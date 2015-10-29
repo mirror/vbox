@@ -287,7 +287,7 @@ ValidateAndMoveFiles(
     } else {
       return SHELL_INVALID_PARAMETER;
     }
-  }  
+  }
 
   ASSERT (CleanFilePathStr != NULL);
 

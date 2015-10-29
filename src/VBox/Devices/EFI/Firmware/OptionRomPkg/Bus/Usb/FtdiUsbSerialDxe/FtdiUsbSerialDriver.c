@@ -467,7 +467,7 @@ EncodeBaudRateForFtdi (
   Divisor = (Divisor & ~(0xF)) + (gRoundedPowersOf2[Divisor & 0xF]);
 
   //
-  // Check to make sure computed divisor is within 
+  // Check to make sure computed divisor is within
   // the min and max that FTDI controller will accept
   //
   if (Divisor < FTDI_MIN_DIVISOR) {
@@ -1117,7 +1117,7 @@ StatusError:
 /**
   Internal function that performs a Usb Control Transfer to set the Dtr value on
   the Usb Serial Device.
-  
+
   @param  UsbIo[in]                  Usb Io Protocol instance pointer
   @param  RtsEnable[in]              Data on the Enable/Disable status of the
                                      Rts for the Usb Serial Device
@@ -1805,7 +1805,7 @@ UsbSerialDriverBindingStart (
               //
               // Clear bits that are not allowed to be passed to SetControl
               //
-              Control &= (EFI_SERIAL_REQUEST_TO_SEND | 
+              Control &= (EFI_SERIAL_REQUEST_TO_SEND |
                           EFI_SERIAL_DATA_TERMINAL_READY |
                           EFI_SERIAL_HARDWARE_LOOPBACK_ENABLE |
                           EFI_SERIAL_SOFTWARE_LOOPBACK_ENABLE |
@@ -1925,11 +1925,11 @@ UsbSerialDriverBindingStart (
   UsbSerialDevice->FlowControlDevicePath.FlowControlMap = 0;
 
   Status = SetAttributesInternal (
-             UsbSerialDevice, 
+             UsbSerialDevice,
              UsbSerialDevice->LastSettings.BaudRate,
-             UsbSerialDevice->LastSettings.ReceiveFifoDepth, 
+             UsbSerialDevice->LastSettings.ReceiveFifoDepth,
              UsbSerialDevice->LastSettings.Timeout,
-             UsbSerialDevice->LastSettings.Parity, 
+             UsbSerialDevice->LastSettings.Parity,
              UsbSerialDevice->LastSettings.DataBits,
              UsbSerialDevice->LastSettings.StopBits
              );
@@ -2294,11 +2294,11 @@ SetControlBits (
   EFI_STATUS    Status;
   USB_SER_DEV   *UsbSerialDevice;
   CONTROL_BITS  ControlBits;
-  
+
   UsbSerialDevice = USB_SER_DEV_FROM_THIS (This);
-  
+
   //
-  // check for invalid control parameters 
+  // check for invalid control parameters
   //
   if ((Control & (~(EFI_SERIAL_REQUEST_TO_SEND          |
                     EFI_SERIAL_DATA_TERMINAL_READY      |

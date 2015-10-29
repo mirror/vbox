@@ -25,7 +25,7 @@ from Common.LongFilePathSupport import OpenLongFilePath as open
 ## TableReport
 #
 # This class defined a table used for data model
-# 
+#
 # @param object:       Inherited from object class
 #
 #
@@ -33,7 +33,7 @@ class TableReport(Table):
     def __init__(self, Cursor):
         Table.__init__(self, Cursor)
         self.Table = 'Report'
-    
+
     ## Create table
     #
     # Create table report
@@ -73,12 +73,12 @@ class TableReport(Table):
         SqlCommand = """insert into %s values(%s, %s, '%s', '%s', %s, %s, %s)""" \
                      % (self.Table, self.ID, ErrorID, ConvertToSqlString2(OtherMsg), BelongsToTable, BelongsToItem, Enabled, Corrected)
         Table.Insert(self, SqlCommand)
-        
+
         return self.ID
-    
+
     ## Query table
     #
-    # @retval:       A recordSet of all found records 
+    # @retval:       A recordSet of all found records
     #
     def Query(self):
         SqlCommand = """select ID, ErrorID, OtherMsg, BelongsToTable, BelongsToItem, Corrected from %s
@@ -116,7 +116,7 @@ class TableReport(Table):
                 if NewRecord != []:
                     File.write("""%s,%s,"%s",%s,%s,"%s"\n""" % (Index, ErrorID, EccToolError.gEccErrorMessage[ErrorID], NewRecord[0][1], NewRecord[0][0], OtherMsg))
                     EdkLogger.quiet("%s(%s): [%s]%s %s" % (NewRecord[0][1], NewRecord[0][0], ErrorID, EccToolError.gEccErrorMessage[ErrorID], OtherMsg))
-                    
+
             File.close()
         except IOError:
             NewFilename = 'Report_' + time.strftime("%Y%m%d_%H%M%S.csv", time.localtime())

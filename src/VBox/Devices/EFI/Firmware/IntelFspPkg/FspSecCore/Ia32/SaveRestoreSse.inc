@@ -49,7 +49,7 @@ ENDIF
 
 ;
 ; XMM7 to save/restore EBP, EBX, ESI, EDI
-; 
+;
 SAVE_REGS    MACRO
   SXMMN      xmm7, 0, ebp
   SXMMN      xmm7, 1, ebx
@@ -68,7 +68,7 @@ LOAD_REGS    MACRO
 
 ;
 ; XMM6 to save/restore EAX, EDX, ECX, ESP
-; 
+;
 LOAD_EAX     MACRO
   LXMMN      xmm6, eax, 1
              ENDM
@@ -100,7 +100,7 @@ SAVE_ESP     MACRO
 LOAD_ESP     MACRO
   movd       esp,  xmm6
              ENDM
-             
+
 ;
 ; XMM5 for calling stack
 ;
@@ -110,27 +110,27 @@ CALL_XMM     MACRO  Entry
              pslldq  xmm5, 4
 IFDEF USE_SSE41_FLAG
              pinsrd  xmm5, esi, 0
-ELSE             
+ELSE
              pinsrw  xmm5, esi, 0
              ror     esi,  16
-             pinsrw  xmm5, esi, 1                        
-ENDIF             
+             pinsrw  xmm5, esi, 1
+ENDIF
              mov     esi,  Entry
              jmp     esi
-ReturnAddress:             
+ReturnAddress:
              ENDM
-            
-RET_XMM      MACRO               
+
+RET_XMM      MACRO
              movd    esi, xmm5
              psrldq  xmm5, 4
              jmp     esi
              ENDM
-             
+
 ENABLE_SSE   MACRO
             ;
             ; Initialize floating point units
             ;
-            local   NextAddress            
+            local   NextAddress
             jmp     NextAddress
 ALIGN 4
             ;
@@ -142,13 +142,13 @@ FpuControlWord       DW      027Fh
             ; Multimedia-extensions control word:
             ; all exceptions masked, round-to-nearest, flush to zero for masked underflow
             ;
-MmxControlWord       DD      01F80h 
-SseError:      
+MmxControlWord       DD      01F80h
+SseError:
             ;
             ; Processor has to support SSE
             ;
-            jmp     SseError      
-NextAddress:            
+            jmp     SseError
+NextAddress:
             finit
             fldcw   FpuControlWord
 
@@ -165,7 +165,7 @@ IFDEF USE_SSE41_FLAG
             ;
             ; SSE 4.1 support
             ;
-            bt      ecx, 19   
+            bt      ecx, 19
             jnc     SseError
 ENDIF
 

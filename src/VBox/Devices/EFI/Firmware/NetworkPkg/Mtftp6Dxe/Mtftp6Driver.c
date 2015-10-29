@@ -238,7 +238,7 @@ Mtftp6CreateInstance (
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 
@@ -473,7 +473,7 @@ Mtftp6DriverBindingStop (
   EFI_STATUS                                 Status;
   LIST_ENTRY                                 *List;
   MTFTP6_DESTROY_CHILD_IN_HANDLE_BUF_CONTEXT Context;
-  
+
   //
   // Locate the Nic handle to retrieve the Mtftp6 private data.
   //

@@ -67,7 +67,7 @@ MmioReadBuffer8 (
   If Length is greater than (MAX_ADDRESS - Buffer + 1), then ASSERT().
 
   If Length is not aligned on a 16-bit boundary, then ASSERT().
-  
+
   If Buffer is not aligned on a 16-bit boundary, then ASSERT().
 
   @param  StartAddress    The starting address for the MMIO region to be copied from.
@@ -170,7 +170,7 @@ MmioReadBuffer32 (
   If Length is greater than (MAX_ADDRESS - Buffer + 1), then ASSERT().
 
   If Length is not aligned on a 64-bit boundary, then ASSERT().
- 
+
   If Buffer is not aligned on a 64-bit boundary, then ASSERT().
 
   @param  StartAddress    The starting address for the MMIO region to be copied from.
@@ -223,7 +223,7 @@ MmioReadBuffer64 (
 
   @param  StartAddress    The starting address for the MMIO region to be copied to.
   @param  Length          The size in bytes of the copy.
-  @param  Buffer          The pointer to a system memory buffer containing the 
+  @param  Buffer          The pointer to a system memory buffer containing the
                           data to write.
 
   @return Buffer
@@ -270,7 +270,7 @@ MmioWriteBuffer8 (
 
   @param  StartAddress    The starting address for the MMIO region to be copied to.
   @param  Length          The size in bytes of the copy.
-  @param  Buffer          The pointer to a system memory buffer containing the 
+  @param  Buffer          The pointer to a system memory buffer containing the
                           data to write.
 
   @return Buffer
@@ -325,7 +325,7 @@ MmioWriteBuffer16 (
 
   @param  StartAddress    The starting address for the MMIO region to be copied to.
   @param  Length          The size in bytes of the copy.
-  @param  Buffer          The pointer to a system memory buffer containing the 
+  @param  Buffer          The pointer to a system memory buffer containing the
                           data to write.
 
   @return Buffer
@@ -379,7 +379,7 @@ MmioWriteBuffer32 (
 
   @param  StartAddress    The starting address for the MMIO region to be copied to.
   @param  Length          The size in bytes of the copy.
-  @param  Buffer          The pointer to a system memory buffer containing the 
+  @param  Buffer          The pointer to a system memory buffer containing the
                           data to write.
 
   @return Buffer

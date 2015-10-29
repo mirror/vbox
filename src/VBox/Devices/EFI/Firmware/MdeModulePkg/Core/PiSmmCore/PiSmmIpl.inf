@@ -35,13 +35,13 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  
+
 [LibraryClasses]
   UefiDriverEntryPoint
   BaseLib
   BaseMemoryLib
   PeCoffLib
-  CacheMaintenanceLib  
+  CacheMaintenanceLib
   MemoryAllocationLib
   DebugLib
   UefiBootServicesTableLib
@@ -50,7 +50,7 @@
   UefiRuntimeLib
   DxeServicesLib
   PcdLib
-  
+
 [Protocols]
   gEfiSmmBase2ProtocolGuid                      ## PRODUCES
   gEfiSmmCommunicationProtocolGuid              ## PRODUCES

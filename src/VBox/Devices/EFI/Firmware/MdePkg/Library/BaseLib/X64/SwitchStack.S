@@ -37,9 +37,9 @@
 #------------------------------------------------------------------------------
 ASM_GLOBAL ASM_PFX(InternalSwitchStack)
 ASM_PFX(InternalSwitchStack):
-	  pushq   %rbp            
+	  pushq   %rbp
   	movq    %rsp, %rbp
-    
+
     mov     %rcx, %rax  // Shift registers for new call
     mov     %rdx, %rcx
     mov     %r8, %rdx

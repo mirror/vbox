@@ -1,4 +1,4 @@
-/** @file  
+/** @file
   Internal include file for BaseCryptLib.
 
 Copyright (c) 2010 - 2012, Intel Corporation. All rights reserved.<BR>

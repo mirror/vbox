@@ -894,7 +894,7 @@ EndList
            else:
                OldTextBody.append (Line)
 
-           if Match and Match.group(3) == 'END':  
+           if Match and Match.group(3) == 'END':
                if (StructName != Match.group(1)) or (VariableName != Match.group(2)):
                    print "Unmatched struct name '%s' and '%s' !"  % (StructName, Match.group(1))
                else:
@@ -1002,7 +1002,7 @@ EndList
 
                 if Offset != Item["offset"]:
                     self.Error = "Unsorted offset 0x%04X\n" % Item["offset"]
-                    return 3                    
+                    return 3
 
                 LastVisible = NextVisible
 
@@ -1022,9 +1022,9 @@ EndList
                             return 4
                     Line = Marker + self.CreateField (Item, Item["cname"], Item["length"], Item["offset"], Item['struct'], Item['name'], Item['help'])
                     TxtBody.append(Line)
-                    
+
             TxtBody.append("} " + Region[0] + "PD_DATA_REGION;\n\n")
-        
+
         # Handle the embedded data structure
         TxtBody = self.PostProcessBody (TxtBody)
 
@@ -1058,7 +1058,7 @@ EndList
                 if Export:
                     HeaderFd.write(Line)
             HeaderFd.write("\n\n")
-            
+
         for Line in TxtBody:
             HeaderFd.write (Line)
         HeaderFd.write("#pragma pack()\n\n")
@@ -1122,7 +1122,7 @@ EndList
                     BsfFd.write('\n        Column "%s", %d bytes, %s' % (Fmt[0].strip(), Dtype, Fmt[2].strip()))
                 BsfFd.write(',\n')
                 WriteHelp = 1
-            
+
         if WriteHelp  > 0:
             HelpLines = Item['help'].split('\\n\\r')
             FirstLine = True

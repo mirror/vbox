@@ -23,7 +23,7 @@
   FILE_GUID                      = 40096a3a-5c2a-4fbc-aef7-5475dd7ab334
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PcdLib 
+  LIBRARY_CLASS                  = PcdLib
 
 
 #

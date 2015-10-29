@@ -5,20 +5,20 @@
   It abstracts the location and characteristics of SMRAM.  The expectation is
   that the north bridge or memory controller would publish this protocol.
 
-  The principal functionality found in the memory controller includes the following: 
+  The principal functionality found in the memory controller includes the following:
   - Exposing the SMRAM to all non-SMM agents, or the "open" state
   - Shrouding the SMRAM to all but the SMM agents, or the "closed" state
-  - Preserving the system integrity, or "locking" the SMRAM, such that the settings cannot be 
-    perturbed by either boot service or runtime agents 
+  - Preserving the system integrity, or "locking" the SMRAM, such that the settings cannot be
+    perturbed by either boot service or runtime agents
 
   Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials                          
-  are licensed and made available under the terms and conditions of the BSD License         
-  which accompanies this distribution.  The full text of the license may be found at        
-  http://opensource.org/licenses/bsd-license.php                                            
+  This program and the accompanying materials
+  are licensed and made available under the terms and conditions of the BSD License
+  which accompanies this distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -36,8 +36,8 @@ typedef struct _EFI_SMM_ACCESS2_PROTOCOL  EFI_SMM_ACCESS2_PROTOCOL;
 /**
   Opens the SMRAM area to be accessible by a boot-service driver.
 
-  This function "opens" SMRAM so that it is visible while not inside of SMM. The function should 
-  return EFI_UNSUPPORTED if the hardware does not support hiding of SMRAM. The function 
+  This function "opens" SMRAM so that it is visible while not inside of SMM. The function should
+  return EFI_UNSUPPORTED if the hardware does not support hiding of SMRAM. The function
   should return EFI_DEVICE_ERROR if the SMRAM configuration is locked.
 
   @param[in] This           The EFI_SMM_ACCESS2_PROTOCOL instance.
@@ -55,7 +55,7 @@ EFI_STATUS
 /**
   Inhibits access to the SMRAM.
 
-  This function "closes" SMRAM so that it is not visible while outside of SMM. The function should 
+  This function "closes" SMRAM so that it is not visible while outside of SMM. The function should
   return EFI_UNSUPPORTED if the hardware does not support hiding of SMRAM.
 
   @param[in] This           The EFI_SMM_ACCESS2_PROTOCOL instance.
@@ -73,8 +73,8 @@ EFI_STATUS
 /**
   Inhibits access to the SMRAM.
 
-  This function prohibits access to the SMRAM region.  This function is usually implemented such 
-  that it is a write-once operation. 
+  This function prohibits access to the SMRAM region.  This function is usually implemented such
+  that it is a write-once operation.
 
   @param[in] This          The EFI_SMM_ACCESS2_PROTOCOL instance.
 
@@ -95,7 +95,7 @@ EFI_STATUS
   @param[in,out] SmramMap       A pointer to the buffer in which firmware places the current memory map.
 
   @retval EFI_SUCCESS           The chipset supported the given resource.
-  @retval EFI_BUFFER_TOO_SMALL  The SmramMap parameter was too small.  The current buffer size 
+  @retval EFI_BUFFER_TOO_SMALL  The SmramMap parameter was too small.  The current buffer size
                                 needed to hold the memory map is returned in SmramMapSize.
 **/
 typedef
@@ -110,7 +110,7 @@ EFI_STATUS
 ///  EFI SMM Access2 Protocol is used to control the visibility of the SMRAM on the platform.
 ///  It abstracts the location and characteristics of SMRAM.  The expectation is
 ///  that the north bridge or memory controller would publish this protocol.
-/// 
+///
 struct _EFI_SMM_ACCESS2_PROTOCOL {
   EFI_SMM_OPEN2          Open;
   EFI_SMM_CLOSE2         Close;

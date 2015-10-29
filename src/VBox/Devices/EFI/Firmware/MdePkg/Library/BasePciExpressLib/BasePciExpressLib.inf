@@ -23,7 +23,7 @@
   FILE_GUID                      = 287e50f4-a188-4699-b907-3e4080ca5688
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PciExpressLib 
+  LIBRARY_CLASS                  = PciExpressLib
 
 #
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC

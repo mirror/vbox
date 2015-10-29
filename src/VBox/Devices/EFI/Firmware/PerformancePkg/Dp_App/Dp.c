@@ -12,13 +12,13 @@
   and start and end time values.
   Dp uses this information to group records in different ways.  It also uses
   timer information to calculate elapsed time for each measurement.
- 
+
   Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
- 
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -95,18 +95,18 @@ VOID
 InitialShellParamList( void )
 {
   UINT32            ListIndex;
-  UINT32            ListLength;  
+  UINT32            ListLength;
 
   //
   // Allocate one more for the end tag.
   //
-  ListLength = sizeof (ParamList) / sizeof (ParamList[0]) + 1;  
+  ListLength = sizeof (ParamList) / sizeof (ParamList[0]) + 1;
   DpParamList = AllocatePool (sizeof (SHELL_PARAM_ITEM) * ListLength);
   ASSERT (DpParamList != NULL);
-  
+
   for (ListIndex = 0; ListIndex < ListLength - 1; ListIndex ++)
-  { 
-    DpParamList[ListIndex].Name = HiiGetString (gHiiHandle, ParamList[ListIndex].Token, NULL);      
+  {
+    DpParamList[ListIndex].Name = HiiGetString (gHiiHandle, ParamList[ListIndex].Token, NULL);
     DpParamList[ListIndex].Type = ParamList[ListIndex].Type;
   }
   DpParamList[ListIndex].Name = NULL;
@@ -151,7 +151,7 @@ DumpStatistics( void )
   EFI_STRING                StringPtr;
   EFI_STRING                StringPtrUnknown;
   StringPtr        = HiiGetString (gHiiHandle, STRING_TOKEN (STR_DP_SECTION_STATISTICS), NULL);
-  StringPtrUnknown = HiiGetString (gHiiHandle, STRING_TOKEN (STR_ALIT_UNKNOWN), NULL);  
+  StringPtrUnknown = HiiGetString (gHiiHandle, STRING_TOKEN (STR_ALIT_UNKNOWN), NULL);
   PrintToken( STRING_TOKEN (STR_DP_SECTION_HEADER),
               (StringPtr == NULL) ? StringPtrUnknown : StringPtr);
 
@@ -168,16 +168,16 @@ DumpStatistics( void )
   FreePool (StringPtrUnknown);
 }
 
-/** 
+/**
   Dump performance data.
-  
+
   @param[in]  ImageHandle     The image handle.
   @param[in]  SystemTable     The system table.
-  
+
   @retval EFI_SUCCESS            Command completed successfully.
   @retval EFI_INVALID_PARAMETER  Command usage error.
   @retval value                  Unknown error.
-  
+
 **/
 EFI_STATUS
 EFIAPI
@@ -189,7 +189,7 @@ InitializeDp (
   UINT64                    Freq;
   UINT64                    Ticker;
   UINT32                    ListIndex;
-  
+
   LIST_ENTRY                *ParamPackage;
   CONST CHAR16              *CmdLineArg;
   EFI_STRING                StringPtr;
@@ -218,7 +218,7 @@ InitializeDp (
   EFI_STRING                StringDpOptionLn;
   EFI_STRING                StringDpOptionLt;
   EFI_STRING                StringDpOptionLi;
-  
+
   SummaryMode     = FALSE;
   VerboseMode     = FALSE;
   AllMode         = FALSE;
@@ -256,7 +256,7 @@ InitializeDp (
   // Initial the command list
   //
   InitialShellParamList ();
-  
+
 /****************************************************************************
 ****            Process Command Line arguments                           ****
 ****************************************************************************/
@@ -270,7 +270,7 @@ InitializeDp (
     StringDpOptionQh = HiiGetString (gHiiHandle, STRING_TOKEN (STR_DP_OPTION_QH), NULL);
     StringDpOptionLh = HiiGetString (gHiiHandle, STRING_TOKEN (STR_DP_OPTION_LH), NULL);
     StringDpOptionUh = HiiGetString (gHiiHandle, STRING_TOKEN (STR_DP_OPTION_UH), NULL);
-    
+
     if (ShellCommandLineGetFlag (ParamPackage, StringDpOptionQh)  ||
         ShellCommandLineGetFlag (ParamPackage, StringDpOptionLh)  ||
         ShellCommandLineGetFlag (ParamPackage, StringDpOptionUh))
@@ -289,9 +289,9 @@ InitializeDp (
       StringDpOptionLn = HiiGetString (gHiiHandle, STRING_TOKEN (STR_DP_OPTION_LN), NULL);
       StringDpOptionLt = HiiGetString (gHiiHandle, STRING_TOKEN (STR_DP_OPTION_LT), NULL);
       StringDpOptionLi = HiiGetString (gHiiHandle, STRING_TOKEN (STR_DP_OPTION_LI), NULL);
-      
+
       // Boolean Options
-      // 
+      //
       VerboseMode = ShellCommandLineGetFlag (ParamPackage, StringDpOptionLv);
       SummaryMode = (BOOLEAN) (ShellCommandLineGetFlag (ParamPackage, StringDpOptionUs) ||
                     ShellCommandLineGetFlag (ParamPackage, StringDpOptionLs));
@@ -438,7 +438,7 @@ InitializeDp (
   while (DpParamList[ListIndex].Name != NULL) {
     FreePool (DpParamList[ListIndex].Name);
     ListIndex ++;
-  }  
+  }
   FreePool (DpParamList);
 
   SafeFreePool (StringDpOptionQh);

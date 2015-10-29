@@ -1,9 +1,9 @@
 ## @file Udp6Dxe.inf
 #  UDP packet service based on IPv6 stack.
-#  
+#
 #  This module produces EFI UDPv6 Protocol which provides simple packet-oriented
 #  services to transmit and receive UDP packets.
-#                                                                                
+#
 #  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials

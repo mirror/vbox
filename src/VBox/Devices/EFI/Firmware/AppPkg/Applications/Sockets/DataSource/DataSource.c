@@ -215,7 +215,7 @@ IpAddress (
   RemoteHostAddress.sin6_port = htons ( PcdGet16 ( DataSource_Port ));
   pRemoteAddress4 = (struct sockaddr_in *)&RemoteHostAddress;
   pRemoteAddress6 = &RemoteHostAddress;
-  
+
   //
   //  Convert the IP address from a string to a numeric value
   //

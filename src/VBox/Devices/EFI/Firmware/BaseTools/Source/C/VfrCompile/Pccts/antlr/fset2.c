@@ -236,7 +236,7 @@ int tok;
 {
 	Tree *p, *newblk;
 	static int n=0;
-	
+
 	if ( FreeList == NULL )
 	{
 		/*fprintf(stderr, "tnode: %d more nodes\n", TreeBlockAllocSize);*/
@@ -346,7 +346,7 @@ Tree *t;
 #endif
 {
 	Tree *u;
-	
+
 	if ( t == NULL ) return NULL;
 	u = tnode(t->token);
 	u->v.rk = t->v.rk;
@@ -365,7 +365,7 @@ Tree *t;
 #endif
 {
 	Tree *u;
-	
+
 	if ( t == NULL ) return NULL;
 	u = tnode(t->token);
 	u->v.rk = t->v.rk;
@@ -513,7 +513,7 @@ Tree *t;
 	t->down = tflatten( t->down );
 	t->right = tflatten( t->right );
 	if ( t->down == NULL ) return t;
-	
+
 	if ( t->token == ALT )
 	{
 		Tree *u;
@@ -630,7 +630,7 @@ set *rk;
 /* MR14 */      guess_point=p->p1;
 /* MR14 */    }
 /* MR14 */    p->guess_analysis_point=guess_point;
-/* MR14 */  }	
+/* MR14 */  }
 
 	if ( p->p2 == NULL )
 	{
@@ -691,7 +691,7 @@ set *rk_out;
 	set rk, rk2;
 	int save_halt;
 	RuleEntry *q = (RuleEntry *) hash_get(Rname, p->text);
-	
+
 #ifdef DBG_TRAV
 	fprintf(stderr, "tRuleRef: %s\n", p->text);
 #endif
@@ -1185,7 +1185,7 @@ int k, max_k;
 #endif
 {
 	Tree *t, *u;
-	
+
 	if ( k>max_k ) return NULL;
 	if ( ftbl[k][findex[k]] == nil ) return NULL;
 	t = permute(k+1, max_k);
@@ -1195,7 +1195,7 @@ int k, max_k;
 		(findex[k])++;			/* try next token at this k */
 		return permute(k, max_k);
 	}
-	
+
 	u = tmake(tnode(ftbl[k][findex[k]]), t, NULL);
 	if ( k == max_k ) (findex[k])++;
 	return u;

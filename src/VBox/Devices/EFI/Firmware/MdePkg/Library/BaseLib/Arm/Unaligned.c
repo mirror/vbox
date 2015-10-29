@@ -1,6 +1,6 @@
 /** @file
   Unaligned access functions of BaseLib for ARM.
-  
+
   volatile was added to work around optimization issues.
 
   Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>

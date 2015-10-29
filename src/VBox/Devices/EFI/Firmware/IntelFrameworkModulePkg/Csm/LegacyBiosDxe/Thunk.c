@@ -73,7 +73,7 @@ LegacyBiosInt86 (
   // We use this base address to get the legacy interrupt handler.
   //
   VectorBase              = 0;
-  
+
   return InternalLegacyBiosFarCall (
            This,
            (UINT16) ((VectorBase)[BiosInt] >> 16),
@@ -127,7 +127,7 @@ LegacyBiosFarCall86 (
 }
 
 /**
-  Provide NULL interrupt handler which is used to check 
+  Provide NULL interrupt handler which is used to check
   if there is more than one HW interrupt registers with the CPU AP.
 
   @param  InterruptType - The type of interrupt that occured
@@ -214,7 +214,7 @@ InternalLegacyBiosFarCall (
   // Disable DXE Timer while executing in real mode
   //
   Private->Timer->SetTimerPeriod (Private->Timer, 0);
- 
+
   //
   // Save and disable interrupt of debug timer
   //
@@ -227,14 +227,14 @@ InternalLegacyBiosFarCall (
 
   //
   // Check to see if there is more than one HW interrupt registers with the CPU AP.
-  // If there is, then ASSERT() since that is not compatible with the CSM because 
-  // interupts other than the Timer interrupt that was disabled above can not be 
+  // If there is, then ASSERT() since that is not compatible with the CSM because
+  // interupts other than the Timer interrupt that was disabled above can not be
   // handled properly from real mode.
   //
   DEBUG_CODE (
     UINTN  Vector;
     UINTN  Count;
-    
+
     for (Vector = 0x20, Count = 0; Vector < 0x100; Vector++) {
       Status = Private->Cpu->RegisterInterruptHandler (Private->Cpu, Vector, LegacyBiosNullInterruptHandler);
       if (Status == EFI_ALREADY_STARTED) {
@@ -251,14 +251,14 @@ InternalLegacyBiosFarCall (
   );
 
   //
-  // If the Timer AP has enabled the 8254 timer IRQ and the current 8254 timer 
-  // period is less than the CSM required rate of 54.9254, then force the 8254 
+  // If the Timer AP has enabled the 8254 timer IRQ and the current 8254 timer
+  // period is less than the CSM required rate of 54.9254, then force the 8254
   // PIT counter to 0, which is the CSM required rate of 54.9254 ms
   //
   if (Private->TimerUses8254 && TimerPeriod < 549254) {
     SetPitCount (0);
   }
-  
+
   if (Stack != NULL && StackSize != 0) {
     //
     // Copy Stack to low memory stack
@@ -323,7 +323,7 @@ InternalLegacyBiosFarCall (
   // End critical section
   //
   gBS->RestoreTPL (OriginalTpl);
-  
+
   //
   // Restore interrupt of debug timer
   //
@@ -378,27 +378,27 @@ LegacyBiosInitializeThunk (
   TimerVector = 0;
   Status = Private->Legacy8259->GetVector (Private->Legacy8259, Efi8259Irq0, &TimerVector);
   ASSERT_EFI_ERROR (Status);
-  
+
   //
   // Check to see if the Timer AP has hooked the IRQ0 from the 8254 PIT
-  //  
+  //
   Status = Private->Cpu->RegisterInterruptHandler (
-                           Private->Cpu, 
-                           TimerVector, 
+                           Private->Cpu,
+                           TimerVector,
                            LegacyBiosNullInterruptHandler
                            );
   if (Status == EFI_SUCCESS) {
     //
-    // If the Timer AP has not enabled the 8254 timer IRQ, then force the 8254 PIT 
+    // If the Timer AP has not enabled the 8254 timer IRQ, then force the 8254 PIT
     // counter to 0, which is the CSM required rate of 54.9254 ms
     //
     Private->Cpu->RegisterInterruptHandler (
-                    Private->Cpu, 
-                    TimerVector, 
+                    Private->Cpu,
+                    TimerVector,
                     NULL
                     );
     SetPitCount (0);
-    
+
     //
     // Save status that the Timer AP is not using the 8254 PIT
     //
@@ -414,6 +414,6 @@ LegacyBiosInitializeThunk (
     //
     ASSERT (FALSE);
   }
-  
+
   return EFI_SUCCESS;
 }

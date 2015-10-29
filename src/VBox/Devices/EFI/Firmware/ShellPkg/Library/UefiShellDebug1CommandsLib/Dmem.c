@@ -152,7 +152,7 @@ ShellCommandRunDmem (
         if (!ShellIsHexOrDecimalNumber(Temp1, TRUE, FALSE) || EFI_ERROR(ShellConvertStringToUint64(Temp1, (UINT64*)&Address, TRUE, FALSE))) {
           ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDebug1HiiHandle, Temp1);
           ShellStatus = SHELL_INVALID_PARAMETER;
-        } 
+        }
         Temp1 = ShellCommandLineGetRawValue(Package, 2);
         if (Temp1 == NULL) {
           Size = 512;
@@ -198,7 +198,7 @@ ShellCommandRunDmem (
             }
           }
 
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_DMEM_SYSTEM_TABLE), gShellDebug1HiiHandle, 
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_DMEM_SYSTEM_TABLE), gShellDebug1HiiHandle,
             (UINT64)(UINTN)Address,
             gST->Hdr.HeaderSize,
             gST->Hdr.Revision,

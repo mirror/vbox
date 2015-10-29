@@ -433,17 +433,17 @@ class Check(object):
                         op = open(FullName).readlines()
                         FileLinesList = op
                         LineNo             = 0
-                        CurrentSection     = MODEL_UNKNOWN 
+                        CurrentSection     = MODEL_UNKNOWN
                         HeaderSectionLines       = []
-                        HeaderCommentStart = False 
+                        HeaderCommentStart = False
                         HeaderCommentEnd   = False
-                        
+
                         for Line in FileLinesList:
                             LineNo   = LineNo + 1
                             Line     = Line.strip()
                             if (LineNo < len(FileLinesList) - 1):
                                 NextLine = FileLinesList[LineNo].strip()
-            
+
                             #
                             # blank line
                             #
@@ -470,8 +470,8 @@ class Check(object):
                                     #
                                     HeaderSectionLines.append((Line, LineNo))
                                     HeaderCommentStart = True
-                                    continue        
-            
+                                    continue
+
                             #
                             # Collect Header content.
                             #
@@ -505,7 +505,7 @@ class Check(object):
                                 if EccGlobalData.gConfig.HeaderCheckFileCommentEnd == '1' or EccGlobalData.gConfig.HeaderCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
                                     EccGlobalData.gDb.TblReport.Insert(ERROR_DOXYGEN_CHECK_FILE_HEADER, Msg, "File", Result[0])
 
-                                     
+
 
     # Check whether the function headers are followed Doxygen special documentation blocks in section 2.3.5
     def DoxygenCheckFunctionHeader(self):
@@ -692,7 +692,7 @@ class Check(object):
                     for FilePath in FilePathList:
                         if not EccGlobalData.gException.IsException(ERROR_META_DATA_FILE_CHECK_LIBRARY_NAME_DUPLICATE, Record[1]):
                             EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_LIBRARY_NAME_DUPLICATE, OtherMsg="The Library Class [%s] is duplicated in '%s' line %s and line %s." % (Record[1], FilePath, Record[3], Record[4]), BelongsToTable='Dsc', BelongsToItem=Record[0])
-                                                
+
     # Check whether an Inf file is specified in the FDF file, but not in the Dsc file, then the Inf file must be for a Binary module only
     def MetaDataFileCheckBinaryInfInFdf(self):
         if EccGlobalData.gConfig.MetaDataFileCheckBinaryInfInFdf == '1' or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
@@ -1094,7 +1094,7 @@ class Check(object):
                      group by A.ID
                      """ % (Table.Table, Table.Table, Model, Model)
         RecordSet = Table.Exec(SqlCommand)
-        for Record in RecordSet:     
+        for Record in RecordSet:
             if not EccGlobalData.gException.IsException(ErrorID, Record[1] + ':' + Record[2]):
                 EccGlobalData.gDb.TblReport.Insert(ErrorID, OtherMsg="The %s value [%s] is used more than one time" % (Name.upper(), Record[2]), BelongsToTable=Table.Table, BelongsToItem=Record[0])
 

@@ -163,7 +163,7 @@ USB_DEBUG_PORT_HANDLE     mDebugCommunicationLibUsbDebugPortHandle;
 
 /**
   Check if the timer is timeout.
-  
+
   @param[in] UsbDebugPortHandle  Pointer to USB Debug port handle
   @param[in] Timer               The start timer from the begin.
   @param[in] TimeoutTicker       Ticker number need time out.
@@ -192,7 +192,7 @@ IsTimerTimeout (
       Delta = Timer - CurrentTimer;
     } else {
       //
-      // Handle one roll-over. 
+      // Handle one roll-over.
       //
       Delta = UsbDebugPortHandle->TimerCycle - (CurrentTimer - Timer);
     }
@@ -204,12 +204,12 @@ IsTimerTimeout (
       Delta = CurrentTimer - Timer;
     } else {
       //
-      // Handle one roll-over. 
+      // Handle one roll-over.
       //
       Delta = UsbDebugPortHandle->TimerCycle - (Timer - CurrentTimer);
     }
   }
- 
+
   return (BOOLEAN) (Delta >= TimeoutTicker);
 }
 
@@ -241,7 +241,7 @@ CalculateUsbDebugPortBar (
 
   VendorId = PciRead16 (PcdGet32(PcdUsbEhciPciAddress) + PCI_VENDOR_ID_OFFSET);
   DeviceId = PciRead16 (PcdGet32(PcdUsbEhciPciAddress) + PCI_DEVICE_ID_OFFSET);
-  
+
   if ((VendorId == 0xFFFF) || (DeviceId == 0xFFFF)) {
     return RETURN_UNSUPPORTED;
   }
@@ -249,7 +249,7 @@ CalculateUsbDebugPortBar (
   ProgInterface = PciRead8 (PcdGet32(PcdUsbEhciPciAddress) + PCI_CLASSCODE_OFFSET);
   SubClassCode  = PciRead8 (PcdGet32(PcdUsbEhciPciAddress) + PCI_CLASSCODE_OFFSET + 1);
   BaseCode      = PciRead8 (PcdGet32(PcdUsbEhciPciAddress) + PCI_CLASSCODE_OFFSET + 2);
-  
+
   if ((ProgInterface != PCI_IF_EHCI) || (SubClassCode != PCI_CLASS_SERIAL_USB) || (BaseCode != PCI_CLASS_SERIAL)) {
     return RETURN_UNSUPPORTED;
   }
@@ -362,7 +362,7 @@ UsbDebugPortIn (
       return RETURN_DEVICE_ERROR;
     }
   }
-  
+
   //
   // Clearing DONE bit by writing 1
   //
@@ -463,7 +463,7 @@ UsbDebugPortOut (
       return RETURN_DEVICE_ERROR;
     }
   }
-  
+
   //
   // Clearing DONE bit by writing 1
   //
@@ -793,7 +793,7 @@ InitializeUsbDebugHardware (
       Handle->Initialized = USBDBG_NO_DBG_CAB;
       return Status;
     }
-  
+
     Handle->Initialized = USBDBG_DBG_CAB;
   }
 
@@ -897,7 +897,7 @@ DebugPortReadBuffer (
   // If Timeout is equal to 0, then it means it should always wait until all datum required are received.
   //
   Begin         = 0;
-  TimeoutTicker = 0;  
+  TimeoutTicker = 0;
   TimerRound    = 0;
   if (Timeout != 0) {
     Begin = GetPerformanceCounter ();
@@ -1212,7 +1212,7 @@ DebugPortInitialize (
   UINT64                    TimerEndValue;
 
   //
-  // Validate the PCD PcdDebugPortHandleBufferSize value 
+  // Validate the PCD PcdDebugPortHandleBufferSize value
   //
   ASSERT (PcdGet16 (PcdDebugPortHandleBufferSize) == sizeof (USB_DEBUG_PORT_HANDLE));
 
@@ -1227,9 +1227,9 @@ DebugPortInitialize (
                                          &TimerStartValue,
                                          &TimerEndValue
                                          );
-  DEBUG ((EFI_D_INFO, "USB Debug Port: TimerFrequency  = 0x%lx\n", UsbDebugPortHandle->TimerFrequency)); 
-  DEBUG ((EFI_D_INFO, "USB Debug Port: TimerStartValue = 0x%lx\n", TimerStartValue)); 
-  DEBUG ((EFI_D_INFO, "USB Debug Port: TimerEndValue   = 0x%lx\n", TimerEndValue)); 
+  DEBUG ((EFI_D_INFO, "USB Debug Port: TimerFrequency  = 0x%lx\n", UsbDebugPortHandle->TimerFrequency));
+  DEBUG ((EFI_D_INFO, "USB Debug Port: TimerStartValue = 0x%lx\n", TimerStartValue));
+  DEBUG ((EFI_D_INFO, "USB Debug Port: TimerEndValue   = 0x%lx\n", TimerEndValue));
 
   if (TimerEndValue < TimerStartValue) {
     UsbDebugPortHandle->TimerCountDown = TRUE;
@@ -1237,7 +1237,7 @@ DebugPortInitialize (
   } else {
     UsbDebugPortHandle->TimerCountDown = FALSE;
     UsbDebugPortHandle->TimerCycle     = TimerEndValue - TimerStartValue;
-  }   
+  }
 
   if (Function == NULL && Context != NULL) {
     return (DEBUG_PORT_HANDLE *) Context;

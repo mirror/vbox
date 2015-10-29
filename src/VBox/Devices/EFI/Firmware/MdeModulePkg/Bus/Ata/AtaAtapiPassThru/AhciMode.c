@@ -806,7 +806,7 @@ AhciPioTransfer (
         Offset = EFI_AHCI_PORT_START + Port * EFI_AHCI_PORT_REG_WIDTH + EFI_AHCI_PORT_TFD;
         PortTfd = AhciReadReg (PciIo, (UINT32) Offset);
         //
-        // PxTFD will be updated if there is a D2H or SetupFIS received. 
+        // PxTFD will be updated if there is a D2H or SetupFIS received.
         //
         if ((PortTfd & EFI_AHCI_PORT_TFD_ERR) != 0) {
           Status = EFI_DEVICE_ERROR;
@@ -1442,7 +1442,7 @@ AhciReset (
   // Collect AHCI controller information
   //
   Capability = AhciReadReg (PciIo, EFI_AHCI_CAPABILITY_OFFSET);
-  
+
   //
   // Enable AE before accessing any AHCI registers if Supports AHCI Mode Only is not set
   //
@@ -1997,7 +1997,7 @@ AhciCreateTransferDescriptor (
   //
   MaxCommandSlotNumber = (UINT8) (((Capability & 0x1F00) >> 8) + 1);
   Support64Bit         = (BOOLEAN) (((Capability & BIT31) != 0) ? TRUE : FALSE);
-  
+
   PortImplementBitMap  = AhciReadReg(PciIo, EFI_AHCI_PI_OFFSET);
   //
   // Get the highest bit of implemented ports which decides how many bytes are allocated for recived FIS.
@@ -2255,14 +2255,14 @@ AhciModeInitialization (
   // Collect AHCI controller information
   //
   Capability = AhciReadReg (PciIo, EFI_AHCI_CAPABILITY_OFFSET);
-  
+
   //
   // Enable AE before accessing any AHCI registers if Supports AHCI Mode Only is not set
   //
   if ((Capability & EFI_AHCI_CAP_SAM) == 0) {
     AhciOrReg (PciIo, EFI_AHCI_GHC_OFFSET, EFI_AHCI_GHC_ENABLE);
   }
-  
+
   //
   // Get the number of command slots per port supported by this HBA.
   //

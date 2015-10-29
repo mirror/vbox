@@ -3,7 +3,7 @@
 #
 #  This module produces EFI Managed Network Protocol upon EFI Simple Network Protocol,
 #  to provide raw asynchronous network I/O services. It also produces EFI VLAN Protocol
-#  to provide manageability interface for VLAN configuration. 
+#  to provide manageability interface for VLAN configuration.
 #
 #  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials

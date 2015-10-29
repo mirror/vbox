@@ -7,13 +7,13 @@
   of multiple physical devices.
 
 Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under 
-the terms and conditions of the BSD License that accompanies this distribution.  
+This program and the accompanying materials are licensed and made available under
+the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.                                          
-    
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+http://opensource.org/licenses/bsd-license.php.
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -27,14 +27,14 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 ///
 /// Protocol GUID defined in EFI1.1.
-/// 
+///
 #define SIMPLE_TEXT_OUTPUT_PROTOCOL   EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID
 
 typedef struct _EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL;
 
 ///
 /// Backward-compatible with EFI1.1.
-/// 
+///
 typedef EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL   SIMPLE_TEXT_OUTPUT_INTERFACE;
 
 //
@@ -137,7 +137,7 @@ typedef EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL   SIMPLE_TEXT_OUTPUT_INTERFACE;
 
 //
 // We currently define attributes from 0 - 7F for color manipulations
-// To internally handle the local display characteristics for a particular character, 
+// To internally handle the local display characteristics for a particular character,
 // Bit 7 signifies the local glyph representation for a character.  If turned on, glyphs will be
 // pulled from the wide glyph database and will display locally as a wide character (16 X 19 versus 8 X 19)
 // If bit 7 is off, the narrow glyph database will be used.  This does NOT affect information that is sent to
@@ -190,7 +190,7 @@ EFI_STATUS
   );
 
 /**
-  Verifies that all characters in a string can be output to the 
+  Verifies that all characters in a string can be output to the
   target device.
 
   @param  This   The protocol instance pointer.
@@ -220,7 +220,7 @@ EFI_STATUS
                      requested ModeNumber.
   @param  Rows       Returns the geometry of the text output device for the
                      requested ModeNumber.
-                                          
+
   @retval EFI_SUCCESS      The requested mode information was returned.
   @retval EFI_DEVICE_ERROR The device had an error and could not complete the request.
   @retval EFI_UNSUPPORTED  The mode number was not valid.
@@ -275,11 +275,11 @@ EFI_STATUS
   );
 
 /**
-  Clears the output device(s) display to the currently selected background 
+  Clears the output device(s) display to the currently selected background
   color.
 
   @param  This              The protocol instance pointer.
-                           
+
   @retval  EFI_SUCCESS      The operation completed successfully.
   @retval  EFI_DEVICE_ERROR The device had an error and could not complete the request.
   @retval  EFI_UNSUPPORTED  The output device is not in a valid text mode.
@@ -374,9 +374,9 @@ typedef struct {
 } EFI_SIMPLE_TEXT_OUTPUT_MODE;
 
 ///
-/// The SIMPLE_TEXT_OUTPUT protocol is used to control text-based output devices. 
-/// It is the minimum required protocol for any handle supplied as the ConsoleOut 
-/// or StandardError device. In addition, the minimum supported text mode of such 
+/// The SIMPLE_TEXT_OUTPUT protocol is used to control text-based output devices.
+/// It is the minimum required protocol for any handle supplied as the ConsoleOut
+/// or StandardError device. In addition, the minimum supported text mode of such
 /// devices is at least 80 x 25 characters.
 ///
 struct _EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL {

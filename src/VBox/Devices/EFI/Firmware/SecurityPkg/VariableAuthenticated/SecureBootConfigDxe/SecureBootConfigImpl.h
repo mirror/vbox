@@ -316,7 +316,7 @@ BOOLEAN
 typedef struct {
   CHAR16                   *Name;           ///< Name for Hash Algorithm
   UINTN                    DigestLength;    ///< Digest Length
-  UINT8                    *OidValue;       ///< Hash Algorithm OID ASN.1 Value 
+  UINT8                    *OidValue;       ///< Hash Algorithm OID ASN.1 Value
   UINTN                    OidLength;       ///< Length of Hash OID Value
   HASH_GET_CONTEXT_SIZE    GetContextSize;  ///< Pointer to Hash GetContentSize function
   HASH_INIT                HashInit;        ///< Pointer to Hash Init function
@@ -471,7 +471,7 @@ DevicePathToStr (
 
 
 /**
-  Clean up the dynamic opcode at label and form specified by both LabelId. 
+  Clean up the dynamic opcode at label and form specified by both LabelId.
 
   @param[in] LabelId         It is both the Form ID and Label ID for opcode deletion.
   @param[in] PrivateData     Module private data.
@@ -505,7 +505,7 @@ UpdateFileExplorer (
   Free resources allocated in Allocate Rountine.
 
   @param[in, out]  MenuOption        Menu to be freed
-  
+
 **/
 VOID
 FreeMenu (
@@ -514,15 +514,15 @@ FreeMenu (
 
 
 /**
-  Read file content into BufferPtr, the size of the allocate buffer 
+  Read file content into BufferPtr, the size of the allocate buffer
   is *FileSize plus AddtionAllocateSize.
 
   @param[in]       FileHandle            The file to be read.
   @param[in, out]  BufferPtr             Pointers to the pointer of allocated buffer.
   @param[out]      FileSize              Size of input file
-  @param[in]       AddtionAllocateSize   Addtion size the buffer need to be allocated. 
+  @param[in]       AddtionAllocateSize   Addtion size the buffer need to be allocated.
                                          In case the buffer need to contain others besides the file content.
-  
+
   @retval   EFI_SUCCESS                  The file was read into the buffer.
   @retval   EFI_INVALID_PARAMETER        A parameter was invalid.
   @retval   EFI_OUT_OF_RESOURCES         A memory allocation failed.
@@ -542,7 +542,7 @@ ReadFileContent (
   Close an open file handle.
 
   @param[in] FileHandle           The file handle to close.
-  
+
 **/
 VOID
 CloseFile (
@@ -555,7 +555,7 @@ CloseFile (
 
   @param[in]   Integer          Pointer to the nonnegative integer to be converted
   @param[in]   IntSizeInWords   Length of integer buffer in words
-  @param[out]  OctetString      Converted octet string of the specified length 
+  @param[out]  OctetString      Converted octet string of the specified length
   @param[in]   OSSizeInBytes    Intended length of resulting octet string in bytes
 
 Returns:
@@ -587,8 +587,8 @@ Int2OctStr (
 **/
 EFI_STATUS
 StringToGuid (
-  IN   CHAR16           *Str, 
-  IN   UINTN            StrLen, 
+  IN   CHAR16           *Str,
+  IN   UINTN            StrLen,
   OUT  EFI_GUID         *Guid
   );
 
@@ -599,7 +599,7 @@ StringToGuid (
   @param[in]     Guid          Pointer to GUID to print.
   @param[in]     Buffer        Buffer to print Guid into.
   @param[in]     BufferSize    Size of Buffer.
-  
+
   @retval    Number of characters printed.
 
 **/

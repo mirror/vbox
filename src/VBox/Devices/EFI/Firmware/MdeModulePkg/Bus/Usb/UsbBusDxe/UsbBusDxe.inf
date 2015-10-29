@@ -29,7 +29,7 @@
 #
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
 #
-#  DRIVER_BINDING                =  mUsbBusDriverBinding                        
+#  DRIVER_BINDING                =  mUsbBusDriverBinding
 #  COMPONENT_NAME                =  mUsbBusComponentName
 #  COMPONENT_NAME2               =  mUsbBusComponentName2
 #
@@ -66,7 +66,7 @@
   gEfiUsbIoProtocolGuid                         ## BY_START
   ## TO_START
   ## BY_START
-  gEfiDevicePathProtocolGuid                    
+  gEfiDevicePathProtocolGuid
   gEfiUsb2HcProtocolGuid                        ## TO_START
   gEfiUsbHcProtocolGuid                         ## TO_START
 

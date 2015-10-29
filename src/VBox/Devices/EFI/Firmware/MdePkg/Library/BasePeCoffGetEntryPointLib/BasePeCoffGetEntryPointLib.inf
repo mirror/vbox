@@ -20,7 +20,7 @@
   FILE_GUID                      = be490364-73d2-420d-950e-f6450ca75dfb
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PeCoffGetEntryPointLib 
+  LIBRARY_CLASS                  = PeCoffGetEntryPointLib
 
 
 #

@@ -188,7 +188,7 @@ BiosVideoDriverBindingSupported (
     if (RemainingDevicePath != NULL) {
       Node = (EFI_DEV_PATH *) RemainingDevicePath;
       //
-      // Check if RemainingDevicePath is the End of Device Path Node, 
+      // Check if RemainingDevicePath is the End of Device Path Node,
       // if yes, return EFI_SUCCESS
       //
       if (!IsDevicePathEnd (Node)) {
@@ -295,7 +295,7 @@ BiosVideoDriverBindingStart (
                       0,
                       &mOriginalPciAttributes
                       );
-    
+
     if (EFI_ERROR (Status)) {
       goto Done;
     }
@@ -319,7 +319,7 @@ BiosVideoDriverBindingStart (
   if (Supports == 0 || Supports == (EFI_PCI_IO_ATTRIBUTE_VGA_IO | EFI_PCI_IO_ATTRIBUTE_VGA_IO_16)) {
     Status = EFI_UNSUPPORTED;
     goto Done;
-  }  
+  }
 
   REPORT_STATUS_CODE_WITH_DEVICE_PATH (
     EFI_PROGRESS_CODE,
@@ -384,7 +384,7 @@ BiosVideoDriverBindingStart (
   }
 
   if (RemainingDevicePath != NULL) {
-    if (IsDevicePathEnd (RemainingDevicePath) && 
+    if (IsDevicePathEnd (RemainingDevicePath) &&
         (FeaturePcdGet (PcdBiosVideoCheckVbeEnable) || FeaturePcdGet (PcdBiosVideoCheckVgaEnable))) {
       //
       // If RemainingDevicePath is the End of Device Path Node,
@@ -509,7 +509,7 @@ BiosVideoDriverBindingStop (
                       (VOID **) &PciIo
                       );
       ASSERT_EFI_ERROR (Status);
-      
+
       //
       // Restore original PCI attributes
       //
@@ -668,7 +668,7 @@ BiosVideoChildHandleInstall (
       AcpiDeviceNode.Header.SubType = ACPI_ADR_DP;
       AcpiDeviceNode.ADR = ACPI_DISPLAY_ADR (1, 0, 0, 1, 0, ACPI_ADR_DISPLAY_TYPE_VGA, 0, 0);
       SetDevicePathNodeLength (&AcpiDeviceNode.Header, sizeof (ACPI_ADR_DEVICE_PATH));
-    
+
       BiosVideoPrivate->GopDevicePath = AppendDevicePathNode (
                                           ParentDevicePath,
                                           (EFI_DEVICE_PATH_PROTOCOL *) &AcpiDeviceNode
@@ -676,7 +676,7 @@ BiosVideoChildHandleInstall (
     } else {
       BiosVideoPrivate->GopDevicePath = AppendDevicePathNode (ParentDevicePath, RemainingDevicePath);
     }
-    
+
     //
     // Creat child handle and device path protocol firstly
     //
@@ -816,7 +816,7 @@ Done:
   if (EFI_ERROR (Status)) {
     if ((BiosVideoPrivate != NULL) && (BiosVideoPrivate->ExitBootServicesEvent != NULL)) {
       gBS->CloseEvent (BiosVideoPrivate->ExitBootServicesEvent);
-    }  
+    }
     //
     // Free private data structure
     //
@@ -1272,7 +1272,7 @@ HasChildHandle (
       HasChild = TRUE;
     }
   }
-  
+
   return HasChild;
 }
 
@@ -1344,7 +1344,7 @@ BiosVideoCheckForVbe (
   }
 
   ZeroMem (&ValidEdidTiming, sizeof (VESA_BIOS_EXTENSIONS_VALID_EDID_TIMING));
-  	
+
   //
   // Fill in the VBE related data structures
   //
@@ -1508,7 +1508,7 @@ BiosVideoCheckForVbe (
 
   PreferMode = 0;
   ModeNumber = 0;
-  
+
   //
   // ModeNumberPtr may be not 16-byte aligned, so ReadUnaligned16 is used to access the buffer pointed by ModeNumberPtr.
   //
@@ -1636,7 +1636,7 @@ BiosVideoCheckForVbe (
     // Record the highest resolution mode to set later
     //
     if ((BiosVideoPrivate->VbeModeInformationBlock->XResolution > HighestHorizontalResolution) ||
-        ((BiosVideoPrivate->VbeModeInformationBlock->XResolution == HighestHorizontalResolution) && 
+        ((BiosVideoPrivate->VbeModeInformationBlock->XResolution == HighestHorizontalResolution) &&
          (BiosVideoPrivate->VbeModeInformationBlock->YResolution > HighestVerticalResolution))) {
       HighestHorizontalResolution = BiosVideoPrivate->VbeModeInformationBlock->XResolution;
       HighestVerticalResolution = BiosVideoPrivate->VbeModeInformationBlock->YResolution;
@@ -1716,7 +1716,7 @@ BiosVideoCheckForVbe (
     // Make sure the FrameBufferSize does not exceed the max available frame buffer size reported by VEB.
     //
     ASSERT (CurrentModeData->FrameBufferSize <= (UINTN)(BiosVideoPrivate->VbeInformationBlock->TotalMemory * 64 * 1024));
-    
+
     BiosVideoPrivate->ModeData = ModeBuffer;
   }
   //
@@ -2080,11 +2080,11 @@ BiosVideoGraphicsOutputSetMode (
   if (ModeNumber >= This->Mode->MaxMode) {
     return EFI_UNSUPPORTED;
   }
-  
+
   if (ModeNumber == This->Mode->Mode) {
     //
     // Clear screen to black
-    //    
+    //
     ZeroMem (&Background, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
     BiosVideoGraphicsOutputVbeBlt (
                         This,

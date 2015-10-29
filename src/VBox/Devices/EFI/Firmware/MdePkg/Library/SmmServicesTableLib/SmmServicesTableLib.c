@@ -40,8 +40,8 @@ SmmServicesTableLibConstructor (
 
   //
   // Retrieve SMM Base2 Protocol,  Do not use gBS from UefiBootServicesTableLib on purpose
-  // to prevent inclusion of gBS, gST, and gImageHandle from SMM Drivers unless the 
-  // SMM driver explicity declares that dependency. 
+  // to prevent inclusion of gBS, gST, and gImageHandle from SMM Drivers unless the
+  // SMM driver explicity declares that dependency.
   //
   Status = SystemTable->BootServices->LocateProtocol (
                                         &gEfiSmmBase2ProtocolGuid,
@@ -71,14 +71,14 @@ SmmServicesTableLibConstructor (
 }
 
 /**
-  This function allows the caller to determine if the driver is executing in 
+  This function allows the caller to determine if the driver is executing in
   System Management Mode(SMM).
 
-  This function returns TRUE if the driver is executing in SMM and FALSE if the 
+  This function returns TRUE if the driver is executing in SMM and FALSE if the
   driver is not executing in SMM.
 
   @retval  TRUE  The driver is executing in System Management Mode (SMM).
-  @retval  FALSE The driver is not executing in System Management Mode (SMM). 
+  @retval  FALSE The driver is not executing in System Management Mode (SMM).
 
 **/
 BOOLEAN

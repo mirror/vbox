@@ -95,7 +95,7 @@ ReportDispatcher (
 
 /**
   Entry point of Status Code PEIM.
-  
+
   This function is the entry point of this Status Code PEIM.
   It initializes supported status code devices according to PCD settings,
   and installs Status Code PPI.

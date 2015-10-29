@@ -229,13 +229,13 @@ EslServiceConnect (
         }
       }
     }
-  
+
     //
     //  Set the next network protocol
     //
     pSocketBinding += 1;
   }
-  
+
   //
   //  Display the driver start status
   //
@@ -274,7 +274,7 @@ EslServiceDisconnect (
   CONST ESL_SOCKET_BINDING * pSocketBinding;
   EFI_STATUS Status;
   EFI_TPL TplPrevious;
-  
+
   DBG_ENTER ( );
 
   //
@@ -316,7 +316,7 @@ EslServiceDisconnect (
         //
         pPort->pService = NULL;
         pService->pPortList = pPort->pLinkService;
-  
+
         //
         //  Close the port
         //
@@ -329,7 +329,7 @@ EslServiceDisconnect (
         //
         pPort = pService->pPortList;
       }
-    
+
       //
       //  Remove the service from the service list
       //

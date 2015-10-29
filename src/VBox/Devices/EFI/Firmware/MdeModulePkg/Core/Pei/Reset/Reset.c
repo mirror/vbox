@@ -1,14 +1,14 @@
 /** @file
   Pei Core Reset System Support
-  
+
 Copyright (c) 2006, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -36,10 +36,10 @@ PeiResetSystem (
   EFI_PEI_RESET_PPI *ResetPpi;
 
   Status = PeiServicesLocatePpi (
-             &gEfiPeiResetPpiGuid,         
-             0,                         
-             NULL,                      
-             (VOID **)&ResetPpi                  
+             &gEfiPeiResetPpiGuid,
+             0,
+             NULL,
+             (VOID **)&ResetPpi
              );
 
   //
@@ -47,7 +47,7 @@ PeiResetSystem (
   //
   if (!EFI_ERROR (Status)) {
     return ResetPpi->ResetSystem (PeiServices);
-  } 
+  }
   //
   // Report Status Code that Reset PPI is not available
   //

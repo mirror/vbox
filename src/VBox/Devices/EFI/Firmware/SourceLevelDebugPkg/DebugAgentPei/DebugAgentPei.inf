@@ -1,7 +1,7 @@
 ## @file
 #  Initialized Debug Agent in PEI phase.
 #
-#  This PEIM will invoke Debug Agent Library to initialize the debug agent in 
+#  This PEIM will invoke Debug Agent Library to initialize the debug agent in
 #  whole PEI phase.
 #
 # Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
@@ -21,7 +21,7 @@
   MODULE_UNI_FILE                = DebugAgentPei.uni
   FILE_GUID                      = D9D114EF-F40B-4d48-AAA0-A3DC99C9F5BD
   MODULE_TYPE                    = PEIM
-  VERSION_STRING                 = 1.0  
+  VERSION_STRING                 = 1.0
   ENTRY_POINT                    = DebugAgentPeiInitialize
 
 #
@@ -32,7 +32,7 @@
 
 [Sources]
   DebugAgentPei.c
-  
+
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec

@@ -23,7 +23,7 @@
   MODULE_TYPE                          = UEFI_DRIVER
   INF_VERSION                          = 0x00010005
   VERSION_STRING                       = 1.0
-  
+
   ENTRY_POINT                          = BiosSnp16DriverEntryPoint
 
 #

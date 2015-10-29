@@ -172,9 +172,9 @@ static void OutLineInfo();                                          /* MR14 */
 /* MR11 a convenient place to set a break point */
 
 #ifdef __USE_PROTOS
-void MR_break(void) 
+void MR_break(void)
 #else
-void MR_break() 
+void MR_break()
 #endif
 {
   return;
@@ -1198,7 +1198,7 @@ int k;
 #endif
 {
 	require(t!=NULL, "genExprTreeOriginal: NULL tree");
-	
+
 	if ( t->token == ALT )
 	{
 		_gen("("); genExprTreeOriginal(t->down, k); _gen(")");
@@ -1369,13 +1369,13 @@ static void genExprTree(tree,k)
 
 #if 0
     /* MR20 THM This was probably an error.
-            The routine should probably reference that static 
+            The routine should probably reference that static
             "across" and this declaration hides it.
     */
 
     int     across;
 #endif
-  
+
     require (tree != NULL,"genExprTree: tree is NULL");
     require (k > 0,"genExprTree: k <= 0");
 
@@ -1557,7 +1557,7 @@ int *lastAltEmpty; /* MR23 */
 	*need_right_curly=0;
 	*lastAltEmpty = 0;		/* MR23 */
 	if ( q->p2 == NULL )	/* only one alternative?  Then don't need if */
-	{	
+	{
 		if (first_item_is_guess_block((Junction *)q->p1)!=NULL )
 		{
             if (jtype != aLoopBlk && jtype != aOptBlk && jtype != aPlusBlk) {
@@ -1575,7 +1575,7 @@ int *lastAltEmpty; /* MR23 */
 	for (alt=q; alt != NULL; alt= (Junction *) alt->p2 )
 	{
 		if ( alt->p2 == NULL )					/* chk for empty alt */
-		{	
+		{
 			Node *p = alt->p1;
 			if ( p->ntype == nJunction )
 			{
@@ -1586,7 +1586,7 @@ int *lastAltEmpty; /* MR23 */
 
          r: { A } b;
 		 b: B;
-		 
+
 		   with input "C"
 
    Before MR21 the error message would be "expecting B - found C".  After MR21
@@ -1714,7 +1714,7 @@ Junction *q;
 	while ( q!=NULL &&
             (  ( q->ntype==nAction ) ||
                ( q->ntype==nJunction &&
-                    (q->jtype==Generic || q->jtype == aLoopBlk) 
+                    (q->jtype==Generic || q->jtype == aLoopBlk)
                )
             )
           )
@@ -1757,7 +1757,7 @@ Junction *q;
 					r : ( (A)? B
 					    | C
 						)*
-			 
+
 			 The routine analysis_point was seeing the guess block when
 			 it was still analyzing the loopBegin block.  As a consequence,
 			 when it looked for the analysis_point it was processing the B, but
@@ -1771,7 +1771,7 @@ Junction *q;
                 |          +-> G  C G ----------------------+   |
                 |                                               |
 				+--- G G G -------------------------------------+
-    
+
 			 Reported by Arpad Beszedes (beszedes@inf.u-szeged.hu).
 
 		MR30  This is still more complicated.  This fix caused ambiguity messages
@@ -1890,9 +1890,9 @@ char *s;
   };
   goto stringizeExit;
 stringizeStop:
-  *p++='.';        	
-  *p++='.';        	
-  *p++='.';        	
+  *p++='.';
+  *p++='.';
+  *p++='.';
 stringizeExit:
   *p=0;
   return stringizeBuf;
@@ -2013,7 +2013,7 @@ RuleRefNode *p;
 
 	require(p!=NULL,			"genRuleRef: invalid node and/or rule");
 	require(p->ntype==nRuleRef, "genRuleRef: not rule reference");
-	
+
 	if ( p->altstart!=NULL && p->altstart->exception_label!=NULL )
 		handler_id = p->altstart->exception_label;
 
@@ -2276,7 +2276,7 @@ TokNode *p;
 /* MR27 */		ast_label_in_action = list_search_cstring(r->ast_labels_in_actions,
 /* MR27 */		                                          p->el_label);
 /* MR27 */	}
-	
+
     OutLineInfo(output,p->line,FileStr[p->file]);
 
 	if ( !set_nil(p->tset) )	/* implies '.', ~Tok, or tokenclass */
@@ -2595,7 +2595,7 @@ TokNode *p;
    And moved into genAction
    *****************************************************************************
 */
- 
+
     	    gen("if (!(");
 
 			/* make sure that '#line n' is on front of line */  /* MR14 */
@@ -2635,12 +2635,12 @@ TokNode *p;
          one.  This is different than the case for semantic
          predicates.
 */
-                                 
+
 /* MR23 */    if (GenCC) {
 /* MR23 */	    if (strstr(a->action, "LT(") != NULL) LTinTokenAction = 1;
 /* MR23 */    }
 /* MR23 */    else {
-/* MR23 */      if (strstr(a->action, "LA(") != NULL) LTinTokenAction = 1;            
+/* MR23 */      if (strstr(a->action, "LA(") != NULL) LTinTokenAction = 1;
 /* MR23 */      if (strstr(a->action, "LATEXT(") != NULL) LTinTokenAction = 1;
 /* MR23 */    }
 
@@ -2737,7 +2737,7 @@ Junction *q;
     BlockPreambleOption(q,q->pFirstSetSymbol); /* MR21 */
 	f = genBlk(q, aOptBlk, &max_k, &need_right_curly, &lastAltEmpty /* MR23 */);
 /* MR23
-   Bypass error clause generation when exceptions are used in {...} block 
+   Bypass error clause generation when exceptions are used in {...} block
    See multi-line note in genBlk near call to isEmptyAlt.
 */
 	if (! FoundException) {
@@ -3066,7 +3066,7 @@ Junction *q;
 	BlkLevel++;
 
     BlockPreambleOption((Junction *)q, q->pFirstSetSymbol);       /* MR21 */
-    
+
     /* first_item_is_guess_block  doesn't care what kind of node it is */
 
     guessBlock=first_item_is_guess_block( (Junction *)q->p1);   /* MR10 */
@@ -3280,7 +3280,7 @@ Junction *q;
 
 /* MR23
    Bypass error clause generation when exceptions are used in a sub block
-   in which the last alternative is epsilon.  Example: "(A | B | )". 
+   in which the last alternative is epsilon.  Example: "(A | B | )".
    See multi-line note in genBlk near call to isEmptyAlt.
 */
 	if (FoundException && lastAltEmpty) {
@@ -3289,7 +3289,7 @@ Junction *q;
 	else {
 		if ( q->p2 != NULL ) {tab(); makeErrorClause(q,f,max_k,0 /* use plus block bypass ? */ );}
 	}
-    
+
 	{ int i; for (i=1; i<=need_right_curly; i++) {tabs--; gen("}\n");} }
 	freeBlkFsets(q);
 	--BlkLevel;
@@ -3403,9 +3403,9 @@ do {    /* MR10     Change recursion into iteration         */
 	DumpFuncHeader(q,r);
 	tabs++;
 
-	/* MR23 
-	   
-	   If there is a single return value then it can be initialized in 
+	/* MR23
+
+	   If there is a single return value then it can be initialized in
 	   the declaration using assignment syntax.  If there are multiple
 	   return values then antlr creates a struct and initialization takes
 	   place element by element for each element of the struct.  For
@@ -3419,7 +3419,7 @@ do {    /* MR10     Change recursion into iteration         */
 	   mode because C does not have constructors.  However, PURIFY is
 	   not used in C++ mode because it might overwrite information created
 	   by elements which have their own ctor.
-       
+
 	*/
 
 	if ( q->ret!=NULL )
@@ -3568,7 +3568,7 @@ do {    /* MR10     Change recursion into iteration         */
   FillSet( follow );
 	set_free( follow );
 
-  /* MR20 G. Hobbelt 
+  /* MR20 G. Hobbelt
      Isn't it so that "fail:" is ONLY referenced when:
 
       	 !FoundException || FoundGuessBlk ?
@@ -3576,7 +3576,7 @@ do {    /* MR10     Change recursion into iteration         */
      Therefore add the "if" around this piece of code generation...
 
      Should guessing mode also use _handler label instead of "fail"
-     when exception handling is active? gen can automatically put 
+     when exception handling is active? gen can automatically put
      "if (guessing)" there so as to skip all kinds of user code.
 
    */
@@ -4269,7 +4269,7 @@ Node *q;
 	Junction *j;
 	require(q!=NULL, "findImmedAction: NULL node");
 	require(q->ntype>=1 && q->ntype<=NumNodeTypes, "findImmedAction: invalid node");
-	
+
 	while ( q->ntype == nJunction )
 	{
 		j = (Junction *)q;
@@ -4292,14 +4292,14 @@ RuleRefNode *ruleRefNode;
 #endif
 {
 	char *q = ret_def;
-	
+
 	tab();
 	while ( *retval != '\0' && *q != '\0')
 	{
 		while ( isspace((*retval)) ) retval++;
 		while ( *retval!=',' && *retval!='\0' ) fputc(*retval++, output);
 		fprintf(output, " = _trv.");
-		
+
 		DumpNextNameInDef(&q, output);
 		while ( isspace(*q) ) q++;
 		fputc(';', output); fputc(' ', output);
@@ -4440,7 +4440,7 @@ int usePlusBlockBypass;
 
       if ( GenCC ) {_gen1(",err%d", DefErrSet( &f, 1, NULL ));}
 			else _gen1(",zzerr%d", DefErrSet( &f, 1, NULL ));
-			
+
 			set_free(f);
 		}
 	}
@@ -4614,12 +4614,12 @@ int final_newline;
 ** 	Junction* alt1;
 ** 	Junction* p;
 ** 	set rk;
-** 
+**
 **     require (max_k <= CLL_k, "k > CLL_k");
-** 
-** 
+**
+**
 **     for (k = 1; k <= CLL_k; k++) {set_clr(q->fset[k]); }
-** 
+**
 **     for (k = 1; k <= max_k; k++) {
 **         for (alt1=q; alt1 != NULL; alt1 = (Junction *)alt1->p2)
 **     	{
@@ -4652,7 +4652,7 @@ char * pReturn;
 	int nest = 0;
     char *q;
 
-	require(pReturn!=NULL, "DumpInitializer: invalid string"); 
+	require(pReturn!=NULL, "DumpInitializer: invalid string");
 
     while (*p != 0) {
     	p = endFormal(p,
@@ -4692,7 +4692,7 @@ int bInitializer;
     char *q;
     int count = 0;
 
-	require(pReturn!=NULL, "DumpFormals: invalid string"); 
+	require(pReturn!=NULL, "DumpFormals: invalid string");
 
     while (*p != 0) {
     	p = endFormal(p,

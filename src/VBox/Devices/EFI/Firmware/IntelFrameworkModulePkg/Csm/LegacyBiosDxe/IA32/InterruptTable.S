@@ -17,14 +17,14 @@
 ASM_GLOBAL ASM_PFX(InterruptRedirectionTemplate)
 
 #----------------------------------------------------------------------------
-# Procedure:    InterruptRedirectionTemplate: Redirects interrupts 0x68-0x6F 
+# Procedure:    InterruptRedirectionTemplate: Redirects interrupts 0x68-0x6F
 #
 # Input:        None
 #
 # Output:       None
 #
 # Prototype:    VOID
-#               InterruptRedirectionTemplate (  
+#               InterruptRedirectionTemplate (
 #                                VOID
 #                                );
 #
@@ -36,7 +36,7 @@ ASM_GLOBAL ASM_PFX(InterruptRedirectionTemplate)
 #               This code reflects interrupts 0x68-0x6f to interrupts 0x08-0x0f.
 #               This template must be copied into low memory, and the IDT entries
 #               0x68-0x6F must be point to the low memory copy of this code.  Each
-#               entry is 4 bytes long, so IDT entries 0x68-0x6F can be easily 
+#               entry is 4 bytes long, so IDT entries 0x68-0x6F can be easily
 #               computed.
 #
 #----------------------------------------------------------------------------

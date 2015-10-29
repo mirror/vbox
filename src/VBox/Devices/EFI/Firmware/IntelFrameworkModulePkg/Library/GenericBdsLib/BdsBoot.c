@@ -417,7 +417,7 @@ BdsCreateLegacyBootOption (
                   );
 
   FreePool (Buffer);
-  
+
   Buffer = NULL;
 
   NewBootOrderList = AllocateZeroPool (*BootOrderListSize + sizeof (UINT16));
@@ -578,10 +578,10 @@ BdsDeleteAllInvalidLegacyBootOptions (
         return EFI_OUT_OF_RESOURCES;
       }
     }
-  
+
     //
     // Skip Non-Legacy boot option
-    // 
+    //
     if (!BdsIsLegacyBootOption (BootOptionVar, &BbsEntry, &BbsIndex)) {
       if (BootOptionVar!= NULL) {
         FreePool (BootOptionVar);
@@ -788,7 +788,7 @@ BdsCreateOneLegacyBootOption (
 /**
   Add the legacy boot options from BBS table if they do not exist.
 
-  @retval EFI_SUCCESS          The boot options are added successfully 
+  @retval EFI_SUCCESS          The boot options are added successfully
                                or they are already in boot options.
   @retval EFI_NOT_FOUND        No legacy boot options is found.
   @retval EFI_OUT_OF_RESOURCE  No enough memory.
@@ -938,7 +938,7 @@ BdsFillDevOrderBuf (
   @param BbsTable        The BBS table.
   @param BbsCount        The BBS Count.
 
-  @retval EFI_SUCCES             The buffer is created and the EFI variable named 
+  @retval EFI_SUCCES             The buffer is created and the EFI variable named
                                  VAR_LEGACY_DEV_ORDER and gEfiLegacyDevOrderVariableGuid is
                                  set correctly.
   @retval EFI_OUT_OF_RESOURCES   Memmory or storage is not enough.
@@ -1029,11 +1029,11 @@ BdsCreateDevOrder (
   DevOrderPtr->BbsType = BBS_HARDDISK;
   DevOrderPtr->Length  = (UINT16) (sizeof (UINT16) + HDCount * sizeof (UINT16));
   DevOrderPtr          = (LEGACY_DEV_ORDER_ENTRY *) BdsFillDevOrderBuf (BbsTable, BBS_HARDDISK, BbsCount, DevOrderPtr->Data);
-  
+
   DevOrderPtr->BbsType = BBS_CDROM;
   DevOrderPtr->Length  = (UINT16) (sizeof (UINT16) + CDCount * sizeof (UINT16));
   DevOrderPtr          = (LEGACY_DEV_ORDER_ENTRY *) BdsFillDevOrderBuf (BbsTable, BBS_CDROM, BbsCount, DevOrderPtr->Data);
-  
+
   DevOrderPtr->BbsType = BBS_EMBED_NETWORK;
   DevOrderPtr->Length  = (UINT16) (sizeof (UINT16) + NETCount * sizeof (UINT16));
   DevOrderPtr          = (LEGACY_DEV_ORDER_ENTRY *) BdsFillDevOrderBuf (BbsTable, BBS_EMBED_NETWORK, BbsCount, DevOrderPtr->Data);
@@ -1060,7 +1060,7 @@ BdsCreateDevOrder (
 }
 
 /**
-  Add the legacy boot devices from BBS table into 
+  Add the legacy boot devices from BBS table into
   the legacy device boot order.
 
   @retval EFI_SUCCESS           The boot devices are added successfully.
@@ -1278,7 +1278,7 @@ BdsUpdateLegacyDevOrder (
     NETIndex++;
   }
   NewNETPtr = NewPtr->Data;
-  
+
   //
   // copy BEV
   //
@@ -1502,7 +1502,7 @@ PrintBbsTable (
   Set the boot priority for BBS entries based on boot option entry and boot order.
 
   @param  Entry             The boot option is to be checked for refresh BBS table.
-  
+
   @retval EFI_SUCCESS           The boot priority for BBS entries is refreshed successfully.
   @retval EFI_NOT_FOUND         BBS entries can't be found.
   @retval EFI_OUT_OF_RESOURCES  Failed to get the legacy device boot order.
@@ -1704,7 +1704,7 @@ BdsLibDoLegacyBoot (
     Status = EfiCreateEventLegacyBootEx(
                TPL_NOTIFY,
                WriteBootToOsPerformanceData,
-               NULL, 
+               NULL,
                &LegacyBootEvent
                );
     ASSERT_EFI_ERROR (Status);
@@ -2553,7 +2553,7 @@ BdsLibBootViaBootOption (
     REPORT_STATUS_CODE (
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_BOOT_OPTION_LOAD_ERROR)
-      );    
+      );
     goto Done;
   }
 

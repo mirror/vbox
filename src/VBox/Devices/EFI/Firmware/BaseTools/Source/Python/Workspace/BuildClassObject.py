@@ -59,7 +59,7 @@ class PcdClassObject(object):
         self.IsOverrided = IsOverrided
         self.IsFromBinaryInf = False
         self.IsFromDsc = False
-        
+
     ## Convert the class to a string
     #
     #  Convert each member of the class to string

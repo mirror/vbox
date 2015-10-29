@@ -1,7 +1,7 @@
 ## @file
 #  Provides some common functions for the TCG feature
 #
-#  This instance provides basic TPM Interface Specification (TIS) functions 
+#  This instance provides basic TPM Interface Specification (TIS) functions
 #  and TPM hashall function.
 #
 # Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>

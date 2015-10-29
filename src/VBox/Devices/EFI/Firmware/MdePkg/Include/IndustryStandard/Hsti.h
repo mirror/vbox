@@ -1,5 +1,5 @@
 /** @file
-  Support for HSTI 1.0 specification, defined at 
+  Support for HSTI 1.0 specification, defined at
   Microsoft Hardware Security Testability Specification.
 
   Copyright (c) 2015, Intel Corporation. All rights reserved.<BR>
@@ -25,8 +25,8 @@
 
 #define PLATFORM_SECURITY_ROLE_PLATFORM_REFERENCE 0x00000001  // IHV
 #define PLATFORM_SECURITY_ROLE_PLATFORM_IBV       0x00000002
-#define PLATFORM_SECURITY_ROLE_IMPLEMENTOR_OEM    0x00000003 
-#define PLATFORM_SECURITY_ROLE_IMPLEMENTOR_ODM    0x00000004  
+#define PLATFORM_SECURITY_ROLE_IMPLEMENTOR_OEM    0x00000003
+#define PLATFORM_SECURITY_ROLE_IMPLEMENTOR_ODM    0x00000004
 
 typedef struct {
   //

@@ -70,7 +70,7 @@ struct netrange {
 };
 
 /*
- * Socket address, AppleTalk style.  We keep magic information in the 
+ * Socket address, AppleTalk style.  We keep magic information in the
  * zero bytes.  There are three types, NONE, CONFIG which has the phase
  * and a net range, and IFACE which has the network address of an
  * interface.  IFACE may be filled in by the client, and is filled in

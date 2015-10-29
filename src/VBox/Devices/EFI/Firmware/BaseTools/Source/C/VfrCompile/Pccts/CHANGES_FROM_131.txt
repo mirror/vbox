@@ -489,7 +489,7 @@ o	Cleaned up the dup() stuff in AST hierarchy to use shallowCopy() to
 	{
 	    return new AST(*this);
 	}
-	
+
 	if you have defined a copy constructor such as
 
 	AST(const AST &t)	// shallow copy constructor

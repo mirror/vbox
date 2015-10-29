@@ -24,22 +24,22 @@
   If List->ForwardLink is NULL, then ASSERT().
   If List->backLink is NULL, then ASSERT().
   If Node is NULL, then ASSERT().
-  If PcdVerifyNodeInList is TRUE and DoMembershipCheck is TRUE and Node 
+  If PcdVerifyNodeInList is TRUE and DoMembershipCheck is TRUE and Node
   is in not a member of List, then return FALSE
   If PcdMaximumLinkedListLength is not zero, and List contains more than
   PcdMaximumLinkedListLength nodes, then ASSERT().
 
   @param  List              A pointer to a node in a linked list.
   @param  Node              A pointer to a node in a linked list.
-  @param  VerifyNodeInList  TRUE if a check should be made to see if Node is a 
-                            member of List.  FALSE if no membership test should 
+  @param  VerifyNodeInList  TRUE if a check should be made to see if Node is a
+                            member of List.  FALSE if no membership test should
                             be performed.
 
   @retval   TRUE if PcdVerifyNodeInList is FALSE
   @retval   TRUE if DoMembershipCheck is FALSE
-  @retval   TRUE if PcdVerifyNodeInList is TRUE and DoMembershipCheck is TRUE 
+  @retval   TRUE if PcdVerifyNodeInList is TRUE and DoMembershipCheck is TRUE
             and Node is a member of List.
-  @retval   FALSE if PcdVerifyNodeInList is TRUE and DoMembershipCheck is TRUE 
+  @retval   FALSE if PcdVerifyNodeInList is TRUE and DoMembershipCheck is TRUE
             and Node is in not a member of List.
 
 **/
@@ -67,7 +67,7 @@ InternalBaseLibIsNodeInList (
 
   if (FeaturePcdGet (PcdVerifyNodeInList) && VerifyNodeInList) {
     //
-    // Check to see if Node is a member of List.  
+    // Check to see if Node is a member of List.
     // Exit early if the number of nodes in List >= PcdMaximumLinkedListLength
     //
     do {
@@ -86,7 +86,7 @@ InternalBaseLibIsNodeInList (
           return (BOOLEAN)(Ptr == Node);
         }
       }
-    } while ((Ptr != List) && (Ptr != Node)); 
+    } while ((Ptr != List) && (Ptr != Node));
 
     if (Ptr != Node) {
       return FALSE;
@@ -175,7 +175,7 @@ InsertHeadList (
   // ASSERT List not too long and Entry is not one of the nodes of List
   //
   ASSERT (InternalBaseLibIsNodeInList (ListHead, Entry, FALSE));
-  
+
   Entry->ForwardLink = ListHead->ForwardLink;
   Entry->BackLink = ListHead;
   Entry->ForwardLink->BackLink = Entry;
@@ -192,7 +192,7 @@ InsertHeadList (
 
   If ListHead is NULL, then ASSERT().
   If Entry is NULL, then ASSERT().
-  If ListHead was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
+  If ListHead was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or
   InitializeListHead(), then ASSERT().
   If PcdMaximumLinkedListLength is not zero, and prior to insertion the number
   of nodes in ListHead, including the ListHead node, is greater than or
@@ -216,7 +216,7 @@ InsertTailList (
   // ASSERT List not too long and Entry is not one of the nodes of List
   //
   ASSERT (InternalBaseLibIsNodeInList (ListHead, Entry, FALSE));
-  
+
   Entry->ForwardLink = ListHead;
   Entry->BackLink = ListHead->BackLink;
   Entry->BackLink->ForwardLink = Entry;
@@ -227,12 +227,12 @@ InsertTailList (
 /**
   Retrieves the first node of a doubly-linked list.
 
-  Returns the first node of a doubly-linked list.  List must have been 
+  Returns the first node of a doubly-linked list.  List must have been
   initialized with INTIALIZE_LIST_HEAD_VARIABLE() or InitializeListHead().
   If List is empty, then List is returned.
 
   If List is NULL, then ASSERT().
-  If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
+  If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or
   InitializeListHead(), then ASSERT().
   If PcdMaximumLinkedListLength is not zero, and the number of nodes
   in List, including the List node, is greater than or equal to
@@ -261,13 +261,13 @@ GetFirstNode (
 /**
   Retrieves the next node of a doubly-linked list.
 
-  Returns the node of a doubly-linked list that follows Node.  
+  Returns the node of a doubly-linked list that follows Node.
   List must have been initialized with INTIALIZE_LIST_HEAD_VARIABLE()
   or InitializeListHead().  If List is empty, then List is returned.
 
   If List is NULL, then ASSERT().
   If Node is NULL, then ASSERT().
-  If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
+  If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or
   InitializeListHead(), then ASSERT().
   If PcdMaximumLinkedListLength is not zero, and List contains more than
   PcdMaximumLinkedListLength nodes, then ASSERT().
@@ -296,24 +296,24 @@ GetNextNode (
 
 /**
   Retrieves the previous node of a doubly-linked list.
- 
-  Returns the node of a doubly-linked list that precedes Node.  
+
+  Returns the node of a doubly-linked list that precedes Node.
   List must have been initialized with INTIALIZE_LIST_HEAD_VARIABLE()
   or InitializeListHead().  If List is empty, then List is returned.
- 
+
   If List is NULL, then ASSERT().
   If Node is NULL, then ASSERT().
-  If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
+  If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or
   InitializeListHead(), then ASSERT().
   If PcdMaximumLinkedListLength is not zero, and List contains more than
   PcdMaximumLinkedListLength nodes, then ASSERT().
   If PcdVerifyNodeInList is TRUE and Node is not a node in List, then ASSERT().
- 
+
   @param  List  A pointer to the head node of a doubly-linked list.
   @param  Node  A pointer to a node in the doubly-linked list.
- 
+
   @return A pointer to the previous node if one exists. Otherwise List is returned.
- 
+
 **/
 LIST_ENTRY *
 EFIAPI
@@ -326,7 +326,7 @@ GetPreviousNode (
   // ASSERT List not too long and Node is one of the nodes of List
   //
   ASSERT (InternalBaseLibIsNodeInList (List, Node, TRUE));
- 
+
   return Node->BackLink;
 }
 
@@ -337,7 +337,7 @@ GetPreviousNode (
   zero nodes, this function returns TRUE. Otherwise, it returns FALSE.
 
   If ListHead is NULL, then ASSERT().
-  If ListHead was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or 
+  If ListHead was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or
   InitializeListHead(), then ASSERT().
   If PcdMaximumLinkedListLength is not zero, and the number of nodes
   in List, including the List node, is greater than or equal to
@@ -359,7 +359,7 @@ IsListEmpty (
   // ASSERT List not too long
   //
   ASSERT (InternalBaseLibIsNodeInList (ListHead, ListHead, FALSE));
-  
+
   return (BOOLEAN)(ListHead->ForwardLink == ListHead);
 }
 
@@ -374,12 +374,12 @@ IsListEmpty (
 
   If List is NULL, then ASSERT().
   If Node is NULL, then ASSERT().
-  If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or InitializeListHead(), 
+  If List was not initialized with INTIALIZE_LIST_HEAD_VARIABLE() or InitializeListHead(),
   then ASSERT().
   If PcdMaximumLinkedListLength is not zero, and the number of nodes
   in List, including the List node, is greater than or equal to
   PcdMaximumLinkedListLength, then ASSERT().
-  If PcdVerifyNodeInList is TRUE and Node is not a node in List and Node is not 
+  If PcdVerifyNodeInList is TRUE and Node is not a node in List and Node is not
   equal to List, then ASSERT().
 
   @param  List  A pointer to the head node of a doubly-linked list.
@@ -400,7 +400,7 @@ IsNull (
   // ASSERT List not too long and Node is one of the nodes of List
   //
   ASSERT (InternalBaseLibIsNodeInList (List, Node, TRUE));
-  
+
   return (BOOLEAN)(Node == List);
 }
 
@@ -438,7 +438,7 @@ IsNodeAtEnd (
   // ASSERT List not too long and Node is one of the nodes of List
   //
   ASSERT (InternalBaseLibIsNodeInList (List, Node, TRUE));
-  
+
   return (BOOLEAN)(!IsNull (List, Node) && List->BackLink == Node);
 }
 
@@ -450,12 +450,12 @@ IsNodeAtEnd (
   Otherwise, the location of the FirstEntry node is swapped with the location
   of the SecondEntry node in a doubly-linked list. SecondEntry must be in the
   same double linked list as FirstEntry and that double linked list must have
-  been initialized with INTIALIZE_LIST_HEAD_VARIABLE() or InitializeListHead(). 
+  been initialized with INTIALIZE_LIST_HEAD_VARIABLE() or InitializeListHead().
   SecondEntry is returned after the nodes are swapped.
 
   If FirstEntry is NULL, then ASSERT().
   If SecondEntry is NULL, then ASSERT().
-  If PcdVerifyNodeInList is TRUE and SecondEntry and FirstEntry are not in the 
+  If PcdVerifyNodeInList is TRUE and SecondEntry and FirstEntry are not in the
   same linked list, then ASSERT().
   If PcdMaximumLinkedListLength is not zero, and the number of nodes in the
   linked list containing the FirstEntry and SecondEntry nodes, including
@@ -464,7 +464,7 @@ IsNodeAtEnd (
 
   @param  FirstEntry  A pointer to a node in a linked list.
   @param  SecondEntry A pointer to another node in the same linked list.
-  
+
   @return SecondEntry.
 
 **/
@@ -485,7 +485,7 @@ SwapListEntries (
   // ASSERT Entry1 and Entry2 are in the same linked list
   //
   ASSERT (InternalBaseLibIsNodeInList (FirstEntry, SecondEntry, TRUE));
-  
+
   //
   // Ptr is the node pointed to by FirstEntry->ForwardLink
   //
@@ -543,7 +543,7 @@ RemoveEntryList (
   )
 {
   ASSERT (!IsListEmpty (Entry));
-  
+
   Entry->ForwardLink->BackLink = Entry->BackLink;
   Entry->BackLink->ForwardLink = Entry->ForwardLink;
   return Entry->ForwardLink;

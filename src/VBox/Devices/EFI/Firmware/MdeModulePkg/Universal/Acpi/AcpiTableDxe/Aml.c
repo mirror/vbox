@@ -209,7 +209,7 @@ AmlSearchByOpByte (
       return &mAmlByteEncoding[Index];
     }
   }
-  
+
   return NULL;
 }
 
@@ -250,7 +250,7 @@ AmlGetPkgLength (
   UINT8             ByteCount;
   UINTN             RealLength;
   UINTN             Offset;
-  
+
   //
   // <bit 7-6: ByteData count that follows (0-3)>
   // <bit 5-4: Only used if PkgLength < 63>
@@ -265,8 +265,8 @@ AmlGetPkgLength (
   // package length value. The next ByteData will become the next least significant 8 bits
   // of the resulting value and so on, up to 3 ByteData bytes. Thus, the maximum package
   // length is 2**28.
-  // 
-  
+  //
+
   LeadByte = *Buffer;
   ByteCount = (UINT8)((LeadByte >> 6) & 0x03);
   Offset = ByteCount + 1;
@@ -295,7 +295,7 @@ AmlGetPkgLength (
     ASSERT (0);
     break;
   }
-  
+
   *PkgLength = RealLength;
   return Offset;
 }

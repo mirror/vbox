@@ -537,7 +537,7 @@ ProduceFVBProtocolOnBuffer (
     CoreFreePool (FvbDev);
     return EFI_OUT_OF_RESOURCES;
   }
-  
+
   //
   // Last, fill in the cache with the linear address of the blocks
   //
@@ -577,11 +577,11 @@ ProduceFVBProtocolOnBuffer (
       return EFI_OUT_OF_RESOURCES;
     }
     CopyGuid (
-      &((FV_PIWG_DEVICE_PATH *)FvbDev->DevicePath)->FvDevPath.FvName, 
+      &((FV_PIWG_DEVICE_PATH *)FvbDev->DevicePath)->FvDevPath.FvName,
       (GUID *)(UINTN)(BaseAddress + FwVolHeader->ExtHeaderOffset)
       );
   }
-  
+
   //
   //
   // Attach FvVolBlock Protocol to new handle

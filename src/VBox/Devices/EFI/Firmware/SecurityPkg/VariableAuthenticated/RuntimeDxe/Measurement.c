@@ -56,7 +56,7 @@ IsSecureBootPolicyVariable (
   UINTN   Index;
 
   for (Index = 0; Index < sizeof(mVariableType)/sizeof(mVariableType[0]); Index++) {
-    if ((StrCmp (VariableName, mVariableType[Index].VariableName) == 0) && 
+    if ((StrCmp (VariableName, mVariableType[Index].VariableName) == 0) &&
         (CompareGuid (VendorGuid, mVariableType[Index].VendorGuid))) {
       return TRUE;
     }
@@ -69,9 +69,9 @@ IsSecureBootPolicyVariable (
 
   @param[in]  VarName           A Null-terminated string that is the name of the vendor's variable.
   @param[in]  VendorGuid        A unique identifier for the vendor.
-  @param[in]  VarData           The content of the variable data.  
-  @param[in]  VarSize           The size of the variable data.  
- 
+  @param[in]  VarData           The content of the variable data.
+  @param[in]  VarSize           The size of the variable data.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_OUT_OF_RESOURCES  Out of memory.
   @retval EFI_DEVICE_ERROR      The operation was unsuccessful.
@@ -134,8 +134,8 @@ MeasureVariable (
 }
 
 /**
-  Returns the status whether get the variable success. The function retrieves 
-  variable  through the UEFI Runtime Service GetVariable().  The 
+  Returns the status whether get the variable success. The function retrieves
+  variable  through the UEFI Runtime Service GetVariable().  The
   returned buffer is allocated using AllocatePool().  The caller is responsible
   for freeing this buffer with FreePool().
 
@@ -170,7 +170,7 @@ InternalGetVariable (
   if (Size != NULL) {
     *Size  = 0;
   }
-  
+
   Status = gRT->GetVariable ((CHAR16 *) Name, (EFI_GUID *) Guid, NULL, &BufferSize, *Value);
   if (Status != EFI_BUFFER_TOO_SMALL) {
     return Status;

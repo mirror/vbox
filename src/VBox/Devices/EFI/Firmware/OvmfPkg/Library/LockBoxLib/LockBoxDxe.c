@@ -27,7 +27,7 @@
 
   @param  MemoryType   Memory type of memory to allocate.
   @param  Size         Size of memory to allocate.
-  
+
   @return Allocated address for output.
 
 **/

@@ -664,7 +664,7 @@ NetListInsertBefore (
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 
@@ -688,7 +688,7 @@ EFI_STATUS
   If it has been removed, then restart the traversal from the head.
   If it hasn't been removed, then continue with the next node directly.
   This function will end the iterate and return the CallBack's last return value if error happens,
-  or retrun EFI_SUCCESS if 2 complete passes are made with no changes in the number of children in the list.  
+  or retrun EFI_SUCCESS if 2 complete passes are made with no changes in the number of children in the list.
 
   @param[in]    List             The head of the list.
   @param[in]    CallBack         Pointer to the callback function to destroy one node in the list.
@@ -1179,8 +1179,8 @@ NetLibGetMacString (
   GET_STATUS command (PXE_STATFLAGS_GET_STATUS_NO_MEDIA_SUPPORTED). This routine
   will try to invoke Snp->GetStatus() to get the media status. If media is already
   present, it returns directly. If media is not present, it will stop SNP and then
-  restart SNP to get the latest media status. This provides an opportunity to get 
-  the correct media status for old UNDI driver, which doesn't support reporting 
+  restart SNP to get the latest media status. This provides an opportunity to get
+  the correct media status for old UNDI driver, which doesn't support reporting
   media status from GET_STATUS command.
   Note: there are two limitations for the current algorithm:
   1) For UNDI with this capability, when the cable is not attached, there will
@@ -1408,14 +1408,14 @@ NetLibStrToIp6andPrefix (
 
   Convert one EFI_IPv6_ADDRESS to Null-terminated Unicode string.
   The text representation of address is defined in RFC 4291.
-  
+
   @param[in]       Ip6Address     The pointer to the IPv6 address.
   @param[out]      String         The buffer to return the converted string.
   @param[in]       StringSize     The length in bytes of the input String.
-                                  
+
   @retval EFI_SUCCESS             Convert to string successfully.
   @retval EFI_INVALID_PARAMETER   The input parameter is invalid.
-  @retval EFI_BUFFER_TOO_SMALL    The BufferSize is too small for the result. BufferSize has been 
+  @retval EFI_BUFFER_TOO_SMALL    The BufferSize is too small for the result. BufferSize has been
                                   updated with the size needed to complete the request.
 **/
 EFI_STATUS
@@ -1748,7 +1748,7 @@ NetbufAllocSpace (
 
   @param[in, out]  Nbuf         The pointer to the net buffer.
   @param[in]       Len          The length of the data to be trimmed.
-  @param[in]      FromHead      The flag to indicate whether trim data is from the 
+  @param[in]      FromHead      The flag to indicate whether trim data is from the
                                 head (TRUE) or the tail (FALSE).
 
   @return    The length of the actual trimmed data, which may be less
@@ -2099,11 +2099,11 @@ NetIp6PseudoHeadChecksum (
   );
 
 /**
-  The function frees the net buffer which allocated by the IP protocol. It releases 
-  only the net buffer and doesn't call the external free function. 
+  The function frees the net buffer which allocated by the IP protocol. It releases
+  only the net buffer and doesn't call the external free function.
 
-  This function should be called after finishing the process of mIpSec->ProcessExt() 
-  for outbound traffic. The (EFI_IPSEC2_PROTOCOL)->ProcessExt() allocates a new 
+  This function should be called after finishing the process of mIpSec->ProcessExt()
+  for outbound traffic. The (EFI_IPSEC2_PROTOCOL)->ProcessExt() allocates a new
   buffer for the ESP, so there needs a function to free the old net buffer.
 
   @param[in]  Nbuf       The network buffer to be freed.

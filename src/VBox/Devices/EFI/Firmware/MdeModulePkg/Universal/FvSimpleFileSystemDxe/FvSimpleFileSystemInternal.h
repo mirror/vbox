@@ -58,7 +58,7 @@ struct _FV_FILESYSTEM_INSTANCE {
 };
 
 //
-// Struct representing a opening file. Each opening operation on file will 
+// Struct representing a opening file. Each opening operation on file will
 // create such an instance except for the "root directory", which will only
 // be created once for each FV.
 //

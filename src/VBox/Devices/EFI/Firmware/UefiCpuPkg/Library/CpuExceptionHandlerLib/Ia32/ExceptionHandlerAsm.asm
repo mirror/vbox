@@ -53,7 +53,7 @@ AsmIdtVectorEnd:
 HookAfterStubBegin:
     db      6ah        ; push
 VectorNum:
-    db      0          ; 0 will be fixed 
+    db      0          ; 0 will be fixed
     push    eax
     mov     eax, HookAfterStubHeaderEnd
     jmp     eax
@@ -193,7 +193,7 @@ ErrorCodeAndVectorOnStack:
     sub     esp, 8
     push    0            ; clear EXCEPTION_HANDLER_CONTEXT.OldIdtHandler
     push    0            ; clear EXCEPTION_HANDLER_CONTEXT.ExceptionDataFlag
-       
+
 ;; UINT32  Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
     push    eax
     push    ecx
@@ -373,7 +373,7 @@ ErrorCode:
     sub     esp, 4
     jmp     dword ptr [esp - 12]
 
-DoReturn:    
+DoReturn:
     cmp     mDoFarReturnFlag, 0   ; Check if need to do far return instead of IRET
     jz      DoIret
     push    [esp + 8]    ; save EFLAGS
@@ -392,30 +392,30 @@ CommonInterruptEntry ENDP
 ;---------------------------------------;
 ; _AsmGetTemplateAddressMap                  ;
 ;----------------------------------------------------------------------------;
-; 
+;
 ; Protocol prototype
 ;   AsmGetTemplateAddressMap (
 ;     EXCEPTION_HANDLER_TEMPLATE_MAP *AddressMap
 ;   );
-;           
+;
 ; Routine Description:
-; 
+;
 ;  Return address map of interrupt handler template so that C code can generate
 ;  interrupt table.
-; 
+;
 ; Arguments:
-; 
-; 
-; Returns: 
-; 
+;
+;
+; Returns:
+;
 ;   Nothing
 ;
-; 
+;
 ; Input:  [ebp][0]  = Original ebp
 ;         [ebp][4]  = Return address
-;          
+;
 ; Output: Nothing
-;           
+;
 ; Destroys: Nothing
 ;-----------------------------------------------------------------------------;
 AsmGetTemplateAddressMap  proc near public
@@ -427,7 +427,7 @@ AsmGetTemplateAddressMap  proc near public
     mov dword ptr [ebx],      AsmIdtVectorBegin
     mov dword ptr [ebx + 4h], (AsmIdtVectorEnd - AsmIdtVectorBegin) / 32
     mov dword ptr [ebx + 8h], HookAfterStubBegin
-  
+
     popad
     pop     ebp
     ret

@@ -41,7 +41,7 @@
 #   IN      CONST VOID                *SourceBuffer,
 #   IN      UINTN                     Length
 #   );
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 ASM_GLOBAL ASM_PFX(InternalMemCompareMem)
 ASM_PFX(InternalMemCompareMem):
     pushq   %rsi

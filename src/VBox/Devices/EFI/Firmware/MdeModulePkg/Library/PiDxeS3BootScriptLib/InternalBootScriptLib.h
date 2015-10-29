@@ -1,7 +1,7 @@
 /** @file
-  Support for S3 boot script lib. This file defined some internal macro and internal 
+  Support for S3 boot script lib. This file defined some internal macro and internal
   data structure
- 
+
   Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
@@ -48,7 +48,7 @@
 #define PCI_ADDRESS_ENCODE(A) (UINTN)PCI_LIB_ADDRESS( \
         ((((UINTN)(A))& 0xff000000) >> 24), ((((UINTN)(A)) &0x00ff0000) >> 16), ((((UINTN)(A)) & 0xff00) >> 8), ((RShiftU64 ((A), 32) & 0xfff) | ((A)& 0xff)) \
         )
-        
+
 
 
 typedef union {
@@ -71,8 +71,8 @@ typedef union {
 //
 typedef struct {
   UINT8           *TableBase;
-  UINT32          TableLength;               // Record the actual memory length 
-  UINT16          TableMemoryPageNumber;     // Record the page number Allocated for the table 
+  UINT32          TableLength;               // Record the actual memory length
+  UINT16          TableMemoryPageNumber;     // Record the page number Allocated for the table
   BOOLEAN         AtRuntime;                 // Record if current state is after SmmReadyToLock
   BOOLEAN         InSmm;                     // Record if this library is in SMM.
 } SCRIPT_TABLE_PRIVATE_DATA;

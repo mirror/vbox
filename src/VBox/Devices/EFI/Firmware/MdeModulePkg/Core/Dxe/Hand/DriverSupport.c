@@ -40,8 +40,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @retval EFI_NOT_FOUND         1) There are no EFI_DRIVER_BINDING_PROTOCOL instances
                                 present in the system.
                                 2) No drivers were connected to ControllerHandle.
-  @retval EFI_SECURITY_VIOLATION 
-                                The user has no permission to start UEFI device drivers on the device path 
+  @retval EFI_SECURITY_VIOLATION
+                                The user has no permission to start UEFI device drivers on the device path
                                 associated with the ControllerHandle or specified by the RemainingDevicePath.
 
 **/
@@ -112,7 +112,7 @@ CoreConnectController (
       }
     }
   }
-  
+
   Handle = ControllerHandle;
 
   //

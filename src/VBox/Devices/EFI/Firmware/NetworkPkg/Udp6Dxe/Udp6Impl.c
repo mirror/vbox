@@ -364,7 +364,7 @@ ON_ERROR:
 
   IpIoDestroy (Udp6Service->IpIo);
   Udp6Service->IpIo = NULL;
-  
+
   return Status;
 }
 
@@ -390,7 +390,7 @@ Udp6CleanService (
   //
   IpIoDestroy (Udp6Service->IpIo);
   Udp6Service->IpIo = NULL;
-  
+
   ZeroMem (Udp6Service, sizeof (UDP6_SERVICE_DATA));
 }
 
@@ -1931,7 +1931,7 @@ Udp6NetVectorExtFree (
   IN VOID  *Context
   )
 {
-} 
+}
 
 /**
   Find the key in the netmap.

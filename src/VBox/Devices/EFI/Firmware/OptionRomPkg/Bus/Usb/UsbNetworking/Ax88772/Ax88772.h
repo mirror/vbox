@@ -82,7 +82,7 @@
 #define ETHERNET_HEADER_SIZE  sizeof ( ETHERNET_HEADER )  ///<  Size in bytes of the Ethernet header
 #define MIN_ETHERNET_PKT_SIZE 60    ///<  Minimum packet size including Ethernet header
 #define MAX_ETHERNET_PKT_SIZE 1500  ///<  Ethernet spec 3.1.1: Minimum packet size
-#define MAX_BULKIN_SIZE       2048  ///<  Maximum size of one UsbBulk 
+#define MAX_BULKIN_SIZE       2048  ///<  Maximum size of one UsbBulk
 
 
 #define USB_NETWORK_CLASS   0x09    ///<  USB Network class code
@@ -423,7 +423,7 @@ SN_Start (
 
 /**
   Set the MAC address.
-  
+
   This function modifies or resets the current station address of a
   network interface.  If Reset is TRUE, then the current station address
   is set ot the network interface's permanent address.  If Reset if FALSE

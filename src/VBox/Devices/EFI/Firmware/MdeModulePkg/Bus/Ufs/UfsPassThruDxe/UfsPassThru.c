@@ -18,7 +18,7 @@
 //
 UFS_PASS_THRU_PRIVATE_DATA gUfsPassThruTemplate = {
   UFS_PASS_THRU_SIG,              // Signature
-  NULL,                           // Handle  
+  NULL,                           // Handle
   {                               // ExtScsiPassThruMode
     0xFFFFFFFF,
     //
@@ -202,7 +202,7 @@ UfsPassThruPassThru (
     if ((Private->Luns.BitMask & (BIT0 << Index)) == 0) {
       continue;
     }
-  
+
     if (Private->Luns.Lun[Index] == UfsLun) {
       break;
     }
@@ -406,7 +406,7 @@ UfsPassThruBuildDevicePath (
     if ((Private->Luns.BitMask & (BIT0 << Index)) == 0) {
       continue;
     }
-  
+
     if (Private->Luns.Lun[Index] == UfsLun) {
       break;
     }
@@ -497,7 +497,7 @@ UfsPassThruGetTargetLun (
     if ((Private->Luns.BitMask & (BIT0 << Index)) == 0) {
       continue;
     }
-  
+
     if (Private->Luns.Lun[Index] == UfsLun) {
       break;
     }
@@ -727,7 +727,7 @@ UfsPassThruDriverBindingSupported (
         This->DriverBindingHandle,
         Controller
         );
-        
+
   return EFI_SUCCESS;
 }
 
@@ -835,8 +835,8 @@ UfsPassThruDriverBindingStart (
 
   //
   // UFS 2.0 spec Section 13.1.3.3:
-  // At the end of the UFS Interconnect Layer initialization on both host and device side, 
-  // the host shall send a NOP OUT UPIU to verify that the device UTP Layer is ready. 
+  // At the end of the UFS Interconnect Layer initialization on both host and device side,
+  // the host shall send a NOP OUT UPIU to verify that the device UTP Layer is ready.
   //
   Status = UfsExecNopCmds (Private);
   if (EFI_ERROR (Status)) {
@@ -886,7 +886,7 @@ UfsPassThruDriverBindingStart (
 Error:
   if (Private != NULL) {
     if (Private->TmrlMapping != NULL) {
-      UfsHc->Unmap (UfsHc, Private->TmrlMapping);  
+      UfsHc->Unmap (UfsHc, Private->TmrlMapping);
     }
     if (Private->UtpTmrlBase != NULL) {
       UfsHc->FreeBuffer (UfsHc, EFI_SIZE_TO_PAGES (Private->Nutmrs * sizeof (UTP_TMRD)), Private->UtpTmrlBase);

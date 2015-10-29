@@ -86,7 +86,7 @@ ArchGetIdtHandler (
   Prints a message to the serial port.
 
   @param  Format      Format string for the message to print.
-  @param  ...         Variable argument list whose contents are accessed 
+  @param  ...         Variable argument list whose contents are accessed
                       based on the format string specified by Format.
 
 **/
@@ -99,14 +99,14 @@ InternalPrintMessage (
 
 /**
   Find and display image base address and return image base and its entry point.
-  
+
   @param CurrentEip      Current instruction pointer.
   @param EntryPoint      Return module entry point if module header is found.
-  
+
   @return !0     Image base address.
   @return 0      Image header cannot be found.
 **/
-UINTN 
+UINTN
 FindModuleImageBase (
   IN  UINTN              CurrentEip,
   OUT UINTN              *EntryPoint
@@ -128,8 +128,8 @@ DumpCpuContent (
   Internal worker function to initialize exception handler.
 
   @param[in]  VectorInfo    Pointer to reserved vector list.
-  
-  @retval EFI_SUCCESS           CPU Exception Entries have been successfully initialized 
+
+  @retval EFI_SUCCESS           CPU Exception Entries have been successfully initialized
                                 with default exception handlers.
   @retval EFI_INVALID_PARAMETER VectorInfo includes the invalid content if VectorInfo is not NULL.
   @retval EFI_UNSUPPORTED       This function is not supported.
@@ -187,7 +187,7 @@ UpdateIdtTable (
 VOID
 ArchSaveExceptionContext (
   IN UINTN                ExceptionType,
-  IN EFI_SYSTEM_CONTEXT   SystemContext 
+  IN EFI_SYSTEM_CONTEXT   SystemContext
   );
 
 /**
@@ -200,12 +200,12 @@ ArchSaveExceptionContext (
 VOID
 ArchRestoreExceptionContext (
   IN UINTN                ExceptionType,
-  IN EFI_SYSTEM_CONTEXT   SystemContext 
+  IN EFI_SYSTEM_CONTEXT   SystemContext
   );
 
 /**
   Fix up the vector number and function address in the vector code.
- 
+
   @param[in] NewVectorAddr   New vector handler address.
   @param[in] VectorNum       Index of vector.
   @param[in] OldVectorAddr   Old vector handler address.
@@ -221,11 +221,11 @@ AsmVectorNumFixup (
 
 /**
   Read and save reserved vector information
-  
+
   @param[in]  VectorInfo        Pointer to reserved vector list.
   @param[out] ReservedVector    Pointer to reserved vector data buffer.
   @param[in]  VectorCount       Vector number to be updated.
-  
+
   @return EFI_SUCCESS           Read and save vector info successfully.
   @retval EFI_INVALID_PARAMETER VectorInfo includes the invalid content if VectorInfo is not NULL.
 

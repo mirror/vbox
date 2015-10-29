@@ -34,7 +34,7 @@
 
 <<
 
-/* MR20 G. Hobbelt 
+/* MR20 G. Hobbelt
    Fix for Borland C++ 4.x & 5.x compiling with ALL warnings enabled
 */
 
@@ -148,7 +148,7 @@ void xxprintf(format,string) 					/* MR1 */
 #token OR		"\|"
 #token RANGE		"\-"
 #token NOT		"\~"
-#token OCTAL_VALUE "\\0[0-7]*"		
+#token OCTAL_VALUE "\\0[0-7]*"
 	<< {int t; sscanf(&zzlextext[1],"%o",&t); zzlextext[0] = t;}>>
 #token HEX_VALUE   "\\0[Xx][0-9a-fA-F]+"
 	<< {int t; sscanf(&zzlextext[3],"%x",&t); zzlextext[0] = t;}>>
@@ -251,7 +251,7 @@ and_expr	: repeat_expr
 					<<
 						$$.l=$1.l; $$.r=$1.r;
 				    >>
-			(repeat_expr 
+			(repeat_expr
 /* MR23 */				<< if ($$.r != NULL) {
 							($$.r)->trans[1]=$1.l;
 							$$.r=$1.r;
@@ -301,7 +301,7 @@ expr	: << $$.l = new_nfa_node();
 			>>
 		| L_PAR reg_expr R_PAR
 			<<
-/* MR23 */		if ($$.l != NULL) {				
+/* MR23 */		if ($$.l != NULL) {
 					($$.l)->trans[0] = $2.l;
 					if ($2.r) {
     					($2.r)->trans[1] = $$.r;    /* MR20 */
@@ -359,7 +359,7 @@ near_atom	: << register int i;
 					    int debugLetter1 = $$.letter;
 						int debugLetter2 = $2.letter;
 					}
-				   if ($$.letter > $2.letter 
+				   if ($$.letter > $2.letter
                                        && $2.letter != 0xff){       /* MR16 */
 					  error("invalid range  ", zzline);
 				   }
@@ -415,7 +415,7 @@ anychar		: REGCHAR	<<$$.letter = $1.letter - MIN_CHAR;>>
 /* MR1				via <<%%lexmember ...>>			    */
 /* MR1			This is a consequence of not saving actions         */
 /* MR1									    */
-/* MR1 */	   parserClass=0;		
+/* MR1 */	   parserClass=0;
 /* MR1 */	   lexPrefix=0;
 /* MR1 */	   lexAction=0;
 /* MR1 */	   lexMember=0;

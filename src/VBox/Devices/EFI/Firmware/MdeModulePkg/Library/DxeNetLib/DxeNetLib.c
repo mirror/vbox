@@ -1075,7 +1075,7 @@ NetListInsertBefore (
   If it has been removed, then restart the traversal from the head.
   If it hasn't been removed, then continue with the next node directly.
   This function will end the iterate and return the CallBack's last return value if error happens,
-  or retrun EFI_SUCCESS if 2 complete passes are made with no changes in the number of children in the list.  
+  or retrun EFI_SUCCESS if 2 complete passes are made with no changes in the number of children in the list.
 
   @param[in]    List             The head of the list.
   @param[in]    CallBack         Pointer to the callback function to destroy one node in the list.
@@ -1162,7 +1162,7 @@ NetIsInHandleBuffer (
   )
 {
   UINTN     Index;
-  
+
   if (NumberOfChildren == 0 || ChildHandleBuffer == NULL) {
     return FALSE;
   }
@@ -1823,7 +1823,7 @@ NetLibDefaultUnload (
     if (DriverBinding->ImageHandle != ImageHandle) {
       continue;
     }
-    
+
     //
     // Disconnect the driver specified by ImageHandle from all
     // the devices in the handle database.
@@ -1835,16 +1835,16 @@ NetLibDefaultUnload (
                       NULL
                       );
     }
-    
+
     //
     // Uninstall all the protocols installed in the driver entry point
-    //    
+    //
     gBS->UninstallProtocolInterface (
           DriverBinding->DriverBindingHandle,
           &gEfiDriverBindingProtocolGuid,
           DriverBinding
           );
-    
+
     Status = gBS->HandleProtocol (
                     DeviceHandleBuffer[Index],
                     &gEfiComponentNameProtocolGuid,
@@ -2984,14 +2984,14 @@ NetLibAsciiStrToIp6 (
 
     if (*Ip6Str == ':') {
       if (*(Ip6Str + 1) == ':') {
-        if ((NodeCnt > 6) || 
+        if ((NodeCnt > 6) ||
             ((*(Ip6Str + 2) != '\0') && (AsciiStrHexToUintn (Ip6Str + 2) == 0))) {
           //
           // ::0 looks strange. report error to user.
           //
           return EFI_INVALID_PARAMETER;
         }
-        if ((NodeCnt == 6) && (*(Ip6Str + 2) != '\0') && 
+        if ((NodeCnt == 6) && (*(Ip6Str + 2) != '\0') &&
             (AsciiStrHexToUintn (Ip6Str + 2) != 0)) {
           return EFI_INVALID_PARAMETER;
         }
@@ -3049,19 +3049,19 @@ NetLibAsciiStrToIp6 (
       return EFI_INVALID_PARAMETER;
     }
     if (NodeVal != 0) {
-      if ((*TempStr  == '0') && 
-          ((*(TempStr + 2) == ':') || (*(TempStr + 3) == ':') || 
+      if ((*TempStr  == '0') &&
+          ((*(TempStr + 2) == ':') || (*(TempStr + 3) == ':') ||
           (*(TempStr + 2) == '\0') || (*(TempStr + 3) == '\0'))) {
         return EFI_INVALID_PARAMETER;
       }
-      if ((*TempStr  == '0') && (*(TempStr + 4) != '\0') && 
-          (*(TempStr + 4) != ':')) { 
+      if ((*TempStr  == '0') && (*(TempStr + 4) != '\0') &&
+          (*(TempStr + 4) != ':')) {
         return EFI_INVALID_PARAMETER;
       }
     } else {
-      if (((*TempStr  == '0') && (*(TempStr + 1) == '0') && 
+      if (((*TempStr  == '0') && (*(TempStr + 1) == '0') &&
           ((*(TempStr + 2) == ':') || (*(TempStr + 2) == '\0'))) ||
-          ((*TempStr  == '0') && (*(TempStr + 1) == '0') && (*(TempStr + 2) == '0') && 
+          ((*TempStr  == '0') && (*(TempStr + 1) == '0') && (*(TempStr + 2) == '0') &&
           ((*(TempStr + 3) == ':') || (*(TempStr + 3) == '\0')))) {
         return EFI_INVALID_PARAMETER;
       }
@@ -3069,7 +3069,7 @@ NetLibAsciiStrToIp6 (
 
     Cnt = 0;
     while ((TempStr[Cnt] != ':') && (TempStr[Cnt] != '\0')) {
-      Cnt++; 
+      Cnt++;
     }
     if (LeadZeroCnt == 0) {
       if ((Cnt == 4) && (*TempStr  == '0')) {
@@ -3087,7 +3087,7 @@ NetLibAsciiStrToIp6 (
       if ((Cnt != 0) && (Cnt < 4) && LeadZero) {
         return EFI_INVALID_PARAMETER;
       }
-    } 
+    }
 
     Ip6Address->Addr[Index] = (UINT8) (NodeVal >> 8);
     Ip6Address->Addr[Index + 1] = (UINT8) (NodeVal & 0xFF);
@@ -3291,14 +3291,14 @@ Exit:
 
   Convert one EFI_IPv6_ADDRESS to Null-terminated Unicode string.
   The text representation of address is defined in RFC 4291.
-  
+
   @param[in]       Ip6Address     The pointer to the IPv6 address.
   @param[out]      String         The buffer to return the converted string.
   @param[in]       StringSize     The length in bytes of the input String.
-                                  
+
   @retval EFI_SUCCESS             Convert to string successfully.
   @retval EFI_INVALID_PARAMETER   The input parameter is invalid.
-  @retval EFI_BUFFER_TOO_SMALL    The BufferSize is too small for the result. BufferSize has been 
+  @retval EFI_BUFFER_TOO_SMALL    The BufferSize is too small for the result. BufferSize has been
                                   updated with the size needed to complete the request.
 **/
 EFI_STATUS
@@ -3324,7 +3324,7 @@ NetLibIp6ToStr (
 
   //
   // Convert the UINT8 array to an UINT16 array for easy handling.
-  // 
+  //
   ZeroMem (Ip6Addr, sizeof (Ip6Addr));
   for (Index = 0; Index < 16; Index++) {
     Ip6Addr[Index / 2] |= (Ip6Address->Addr[Index] << ((1 - (Index % 2)) << 3));
@@ -3356,7 +3356,7 @@ NetLibIp6ToStr (
       }
     }
   }
-  
+
   if (CurrentZerosStart != DEFAULT_ZERO_START && CurrentZerosLength > 2) {
     if (LongestZerosStart == DEFAULT_ZERO_START || LongestZerosLength < CurrentZerosLength) {
       LongestZerosStart  = CurrentZerosStart;
@@ -3377,7 +3377,7 @@ NetLibIp6ToStr (
     }
     Ptr += UnicodeSPrint(Ptr, 10, L"%x", Ip6Addr[Index]);
   }
-  
+
   if (LongestZerosStart != DEFAULT_ZERO_START && LongestZerosStart + LongestZerosLength == 8) {
     *Ptr++ = L':';
   }
@@ -3431,7 +3431,7 @@ NetLibGetSystemGuid (
         //
         return EFI_NOT_FOUND;
       }
-      
+
       //
       // SMBIOS tables are byte packed so we need to do a byte copy to
       // prevend alignment faults on Itanium-based platform.
@@ -3445,12 +3445,12 @@ NetLibGetSystemGuid (
     // 1. Formatted section; 2. Unformatted string section. So, 2 steps are needed
     // to skip one SMBIOS structure.
     //
-    
+
     //
     // Step 1: Skip over formatted section.
     //
     String = (CHAR8 *) (Smbios.Raw + Smbios.Hdr->Length);
-  
+
     //
     // Step 2: Skip over unformated string section.
     //
@@ -3468,7 +3468,7 @@ NetLibGetSystemGuid (
         //
         Smbios.Raw = (UINT8 *)++String;
         break;
-      }    
+      }
     } while (TRUE);
   } while (Smbios.Raw < SmbiosEnd.Raw);
   return EFI_NOT_FOUND;

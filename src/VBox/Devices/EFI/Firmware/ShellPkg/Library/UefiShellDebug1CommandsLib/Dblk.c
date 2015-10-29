@@ -62,11 +62,11 @@ DisplayTheBlocks(
   Status = BlockIo->ReadBlocks(BlockIo, BlockIo->Media->MediaId, Lba, BufferSize, Buffer);
   if (!EFI_ERROR(Status) && Buffer != NULL) {
     ShellPrintHiiEx(
-      -1, 
-      -1, 
-      NULL, 
-      STRING_TOKEN (STR_DBLK_HEADER), 
-      gShellDebug1HiiHandle, 
+      -1,
+      -1,
+      NULL,
+      STRING_TOKEN (STR_DBLK_HEADER),
+      gShellDebug1HiiHandle,
       Lba,
       BufferSize,
       BlockIo
@@ -174,7 +174,7 @@ ShellCommandRunDblk (
           ShellStatus = SHELL_INVALID_PARAMETER;
         }
       }
-      
+
       if (ShellStatus == SHELL_SUCCESS) {
         //
         // do the work if we have a valid block identifier

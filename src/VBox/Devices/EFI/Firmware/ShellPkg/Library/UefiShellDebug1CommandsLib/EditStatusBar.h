@@ -40,7 +40,7 @@ StatusBarCleanup (
 /**
   Cause the status bar to refresh it's printing on the screen.
 
-  @param[in] EditorFirst      TRUE to indicate the first launch of the editor.  
+  @param[in] EditorFirst      TRUE to indicate the first launch of the editor.
                               FALSE otherwise.
   @param[in] LastRow          LastPrintable row.
   @param[in] LastCol          Last printable column.

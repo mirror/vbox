@@ -36,7 +36,7 @@ EfiTableHeader (
   EFI_STATUS Status;
 
   DBG_ENTER ( );
-  
+
   //
   //  Send the handles page
   //
@@ -550,7 +550,7 @@ TableHeader (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     //  Build the table header
     //
@@ -631,7 +631,7 @@ TableTrailer (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     //  Send the page trailer
     //
@@ -667,7 +667,7 @@ SystemTablePage (
   EFI_STATUS Status;
 
   DBG_ENTER ( );
-  
+
   //
   //  Send the system table page
   //
@@ -844,7 +844,7 @@ SystemTablePage (
                             pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

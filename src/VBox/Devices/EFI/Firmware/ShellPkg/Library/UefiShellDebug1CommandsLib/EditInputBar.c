@@ -241,7 +241,7 @@ InputBarRefresh (
   }
 
   mReturnString[Size] = CHAR_NULL;
-  
+
 
   //
   // restore screen attributes

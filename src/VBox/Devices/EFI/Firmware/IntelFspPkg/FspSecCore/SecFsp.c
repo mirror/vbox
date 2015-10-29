@@ -329,6 +329,6 @@ EFIAPI
 GetBootFirmwareVolumeOffset (
   VOID
   )
-{ 
+{
   return PcdGet32 (PcdFspBootFirmwareVolumeBase) - PcdGet32 (PcdFspAreaBaseAddress);
 }

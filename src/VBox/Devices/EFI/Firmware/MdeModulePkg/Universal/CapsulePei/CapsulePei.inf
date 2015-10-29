@@ -38,7 +38,7 @@
 [Sources]
   UefiCapsule.c
   Capsule.h
-  Common/CapsuleCoalesce.c  
+  Common/CapsuleCoalesce.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -68,8 +68,8 @@
 [Ppis]
   gEfiPeiReadOnlyVariable2PpiGuid               ## CONSUMES
   gPeiCapsulePpiGuid                            ## PRODUCES
-  
-[Ppis.IA32]  
+
+[Ppis.IA32]
   gEfiPeiLoadFilePpiGuid                        ## SOMETIMES_CONSUMES
 
 [Pcd.IA32]

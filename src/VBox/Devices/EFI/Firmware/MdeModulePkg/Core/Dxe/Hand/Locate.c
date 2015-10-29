@@ -457,7 +457,7 @@ CoreLocateDevicePath (
     if (IsDevicePathEndInstance (TmpDevicePath)) {
       //
       // If DevicePath is a multi-instance device path,
-      // the function will operate on the first instance 
+      // the function will operate on the first instance
       //
       break;
     }
@@ -522,7 +522,7 @@ CoreLocateDevicePath (
     return  EFI_INVALID_PARAMETER;
   }
   *Device = BestDevice;
-  
+
   //
   // Return the remaining part of the device path
   //

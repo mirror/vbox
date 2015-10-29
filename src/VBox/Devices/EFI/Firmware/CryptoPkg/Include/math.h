@@ -1,5 +1,5 @@
 /** @file
-  Include file to support building OPEN SSL 
+  Include file to support building OPEN SSL
 
 Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials

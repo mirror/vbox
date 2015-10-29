@@ -41,7 +41,7 @@
   DebugLib
   MemoryAllocationLib
   PeiServicesLib
-  
+
 [Depex]
   gEfiPeiMemoryDiscoveredPpiGuid
 

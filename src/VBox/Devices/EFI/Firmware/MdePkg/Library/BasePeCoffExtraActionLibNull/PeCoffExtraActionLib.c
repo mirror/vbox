@@ -32,14 +32,14 @@ PeCoffLoaderRelocateImageExtraAction (
   )
 {
   ASSERT (ImageContext != NULL);
-}  
+}
 
 /**
   Performs additional actions just before a PE/COFF image is unloaded.  Any resources
   that were allocated by PeCoffLoaderRelocateImageExtraAction() must be freed.
-  
+
   If ImageContext is NULL, then ASSERT().
-  
+
   @param  ImageContext  The pointer to the image context structure that describes the
                         PE/COFF image that is being unloaded.
 

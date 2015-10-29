@@ -55,7 +55,7 @@ struct _UFS_HOST_CONTROLLER_PRIVATE_DATA {
   EFI_HANDLE                         Handle;
 
   EDKII_UFS_HOST_CONTROLLER_PROTOCOL UfsHc;
-  EFI_PCI_IO_PROTOCOL                *PciIo;  
+  EFI_PCI_IO_PROTOCOL                *PciIo;
   UINT64                             PciAttributes;
 };
 
@@ -335,24 +335,24 @@ UfsHcGetMmioBar (
      OUT UINTN                              *MmioBar
   );
 
-/**                                                                 
+/**
   Provides the UFS controller-specific addresses needed to access system memory.
-            
+
   @param  This                  A pointer to the EFI_UFS_HOST_CONTROLLER_PROTOCOL instance.
   @param  Operation             Indicates if the bus master is going to read or write to system memory.
   @param  HostAddress           The system memory address to map to the UFS controller.
   @param  NumberOfBytes         On input the number of bytes to map. On output the number of bytes
-                                that were mapped.                                                 
+                                that were mapped.
   @param  DeviceAddress         The resulting map address for the bus master UFS controller to use to
-                                access the hosts HostAddress.                                        
+                                access the hosts HostAddress.
   @param  Mapping               A resulting value to pass to Unmap().
-                                  
+
   @retval EFI_SUCCESS           The range was mapped for the returned NumberOfBytes.
-  @retval EFI_UNSUPPORTED       The HostAddress cannot be mapped as a common buffer.                                
+  @retval EFI_UNSUPPORTED       The HostAddress cannot be mapped as a common buffer.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
   @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a lack of resources.
   @retval EFI_DEVICE_ERROR      The system hardware could not map the requested address.
-                                   
+
 **/
 EFI_STATUS
 EFIAPI
@@ -365,15 +365,15 @@ UfsHcMap (
      OUT VOID                                 **Mapping
   );
 
-/**                                                                 
+/**
   Completes the Map() operation and releases any corresponding resources.
-            
-  @param  This                  A pointer to the EFI_UFS_HOST_CONTROLLER_PROTOCOL instance.                                      
+
+  @param  This                  A pointer to the EFI_UFS_HOST_CONTROLLER_PROTOCOL instance.
   @param  Mapping               The mapping value returned from Map().
-                                  
+
   @retval EFI_SUCCESS           The range was unmapped.
   @retval EFI_DEVICE_ERROR      The data was not committed to the target system memory.
-                                   
+
 **/
 EFI_STATUS
 EFIAPI
@@ -382,25 +382,25 @@ UfsHcUnmap (
   IN  VOID                                 *Mapping
   );
 
-/**                                                                 
+/**
   Allocates pages that are suitable for an EfiUfsHcOperationBusMasterCommonBuffer
-  mapping.                                                                       
-            
+  mapping.
+
   @param  This                  A pointer to the EFI_UFS_HOST_CONTROLLER_PROTOCOL instance.
   @param  Type                  This parameter is not used and must be ignored.
   @param  MemoryType            The type of memory to allocate, EfiBootServicesData or
-                                EfiRuntimeServicesData.                               
-  @param  Pages                 The number of pages to allocate.                                
+                                EfiRuntimeServicesData.
+  @param  Pages                 The number of pages to allocate.
   @param  HostAddress           A pointer to store the base system memory address of the
-                                allocated range.                                        
+                                allocated range.
   @param  Attributes            The requested bit mask of attributes for the allocated range.
-                                  
+
   @retval EFI_SUCCESS           The requested memory pages were allocated.
   @retval EFI_UNSUPPORTED       Attributes is unsupported. The only legal attribute bits are
-                                MEMORY_WRITE_COMBINE and MEMORY_CACHED.                     
+                                MEMORY_WRITE_COMBINE and MEMORY_CACHED.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
-  @retval EFI_OUT_OF_RESOURCES  The memory pages could not be allocated.  
-                                   
+  @retval EFI_OUT_OF_RESOURCES  The memory pages could not be allocated.
+
 **/
 EFI_STATUS
 EFIAPI
@@ -413,17 +413,17 @@ UfsHcAllocateBuffer (
   IN     UINT64                             Attributes
   );
 
-/**                                                                 
+/**
   Frees memory that was allocated with AllocateBuffer().
-            
-  @param  This                  A pointer to the EFI_UFS_HOST_CONTROLLER_PROTOCOL instance.  
-  @param  Pages                 The number of pages to free.                                
-  @param  HostAddress           The base system memory address of the allocated range.                                    
-                                  
+
+  @param  This                  A pointer to the EFI_UFS_HOST_CONTROLLER_PROTOCOL instance.
+  @param  Pages                 The number of pages to free.
+  @param  HostAddress           The base system memory address of the allocated range.
+
   @retval EFI_SUCCESS           The requested memory pages were freed.
   @retval EFI_INVALID_PARAMETER The memory range specified by HostAddress and Pages
                                 was not allocated with AllocateBuffer().
-                                     
+
 **/
 EFI_STATUS
 EFIAPI
@@ -433,16 +433,16 @@ UfsHcFreeBuffer (
   IN  VOID                                  *HostAddress
   );
 
-/**                                                                 
+/**
   Flushes all posted write transactions from the UFS bus to attached UFS device.
-            
-  @param  This                  A pointer to the EFI_UFS_HOST_CONTROLLER_PROTOCOL instance.  
-                                  
+
+  @param  This                  A pointer to the EFI_UFS_HOST_CONTROLLER_PROTOCOL instance.
+
   @retval EFI_SUCCESS           The posted write transactions were flushed from the UFS bus
-                                to attached UFS device.                                      
+                                to attached UFS device.
   @retval EFI_DEVICE_ERROR      The posted write transactions were not flushed from the UFS
-                                bus to attached UFS device due to a hardware error.                           
-                                     
+                                bus to attached UFS device due to a hardware error.
+
 **/
 EFI_STATUS
 EFIAPI

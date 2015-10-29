@@ -1,7 +1,7 @@
 /** @file
   SMBIOS Protocol as defined in PI1.2 Specification VOLUME 5 Standard.
 
-  SMBIOS protocol allows consumers to log SMBIOS data records, and enables the producer 
+  SMBIOS protocol allows consumers to log SMBIOS data records, and enables the producer
   to create the SMBIOS tables for a platform.
 
   This protocol provides an interface to add, remove or discover SMBIOS records. The driver which
@@ -14,13 +14,13 @@
   The SMBIOS protocol can only be called a TPL < TPL_NOTIFY.
 
   Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials                          
-  are licensed and made available under the terms and conditions of the BSD License         
-  which accompanies this distribution.  The full text of the license may be found at        
-  http://opensource.org/licenses/bsd-license.php                                            
+  This program and the accompanying materials
+  are licensed and made available under the terms and conditions of the BSD License
+  which accompanies this distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -29,7 +29,7 @@
 
 #define EFI_SMBIOS_PROTOCOL_GUID \
     { 0x3583ff6, 0xcb36, 0x4940, { 0x94, 0x7e, 0xb9, 0xb3, 0x9f, 0x4a, 0xfa, 0xf7 }}
-    
+
 //
 // SMBIOS type macros which is according to SMBIOS 2.7 specification.
 //
@@ -92,11 +92,11 @@
 /// formatted portion of the structure contains string-reference fields and all the string fields are set to 0 (no string
 /// references), the formatted section of the structure is followed by two null (00h) BYTES.
 ///
-typedef UINT8  EFI_SMBIOS_STRING;  
+typedef UINT8  EFI_SMBIOS_STRING;
 
 ///
 /// Types 0 through 127 (7Fh) are reserved for and defined by this
-/// specification. Types 128 through 256 (80h to FFh) are available for system- and OEM-specific information.  
+/// specification. Types 128 through 256 (80h to FFh) are available for system- and OEM-specific information.
 ///
 typedef UINT8  EFI_SMBIOS_TYPE;
 
@@ -111,18 +111,18 @@ typedef UINT8  EFI_SMBIOS_TYPE;
 /// number to another structure.
 ///
 typedef UINT16 EFI_SMBIOS_HANDLE;
-    
+
 typedef struct {
   EFI_SMBIOS_TYPE   Type;
   UINT8             Length;
   EFI_SMBIOS_HANDLE Handle;
 } EFI_SMBIOS_TABLE_HEADER;
-    
+
 typedef struct _EFI_SMBIOS_PROTOCOL EFI_SMBIOS_PROTOCOL;
 
 /**
   Add an SMBIOS record.
-  
+
   This function allows any agent to add SMBIOS records. The caller is responsible for ensuring
   Record is formatted in a way that matches the version of the SMBIOS specification as defined in
   the MajorRevision and MinorRevision fields of the EFI_SMBIOS_PROTOCOL.
@@ -133,7 +133,7 @@ typedef struct _EFI_SMBIOS_PROTOCOL EFI_SMBIOS_PROTOCOL;
   directly following the last string. The number of optional strings is not defined by the formatted area,
   but is fixed by the call to Add(). A string can be a place holder, but it must not be a NULL string as
   two NULL strings look like the double-null that terminates the structure.
-  
+
   @param[in]        This                The EFI_SMBIOS_PROTOCOL instance.
   @param[in]        ProducerHandle      The handle of the controller or driver associated with the SMBIOS information. NULL means no handle.
   @param[in, out]   SmbiosHandle        On entry, the handle of the SMBIOS record to add. If FFFEh, then a unique handle
@@ -143,7 +143,7 @@ typedef struct _EFI_SMBIOS_PROTOCOL EFI_SMBIOS_PROTOCOL;
                                         determined by EFI_SMBIOS_TABLE_HEADER.Type. The size of the formatted
                                         area is defined by EFI_SMBIOS_TABLE_HEADER.Length and either followed
                                         by a double-null (0x0000) or a set of null terminated strings and a null.
-  
+
   @retval EFI_SUCCESS                   Record was added.
   @retval EFI_OUT_OF_RESOURCES          Record was not added.
   @retval EFI_ALREADY_STARTED           The SmbiosHandle passed in was already in use.
@@ -159,19 +159,19 @@ EFI_STATUS
 
 /**
   Update the string associated with an existing SMBIOS record.
-  
+
   This function allows the update of specific SMBIOS strings. The number of valid strings for any
   SMBIOS record is defined by how many strings were present when Add() was called.
-  
+
   @param[in]    This            The EFI_SMBIOS_PROTOCOL instance.
   @param[in]    SmbiosHandle    SMBIOS Handle of structure that will have its string updated.
   @param[in]    StringNumber    The non-zero string number of the string to update.
   @param[in]    String          Update the StringNumber string with String.
-  
+
   @retval EFI_SUCCESS           SmbiosHandle had its StringNumber String updated.
   @retval EFI_INVALID_PARAMETER SmbiosHandle does not exist.
   @retval EFI_UNSUPPORTED       String was not added because it is longer than the SMBIOS Table supports.
-  @retval EFI_NOT_FOUND         The StringNumber.is not valid for this SMBIOS record.    
+  @retval EFI_NOT_FOUND         The StringNumber.is not valid for this SMBIOS record.
 **/
 typedef
 EFI_STATUS
@@ -184,12 +184,12 @@ EFI_STATUS
 
 /**
   Remove an SMBIOS record.
-  
+
   This function removes an SMBIOS record using the handle specified by SmbiosHandle.
-  
+
   @param[in]    This                The EFI_SMBIOS_PROTOCOL instance.
   @param[in]    SmbiosHandle        The handle of the SMBIOS record to remove.
-  
+
   @retval EFI_SUCCESS               SMBIOS record was removed.
   @retval EFI_INVALID_PARAMETER     SmbiosHandle does not specify a valid SMBIOS record.
 **/
@@ -202,10 +202,10 @@ EFI_STATUS
 
 /**
   Allow the caller to discover all or some of the SMBIOS records.
-  
+
   This function allows all of the SMBIOS records to be discovered. It's possible to find
   only the SMBIOS records that match the optional Type argument.
-  
+
   @param[in]        This            The EFI_SMBIOS_PROTOCOL instance.
   @param[in, out]   SmbiosHandle    On entry, points to the previous handle of the SMBIOS record. On exit, points to the
                                     next SMBIOS record handle. If it is FFFEh on entry, then the first SMBIOS record
@@ -240,7 +240,7 @@ struct _EFI_SMBIOS_PROTOCOL {
   UINT8                    MajorVersion;    ///< The major revision of the SMBIOS specification supported.
   UINT8                    MinorVersion;    ///< The minor revision of the SMBIOS specification supported.
 };
-    
+
 extern EFI_GUID gEfiSmbiosProtocolGuid;
-    
+
 #endif // __SMBIOS_PROTOCOL_H__

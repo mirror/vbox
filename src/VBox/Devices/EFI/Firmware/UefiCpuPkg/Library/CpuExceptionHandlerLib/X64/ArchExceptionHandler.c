@@ -29,7 +29,7 @@ ArchUpdateIdtEntry (
 {
   IdtEntry->Bits.OffsetLow   = (UINT16)(UINTN)InterruptHandler;
   IdtEntry->Bits.OffsetHigh  = (UINT16)((UINTN)InterruptHandler >> 16);
-  IdtEntry->Bits.OffsetUpper = (UINT32)((UINTN)InterruptHandler >> 32);	
+  IdtEntry->Bits.OffsetUpper = (UINT32)((UINTN)InterruptHandler >> 32);
   IdtEntry->Bits.GateType    = IA32_IDT_GATE_TYPE_INTERRUPT_32;
 }
 
@@ -57,7 +57,7 @@ ArchGetIdtHandler (
 VOID
 ArchSaveExceptionContext (
   IN UINTN                ExceptionType,
-  IN EFI_SYSTEM_CONTEXT   SystemContext 
+  IN EFI_SYSTEM_CONTEXT   SystemContext
   )
 {
   IA32_EFLAGS32           Eflags;
@@ -74,7 +74,7 @@ ArchSaveExceptionContext (
   // Clear IF flag to avoid old IDT handler enable interrupt by IRET
   //
   Eflags.UintN = SystemContext.SystemContextX64->Rflags;
-  Eflags.Bits.IF = 0; 
+  Eflags.Bits.IF = 0;
   SystemContext.SystemContextX64->Rflags = Eflags.UintN;
   //
   // Modify the EIP in stack, then old IDT handler will return to the stub code
@@ -91,7 +91,7 @@ ArchSaveExceptionContext (
 VOID
 ArchRestoreExceptionContext (
   IN UINTN                ExceptionType,
-  IN EFI_SYSTEM_CONTEXT   SystemContext 
+  IN EFI_SYSTEM_CONTEXT   SystemContext
   )
 {
   SystemContext.SystemContextX64->Ss            = mReservedVectors[ExceptionType].OldSs;

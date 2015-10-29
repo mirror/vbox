@@ -19,7 +19,7 @@
 ;
 ; Notes:
 ;
-;   Visual Studio coding practices do not use inline asm since multiple compilers and 
+;   Visual Studio coding practices do not use inline asm since multiple compilers and
 ;   architectures are supported assembler not recognizing rdrand instruction so using DB's.
 ;
 ;------------------------------------------------------------------------------
@@ -27,7 +27,7 @@
     .586P
     .model flat, C
     .code
- 
+
 ;------------------------------------------------------------------------------
 ;  Generate a 16 bit random number
 ;  Return TRUE if Rand generated successfully, or FALSE if not

@@ -40,13 +40,13 @@ typedef enum {
 } VAR_CHECK_FLAG_TYPE;
 
 #define MACADDRMAXSIZE    32
-#define PREFIXMAXLEN      16 
+#define PREFIXMAXLEN      16
 
 typedef struct _IFCONFIG6_INTERFACE_CB {
   EFI_HANDLE                                  NicHandle;
   LIST_ENTRY                                  Link;
   EFI_IP6_CONFIG_PROTOCOL                     *IfCfg;
-  EFI_IP6_CONFIG_INTERFACE_INFO               *IfInfo; 
+  EFI_IP6_CONFIG_INTERFACE_INFO               *IfInfo;
   EFI_IP6_CONFIG_INTERFACE_ID                 *IfId;
   EFI_IP6_CONFIG_POLICY                       Policy;
   EFI_IP6_CONFIG_DUP_ADDR_DETECT_TRANSMITS    Xmits;

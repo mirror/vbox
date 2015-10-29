@@ -20,10 +20,10 @@ $(MAKEROOT)/libs-$(ARCH):
 install: $(MAKEROOT)/libs-$(ARCH) $(LIBRARY)
 	cp $(LIBRARY) $(MAKEROOT)/libs-$(ARCH)
 
-$(LIBRARY): $(OBJECTS) 
+$(LIBRARY): $(OBJECTS)
 	$(AR) crs $@ $^
 
-%.o : %.c 
+%.o : %.c
 	$(CC)  -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 %.o : %.S

@@ -25,8 +25,8 @@ void * memset (void *dest, char ch, unsigned int count)
 {
   //
   // NOTE: Here we use one base implementation for memset, instead of the direct
-  //       optimized SetMem() wrapper. Because the IntrinsicLib has to be built 
-  //       without whole program optimization option, and there will be some 
+  //       optimized SetMem() wrapper. Because the IntrinsicLib has to be built
+  //       without whole program optimization option, and there will be some
   //       potential register usage errors when calling other optimized codes.
   //
 
@@ -41,6 +41,6 @@ void * memset (void *dest, char ch, unsigned int count)
   while (count-- != 0) {
     *(Pointer++) = ch;
   }
-  
+
   return dest;
 }

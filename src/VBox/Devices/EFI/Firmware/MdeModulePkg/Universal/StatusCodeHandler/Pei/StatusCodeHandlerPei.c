@@ -17,7 +17,7 @@
 
 /**
   Entry point of Status Code PEIM.
-  
+
   This function is the entry point of this Status Code PEIM.
   It initializes supported status code devices according to PCD settings,
   and installs Status Code PPI.
@@ -54,13 +54,13 @@ StatusCodeHandlerPeiEntry (
   if (FeaturePcdGet (PcdStatusCodeUseSerial)) {
     Status = SerialPortInitialize();
     ASSERT_EFI_ERROR (Status);
-    Status = RscHandlerPpi->Register (SerialStatusCodeReportWorker);                     
+    Status = RscHandlerPpi->Register (SerialStatusCodeReportWorker);
     ASSERT_EFI_ERROR (Status);
   }
   if (FeaturePcdGet (PcdStatusCodeUseMemory)) {
     Status = MemoryStatusCodeInitializeWorker ();
     ASSERT_EFI_ERROR (Status);
-    Status = RscHandlerPpi->Register (MemoryStatusCodeReportWorker);                     
+    Status = RscHandlerPpi->Register (MemoryStatusCodeReportWorker);
     ASSERT_EFI_ERROR (Status);
   }
 

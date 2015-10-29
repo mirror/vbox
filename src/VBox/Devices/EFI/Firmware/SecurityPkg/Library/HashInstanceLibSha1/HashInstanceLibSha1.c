@@ -118,7 +118,7 @@ Sha1HashFinal (
   Sha1Final (Sha1Ctx, Digest);
 
   FreePool (Sha1Ctx);
-  
+
   Tpm2SetSha1ToDigestList (DigestList, Digest);
 
   return EFI_SUCCESS;
@@ -133,7 +133,7 @@ HASH_INTERFACE  mSha1InternalHashInstance = {
 
 /**
   The function register SHA1 instance.
-  
+
   @retval EFI_SUCCESS   SHA1 instance is registered, or system dose not surpport registr SHA1 instance
 **/
 EFI_STATUS

@@ -132,7 +132,7 @@ LocateFvInstanceWithTables (
 /**
   Find ACPI tables in an FV and parses them. This function is useful for QEMU and KVM.
 
-  @param  AcpiTable     Protocol instance pointer    
+  @param  AcpiTable     Protocol instance pointer
 
 **/
 EFI_STATUS

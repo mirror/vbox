@@ -2,11 +2,11 @@
   SMM General Purpose Input (GPI) Dispatch2 Protocol as defined in PI 1.1 Specification
   Volume 4 System Management Mode Core Interface.
 
-  This protocol provides the parent dispatch service for the General Purpose Input 
+  This protocol provides the parent dispatch service for the General Purpose Input
   (GPI) SMI source generator.
 
-  The EFI_SMM_GPI_DISPATCH2_PROTOCOL provides the ability to install child handlers for the 
-  given event types.  Several inputs can be enabled.  This purpose of this interface is to generate an 
+  The EFI_SMM_GPI_DISPATCH2_PROTOCOL provides the ability to install child handlers for the
+  given event types.  Several inputs can be enabled.  This purpose of this interface is to generate an
   SMI in response to any of these inputs having a true value provided.
 
   Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
@@ -38,7 +38,7 @@
 ///
 typedef struct {
   ///
-  /// A bit mask of 64 possible GPIs that can generate an SMI.  Bit 0 corresponds to logical 
+  /// A bit mask of 64 possible GPIs that can generate an SMI.  Bit 0 corresponds to logical
   /// GPI[0], 1 corresponds to logical GPI[1], and so on.
   ///
   UINT64 GpiNum;
@@ -49,13 +49,13 @@ typedef struct _EFI_SMM_GPI_DISPATCH2_PROTOCOL EFI_SMM_GPI_DISPATCH2_PROTOCOL;
 /**
   Registers a child SMI source dispatch function with a parent SMM driver.
 
-  This service registers a function (DispatchFunction) which will be called when an SMI is 
-  generated because of one or more of the GPIs specified by RegisterContext. On return, 
-  DispatchHandle contains a unique handle which may be used later to unregister the function 
+  This service registers a function (DispatchFunction) which will be called when an SMI is
+  generated because of one or more of the GPIs specified by RegisterContext. On return,
+  DispatchHandle contains a unique handle which may be used later to unregister the function
   using UnRegister().
-  The DispatchFunction will be called with Context set to the same value as was passed into 
-  this function in RegisterContext and with CommBuffer pointing to another instance of 
-  EFI_SMM_GPI_REGISTER_CONTEXT describing the GPIs which actually caused the SMI and 
+  The DispatchFunction will be called with Context set to the same value as was passed into
+  this function in RegisterContext and with CommBuffer pointing to another instance of
+  EFI_SMM_GPI_REGISTER_CONTEXT describing the GPIs which actually caused the SMI and
   CommBufferSize pointing to the size of the structure.
 
   @param[in]  This               Pointer to the EFI_SMM_GPI_DISPATCH2_PROTOCOL instance.
@@ -87,8 +87,8 @@ EFI_STATUS
 /**
   Unregisters a General Purpose Input (GPI) service.
 
-  This service removes the handler associated with DispatchHandle so that it will no longer be 
-  called when the GPI triggers an SMI. 
+  This service removes the handler associated with DispatchHandle so that it will no longer be
+  called when the GPI triggers an SMI.
 
   @param[in]  This               Pointer to the EFI_SMM_GPI_DISPATCH2_PROTOCOL instance.
   @param[in]  DispatchHandle     Handle of the service to remove.

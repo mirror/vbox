@@ -16,7 +16,7 @@
 
 /**
   Check if the hardware breakpoint in Drx is enabled by checking the Lx and Gx bit in Dr7.
-  
+
   It assumes that DebugAgent will set both Lx and Gx bit when setting up the hardware breakpoint.
 
 
@@ -40,7 +40,7 @@ IsDrxEnabled (
   Common routine to report the PE/COFF image loading/relocating or unloading event.
 
   If ImageContext is NULL, then ASSERT().
-  
+
   @param  ImageContext  Pointer to the image context structure that describes the
                         PE/COFF image.
   @param  Signature     IMAGE_LOAD_SIGNATURE or IMAGE_UNLOAD_SIGNATURE.
@@ -96,7 +96,7 @@ PeCoffLoaderExtraActionCommon (
       IdtEntryHooked = TRUE;
     }
   }
-  
+
   //
   // Save Debug Register State
   //
@@ -141,7 +141,7 @@ PeCoffLoaderExtraActionCommon (
 
   //
   // Restore Debug Register State only when Host didn't change it inside exception handler.
-  // E.g.: User halts the target and sets the HW breakpoint while target is 
+  // E.g.: User halts the target and sets the HW breakpoint while target is
   //       in the above exception handler
   //
   NewDr7 = AsmReadDr7 ();

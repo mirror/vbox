@@ -1347,9 +1347,9 @@ ShellFileHandleReadLine(
 
 /**
   Function to delete a file by name
-  
+
   @param[in]       FileName       Pointer to file name to delete.
-  
+
   @retval EFI_SUCCESS             the file was deleted sucessfully
   @retval EFI_WARN_DELETE_FAILURE the handle was closed, but the file was not
                                   deleted
@@ -1379,7 +1379,7 @@ ShellDeleteFileByName(
 
   @param[in] CommandToGetHelpOn  Pointer to a string containing the command name of help file to be printed.
   @param[in] SectionToGetHelpOn  Pointer to the section specifier(s).
-  @param[in] PrintCommandText    If TRUE, prints the command followed by the help content, otherwise prints 
+  @param[in] PrintCommandText    If TRUE, prints the command followed by the help content, otherwise prints
                                  the help content only.
   @retval EFI_DEVICE_ERROR       The help data format was incorrect.
   @retval EFI_NOT_FOUND          The help data could not be found.

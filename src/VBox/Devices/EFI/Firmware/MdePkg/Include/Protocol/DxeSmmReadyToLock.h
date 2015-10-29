@@ -2,8 +2,8 @@
   DXE SMM Ready To Lock protocol as defined in the PI 1.2 specification.
 
   This UEFI protocol indicates that SMM is about to be locked.
-  This protocol is a mandatory protocol published by a DXE driver prior to invoking the 
-  EFI_SMM_ACCESS2_PROTOCOL.Lock() function to lock SMM. 
+  This protocol is a mandatory protocol published by a DXE driver prior to invoking the
+  EFI_SMM_ACCESS2_PROTOCOL.Lock() function to lock SMM.
 
   Copyright (c) 2009, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials

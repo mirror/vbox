@@ -31,7 +31,7 @@ MAP_FILE_COMMENT_TEMPLATE = \
 #  THIS IS AUTO-GENERATED FILE BY BPDG TOOLS AND PLEASE DO NOT MAKE MODIFICATION.
 #
 #  This file lists all VPD informations for a platform fixed/adjusted by BPDG tool.
-# 
+#
 # Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
@@ -58,10 +58,10 @@ Required Flags:
   -o BIN_FILENAME, --vpd-filename=BIN_FILENAME
             Specify the file name for the VPD binary file
   -m FILENAME, --map-filename=FILENAME
-            Generate file name for consumption during the build that contains 
-            the mapping of Pcd name, offset, datum size and value derived 
+            Generate file name for consumption during the build that contains
+            the mapping of Pcd name, offset, datum size and value derived
             from the input file and any automatic calculations.
-""" 
+"""
 )
 
 MSG_OPTION_HELP             = ("Show this help message and exit.")

@@ -876,7 +876,7 @@ BOpt_GetBootOptions (
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
   UINTN                     MenuCount;
   UINT8                     *Ptr;
-  
+
   MenuCount         = 0;
   BootOrderListSize = 0;
   BootNextSize      = 0;
@@ -897,7 +897,7 @@ BOpt_GetBootOptions (
   if (BootOrderList == NULL) {
     return EFI_NOT_FOUND;
   }
-  
+
   //
   // Get the BootNext from the Var
   //
@@ -1011,13 +1011,13 @@ BOpt_GetBootOptions (
 
     NewLoadContext->FilePathListLength = *(UINT16 *) LoadOptionPtr;
     LoadOptionPtr += sizeof (UINT16);
-    
+
     StringSize = StrSize((UINT16*)LoadOptionPtr);
 
     NewLoadContext->Description = AllocateZeroPool (StrSize((UINT16*)LoadOptionPtr));
     ASSERT (NewLoadContext->Description != NULL);
     StrCpy (NewLoadContext->Description, (UINT16*)LoadOptionPtr);
-    
+
     ASSERT (NewLoadContext->Description != NULL);
     NewMenuEntry->DisplayString = NewLoadContext->Description;
 
@@ -1103,7 +1103,7 @@ BOpt_AppendFileName (
   Str   = AllocateZeroPool (Size1 + Size2 + sizeof (CHAR16));
   ASSERT (Str != NULL);
 
-  TmpStr = AllocateZeroPool (Size1 + Size2 + sizeof (CHAR16)); 
+  TmpStr = AllocateZeroPool (Size1 + Size2 + sizeof (CHAR16));
   ASSERT (TmpStr != NULL);
 
   StrCat (Str, Str1);
@@ -1124,7 +1124,7 @@ BOpt_AppendFileName (
       //
 
       //
-      // Use TmpStr as a backup, as StrCpy in BaseLib does not handle copy of two strings 
+      // Use TmpStr as a backup, as StrCpy in BaseLib does not handle copy of two strings
       // that overlap.
       //
       StrCpy (TmpStr, Ptr + 3);
@@ -1136,7 +1136,7 @@ BOpt_AppendFileName (
       //
 
       //
-      // Use TmpStr as a backup, as StrCpy in BaseLib does not handle copy of two strings 
+      // Use TmpStr as a backup, as StrCpy in BaseLib does not handle copy of two strings
       // that overlap.
       //
       StrCpy (TmpStr, Ptr + 2);
@@ -1150,7 +1150,7 @@ BOpt_AppendFileName (
   }
 
   FreePool (TmpStr);
-  
+
   return Str;
 }
 
@@ -1501,7 +1501,7 @@ BOpt_GetDriverOptions (
   if (DriverOrderList == NULL) {
     return EFI_NOT_FOUND;
   }
-  
+
   for (Index = 0; Index < DriverOrderListSize / sizeof (UINT16); Index++) {
     UnicodeSPrint (
       DriverString,
@@ -1680,20 +1680,20 @@ GetLegacyDeviceOrder (
   UINTN                     Index;
   UINTN                     OptionIndex;
   UINT16                    PageIdList[5];
-  UINTN                     PageNum;  
+  UINTN                     PageNum;
   UINTN                     VarSize;
-  UINT8                     *VarData;     
-  UINT8                     *WorkingVarData; 
+  UINT8                     *VarData;
+  UINT8                     *WorkingVarData;
   LEGACY_DEV_ORDER_ENTRY    *DevOrder;
-  UINT16                    VarDevOrder;  
-  UINT8                     *DisMap;  
+  UINT16                    VarDevOrder;
+  UINT8                     *DisMap;
   BM_MENU_OPTION            *OptionMenu;
   BBS_TYPE                  BbsType;
   UINT8                     *LegacyOrder;
-  UINT8                     *OldData;  
+  UINT8                     *OldData;
   UINTN                     Pos;
   UINTN                     Bit;
-  
+
   ASSERT (CallbackData != NULL);
 
   PageIdList[0] = FORM_SET_FD_ORDER_ID;
@@ -1715,7 +1715,7 @@ GetLegacyDeviceOrder (
 
   for (Index = 0; Index < PageNum; Index++) {
     switch (PageIdList[Index]) {
-      
+
     case FORM_SET_FD_ORDER_ID:
       OptionMenu  = (BM_MENU_OPTION *) &LegacyFDMenu;
       BbsType     = BBS_FLOPPY;
@@ -1729,14 +1729,14 @@ GetLegacyDeviceOrder (
       LegacyOrder = CallbackData->BmmFakeNvData.LegacyHD;
       OldData     = CallbackData->BmmOldFakeNVData.LegacyHD;
       break;
-    
+
     case FORM_SET_CD_ORDER_ID:
       OptionMenu  = (BM_MENU_OPTION *) &LegacyCDMenu;
       BbsType     = BBS_CDROM;
       LegacyOrder = CallbackData->BmmFakeNvData.LegacyCD;
       OldData     = CallbackData->BmmOldFakeNVData.LegacyCD;
       break;
-    
+
     case FORM_SET_NET_ORDER_ID:
       OptionMenu  = (BM_MENU_OPTION *) &LegacyNETMenu;
       BbsType     = BBS_EMBED_NETWORK;
@@ -1752,7 +1752,7 @@ GetLegacyDeviceOrder (
       OldData     = CallbackData->BmmOldFakeNVData.LegacyBEV;
       break;
     }
-    
+
     if (NULL != VarData) {
       WorkingVarData = VarData;
       DevOrder    = (LEGACY_DEV_ORDER_ENTRY *) WorkingVarData;
@@ -1760,11 +1760,11 @@ GetLegacyDeviceOrder (
         if (DevOrder->BbsType == BbsType) {
           break;
         }
-    
+
         WorkingVarData  = (UINT8 *)((UINTN)WorkingVarData + sizeof (BBS_TYPE));
         WorkingVarData += *(UINT16 *) WorkingVarData;
         DevOrder = (LEGACY_DEV_ORDER_ENTRY *) WorkingVarData;
-      } 
+      }
       for (OptionIndex = 0; OptionIndex < OptionMenu->MenuNumber; OptionIndex++) {
         VarDevOrder = *(UINT16 *) ((UINTN) DevOrder + sizeof (BBS_TYPE) + sizeof (UINT16) + OptionIndex * sizeof (UINT16));
          if (0xFF00 == (VarDevOrder & 0xFF00)) {
@@ -1775,17 +1775,17 @@ GetLegacyDeviceOrder (
         } else {
           LegacyOrder[OptionIndex] = (UINT8) (VarDevOrder & 0xFF);
         }
-      } 
+      }
       CopyMem (OldData, LegacyOrder, 100);
     }
-  }  
+  }
 }
 
 /**
   Get driver option order from globalc DriverOptionMenu.
 
   @param CallbackData    The BMM context data.
-  
+
 **/
 VOID
 GetDriverOrder (

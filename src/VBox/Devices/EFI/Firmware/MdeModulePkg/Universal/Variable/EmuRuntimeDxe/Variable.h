@@ -139,21 +139,21 @@ VariableClassAddressChangeEvent (
 
 /**
   This code finds variable in storage blocks (Volatile or Non-Volatile).
-  
+
   @param  VariableName           A Null-terminated Unicode string that is the name of
                                  the vendor's variable.
   @param  VendorGuid             A unique identifier for the vendor.
-  @param  Attributes             If not NULL, a pointer to the memory location to return the 
+  @param  Attributes             If not NULL, a pointer to the memory location to return the
                                  attributes bitmask for the variable.
   @param  DataSize               Size of Data found. If size is less than the
                                  data, this value contains the required size.
-  @param  Data                   On input, the size in bytes of the return Data buffer.  
+  @param  Data                   On input, the size in bytes of the return Data buffer.
                                  On output, the size of data returned in Data.
   @param  Global                 Pointer to VARIABLE_GLOBAL structure
 
-  @retval EFI_SUCCESS            The function completed successfully. 
+  @retval EFI_SUCCESS            The function completed successfully.
   @retval EFI_NOT_FOUND          The variable was not found.
-  @retval EFI_BUFFER_TOO_SMALL   DataSize is too small for the result.  DataSize has 
+  @retval EFI_BUFFER_TOO_SMALL   DataSize is too small for the result.  DataSize has
                                  been updated with the size needed to complete the request.
   @retval EFI_INVALID_PARAMETER  VariableName or VendorGuid or DataSize is NULL.
 
@@ -177,12 +177,12 @@ EmuGetVariable (
   @param  VariableName           On input, supplies the last VariableName that was returned by GetNextVariableName().
                                  On output, returns the Null-terminated Unicode string of the current variable.
   @param  VendorGuid             On input, supplies the last VendorGuid that was returned by GetNextVariableName().
-                                 On output, returns the VendorGuid of the current variable.  
+                                 On output, returns the VendorGuid of the current variable.
   @param  Global                 Pointer to VARIABLE_GLOBAL structure.
 
-  @retval EFI_SUCCESS            The function completed successfully. 
+  @retval EFI_SUCCESS            The function completed successfully.
   @retval EFI_NOT_FOUND          The next variable was not found.
-  @retval EFI_BUFFER_TOO_SMALL   VariableNameSize is too small for the result. 
+  @retval EFI_BUFFER_TOO_SMALL   VariableNameSize is too small for the result.
                                  VariableNameSize has been updated with the size needed to complete the request.
   @retval EFI_INVALID_PARAMETER  VariableNameSize or VariableName or VendorGuid is NULL.
 
@@ -201,9 +201,9 @@ EmuGetNextVariableName (
   This code sets variable in storage blocks (Volatile or Non-Volatile).
 
   @param  VariableName           A Null-terminated Unicode string that is the name of the vendor's
-                                 variable.  Each VariableName is unique for each 
-                                 VendorGuid.  VariableName must contain 1 or more 
-                                 Unicode characters.  If VariableName is an empty Unicode 
+                                 variable.  Each VariableName is unique for each
+                                 VendorGuid.  VariableName must contain 1 or more
+                                 Unicode characters.  If VariableName is an empty Unicode
                                  string, then EFI_INVALID_PARAMETER is returned.
   @param  VendorGuid             A unique identifier for the vendor
   @param  Attributes             Attributes bitmask to set for the variable
@@ -214,10 +214,10 @@ EmuGetNextVariableName (
   @param  VolatileOffset         The offset of last volatile variable
   @param  NonVolatileOffset      The offset of last non-volatile variable
 
-  @retval EFI_SUCCESS            The firmware has successfully stored the variable and its data as 
+  @retval EFI_SUCCESS            The firmware has successfully stored the variable and its data as
                                  defined by the Attributes.
-  @retval EFI_INVALID_PARAMETER  An invalid combination of attribute bits was supplied, or the 
-                                 DataSize exceeds the maximum allowed, or VariableName is an empty 
+  @retval EFI_INVALID_PARAMETER  An invalid combination of attribute bits was supplied, or the
+                                 DataSize exceeds the maximum allowed, or VariableName is an empty
                                  Unicode string, or VendorGuid is NULL.
   @retval EFI_OUT_OF_RESOURCES   Not enough storage is available to hold the variable and its data.
   @retval EFI_DEVICE_ERROR       The variable could not be saved due to a hardware failure.
@@ -244,18 +244,18 @@ EmuSetVariable (
 
   @param  Attributes                   Attributes bitmask to specify the type of variables
                                        on which to return information.
-  @param  MaximumVariableStorageSize   On output the maximum size of the storage space available for 
-                                       the EFI variables associated with the attributes specified.  
-  @param  RemainingVariableStorageSize Returns the remaining size of the storage space available for EFI 
+  @param  MaximumVariableStorageSize   On output the maximum size of the storage space available for
+                                       the EFI variables associated with the attributes specified.
+  @param  RemainingVariableStorageSize Returns the remaining size of the storage space available for EFI
                                        variables associated with the attributes specified.
-  @param  MaximumVariableSize          Returns the maximum size of an individual EFI variable 
+  @param  MaximumVariableSize          Returns the maximum size of an individual EFI variable
                                        associated with the attributes specified.
   @param  Global                       Pointer to VARIABLE_GLOBAL structure.
 
   @retval EFI_SUCCESS                  Valid answer returned.
   @retval EFI_INVALID_PARAMETER        An invalid combination of attribute bits was supplied
-  @retval EFI_UNSUPPORTED              The attribute is not supported on this platform, and the 
-                                       MaximumVariableStorageSize, RemainingVariableStorageSize, 
+  @retval EFI_UNSUPPORTED              The attribute is not supported on this platform, and the
+                                       MaximumVariableStorageSize, RemainingVariableStorageSize,
                                        MaximumVariableSize are undefined.
 
 **/

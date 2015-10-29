@@ -59,13 +59,13 @@ PalCall (
   SalReturn = EsalCall (
                 EFI_EXTENDED_SAL_PAL_SERVICES_PROTOCOL_GUID_LO,
                 EFI_EXTENDED_SAL_PAL_SERVICES_PROTOCOL_GUID_HI,
-                PalProcFunctionId, 
-                Index, 
-                Arg2, 
-                Arg3, 
-                Arg4, 
-                0, 
-                0, 
+                PalProcFunctionId,
+                Index,
+                Arg2,
+                Arg3,
+                Arg4,
+                0,
+                0,
                 0
                 );
   PalReturn = (PAL_CALL_RETURN *) (UINTN) (&SalReturn);

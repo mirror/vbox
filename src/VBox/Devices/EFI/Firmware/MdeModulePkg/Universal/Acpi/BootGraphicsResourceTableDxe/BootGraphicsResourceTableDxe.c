@@ -160,13 +160,13 @@ SetBootLogo (
   if (Width == 0 || Height == 0) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   mAcpiBgrtBufferChanged = TRUE;
   if (mLogoBltBuffer != NULL) {
     FreePool (mLogoBltBuffer);
     mLogoBltBuffer = NULL;
   }
-  
+
   //
   // Ensure the Height * Width doesn't overflow
   //
@@ -174,7 +174,7 @@ SetBootLogo (
     return EFI_UNSUPPORTED;
   }
   BufferSize = MultU64x64 (Width, Height);
-  
+
   //
   // Ensure the BufferSize * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL) doesn't overflow
   //
@@ -312,7 +312,7 @@ InstallBootGraphicsResourceTable (
                                     );
       if (EFI_ERROR (Status)) {
         return Status;
-      } 
+      }
     }
   } else {
     //
@@ -329,8 +329,8 @@ InstallBootGraphicsResourceTable (
     //
     OrigBmpSize = mBmpImageHeaderTemplate.ImageSize + sizeof (BMP_IMAGE_HEADER);
     //
-    // Free orignal BMP memory 
-    // 
+    // Free orignal BMP memory
+    //
     if (mBootGraphicsResourceTableTemplate.ImageAddress) {
       gBS->FreePages(mBootGraphicsResourceTableTemplate.ImageAddress, EFI_SIZE_TO_PAGES(OrigBmpSize));
     }
@@ -368,7 +368,7 @@ InstallBootGraphicsResourceTable (
     mBmpImageHeaderTemplate.PixelWidth = (UINT32) mLogoWidth;
     mBmpImageHeaderTemplate.PixelHeight = (UINT32) mLogoHeight;
     CopyMem (ImageBuffer, &mBmpImageHeaderTemplate, sizeof (BMP_IMAGE_HEADER));
-    
+
     //
     // Convert BLT buffer to BMP file.
     //
@@ -419,7 +419,7 @@ InstallBootGraphicsResourceTable (
   mAcpiBgrtInstalled = TRUE;
   mAcpiBgrtStatusChanged = FALSE;
   mAcpiBgrtBufferChanged = FALSE;
-  
+
   return Status;
 }
 

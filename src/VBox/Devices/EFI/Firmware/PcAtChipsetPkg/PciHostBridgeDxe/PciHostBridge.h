@@ -1,16 +1,16 @@
 /** @file
-  The Header file of the Pci Host Bridge Driver 
+  The Header file of the Pci Host Bridge Driver
 
   Copyright (c) 2008 - 2010, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials are
   licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
-  
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
-**/ 
+**/
 
 #ifndef _PCI_HOST_BRIDGE_H_
 #define _PCI_HOST_BRIDGE_H_
@@ -59,14 +59,14 @@ typedef struct {
   EFI_HANDLE                                        HostBridgeHandle;
   UINTN                                             RootBridgeNumber;
   LIST_ENTRY                                        Head;
-  BOOLEAN                                           ResourceSubmited;  
-  BOOLEAN                                           CanRestarted;  
+  BOOLEAN                                           ResourceSubmited;
+  BOOLEAN                                           CanRestarted;
   EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL  ResAlloc;
 } PCI_HOST_BRIDGE_INSTANCE;
 
 #define INSTANCE_FROM_RESOURCE_ALLOCATION_THIS(a) \
   CR(a, PCI_HOST_BRIDGE_INSTANCE, ResAlloc, PCI_HOST_BRIDGE_SIGNATURE)
-  
+
 //
 //  HostBridge Resource Allocation interface
 //
@@ -157,9 +157,9 @@ NotifyPhase(
 
    @param[in]       This              The instance pointer of EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
    @param[in, out]  RootBridgeHandle  Returns the device handle of the next PCI root bridge.
-   
+
    @retval EFI_SUCCESS            If parameter RootBridgeHandle = NULL, then return the first Rootbridge handle of the
-                                  specific Host bridge and return EFI_SUCCESS. 
+                                  specific Host bridge and return EFI_SUCCESS.
    @retval EFI_NOT_FOUND          Can not find the any more root bridge in specific host bridge.
    @retval EFI_INVALID_PARAMETER  RootBridgeHandle is not an EFI_HANDLE that was
                                   returned on a previous call to GetNextRootBridge().
@@ -170,7 +170,7 @@ GetNextRootBridge(
   IN       EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN OUT   EFI_HANDLE                                       *RootBridgeHandle
   );
-  
+
 /**
    Returns the allocation attributes of a PCI root bridge.
 
@@ -181,11 +181,11 @@ GetNextRootBridge(
    handles of all the root bridges that are associated with this host bridge must be obtained by calling
    GetNextRootBridge(). The attributes are static in the sense that they do not change during or
    after the enumeration process. The hardware may provide mechanisms to change the attributes on
-   the fly, but such changes must be completed before EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL is 
+   the fly, but such changes must be completed before EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL is
    installed. The permitted values of EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_ATTRIBUTES are defined in
    "Related Definitions" below. The caller uses these attributes to combine multiple resource requests.
-   For example, if the flag EFI_PCI_HOST_BRIDGE_COMBINE_MEM_PMEM is set, the PCI bus enumerator needs to 
-   include requests for the prefetchable memory in the nonprefetchable memory pool and not request any 
+   For example, if the flag EFI_PCI_HOST_BRIDGE_COMBINE_MEM_PMEM is set, the PCI bus enumerator needs to
+   include requests for the prefetchable memory in the nonprefetchable memory pool and not request any
    prefetchable memory.
       Attribute                                 Description
    ------------------------------------         ----------------------------------------------------------------------
@@ -203,12 +203,12 @@ GetNextRootBridge(
    @param[in]   RootBridgeHandle   The device handle of the PCI root bridge in which the caller is interested. Type
                                    EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI 2.0 Specification.
    @param[out]  Attributes         The pointer to attribte of root bridge, it is output parameter
-   
+
    @retval EFI_INVALID_PARAMETER   Attribute pointer is NULL
    @retval EFI_INVALID_PARAMETER   RootBridgehandle is invalid.
    @retval EFI_SUCCESS             Success to get attribute of interested root bridge.
 
-**/  
+**/
 EFI_STATUS
 EFIAPI
 GetAttributes(
@@ -216,7 +216,7 @@ GetAttributes(
   IN  EFI_HANDLE                                       RootBridgeHandle,
   OUT UINT64                                           *Attributes
   );
-  
+
 /**
    Sets up the specified PCI root bridge for the bus enumeration process.
 
@@ -226,7 +226,7 @@ GetAttributes(
    @param[in]   This              The EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_ PROTOCOL instance.
    @param[in]   RootBridgeHandle  The PCI Root Bridge to be set up.
    @param[out]  Configuration     Pointer to the pointer to the PCI bus resource descriptor.
-   
+
    @retval EFI_INVALID_PARAMETER Invalid Root bridge's handle
    @retval EFI_OUT_OF_RESOURCES  Fail to allocate ACPI resource descriptor tag.
    @retval EFI_SUCCESS           Sucess to allocate ACPI resource descriptor.
@@ -239,7 +239,7 @@ StartBusEnumeration(
   IN  EFI_HANDLE                                       RootBridgeHandle,
   OUT VOID                                             **Configuration
   );
-  
+
 /**
    Programs the PCI root bridge hardware so that it decodes the specified PCI bus range.
 
@@ -250,12 +250,12 @@ StartBusEnumeration(
    @param[in] This              The EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_ PROTOCOL instance
    @param[in] RootBridgeHandle  The PCI Root Bridge whose bus range is to be programmed
    @param[in] Configuration     The pointer to the PCI bus resource descriptor
-   
+
    @retval EFI_INVALID_PARAMETER  RootBridgeHandle is not a valid root bridge handle.
    @retval EFI_INVALID_PARAMETER  Configuration is NULL.
    @retval EFI_INVALID_PARAMETER  Configuration does not point to a valid ACPI 2.0 resource descriptor.
    @retval EFI_INVALID_PARAMETER  Configuration does not include a valid ACPI 2.0 bus resource descriptor.
-   @retval EFI_INVALID_PARAMETER  Configuration includes valid ACPI 2.0 resource descriptors other than 
+   @retval EFI_INVALID_PARAMETER  Configuration includes valid ACPI 2.0 resource descriptors other than
                                   bus descriptors.
    @retval EFI_INVALID_PARAMETER  Configuration contains one or more invalid ACPI resource descriptors.
    @retval EFI_INVALID_PARAMETER  "Address Range Minimum" is invalid for this root bridge.
@@ -271,7 +271,7 @@ SetBusNumbers(
   IN EFI_HANDLE                                       RootBridgeHandle,
   IN VOID                                             *Configuration
   );
-  
+
 /**
    Submits the I/O and memory resource requirements for the specified PCI root bridge.
 
@@ -283,13 +283,13 @@ SetBusNumbers(
    @param[in] This              Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
    @param[in] RootBridgeHandle  The PCI root bridge whose I/O and memory resource requirements are being submitted.
    @param[in] Configuration     The pointer to the PCI I/O and PCI memory resource descriptor.
-   
+
    @retval EFI_SUCCESS            The I/O and memory resource requests for a PCI root bridge were accepted.
    @retval EFI_INVALID_PARAMETER  RootBridgeHandle is not a valid root bridge handle.
    @retval EFI_INVALID_PARAMETER  Configuration is NULL.
    @retval EFI_INVALID_PARAMETER  Configuration does not point to a valid ACPI 2.0 resource descriptor.
-   @retval EFI_INVALID_PARAMETER  Configuration includes requests for one or more resource types that are 
-                                  not supported by this PCI root bridge. This error will happen if the caller 
+   @retval EFI_INVALID_PARAMETER  Configuration includes requests for one or more resource types that are
+                                  not supported by this PCI root bridge. This error will happen if the caller
                                   did not combine resources according to Attributes that were returned by
                                   GetAllocAttributes().
    @retval EFI_INVALID_PARAMETER  Address Range Maximum" is invalid.
@@ -304,7 +304,7 @@ SubmitResources(
   IN EFI_HANDLE                                       RootBridgeHandle,
   IN VOID                                             *Configuration
   );
-  
+
 /**
    Returns the proposed resource settings for the specified PCI root bridge.
 
@@ -318,7 +318,7 @@ SubmitResources(
    @param[in]  This              Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
    @param[in]  RootBridgeHandle  The PCI root bridge handle. Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI 2.0 Specification.
    @param[out] Configuration     The pointer to the pointer to the PCI I/O and memory resource descriptor.
-   
+
    @retval EFI_SUCCESS            The requested parameters were returned.
    @retval EFI_INVALID_PARAMETER  RootBridgeHandle is not a valid root bridge handle.
    @retval EFI_DEVICE_ERROR       Programming failed due to a hardware error.
@@ -349,8 +349,8 @@ GetProposedResources(
                             EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL member functions to access the PCI
                             configuration space of the device. See Table 12-1 in the UEFI 2.0 Specification for
                             the definition of EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS.
-   @param Phase             The phase of the PCI device enumeration. 
-   
+   @param Phase             The phase of the PCI device enumeration.
+
    @retval EFI_SUCCESS              The requested parameters were returned.
    @retval EFI_INVALID_PARAMETER    RootBridgeHandle is not a valid root bridge handle.
    @retval EFI_INVALID_PARAMETER    Phase is not a valid phase that is defined in
@@ -371,7 +371,7 @@ PreprocessController (
 
 
 //
-// Define resource status constant 
+// Define resource status constant
 //
 #define EFI_RESOURCE_NONEXISTENT   0xFFFFFFFFFFFFFFFFULL
 #define EFI_RESOURCE_LESS          0xFFFFFFFFFFFFFFFEULL
@@ -396,13 +396,13 @@ typedef struct {
 
 typedef struct {
   UINT64          BusBase;
-  UINT64          BusLimit;     
-  
-  UINT64          MemBase;     
-  UINT64          MemLimit;    
-  
-  UINT64          IoBase; 
-  UINT64          IoLimit;     
+  UINT64          BusLimit;
+
+  UINT64          MemBase;
+  UINT64          MemLimit;
+
+  UINT64          IoBase;
+  UINT64          IoLimit;
 } PCI_ROOT_BRIDGE_RESOURCE_APPETURE;
 
 typedef enum {
@@ -440,25 +440,25 @@ typedef struct {
   UINT64                 RootBridgeAttrib;
   UINT64                 Attributes;
   UINT64                 Supports;
-  
+
   //
   // Specific for this memory controller: Bus, I/O, Mem
   //
   PCI_RES_NODE           ResAllocNode[6];
-  
+
   //
   // Addressing for Memory and I/O and Bus arrange
   //
   UINT64                 BusBase;
-  UINT64                 MemBase;     
-  UINT64                 IoBase; 
-  UINT64                 BusLimit;     
-  UINT64                 MemLimit;    
-  UINT64                 IoLimit;     
+  UINT64                 MemBase;
+  UINT64                 IoBase;
+  UINT64                 BusLimit;
+  UINT64                 MemLimit;
+  UINT64                 IoLimit;
 
   UINTN                  PciAddress;
   UINTN                  PciData;
-  
+
   EFI_DEVICE_PATH_PROTOCOL                *DevicePath;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL         Io;
 

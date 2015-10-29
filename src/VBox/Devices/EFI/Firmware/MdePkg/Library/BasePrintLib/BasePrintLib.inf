@@ -20,7 +20,7 @@
   FILE_GUID                      = a86fbfca-0183-4eeb-aa8a-762e3b7da1f3
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PrintLib 
+  LIBRARY_CLASS                  = PrintLib
 
 
 #

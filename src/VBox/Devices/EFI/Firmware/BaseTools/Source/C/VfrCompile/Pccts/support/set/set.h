@@ -5,12 +5,12 @@
 
 	The following is a general-purpose set library originally developed
 	by Hank Dietz and enhanced by Terence Parr to allow dynamic sets.
-	
+
 	Sets are now structs containing the #words in the set and
 	a pointer to the actual set words.
 
 	1987 by Hank Dietz
-	
+
 	Modified by:
 		Terence Parr
 		Purdue University

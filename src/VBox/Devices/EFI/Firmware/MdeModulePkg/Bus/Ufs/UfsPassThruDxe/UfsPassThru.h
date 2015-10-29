@@ -35,7 +35,7 @@
 #define UFS_PASS_THRU_SIG           SIGNATURE_32 ('U', 'F', 'S', 'P')
 
 //
-// Lun 0~7 is for 8 common luns. 
+// Lun 0~7 is for 8 common luns.
 // Lun 8~11 is for those 4 well known luns (Refer to UFS 2.0 spec Table 10.58 for details):
 //  Lun 8:  REPORT LUNS
 //  Lun 9:  UFS DEVICE
@@ -51,7 +51,7 @@ typedef struct {
   UINT16   Rsvd:4;
 } UFS_EXPOSED_LUNS;
 
-typedef struct _UFS_PASS_THRU_PRIVATE_DATA {  
+typedef struct _UFS_PASS_THRU_PRIVATE_DATA {
   UINT32                              Signature;
   EFI_HANDLE                          Handle;
   EFI_EXT_SCSI_PASS_THRU_MODE         ExtScsiPassThruMode;

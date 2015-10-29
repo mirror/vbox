@@ -232,7 +232,7 @@ CMD_UPT=$(BASE_TOOLS_PATH)\Source\Python\UPT\Core\DependencyRules.py \
     $(BASE_TOOLS_PATH)\Source\Python\UPT\Xml\XmlParser.py \
     $(BASE_TOOLS_PATH)\Source\Python\UPT\Xml\XmlParserMisc.py
 
-              
+
 all: SetPythonPath $(APPLICATIONS)
 
 SetPythonPath:
@@ -268,12 +268,12 @@ $(BIN_DIR)\UPT.exe: $(BASE_TOOLS_PATH)\Source\Python\UPT\UPT.py $(CMD_UPT)
 $(BIN_DIR)\Rsa2048Sha256Sign.exe: $(BASE_TOOLS_PATH)\Source\Python\Rsa2048Sha256Sign\Rsa2048Sha256Sign.py
   @pushd . & @cd Rsa2048Sha256Sign & @$(FREEZE) --include-modules=$(MODULES) --install-dir=$(BIN_DIR) Rsa2048Sha256Sign.py & @popd
   @pushd . & @copy /Y /B $(BASE_TOOLS_PATH)\Source\Python\Rsa2048Sha256Sign\TestSigningPrivateKey.pem $(BIN_DIR)\TestSigningPrivateKey.pem & @popd
-  
+
 $(BIN_DIR)\Rsa2048Sha256GenerateKeys.exe: $(BASE_TOOLS_PATH)\Source\Python\Rsa2048Sha256Sign\Rsa2048Sha256GenerateKeys.py
   @pushd . & @cd Rsa2048Sha256Sign & @$(FREEZE) --include-modules=$(MODULES) --install-dir=$(BIN_DIR) Rsa2048Sha256GenerateKeys.py & @popd
-  
+
 clean:
-cleanall:  
+cleanall:
   @del /f /q $(BIN_DIR)\*.pyd $(BIN_DIR)\*.dll
   @for %%i in ($(APPLICATIONS)) do @del /f /q %%i
 

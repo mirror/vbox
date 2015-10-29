@@ -19,17 +19,17 @@ def GenerateHelpText(Text, Lang):
         Ht = HelpTextClass()
         Ht.Lang = Lang
         Ht.String = Text
-    
+
         return Ht
-    
+
     return None
 
 ## CommonClass
 #
 # This class defined common items used in Module/Platform/Package files
-# 
+#
 # @param object:       Inherited from object class
-# @param Usage:        Input value for Usage, default is [] 
+# @param Usage:        Input value for Usage, default is []
 # @param FeatureFlag:  Input value for FeatureFalg, default is ''
 # @param SupArchList:  Input value for SupArchList, default is []
 # @param HelpText:     Input value for HelpText, default is ''
@@ -56,7 +56,7 @@ class CommonClass(object):
 ## CommonHeaderClass
 #
 # This class defined common items used in Module/Platform/Package files
-# 
+#
 # @param object:          Inherited from object class
 #
 # @var Abstract:          To store value for Abstract
@@ -76,7 +76,7 @@ class CommonHeaderClass(object):
 ## HelpTextClass
 #
 # This class defined HelpText item used in PKG file
-# 
+#
 # @param object:     Inherited from object class
 #
 # @var Lang:         To store value for Lang
@@ -86,7 +86,7 @@ class HelpTextClass(object):
     def __init__(self):
         self.Lang = ''
         self.String = ''
-    
+
 ## DefineClass
 #
 # This class defined item DEFINE used in Module/Platform/Package files
@@ -103,7 +103,7 @@ class DefineClass(object):
 ## ClonedRecordClass
 #
 # This class defined ClonedRecord items used in Module/Platform/Package files
-# 
+#
 # @param object:        Inherited from object class
 #
 # @var Id:              To store value for Id
@@ -125,7 +125,7 @@ class ClonedRecordClass(object):
 ## IdentificationClass
 #
 # This class defined Identification items used in Module/Platform/Package files
-# 
+#
 # @param object:  Inherited from object class
 #
 # @var Name:      To store value for Name
@@ -151,7 +151,7 @@ class IdentificationClass(object):
 ## IncludeStatementClass
 #
 # This class defined IncludeFiles item used in Module/Platform/Package files
-# 
+#
 # @param object:      Inherited from object class
 #
 # @var IncludeFiles:  To store value for IncludeFiles
@@ -159,12 +159,12 @@ class IdentificationClass(object):
 #
 class IncludeStatementClass(object):
     def __init__(self):
-        self.IncludeFiles = {}                             
+        self.IncludeFiles = {}
 
 ## GuidProtocolPpiCommonClass
 #
 # This class defined Guid, Protocol and Ppi like items used in Module/Platform/Package files
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var Name:           To store value for Name
@@ -185,13 +185,13 @@ class GuidProtocolPpiCommonClass(CommonClass):
         self.Notify = False
         self.GuidTypeList = []
         self.GuidTypeLists = []
-        self.SupModuleList = []                           
+        self.SupModuleList = []
         CommonClass.__init__(self)
 
 ## LibraryClassClass
 #
 # This class defined Library item used in Module/Platform/Package files
-# 
+#
 # @param CommonClass:               Inherited from CommonClass class
 # @param DefineClass:               Inherited from DefineClass class
 #
@@ -218,7 +218,7 @@ class LibraryClassClass(CommonClass, DefineClass):
 ## GuidClass
 #
 # This class defined Guid item used in Module/Platform/Package files
-# 
+#
 # @param GuidProtocolPpiCommonClass:  Inherited from GuidProtocolPpiCommonClass class
 #
 class GuidClass(GuidProtocolPpiCommonClass):
@@ -228,7 +228,7 @@ class GuidClass(GuidProtocolPpiCommonClass):
 ## ProtocolClass
 #
 # This class defined Protocol item used in Module/Platform/Package files
-# 
+#
 # @param GuidProtocolPpiCommonClass:  Inherited from GuidProtocolPpiCommonClass class
 #
 class ProtocolClass(GuidProtocolPpiCommonClass):
@@ -238,17 +238,17 @@ class ProtocolClass(GuidProtocolPpiCommonClass):
 ## PpiClass
 #
 # This class defined Ppi item used in Module/Platform/Package files
-# 
+#
 # @param GuidProtocolPpiCommonClass:  Inherited from GuidProtocolPpiCommonClass class
 #
-class PpiClass(GuidProtocolPpiCommonClass):        
+class PpiClass(GuidProtocolPpiCommonClass):
     def __init__(self):
         GuidProtocolPpiCommonClass.__init__(self)
 
 ## SkuInfoClass
 #
 # This class defined SkuInfo item used in Module/Platform/Package files
-# 
+#
 # @param object:           Inherited from object class
 # @param SkuIdName:        Input value for SkuIdName, default is ''
 # @param SkuId:            Input value for SkuId, default is ''
@@ -269,11 +269,11 @@ class PpiClass(GuidProtocolPpiCommonClass):
 # @var DefaultValue:       To store value for DefaultValue
 #
 class SkuInfoClass(object):
-    def __init__(self, SkuIdName = '', SkuId = '', VariableName = '', VariableGuid = '', VariableOffset = '', 
+    def __init__(self, SkuIdName = '', SkuId = '', VariableName = '', VariableGuid = '', VariableOffset = '',
                  HiiDefaultValue = '', VpdOffset = '', DefaultValue = '', VariableGuidValue = ''):
         self.SkuIdName = SkuIdName
         self.SkuId = SkuId
-        
+
         #
         # Used by Hii
         #
@@ -282,17 +282,17 @@ class SkuInfoClass(object):
         self.VariableGuidValue = VariableGuidValue
         self.VariableOffset = VariableOffset
         self.HiiDefaultValue = HiiDefaultValue
-        
+
         #
         # Used by Vpd
         #
         self.VpdOffset = VpdOffset
-        
+
         #
         # Used by Default
         #
         self.DefaultValue = DefaultValue
-        
+
     ## Convert the class to a string
     #
     #  Convert each member of the class to string
@@ -326,7 +326,7 @@ class PcdErrorClass(object):
 ## PcdClass
 #
 # This class defined Pcd item used in Module/Platform/Package files
-# 
+#
 # @param CommonClass:          Inherited from CommonClass class
 # @param CName:                Input value for CName, default is ''
 # @param Token:                Input value for Token, default is ''
@@ -343,7 +343,7 @@ class PcdErrorClass(object):
 # @var Token:                  To store value for Token
 # @var TokenSpaceGuidCName:    To store value for TokenSpaceGuidCName
 # @var DatumType:              To store value for DatumType, selection scope is in below list
-#                              UINT8 | UINT16 | UINT32 | UINT64 | VOID* | BOOLEAN 
+#                              UINT8 | UINT16 | UINT32 | UINT64 | VOID* | BOOLEAN
 # @var MaxDatumSize:           To store value for MaxDatumSize
 # @var DefaultValue:           To store value for DefaultValue
 # @var ItemType:               To store value for ItemType, selection scope is in below list
@@ -351,7 +351,7 @@ class PcdErrorClass(object):
 # @var ValidUsage:             To store value for ValidUsage, selection scope is in below list
 #                              FEATURE_FLAG | FIXED_AT_BUILD | PATCHABLE_IN_MODULE | DYNAMIC | DYNAMIC_EX
 # @var SkuInfoList:            To store value for SkuInfoList
-#                              It is a set structure as { [SkuIdName] : SkuInfoClass } 
+#                              It is a set structure as { [SkuIdName] : SkuInfoClass }
 # @var SupModuleList:          To store value for SupModuleList, selection scope is in below list
 #                              BASE | SEC | PEI_CORE | PEIM | DXE_CORE | DXE_DRIVER | DXE_RUNTIME_DRIVER | DXE_SAL_DRIVER | DXE_SMM_DRIVER | UEFI_DRIVER | UEFI_APPLICATION | USER_DEFINED | SMM_CORE
 #
@@ -385,7 +385,7 @@ class PcdClass(CommonClass):
 ## BuildOptionClass
 #
 # This class defined BuildOption item used in Module/Platform/Package files
-# 
+#
 # @param IncludeStatementClass:  Inherited from IncludeStatementClass class
 # @param ToolChainFamily:        Input value for ToolChainFamily, default is ''
 # @param ToolChain:              Input value for ToolChain, default is ''
@@ -405,7 +405,7 @@ class PcdClass(CommonClass):
 class BuildOptionClass(IncludeStatementClass):
     def __init__(self, ToolChainFamily = '', ToolChain = '', Option = ''):
         IncludeStatementClass.__init__(self)
-        self.Statement = ''                               
+        self.Statement = ''
         self.ToolChainFamily = ToolChainFamily
         self.ToolChain = ToolChain
         self.Option = Option
@@ -417,7 +417,7 @@ class BuildOptionClass(IncludeStatementClass):
 ## IncludeClass
 #
 # This class defined Include item used in Module/Platform/Package files
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var FilePath:       To store value for FilePath
@@ -430,7 +430,7 @@ class IncludeClass(CommonClass):
         self.ModuleType = ''
         self.SupModuleList = []
         self.Comment = ''
-        CommonClass.__init__(self)        
+        CommonClass.__init__(self)
 
 ## FileClass
 #
@@ -442,7 +442,7 @@ class FileClass(CommonClass):
         self.Family = ''
         self.FileType = ''
         CommonClass.__init__(self)
-        
+
 
 ## MiscFileClass
 #
@@ -452,18 +452,18 @@ class MiscFileClass(CommonHeaderClass):
         CommonHeaderClass.__init__(self)
         self.Name = ''
         self.Files = []
-    
+
 
 ## UserExtensionsClass
 #
 # This class defined UserExtensions item used in Module/Platform/Package files
-# 
+#
 # @param object:    Inherited from object class
 #
 # @var UserID:      To store value for UserID
 # @var Identifier:  To store value for Identifier
 # @var Content:     To store value for Content
-#       
+#
 class UserExtensionsClass(object):
     def __init__(self):
         self.UserID = ''

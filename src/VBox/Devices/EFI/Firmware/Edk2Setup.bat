@@ -10,13 +10,13 @@
 @REM   BASE_TOOLS_PATH, PYTHON_FREEZER_PATH, PYTHONPATH
 @REM It will also create a Conf/target.txt, tools_def.txt and build_rule.txt files
 @REM if they do not exist
-@REM If the reset flag is set, all environment variables will be reset and 
+@REM If the reset flag is set, all environment variables will be reset and
 @REM the Conf/target.txt, tools_def.txt and build_rule.txt files will be overwritten
 @REM
 @REM Three other scripts, located in the BaseTools\Scripts directory, may be called
 @REM by this script.
 @REM SetVisualStudio.bat    - will set the Visual Studio environment based on the --vs* flags
-@REM                          it is also used to build the Win32 binaries, calling nmake 
+@REM                          it is also used to build the Win32 binaries, calling nmake
 @REM                          using the WORKSPACE\BaseTools\Makefile
 @REM ShowEnvironment.bat    - will display the current EDK II Build environment
 @REM UpdateBuildVersions.py - script is called prior to building the EDK II BaseTools from
@@ -37,7 +37,7 @@
 @REM
 @REM
 @REM usage:
-@REM   Edk2Setup.bat [--help | -h] [-v | --version] [-r | --reset] 
+@REM   Edk2Setup.bat [--help | -h] [-v | --version] [-r | --reset]
 @REM                 [--reconfig] [--edk-tools-path DirName]
 @REM                 [--pull [Directory]| --rebuild [Directory]]
 @REM                 [--nt32 [X64]]
@@ -177,7 +177,7 @@
     @if not defined BUILD_TOOLS_WITH (
         @set BUILD_TOOLS_WITH=Latest
     )
-    @REM This option will try to set the environment for building the Nt32Pkg/Nt32Pkg; on a 64-bit 
+    @REM This option will try to set the environment for building the Nt32Pkg/Nt32Pkg; on a 64-bit
     @REM Windows OS
     @if /I "%2"=="X64" (
         @set NT32_64=TRUE
@@ -194,7 +194,7 @@
 @echo Usage: %SCRIPT_NAME% [Options]
 @echo Copyright(c) 2014, Intel Corporation. All rights reserved.
 @echo.
-@echo The system environment variable, WORKSPACE, is always set to the current 
+@echo The system environment variable, WORKSPACE, is always set to the current
 @echo working directory.
 @echo.
 @echo Options:
@@ -203,7 +203,7 @@
 @echo   --version           Print this script's version and exit.
 @echo.
 @echo   --reset, -r         Reset the EDK_TOOLS_PATH and PATH system environment
-@echo                       variables. The EDK_TOOLS_PATH default is 
+@echo                       variables. The EDK_TOOLS_PATH default is
 @echo                       WORKSPACE\BaseTools, however, it may be overridden by
 @echo                       arguments given to the --edk-tools-path, --pull and/or
 @echo                       --rebuild options.
@@ -230,15 +230,15 @@
 @echo.
 @pause
 @echo.
-@echo   --pull [DIRECTORY]  Get the EDK II BaseTools binaries from source control 
+@echo   --pull [DIRECTORY]  Get the EDK II BaseTools binaries from source control
 @echo                       (must not be used with --rebuild).
 @echo                       If the optional DIRECTORY argument is specified, the tool
 @echo                       sets EDK_TOOLS_PATH to DIRECTORY.
 @echo                       If the DIRECTORY argument is not specified, the tools are
-@echo                       placed in the directory tree pointed to by the current 
+@echo                       placed in the directory tree pointed to by the current
 @echo                       EDK_TOOLS_PATH environment variable. If the binaries
-@echo                       cannot be obtained from source control, the 
-@echo                       EDK_TOOLS_PATH will be set to the default, 
+@echo                       cannot be obtained from source control, the
+@echo                       EDK_TOOLS_PATH will be set to the default,
 @echo                       WORKSPACE\BaseTools directory.
 @echo.
 @echo   --rebuild  [DIRECTORY]
@@ -249,7 +249,7 @@
 @echo                                 running edksetup.bat.
 @echo                       If the optional DIRECTORY argument is specified, the tool
 @echo                       sets EDK_TOOLS_PATH to DIRECTORY. Tools binaries will be
-@echo                       placed in the appropriate subdirectory in the 
+@echo                       placed in the appropriate subdirectory in the
 @echo                       EDK_TOOLS_PATH directory. If the build fails, the
 @echo                       EDK_TOOLS_PATH will be set to the default,
 @echo                       WORKSPACE\BaseTools directory.
@@ -272,7 +272,7 @@
 @echo ERROR : Unable to determine if a compiler tool chain has been enabled in this
 @echo         command-prompt window. Rebuilding of the tools with this script is not
 @echo         possible.
-@echo         Refer to the BaseTools\BuildNotes.txt for directions for building 
+@echo         Refer to the BaseTools\BuildNotes.txt for directions for building
 @echo         the BaseTools binaries.
 @echo.
 @goto ExitFailure
@@ -288,9 +288,9 @@
 
 :BadPython
 @echo ERROR : Unable to rebuild the BaseTools binaries, python does not appear to be
-@echo         installed. 
+@echo         installed.
 @echo         The python executable was not found in the PYTHONHOME: %PYTHONHOME%
-@echo         If python is installed, please set the environment variable, PYTHONHOME 
+@echo         If python is installed, please set the environment variable, PYTHONHOME
 @echo         to the Path that contains python.exe, for example, if python.exe is
 @echo         located in the C:\Python27 directory, then:
 @echo         set PYTHONHOME=C:\Python27
@@ -394,7 +394,7 @@
         @call "%WORKSPACE%\BaseTools\Scripts\UpdateBuildVersions.py" --svn-test -v
         @if errorlevel 1 (
             @echo ERROR : The command-line svn tool is not available and the Win32 binaries do not exist
-            @echo         Please re-run this script again with the --rebuild option to attempt to build 
+            @echo         Please re-run this script again with the --rebuild option to attempt to build
             @echo         the binaries
             @echo.
             @goto ExitFailure

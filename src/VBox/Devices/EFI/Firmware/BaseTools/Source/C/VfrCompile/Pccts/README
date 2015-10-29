@@ -29,7 +29,7 @@ order to get the following document:
 
         "Notes For New Users of PCCTS"
 
-This is a Postscript file of about 40 pages which is extremely 
+This is a Postscript file of about 40 pages which is extremely
 useful for someone starting out. It is a based on 1.33mr21
 
 When you have a little more experience, be sure to review the
@@ -44,7 +44,7 @@ following documents in the distribution kit:
 -------------------------------------------------------------------------
 0. Download http://www.polhode.com/pccts133mr.zip
 
-1. Unzip the distribution kit to your preferred location.  
+1. Unzip the distribution kit to your preferred location.
    If there are newline problems try using zip -a ...
 
 2. cd to the main pccts directory.
@@ -69,7 +69,7 @@ following documents in the distribution kit:
            http://www.polhode.com/pccts.html
 
 6. You need not create a library.  The makefile created by genmk
-   assumes that the files are not part of a library. 
+   assumes that the files are not part of a library.
 
    If you wish to create a library from elements of pccts/h:
 
@@ -93,9 +93,9 @@ following documents in the distribution kit:
                     INSTALLATION (Win32)
 -------------------------------------------------------------------------
 
-I've tried to keep the win32 kit to the minimum necessary to get 
+I've tried to keep the win32 kit to the minimum necessary to get
 up and running.  The complete kit contains additional information
-(some historical), source code, and DevStudio projects for 
+(some historical), source code, and DevStudio projects for
 rebuilding pccts from the source code.
 
 The kit is now distributed with both MSVC 5 and MSVC6 style projects.

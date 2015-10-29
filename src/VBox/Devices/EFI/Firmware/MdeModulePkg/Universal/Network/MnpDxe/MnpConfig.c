@@ -687,7 +687,7 @@ MnpDestroyServiceData (
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 
@@ -727,9 +727,9 @@ MnpDestroyServiceChild (
   LIST_ENTRY                         *List;
   EFI_STATUS                         Status;
   UINTN                              ListLength;
-  
+
   List = &MnpServiceData->ChildrenList;
-  
+
   Status = NetDestroyLinkList (
              List,
              MnpDestoryChildEntry,

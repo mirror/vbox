@@ -57,28 +57,28 @@
  * Portions copyright (c) 1999, 2000
  * Intel Corporation.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- * 
+ *
  *    This product includes software developed by Intel Corporation and
  *    its contributors.
- * 
+ *
  * 4. Neither the name of Intel Corporation or its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -90,7 +90,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -589,7 +589,7 @@ _gethostbydnsname(const char *name, int af)
 				h_errno = NETDB_SUCCESS;
 				return (&host);
 			}
-			if (!isdigit(*cp) && *cp != '.') 
+			if (!isdigit(*cp) && *cp != '.')
 				break;
 		}
 	if ((isxdigit(name[0]) && strchr(name, ':') != NULL) ||
@@ -620,7 +620,7 @@ _gethostbydnsname(const char *name, int af)
 				h_errno = NETDB_SUCCESS;
 				return (&host);
 			}
-			if (!isxdigit(*cp) && *cp != ':' && *cp != '.') 
+			if (!isxdigit(*cp) && *cp != ':' && *cp != '.')
 				break;
 		}
 
@@ -647,7 +647,7 @@ _gethostbydnsaddr(const char *addr, int len, int af)
 	u_long old_options;
 	char hname2[MAXDNAME+1];
 #endif /*SUNSECURITY*/
-	
+
 	if ((_res.options & RES_INIT) == 0 && res_init() == -1) {
 		h_errno = NETDB_INTERNAL;
 		return (NULL);
@@ -767,7 +767,7 @@ addrsort(char **ap, int num)
 	p = ap;
 	for (i = 0; i < num; i++, p++) {
 	    for (j = 0 ; (unsigned)j < _res.nsort; j++)
-		if (_res.sort_list[j].addr.s_addr == 
+		if (_res.sort_list[j].addr.s_addr ==
 		    (((struct in_addr *)(*p))->s_addr & _res.sort_list[j].mask))
 			break;
 	    aval[i] = j;

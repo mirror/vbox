@@ -1,6 +1,6 @@
 /** @file
   Mtftp drivers function header.
-  
+
 Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -49,8 +49,8 @@ Mtftp4DriverBindingSupported (
   );
 
 /**
-  Start the MTFTP driver on this controller. 
-  
+  Start the MTFTP driver on this controller.
+
   MTFTP driver will install a MTFTP SERVICE BINDING protocol on the supported
   controller, which can be used to create/destroy MTFTP children.
 

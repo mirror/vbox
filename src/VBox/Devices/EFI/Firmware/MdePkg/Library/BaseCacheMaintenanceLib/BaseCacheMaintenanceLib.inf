@@ -24,7 +24,7 @@
   FILE_GUID                      = 123dd843-57c9-4158-8418-ce68b3944ce7
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = CacheMaintenanceLib 
+  LIBRARY_CLASS                  = CacheMaintenanceLib
 
 
 #

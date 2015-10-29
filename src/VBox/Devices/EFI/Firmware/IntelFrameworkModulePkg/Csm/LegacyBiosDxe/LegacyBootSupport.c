@@ -791,15 +791,15 @@ CreateSmbiosTableInReservedMemory (
   )
 {
   SMBIOS_TABLE_ENTRY_POINT    *EntryPointStructure;
-  
-  if ((mRuntimeSmbiosEntryPoint == NULL) || 
-      (mReserveSmbiosEntryPoint == 0) || 
+
+  if ((mRuntimeSmbiosEntryPoint == NULL) ||
+      (mReserveSmbiosEntryPoint == 0) ||
       (mStructureTableAddress == 0)) {
     return;
   }
-  
+
   EntryPointStructure = (SMBIOS_TABLE_ENTRY_POINT *) mRuntimeSmbiosEntryPoint;
-  
+
   //
   // Copy SMBIOS Entry Point Structure
   //
@@ -808,7 +808,7 @@ CreateSmbiosTableInReservedMemory (
     EntryPointStructure,
     EntryPointStructure->EntryPointLength
   );
-  
+
   //
   // Copy SMBIOS Structure Table into EfiReservedMemoryType memory
   //
@@ -817,22 +817,22 @@ CreateSmbiosTableInReservedMemory (
     (VOID *)(UINTN) EntryPointStructure->TableAddress,
     EntryPointStructure->TableLength
   );
-  
+
   //
   // Update TableAddress in Entry Point Structure
   //
   EntryPointStructure = (SMBIOS_TABLE_ENTRY_POINT *)(UINTN) mReserveSmbiosEntryPoint;
   EntryPointStructure->TableAddress = (UINT32)(UINTN) mStructureTableAddress;
-  
+
   //
   // Fixup checksums in the Entry Point Structure
   //
   EntryPointStructure->IntermediateChecksum = 0;
   EntryPointStructure->EntryPointStructureChecksum = 0;
 
-  EntryPointStructure->IntermediateChecksum = 
+  EntryPointStructure->IntermediateChecksum =
     CalculateCheckSum8 (
-      (UINT8 *) EntryPointStructure + OFFSET_OF (SMBIOS_TABLE_ENTRY_POINT, IntermediateAnchorString), 
+      (UINT8 *) EntryPointStructure + OFFSET_OF (SMBIOS_TABLE_ENTRY_POINT, IntermediateAnchorString),
       EntryPointStructure->EntryPointLength - OFFSET_OF (SMBIOS_TABLE_ENTRY_POINT, IntermediateAnchorString)
       );
   EntryPointStructure->EntryPointStructureChecksum =
@@ -898,7 +898,7 @@ GenericLegacyBoot (
 
   EfiToLegacy16BootTable->MajorVersion = EFI_TO_LEGACY_MAJOR_VERSION;
   EfiToLegacy16BootTable->MinorVersion = EFI_TO_LEGACY_MINOR_VERSION;
-  
+
   //
   // If booting to a legacy OS then force HDD drives to the appropriate
   // boot mode by calling GetIdeHandle.
@@ -916,7 +916,7 @@ GenericLegacyBoot (
                                   );
     if (!EFI_ERROR (Status)) {
       IdeController = HandleBuffer[0];
-    }   
+    }
   }
   //
   // Unlock the Legacy BIOS region
@@ -1271,7 +1271,7 @@ GenericLegacyBoot (
     // Disable DXE Timer while executing in real mode
     //
     Private->Timer->SetTimerPeriod (Private->Timer, 0);
-    
+
     //
     // Save and disable interrupt of debug timer
     //

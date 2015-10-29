@@ -1650,7 +1650,7 @@ FvBufCalculateSum16 (
   IN UINTN        Size
   )
 /*++
-  
+
 Routine Description:
 
   This function calculates the UINT16 sum for the requested region.
@@ -1689,7 +1689,7 @@ FvBufCalculateChecksum16 (
   IN UINTN        Size
   )
 /*++
-  
+
 Routine Description::
 
   This function calculates the value needed for a valid UINT16 checksum

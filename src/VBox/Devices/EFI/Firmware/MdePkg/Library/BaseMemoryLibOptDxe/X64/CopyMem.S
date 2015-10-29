@@ -39,7 +39,7 @@ ASM_PFX(InternalMemCopyMem):
     pushq   %rdi
     movq    %rdx, %rsi                  # rsi <- Source
     movq    %rcx, %rdi                  # rdi <- Destination
-    leaq    -1(%rsi,%r8,), %r9          # r9 <- Last byte of Source      
+    leaq    -1(%rsi,%r8,), %r9          # r9 <- Last byte of Source
     cmpq    %rdi, %rsi
     movq    %rdi, %rax                  # rax <- Destination as return value
     jae     L0                          # Copy forward if Source > Destination

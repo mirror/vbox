@@ -147,7 +147,7 @@ UsbCbiInit (
   } else {
     FreePool (UsbCbi);
   }
- 
+
   return EFI_SUCCESS;
 
 ON_ERROR:

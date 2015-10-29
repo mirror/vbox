@@ -187,14 +187,14 @@ ON_EXIT:
 /**
   The callback function registerd to the DHCP4 instance that is used to select
   the qualified DHCP OFFER.
-  
+
   @param[in]  This         The DHCP4 protocol.
   @param[in]  Context      The context set when configuring the DHCP4 protocol.
   @param[in]  CurrentState The current state of the DHCP4 protocol.
   @param[in]  Dhcp4Event   The event occurs in the current state.
-  @param[in]  Packet       The DHCP packet that is to be sent or was already received. 
+  @param[in]  Packet       The DHCP packet that is to be sent or was already received.
   @param[out] NewPacket    The packet used to replace the above Packet.
-  
+
   @retval EFI_SUCCESS      Either the DHCP OFFER is qualified or we're not intereseted
                            in the Dhcp4Event.
   @retval EFI_NOT_READY    The DHCP OFFER packet doesn't match our requirements.

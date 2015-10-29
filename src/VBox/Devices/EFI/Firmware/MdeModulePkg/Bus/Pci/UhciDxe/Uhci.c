@@ -1523,7 +1523,7 @@ UhciFreeDev (
   if (Uhc->ExitBootServiceEvent != NULL) {
     gBS->CloseEvent (Uhc->ExitBootServiceEvent);
   }
-  
+
   if (Uhc->MemPool != NULL) {
     UsbHcFreeMemPool (Uhc->MemPool);
   }
@@ -1800,7 +1800,7 @@ UhciDriverBindingStart (
   UhciWriteReg (Uhc->PciIo, USBCMD_OFFSET, USBCMD_RS | USBCMD_MAXP);
 
   return EFI_SUCCESS;
-  
+
 UNINSTALL_USBHC:
   gBS->UninstallMultipleProtocolInterfaces (
          Controller,

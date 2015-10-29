@@ -28,7 +28,7 @@
 
 /* MR1 Move pcctscfg.h to top of file 					*/
 
-#include "pcctscfg.h"						
+#include "pcctscfg.h"
 
 /* turn off warnings for unreferenced labels */
 

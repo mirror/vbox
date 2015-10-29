@@ -84,7 +84,7 @@ TypeFileByHandle (
           //
           // Allow Line Feed (LF) (0xA) & Carriage Return (CR) (0xD)
           // characters to be displayed as is.
-          // 
+          //
           if (AsciiChar == '\n' && ((CHAR8*)Buffer)[LoopVar-1] != '\r') {
             //
             // In case Line Feed (0xA) is encountered & Carriage Return (0xD)
@@ -115,7 +115,7 @@ TypeFileByHandle (
       } else {
         LoopSize = ReadSize / (sizeof (CHAR16));
       }
-      
+
       for (LoopVar = 0 ; LoopVar < LoopSize ; LoopVar++) {
         //
         // An invalid range of characters is 0x0-0x1F.
@@ -127,7 +127,7 @@ TypeFileByHandle (
           //
           // Allow Line Feed (LF) (0xA) & Carriage Return (CR) (0xD)
           // characters to be displayed as is.
-          // 
+          //
           if (Ucs2Char == '\n' && ((CHAR16*)Buffer)[LoopVar-1] != '\r') {
             //
             // In case Line Feed (0xA) is encountered & Carriage Return (0xD)
@@ -138,7 +138,7 @@ TypeFileByHandle (
             ShellPrintEx (-1, -1, L"\r\n");
             continue;
           }
-        } 
+        }
         else if (Ucs2Char < 0x20) {
           //
           // For all other characters which are not printable, display '.'

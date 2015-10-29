@@ -328,7 +328,7 @@ Dhcp6CreateInstance (
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 
@@ -352,7 +352,7 @@ Dhcp6DestroyChildEntry (
 
   Instance = NET_LIST_USER_STRUCT_S (Entry, DHCP6_INSTANCE, Link, DHCP6_INSTANCE_SIGNATURE);
   ServiceBinding = (EFI_SERVICE_BINDING_PROTOCOL *) Context;
-  
+
   return ServiceBinding->DestroyChild (ServiceBinding, Instance->Handle);
 }
 
@@ -558,7 +558,7 @@ Dhcp6DriverBindingStop (
   if (!IsListEmpty (&Service->Child)) {
     //
     // Destroy all the children instances before destory the service.
-    //  
+    //
     List = &Service->Child;
     Status = NetDestroyLinkList (
                List,
@@ -591,7 +591,7 @@ Dhcp6DriverBindingStop (
     Dhcp6DestroyService (Service);
     Status = EFI_SUCCESS;
   }
-  
+
 ON_EXIT:
   return Status;
 }

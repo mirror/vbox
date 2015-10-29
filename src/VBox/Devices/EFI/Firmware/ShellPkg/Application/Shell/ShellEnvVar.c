@@ -138,9 +138,9 @@ GetEnvironmentVariableList(
   if (ListHead == NULL) {
     return (EFI_INVALID_PARAMETER);
   }
-  
+
   Status = EFI_SUCCESS;
-  
+
   ValBufferSize = INIT_DATA_BUFFER_SIZE;
   NameBufferSize = INIT_NAME_BUFFER_SIZE;
   VariableName = AllocateZeroPool(NameBufferSize);
@@ -166,7 +166,7 @@ GetEnvironmentVariableList(
       NameSize = NameBufferSize;
       Status = gRT->GetNextVariableName(&NameSize, VariableName, &Guid);
     }
-    
+
     if (!EFI_ERROR(Status) && CompareGuid(&Guid, &gShellVariableGuid)){
       VarList = AllocateZeroPool(sizeof(ENV_VAR_LIST));
       if (VarList == NULL) {
@@ -189,7 +189,7 @@ GetEnvironmentVariableList(
             Status = EFI_OUT_OF_RESOURCES;
             break;
           }
-          
+
           ValSize = ValBufferSize;
           Status = SHELL_GET_ENVIRONMENT_VARIABLE_AND_ATTRIBUTES(VariableName, &VarList->Atts, &ValSize, VarList->Val);
         }

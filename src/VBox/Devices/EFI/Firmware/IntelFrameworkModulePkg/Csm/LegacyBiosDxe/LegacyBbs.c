@@ -31,7 +31,7 @@ BOOLEAN             IsHaveMediaInFloppy = TRUE;
 
 /**
   Checks the state of the floppy and if media is inserted.
-  
+
   This routine checks the state of the floppy and if media is inserted.
   There are 3 cases:
   No floppy present         - Set BBS entry to ignore

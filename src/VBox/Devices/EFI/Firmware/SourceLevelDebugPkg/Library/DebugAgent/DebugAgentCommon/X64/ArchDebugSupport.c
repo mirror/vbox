@@ -70,7 +70,7 @@ InitializeDebugIdt (
   Retrieve exception handler from IDT table by ExceptionNum.
 
   @param[in]  ExceptionNum    Exception number
- 
+
   @return Exception handler
 
 **/
@@ -88,13 +88,13 @@ GetExceptionHandlerInIdtEntry (
   return (VOID *) (IdtEntry[ExceptionNum].Bits.OffsetLow |
                   (((UINTN)IdtEntry[ExceptionNum].Bits.OffsetHigh) << 16) |
                   (((UINTN)IdtEntry[ExceptionNum].Bits.OffsetUpper) << 32));
-} 
+}
 
 /**
   Set exception handler in IDT table by ExceptionNum.
 
   @param[in]  ExceptionNum      Exception number
-  @param[in]  ExceptionHandler  Exception Handler to be set 
+  @param[in]  ExceptionHandler  Exception Handler to be set
 
 **/
 VOID

@@ -25,9 +25,9 @@ EFI_HANDLE  mResetHandle = NULL;
 
   It initializes the Reset Architectural Protocol.
 
-  @param[in] ImageHandle  The firmware allocated handle for the EFI image.  
+  @param[in] ImageHandle  The firmware allocated handle for the EFI image.
   @param[in] SystemTable  A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS     The entry point is executed successfully.
   @retval other           Cannot install ResetArch protocol.
 
@@ -66,7 +66,7 @@ InitializeResetSystem (
 }
 
 /**
-  Put the system into S3 power state.                            
+  Put the system into S3 power state.
 **/
 VOID
 DoS3 (
@@ -104,7 +104,7 @@ ResetSystem (
   EFI_STATUS    Status;
   UINTN         Size;
   UINTN         CapsuleDataPtr;
-  
+
   //
   // Indicate reset system runtime service is called.
   //

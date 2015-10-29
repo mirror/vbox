@@ -68,7 +68,7 @@ class FD(FDClassObject):
         TempFdBuffer = StringIO.StringIO('')
         PreviousRegionStart = -1
         PreviousRegionSize = 1
-        
+
         for RegionObj in self.RegionList :
             if RegionObj.RegionType == 'CAPSULE':
                 continue
@@ -91,7 +91,7 @@ class FD(FDClassObject):
                 pass
             GenFdsGlobalVariable.VerboseLogger('Call each region\'s AddToBuffer function')
             RegionObj.AddToBuffer (TempFdBuffer, self.BaseAddress, self.BlockSizeList, self.ErasePolarity, GenFds.ImageBinDict, self.vtfRawDict, self.DefineVarDict)
-        
+
         FdBuffer = StringIO.StringIO('')
         PreviousRegionStart = -1
         PreviousRegionSize = 1

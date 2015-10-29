@@ -35,9 +35,9 @@ ASM_GLOBAL GetEsalEntryPoint
 //        r9  = Physical Plabel
 //        r10 = Virtual Plabel
 //        r11 = psr
-// 
-// As per static calling conventions. 
-// 
+//
+// As per static calling conventions.
+//
 //--
 //---------------------------------------------------------------------------
 PROCEDURE_ENTRY (GetEsalEntryPoint)
@@ -66,11 +66,11 @@ PROCEDURE_EXIT (GetEsalEntryPoint)
 //  in0 = Physical address of Esal Dispatcher
 //  in1 = Physical GP
 //
-// Return Value: 
+// Return Value:
 //   r8 = EFI_SAL_SUCCESS
-// 
-// As per static calling conventions. 
-// 
+//
+// As per static calling conventions.
+//
 //--
 //---------------------------------------------------------------------------
 PROCEDURE_ENTRY (SetEsalPhysicalEntryPoint)
@@ -90,7 +90,7 @@ EsalCalcStart1:
 PROCEDURE_EXIT (SetEsalPhysicalEntryPoint)
 
 .align 32
-EsalEntryPoint: 
+EsalEntryPoint:
     data8 0   // Physical Entry
     data8 0   //         GP
     data8 0   // Virtual Entry

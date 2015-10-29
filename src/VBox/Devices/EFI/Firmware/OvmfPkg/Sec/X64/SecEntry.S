@@ -41,7 +41,7 @@ ASM_PFX(_ModuleEntryPoint):
     #
     .set    SEC_TOP_OF_STACK, FixedPcdGet32 (PcdOvmfSecPeiTempRamBase) + \
                               FixedPcdGet32 (PcdOvmfSecPeiTempRamSize)
-    movq    $SEC_TOP_OF_STACK, %rsp 
+    movq    $SEC_TOP_OF_STACK, %rsp
     nop
 
     #

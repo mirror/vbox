@@ -1,4 +1,4 @@
-/** @file  
+/** @file
   Application for HMAC Primitives Validation.
 
 Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>

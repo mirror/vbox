@@ -1,5 +1,5 @@
 ## @file
-# This file is used to parse a strings file and create or add to a string database 
+# This file is used to parse a strings file and create or add to a string database
 # file.
 #
 # Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
@@ -171,7 +171,7 @@ def CreateHFileContent(BaseName, UniObjectClass, IsCompatibleMode, UniGenCFlag):
     Str = WriteLine(Str, Line)
     UnusedStr = ''
 
-    #Group the referred/Unused STRING token together. 
+    #Group the referred/Unused STRING token together.
     for Index in range(2, len(UniObjectClass.OrderedStringList[UniObjectClass.LanguageDef[0][0]])):
         StringItem = UniObjectClass.OrderedStringList[UniObjectClass.LanguageDef[0][0]][Index]
         Name = StringItem.StringName
@@ -305,22 +305,22 @@ def GetFilteredLanguage(UniLanguageList, LanguageFilterList):
                 PrimaryTag = Language[0:Language.find('-')].lower()
             else:
                 PrimaryTag = Language
-            
+
             if len(PrimaryTag) == 3:
                 PrimaryTag = LangConvTable.get(PrimaryTag)
-            
+
             for UniLanguage in UniLanguageList:
                 if UniLanguage.find('-') != -1:
                     UniLanguagePrimaryTag = UniLanguage[0:UniLanguage.find('-')].lower()
                 else:
                     UniLanguagePrimaryTag = UniLanguage
-                
+
                 if len(UniLanguagePrimaryTag) == 3:
                     UniLanguagePrimaryTag = LangConvTable.get(UniLanguagePrimaryTag)
 
                 if PrimaryTag == UniLanguagePrimaryTag:
                     if UniLanguage not in UniLanguageListFiltered:
-                        UniLanguageListFiltered += [UniLanguage]    
+                        UniLanguageListFiltered += [UniLanguage]
                     break
             else:
                 # Here is rule 3 for "get best language"
@@ -347,7 +347,7 @@ def GetFilteredLanguage(UniLanguageList, LanguageFilterList):
 # @param UniObjectClass   A UniObjectClass instance
 # @param IsCompatibleMode Compatible mode
 # @param UniBinBuffer     UniBinBuffer to contain UniBinary data.
-# @param FilterInfo       Platform language filter information 
+# @param FilterInfo       Platform language filter information
 #
 # @retval Str:           A string of .c file content
 #
@@ -365,14 +365,14 @@ def CreateCFileContent(BaseName, UniObjectClass, IsCompatibleMode, UniBinBuffer,
     else:
         # EDK module is using ISO639-2 format filter, convert to the RFC4646 format
         LanguageFilterList = [LangConvTable.get(F.lower()) for F in FilterInfo[1]]
-    
+
     UniLanguageList = []
     for IndexI in range(len(UniObjectClass.LanguageDef)):
-        UniLanguageList += [UniObjectClass.LanguageDef[IndexI][0]]           
+        UniLanguageList += [UniObjectClass.LanguageDef[IndexI][0]]
 
     UniLanguageListFiltered = GetFilteredLanguage(UniLanguageList, LanguageFilterList)
- 
-        
+
+
     #
     # Create lines for each language's strings
     #
@@ -380,7 +380,7 @@ def CreateCFileContent(BaseName, UniObjectClass, IsCompatibleMode, UniBinBuffer,
         Language = UniObjectClass.LanguageDef[IndexI][0]
         if Language not in UniLanguageListFiltered:
             continue
-        
+
         StringBuffer = StringIO()
         StrStringValue = ''
         ArrayLength = 0
@@ -443,7 +443,7 @@ def CreateCFileContent(BaseName, UniObjectClass, IsCompatibleMode, UniBinBuffer,
         # Add an EFI_HII_SIBT_END at last
         #
         Str = WriteLine(Str, '  ' + EFI_HII_SIBT_END + ",")
-        
+
         #
         # Create binary UNI string
         #
@@ -498,7 +498,7 @@ def CreateCFileEnd():
 # @param BaseName:        The basename of strings
 # @param UniObjectClass   A UniObjectClass instance
 # @param IsCompatibleMode Compatible Mode
-# @param FilterInfo       Platform language filter information 
+# @param FilterInfo       Platform language filter information
 #
 # @retval CFile:          A string of complete .c file
 #
@@ -589,7 +589,7 @@ def SearchString(UniObjectClass, FileList, IsCompatibleMode):
 # This function is used for UEFI2.1 spec
 #
 #
-def GetStringFiles(UniFilList, SourceFileList, IncludeList, IncludePathList, SkipList, BaseName, IsCompatibleMode = False, ShellMode = False, UniGenCFlag = True, UniGenBinBuffer = None, FilterInfo = [True, []]):  
+def GetStringFiles(UniFilList, SourceFileList, IncludeList, IncludePathList, SkipList, BaseName, IsCompatibleMode = False, ShellMode = False, UniGenCFlag = True, UniGenBinBuffer = None, FilterInfo = [True, []]):
     if len(UniFilList) > 0:
         if ShellMode:
             #

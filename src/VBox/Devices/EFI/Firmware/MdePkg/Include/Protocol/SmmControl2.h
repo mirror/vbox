@@ -3,22 +3,22 @@
 
   This protocol is used initiate synchronous SMI activations. This protocol could be published by a
   processor driver to abstract the SMI IPI or a driver which abstracts the ASIC that is supporting the
-  APM port. Because of the possibility of performing SMI IPI transactions, the ability to generate this 
+  APM port. Because of the possibility of performing SMI IPI transactions, the ability to generate this
   event from a platform chipset agent is an optional capability for both IA-32 and x64-based systems.
 
-  The EFI_SMM_CONTROL2_PROTOCOL is produced by a runtime driver. It provides  an 
-  abstraction of the platform hardware that generates an SMI.  There are often I/O ports that, when 
-  accessed, will generate the SMI.  Also, the hardware optionally supports the periodic generation of 
+  The EFI_SMM_CONTROL2_PROTOCOL is produced by a runtime driver. It provides  an
+  abstraction of the platform hardware that generates an SMI.  There are often I/O ports that, when
+  accessed, will generate the SMI.  Also, the hardware optionally supports the periodic generation of
   these signals.
 
   Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials                          
-  are licensed and made available under the terms and conditions of the BSD License         
-  which accompanies this distribution.  The full text of the license may be found at        
-  http://opensource.org/licenses/bsd-license.php                                            
+  This program and the accompanying materials
+  are licensed and made available under the terms and conditions of the BSD License
+  which accompanies this distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -50,7 +50,7 @@ typedef UINTN  EFI_SMM_PERIOD;
   @retval EFI_SUCCESS            The SMI/PMI has been engendered.
   @retval EFI_DEVICE_ERROR       The timing is unsupported.
   @retval EFI_INVALID_PARAMETER  The activation period is unsupported.
-  @retval EFI_INVALID_PARAMETER  The last periodic activation has not been cleared. 
+  @retval EFI_INVALID_PARAMETER  The last periodic activation has not been cleared.
   @retval EFI_NOT_STARTED        The SMM base service has not been initialized.
 **/
 typedef
@@ -83,18 +83,18 @@ EFI_STATUS
   );
 
 ///
-/// The EFI_SMM_CONTROL2_PROTOCOL is produced by a runtime driver. It provides  an 
-/// abstraction of the platform hardware that generates an SMI.  There are often I/O ports that, when 
-/// accessed, will generate the SMI.  Also, the hardware optionally supports the periodic generation of 
+/// The EFI_SMM_CONTROL2_PROTOCOL is produced by a runtime driver. It provides  an
+/// abstraction of the platform hardware that generates an SMI.  There are often I/O ports that, when
+/// accessed, will generate the SMI.  Also, the hardware optionally supports the periodic generation of
 /// these signals.
 ///
 struct _EFI_SMM_CONTROL2_PROTOCOL {
   EFI_SMM_ACTIVATE2    Trigger;
   EFI_SMM_DEACTIVATE2  Clear;
   ///
-  /// Minimum interval at which the platform can set the period.  A maximum is not 
-  /// specified in that the SMM infrastructure code can emulate a maximum interval that is 
-  /// greater than the hardware capabilities by using software emulation in the SMM 
+  /// Minimum interval at which the platform can set the period.  A maximum is not
+  /// specified in that the SMM infrastructure code can emulate a maximum interval that is
+  /// greater than the hardware capabilities by using software emulation in the SMM
   /// infrastructure code.
   ///
   EFI_SMM_PERIOD      MinimumTriggerPeriod;

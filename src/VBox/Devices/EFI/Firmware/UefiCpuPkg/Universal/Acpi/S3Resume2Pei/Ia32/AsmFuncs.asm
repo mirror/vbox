@@ -38,7 +38,7 @@ AsmSetDataSelectors   PROC near public
   mov     es, ax
   mov     fs, ax
   mov     gs, ax
-  mov     ss, ax   
+  mov     ss, ax
   ret
 AsmSetDataSelectors   ENDP
 

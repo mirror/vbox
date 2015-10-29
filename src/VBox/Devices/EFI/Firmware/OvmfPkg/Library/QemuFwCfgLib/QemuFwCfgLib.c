@@ -78,7 +78,7 @@ IoWriteFifo8 (
 
 /**
   Selects a firmware configuration item for reading.
-  
+
   Following this call, any data read from this item will start from
   the beginning of the configuration item's data.
 

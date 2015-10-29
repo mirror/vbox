@@ -2,7 +2,7 @@
   This file defines the Human Interface Infrastructure protocol which will
   be used by resources which want to publish IFR/Font/String data and have it
   collected by the Configuration engine.
-  
+
   @par Revision Reference:
   This protocol is defined in HII spec 0.92.
 

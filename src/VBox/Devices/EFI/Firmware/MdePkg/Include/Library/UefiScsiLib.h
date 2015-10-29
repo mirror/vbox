@@ -6,13 +6,13 @@
   This library class depends on SCSI I/O Protocol defined in UEFI Specification and SCSI-2 industry standard.
 
 Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -49,7 +49,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
                                     optional and may be NULL.
   @param[in, out] SenseDataLength   On input, a pointer to the length in bytes of
                                     the SenseData buffer. On output, a pointer to
-                                    the number of bytes written to the SenseData buffer. 
+                                    the number of bytes written to the SenseData buffer.
   @param[out]     HostAdapterStatus The status of the SCSI Host Controller that produces
                                     the SCSI bus containing the SCSI target specified by
                                     ScsiIo when the SCSI Request Packet was executed.
@@ -59,7 +59,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
                                     by ScsiIo when the SCSI Request Packet was executed
                                     on the SCSI Host Controller. See the EFI SCSI I/O
                                     Protocol in the UEFI Specification for details on
-                                    the possible return values. 
+                                    the possible return values.
 
   @retval EFI_SUCCESS          The command was executed successfully.
                                See HostAdapterStatus, TargetStatus, SenseDataLength,
@@ -123,7 +123,7 @@ ScsiTestUnitReadyCommand (
                                          If SenseDataLength is 0, then this parameter
                                          is optional and may be NULL.
   @param[in, out] SenseDataLength        On input, the length in bytes of the SenseData buffer.
-                                         On output, the number of bytes written to the SenseData buffer. 
+                                         On output, the number of bytes written to the SenseData buffer.
   @param[out]     HostAdapterStatus      The status of the SCSI Host Controller that
                                          produces the SCSI bus containing the SCSI
                                          target specified by ScsiIo when the SCSI
@@ -135,12 +135,12 @@ ScsiTestUnitReadyCommand (
                                          executed on the SCSI Host Controller.
                                          See the EFI SCSI I/O Protocol in the UEFI
                                          Specification for details on the possible
-                                         return values. 
+                                         return values.
   @param[in, out] InquiryDataBuffer      A pointer to inquiry data that was generated
                                          by the execution of the SCSI Request Packet.
                                          This buffer must be allocated by the caller.
                                          If InquiryDataLength is 0, then this parameter
-                                         is optional and may be NULL. 
+                                         is optional and may be NULL.
   @param[in, out] InquiryDataLength      On input, a pointer to the length in bytes
                                          of the InquiryDataBuffer buffer.
                                          On output, a pointer to the number of bytes
@@ -148,7 +148,7 @@ ScsiTestUnitReadyCommand (
   @param[in]      EnableVitalProductData If TRUE, then the supported vital product
                                          data is returned in InquiryDataBuffer.
                                          If FALSE, then the standard inquiry data is
-                                         returned in InquiryDataBuffer. 
+                                         returned in InquiryDataBuffer.
 
   @retval EFI_SUCCESS          The command was executed successfully. See HostAdapterStatus,
                                TargetStatus, SenseDataLength, and SenseData in that order
@@ -216,7 +216,7 @@ ScsiInquiryCommand (
                                          If SenseDataLength is 0, then this parameter
                                          is optional and may be NULL.
   @param[in, out] SenseDataLength        On input, the length in bytes of the SenseData buffer.
-                                         On output, the number of bytes written to the SenseData buffer. 
+                                         On output, the number of bytes written to the SenseData buffer.
   @param[out]     HostAdapterStatus      The status of the SCSI Host Controller that
                                          produces the SCSI bus containing the SCSI
                                          target specified by ScsiIo when the SCSI
@@ -228,12 +228,12 @@ ScsiInquiryCommand (
                                          executed on the SCSI Host Controller.
                                          See the EFI SCSI I/O Protocol in the UEFI
                                          Specification for details on the possible
-                                         return values. 
+                                         return values.
   @param[in, out] InquiryDataBuffer      A pointer to inquiry data that was generated
                                          by the execution of the SCSI Request Packet.
                                          This buffer must be allocated by the caller.
                                          If InquiryDataLength is 0, then this parameter
-                                         is optional and may be NULL. 
+                                         is optional and may be NULL.
   @param[in, out] InquiryDataLength      On input, a pointer to the length in bytes
                                          of the InquiryDataBuffer buffer.
                                          On output, a pointer to the number of bytes
@@ -315,7 +315,7 @@ ScsiInquiryCommandEx (
                                      If SenseDataLength is 0, then this parameter
                                      is optional and may be NULL.
   @param[in, out]  SenseDataLength   On input, the length in bytes of the SenseData buffer.
-                                     On output, the number of bytes written to the SenseData buffer. 
+                                     On output, the number of bytes written to the SenseData buffer.
   @param[out]     HostAdapterStatus  The status of the SCSI Host Controller that
                                      produces the SCSI bus containing the SCSI target
                                      specified by ScsiIo when the SCSI Request Packet
@@ -331,14 +331,14 @@ ScsiInquiryCommandEx (
                                      execution of the SCSI Request Packet.  This
                                      buffer must be allocated by the caller. If
                                      DataLength is 0, then this parameter is optional
-                                     and may be NULL. 
+                                     and may be NULL.
   @param[in, out]  DataLength        On input, a pointer to the length in bytes of
                                      the DataBuffer buffer.  On output, a pointer
                                      to the number of bytes written to the DataBuffer
-                                     buffer. 
+                                     buffer.
   @param[in]      DBDField           Specifies the DBD field of the CDB for this SCSI Command.
-  @param[in]      PageControl        Specifies the PC field of the CDB for this SCSI Command. 
-  @param[in]      PageCode           Specifies the Page Control field of the CDB for this SCSI Command. 
+  @param[in]      PageControl        Specifies the PC field of the CDB for this SCSI Command.
+  @param[in]      PageCode           Specifies the Page Control field of the CDB for this SCSI Command.
 
   @retval EFI_SUCCESS               The command was executed successfully.
                                     See HostAdapterStatus, TargetStatus, SenseDataLength,
@@ -552,10 +552,10 @@ ScsiReadCapacity16Command (
   @retval  EFI_SUCCESS          Command is executed successfully.
   @retval  EFI_BAD_BUFFER_SIZE  The SCSI Request Packet was executed, but the entire DataBuffer could
                                 not be transferred. The actual number of bytes transferred is returned in DataLength.
-  @retval  EFI_NOT_READY        The SCSI Request Packet could not be sent because there are too many 
+  @retval  EFI_NOT_READY        The SCSI Request Packet could not be sent because there are too many
                                 SCSI Command Packets already queued.
   @retval  EFI_DEVICE_ERROR     A device error occurred while attempting to send SCSI Request Packet.
-  @retval  EFI_UNSUPPORTED      The command described by the SCSI Request Packet is not supported by 
+  @retval  EFI_UNSUPPORTED      The command described by the SCSI Request Packet is not supported by
                                 the SCSI initiator(i.e., SCSI  Host Controller)
   @retval  EFI_TIMEOUT          A timeout occurred while waiting for the SCSI Request Packet to execute.
 
@@ -604,10 +604,10 @@ ScsiRead10Command (
   @retval  EFI_SUCCESS          Command is executed successfully.
   @retval  EFI_BAD_BUFFER_SIZE  The SCSI Request Packet was executed, but the entire DataBuffer could
                                 not be transferred. The actual number of bytes transferred is returned in DataLength.
-  @retval  EFI_NOT_READY        The SCSI Request Packet could not be sent because there are too many 
+  @retval  EFI_NOT_READY        The SCSI Request Packet could not be sent because there are too many
                                 SCSI Command Packets already queued.
   @retval  EFI_DEVICE_ERROR     A device error occurred while attempting to send SCSI Request Packet.
-  @retval  EFI_UNSUPPORTED      The command described by the SCSI Request Packet is not supported by 
+  @retval  EFI_UNSUPPORTED      The command described by the SCSI Request Packet is not supported by
                                 the SCSI initiator(i.e., SCSI  Host Controller)
   @retval  EFI_TIMEOUT          A timeout occurred while waiting for the SCSI Request Packet to execute.
 
@@ -656,10 +656,10 @@ ScsiWrite10Command (
   @retval  EFI_SUCCESS          Command is executed successfully.
   @retval  EFI_BAD_BUFFER_SIZE  The SCSI Request Packet was executed, but the entire DataBuffer could
                                 not be transferred. The actual number of bytes transferred is returned in DataLength.
-  @retval  EFI_NOT_READY        The SCSI Request Packet could not be sent because there are too many 
+  @retval  EFI_NOT_READY        The SCSI Request Packet could not be sent because there are too many
                                 SCSI Command Packets already queued.
   @retval  EFI_DEVICE_ERROR     A device error occurred while attempting to send SCSI Request Packet.
-  @retval  EFI_UNSUPPORTED      The command described by the SCSI Request Packet is not supported by 
+  @retval  EFI_UNSUPPORTED      The command described by the SCSI Request Packet is not supported by
                                 the SCSI initiator(i.e., SCSI  Host Controller)
   @retval  EFI_TIMEOUT          A timeout occurred while waiting for the SCSI Request Packet to execute.
 
@@ -708,10 +708,10 @@ ScsiRead16Command (
   @retval  EFI_SUCCESS          Command is executed successfully.
   @retval  EFI_BAD_BUFFER_SIZE  The SCSI Request Packet was executed, but the entire DataBuffer could
                                 not be transferred. The actual number of bytes transferred is returned in DataLength.
-  @retval  EFI_NOT_READY        The SCSI Request Packet could not be sent because there are too many 
+  @retval  EFI_NOT_READY        The SCSI Request Packet could not be sent because there are too many
                                 SCSI Command Packets already queued.
   @retval  EFI_DEVICE_ERROR     A device error occurred while attempting to send SCSI Request Packet.
-  @retval  EFI_UNSUPPORTED      The command described by the SCSI Request Packet is not supported by 
+  @retval  EFI_UNSUPPORTED      The command described by the SCSI Request Packet is not supported by
                                 the SCSI initiator(i.e., SCSI  Host Controller)
   @retval  EFI_TIMEOUT          A timeout occurred while waiting for the SCSI Request Packet to execute.
 

@@ -42,18 +42,18 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  
+
 [LibraryClasses]
   UefiDriverEntryPoint
   BaseLib
   BaseMemoryLib
   PeCoffLib
-  CacheMaintenanceLib  
+  CacheMaintenanceLib
   DebugLib
   ReportStatusCodeLib
-  DevicePathLib               
-  UefiLib                     
-  UefiBootServicesTableLib    
+  DevicePathLib
+  UefiLib
+  UefiBootServicesTableLib
   MemoryAllocationLib
   PcdLib
   SmmCorePlatformHookLib

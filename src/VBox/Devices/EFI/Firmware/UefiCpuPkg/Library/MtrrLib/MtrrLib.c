@@ -186,7 +186,7 @@ PreMtrrChange (
   // Disable interrupts and save current interrupt state
   //
   MtrrContext->InterruptState = SaveAndDisableInterrupts();
-  
+
   //
   // Enter no fill cache mode, CD=1(Bit30), NW=0 (Bit29)
   //
@@ -224,7 +224,7 @@ PostMtrrChangeEnableCache (
   )
 {
   //
-  // Flush all TLBs 
+  // Flush all TLBs
   //
   CpuFlushTlb ();
 
@@ -237,7 +237,7 @@ PostMtrrChangeEnableCache (
   // Restore original CR4 value
   //
   AsmWriteCr4 (MtrrContext->Cr4);
-  
+
   //
   // Restore original interrupt state
   //
@@ -534,7 +534,7 @@ CombineMemoryAttribute (
     //
     if (Attributes == VariableMtrr[Index].Type) {
       //
-      // if the Mtrr range contain the request range, set a flag, then continue to 
+      // if the Mtrr range contain the request range, set a flag, then continue to
       // invalidate any MTRR of the same request range with higher priority cache type.
       //
       if (VariableMtrr[Index].BaseAddress <= *Base && MtrrEnd >= EndAddress) {
@@ -1567,7 +1567,7 @@ MtrrDebugPrintAllMtrrs (
 
     DEBUG((DEBUG_CACHE, "MTRR Settings\n"));
     DEBUG((DEBUG_CACHE, "=============\n"));
-    
+
     MtrrGetAllMtrrs (&MtrrSettings);
     DEBUG((DEBUG_CACHE, "MTRR Default Type: %016lx\n", MtrrSettings.MtrrDefType));
     for (Index = 0; Index < MTRR_NUMBER_OF_FIXED_MTRR; Index++) {
@@ -1594,7 +1594,7 @@ MtrrDebugPrintAllMtrrs (
       MemoryType = (UINTN)(RShiftU64 (MtrrSettings.Fixed.Mtrr[Index], Index1 * 8) & 0xff);
         if (MemoryType > CacheWriteBack) {
           MemoryType = MTRR_CACHE_INVALID_TYPE;
-        }            
+        }
         if (MemoryType != PreviousMemoryType) {
           if (PreviousMemoryType != MTRR_CACHE_INVALID_TYPE) {
             DEBUG((DEBUG_CACHE, "%016lx\n", Base - 1));
@@ -1630,12 +1630,12 @@ MtrrDebugPrintAllMtrrs (
         PreviousMemoryType = MemoryType;
         DEBUG((DEBUG_CACHE, "%a:%016lx-", mMtrrMemoryCacheTypeShortName[MemoryType], Base));
       }
-      
-      RangeBase    = BASE_1MB;        
+
+      RangeBase    = BASE_1MB;
       NoRangeBase  = BASE_1MB;
       RangeLimit   = Limit;
       NoRangeLimit = Limit;
-      
+
       for (Index = 0, Found = FALSE; Index < VariableMtrrCount; Index++) {
         if ((MtrrSettings.Variables.Mtrr[Index].Mask & BIT11) == 0) {
           //
@@ -1649,7 +1649,7 @@ MtrrDebugPrintAllMtrrs (
         if (Base >= MtrrBase && Base < MtrrLimit) {
           Found = TRUE;
         }
-        
+
         if (Base >= MtrrBase && MtrrBase > RangeBase) {
           RangeBase = MtrrBase;
         }
@@ -1662,7 +1662,7 @@ MtrrDebugPrintAllMtrrs (
         if (Base < MtrrLimit && MtrrLimit <= RangeLimit) {
           RangeLimit = MtrrLimit;
         }
-        
+
         if (Base > MtrrLimit && NoRangeBase < MtrrLimit) {
           NoRangeBase = MtrrLimit + 1;
         }
@@ -1670,7 +1670,7 @@ MtrrDebugPrintAllMtrrs (
           NoRangeLimit = MtrrBase - 1;
         }
       }
-      
+
       if (Found) {
         Base = RangeLimit + 1;
       } else {

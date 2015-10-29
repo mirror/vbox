@@ -49,7 +49,7 @@
   gEfiLoadedImageProtocolGuid                   ## CONSUMES
   gEfiSmmBaseProtocolGuid                       ## CONSUMES
   gEfiDevicePathProtocolGuid                    ## CONSUMES
-  
+
 [Depex]
   gEfiSmmBaseProtocolGuid
 

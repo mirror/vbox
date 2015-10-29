@@ -68,7 +68,7 @@ EFI_GUID              mAcpiS3IdtrProfileGuid = {
 
   @param  MemoryType   Memory type of memory to allocate.
   @param  Size         Size of memory to allocate.
-  
+
   @return Allocated address for output.
 
 **/
@@ -126,7 +126,7 @@ ScanTableInRSDT (
   }
 
   EntryCount = (Rsdt->Length - sizeof (EFI_ACPI_DESCRIPTION_HEADER)) / sizeof(UINT32);
-  
+
   EntryPtr = (UINT32 *)(Rsdt + 1);
   for (Index = 0; Index < EntryCount; Index ++, EntryPtr ++) {
     Table = (EFI_ACPI_DESCRIPTION_HEADER *)((UINTN)(*EntryPtr));
@@ -134,7 +134,7 @@ ScanTableInRSDT (
       return Table;
     }
   }
-  
+
   return NULL;
 }
 
@@ -165,7 +165,7 @@ ScanTableInXSDT (
   }
 
   EntryCount = (Xsdt->Length - sizeof (EFI_ACPI_DESCRIPTION_HEADER)) / sizeof(UINT64);
-  
+
   BasePtr = (UINTN)(Xsdt + 1);
   for (Index = 0; Index < EntryCount; Index ++) {
     CopyMem (&EntryPtr, (VOID *)(BasePtr + Index * sizeof(UINT64)), sizeof(UINT64));
@@ -174,7 +174,7 @@ ScanTableInXSDT (
       return Table;
     }
   }
-  
+
   return NULL;
 }
 
@@ -182,7 +182,7 @@ ScanTableInXSDT (
   To find Facs in FADT.
 
   @param Fadt   FADT table pointer
-  
+
   @return  Facs table pointer.
 **/
 EFI_ACPI_2_0_FIRMWARE_ACPI_CONTROL_STRUCTURE  *
@@ -212,12 +212,12 @@ FindAcpiFacsFromFadt (
 
 /**
   To find Facs in Acpi tables.
- 
-  To find Firmware ACPI control strutcure in Acpi Tables since the S3 waking vector is stored 
+
+  To find Firmware ACPI control strutcure in Acpi Tables since the S3 waking vector is stored
   in the table.
 
   @param AcpiTableGuid   The guid used to find ACPI table in UEFI ConfigurationTable.
-  
+
   @return  Facs table pointer.
 **/
 EFI_ACPI_2_0_FIRMWARE_ACPI_CONTROL_STRUCTURE  *
@@ -281,10 +281,10 @@ FindAcpiFacsTableByAcpiGuid (
 
 /**
   To find Facs in Acpi tables.
- 
-  To find Firmware ACPI control strutcure in Acpi Tables since the S3 waking vector is stored 
+
+  To find Firmware ACPI control strutcure in Acpi Tables since the S3 waking vector is stored
   in the table.
-  
+
   @return  Facs table pointer.
 **/
 EFI_ACPI_2_0_FIRMWARE_ACPI_CONTROL_STRUCTURE  *
@@ -305,18 +305,18 @@ FindAcpiFacsTable (
 /**
   Allocates and fills in the Page Directory and Page Table Entries to
   establish a 1:1 Virtual to Physical mapping.
-  If BootScriptExector driver will run in 64-bit mode, this function will establish the 1:1 
+  If BootScriptExector driver will run in 64-bit mode, this function will establish the 1:1
   virtual to physical mapping page table.
-  If BootScriptExector driver will not run in 64-bit mode, this function will do nothing. 
-  
-  @return  the 1:1 Virtual to Physical identity mapping page table base address. 
+  If BootScriptExector driver will not run in 64-bit mode, this function will do nothing.
+
+  @return  the 1:1 Virtual to Physical identity mapping page table base address.
 
 **/
 EFI_PHYSICAL_ADDRESS
 S3CreateIdentityMappingPageTables (
   VOID
   )
-{  
+{
   if (FeaturePcdGet (PcdDxeIplSwitchToLongMode)) {
     UINT32                                        RegEax;
     UINT32                                        RegEdx;
@@ -342,7 +342,7 @@ S3CreateIdentityMappingPageTables (
           }
         }
       }
-      
+
       //
       // Get physical address bits supported.
       //
@@ -358,7 +358,7 @@ S3CreateIdentityMappingPageTables (
           PhysicalAddressBits = 36;
         }
       }
-      
+
       //
       // IA-32e paging translates 48-bit linear addresses to 52-bit physical addresses.
       //
@@ -366,7 +366,7 @@ S3CreateIdentityMappingPageTables (
       if (PhysicalAddressBits > 48) {
         PhysicalAddressBits = 48;
       }
-      
+
       //
       // Calculate the table entries needed.
       //
@@ -377,7 +377,7 @@ S3CreateIdentityMappingPageTables (
         NumberOfPml4EntriesNeeded = (UINT32)LShiftU64 (1, (PhysicalAddressBits - 39));
         NumberOfPdpEntriesNeeded = 512;
       }
-      
+
       //
       // We need calculate whole page size then allocate once, because S3 restore page table does not know each page in Nvs.
       //
@@ -387,25 +387,25 @@ S3CreateIdentityMappingPageTables (
         TotalPageTableSize = (UINTN)(1 + NumberOfPml4EntriesNeeded);
       }
       DEBUG ((EFI_D_ERROR, "TotalPageTableSize - %x pages\n", TotalPageTableSize));
-      
+
       //
       // By architecture only one PageMapLevel4 exists - so lets allocate storage for it.
       //
       S3NvsPageTableAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)AllocateMemoryBelow4G (EfiReservedMemoryType, EFI_PAGES_TO_SIZE(TotalPageTableSize));
       ASSERT (S3NvsPageTableAddress != 0);
-      PcdSet64 (PcdIdentifyMappingPageTablePtr, S3NvsPageTableAddress); 
+      PcdSet64 (PcdIdentifyMappingPageTablePtr, S3NvsPageTableAddress);
       return S3NvsPageTableAddress;
     }
   } else {
     //
     // If DXE is running 32-bit mode, no need to establish page table.
     //
-    return  (EFI_PHYSICAL_ADDRESS) 0;  
+    return  (EFI_PHYSICAL_ADDRESS) 0;
   }
 }
 
 /**
-  Gets the buffer of legacy memory below 1 MB 
+  Gets the buffer of legacy memory below 1 MB
   This function is to get the buffer in legacy memory below 1MB that is required during S3 resume.
 
   @param This           A pointer to the EFI_ACPI_S3_SAVE_PROTOCOL instance.
@@ -432,9 +432,9 @@ LegacyGetS3MemorySize (
 
 /**
   Prepares all information that is needed in the S3 resume boot path.
-  
-  Allocate the resources or prepare informations and save in ACPI variable set for S3 resume boot path  
-  
+
+  Allocate the resources or prepare informations and save in ACPI variable set for S3 resume boot path
+
   @param This                 A pointer to the EFI_ACPI_S3_SAVE_PROTOCOL instance.
   @param LegacyMemoryAddress  The base address of legacy memory.
 
@@ -546,9 +546,9 @@ S3Ready (
 
 /**
   The Driver Entry Point.
-  
+
   The function is the driver Entry point which will produce AcpiS3SaveProtocol.
-  
+
   @param ImageHandle   A handle for the image that is initializing this driver
   @param SystemTable   A pointer to the EFI system table
 

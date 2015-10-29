@@ -20,7 +20,7 @@
   against EfiSocketLib.  An alternative set of values exists in
   SocketDxe\EntryUnload.c which the SocketDxe driver uses to coexist
   with socket applications.
-  
+
   Tag GUID - IPv4 in use by an application using EfiSocketLib
 **/
 CONST EFI_GUID mEslIp4ServiceGuid __attribute__((weak)) = {

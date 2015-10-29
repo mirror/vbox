@@ -279,7 +279,7 @@ VlanConfigDriverBindingStop (
     if (NumberOfChildren != 1 || ChildHandleBuffer[0] != PrivateData->DriverHandle) {
       return EFI_DEVICE_ERROR;
     }
-    
+
     return UninstallVlanConfigForm (PrivateData);
   }
 

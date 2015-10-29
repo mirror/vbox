@@ -359,7 +359,7 @@ TcpAttachPcb (
   } else {
     IpProtocolGuid = &gEfiIp6ProtocolGuid;
   }
-  
+
   Tcb = AllocateZeroPool (sizeof (TCP_CB));
 
   if (Tcb == NULL) {
@@ -397,7 +397,7 @@ TcpAttachPcb (
     IpIoRemoveIp (IpIo, Tcb->IpInfo);
     return Status;
   }
-  
+
   InitializeListHead (&Tcb->List);
   InitializeListHead (&Tcb->SndQue);
   InitializeListHead (&Tcb->RcvQue);
@@ -429,7 +429,7 @@ TcpDetachPcb (
   } else {
     IpProtocolGuid = &gEfiIp6ProtocolGuid;
   }
-  
+
   ProtoData = (TCP_PROTO_DATA *) Sk->ProtoReserved;
   Tcb       = ProtoData->TcpPcb;
 
@@ -446,7 +446,7 @@ TcpDetachPcb (
          ProtoData->TcpService->IpIo->Image,
          Sk->SockHandle
          );
-  
+
   IpIoRemoveIp (ProtoData->TcpService->IpIo, Tcb->IpInfo);
 
   FreePool (Tcb);

@@ -2,8 +2,8 @@
   SMM Ready To Lock protocol as defined in the PI 1.2 specification.
 
   This SMM protocol indicates that SMM is about to be locked.
-  This protocol is a mandatory protocol published by the SMM Foundation code when the system is 
-  preparing to lock SMM. 
+  This protocol is a mandatory protocol published by the SMM Foundation code when the system is
+  preparing to lock SMM.
 
   Copyright (c) 2009, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials

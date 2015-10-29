@@ -8,28 +8,28 @@
     See item #207.
 
     Reported by Frank Hartmann.
-        
+
 #16. A note about "&&" predicates (Mike Dimmick)
 
     Mike Dimmick has pointed out a potential pitfall in the use of the
     "&&" style predicate.  Consider:
-    
+
          r0: (g)? => <<P>>?  r1
              | ...
              ;
          r1: A | B;
-         
+
     If the context guard g is not a subset of the lookahead context for r1
-    (in other words g is neither A nor B) then the code may execute r1 
+    (in other words g is neither A nor B) then the code may execute r1
     even when the lookahead context is not satisfied.  This is an error
     by the person coding the grammer, and the error should be reported to
     the user, but it isn't. expect.  Some examples I've run seem to
     indicate that such an error actually results in the rule becoming
     unreachable.
-    
+
     When g is properly coded the code is correct, the problem is when g
     is not properly coded.
-    
+
     A second problem reported by Mike Dimmick is that the test for a
     failed validation predicate is equivalent to a test on the predicate
     along.  In other words, if the "&&" has not been hoisted then it may
@@ -53,7 +53,7 @@
 
     This behavior should be changed, but it appears in too many programs
     now.  Another problem, perhaps more significant, is that the obvious
-    fix (moving the consume() call to before the action) could change the 
+    fix (moving the consume() call to before the action) could change the
     order in which input is requested and output appears in existing programs.
 
     This problem was reported, along with a fix by Benjamin Mandel
@@ -85,12 +85,12 @@
 	GraphPtr g;
 	{
 	    Graph g1, g2;
-	
+
 	    if ( andExpr(&g1) == -1 )
 	    {
 	        return -1;
 	    }
-	
+
 	    while ( token == '|' )
 	    {
 	        int a;
@@ -100,7 +100,7 @@
 	        else if ( !a ) return 1;    /* empty alternative */
 	        g1 = BuildNFA_AorB(g1, g2);
 	    }
-	
+
 	    if ( token!='\0' ) return -1;
 	*****
 	***** It appears to fail here becuause token is 125 - the closing '}'

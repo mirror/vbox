@@ -1,6 +1,6 @@
 /** @file
   Define Name, GUID and data format for an EFI Variable that is used to save the entry point
-  of a code segment which will be loaded and executed by a standalone boot script 
+  of a code segment which will be loaded and executed by a standalone boot script
   executor on S3 boot path.
 
   Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>

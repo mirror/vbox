@@ -341,7 +341,7 @@ char **argv;
 	if ( user_token_types!=NULL ) printf("# User-defined token types in '%s'\n", user_token_types);
 	else printf("# ANTLR-defined token types\n");
 	printf("#\n");
-	printf(".SUFFIXES:\n.SUFFIXES:      .o .cpp .c .h .g .i .dlg\n"); 
+	printf(".SUFFIXES:\n.SUFFIXES:      .o .cpp .c .h .g .i .dlg\n");
 	if ( user_token_types!=NULL ) {
 		printf("# Make sure #tokdefs directive in ANTLR grammar lists this file:\n");
 		printf("TOKENS = %s", user_token_types);
@@ -755,7 +755,7 @@ char *err_;
 char *DIR()
 {
 	static char buf[200+1];
-	
+
 	if ( strcmp(outdir,TopDirectory)==0 ) return "";
 	sprintf(buf, "%s%s", outdir, DirectorySymbol);
 	return buf;

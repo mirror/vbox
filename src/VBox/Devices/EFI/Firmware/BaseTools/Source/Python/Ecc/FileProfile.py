@@ -36,7 +36,7 @@ FunctionCallingList = []
 # May raise Exception when opening file.
 #
 class FileProfile :
-    
+
     ## The constructor
     #
     #   @param  self        The object pointer
@@ -54,5 +54,5 @@ class FileProfile :
 
         except IOError:
             raise Warning("Error when opening file %s" % FileName)
-        
+
         

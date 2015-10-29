@@ -23,7 +23,7 @@
   FILE_GUID                      = 882ee1a3-35b2-412c-b8a2-7a8d34a7c390
   MODULE_TYPE                    = DXE_CORE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = HobLib|DXE_CORE 
+  LIBRARY_CLASS                  = HobLib|DXE_CORE
 
 
 #

@@ -1,9 +1,9 @@
 /** @file
   Instance of Print Library based on gEfiPrint2ProtocolGuid.
 
-  Implement the print library instance by wrap the interface 
+  Implement the print library instance by wrap the interface
   provided in the Print2 protocol. This protocol is defined as the internal
-  protocol related to this implementation, not in the public spec. So, this 
+  protocol related to this implementation, not in the public spec. So, this
   library instance is only for this code base.
 
 Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
@@ -30,13 +30,13 @@ EFI_PRINT2_PROTOCOL  *mPrint2Protocol = NULL;
 
 /**
   The constructor function caches the pointer to Print2 protocol.
-  
+
   The constructor function locates Print2 protocol from protocol database.
-  It will ASSERT() if that operation fails and it will always return EFI_SUCCESS. 
+  It will ASSERT() if that operation fails and it will always return EFI_SUCCESS.
 
   @param  ImageHandle   The firmware allocated handle for the EFI image.
   @param  SystemTable   A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS   The constructor always returns EFI_SUCCESS.
 
 **/
@@ -62,7 +62,7 @@ PrintLibConstructor (
 
 
 /**
-  Worker function that converts a VA_LIST to a BASE_LIST based on a Null-terminated 
+  Worker function that converts a VA_LIST to a BASE_LIST based on a Null-terminated
   format string.
 
   @param  AsciiFormat     TRUE if Format is an ASCII string.  FALSE if Format is a Unicode string.
@@ -129,11 +129,11 @@ DxePrintLibPrint2ProtocolVaListToBaseList (
         FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
 
         switch (FormatCharacter) {
-        case '.': 
-        case '-': 
-        case '+': 
-        case ' ': 
-        case ',': 
+        case '.':
+        case '-':
+        case '+':
+        case ' ':
+        case ',':
         case '0':
         case '1':
         case '2':
@@ -146,7 +146,7 @@ DxePrintLibPrint2ProtocolVaListToBaseList (
         case '9':
           break;
         case 'L':
-        case 'l': 
+        case 'l':
           Long = TRUE;
           break;
         case '*':
@@ -155,7 +155,7 @@ DxePrintLibPrint2ProtocolVaListToBaseList (
         case '\0':
           //
           // Make no output if Format string terminates unexpectedly when
-          // looking up for flag, width, precision and type. 
+          // looking up for flag, width, precision and type.
           //
           Format -= BytesPerFormatCharacter;
           //
@@ -165,8 +165,8 @@ DxePrintLibPrint2ProtocolVaListToBaseList (
           Done = TRUE;
           break;
         }
-      } 
-        
+      }
+
       //
       // Handle each argument type
       //
@@ -221,14 +221,14 @@ DxePrintLibPrint2ProtocolVaListToBaseList (
 }
 
 /**
-  Produces a Null-terminated Unicode string in an output buffer based on 
+  Produces a Null-terminated Unicode string in an output buffer based on
   a Null-terminated Unicode format string and a VA_LIST argument list
-  
+
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
-  and BufferSize.  
-  The Unicode string is produced by parsing the format string specified by FormatString.  
-  Arguments are pulled from the variable argument list specified by Marker based on the 
-  contents of the format string.  
+  and BufferSize.
+  The Unicode string is produced by parsing the format string specified by FormatString.
+  Arguments are pulled from the variable argument list specified by Marker based on the
+  contents of the format string.
   The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
   If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
@@ -237,19 +237,19 @@ DxePrintLibPrint2ProtocolVaListToBaseList (
   If BufferSize > 1 and StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
   If BufferSize > 1 and FormatString is NULL, then ASSERT().
   If BufferSize > 1 and FormatString is not aligned on a 16-bit boundary, then ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than 
+  If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than
   PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator, then
   ASSERT().
   If PcdMaximumUnicodeStringLength is not zero, and produced Null-terminated Unicode string
   contains more than PcdMaximumUnicodeStringLength Unicode characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
   @param  Marker          VA_LIST marker for the variable argument list.
-  
+
   @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
@@ -266,10 +266,10 @@ UnicodeVSPrint (
   UINT64  BaseListMarker[256 / sizeof (UINT64)];
 
   DxePrintLibPrint2ProtocolVaListToBaseList (
-    FALSE, 
-    (CHAR8 *)FormatString, 
-    Marker, 
-    (BASE_LIST)BaseListMarker, 
+    FALSE,
+    (CHAR8 *)FormatString,
+    Marker,
+    (BASE_LIST)BaseListMarker,
     sizeof (BaseListMarker) - 8
     );
 
@@ -277,14 +277,14 @@ UnicodeVSPrint (
 }
 
 /**
-  Produces a Null-terminated Unicode string in an output buffer based on 
+  Produces a Null-terminated Unicode string in an output buffer based on
   a Null-terminated Unicode format string and a BASE_LIST argument list
-  
+
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
-  and BufferSize.  
-  The Unicode string is produced by parsing the format string specified by FormatString.  
-  Arguments are pulled from the variable argument list specified by Marker based on the 
-  contents of the format string.  
+  and BufferSize.
+  The Unicode string is produced by parsing the format string specified by FormatString.
+  Arguments are pulled from the variable argument list specified by Marker based on the
+  contents of the format string.
   The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
   If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
@@ -293,19 +293,19 @@ UnicodeVSPrint (
   If BufferSize > 1 and StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
   If BufferSize > 1 and FormatString is NULL, then ASSERT().
   If BufferSize > 1 and FormatString is not aligned on a 16-bit boundary, then ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than 
+  If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than
   PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator, then
   ASSERT().
   If PcdMaximumUnicodeStringLength is not zero, and produced Null-terminated Unicode string
   contains more than PcdMaximumUnicodeStringLength Unicode characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
   @param  Marker          BASE_LIST marker for the variable argument list.
-  
+
   @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
@@ -323,9 +323,9 @@ UnicodeBSPrint (
 }
 
 /**
-  Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated 
+  Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
   Unicode format string and variable argument list.
-  
+
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The Unicode string is produced by parsing the format string specified by FormatString.
@@ -338,18 +338,18 @@ UnicodeBSPrint (
   If BufferSize > 1 and StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
   If BufferSize > 1 and FormatString is NULL, then ASSERT().
   If BufferSize > 1 and FormatString is not aligned on a 16-bit boundary, then ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than 
+  If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than
   PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator, then
   ASSERT().
   If PcdMaximumUnicodeStringLength is not zero, and produced Null-terminated Unicode string
   contains more than PcdMaximumUnicodeStringLength Unicode characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
-  @param  ...             Variable argument list whose contents are accessed based on the 
+  @param  ...             Variable argument list whose contents are accessed based on the
                           format string specified by FormatString.
 
   @return The number of Unicode characters in the produced output buffer not including the
@@ -377,11 +377,11 @@ UnicodeSPrint (
 /**
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
   ASCII format string and a VA_LIST argument list
-  
+
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The Unicode string is produced by parsing the format string specified by FormatString.
-  Arguments are pulled from the variable argument list specified by Marker based on the 
+  Arguments are pulled from the variable argument list specified by Marker based on the
   contents of the format string.
   The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
@@ -397,12 +397,12 @@ UnicodeSPrint (
   contains more than PcdMaximumUnicodeStringLength Unicode characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
   @param  Marker          VA_LIST marker for the variable argument list.
-  
+
   @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
@@ -419,10 +419,10 @@ UnicodeVSPrintAsciiFormat (
   UINT64  BaseListMarker[256 / sizeof (UINT64)];
 
   DxePrintLibPrint2ProtocolVaListToBaseList (
-    TRUE, 
-    FormatString, 
-    Marker, 
-    (BASE_LIST)BaseListMarker, 
+    TRUE,
+    FormatString,
+    Marker,
+    (BASE_LIST)BaseListMarker,
     sizeof (BaseListMarker) - 8
     );
 
@@ -432,11 +432,11 @@ UnicodeVSPrintAsciiFormat (
 /**
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
   ASCII format string and a BASE_LIST argument list
-  
+
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The Unicode string is produced by parsing the format string specified by FormatString.
-  Arguments are pulled from the variable argument list specified by Marker based on the 
+  Arguments are pulled from the variable argument list specified by Marker based on the
   contents of the format string.
   The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
@@ -452,12 +452,12 @@ UnicodeVSPrintAsciiFormat (
   contains more than PcdMaximumUnicodeStringLength Unicode characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
   @param  Marker          BASE_LIST marker for the variable argument list.
-  
+
   @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
@@ -475,13 +475,13 @@ UnicodeBSPrintAsciiFormat (
 }
 
 /**
-  Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated 
+  Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
   ASCII format string and  variable argument list.
-  
+
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The Unicode string is produced by parsing the format string specified by FormatString.
-  Arguments are pulled from the variable argument list based on the contents of the 
+  Arguments are pulled from the variable argument list based on the contents of the
   format string.
   The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
@@ -497,13 +497,13 @@ UnicodeBSPrintAsciiFormat (
   contains more than PcdMaximumUnicodeStringLength Unicode characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
-  @param  ...             Variable argument list whose contents are accessed based on the 
+  @param  ...             Variable argument list whose contents are accessed based on the
                           format string specified by FormatString.
-  
+
   @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
@@ -528,26 +528,26 @@ UnicodeSPrintAsciiFormat (
 
 /**
   Converts a decimal value to a Null-terminated Unicode string.
-  
-  Converts the decimal number specified by Value to a Null-terminated Unicode 
-  string specified by Buffer containing at most Width characters. No padding of spaces 
+
+  Converts the decimal number specified by Value to a Null-terminated Unicode
+  string specified by Buffer containing at most Width characters. No padding of spaces
   is ever performed. If Width is 0 then a width of MAXIMUM_VALUE_CHARACTERS is assumed.
   The number of Unicode characters in Buffer is returned not including the Null-terminator.
   If the conversion contains more than Width characters, then only the first
-  Width characters are returned, and the total number of characters 
+  Width characters are returned, and the total number of characters
   required to perform the conversion is returned.
-  Additional conversion parameters are specified in Flags.  
-  
+  Additional conversion parameters are specified in Flags.
+
   The Flags bit LEFT_JUSTIFY is always ignored.
   All conversions are left justified in Buffer.
   If Width is 0, PREFIX_ZERO is ignored in Flags.
   If COMMA_TYPE is set in Flags, then PREFIX_ZERO is ignored in Flags, and commas
   are inserted every 3rd digit starting from the right.
-  If RADIX_HEX is set in Flags, then the output buffer will be 
+  If RADIX_HEX is set in Flags, then the output buffer will be
   formatted in hexadecimal format.
   If Value is < 0 and RADIX_HEX is not set in Flags, then the fist character in Buffer is a '-'.
-  If PREFIX_ZERO is set in Flags and PREFIX_ZERO is not being ignored, 
-  then Buffer is padded with '0' characters so the combination of the optional '-' 
+  If PREFIX_ZERO is set in Flags and PREFIX_ZERO is not being ignored,
+  then Buffer is padded with '0' characters so the combination of the optional '-'
   sign character, '0' characters, digit characters for Value, and the Null-terminator
   add up to Width characters.
   If both COMMA_TYPE and RADIX_HEX are set in Flags, then ASSERT().
@@ -563,7 +563,7 @@ UnicodeSPrintAsciiFormat (
   @param  Value   The 64-bit signed value to convert to a string.
   @param  Width   The maximum number of Unicode characters to place in Buffer, not including
                   the Null-terminator.
-  
+
   @return The number of Unicode characters in Buffer not including the Null-terminator.
 
 **/
@@ -582,11 +582,11 @@ UnicodeValueToString (
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   ASCII format string and a VA_LIST argument list.
-  
+
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
-  Arguments are pulled from the variable argument list specified by Marker based on 
+  Arguments are pulled from the variable argument list specified by Marker based on
   the contents of the format string.
   The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
@@ -601,12 +601,12 @@ UnicodeValueToString (
   contains more than PcdMaximumAsciiStringLength ASCII characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
   @param  Marker          VA_LIST marker for the variable argument list.
-  
+
   @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
@@ -623,10 +623,10 @@ AsciiVSPrint (
   UINT64  BaseListMarker[256 / sizeof (UINT64)];
 
   DxePrintLibPrint2ProtocolVaListToBaseList (
-    TRUE, 
-    FormatString, 
-    Marker, 
-    (BASE_LIST)BaseListMarker, 
+    TRUE,
+    FormatString,
+    Marker,
+    (BASE_LIST)BaseListMarker,
     sizeof (BaseListMarker) - 8
     );
 
@@ -636,11 +636,11 @@ AsciiVSPrint (
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   ASCII format string and a BASE_LIST argument list.
-  
+
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
-  Arguments are pulled from the variable argument list specified by Marker based on 
+  Arguments are pulled from the variable argument list specified by Marker based on
   the contents of the format string.
   The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
@@ -655,12 +655,12 @@ AsciiVSPrint (
   contains more than PcdMaximumAsciiStringLength ASCII characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
   @param  Marker          BASE_LIST marker for the variable argument list.
-  
+
   @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
@@ -680,11 +680,11 @@ AsciiBSPrint (
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   ASCII format string and  variable argument list.
-  
+
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
-  Arguments are pulled from the variable argument list based on the contents of the 
+  Arguments are pulled from the variable argument list based on the contents of the
   format string.
   The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
@@ -699,11 +699,11 @@ AsciiBSPrint (
   contains more than PcdMaximumAsciiStringLength ASCII characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
-  @param  ...             Variable argument list whose contents are accessed based on the 
+  @param  ...             Variable argument list whose contents are accessed based on the
                           format string specified by FormatString.
 
   @return The number of ASCII characters in the produced output buffer not including the
@@ -731,11 +731,11 @@ AsciiSPrint (
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   ASCII format string and a VA_LIST argument list.
-  
+
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
-  Arguments are pulled from the variable argument list specified by Marker based on 
+  Arguments are pulled from the variable argument list specified by Marker based on
   the contents of the format string.
   The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
@@ -751,12 +751,12 @@ AsciiSPrint (
   contains more than PcdMaximumAsciiStringLength ASCII characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
   @param  Marker          VA_LIST marker for the variable argument list.
-  
+
   @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
@@ -773,10 +773,10 @@ AsciiVSPrintUnicodeFormat (
   UINT64  BaseListMarker[256 / sizeof (UINT64)];
 
   DxePrintLibPrint2ProtocolVaListToBaseList (
-    FALSE, 
-    (CHAR8 *)FormatString, 
-    Marker, 
-    (BASE_LIST)BaseListMarker, 
+    FALSE,
+    (CHAR8 *)FormatString,
+    Marker,
+    (BASE_LIST)BaseListMarker,
     sizeof (BaseListMarker) - 8
     );
 
@@ -786,11 +786,11 @@ AsciiVSPrintUnicodeFormat (
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   ASCII format string and a BASE_LIST argument list.
-  
+
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
-  Arguments are pulled from the variable argument list specified by Marker based on 
+  Arguments are pulled from the variable argument list specified by Marker based on
   the contents of the format string.
   The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
@@ -806,12 +806,12 @@ AsciiVSPrintUnicodeFormat (
   contains more than PcdMaximumAsciiStringLength ASCII characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
   @param  Marker          BASE_LIST marker for the variable argument list.
-  
+
   @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
@@ -831,11 +831,11 @@ AsciiBSPrintUnicodeFormat (
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   ASCII format string and  variable argument list.
-  
+
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
-  Arguments are pulled from the variable argument list based on the contents of the 
+  Arguments are pulled from the variable argument list based on the contents of the
   format string.
   The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
@@ -851,11 +851,11 @@ AsciiBSPrintUnicodeFormat (
   contains more than PcdMaximumAsciiStringLength ASCII characters not including the
   Null-terminator, then ASSERT().
 
-  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated 
+  @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
   @param  FormatString    Null-terminated Unicode format string.
-  @param  ...             Variable argument list whose contents are accessed based on the 
+  @param  ...             Variable argument list whose contents are accessed based on the
                           format string specified by FormatString.
 
   @return The number of ASCII characters in the produced output buffer not including the
@@ -883,29 +883,29 @@ AsciiSPrintUnicodeFormat (
 
 /**
   Converts a decimal value to a Null-terminated ASCII string.
-  
-  Converts the decimal number specified by Value to a Null-terminated ASCII string 
-  specified by Buffer containing at most Width characters. No padding of spaces 
+
+  Converts the decimal number specified by Value to a Null-terminated ASCII string
+  specified by Buffer containing at most Width characters. No padding of spaces
   is ever performed.
   If Width is 0 then a width of  MAXIMUM_VALUE_CHARACTERS is assumed.
   The number of ASCII characters in Buffer is returned not including the Null-terminator.
   If the conversion contains more than Width characters, then only the first Width
   characters are returned, and the total number of characters required to perform
   the conversion is returned.
-  Additional conversion parameters are specified in Flags.  
+  Additional conversion parameters are specified in Flags.
   The Flags bit LEFT_JUSTIFY is always ignored.
   All conversions are left justified in Buffer.
   If Width is 0, PREFIX_ZERO is ignored in Flags.
   If COMMA_TYPE is set in Flags, then PREFIX_ZERO is ignored in Flags, and commas
   are inserted every 3rd digit starting from the right.
-  If RADIX_HEX is set in Flags, then the output buffer will be 
+  If RADIX_HEX is set in Flags, then the output buffer will be
   formatted in hexadecimal format.
   If Value is < 0 and RADIX_HEX is not set in Flags, then the fist character in Buffer is a '-'.
-  If PREFIX_ZERO is set in Flags and PREFIX_ZERO is not being ignored, 
-  then Buffer is padded with '0' characters so the combination of the optional '-' 
+  If PREFIX_ZERO is set in Flags and PREFIX_ZERO is not being ignored,
+  then Buffer is padded with '0' characters so the combination of the optional '-'
   sign character, '0' characters, digit characters for Value, and the Null-terminator
   add up to Width characters.
-  
+
   If Buffer is NULL, then ASSERT().
   If unsupported bits are set in Flags, then ASSERT().
   If both COMMA_TYPE and RADIX_HEX are set in Flags, then ASSERT().
@@ -917,7 +917,7 @@ AsciiSPrintUnicodeFormat (
   @param  Value   The 64-bit signed value to convert to a string.
   @param  Width   The maximum number of ASCII characters to place in Buffer, not including
                   the Null-terminator.
-  
+
   @return The number of ASCII characters in Buffer not including the Null-terminator.
 
 **/
@@ -977,8 +977,8 @@ GLOBAL_REMOVE_IF_UNREFERENCED CONST CHAR8 mHexStr[] = {'0','1','2','3','4','5','
 **/
 CHAR8 *
 InternalPrintLibValueToString (
-  IN OUT CHAR8  *Buffer, 
-  IN INT64      Value, 
+  IN OUT CHAR8  *Buffer,
+  IN INT64      Value,
   IN UINTN      Radix
   )
 {
@@ -1000,21 +1000,21 @@ InternalPrintLibValueToString (
 }
 
 /**
-  Worker function that produces a Null-terminated string in an output buffer 
+  Worker function that produces a Null-terminated string in an output buffer
   based on a Null-terminated format string and a VA_LIST argument list.
 
-  VSPrint function to process format and place the results in Buffer. Since a 
-  VA_LIST is used this routine allows the nesting of Vararg routines. Thus 
+  VSPrint function to process format and place the results in Buffer. Since a
+  VA_LIST is used this routine allows the nesting of Vararg routines. Thus
   this is the main print working routine.
 
   If COUNT_ONLY_NO_PRINT is set in Flags, Buffer will not be modified at all.
 
-  @param[out] Buffer          The character buffer to print the results of the 
+  @param[out] Buffer          The character buffer to print the results of the
                               parsing of Format into.
-  @param[in]  BufferSize      The maximum number of characters to put into 
+  @param[in]  BufferSize      The maximum number of characters to put into
                               buffer.
   @param[in]  Flags           Initial flags value.
-                              Can only have FORMAT_UNICODE, OUTPUT_UNICODE, 
+                              Can only have FORMAT_UNICODE, OUTPUT_UNICODE,
                               and COUNT_ONLY_NO_PRINT set.
   @param[in]  Format          A Null-terminated format string.
   @param[in]  VaListMarker    VA_LIST style variable argument list consumed by
@@ -1038,11 +1038,11 @@ InternalPrintLibSPrintMarker (
   );
 
 /**
-  Worker function that produces a Null-terminated string in an output buffer 
+  Worker function that produces a Null-terminated string in an output buffer
   based on a Null-terminated format string and variable argument list.
 
-  VSPrint function to process format and place the results in Buffer. Since a 
-  VA_LIST is used this routine allows the nesting of Vararg routines. Thus 
+  VSPrint function to process format and place the results in Buffer. Since a
+  VA_LIST is used this routine allows the nesting of Vararg routines. Thus
   this is the main print working routine
 
   @param  StartOfBuffer The character buffer to print the results of the parsing
@@ -1128,7 +1128,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED CONST CHAR8 *mStatusString[] = {
 
   @param  Buffer      The buffer to place the Unicode or ASCII string.
   @param  EndBuffer   The end of the input Buffer. No characters will be
-                      placed after that. 
+                      placed after that.
   @param  Length      The count of character to be placed into Buffer.
                       (Negative value indicates no buffer fill.)
   @param  Character   The character to be placed into Buffer.
@@ -1147,7 +1147,7 @@ InternalPrintLibFillBuffer (
   )
 {
   INTN  Index;
-  
+
   for (Index = 0; Index < Length && Buffer < EndBuffer; Index++) {
     *Buffer = (CHAR8) Character;
     if (Increment != 1) {
@@ -1160,21 +1160,21 @@ InternalPrintLibFillBuffer (
 }
 
 /**
-  Worker function that produces a Null-terminated string in an output buffer 
+  Worker function that produces a Null-terminated string in an output buffer
   based on a Null-terminated format string and a VA_LIST argument list.
 
-  VSPrint function to process format and place the results in Buffer. Since a 
-  VA_LIST is used this routine allows the nesting of Vararg routines. Thus 
+  VSPrint function to process format and place the results in Buffer. Since a
+  VA_LIST is used this routine allows the nesting of Vararg routines. Thus
   this is the main print working routine.
 
   If COUNT_ONLY_NO_PRINT is set in Flags, Buffer will not be modified at all.
 
-  @param[out] Buffer          The character buffer to print the results of the 
+  @param[out] Buffer          The character buffer to print the results of the
                               parsing of Format into.
-  @param[in]  BufferSize      The maximum number of characters to put into 
+  @param[in]  BufferSize      The maximum number of characters to put into
                               buffer.
   @param[in]  Flags           Initial flags value.
-                              Can only have FORMAT_UNICODE, OUTPUT_UNICODE, 
+                              Can only have FORMAT_UNICODE, OUTPUT_UNICODE,
                               and COUNT_ONLY_NO_PRINT set.
   @param[in]  Format          A Null-terminated format string.
   @param[in]  VaListMarker    VA_LIST style variable argument list consumed by
@@ -1230,7 +1230,7 @@ InternalPrintLibSPrintMarker (
 
   //
   // If you change this code be sure to match the 2 versions of this function.
-  // Nearly identical logic is found in the BasePrintLib and 
+  // Nearly identical logic is found in the BasePrintLib and
   // DxePrintLibPrint2Protocol (both PrintLib instances).
   //
 
@@ -1274,7 +1274,7 @@ InternalPrintLibSPrintMarker (
   if ((Flags & FORMAT_UNICODE) != 0) {
     //
     // Make sure format string cannot contain more than PcdMaximumUnicodeStringLength
-    // Unicode characters if PcdMaximumUnicodeStringLength is not zero. 
+    // Unicode characters if PcdMaximumUnicodeStringLength is not zero.
     //
     ASSERT (StrSize ((CHAR16 *) Format) != 0);
     BytesPerFormatCharacter = 2;
@@ -1282,7 +1282,7 @@ InternalPrintLibSPrintMarker (
   } else {
     //
     // Make sure format string cannot contain more than PcdMaximumAsciiStringLength
-    // Ascii characters if PcdMaximumAsciiStringLength is not zero. 
+    // Ascii characters if PcdMaximumAsciiStringLength is not zero.
     //
     ASSERT (AsciiStrSize (Format) != 0);
     BytesPerFormatCharacter = 1;
@@ -1326,24 +1326,24 @@ InternalPrintLibSPrintMarker (
         Format += BytesPerFormatCharacter;
         FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
         switch (FormatCharacter) {
-        case '.': 
-          Flags |= PRECISION; 
+        case '.':
+          Flags |= PRECISION;
           break;
-        case '-': 
-          Flags |= LEFT_JUSTIFY; 
+        case '-':
+          Flags |= LEFT_JUSTIFY;
           break;
-        case '+': 
-          Flags |= PREFIX_SIGN;  
+        case '+':
+          Flags |= PREFIX_SIGN;
           break;
-        case ' ': 
-          Flags |= PREFIX_BLANK; 
+        case ' ':
+          Flags |= PREFIX_BLANK;
           break;
-        case ',': 
-          Flags |= COMMA_TYPE; 
+        case ',':
+          Flags |= COMMA_TYPE;
           break;
         case 'L':
-        case 'l': 
-          Flags |= LONG_TYPE;    
+        case 'l':
+          Flags |= LONG_TYPE;
           break;
         case '*':
           if ((Flags & PRECISION) == 0) {
@@ -1387,11 +1387,11 @@ InternalPrintLibSPrintMarker (
             Precision = Count;
           }
           break;
-       
+
         case '\0':
           //
           // Make no output if Format string terminates unexpectedly when
-          // looking up for flag, width, precision and type. 
+          // looking up for flag, width, precision and type.
           //
           Format   -= BytesPerFormatCharacter;
           Precision = 0;
@@ -1402,7 +1402,7 @@ InternalPrintLibSPrintMarker (
           Done = TRUE;
           break;
         }
-      } 
+      }
 
       //
       // Handle each argument type
@@ -1434,9 +1434,9 @@ InternalPrintLibSPrintMarker (
           //
           // 'd','x', and 'X' that are not preceded by 'l' or 'L' are assumed to be type "int".
           // This assumption is made so the format string definition is compatible with the ANSI C
-          // Specification for formatted strings.  It is recommended that the Base Types be used 
-          // everywhere, but in this one case, compliance with ANSI C is more important, and 
-          // provides an implementation that is compatible with that largest possible set of CPU 
+          // Specification for formatted strings.  It is recommended that the Base Types be used
+          // everywhere, but in this one case, compliance with ANSI C is more important, and
+          // provides an implementation that is compatible with that largest possible set of CPU
           // architectures.  This is why the type "int" is used in this one case.
           //
           if (BaseListMarker == NULL) {
@@ -1478,9 +1478,9 @@ InternalPrintLibSPrintMarker (
             //
             // 'd','x', and 'X' that are not preceded by 'l' or 'L' are assumed to be type "int".
             // This assumption is made so the format string definition is compatible with the ANSI C
-            // Specification for formatted strings.  It is recommended that the Base Types be used 
-            // everywhere, but in this one case, compliance with ANSI C is more important, and 
-            // provides an implementation that is compatible with that largest possible set of CPU 
+            // Specification for formatted strings.  It is recommended that the Base Types be used
+            // everywhere, but in this one case, compliance with ANSI C is more important, and
+            // provides an implementation that is compatible with that largest possible set of CPU
             // architectures.  This is why the type "unsigned int" is used in this one case.
             //
             Value = (unsigned int)Value;
@@ -1494,7 +1494,7 @@ InternalPrintLibSPrintMarker (
           Count = 0;
         }
         ArgumentString = (CHAR8 *)ValueBuffer + Count;
-        
+
         Digits = Count % 3;
         if (Digits != 0) {
           Digits = 3 - Digits;
@@ -1567,7 +1567,7 @@ InternalPrintLibSPrintMarker (
           GuidData3 = ReadUnaligned16 (&(TmpGuid->Data3));
           InternalPrintLibSPrint (
             ValueBuffer,
-            MAXIMUM_VALUE_CHARACTERS, 
+            MAXIMUM_VALUE_CHARACTERS,
             0,
             "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
             GuidData1,
@@ -1588,9 +1588,9 @@ InternalPrintLibSPrintMarker (
 
       case 't':
         if (BaseListMarker == NULL) {
-          TmpTime = VA_ARG (VaListMarker, TIME *); 
+          TmpTime = VA_ARG (VaListMarker, TIME *);
         } else {
-          TmpTime = BASE_ARG (BaseListMarker, TIME *); 
+          TmpTime = BASE_ARG (BaseListMarker, TIME *);
         }
         if (TmpTime == NULL) {
           ArgumentString = "<null time>";
@@ -1675,7 +1675,7 @@ InternalPrintLibSPrintMarker (
         break;
       }
       break;
- 
+
     case '\r':
       Format += BytesPerFormatCharacter;
       FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
@@ -1841,12 +1841,12 @@ InternalPrintLibSPrintMarker (
   InternalPrintLibFillBuffer (Buffer, EndBuffer + BytesPerOutputCharacter, 1, 0, BytesPerOutputCharacter);
   //
   // Make sure output buffer cannot contain more than PcdMaximumUnicodeStringLength
-  // Unicode characters if PcdMaximumUnicodeStringLength is not zero. 
+  // Unicode characters if PcdMaximumUnicodeStringLength is not zero.
   //
   ASSERT ((((Flags & OUTPUT_UNICODE) == 0)) || (StrSize ((CHAR16 *) OriginalBuffer) != 0));
   //
   // Make sure output buffer cannot contain more than PcdMaximumAsciiStringLength
-  // ASCII characters if PcdMaximumAsciiStringLength is not zero. 
+  // ASCII characters if PcdMaximumAsciiStringLength is not zero.
   //
   ASSERT ((((Flags & OUTPUT_UNICODE) != 0)) || (AsciiStrSize (OriginalBuffer) != 0));
 
@@ -1854,7 +1854,7 @@ InternalPrintLibSPrintMarker (
 }
 
 /**
-  Returns the number of characters that would be produced by if the formatted 
+  Returns the number of characters that would be produced by if the formatted
   output were produced not including the Null-terminator.
 
   If FormatString is NULL, then ASSERT().
@@ -1863,7 +1863,7 @@ InternalPrintLibSPrintMarker (
   @param[in]  FormatString    A Null-terminated Unicode format string.
   @param[in]  Marker          VA_LIST marker for the variable argument list.
 
-  @return The number of characters that would be produced, not including the 
+  @return The number of characters that would be produced, not including the
           Null-terminator.
 **/
 UINTN
@@ -1878,7 +1878,7 @@ SPrintLength (
 }
 
 /**
-  Returns the number of characters that would be produced by if the formatted 
+  Returns the number of characters that would be produced by if the formatted
   output were produced not including the Null-terminator.
 
   If FormatString is NULL, then ASSERT().
@@ -1886,7 +1886,7 @@ SPrintLength (
   @param[in]  FormatString    A Null-terminated ASCII format string.
   @param[in]  Marker          VA_LIST marker for the variable argument list.
 
-  @return The number of characters that would be produced, not including the 
+  @return The number of characters that would be produced, not including the
           Null-terminator.
 **/
 UINTN

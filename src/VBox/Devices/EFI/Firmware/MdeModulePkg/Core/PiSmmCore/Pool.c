@@ -2,13 +2,13 @@
   SMM Memory pool management functions.
 
   Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are licensed and made available 
-  under the terms and conditions of the BSD License which accompanies this 
-  distribution.  The full text of the license may be found at        
-  http://opensource.org/licenses/bsd-license.php                                            
+  This program and the accompanying materials are licensed and made available
+  under the terms and conditions of the BSD License which accompanies this
+  distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -16,7 +16,7 @@
 
 LIST_ENTRY  mSmmPoolLists[MAX_POOL_INDEX];
 //
-// To cache the SMRAM base since when Loading modules At fixed address feature is enabled, 
+// To cache the SMRAM base since when Loading modules At fixed address feature is enabled,
 // all module is assigned an offset relative the SMRAM base in build time.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED  EFI_PHYSICAL_ADDRESS       gLoadModuleAtFixAddressSmramBase = 0;
@@ -54,7 +54,7 @@ SmmInitializeMemoryServices (
     // Build tool will calculate the smm code size and then patch the PcdLoadFixAddressSmmCodePageNumber
     //
     SmmCodeSize = LShiftU64 (PcdGet32(PcdLoadFixAddressSmmCodePageNumber), EFI_PAGE_SHIFT);
-    
+
     //
     // Find the largest SMRAM range between 1MB and 4GB that is at least 256KB - 4K in size
     //
@@ -76,12 +76,12 @@ SmmInitializeMemoryServices (
       }
     }
     gLoadModuleAtFixAddressSmramBase = SmramRanges[CurrentSmramRangesIndex].CpuStart;
-    
+
     //
     // cut out a memory range from this SMRAM range with the size SmmCodeSize to hold SMM driver code
     // A notable thing is that SMM core is already loaded into this range.
     //
-    SmramRanges[CurrentSmramRangesIndex].CpuStart     = SmramRanges[CurrentSmramRangesIndex].CpuStart + SmmCodeSize; 
+    SmramRanges[CurrentSmramRangesIndex].CpuStart     = SmramRanges[CurrentSmramRangesIndex].CpuStart + SmmCodeSize;
     SmramRanges[CurrentSmramRangesIndex].PhysicalSize = SmramRanges[CurrentSmramRangesIndex].PhysicalSize - SmmCodeSize;
   }
   //

@@ -44,7 +44,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @param MemSize     The size of the block of memory pointed to by MemBase
   @param DataSize    How big a free block we want to find
 
-  @return A pointer to a memory block of at least DataSize that lies somewhere 
+  @return A pointer to a memory block of at least DataSize that lies somewhere
           between MemBase and (MemBase + MemSize). The memory pointed to does not
           contain any of the capsule block descriptors or capsule blocks pointed to
           by the BlockList.
@@ -88,7 +88,7 @@ ValidateCapsuleIntegrity (
   @param MemSize        size of the system memory pointed to by MemBase
 
   @retval NULL    could not relocate the descriptors
-  @retval Pointer to the base of the successfully-relocated block descriptors. 
+  @retval Pointer to the base of the successfully-relocated block descriptors.
 
 **/
 EFI_CAPSULE_BLOCK_DESCRIPTOR *
@@ -106,7 +106,7 @@ RelocateBlockDescriptors (
   @param CapsuleHeader   The pointer to EFI_CAPSULE_HEADER
 
   @retval FALSE  Capsule is OK
-  @retval TRUE   Capsule is corrupted 
+  @retval TRUE   Capsule is corrupted
 
 **/
 BOOLEAN
@@ -166,7 +166,7 @@ GetCapsuleInfo (
   @param MemSize     The size of the block of memory pointed to by MemBase
   @param DataSize    How big a free block we want to find
 
-  @return A pointer to a memory block of at least DataSize that lies somewhere 
+  @return A pointer to a memory block of at least DataSize that lies somewhere
           between MemBase and (MemBase + MemSize). The memory pointed to does not
           contain any of the capsule block descriptors or capsule blocks pointed to
           by the BlockList.
@@ -410,7 +410,7 @@ ValidateCapsuleIntegrity (
   @param MemSize        size of the system memory pointed to by MemBase
 
   @retval NULL    could not relocate the descriptors
-  @retval Pointer to the base of the successfully-relocated block descriptors. 
+  @retval Pointer to the base of the successfully-relocated block descriptors.
 
 **/
 EFI_CAPSULE_BLOCK_DESCRIPTOR  *
@@ -697,7 +697,7 @@ GetCapsuleInfo (
   @param CapsuleHeader   The pointer to EFI_CAPSULE_HEADER
 
   @retval FALSE  Capsule is OK
-  @retval TRUE   Capsule is corrupted 
+  @retval TRUE   Capsule is corrupted
 
 **/
 BOOLEAN
@@ -729,7 +729,7 @@ IsCapsuleCorrupted (
   capsule gets coalesced. This can be useful in narrowing down
   where capsule data corruption occurs.
 
-  The test pattern mode fills in memory with a counting UINT32 value. 
+  The test pattern mode fills in memory with a counting UINT32 value.
   If the capsule is not divided up in a multiple of 4-byte blocks, then
   things get messy doing the check. Therefore there are some cases
   here where we just give up and skip the pre-coalesce check.
@@ -823,7 +823,7 @@ CapsuleTestPatternPreCoalesce (
 EFI_STATUS
 BuildCapsuleDescriptors (
   IN  EFI_PHYSICAL_ADDRESS            *BlockListBuffer,
-  OUT EFI_CAPSULE_BLOCK_DESCRIPTOR    **BlockDescriptorList 
+  OUT EFI_CAPSULE_BLOCK_DESCRIPTOR    **BlockDescriptorList
   )
 {
   UINTN                            Index;
@@ -866,7 +866,7 @@ BuildCapsuleDescriptors (
     }
     Index ++;
   }
-  
+
   if (HeadBlock != NULL) {
     *BlockDescriptorList = HeadBlock;
     return EFI_SUCCESS;
@@ -888,7 +888,7 @@ BuildCapsuleDescriptors (
                    | ------------------------- |            |
                    | |  Capsule [0]          | |            |
                    | ------------------------- |            |
-                   |    Capsule Image          |            |   
+                   |    Capsule Image          |            |
 CapsuleImageBase-->+---------------------------+
                    | ------------------------- |            |
                    | |  CapsuleOffset[Num-1] | |            |
@@ -961,9 +961,9 @@ CapsuleDataCoalesce (
   UINTN                          DestLength;
   UINT8                          *RelocPtr;
   UINT64                         *AddDataPtr;
-  UINTN                          CapsuleTimes; 
-  UINT64                         SizeLeft; 
-  UINT64                         CapsuleImageSize; 
+  UINTN                          CapsuleTimes;
+  UINT64                         SizeLeft;
+  UINT64                         CapsuleImageSize;
   UINTN                          CapsuleSize;
   UINTN                          CapsuleNumber;
   UINTN                          DescriptorsSize;
@@ -1223,7 +1223,7 @@ CapsuleDataCoalesce (
         //
         //Here is the end of the current capsule image.
         //
-        CapsuleBeginFlag = TRUE; 
+        CapsuleBeginFlag = TRUE;
       }
     } else {
       //

@@ -74,8 +74,8 @@
   gEfiEndOfPeiSignalPpiGuid                                           ## SOMETIMES_CONSUMES     ## NOTIFY
 
 [Pcd]
-  gEfiSecurityPkgTokenSpaceGuid.PcdPhysicalPresenceLifetimeLock       ## SOMETIMES_CONSUMES 
-  gEfiSecurityPkgTokenSpaceGuid.PcdPhysicalPresenceCmdEnable          ## SOMETIMES_CONSUMES 
+  gEfiSecurityPkgTokenSpaceGuid.PcdPhysicalPresenceLifetimeLock       ## SOMETIMES_CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdPhysicalPresenceCmdEnable          ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdPhysicalPresenceHwEnable           ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString             ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid                    ## CONSUMES

@@ -157,7 +157,7 @@ PxeBcParseCachedDhcpPacket (
                        );
   }
   //
-  // Second, Check if bootfilename and serverhostname is overloaded to carry DHCP options refers to rfc-2132. 
+  // Second, Check if bootfilename and serverhostname is overloaded to carry DHCP options refers to rfc-2132.
   // If yes, try to parse options from the BootFileName field, then ServerName field.
   //
   Option = Options[PXEBC_DHCP4_TAG_INDEX_OVERLOAD];
@@ -215,7 +215,7 @@ PxeBcParseCachedDhcpPacket (
   //
   if (Options[PXEBC_DHCP4_TAG_INDEX_BOOTFILE] != NULL) {
     //
-    // RFC 2132, Section 9.5 does not strictly state Bootfile name (option 67) is null 
+    // RFC 2132, Section 9.5 does not strictly state Bootfile name (option 67) is null
     // terminated string. So force to append null terminated character at the end of string.
     //
     Ptr8 =  (UINT8*)&Options[PXEBC_DHCP4_TAG_INDEX_BOOTFILE]->Data[0];
@@ -1561,12 +1561,12 @@ PxeBcSelectBootPrompt (
 
   VendorOpt = &Packet->PxeVendorOption;
   //
-  // According to the PXE specification 2.1, Table 2-1 PXE DHCP Options  (Full  
-  // List), we must not consider a boot prompt or boot menu if all of the  
+  // According to the PXE specification 2.1, Table 2-1 PXE DHCP Options  (Full
+  // List), we must not consider a boot prompt or boot menu if all of the
   // following hold:
   // - the PXE_DISCOVERY_CONTROL PXE tag is present inside the Vendor Options
   //   (=43) DHCP tag, and
-  // - the PXE_DISCOVERY_CONTROL PXE tag has bit 3 set, and  
+  // - the PXE_DISCOVERY_CONTROL PXE tag has bit 3 set, and
   // - a boot file name has been presented with DHCP option 67.
   //
   if (IS_DISABLE_PROMPT_MENU (VendorOpt->DiscoverCtrl) &&

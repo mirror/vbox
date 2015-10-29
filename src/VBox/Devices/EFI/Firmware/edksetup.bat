@@ -13,10 +13,10 @@
 
 @REM set CYGWIN_HOME=C:\cygwin
 
-@REM usage: 
+@REM usage:
 @REM   edksetup.bat [--nt32] [AntBuild] [Rebuild] [ForceRebuild] [Reconfig]
 @REM if the argument, skip is present, only the paths and the
-@REM test and set of environment settings are performed. 
+@REM test and set of environment settings are performed.
 
 @REM ##############################################################
 @REM # You should not have to modify anything below this line

@@ -55,12 +55,12 @@ IsNumberLetterOnly(
 
   @param[in] List         The list to seatch in.
   @param[in] MetaTarget   The item to search for. MetaMatching supported.
-  @param[out] FullName    Optional pointer to an allocated buffer containing 
+  @param[out] FullName    Optional pointer to an allocated buffer containing
                           the match.
   @param[in] Meta         TRUE to use MetaMatching.
   @param[in] SkipTrailingNumbers  TRUE to allow for numbers after the MetaTarget.
-  @param[in] Target       The single character that delimits list 
-                          items (";" normally). 
+  @param[in] Target       The single character that delimits list
+                          items (";" normally).
 **/
 BOOLEAN
 EFIAPI
@@ -119,7 +119,7 @@ SearchList(
 }
 
 /**
-  Determine what type of device is represented and return it's string.  The 
+  Determine what type of device is represented and return it's string.  The
   string is in allocated memory and must be callee freed.  The HII is is listed below.
   The actual string cannot be determined.
 
@@ -875,7 +875,7 @@ AddMappingFromMapping(
   CONST EFI_DEVICE_PATH_PROTOCOL  *DevPath;
   EFI_STATUS                      Status;
   CHAR16                          *NewSName;
-  
+
   NewSName = AllocateCopyPool(StrSize(SName) + sizeof(CHAR16), SName);
   if (NewSName == NULL) {
     return (SHELL_OUT_OF_RESOURCES);
@@ -927,7 +927,7 @@ AddMappingFromHandle(
   EFI_DEVICE_PATH_PROTOCOL  *DevPath;
   EFI_STATUS                Status;
   CHAR16                    *NewSName;
-  
+
   NewSName = AllocateCopyPool(StrSize(SName) + sizeof(CHAR16), SName);
   if (NewSName == NULL) {
     return (SHELL_OUT_OF_RESOURCES);

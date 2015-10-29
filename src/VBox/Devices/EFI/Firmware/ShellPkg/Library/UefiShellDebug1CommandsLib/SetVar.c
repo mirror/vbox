@@ -181,7 +181,7 @@ ShellCommandRunSetVar (
               FreePool(Buffer);
             }
             Attributes = Attributes2;
-          }          
+          }
           //
           // ascii text
           //

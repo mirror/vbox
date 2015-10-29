@@ -359,7 +359,7 @@ ExtraPushDone:
 
 // UEFI calling convention for x64 requires that Direction flag in EFLAGs is clear
                 cld
-                
+
 // UINT64  ExceptionData;
                 movq    ASM_PFX(ExceptData)(%rip),  %rax
                 pushq   %rax

@@ -35,19 +35,19 @@ ASM_PFX(AsmTransferControl):
     movw  %cx,%bx
     movl  %ebx, jmp_addr
     lret
-LABLE: 
+LABLE:
     .byte 0xb8,0x30,0       # mov ax, 30h as selector
     movw  %ax,%ds
     movw  %ax,%es
     movw  %ax,%fs
     movw  %ax,%gs
     movw  %ax,%ss
-    movl  %cr0, %eax        # Get control register 0  
+    movl  %cr0, %eax        # Get control register 0
     .byte 0x66
     .byte 0x83,0xe0,0xfe    # and    eax, 0fffffffeh  ; Clear PE bit (bit #0)
     .byte 0xf,0x22,0xc0     # mov    cr0, eax         ; Activate real mode
     .byte 0xea              # jmp far @jmp_addr
-jmp_addr: 
+jmp_addr:
     .long    0
 
 ASM_GLOBAL ASM_PFX(AsmTransferControl32)

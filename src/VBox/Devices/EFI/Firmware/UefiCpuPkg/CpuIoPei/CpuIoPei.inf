@@ -18,7 +18,7 @@
   MODULE_UNI_FILE                = CpuIoPei.uni
   FILE_GUID                      = AE265864-CF5D-41a8-913D-71C155E76442
   MODULE_TYPE                    = PEIM
-  VERSION_STRING                 = 1.0  
+  VERSION_STRING                 = 1.0
   ENTRY_POINT                    = CpuIoInitialize
 
 #
@@ -30,7 +30,7 @@
 [Sources]
   CpuIoPei.c
   CpuIoPei.h
-  
+
 [Packages]
   MdePkg/MdePkg.dec
 

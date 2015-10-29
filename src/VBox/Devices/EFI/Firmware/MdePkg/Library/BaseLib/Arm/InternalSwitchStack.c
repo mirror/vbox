@@ -39,7 +39,7 @@ InternalSwitchStackAsm (
   IN      VOID                      *NewStack
   );
 
-  
+
 /**
   Transfers control to a function starting with a new stack.
 

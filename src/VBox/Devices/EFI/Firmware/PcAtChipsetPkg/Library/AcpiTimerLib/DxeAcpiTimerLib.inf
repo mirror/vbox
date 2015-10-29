@@ -2,7 +2,7 @@
 #  DXE ACPI Timer Library
 #
 #  Provides basic timer support using the ACPI timer hardware.  The performance
-#  counter features are provided by the processors time stamp counter. 
+#  counter features are provided by the processors time stamp counter.
 #
 #  Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials

@@ -2727,7 +2727,7 @@ DisplaySBDSManufactureDate (
 /**
   Display System Reset (Type 23) information.
 
-  
+
 Identifies the system-reset capabilities for the system.
  Bits 7:6 Reserved for future assignment via this specification, set to 00b.
  Bit 5  System contains a watchdog timer, either True (1) or False (0).
@@ -2831,7 +2831,7 @@ DisplaySystemResetCapabilities (
 /**
   Display Hardware Security (Type 24) information.
 
-    
+
 Identifies the password and reset status for the system:
 
 Bits 7:6    Power-on Password Status, one of:

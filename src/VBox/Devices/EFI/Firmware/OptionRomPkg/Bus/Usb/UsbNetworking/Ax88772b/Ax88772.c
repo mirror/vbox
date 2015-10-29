@@ -20,7 +20,7 @@
 
 
 /**
-  Compute the CRC 
+  Compute the CRC
 
   @param [in] pMacAddress      Address of a six byte buffer to containing the MAC address.
 
@@ -140,7 +140,7 @@ Ax88772MacAddressSet (
   SetupMsg.Value = 0;
   SetupMsg.Index = 0;
   SetupMsg.Length = PXE_HWADDR_LEN_ETHER;
-  
+
   //
   //  Read the PHY register
   //
@@ -217,7 +217,7 @@ Ax88772NegotiateLinkStart (
 {
   UINT16 Control;
   EFI_STATUS Status;
-  int i; 
+  int i;
   //
   // Set the supported capabilities.
   //
@@ -240,13 +240,13 @@ Ax88772NegotiateLinkStart (
     }
     Status = Ax88772PhyWrite ( pNicDevice, PHY_BMCR, Control );
   }
-  
+
   if (!EFI_ERROR(Status)) {
     i = 0;
     do {
-      
+
         if (pNicDevice->bComplete && pNicDevice->bLinkUp) {
-            pNicDevice->SimpleNetwork.Mode->MediaPresent 
+            pNicDevice->SimpleNetwork.Mode->MediaPresent
                = pNicDevice->bLinkUp & pNicDevice->bComplete;
            break;
        }
@@ -296,11 +296,11 @@ Ax88772NegotiateLinkComplete (
   UINT16 Mask;
   UINT16 PhyData;
   EFI_STATUS  Status;
- 
+
   //
   //  Determine if the link is up.
   //
-  *pbComplete = FALSE;  
+  *pbComplete = FALSE;
 
   //
   //  Get the link status
@@ -313,7 +313,7 @@ Ax88772NegotiateLinkComplete (
       *pbLinkUp = (BOOLEAN)( 0 != ( PhyData & BMSR_LINKST ));
       if ( 0 == *pbLinkUp ) {
         DEBUG (( EFI_D_INFO, "Link Down\n" ));
-      }      
+      }
       else {
          *pbComplete = (BOOLEAN)( 0 != ( PhyData & 0x20 ));
          if ( 0 == *pbComplete ) {
@@ -336,9 +336,9 @@ Ax88772NegotiateLinkComplete (
             Mask = ( *pbHiSpeed ) ? AN_TX_FDX : AN_10_FDX;
             *pbFullDuplex = (BOOLEAN)( 0 != ( PhyData & Mask ));
           }
-        } 
+        }
       }
-  } 
+  }
   else {
       DEBUG (( EFI_D_ERROR, "Failed to read BMCR\n" ));
   }
@@ -374,7 +374,7 @@ Ax88772PhyRead (
   //
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
                        | USB_TARGET_DEVICE;
-  SetupMsg.Request = CMD_PHY_ACCESS_SOFTWARE;   
+  SetupMsg.Request = CMD_PHY_ACCESS_SOFTWARE;
   SetupMsg.Value = 0;
   SetupMsg.Index = 0;
   SetupMsg.Length = 0;
@@ -504,14 +504,14 @@ Ax88772Reset (
 {
   USB_DEVICE_REQUEST SetupMsg;
   EFI_STATUS Status;
-  
+
   EFI_USB_IO_PROTOCOL *pUsbIo;
   EFI_USB_DEVICE_DESCRIPTOR Device;
-  
+
   pUsbIo = pNicDevice->pUsbIo;
   Status = pUsbIo->UsbGetDeviceDescriptor ( pUsbIo, &Device );
 
-	if (EFI_ERROR(Status)) goto err; 
+	if (EFI_ERROR(Status)) goto err;
 
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
                            | USB_TARGET_DEVICE;
@@ -522,9 +522,9 @@ Ax88772Reset (
   Status = Ax88772UsbCommand ( pNicDevice,
                                 &SetupMsg,
                                 NULL );
-                                   
-  if (EFI_ERROR(Status)) goto err;                                 
-                                   
+
+  if (EFI_ERROR(Status)) goto err;
+
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
                           | USB_TARGET_DEVICE;
       SetupMsg.Request = CMD_PHY_SELECT;
@@ -534,23 +534,23 @@ Ax88772Reset (
       Status = Ax88772UsbCommand ( pNicDevice,
                                     &SetupMsg,
                                     NULL );
-                                    
-  if (EFI_ERROR(Status)) goto err;  
-                                     
+
+  if (EFI_ERROR(Status)) goto err;
+
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
-                          | USB_TARGET_DEVICE;                                
+                          | USB_TARGET_DEVICE;
   SetupMsg.Request = CMD_RESET;
       SetupMsg.Value = SRR_IPRL ;
       SetupMsg.Index = 0;
       SetupMsg.Length = 0;
       Status = Ax88772UsbCommand ( pNicDevice,
                                    &SetupMsg,
-                                   NULL );  
-                                   
-  if (EFI_ERROR(Status)) goto err;  
-                                   
+                                   NULL );
+
+  if (EFI_ERROR(Status)) goto err;
+
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
-                          | USB_TARGET_DEVICE;                                
+                          | USB_TARGET_DEVICE;
   SetupMsg.Request = CMD_RESET;
         SetupMsg.Value = SRR_IPPD | SRR_IPRL ;
         SetupMsg.Index = 0;
@@ -558,11 +558,11 @@ Ax88772Reset (
         Status = Ax88772UsbCommand ( pNicDevice,
                                     &SetupMsg,
                                     NULL );
-                                   
+
   gBS->Stall ( 200000 );
-    
-  if (EFI_ERROR(Status)) goto err;  
-    
+
+  if (EFI_ERROR(Status)) goto err;
+
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
                           | USB_TARGET_DEVICE;
   SetupMsg.Request = CMD_RESET;
@@ -571,12 +571,12 @@ Ax88772Reset (
   SetupMsg.Length = 0;
   Status = Ax88772UsbCommand ( pNicDevice,
                                 &SetupMsg,
-                                NULL );   
-                                    
-  gBS->Stall ( 200000 ); 
-     
-  if (EFI_ERROR(Status)) goto err;  
-     
+                                NULL );
+
+  gBS->Stall ( 200000 );
+
+  if (EFI_ERROR(Status)) goto err;
+
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
                           | USB_TARGET_DEVICE;
   SetupMsg.Request = CMD_RESET;
@@ -586,9 +586,9 @@ Ax88772Reset (
   Status = Ax88772UsbCommand ( pNicDevice,
                                     &SetupMsg,
                                     NULL );
-                                    
-  if (EFI_ERROR(Status)) goto err;                                
-                                    
+
+  if (EFI_ERROR(Status)) goto err;
+
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
                           | USB_TARGET_DEVICE;
   SetupMsg.Request = CMD_PHY_SELECT;
@@ -597,10 +597,10 @@ Ax88772Reset (
   SetupMsg.Length = 0;
   Status = Ax88772UsbCommand ( pNicDevice,
                                     &SetupMsg,
-                                    NULL ); 
-                                    
-  if (EFI_ERROR(Status)) goto err;                                
-                                    
+                                    NULL );
+
+  if (EFI_ERROR(Status)) goto err;
+
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
                           | USB_TARGET_DEVICE;
   SetupMsg.Request = CMD_RESET;
@@ -610,9 +610,9 @@ Ax88772Reset (
   Status = Ax88772UsbCommand ( pNicDevice,
                                     &SetupMsg,
                                     NULL );
-                                    
-  if (EFI_ERROR(Status)) goto err;                                
-                                    
+
+  if (EFI_ERROR(Status)) goto err;
+
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
                         | USB_TARGET_DEVICE;
   SetupMsg.Request = CMD_RX_CONTROL_WRITE;
@@ -622,18 +622,18 @@ Ax88772Reset (
   Status = Ax88772UsbCommand ( pNicDevice,
                                   &SetupMsg,
                                   NULL );
-                                  
-  if (EFI_ERROR(Status)) goto err;  
+
+  if (EFI_ERROR(Status)) goto err;
 
   SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
-                        | USB_TARGET_DEVICE; 
+                        | USB_TARGET_DEVICE;
   SetupMsg.Request = CMD_RXQTC;
   SetupMsg.Value = 0x8000;
   SetupMsg.Index = 0x8001;
   SetupMsg.Length = 0;
   Status = Ax88772UsbCommand ( pNicDevice,
                                   &SetupMsg,
-                                  NULL ); 
+                                  NULL );
 err:
   return Status;
 }
@@ -664,10 +664,10 @@ Ax88772RxControl (
   EFI_STATUS Status;
   EFI_USB_IO_PROTOCOL *pUsbIo;
   EFI_USB_DEVICE_DESCRIPTOR Device;
-  
+
   pUsbIo = pNicDevice->pUsbIo;
   Status = pUsbIo->UsbGetDeviceDescriptor ( pUsbIo, &Device );
-  
+
   if (EFI_ERROR(Status)) {
     DEBUG (( EFI_D_ERROR, "Failed to get device descriptor\n" ));
     return Status;
@@ -676,7 +676,7 @@ Ax88772RxControl (
   //
   // Enable the receiver if something is to be received
   //
-  
+
   if ( 0 != RxFilter ) {
     //
     //  Enable the receiver
@@ -684,7 +684,7 @@ Ax88772RxControl (
     SetupMsg.RequestType = USB_ENDPOINT_DIR_IN
                          | USB_REQ_TYPE_VENDOR
                          | USB_TARGET_DEVICE;
-    SetupMsg.Request = CMD_MEDIUM_STATUS_READ;    
+    SetupMsg.Request = CMD_MEDIUM_STATUS_READ;
     SetupMsg.Value = 0;
     SetupMsg.Index = 0;
     SetupMsg.Length = sizeof ( MediumStatus );
@@ -694,17 +694,17 @@ Ax88772RxControl (
     if ( !EFI_ERROR ( Status )) {
       if ( 0 == ( MediumStatus & MS_RE )) {
         MediumStatus |= MS_RE | MS_ONE;
-        
+
         if ( pNicDevice->bFullDuplex )
           MediumStatus |= MS_TFC | MS_RFC | MS_FD;
         else
           MediumStatus &= ~(MS_TFC | MS_RFC | MS_FD);
-        
+
         if ( pNicDevice->b100Mbps )
           MediumStatus |= MS_PS;
         else
           MediumStatus &= ~MS_PS;
-        
+
         SetupMsg.RequestType = USB_REQ_TYPE_VENDOR
                              | USB_TARGET_DEVICE;
         SetupMsg.Request = CMD_MEDIUM_STATUS_WRITE;
@@ -725,8 +725,8 @@ Ax88772RxControl (
               Status ));
     }
   }
-  
-  RxControl = RXC_SO | RXC_RH1M;  
+
+  RxControl = RXC_SO | RXC_RH1M;
   //
   //  Enable multicast if requested
   //
@@ -765,7 +765,7 @@ Ax88772RxControl (
   if ( 0 != ( RxFilter & EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS )) {
       RxControl |= RXC_PRO;
   }
-    
+
   //
   //  Update the receiver control
   //
@@ -781,7 +781,7 @@ Ax88772RxControl (
                                  NULL );
     if ( !EFI_ERROR ( Status )) {
       pNicDevice->CurRxControl = RxControl;
-      
+
     }
     else {
         DEBUG (( EFI_D_ERROR, "ERROR - Failed to set receiver control, Status: %r\r\n",
@@ -812,7 +812,7 @@ Ax88772SromRead (
   IN UINT32 Address,
   OUT UINT16 * pData
   )
-{ 
+{
   return EFI_UNSUPPORTED;
 }
 

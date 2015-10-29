@@ -226,7 +226,7 @@ def TrimPreprocessedFile(Source, Target, ConvertHex, TrimLong):
 #
 def TrimPreprocessedVfr(Source, Target):
     CreateDirectory(os.path.dirname(Target))
-    
+
     try:
         f = open (Source,'r')
     except:
@@ -303,7 +303,7 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None):
             SearchPathList = [LocalSearchPath] + IncludePathList
         else:
             SearchPathList = IncludePathList
-  
+
         for IncludePath in SearchPathList:
             IncludeFile = os.path.join(IncludePath, Source)
             if os.path.isfile(IncludeFile):
@@ -314,7 +314,7 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None):
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Source)
 
-    
+
     # avoid A "include" B and B "include" A
     IncludeFile = os.path.abspath(os.path.normpath(IncludeFile))
     if IncludeFile in gIncludedAslFile:
@@ -322,7 +322,7 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None):
                        ExtraData= "%s -> %s" % (" -> ".join(gIncludedAslFile), IncludeFile))
         return []
     gIncludedAslFile.append(IncludeFile)
-    
+
     for Line in F:
         LocalSearchPath = None
         Result = gAslIncludePattern.findall(Line)
@@ -332,7 +332,7 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None):
                 NewFileContent.append("%s%s" % (Indent, Line))
                 continue
             #
-            # We should first search the local directory if current file are using pattern #include "XXX" 
+            # We should first search the local directory if current file are using pattern #include "XXX"
             #
             if Result[0][2] == '"':
                 LocalSearchPath = os.path.dirname(IncludeFile)
@@ -353,20 +353,20 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None):
 #
 # @param  Source          File to be trimmed
 # @param  Target          File to store the trimmed content
-# @param  IncludePathFile The file to log the external include path 
+# @param  IncludePathFile The file to log the external include path
 #
 def TrimAslFile(Source, Target, IncludePathFile):
     CreateDirectory(os.path.dirname(Target))
-    
+
     SourceDir = os.path.dirname(Source)
     if SourceDir == '':
         SourceDir = '.'
-    
+
     #
     # Add source directory as the first search directory
     #
     IncludePathList = [SourceDir]
-    
+
     #
     # If additional include path file is specified, append them all
     # to the search directory list.
@@ -565,7 +565,7 @@ def Main():
             EdkLogger.SetLevel(CommandOptions.LogLevel)
     except FatalError, X:
         return 1
-    
+
     try:
         if CommandOptions.FileType == "Vfr":
             if CommandOptions.OutputFile == None:

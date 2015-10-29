@@ -30,16 +30,16 @@
   BaseSynchronizationLibInternals.h
 
 [Sources.IA32]
-  Ia32/InterlockedCompareExchange64.c | MSFT 
-  Ia32/InterlockedCompareExchange32.c | MSFT 
-  Ia32/InterlockedDecrement.c | MSFT 
-  Ia32/InterlockedIncrement.c | MSFT 
+  Ia32/InterlockedCompareExchange64.c | MSFT
+  Ia32/InterlockedCompareExchange32.c | MSFT
+  Ia32/InterlockedDecrement.c | MSFT
+  Ia32/InterlockedIncrement.c | MSFT
   SynchronizationMsc.c  | MSFT
 
-  Ia32/InterlockedCompareExchange64.asm | INTEL 
-  Ia32/InterlockedCompareExchange32.asm | INTEL 
-  Ia32/InterlockedDecrement.asm | INTEL 
-  Ia32/InterlockedIncrement.asm | INTEL 
+  Ia32/InterlockedCompareExchange64.asm | INTEL
+  Ia32/InterlockedCompareExchange32.asm | INTEL
+  Ia32/InterlockedDecrement.asm | INTEL
+  Ia32/InterlockedIncrement.asm | INTEL
   Synchronization.c | INTEL
 
   Ia32/GccInline.c | GCC
@@ -48,29 +48,29 @@
 [Sources.X64]
   X64/InterlockedCompareExchange64.c | MSFT
   X64/InterlockedCompareExchange32.c | MSFT
-  
+
   X64/InterlockedCompareExchange64.asm | INTEL
   X64/InterlockedCompareExchange32.asm | INTEL
-  
-  X64/InterlockedDecrement.c | MSFT 
-  X64/InterlockedIncrement.c | MSFT 
-  SynchronizationMsc.c | MSFT 
 
-  X64/InterlockedDecrement.asm | INTEL 
-  X64/InterlockedIncrement.asm | INTEL 
-  Synchronization.c | INTEL 
+  X64/InterlockedDecrement.c | MSFT
+  X64/InterlockedIncrement.c | MSFT
+  SynchronizationMsc.c | MSFT
+
+  X64/InterlockedDecrement.asm | INTEL
+  X64/InterlockedIncrement.asm | INTEL
+  Synchronization.c | INTEL
 
   X64/GccInline.c | GCC
-  SynchronizationGcc.c  | GCC 
+  SynchronizationGcc.c  | GCC
 
 [Sources.IPF]
   Ipf/Synchronization.c
   Ipf/InterlockedCompareExchange64.s
   Ipf/InterlockedCompareExchange32.s
 
-  Synchronization.c     | INTEL 
-  SynchronizationMsc.c  | MSFT 
-  SynchronizationGcc.c  | GCC 
+  Synchronization.c     | INTEL
+  SynchronizationMsc.c  | MSFT
+  SynchronizationGcc.c  | GCC
 
 [Sources.EBC]
   Synchronization.c

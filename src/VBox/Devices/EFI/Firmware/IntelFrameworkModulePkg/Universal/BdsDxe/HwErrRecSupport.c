@@ -28,9 +28,9 @@ InitializeHwErrRecSupport (
 {
   EFI_STATUS    Status;
   UINT16        HardwareErrorRecordLevel;
-  
+
   HardwareErrorRecordLevel = PcdGet16 (PcdHardwareErrorRecordLevel);
-  
+
   if (HardwareErrorRecordLevel != 0) {
     //
     // If level value equal 0, no need set to 0 to variable area because UEFI specification

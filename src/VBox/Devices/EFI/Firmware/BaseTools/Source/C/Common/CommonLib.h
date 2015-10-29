@@ -152,14 +152,14 @@ LongFilePath (
 /*++
 
 Routine Description:
-  Convert FileName to the long file path, which can support larger than 260 length. 
+  Convert FileName to the long file path, which can support larger than 260 length.
 
 Arguments:
-  FileName         - FileName. 
+  FileName         - FileName.
 
 Returns:
   LongFilePath      A pointer to the converted long file path.
-  
+
 --*/
 
 #ifdef __cplusplus

@@ -23,7 +23,7 @@
   FILE_GUID                      = 472ab06d-9810-4c00-bb7f-dad1828fc1ab
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PciCf8Lib 
+  LIBRARY_CLASS                  = PciCf8Lib
 
 #
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC

@@ -32,7 +32,7 @@ UINT64  mPerformanceCounterFrequency = 0;
 UINT64
 InternalGetPerformanceCounterFrequency (
   VOID
-  ) 
+  )
 {
   BOOLEAN  InterruptState;
   UINT64   Count;

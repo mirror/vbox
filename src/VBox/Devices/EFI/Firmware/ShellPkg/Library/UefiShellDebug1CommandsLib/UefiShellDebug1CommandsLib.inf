@@ -64,8 +64,8 @@
   EditStatusBar.c
   EditMenuBar.h
   EditMenuBar.c
-  
-## Files specific to the text editor  
+
+## Files specific to the text editor
   Edit/Edit.c
   Edit/TextEditor.h
   Edit/TextEditorTypes.h
@@ -76,7 +76,7 @@
   Edit/Misc.h
   Edit/Misc.c
   Edit/TextEditStrings.uni
-  
+
 ## Files specific to the HEX editor
   HexEdit/BufferImage.h
   HexEdit/BufferImage.c

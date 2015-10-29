@@ -116,7 +116,7 @@ HandleVol(
       if (SysInfo == NULL) {
         ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellLevel2HiiHandle);
         ShellStatus = SHELL_OUT_OF_RESOURCES;
-      } 
+      }
     }
     if (SysInfo != NULL) {
       StrnCpy ((CHAR16 *) SysInfo->VolumeLabel, Name, (Size1 > Size2?Size1/sizeof(CHAR16):Size2/sizeof(CHAR16))-1);
@@ -127,7 +127,7 @@ HandleVol(
         (UINTN)SysInfo->Size,
         SysInfo);
     }
-  }  
+  }
 
   FreePool(SysInfo);
 
@@ -157,7 +157,7 @@ HandleVol(
   }
 
   gEfiShellProtocol->CloseFile(ShellFileHandle);
-  
+
   ASSERT(SysInfo != NULL);
 
   if (SysInfo != NULL) {

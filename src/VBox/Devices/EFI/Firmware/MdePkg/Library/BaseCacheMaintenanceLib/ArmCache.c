@@ -1,6 +1,6 @@
 /** @file
-  Cache Maintenance Functions. These functions vary by ARM architecture so the MdePkg 
-  versions are null functions used to make sure things will compile. 
+  Cache Maintenance Functions. These functions vary by ARM architecture so the MdePkg
+  versions are null functions used to make sure things will compile.
 
   Copyright (c) 2006 - 2009, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>

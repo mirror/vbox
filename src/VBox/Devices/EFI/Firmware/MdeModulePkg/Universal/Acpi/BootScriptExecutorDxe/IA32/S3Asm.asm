@@ -19,7 +19,7 @@
 
 EXTERNDEF   AsmFixAddress16:DWORD
 EXTERNDEF   AsmJmpAddr32:DWORD
-   
+
 ;-----------------------------------------
 ;VOID
 ;AsmTransferControl (
@@ -27,19 +27,19 @@ EXTERNDEF   AsmJmpAddr32:DWORD
 ;  IN   UINT32           AcpiLowMemoryBase
 ;  );
 ;-----------------------------------------
-   
+
 AsmTransferControl  PROC
     ; S3WakingVector    :DWORD
     ; AcpiLowMemoryBase :DWORD
     push  ebp
-    mov   ebp, esp    
+    mov   ebp, esp
     lea   eax, @F
     push  28h               ; CS
     push  eax
     mov   ecx, [ebp + 8]
     shrd  ebx, ecx, 20
-    and   ecx, 0fh          
-    mov   bx, cx          
+    and   ecx, 0fh
+    mov   bx, cx
     mov   @jmp_addr, ebx
     retf
 @@:
@@ -49,7 +49,7 @@ AsmTransferControl  PROC
     mov   fs, ax
     mov   gs, ax
     mov   ss, ax
-    mov   eax, cr0          ; Get control register 0  
+    mov   eax, cr0          ; Get control register 0
     DB    66h
     DB    83h, 0e0h, 0feh   ; and    eax, 0fffffffeh  ; Clear PE bit (bit #0)
     DB    0fh, 22h, 0c0h    ; mov    cr0, eax         ; Activate real mode

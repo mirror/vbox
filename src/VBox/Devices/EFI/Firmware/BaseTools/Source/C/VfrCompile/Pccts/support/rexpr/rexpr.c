@@ -154,7 +154,7 @@ char *s;
 #endif
 {
 	ArcPtr p;
-	
+
 	if ( automaton == accept && *s == '\0' ) return 1;	/* match */
 
 	for (p=automaton->arcs; p!=NULL; p=p->next)			/* try all arcs */
@@ -185,12 +185,12 @@ GraphPtr g;
 #endif
 {
 	Graph g1, g2;
-	
+
 	if ( andExpr(&g1) == -1 )
 	{
 		return -1;
 	}
-	
+
 	while ( token == '|' )
 	{
 		int a;
@@ -200,7 +200,7 @@ GraphPtr g;
 		else if ( !a ) return 1;	/* empty alternative */
 		g1 = BuildNFA_AorB(g1, g2);
 	}
-	
+
 	if ( token!='\0' ) return -1;
 
 	*g = g1;
@@ -219,18 +219,18 @@ GraphPtr g;
 #endif
 {
 	Graph g1, g2;
-	
+
 	if ( expr(&g1) == -1 )
 	{
 		return -1;
 	}
-	
+
 	while ( token==Atom || token=='{' || token=='(' || token=='~' || token=='[' )
 	{
 		if (expr(&g2) == -1) return -1;
 		g1 = BuildNFA_AB(g1, g2);
 	}
-	
+
 	*g = g1;
 	return 1;
 }
@@ -251,7 +251,7 @@ GraphPtr g;
 {
 	int complement = 0;
 	char s[257];    /* alloc space for string of char in [] */
-	
+
 	if ( token == '~' || token == '[' )
 	{
 		if ( token == '~' ) {complement = 1; next();}
@@ -294,7 +294,7 @@ GraphPtr g;
 		repeatSymbol( g );
 		return 1;
 	}
-	
+
 	return -1;
 }
 
@@ -335,9 +335,9 @@ int complement;
 	static unsigned char set[256];		/* no duplicates */
 	int first, last, i;
 	char *s = p;
-	
+
 	if ( token != Atom ) return -1;
-	
+
 	for (i=0; i<256; i++) set[i] = 0;
 	while ( token == Atom )
 	{
@@ -458,7 +458,7 @@ int label;
 #endif
 {
 	ArcPtr a;
-	
+
 	a = newGraphArc();
 	if ( i->arcs == NULL ) i->arctail = i->arcs = a;
 	else {(i->arctail)->next = a; i->arctail = a;}
@@ -474,7 +474,7 @@ int label;
 #endif
 {
 	Graph g;
-	
+
 	g.left = newNode();
 	g.right = newNode();
 	ArcBetweenGraphNodes(g.left, g.right, label);
@@ -489,7 +489,7 @@ Graph A, B;
 #endif
 {
 	Graph g;
-	
+
 	ArcBetweenGraphNodes(A.right, B.left, Epsilon);
 	g.left = A.left;
 	g.right = B.right;
@@ -504,7 +504,7 @@ Graph A, B;
 #endif
 {
 	Graph g;
-	
+
 	g.left = newNode();
 	ArcBetweenGraphNodes(g.left, A.left, Epsilon);
 	ArcBetweenGraphNodes(g.left, B.left, Epsilon);
@@ -522,9 +522,9 @@ char *s;
 #endif
 {
 	Graph g;
-	
+
 	if ( s == NULL ) return g;
-	
+
 	g.left = newNode();
 	g.right = newNode();
 	while ( *s != '\0' )
@@ -545,12 +545,12 @@ Graph A;
 
 	g.left = newNode();
 	g.right = newNode();
-	
+
 	ArcBetweenGraphNodes(g.left, A.left, Epsilon);
 	ArcBetweenGraphNodes(g.left, g.right, Epsilon);
 	ArcBetweenGraphNodes(A.right, g.right, Epsilon);
 	ArcBetweenGraphNodes(A.right, A.left, Epsilon);
-	
+
 	return( g );
 }
 
@@ -562,7 +562,7 @@ Graph A;
 #endif
 {
 	ArcBetweenGraphNodes(A.right, A.left, Epsilon);
-	
+
 	return( A );
 }
 
@@ -574,13 +574,13 @@ Graph A;
 #endif
 {
 	Graph g;
-	
+
 	g.left = newNode();
 	g.right = newNode();
-	
+
 	ArcBetweenGraphNodes(g.left, A.left, Epsilon);
 	ArcBetweenGraphNodes(g.left, g.right, Epsilon);
 	ArcBetweenGraphNodes(A.right, g.right, Epsilon);
-	
+
 	return( g );
 }

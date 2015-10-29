@@ -28,13 +28,13 @@ class CapsuleData:
     #   @param  self        The object pointer
     def __init__(self):
         pass
-    
+
     ## generate capsule data
     #
     #   @param  self        The object pointer
     def GenCapsuleSubItem(self):
         pass
-        
+
 ## FFS class for capsule data
 #
 #
@@ -115,7 +115,7 @@ class CapsuleFd (CapsuleData):
         else:
             FdFile = GenFdsGlobalVariable.ReplaceWorkspaceMacro(self.FdName)
             return FdFile
-        
+
 ## AnyFile class for capsule data
 #
 #
@@ -135,7 +135,7 @@ class CapsuleAnyFile (CapsuleData):
     #
     def GenCapsuleSubItem(self):
         return self.FileName
-    
+
 ## Afile class for capsule data
 #
 #

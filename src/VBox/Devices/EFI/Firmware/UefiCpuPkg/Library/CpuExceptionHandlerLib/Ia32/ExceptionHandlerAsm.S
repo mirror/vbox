@@ -357,7 +357,7 @@ HasErrorCode:
     #
     # Put Vector Number on stack and restore ECX
     #
-    xchgl   (%esp), %ecx 
+    xchgl   (%esp), %ecx
 
 ErrorCodeAndVectorOnStack:
     pushl   %ebp
@@ -384,13 +384,13 @@ ErrorCodeAndVectorOnStack:
     # Align stack to make sure that EFI_FX_SAVE_STATE_IA32 of EFI_SYSTEM_CONTEXT_IA32
     # is 16-byte aligned
     #
-    andl    $0x0fffffff0, %esp 
+    andl    $0x0fffffff0, %esp
     subl    $12, %esp
 
     subl    $8, %esp
     pushl   $0         # check EXCEPTION_HANDLER_CONTEXT.OldIdtHandler
     pushl   $0         # check EXCEPTION_HANDLER_CONTEXT.ExceptionDataFlag
-       
+
 #; UINT32  Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
     pushl   %eax
     pushl   %ecx
@@ -405,7 +405,7 @@ ErrorCodeAndVectorOnStack:
 #; UINT32  Gs, Fs, Es, Ds, Cs, Ss;
     movl    %ss, %eax
     pushl   %eax
-    movzwl  16(%ebp), %eax 
+    movzwl  16(%ebp), %eax
     pushl   %eax
     movl    %ds, %eax
     pushl   %eax
@@ -425,14 +425,14 @@ ErrorCodeAndVectorOnStack:
     sidt    (%esp)
     movl    2(%esp), %eax
     xchgl   (%esp), %eax
-    andl    $0x0FFFF, %eax 
+    andl    $0x0FFFF, %eax
     movl    %eax, 4(%esp)
 
     subl    $8, %esp
     sgdt    (%esp)
     movl    2(%esp), %eax
     xchgl   (%esp), %eax
-    andl    $0x0FFFF, %eax 
+    andl    $0x0FFFF, %eax
     movl    %eax, 4(%esp)
 
 #; UINT32  Ldtr, Tr;
@@ -587,30 +587,30 @@ DoIret:
 #---------------------------------------;
 # _AsmGetTemplateAddressMap             ;
 #---------------------------------------;
-# 
+#
 # Protocol prototype
 #   AsmGetTemplateAddressMap (
 #     EXCEPTION_HANDLER_TEMPLATE_MAP *AddressMap
 #   );
-#           
+#
 # Routine Description:
-# 
+#
 #  Return address map of interrupt handler template so that C code can generate
 #  interrupt table.
-# 
+#
 # Arguments:
-# 
-# 
-# Returns: 
-# 
+#
+#
+# Returns:
+#
 #   Nothing
 #
-# 
+#
 # Input:  [ebp][0]  = Original ebp
 #         [ebp][4]  = Return address
-#          
+#
 # Output: Nothing
-#          
+#
 # Destroys: Nothing
 #-----------------------------------------------------------------------------;
 #-------------------------------------------------------------------------------------

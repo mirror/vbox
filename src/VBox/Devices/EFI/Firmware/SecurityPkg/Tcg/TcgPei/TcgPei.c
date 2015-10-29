@@ -2,12 +2,12 @@
   Initialize TPM device and measure FVs before handing off control to DXE.
 
 Copyright (c) 2005 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -129,12 +129,12 @@ EFI_PEI_NOTIFY_DESCRIPTOR           mNotifyList[] = {
   {
     EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK,
     &gEfiPeiFirmwareVolumeInfoPpiGuid,
-    FirmwareVolmeInfoPpiNotifyCallback 
+    FirmwareVolmeInfoPpiNotifyCallback
   },
   {
     EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK,
     &gEfiPeiFirmwareVolumeInfo2PpiGuid,
-    FirmwareVolmeInfoPpiNotifyCallback 
+    FirmwareVolmeInfoPpiNotifyCallback
   },
   {
     (EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
@@ -145,7 +145,7 @@ EFI_PEI_NOTIFY_DESCRIPTOR           mNotifyList[] = {
 
 /**
   Record all measured Firmware Volum Information into a Guid Hob
-  Guid Hob payload layout is 
+  Guid Hob payload layout is
 
      UINT32 *************************** FIRMWARE_BLOB number
      EFI_PLATFORM_FIRMWARE_BLOB******** BLOB Array
@@ -165,13 +165,13 @@ EndofPeiSignalNotifyCallBack (
   IN EFI_PEI_NOTIFY_DESCRIPTOR     *NotifyDescriptor,
   IN VOID                          *Ppi
   )
-{  
+{
   MEASURED_HOB_DATA *MeasuredHobData;
 
   MeasuredHobData = NULL;
 
   //
-  // Create a Guid hob to save all measured Fv 
+  // Create a Guid hob to save all measured Fv
   //
   MeasuredHobData = BuildGuidHob(
                       &gMeasuredFvHobGuid,
@@ -204,12 +204,12 @@ EndofPeiSignalNotifyCallBack (
   added into the Event Log.
 
   @param[in]      PeiServices   Describes the list of possible PEI Services.
-  @param[in]      HashData      Physical address of the start of the data buffer 
+  @param[in]      HashData      Physical address of the start of the data buffer
                                 to be hashed, extended, and logged.
   @param[in]      HashDataLen   The length, in bytes, of the buffer referenced by HashData.
   @param[in]      TpmHandle     TPM handle.
-  @param[in]      NewEventHdr   Pointer to a TCG_PCR_EVENT_HDR data structure.  
-  @param[in]      NewEventData  Pointer to the new event data.  
+  @param[in]      NewEventHdr   Pointer to a TCG_PCR_EVENT_HDR data structure.
+  @param[in]      NewEventData  Pointer to the new event data.
 
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_OUT_OF_RESOURCES  No enough memory to log the new event.
@@ -228,7 +228,7 @@ HashLogExtendEvent (
 {
   EFI_STATUS                        Status;
   VOID                              *HobData;
-  
+
   if (GetFirstGuidHob (&gTpmErrorHobGuid) != NULL) {
     return EFI_DEVICE_ERROR;
   }
@@ -322,13 +322,13 @@ MeasureCRTMVersion (
 }
 
 /**
-  Measure FV image. 
-  Add it into the measured FV list after the FV is measured successfully. 
+  Measure FV image.
+  Add it into the measured FV list after the FV is measured successfully.
 
   @param[in]  FvBase            Base address of FV image.
   @param[in]  FvLength          Length of FV image.
 
-  @retval EFI_SUCCESS           Fv image is measured successfully 
+  @retval EFI_SUCCESS           Fv image is measured successfully
                                 or it has been already measured.
   @retval EFI_OUT_OF_RESOURCES  No enough memory to log the new event.
   @retval EFI_DEVICE_ERROR      The command was unsuccessful.
@@ -370,7 +370,7 @@ MeasureFvImage (
       return EFI_SUCCESS;
     }
   }
-  
+
   //
   // Measure and record the FV to the TPM
   //
@@ -429,7 +429,7 @@ MeasureMainBios (
   EFI_PEI_FV_HANDLE                 VolumeHandle;
   EFI_FV_INFO                       VolumeInfo;
   EFI_PEI_FIRMWARE_VOLUME_PPI       *FvPpi;
-  
+
   FvInstances    = 0;
   while (TRUE) {
     //
@@ -441,7 +441,7 @@ MeasureMainBios (
     if (EFI_ERROR (Status)) {
       break;
     }
-  
+
     //
     // Measure and record the firmware volume that is dispatched by PeiCore
     //
@@ -451,8 +451,8 @@ MeasureMainBios (
     // Locate the corresponding FV_PPI according to founded FV's format guid
     //
     Status = PeiServicesLocatePpi (
-               &VolumeInfo.FvFormat, 
-               0, 
+               &VolumeInfo.FvFormat,
+               0,
                NULL,
                (VOID**)&FvPpi
                );
@@ -496,21 +496,21 @@ FirmwareVolmeInfoPpiNotifyCallback (
   // The PEI Core can not dispatch or load files from memory mapped FVs that do not support FvPpi.
   //
   Status = PeiServicesLocatePpi (
-             &Fv->FvFormat, 
-             0, 
+             &Fv->FvFormat,
+             0,
              NULL,
              (VOID**)&FvPpi
              );
   if (EFI_ERROR (Status)) {
     return EFI_SUCCESS;
   }
-  
+
   //
   // This is an FV from an FFS file, and the parent FV must have already been measured,
   // No need to measure twice, so just record the FV and return
   //
   if (Fv->ParentFvName != NULL || Fv->ParentFileName != NULL ) {
-    
+
     ASSERT (mMeasuredChildFvIndex < PcdGet32 (PcdPeiCoreMaxFvSupported));
     if (mMeasuredChildFvIndex < PcdGet32 (PcdPeiCoreMaxFvSupported)) {
       //
@@ -571,7 +571,7 @@ PhysicalPresencePpiNotifyCallback (
   //
   if (PcdGetBool (PcdPhysicalPresenceLifetimeLock) && !LifetimeLock) {
     //
-    // Lock TPM LifetimeLock is required, and LifetimeLock is not locked yet. 
+    // Lock TPM LifetimeLock is required, and LifetimeLock is not locked yet.
     //
     PhysicalPresenceValue = TPM_PHYSICAL_PRESENCE_LIFETIME_LOCK;
 
@@ -587,8 +587,8 @@ PhysicalPresencePpiNotifyCallback (
       PhysicalPresenceValue |= TPM_PHYSICAL_PRESENCE_HW_ENABLE;
     } else {
       PhysicalPresenceValue |= TPM_PHYSICAL_PRESENCE_HW_DISABLE;
-    }      
-     
+    }
+
     Status = TpmCommPhysicalPresence (
                PeiServices,
                TpmHandle,
@@ -598,7 +598,7 @@ PhysicalPresencePpiNotifyCallback (
       return Status;
     }
   }
-  
+
   //
   // 2. Lock physical presence if it is required.
   //
@@ -631,7 +631,7 @@ PhysicalPresencePpiNotifyCallback (
 
   //
   // Lock physical presence
-  // 
+  //
   Status = TpmCommPhysicalPresence (
               PeiServices,
               TpmHandle,
@@ -664,7 +664,7 @@ IsTpmUsable (
   if (EFI_ERROR (Status)) {
     return FALSE;
   }
-  return (BOOLEAN)(!Deactivated); 
+  return (BOOLEAN)(!Deactivated);
 }
 
 /**
@@ -687,8 +687,8 @@ PeimEntryMP (
   TIS_TPM_HANDLE                    TpmHandle;
 
   Status = PeiServicesLocatePpi (
-               &gEfiPeiFirmwareVolumeInfoMeasurementExcludedPpiGuid, 
-               0, 
+               &gEfiPeiFirmwareVolumeInfoMeasurementExcludedPpiGuid,
+               0,
                NULL,
                (VOID**)&mMeasurementExcludedFvPpi
                );
@@ -711,13 +711,13 @@ PeimEntryMP (
     }
 
     Status = MeasureMainBios (PeiServices, TpmHandle);
-  }  
+  }
 
   //
   // Post callbacks:
   // 1). for the FvInfoPpi services to measure and record
   // the additional Fvs to TPM
-  // 2). for the OperatorPresencePpi service to determine whether to 
+  // 2). for the OperatorPresencePpi service to determine whether to
   // lock the TPM
   //
   Status = PeiServicesNotifyPpi (&mNotifyList[0]);

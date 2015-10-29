@@ -45,11 +45,11 @@ gFileTimeStampCache = {}    # {file path : file time stamp}
 gDependencyDatabase = {}    # arch : {file path : [dependent files list]}
 
 def GetVariableOffset(mapfilepath, efifilepath, varnames):
-    """ Parse map file to get variable offset in current EFI file 
+    """ Parse map file to get variable offset in current EFI file
     @param mapfilepath    Map file absolution path
     @param efifilepath:   EFI binary file full path
     @param varnames       iteratable container whose elements are variable names to be searched
-    
+
     @return List whos elements are tuple with variable name and raw offset
     """
     lines = []
@@ -59,7 +59,7 @@ def GetVariableOffset(mapfilepath, efifilepath, varnames):
         f.close()
     except:
         return None
-    
+
     if len(lines) == 0: return None
     firstline = lines[0].strip()
     if (firstline.startswith("Archive member included ") and
@@ -132,7 +132,7 @@ def _parseGeneral(lines, efifilepath, varnames):
             continue
         if re.match("^entry point at", line):
             status = 3
-            continue        
+            continue
         if status == 1 and len(line) != 0:
             m =  secRe.match(line)
             assert m != None, "Fail to parse the section in map file , line is %s" % line
@@ -211,7 +211,7 @@ def ProcessDuplicatedInf(Path, BaseName, Workspace):
     #
     # A temporary INF is copied to database path which must have write permission
     # The temporary will be removed at the end of build
-    # In case of name conflict, the file name is 
+    # In case of name conflict, the file name is
     # FILE_GUIDBaseName (0D1B936F-68F3-4589-AFCC-FB8B7AEBC836module.inf)
     #
     TempFullPath = os.path.join(DbDir,
@@ -222,7 +222,7 @@ def ProcessDuplicatedInf(Path, BaseName, Workspace):
     #
     # To build same module more than once, the module path with FILE_GUID overridden has
     # the file name FILE_GUIDmodule.inf, but the relative path (self.MetaFile.File) is the real path
-    # in DSC which is used as relative path by C files and other files in INF. 
+    # in DSC which is used as relative path by C files and other files in INF.
     # A trick was used: all module paths are PathClass instances, after the initialization
     # of PathClass, the PathClass.Path is overridden by the temporary INF path.
     #
@@ -1439,7 +1439,7 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
             Pair += 1
         elif ch == ')' and not InStr:
             Pair -= 1
-        
+
         if (Pair > 0 or InStr) and ch == TAB_VALUE_SPLIT:
             NewStr += '-'
         else:
@@ -1493,7 +1493,7 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
             IsValid = (len(FieldList) <= 3)
         else:
             IsValid = (len(FieldList) <= 1)
-        return [Value, Type, Size], IsValid, 0 
+        return [Value, Type, Size], IsValid, 0
     elif PcdType in (MODEL_PCD_DYNAMIC_VPD, MODEL_PCD_DYNAMIC_EX_VPD):
         VpdOffset = FieldList[0]
         Value = Size = ''
@@ -1529,37 +1529,37 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
 #  Used to avoid split issue while the value string contain "|" character
 #
 #  @param[in] Setting:  A String contain value/datum type/token number information;
-#  
-#  @retval   ValueList: A List contain value, datum type and toke number. 
 #
-def AnalyzePcdData(Setting):   
-    ValueList = ['', '', '']    
-    
+#  @retval   ValueList: A List contain value, datum type and toke number.
+#
+def AnalyzePcdData(Setting):
+    ValueList = ['', '', '']
+
     ValueRe  = re.compile(r'^\s*L?\".*\|.*\"')
     PtrValue = ValueRe.findall(Setting)
-    
+
     ValueUpdateFlag = False
-    
+
     if len(PtrValue) >= 1:
         Setting = re.sub(ValueRe, '', Setting)
-        ValueUpdateFlag = True   
+        ValueUpdateFlag = True
 
     TokenList = Setting.split(TAB_VALUE_SPLIT)
     ValueList[0:len(TokenList)] = TokenList
-    
+
     if ValueUpdateFlag:
         ValueList[0] = PtrValue[0]
-        
-    return ValueList   
- 
+
+    return ValueList
+
 ## AnalyzeHiiPcdData
 #
 #  Analyze the pcd Value, variable name, variable Guid and variable offset.
 #  Used to avoid split issue while the value string contain "|" character
 #
 #  @param[in] Setting:  A String contain VariableName, VariableGuid, VariableOffset, DefaultValue information;
-#  
-#  @retval   ValueList: A List contaian VariableName, VariableGuid, VariableOffset, DefaultValue. 
+#
+#  @retval   ValueList: A List contaian VariableName, VariableGuid, VariableOffset, DefaultValue.
 #
 def AnalyzeHiiPcdData(Setting):
     ValueList = ['', '', '', '']
@@ -1575,28 +1575,28 @@ def AnalyzeHiiPcdData(Setting):
 #  Used to avoid split issue while the value string contain "|" character
 #
 #  @param[in] Setting:  A String contain VpdOffset/MaxDatumSize/InitialValue information;
-#  
-#  @retval   ValueList: A List contain VpdOffset, MaxDatumSize and InitialValue. 
 #
-def AnalyzeVpdPcdData(Setting):   
-    ValueList = ['', '', '']    
-    
+#  @retval   ValueList: A List contain VpdOffset, MaxDatumSize and InitialValue.
+#
+def AnalyzeVpdPcdData(Setting):
+    ValueList = ['', '', '']
+
     ValueRe  = re.compile(r'\s*L?\".*\|.*\"\s*$')
     PtrValue = ValueRe.findall(Setting)
-    
+
     ValueUpdateFlag = False
-    
+
     if len(PtrValue) >= 1:
         Setting = re.sub(ValueRe, '', Setting)
-        ValueUpdateFlag = True   
+        ValueUpdateFlag = True
 
     TokenList = Setting.split(TAB_VALUE_SPLIT)
     ValueList[0:len(TokenList)] = TokenList
-    
+
     if ValueUpdateFlag:
         ValueList[2] = PtrValue[0]
-        
-    return ValueList     
+
+    return ValueList
 
 ## check format of PCD value against its the datum type
 #
@@ -1609,7 +1609,7 @@ def CheckPcdDatum(Type, Value):
                 or (Value.startswith('{') and Value.endswith('}'))
                ):
             return False, "Invalid value [%s] of type [%s]; must be in the form of {...} for array"\
-                          ", or \"...\" for string, or L\"...\" for unicode string" % (Value, Type)        
+                          ", or \"...\" for string, or L\"...\" for unicode string" % (Value, Type)
         elif ValueRe.match(Value):
             # Check the chars in UnicodeString or CString is printable
             if Value.startswith("L"):
@@ -1800,7 +1800,7 @@ class PathClass(object):
             OtherKey = Other.Path
         else:
             OtherKey = str(Other)
-            
+
         SelfKey = self.Path
         if SelfKey == OtherKey:
             return 0
@@ -1935,7 +1935,7 @@ class PeImageClass():
     def _ByteListToStr(self, ByteList):
         String = ''
         for index in range(len(ByteList)):
-            if ByteList[index] == 0: 
+            if ByteList[index] == 0:
                 break
             String += chr(ByteList[index])
         return String
@@ -1948,26 +1948,26 @@ class PeImageClass():
 
 
 class SkuClass():
-    
+
     DEFAULT = 0
     SINGLE = 1
     MULTIPLE =2
-    
+
     def __init__(self,SkuIdentifier='', SkuIds={}):
-        
+
         self.AvailableSkuIds = sdict()
         self.SkuIdSet = []
-        
+
         if SkuIdentifier == '' or SkuIdentifier is None:
             self.SkuIdSet = ['DEFAULT']
         elif SkuIdentifier == 'ALL':
             self.SkuIdSet = SkuIds.keys()
         else:
-            r = SkuIdentifier.split('|') 
-            self.SkuIdSet=[r[k].strip() for k in range(len(r))]      
+            r = SkuIdentifier.split('|')
+            self.SkuIdSet=[r[k].strip() for k in range(len(r))]
         if len(self.SkuIdSet) == 2 and 'DEFAULT' in self.SkuIdSet and SkuIdentifier != 'ALL':
             self.SkuIdSet.remove('DEFAULT')
-                
+
         for each in self.SkuIdSet:
             if each in SkuIds:
                 self.AvailableSkuIds[each] = SkuIds[each]
@@ -1975,9 +1975,9 @@ class SkuClass():
                 EdkLogger.error("build", PARAMETER_INVALID,
                             ExtraData="SKU-ID [%s] is not supported by the platform. [Valid SKU-ID: %s]"
                                       % (each, " ".join(SkuIds.keys())))
-        
-    def __SkuUsageType(self): 
-        
+
+    def __SkuUsageType(self):
+
         if len(self.SkuIdSet) == 1:
             if self.SkuIdSet[0] == 'DEFAULT':
                 return SkuClass.DEFAULT
@@ -1988,13 +1988,13 @@ class SkuClass():
 
     def __GetAvailableSkuIds(self):
         return self.AvailableSkuIds
-    
+
     def __GetSystemSkuID(self):
         if self.__SkuUsageType() == SkuClass.SINGLE:
             return self.SkuIdSet[0]
         else:
             return 'DEFAULT'
-            
+
     SystemSkuId = property(__GetSystemSkuID)
     AvailableSkuIdSet = property(__GetAvailableSkuIds)
     SkuUsageType = property(__SkuUsageType)

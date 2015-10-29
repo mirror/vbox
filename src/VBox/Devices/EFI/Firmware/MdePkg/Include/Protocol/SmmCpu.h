@@ -1,19 +1,19 @@
 /** @file
   EFI SMM CPU Protocol as defined in the PI 1.2 specification.
 
-  This protocol allows SMM drivers to access architecture-standard registers from any of the CPU 
-  save state areas. In some cases, difference processors provide the same information in the save state, 
-  but not in the same format. These so-called pseudo-registers provide this information in a standard 
-  format.  
+  This protocol allows SMM drivers to access architecture-standard registers from any of the CPU
+  save state areas. In some cases, difference processors provide the same information in the save state,
+  but not in the same format. These so-called pseudo-registers provide this information in a standard
+  format.
 
   Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials                          
-  are licensed and made available under the terms and conditions of the BSD License         
-  which accompanies this distribution.  The full text of the license may be found at        
-  http://opensource.org/licenses/bsd-license.php                                            
+  This program and the accompanying materials
+  are licensed and made available under the terms and conditions of the BSD License
+  which accompanies this distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -56,7 +56,7 @@ typedef enum {
   EFI_SMM_SAVE_STATE_REGISTER_R12           = 34,
   EFI_SMM_SAVE_STATE_REGISTER_R13           = 35,
   EFI_SMM_SAVE_STATE_REGISTER_R14           = 36,
-  EFI_SMM_SAVE_STATE_REGISTER_R15           = 37,  
+  EFI_SMM_SAVE_STATE_REGISTER_R15           = 37,
   EFI_SMM_SAVE_STATE_REGISTER_RAX           = 38,
   EFI_SMM_SAVE_STATE_REGISTER_RBX           = 39,
   EFI_SMM_SAVE_STATE_REGISTER_RCX           = 40,
@@ -72,7 +72,7 @@ typedef enum {
   EFI_SMM_SAVE_STATE_REGISTER_CR4           = 54,
   EFI_SMM_SAVE_STATE_REGISTER_FCW           = 256,
   EFI_SMM_SAVE_STATE_REGISTER_FSW           = 257,
-  EFI_SMM_SAVE_STATE_REGISTER_FTW           = 258,  
+  EFI_SMM_SAVE_STATE_REGISTER_FTW           = 258,
   EFI_SMM_SAVE_STATE_REGISTER_OPCODE        = 259,
   EFI_SMM_SAVE_STATE_REGISTER_FP_EIP        = 260,
   EFI_SMM_SAVE_STATE_REGISTER_FP_CS         = 261,
@@ -101,19 +101,19 @@ typedef enum {
   EFI_SMM_SAVE_STATE_REGISTER_XMM12         = 284,
   EFI_SMM_SAVE_STATE_REGISTER_XMM13         = 285,
   EFI_SMM_SAVE_STATE_REGISTER_XMM14         = 286,
-  EFI_SMM_SAVE_STATE_REGISTER_XMM15         = 287,  
+  EFI_SMM_SAVE_STATE_REGISTER_XMM15         = 287,
   ///
   /// Pseudo-Registers
   ///
   EFI_SMM_SAVE_STATE_REGISTER_IO            = 512,
   EFI_SMM_SAVE_STATE_REGISTER_LMA           = 513,
   EFI_SMM_SAVE_STATE_REGISTER_PROCESSOR_ID  = 514
-} EFI_SMM_SAVE_STATE_REGISTER;  
+} EFI_SMM_SAVE_STATE_REGISTER;
 
 ///
 /// The EFI_SMM_SAVE_STATE_REGISTER_LMA pseudo-register values
-/// If the processor acts in 32-bit mode at the time the SMI occurred, the pseudo register value 
-/// EFI_SMM_SAVE_STATE_REGISTER_LMA_32BIT is returned in Buffer. Otherwise, 
+/// If the processor acts in 32-bit mode at the time the SMI occurred, the pseudo register value
+/// EFI_SMM_SAVE_STATE_REGISTER_LMA_32BIT is returned in Buffer. Otherwise,
 /// EFI_SMM_SAVE_STATE_REGISTER_LMA_64BIT is returned in Buffer.
 ///
 #define EFI_SMM_SAVE_STATE_REGISTER_LMA_32BIT  32
@@ -140,16 +140,16 @@ typedef enum {
 } EFI_SMM_SAVE_STATE_IO_TYPE;
 
 ///
-/// Structure of the data which is returned when ReadSaveState() is called with 
-/// EFI_SMM_SAVE_STATE_REGISTER_IO. If there was no I/O then ReadSaveState() will 
+/// Structure of the data which is returned when ReadSaveState() is called with
+/// EFI_SMM_SAVE_STATE_REGISTER_IO. If there was no I/O then ReadSaveState() will
 /// return EFI_NOT_FOUND.
 ///
 /// This structure describes the I/O operation which was in process when the SMI was generated.
 ///
 typedef struct _EFI_SMM_SAVE_STATE_IO_INFO {
   ///
-  /// For input instruction (IN, INS), this is data read before the SMI occurred. For output 
-  /// instructions (OUT, OUTS) this is data that was written before the SMI occurred. The 
+  /// For input instruction (IN, INS), this is data read before the SMI occurred. For output
+  /// instructions (OUT, OUTS) this is data that was written before the SMI occurred. The
   /// width of the data is specified by IoWidth.
   ///
   UINT64                        IoData;
@@ -166,15 +166,15 @@ typedef struct _EFI_SMM_SAVE_STATE_IO_INFO {
   ///
   EFI_SMM_SAVE_STATE_IO_TYPE    IoType;
 } EFI_SMM_SAVE_STATE_IO_INFO;
-  
+
 typedef struct _EFI_SMM_CPU_PROTOCOL  EFI_SMM_CPU_PROTOCOL;
 
 /**
   Read data from the CPU save state.
 
-  This function is used to read the specified number of bytes of the specified register from the CPU 
+  This function is used to read the specified number of bytes of the specified register from the CPU
   save state of the specified CPU and place the value into the buffer. If the CPU does not support the
-  specified register Register, then EFI_NOT_FOUND  should be returned. If the CPU does not 
+  specified register Register, then EFI_NOT_FOUND  should be returned. If the CPU does not
   support the specified register width Width, then EFI_INVALID_PARAMETER is returned.
 
   @param[in]  This               The EFI_SMM_CPU_PROTOCOL instance.
@@ -182,10 +182,10 @@ typedef struct _EFI_SMM_CPU_PROTOCOL  EFI_SMM_CPU_PROTOCOL;
   @param[in]  Register           Specifies the CPU register to read form the save state.
   @param[in]  CpuIndex           Specifies the zero-based index of the CPU save state.
   @param[out] Buffer             Upon return, this holds the CPU register value read from the save state.
-    
+
   @retval EFI_SUCCESS            The register was read from Save State.
   @retval EFI_NOT_FOUND          The register is not defined for the Save State of Processor.
-  @retval EFI_INVALID_PARAMETER  Input parameters are not valid, for example, Processor No or register width 
+  @retval EFI_INVALID_PARAMETER  Input parameters are not valid, for example, Processor No or register width
                                  is not correct.This or Buffer is NULL.
 **/
 typedef
@@ -202,9 +202,9 @@ EFI_STATUS
 /**
   Write data to the CPU save state.
 
-  This function is used to write the specified number of bytes of the specified register to the CPU save 
-  state of the specified CPU and place the value into the buffer. If the CPU does not support the 
-  specified register Register, then EFI_UNSUPPORTED should be returned. If the CPU does not 
+  This function is used to write the specified number of bytes of the specified register to the CPU save
+  state of the specified CPU and place the value into the buffer. If the CPU does not support the
+  specified register Register, then EFI_UNSUPPORTED should be returned. If the CPU does not
   support the specified register width Width, then EFI_INVALID_PARAMETER is returned.
 
   @param[in]  This               The EFI_SMM_CPU_PROTOCOL instance.
@@ -212,17 +212,17 @@ EFI_STATUS
   @param[in]  Register           Specifies the CPU register to write to the save state.
   @param[in]  CpuIndex           Specifies the zero-based index of the CPU save state.
   @param[in]  Buffer             Upon entry, this holds the new CPU register value.
-  
+
   @retval EFI_SUCCESS            The register was written to Save State.
   @retval EFI_NOT_FOUND          The register is not defined for the Save State of Processor.
-  @retval EFI_INVALID_PARAMETER  Input parameters are not valid. For example: 
+  @retval EFI_INVALID_PARAMETER  Input parameters are not valid. For example:
                                  ProcessorIndex or Width is not correct.
 **/
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SMM_WRITE_SAVE_STATE)(
   IN CONST EFI_SMM_CPU_PROTOCOL   *This,
-  IN UINTN                        Width, 
+  IN UINTN                        Width,
   IN EFI_SMM_SAVE_STATE_REGISTER  Register,
   IN UINTN                        CpuIndex,
   IN CONST VOID                   *Buffer
@@ -231,10 +231,10 @@ EFI_STATUS
 ///
 /// EFI SMM CPU Protocol provides access to CPU-related information while in SMM.
 ///
-/// This protocol allows SMM drivers to access architecture-standard registers from any of the CPU 
-/// save state areas. In some cases, difference processors provide the same information in the save state, 
-/// but not in the same format. These so-called pseudo-registers provide this information in a standard 
-/// format.  
+/// This protocol allows SMM drivers to access architecture-standard registers from any of the CPU
+/// save state areas. In some cases, difference processors provide the same information in the save state,
+/// but not in the same format. These so-called pseudo-registers provide this information in a standard
+/// format.
 ///
 struct _EFI_SMM_CPU_PROTOCOL {
   EFI_SMM_READ_SAVE_STATE   ReadSaveState;

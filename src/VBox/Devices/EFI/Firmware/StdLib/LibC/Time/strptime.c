@@ -1,4 +1,4 @@
-/** @file 
+/** @file
   strptime implementation
 
   Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>

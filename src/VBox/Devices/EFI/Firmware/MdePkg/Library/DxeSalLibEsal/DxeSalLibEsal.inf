@@ -19,7 +19,7 @@
   FILE_GUID                      = 2B73B074-2E67-498b-82AC-CE38FB770FFC
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = SalLib|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SMM_DRIVER DXE_SAL_DRIVER UEFI_DRIVER UEFI_APPLICATION 
+  LIBRARY_CLASS                  = SalLib|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SMM_DRIVER DXE_SAL_DRIVER UEFI_DRIVER UEFI_APPLICATION
 
 #
 # The following information is for reference only and not required by the build tools.

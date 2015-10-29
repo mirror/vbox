@@ -43,7 +43,7 @@ Exception0Handle:
     push    rcx
     mov     rcx, 0
     jmp     qword ptr [CommonEntryAddr]
-AGENT_HANDLER_SIGNATURE	
+AGENT_HANDLER_SIGNATURE
 Exception1Handle:
     cli
     push    rcx
@@ -295,11 +295,11 @@ NoExtrPush:
 
     ;; Clear Direction Flag
     cld
-	
+
     ; call the C interrupt process function
     mov     rdx, rsp      ; Structure
     mov     r15, rcx      ; save vector in r15
-    
+
     ;
     ; Per X64 calling convention, allocate maximum parameter stack space
     ; and make sure RSP is 16-byte aligned
@@ -310,7 +310,7 @@ NoExtrPush:
 
     ;; skip the exception data
     add     rsp, 8
-    
+
     mov     rsi, rsp
     db 0fh, 0aeh, 00001110y ; fxrstor [rsi]
     add     rsp, 512

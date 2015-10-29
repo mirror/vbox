@@ -50,7 +50,7 @@
   ReportStatusCodeLib
   DebugLib
   BaseMemoryLib
-  
+
 [Guids]
   gMemoryStatusCodeRecordGuid                   ## SOMETIMES_CONSUMES   ## HOB
   gEfiStatusCodeDataTypeStringGuid              ## SOMETIMES_CONSUMES   ## UNDEFINED

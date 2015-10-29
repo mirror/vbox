@@ -1,4 +1,4 @@
-/** @file 
+/** @file
 
     This module contains generic macros for an assembly writer.
 

@@ -28,7 +28,7 @@
   @param[in]  RemainingDevicePath  Optional parameter used to pick a specific child
                                    device to start.
   @param[in]  IpVersion            IP_VERSION_4 or IP_VERSION_6.
-  
+
   @retval EFI_SUCCES           This driver supports this device.
   @retval EFI_ALREADY_STARTED  This driver is already running on this device.
   @retval other                This driver does not support this device.
@@ -45,7 +45,7 @@ IpSecSupported (
 {
   EFI_STATUS  Status;
   EFI_GUID    *UdpServiceBindingGuid;
-  
+
   if (IpVersion == IP_VERSION_4) {
     UdpServiceBindingGuid  = &gEfiUdp4ServiceBindingProtocolGuid;
   } else {

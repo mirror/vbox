@@ -277,7 +277,7 @@ typedef Graph Attrib;
 					zzenterANTLR(f);			\
 					st; ++zzasp;				\
 					zzleaveANTLR(f);
-	#endif						
+	#endif
     *********************************************************/
 #endif
 

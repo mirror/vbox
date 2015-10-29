@@ -1,5 +1,5 @@
 /** @file
-  GUID for an event that is signaled on the first attempt to check for a keystroke 
+  GUID for an event that is signaled on the first attempt to check for a keystroke
   from the ConIn device.
 
   Copyright (c) 2012, Intel Corporation. All rights reserved.<BR>

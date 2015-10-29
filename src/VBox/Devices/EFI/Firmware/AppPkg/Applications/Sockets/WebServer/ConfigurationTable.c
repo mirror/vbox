@@ -63,7 +63,7 @@ RowGuid (
   UINTN Value;
 
   DBG_ENTER ( );
-  
+
   //
   //  Use for/break instead of goto
   //
@@ -138,7 +138,7 @@ RowGuid (
         }
         break;
       }
-    
+
       //
       //  Set the next GUID name
       //
@@ -270,7 +270,7 @@ RowGuid (
                                   "</code></td></tr>\r\n" );
     break;
   }
-  
+
   //
   //  Return the operation status
   //
@@ -301,7 +301,7 @@ ConfigurationTablePage (
   EFI_STATUS Status;
 
   DBG_ENTER ( );
-  
+
   //
   //  Send the system table page
   //
@@ -361,7 +361,7 @@ ConfigurationTablePage (
                             pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

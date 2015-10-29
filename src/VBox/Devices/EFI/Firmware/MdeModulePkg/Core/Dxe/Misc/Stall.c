@@ -19,8 +19,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "DxeMain.h"
 
 /**
-  Internal worker function to call the Metronome Architectural Protocol for 
-  the number of ticks specified by the UINT64 Counter value.  WaitForTick() 
+  Internal worker function to call the Metronome Architectural Protocol for
+  the number of ticks specified by the UINT64 Counter value.  WaitForTick()
   service of the Metronome Architectural Protocol uses a UINT32 for the number
   of ticks to wait, so this function loops when Counter is larger than 0xffffffff.
 
@@ -73,7 +73,7 @@ CoreStall (
   if (0) {
 #endif
     //
-    // Microseconds is too large to multiple by 10 first.  Perform the divide 
+    // Microseconds is too large to multiple by 10 first.  Perform the divide
     // operation first and loop 10 times to avoid 64-bit math overflow.
     //
     Counter = DivU64x32Remainder (
@@ -83,11 +83,11 @@ CoreStall (
                 );
     for (Index = 0; Index < 10; Index++) {
       CoreInternalWaitForTick (Counter);
-    }      
+    }
 
     if (Remainder != 0) {
       //
-      // If Remainder was not zero, then normally, Counter would be rounded 
+      // If Remainder was not zero, then normally, Counter would be rounded
       // up by 1 tick.  In this case, since a loop for 10 counts was used
       // to emulate the multiply by 10 operation, Counter needs to be rounded
       // up by 10 counts.

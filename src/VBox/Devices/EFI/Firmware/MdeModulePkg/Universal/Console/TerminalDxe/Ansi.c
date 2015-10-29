@@ -47,8 +47,8 @@ AnsiRawDataToUnicode (
   or valid text graphics.
 
   @param  TerminalDevice          The terminal device.
-  @param  WString                 The input string.          
- 
+  @param  WString                 The input string.
+
   @retval EFI_UNSUPPORTED         If not all input characters are valid.
   @retval EFI_SUCCESS             If all input characters are valid.
 

@@ -94,9 +94,9 @@ SerialStatusCodeReportWorker (
                   Value,
                   Instance
                   );
-    
+
     ASSERT(CharCount > 0);
-    
+
     if (CallerId != NULL) {
       CharCount += AsciiSPrint (
                      &Buffer[CharCount],

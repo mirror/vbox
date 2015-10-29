@@ -990,7 +990,7 @@ HiiGetImage (
 
   @retval EFI_SUCCESS            The new image was updated successfully.
   @retval EFI_NOT_FOUND          The image specified by ImageId is not in the
-                                                database. The specified PackageList is not in the database.    
+                                                database. The specified PackageList is not in the database.
   @retval EFI_INVALID_PARAMETER  The Image was NULL.
 
 **/
@@ -1436,8 +1436,8 @@ HiiDrawImage (
   @retval EFI_SUCCESS            The image was successfully drawn.
   @retval EFI_OUT_OF_RESOURCES   Unable to allocate an output buffer for Blt.
   @retval EFI_INVALID_PARAMETER  The Blt was NULL.
-  @retval EFI_NOT_FOUND          The image specified by ImageId is not in the database. 
-                           The specified PackageList is not in the database.                             
+  @retval EFI_NOT_FOUND          The image specified by ImageId is not in the database.
+                           The specified PackageList is not in the database.
 
 **/
 EFI_STATUS

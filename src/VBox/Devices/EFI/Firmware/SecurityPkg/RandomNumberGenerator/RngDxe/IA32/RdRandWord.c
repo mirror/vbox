@@ -33,7 +33,7 @@ RdRand64Step  (
   UINT32  RandHigh;
 
   //
-  // Generating a 64-bit rand on a 32-bit system by 
+  // Generating a 64-bit rand on a 32-bit system by
   // mapping two 32-bit RDRAND instructions.
   //
   if (!RdRand32Step (&RandLow)) {
@@ -96,7 +96,7 @@ RdRandGetWords (
     if (EFI_ERROR (Status)) {
       return Status;
     }
-    
+
     RandBuffer++;
   }
 

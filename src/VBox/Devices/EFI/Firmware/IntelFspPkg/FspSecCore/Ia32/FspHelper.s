@@ -16,8 +16,8 @@
 #------------------------------------------------------------------------------
 
 #
-# FspInfoHeaderRelativeOff is patched during build process and initialized to offset of the  AsmGetFspBaseAddress 
-# from the FSP Info header. 
+# FspInfoHeaderRelativeOff is patched during build process and initialized to offset of the  AsmGetFspBaseAddress
+# from the FSP Info header.
 #
 ASM_GLOBAL ASM_PFX(FspInfoHeaderRelativeOff)
 ASM_PFX(FspInfoHeaderRelativeOff):
@@ -27,7 +27,7 @@ ASM_PFX(FspInfoHeaderRelativeOff):
    .long    0x012345678
 
 #
-# Returns FSP Base Address. 
+# Returns FSP Base Address.
 #
 # This function gets the FSP Info Header using relative addressing and returns the FSP Base from the header structure
 #
@@ -46,12 +46,12 @@ ASM_GLOBAL ASM_PFX(AsmGetFspBaseAddressNoStack)
 ASM_PFX(AsmGetFspBaseAddressNoStack):
    mov    $AsmGetFspBaseAddress, %eax
    sub    FspInfoHeaderRelativeOff, %eax
-   add    $0x01C, %eax 
+   add    $0x01C, %eax
    mov    (%eax), %eax
    jmp    *%edi
 
 #
-# Returns FSP Info Header. 
+# Returns FSP Info Header.
 #
 # This function gets the FSP Info Header using relative addressing and returns it
 #
@@ -60,7 +60,7 @@ ASM_PFX(AsmGetFspInfoHeader):
    mov    $AsmGetFspBaseAddress, %eax
    sub    FspInfoHeaderRelativeOff, %eax
    ret
-   
+
 #
 # No stack counter part of AsmGetFspInfoHeader. Return address is in edi.
 #

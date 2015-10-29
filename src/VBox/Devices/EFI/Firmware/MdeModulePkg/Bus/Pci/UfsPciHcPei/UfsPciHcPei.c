@@ -53,7 +53,7 @@ GetUfsHcMmioBar (
   if (ControllerId >= Private->TotalUfsHcs) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   *MmioBar = (UINTN)Private->UfsHcPciAddr[ControllerId];
 
   return EFI_SUCCESS;
@@ -61,7 +61,7 @@ GetUfsHcMmioBar (
 
 /**
   The user code starts with this function.
-  
+
   @param  FileHandle             Handle of the file being invoked.
   @param  PeiServices            Describes the list of possible PEI Services.
 

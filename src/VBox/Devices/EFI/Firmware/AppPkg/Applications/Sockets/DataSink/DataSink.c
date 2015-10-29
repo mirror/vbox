@@ -217,7 +217,7 @@ SocketNew (
   LocalAddress.sin6_len = sizeof ( LocalAddress );
   LocalAddress.sin6_family = Family;
   LocalAddress.sin6_port = htons ( PcdGet16 ( DataSource_Port ));
-  
+
   //
   //  Loop creating the socket
   //
@@ -443,7 +443,7 @@ SocketPoll (
             }
           }
         }
-        
+
         //
         //  Check for a connection or read data
         //
@@ -871,7 +871,7 @@ TimerCallback (
       if ( DATA_SAMPLES <= Port[ Index ].In ) {
         Port[ Index ].In = 0;
       }
-      
+
       //
       //  Separate the samples
       //
@@ -1212,7 +1212,7 @@ main (
           //
           break;
         }
-      
+
         //
         //  Wait for a while
         //
@@ -1223,7 +1223,7 @@ main (
         //
         break;
       }
-      
+
       //
       //  Wait for the network layer to initialize
       //

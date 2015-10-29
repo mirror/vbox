@@ -190,7 +190,7 @@ typedef struct {
 //struct to describe the control bits of the device
 //true indicates enabled
 //false indicates disabled
-// 
+//
 typedef struct {
   BOOLEAN    HardwareFlowControl;
   BOOLEAN    DtrState;
@@ -200,7 +200,7 @@ typedef struct {
 } CONTROL_BITS;
 
 //
-//struct to describe the status bits of the device 
+//struct to describe the status bits of the device
 //true indicates enabled
 //false indicated disabled
 //

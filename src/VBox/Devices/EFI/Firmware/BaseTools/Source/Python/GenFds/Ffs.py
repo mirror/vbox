@@ -21,7 +21,7 @@ from CommonDataClass.FdfClass import FDClassObject
 #
 #
 class Ffs(FDClassObject):
-    
+
     # mapping between MODULE type in FDF (from INF) and file type for GenFfs
     ModuleTypeToFileType = {
         'SEC'               : 'EFI_FV_FILETYPE_SECURITY_CORE',
@@ -36,7 +36,7 @@ class Ffs(FDClassObject):
         'UEFI_APPLICATION'  : 'EFI_FV_FILETYPE_APPLICATION',
         'SMM_CORE'          : 'EFI_FV_FILETYPE_SMM_CORE'
     }
-    
+
     # mapping between FILE type in FDF and file type for GenFfs
     FdfFvFileTypeToFileType = {
         'SEC'               : 'EFI_FV_FILETYPE_SECURITY_CORE',
@@ -52,7 +52,7 @@ class Ffs(FDClassObject):
         'SMM'               : 'EFI_FV_FILETYPE_SMM',
         'SMM_CORE'          : 'EFI_FV_FILETYPE_SMM_CORE'
     }
-    
+
     # mapping between section type in FDF and file suffix
     SectionSuffix = {
         'PE32'                 : '.pe32',
@@ -64,14 +64,14 @@ class Ffs(FDClassObject):
         'COMPAT16'             : '.com16',
         'RAW'                  : '.raw',
         'FREEFORM_SUBTYPE_GUID': '.guid',
-        'SUBTYPE_GUID'         : '.guid',        
+        'SUBTYPE_GUID'         : '.guid',
         'FV_IMAGE'             : 'fv.sec',
         'COMPRESS'             : '.com',
         'GUIDED'               : '.guided',
         'PEI_DEPEX'            : '.dpx',
         'SMM_DEPEX'            : '.dpx'
     }
-    
+
     ## The constructor
     #
     #   @param  self        The object pointer

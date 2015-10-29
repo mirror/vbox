@@ -284,7 +284,7 @@ Udp6Configure (
 
     ASSERT (IsListEmpty (&Instance->DeliveredDgramQue));
   }
- 
+
 ON_EXIT:
 
   gBS->RestoreTPL (OldTpl);

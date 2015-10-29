@@ -50,7 +50,7 @@ extern RUNTIME_MEMORY_STATUSCODE_HEADER  *mSmmMemoryStatusCodeTable;
 
 /**
   Locates Serial I/O Protocol as initialization for serial status code worker.
- 
+
   @retval EFI_SUCCESS  Serial I/O Protocol is successfully located.
 
 **/
@@ -62,7 +62,7 @@ EfiSerialStatusCodeInitializeWorker (
 
 /**
   Convert status code value and extended data to readable ASCII string, send string to serial I/O device.
- 
+
   @param  CodeType         Indicates the type of status code being reported.
   @param  Value            Describes the current status of a hardware or software entity.
                            This included information about the class and subclass that is used to
@@ -91,7 +91,7 @@ SerialStatusCodeReportWorker (
 
 /**
   Initialize runtime memory status code table as initialization for runtime memory status code worker
- 
+
   @retval EFI_SUCCESS  Runtime memory status code table successfully initialized.
 
 **/
@@ -101,9 +101,9 @@ MemoryStatusCodeInitializeWorker (
   );
 
 /**
-  Report status code into runtime memory. If the runtime pool is full, roll back to the 
+  Report status code into runtime memory. If the runtime pool is full, roll back to the
   first record and overwrite it.
- 
+
   @param  CodeType                Indicates the type of status code being reported.
   @param  Value                   Describes the current status of a hardware or software entity.
                                   This included information about the class and subclass that is used to
@@ -114,7 +114,7 @@ MemoryStatusCodeInitializeWorker (
                                   This parameter allows the status code driver to apply different rules to
                                   different callers.
   @param  Data                    This optional parameter may be used to pass additional data.
- 
+
   @retval EFI_SUCCESS             Status code successfully recorded in runtime memory status code table.
 
 **/

@@ -123,7 +123,7 @@ typedef struct _USB_HUB_API    USB_HUB_API;
 
 //
 // Send general device request timeout.
-// 
+//
 // The USB Specification 2.0, section 11.24.1 recommends a value of
 // 50 milliseconds.  We use a value of 500 milliseconds to work
 // around slower hubs and devices.

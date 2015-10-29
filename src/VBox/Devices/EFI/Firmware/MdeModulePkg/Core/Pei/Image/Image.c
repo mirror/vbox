@@ -50,7 +50,7 @@ PeiImageRead (
 {
   CHAR8 *Destination8;
   CHAR8 *Source8;
-  
+
   Destination8  = Buffer;
   Source8       = (CHAR8 *) ((UINTN) FileHandle + FileOffset);
   if (Destination8 != Source8) {
@@ -116,11 +116,11 @@ GetImageReadFunction (
   VOID*  MemoryBuffer;
 
   Private = PEI_CORE_INSTANCE_FROM_PS_THIS (GetPeiServicesTablePointer ());
-  
+
   if (Private->PeiMemoryInstalled  && ((Private->HobList.HandoffInformationTable->BootMode != BOOT_ON_S3_RESUME) || PcdGetBool (PcdShadowPeimOnS3Boot))  &&
       (EFI_IMAGE_MACHINE_TYPE_SUPPORTED(EFI_IMAGE_MACHINE_X64) || EFI_IMAGE_MACHINE_TYPE_SUPPORTED(EFI_IMAGE_MACHINE_IA32))) {
-    // 
-    // Shadow algorithm makes lots of non ANSI C assumptions and only works for IA32 and X64 
+    //
+    // Shadow algorithm makes lots of non ANSI C assumptions and only works for IA32 and X64
     //  compilers that have been tested
     //
     if (Private->ShadowedImageRead == NULL) {
@@ -138,14 +138,14 @@ GetImageReadFunction (
   return EFI_SUCCESS;
 }
 /**
-  To check memory usage bit map arry to figure out if the memory range the image will be loaded in is available or not. If 
+  To check memory usage bit map arry to figure out if the memory range the image will be loaded in is available or not. If
   memory range is avaliable, the function will mark the correponding bits to 1 which indicates the memory range is used.
-  The function is only invoked when load modules at fixed address feature is enabled. 
-  
+  The function is only invoked when load modules at fixed address feature is enabled.
+
   @param  Private                  Pointer to the private data passed in from caller
   @param  ImageBase                The base addres the image will be loaded at.
   @param  ImageSize                The size of the image
-  
+
   @retval EFI_SUCCESS              The memory range the image will be loaded in is available
   @retval EFI_NOT_FOUND            The memory range the image will be loaded in is not available
 **/
@@ -163,7 +163,7 @@ CheckAndMarkFixLoadingMemoryUsageBitMap (
    UINT32                             TopOffsetPageNumber;
    UINT32                             Index;
    UINT64                             *MemoryUsageBitMap;
-   
+
 
    //
    // The reserved code range includes RuntimeCodePage range, Boot time code range and PEI code range.
@@ -172,19 +172,19 @@ CheckAndMarkFixLoadingMemoryUsageBitMap (
    DxeCodePageNumber += PcdGet32(PcdLoadFixAddressRuntimeCodePageNumber);
    ReservedCodeSize  = EFI_PAGES_TO_SIZE(DxeCodePageNumber + PcdGet32(PcdLoadFixAddressPeiCodePageNumber));
    PeiCodeBase       = Private->LoadModuleAtFixAddressTopAddress - ReservedCodeSize;
-   
+
    //
    // Test the memory range for loading the image in the PEI code range.
    //
    if ((Private->LoadModuleAtFixAddressTopAddress - EFI_PAGES_TO_SIZE(DxeCodePageNumber)) < (ImageBase + ImageSize) ||
-       (PeiCodeBase > ImageBase)) {         
-     return EFI_NOT_FOUND; 
+       (PeiCodeBase > ImageBase)) {
+     return EFI_NOT_FOUND;
    }
-   
+
    //
    // Test if the memory is avalaible or not.
    //
-   MemoryUsageBitMap    = Private->PeiCodeMemoryRangeUsageBitMap;  
+   MemoryUsageBitMap    = Private->PeiCodeMemoryRangeUsageBitMap;
    BaseOffsetPageNumber = EFI_SIZE_TO_PAGES((UINT32)(ImageBase - PeiCodeBase));
    TopOffsetPageNumber  = EFI_SIZE_TO_PAGES((UINT32)(ImageBase + ImageSize - PeiCodeBase));
    for (Index = BaseOffsetPageNumber; Index < TopOffsetPageNumber; Index ++) {
@@ -192,17 +192,17 @@ CheckAndMarkFixLoadingMemoryUsageBitMap (
        //
        // This page is already used.
        //
-       return EFI_NOT_FOUND;  
+       return EFI_NOT_FOUND;
      }
    }
-   
+
    //
    // Being here means the memory range is available.  So mark the bits for the memory range
-   // 
+   //
    for (Index = BaseOffsetPageNumber; Index < TopOffsetPageNumber; Index ++) {
      MemoryUsageBitMap[Index / 64] |= LShiftU64(1, (Index % 64));
    }
-   return  EFI_SUCCESS;   
+   return  EFI_SUCCESS;
 }
 /**
 
@@ -232,7 +232,7 @@ GetPeCoffImageFixLoadingAssignedAddress(
    UINTN                              Size;
    UINT16                             NumberOfSections;
    UINT64                             ValueInSectionHeader;
- 
+
 
    FixLoaddingAddress = 0;
    Status = EFI_NOT_FOUND;
@@ -335,7 +335,7 @@ GetPeCoffImageFixLoadingAssignedAddress(
 
   @retval EFI_SUCCESS           The file was loaded and relocated
   @retval EFI_OUT_OF_RESOURCES  There was not enough memory to load and relocate the PE/COFF file
-  @retval EFI_WARN_BUFFER_TOO_SMALL 
+  @retval EFI_WARN_BUFFER_TOO_SMALL
                                 There is not enough heap to allocate the requested size.
                                 This will not prevent the XIP image from being invoked.
 
@@ -369,7 +369,7 @@ LoadAndRelocatePeCoffImage (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   //
   // XIP image that ImageAddress is same to Image handle.
   //
@@ -500,7 +500,7 @@ LoadAndRelocatePeCoffImage (
   @retval EFI_SUCCESS      Image is successfully loaded.
   @retval EFI_NOT_FOUND    Fail to locate necessary PPI.
   @retval EFI_UNSUPPORTED  Image Machine Type is not supported.
-  @retval EFI_WARN_BUFFER_TOO_SMALL 
+  @retval EFI_WARN_BUFFER_TOO_SMALL
                            There is not enough heap to allocate the requested size.
                            This will not prevent the XIP image from being invoked.
 

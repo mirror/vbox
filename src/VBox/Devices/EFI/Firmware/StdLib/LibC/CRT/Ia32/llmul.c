@@ -76,4 +76,4 @@ __declspec(naked) void __cdecl _allmul (void)
 
     ret  16
   }
-} 
+}

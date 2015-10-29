@@ -7,10 +7,10 @@
 #  buffer overflow or integer overflow.
 #
 #  Note: MD4 Digest functions, SHA-384 Digest functions, SHA-512 Digest functions,
-#  HMAC-MD5 functions, HMAC-SHA1 functions, AES/TDES/ARC4 functions, RSA external 
-#  functions, PKCS#7 SignedData sign functions, Diffie-Hellman functions, X.509 
-#  certificate handler functions, authenticode signature verification functions, 
-#  PEM handler functions, and pseudorandom number generator functions are not 
+#  HMAC-MD5 functions, HMAC-SHA1 functions, AES/TDES/ARC4 functions, RSA external
+#  functions, PKCS#7 SignedData sign functions, Diffie-Hellman functions, X.509
+#  certificate handler functions, authenticode signature verification functions,
+#  PEM handler functions, and pseudorandom number generator functions are not
 #  supported in this instance.
 #
 #  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>

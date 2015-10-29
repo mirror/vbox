@@ -64,7 +64,7 @@ EFI_STATUS
 
   @param  PeiServices           General purpose services available to every PEIM.
   @param  This                  The PEI_SMM_CONTROL_PPI instance.
-  @param  Periodic              Optional parameter to repeat at this period one 
+  @param  Periodic              Optional parameter to repeat at this period one
                                 time or, if the Periodic Boolean is set, periodically.
 
   @retval EFI_SUCCESS           The SMI/PMI has been engendered.
@@ -85,7 +85,7 @@ EFI_STATUS
 ///  - A processor driver to abstract the SMI/PMI IPI
 ///  - The driver that abstracts the ASIC that is supporting the APM port, such as the ICH in an
 ///  Intel chipset
-/// 
+///
 struct _PEI_SMM_CONTROL_PPI {
   PEI_SMM_ACTIVATE    Trigger;
   PEI_SMM_DEACTIVATE  Clear;

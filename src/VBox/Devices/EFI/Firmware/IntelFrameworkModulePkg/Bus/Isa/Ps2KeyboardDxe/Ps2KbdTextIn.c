@@ -268,7 +268,7 @@ KeyboardReadKeyStroke (
   EFI_KEY_DATA            KeyData;
 
   ConsoleIn = KEYBOARD_CONSOLE_IN_DEV_FROM_THIS (This);
-  
+
   //
   // Considering if the partial keystroke is enabled, there maybe a partial
   // keystroke in the queue, so here skip the partial keystroke and get the

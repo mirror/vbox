@@ -34,9 +34,9 @@ HelloPage (
   )
 {
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Send the Hello World page
   //
@@ -48,7 +48,7 @@ HelloPage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     //  Send the page body
     //
@@ -61,14 +61,14 @@ HelloPage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     //  Send the page trailer
     //
     Status = HttpPageTrailer ( SocketFD, pPort, pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

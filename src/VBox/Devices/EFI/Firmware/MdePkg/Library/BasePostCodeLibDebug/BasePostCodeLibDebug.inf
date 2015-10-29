@@ -23,7 +23,7 @@
   FILE_GUID                      = 19e3bbba-beb1-43e8-b32d-9acbb22c7639
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PostCodeLib 
+  LIBRARY_CLASS                  = PostCodeLib
 
 
 #

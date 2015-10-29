@@ -90,10 +90,10 @@ InitializeBootManager (
 
 /**
   This function invokes Boot Manager. If all devices have not a chance to be connected,
-  the connect all will be triggered. It then enumerate all boot options. If 
+  the connect all will be triggered. It then enumerate all boot options. If
   a boot option from the Boot Manager page is selected, Boot Manager will boot
   from this boot option.
-  
+
 **/
 VOID
 CallBootManager (

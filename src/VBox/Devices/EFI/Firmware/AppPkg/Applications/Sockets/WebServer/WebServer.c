@@ -139,26 +139,26 @@ PortAdd (
                   pWebServer->ppPortList,
                   Index * sizeof ( *ppPortListNew ));
       }
-      
+
       //
       //  Initialize the new entries in the port list
       //
       for ( ; MaxEntriesNew > Index; Index++ ) {
         ppPortListNew[ Index ] = NULL;
       }
-      
+
       //
       //  Free the old port list
       //
       if ( NULL != pWebServer->ppPortList ) {
         gBS->FreePool ( pWebServer->ppPortList );
       }
-      
+
       //
       //  Switch to the new port list
       //
       pWebServer->ppPortList = ppPortListNew;
-      
+
       //
       //  Update the list size
       //

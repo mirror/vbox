@@ -35,16 +35,16 @@ ShellConnectDevicePath (
   EFI_STATUS                Status;
   EFI_HANDLE                Handle;
   EFI_HANDLE                PreviousHandle;
-  
+
   if (DevicePathToConnect == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
   PreviousHandle = NULL;
-  do{    
+  do{
     RemainingDevicePath = DevicePathToConnect;
     Status = gBS->LocateDevicePath (&gEfiDevicePathProtocolGuid, &RemainingDevicePath, &Handle);
-    
+
     if (!EFI_ERROR (Status) && (Handle != NULL)) {
       if (PreviousHandle == Handle) {
         Status = EFI_NOT_FOUND;
@@ -53,16 +53,16 @@ ShellConnectDevicePath (
         Status = gBS->ConnectController (Handle, NULL, RemainingDevicePath, FALSE);
       }
     }
-    
+
   } while (!EFI_ERROR (Status) && !IsDevicePathEnd (RemainingDevicePath) );
-  
+
   return Status;
-   
+
 }
 
 /**
   Connect drivers for PCI root bridge.
-  
+
   @retval EFI_SUCCESS                     Connect drivers successfully.
   @retval EFI_NOT_FOUND                   Cannot find PCI root bridge device.
 
@@ -71,29 +71,29 @@ EFI_STATUS
 ShellConnectPciRootBridge (
   VOID
   )
-{  
+{
   UINTN               RootBridgeHandleCount;
   EFI_HANDLE          *RootBridgeHandleBuffer;
   UINTN               RootBridgeIndex;
   EFI_STATUS          Status;
-  
+
   RootBridgeHandleCount = 0;
-  
-  Status = gBS->LocateHandleBuffer (  
-              ByProtocol,  
-              &gEfiPciRootBridgeIoProtocolGuid, 
-              NULL,  
-              &RootBridgeHandleCount,  
-              &RootBridgeHandleBuffer  
+
+  Status = gBS->LocateHandleBuffer (
+              ByProtocol,
+              &gEfiPciRootBridgeIoProtocolGuid,
+              NULL,
+              &RootBridgeHandleCount,
+              &RootBridgeHandleBuffer
               );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
-  for (RootBridgeIndex = 0; RootBridgeIndex < RootBridgeHandleCount; RootBridgeIndex++) {    
-    gBS->ConnectController (RootBridgeHandleBuffer[RootBridgeIndex], NULL, NULL, FALSE);    
-  }  
-  
+
+  for (RootBridgeIndex = 0; RootBridgeIndex < RootBridgeHandleCount; RootBridgeIndex++) {
+    gBS->ConnectController (RootBridgeHandleBuffer[RootBridgeIndex], NULL, NULL, FALSE);
+  }
+
   return EFI_SUCCESS;
 }
 
@@ -198,7 +198,7 @@ ConnectFromDevPaths (
 {
   EFI_DEVICE_PATH_PROTOCOL  *DevPath;
   EFI_DEVICE_PATH_PROTOCOL  *CopyOfDevPath;
-  EFI_DEVICE_PATH_PROTOCOL  *Instance;  
+  EFI_DEVICE_PATH_PROTOCOL  *Instance;
   EFI_DEVICE_PATH_PROTOCOL  *Next;
   UINTN                     Length;
   UINTN                     Index;
@@ -209,7 +209,7 @@ ConnectFromDevPaths (
   BOOLEAN                   AtLeastOneConnected;
   EFI_PCI_IO_PROTOCOL       *PciIo;
   UINT8                     Class[3];
-  
+
   DevPath = NULL;
   Length  = 0;
   AtLeastOneConnected = FALSE;
@@ -265,14 +265,14 @@ ConnectFromDevPaths (
       ((DevicePathSubType (Instance) == MSG_USB_CLASS_DP)
       || (DevicePathSubType (Instance) == MSG_USB_WWID_DP)
       )) {
-      
+
       Status = ShellConnectPciRootBridge ();
       if (EFI_ERROR(Status)) {
         FreePool(Instance);
         FreePool(DevPath);
         return Status;
       }
-      
+
       Status = gBS->LocateHandleBuffer (
                   ByProtocol,
                   &gEfiPciIoProtocolGuid,
@@ -280,7 +280,7 @@ ConnectFromDevPaths (
                   &HandleArrayCount,
                   &HandleArray
                   );
-      
+
       if (!EFI_ERROR (Status)) {
         for (Index = 0; Index < HandleArrayCount; Index++) {
           Status = gBS->HandleProtocol (
@@ -288,7 +288,7 @@ ConnectFromDevPaths (
                       &gEfiPciIoProtocolGuid,
                       (VOID **)&PciIo
                       );
-          
+
           if (!EFI_ERROR (Status)) {
             Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, 0x09, 3, &Class);
             if (!EFI_ERROR (Status)) {
@@ -312,7 +312,7 @@ ConnectFromDevPaths (
       if (HandleArray != NULL) {
         FreePool (HandleArray);
       }
-    } else { 
+    } else {
       //
       // connect the entire device path
       //
@@ -322,9 +322,9 @@ ConnectFromDevPaths (
       }
     }
     FreePool (Instance);
-    
+
   } while (CopyOfDevPath != NULL);
-  
+
   if (DevPath != NULL) {
     FreePool(DevPath);
   }
@@ -334,7 +334,7 @@ ConnectFromDevPaths (
   } else {
     return EFI_NOT_FOUND;
   }
-  
+
 }
 
 /**
@@ -520,7 +520,7 @@ ShellCommandRunConnect (
       } else {
         Handle2 = NULL;
       }
-      
+
       if (ShellStatus == SHELL_SUCCESS) {
         if (Param1 != NULL && Handle1 == NULL){
           ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, Param1);

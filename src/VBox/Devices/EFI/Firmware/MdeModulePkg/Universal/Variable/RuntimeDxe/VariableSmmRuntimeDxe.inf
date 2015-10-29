@@ -48,13 +48,13 @@
 
 [LibraryClasses]
   MemoryAllocationLib
-  BaseLib  
+  BaseLib
   UefiBootServicesTableLib
   DebugLib
   UefiRuntimeLib
   DxeServicesTableLib
   UefiDriverEntryPoint
-  PcdLib  
+  PcdLib
 
 [Protocols]
   gEfiVariableWriteArchProtocolGuid             ## PRODUCES
@@ -76,7 +76,7 @@
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize                 ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxHardwareErrorVariableSize    ## CONSUMES
-  
+
 [Depex]
   gEfiSmmCommunicationProtocolGuid
 

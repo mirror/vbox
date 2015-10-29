@@ -63,11 +63,11 @@ class GenFdsGlobalVariable:
     FdfFileTimeStamp = 0
     FixedLoadAddress = False
     PlatformName = ''
-    
+
     BuildRuleFamily = "MSFT"
     ToolChainFamily = "MSFT"
     __BuildRuleDatabase = None
-    
+
     #
     # The list whose element are flags to indicate if large FFS or SECTION files exist in FV.
     # At the beginning of each generation of FV, false flag is appended to the list,
@@ -82,7 +82,7 @@ class GenFdsGlobalVariable:
     LARGE_FILE_SIZE = 0x1000000
 
     SectionHeader = struct.Struct("3B 1B")
-    
+
     ## LoadBuildRule
     #
     @staticmethod
@@ -113,7 +113,7 @@ class GenFdsGlobalVariable:
                    and GenFdsGlobalVariable.ToolChainTag in ToolDefinition[DataType.TAB_TOD_DEFINES_BUILDRULEFAMILY] \
                    and ToolDefinition[DataType.TAB_TOD_DEFINES_BUILDRULEFAMILY][GenFdsGlobalVariable.ToolChainTag]:
                     GenFdsGlobalVariable.BuildRuleFamily = ToolDefinition[DataType.TAB_TOD_DEFINES_BUILDRULEFAMILY][GenFdsGlobalVariable.ToolChainTag]
-                    
+
                 if DataType.TAB_TOD_DEFINES_FAMILY in ToolDefinition \
                    and GenFdsGlobalVariable.ToolChainTag in ToolDefinition[DataType.TAB_TOD_DEFINES_FAMILY] \
                    and ToolDefinition[DataType.TAB_TOD_DEFINES_FAMILY][GenFdsGlobalVariable.ToolChainTag]:
@@ -225,11 +225,11 @@ class GenFdsGlobalVariable:
             while Index < len(SourceList):
                 Source = SourceList[Index]
                 Index = Index + 1
-    
+
                 if File.IsBinary and File == Source and Inf.Binaries != None and File in Inf.Binaries:
                     # Skip all files that are not binary libraries
                     if not Inf.LibraryClass:
-                        continue            
+                        continue
                     RuleObject = BuildRules[DataType.TAB_DEFAULT_BINARY_FILE]
                 elif FileType in BuildRules:
                     RuleObject = BuildRules[FileType]
@@ -240,15 +240,15 @@ class GenFdsGlobalVariable:
                     if LastTarget:
                         TargetList.add(str(LastTarget))
                     break
-    
+
                 FileType = RuleObject.SourceFileType
-    
+
                 # stop at STATIC_LIBRARY for library
                 if Inf.LibraryClass and FileType == DataType.TAB_STATIC_LIBRARY:
                     if LastTarget:
                         TargetList.add(str(LastTarget))
                     break
-    
+
                 Target = RuleObject.Apply(Source)
                 if not Target:
                     if LastTarget:
@@ -257,11 +257,11 @@ class GenFdsGlobalVariable:
                 elif not Target.Outputs:
                     # Only do build for target with outputs
                     TargetList.add(str(Target))
-    
+
                 # to avoid cyclic rule
                 if FileType in RuleChain:
                     break
-    
+
                 RuleChain.append(FileType)
                 SourceList.extend(Target.Outputs)
                 LastTarget = Target
@@ -417,7 +417,7 @@ class GenFdsGlobalVariable:
 
             if (os.path.getsize(Output) >= GenFdsGlobalVariable.LARGE_FILE_SIZE and
                 GenFdsGlobalVariable.LargeFileInFvFlags):
-                GenFdsGlobalVariable.LargeFileInFvFlags[-1] = True 
+                GenFdsGlobalVariable.LargeFileInFvFlags[-1] = True
 
     @staticmethod
     def GetAlignment (AlignString):
@@ -463,12 +463,12 @@ class GenFdsGlobalVariable:
         Cmd = ["GenFv"]
         if BaseAddress not in [None, '']:
             Cmd += ["-r", BaseAddress]
-        
+
         if ForceRebase == False:
             Cmd +=["-F", "FALSE"]
         elif ForceRebase == True:
             Cmd +=["-F", "TRUE"]
-            
+
         if Capsule:
             Cmd += ["-c"]
         if Dump:
@@ -539,19 +539,19 @@ class GenFdsGlobalVariable:
     @staticmethod
     def GenerateOptionRom(Output, EfiInput, BinaryInput, Compress=False, ClassCode=None,
                         Revision=None, DeviceId=None, VendorId=None):
-        InputList = []   
+        InputList = []
         Cmd = ["EfiRom"]
         if len(EfiInput) > 0:
-            
+
             if Compress:
                 Cmd += ["-ec"]
             else:
                 Cmd += ["-e"]
-                
+
             for EfiFile in EfiInput:
                 Cmd += [EfiFile]
                 InputList.append (EfiFile)
-        
+
         if len(BinaryInput) > 0:
             Cmd += ["-b"]
             for BinFile in BinaryInput:
@@ -562,7 +562,7 @@ class GenFdsGlobalVariable:
         if not GenFdsGlobalVariable.NeedsUpdate(Output, InputList):
             return
         GenFdsGlobalVariable.DebugLogger(EdkLogger.DEBUG_5, "%s needs update because of newer %s" % (Output, InputList))
-                        
+
         if ClassCode != None:
             Cmd += ["-l", ClassCode]
         if Revision != None:
@@ -572,7 +572,7 @@ class GenFdsGlobalVariable:
         if VendorId != None:
             Cmd += ["-f", VendorId]
 
-        Cmd += ["-o", Output]    
+        Cmd += ["-o", Output]
         GenFdsGlobalVariable.CallExternalTool(Cmd, "Failed to generate option rom")
 
     @staticmethod
@@ -701,13 +701,13 @@ class GenFdsGlobalVariable:
                         EdkLogger.error("GenFds", GENFDS_ERROR, "%s is not FixedAtBuild type." % PcdPattern)
                     if PcdObj.DatumType != 'VOID*':
                         EdkLogger.error("GenFds", GENFDS_ERROR, "%s is not VOID* datum type." % PcdPattern)
-                        
+
                     PcdValue = PcdObj.DefaultValue
                     return PcdValue
-                
-            for Package in GenFdsGlobalVariable.WorkSpace.GetPackageList(GenFdsGlobalVariable.ActivePlatform, 
-                                                                         Arch, 
-                                                                         GenFdsGlobalVariable.TargetName, 
+
+            for Package in GenFdsGlobalVariable.WorkSpace.GetPackageList(GenFdsGlobalVariable.ActivePlatform,
+                                                                         Arch,
+                                                                         GenFdsGlobalVariable.TargetName,
                                                                          GenFdsGlobalVariable.ToolChainTag):
                 PcdDict = Package.Pcds
                 for Key in PcdDict:
@@ -717,7 +717,7 @@ class GenFdsGlobalVariable:
                             EdkLogger.error("GenFds", GENFDS_ERROR, "%s is not FixedAtBuild type." % PcdPattern)
                         if PcdObj.DatumType != 'VOID*':
                             EdkLogger.error("GenFds", GENFDS_ERROR, "%s is not VOID* datum type." % PcdPattern)
-                            
+
                         PcdValue = PcdObj.DefaultValue
                         return PcdValue
 

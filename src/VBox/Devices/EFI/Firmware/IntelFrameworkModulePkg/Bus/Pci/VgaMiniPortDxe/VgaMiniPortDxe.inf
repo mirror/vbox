@@ -29,7 +29,7 @@
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
 #  DRIVER_BINDING                = gPciVgaMiniPortDriverBinding;
 #  COMPONENT_NAME                = gPciVgaMiniPortComponentName;
-#  COMPONENT_NAME2               = gPciVgaMiniPortComponentName2; 
+#  COMPONENT_NAME2               = gPciVgaMiniPortComponentName2;
 #
 
 [Sources]

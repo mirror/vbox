@@ -29,9 +29,9 @@
 #
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
 #
-#  DRIVER_BINDING                =  gIDEBusDriverBinding                         
+#  DRIVER_BINDING                =  gIDEBusDriverBinding
 #  COMPONENT_NAME                =  gIDEBusComponentName
-#  COMPONENT_NAME2               =  gIDEBusComponentName2                         
+#  COMPONENT_NAME2               =  gIDEBusComponentName2
 #  Variable Guid C Name: gConfigurationGuid Variable Name: L"Configuration"
 #
 #
@@ -53,7 +53,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   IntelFrameworkPkg/IntelFrameworkPkg.dec
-  IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec  
+  IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
 
 
 [LibraryClasses]

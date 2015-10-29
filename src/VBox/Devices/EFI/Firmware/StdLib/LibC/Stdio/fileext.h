@@ -41,7 +41,7 @@ struct __sfileext {
 	int _lockcount; /* Count of recursive locks */
 	int _lockinternal; /* Flag of whether the lock is held inside stdio */
 	int _lockcancelstate; /* Stashed cancellation state on internal lock */
-#endif	
+#endif
 };
 
 #define _EXT(fp) ((struct __sfileext *)(void *)((fp)->_ext._base))

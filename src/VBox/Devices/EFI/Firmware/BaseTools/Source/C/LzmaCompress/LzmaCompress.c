@@ -33,7 +33,7 @@
 #define LZMA_HEADER_SIZE (LZMA_PROPS_SIZE + 8)
 
 typedef enum {
-  NoConverter, 
+  NoConverter,
   X86Converter,
   MaxConverter
 } CONVERTER_TYPE;
@@ -117,7 +117,7 @@ static SRes Encode(ISeqOutStream *outStream, ISeqInStream *inStream, UInt64 file
   } else {
     return SZ_ERROR_INPUT_EOF;
   }
-  
+
   if (SeqInStream_Read(inStream, inBuffer, inSize) != SZ_OK) {
     res = SZ_ERROR_READ;
     goto Done;
@@ -130,7 +130,7 @@ static SRes Encode(ISeqOutStream *outStream, ISeqInStream *inStream, UInt64 file
     res = SZ_ERROR_MEM;
     goto Done;
   }
-  
+
   {
     int i;
     for (i = 0; i < 8; i++)
@@ -145,7 +145,7 @@ static SRes Encode(ISeqOutStream *outStream, ISeqInStream *inStream, UInt64 file
       goto Done;
     }
     memcpy(filteredStream, inBuffer, inSize);
-    
+
     if (mConType == X86Converter) {
       {
         UInt32 x86State;
@@ -158,12 +158,12 @@ static SRes Encode(ISeqOutStream *outStream, ISeqInStream *inStream, UInt64 file
   {
     size_t outSizeProcessed = outSize - LZMA_HEADER_SIZE;
     size_t outPropsSize = LZMA_PROPS_SIZE;
-    
+
     res = LzmaEncode(outBuffer + LZMA_HEADER_SIZE, &outSizeProcessed,
         mConType != NoConverter ? filteredStream : inBuffer, inSize,
         &props, outBuffer, &outPropsSize, 0,
         NULL, &g_Alloc, &g_Alloc);
-    
+
     if (res != SZ_OK)
       goto Done;
 
@@ -194,13 +194,13 @@ static SRes Decode(ISeqOutStream *outStream, ISeqInStream *inStream, UInt64 file
 
   int i;
 
-  if (inSize < LZMA_HEADER_SIZE) 
+  if (inSize < LZMA_HEADER_SIZE)
     return SZ_ERROR_INPUT_EOF;
 
   inBuffer = (Byte *)MyAlloc(inSize);
   if (inBuffer == 0)
     return SZ_ERROR_MEM;
-  
+
   if (SeqInStream_Read(inStream, inBuffer, inSize) != SZ_OK) {
     res = SZ_ERROR_READ;
     goto Done;

@@ -1,4 +1,4 @@
-;------------------------------------------------------------------------------ 
+;------------------------------------------------------------------------------
 ;
 ; CpuFlushTlb() for ARM
 ;
@@ -29,7 +29,7 @@
 ;  VOID
 ;  );
 ;
-CpuFlushTlb 
+CpuFlushTlb
     MOV r0,#0
     MCR p15,0,r0,c8,c5,0        ;Invalidate all the unlocked entried in TLB
     BX LR

@@ -16,7 +16,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 /**
   Compare the Hour, Minute and Second of the From time and the To time.
-  
+
   Only compare H/M/S in EFI_TIME and ignore other fields here.
 
   @param From   the first time
@@ -164,7 +164,7 @@ PcRtcInit (
   Time.Year   = RtcRead (RTC_ADDRESS_YEAR);
 
   Century = RtcRead (RTC_ADDRESS_CENTURY);
-  
+
   //
   // Set RTC configuration after get original time
   // The value of bit AIE should be reserved.
@@ -177,7 +177,7 @@ PcRtcInit (
   if (!EfiAtRuntime ()) {
     EfiReleaseLock (&Global->RtcLock);
   }
- 
+
   //
   // Get the data of Daylight saving and time zone, if they have been
   // stored in NV variable during previous boot.
@@ -195,7 +195,7 @@ PcRtcInit (
     Time.Daylight = (UINT8) (TimerVar >> 16);
   } else {
     Time.TimeZone = EFI_UNSPECIFIED_TIMEZONE;
-    Time.Daylight = 0;  
+    Time.Daylight = 0;
   }
 
   //
@@ -231,7 +231,7 @@ PcRtcInit (
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   //
   // Reset wakeup time value to valid state when wakeup alarm is disabled and wakeup time is invalid.
   // Global variable has already had valid SavedTimeZone and Daylight,
@@ -241,9 +241,9 @@ PcRtcInit (
   if ((Enabled) || (!EFI_ERROR (Status))) {
     return EFI_SUCCESS;
   }
-  
+
   //
-  // When wakeup time is disabled and invalid, reset wakeup time register to valid state 
+  // When wakeup time is disabled and invalid, reset wakeup time register to valid state
   // but keep wakeup alarm disabled.
   //
   Time.Second = RTC_INIT_SECOND;
@@ -272,7 +272,7 @@ PcRtcInit (
     }
     return EFI_DEVICE_ERROR;
   }
-  
+
   ConvertEfiTimeToRtcTime (&Time, RegisterB, &Century);
 
   //
@@ -291,13 +291,13 @@ PcRtcInit (
     }
     return EFI_DEVICE_ERROR;
   }
-  
+
   //
   // Inhibit updates of the RTC
   //
   RegisterB.Bits.Set  = 1;
   RtcWrite (RTC_ADDRESS_REGISTER_B, RegisterB.Data);
- 
+
   //
   // Set RTC alarm time registers
   //
@@ -310,7 +310,7 @@ PcRtcInit (
   //
   RegisterB.Bits.Set = 0;
   RtcWrite (RTC_ADDRESS_REGISTER_B, RegisterB.Data);
- 
+
   //
   // Release RTC Lock.
   //
@@ -384,7 +384,7 @@ PcRtcGetTime (
   Time->Year    = RtcRead (RTC_ADDRESS_YEAR);
 
   Century = RtcRead (RTC_ADDRESS_CENTURY);
-  
+
   //
   // Release RTC Lock.
   //
@@ -479,7 +479,7 @@ PcRtcSetTime (
      }
     return Status;
   }
-  
+
   //
   // Write timezone and daylight to RTC variable
   //
@@ -767,7 +767,7 @@ PcRtcSetWakeupTime (
     }
     return EFI_DEVICE_ERROR;
   }
-  
+
   //
   // Inhibit updates of the RTC
   //
@@ -904,7 +904,7 @@ ConvertRtcTimeToEfiTime (
   @param    Timeout  Tell how long it should take to wait.
 
   @retval   EFI_DEVICE_ERROR   RTC device error.
-  @retval   EFI_SUCCESS        RTC is updated and ready.  
+  @retval   EFI_SUCCESS        RTC is updated and ready.
 **/
 EFI_STATUS
 RtcWaitToUpdate (
@@ -1105,7 +1105,7 @@ ConvertEfiTimeToRtcTime (
 
 /**
   Compare the Hour, Minute and Second of the From time and the To time.
-  
+
   Only compare H/M/S in EFI_TIME and ignore other fields here.
 
   @param From   the first time
@@ -1170,7 +1170,7 @@ IsWithinOneDay (
   //
   ASSERT (From->Month >=1);
   ASSERT (From->Month <=12);
-  
+
   if (From->Year == To->Year) {
     if (From->Month == To->Month) {
       if ((From->Day + 1) == To->Day) {

@@ -1,7 +1,7 @@
-/** @file  
+/** @file
   RNG Driver to produce the UEFI Random Number Generator protocol.
 
-  The driver will use the new RDRAND instruction to produce high-quality, high-performance 
+  The driver will use the new RDRAND instruction to produce high-quality, high-performance
   entropy and random number.
 
   RNG Algoritnms defined in UEFI 2.4:
@@ -15,12 +15,12 @@
    - EFI_RNG_ALGORITHM_X9_31_AES_GUID         - Unsupported
 
 Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -39,7 +39,7 @@ EFI_RNG_ALGORITHM mSupportedRngAlgorithms[] = {
   Returns information about the random number generation implementation.
 
   @param[in]     This                 A pointer to the EFI_RNG_PROTOCOL instance.
-  @param[in,out] RNGAlgorithmListSize On input, the size in bytes of RNGAlgorithmList. 
+  @param[in,out] RNGAlgorithmListSize On input, the size in bytes of RNGAlgorithmList.
                                       On output with a return code of EFI_SUCCESS, the size
                                       in bytes of the data returned in RNGAlgorithmList. On output
                                       with a return code of EFI_BUFFER_TOO_SMALL,
@@ -88,7 +88,7 @@ RngGetInfo (
     }
   }
   *RNGAlgorithmListSize = RequiredSize;
-  
+
   return Status;
 }
 
@@ -150,13 +150,13 @@ RngGetRNG (
   //
   if (CompareGuid (RNGAlgorithm, &gEfiRngAlgorithmRaw)) {
     //
-    // When a DRBG is used on the output of a entropy source, 
+    // When a DRBG is used on the output of a entropy source,
     // its security level must be at least 256 bits according to UEFI Spec.
     //
     if (RNGValueLength < 32) {
       return EFI_INVALID_PARAMETER;
     }
-    
+
     Status = RdRandGenerateEntropy (RNGValueLength, RNGValue);
     return Status;
   }
@@ -214,6 +214,6 @@ RngDriverEntry (
                   &mRngRdRand,
                   NULL
                   );
-  
+
   return Status;
 }

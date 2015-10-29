@@ -107,14 +107,14 @@
 #ifdef __STDC__
 #define	IDTVEC(name) \
 	ALIGN_TEXT; .globl X ## name; .type X ## name,@function; X ## name:
-#else 
+#else
 #define	IDTVEC(name) \
 	ALIGN_TEXT; .globl X/**/name; .type X/**/name,@function; X/**/name:
-#endif /* __STDC__ */ 
-#else 
+#endif /* __STDC__ */
+#else
 #ifdef __STDC__
 #define	IDTVEC(name) \
-	ALIGN_TEXT; .globl _X ## name; .type _X ## name,@function; _X ## name: 
+	ALIGN_TEXT; .globl _X ## name; .type _X ## name,@function; _X ## name:
 #else
 #define	IDTVEC(name) \
 	ALIGN_TEXT; .globl _X/**/name; .type _X/**/name,@function; _X/**/name:
@@ -151,7 +151,7 @@
 # ifdef __ELF__
 #  define _PROF_PROLOGUE	\
 	pushl %ebp; movl %esp,%ebp; call PIC_PLT(__mcount); popl %ebp
-# else 
+# else
 #  define _PROF_PROLOGUE	\
 	pushl %ebp; movl %esp,%ebp; call PIC_PLT(mcount); popl %ebp
 # endif

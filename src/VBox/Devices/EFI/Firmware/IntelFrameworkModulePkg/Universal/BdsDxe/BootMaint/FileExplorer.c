@@ -236,7 +236,7 @@ UpdateFileExplorer (
 
   @param[in]  This                Points to the EFI_HII_CONFIG_ACCESS_PROTOCOL.
   @param[in]  Configuration       A null-terminated Unicode string in
-                                  <ConfigString> format.   
+                                  <ConfigString> format.
   @param[out] Progress            A pointer to a string filled in with the
                                   offset of the most recent '&' before the
                                   first failing name / value pair (or the
@@ -246,7 +246,7 @@ UpdateFileExplorer (
                                   successful.
 
   @retval EFI_SUCCESS             The results have been distributed or are
-                                  awaiting distribution.  
+                                  awaiting distribution.
   @retval EFI_OUT_OF_RESOURCES    Not enough memory to store the
                                   parts of the results that must be
                                   stored awaiting possible future
@@ -289,8 +289,8 @@ FileExplorerRouteConfig (
   }
 
   Status = gBS->LocateProtocol (
-                  &gEfiHiiConfigRoutingProtocolGuid, 
-                  NULL, 
+                  &gEfiHiiConfigRoutingProtocolGuid,
+                  NULL,
                   (VOID**) &ConfigRouting
                   );
   if (EFI_ERROR (Status)) {
@@ -393,7 +393,7 @@ FileExplorerCallback (
     //
     return EFI_UNSUPPORTED;
   }
-  
+
   Status         = EFI_SUCCESS;
   Private        = FE_CALLBACK_DATA_FROM_THIS (This);
 
@@ -407,7 +407,7 @@ FileExplorerCallback (
     if ((Value == NULL) || (ActionRequest == NULL)) {
       return EFI_INVALID_PARAMETER;
     }
-    
+
     if (QuestionId == KEY_VALUE_SAVE_AND_EXIT_BOOT) {
       NvRamMap->BootOptionChanged = FALSE;
       *ActionRequest = EFI_BROWSER_ACTION_REQUEST_SUBMIT;
@@ -451,7 +451,7 @@ FileExplorerCallback (
     if (Value == NULL) {
       return EFI_INVALID_PARAMETER;
     }
-    
+
     if (QuestionId >= FILE_OPTION_GOTO_OFFSET) {
       //
       // function will always return FALSE, no need to check here.

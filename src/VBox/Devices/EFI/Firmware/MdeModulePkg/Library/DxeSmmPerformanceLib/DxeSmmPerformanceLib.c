@@ -242,12 +242,12 @@ GetAllSmmGaugeData (VOID)
   }
 
   //
-  // Initialize communicate buffer 
+  // Initialize communicate buffer
   //
   SmmCommBufferHeader = (EFI_SMM_COMMUNICATE_HEADER *)mSmmPerformanceBuffer;
   SmmPerfCommData = (SMM_PERF_COMMUNICATE *)SmmCommBufferHeader->Data;
   ZeroMem((UINT8*)SmmPerfCommData, sizeof(SMM_PERF_COMMUNICATE));
-    
+
   CopyGuid (&SmmCommBufferHeader->HeaderGuid, &gSmmPerformanceProtocolGuid);
   SmmCommBufferHeader->MessageLength = sizeof(SMM_PERF_COMMUNICATE);
   CommSize = SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE;
@@ -262,14 +262,14 @@ GetAllSmmGaugeData (VOID)
   }
 
   mGaugeNumberOfEntries = SmmPerfCommData->NumberOfEntries;
-  
+
   DataSize = mGaugeNumberOfEntries * sizeof(GAUGE_DATA_ENTRY);
   mGaugeData = AllocateZeroPool(DataSize);
   ASSERT (mGaugeData != NULL);
-  
+
   //
   // Get all SMM gauge data
-  //  
+  //
   SmmPerfCommData->Function = SMM_PERF_FUNCTION_GET_GAUGE_DATA;
   SmmPerfCommData->LogEntryKey = 0;
   SmmPerfCommData->NumberOfEntries = mGaugeNumberOfEntries;
@@ -312,12 +312,12 @@ GetAllSmmGaugeDataEx (VOID)
   }
 
   //
-  // Initialize communicate buffer 
+  // Initialize communicate buffer
   //
   SmmCommBufferHeader = (EFI_SMM_COMMUNICATE_HEADER *)mSmmPerformanceBuffer;
   SmmPerfCommData = (SMM_PERF_COMMUNICATE_EX *)SmmCommBufferHeader->Data;
   ZeroMem((UINT8*)SmmPerfCommData, sizeof(SMM_PERF_COMMUNICATE_EX));
-    
+
   CopyGuid (&SmmCommBufferHeader->HeaderGuid, &gSmmPerformanceExProtocolGuid);
   SmmCommBufferHeader->MessageLength = sizeof(SMM_PERF_COMMUNICATE_EX);
   CommSize = SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE;
@@ -332,14 +332,14 @@ GetAllSmmGaugeDataEx (VOID)
   }
 
   mGaugeNumberOfEntriesEx = SmmPerfCommData->NumberOfEntries;
-  
+
   DataSize = mGaugeNumberOfEntriesEx * sizeof(GAUGE_DATA_ENTRY_EX);
   mGaugeDataEx = AllocateZeroPool(DataSize);
   ASSERT (mGaugeDataEx != NULL);
-  
+
   //
   // Get all SMM gauge data
-  //  
+  //
   SmmPerfCommData->Function = SMM_PERF_FUNCTION_GET_GAUGE_DATA;
   SmmPerfCommData->LogEntryKey = 0;
   SmmPerfCommData->NumberOfEntries = mGaugeNumberOfEntriesEx;
@@ -350,7 +350,7 @@ GetAllSmmGaugeDataEx (VOID)
     mGaugeDataEx = NULL;
     mGaugeNumberOfEntriesEx = 0;
   }
- 
+
   return mGaugeDataEx;
 }
 
@@ -398,7 +398,7 @@ GetAllSmmGaugeDataEx (VOID)
 UINTN
 EFIAPI
 GetPerformanceMeasurementEx (
-  IN  UINTN       LogEntryKey, 
+  IN  UINTN       LogEntryKey,
   OUT CONST VOID  **Handle,
   OUT CONST CHAR8 **Token,
   OUT CONST CHAR8 **Module,

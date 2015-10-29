@@ -1,6 +1,6 @@
 /** @file
   UEFI Component Name(2) protocol implementation for Ip4ConfigDxe driver.
-  
+
 Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -61,7 +61,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE mIp4ConfigDriverNameTable
                                 languages specified in SupportedLanguages. The
                                 number of languages supported by a driver is up
                                 to the driver writer. Language is specified
-                                in RFC 4646 or ISO 639-2 language code format.                                
+                                in RFC 4646 or ISO 639-2 language code format.
   @param  DriverName[out]       A pointer to the Unicode string to return.
                                 This Unicode string is the name of the
                                 driver specified by This in the language
@@ -134,7 +134,7 @@ Ip4ConfigComponentNameGetDriverName (
                                 ChildHandle in the language specified by
                                 Language from the point of view of the driver
                                 specified by This.
-                                
+
   @retval EFI_SUCCESS           The Unicode string for the user readable name in
                                 the language specified by Language for the
                                 driver specified by This was returned in

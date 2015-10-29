@@ -1366,7 +1366,7 @@ SmramProfileCopyData (
     MemoryProfileDescriptor->Header.Revision = MEMORY_PROFILE_DESCRIPTOR_REVISION;
     MemoryProfileDescriptor->Address = mFullSmramRanges[Index].PhysicalStart;
     MemoryProfileDescriptor->Size = mFullSmramRanges[Index].PhysicalSize;
-    MemoryProfileDescriptor++; 
+    MemoryProfileDescriptor++;
   }
 }
 

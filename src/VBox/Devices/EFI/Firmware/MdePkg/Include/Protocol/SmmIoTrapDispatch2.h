@@ -60,24 +60,24 @@ typedef struct _EFI_SMM_IO_TRAP_DISPATCH2_PROTOCOL EFI_SMM_IO_TRAP_DISPATCH2_PRO
 /**
   Register an IO trap SMI child handler for a specified SMI.
 
-  This service registers a function (DispatchFunction) which will be called when an SMI is 
-  generated because of an access to an I/O port specified by RegisterContext. On return, 
-  DispatchHandle contains a unique handle which may be used later to unregister the function 
-  using UnRegister(). If the base of the I/O range specified is zero, then an I/O range with the 
-  specified length and characteristics will be allocated and the Address field in RegisterContext 
-  updated. If no range could be allocated, then EFI_OUT_OF_RESOURCES will be returned. 
+  This service registers a function (DispatchFunction) which will be called when an SMI is
+  generated because of an access to an I/O port specified by RegisterContext. On return,
+  DispatchHandle contains a unique handle which may be used later to unregister the function
+  using UnRegister(). If the base of the I/O range specified is zero, then an I/O range with the
+  specified length and characteristics will be allocated and the Address field in RegisterContext
+  updated. If no range could be allocated, then EFI_OUT_OF_RESOURCES will be returned.
 
-  The service will not perform GCD allocation if the base address is non-zero or 
-  EFI_SMM_READY_TO_LOCK has been installed.  In this case, the caller is responsible for the 
+  The service will not perform GCD allocation if the base address is non-zero or
+  EFI_SMM_READY_TO_LOCK has been installed.  In this case, the caller is responsible for the
   existence and allocation of the specific IO range.
-  An error may be returned if some or all of the requested resources conflict with an existing IO trap 
+  An error may be returned if some or all of the requested resources conflict with an existing IO trap
   child handler.
 
-  It is not required that implementations will allow multiple children for a single IO trap SMI source.  
+  It is not required that implementations will allow multiple children for a single IO trap SMI source.
   Some implementations may support multiple children.
-  The DispatchFunction will be called with Context updated to contain information 
-  concerning the I/O action that actually happened and is passed in RegisterContext, with 
-  CommBuffer pointing to the data actually written and CommBufferSize pointing to the size of 
+  The DispatchFunction will be called with Context updated to contain information
+  concerning the I/O action that actually happened and is passed in RegisterContext, with
+  CommBuffer pointing to the data actually written and CommBufferSize pointing to the size of
   the data in CommBuffer.
 
   @param[in]  This               Pointer to the EFI_SMM_IO_TRAP_DISPATCH2_PROTOCOL instance.
@@ -104,10 +104,10 @@ EFI_STATUS
 /**
   Unregister a child SMI source dispatch function with a parent SMM driver.
 
-  This service removes a previously installed child dispatch handler. This does not guarantee that the 
+  This service removes a previously installed child dispatch handler. This does not guarantee that the
   system resources will be freed from the GCD.
 
-  @param[in] This                Pointer to the EFI_SMM_IO_TRAP_DISPATCH2_PROTOCOL instance. 
+  @param[in] This                Pointer to the EFI_SMM_IO_TRAP_DISPATCH2_PROTOCOL instance.
   @param[in] DispatchHandle      Handle of the child service to remove.
 
   @retval EFI_SUCCESS            The dispatch function has been successfully unregistered.

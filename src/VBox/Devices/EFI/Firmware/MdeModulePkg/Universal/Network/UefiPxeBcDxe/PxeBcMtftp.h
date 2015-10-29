@@ -1,6 +1,6 @@
 /** @file
   Mtftp routines for PxeBc.
-    
+
 Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -26,7 +26,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 /**
   This function is to get size of a file by Tftp.
-  
+
   @param  Private        Pointer to PxeBc private data
   @param  Config         Pointer to Mtftp configuration data
   @param  Filename       Pointer to file name
@@ -37,7 +37,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @retval EFI_NOT_FOUND      Parse the tftp ptions failed.
   @retval EFI_DEVICE_ERROR   The network device encountered an error during this operation.
   @retval Other              Has not get the size of the file.
-  
+
 **/
 EFI_STATUS
 PxeBcTftpGetFileSize (
@@ -63,7 +63,7 @@ PxeBcTftpGetFileSize (
   @retval EFI_SUCCESS        Read the data success from the special file.
   @retval EFI_DEVICE_ERROR   The network device encountered an error during this operation.
   @retval other              Read data from file failed.
-  
+
 **/
 EFI_STATUS
 PxeBcTftpReadFile (
@@ -91,7 +91,7 @@ PxeBcTftpReadFile (
   @retval EFI_SUCCESS        Write the data success into the special file.
   @retval EFI_DEVICE_ERROR   The network device encountered an error during this operation.
   @retval other              Write data into file failed.
-  
+
 **/
 EFI_STATUS
 PxeBcTftpWriteFile (
@@ -116,10 +116,10 @@ PxeBcTftpWriteFile (
   @param  BufferSize     Pointer to buffer size.
   @param  DontUseBuffer  Indicate whether with a receive buffer.
 
-  @retval EFI_SUCCES         Get the data from the file included in directory success. 
+  @retval EFI_SUCCES         Get the data from the file included in directory success.
   @retval EFI_DEVICE_ERROR   The network device encountered an error during this operation.
   @retval other              Operation failed.
-  
+
 **/
 EFI_STATUS
 PxeBcTftpReadDirectory (

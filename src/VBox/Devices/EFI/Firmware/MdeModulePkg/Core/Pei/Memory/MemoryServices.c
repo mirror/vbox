@@ -1,14 +1,14 @@
 /** @file
   EFI PEI Core memory services
-  
+
 Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -33,7 +33,7 @@ InitializeMemoryServices (
   IN PEI_CORE_INSTANCE           *OldCoreData
   )
 {
-  
+
   PrivateData->SwitchStackSignal    = FALSE;
 
   //
@@ -44,7 +44,7 @@ InitializeMemoryServices (
 
     PrivateData->PeiMemoryInstalled = FALSE;
     PrivateData->HobList.Raw        = SecCoreData->PeiTemporaryRamBase;
-    
+
     PeiCoreBuildHobHandoffInfoTable (
       BOOT_WITH_FULL_CONFIGURATION,
       (EFI_PHYSICAL_ADDRESS) (UINTN) SecCoreData->PeiTemporaryRamBase,
@@ -56,7 +56,7 @@ InitializeMemoryServices (
     //
     PrivateData->Ps = &(PrivateData->ServiceTableShadow);
   }
-  
+
   return;
 }
 
@@ -68,7 +68,7 @@ InitializeMemoryServices (
   This routine will hold discoveried memory information into PeiCore's private data,
   and set SwitchStackSignal flag. After PEIM who discovery memory is dispatched,
   PeiDispatcher will migrate temporary memory to permenement memory.
-  
+
   @param PeiServices        An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
   @param MemoryBegin        Start of memory address.
   @param MemoryLength       Length of memory.
@@ -93,35 +93,35 @@ PeiInstallPeiMemory (
   // PEI_SERVICE.InstallPeiMemory should only be called one time during whole PEI phase.
   // If it is invoked more than one time, ASSERT information is given for developer debugging in debug tip and
   // simply return EFI_SUCESS in release tip to ignore it.
-  // 
+  //
   if (PrivateData->PeiMemoryInstalled) {
     DEBUG ((EFI_D_ERROR, "ERROR: PeiInstallPeiMemory is called more than once!\n"));
     ASSERT (PrivateData->PeiMemoryInstalled);
     return EFI_SUCCESS;
   }
-  
+
   PrivateData->PhysicalMemoryBegin   = MemoryBegin;
   PrivateData->PhysicalMemoryLength  = MemoryLength;
   PrivateData->FreePhysicalMemoryTop = MemoryBegin + MemoryLength;
-   
+
   PrivateData->SwitchStackSignal      = TRUE;
 
-  return EFI_SUCCESS;   
+  return EFI_SUCCESS;
 }
 
 /**
-  The purpose of the service is to publish an interface that allows 
+  The purpose of the service is to publish an interface that allows
   PEIMs to allocate memory ranges that are managed by the PEI Foundation.
 
   @param  PeiServices      An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
   @param  MemoryType       The type of memory to allocate.
   @param  Pages            The number of contiguous 4 KB pages to allocate.
-  @param  Memory           Pointer to a physical address. On output, the address is set to the base 
+  @param  Memory           Pointer to a physical address. On output, the address is set to the base
                            of the page range that was allocated.
 
   @retval EFI_SUCCESS           The memory range was successfully allocated.
   @retval EFI_OUT_OF_RESOURCES  The pages could not be allocated.
-  @retval EFI_INVALID_PARAMETER Type is not equal to EfiLoaderCode, EfiLoaderData, EfiRuntimeServicesCode, 
+  @retval EFI_INVALID_PARAMETER Type is not equal to EfiLoaderCode, EfiLoaderData, EfiRuntimeServicesCode,
                                 EfiRuntimeServicesData, EfiBootServicesCode, EfiBootServicesData,
                                 EfiACPIReclaimMemory, or EfiACPIMemoryNVS.
 
@@ -154,7 +154,7 @@ PeiAllocatePages (
 
   PrivateData = PEI_CORE_INSTANCE_FROM_PS_THIS (PeiServices);
   Hob.Raw     = PrivateData->HobList.Raw;
-  
+
   //
   // Check if Hob already available
   //
@@ -178,7 +178,7 @@ PeiAllocatePages (
   // Check to see if on 4k boundary, If not aligned, make the allocation aligned.
   //
   *(FreeMemoryTop) -= *(FreeMemoryTop) & 0xFFF;
-  
+
   //
   // Verify that there is sufficient memory to satisfy the allocation
   //
@@ -217,9 +217,9 @@ PeiAllocatePages (
 
 /**
 
-  Pool allocation service. Before permenent memory is discoveried, the pool will 
-  be allocated the heap in the temporary memory. Genenrally, the size of heap in temporary 
-  memory does not exceed to 64K, so the biggest pool size could be allocated is 
+  Pool allocation service. Before permenent memory is discoveried, the pool will
+  be allocated the heap in the temporary memory. Genenrally, the size of heap in temporary
+  memory does not exceed to 64K, so the biggest pool size could be allocated is
   64K.
 
   @param PeiServices               An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
@@ -246,7 +246,7 @@ PeiAllocatePool (
   // If some "post-memory" PEIM wishes to allocate larger pool,
   // it should use AllocatePages service instead.
   //
-  
+
   //
   // Generally, the size of heap in temporary memory does not exceed to 64K,
   // HobLength is multiples of 8 bytes, so the maxmium size of pool is 0xFFF8 - sizeof (EFI_HOB_MEMORY_POOL)
@@ -254,14 +254,14 @@ PeiAllocatePool (
   if (Size > (0xFFF8 - sizeof (EFI_HOB_MEMORY_POOL))) {
     return EFI_OUT_OF_RESOURCES;
   }
-  
+
   Status = PeiServicesCreateHob (
              EFI_HOB_TYPE_MEMORY_POOL,
              (UINT16)(sizeof (EFI_HOB_MEMORY_POOL) + Size),
              (VOID **)&Hob
              );
   ASSERT_EFI_ERROR (Status);
-  *Buffer = Hob+1;  
+  *Buffer = Hob+1;
 
   return Status;
 }

@@ -187,7 +187,7 @@ WriteBootToOsPerformanceData (
   Ticker  = GetPerformanceCounter ();
 
   Freq    = GetPerformanceCounterProperties (&StartValue, &EndValue);
-  
+
   Freq    = DivU64x32 (Freq, 1000);
 
   mPerfHeader.CpuFreq = Freq;
@@ -251,7 +251,7 @@ WriteBootToOsPerformanceData (
   }
   PerfEntriesAsDxeHandle = AllocateZeroPool (NumPerfEntries * sizeof (BOOLEAN));
   ASSERT (PerfEntriesAsDxeHandle != NULL);
-  
+
   //
   // Get DXE drivers performance
   //

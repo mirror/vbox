@@ -1,6 +1,6 @@
 /** @file
   Definition for IP4 pesudo interface structure.
-  
+
 Copyright (c) 2005 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License

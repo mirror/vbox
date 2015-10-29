@@ -157,7 +157,7 @@ PushStack (
     (*StackPtr)->Buffer = AllocateCopyPool(Data->BufferLen, Data->Buffer);
     ASSERT ((*StackPtr)->Buffer != NULL);
   }
-  
+
   *StackPtr = *StackPtr + 1;
 
   return EFI_SUCCESS;
@@ -210,7 +210,7 @@ ResetCurrentExpressionStack (
   mCurrentExpressionPointer   = mCurrentExpressionStack;
   mFormExpressionPointer      = mFormExpressionStack;
   mStatementExpressionPointer = mStatementExpressionStack;
-  mOptionExpressionPointer    = mOptionExpressionStack;  
+  mOptionExpressionPointer    = mOptionExpressionStack;
 }
 
 
@@ -293,7 +293,7 @@ ResetMapExpressionListStack (
                                  pointer
   @param  StackEnd               On input: old stack end; On output: new stack end
   @param  MemberSize             The stack member size.
-  
+
   @retval EFI_SUCCESS            Grow stack success.
   @retval EFI_OUT_OF_RESOURCES   No enough memory for stack space.
 
@@ -383,7 +383,7 @@ PushConditionalStack (
   //
   // Push the item onto the stack
   //
-  CopyMem (*StackPtr, Data, sizeof (FORM_EXPRESSION *)); 
+  CopyMem (*StackPtr, Data, sizeof (FORM_EXPRESSION *));
   *StackPtr = *StackPtr + 1;
 
   return EFI_SUCCESS;
@@ -426,15 +426,15 @@ PopConditionalStack (
 
 /**
   Get the expression list count.
-  
-  @param  Level                  Which type this expression belong to. Form, 
+
+  @param  Level                  Which type this expression belong to. Form,
                                  statement or option?
 
   @retval >=0                    The expression count
   @retval -1                     Input parameter error.
 
 **/
-INTN 
+INTN
 GetConditionalExpressionCount (
   IN EXPRESS_LEVEL       Level
   )
@@ -449,13 +449,13 @@ GetConditionalExpressionCount (
     default:
       ASSERT (FALSE);
       return -1;
-  } 
+  }
 }
 
 /**
   Get the expression Buffer pointer.
-  
-  @param  Level                  Which type this expression belong to. Form, 
+
+  @param  Level                  Which type this expression belong to. Form,
                                  statement or option?
 
   @retval  The start pointer of the expression buffer or NULL.
@@ -476,7 +476,7 @@ GetConditionalExpressionList (
     default:
       ASSERT (FALSE);
       return NULL;
-  } 
+  }
 }
 
 
@@ -484,7 +484,7 @@ GetConditionalExpressionList (
   Push the expression options onto the Stack.
 
   @param  Pointer                Pointer to the current expression.
-  @param  Level                  Which type this expression belong to. Form, 
+  @param  Level                  Which type this expression belong to. Form,
                                  statement or option?
 
   @retval EFI_SUCCESS            The value was pushed onto the stack.
@@ -528,7 +528,7 @@ PushConditionalExpression (
 /**
   Pop the expression options from the Stack
 
-  @param  Level                  Which type this expression belong to. Form, 
+  @param  Level                  Which type this expression belong to. Form,
                                  statement or option?
 
   @retval EFI_SUCCESS            The value was pushed onto the stack.
@@ -991,7 +991,7 @@ IfrStrToUpper (
 /**
   Check whether this value type can be transfer to EFI_IFR_TYPE_BUFFER type.
 
-  EFI_IFR_TYPE_REF, EFI_IFR_TYPE_DATE and EFI_IFR_TYPE_TIME are converted to 
+  EFI_IFR_TYPE_REF, EFI_IFR_TYPE_DATE and EFI_IFR_TYPE_TIME are converted to
   EFI_IFR_TYPE_BUFFER when do the value compare.
 
   @param  Value                  Expression value to compare on.
@@ -1047,11 +1047,11 @@ IsTypeInUINT64 (
 /**
   Return the buffer length for this value.
 
-  EFI_IFR_TYPE_REF, EFI_IFR_TYPE_DATE and EFI_IFR_TYPE_TIME are converted to 
+  EFI_IFR_TYPE_REF, EFI_IFR_TYPE_DATE and EFI_IFR_TYPE_TIME are converted to
   EFI_IFR_TYPE_BUFFER when do the value compare.
 
   @param   Value                  Expression value to compare on.
-  
+
   @retval  BufLen                 Return the buffer length.
 
 **/
@@ -1081,7 +1081,7 @@ GetLengthForValue (
 /**
   Return the buffer pointer for this value.
 
-  EFI_IFR_TYPE_REF, EFI_IFR_TYPE_DATE and EFI_IFR_TYPE_TIME are converted to 
+  EFI_IFR_TYPE_REF, EFI_IFR_TYPE_DATE and EFI_IFR_TYPE_TIME are converted to
   EFI_IFR_TYPE_BUFFER when do the value compare.
 
   @param  Value                  Expression value to compare on.
@@ -1180,13 +1180,13 @@ IfrToString (
   case EFI_IFR_TYPE_BOOLEAN:
     String = (Value.Value.b) ? L"True" : L"False";
     break;
-    
+
   case EFI_IFR_TYPE_BUFFER:
   case EFI_IFR_TYPE_DATE:
   case EFI_IFR_TYPE_TIME:
   case EFI_IFR_TYPE_REF:
     //
-    // + 3 is base on the unicode format, the length may be odd number, 
+    // + 3 is base on the unicode format, the length may be odd number,
     // so need 1 byte to align, also need 2 bytes for L'\0'.
     //
     if (Value.Type == EFI_IFR_TYPE_BUFFER) {
@@ -1201,20 +1201,20 @@ IfrToString (
     ASSERT (TmpBuf != NULL);
     if (Format == EFI_IFR_STRING_ASCII) {
       CopyMem (TmpBuf, SrcBuf, SrcLen);
-      PrintFormat = L"%a"; 
+      PrintFormat = L"%a";
     } else {
       // Format == EFI_IFR_STRING_UNICODE
       CopyMem (TmpBuf, SrcBuf, SrcLen * sizeof (CHAR16));
-      PrintFormat = L"%s";  
+      PrintFormat = L"%s";
     }
     UnicodeSPrint (Buffer, sizeof (Buffer), PrintFormat, TmpBuf);
-    String = Buffer; 
+    String = Buffer;
     FreePool (TmpBuf);
     if (Value.Type == EFI_IFR_TYPE_BUFFER) {
       FreePool (Value.Buffer);
     }
     break;
-    
+
   default:
     Result->Type = EFI_IFR_TYPE_UNDEFINED;
     return EFI_SUCCESS;
@@ -1520,7 +1520,7 @@ IfrFind (
   Status = PopExpression (&Value[2]);
   if (EFI_ERROR (Status)) {
     return Status;
-  }  
+  }
 
   if (Value[0].Type > EFI_IFR_TYPE_NUM_SIZE_64) {
     Result->Type = EFI_IFR_TYPE_UNDEFINED;
@@ -1615,7 +1615,7 @@ IfrMid (
   Status = PopExpression (&Value[2]);
   if (EFI_ERROR (Status)) {
     return Status;
-  } 
+  }
 
   if (Value[0].Type > EFI_IFR_TYPE_NUM_SIZE_64) {
     Result->Type = EFI_IFR_TYPE_UNDEFINED;
@@ -1661,7 +1661,7 @@ IfrMid (
       Result->BufferLen = 0;
       Result->Buffer = NULL;
     } else {
-      Result->BufferLen = (UINT16)((BufferLen - Base) < Length ? (BufferLen - Base) : Length);    
+      Result->BufferLen = (UINT16)((BufferLen - Base) < Length ? (BufferLen - Base) : Length);
       Result->Buffer = AllocateZeroPool (Result->BufferLen);
       ASSERT (Result->Buffer != NULL);
       CopyMem (Result->Buffer, &Buffer[Base], Result->BufferLen);
@@ -1671,7 +1671,7 @@ IfrMid (
       FreePool (Value[2].Buffer);
     }
   }
-  
+
   return Status;
 }
 
@@ -1716,9 +1716,9 @@ IfrToken (
   Status = PopExpression (&Value[2]);
   if (EFI_ERROR (Status)) {
     return Status;
-  } 
+  }
 
-  if (Value[0].Type > EFI_IFR_TYPE_NUM_SIZE_64) { 
+  if (Value[0].Type > EFI_IFR_TYPE_NUM_SIZE_64) {
     Result->Type = EFI_IFR_TYPE_UNDEFINED;
     return EFI_SUCCESS;
   }
@@ -1733,7 +1733,7 @@ IfrToken (
   for (Index = 0; Index < 2; Index++) {
     if (Value[Index + 1].Type != EFI_IFR_TYPE_STRING) {
       Result->Type = EFI_IFR_TYPE_UNDEFINED;
-      Status = EFI_SUCCESS;   
+      Status = EFI_SUCCESS;
       goto Done;
     }
 
@@ -1831,7 +1831,7 @@ IfrSpan (
   Status = PopExpression (&Value[2]);
   if (EFI_ERROR (Status)) {
     return Status;
-  } 
+  }
 
   if (Value[0].Type > EFI_IFR_TYPE_NUM_SIZE_64) {
     Result->Type = EFI_IFR_TYPE_UNDEFINED;
@@ -2079,7 +2079,7 @@ CompareHiiValue (
     Buf1Len = GetLengthForValue(Value1);
     Buf2    = GetBufferForValue(Value2);
     Buf2Len = GetLengthForValue(Value2);
-    
+
     Len = Buf1Len > Buf2Len ? Buf2Len : Buf1Len;
     *Result = CompareMem (Buf1, Buf2, Len);
     if ((*Result == 0) && (Buf1Len != Buf2Len)) {
@@ -2090,7 +2090,7 @@ CompareHiiValue (
       *Result = Buf1Len > Buf2Len ? 1 : -1;
     }
     return EFI_SUCCESS;
-  }  
+  }
 
   //
   // Take types(integer, boolean) as integer
@@ -2157,7 +2157,7 @@ CheckUserPrivilege (
   /// Enumerate all user information of the current user profile
   /// to look for any EFI_USER_INFO_ACCESS_SETUP record.
   ///
-  
+
   for (UserInfoHandle = NULL;;) {
     Status = mUserManager->GetNextInfo (mUserManager, UserProfileHandle, &UserInfoHandle);
     if (EFI_ERROR (Status)) {
@@ -2222,11 +2222,11 @@ CheckUserPrivilege (
   @param  FormSetGuid            The formset guid which include the question.
   @param  QuestionId             The question id which need to get value from.
   @param  Value                  The return data about question's value.
-  
+
   @retval TRUE                   Get the question value success.
   @retval FALSE                  Get the question value failed.
 **/
-BOOLEAN 
+BOOLEAN
 GetQuestionValueFromForm (
   IN EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
   IN EFI_HII_HANDLE            InputHiiHandle,
@@ -2243,10 +2243,10 @@ GetQuestionValueFromForm (
   BOOLEAN                      GetTheVal;
   LIST_ENTRY                   *Link;
 
-  // 
-  // The input parameter DevicePath or InputHiiHandle must have one valid input. 
   //
-  ASSERT ((DevicePath != NULL && InputHiiHandle == NULL) || 
+  // The input parameter DevicePath or InputHiiHandle must have one valid input.
+  //
+  ASSERT ((DevicePath != NULL && InputHiiHandle == NULL) ||
           (DevicePath == NULL && InputHiiHandle != NULL) );
 
   GetTheVal    = TRUE;
@@ -2264,7 +2264,7 @@ GetQuestionValueFromForm (
     }
   } else {
     HiiHandle = InputHiiHandle;
-  } 
+  }
   ASSERT (HiiHandle != NULL);
 
   //
@@ -2280,7 +2280,7 @@ GetQuestionValueFromForm (
 
   //
   // Base on the Question Id to get the question info.
-  //  
+  //
   Question = IdToQuestion(FormSet, NULL, QuestionId);
   if (Question == NULL) {
     GetTheVal = FALSE;
@@ -2303,7 +2303,7 @@ GetQuestionValueFromForm (
     Form = NULL;
   }
   ASSERT (Form != NULL);
-  
+
   //
   // Get the question value.
   //
@@ -2314,7 +2314,7 @@ GetQuestionValueFromForm (
   }
 
   CopyMem (Value, &Question->HiiValue, sizeof (EFI_HII_VALUE));
-  
+
 Done:
   //
   // Clean the formset structure and restore the global parameter.
@@ -2322,7 +2322,7 @@ Done:
   if (FormSet != NULL) {
     DestroyFormSet (FormSet);
   }
-  
+
   return GetTheVal;
 }
 
@@ -2528,7 +2528,7 @@ EvaluateExpression (
                     TempBuffer [Index/2] = (UINT8) ((DigitUint8 << 4) + TempBuffer [Index/2]);
                   }
                 }
-              }                
+              }
             }
           }
           break;
@@ -2627,7 +2627,7 @@ EvaluateExpression (
       if (EFI_ERROR (Status)) {
         goto Done;
       }
-    
+
       //
       // Validate the expression value
       //
@@ -2840,14 +2840,14 @@ EvaluateExpression (
         //
         // When converting from a string, if case-insensitive compare
         // with "true" is True, then push True. If a case-insensitive compare
-        // with "false" is True, then push False. Otherwise, push Undefined. 
+        // with "false" is True, then push False. Otherwise, push Undefined.
         //
         StrPtr = GetToken (Value->Value.string, FormSet->HiiHandle);
         if (StrPtr == NULL) {
           Status = EFI_INVALID_PARAMETER;
           goto Done;
         }
-        
+
         IfrStrToUpper (StrPtr);
         if (StrCmp (StrPtr, L"TRUE") == 0){
           Value->Value.b = TRUE;
@@ -2861,11 +2861,11 @@ EvaluateExpression (
         FreePool (StrPtr);
       } else if (Value->Type == EFI_IFR_TYPE_BUFFER) {
         //
-        // When converting from a buffer, if the buffer is all zeroes, 
-        // then push False. Otherwise push True. 
+        // When converting from a buffer, if the buffer is all zeroes,
+        // then push False. Otherwise push True.
         //
         for (Index =0; Index < Value->BufferLen; Index ++) {
-          if (Value->Buffer[Index] != 0) {            
+          if (Value->Buffer[Index] != 0) {
             break;
           }
         }
@@ -3196,15 +3196,15 @@ EvaluateExpression (
         goto Done;
       }
 
-      if (Data2.Type > EFI_IFR_TYPE_BOOLEAN && 
-          Data2.Type != EFI_IFR_TYPE_STRING && 
+      if (Data2.Type > EFI_IFR_TYPE_BOOLEAN &&
+          Data2.Type != EFI_IFR_TYPE_STRING &&
           !IsTypeInBuffer(&Data2)) {
         Value->Type = EFI_IFR_TYPE_UNDEFINED;
         break;
       }
 
-      if (Data1.Type > EFI_IFR_TYPE_BOOLEAN && 
-          Data1.Type != EFI_IFR_TYPE_STRING && 
+      if (Data1.Type > EFI_IFR_TYPE_BOOLEAN &&
+          Data1.Type != EFI_IFR_TYPE_STRING &&
           !IsTypeInBuffer(&Data1)) {
         Value->Type = EFI_IFR_TYPE_UNDEFINED;
         break;
@@ -3217,7 +3217,7 @@ EvaluateExpression (
       if (Data2.Type == EFI_IFR_TYPE_BUFFER) {
         FreePool (Data2.Buffer);
       }
-      
+
       if (Status == EFI_UNSUPPORTED) {
         Value->Type = EFI_IFR_TYPE_UNDEFINED;
         Status = EFI_SUCCESS;
@@ -3263,7 +3263,7 @@ EvaluateExpression (
       if (EFI_ERROR (Status)) {
         goto Done;
       }
-     
+
       Status = IfrMatch (FormSet, Value);
       break;
 
@@ -3437,7 +3437,7 @@ Done:
 
 /**
   Check whether the result is TRUE or FALSE.
-  
+
   For the EFI_HII_VALUE value type is numeric, return TRUE if the
   value is not 0.
 
@@ -3474,20 +3474,20 @@ IsTrue (
 }
 
 /**
-  Return the result of the expression list. Check the expression list and 
-  return the highest priority express result.  
+  Return the result of the expression list. Check the expression list and
+  return the highest priority express result.
   Priority: DisableIf > SuppressIf > GrayOutIf > FALSE
 
   @param  ExpList             The input expression list.
   @param  Evaluate            Whether need to evaluate the expression first.
   @param  FormSet             FormSet associated with this expression.
-  @param  Form                Form associated with this expression.  
+  @param  Form                Form associated with this expression.
 
-  @retval EXPRESS_RESULT      Return the higher priority express result. 
+  @retval EXPRESS_RESULT      Return the higher priority express result.
                               DisableIf > SuppressIf > GrayOutIf > FALSE
 
 **/
-EXPRESS_RESULT 
+EXPRESS_RESULT
 EvaluateExpressionList (
   IN FORM_EXPRESSION_LIST *ExpList,
   IN BOOLEAN              Evaluate,
@@ -3510,7 +3510,7 @@ EvaluateExpressionList (
   //
   // Check whether need to evaluate the expression first.
   //
-  if (Evaluate) {  
+  if (Evaluate) {
     while (ExpList->Count > Index) {
       Status = EvaluateExpression (FormSet, Form, ExpList->Expression[Index++]);
       if (EFI_ERROR (Status)) {
@@ -3539,12 +3539,12 @@ EvaluateExpressionList (
           break;
 
         default:
-          return ExpressFalse; 
+          return ExpressFalse;
       }
 
       ReturnVal = ReturnVal < CompareOne ? CompareOne : ReturnVal;
     }
   }
-  
+
   return ReturnVal;
 }

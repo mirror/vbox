@@ -342,7 +342,7 @@ ContainEfiImage (
     }
 
     //
-    // The PCI Data Structure must be DWORD aligned. 
+    // The PCI Data Structure must be DWORD aligned.
     //
     if (RomHeader->PcirOffset == 0 ||
         (RomHeader->PcirOffset & 3) != 0 ||
@@ -471,8 +471,8 @@ LoadOpRomImage (
     FirstCheck  = FALSE;
     OffsetPcir  = RomHeader->PcirOffset;
     //
-    // If the pointer to the PCI Data Structure is invalid, no further images can be located. 
-    // The PCI Data Structure must be DWORD aligned. 
+    // If the pointer to the PCI Data Structure is invalid, no further images can be located.
+    // The PCI Data Structure must be DWORD aligned.
     //
     if (OffsetPcir == 0 ||
         (OffsetPcir & 3) != 0 ||

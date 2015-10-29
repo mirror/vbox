@@ -27,7 +27,7 @@
 
   @param [in] pThis        Address of the EFI_SERVICE_BINDING_PROTOCOL structure.
   @param [in] pChildHandle Pointer to the handle of the child to create. If it is NULL,
-                           then a new handle is created. If it is a pointer to an existing UEFI handle, 
+                           then a new handle is created. If it is a pointer to an existing UEFI handle,
                            then the protocol is added to the existing UEFI handle.
 
   @retval EFI_SUCCESS           The protocol was added to ChildHandle.
@@ -71,7 +71,7 @@ EslDxeCreateChild (
   and destroys the child handle if necessary.
 
   This routine is called from ???.
-  
+
   @param [in] pThis       Address of the EFI_SERVICE_BINDING_PROTOCOL structure.
   @param [in] ChildHandle Handle of the child to destroy
 

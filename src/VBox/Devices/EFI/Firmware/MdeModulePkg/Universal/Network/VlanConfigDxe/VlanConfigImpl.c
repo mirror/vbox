@@ -327,7 +327,7 @@ VlanCallback (
       break;
     }
   }
-  
+
   HiiSetBrowserData (&gVlanConfigFormSetGuid, mVlanStorageName, sizeof (VLAN_CONFIGURATION), (UINT8 *) Configuration, NULL);
   FreePool (Configuration);
   return EFI_SUCCESS;
@@ -599,7 +599,7 @@ UninstallVlanConfigForm (
 {
   EFI_STATUS                   Status;
   EFI_VLAN_CONFIG_PROTOCOL     *VlanConfig;
-  
+
   //
   // End the parent-child relationship.
   //

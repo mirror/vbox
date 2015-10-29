@@ -2,7 +2,7 @@
 # Memory Allocation Library instance dedicated to SMM Core.
 # The implementation borrows the SMM Core Memory Allocation services as the primitive
 # for memory allocation instead of using SMM System Table servces in an indirect way.
-# It is assumed that this library instance must be linked with SMM Cre in this package. 
+# It is assumed that this library instance must be linked with SMM Cre in this package.
 #
 # Copyright (c) 2010 - 2015, Intel Corporation. All rights reserved.<BR>
 #
@@ -45,4 +45,4 @@
   UefiBootServicesTableLib
 
 [Protocols]
-  gEfiSmmAccess2ProtocolGuid    ## CONSUMES  
+  gEfiSmmAccess2ProtocolGuid    ## CONSUMES

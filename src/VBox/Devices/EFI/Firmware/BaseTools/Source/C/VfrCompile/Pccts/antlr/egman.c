@@ -212,7 +212,7 @@ Junction *alt;
   altArray[BlkLevel]=alt;
 }
 
-static void 
+static void
 #ifdef __USE_PROTOS
 arrayCheck(void)
 #else
@@ -252,9 +252,9 @@ arrayCheck()
 
 /* always call leFixup() BEFORE egFixup() */
 
-void 
+void
 #ifdef __USE_PROTOS
-egFixup(void) 
+egFixup(void)
 #else
 egFixup()
 #endif
@@ -277,9 +277,9 @@ egFixup()
 /* always call leFixup() BEFORE egFixup() */
 
 #ifdef __USE_PROTOS
-void leFixup(void) 
+void leFixup(void)
 #else
-void leFixup() 
+void leFixup()
 #endif
 {
 
@@ -301,7 +301,7 @@ void leFixup()
 #ifdef __USE_PROTOS
 void altFixup(void)
 #else
-void altFixup() 
+void altFixup()
 #endif
 {
 

@@ -44,7 +44,7 @@ setsockopt (
   int OptionStatus;
   EFI_SOCKET_PROTOCOL * pSocketProtocol;
   EFI_STATUS Status;
-  
+
   //
   //  Locate the context for this socket
   //
@@ -60,7 +60,7 @@ setsockopt (
                                              option_len,
                                              &errno );
   }
-  
+
   //
   //  Return the operation stauts
   //

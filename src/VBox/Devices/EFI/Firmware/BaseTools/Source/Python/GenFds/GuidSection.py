@@ -73,7 +73,7 @@ class GuidSection(GuidSectionClassObject) :
             FvAddrIsSet = True
         else:
             FvAddrIsSet = False
-        
+
         if self.ProcessRequired in ("TRUE", "1"):
             if self.FvAddr != []:
                 #no use FvAddr when the image is processed.
@@ -200,7 +200,7 @@ class GuidSection(GuidSectionClassObject) :
             FileHandleIn = open(DummyFile,'rb')
             FileHandleIn.seek(0,2)
             InputFileSize = FileHandleIn.tell()
-            
+
             FileHandleOut = open(TempFile,'rb')
             FileHandleOut.seek(0,2)
             TempFileSize = FileHandleOut.tell()
@@ -224,18 +224,18 @@ class GuidSection(GuidSectionClassObject) :
 
             FileHandleIn.close()
             FileHandleOut.close()
-            
+
             if FirstCall and 'PROCESSING_REQUIRED' in Attribute:
                 # Guided data by -z option on first call is the process required data. Call the guided tool with the real option.
                 GenFdsGlobalVariable.GuidTool(TempFile, [DummyFile], ExternalTool, CmdOption)
-            
+
             #
             # Call Gensection Add Section Header
             #
             if self.ProcessRequired in ("TRUE", "1"):
                 if 'PROCESSING_REQUIRED' not in Attribute:
                     Attribute.append('PROCESSING_REQUIRED')
-  
+
             if self.AuthStatusValid in ("TRUE", "1"):
                 Attribute.append('AUTH_STATUS_VALID')
             GenFdsGlobalVariable.GenerateSection(OutputFile, [TempFile], Section.Section.SectionType['GUIDED'],
@@ -297,8 +297,8 @@ class GuidSection(GuidSectionClassObject) :
                     else:
                         if ToolPathTmp != ToolPath:
                             EdkLogger.error("GenFds", GENFDS_ERROR, "Don't know which tool to use, %s or %s ?" % (ToolPathTmp, ToolPath))
-                            
-                    
+
+
         return ToolPathTmp, ToolOption
 
 

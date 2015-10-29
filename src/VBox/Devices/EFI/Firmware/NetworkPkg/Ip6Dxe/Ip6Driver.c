@@ -123,7 +123,7 @@ Ip6CleanService (
     Status = Ip6LeaveGroup (IpSb, &AllNodes);
     if (EFI_ERROR (Status)) {
       return Status;
-    }  
+    }
   }
 
   if (IpSb->DefaultInterface != NULL) {
@@ -566,7 +566,7 @@ Ip6DriverBindingStart (
                     );
     if (EFI_ERROR (Status)) {
       goto ON_ERROR;
-    }    
+    }
 
     //
     // Initialize the IP6 ID
@@ -584,7 +584,7 @@ ON_ERROR:
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 
@@ -717,7 +717,7 @@ Ip6DriverBindingStop (
     FreePool (IpSb);
     Status = EFI_SUCCESS;
   }
-  
+
 Exit:
   return Status;
 }

@@ -26,7 +26,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   This empty function ensures that EVT_NOTIFY_SIGNAL_ALL is error
   checked correctly since it is now mapped into CreateEventEx() in UEFI 2.0.
- 
+
   @param  Event                 Event whose notification function is being invoked.
   @param  Context               Pointer to the notification function's context,
                                 which is implementation-dependent.
@@ -297,7 +297,7 @@ EfiGetNameGuidFromFwVolDevicePathNode (
   ASSERT (FvDevicePathNode != NULL);
 
   //
-  // EFI Specification extension on Media Device Path. MEDIA_FW_VOL_FILEPATH_DEVICE_PATH is adopted by UEFI later and added in UEFI2.10. 
+  // EFI Specification extension on Media Device Path. MEDIA_FW_VOL_FILEPATH_DEVICE_PATH is adopted by UEFI later and added in UEFI2.10.
   // In EdkCompatibility Package, we only support MEDIA_FW_VOL_FILEPATH_DEVICE_PATH that complies with
   // EFI 1.10 and UEFI 2.10.
   //
@@ -335,14 +335,14 @@ EfiInitializeFwVolDevicepathNode (
   ASSERT (NameGuid          != NULL);
 
   //
-  // EFI Specification extension on Media Device Path. MEDIA_FW_VOL_FILEPATH_DEVICE_PATH is adopted by UEFI later and added in UEFI2.10. 
+  // EFI Specification extension on Media Device Path. MEDIA_FW_VOL_FILEPATH_DEVICE_PATH is adopted by UEFI later and added in UEFI2.10.
   // In EdkCompatibility Package, we only support MEDIA_FW_VOL_FILEPATH_DEVICE_PATH that complies with
   // EFI 1.10 and UEFI 2.10.
   //
   FvDevicePathNode->Header.Type     = MEDIA_DEVICE_PATH;
   FvDevicePathNode->Header.SubType  = MEDIA_PIWG_FW_FILE_DP;
   SetDevicePathNodeLength (&FvDevicePathNode->Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
-  
+
   CopyGuid (&FvDevicePathNode->FvFileName, NameGuid);
 }
 

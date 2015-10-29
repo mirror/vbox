@@ -559,7 +559,7 @@ UNDI_RecFilter (
   UINT8                   *ptr1;
   UINT8                   *ptr2;
   BOOLEAN                 InvalidMacAddr;
-    
+
   OpFlags   = CdbPtr->OpFlags;
   NewFilter = (UINT16) (OpFlags & 0x1F);
 
@@ -617,7 +617,7 @@ UNDI_RecFilter (
       // for IPv4 is defined in RFC1112. Check whether the address is valid.
       //
       InvalidMacAddr = FALSE;
-      
+
       for (; MacCount-- != 0; MacAddr += sizeof (PXE_MAC_ADDR)) {
         if (MacAddr[0] == 0x01) {
           //
@@ -625,7 +625,7 @@ UNDI_RecFilter (
           //
           if (MacAddr[1] != 0x00 || MacAddr[2] != 0x5E || (MacAddr[3] & 0x80) != 0) {
             InvalidMacAddr = TRUE;
-          }          
+          }
         } else if (MacAddr[0] == 0x33) {
           //
           // This multicast MAC address is mapped from IPv6 address.
@@ -1438,7 +1438,7 @@ PxeUpdate (
 {
   UINT16 NicNum;
   NicNum = (PxePtr->IFcnt | PxePtr->IFcntExt << 8);
-  
+
   if (NicPtr == NULL) {
     if (NicNum > 0) {
       //
@@ -1453,8 +1453,8 @@ PxeUpdate (
   // number of NICs this undi supports
   //
   NicNum++;
-  
-done: 
+
+done:
   PxePtr->IFcnt = (UINT8)(NicNum & 0xFF);
   PxePtr->IFcntExt = (UINT8) ((NicNum & 0xFF00) >> 8);
   PxePtr->Fudge = (UINT8) (PxePtr->Fudge - CalculateSum8 ((VOID *) PxePtr, PxePtr->Len));

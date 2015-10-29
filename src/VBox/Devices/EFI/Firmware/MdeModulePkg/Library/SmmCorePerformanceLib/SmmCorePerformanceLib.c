@@ -36,7 +36,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 GAUGE_DATA_HEADER       *mGaugeData;
 
 //
-// The current maximum number of logging entries. If current number of 
+// The current maximum number of logging entries. If current number of
 // entries exceeds this value, it will re-allocate a larger array and
 // migration the old data to the larger array.
 //
@@ -451,7 +451,7 @@ GetGauge (
   Communication service SMI Handler entry.
 
   This SMI handler provides services for the performance wrapper driver.
-  
+
    Caution: This function may receive untrusted input.
    Communicate buffer and buffer size are external input, so this function will do basic validation.
 
@@ -462,11 +462,11 @@ GetGauge (
                                  be conveyed from a non-SMM environment into an SMM environment.
   @param[in, out] CommBufferSize The size of the CommBuffer.
 
-  @retval EFI_SUCCESS                         The interrupt was handled and quiesced. No other handlers 
+  @retval EFI_SUCCESS                         The interrupt was handled and quiesced. No other handlers
                                               should still be called.
-  @retval EFI_WARN_INTERRUPT_SOURCE_QUIESCED  The interrupt has been quiesced but other handlers should 
+  @retval EFI_WARN_INTERRUPT_SOURCE_QUIESCED  The interrupt has been quiesced but other handlers should
                                               still be called.
-  @retval EFI_WARN_INTERRUPT_SOURCE_PENDING   The interrupt is still pending and other handlers should still 
+  @retval EFI_WARN_INTERRUPT_SOURCE_PENDING   The interrupt is still pending and other handlers should still
                                               be called.
   @retval EFI_INTERRUPT_PENDING               The interrupt could not be quiesced.
 **/
@@ -507,7 +507,7 @@ SmmPerformanceHandlerEx (
     DEBUG ((EFI_D_ERROR, "SmmPerformanceHandlerEx: SMM communcation data buffer in SMRAM or overflow!\n"));
     return EFI_SUCCESS;
   }
-  
+
   SmmPerfCommData = (SMM_PERF_COMMUNICATE_EX *)CommBuffer;
 
   switch (SmmPerfCommData->Function) {
@@ -551,7 +551,7 @@ SmmPerformanceHandlerEx (
 
 
   SmmPerfCommData->ReturnStatus = Status;
-  
+
   return EFI_SUCCESS;
 }
 
@@ -570,11 +570,11 @@ SmmPerformanceHandlerEx (
                                  be conveyed from a non-SMM environment into an SMM environment.
   @param[in, out] CommBufferSize The size of the CommBuffer.
 
-  @retval EFI_SUCCESS                         The interrupt was handled and quiesced. No other handlers 
+  @retval EFI_SUCCESS                         The interrupt was handled and quiesced. No other handlers
                                               should still be called.
-  @retval EFI_WARN_INTERRUPT_SOURCE_QUIESCED  The interrupt has been quiesced but other handlers should 
+  @retval EFI_WARN_INTERRUPT_SOURCE_QUIESCED  The interrupt has been quiesced but other handlers should
                                               still be called.
-  @retval EFI_WARN_INTERRUPT_SOURCE_PENDING   The interrupt is still pending and other handlers should still 
+  @retval EFI_WARN_INTERRUPT_SOURCE_PENDING   The interrupt is still pending and other handlers should still
                                               be called.
   @retval EFI_INTERRUPT_PENDING               The interrupt could not be quiesced.
 **/
@@ -663,13 +663,13 @@ SmmPerformanceHandler (
 
 
   SmmPerfCommData->ReturnStatus = Status;
-  
+
   return EFI_SUCCESS;
 }
 
 /**
-  SmmBase2 protocol notify callback function, when SMST and SMM memory service get initialized 
-  this function is callbacked to initialize the Smm Performance Lib 
+  SmmBase2 protocol notify callback function, when SMST and SMM memory service get initialized
+  this function is callbacked to initialize the Smm Performance Lib
 
   @param  Event    The event of notify protocol.
   @param  Context  Notify event context.
@@ -694,7 +694,7 @@ InitializeSmmCorePerformanceLib (
 
   mGaugeData = AllocateZeroPool (sizeof (GAUGE_DATA_HEADER) + (sizeof (GAUGE_DATA_ENTRY_EX) * mMaxGaugeRecords));
   ASSERT (mGaugeData != NULL);
-  
+
   //
   // Install the protocol interfaces.
   //
@@ -725,7 +725,7 @@ InitializeSmmCorePerformanceLib (
 }
 
 /**
-  The constructor function initializes the Performance Measurement Enable flag and 
+  The constructor function initializes the Performance Measurement Enable flag and
   registers SmmBase2 protocol notify callback.
   It will ASSERT() if one of these operations fails and it will always return EFI_SUCCESS.
 
@@ -901,7 +901,7 @@ EndPerformanceMeasurementEx (
 UINTN
 EFIAPI
 GetPerformanceMeasurementEx (
-  IN  UINTN       LogEntryKey, 
+  IN  UINTN       LogEntryKey,
   OUT CONST VOID  **Handle,
   OUT CONST CHAR8 **Token,
   OUT CONST CHAR8 **Module,
@@ -914,7 +914,7 @@ GetPerformanceMeasurementEx (
   GAUGE_DATA_ENTRY_EX  *GaugeData;
 
   GaugeData = NULL;
-  
+
   ASSERT (Handle != NULL);
   ASSERT (Token != NULL);
   ASSERT (Module != NULL);

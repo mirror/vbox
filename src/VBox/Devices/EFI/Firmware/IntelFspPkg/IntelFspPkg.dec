@@ -21,7 +21,7 @@
 [Includes]
   Include
   Include/Private
-  
+
 [LibraryClasses]
   ##  @libraryclass  Provides cache-as-ram support.
   CacheAsRamLib|Include/Library/CacheAsRamLib.h
@@ -40,7 +40,7 @@
 
   ##  @libraryclass  Provides FSP switch stack function.
   FspSwitchStackLib|Include/Library/FspSwitchStackLib.h
-  
+
   ##  @libraryclass  Provides FSP platform sec related actions.
   FspSecPlatformLib|Include/Library/FspSecPlatformLib.h
 

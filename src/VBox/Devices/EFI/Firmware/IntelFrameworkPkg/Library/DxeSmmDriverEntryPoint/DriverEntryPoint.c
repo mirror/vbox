@@ -136,9 +136,9 @@ _DriverUnloadHandler (
 {
   //
   // Call the unload handlers for all the modules.
-  // 
-  // Note: All libraries were constructed in SMM space, 
-  // therefore we can not destruct them in Unload 
+  //
+  // Note: All libraries were constructed in SMM space,
+  // therefore we can not destruct them in Unload
   // handler.
   //
   return ProcessModuleUnloadList (ImageHandle);

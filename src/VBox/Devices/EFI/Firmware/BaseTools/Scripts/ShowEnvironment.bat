@@ -53,7 +53,7 @@ if defined SRC_CONF @goto SetEnv
 @if defined PYTHON_FREEZER_PATH @echo     PYTHON_FREEZER_PATH  = %PYTHON_FREEZER_PATH%
 @if "%NT32PKG%"=="TRUE" (
     @echo.
-    @echo NOTE: Please configure your build to use the following TOOL_CHAIN_TAG 
+    @echo NOTE: Please configure your build to use the following TOOL_CHAIN_TAG
     @echo       when building NT32Pkg/Nt32Pkg.dsc
     @if defined VCINSTALLDIR @call :CheckVsVer
     @set TEST_VS=
@@ -151,7 +151,7 @@ if defined SRC_CONF @goto SetEnv
     @copy /Y "%SRC_CONF%\tools_def.template" "%WORKSPACE%\Conf\tools_def.txt" > nul
     @set FIRST_COPY=TRUE
 )
-@if not exist "%WORKSPACE%\Conf\build_rule.txt" (   
+@if not exist "%WORKSPACE%\Conf\build_rule.txt" (
     @if "%MISSING_BUILD_RULE_TEMPLATE%"=="TRUE" @goto MissingTemplates
     @echo copying ... build_rule.template to %WORKSPACE%\Conf\build_rule.txt
     @copy /Y "%SRC_CONF%\build_rule.template" "%WORKSPACE%\Conf\build_rule.txt" > nul
@@ -169,11 +169,11 @@ if defined SRC_CONF @goto SetEnv
     @if "%MISSING_TARGET_TEMPLATE%"=="TRUE" @goto MissingTemplates
     @echo over-write ... target.template to %WORKSPACE%\Conf\target.txt
     @copy /Y "%SRC_CONF%\target.template" "%WORKSPACE%\Conf\target.txt" > nul
-    
+
     @if "%MISSING_TOOLS_DEF_TEMPLATE%"=="TRUE" @goto MissingTemplates
     @echo over-write ... tools_def.template to %WORKSPACE%\Conf\tools_def.txt
     @copy /Y "%SRC_CONF%\tools_def.template" "%WORKSPACE%\Conf\tools_def.txt" > nul
-    
+
     @if "%MISSING_BUILD_RULE_TEMPLATE%"=="TRUE" @goto MissingTemplates
     @echo over-write ... build_rule.template to %WORKSPACE%\Conf\build_rule.txt
     @copy /Y "%SRC_CONF%\build_rule.template" "%WORKSPACE%\Conf\build_rule.txt" > nul

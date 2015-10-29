@@ -551,7 +551,7 @@ typedef CHAR8 *VA_LIST;
 
   This macro initializes Dest as a copy of Start, as if the VA_START macro had been applied to Dest
   followed by the same sequence of uses of the VA_ARG macro as had previously been used to reach
-  the present state of Start. 
+  the present state of Start.
 
   @param   Dest   VA_LIST used to traverse the list of arguments.
   @param   Start  VA_LIST used to traverse the list of arguments.

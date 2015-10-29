@@ -39,7 +39,7 @@ ASM_PFX(InternalMemSetMem64):
     movq      %rcx, %rax                #rax <- Buffer
     xchg      %rdx, %rcx                #rcx <- Count
 L0:
-    movntq  %mm0, (%rdx) 
+    movntq  %mm0, (%rdx)
     addq    $8, %rdx
     loop    L0
     mfence

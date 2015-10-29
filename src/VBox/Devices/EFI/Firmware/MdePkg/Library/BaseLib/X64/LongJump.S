@@ -49,6 +49,6 @@ ASM_PFX(InternalLongJump):
     movdqu  0xB8(%rcx), %xmm12
     movdqu  0xC8(%rcx), %xmm13
     movdqu  0xD8(%rcx), %xmm14
-    movdqu  0xE8(%rcx), %xmm15  
+    movdqu  0xE8(%rcx), %xmm15
     mov     %rdx, %rax          # set return value
     jmp     *0x48(%rcx)

@@ -1171,7 +1171,7 @@ EfiShellCreateFile(
   @retval EFI_ACCESS_DENIED       Guid already is assigned a name.
 **/
 EFI_STATUS
-EFIAPI 
+EFIAPI
 EfiShellRegisterGuidName(
   IN CONST EFI_GUID *Guid,
   IN CONST CHAR16   *GuidName
@@ -1401,7 +1401,7 @@ EfiShellEnablePageBreak (
                                 variables with the format 'x=y', where x is the
                                 environment variable name and y is the value. If this
                                 is NULL, then the current shell environment is used.
-                            
+
   @param[out] StartImageStatus  Returned status from gBS->StartImage.
 
   @retval EFI_SUCCESS       The command executed successfully. The  status code
@@ -1439,7 +1439,7 @@ InternalShellExecuteDevicePath(
   InitializeListHead(&OrigEnvs);
 
   NewHandle = NULL;
-  
+
   NewCmdLine = AllocateCopyPool (StrSize (CommandLine), CommandLine);
   if (NewCmdLine == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -2046,7 +2046,7 @@ EfiShellFindFilesInDir(
   @retval EFI_NOT_FOUND           GuidName is not a known GUID Name.
 **/
 EFI_STATUS
-EFIAPI 
+EFIAPI
 EfiShellGetGuidFromName(
   IN  CONST CHAR16   *GuidName,
   OUT       EFI_GUID *Guid
@@ -2058,7 +2058,7 @@ EfiShellGetGuidFromName(
   if (Guid == NULL || GuidName == NULL) {
     return (EFI_INVALID_PARAMETER);
   }
- 
+
   Status = GetGuidFromStringName(GuidName, NULL, &NewGuid);
 
   if (!EFI_ERROR(Status)) {
@@ -2086,7 +2086,7 @@ EfiShellGetGuidFromName(
   @retval EFI_NOT_FOUND           Guid is not assigned a name.
 **/
 EFI_STATUS
-EFIAPI 
+EFIAPI
 EfiShellGetGuidName(
   IN  CONST EFI_GUID *Guid,
   OUT CONST CHAR16   **GuidName
@@ -2562,7 +2562,7 @@ EfiShellOpenFileList(
                                 pointer does not need to be freed by the caller.
 **/
 CONST CHAR16 *
-EFIAPI 
+EFIAPI
 EfiShellGetEnvEx(
   IN  CONST CHAR16 *Name,
   OUT       UINT32 *Attributes OPTIONAL
@@ -3104,7 +3104,7 @@ EFIAPI
 InternalEfiShellGetListAlias(
   )
 {
-  
+
   EFI_STATUS        Status;
   EFI_GUID          Guid;
   CHAR16            *VariableName;
@@ -3139,17 +3139,17 @@ InternalEfiShellGetListAlias(
         RetVal = NULL;
         break;
       }
-      
+
       NameSize = NameBufferSize;
       Status = gRT->GetNextVariableName(&NameSize, VariableName, &Guid);
     }
-    
+
     if (EFI_ERROR (Status)) {
       SHELL_FREE_NON_NULL(RetVal);
       RetVal = NULL;
       break;
     }
-    
+
     if (CompareGuid(&Guid, &gShellAliasGuid)){
       ASSERT((RetVal == NULL && RetSize == 0) || (RetVal != NULL));
       RetVal = StrnCatGrow(&RetVal, &RetSize, VariableName, 0);
@@ -3164,10 +3164,10 @@ InternalEfiShellGetListAlias(
 /**
   Convert a null-terminated unicode string, in-place, to all lowercase.
   Then return it.
-  
+
   @param  Str    The null-terminated string to be converted to all lowercase.
-  
-  @return        The null-terminated string converted into all lowercase.  
+
+  @return        The null-terminated string converted into all lowercase.
 **/
 CHAR16 *
 ToLower (
@@ -3627,21 +3627,21 @@ NotificationFunction(
   if ( ((KeyData->Key.UnicodeChar == L'c') &&
         (KeyData->KeyState.KeyShiftState == (EFI_SHIFT_STATE_VALID|EFI_LEFT_CONTROL_PRESSED) || KeyData->KeyState.KeyShiftState  == (EFI_SHIFT_STATE_VALID|EFI_RIGHT_CONTROL_PRESSED))) ||
       (KeyData->Key.UnicodeChar == 3)
-      ){ 
+      ){
     if (ShellInfoObject.NewEfiShellProtocol->ExecutionBreak == NULL) {
       return (EFI_UNSUPPORTED);
     }
     return (gBS->SignalEvent(ShellInfoObject.NewEfiShellProtocol->ExecutionBreak));
   } else if  ((KeyData->Key.UnicodeChar == L's') &&
               (KeyData->KeyState.KeyShiftState  == (EFI_SHIFT_STATE_VALID|EFI_LEFT_CONTROL_PRESSED) || KeyData->KeyState.KeyShiftState  == (EFI_SHIFT_STATE_VALID|EFI_RIGHT_CONTROL_PRESSED))
-              ){ 
+              ){
     ShellInfoObject.HaltOutput = TRUE;
   }
   return (EFI_SUCCESS);
 }
 
 /**
-  Function to start monitoring for CTRL-C using SimpleTextInputEx.  This 
+  Function to start monitoring for CTRL-C using SimpleTextInputEx.  This
   feature's enabled state was not known when the shell initially launched.
 
   @retval EFI_SUCCESS           The feature is enabled.
@@ -3666,8 +3666,8 @@ InernalEfiShellStartMonitor(
     EFI_OPEN_PROTOCOL_GET_PROTOCOL);
   if (EFI_ERROR(Status)) {
     ShellPrintHiiEx(
-      -1, 
-      -1, 
+      -1,
+      -1,
       NULL,
       STRING_TOKEN (STR_SHELL_NO_IN_EX),
       ShellInfoObject.HiiHandle);
@@ -3688,7 +3688,7 @@ InernalEfiShellStartMonitor(
     &KeyData,
     NotificationFunction,
     &ShellInfoObject.CtrlCNotifyHandle1);
-  
+
   KeyData.KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID|EFI_RIGHT_CONTROL_PRESSED;
   if (!EFI_ERROR(Status)) {
     Status = SimpleEx->RegisterKeyNotify(

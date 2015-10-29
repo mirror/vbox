@@ -63,7 +63,7 @@
   Ikev2/Info.c
   Ikev2/Payload.c
   Ikev2/Exchange.c
-  
+
 
 
 [Packages]
@@ -85,18 +85,18 @@
   BaseCryptLib
   DpcLib
   UdpIoLib
-  NetLib  
+  NetLib
   PcdLib
-  
+
 [Protocols]
   gEfiIp4ConfigProtocolGuid                     ## SOMETIMES_CONSUMES
-  gEfiUdp4ServiceBindingProtocolGuid            ## SOMETIMES_CONSUMES  
+  gEfiUdp4ServiceBindingProtocolGuid            ## SOMETIMES_CONSUMES
   gEfiUdp4ProtocolGuid                          ## SOMETIMES_CONSUMES
-  gEfiUdp6ServiceBindingProtocolGuid            ## SOMETIMES_CONSUMES  
+  gEfiUdp6ServiceBindingProtocolGuid            ## SOMETIMES_CONSUMES
   gEfiUdp6ProtocolGuid                          ## SOMETIMES_CONSUMES
   gEfiIpSecConfigProtocolGuid                   ## PRODUCES
   gEfiIpSec2ProtocolGuid                        ## PRODUCES
-  
+
 [Pcd]
   gEfiNetworkPkgTokenSpaceGuid.PcdIpsecCertificateEnabled       ## SOMETIMES_CONSUMES
   gEfiNetworkPkgTokenSpaceGuid.PcdIpsecUefiCaFile               ## SOMETIMES_CONSUMES

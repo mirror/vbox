@@ -22,7 +22,7 @@
   FILE_GUID                      = fd44e603-002a-4b29-9f5f-529e815b6165
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = BaseMemoryLib 
+  LIBRARY_CLASS                  = BaseMemoryLib
 
 
 #

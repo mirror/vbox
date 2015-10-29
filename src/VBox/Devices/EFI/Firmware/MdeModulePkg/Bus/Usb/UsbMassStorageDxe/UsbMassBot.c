@@ -272,7 +272,7 @@ UsbBotDataTransfer (
                             );
   if (EFI_ERROR (Status)) {
     if (USB_IS_ERROR (Result, EFI_USB_ERR_STALL)) {
-      DEBUG ((EFI_D_INFO, "UsbBotDataTransfer: (%r)\n", Status));      
+      DEBUG ((EFI_D_INFO, "UsbBotDataTransfer: (%r)\n", Status));
       DEBUG ((EFI_D_INFO, "UsbBotDataTransfer: DataIn Stall\n"));
       UsbClearEndpointStall (UsbBot->UsbIo, Endpoint->EndpointAddress);
     } else if (USB_IS_ERROR (Result, EFI_USB_ERR_NAK)) {
@@ -553,7 +553,7 @@ UsbBotGetMaxLun (
   UINT32                  Timeout;
 
   ASSERT (Context);
-  
+
   UsbBot = (USB_BOT_PROTOCOL *) Context;
 
   //

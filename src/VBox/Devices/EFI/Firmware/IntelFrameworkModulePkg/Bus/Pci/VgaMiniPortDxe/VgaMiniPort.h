@@ -252,14 +252,14 @@ PciVgaMiniPortComponentNameGetControllerName (
   This function implements EFI_VGA_MINI_PORT_PROTOCOL.SetMode().
   If ModeNumber exceeds the valid range, then EFI_UNSUPPORTED is returned.
   Otherwise, EFI_SUCCESS is directly returned without real operation.
-  
+
   @param This                 Protocol instance pointer.
   @param ModeNumber           Mode number.  0 - 80x25   1-80x50
 
   @retval EFI_SUCCESS         The mode was set
   @retval EFI_UNSUPPORTED     ModeNumber is not supported.
   @retval EFI_DEVICE_ERROR    The device is not functioning properly.
-  
+
 **/
 EFI_STATUS
 EFIAPI

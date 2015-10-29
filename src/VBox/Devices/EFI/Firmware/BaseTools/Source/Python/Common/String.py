@@ -815,7 +815,7 @@ def StringToArray(String):
             return "{%s, 0x00}" % ", ".join([ C for C in String[1:-1].split(',')])
         else:
             return "{%s}" % ", ".join([ C for C in String[1:-1].split(',')])
-        
+
     else:
         if len(String.split()) % 2:
             return '{%s, 0}' % ', '.join(String.split())

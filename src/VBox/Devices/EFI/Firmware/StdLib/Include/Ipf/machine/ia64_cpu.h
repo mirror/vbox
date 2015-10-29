@@ -180,7 +180,7 @@ ia64_fc(u_int64_t va)
 	__asm __volatile("fc %0" :: "r"(va));
 }
 
-/* 
+/*
  * Flush Instruction Cache
  */
 

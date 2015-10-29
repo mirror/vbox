@@ -324,7 +324,7 @@ PxeBcComponentNameGetControllerName (
   if (ControllerHandle == NULL || ChildHandle != NULL) {
     return EFI_UNSUPPORTED;
   }
-  
+
   NicHandle = PxeBcGetNicByIp4Children (ControllerHandle);
   if (NicHandle == NULL) {
     NicHandle = PxeBcGetNicByIp6Children (ControllerHandle);

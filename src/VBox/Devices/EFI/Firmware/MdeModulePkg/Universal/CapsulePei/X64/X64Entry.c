@@ -45,7 +45,7 @@ _ModuleEntryPoint (
   //
   // Save the IA32 IDT Descriptor
   //
-  AsmReadIdtr ((IA32_DESCRIPTOR *) &Ia32Idtr); 
+  AsmReadIdtr ((IA32_DESCRIPTOR *) &Ia32Idtr);
 
   //
   // Setup X64 IDT table
@@ -53,14 +53,14 @@ _ModuleEntryPoint (
   ZeroMem (IdtEntryTable, sizeof (IA32_IDT_GATE_DESCRIPTOR) * EXCEPTION_VECTOR_NUMBER);
   X64Idtr.Base = (UINTN) IdtEntryTable;
   X64Idtr.Limit = (UINT16) (sizeof (IA32_IDT_GATE_DESCRIPTOR) * EXCEPTION_VECTOR_NUMBER - 1);
-  AsmWriteIdtr ((IA32_DESCRIPTOR *) &X64Idtr);  
+  AsmWriteIdtr ((IA32_DESCRIPTOR *) &X64Idtr);
 
   //
   // Setup the default CPU exception handlers
   //
   Status = InitializeCpuExceptionHandlers (NULL);
   ASSERT_EFI_ERROR (Status);
-  
+
   //
   // Initialize Debug Agent to support source level debug
   //
@@ -75,7 +75,7 @@ _ModuleEntryPoint (
              (VOID **) (UINTN) EntrypointContext->MemoryBase64Ptr,
              (UINTN *) (UINTN) EntrypointContext->MemorySize64Ptr
              );
-  
+
   ReturnContext->ReturnStatus = Status;
 
   //
@@ -85,8 +85,8 @@ _ModuleEntryPoint (
   //
   // Restore IA32 IDT table
   //
-  AsmWriteIdtr ((IA32_DESCRIPTOR *) &Ia32Idtr);  
-  
+  AsmWriteIdtr ((IA32_DESCRIPTOR *) &Ia32Idtr);
+
   //
   // Finish to coalesce capsule, and return to 32-bit mode.
   //
@@ -96,8 +96,8 @@ _ModuleEntryPoint (
     (UINT32) (UINTN) EntrypointContext,
     (UINT32) (UINTN) ReturnContext,
     (UINT32) (EntrypointContext->StackBufferBase + EntrypointContext->StackBufferLength)
-    );  
-  
+    );
+
   //
   // Should never be here.
   //

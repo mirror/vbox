@@ -1,5 +1,5 @@
 /** @file
-Decompressor. Algorithm Ported from OPSD code (Decomp.asm) for Efi and Tiano 
+Decompressor. Algorithm Ported from OPSD code (Decomp.asm) for Efi and Tiano
 compress algorithm.
 
 Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>

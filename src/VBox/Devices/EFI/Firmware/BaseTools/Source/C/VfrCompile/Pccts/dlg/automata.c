@@ -51,7 +51,7 @@ dfa_node	*dfa_model_node;
 hash_list 	*dfa_hash[HASH_SIZE];	/* used to quickly find */
 					/* desired dfa node */
 
-void 
+void
 #ifdef __USE_PROTOS
 make_dfa_model_node(int width)
 #else
@@ -143,7 +143,7 @@ nfa_node *start;
 	/* Make t a dfa state */
 	d_state = dfastate(t);
 	last_done = DFA_NO(d_state);
-	
+
 	do {
 		/* Mark dfa state x as "done" */
 		d_state->done = TRUE;
@@ -177,7 +177,7 @@ nfa_node *start;
 	return dfa_array;
 }
 
-void 
+void
 #ifdef __USE_PROTOS
 clear_hash(void)
 #else
@@ -250,7 +250,7 @@ set nfa_states;
 
 
 /* this reach assumes the closure has been done already on set */
-int 
+int
 #ifdef __USE_PROTOS
 reach(unsigned *nfa_list, register int a, unsigned *reach_list)
 #else
@@ -282,7 +282,7 @@ unsigned *reach_list;
 
 /* finds all the nodes that can be reached by epsilon transitions
    from the set of a nodes and returns puts them back in set b */
-set 
+set
 #ifdef __USE_PROTOS
 closure(set *b, unsigned *reach_list)
 #else

@@ -1,4 +1,4 @@
-/** @file 
+/** @file
   ARC4 Wrapper Implementation which does not provide real capabilities.
 
 Copyright (c) 2012, Intel Corporation. All rights reserved.<BR>
@@ -78,7 +78,7 @@ Arc4Encrypt (
   IN      UINTN        InputSize,
   OUT     UINT8        *Output
   )
-{ 
+{
   ASSERT (FALSE);
   return FALSE;
 }

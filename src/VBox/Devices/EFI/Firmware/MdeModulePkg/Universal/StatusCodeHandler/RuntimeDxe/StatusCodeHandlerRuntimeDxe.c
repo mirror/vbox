@@ -66,9 +66,9 @@ VirtualAddressChangeCallBack (
 }
 
 /**
-  Dispatch initialization request to sub status code devices based on 
+  Dispatch initialization request to sub status code devices based on
   customized feature flags.
- 
+
 **/
 VOID
 InitializationDispatcherWorker (
@@ -99,11 +99,11 @@ InitializationDispatcherWorker (
   }
 
   //
-  // Replay Status code which saved in GUID'ed HOB to all supported devices. 
+  // Replay Status code which saved in GUID'ed HOB to all supported devices.
   //
   if (FeaturePcdGet (PcdStatusCodeReplayIn)) {
-    // 
-    // Journal GUID'ed HOBs to find all record entry, if found, 
+    //
+    // Journal GUID'ed HOBs to find all record entry, if found,
     // then output record to support replay device.
     //
     Hob.Raw   = GetFirstGuidHob (&gMemoryStatusCodeRecordGuid);
@@ -152,7 +152,7 @@ InitializationDispatcherWorker (
 
   @param  ImageHandle       The firmware allocated handle for the EFI image.
   @param  SystemTable       A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS       The entry point is executed successfully.
 
 **/

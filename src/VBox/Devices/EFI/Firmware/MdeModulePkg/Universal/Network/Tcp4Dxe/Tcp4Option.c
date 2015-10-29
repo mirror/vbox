@@ -1,6 +1,6 @@
 /** @file
   Routines to process TCP option.
-    
+
 Copyright (c) 2005 - 2006, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -16,9 +16,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 /**
     Get a UINT16 value from buffer.
-    
+
     @param Buf                  Pointer to input buffer.
-    
+
     @return                     The UINT16 value get from buffer.
 
 **/
@@ -34,9 +34,9 @@ TcpGetUint16 (
 
 /**
     Get a UINT32 value from buffer.
-    
+
     @param Buf                  Pointer to input buffer.
-    
+
     @return                     The UINT32 value get from buffer.
 
 **/
@@ -52,9 +52,9 @@ TcpGetUint32 (
 
 /**
     Put a UINT32 value in buffer.
-    
+
     @param Buf                  Pointer to the buffer.
-    @param Data                 The UINT32 Date to put in buffer 
+    @param Data                 The UINT32 Date to put in buffer
 
 **/
 VOID

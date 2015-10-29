@@ -90,7 +90,7 @@ SecPlatformInitDefault PROC NEAR PUBLIC
    ; Register Usage:
    ;   eax is cleared and ebp is used for return address.
    ;   All others reserved.
-   
+
    ; Save return address to EBP
    movd  ebp, mm7
 
@@ -306,7 +306,7 @@ EstablishStackFsp    PROC    NEAR    PRIVATE
   ;
   ; Save API entry/exit timestamp into stack
   ;
-  push      DATA_LEN_OF_PER0     ; Size of the data region 
+  push      DATA_LEN_OF_PER0     ; Size of the data region
   push      30524550h            ; Signature of the  data region 'PER0'
   LOAD_EDX
   push      edx
@@ -318,7 +318,7 @@ EstablishStackFsp    PROC    NEAR    PRIVATE
 
   ;
   ; Terminator for the data on stack
-  ; 
+  ;
   push      0
 
   ;
@@ -476,7 +476,7 @@ FspApiCommon   PROC C PUBLIC
 
   ;
   ; Stack must be ready
-  ;  
+  ;
   push   eax
   add    esp, 4
   cmp    eax, dword ptr [esp - 4]
@@ -513,7 +513,7 @@ FspApiCommon   PROC C PUBLIC
   ;
   ; FspInit and FspMemoryInit APIs, setup the initial stack frame
   ;
-  
+
   ;
   ; Place holder to store the FspInfoHeader pointer
   ;
@@ -550,7 +550,7 @@ FspApiCommon   PROC C PUBLIC
   ; Pass the API Idx to SecStartup
   ;
   push    eax
-  
+
   ;
   ; Pass the BootLoader stack to SecStartup
   ;
@@ -561,7 +561,7 @@ FspApiCommon   PROC C PUBLIC
   ;
   call    AsmGetFspBaseAddress
   mov     edi, eax
-  add     edi, PcdGet32 (PcdFspAreaSize) 
+  add     edi, PcdGet32 (PcdFspAreaSize)
   sub     edi, 20h
   add     eax, DWORD PTR ds:[edi]
   push    eax

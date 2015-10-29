@@ -55,7 +55,7 @@ def MakePythonSyntaxCheckTests():
         newmethod = lambda self: self.SingleFileTest(filename)
         setattr(
             Tests,
-            test, 
+            test,
             newmethod
             )
 

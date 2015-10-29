@@ -41,7 +41,7 @@
   XhciReg.c
   XhciSched.c
   UsbHcMem.c
-  UsbHcMem.h  
+  UsbHcMem.h
   ComponentName.c
   ComponentName.h
   Xhci.h

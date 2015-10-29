@@ -314,8 +314,8 @@ StrniCmp(
   Cleans off all the quotes in the string.
 
   @param[in]     OriginalString   pointer to the string to be cleaned.
-  @param[out]   CleanString      The new string with all quotes removed. 
-                                                  Memory allocated in the function and free 
+  @param[out]   CleanString      The new string with all quotes removed.
+                                                  Memory allocated in the function and free
                                                   by caller.
 
   @retval EFI_SUCCESS   The operation was successful.
@@ -328,7 +328,7 @@ ShellLevel2StripQuotes (
   )
 {
   CHAR16            *Walker;
-  
+
   if (OriginalString == NULL || CleanString == NULL) {
     return EFI_INVALID_PARAMETER;
   }

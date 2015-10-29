@@ -24,7 +24,7 @@
   MODULE_UNI_FILE                = Ip4Dxe.uni
   FILE_GUID                      = 9FB1A1F3-3B71-4324-B39A-745CBB015FFF
   MODULE_TYPE                    = UEFI_DRIVER
-  VERSION_STRING                 = 1.0 
+  VERSION_STRING                 = 1.0
   ENTRY_POINT                    = Ip4DriverEntryPoint
   UNLOAD_IMAGE                   = NetLibDefaultUnload
 
@@ -33,7 +33,7 @@
 #
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
 #
-#  DRIVER_BINDING                =  gIp4DriverBinding                        
+#  DRIVER_BINDING                =  gIp4DriverBinding
 #  COMPONENT_NAME                =  gIp4ComponentName
 #  COMPONENT_NAME2               =  gIp4ComponentName2
 #

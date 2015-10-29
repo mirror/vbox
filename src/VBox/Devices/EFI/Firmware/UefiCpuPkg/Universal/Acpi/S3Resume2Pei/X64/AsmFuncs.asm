@@ -34,7 +34,7 @@ AsmSetDataSelectors   PROC
   mov     es, cx
   mov     fs, cx
   mov     gs, cx
-  mov     ss, cx   
+  mov     ss, cx
   ret
 AsmSetDataSelectors   ENDP
 

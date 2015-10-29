@@ -141,7 +141,7 @@ SavedCr0    DD      ?
 @64Eip      DD      ?
 SavedCs     DW      ?
 @64BitCode:
-    db      090h 
+    db      090h
     db      048h, 0bch                 ; mov rsp, imm64
 SavedSp     DQ   ?                     ; restore stack
     nop
@@ -240,7 +240,7 @@ InternalAsmThunk16  PROC    USES    rbp rbx rsi rdi
     push    rbx          ; Save es segment register on the stack
     mov     rbx, ss
     push    rbx          ; Save ss segment register on the stack
-    
+
     push    fs
     push    gs
     mov     rsi, rcx
@@ -259,15 +259,15 @@ InternalAsmThunk16  PROC    USES    rbp rbx rsi rdi
     shl     eax, 12                     ; segment address in high order 16 bits
     lea     ax, [rdx + (_BackFromUserCode - m16Start)]  ; offset address
     stosd                               ; [edi] <- return address of user code
-  
+
     sgdt    fword ptr [rsp + 60h]       ; save GDT stack in argument space
-    movzx   r10, word ptr [rsp + 60h]   ; r10 <- GDT limit 
+    movzx   r10, word ptr [rsp + 60h]   ; r10 <- GDT limit
     lea     r11, [rcx + (InternalAsmThunk16 - SavedCr4) + 0xf]
     and     r11, 0xfffffff0             ; r11 <- 16-byte aligned shadowed GDT table in real mode buffer
-    
+
     mov     word ptr [rcx + (SavedGdt - SavedCr4)], r10w      ; save the limit of shadowed GDT table
     mov     qword ptr [rcx + (SavedGdt - SavedCr4) + 2], r11  ; save the base address of shadowed GDT table
-    
+
     mov     rsi, qword ptr [rsp + 62h]  ; rsi <- the original GDT base address
     xchg    rcx, r10                    ; save rcx to r10 and initialize rcx to be the limit of GDT table
     inc     rcx                         ; rcx <- the size of memory to copy
@@ -275,7 +275,7 @@ InternalAsmThunk16  PROC    USES    rbp rbx rsi rdi
     rep     movsb                       ; perform memory copy to shadow GDT table
     mov     rcx, r10                    ; restore the orignal rcx before memory copy
     mov     rdi, r11                    ; restore the original rdi before memory copy
-    
+
     sidt    fword ptr [rsp + 50h]       ; save IDT stack in argument space
     mov     rax, cr0
     mov     [rcx + (SavedCr0 - SavedCr4)], eax

@@ -100,7 +100,7 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gDiskIoComponentName2;
 // Driver model protocol interface
 //
 /**
-  Test to see if this driver supports ControllerHandle. 
+  Test to see if this driver supports ControllerHandle.
 
   @param  This                Protocol instance pointer.
   @param  ControllerHandle    Handle of device to test

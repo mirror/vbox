@@ -86,7 +86,7 @@ HandOffToDxeCore (
     //
     PageTables = CreateIdentityMappingPageTables ();
   }
-  
+
   //
   // End of PEI phase signal
   //
@@ -99,7 +99,7 @@ HandOffToDxeCore (
 
   //
   // Update the contents of BSP stack HOB to reflect the real stack info passed to DxeCore.
-  //    
+  //
   UpdateStackHob ((EFI_PHYSICAL_ADDRESS)(UINTN) BaseOfStack, STACK_SIZE);
 
   //

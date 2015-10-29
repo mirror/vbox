@@ -1,13 +1,13 @@
 /** @file
   TIS (TPM Interface Specification) functions used by TPM PEI driver.
-  
+
 Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -24,12 +24,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   Send a command to TPM for execution and return response data.
 
   @param[in]      PeiServices   Describes the list of possible PEI Services.
-  @param[in]      TisReg        TPM register space base address.  
-  @param[in]      BufferIn      Buffer for command data.  
-  @param[in]      SizeIn        Size of command data.  
-  @param[in, out] BufferOut     Buffer for response data.  
-  @param[in, out] SizeOut       Size of response data.  
- 
+  @param[in]      TisReg        TPM register space base address.
+  @param[in]      BufferIn      Buffer for command data.
+  @param[in]      SizeIn        Size of command data.
+  @param[in, out] BufferOut     Buffer for response data.
+  @param[in, out] SizeOut       Size of response data.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_TIMEOUT           The register can't run into the expected status in time.
   @retval EFI_BUFFER_TOO_SMALL  Response data buffer is too small.
@@ -127,7 +127,7 @@ TisTpmCommand (
     Status = EFI_DEVICE_ERROR;
     goto Exit;
   }
-  
+
   CopyMem (&Data32, (BufferOut + 2), sizeof (UINT32));
   TpmOutSize  = SwapBytes32 (Data32);
   if (*SizeOut < TpmOutSize) {

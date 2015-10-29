@@ -273,7 +273,7 @@ SimpleNetworkDriverStart (
   PXE_STATFLAGS                             InitStatFlags;
   EFI_PCI_IO_PROTOCOL                       *PciIo;
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR         *BarDesc;
-  
+
   DEBUG ((EFI_D_NET, "\nSnpNotifyNetworkInterfaceIdentifier()  "));
 
   Status = gBS->OpenProtocol (
@@ -401,7 +401,7 @@ SimpleNetworkDriverStart (
 
   Snp->TxRxBufferSize     = 0;
   Snp->TxRxBuffer         = NULL;
- 
+
   if (Nii->Revision >= EFI_NETWORK_INTERFACE_IDENTIFIER_PROTOCOL_REVISION) {
   	Snp->IfNum = Nii->IfNum;
 

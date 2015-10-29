@@ -108,9 +108,9 @@ HandleParsingLibConstructor (
   return (EFI_SUCCESS);
 }
 
-/** 
+/**
   Initialization function for HII packages.
- 
+
 **/
 VOID
 HandleParsingHiiInit (VOID)
@@ -220,7 +220,7 @@ LoadedImageProtocolDumpInformation(
                       DataType,
                       LoadedImage->Unload);
 
-  
+
   SHELL_FREE_NON_NULL(Temp);
   SHELL_FREE_NON_NULL(CodeType);
   SHELL_FREE_NON_NULL(DataType);
@@ -298,7 +298,7 @@ GraphicsOutputProtocolDumpInformation(
                       GraphicsOutput->Mode->Info->PixelFormat!=PixelBitMask?0:GraphicsOutput->Mode->Info->PixelInformation.GreenMask,
                       GraphicsOutput->Mode->Info->PixelFormat!=PixelBitMask?0:GraphicsOutput->Mode->Info->PixelInformation.BlueMask
                       );
-  
+
   SHELL_FREE_NON_NULL(Temp);
   SHELL_FREE_NON_NULL(Fmt);
 
@@ -354,7 +354,7 @@ PciRootBridgeIoDumpInformation(
   FreePool(Temp);
   RetVal = Temp2;
   Temp2 = NULL;
- 
+
   Temp = HiiGetString(mHandleParsingHiiHandle, STRING_TOKEN(STR_PCIRB_DUMP_SEG), NULL);
   ASSERT (Temp != NULL);
   Temp2 = CatSPrint(RetVal, Temp, PciRootBridgeIo->SegmentNumber);
@@ -368,13 +368,13 @@ PciRootBridgeIoDumpInformation(
   Status = PciRootBridgeIo->GetAttributes (PciRootBridgeIo, &Supports, &Attributes);
   if (!EFI_ERROR(Status)) {
     Temp = HiiGetString(mHandleParsingHiiHandle, STRING_TOKEN(STR_PCIRB_DUMP_ATT), NULL);
-    ASSERT (Temp != NULL);    
+    ASSERT (Temp != NULL);
     Temp2 = CatSPrint(RetVal, Temp, Attributes);
     FreePool(Temp);
     FreePool(RetVal);
     RetVal = Temp2;
     Temp2 = NULL;
-    
+
     Temp = HiiGetString(mHandleParsingHiiHandle, STRING_TOKEN(STR_PCIRB_DUMP_SUPPORTS), NULL);
     ASSERT (Temp != NULL);
     Temp2 = CatSPrint(RetVal, Temp, Supports);
@@ -415,7 +415,7 @@ PciRootBridgeIoDumpInformation(
         Temp2 = NULL;
       }
 
-      Temp2 = CatSPrint(RetVal, 
+      Temp2 = CatSPrint(RetVal,
         L"%H%02x    %016lx  %016lx  %02x%N\r\n",
         Configuration->SpecificFlag,
         Configuration->AddrRangeMin,
@@ -1055,9 +1055,9 @@ GetGuidFromStringName(
 
 /**
   Get best support language for this driver.
-  
-  First base on the user input language  to search, second base on the current 
-  platform used language to search, third get the first language from the 
+
+  First base on the user input language  to search, second base on the current
+  platform used language to search, third get the first language from the
   support language list. The caller need to free the buffer of the best language.
 
   @param[in] SupportedLanguages      The support languages for this driver.
@@ -1455,7 +1455,7 @@ ParseHandleDatabaseByRelationshipWithType (
 
       if (ControllerHandle == NULL) {
         //
-        // ControllerHandle == NULL and DriverBindingHandle != NULL.  
+        // ControllerHandle == NULL and DriverBindingHandle != NULL.
         // Return information on all the controller handles that the driver specified by DriverBindingHandle is managing
         //
         for (OpenInfoIndex = 0; OpenInfoIndex < OpenInfoCount; OpenInfoIndex++) {
@@ -2003,7 +2003,7 @@ GetHandleListByProtocolList (
   }
 
   //
-  // No handles were found... 
+  // No handles were found...
   //
   if (TotalSize == sizeof(EFI_HANDLE)) {
     return (NULL);

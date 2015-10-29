@@ -39,7 +39,7 @@
   The
   <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/connect.html">POSIX</a>
   documentation is available online.
-  
+
   @param [in] s         Socket file descriptor returned from ::socket.
 
   @param [in] address   Network address of the remote system

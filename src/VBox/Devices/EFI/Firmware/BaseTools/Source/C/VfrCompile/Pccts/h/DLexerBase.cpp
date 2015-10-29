@@ -83,7 +83,7 @@ DLGLexerBase(DLGInputStream *in,
     this->lexErrCount=0;                        // MR11
 }
 
-// MR19  THM 
+// MR19  THM
 
 void DLGLexerBase::reset()
 {

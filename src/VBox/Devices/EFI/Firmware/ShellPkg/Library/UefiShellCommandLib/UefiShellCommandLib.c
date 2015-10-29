@@ -238,7 +238,7 @@ ShellCommandFindDynamicCommand (
     //
     // not found or out of resources
     //
-    return NULL; 
+    return NULL;
   }
 
   for (NextCommand = CommandHandleList; *NextCommand != NULL; NextCommand++) {
@@ -255,7 +255,7 @@ ShellCommandFindDynamicCommand (
     if (gUnicodeCollation->StriColl(
           gUnicodeCollation,
           (CHAR16*)CommandString,
-          (CHAR16*)DynamicCommand->CommandName) == 0 
+          (CHAR16*)DynamicCommand->CommandName) == 0
           ){
         FreePool(CommandHandleList);
         return (DynamicCommand);
@@ -359,7 +359,7 @@ ShellCommandGetDynamicCommandHelp(
   //
   // TODO: how to get proper language?
   //
-  return DynamicCommand->GetHelp(DynamicCommand, "en"); 
+  return DynamicCommand->GetHelp(DynamicCommand, "en");
 }
 
 /**
@@ -773,7 +773,7 @@ ShellCommandRegisterAlias (
 {
   ALIAS_LIST *Node;
   ALIAS_LIST *CommandAlias;
-  ALIAS_LIST *PrevCommandAlias; 
+  ALIAS_LIST *PrevCommandAlias;
   INTN       LexicalMatchValue;
 
   //
@@ -813,7 +813,7 @@ ShellCommandRegisterAlias (
     //
     // Swap PrevCommandAlias and CommandAlias list entry if PrevCommandAlias list entry
     // is alphabetically greater than CommandAlias list entry
-    // 
+    //
     if (LexicalMatchValue > 0) {
       CommandAlias = (ALIAS_LIST *) SwapListEntries (&PrevCommandAlias->Link, &CommandAlias->Link);
     } else if (LexicalMatchValue < 0) {

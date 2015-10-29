@@ -44,5 +44,5 @@ ASM_PFX(InternalSwitchStack):
 	movl	12(%ebp), %eax
 	movl	%eax, (%esp)
 	pushl $0                  # keeps gdb from unwinding stack
-	jmp   *8(%ebp)            # call and never return 
+	jmp   *8(%ebp)            # call and never return
 

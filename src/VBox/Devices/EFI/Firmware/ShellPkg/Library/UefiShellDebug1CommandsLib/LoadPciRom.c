@@ -238,8 +238,8 @@ LoadEfiDriversFromRomImage (
     }
 
     //
-    // If the pointer to the PCI Data Structure is invalid, no further images can be located. 
-    // The PCI Data Structure must be DWORD aligned. 
+    // If the pointer to the PCI Data Structure is invalid, no further images can be located.
+    // The PCI Data Structure must be DWORD aligned.
     //
     if (EfiRomHeader->PcirOffset == 0 ||
         (EfiRomHeader->PcirOffset & 3) != 0 ||

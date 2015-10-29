@@ -149,7 +149,7 @@ GetNewPage (
 
 /**
   The page fault handler that on-demand read >4G memory/MMIO.
-  
+
   @retval TRUE     The page fault is correctly handled.
   @retval FALSE    The page fault is not handled and is passed through to original handler.
 

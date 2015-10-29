@@ -28,7 +28,7 @@ EFI_DRIVER_BINDING_PROTOCOL gMnpDriverBinding = {
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 
@@ -44,14 +44,14 @@ MnpDestroyServiceDataEntry (
   )
 {
   MNP_SERVICE_DATA              *MnpServiceData;
-  
+
   MnpServiceData = MNP_SERVICE_DATA_FROM_LINK (Entry);
   return MnpDestroyServiceData (MnpServiceData);
 }
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 

@@ -19,7 +19,7 @@ UINTN   mTableKey;
 
 /**
   Initialize the header of the iSCSI Boot Firmware Table.
-  
+
   @param[out]  Header     The header of the iSCSI Boot Firmware Table.
   @param[in]   OemId      The OEM ID.
   @param[in]   OemTableId The OEM table ID for the iBFT.
@@ -37,14 +37,14 @@ IScsiInitIbfTableHeader (
   Header->Length    = IBFT_HEAP_OFFSET;
   Header->Revision  = EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_REVISION;
   Header->Checksum  = 0;
-  
+
   CopyMem (Header->OemId, OemId, sizeof (Header->OemId));
   CopyMem (&Header->OemTableId, OemTableId, sizeof (UINT64));
 }
 
 /**
   Initialize the control section of the iSCSI Boot Firmware Table.
-  
+
   @param[in]  Table       The ACPI table.
   @param[in]  HandleCount The number of the handles associated with iSCSI sessions, it's
                           equal to the number of iSCSI sessions.

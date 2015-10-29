@@ -1,7 +1,7 @@
 /** @file
   Stall Services that do stall and also enable the Stall operatation
   to be replayed during an S3 resume. This library class maps directly on top
-  of the Timer class. 
+  of the Timer class.
 
   Copyright (c) 2007, Intel Corporation. All rights reserved.<BR>
 
@@ -42,10 +42,10 @@ S3Stall (
   )
 {
   RETURN_STATUS    Status;
-  
+
   Status = S3BootScriptSaveStall (MicroSecondDelay (MicroSeconds));
   ASSERT (Status == RETURN_SUCCESS);
-  
+
   return MicroSeconds;
 }
 

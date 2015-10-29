@@ -54,7 +54,7 @@ CacheEntry *dumpFcache1(prev)
 	for (p=table; p<&(table[HashTableSize]); p++) {
 
 		CacheEntry *q =(CacheEntry *) *p;
-		
+
 		if ( q != NULL && low==0 ) low = p-table;
 		while ( q != NULL ) {
             if (strcmp(q->str,prev) > 0) {
@@ -98,11 +98,11 @@ void reportFcache(q)
     MR_dumpTokenSet(stdout,1,q->fset);
 }
 
-void 
+void
 #ifdef __USE_PROTOS
-DumpFcache(void) 
+DumpFcache(void)
 #else
-DumpFcache() 
+DumpFcache()
 #endif
 {
 

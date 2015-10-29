@@ -1,8 +1,8 @@
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 #
-# Replacement for Math64.c that is coded to use older GCC intrinsics. 
+# Replacement for Math64.c that is coded to use older GCC intrinsics.
 # Doing this reduces the number of intrinsics that are required when
-# you port to a new version of gcc. 
+# you port to a new version of gcc.
 #
 # Need to split this into multple files to size optimize the image.
 #
@@ -159,8 +159,8 @@ ASM_PFX(InternalMathDivU64x32):
 	mov	r3, #0
 	bl 	ASM_PFX(__udivdi3)
 	ldmfd	sp!, {r7, pc}
-	
-	
+
+
 	.align 2
 	GCC_ASM_EXPORT(InternalMathModU64x32)
 
@@ -170,8 +170,8 @@ ASM_PFX(InternalMathModU64x32):
 	mov	r3, #0
 	bl 	ASM_PFX(__umoddi3)
 	ldmfd	sp!, {r7, pc}
-	
-	
+
+
 	.align 2
 	GCC_ASM_EXPORT(InternalMathDivRemU64x32)
 
@@ -198,8 +198,8 @@ L22:
 	bl 	ASM_PFX(__udivdi3)
 	ldmfd	sp!, {r10, r11}
 	ldmfd	sp!, {r4, r5, r6, r7, pc}
-	
-	
+
+
 	.align 2
 	GCC_ASM_EXPORT(InternalMathDivRemU64x64)
 
@@ -224,8 +224,8 @@ L26:
 	bl 	ASM_PFX(__udivdi3)
 	ldmfd	sp!, {r10, r11}
 	ldmfd	sp!, {r4, r5, r6, r7, pc}
-	
-	
+
+
 	.align 2
 	GCC_ASM_EXPORT(InternalMathDivRemS64x64)
 
@@ -250,8 +250,8 @@ L30:
 	bl 	ASM_PFX(__divdi3)
 	ldmfd	sp!, {r10, r11}
 	ldmfd	sp!, {r4, r5, r6, r7, pc}
-	
-	
+
+
 	.align 2
 	GCC_ASM_EXPORT(InternalMathSwapBytes64)
 

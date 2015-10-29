@@ -1026,7 +1026,7 @@ void MR_complete_tree(predDepth,t,incomplete)
 
       rk2=empty;
 
-      while ( !set_nil(*incomplete) ) {	
+      while ( !set_nil(*incomplete) ) {
 		k2 = set_int(*incomplete);
         if (k2 > (unsigned) predDepth) break;       /* <=== another exit from loop */
 		set_rm(k2,*incomplete);
@@ -2727,7 +2727,7 @@ int MR_suppressK_client(tree,tokensInChain)
 /***  constrain = &(fset[1]); ***/
 
   MR_setConstrainPointer(&(fset[1]));	/* MR18 */
-  
+
   MR_pointerStackReset(&MR_BackTraceStack);
 
   TRAV(suppressNode,maxk,&incomplete,t);

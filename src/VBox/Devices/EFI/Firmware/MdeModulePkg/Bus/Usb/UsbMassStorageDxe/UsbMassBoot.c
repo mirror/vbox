@@ -211,7 +211,7 @@ UsbBootExecCmd (
   If the device isn't ready, wait for it. If the device is ready
   and error occurs, retry the command again until it exceeds the
   limit of retrial times.
-  
+
   @param  UsbMass                The device to issue commands to
   @param  Cmd                    The command to execute
   @param  CmdLen                 The length of the command
@@ -399,7 +399,7 @@ UsbBootInquiry (
   @retval EFI_SUCCESS            The disk geometry is successfully retrieved.
   @retval EFI_NOT_READY          The returned block size is zero.
   @retval Other                  READ CAPACITY 16 bytes command execution failed.
- 
+
 **/
 EFI_STATUS
 UsbBootReadCapacity16 (
@@ -429,7 +429,7 @@ UsbBootReadCapacity16 (
   ZeroMem ((CapacityCmd + 2), 8);
 
   CapacityCmd[13] = sizeof (CapacityData);
-  
+
   Status = UsbBootExecCmdWithRetry (
              UsbMass,
              CapacityCmd,
@@ -451,13 +451,13 @@ UsbBootReadCapacity16 (
   Media->LastBlock    = SwapBytes64 (ReadUnaligned64 ((CONST UINT64 *) &(CapacityData.LastLba7)));
 
   BlockSize           = SwapBytes32 (ReadUnaligned32 ((CONST UINT32 *) &(CapacityData.BlockSize3)));
-  
+
   Media->LowestAlignedLba = (CapacityData.LowestAlignLogic2 << 8) |
                              CapacityData.LowestAlignLogic1;
   Media->LogicalBlocksPerPhysicalBlock  = (1 << CapacityData.LogicPerPhysical);
   if (BlockSize == 0) {
     //
-    //  Get sense data  
+    //  Get sense data
     //
     return UsbBootRequestSense (UsbMass);
   } else {
@@ -481,7 +481,7 @@ UsbBootReadCapacity16 (
   @retval EFI_SUCCESS            The disk geometry is successfully retrieved.
   @retval EFI_NOT_READY          The returned block size is zero.
   @retval Other                  READ CAPACITY command execution failed.
- 
+
 **/
 EFI_STATUS
 UsbBootReadCapacity (
@@ -525,7 +525,7 @@ UsbBootReadCapacity (
   BlockSize           = SwapBytes32 (ReadUnaligned32 ((CONST UINT32 *) CapacityData.BlockLen));
   if (BlockSize == 0) {
     //
-    //  Get sense data  
+    //  Get sense data
     //
     return UsbBootRequestSense (UsbMass);
   } else {

@@ -183,7 +183,7 @@ PutDword (
 
 /**
   Allocate memory spaces for data structures used in compression process.
-  
+
   @retval EFI_SUCCESS           Memory was allocated successfully.
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
 **/
@@ -755,7 +755,7 @@ MakeLen (
 
 /**
   Assign code to each symbol based on the code length array.
-  
+
   @param[in] LoopVar8      The number of symbols.
   @param[in] Len    The code length array.
   @param[out] Code  The stores codes for each symbol.
@@ -780,7 +780,7 @@ MakeCode (
     Code[LoopVar1] = Start[Len[LoopVar1]]++;
   }
 }
-  
+
 /**
   Generates Huffman codes given a frequency distribution of symbols.
 
@@ -1200,7 +1200,7 @@ HufEncodeStart (
 /**
   Outputs an Original Character or a Pointer.
 
-  @param[in] LoopVar5     The original character or the 'String Length' element of 
+  @param[in] LoopVar5     The original character or the 'String Length' element of
                    a Pointer.
   @param[in] LoopVar7     The 'Position' field of a Pointer.
 **/

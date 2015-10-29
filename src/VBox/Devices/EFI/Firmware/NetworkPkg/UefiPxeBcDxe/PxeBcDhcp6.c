@@ -719,7 +719,7 @@ PxeBcRequestBootService (
   if (Option == NULL) {
     return EFI_NOT_FOUND;
   }
-  
+
   //
   // Add Server ID Option.
   //
@@ -747,7 +747,7 @@ PxeBcRequestBootService (
   }
 
   //
-  // Update Elapsed option in the package 
+  // Update Elapsed option in the package
   //
   Option = PxeBcDhcp6SeekOption (
              Discover->DhcpOptions,
@@ -757,7 +757,7 @@ PxeBcRequestBootService (
   if (Option != NULL) {
     CalcElapsedTime (Private);
     WriteUnaligned16 ((UINT16*)(Option + 4), HTONS((UINT16) Private->ElapsedTime));
-  }  
+  }
 
   Status = PxeBc->UdpWrite (
                     PxeBc,
@@ -791,7 +791,7 @@ PxeBcRequestBootService (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-    
+
   Status = PxeBc->UdpRead (
                     PxeBc,
                     EFI_PXE_BASE_CODE_UDP_OPFLAGS_ANY_SRC_IP,
@@ -1666,7 +1666,7 @@ PxeBcDhcp6Discover (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   Status = PxeBc->UdpRead (
                     PxeBc,
                     OpFlags,
@@ -1816,13 +1816,13 @@ PxeBcDhcp6Sarr (
     }
 
     do {
-      
+
       TimerStatus = gBS->CheckEvent (Timer);
       if (!EFI_ERROR (TimerStatus)) {
         Status = Dhcp6->Start (Dhcp6);
       }
     } while (TimerStatus == EFI_NOT_READY);
-    
+
     gBS->CloseEvent (Timer);
   }
   if (EFI_ERROR (Status)) {

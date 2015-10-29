@@ -1,17 +1,17 @@
 #/** @file
-#  
+#
 #    This code provides low level routines that support the Virtual Machine
 #   for option ROMs.
-#  
+#
 #  Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
 #  which accompanies this distribution.  The full text of the license may be found at
 #  http://opensource.org/licenses/bsd-license.php
-#  
+#
 #  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
-#  
+#
 #**/
 
 #---------------------------------------------------------------------------
@@ -45,10 +45,10 @@ ASM_PFX(EbcLLCALLEXNative):
       mov    %rcx, %rbx
 
       # Set stack pointer to new value
-      sub    %rdx, %r8  
-      sub    %r8,  %rsp 
+      sub    %rdx, %r8
+      sub    %r8,  %rsp
       mov    %rsp, %rcx
-      sub    $0x20, %rsp 
+      sub    $0x20, %rsp
       call   ASM_PFX(CopyMem)
       add    $0x20, %rsp
 
@@ -90,7 +90,7 @@ ASM_PFX(EbcLLEbcInterpret):
     add  $0x8, %rdi
     mov  $0x10, %rcx
     rep  movsq
-    
+
     # build new paramater calling convention
     mov  0x18(%rsp), %r9
     mov  0x10(%rsp), %r8

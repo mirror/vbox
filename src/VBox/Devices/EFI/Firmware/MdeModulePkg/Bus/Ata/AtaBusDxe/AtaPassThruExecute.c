@@ -632,7 +632,7 @@ AtaTerminateNonBlockingTask (
 
   //
   // Aborting operation has been done. From now on, don't need to abort normal operation.
-  //  
+  //
   OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
   AtaDevice->Abort = FALSE;
   gBS->RestoreTPL (OldTpl);

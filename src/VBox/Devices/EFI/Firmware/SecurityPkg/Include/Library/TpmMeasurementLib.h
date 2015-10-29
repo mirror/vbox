@@ -31,7 +31,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @retval EFI_DEVICE_ERROR      The operation was unsuccessful.
 **/
 EFI_STATUS
-EFIAPI 
+EFIAPI
 TpmMeasureAndLogData (
   IN UINT32             PcrIndex,
   IN UINT32             EventType,

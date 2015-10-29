@@ -1,13 +1,13 @@
-/** @file  
+/** @file
   TIS (TPM Interface Specification) functions used by TPM Dxe driver.
-  
+
 Copyright (c) 2005 - 2012, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -25,10 +25,10 @@ STATIC UINT8                        TpmCommandBuf[TPMCMDBUFLENGTH];
 /**
   Send command to TPM for execution.
 
-  @param[in] TisReg     TPM register space base address.  
-  @param[in] TpmBuffer  Buffer for TPM command data.  
-  @param[in] DataLength TPM command data length.  
- 
+  @param[in] TisReg     TPM register space base address.
+  @param[in] TpmBuffer  Buffer for TPM command data.
+  @param[in] DataLength TPM command data length.
+
   @retval EFI_SUCCESS   Operation completed successfully.
   @retval EFI_TIMEOUT   The register can't run into the expected status in time.
 
@@ -75,10 +75,10 @@ TisPcSend (
 /**
   Receive response data of last command from TPM.
 
-  @param[in]  TisReg            TPM register space base address.  
-  @param[out] TpmBuffer         Buffer for response data.  
-  @param[out] RespSize          Response data length.  
- 
+  @param[in]  TisReg            TPM register space base address.
+  @param[out] TpmBuffer         Buffer for response data.
+  @param[out] RespSize          Response data length.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_TIMEOUT           The register can't run into the expected status in time.
   @retval EFI_DEVICE_ERROR      Unexpected device status.
@@ -164,11 +164,11 @@ TisPcReceive (
 /**
   Format TPM command data according to the format control character.
 
-  @param[in]      FmtChar       Format control character.  
-  @param[in, out] ap            List of arguments.  
-  @param[in]      TpmBuffer     Buffer for TPM command data.  
-  @param[out]     DataLength    TPM command data length. 
- 
+  @param[in]      FmtChar       Format control character.
+  @param[in, out] ap            List of arguments.
+  @param[in]      TpmBuffer     Buffer for TPM command data.
+  @param[out]     DataLength    TPM command data length.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_INVALID_PARAMETER Invalid format control character.
   @retval EFI_BUFFER_TOO_SMALL  Buffer too small for command data.
@@ -251,13 +251,13 @@ TisPcSendV (
 /**
   Format reponse data according to the format control character.
 
-  @param[in]      FmtChar       Format control character.  
-  @param[in, out] ap            List of arguments.  
-  @param[out]     TpmBuffer     Buffer for reponse data.  
-  @param[in, out] DataIndex     Data offset in reponse data buffer. 
-  @param[in]      RespSize      Response data length.  
-  @param[out]     DataFinished  Reach the end of Response data.  
- 
+  @param[in]      FmtChar       Format control character.
+  @param[in, out] ap            List of arguments.
+  @param[out]     TpmBuffer     Buffer for reponse data.
+  @param[in, out] DataIndex     Data offset in reponse data buffer.
+  @param[in]      RespSize      Response data length.
+  @param[out]     DataFinished  Reach the end of Response data.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_INVALID_PARAMETER Invalid format control character.
   @retval EFI_BUFFER_TOO_SMALL  Buffer too small for command data.
@@ -299,8 +299,8 @@ TisPcReceiveV (
     case 'r':
       Size = VA_ARG (*ap, UINTN);
       //
-      // If overflowed, which means Size is big enough for Response data. 
-      // skip this check. Copy the whole data 
+      // If overflowed, which means Size is big enough for Response data.
+      // skip this check. Copy the whole data
       //
       if ((UINT32) (~0)- *DataIndex >= (UINT32)Size) {
         if(*DataIndex + (UINT32) Size <= RespSize) {
@@ -357,10 +357,10 @@ TisPcReceiveV (
 /**
   Send formatted command to TPM for execution and return formatted data from response.
 
-  @param[in] TisReg    TPM Handle.  
-  @param[in] Fmt       Format control string.  
+  @param[in] TisReg    TPM Handle.
+  @param[in] Fmt       Format control string.
   @param[in] ...       The variable argument list.
- 
+
   @retval EFI_SUCCESS  Operation completed successfully.
   @retval EFI_TIMEOUT  The register can't run into the expected status in time.
 
@@ -420,7 +420,7 @@ TisPcExecute (
   if (EFI_ERROR (Status)) {
     goto Error;
   }
-  
+
   //
   // Get the formatted data from the TpmCommandBuf.
   //

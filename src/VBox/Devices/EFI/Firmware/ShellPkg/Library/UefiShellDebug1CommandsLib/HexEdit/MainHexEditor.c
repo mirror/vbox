@@ -1,9 +1,9 @@
 /** @file
-    Defines the Main Editor data type - 
-     - Global variables 
+    Defines the Main Editor data type -
+     - Global variables
      - Instances of the other objects of the editor
      - Main Interfaces
-  
+
   Copyright (c) 2005 - 2012, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -110,17 +110,17 @@ HMainCommandDisplayHelp (
   EFI_INPUT_KEY  Key;
 
   CurrentLine = 0;
-  // print helpInfo      
+  // print helpInfo
   for (CurrentLine = 0; 0 != HexMainMenuHelpInfo[CurrentLine]; CurrentLine++) {
     InfoString = HiiGetString(gShellDebug1HiiHandle, HexMainMenuHelpInfo[CurrentLine]
 , NULL);
-    ShellPrintEx (0,CurrentLine+1,L"%E%s%N",InfoString);        
+    ShellPrintEx (0,CurrentLine+1,L"%E%s%N",InfoString);
   }
-  
+
   // scan for ctrl+w
   do {
     gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-  } while(SCAN_CONTROL_W != Key.UnicodeChar); 
+  } while(SCAN_CONTROL_W != Key.UnicodeChar);
 
   // update screen with buffer's info
   HBufferImageNeedRefresh = TRUE;
@@ -211,7 +211,7 @@ HMainCommandGoToOffset (
 
 /**
   Save current opened buffer.
-  If is file buffer, you can save to current file name or 
+  If is file buffer, you can save to current file name or
   save to another file name.
 
   @retval EFI_SUCCESS             The operation was successful.
@@ -341,7 +341,7 @@ HMainCommandSaveBuffer (
   // 7. Update File Name field in Title Bar to B
   //       and remove the Modified flag in Title Bar.
   //
-  Str = CatSPrint(NULL, 
+  Str = CatSPrint(NULL,
           L"File to Save: [%s]",
           HMainEditor.BufferImage->FileImage->FileName
           );
@@ -388,7 +388,7 @@ HMainCommandSaveBuffer (
   // if just enter pressed, so think save to current file name
   //
   if (StrLen (InputBarGetString()) == 0) {
-    FileName = CatSPrint(NULL, 
+    FileName = CatSPrint(NULL,
                 L"%s",
                 HMainEditor.BufferImage->FileImage->FileName
                 );
@@ -442,7 +442,7 @@ HMainCommandSaveBuffer (
         StatusBarSetStatusString (L"Access Denied");
         SHELL_FREE_NON_NULL (FileName);
         return EFI_SUCCESS;
-      } 
+      }
 
       SHELL_FREE_NON_NULL(Info);
       //
@@ -486,7 +486,7 @@ HMainCommandSaveBuffer (
       } // while
     } // if opened existing file
   } // if OldFile
-  
+
   //
   // save file back to disk
   //
@@ -1756,9 +1756,9 @@ HMainEditorCleanup (
   MenuBarCleanup ();
 
   StatusBarCleanup ();
-  
+
   InputBarCleanup ();
-  
+
   Status = HBufferImageCleanup ();
   if (EFI_ERROR (Status)) {
     ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_HEXEDIT_LIBEDITOR_BUFFERIMAGE_CLEAN), gShellDebug1HiiHandle);
@@ -1803,28 +1803,28 @@ HMainEditorRefresh (
   if (HMainEditor.BufferImage->BufferType == FileTypeDiskBuffer) {
     if (HMainEditor.BufferImage->DiskImage != NULL &&
         HBufferImageBackupVar.DiskImage != NULL &&
-        (HMainEditor.BufferImage->DiskImage->Offset != HBufferImageBackupVar.DiskImage->Offset || 
+        (HMainEditor.BufferImage->DiskImage->Offset != HBufferImageBackupVar.DiskImage->Offset ||
            HMainEditor.BufferImage->DiskImage->Size != HBufferImageBackupVar.DiskImage->Size) ){
       NameChange = TRUE;
     }
   } else if (HMainEditor.BufferImage->BufferType == FileTypeMemBuffer) {
     if (HMainEditor.BufferImage->MemImage != NULL &&
         HBufferImageBackupVar.MemImage != NULL &&
-        (HMainEditor.BufferImage->MemImage->Offset != HBufferImageBackupVar.MemImage->Offset || 
+        (HMainEditor.BufferImage->MemImage->Offset != HBufferImageBackupVar.MemImage->Offset ||
            HMainEditor.BufferImage->MemImage->Size != HBufferImageBackupVar.MemImage->Size) ){
       NameChange = TRUE;
     }
   } else if (HMainEditor.BufferImage->BufferType == FileTypeFileBuffer) {
-    if ( HMainEditor.BufferImage->FileImage != NULL && 
-         HMainEditor.BufferImage->FileImage->FileName != NULL && 
-         HBufferImageBackupVar.FileImage != NULL && 
-         HBufferImageBackupVar.FileImage->FileName != NULL && 
+    if ( HMainEditor.BufferImage->FileImage != NULL &&
+         HMainEditor.BufferImage->FileImage->FileName != NULL &&
+         HBufferImageBackupVar.FileImage != NULL &&
+         HBufferImageBackupVar.FileImage->FileName != NULL &&
          StrCmp (HMainEditor.BufferImage->FileImage->FileName, HBufferImageBackupVar.FileImage->FileName) != 0 ) {
       NameChange = TRUE;
     }
   }
-  if ( HMainEditor.BufferImage->FileImage != NULL && 
-       HBufferImageBackupVar.FileImage != NULL && 
+  if ( HMainEditor.BufferImage->FileImage != NULL &&
+       HBufferImageBackupVar.FileImage != NULL &&
        HMainEditor.BufferImage->FileImage->ReadOnly != HBufferImageBackupVar.FileImage->ReadOnly ) {
     ReadChange = TRUE;
   }
@@ -1838,10 +1838,10 @@ HMainEditorRefresh (
   //
   // call the components refresh function
   //
-  if (HEditorFirst 
+  if (HEditorFirst
     || NameChange
-    || HMainEditor.BufferImage->BufferType != HBufferImageBackupVar.BufferType 
-    || HBufferImageBackupVar.Modified != HMainEditor.BufferImage->Modified 
+    || HMainEditor.BufferImage->BufferType != HBufferImageBackupVar.BufferType
+    || HBufferImageBackupVar.Modified != HMainEditor.BufferImage->Modified
     || ReadChange ) {
 
     MainTitleBarRefresh (
@@ -1857,8 +1857,8 @@ HMainEditorRefresh (
     HBufferImageRefresh ();
   }
   if (HEditorFirst
-    || HBufferImageBackupVar.DisplayPosition.Row != HMainEditor.BufferImage->DisplayPosition.Row 
-    || HBufferImageBackupVar.DisplayPosition.Column != HMainEditor.BufferImage->DisplayPosition.Column 
+    || HBufferImageBackupVar.DisplayPosition.Row != HMainEditor.BufferImage->DisplayPosition.Row
+    || HBufferImageBackupVar.DisplayPosition.Column != HMainEditor.BufferImage->DisplayPosition.Column
     || StatusBarGetRefresh()) {
 
     StatusBarRefresh (
@@ -2274,7 +2274,7 @@ HMainEditorKeyInput (
         case FileTypeMemBuffer:
           OldSize = HBufferImage.MemImage->Size;
           break;
-        
+
         default:
           OldSize = 0;
           break;

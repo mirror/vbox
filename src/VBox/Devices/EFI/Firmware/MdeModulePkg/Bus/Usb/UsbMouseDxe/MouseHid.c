@@ -160,7 +160,7 @@ GetItemData (
   There are three item types: Main, Global, and Local.
   This function parses these types of HID items according
   to tag info.
-  
+
   @param  UsbMouse          The instance of USB_MOUSE_DEV
   @param  HidItem           The HID item to parse
 

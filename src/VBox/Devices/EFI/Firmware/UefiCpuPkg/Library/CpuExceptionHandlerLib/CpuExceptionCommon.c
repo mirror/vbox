@@ -24,7 +24,7 @@ CONST UINT32 mErrorCodeFlag             = 0x00027d00;
 RESERVED_VECTORS_DATA *mReservedVectors = NULL;
 
 //
-// Define the maximum message length 
+// Define the maximum message length
 //
 #define MAX_DEBUG_MESSAGE_LENGTH  0x100
 
@@ -32,7 +32,7 @@ RESERVED_VECTORS_DATA *mReservedVectors = NULL;
   Prints a message to the serial port.
 
   @param  Format      Format string for the message to print.
-  @param  ...         Variable argument list whose contents are accessed 
+  @param  ...         Variable argument list whose contents are accessed
                       based on the format string specified by Format.
 
 **/
@@ -54,21 +54,21 @@ InternalPrintMessage (
   VA_END (Marker);
 
   //
-  // Send the print string to a Serial Port 
+  // Send the print string to a Serial Port
   //
   SerialPortWrite ((UINT8 *)Buffer, AsciiStrLen (Buffer));
 }
 
 /**
   Find and display image base address and return image base and its entry point.
-  
+
   @param CurrentEip      Current instruction pointer.
   @param EntryPoint      Return module entry point if module header is found.
-  
+
   @return !0     Image base address.
   @return 0      Image header cannot be found.
 **/
-UINTN 
+UINTN
 FindModuleImageBase (
   IN  UINTN              CurrentEip,
   OUT UINTN              *EntryPoint
@@ -121,7 +121,7 @@ FindModuleImageBase (
 
     //
     // Not found the image base, check the previous aligned address
-    // 
+    //
     Pe32Data -= mImageAlignSize;
   }
 
@@ -141,11 +141,11 @@ FindModuleImageBase (
 
 /**
   Read and save reserved vector information
-  
+
   @param[in]  VectorInfo        Pointer to reserved vector list.
   @param[out] ReservedVector    Pointer to reserved vector data buffer.
   @param[in]  VectorCount       Vector number to be updated.
-  
+
   @return EFI_SUCCESS           Read and save vector info successfully.
   @retval EFI_INVALID_PARAMETER VectorInfo includes the invalid content if VectorInfo is not NULL.
 

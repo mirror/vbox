@@ -52,8 +52,8 @@
 
 [Guids]
   ## SOMETIMES_PRODUCES ## UNDEFINED # HiiConstructConfigHdr EFI_NIC_IP4_CONFIG_VARIABLE
-  ## UNDEFINED # Device Path Node 
-  gEfiNicIp4ConfigVariableGuid                  
+  ## UNDEFINED # Device Path Node
+  gEfiNicIp4ConfigVariableGuid
   gEfiSmbiosTableGuid                           ## SOMETIMES_CONSUMES  ## SystemTable
 
 [Protocols]

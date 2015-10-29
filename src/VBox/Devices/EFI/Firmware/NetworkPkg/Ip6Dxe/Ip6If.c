@@ -565,7 +565,7 @@ Ip6ReceiveFrame (
 {
   EFI_STATUS                Status;
   IP6_LINK_RX_TOKEN         *Token;
-  
+
   NET_CHECK_SIGNATURE (IpSb, IP6_SERVICE_SIGNATURE);
 
   Token           = &IpSb->RecvRequest;

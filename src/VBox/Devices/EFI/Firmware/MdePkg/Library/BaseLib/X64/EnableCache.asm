@@ -15,7 +15,7 @@
 ;
 ; Abstract:
 ;
-;  Flush all caches with a WBINVD instruction, clear the CD bit of CR0 to 0, and clear 
+;  Flush all caches with a WBINVD instruction, clear the CD bit of CR0 to 0, and clear
 ;  the NW bit of CR0 to 0
 ;
 ; Notes:

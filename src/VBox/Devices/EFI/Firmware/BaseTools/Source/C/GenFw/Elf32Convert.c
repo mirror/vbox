@@ -129,7 +129,7 @@ InitializeElf32 (
   //
   // Initialize data pointer and structures.
   //
-  mEhdr = (Elf_Ehdr*) FileBuffer;  
+  mEhdr = (Elf_Ehdr*) FileBuffer;
 
   //
   // Check the ELF32 specific header information.
@@ -141,12 +141,12 @@ InitializeElf32 (
   if (mEhdr->e_ident[EI_DATA] != ELFDATA2LSB) {
     Error (NULL, 0, 3000, "Unsupported", "ELF EI_DATA not ELFDATA2LSB");
     return FALSE;
-  }  
+  }
   if ((mEhdr->e_type != ET_EXEC) && (mEhdr->e_type != ET_DYN)) {
     Error (NULL, 0, 3000, "Unsupported", "ELF e_type not ET_EXEC or ET_DYN");
     return FALSE;
   }
-  if (!((mEhdr->e_machine == EM_386) || (mEhdr->e_machine == EM_ARM))) { 
+  if (!((mEhdr->e_machine == EM_386) || (mEhdr->e_machine == EM_ARM))) {
     Error (NULL, 0, 3000, "Unsupported", "ELF e_machine not EM_386 or EM_ARM");
     return FALSE;
   }
@@ -154,13 +154,13 @@ InitializeElf32 (
     Error (NULL, 0, 3000, "Unsupported", "ELF e_version (%u) not EV_CURRENT (%d)", (unsigned) mEhdr->e_version, EV_CURRENT);
     return FALSE;
   }
-  
+
   //
   // Update section header pointers
   //
   mShdrBase  = (Elf_Shdr *)((UINT8 *)mEhdr + mEhdr->e_shoff);
   mPhdrBase = (Elf_Phdr *)((UINT8 *)mEhdr + mEhdr->e_phoff);
-  
+
   //
   // Create COFF Section offset buffer and zero.
   //
@@ -586,20 +586,20 @@ WriteSections32 (
     if ((RelShdr->sh_type != SHT_REL) && (RelShdr->sh_type != SHT_RELA)) {
       continue;
     }
-    
+
     //
     // Relocation section found.  Now extract section information that the relocations
     // apply to in the ELF data and the new COFF data.
     //
     SecShdr = GetShdrByIndex(RelShdr->sh_info);
     SecOffset = mCoffSectionsOffset[RelShdr->sh_info];
-    
+
     //
     // Only process relocations for the current filter type.
     //
     if (RelShdr->sh_type == SHT_REL && (*Filter)(SecShdr)) {
       UINT32 RelOffset;
-      
+
       //
       // Determine the symbol table referenced by the relocation data.
       //
@@ -614,18 +614,18 @@ WriteSections32 (
         // Set pointer to relocation entry
         //
         Elf_Rel *Rel = (Elf_Rel *)((UINT8*)mEhdr + RelShdr->sh_offset + RelOffset);
-        
+
         //
         // Set pointer to symbol table entry associated with the relocation entry.
         //
         Elf_Sym *Sym = (Elf_Sym *)(Symtab + ELF_R_SYM(Rel->r_info) * SymtabShdr->sh_entsize);
-        
+
         Elf_Shdr *SymShdr;
         UINT8 *Targ;
         UINT16 Address;
 
         //
-        // Check section header index found in symbol table and get the section 
+        // Check section header index found in symbol table and get the section
         // header location.
         //
         if (Sym->st_shndx == SHN_UNDEF
@@ -638,7 +638,7 @@ WriteSections32 (
         //
         // Convert the relocation data to a pointer into the coff file.
         //
-        // Note: 
+        // Note:
         //   r_offset is the virtual address of the storage unit to be relocated.
         //   sh_addr is the virtual address for the base of the section.
         //
@@ -683,9 +683,9 @@ WriteSections32 (
           case R_ARM_THM_JUMP19:
           case R_ARM_CALL:
           case R_ARM_JMP24:
-          case R_ARM_THM_JUMP24:  
-          case R_ARM_PREL31:  
-          case R_ARM_MOVW_PREL_NC:  
+          case R_ARM_THM_JUMP24:
+          case R_ARM_PREL31:
+          case R_ARM_MOVW_PREL_NC:
           case R_ARM_MOVT_PREL:
           case R_ARM_THM_MOVW_PREL_NC:
           case R_ARM_THM_MOVT_PREL:
@@ -780,7 +780,7 @@ WriteRelocations32 (
         for (RelIdx = 0; RelIdx < RelShdr->sh_size; RelIdx += RelShdr->sh_entsize) {
           Elf_Rel  *Rel = (Elf_Rel *)((UINT8*)mEhdr + RelShdr->sh_offset + RelIdx);
 
-          if (mEhdr->e_machine == EM_386) { 
+          if (mEhdr->e_machine == EM_386) {
             switch (ELF_R_TYPE(Rel->r_info)) {
             case R_386_NONE:
             case R_386_PC32:
@@ -811,9 +811,9 @@ WriteRelocations32 (
             case R_ARM_THM_JUMP19:
             case R_ARM_CALL:
             case R_ARM_JMP24:
-            case R_ARM_THM_JUMP24:  
-            case R_ARM_PREL31:  
-            case R_ARM_MOVW_PREL_NC:  
+            case R_ARM_THM_JUMP24:
+            case R_ARM_PREL31:
+            case R_ARM_MOVW_PREL_NC:
             case R_ARM_MOVT_PREL:
             case R_ARM_THM_MOVW_PREL_NC:
             case R_ARM_THM_MOVT_PREL:
@@ -942,7 +942,7 @@ WriteRelocations32 (
 
             CoffAddFixup (mCoffSectionsOffset[ELF32_R_SYM (Rel->r_info)] + (Rel->r_offset - TargetSegment->p_vaddr), EFI_IMAGE_REL_BASED_HIGHLOW);
             break;
-          
+
           default:
             Error (NULL, 0, 3000, "Invalid", "%s bad ARM dynamic relocations, unkown type %d.", mInImageName, ELF32_R_TYPE (Rel->r_info));
             break;
@@ -1037,7 +1037,7 @@ SetImageSize32 (
   )
 {
   EFI_IMAGE_OPTIONAL_HEADER_UNION *NtHdr;
-  
+
   //
   // Set image size
   //

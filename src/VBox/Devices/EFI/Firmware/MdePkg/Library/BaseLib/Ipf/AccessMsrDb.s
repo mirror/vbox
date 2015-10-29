@@ -1,6 +1,6 @@
 /// @file
-///  IPF specific Machine Specific Registers accessing functions. 
-///  This implementation uses raw data to prepresent the assembly instruction of 
+///  IPF specific Machine Specific Registers accessing functions.
+///  This implementation uses raw data to prepresent the assembly instruction of
 /// mov msr[]= and mov =msr[].
 ///
 /// Copyright (c) 2008, Intel Corporation. All rights reserved.<BR>
@@ -43,7 +43,7 @@
 
 AsmReadMsr::
 //
-// The follow 16 bytes stand for the bundle of 
+// The follow 16 bytes stand for the bundle of
 //   mov    r8=msr[in0];;
 // since MSFT tool chain does not support mov =msr[] instruction
 //
@@ -94,7 +94,7 @@ AsmReadMsr::
 
 AsmWriteMsr::
 //
-// The follow 16 bytes stand for the bundle of 
+// The follow 16 bytes stand for the bundle of
 //  mov             msr[in0] = in1
 //  mov             r8 = in1;;
 // since MSFT tool chain does not support mov msr[]= instruction

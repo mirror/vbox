@@ -54,7 +54,7 @@
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdUsbTransferTimeoutValue  ## CONSUMES
-  
+
 [Ppis]
   gPeiUsbIoPpiGuid                              ## PRODUCES
   gPeiUsbHostControllerPpiGuid                  ## SOMETIMES_CONSUMES

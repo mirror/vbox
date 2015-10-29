@@ -189,7 +189,7 @@ FrontPageCallback (
     //
     return EFI_UNSUPPORTED;
   }
-  
+
   gCallbackKey = QuestionId;
 
   if (Action == EFI_BROWSER_ACTION_CHANGED) {
@@ -210,7 +210,7 @@ FrontPageCallback (
       // Allocate working buffer for RFC 4646 language in supported LanguageString.
       //
       Lang = AllocatePool (AsciiStrSize (mLanguageString));
-      ASSERT (Lang != NULL);  
+      ASSERT (Lang != NULL);
 
       Index = 0;
       LangCode = mLanguageString;
@@ -279,7 +279,7 @@ FrontPageCallback (
     }
   }
 
-  return EFI_SUCCESS;  
+  return EFI_SUCCESS;
 }
 
 /**
@@ -414,7 +414,7 @@ InitializeFrontPage (
   if (gFrontPagePrivate.LanguageToken == NULL) {
     //
     // Count the language list number.
-    //  
+    //
     LangCode      = mLanguageString;
     Lang          = AllocatePool (AsciiStrSize (mLanguageString));
     ASSERT (Lang != NULL);
@@ -758,7 +758,7 @@ UpdateFrontPageStrings (
       HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
       FreePool (NewString);
       Find[0] = TRUE;
-    }  
+    }
 
     if (Record->Type == EFI_SMBIOS_TYPE_SYSTEM_INFORMATION) {
       Type1Record = (SMBIOS_TABLE_TYPE1 *) Record;
@@ -769,7 +769,7 @@ UpdateFrontPageStrings (
       FreePool (NewString);
       Find[1] = TRUE;
     }
-      
+
     if (Record->Type == EFI_SMBIOS_TYPE_PROCESSOR_INFORMATION) {
       Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
       StrIndex = Type4Record->ProcessorVersion;
@@ -778,7 +778,7 @@ UpdateFrontPageStrings (
       HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
       FreePool (NewString);
       Find[2] = TRUE;
-    }    
+    }
 
     if (Record->Type == EFI_SMBIOS_TYPE_PROCESSOR_INFORMATION) {
       Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
@@ -787,7 +787,7 @@ UpdateFrontPageStrings (
       HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
       FreePool (NewString);
       Find[3] = TRUE;
-    } 
+    }
 
     if ( Record->Type == EFI_SMBIOS_TYPE_MEMORY_ARRAY_MAPPED_ADDRESS ) {
       Type19Record = (SMBIOS_TABLE_TYPE19 *) Record;
@@ -798,7 +798,7 @@ UpdateFrontPageStrings (
       TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_MEMORY_SIZE);
       HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
       FreePool (NewString);
-      Find[4] = TRUE;  
+      Find[4] = TRUE;
     }
   } while ( !(Find[0] && Find[1] && Find[2] && Find[3] && Find[4]));
   return ;
@@ -900,7 +900,7 @@ ShowProgress (
   SetMem (&Foreground, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
   SetMem (&Background, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0x0);
   SetMem (&Color, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
-  
+
   TmpStr = GetStringById (STRING_TOKEN (STR_START_BOOT_OPTION));
 
   if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
@@ -911,7 +911,7 @@ ShowProgress (
       PlatformBdsShowProgress (Foreground, Background, TmpStr, Color, 0, 0);
     }
   }
-  
+
 
   TimeoutRemain = TimeoutDefault;
   while (TimeoutRemain != 0) {
@@ -922,7 +922,7 @@ ShowProgress (
       break;
     }
     TimeoutRemain--;
-    
+
     if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
       //
       // Show progress
@@ -939,7 +939,7 @@ ShowProgress (
       }
     }
   }
-  
+
   if (TmpStr != NULL) {
     gBS->FreePool (TmpStr);
   }
@@ -990,7 +990,7 @@ PlatformBdsEnterFrontPage (
   )
 {
   EFI_STATUS                         Status;
-  EFI_STATUS                         StatusHotkey; 
+  EFI_STATUS                         StatusHotkey;
   EFI_BOOT_LOGO_PROTOCOL             *BootLogo;
   EFI_GRAPHICS_OUTPUT_PROTOCOL       *GraphicsOutput;
   EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL    *SimpleTextOut;
@@ -1013,7 +1013,7 @@ PlatformBdsEnterFrontPage (
 
   if (!mModeInitialized) {
     //
-    // After the console is ready, get current video resolution 
+    // After the console is ready, get current video resolution
     // and text mode before launching setup at first time.
     //
     Status = gBS->HandleProtocol (
@@ -1024,7 +1024,7 @@ PlatformBdsEnterFrontPage (
     if (EFI_ERROR (Status)) {
       GraphicsOutput = NULL;
     }
-    
+
     Status = gBS->HandleProtocol (
                     gST->ConsoleOutHandle,
                     &gEfiSimpleTextOutProtocolGuid,
@@ -1032,7 +1032,7 @@ PlatformBdsEnterFrontPage (
                     );
     if (EFI_ERROR (Status)) {
       SimpleTextOut = NULL;
-    }  
+    }
 
     if (GraphicsOutput != NULL) {
       //
@@ -1055,9 +1055,9 @@ PlatformBdsEnterFrontPage (
 
     //
     // Get user defined text mode for setup.
-    //  
+    //
     mSetupHorizontalResolution = PcdGet32 (PcdSetupVideoHorizontalResolution);
-    mSetupVerticalResolution   = PcdGet32 (PcdSetupVideoVerticalResolution);      
+    mSetupVerticalResolution   = PcdGet32 (PcdSetupVideoVerticalResolution);
     mSetupTextModeColumn       = PcdGet32 (PcdSetupConOutColumn);
     mSetupTextModeRow          = PcdGet32 (PcdSetupConOutRow);
 
@@ -1084,7 +1084,7 @@ PlatformBdsEnterFrontPage (
   if (!EFI_ERROR(Status) && ((OsIndication & EFI_OS_INDICATIONS_BOOT_TO_FW_UI) != 0)) {
     //
     // Clear EFI_OS_INDICATIONS_BOOT_TO_FW_UI to acknowledge OS
-    // 
+    //
     OsIndication &= ~((UINT64)EFI_OS_INDICATIONS_BOOT_TO_FW_UI);
     Status = gRT->SetVariable (
                     L"OsIndications",
@@ -1121,7 +1121,7 @@ PlatformBdsEnterFrontPage (
       if (!FeaturePcdGet(PcdBootlogoOnlyEnable) || !EFI_ERROR(Status) || !EFI_ERROR(StatusHotkey)){
         //
         // Ensure screen is clear when switch Console from Graphics mode to Text mode
-        // Skip it in normal boot 
+        // Skip it in normal boot
         //
         gST->ConOut->EnableCursor (gST->ConOut, TRUE);
         gST->ConOut->ClearScreen (gST->ConOut);
@@ -1145,8 +1145,8 @@ PlatformBdsEnterFrontPage (
   }
 
   //
-  // Install BM HiiPackages. 
-  // Keep BootMaint HiiPackage, so that it can be covered by global setting. 
+  // Install BM HiiPackages.
+  // Keep BootMaint HiiPackage, so that it can be covered by global setting.
   //
   InitBMPackage ();
 
@@ -1156,7 +1156,7 @@ PlatformBdsEnterFrontPage (
     // Set proper video resolution and text mode for setup
     //
     BdsSetConsoleMode (TRUE);
-    
+
     InitializeFrontPage (FALSE);
 
     //
@@ -1265,9 +1265,9 @@ Exit:
 
 /**
   This function will change video resolution and text mode
-  according to defined setup mode or defined boot mode  
+  according to defined setup mode or defined boot mode
 
-  @param  IsSetupMode   Indicate mode is changed to setup mode or boot mode. 
+  @param  IsSetupMode   Indicate mode is changed to setup mode or boot mode.
 
   @retval  EFI_SUCCESS  Mode is changed successfully.
   @retval  Others             Mode failed to be changed.
@@ -1295,13 +1295,13 @@ BdsSetConsoleMode (
   EFI_STATUS                            Status;
   UINTN                                 Index;
   UINTN                                 CurrentColumn;
-  UINTN                                 CurrentRow;  
+  UINTN                                 CurrentRow;
 
   MaxGopMode  = 0;
   MaxTextMode = 0;
 
   //
-  // Get current video resolution and text mode 
+  // Get current video resolution and text mode
   //
   Status = gBS->HandleProtocol (
                   gST->ConsoleOutHandle,
@@ -1319,7 +1319,7 @@ BdsSetConsoleMode (
                   );
   if (EFI_ERROR (Status)) {
     SimpleTextOut = NULL;
-  }  
+  }
 
   if ((GraphicsOutput == NULL) || (SimpleTextOut == NULL)) {
     return EFI_UNSUPPORTED;
@@ -1340,12 +1340,12 @@ BdsSetConsoleMode (
     NewHorizontalResolution = mBootHorizontalResolution;
     NewVerticalResolution   = mBootVerticalResolution;
     NewColumns              = mBootTextModeColumn;
-    NewRows                 = mBootTextModeRow;   
+    NewRows                 = mBootTextModeRow;
   }
-  
+
   if (GraphicsOutput != NULL) {
     MaxGopMode  = GraphicsOutput->Mode->MaxMode;
-  } 
+  }
 
   if (SimpleTextOut != NULL) {
     MaxTextMode = SimpleTextOut->Mode->MaxMode;
@@ -1443,8 +1443,8 @@ BdsSetConsoleMode (
   PcdSet32 (PcdVideoVerticalResolution, NewVerticalResolution);
   PcdSet32 (PcdConOutColumn, NewColumns);
   PcdSet32 (PcdConOutRow, NewRows);
-  
-  
+
+
   //
   // Video mode is changed, so restart graphics console driver and higher level driver.
   // Reconnect graphics console driver and higher level driver.

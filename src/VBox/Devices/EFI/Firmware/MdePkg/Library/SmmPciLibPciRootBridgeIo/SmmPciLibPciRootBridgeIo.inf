@@ -49,7 +49,7 @@
 
 [Protocols]
   gEfiSmmPciRootBridgeIoProtocolGuid               ## CONSUMES
-  
+
 [Depex.common.DXE_SMM_DRIVER]
   gEfiSmmPciRootBridgeIoProtocolGuid
 

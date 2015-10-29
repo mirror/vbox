@@ -10,7 +10,7 @@ http://opensource.org/licenses/bsd-license.php
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
-**/ 
+**/
 
 #include "PciHostBridge.h"
 
@@ -39,7 +39,7 @@ EFI_PCI_ROOT_BRIDGE_DEVICE_PATH mEfiPciRootBridgeDevicePath[1][1] = {
         EISA_PNP_ID(0x0A03),
         0
       },
-  
+
       {
         END_DEVICE_PATH_TYPE,
         END_ENTIRE_DEVICE_PATH_SUBTYPE,
@@ -103,9 +103,9 @@ InitializePciHostBridge (
   UINTN                       Loop2;
   PCI_HOST_BRIDGE_INSTANCE    *HostBridge;
   PCI_ROOT_BRIDGE_INSTANCE    *PrivateData;
- 
+
   mDriverImageHandle = ImageHandle;
-  
+
   //
   // Create Host Bridge Device Handle
   //
@@ -114,12 +114,12 @@ InitializePciHostBridge (
     if (HostBridge == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
-  
+
     HostBridge->RootBridgeNumber = RootBridgeNumber[Loop1];
     InitializeListHead (&HostBridge->Head);
 
     Status = gBS->InstallMultipleProtocolInterfaces (
-                    &HostBridge->HostBridgeHandle,              
+                    &HostBridge->HostBridgeHandle,
                     &gEfiPciHostBridgeResourceAllocationProtocolGuid, &HostBridge->ResAlloc,
                     NULL
                     );
@@ -127,11 +127,11 @@ InitializePciHostBridge (
       FreePool (HostBridge);
       return EFI_DEVICE_ERROR;
     }
-  
+
     //
     // Create Root Bridge Device Handle in this Host Bridge
     //
-  
+
     for (Loop2 = 0; Loop2 < HostBridge->RootBridgeNumber; Loop2++) {
       PrivateData = AllocateZeroPool (sizeof(PCI_ROOT_BRIDGE_INSTANCE));
       if (PrivateData == NULL) {
@@ -142,14 +142,14 @@ InitializePciHostBridge (
       PrivateData->DevicePath = (EFI_DEVICE_PATH_PROTOCOL *)&mEfiPciRootBridgeDevicePath[Loop1][Loop2];
 
       RootBridgeConstructor (
-        &PrivateData->Io, 
-        HostBridge->HostBridgeHandle, 
-        RootBridgeAttribute[Loop1][Loop2], 
+        &PrivateData->Io,
+        HostBridge->HostBridgeHandle,
+        RootBridgeAttribute[Loop1][Loop2],
         &mResAppeture[Loop1][Loop2]
         );
-    
+
       Status = gBS->InstallMultipleProtocolInterfaces(
-                      &PrivateData->Handle,              
+                      &PrivateData->Handle,
                       &gEfiDevicePathProtocolGuid,      PrivateData->DevicePath,
                       &gEfiPciRootBridgeIoProtocolGuid, &PrivateData->Io,
                       NULL
@@ -158,10 +158,10 @@ InitializePciHostBridge (
         FreePool(PrivateData);
         return EFI_DEVICE_ERROR;
       }
- 
+
       InsertTailList (&HostBridge->Head, &PrivateData->Link);
     }
-  } 
+  }
 
   return EFI_SUCCESS;
 }
@@ -247,18 +247,18 @@ NotifyPhase(
   UINTN                                 BitsOfAlignment;
   EFI_STATUS                            Status;
   EFI_STATUS                            ReturnStatus;
-  
+
   HostBridgeInstance = INSTANCE_FROM_RESOURCE_ALLOCATION_THIS (This);
-  
+
   switch (Phase) {
 
   case EfiPciHostBridgeBeginEnumeration:
     if (HostBridgeInstance->CanRestarted) {
       //
-      // Reset the Each Root Bridge 
+      // Reset the Each Root Bridge
       //
       List = HostBridgeInstance->Head.ForwardLink;
-  
+
       while (List != &HostBridgeInstance->Head) {
         RootBridgeInstance = DRIVER_INSTANCE_FROM_LIST_ENTRY (List);
         for (Index = TypeIo; Index < TypeMax; Index++) {
@@ -267,18 +267,18 @@ NotifyPhase(
           RootBridgeInstance->ResAllocNode[Index].Length    = 0;
           RootBridgeInstance->ResAllocNode[Index].Status    = ResNone;
         }
-          
+
         List = List->ForwardLink;
       }
-        
+
       HostBridgeInstance->ResourceSubmited = FALSE;
       HostBridgeInstance->CanRestarted     = TRUE;
     } else {
       //
       // Can not restart
-      // 
+      //
       return EFI_NOT_READY;
-    }  
+    }
     break;
 
   case EfiPciHostBridgeEndEnumeration:
@@ -309,7 +309,7 @@ NotifyPhase(
     ReturnStatus = EFI_SUCCESS;
     if (HostBridgeInstance->ResourceSubmited) {
       //
-      // Take care of the resource dependencies between the root bridges 
+      // Take care of the resource dependencies between the root bridges
       //
       List = HostBridgeInstance->Head.ForwardLink;
 
@@ -317,17 +317,17 @@ NotifyPhase(
         RootBridgeInstance = DRIVER_INSTANCE_FROM_LIST_ENTRY (List);
         for (Index = TypeIo; Index < TypeBus; Index++) {
           if (RootBridgeInstance->ResAllocNode[Index].Status != ResNone) {
-                                        
+
             AddrLen = RootBridgeInstance->ResAllocNode[Index].Length;
-            
+
             //
             // Get the number of '1' in Alignment.
             //
             BitsOfAlignment = (UINTN) (HighBitSet64 (RootBridgeInstance->ResAllocNode[Index].Alignment) + 1);
-                                  
+
             switch (Index) {
 
-              case TypeIo:  
+              case TypeIo:
                 //
                 // It is impossible for this chipset to align 0xFFFF for IO16
                 // So clear it
@@ -335,22 +335,22 @@ NotifyPhase(
                 if (BitsOfAlignment >= 16) {
                   BitsOfAlignment = 0;
                 }
-                  
+
                 Status = gDS->AllocateIoSpace (
-                                EfiGcdAllocateAnySearchBottomUp, 
-                                EfiGcdIoTypeIo, 
+                                EfiGcdAllocateAnySearchBottomUp,
+                                EfiGcdIoTypeIo,
                                 BitsOfAlignment,
                                 AddrLen,
                                 &BaseAddress,
                                 mDriverImageHandle,
                                 NULL
                                 );
-                 
+
                 if (!EFI_ERROR (Status)) {
                   RootBridgeInstance->ResAllocNode[Index].Base   = (UINTN)BaseAddress;
-                  RootBridgeInstance->ResAllocNode[Index].Status = ResAllocated; 
+                  RootBridgeInstance->ResAllocNode[Index].Status = ResAllocated;
                 } else {
-                  ReturnStatus = Status;  
+                  ReturnStatus = Status;
                   if (Status != EFI_OUT_OF_RESOURCES) {
                     RootBridgeInstance->ResAllocNode[Index].Length = 0;
                   }
@@ -362,54 +362,54 @@ NotifyPhase(
               case TypeMem32:
                 //
                 // It is impossible for this chipset to align 0xFFFFFFFF for Mem32
-                // So clear it 
+                // So clear it
                 //
-                  
+
                 if (BitsOfAlignment >= 32) {
                   BitsOfAlignment = 0;
                 }
-                  
+
                 Status = gDS->AllocateMemorySpace (
-                                EfiGcdAllocateAnySearchBottomUp, 
-                                EfiGcdMemoryTypeMemoryMappedIo, 
+                                EfiGcdAllocateAnySearchBottomUp,
+                                EfiGcdMemoryTypeMemoryMappedIo,
                                 BitsOfAlignment,
                                 AddrLen,
                                 &BaseAddress,
                                 mDriverImageHandle,
                                 NULL
                                 );
-                  
+
                 if (!EFI_ERROR (Status)) {
                   // We were able to allocate the PCI memory
                   RootBridgeInstance->ResAllocNode[Index].Base   = (UINTN)BaseAddress;
                   RootBridgeInstance->ResAllocNode[Index].Status = ResAllocated;
-                    
+
                 } else {
                   // Not able to allocate enough PCI memory
-                  ReturnStatus = Status;  
-                    
+                  ReturnStatus = Status;
+
                   if (Status != EFI_OUT_OF_RESOURCES) {
                     RootBridgeInstance->ResAllocNode[Index].Length = 0;
-                  } 
+                  }
                   ASSERT (FALSE);
                 }
                 break;
-                  
-              case TypePMem32:                  
-              case TypeMem64:                  
+
+              case TypePMem32:
+              case TypeMem64:
               case TypePMem64:
                   ReturnStatus = EFI_ABORTED;
-                  break;  
+                  break;
               default:
                 ASSERT (FALSE);
                 break;
               }; //end switch
           }
         }
-          
+
         List = List->ForwardLink;
       }
-        
+
       return ReturnStatus;
 
     } else {
@@ -431,8 +431,8 @@ NotifyPhase(
           BaseAddress = RootBridgeInstance->ResAllocNode[Index].Base;
           switch (Index) {
 
-          case TypeIo:  
-            Status = gDS->FreeIoSpace (BaseAddress, AddrLen);                
+          case TypeIo:
+            Status = gDS->FreeIoSpace (BaseAddress, AddrLen);
             if (EFI_ERROR (Status)) {
               ReturnStatus = Status;
             }
@@ -452,7 +452,7 @@ NotifyPhase(
             break;
 
           case TypePMem64:
-            break; 
+            break;
 
           default:
             ASSERT (FALSE);
@@ -465,12 +465,12 @@ NotifyPhase(
           RootBridgeInstance->ResAllocNode[Index].Status    = ResNone;
         }
       }
-        
+
       List = List->ForwardLink;
     }
-              
+
     HostBridgeInstance->ResourceSubmited = FALSE;
-    HostBridgeInstance->CanRestarted     = TRUE;      
+    HostBridgeInstance->CanRestarted     = TRUE;
     return ReturnStatus;
 
   case EfiPciHostBridgeEndResourceAllocation:
@@ -480,8 +480,8 @@ NotifyPhase(
   default:
     return EFI_INVALID_PARAMETER;
   }
-  
-  return EFI_SUCCESS;  
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -499,9 +499,9 @@ NotifyPhase(
 
    @param[in]       This              The instance pointer of EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
    @param[in, out]  RootBridgeHandle  Returns the device handle of the next PCI root bridge.
-   
+
    @retval EFI_SUCCESS            If parameter RootBridgeHandle = NULL, then return the first Rootbridge handle of the
-                                  specific Host bridge and return EFI_SUCCESS. 
+                                  specific Host bridge and return EFI_SUCCESS.
    @retval EFI_NOT_FOUND          Can not find the any more root bridge in specific host bridge.
    @retval EFI_INVALID_PARAMETER  RootBridgeHandle is not an EFI_HANDLE that was
                                   returned on a previous call to GetNextRootBridge().
@@ -513,16 +513,16 @@ GetNextRootBridge(
   IN OUT   EFI_HANDLE                                       *RootBridgeHandle
   )
 {
-  BOOLEAN                               NoRootBridge; 
-  LIST_ENTRY                            *List; 
+  BOOLEAN                               NoRootBridge;
+  LIST_ENTRY                            *List;
   PCI_HOST_BRIDGE_INSTANCE              *HostBridgeInstance;
   PCI_ROOT_BRIDGE_INSTANCE              *RootBridgeInstance;
-  
+
   NoRootBridge = TRUE;
   HostBridgeInstance = INSTANCE_FROM_RESOURCE_ALLOCATION_THIS (This);
   List = HostBridgeInstance->Head.ForwardLink;
-  
-  
+
+
   while (List != &HostBridgeInstance->Head) {
     NoRootBridge = FALSE;
     RootBridgeInstance = DRIVER_INSTANCE_FROM_LIST_ENTRY (List);
@@ -541,16 +541,16 @@ GetNextRootBridge(
         if (List!=&HostBridgeInstance->Head) {
           RootBridgeInstance = DRIVER_INSTANCE_FROM_LIST_ENTRY (List);
           *RootBridgeHandle = RootBridgeInstance->Handle;
-          return EFI_SUCCESS;  
+          return EFI_SUCCESS;
         } else {
           return EFI_NOT_FOUND;
         }
       }
     }
-      
+
     List = List->ForwardLink;
   } //end while
-  
+
   if (NoRootBridge) {
     return EFI_NOT_FOUND;
   } else {
@@ -568,11 +568,11 @@ GetNextRootBridge(
    handles of all the root bridges that are associated with this host bridge must be obtained by calling
    GetNextRootBridge(). The attributes are static in the sense that they do not change during or
    after the enumeration process. The hardware may provide mechanisms to change the attributes on
-   the fly, but such changes must be completed before EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL is 
+   the fly, but such changes must be completed before EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL is
    installed. The permitted values of EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_ATTRIBUTES are defined in
    "Related Definitions" below. The caller uses these attributes to combine multiple resource requests.
-   For example, if the flag EFI_PCI_HOST_BRIDGE_COMBINE_MEM_PMEM is set, the PCI bus enumerator needs to 
-   include requests for the prefetchable memory in the nonprefetchable memory pool and not request any 
+   For example, if the flag EFI_PCI_HOST_BRIDGE_COMBINE_MEM_PMEM is set, the PCI bus enumerator needs to
+   include requests for the prefetchable memory in the nonprefetchable memory pool and not request any
    prefetchable memory.
       Attribute                                 Description
    ------------------------------------         ----------------------------------------------------------------------
@@ -590,7 +590,7 @@ GetNextRootBridge(
    @param[in]   RootBridgeHandle   The device handle of the PCI root bridge in which the caller is interested. Type
                                    EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI 2.0 Specification.
    @param[out]  Attributes         The pointer to attribte of root bridge, it is output parameter
-   
+
    @retval EFI_INVALID_PARAMETER   Attribute pointer is NULL
    @retval EFI_INVALID_PARAMETER   RootBridgehandle is invalid.
    @retval EFI_SUCCESS             Success to get attribute of interested root bridge.
@@ -604,17 +604,17 @@ GetAttributes(
   OUT UINT64                                           *Attributes
   )
 {
-  LIST_ENTRY                            *List; 
+  LIST_ENTRY                            *List;
   PCI_HOST_BRIDGE_INSTANCE              *HostBridgeInstance;
   PCI_ROOT_BRIDGE_INSTANCE              *RootBridgeInstance;
-  
+
   if (Attributes == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   HostBridgeInstance = INSTANCE_FROM_RESOURCE_ALLOCATION_THIS (This);
   List = HostBridgeInstance->Head.ForwardLink;
-  
+
   while (List != &HostBridgeInstance->Head) {
     RootBridgeInstance = DRIVER_INSTANCE_FROM_LIST_ENTRY (List);
     if (RootBridgeHandle == RootBridgeInstance->Handle) {
@@ -623,9 +623,9 @@ GetAttributes(
     }
     List = List->ForwardLink;
   }
-  
+
   //
-  // RootBridgeHandle is not an EFI_HANDLE 
+  // RootBridgeHandle is not an EFI_HANDLE
   // that was returned on a previous call to GetNextRootBridge()
   //
   return EFI_INVALID_PARAMETER;
@@ -640,7 +640,7 @@ GetAttributes(
    @param[in]   This              The EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_ PROTOCOL instance.
    @param[in]   RootBridgeHandle  The PCI Root Bridge to be set up.
    @param[out]  Configuration     Pointer to the pointer to the PCI bus resource descriptor.
-   
+
    @retval EFI_INVALID_PARAMETER Invalid Root bridge's handle
    @retval EFI_OUT_OF_RESOURCES  Fail to allocate ACPI resource descriptor tag.
    @retval EFI_SUCCESS           Sucess to allocate ACPI resource descriptor.
@@ -654,17 +654,17 @@ StartBusEnumeration(
   OUT VOID                                             **Configuration
   )
 {
-  LIST_ENTRY                            *List; 
+  LIST_ENTRY                            *List;
   PCI_HOST_BRIDGE_INSTANCE              *HostBridgeInstance;
   PCI_ROOT_BRIDGE_INSTANCE              *RootBridgeInstance;
   VOID                                  *Buffer;
   UINT8                                 *Temp;
   UINT64                                BusStart;
   UINT64                                BusEnd;
-  
+
   HostBridgeInstance = INSTANCE_FROM_RESOURCE_ALLOCATION_THIS (This);
   List = HostBridgeInstance->Head.ForwardLink;
-  
+
   while (List != &HostBridgeInstance->Head) {
     RootBridgeInstance = DRIVER_INSTANCE_FROM_LIST_ENTRY (List);
     if (RootBridgeHandle == RootBridgeInstance->Handle) {
@@ -676,35 +676,35 @@ StartBusEnumeration(
       //
       // Program the Hardware(if needed) if error return EFI_DEVICE_ERROR
       //
-      
+
       Buffer = AllocatePool (sizeof(EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) + sizeof(EFI_ACPI_END_TAG_DESCRIPTOR));
       if (Buffer == NULL) {
         return EFI_OUT_OF_RESOURCES;
       }
-      
+
       Temp = (UINT8 *)Buffer;
-      
+
       ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->Desc = 0x8A;
       ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->Len  = 0x2B;
       ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->ResType = 2;
-      ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->GenFlag = 0; 
+      ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->GenFlag = 0;
       ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->SpecificFlag = 0;
       ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->AddrSpaceGranularity = 0;
       ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->AddrRangeMin = BusStart;
       ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->AddrRangeMax = 0;
-      ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->AddrTranslationOffset = 0;       
+      ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->AddrTranslationOffset = 0;
       ((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Temp)->AddrLen = BusEnd - BusStart + 1;
-      
+
       Temp = Temp + sizeof(EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR);
-      ((EFI_ACPI_END_TAG_DESCRIPTOR *)Temp)->Desc = 0x79;      
+      ((EFI_ACPI_END_TAG_DESCRIPTOR *)Temp)->Desc = 0x79;
       ((EFI_ACPI_END_TAG_DESCRIPTOR *)Temp)->Checksum = 0x0;
-      
-      *Configuration = Buffer;      
+
+      *Configuration = Buffer;
       return EFI_SUCCESS;
     }
     List = List->ForwardLink;
   }
-  
+
   return EFI_INVALID_PARAMETER;
 }
 
@@ -718,12 +718,12 @@ StartBusEnumeration(
    @param[in] This              The EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_ PROTOCOL instance
    @param[in] RootBridgeHandle  The PCI Root Bridge whose bus range is to be programmed
    @param[in] Configuration     The pointer to the PCI bus resource descriptor
-   
+
    @retval EFI_INVALID_PARAMETER  RootBridgeHandle is not a valid root bridge handle.
    @retval EFI_INVALID_PARAMETER  Configuration is NULL.
    @retval EFI_INVALID_PARAMETER  Configuration does not point to a valid ACPI 2.0 resource descriptor.
    @retval EFI_INVALID_PARAMETER  Configuration does not include a valid ACPI 2.0 bus resource descriptor.
-   @retval EFI_INVALID_PARAMETER  Configuration includes valid ACPI 2.0 resource descriptors other than 
+   @retval EFI_INVALID_PARAMETER  Configuration includes valid ACPI 2.0 resource descriptors other than
                                   bus descriptors.
    @retval EFI_INVALID_PARAMETER  Configuration contains one or more invalid ACPI resource descriptors.
    @retval EFI_INVALID_PARAMETER  "Address Range Minimum" is invalid for this root bridge.
@@ -740,27 +740,27 @@ SetBusNumbers(
   IN VOID                                             *Configuration
   )
 {
-  LIST_ENTRY                            *List; 
+  LIST_ENTRY                            *List;
   PCI_HOST_BRIDGE_INSTANCE              *HostBridgeInstance;
   PCI_ROOT_BRIDGE_INSTANCE              *RootBridgeInstance;
   UINT8                                 *Ptr;
   UINTN                                 BusStart;
   UINTN                                 BusEnd;
   UINTN                                 BusLen;
-  
+
   if (Configuration == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-    
+
   Ptr = Configuration;
-  
+
   //
   // Check the Configuration is valid
   //
   if(*Ptr != ACPI_ADDRESS_SPACE_DESCRIPTOR) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if (((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Ptr)->ResType != 2) {
     return EFI_INVALID_PARAMETER;
   }
@@ -769,44 +769,44 @@ SetBusNumbers(
   if (*Ptr != ACPI_END_TAG_DESCRIPTOR) {
     return EFI_INVALID_PARAMETER;
   }
-   
+
   HostBridgeInstance = INSTANCE_FROM_RESOURCE_ALLOCATION_THIS (This);
   List = HostBridgeInstance->Head.ForwardLink;
-  
+
   Ptr = Configuration;
-  
+
   while (List != &HostBridgeInstance->Head) {
     RootBridgeInstance = DRIVER_INSTANCE_FROM_LIST_ENTRY (List);
     if (RootBridgeHandle == RootBridgeInstance->Handle) {
       BusStart = (UINTN)((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Ptr)->AddrRangeMin;
       BusLen = (UINTN)((EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Ptr)->AddrLen;
       BusEnd = BusStart + BusLen - 1;
-      
+
       if (BusStart > BusEnd) {
         return EFI_INVALID_PARAMETER;
       }
-      
+
       if ((BusStart < RootBridgeInstance->BusBase) || (BusEnd > RootBridgeInstance->BusLimit)) {
         return EFI_INVALID_PARAMETER;
       }
-      
+
       //
       // Update the Bus Range
       //
       RootBridgeInstance->ResAllocNode[TypeBus].Base   = BusStart;
       RootBridgeInstance->ResAllocNode[TypeBus].Length = BusLen;
       RootBridgeInstance->ResAllocNode[TypeBus].Status = ResAllocated;
-      
+
       //
       // Program the Root Bridge Hardware
       //
-       
+
       return EFI_SUCCESS;
     }
-    
+
     List = List->ForwardLink;
   }
-  
+
   return EFI_INVALID_PARAMETER;
 }
 
@@ -822,13 +822,13 @@ SetBusNumbers(
    @param[in] This              Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
    @param[in] RootBridgeHandle  The PCI root bridge whose I/O and memory resource requirements are being submitted.
    @param[in] Configuration     The pointer to the PCI I/O and PCI memory resource descriptor.
-   
+
    @retval EFI_SUCCESS            The I/O and memory resource requests for a PCI root bridge were accepted.
    @retval EFI_INVALID_PARAMETER  RootBridgeHandle is not a valid root bridge handle.
    @retval EFI_INVALID_PARAMETER  Configuration is NULL.
    @retval EFI_INVALID_PARAMETER  Configuration does not point to a valid ACPI 2.0 resource descriptor.
-   @retval EFI_INVALID_PARAMETER  Configuration includes requests for one or more resource types that are 
-                                  not supported by this PCI root bridge. This error will happen if the caller 
+   @retval EFI_INVALID_PARAMETER  Configuration includes requests for one or more resource types that are
+                                  not supported by this PCI root bridge. This error will happen if the caller
                                   did not combine resources according to Attributes that were returned by
                                   GetAllocAttributes().
    @retval EFI_INVALID_PARAMETER  Address Range Maximum" is invalid.
@@ -844,32 +844,32 @@ SubmitResources(
   IN VOID                                             *Configuration
   )
 {
-  LIST_ENTRY                            *List; 
+  LIST_ENTRY                            *List;
   PCI_HOST_BRIDGE_INSTANCE              *HostBridgeInstance;
   PCI_ROOT_BRIDGE_INSTANCE              *RootBridgeInstance;
   UINT8                                 *Temp;
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR     *Ptr;
   UINT64                                AddrLen;
   UINT64                                Alignment;
-  
+
   //
   // Check the input parameter: Configuration
   //
   if (Configuration == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   HostBridgeInstance = INSTANCE_FROM_RESOURCE_ALLOCATION_THIS (This);
   List = HostBridgeInstance->Head.ForwardLink;
-  
+
   Temp = (UINT8 *)Configuration;
-  while ( *Temp == 0x8A) { 
+  while ( *Temp == 0x8A) {
     Temp += sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) ;
   }
   if (*Temp != 0x79) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   Temp = (UINT8 *)Configuration;
   while (List != &HostBridgeInstance->Head) {
     RootBridgeInstance = DRIVER_INSTANCE_FROM_LIST_ENTRY (List);
@@ -890,18 +890,18 @@ SubmitResources(
         if (Ptr->AddrRangeMax >= 0xffffffff || Ptr->AddrRangeMax != (GetPowerOfTwo64 (Ptr->AddrRangeMax + 1) - 1)) {
           return EFI_INVALID_PARAMETER;
         }
-        
+
         switch (Ptr->ResType) {
 
         case 0:
-            
+
           //
           // Check invalid Address Sapce Granularity
           //
           if (Ptr->AddrSpaceGranularity != 32) {
             return EFI_INVALID_PARAMETER;
           }
-            
+
           //
           // check the memory resource request is supported by PCI root bridge
           //
@@ -909,7 +909,7 @@ SubmitResources(
                Ptr->SpecificFlag == 0x06) {
             return EFI_INVALID_PARAMETER;
           }
-            
+
           AddrLen = Ptr->AddrLen;
           Alignment = Ptr->AddrRangeMax;
           if (Ptr->AddrSpaceGranularity == 32) {
@@ -921,7 +921,7 @@ SubmitResources(
             } else {
               RootBridgeInstance->ResAllocNode[TypeMem32].Length = AddrLen;
               RootBridgeInstance->ResAllocNode[TypeMem32].Alignment = Alignment;
-              RootBridgeInstance->ResAllocNode[TypeMem32].Status = ResRequested; 
+              RootBridgeInstance->ResAllocNode[TypeMem32].Status = ResRequested;
               HostBridgeInstance->ResourceSubmited = TRUE;
             }
           }
@@ -941,22 +941,22 @@ SubmitResources(
           RootBridgeInstance->ResAllocNode[TypeIo].Length  = AddrLen;
           RootBridgeInstance->ResAllocNode[TypeIo].Alignment = Alignment;
           RootBridgeInstance->ResAllocNode[TypeIo].Status  = ResRequested;
-          HostBridgeInstance->ResourceSubmited = TRUE; 
+          HostBridgeInstance->ResourceSubmited = TRUE;
           break;
 
         default:
             break;
         };
-    
+
         Temp += sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) ;
-      } 
-      
+      }
+
       return EFI_SUCCESS;
     }
-    
+
     List = List->ForwardLink;
   }
-  
+
   return EFI_INVALID_PARAMETER;
 }
 
@@ -973,7 +973,7 @@ SubmitResources(
    @param[in]  This              Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
    @param[in]  RootBridgeHandle  The PCI root bridge handle. Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI 2.0 Specification.
    @param[out] Configuration     The pointer to the pointer to the PCI I/O and memory resource descriptor.
-   
+
    @retval EFI_SUCCESS            The requested parameters were returned.
    @retval EFI_INVALID_PARAMETER  RootBridgeHandle is not a valid root bridge handle.
    @retval EFI_DEVICE_ERROR       Programming failed due to a hardware error.
@@ -988,16 +988,16 @@ GetProposedResources(
   OUT VOID                                             **Configuration
   )
 {
-  LIST_ENTRY                            *List; 
+  LIST_ENTRY                            *List;
   PCI_HOST_BRIDGE_INSTANCE              *HostBridgeInstance;
   PCI_ROOT_BRIDGE_INSTANCE              *RootBridgeInstance;
   UINTN                                 Index;
-  UINTN                                 Number; 
-  VOID                                  *Buffer; 
+  UINTN                                 Number;
+  VOID                                  *Buffer;
   UINT8                                 *Temp;
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR     *Ptr;
   UINT64                                ResStatus;
-    
+
   Buffer = NULL;
   Number = 0;
   //
@@ -1005,7 +1005,7 @@ GetProposedResources(
   //
   HostBridgeInstance = INSTANCE_FROM_RESOURCE_ALLOCATION_THIS (This);
   List = HostBridgeInstance->Head.ForwardLink;
-  
+
   //
   // Enumerate the root bridges in this host bridge
   //
@@ -1015,9 +1015,9 @@ GetProposedResources(
       for (Index = 0; Index < TypeBus; Index ++) {
         if (RootBridgeInstance->ResAllocNode[Index].Status != ResNone) {
           Number ++;
-        }  
+        }
       }
-      
+
       if (Number ==  0) {
         return EFI_INVALID_PARAMETER;
       }
@@ -1026,13 +1026,13 @@ GetProposedResources(
       if (Buffer == NULL) {
         return EFI_OUT_OF_RESOURCES;
       }
-      
+
       Temp = Buffer;
       for (Index = 0; Index < TypeBus; Index ++) {
         if (RootBridgeInstance->ResAllocNode[Index].Status != ResNone) {
           Ptr = (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *) Temp ;
           ResStatus = RootBridgeInstance->ResAllocNode[Index].Status;
-          
+
           switch (Index) {
 
           case TypeIo:
@@ -1042,7 +1042,7 @@ GetProposedResources(
             Ptr->Desc = 0x8A;
             Ptr->Len  = 0x2B;
             Ptr->ResType = 1;
-            Ptr->GenFlag = 0; 
+            Ptr->GenFlag = 0;
             Ptr->SpecificFlag = 0;
             Ptr->AddrRangeMin = RootBridgeInstance->ResAllocNode[Index].Base;
             Ptr->AddrRangeMax = 0;
@@ -1054,17 +1054,17 @@ GetProposedResources(
           case TypeMem32:
             //
             // Memory 32
-            // 
+            //
             Ptr->Desc = 0x8A;
             Ptr->Len  = 0x2B;
             Ptr->ResType = 0;
-            Ptr->GenFlag = 0; 
+            Ptr->GenFlag = 0;
             Ptr->SpecificFlag = 0;
             Ptr->AddrSpaceGranularity = 32;
             Ptr->AddrRangeMin = RootBridgeInstance->ResAllocNode[Index].Base;
             Ptr->AddrRangeMax = 0;
             Ptr->AddrTranslationOffset = \
-                 (ResStatus == ResAllocated) ? EFI_RESOURCE_SATISFIED : EFI_RESOURCE_LESS;              
+                 (ResStatus == ResAllocated) ? EFI_RESOURCE_SATISFIED : EFI_RESOURCE_LESS;
             Ptr->AddrLen = RootBridgeInstance->ResAllocNode[Index].Length;
             break;
 
@@ -1075,12 +1075,12 @@ GetProposedResources(
             Ptr->Desc = 0x8A;
             Ptr->Len  = 0x2B;
             Ptr->ResType = 0;
-            Ptr->GenFlag = 0; 
+            Ptr->GenFlag = 0;
             Ptr->SpecificFlag = 6;
             Ptr->AddrSpaceGranularity = 32;
             Ptr->AddrRangeMin = 0;
             Ptr->AddrRangeMax = 0;
-            Ptr->AddrTranslationOffset = EFI_RESOURCE_NONEXISTENT;       
+            Ptr->AddrTranslationOffset = EFI_RESOURCE_NONEXISTENT;
             Ptr->AddrLen = 0;
             break;
 
@@ -1091,12 +1091,12 @@ GetProposedResources(
             Ptr->Desc = 0x8A;
             Ptr->Len  = 0x2B;
             Ptr->ResType = 0;
-            Ptr->GenFlag = 0; 
+            Ptr->GenFlag = 0;
             Ptr->SpecificFlag = 0;
             Ptr->AddrSpaceGranularity = 64;
             Ptr->AddrRangeMin = 0;
             Ptr->AddrRangeMax = 0;
-            Ptr->AddrTranslationOffset = EFI_RESOURCE_NONEXISTENT;       
+            Ptr->AddrTranslationOffset = EFI_RESOURCE_NONEXISTENT;
             Ptr->AddrLen = 0;
             break;
 
@@ -1107,31 +1107,31 @@ GetProposedResources(
             Ptr->Desc = 0x8A;
             Ptr->Len  = 0x2B;
             Ptr->ResType = 0;
-            Ptr->GenFlag = 0; 
+            Ptr->GenFlag = 0;
             Ptr->SpecificFlag = 6;
             Ptr->AddrSpaceGranularity = 64;
             Ptr->AddrRangeMin = 0;
             Ptr->AddrRangeMax = 0;
-            Ptr->AddrTranslationOffset = EFI_RESOURCE_NONEXISTENT;       
+            Ptr->AddrTranslationOffset = EFI_RESOURCE_NONEXISTENT;
             Ptr->AddrLen = 0;
             break;
           };
-          
+
           Temp += sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR);
-        }  
+        }
       }
-      
-      ((EFI_ACPI_END_TAG_DESCRIPTOR *)Temp)->Desc = 0x79;      
+
+      ((EFI_ACPI_END_TAG_DESCRIPTOR *)Temp)->Desc = 0x79;
       ((EFI_ACPI_END_TAG_DESCRIPTOR *)Temp)->Checksum = 0x0;
-      
-      *Configuration = Buffer;      
-       
+
+      *Configuration = Buffer;
+
       return EFI_SUCCESS;
     }
-    
+
     List = List->ForwardLink;
   }
-  
+
   return EFI_INVALID_PARAMETER;
 }
 
@@ -1151,8 +1151,8 @@ GetProposedResources(
                             EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL member functions to access the PCI
                             configuration space of the device. See Table 12-1 in the UEFI 2.0 Specification for
                             the definition of EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS.
-   @param Phase             The phase of the PCI device enumeration. 
-   
+   @param Phase             The phase of the PCI device enumeration.
+
    @retval EFI_SUCCESS              The requested parameters were returned.
    @retval EFI_INVALID_PARAMETER    RootBridgeHandle is not a valid root bridge handle.
    @retval EFI_INVALID_PARAMETER    Phase is not a valid phase that is defined in
@@ -1173,7 +1173,7 @@ PreprocessController (
 {
   PCI_HOST_BRIDGE_INSTANCE              *HostBridgeInstance;
   PCI_ROOT_BRIDGE_INSTANCE              *RootBridgeInstance;
-  LIST_ENTRY                            *List; 
+  LIST_ENTRY                            *List;
 
   HostBridgeInstance = INSTANCE_FROM_RESOURCE_ALLOCATION_THIS (This);
   List = HostBridgeInstance->Head.ForwardLink;

@@ -12,13 +12,13 @@
   and start and end time values.
   Dp uses this information to group records in different ways.  It also uses
   timer information to calculate elapsed time for each measurement.
- 
+
   Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
- 
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -110,16 +110,16 @@ DumpStatistics( void )
   SHELL_FREE_NON_NULL (StringPtrUnknown);
 }
 
-/** 
+/**
   Dump performance data.
-  
+
   @param[in]  ImageHandle     The image handle.
   @param[in]  SystemTable     The system table.
-  
+
   @retval EFI_SUCCESS            Command completed successfully.
   @retval EFI_INVALID_PARAMETER  Command usage error.
   @retval value                  Unknown error.
-  
+
 **/
 SHELL_STATUS
 EFIAPI

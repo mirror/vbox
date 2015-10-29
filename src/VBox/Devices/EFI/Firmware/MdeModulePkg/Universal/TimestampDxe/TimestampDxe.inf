@@ -32,7 +32,7 @@
   MdePkg/MdePkg.dec
 
 [Sources]
-  TimestampDxe.c 
+  TimestampDxe.c
 
 [LibraryClasses]
   UefiBootServicesTableLib

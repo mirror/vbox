@@ -355,7 +355,7 @@ ON_ERROR:
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 
@@ -445,7 +445,7 @@ Dhcp4DriverBindingStop (
   if (!IsListEmpty (&DhcpSb->Children)) {
     //
     // Destroy all the children instances before destory the service.
-    //  
+    //
     List = &DhcpSb->Children;
     Status = NetDestroyLinkList (
                List,
@@ -481,7 +481,7 @@ Dhcp4DriverBindingStop (
       gDhcpControllerNameTable = NULL;
     }
     FreePool (DhcpSb);
-    
+
     Status = EFI_SUCCESS;
   }
 

@@ -65,7 +65,7 @@ FvGetVolumeAttributes (
                         unsuccessful return, FvAttributes is not
                         modified and the firmware volume
                         settings are not changed.
-  
+
   @retval EFI_SUCCESS             The requested firmware volume attributes
                                   were set and the resulting
                                   EFI_FV_ATTRIBUTES is returned in

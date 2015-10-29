@@ -18,7 +18,7 @@ from CommonClass import *
 ## ModuleHeaderClass
 #
 # This class defined header items used in Module file
-# 
+#
 # @param IdentificationClass:    Inherited from IdentificationClass class
 # @param CommonHeaderClass:      Inherited from CommonHeaderClass class
 # @param DefineClass:            Inherited from DefineClass class
@@ -85,7 +85,7 @@ class ModuleHeaderClass(IdentificationClass, CommonHeaderClass, DefineClass):
 ## ModuleSourceFileClass
 #
 # This class defined source file item used in Module file
-# 
+#
 # @param CommonClass:      Inherited from CommonClass class
 # @param SourceFile:       Input value for SourceFile, default is ''
 # @param TagName:          Input value for TagName, default is ''
@@ -111,7 +111,7 @@ class ModuleSourceFileClass(CommonClass):
 ## ModuleBinaryFileClass
 #
 # This class defined binary file item used in Module file
-# 
+#
 # @param CommonClass:    Inherited from CommonClass class
 # @param BinaryFile:     Input value for BinaryFile, default is ''
 # @param FileType:       Input value for FileType, default is ''
@@ -139,7 +139,7 @@ class ModuleBinaryFileClass(CommonClass):
 ## ModulePackageDependencyClass
 #
 # This class defined package dependency item used in Module file
-# 
+#
 # @param CommonClass:   Inherited from CommonClass class
 # @param DefineClass:   Input value for DefineClass class
 #
@@ -156,12 +156,12 @@ class ModulePackageDependencyClass(CommonClass, DefineClass):
         self.PackageGuid = ''
         self.Description = ''
         CommonClass.__init__(self)
-        DefineClass.__init__(self)       
+        DefineClass.__init__(self)
 
 ## ModuleLibraryClass
 #
 # This class defined library item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var Library:        To store value for Library
@@ -174,7 +174,7 @@ class ModuleLibraryClass(CommonClass):
 ## ModuleEventClass
 #
 # This class defined event item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var CName:          To store value for CName
@@ -182,17 +182,17 @@ class ModuleLibraryClass(CommonClass):
 # @var Type:           To store value for Type, selection scope is in below list
 #                      CREATE_EVENT | SIGNAL_EVENT
 #
-class ModuleEventClass(CommonClass):        
+class ModuleEventClass(CommonClass):
     def __init__(self):
         self.CName = ''
         self.GuidCName = ''
-        self.Type = ''                              
+        self.Type = ''
         CommonClass.__init__(self)
 
 ## ModuleHobClass
 #
 # This class defined hob item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var GuidCName:      To store value for GuidCName
@@ -208,7 +208,7 @@ class ModuleHobClass(CommonClass):
 ## ModuleVariableClass
 #
 # This class defined variable item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var GuidCName:      To store value for GuidCName
@@ -223,11 +223,11 @@ class ModuleVariableClass(CommonClass):
 ## ModuleBootModeClass
 #
 # This class defined boot mode item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var Name:           To store value for Name, selection scope is in below list
-#                      FULL | MINIMAL | NO_CHANGE | DIAGNOSTICS | DEFAULT | S2_RESUME | S3_RESUME | S4_RESUME | S5_RESUME | FLASH_UPDATE | RECOVERY_FULL | RECOVERY_MINIMAL | RECOVERY_NO_CHANGE | RECOVERY_DIAGNOSTICS | RECOVERY_DEFAULT | RECOVERY_S2_RESUME | RECOVERY_S3_RESUME | RECOVERY_S4_RESUME | RECOVERY_S5_RESUME | RECOVERY_FLASH_UPDATE 
+#                      FULL | MINIMAL | NO_CHANGE | DIAGNOSTICS | DEFAULT | S2_RESUME | S3_RESUME | S4_RESUME | S5_RESUME | FLASH_UPDATE | RECOVERY_FULL | RECOVERY_MINIMAL | RECOVERY_NO_CHANGE | RECOVERY_DIAGNOSTICS | RECOVERY_DEFAULT | RECOVERY_S2_RESUME | RECOVERY_S3_RESUME | RECOVERY_S4_RESUME | RECOVERY_S5_RESUME | RECOVERY_FLASH_UPDATE
 #
 class ModuleBootModeClass(CommonClass):
     def __init__(self):
@@ -237,7 +237,7 @@ class ModuleBootModeClass(CommonClass):
 ## ModuleSystemTableClass
 #
 # This class defined system table item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var CName:          To store value for CName
@@ -250,7 +250,7 @@ class ModuleSystemTableClass(CommonClass):
 ## ModuleDataHubClass
 #
 # This class defined data hub item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var CName:          To store value for CName
@@ -258,12 +258,12 @@ class ModuleSystemTableClass(CommonClass):
 class ModuleDataHubClass(CommonClass):
     def __init__(self):
         self.CName = ''
-        CommonClass.__init__(self)        
+        CommonClass.__init__(self)
 
 ## ModuleHiiPackageClass
 #
 # This class defined Hii package item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var CName:          To store value for CName
@@ -276,7 +276,7 @@ class ModuleHiiPackageClass(CommonClass):
 ## ModuleExternImageClass
 #
 # This class defined Extern Image item used in Module file
-# 
+#
 # @param object:           Inherited from object class
 #
 # @var ModuleEntryPoint:   To store value for ModuleEntryPoint
@@ -290,7 +290,7 @@ class ModuleExternImageClass(object):
 ## ModuleExternLibraryClass
 #
 # This class defined Extern Library item used in Module file
-# 
+#
 # @param object:     Inherited from object class
 #
 # @var Constructor:  To store value for Constructor
@@ -304,7 +304,7 @@ class ModuleExternLibraryClass(object):
 ## ModuleExternDriverClass
 #
 # This class defined Extern Driver item used in Module file
-# 
+#
 # @param object:       Inherited from object class
 #
 # @var DriverBinding:  To store value for DriverBinding
@@ -322,7 +322,7 @@ class ModuleExternDriverClass(object):
 ## ModuleExternCallBackClass
 #
 # This class defined Extern Call Back item used in Module file
-# 
+#
 # @param object:                      Inherited from object class
 #
 # @var SetVirtualAddressMapCallBack:  To store value for SetVirtualAddressMapCallBack
@@ -336,7 +336,7 @@ class ModuleExternCallBackClass(object):
 ## ModuleExternClass
 #
 # This class defined Extern used in Module file
-# 
+#
 # @param object:                      Inherited from object class
 #
 #
@@ -351,7 +351,7 @@ class ModuleExternClass(CommonClass):
 ## ModuleDepexClass
 #
 # This class defined depex item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 # @param DefineClass:  Input value for DefineClass class
 #
@@ -366,7 +366,7 @@ class ModuleDepexClass(CommonClass, DefineClass):
 ## ModuleNmakeClass
 #
 # This class defined nmake item used in Module file
-# 
+#
 # @param CommonClass:  Inherited from CommonClass class
 #
 # @var Name:           To store value for Name
@@ -381,7 +381,7 @@ class ModuleNmakeClass(CommonClass):
 ## ModuleClass
 #
 # This class defined a complete module item
-# 
+#
 # @param object:    Inherited from object class
 #
 # @var Header:               To store value for Header, it is a structure as
@@ -397,7 +397,7 @@ class ModuleNmakeClass(CommonClass):
 # @var NonProcessedFiles:    To store value for NonProcessedFiles, it is a list structure as
 #                            [ '', '', ...]
 # @var PackageDependencies:  To store value for PackageDependencies, it is a list structure as
-#                            [ ModulePackageDependencyClass, ... ] 
+#                            [ ModulePackageDependencyClass, ... ]
 # @var Nmake:                To store value for Nmake, it is a list structure as
 #                            [ ModuleNmakeClass, ... ]
 # @var Depex:                To store value for Depex, it is a list structure as
@@ -411,7 +411,7 @@ class ModuleNmakeClass(CommonClass):
 # @var Events:               To store value for Events, it is a list structure as
 #                            [ ModuleEventClass, ...]
 # @var Hobs:                 To store value for Hobs, it is a list structure as
-#                            [ ModuleHobClass, ...] 
+#                            [ ModuleHobClass, ...]
 # @var Variables:            To store value for Variables, it is a list structure as
 #                            [ ModuleVariableClass, ...]
 # @var BootModes:            To store value for BootModes, it is a list structure as

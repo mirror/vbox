@@ -62,7 +62,7 @@ UINTN CumulativeDays[2][14] = {
     31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30,
     31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31,
     31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30,
-    31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + 31 
+    31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + 31
   }
 };
 
@@ -91,12 +91,12 @@ time_t time (time_t *timer)
   //
   // Add in number of seconds for current Month, Day, Hour, Minute, Seconds, and TimeZone adjustment
   //
-  *timer = *timer + 
+  *timer = *timer +
            (time_t)((Time.TimeZone != EFI_UNSPECIFIED_TIMEZONE) ? (Time.TimeZone * 60) : 0) +
-           (time_t)(CumulativeDays[IsLeap(Time.Year)][Time.Month] * SECSPERDAY) + 
-           (time_t)(((Time.Day > 0) ? Time.Day - 1 : 0) * SECSPERDAY) + 
-           (time_t)(Time.Hour * SECSPERHOUR) + 
-           (time_t)(Time.Minute * 60) + 
+           (time_t)(CumulativeDays[IsLeap(Time.Year)][Time.Month] * SECSPERDAY) +
+           (time_t)(((Time.Day > 0) ? Time.Day - 1 : 0) * SECSPERDAY) +
+           (time_t)(Time.Hour * SECSPERHOUR) +
+           (time_t)(Time.Minute * 60) +
            (time_t)Time.Second;
 
   return *timer;

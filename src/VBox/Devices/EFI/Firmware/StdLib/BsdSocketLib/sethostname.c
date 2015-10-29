@@ -98,7 +98,7 @@ Returns:
     //
     memcpy ( pName, name, namelen );
     pName[ namelen ] = 0;
-  
+
     //
     //  Set the environment variable
     //

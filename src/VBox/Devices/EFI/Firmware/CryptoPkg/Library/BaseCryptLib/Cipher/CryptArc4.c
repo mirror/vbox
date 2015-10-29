@@ -66,7 +66,7 @@ Arc4Init (
 
   //
   // Check input parameters.
-  //  
+  //
   if (Arc4Context == NULL || Key == NULL || (KeySize < 5 || KeySize > 256)) {
     return FALSE;
   }
@@ -202,7 +202,7 @@ Arc4Reset (
   if (Arc4Context == NULL) {
     return FALSE;
   }
-  
+
   Rc4Key = (RC4_KEY *) Arc4Context;
 
   CopyMem (Rc4Key, Rc4Key + 1, sizeof (RC4_KEY));

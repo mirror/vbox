@@ -15,11 +15,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/CapsuleLib.h>
 
 /**
-  The firmware checks whether the capsule image is supported 
+  The firmware checks whether the capsule image is supported
   by the CapsuleGuid in CapsuleHeader or other specific information in capsule image.
-  
+
   @param  CapsuleHeader    Point to the UEFI capsule image to be checked.
-  
+
   @retval EFI_UNSUPPORTED  Input capsule is not supported by the firmware.
 **/
 EFI_STATUS
@@ -34,9 +34,9 @@ SupportCapsuleImage (
 /**
   The firmware specific implementation processes the capsule image
   if it recognized the format of this capsule image.
-  
-  @param  CapsuleHeader    Point to the UEFI capsule image to be processed. 
-   
+
+  @param  CapsuleHeader    Point to the UEFI capsule image to be processed.
+
   @retval EFI_UNSUPPORTED  Capsule image is not supported by the firmware.
 **/
 EFI_STATUS

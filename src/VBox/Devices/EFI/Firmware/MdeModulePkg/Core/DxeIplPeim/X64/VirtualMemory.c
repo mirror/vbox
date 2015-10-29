@@ -1,9 +1,9 @@
 /** @file
-  x64 Virtual Memory Management Services in the form of an IA-32 driver.  
+  x64 Virtual Memory Management Services in the form of an IA-32 driver.
   Used to establish a 1:1 Virtual to Physical Mapping that is required to
   enter Long Mode (x64 64-bit mode).
 
-  While we make a 1:1 mapping (identity mapping) for all physical pages 
+  While we make a 1:1 mapping (identity mapping) for all physical pages
   we still need to use the MTRR's to ensure that the cachability attributes
   for all memory regions is correct.
 
@@ -24,7 +24,7 @@ http://opensource.org/licenses/bsd-license.php
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
-**/  
+**/
 
 #include "DxeIpl.h"
 #include "VirtualMemory.h"
@@ -33,10 +33,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   Allocates and fills in the Page Directory and Page Table Entries to
   establish a 1:1 Virtual to Physical mapping.
 
-  @param  NumberOfProcessorPhysicalAddressBits  Number of processor address bits 
-                                                to use. Limits the number of page 
-                                                table entries  to the physical 
-                                                address space. 
+  @param  NumberOfProcessorPhysicalAddressBits  Number of processor address bits
+                                                to use. Limits the number of page
+                                                table entries  to the physical
+                                                address space.
 
   @return The address of 4 level page map.
 
@@ -45,7 +45,7 @@ UINTN
 CreateIdentityMappingPageTables (
   VOID
   )
-{  
+{
   UINT32                                        RegEax;
   UINT32                                        RegEdx;
   UINT8                                         PhysicalAddressBits;
@@ -112,7 +112,7 @@ CreateIdentityMappingPageTables (
   }
 
   //
-  // Pre-allocate big pages to avoid later allocations. 
+  // Pre-allocate big pages to avoid later allocations.
   //
   if (!Page1GSupport) {
     TotalPagesNum = (NumberOfPdpEntriesNeeded + 1) * NumberOfPml4EntriesNeeded + 1;
@@ -147,7 +147,7 @@ CreateIdentityMappingPageTables (
 
     if (Page1GSupport) {
       PageDirectory1GEntry = (VOID *) PageDirectoryPointerEntry;
-    
+
       for (IndexOfPageDirectoryEntries = 0; IndexOfPageDirectoryEntries < 512; IndexOfPageDirectoryEntries++, PageDirectory1GEntry++, PageAddress += SIZE_1GB) {
         //
         // Fill in the Page Directory entries
@@ -162,7 +162,7 @@ CreateIdentityMappingPageTables (
         //
         // Each Directory Pointer entries points to a page of Page Directory entires.
         // So allocate space for them and fill them in in the IndexOfPageDirectoryEntries loop.
-        //       
+        //
         PageDirectoryEntry = (VOID *) BigPageAddress;
         BigPageAddress += SIZE_4KB;
 

@@ -1,5 +1,5 @@
 ///** @file
-//  
+//
 //  Contains low level routines for the Virtual Machine implementation
 //  on an Itanium-based platform.
 //
@@ -8,10 +8,10 @@
 //  are licensed and made available under the terms and conditions of the BSD License
 //  which accompanies this distribution.  The full text of the license may be found at
 //  http://opensource.org/licenses/bsd-license.php
-//  
+//
 //  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 //  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
-//  
+//
 //**/
 
 .file  "EbcLowLevel.s"
@@ -129,11 +129,11 @@ PROCEDURE_EXIT(EbcAsmLLCALLEX)
 //  This instruction requires that we thunk out to external native
 //  code. On return, we restore the stack pointer to its original location.
 //  Destroys no working registers.  For IPF, at least 8 register slots
-//  must be allocated on the stack frame to support any number of 
+//  must be allocated on the stack frame to support any number of
 //  arguments beiung passed to the external native function.  The
 //  size of the stack frame is FramePtr - EbcSp.  If this size is less
 //  than 64-bytes, the amount of stack frame allocated is rounded up
-//  to 64-bytes 
+//  to 64-bytes
 //
 // Arguments On Entry :
 //    in0 = CallAddr     The function address.
@@ -172,9 +172,9 @@ PROCEDURE_ENTRY(EbcLLCALLEXNative)
   and   r12 = -0x10, r12          // Round sp down to the nearest 16-byte boundary
   mov   out1 = in1;;              // out1 = EbcSp
   mov   out0 = r12;;              // out0 = sp
-  adds  r12 = -0x8, r12           
+  adds  r12 = -0x8, r12
   (p0) br.call.dptk.many b0 = CopyMem;;      // CopyMem (sp, EbcSp, (FramePtr - EbcSp))
-  adds  r12 = 0x8, r12            
+  adds  r12 = 0x8, r12
 
   mov   out0 = in0;;              // out0 = CallAddr
   mov   out1 = r12;;              // out1 = sp

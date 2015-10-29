@@ -35,7 +35,7 @@ BootServicesTablePage (
   EFI_STATUS Status;
 
   DBG_ENTER ( );
-  
+
   //
   //  Send the boot services page
   //
@@ -57,7 +57,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // Task Priority Services
     //
@@ -77,7 +77,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // Memory Services
     //
@@ -121,7 +121,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // Event & Timer Services
     //
@@ -173,7 +173,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // Protocol Handler Services
     //
@@ -249,7 +249,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // Image Services
     //
@@ -293,7 +293,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // Miscellaneous Services
     //
@@ -321,7 +321,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // DriverSupport Services
     //
@@ -341,7 +341,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // Open and Close Protocol Services
     //
@@ -369,7 +369,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // Library Services
     //
@@ -413,7 +413,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // 32-bit CRC Services
     //
@@ -425,7 +425,7 @@ BootServicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     // Miscellaneous Services
     //
@@ -462,7 +462,7 @@ BootServicesTablePage (
                             pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

@@ -33,7 +33,7 @@ from Table.TableDsc import TableDsc
 # This class defined the build databse
 # During the phase of initialization, the database will create all tables and
 # insert all records of table DataModel
-# 
+#
 # @param object:      Inherited from object class
 # @param DbPath:      A string for the path of the ECC database
 #
@@ -54,7 +54,7 @@ class Database(object):
         self.TblInf = TableInf(self.Cur)
         self.TblDec = TableDec(self.Cur)
         self.TblDsc = TableDsc(self.Cur)
-    
+
     ## Initialize build database
     #
     # 1. Delete all old existing tables
@@ -69,7 +69,7 @@ class Database(object):
 #        self.TblDataModel.Drop()
 #        self.TblDsc.Drop()
 #        self.TblFile.Drop()
-        
+
         #
         # Create new tables
         #
@@ -78,7 +78,7 @@ class Database(object):
         self.TblInf.Create()
         self.TblDec.Create()
         self.TblDsc.Create()
-        
+
         #
         # Initialize table DataModel
         #
@@ -91,10 +91,10 @@ class Database(object):
     #
     def QueryTable(self, Table):
         Table.Query()
-    
+
     ## Close entire database
     #
-    # Commit all first 
+    # Commit all first
     # Close the connection and cursor
     #
     def Close(self):
@@ -110,10 +110,10 @@ class Database(object):
 if __name__ == '__main__':
     EdkLogger.Initialize()
     EdkLogger.SetLevel(EdkLogger.DEBUG_0)
-    
+
     Db = Database(DATABASE_PATH)
     Db.InitDatabase()
-    Db.QueryTable(Db.TblDataModel)   
+    Db.QueryTable(Db.TblDataModel)
     Db.QueryTable(Db.TblFile)
     Db.QueryTable(Db.TblDsc)
     Db.Close()

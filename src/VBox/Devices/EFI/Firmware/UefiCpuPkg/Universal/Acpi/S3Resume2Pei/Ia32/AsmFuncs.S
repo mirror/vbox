@@ -20,7 +20,7 @@
 .text
 
 #------------------------------------------------------------------------------
-# 
+#
 # VOID
 # EFIAPI
 # AsmSetDataSelectors (
@@ -34,5 +34,5 @@ ASM_PFX(AsmSetDataSelectors):
     movw    %ax, %ds
     movw    %ax, %es
     movw    %ax, %fs
-    movw    %ax, %gs 
+    movw    %ax, %gs
     ret

@@ -597,7 +597,7 @@ CoreInstallMultipleProtocolInterfaces (
       CoreUninstallProtocolInterface (*Handle, Protocol, Interface);
     }
     VA_END (Args);
-    
+
     *Handle = OldHandle;
   }
 
@@ -1293,7 +1293,7 @@ Done:
                                  form of EFI_OPEN_PROTOCOL_INFORMATION_ENTRY structures.
   @param  EntryCount             Number of EntryBuffer entries
 
-  @retval EFI_SUCCESS            The open protocol information was returned in EntryBuffer, 
+  @retval EFI_SUCCESS            The open protocol information was returned in EntryBuffer,
                                  and the number of entries was returned EntryCount.
   @retval EFI_NOT_FOUND          Handle does not support the protocol specified by Protocol.
   @retval EFI_OUT_OF_RESOURCES   There are not enough resources available to allocate EntryBuffer.

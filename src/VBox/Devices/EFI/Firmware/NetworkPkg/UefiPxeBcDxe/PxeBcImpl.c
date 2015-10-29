@@ -91,7 +91,7 @@ EfiPxeBcStart (
     if (EFI_ERROR (Status)) {
       goto ON_ERROR;
     }
-    
+
     //
     // Configure block size for TFTP as a default value to handle all link layers.
     //
@@ -136,7 +136,7 @@ EfiPxeBcStart (
     if (EFI_ERROR (Status)) {
       goto ON_ERROR;
     }
-    
+
     //
     // Configure block size for TFTP as a default value to handle all link layers.
     //
@@ -724,13 +724,13 @@ ON_EXIT:
   if (NewCreatedInfo != NULL && NewCreatedInfo != &DefaultInfo) {
     FreePool (NewCreatedInfo);
   }
-  
+
   if (Mode->UsingIpv6) {
     Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
   } else {
     Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
   }
-  
+
   //
   // Dhcp(), Discover(), and Mtftp() set the IP filter, and return with the IP
   // receive filter list emptied and the filter set to EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP.
@@ -1621,7 +1621,7 @@ EfiPxeBcSetIpFilter (
       // during the operation.
       //
       Private->Udp4Read->Configure (Private->Udp4Read, NULL);
-  
+
       //
       // Configure the UDP instance with the new configuration.
       //
@@ -1631,7 +1631,7 @@ EfiPxeBcSetIpFilter (
       if (EFI_ERROR (Status)) {
         return Status;
       }
-  
+
       //
       // In not Promiscuous mode, need to join the new multicast group.
       //
@@ -1660,7 +1660,7 @@ EfiPxeBcSetIpFilter (
       // during the operation.
       //
       Private->Udp6Read->Configure (Private->Udp6Read, NULL);
-  
+
       //
       // Configure the UDP instance with the new configuration.
       //
@@ -1669,7 +1669,7 @@ EfiPxeBcSetIpFilter (
       if (EFI_ERROR (Status)) {
         return Status;
       }
-  
+
       //
       // In not Promiscuous mode, need to join the new multicast group.
       //

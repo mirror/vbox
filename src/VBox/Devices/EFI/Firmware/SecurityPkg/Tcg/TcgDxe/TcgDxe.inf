@@ -57,7 +57,7 @@
   ## SOMETIMES_CONSUMES     ## SystemTable           # Smbios Table
   ## SOMETIMES_CONSUMES     ## GUID                  # Handoff Table for measurement.
   gEfiSmbiosTableGuid
-  
+
   gEfiGlobalVariableGuid                             ## SOMETIMES_CONSUMES  ## Variable:L"BootXXXX"
   gTcgEventEntryHobGuid                              ## SOMETIMES_CONSUMES  ## HOB
   gTpmErrorHobGuid                                   ## SOMETIMES_CONSUMES  ## HOB
@@ -69,7 +69,7 @@
   gEfiTcgProtocolGuid                                ## PRODUCES
   gEfiAcpiTableProtocolGuid                          ## NOTIFY
   gEfiMpServiceProtocolGuid                          ## SOMETIMES_CONSUMES
-  
+
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmPlatformClass              ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid               ## CONSUMES

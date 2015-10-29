@@ -2074,7 +2074,7 @@ ExtScsiPassThruPassThru (
       // no more sense key or number of sense keys exceeds predefined,
       // skip the loop.
       //
-      if ((PtrSenseData->Sense_Key == EFI_SCSI_SK_NO_SENSE) || 
+      if ((PtrSenseData->Sense_Key == EFI_SCSI_SK_NO_SENSE) ||
           (SenseDataLen + sizeof (EFI_SCSI_SENSE_DATA) > Packet->SenseDataLength)) {
         SenseReq = FALSE;
       }

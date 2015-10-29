@@ -1,8 +1,8 @@
 /** @file
-Prototypes for binder functions that allow common code to be written which then 
-links to implementation of these functions which is appropriate for the specific 
+Prototypes for binder functions that allow common code to be written which then
+links to implementation of these functions which is appropriate for the specific
 environment that they are running under.
-  
+
 Copyright (c) 1999 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License

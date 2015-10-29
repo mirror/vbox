@@ -72,9 +72,9 @@ SmmMemLibInternalCalculateMaximumSupportAddress (
   if (PhysicalAddressBits > 48) {
     PhysicalAddressBits = 48;
   }
-  
+
   //
-  // Save the maximum support address in one global variable  
+  // Save the maximum support address in one global variable
   //
   mSmmMemLibInternalMaximumSupportAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)(LShiftU64 (1, PhysicalAddressBits) - 1);
   DEBUG ((EFI_D_INFO, "mSmmMemLibInternalMaximumSupportAddress = 0x%lx\n", mSmmMemLibInternalMaximumSupportAddress));
@@ -97,7 +97,7 @@ SmmIsBufferOutsideSmmValid (
   )
 {
   UINTN  Index;
-  
+
   //
   // Check override.
   // NOTE: (B:0->L:4G) is invalid for IA32, but (B:1->L:4G-1)/(B:4G-1->L:1) is valid.
@@ -117,7 +117,7 @@ SmmIsBufferOutsideSmmValid (
       ));
     return FALSE;
   }
-  
+
   for (Index = 0; Index < mSmmMemLibInternalSmramCount; Index ++) {
     if (((Buffer >= mSmmMemLibInternalSmramRanges[Index].CpuStart) && (Buffer < mSmmMemLibInternalSmramRanges[Index].CpuStart + mSmmMemLibInternalSmramRanges[Index].PhysicalSize)) ||
         ((mSmmMemLibInternalSmramRanges[Index].CpuStart >= Buffer) && (mSmmMemLibInternalSmramRanges[Index].CpuStart < Buffer + Length))) {
@@ -181,7 +181,7 @@ SmmCopyMemToSmram (
   If the check passes, it copies memory and returns EFI_SUCCESS.
   If the check fails, it returns EFI_SECURITY_VIOLATION.
   The implementation must be reentrant.
-  
+
   @param  DestinationBuffer   The pointer to the destination buffer of the memory copy.
   @param  SourceBuffer        The pointer to the source buffer of the memory copy.
   @param  Length              The number of bytes to copy from SourceBuffer to DestinationBuffer.
@@ -214,7 +214,7 @@ SmmCopyMemFromSmram (
   If the check passes, it copies memory and returns EFI_SUCCESS.
   If the check fails, it returns EFI_SECURITY_VIOLATION.
   The implementation must be reentrant, and it must handle the case where source buffer overlaps destination buffer.
-  
+
   @param  DestinationBuffer   The pointer to the destination buffer of the memory copy.
   @param  SourceBuffer        The pointer to the source buffer of the memory copy.
   @param  Length              The number of bytes to copy from SourceBuffer to DestinationBuffer.
@@ -251,11 +251,11 @@ SmmCopyMem (
   It checks if target buffer is valid per processor architecture and not overlap with SMRAM.
   If the check passes, it fills memory and returns EFI_SUCCESS.
   If the check fails, it returns EFI_SECURITY_VIOLATION.
-  
+
   @param  Buffer    The memory to set.
   @param  Length    The number of bytes to set.
   @param  Value     The value with which to fill Length bytes of Buffer.
-  
+
   @retval EFI_SECURITY_VIOLATION The Buffer is invalid per processor architecture or overlap with SMRAM.
   @retval EFI_SUCCESS            Memory is set.
 
@@ -295,7 +295,7 @@ SmmMemLibConstructor (
   EFI_STATUS                    Status;
   EFI_SMM_ACCESS2_PROTOCOL      *SmmAccess;
   UINTN                         Size;
-  
+
   //
   // Get SMRAM information
   //

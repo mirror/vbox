@@ -156,7 +156,7 @@ void pmap_bootstrap(void);
 #define	PMAP_UNLOCK(pmap)	simple_unlock(&(pmap)->pm_slock)
 
 
-#define PMAP_VHPT_LOG2SIZE 16 
+#define PMAP_VHPT_LOG2SIZE 16
 
 
 #endif /* _PMAP_MACHINE_ */

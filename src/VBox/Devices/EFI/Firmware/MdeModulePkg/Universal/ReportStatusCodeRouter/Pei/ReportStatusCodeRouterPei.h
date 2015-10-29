@@ -28,13 +28,13 @@
 
 /**
   Register the callback function for ReportStatusCode() notification.
-  
+
   When this function is called the function pointer is added to an internal list and any future calls to
   ReportStatusCode() will be forwarded to the Callback function.
 
   @param[in] Callback           A pointer to a function of type EFI_PEI_RSC_HANDLER_CALLBACK that is called
                                 when a call to ReportStatusCode() occurs.
-                        
+
   @retval EFI_SUCCESS           Function was successfully registered.
   @retval EFI_INVALID_PARAMETER The callback function was NULL.
   @retval EFI_OUT_OF_RESOURCES  The internal buffer ran out of space. No more functions can be
@@ -50,16 +50,16 @@ Register (
 
 /**
   Remove a previously registered callback function from the notification list.
-  
+
   ReportStatusCode() messages will no longer be forwarded to the Callback function.
-  
+
   @param[in] Callback           A pointer to a function of type EFI_PEI_RSC_HANDLER_CALLBACK that is to be
                                 unregistered.
 
   @retval EFI_SUCCESS           The function was successfully unregistered.
   @retval EFI_INVALID_PARAMETER The callback function was NULL.
   @retval EFI_NOT_FOUND         The callback function was not found to be unregistered.
-                        
+
 **/
 EFI_STATUS
 EFIAPI

@@ -345,16 +345,16 @@ IpSecDuplicateProcessPolicy (
   Find if the two SPD Selectors has subordinative.
 
   Compare two SPD Selector by the fields of LocalAddressCount/RemoteAddressCount/
-  NextLayerProtocol/LocalPort/LocalPortRange/RemotePort/RemotePortRange and the 
+  NextLayerProtocol/LocalPort/LocalPortRange/RemotePort/RemotePortRange and the
   Local Addresses and remote Addresses.
 
   @param[in]   Selector1           Pointer of first SPD Selector.
   @param[in]   Selector2           Pointer of second SPD Selector.
 
   @retval  TRUE    The first SPD Selector is subordinate Selector of second SPD Selector.
-  @retval  FALSE   The first SPD Selector is not subordinate Selector of second 
+  @retval  FALSE   The first SPD Selector is not subordinate Selector of second
                    SPD Selector.
-  
+
 **/
 BOOLEAN
 IsSubSpdSelector (

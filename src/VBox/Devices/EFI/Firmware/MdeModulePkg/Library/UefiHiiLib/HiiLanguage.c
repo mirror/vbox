@@ -16,18 +16,18 @@
 #include "InternalHiiLib.h"
 
 /**
-  Retrieves a pointer to the a Null-terminated ASCII string containing the list 
-  of languages that an HII handle in the HII Database supports.  The returned 
+  Retrieves a pointer to the a Null-terminated ASCII string containing the list
+  of languages that an HII handle in the HII Database supports.  The returned
   string is allocated using AllocatePool().  The caller is responsible for freeing
   the returned string using FreePool().  The format of the returned string follows
   the language format assumed the HII Database.
-  
+
   If HiiHandle is NULL, then ASSERT().
 
   @param[in]  HiiHandle  A handle that was previously registered in the HII Database.
 
   @retval NULL   HiiHandle is not registered in the HII database
-  @retval NULL   There are not enough resources available to retrieve the suported 
+  @retval NULL   There are not enough resources available to retrieve the suported
                  languages.
   @retval NULL   The list of suported languages could not be retrieved.
   @retval Other  A pointer to the Null-terminated ASCII string of supported languages.
@@ -53,8 +53,8 @@ HiiGetSupportedLanguages (
   Status = gHiiString->GetLanguages (gHiiString, HiiHandle, &TempSupportedLanguages, &LanguageSize);
 
   //
-  // If GetLanguages() returns EFI_SUCCESS for a zero size, 
-  // then there are no supported languages registered for HiiHandle.  If GetLanguages() 
+  // If GetLanguages() returns EFI_SUCCESS for a zero size,
+  // then there are no supported languages registered for HiiHandle.  If GetLanguages()
   // returns an error other than EFI_BUFFER_TOO_SMALL, then HiiHandle is not present
   // in the HII Database
   //

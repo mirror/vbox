@@ -2,7 +2,7 @@
   This module install ACPI Firmware Performance Data Table (FPDT).
 
   This module register report status code listener to collect performance data
-  for Firmware Basic Boot Performance Record and other boot performance records, 
+  for Firmware Basic Boot Performance Record and other boot performance records,
   and install FPDT to ACPI table.
 
   Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
@@ -334,7 +334,7 @@ InstallFirmwarePerformanceDataTable (
   SMM_BOOT_RECORD_COMMUNICATE   *SmmCommData;
   UINTN                         CommSize;
   UINTN                         BootPerformanceDataSize;
-  UINT8                         *BootPerformanceData; 
+  UINT8                         *BootPerformanceData;
   EFI_SMM_COMMUNICATION_PROTOCOL  *Communication;
   FIRMWARE_PERFORMANCE_VARIABLE PerformanceVariable;
 
@@ -354,7 +354,7 @@ InstallFirmwarePerformanceDataTable (
   Status = gBS->LocateProtocol (&gEfiSmmCommunicationProtocolGuid, NULL, (VOID **) &Communication);
   if (!EFI_ERROR (Status)) {
     //
-    // Initialize communicate buffer 
+    // Initialize communicate buffer
     //
     SmmBootRecordCommBuffer = AllocateZeroPool (SMM_BOOT_RECORD_COMM_SIZE);
     ASSERT (SmmBootRecordCommBuffer != NULL);
@@ -365,7 +365,7 @@ InstallFirmwarePerformanceDataTable (
     CopyGuid (&SmmCommBufferHeader->HeaderGuid, &gEfiFirmwarePerformanceGuid);
     SmmCommBufferHeader->MessageLength = sizeof(SMM_BOOT_RECORD_COMMUNICATE);
     CommSize = SMM_BOOT_RECORD_COMM_SIZE;
-  
+
     //
     // Get the size of boot records.
     //
@@ -373,7 +373,7 @@ InstallFirmwarePerformanceDataTable (
     SmmCommData->BootRecordData = NULL;
     Status = Communication->Communicate (Communication, SmmBootRecordCommBuffer, &CommSize);
     ASSERT_EFI_ERROR (Status);
-  
+
     if (!EFI_ERROR (SmmCommData->ReturnStatus) && SmmCommData->BootRecordSize != 0) {
       //
       // Get all boot records
@@ -381,7 +381,7 @@ InstallFirmwarePerformanceDataTable (
       SmmCommData->Function       = SMM_FPDT_FUNCTION_GET_BOOT_RECORD_DATA;
       SmmCommData->BootRecordData = AllocateZeroPool(SmmCommData->BootRecordSize);
       ASSERT (SmmCommData->BootRecordData != NULL);
-      
+
       Status = Communication->Communicate (Communication, SmmBootRecordCommBuffer, &CommSize);
       ASSERT_EFI_ERROR (Status);
       ASSERT_EFI_ERROR(SmmCommData->ReturnStatus);
@@ -390,7 +390,7 @@ InstallFirmwarePerformanceDataTable (
 
   //
   // Prepare memory for Boot Performance table.
-  // Boot Performance table includes BasicBoot record, and one or more appended Boot Records. 
+  // Boot Performance table includes BasicBoot record, and one or more appended Boot Records.
   //
   BootPerformanceDataSize = sizeof (BOOT_PERFORMANCE_TABLE) + mBootRecordSize + PcdGet32 (PcdExtFpdtBootRecordPadSize);
   if (SmmCommData != NULL) {
@@ -489,7 +489,7 @@ InstallFirmwarePerformanceDataTable (
   mFirmwarePerformanceTableTemplate.S3PointerRecord.S3PerformanceTablePointer = (UINT64) (UINTN) mAcpiS3PerformanceTable;
   //
   // Save Runtime Performance Table pointers to Variable.
-  // Don't check SetVariable return status. It doesn't impact FPDT table generation. 
+  // Don't check SetVariable return status. It doesn't impact FPDT table generation.
   //
   gRT->SetVariable (
         EFI_FIRMWARE_PERFORMANCE_VARIABLE_NAME,
@@ -518,7 +518,7 @@ InstallFirmwarePerformanceDataTable (
     mAcpiS3PerformanceTable = NULL;
     return Status;
   }
-  
+
   //
   // Free temp Boot record, and update Boot Record to point to Basic Boot performance table.
   //
@@ -528,7 +528,7 @@ InstallFirmwarePerformanceDataTable (
   mBootRecordBuffer  = (UINT8 *) mAcpiBootPerformanceTable;
   mBootRecordSize    = mAcpiBootPerformanceTable->Header.Length;
   mBootRecordMaxSize = mBootRecordSize + PcdGet32 (PcdExtFpdtBootRecordPadSize);
-  
+
   return EFI_SUCCESS;
 }
 
@@ -632,7 +632,7 @@ FpdtStatusCodeListenerDxe (
   if ((CodeType & EFI_STATUS_CODE_TYPE_MASK) != EFI_PROGRESS_CODE) {
     return EFI_UNSUPPORTED;
   }
-  
+
   if (Value == (EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_HANDOFF_TO_NEXT)) {
     //
     // DxeCore ReportStatusCode Enable so that the capability can be supported.
@@ -688,7 +688,7 @@ FpdtStatusCodeListenerDxe (
     //
     if (mAcpiBootPerformanceTable == NULL) {
       //
-      // Append Boot records before FPDT ACPI table is installed. 
+      // Append Boot records before FPDT ACPI table is installed.
       //
       if (mBootRecordSize + Data->Size > mBootRecordMaxSize) {
         mBootRecordBuffer = ReallocatePool (mBootRecordSize, mBootRecordSize + Data->Size + EXTENSION_RECORD_SIZE, mBootRecordBuffer);
@@ -702,7 +702,7 @@ FpdtStatusCodeListenerDxe (
       mBootRecordSize += Data->Size;
     } else {
       //
-      // Append Boot records after FPDT ACPI table is installed. 
+      // Append Boot records after FPDT ACPI table is installed.
       //
       if (mBootRecordSize + Data->Size > mBootRecordMaxSize) {
         //
@@ -746,7 +746,7 @@ FpdtExitBootServicesEventNotify (
 {
   if (!mDxeCoreReportStatusCodeEnable) {
     //
-    // When DxeCore Report Status Code is disabled, 
+    // When DxeCore Report Status Code is disabled,
     // Unregister boot time report status code listener at ExitBootService Event.
     //
     mRscHandlerProtocol->Unregister (FpdtStatusCodeListenerDxe);

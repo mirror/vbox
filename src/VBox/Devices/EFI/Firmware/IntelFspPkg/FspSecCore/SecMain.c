@@ -123,7 +123,7 @@ SecStartup (
 
   //
   // Call PeiCore Entry
-  //  
+  //
   PeiCore (&SecCoreData, mPeiSecPlatformInformationPpi);
 
   //

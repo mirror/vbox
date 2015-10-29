@@ -91,7 +91,7 @@ ReceiveFilterUpdate (
 
 /**
   This function updates the SNP driver status.
-  
+
   This function gets the current interrupt and recycled transmit
   buffer status from the network interface.  The interrupt status
   and the media status are returned as a bit mask in InterruptStatus.
@@ -235,7 +235,7 @@ SN_Initialize (
   EFI_STATUS Status;
 
   DBG_ENTER ( );
-  
+
   //
   // Verify the parameters
   //
@@ -268,7 +268,7 @@ SN_Initialize (
   else {
     Status = EFI_INVALID_PARAMETER;
   }
-  
+
   //
   // Return the operation status
   //
@@ -886,14 +886,14 @@ SN_Setup (
   pNicDevice->b100Mbps = TRUE;
   pNicDevice->bFullDuplex = TRUE;
 
-  Status = gBS->AllocatePool ( EfiRuntimeServicesData, 
+  Status = gBS->AllocatePool ( EfiRuntimeServicesData,
                                MAX_BULKIN_SIZE,
                                (VOID **) &pNicDevice->pBulkInBuff);
   if ( EFI_ERROR(Status)) {
     DEBUG (( EFI_D_ERROR, "Memory are not enough\n"));
     return Status;
   }
-        
+
   Status = Ax88772MacAddressGet (
                 pNicDevice,
                 &pMode->PermanentAddress.Addr[0]);
@@ -948,9 +948,9 @@ SN_Start (
   NIC_DEVICE * pNicDevice;
   EFI_SIMPLE_NETWORK_MODE * pMode;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   // Verify the parameters
   //
@@ -963,7 +963,7 @@ SN_Start (
       // NVRAM access is not supported
       //
       ZeroMem ( pMode, sizeof ( *pMode ));
-  
+
       pMode->State = EfiSimpleNetworkStarted;
       pMode->HwAddressSize = PXE_HWADDR_LEN_ETHER;
       pMode->MediaHeaderSize = sizeof ( ETHERNET_HEADER );
@@ -996,7 +996,7 @@ SN_Start (
       Status = EFI_ALREADY_STARTED;
     }
   }
-  
+
   //
   // Return the operation status
   //
@@ -1007,7 +1007,7 @@ SN_Start (
 
 /**
   Set the MAC address.
-  
+
   This function modifies or resets the current station address of a
   network interface.  If Reset is TRUE, then the current station address
   is set ot the network interface's permanent address.  If Reset if FALSE
@@ -1169,9 +1169,9 @@ SN_Stop (
 {
   EFI_SIMPLE_NETWORK_MODE * pMode;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   // Verify the parameters
   //
@@ -1203,7 +1203,7 @@ SN_Stop (
   else {
     Status = EFI_INVALID_PARAMETER;
   }
-  
+
   //
   // Return the operation status
   //
@@ -1236,9 +1236,9 @@ SN_Shutdown (
   EFI_SIMPLE_NETWORK_MODE * pMode;
   UINT32 RxFilter;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   // Verify the parameters
   //
@@ -1273,7 +1273,7 @@ SN_Shutdown (
   else {
     Status = EFI_INVALID_PARAMETER;
   }
-  
+
   //
   // Return the operation status
   //

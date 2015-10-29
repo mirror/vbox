@@ -20,7 +20,7 @@
   FILE_GUID                      = 0EB84DA1-267A-40b4-8347-1F48694C8B47
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PeCoffExtraActionLib 
+  LIBRARY_CLASS                  = PeCoffExtraActionLib
 
 
 #

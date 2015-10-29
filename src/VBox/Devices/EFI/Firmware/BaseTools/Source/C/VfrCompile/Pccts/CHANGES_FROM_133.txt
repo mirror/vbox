@@ -17,53 +17,53 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
         Note:  Items #153 to #1 are now in a separate file named
                 CHANGES_FROM_133_BEFORE_MR13.txt
         -------------------------------------------------------
-        
+
 #312. (Changed in MR33) Bug caused by change #299.
 
 	In change #299 a warning message was suppressed when there was
-	no LT(1) in a semantic predicate and max(k,ck) was 1.  The 
+	no LT(1) in a semantic predicate and max(k,ck) was 1.  The
 	changed caused the code which set a default predicate depth for
 	the semantic predicate to be left as 0 rather than set to 1.
-	
+
 	This manifested as an error at line #1559 of mrhost.c
-	
+
 	Reported by Peter Dulimov.
-	    
+
 #311. (Changed in MR33) Added sorcer/lib to Makefile.
 
     Reported by Dale Martin.
-            
+
 #310. (Changed in MR32) In C mode zzastPush was spelled zzastpush in one case.
 
     Reported by Jean-Claude Durand
-    
+
 #309. (Changed in MR32) Renamed baseName because of VMS name conflict
 
     Renamed baseName to pcctsBaseName to avoid library name conflict with
     VMS library routine.  Reported by Jean-François PIÉRONNE.
-    
+
 #308. (Changed in MR32) Used "template" as name of formal in C routine
 
 	In astlib.h routine ast_scan a formal was named "template".  This caused
 	problems when the C code was compiled with a C++ compiler.  Reported by
 	Sabyasachi Dey.
-            
+
 #307. (Changed in MR31) Compiler dependent bug in function prototype generation
-    
+
     The code which generated function prototypes contained a bug which
     was compiler/optimization dependent.  Under some circumstance an
     extra character would be included in portions of a function prototype.
-    
+
     Reported by David Cook.
-    
+
 #306. (Changed in MR30) Validating predicate following a token
 
-    A validating predicate which immediately followed a token match 
+    A validating predicate which immediately followed a token match
     consumed the token after the predicate rather than before.  Prior
     to this fix (in the following example) isValidTimeScaleValue() in
     the predicate would test the text for TIMESCALE rather than for
     NUMBER:
-     
+
 		time_scale :
     		TIMESCALE
     		<<isValidTimeScaleValue(LT(1)->getText())>>?
@@ -71,23 +71,23 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     		( us:MICROSECOND << tVal = ...>>
     		| ns:NANOSECOND << tVal = ...  >>
     		)
-	
+
 	Reported by Adalbert Perbandt.
-	
+
 #305. (Changed in MR30) Alternatives with guess blocks inside (...)* blocks.
 
 	In MR14 change #175 fixed a bug in the prediction expressions for guess
 	blocks which were of the form (alpha)? beta.  Unfortunately, this
 	resulted in a new bug as exemplified by the example below, which computed
 	the first set for r as {B} rather than {B C}:
-	
+
 					r : ( (A)? B
 					    | C
 						)*
-  
+
     This example doesn't make any sense as A is not a prefix of B, but it
     illustrates the problem.  This bug did not appear for:
-    
+
     				r : ( (A)?
     				    | C
     				    )*
@@ -98,29 +98,29 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 	constructs which appear to have identical ambiguities (between repeating
 	the loop vs. exiting the loop).  MR30 retains this fix, but the implementation
 	is slightly different.
-	
+
 	          r_star : ( (A B)? )* A ;
 	          r_plus : ( (A B)? )+ A ;
 
     Reported by Arpad Beszedes (beszedes inf.u-szeged.hu).
-    
+
 #304. (Changed in MR30) Crash when mismatch between output value counts.
 
 	For a rule such as:
-	
+
 		r1 : r2>[i,j];
 		r2 >[int i, int j] : A;
-		
+
 	If there were extra actuals for the reference to rule r2 from rule r1
 	there antlr would crash.  This bug was introduced by change #276.
 
 	Reported by Sinan Karasu.
-	
+
 #303. (Changed in MR30) DLGLexerBase::replchar
 
-	DLGLexerBase::replchar and the C mode routine zzreplchar did not work 
+	DLGLexerBase::replchar and the C mode routine zzreplchar did not work
 	properly when the new character was 0.
-      
+
     Reported with fix by Philippe Laporte
 
 #302. (Changed in MR28) Fix significant problems in initial release of MR27.
@@ -129,29 +129,29 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
     To have antlr generate true tabs rather than spaces, use "antlr -tab 0".
     To generate 4 spaces per tab stop use "antlr -tab 4"
-    
+
 #300. (Changed in MR27)
 
 	Consider the following methods of constructing an AST from ID:
-	
+
         rule1!
                 : id:ID << #0 = #[id]; >> ;
-        
+
         rule2!
                 : id:ID << #0 = #id; >> ;
-        
+
         rule3
                 : ID ;
-        
+
         rule4
                 : id:ID << #0 = #id; >> ;
-        
+
     For rule_2, the AST corresponding to id would always be NULL.  This
     is because the user explicitly suppressed AST construction using the
     "!" operator on the rule.  In MR27 the use of an AST expression
     such as #id overrides the "!" operator and forces construction of
     the AST.
-    
+
     This fix does not apply to C mode ASTs when the ASTs are referenced
     using numbers rather than symbols.
 
@@ -167,28 +167,28 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     then pccts doesn't know how many lookahead tokens to use for context.
     However, if max(k,ck) is 1 then there is really only one choice and
     the warning is unnecessary.
-    
+
 #298. (Changed in MR27) Removed "register" for lastpos in dlgauto.c zzgettok
 
 #297. (Changed in MR27) Incorrect prototypes when used with classic C
 
     There were a number of errors in function headers when antlr was
     built with compilers that do not have __STDC__ or __cplusplus set.
-    
+
     The functions which have variable length argument lists now use
     PCCTS_USE_STDARG rather than __USE_PROTOTYPES__ to determine
     whether to use stdargs or varargs.
 
 #296. (Changed in MR27) Complex return types in rules.
 
-    The following return type was not properly handled when 
+    The following return type was not properly handled when
     unpacking a struct with containing multiple return values:
-    
-      rule > [int i, IIR_Bool (IIR_Decl::*constraint)()] : ...    
+
+      rule > [int i, IIR_Bool (IIR_Decl::*constraint)()] : ...
 
     Instead of using "constraint", the program got lost and used
     an empty string.
-    
+
     Reported by P.A. Wilsey.
 
 #295. (Changed in MR27) Extra ";" following zzGUESS_DONE sometimes.
@@ -197,15 +197,15 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     preceding the "else" clause of an "if".
 
     Reported by P.A. Wilsey.
-    
+
 #294. (Changed in MR27) Infinite loop in antlr for nested blocks
 
     An oversight in detecting an empty alternative sometimes led
     to an infinite loop in antlr when it encountered a rule with
     nested blocks and guess blocks.
-    
+
     Reported by P.A. Wilsey.
-    
+
 #293. (Changed in MR27) Sorcerer optimization of _t->type()
 
     Sorcerer generated code may contain many calls to _t->type() in a
@@ -224,21 +224,21 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
     Fix to serious code generation error in MR23 for (...)+ block.
 
-#290. (Changed in MR23) 
+#290. (Changed in MR23)
 
     Item #247 describes a change in the way {...} blocks handled
     an error.  Consider:
 
             r1 : {A} b ;
             b  : B;
-                
+
                 with input "C".
 
     Prior to change #247, the error would resemble "expected B -
     found C".  This is correct but incomplete, and therefore
     misleading.  In #247 it was changed to "expected A, B - found
     C".  This was fine, except for users of parser exception
-    handling because the exception was generated in the epilogue 
+    handling because the exception was generated in the epilogue
     for {...} block rather than in rule b.  This made it difficult
     for users of parser exception handling because B was not
     expected in that context. Those not using parser exception
@@ -252,7 +252,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     an empty production and it is the last alternative of a sub-block.
     In contrast, (something | epsilon | something) should generate the
     same code as before, even when exceptions are used.
-    
+
     Reported by Philippe Laporte (philippe at transvirtual.com).
 
 #289. (Changed in MR23) Bug in matching complement of a #tokclass
@@ -261,43 +261,43 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     and uncomplemented form, the bit set generated for its first use was used
     for both cases.  However, the prediction expression was correctly computed
     in both cases.  This meant that the second case would never be matched
-    because, for the second appearance, the prediction expression and the 
+    because, for the second appearance, the prediction expression and the
     set to be matched would be complements of each other.
-        
+
     Consider:
-        
+
                 #token A "a"
                 #token B "b"
                 #token C "c"
                 #tokclass AB {A B}
-                
+
                 r1 : AB    /* alt 1x */
                    | ~AB   /* alt 1y */
                    ;
-        
+
     Prior to MR23, this resulted in alternative 1y being unreachable.  Had it
     been written:
-        
+
                 r2 : ~AB  /* alt 2x */
                    : AB   /* alt 2y */
-                   
-    then alternative 2y would have become unreachable.        
-        
+
+    then alternative 2y would have become unreachable.
+
     This bug was only for the case of complemented #tokclass.  For complemented
-    #token the proper code was generated.           
-        
+    #token the proper code was generated.
+
 #288. (Changed in MR23) #errclass not restricted to choice points
 
     The #errclass directive is supposed to allow a programmer to define
     print strings which should appear in syntax error messages as a replacement
     for some combinations of tokens. For instance:
-    
+
             #errclass Operator {PLUS MINUS TIMES DIVIDE}
-            
+
     If a syntax message includes all four of these tokens, and there is no
     "better" choice of error class, the word "Operator" will be used rather
     than a list of the four token names.
-        
+
     Prior to MR23 the #errclass definitions were used only at choice points
     (which call the FAIL macro). In other cases where there was no choice
     (e.g. where a single token or token class were matched) the #errclass
@@ -307,7 +307,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     when matching a #tokclass, a wildcard (i.e. "*"), or the complement of a
     #token or #tokclass (e.g. ~Operator).
 
-    Please note that #errclass may now be defined using #tokclass names 
+    Please note that #errclass may now be defined using #tokclass names
     (see Item #284).
 
     Reported by Philip A. Wilsey.
@@ -317,25 +317,25 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     Item #148 describes how to give a print name to a #token so that,for
     example, #token ID could have the expression "identifier" in syntax
     error messages.  This has been extended to #tokclass:
-    
+
             #token ID("identifier")  "[a-zA-Z]+"
-            #tokclass Primitive("primitive type") 
-                                    {INT, FLOAT, CHAR, FLOAT, DOUBLE, BOOL} 
+            #tokclass Primitive("primitive type")
+                                    {INT, FLOAT, CHAR, FLOAT, DOUBLE, BOOL}
 
     This is really a cosmetic change, since #tokclass names do not appear
     in any error messages.
-        
+
 #286. (Changed in MR23) Makefile change to use of cd
 
     In cases where a pccts subdirectory name matched a directory identified
     in a $CDPATH environment variable the build would fail.  All makefile
     cd commands have been changed from "cd xyz" to "cd ./xyz" in order
     to avoid this problem.
-        
+
 #285. (Changed in MR23) Check for null pointers in some dlg structures
 
     An invalid regular expression can cause dlg to build an invalid
-    structure to represent the regular expression even while it issues 
+    structure to represent the regular expression even while it issues
     error messages.  Additional pointer checks were added.
 
     Reported by Robert Sherry.
@@ -354,7 +354,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
     Problem reported by Mike Dimmick (mike dimmick.demon.co.uk).
 
-#283. (Changed in MR23) Option -tmake invoke's parser's tmake 
+#283. (Changed in MR23) Option -tmake invoke's parser's tmake
 
     When the string #(...) appears in an action antlr replaces it with
     a call to ASTBase::tmake(...) to construct an AST.  It is sometimes
@@ -364,15 +364,15 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
     The antlr option -tmake replaces the call to ASTBase::tmake with a call
     to a user supplied tmake routine.
-   
+
 #282. (Changed in MR23) Initialization error for DBG_REFCOUNTTOKEN
 
-    When the pre-processor symbol DBG_REFCOUNTTOKEN is defined 
+    When the pre-processor symbol DBG_REFCOUNTTOKEN is defined
     incorrect code is generated to initialize ANTLRRefCountToken::ctor and
     dtor.
 
     Fix reported by Sven Kuehn (sven sevenkuehn.de).
-   
+
 #281. (Changed in MR23) Addition of -noctor option for Sorcerer
 
     Added a -noctor option to suppress generation of the blank ctor
@@ -395,29 +395,29 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     alternatives which caused problems when there was a block contained
     in an alternative.  For instance, in the following rule;
 
-        statement : IF S { ELSE S } 
+        statement : IF S { ELSE S }
                         exception ....
         ;
 
-    the exception would be attached to the {...} block instead of the 
+    the exception would be attached to the {...} block instead of the
     entire alternative because it was attached, in error, to the last
     alternative instead of the last OPEN alternative.
 
     Reported by Ty Mordane (tymordane hotmail.com).
-    
+
 #278. (Changed in MR23) makefile changes
 
     Contributed by Tomasz Babczynski (faster lab05-7.ict.pwr.wroc.pl).
 
     The -cfile option is not absolutely needed: when extension of
-    source file is one of the well-known C/C++ extensions it is 
+    source file is one of the well-known C/C++ extensions it is
     treated as C/C++ source
 
     The gnu make defines the CXX variable as the default C++ compiler
     name, so I added a line to copy this (if defined) to the CCC var.
 
     Added a -sor option: after it any -class command defines the class
-    name for sorcerer, not for ANTLR.  A file extended with .sor is 
+    name for sorcerer, not for ANTLR.  A file extended with .sor is
     treated as sorcerer input.  Because sorcerer can be called multiple
     times, -sor option can be repeated.  Any files and classes (one class
     per group) after each -sor makes one tree parser.
@@ -448,7 +448,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
         rule : <<my_predicate>>? [my_fail_action] A
              | ...
 
-           
+
     the code for my_fail_action would have to contain logic for handling
     the guess part of the zzfailed_pred macro.  The user should not have
     to be aware of the guess logic in writing the fail action.
@@ -501,7 +501,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
           Foo _retv = expr;
           ...
         }
-  
+
     A rule with more than one return argument:
 
         r2 > [Foo f = expr1, Bar b = expr2 ] :
@@ -567,13 +567,13 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
             Multi-threaded DLL
             Debug Multi-threaded DLL
-           
-    Suggested by Bill Menees (bill.menees gogallagher.com) 
-    
+
+    Suggested by Bill Menees (bill.menees gogallagher.com)
+
 #272. (Changed in MR23) Failed semantic predicate reported via virtual function
 
     In the past, a failed semantic predicated reported the problem via a
-    macro which used fprintf().  The macro now expands into a call on 
+    macro which used fprintf().  The macro now expands into a call on
     the virtual function ANTLRParser::failedSemanticPredicate().
 
 #271. (Changed in MR23) Warning for LT(i), LATEXT(i) in token match actions
@@ -594,7 +594,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
     This behavior should be changed, but it appears in too many programs
     now.  Another problem, perhaps more significant, is that the obvious
-    fix (moving the consume() call to before the action) could change the 
+    fix (moving the consume() call to before the action) could change the
     order in which input is requested and output appears in existing programs.
 
     This problem was reported, along with a fix by Benjamin Mandel
@@ -610,7 +610,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
     The output from dlg contains a construct similar to the
     following:
-   
+
         struct XXX {
           static const int size;
           static int array1[5];
@@ -619,7 +619,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
         const int XXX::size = 4;
         int XXX::array1[size+1];
 
-    
+
     The problem is that although the expression "size+1" used in
     the definition of array1 is equal to 5 (the expression used to
     declare array), it is not considered equivalent by some compilers.
@@ -634,10 +634,10 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     appropriate one.  The appropriate one is computed by comparing
     the token codes of lookahead token i (for i = 1 to k) with
     the FIRST(i) set.
-    
+
     This has been corrected in ANTLRParser::syn().
 
-    Reported by Bill Menees (bill.menees gogallagher.com) 
+    Reported by Bill Menees (bill.menees gogallagher.com)
 
 #267. (Changed in MR23) AST traversal functions client data argument
 
@@ -651,8 +651,8 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     ****       Warning: this changes the AST signature.         ***
     **** Be sure to revise your AST functions of the same name  ***
 
-    Bill Menees (bill.menees gogallagher.com) 
-    
+    Bill Menees (bill.menees gogallagher.com)
+
 #266. (Changed in MR23) virtual function printMessage()
 
     Bill Menees (bill.menees gogallagher.com) has completed the
@@ -669,7 +669,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     In C++ mode labase++ is called when a token is matched.
     It appears that labase is not used in C++ mode at all, so
     this code has been commented out.
-    
+
 #264. (Changed in MR23) Complete rewrite of ParserBlackBox.h
 
     The parser black box (PBlackBox.h) was completely rewritten
@@ -694,7 +694,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
 #260. (MR22) Raise default lex buffer size from 8,000 to 32,000 bytes.
 
-    ZZLEXBUFSIZE is the size (in bytes) of the buffer used by dlg 
+    ZZLEXBUFSIZE is the size (in bytes) of the buffer used by dlg
     generated lexers.  The default value has been raised to 32,000 and
     the value used by antlr, dlg, and sorcerer has also been raised to
     32,000.
@@ -759,12 +759,12 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 #256. (MR21a) Malformed syntax graph causes crash after error message.
 
     In the past, certain kinds of errors in the very first grammar
-    element could cause the construction of a malformed graph 
+    element could cause the construction of a malformed graph
     representing the grammar.  This would eventually result in a
     fatal internal error.  The code has been changed to be more
     resistant to this particular error.
 
-#255. (MR21a) ParserBlackBox(FILE* f) 
+#255. (MR21a) ParserBlackBox(FILE* f)
 
     This constructor set openByBlackBox to the wrong value.
 
@@ -813,14 +813,14 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     AParser.h.  If this preprocessor symbol was not properly
     set the first time AParser.h was #included, the declaration
     of zzTRACEdata would be omitted (it is used by the -gd option).
-    Subsequent #includes of AParser.h would be skipped because of 
+    Subsequent #includes of AParser.h would be skipped because of
     the #ifdef guard, so the declaration of zzTracePrevRuleName would
-    never be made.  The result was that proper compilation was very 
+    never be made.  The result was that proper compilation was very
     order dependent.
 
     The declaration of zzTRACEdata was made unconditional and the
     problem of removing unused declarations will be left to optimizers.
-    
+
     Diagnosed by Douglas E. Forester (dougf projtech.com).
 
 #250. (MR21) Option for EXPERIMENTAL change to error sets for blocks
@@ -835,13 +835,13 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     the most appropriate tokens in the error message.  The error sets used
     in pccts error messages are approximations of the exact error set when
     optional elements in (...)* or (...)+ are involved.  While entirely
-    correct, the error messages are sometimes not 100% accurate.  
+    correct, the error messages are sometimes not 100% accurate.
 
     There is also a minor philosophical issue.  For example, suppose the
-    grammar expects the token to be an optional A followed by Z, and it 
+    grammar expects the token to be an optional A followed by Z, and it
     is X.  X, of course, is neither A nor Z, so an error message is appropriate.
     Is it appropriate to say "Expected Z" ?  It is correct, it is accurate,
-    but it is not complete.  
+    but it is not complete.
 
     When k>1 or ck>1 the problem of providing the exactly correct
     list of tokens for the syntax error messages ends up becoming
@@ -852,7 +852,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     This application uses the error set in an interactive command language
     to provide prompts which list the alternatives available at that
     point in the parser.  The user can then enter additional tokens to
-    complete the command line.  To do this required more accurate error 
+    complete the command line.  To do this required more accurate error
     sets then previously provided by pccts.
 
     In some cases the default pccts behavior may lead to more robust error
@@ -972,7 +972,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
             This includes the choice of looping back to the
             star block.
-    
+
 #249. (MR21) Changes for DEC/VMS systems
 
     Jean-François Piéronne (jfp altavista.net) has updated some
@@ -991,7 +991,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
         rr : #FirstSetSymbol(rr_FirstSet)  ( Foo | Bar ) ;
 
     This will generate the symbol rr_FirstSet of type SetWordType with
-    elements Foo and Bar set. The bits can be tested using code similar 
+    elements Foo and Bar set. The bits can be tested using code similar
     to the following:
 
         if (set_el(Foo, &rr_FirstSet)) { ...
@@ -999,9 +999,9 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     This can be combined with the C array zztokens[] or the C++ routine
     tokenName() to get the print name of the token in the first set.
 
-    The size of the set is given by the newly added enum SET_SIZE, a 
+    The size of the set is given by the newly added enum SET_SIZE, a
     protected member of the generated parser's class.  The number of
-    elements in the generated set will not be exactly equal to the 
+    elements in the generated set will not be exactly equal to the
     value of SET_SIZE because of synthetic tokens created by #tokclass,
     #errclass, the -ge option, and meta-tokens such as epsilon, and
     end-of-file.
@@ -1015,11 +1015,11 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
             rr_bad : #FirstSetSymbol(rr_bad_FirstSet) Foo;   //  Illegal
 
             rr_ok :  #FirstSetSymbol(rr_ok_FirstSet) (Foo);  //  Legal
-    
+
     Do not confuse FirstSetSymbol sets with the sets used for testing
     lookahead. The sets used for FirstSetSymbol have one element per bit,
     so the number of bytes  is approximately the largest token number
-    divided by 8.  The sets used for testing lookahead store 8 lookahead 
+    divided by 8.  The sets used for testing lookahead store 8 lookahead
     sets per byte, so the length of the array is approximately the largest
     token number.
 
@@ -1033,7 +1033,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
         ===================================================
 
     Prior to MR21, tokens which were optional did not appear in syntax
-    error messages if the block which immediately followed detected a 
+    error messages if the block which immediately followed detected a
     syntax error.
 
     Consider the following grammar which accepts Number, Word, and Other:
@@ -1071,7 +1071,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
                 }
             }
             match(Word);
-        
+
     The code generated for optional blocks in MR21 is slightly longer
     than the previous versions, but it should give better error messages.
 
@@ -1098,14 +1098,14 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
     The following command line options have been added to genmk:
 
-        -cfiles ... 
-            
+        -cfiles ...
+
             To add a user's C or C++ files into makefile automatically.
             The list of files must be enclosed in apostrophes.  This
             option may be specified multiple times.
 
         -compiler ...
-    
+
             The name of the compiler to use for $(CCC) or $(CC).  The
             default in C++ mode is "CC".  The default in C mode is "cc".
 
@@ -1139,15 +1139,15 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
                 *** NOT IMPLEMENTED ***
                 ***********************
 
-        The PURIFY macro was changed to a no-op because it was causing 
+        The PURIFY macro was changed to a no-op because it was causing
         problems when passing C++ objects.
-    
+
         The old definition:
-    
+
             #define PURIFY(r,s)     memset((char *) &(r),'\\0',(s));
-    
+
         The new definition:
-    
+
             #define PURIFY(r,s)     /* nothing */
 #endif
 
@@ -1174,10 +1174,10 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     Should have known better.
 
 #237. (Changed in MR21) ParserBlackBox(FILE*)
-    
+
     In the past, ParserBlackBox would close the FILE in the dtor
     even though it was not opened by ParserBlackBox.  The problem
-    is that there were two constructors, one which accepted a file   
+    is that there were two constructors, one which accepted a file
     name and did an fopen, the other which accepted a FILE and did
     not do an fopen.  There is now an extra member variable which
     remembers whether ParserBlackBox did the open or not.
@@ -1186,7 +1186,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
 #236. (Changed in MR21) tmake now reports down pointer problem
 
-    When ASTBase::tmake attempts to update the down pointer of 
+    When ASTBase::tmake attempts to update the down pointer of
     an AST it checks to see if the down pointer is NULL.  If it
     is not NULL it does not do the update and returns NULL.
     An attempt to update the down pointer is almost always a
@@ -1221,7 +1221,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 #232. (Changed in MR20) Make setwd bit vectors protected in parser.h
 
     The access for the setwd array in the parser header was not
-    specified.  As a result, it would depend on the code which 
+    specified.  As a result, it would depend on the code which
     preceded it.  In MR20 it will always have access "protected".
 
     Reported by Piotr Eljasiak (eljasiak zt.gdansk.tpsa.pl).
@@ -1273,8 +1273,8 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     resized for deeply nested blocks.  This has been fixed.
 
 #226. (Changed in MR20) -pedantic conformance
-   
-    G. Hobbelt (i_a mbh.org) and THM made many, many minor 
+
+    G. Hobbelt (i_a mbh.org) and THM made many, many minor
     changes to create prototypes for all the functions and
     bring antlr, dlg, and sorcerer into conformance with
     the gcc -pedantic option.
@@ -1284,7 +1284,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
 #225  (Changed in MR20) AST stack adjustment in C mode
 
-    The fix in #214 for AST stack adjustment in C mode missed 
+    The fix in #214 for AST stack adjustment in C mode missed
     some cases.
 
     Reported with fix by Ger Hobbelt (i_a mbh.org).
@@ -1299,7 +1299,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
 #223  (Changed in MR20) Addition of IBM_VISUAL_AGE directory
 
-    Build files for antlr, dlg, and sorcerer under IBM Visual Age 
+    Build files for antlr, dlg, and sorcerer under IBM Visual Age
     have been contributed by Anton Sergeev (ags mlc.ru).  They have
     been placed in the pccts/IBM_VISUAL_AGE directory.
 
@@ -1317,7 +1317,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     The arguments to strcat are reversed when creating a print
     name for a hash table entry for use with #pred feature.
 
-    Problem diagnosed and fix reported by Scott Harrington 
+    Problem diagnosed and fix reported by Scott Harrington
     (seh4 ix.netcom.com).
 
 #219. (Changed in MR19) C Mode routine zzfree_ast
@@ -1334,7 +1334,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     Implemented by SAKAI Kiyotaka (ksakai isr.co.jp).
 
 #217. (Changed in MR19) Error message when dlg -i and -CC options selected
-    
+
     *** This change was rescinded by item #257 ***
 
     The parsers generated by pccts in C++ mode are not able to support the
@@ -1353,13 +1353,13 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     This requires max(k,ck) tokens of lookahead.  For some applications
     this can cause deadlock problems.  For example, there may be cases
     when the parser can't tell when the input has been completely consumed
-    until the parse is complete, but the parse can't be completed because 
+    until the parse is complete, but the parse can't be completed because
     the input routines are waiting for additional tokens to fill the
     lookahead buffer.
-    
-    When the ANTLRParser class is built with the pre-processor option 
+
+    When the ANTLRParser class is built with the pre-processor option
     ZZDEFER_FETCH defined, the fetch of new tokens by consume() is deferred
-    until LA(i) or LT(i) is called. 
+    until LA(i) or LT(i) is called.
 
     To test whether this option has been built into the ANTLRParser class
     use "isDeferFetchEnabled()".
@@ -1368,8 +1368,8 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     routines will defeat the effort to defer the fetch because the
     trace routines print out information about the lookahead token at
     the start of the rule.
-    
-    Because the tracein and traceout routines are virtual it is 
+
+    Because the tracein and traceout routines are virtual it is
     easy to redefine them in your parser:
 
         class MyParser {
@@ -1379,9 +1379,9 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
             virtual void traceout(ANTLRChar * ruleName)
                 { fprintf(stderr,"Leaving: %s\n", ruleName); }
         >>
- 
+
     The originals for those routines are pccts/h/AParser.cpp
- 
+
     This requires use of the dlg option -i (interactive lexer).
 
     This is implemented only for C++ mode.
@@ -1434,9 +1434,9 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
             pccts/sorcerer/sor.r
             pccts/sorcerer/sor68K.make
             pccts/sorcerer/sorPPC.make
-    
+
        They completely replace the previous Mac installation files.
-            
+
     b. The most significant is a change in the MAC_FILE_CREATOR symbol
        in pcctscfg.h:
 
@@ -1468,7 +1468,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     PCCTS in the same source file.  The problem is caused by the
     redefinition of setjmp in the MS header file setjmp.h.  In
     setjmp.h the pre-processor symbol setjmp was redefined to be
-    _setjmp.  A later effort to execute #include <setjmp.h> resulted 
+    _setjmp.  A later effort to execute #include <setjmp.h> resulted
     in an effort to #include <_setjmp.h>.  I'm not sure whether this
     is a bug or a feature.  In any case, I decided to fix it by
     avoiding the use of pre-processor symbols in #include statements
@@ -1484,7 +1484,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
             #ifndef __PCCTS_SETJMP_H__
             #define __PCCTS_SETJMP_H__
-    
+
             #ifdef PCCTS_USE_NAMESPACE_STD
             #include <Csetjmp>
             #else
@@ -1492,7 +1492,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
             #endif
 
             #endif
-        
+
     A similar change has been made for other standard header files
     required by pccts and sorcerer: stdlib.h, stdarg.h, stdio.h, etc.
 
@@ -1522,13 +1522,13 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
 
         if ($$.letter > $2.letter) {
           error("invalid range  ", zzline);
-        } 
+        }
 
     The fix is:
 
         if ($$.letter > $2.letter && 255 != $$2.letter) {
           error("invalid range  ", zzline);
-        } 
+        }
 
 #206. (Changed in MR16) Free zzFAILtext in ANTLRParser destructor
 
@@ -1544,7 +1544,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     Suggested by Dale Davis (daldavis spectrace.com)
 
 #204. (Changed in MR15a) Change __WATCOM__ to __WATCOMC__ in pcctscfg.h
-    
+
     Reported by Oleg Dashevskii (olegdash my-dejanews.com).
 
 #203. (Changed in MR15) Addition of sorcerer to distribution kit
@@ -1562,7 +1562,7 @@ List of Implemented Fixes and Changes for Maintenance Releases of PCCTS
     .cpp files in the pccts/h directory.
 
     The library build will create pccts_debug.lib or pccts_release.lib
-    according to the configuration selected.  
+    according to the configuration selected.
 
     If you don't want to build pccts 1.33MR15 you can download a
     ready-to-run kit for win32 from http://www.polhode.com/win32.zip.

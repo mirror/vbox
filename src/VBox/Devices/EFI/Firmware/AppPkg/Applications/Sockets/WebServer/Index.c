@@ -36,9 +36,9 @@ IndexPage (
   CONST DT_PAGE * pPage;
   CONST DT_PAGE * pPageEnd;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Send the index page
   //
@@ -125,7 +125,7 @@ IndexPage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     //  Build the table trailer
     //
@@ -142,7 +142,7 @@ IndexPage (
     Status = HttpPageTrailer ( SocketFD, pPort, pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

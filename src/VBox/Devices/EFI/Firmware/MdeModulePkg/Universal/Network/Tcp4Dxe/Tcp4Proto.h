@@ -49,11 +49,11 @@ typedef struct _TCP_CB  TCP_CB;
 #define TCP_FLG_PSH      0x08
 #define TCP_FLG_ACK      0x10
 #define TCP_FLG_URG      0x20
- 
+
  //
  // mask for all the flags
  //
-#define TCP_FLG_FLAG     0x3F  
+#define TCP_FLG_FLAG     0x3F
 
 
 #define TCP_CONNECT_REFUSED      (-1) ///< TCP error status

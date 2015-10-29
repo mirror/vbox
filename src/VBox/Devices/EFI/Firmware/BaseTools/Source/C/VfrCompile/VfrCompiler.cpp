@@ -1,15 +1,15 @@
 /** @file
-  
+
   VfrCompiler main class and main function.
 
 Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -24,7 +24,7 @@ PACKAGE_DATA  gCBuffer;
 PACKAGE_DATA  gRBuffer;
 CVfrStringDB  gCVfrStringDB;
 
-VOID 
+VOID
 CVfrCompiler::DebugError (
   IN CHAR8         *FileName,
   IN UINT32        LineNumber,
@@ -32,7 +32,7 @@ CVfrCompiler::DebugError (
   IN CONST CHAR8   *Text,
   IN CONST CHAR8   *MsgFmt,
   ...
-  ) 
+  )
 {
   va_list List;
   va_start (List, MsgFmt);
@@ -58,7 +58,7 @@ CVfrCompiler::IS_RUN_STATUS (
 
 VOID
 CVfrCompiler::OptionInitialization (
-  IN INT32      Argc, 
+  IN INT32      Argc,
   IN CHAR8      **Argv
   )
 {
@@ -84,7 +84,7 @@ CVfrCompiler::OptionInitialization (
   mOptions.HasOverrideClassGuid          = FALSE;
   mOptions.WarningAsError                = FALSE;
   memset (&mOptions.OverrideClassGuid, 0, sizeof (EFI_GUID));
-  
+
   if (Argc == 1) {
     Usage ();
     SET_RUN_STATUS (STATUS_DEAD);
@@ -106,7 +106,7 @@ CVfrCompiler::OptionInitialization (
     } else if (stricmp(Argv[Index], "-i") == 0) {
       Index++;
       if ((Index >= Argc) || (Argv[Index][0] == '-')) {
-        DebugError (NULL, 0, 1001, "Missing option", "-i missing path argument"); 
+        DebugError (NULL, 0, 1001, "Missing option", "-i missing path argument");
         goto Fail;
       }
 
@@ -118,7 +118,7 @@ CVfrCompiler::OptionInitialization (
         goto Fail;
       }
       strcpy (mOptions.OutputDirectory, Argv[Index]);
-      
+
       CHAR8 lastChar = mOptions.OutputDirectory[strlen(mOptions.OutputDirectory) - 1];
       if ((lastChar != '/') && (lastChar != '\\')) {
         if (strchr(mOptions.OutputDirectory, '/') != NULL) {
@@ -205,7 +205,7 @@ Fail:
   if (mOptions.IncludePaths != NULL) {
     delete mOptions.IncludePaths;
     mOptions.IncludePaths                = NULL;
-  } 
+  }
   if (mOptions.CPreprocessorOptions != NULL) {
     delete mOptions.CPreprocessorOptions;
     mOptions.CPreprocessorOptions        = NULL;
@@ -369,7 +369,7 @@ CVfrCompiler::SetRecordListFileName (
 }
 
 CVfrCompiler::CVfrCompiler (
-  IN INT32      Argc, 
+  IN INT32      Argc,
   IN CHAR8      **Argv
   )
 {
@@ -404,14 +404,14 @@ CVfrCompiler::~CVfrCompiler (
   SET_RUN_STATUS(STATUS_DEAD);
 }
 
-VOID 
+VOID
 CVfrCompiler::Usage (
   VOID
   )
 {
   UINT32 Index;
   CONST  CHAR8 *Help[] = {
-    " ", 
+    " ",
     "VfrCompile version " VFR_COMPILER_VERSION __BUILD_VERSION,
     "Copyright (c) 2004-2014 Intel Corporation. All rights reserved.",
     " ",
@@ -444,7 +444,7 @@ CVfrCompiler::Usage (
   }
 }
 
-VOID 
+VOID
 CVfrCompiler::Version (
   VOID
   )
@@ -482,7 +482,7 @@ CVfrCompiler::PreProcess (
   }
   fclose (pVfrFile);
 
-  CmdLen = strlen (mPreProcessCmd) + strlen (mPreProcessOpt) + 
+  CmdLen = strlen (mPreProcessCmd) + strlen (mPreProcessOpt) +
   	       strlen (mOptions.VfrFileName) + strlen (mOptions.PreprocessorOutputFileName);
   if (mOptions.CPreprocessorOptions != NULL) {
     CmdLen += strlen (mOptions.CPreprocessorOptions);
@@ -591,7 +591,7 @@ CVfrCompiler::UpdateInfoForDynamicOpcode (
   if (!gNeedAdjustOpcode) {
     return;
   }
-  
+
   //
   // Base on the original offset info to update the record list.
   //
@@ -638,7 +638,7 @@ CVfrCompiler::AdjustBin (
   // Get Package Data and IfrRecord Data
   //
   gCFormPkg.BuildPkg (gCBuffer);
-  gCIfrRecordInfoDB.IfrRecordOutput (gRBuffer); 
+  gCIfrRecordInfoDB.IfrRecordOutput (gRBuffer);
 
   //
   // Compare Form and Record data
@@ -681,7 +681,7 @@ CVfrCompiler::AdjustBin (
     //
     // Re get the IfrRecord Buffer.
     //
-    gCIfrRecordInfoDB.IfrRecordOutput (gRBuffer); 
+    gCIfrRecordInfoDB.IfrRecordOutput (gRBuffer);
   }
 
   return;
@@ -740,7 +740,7 @@ CVfrCompiler::GenCFile (
   if (!IS_RUN_STATUS(STATUS_GENBINARY)) {
     goto Fail;
   }
-  
+
   if (!mOptions.CreateIfrPkgFile || mOptions.CompatibleMode) {
     if ((pFile = fopen (LongFilePath (mOptions.COutputFileName), "w")) == NULL) {
       DebugError (NULL, 0, 0001, "Error opening output C file", mOptions.COutputFileName);
@@ -751,7 +751,7 @@ CVfrCompiler::GenCFile (
       fprintf (pFile, "%s\n", gSourceFileHeader[Index]);
     }
 
-    if (mOptions.CompatibleMode) { 
+    if (mOptions.CompatibleMode) {
       gCVfrBufferConfig.OutputCFile (pFile, mOptions.VfrBaseFileName);
     }
 
@@ -808,7 +808,7 @@ CVfrCompiler::GenRecordListFile (
         gCIfrRecordInfoDB.IfrRecordOutput (pOutFile, LineNo);
       }
     }
-    
+
     fprintf (pOutFile, "\n//\n// All Opcode Record List \n//\n");
     gCIfrRecordInfoDB.IfrRecordOutput (pOutFile, 0);
     gCVfrVarDataTypeDB.Dump(pOutFile);
@@ -825,7 +825,7 @@ Err1:
 
 int
 main (
-  IN int             Argc, 
+  IN int             Argc,
   IN char            **Argv
   )
 {
@@ -833,7 +833,7 @@ main (
 
   SetPrintLevel(WARNING_LOG_LEVEL);
   CVfrCompiler         Compiler(Argc, Argv);
-  
+
   Compiler.PreProcess();
   Compiler.Compile();
   Compiler.AdjustBin();
@@ -849,7 +849,7 @@ main (
   if (gCBuffer.Buffer != NULL) {
     delete gCBuffer.Buffer;
   }
-  
+
   if (gRBuffer.Buffer != NULL) {
     delete gRBuffer.Buffer;
   }

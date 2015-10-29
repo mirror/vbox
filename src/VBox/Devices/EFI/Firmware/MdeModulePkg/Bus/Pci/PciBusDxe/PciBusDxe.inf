@@ -90,8 +90,8 @@
   gEfiPciHotPlugInitProtocolGuid                  ## SOMETIMES_CONSUMES
   gEfiPciHostBridgeResourceAllocationProtocolGuid ## TO_START
   gEfiPciPlatformProtocolGuid                     ## SOMETIMES_CONSUMES
-  gEfiPciOverrideProtocolGuid                     ## SOMETIMES_CONSUMES 
-  gEfiPciEnumerationCompleteProtocolGuid          ## PRODUCES 
+  gEfiPciOverrideProtocolGuid                     ## SOMETIMES_CONSUMES
+  gEfiPciEnumerationCompleteProtocolGuid          ## PRODUCES
   gEfiPciRootBridgeIoProtocolGuid                 ## TO_START
   gEfiIncompatiblePciDeviceSupportProtocolGuid    ## SOMETIMES_CONSUMES
   gEfiLoadFile2ProtocolGuid                       ## SOMETIMES_PRODUCES

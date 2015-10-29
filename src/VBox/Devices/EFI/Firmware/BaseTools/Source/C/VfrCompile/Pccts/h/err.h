@@ -106,7 +106,7 @@ SetWordType *wd, mask;
 
 	/* if current token is in resynch set, we've got what we wanted */
 	if ( wd[LA(1)]&mask || LA(1) == zzEOF_TOKEN ) {consumed=0; return;}
-	
+
 	/* scan until we find something in the resynch set */
 	while ( !(wd[LA(1)]&mask) && LA(1) != zzEOF_TOKEN ) {zzCONSUME;}
 	consumed=1;
@@ -427,7 +427,7 @@ int k;
 SetWordType *eset;
 #endif
 {
-	
+
     zzSyntaxErrCount++;                             /* MR11 */
 	fprintf(stderr, "line %d: syntax error at \"%s\"", zzline, (tok==zzEOF_TOKEN)?"EOF":bad_text);
 	if ( !etok && !eset ) {fprintf(stderr, "\n"); return;}
@@ -508,14 +508,14 @@ SetWordType **zzMissSet;
 		zzCONSUME;
 	}
 	if ( LA(1)!=_t ) {
-		*zzBadText = *zzMissText=LATEXT(1);	
+		*zzBadText = *zzMissText=LATEXT(1);
 		*zzMissTok= _t; *zzBadTok=LA(1);
-		*zzMissSet=NULL;				
+		*zzMissSet=NULL;
 		return 0;
 	}
-	zzMakeAttr						
-	zzdirty++;						
-	zzlabase++;						
+	zzMakeAttr
+	zzdirty++;
+	zzlabase++;
 	return 1;
 }
 
@@ -533,9 +533,9 @@ int _t;
 	if ( LA(1)!=_t ) {
 		return 0;
 	}
-	zzMakeAttr						
-	zzdirty++;						
-	zzlabase++;						
+	zzMakeAttr
+	zzdirty++;
+	zzlabase++;
 	return 1;
 }
 
@@ -553,16 +553,16 @@ char **zzMissText;
 int *zzMissTok, *zzBadTok;
 SetWordType **zzMissSet;
 #endif
-{								
-	if ( zzdirty ) {zzCONSUME;}		
+{
+	if ( zzdirty ) {zzCONSUME;}
 	if ( LA(1)!=_t ) {
-		*zzBadText = *zzMissText=LATEXT(1);	
+		*zzBadText = *zzMissText=LATEXT(1);
 		*zzMissTok= _t; *zzBadTok=LA(1);
-		*zzMissSet=NULL;				
+		*zzMissSet=NULL;
 		return 0;
-	}								
-	zzdirty = 1;					
-	zzMakeAttr						
+	}
+	zzdirty = 1;
+	zzMakeAttr
 	return 1;
 }
 
@@ -574,12 +574,12 @@ _zzmatch_wsig(_t)
 int _t;
 #endif
 {
-	if ( zzdirty ) {zzCONSUME;}		
+	if ( zzdirty ) {zzCONSUME;}
 	if ( LA(1)!=_t ) {
 		return 0;
 	}
-	zzdirty = 1;					
-	zzMakeAttr						
+	zzdirty = 1;
+	zzMakeAttr
 	return 1;
 }
 
@@ -601,10 +601,10 @@ int *zzMissTok, *zzBadTok;
 SetWordType **zzMissSet;
 #endif
 {
-	if ( LA(1)!=_t ) {				
-		*zzBadText = *zzMissText=LATEXT(1);	
+	if ( LA(1)!=_t ) {
+		*zzBadText = *zzMissText=LATEXT(1);
 		*zzMissTok= _t; *zzBadTok=LA(1);
-		*zzMissSet=NULL;				
+		*zzMissSet=NULL;
 		return 0;
 	}
 	zzMakeAttr
@@ -620,7 +620,7 @@ int _t;
 #endif
 {
 	if ( LA(1)!=_t ) return 0;
-	zzMakeAttr						
+	zzMakeAttr
 	return 1;
 }
 
@@ -634,14 +634,14 @@ _inf_zzgettok(void)
 _inf_zzgettok()
 #endif
 {
-	if ( zzinf_labase >= zzinf_last )					
-		{NLA = zzEOF_TOKEN; strcpy(NLATEXT, "");}	
-	else {											
+	if ( zzinf_labase >= zzinf_last )
+		{NLA = zzEOF_TOKEN; strcpy(NLATEXT, "");}
+	else {
 		NLA = zzinf_tokens[zzinf_labase];
 		zzline = zzinf_line[zzinf_labase];	/* wrong in 1.21 */
-		strcpy(NLATEXT, zzinf_text[zzinf_labase]);		
-		zzinf_labase++; 								
-	}												
+		strcpy(NLATEXT, zzinf_text[zzinf_labase]);
+		zzinf_labase++;
+	}
 }
 #endif
 
@@ -670,14 +670,14 @@ zzfill_inf_look()
 	{
 		fprintf(stderr, "cannot allocate lookahead text buffer (%d bytes)\n",
 		zzinf_text_buffer_size);
-		exit(PCCTS_EXIT_FAILURE);									
+		exit(PCCTS_EXIT_FAILURE);
 	}
 	zzinf_tokens = (int *) calloc(zzinf_token_buffer_size,sizeof(int));
 	if ( zzinf_tokens == NULL )
 	{
 		fprintf(stderr,	"cannot allocate token buffer (%d tokens)\n",
 				zzinf_token_buffer_size);
-		exit(PCCTS_EXIT_FAILURE);									
+		exit(PCCTS_EXIT_FAILURE);
 	}
     zzinf_line = (int *) calloc(zzinf_token_buffer_size,sizeof(int));
     if ( zzinf_line == NULL )
@@ -741,8 +741,8 @@ zzfill_inf_look()
 	{
 		fprintf(stderr,	"cannot allocate lookahead text buffer (%d)\n",
 				zzinf_text_buffer_size);
-		exit(PCCTS_EXIT_FAILURE);										
-	}													
+		exit(PCCTS_EXIT_FAILURE);
+	}
 	zzinf_text_buffer_index = 0;
 	zzinf_lap = 0;
 	/* set ptrs so that zzinf_text[i] is the text of the ith token found on input */
@@ -826,7 +826,7 @@ SetWordType *whatFollows;
 		return 0;
 	}
 	else {
-		zzMakeAttr						
+		zzMakeAttr
 #ifdef DEMAND_LOOK
 #ifdef LL_K
 		zzdirty++;

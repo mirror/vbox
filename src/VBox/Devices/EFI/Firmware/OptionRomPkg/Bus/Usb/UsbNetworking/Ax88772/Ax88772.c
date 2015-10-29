@@ -47,8 +47,8 @@ Ax88772Crc (
   pEnd = &pMacAddress[ PXE_HWADDR_LEN_ETHER ];
   while ( pEnd > pMacAddress ) {
     Data = *pMacAddress++;
-    
-    
+
+
     //
     //  CRC32: x32 + x26 + x23 + x22 + x16 + x12 + x11 + x10 + x8 + x7 + x5 + x4 + x2 + x + 1
     //
@@ -93,9 +93,9 @@ Ax88772MacAddressGet (
 {
   USB_DEVICE_REQUEST SetupMsg;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Set the register address.
   //
@@ -143,9 +143,9 @@ Ax88772MacAddressSet (
 {
   USB_DEVICE_REQUEST SetupMsg;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Set the register address.
   //
@@ -155,14 +155,14 @@ Ax88772MacAddressSet (
   SetupMsg.Value = 0;
   SetupMsg.Index = 0;
   SetupMsg.Length = PXE_HWADDR_LEN_ETHER;
-  
+
   //
   //  Read the PHY register
   //
   Status = Ax88772UsbCommand ( pNicDevice,
                                &SetupMsg,
                                pMacAddress );
-  
+
   //
   // Return the operation status
   //
@@ -337,7 +337,7 @@ Ax88772NegotiateLinkComplete (
   EFI_STATUS  Status;
 
   DBG_ENTER ( );
-  
+
   //
   //  Determine if the link is up.
   //
@@ -489,9 +489,9 @@ Ax88772PhyWrite (
 {
   USB_DEVICE_REQUEST SetupMsg;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Request access to the PHY
   //
@@ -567,7 +567,7 @@ Ax88772Reset (
 {
   USB_DEVICE_REQUEST SetupMsg;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
 
   //
@@ -656,7 +656,7 @@ Ax88772Reset (
 }
 
 
-VOID 
+VOID
 FillPkt2Queue (
   IN NIC_DEVICE * pNicDevice,
   IN UINTN BufLength)
@@ -669,20 +669,20 @@ FillPkt2Queue (
   RX_TX_PACKET * pRxPacket;
   UINTN LengthInBytes;
   EFI_STATUS Status;
-  
+
   for ( offset = 0; offset < BufLength; ){
     pLength = (UINT16*) (pNicDevice->pBulkInBuff + offset);
     pLengthBar = (UINT16*) (pNicDevice->pBulkInBuff + offset +2);
-    
+
     *pLength &= 0x7ff;
     *pLengthBar &= 0x7ff;
     *pLengthBar |= 0xf800;
-      
+
     if ((*pLength ^ *pLengthBar ) != 0xFFFF) {
       DEBUG (( EFI_D_ERROR , "Pkt length error. BufLength = %d\n", BufLength));
       return;
     }
-      
+
     pRxPacket = pNicDevice->pRxFree;
     LengthInBytes = sizeof ( *pRxPacket ) - sizeof ( pRxPacket->pNext );
     if ( NULL == pRxPacket ) {
@@ -703,17 +703,17 @@ FillPkt2Queue (
         //pRxPacket = &Packet;
       }
     }
-      
+
 
     pData = pNicDevice->pBulkInBuff + offset + 4;
     pRxPacket->Length = *pLength;
     pRxPacket->LengthBar = *(UINT16*) (pNicDevice->pBulkInBuff + offset +2);
     CopyMem (&pRxPacket->Data[0], pData, *pLength);
     //DEBUG((DEBUG_INFO, "Packet [%d]\n", *pLength));
-    
+
     pNicDevice->pRxFree = pRxPacket->pNext;
     pRxPacket->pNext = NULL;
-    
+
     if ( NULL == pNicDevice->pRxTail ) {
       pNicDevice->pRxHead = pRxPacket;
     }
@@ -722,7 +722,7 @@ FillPkt2Queue (
     }
     pNicDevice->pRxTail = pRxPacket;
     offset += (*pLength + 4);
-              
+
   }
 }
 
@@ -946,7 +946,7 @@ Ax88772Rx (
                     pRxPacket->Data[13],
                     LengthInBytes ));
         }
-        
+
       }
       else {
         //

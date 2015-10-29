@@ -42,7 +42,7 @@ main (
   UINT32 RemoteAddress[4];
   UINT8 IpAddress[4];
   struct netent * pNetwork;
-  
+
   //
   //  Determine if the IPv4 address is specified
   //
@@ -81,7 +81,7 @@ main (
               pNetwork->n_net );
     }
   }
-  
+
   //
   //  All done
   //

@@ -282,7 +282,7 @@ class Region(RegionClassObject):
 
         AlignValue = int(Str)*Granu
         return AlignValue
- 
+
     ## BlockSizeOfRegion()
     #
     #   @param  BlockSizeList        List of block information
@@ -299,7 +299,7 @@ class Region(RegionClassObject):
             if self.Offset >= End:
                 Start = End
                 continue
-            # region located in current blocks 
+            # region located in current blocks
             else:
                 # region ended within current blocks
                 if self.Offset + self.Size <= End:
@@ -316,7 +316,7 @@ class Region(RegionClassObject):
                     Start = End
                     ExpectedList.append((BlockSize, UsedBlockNum))
                     RemindingSize -= BlockSize * UsedBlockNum
-                   
+
         if FvObj.BlockSizeList == []:
             FvObj.BlockSizeList = ExpectedList
         else:
@@ -336,7 +336,7 @@ class Region(RegionClassObject):
             # check whether the BlockStatements in FV section is appropriate
             ExpectedListData = ''
             for Item in ExpectedList:
-                ExpectedListData += "BlockSize = 0x%x\n\tNumBlocks = 0x%x\n\t"%Item 
+                ExpectedListData += "BlockSize = 0x%x\n\tNumBlocks = 0x%x\n\t"%Item
             Index = 0
             for Item in FvObj.BlockSizeList:
                 if Item[0] != ExpectedList[Index][0]:
@@ -351,5 +351,5 @@ class Region(RegionClassObject):
                 else:
                     Index += 1
 
-            
+
 

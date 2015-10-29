@@ -43,13 +43,13 @@ ASM_PFX(InternalMemSetMem32):
     jz      L_SetDwords
    .byte    0x0f, 0x70, 0x0C0, 0x44
 L0:
-    movntq  %mm0, (%rdx) 
+    movntq  %mm0, (%rdx)
     leaq    8(%rdx), %rdx               # use "lea" to avoid flag changes
     loop    L0
     mfence
 L_SetDwords:
     jnc     L1
-    movd    %mm0, (%rdx) 
+    movd    %mm0, (%rdx)
 L1:
     ret
 

@@ -55,7 +55,7 @@ RsaGetKey (
   @param[in, out]  RsaContext           Pointer to RSA context being set.
   @param[in]       ModulusLength        Length of RSA modulus N in bits.
   @param[in]       PublicExponent       Pointer to RSA public exponent.
-  @param[in]       PublicExponentSize   Size of RSA public exponent buffer in bytes. 
+  @param[in]       PublicExponentSize   Size of RSA public exponent buffer in bytes.
 
   @retval FALSE  This interface is not supported.
 

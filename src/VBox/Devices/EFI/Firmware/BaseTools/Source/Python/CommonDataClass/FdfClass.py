@@ -82,7 +82,7 @@ class RegionClassObject:
 
 ## FFS data in FDF
 #
-#        
+#
 class FfsClassObject:
     ## The constructor
     #
@@ -97,7 +97,7 @@ class FfsClassObject:
 
 ## FILE statement data in FDF
 #
-#        
+#
 class FileStatementClassObject (FfsClassObject) :
     ## The constructor
     #
@@ -148,7 +148,7 @@ class AprioriSectionClassObject:
 
 ## section data in FDF
 #
-#        
+#
 class SectionClassObject:
     ## The constructor
     #
@@ -156,10 +156,10 @@ class SectionClassObject:
     #
     def __init__(self):
         self.Alignment = None
-        
+
 ## Depex expression section in FDF
 #
-#        
+#
 class DepexSectionClassObject (SectionClassObject):
     ## The constructor
     #
@@ -185,7 +185,7 @@ class CompressSectionClassObject (SectionClassObject) :
 
 ## Data section data in FDF
 #
-#        
+#
 class DataSectionClassObject (SectionClassObject):
     ## The constructor
     #
@@ -219,7 +219,7 @@ class EfiSectionClassObject (SectionClassObject):
 
 ## FV image section data in FDF
 #
-#        
+#
 class FvImageSectionClassObject (SectionClassObject):
     ## The constructor
     #
@@ -236,7 +236,7 @@ class FvImageSectionClassObject (SectionClassObject):
 
 ## GUIDed section data in FDF
 #
-#        
+#
 class GuidSectionClassObject (SectionClassObject) :
     ## The constructor
     #
@@ -269,7 +269,7 @@ class UiSectionClassObject (SectionClassObject):
 
 ## Version section data in FDF
 #
-#        
+#
 class VerSectionClassObject (SectionClassObject):
     ## The constructor
     #
@@ -304,7 +304,7 @@ class RuleClassObject :
 
 ## Complex rule data in FDF
 #
-#        
+#
 class RuleComplexFileClassObject(RuleClassObject) :
     ## The constructor
     #
@@ -342,7 +342,7 @@ class RuleFileExtensionClassObject(RuleClassObject):
 
 ## Capsule data in FDF
 #
-#        
+#
 class CapsuleClassObject :
     ## The constructor
     #
@@ -378,7 +378,7 @@ class VtfClassObject :
 
 ## VTF component data in FDF
 #
-#        
+#
 class ComponentStatementClassObject :
     ## The constructor
     #
@@ -394,7 +394,7 @@ class ComponentStatementClassObject :
         self.CompSym = None
         self.CompSize = None
         self.FilePos = None
- 
+
 ## OptionROM data in FDF
 #
 #
@@ -406,4 +406,4 @@ class OptionRomClassObject:
     def __init__(self):
         self.DriverName = None
         self.FfsList = []
-       
+

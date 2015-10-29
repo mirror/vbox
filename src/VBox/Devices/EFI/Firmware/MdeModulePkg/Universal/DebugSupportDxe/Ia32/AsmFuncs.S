@@ -192,7 +192,7 @@ ASM_PFX(CommonIdtEntry):
 ## UINT32  Gs, Fs, Es, Ds, Cs, Ss;  insure high 16 bits of each is zero
         mov    %ss,%eax
         push   %eax
-        
+
         # CS from application is one entry back in application stack
         mov    0x0,%eax
         movzwl 0x4(%eax),%eax
@@ -278,7 +278,7 @@ ASM_PFX(CommonIdtEntry):
 
 ## UEFI calling convention for IA32 requires that Direction flag in EFLAGs is clear
         cld
-                
+
 ## UINT32  ExceptionData;
         mov    0x0,%eax
         push   %eax
@@ -372,12 +372,12 @@ ASM_PFX(CommonIdtEntry):
         mov    %ecx,0x4(%ebx)
         mov    0x8(%eax),%ecx    # EFLAGS
         mov    %ecx,0x8(%ebx)
-	
+
         mov    %ebx,%eax         # modify the saved AppEsp to the new AppEsp
         mov    %eax,0x0
         mov    0x0,%eax          # restore the DebugEsp on the debug stack
 	                               # so our "popad" will not cause a stack switch
-        mov    %eax,0xc(%esp)    
+        mov    %eax,0xc(%esp)
         cmpl   $0x68,0x0
         jne    PhonyIretd+0xd
 ## Restore eflags so when we chain, the flags will be exactly as if we were never here.

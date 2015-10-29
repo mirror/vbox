@@ -1,9 +1,9 @@
 ## @file
 #  Dxe Timer Library which uses the Time Stamp Counter in the processor.
 #
-#  Note: This library is a sample implementation that depends on chipset ACPI timer. 
-#    It may not work on new generation chipset. PcAtChipsetPkg AcpiTimerLib is 
-#    the generic timer library that can replace this one. 
+#  Note: This library is a sample implementation that depends on chipset ACPI timer.
+#    It may not work on new generation chipset. PcAtChipsetPkg AcpiTimerLib is
+#    the generic timer library that can replace this one.
 #
 #  A version of the Timer Library using the processor's TSC.
 #  The time stamp counter in newer processors may support an enhancement, referred to as invariant TSC.

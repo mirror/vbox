@@ -57,7 +57,7 @@ IpSecDumpAddress (
 VOID
 IkeDumpState (
   IN UINT32              Previous,
-  IN UINT32              Current, 
+  IN UINT32              Current,
   IN UINT8               IkeVersion
   );
 
@@ -81,7 +81,7 @@ IpSecDumpPacket (
 
   @param[in]  IkePayload  Point to payload to be printed.
   @param[in]  IkeVersion  The specified version of IKE.
- 
+
 **/
 VOID
 IpSecDumpPayload (

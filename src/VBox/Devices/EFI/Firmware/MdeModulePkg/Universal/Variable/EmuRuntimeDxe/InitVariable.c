@@ -1,8 +1,8 @@
 /** @file
 
-  Implment all four UEFI runtime variable services and 
+  Implment all four UEFI runtime variable services and
   install variable architeture protocol.
-  
+
 Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -94,7 +94,7 @@ static UINT32 VBoxWriteNVRAMDoOp(UINT32 u32Operation)
   @param DataSize                   Size of Data found. If size is less than the
                                     data, this value contains the required size.
   @param Data                       Data pointer.
-                      
+
   @return EFI_INVALID_PARAMETER     Invalid parameter
   @return EFI_SUCCESS               Find the specified variable
   @return EFI_NOT_FOUND             Not found
@@ -423,13 +423,13 @@ VariableClassAddressChangeEvent (
 
 /**
   EmuVariable Driver main entry point. The Variable driver places the 4 EFI
-  runtime services in the EFI System Table and installs arch protocols 
+  runtime services in the EFI System Table and installs arch protocols
   for variable read and write services being available. It also registers
   notification function for EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE event.
 
-  @param[in] ImageHandle    The firmware allocated handle for the EFI image.  
+  @param[in] ImageHandle    The firmware allocated handle for the EFI image.
   @param[in] SystemTable    A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS       Variable service successfully initialized.
 
 **/

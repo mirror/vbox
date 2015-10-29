@@ -133,14 +133,14 @@ MnpBuildTxPacket (
   // Reserve space for vlan tag.
   //
   *PktBuf = MnpDerviceData->TxBuf + NET_VLAN_TAG_LEN;
-  
+
   if ((TxData->DestinationAddress == NULL) && (TxData->FragmentCount == 1)) {
     CopyMem (
         *PktBuf,
         TxData->FragmentTable[0].FragmentBuffer,
         TxData->FragmentTable[0].FragmentLength
         );
-    
+
     *PktLen = TxData->FragmentTable[0].FragmentLength;
   } else {
     //
@@ -148,7 +148,7 @@ MnpBuildTxPacket (
     // one fragment, copy the data into the packet buffer. Reserve the
     // media header space if necessary.
     //
-    SnpMode = MnpDerviceData->Snp->Mode; 
+    SnpMode = MnpDerviceData->Snp->Mode;
     DstPos  = *PktBuf;
     *PktLen = 0;
     if (TxData->DestinationAddress != NULL) {
@@ -240,7 +240,7 @@ MnpSyncSendPacket (
     goto SIGNAL_TOKEN;
   }
 
-  
+
   if (MnpServiceData->VlanId != 0) {
     //
     // Insert VLAN tag

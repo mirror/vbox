@@ -51,7 +51,7 @@ HII_VENDOR_DEVICE_PATH  mHiiVendorDevicePath = {
   {
     END_DEVICE_PATH_TYPE,
     END_ENTIRE_DEVICE_PATH_SUBTYPE,
-    { 
+    {
       (UINT8) (END_DEVICE_PATH_LENGTH),
       (UINT8) ((END_DEVICE_PATH_LENGTH) >> 8)
     }
@@ -60,7 +60,7 @@ HII_VENDOR_DEVICE_PATH  mHiiVendorDevicePath = {
 
 /**
   Main entry for this driver.
-  
+
   @param[in] ImageHandle     Image handle this driver.
   @param[in] SystemTable     Pointer to SystemTable.
 

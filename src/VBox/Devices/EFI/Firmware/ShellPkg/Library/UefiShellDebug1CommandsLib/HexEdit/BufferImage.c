@@ -1,7 +1,7 @@
 /** @file
   Defines HBufferImage - the view of the file that is visible at any point,
   as well as the event handlers for editing the file
-  
+
   Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -138,7 +138,7 @@ HBufferImageInit (
 }
 
 /**
-  Backup function for HBufferImage. Only a few fields need to be backup. 
+  Backup function for HBufferImage. Only a few fields need to be backup.
   This is for making the file buffer refresh as few as possible.
 
   @retval EFI_SUCCESS  The operation was successful.
@@ -190,7 +190,7 @@ HBufferImageBackup (
     Lines
     CurrentLine
     NumLines
-    ListHead 
+    ListHead
 
   @retval EFI_SUCCESS  The operation was successful.
 **/
@@ -947,7 +947,7 @@ HBufferImageRead (
   case FileTypeMemBuffer:
     Status = HMemImageRead (MemOffset, MemSize, Recover);
     break;
-    
+
   default:
     Status = EFI_NOT_FOUND;
     break;
@@ -1014,7 +1014,7 @@ HBufferImageSave (
   case FileTypeMemBuffer:
     Status = HMemImageSave (MemOffset, MemSize);
     break;
-    
+
   default:
     Status = EFI_NOT_FOUND;
     break;
@@ -1031,7 +1031,7 @@ HBufferImageSave (
   Create a new line and append it to the line list.
     Fields affected:
     NumLines
-    Lines 
+    Lines
 
   @retval NULL    create line failed.
   @return         the line created.
@@ -1373,7 +1373,7 @@ HBufferImageDoCharInput (
   Check user specified FileRow is above current screen.
 
   @param[in] FileRow  Row of file position ( start from 1 ).
-  
+
   @retval TRUE   It is above the current screen.
   @retval FALSE  It is not above the current screen.
 
@@ -1885,12 +1885,12 @@ HBufferImageGetTotalSize (
 
 /**
   Delete character from buffer.
-  
+
   @param[in] Pos      Position, Pos starting from 0.
   @param[in] Count    The Count of characters to delete.
   @param[out] DeleteBuffer    The DeleteBuffer.
 
-  @retval EFI_SUCCESS Success 
+  @retval EFI_SUCCESS Success
 **/
 EFI_STATUS
 HBufferImageDeleteCharacterFromBuffer (
@@ -2019,7 +2019,7 @@ HBufferImageDeleteCharacterFromBuffer (
   @param[in] Count      Count of characters to add.
   @param[in] AddBuffer  Add buffer.
 
-  @retval EFI_SUCCESS   Success.  
+  @retval EFI_SUCCESS   Success.
 **/
 EFI_STATUS
 HBufferImageAddCharacterToBuffer (
@@ -2172,7 +2172,7 @@ HBufferImageDoDelete (
 
 /**
   Change the raw buffer to a list of lines for the UI.
-  
+
   @param[in] Buffer   The pointer to the buffer to fill.
   @param[in] Bytes    The size of the buffer in bytes.
 
@@ -2238,7 +2238,7 @@ HBufferImageBufferToList (
 
 /**
   Change the list of lines from the UI to a raw buffer.
-  
+
   @param[in] Buffer   The pointer to the buffer to fill.
   @param[in] Bytes    The size of the buffer in bytes.
 

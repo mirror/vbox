@@ -22,25 +22,25 @@ UINT64          CurrentTick = 0;
 //
 // Function templates to match the IPv4 and IPv6 commands that we use.
 //
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *PING_IPX_POLL)(
   IN VOID          *This
-  );  
+  );
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *PING_IPX_TRANSMIT)(
   IN VOID          *This,
   IN VOID          *Token
   );
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *PING_IPX_RECEIVE)(
   IN VOID          *This,
   IN VOID          *Token
-  ); 
+  );
 
 typedef
 EFI_STATUS
@@ -50,7 +50,7 @@ EFI_STATUS
   );
 
 ///
-/// A set of pointers to either IPv6 or IPv4 functions.  
+/// A set of pointers to either IPv6 or IPv4 functions.
 /// Unknown which one to the ping command.
 ///
 typedef struct {
@@ -68,7 +68,7 @@ typedef union {
 
 //
 // PING_IPX_COMPLETION_TOKEN
-// structures are used for both transmit and receive operations. 
+// structures are used for both transmit and receive operations.
 // This version is IP-unaware.
 //
 typedef struct {
@@ -141,7 +141,7 @@ typedef struct _PING_PRIVATE_DATA {
   @param[in] Packet  Buffer which contains the data to be checksummed.
   @param[in] Length  Length to be checksummed.
 
-  @retval Checksum     Returns the 16 bit ones complement of 
+  @retval Checksum     Returns the 16 bit ones complement of
                        ones complement sum of 16 bit words
 **/
 UINT16
@@ -242,7 +242,7 @@ ReadTime (
     //
     CurrentTick += 1000000;
   }
-  
+
   return CurrentTick;
 }
 
@@ -466,7 +466,7 @@ Ping6OnEchoReplyReceived (
     if (((EFI_IP6_RECEIVE_DATA*)Private->RxToken.Packet.RxData)->Header->NextHeader != IP6_ICMP) {
       goto ON_EXIT;
     }
-    if (!IP6_IS_MULTICAST ((EFI_IPv6_ADDRESS*)&Private->DstAddress) && 
+    if (!IP6_IS_MULTICAST ((EFI_IPv6_ADDRESS*)&Private->DstAddress) &&
         !EFI_IP6_EQUAL (&((EFI_IP6_RECEIVE_DATA*)Private->RxToken.Packet.RxData)->Header->SourceAddress, (EFI_IPv6_ADDRESS*)&Private->DstAddress)) {
       goto ON_EXIT;
     }
@@ -477,7 +477,7 @@ Ping6OnEchoReplyReceived (
   } else {
     Reply   = ((EFI_IP4_RECEIVE_DATA*)Private->RxToken.Packet.RxData)->FragmentTable[0].FragmentBuffer;
     PayLoad = ((EFI_IP4_RECEIVE_DATA*)Private->RxToken.Packet.RxData)->DataLength;
-    if (!IP4_IS_MULTICAST (EFI_IP4(*(EFI_IPv4_ADDRESS*)Private->DstAddress)) && 
+    if (!IP4_IS_MULTICAST (EFI_IP4(*(EFI_IPv4_ADDRESS*)Private->DstAddress)) &&
         !EFI_IP4_EQUAL (&((EFI_IP4_RECEIVE_DATA*)Private->RxToken.Packet.RxData)->Header->SourceAddress, (EFI_IPv4_ADDRESS*)&Private->DstAddress)) {
       goto ON_EXIT;
     }
@@ -486,7 +486,7 @@ Ping6OnEchoReplyReceived (
       goto ON_EXIT;
     }
   }
-  
+
 
   if (PayLoad != Private->BufferSize) {
     goto ON_EXIT;
@@ -978,7 +978,7 @@ PingCreateIpInstance (
                            NULL
                            );
       }
-      
+
       //
       // Skip the ones not in current use.
       //
@@ -1164,7 +1164,7 @@ PingCreateIpInstance (
     Private->ProtocolPointers.Transmit  = (PING_IPX_TRANSMIT )((EFI_IP4_PROTOCOL*)Private->IpProtocol)->Transmit;
     Private->ProtocolPointers.Receive   = (PING_IPX_RECEIVE  )((EFI_IP4_PROTOCOL*)Private->IpProtocol)->Receive;
     Private->ProtocolPointers.Cancel    = (PING_IPX_CANCEL   )((EFI_IP4_PROTOCOL*)Private->IpProtocol)->Cancel;
-    Private->ProtocolPointers.Poll      = (PING_IPX_POLL     )((EFI_IP4_PROTOCOL*)Private->IpProtocol)->Poll;  
+    Private->ProtocolPointers.Poll      = (PING_IPX_POLL     )((EFI_IP4_PROTOCOL*)Private->IpProtocol)->Poll;
   }
 
   if (HandleBuffer != NULL) {
@@ -1448,7 +1448,7 @@ ShellCommandRunPing (
   UINT32              IpChoice;
 
   //
-  // we use IPv6 buffers to hold items... 
+  // we use IPv6 buffers to hold items...
   // make sure this is enough space!
   //
   ASSERT(sizeof(EFI_IPv4_ADDRESS        ) <= sizeof(EFI_IPv6_ADDRESS         ));

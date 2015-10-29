@@ -35,9 +35,9 @@ RebootPage (
   )
 {
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Send the Reboot page
   //
@@ -49,7 +49,7 @@ RebootPage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     //  Send the page body
     //
@@ -61,7 +61,7 @@ RebootPage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     //  Send the page trailer
     //
@@ -86,7 +86,7 @@ RebootPage (
                        NULL );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

@@ -135,7 +135,7 @@ typedef struct _IP4_CONFIG_INSTANCE {
   EFI_EVENT                       Timer;
 
   //
-  // Underlying media present status. 
+  // Underlying media present status.
   //
   BOOLEAN                         MediaPresent;
 
@@ -513,7 +513,7 @@ EfiIp4ConfigGetData (
 
 /**
   A dedicated timer is used to poll underlying media status. In case of
-  cable swap, a new round auto configuration will be initiated. The timer 
+  cable swap, a new round auto configuration will be initiated. The timer
   will signal the IP4 to run the auto configuration again. IP4 driver will free
   old IP address related resource, such as route table and Interface, then
   initiate a DHCP round by IP4Config->Start to acquire new IP, eventually

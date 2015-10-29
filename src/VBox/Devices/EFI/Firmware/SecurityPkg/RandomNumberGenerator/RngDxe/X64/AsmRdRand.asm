@@ -19,13 +19,13 @@
 ;
 ; Notes:
 ;
-;   Visual Studio coding practices do not use inline asm since multiple compilers and 
+;   Visual Studio coding practices do not use inline asm since multiple compilers and
 ;   architectures are supported assembler not recognizing rdrand instruction so using DB's.
 ;
 ;------------------------------------------------------------------------------
 
     .code
- 
+
 ;------------------------------------------------------------------------------
 ;  Generate a 16 bit random number
 ;  Return TRUE if Rand generated successfully, or FALSE if not
@@ -70,7 +70,7 @@ RdRand32Step ENDP
 ;------------------------------------------------------------------------------
 RdRand64Step  PROC
     ; rdrand   rax                 ; generate a 64 bit RN into rax, CF=1 if RN generated ok, otherwise CF=0
-    db     048h, 0fh, 0c7h, 0f0h   ; rdrand r64: "REX.W + 0F C7 /6 ModRM:r/m(w)" 
+    db     048h, 0fh, 0c7h, 0f0h   ; rdrand r64: "REX.W + 0F C7 /6 ModRM:r/m(w)"
     jb     rn64_ok                 ; jmp if CF=1
     xor    rax, rax                ; reg=0 if CF=0
     ret                            ; return with failure status

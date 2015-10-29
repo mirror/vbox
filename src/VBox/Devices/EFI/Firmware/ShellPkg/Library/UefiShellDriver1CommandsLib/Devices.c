@@ -19,19 +19,19 @@
   Get lots of info about a device from its handle.
 
   @param[in] TheHandle       The device handle to get info on.
-  @param[in, out] Type       On successful return R, B, or D (root, bus, or 
+  @param[in, out] Type       On successful return R, B, or D (root, bus, or
                              device) will be placed in this buffer.
-  @param[in, out] Cfg        On successful return this buffer will be 
+  @param[in, out] Cfg        On successful return this buffer will be
                              TRUE if the handle has configuration, FALSE
                              otherwise.
-  @param[in, out] Diag       On successful return this buffer will be 
+  @param[in, out] Diag       On successful return this buffer will be
                              TRUE if the handle has disgnostics, FALSE
                              otherwise.
-  @param[in, out] Parents    On successful return this buffer will be 
+  @param[in, out] Parents    On successful return this buffer will be
                              contain the number of parent handles.
-  @param[in, out] Devices    On successful return this buffer will be 
+  @param[in, out] Devices    On successful return this buffer will be
                              contain the number of devices controlled.
-  @param[in, out] Children   On successful return this buffer will be 
+  @param[in, out] Children   On successful return this buffer will be
                              contain the number of child handles.
   @param[out] Name           The pointer to a buffer that will be allocated
                              and contain the string name of the handle.
@@ -59,7 +59,7 @@ GetDeviceHandleInfo (
   EFI_HANDLE    *HandleBuffer;
   UINTN         Count;
 
-  if (TheHandle == NULL 
+  if (TheHandle == NULL
     || Type == NULL
     || Cfg == NULL
     || Diag == NULL
@@ -254,13 +254,13 @@ ShellCommandRunDevices (
           ShellStatus = SHELL_ABORTED;
           break;
         }
-        
+
       }
 
       if (HandleList != NULL) {
         FreePool(HandleList);
       }
- 
+
     }
     SHELL_FREE_NON_NULL(Language);
     ShellCommandLineFreeVarList (Package);

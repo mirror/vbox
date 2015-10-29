@@ -90,7 +90,7 @@ MemoryStatusCodeReportWorker (
   MEMORY_STATUSCODE_RECORD          *Record;
 
   //
-  // Find GUID'ed HOBs to locate current record buffer. 
+  // Find GUID'ed HOBs to locate current record buffer.
   //
   Hob.Raw = GetFirstGuidHob (&gMemoryStatusCodeRecordGuid);
   ASSERT (Hob.Raw != NULL);

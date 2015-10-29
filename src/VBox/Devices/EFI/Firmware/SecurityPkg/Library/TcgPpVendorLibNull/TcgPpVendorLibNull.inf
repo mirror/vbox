@@ -32,6 +32,6 @@
 [Packages]
   MdePkg/MdePkg.dec
   SecurityPkg/SecurityPkg.dec
-  
+
 [LibraryClasses]
   DebugLib

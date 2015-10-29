@@ -49,7 +49,7 @@ CalculateSum8 (
   for (Sum = 0, Count = 0; Count < Length; Count++) {
     Sum = (UINT8) (Sum + *(Buffer + Count));
   }
-  
+
   return Sum;
 }
 
@@ -128,7 +128,7 @@ CalculateSum16 (
   for (Sum = 0, Count = 0; Count < Total; Count++) {
     Sum = (UINT16) (Sum + *(Buffer + Count));
   }
-  
+
   return Sum;
 }
 
@@ -210,7 +210,7 @@ CalculateSum32 (
   for (Sum = 0, Count = 0; Count < Total; Count++) {
     Sum = Sum + *(Buffer + Count);
   }
-  
+
   return Sum;
 }
 
@@ -292,7 +292,7 @@ CalculateSum64 (
   for (Sum = 0, Count = 0; Count < Total; Count++) {
     Sum = Sum + *(Buffer + Count);
   }
-  
+
   return Sum;
 }
 

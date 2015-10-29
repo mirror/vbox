@@ -18,14 +18,14 @@ ASM_GLOBAL ASM_PFX(AsmTransferControl)
 ASM_PFX(AsmTransferControl):
     # rcx S3WakingVector    :DWORD
     # rdx AcpiLowMemoryBase :DWORD
-    lea   _AsmTransferControl_al_0000(%rip), %eax 
-    movq  $0x2800000000, %r8 
+    lea   _AsmTransferControl_al_0000(%rip), %eax
+    movq  $0x2800000000, %r8
     orq   %r8, %rax
     pushq %rax
     shrd  $20, %ecx, %ebx
-    andl  $0x0f, %ecx 
+    andl  $0x0f, %ecx
     movw  %cx, %bx
-    movl  %ebx, jmp_addr(%rip) 
+    movl  %ebx, jmp_addr(%rip)
     lret
 _AsmTransferControl_al_0000:
     .byte    0x0b8, 0x30, 0      # mov ax, 30h as selector
@@ -37,13 +37,13 @@ _AsmTransferControl_al_0000:
     movq  %cr0, %rax
     movq  %cr4, %rbx
     .byte    0x66
-    andl  $0x7ffffffe, %eax 
-    andb  $0xdf, %bl 
+    andl  $0x7ffffffe, %eax
+    andb  $0xdf, %bl
     movq  %rax, %cr0
     .byte    0x66
-    movl  $0x0c0000080, %ecx 
+    movl  $0x0c0000080, %ecx
     rdmsr
-    andb  $0xfe, %ah 
+    andb  $0xfe, %ah
     wrmsr
     movq  %rbx, %cr4
     .byte    0x0ea              # jmp far jmp_addr
@@ -72,7 +72,7 @@ ASM_PFX(AsmTransferControl16):
     movw  %ax,%fs
     movw  %ax,%gs
     movw  %ax,%ss
-    movq  %cr0, %rax        # Get control register 0  
+    movq  %cr0, %rax        # Get control register 0
     .byte 0x66
     .byte 0x83,0xe0,0xfe    # and    eax, 0fffffffeh  ; Clear PE bit (bit #0)
     .byte 0xf,0x22,0xc0     # mov    cr0, eax         ; Activate real mode
@@ -93,12 +93,12 @@ ASM_PFX(PageFaultHandlerHook):
     # save volatile fp registers
     addq     $-0x68, %rsp
     stmxcsr  0x60(%rsp)
-    movdqa   %xmm0, 0x0(%rsp) 
-    movdqa   %xmm1, 0x10(%rsp) 
-    movdqa   %xmm2, 0x20(%rsp) 
-    movdqa   %xmm3, 0x30(%rsp) 
-    movdqa   %xmm4, 0x40(%rsp) 
-    movdqa   %xmm5, 0x50(%rsp) 
+    movdqa   %xmm0, 0x0(%rsp)
+    movdqa   %xmm1, 0x10(%rsp)
+    movdqa   %xmm2, 0x20(%rsp)
+    movdqa   %xmm3, 0x30(%rsp)
+    movdqa   %xmm4, 0x40(%rsp)
+    movdqa   %xmm5, 0x50(%rsp)
 
     addq     $-0x20, %rsp
     call     ASM_PFX(PageFaultHandler)

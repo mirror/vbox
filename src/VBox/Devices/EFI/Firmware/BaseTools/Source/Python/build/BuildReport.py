@@ -182,7 +182,7 @@ def FindIncludeFiles(Source, IncludePathList, IncludeFiles):
 
 ## Split each lines in file
 #
-#  This method is used to split the lines in file to make the length of each line 
+#  This method is used to split the lines in file to make the length of each line
 #  less than MaxLength.
 #
 #  @param      Content           The content of file
@@ -207,12 +207,12 @@ def FileLinesSplit(Content=None, MaxLength=None):
             NewContentList.append(Line)
     for NewLine in NewContentList:
         NewContent += NewLine + TAB_LINE_BREAK
-    
+
     NewContent = NewContent.replace(TAB_LINE_BREAK, gEndOfLine).replace('\r\r\n', gEndOfLine)
     return NewContent
-    
-    
-    
+
+
+
 ##
 # Parse binary dependency expression section
 #
@@ -232,7 +232,7 @@ class DepexParser(object):
     def __init__(self, Wa):
         self._GuidDb = {}
         for Pa in Wa.AutoGenObjectList:
-            for Package in Pa.PackageList:        
+            for Package in Pa.PackageList:
                 for Protocol in Package.Protocols:
                     GuidValue = GuidStructureStringToGuidString(Package.Protocols[Protocol])
                     self._GuidDb[GuidValue.upper()] = Protocol
@@ -242,10 +242,10 @@ class DepexParser(object):
                 for Guid in Package.Guids:
                     GuidValue = GuidStructureStringToGuidString(Package.Guids[Guid])
                     self._GuidDb[GuidValue.upper()] = Guid
-    
+
     ##
     # Parse the binary dependency expression files.
-    # 
+    #
     # This function parses the binary dependency expression file and translate it
     # to the instruction list.
     #
@@ -264,10 +264,10 @@ class DepexParser(object):
                 GuidString = self._GuidDb.get(GuidValue, GuidValue)
                 Statement = "%s %s" % (Statement, GuidString)
             DepexStatement.append(Statement)
-            OpCode = DepexFile.read(1)     
-        
+            OpCode = DepexFile.read(1)
+
         return DepexStatement
-    
+
 ##
 # Reports library information
 #
@@ -360,14 +360,14 @@ class DepexReport(object):
     #
     def __init__(self, M):
         self.Depex = ""
-        self._DepexFileName = os.path.join(M.BuildDir, "OUTPUT", M.Module.BaseName + ".depex") 
+        self._DepexFileName = os.path.join(M.BuildDir, "OUTPUT", M.Module.BaseName + ".depex")
         ModuleType = M.ModuleType
         if not ModuleType:
             ModuleType = gComponentType2ModuleType.get(M.ComponentType, "")
 
         if ModuleType in ["SEC", "PEI_CORE", "DXE_CORE", "SMM_CORE", "UEFI_APPLICATION"]:
             return
-      
+
         for Source in M.SourceFileList:
             if os.path.splitext(Source.Path)[1].lower() == ".dxs":
                 Match = gDxsDependencyPattern.search(open(Source.Path).read())
@@ -416,7 +416,7 @@ class DepexReport(object):
                 FileWrite(File, gSubSectionSep)
             except:
                 EdkLogger.warn(None, "Dependency expression file is corrupted", self._DepexFileName)
-        
+
         FileWrite(File, "Dependency Expression (DEPEX) from %s" % self.Source)
 
         if self.Source == "INF":
@@ -756,7 +756,7 @@ class PcdReport(object):
                     DscDefaultValue = self.DscPcdDefault.get((Pcd.TokenCName, Pcd.TokenSpaceGuidCName))
                     DscDefaultValue = self.FdfPcdSet.get((Pcd.TokenCName, Key), DscDefaultValue)
                     InfDefaultValue = None
-                    
+
                     PcdValue = DecDefaultValue
                     if DscDefaultValue:
                         PcdValue = DscDefaultValue
@@ -821,14 +821,14 @@ class PcdReport(object):
                                 FileWrite(File, ' *P %-*s: %6s %10s = %-22s' % (self.MaxLen, Pcd.TokenCName, TypeName, '('+Pcd.DatumType+')', PcdValue.strip()))
                         else:
                             FileWrite(File, ' *M %-*s: %6s %10s = %-22s' % (self.MaxLen, Pcd.TokenCName, TypeName, '('+Pcd.DatumType+')', PcdValue.strip()))
-                    
+
                     if TypeName in ('DYNHII', 'DEXHII', 'DYNVPD', 'DEXVPD'):
                         for SkuInfo in Pcd.SkuInfoList.values():
                             if TypeName in ('DYNHII', 'DEXHII'):
-                                FileWrite(File, '%*s: %s: %s' % (self.MaxLen + 4, SkuInfo.VariableGuid, SkuInfo.VariableName, SkuInfo.VariableOffset))        
+                                FileWrite(File, '%*s: %s: %s' % (self.MaxLen + 4, SkuInfo.VariableGuid, SkuInfo.VariableName, SkuInfo.VariableOffset))
                             else:
                                 FileWrite(File, '%*s' % (self.MaxLen + 4, SkuInfo.VpdOffset))
-                               
+
                     if not DscMatch and DscDefaultValue != None:
                         FileWrite(File, '    %*s = %s' % (self.MaxLen + 19, 'DSC DEFAULT', DscDefaultValue.strip()))
 
@@ -1033,7 +1033,7 @@ class PredictionReport(object):
             EotEndTime = time.time()
             EotDuration = time.strftime("%H:%M:%S", time.gmtime(int(round(EotEndTime - EotStartTime))))
             EdkLogger.quiet("EOT run time: %s\n" % EotDuration)
-            
+
             #
             # Parse the output of EOT tool
             #
@@ -1228,7 +1228,7 @@ class FdRegionReport(object):
         PlatformPcds = {}
         #
         # Collect PCDs declared in DEC files.
-        #        
+        #
         for Pa in Wa.AutoGenObjectList:
             for Package in Pa.PackageList:
                 for (TokenCName, TokenSpaceGuidCName, DecType) in Package.Pcds:
@@ -1452,7 +1452,7 @@ class PlatformReport(object):
         self.DepexParser = None
         if "DEPEX" in ReportType:
             self.DepexParser = DepexParser(Wa)
-            
+
         self.ModuleReportList = []
         if MaList != None:
             self._IsModuleBuild = True
@@ -1493,7 +1493,7 @@ class PlatformReport(object):
         if not self._IsModuleBuild:
             if "PCD" in ReportType:
                 self.PcdReport.GenerateReport(File, None)
-    
+
             if "FLASH" in ReportType:
                 for FdReportListItem in self.FdReportList:
                     FdReportListItem.GenerateReport(File)
@@ -1527,7 +1527,7 @@ class BuildReport(object):
         if ReportFile:
             self.ReportList = []
             self.ReportType = []
-            if ReportType: 
+            if ReportType:
                 for ReportTypeItem in ReportType:
                     if ReportTypeItem not in self.ReportType:
                         self.ReportType.append(ReportTypeItem)
@@ -1570,7 +1570,7 @@ class BuildReport(object):
                 EdkLogger.error("BuildReport", CODE_ERROR, "Unknown fatal error when generating build report", ExtraData=self.ReportFile, RaiseError=False)
                 EdkLogger.quiet("(Python %s on %s\n%s)" % (platform.python_version(), sys.platform, traceback.format_exc()))
             File.close()
-            
+
 # This acts like the main() function for the script, unless it is 'import'ed into another script.
 if __name__ == '__main__':
     pass

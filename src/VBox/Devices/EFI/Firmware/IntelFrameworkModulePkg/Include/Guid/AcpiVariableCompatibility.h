@@ -62,8 +62,8 @@ typedef struct {
   //
   // S3 Debug extension
   //
-  EFI_PHYSICAL_ADDRESS  S3DebugBufferAddress; 
-  EFI_PHYSICAL_ADDRESS  S3ResumeNvsEntryPoint;    
+  EFI_PHYSICAL_ADDRESS  S3DebugBufferAddress;
+  EFI_PHYSICAL_ADDRESS  S3ResumeNvsEntryPoint;
 } ACPI_VARIABLE_SET_COMPATIBILITY;
 
 #endif

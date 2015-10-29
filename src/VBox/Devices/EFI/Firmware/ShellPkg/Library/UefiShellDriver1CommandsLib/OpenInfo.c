@@ -126,7 +126,7 @@ TraverseHandleDatabase (
               OpenInfo[OpenInfoIndex].OpenCount,
               OpenTypeString,
               Name
-             );            
+             );
           }
         }
         FreePool (OpenInfo);

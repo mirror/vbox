@@ -19,7 +19,7 @@
   FILE_GUID                      = 8FDED21D-7AB5-4c26-8CF7-20EC4DB9861D
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = ExtendedSalLib|DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION 
+  LIBRARY_CLASS                  = ExtendedSalLib|DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION
   CONSTRUCTOR                    = DxeExtendedSalLibConstruct
 
 #

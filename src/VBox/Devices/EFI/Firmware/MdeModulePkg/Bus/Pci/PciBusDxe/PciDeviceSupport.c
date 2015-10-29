@@ -251,7 +251,7 @@ RegisterPciDevice (
   PciIo = &(PciIoDevice->PciIo);
   Data8 = PCI_INT_LINE_UNKNOWN;
   PciIo->Pci.Write (PciIo, EfiPciIoWidthUint8, 0x3C, 1, &Data8);
- 
+
   //
   // Process OpRom
   //
@@ -311,7 +311,7 @@ RegisterPciDevice (
           (UINT64) (UINTN) PciIoDevice->PciIo.RomImage,
           PciIoDevice->PciIo.RomSize
           );
-      }   
+      }
     }
   }
 

@@ -71,10 +71,10 @@
 #ifdef __STDC__
 #define	IDTVEC(name) \
 	ALIGN_TEXT; .globl X ## name; .type X ## name,@function; X ## name:
-#else 
+#else
 #define	IDTVEC(name) \
 	ALIGN_TEXT; .globl X/**/name; .type X/**/name,@function; X/**/name:
-#endif /* __STDC__ */ 
+#endif /* __STDC__ */
 #endif /* _KERNEL */
 
 #ifdef __STDC__

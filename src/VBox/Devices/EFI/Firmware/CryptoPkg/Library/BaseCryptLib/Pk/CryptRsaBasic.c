@@ -304,17 +304,17 @@ RsaPkcs1Verify (
 
   //
   // Determine the message digest algorithm according to digest size.
-  //   Only MD5, SHA-1 or SHA-256 algorithm is supported. 
+  //   Only MD5, SHA-1 or SHA-256 algorithm is supported.
   //
   switch (HashSize) {
   case MD5_DIGEST_SIZE:
     DigestType = NID_md5;
     break;
-    
+
   case SHA1_DIGEST_SIZE:
     DigestType = NID_sha1;
     break;
-    
+
   case SHA256_DIGEST_SIZE:
     DigestType = NID_sha256;
     break;

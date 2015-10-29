@@ -1,7 +1,7 @@
 /** @file
   Define the variable data structures used for TrEE physical presence.
   The TPM2 request from firmware or OS is saved to variable. And it is
-  cleared after it is processed in the next boot cycle. The TPM2 response 
+  cleared after it is processed in the next boot cycle. The TPM2 response
   is saved to variable.
 
 Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved. <BR>
@@ -41,7 +41,7 @@ typedef struct {
 
 //
 // This variable is used to save TPM Management Flags and corresponding operations.
-// It should be protected from malicious software (e.g. Set it as read-only variable). 
+// It should be protected from malicious software (e.g. Set it as read-only variable).
 //
 #define TREE_PHYSICAL_PRESENCE_FLAGS_VARIABLE  L"TrEEPhysicalPresenceFlags"
 typedef struct {

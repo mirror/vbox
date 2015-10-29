@@ -282,7 +282,7 @@ BdsMemoryTest (
     FreePool (Pos);
     return EFI_SUCCESS;
   }
-  
+
   if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
     TmpStr = GetStringById (STRING_TOKEN (STR_ESC_TO_SKIP_MEM_TEST));
 
@@ -310,7 +310,7 @@ BdsMemoryTest (
 
       ASSERT (0);
     }
-    
+
     if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
       TempData = (UINT32) DivU64x32 (TotalMemorySize, 16);
       TestPercent = (UINTN) DivU64x32 (
@@ -402,11 +402,11 @@ Done:
       100,
       (UINTN) PreviousValue
       );
-    
+
   } else {
     DEBUG ((EFI_D_INFO, "%d bytes of system memory tested OK\r\n", TotalMemorySize));
   }
-  
+
   FreePool (Pos);
 
 

@@ -172,7 +172,7 @@ RsaGetKey (
     return FALSE;
   }
   *BnSize = BN_bn2bin (BnKey, BigNumber) ;
-  
+
   return TRUE;
 }
 
@@ -191,7 +191,7 @@ RsaGetKey (
   @param[in, out]  RsaContext           Pointer to RSA context being set.
   @param[in]       ModulusLength        Length of RSA modulus N in bits.
   @param[in]       PublicExponent       Pointer to RSA public exponent.
-  @param[in]       PublicExponentSize   Size of RSA public exponent buffer in bytes. 
+  @param[in]       PublicExponentSize   Size of RSA public exponent buffer in bytes.
 
   @retval  TRUE   RSA key component was generated successfully.
   @retval  FALSE  Invalid RSA key component tag.
@@ -215,14 +215,14 @@ RsaGenerateKey (
   if (RsaContext == NULL || ModulusLength > INT_MAX || PublicExponentSize > INT_MAX) {
     return FALSE;
   }
-  
+
   KeyE = BN_new ();
   if (KeyE == NULL) {
     return FALSE;
   }
 
   RetVal = FALSE;
-  
+
   if (PublicExponent == NULL) {
     if (BN_set_word (KeyE, 0x10001) == 0) {
       goto _Exit;
@@ -243,7 +243,7 @@ _Exit:
 }
 
 /**
-  Validates key components of RSA context. 
+  Validates key components of RSA context.
   NOTE: This function performs integrity checks on all the RSA key material, so
         the RSA key structure must contain all the private key data.
 
@@ -275,7 +275,7 @@ RsaCheckKey (
   if (RsaContext == NULL) {
     return FALSE;
   }
-  
+
   if  (RSA_check_key ((RSA *) RsaContext) != 1) {
     Reason = ERR_GET_REASON (ERR_peek_last_error ());
     if (Reason == RSA_R_P_NOT_PRIME ||
@@ -342,31 +342,31 @@ RsaPkcs1Sign (
     *SigSize = Size;
     return FALSE;
   }
-  
+
   if (Signature == NULL) {
     return FALSE;
   }
-  
+
   //
   // Determine the message digest algorithm according to digest size.
-  //   Only MD5, SHA-1 or SHA-256 algorithm is supported. 
+  //   Only MD5, SHA-1 or SHA-256 algorithm is supported.
   //
   switch (HashSize) {
   case MD5_DIGEST_SIZE:
     DigestType = NID_md5;
     break;
-    
+
   case SHA1_DIGEST_SIZE:
     DigestType = NID_sha1;
     break;
-    
+
   case SHA256_DIGEST_SIZE:
     DigestType = NID_sha256;
     break;
 
   default:
     return FALSE;
-  }  
+  }
 
   return (BOOLEAN) RSA_sign (
                      DigestType,

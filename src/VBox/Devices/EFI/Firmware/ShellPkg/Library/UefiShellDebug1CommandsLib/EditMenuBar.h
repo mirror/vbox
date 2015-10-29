@@ -97,7 +97,7 @@ MenuBarRefresh (
 
   @param[in] Key                The pressed key.
 
-  @retval EFI_NOT_FOUND         The key was not a valid function key 
+  @retval EFI_NOT_FOUND         The key was not a valid function key
                                 (an error was sent to the status bar).
   @return The return value from the called dispatch function.
 **/
@@ -112,7 +112,7 @@ MenuBarDispatchFunctionKey (
 
   @param[in] Key                The pressed key.
 
-  @retval EFI_NOT_FOUND         The key was not a valid control-based key 
+  @retval EFI_NOT_FOUND         The key was not a valid control-based key
                                 (an error was sent to the status bar).
   @return EFI_SUCCESS.
 **/

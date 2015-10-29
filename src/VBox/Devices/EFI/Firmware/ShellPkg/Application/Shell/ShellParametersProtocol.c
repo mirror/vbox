@@ -143,8 +143,8 @@ DEBUG_CODE_END();
   // Remove any non-escaped quotes in the string
   // Remove any remaining escape characters in the string
   //
-  for (NextDelim = FindFirstCharacter(*TempParameter, L"\"^", CHAR_NULL) 
-    ; *NextDelim != CHAR_NULL 
+  for (NextDelim = FindFirstCharacter(*TempParameter, L"\"^", CHAR_NULL)
+    ; *NextDelim != CHAR_NULL
     ; NextDelim = FindFirstCharacter(NextDelim, L"\"^", CHAR_NULL)
     ) {
     if (*NextDelim == L'^') {
@@ -173,7 +173,7 @@ DEBUG_CODE_END();
   parameters for inclusion in EFI_SHELL_PARAMETERS_PROTOCOL.  this supports space
   delimited and quote surrounded parameter definition.
 
-  All special character processing (alias, environment variable, redirection, 
+  All special character processing (alias, environment variable, redirection,
   etc... must be complete before calling this API.
 
   @param[in] CommandLine         String of command line to parse
@@ -482,7 +482,7 @@ IsUnicodeFile(
   }
   gEfiShellProtocol->SetFilePosition(Handle, OriginalFilePosition);
   gEfiShellProtocol->CloseFile(Handle);
-  return (Status);  
+  return (Status);
 }
 
 /**
@@ -561,7 +561,7 @@ FixFileName (
     Copy = FileName+1;
     if ((TempLocation = StrStr(Copy , L"\"")) != NULL) {
       TempLocation[0] = CHAR_NULL;
-    }    
+    }
   } else {
     Copy = FileName;
     while(Copy[0] == L' ') {
@@ -569,7 +569,7 @@ FixFileName (
     }
     if ((TempLocation = StrStr(Copy , L" ")) != NULL) {
       TempLocation[0] = CHAR_NULL;
-    }    
+    }
   }
 
   if (Copy[0] == CHAR_NULL) {
@@ -602,7 +602,7 @@ FixVarName (
     Copy = FileName+1;
     if ((TempLocation = StrStr(Copy , L"%")) != NULL) {
       TempLocation[0] = CHAR_NULL;
-    }    
+    }
   }
 
   return (FixFileName(Copy));
@@ -611,9 +611,9 @@ FixVarName (
 /**
   Remove the unicode file tag from the begining of the file buffer since that will not be
   used by StdIn.
-  
+
   @param[in]  Handle    Pointer to the handle of the file to be processed.
-  
+
   @retval EFI_SUCCESS   The unicode file tag has been moved successfully.
 **/
 EFI_STATUS
@@ -819,7 +819,7 @@ UpdateStdInStdOutStdErr(
     if (StrStr(CommandLineWalker, L" 1>> ") != NULL) {
       Status = EFI_NOT_FOUND;
     }
-  } 
+  }
   if (!EFI_ERROR(Status) && (CommandLineWalker = StrStr(CommandLineCopy, L" >> ")) != NULL) {
     FirstLocation = MIN(CommandLineWalker, FirstLocation);
     SetMem16(CommandLineWalker, 8, L' ');
@@ -846,7 +846,7 @@ UpdateStdInStdOutStdErr(
     if (StrStr(CommandLineWalker, L" >>a ") != NULL) {
       Status = EFI_NOT_FOUND;
     }
-  } 
+  }
   if (!EFI_ERROR(Status) && (CommandLineWalker = StrStr(CommandLineCopy, L" 1>a ")) != NULL) {
     FirstLocation = MIN(CommandLineWalker, FirstLocation);
     SetMem16(CommandLineWalker, 10, L' ');
@@ -860,7 +860,7 @@ UpdateStdInStdOutStdErr(
     if (StrStr(CommandLineWalker, L" 1>a ") != NULL) {
       Status = EFI_NOT_FOUND;
     }
-  } 
+  }
   if (!EFI_ERROR(Status) && (CommandLineWalker = StrStr(CommandLineCopy, L" >a ")) != NULL) {
     FirstLocation = MIN(CommandLineWalker, FirstLocation);
     SetMem16(CommandLineWalker, 8, L' ');
@@ -1088,7 +1088,7 @@ UpdateStdInStdOutStdErr(
       //
       // Cant redirect during a reconnect operation.
       //
-      ||(StrStr(NewCommandLine, L"connect -r") != NULL 
+      ||(StrStr(NewCommandLine, L"connect -r") != NULL
          && (StdOutVarName != NULL || StdOutFileName != NULL || StdErrFileName != NULL || StdErrVarName != NULL))
       //
       // Check that filetypes (Unicode/Ascii) do not change during an append
@@ -1294,7 +1294,7 @@ RestoreStdInStdOutStdErr (
 {
   SPLIT_LIST        *Split;
 
-  if (ShellParameters == NULL 
+  if (ShellParameters == NULL
     ||OldStdIn        == NULL
     ||OldStdOut       == NULL
     ||OldStdErr       == NULL

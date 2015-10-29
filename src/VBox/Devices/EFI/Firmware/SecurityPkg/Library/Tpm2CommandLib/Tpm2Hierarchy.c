@@ -206,7 +206,7 @@ Tpm2SetPrimaryPolicy (
 
   @param[in] AuthHandle        TPM_RH_LOCKOUT or TPM_RH_PLATFORM+{PP}
   @param[in] AuthSession       Auth Session context
- 
+
   @retval EFI_SUCCESS      Operation completed successfully.
   @retval EFI_DEVICE_ERROR Unexpected device behavior.
 **/
@@ -431,8 +431,8 @@ Tpm2HierarchyChangeAuth (
   // Call the TPM
   //
   Status = Tpm2SubmitCommand (
-             CmdSize, 
-             (UINT8 *)&Cmd, 
+             CmdSize,
+             (UINT8 *)&Cmd,
              &ResultBufSize,
              ResultBuf
              );
@@ -517,8 +517,8 @@ Tpm2ChangeEPS (
   // Call the TPM
   //
   Status = Tpm2SubmitCommand (
-             CmdSize, 
-             (UINT8 *)&Cmd, 
+             CmdSize,
+             (UINT8 *)&Cmd,
              &ResultBufSize,
              ResultBuf
              );
@@ -603,8 +603,8 @@ Tpm2ChangePPS (
   // Call the TPM
   //
   Status = Tpm2SubmitCommand (
-             CmdSize, 
-             (UINT8 *)&Cmd, 
+             CmdSize,
+             (UINT8 *)&Cmd,
              &ResultBufSize,
              ResultBuf
              );
@@ -699,8 +699,8 @@ Tpm2HierarchyControl (
   // Call the TPM
   //
   Status = Tpm2SubmitCommand (
-             CmdSize, 
-             (UINT8 *)&Cmd, 
+             CmdSize,
+             (UINT8 *)&Cmd,
              &ResultBufSize,
              ResultBuf
              );

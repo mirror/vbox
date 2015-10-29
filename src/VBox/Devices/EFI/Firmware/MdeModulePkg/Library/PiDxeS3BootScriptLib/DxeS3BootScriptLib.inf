@@ -52,7 +52,7 @@
   UefiLib
   SmbusLib
   PciLib
-  IoLib 
+  IoLib
   LockBoxLib
 
 [Protocols]

@@ -1,8 +1,8 @@
 ## @file
 #  UEFI RNG (Random Number Generator) Protocol test application.
-#  
-#  This application can print out the supported RNG algorithm in UEFI RNG Protocol. 
-#  And then it will do a generation test on the supported RNG algorithm.  
+#
+#  This application can print out the supported RNG algorithm in UEFI RNG Protocol.
+#  And then it will do a generation test on the supported RNG algorithm.
 #
 #  Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials
@@ -52,6 +52,6 @@
   gEfiRngAlgorithmX9313DesGuid          ## SOMETIMES_CONSUMES    ## GUID        # Unique ID of the algorithm for RNG
   gEfiRngAlgorithmX931AesGuid           ## SOMETIMES_CONSUMES    ## GUID        # Unique ID of the algorithm for RNG
   gEfiRngAlgorithmRaw                   ## SOMETIMES_CONSUMES    ## GUID        # Unique ID of the algorithm for RNG
-  
+
   [UserExtensions.TianoCore."ExtraFiles"]
   RngTestExtra.uni

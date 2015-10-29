@@ -17,7 +17,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 UINT32 mDataSegPad = 0;
 
 /**
-  Attach the iSCSI connection to the iSCSI session. 
+  Attach the iSCSI connection to the iSCSI session.
 
   @param[in, out]  Session The iSCSI session.
   @param[in, out]  Conn    The iSCSI connection.
@@ -35,7 +35,7 @@ IScsiAttatchConnection (
 }
 
 /**
-  Detach the iSCSI connection from the session it belongs to. 
+  Detach the iSCSI connection from the session it belongs to.
 
   @param[in, out]  Conn The iSCSI connection.
 
@@ -52,7 +52,7 @@ IScsiDetatchConnection (
 
 
 /**
-  Check the sequence number according to RFC3720. 
+  Check the sequence number according to RFC3720.
 
   @param[in, out]  ExpSN   The currently expected sequence number.
   @param[in]       NewSN   The sequence number to check.
@@ -124,7 +124,7 @@ IScsiUpdateCmdSN (
 
   @retval EFI_SUCCESS        The iSCSI connection is logged into the iSCSI target.
   @retval EFI_TIMEOUT        Timeout occurred during the login procedure.
-  @retval Others             Other errors as indicated.  
+  @retval Others             Other errors as indicated.
 
 **/
 EFI_STATUS
@@ -253,7 +253,7 @@ IScsiCreateConnection (
 
   if (!Conn->Ipv6Flag) {
     Tcp4IoConfig = &TcpIoConfig.Tcp4IoConfigData;
-    
+
     CopyMem (&Tcp4IoConfig->LocalIp, &NvData->LocalIp, sizeof (EFI_IPv4_ADDRESS));
     CopyMem (&Tcp4IoConfig->SubnetMask, &NvData->SubnetMask, sizeof (EFI_IPv4_ADDRESS));
     CopyMem (&Tcp4IoConfig->Gateway, &NvData->Gateway, sizeof (EFI_IPv4_ADDRESS));
@@ -264,7 +264,7 @@ IScsiCreateConnection (
     Tcp4IoConfig->StationPort = 0;
   } else {
     Tcp6IoConfig = &TcpIoConfig.Tcp6IoConfigData;
-  
+
     CopyMem (&Tcp6IoConfig->RemoteIp, &NvData->TargetIp, sizeof (EFI_IPv6_ADDRESS));
     Tcp6IoConfig->RemotePort  = NvData->TargetPort;
     Tcp6IoConfig->ActiveFlag  = TRUE;
@@ -317,7 +317,7 @@ IScsiDestroyConnection (
 
   @retval     EFI_SUCCESS      Get the NIC information successfully.
   @retval     Others           Other errors as indicated.
-  
+
 **/
 EFI_STATUS
 IScsiGetIp6NicInfo (
@@ -473,7 +473,7 @@ IScsiSessionLogin (
     Session->State = SESSION_STATE_LOGGED_IN;
 
     if (!Conn->Ipv6Flag) {
-      ProtocolGuid = &gEfiTcp4ProtocolGuid;      
+      ProtocolGuid = &gEfiTcp4ProtocolGuid;
     } else {
       ProtocolGuid = &gEfiTcp6ProtocolGuid;
     }
@@ -484,7 +484,7 @@ IScsiSessionLogin (
                     (VOID **) &Tcp,
                     Session->Private->Image,
                     Session->Private->ExtScsiPassThruHandle,
-                    EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER                    
+                    EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
                     );
 
     ASSERT_EFI_ERROR (Status);
@@ -591,7 +591,7 @@ IScsiSendLoginReq (
   Receive and process the iSCSI login response.
 
   @param[in]  Conn             The connection in the iSCSI login phase.
-  
+
   @retval EFI_SUCCESS          The iSCSI login response PDU is received and processed.
   @retval Others               Other errors as indicated.
 
@@ -769,7 +769,7 @@ IScsiPrepareLoginReq (
   case ISCSI_SECURITY_NEGOTIATION:
     //
     // Both none authentication and CHAP authentication share the CHAP path.
-    // 
+    //
     //
     if (Session->AuthType != ISCSI_AUTH_TYPE_KRB) {
       Status = IScsiCHAPToSendReq (Conn, Nbuf);
@@ -784,7 +784,7 @@ IScsiPrepareLoginReq (
     if (!Conn->ParamNegotiated) {
       IScsiFillOpParams (Conn, Nbuf);
     }
-    
+
     ISCSI_SET_FLAG (LoginReq, ISCSI_LOGIN_REQ_PDU_FLAG_TRANSIT);
     break;
 
@@ -940,7 +940,7 @@ IScsiProcessLoginRsp (
     // the value presented in CmdSN as the target value for ExpCmdSN.
     //
     if ((Session->State == SESSION_STATE_FREE) && (Session->CmdSN != LoginRsp->ExpCmdSN)) {
-      return EFI_PROTOCOL_ERROR;     
+      return EFI_PROTOCOL_ERROR;
     }
 
     //
@@ -1048,7 +1048,7 @@ IScsiProcessLoginRsp (
   @param[in]      Data         The data segment that should contain the
                                TargetAddress key-value list.
   @param[in]      Len          Length of the data.
-  
+
   @retval EFI_SUCCESS          The target address is updated.
   @retval EFI_OUT_OF_RESOURCES Failed to allocate memory.
   @retval EFI_NOT_FOUND        The TargetAddress key is not found.
@@ -1282,7 +1282,7 @@ IScsiReceivePdu (
   switch (ISCSI_GET_OPCODE (Header)) {
   case ISCSI_OPCODE_SCSI_DATA_IN:
     //
-    // To reduce memory copy overhead, try to use the buffer described by Context 
+    // To reduce memory copy overhead, try to use the buffer described by Context
     // if the PDU is an iSCSI SCSI data.
     //
     InDataOffset = ISCSI_GET_BUFFER_OFFSET (Header);
@@ -1630,7 +1630,7 @@ IScsiCheckOpParams (
   IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_TARGET_ALIAS);
   IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_TARGET_PORTAL_GROUP_TAG);
 
-  
+
   //
   // Remove the key-value that may not needed for result function is OR.
   //
@@ -2145,7 +2145,7 @@ IScsiNewScsiCmdPdu (
   if (ScsiCmd == NULL) {
     NetbufFree (PduHeader);
     return NULL;
-  }	
+  }
   Header  = (ISCSI_ADDITIONAL_HEADER *) (ScsiCmd + 1);
 
   ZeroMem (ScsiCmd, Length);
@@ -2816,8 +2816,8 @@ IScsiOnNopInRcvd (
   @param[in]       Lun       The LUN.
   @param[in, out]  Packet    The request packet containing IO request, SCSI command
                              buffer and buffers to read/write.
-                             
-  @retval EFI_SUCCES           The SCSI command is executed and the result is updated to 
+
+  @retval EFI_SUCCES           The SCSI command is executed and the result is updated to
                                the Packet.
   @retval EFI_DEVICE_ERROR     Session state was not as required.
   @retval EFI_OUT_OF_RESOURCES Failed to allocate memory.
@@ -3111,7 +3111,7 @@ IScsiSessionAbort (
     if (!Conn->Ipv6Flag) {
       ProtocolGuid = &gEfiTcp4ProtocolGuid;
     } else {
-      ProtocolGuid = &gEfiTcp6ProtocolGuid;    
+      ProtocolGuid = &gEfiTcp6ProtocolGuid;
     }
 
     gBS->CloseProtocol (

@@ -1,6 +1,6 @@
 /** @file
   The implementation of the ARP protocol.
-  
+
 Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -330,7 +330,7 @@ ArpOnFrameRcvd (
 
 /**
   Process the already sent arp packets.
-  
+
   @param[in]  Context                Pointer to the context data registerd to the
                                      Event.
 

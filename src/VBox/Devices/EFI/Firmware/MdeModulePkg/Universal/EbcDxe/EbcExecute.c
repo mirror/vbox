@@ -1332,11 +1332,11 @@ CONST VM_TABLE_ENTRY           mVmOpcodeTable[] = {
   { ExecuteMOVIn },             // opcode 0x38 - mov immediate natural
   { ExecuteMOVREL },            // opcode 0x39 - move data relative to PC
   { NULL },                     // opcode 0x3a
-  { NULL },                     // opcode 0x3b 
-  { NULL },                     // opcode 0x3c 
-  { NULL },                     // opcode 0x3d 
-  { NULL },                     // opcode 0x3e 
-  { NULL }                      // opcode 0x3f 
+  { NULL },                     // opcode 0x3b
+  { NULL },                     // opcode 0x3c
+  { NULL },                     // opcode 0x3d
+  { NULL },                     // opcode 0x3e
+  { NULL }                      // opcode 0x3f
 };
 
 //

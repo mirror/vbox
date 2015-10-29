@@ -21,7 +21,7 @@
   Read a 32-bit I/O APIC register.
 
   If Index is >= 0x100, then ASSERT().
-  
+
   @param  Index  Specifies the I/O APIC register to read.
 
   @return  The 32-bit value read from the I/O APIC register specified by Index.
@@ -36,7 +36,7 @@ IoApicRead (
   Write a 32-bit I/O APIC register.
 
   If Index is >= 0x100, then ASSERT().
-  
+
   @param  Index  Specifies the I/O APIC register to write.
   @param  Value  Specifies the value to write to the I/O APIC register specified by Index.
 
@@ -52,8 +52,8 @@ IoApicWrite (
 /**
   Set the interrupt mask of an I/O APIC interrupt.
 
-  If Irq is larger than the maximum number I/O APIC redirection entries, then ASSERT(). 
-  
+  If Irq is larger than the maximum number I/O APIC redirection entries, then ASSERT().
+
   @param  Irq     Specifies the I/O APIC interrupt to enable or disable.
   @param  Enable  If TRUE, then enable the I/O APIC interrupt specified by Irq.
                   If FALSE, then disable the I/O APIC interrupt specified by Irq.
@@ -67,13 +67,13 @@ IoApicEnableInterrupt (
 
 /**
   Configures an I/O APIC interrupt.
-  
+
   Configure an I/O APIC Redirection Table Entry to deliver an interrupt in physical
-  mode to the Local APIC of the currntly executing CPU.  The default state of the 
+  mode to the Local APIC of the currntly executing CPU.  The default state of the
   entry is for the interrupt to be disabled (masked).  IoApicEnableInterrupts() must
   be used to enable(unmask) the I/O APIC Interrupt.
 
-  If Irq is larger than the maximum number I/O APIC redirection entries, then ASSERT(). 
+  If Irq is larger than the maximum number I/O APIC redirection entries, then ASSERT().
   If Vector >= 0x100, then ASSERT().
   If DeliveryMode is not supported, then ASSERT().
 

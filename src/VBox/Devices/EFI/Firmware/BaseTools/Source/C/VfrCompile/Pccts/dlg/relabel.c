@@ -67,7 +67,7 @@ nfa_node *start;
 #endif
 {
 	if (level){
-		set_free(used_classes);	
+		set_free(used_classes);
 		partition(start,level);
 		label_with_classes(start);
 	}else{
@@ -146,7 +146,7 @@ set *maximal_class;
 {
 	/* pick a new operation number */
 	++operation_no;
-	r_intersect(start,maximal_class);	
+	r_intersect(start,maximal_class);
 }
 
 #ifdef __USE_PROTOS

@@ -2,12 +2,12 @@
   User Profile Manager formset.
 
 Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -17,13 +17,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define USER_MANAGER_CLASS       0x00
 #define USER_MANAGER_SUBCLASS    0x04
 
-formset 
+formset
   guid     = USER_PROFILE_MANAGER_GUID,
-  title    = STRING_TOKEN(STR_FORMSET_TITLE),  
+  title    = STRING_TOKEN(STR_FORMSET_TITLE),
   help     = STRING_TOKEN(STR_TITLE_HELP),
   class    = USER_MANAGER_CLASS,
   subclass = USER_MANAGER_SUBCLASS,
-    
+
   // User manager form
   form formid = FORMID_USER_MANAGE,
     title     = STRING_TOKEN(STR_USERMAN_TITLE);
@@ -38,9 +38,9 @@ formset
         flags  = INTERACTIVE,
         key    = QUESTIONID_USER_MANAGE;
     endif;
-     
+
   endform;
-  
+
   // Modify user profile form
   form formid = FORMID_MODIFY_USER,
     title     = STRING_TOKEN(STR_MODIFY_USER_TITLE);
@@ -49,68 +49,68 @@ formset
     label LABEL_END;
 
   endform;
-  
+
   // Delete user profile form
   form formid = FORMID_DEL_USER,
     title     = STRING_TOKEN(STR_DELETE_USER_TITLE);
-  
+
     label LABEL_USER_DEL_FUNC;
     label LABEL_END;
-    
-    subtitle 
+
+    subtitle
       text   = STRING_TOKEN(STR_NULL_STRING);
   endform;
-  
+
   //
   // User profile information form
   //
   form formid = FORMID_USER_INFO,
     title     = STRING_TOKEN(STR_USER_INFO);
 
-    text 
-      help   = STRING_TOKEN(STR_USER_NAME_VAL),  
+    text
+      help   = STRING_TOKEN(STR_USER_NAME_VAL),
       text   = STRING_TOKEN(STR_USER_NAME),
       flags  = INTERACTIVE,
       key    = KEY_MODIFY_USER_NAME;
-      
-    text 
-      help   = STRING_TOKEN(STR_CREATE_DATE_VAL),  
+
+    text
+      help   = STRING_TOKEN(STR_CREATE_DATE_VAL),
       text   = STRING_TOKEN(STR_CREATE_DATE);
-      
-    text 
-      help   = STRING_TOKEN(STR_USAGE_DATE_VAL),  
+
+    text
+      help   = STRING_TOKEN(STR_USAGE_DATE_VAL),
       text   = STRING_TOKEN(STR_USAGE_DATE);
-      
-    text 
-      help   = STRING_TOKEN(STR_USAGE_COUNT_VAL),  
+
+    text
+      help   = STRING_TOKEN(STR_USAGE_COUNT_VAL),
       text   = STRING_TOKEN(STR_USAGE_COUNT);
-      
-    label LABEL_USER_INFO_FUNC; 
+
+    label LABEL_USER_INFO_FUNC;
     label LABEL_END;
 
   endform;
-  
+
   //
   // Identify policy modify form
   //
   form formid = FORMID_MODIFY_IP,
     title     = STRING_TOKEN(STR_IDENTIFY_POLICY);
 
-    text 
+    text
       help   = STRING_TOKEN(STR_IDENTIFY_POLICY_HELP),
       text   = STRING_TOKEN(STR_IDENTIFY_POLICY),
         text   = STRING_TOKEN(STR_IDENTIFY_POLICY_VALUE);
-      
+
     label LABEL_IP_MOD_FUNC;
     label LABEL_END;
-    
-    text 
-      help   = STRING_TOKEN(STR_ADD_OPTION_HELP),  
+
+    text
+      help   = STRING_TOKEN(STR_ADD_OPTION_HELP),
       text   = STRING_TOKEN(STR_ADD_OPTION),
       flags  = INTERACTIVE,
       key    = KEY_ADD_LOGICAL_OP;
-      
-    subtitle 
+
+    subtitle
       text   = STRING_TOKEN(STR_NULL_STRING);
 
     text
@@ -120,7 +120,7 @@ formset
       key    = KEY_IP_RETURN;
 
   endform;
-  
+
   //
   // Access policy modify form
   //
@@ -142,9 +142,9 @@ formset
       flags   = INTERACTIVE,
       key     = KEY_CONN_DP;
 
-    subtitle 
+    subtitle
       text   = STRING_TOKEN(STR_NULL_STRING);
-   
+
     text
       help   = STRING_TOKEN(STR_ACCESS_SAVE_HELP),
       text   = STRING_TOKEN(STR_SAVE),
@@ -164,43 +164,43 @@ formset
       help    = STRING_TOKEN(STR_LOAD_PERMIT_HELP),
       flags   = INTERACTIVE,
       key     = KEY_LOAD_PERMIT;
-    
+
     goto FORMID_FORBID_LOAD_DP,
       prompt  = STRING_TOKEN(STR_LOAD_FORBID),
       help    = STRING_TOKEN(STR_LOAD_FORBID_HELP),
       flags   = INTERACTIVE,
       key     = KEY_LOAD_FORBID;
- 
+
   endform;
-  
+
   //
   // Permit load device path form
   //
   form formid = FORMID_PERMIT_LOAD_DP,
     title     = STRING_TOKEN(STR_LOAD_PERMIT);
-  
+
     label LABEL_PERMIT_LOAD_FUNC;
     label LABEL_END;
-  
-    subtitle 
+
+    subtitle
       text   = STRING_TOKEN(STR_NULL_STRING);
 
   endform;
-  
+
   //
   // Forbid load device path form
   //
   form formid = FORMID_FORBID_LOAD_DP,
     title     = STRING_TOKEN(STR_LOAD_FORBID);
-  
+
     label LABLE_FORBID_LOAD_FUNC;
     label LABEL_END;
-   
-    subtitle 
+
+    subtitle
       text   = STRING_TOKEN(STR_NULL_STRING);
 
   endform;
-  
+
   //
   // Connect device path form
   //
@@ -212,35 +212,35 @@ formset
       help    = STRING_TOKEN(STR_CONNECT_PERMIT_HELP),
       flags   = INTERACTIVE,
       key     = KEY_CONNECT_PERMIT;
-      
+
     goto FORMID_FORBID_CONNECT_DP,
       prompt  = STRING_TOKEN(STR_CONNECT_FORBID),
       help    = STRING_TOKEN(STR_CONNECT_FORBID_HELP),
       flags   = INTERACTIVE,
       key     = KEY_CONNECT_FORBID;
-      
+
   endform;
-  
+
   //
   // Permit connect device path form
   //
   form formid = FORMID_PERMIT_CONNECT_DP,
     title     = STRING_TOKEN(STR_CONNECT_PERMIT);
-     
-    subtitle 
+
+    subtitle
       text   = STRING_TOKEN(STR_NULL_STRING);
 
   endform;
-  
+
   //
   // Forbid connect device path form
   //
   form formid = FORMID_FORBID_CONNECT_DP,
     title     = STRING_TOKEN(STR_CONNECT_FORBID);
-     
-   subtitle 
+
+   subtitle
      text   = STRING_TOKEN(STR_NULL_STRING);
 
   endform;
-  
+
 endformset;

@@ -50,9 +50,9 @@ HandlePage (
   UINTN Value;
   CONST UINTN cDigit [] = {
     3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15 };
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Send the handles page
   //
@@ -195,7 +195,7 @@ HandlePage (
                   if ( '9' < Digit ) {
                     Digit += 'a' - '0' - 10;
                   }
-                
+
                   //
                   //  Display the address digit
                   //
@@ -258,7 +258,7 @@ HandlePage (
         gBS->FreePool ( pHandleArray );
       }
     }
-    
+
     //
     //  Build the table trailer
     //
@@ -275,7 +275,7 @@ HandlePage (
     Status = HttpPageTrailer ( SocketFD, pPort, pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

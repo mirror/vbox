@@ -10,7 +10,7 @@ http://opensource.org/licenses/bsd-license.php
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
-**/ 
+**/
 
 #include "PciHostBridge.h"
 #include "IoFifo.h"
@@ -26,7 +26,7 @@ typedef struct {
 
 RESOURCE_CONFIGURATION Configuration = {
   {{0x8A, 0x2B, 1, 0, 0, 0, 0, 0, 0, 0},
-  {0x8A, 0x2B, 0, 0, 0, 32, 0, 0, 0, 0}, 
+  {0x8A, 0x2B, 0, 0, 0, 32, 0, 0, 0, 0},
   {0x8A, 0x2B, 0, 0, 6, 32, 0, 0, 0, 0},
   {0x8A, 0x2B, 0, 0, 0, 64, 0, 0, 0, 0},
   {0x8A, 0x2B, 0, 0, 6, 64, 0, 0, 0, 0},
@@ -39,8 +39,8 @@ RESOURCE_CONFIGURATION Configuration = {
 //
 
 /**
-   Polls an address in memory mapped I/O space until an exit condition is met, or 
-   a timeout occurs. 
+   Polls an address in memory mapped I/O space until an exit condition is met, or
+   a timeout occurs.
 
    This function provides a standard way to poll a PCI memory location. A PCI memory read
    operation is performed at the PCI memory address specified by Address for the width specified
@@ -59,7 +59,7 @@ RESOURCE_CONFIGURATION Configuration = {
    @param[in]   Delay     The number of 100 ns units to poll. Note that timer available may
                           be of poorer granularity.
    @param[out]  Result    Pointer to the last value read from the memory location.
-   
+
    @retval EFI_SUCCESS            The last data returned from the access matched the poll exit criteria.
    @retval EFI_INVALID_PARAMETER  Width is invalid.
    @retval EFI_INVALID_PARAMETER  Result is NULL.
@@ -69,7 +69,7 @@ RESOURCE_CONFIGURATION Configuration = {
 **/
 EFI_STATUS
 EFIAPI
-RootBridgeIoPollMem ( 
+RootBridgeIoPollMem (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
   IN  UINT64                                 Address,
@@ -78,7 +78,7 @@ RootBridgeIoPollMem (
   IN  UINT64                                 Delay,
   OUT UINT64                                 *Result
   );
-  
+
 /**
    Reads from the I/O space of a PCI Root Bridge. Returns when either the polling exit criteria is
    satisfied or after a defined duration.
@@ -100,7 +100,7 @@ RootBridgeIoPollMem (
    @param[in] Delay     The number of 100 ns units to poll. Note that timer available may
                         be of poorer granularity.
    @param[out] Result   Pointer to the last value read from the memory location.
-   
+
    @retval EFI_SUCCESS            The last data returned from the access matched the poll exit criteria.
    @retval EFI_INVALID_PARAMETER  Width is invalid.
    @retval EFI_INVALID_PARAMETER  Result is NULL.
@@ -110,7 +110,7 @@ RootBridgeIoPollMem (
 **/
 EFI_STATUS
 EFIAPI
-RootBridgeIoPollIo ( 
+RootBridgeIoPollIo (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
   IN  UINT64                                 Address,
@@ -119,7 +119,7 @@ RootBridgeIoPollIo (
   IN  UINT64                                 Delay,
   OUT UINT64                                 *Result
   );
-  
+
 /**
    Enables a PCI driver to access PCI controller registers in the PCI root bridge memory space.
 
@@ -136,7 +136,7 @@ RootBridgeIoPollIo (
                           Width size * Count, starting at Address.
    @param[out]  Buffer    For read operations, the destination buffer to store the results. For
                           write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -169,7 +169,7 @@ RootBridgeIoMemRead (
                           Width size * Count, starting at Address.
    @param[in]   Buffer    For read operations, the destination buffer to store the results. For
                           write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -196,7 +196,7 @@ RootBridgeIoMemWrite (
                             size * Count, starting at Address.
    @param[out]  UserBuffer  For read operations, the destination buffer to store the results. For
                             write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS              The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER    Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER    Buffer is NULL.
@@ -224,7 +224,7 @@ RootBridgeIoIoRead (
                             size * Count, starting at Address.
    @param[in]   UserBuffer  For read operations, the destination buffer to store the results. For
                             write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS              The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER    Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER    Buffer is NULL.
@@ -259,7 +259,7 @@ RootBridgeIoIoWrite (
                           responsible for aligning the SrcAddress if required.
    @param[in] Count       The number of memory operations to perform. Bytes moved is
                           Width size * Count, starting at DestAddress and SrcAddress.
-   
+
    @retval  EFI_SUCCESS             The data was copied from one memory region to another memory region.
    @retval  EFI_INVALID_PARAMETER   Width is invalid for this PCI root bridge.
    @retval  EFI_OUT_OF_RESOURCES    The request could not be completed due to a lack of resources.
@@ -291,7 +291,7 @@ RootBridgeIoCopyMem (
                           moved is Width size * Count, starting at Address.
    @param[out]  Buffer    For read operations, the destination buffer to store the results. For
                           write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -324,7 +324,7 @@ RootBridgeIoPciRead (
                           moved is Width size * Count, starting at Address.
    @param[in]   Buffer    For read operations, the destination buffer to store the results. For
                           write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -355,7 +355,7 @@ RootBridgeIoPciWrite (
    @param[out]      DeviceAddress   The resulting map address for the bus master PCI controller to use
                                     to access the system memory's HostAddress.
    @param[out]      Mapping         The value to pass to Unmap() when the bus master DMA operation is complete.
-   
+
    @retval EFI_SUCCESS            The range was mapped for the returned NumberOfBytes.
    @retval EFI_INVALID_PARAMETER  Operation is invalid.
    @retval EFI_INVALID_PARAMETER  HostAddress is NULL.
@@ -384,11 +384,11 @@ RootBridgeIoMap (
    The Unmap() function completes the Map() operation and releases any corresponding resources.
    If the operation was an EfiPciOperationBusMasterWrite or
    EfiPciOperationBusMasterWrite64, the data is committed to the target system memory.
-   Any resources used for the mapping are freed.  
+   Any resources used for the mapping are freed.
 
    @param[in] This      A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
    @param[in] Mapping   The mapping value returned from Map().
-   
+
    @retval EFI_SUCCESS            The range was unmapped.
    @retval EFI_INVALID_PARAMETER  Mapping is not a value that was returned by Map().
    @retval EFI_DEVICE_ERROR       The data was not committed to the target system memory.
@@ -404,16 +404,16 @@ RootBridgeIoUnmap (
 /**
    Allocates pages that are suitable for an EfiPciOperationBusMasterCommonBuffer or
    EfiPciOperationBusMasterCommonBuffer64 mapping.
-  
+
    @param This        A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
    @param Type        This parameter is not used and must be ignored.
    @param MemoryType  The type of memory to allocate, EfiBootServicesData or EfiRuntimeServicesData.
    @param Pages       The number of pages to allocate.
    @param HostAddress A pointer to store the base system memory address of the allocated range.
    @param Attributes  The requested bit mask of attributes for the allocated range. Only
-                      the attributes EFI_PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE, EFI_PCI_ATTRIBUTE_MEMORY_CACHED, 
+                      the attributes EFI_PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE, EFI_PCI_ATTRIBUTE_MEMORY_CACHED,
                       and EFI_PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE may be used with this function.
-   
+
    @retval EFI_SUCCESS            The requested memory pages were allocated.
    @retval EFI_INVALID_PARAMETER  MemoryType is invalid.
    @retval EFI_INVALID_PARAMETER  HostAddress is NULL.
@@ -441,7 +441,7 @@ RootBridgeIoAllocateBuffer (
    @param This        A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
    @param Pages       The number of pages to free.
    @param HostAddress The base system memory address of the allocated range.
-   
+
    @retval EFI_SUCCESS            The requested memory pages were freed.
    @retval EFI_INVALID_PARAMETER  The memory range specified by HostAddress and Pages
                                   was not allocated with AllocateBuffer().
@@ -467,7 +467,7 @@ RootBridgeIoFreeBuffer (
    a PCI read transaction from the PCI controller prior to calling Flush().
 
    @param This        A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
-   
+
    @retval EFI_SUCCESS        The PCI posted write transactions were flushed from the PCI host
                               bridge to system memory.
    @retval EFI_DEVICE_ERROR   The PCI posted write transactions were not flushed from the PCI
@@ -482,7 +482,7 @@ RootBridgeIoFlush (
 
 /**
    Gets the attributes that a PCI root bridge supports setting with SetAttributes(), and the
-   attributes that a PCI root bridge is currently using.  
+   attributes that a PCI root bridge is currently using.
 
    The GetAttributes() function returns the mask of attributes that this PCI root bridge supports
    and the mask of attributes that the PCI root bridge is currently using.
@@ -492,7 +492,7 @@ RootBridgeIoFlush (
                       supports setting with SetAttributes().
    @param Attributes  A pointer to the mask of attributes that this PCI root bridge is
                       currently using.
-   
+
    @retval  EFI_SUCCESS           If Supports is not NULL, then the attributes that the PCI root
                                   bridge supports is returned in Supports. If Attributes is
                                   not NULL, then the attributes that the PCI root bridge is currently
@@ -532,7 +532,7 @@ RootBridgeIoGetAttributes (
                                     by the attributes specified by Attributes.
    @param[in, out]  ResourceLength  A pointer to the length of the resource range to be modified by the
                                     attributes specified by Attributes.
-   
+
    @retval  EFI_SUCCESS     The current configuration of this PCI root bridge was returned in Resources.
    @retval  EFI_UNSUPPORTED The current configuration of this PCI root bridge could not be retrieved.
    @retval  EFI_INVALID_PARAMETER Invalid pointer of EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL
@@ -544,8 +544,8 @@ RootBridgeIoSetAttributes (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN     UINT64                           Attributes,
   IN OUT UINT64                           *ResourceBase,
-  IN OUT UINT64                           *ResourceLength 
-  ); 
+  IN OUT UINT64                           *ResourceLength
+  );
 
 /**
    Retrieves the current resource settings of this PCI root bridge in the form of a set of ACPI 2.0
@@ -564,7 +564,7 @@ RootBridgeIoSetAttributes (
                             ACPI 2.0 resource descriptors is allocated by this function. The
                             caller must treat the return buffer as read-only data, and the buffer
                             must not be freed by the caller.
-   
+
    @retval  EFI_SUCCESS     The current configuration of this PCI root bridge was returned in Resources.
    @retval  EFI_UNSUPPORTED The current configuration of this PCI root bridge could not be retrieved.
    @retval  EFI_INVALID_PARAMETER Invalid pointer of EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL
@@ -663,7 +663,7 @@ RootBridgeConstructor (
   //
   PrivateData->BusBase  = ResAppeture->BusBase;
   PrivateData->BusLimit = ResAppeture->BusLimit;
-  
+
   //
   // Specific for this chipset
   //
@@ -673,12 +673,12 @@ RootBridgeConstructor (
     PrivateData->ResAllocNode[Index].Length    = 0;
     PrivateData->ResAllocNode[Index].Status    = ResNone;
   }
-  
+
   PrivateData->PciAddress = 0xCF8;
   PrivateData->PciData    = 0xCFC;
 
   PrivateData->RootBridgeAttrib = Attri;
-  
+
   PrivateData->Supports    = EFI_PCI_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_ATTRIBUTE_IDE_SECONDARY_IO | \
                              EFI_PCI_ATTRIBUTE_ISA_IO_16 | EFI_PCI_ATTRIBUTE_ISA_MOTHERBOARD_IO | \
                              EFI_PCI_ATTRIBUTE_VGA_MEMORY | \
@@ -686,7 +686,7 @@ RootBridgeConstructor (
   PrivateData->Attributes  = PrivateData->Supports;
 
   Protocol->ParentHandle   = HostBridgeHandle;
-  
+
   Protocol->PollMem        = RootBridgeIoPollMem;
   Protocol->PollIo         = RootBridgeIoPollIo;
 
@@ -725,17 +725,17 @@ RootBridgeConstructor (
 /**
   Check parameters for IO,MMIO,PCI read/write services of PCI Root Bridge IO.
 
-  The I/O operations are carried out exactly as requested. The caller is responsible 
-  for satisfying any alignment and I/O width restrictions that a PI System on a 
-  platform might require. For example on some platforms, width requests of 
-  EfiCpuIoWidthUint64 do not work. Misaligned buffers, on the other hand, will 
+  The I/O operations are carried out exactly as requested. The caller is responsible
+  for satisfying any alignment and I/O width restrictions that a PI System on a
+  platform might require. For example on some platforms, width requests of
+  EfiCpuIoWidthUint64 do not work. Misaligned buffers, on the other hand, will
   be handled by the driver.
-  
+
   @param[in] This           A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
   @param[in] OperationType  I/O operation type: IO/MMIO/PCI.
   @param[in] Width          Signifies the width of the I/O or Memory operation.
-  @param[in] Address        The base address of the I/O operation. 
-  @param[in] Count          The number of I/O operations to perform. The number of  
+  @param[in] Address        The base address of the I/O operation.
+  @param[in] Count          The number of I/O operations to perform. The number of
                             bytes moved is Width size * Count, starting at Address.
   @param[in] Buffer         For read operations, the destination buffer to store the results.
                             For write operations, the source buffer from which to write data.
@@ -744,7 +744,7 @@ RootBridgeConstructor (
   @retval EFI_INVALID_PARAMETER  Width is invalid for this PI system.
   @retval EFI_INVALID_PARAMETER  Buffer is NULL.
   @retval EFI_UNSUPPORTED        The Buffer is not aligned for the given Width.
-  @retval EFI_UNSUPPORTED        The address range specified by Address, Width, 
+  @retval EFI_UNSUPPORTED        The address range specified by Address, Width,
                                  and Count is not valid for this PI system.
 
 **/
@@ -805,18 +805,18 @@ RootBridgeIoCheckParameter (
   PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
 
   //
-  // Check to see if any address associated with this transfer exceeds the maximum 
+  // Check to see if any address associated with this transfer exceeds the maximum
   // allowed address.  The maximum address implied by the parameters passed in is
   // Address + Size * Count.  If the following condition is met, then the transfer
   // is not supported.
   //
   //    Address + Size * Count > Limit + 1
   //
-  // Since Limit can be the maximum integer value supported by the CPU and Count 
+  // Since Limit can be the maximum integer value supported by the CPU and Count
   // can also be the maximum integer value supported by the CPU, this range
   // check must be adjusted to avoid all oveflow conditions.
-  //   
-  // The following form of the range check is equivalent but assumes that 
+  //
+  // The following form of the range check is equivalent but assumes that
   // Limit is of the form (2^n - 1).
   //
   if (OperationType == IoOperation) {
@@ -852,7 +852,7 @@ RootBridgeIoCheckParameter (
     if (Address > Limit) {
       return EFI_UNSUPPORTED;
     }
-  } else {  
+  } else {
     MaxCount = RShiftU64 (Limit, Width);
     if (MaxCount < (Count - 1)) {
       return EFI_UNSUPPORTED;
@@ -876,7 +876,7 @@ RootBridgeIoCheckParameter (
                               moved is Width size * Count, starting at Address.
    @param[in, out] UserBuffer For read operations, the destination buffer to store the results. For
                               write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -954,7 +954,7 @@ RootBridgeIoMemRW (
       }
     }
   }
-  return EFI_SUCCESS;  
+  return EFI_SUCCESS;
 }
 
 /**
@@ -968,7 +968,7 @@ RootBridgeIoMemRW (
                               moved is Width size * Count, starting at Address.
    @param[in, out] UserBuffer For read operations, the destination buffer to store the results. For
                               write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -1086,7 +1086,7 @@ RootBridgeIoIoRW (
                               moved is Width size * Count, starting at Address.
    @param[in, out] UserBuffer For read operations, the destination buffer to store the results. For
                               write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -1176,8 +1176,8 @@ RootBridgeIoPciRW (
 }
 
 /**
-   Polls an address in memory mapped I/O space until an exit condition is met, or 
-   a timeout occurs. 
+   Polls an address in memory mapped I/O space until an exit condition is met, or
+   a timeout occurs.
 
    This function provides a standard way to poll a PCI memory location. A PCI memory read
    operation is performed at the PCI memory address specified by Address for the width specified
@@ -1196,7 +1196,7 @@ RootBridgeIoPciRW (
    @param[in]   Delay     The number of 100 ns units to poll. Note that timer available may
                           be of poorer granularity.
    @param[out]  Result    Pointer to the last value read from the memory location.
-   
+
    @retval EFI_SUCCESS            The last data returned from the access matched the poll exit criteria.
    @retval EFI_INVALID_PARAMETER  Width is invalid.
    @retval EFI_INVALID_PARAMETER  Result is NULL.
@@ -1206,7 +1206,7 @@ RootBridgeIoPciRW (
 **/
 EFI_STATUS
 EFIAPI
-RootBridgeIoPollMem ( 
+RootBridgeIoPollMem (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
   IN  UINT64                                 Address,
@@ -1234,14 +1234,14 @@ RootBridgeIoPollMem (
   Status = This->Mem.Read (This, Width, Address, 1, Result);
   if (EFI_ERROR (Status)) {
     return Status;
-  }    
+  }
   if ((*Result & Mask) == Value) {
     return EFI_SUCCESS;
   }
 
   if (Delay == 0) {
     return EFI_SUCCESS;
-  
+
   } else {
 
     //
@@ -1258,16 +1258,16 @@ RootBridgeIoPollMem (
       NumberOfTicks += 1;
     }
     NumberOfTicks += 1;
-  
+
     while (NumberOfTicks != 0) {
 
       mMetronome->WaitForTick (mMetronome, 1);
-    
+
       Status = This->Mem.Read (This, Width, Address, 1, Result);
       if (EFI_ERROR (Status)) {
         return Status;
       }
-    
+
       if ((*Result & Mask) == Value) {
         return EFI_SUCCESS;
       }
@@ -1277,7 +1277,7 @@ RootBridgeIoPollMem (
   }
   return EFI_TIMEOUT;
 }
-  
+
 /**
    Reads from the I/O space of a PCI Root Bridge. Returns when either the polling exit criteria is
    satisfied or after a defined duration.
@@ -1299,7 +1299,7 @@ RootBridgeIoPollMem (
    @param[in] Delay     The number of 100 ns units to poll. Note that timer available may
                         be of poorer granularity.
    @param[out] Result   Pointer to the last value read from the memory location.
-   
+
    @retval EFI_SUCCESS            The last data returned from the access matched the poll exit criteria.
    @retval EFI_INVALID_PARAMETER  Width is invalid.
    @retval EFI_INVALID_PARAMETER  Result is NULL.
@@ -1309,7 +1309,7 @@ RootBridgeIoPollMem (
 **/
 EFI_STATUS
 EFIAPI
-RootBridgeIoPollIo ( 
+RootBridgeIoPollIo (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
   IN  UINT64                                 Address,
@@ -1334,18 +1334,18 @@ RootBridgeIoPollIo (
   if ((UINT32)Width > EfiPciWidthUint64) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   Status = This->Io.Read (This, Width, Address, 1, Result);
   if (EFI_ERROR (Status)) {
     return Status;
-  }    
+  }
   if ((*Result & Mask) == Value) {
     return EFI_SUCCESS;
   }
 
   if (Delay == 0) {
     return EFI_SUCCESS;
-  
+
   } else {
 
     //
@@ -1359,16 +1359,16 @@ RootBridgeIoPollIo (
       NumberOfTicks += 1;
     }
     NumberOfTicks += 1;
-  
+
     while (NumberOfTicks != 0) {
 
       mMetronome->WaitForTick (mMetronome, 1);
-    
+
       Status = This->Io.Read (This, Width, Address, 1, Result);
       if (EFI_ERROR (Status)) {
         return Status;
       }
-    
+
       if ((*Result & Mask) == Value) {
         return EFI_SUCCESS;
       }
@@ -1395,7 +1395,7 @@ RootBridgeIoPollIo (
                           Width size * Count, starting at Address.
    @param[out]  Buffer    For read operations, the destination buffer to store the results. For
                           write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -1431,7 +1431,7 @@ RootBridgeIoMemRead (
                           Width size * Count, starting at Address.
    @param[in]   Buffer    For read operations, the destination buffer to store the results. For
                           write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -1447,7 +1447,7 @@ RootBridgeIoMemWrite (
   IN     VOID                                   *Buffer
   )
 {
-  return RootBridgeIoMemRW (This, TRUE, Width, Address, Count, Buffer);  
+  return RootBridgeIoMemRW (This, TRUE, Width, Address, Count, Buffer);
 }
 
 /**
@@ -1461,7 +1461,7 @@ RootBridgeIoMemWrite (
                             size * Count, starting at Address.
    @param[out]  Buffer      For read operations, the destination buffer to store the results. For
                             write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS              The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER    Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER    Buffer is NULL.
@@ -1478,7 +1478,7 @@ RootBridgeIoIoRead (
   OUT    VOID                                   *Buffer
   )
 {
-  return RootBridgeIoIoRW (This, FALSE, Width, Address, Count, Buffer);  
+  return RootBridgeIoIoRW (This, FALSE, Width, Address, Count, Buffer);
 }
 
 /**
@@ -1492,7 +1492,7 @@ RootBridgeIoIoRead (
                             size * Count, starting at Address.
    @param[in]   Buffer       For read operations, the destination buffer to store the results. For
                             write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS              The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER    Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER    Buffer is NULL.
@@ -1509,7 +1509,7 @@ RootBridgeIoIoWrite (
   IN       VOID                                    *Buffer
   )
 {
-  return RootBridgeIoIoRW (This, TRUE, Width, Address, Count, Buffer);  
+  return RootBridgeIoIoRW (This, TRUE, Width, Address, Count, Buffer);
 }
 
 /**
@@ -1530,7 +1530,7 @@ RootBridgeIoIoWrite (
                           responsible for aligning the SrcAddress if required.
    @param[in] Count       The number of memory operations to perform. Bytes moved is
                           Width size * Count, starting at DestAddress and SrcAddress.
-   
+
    @retval  EFI_SUCCESS             The data was copied from one memory region to another memory region.
    @retval  EFI_INVALID_PARAMETER   Width is invalid for this PCI root bridge.
    @retval  EFI_OUT_OF_RESOURCES    The request could not be completed due to a lack of resources.
@@ -1554,7 +1554,7 @@ RootBridgeIoCopyMem (
 
   if ((UINT32)Width > EfiPciWidthUint64) {
     return EFI_INVALID_PARAMETER;
-  }    
+  }
 
   if (DestAddress == SrcAddress) {
     return EFI_SUCCESS;
@@ -1617,7 +1617,7 @@ RootBridgeIoCopyMem (
                           moved is Width size * Count, starting at Address.
    @param[out]  Buffer    For read operations, the destination buffer to store the results. For
                           write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -1653,7 +1653,7 @@ RootBridgeIoPciRead (
                           moved is Width size * Count, starting at Address.
    @param[in]   Buffer    For read operations, the destination buffer to store the results. For
                           write operations, the source buffer to write data from.
-   
+
    @retval EFI_SUCCESS            The data was read from or written to the PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Width is invalid for this PCI root bridge.
    @retval EFI_INVALID_PARAMETER  Buffer is NULL.
@@ -1687,7 +1687,7 @@ RootBridgeIoPciWrite (
    @param[out]      DeviceAddress   The resulting map address for the bus master PCI controller to use
                                     to access the system memory's HostAddress.
    @param[out]      Mapping         The value to pass to Unmap() when the bus master DMA operation is complete.
-   
+
    @retval EFI_SUCCESS            The range was mapped for the returned NumberOfBytes.
    @retval EFI_INVALID_PARAMETER  Operation is invalid.
    @retval EFI_INVALID_PARAMETER  HostAddress is NULL.
@@ -1717,7 +1717,7 @@ RootBridgeIoMap (
   if (HostAddress == NULL || NumberOfBytes == NULL || DeviceAddress == NULL || Mapping == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   //
   // Initialize the return values to their defaults
   //
@@ -1740,7 +1740,7 @@ RootBridgeIoMap (
 
     //
     // Common Buffer operations can not be remapped.  If the common buffer
-    // if above 4GB, then it is not possible to generate a mapping, so return 
+    // if above 4GB, then it is not possible to generate a mapping, so return
     // an error.
     //
     if (Operation == EfiPciOperationBusMasterCommonBuffer || Operation == EfiPciOperationBusMasterCommonBuffer64) {
@@ -1752,8 +1752,8 @@ RootBridgeIoMap (
     // called later.
     //
     Status = gBS->AllocatePool (
-                    EfiBootServicesData, 
-                    sizeof(MAP_INFO), 
+                    EfiBootServicesData,
+                    sizeof(MAP_INFO),
                     (VOID **)&MapInfo
                     );
     if (EFI_ERROR (Status)) {
@@ -1779,8 +1779,8 @@ RootBridgeIoMap (
     // Allocate a buffer below 4GB to map the transfer to.
     //
     Status = gBS->AllocatePages (
-                    AllocateMaxAddress, 
-                    EfiBootServicesData, 
+                    AllocateMaxAddress,
+                    EfiBootServicesData,
                     MapInfo->NumberOfPages,
                     &MapInfo->MappedHostAddress
                     );
@@ -1797,7 +1797,7 @@ RootBridgeIoMap (
     //
     if (Operation == EfiPciOperationBusMasterRead || Operation == EfiPciOperationBusMasterRead64) {
       CopyMem (
-        (VOID *)(UINTN)MapInfo->MappedHostAddress, 
+        (VOID *)(UINTN)MapInfo->MappedHostAddress,
         (VOID *)(UINTN)MapInfo->HostAddress,
         MapInfo->NumberOfBytes
         );
@@ -1823,11 +1823,11 @@ RootBridgeIoMap (
    The Unmap() function completes the Map() operation and releases any corresponding resources.
    If the operation was an EfiPciOperationBusMasterWrite or
    EfiPciOperationBusMasterWrite64, the data is committed to the target system memory.
-   Any resources used for the mapping are freed.  
+   Any resources used for the mapping are freed.
 
    @param[in] This      A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
    @param[in] Mapping   The mapping value returned from Map().
-   
+
    @retval EFI_SUCCESS            The range was unmapped.
    @retval EFI_INVALID_PARAMETER  Mapping is not a value that was returned by Map().
    @retval EFI_DEVICE_ERROR       The data was not committed to the target system memory.
@@ -1859,7 +1859,7 @@ RootBridgeIoUnmap (
     //
     if (MapInfo->Operation == EfiPciOperationBusMasterWrite || MapInfo->Operation == EfiPciOperationBusMasterWrite64) {
       CopyMem (
-        (VOID *)(UINTN)MapInfo->HostAddress, 
+        (VOID *)(UINTN)MapInfo->HostAddress,
         (VOID *)(UINTN)MapInfo->MappedHostAddress,
         MapInfo->NumberOfBytes
         );
@@ -1877,16 +1877,16 @@ RootBridgeIoUnmap (
 /**
    Allocates pages that are suitable for an EfiPciOperationBusMasterCommonBuffer or
    EfiPciOperationBusMasterCommonBuffer64 mapping.
-  
+
    @param This        A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
    @param Type        This parameter is not used and must be ignored.
    @param MemoryType  The type of memory to allocate, EfiBootServicesData or EfiRuntimeServicesData.
    @param Pages       The number of pages to allocate.
    @param HostAddress A pointer to store the base system memory address of the allocated range.
    @param Attributes  The requested bit mask of attributes for the allocated range. Only
-                      the attributes EFI_PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE, EFI_PCI_ATTRIBUTE_MEMORY_CACHED, 
+                      the attributes EFI_PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE, EFI_PCI_ATTRIBUTE_MEMORY_CACHED,
                       and EFI_PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE may be used with this function.
-   
+
    @retval EFI_SUCCESS            The requested memory pages were allocated.
    @retval EFI_INVALID_PARAMETER  MemoryType is invalid.
    @retval EFI_INVALID_PARAMETER  HostAddress is NULL.
@@ -1922,7 +1922,7 @@ RootBridgeIoAllocateBuffer (
   if (HostAddress == NULL) {
     return EFI_INVALID_PARAMETER;
   }
- 
+
   //
   // The only valid memory types are EfiBootServicesData and EfiRuntimeServicesData
   //
@@ -1953,7 +1953,7 @@ RootBridgeIoAllocateBuffer (
    @param This        A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
    @param Pages       The number of pages to free.
    @param HostAddress The base system memory address of the allocated range.
-   
+
    @retval EFI_SUCCESS            The requested memory pages were freed.
    @retval EFI_INVALID_PARAMETER  The memory range specified by HostAddress and Pages
                                   was not allocated with AllocateBuffer().
@@ -1982,7 +1982,7 @@ RootBridgeIoFreeBuffer (
    a PCI read transaction from the PCI controller prior to calling Flush().
 
    @param This        A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
-   
+
    @retval EFI_SUCCESS        The PCI posted write transactions were flushed from the PCI host
                               bridge to system memory.
    @retval EFI_DEVICE_ERROR   The PCI posted write transactions were not flushed from the PCI
@@ -2003,7 +2003,7 @@ RootBridgeIoFlush (
 
 /**
    Gets the attributes that a PCI root bridge supports setting with SetAttributes(), and the
-   attributes that a PCI root bridge is currently using.  
+   attributes that a PCI root bridge is currently using.
 
    The GetAttributes() function returns the mask of attributes that this PCI root bridge supports
    and the mask of attributes that the PCI root bridge is currently using.
@@ -2013,7 +2013,7 @@ RootBridgeIoFlush (
                       supports setting with SetAttributes().
    @param Attributes  A pointer to the mask of attributes that this PCI root bridge is
                       currently using.
-   
+
    @retval  EFI_SUCCESS           If Supports is not NULL, then the attributes that the PCI root
                                   bridge supports is returned in Supports. If Attributes is
                                   not NULL, then the attributes that the PCI root bridge is currently
@@ -2041,13 +2041,13 @@ RootBridgeIoGetAttributes (
   // Set the return value for Supported and Attributes
   //
   if (Supported != NULL) {
-    *Supported  = PrivateData->Supports; 
+    *Supported  = PrivateData->Supports;
   }
 
   if (Attributes != NULL) {
     *Attributes = PrivateData->Attributes;
   }
-  
+
   return EFI_SUCCESS;
 }
 
@@ -2075,7 +2075,7 @@ RootBridgeIoGetAttributes (
                                     by the attributes specified by Attributes.
    @param[in, out]  ResourceLength  A pointer to the length of the resource range to be modified by the
                                     attributes specified by Attributes.
-   
+
    @retval  EFI_SUCCESS     The current configuration of this PCI root bridge was returned in Resources.
    @retval  EFI_UNSUPPORTED The current configuration of this PCI root bridge could not be retrieved.
    @retval  EFI_INVALID_PARAMETER Invalid pointer of EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL
@@ -2087,23 +2087,23 @@ RootBridgeIoSetAttributes (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN     UINT64                           Attributes,
   IN OUT UINT64                           *ResourceBase,
-  IN OUT UINT64                           *ResourceLength 
+  IN OUT UINT64                           *ResourceLength
   )
 {
   PCI_ROOT_BRIDGE_INSTANCE            *PrivateData;
-  
+
   PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS(This);
-  
+
   if (Attributes != 0) {
     if ((Attributes & (~(PrivateData->Supports))) != 0) {
       return EFI_UNSUPPORTED;
     }
   }
-  
+
   //
   // This is a generic driver for a PC-AT class system.  It does not have any
-  // chipset specific knowlegde, so none of the attributes can be set or 
-  // cleared.  Any attempt to set attribute that are already set will succeed, 
+  // chipset specific knowlegde, so none of the attributes can be set or
+  // cleared.  Any attempt to set attribute that are already set will succeed,
   // and any attempt to set an attribute that is not supported will fail.
   //
   if (Attributes & (~PrivateData->Attributes)) {
@@ -2130,7 +2130,7 @@ RootBridgeIoSetAttributes (
                             ACPI 2.0 resource descriptors is allocated by this function. The
                             caller must treat the return buffer as read-only data, and the buffer
                             must not be freed by the caller.
-   
+
    @retval  EFI_SUCCESS     The current configuration of this PCI root bridge was returned in Resources.
    @retval  EFI_UNSUPPORTED The current configuration of this PCI root bridge could not be retrieved.
    @retval  EFI_INVALID_PARAMETER Invalid pointer of EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL
@@ -2147,16 +2147,16 @@ RootBridgeIoConfiguration (
   UINTN                                 Index;
 
   PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
-  
+
   for (Index = 0; Index < TypeMax; Index++) {
     if (PrivateData->ResAllocNode[Index].Status == ResAllocated) {
       Configuration.SpaceDesp[Index].AddrRangeMin = PrivateData->ResAllocNode[Index].Base;
       Configuration.SpaceDesp[Index].AddrRangeMax = PrivateData->ResAllocNode[Index].Base + PrivateData->ResAllocNode[Index].Length - 1;
       Configuration.SpaceDesp[Index].AddrLen      = PrivateData->ResAllocNode[Index].Length;
-    }  
-  }  
-    
-  *Resources = &Configuration;      
+    }
+  }
+
+  *Resources = &Configuration;
   return EFI_SUCCESS;
 }
 

@@ -71,7 +71,7 @@ class BaseToolsTest(unittest.TestCase):
     def HandleTreeDeleteError(self, function, path, excinfo):
         os.chmod(path, stat.S_IWRITE)
         function(path)
-    
+
     def RemoveDir(self, dir):
         shutil.rmtree(dir, False, self.HandleTreeDeleteError)
 

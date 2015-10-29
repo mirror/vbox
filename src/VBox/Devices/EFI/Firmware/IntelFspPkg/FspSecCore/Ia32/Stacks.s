@@ -82,5 +82,5 @@ ASM_PFX(SecSwitchStack):
     popl   %edx
     popl   %ecx
     popl   %ebx
-    popl   %eax    
+    popl   %eax
     ret

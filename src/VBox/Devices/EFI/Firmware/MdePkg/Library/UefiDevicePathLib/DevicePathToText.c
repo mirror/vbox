@@ -53,7 +53,7 @@ UefiDevicePathLibCatPrint (
   }
   UnicodeVSPrint (&Str->Str[Str->Count], Str->Capacity - Str->Count * sizeof (CHAR16), Fmt, Args);
   Str->Count += Count;
-  
+
   VA_END (Args);
   return Str->Str;
 }
@@ -400,7 +400,7 @@ DevPathToTextAcpiEx (
 
   //
   // Converts EISA identification to string.
-  // 
+  //
   UnicodeSPrint (
     HIDText,
     sizeof (HIDText),
@@ -1267,7 +1267,7 @@ DevPathToTextIPv6 (
     UefiDevicePathLibCatPrint (Str, L")");
     return ;
   }
-  
+
   UefiDevicePathLibCatPrint (Str, L",");
   CatNetworkProtocol (Str, IPDevPath->Protocol);
 
@@ -2043,14 +2043,14 @@ UefiDevicePathLibConvertDevicePathToText (
         UefiDevicePathLibCatPrint (&Str, L"/");
       }
     }
-    
+
     AlignedNode = AllocateCopyPool (DevicePathNodeLength (Node), Node);
     //
     // Print this node of the device path
     //
     ToText (&Str, AlignedNode, DisplayOnly, AllowShortcuts);
     FreePool (AlignedNode);
-    
+
     //
     // Next device path node
     //

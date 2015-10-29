@@ -22,7 +22,7 @@
 
   @param[in] Count      The line number to advance/retreat.
                             >0 : advance
-                            <0: retreat  
+                            <0: retreat
 
   @retval NULL An error occured.
   @return A pointer to the line after move.
@@ -53,7 +53,7 @@ HMoveCurrentLine (
     Lines
     CurrentLine
     NumLines
-    ListHead 
+    ListHead
 
   @param[in] ListHead     The list head.
   @param[in] Lines        The lines.

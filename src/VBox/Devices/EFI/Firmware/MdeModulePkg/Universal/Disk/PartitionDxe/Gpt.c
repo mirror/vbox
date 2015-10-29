@@ -100,7 +100,7 @@ PartitionRestoreGptTable (
 
   @param[in]    PartHeader    Partition table header structure
   @param[in]    PartEntry     The partition entry array
-  @param[out]   PEntryStatus  the partition entry status array 
+  @param[out]   PEntryStatus  the partition entry status array
                               recording the status of each partition
 
 **/
@@ -690,7 +690,7 @@ Done:
 
   @param[in]    PartHeader    Partition table header structure
   @param[in]    PartEntry     The partition entry array
-  @param[out]   PEntryStatus  the partition entry status array 
+  @param[out]   PEntryStatus  the partition entry status array
                               recording the status of each partition
 
 **/
@@ -728,7 +728,7 @@ PartitionCheckGptEntry (
 
     if ((Entry->Attributes & BIT1) != 0) {
       //
-      // If Bit 1 is set, this indicate that this is an OS specific GUID partition. 
+      // If Bit 1 is set, this indicate that this is an OS specific GUID partition.
       //
       PEntryStatus[Index1].OsSpecific = TRUE;
     }

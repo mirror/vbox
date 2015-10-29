@@ -1,13 +1,13 @@
 /** @file
   This module implements TrEE Protocol.
-  
+
 Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -108,8 +108,8 @@ EFI_TCG_CLIENT_ACPI_TABLE           mTcgClientAcpiTemplate = {
 //
 // The following EFI_TCG_SERVER_ACPI_TABLE default setting is just one example,
 // the TPM device connectes to LPC, and also defined the ACPI _UID as 0xFF,
-// this _UID can be changed and should match with the _UID setting of the TPM 
-// ACPI device object  
+// this _UID can be changed and should match with the _UID setting of the TPM
+// ACPI device object
 //
 EFI_TCG_SERVER_ACPI_TABLE           mTcgServerAcpiTemplate = {
   {
@@ -349,11 +349,11 @@ GetProcessorsCpuLocation (
 
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
-                                 The ProtocolCapability variable will not be populated. 
+                                 The ProtocolCapability variable will not be populated.
   @retval EFI_INVALID_PARAMETER  One or more of the parameters are incorrect.
                                  The ProtocolCapability variable will not be populated.
   @retval EFI_BUFFER_TOO_SMALL   The ProtocolCapability variable is too small to hold the full response.
-                                 It will be partially populated (required Size field will be set). 
+                                 It will be partially populated (required Size field will be set).
 **/
 EFI_STATUS
 EFIAPI
@@ -397,7 +397,7 @@ DumpEventLog (
   UINTN                     Index;
 
   DEBUG ((EFI_D_INFO, "EventLogFormat: (0x%x)\n", EventLogFormat));
-  
+
   switch (EventLogFormat) {
   case TREE_EVENT_LOG_FORMAT_TCG_1_2:
     EventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
@@ -422,7 +422,7 @@ DumpEventLog (
 
 /**
   The EFI_TREE_PROTOCOL Get Event Log function call allows a caller to
-  retrieve the address of a given event log and its last entry. 
+  retrieve the address of a given event log and its last entry.
 
   @param[in]  This               Indicates the calling context
   @param[in]  EventLogFormat     The type of the event log for which the information is requested.
@@ -510,14 +510,14 @@ TreeGetEventLog (
 /**
   Add a new entry to the Event Log.
 
-  @param[in, out] EventLogPtr     Pointer to the Event Log data.  
-  @param[in, out] LogSize         Size of the Event Log.  
+  @param[in, out] EventLogPtr     Pointer to the Event Log data.
+  @param[in, out] LogSize         Size of the Event Log.
   @param[in]      MaxSize         Maximum size of the Event Log.
-  @param[in]      NewEventHdr     Pointer to a TCG_PCR_EVENT_HDR/TCG_PCR_EVENT_EX data structure.  
+  @param[in]      NewEventHdr     Pointer to a TCG_PCR_EVENT_HDR/TCG_PCR_EVENT_EX data structure.
   @param[in]      NewEventHdrSize New event header size.
-  @param[in]      NewEventData    Pointer to the new event data.  
+  @param[in]      NewEventData    Pointer to the new event data.
   @param[in]      NewEventSize    New event data size.
-  
+
   @retval EFI_SUCCESS           The new event log entry was added.
   @retval EFI_OUT_OF_RESOURCES  No enough memory to log the new event.
 
@@ -568,9 +568,9 @@ TcgCommLogEvent (
   Add a new entry to the Event Log.
 
   @param[in] EventLogFormat  The type of the event log for which the information is requested.
-  @param[in] NewEventHdr     Pointer to a TCG_PCR_EVENT_HDR/TCG_PCR_EVENT_EX data structure.  
+  @param[in] NewEventHdr     Pointer to a TCG_PCR_EVENT_HDR/TCG_PCR_EVENT_EX data structure.
   @param[in] NewEventHdrSize New event header size.
-  @param[in] NewEventData    Pointer to the new event data.  
+  @param[in] NewEventData    Pointer to the new event data.
   @param[in] NewEventSize    New event data size.
 
   @retval EFI_SUCCESS           The new event log entry was added.
@@ -613,7 +613,7 @@ TcgDxeLogEvent (
              NewEventData,
              NewEventSize
              );
-  
+
   if (Status == EFI_DEVICE_ERROR) {
     return EFI_DEVICE_ERROR;
   } else if (Status == EFI_OUT_OF_RESOURCES) {
@@ -721,11 +721,11 @@ TcgDxeLogHashEvent (
   and add an entry to the Event Log.
 
   @param[in]      Flags         Bitmap providing additional information.
-  @param[in]      HashData      Physical address of the start of the data buffer 
+  @param[in]      HashData      Physical address of the start of the data buffer
                                 to be hashed, extended, and logged.
   @param[in]      HashDataLen   The length, in bytes, of the buffer referenced by HashData
-  @param[in, out] NewEventHdr   Pointer to a TCG_PCR_EVENT_HDR data structure.  
-  @param[in]      NewEventData  Pointer to the new event data.  
+  @param[in, out] NewEventHdr   Pointer to a TCG_PCR_EVENT_HDR data structure.
+  @param[in]      NewEventData  Pointer to the new event data.
 
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_OUT_OF_RESOURCES  No enough memory to log the new event.
@@ -743,7 +743,7 @@ TcgDxeHashLogExtendEvent (
 {
   EFI_STATUS                        Status;
   TPML_DIGEST_VALUES                DigestList;
-  
+
   if (!mTcgDxeData.BsCap.TrEEPresentFlag) {
     return EFI_DEVICE_ERROR;
   }
@@ -775,13 +775,13 @@ TcgDxeHashLogExtendEvent (
 /**
   The EFI_TREE_PROTOCOL HashLogExtendEvent function call provides callers with
   an opportunity to extend and optionally log events without requiring
-  knowledge of actual TPM commands. 
+  knowledge of actual TPM commands.
   The extend operation will occur even if this function cannot create an event
-  log entry (e.g. due to the event log being full). 
+  log entry (e.g. due to the event log being full).
 
   @param[in]  This               Indicates the calling context
   @param[in]  Flags              Bitmap providing additional information.
-  @param[in]  DataToHash         Physical address of the start of the data buffer to be hashed. 
+  @param[in]  DataToHash         Physical address of the start of the data buffer to be hashed.
   @param[in]  DataToHashLen      The length in bytes of the buffer referenced by DataToHash.
   @param[in]  Event              Pointer to data buffer containing information about the event.
 
@@ -871,7 +871,7 @@ TreeHashLogExtendEvent (
   @retval EFI_SUCCESS            The command byte stream was successfully sent to the device and a response was successfully received.
   @retval EFI_DEVICE_ERROR       The command was not successfully sent to the device or a response was not successfully received from the device.
   @retval EFI_INVALID_PARAMETER  One or more of the parameters are incorrect.
-  @retval EFI_BUFFER_TOO_SMALL   The output parameter block is too small. 
+  @retval EFI_BUFFER_TOO_SMALL   The output parameter block is too small.
 **/
 EFI_STATUS
 EFIAPI
@@ -960,7 +960,7 @@ SetupEventLog (
       mTcgDxeData.EventLogAreaStruct[Index].Lasa = Lasa;
       mTcgDxeData.EventLogAreaStruct[Index].Laml = EFI_TCG_LOG_AREA_SIZE;
       //
-      // To initialize them as 0xFF is recommended 
+      // To initialize them as 0xFF is recommended
       // because the OS can know the last entry for that.
       //
       SetMem ((VOID *)(UINTN)Lasa, EFI_TCG_LOG_AREA_SIZE, 0xFF);
@@ -984,7 +984,7 @@ SetupEventLog (
   for (Index = 0; Index < sizeof(mTreeEventInfo)/sizeof(mTreeEventInfo[0]); Index++) {
       GuidHob.Raw = GetHobList ();
       Status = EFI_SUCCESS;
-      while (!EFI_ERROR (Status) && 
+      while (!EFI_ERROR (Status) &&
              (GuidHob.Raw = GetNextGuidHob (mTreeEventInfo[Index].EventGuid, GuidHob.Raw)) != NULL) {
         TcgEvent    = GET_GUID_HOB_DATA (GuidHob.Guid);
         GuidHob.Raw = GET_NEXT_HOB (GuidHob);
@@ -1008,8 +1008,8 @@ SetupEventLog (
 /**
   Measure and log an action string, and extend the measurement result into PCR[5].
 
-  @param[in] String           A specific string that indicates an Action event.  
-  
+  @param[in] String           A specific string that indicates an Action event.
+
   @retval EFI_SUCCESS         Operation completed successfully.
   @retval EFI_DEVICE_ERROR    The operation was unsuccessful.
 
@@ -1085,7 +1085,7 @@ MeasureHandoffTables (
 
   if (PcdGet8 (PcdTpmPlatformClass) == TCG_PLATFORM_TYPE_SERVER) {
     //
-    // Tcg Server spec. 
+    // Tcg Server spec.
     // Measure each processor EFI_CPU_PHYSICAL_LOCATION with EV_TABLE_OF_DEVICES to PCR[1]
     //
     Status = GetProcessorsCpuLocation(&ProcessorLocBuf, &ProcessorNum);
@@ -1117,7 +1117,7 @@ MeasureHandoffTables (
 /**
   Measure and log Separator event, and extend the measurement result into a specific PCR.
 
-  @param[in] PCRIndex         PCR index.  
+  @param[in] PCRIndex         PCR index.
 
   @retval EFI_SUCCESS         Operation completed successfully.
   @retval EFI_DEVICE_ERROR    The operation was unsuccessful.
@@ -1149,13 +1149,13 @@ MeasureSeparatorEvent (
 /**
   Measure and log an EFI variable, and extend the measurement result into a specific PCR.
 
-  @param[in]  PCRIndex          PCR Index.  
-  @param[in]  EventType         Event type.  
+  @param[in]  PCRIndex          PCR Index.
+  @param[in]  EventType         Event type.
   @param[in]  VarName           A Null-terminated string that is the name of the vendor's variable.
   @param[in]  VendorGuid        A unique identifier for the vendor.
-  @param[in]  VarData           The content of the variable data.  
-  @param[in]  VarSize           The size of the variable data.  
- 
+  @param[in]  VarData           The content of the variable data.
+  @param[in]  VarSize           The size of the variable data.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_OUT_OF_RESOURCES  Out of memory.
   @retval EFI_DEVICE_ERROR      The operation was unsuccessful.
@@ -1233,13 +1233,13 @@ MeasureVariable (
 /**
   Read then Measure and log an EFI variable, and extend the measurement result into a specific PCR.
 
-  @param[in]  PCRIndex          PCR Index.  
-  @param[in]  EventType         Event type.  
+  @param[in]  PCRIndex          PCR Index.
+  @param[in]  EventType         Event type.
   @param[in]   VarName          A Null-terminated string that is the name of the vendor's variable.
   @param[in]   VendorGuid       A unique identifier for the vendor.
-  @param[out]  VarSize          The size of the variable data.  
-  @param[out]  VarData          Pointer to the content of the variable.  
- 
+  @param[out]  VarSize          The size of the variable data.
+  @param[out]  VarData          Pointer to the content of the variable.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_OUT_OF_RESOURCES  Out of memory.
   @retval EFI_DEVICE_ERROR      The operation was unsuccessful.
@@ -1291,9 +1291,9 @@ ReadAndMeasureVariable (
 
   @param[in]   VarName          A Null-terminated string that is the name of the vendor's variable.
   @param[in]   VendorGuid       A unique identifier for the vendor.
-  @param[out]  VarSize          The size of the variable data.  
-  @param[out]  VarData          Pointer to the content of the variable.  
- 
+  @param[out]  VarSize          The size of the variable data.
+  @param[out]  VarData          Pointer to the content of the variable.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_OUT_OF_RESOURCES  Out of memory.
   @retval EFI_DEVICE_ERROR      The operation was unsuccessful.
@@ -1322,9 +1322,9 @@ ReadAndMeasureBootVariable (
 
   @param[in]   VarName          A Null-terminated string that is the name of the vendor's variable.
   @param[in]   VendorGuid       A unique identifier for the vendor.
-  @param[out]  VarSize          The size of the variable data.  
-  @param[out]  VarData          Pointer to the content of the variable.  
- 
+  @param[out]  VarSize          The size of the variable data.
+  @param[out]  VarData          Pointer to the content of the variable.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_OUT_OF_RESOURCES  Out of memory.
   @retval EFI_DEVICE_ERROR      The operation was unsuccessful.
@@ -1616,9 +1616,9 @@ OnReadyToBoot (
 /**
   Install TCG ACPI Table when ACPI Table Protocol is available.
 
-  A system's firmware uses an ACPI table to identify the system's TCG capabilities 
-  to the Post-Boot environment. The information in this ACPI table is not guaranteed 
-  to be valid until the Host Platform transitions from pre-boot state to post-boot state.  
+  A system's firmware uses an ACPI table to identify the system's TCG capabilities
+  to the Post-Boot environment. The information in this ACPI table is not guaranteed
+  to be valid until the Host Platform transitions from pre-boot state to post-boot state.
 
   @param[in]  Event     Event whose notification function is being invoked
   @param[in]  Context   Pointer to the notification function's context
@@ -1649,7 +1649,7 @@ InstallAcpiTable (
     mTcgClientAcpiTemplate.Header.CreatorId        = PcdGet32 (PcdAcpiDefaultCreatorId);
     mTcgClientAcpiTemplate.Header.CreatorRevision  = PcdGet32 (PcdAcpiDefaultCreatorRevision);
     //
-    // The ACPI table must be checksumed before calling the InstallAcpiTable() 
+    // The ACPI table must be checksumed before calling the InstallAcpiTable()
     // service of the ACPI table protocol to install it.
     //
     Checksum = CalculateCheckSum8 ((UINT8 *)&mTcgClientAcpiTemplate, sizeof (mTcgClientAcpiTemplate));
@@ -1669,7 +1669,7 @@ InstallAcpiTable (
     mTcgServerAcpiTemplate.Header.CreatorId        = PcdGet32 (PcdAcpiDefaultCreatorId);
     mTcgServerAcpiTemplate.Header.CreatorRevision  = PcdGet32 (PcdAcpiDefaultCreatorRevision);
     //
-    // The ACPI table must be checksumed before calling the InstallAcpiTable() 
+    // The ACPI table must be checksumed before calling the InstallAcpiTable()
     // service of the ACPI table protocol to install it.
     //
     Checksum = CalculateCheckSum8 ((UINT8 *)&mTcgServerAcpiTemplate, sizeof (mTcgServerAcpiTemplate));
@@ -1760,7 +1760,7 @@ OnExitBootServicesFailed (
 
 /**
   The function install TrEE protocol.
-  
+
   @retval EFI_SUCCESS     TrEE protocol is installed.
   @retval other           Some error occurs.
 **/
@@ -1785,9 +1785,9 @@ InstallTrEE (
 /**
   The driver's entry point. It publishes EFI TrEE Protocol.
 
-  @param[in] ImageHandle  The firmware allocated handle for the EFI image.  
+  @param[in] ImageHandle  The firmware allocated handle for the EFI image.
   @param[in] SystemTable  A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS     The entry point is executed successfully.
   @retval other           Some error occurs when executing this entry point.
 **/
@@ -1819,13 +1819,13 @@ DriverEntry (
     DEBUG ((EFI_D_ERROR, "TPM2 error!\n"));
     return EFI_DEVICE_ERROR;
   }
-  
+
   Status = Tpm2RequestUseTpm ();
   if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_ERROR, "TPM2 not detected!\n"));
     return Status;
   }
-  
+
   //
   // Fill information
   //
@@ -1921,7 +1921,7 @@ DriverEntry (
                     );
 
     //
-    // Measure Exit Boot Service failed 
+    // Measure Exit Boot Service failed
     //
     Status = gBS->CreateEventEx (
                     EVT_NOTIFY_SIGNAL,

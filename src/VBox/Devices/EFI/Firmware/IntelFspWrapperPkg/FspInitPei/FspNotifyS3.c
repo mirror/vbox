@@ -65,9 +65,9 @@ S3EndOfPeiNotify (
   if (FspHeader == NULL) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   DEBUG ((DEBUG_INFO, "S3EndOfPeiNotify enter\n"));
-  
+
   NotifyPhaseParams.Phase = EnumInitPhaseAfterPciEnumeration;
   Status = CallFspNotifyPhase (FspHeader, &NotifyPhaseParams);
   DEBUG((DEBUG_INFO, "FSP S3NotifyPhase AfterPciEnumeration status: 0x%x\n", Status));

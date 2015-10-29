@@ -291,7 +291,7 @@ genDefFile( )
 			if ( TokenString(i)!=NULL && i != EpToken )
 			{
 				TermEntry *p;
-				
+
 				if ( WarningLevel>1 )
 				{
 					int j;
@@ -491,7 +491,7 @@ Junction *p;
 				DumpRetValStruct(f, p->ret, i);
 			}
 			fprintf(f, "\n#ifdef __USE_PROTOS\n");
-/* MR23 */	if ( hasMultipleOperands(p->ret) ) 
+/* MR23 */	if ( hasMultipleOperands(p->ret) )
 			{
 				fprintf(f, "extern struct _rv%d", i);
 			}
@@ -762,7 +762,7 @@ FILE *f;
 	char *pSeparator;
 	int nest = 0;
 
-	require(s!=NULL, "DumpType: invalid type string"); 
+	require(s!=NULL, "DumpType: invalid type string");
 
 	p = endFormal(s,
 			      &pDataType,

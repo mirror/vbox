@@ -111,7 +111,7 @@ class Configuration(object):
         self.HeaderCheckCFileCommentReferenceFormat = 1
         # Check whether C File header Comment have the License immediately after the ""Copyright"" line
         self.HeaderCheckCFileCommentLicenseFormat = 1
-  
+
         ## C Function Layout Checking
         self.CFunctionLayoutCheckAll = 0
 
@@ -259,7 +259,7 @@ class Configuration(object):
 
         # A list for binary file ext name
         self.BinaryExtList = []
-        
+
         # A list for only scanned folders
         self.ScanOnlyDirList = []
 

@@ -2,12 +2,12 @@
   Guid for Pcd DataBase Signature.
 
 Copyright (c) 2012 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under 
-the terms and conditions of the BSD License that accompanies this distribution.  
+This program and the accompanying materials are licensed and made available under
+the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.                                            
+http://opensource.org/licenses/bsd-license.php.
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -117,11 +117,11 @@ typedef struct {
     //DYNAMICEX_MAPPING              ExMapTable[];            // DynamicEx PCD mapped to LocalIndex in LocalTokenNumberTable. It can be accessed by the ExMapTableOffset.
     //UINT32                         LocalTokenNumberTable[]; // Offset | DataType | PCD Type. It can be accessed by LocalTokenNumberTableOffset.
     //GUID                           GuidTable[];             // GUID for DynamicEx and HII PCD variable Guid. It can be accessed by the GuidTableOffset.
-    //STRING_HEAD                    StringHead[];            // String PCD 
+    //STRING_HEAD                    StringHead[];            // String PCD
     //PCD_NAME_INDEX                 PcdNameTable[];          // PCD name index info. It can be accessed by the PcdNameTableOffset.
     //VARIABLE_HEAD                  VariableHead[];          // HII PCD
     //SKU_HEAD                       SkuHead[];               // Store SKU info for each PCD with SKU enable.
-    //UINT8                          StringTable[];           // String for String PCD value and HII PCD Variable Name. It can be accessed by StringTableOffset.        
+    //UINT8                          StringTable[];           // String for String PCD value and HII PCD Variable Name. It can be accessed by StringTableOffset.
     //SIZE_INFO                      SizeTable[];             // MaxSize and CurSize for String PCD. It can be accessed by SizeTableOffset.
     //UINT16                         ValueUint16[];
     //UINT8                          ValueUint8[];

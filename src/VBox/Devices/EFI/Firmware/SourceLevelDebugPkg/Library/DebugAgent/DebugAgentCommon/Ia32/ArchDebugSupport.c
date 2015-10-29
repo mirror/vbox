@@ -57,7 +57,7 @@ InitializeDebugIdt (
   IdtEntry[DEBUG_TIMER_VECTOR].Bits.OffsetHigh = (UINT16)((UINTN)InterruptHandler >> 16);
   IdtEntry[DEBUG_TIMER_VECTOR].Bits.Selector   = CodeSegment;
   IdtEntry[DEBUG_TIMER_VECTOR].Bits.GateType   = IA32_IDT_GATE_TYPE_INTERRUPT_32;
-  
+
   //
   // Set DE flag in CR4 to enable IO breakpoint
   //
@@ -68,7 +68,7 @@ InitializeDebugIdt (
   Retrieve exception handler from IDT table by ExceptionNum.
 
   @param[in]  ExceptionNum    Exception number
- 
+
   @return Exception handler
 
 **/
@@ -85,13 +85,13 @@ GetExceptionHandlerInIdtEntry (
 
   return (VOID *) (((UINTN)IdtEntry[ExceptionNum].Bits.OffsetLow) |
                   (((UINTN)IdtEntry[ExceptionNum].Bits.OffsetHigh) << 16));
-} 
+}
 
 /**
   Set exception handler in IDT table by ExceptionNum.
 
   @param[in]  ExceptionNum      Exception number
-  @param[in]  ExceptionHandler  Exception Handler to be set 
+  @param[in]  ExceptionHandler  Exception Handler to be set
 
 **/
 VOID

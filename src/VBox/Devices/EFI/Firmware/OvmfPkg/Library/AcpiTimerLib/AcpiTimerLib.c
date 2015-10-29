@@ -152,7 +152,7 @@ AcpiTimerLibConstructor (
     //
     PciOr8 (PMREGMISC, PMIOSE);
   }
-  
+
   return RETURN_SUCCESS;
 }
 #else

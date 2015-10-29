@@ -42,13 +42,13 @@ MicroSecondDelay (
   EsalCall (
     EFI_EXTENDED_SAL_STALL_SERVICES_PROTOCOL_GUID_LO,
     EFI_EXTENDED_SAL_STALL_SERVICES_PROTOCOL_GUID_HI,
-    StallFunctionId, 
-    MicroSeconds, 
-    0, 
-    0, 
-    0, 
-    0, 
-    0, 
+    StallFunctionId,
+    MicroSeconds,
+    0,
+    0,
+    0,
+    0,
+    0,
     0
     );
   return MicroSeconds;
@@ -82,13 +82,13 @@ NanoSecondDelay (
   EsalCall (
     EFI_EXTENDED_SAL_STALL_SERVICES_PROTOCOL_GUID_LO,
     EFI_EXTENDED_SAL_STALL_SERVICES_PROTOCOL_GUID_HI,
-    StallFunctionId, 
-    MicroSeconds, 
-    0, 
-    0, 
-    0, 
-    0, 
-    0, 
+    StallFunctionId,
+    MicroSeconds,
+    0,
+    0,
+    0,
+    0,
+    0,
     0
     );
   return NanoSeconds;

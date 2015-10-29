@@ -92,22 +92,22 @@ FpdtStatusCodeListenerSmm (
   if ((CodeType & EFI_STATUS_CODE_TYPE_MASK) != EFI_PROGRESS_CODE) {
     return EFI_UNSUPPORTED;
   }
-  
+
   //
   // Collect one or more Boot records in boot time
   //
   if (Data != NULL && CompareGuid (&Data->Type, &gEfiFirmwarePerformanceGuid)) {
     AcquireSpinLock (&mSmmFpdtLock);
-    
+
     if (mBootRecordSize + Data->Size > mBootRecordMaxSize) {
       //
-      // Try to allocate big SMRAM data to store Boot record. 
+      // Try to allocate big SMRAM data to store Boot record.
       //
       if (mSmramIsOutOfResource) {
         ReleaseSpinLock (&mSmmFpdtLock);
         return EFI_OUT_OF_RESOURCES;
       }
-      NewRecordBuffer = ReallocatePool (mBootRecordSize, mBootRecordSize + Data->Size + EXTENSION_RECORD_SIZE, mBootRecordBuffer); 
+      NewRecordBuffer = ReallocatePool (mBootRecordSize, mBootRecordSize + Data->Size + EXTENSION_RECORD_SIZE, mBootRecordBuffer);
       if (NewRecordBuffer == NULL) {
         ReleaseSpinLock (&mSmmFpdtLock);
         mSmramIsOutOfResource = TRUE;
@@ -121,7 +121,7 @@ FpdtStatusCodeListenerSmm (
     //
     CopyMem (mBootRecordBuffer + mBootRecordSize, Data + 1, Data->Size);
     mBootRecordSize += Data->Size;
-    
+
     ReleaseSpinLock (&mSmmFpdtLock);
     return EFI_SUCCESS;
   }
@@ -178,7 +178,7 @@ FpdtStatusCodeListenerSmm (
 /**
   Communication service SMI Handler entry.
 
-  This SMI handler provides services for report SMM boot records. 
+  This SMI handler provides services for report SMM boot records.
 
   Caution: This function may receive untrusted input.
   Communicate buffer and buffer size are external input, so this function will do basic validation.
@@ -190,11 +190,11 @@ FpdtStatusCodeListenerSmm (
                                  be conveyed from a non-SMM environment into an SMM environment.
   @param[in, out] CommBufferSize The size of the CommBuffer.
 
-  @retval EFI_SUCCESS                         The interrupt was handled and quiesced. No other handlers 
+  @retval EFI_SUCCESS                         The interrupt was handled and quiesced. No other handlers
                                               should still be called.
-  @retval EFI_WARN_INTERRUPT_SOURCE_QUIESCED  The interrupt has been quiesced but other handlers should 
+  @retval EFI_WARN_INTERRUPT_SOURCE_QUIESCED  The interrupt has been quiesced but other handlers should
                                               still be called.
-  @retval EFI_WARN_INTERRUPT_SOURCE_PENDING   The interrupt is still pending and other handlers should still 
+  @retval EFI_WARN_INTERRUPT_SOURCE_PENDING   The interrupt is still pending and other handlers should still
                                               be called.
   @retval EFI_INTERRUPT_PENDING               The interrupt could not be quiesced.
 
@@ -226,7 +226,7 @@ FpdtSmiHandler (
   if(TempCommBufferSize < sizeof (SMM_BOOT_RECORD_COMMUNICATE)) {
     return EFI_SUCCESS;
   }
-  
+
   if (!SmmIsBufferOutsideSmmValid ((UINTN)CommBuffer, TempCommBufferSize)) {
     DEBUG ((EFI_D_ERROR, "FpdtSmiHandler: SMM communication data buffer in SMRAM or overflow!\n"));
     return EFI_SUCCESS;
@@ -247,7 +247,7 @@ FpdtSmiHandler (
        if (BootRecordData == NULL || BootRecordSize < mBootRecordSize) {
          Status = EFI_INVALID_PARAMETER;
          break;
-       } 
+       }
 
        //
        // Sanity check
@@ -260,8 +260,8 @@ FpdtSmiHandler (
        }
 
        CopyMem (
-         (UINT8*)BootRecordData, 
-         mBootRecordBuffer, 
+         (UINT8*)BootRecordData,
+         mBootRecordBuffer,
          mBootRecordSize
          );
        break;
@@ -271,7 +271,7 @@ FpdtSmiHandler (
   }
 
   SmmCommData->ReturnStatus = Status;
-  
+
   return EFI_SUCCESS;
 }
 
@@ -298,8 +298,8 @@ FirmwarePerformanceSmmEntryPoint (
   //
   // Initialize spin lock
   //
-  InitializeSpinLock (&mSmmFpdtLock); 
-   
+  InitializeSpinLock (&mSmmFpdtLock);
+
   //
   // Get SMM Report Status Code Handler Protocol.
   //

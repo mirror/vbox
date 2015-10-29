@@ -43,7 +43,7 @@ ifeq ($(ARCH), AARCH64)
 ARCH_INCLUDE = -I $(MAKEROOT)/Include/AArch64/
 endif
 
-INCLUDE = $(TOOL_INCLUDE) -I $(MAKEROOT) -I $(MAKEROOT)/Include/Common -I $(MAKEROOT)/Include/ -I $(MAKEROOT)/Include/IndustryStandard -I $(MAKEROOT)/Common/ -I .. -I . $(ARCH_INCLUDE) 
+INCLUDE = $(TOOL_INCLUDE) -I $(MAKEROOT) -I $(MAKEROOT)/Include/Common -I $(MAKEROOT)/Include/ -I $(MAKEROOT)/Include/IndustryStandard -I $(MAKEROOT)/Common/ -I .. -I . $(ARCH_INCLUDE)
 CPPFLAGS = $(INCLUDE)
 ifeq ($(DARWIN),Darwin)
 # assume clang or clang compatible flags on OS X
@@ -55,7 +55,7 @@ LFLAGS =
 
 ifeq ($(ARCH), IA32)
 #
-# Snow Leopard  is a 32-bit and 64-bit environment. uname -m returns i386, but gcc defaults 
+# Snow Leopard  is a 32-bit and 64-bit environment. uname -m returns i386, but gcc defaults
 #  to x86_64. So make sure tools match uname -m. You can manual have a 64-bit kernal on Snow Leopard
 #  so only do this is uname -m returns i386.
 #
@@ -66,7 +66,7 @@ ifeq ($(DARWIN),Darwin)
 endif
 endif
 
-  
+
 .PHONY: all
 .PHONY: install
 .PHONY: clean
@@ -74,7 +74,7 @@ endif
 all:
 
 $(MAKEROOT)/libs:
-	mkdir $(MAKEROOT)/libs 
+	mkdir $(MAKEROOT)/libs
 
 $(MAKEROOT)/bin:
 	mkdir $(MAKEROOT)/bin

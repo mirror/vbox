@@ -53,7 +53,7 @@ FileBufferRefresh (
   VOID
   );
 
-/** 
+/**
   Dispatch input to different handler
   @param[in] Key                The input key.  One of:
                                     ASCII KEY
@@ -104,7 +104,7 @@ FileBufferRestorePosition (
   Set FileName field in FileBuffer.
 
   @param Str                    The file name to set.
-  
+
   @retval EFI_SUCCESS           The filename was successfully set.
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
   @retval EFI_INVALID_PARAMETER Str is not a valid filename.
@@ -117,10 +117,10 @@ FileBufferSetFileName (
 
 /**
   Read a file from disk into the FileBuffer.
-  
+
   @param[in] FileName           The filename to read.
   @param[in] Recover            TRUE if is for recover mode, no information printouts.
-  
+
   @retval EFI_SUCCESS            The load was successful.
   @retval EFI_LOAD_ERROR         The load failed.
   @retval EFI_OUT_OF_RESOURCES   A memory allocation failed.
@@ -139,7 +139,7 @@ FileBufferRead (
   @param[in] FileName           The file name for writing.
 
   @retval EFI_SUCCESS           Data was written.
-  @retval EFI_LOAD_ERROR        
+  @retval EFI_LOAD_ERROR
   @retval EFI_OUT_OF_RESOURCES  There were not enough resources to write the file.
 **/
 EFI_STATUS
@@ -164,7 +164,7 @@ FileBufferMovePosition (
 /**
   Cut current line out and return a pointer to it.
 
-  @param[out] CutLine    Upon a successful return pointer to the pointer to 
+  @param[out] CutLine    Upon a successful return pointer to the pointer to
                         the allocated cut line.
 
   @retval EFI_SUCCESS             The cut was successful.

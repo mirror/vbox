@@ -68,10 +68,10 @@ def main():
         if Options.verbose != None:
             EdkLogger.SetLevel(EdkLogger.VERBOSE)
             GenFdsGlobalVariable.VerboseMode = True
-            
+
         if Options.FixedAddress != None:
             GenFdsGlobalVariable.FixedLoadAddress = True
-            
+
         if Options.quiet != None:
             EdkLogger.SetLevel(EdkLogger.QUIET)
         if Options.debug != None:
@@ -202,7 +202,7 @@ def main():
         GlobalData.gDatabasePath = os.path.normpath(os.path.join(ConfDirectoryPath, GlobalData.gDatabasePath))
         BuildWorkSpace = WorkspaceDatabase(GlobalData.gDatabasePath)
         BuildWorkSpace.InitDatabase()
-        
+
         #
         # Get files real name in workspace dir
         #
@@ -218,7 +218,7 @@ def main():
         TargetArchList = set(BuildWorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, 'COMMON', Options.BuildTarget, Options.ToolChain].SupArchList) & set(ArchList)
         if len(TargetArchList) == 0:
             EdkLogger.error("GenFds", GENFDS_ERROR, "Target ARCH %s not in platform supported ARCH %s" % (str(ArchList), str(BuildWorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, 'COMMON'].SupArchList)))
-        
+
         for Arch in ArchList:
             GenFdsGlobalVariable.OutputDirFromDscDict[Arch] = NormPath(BuildWorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, Arch, Options.BuildTarget, Options.ToolChain].OutputDirectory)
             GenFdsGlobalVariable.PlatformName = BuildWorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, Arch, Options.BuildTarget, Options.ToolChain].PlatformName
@@ -315,7 +315,7 @@ def SingleCheckCallback(option, opt_str, value, parser):
         gParamCheck.append(option)
     else:
         parser.error("Option %s only allows one instance in command line!" % option)
-        
+
 ## Parse command line options
 #
 # Using standard Python module optparse to parse command line option of this tool.
@@ -408,7 +408,7 @@ class GenFds :
                 FvObj = GenFdsGlobalVariable.FdfParser.Profile.FvDict[FvName]
                 FvObj.AddToBuffer(Buffer)
                 Buffer.close()
-        
+
         if GenFds.OnlyGenerateThisFv == None and GenFds.OnlyGenerateThisFd == None and GenFds.OnlyGenerateThisCap == None:
             if GenFdsGlobalVariable.FdfParser.Profile.CapsuleDict != {}:
                 GenFdsGlobalVariable.VerboseLogger("\n Generate other Capsule images!")
@@ -462,7 +462,7 @@ class GenFds :
     #   @retval None
     #
     def DisplayFvSpaceInfo(FdfParser):
-        
+
         FvSpaceInfoList = []
         MaxFvNameLength = 0
         for FvName in FdfParser.Profile.FvDict:
@@ -489,10 +489,10 @@ class GenFds :
                         if NameValue[0].strip() == 'EFI_FV_SPACE_SIZE':
                             FreeFound = True
                             Free = NameValue[1].strip()
-                
+
                 if TotalFound and UsedFound and FreeFound:
                     FvSpaceInfoList.append((FvName, Total, Used, Free))
-                
+
         GenFdsGlobalVariable.QuietLogger('\nFV Space Information')
         for FvSpaceInfo in FvSpaceInfoList:
             Name = FvSpaceInfo[0]
@@ -502,8 +502,8 @@ class GenFds :
             if UsedSizeValue == TotalSizeValue:
                 Percentage = '100'
             else:
-                Percentage = str((UsedSizeValue+0.0)/TotalSizeValue)[0:4].lstrip('0.') 
-            
+                Percentage = str((UsedSizeValue+0.0)/TotalSizeValue)[0:4].lstrip('0.')
+
             GenFdsGlobalVariable.QuietLogger(Name + ' ' + '[' + Percentage + '%Full] ' + str(TotalSizeValue) + ' total, ' + str(UsedSizeValue) + ' used, ' + str(FreeSizeValue) + ' free')
 
     ## PreprocessImage()
@@ -520,18 +520,18 @@ class GenFds :
             if PcdObj.TokenCName == 'PcdBsBaseAddress':
                 PcdValue = PcdObj.DefaultValue
                 break
-        
+
         if PcdValue == '':
             return
-        
+
         Int64PcdValue = long(PcdValue, 0)
-        if Int64PcdValue == 0 or Int64PcdValue < -1:    
+        if Int64PcdValue == 0 or Int64PcdValue < -1:
             return
-                
+
         TopAddress = 0
         if Int64PcdValue > 0:
             TopAddress = Int64PcdValue
-            
+
         ModuleDict = BuildDb.BuildObject[DscFile, 'COMMON', GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag].Modules
         for Key in ModuleDict:
             ModuleObj = BuildDb.BuildObject[Key, 'COMMON', GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]

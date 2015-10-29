@@ -206,7 +206,7 @@ FwVolInheritAuthenticationStatus (
 
   if (FvDevice->Fv.ParentHandle != NULL) {
     //
-    // By Parent Handle, find out the FV image file and section(in another firmware volume) where the firmware volume came from 
+    // By Parent Handle, find out the FV image file and section(in another firmware volume) where the firmware volume came from
     //
     Status = gBS->HandleProtocol (FvDevice->Fv.ParentHandle, &gEfiFirmwareVolume2ProtocolGuid, (VOID **) &ParentFvProtocol);
     if (!EFI_ERROR (Status) && (ParentFvProtocol != NULL)) {
@@ -747,7 +747,7 @@ FwVolDriverInit (
       } else {
         FreePool (FvDevice);
       }
-      
+
       DEBUG ((EFI_D_INFO, "Reinstall FV protocol as writable - %r\n", Status));
       ASSERT_EFI_ERROR (Status);
     } else {
@@ -765,7 +765,7 @@ FwVolDriverInit (
       } else {
         FreePool (FvDevice);
       }
-      
+
       DEBUG ((EFI_D_INFO, "Install FV protocol as writable - %r\n", Status));
       ASSERT_EFI_ERROR (Status);
     }
@@ -780,7 +780,7 @@ Done:
   if (InstallFlag) {
     return EFI_SUCCESS;
   }
-  
+
   //
   // No FV protocol install/reinstall successfully.
   // EFI_NOT_FOUND should return to ensure this image will be unloaded.

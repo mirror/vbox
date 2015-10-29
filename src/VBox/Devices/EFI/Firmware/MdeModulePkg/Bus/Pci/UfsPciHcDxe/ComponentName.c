@@ -38,7 +38,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE mUfsHcDriverNameTable[] =
     "eng;en",
     L"Universal Flash Storage (UFS) Pci Host Controller Driver"
   },
-  { 
+  {
     NULL,
     NULL
   }

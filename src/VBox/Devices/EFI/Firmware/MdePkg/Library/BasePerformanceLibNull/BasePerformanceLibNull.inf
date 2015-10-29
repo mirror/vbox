@@ -20,7 +20,7 @@
   FILE_GUID                      = FC120ED3-40E1-46dc-8C9C-AAE3CA139ACF
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PerformanceLib 
+  LIBRARY_CLASS                  = PerformanceLib
 
 
 #

@@ -16,12 +16,12 @@
 #include "Utility.h"
 
 /**
-  Generate IKE Packet for CREATE_CHILD_SA exchange.  
+  Generate IKE Packet for CREATE_CHILD_SA exchange.
 
   This IKE Packet would be the packet for creating new CHILD SA, or the packet for
   rekeying existing IKE SA, or the packet for existing CHILD SA.
-  
-  @param[in] SaSession   Pointer to related SA session. 
+
+  @param[in] SaSession   Pointer to related SA session.
   @param[in] Context     The data passed by the caller.
 
   return a pointer of IKE packet.
@@ -39,7 +39,7 @@ Ikev2CreateChildGenerator (
   IKE_PACKET              *IkePacket;
   IKE_PAYLOAD             *NotifyPayload;
   UINT32                  *MessageId;
-  
+
   ChildSaSession  = (IKEV2_CHILD_SA_SESSION *) SaSession;
   IkePacket       = IkePacketAlloc();
   MessageId       = NULL;
@@ -54,30 +54,30 @@ Ikev2CreateChildGenerator (
   if (Context != NULL) {
     MessageId = (UINT32 *) Context;
   }
-  
+
   IkePacket->Header->Version      = (UINT8) (2 << 4);
   IkePacket->Header->NextPayload  = IKEV2_PAYLOAD_TYPE_NOTIFY;
   IkePacket->Header->ExchangeType = IKE_XCG_TYPE_CREATE_CHILD_SA;
-  
+
   if (ChildSaSession->SessionCommon.IkeSessionType == IkeSessionTypeChildSa) {
     //
     // 1.a Fill the IkePacket->Hdr
-    //    
+    //
     IkePacket->Header->InitiatorCookie = ChildSaSession->IkeSaSession->InitiatorCookie;
     IkePacket->Header->ResponderCookie = ChildSaSession->IkeSaSession->ResponderCookie;
-    
+
     if (MessageId != NULL) {
       IkePacket->Header->MessageId     = *MessageId;
     } else {
       IkePacket->Header->MessageId     = ChildSaSession->MessageId;
-    }    
-    
+    }
+
     if (ChildSaSession->SessionCommon.IsInitiator) {
       IkePacket->Header->Flags = IKE_HEADER_FLAGS_CHILD_INIT;
     } else {
       IkePacket->Header->Flags = IKE_HEADER_FLAGS_RESPOND;
     }
-      
+
   } else {
     IkeSaSession  = (IKEV2_SA_SESSION *) SaSession;
     //
@@ -90,15 +90,15 @@ Ikev2CreateChildGenerator (
       IkePacket->Header->MessageId     = *MessageId;
     } else {
       IkePacket->Header->MessageId     = IkeSaSession->MessageId;
-    }    
-    
+    }
+
     if (IkeSaSession->SessionCommon.IsInitiator) {
       IkePacket->Header->Flags = IKE_HEADER_FLAGS_CHILD_INIT;
     } else {
       IkePacket->Header->Flags = IKE_HEADER_FLAGS_RESPOND;
     }
-  } 
-   
+  }
+
   //
   // According to RFC4306, Chapter 4.
   // A minimal implementation may support the CREATE_CHILD_SA exchange only to
@@ -107,29 +107,29 @@ Ikev2CreateChildGenerator (
   NotifyPayload = Ikev2GenerateNotifyPayload (
                     0,
                     IKEV2_PAYLOAD_TYPE_NONE,
-                    0,                  
+                    0,
                     IKEV2_NOTIFICATION_NO_ADDITIONAL_SAS,
                     NULL,
                     NULL,
                     0
                     );
-                        
+
   IKE_PACKET_APPEND_PAYLOAD (IkePacket, NotifyPayload);
   //
-  // TODO: Support the CREATE_CHILD_SA exchange. 
-  // 
+  // TODO: Support the CREATE_CHILD_SA exchange.
+  //
   return IkePacket;
 }
 
 /**
   Parse the IKE packet of CREATE_CHILD_SA exchange.
-  
+
   This function parse the IKE packet and save the related information to further
-  calculation. 
-  
+  calculation.
+
   @param[in] SaSession   Pointer to IKEv2_CHILD_SA_SESSION related to this Exchange.
   @param[in] IkePacket   Received packet to be parsed.
- 
+
 
   @retval EFI_SUCCESS       The IKE Packet is acceptable.
   @retval EFI_UNSUPPORTED   Not support the CREATE_CHILD_SA request.

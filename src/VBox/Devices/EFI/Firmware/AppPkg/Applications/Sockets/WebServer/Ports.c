@@ -37,9 +37,9 @@ PortsPage (
   struct sockaddr_in6 LocalAddress;
   DT_WEB_SERVER * pWebServer;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Send the Hello World page
   //
@@ -52,7 +52,7 @@ PortsPage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     //  Send the page body
     //
@@ -127,7 +127,7 @@ PortsPage (
     Status = HttpPageTrailer ( SocketFD, pPort, pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

@@ -62,7 +62,7 @@ typedef struct {
 #pragma pack(1)
 typedef struct {
   IKEV2_COMMON_PAYLOAD_HEADER Header;
-  // 
+  //
   // Proposals
   //
 } IKEV2_SA;
@@ -89,7 +89,7 @@ typedef struct {
 
 //
 // IKEv2 Transform ID for Encrypt Algorithm (ENCR)
-// 
+//
 #define IKEV2_TRANSFORM_ID_ENCR_DES_IV64 1
 #define IKEV2_TRANSFORM_ID_ENCR_DES      2
 #define IKEV2_TRANSFORM_ID_ENCR_3DES     3

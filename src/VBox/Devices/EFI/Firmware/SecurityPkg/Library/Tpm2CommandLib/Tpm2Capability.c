@@ -48,25 +48,25 @@ typedef struct {
 /**
   This command returns various information regarding the TPM and its current state.
 
-  The capability parameter determines the category of data returned. The property parameter 
-  selects the first value of the selected category to be returned. If there is no property 
+  The capability parameter determines the category of data returned. The property parameter
+  selects the first value of the selected category to be returned. If there is no property
   that corresponds to the value of property, the next higher value is returned, if it exists.
-  The moreData parameter will have a value of YES if there are more values of the requested 
+  The moreData parameter will have a value of YES if there are more values of the requested
   type that were not returned.
-  If no next capability exists, the TPM will return a zero-length list and moreData will have 
+  If no next capability exists, the TPM will return a zero-length list and moreData will have
   a value of NO.
 
-  NOTE: 
-  To simplify this function, leave returned CapabilityData for caller to unpack since there are 
+  NOTE:
+  To simplify this function, leave returned CapabilityData for caller to unpack since there are
   many capability categories and only few categories will be used in firmware. It means the caller
   need swap the byte order for the feilds in CapabilityData.
 
   @param[in]  Capability         Group selection; determines the format of the response.
-  @param[in]  Property           Further definition of information. 
+  @param[in]  Property           Further definition of information.
   @param[in]  PropertyCount      Number of properties of the indicated type to return.
   @param[out] MoreData           Flag to indicate if there are more values of this type.
   @param[out] CapabilityData     The capability data.
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -95,10 +95,10 @@ Tpm2GetCapability (
   SendBuffer.Capability = SwapBytes32 (Capability);
   SendBuffer.Property = SwapBytes32 (Property);
   SendBuffer.PropertyCount = SwapBytes32 (PropertyCount);
- 
+
   SendBufferSize = (UINT32) sizeof (SendBuffer);
   SendBuffer.Header.paramSize = SwapBytes32 (SendBufferSize);
-    
+
   //
   // send Tpm command
   //
@@ -120,7 +120,7 @@ Tpm2GetCapability (
   // Does not unpack all possiable property here, the caller should unpack it and note the byte order.
   //
   CopyMem (CapabilityData, &RecvBuffer.CapabilityData, RecvBufferSize - sizeof (TPM2_RESPONSE_HEADER) - sizeof (UINT8));
-  
+
   return EFI_SUCCESS;
 }
 
@@ -130,7 +130,7 @@ Tpm2GetCapability (
   This function parse the value got from TPM2_GetCapability and return the Family.
 
   @param[out] Family             The Family of TPM. (a 4-octet character string)
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -142,13 +142,13 @@ Tpm2GetCapabilityFamily (
 {
   TPMS_CAPABILITY_DATA    TpmCap;
   TPMI_YES_NO             MoreData;
-  EFI_STATUS              Status; 
+  EFI_STATUS              Status;
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_FAMILY_INDICATOR, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_FAMILY_INDICATOR,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -165,7 +165,7 @@ Tpm2GetCapabilityFamily (
   This function parse the value got from TPM2_GetCapability and return the TPM manufacture ID.
 
   @param[out] ManufactureId      The manufacture ID of TPM.
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -177,13 +177,13 @@ Tpm2GetCapabilityManufactureID (
 {
   TPMS_CAPABILITY_DATA    TpmCap;
   TPMI_YES_NO             MoreData;
-  EFI_STATUS              Status; 
+  EFI_STATUS              Status;
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_MANUFACTURER, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_MANUFACTURER,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -201,7 +201,7 @@ Tpm2GetCapabilityManufactureID (
 
   @param[out] FirmwareVersion1   The FirmwareVersion1.
   @param[out] FirmwareVersion2   The FirmwareVersion2.
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -214,13 +214,13 @@ Tpm2GetCapabilityFirmwareVersion (
 {
   TPMS_CAPABILITY_DATA    TpmCap;
   TPMI_YES_NO             MoreData;
-  EFI_STATUS              Status; 
+  EFI_STATUS              Status;
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_FIRMWARE_VERSION_1, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_FIRMWARE_VERSION_1,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -229,10 +229,10 @@ Tpm2GetCapabilityFirmwareVersion (
   *FirmwareVersion1 = SwapBytes32 (TpmCap.data.tpmProperties.tpmProperty->value);
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_FIRMWARE_VERSION_2, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_FIRMWARE_VERSION_2,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -250,7 +250,7 @@ Tpm2GetCapabilityFirmwareVersion (
 
   @param[out] MaxCommandSize     The maximum value for commandSize in a command.
   @param[out] MaxResponseSize    The maximum value for responseSize in a command.
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -266,10 +266,10 @@ Tpm2GetCapabilityMaxCommandResponseSize (
   EFI_STATUS              Status;
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_MAX_COMMAND_SIZE, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_MAX_COMMAND_SIZE,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -279,10 +279,10 @@ Tpm2GetCapabilityMaxCommandResponseSize (
   *MaxCommandSize = SwapBytes32 (TpmCap.data.tpmProperties.tpmProperty->value);
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_MAX_RESPONSE_SIZE, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_MAX_RESPONSE_SIZE,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -290,17 +290,17 @@ Tpm2GetCapabilityMaxCommandResponseSize (
   }
 
   *MaxResponseSize = SwapBytes32 (TpmCap.data.tpmProperties.tpmProperty->value);
-  return EFI_SUCCESS; 
+  return EFI_SUCCESS;
 }
 
 /**
   This command returns Returns a list of TPMS_ALG_PROPERTIES. Each entry is an
-  algorithm ID and a set of properties of the algorithm. 
+  algorithm ID and a set of properties of the algorithm.
 
   This function parse the value got from TPM2_GetCapability and return the list.
 
   @param[out] AlgList      List of algorithm.
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -314,18 +314,18 @@ Tpm2GetCapabilitySupportedAlg (
   TPMI_YES_NO             MoreData;
   UINTN                   Index;
   EFI_STATUS              Status;
- 
+
   Status = Tpm2GetCapability (
-             TPM_CAP_ALGS, 
-             1, 
-             MAX_CAP_ALGS, 
-             &MoreData, 
+             TPM_CAP_ALGS,
+             1,
+             MAX_CAP_ALGS,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   CopyMem (AlgList, &TpmCap.data.algorithms, sizeof (TPML_ALG_PROPERTY));
 
   AlgList->count = SwapBytes32 (AlgList->count);
@@ -343,7 +343,7 @@ Tpm2GetCapabilitySupportedAlg (
   This function parse the value got from TPM2_GetCapability and return the LockoutCounter.
 
   @param[out] LockoutCounter     The LockoutCounter of TPM.
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -355,13 +355,13 @@ Tpm2GetCapabilityLockoutCounter (
 {
   TPMS_CAPABILITY_DATA    TpmCap;
   TPMI_YES_NO             MoreData;
-  EFI_STATUS              Status; 
+  EFI_STATUS              Status;
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_LOCKOUT_COUNTER, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_LOCKOUT_COUNTER,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -378,7 +378,7 @@ Tpm2GetCapabilityLockoutCounter (
   This function parse the value got from TPM2_GetCapability and return the LockoutInterval.
 
   @param[out] LockoutInterval    The LockoutInterval of TPM.
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -390,13 +390,13 @@ Tpm2GetCapabilityLockoutInterval (
 {
   TPMS_CAPABILITY_DATA    TpmCap;
   TPMI_YES_NO             MoreData;
-  EFI_STATUS              Status; 
+  EFI_STATUS              Status;
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_LOCKOUT_INTERVAL, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_LOCKOUT_INTERVAL,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -414,7 +414,7 @@ Tpm2GetCapabilityLockoutInterval (
 
   @param[out] InputBufferSize    The InputBufferSize of TPM.
                                  the maximum size of a parameter (typically, a TPM2B_MAX_BUFFER)
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -426,13 +426,13 @@ Tpm2GetCapabilityInputBufferSize (
 {
   TPMS_CAPABILITY_DATA    TpmCap;
   TPMI_YES_NO             MoreData;
-  EFI_STATUS              Status; 
+  EFI_STATUS              Status;
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_INPUT_BUFFER, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_INPUT_BUFFER,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -449,7 +449,7 @@ Tpm2GetCapabilityInputBufferSize (
   This function parse the value got from TPM2_GetCapability and return the PcrSelection.
 
   @param[out] Pcrs    The Pcr Selection
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -465,10 +465,10 @@ Tpm2GetCapabilityPcrs (
   UINTN                   Index;
 
   Status = Tpm2GetCapability (
-             TPM_CAP_PCRS, 
-             0, 
-             1, 
-             &MoreData, 
+             TPM_CAP_PCRS,
+             0,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {
@@ -491,7 +491,7 @@ Tpm2GetCapabilityPcrs (
   This function parse the value got from TPM2_GetCapability and return the AlgorithmSet.
 
   @param[out] AlgorithmSet    The AlgorithmSet of TPM.
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -503,13 +503,13 @@ Tpm2GetCapabilityAlgorithmSet (
 {
   TPMS_CAPABILITY_DATA    TpmCap;
   TPMI_YES_NO             MoreData;
-  EFI_STATUS              Status; 
+  EFI_STATUS              Status;
 
   Status = Tpm2GetCapability (
-             TPM_CAP_TPM_PROPERTIES, 
-             TPM_PT_ALGORITHM_SET, 
-             1, 
-             &MoreData, 
+             TPM_CAP_TPM_PROPERTIES,
+             TPM_PT_ALGORITHM_SET,
+             1,
+             &MoreData,
              &TpmCap
              );
   if (EFI_ERROR (Status)) {

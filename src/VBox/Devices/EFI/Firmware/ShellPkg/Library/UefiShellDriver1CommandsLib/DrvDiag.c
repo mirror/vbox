@@ -102,7 +102,7 @@ DoDiagnostics (
       ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROTOCOL_NF), gShellDriver1HiiHandle, L"gEfiDriverDiagnosticsProtocolGuid", &gEfiDriverDiagnosticsProtocolGuid);
       ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROTOCOL_NF), gShellDriver1HiiHandle, L"gEfiDriverDiagnostics2ProtocolGuid", &gEfiDriverDiagnostics2ProtocolGuid);
       return (EFI_NOT_FOUND);
-    } 
+    }
     for (Walker = DriverHandleList ; Walker != NULL && *Walker != NULL ; DriverHandleListCount++, Walker++);
   }
 
@@ -141,7 +141,7 @@ DoDiagnostics (
     }
     if (ControllerHandle == NULL) {
       PARSE_HANDLE_DATABASE_DEVICES(DriverHandleList[DriverHandleListLoop], &ControllerHandleListCount, &ControllerHandleList);
-    } 
+    }
     if (ControllerHandleListCount == 0) {
       if (Mode == TestModeList) {
         ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_DRVDIAG_DRIVER_NO_HANDLES), gShellDriver1HiiHandle);
@@ -157,7 +157,7 @@ DoDiagnostics (
         if (AllChilds) {
           ASSERT(ChildHandleList == NULL);
           PARSE_HANDLE_DATABASE_MANAGED_CHILDREN(
-            DriverHandleList[DriverHandleListLoop], 
+            DriverHandleList[DriverHandleListLoop],
             ControllerHandleList[ControllerHandleListLoop],
             &ChildHandleListCount,
             &ChildHandleList);
@@ -193,7 +193,7 @@ DoDiagnostics (
                   &OutBuffer);
                 FreePool(Language);
               }
-            } 
+            }
             if (!Found && (Lang == NULL||(Lang!=NULL&&(Lang[2]!='-')))){
               Status = gBS->OpenProtocol(
                 DriverHandleList[DriverHandleListLoop],
@@ -429,8 +429,8 @@ ShellCommandRunDrvDiag (
       Mode,
       Language,
       ShellCommandLineGetFlag(Package, L"-c"),
-      Handle1, 
-      Handle2, 
+      Handle1,
+      Handle2,
       Handle3
       );
 

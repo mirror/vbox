@@ -91,8 +91,8 @@ typedef struct {
 EFI_STATUS
 EFIAPI
 UpdateOptionalData(
-  UINT16                          Index, 
-  UINTN                           DataSize, 
+  UINT16                          Index,
+  UINTN                           DataSize,
   UINT8                           *Data,
   IN CONST BCFG_OPERATION_TARGET  Target
   )
@@ -106,7 +106,7 @@ UpdateOptionalData(
   UINTN       OriginalOptionDataSize;
 
   UnicodeSPrint(VariableName, sizeof(VariableName), L"%s%04x", Target == BcfgTargetBootOrder?L"Boot":L"Driver", Index);
-  
+
   OriginalSize = 0;
   OriginalData = NULL;
   NewData      = NULL;
@@ -153,7 +153,7 @@ UpdateOptionalData(
     // put the data back under the variable
     //
     Status = gRT->SetVariable(
-      VariableName, 
+      VariableName,
       (EFI_GUID*)&gEfiGlobalVariableGuid,
       EFI_VARIABLE_NON_VOLATILE|EFI_VARIABLE_BOOTSERVICE_ACCESS|EFI_VARIABLE_RUNTIME_ACCESS,
       NewSize,
@@ -177,7 +177,7 @@ UpdateOptionalData(
 EFI_STATUS
 EFIAPI
 GetBootOptionCrc(
-  UINT32      *Crc, 
+  UINT32      *Crc,
   UINT16      BootIndex
   )
 {
@@ -809,7 +809,7 @@ BcfgAddOpt(
   }
 
   //
-  // determine whether we have file with data, quote delimited information, or a hot-key 
+  // determine whether we have file with data, quote delimited information, or a hot-key
   //
   if (Walker[0] == L'\"') {
     //
@@ -885,7 +885,7 @@ BcfgAddOpt(
 
       if (ShellStatus == SHELL_SUCCESS) {
         //
-        // Now we know how many EFI_INPUT_KEY structs we need to attach to the end of the EFI_KEY_OPTION struct.  
+        // Now we know how many EFI_INPUT_KEY structs we need to attach to the end of the EFI_KEY_OPTION struct.
         // Re-allocate with the added information.
         //
         KeyOptionBuffer = AllocateCopyPool(sizeof(EFI_KEY_OPTION) + (sizeof(EFI_INPUT_KEY) * NewKeyOption.KeyData.Options.InputKeyCount), &NewKeyOption);
@@ -940,7 +940,7 @@ BcfgAddOpt(
         if (EFI_ERROR(Status)) {
           ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellBcfgHiiHandle, L"Option Index");
           ShellStatus = SHELL_INVALID_PARAMETER;
-        }        
+        }
       }
 
       if (ShellStatus == SHELL_SUCCESS) {
@@ -964,7 +964,7 @@ BcfgAddOpt(
           if (EFI_ERROR(Status)) {
             ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_BCFG_SET_VAR_FAIL), gShellBcfgHiiHandle, VariableName, Status);
             ShellStatus = SHELL_INVALID_PARAMETER;
-          }   
+          }
         } else {
           ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_BCFG_VAR_NO_NUM), gShellBcfgHiiHandle);
           ShellStatus = SHELL_INVALID_PARAMETER;
@@ -1009,12 +1009,12 @@ BcfgAddOpt(
       if (EFI_ERROR(Status)) {
         ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_BCFG_SET_VAR_FAIL), gShellBcfgHiiHandle, VariableName, Status);
         ShellStatus = SHELL_INVALID_PARAMETER;
-      }   
+      }
     }
     if (EFI_ERROR(Status) && ShellStatus == SHELL_SUCCESS) {
       ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_BCFG_SET_VAR_FAIL), gShellBcfgHiiHandle, VariableName, Status);
       ShellStatus = SHELL_INVALID_PARAMETER;
-    }   
+    }
   }
 
   SHELL_FREE_NON_NULL(Data);

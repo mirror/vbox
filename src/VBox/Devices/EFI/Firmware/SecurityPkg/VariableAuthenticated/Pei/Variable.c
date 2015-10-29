@@ -1,15 +1,15 @@
 /** @file
   Implement ReadOnly Variable Services required by PEIM and install PEI
-  ReadOnly Varaiable2 PPI. These services operates the non-volatile 
+  ReadOnly Varaiable2 PPI. These services operates the non-volatile
   storage space.
 
 Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -33,8 +33,8 @@ EFI_PEI_PPI_DESCRIPTOR     mPpiListVariable = {
 
 /**
   Provide the functionality of the variable services.
-  
-  @param  FileHandle   Handle of the file being invoked. 
+
+  @param  FileHandle   Handle of the file being invoked.
                        Type EFI_PEI_FILE_HANDLE is defined in FfsFindNextFile().
   @param  PeiServices  General purpose services available to every PEIM.
 
@@ -192,7 +192,7 @@ GetVariableDataPtr (
   )
 {
   UINTN Value;
-  
+
   //
   // Be careful about pad size for alignment
   //
@@ -450,8 +450,8 @@ GetVariableStore (
         //
 
         NvStorageSize = PcdGet32 (PcdFlashNvStorageVariableSize);
-        NvStorageBase = (EFI_PHYSICAL_ADDRESS) (PcdGet64 (PcdFlashNvStorageVariableBase64) != 0 ? 
-                                                PcdGet64 (PcdFlashNvStorageVariableBase64) : 
+        NvStorageBase = (EFI_PHYSICAL_ADDRESS) (PcdGet64 (PcdFlashNvStorageVariableBase64) != 0 ?
+                                                PcdGet64 (PcdFlashNvStorageVariableBase64) :
                                                 PcdGet32 (PcdFlashNvStorageVariableBase)
                                                );
         //
@@ -492,7 +492,7 @@ GetVariableStore (
           DEBUG ((EFI_D_ERROR, "Firmware Volume for Variable Store is corrupted\n"));
           break;
         }
-        
+
         VariableStoreHeader = (VARIABLE_STORE_HEADER *) ((UINT8 *) FvHeader + FvHeader->HeaderLength);
 
         GuidHob = GetFirstGuidHob (&gEfiVariableIndexTableGuid);
@@ -502,7 +502,7 @@ GetVariableStore (
           //
           // If it's the first time to access variable region in flash, create a guid hob to record
           // VAR_ADDED type variable info.
-          // Note that as the resource of PEI phase is limited, only store the limited number of 
+          // Note that as the resource of PEI phase is limited, only store the limited number of
           // VAR_ADDED type variables to reduce access time.
           //
           StoreInfo->IndexTable = (VARIABLE_INDEX_TABLE *) BuildGuidHob (&gEfiVariableIndexTableGuid, sizeof (VARIABLE_INDEX_TABLE));
@@ -618,7 +618,7 @@ GetVariableNameOrData (
   EFI_PHYSICAL_ADDRESS  TargetAddress;
   EFI_PHYSICAL_ADDRESS  SpareAddress;
   UINTN                 PartialSize;
- 
+
   if (StoreInfo->FtwLastWriteData != NULL) {
     TargetAddress = StoreInfo->FtwLastWriteData->TargetAddress;
     SpareAddress = StoreInfo->FtwLastWriteData->SpareAddress;
@@ -825,7 +825,7 @@ FindVariable (
     Status = FindVariableEx (
                StoreInfo,
                VariableName,
-               VendorGuid, 
+               VendorGuid,
                PtrTrack
                );
     if (!EFI_ERROR (Status)) {
@@ -839,7 +839,7 @@ FindVariable (
 /**
   This service retrieves a variable's value using its name and GUID.
 
-  Read the specified variable from the UEFI variable store. If the Data 
+  Read the specified variable from the UEFI variable store. If the Data
   buffer is too small to hold the contents of the variable, the error
   EFI_BUFFER_TOO_SMALL is returned and DataSize is set to the required buffer
   size to obtain the data.
@@ -855,8 +855,8 @@ FindVariable (
 
   @retval EFI_SUCCESS           The variable was read successfully.
   @retval EFI_NOT_FOUND         The variable could not be found.
-  @retval EFI_BUFFER_TOO_SMALL  The DataSize is too small for the resulting data. 
-                                DataSize is updated with the size required for 
+  @retval EFI_BUFFER_TOO_SMALL  The DataSize is too small for the resulting data.
+                                DataSize is updated with the size required for
                                 the specified variable.
   @retval EFI_INVALID_PARAMETER VariableName, VariableGuid, DataSize or Data is NULL.
   @retval EFI_DEVICE_ERROR      The variable could not be retrieved because of a device error.
@@ -920,11 +920,11 @@ PeiGetVariable (
 /**
   Return the next variable name and GUID.
 
-  This function is called multiple times to retrieve the VariableName 
-  and VariableGuid of all variables currently available in the system. 
-  On each call, the previous results are passed into the interface, 
-  and, on return, the interface returns the data for the next 
-  interface. When the entire variable list has been returned, 
+  This function is called multiple times to retrieve the VariableName
+  and VariableGuid of all variables currently available in the system.
+  On each call, the previous results are passed into the interface,
+  and, on return, the interface returns the data for the next
+  interface. When the entire variable list has been returned,
   EFI_NOT_FOUND is returned.
 
   @param  This              A pointer to this instance of the EFI_PEI_READ_ONLY_VARIABLE2_PPI.
@@ -933,7 +933,7 @@ PeiGetVariable (
                             On return, the size of the variable name buffer.
   @param  VariableName      On entry, a pointer to a null-terminated string that is the variable's name.
                             On return, points to the next variable's null-terminated name string.
-  @param  VariableGuid      On entry, a pointer to an EFI_GUID that is the variable's GUID. 
+  @param  VariableGuid      On entry, a pointer to an EFI_GUID that is the variable's GUID.
                             On return, a pointer to the next variable's GUID.
 
   @retval EFI_SUCCESS           The variable was read successfully.
@@ -1012,7 +1012,7 @@ PeiGetNextVariableName (
         }
       }
       //
-      // Capture the case that 
+      // Capture the case that
       // 1. current storage is the last one, or
       // 2. no further storage
       //
@@ -1053,7 +1053,7 @@ PeiGetNextVariableName (
         Status = FindVariableEx (
                    &StoreInfoForHob,
                    GetVariableNamePtr (Variable.CurrPtr),
-                   &VariableHeader->VendorGuid, 
+                   &VariableHeader->VendorGuid,
                    &VariableInHob
                    );
         if (!EFI_ERROR (Status)) {

@@ -19,7 +19,7 @@
 #include <Protocol/Udp4.h>
 #include <Protocol/Udp6.h>
 #include <Protocol/Ip4Config.h>
- 
+
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
@@ -62,7 +62,7 @@
 
 /**
   Call Crypto Lib to generate a random value with eight-octet length.
-  
+
   @return the 64 byte vaule.
 
 **/
@@ -75,8 +75,8 @@ IkeGenerateCookie (
   Generate the random data for Nonce payload.
 
   @param[in]  NonceSize      Size of the data in bytes.
-  
-  @return Buffer which contains the random data of the spcified size. 
+
+  @return Buffer which contains the random data of the spcified size.
 
 **/
 UINT8 *

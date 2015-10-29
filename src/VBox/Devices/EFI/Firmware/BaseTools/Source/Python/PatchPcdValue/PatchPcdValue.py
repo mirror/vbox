@@ -34,9 +34,9 @@ __copyright__ = "Copyright (c) 2010, Intel Corporation. All rights reserved."
 ## PatchBinaryFile method
 #
 # This method mainly patches the data into binary file.
-# 
+#
 # @param FileName    File path of the binary file
-# @param ValueOffset Offset value 
+# @param ValueOffset Offset value
 # @param TypeName    DataType Name
 # @param Value       Value String
 # @param MaxSize     MaxSize value
@@ -177,7 +177,7 @@ def PatchBinaryFile(FileName, ValueOffset, TypeName, ValueString, MaxSize=0):
                 return PARAMETER_INVALID, "PCD Value %s is not valid dec or hex string array." %(ValueString)
         else:
             #
-            # Patch ascii string 
+            # Patch ascii string
             #
             Index = 0
             for ByteString in ValueString[1:-1]:

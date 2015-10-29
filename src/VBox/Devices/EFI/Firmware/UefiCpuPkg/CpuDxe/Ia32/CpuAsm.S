@@ -28,13 +28,13 @@
 ASM_GLOBAL ASM_PFX(SetCodeSelector)
 ASM_PFX(SetCodeSelector):
     movl    4(%esp), %ecx
-    subl    $0x10, %esp 
-    leal    setCodeSelectorLongJump, %eax 
+    subl    $0x10, %esp
+    leal    setCodeSelectorLongJump, %eax
     movl    %eax, (%esp)
     movw    %cx, 4(%esp)
-    .byte   0xFF, 0x2C, 0x24   # jmp *(%esp)  note:(FWORD jmp) 
+    .byte   0xFF, 0x2C, 0x24   # jmp *(%esp)  note:(FWORD jmp)
 setCodeSelectorLongJump:
-    addl    $0x10, %esp 
+    addl    $0x10, %esp
     ret
 
 #------------------------------------------------------------------------------

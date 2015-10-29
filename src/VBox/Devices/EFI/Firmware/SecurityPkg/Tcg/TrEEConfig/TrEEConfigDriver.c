@@ -2,12 +2,12 @@
   The module entry point for TrEE configuration module.
 
 Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -54,7 +54,7 @@ TrEEConfigDriverEntryPoint (
   if (!EFI_ERROR (Status)) {
     return EFI_ALREADY_STARTED;
   }
-  
+
   //
   // Create a private data structure.
   //
@@ -63,7 +63,7 @@ TrEEConfigDriverEntryPoint (
 
   //
   // Install private GUID.
-  //    
+  //
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &ImageHandle,
                   &gEfiCallerIdGuid,
@@ -155,7 +155,7 @@ TrEEConfigDriverEntryPoint (
                                      );
     ASSERT_EFI_ERROR (Status);
   }
-  
+
   //
   // Install TrEE configuration form
   //
@@ -169,8 +169,8 @@ TrEEConfigDriverEntryPoint (
 ErrorExit:
   if (PrivateData != NULL) {
     UninstallTrEEConfigForm (PrivateData);
-  }  
-  
+  }
+
   return Status;
 }
 
@@ -196,11 +196,11 @@ TrEEConfigDriverUnload (
                   ImageHandle,
                   &gEfiCallerIdGuid,
                   (VOID **) &PrivateData
-                  );  
+                  );
   if (EFI_ERROR (Status)) {
-    return Status;  
+    return Status;
   }
-  
+
   ASSERT (PrivateData->Signature == TREE_CONFIG_PRIVATE_DATA_SIGNATURE);
 
   gBS->UninstallMultipleProtocolInterfaces (
@@ -209,7 +209,7 @@ TrEEConfigDriverUnload (
          PrivateData,
          NULL
          );
-  
+
   UninstallTrEEConfigForm (PrivateData);
 
   return EFI_SUCCESS;

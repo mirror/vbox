@@ -75,5 +75,5 @@
   gIntelFspPkgTokenSpaceGuid.PcdFspMaxPerfEntry               ## CONSUMES
 
 [Ppis]
-  gEfiTemporaryRamSupportPpiGuid                ## PRODUCES 
+  gEfiTemporaryRamSupportPpiGuid                ## PRODUCES
 

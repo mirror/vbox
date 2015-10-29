@@ -3,7 +3,7 @@
 #
 # HOB Library implementation that uses PEI Services to retrieve the HOB List.
 # This library instance uses EFI_HOB_TYPE_CV defined in Intel framework HOB specification v0.9
-# to implement HobLib BuildCvHob() API. 
+# to implement HobLib BuildCvHob() API.
 #
 # Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 #
@@ -54,5 +54,5 @@
 #   MEMORY_ALLOCATION     ## SOMETIMES_PRODUCES
 #   RESOURCE_DESCRIPTOR   ## SOMETIMES_PRODUCES
 #   FIRMWARE_VOLUME       ## SOMETIMES_PRODUCES
-#   
+#
 

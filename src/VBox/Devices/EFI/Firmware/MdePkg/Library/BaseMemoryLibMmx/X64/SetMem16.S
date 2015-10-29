@@ -37,22 +37,22 @@
 ASM_GLOBAL ASM_PFX(InternalMemSetMem16)
 ASM_PFX(InternalMemSetMem16):
     pushq    %rdi
-    movq     %r8, %rax 
-    movd     %rax, %mm0 
-    movq     %rcx, %r8 
-    movq     %r8, %rdi 
-    movq     %rdx, %rcx 
-    andl     $3, %edx 
+    movq     %r8, %rax
+    movd     %rax, %mm0
+    movq     %rcx, %r8
+    movq     %r8, %rdi
+    movq     %rdx, %rcx
+    andl     $3, %edx
     shrq     $2, %rcx
     jz       L_SetWords
     .byte    0x0f, 0x70, 0x0C0, 0x00
 L0:
-    movntq   %mm0, (%rdi) 
-    addq     $8, %rdi 
+    movntq   %mm0, (%rdi)
+    addq     $8, %rdi
     loop     L0
     mfence
 L_SetWords:
-    movl    %edx, %ecx 
+    movl    %edx, %ecx
     rep     stosw
     movq    %r8, %rax
     popq    %rdi

@@ -126,7 +126,7 @@ LookupPoolHead (
   }
 
   //
-  // MemoryType values in the range 0x80000000..0xFFFFFFFF are reserved for use by UEFI 
+  // MemoryType values in the range 0x80000000..0xFFFFFFFF are reserved for use by UEFI
   // OS loaders that are provided by operating system vendors
   //
   if ((INT32)MemoryType < 0) {
@@ -168,7 +168,7 @@ LookupPoolHead (
   @param  Buffer                 The address to return a pointer to the allocated
                                  pool
 
-  @retval EFI_INVALID_PARAMETER  PoolType not valid or Buffer is NULL. 
+  @retval EFI_INVALID_PARAMETER  PoolType not valid or Buffer is NULL.
                                  PoolType was EfiPersistentMemory.
   @retval EFI_OUT_OF_RESOURCES   Size exceeds max pool size or allocation failed.
   @retval EFI_SUCCESS            Pool successfully allocated.
@@ -227,7 +227,7 @@ CoreInternalAllocatePool (
   @param  Buffer                 The address to return a pointer to the allocated
                                  pool
 
-  @retval EFI_INVALID_PARAMETER  PoolType not valid or Buffer is NULL. 
+  @retval EFI_INVALID_PARAMETER  PoolType not valid or Buffer is NULL.
   @retval EFI_OUT_OF_RESOURCES   Size exceeds max pool size or allocation failed.
   @retval EFI_SUCCESS            Pool successfully allocated.
 

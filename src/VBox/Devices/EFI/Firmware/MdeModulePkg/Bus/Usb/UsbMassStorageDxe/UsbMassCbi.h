@@ -27,7 +27,7 @@ extern USB_MASS_TRANSPORT mUsbCbi1Transport;
 #define USB_CBI_MAX_RETRY             3
 //
 // Time to wait for USB CBI reset to complete, set by experience
-//  
+//
 #define USB_CBI_RESET_DEVICE_STALL    (50 * USB_MASS_1_MILLISECOND)
 //
 // USB CBI transport timeout, set by experience

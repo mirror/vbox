@@ -225,7 +225,7 @@ set.obj: $(SET)\set.c \
 
     $(CC) -c $(CFLAGS) $(SET)\set.c
 
-clean:	
+clean:
     del *.obj
 
 distclean:

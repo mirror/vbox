@@ -20,7 +20,7 @@
   Allocate aligned memory for XHC's usage.
 
   @param  BufferSize      The size, in bytes, of the Buffer.
-  
+
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
@@ -32,8 +32,8 @@ AllocateAlignBuffer (
   VOID                     *Buf;
   EFI_PHYSICAL_ADDRESS     Address;
   EFI_STATUS               Status;
-  
-  Buf = NULL;  
+
+  Buf = NULL;
   Status = PeiServicesAllocatePages (EfiACPIMemoryNVS, EFI_SIZE_TO_PAGES (BufferSize), &Address);
   if (EFI_ERROR (Status)) {
     Buf = NULL;

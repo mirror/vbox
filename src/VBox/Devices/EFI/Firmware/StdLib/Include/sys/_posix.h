@@ -35,7 +35,7 @@
  * defined to take place before the inclusion of any standard header.
  * It should only handle pre-processor defines.
  *
- * See section B.2.7 of 1003.1b-1993 
+ * See section B.2.7 of 1003.1b-1993
  *
  */
 
@@ -81,7 +81,7 @@
  *
  * If they specify a version including P1003.1B then they show up.
  *
- * (Two macros are added to permit hiding new extensions while 
+ * (Two macros are added to permit hiding new extensions while
  * keeping historic BSD features - that is not done now)
  *
  */

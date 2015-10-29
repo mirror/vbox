@@ -19,7 +19,7 @@ UINTN   mTableKey;
 
 /**
   Initialize the header of the iSCSI Boot Firmware Table.
-  
+
   @param[out]  Header     The header of the iSCSI Boot Firmware Table.
   @param[in]   OemId      The OEM ID.
   @param[in]   OemTableId The OEM table ID for the iBFT.

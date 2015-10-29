@@ -47,9 +47,9 @@
 
 /**
   Prototype of HMAC GetContextSize.
-  
+
   Retrieves the size, in bytes, of the context buffer required.
-  
+
   @return  The size, in bytes, of the context buffer required.
 
 **/
@@ -61,13 +61,13 @@ UINTN
 
 /**
   Prototype of HMAC Operation Initiating.
-  
+
   Initialization with a new context.
 
   @param[out]     Context  Input Context.
   @param[in]      Key      Pointer to the key for HMAC.
   @param[in]      KeySize  The length of the Key in bytes.
- 
+
   @retval TRUE  Initialization Successfully.
 
 **/
@@ -251,7 +251,7 @@ BOOLEAN
 
 /**
   Prototype of Hash Update
-  
+
   Digests the input data and updates hash context.
 
   This function performs digest on a data buffer of the specified size.
@@ -354,7 +354,7 @@ typedef struct _AUTH_ALGORITHM {
   UINT8                    AlgorithmId;
   //
   // The Key length of the Algorithm
-  // 
+  //
   UINTN                    DigestLength;
   //
   // The ICV length of the Algorithm
@@ -578,7 +578,7 @@ IpSecCryptoIoDecrypt (
   the input alogrithm ID. It computes all datas from InDataFragment and output
   the result into the OutData buffer. If the OutDataSize is larger than the related
   HMAC alogrithm output size, return EFI_INVALID_PARAMETER.
-  
+
   @param[in]      AlgorithmId     The authentication Identification.
   @param[in]      Key             Pointer of the authentication key.
   @param[in]      KeyLength       The length of the Key in bytes.
@@ -704,7 +704,7 @@ IpSecCryptoIoDhComputeKey (
 
   @retval EFI_SUCCESS              The operation perfoms successfully.
   @retval EFI_INVALID_PARAMETER    The DhContext is NULL.
-  
+
 **/
 EFI_STATUS
 IpSecCryptoIoFreeDh (
@@ -740,7 +740,7 @@ IpSecCryptoIoGenerateRandomBytes (
   @param[in]      KeyPwdSize      The size of Key Password in bytes.
   @param[out]     OutData         The pointer to the signed data.
   @param[in, out] OutDataSize     Pointer to contain the size of out data.
- 
+
 **/
 VOID
 IpSecCryptoIoAuthDataWithCertificate (
@@ -769,7 +769,7 @@ IpSecCryptoIoAuthDataWithCertificate (
 
   @retval  TRUE   Valid signature encoded in PKCS1-v1_5.
   @retval  FALSE  Invalid signature or invalid RSA context.
- 
+
 **/
 BOOLEAN
 IpSecCryptoIoVerifySignDataByCertificate (
@@ -810,10 +810,10 @@ IpSecCryptoIoGetPublicKeyFromCert (
   @param[in]     CertSize          The size of the X509 certificate in bytes.
   @param[out]    CertSubject       Pointer to the retrieved certificate subject.
   @param[out]    SubjectSize       The size of Certificate Subject in bytes.
-  
+
   @retval  EFI_SUCCESS            Retrieved the certificate subject successfully.
   @retval  EFI_INVALID_PARAMETER  The certificate is malformed.
- 
+
 **/
 EFI_STATUS
 IpSecCryptoIoGetSubjectFromCert (

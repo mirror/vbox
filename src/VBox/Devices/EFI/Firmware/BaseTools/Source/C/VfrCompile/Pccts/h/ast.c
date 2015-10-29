@@ -18,7 +18,7 @@
  * addition, we ask that this header remain intact in our source code.
  * As long as these guidelines are kept, we expect to continue enhancing
  * this system and expect to make other tools available as they are
- * completed. 
+ * completed.
  *
  * ANTLR 1.33
  * Terence Parr
@@ -292,7 +292,7 @@ AST *t;
 #endif
 {
 	AST *u;
-	
+
 	if ( t == NULL ) return NULL;
 	u = zzastnew();
 	*u = *t;

@@ -457,7 +457,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS
-  Others 
+  Others
 
 --*/
 ;
@@ -473,12 +473,12 @@ RegisterAtapiScsiPassThru (
 
 Routine Description:
   Attaches SCSI Pass Thru Protocol for specified IDE channel.
-    
+
 Arguments:
   This              - Protocol instance pointer.
-  Controller        - Parent device handle to the IDE channel.    
-  PciIo             - PCI I/O protocol attached on the "Controller".                        
-  
+  Controller        - Parent device handle to the IDE channel.
+  PciIo             - PCI I/O protocol attached on the "Controller".
+
 Returns:
   Always return EFI_SUCCESS unless installing SCSI Pass Thru Protocol failed.
 
@@ -503,22 +503,22 @@ Routine Description:
 Arguments:
 
   This:     The EFI_SCSI_PASS_THRU_PROTOCOL instance.
-  Target:   The Target ID of the ATAPI device to send the SCSI 
+  Target:   The Target ID of the ATAPI device to send the SCSI
             Request Packet. To ATAPI devices attached on an IDE
             Channel, Target ID 0 indicates Master device;Target
             ID 1 indicates Slave device.
   Lun:      The LUN of the ATAPI device to send the SCSI Request
             Packet. To the ATAPI device, Lun is always 0.
-  Packet:   The SCSI Request Packet to send to the ATAPI device 
+  Packet:   The SCSI Request Packet to send to the ATAPI device
             specified by Target and Lun.
-  Event:    If non-blocking I/O is not supported then Event is ignored, 
+  Event:    If non-blocking I/O is not supported then Event is ignored,
             and blocking I/O is performed.
             If Event is NULL, then blocking I/O is performed.
-            If Event is not NULL and non blocking I/O is supported, 
-            then non-blocking I/O is performed, and Event will be signaled 
-            when the SCSI Request Packet completes.      
+            If Event is not NULL and non blocking I/O is supported,
+            then non-blocking I/O is performed, and Event will be signaled
+            when the SCSI Request Packet completes.
 
-Returns:  
+Returns:
 
    EFI_STATUS
 
@@ -536,25 +536,25 @@ AtapiScsiPassThruGetNextDevice (
 
 Routine Description:
 
-  Used to retrieve the list of legal Target IDs for SCSI devices 
+  Used to retrieve the list of legal Target IDs for SCSI devices
   on a SCSI channel.
 
 Arguments:
 
   This                  - Protocol instance pointer.
-  Target                - On input, a pointer to the Target ID of a SCSI 
-                          device present on the SCSI channel.  On output, 
+  Target                - On input, a pointer to the Target ID of a SCSI
+                          device present on the SCSI channel.  On output,
                           a pointer to the Target ID of the next SCSI device
-                          present on a SCSI channel.  An input value of 
-                          0xFFFFFFFF retrieves the Target ID of the first 
+                          present on a SCSI channel.  An input value of
+                          0xFFFFFFFF retrieves the Target ID of the first
                           SCSI device present on a SCSI channel.
   Lun                   - On input, a pointer to the LUN of a SCSI device
                           present on the SCSI channel. On output, a pointer
-                          to the LUN of the next SCSI device present on 
+                          to the LUN of the next SCSI device present on
                           a SCSI channel.
 Returns:
 
-  EFI_SUCCESS           - The Target ID and Lun of the next SCSI device 
+  EFI_SUCCESS           - The Target ID and Lun of the next SCSI device
                           on the SCSI channel was returned in Target and Lun.
   EFI_NOT_FOUND         - There are no more SCSI devices on this SCSI channel.
   EFI_INVALID_PARAMETER - Target is not 0xFFFFFFFF,and Target and Lun were not
@@ -575,7 +575,7 @@ AtapiScsiPassThruBuildDevicePath (
 
 Routine Description:
 
-  Used to allocate and build a device path node for a SCSI device 
+  Used to allocate and build a device path node for a SCSI device
   on a SCSI channel. Would not build device path for a SCSI Host Controller.
 
 Arguments:
@@ -583,23 +583,23 @@ Arguments:
   This                  - Protocol instance pointer.
   Target                - The Target ID of the SCSI device for which
                           a device path node is to be allocated and built.
-  Lun                   - The LUN of the SCSI device for which a device 
+  Lun                   - The LUN of the SCSI device for which a device
                           path node is to be allocated and built.
-  DevicePath            - A pointer to a single device path node that 
-                          describes the SCSI device specified by 
-                          Target and Lun. This function is responsible 
+  DevicePath            - A pointer to a single device path node that
+                          describes the SCSI device specified by
+                          Target and Lun. This function is responsible
                           for allocating the buffer DevicePath with the boot
-                          service AllocatePool().  It is the caller's 
+                          service AllocatePool().  It is the caller's
                           responsibility to free DevicePath when the caller
-                          is finished with DevicePath.    
+                          is finished with DevicePath.
   Returns:
   EFI_SUCCESS           - The device path node that describes the SCSI device
-                          specified by Target and Lun was allocated and 
+                          specified by Target and Lun was allocated and
                           returned in DevicePath.
   EFI_NOT_FOUND         - The SCSI devices specified by Target and Lun does
                           not exist on the SCSI channel.
   EFI_INVALID_PARAMETER - DevicePath is NULL.
-  EFI_OUT_OF_RESOURCES  - There are not enough resources to allocate 
+  EFI_OUT_OF_RESOURCES  - There are not enough resources to allocate
                           DevicePath.
 
 --*/
@@ -622,21 +622,21 @@ Routine Description:
 Arguments:
 
   This                  - Protocol instance pointer.
-  DevicePath            - A pointer to the device path node that 
+  DevicePath            - A pointer to the device path node that
                           describes a SCSI device on the SCSI channel.
-  Target                - A pointer to the Target ID of a SCSI device 
-                          on the SCSI channel. 
-  Lun                   - A pointer to the LUN of a SCSI device on 
-                          the SCSI channel.    
+  Target                - A pointer to the Target ID of a SCSI device
+                          on the SCSI channel.
+  Lun                   - A pointer to the LUN of a SCSI device on
+                          the SCSI channel.
 Returns:
 
-  EFI_SUCCESS           - DevicePath was successfully translated to a 
-                          Target ID and LUN, and they were returned 
+  EFI_SUCCESS           - DevicePath was successfully translated to a
+                          Target ID and LUN, and they were returned
                           in Target and Lun.
   EFI_INVALID_PARAMETER - DevicePath/Target/Lun is NULL.
-  EFI_UNSUPPORTED       - This driver does not support the device path 
+  EFI_UNSUPPORTED       - This driver does not support the device path
                           node type in DevicePath.
-  EFI_NOT_FOUND         - A valid translation from DevicePath to a 
+  EFI_NOT_FOUND         - A valid translation from DevicePath to a
                           Target ID and LUN does not exist.
 
 --*/
@@ -651,7 +651,7 @@ AtapiScsiPassThruResetChannel (
 
 Routine Description:
 
-  Resets a SCSI channel.This operation resets all the 
+  Resets a SCSI channel.This operation resets all the
   SCSI devices connected to the SCSI channel.
 
 Arguments:
@@ -661,11 +661,11 @@ Arguments:
 Returns:
 
   EFI_SUCCESS           - The SCSI channel was reset.
-  EFI_UNSUPPORTED       - The SCSI channel does not support 
+  EFI_UNSUPPORTED       - The SCSI channel does not support
                           a channel reset operation.
-  EFI_DEVICE_ERROR      - A device error occurred while 
+  EFI_DEVICE_ERROR      - A device error occurred while
                           attempting to reset the SCSI channel.
-  EFI_TIMEOUT           - A timeout occurred while attempting 
+  EFI_TIMEOUT           - A timeout occurred while attempting
                           to reset the SCSI channel.
 
 --*/
@@ -687,20 +687,20 @@ Routine Description:
 Arguments:
 
   This                  - Protocol instance pointer.
-  Target                - The Target ID of the SCSI device to reset. 
+  Target                - The Target ID of the SCSI device to reset.
   Lun                   - The LUN of the SCSI device to reset.
-    
+
 Returns:
 
-  EFI_SUCCESS           - The SCSI device specified by Target and 
+  EFI_SUCCESS           - The SCSI device specified by Target and
                           Lun was reset.
   EFI_UNSUPPORTED       - The SCSI channel does not support a target
                           reset operation.
   EFI_INVALID_PARAMETER - Target or Lun are invalid.
-  EFI_DEVICE_ERROR      - A device error occurred while attempting 
-                          to reset the SCSI device specified by Target 
+  EFI_DEVICE_ERROR      - A device error occurred while attempting
+                          to reset the SCSI device specified by Target
                           and Lun.
-  EFI_TIMEOUT           - A timeout occurred while attempting to reset 
+  EFI_TIMEOUT           - A timeout occurred while attempting to reset
                           the SCSI device specified by Target and Lun.
 
 --*/
@@ -724,22 +724,22 @@ Routine Description:
 Arguments:
 
   This:     The EFI_EXT_SCSI_PASS_THRU_PROTOCOL instance.
-  Target:   The Target ID of the ATAPI device to send the SCSI 
+  Target:   The Target ID of the ATAPI device to send the SCSI
             Request Packet. To ATAPI devices attached on an IDE
             Channel, Target ID 0 indicates Master device;Target
             ID 1 indicates Slave device.
   Lun:      The LUN of the ATAPI device to send the SCSI Request
             Packet. To the ATAPI device, Lun is always 0.
-  Packet:   The SCSI Request Packet to send to the ATAPI device 
+  Packet:   The SCSI Request Packet to send to the ATAPI device
             specified by Target and Lun.
-  Event:    If non-blocking I/O is not supported then Event is ignored, 
+  Event:    If non-blocking I/O is not supported then Event is ignored,
             and blocking I/O is performed.
             If Event is NULL, then blocking I/O is performed.
-            If Event is not NULL and non blocking I/O is supported, 
-            then non-blocking I/O is performed, and Event will be signaled 
-            when the SCSI Request Packet completes.      
+            If Event is not NULL and non blocking I/O is supported,
+            then non-blocking I/O is performed, and Event will be signaled
+            when the SCSI Request Packet completes.
 
-Returns:  
+Returns:
 
   EFI_STATUS
 
@@ -757,25 +757,25 @@ AtapiExtScsiPassThruGetNextTargetLun (
 
 Routine Description:
 
-  Used to retrieve the list of legal Target IDs for SCSI devices 
+  Used to retrieve the list of legal Target IDs for SCSI devices
   on a SCSI channel.
 
 Arguments:
 
   This                  - Protocol instance pointer.
-  Target                - On input, a pointer to the Target ID of a SCSI 
-                          device present on the SCSI channel.  On output, 
+  Target                - On input, a pointer to the Target ID of a SCSI
+                          device present on the SCSI channel.  On output,
                           a pointer to the Target ID of the next SCSI device
-                          present on a SCSI channel.  An input value of 
-                          0xFFFFFFFF retrieves the Target ID of the first 
+                          present on a SCSI channel.  An input value of
+                          0xFFFFFFFF retrieves the Target ID of the first
                           SCSI device present on a SCSI channel.
   Lun                   - On input, a pointer to the LUN of a SCSI device
                           present on the SCSI channel. On output, a pointer
-                          to the LUN of the next SCSI device present on 
+                          to the LUN of the next SCSI device present on
                           a SCSI channel.
 Returns:
 
-  EFI_SUCCESS           - The Target ID and Lun of the next SCSI device 
+  EFI_SUCCESS           - The Target ID and Lun of the next SCSI device
                           on the SCSI channel was returned in Target and Lun.
   EFI_NOT_FOUND         - There are no more SCSI devices on this SCSI channel.
   EFI_INVALID_PARAMETER - Target is not 0xFFFFFFFF,and Target and Lun were not
@@ -796,7 +796,7 @@ AtapiExtScsiPassThruBuildDevicePath (
 
 Routine Description:
 
-  Used to allocate and build a device path node for a SCSI device 
+  Used to allocate and build a device path node for a SCSI device
   on a SCSI channel. Would not build device path for a SCSI Host Controller.
 
 Arguments:
@@ -804,23 +804,23 @@ Arguments:
   This                  - Protocol instance pointer.
   Target                - The Target ID of the SCSI device for which
                           a device path node is to be allocated and built.
-  Lun                   - The LUN of the SCSI device for which a device 
+  Lun                   - The LUN of the SCSI device for which a device
                           path node is to be allocated and built.
-  DevicePath            - A pointer to a single device path node that 
-                          describes the SCSI device specified by 
-                          Target and Lun. This function is responsible 
+  DevicePath            - A pointer to a single device path node that
+                          describes the SCSI device specified by
+                          Target and Lun. This function is responsible
                           for allocating the buffer DevicePath with the boot
-                          service AllocatePool().  It is the caller's 
+                          service AllocatePool().  It is the caller's
                           responsibility to free DevicePath when the caller
-                          is finished with DevicePath.    
+                          is finished with DevicePath.
   Returns:
   EFI_SUCCESS           - The device path node that describes the SCSI device
-                          specified by Target and Lun was allocated and 
+                          specified by Target and Lun was allocated and
                           returned in DevicePath.
   EFI_NOT_FOUND         - The SCSI devices specified by Target and Lun does
                           not exist on the SCSI channel.
   EFI_INVALID_PARAMETER - DevicePath is NULL.
-  EFI_OUT_OF_RESOURCES  - There are not enough resources to allocate 
+  EFI_OUT_OF_RESOURCES  - There are not enough resources to allocate
                           DevicePath.
 
 --*/
@@ -843,21 +843,21 @@ Routine Description:
 Arguments:
 
   This                  - Protocol instance pointer.
-  DevicePath            - A pointer to the device path node that 
+  DevicePath            - A pointer to the device path node that
                           describes a SCSI device on the SCSI channel.
-  Target                - A pointer to the Target ID of a SCSI device 
-                          on the SCSI channel. 
-  Lun                   - A pointer to the LUN of a SCSI device on 
-                          the SCSI channel.    
+  Target                - A pointer to the Target ID of a SCSI device
+                          on the SCSI channel.
+  Lun                   - A pointer to the LUN of a SCSI device on
+                          the SCSI channel.
 Returns:
 
-  EFI_SUCCESS           - DevicePath was successfully translated to a 
-                          Target ID and LUN, and they were returned 
+  EFI_SUCCESS           - DevicePath was successfully translated to a
+                          Target ID and LUN, and they were returned
                           in Target and Lun.
   EFI_INVALID_PARAMETER - DevicePath/Target/Lun is NULL.
-  EFI_UNSUPPORTED       - This driver does not support the device path 
+  EFI_UNSUPPORTED       - This driver does not support the device path
                           node type in DevicePath.
-  EFI_NOT_FOUND         - A valid translation from DevicePath to a 
+  EFI_NOT_FOUND         - A valid translation from DevicePath to a
                           Target ID and LUN does not exist.
 
 --*/
@@ -872,7 +872,7 @@ AtapiExtScsiPassThruResetChannel (
 
 Routine Description:
 
-  Resets a SCSI channel.This operation resets all the 
+  Resets a SCSI channel.This operation resets all the
   SCSI devices connected to the SCSI channel.
 
 Arguments:
@@ -882,11 +882,11 @@ Arguments:
 Returns:
 
   EFI_SUCCESS           - The SCSI channel was reset.
-  EFI_UNSUPPORTED       - The SCSI channel does not support 
+  EFI_UNSUPPORTED       - The SCSI channel does not support
                           a channel reset operation.
-  EFI_DEVICE_ERROR      - A device error occurred while 
+  EFI_DEVICE_ERROR      - A device error occurred while
                           attempting to reset the SCSI channel.
-  EFI_TIMEOUT           - A timeout occurred while attempting 
+  EFI_TIMEOUT           - A timeout occurred while attempting
                           to reset the SCSI channel.
 
 --*/
@@ -908,20 +908,20 @@ Routine Description:
 Arguments:
 
   This                  - Protocol instance pointer.
-  Target                - The Target ID of the SCSI device to reset. 
+  Target                - The Target ID of the SCSI device to reset.
   Lun                   - The LUN of the SCSI device to reset.
-    
+
 Returns:
 
-  EFI_SUCCESS           - The SCSI device specified by Target and 
+  EFI_SUCCESS           - The SCSI device specified by Target and
                           Lun was reset.
   EFI_UNSUPPORTED       - The SCSI channel does not support a target
                           reset operation.
   EFI_INVALID_PARAMETER - Target or Lun are invalid.
-  EFI_DEVICE_ERROR      - A device error occurred while attempting 
-                          to reset the SCSI device specified by Target 
+  EFI_DEVICE_ERROR      - A device error occurred while attempting
+                          to reset the SCSI device specified by Target
                           and Lun.
-  EFI_TIMEOUT           - A timeout occurred while attempting to reset 
+  EFI_TIMEOUT           - A timeout occurred while attempting to reset
                           the SCSI device specified by Target and Lun.
 
 --*/
@@ -936,24 +936,24 @@ AtapiExtScsiPassThruGetNextTarget (
 /*++
 
 Routine Description:
-  Used to retrieve the list of legal Target IDs for SCSI devices 
+  Used to retrieve the list of legal Target IDs for SCSI devices
   on a SCSI channel.
 
 Arguments:
   This                  - Protocol instance pointer.
-  Target                - On input, a pointer to the Target ID of a SCSI 
-                          device present on the SCSI channel.  On output, 
+  Target                - On input, a pointer to the Target ID of a SCSI
+                          device present on the SCSI channel.  On output,
                           a pointer to the Target ID of the next SCSI device
-                           present on a SCSI channel.  An input value of 
-                           0xFFFFFFFF retrieves the Target ID of the first 
+                           present on a SCSI channel.  An input value of
+                           0xFFFFFFFF retrieves the Target ID of the first
                            SCSI device present on a SCSI channel.
   Lun                   - On input, a pointer to the LUN of a SCSI device
                           present on the SCSI channel. On output, a pointer
-                          to the LUN of the next SCSI device present on 
+                          to the LUN of the next SCSI device present on
                           a SCSI channel.
-    
+
 Returns:
-  EFI_SUCCESS           - The Target ID and Lun of the next SCSI device 
+  EFI_SUCCESS           - The Target ID and Lun of the next SCSI device
                           on the SCSI channel was returned in Target and Lun.
   EFI_NOT_FOUND         - There are no more SCSI devices on this SCSI channel.
   EFI_INVALID_PARAMETER - Target is not 0xFFFFFFFF,and Target and Lun were not
@@ -975,7 +975,7 @@ Routine Description:
 
 Arguments:
 
-  Packet         -  The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET   
+  Packet         -  The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET
 
 Returns:
 
@@ -995,18 +995,18 @@ SubmitBlockingIoCommand (
 Routine Description:
 
   Performs blocking I/O request.
-    
+
 Arguments:
 
   AtapiScsiPrivate:   Private data structure for the specified channel.
-  Target:             The Target ID of the ATAPI device to send the SCSI 
+  Target:             The Target ID of the ATAPI device to send the SCSI
                       Request Packet. To ATAPI devices attached on an IDE
                       Channel, Target ID 0 indicates Master device;Target
                       ID 1 indicates Slave device.
-  Packet:             The SCSI Request Packet to send to the ATAPI device 
+  Packet:             The SCSI Request Packet to send to the ATAPI device
                       specified by Target.
-  
-  Returns:            EFI_STATUS  
+
+  Returns:            EFI_STATUS
 
 --*/
 ;
@@ -1019,13 +1019,13 @@ IsCommandValid (
 
 Routine Description:
 
-  Checks the requested SCSI command: 
+  Checks the requested SCSI command:
   Is it supported by this driver?
   Is the Data transfer direction reasonable?
 
 Arguments:
 
-  Packet         -  The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET   
+  Packet         -  The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET
 
 Returns:
 
@@ -1048,9 +1048,9 @@ Routine Description:
 Arguments:
 
   Packet       - The pointer of EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET
-  
+
 Returns:
-  
+
   EFI_STATUS
 
 --*/
@@ -1062,16 +1062,16 @@ IsExtCommandValid (
   EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET   *Packet
   )
 /*++
-  
+
 Routine Description:
 
-  Checks the requested SCSI command: 
+  Checks the requested SCSI command:
   Is it supported by this driver?
   Is the Data transfer direction reasonable?
 
 Arguments:
 
-  Packet         -  The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET   
+  Packet         -  The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET
 
 Returns:
 
@@ -1091,19 +1091,19 @@ SubmitExtBlockingIoCommand (
 Routine Description:
 
   Performs blocking I/O request.
-    
+
 Arguments:
 
   AtapiScsiPrivate:   Private data structure for the specified channel.
-  Target:             The Target ID of the ATAPI device to send the SCSI 
+  Target:             The Target ID of the ATAPI device to send the SCSI
                       Request Packet. To ATAPI devices attached on an IDE
                       Channel, Target ID 0 indicates Master device;Target
                       ID 1 indicates Slave device.
-  Packet:             The SCSI Request Packet to send to the ATAPI device 
+  Packet:             The SCSI Request Packet to send to the ATAPI device
                       specified by Target.
-  
-  Returns:            EFI_STATUS  
-  
+
+  Returns:            EFI_STATUS
+
 --*/
 ;
 
@@ -1151,11 +1151,11 @@ AtapiPacketCommand (
 Routine Description:
 
   Submits ATAPI command packet to the specified ATAPI device.
-    
+
 Arguments:
 
   AtapiScsiPrivate:   Private data structure for the specified channel.
-  Target:             The Target ID of the ATAPI device to send the SCSI 
+  Target:             The Target ID of the ATAPI device to send the SCSI
                       Request Packet. To ATAPI devices attached on an IDE
                       Channel, Target ID 0 indicates Master device;Target
                       ID 1 indicates Slave device.
@@ -1163,18 +1163,18 @@ Arguments:
   Buffer:             Points to the transferred data.
   ByteCount:          When input,indicates the buffer size; when output,
                       indicates the actually transferred data size.
-  Direction:          Indicates the data transfer direction. 
+  Direction:          Indicates the data transfer direction.
   TimeoutInMicroSeconds:
-                      The timeout, in micro second units, to use for the 
+                      The timeout, in micro second units, to use for the
                       execution of this ATAPI command.
-                      A TimeoutInMicroSeconds value of 0 means that 
-                      this function will wait indefinitely for the ATAPI 
+                      A TimeoutInMicroSeconds value of 0 means that
+                      this function will wait indefinitely for the ATAPI
                       command to execute.
-                      If TimeoutInMicroSeconds is greater than zero, then 
-                      this function will return EFI_TIMEOUT if the time 
-                      required to execute the ATAPI command is greater 
+                      If TimeoutInMicroSeconds is greater than zero, then
+                      this function will return EFI_TIMEOUT if the time
+                      required to execute the ATAPI command is greater
                       than TimeoutInMicroSeconds.
-  
+
 Returns:
 
   EFI_STATUS
@@ -1198,7 +1198,7 @@ Arguments:
 
   PciIo      - The pointer of EFI_PCI_IO_PROTOCOL
   Port       - IO port
-  
+
 Returns:
 
   A byte read out
@@ -1222,8 +1222,8 @@ Arguments:
 
   PciIo      - The pointer of EFI_PCI_IO_PROTOCOL
   Port       - IO port
-  
-Returns:     
+
+Returns:
 
   A word read out
 
@@ -1248,11 +1248,11 @@ Arguments:
   PciIo      - The pointer of EFI_PCI_IO_PROTOCOL
   Port       - IO port
   Data       - The data to write
-  
+
 Returns:
- 
+
   NONE
- 
+
 --*/
 ;
 
@@ -1274,11 +1274,11 @@ Arguments:
   PciIo      - The pointer of EFI_PCI_IO_PROTOCOL
   Port       - IO port
   Data       - The data to write
-  
+
 Returns:
 
   NONE
-  
+
 --*/
 ;
 
@@ -1293,14 +1293,14 @@ Routine Description:
 
   Check whether DRQ is clear in the Status Register. (BSY must also be cleared)
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
-  DRQ clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  DRQ clear. Otherwise, it will return EFI_TIMEOUT when specified time is
   elapsed.
 
 Arguments:
 
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   TimeoutInMicroSeconds       - The time to wait for
-   
+
 Returns:
 
   EFI_STATUS
@@ -1317,16 +1317,16 @@ AltStatusDRQClear (
 
 Routine Description:
 
-  Check whether DRQ is clear in the Alternate Status Register. 
-  (BSY must also be cleared).If TimeoutInMicroSeconds is zero, this routine should 
-  wait infinitely for DRQ clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  Check whether DRQ is clear in the Alternate Status Register.
+  (BSY must also be cleared).If TimeoutInMicroSeconds is zero, this routine should
+  wait infinitely for DRQ clear. Otherwise, it will return EFI_TIMEOUT when specified time is
   elapsed.
 
 Arguments:
 
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   TimeoutInMicroSeconds       - The time to wait for
-   
+
 Returns:
 
   EFI_STATUS
@@ -1345,14 +1345,14 @@ Routine Description:
 
   Check whether DRQ is ready in the Status Register. (BSY must also be cleared)
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
-  DRQ ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  DRQ ready. Otherwise, it will return EFI_TIMEOUT when specified time is
   elapsed.
 
 Arguments:
 
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   TimeoutInMicroSeconds       - The time to wait for
-   
+
 Returns:
 
   EFI_STATUS
@@ -1369,17 +1369,17 @@ AltStatusDRQReady (
 
 Routine Description:
 
-  Check whether DRQ is ready in the Alternate Status Register. 
+  Check whether DRQ is ready in the Alternate Status Register.
   (BSY must also be cleared)
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
-  DRQ ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  DRQ ready. Otherwise, it will return EFI_TIMEOUT when specified time is
   elapsed.
 
 Arguments:
 
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   TimeoutInMicroSeconds       - The time to wait for
-   
+
 Returns:
 
   EFI_STATUS
@@ -1398,14 +1398,14 @@ Routine Description:
 
   Check whether BSY is clear in the Status Register.
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
-  BSY clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  BSY clear. Otherwise, it will return EFI_TIMEOUT when specified time is
   elapsed.
 
 Arguments:
 
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   TimeoutInMicroSeconds       - The time to wait for
-   
+
 Returns:
 
   EFI_STATUS
@@ -1424,14 +1424,14 @@ Routine Description:
 
   Check whether BSY is clear in the Alternate Status Register.
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
-  BSY clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  BSY clear. Otherwise, it will return EFI_TIMEOUT when specified time is
   elapsed.
 
 Arguments:
 
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   TimeoutInMicroSeconds       - The time to wait for
-   
+
 Returns:
 
   EFI_STATUS
@@ -1448,17 +1448,17 @@ StatusDRDYReady (
 
 Routine Description:
 
-  Check whether DRDY is ready in the Status Register. 
+  Check whether DRDY is ready in the Status Register.
   (BSY must also be cleared)
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
-  DRDY ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  DRDY ready. Otherwise, it will return EFI_TIMEOUT when specified time is
   elapsed.
 
 Arguments:
 
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   TimeoutInMicroSeconds       - The time to wait for
-   
+
 Returns:
 
   EFI_STATUS
@@ -1475,17 +1475,17 @@ AltStatusDRDYReady (
 
 Routine Description:
 
-  Check whether DRDY is ready in the Alternate Status Register. 
+  Check whether DRDY is ready in the Alternate Status Register.
   (BSY must also be cleared)
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
-  DRDY ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  DRDY ready. Otherwise, it will return EFI_TIMEOUT when specified time is
   elapsed.
 
 Arguments:
 
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   TimeoutInMicroSeconds       - The time to wait for
-   
+
 Returns:
 
   EFI_STATUS
@@ -1507,23 +1507,23 @@ Routine Description:
 
   Performs data transfer between ATAPI device and host after the
   ATAPI command packet is sent.
-    
+
 Arguments:
 
-  AtapiScsiPrivate:   Private data structure for the specified channel.    
+  AtapiScsiPrivate:   Private data structure for the specified channel.
   Buffer:             Points to the transferred data.
   ByteCount:          When input,indicates the buffer size; when output,
                       indicates the actually transferred data size.
-  Direction:          Indicates the data transfer direction. 
+  Direction:          Indicates the data transfer direction.
   TimeoutInMicroSeconds:
-                      The timeout, in micro second units, to use for the 
+                      The timeout, in micro second units, to use for the
                       execution of this ATAPI command.
-                      A TimeoutInMicroSeconds value of 0 means that 
-                      this function will wait indefinitely for the ATAPI 
+                      A TimeoutInMicroSeconds value of 0 means that
+                      this function will wait indefinitely for the ATAPI
                       command to execute.
-                      If TimeoutInMicroSeconds is greater than zero, then 
-                      this function will return EFI_TIMEOUT if the time 
-                      required to execute the ATAPI command is greater 
+                      If TimeoutInMicroSeconds is greater than zero, then
+                      this function will return EFI_TIMEOUT if the time
+                      required to execute the ATAPI command is greater
                       than TimeoutInMicroSeconds.
  Returns:
 
@@ -1540,12 +1540,12 @@ AtapiPassThruCheckErrorStatus (
 
 Routine Description:
 
-  Check Error Register for Error Information. 
-  
+  Check Error Register for Error Information.
+
 Arguments:
 
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
-   
+
 Returns:
 
   EFI_STATUS
@@ -1568,13 +1568,13 @@ Routine Description:
 
 Arguments:
   PciIo             - Pointer to the EFI_PCI_IO_PROTOCOL instance
-  IdeRegsBaseAddr   - Pointer to IDE_REGISTERS_BASE_ADDR to 
+  IdeRegsBaseAddr   - Pointer to IDE_REGISTERS_BASE_ADDR to
                       receive IDE IO port registers' base addresses
-                      
+
 Returns:
 
   EFI_STATUS
-    
+
 --*/
 ;
 
@@ -1591,29 +1591,29 @@ Routine Description:
   Initialize each Channel's Base Address of CommandBlock and ControlBlock.
 
 Arguments:
-    
+
   AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   IdeRegsBaseAddr             - The pointer of IDE_REGISTERS_BASE_ADDR
-  
+
 Returns:
-  
+
   None
 
---*/  
+--*/
 ;
 
 /**
-  Installs Scsi Pass Thru and/or Ext Scsi Pass Thru 
-  protocols based on feature flags. 
+  Installs Scsi Pass Thru and/or Ext Scsi Pass Thru
+  protocols based on feature flags.
 
-  @param Controller         The controller handle to 
+  @param Controller         The controller handle to
                             install these protocols on.
   @param AtapiScsiPrivate   A pointer to the protocol private
                             data structure.
 
-  @retval EFI_SUCCESS       The installation succeeds. 
-  @retval other             The installation fails. 
-   
+  @retval EFI_SUCCESS       The installation succeeds.
+  @retval other             The installation fails.
+
 **/
 EFI_STATUS
 InstallScsiPassThruProtocols (

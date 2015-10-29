@@ -60,11 +60,11 @@ typedef struct _EFI_SMM_SX_DISPATCH2_PROTOCOL  EFI_SMM_SX_DISPATCH2_PROTOCOL;
 /**
   Provides the parent dispatch service for a given Sx source generator.
 
-  This service registers a function (DispatchFunction) which will be called when the sleep state 
-  event specified by RegisterContext is detected. On return, DispatchHandle contains a 
+  This service registers a function (DispatchFunction) which will be called when the sleep state
+  event specified by RegisterContext is detected. On return, DispatchHandle contains a
   unique handle which may be used later to unregister the function using UnRegister().
-  The DispatchFunction will be called with Context set to the same value as was passed into 
-  this function in RegisterContext and with CommBuffer and CommBufferSize set to 
+  The DispatchFunction will be called with Context set to the same value as was passed into
+  this function in RegisterContext and with CommBuffer and CommBufferSize set to
   NULL and 0 respectively.
 
   @param[in] This                Pointer to the EFI_SMM_SX_DISPATCH2_PROTOCOL instance.
@@ -103,11 +103,11 @@ EFI_STATUS
 /**
   Unregisters an Sx-state service.
 
-  This service removes the handler associated with DispatchHandle so that it will no longer be 
+  This service removes the handler associated with DispatchHandle so that it will no longer be
   called in response to sleep event.
 
   @param[in] This                Pointer to the EFI_SMM_SX_DISPATCH2_PROTOCOL instance.
-  @param[in] DispatchHandle      Handle of the service to remove. 
+  @param[in] DispatchHandle      Handle of the service to remove.
 
   @retval EFI_SUCCESS            The service has been successfully removed.
   @retval EFI_INVALID_PARAMETER  The DispatchHandle was not valid.
@@ -122,7 +122,7 @@ EFI_STATUS
 ///
 /// Interface structure for the SMM Sx Dispatch Protocol
 ///
-/// The EFI_SMM_SX_DISPATCH2_PROTOCOL provides the ability to install child handlers to 
+/// The EFI_SMM_SX_DISPATCH2_PROTOCOL provides the ability to install child handlers to
 /// respond to sleep state related events.
 ///
 struct _EFI_SMM_SX_DISPATCH2_PROTOCOL {

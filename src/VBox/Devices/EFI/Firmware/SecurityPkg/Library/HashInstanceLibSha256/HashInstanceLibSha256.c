@@ -118,7 +118,7 @@ Sha256HashFinal (
   Sha256Final (Sha256Ctx, Digest);
 
   FreePool (Sha256Ctx);
-  
+
   Tpm2SetSha256ToDigestList (DigestList, Digest);
 
   return EFI_SUCCESS;
@@ -133,7 +133,7 @@ HASH_INTERFACE  mSha256InternalHashInstance = {
 
 /**
   The function register SHA256 instance.
-  
+
   @retval EFI_SUCCESS   SHA256 instance is registered, or system dose not surpport registr SHA256 instance
 **/
 EFI_STATUS

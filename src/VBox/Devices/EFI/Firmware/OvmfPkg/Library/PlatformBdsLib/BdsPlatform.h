@@ -219,7 +219,7 @@ typedef struct {
 typedef struct {
   USB_CLASS_DEVICE_PATH           UsbClass;
   EFI_DEVICE_PATH_PROTOCOL        End;
-} USB_CLASS_FORMAT_DEVICE_PATH;  
+} USB_CLASS_FORMAT_DEVICE_PATH;
 
 extern PLATFORM_ROOT_BRIDGE_DEVICE_PATH  gPlatformRootBridge0;
 
@@ -271,12 +271,12 @@ EFI_STATUS
 ConvertMpsTable (
   IN OUT  VOID     **Table
   );
-  
+
 EFI_STATUS
 ConvertSmbiosTable (
   IN OUT VOID       **Table
   );
-  
+
 EFI_STATUS
 ConvertAcpiTable (
  IN      UINTN      TableLen,

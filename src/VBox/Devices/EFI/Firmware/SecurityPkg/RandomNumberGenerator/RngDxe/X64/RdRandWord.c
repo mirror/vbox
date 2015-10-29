@@ -62,7 +62,7 @@ RdRandGetWords (
     if (EFI_ERROR (Status)) {
       return Status;
     }
-    
+
     RandBuffer++;
   }
 

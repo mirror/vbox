@@ -5,28 +5,28 @@
  * Portions copyright (c) 1999, 2000
  * Intel Corporation.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- * 
+ *
  *    This product includes software developed by the University of
  *    California, Berkeley, Intel Corporation, and its contributors.
- * 
+ *
  * 4. Neither the name of University, Intel Corporation, or their respective
  *    contributors may be used to endorse or promote products derived from
  *    this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS, INTEL CORPORATION AND
  * CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
  * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -181,7 +181,7 @@ static	char *net_aliases[MAXALIASES], netbuf[PACKETSZ];
 				cp += n;
 				return (NULL);
 			}
-			cp += n; 
+			cp += n;
 			*ap++ = bp;
 			bp += strlen(bp) + 1;
 			net_entry.n_addrtype =
@@ -216,7 +216,7 @@ static	char *net_aliases[MAXALIASES], netbuf[PACKETSZ];
 					paux1 = pauxt;
 				}
 				in = ++st;
-			}		  
+			}
 			net_entry.n_net = inet_network(paux2);
 			break;
 		}

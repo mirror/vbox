@@ -1,5 +1,5 @@
 /** @file
-  HPET register definitions from the IA-PC HPET (High Precision Event Timers) 
+  HPET register definitions from the IA-PC HPET (High Precision Event Timers)
   Specification, Revision 1.0a, October 2004.
 
   Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>

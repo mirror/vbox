@@ -121,7 +121,7 @@ Pkcs7Sign (
   }
 
   //
-  // Convert the data to be signed to BIO format. 
+  // Convert the data to be signed to BIO format.
   //
   DataBio = BIO_new (BIO_s_mem ());
   if (DataBio == NULL) {

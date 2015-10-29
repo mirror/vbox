@@ -106,13 +106,13 @@ InternalReportStatusCode (
         return EFI_UNSUPPORTED;
       }
     }
-  
+
     //
     // A status code service is present in system, so pass in all the parameters to the service.
     //
     return (*mReportStatusCode) (Type, Value, Instance, (EFI_GUID *)CallerId, Data);
   }
-  
+
   return EFI_UNSUPPORTED;
 }
 
@@ -508,7 +508,7 @@ ReportStatusCodeEx (
   //
   Tpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
   gBS->RestoreTPL (Tpl);
-  
+
   StatusCodeData = NULL;
   if (Tpl <= TPL_NOTIFY) {
     //

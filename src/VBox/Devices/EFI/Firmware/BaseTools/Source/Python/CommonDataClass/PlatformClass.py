@@ -18,7 +18,7 @@ from CommonClass import *
 ## SkuInfoListClass
 #
 # This class defined sku info list item used in platform file
-# 
+#
 # @param IncludeStatementClass:  Inherited from IncludeStatementClass class
 #
 # @var SkuInfoList:              To store value for SkuInfoList, it is a set structure as
@@ -32,7 +32,7 @@ class SkuInfoListClass(IncludeStatementClass):
 ## PlatformHeaderClass
 #
 # This class defined header items used in Platform file
-# 
+#
 # @param IdentificationClass:    Inherited from IdentificationClass class
 # @param CommonHeaderClass:      Inherited from CommonHeaderClass class
 # @param DefineClass:            Inherited from DefineClass class
@@ -61,7 +61,7 @@ class PlatformHeaderClass(IdentificationClass, CommonHeaderClass, DefineClass):
         self.SupArchList = []
         self.BuildTargets = []
         self.IntermediateDirectories = ''
-        self.OutputDirectory = ''                                                    
+        self.OutputDirectory = ''
         self.ForceDebugTarget = ''
         self.SkuIdName = []
         self.BuildNumber = ''
@@ -71,7 +71,7 @@ class PlatformHeaderClass(IdentificationClass, CommonHeaderClass, DefineClass):
 ## PlatformFlashDefinitionFileClass
 #
 # This class defined FlashDefinitionFile item used in platform file
-# 
+#
 # @param object:   Inherited from object class
 #
 # @var Id:         To store value for Id
@@ -89,7 +89,7 @@ class PlatformFlashDefinitionFileClass(object):
 ## PlatformFvImageOptionClass
 #
 # This class defined FvImageOption item used in platform file
-# 
+#
 # @param object:             Inherited from object class
 #
 # @var FvImageOptionName:    To store value for FvImageOptionName
@@ -103,13 +103,13 @@ class PlatformFvImageOptionClass(object):
 ## PlatformFvImageClass
 #
 # This class defined FvImage item used in platform file
-# 
+#
 # @param object:        Inherited from object class
 #
 # @var Name:            To store value for Name
 # @var Value:           To store value for Value
 # @var Type:            To store value for Type, selection scope is in below list
-#                       Attributes | Options | Components | ImageName 
+#                       Attributes | Options | Components | ImageName
 # @var FvImageNames:    To store value for FvImageNames
 # @var FvImageOptions:  To store value for FvImageOptions, it is a list structure as
 #                       [ PlatformFvImageOption, ...]
@@ -125,12 +125,12 @@ class PlatformFvImageClass(object):
 ## PlatformFvImageNameClass
 #
 # This class defined FvImageName item used in platform file
-# 
+#
 # @param object:        Inherited from object class
 #
 # @var Name:            To store value for Name
 # @var Type:            To store value for Type, selection scope is in below list
-#                       FV_MAIN | FV_MAIN_COMPACT | NV_STORAGE | FV_RECOVERY | FV_RECOVERY_FLOPPY | FV_FILE | CAPSULE_CARGO | NULL | USER_DEFINED 
+#                       FV_MAIN | FV_MAIN_COMPACT | NV_STORAGE | FV_RECOVERY | FV_RECOVERY_FLOPPY | FV_FILE | CAPSULE_CARGO | NULL | USER_DEFINED
 # @var FvImageOptions:  To store value for FvImageOptions, it is a list structure as
 #                       [ PlatformFvImageOption, ...]
 #
@@ -143,7 +143,7 @@ class PlatformFvImageNameClass(object):
 ## PlatformFvImagesClass
 #
 # This class defined FvImages item used in platform file
-# 
+#
 # @param object:  Inherited from object class
 #
 # @var FvImages:  To store value for FvImages
@@ -155,7 +155,7 @@ class PlatformFvImagesClass(object):
 ## PlatformAntTaskClass
 #
 # This class defined AntTask item used in platform file
-# 
+#
 # @param object:       Inherited from object class
 #
 # @var Id:             To store value for Id
@@ -171,7 +171,7 @@ class PlatformAntTaskClass(object):
 ## PlatformFfsSectionClass
 #
 # This class defined FfsSection item used in platform file
-# 
+#
 # @param CommonClass:        Inherited from CommonClass class
 #
 # @var BindingOrder:         To store value for BindingOrder
@@ -202,7 +202,7 @@ class PlatformFfsSectionClass(CommonClass):
 ## PlatformFfsSectionsClass
 #
 # This class defined FfsSections item used in platform file
-# 
+#
 # @param CommonClass:      Inherited from CommonClass class
 #
 # @var BindingOrder:       To store value for BindingOrder
@@ -229,7 +229,7 @@ class PlatformFfsSectionsClass(CommonClass):
 ## PlatformFfsClass
 #
 # This class defined Ffs item used in platform file
-# 
+#
 # @param object:   Inherited from object class
 #
 # @var Attribute:  To store value for Attribute, it is a set structure as
@@ -247,7 +247,7 @@ class PlatformFfsClass(object):
 ## PlatformBuildOptionClass
 #
 # This class defined BuildOption item used in platform file
-# 
+#
 # @param object:             Inherited from object class
 #
 # @var UserDefinedAntTasks:  To store value for UserDefinedAntTasks, it is a set structure as
@@ -257,7 +257,7 @@ class PlatformFfsClass(object):
 # @var UserExtensions:       To store value for UserExtensions, it is a set structure as
 #                            { [(UserID, Identifier)] : UserExtensionsClass, ...}
 # @var FfsKeyList:           To store value for FfsKeyList, it is a set structure as
-#                            { [FfsKey]: PlatformFfsClass, ...} 
+#                            { [FfsKey]: PlatformFfsClass, ...}
 #
 class PlatformBuildOptionClass(object):
     def __init__(self):
@@ -269,7 +269,7 @@ class PlatformBuildOptionClass(object):
 ## PlatformBuildOptionClasses
 #
 # This class defined BuildOption item list used in platform file
-# 
+#
 # @param IncludeStatementClass:  Inherited from IncludeStatementClass class
 #
 # @var FvBinding:                To store value for FvBinding
@@ -289,7 +289,7 @@ class PlatformBuildOptionClasses(IncludeStatementClass):
 ## PlatformLibraryClass
 #
 # This class defined Library item used in platform file
-# 
+#
 # @param CommonClass:   Inherited from CommonClass class
 # @param DefineClass:   Inherited from DefineClass class
 # @param Name:          Input value for Name, default is ''
@@ -320,7 +320,7 @@ class PlatformLibraryClass(CommonClass, DefineClass):
 ## PlatformLibraryClasses
 #
 # This class defined Library item list used in platform file
-# 
+#
 # @param IncludeStatementClass:  Inherited from IncludeStatementClass class
 #
 # @var LibraryList:              To store value for LibraryList, it is a list structure as
@@ -334,7 +334,7 @@ class PlatformLibraryClasses(IncludeStatementClass):
 ## PlatformModuleClass
 #
 # This class defined Module item used in platform file
-# 
+#
 # @param CommonClass:            Inherited from CommonClass class
 # @param DefineClass:            Inherited from DefineClass class
 # @param IncludeStatementClass:  Inherited from IncludeStatementClass class
@@ -372,7 +372,7 @@ class PlatformModuleClass(CommonClass, DefineClass, IncludeStatementClass):
 ## PlatformModuleClasses
 #
 # This class defined Module item list used in platform file
-# 
+#
 # @param IncludeStatementClass:  Inherited from IncludeStatementClass class
 #
 # @var ModuleList:               To store value for ModuleList, it is a list structure as
@@ -386,7 +386,7 @@ class PlatformModuleClasses(IncludeStatementClass):
 ## PlatformClass
 #
 # This class defined a complete platform item
-# 
+#
 # @param object:                    Inherited from object class
 #
 # @var Header:                      To store value for Header, it is a structure as

@@ -92,7 +92,7 @@
   ## TO_START
   gEfiSimpleTextInputExProtocolGuid
   ## PRODUCES
-  ## TO_START 
+  ## TO_START
   gEfiSimpleTextOutProtocolGuid
   ## SOMETIMES_PRODUCES
   ## SOMETIMES_CONSUMES

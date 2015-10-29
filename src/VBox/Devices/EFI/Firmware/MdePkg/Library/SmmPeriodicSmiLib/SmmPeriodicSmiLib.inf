@@ -24,7 +24,7 @@
   PI_SPECIFICATION_VERSION       = 0x0001000A
   CONSTRUCTOR                    = SmmPeriodicSmiLibConstructor
   DESTRUCTOR                     = SmmPeriodicSmiLibDestructor
-  
+
 #
 #  VALID_ARCHITECTURES           = IA32 X64
 #
@@ -43,10 +43,10 @@
   TimerLib
   MemoryAllocationLib
   SmmServicesTableLib
-  
+
 [Protocols]
   gEfiSmmPeriodicTimerDispatch2ProtocolGuid  ## CONSUMES
-  
+
 [Depex]
   gEfiSmmPeriodicTimerDispatch2ProtocolGuid
 

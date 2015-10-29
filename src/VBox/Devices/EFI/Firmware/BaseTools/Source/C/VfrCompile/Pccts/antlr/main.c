@@ -799,7 +799,7 @@ char *argv[];
 	buildRulePtr();					/* create mapping from rule # to RuleBlk junction */
 	ComputeErrorSets();
 	FoLink( (Node *)SynDiag );		/* add follow links to end of all rules */
-	
+
 	if ( GenCR ) GenCrossRef( SynDiag );
 
 	if ( CodeGen )
@@ -955,11 +955,11 @@ char *argv[];
     }
 	cleanUp();
 	exit(PCCTS_EXIT_SUCCESS);
-    return 0;           /* MR11 make compilers happy */ 
+    return 0;           /* MR11 make compilers happy */
 }
 
-static void 
-#ifdef __USE_PROTOS 
+static void
+#ifdef __USE_PROTOS
 init( void )
 #else
 init( )
@@ -990,7 +990,7 @@ init( )
 							  (Entry *)newSignalEntry("NoSemViableAlt"));
 	require(q!=NULL, "cannot alloc signal entry");
 	q->signum = sigNoSemViableAlt;
-	
+
 	reserved_positions = empty;
 	all_tokens = empty;
 	imag_tokens = empty;
@@ -1041,7 +1041,7 @@ buildRulePtr( )
 	Junction *p  = SynDiag;
 	RulePtr = (Junction **) calloc(NumRules+1, sizeof(Junction *));
 	require(RulePtr!=NULL, "cannot allocate RulePtr array");
-	
+
 	while ( p!=NULL )
 	{
 		require(r<=NumRules, "too many rules???");
@@ -1224,7 +1224,7 @@ char *a3;
 #endif
 {
 	static char buf[250];			/* DANGEROUS as hell !!!!!! */
-	
+
 	sprintf(buf, s, a1, a2, a3);
 	return( buf );
 }
@@ -1240,7 +1240,7 @@ int d;
 #endif
 {
 	static char buf[250];			/* DANGEROUS as hell !!!!!! */
-	
+
 	sprintf(buf, s, d);
 	return( buf );
 }
@@ -1256,7 +1256,7 @@ int d2;
 #endif
 {
 	static char buf[250];			/* DANGEROUS as hell !!!!!! */
-	
+
 	sprintf(buf, s, d1, d2);
 	return( buf );
 }
@@ -1422,7 +1422,7 @@ exit(PCCTS_EXIT_FAILURE);
 	}
 }
 
-static void 
+static void
 #ifdef __USE_PROTOS
 CompleteContextGuards(void)
 #else
@@ -1507,7 +1507,7 @@ OutMetaName(char *n)
 OutMetaName(n)
 char *n;
 #endif
-{	
+{
     static char *dir_sym = DirectorySymbol;
     static char newname[MaxFileName+1];
     char *p;
@@ -1607,15 +1607,15 @@ int l;
 char *err;
 #endif
 {
-	fprintf(stderr, ErrHdr, f, l);						
+	fprintf(stderr, ErrHdr, f, l);
 	fprintf(stderr, " warning: %s\n", err);
 }
 
 void
 #ifdef __USE_PROTOS
-warn(char *err)												
+warn(char *err)
 #else
-warn(err)												
+warn(err)
 char *err;
 #endif
 {
@@ -1629,7 +1629,7 @@ void
 #ifdef __USE_PROTOS
 warnNoCR( char *err )
 #else
-warnNoCR( err )											
+warnNoCR( err )
 char *err;
 #endif
 {
@@ -1660,15 +1660,15 @@ char *f;
 int l;
 #endif
 {
-	fprintf(stderr, ErrHdr, f, l);						
+	fprintf(stderr, ErrHdr, f, l);
 	fprintf(stderr, " error: %s\n", err);
 }
 
 void
 #ifdef __USE_PROTOS
-err(char *err)												
+err(char *err)
 #else
-err(err)												
+err(err)
 char *err;
 #endif
 {
@@ -1680,9 +1680,9 @@ char *err;
 
 void
 #ifdef __USE_PROTOS
-errNoCR( char *err )											
+errNoCR( char *err )
 #else
-errNoCR( err )											
+errNoCR( err )
 char *err;
 #endif
 {

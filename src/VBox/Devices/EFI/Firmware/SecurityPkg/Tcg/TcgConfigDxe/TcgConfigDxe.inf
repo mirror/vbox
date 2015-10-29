@@ -58,7 +58,7 @@
   ## SOMETIMES_PRODUCES ## Variable:L"PhysicalPresence"
   ## SOMETIMES_CONSUMES ## Variable:L"PhysicalPresence"
   gEfiPhysicalPresenceGuid
-  
+
   gEfiIfrTianoGuid                                    ## SOMETIMES_PRODUCES  ## GUID       # HII opcode
   ## PRODUCES            ## HII
   ## CONSUMES            ## HII
@@ -78,6 +78,6 @@
   gEfiHiiDatabaseProtocolGuid       AND
   gEfiVariableArchProtocolGuid      AND
   gEfiVariableWriteArchProtocolGuid
-  
+
 [UserExtensions.TianoCore."ExtraFiles"]
   TcgConfigDxeExtra.uni

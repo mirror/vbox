@@ -340,12 +340,12 @@ getParser() {							// MR1
 }								// MR1
 
 void ANTLRTokenBuffer::panic(const char *msg) // MR23
-{ 
+{
 	if (parser)				//MR23
 		parser->panic(msg);	//MR23
 	else					//MR23
-		exit(PCCTS_EXIT_FAILURE); 
-} 
+		exit(PCCTS_EXIT_FAILURE);
+}
 
 //MR23
 int ANTLRTokenBuffer::printMessage(FILE* pFile, const char* pFormat, ...)

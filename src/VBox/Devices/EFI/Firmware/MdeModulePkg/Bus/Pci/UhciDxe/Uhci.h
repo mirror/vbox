@@ -145,7 +145,7 @@ struct _USB_HC_DEV {
   VOID                      *FrameMapping;
 
   //
-  // ExitBootServicesEvent is used to stop the EHC DMA operation 
+  // ExitBootServicesEvent is used to stop the EHC DMA operation
   // after exit boot service.
   //
   EFI_EVENT                 ExitBootServiceEvent;

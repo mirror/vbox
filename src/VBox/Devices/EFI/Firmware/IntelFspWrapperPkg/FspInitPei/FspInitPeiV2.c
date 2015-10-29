@@ -226,9 +226,9 @@ PeiTemporaryRamDone (
   if (FspHeader == NULL) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   DEBUG ((DEBUG_INFO, "PeiTemporaryRamDone enter\n"));
-  
+
   TempRamExitParam = GetTempRamExitParam ();
   Status = CallTempRamExit (FspHeader, TempRamExitParam);
   DEBUG((DEBUG_INFO, "TempRamExit status: 0x%x\n", Status));
@@ -269,14 +269,14 @@ PeiMemoryDiscoveredNotify (
   if (FspHeader == NULL) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   DEBUG ((DEBUG_INFO, "PeiMemoryDiscoveredNotify enter\n"));
-  
+
   FspSiliconInitParam = GetFspSiliconInitParam ();
   Status = CallFspSiliconInit (FspHeader, FspSiliconInitParam);
   DEBUG((DEBUG_ERROR, "FspSiliconInit status: 0x%x\n", Status));
   ASSERT_EFI_ERROR (Status);
-  
+
   //
   // Now FspHobList complete, process it
   //
@@ -324,7 +324,7 @@ PeiFspInitV2 (
   //
   Status = PeiServicesNotifyPpi (&mPeiMemoryDiscoveredNotifyDesc);
   ASSERT_EFI_ERROR (Status);
-      
+
   //
   // Register EndOfPei Notify for S3 to run FspNotifyPhase
   //

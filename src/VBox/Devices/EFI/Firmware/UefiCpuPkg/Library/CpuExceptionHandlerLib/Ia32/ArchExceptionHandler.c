@@ -57,7 +57,7 @@ ArchGetIdtHandler (
 VOID
 ArchSaveExceptionContext (
   IN UINTN                ExceptionType,
-  IN EFI_SYSTEM_CONTEXT   SystemContext 
+  IN EFI_SYSTEM_CONTEXT   SystemContext
   )
 {
   IA32_EFLAGS32           Eflags;
@@ -72,7 +72,7 @@ ArchSaveExceptionContext (
   // Clear IF flag to avoid old IDT handler enable interrupt by IRET
   //
   Eflags.UintN = SystemContext.SystemContextIa32->Eflags;
-  Eflags.Bits.IF = 0; 
+  Eflags.Bits.IF = 0;
   SystemContext.SystemContextIa32->Eflags = Eflags.UintN;
   //
   // Modify the EIP in stack, then old IDT handler will return to the stub code
@@ -89,7 +89,7 @@ ArchSaveExceptionContext (
 VOID
 ArchRestoreExceptionContext (
   IN UINTN                ExceptionType,
-  IN EFI_SYSTEM_CONTEXT   SystemContext 
+  IN EFI_SYSTEM_CONTEXT   SystemContext
   )
 {
   SystemContext.SystemContextIa32->Eflags        = mReservedVectors[ExceptionType].OldFlags;

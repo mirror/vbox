@@ -1,8 +1,8 @@
 ## @file
 #  Provides TPM 2.0 TIS functions for DTPM
-#  
-#  This library implements TIS (TPM Interface Specification) functions which is 
-#  used for every TPM 2.0 command. Choosing this library means platform uses and 
+#
+#  This library implements TIS (TPM Interface Specification) functions which is
+#  used for every TPM 2.0 command. Choosing this library means platform uses and
 #  only uses TPM 2.0 DTPM device.
 #
 # Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>

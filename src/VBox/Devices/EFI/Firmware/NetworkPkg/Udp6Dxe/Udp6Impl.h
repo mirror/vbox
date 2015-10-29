@@ -144,7 +144,7 @@ Udp6CreateService (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_HANDLE         ControllerHandle
   );
- 
+
 /**
   This function cleans the udp instance.
 
@@ -155,7 +155,7 @@ VOID
 Udp6CleanInstance (
   IN OUT UDP6_INSTANCE_DATA  *Instance
   );
- 
+
 /**
   This function intializes the new created udp instance.
 

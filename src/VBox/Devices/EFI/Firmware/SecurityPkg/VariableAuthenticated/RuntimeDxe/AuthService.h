@@ -9,7 +9,7 @@
   Variable attribute should also be checked to avoid authentication bypass.
      The whole SMM authentication variable design relies on the integrity of flash part and SMM.
   which is assumed to be protected by platform.  All variable code and metadata in flash/SMM Memory
-  may not be modified without authorization. If platform fails to protect these resources, 
+  may not be modified without authorization. If platform fails to protect these resources,
   the authentication service provided in this driver will be broken, and the behavior is undefined.
 
 Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
@@ -50,7 +50,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 ///
 /// "certdb" variable stores the signer's certificates for non PK/KEK/DB/DBX
 /// variables with EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS set.
-/// 
+///
 ///
 #define EFI_CERT_DB_NAME        L"certdb"
 
@@ -167,7 +167,7 @@ CryptLibraryInitialize (
 
   @return EFI_INVALID_PARAMETER           Invalid signature list format.
   @return EFI_SUCCESS                     Passed signature list format check successfully.
-  
+
 **/
 EFI_STATUS
 CheckSignatureListFormat(
@@ -254,7 +254,7 @@ ProcessVarWithKek (
 
   @param[in, out]  Data             Pointer to original EFI_SIGNATURE_LIST.
   @param[in]       DataSize         Size of Data buffer.
-  @param[in]       FreeBufSize      Size of free data buffer 
+  @param[in]       FreeBufSize      Size of free data buffer
   @param[in]       NewData          Pointer to new EFI_SIGNATURE_LIST to be appended.
   @param[in]       NewDataSize      Size of NewData buffer.
   @param[out]      MergedBufSize    Size of the merged buffer

@@ -107,7 +107,7 @@ USBMassDriverBindingStop (
 /**
   Reset the block device.
 
-  This function implements EFI_BLOCK_IO_PROTOCOL.Reset(). 
+  This function implements EFI_BLOCK_IO_PROTOCOL.Reset().
   It resets the block device hardware.
   ExtendedVerification is ignored in this implementation.
 
@@ -129,7 +129,7 @@ UsbMassReset (
 /**
   Reads the requested number of blocks from the device.
 
-  This function implements EFI_BLOCK_IO_PROTOCOL.ReadBlocks(). 
+  This function implements EFI_BLOCK_IO_PROTOCOL.ReadBlocks().
   It reads the requested number of blocks from the device.
   All the blocks are read, or an error is returned.
 
@@ -163,7 +163,7 @@ UsbMassReadBlocks (
 /**
   Writes a specified number of blocks to the device.
 
-  This function implements EFI_BLOCK_IO_PROTOCOL.WriteBlocks(). 
+  This function implements EFI_BLOCK_IO_PROTOCOL.WriteBlocks().
   It writes a specified number of blocks to the device.
   All blocks are written, or an error is returned.
 

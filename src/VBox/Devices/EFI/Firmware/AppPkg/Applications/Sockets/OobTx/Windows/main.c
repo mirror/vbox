@@ -52,5 +52,5 @@ main(
   //
   //  Return the final result
   //
-  return RetVal;  
+  return RetVal;
 }

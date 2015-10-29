@@ -30,7 +30,7 @@
 
 [Sources]
   SmmLibNull.c
-  
+
 
 [Packages]
   MdePkg/MdePkg.dec

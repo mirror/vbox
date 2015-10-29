@@ -847,7 +847,7 @@ HttpSendCharacter (
 
 /**
   Send a buffer dump
-  
+
   @param [in] SocketFD      The socket's file descriptor to add to the list.
   @param [in] pPort         The WSDT_PORT structure address
   @param [in] ByteCount     The number of bytes to display

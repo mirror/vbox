@@ -133,7 +133,7 @@ DriverUnload (
                 "Failure getting Telnet handles\r\n" ));
         break;
       }
-      
+
       //
       //  Remove any use of the driver
       //

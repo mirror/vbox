@@ -970,7 +970,7 @@ FvSimpleFileSystemSetInfo (
   IN VOID                     *Buffer
   )
 {
-  if (CompareGuid (InformationType, &gEfiFileSystemInfoGuid) || 
+  if (CompareGuid (InformationType, &gEfiFileSystemInfoGuid) ||
       CompareGuid (InformationType, &gEfiFileInfoGuid) ||
       CompareGuid (InformationType, &gEfiFileSystemVolumeLabelInfoIdGuid)) {
     return EFI_WRITE_PROTECTED;

@@ -279,7 +279,7 @@ IsHexStr (
   while ((*Str != 0) && *Str == L'0') {
     Str ++;
   }
-  
+
   return (BOOLEAN) (*Str == L'x' || *Str == L'X');
 }
 
@@ -409,13 +409,13 @@ StrToGuid (
   while (!IS_HYPHEN (*Str) && !IS_NULL (*Str)) {
     Str ++;
   }
-  
+
   if (IS_HYPHEN (*Str)) {
     Str++;
   } else {
     return EFI_UNSUPPORTED;
   }
-  
+
   //
   // Get the second UINT16 data
   //
@@ -429,7 +429,7 @@ StrToGuid (
   } else {
     return EFI_UNSUPPORTED;
   }
-  
+
   //
   // Get the third UINT16 data
   //
@@ -446,7 +446,7 @@ StrToGuid (
 
   //
   // Get the following 8 bytes data
-  //  
+  //
   StrToBuf (&Guid->Data4[0], 2, Str);
   //
   // Skip 2 byte hex chars
@@ -1129,7 +1129,7 @@ DevPathFromTextAcpiAdr (
       ASSERT (AcpiAdr != NULL);
       SetDevicePathNodeLength (AcpiAdr, Length + sizeof (UINT32));
     }
-    
+
     (&AcpiAdr->ADR)[Index] = (UINT32) Strtoi (DisplayDeviceStr);
   }
 

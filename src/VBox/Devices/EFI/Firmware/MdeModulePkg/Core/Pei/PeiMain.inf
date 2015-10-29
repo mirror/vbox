@@ -81,10 +81,10 @@
   ## CONSUMES   ## UNDEFINED # Locate ppi
   ## CONSUMES   ## GUID      # Used to compare with FV's file system guid and get the FV's file system format
   gEfiFirmwareFileSystem3Guid
-  
+
 [Ppis]
   gEfiPeiStatusCodePpiGuid                      ## SOMETIMES_CONSUMES # PeiReportStatusService is not ready if this PPI doesn't exist
-  gEfiPeiResetPpiGuid                           ## SOMETIMES_CONSUMES # PeiResetService is not ready if this PPI doesn't exist 
+  gEfiPeiResetPpiGuid                           ## SOMETIMES_CONSUMES # PeiResetService is not ready if this PPI doesn't exist
   gEfiDxeIplPpiGuid                             ## CONSUMES
   gEfiPeiMemoryDiscoveredPpiGuid                ## PRODUCES
   gEfiPeiDecompressPpiGuid                      ## SOMETIMES_CONSUMES
@@ -101,7 +101,7 @@
   gEfiTemporaryRamSupportPpiGuid                ## SOMETIMES_CONSUMES
   gEfiTemporaryRamDonePpiGuid                   ## SOMETIMES_CONSUMES
 
-[Pcd]  
+[Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxFvSupported                   ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeimPerFv                     ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPpiSupported                  ## CONSUMES
@@ -112,7 +112,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressBootTimeCodePageNumber    ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressRuntimeCodePageNumber     ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadModuleAtFixAddressEnable            ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdShadowPeimOnS3Boot                      ## CONSUMES 
+  gEfiMdeModulePkgTokenSpaceGuid.PcdShadowPeimOnS3Boot                      ## CONSUMES
 
 # [BootMode]
 # S3_RESUME             ## SOMETIMES_CONSUMES

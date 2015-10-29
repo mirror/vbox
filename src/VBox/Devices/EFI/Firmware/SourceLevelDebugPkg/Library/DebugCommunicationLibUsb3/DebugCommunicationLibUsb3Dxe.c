@@ -21,7 +21,7 @@
   Allocate aligned memory for XHC's usage.
 
   @param  BufferSize      The size, in bytes, of the Buffer.
-  
+
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
@@ -31,9 +31,9 @@ AllocateAlignBuffer (
   )
 {
   VOID      *Buf;
-  
+
   Buf = NULL;
-  
+
   if (gBS != NULL) {
     Buf = (VOID *)(UINTN)0xFFFFFFFF;
     gBS->AllocatePages (

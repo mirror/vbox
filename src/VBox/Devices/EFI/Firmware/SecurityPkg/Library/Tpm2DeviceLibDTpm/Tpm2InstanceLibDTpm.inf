@@ -1,7 +1,7 @@
 ## @file
 #  Provides a DTPM instance for TPM 2.0
 #
-#  This library can be registered to Tpm 2.0 device router, to be active TPM 2.0 
+#  This library can be registered to Tpm 2.0 device router, to be active TPM 2.0
 #  engine, based on platform setting.
 #
 # Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>

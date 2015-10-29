@@ -6,7 +6,7 @@
 #include "hash.h"
 #include "generic.h"
 
-void 
+void
 #ifdef __USE_PROTOS
 dumpcycles(void)
 #else
@@ -40,11 +40,11 @@ dumpcycles()
   };
 }
 
-void 
+void
 #ifdef __USE_PROTOS
-dumpfostack(int k) 
+dumpfostack(int k)
 #else
-dumpfostack(k) 
+dumpfostack(k)
 int k;
 #endif
 {

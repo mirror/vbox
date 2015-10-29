@@ -62,7 +62,7 @@ AcquireRecordBuffer (
     if (CurrentTpl > TPL_NOTIFY) {
       //
       // Memory management should work at <=TPL_NOTIFY
-      // 
+      //
       gBS->RestoreTPL (CurrentTpl);
       return NULL;
     }
@@ -132,7 +132,7 @@ RetrieveRecord (
 
 /**
   Release given record and return it to free record buffer.
-  
+
   @param RecordData  Pointer to the record to release.
 
 **/
@@ -212,7 +212,7 @@ DataHubStatusCodeReportWorker (
       return Status;
     }
   }
-  
+
   Record = AcquireRecordBuffer ();
   if (Record == NULL) {
     //
@@ -362,8 +362,8 @@ DataHubStatusCodeInitializeWorker (
   EFI_STATUS  Status;
 
   Status = gBS->LocateProtocol (
-                  &gEfiDataHubProtocolGuid, 
-                  NULL, 
+                  &gEfiDataHubProtocolGuid,
+                  NULL,
                   (VOID **) &mDataHubProtocol
                   );
   if (EFI_ERROR (Status)) {

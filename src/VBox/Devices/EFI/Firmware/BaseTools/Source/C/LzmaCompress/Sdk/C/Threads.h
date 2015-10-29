@@ -13,7 +13,7 @@ typedef struct _CThread
 
 #define Thread_Construct(thread) (thread)->handle = NULL
 #define Thread_WasCreated(thread) ((thread)->handle != NULL)
- 
+
 typedef unsigned THREAD_FUNC_RET_TYPE;
 #define THREAD_FUNC_CALL_TYPE MY_STD_CALL
 #define THREAD_FUNC_DECL THREAD_FUNC_RET_TYPE THREAD_FUNC_CALL_TYPE

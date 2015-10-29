@@ -283,6 +283,6 @@ RegisterHashInterfaceLib (
 
   CopyMem (&HashInterfaceHob->HashInterface[HashInterfaceHob->HashInterfaceCount], HashInterface, sizeof(*HashInterface));
   HashInterfaceHob->HashInterfaceCount ++;
-  
+
   return EFI_SUCCESS;
 }

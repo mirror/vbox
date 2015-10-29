@@ -19,10 +19,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 /**
   Signal a event with the given status.
-  
+
   @param Token        The token's event is to be signaled.
   @param TokenStatus  The status to be sent with the event.
-  
+
 **/
 #define SIGNAL_TOKEN(Token, TokenStatus) \
   do { \
@@ -35,7 +35,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   Supporting function for both SockImpl and SockInterface.
 
   @param Event  The Event this notify function registered to, ignored.
-  
+
 **/
 VOID
 EFIAPI

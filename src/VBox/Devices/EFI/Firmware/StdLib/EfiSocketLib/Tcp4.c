@@ -12,7 +12,7 @@
 
 
   \section ConnectionManagement Connection Management
-  
+
   The ::EslTcp4Listen routine initially places the SOCK_STREAM or
   SOCK_SEQPACKET socket into a listen state.   When a remote machine
   makes a connection to the socket, the TCPv4 network layer calls
@@ -487,7 +487,7 @@ EslTcp4ConnectStart (
   EFI_STATUS Status;
 
   DBG_ENTER ( );
-  
+
   //
   //  Determine if any more local adapters are available
   //
@@ -776,7 +776,7 @@ EslTcp4Listen (
       //
       pPort = pNextPort;
     }
-    
+
     //
     //  Determine if any ports are in the listen state
     //
@@ -1041,7 +1041,7 @@ EslTcp4ListenComplete (
     //  Process:
     //    Call close
     //    Release the resources
-    
+
   }
 
   DBG_EXIT ( );
@@ -1151,7 +1151,7 @@ EslTcp4LocalAddressSet (
     //  Determine if the default address is used
     //
     pAccessPoint->UseDefaultAddress = (BOOLEAN)( 0 == pIpAddress->sin_addr.s_addr );
-    
+
     //
     //  Set the subnet mask
     //
@@ -1345,7 +1345,7 @@ EslTcp4PortAllocate (
 
   This routine is called by ::EslSocketPortClose.
   See the \ref PortCloseStateMachine section.
-  
+
   @param [in] pPort       Address of an ::ESL_PORT structure.
 
   @retval EFI_SUCCESS     The port is closed
@@ -1360,7 +1360,7 @@ EslTcp4PortClose (
   UINTN DebugFlags;
   ESL_TCP4_CONTEXT * pTcp4;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
 
   //
@@ -1504,13 +1504,13 @@ EslTcp4PortCloseOp (
   @param [in] pPort           Address of an ::ESL_PORT structure.
 
   @param [in] pPacket         Address of an ::ESL_PACKET structure.
-  
+
   @param [in] pbConsumePacket Address of a BOOLEAN indicating if the packet is to be consumed
-  
+
   @param [in] BufferLength    Length of the the buffer
-  
+
   @param [in] pBuffer         Address of a buffer to receive the data.
-  
+
   @param [in] pDataLength     Number of received data bytes in the buffer.
 
   @param [out] pAddress       Network address to receive the remote system address
@@ -1888,13 +1888,13 @@ EslTcp4RxStart (
   during the current transmission attempt.
 
   @param [in] pSocket         Address of an ::ESL_SOCKET structure
-  
+
   @param [in] Flags           Message control flags
-  
+
   @param [in] BufferLength    Length of the the buffer
-  
+
   @param [in] pBuffer         Address of a buffer to receive the data.
-  
+
   @param [in] pDataLength     Number of received data bytes in the buffer.
 
   @param [in] pAddress        Network address of the remote system address
@@ -2142,7 +2142,7 @@ EslTcp4TxComplete (
   ESL_PORT * pPort;
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
 
   //

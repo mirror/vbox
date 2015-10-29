@@ -38,7 +38,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   This function allocates EfiReservedMemoryType below 4G memory address.
 
   @param  Size      Size of memory to allocate.
-  
+
   @return Allocated Address for output.
 
 **/
@@ -117,7 +117,7 @@ PrepareContextForCapsulePei (
   EFI_CAPSULE_LONG_MODE_BUFFER                  LongModeBuffer;
   EFI_STATUS                                    Status;
   VOID                                          *Registration;
-  
+
   LongModeBuffer.PageTableAddress = (EFI_PHYSICAL_ADDRESS) PcdGet64 (PcdIdentifyMappingPageTablePtr);
 
   if (LongModeBuffer.PageTableAddress == 0x0) {
@@ -134,7 +134,7 @@ PrepareContextForCapsulePei (
         }
       }
     }
-    
+
     //
     // Get physical address bits supported.
     //
@@ -150,7 +150,7 @@ PrepareContextForCapsulePei (
         PhysicalAddressBits = 36;
       }
     }
-    
+
     //
     // IA-32e paging translates 48-bit linear addresses to 52-bit physical addresses.
     //
@@ -158,7 +158,7 @@ PrepareContextForCapsulePei (
     if (PhysicalAddressBits > 48) {
       PhysicalAddressBits = 48;
     }
-    
+
     //
     // Calculate the table entries needed.
     //
@@ -169,25 +169,25 @@ PrepareContextForCapsulePei (
       NumberOfPml4EntriesNeeded = (UINT32)LShiftU64 (1, (PhysicalAddressBits - 39));
       NumberOfPdpEntriesNeeded = 512;
     }
-    
+
     if (!Page1GSupport) {
       TotalPagesNum = (NumberOfPdpEntriesNeeded + 1) * NumberOfPml4EntriesNeeded + 1;
     } else {
       TotalPagesNum = NumberOfPml4EntriesNeeded + 1;
     }
-    
+
     LongModeBuffer.PageTableAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)AllocateReservedMemoryBelow4G (EFI_PAGES_TO_SIZE (TotalPagesNum));
     ASSERT (LongModeBuffer.PageTableAddress != 0);
-    PcdSet64 (PcdIdentifyMappingPageTablePtr, LongModeBuffer.PageTableAddress); 
+    PcdSet64 (PcdIdentifyMappingPageTablePtr, LongModeBuffer.PageTableAddress);
   }
-  
+
   //
   // Allocate stack
   //
   LongModeBuffer.StackSize        = PcdGet32 (PcdCapsulePeiLongModeStackSize);
   LongModeBuffer.StackBaseAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)AllocateReservedMemoryBelow4G (PcdGet32 (PcdCapsulePeiLongModeStackSize));
-  ASSERT (LongModeBuffer.StackBaseAddress != 0);  
-  
+  ASSERT (LongModeBuffer.StackBaseAddress != 0);
+
   Status = gRT->SetVariable (
                   EFI_CAPSULE_LONG_MODE_BUFFER_NAME,
                   &gEfiCapsuleVendorGuid,
@@ -206,7 +206,7 @@ PrepareContextForCapsulePei (
         VariableLockCapsuleLongModeBufferVariable,
         NULL,
         &Registration
-        );    
+        );
   } else {
       DEBUG ((EFI_D_ERROR, "FATAL ERROR: CapsuleLongModeBuffer cannot be saved: %r. Capsule in PEI may fail!\n", Status));
       gBS->FreePages (LongModeBuffer.StackBaseAddress, EFI_SIZE_TO_PAGES (LongModeBuffer.StackSize));

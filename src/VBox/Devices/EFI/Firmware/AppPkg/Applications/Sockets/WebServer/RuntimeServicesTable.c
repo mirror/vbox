@@ -36,7 +36,7 @@ RuntimeSservicesTablePage (
   EFI_STATUS Status;
 
   DBG_ENTER ( );
-  
+
   //
   //  Send the runtime services page
   //
@@ -58,7 +58,7 @@ RuntimeSservicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     // Time Services
     //
@@ -94,7 +94,7 @@ RuntimeSservicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     // Virtual Memory Services
     //
@@ -114,7 +114,7 @@ RuntimeSservicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     // Variable Services
     //
@@ -142,7 +142,7 @@ RuntimeSservicesTablePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     // Miscellaneous Services
     //
@@ -186,7 +186,7 @@ RuntimeSservicesTablePage (
       if ( EFI_ERROR ( Status )) {
         break;
       }
-    
+
       //
       // Miscellaneous UEFI 2.0 Service
       //
@@ -208,7 +208,7 @@ RuntimeSservicesTablePage (
                             pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

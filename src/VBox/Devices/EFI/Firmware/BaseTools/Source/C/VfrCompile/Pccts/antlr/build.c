@@ -96,7 +96,7 @@ int is_predicate;
 	Graph g;
 	ActionNode *a;
 	require(action!=NULL, "buildAction: invalid action");
-	
+
 	j1 = newJunction();
 	j2 = newJunction();
 	a = newActionNode();
@@ -169,7 +169,7 @@ char *text;
 	Graph g;
 	TokNode *t;
 	require(text!=NULL, "buildToken: invalid token name");
-	
+
 	j1 = newJunction();
 	j2 = newJunction();
 	t = newTokNode();
@@ -203,7 +203,7 @@ char *text;
 	TCnode *w;
 	TermEntry *p;
 	require(text!=NULL, "buildWildCard: invalid token name");
-	
+
 	j1 = newJunction();
 	j2 = newJunction();
 	t = newTokNode();
@@ -278,7 +278,7 @@ char *text;
 	RuleRefNode *r;
 	RuleEntry *p;
 	require(text!=NULL, "buildRuleRef: invalid rule name");
-	
+
 	j1 = newJunction();
 	j2 = newJunction();
 	r = newRNode();
@@ -344,7 +344,7 @@ Graph g2;
 #endif
 {
 	Graph g;
-	
+
 	if ( g1.left == NULL && g1.right == NULL ) return g2;
 	if ( g2.left == NULL && g2.right == NULL ) return g1;
 	((Junction *)g1.right)->p1 = g2.left;
@@ -596,7 +596,7 @@ emptyAlt( )
 	j1->p1 = (Node *) j2;
 	g.left = (Node *) j1;
 	g.right = (Node *) j2;
-	
+
 	return g;
 }
 
@@ -624,7 +624,7 @@ emptyAlt3( )
 	j2->p1 = (Node *) j3;
 	g.left = (Node *) j1;
 	g.right = (Node *) j3;
-	
+
 	return g;
 }
 
@@ -695,7 +695,7 @@ newRNode( )
 	p->line = zzline;
 	p->astnode = ASTinclude;
 	p->altstart = NULL;
-	
+
 	return p;
 }
 
@@ -790,7 +790,7 @@ makelocks( )
 {
 	char *p = (char *) calloc(CLL_k+1, sizeof(char));
 	require(p!=NULL, "cannot allocate lock array");
-	
+
 	return p;
 }
 

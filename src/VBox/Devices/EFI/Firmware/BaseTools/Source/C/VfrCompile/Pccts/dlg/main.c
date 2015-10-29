@@ -136,7 +136,7 @@ Opt options[] = {
 	{ "-o",  1, (WildFunc)p_outdir, OutputDirectoryOption},
 	{ "-", 0, (WildFunc)p_stdio, "Use standard i/o rather than file"},
 	{ "*", 0, (WildFunc)p_file, ""}, /* anything else is a file */
-	{ NULL, 0, NULL }	
+	{ NULL, 0, NULL }
  };
 
 #ifdef __USE_PROTOS
@@ -149,7 +149,7 @@ Opt *options;
 #endif
 {
 	Opt *p;
-	
+
 	while ( argc-- > 0 )
 	{
 		p = options;
@@ -240,7 +240,7 @@ char *argv[];
 }
 
 /* initialize all the variables */
-void 
+void
 #ifdef __USE_PROTOS
 init(void)
 #else
@@ -265,11 +265,11 @@ init()
 	clear_hash();
 	/* NOTE: need to set this flag before the lexer starts getting */
 	/* tokens */
-   	func_action = FALSE;	
+   	func_action = FALSE;
 }
 
 /* stuff that needs to be reset when a new automaton is being built */
-void 
+void
 #ifdef __USE_PROTOS
 new_automaton_mode(void)					/* MR1 */
 #else

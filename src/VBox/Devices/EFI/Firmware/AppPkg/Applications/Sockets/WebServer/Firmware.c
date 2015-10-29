@@ -36,7 +36,7 @@ FirmwarePage (
   EFI_STATUS Status;
 
   DBG_ENTER ( );
-  
+
   //
   //  Send the system table page
   //
@@ -59,7 +59,7 @@ FirmwarePage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     Status = RowRevision ( SocketFD,
                            pPort,
                            "Revision",
@@ -87,7 +87,7 @@ FirmwarePage (
                             pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

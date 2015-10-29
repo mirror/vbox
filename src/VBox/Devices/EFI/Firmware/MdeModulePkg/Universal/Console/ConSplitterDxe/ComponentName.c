@@ -225,7 +225,7 @@ ConSplitterComponentNameGetDriverName (
            This->SupportedLanguages,
            mConSplitterDriverNameTable,
            DriverName,
-           (BOOLEAN)((This == &gConSplitterConInComponentName) || 
+           (BOOLEAN)((This == &gConSplitterConInComponentName) ||
                      (This == &gConSplitterSimplePointerComponentName) ||
                      (This == &gConSplitterAbsolutePointerComponentName) ||
                      (This == &gConSplitterConOutComponentName) ||

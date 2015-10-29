@@ -746,9 +746,9 @@ USBKeyboardWaitForKey (
 
   //
   // Enter critical section
-  //  
+  //
   OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
-  
+
   //
   // WaitforKey doesn't suppor the partial key.
   // Considering if the partial keystroke is enabled, there maybe a partial

@@ -1,12 +1,12 @@
 ## @file
 #  Provides security service for TPM 1.2 measured boot
 #
-#  This library instance hooks LoadImage() API to measure every image that 
+#  This library instance hooks LoadImage() API to measure every image that
 #  is not measured in PEI phase. And, it will also measure GPT partition.
 #
 #  Caution: This module requires additional review when modified.
 #  This library will have external input - PE/COFF image and GPT partition.
-#  This external input must be validated carefully to avoid security issues such 
+#  This external input must be validated carefully to avoid security issues such
 #  as buffer overflow or integer overflow.
 #
 # Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
@@ -26,7 +26,7 @@
   FILE_GUID                      = 6C60C7D0-922A-4b7c-87D7-E503EDD73BBF
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = NULL|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SAL_DRIVER DXE_SMM_DRIVER UEFI_APPLICATION UEFI_DRIVER 
+  LIBRARY_CLASS                  = NULL|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SAL_DRIVER DXE_SMM_DRIVER UEFI_APPLICATION UEFI_DRIVER
   CONSTRUCTOR                    = DxeTpmMeasureBootLibConstructor
 
 #

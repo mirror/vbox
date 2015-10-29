@@ -1,6 +1,6 @@
 /** @file
   PxeBc MTFTP functions.
-  
+
 Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -25,19 +25,19 @@ CHAR8 *mMtftpOptions[PXE_MTFTP_OPTION_MAXIMUM_INDEX] = {
 /**
   This is a callback function when packets received/transmitted in Mtftp driver.
 
-  A callback function that is provided by the caller to intercept               
+  A callback function that is provided by the caller to intercept
   the EFI_MTFTP4_OPCODE_DATA or EFI_MTFTP4_OPCODE_DATA8 packets processed in the
-  EFI_MTFTP4_PROTOCOL.ReadFile() function, and alternatively to intercept       
-  EFI_MTFTP4_OPCODE_OACK or EFI_MTFTP4_OPCODE_ERROR packets during a call to    
+  EFI_MTFTP4_PROTOCOL.ReadFile() function, and alternatively to intercept
+  EFI_MTFTP4_OPCODE_OACK or EFI_MTFTP4_OPCODE_ERROR packets during a call to
   EFI_MTFTP4_PROTOCOL.ReadFile(), WriteFile() or ReadDirectory().
-   
+
   @param  This           Pointer to Mtftp protocol instance
   @param  Token          Pointer to Mtftp token
   @param  PacketLen      Length of Mtftp packet
   @param  Packet         Pointer to Mtftp packet
 
   @retval EFI_SUCCESS    Operation sucess
-  @retval EFI_ABORTED    Abort transfer process 
+  @retval EFI_ABORTED    Abort transfer process
 
 **/
 EFI_STATUS
@@ -88,7 +88,7 @@ PxeBcCheckPacket (
 
 /**
   This function is to get size of a file by Tftp.
-  
+
   @param  Private        Pointer to PxeBc private data
   @param  Config         Pointer to Mtftp configuration data
   @param  Filename       Pointer to file name
@@ -99,7 +99,7 @@ PxeBcCheckPacket (
   @retval EFI_NOT_FOUND      Parse the tftp ptions failed.
   @retval EFI_DEVICE_ERROR   The network device encountered an error during this operation.
   @retval Other              Has not get the size of the file.
-  
+
 **/
 EFI_STATUS
 PxeBcTftpGetFileSize (
@@ -161,8 +161,8 @@ PxeBcTftpGetFileSize (
       Private->Mode.TftpErrorReceived = TRUE;
       Private->Mode.TftpError.ErrorCode = (UINT8) Packet->Error.ErrorCode;
       AsciiStrnCpy (
-        Private->Mode.TftpError.ErrorString, 
-        (CHAR8 *) Packet->Error.ErrorMessage, 
+        Private->Mode.TftpError.ErrorString,
+        (CHAR8 *) Packet->Error.ErrorMessage,
         PXE_MTFTP_ERROR_STRING_LENGTH
         );
       Private->Mode.TftpError.ErrorString[PXE_MTFTP_ERROR_STRING_LENGTH - 1] = '\0';
@@ -226,7 +226,7 @@ ON_ERROR:
   @retval EFI_SUCCESS        Read the data success from the special file.
   @retval EFI_DEVICE_ERROR   The network device encountered an error during this operation.
   @retval other              Read data from file failed.
-  
+
 **/
 EFI_STATUS
 PxeBcTftpReadFile (
@@ -309,7 +309,7 @@ PxeBcTftpReadFile (
   @retval EFI_SUCCESS        Write the data success into the special file.
   @retval EFI_DEVICE_ERROR   The network device encountered an error during this operation.
   @retval other              Write data into file failed.
-  
+
 **/
 EFI_STATUS
 PxeBcTftpWriteFile (
@@ -380,10 +380,10 @@ PxeBcTftpWriteFile (
   @param  BufferSize     Pointer to buffer size.
   @param  DontUseBuffer  Indicate whether with a receive buffer.
 
-  @retval EFI_SUCCES         Get the data from the file included in directory success. 
+  @retval EFI_SUCCES         Get the data from the file included in directory success.
   @retval EFI_DEVICE_ERROR   The network device encountered an error during this operation.
   @retval other              Operation failed.
-  
+
 **/
 EFI_STATUS
 PxeBcTftpReadDirectory (

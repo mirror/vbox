@@ -482,7 +482,7 @@ PxeBcParseDhcp4Packet (
                        );
   }
   //
-  // Second, Check if bootfilename and serverhostname is overloaded to carry DHCP options refers to rfc-2132. 
+  // Second, Check if bootfilename and serverhostname is overloaded to carry DHCP options refers to rfc-2132.
   // If yes, try to parse options from the BootFileName field, then ServerName field.
   //
   Option = Options[PXEBC_DHCP4_TAG_INDEX_OVERLOAD];

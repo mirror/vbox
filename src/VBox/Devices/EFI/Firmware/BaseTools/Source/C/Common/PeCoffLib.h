@@ -2,13 +2,13 @@
 	Function prototypes and defines on Memory Only PE COFF loader
 
 	Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials                          
-	are licensed and made available under the terms and conditions of the BSD License         
-	which accompanies this distribution.  The full text of the license may be found at        
-	http://opensource.org/licenses/bsd-license.php                                            
+  This program and the accompanying materials
+	are licensed and made available under the terms and conditions of the BSD License
+	which accompanies this distribution.  The full text of the license may be found at
+	http://opensource.org/licenses/bsd-license.php
 
-	THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-	WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+	THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+	WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -20,7 +20,7 @@
 // BUGBUG: Find where used and see if can be replaced by RETURN_STATUS codes
 //
 #define IMAGE_ERROR_SUCCESS                      0
-#define IMAGE_ERROR_IMAGE_READ                   1  
+#define IMAGE_ERROR_IMAGE_READ                   1
 #define IMAGE_ERROR_INVALID_PE_HEADER_SIGNATURE  2
 #define IMAGE_ERROR_INVALID_MACHINE_TYPE         3
 #define IMAGE_ERROR_INVALID_SUBSYSTEM            4
@@ -148,7 +148,7 @@ PeCoffLoaderGetEntryPoint (
 //
 
 /**
-  Pass in a pointer to an ARM MOVT or MOVW immediate instruciton and 
+  Pass in a pointer to an ARM MOVT or MOVW immediate instruciton and
   return the immediate data encoded in the instruction
 
   @param  Instruction   Pointer to ARM MOVT or MOVW immediate instruction
@@ -178,7 +178,7 @@ ThumbMovtImmediatePatch (
 
 
 /**
-  Pass in a pointer to an ARM MOVW/MOVT instruciton pair and 
+  Pass in a pointer to an ARM MOVW/MOVT instruciton pair and
   return the immediate data encoded in the two` instruction
 
   @param  Instructions  Pointer to ARM MOVW/MOVT insturction pair

@@ -108,13 +108,13 @@ DumpUicCmdExecResult (
         break;
       case 0x08:
         DEBUG ((EFI_D_VERBOSE, "UIC configuration command fails - PEER_COMMUNICATION_FAILURE\n"));
-        break; 
+        break;
       case 0x09:
         DEBUG ((EFI_D_VERBOSE, "UIC configuration command fails - BUSY\n"));
         break;
       case 0x0A:
         DEBUG ((EFI_D_VERBOSE, "UIC configuration command fails - DME_FAILURE\n"));
-        break;        
+        break;
       default :
         ASSERT (FALSE);
         break;
@@ -125,7 +125,7 @@ DumpUicCmdExecResult (
         break;
       case 0x01:
         DEBUG ((EFI_D_VERBOSE, "UIC control command fails - FAILURE\n"));
-        break;     
+        break;
       default :
         ASSERT (FALSE);
         break;
@@ -171,7 +171,7 @@ DumpQueryResponseResult (
       break;
     case 0xFE:
       DEBUG ((EFI_D_VERBOSE, "Query Response with Invalid Opcode\n"));
-      break; 
+      break;
     case 0xFF:
       DEBUG ((EFI_D_VERBOSE, "Query Response with General Failure\n"));
       break;
@@ -243,7 +243,7 @@ UfsFillTsfOfQueryReqUpiu (
       SwapLittleEndianToBigEndian ((UINT8*)&Length, sizeof (Length));
       TsfBase->Length = Length;
     }
-  
+
     if (Opcode == UtpQueryFuncOpcodeWrAttr) {
       SwapLittleEndianToBigEndian ((UINT8*)&Value, sizeof (Value));
       TsfBase->Value  = Value;
@@ -703,7 +703,7 @@ VOID
 UfsStartExecCmd (
   IN  UFS_PEIM_HC_PRIVATE_DATA     *Private,
   IN  UINT8                        Slot
-  ) 
+  )
 {
   UINTN         UfsHcBase;
   UINTN         Address;
@@ -711,7 +711,7 @@ UfsStartExecCmd (
 
   UfsHcBase = Private->UfsHcBase;
 
-  Address = UfsHcBase + UFS_HC_UTRLRSR_OFFSET;  
+  Address = UfsHcBase + UFS_HC_UTRLRSR_OFFSET;
   Data    = MmioRead32 (Address);
   if ((Data & UFS_HC_UTRLRSR) != UFS_HC_UTRLRSR) {
     MmioWrite32 (Address, UFS_HC_UTRLRSR);
@@ -732,7 +732,7 @@ VOID
 UfsStopExecCmd (
   IN  UFS_PEIM_HC_PRIVATE_DATA     *Private,
   IN  UINT8                        Slot
-  ) 
+  )
 {
   UINTN         UfsHcBase;
   UINTN         Address;
@@ -740,10 +740,10 @@ UfsStopExecCmd (
 
   UfsHcBase = Private->UfsHcBase;
 
-  Address = UfsHcBase + UFS_HC_UTRLDBR_OFFSET;  
+  Address = UfsHcBase + UFS_HC_UTRLDBR_OFFSET;
   Data    = MmioRead32 (Address);
   if ((Data & (BIT0 << Slot)) != 0) {
-    Address = UfsHcBase + UFS_HC_UTRLCLR_OFFSET;  
+    Address = UfsHcBase + UFS_HC_UTRLCLR_OFFSET;
     Data    = MmioRead32 (Address);
     MmioWrite32 (Address, (Data & ~(BIT0 << Slot)));
   }
@@ -811,7 +811,7 @@ UfsRwDeviceDesc (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   Trd = ((UTP_TRD*)Private->UtpTrlBase) + Slot;
   //
   // Fill transfer request descriptor to this slot.
@@ -835,8 +835,8 @@ UfsRwDeviceDesc (
 
   //
   // Wait for the completion of the transfer request.
-  //  
-  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;  
+  //
+  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;
   Status = UfsWaitMemSet (Address, BIT0, 0, Packet.Timeout);
   if (EFI_ERROR (Status)) {
     goto Exit;
@@ -925,7 +925,7 @@ UfsRwAttributes (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   Trd = ((UTP_TRD*)Private->UtpTrlBase) + Slot;
   //
   // Fill transfer request descriptor to this slot.
@@ -949,8 +949,8 @@ UfsRwAttributes (
 
   //
   // Wait for the completion of the transfer request.
-  //  
-  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;  
+  //
+  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;
   Status = UfsWaitMemSet (Address, BIT0, 0, Packet.Timeout);
   if (EFI_ERROR (Status)) {
     goto Exit;
@@ -1063,8 +1063,8 @@ UfsRwFlags (
 
   //
   // Wait for the completion of the transfer request.
-  //  
-  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;  
+  //
+  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;
   Status = UfsWaitMemSet (Address, BIT0, 0, Packet.Timeout);
   if (EFI_ERROR (Status)) {
     goto Exit;
@@ -1221,8 +1221,8 @@ UfsExecNopCmds (
 
   //
   // Wait for the completion of the transfer request.
-  //  
-  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;  
+  //
+  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;
   Status = UfsWaitMemSet (Address, BIT0, 0, UFS_TIMEOUT);
   if (EFI_ERROR (Status)) {
     goto Exit;
@@ -1305,8 +1305,8 @@ UfsExecScsiCmds (
 
   //
   // Wait for the completion of the transfer request.
-  //  
-  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;  
+  //
+  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;
   Status = UfsWaitMemSet (Address, BIT0, 0, Packet->Timeout);
   if (EFI_ERROR (Status)) {
     goto Exit;
@@ -1318,7 +1318,7 @@ UfsExecScsiCmds (
   Response     = (UTP_RESPONSE_UPIU*)(CmdDescBase + Trd->RuO * sizeof (UINT32));
   SenseDataLen = Response->SenseDataLen;
   SwapLittleEndianToBigEndian ((UINT8*)&SenseDataLen, sizeof (UINT16));
-  
+
   if ((Packet->SenseDataLength != 0) && (Packet->SenseData != NULL)) {
     CopyMem (Packet->SenseData, Response->SenseData, SenseDataLen);
     Packet->SenseDataLength = (UINT8)SenseDataLen;
@@ -1425,7 +1425,7 @@ UfsExecUicCommands (
 
   //
   // UFS 2.0 spec section 5.3.1 Offset:0x20 IS.Bit10 UIC Command Completion Status (UCCS)
-  // This bit is set to '1' by the host controller upon completion of a UIC command. 
+  // This bit is set to '1' by the host controller upon completion of a UIC command.
   //
   Address = UfsHcBase + UFS_HC_IS_OFFSET;
   Data    = MmioRead32 (Address);
@@ -1448,7 +1448,7 @@ UfsExecUicCommands (
   //
   // Check value of HCS.DP and make sure that there is a device attached to the Link.
   //
-  Address = UfsHcBase + UFS_HC_STATUS_OFFSET;  
+  Address = UfsHcBase + UFS_HC_STATUS_OFFSET;
   Data    = MmioRead32 (Address);
   if ((Data & UFS_HC_HCS_DP) == 0) {
     Address = UfsHcBase + UFS_HC_IS_OFFSET;
@@ -1579,11 +1579,11 @@ UfsInitTaskManagementRequestList (
   UINT8                  Nutmrs;
   EFI_PHYSICAL_ADDRESS   Buffer;
   EFI_STATUS             Status;
-  
+
   //
   // Initial h/w and s/w context for future operations.
   //
-  Address = Private->UfsHcBase + UFS_HC_CAP_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_CAP_OFFSET;
   Data    = MmioRead32 (Address);
   Private->Capabilities = Data;
 
@@ -1607,9 +1607,9 @@ UfsInitTaskManagementRequestList (
   // Program the UTP Task Management Request List Base Address and UTP Task Management
   // Request List Base Address with a 64-bit address allocated at step 6.
   //
-  Address = Private->UfsHcBase + UFS_HC_UTMRLBA_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_UTMRLBA_OFFSET;
   MmioWrite32 (Address, (UINT32)(UINTN)Buffer);
-  Address = Private->UfsHcBase + UFS_HC_UTMRLBAU_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_UTMRLBAU_OFFSET;
   MmioWrite32 (Address, (UINT32)RShiftU64 ((UINT64)Buffer, 32));
   Private->UtpTmrlBase = (VOID*)(UINTN)Buffer;
   Private->Nutmrs      = Nutmrs;
@@ -1618,7 +1618,7 @@ UfsInitTaskManagementRequestList (
   // Enable the UTP Task Management Request List by setting the UTP Task Management
   // Request List RunStop Register (UTMRLRSR) to '1'.
   //
-  Address = Private->UfsHcBase + UFS_HC_UTMRLRSR_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_UTMRLRSR_OFFSET;
   MmioWrite32 (Address, UFS_HC_UTMRLRSR);
 
   return EFI_SUCCESS;
@@ -1643,11 +1643,11 @@ UfsInitTransferRequestList (
   UINT8                  Nutrs;
   EFI_PHYSICAL_ADDRESS   Buffer;
   EFI_STATUS             Status;
-  
+
   //
   // Initial h/w and s/w context for future operations.
   //
-  Address = Private->UfsHcBase + UFS_HC_CAP_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_CAP_OFFSET;
   Data    = MmioRead32 (Address);
   Private->Capabilities = Data;
 
@@ -1671,18 +1671,18 @@ UfsInitTransferRequestList (
   // Program the UTP Transfer Request List Base Address and UTP Transfer Request List
   // Base Address with a 64-bit address allocated at step 8.
   //
-  Address = Private->UfsHcBase + UFS_HC_UTRLBA_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_UTRLBA_OFFSET;
   MmioWrite32 (Address, (UINT32)(UINTN)Buffer);
-  Address = Private->UfsHcBase + UFS_HC_UTRLBAU_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_UTRLBAU_OFFSET;
   MmioWrite32 (Address, (UINT32)RShiftU64 ((UINT64)Buffer, 32));
   Private->UtpTrlBase = (VOID*)(UINTN)Buffer;
   Private->Nutrs      = Nutrs;
-  
+
   //
   // Enable the UTP Transfer Request List by setting the UTP Transfer Request List
   // RunStop Register (UTRLRSR) to '1'.
   //
-  Address = Private->UfsHcBase + UFS_HC_UTRLRSR_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_UTRLRSR_OFFSET;
   MmioWrite32 (Address, UFS_HC_UTRLRSR);
 
   return EFI_SUCCESS;
@@ -1754,14 +1754,14 @@ UfsControllerStop (
   // Enable the UTP Task Management Request List by setting the UTP Task Management
   // Request List RunStop Register (UTMRLRSR) to '1'.
   //
-  Address = Private->UfsHcBase + UFS_HC_UTMRLRSR_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_UTMRLRSR_OFFSET;
   MmioWrite32 (Address, 0);
 
   //
   // Enable the UTP Transfer Request List by setting the UTP Transfer Request List
   // RunStop Register (UTRLRSR) to '1'.
   //
-  Address = Private->UfsHcBase + UFS_HC_UTRLRSR_OFFSET;  
+  Address = Private->UfsHcBase + UFS_HC_UTRLRSR_OFFSET;
   MmioWrite32 (Address, 0);
 
   //

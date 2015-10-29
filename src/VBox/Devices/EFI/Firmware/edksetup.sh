@@ -4,12 +4,12 @@
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
 # http://opensource.org/licenses/bsd-license.php
-# 
+#
 # THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
 # In *inux environment, the build tools's source is required and need to be compiled
-# firstly, please reference https://edk2.tianocore.org/unix-getting-started.html to 
+# firstly, please reference https://edk2.tianocore.org/unix-getting-started.html to
 # to get how to setup build tool.
 #
 # After build tool is downloaded and compiled, a soft symbol linker need to be created
@@ -28,7 +28,7 @@
 function HelpMsg()
 {
   echo Please note: This script must be \'sourced\' so the environment can be changed.
-  echo ". edksetup.sh" 
+  echo ". edksetup.sh"
   echo "source edksetup.sh"
   return 1
 }

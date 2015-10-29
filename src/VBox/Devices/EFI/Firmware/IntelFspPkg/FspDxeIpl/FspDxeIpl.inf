@@ -63,8 +63,8 @@
   gEfiEventReadyToBootGuid                ## PRODUCES ## Event
 
 [FixedPcd]
-  gIntelFspPkgTokenSpaceGuid.PcdFspMaxPatchEntry    ## CONSUMES 
-  gIntelFspPkgTokenSpaceGuid.PcdFspMaxPerfEntry     ## CONSUMES  
+  gIntelFspPkgTokenSpaceGuid.PcdFspMaxPatchEntry    ## CONSUMES
+  gIntelFspPkgTokenSpaceGuid.PcdFspMaxPerfEntry     ## CONSUMES
 
 [Depex]
   gEfiPeiMemoryDiscoveredPpiGuid AND gEfiPeiLoadFilePpiGuid

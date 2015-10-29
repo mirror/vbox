@@ -148,7 +148,7 @@ char *s;
 #ifdef __USE_PROTOS
 void p_class_hdr(void)
 #else
-void p_class_hdr()						
+void p_class_hdr()
 #endif
 {
 	if ( class_stream == NULL ) return;
@@ -860,6 +860,6 @@ set label;
 		printf("\n");
 		free(t);
 	}
-	
+
 }
 #endif

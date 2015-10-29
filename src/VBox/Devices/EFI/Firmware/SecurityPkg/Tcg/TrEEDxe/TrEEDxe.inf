@@ -63,7 +63,7 @@
   ## SOMETIMES_CONSUMES     ## SystemTable           # Smbios Table
   ## SOMETIMES_CONSUMES     ## GUID                  # Handoff Table for measurement.
   gEfiSmbiosTableGuid
-  
+
   ## SOMETIMES_CONSUMES     ## Variable:L"SecureBoot"
   ## SOMETIMES_CONSUMES     ## Variable:L"PK"
   ## SOMETIMES_CONSUMES     ## Variable:L"KEK"
@@ -73,7 +73,7 @@
   ## SOMETIMES_CONSUMES      ## Variable:L"db"
   ## SOMETIMES_CONSUMES      ## Variable:L"dbx"
   gEfiImageSecurityDatabaseGuid
-    
+
   gTcgEventEntryHobGuid                              ## SOMETIMES_CONSUMES  ## HOB
   gTpmErrorHobGuid                                   ## SOMETIMES_CONSUMES  ## HOB
   gEfiEventExitBootServicesGuid                      ## CONSUMES            ## Event

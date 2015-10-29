@@ -1,4 +1,4 @@
-/** @file  
+/** @file
   Sample Implementation for Microsoft Authenticode Verification.
 
 Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
@@ -19,7 +19,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // This value should be calculated following MSFT's Authenticode Specification
 //
 GLOBAL_REMOVE_IF_UNREFERENCED UINT8 PeSha1Hash[] = {
-  0x44, 0xFD, 0x4F, 0xA9, 0x17, 0xEE, 0xAC, 0xCF, 0x1F, 0x0B, 0xE3, 0xA1, 0x4D, 0x5B, 0xA6, 0x61, 
+  0x44, 0xFD, 0x4F, 0xA9, 0x17, 0xEE, 0xAC, 0xCF, 0x1F, 0x0B, 0xE3, 0xA1, 0x4D, 0x5B, 0xA6, 0x61,
   0x82, 0x97, 0xC4, 0xB6
   };
 
@@ -33,7 +33,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED UINT8 PeSha256Hash[] = {
 
 //
 // Sample Authenticode Data with SHA-1 hash algorithm.
-// This data should be retrieved from signed PE/COFF image according to SECURITY 
+// This data should be retrieved from signed PE/COFF image according to SECURITY
 // directory in PE/COFF Header.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED UINT8 AuthenticodeWithSha1[] = {
@@ -168,7 +168,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED UINT8 AuthenticodeWithSha1[] = {
   0x1D, 0x06, 0x03, 0x55, 0x1D, 0x0E, 0x04, 0x16, 0x04, 0x14, 0xA1, 0xE6, 0xC3, 0x65, 0xD0, 0xE6,
   0xE8, 0x28, 0x62, 0xC2, 0xF3, 0xC2, 0x23, 0xA6, 0x1C, 0x49, 0x82, 0x0B, 0xD5, 0x53, 0x30, 0x0E,
   0x06, 0x03, 0x55, 0x1D, 0x0F, 0x01, 0x01, 0xFF, 0x04, 0x04, 0x03, 0x02, 0x07, 0x80, 0x30, 0x1F,
-  0x06, 0x03, 0x55, 0x1D, 0x23, 0x04, 0x18, 0x30, 0x16, 0x80, 0x14, 0x90, 0x8B, 0x11, 
+  0x06, 0x03, 0x55, 0x1D, 0x23, 0x04, 0x18, 0x30, 0x16, 0x80, 0x14, 0x90, 0x8B, 0x11,
   0xA5, 0x70, 0xED, 0xE0, 0xF9, 0xA9, 0xC0, 0xAC, 0x08, 0xC7, 0xB5, 0xF4, 0x82, 0xB1, 0x3C, 0xC5,
   0x4A, 0x30, 0x7B, 0x06, 0x03, 0x55, 0x1D, 0x1F, 0x04, 0x74, 0x30, 0x72, 0x30, 0x70, 0xA0, 0x6E,
   0xA0, 0x6C, 0x86, 0x34, 0x68, 0x74, 0x74, 0x70, 0x3A, 0x2F, 0x2F, 0x63, 0x72, 0x6C, 0x2E, 0x6D,
@@ -489,12 +489,12 @@ GLOBAL_REMOVE_IF_UNREFERENCED UINT8 AuthenticodeWithSha1[] = {
   0x2E, 0x39, 0x62, 0xF0, 0x56, 0xE9, 0xD9, 0x5C, 0x85, 0x67, 0x9B, 0x2F, 0xDE, 0xD1, 0x00, 0x45,
   0x0E, 0x99, 0x1F, 0xDF, 0x7E, 0xC9, 0x10, 0x56, 0xC7, 0x00, 0x6D, 0x5F, 0x23, 0x57, 0x12, 0x84,
   0xCD, 0xAC, 0x82, 0xAE, 0x39, 0x52, 0xA5, 0x19, 0x23, 0xA3, 0x6B, 0xE7, 0x49, 0x8F, 0x86, 0x74,
-  0x46, 0x41, 0x2A, 0x0F, 0x3D, 0x29, 0xB7, 0xAE, 0x8C, 0x00  
+  0x46, 0x41, 0x2A, 0x0F, 0x3D, 0x29, 0xB7, 0xAE, 0x8C, 0x00
   };
 
 //
 // Sample Authenticode Data with SHA-256 hash algorithm.
-// This data should be retrieved from signed PE/COFF image according to SECURITY 
+// This data should be retrieved from signed PE/COFF image according to SECURITY
 // directory in PE/COFF Header.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED UINT8 AuthenticodeWithSha256[] = {
@@ -739,8 +739,8 @@ GLOBAL_REMOVE_IF_UNREFERENCED UINT8 AuthenticodeWithSha256[] = {
   };
 
 //
-// Sample root certificate for code signing. 
-// A trusted certificate with self-signing, will be used to construct the certificate chains for 
+// Sample root certificate for code signing.
+// A trusted certificate with self-signing, will be used to construct the certificate chains for
 // authority checking.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED UINT8 TestRootCert1[] = {
@@ -964,10 +964,10 @@ VerifyAuthenticode (
 
   Status = FALSE;
   Print (L"\n- PE/COFF Authenticode (Digested by SHA-1) Verification   ... ");
-    
+
   //
   // Sample Code: Demonstrate how to check the Hash algorithm in PE/COFF Authenticode.
-  //    According to PKCS#7 Definition: 
+  //    According to PKCS#7 Definition:
   //        SignedData ::= SEQUENCE {
   //            version Version,
   //            digestAlgorithms DigestAlgorithmIdentifiers,
@@ -975,10 +975,10 @@ VerifyAuthenticode (
   //            .... }
   //    The DigestAlgorithmIdentifiers can be used to determine the hash algorithm in PE/COFF hashing
   //    This field has the fixed offset (+32) in final Authenticode ASN.1 data.
-  //    
+  //
   if (CompareMem (AuthenticodeWithSha1 + 32, &HashOidValue[8], 5) == 0) {
     //
-    // Verify Authenticode signature. 
+    // Verify Authenticode signature.
     // The PeHash value should be calculated following MSFT's Authenticode Specification.
     //
     Status = AuthenticodeVerify (
@@ -993,7 +993,7 @@ VerifyAuthenticode (
       Print (L"[Pass]");
     } else {
       Print (L"[Fail]");
-    }       
+    }
   } else {
     Print (L"[Invalid Hash]");
   }
@@ -1014,7 +1014,7 @@ VerifyAuthenticode (
       Print (L"[Pass]");
     } else {
       Print (L"[Fail]");
-    }       
+    }
   } else {
     Print (L"[Invalid Hash]");
   }

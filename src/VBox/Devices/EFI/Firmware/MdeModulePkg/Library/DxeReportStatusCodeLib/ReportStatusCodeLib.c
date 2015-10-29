@@ -109,7 +109,7 @@ InternalReportStatusCode (
     //
     return mReportStatusCodeLibStatusCodeProtocol->ReportStatusCode (Type, Value, Instance, (EFI_GUID *)CallerId, Data);
   }
-  
+
   return EFI_UNSUPPORTED;
 }
 
@@ -505,7 +505,7 @@ ReportStatusCodeEx (
   //
   Tpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
   gBS->RestoreTPL (Tpl);
-  
+
   StatusCodeData = NULL;
   if (Tpl <= TPL_NOTIFY) {
     //

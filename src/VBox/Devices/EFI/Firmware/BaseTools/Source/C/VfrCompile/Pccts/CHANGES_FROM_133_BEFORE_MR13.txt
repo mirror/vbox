@@ -2143,7 +2143,7 @@
 
             --------------------------------------------------
             Note: This was incorrect.  The contexts should be
-            ORed together.  This has been fixed.  A more 
+            ORed together.  This has been fixed.  A more
             complete description is available in item #152.
             ---------------------------------------------------
 

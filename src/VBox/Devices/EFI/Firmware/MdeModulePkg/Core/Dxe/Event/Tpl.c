@@ -28,7 +28,7 @@ CoreSetInterruptState (
 {
   EFI_STATUS  Status;
   BOOLEAN     InSmm;
-  
+
   if (gCpu == NULL) {
     return;
   }

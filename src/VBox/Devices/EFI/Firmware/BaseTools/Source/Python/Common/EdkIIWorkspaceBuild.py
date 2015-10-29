@@ -29,7 +29,7 @@ import time as time
 ## PcdClassObject
 #
 # This Class is used for PcdObject
-# 
+#
 # @param object:             Inherited from object class
 # @param Name:               Input value for Name of Pcd, default is None
 # @param Guid:               Input value for Guid of Pcd, default is None
@@ -107,7 +107,7 @@ class PcdClassObject(object):
 ## LibraryClassObject
 #
 # This Class defines LibraryClassObject used in BuildDatabase
-# 
+#
 # @param object:      Inherited from object class
 # @param Name:        Input value for LibraryClassName, default is None
 # @param SupModList:  Input value for SupModList, default is []
@@ -127,7 +127,7 @@ class LibraryClassObject(object):
 ## ModuleBuildClassObject
 #
 # This Class defines ModuleBuildClass
-# 
+#
 # @param object:               Inherited from object class
 #
 # @var DescFilePath:           To store value for DescFilePath
@@ -231,7 +231,7 @@ class ModuleBuildClassObject(object):
 ## PackageBuildClassObject
 #
 # This Class defines PackageBuildClass
-# 
+#
 # @param object:        Inherited from object class
 #
 # @var DescFilePath:    To store value for DescFilePath
@@ -296,7 +296,7 @@ class PackageBuildClassObject(object):
 ## PlatformBuildClassObject
 #
 # This Class defines PlatformBuildClass
-# 
+#
 # @param object:          Inherited from object class
 #
 # @var DescFilePath:      To store value for DescFilePath
@@ -443,7 +443,7 @@ class WorkspaceBuild(object):
         self.InfDatabase             = {}
         self.DecDatabase             = {}
         self.DscDatabase             = {}
-        
+
         self.UnFoundPcdInDsc         = {}
 
         #
@@ -458,7 +458,7 @@ class WorkspaceBuild(object):
         #
         self.Db = Database.Database(DATABASE_PATH)
         self.Db.InitDatabase()
-        
+
         #
         # Get active platform
         #
@@ -585,14 +585,14 @@ class WorkspaceBuild(object):
 
                 #
                 # Libraries
-                # 
+                #
                 for Item in Platform.Libraries.LibraryList:
                     for ItemArch in Item.SupArchList:
                         Library = self.InfDatabase[Item.FilePath]
                         if ItemArch not in Library.Module.Header:
                             continue
                         Pb.Libraries[Library.Module.Header[ItemArch].Name] = Item.FilePath
-                
+
                 #
                 # Pcds
                 #
@@ -716,7 +716,7 @@ class WorkspaceBuild(object):
     ## Generate ModuleDatabase
     #
     # Go through each arch to get all items in InfDatabase to ModuleDatabase
-    #    
+    #
     def GenModuleDatabase(self, InfList = []):
         for Inf in self.InfDatabase.keys():
             Module = self.InfDatabase[Inf].Module
@@ -734,7 +734,7 @@ class WorkspaceBuild(object):
                 Pb.DescFilePath = Inf
                 Pb.BaseName = ModuleHeader.Name
                 if Pb.BaseName == '':
-                    EdkLogger.error("AutoGen", PARSER_ERROR, "The BaseName of module %s is not defined for arch %s" % (Inf, Arch))                
+                    EdkLogger.error("AutoGen", PARSER_ERROR, "The BaseName of module %s is not defined for arch %s" % (Inf, Arch))
                 Pb.Guid = ModuleHeader.Guid
                 Pb.Version = ModuleHeader.Version
                 Pb.ModuleType = ModuleHeader.ModuleType
@@ -944,7 +944,7 @@ class WorkspaceBuild(object):
                         EdkLogger.warn("AutoGen", "Library [%s] is not found" % LibraryName,
                                         ExtraData="\t%s [%s]" % (str(Module), Arch))
                         continue
-    
+
                     LibraryFile = Platform.Libraries[LibraryName]
                     if (LibraryName, ModuleType) not in Module.LibraryClasses:
                         Module.LibraryClasses[LibraryName, ModuleType] = LibraryFile
@@ -1140,21 +1140,21 @@ class WorkspaceBuild(object):
         #
         for InfFile in InfList:
             self.AddToInfDatabase(NormPath(InfFile))
-        
+
         #
         # Generate PlatformDatabase, PackageDatabase and ModuleDatabase
         #
         self.GenPackageDatabase()
         self.GenPlatformDatabase(PcdsSet)
         self.GenModuleDatabase(InfList)
-        
+
         self.Db.Close()
-        
+
         #
         # Update Libraries Of Platform
         #
         self.UpdateLibrariesOfPlatform(InfList)
-        
+
         #
         # Output used Pcds not found in DSC file
         #
@@ -1179,7 +1179,7 @@ class WorkspaceBuild(object):
                     DefaultValue = Pcd.DefaultValue
                     WrnMessage += '%s.%s: Defined in file %s, PcdItemType is Pcds%s, DefaultValue is %s\n' % (Guid, Name, Dec, PcdItemTypeUsed, DefaultValue)
             EdkLogger.verbose(WrnMessage)
-        
+
     ## Create a full path with workspace dir
     #
     # Convert Filename with workspace dir to create a full path
@@ -1370,7 +1370,7 @@ class WorkspaceBuild(object):
         IsFoundInDsc = False
         IsFoundInDec = False
         FoundInDecFile = ''
-        
+
         #
         # Second get information from platform database
         #
@@ -1405,7 +1405,7 @@ class WorkspaceBuild(object):
                 if Pcd.MaxDatumSize != '' and Pcd.MaxDatumSize != None:
                     MaxDatumSize = Pcd.MaxDatumSize
                 SkuInfoList =  Pcd.SkuInfoList
-                
+
                 IsOverrided = True
                 IsFoundInDsc = True
                 break
@@ -1423,7 +1423,7 @@ class WorkspaceBuild(object):
                                     Value = Pcd.DefaultValue
                                 if Pcd.MaxDatumSize != '':
                                     MaxDatumSize = Pcd.MaxDatumSize
-                                    
+
                                 IsFoundInDsc = True
                                 IsOverrided = True
                                 break
@@ -1662,7 +1662,7 @@ if __name__ == '__main__':
     print 'Start!', time.strftime('%H:%M:%S', time.localtime())
     EdkLogger.Initialize()
     EdkLogger.SetLevel(EdkLogger.QUIET)
-    
+
     W = os.getenv('WORKSPACE')
     Ewb = WorkspaceBuild('Nt32Pkg/Nt32Pkg.dsc', W)
     Ewb.GenBuildDatabase({('PcdDevicePathSupportDevicePathFromText', 'gEfiMdeModulePkgTokenSpaceGuid') : 'KKKKKKKKKKKKKKKKKKKKK'}, ['Test.Inf'])

@@ -139,7 +139,7 @@ PeiFspInitV1 (
   FSP_INIT_DONE_PPI    *FspInitDone;
   VOID                 *FspHobList;
   EFI_BOOT_MODE        BootMode;
-  
+
   Status = PeiServicesLocatePpi (
              &gFspInitDonePpiGuid,
              0,
@@ -167,7 +167,7 @@ PeiFspInitV1 (
     ASSERT_EFI_ERROR (Status);
     DEBUG ((DEBUG_INFO, "FspHobList - 0x%x\n", FspHobList));
     FspHobProcess (FspHobList);
-    
+
     //
     // Register EndOfPei Notify for S3 to run FspNotifyPhase
     //

@@ -201,7 +201,7 @@ XhcFreeUrb (
   if ((Xhc == NULL) || (Urb == NULL)) {
     return;
   }
-  
+
   if (Urb->DataMap != NULL) {
     Xhc->PciIo->Unmap (Xhc->PciIo, Urb->DataMap);
   }
@@ -259,22 +259,22 @@ XhcCreateTransferTrb (
   } else {
     EPType  = (UINT8) ((DEVICE_CONTEXT_64 *)OutputContext)->EP[Dci-1].EPType;
   }
-  
+
   if (Urb->Data != NULL) {
     if (((UINT8) (Urb->Ep.Direction)) == EfiUsbDataIn) {
       MapOp = EfiPciIoOperationBusMasterWrite;
     } else {
       MapOp = EfiPciIoOperationBusMasterRead;
     }
-    
+
     Len = Urb->DataLen;
     Status  = Xhc->PciIo->Map (Xhc->PciIo, MapOp, Urb->Data, &Len, &PhyAddr, &Map);
-    
+
     if (EFI_ERROR (Status) || (Len != Urb->DataLen)) {
       DEBUG ((EFI_D_ERROR, "XhcCreateTransferTrb: Fail to map Urb->Data.\n"));
       return EFI_OUT_OF_RESOURCES;
     }
-    
+
     Urb->DataPhy  = (VOID *) ((UINTN) PhyAddr);
     Urb->DataMap  = Map;
   }
@@ -466,7 +466,7 @@ XhcInitSched (
   VOID                  *Dcbaa;
   EFI_PHYSICAL_ADDRESS  DcbaaPhy;
   UINT64                CmdRing;
-  EFI_PHYSICAL_ADDRESS  CmdRingPhy; 
+  EFI_PHYSICAL_ADDRESS  CmdRingPhy;
   UINTN                 Entries;
   UINT32                MaxScratchpadBufs;
   UINT64                *ScratchBuf;
@@ -517,7 +517,7 @@ XhcInitSched (
     ScratchEntryMap = AllocateZeroPool (sizeof (UINTN) * MaxScratchpadBufs);
     ASSERT (ScratchEntryMap != NULL);
     Xhc->ScratchEntryMap = ScratchEntryMap;
-    
+
     //
     // Allocate the buffer to record the host address for each entry
     //
@@ -530,7 +530,7 @@ XhcInitSched (
                Xhc->PciIo,
                EFI_SIZE_TO_PAGES (MaxScratchpadBufs * sizeof (UINT64)),
                Xhc->PageSize,
-               (VOID **) &ScratchBuf, 
+               (VOID **) &ScratchBuf,
                &ScratchPhy,
                &Xhc->ScratchMap
                );
@@ -659,7 +659,7 @@ XhcRecoverHaltedEndpoint (
   }
   Dci = XhcEndpointToDci (Urb->Ep.EpAddr, (UINT8)(Urb->Ep.Direction));
   ASSERT (Dci < 32);
-  
+
   DEBUG ((EFI_D_INFO, "Recovery Halted Slot = %x,Dci = %x\n", SlotId, Dci));
 
   //
@@ -743,9 +743,9 @@ CreateEventRing (
   EventRing->TrbNumber        = EVENT_RING_TRB_NUMBER;
   EventRing->EventRingDequeue = (TRB_TEMPLATE *) EventRing->EventRingSeg0;
   EventRing->EventRingEnqueue = (TRB_TEMPLATE *) EventRing->EventRingSeg0;
-  
+
   DequeuePhy = UsbHcGetPciAddrForHostAddr (Xhc->MemPool, Buf, Size);
-  
+
   //
   // Software maintains an Event Ring Consumer Cycle State (CCS) bit, initializing it to '1'
   // and toggling it every time the Event Ring Dequeue Pointer wraps back to the beginning of the Event Ring.
@@ -904,7 +904,7 @@ XhcFreeSched (
 {
   UINT32                  Index;
   UINT64                  *ScratchEntry;
-  
+
   if (Xhc->ScratchBuf != NULL) {
     ScratchEntry = Xhc->ScratchEntry;
     for (Index = 0; Index < Xhc->MaxScratchpadBufs; Index++) {
@@ -925,14 +925,14 @@ XhcFreeSched (
     UsbHcFreeMem (Xhc->MemPool, Xhc->CmdRing.RingSeg0, sizeof (TRB_TEMPLATE) * CMD_RING_TRB_NUMBER);
     Xhc->CmdRing.RingSeg0 = NULL;
   }
-  
+
   XhcFreeEventRing (Xhc,&Xhc->EventRing);
 
   if (Xhc->DCBAA != NULL) {
     UsbHcFreeMem (Xhc->MemPool, Xhc->DCBAA, (Xhc->MaxSlotsEn + 1) * sizeof(UINT64));
     Xhc->DCBAA = NULL;
   }
-  
+
   //
   // Free memory pool at last
   //
@@ -1081,7 +1081,7 @@ XhcCheckUrbResult (
     if ((EvtTrb->Type != TRB_TYPE_COMMAND_COMPLT_EVENT) && (EvtTrb->Type != TRB_TYPE_TRANS_EVENT)) {
       continue;
     }
-    
+
     //
     // Need convert pci device address to host address
     //
@@ -1096,12 +1096,12 @@ XhcCheckUrbResult (
     //
     if (IsTransferRingTrb (TRBPtr, Urb)) {
       CheckedUrb = Urb;
-    } else if (IsAsyncIntTrb (Xhc, TRBPtr, &AsyncUrb)) {    
+    } else if (IsAsyncIntTrb (Xhc, TRBPtr, &AsyncUrb)) {
       CheckedUrb = AsyncUrb;
     } else {
       continue;
     }
-  
+
     switch (EvtTrb->Completecode) {
       case TRB_COMPLETION_STALL_ERROR:
         CheckedUrb->Result  |= EFI_USB_ERR_STALL;
@@ -1588,7 +1588,7 @@ XhcPollPortStatusChange (
         Status = XhcInitializeDeviceSlot64 (Xhc, ParentRouteChart, Port, RouteChart, Speed);
       }
     }
-  } 
+  }
 
   return Status;
 }
@@ -2980,7 +2980,7 @@ XhcSetConfigCmd64 (
     if (Dci > MaxDci) {
       MaxDci = Dci;
     }
- 
+
     IfDesc = (USB_INTERFACE_DESCRIPTOR *)((UINTN)IfDesc + IfDesc->Length);
   }
 

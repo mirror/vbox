@@ -1,17 +1,17 @@
 /** @file
-Compression routine. The compression algorithm is a mixture of LZ77 and Huffman 
-coding. LZ77 transforms the source data into a sequence of Original Characters 
-and Pointers to repeated strings. This sequence is further divided into Blocks 
+Compression routine. The compression algorithm is a mixture of LZ77 and Huffman
+coding. LZ77 transforms the source data into a sequence of Original Characters
+and Pointers to repeated strings. This sequence is further divided into Blocks
 and Huffman codings are applied to each Block.
-  
+
 Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -367,13 +367,13 @@ PutDword (
 Routine Description:
 
   Put a dword to output stream
-  
+
 Arguments:
 
   Data    - the dword to put
-  
+
 Returns: (VOID)
-  
+
 --*/
 {
   if (mDst < mDstUpperLimit) {
@@ -403,8 +403,8 @@ AllocateMemory (
 Routine Description:
 
   Allocate memory spaces for data structures used in compression process
-  
-Argements: 
+
+Argements:
   VOID
 
 Returns:
@@ -453,7 +453,7 @@ FreeMemory (
 Routine Description:
 
   Called when compression is completed to free memory previously allocated.
-  
+
 Arguments: (VOID)
 
 Returns: (VOID)
@@ -505,7 +505,7 @@ InitSlide (
 Routine Description:
 
   Initialize String Info Log data structures
-  
+
 Arguments: (VOID)
 
 Returns: (VOID)
@@ -545,16 +545,16 @@ Child (
 Routine Description:
 
   Find child node given the parent node and the edge character
-  
+
 Arguments:
 
   NodeQ       - the parent node
   CharC       - the edge character
-  
+
 Returns:
 
-  The child node (NIL if not found)  
-  
+  The child node (NIL if not found)
+
 --*/
 {
   NODE  NodeR;
@@ -583,13 +583,13 @@ MakeChild (
 Routine Description:
 
   Create a new child for a given parent node.
-  
+
 Arguments:
 
   Parent       - the parent node
   CharC   - the edge character
   Child       - the child node
-  
+
 Returns: (VOID)
 
 --*/
@@ -617,11 +617,11 @@ Split (
 Routine Description:
 
   Split a node.
-  
+
 Arguments:
 
   Old     - the node to split
-  
+
 Returns: (VOID)
 
 --*/
@@ -655,7 +655,7 @@ InsertNode (
 Routine Description:
 
   Insert string info for current position into the String Info Log
-  
+
 Arguments: (VOID)
 
 Returns: (VOID)
@@ -788,7 +788,7 @@ Routine Description:
 
   Delete outdated string info. (The Usage of PERC_FLAG
   ensures a clean deletion)
-  
+
 Arguments: (VOID)
 
 Returns: (VOID)
@@ -919,7 +919,7 @@ Routine Description:
 Arguments: (VOID)
 
 Returns:
-  
+
   EFI_SUCCESS           - The compression is successful
   EFI_OUT_0F_RESOURCES  - Not enough memory for compression process
 
@@ -1005,7 +1005,7 @@ CountTFreq (
 Routine Description:
 
   Count the frequencies for the Extra Set
-  
+
 Arguments: (VOID)
 
 Returns: (VOID)
@@ -1064,13 +1064,13 @@ WritePTLen (
 Routine Description:
 
   Outputs the code length array for the Extra Set or the Position Set.
-  
+
 Arguments:
 
   Number       - the number of symbols
   nbit    - the number of bits needed to represent 'n'
   Special - the special symbol that needs to be take care of
-  
+
 Returns: (VOID)
 
 --*/
@@ -1112,7 +1112,7 @@ WriteCLen (
 Routine Description:
 
   Outputs the code length array for Char&Length Set
-  
+
 Arguments: (VOID)
 
 Returns: (VOID)
@@ -1202,11 +1202,11 @@ SendBlock (
 Routine Description:
 
   Huffman code the block and output it.
-  
-Arguments: 
+
+Arguments:
   (VOID)
 
-Returns: 
+Returns:
   (VOID)
 
 --*/
@@ -1413,7 +1413,7 @@ Routine Description:
 Arguments:
 
   Number   - the rightmost n bits of the data is used
-  x   - the data 
+  x   - the data
 
 Returns: (VOID)
 
@@ -1449,7 +1449,7 @@ FreadCrc (
 Routine Description:
 
   Read in source data
-  
+
 Arguments:
 
   Pointer   - the buffer to hold the data
@@ -1458,7 +1458,7 @@ Arguments:
 Returns:
 
   number of bytes actually read
-  
+
 --*/
 {
   INT32 Index;
@@ -1500,11 +1500,11 @@ CountLen (
 Routine Description:
 
   Count the number of each code length for a Huffman tree.
-  
+
 Arguments:
 
   Index   - the top node
-  
+
 Returns: (VOID)
 
 --*/
@@ -1531,11 +1531,11 @@ MakeLen (
 Routine Description:
 
   Create code length array for a Huffman tree
-  
+
 Arguments:
 
   Root   - the root of the tree
-  
+
 Returns:
 
   VOID
@@ -1627,7 +1627,7 @@ MakeCode (
 Routine Description:
 
   Assign code to each symbol based on the code length array
-  
+
 Arguments:
 
   Number     - number of symbols
@@ -1664,18 +1664,18 @@ MakeTree (
 Routine Description:
 
   Generates Huffman codes given a frequency distribution of symbols
-  
+
 Arguments:
 
   NParm    - number of symbols
   FreqParm - frequency of each symbol
   LenParm  - code length for each symbol
   CodeParm - code for each symbol
-  
+
 Returns:
 
   Root of the Huffman tree.
-  
+
 --*/
 {
   INT32 Index;

@@ -1,8 +1,8 @@
 /** @file
   Status code Runtime Protocol as defined in PI Specification VOLUME 2 DXE
 
-  The StatusCode () service is added to the EFI system table and the 
-  EFI_STATUS_CODE_ARCH_PROTOCOL_GUID protocol is registered with a NULL 
+  The StatusCode () service is added to the EFI system table and the
+  EFI_STATUS_CODE_ARCH_PROTOCOL_GUID protocol is registered with a NULL
   pointer.
 
   No CRC of the EFI system table is required, since that is done in the DXE core.
@@ -10,13 +10,13 @@
   This code abstracts Status Code reporting.
 
   Copyright (c) 2006 - 2009, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials                          
-  are licensed and made available under the terms and conditions of the BSD License         
-  which accompanies this distribution.  The full text of the license may be found at        
-  http://opensource.org/licenses/bsd-license.php                                            
+  This program and the accompanying materials
+  are licensed and made available under the terms and conditions of the BSD License
+  which accompanies this distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -56,7 +56,7 @@ EFI_STATUS
 
 ///
 /// Provides the service required to report a status code to the platform firmware.
-/// This protocol must be produced by a runtime DXE driver and may be consumed 
+/// This protocol must be produced by a runtime DXE driver and may be consumed
 /// only by the DXE Foundation.
 ///
 typedef struct _EFI_STATUS_CODE_PROTOCOL {

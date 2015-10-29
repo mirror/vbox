@@ -17,7 +17,7 @@
 #define _SHELL_CONSOLE_WRAPPERS_HEADER_
 
 /**
-  Function to create a EFI_SIMPLE_TEXT_INPUT_PROTOCOL on top of a 
+  Function to create a EFI_SIMPLE_TEXT_INPUT_PROTOCOL on top of a
   SHELL_FILE_HANDLE to support redirecting input from a file.
 
   @param[in]  FileHandleToUse The pointer to the SHELL_FILE_HANDLE to use.
@@ -34,7 +34,7 @@ CreateSimpleTextInOnFile(
   );
 
 /**
-  Function to close a EFI_SIMPLE_TEXT_INPUT_PROTOCOL on top of a 
+  Function to close a EFI_SIMPLE_TEXT_INPUT_PROTOCOL on top of a
   SHELL_FILE_HANDLE to support redirecting input from a file.
 
   @param[in]  SimpleTextIn    The pointer to the SimpleTextIn to close.
@@ -48,7 +48,7 @@ CloseSimpleTextInOnFile(
   );
 
 /**
-  Function to create a EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL on top of a 
+  Function to create a EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL on top of a
   SHELL_FILE_HANDLE to support redirecting output from a file.
 
   @param[in]  FileHandleToUse  The pointer to the SHELL_FILE_HANDLE to use.
@@ -67,7 +67,7 @@ CreateSimpleTextOutOnFile(
   );
 
 /**
-  Function to close a EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL on top of a 
+  Function to close a EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL on top of a
   SHELL_FILE_HANDLE to support redirecting output from a file.
 
   @param[in] SimpleTextOut    The pointer to the SimpleTextOUT to close.

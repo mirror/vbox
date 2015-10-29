@@ -146,7 +146,7 @@ EfiLibGetVariable (
 
   @param VarName           A Null-terminated Unicode string that is
                            the name of the vendor's variable.
-                         
+
   @param VarGuid           A unique identifier for the vendor.
 
   @retval  EFI_SUCCESS           The variable was found and removed
@@ -361,7 +361,7 @@ EfiReallocatePool (
 }
 
 /**
-  Get a string from the Data Hub record based on 
+  Get a string from the Data Hub record based on
   a device path.
 
   @param DevPath         The device Path.

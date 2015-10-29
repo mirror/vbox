@@ -1,6 +1,6 @@
 ## @file
 #  Reset Vector
-#  
+#
 #  This VTF requires build time fixups in order to find the SEC entry point.
 #
 #  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>

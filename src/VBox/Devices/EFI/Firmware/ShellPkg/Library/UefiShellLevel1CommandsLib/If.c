@@ -333,7 +333,7 @@ TestOperation (
 /**
   Process an if statement and determine if its is valid or not.
 
-  @param[in, out] PassingState     Opon entry, the current state.  Upon exit, 
+  @param[in, out] PassingState     Opon entry, the current state.  Upon exit,
                                    the new state.
   @param[in] StartParameterNumber  The number of the first parameter of
                                    this statement.
@@ -344,7 +344,7 @@ TestOperation (
   @param[in] ForceStringCompare    TRUE for all string based, FALSE otherwise.
 
   @retval EFI_INVALID_PARAMETER   A parameter was invalid.
-  @retval EFI_SUCCESS             The operation was successful.                                  
+  @retval EFI_SUCCESS             The operation was successful.
 **/
 EFI_STATUS
 EFIAPI
@@ -641,9 +641,9 @@ ProcessStatement (
   Break up the next part of the if statement (until the next 'and', 'or', or 'then').
 
   @param[in] ParameterNumber      The current parameter number.
-  @param[out] EndParameter        Upon successful return, will point to the 
+  @param[out] EndParameter        Upon successful return, will point to the
                                   parameter to start the next iteration with.
-  @param[out] EndTag              Upon successful return, will point to the 
+  @param[out] EndTag              Upon successful return, will point to the
                                   type that was found at the end of this statement.
 
   @retval TRUE    A valid statement was found.
@@ -847,14 +847,14 @@ ShellCommandRunIf (
   CurrentScriptFile = ShellCommandGetCurrentScriptFile();
   if (!MoveToTag(GetNextNode, L"endif", L"if", NULL, CurrentScriptFile, TRUE, TRUE, FALSE)) {
     ShellPrintHiiEx(
-      -1, 
-      -1, 
-      NULL, 
-      STRING_TOKEN (STR_SYNTAX_NO_MATCHING), 
-      gShellLevel1HiiHandle, 
-      L"EndIf", 
-      L"If", 
-      CurrentScriptFile!=NULL 
+      -1,
+      -1,
+      NULL,
+      STRING_TOKEN (STR_SYNTAX_NO_MATCHING),
+      gShellLevel1HiiHandle,
+      L"EndIf",
+      L"If",
+      CurrentScriptFile!=NULL
         && CurrentScriptFile->CurrentCommand!=NULL
         ? CurrentScriptFile->CurrentCommand->Line:0);
     return (SHELL_DEVICE_ERROR);
@@ -932,14 +932,14 @@ ShellCommandRunIf (
       if (!BuildNextStatement(CurrentParameter, &EndParameter, &Ending)) {
         CurrentScriptFile = ShellCommandGetCurrentScriptFile();
         ShellPrintHiiEx(
-          -1, 
-          -1, 
-          NULL, 
-          STRING_TOKEN (STR_SYNTAX_NO_MATCHING), 
-          gShellLevel1HiiHandle, 
-          L"Then", 
+          -1,
+          -1,
+          NULL,
+          STRING_TOKEN (STR_SYNTAX_NO_MATCHING),
+          gShellLevel1HiiHandle,
+          L"Then",
           L"If",
-          CurrentScriptFile!=NULL 
+          CurrentScriptFile!=NULL
             && CurrentScriptFile->CurrentCommand!=NULL
             ? CurrentScriptFile->CurrentCommand->Line:0);
         ShellStatus = SHELL_INVALID_PARAMETER;
@@ -1009,28 +1009,28 @@ ShellCommandRunElse (
 
   if (!MoveToTag(GetPreviousNode, L"if", L"endif", NULL, CurrentScriptFile, FALSE, TRUE, FALSE)) {
     ShellPrintHiiEx(
-      -1, 
-      -1, 
-      NULL, 
-      STRING_TOKEN (STR_SYNTAX_NO_MATCHING), 
-      gShellLevel1HiiHandle, 
-      L"If", 
-      L"Else", 
-      CurrentScriptFile!=NULL 
+      -1,
+      -1,
+      NULL,
+      STRING_TOKEN (STR_SYNTAX_NO_MATCHING),
+      gShellLevel1HiiHandle,
+      L"If",
+      L"Else",
+      CurrentScriptFile!=NULL
         && CurrentScriptFile->CurrentCommand!=NULL
         ? CurrentScriptFile->CurrentCommand->Line:0);
     return (SHELL_DEVICE_ERROR);
   }
   if (!MoveToTag(GetPreviousNode, L"if", L"else", NULL, CurrentScriptFile, FALSE, TRUE, FALSE)) {
     ShellPrintHiiEx(
-      -1, 
-      -1, 
-      NULL, 
-      STRING_TOKEN (STR_SYNTAX_NO_MATCHING), 
-      gShellLevel1HiiHandle, 
-      L"If", 
-      L"Else", 
-      CurrentScriptFile!=NULL 
+      -1,
+      -1,
+      NULL,
+      STRING_TOKEN (STR_SYNTAX_NO_MATCHING),
+      gShellLevel1HiiHandle,
+      L"If",
+      L"Else",
+      CurrentScriptFile!=NULL
         && CurrentScriptFile->CurrentCommand!=NULL
         ? CurrentScriptFile->CurrentCommand->Line:0);
     return (SHELL_DEVICE_ERROR);
@@ -1038,14 +1038,14 @@ ShellCommandRunElse (
 
   if (!MoveToTag(GetNextNode, L"endif", L"if", NULL, CurrentScriptFile, FALSE, FALSE, FALSE)) {
     ShellPrintHiiEx(
-      -1, 
-      -1, 
-      NULL, 
-      STRING_TOKEN (STR_SYNTAX_NO_MATCHING), 
-      gShellLevel1HiiHandle, 
-      L"EndIf", 
-      "Else", 
-      CurrentScriptFile!=NULL 
+      -1,
+      -1,
+      NULL,
+      STRING_TOKEN (STR_SYNTAX_NO_MATCHING),
+      gShellLevel1HiiHandle,
+      L"EndIf",
+      "Else",
+      CurrentScriptFile!=NULL
         && CurrentScriptFile->CurrentCommand!=NULL
         ? CurrentScriptFile->CurrentCommand->Line:0);
     return (SHELL_DEVICE_ERROR);
@@ -1083,14 +1083,14 @@ ShellCommandRunEndIf (
   CurrentScriptFile = ShellCommandGetCurrentScriptFile();
   if (!MoveToTag(GetPreviousNode, L"if", L"endif", NULL, CurrentScriptFile, FALSE, TRUE, FALSE)) {
     ShellPrintHiiEx(
-      -1, 
-      -1, 
-      NULL, 
-      STRING_TOKEN (STR_SYNTAX_NO_MATCHING), 
-      gShellLevel1HiiHandle, 
-      L"If", 
-      L"EndIf", 
-      CurrentScriptFile!=NULL 
+      -1,
+      -1,
+      NULL,
+      STRING_TOKEN (STR_SYNTAX_NO_MATCHING),
+      gShellLevel1HiiHandle,
+      L"If",
+      L"EndIf",
+      CurrentScriptFile!=NULL
         && CurrentScriptFile->CurrentCommand!=NULL
         ? CurrentScriptFile->CurrentCommand->Line:0);
     return (SHELL_DEVICE_ERROR);

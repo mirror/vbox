@@ -27,12 +27,12 @@
 UINT64
 InternalGetPerformanceCounterFrequency (
   VOID
-  ) 
+  )
 {
   BOOLEAN  InterruptState;
   UINT64   Count;
   UINT64   Frequency;
-  
+
   InterruptState = SaveAndDisableInterrupts ();
   Count = GetPerformanceCounter ();
   MicroSecondDelay (100);

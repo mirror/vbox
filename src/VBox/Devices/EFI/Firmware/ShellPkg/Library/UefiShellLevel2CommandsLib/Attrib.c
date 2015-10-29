@@ -153,7 +153,7 @@ ShellCommandRunAttrib (
                 FileNode->Info->Attribute&EFI_FILE_READ_ONLY? L'R':L' ',
                 FileNode->FileName
                );
-               
+
               if (ShellGetExecutionBreakFlag()) {
                   ShellStatus = SHELL_ABORTED;
                   break;

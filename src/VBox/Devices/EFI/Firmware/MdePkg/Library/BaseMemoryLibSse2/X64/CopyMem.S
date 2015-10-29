@@ -46,8 +46,8 @@ ASM_PFX(InternalMemCopyMem):
     jae     L0                          # Copy forward if Source > Destination
     cmpq    %rdi, %r9                   # Overlapped?
     jae     L_CopyBackward              # Copy backward if overlapped
-L0:            
-    xorq    %rcx, %rcx                    
+L0:
+    xorq    %rcx, %rcx
     subq    %rdi, %rcx                  # rcx <- -rdi
     andq    $15, %rcx                   # rcx + rsi should be 16 bytes aligned
     jz      L1                          # skip if rcx == 0

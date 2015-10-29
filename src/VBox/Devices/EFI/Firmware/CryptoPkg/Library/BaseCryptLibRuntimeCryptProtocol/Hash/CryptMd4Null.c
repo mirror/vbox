@@ -103,7 +103,7 @@ Md4Update (
 /**
   Completes computation of the MD4 digest value.
 
-  Return FALSE to indicate this interface is not supported.  
+  Return FALSE to indicate this interface is not supported.
 
   @param[in, out]  Md4Context  Pointer to the MD4 context.
   @param[out]      HashValue   Pointer to a buffer that receives the MD4 digest

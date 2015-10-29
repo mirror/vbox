@@ -119,5 +119,5 @@ __END_DECLS
 #endif /* _LOCORE */
 
 #endif /* _ARM_FRAME_H_ */
-  
+
 /* End of frame.h */

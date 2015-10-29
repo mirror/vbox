@@ -3,12 +3,12 @@
   internal structure and functions used by Variable modules.
 
 Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -228,7 +228,7 @@ DataSizeOfVariable (
 
   @param[in] Attributes         Variable attributes for Variable entries.
   @param ...                    The variable argument list with type VARIABLE_ENTRY_CONSISTENCY *.
-                                A NULL terminates the list. The VariableSize of 
+                                A NULL terminates the list. The VariableSize of
                                 VARIABLE_ENTRY_CONSISTENCY is the variable data size as input.
                                 It will be changed to variable total size as output.
 
@@ -242,7 +242,7 @@ CheckRemainingSpaceForConsistency (
   IN UINT32                     Attributes,
   ...
   );
-  
+
 /**
   Update the variable region with Variable information. If EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS is set,
   index of associated public key is needed.
@@ -272,13 +272,13 @@ UpdateVariable (
   IN      UINT32          KeyIndex  OPTIONAL,
   IN      UINT64          MonotonicCount  OPTIONAL,
   IN OUT  VARIABLE_POINTER_TRACK *Variable,
-  IN      EFI_TIME        *TimeStamp  OPTIONAL  
+  IN      EFI_TIME        *TimeStamp  OPTIONAL
   );
 
 
 /**
   Return TRUE if ExitBootServices () has been called.
-  
+
   @retval TRUE If ExitBootServices () has been called.
 **/
 BOOLEAN
@@ -289,8 +289,8 @@ AtRuntime (
 /**
   Initializes a basic mutual exclusion lock.
 
-  This function initializes a basic mutual exclusion lock to the released state 
-  and returns the lock.  Each lock provides mutual exclusion access at its task 
+  This function initializes a basic mutual exclusion lock to the released state
+  and returns the lock.  Each lock provides mutual exclusion access at its task
   priority level.  Since there is no preemption or multiprocessor support in EFI,
   acquiring the lock only consists of raising to the locks TPL.
   If Lock is NULL, then ASSERT().
@@ -308,7 +308,7 @@ InitializeLock (
   IN EFI_TPL        Priority
   );
 
-  
+
 /**
   Acquires lock only at boot time. Simply returns at runtime.
 
@@ -342,7 +342,7 @@ AcquireLockOnlyAtBootTime (
 VOID
 ReleaseLockOnlyAtBootTime (
   IN EFI_LOCK  *Lock
-  );  
+  );
 
 /**
   Retrive the FVB protocol interface by HANDLE.
@@ -354,7 +354,7 @@ ReleaseLockOnlyAtBootTime (
   @retval EFI_SUCCESS           The interface information for the specified protocol was returned.
   @retval EFI_UNSUPPORTED       The device does not support the FVB protocol.
   @retval EFI_INVALID_PARAMETER FvBlockHandle is not a valid EFI_HANDLE or FvBlock is NULL.
-  
+
 **/
 EFI_STATUS
 GetFvbByHandle (
@@ -380,7 +380,7 @@ GetSarProtocol (
 
 /**
   Function returns an array of handles that support the FVB protocol
-  in a buffer allocated from pool. 
+  in a buffer allocated from pool.
 
   @param[out]  NumberHandles    The number of handles returned in Buffer.
   @param[out]  Buffer           A pointer to the buffer to return the requested
@@ -391,7 +391,7 @@ GetSarProtocol (
   @retval EFI_NOT_FOUND         No FVB handle was found.
   @retval EFI_OUT_OF_RESOURCES  There is not enough pool memory to store the matching results.
   @retval EFI_INVALID_PARAMETER NumberHandles is NULL or Buffer is NULL.
-  
+
 **/
 EFI_STATUS
 GetFvbCountAndBuffer (
@@ -427,7 +427,7 @@ VariableCommonInitialize (
   @param[in]      NewVariable             Pointer to new variable.
   @param[in]      NewVariableSize         New variable size.
   @param[in]      ReclaimPubKeyStore      Reclaim for public key database or not.
-  
+
   @return EFI_SUCCESS                  Reclaim operation has finished successfully.
   @return EFI_OUT_OF_RESOURCES         No enough memory resources or variable space.
   @return EFI_DEVICE_ERROR             The public key database doesn't exist.
@@ -447,12 +447,12 @@ Reclaim (
 
 /**
   This function reclaims variable storage if free size is below the threshold.
-  
+
 **/
 VOID
 ReclaimForOS(
   VOID
-  );  
+  );
 
 
 /**
@@ -466,7 +466,7 @@ EFI_STATUS
 VariableWriteServiceInitialize (
   VOID
   );
-  
+
 /**
   Retrive the SMM Fault Tolerent Write protocol interface.
 
@@ -511,7 +511,7 @@ GetFvbInfoByAddress (
   @param DataSize                   Size of Data found. If size is less than the
                                     data, this value contains the required size.
   @param Data                       Data pointer.
-                      
+
   @return EFI_INVALID_PARAMETER     Invalid parameter.
   @return EFI_SUCCESS               Find the specified variable.
   @return EFI_NOT_FOUND             Not found.
@@ -644,7 +644,7 @@ VariableServiceQueryVariableInfo (
   OUT UINT64                 *MaximumVariableStorageSize,
   OUT UINT64                 *RemainingVariableStorageSize,
   OUT UINT64                 *MaximumVariableSize
-  );  
+  );
 
 /**
   Mark a variable that will become read-only after leaving the DXE phase of execution.

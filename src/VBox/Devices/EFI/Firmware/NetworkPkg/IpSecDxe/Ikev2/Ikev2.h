@@ -231,7 +231,7 @@ typedef struct {
   UINT8 *Data;
 } PRF_DATA_FRAGMENT;
 
-typedef 
+typedef
 IKE_PACKET *
 (*IKEV2_PACKET_GENERATOR) (
   IN UINT8                             *SaSession,

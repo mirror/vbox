@@ -66,7 +66,7 @@ typedef struct {
 
 /**
   Send NV DefineSpace command to TPM1.2.
-  
+
   @param PubInfo           The public parameters of the NV area.
   @param EncAuth           The encrypted AuthData, only valid if the attributes require subsequent authorization.
 
@@ -196,7 +196,7 @@ Tpm12NvReadValue (
 
 /**
   Send NV WriteValue command to TPM1.2.
-  
+
   @param NvIndex           The index of the area to set.
   @param Offset            The offset into the NV Area.
   @param DataSize          The size of the data parameter.

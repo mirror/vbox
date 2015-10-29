@@ -20,7 +20,7 @@
 #  Management Interface (IPMI).The alternative to a data-hub-like architecture is to require all
 #  drivers to be aware of all reporting formats.
 #  For more information, please ref http://www.intel.com/technology/framework/
-#  
+#
 #  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials

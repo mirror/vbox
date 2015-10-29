@@ -215,7 +215,7 @@ ReportStatusCodeWithDevicePath (
   )
 {
   ASSERT (DevicePath != NULL);
-  
+
   return EFI_SUCCESS;
 }
 

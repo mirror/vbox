@@ -120,9 +120,9 @@ GetStringNameFromHandle(
 
 /**
   Get best support language for this driver.
-  
-  First base on the user input language  to search, second base on the current 
-  platform used language to search, third get the first language from the 
+
+  First base on the user input language  to search, second base on the current
+  platform used language to search, third get the first language from the
   support language list. The caller need to free the buffer of the best language.
 
   @param[in] SupportedLanguages      The support languages for this driver.

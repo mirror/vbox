@@ -3,12 +3,12 @@
   NOTE: This module is only for reference only, each platform should have its own setup page.
 
 Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -44,7 +44,7 @@ HII_VENDOR_DEVICE_PATH          mTrEEHiiVendorDevicePath = {
   {
     END_DEVICE_PATH_TYPE,
     END_ENTIRE_DEVICE_PATH_SUBTYPE,
-    { 
+    {
       (UINT8) (END_DEVICE_PATH_LENGTH),
       (UINT8) ((END_DEVICE_PATH_LENGTH) >> 8)
     }
@@ -125,8 +125,8 @@ SaveTrEEPpRequest (
                   );
   if (EFI_ERROR (Status)) {
     return Status;
-  }                
-                  
+  }
+
   PpData.PPRequest = PpRequest;
   Status = gRT->SetVariable (
                   TREE_PHYSICAL_PRESENCE_VARIABLE,
@@ -211,7 +211,7 @@ TrEECallback (
   if ((This == NULL) || (Value == NULL) || (ActionRequest == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if (Action == EFI_BROWSER_ACTION_CHANGED) {
     if (QuestionId == KEY_TPM_DEVICE) {
       return EFI_SUCCESS;
@@ -278,11 +278,11 @@ InstallTrEEConfigForm (
            &gEfiHiiConfigAccessProtocolGuid,
            ConfigAccess,
            NULL
-           );  
+           );
 
     return EFI_OUT_OF_RESOURCES;
   }
-  
+
   PrivateData->HiiHandle = HiiHandle;
 
   //
@@ -303,7 +303,7 @@ InstallTrEEConfigForm (
     break;
   }
 
-  return EFI_SUCCESS;  
+  return EFI_SUCCESS;
 }
 
 /**
@@ -339,6 +339,6 @@ UninstallTrEEConfigForm (
            );
     PrivateData->DriverHandle = NULL;
   }
-  
+
   FreePool (PrivateData);
 }

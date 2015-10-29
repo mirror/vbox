@@ -1,4 +1,4 @@
-/** @file  
+/** @file
   Application for Block Cipher Primitives Validation.
 
 Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
@@ -41,7 +41,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED CONST UINT8 TdesCbcData[] = {
   };
 
 GLOBAL_REMOVE_IF_UNREFERENCED CONST UINT8 TdesCbcKey[] = {
-  0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 
+  0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
   0xf1, 0xe0, 0xd3, 0xc2, 0xb5, 0xa4, 0x97, 0x86,
   0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10
   };
@@ -222,7 +222,7 @@ ValidateCryptBlockCipher (
   if (CompareMem (Encrypt, TdesEcb2Cipher, 8) != 0) {
     Print (L"[Fail]");
     return EFI_ABORTED;
-  } 
+  }
 
   if (CompareMem (Decrypt, TdesEcbData, 8) != 0) {
     Print (L"[Fail]");
@@ -271,7 +271,7 @@ ValidateCryptBlockCipher (
 
   CtxSize   = AesGetContextSize ();
   CipherCtx = AllocatePool (CtxSize);
-  
+
   Print (L"\n- AES Validation:  ");
 
   Print (L"ECB-128... ");
@@ -303,7 +303,7 @@ ValidateCryptBlockCipher (
   if (CompareMem (Encrypt, Aes128EcbCipher, sizeof (Aes128EcbCipher)) != 0) {
     Print (L"[Fail]");
     return EFI_ABORTED;
-  } 
+  }
 
   if (CompareMem (Decrypt, Aes128EcbData, sizeof (Aes128EcbData)) != 0) {
     Print (L"[Fail]");

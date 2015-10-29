@@ -337,7 +337,7 @@ DpcDriverEntryPoint (
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &mDpcHandle,
-                  &gEfiDpcProtocolGuid, 
+                  &gEfiDpcProtocolGuid,
                   &mDpc,
                   NULL
                   );

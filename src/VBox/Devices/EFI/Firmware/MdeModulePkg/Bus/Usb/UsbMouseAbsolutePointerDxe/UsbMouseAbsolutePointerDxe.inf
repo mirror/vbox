@@ -36,7 +36,7 @@
 #
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
 #
-#  DRIVER_BINDING                =  gUsbMouseAbsolutePointerDriverBinding                        
+#  DRIVER_BINDING                =  gUsbMouseAbsolutePointerDriverBinding
 #  COMPONENT_NAME                =  gUsbMouseAbsolutePointerComponentName
 #  COMPONENT_NAME2               =  gUsbMouseAbsolutePointerComponentName2
 #

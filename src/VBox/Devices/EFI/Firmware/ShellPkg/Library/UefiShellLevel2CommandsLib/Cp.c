@@ -242,7 +242,7 @@ CopySingleFile(
     }
     SHELL_FREE_NON_NULL(DestVolumeInfo);
   }
-  
+
   //
   // close files
   //
@@ -318,7 +318,7 @@ ValidateAndCopyFiles(
   ASSERT(FileList != NULL);
   ASSERT(DestDir  != NULL);
 
-  
+
   Status = ShellLevel2StripQuotes (DestDir, &CleanFilePathStr);
   if (EFI_ERROR (Status)) {
     if (Status == EFI_OUT_OF_RESOURCES) {
@@ -327,7 +327,7 @@ ValidateAndCopyFiles(
       return SHELL_INVALID_PARAMETER;
     }
   }
-  
+
   ASSERT (CleanFilePathStr != NULL);
 
   //
@@ -440,7 +440,7 @@ ValidateAndCopyFiles(
       //
       // we have multiple files or a directory in the DestDir
       //
-      
+
       //
       // Check for leading slash
       //
@@ -489,7 +489,7 @@ ValidateAndCopyFiles(
         StrnCat(DestPath, Node->FileName, PathSize/sizeof(CHAR16) - StrLen(DestPath) -1);
       }
     }
-    
+
     //
     // Make sure the path exists
     //
@@ -552,7 +552,7 @@ ValidateAndCopyFiles(
 }
 
 /**
-  Validate and if successful copy all the files from the list into 
+  Validate and if successful copy all the files from the list into
   destination directory.
 
   @param[in] FileList       The list of files to copy.

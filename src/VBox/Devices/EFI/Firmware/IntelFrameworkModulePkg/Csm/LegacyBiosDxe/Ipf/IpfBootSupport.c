@@ -248,7 +248,7 @@ RelocateImageUnder4GIfNeeded (
 
       //
       // Create a new handle with gEfiCallerIdGuid to be used as the ImageHandle fore the reloaded image
-      // 
+      //
       NewImageHandle = NULL;
       Status = gBS->InstallProtocolInterface (
                       &NewImageHandle,

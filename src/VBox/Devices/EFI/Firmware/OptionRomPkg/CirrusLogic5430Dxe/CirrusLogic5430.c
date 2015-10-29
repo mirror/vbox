@@ -169,10 +169,10 @@ CirrusLogic5430ControllerDriverSupported (
     //
     // See if this is a 5430 or a 5446 PCI controller
     //
-    if (Pci.Hdr.DeviceId == CIRRUS_LOGIC_5430_DEVICE_ID || 
+    if (Pci.Hdr.DeviceId == CIRRUS_LOGIC_5430_DEVICE_ID ||
         Pci.Hdr.DeviceId == CIRRUS_LOGIC_5430_ALTERNATE_DEVICE_ID ||
         Pci.Hdr.DeviceId == CIRRUS_LOGIC_5446_DEVICE_ID) {
-        
+
       Status = EFI_SUCCESS;
       //
       // If this is an Intel 945 graphics controller,
@@ -181,7 +181,7 @@ CirrusLogic5430ControllerDriverSupported (
       if (RemainingDevicePath != NULL) {
         Node = (EFI_DEV_PATH *) RemainingDevicePath;
         //
-        // Check if RemainingDevicePath is the End of Device Path Node, 
+        // Check if RemainingDevicePath is the End of Device Path Node,
         // if yes, return EFI_SUCCESS
         //
         if (!IsDevicePathEnd (Node)) {
@@ -283,7 +283,7 @@ CirrusLogic5430ControllerDriverStart (
   if (Supports == 0 || Supports == (EFI_PCI_IO_ATTRIBUTE_VGA_IO | EFI_PCI_IO_ATTRIBUTE_VGA_IO_16)) {
     Status = EFI_UNSUPPORTED;
     goto Error;
-  }  
+  }
 
   //
   // Save original PCI attributes
@@ -339,18 +339,18 @@ CirrusLogic5430ControllerDriverStart (
                                           );
     } else if (!IsDevicePathEnd (RemainingDevicePath)) {
       //
-      // If RemainingDevicePath isn't the End of Device Path Node, 
+      // If RemainingDevicePath isn't the End of Device Path Node,
       // only scan the specified device by RemainingDevicePath
       //
       Private->GopDevicePath = AppendDevicePathNode (ParentDevicePath, RemainingDevicePath);
     } else {
       //
-      // If RemainingDevicePath is the End of Device Path Node, 
+      // If RemainingDevicePath is the End of Device Path Node,
       // don't create child device and return EFI_SUCCESS
       //
       Private->GopDevicePath = NULL;
     }
-      
+
     if (Private->GopDevicePath != NULL) {
       //
       // Creat child handle and device path protocol firstly
@@ -393,18 +393,18 @@ CirrusLogic5430ControllerDriverStart (
   } else if (FeaturePcdGet (PcdSupportGop)) {
     if (Private->GopDevicePath == NULL) {
       //
-      // If RemainingDevicePath is the End of Device Path Node, 
+      // If RemainingDevicePath is the End of Device Path Node,
       // don't create child device and return EFI_SUCCESS
       //
       Status = EFI_SUCCESS;
     } else {
-  
+
       //
       // Start the GOP software stack.
       //
       Status = CirrusLogic5430GraphicsOutputConstructor (Private);
       ASSERT_EFI_ERROR (Status);
-  
+
       Status = gBS->InstallMultipleProtocolInterfaces (
                       &Private->Handle,
                       &gEfiGraphicsOutputProtocolGuid,

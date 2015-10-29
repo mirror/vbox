@@ -102,7 +102,7 @@ ShellCommandRunCd (
           CopyMem(Walker, Walker+1, StrSize(Walker) - sizeof(Walker[0]));
         }
       }
-      
+
       if (Param1Copy != NULL) {
         Param1Copy = PathCleanUpDirectories(Param1Copy);
       }

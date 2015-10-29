@@ -341,7 +341,7 @@ Tcp4DetachPcb (
          ProtoData->TcpService->IpIo->Image,
          Sk->SockHandle
          );
-  
+
   IpIoRemoveIp (ProtoData->TcpService->IpIo, Tcb->IpInfo);
 
   FreePool (Tcb);

@@ -54,7 +54,7 @@ class MetaFileTable(Table):
             Result = self.Cur.execute("select ID from %s where ID<0" % (self.Table)).fetchall()
             if not Result:
                 # update the timestamp in database
-                self._FileIndexTable.SetFileTimeStamp(self.IdBase, TimeStamp)                
+                self._FileIndexTable.SetFileTimeStamp(self.IdBase, TimeStamp)
                 return False
 
             if TimeStamp != self._FileIndexTable.GetFileTimeStamp(self.IdBase):
@@ -111,28 +111,28 @@ class ModuleTable(MetaFileTable):
                BelongsToItem=-1, StartLine=-1, StartColumn=-1, EndLine=-1, EndColumn=-1, Enabled=0):
         (Value1, Value2, Value3, Scope1, Scope2) = ConvertToSqlString((Value1, Value2, Value3, Scope1, Scope2))
         return Table.Insert(
-                        self, 
-                        Model, 
-                        Value1, 
-                        Value2, 
-                        Value3, 
-                        Scope1, 
+                        self,
+                        Model,
+                        Value1,
+                        Value2,
+                        Value3,
+                        Scope1,
                         Scope2,
-                        BelongsToItem, 
-                        StartLine, 
-                        StartColumn, 
-                        EndLine, 
-                        EndColumn, 
+                        BelongsToItem,
+                        StartLine,
+                        StartColumn,
+                        EndLine,
+                        EndColumn,
                         Enabled
                         )
 
     ## Query table
     #
-    # @param    Model:      The Model of Record 
-    # @param    Arch:       The Arch attribute of Record 
-    # @param    Platform    The Platform attribute of Record 
+    # @param    Model:      The Model of Record
+    # @param    Arch:       The Arch attribute of Record
+    # @param    Platform    The Platform attribute of Record
     #
-    # @retval:       A recordSet of all found records 
+    # @retval:       A recordSet of all found records
     #
     def Query(self, Model, Arch=None, Platform=None, BelongsToItem=None):
         ConditionString = "Model=%s AND Enabled>=0" % Model
@@ -193,27 +193,27 @@ class PackageTable(MetaFileTable):
                BelongsToItem=-1, StartLine=-1, StartColumn=-1, EndLine=-1, EndColumn=-1, Enabled=0):
         (Value1, Value2, Value3, Scope1, Scope2) = ConvertToSqlString((Value1, Value2, Value3, Scope1, Scope2))
         return Table.Insert(
-                        self, 
-                        Model, 
-                        Value1, 
-                        Value2, 
-                        Value3, 
-                        Scope1, 
+                        self,
+                        Model,
+                        Value1,
+                        Value2,
+                        Value3,
+                        Scope1,
                         Scope2,
-                        BelongsToItem, 
-                        StartLine, 
-                        StartColumn, 
-                        EndLine, 
-                        EndColumn, 
+                        BelongsToItem,
+                        StartLine,
+                        StartColumn,
+                        EndLine,
+                        EndColumn,
                         Enabled
                         )
 
     ## Query table
     #
-    # @param    Model:  The Model of Record 
-    # @param    Arch:   The Arch attribute of Record 
+    # @param    Model:  The Model of Record
+    # @param    Arch:   The Arch attribute of Record
     #
-    # @retval:       A recordSet of all found records 
+    # @retval:       A recordSet of all found records
     #
     def Query(self, Model, Arch=None):
         ConditionString = "Model=%s AND Enabled>=0" % Model
@@ -268,35 +268,35 @@ class PlatformTable(MetaFileTable):
     # @param EndColumn:      EndColumn of a Dsc item
     # @param Enabled:        If this item enabled
     #
-    def Insert(self, Model, Value1, Value2, Value3, Scope1='COMMON', Scope2='COMMON', BelongsToItem=-1, 
+    def Insert(self, Model, Value1, Value2, Value3, Scope1='COMMON', Scope2='COMMON', BelongsToItem=-1,
                FromItem=-1, StartLine=-1, StartColumn=-1, EndLine=-1, EndColumn=-1, Enabled=1):
         (Value1, Value2, Value3, Scope1, Scope2) = ConvertToSqlString((Value1, Value2, Value3, Scope1, Scope2))
         return Table.Insert(
-                        self, 
-                        Model, 
-                        Value1, 
-                        Value2, 
-                        Value3, 
-                        Scope1, 
+                        self,
+                        Model,
+                        Value1,
+                        Value2,
+                        Value3,
+                        Scope1,
                         Scope2,
-                        BelongsToItem, 
+                        BelongsToItem,
                         FromItem,
-                        StartLine, 
-                        StartColumn, 
-                        EndLine, 
-                        EndColumn, 
+                        StartLine,
+                        StartColumn,
+                        EndLine,
+                        EndColumn,
                         Enabled
                         )
 
     ## Query table
     #
-    # @param Model:          The Model of Record 
+    # @param Model:          The Model of Record
     # @param Scope1:         Arch of a Dsc item
     # @param Scope2:         Module type of a Dsc item
     # @param BelongsToItem:  The item belongs to which another item
     # @param FromItem:       The item belongs to which dsc file
     #
-    # @retval:       A recordSet of all found records 
+    # @retval:       A recordSet of all found records
     #
     def Query(self, Model, Scope1=None, Scope2=None, BelongsToItem=None, FromItem=None):
         ConditionString = "Model=%s AND Enabled>0" % Model

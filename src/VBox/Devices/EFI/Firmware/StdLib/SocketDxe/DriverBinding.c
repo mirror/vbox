@@ -19,7 +19,7 @@
   The ::DriverSupported routine selects network adapters that the
   socket layer is not using.  This determination by the lack of the
   tag GUID associated with the network protocol in the
-  ::cEslSocketBinding array.  The selected network adapters are 
+  ::cEslSocketBinding array.  The selected network adapters are
   passed to the ::DriverStart routine.
 
   The ::DriverStart routine calls the ::EslServiceConnect routine
@@ -190,7 +190,7 @@ DriverStart (
   is being unloaded.  This routine should also called by the UEFI
   driver framework when a network adapter is being unloaded from
   the system.
-  
+
   @param [in] pThis                Protocol instance pointer.
   @param [in] Controller           Handle of device to stop driver on.
   @param [in] NumberOfChildren     How many children need to be stopped.
@@ -211,7 +211,7 @@ DriverStop (
   )
 {
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
 
   //

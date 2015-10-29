@@ -131,7 +131,7 @@ static const struct afd {
 	int a_socklen;
 	int a_off;
 	const char *a_addrany;
-	const char *a_loopback;	
+	const char *a_loopback;
 	int a_scoped;
 } afdl [] = {
 #ifdef INET6
@@ -302,7 +302,7 @@ do { 								\
 
 #define MATCH_FAMILY(x, y, w) 						\
 	((x) == (y) || (/*CONSTCOND*/(w) && ((x) == PF_UNSPEC || 	\
-	    (y) == PF_UNSPEC)))	
+	    (y) == PF_UNSPEC)))
 #define MATCH(x, y, w) 							\
 	((x) == (y) || (/*CONSTCOND*/(w) && ((x) == ANY || (y) == ANY)))
 
@@ -381,7 +381,7 @@ getaddrinfo(const char *hostname, const char *servname,
 	pai->ai_canonname = NULL;
 	pai->ai_addr = NULL;
 	pai->ai_next = NULL;
-	
+
 	if (hostname == NULL && servname == NULL)
 		return EAI_NONAME;
 	if (hints) {

@@ -675,7 +675,7 @@ FvcWrite (
   UINTN                               RemainingLength;
   UINTN                               WriteLength;
   UINT8                               *TmpBuffer;
-  
+
   LOffset = 0;
   RemainingLength = CalculateRemainingLength (FvDevice, Offset, &Lba, &LOffset);
   if ((UINTN) (*NumBytes) > RemainingLength) {
@@ -1428,8 +1428,8 @@ FvWriteFile (
 
     if (FileData[Index1].Type == EFI_FV_FILETYPE_FFS_PAD) {
       //
-      // According to PI spec, on EFI_FV_FILETYPE_FFS_PAD: 
-      // "Standard firmware file system services will not return the handle of any pad files, 
+      // According to PI spec, on EFI_FV_FILETYPE_FFS_PAD:
+      // "Standard firmware file system services will not return the handle of any pad files,
       // nor will they permit explicit creation of such files."
       //
       return EFI_INVALID_PARAMETER;

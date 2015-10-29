@@ -3,7 +3,7 @@
 #
 #  This library instance is no longer used and module using this library
 #  class should update to directly locate EFI_PEI_RECOVERY_MODULE_PPI defined
-#  in PI 1.2 specification. 
+#  in PI 1.2 specification.
 #
 #  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 #
@@ -46,5 +46,5 @@
 
 [Ppis]
   gEfiPeiRecoveryModulePpiGuid            ## CONSUMES
-  
+
   

@@ -29,7 +29,7 @@
 #
 #  VALID_ARCHITECTURES           = IPF
 #
-#  VIRTUAL_ADDRESS_MAP_CALLBACK  =  VariableClassAddressChangeEvent              
+#  VIRTUAL_ADDRESS_MAP_CALLBACK  =  VariableClassAddressChangeEvent
 #
 
 [Sources.common]
@@ -73,13 +73,13 @@
   ## CONSUMES             ## Variable:L"SignatureSupport"
   ## PRODUCES             ## Variable:L"SignatureSupport"
   gEfiGlobalVariableGuid
-  
+
   ## PRODUCES             ## GUID # Variable store header
   ## CONSUMES             ## GUID # Variable store header
   ## SOMETIMES_CONSUMES   ## HOB
   ## SOMETIMES_PRODUCES   ## SystemTable
   gEfiAuthenticatedVariableGuid
-  
+
   gEfiEventVirtualAddressChangeGuid             ## CONSUMES               ## Event
   gEfiCertRsa2048Sha256Guid                     ## CONSUMES               ## GUID        # Unique ID for the format of the CertType.
 
@@ -94,12 +94,12 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxHardwareErrorVariableSize          ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdVariableStoreSize                     ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdHwErrStorageSize                      ## CONSUMES
-  
+
 [FeaturePcd.common]
   gEfiMdeModulePkgTokenSpaceGuid.PcdVariableCollectStatistics             ## CONSUMES    # statistic the information of variable.
 
 [Depex]
-  gEfiExtendedSalFvBlockServicesProtocolGuid AND gEfiFaultTolerantWriteProtocolGuid  
+  gEfiExtendedSalFvBlockServicesProtocolGuid AND gEfiFaultTolerantWriteProtocolGuid
 
 [UserExtensions.TianoCore."ExtraFiles"]
   EsalVariableDxeSalExtra.uni

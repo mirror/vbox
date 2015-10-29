@@ -20,7 +20,7 @@
   FILE_GUID                      = 51C4C059-67F0-4e3c-9A55-FF42A8291C8C
   MODULE_TYPE                    = PEIM
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = SmbusLib|PEIM 
+  LIBRARY_CLASS                  = SmbusLib|PEIM
 
 
 #

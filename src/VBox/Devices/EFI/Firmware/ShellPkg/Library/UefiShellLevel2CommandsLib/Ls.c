@@ -154,10 +154,10 @@ PrintSfoVolumeInfoTableEntry(
 VOID
 EFIAPI
 PrintFileInformation(
-  IN CONST BOOLEAN              Sfo, 
-  IN CONST EFI_SHELL_FILE_INFO  *TheNode, 
-  IN UINT64                     *Files, 
-  IN UINT64                     *Size, 
+  IN CONST BOOLEAN              Sfo,
+  IN CONST EFI_SHELL_FILE_INFO  *TheNode,
+  IN UINT64                     *Files,
+  IN UINT64                     *Size,
   IN UINT64                     *Dirs
   )
 {
@@ -302,8 +302,8 @@ PrintNonSfoHeader(
 VOID
 EFIAPI
 PrintNonSfoFooter(
-  IN UINT64                     Files, 
-  IN UINT64                     Size, 
+  IN UINT64                     Files,
+  IN UINT64                     Size,
   IN UINT64                     Dirs
   )
 {
@@ -470,7 +470,7 @@ PrintLsOutput(
     }
     CorrectedPath = StrnCatGrow(&CorrectedPath, &LongestPath, L"*",     0);
     Status = ShellOpenFileMetaArg((CHAR16*)CorrectedPath, EFI_FILE_MODE_READ, &ListHead);
-   
+
     if (!EFI_ERROR(Status)) {
       for ( Node = (EFI_SHELL_FILE_INFO *)GetFirstNode(&ListHead->Link)
           ; !IsNull(&ListHead->Link, &Node->Link) && ShellStatus == SHELL_SUCCESS
@@ -497,7 +497,7 @@ PrintLsOutput(
             &FoundOne,
             Count,
             TimeZone);
-            
+
           //
           // Since it's running recursively, we have to break immediately when returned SHELL_ABORTED
           //
@@ -693,7 +693,7 @@ ShellCommandRunLs (
                 ShellCommandLineFreeVarList (Package);
                 return SHELL_OUT_OF_RESOURCES;
             }
-               
+
             if  (ShellIsDirectory(PathName) == EFI_SUCCESS) {
               //
               // is listing ends with a directory, then we list all files in that directory

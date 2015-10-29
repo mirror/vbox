@@ -49,7 +49,7 @@
 
 [Protocols]
   gEfiSmbiosProtocolGuid                            ## PRODUCES
-  
+
 [Guids]
   gEfiSmbiosTableGuid                               ## PRODUCES ## SystemTable
 

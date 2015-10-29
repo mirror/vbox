@@ -703,7 +703,7 @@ grammar :	<<Graph g;>>
 				class_nest_level--;
 				>>
 			)*
-            
+
 			rule		<<g=$3; SynDiag = (Junction *) $3.left;>>
 			(	rule
 
@@ -894,7 +894,7 @@ rule	:	<<
 			<<BlkLevel++;
               if (BlkLevel >= MAX_BLK_LEVEL) fatal("Blocks nested too deeply");
 /* MR23 */    CurBlockID_array[BlkLevel] = CurBlockID;
-/* MR23 */    CurAltNum_array[BlkLevel] = CurAltNum;                
+/* MR23 */    CurAltNum_array[BlkLevel] = CurAltNum;
             >>
 
 			":" <<inAlt=1;>>
@@ -924,7 +924,7 @@ rule	:	<<
 			>>
 			<<
                 /* MR23 */      CurBlockID_array[BlkLevel] = (-1);
-                /* MR23 */      CurAltNum_array[BlkLevel] = (-1);                
+                /* MR23 */      CurAltNum_array[BlkLevel] = (-1);
                 --BlkLevel;
             >>
             <<altFixup();leFixup();egFixup();>>                      /* MR7 */
@@ -1465,7 +1465,7 @@ block[set *toksrefd, set *rulesrefd]
     			CurBlockID++;
 /* MR23 */      CurBlockID_array[BlkLevel] = CurBlockID;
     			CurAltNum = 1;
-/* MR23 */      CurAltNum_array[BlkLevel] = CurAltNum;                
+/* MR23 */      CurAltNum_array[BlkLevel] = CurAltNum;
     			saveblah = attribsRefdFromAction;
     			attribsRefdFromAction = empty;
 			>>
@@ -1519,7 +1519,7 @@ block[set *toksrefd, set *rulesrefd]
 				)*
 
 				<<CurAltNum++;
-/* MR23 */        CurAltNum_array[BlkLevel] = CurAltNum;                
+/* MR23 */        CurAltNum_array[BlkLevel] = CurAltNum;
                 >>
 
 			)*
@@ -1841,7 +1841,7 @@ element[int old_not, int first_on_line, int use_def_MT_handler] > [Node *node]
 			<<BlkLevel++;
               if (BlkLevel >= MAX_BLK_LEVEL) fatal("Blocks nested too deeply");
 /* MR23 */    CurBlockID_array[BlkLevel] = CurBlockID;
-/* MR23 */    CurAltNum_array[BlkLevel] = CurAltNum;                
+/* MR23 */    CurAltNum_array[BlkLevel] = CurAltNum;
             >>
 			{	Pragma
 				(	"approx" <<approx=LL_k;>>
@@ -1877,14 +1877,14 @@ element[int old_not, int first_on_line, int use_def_MT_handler] > [Node *node]
         	"\(" block[&toksrefd,&rulesrefd] "\)"
 				<<blk = $$ = $2;
                         /* MR23 */      CurBlockID_array[BlkLevel] = (-1);
-                        /* MR23 */      CurAltNum_array[BlkLevel] = (-1);                
+                        /* MR23 */      CurAltNum_array[BlkLevel] = (-1);
                   --BlkLevel;
             >>
 
 				(	"\*"		<<$$ = makeLoop($$,approx,pFirstSetSymbol);>>
 				|	"\+"		<<$$ = makePlus($$,approx,pFirstSetSymbol);>>
 				|	"?"
-					(	
+					(
                         ( "=>" <<ampersandStyle=0;>>
                         | "&&" <<ampersandStyle=1;>>  /* MR10 (g)? && <<p>>? */
                         )
@@ -1973,7 +1973,7 @@ element[int old_not, int first_on_line, int use_def_MT_handler] > [Node *node]
 			|	"\{"	block[&toksrefd,&rulesrefd]
 						<<$$ = makeOpt($2,approx,pFirstSetSymbol);
                                 /* MR23 */      CurBlockID_array[BlkLevel] = (-1);
-                                /* MR23 */      CurAltNum_array[BlkLevel] = (-1);                
+                                /* MR23 */      CurAltNum_array[BlkLevel] = (-1);
                                 --BlkLevel;
                         >>
 				"\}"

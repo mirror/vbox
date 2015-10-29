@@ -3,12 +3,12 @@
   VariableFormat.h defines variable data headers and variable storage region headers.
 
 Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under 
-the terms and conditions of the BSD License that accompanies this distribution.  
+This program and the accompanying materials are licensed and made available under
+the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.                                            
+http://opensource.org/licenses/bsd-license.php.
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -76,7 +76,7 @@ typedef struct {
   ///
   EFI_GUID  Signature;
   ///
-  /// Size of entire variable store, 
+  /// Size of entire variable store,
   /// including size of variable store header but not including the size of FvHeader.
   ///
   UINT32  Size;
@@ -143,12 +143,12 @@ typedef struct _VARIABLE_INFO_ENTRY  VARIABLE_INFO_ENTRY;
 ///
 /// This structure contains the variable list that is put in EFI system table.
 /// The variable driver collects all variables that were used at boot service time and produces this list.
-/// This is an optional feature to dump all used variables in shell environment. 
+/// This is an optional feature to dump all used variables in shell environment.
 ///
 struct _VARIABLE_INFO_ENTRY {
   VARIABLE_INFO_ENTRY *Next;       ///< Pointer to next entry.
   EFI_GUID            VendorGuid;  ///< Guid of Variable.
-  CHAR16              *Name;       ///< Name of Variable. 
+  CHAR16              *Name;       ///< Name of Variable.
   UINT32              Attributes;  ///< Attributes of variable defined in UEFI specification.
   UINT32              ReadCount;   ///< Number of times to read this variable.
   UINT32              WriteCount;  ///< Number of times to write this variable.

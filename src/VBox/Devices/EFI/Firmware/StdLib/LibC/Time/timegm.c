@@ -1,4 +1,4 @@
-/** @file 
+/** @file
   timegm implementation
 
   Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
@@ -78,7 +78,7 @@ static char *sccsid = "from: @(#)ctime.c	5.26 (Berkeley) 2/23/91";
 /*
   This funciton is in Time.c, which has a different license than timegm.
 */
-time_t 
+time_t
 time2(struct tm * const tmp, void (* const funcp)(const time_t*, long, struct tm*),
       const long offset, int * const okayp);
 

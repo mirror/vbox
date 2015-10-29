@@ -50,9 +50,9 @@ MemoryMapPage (
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR * pMemoryDescriptor;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR * pMemoryDescriptorStart;
   EFI_STATUS Status;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Send the memory map page
   //
@@ -65,7 +65,7 @@ MemoryMapPage (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-  
+
     //
     //  Start the table
     //

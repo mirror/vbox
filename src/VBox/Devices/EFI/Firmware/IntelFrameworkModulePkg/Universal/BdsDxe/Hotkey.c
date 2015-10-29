@@ -73,15 +73,15 @@ EFI_STATUS
 HotkeyBoot (
   VOID
   )
-{ 
+{
   EFI_STATUS           Status;
   UINTN                ExitDataSize;
   CHAR16               *ExitData;
 
   if (mHotkeyBootOption == NULL) {
     return EFI_NOT_FOUND;
-  } 
-  
+  }
+
   BdsLibConnectDevicePath (mHotkeyBootOption->DevicePath);
 
   //
@@ -162,7 +162,7 @@ HotkeyCallback (
     HotkeyData = &Hotkey->KeyData[Hotkey->WaitingKey];
     if ((KeyData->Key.ScanCode == HotkeyData->Key.ScanCode) &&
         (KeyData->Key.UnicodeChar == HotkeyData->Key.UnicodeChar) &&
-        (((KeyData->KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) != 0) ? 
+        (((KeyData->KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) != 0) ?
           (KeyData->KeyState.KeyShiftState == HotkeyData->KeyState.KeyShiftState) : TRUE
         )
        ) {
@@ -421,7 +421,7 @@ IsKeyOptionVariable (
   )
 {
   UINTN         Index;
-  
+
   if (!CompareGuid (Guid, &gEfiGlobalVariableGuid) ||
       (StrSize (Name) != sizeof (L"Key####")) ||
       (StrnCmp (Name, L"Key", 3) != 0)

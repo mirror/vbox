@@ -145,13 +145,13 @@ EfiNicIp4ConfigSetInfo (
   // A dedicated timer is used to poll underlying media status.In case of
   // cable swap, a new round auto configuration will be initiated. The timer
   // starts in DHCP policy only. STATIC policy stops the timer.
-  // 
+  //
   if (NicConfig->Source == IP4_CONFIG_SOURCE_DHCP) {
     gBS->SetTimer (Instance->Timer, TimerPeriodic, TICKS_PER_SECOND);
   } else if (NicConfig->Source == IP4_CONFIG_SOURCE_STATIC) {
     gBS->SetTimer (Instance->Timer, TimerCancel, 0);
   }
-  
+
   return Status;
 }
 
@@ -691,7 +691,7 @@ Ip4ConfigCleanConfig (
 
 /**
   A dedicated timer is used to poll underlying media status. In case of
-  cable swap, a new round auto configuration will be initiated. The timer 
+  cable swap, a new round auto configuration will be initiated. The timer
   will signal the IP4 to run the auto configuration again. IP4 driver will free
   old IP address related resource, such as route table and Interface, then
   initiate a DHCP process by IP4Config->Start to acquire new IP, eventually
@@ -711,12 +711,12 @@ MediaChangeDetect (
   BOOLEAN                      OldMediaPresent;
   EFI_STATUS                   Status;
   EFI_SIMPLE_NETWORK_MODE      SnpModeData;
-  IP4_CONFIG_INSTANCE         *Instance;  
+  IP4_CONFIG_INSTANCE         *Instance;
 
   Instance = (IP4_CONFIG_INSTANCE *) Context;
 
   OldMediaPresent = Instance->MediaPresent;
-  
+
   //
   // Get fresh mode data from MNP, since underlying media status may change
   //
@@ -732,8 +732,8 @@ MediaChangeDetect (
   if (!OldMediaPresent && Instance->MediaPresent) {
     //
     // Signal the IP4 to run the auto configuration again. IP4 driver will free
-    // old IP address related resource, such as route table and Interface, then 
-    // initiate a DHCP round by IP4Config->Start to acquire new IP, eventually 
+    // old IP address related resource, such as route table and Interface, then
+    // initiate a DHCP round by IP4Config->Start to acquire new IP, eventually
     // create route table for new IP address.
     //
     if (Instance->ReconfigEvent != NULL) {

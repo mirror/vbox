@@ -16,7 +16,7 @@
 #include "UefiShellLevel2CommandsLib.h"
 
 /**
-  Do the actual parsing of the file.  the file should be SFO output from a 
+  Do the actual parsing of the file.  the file should be SFO output from a
   shell command or a similar format.
 
   @param[in] FileName               The filename to open.

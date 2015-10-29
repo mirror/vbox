@@ -46,13 +46,13 @@ ASM_GLOBAL ASM_PFX(InternalMemCompareMem)
 ASM_PFX(InternalMemCompareMem):
     pushq   %rsi
     pushq   %rdi
-    movq    %rcx, %rsi 
-    movq    %rdx, %rdi 
-    movq    %r8, %rcx 
+    movq    %rcx, %rsi
+    movq    %rdx, %rdi
+    movq    %r8, %rcx
     repe    cmpsb
     movzbq  -1(%rsi), %rax
     movzbq  -1(%rdi), %rdx
-    subq    %rdx, %rax 
+    subq    %rdx, %rax
     popq    %rdi
     popq    %rsi
     ret

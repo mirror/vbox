@@ -73,7 +73,7 @@ X509ConstructCertificate (
   @param           ...        A list of DER-encoded single certificate data followed
                               by certificate size. A NULL terminates the list. The
                               pairs are the arguments to X509ConstructCertificate().
-                                 
+
   @retval     TRUE            The X509 stack construction succeeded.
   @retval     FALSE           The construction operation failed.
 
@@ -82,7 +82,7 @@ BOOLEAN
 EFIAPI
 X509ConstructCertificateStack (
   IN OUT  UINT8  **X509Stack,
-  ...  
+  ...
   )
 {
   UINT8           *Cert;
@@ -175,14 +175,14 @@ EFIAPI
 X509Free (
   IN  VOID  *X509Cert
   )
-{ 
+{
   //
   // Check input parameters.
   //
   if (X509Cert == NULL) {
     return;
   }
-  
+
   //
   // Free OpenSSL X509 object.
   //
@@ -209,7 +209,7 @@ X509StackFree (
   if (X509Stack == NULL) {
     return;
   }
-  
+
   //
   // Free OpenSSL X509 stack object.
   //
@@ -322,7 +322,7 @@ RsaGetPublicKeyFromX509 (
   BOOLEAN   Status;
   EVP_PKEY  *Pkey;
   X509      *X509Cert;
-  
+
   //
   // Check input parameters.
   //
@@ -369,7 +369,7 @@ _Exit:
 
   if (Pkey != NULL) {
     EVP_PKEY_free (Pkey);
-  }  
+  }
 
   return Status;
 }
@@ -404,7 +404,7 @@ X509VerifyCert (
   X509            *X509CACert;
   X509_STORE      *CertStore;
   X509_STORE_CTX  CertCtx;
-  
+
   //
   // Check input parameters.
   //
@@ -489,7 +489,7 @@ _Exit:
   if (CertStore != NULL) {
     X509_STORE_free (CertStore);
   }
-  
+
   return Status;
 }
 
@@ -566,6 +566,6 @@ X509GetTBSCert (
   }
 
   *TBSCertSize = Length + (Temp - *TBSCert);
-  
+
   return TRUE;
 }

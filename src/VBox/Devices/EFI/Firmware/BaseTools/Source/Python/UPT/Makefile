@@ -33,9 +33,9 @@ SetPythonPath:
 
 $(BIN_DIR)\UPT.exe: $(SOURCES_PATH)\UPT.py $(UPT_BUILDVERSION_PYTHON)
   @pushd . & @cd build & @$(FREEZE) --include-modules=$(MODULES) --install-dir=$(BIN_DIR) UPT.py & @popd
-  @pushd . & @copy .\Dll\sqlite3.dll .\Bin\Sqlite3.dll & @popd 
+  @pushd . & @copy .\Dll\sqlite3.dll .\Bin\Sqlite3.dll & @popd
 clean:
-cleanall:  
+cleanall:
   @del /f /q $(BIN_DIR)\*.pyd $(BIN_DIR)\*.dll
   @for %%i in ($(APPLICATIONS)) do @del /f /q %%i
 

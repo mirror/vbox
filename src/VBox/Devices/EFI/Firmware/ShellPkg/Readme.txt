@@ -7,7 +7,7 @@ It is similar to the EDK EFI Shell or a *nix command line parser.
 ============================================================================
                     HOW TO INCORPORATE THIS SHELL INTO NT32
 ============================================================================
-The instructions below are included as a sample and template on how a 
+The instructions below are included as a sample and template on how a
 developer may integrate this code into an existing platform:
 
 1. Add this shell build to the NT32 build:

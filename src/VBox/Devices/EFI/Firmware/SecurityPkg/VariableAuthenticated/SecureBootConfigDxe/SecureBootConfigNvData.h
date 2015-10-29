@@ -2,12 +2,12 @@
   Header file for NV data structure definition.
 
 Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -93,7 +93,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 // Question ID 0x4000 ~ 0x4FFF is for DBX
 //
-#define OPTION_DEL_DBX_QUESTION_ID            0x4000 
+#define OPTION_DEL_DBX_QUESTION_ID            0x4000
 
 #define FILE_OPTION_GOTO_OFFSET               0xC000
 #define FILE_OPTION_OFFSET                    0x8000
@@ -112,7 +112,7 @@ typedef struct {
   CHAR16  SignatureGuid[SECURE_BOOT_GUID_STORAGE_SIZE];
   BOOLEAN PhysicalPresent; //If a Physical Present User;
   UINT8   SecureBootMode;  //Secure Boot Mode: Standard Or Custom
-  BOOLEAN DeletePk; 
+  BOOLEAN DeletePk;
   BOOLEAN HasPk;           //If Pk is existed it is true;
 } SECUREBOOT_CONFIGURATION;
 

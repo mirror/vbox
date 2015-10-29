@@ -226,7 +226,7 @@ PciRootBridgeEnumerator (
       AddrRangeMin = Configuration1->AddrRangeMin;
       Configuration1->AddrRangeMin = Configuration2->AddrRangeMin;
       Configuration2->AddrRangeMin = AddrRangeMin;
-      
+
       AddrLen = Configuration1->AddrLen;
       Configuration1->AddrLen = Configuration2->AddrLen;
       Configuration2->AddrLen = AddrLen;
@@ -273,7 +273,7 @@ PciRootBridgeEnumerator (
   Status = PciAllocateBusNumber (RootBridgeDev, SubBusNumber, PaddedBusRange, &SubBusNumber);
   if (EFI_ERROR (Status)) {
     return Status;
-  }  
+  }
 
   //
   // Find the bus range which contains the higest bus number, then returns the number of buses
@@ -291,7 +291,7 @@ PciRootBridgeEnumerator (
   Configuration++;
   Desc = Configuration->Desc;
   Configuration->Desc = ACPI_END_TAG_DESCRIPTOR;
-  
+
   //
   // Set bus number
   //
@@ -306,7 +306,7 @@ PciRootBridgeEnumerator (
   //
   Configuration->Desc = Desc;
   (Configuration - 1)->AddrLen = AddrLen;
-  
+
   return Status;
 }
 
@@ -1847,7 +1847,7 @@ NotifyPhase (
                             Phase,
                             ChipsetEntry
                             );
-  }  
+  }
 
   Status = PciResAlloc->NotifyPhase (
                           PciResAlloc,
@@ -2078,7 +2078,7 @@ PciHotPlugRequestNotify (
       return EFI_INVALID_PARAMETER;
     }
   }
-  
+
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiPciIoProtocolGuid,

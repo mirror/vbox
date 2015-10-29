@@ -395,7 +395,7 @@ Ip4CleanService (
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 
@@ -562,9 +562,9 @@ Ip4DriverBindingStop (
   )
 {
   EFI_SERVICE_BINDING_PROTOCOL             *ServiceBinding;
-  IP4_SERVICE                              *IpSb; 
+  IP4_SERVICE                              *IpSb;
   EFI_HANDLE                               NicHandle;
-  EFI_STATUS                               Status; 
+  EFI_STATUS                               Status;
   INTN                                     State;
   LIST_ENTRY                               *List;
   IP4_DESTROY_CHILD_IN_HANDLE_BUF_CONTEXT  Context;
@@ -688,7 +688,7 @@ Ip4DriverBindingStop (
     Ip4CancelReceive (IpSb->DefaultInterface);
     Ip4FreeInterface (IpSb->DefaultInterface, NULL);
     Ip4FreeRouteTable (IpSb->DefaultRouteTable);
-    
+
     IpIf = Ip4CreateInterface (IpSb->Mnp, IpSb->Controller, IpSb->Image);
     if (IpIf == NULL) {
       goto ON_ERROR;
@@ -698,7 +698,7 @@ Ip4DriverBindingStop (
       Ip4FreeInterface (IpIf, NULL);
       goto ON_ERROR;;
     }
-    
+
     IpSb->DefaultInterface  = IpIf;
     InsertHeadList (&IpSb->Interfaces, &IpIf->Link);
     IpSb->DefaultRouteTable = RouteTable;
@@ -726,7 +726,7 @@ Ip4DriverBindingStop (
            &gEfiIp4ServiceBindingProtocolGuid,
            ServiceBinding
            );
-    
+
     if (gIp4ControllerNameTable != NULL) {
       FreeUnicodeStringTable (gIp4ControllerNameTable);
       gIp4ControllerNameTable = NULL;

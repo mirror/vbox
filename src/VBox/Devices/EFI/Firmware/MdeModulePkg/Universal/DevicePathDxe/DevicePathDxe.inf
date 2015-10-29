@@ -43,7 +43,7 @@
   DevicePathLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
-  
+
 [Protocols]
   gEfiDevicePathToTextProtocolGuid   | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText ## SOMETIMES_PRODUCES
   gEfiDevicePathFromTextProtocolGuid | gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathToText ## SOMETIMES_PRODUCES

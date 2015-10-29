@@ -61,7 +61,7 @@ static __inline uint16_t __byte_swap_u16_variable(uint16_t);
 static __inline uint16_t
 __byte_swap_u16_variable(uint16_t x)
 {
-	__asm volatile ("rorw $8, %w1" : "=r" (x) : "0" (x)); 
+	__asm volatile ("rorw $8, %w1" : "=r" (x) : "0" (x));
 	return (x);
 }
 

@@ -36,7 +36,7 @@ typedef struct {
   This command causes all context associated with a loaded object or session to be removed from TPM memory.
 
   @param[in]  FlushHandle        The handle of the item to flush.
-  
+
   @retval EFI_SUCCESS            Operation completed successfully.
   @retval EFI_DEVICE_ERROR       The command was unsuccessful.
 **/
@@ -59,7 +59,7 @@ Tpm2FlushContext (
   SendBuffer.Header.commandCode = SwapBytes32(TPM_CC_FlushContext);
 
   SendBuffer.FlushHandle = SwapBytes32 (FlushHandle);
- 
+
   SendBufferSize = (UINT32) sizeof (SendBuffer);
   SendBuffer.Header.paramSize = SwapBytes32 (SendBufferSize);
 

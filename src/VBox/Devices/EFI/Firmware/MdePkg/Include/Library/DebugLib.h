@@ -235,7 +235,7 @@ DebugPrintLevelEnabled (
   IN  CONST UINTN        ErrorLevel
   );
 
-/**  
+/**
   Internal worker macro that calls DebugAssert().
 
   This macro calls DebugAssert(), passing in the filename, line number, and an
@@ -529,7 +529,7 @@ VOID EFIAPI VBoxLogWorker(const char *pszFormat, ...);
 #  define VBoxLogFlowFuncMarkHandleDP(dp)\
     VBoxLog(("%a:" VBOX_XSTR(__LINE__) ": " #dp "=%s\n", __FUNCTION__, VBoxDebugHandleDevicePath2Str(dp)))
 #  define VBoxLog(a)                            VBoxLogWorker a
-# else
+# else  /* !EFI_LOG_ENABLED */
 #  define VBoxLogFlowFuncEnter()                do {} while (0)
 #  define VBoxLogFlowFuncLeave()                do {} while (0)
 #  define VBoxLogFlowFuncLeaveRC(rc)            do {} while (0)
@@ -539,6 +539,6 @@ VOID EFIAPI VBoxLogWorker(const char *pszFormat, ...);
 #  define VBoxLogFlowFuncMarkDP(dp)             do {} while (0)
 #  define VBoxLogLogFlowFuncMarkHandleDP(dp)    do {} while (0)
 #  define VBoxLog(a)                            do {} while (0)
-# endif
-#endif
+# endif /* !EFI_LOG_ENABLED */
+#endif /* VBOX */
 #endif

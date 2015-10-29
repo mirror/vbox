@@ -187,10 +187,10 @@ ArpComponentNameGetControllerName (
   if (ChildHandle == NULL) {
     return EFI_UNSUPPORTED;
   }
-  
-  // 
-  // Make sure this driver produced ChildHandle 
-  // 
+
+  //
+  // Make sure this driver produced ChildHandle
+  //
   Status = EfiTestChildHandle (
              ControllerHandle,
              ChildHandle,
@@ -200,9 +200,9 @@ ArpComponentNameGetControllerName (
     return Status;
   }
 
-  // 
-  // Retrieve an instance of a produced protocol from ChildHandle  
-  // 
+  //
+  // Retrieve an instance of a produced protocol from ChildHandle
+  //
   Status = gBS->OpenProtocol (
                   ChildHandle,
                   &gEfiArpProtocolGuid,

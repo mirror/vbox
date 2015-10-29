@@ -31,7 +31,7 @@ Sha1GetContextSize (
   )
 {
   ASSERT (FALSE);
-  return 0;  
+  return 0;
 }
 
 /**
@@ -39,7 +39,7 @@ Sha1GetContextSize (
   subsequent use.
 
   Return FALSE to indicate this interface is not supported.
-  
+
   @param[out]  Sha1Context  Pointer to SHA-1 context being initialized.
 
   @retval FALSE  This interface is not supported.

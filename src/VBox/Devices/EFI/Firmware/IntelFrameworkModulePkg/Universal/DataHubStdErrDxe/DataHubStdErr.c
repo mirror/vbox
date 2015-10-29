@@ -65,7 +65,7 @@ DataHubStdErrEventHandler (
   if (gST->StdErr == NULL) {
     return ;
   }
-  
+
   //
   // Mtc of zero means return the next record that has not been read by the
   // event handler.

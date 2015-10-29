@@ -1,6 +1,6 @@
 ## @file
 #  Client-side DHCPv6 services.
-#  
+#
 #  This driver produces EFI DHCPv6 Protocol which is used to get IPv6 addresses
 #  and other configuration parameters from DHCPv6 servers.
 #

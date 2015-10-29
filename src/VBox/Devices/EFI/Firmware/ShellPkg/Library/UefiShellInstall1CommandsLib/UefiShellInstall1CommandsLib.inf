@@ -48,4 +48,4 @@
   gEfiShellPkgTokenSpaceGuid.PcdShellProfileMask ## CONSUMES
 
 [Guids]
-  gShellInstall1HiiGuid                         ## UNDEFINED 
+  gShellInstall1HiiGuid                         ## UNDEFINED

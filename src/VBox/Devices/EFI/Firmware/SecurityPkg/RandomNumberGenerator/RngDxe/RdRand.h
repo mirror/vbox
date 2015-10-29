@@ -29,7 +29,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/Rng.h>
 
 //
-// The maximun number of retries to obtain one available random number. 
+// The maximun number of retries to obtain one available random number.
 //
 #define RETRY_LIMIT    10
 
@@ -141,7 +141,7 @@ RdRand64 (
   OUT UINT64       *Rand,
   IN BOOLEAN       NeedRetry
   );
-  
+
 /**
   Calls RDRAND to request a word-length random number.
 

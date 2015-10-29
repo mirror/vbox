@@ -32,7 +32,7 @@ def CreateXmlElement(Name, String, NodeList, AttributeList):
     Element = Doc.createElement(Name)
     if String != '' and String != None:
         Element.appendChild(Doc.createTextNode(String))
-    
+
     for Item in NodeList:
         if type(Item) == type([]):
             Key = Item[0]
@@ -48,7 +48,7 @@ def CreateXmlElement(Name, String, NodeList, AttributeList):
         Value = Item[1]
         if Key != '' and Key != None and Value != '' and Value != None:
             Element.setAttribute(Key, Value)
-    
+
     return Element
 
 ## Get a list of XML nodes using XPath style syntax.

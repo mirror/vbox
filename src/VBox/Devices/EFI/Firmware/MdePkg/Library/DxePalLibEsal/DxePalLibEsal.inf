@@ -19,7 +19,7 @@
   FILE_GUID                      = 8BA65DE3-39E1-4afd-A8FE-7DD0BAFEFCC0
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PalLib|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SMM_DRIVER DXE_SAL_DRIVER UEFI_DRIVER UEFI_APPLICATION 
+  LIBRARY_CLASS                  = PalLib|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SMM_DRIVER DXE_SAL_DRIVER UEFI_DRIVER UEFI_APPLICATION
 
 #
 # The following information is for reference only and not required by the build tools.

@@ -1,6 +1,6 @@
 /** @file
   Routines to process Rrq (download).
-  
+
 Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -36,9 +36,9 @@ Mtftp4RrqInput (
 
 
 /**
-  Start the MTFTP session to download. 
-  
-  It will first initialize some of the internal states then build and send a RRQ 
+  Start the MTFTP session to download.
+
+  It will first initialize some of the internal states then build and send a RRQ
   reqeuest packet, at last, it will start receive for the downloading.
 
   @param  Instance              The Mtftp session
@@ -166,7 +166,7 @@ Mtftp4RrqSaveBlock (
   // Remove this block number from the file hole. If Mtftp4RemoveBlockNum
   // returns EFI_NOT_FOUND, the block has been saved, don't save it again.
   // Note that : For bigger files, allowing the block counter to roll over
-  // to accept transfers of unlimited size. So TotalBlock is memorised as 
+  // to accept transfers of unlimited size. So TotalBlock is memorised as
   // continuous block counter.
   //
   Status = Mtftp4RemoveBlockNum (&Instance->Blocks, Block, Completed, &TotalBlock);
@@ -227,8 +227,8 @@ Mtftp4RrqSaveBlock (
 
 
 /**
-  Function to process the received data packets. 
-  
+  Function to process the received data packets.
+
   It will save the block then send back an ACK if it is active.
 
   @param  Instance              The downloading MTFTP session
@@ -317,7 +317,7 @@ Mtftp4RrqHandleData (
 
 /**
   Validate whether the options received in the server's OACK packet is valid.
-  
+
   The options are valid only if:
   1. The server doesn't include options not requested by us
   2. The server can only use smaller blksize than that is requested
@@ -427,20 +427,20 @@ Mtftp4RrqConfigMcastPort (
     return Status;
   }
 
-  if (!Config->UseDefaultSetting && 
+  if (!Config->UseDefaultSetting &&
       !EFI_IP4_EQUAL (&mZeroIp4Addr, &Config->GatewayIp)) {
     //
     // The station IP address is manually configured and the Gateway IP is not 0.
     // Add the default route for this UDP instance.
     //
     Status = McastIo->Protocol.Udp4->Routes (
-                                       McastIo->Protocol.Udp4, 
+                                       McastIo->Protocol.Udp4,
                                        FALSE,
                                        &mZeroIp4Addr,
                                        &mZeroIp4Addr,
                                        &Config->GatewayIp
                                        );
-                             
+
     if (EFI_ERROR (Status)) {
       McastIo->Protocol.Udp4->Configure (McastIo->Protocol.Udp4, NULL);
       return Status;
@@ -458,8 +458,8 @@ Mtftp4RrqConfigMcastPort (
 
 
 /**
-  Function to process the OACK. 
-  
+  Function to process the OACK.
+
   It will first validate the OACK packet, then update the various negotiated parameters.
 
   @param  Instance              The download MTFTP session
@@ -590,22 +590,22 @@ Mtftp4RrqHandleOack (
 
         return Status;
       }
-    
+
       //
       // Update the parameters used.
       //
       if (Reply.BlkSize != 0) {
         Instance->BlkSize = Reply.BlkSize;
       }
-      
+
       if (Reply.Timeout != 0) {
         Instance->Timeout = Reply.Timeout;
-      }  
-    }    
-    
+      }
+    }
+
   } else {
     Instance->Master = TRUE;
-    
+
     if (Reply.BlkSize != 0) {
       Instance->BlkSize = Reply.BlkSize;
     }
@@ -614,7 +614,7 @@ Mtftp4RrqHandleOack (
       Instance->Timeout = Reply.Timeout;
     }
   }
-  
+
   //
   // Send an ACK to (Expected - 1) which is 0 for unicast download,
   // or tell the server we want to receive the Expected block.
@@ -761,7 +761,7 @@ Mtftp4RrqInput (
   case EFI_MTFTP4_OPCODE_ERROR:
     Status = EFI_TFTP_ERROR;
     break;
-    
+
   default:
     break;
   }

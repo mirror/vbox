@@ -2,7 +2,7 @@ AtapiPassThru:
   For now, AtapiPassThru driver in this package is to test Scsi Bus support:
   ScsiBus driver should support both/either ScsiPassThru and ExtScsiPassThru
   installed on a controller handle.
-   
+
   AtapiPassThru driver in this package can selectively produce ScsiPassThru
   and/or ExtScsiPassThru protocol based on feature flags of PcdSupportScsiPassThru
   and PcdSupportExtScsiPassThru.

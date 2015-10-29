@@ -1,6 +1,6 @@
 /** @file
   This protocol provides registering and unregistering services to status code consumers while in DXE SMM.
-  
+
   Copyright (c) 2007 - 2009, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -32,10 +32,10 @@ EFI_STATUS
 
 /**
   Register the callback function for ReportStatusCode() notification.
-  
+
   When this function is called the function pointer is added to an internal list and any future calls to
   ReportStatusCode() will be forwarded to the Callback function.
-  
+
   @param[in] Callback               A pointer to a function of type EFI_RSC_HANDLER_CALLBACK that is called when
                                     a call to ReportStatusCode() occurs.
 
@@ -53,17 +53,17 @@ EFI_STATUS
 
 /**
   Remove a previously registered callback function from the notification list.
-  
+
   A callback function must be unregistered before it is deallocated. It is important that any registered
   callbacks that are not runtime complaint be unregistered when ExitBootServices() is called.
 
   @param[in] Callback           A pointer to a function of type EFI_SMM_RSC_HANDLER_CALLBACK that is to be
                                 unregistered.
-                        
+
   @retval EFI_SUCCESS           The function was successfully unregistered.
   @retval EFI_INVALID_PARAMETER The callback function was NULL.
   @retval EFI_NOT_FOUND         The callback function was not found to be unregistered.
-                            
+
 **/
 typedef
 EFI_STATUS

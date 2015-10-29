@@ -105,18 +105,18 @@ FspInitDone (
     // FspInit API is used, so jump into the ContinuationFunc
     //
     FspInitParams   = (FSP_INIT_PARAMS *)GetFspApiParameter ();
-  
+
     //
     // Modify the parameters for ContinuationFunc
     //
     SetFspContinuationFuncParameter(EFI_SUCCESS, 0);
     SetFspContinuationFuncParameter((UINT32)GetHobList(), 1);
-  
+
     //
     // Modify the return address to ContinuationFunc
     //
     SetFspApiReturnAddress((UINT32)FspInitParams->ContinuationFunc);
-  
+
     //
     // Give control back to the boot loader framework caller after FspInit is done
     // It is done throught the continuation function

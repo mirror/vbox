@@ -43,7 +43,7 @@ SERIAL_DEBUG_PORT_HANDLE     mSerialDebugPortHandle;
 
 /**
   Check if the timer is timeout.
-  
+
   @param[in] SerialDebugPortHandle  Pointer to Serial Debug port handle
   @param[in] Timer                  The start timer from the begin.
   @param[in] TimeoutTicker          Ticker number need time out.
@@ -72,7 +72,7 @@ IsTimerTimeout (
       Delta = Timer - CurrentTimer;
     } else {
       //
-      // Handle one roll-over. 
+      // Handle one roll-over.
       //
       Delta = SerialDebugPortHandle->TimerCycle - (CurrentTimer - Timer);
     }
@@ -84,12 +84,12 @@ IsTimerTimeout (
       Delta = CurrentTimer - Timer;
     } else {
       //
-      // Handle one roll-over. 
+      // Handle one roll-over.
       //
       Delta = SerialDebugPortHandle->TimerCycle - (Timer - CurrentTimer);
     }
   }
- 
+
   return (BOOLEAN) (Delta >= TimeoutTicker);
 }
 
@@ -143,7 +143,7 @@ DebugPortInitialize (
   UINT64                     TimerEndValue;
 
   //
-  // Validate the PCD PcdDebugPortHandleBufferSize value 
+  // Validate the PCD PcdDebugPortHandleBufferSize value
   //
   ASSERT (PcdGet16 (PcdDebugPortHandleBufferSize) == sizeof (SERIAL_DEBUG_PORT_HANDLE));
 
@@ -157,9 +157,9 @@ DebugPortInitialize (
                                             &TimerStartValue,
                                             &TimerEndValue
                                             );
-  DEBUG ((EFI_D_INFO, "Serial Debug Port: TimerFrequency  = 0x%lx\n", SerialDebugPortHandle->TimerFrequency)); 
-  DEBUG ((EFI_D_INFO, "Serial Debug Port: TimerStartValue = 0x%lx\n", TimerStartValue)); 
-  DEBUG ((EFI_D_INFO, "Serial Debug Port: TimerEndValue   = 0x%lx\n", TimerEndValue)); 
+  DEBUG ((EFI_D_INFO, "Serial Debug Port: TimerFrequency  = 0x%lx\n", SerialDebugPortHandle->TimerFrequency));
+  DEBUG ((EFI_D_INFO, "Serial Debug Port: TimerStartValue = 0x%lx\n", TimerStartValue));
+  DEBUG ((EFI_D_INFO, "Serial Debug Port: TimerEndValue   = 0x%lx\n", TimerEndValue));
 
   if (TimerEndValue < TimerStartValue) {
     SerialDebugPortHandle->TimerCountDown = TRUE;
@@ -167,7 +167,7 @@ DebugPortInitialize (
   } else {
     SerialDebugPortHandle->TimerCountDown = FALSE;
     SerialDebugPortHandle->TimerCycle     = TimerEndValue - TimerStartValue;
-  }  
+  }
 
   if (Function == NULL && Context != NULL) {
     return (DEBUG_PORT_HANDLE *) Context;
@@ -175,7 +175,7 @@ DebugPortInitialize (
 
   Status = SerialPortInitialize ();
   if (RETURN_ERROR(Status)) {
-    DEBUG ((EFI_D_ERROR, "Debug Serial Port: Initialization failed!\n")); 
+    DEBUG ((EFI_D_ERROR, "Debug Serial Port: Initialization failed!\n"));
   }
 
   if (Function != NULL) {
@@ -218,7 +218,7 @@ DebugPortReadBuffer (
   UINT64                   Begin;
   UINT64                   TimeoutTicker;
   UINT64                   TimerRound;
-  
+
   //
   // If Handle is NULL, it means memory is ready for use.
   // Use global variable to store handle value.
@@ -230,7 +230,7 @@ DebugPortReadBuffer (
   }
 
   Begin         = 0;
-  TimeoutTicker = 0;  
+  TimeoutTicker = 0;
   TimerRound    = 0;
   if (Timeout != 0) {
     Begin = GetPerformanceCounter ();
@@ -251,7 +251,7 @@ DebugPortReadBuffer (
   while (Index < NumberOfBytes) {
     if (SerialPortPoll () || Timeout == 0) {
       SerialPortRead (Buffer + Index, 1);
-      Index ++; 
+      Index ++;
       continue;
     }
     if (TimerRound == 0) {

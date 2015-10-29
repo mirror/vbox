@@ -1,4 +1,4 @@
-/** @file 
+/** @file
   setitimer and getitimer functions.
 
   Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
@@ -32,10 +32,10 @@ STATIC struct itimerval ProfTimerInfo    = {{0,0},{0,0}};
 /**
   Function to queue the next iteration of the timer.
 
-  This will copy the interval part of the struct into the value and (if 
+  This will copy the interval part of the struct into the value and (if
   non-zero), then queue the next timer event.
 
-  @param[in] TimerInfo  The timer info structure.  
+  @param[in] TimerInfo  The timer info structure.
   @param[in] Event      The EFI timer event.
 **/
 VOID
@@ -126,31 +126,31 @@ iTimerProfNotifyFunction (
 }
 
 /**
-  The setitimer() function sets the timer specified by which to the value 
-  specified in the structure pointed to by value, and if ovalue is not a null 
+  The setitimer() function sets the timer specified by which to the value
+  specified in the structure pointed to by value, and if ovalue is not a null
   pointer, stores the previous value of the timer in the structure pointed to
-  by ovalue. 
+  by ovalue.
 
   A timer value is defined by the itimerval structure. If it_value is non-zero,
-  it indicates the time to the next timer expiration. If it_interval is 
-  non-zero, it specifies a value to be used in reloading it_value when the 
-  timer expires. Setting it_value to 0 disables a timer, regardless of the 
-  value of it_interval. Setting it_interval to 0 disables a timer after its 
-  next expiration (assuming it_value is non-zero). 
+  it indicates the time to the next timer expiration. If it_interval is
+  non-zero, it specifies a value to be used in reloading it_value when the
+  timer expires. Setting it_value to 0 disables a timer, regardless of the
+  value of it_interval. Setting it_interval to 0 disables a timer after its
+  next expiration (assuming it_value is non-zero).
 
   ITIMER_REAL
-  Decrements in real time. A SIGALRM signal is delivered when this timer 
-  expires. 
-  
+  Decrements in real time. A SIGALRM signal is delivered when this timer
+  expires.
+
   ITIMER_VIRTUAL
-  Decrements in process virtual time. It runs only when the process is 
-  executing. A SIGVTALRM signal is delivered when it expires. 
+  Decrements in process virtual time. It runs only when the process is
+  executing. A SIGVTALRM signal is delivered when it expires.
 
   ITIMER_PROF
-  Decrements both in process virtual time and when the system is running on 
-  behalf of the process. It is designed to be used by interpreters in 
-  statistically profiling the execution of interpreted programs. Each time 
-  the ITIMER_PROF timer expires, the SIGPROF signal is delivered. 
+  Decrements both in process virtual time and when the system is running on
+  behalf of the process. It is designed to be used by interpreters in
+  statistically profiling the execution of interpreted programs. Each time
+  the ITIMER_PROF timer expires, the SIGPROF signal is delivered.
 
   @param[in] which      Which timer to set.  Possible values are described above.
   @param[in] value      The new value for this timer.
@@ -161,7 +161,7 @@ iTimerProfNotifyFunction (
 **/
 
 int setitimer(
-  int which, 
+  int which,
   const struct itimerval *value,
   struct itimerval *ovalue
   )
@@ -243,16 +243,16 @@ int setitimer(
 /**
   Function to get the current state of a timer.
 
-  @param[in] which    The identifier of the timer to get.  See setitimer for 
+  @param[in] which    The identifier of the timer to get.  See setitimer for
                       details.
   @param[in] value    The pointer to populate.  must be pre-allocated to size.
 
   @return 0           The operation was successful.
-  @return -1          The operation failed.  
+  @return -1          The operation failed.
                       This means that value or which had an invalid value.
 **/
 int getitimer(
-  int which, 
+  int which,
   struct itimerval *value
   )
 {

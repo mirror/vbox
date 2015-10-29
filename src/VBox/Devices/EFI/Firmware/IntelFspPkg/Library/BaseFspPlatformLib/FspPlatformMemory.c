@@ -91,7 +91,7 @@ FspMigrateTemporaryMemory (
   UINT32                    SiliconInitUpdPtr;
   VOID                      *PlatformDataPtr;
   UINT8                      ApiMode;
-    
+
   ApiMode = GetFspApiCallingMode ();
 
   //

@@ -42,9 +42,9 @@
 
 #216. Defer token fetch for C++ mode
 
-    When the ANTLRParser class is built with the pre-processor option 
+    When the ANTLRParser class is built with the pre-processor option
     ZZDEFER_FETCH defined, the fetch of new tokens by consume() is deferred
-    until LA(i) or LT(i) is called. 
+    until LA(i) or LT(i) is called.
 
 #215. Use reset() to reset DLGLexerBase
 #188. Added pccts/h/DLG_stream_input.h
@@ -1684,7 +1684,7 @@
 
             --------------------------------------------------
             Note: This was incorrect.  The contexts should be
-            ORed together.  This has been fixed.  A more 
+            ORed together.  This has been fixed.  A more
             complete description is available in item #152.
             ---------------------------------------------------
 

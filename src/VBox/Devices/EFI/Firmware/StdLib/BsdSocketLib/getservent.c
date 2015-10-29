@@ -102,7 +102,7 @@ _getservbyport_yp(line)
 		} else
 			return(0);
 	}
-		
+
 	/* getservent() expects lines terminated with \n -- make it happy */
 	snprintf(line, BUFSIZ, "%.*s\n", resultlen, result);
 
@@ -133,7 +133,7 @@ _getservbyname_yp(line)
 						&result, &resultlen)) {
 		return(0);
 	}
-		
+
 	/* getservent() expects lines terminated with \n -- make it happy */
 	snprintf(line, BUFSIZ, "%.*s\n", resultlen, result);
 
@@ -228,7 +228,7 @@ again:
 		if (___getservbyname_yp != NULL) {
 			if (!_getservbyname_yp(line))
 				goto tryagain;
-		} 
+		}
 		else if (___getservbyport_yp != 0) {
 			if (!_getservbyport_yp(line))
 				goto tryagain;

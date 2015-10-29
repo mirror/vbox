@@ -2,7 +2,7 @@
 Private Header file for Usb Host Controller PEIM
 
 Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
-  
+
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
 of the BSD License which accompanies this distribution.  The
@@ -61,7 +61,7 @@ typedef struct _PEI_USB2_HC_DEV PEI_USB2_HC_DEV;
 #define EHC_ROOT_PORT_RECOVERY_STALL (20 * EHC_1_MILLISECOND)
 
 //
-// Sync and Async transfer polling interval, set by experience, 
+// Sync and Async transfer polling interval, set by experience,
 // and the unit of Async is 100us, means 50ms as interval.
 //
 #define EHC_SYNC_POLL_INTERVAL       (6 * EHC_1_MILLISECOND)
@@ -97,7 +97,7 @@ typedef struct _PEI_USB2_HC_DEV PEI_USB2_HC_DEV;
 struct _PEI_USB2_HC_DEV {
   UINTN                               Signature;
   PEI_USB2_HOST_CONTROLLER_PPI        Usb2HostControllerPpi;
-  EFI_PEI_PPI_DESCRIPTOR              PpiDescriptor;                    
+  EFI_PEI_PPI_DESCRIPTOR              PpiDescriptor;
   UINT32                              UsbHostControllerBaseAddress;
   PEI_URB                             *Urb;
   USBHC_MEM_POOL                      *MemPool;
@@ -113,21 +113,21 @@ struct _PEI_USB2_HC_DEV {
   //
   PEI_EHC_QTD                         *ShortReadStop;
   EFI_EVENT                           PollTimer;
-  
+
   //
-  // Asynchronous(bulk and control) transfer schedule data: 
+  // Asynchronous(bulk and control) transfer schedule data:
   // ReclaimHead is used as the head of the asynchronous transfer
-  // list. It acts as the reclamation header. 
+  // list. It acts as the reclamation header.
   //
   PEI_EHC_QH                          *ReclaimHead;
-  
+
   //
   // Peroidic (interrupt) transfer schedule data:
   //
-  VOID                                *PeriodFrame;     // Mapped as common buffer 
+  VOID                                *PeriodFrame;     // Mapped as common buffer
   VOID                                *PeriodFrameHost;
   VOID                                *PeriodFrameMap;
-                                      
+
   PEI_EHC_QH                          *PeriodOne;
   EFI_LIST_ENTRY                      AsyncIntTransfers;
 
@@ -151,14 +151,14 @@ struct _PEI_USB2_HC_DEV {
 **/
 EFI_STATUS
 InitializeUsbHC (
-  IN PEI_USB2_HC_DEV      *EhcDev  
+  IN PEI_USB2_HC_DEV      *EhcDev
   );
 
 /**
   Initialize the memory management pool for the host controller.
-  
+
   @param  Ehc                   The EHCI device.
-  @param  Check4G               Whether the host controller requires allocated memory 
+  @param  Check4G               Whether the host controller requires allocated memory
                                 from one 4G address space.
   @param  Which4G               The 4G memory area each memory allocated should be from.
 
@@ -173,10 +173,10 @@ UsbHcInitMemPool (
   IN UINT32               Which4G
   )
 ;
-            
+
 /**
   Release the memory management pool.
-  
+
   @param  Pool                  The USB memory pool to free.
 
   @retval EFI_DEVICE_ERROR      Fail to free the memory pool.
@@ -192,7 +192,7 @@ UsbHcFreeMemPool (
 /**
   Allocate some memory from the host controller's memory pool
   which can be used to communicate with host controller.
-  
+
   @param  Ehc       The EHCI device.
   @param  Pool      The host controller's memory pool.
   @param  Size      Size of the memory to allocate.

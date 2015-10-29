@@ -45,9 +45,9 @@
 ASM_GLOBAL ASM_PFX(InternalMemScanMem8)
 ASM_PFX(InternalMemScanMem8):
     pushq    %rdi
-    movq     %rcx, %rdi 
-    movq     %rdx, %rcx  
-    movq     %r8,   %rax 
+    movq     %rcx, %rdi
+    movq     %rdx, %rcx
+    movq     %r8,   %rax
     repne    scasb
     leaq     -1(%rdi), %rax
     cmovnz   %rcx, %rax                     # set rax to 0 if not found

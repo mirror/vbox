@@ -1,10 +1,10 @@
 ## @file
 #  This module installs SMM variable protocol into SMM protocol database,
-#  which can be used by SMM driver, and installs SMM variable protocol 
+#  which can be used by SMM driver, and installs SMM variable protocol
 #  into BS protocol database, which can be used to notify the SMM Runtime
 #  Dxe driver that the SMM variable service is ready.
-#  This module should be used with SMM Runtime DXE module together. The 
-#  SMM Runtime DXE module would install variable arch protocol and variable 
+#  This module should be used with SMM Runtime DXE module together. The
+#  SMM Runtime DXE module would install variable arch protocol and variable
 #  write arch protocol based on SMM variable module.
 #
 #  Caution: This module requires additional review when modified.

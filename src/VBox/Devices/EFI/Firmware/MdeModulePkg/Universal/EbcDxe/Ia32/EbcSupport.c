@@ -43,7 +43,7 @@ UINT8  mInstructionBufferTemplate[] = {
   // These 4 bytes of the thunk entry is the address of the EBC
   // entry point.
   //
-  0xB8, 
+  0xB8,
     (UINT8)(EBC_ENTRYPOINT_SIGNATURE & 0xFF),
     (UINT8)((EBC_ENTRYPOINT_SIGNATURE >> 8) & 0xFF),
     (UINT8)((EBC_ENTRYPOINT_SIGNATURE >> 16) & 0xFF),

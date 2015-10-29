@@ -822,7 +822,7 @@ Ip6OnDADFinished (
   EFI_DHCP6_PACKET_OPTION   *Oro;
   EFI_DHCP6_RETRANSMISSION  InfoReqReXmit;
   EFI_IPv6_ADDRESS          AllNodes;
-  
+
   IpSb     = IpIf->Service;
   AddrInfo = DadEntry->AddressInfo;
 

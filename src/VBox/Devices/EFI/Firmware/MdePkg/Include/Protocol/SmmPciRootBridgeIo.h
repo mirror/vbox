@@ -25,8 +25,8 @@
   }
 
 ///
-/// This protocol provides the same functionality as the PCI Root Bridge I/O Protocol defined in the 
-/// UEFI 2.1 Specifcation, section 13.2, except that the functions for Map() and Unmap() may return 
+/// This protocol provides the same functionality as the PCI Root Bridge I/O Protocol defined in the
+/// UEFI 2.1 Specifcation, section 13.2, except that the functions for Map() and Unmap() may return
 /// EFI_UNSUPPORTED.
 ///
 typedef EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  EFI_SMM_PCI_ROOT_BRIDGE_IO_PROTOCOL;

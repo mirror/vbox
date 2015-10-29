@@ -85,7 +85,7 @@ ShellCommandRunEdit (
             }
             gEfiShellProtocol->SetCurDir(NULL, Nfs);
             FreePool(Nfs);
-          } 
+          }
         }
       }
 

@@ -479,7 +479,7 @@ char *term;
 {
 	TermEntry *p;
 	require(term!=NULL, "Tnum: invalid terminal");
-	
+
 	if ( *term=='"' ) p = (TermEntry *) hash_get(Texpr, term);
 	else p = (TermEntry *) hash_get(Tname, term);
 	if ( p == NULL ) return 0;
@@ -559,14 +559,14 @@ int sz;
 {
 	Entry *p;
 	require(text!=NULL, "new: NULL terminal");
-	
+
 	if ( (p = (Entry *) calloc(1,sz)) == 0 )
 	{
 		fatal_internal("newEntry: out of memory for terminals\n");
 		exit(PCCTS_EXIT_FAILURE);
 	}
 	p->str = mystrdup(text);
-	
+
 	return(p);
 }
 
@@ -671,7 +671,7 @@ int list_search_cstring(list, cstring)
 }
 
 			/* F O L L O W  C y c l e  S t u f f */
-		
+
 /* make a key based upon (rulename, computation, k value).
  * Computation values are 'i'==FIRST, 'o'==FOLLOW.
  */
@@ -692,7 +692,7 @@ int k;
 {
 	static char key[MaxRuleName+2+2+1];                                 /* MR10 */
 	int i;
-	
+
 	if ( k > 99 )                                                       /* MR10 */
 		fatal("k>99 is too big for this implementation of ANTLR!\n");   /* MR10 */
 	if ( (i=strlen(rule)) > MaxRuleName )                               /* MR10 */
@@ -839,7 +839,7 @@ int k;
 	for (p=FoTOS[k]; *p != r->rulenum && p >= FoStack[k]; --p) {;}
 	require(p>=FoStack[k], "RegisterCycle: FoStack is screwed up beyond belief");
 	if ( p == FoTOS[k] ) return;	/* don't worry about cycles to oneself */
-	
+
 	/* compute cyclic dependents (rules in cycle except head) */
 	c = newCycle;
 	require(c!=NULL, "RegisterCycle: couldn't alloc new cycle");
@@ -855,7 +855,7 @@ int k;
 			hash_add(Fcache, Fkey(RulePtr[*p]->rname,'o',k), (Entry *)f);
 		}
 		f->incomplete = TRUE;
-		
+
 		set_orel(*p, &(c->cyclicDep)); /* mark rule as dependent of croot */
 	}
 	list_add(&(Cycles[k]), (void *)c);
@@ -890,7 +890,7 @@ int k;
 
     unsigned    *cursor;        /* MR10 */
     unsigned    *origin;        /* MR10 */
-	
+
 	/*fprintf(stderr, "Resolving following cycles for %d\n", k);*/
 	while ( changed )
 	{
@@ -1052,7 +1052,7 @@ Junction *q;
 	int doing_rule;
 	require(q!=NULL, "pJunc: NULL node");
 	require(q->ntype==nJunction, "pJunc: not junction");
-	
+
 	if ( q->pvisited == TRUE ) return;
 	q->pvisited = TRUE;
 	switch ( q->jtype )
@@ -1177,7 +1177,7 @@ RuleRefNode *p;
 {
 	require(p!=NULL, "pRuleRef: NULL node");
 	require(p->ntype==nRuleRef, "pRuleRef: not rule ref node");
-	
+
 	printf( " %s", p->text);
 	PRINT(p->next);
 }
@@ -1210,7 +1210,7 @@ ActionNode *p;
 {
 	require(p!=NULL, "pAction: NULL node");
 	require(p->ntype==nAction, "pAction: not action node");
-	
+
 	PRINT(p->next);
 }
 
@@ -1424,7 +1424,7 @@ Junction *p;
    hand written code ?
 
    Examples of input:
- 
+
         Foo f,
         Foo f = Foo(1),
         Foo f = Foo(1,2),
@@ -1521,7 +1521,7 @@ int *pNest;
 #endif
 {
   char *p = pStart;
-  
+
   int nest = 0;
 
   *pNest = (-1);
@@ -1544,11 +1544,11 @@ int *pNest;
         nest--;
         p++;
         break;
-      
+
       case '"' :
         p = skipStringLiteral(p);
         break;
-  
+
       case '\'' :
         p = skipCharLiteral(p);
         break;
@@ -1609,7 +1609,7 @@ char * pStart;
 	char *pSeparator;
 	int nest = 0;
 
-	require(pStart!=NULL, "getInitializer: invalid string"); 
+	require(pStart!=NULL, "getInitializer: invalid string");
 
 	p = endFormal(pStart,
 			      &pDataType,
@@ -1686,7 +1686,7 @@ static char strBetweenWorkArea[MAX_STR_BETWEEN_WORK_AREA];
 	to a work area.  The start of the string is pStart.  The end of the string
 	is the character before pNext, or if pNext is null then the character before
 	pStop.  Trailing spaces are not included in the copy operation.
-	
+
 	This is used when a string contains several parts.  The pNext part may be
 	optional.  The pStop will stop the scan when the optional part is not present
 	(is a null pointer).
@@ -1740,7 +1740,7 @@ char *pStop;
                 Example: pointer to "f".
 
    ppEqualSign  Returns a pointer to the equal sign separating the
-                formal symbol from the initial value.  If there is 
+                formal symbol from the initial value.  If there is
                 no "=" then this will be NULL.
 
    ppValue      Returns a pointer to the initial value part of the
@@ -1755,8 +1755,8 @@ char *pStop;
                 for a successful parse of this portion of the formal
                 list.
 
-*/ 
- 
+*/
+
 #ifdef __USE_PROTOS
 char * endFormal(char *pStart,
                  char **ppDataType,
@@ -1803,7 +1803,7 @@ int *pNest;
   /* We are not looking for the symbol, we are looking
      for the separator that follows the symbol.  Then
      we'll back up.
-   
+
      Search for the ',' or '=" or null terminator.
    */
 

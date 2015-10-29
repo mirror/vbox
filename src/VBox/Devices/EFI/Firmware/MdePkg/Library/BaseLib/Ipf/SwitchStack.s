@@ -27,9 +27,9 @@ AsmSwitchStackAndBackingStore::
         mov                 r17 = in1
         mov                 r18 = in2
         and                 r2  = r14, r2
-        
+
         flushrs
-        
+
         mov                 ar.rsc = r2
         mov                 sp  = in3
         mov                 r19 = in4

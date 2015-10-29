@@ -37,17 +37,17 @@ typedef enum {
 /**
   Provides the basic memory and I/O interfaces used toabstract accesses to devices.
 
-  The I/O operations are carried out exactly as requested.  The caller is 
-  responsible for any alignment and I/O width issues that the bus, device, 
+  The I/O operations are carried out exactly as requested.  The caller is
+  responsible for any alignment and I/O width issues that the bus, device,
   platform, or type of I/O might require.
 
   @param[in]      This     The EFI_SMM_CPU_IO2_PROTOCOL instance.
   @param[in]      Width    Signifies the width of the I/O operations.
-  @param[in]      Address  The base address of the I/O operations.  The caller is 
-                           responsible for aligning the Address if required. 
+  @param[in]      Address  The base address of the I/O operations.  The caller is
+                           responsible for aligning the Address if required.
   @param[in]      Count    The number of I/O operations to perform.
-  @param[in,out]  Buffer   For read operations, the destination buffer to store 
-                           the results.  For write operations, the source buffer 
+  @param[in,out]  Buffer   For read operations, the destination buffer to store
+                           the results.  For write operations, the source buffer
                            from which to write data.
 
   @retval EFI_SUCCESS            The data was read from or written to the device.

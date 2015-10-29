@@ -15,9 +15,9 @@
 
 APPLICATION = $(BIN_PATH)\$(APPNAME).exe
 
-all: $(APPLICATION) 
+all: $(APPLICATION)
 
-$(APPLICATION) : $(OBJECTS) 
+$(APPLICATION) : $(OBJECTS)
 	-@if not exist $(BIN_PATH) mkdir $(BIN_PATH)
 	$(LD) /nologo /debug /incremental:no /nodefaultlib:libc.lib /out:$@ $(LIBS) $**
 

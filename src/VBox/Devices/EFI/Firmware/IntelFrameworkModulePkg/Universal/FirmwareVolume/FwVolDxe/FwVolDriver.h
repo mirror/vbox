@@ -128,7 +128,7 @@ FvGetVolumeAttributes (
                         unsuccessful return, FvAttributes is not
                         modified and the firmware volume
                         settings are not changed.
-  
+
   @retval EFI_SUCCESS             The requested firmware volume attributes
                                   were set and the resulting
                                   EFI_FV_ATTRIBUTES is returned in
@@ -595,7 +595,7 @@ FvCreateNewFileInsidePadFile (
 
   @param FvDevice        Firmware Volume Device.
   @param NumOfFiles      Total File number to be written.
-  @param FileData        The array of EFI_FV_WRITE_FILE_DATA structure, 
+  @param FileData        The array of EFI_FV_WRITE_FILE_DATA structure,
                          used to get name, attributes, type, etc
   @param FileOperation   The array of operation for each file.
 

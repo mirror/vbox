@@ -1048,7 +1048,7 @@ DegradeResource (
   while (ChildDeviceLink != NULL && ChildDeviceLink != &Bridge->ChildList) {
     Temp = PCI_IO_DEVICE_FROM_LINK (ChildDeviceLink);
     if (Temp->RomSize != 0) {
-      if (!IsListEmpty (&Mem64Node->ChildList)) {      
+      if (!IsListEmpty (&Mem64Node->ChildList)) {
         ChildNodeLink = Mem64Node->ChildList.ForwardLink;
         while (ChildNodeLink != &Mem64Node->ChildList) {
           TempNode = RESOURCE_NODE_FROM_LINK (ChildNodeLink);
@@ -1059,10 +1059,10 @@ DegradeResource (
             InsertResourceNode (Mem32Node, TempNode);
           }
           ChildNodeLink = NextChildNodeLink;
-        }        
+        }
       }
 
-      if (!IsListEmpty (&PMem64Node->ChildList)) {      
+      if (!IsListEmpty (&PMem64Node->ChildList)) {
         ChildNodeLink = PMem64Node->ChildList.ForwardLink;
         while (ChildNodeLink != &PMem64Node->ChildList) {
           TempNode = RESOURCE_NODE_FROM_LINK (ChildNodeLink);
@@ -1073,7 +1073,7 @@ DegradeResource (
             InsertResourceNode (PMem32Node, TempNode);
           }
           ChildNodeLink = NextChildNodeLink;
-        }        
+        }
       }
 
     }
@@ -1117,7 +1117,7 @@ DegradeResource (
         PMem64Node,
         TRUE
         );
-    } 
+    }
 
     //
     // if both PMEM64 and PMEM32 requests from child devices, which can not be satisfied

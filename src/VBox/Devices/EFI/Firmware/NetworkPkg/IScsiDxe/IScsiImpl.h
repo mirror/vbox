@@ -191,7 +191,7 @@ struct _ISCSI_DRIVER_DATA {
   EFI_EXT_SCSI_PASS_THRU_MODE     ExtScsiPassThruMode;
   EFI_HANDLE                      ExtScsiPassThruHandle;
   EFI_DEVICE_PATH_PROTOCOL        *DevicePath;
-  EFI_HANDLE                      ChildHandle;  
+  EFI_HANDLE                      ChildHandle;
   ISCSI_SESSION                   *Session;
 };
 

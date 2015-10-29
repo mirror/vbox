@@ -1,4 +1,4 @@
-#      TITLE   CpuAsm.S: 
+#      TITLE   CpuAsm.S:
 
 #------------------------------------------------------------------------------
 #*
@@ -29,9 +29,9 @@
 #------------------------------------------------------------------------------
 ASM_GLOBAL ASM_PFX(SetCodeSelector)
 ASM_PFX(SetCodeSelector):
-    subq    $0x10, %rsp 
-    leaq    L_setCodeSelectorLongJump(%rip), %rax 
-    movq    %rax, (%rsp) 
+    subq    $0x10, %rsp
+    leaq    L_setCodeSelectorLongJump(%rip), %rax
+    movq    %rax, (%rsp)
     movw    %cx, 4(%rsp)
     .byte   0xFF, 0x2C, 0x24     # jmp (%rsp) note:fword jmp
 L_setCodeSelectorLongJump:

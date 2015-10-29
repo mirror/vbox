@@ -60,7 +60,7 @@ IScsiGetSubnetMaskPrefixLength (
   );
 
 /**
-  Convert the hexadecimal encoded LUN string into the 64-bit LUN. 
+  Convert the hexadecimal encoded LUN string into the 64-bit LUN.
 
   @param[in]   Str             The hexadecimal encoded LUN string.
   @param[out]  Lun             Storage to return the 64-bit LUN.
@@ -153,7 +153,7 @@ IScsiAsciiStrToIp (
   @param[in, out]  HexStr      Pointer to the string.
   @param[in, out]  HexLength   The length of the string.
 
-  @retval EFI_SUCCESS          The binary data is converted to the hexadecimal string 
+  @retval EFI_SUCCESS          The binary data is converted to the hexadecimal string
                                and the length of the string is updated.
   @retval EFI_BUFFER_TOO_SMALL The string is too small.
   @retval EFI_INVALID_PARAMETER The IP string is malformatted.
@@ -225,10 +225,10 @@ IScsiCleanDriverData (
   Check wheather the Controller is configured to use DHCP protocol.
 
   @param[in]  Controller           The handle of the controller.
-  
+
   @retval TRUE                     The handle of the controller need the Dhcp protocol.
   @retval FALSE                    The handle of the controller does not need the Dhcp protocol.
-  
+
 **/
 BOOLEAN
 IScsiDhcpIsConfigured (
@@ -282,7 +282,7 @@ IScsiOnExitBootService (
   currently managing the controller specified by ControllerHandle.  This test
   is performed by evaluating if the the protocol specified by ProtocolGuid is
   present on ControllerHandle and is was opened by DriverBindingHandle and Nic
-  Device handle with an attribute of EFI_OPEN_PROTOCOL_BY_DRIVER. 
+  Device handle with an attribute of EFI_OPEN_PROTOCOL_BY_DRIVER.
   If ProtocolGuid is NULL, then ASSERT().
 
   @param  ControllerHandle     A handle for a controller to test.

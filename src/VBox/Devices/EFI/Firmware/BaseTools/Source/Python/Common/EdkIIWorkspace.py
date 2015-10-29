@@ -1,5 +1,5 @@
 ## @file
-# This is the base class for applications that operate on an EDK II Workspace 
+# This is the base class for applications that operate on an EDK II Workspace
 #
 # Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
@@ -21,7 +21,7 @@ from Common.LongFilePathSupport import OpenLongFilePath as open
 ## EdkIIWorkspace
 #
 # Collect WorkspaceDir from the environment, the Verbose command line flag, and detect an icon bitmap file.
-# 
+#
 # @var StartTime:       Time of build system starting
 # @var PrintRunTime:    Printable time of build system running
 # @var PrintRunStatus:  Printable status of build system running
@@ -33,7 +33,7 @@ class EdkIIWorkspace:
         self.PrintRunTime = False
         self.PrintRunStatus = False
         self.RunStatus = ''
-        
+
         #
         # Check environment valiable 'WORKSPACE'
         #
@@ -42,7 +42,7 @@ class EdkIIWorkspace:
             return False
 
         self.CurrentWorkingDir = os.getcwd()
-        
+
         self.WorkspaceDir = os.path.realpath(os.environ.get('WORKSPACE'))
         (Drive, Path) = os.path.splitdrive(self.WorkspaceDir)
         if Drive == '':
@@ -53,7 +53,7 @@ class EdkIIWorkspace:
             self.WorkspaceDir = Drive.upper() + Path
 
         self.WorkspaceRelativeWorkingDir = self.WorkspaceRelativePath (self.CurrentWorkingDir)
-            
+
         try:
             #
             # Load TianoCoreOrgLogo, used for GUI tool
@@ -61,12 +61,12 @@ class EdkIIWorkspace:
             self.Icon = wx.Icon(self.WorkspaceFile('tools/Python/TianoCoreOrgLogo.gif'),wx.BITMAP_TYPE_GIF)
         except:
             self.Icon = None
-            
+
         self.Verbose = False
         for Arg in sys.argv:
             if Arg.lower() == '-v':
                 self.Verbose = True
-    
+
     ## Close build system
     #
     # Close build system and print running time and status
@@ -150,7 +150,7 @@ class EdkIIWorkspace:
     def XmlParseFileSection (self, FileName, SectionTag):
         if self.Verbose:
             print FileName
-        return XmlParseFileSection (self.WorkspaceFile(FileName), SectionTag)        
+        return XmlParseFileSection (self.WorkspaceFile(FileName), SectionTag)
 
     ## Save a XML file
     #
@@ -226,7 +226,7 @@ def ConvertTextFileToDictionary(FileName, Dictionary, CommentCharacter, KeySplit
         LineList = Line.split(KeySplitCharacter,1)
         if len(LineList) >= 2:
             Key = LineList[0].split()
-            if len(Key) == 1 and Key[0][0] != CommentCharacter and Key[0] not in Keys: 
+            if len(Key) == 1 and Key[0][0] != CommentCharacter and Key[0] not in Keys:
                 if ValueSplitFlag:
                     Dictionary[Key[0]] = LineList[1].replace('\\','/').split(ValueSplitCharacter)
                 else:
@@ -279,7 +279,7 @@ def ConvertDictionaryToTextFile(FileName, Dictionary, CommentCharacter, KeySplit
         Index += 1
     for RemainingKey in Keys:
         if ValueSplitFlag:
-            Line = '%-*s %c %s\n' % (MaxLength, RemainingKey, KeySplitCharacter,' '.join(Dictionary[RemainingKey])) 
+            Line = '%-*s %c %s\n' % (MaxLength, RemainingKey, KeySplitCharacter,' '.join(Dictionary[RemainingKey]))
         else:
             Line = '%-*s %c %s\n' % (MaxLength, RemainingKey, KeySplitCharacter, Dictionary[RemainingKey])
         Lines.append(Line)

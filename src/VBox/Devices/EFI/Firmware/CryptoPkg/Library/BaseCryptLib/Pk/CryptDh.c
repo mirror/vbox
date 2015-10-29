@@ -60,7 +60,7 @@ DhFree (
 
   Given generator g, and length of prime number p in bits, this function generates p,
   and sets DH context according to value of g and p.
-  
+
   Before this function can be invoked, pseudorandom number generator must be correctly
   initialized by RandomSeed().
 
@@ -148,7 +148,7 @@ DhSetParameter (
   if (DhContext == NULL || Prime == NULL || PrimeLength > INT_MAX) {
     return FALSE;
   }
-  
+
   if (Generator != DH_GENERATOR_2 && Generator != DH_GENERATOR_5) {
     return FALSE;
   }
@@ -161,7 +161,7 @@ DhSetParameter (
   if (Dh->p == NULL) {
     goto Error;
   }
-  
+
   Dh->g = BN_new ();
   if (Dh->g == NULL) {
     goto Error;
@@ -191,14 +191,14 @@ Error:
   if (Bn != NULL) {
     BN_free (Bn);
   }
-  
+
   return FALSE;
 }
 
 /**
   Generates DH public key.
 
-  This function generates random secret exponent, and computes the public key, which is 
+  This function generates random secret exponent, and computes the public key, which is
   returned via parameter PublicKey and PublicKeySize. DH context is updated accordingly.
   If the PublicKey buffer is too small to hold the public key, FALSE is returned and
   PublicKeySize is set to the required buffer size to obtain the public key.
@@ -239,7 +239,7 @@ DhGenerateKey (
   if (PublicKey == NULL && *PublicKeySize != 0) {
     return FALSE;
   }
-  
+
   Dh = (DH *) DhContext;
 
   RetVal = (BOOLEAN) DH_generate_key (DhContext);
@@ -249,7 +249,7 @@ DhGenerateKey (
       *PublicKeySize = Size;
       return FALSE;
     }
-    
+
     BN_bn2bin (Dh->pub_key, PublicKey);
     *PublicKeySize = Size;
   }
@@ -261,7 +261,7 @@ DhGenerateKey (
   Computes exchanged common key.
 
   Given peer's public key, this function computes the exchanged common key, based on its own
-  context including value of prime modulus and random secret exponent. 
+  context including value of prime modulus and random secret exponent.
 
   If DhContext is NULL, then return FALSE.
   If PeerPublicKey is NULL, then return FALSE.
@@ -304,7 +304,7 @@ DhComputeKey (
   if (PeerPublicKeySize > INT_MAX) {
     return FALSE;
   }
-  
+
   Bn = BN_bin2bn (PeerPublicKey, (UINT32) PeerPublicKeySize, NULL);
   if (Bn == NULL) {
     return FALSE;

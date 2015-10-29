@@ -159,7 +159,7 @@ XhcReset (
   EFI_TPL            OldTpl;
 
   Xhc = XHC_FROM_THIS (This);
-  
+
   if (Xhc->DevicePath != NULL) {
     //
     // Report Status Code to indicate reset happens
@@ -169,7 +169,7 @@ XhcReset (
       (EFI_IO_BUS_USB | EFI_IOB_PC_RESET),
       Xhc->DevicePath
       );
-  }  
+  }
 
   OldTpl = gBS->RaiseTPL (XHC_TPL);
 
@@ -919,14 +919,14 @@ XhcControlTransfer (
   }
 
   Xhc->PciIo->Flush (Xhc->PciIo);
-  
+
   if (Urb->DataMap != NULL) {
     Status = Xhc->PciIo->Unmap (Xhc->PciIo, Urb->DataMap);
     ASSERT_EFI_ERROR (Status);
     if (EFI_ERROR (Status)) {
       Status = EFI_DEVICE_ERROR;
       goto FREE_URB;
-    }  
+    }
   }
 
   //
@@ -935,7 +935,7 @@ XhcControlTransfer (
   // Hook Set_Config request from UsbBus as we need configure device endpoint.
   //
   if ((Request->Request     == USB_REQ_GET_DESCRIPTOR) &&
-      ((Request->RequestType == USB_REQUEST_TYPE (EfiUsbDataIn, USB_REQ_TYPE_STANDARD, USB_TARGET_DEVICE)) || 
+      ((Request->RequestType == USB_REQUEST_TYPE (EfiUsbDataIn, USB_REQ_TYPE_STANDARD, USB_TARGET_DEVICE)) ||
       ((Request->RequestType == USB_REQUEST_TYPE (EfiUsbDataIn, USB_REQ_TYPE_CLASS, USB_TARGET_DEVICE))))) {
     DescriptorType = (UINT8)(Request->Value >> 8);
     if ((DescriptorType == USB_DESC_TYPE_DEVICE) && ((*DataLength == sizeof (EFI_USB_DEVICE_DESCRIPTOR)) || ((DeviceSpeed == EFI_USB_SPEED_FULL) && (*DataLength == 8)))) {
@@ -1084,7 +1084,7 @@ XhcControlTransfer (
         ClearPortRequest.Length       = 0;
 
         XhcControlTransfer (
-          This, 
+          This,
           DeviceAddress,
           DeviceSpeed,
           MaximumPacketLength,

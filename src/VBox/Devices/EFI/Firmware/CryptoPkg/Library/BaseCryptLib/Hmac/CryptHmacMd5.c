@@ -97,7 +97,7 @@ HmacMd5Duplicate (
   if (HmacMd5Context == NULL || NewHmacMd5Context == NULL) {
     return FALSE;
   }
-  
+
   CopyMem (NewHmacMd5Context, HmacMd5Context, sizeof (HMAC_CTX));
 
   return TRUE;

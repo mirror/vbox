@@ -1,7 +1,7 @@
 /** @file
   Guid used to define the Firmware File System. See PI spec volume 3 for more
   details.
-  
+
   @par Revision Reference:
   Guids defined in PI Spec Volume 3
 

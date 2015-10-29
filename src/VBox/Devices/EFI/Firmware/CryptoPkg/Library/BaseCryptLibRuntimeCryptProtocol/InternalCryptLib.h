@@ -1,4 +1,4 @@
-/** @file  
+/** @file
   Internal include file for BaseCryptLibRuntimeCryptProtocol.
 
 Copyright (c) 2012, Intel Corporation. All rights reserved.<BR>

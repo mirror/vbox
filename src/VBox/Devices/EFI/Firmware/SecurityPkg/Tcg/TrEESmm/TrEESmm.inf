@@ -1,8 +1,8 @@
 ## @file
 #  Provides ACPI metholds for TPM 2.0 support
 #
-#  This driver implements TPM 2.0 definition block in ACPI table and 
-#  registers SMI callback functions for TrEE physical presence and 
+#  This driver implements TPM 2.0 definition block in ACPI table and
+#  registers SMI callback functions for TrEE physical presence and
 #  MemoryClear to handle the requests from ACPI method.
 #
 #  Caution: This module requires additional review when modified.
@@ -58,9 +58,9 @@
   gEfiTrEEPhysicalPresenceGuid
 
   ## SOMETIMES_PRODUCES ## Variable:L"MemoryOverwriteRequestControl"
-  ## SOMETIMES_CONSUMES ## Variable:L"MemoryOverwriteRequestControl"  
+  ## SOMETIMES_CONSUMES ## Variable:L"MemoryOverwriteRequestControl"
   gEfiMemoryOverwriteControlDataGuid
-  
+
   gEfiTpmDeviceInstanceTpm20DtpmGuid                            ## PRODUCES           ## GUID       # TPM device identifier
 
 [Protocols]

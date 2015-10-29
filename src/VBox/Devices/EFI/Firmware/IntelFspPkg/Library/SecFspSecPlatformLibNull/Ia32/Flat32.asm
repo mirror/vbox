@@ -70,7 +70,7 @@ _ModuleEntryPoint      PROC C PUBLIC
   ;
   ; Now we're in 16 bit protected mode
   ; Set up the selectors for 32 bit protected mode entry
-  ; 
+  ;
   mov     ax, SYS_DATA_SEL
   mov     ds, ax
   mov     es, ax
@@ -89,7 +89,7 @@ _ModuleEntryPoint   ENDP
 
 _TEXT_REALMODE      ENDS
 
-.code 
+.code
 ;
 ; Protected mode portion initializes stack, configures cache, and calls C entry point
 ;
@@ -179,5 +179,5 @@ ProtectedModeEntryLinearAddress   LABEL   FWORD
 ProtectedModeEntryLinearOffset    LABEL   DWORD
   DD      OFFSET ProtectedModeEntryPoint  ; Offset of our 32 bit code
   DW      LINEAR_CODE_SEL
-  
+
 END

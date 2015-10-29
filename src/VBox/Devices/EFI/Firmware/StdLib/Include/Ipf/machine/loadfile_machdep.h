@@ -51,7 +51,7 @@ extern	vsize_t ia64_unwindtablen;
 #ifdef _STANDALONE
 
 /* XXX: cherry: This whole thing is glue between the NetBSD pread/vpbcopy etc. etc
- *      and the FreeBSD kern_pread/bzero etc. etc. Needs to be cleaned up 
+ *      and the FreeBSD kern_pread/bzero etc. etc. Needs to be cleaned up
  *      after discussion.
  */
 

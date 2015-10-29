@@ -112,7 +112,7 @@ DisplayOption (
       Value.u8 += 1;
     }
     break;
-    
+
   case DATA_TYPE_INT32_DECIMAL:
     if ( 4 == LengthInBytes ) {
       Print ( L"%d", *Value.i32 );

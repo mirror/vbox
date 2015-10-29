@@ -39,7 +39,7 @@ InternalX86DisablePaging64    PROC
     lea     rsi, @F                     ; rsi <- The start address of transition code
     mov     edi, [rsp + 28h]            ; rdi <- New stack
     lea     rax, mTransitionEnd         ; rax <- end of transition code
-    sub     rax, rsi                    ; rax <- The size of transition piece code 
+    sub     rax, rsi                    ; rax <- The size of transition piece code
     add     rax, 4                      ; Round RAX up to the next 4 byte boundary
     and     al, 0fch
     sub     rdi, rax                    ; rdi <- Use stack to hold transition code
@@ -48,7 +48,7 @@ InternalX86DisablePaging64    PROC
     mov     rcx, rax                    ; rcx <- The size of transition piece code
     rep     movsb                       ; copy transition code to top of new stack which must be below 4GB
     pop     rcx                         ; restore rcx
-    
+
     mov     esi, r8d
     mov     edi, r9d
     mov     eax, r10d                   ; eax <- start of the transition code on the stack
@@ -64,7 +64,7 @@ InternalX86DisablePaging64    PROC
     mov     rax, cr0
     btr     eax, 31                     ; Clear CR0.PG
     mov     cr0, rax                    ; disable paging and caches
-    
+
     mov     ebx, edx                    ; save EntryPoint to rbx, for rdmsr will overwrite rdx
     mov     ecx, 0c0000080h
     rdmsr

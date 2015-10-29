@@ -340,7 +340,7 @@ class MetaFileParser(object):
 
         self._ValueList = [ReplaceMacro(Value, self._Macros) for Value in self._ValueList]
         Name, Value = self._ValueList[1], self._ValueList[2]
-        # Sometimes, we need to make differences between EDK and EDK2 modules 
+        # Sometimes, we need to make differences between EDK and EDK2 modules
         if Name == 'INF_VERSION':
             try:
                 self._Version = int(Value, 0)
@@ -383,7 +383,7 @@ class MetaFileParser(object):
         Macros.update(self._GetApplicableSectionMacro())
         return Macros
 
-    ## Construct section Macro dict 
+    ## Construct section Macro dict
     def _ConstructSectionMacroDict(self, Name, Value):
         ScopeKey = [(Scope[0], Scope[1]) for Scope in self._Scope]
         ScopeKey = tuple(ScopeKey)
@@ -399,7 +399,7 @@ class MetaFileParser(object):
         SectionLocalMacros = self._SectionsMacroDict[SectionDictKey]
         SectionLocalMacros[Name] = Value
 
-    ## Get section Macros that are applicable to current line, which may come from other sections 
+    ## Get section Macros that are applicable to current line, which may come from other sections
     ## that share the same name while scope is wider
     def _GetApplicableSectionMacro(self):
         Macros = {}
@@ -1271,7 +1271,7 @@ class DscParser(MetaFileParser):
             try:
                 Processer[self._ItemType]()
             except EvaluationException, Excpt:
-                # 
+                #
                 # Only catch expression evaluation error here. We need to report
                 # the precise number of line on which the error occurred
                 #
@@ -1393,7 +1393,7 @@ class DscParser(MetaFileParser):
                 EdkLogger.debug(EdkLogger.DEBUG_5, str(Exc), self._ValueList[1])
                 Result = False
             except WrnExpression, Excpt:
-                # 
+                #
                 # Catch expression evaluation warning here. We need to report
                 # the precise number of line and return the evaluation result
                 #
@@ -1450,7 +1450,7 @@ class DscParser(MetaFileParser):
             __IncludeMacros['EFI_SOURCE'] = GlobalData.gGlobalDefines['EFI_SOURCE']
             __IncludeMacros['EDK_SOURCE'] = GlobalData.gGlobalDefines['EDK_SOURCE']
             #
-            # Allow using MACROs comes from [Defines] section to keep compatible. 
+            # Allow using MACROs comes from [Defines] section to keep compatible.
             #
             __IncludeMacros.update(self._Macros)
 
@@ -1810,7 +1810,7 @@ class DecParser(MetaFileParser):
         ValueRe = re.compile(r'^\s*L?\".*\|.*\"')
         PtrValue = ValueRe.findall(TokenList[1])
 
-        # Has VOID* type string, may contain "|" character in the string. 
+        # Has VOID* type string, may contain "|" character in the string.
         if len(PtrValue) != 0:
             ptrValueList = re.sub(ValueRe, '', TokenList[1])
             ValueList = GetSplitValueList(ptrValueList)

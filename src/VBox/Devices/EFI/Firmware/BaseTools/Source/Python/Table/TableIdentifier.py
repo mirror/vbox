@@ -21,7 +21,7 @@ from Table import Table
 ## TableIdentifier
 #
 # This class defined a table used for Identifier
-# 
+#
 # @param object:       Inherited from object class
 #
 #
@@ -29,7 +29,7 @@ class TableIdentifier(Table):
     def __init__(self, Cursor):
         Table.__init__(self, Cursor)
         self.Table = 'Identifier'
-    
+
     ## Create table
     #
     # Create table Identifier

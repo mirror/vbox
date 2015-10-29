@@ -320,7 +320,7 @@ Node *alt;
 		case nJunction :
 		{
 			Predicate *a, *b;
-			Junction *p = (Junction *) alt;	
+			Junction *p = (Junction *) alt;
 
 			/* lock nodes */
 			if ( p->jtype==aLoopBlk || p->jtype==RuleBlk ||
@@ -672,7 +672,7 @@ Predicate *a;
 
 		/* any k left to do? if so, link onto tree */
 		while ( !set_nil(a->completionTree) )
-		{	
+		{
 			k2 = set_int(a->completionTree);
 			set_rm(k2, a->completionTree);
 			u = NULL;

@@ -133,7 +133,7 @@ struct _USB2_HC_DEV {
   EFI_EVENT                 PollTimer;
 
   //
-  // ExitBootServicesEvent is used to stop the EHC DMA operation 
+  // ExitBootServicesEvent is used to stop the EHC DMA operation
   // after exit boot service.
   //
   EFI_EVENT                 ExitBootServiceEvent;

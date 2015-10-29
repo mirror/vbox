@@ -42,7 +42,7 @@
   Sdk/C/LzFind.h
   Sdk/C/LzHash.h
   Sdk/C/LzmaDec.h
-  Sdk/C/Types.h  
+  Sdk/C/Types.h
   GuidedSectionExtraction.c
   UefiLzma.h
   LzmaDecompressLibInternal.h

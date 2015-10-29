@@ -30,7 +30,7 @@
 #
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
 #
-#  DRIVER_BINDING                =  gMtftp4DriverBinding                        
+#  DRIVER_BINDING                =  gMtftp4DriverBinding
 #  COMPONENT_NAME                =  gMtftp4ComponentName
 #  COMPONENT_NAME2               =  gMtftp4ComponentName2
 #

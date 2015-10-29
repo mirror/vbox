@@ -1,5 +1,5 @@
 @REM @file
-@REM This script will exec LzmaCompress tool with --f86 option that enables 
+@REM This script will exec LzmaCompress tool with --f86 option that enables
 @REM converter for x86 code.
 @REM
 @REM Copyright (c) 2012 - 2014, Intel Corporation. All rights reserved.<BR>

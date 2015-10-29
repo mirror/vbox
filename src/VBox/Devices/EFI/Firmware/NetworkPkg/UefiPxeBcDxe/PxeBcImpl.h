@@ -101,7 +101,7 @@ struct _PXEBC_PRIVATE_DATA {
   EFI_HANDLE                                Image;
 
   PXEBC_PRIVATE_PROTOCOL                    Id;
-  EFI_SIMPLE_NETWORK_PROTOCOL               *Snp; 
+  EFI_SIMPLE_NETWORK_PROTOCOL               *Snp;
 
   PXEBC_VIRTUAL_NIC                         *Ip4Nic;
   PXEBC_VIRTUAL_NIC                         *Ip6Nic;

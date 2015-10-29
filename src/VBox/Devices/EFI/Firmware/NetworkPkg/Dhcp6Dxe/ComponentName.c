@@ -247,10 +247,10 @@ Dhcp6ComponentNameGetDriverName (
 
   @param  Dhcp6[in]                   A pointer to the EFI_DHCP6_PROTOCOL.
 
-  
+
   @retval EFI_SUCCESS                 Update the ControllerNameTable of this instance successfully.
   @retval EFI_INVALID_PARAMETER       The input parameter is invalid.
-  
+
 **/
 EFI_STATUS
 UpdateName (
@@ -272,12 +272,12 @@ UpdateName (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   if (gDhcp6ControllerNameTable != NULL) {
     FreeUnicodeStringTable (gDhcp6ControllerNameTable);
     gDhcp6ControllerNameTable = NULL;
   }
-  
+
   if (Dhcp6ModeData.Ia == NULL) {
     HandleName = L"DHCPv6 (No configured IA)";
   } else {
@@ -286,7 +286,7 @@ UpdateName (
     }
     HandleName = mDhcp6ControllerName[Dhcp6ModeData.Ia->State];
   }
-  
+
   Status = AddUnicodeString2 (
              "eng",
              gDhcp6ComponentName.SupportedLanguages,
@@ -297,7 +297,7 @@ UpdateName (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   return AddUnicodeString2 (
            "en",
            gDhcp6ComponentName2.SupportedLanguages,
@@ -394,13 +394,13 @@ Dhcp6ComponentNameGetControllerName (
   if (ChildHandle == NULL) {
     return EFI_UNSUPPORTED;
   }
-  
-  // 
-  // Make sure this driver produced ChildHandle 
-  // 
+
+  //
+  // Make sure this driver produced ChildHandle
+  //
   Status = EfiTestChildHandle (
              ControllerHandle,
-             ChildHandle, 
+             ChildHandle,
              &gEfiUdp6ProtocolGuid
              );
   if (EFI_ERROR (Status)) {
@@ -413,7 +413,7 @@ Dhcp6ComponentNameGetControllerName (
   Status = gBS->OpenProtocol (
                   ChildHandle,
                   &gEfiDhcp6ProtocolGuid,
-                  (VOID **)&Dhcp6, 
+                  (VOID **)&Dhcp6,
                   NULL,
                   NULL,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL

@@ -1,5 +1,5 @@
 /** @file
-  The internal structure and function declaration of 
+  The internal structure and function declaration of
   match policy entry function in IpSecConfig application.
 
   Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>

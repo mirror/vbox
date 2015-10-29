@@ -1,7 +1,7 @@
 /** @file
   EFI_USB2_HC_PROTOCOL as defined in UEFI 2.0.
-  The USB Host Controller Protocol is used by code, typically USB bus drivers, 
-  running in the EFI boot services environment, to perform data transactions over 
+  The USB Host Controller Protocol is used by code, typically USB bus drivers,
+  running in the EFI boot services environment, to perform data transactions over
   a USB bus. In addition, it provides an abstraction for the root hub of the USB bus.
 
   Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
@@ -37,7 +37,7 @@ typedef struct {
 } EFI_USB_PORT_STATUS;
 
 ///
-/// EFI_USB_PORT_STATUS.PortStatus bit definition 
+/// EFI_USB_PORT_STATUS.PortStatus bit definition
 ///
 #define USB_PORT_STAT_CONNECTION    0x0001
 #define USB_PORT_STAT_ENABLE        0x0002
@@ -51,7 +51,7 @@ typedef struct {
 #define USB_PORT_STAT_OWNER         0x2000
 
 ///
-/// EFI_USB_PORT_STATUS.PortChangeStatus bit definition 
+/// EFI_USB_PORT_STATUS.PortChangeStatus bit definition
 ///
 #define USB_PORT_STAT_C_CONNECTION  0x0001
 #define USB_PORT_STAT_C_ENABLE      0x0002
@@ -62,7 +62,7 @@ typedef struct {
 
 ///
 /// Usb port features value
-/// Each value indicates its bit index in the port status and status change bitmaps, 
+/// Each value indicates its bit index in the port status and status change bitmaps,
 /// if combines these two bitmaps into a 32-bit bitmap.
 ///
 typedef enum {
@@ -158,7 +158,7 @@ typedef enum {
                                     ///< Explicitly set by software. 3)
                                     ///< Triggered by a fatal error such as
                                     ///< consistency check failure.
-                                    
+
   EfiUsbHcStateOperational,         ///< The host controller is in an
                                     ///< operational state. When in
                                     ///< this state, the host
@@ -166,7 +166,7 @@ typedef enum {
                                     ///< traffic. This state must be
                                     ///< explicitly set to enable the
                                     ///< USB bus traffic.
-                                    
+
   EfiUsbHcStateSuspend,             ///< The host controller is in the
                                     ///< suspend state. No USB
                                     ///< transactions can occur while in
@@ -176,7 +176,7 @@ typedef enum {
                                     ///< set by software. 2) Triggered
                                     ///< when there is no bus traffic for
                                     ///< 3 microseconds.
-                                    
+
   EfiUsbHcStateMaximum              ///< Maximum value for enumration value of HC status.
 } EFI_USB_HC_STATE;
 
@@ -559,11 +559,11 @@ EFI_STATUS
   );
 
 ///
-/// The EFI_USB2_HC_PROTOCOL provides USB host controller management, basic 
-/// data transactions over a USB bus, and USB root hub access. A device driver 
-/// that wishes to manage a USB bus in a system retrieves the EFI_USB2_HC_PROTOCOL 
-/// instance that is associated with the USB bus to be managed. A device handle 
-/// for a USB host controller will minimally contain an EFI_DEVICE_PATH_PROTOCOL 
+/// The EFI_USB2_HC_PROTOCOL provides USB host controller management, basic
+/// data transactions over a USB bus, and USB root hub access. A device driver
+/// that wishes to manage a USB bus in a system retrieves the EFI_USB2_HC_PROTOCOL
+/// instance that is associated with the USB bus to be managed. A device handle
+/// for a USB host controller will minimally contain an EFI_DEVICE_PATH_PROTOCOL
 /// instance, and an EFI_USB2_HC_PROTOCOL instance.
 ///
 struct _EFI_USB2_HC_PROTOCOL {
@@ -580,18 +580,18 @@ struct _EFI_USB2_HC_PROTOCOL {
   EFI_USB2_HC_PROTOCOL_GET_ROOTHUB_PORT_STATUS     GetRootHubPortStatus;
   EFI_USB2_HC_PROTOCOL_SET_ROOTHUB_PORT_FEATURE    SetRootHubPortFeature;
   EFI_USB2_HC_PROTOCOL_CLEAR_ROOTHUB_PORT_FEATURE  ClearRootHubPortFeature;
-  
+
   ///
-  /// The major revision number of the USB host controller. The revision information 
-  /// indicates the release of the Universal Serial Bus Specification with which the 
+  /// The major revision number of the USB host controller. The revision information
+  /// indicates the release of the Universal Serial Bus Specification with which the
   /// host controller is compliant.
   ///
   UINT16                                           MajorRevision;
 
   ///
-  /// The minor revision number of the USB host controller. The revision information 
-  /// indicates the release of the Universal Serial Bus Specification with which the 
-  /// host controller is compliant.  
+  /// The minor revision number of the USB host controller. The revision information
+  /// indicates the release of the Universal Serial Bus Specification with which the
+  /// host controller is compliant.
   ///
   UINT16                                           MinorRevision;
 };

@@ -71,7 +71,7 @@ GetMailboxFromHob (
   )
 {
   EFI_HOB_GUID_TYPE        *GuidHob;
-  UINT64                   *MailboxLocation;  
+  UINT64                   *MailboxLocation;
   DEBUG_AGENT_MAILBOX      *Mailbox;
 
   GuidHob = GetFirstGuidHob (&gEfiDebugAgentGuid);
@@ -81,7 +81,7 @@ GetMailboxFromHob (
   MailboxLocation = (UINT64 *) (GET_GUID_HOB_DATA(GuidHob));
   Mailbox = (DEBUG_AGENT_MAILBOX *)(UINTN)(*MailboxLocation);
   VerifyMailboxChecksum (Mailbox);
-  
+
   return Mailbox;
 }
 
@@ -217,7 +217,7 @@ InitializeDebugAgent (
     //
     // Check if Debug Agent initialized in SEC/PEI phase
     //
-    Mailbox = GetMailboxFromHob (); 
+    Mailbox = GetMailboxFromHob ();
     if (Mailbox != NULL) {
       mMailboxPointer = Mailbox;
       break;
@@ -230,7 +230,7 @@ InitializeDebugAgent (
     //
     // Save original IDT entries
     //
-    AsmReadIdtr (&IdtDescriptor);      
+    AsmReadIdtr (&IdtDescriptor);
     CopyMem (&IdtEntry, (VOID *)IdtDescriptor.Base, 33 * sizeof(IA32_IDT_GATE_DESCRIPTOR));
     //
     // Initialized Debug Agent
@@ -256,11 +256,11 @@ InitializeDebugAgent (
     }
     //
     // Find and report PE/COFF image info to HOST
-    //  
+    //
     FindAndReportModuleImageInfo (SIZE_4KB);
     //
     // Restore saved IDT entries
-    //     
+    //
     CopyMem ((VOID *)IdtDescriptor.Base, &IdtEntry, 33 * sizeof(IA32_IDT_GATE_DESCRIPTOR));
 
     break;
@@ -311,7 +311,7 @@ InitializeDebugAgent (
     } else {
       Ia32Idtr =  (IA32_DESCRIPTOR *) Context;
       Ia32IdtEntry = (IA32_IDT_ENTRY *)(Ia32Idtr->Base);
-      MailboxLocation = (UINT64 *) (UINTN) (Ia32IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetLow + 
+      MailboxLocation = (UINT64 *) (UINTN) (Ia32IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetLow +
                                            (Ia32IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetHigh << 16));
       mMailboxPointer = (DEBUG_AGENT_MAILBOX *)(UINTN)(*MailboxLocation);
       VerifyMailboxChecksum (mMailboxPointer);
@@ -340,12 +340,12 @@ InitializeDebugAgent (
 
   default:
     //
-    // Only DEBUG_AGENT_INIT_PREMEM_SEC and DEBUG_AGENT_INIT_POSTMEM_SEC are allowed for this 
+    // Only DEBUG_AGENT_INIT_PREMEM_SEC and DEBUG_AGENT_INIT_POSTMEM_SEC are allowed for this
     // Debug Agent library instance.
     //
     DEBUG ((EFI_D_ERROR, "Debug Agent: The InitFlag value is not allowed!\n"));
     CpuDeadLoop ();
-    break;    
+    break;
   }
 }
 

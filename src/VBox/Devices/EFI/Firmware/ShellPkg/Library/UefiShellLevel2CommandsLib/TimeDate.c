@@ -77,7 +77,7 @@ InternalIsTimeLikeString (
 }
 
 /**
-  Verify that the DateString is valid and if so set that as the current 
+  Verify that the DateString is valid and if so set that as the current
   date.
 
   @param[in] DateString     The pointer to a string representation of the date.
@@ -289,7 +289,7 @@ STATIC CONST SHELL_PARAM_ITEM TimeParamList3[] = {
   };
 
 /**
-  Verify that the TimeString is valid and if so set that as the current 
+  Verify that the TimeString is valid and if so set that as the current
   time.
 
   @param[in] TimeString     The pointer to a string representation of the time.
@@ -691,7 +691,7 @@ STATIC CONST SHELL_PARAM_ITEM TimeZoneParamList3[] = {
 };
 
 /**
-  Verify that the TimeZoneString is valid and if so set that as the current 
+  Verify that the TimeZoneString is valid and if so set that as the current
   timezone.
 
   @param[in] TimeZoneString     The pointer to a string representation of the timezone.
@@ -955,7 +955,7 @@ ShellCommandRunTimeZone (
               //
               ShellPrintHiiEx (-1, -1, NULL, TimeZoneList[LoopVar].StringId, gShellLevel2HiiHandle);
               break;
-            } 
+            }
           }
         } else {
           //

@@ -17,14 +17,14 @@
 import Common.EdkLogger as EdkLogger
 from Common.BuildToolError import *
 from Common.DataType import *
- 
+
 
 class InfSectionParser():
     def __init__(self, FilePath):
         self._FilePath = FilePath
         self._FileSectionDataList = []
         self._ParserInf()
-    
+
     def _ParserInf(self):
         Filename = self._FilePath
         FileLinesList = []
@@ -33,12 +33,12 @@ class InfSectionParser():
         FileLastLine = False
         SectionLine = ''
         SectionData = []
-        
+
         try:
             FileLinesList = open(Filename, "r", 0).readlines()
         except BaseException:
             EdkLogger.error("build", AUTOGEN_ERROR, 'File %s is opened failed.' % Filename)
-        
+
         for Index in range(0, len(FileLinesList)):
             line = str(FileLinesList[Index]).strip()
             if Index + 1 == len(FileLinesList):
@@ -53,7 +53,7 @@ class InfSectionParser():
                 SectionLine = line
                 UserExtFind = True
                 FindEnd = False
-            
+
             if (NextLine != '' and NextLine[0] == TAB_SECTION_START and \
                 NextLine[-1] == TAB_SECTION_END) or FileLastLine:
                 UserExtFind = False
@@ -61,7 +61,7 @@ class InfSectionParser():
                 self._FileSectionDataList.append({SectionLine: SectionData[:]})
                 SectionData = []
                 SectionLine = ''
-    
+
 
     # Get depex expresion
     #

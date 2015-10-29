@@ -2,7 +2,7 @@
 #  Provides hash service by registered hash handler
 #
 #  Ihis library is BaseCrypto router. It will redirect hash request to each individual
-#  hash handler registered, such as SHA1, SHA256. Platform can use PcdTpm2HashMask to 
+#  hash handler registered, such as SHA1, SHA256. Platform can use PcdTpm2HashMask to
 #  mask some hash engines.
 #
 # Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>

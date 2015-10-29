@@ -2,7 +2,7 @@
   Timer Library functions built upon local APIC on IA32/x64.
 
   This library uses the local APIC library so that it supports x2APIC mode.
-  
+
   Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License

@@ -1,7 +1,7 @@
 ## @file
 # Generate PCD table for 'Patchable In Module' type PCD with given .map file.
 #    The Patch PCD table like:
-#    
+#
 #    PCD Name    Offset in binary
 #    ========    ================
 #
@@ -40,9 +40,9 @@ secRe = re.compile('^([\da-fA-F]+):([\da-fA-F]+) +([\da-fA-F]+)[Hh]? +([.\w\$]+)
 symRe = re.compile('^([\da-fA-F]+):([\da-fA-F]+) +([\.:\\\\\w\?@\$]+) +([\da-fA-F]+)', re.UNICODE)
 
 def parsePcdInfoFromMapFile(mapfilepath, efifilepath):
-    """ Parse map file to get binary patch pcd information 
+    """ Parse map file to get binary patch pcd information
     @param path    Map file absolution path
-    
+
     @return a list which element hold (PcdName, Offset, SectionName)
     """
     lines = []
@@ -52,7 +52,7 @@ def parsePcdInfoFromMapFile(mapfilepath, efifilepath):
         f.close()
     except:
         return None
-    
+
     if len(lines) == 0: return None
     firstline = lines[0].strip()
     if (firstline.startswith("Archive member included ") and
@@ -88,7 +88,7 @@ def _parseForGCC(lines, efifilepath):
             m = re.match("^([\da-fA-Fx]+) +[_]+gPcd_BinaryPatch_([\w_\d]+)$", line)
             if m != None:
                 bpcds.append((m.groups(0)[1], int(m.groups(0)[0], 16) , int(sections[-1][1], 16), sections[-1][0]))
-                
+
     # get section information from efi file
     efisecs = PeImageClass(efifilepath).SectionHeaderList
     if efisecs == None or len(efisecs) == 0:
@@ -106,17 +106,17 @@ def _parseForGCC(lines, efifilepath):
                 #assert efisec[0].strip() == pcd[3].strip() and efisec[1] + redirection == pcd[2], "There are some differences between map file and efi file"
                 pcds.append([pcd[0], efisec[2] + pcd[1] - efisec[1] - redirection, efisec[0]])
     return pcds
-                
+
 def _parseGeneral(lines, efifilepath):
-    """ For MSFT, ICC, EBC 
+    """ For MSFT, ICC, EBC
     @param lines    line array for map file
-    
+
     @return a list which element hold (PcdName, Offset, SectionName)
-    """    
+    """
     status = 0    #0 - beginning of file; 1 - PE section definition; 2 - symbol table
     secs  = []    # key = section name
     bPcds = []
-    
+
 
     for line in lines:
         line = line.strip()
@@ -128,7 +128,7 @@ def _parseGeneral(lines, efifilepath):
             continue
         if re.match("^entry point at", line):
             status = 3
-            continue        
+            continue
         if status == 1 and len(line) != 0:
             m =  secRe.match(line)
             assert m != None, "Fail to parse the section in map file , line is %s" % line
@@ -154,7 +154,7 @@ def _parseGeneral(lines, efifilepath):
     efisecs = PeImageClass(efifilepath).SectionHeaderList
     if efisecs == None or len(efisecs) == 0:
         return None
-    
+
     pcds = []
     for pcd in bPcds:
         index = 0
@@ -165,7 +165,7 @@ def _parseGeneral(lines, efifilepath):
             elif pcd[4] == index:
                 pcds.append([pcd[0], efisec[2] + pcd[2], efisec[0]])
     return pcds
-    
+
 def generatePcdTable(list, pcdpath):
     try:
         f = open(pcdpath, 'w')
@@ -173,13 +173,13 @@ def generatePcdTable(list, pcdpath):
         pass
 
     f.write('PCD Name                       Offset    Section Name\r\n')
-    
+
     for pcditem in list:
         f.write('%-30s 0x%-08X %-6s\r\n' % (pcditem[0], pcditem[1], pcditem[2]))
     f.close()
 
-    #print 'Success to generate Binary Patch PCD table at %s!' % pcdpath 
-    
+    #print 'Success to generate Binary Patch PCD table at %s!' % pcdpath
+
 if __name__ == '__main__':
     UsageString = "%prog -m <MapFile> -e <EfiFile> -o <OutFile>"
     AdditionalNotes = "\nPCD table is generated in file name with .BinaryPcdTable.txt postfix"
@@ -190,18 +190,18 @@ if __name__ == '__main__':
                       help='Absolute path of EFI binary file.')
     parser.add_option('-o', '--outputfile', action='store', dest='outfile',
                       help='Absolute path of output file to store the got patchable PCD table.')
-  
+
     (options, args) = parser.parse_args()
 
     if options.mapfile == None or options.efifile == None:
         print parser.get_usage()
     elif os.path.exists(options.mapfile) and os.path.exists(options.efifile):
-        list = parsePcdInfoFromMapFile(options.mapfile, options.efifile) 
+        list = parsePcdInfoFromMapFile(options.mapfile, options.efifile)
         if list != None:
             if options.outfile != None:
                 generatePcdTable(list, options.outfile)
             else:
-                generatePcdTable(list, options.mapfile.replace('.map', '.BinaryPcdTable.txt')) 
+                generatePcdTable(list, options.mapfile.replace('.map', '.BinaryPcdTable.txt'))
         else:
             print 'Fail to generate Patch PCD Table based on map file and efi file'
     else:

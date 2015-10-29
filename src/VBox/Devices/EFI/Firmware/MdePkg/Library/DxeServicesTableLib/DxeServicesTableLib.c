@@ -1,14 +1,14 @@
 /** @file
   This library implement library class DxeServiceTableLib.
   It produce EFI_DXE_SERVICE pointer in global variable gDS in library's constructure.
-  
+
   A DXE driver can use gDS pointer to access services in EFI_DXE_SERVICE, if this
-  DXE driver declare that use DxeServicesTableLib library class and link to this 
+  DXE driver declare that use DxeServicesTableLib library class and link to this
   library instance.
 
-  Please attention this library instance can not be used util EFI_SYSTEM_TABLE was 
+  Please attention this library instance can not be used util EFI_SYSTEM_TABLE was
   initialized.
-  
+
   This library contains contruct function to retrieve EFI_DXE_SERIVCE, this construct
   function will be invoked in DXE driver's autogen file.
 

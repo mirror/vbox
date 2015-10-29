@@ -1,7 +1,7 @@
 /** @file
-  Partition driver that produces logical BlockIo devices from a physical 
+  Partition driver that produces logical BlockIo devices from a physical
   BlockIo device. The logical BlockIo devices are based on the format
-  of the raw block devices media. Currently "El Torito CD-ROM", Legacy 
+  of the raw block devices media. Currently "El Torito CD-ROM", Legacy
   MBR, and GPT partition schemes are supported.
 
 Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
@@ -15,8 +15,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
-#ifndef _PARTITION_H_ 
-#define _PARTITION_H_ 
+#ifndef _PARTITION_H_
+#define _PARTITION_H_
 
 #include <Uefi.h>
 #include <Protocol/BlockIo.h>
@@ -411,7 +411,7 @@ PartitionInstallElToritoChildHandles (
   @param[in]  BlockIo           Parent BlockIo interface.
   @param[in]  BlockIo2          Parent BlockIo2 interface.
   @param[in]  DevicePath        Parent Device Path.
-   
+
   @retval EFI_SUCCESS       A child handle was added.
   @retval EFI_MEDIA_CHANGED Media change was detected.
   @retval Others            MBR partition was not found.

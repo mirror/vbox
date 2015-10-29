@@ -40,9 +40,9 @@ GetLocalApicBaseAddress (
   )
 {
   MSR_IA32_APIC_BASE ApicBaseMsr;
-  
+
   ApicBaseMsr.Uint64 = AsmReadMsr64 (MSR_IA32_APIC_BASE_ADDRESS);
-  
+
   return (UINTN)(LShiftU64 ((UINT64) ApicBaseMsr.Bits.ApicBaseHigh, 32)) +
            (((UINTN)ApicBaseMsr.Bits.ApicBaseLow) << 12);
 }
@@ -166,7 +166,7 @@ WriteLocalApicReg (
 /**
   Send an IPI by writing to ICR.
 
-  This function returns after the IPI has been accepted by the target processor. 
+  This function returns after the IPI has been accepted by the target processor.
 
   @param  IcrLow 32-bit value to be written to the low half of ICR.
   @param  ApicId APIC ID of the target processor if this IPI is targeted for a specific processor.
@@ -231,7 +231,7 @@ SendIpi (
 
   } else {
     //
-    // For x2APIC, A single MSR write to the Interrupt Command Register is required for dispatching an 
+    // For x2APIC, A single MSR write to the Interrupt Command Register is required for dispatching an
     // interrupt in x2APIC mode.
     //
     MsrValue = LShiftU64 ((UINT64) ApicId, 32) | IcrLow;
@@ -330,7 +330,7 @@ SetApicMode (
   Get the initial local APIC ID of the executing processor assigned by hardware upon power on or reset.
 
   In xAPIC mode, the initial local APIC ID may be different from current APIC ID.
-  In x2APIC mode, the local APIC ID can't be changed and there is no concept of initial APIC ID. In this case, 
+  In x2APIC mode, the local APIC ID can't be changed and there is no concept of initial APIC ID. In this case,
   the 32-bit local APIC ID is returned as initial APIC ID.
 
   @return  32-bit initial local APIC ID of the executing processor.
@@ -351,7 +351,7 @@ GetInitialApicId (
     //
     AsmCpuid (CPUID_SIGNATURE, &MaxCpuIdIndex, NULL, NULL, NULL);
     //
-    // If CPUID Leaf B is supported, 
+    // If CPUID Leaf B is supported,
     // Then the initial 32-bit APIC ID = CPUID.0BH:EDX
     // Else the initial 8-bit APIC ID = CPUID.1:EBX[31:24]
     //
@@ -405,7 +405,7 @@ GetApicVersion (
 /**
   Send a Fixed IPI to a specified target processor.
 
-  This function returns after the IPI has been accepted by the target processor. 
+  This function returns after the IPI has been accepted by the target processor.
 
   @param  ApicId   The local APIC ID of the target processor.
   @param  Vector   The vector number of the interrupt being sent.
@@ -429,7 +429,7 @@ SendFixedIpi (
 /**
   Send a Fixed IPI to all processors excluding self.
 
-  This function returns after the IPI has been accepted by the target processors. 
+  This function returns after the IPI has been accepted by the target processors.
 
   @param  Vector   The vector number of the interrupt being sent.
 **/
@@ -452,7 +452,7 @@ SendFixedIpiAllExcludingSelf (
 /**
   Send a SMI IPI to a specified target processor.
 
-  This function returns after the IPI has been accepted by the target processor. 
+  This function returns after the IPI has been accepted by the target processor.
 
   @param  ApicId   Specify the local APIC ID of the target processor.
 **/
@@ -473,7 +473,7 @@ SendSmiIpi (
 /**
   Send a SMI IPI to all processors excluding self.
 
-  This function returns after the IPI has been accepted by the target processors. 
+  This function returns after the IPI has been accepted by the target processors.
 **/
 VOID
 EFIAPI
@@ -493,7 +493,7 @@ SendSmiIpiAllExcludingSelf (
 /**
   Send an INIT IPI to a specified target processor.
 
-  This function returns after the IPI has been accepted by the target processor. 
+  This function returns after the IPI has been accepted by the target processor.
 
   @param  ApicId   Specify the local APIC ID of the target processor.
 **/
@@ -514,7 +514,7 @@ SendInitIpi (
 /**
   Send an INIT IPI to all processors excluding self.
 
-  This function returns after the IPI has been accepted by the target processors. 
+  This function returns after the IPI has been accepted by the target processors.
 **/
 VOID
 EFIAPI
@@ -534,7 +534,7 @@ SendInitIpiAllExcludingSelf (
 /**
   Send an INIT-Start-up-Start-up IPI sequence to a specified target processor.
 
-  This function returns after the IPI has been accepted by the target processor. 
+  This function returns after the IPI has been accepted by the target processor.
 
   if StartupRoutine >= 1M, then ASSERT.
   if StartupRoutine is not multiple of 4K, then ASSERT.
@@ -569,7 +569,7 @@ SendInitSipiSipi (
 /**
   Send an INIT-Start-up-Start-up IPI sequence to all processors excluding self.
 
-  This function returns after the IPI has been accepted by the target processors. 
+  This function returns after the IPI has been accepted by the target processors.
 
   if StartupRoutine >= 1M, then ASSERT.
   if StartupRoutine is not multiple of 4K, then ASSERT.
@@ -741,7 +741,7 @@ InitializeApicTimer (
     Dcr.Uint32 = ReadLocalApicReg (XAPIC_TIMER_DIVIDE_CONFIGURATION_OFFSET);
     Dcr.Bits.DivideValue1 = (Divisor & 0x3);
     Dcr.Bits.DivideValue2 = (Divisor >> 2);
-    WriteLocalApicReg (XAPIC_TIMER_DIVIDE_CONFIGURATION_OFFSET, Dcr.Uint32); 
+    WriteLocalApicReg (XAPIC_TIMER_DIVIDE_CONFIGURATION_OFFSET, Dcr.Uint32);
   }
 
   //
@@ -862,13 +862,13 @@ SendApicEoi (
 }
 
 /**
-  Get the 32-bit address that a device should use to send a Message Signaled 
+  Get the 32-bit address that a device should use to send a Message Signaled
   Interrupt (MSI) to the Local APIC of the currently executing processor.
 
   @return 32-bit address used to send an MSI to the Local APIC.
 **/
 UINT32
-EFIAPI    
+EFIAPI
 GetApicMsiAddress (
   VOID
   )
@@ -876,7 +876,7 @@ GetApicMsiAddress (
   LOCAL_APIC_MSI_ADDRESS  MsiAddress;
 
   //
-  // Return address for an MSI interrupt to be delivered only to the APIC ID 
+  // Return address for an MSI interrupt to be delivered only to the APIC ID
   // of the currently executing processor.
   //
   MsiAddress.Uint32             = 0;
@@ -884,17 +884,17 @@ GetApicMsiAddress (
   MsiAddress.Bits.DestinationId = GetApicId ();
   return MsiAddress.Uint32;
 }
-    
+
 /**
-  Get the 64-bit data value that a device should use to send a Message Signaled 
+  Get the 64-bit data value that a device should use to send a Message Signaled
   Interrupt (MSI) to the Local APIC of the currently executing processor.
 
   If Vector is not in range 0x10..0xFE, then ASSERT().
   If DeliveryMode is not supported, then ASSERT().
-  
-  @param  Vector          The 8-bit interrupt vector associated with the MSI.  
+
+  @param  Vector          The 8-bit interrupt vector associated with the MSI.
                           Must be in the range 0x10..0xFE
-  @param  DeliveryMode    A 3-bit value that specifies how the recept of the MSI 
+  @param  DeliveryMode    A 3-bit value that specifies how the recept of the MSI
                           is handled.  The only supported values are:
                             0: LOCAL_APIC_DELIVERY_MODE_FIXED
                             1: LOCAL_APIC_DELIVERY_MODE_LOWEST_PRIORITY
@@ -902,19 +902,19 @@ GetApicMsiAddress (
                             4: LOCAL_APIC_DELIVERY_MODE_NMI
                             5: LOCAL_APIC_DELIVERY_MODE_INIT
                             7: LOCAL_APIC_DELIVERY_MODE_EXTINT
-                          
-  @param  LevelTriggered  TRUE specifies a level triggered interrupt.  
+
+  @param  LevelTriggered  TRUE specifies a level triggered interrupt.
                           FALSE specifies an edge triggered interrupt.
   @param  AssertionLevel  Ignored if LevelTriggered is FALSE.
-                          TRUE specifies a level triggered interrupt that active 
+                          TRUE specifies a level triggered interrupt that active
                           when the interrupt line is asserted.
-                          FALSE specifies a level triggered interrupt that active 
+                          FALSE specifies a level triggered interrupt that active
                           when the interrupt line is deasserted.
 
   @return 64-bit data value used to send an MSI to the Local APIC.
 **/
 UINT64
-EFIAPI    
+EFIAPI
 GetApicMsiValue (
   IN UINT8    Vector,
   IN UINTN    DeliveryMode,
@@ -926,7 +926,7 @@ GetApicMsiValue (
 
   ASSERT (Vector >= 0x10 && Vector <= 0xFE);
   ASSERT (DeliveryMode < 8 && DeliveryMode != 6 && DeliveryMode != 3);
-  
+
   MsiData.Uint64            = 0;
   MsiData.Bits.Vector       = Vector;
   MsiData.Bits.DeliveryMode = (UINT32)DeliveryMode;

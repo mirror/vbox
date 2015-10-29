@@ -92,13 +92,13 @@ InternalReportStatusCode (
         return EFI_UNSUPPORTED;
       }
     }
-  
+
     //
     // A status code service is present in system, so pass in all the parameters to the service.
     //
     return (*mReportStatusCode) (mStatusCodeProtocol, Type, Value, Instance, (EFI_GUID *)CallerId, Data);
   }
-  
+
   return EFI_UNSUPPORTED;
 }
 

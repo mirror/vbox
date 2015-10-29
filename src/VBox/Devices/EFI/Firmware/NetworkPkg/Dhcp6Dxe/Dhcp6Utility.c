@@ -67,7 +67,7 @@ Dhcp6GenerateClientId (
     //
     //
     //  The format of DUID-UUID:
-    //   
+    //
     //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
     //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     //   |          DUID-Type (4)        |    UUID (128 bits)            |
@@ -90,16 +90,16 @@ Dhcp6GenerateClientId (
     // sizeof (Duid-type + UUID-size) = 18 bytes
     //
     Duid->Length = (UINT16) (18);
-  
+
     //
     // Set the Duid-type and copy UUID.
     //
     WriteUnaligned16 ((UINT16 *) (Duid->Duid), HTONS (Dhcp6DuidTypeUuid));
-  
+
     CopyMem (Duid->Duid + 2, &Uuid, sizeof(EFI_GUID));
 
   } else {
-      
+
     //
     //
     //  The format of DUID-LLT:
@@ -134,12 +134,12 @@ Dhcp6GenerateClientId (
     if (Duid == NULL) {
       return NULL;
     }
-  
+
     //
     // sizeof (Duid-type + hardware-type + time) = 8 bytes
     //
     Duid->Length = (UINT16) (Mode->HwAddressSize + 8);
-  
+
     //
     // Set the Duid-type, hardware-type, time and copy the hardware address.
     //
@@ -686,7 +686,7 @@ Dhcp6AppendIaAddrOption (
   //      .                        IAaddr-options                         .
   //      .                                                               .
   //      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  
+
   //
   // Fill the value of Ia Address option type
   //
@@ -999,7 +999,7 @@ Dhcp6SeekIaOption (
 }
 
 /**
-  Check whether the incoming IPv6 address in IaAddr is one of the maintained 
+  Check whether the incoming IPv6 address in IaAddr is one of the maintained
   addresses in the IA control blcok.
 
   @param[in]  IaAddr            The pointer to the IA Address to be checked.
@@ -1018,7 +1018,7 @@ Dhcp6AddrIsInCurrentIa (
   UINT32    Index;
 
   ASSERT (IaAddr != NULL && CurrentIa != NULL);
-  
+
   for (Index = 0; Index < CurrentIa->IaAddressCount; Index++) {
     if (EFI_IP6_EQUAL(&IaAddr->IpAddress, &CurrentIa->IaAddress[Index].IpAddress)) {
       return TRUE;
@@ -1302,7 +1302,7 @@ EFI_STATUS
 Dhcp6GetMappingTimeOut (
   IN  EFI_IP6_CONFIG_PROTOCOL       *Ip6Cfg,
   OUT UINTN                         *TimeOut
-  ) 
+  )
 {
   EFI_STATUS            Status;
   UINTN                 DataSize;
@@ -1322,8 +1322,8 @@ Dhcp6GetMappingTimeOut (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   *TimeOut = TICKS_PER_SECOND * DadXmits.DupAddrDetectTransmits + DHCP6_DAD_ADDITIONAL_DELAY;
-  
+
   return EFI_SUCCESS;
 }

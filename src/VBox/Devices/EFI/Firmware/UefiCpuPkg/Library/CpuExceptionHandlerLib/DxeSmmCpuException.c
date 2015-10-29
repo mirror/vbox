@@ -39,7 +39,7 @@ UINTN                       mEnabledInterruptNum = 0;
 VOID
 EFIAPI
 CommonExceptionHandler (
-  IN EFI_EXCEPTION_TYPE          ExceptionType, 
+  IN EFI_EXCEPTION_TYPE          ExceptionType,
   IN EFI_SYSTEM_CONTEXT          SystemContext
   )
 {
@@ -97,7 +97,7 @@ CommonExceptionHandler (
     CpuDeadLoop ();
     break;
   }
-  
+
   if (mExternalInterruptHandler[ExceptionType] != NULL) {
     (mExternalInterruptHandler[ExceptionType]) (ExceptionType, SystemContext);
   } else if (ExceptionType < CPU_EXCEPTION_NUM) {
@@ -109,7 +109,7 @@ CommonExceptionHandler (
     }
     //
     // Display ExceptionType, CPU information and Image information
-    //  
+    //
     DumpCpuContent (ExceptionType, SystemContext);
     //
     // Release Spinlock of output message
@@ -191,7 +191,7 @@ UpdateIdtTable (
       break;
     }
   }
- 
+
   //
   // Save Interrupt number to global variable used for RegisterCpuInterruptHandler ()
   //
@@ -202,8 +202,8 @@ UpdateIdtTable (
   Internal worker function to initialize exception handler.
 
   @param[in]  VectorInfo    Pointer to reserved vector list.
-  
-  @retval EFI_SUCCESS           CPU Exception Entries have been successfully initialized 
+
+  @retval EFI_SUCCESS           CPU Exception Entries have been successfully initialized
                                 with default exception handlers.
   @retval EFI_INVALID_PARAMETER VectorInfo includes the invalid content if VectorInfo is not NULL.
   @retval EFI_UNSUPPORTED       This function is not supported.

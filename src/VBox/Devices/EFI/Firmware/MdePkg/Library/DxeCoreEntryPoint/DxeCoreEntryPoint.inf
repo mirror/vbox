@@ -20,7 +20,7 @@
   FILE_GUID                      = d258d6af-2fc0-4019-9c1f-1101c3dd19b5
   MODULE_TYPE                    = DXE_CORE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = DxeCoreEntryPoint|DXE_CORE 
+  LIBRARY_CLASS                  = DxeCoreEntryPoint|DXE_CORE
 
 
 #

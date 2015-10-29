@@ -1,16 +1,16 @@
 ## @file
 #  Runtime DXE part corresponding to SMM authenticated variable module
 #
-#  This module installs variable arch protocol and variable write arch protocol to provide 
-#  variable service. This module need work together with SMM authenticated variable module. 
+#  This module installs variable arch protocol and variable write arch protocol to provide
+#  variable service. This module need work together with SMM authenticated variable module.
 #
 #  Caution: This module requires additional review when modified.
 #  This driver will have external input - variable data.
-#  This external input must be validated carefully to avoid security issues such as 
+#  This external input must be validated carefully to avoid security issues such as
 #  buffer overflow or integer overflow.
 #    The whole SMM authentication variable design relies on the integrity of flash part and SMM.
 #  which is assumed to be protected by platform.  All variable code and metadata in flash/SMM Memory
-#  may not be modified without authorization. If platform fails to protect these resources, 
+#  may not be modified without authorization. If platform fails to protect these resources,
 #  the authentication service provided in this driver will be broken, and the behavior is undefined.
 #
 # Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
@@ -51,13 +51,13 @@
 
 [LibraryClasses]
   MemoryAllocationLib
-  BaseLib  
+  BaseLib
   UefiBootServicesTableLib
   DebugLib
   UefiRuntimeLib
   DxeServicesTableLib
   UefiDriverEntryPoint
-  PcdLib  
+  PcdLib
   TpmMeasurementLib
 
 [Protocols]
@@ -74,17 +74,17 @@
 [Guids]
   gEfiEventVirtualAddressChangeGuid                                 ## CONSUMES       ## Event
   gEfiEventExitBootServicesGuid                                     ## CONSUMES       ## Event
-    
+
   ## CONSUMES ## UNDEFINED # Locate protocol
   ## CONSUMES ## UNDEFINED # Protocol notify
   gSmmVariableWriteGuid
-  
+
 
   ## SOMETIMES_CONSUMES   ## Variable:L"PK"
   ## SOMETIMES_CONSUMES   ## Variable:L"KEK"
   ## SOMETIMES_CONSUMES   ## Variable:L"SecureBoot"
   gEfiGlobalVariableGuid
-  
+
   ## SOMETIMES_CONSUMES   ## Variable:L"DB"
   ## SOMETIMES_CONSUMES   ## Variable:L"DBX"
   gEfiImageSecurityDatabaseGuid

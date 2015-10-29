@@ -259,7 +259,7 @@ Ping6OnEchoReplyReceived (
     goto ON_EXIT;
   }
 
-  if (!IP6_IS_MULTICAST (&Private->DstAddress) && 
+  if (!IP6_IS_MULTICAST (&Private->DstAddress) &&
       !EFI_IP6_EQUAL (&RxData->Header->SourceAddress, &Private->DstAddress)) {
     goto ON_EXIT;
   }

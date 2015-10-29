@@ -46,7 +46,7 @@
   GCC:*_*_X64_GENFW_FLAGS   = --keepexceptiontable
   INTEL:*_*_X64_GENFW_FLAGS = --keepexceptiontable
 !endif
-  
+
 ################################################################################
 #
 # SKU Identification section - list of all SKU IDs supported by this Platform.

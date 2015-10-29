@@ -93,7 +93,7 @@ AsmReadControlRegister::
   (p43)  mov  ret0=cr.cmcv      // cr74
   (p49)  mov  ret0=cr.lrr0      // cr80
   (p50)  mov  ret0=cr.lrr1      // cr81
-  
+
   //
   // Restore predicates and return.
   //

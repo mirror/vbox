@@ -211,7 +211,7 @@ char *OutMetaName(char *n)
 char *OutMetaName(n)
 char *n;
 #endif
-{	
+{
     static char *dir_sym = DirectorySymbol;
     static char newname[MaxFileName+1];
     char *p;

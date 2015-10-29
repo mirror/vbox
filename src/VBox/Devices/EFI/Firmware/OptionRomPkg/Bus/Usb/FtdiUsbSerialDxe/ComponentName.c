@@ -164,7 +164,7 @@ UsbSerialComponentNameGetControllerName (
   USB_SER_DEV             *UsbSerDev;
   EFI_SERIAL_IO_PROTOCOL  *SerialIo;
   EFI_USB_IO_PROTOCOL     *UsbIoProtocol;
-  
+
   //
   // This is a device driver, so ChildHandle must be NULL.
   //

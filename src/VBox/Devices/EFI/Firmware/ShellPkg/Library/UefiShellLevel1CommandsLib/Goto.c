@@ -82,14 +82,14 @@ ShellCommandRunGoto (
       if (!MoveToTag(GetNextNode, L"endfor", L"for", CompareString, ShellCommandGetCurrentScriptFile(), FALSE, FALSE, TRUE)) {
         CurrentScriptFile = ShellCommandGetCurrentScriptFile();
         ShellPrintHiiEx(
-          -1, 
-          -1, 
-          NULL, 
-          STRING_TOKEN (STR_SYNTAX_NO_MATCHING), 
-          gShellLevel1HiiHandle, 
-          CompareString, 
-          L"Goto", 
-          CurrentScriptFile!=NULL 
+          -1,
+          -1,
+          NULL,
+          STRING_TOKEN (STR_SYNTAX_NO_MATCHING),
+          gShellLevel1HiiHandle,
+          CompareString,
+          L"Goto",
+          CurrentScriptFile!=NULL
             && CurrentScriptFile->CurrentCommand!=NULL
             ? CurrentScriptFile->CurrentCommand->Line:0);
         ShellStatus = SHELL_NOT_FOUND;

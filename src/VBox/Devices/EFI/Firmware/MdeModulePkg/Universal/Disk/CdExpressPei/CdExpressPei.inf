@@ -1,7 +1,7 @@
 ## @file
 # PeiCdExpress recovery module.
 #
-# This module reads data from CDROM device by all installed block IO ppi and 
+# This module reads data from CDROM device by all installed block IO ppi and
 # finds whether there is Recovery data in the device. If it finds recovery
 # data, it will install Device Recovery Module PPI.
 #

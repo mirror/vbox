@@ -45,11 +45,11 @@
 ASM_GLOBAL ASM_PFX(InternalMemScanMem64)
 ASM_PFX(InternalMemScanMem64):
     pushq    %rdi
-    movq     %rcx, %rdi 
-    movq     %r8, %rax 
-    movq     %rdx, %rcx 
+    movq     %rcx, %rdi
+    movq     %r8, %rax
+    movq     %rdx, %rcx
     repne    scasq
     leaq     -8(%rdi), %rax
-    cmovnz   %rcx, %rax 
+    cmovnz   %rcx, %rax
     popq     %rdi
     ret

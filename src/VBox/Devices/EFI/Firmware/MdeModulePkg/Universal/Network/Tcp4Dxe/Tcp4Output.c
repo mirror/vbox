@@ -1,6 +1,6 @@
 /** @file
   TCP output process routines.
-    
+
 Copyright (c) 2005 - 2010, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -767,7 +767,7 @@ SEND_AGAIN:
   // only send a segment without data if SYN or
   // FIN is set.
   //
-  if ((Len == 0) && 
+  if ((Len == 0) &&
       ((Flag & (TCP_FLG_SYN | TCP_FLG_FIN)) == 0)) {
     return Sent;
   }
@@ -805,10 +805,10 @@ SEND_AGAIN:
         TCP_SEQ_LT (End + 1, Tcb->SndWnd + Tcb->SndWl2)) {
 
       DEBUG (
-	  	(EFI_D_INFO, 
+	  	(EFI_D_INFO,
 	  	"TcpToSendData: send FIN "
-        "to peer for TCB %p in state %s\n", 
-        Tcb, 
+        "to peer for TCB %p in state %s\n",
+        Tcb,
         mTcpStateName[Tcb->State])
       );
 

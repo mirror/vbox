@@ -387,17 +387,17 @@ typedef struct {
   INT8 MulticastHash[8];
   EFI_MAC_ADDRESS MAC;
   BOOLEAN bHavePkt;
- 
+
   EFI_DEVICE_PATH_PROTOCOL                  *MyDevPath;
-  
+
   EFI_DRIVER_BINDING_PROTOCOL * DrvBind;
-  
+
   RX_PKT * QueueHead;
   RX_PKT * pNextFill;
   RX_PKT * pFirstFill;
   UINTN   PktCntInQueue;
   UINT8 * pBulkInBuff;
- 
+
 } NIC_DEVICE;
 
 #define DEV_FROM_SIMPLE_NETWORK(a)  CR (a, NIC_DEVICE, SimpleNetwork, DEV_SIGNATURE)  ///< Locate NIC_DEVICE from Simple Network Protocol
@@ -476,7 +476,7 @@ SN_Start (
 
 /**
   Set the MAC address.
-  
+
   This function modifies or resets the current station address of a
   network interface.  If Reset is TRUE, then the current station address
   is set ot the network interface's permanent address.  If Reset if FALSE
@@ -1012,8 +1012,8 @@ GetControllerName (
   IN  CHAR8 * pLanguage,
   OUT CHAR16 ** ppControllerName
   );
-  
-VOID 
+
+VOID
 FillPkt2Queue (
   IN EFI_SIMPLE_NETWORK_PROTOCOL * pSimpleNetwork,
   IN UINTN BufLength);

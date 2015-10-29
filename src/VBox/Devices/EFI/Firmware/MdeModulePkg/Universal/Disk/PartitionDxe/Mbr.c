@@ -3,11 +3,11 @@
 
   MBR - Master Boot Record is in the first sector of a partitioned hard disk.
         The MBR supports four partitions per disk. The MBR also contains legacy
-        code that is not run on an EFI system. The legacy code reads the 
-        first sector of the active partition into memory and 
+        code that is not run on an EFI system. The legacy code reads the
+        first sector of the active partition into memory and
 
-  BPB - BIOS Parameter Block is in the first sector of a FAT file system. 
-        The BPB contains information about the FAT file system. The BPB is 
+  BPB - BIOS Parameter Block is in the first sector of a FAT file system.
+        The BPB contains information about the FAT file system. The BPB is
         always on the first sector of a media. The first sector also contains
         the legacy boot strap code.
 
@@ -29,7 +29,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   @param  Mbr         Parent Handle.
   @param  LastLba     Last Lba address on the device.
-   
+
   @retval TRUE        Mbr is a Valid MBR.
   @retval FALSE       Mbr is not a Valid MBR.
 
@@ -108,7 +108,7 @@ PartitionValidMbr (
   @param[in]  BlockIo           Parent BlockIo interface.
   @param[in]  BlockIo2          Parent BlockIo2 interface.
   @param[in]  DevicePath        Parent Device Path.
-   
+
   @retval EFI_SUCCESS       A child handle was added.
   @retval EFI_MEDIA_CHANGED Media change was detected.
   @retval Others            MBR partition was not found.
@@ -215,9 +215,9 @@ PartitionInstallMbrChildHandles (
       if (Mbr->Partition[Index].OSIndicator == PMBR_GPT_PARTITION) {
         //
         // This is the guard MBR for the GPT. If you ever see a GPT disk with zero partitions you can get here.
-        //  We can not produce an MBR BlockIo for this device as the MBR spans the GPT headers. So formating 
+        //  We can not produce an MBR BlockIo for this device as the MBR spans the GPT headers. So formating
         //  this BlockIo would corrupt the GPT structures and require a recovery that would corrupt the format
-        //  that corrupted the GPT partition. 
+        //  that corrupted the GPT partition.
         //
         continue;
       }

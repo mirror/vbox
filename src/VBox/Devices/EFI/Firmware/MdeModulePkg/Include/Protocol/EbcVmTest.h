@@ -95,7 +95,7 @@ EFI_STATUS
   @param[out] BufferLen         Size of buffer that is requried to store data.
 
   @retval EFI_UNSUPPORTED       This functionality is unsupported.
-  @retval EFI_SUCCESS           Successfully convert AsmText to the instruction. 
+  @retval EFI_SUCCESS           Successfully convert AsmText to the instruction.
 
 **/
 typedef

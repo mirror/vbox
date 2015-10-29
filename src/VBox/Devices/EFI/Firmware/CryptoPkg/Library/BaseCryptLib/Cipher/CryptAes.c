@@ -125,7 +125,7 @@ AesEcbEncrypt (
   if (AesContext == NULL || Input == NULL || (InputSize % AES_BLOCK_SIZE) != 0 || Output == NULL) {
     return FALSE;
   }
-  
+
   AesKey = (AES_KEY *) AesContext;
 
   //

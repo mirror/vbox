@@ -19,7 +19,7 @@ from Common.Misc import sdict
 ## PackageHeaderClass
 #
 # This class defined header items used in Package file
-# 
+#
 # @param IdentificationClass:  Inherited from IdentificationClass class
 # @param CommonHeaderClass:    Inherited from CommonHeaderClass class
 #
@@ -42,7 +42,7 @@ class PackageHeaderClass(IdentificationClass, CommonHeaderClass):
 ## PackageIndustryStdHeaderClass
 #
 # This class defined industry std header items used in Package file
-# 
+#
 # @param CommonHeaderClass:  Inherited from CommonHeaderClass class
 #
 # @var Name:                 To store value for Name
@@ -57,7 +57,7 @@ class PackageIndustryStdHeaderClass(CommonClass):
 ## PackageIncludePkgHeaderClass
 #
 # This class defined include Pkg header items used in Package file
-# 
+#
 # @param object:       Inherited from object class
 #
 # @var IncludeHeader:  To store value for IncludeHeader
@@ -72,7 +72,7 @@ class PackageIncludePkgHeaderClass(object):
 ## PackageClass
 #
 # This class defined a complete package item
-# 
+#
 # @param object:                  Inherited from object class
 #
 # @var Header:                    To store value for Header, it is a structure as
@@ -84,7 +84,7 @@ class PackageIncludePkgHeaderClass(object):
 # @var IndustryStdHeaders:        To store value for IndustryStdHeaders, it is a list structure as
 #                                 [ PackageIndustryStdHeader, ...]
 # @var ModuleFiles:               To store value for ModuleFiles, it is a list structure as
-#                                 [ '', '', ...] 
+#                                 [ '', '', ...]
 # @var PackageIncludePkgHeaders:  To store value for PackageIncludePkgHeaders, it is a list structure as
 #                                 [ PackageIncludePkgHeader, ...]
 # @var GuidDeclarations:          To store value for GuidDeclarations, it is a list structure as

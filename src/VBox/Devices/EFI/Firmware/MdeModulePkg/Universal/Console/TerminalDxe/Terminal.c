@@ -431,18 +431,18 @@ InitializeTerminalConsoleTextMode (
   TERMINAL_CONSOLE_MODE_DATA  *NewModeBuffer;
   UINTN                       ValidCount;
   UINTN                       ValidIndex;
-  
+
   if ((TextModeCount == NULL) || (TextModeData == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   Count = sizeof (mTerminalConsoleModeData) / sizeof (TERMINAL_CONSOLE_MODE_DATA);
-  
+
   //
   // Get defined mode buffer pointer.
   //
   ModeBuffer = mTerminalConsoleModeData;
-    
+
   //
   // Here we make sure that the final mode exposed does not include the duplicated modes,
   // and does not include the invalid modes which exceed the max column and row.
@@ -454,7 +454,7 @@ InitializeTerminalConsoleTextMode (
   //
   // Mode 0 and mode 1 is for 80x25, 80x50 according to UEFI spec.
   //
-  ValidCount = 0;  
+  ValidCount = 0;
 
   NewModeBuffer[ValidCount].Columns = 80;
   NewModeBuffer[ValidCount].Rows    = 25;
@@ -463,7 +463,7 @@ InitializeTerminalConsoleTextMode (
   NewModeBuffer[ValidCount].Columns = 80;
   NewModeBuffer[ValidCount].Rows    = 50;
   ValidCount++;
-  
+
   //
   // Start from mode 2 to put the valid mode other than 80x25 and 80x50 in the output mode buffer.
   //
@@ -489,14 +489,14 @@ InitializeTerminalConsoleTextMode (
       ValidCount++;
     }
   }
- 
+
   DEBUG_CODE (
     for (Index = 0; Index < ValidCount; Index++) {
-      DEBUG ((EFI_D_INFO, "Terminal - Mode %d, Column = %d, Row = %d\n", 
-                           Index, NewModeBuffer[Index].Columns, NewModeBuffer[Index].Rows));  
+      DEBUG ((EFI_D_INFO, "Terminal - Mode %d, Column = %d, Row = %d\n",
+                           Index, NewModeBuffer[Index].Columns, NewModeBuffer[Index].Rows));
     }
   );
-  
+
   //
   // Return valid mode count and mode information buffer.
   //
@@ -831,13 +831,13 @@ TerminalDriverBindingStart (
                          sizeof (mTerminalDevTemplate.SimpleTextOutput)
                          );
     SimpleTextOutput->Mode = &TerminalDevice->SimpleTextOutputMode;
-    
+
     Status = InitializeTerminalConsoleTextMode (&ModeCount, &TerminalDevice->TerminalConsoleModeData);
     if (EFI_ERROR (Status)) {
       goto ReportError;
     }
     TerminalDevice->SimpleTextOutputMode.MaxMode = (INT32) ModeCount;
-    
+
     //
     // For terminal devices, cursor is always visible
     //

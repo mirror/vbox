@@ -59,7 +59,7 @@
   UefiLib
   UefiBootServicesTableLib
   BaseLib
-  DebugLib	
+  DebugLib
   UefiDriverEntryPoint
   TimerLib
 

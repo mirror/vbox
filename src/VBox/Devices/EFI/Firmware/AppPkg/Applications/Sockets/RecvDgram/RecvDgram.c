@@ -48,7 +48,7 @@ main (
   int s;
   int Status;
   struct timeval Timeout;
-  
+
 
   DEBUG (( DEBUG_INFO,
             "%a starting\r\n",

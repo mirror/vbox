@@ -99,11 +99,11 @@ SecureBootHook (
 
   @param  FileHandle      Pointer to the file handle to read the PE/COFF image.
   @param  FileOffset      Offset into the PE/COFF image to begin the read operation.
-  @param  ReadSize        On input, the size in bytes of the requested read operation.  
+  @param  ReadSize        On input, the size in bytes of the requested read operation.
                           On output, the number of bytes actually read.
   @param  Buffer          Output buffer that contains the data read from the PE/COFF image.
-  
-  @retval EFI_SUCCESS     The specified portion of the PE/COFF image was read and the size 
+
+  @retval EFI_SUCCESS     The specified portion of the PE/COFF image was read and the size
 **/
 EFI_STATUS
 EFIAPI
@@ -117,7 +117,7 @@ DxeImageVerificationLibImageRead (
   UINTN               EndPosition;
 
   if (FileHandle == NULL || ReadSize == NULL || Buffer == NULL) {
-    return EFI_INVALID_PARAMETER;    
+    return EFI_INVALID_PARAMETER;
   }
 
   if (MAX_ADDRESS - FileOffset < *ReadSize) {
@@ -347,8 +347,8 @@ HashPeImage (
   //
   if (mNtHeader.Pe32->FileHeader.Machine == IMAGE_FILE_MACHINE_IA64 && mNtHeader.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
     //
-    // NOTE: Some versions of Linux ELILO for Itanium have an incorrect magic value 
-    //       in the PE/COFF Header. If the MachineType is Itanium(IA64) and the 
+    // NOTE: Some versions of Linux ELILO for Itanium have an incorrect magic value
+    //       in the PE/COFF Header. If the MachineType is Itanium(IA64) and the
     //       Magic value in the OptionalHeader is EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC
     //       then override the magic value to EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC
     //
@@ -359,7 +359,7 @@ HashPeImage (
     //
     Magic =  mNtHeader.Pe32->OptionalHeader.Magic;
   }
-  
+
   //
   // 3.  Calculate the distance from the base of the image header to the image checksum address.
   // 4.  Hash the image header from its base to beginning of the image checksum.
@@ -466,7 +466,7 @@ HashPeImage (
       if (!Status) {
         goto Done;
       }
-    }    
+    }
   }
 
   //
@@ -604,7 +604,7 @@ Done:
 
   @param[in]  AuthData            Pointer to the Authenticode Signature retrieved from signed image.
   @param[in]  AuthDataSize        Size of the Authenticode Signature in bytes.
-  
+
   @retval EFI_UNSUPPORTED             Hash algorithm is not supported.
   @retval EFI_SUCCESS                 Hash successfully.
 
@@ -1109,7 +1109,7 @@ DxeImageVerificationHandler (
   }
 
   //
-  // The policy QUERY_USER_ON_SECURITY_VIOLATION and ALLOW_EXECUTE_ON_SECURITY_VIOLATION 
+  // The policy QUERY_USER_ON_SECURITY_VIOLATION and ALLOW_EXECUTE_ON_SECURITY_VIOLATION
   // violates the UEFI spec and has been removed.
   //
   ASSERT (Policy != QUERY_USER_ON_SECURITY_VIOLATION && Policy != ALLOW_EXECUTE_ON_SECURITY_VIOLATION);
@@ -1184,8 +1184,8 @@ DxeImageVerificationHandler (
 
   if (mNtHeader.Pe32->FileHeader.Machine == IMAGE_FILE_MACHINE_IA64 && mNtHeader.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
     //
-    // NOTE: Some versions of Linux ELILO for Itanium have an incorrect magic value 
-    //       in the PE/COFF Header. If the MachineType is Itanium(IA64) and the 
+    // NOTE: Some versions of Linux ELILO for Itanium have an incorrect magic value
+    //       in the PE/COFF Header. If the MachineType is Itanium(IA64) and the
     //       Magic value in the OptionalHeader is EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC
     //       then override the magic value to EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC
     //
@@ -1196,7 +1196,7 @@ DxeImageVerificationHandler (
     //
     Magic = mNtHeader.Pe32->OptionalHeader.Magic;
   }
-  
+
   if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
     //
     // Use PE32 offset.
@@ -1204,7 +1204,7 @@ DxeImageVerificationHandler (
     NumberOfRvaAndSizes = mNtHeader.Pe32->OptionalHeader.NumberOfRvaAndSizes;
     if (NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_SECURITY) {
       SecDataDir = (EFI_IMAGE_DATA_DIRECTORY *) &mNtHeader.Pe32->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY];
-    }        
+    }
   } else {
     //
     // Use PE32+ offset.
@@ -1220,7 +1220,7 @@ DxeImageVerificationHandler (
   //
   if (SecDataDir == NULL || SecDataDir->Size == 0) {
     //
-    // This image is not signed. The SHA256 hash value of the image must match a record in the security database "db", 
+    // This image is not signed. The SHA256 hash value of the image must match a record in the security database "db",
     // and not be reflected in the security data base "dbx".
     //
     if (!HashPeImage (HASHALG_SHA256)) {
@@ -1248,7 +1248,7 @@ DxeImageVerificationHandler (
   }
 
   //
-  // Verify the signature of the image, multiple signatures are allowed as per PE/COFF Section 4.7 
+  // Verify the signature of the image, multiple signatures are allowed as per PE/COFF Section 4.7
   // "Attribute Certificate Table".
   // The first certificate starts at offset (SecDataDir->VirtualAddress) from the start of the file.
   //
@@ -1260,13 +1260,13 @@ DxeImageVerificationHandler (
         (SecDataDir->VirtualAddress + SecDataDir->Size - OffSet) < WinCertificate->dwLength) {
       break;
     }
-    
+
     //
     // Verify the image's Authenticode signature, only DER-encoded PKCS#7 signed data is supported.
     //
     if (WinCertificate->wCertificateType == WIN_CERT_TYPE_PKCS_SIGNED_DATA) {
       //
-      // The certificate is formatted as WIN_CERTIFICATE_EFI_PKCS which is described in the 
+      // The certificate is formatted as WIN_CERTIFICATE_EFI_PKCS which is described in the
       // Authenticode specification.
       //
       PkcsCertData = (WIN_CERTIFICATE_EFI_PKCS *) WinCertificate;
@@ -1299,7 +1299,7 @@ DxeImageVerificationHandler (
     if (EFI_ERROR (Status)) {
       continue;
     }
-    
+
     //
     // Check the digital signature against the revoked certificate in forbidden database (dbx).
     //
@@ -1338,7 +1338,7 @@ DxeImageVerificationHandler (
     //
     VerifyStatus = EFI_ACCESS_DENIED;
   }
-  
+
   if (!EFI_ERROR (VerifyStatus)) {
     return EFI_SUCCESS;
   } else {
@@ -1413,7 +1413,7 @@ OnReadyToBoot (
     return ;
   }
 
-  ImageExeInfoTable->NumberOfImages = 0;  
+  ImageExeInfoTable->NumberOfImages = 0;
   gBS->InstallConfigurationTable (&gEfiImageSecurityDatabaseGuid, (VOID *) ImageExeInfoTable);
 
 }
@@ -1440,10 +1440,10 @@ DxeImageVerificationLibConstructor (
   //
   EfiCreateEventReadyToBootEx (
     TPL_CALLBACK,
-    OnReadyToBoot, 
-    NULL, 
+    OnReadyToBoot,
+    NULL,
     &Event
-    ); 
+    );
 
   return RegisterSecurity2Handler (
           DxeImageVerificationHandler,

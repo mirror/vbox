@@ -211,12 +211,12 @@ typedef struct {
 #define SHT_STRTAB		3	/* string table section */
 #define SHT_RELA		4	/* relocation section with addends */
 #define SHT_HASH		5	/* symbol hash table section */
-#define SHT_DYNAMIC		6	/* dynamic section */ 
+#define SHT_DYNAMIC		6	/* dynamic section */
 #define SHT_NOTE		7	/* note section */
 #define SHT_NOBITS		8	/* no space section */
 #define SHT_REL			9	/* relocation section - no addends */
 #define SHT_SHLIB		10	/* reserved - purpose unknown */
-#define SHT_DYNSYM		11	/* dynamic symbol table section */ 
+#define SHT_DYNSYM		11	/* dynamic symbol table section */
 #define SHT_INIT_ARRAY		14	/* Initialization function pointers. */
 #define SHT_FINI_ARRAY		15	/* Termination function pointers. */
 #define SHT_PREINIT_ARRAY	16	/* Pre-initialization function ptrs. */
@@ -730,14 +730,14 @@ typedef struct {
 #define	R_ARM_PLT32		27	/* Add PC-relative PLT offset. */
 #define R_ARM_CALL            28
 #define R_ARM_JMP24           29
-#define R_ARM_THM_MOVW_ABS_NC 47 
+#define R_ARM_THM_MOVW_ABS_NC 47
 #define R_ARM_THM_MOVT_ABS    48
 
 // Block of PC-relative relocations added to work around gcc putting
 // object relocations in static executables.
-#define R_ARM_THM_JUMP24        30  
-#define R_ARM_PREL31            42  
-#define R_ARM_MOVW_PREL_NC      45  
+#define R_ARM_THM_JUMP24        30
+#define R_ARM_PREL31            42
+#define R_ARM_MOVW_PREL_NC      45
 #define R_ARM_MOVT_PREL         46
 #define R_ARM_THM_MOVW_PREL_NC  49
 #define R_ARM_THM_MOVT_PREL     50

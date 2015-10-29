@@ -155,7 +155,7 @@ ShellCommandRunEfiDecompress (
                   ShellStatus = SHELL_DEVICE_ERROR;
                 }
               }
-            } 
+            }
           }
         }
       }

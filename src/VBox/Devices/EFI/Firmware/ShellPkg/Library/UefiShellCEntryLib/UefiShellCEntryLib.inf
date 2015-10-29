@@ -40,5 +40,5 @@
 [Protocols]
   gEfiShellParametersProtocolGuid                         ## CONSUMES
   gEfiShellInterfaceGuid                                  ## SOMETIMES_CONSUMES
-  
+
 

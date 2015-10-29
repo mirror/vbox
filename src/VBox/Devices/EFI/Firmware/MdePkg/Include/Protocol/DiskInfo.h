@@ -1,6 +1,6 @@
 /** @file
-  Provides the basic interfaces to abstract platform information regarding an 
-  IDE controller.  
+  Provides the basic interfaces to abstract platform information regarding an
+  IDE controller.
 
   Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
@@ -12,9 +12,9 @@
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   @par Revision Reference:
-  This Protocol is defined in UEFI Platform Initialization Specification 1.2 
+  This Protocol is defined in UEFI Platform Initialization Specification 1.2
   Volume 5: Standards
-  
+
 **/
 
 #ifndef __DISK_INFO_H__
@@ -83,7 +83,7 @@ typedef struct _EFI_DISK_INFO_PROTOCOL  EFI_DISK_INFO_PROTOCOL;
 
 /**
   Provides inquiry information for the controller type.
-  
+
   This function is used by the IDE bus driver to get inquiry data.  Data format
   of Identify data is defined by the Interface GUID.
 
@@ -92,9 +92,9 @@ typedef struct _EFI_DISK_INFO_PROTOCOL  EFI_DISK_INFO_PROTOCOL;
   @param[in,out] InquiryDataSize   Pointer to the value for the inquiry data size.
 
   @retval EFI_SUCCESS            The command was accepted without any errors.
-  @retval EFI_NOT_FOUND          Device does not support this data class 
-  @retval EFI_DEVICE_ERROR       Error reading InquiryData from device 
-  @retval EFI_BUFFER_TOO_SMALL   InquiryDataSize not big enough 
+  @retval EFI_NOT_FOUND          Device does not support this data class
+  @retval EFI_DEVICE_ERROR       Error reading InquiryData from device
+  @retval EFI_BUFFER_TOO_SMALL   InquiryDataSize not big enough
 
 **/
 typedef
@@ -111,16 +111,16 @@ EFI_STATUS
   This function is used by the IDE bus driver to get identify data.  Data format
   of Identify data is defined by the Interface GUID.
 
-  @param[in]     This               Pointer to the EFI_DISK_INFO_PROTOCOL 
+  @param[in]     This               Pointer to the EFI_DISK_INFO_PROTOCOL
                                     instance.
   @param[in,out] IdentifyData       Pointer to a buffer for the identify data.
   @param[in,out] IdentifyDataSize   Pointer to the value for the identify data
                                     size.
 
   @retval EFI_SUCCESS            The command was accepted without any errors.
-  @retval EFI_NOT_FOUND          Device does not support this data class 
-  @retval EFI_DEVICE_ERROR       Error reading IdentifyData from device 
-  @retval EFI_BUFFER_TOO_SMALL   IdentifyDataSize not big enough 
+  @retval EFI_NOT_FOUND          Device does not support this data class
+  @retval EFI_DEVICE_ERROR       Error reading IdentifyData from device
+  @retval EFI_BUFFER_TOO_SMALL   IdentifyDataSize not big enough
 
 **/
 typedef
@@ -133,8 +133,8 @@ EFI_STATUS
 
 /**
   Provides sense data information for the controller type.
-  
-  This function is used by the IDE bus driver to get sense data. 
+
+  This function is used by the IDE bus driver to get sense data.
   Data format of Sense data is defined by the Interface GUID.
 
   @param[in]     This              Pointer to the EFI_DISK_INFO_PROTOCOL instance.
@@ -160,7 +160,7 @@ EFI_STATUS
 /**
   This function is used by the IDE bus driver to get controller information.
 
-  @param[in]  This         Pointer to the EFI_DISK_INFO_PROTOCOL instance. 
+  @param[in]  This         Pointer to the EFI_DISK_INFO_PROTOCOL instance.
   @param[out] IdeChannel   Pointer to the Ide Channel number.  Primary or secondary.
   @param[out] IdeDevice    Pointer to the Ide Device number.  Master or slave.
 
@@ -181,7 +181,7 @@ EFI_STATUS
 ///
 struct _EFI_DISK_INFO_PROTOCOL {
   ///
-  /// A GUID that defines the format of buffers for the other member functions 
+  /// A GUID that defines the format of buffers for the other member functions
   /// of this protocol.
   ///
   EFI_GUID                  Interface;
@@ -201,7 +201,7 @@ struct _EFI_DISK_INFO_PROTOCOL {
   ///
   EFI_DISK_INFO_SENSE_DATA  SenseData;
   ///
-  /// Specific controller. 
+  /// Specific controller.
   ///
   EFI_DISK_INFO_WHICH_IDE   WhichIde;
 };

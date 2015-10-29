@@ -29,12 +29,12 @@
 #include "DebugAgent.h"
 
 /**
-  Install EFI Serial IO protocol based on Debug Communication Library. 
+  Install EFI Serial IO protocol based on Debug Communication Library.
 
 **/
 VOID
 InstallSerialIo (
   VOID
   );
-  
+
 #endif

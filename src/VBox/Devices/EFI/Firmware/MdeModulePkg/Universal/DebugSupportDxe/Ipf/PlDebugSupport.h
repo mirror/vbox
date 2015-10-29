@@ -185,7 +185,7 @@ RegisterPeriodicCallback (
   @param  This                  A pointer to the EFI_DEBUG_SUPPORT_PROTOCOL instance.
   @param  ProcessorIndex        Specifies which processor the callback function applies to.
   @param  ExceptionCallback     A pointer to a function of type EXCEPTION_CALLBACK that is called
-                                when the processor exception specified by ExceptionType occurs.  
+                                when the processor exception specified by ExceptionType occurs.
   @param  ExceptionType         Specifies which processor exception to hook.
 
   @retval EFI_SUCCESS           The function completed successfully.

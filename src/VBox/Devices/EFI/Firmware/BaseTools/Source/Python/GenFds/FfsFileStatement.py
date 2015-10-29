@@ -55,7 +55,7 @@ class FileStatement (FileStatementClassObject) :
     #   @retval string       Generated FFS file name
     #
     def GenFfs(self, Dict = {}, FvChildAddr=[], FvParentAddr=None):
-        
+
         if self.NameGuid != None and self.NameGuid.startswith('PCD('):
             PcdValue = GenFdsGlobalVariable.GetPcdValue(self.NameGuid)
             if len(PcdValue) == 0:
@@ -68,7 +68,7 @@ class FileStatement (FileStatementClassObject) :
                 EdkLogger.error("GenFds", GENFDS_ERROR, 'GUID value for %s in wrong format.' \
                             % (self.NameGuid))
             self.NameGuid = RegistryGuidStr
-        
+
         OutputDir = os.path.join(GenFdsGlobalVariable.FfsDir, self.NameGuid)
         if not os.path.exists(OutputDir):
             os.makedirs(OutputDir)

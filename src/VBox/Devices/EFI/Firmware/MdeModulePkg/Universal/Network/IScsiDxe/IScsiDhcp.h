@@ -40,7 +40,7 @@ typedef struct _ISCSI_ROOT_PATH_FIELD {
 
 /**
   Parse the DHCP ACK to get the address configuration and DNS information.
-  
+
   @param[in]       Image            The handle of the driver image.
   @param[in]       Controller       The handle of the controller;
   @param[in, out]  ConfigData       The session configuration data.

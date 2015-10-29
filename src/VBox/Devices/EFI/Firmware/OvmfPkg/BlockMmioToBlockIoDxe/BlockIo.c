@@ -7,7 +7,7 @@
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
-  
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
@@ -27,7 +27,7 @@ EFI_DRIVER_BINDING_PROTOCOL gBlockIoDriverBinding = {
 /**
   Reset the block device.
 
-  This function implements EFI_BLOCK_IO_PROTOCOL.Reset(). 
+  This function implements EFI_BLOCK_IO_PROTOCOL.Reset().
   It resets the block device hardware.
   ExtendedVerification is ignored in this implementation.
 
@@ -52,7 +52,7 @@ BlockIoReset (
 /**
   Reads the requested number of blocks from the device.
 
-  This function implements EFI_BLOCK_IO_PROTOCOL.ReadBlocks(). 
+  This function implements EFI_BLOCK_IO_PROTOCOL.ReadBlocks().
   It reads the requested number of blocks from the device.
   All the blocks are read, or an error is returned.
 
@@ -156,7 +156,7 @@ ReadOrWriteBlocks (
 /**
   Reads the requested number of blocks from the device.
 
-  This function implements EFI_BLOCK_IO_PROTOCOL.ReadBlocks(). 
+  This function implements EFI_BLOCK_IO_PROTOCOL.ReadBlocks().
   It reads the requested number of blocks from the device.
   All the blocks are read, or an error is returned.
 
@@ -202,7 +202,7 @@ BlockIoReadBlocks (
 /**
   Writes a specified number of blocks to the device.
 
-  This function implements EFI_BLOCK_IO_PROTOCOL.WriteBlocks(). 
+  This function implements EFI_BLOCK_IO_PROTOCOL.WriteBlocks().
   It writes a specified number of blocks to the device.
   All blocks are written, or an error is returned.
 
@@ -311,7 +311,7 @@ BlockIoInit (
   }
   DEBUG ((EFI_D_INFO, "BlockMmio: 0x%x\n", BlockMmio));
   DEBUG ((EFI_D_INFO, "BlockMmio->Media->LastBlock: 0x%lx\n", BlockMmio->Media->LastBlock));
-  
+
   Private->Signature            = BLOCK_MMIO_TO_BLOCK_IO_SIGNATURE;
   Private->Controller           = Controller;
   Private->BlockMmio            = BlockMmio;
@@ -347,7 +347,7 @@ ON_ERROR:
            Controller
            );
   }
-  return Status;  
+  return Status;
 }
 
 
@@ -422,7 +422,7 @@ BlockIoDriverBindingStart (
   )
 {
   EFI_STATUS                    Status;
-  
+
   Status = BlockIoInit (This, Controller);
   if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_ERROR, "BlockIoDriverBindingStart: BlockIoInit (%r)\n", Status));
@@ -483,7 +483,7 @@ BlockIoDriverBindingStop (
         );
 
   FreePool (Private);
-  
+
   DEBUG ((EFI_D_INFO, "Successfully stopped BlockIo on BlockMmio\n"));
   return EFI_SUCCESS;
 }

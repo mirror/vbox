@@ -237,10 +237,10 @@ Udp6ComponentNameGetDriverName (
 
   @param  Udp6[in]                  A pointer to the EFI_UDP6_PROTOCOL.
 
-  
+
   @retval EFI_SUCCESS               Update the ControllerNameTable of this instance successfully.
   @retval EFI_INVALID_PARAMETER     The input parameter is invalid.
-  
+
 **/
 EFI_STATUS
 UpdateName (

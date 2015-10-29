@@ -1,19 +1,19 @@
 /** @file
   This file declares Sec Platform Information PPI.
 
-  This service is the primary handoff state into the PEI Foundation. 
-  The Security (SEC) component creates the early, transitory memory 
-  environment and also encapsulates knowledge of at least the 
+  This service is the primary handoff state into the PEI Foundation.
+  The Security (SEC) component creates the early, transitory memory
+  environment and also encapsulates knowledge of at least the
   location of the Boot Firmware Volume (BFV).
 
 Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under 
-the terms and conditions of the BSD License that accompanies this distribution.  
+This program and the accompanying materials are licensed and made available under
+the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.                                             
+http://opensource.org/licenses/bsd-license.php.
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   @par Revision Reference:
   This PPI is introduced in PI Version 1.0.
@@ -172,8 +172,8 @@ EFI_STATUS
 
 
 ///
-/// This service abstracts platform-specific information. It is necessary 
-/// to convey this information to the PEI Foundation so that it can 
+/// This service abstracts platform-specific information. It is necessary
+/// to convey this information to the PEI Foundation so that it can
 /// discover where to begin dispatching PEIMs.
 ///
 struct _EFI_SEC_PLATFORM_INFORMATION_PPI {

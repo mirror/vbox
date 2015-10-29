@@ -22,8 +22,8 @@
   hash by calling ::Ax88772MulticastClear and ::Ax88772MulticastSet.
   Finally this routine enables the receiver by calling
   ::Ax88772RxControl.
-                                                                                  
-  @param [in] pSimpleNetwork    Simple network mode pointer  
+
+  @param [in] pSimpleNetwork    Simple network mode pointer
 
   @retval EFI_SUCCESS           This operation was successful.
   @retval EFI_NOT_STARTED       The network interface was not started.
@@ -75,7 +75,7 @@ ReceiveFilterUpdate (
 
 /**
   This function updates the SNP driver status.
-  
+
   This function gets the current interrupt and recycled transmit
   buffer status from the network interface.  The interrupt status
   and the media status are returned as a bit mask in InterruptStatus.
@@ -126,7 +126,7 @@ SN_GetStatus (
   BOOLEAN bLinkUp;
   BOOLEAN bSpeed100;
   EFI_TPL TplPrevious;
- 
+
   TplPrevious = gBS->RaiseTPL(TPL_CALLBACK);
   //
   // Verify the parameters
@@ -135,13 +135,13 @@ SN_GetStatus (
     //
     // Return the transmit buffer
     //
-    
+
     pNicDevice = DEV_FROM_SIMPLE_NETWORK ( pSimpleNetwork );
     if (( NULL != ppTxBuf ) && ( NULL != pNicDevice->pTxBuffer )) {
      		 *ppTxBuf = pNicDevice->pTxBuffer;
      		 pNicDevice->pTxBuffer = NULL;
    	}
-    
+
     //
     // Determine if interface is running
     //
@@ -199,7 +199,7 @@ SN_GetStatus (
       //
       if ( NULL != pInterruptStatus ) {
         *pInterruptStatus = 0;
-      }   
+      }
       Status = EFI_SUCCESS;
     }
     else {
@@ -210,7 +210,7 @@ SN_GetStatus (
         Status = EFI_NOT_STARTED;
       }
     }
-      
+
   }
   else {
     Status = EFI_INVALID_PARAMETER;
@@ -242,7 +242,7 @@ SN_GetStatus (
 **/
 EFI_STATUS
 EFIAPI
-SN_Initialize (                                              
+SN_Initialize (
   IN EFI_SIMPLE_NETWORK_PROTOCOL * pSimpleNetwork,
   IN UINTN ExtraRxBufferSize,
   IN UINTN ExtraTxBufferSize
@@ -252,7 +252,7 @@ SN_Initialize (
   EFI_STATUS Status;
   UINT32  TmpState;
    EFI_TPL TplPrevious;
-   
+
    TplPrevious = gBS->RaiseTPL (TPL_CALLBACK);
   //
   // Verify the parameters
@@ -279,7 +279,7 @@ SN_Initialize (
         }
       }
       else {
-        DEBUG (( EFI_D_ERROR , "Increase ExtraRxBufferSize = %d ExtraTxBufferSize=%d\n", 
+        DEBUG (( EFI_D_ERROR , "Increase ExtraRxBufferSize = %d ExtraTxBufferSize=%d\n",
               ExtraRxBufferSize, ExtraTxBufferSize));
         Status = EFI_UNSUPPORTED;
       }
@@ -344,7 +344,7 @@ SN_MCastIPtoMAC (
 
   if (bIPv6){
     Status = EFI_UNSUPPORTED;
-  }  
+  }
   else {
       //
       // check if the ip given is a mcast IP
@@ -416,7 +416,7 @@ SN_NvData (
   return Status;
 }
 
-VOID 
+VOID
 FillPkt2Queue (
   IN EFI_SIMPLE_NETWORK_PROTOCOL * pSimpleNetwork,
   IN UINTN BufLength)
@@ -427,21 +427,21 @@ FillPkt2Queue (
   UINT8* pData;
   UINT32 offset;
   NIC_DEVICE * pNicDevice;
-  
+
   pNicDevice = DEV_FROM_SIMPLE_NETWORK ( pSimpleNetwork);
   for ( offset = 0; offset < BufLength; ){
       pLength = (UINT16*) (pNicDevice->pBulkInBuff + offset);
       pLengthBar = (UINT16*) (pNicDevice->pBulkInBuff + offset +2);
-      
+
       *pLength &= 0x7ff;
       *pLengthBar &= 0x7ff;
       *pLengthBar |= 0xf800;
-      
+
       if ((*pLength ^ *pLengthBar ) != 0xFFFF) {
           DEBUG (( EFI_D_ERROR , "Pkt length error. BufLength = %d\n", BufLength));
           return;
-      }          
-      
+      }
+
       if (TRUE == pNicDevice->pNextFill->f_Used) {
         return;
       }
@@ -450,12 +450,12 @@ FillPkt2Queue (
           pNicDevice->pNextFill->f_Used = TRUE;
           pNicDevice->pNextFill->Length = *pLength;
           CopyMem (&pNicDevice->pNextFill->Data[0], pData, *pLength);
-          
+
           pNicDevice->pNextFill = pNicDevice->pNextFill->pNext;
           offset += ((*pLength + HW_HDR_LENGTH - 1) &~3) + 1;
           pNicDevice->PktCntInQueue++;
       }
-              
+
   }
 }
 
@@ -481,13 +481,13 @@ SN_Receive (
   UINT32 TransferStatus;
   RX_PKT * pFirstFill;
   TplPrevious = gBS->RaiseTPL (TPL_CALLBACK);
-  
+
   //
   // Verify the parameters
   //
-  if (( NULL != pSimpleNetwork ) && 
-    ( NULL != pSimpleNetwork->Mode ) && 
-    (NULL != pBufferSize) && 
+  if (( NULL != pSimpleNetwork ) &&
+    ( NULL != pSimpleNetwork->Mode ) &&
+    (NULL != pBufferSize) &&
     (NULL != pBuffer)) {
     //
     // The interface must be running
@@ -500,15 +500,15 @@ SN_Receive (
       pNicDevice = DEV_FROM_SIMPLE_NETWORK ( pSimpleNetwork );
       pNicDevice->LinkIdleCnt++;
       pMode->MediaPresent = pNicDevice->bLinkUp;
-      
+
       if ( pMode->MediaPresent && pNicDevice->bComplete) {
-      
-      
+
+
         if (pNicDevice->PktCntInQueue != 0 ) {
             DEBUG (( EFI_D_INFO, "pNicDevice->PktCntInQueue = %d\n",
                 pNicDevice->PktCntInQueue));
         }
-        
+
         LengthInBytes = MAX_BULKIN_SIZE;
         if (pNicDevice->PktCntInQueue == 0 ){
             //
@@ -522,21 +522,21 @@ SN_Receive (
                                        &LengthInBytes,
                                        BULKIN_TIMEOUT,
                                        &TransferStatus );
-                                       
+
             if (LengthInBytes != 0 && !EFI_ERROR(Status) && !EFI_ERROR(TransferStatus) ){
                 FillPkt2Queue(pSimpleNetwork, LengthInBytes);
             }
         }
-        
+
         pFirstFill = pNicDevice->pFirstFill;
-         
+
         if (TRUE == pFirstFill->f_Used) {
             ETHERNET_HEADER * pHeader;
             pNicDevice->LinkIdleCnt = 0;
             CopyMem (pBuffer,  &pFirstFill->Data[0], pFirstFill->Length);
             pHeader = (ETHERNET_HEADER *) &pFirstFill->Data[0];
-                     
-            DEBUG (( EFI_D_INFO, "RX: %02x-%02x-%02x-%02x-%02x-%02x " 
+
+            DEBUG (( EFI_D_INFO, "RX: %02x-%02x-%02x-%02x-%02x-%02x "
                       "%02x-%02x-%02x-%02x-%02x-%02x  %02x-%02x  %d bytes\r\n",
                       pFirstFill->Data[0],
                       pFirstFill->Data[1],
@@ -552,8 +552,8 @@ SN_Receive (
                       pFirstFill->Data[11],
                       pFirstFill->Data[12],
                       pFirstFill->Data[13],
-                      pFirstFill->Length));   
-            
+                      pFirstFill->Length));
+
             if ( NULL != pHeaderSize ) {
               *pHeaderSize = sizeof ( *pHeader );
             }
@@ -588,9 +588,9 @@ SN_Receive (
         //  Link no up
         //
         pNicDevice->LinkIdleCnt++;
-        Status = EFI_NOT_READY; 
+        Status = EFI_NOT_READY;
       }
-      
+
     }
     else {
       if (EfiSimpleNetworkStarted == pMode->State) {
@@ -603,7 +603,7 @@ SN_Receive (
   }
   else {
     Status = EFI_INVALID_PARAMETER;
-  }                              
+  }
   gBS->RestoreTPL (TplPrevious);
   return Status;
 }
@@ -698,8 +698,8 @@ SN_ReceiveFilters (
   )
 {
   EFI_SIMPLE_NETWORK_MODE * pMode;
-  EFI_STATUS Status = EFI_SUCCESS;   
-  EFI_TPL TplPrevious; 
+  EFI_STATUS Status = EFI_SUCCESS;
+  EFI_TPL TplPrevious;
   NIC_DEVICE * pNicDevice;
 
   TplPrevious = gBS->RaiseTPL(TPL_CALLBACK);
@@ -734,29 +734,29 @@ SN_ReceiveFilters (
     gBS->RestoreTPL(TplPrevious);
     return Status;
   }
-  
+
   if (bResetMCastFilter) {
     Disable |= (EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST & pMode->ReceiveFilterMask);
       pMode->MCastFilterCount = 0;
-      if ( (0 == (pMode->ReceiveFilterSetting & EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST)) 
+      if ( (0 == (pMode->ReceiveFilterSetting & EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST))
             && Enable == 0 && Disable == 2) {
             gBS->RestoreTPL(TplPrevious);
             return EFI_SUCCESS;
       }
-  } 
+  }
   else {
     if (MCastFilterCnt != 0) {
-      UINTN i; 
+      UINTN i;
       EFI_MAC_ADDRESS * pMulticastAddress;
       pMulticastAddress =  pMCastFilter;
-      
+
       if ((MCastFilterCnt > pMode->MaxMCastFilterCount) ||
           (pMCastFilter == NULL)) {
         Status = EFI_INVALID_PARAMETER;
         gBS->RestoreTPL(TplPrevious);
         return Status;
       }
-      
+
       for ( i = 0 ; i < MCastFilterCnt ; i++ ) {
           UINT8  tmp;
           tmp = pMulticastAddress->Addr[0];
@@ -766,14 +766,14 @@ SN_ReceiveFilters (
           }
           pMulticastAddress++;
       }
-      
+
       pMode->MCastFilterCount = (UINT32)MCastFilterCnt;
       CopyMem (&pMode->MCastFilter[0],
                      pMCastFilter,
                      MCastFilterCnt * sizeof ( EFI_MAC_ADDRESS));
     }
   }
-  
+
   if (Enable == 0 && Disable == 0 && !bResetMCastFilter && MCastFilterCnt == 0) {
     Status = EFI_SUCCESS;
     gBS->RestoreTPL(TplPrevious);
@@ -785,11 +785,11 @@ SN_ReceiveFilters (
     gBS->RestoreTPL(TplPrevious);
     return Status;
   }
-  
+
   pMode->ReceiveFilterSetting |= Enable;
   pMode->ReceiveFilterSetting &= ~Disable;
   Status = ReceiveFilterUpdate (pSimpleNetwork);
-  
+
   if (EFI_DEVICE_ERROR == Status || EFI_INVALID_PARAMETER == Status)
       Status = EFI_SUCCESS;
 
@@ -847,7 +847,7 @@ SN_Reset (
     	//
     	pNicDevice = DEV_FROM_SIMPLE_NETWORK ( pSimpleNetwork );
     	pNicDevice->bComplete = FALSE;
-    	pNicDevice->bLinkUp = FALSE; 
+    	pNicDevice->bLinkUp = FALSE;
     	pNicDevice->bHavePkt = FALSE;
     	pMode = pSimpleNetwork->Mode;
     	pMode->MediaPresent = FALSE;
@@ -880,7 +880,7 @@ SN_Reset (
       else {
         Status = EFI_NOT_STARTED;
       }
-   	}  
+   	}
   }
   else {
     Status = EFI_INVALID_PARAMETER;
@@ -905,7 +905,7 @@ SN_Setup (
   IN NIC_DEVICE * pNicDevice
   )
 {
-  
+
 
   EFI_SIMPLE_NETWORK_MODE * pMode;
   EFI_SIMPLE_NETWORK_PROTOCOL * pSimpleNetwork;
@@ -913,7 +913,7 @@ SN_Setup (
   RX_PKT * pCurr = NULL;
   RX_PKT * pPrev = NULL;
 
-	pSimpleNetwork = &pNicDevice->SimpleNetwork;  
+	pSimpleNetwork = &pNicDevice->SimpleNetwork;
   pSimpleNetwork->Revision = EFI_SIMPLE_NETWORK_PROTOCOL_REVISION;
   pSimpleNetwork->Start = (EFI_SIMPLE_NETWORK_START)SN_Start;
   pSimpleNetwork->Stop = (EFI_SIMPLE_NETWORK_STOP)SN_Stop;
@@ -961,13 +961,13 @@ SN_Setup (
   pNicDevice->PhyId = PHY_ID_INTERNAL;
   pNicDevice->b100Mbps = TRUE;
   pNicDevice->bFullDuplex = TRUE;
-  
+
   Status = Ax88772MacAddressGet (
                 pNicDevice,
                 &pMode->PermanentAddress.Addr[0]);
 
   if ( !EFI_ERROR ( Status )) {
-    int i; 
+    int i;
     //
     //  Use the hardware address as the current address
     //
@@ -975,44 +975,44 @@ SN_Setup (
     CopyMem ( &pMode->CurrentAddress,
               &pMode->PermanentAddress,
               PXE_HWADDR_LEN_ETHER );
-              
+
     CopyMem ( &pNicDevice->MAC,
               &pMode->PermanentAddress,
               PXE_HWADDR_LEN_ETHER );
-              
+
     pNicDevice->PktCntInQueue = 0;
-    
+
     for ( i = 0 ; i < MAX_QUEUE_SIZE ; i++) {
-        Status = gBS->AllocatePool ( EfiRuntimeServicesData, 
+        Status = gBS->AllocatePool ( EfiRuntimeServicesData,
                                       sizeof (RX_PKT),
                                       (VOID **) &pCurr);
         if ( EFI_ERROR(Status)) {
             DEBUG (( EFI_D_ERROR, "Memory are not enough\n"));
             return Status;
-        }                              
+        }
         pCurr->f_Used = FALSE;
-        
+
         if ( i ) {
             pPrev->pNext = pCurr;
         }
         else {
             pNicDevice->QueueHead = pCurr;
         }
-        
+
         if (MAX_QUEUE_SIZE - 1 == i) {
             pCurr->pNext = pNicDevice->QueueHead;
         }
-        
+
         pPrev = pCurr;
     }
-    
+
     pNicDevice->pNextFill = pNicDevice->QueueHead;
     pNicDevice->pFirstFill = pNicDevice->QueueHead;
-    
+
     Status = gBS->AllocatePool (EfiRuntimeServicesData,
                                 MAX_BULKIN_SIZE,
                                 (VOID **) &pNicDevice->pBulkInBuff);
-                                
+
     if (EFI_ERROR(Status)) {
         DEBUG (( EFI_D_ERROR, "gBS->AllocatePool for pBulkInBuff error. Status = %r\n",
               Status));
@@ -1023,7 +1023,7 @@ SN_Setup (
     DEBUG (( EFI_D_ERROR, "Ax88772MacAddressGet error. Status = %r\n", Status));
 		return Status;
   }
-  
+
   Status = gBS->AllocatePool ( EfiRuntimeServicesData,
                                    sizeof ( RX_TX_PACKET ),
                                    (VOID **) &pNicDevice->pRxTest );
@@ -1033,7 +1033,7 @@ SN_Setup (
               Status));
 	  return Status;
   }
-                                   
+
   Status = gBS->AllocatePool ( EfiRuntimeServicesData,
                                    sizeof ( RX_TX_PACKET ),
                                    (VOID **) &pNicDevice->pTxTest );
@@ -1087,7 +1087,7 @@ SN_Start (
       // NVRAM access is not supported
       //
       ZeroMem ( pMode, sizeof ( *pMode ));
-  
+
       pMode->State = EfiSimpleNetworkStarted;
       pMode->HwAddressSize = PXE_HWADDR_LEN_ETHER;
       pMode->MediaHeaderSize = sizeof ( ETHERNET_HEADER );
@@ -1109,17 +1109,17 @@ SN_Start (
       pMode->MacAddressChangeable = TRUE;
       pMode->MultipleTxSupported = FALSE;
       pMode->MediaPresentSupported = TRUE;
-      pMode->MediaPresent = FALSE; 
+      pMode->MediaPresent = FALSE;
       pNicDevice->PktCntInQueue = 0;
       pNicDevice->pNextFill = pNicDevice->QueueHead;
       pNicDevice->pFirstFill = pNicDevice->QueueHead;
       pCurr = pNicDevice->QueueHead;
-      
-      for ( i = 0 ; i < MAX_QUEUE_SIZE ; i++) { 
+
+      for ( i = 0 ; i < MAX_QUEUE_SIZE ; i++) {
         pCurr->f_Used = FALSE;
         pCurr = pCurr->pNext;
       }
-      
+
     }
     else {
       Status = EFI_ALREADY_STARTED;
@@ -1132,7 +1132,7 @@ SN_Start (
 
 /**
   Set the MAC address.
-  
+
   This function modifies or resets the current station address of a
   network interface.  If Reset is TRUE, then the current station address
   is set ot the network interface's permanent address.  If Reset if FALSE
@@ -1168,7 +1168,7 @@ SN_StationAddress (
   EFI_SIMPLE_NETWORK_MODE * pMode;
   EFI_STATUS Status;
   EFI_TPL TplPrevious;
-  
+
   TplPrevious = gBS->RaiseTPL(TPL_CALLBACK);
   //
   // Verify the parameters
@@ -1288,7 +1288,7 @@ SN_Statistics (
   if (( NULL != pSimpleNetwork ) && ( NULL != pSimpleNetwork->Mode )) {
     pMode = pSimpleNetwork->Mode;
     //
-    // Determine if the interface is started 
+    // Determine if the interface is started
     //
     if (EfiSimpleNetworkInitialized == pMode->State){
       //
@@ -1297,7 +1297,7 @@ SN_Statistics (
       if (sizeof (EFI_NETWORK_STATISTICS) <= *pStatisticsSize){
         if (bReset) {
           Status = EFI_SUCCESS;
-        } 
+        }
         else {
           Status = EFI_UNSUPPORTED;
         }
@@ -1346,7 +1346,7 @@ SN_Stop (
   EFI_SIMPLE_NETWORK_MODE * pMode;
   EFI_STATUS Status;
   EFI_TPL TplPrevious;
-  
+
   TplPrevious = gBS->RaiseTPL(TPL_CALLBACK);
   //
   // Verify the parameters
@@ -1355,19 +1355,19 @@ SN_Stop (
     //
     // Determine if the interface is started
     //
-    pMode = pSimpleNetwork->Mode;   
+    pMode = pSimpleNetwork->Mode;
     if ( EfiSimpleNetworkStarted == pMode->State ) {
         pMode->State = EfiSimpleNetworkStopped;
-        Status = EFI_SUCCESS; 
+        Status = EFI_SUCCESS;
     }
     else {
         Status = EFI_NOT_STARTED;
     }
-  } 
+  }
   else {
     Status = EFI_INVALID_PARAMETER;
   }
-  
+
   gBS->RestoreTPL ( TplPrevious );
   return Status;
 }
@@ -1398,7 +1398,7 @@ SN_Shutdown (
   UINT32 RxFilter;
   EFI_STATUS Status;
   EFI_TPL TplPrevious;
-  
+
   TplPrevious = gBS->RaiseTPL(TPL_CALLBACK);
   //
   // Verify the parameters
@@ -1508,9 +1508,9 @@ SN_Transmit (
 
   // Verify the parameters
   //
-  if (( NULL != pSimpleNetwork ) && 
-      ( NULL != pSimpleNetwork->Mode ) && 
-      ( NULL != pBuffer) && 
+  if (( NULL != pSimpleNetwork ) &&
+      ( NULL != pSimpleNetwork->Mode ) &&
+      ( NULL != pBuffer) &&
       ( (HeaderSize == 0) || ( (NULL != pDestAddr) && (NULL != pProtocol) ))) {
     //
     // The interface must be running
@@ -1533,13 +1533,13 @@ SN_Transmit (
 
           //
           //  Release the synchronization with Ax88772Timer
-          //      
+          //
           if ( pMode->MediaPresent && pNicDevice->bComplete) {
             //
             //  Copy the packet into the USB buffer
             //
 
-            CopyMem ( &pNicDevice->pTxTest->Data[0], pBuffer, BufferSize ); 
+            CopyMem ( &pNicDevice->pTxTest->Data[0], pBuffer, BufferSize );
             pNicDevice->pTxTest->Length = (UINT16) BufferSize;
 
             //
@@ -1570,7 +1570,7 @@ SN_Transmit (
               ZeroMem ( &pNicDevice->pTxTest->Data[ BufferSize ],
                         pNicDevice->pTxTest->Length - BufferSize );
             }
-        
+
             DEBUG ((EFI_D_INFO, "TX: %02x-%02x-%02x-%02x-%02x-%02x  %02x-%02x-%02x-%02x-%02x-%02x"
                       "  %02x-%02x  %d bytes\r\n",
                       pNicDevice->pTxTest->Data[0],
@@ -1593,7 +1593,7 @@ SN_Transmit (
             TransferLength = sizeof ( pNicDevice->pTxTest->Length )
                            + sizeof ( pNicDevice->pTxTest->LengthBar )
                            + pNicDevice->pTxTest->Length;
-                           
+
             if (TransferLength % 512 == 0 || TransferLength % 1024 == 0)
                 TransferLength +=4;
 
@@ -1607,7 +1607,7 @@ SN_Transmit (
                                                BULK_OUT_ENDPOINT,
                                                &pNicDevice->pTxTest->Length,
                                                &TransferLength,
-                                               0xfffffffe, 
+                                               0xfffffffe,
                                                &TransferStatus );
             if ( !EFI_ERROR ( Status )) {
               Status = TransferStatus;
@@ -1636,7 +1636,7 @@ SN_Transmit (
             //
             Status = EFI_NOT_READY;
           }
-          
+
         }
         else {
           if (EfiSimpleNetworkStarted == pMode->State) {
@@ -1658,7 +1658,7 @@ SN_Transmit (
   else {
     Status = EFI_INVALID_PARAMETER;
   }
-  
+
   gBS->RestoreTPL (TplPrevious);
 
   return Status;

@@ -658,8 +658,8 @@ Ip4AutoConfigCallBackDpc (
   }
 
   if (IpIf->Arp != NULL) {
-    //   
-    // A non-NULL IpIf->Arp here means a new ARP child is created when setting default address, 
+    //
+    // A non-NULL IpIf->Arp here means a new ARP child is created when setting default address,
     // but some IP children may have referenced the default interface before it is configured,
     // these IP instances also consume this ARP protocol so they need to open it BY_CHILD_CONTROLLER.
     //
@@ -2000,7 +2000,7 @@ EfiIp4Transmit (
     }
 
     RawHdrLen = (UINT8) (RawHdrLen << 2);
-    
+
     CopyMem (&Head, FirstFragment, IP4_MIN_HEADLEN);
 
     Ip4NtohHead (&Head);

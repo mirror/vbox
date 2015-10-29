@@ -101,7 +101,7 @@ TrimSpaces(
 }
 
 /**
-  Parse for the next instance of one string within another string. Can optionally make sure that 
+  Parse for the next instance of one string within another string. Can optionally make sure that
   the string was not escaped (^ character) per the shell specification.
 
   @param[in] SourceString             The string to search within
@@ -158,13 +158,13 @@ IsValidEnvironmentVariableName(
   )
 {
   CONST CHAR16    *Walker;
-  
+
   Walker = NULL;
 
   ASSERT (BeginPercent != NULL);
   ASSERT (EndPercent != NULL);
   ASSERT (BeginPercent < EndPercent);
-  
+
   if ((BeginPercent + 1) == EndPercent) {
     return FALSE;
   }
@@ -211,9 +211,9 @@ ContainsSplit(
   SecondQuote   = NULL;
   TempSpot      = FindFirstCharacter(CmdLine, L"|", L'^');
 
-  if (FirstQuote == NULL    || 
-      TempSpot == NULL      || 
-      TempSpot == CHAR_NULL || 
+  if (FirstQuote == NULL    ||
+      TempSpot == NULL      ||
+      TempSpot == CHAR_NULL ||
       FirstQuote > TempSpot
       ) {
     return (BOOLEAN) ((TempSpot != NULL) && (*TempSpot != CHAR_NULL));
@@ -222,7 +222,7 @@ ContainsSplit(
   while ((TempSpot != NULL) && (*TempSpot != CHAR_NULL)) {
     if (FirstQuote == NULL || FirstQuote > TempSpot) {
       break;
-    }    
+    }
     SecondQuote = FindNextInstance (FirstQuote + 1, L"\"", TRUE);
     if (SecondQuote == NULL) {
       break;
@@ -234,14 +234,14 @@ ContainsSplit(
       FirstQuote = FindNextInstance (SecondQuote + 1, L"\"", TRUE);
       TempSpot = FindFirstCharacter(TempSpot + 1, L"|", L'^');
       continue;
-    } 
+    }
   }
-  
+
   return (BOOLEAN) ((TempSpot != NULL) && (*TempSpot != CHAR_NULL));
 }
 
 /**
-  Function to start monitoring for CTRL-S using SimpleTextInputEx.  This 
+  Function to start monitoring for CTRL-S using SimpleTextInputEx.  This
   feature's enabled state was not known when the shell initially launched.
 
   @retval EFI_SUCCESS           The feature is enabled.
@@ -266,8 +266,8 @@ InternalEfiShellStartCtrlSMonitor(
     EFI_OPEN_PROTOCOL_GET_PROTOCOL);
   if (EFI_ERROR(Status)) {
     ShellPrintHiiEx(
-      -1, 
-      -1, 
+      -1,
+      -1,
       NULL,
       STRING_TOKEN (STR_SHELL_NO_IN_EX),
       ShellInfoObject.HiiHandle);
@@ -284,7 +284,7 @@ InternalEfiShellStartCtrlSMonitor(
     &KeyData,
     NotificationFunction,
     &ShellInfoObject.CtrlSNotifyHandle1);
-  
+
   KeyData.KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID|EFI_RIGHT_CONTROL_PRESSED;
   if (!EFI_ERROR(Status)) {
     Status = SimpleEx->RegisterKeyNotify(
@@ -302,7 +302,7 @@ InternalEfiShellStartCtrlSMonitor(
       &KeyData,
       NotificationFunction,
       &ShellInfoObject.CtrlSNotifyHandle3);
-  }  
+  }
   KeyData.KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID|EFI_RIGHT_CONTROL_PRESSED;
   if (!EFI_ERROR(Status)) {
     Status = SimpleEx->RegisterKeyNotify(
@@ -1373,7 +1373,7 @@ StripUnreplacedEnvironmentVariables(
       }
       continue;
     }
-    
+
     if (FirstQuote == NULL || SecondPercent < FirstQuote) {
       if (IsValidEnvironmentVariableName(FirstPercent, SecondPercent)) {
         //
@@ -1514,7 +1514,7 @@ ShellConvertVariables (
   //
   ShellCopySearchAndReplace(NewCommandLine1, NewCommandLine2, NewSize, L"^%", L"%", TRUE, FALSE);
   StrnCpy(NewCommandLine1, NewCommandLine2, NewSize/sizeof(CHAR16)-1);
-  
+
   FreePool(NewCommandLine2);
   FreePool(ItemTemp);
 
@@ -1632,7 +1632,7 @@ RunSplitCommand(
 }
 
 /**
-  Take the original command line, substitute any variables, free 
+  Take the original command line, substitute any variables, free
   the original string, return the modified copy.
 
   @param[in] CmdLine  pointer to the command line to update.
@@ -1657,7 +1657,7 @@ ShellSubstituteVariables(
 }
 
 /**
-  Take the original command line, substitute any alias in the first group of space delimited characters, free 
+  Take the original command line, substitute any alias in the first group of space delimited characters, free
   the original string, return the modified copy.
 
   @param[in] CmdLine  pointer to the command line to update.
@@ -1717,7 +1717,7 @@ ShellSubstituteAliases(
 
   SHELL_FREE_NON_NULL(*CmdLine);
   SHELL_FREE_NON_NULL(CommandName);
- 
+
   //
   // re-assign the passed in double pointer to point to our newly allocated buffer
   //
@@ -1730,7 +1730,7 @@ ShellSubstituteAliases(
   Takes the Argv[0] part of the command line and determine the meaning of it.
 
   @param[in] CmdName  pointer to the command line to update.
-  
+
   @retval Internal_Command    The name is an internal command.
   @retval File_Sys_Change     the name is a file system change.
   @retval Script_File_Name    the name is a NSH script file.
@@ -1759,7 +1759,7 @@ GetOperationType(
   // Test for file system change request.  anything ending with first : and cant have spaces.
   //
   if (CmdName[(StrLen(CmdName)-1)] == L':') {
-    if ( StrStr(CmdName, L" ") != NULL 
+    if ( StrStr(CmdName, L" ") != NULL
       || StrLen(StrStr(CmdName, L":")) > 1
       ) {
       return (Unknown_Invalid);
@@ -1789,7 +1789,7 @@ GetOperationType(
     SHELL_FREE_NON_NULL(FileWithPath);
     return (Efi_Application);
   }
-  
+
   SHELL_FREE_NON_NULL(FileWithPath);
   //
   // No clue what this is... return invalid flag...
@@ -1806,7 +1806,7 @@ GetOperationType(
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
   @retval EFI_NOT_FOUND         The operation type is unknown or invalid.
 **/
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 IsValidSplit(
   IN CONST CHAR16 *CmdLine
@@ -1958,7 +1958,7 @@ ChangeMappedDrive(
   // make sure we are the right operation
   //
   ASSERT(CmdLine[(StrLen(CmdLine)-1)] == L':' && StrStr(CmdLine, L" ") == NULL);
-  
+
   //
   // Call the protocol API to do the work
   //
@@ -2106,7 +2106,7 @@ ProcessCommandLineToFinal(
   Run an internal shell command.
 
   This API will upadate the shell's environment since these commands are libraries.
-  
+
   @param[in] CmdLine          the command line to run.
   @param[in] FirstParameter   the first parameter on the command line
   @param[in] ParamProtocol    the shell parameters protocol pointer
@@ -2128,7 +2128,7 @@ RunInternalCommand(
   SHELL_STATUS              CommandReturnedStatus;
   BOOLEAN                   LastError;
   CHAR16                    *Walker;
-  CHAR16                    *NewCmdLine;  
+  CHAR16                    *NewCmdLine;
 
   NewCmdLine = AllocateCopyPool (StrSize (CmdLine), CmdLine);
   if (NewCmdLine == NULL) {
@@ -2388,7 +2388,7 @@ SetupAndRunCommandOrFile(
 /**
   Function will process and run a command line.
 
-  This will determine if the command line represents an internal shell 
+  This will determine if the command line represents an internal shell
   command or dispatch an external application.
 
   @param[in] CmdLine      The command line to parse.
@@ -2462,7 +2462,7 @@ RunCommand(
     Status = ProcessNewSplitCommandLine(CleanOriginal);
     SHELL_FREE_NON_NULL(CleanOriginal);
     return (Status);
-  } 
+  }
 
   //
   // We need the first parameter information so we can determine the operation type
@@ -2498,7 +2498,7 @@ RunCommand(
     ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_SHELL_NOT_FOUND), ShellInfoObject.HiiHandle, FirstParameter);
     SetLastError(SHELL_NOT_FOUND);
   }
- 
+
   SHELL_FREE_NON_NULL(CleanOriginal);
   SHELL_FREE_NON_NULL(FirstParameter);
 

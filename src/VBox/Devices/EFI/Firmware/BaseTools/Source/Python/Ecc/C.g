@@ -65,34 +65,34 @@ import FileProfile
 }
 
 @members {
-        
+
     def printTokenInfo(self, line, offset, tokenText):
     	print str(line)+ ',' + str(offset) + ':' + str(tokenText)
-        
+
     def StorePredicateExpression(self, StartLine, StartOffset, EndLine, EndOffset, Text):
     	PredExp = CodeFragment.PredicateExpression(Text, (StartLine, StartOffset), (EndLine, EndOffset))
     	FileProfile.PredicateExpressionList.append(PredExp)
-    	
+
     def StoreEnumerationDefinition(self, StartLine, StartOffset, EndLine, EndOffset, Text):
     	EnumDef = CodeFragment.EnumerationDefinition(Text, (StartLine, StartOffset), (EndLine, EndOffset))
     	FileProfile.EnumerationDefinitionList.append(EnumDef)
-    	
+
     def StoreStructUnionDefinition(self, StartLine, StartOffset, EndLine, EndOffset, Text):
     	SUDef = CodeFragment.StructUnionDefinition(Text, (StartLine, StartOffset), (EndLine, EndOffset))
     	FileProfile.StructUnionDefinitionList.append(SUDef)
-    	
+
     def StoreTypedefDefinition(self, StartLine, StartOffset, EndLine, EndOffset, FromText, ToText):
     	Tdef = CodeFragment.TypedefDefinition(FromText, ToText, (StartLine, StartOffset), (EndLine, EndOffset))
     	FileProfile.TypedefDefinitionList.append(Tdef)
-    
+
     def StoreFunctionDefinition(self, StartLine, StartOffset, EndLine, EndOffset, ModifierText, DeclText, LeftBraceLine, LeftBraceOffset, DeclLine, DeclOffset):
     	FuncDef = CodeFragment.FunctionDefinition(ModifierText, DeclText, (StartLine, StartOffset), (EndLine, EndOffset), (LeftBraceLine, LeftBraceOffset), (DeclLine, DeclOffset))
     	FileProfile.FunctionDefinitionList.append(FuncDef)
-    	
+
     def StoreVariableDeclaration(self, StartLine, StartOffset, EndLine, EndOffset, ModifierText, DeclText):
     	VarDecl = CodeFragment.VariableDeclaration(ModifierText, DeclText, (StartLine, StartOffset), (EndLine, EndOffset))
     	FileProfile.VariableDeclarationList.append(VarDecl)
-    
+
     def StoreFunctionCalling(self, StartLine, StartOffset, EndLine, EndOffset, FuncName, ParamList):
     	FuncCall = CodeFragment.FunctionCalling(FuncName, ParamList, (StartLine, StartOffset), (EndLine, EndOffset))
     	FileProfile.FunctionCallingList.append(FuncCall)
@@ -120,7 +120,7 @@ options {k=1;}
 	| declaration
 	| macro_statement (';')?
 	;
-	
+
 
 
 function_definition
@@ -146,7 +146,7 @@ scope {
 	:	d=declaration_specifiers? declarator
 		(	declaration+ a=compound_statement	// K&R style
 		|	b=compound_statement				// ANSI style
-		) { 
+		) {
 		    if d != None:
 		      $function_definition::ModifierText = $declaration_specifiers.text
 		    else:
@@ -164,15 +164,15 @@ scope {
 	;
 
 declaration
-	: a='typedef' b=declaration_specifiers? 
-	  c=init_declarator_list d=';' 
+	: a='typedef' b=declaration_specifiers?
+	  c=init_declarator_list d=';'
 	  {
 	  if b != None:
 	    self.StoreTypedefDefinition($a.line, $a.charPositionInLine, $d.line, $d.charPositionInLine, $b.text, $c.text)
 	  else:
 	    self.StoreTypedefDefinition($a.line, $a.charPositionInLine, $d.line, $d.charPositionInLine, '', $c.text)
-	  }	
-	| s=declaration_specifiers t=init_declarator_list? e=';' 
+	  }
+	| s=declaration_specifiers t=init_declarator_list? e=';'
 	{
 	if t != None:
 	  self.StoreVariableDeclaration($s.start.line, $s.start.charPositionInLine, $t.start.line, $t.start.charPositionInLine, $s.text, $t.text)
@@ -191,7 +191,7 @@ init_declarator_list
 	;
 
 init_declarator
-	: declarator ('=' initializer)? 
+	: declarator ('=' initializer)?
 	;
 
 storage_class_specifier
@@ -357,7 +357,7 @@ abstract_declarator_suffix
 	|	'(' ')'
 	|	'(' parameter_type_list ')'
 	;
-	
+
 initializer
 
 	: assignment_expression
@@ -415,7 +415,7 @@ scope {
         |   '--'
         )*
 	;
-	
+
 macro_parameter_list
 	: parameter_declaration (',' parameter_declaration)*
 	;
@@ -458,7 +458,7 @@ assignment_expression
 	: lvalue assignment_operator assignment_expression
 	| conditional_expression
 	;
-	
+
 lvalue
 	:	unary_expression
 	;
@@ -531,7 +531,7 @@ statement
 asm2_statement
 	: '__asm__'? IDENTIFIER '(' (~(';'))* ')' ';'
 	;
-	
+
 asm1_statement
 	: '_asm' '{' (~('}'))* '}'
 	;
@@ -539,11 +539,11 @@ asm1_statement
 asm_statement
 	: '__asm' '{' (~('}'))* '}'
 	;
-	
+
 macro_statement
 	: IDENTIFIER '(' declaration*  statement_list? expression? ')'
 	;
-	
+
 labeled_statement
 	: IDENTIFIER ':' statement
 	| 'case' constant_expression ':' statement
@@ -585,7 +585,7 @@ jump_statement
 IDENTIFIER
 	:	LETTER (LETTER|'0'..'9')*
 	;
-	
+
 fragment
 LETTER
 	:	'$'
@@ -601,7 +601,7 @@ CHARACTER_LITERAL
 STRING_LITERAL
     :  ('L')? '"' ( EscapeSequence | ~('\\'|'"') )* '"'
     ;
-    
+
 HEX_LITERAL : '0' ('x'|'X') HexDigit+ IntegerTypeSuffix? ;
 
 DECIMAL_LITERAL : ('0' | '1'..'9' '0'..'9'*) IntegerTypeSuffix? ;
@@ -656,11 +656,11 @@ WS  :  (' '|'\r'|'\t'|'\u000C'|'\n') {$channel=HIDDEN;}
 // ingore '\' of line concatenation
 BS  : ('\\') {$channel=HIDDEN;}
     ;
-    
+
 // ingore function modifiers
 //FUNC_MODIFIERS  : 'EFIAPI' {$channel=HIDDEN;}
 //    ;
-    	
+
 UnicodeVocabulary
     : '\u0003'..'\uFFFE'
     ;
@@ -674,6 +674,6 @@ LINE_COMMENT
     ;
 
 // ignore #line info for now
-LINE_COMMAND 
+LINE_COMMAND
     : '#' ~('\n'|'\r')* '\r'? '\n' {$channel=HIDDEN;}
     ;

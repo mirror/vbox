@@ -65,7 +65,7 @@ MtrrDisplayFixedRow (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     //  Start
     //
@@ -75,7 +75,7 @@ MtrrDisplayFixedRow (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     //  End
     //
@@ -91,7 +91,7 @@ MtrrDisplayFixedRow (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     //  Type
     //
@@ -110,7 +110,7 @@ MtrrDisplayFixedRow (
     if ( EFI_ERROR ( Status )) {
       break;
     }
-    
+
     //
     //  End of row
     //
@@ -262,9 +262,9 @@ MemoryTypeRegistersPage (
   EFI_STATUS Status;
   UINT64 Type;
   INT64 Value;
-  
+
   DBG_ENTER ( );
-  
+
   //
   //  Send the Memory Type Registers page
   //
@@ -441,7 +441,7 @@ MemoryTypeRegistersPage (
             if ( EFI_ERROR ( Status )) {
               break;
             }
-            
+
             //
             //  Index
             //
@@ -451,7 +451,7 @@ MemoryTypeRegistersPage (
             if ( EFI_ERROR ( Status )) {
               break;
             }
-            
+
             //
             //  Value
             //
@@ -602,7 +602,7 @@ MemoryTypeRegistersPage (
           }
 
           //
-          //  End of table 
+          //  End of table
           //
           Status = HttpSendAnsiString ( SocketFD,
                                         pPort,
@@ -642,7 +642,7 @@ MemoryTypeRegistersPage (
             if ( EFI_ERROR ( Status )) {
               break;
             }
-            
+
             //
             //  Index
             //
@@ -652,7 +652,7 @@ MemoryTypeRegistersPage (
             if ( EFI_ERROR ( Status )) {
               break;
             }
-            
+
             //
             //  Base
             //
@@ -798,7 +798,7 @@ MemoryTypeRegistersPage (
           }
 
           //
-          //  End of table 
+          //  End of table
           //
           Status = HttpSendAnsiString ( SocketFD,
                                         pPort,
@@ -816,7 +816,7 @@ MemoryTypeRegistersPage (
     Status = HttpPageTrailer ( SocketFD, pPort, pbDone );
     break;
   }
-    
+
   //
   //  Return the operation status
   //

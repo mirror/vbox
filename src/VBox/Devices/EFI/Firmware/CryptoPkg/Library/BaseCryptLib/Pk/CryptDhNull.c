@@ -98,7 +98,7 @@ DhSetParameter (
   )
 {
   ASSERT (FALSE);
-  return FALSE; 
+  return FALSE;
 }
 
 /**

@@ -33,7 +33,7 @@ Tools in Python
 ---------------
 * Convert Python source to exe file
 
-  The tools written in Python can be converted into executable program which can 
+  The tools written in Python can be converted into executable program which can
   be executed without installing a Python interpreter.  (Generally it is easier
   to run the scripts from their source on operating systems other than Windows.)
 
@@ -51,10 +51,10 @@ Tools in Python
 
 	The generated .exe (and .dll) files are put in "mybuild" subdirectory.
 
-  The following is a real example with the BuildTools/trunk/BaseTools project 
+  The following is a real example with the BuildTools/trunk/BaseTools project
   installed in: C:\Work\BaseTools
 
-  
+
   C:\Work\BaseTools\Source\Python> set PYTHONPATH=C:\Work\BaseTools\Source\Python
   C:\Work\BaseTools\Source\Python> c:\cx_Freeze-3.0.3\FreezePython.exe --include-modules=encodings.cp437,encodings.gbk,encodings.utf_16,encodings.utf_16_le,encodings.utf_8 --install-dir=C:\Work\BaseTools\Bin\Win32 build\build.py
 
@@ -70,7 +70,7 @@ Windows:
 
   The tools written in Python can be executed directly from its source directory
 as long as the Python interpreter (Python 2.5) has been installed. Before the execution,
-please make sure the environment variable PYTHONPATH is set to 
+please make sure the environment variable PYTHONPATH is set to
 
         <buildtools_project>/BaseTools/Source/Python
 

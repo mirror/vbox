@@ -31,7 +31,7 @@
 ANTLR_INFO
 
 
-/* MR20 G. Hobbelt 
+/* MR20 G. Hobbelt
 Fix for Borland C++ 4.x & 5.x compiling with ALL warnings enabled
 */
 
@@ -51,7 +51,7 @@ int	flag_paren = FALSE;
 int	flag_brace = FALSE;
 int	mode_counter = 0;  /* keep track of number of %%names */
 
-  
+
 
 void
 #ifdef __USE_PROTOS
@@ -197,7 +197,7 @@ do_conversion()
   {
   new_automaton_mode(); func_action = TRUE;
   rule_list();
-  
+
   dfa_class_nop[mode_counter] =
   relabel(zzaArg(zztasp1,1 ).l,comp_level);
   if (comp_level)
@@ -363,7 +363,7 @@ and_expr()
   zzMake0;
   {
   repeat_expr();
-  
+
   zzaRet.l=zzaArg(zztasp1,1 ).l; zzaRet.r=zzaArg(zztasp1,1 ).r;
   {
     zzBLOCK(zztasp2);
@@ -480,7 +480,7 @@ expr()
     zzmatch(L_BRACK); zzCONSUME;
     atom_list();
     zzmatch(R_BRACK);
-    
+
     /* MR23 */		if (zzaRet.l != NULL) {
       (zzaRet.l)->trans[0] = zzaRet.r;
       (zzaRet.l)->label = set_dup(zzaArg(zztasp1,2 ).label);
@@ -495,7 +495,7 @@ expr()
       zzmatch(L_BRACK); zzCONSUME;
       atom_list();
       zzmatch(R_BRACK);
-      
+
       /* MR23 */		if (zzaRet.l != NULL) {
         (zzaRet.l)->trans[0] = zzaRet.r;
         (zzaRet.l)->label = set_dif(normal_chars,zzaArg(zztasp1,3 ).label);
@@ -509,8 +509,8 @@ expr()
         zzmatch(L_PAR); zzCONSUME;
         reg_expr();
         zzmatch(R_PAR);
-        
-        /* MR23 */		if (zzaRet.l != NULL) {				
+
+        /* MR23 */		if (zzaRet.l != NULL) {
           (zzaRet.l)->trans[0] = zzaArg(zztasp1,2 ).l;
           if (zzaArg(zztasp1,2 ).r) {
             (zzaArg(zztasp1,2 ).r)->trans[1] = zzaRet.r;    /* MR20 */
@@ -524,7 +524,7 @@ expr()
           zzmatch(L_BRACE); zzCONSUME;
           reg_expr();
           zzmatch(R_BRACE);
-          
+
           /* MR23 */		if (zzaRet.l != NULL) {
             (zzaRet.l)->trans[0] = zzaArg(zztasp1,2 ).l;
             (zzaRet.l)->trans[1] = zzaRet.r;
@@ -538,7 +538,7 @@ expr()
         else {
           if ( (setwd3[LA(1)]&0x1) ) {
             atom();
-            
+
             /* MR23 */		if (zzaRet.l != NULL) {
               (zzaRet.l)->trans[0] = zzaRet.r;
               (zzaRet.l)->label = set_dup(zzaArg(zztasp1,1 ).label);
@@ -634,7 +634,7 @@ near_atom()
         int debugLetter1 = zzaRet.letter;
         int debugLetter2 = zzaArg(zztasp2,2 ).letter;
       }
-      if (zzaRet.letter > zzaArg(zztasp2,2 ).letter 
+      if (zzaRet.letter > zzaArg(zztasp2,2 ).letter
       && zzaArg(zztasp2,2 ).letter != 0xff){       /* MR16 */
         error("invalid range  ", zzline);
       }
@@ -790,7 +790,7 @@ anychar()
   return;
 fail:
   zzEXIT(zztasp1);
-  /* empty action */  
+  /* empty action */
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd3, 0x80);
   }
@@ -806,7 +806,7 @@ new_nfa_node()
 {
   register nfa_node *t;
   static int nfa_size=0;	/* elements nfa_array[] can hold */
-  
+
 	++nfa_allocated;
   if (nfa_size<=nfa_allocated){
     /* need to redo array */
@@ -877,7 +877,7 @@ set s;
 #endif
 {
   unsigned int *x;
-  
+
 	fprintf(f, "n = %d,", s.n);
   if (s.setword){
     fprintf(f, "setword = %x,   ", s.setword);
@@ -907,7 +907,7 @@ int last_node;
 {
   register int i;
   nfa_node *t;
-  
+
 	for (i=first_node; i<=last_node; ++i){
     t = NFA(i);
     if (!t) break;

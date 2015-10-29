@@ -71,7 +71,7 @@ VOID
 
   @param[in] This           A pointer to the EFI_EBC_SIMPLE_DEBUGGER_PROTOCOL structure.
   @param[in] VmPtr          A pointer to a VM context.
-  @param[in] DasmString     Dump string buffer. 
+  @param[in] DasmString     Dump string buffer.
   @param[in] DasmStringSize Dump string size.
 
   @retval EFI_UNSUPPORTED       No support for it.

@@ -247,12 +247,12 @@ typedef struct _ENDPOINT_CONTEXT_64 {
   UINT32                  RsvdZ5;             // Reserved
   UINT32                  RsvdZ6;
   UINT32                  RsvdZ7;
-  
+
   UINT32                  RsvdZ8;
   UINT32                  RsvdZ9;
   UINT32                  RsvdZ10;
   UINT32                  RsvdZ11;
-  
+
   UINT32                  RsvdZ12;
   UINT32                  RsvdZ13;
   UINT32                  RsvdZ14;
@@ -395,7 +395,7 @@ typedef struct _DBC_INFO_CONTEXT {
   UINT64        RsvdZ1:32;
   UINT64        RsvdZ2;
   UINT64        RsvdZ3;
-  UINT64        RsvdZ4;  
+  UINT64        RsvdZ4;
 } DBC_INFO_CONTEXT;
 
 //
@@ -459,7 +459,7 @@ typedef struct _USB3_DEBUG_PORT_INSTANCE {
   // The flag indicates debug device is ready
   //
   BOOLEAN                                 DebugSupport;
-  
+
   //
   // The flag indicates debug device is ready
   //
@@ -467,7 +467,7 @@ typedef struct _USB3_DEBUG_PORT_INSTANCE {
 
   //
   // The flag indicates if USB 3.0 ports has been turn off/on power
-  //  
+  //
   BOOLEAN                                 ChangePortPower;
 
   //
@@ -477,24 +477,24 @@ typedef struct _USB3_DEBUG_PORT_INSTANCE {
 
   //
   // XHCI OP RegisterBase address
-  //  
+  //
   EFI_PHYSICAL_ADDRESS                    XhciOpRegister;
-  
+
   //
   // XHCI Debug Register Base Address
   //
   EFI_PHYSICAL_ADDRESS                    DebugCapabilityBase;
-  
+
   //
   // XHCI Debug Capability offset
   //
-  UINT64                                  DebugCapabilityOffset;  
-  
+  UINT64                                  DebugCapabilityOffset;
+
   //
   // XHCI Debug Context Address
   //
   EFI_PHYSICAL_ADDRESS                    DebugCapabilityContext;
-  
+
   //
   // Transfer Ring
   //
@@ -505,7 +505,7 @@ typedef struct _USB3_DEBUG_PORT_INSTANCE {
   // EventRing
   //
   EVENT_RING                              EventRing;
-  
+
   //
   // URB - Read
   //
@@ -564,7 +564,7 @@ XhcSetDebugRegBit (
   IN UINT32                   Offset,
   IN UINT32                   Bit
   );
-  
+
 /**
   Write the data to the debug register.
 
@@ -572,7 +572,7 @@ XhcSetDebugRegBit (
   @param  Offset       The offset of the debug register.
   @param  Data         The data to write.
 
-**/  
+**/
 VOID
 XhcWriteDebugReg (
   IN USB3_DEBUG_PORT_HANDLE     *Handle,
@@ -582,9 +582,9 @@ XhcWriteDebugReg (
 
 /**
   Discover the USB3 debug device.
-  
+
   @param  Handle                Debug port handle.
-  
+
   @retval RETURN_SUCCESS        The serial device was initialized.
   @retval RETURN_DEVICE_ERROR   The serial device could not be initialized.
 
@@ -593,10 +593,10 @@ RETURN_STATUS
 DiscoverUsb3DebugPort(
   USB3_DEBUG_PORT_HANDLE  *Handle
   );
-  
+
 /**
   Initialize the Serial Device hardware.
-  
+
   @param  Handle            Debug port handle.
 
   @retval RETURN_SUCCESS    The serial device was initialized successfully.
@@ -624,12 +624,12 @@ GetXhciBaseAddress (
   @param[in]      BitMask     32-bit mask
 
   @return  BOOLEAN  - TRUE  if all bits specified by the mask are enabled.
-                    - FALSE even if one of the bits specified by the mask 
+                    - FALSE even if one of the bits specified by the mask
                             is not enabled.
 **/
 BOOLEAN
 XhcIsBitSet(
-  UINTN   Register, 
+  UINTN   Register,
   UINT32  BitMask
   );
 
@@ -641,7 +641,7 @@ XhcIsBitSet(
 **/
 VOID
 XhcSetR32Bit(
-  UINTN   Register, 
+  UINTN   Register,
   UINT32  BitMask
   );
 
@@ -653,13 +653,13 @@ XhcSetR32Bit(
 **/
 VOID
 XhcClearR32Bit(
-  IN OUT  UINTN  Register, 
+  IN OUT  UINTN  Register,
   IN      UINT32 BitMask
   );
 
 /**
   Initialize USB3 debug port.
-  
+
   This method invokes various internal functions to facilitate
   detection and initialization of USB3 debug port.
 
@@ -684,7 +684,7 @@ GetXhciPciCommand (
   Allocate aligned memory for XHC's usage.
 
   @param  BufferSize      The size, in bytes, of the Buffer.
-  
+
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
@@ -695,7 +695,7 @@ AllocateAlignBuffer (
 
 /**
   The real function to initialize USB3 debug port.
-  
+
   This method invokes various internal functions to facilitate
   detection and initialization of USB3 debug port.
 
@@ -737,7 +737,7 @@ XhcDataTransfer (
 
 /**
   Check if the timer is timeout.
-  
+
   @param[in] UsbDebugPortHandle  Pointer to USB Debug port handle
   @param[in] Timer               The start timer from the begin.
   @param[in] TimeoutTicker       Ticker number need time out.

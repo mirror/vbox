@@ -52,7 +52,7 @@ ASM_PFX(_ModuleEntryPoint):
   #
   .byte   0x66,0xbe        #movl    $GdtDesc, %esi
   .long   GdtDesc
-  
+
   .byte   0x66,0x2e,0x0f,0x01,0x14   #lgdt    %cs:(%si)
 
   #
@@ -65,10 +65,10 @@ ASM_PFX(_ModuleEntryPoint):
   #
   # Now we're in 16 bit protected mode
   # Set up the selectors for 32 bit protected mode entry
-  # 
+  #
   .byte   0xb8                 #movw    SYS_DATA_SEL, %ax
   .word   SYS_DATA_SEL
-  
+
   .byte   0x8e,0xd8            #movw    %ax, %ds
   .byte   0x8e,0xc0            #movw    %ax, %es
   .byte   0x8e,0xe0            #movw    %ax, %fs
@@ -80,7 +80,7 @@ ASM_PFX(_ModuleEntryPoint):
   # The jump to a far pointer causes the transition to 32 bit mode
   #
   .byte   0x66,0xbe            #movl   ProtectedModeEntryLinearAddress, %esi
-  .long   ProtectedModeEntryLinearAddress 
+  .long   ProtectedModeEntryLinearAddress
   .byte   0x66,0x2e,0xff,0x2c  #jmp    %cs:(%esi)
 
 #
@@ -131,8 +131,8 @@ ProtectedModeEntryPoint:
 # GDT[0]: 000h: Null entry, never used.
 #
 .equ   NULL_SEL, . - GDT_BASE         # Selector [0]
-GDT_BASE: 
-BootGdtTable:   
+GDT_BASE:
+BootGdtTable:
         .long   0
         .long   0
 #
@@ -162,8 +162,8 @@ BootGdtTable:
 # GDT Descriptor
 #
 GdtDesc:                                     # GDT descriptor
-       .word    GDT_SIZE - 1               
-       .long    BootGdtTable        
+       .word    GDT_SIZE - 1
+       .long    BootGdtTable
 
 ProtectedModeEntryLinearAddress:
 ProtectedModeEntryLinearOffset:

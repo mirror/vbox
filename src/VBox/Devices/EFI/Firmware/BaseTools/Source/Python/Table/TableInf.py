@@ -22,7 +22,7 @@ from Common.String import ConvertToSqlString
 ## TableInf
 #
 # This class defined a table used for data model
-# 
+#
 # @param object:       Inherited from object class
 #
 #
@@ -30,7 +30,7 @@ class TableInf(Table):
     def __init__(self, Cursor):
         Table.__init__(self, Cursor)
         self.Table = 'Inf'
-    
+
     ## Create table
     #
     # Create table Inf
@@ -96,14 +96,14 @@ class TableInf(Table):
         SqlCommand = """insert into %s values(%s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s, %s, %s, %s, %s, %s, %s)""" \
                      % (self.Table, self.ID, Model, Value1, Value2, Value3, Value4, Value5, Arch, BelongsToItem, BelongsToFile, StartLine, StartColumn, EndLine, EndColumn, Enabled)
         Table.Insert(self, SqlCommand)
-        
+
         return self.ID
-    
+
     ## Query table
     #
-    # @param Model:  The Model of Record 
+    # @param Model:  The Model of Record
     #
-    # @retval:       A recordSet of all found records 
+    # @retval:       A recordSet of all found records
     #
     def Query(self, Model):
         SqlCommand = """select ID, Value1, Value2, Value3, Arch, BelongsToItem, BelongsToFile, StartLine from %s

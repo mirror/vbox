@@ -365,7 +365,7 @@ ON_ERROR:
 
 /**
   Callback function which provided by user to remove one node in NetDestroyLinkList process.
-  
+
   @param[in]    Entry           The entry to be removed.
   @param[in]    Context         Pointer to the callback context corresponds to the Context in NetDestroyLinkList.
 
@@ -410,7 +410,7 @@ TcpDestroyChildEntryInHandleBuffer (
   @param[in]  NumberOfChildren   Number of Handles in ChildHandleBuffer. If number
                                  of children is zero stop the entire bus driver.
   @param[in]  ChildHandleBuffer  An array of child handles to be freed. May be NULL
-                                 if NumberOfChildren is 0.  
+                                 if NumberOfChildren is 0.
   @param[in]  IpVersion          IP_VERSION_4 or IP_VERSION_6
 
   @retval EFI_SUCCESS            The resources used by the instance were cleaned up.
@@ -545,7 +545,7 @@ Tcp4DriverBindingSupported (
   if (!EFI_ERROR (Status)) {
     return EFI_ALREADY_STARTED;
   }
-  
+
   //
   // Test for the Ip4ServiceBinding Protocol
   //
@@ -662,7 +662,7 @@ Tcp6DriverBindingSupported (
   if (!EFI_ERROR (Status)) {
     return EFI_ALREADY_STARTED;
   }
-  
+
   //
   // Test for the Ip6ServiceBinding Protocol
   //

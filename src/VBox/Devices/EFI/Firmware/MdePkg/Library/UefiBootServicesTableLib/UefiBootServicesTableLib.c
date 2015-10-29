@@ -1,5 +1,5 @@
 /** @file
-  This library retrieve the EFI_BOOT_SERVICES pointer from EFI system table in 
+  This library retrieve the EFI_BOOT_SERVICES pointer from EFI system table in
   library's constructor.
 
   Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
@@ -25,7 +25,7 @@ EFI_BOOT_SERVICES  *gBS         = NULL;
 
 /**
   The constructor function caches the pointer of Boot Services Table.
-    
+
   The constructor function caches the pointer of Boot Services Table through System Table.
   It will ASSERT() if the pointer of System Table is NULL.
   It will ASSERT() if the pointer of Boot Services Table is NULL.

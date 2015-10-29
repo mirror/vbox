@@ -1,5 +1,5 @@
 /** @file
-  Provides the services to get the entry point to a PE/COFF image that has either been 
+  Provides the services to get the entry point to a PE/COFF image that has either been
   loaded into memory or is executing at it's linked address.
 
   Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
@@ -128,7 +128,7 @@ PeCoffLoaderGetMachineType (
 
 /**
   Returns a pointer to the PDB file name for a PE/COFF image that has been
-  loaded into system memory with the PE/COFF Loader Library functions. 
+  loaded into system memory with the PE/COFF Loader Library functions.
 
   Returns the PDB file name for the PE/COFF image specified by Pe32Data.  If
   the PE/COFF image specified by Pe32Data is not a valid, then NULL is
@@ -246,7 +246,7 @@ PeCoffLoaderGetPdbPointer (
 
   //
   // Scan the directory to find the debug entry.
-  // 
+  //
   for (DirCount = 0; DirCount < DirectoryEntry->Size; DirCount += sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY), DebugEntry++) {
     if (DebugEntry->Type == EFI_IMAGE_DEBUG_TYPE_CODEVIEW) {
       if (DebugEntry->SizeOfData > 0) {
@@ -291,7 +291,7 @@ PeCoffGetSizeOfHeaders (
   UINTN                                 SizeOfHeaders;
 
   ASSERT (Pe32Data   != NULL);
- 
+
   DosHdr = (EFI_IMAGE_DOS_HEADER *)Pe32Data;
   if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
     //

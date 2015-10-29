@@ -20,7 +20,7 @@
   FILE_GUID                      = 79CD78D8-6EDC-4978-BD02-3299C387AB17
   MODULE_TYPE                    = DXE_SMM_DRIVER
   PI_SPECIFICATION_VERSION       = 0x0001000A
-  VERSION_STRING                 = 1.0  
+  VERSION_STRING                 = 1.0
   ENTRY_POINT                    = StatusCodeHandlerSmmEntry
 
 #
@@ -49,7 +49,7 @@
   DebugLib
   MemoryAllocationLib
   BaseMemoryLib
-  
+
 [Guids]
   gEfiStatusCodeDataTypeStringGuid              ## SOMETIMES_CONSUMES   ## UNDEFINED
 

@@ -39,7 +39,7 @@ BdsBuildLegacyDevNameString (
 /**
   Group the legacy boot options in the BootOption.
 
-  The routine assumes the boot options in the beginning that covers all the device 
+  The routine assumes the boot options in the beginning that covers all the device
   types are ordered properly and re-position the following boot options just after
   the corresponding boot options with the same device type.
   For example:

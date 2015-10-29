@@ -44,7 +44,7 @@ CalculateConfigStringLen (
   //
   // The beginning of next <ConfigRequest>/<ConfigResp> should be "&GUID=".
   // Will meet '\0' if there is only one <ConfigRequest>/<ConfigResp>.
-  // 
+  //
   TmpPtr = StrStr (String, L"&GUID=");
   if (TmpPtr == NULL) {
     return StrLen (String);
@@ -117,7 +117,7 @@ GetDevicePath (
   if (((Length + 1) / 2) < sizeof (EFI_DEVICE_PATH_PROTOCOL)) {
     return EFI_NOT_FOUND;
   }
-  
+
   //
   // The data in <PathHdr> is encoded as hex UNICODE %02x bytes in the same order
   // as the device path resides in RAM memory.
@@ -127,7 +127,7 @@ GetDevicePath (
   if (DevicePathBuffer == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  
+
   //
   // Convert DevicePath
   //
@@ -141,7 +141,7 @@ GetDevicePath (
       DevicePathBuffer [Index/2] = (UINT8) ((DevicePathBuffer [Index/2] << 4) + DigitUint8);
     }
   }
-  
+
   //
   // Validate DevicePath
   //
@@ -208,10 +208,10 @@ HiiToLower (
 
   @param  BufferLen              The length of the Buffer in bytes.
 
-  @param  Buffer                 Points to a buffer which will be converted to be the 
+  @param  Buffer                 Points to a buffer which will be converted to be the
                                  content of the generated string.
 
-  @param  Flag                   If 1, the buffer contains data for the value of GUID or PATH stored in 
+  @param  Flag                   If 1, the buffer contains data for the value of GUID or PATH stored in
                                  UINT8 *; if 2, the buffer contains unicode string for the value of NAME;
                                  if 3, the buffer contains other data.
 
@@ -244,7 +244,7 @@ GenerateSubStr (
     ASSERT (*SubStr != NULL);
     return;
   }
-  
+
   //
   // Header + Data + '&' + '\0'
   //
@@ -297,7 +297,7 @@ GenerateSubStr (
   //
   // Convert the uppercase to lowercase since <HexAf> is defined in lowercase format.
   //
-  StrCat (Str, L"&");  
+  StrCat (Str, L"&");
   HiiToLower (Str);
 
   *SubStr = Str;
@@ -332,7 +332,7 @@ OutputConfigBody (
   if (String == NULL || ConfigBody == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   //
   // The setting information should start OFFSET, not ALTCFG.
   //
@@ -483,7 +483,7 @@ GetValueOfNumber (
     Status = EFI_OUT_OF_RESOURCES;
     goto Exit;
   }
-  
+
   Length = *Len;
   ZeroMem (TemStr, sizeof (TemStr));
   for (Index = 0; Index < Length; Index ++) {
@@ -512,10 +512,10 @@ Exit:
   the missing AltCfgId in AltCfgResq.
 
   @param  AltCfgResp             Pointer to a null-terminated Unicode string in
-                                 <ConfigAltResp> format. The default value string 
-                                 will be merged into it. 
+                                 <ConfigAltResp> format. The default value string
+                                 will be merged into it.
   @param  DefaultAltCfgResp      Pointer to a null-terminated Unicode string in
-                                 <MultiConfigAltResp> format. The default value 
+                                 <MultiConfigAltResp> format. The default value
                                  string may contain more than one ConfigAltResp
                                  string for the different varstore buffer.
 
@@ -536,17 +536,17 @@ MergeDefaultString (
   EFI_STRING   AltConfigHdr;
   UINTN        HeaderLength;
   UINTN        SizeAltCfgResp;
-  
+
   if (*AltCfgResp == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   //
   // Get the requestr ConfigHdr
   //
   SizeAltCfgResp  = 0;
   StringPtr       = *AltCfgResp;
-  
+
   //
   // Find <ConfigHdr> GUID=...&NAME=...&PATH=...
   //
@@ -580,18 +580,18 @@ MergeDefaultString (
   StrnCat (AltConfigHdr, *AltCfgResp, HeaderLength);
   StrCat (AltConfigHdr, L"&ALTCFG=");
   HeaderLength = StrLen (AltConfigHdr);
-  
+
   StringPtrDefault = StrStr (DefaultAltCfgResp, AltConfigHdr);
   while (StringPtrDefault != NULL) {
     //
     // Get AltCfg Name
     //
     StrnCat (AltConfigHdr, StringPtrDefault + HeaderLength, 4);
-    StringPtr = StrStr (*AltCfgResp, AltConfigHdr); 
-    
+    StringPtr = StrStr (*AltCfgResp, AltConfigHdr);
+
     //
     // Append the found default value string to the input AltCfgResp
-    // 
+    //
     if (StringPtr == NULL) {
       StringPtrEnd   = StrStr (StringPtrDefault + 1, L"&GUID");
       SizeAltCfgResp = StrSize (*AltCfgResp);
@@ -626,16 +626,16 @@ MergeDefaultString (
         *StringPtrEnd = TempChar;
       }
     }
-    
+
     //
     // Find next AltCfg String
     //
     *(AltConfigHdr + HeaderLength) = L'\0';
     StringPtrDefault = StrStr (StringPtrDefault + 1, AltConfigHdr);
   }
-  
+
   FreePool (AltConfigHdr);
-  return EFI_SUCCESS;  
+  return EFI_SUCCESS;
 }
 
 /**
@@ -652,9 +652,9 @@ InsertDefaultValue (
   )
 {
   LIST_ENTRY             *Link;
-  IFR_DEFAULT_DATA       *DefaultValueArray; 
+  IFR_DEFAULT_DATA       *DefaultValueArray;
   LIST_ENTRY             *DefaultLink;
- 
+
   DefaultLink   = &BlockData->DefaultValueEntry;
 
   for (Link = DefaultLink->ForwardLink; Link != DefaultLink; Link = Link->ForwardLink) {
@@ -672,7 +672,7 @@ InsertDefaultValue (
         DefaultValueArray->Cleaned = DefaultValueData->Cleaned;
       }
       return;
-    } 
+    }
   }
 
   //
@@ -689,7 +689,7 @@ InsertDefaultValue (
 
   @param  BlockLink      The list entry points to block array.
   @param  BlockData      The point to BlockData is added.
-  
+
 **/
 VOID
 InsertBlockData (
@@ -734,32 +734,32 @@ InsertBlockData (
       }
     } else if (BlockArray->Offset > BlockSingleData->Offset) {
       //
-      // Insert new block data in the front of block array 
+      // Insert new block data in the front of block array
       //
       InsertTailList (Link, &BlockSingleData->Entry);
       return;
     }
   }
-  
+
   //
   // Add new block data into the tail.
   //
-  InsertTailList (Link, &BlockSingleData->Entry); 
+  InsertTailList (Link, &BlockSingleData->Entry);
 }
 
 /**
-  Retrieves a pointer to the a Null-terminated ASCII string containing the list 
-  of languages that an HII handle in the HII Database supports.  The returned 
+  Retrieves a pointer to the a Null-terminated ASCII string containing the list
+  of languages that an HII handle in the HII Database supports.  The returned
   string is allocated using AllocatePool().  The caller is responsible for freeing
   the returned string using FreePool().  The format of the returned string follows
   the language format assumed the HII Database.
-  
+
   If HiiHandle is NULL, then ASSERT().
 
   @param[in]  HiiHandle  A handle that was previously registered in the HII Database.
 
   @retval NULL   HiiHandle is not registered in the HII database
-  @retval NULL   There are not enough resources available to retrieve the suported 
+  @retval NULL   There are not enough resources available to retrieve the suported
                  languages.
   @retval NULL   The list of suported languages could not be retrieved.
   @retval Other  A pointer to the Null-terminated ASCII string of supported languages.
@@ -784,8 +784,8 @@ GetSupportedLanguages (
   Status = mPrivate.HiiString.GetLanguages (&mPrivate.HiiString, HiiHandle, &TempSupportedLanguages, &LanguageSize);
 
   //
-  // If GetLanguages() returns EFI_SUCCESS for a zero size, 
-  // then there are no supported languages registered for HiiHandle.  If GetLanguages() 
+  // If GetLanguages() returns EFI_SUCCESS for a zero size,
+  // then there are no supported languages registered for HiiHandle.  If GetLanguages()
   // returns an error other than EFI_BUFFER_TOO_SMALL, then HiiHandle is not present
   // in the HII Database
   //
@@ -827,12 +827,12 @@ GetSupportedLanguages (
 
 /**
   Retrieves a string from a string package.
-  
+
   If HiiHandle is NULL, then ASSERT().
   If StringId is 0, then ASSET.
 
   @param[in]  HiiHandle  A handle that was previously registered in the HII Database.
-  @param[in]  StringId   The identifier of the string to retrieved from the string 
+  @param[in]  StringId   The identifier of the string to retrieved from the string
                          package associated with HiiHandle.
 
   @retval NULL   The string specified by StringId is not present in the string package.
@@ -859,7 +859,7 @@ InternalGetString (
 
   //
   // Initialize all allocated buffers to NULL
-  // 
+  //
   SupportedLanguages = NULL;
   PlatformLanguage   = NULL;
   BestLanguage       = NULL;
@@ -883,11 +883,11 @@ InternalGetString (
   // Get the best matching language from SupportedLanguages
   //
   BestLanguage = GetBestLanguage (
-                   SupportedLanguages, 
+                   SupportedLanguages,
                    FALSE,                                             // RFC 4646 mode
-                   Language,                                          // Highest priority 
+                   Language,                                          // Highest priority
                    PlatformLanguage != NULL ? PlatformLanguage : "",  // Next highest priority
-                   SupportedLanguages,                                // Lowest priority 
+                   SupportedLanguages,                                // Lowest priority
                    NULL
                    );
   if (BestLanguage == NULL) {
@@ -908,8 +908,8 @@ InternalGetString (
                          NULL
                          );
   //
-  // If GetString() returns EFI_SUCCESS for a zero size, 
-  // then there are no supported languages registered for HiiHandle.  If GetString() 
+  // If GetString() returns EFI_SUCCESS for a zero size,
+  // then there are no supported languages registered for HiiHandle.  If GetString()
   // returns an error other than EFI_BUFFER_TOO_SMALL, then HiiHandle is not present
   // in the HII Database
   //
@@ -968,12 +968,12 @@ Error:
 /**
   This function checks VarOffset and VarWidth is in the block range.
 
-  @param  RequestBlockArray  The block array is to be checked. 
+  @param  RequestBlockArray  The block array is to be checked.
   @param  VarOffset          Offset of var to the structure
   @param  VarWidth           Width of var.
   @param  IsNameValueType    Whether this varstore is name/value varstore or not.
   @param  HiiHandle          Hii handle for this hii package.
-  
+
   @retval TRUE   This Var is in the block range.
   @retval FALSE  This Var is not in the block range.
 **/
@@ -1051,18 +1051,18 @@ GetFormPackageData (
   // 0. Get Hii Form Package by HiiHandle
   //
   Status = ExportFormPackages (
-             &mPrivate, 
-             DataBaseRecord->Handle, 
-             DataBaseRecord->PackageList, 
-             0, 
-             Size, 
+             &mPrivate,
+             DataBaseRecord->Handle,
+             DataBaseRecord->PackageList,
+             0,
+             Size,
              HiiFormPackage,
              &ResultSize
            );
   if (EFI_ERROR (Status)) {
     return Status;
   }
- 
+
   (*HiiFormPackage) = AllocatePool (ResultSize);
   if (*HiiFormPackage == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
@@ -1075,18 +1075,18 @@ GetFormPackageData (
   Size   = ResultSize;
   ResultSize    = 0;
   Status = ExportFormPackages (
-             &mPrivate, 
-             DataBaseRecord->Handle, 
-             DataBaseRecord->PackageList, 
+             &mPrivate,
+             DataBaseRecord->Handle,
+             DataBaseRecord->PackageList,
              0,
-             Size, 
+             Size,
              *HiiFormPackage,
              &ResultSize
            );
   if (EFI_ERROR (Status)) {
     FreePool (*HiiFormPackage);
   }
-  
+
   *PackageSize = Size;
 
   return Status;
@@ -1101,7 +1101,7 @@ GetFormPackageData (
                                 the first found varstore will be as ConfigHdr.
   @param  IsEfiVarstore         Whether the request storage type is efi varstore type.
   @param  EfiVarStore           The efi varstore info which will return.
-**/                                
+**/
 EFI_STATUS
 GetVarStoreType (
   IN     HII_DATABASE_RECORD        *DataBaseRecord,
@@ -1118,12 +1118,12 @@ GetVarStoreType (
   EFI_STRING               GuidStr;
   EFI_STRING               NameStr;
   EFI_STRING               TempStr;
-  UINTN                    LengthString;  
+  UINTN                    LengthString;
   UINT8                    *HiiFormPackage;
   UINTN                    PackageSize;
   EFI_IFR_VARSTORE_EFI     *IfrEfiVarStore;
   EFI_HII_PACKAGE_HEADER   *PackageHeader;
-  
+
   HiiFormPackage = NULL;
   LengthString     = 0;
   Status           = EFI_SUCCESS;
@@ -1161,8 +1161,8 @@ GetVarStoreType (
     if (IfrOpHdr->OpCode == EFI_IFR_VARSTORE_EFI_OP ) {
       IfrEfiVarStore = (EFI_IFR_VARSTORE_EFI *) IfrOpHdr;
       //
-      // If the length is small than the structure, this is from old efi 
-      // varstore definition. Old efi varstore get config directly from 
+      // If the length is small than the structure, this is from old efi
+      // varstore definition. Old efi varstore get config directly from
       // GetVariable function.
       //
       if (IfrOpHdr->Length < sizeof (EFI_IFR_VARSTORE_EFI)) {
@@ -1202,8 +1202,8 @@ GetVarStoreType (
         }
         *IsEfiVarstore = TRUE;
         CopyMem (*EfiVarStore, IfrEfiVarStore, IfrOpHdr->Length);
-      } 
-        
+      }
+
       //
       // Free alllocated temp string.
       //
@@ -1265,7 +1265,7 @@ GetElementsFromRequest (
 
   @retval  TRUE              This varstore is the requst one.
   @retval  FALSE             This varstore is not the requst one.
-                                 
+
 **/
 BOOLEAN
 IsThisVarstore (
@@ -1313,7 +1313,7 @@ IsThisVarstore (
 
 Done:
   if (GuidStr != NULL) {
-    FreePool (GuidStr); 
+    FreePool (GuidStr);
   }
 
   if (NameStr != NULL) {
@@ -1335,7 +1335,7 @@ Done:
                                 the first found varstore will be as ConfigHdr.
   @retval  TRUE                 This hii package is the reqeust one.
   @retval  FALSE                This hii package is not the reqeust one.
-**/                                
+**/
 BOOLEAN
 IsThisPackageList (
   IN     HII_DATABASE_RECORD        *DataBaseRecord,
@@ -1387,7 +1387,7 @@ IsThisPackageList (
     PackageOffset += IfrOpHdr->Length;
 
     switch (IfrOpHdr->OpCode) {
-    
+
     case EFI_IFR_VARSTORE_OP:
       IfrVarStore = (EFI_IFR_VARSTORE *) IfrOpHdr;
 
@@ -1425,7 +1425,7 @@ IsThisPackageList (
         goto Done;
       }
       break;
-      
+
     case EFI_IFR_FORM_OP:
     case EFI_IFR_FORM_MAP_OP:
       //
@@ -1461,7 +1461,7 @@ Done:
 
   @retval  EFI_SUCCESS           This opcode is required.
   @retval  Others                This opcode is not required or error occur.
-                                 
+
 **/
 EFI_STATUS
 IsThisOpcodeRequired (
@@ -1496,7 +1496,7 @@ IsThisOpcodeRequired (
     }
   } else {
     VarOffset = IfrQuestionHdr->VarStoreInfo.VarOffset;
-    
+
     //
     // Check whether this question is in requested block array.
     //
@@ -1508,7 +1508,7 @@ IsThisOpcodeRequired (
     }
 
     //
-    // Check this var question is in the var storage 
+    // Check this var question is in the var storage
     //
     if (((VarOffset + VarWidth) > VarStorageData->Size)) {
       return EFI_INVALID_PARAMETER;
@@ -1555,7 +1555,7 @@ IsThisOpcodeRequired (
 
   @retval EFI_SUCCESS           The block array and the default value array are got.
   @retval EFI_INVALID_PARAMETER The varstore defintion in the differnt form pacakges
-                                are conflicted. 
+                                are conflicted.
   @retval EFI_OUT_OF_RESOURCES  No enough memory.
 **/
 EFI_STATUS
@@ -1675,10 +1675,10 @@ ParseIfrData (
       IfrEfiVarStore = (EFI_IFR_VARSTORE_EFI *) IfrOpHdr;
 
       //
-      // If the length is small than the structure, this is from old efi 
-      // varstore definition. Old efi varstore get config directly from 
+      // If the length is small than the structure, this is from old efi
+      // varstore definition. Old efi varstore get config directly from
       // GetVariable function.
-      //      
+      //
       if (IfrOpHdr->Length < sizeof (EFI_IFR_VARSTORE_EFI)) {
         break;
       }
@@ -1749,7 +1749,7 @@ ParseIfrData (
 
     case EFI_IFR_REF_OP:
       //
-      // Ref question is not in IFR Form. This IFR form is not valid. 
+      // Ref question is not in IFR Form. This IFR form is not valid.
       //
       if ( VarStoreId == 0) {
         Status = EFI_INVALID_PARAMETER;
@@ -1777,7 +1777,7 @@ ParseIfrData (
       //
 
       //
-      // Numeric and OneOf question is not in IFR Form. This IFR form is not valid. 
+      // Numeric and OneOf question is not in IFR Form. This IFR form is not valid.
       //
       if (VarStoreId == 0) {
         Status = EFI_INVALID_PARAMETER;
@@ -1811,7 +1811,7 @@ ParseIfrData (
         FirstOneOfOption = TRUE;
       } else if (IfrOpHdr->OpCode == EFI_IFR_NUMERIC_OP) {
         //
-        // Numeric minimum value will be used as default value when no default is specified. 
+        // Numeric minimum value will be used as default value when no default is specified.
         //
         DefaultData.Type        = DefaultValueFromDefault;
         switch (IfrOneOf->Flags & EFI_IFR_NUMERIC_SIZE) {
@@ -1837,7 +1837,7 @@ ParseIfrData (
         }
         //
         // Set default value base on the DefaultId list get from IFR data.
-        //        
+        //
         for (LinkData = DefaultIdArray->Entry.ForwardLink; LinkData != &DefaultIdArray->Entry; LinkData = LinkData->ForwardLink) {
           DefaultDataPtr = BASE_CR (LinkData, IFR_DEFAULT_DATA, Entry);
           DefaultData.DefaultId   = DefaultDataPtr->DefaultId;
@@ -1854,7 +1854,7 @@ ParseIfrData (
       //
 
       //
-      // OrderedList question is not in IFR Form. This IFR form is not valid. 
+      // OrderedList question is not in IFR Form. This IFR form is not valid.
       //
       if (VarStoreId == 0) {
         Status = EFI_INVALID_PARAMETER;
@@ -1883,10 +1883,10 @@ ParseIfrData (
       // default id by CheckBox Flags if CheckBox flags (Default or Mau) is set, the default value is 1 to be set.
       // value by DefaultOption
       // default id by DeaultOption DefaultId can override CheckBox Flags and Default value.
-      // 
+      //
 
       //
-      // CheckBox question is not in IFR Form. This IFR form is not valid. 
+      // CheckBox question is not in IFR Form. This IFR form is not valid.
       //
       if (VarStoreId == 0) {
         Status = EFI_INVALID_PARAMETER;
@@ -1973,7 +1973,7 @@ ParseIfrData (
       //
 
       //
-      // Date question is not in IFR Form. This IFR form is not valid. 
+      // Date question is not in IFR Form. This IFR form is not valid.
       //
       if (VarStoreId == 0) {
         Status = EFI_INVALID_PARAMETER;
@@ -2002,7 +2002,7 @@ ParseIfrData (
       //
 
       //
-      // Time question is not in IFR Form. This IFR form is not valid. 
+      // Time question is not in IFR Form. This IFR form is not valid.
       //
       if (VarStoreId == 0) {
         Status = EFI_INVALID_PARAMETER;
@@ -2031,7 +2031,7 @@ ParseIfrData (
       //
 
       //
-      // String question is not in IFR Form. This IFR form is not valid. 
+      // String question is not in IFR Form. This IFR form is not valid.
       //
       if (VarStoreId == 0) {
         Status = EFI_INVALID_PARAMETER;
@@ -2065,7 +2065,7 @@ ParseIfrData (
       //
 
       //
-      // Password question is not in IFR Form. This IFR form is not valid. 
+      // Password question is not in IFR Form. This IFR form is not valid.
       //
       if (VarStoreId == 0) {
         Status = EFI_INVALID_PARAMETER;
@@ -2143,7 +2143,7 @@ ParseIfrData (
           break;
         }
         //
-        // Check this var question is in the var storage 
+        // Check this var question is in the var storage
         //
         if ((BlockData->Name == NULL) && ((BlockData->Offset + BlockData->Width) > VarStorageData->Size)) {
           Status = EFI_INVALID_PARAMETER;
@@ -2170,11 +2170,11 @@ ParseIfrData (
       if (((IfrOneOfOption->Flags & EFI_IFR_OPTION_DEFAULT) == EFI_IFR_OPTION_DEFAULT) ||
           ((IfrOneOfOption->Flags & EFI_IFR_OPTION_DEFAULT_MFG) == EFI_IFR_OPTION_DEFAULT_MFG)) {
         //
-        // This flag is used to specify whether this option is the first. Set it to FALSE for the following options. 
-        // The first oneof option value will be used as default value when no default value is specified. 
+        // This flag is used to specify whether this option is the first. Set it to FALSE for the following options.
+        // The first oneof option value will be used as default value when no default value is specified.
         //
         FirstOneOfOption = FALSE;
-        
+
         // Prepare new DefaultValue
         //
         DefaultData.Type     = DefaultValueFromFlag;
@@ -2182,7 +2182,7 @@ ParseIfrData (
         if ((IfrOneOfOption->Flags & EFI_IFR_OPTION_DEFAULT) == EFI_IFR_OPTION_DEFAULT) {
           DefaultData.DefaultId = EFI_HII_DEFAULT_CLASS_STANDARD;
           InsertDefaultValue (BlockData, &DefaultData);
-        } 
+        }
         if ((IfrOneOfOption->Flags & EFI_IFR_OPTION_DEFAULT_MFG) == EFI_IFR_OPTION_DEFAULT_MFG) {
           DefaultData.DefaultId = EFI_HII_DEFAULT_CLASS_MANUFACTURING;
           InsertDefaultValue (BlockData, &DefaultData);
@@ -2191,19 +2191,19 @@ ParseIfrData (
 
       //
       // 2. Set as the default value when this is the first option.
-      // The first oneof option value will be used as default value when no default value is specified. 
+      // The first oneof option value will be used as default value when no default value is specified.
       //
       if (FirstOneOfOption) {
-        // This flag is used to specify whether this option is the first. Set it to FALSE for the following options. 
+        // This flag is used to specify whether this option is the first. Set it to FALSE for the following options.
         FirstOneOfOption = FALSE;
-        
+
         //
         // Prepare new DefaultValue
-        //        
+        //
         DefaultData.Type     = DefaultValueFromDefault;
         CopyMem (&DefaultData.Value, &IfrOneOfOption->Value, IfrOneOfOption->Header.Length - OFFSET_OF (EFI_IFR_ONE_OF_OPTION, Value));
         for (LinkData = DefaultIdArray->Entry.ForwardLink; LinkData != &DefaultIdArray->Entry; LinkData = LinkData->ForwardLink) {
-          DefaultDataPtr = BASE_CR (LinkData, IFR_DEFAULT_DATA, Entry); 
+          DefaultDataPtr = BASE_CR (LinkData, IFR_DEFAULT_DATA, Entry);
           DefaultData.DefaultId   = DefaultDataPtr->DefaultId;
           InsertDefaultValue (BlockData, &DefaultData);
         }
@@ -2249,8 +2249,8 @@ ParseIfrData (
       InsertDefaultValue (BlockData, &DefaultData);
 
       //
-      // After insert the default value, reset the cleaned value for next 
-      // time used. If not set here, need to set the value before everytime 
+      // After insert the default value, reset the cleaned value for next
+      // time used. If not set here, need to set the value before everytime
       // use it.
       //
       DefaultData.Cleaned     = FALSE;
@@ -2397,7 +2397,7 @@ GetBlockElement (
     if (*StringPtr != 0 && *StringPtr != L'&') {
       goto Done;
     }
-    
+
     //
     // Set Block Data
     //
@@ -2429,7 +2429,7 @@ GetBlockElement (
       }
     }
     //
-    // If '\0', parsing is finished. 
+    // If '\0', parsing is finished.
     //
     if (*StringPtr == 0) {
       break;
@@ -2546,7 +2546,7 @@ GetNameElement (
     if (HasValue) {
       //
       // If has value, skip the value.
-      //    
+      //
       StringPtr = NextTag + 1;
       *NextTag  = L'=';
       StringPtr = StrStr (StringPtr, L"&");
@@ -2611,14 +2611,14 @@ GenerateConfigRequest (
   // Append VarStorageData BlockEntry into *Request string
   // Now support only one varstore in a form package.
   //
-  
+
   //
   // Go through all VarStorageData Entry and get BlockEntry for each one for the multiple varstore in a single form package
   // Then construct them all to return MultiRequest string : ConfigHdr BlockConfig
   //
-  
+
   //
-  // Compute the length of the entire request starting with <ConfigHdr> and a 
+  // Compute the length of the entire request starting with <ConfigHdr> and a
   // Null-terminator
   //
   DataExist = FALSE;
@@ -2631,7 +2631,7 @@ GenerateConfigRequest (
       //
       // Add <BlockName> length for each Name
       //
-      // <BlockName> ::= &Name1&Name2&... 
+      // <BlockName> ::= &Name1&Name2&...
       //                 |1| StrLen(Name1)
       //
       Length = Length + (1 + StrLen (BlockData->Name));
@@ -2689,10 +2689,10 @@ GenerateConfigRequest (
       // Append &OFFSET=XXXX&WIDTH=YYYY\0
       //
       UnicodeSPrint (
-        StringPtr, 
-        (8 + 4 + 7 + 4 + 1) * sizeof (CHAR16), 
-        L"&OFFSET=%04X&WIDTH=%04X", 
-        BlockData->Offset, 
+        StringPtr,
+        (8 + 4 + 7 + 4 + 1) * sizeof (CHAR16),
+        L"&OFFSET=%04X&WIDTH=%04X",
+        BlockData->Offset,
         BlockData->Width
       );
     }
@@ -2888,7 +2888,7 @@ GenerateAltConfigResp (
     //                |1| StrLen (ConfigHdr) | 8 | 4 |
     //
     Length += (1 + StrLen (ConfigHdr) + 8 + 4);
-    
+
     for (LinkData = VarStorageData->BlockEntry.ForwardLink; LinkData != &VarStorageData->BlockEntry; LinkData = LinkData->ForwardLink) {
       BlockData = BASE_CR (LinkData, IFR_BLOCK_DATA, Entry);
       ListEntry     = &BlockData->DefaultValueEntry;
@@ -2914,7 +2914,7 @@ GenerateAltConfigResp (
       }
     }
   }
-  
+
   //
   // No default value is found. The default string doesn't exist.
   //
@@ -2944,10 +2944,10 @@ GenerateAltConfigResp (
     //                                |1| StrLen (ConfigHdr) | 8 | 4 |
     //
     UnicodeSPrint (
-      StringPtr, 
-      (1 + StrLen (ConfigHdr) + 8 + 4 + 1) * sizeof (CHAR16), 
-      L"&%s&ALTCFG=%04X", 
-      ConfigHdr, 
+      StringPtr,
+      (1 + StrLen (ConfigHdr) + 8 + 4 + 1) * sizeof (CHAR16),
+      L"&%s&ALTCFG=%04X",
+      ConfigHdr,
       DefaultId->DefaultId
       );
     StringPtr += StrLen (StringPtr);
@@ -2962,9 +2962,9 @@ GenerateAltConfigResp (
         }
         if (VarStorageData->Type == EFI_HII_VARSTORE_NAME_VALUE) {
           UnicodeSPrint (
-            StringPtr, 
-            (1 + StrLen (ConfigHdr) + 1) * sizeof (CHAR16), 
-            L"&%s=", 
+            StringPtr,
+            (1 + StrLen (ConfigHdr) + 1) * sizeof (CHAR16),
+            L"&%s=",
             BlockData->Name
             );
           StringPtr += StrLen (StringPtr);
@@ -2974,10 +2974,10 @@ GenerateAltConfigResp (
           // <BlockConfig> ::= 'OFFSET='<Number>&'WIDTH='<Number>&'VALUE'=<Number>
           //
           UnicodeSPrint (
-            StringPtr, 
+            StringPtr,
             (8 + 4 + 7 + 4 + 7 + 1) * sizeof (CHAR16),
-            L"&OFFSET=%04X&WIDTH=%04X&VALUE=", 
-            BlockData->Offset, 
+            L"&OFFSET=%04X&WIDTH=%04X&VALUE=",
+            BlockData->Offset,
             BlockData->Width
             );
           StringPtr += StrLen (StringPtr);
@@ -3001,32 +3001,32 @@ GenerateAltConfigResp (
 }
 
 /**
-  This function gets the full request string and full default value string by 
-  parsing IFR data in HII form packages. 
-  
-  When Request points to NULL string, the request string and default value string 
-  for each varstore in form package will return. 
+  This function gets the full request string and full default value string by
+  parsing IFR data in HII form packages.
+
+  When Request points to NULL string, the request string and default value string
+  for each varstore in form package will return.
 
   @param  DataBaseRecord         The DataBaseRecord instance contains the found Hii handle and package.
   @param  DevicePath             Device Path which Hii Config Access Protocol is registered.
   @param  Request                Pointer to a null-terminated Unicode string in
                                  <ConfigRequest> format. When it doesn't contain
-                                 any RequestElement, it will be updated to return 
+                                 any RequestElement, it will be updated to return
                                  the full RequestElement retrieved from IFR data.
                                  If it points to NULL, the request string for the first
                                  varstore in form package will be merged into a
-                                 <MultiConfigRequest> format string and return. 
+                                 <MultiConfigRequest> format string and return.
   @param  AltCfgResp             Pointer to a null-terminated Unicode string in
                                  <ConfigAltResp> format. When the pointer is to NULL,
                                  the full default value string retrieved from IFR data
                                  will return. When the pinter is to a string, the
                                  full default value string retrieved from IFR data
                                  will be merged into the input string and return.
-                                 When Request points to NULL, the default value string 
-                                 for each varstore in form package will be merged into 
+                                 When Request points to NULL, the default value string
+                                 for each varstore in form package will be merged into
                                  a <MultiConfigAltResp> format string and return.
-  @param  PointerProgress        Optional parameter, it can be be NULL. 
-                                 When it is not NULL, if Request is NULL, it returns NULL. 
+  @param  PointerProgress        Optional parameter, it can be be NULL.
+                                 When it is not NULL, if Request is NULL, it returns NULL.
                                  On return, points to a character in the Request
                                  string. Points to the string's null terminator if
                                  request was successful. Points to the most recent
@@ -3037,7 +3037,7 @@ GenerateAltConfigResp (
   @retval EFI_SUCCESS            The Results string is set to the full request string.
                                  And AltCfgResp contains all default value string.
   @retval EFI_OUT_OF_RESOURCES   Not enough memory for the return string.
-  @retval EFI_NOT_FOUND          The varstore (Guid and Name) in Request string 
+  @retval EFI_NOT_FOUND          The varstore (Guid and Name) in Request string
                                  can't be found in Form package.
   @retval EFI_NOT_FOUND          HiiPackage can't be got on the input HiiHandle.
   @retval EFI_INVALID_PARAMETER  Request points to NULL.
@@ -3280,7 +3280,7 @@ Done:
   }
 
   //
-  // Free the allocated string 
+  // Free the allocated string
   //
   if (ConfigHdr != NULL) {
     FreePool (ConfigHdr);
@@ -3307,13 +3307,13 @@ Done:
 }
 
 /**
-  This function gets the full request resp string by 
+  This function gets the full request resp string by
   parsing IFR data in HII form packages.
 
   @param  This                   A pointer to the EFI_HII_CONFIG_ROUTING_PROTOCOL
                                  instance.
-  @param  EfiVarStoreInfo        The efi varstore info which is save in the EFI 
-                                 varstore data structure.                       
+  @param  EfiVarStoreInfo        The efi varstore info which is save in the EFI
+                                 varstore data structure.
   @param  Request                Pointer to a null-terminated Unicode string in
                                  <ConfigRequest> format.
   @param  RequestResp            Pointer to a null-terminated Unicode string in
@@ -3335,7 +3335,7 @@ Done:
 EFI_STATUS
 GetConfigRespFromEfiVarStore (
   IN  CONST EFI_HII_CONFIG_ROUTING_PROTOCOL  *This,
-  IN  EFI_IFR_VARSTORE_EFI                   *EfiVarStoreInfo,    
+  IN  EFI_IFR_VARSTORE_EFI                   *EfiVarStoreInfo,
   IN  EFI_STRING                             Request,
   OUT EFI_STRING                             *RequestResp,
   OUT EFI_STRING                             *AccessProgress
@@ -3351,15 +3351,15 @@ GetConfigRespFromEfiVarStore (
   VarStore        = NULL;
   VarStoreName    = NULL;
   *AccessProgress = Request;
-  
+
   VarStoreName = AllocateZeroPool (AsciiStrSize ((CHAR8 *)EfiVarStoreInfo->Name) * sizeof (CHAR16));
   if (VarStoreName == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
     goto Done;
   }
   AsciiStrToUnicodeStr ((CHAR8 *) EfiVarStoreInfo->Name, VarStoreName);
-   
-  
+
+
   Status = gRT->GetVariable (VarStoreName, &EfiVarStoreInfo->Guid, NULL, &BufferSize, NULL);
   if (Status != EFI_BUFFER_TOO_SMALL) {
     goto Done;
@@ -3391,17 +3391,17 @@ Done:
 
 
 /**
-  This function route the full request resp string for efi varstore. 
+  This function route the full request resp string for efi varstore.
 
   @param  This                   A pointer to the EFI_HII_CONFIG_ROUTING_PROTOCOL
                                  instance.
-  @param  EfiVarStoreInfo        The efi varstore info which is save in the EFI 
-                                 varstore data structure.      
+  @param  EfiVarStoreInfo        The efi varstore info which is save in the EFI
+                                 varstore data structure.
   @param  RequestResp            Pointer to a null-terminated Unicode string in
                                  <ConfigResp> format.
   @param  Result                 Pointer to a null-terminated Unicode string in
                                  <ConfigResp> format.
-                                 
+
   @retval EFI_SUCCESS            The Results string is set to the full request string.
                                  And AltCfgResp contains all default value string.
   @retval EFI_OUT_OF_RESOURCES   Not enough memory for the return string.
@@ -3411,7 +3411,7 @@ Done:
 EFI_STATUS
 RouteConfigRespForEfiVarStore (
   IN  CONST EFI_HII_CONFIG_ROUTING_PROTOCOL  *This,
-  IN  EFI_IFR_VARSTORE_EFI                   *EfiVarStoreInfo,  
+  IN  EFI_IFR_VARSTORE_EFI                   *EfiVarStoreInfo,
   IN  EFI_STRING                             RequestResp,
   OUT EFI_STRING                             *Result
   )
@@ -3433,7 +3433,7 @@ RouteConfigRespForEfiVarStore (
     goto Done;
   }
   AsciiStrToUnicodeStr ((CHAR8 *) EfiVarStoreInfo->Name, VarStoreName);
-      
+
   Status = gRT->GetVariable (VarStoreName, &EfiVarStoreInfo->Guid, NULL, &BufferSize, NULL);
   if (Status != EFI_BUFFER_TOO_SMALL) {
     goto Done;
@@ -3472,7 +3472,7 @@ Done:
 /**
   Validate the config request elements.
 
-  @param  ConfigElements                A null-terminated Unicode string in <ConfigRequest> format, 
+  @param  ConfigElements                A null-terminated Unicode string in <ConfigRequest> format,
                                         without configHdr field.
 
   @retval     CHAR16 *    THE first Name/value pair not correct.
@@ -3515,7 +3515,7 @@ OffsetWidthValidate (
 /**
   Validate the config request elements.
 
-  @param  ConfigElements                A null-terminated Unicode string in <ConfigRequest> format, 
+  @param  ConfigElements                A null-terminated Unicode string in <ConfigRequest> format,
                                         without configHdr field.
 
   @retval     CHAR16 *    THE first Name/value pair not correct.
@@ -3540,7 +3540,7 @@ NameValueValidate (
     StringPtr += 1;
 
     StringPtr = StrStr (StringPtr, L"&");
-    
+
     if (StringPtr == NULL) {
       return NULL;
     }
@@ -3648,7 +3648,7 @@ ConfigRequestValidate (
   @retval EFI_INVALID_PARAMETER  Illegal syntax. Progress set to most recent &
                                  before the error or the beginning of the string.
   @retval EFI_INVALID_PARAMETER  The ExtractConfig function of the underlying HII
-                                 Configuration Access Protocol returned 
+                                 Configuration Access Protocol returned
                                  EFI_INVALID_PARAMETER. Progress set to most recent
                                  & before the error or the beginning of the string.
 
@@ -3778,7 +3778,7 @@ HiiConfigRoutingExtractConfig (
         }
       }
     }
-    
+
     //
     // Try to find driver handle by device path.
     //
@@ -3816,7 +3816,7 @@ HiiConfigRoutingExtractConfig (
     IfrDataParsedFlag = FALSE;
     if ((HiiHandle != NULL) && !GetElementsFromRequest(ConfigRequest)) {
       //
-      // Get the full request string from IFR when HiiPackage is registered to HiiHandle 
+      // Get the full request string from IFR when HiiPackage is registered to HiiHandle
       //
       IfrDataParsedFlag = TRUE;
       Status = GetFullStringFromHiiFormPackages (Database, DevicePath, &ConfigRequest, &DefaultResults, &AccessProgress);
@@ -3845,7 +3845,7 @@ HiiConfigRoutingExtractConfig (
     if (EFI_ERROR (Status)) {
       goto Done;
     }
-    
+
     if (IsEfiVarStore) {
       //
       // Call the GetVariable function to extract settings.
@@ -3886,7 +3886,7 @@ HiiConfigRoutingExtractConfig (
     ASSERT (*AccessProgress == 0);
 
     //
-    // Update AccessResults by getting default setting from IFR when HiiPackage is registered to HiiHandle 
+    // Update AccessResults by getting default setting from IFR when HiiPackage is registered to HiiHandle
     //
     if (!IfrDataParsedFlag && HiiHandle != NULL) {
       Status = GetFullStringFromHiiFormPackages (Database, DevicePath, &ConfigRequest, &DefaultResults, NULL);
@@ -3902,13 +3902,13 @@ HiiConfigRoutingExtractConfig (
       FreePool (DefaultResults);
       DefaultResults = NULL;
     }
-    
+
 NextConfigString:
     if (!FirstElement) {
       Status = AppendToMultiString (Results, L"&");
       ASSERT_EFI_ERROR (Status);
     }
-    
+
     Status = AppendToMultiString (Results, AccessResults);
     ASSERT_EFI_ERROR (Status);
 
@@ -3936,22 +3936,22 @@ Done:
     FreePool (*Results);
     *Results = NULL;
   }
-  
+
   if (ConfigRequest != NULL) {
     FreePool (ConfigRequest);
   }
-  
+
   if (AccessResults != NULL) {
     FreePool (AccessResults);
   }
-  
+
   if (DefaultResults != NULL) {
     FreePool (DefaultResults);
   }
-  
+
   if (DevicePath != NULL) {
     FreePool (DevicePath);
-  }  
+  }
 
   return Status;
 }
@@ -3966,8 +3966,8 @@ Done:
                                  instance.
   @param  Results                Null-terminated Unicode string in
                                  <MultiConfigAltResp> format which has all values
-                                 filled in for the entirety of the current HII 
-                                 database. String to be allocated by the  called 
+                                 filled in for the entirety of the current HII
+                                 database. String to be allocated by the  called
                                  function. De-allocation is up to the caller.
 
   @retval EFI_SUCCESS            The Results string is filled with the values
@@ -4083,7 +4083,7 @@ HiiConfigRoutingExportConfig (
                              );
     if (EFI_ERROR (Status)) {
       //
-      // Update AccessResults by getting default setting from IFR when HiiPackage is registered to HiiHandle 
+      // Update AccessResults by getting default setting from IFR when HiiPackage is registered to HiiHandle
       //
       if (HiiHandle != NULL && DevicePath != NULL) {
         IfrDataParsedFlag = TRUE;
@@ -4107,7 +4107,7 @@ HiiConfigRoutingExportConfig (
 
     if (!EFI_ERROR (Status)) {
       //
-      // Update AccessResults by getting default setting from IFR when HiiPackage is registered to HiiHandle 
+      // Update AccessResults by getting default setting from IFR when HiiPackage is registered to HiiHandle
       //
       if (!IfrDataParsedFlag && HiiHandle != NULL && DevicePath != NULL) {
         StringPtr = StrStr (AccessResults, L"&GUID=");
@@ -4131,28 +4131,28 @@ HiiConfigRoutingExportConfig (
         FreePool (DefaultResults);
         DefaultResults = NULL;
       }
-      
+
       //
       // Attach this <ConfigAltResp> to a <MultiConfigAltResp>. There is a '&'
-      // which seperates the first <ConfigAltResp> and the following ones.      
+      // which seperates the first <ConfigAltResp> and the following ones.
       //
       if (!FirstElement) {
         Status = AppendToMultiString (Results, L"&");
         ASSERT_EFI_ERROR (Status);
       }
-      
+
       Status = AppendToMultiString (Results, AccessResults);
       ASSERT_EFI_ERROR (Status);
 
       FirstElement = FALSE;
-      
+
       FreePool (AccessResults);
       AccessResults = NULL;
     }
   }
   FreePool (ConfigAccessHandles);
 
-  return EFI_SUCCESS;  
+  return EFI_SUCCESS;
 }
 
 
@@ -4320,7 +4320,7 @@ HiiConfigRoutingRouteConfig (
     if (IsEfiVarstore) {
       //
       // Call the SetVariable function to route settings.
-      //    
+      //
       Status = RouteConfigRespForEfiVarStore(This, EfiVarStoreInfo, ConfigResp, &AccessProgress);
       FreePool (EfiVarStoreInfo);
     } else {
@@ -4588,7 +4588,7 @@ HiiBlockToConfig (
       Status = EFI_OUT_OF_RESOURCES;
       goto Exit;
     }
-    
+
     TemString = ValueStr;
     TemBuffer = Value + Width - 1;
     for (Index = 0; Index < Width; Index ++, TemBuffer --) {
@@ -4638,7 +4638,7 @@ HiiBlockToConfig (
     Status = EFI_INVALID_PARAMETER;
     goto Exit;
   }
-  
+
   HiiToLower (*Config);
   *Progress = StringPtr;
   return EFI_SUCCESS;
@@ -4703,7 +4703,7 @@ Exit:
                                  value pair. Block is left updated and
                                  Progress points at the '&' preceding the first
                                  non-<BlockName>.
-  @retval EFI_BUFFER_TOO_SMALL   Block not large enough. Progress undefined. 
+  @retval EFI_BUFFER_TOO_SMALL   Block not large enough. Progress undefined.
                                  BlockSize is updated with the required buffer size.
   @retval EFI_NOT_FOUND          Target for the specified routing data was not found.
                                  Progress points to the "G" in "GUID" of the errant
@@ -4869,7 +4869,7 @@ HiiConfigToBlock (
       break;
     }
   }
-  
+
   //
   // The input string is not ConfigResp format, return error.
   //
@@ -5004,10 +5004,10 @@ HiiGetAltCfg (
     &PathStr
     );
   if (AltCfgId != NULL) {
-    GenerateSubStr (L"ALTCFG=", sizeof (UINT16), (VOID *) AltCfgId, 3, &AltIdStr);  
+    GenerateSubStr (L"ALTCFG=", sizeof (UINT16), (VOID *) AltCfgId, 3, &AltIdStr);
   }
   if (Name != NULL) {
-    GenerateSubStr (L"NAME=", StrLen (Name) * sizeof (CHAR16), (VOID *) Name, 2, &NameStr);    
+    GenerateSubStr (L"NAME=", StrLen (Name) * sizeof (CHAR16), (VOID *) Name, 2, &NameStr);
   } else {
     GenerateSubStr (L"NAME=", 0, NULL, 2, &NameStr);
   }

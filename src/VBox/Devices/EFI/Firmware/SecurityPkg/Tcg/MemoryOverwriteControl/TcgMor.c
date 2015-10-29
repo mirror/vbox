@@ -1,16 +1,16 @@
 /** @file
   TCG MOR (Memory Overwrite Request) Control Driver.
 
-  This driver initilize MemoryOverwriteRequestControl variable. It 
+  This driver initilize MemoryOverwriteRequestControl variable. It
   will clear MOR_CLEAR_MEMORY_BIT bit if it is set.
 
 Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -37,7 +37,7 @@ OnReadyToBoot (
 {
   EFI_STATUS  Status;
   UINTN       DataSize;
-  
+
   if (MOR_CLEAR_MEMORY_VALUE (mMorControl) == 0x0) {
     //
     // MorControl is expected, directly return to avoid unnecessary variable operation
@@ -48,14 +48,14 @@ OnReadyToBoot (
   // Clear MOR_CLEAR_MEMORY_BIT
   //
   DEBUG ((EFI_D_INFO, "TcgMor: Clear MorClearMemory bit\n"));
-  mMorControl &= 0xFE;  
+  mMorControl &= 0xFE;
 
   DataSize = sizeof (mMorControl);
   Status   = gRT->SetVariable (
-               MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME, 
-               &gEfiMemoryOverwriteControlDataGuid, 
+               MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME,
+               &gEfiMemoryOverwriteControlDataGuid,
                EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-               DataSize, 
+               DataSize,
                &mMorControl
                );
   if (EFI_ERROR (Status)) {
@@ -70,7 +70,7 @@ OnReadyToBoot (
   @param[in] ImageHandle  Image handle of this driver.
   @param[in] SystemTable  A Pointer to the EFI System Table.
 
-  @retval EFI_SUCEESS     
+  @retval EFI_SUCEESS
   @return Others          Some error occurs.
 **/
 EFI_STATUS
@@ -90,10 +90,10 @@ MorDriverEntryPoint (
 
   DataSize = sizeof (mMorControl);
   Status = gRT->GetVariable (
-                  MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME, 
-                  &gEfiMemoryOverwriteControlDataGuid, 
-                  NULL, 
-                  &DataSize, 
+                  MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME,
+                  &gEfiMemoryOverwriteControlDataGuid,
+                  NULL,
+                  &DataSize,
                   &mMorControl
                   );
   if (EFI_ERROR (Status)) {
@@ -102,10 +102,10 @@ MorDriverEntryPoint (
     //
     mMorControl = 0;
     Status = gRT->SetVariable (
-                    MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME, 
-                    &gEfiMemoryOverwriteControlDataGuid, 
+                    MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME,
+                    &gEfiMemoryOverwriteControlDataGuid,
                     EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                    DataSize, 
+                    DataSize,
                     &mMorControl
                     );
     DEBUG ((EFI_D_INFO, "TcgMor: Create MOR variable! Status = %r\n", Status));
@@ -120,8 +120,8 @@ MorDriverEntryPoint (
                NULL,
                &Event
                );
-  }    
-  
+  }
+
   return Status;
 }
 

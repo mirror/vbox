@@ -1,5 +1,5 @@
 /** @file
-  
+
   Handles non-volatile variable store garbage collection, using FTW
   (Fault Tolerant Write) protocol.
 
@@ -50,7 +50,7 @@ GetLbaAndOffsetByAddress (
   Fvb     = NULL;
   *Lba    = (EFI_LBA) (-1);
   *Offset = 0;
-  
+
   //
   // Get the proper FVB protocol.
   //

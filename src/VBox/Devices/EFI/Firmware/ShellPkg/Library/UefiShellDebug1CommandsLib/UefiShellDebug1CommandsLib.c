@@ -295,7 +295,7 @@ ConvertStringToGuid (
     return (EFI_INVALID_PARAMETER);
   } else if (StrLen(StringGuid) != 36) {
     return (EFI_INVALID_PARAMETER);
-  } 
+  }
   TempCopy = NULL;
   TempCopy = StrnCatGrow(&TempCopy, NULL, StringGuid, 0);
   if (TempCopy == NULL) {
@@ -364,7 +364,7 @@ ConvertStringToGuid (
 
 /**
   Clear the line at the specified Row.
-  
+
   @param[in] Row                The row number to be cleared ( start from 1 )
   @param[in] LastCol            The last printable column.
   @param[in] LastRow            The last printable row.
@@ -429,7 +429,7 @@ IsValidFileNameChar (
 
 /**
   Check if file name has illegal characters.
-  
+
   @param Name       The filename to check.
 
   @retval TRUE      The filename is ok.
@@ -511,18 +511,18 @@ EditGetDefaultFileName (
 }
 
 /**
-  Read a file into an allocated buffer.  The buffer is the responsibility 
+  Read a file into an allocated buffer.  The buffer is the responsibility
   of the caller to free.
 
   @param[in]  FileName          The filename of the file to open.
-  @param[out] Buffer            Upon successful return, the pointer to the 
-                                address of the allocated buffer.                                  
+  @param[out] Buffer            Upon successful return, the pointer to the
+                                address of the allocated buffer.
   @param[out] BufferSize        If not NULL, then the pointer to the size
                                 of the allocated buffer.
   @param[out] ReadOnly          Upon successful return TRUE if the file is
                                 read only.  FALSE otherwise.
 
-  @retval EFI_NOT_FOUND         The filename did not represent a file in the 
+  @retval EFI_NOT_FOUND         The filename did not represent a file in the
                                 file system.
   @retval EFI_SUCCESS           The file was read into the buffer.
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
@@ -570,7 +570,7 @@ ReadFileIntoBuffer (
     }
 
     Info = ShellGetFileInfo(FileHandle);
-    
+
     if (Info->Attribute & EFI_FILE_DIRECTORY) {
       FreePool (Info);
       return EFI_INVALID_PARAMETER;

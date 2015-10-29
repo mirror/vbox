@@ -53,7 +53,7 @@ Pkcs7GetSigners (
   Wrap function to use free() to free allocated memory for certificates.
 
   If the interface is not supported, then ASSERT().
-  
+
   @param[in]  Certs        Pointer to the certificates to be freed.
 
 **/

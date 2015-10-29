@@ -51,7 +51,7 @@ Section = {TAB_UNKNOWN.upper() : MODEL_UNKNOWN,
 ## DecObject
 #
 # This class defined basic Dec object which is used by inheriting
-# 
+#
 # @param object:       Inherited from object class
 #
 class DecObject(object):
@@ -61,7 +61,7 @@ class DecObject(object):
 ## Dec
 #
 # This class defined the structure used in Dec object
-# 
+#
 # @param DecObject:         Inherited from DecObject class
 # @param Filename:          Input value for Filename of Dec file, default is None
 # @param IsMergeAllArches:  Input value for IsMergeAllArches
@@ -248,7 +248,7 @@ class Dec(DecObject):
         ParseDefineMacro2(self.TblDec, self.RecordSet, GlobalData.gGlobalDefines)
 
     ## Transfer to Package Object
-    # 
+    #
     # Transfer all contents of a Dec file to a standard Package Object
     #
     def DecToPackage(self):
@@ -296,7 +296,7 @@ class Dec(DecObject):
     #
     # Gen Package Header of Dec as <Key> = <Value>
     #
-    # @param ContainerFile: The Dec file full path 
+    # @param ContainerFile: The Dec file full path
     #
     def GenPackageHeader(self, ContainerFile):
         EdkLogger.debug(2, "Generate PackageHeader ...")
@@ -331,9 +331,9 @@ class Dec(DecObject):
     ## GenIncludes
     #
     # Gen Includes of Dec
-    # 
     #
-    # @param ContainerFile: The Dec file full path 
+    #
+    # @param ContainerFile: The Dec file full path
     #
     def GenIncludes(self, ContainerFile):
         EdkLogger.debug(2, "Generate %s ..." % TAB_INCLUDES)
@@ -362,7 +362,7 @@ class Dec(DecObject):
     # Gen Ppis of Dec
     # <CName>=<GuidValue>
     #
-    # @param ContainerFile: The Dec file full path 
+    # @param ContainerFile: The Dec file full path
     #
     def GenGuidProtocolPpis(self, Type, ContainerFile):
         EdkLogger.debug(2, "Generate %s ..." % Type)
@@ -406,7 +406,7 @@ class Dec(DecObject):
     # Gen LibraryClasses of Dec
     # <CName>=<GuidValue>
     #
-    # @param ContainerFile: The Dec file full path 
+    # @param ContainerFile: The Dec file full path
     #
     def GenLibraryClasses(self, ContainerFile):
         EdkLogger.debug(2, "Generate %s ..." % TAB_LIBRARY_CLASSES)
@@ -447,7 +447,7 @@ class Dec(DecObject):
     # Gen Pcds of Dec
     # <TokenSpcCName>.<TokenCName>|<Value>|<DatumType>|<Token>
     #
-    # @param ContainerFile: The Dec file full path 
+    # @param ContainerFile: The Dec file full path
     #
     def GenPcds(self, ContainerFile):
         EdkLogger.debug(2, "Generate %s ..." % TAB_PCDS)

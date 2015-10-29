@@ -42,7 +42,7 @@ IsRdRandSupported (
 
   Status     = EFI_UNSUPPORTED;
   IsIntelCpu = FALSE;
-  
+
   //
   // Checks whether the current processor is an Intel product by CPUID.
   //
@@ -102,7 +102,7 @@ RdRand16 (
       return EFI_SUCCESS;
     }
   }
-  
+
   return EFI_NOT_READY;
 }
 
@@ -140,7 +140,7 @@ RdRand32 (
       return EFI_SUCCESS;
     }
   }
-  
+
   return EFI_NOT_READY;
 }
 
@@ -178,7 +178,7 @@ RdRand64 (
       return EFI_SUCCESS;
     }
   }
-  
+
   return EFI_NOT_READY;
 }
 
@@ -214,7 +214,7 @@ RdRandGetBytes (
   TempRand      = 0;
 
   //
-  // Compute the address of the first word aligned (32/64-bit) block in the 
+  // Compute the address of the first word aligned (32/64-bit) block in the
   // destination buffer, depending on whether we are in 32- or 64-bit mode.
   //
   Start = RandBuffer;
@@ -285,7 +285,7 @@ RdRandGetBytes (
   This function takes multiple random numbers through RDRAND without intervening
   delays to ensure reseeding and performs AES-CBC-MAC over the data to compute the
   seed value.
-  
+
   @param[out]  SeedBuffer    Pointer to a 128bit buffer to store the random seed.
 
   @retval EFI_SUCCESS        Random seed generation succeeded.

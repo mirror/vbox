@@ -2,7 +2,7 @@
 #  Executes pending TPM 1.2 requests from OS or BIOS and Locks TPM
 #
 #  This library will check and execute TPM 1.2 request from OS or BIOS. The request may
-#  ask for user confirmation before execution. This Library will also lock TPM physical 
+#  ask for user confirmation before execution. This Library will also lock TPM physical
 #  presence at last.
 #
 #  Caution: This module requires additional review when modified.
@@ -26,9 +26,9 @@
   FILE_GUID                      = EBC43A46-34AC-4F07-A7F5-A5394619361C
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = TcgPhysicalPresenceLib|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SAL_DRIVER UEFI_APPLICATION UEFI_DRIVER 
+  LIBRARY_CLASS                  = TcgPhysicalPresenceLib|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SAL_DRIVER UEFI_APPLICATION UEFI_DRIVER
   CONSTRUCTOR                    = TcgPhysicalPresenceLibConstructor
-  
+
 #
 # The following information is for reference only and not required by the build tools.
 #

@@ -37,7 +37,7 @@ RdRand16Step (
     ".byte 0x66; .byte 0x0f; .byte 0xc7; .byte 0xf0; setc %1"
     :"=a"  (*Rand),
      "=qm" (Carry)
-    ); 
+    );
 
   return (BOOLEAN) Carry;
 }
@@ -61,7 +61,7 @@ RdRand32Step (
 
   __asm__ __volatile__ (
     ".byte 0x0f; .byte 0xc7; .byte 0xf0; setc %1"
-    :"=a"  (*Rand), 
+    :"=a"  (*Rand),
      "=qm" (Carry)
     );
 
@@ -87,9 +87,9 @@ RdRand64Step  (
 
   __asm__ __volatile__ (
     ".byte 0x48; .byte 0x0f; .byte 0xc7; .byte 0xf0; setc %1"
-    :"=a"  (*Rand), 
+    :"=a"  (*Rand),
      "=qm" (Carry)
     );
-  
+
   return (BOOLEAN) Carry;
 }

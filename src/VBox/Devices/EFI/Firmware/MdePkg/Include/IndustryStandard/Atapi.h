@@ -3,12 +3,12 @@
   that dealing with ATA/ATAPI interface.
 
 Copyright (c) 2007 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under 
-the terms and conditions of the BSD License that accompanies this distribution.  
+This program and the accompanying materials are licensed and made available under
+the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.                                          
-    
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+http://opensource.org/licenses/bsd-license.php.
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -21,59 +21,59 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 ///
 /// ATA5_IDENTIFY_DATA is defined in ATA-5.
 /// (This structure is provided mainly for backward-compatibility support.
-/// Old drivers may reference fields that are marked "obsolete" in 
-/// ATA_IDENTIFY_DATA, which currently conforms to ATA-8.) 
+/// Old drivers may reference fields that are marked "obsolete" in
+/// ATA_IDENTIFY_DATA, which currently conforms to ATA-8.)
 ///
-typedef struct {    
+typedef struct {
   UINT16  config;             ///< General Configuration.
   UINT16  cylinders;          ///< Number of Cylinders.
-  UINT16  reserved_2; 
-  UINT16  heads;              ///< Number of logical heads. 
-  UINT16  vendor_data1; 
-  UINT16  vendor_data2; 
-  UINT16  sectors_per_track; 
-  UINT16  vendor_specific_7_9[3]; 
-  CHAR8   SerialNo[20];       ///< ASCII  
-  UINT16  vendor_specific_20_21[2];  
-  UINT16  ecc_bytes_available;    
-  CHAR8   FirmwareVer[8];     ///< ASCII  
-  CHAR8   ModelName[40];      ///< ASCII    
-  UINT16  multi_sector_cmd_max_sct_cnt; 
-  UINT16  reserved_48; 
-  UINT16  capabilities; 
-  UINT16  reserved_50;     
-  UINT16  pio_cycle_timing;    
-  UINT16  reserved_52;             
-  UINT16  field_validity;     
-  UINT16  current_cylinders; 
-  UINT16  current_heads; 
-  UINT16  current_sectors;    
-  UINT16  CurrentCapacityLsb; 
-  UINT16  CurrentCapacityMsb;     
-  UINT16  reserved_59;     
-  UINT16  user_addressable_sectors_lo; 
-  UINT16  user_addressable_sectors_hi; 
-  UINT16  reserved_62;     
-  UINT16  multi_word_dma_mode;    
-  UINT16  advanced_pio_modes; 
-  UINT16  min_multi_word_dma_cycle_time; 
-  UINT16  rec_multi_word_dma_cycle_time; 
-  UINT16  min_pio_cycle_time_without_flow_control; 
-  UINT16  min_pio_cycle_time_with_flow_control; 
-  UINT16  reserved_69_79[11];     
-  UINT16  major_version_no; 
-  UINT16  minor_version_no; 
-  UINT16  command_set_supported_82;    ///< word 82 
-  UINT16  command_set_supported_83;    ///< word 83 
-  UINT16  command_set_feature_extn;    ///< word 84 
-  UINT16  command_set_feature_enb_85;  ///< word 85 
-  UINT16  command_set_feature_enb_86;  ///< word 86 
-  UINT16  command_set_feature_default; ///< word 87 
-  UINT16  ultra_dma_mode;              ///< word 88 
-  UINT16  reserved_89_127[39]; 
-  UINT16  security_status; 
-  UINT16  vendor_data_129_159[31]; 
-  UINT16  reserved_160_255[96]; 
+  UINT16  reserved_2;
+  UINT16  heads;              ///< Number of logical heads.
+  UINT16  vendor_data1;
+  UINT16  vendor_data2;
+  UINT16  sectors_per_track;
+  UINT16  vendor_specific_7_9[3];
+  CHAR8   SerialNo[20];       ///< ASCII
+  UINT16  vendor_specific_20_21[2];
+  UINT16  ecc_bytes_available;
+  CHAR8   FirmwareVer[8];     ///< ASCII
+  CHAR8   ModelName[40];      ///< ASCII
+  UINT16  multi_sector_cmd_max_sct_cnt;
+  UINT16  reserved_48;
+  UINT16  capabilities;
+  UINT16  reserved_50;
+  UINT16  pio_cycle_timing;
+  UINT16  reserved_52;
+  UINT16  field_validity;
+  UINT16  current_cylinders;
+  UINT16  current_heads;
+  UINT16  current_sectors;
+  UINT16  CurrentCapacityLsb;
+  UINT16  CurrentCapacityMsb;
+  UINT16  reserved_59;
+  UINT16  user_addressable_sectors_lo;
+  UINT16  user_addressable_sectors_hi;
+  UINT16  reserved_62;
+  UINT16  multi_word_dma_mode;
+  UINT16  advanced_pio_modes;
+  UINT16  min_multi_word_dma_cycle_time;
+  UINT16  rec_multi_word_dma_cycle_time;
+  UINT16  min_pio_cycle_time_without_flow_control;
+  UINT16  min_pio_cycle_time_with_flow_control;
+  UINT16  reserved_69_79[11];
+  UINT16  major_version_no;
+  UINT16  minor_version_no;
+  UINT16  command_set_supported_82;    ///< word 82
+  UINT16  command_set_supported_83;    ///< word 83
+  UINT16  command_set_feature_extn;    ///< word 84
+  UINT16  command_set_feature_enb_85;  ///< word 85
+  UINT16  command_set_feature_enb_86;  ///< word 86
+  UINT16  command_set_feature_default; ///< word 87
+  UINT16  ultra_dma_mode;              ///< word 88
+  UINT16  reserved_89_127[39];
+  UINT16  security_status;
+  UINT16  vendor_data_129_159[31];
+  UINT16  reserved_160_255[96];
 } ATA5_IDENTIFY_DATA;
 
 ///
@@ -86,50 +86,50 @@ typedef struct {
   UINT16  obsolete_1;
   UINT16  specific_config;                         ///< Specific Configuration.
   UINT16  obsolete_3;
-  UINT16  retired_4_5[2]; 
+  UINT16  retired_4_5[2];
   UINT16  obsolete_6;
   UINT16  cfa_reserved_7_8[2];
-  UINT16  retired_9; 
+  UINT16  retired_9;
   CHAR8   SerialNo[20];                            ///< word 10~19
-  UINT16  retired_20_21[2];  
-  UINT16  obsolete_22;    
+  UINT16  retired_20_21[2];
+  UINT16  obsolete_22;
   CHAR8   FirmwareVer[8];                          ///< word 23~26
   CHAR8   ModelName[40];                           ///< word 27~46
   UINT16  multi_sector_cmd_max_sct_cnt;
-  UINT16  trusted_computing_support; 
+  UINT16  trusted_computing_support;
   UINT16  capabilities_49;
   UINT16  capabilities_50;
-  UINT16  obsolete_51_52[2];           
-  UINT16  field_validity;     
-  UINT16  obsolete_54_58[5];     
+  UINT16  obsolete_51_52[2];
+  UINT16  field_validity;
+  UINT16  obsolete_54_58[5];
   UINT16  multi_sector_setting;
-  UINT16  user_addressable_sectors_lo; 
-  UINT16  user_addressable_sectors_hi; 
-  UINT16  obsolete_62;     
-  UINT16  multi_word_dma_mode;    
-  UINT16  advanced_pio_modes; 
-  UINT16  min_multi_word_dma_cycle_time; 
-  UINT16  rec_multi_word_dma_cycle_time; 
-  UINT16  min_pio_cycle_time_without_flow_control; 
-  UINT16  min_pio_cycle_time_with_flow_control; 
+  UINT16  user_addressable_sectors_lo;
+  UINT16  user_addressable_sectors_hi;
+  UINT16  obsolete_62;
+  UINT16  multi_word_dma_mode;
+  UINT16  advanced_pio_modes;
+  UINT16  min_multi_word_dma_cycle_time;
+  UINT16  rec_multi_word_dma_cycle_time;
+  UINT16  min_pio_cycle_time_without_flow_control;
+  UINT16  min_pio_cycle_time_with_flow_control;
   UINT16  additional_supported;                    ///< word 69
   UINT16  reserved_70;
   UINT16  reserved_71_74[4];                       ///< Reserved for IDENTIFY PACKET DEVICE cmd.
-  UINT16  queue_depth;     
+  UINT16  queue_depth;
   UINT16  serial_ata_capabilities;
   UINT16  reserved_77;                             ///< Reserved for Serial ATA
   UINT16  serial_ata_features_supported;
   UINT16  serial_ata_features_enabled;
-  UINT16  major_version_no; 
-  UINT16  minor_version_no; 
+  UINT16  major_version_no;
+  UINT16  minor_version_no;
   UINT16  command_set_supported_82;                ///< word 82
   UINT16  command_set_supported_83;                ///< word 83
   UINT16  command_set_feature_extn;                ///< word 84
   UINT16  command_set_feature_enb_85;              ///< word 85
   UINT16  command_set_feature_enb_86;              ///< word 86
   UINT16  command_set_feature_default;             ///< word 87
-  UINT16  ultra_dma_mode;                          ///< word 88 
-  UINT16  time_for_security_erase_unit; 
+  UINT16  ultra_dma_mode;                          ///< word 88
+  UINT16  time_for_security_erase_unit;
   UINT16  time_for_enhanced_security_erase_unit;
   UINT16  advanced_power_management_level;
   UINT16  master_password_identifier;
@@ -154,7 +154,7 @@ typedef struct {
   UINT16  reserved_121_126[6];
   UINT16  obsolete_127;
   UINT16  security_status;                         ///< word 128
-  UINT16  vendor_specific_129_159[31]; 
+  UINT16  vendor_specific_129_159[31];
   UINT16  cfa_power_mode;                          ///< word 160
   UINT16  reserved_for_compactflash_161_167[7];
   UINT16  device_nominal_form_factor;
@@ -239,7 +239,7 @@ typedef struct {
   UINT16  reserved_95_107[13];
   UINT16  world_wide_name[4];                      ///< word 108~111
   UINT16  reserved_for_128bit_wwn_112_115[4];
-  UINT16  reserved_116_118[3];  
+  UINT16  reserved_116_118[3];
   UINT16  command_and_feature_sets_supported;      ///< word 119
   UINT16  command_and_feature_sets_supported_enabled;
   UINT16  reserved_121_124[4];
@@ -458,7 +458,7 @@ typedef struct {
 
 ///
 /// ATAPI_PACKET_COMMAND is not defined in the ATA specification.
-/// We add it here for the convenience of ATA/ATAPI module writers. 
+/// We add it here for the convenience of ATA/ATAPI module writers.
 ///
 typedef union {
   UINT16                    Data16[6];
@@ -512,7 +512,7 @@ typedef union {
 //
 #define ATA_CMD_IDENTIFY_DRIVE          0xec   ///< defined from ATA-3
 #define ATA_CMD_READ_BUFFER             0xe4   ///< defined from ATA-1
-#define ATA_CMD_READ_SECTORS            0x20   ///< defined from ATA-1     
+#define ATA_CMD_READ_SECTORS            0x20   ///< defined from ATA-1
 #define ATA_CMD_READ_SECTORS_WITH_RETRY 0x21   ///< defined from ATA-1, obsoleted from ATA-5
 #define ATA_CMD_READ_LONG               0x22   ///< defined from ATA-1, obsoleted from ATA-5
 #define ATA_CMD_READ_LONG_WITH_RETRY    0x23   ///< defined from ATA-1, obsoleted from ATA-5
@@ -522,7 +522,7 @@ typedef union {
 // Class 2: PIO Data-Out Commands
 //
 #define ATA_CMD_FORMAT_TRACK              0x50  ///< defined from ATA-1, obsoleted from ATA-4
-#define ATA_CMD_WRITE_BUFFER              0xe8  ///< defined from ATA-1  
+#define ATA_CMD_WRITE_BUFFER              0xe8  ///< defined from ATA-1
 #define ATA_CMD_WRITE_SECTORS             0x30  ///< defined from ATA-1
 #define ATA_CMD_WRITE_SECTORS_WITH_RETRY  0x31  ///< defined from ATA-1, obsoleted from ATA-5
 #define ATA_CMD_WRITE_LONG                0x32  ///< defined from ATA-1, obsoleted from ATA-5
@@ -533,7 +533,7 @@ typedef union {
 //
 // Class 3 No Data Command
 //
-#define ATA_CMD_ACK_MEDIA_CHANGE        0xdb  ///< defined from ATA-1, obsoleted from ATA-5 
+#define ATA_CMD_ACK_MEDIA_CHANGE        0xdb  ///< defined from ATA-1, obsoleted from ATA-5
 #define ATA_CMD_BOOT_POST_BOOT          0xdc  ///< defined from ATA-1, obsoleted from ATA-3
 #define ATA_CMD_BOOT_PRE_BOOT           0xdd  ///< defined from ATA-1, obsoleted from ATA-3
 #define ATA_CMD_CHECK_POWER_MODE        0x98  ///< defined from ATA-1, obsoleted from ATA-4
@@ -575,12 +575,12 @@ typedef union {
 #define ATA_CMD_WRITE_DMA             0xca   ///< defined from ATA-1
 #define ATA_CMD_WRITE_DMA_WITH_RETRY  0xcb   ///< defined from ATA-1, obsoleted from ATA-
 #define ATA_CMD_WRITE_DMA_EXT         0x35   ///< defined from ATA-6
-        
+
 ///
 /// Default content of device control register, disable INT,
 /// Bit3 is set to 1 according ATA-1
 ///
-#define ATA_DEFAULT_CTL           (0x0a)  
+#define ATA_DEFAULT_CTL           (0x0a)
 ///
 /// Default context of Device/Head Register,
 /// Bit7 and Bit5 are set to 1 for back-compatibilities.
@@ -593,9 +593,9 @@ typedef union {
 
 //
 // Sense Key, Additional Sense Codes and Additional Sense Code Qualifier
-// defined in MultiMedia Commands (MMC, MMC-2) 
+// defined in MultiMedia Commands (MMC, MMC-2)
 //
-// Sense Key 
+// Sense Key
 //
 #define ATA_SK_NO_SENSE         (0x0)
 #define ATA_SK_RECOVERY_ERROR   (0x1)

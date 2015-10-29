@@ -1,4 +1,4 @@
-/* antlr.h 
+/* antlr.h
  *
  * SOFTWARE RIGHTS
  *
@@ -353,7 +353,7 @@ extern void _inf_zzgettok();
 	InfLookData                                                             \
     zzGuessData
 #endif
-	
+
 #endif /* LL_k */
 
 
@@ -461,7 +461,7 @@ extern void _inf_zzgettok();
               zzEXIT_ANTLR(zztasp1 + 1);                 \
             }                                            \
 						zzleaveANTLR(f);
-						
+
 #define ANTLRm(st, f, _m)	zzbufsize = ZZLEXBUFSIZE;	\
 						zzmode(_m);				\
 						zzenterANTLR(f);			\
@@ -473,7 +473,7 @@ extern void _inf_zzgettok();
               zzEXIT_ANTLR(zztasp1 + 1);                 \
             }                                            \
 						zzleaveANTLR(f);
-						
+
 #define ANTLRf(st, f)	zzbufsize = ZZLEXBUFSIZE;	\
 						zzenterANTLRf(f);			\
             {                                            \
@@ -535,7 +535,7 @@ extern void _inf_zzgettok();
 #endif
 
 #ifdef __USE_PROTOS
-extern int _zzsetmatch(SetWordType *, char **, char **, int *, int *, SetWordType **, SetWordType * /* MR23 */); 
+extern int _zzsetmatch(SetWordType *, char **, char **, int *, int *, SetWordType **, SetWordType * /* MR23 */);
 extern int _zzsetmatch_wsig(SetWordType *);
 #else
 extern int _zzsetmatch();

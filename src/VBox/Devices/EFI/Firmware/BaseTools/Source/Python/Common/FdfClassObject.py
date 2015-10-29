@@ -22,7 +22,7 @@ from String import NormPath
 ## FdfObject
 #
 # This class defined basic Fdf object which is used by inheriting
-# 
+#
 # @param object:       Inherited from object class
 #
 class FdfObject(object):
@@ -32,7 +32,7 @@ class FdfObject(object):
 ## Fdf
 #
 # This class defined the structure used in Fdf object
-# 
+#
 # @param FdfObject:     Inherited from FdfObject class
 # @param Filename:      Input value for Ffilename of Fdf file, default is None
 # @param WorkspaceDir:  Input value for current workspace directory, default is None
@@ -41,7 +41,7 @@ class Fdf(FdfObject):
     def __init__(self, Filename = None, IsToDatabase = False, WorkspaceDir = None, Database = None):
         self.WorkspaceDir = WorkspaceDir
         self.IsToDatabase = IsToDatabase
-        
+
         self.Cur = Database.Cur
         self.TblFile = Database.TblFile
         self.TblFdf = Database.TblFdf
@@ -65,15 +65,15 @@ class Fdf(FdfObject):
             self.FileList[Filename] = FileID
 
         return self.FileList[Filename]
-            
-    
+
+
     ## Load Fdf file
     #
     # Load the file if it exists
     #
     # @param Filename:  Input value for filename of Fdf file
     #
-    def LoadFdfFile(self, Filename):     
+    def LoadFdfFile(self, Filename):
         FileList = []
         #
         # Parse Fdf file

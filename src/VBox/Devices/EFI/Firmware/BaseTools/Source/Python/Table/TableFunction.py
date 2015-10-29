@@ -21,21 +21,21 @@ from Common.String import ConvertToSqlString
 ## TableFunction
 #
 # This class defined a table used for function
-# 
+#
 # @param Table:       Inherited from Table class
 #
 class TableFunction(Table):
     def __init__(self, Cursor):
         Table.__init__(self, Cursor)
         self.Table = 'Function'
-    
+
     ## Create table
     #
     # Create table Function
     #
     # @param ID:                  ID of a Function
     # @param Header:              Header of a Function
-    # @param Modifier:            Modifier of a Function 
+    # @param Modifier:            Modifier of a Function
     # @param Name:                Name of a Function
     # @param ReturnStatement:     ReturnStatement of a Funciont
     # @param StartLine:           StartLine of a Function
@@ -72,7 +72,7 @@ class TableFunction(Table):
     #
     # @param ID:                  ID of a Function
     # @param Header:              Header of a Function
-    # @param Modifier:            Modifier of a Function 
+    # @param Modifier:            Modifier of a Function
     # @param Name:                Name of a Function
     # @param ReturnStatement:     ReturnStatement of a Funciont
     # @param StartLine:           StartLine of a Function

@@ -2,7 +2,7 @@
 # Memory Allocation Library instance dedicated to DXE Core.
 # The implementation borrows the DxeCore Memory Allocation services as the primitive
 # for memory allocation instead of using UEFI boot servces in an indirect way.
-# It is assumed that this library instance must be linked with DxeCore in this package. 
+# It is assumed that this library instance must be linked with DxeCore in this package.
 #
 # Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
 #
@@ -24,7 +24,7 @@
   MODULE_TYPE                    = DXE_CORE
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = MemoryAllocationLib|DXE_CORE
-  
+
 #
 # The following information is for reference only and not required by the build tools.
 #

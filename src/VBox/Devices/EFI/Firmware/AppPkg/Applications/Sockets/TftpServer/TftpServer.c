@@ -410,7 +410,7 @@ PacketFill (
               pPacket,
               pContext->BlockNumber,
               (UINT32)LengthInBytes ));
-    
+
     //
     //  Copy the file data into the packet
     //
@@ -434,7 +434,7 @@ PacketFill (
         pContext->pBuffer = &pContext->FileData[ 0 ];
       }
     }
-    
+
     //
     //  Queue the packet for transmission
     //
@@ -1064,7 +1064,7 @@ TftpAck (
       bCloseContext = (BOOLEAN)( EFI_ERROR ( Status ));
       pPacket = pPacket->pNext;
     }
-    
+
     //
     //  Get more packets ready for transmission
     //
@@ -1550,7 +1550,7 @@ TftpProcessRequest (
 
 
 
-  
+
   case TFTP_OP_DATA:
     if ( NULL == pContext ) {
       if ( AF_INET == pTftpServer->RemoteAddress.v4.sin_family ) {
@@ -2039,7 +2039,7 @@ WindowAck (
         //
         DEBUG_CODE_BEGIN ( );
         UINT32 Value;
-        
+
         DeltaTime = RShiftU64 ( pContext->Rtt2x, 1 );
         if ( 1000 > DeltaTime ) {
           DEBUG (( DEBUG_WINDOW,
@@ -2139,7 +2139,7 @@ WindowTimeout (
     DEBUG_CODE_BEGIN ( );
     UINT64 DeltaTime;
     UINT32 Value;
-    
+
     DeltaTime = RShiftU64 ( pContext->Rtt2x, 1 );
     if ( 1000 > DeltaTime ) {
       DEBUG (( DEBUG_WINDOW,
@@ -2188,7 +2188,7 @@ WindowTimeout (
     if ( NULL != pPacket ) {
       PacketTx ( pContext, pPacket );
     }
-    
+
     DBG_EXIT ( );
   }
 }

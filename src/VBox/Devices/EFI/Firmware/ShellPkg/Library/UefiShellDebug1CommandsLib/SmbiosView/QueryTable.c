@@ -3227,7 +3227,7 @@ QueryTable (
     // Check if Key is in the range
     // or if Key == Value in the table
     //
-    if ((High > Low && Key >= Low && Key <= High) 
+    if ((High > Low && Key >= Low && Key <= High)
       || (Table[Index].Key == Key)) {
       StrnCpy (Info, Table[Index].Info, InfoLen-1);
       StrnCat (Info, L"\n", InfoLen - 1 - StrLen(Info));

@@ -23,7 +23,7 @@ STATIC CONST SHELL_PARAM_ITEM ParamList[] = {
   Determine if a directory has no files in it.
 
   @param[in] FileHandle   The EFI_HANDLE to the directory.
-  
+
   @retval TRUE  The directory has no files (or directories).
   @retval FALSE The directory has at least 1 file or directory in it.
 **/

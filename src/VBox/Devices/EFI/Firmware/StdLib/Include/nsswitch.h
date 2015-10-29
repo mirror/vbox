@@ -54,7 +54,7 @@
 /*
  * Layout of:
  *	uint32_t ns_src.flags
- */ 
+ */
 	/* nsswitch.conf status codes and nsdispatch(3) return values */
 #define	NS_SUCCESS	(1<<0)		/* entry was found */
 #define	NS_UNAVAIL	(1<<1)		/* source not responding, or corrupt */
@@ -125,7 +125,7 @@ typedef struct {
  */
 #define NS_FILES_CB(F,C)	{ NSSRC_FILES,	F,	__UNCONST(C) },
 #define NS_COMPAT_CB(F,C)	{ NSSRC_COMPAT,	F,	__UNCONST(C) },
- 
+
 #ifdef HESIOD
 #   define NS_DNS_CB(F,C)	{ NSSRC_DNS,	F,	__UNCONST(C) },
 #else

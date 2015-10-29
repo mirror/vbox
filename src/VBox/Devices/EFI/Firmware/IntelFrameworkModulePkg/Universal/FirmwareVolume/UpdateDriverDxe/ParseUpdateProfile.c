@@ -622,7 +622,7 @@ UpdateValueToString (
 }
 
 /**
-  Convert the input value to a ascii string, 
+  Convert the input value to a ascii string,
   and concatenates this string to the input string.
 
   @param Str             Pointer to a Null-terminated ASCII string.
@@ -787,7 +787,7 @@ UpdateStringToGuid (
 
 /**
   Pre process config data buffer into Section entry list and Comment entry list.
- 
+
   @param DataBuffer      Config raw file buffer.
   @param BufferSize      Size of raw buffer.
   @param SectionHead     Pointer to the section entry list.

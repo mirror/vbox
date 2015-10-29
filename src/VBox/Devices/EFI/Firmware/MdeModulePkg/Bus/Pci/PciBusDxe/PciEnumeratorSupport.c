@@ -1605,7 +1605,7 @@ PciIovParseVfBar (
       break;
     }
   }
-  
+
   //
   // Check the length again so as to keep compatible with some special bars
   //
@@ -1614,7 +1614,7 @@ PciIovParseVfBar (
     PciIoDevice->VfPciBar[BarIndex].BaseAddress = 0;
     PciIoDevice->VfPciBar[BarIndex].Alignment   = 0;
   }
-  
+
   //
   // Increment number of bar
   //
@@ -2049,7 +2049,7 @@ CreatePciIoDevice (
       //
       ParentPciIo = &Bridge->PciIo;
       ParentPciIo->Pci.Read (
-                          ParentPciIo, 
+                          ParentPciIo,
                           EfiPciIoWidthUint32,
                           Bridge->PciExpressCapabilityOffset + EFI_PCIE_CAPABILITY_DEVICE_CAPABILITIES_2_OFFSET,
                           1,

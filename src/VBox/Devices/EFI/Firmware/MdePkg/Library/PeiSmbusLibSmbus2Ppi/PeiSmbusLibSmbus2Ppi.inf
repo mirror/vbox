@@ -46,5 +46,5 @@
   gEfiPeiSmbus2PpiGuid                           ## CONSUMES
 
 [Depex.common.PEIM]
-  gEfiPeiSmbus2PpiGuid 
+  gEfiPeiSmbus2PpiGuid
 

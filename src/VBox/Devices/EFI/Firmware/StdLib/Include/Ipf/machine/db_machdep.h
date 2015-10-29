@@ -75,8 +75,8 @@ extern db_regs_t	*ddb_regp;	/* pointer to current register state */
 
 #define ADDR_SLOT0(addr)	( (addr) & ~(0xFUL) )
 #define SLOT_ADDR(addr)		( (addr) & (0xFUL) )
-/* breakpoint address. 
- * Check for violations of pseudo offsets above 2. 
+/* breakpoint address.
+ * Check for violations of pseudo offsets above 2.
  * Adjust for 32 bit shift within Bundle.
  */
 

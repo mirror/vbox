@@ -103,7 +103,7 @@ ShellCommandRunEcho (
         StrnCatGrow(&PrintString, &Size, ShellCommandLineGetRawValue(Package, ParamCount), 0);
         if (ShellCommandLineGetRawValue(Package, ParamCount+1) != NULL) {
           StrnCatGrow(&PrintString, &Size, L" ", 0);
-        } 
+        }
       }
       ShellPrintEx(-1, -1, L"%s\r\n", PrintString);
       SHELL_FREE_NON_NULL(PrintString);

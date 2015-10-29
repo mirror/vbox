@@ -11,7 +11,7 @@
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
-    
+
 
 #include "../UefiShellDebug1CommandsLib.h"
 #include <Guid/SmBios.h>

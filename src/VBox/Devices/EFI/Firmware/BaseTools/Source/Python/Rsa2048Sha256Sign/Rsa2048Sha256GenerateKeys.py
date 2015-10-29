@@ -1,11 +1,11 @@
 ## @file
-# This tool can be used to generate new RSA 2048 bit private/public key pairs 
-# in a PEM file format using OpenSSL command line utilities that are installed 
+# This tool can be used to generate new RSA 2048 bit private/public key pairs
+# in a PEM file format using OpenSSL command line utilities that are installed
 # on the path specified by the system environment variable OPENSSL_PATH.
-# This tool can also optionally write one or more SHA 256 hashes of 2048 bit 
-# public keys to a binary file, write one or more SHA 256 hashes of 2048 bit 
-# public keys to a file in a C structure format, and in verbose mode display 
-# one or more SHA 256 hashes of 2048 bit public keys in a C structure format 
+# This tool can also optionally write one or more SHA 256 hashes of 2048 bit
+# public keys to a binary file, write one or more SHA 256 hashes of 2048 bit
+# public keys to a file in a C structure format, and in verbose mode display
+# one or more SHA 256 hashes of 2048 bit public keys in a C structure format
 # on STDOUT.
 # This tool has been tested with OpenSSL 1.0.1e 11 Feb 2013
 #
@@ -25,7 +25,7 @@ Rsa2048Sha256GenerateKeys
 
 import os
 import sys
-import argparse 
+import argparse
 import subprocess
 from Common.BuildVersion import gBUILD_VERSION
 
@@ -41,7 +41,7 @@ __usage__     = '%s [options]' % (__prog__)
 if __name__ == '__main__':
   #
   # Create command line argument parser object
-  #  
+  #
   parser = argparse.ArgumentParser(prog=__prog__, version=__version__, usage=__usage__, description=__copyright__, conflict_handler='resolve')
   group = parser.add_mutually_exclusive_group(required=True)
   group.add_argument("-o", "--output", dest='OutputFile', type=argparse.FileType('wb'), metavar='filename', nargs='*', help="specify the output private key filename in PEM format")
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
   #
   # Parse command line arguments
-  #  
+  #
   args = parser.parse_args()
 
   #
@@ -72,18 +72,18 @@ if __name__ == '__main__':
   #
   try:
     Process = subprocess.Popen('%s version' % (OpenSslCommand), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  except:  
+  except:
     print 'ERROR: Open SSL command not available.  Please verify PATH or set OPENSSL_PATH'
     sys.exit(1)
-    
+
   Version = Process.communicate()
   if Process.returncode <> 0:
     print 'ERROR: Open SSL command not available.  Please verify PATH or set OPENSSL_PATH'
     sys.exit(Process.returncode)
   print Version[0]
-  
+
   args.PemFileName = []
-  
+
   #
   # Check for output file argument
   #
@@ -103,7 +103,7 @@ if __name__ == '__main__':
       if Process.returncode <> 0:
         print 'ERROR: RSA 2048 key generation failed'
         sys.exit(Process.returncode)
-      
+
   #
   # Check for input file argument
   #
@@ -155,7 +155,7 @@ if __name__ == '__main__':
   for Item in PublicKeyHash:
     PublicKeyHashC = PublicKeyHashC + '0x%02x, ' % (ord(Item))
   PublicKeyHashC = PublicKeyHashC[:-2] + '}'
-  
+
   #
   # Write SHA 256 of 2048 bit binary public key to public key hash C structure file
   #
@@ -164,9 +164,9 @@ if __name__ == '__main__':
     args.PublicKeyHashCFile.close ()
   except:
     pass
-    
+
   #
   # If verbose is enabled display the public key in C structure format
   #
   if args.Verbose:
-    print 'PublicKeySha256 = ' + PublicKeyHashC    
+    print 'PublicKeySha256 = ' + PublicKeyHashC

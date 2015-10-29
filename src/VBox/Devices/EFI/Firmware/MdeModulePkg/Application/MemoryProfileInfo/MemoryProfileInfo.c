@@ -1,13 +1,13 @@
 /** @file
-  
-  Copyright (c) 2014 - 2015, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials                          
-  are licensed and made available under the terms and conditions of the BSD License         
-  which accompanies this distribution.  The full text of the license may be found at        
-  http://opensource.org/licenses/bsd-license.php                                            
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+  Copyright (c) 2014 - 2015, Intel Corporation. All rights reserved.<BR>
+  This program and the accompanying materials
+  are licensed and made available under the terms and conditions of the BSD License
+  which accompanies this distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
+
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -97,17 +97,17 @@ CHAR16 *mFileTypeString[] = {
 #define PROFILE_NAME_STRING_LENGTH  36
 CHAR16 mNameString[PROFILE_NAME_STRING_LENGTH + 1];
 
-/** 
+/**
   Get the file name portion of the Pdb File Name.
-  
+
   The portion of the Pdb File Name between the last backslash and
   either a following period or the end of the string is converted
   to Unicode and copied into UnicodeBuffer.  The name is truncated,
   if necessary, to ensure that UnicodeBuffer is not overrun.
-  
+
   @param[in]  PdbFileName     Pdb file name.
   @param[out] UnicodeBuffer   The resultant Unicode File Name.
-  
+
 **/
 VOID
 GetShortPdbFileName (
@@ -149,7 +149,7 @@ GetShortPdbFileName (
   }
 }
 
-/** 
+/**
   Get a human readable name for an image.
   The following methods will be tried orderly:
     1. Image PDB
@@ -236,7 +236,7 @@ DumpMemoryProfileAllocInfo (
   Print (L"    MEMORY_PROFILE_ALLOC_INFO (0x%x)\n", AllocIndex);
   Print (L"      Signature     - 0x%08x\n", AllocInfo->Header.Signature);
   Print (L"      Length        - 0x%04x\n", AllocInfo->Header.Length);
-  Print (L"      Revision      - 0x%04x\n", AllocInfo->Header.Revision);  
+  Print (L"      Revision      - 0x%04x\n", AllocInfo->Header.Revision);
   Print (L"      CallerAddress - 0x%016lx (Offset: 0x%08x)\n", AllocInfo->CallerAddress, (UINTN) (AllocInfo->CallerAddress - DriverInfo->ImageBase));
   Print (L"      SequenceId    - 0x%08x\n", AllocInfo->SequenceId);
   Print (L"      Action        - 0x%08x (%s)\n", AllocInfo->Action, mActionString[(AllocInfo->Action < sizeof(mActionString)/sizeof(mActionString[0])) ? AllocInfo->Action : 0]);
@@ -272,7 +272,7 @@ DumpMemoryProfileDriverInfo (
   Print (L"  MEMORY_PROFILE_DRIVER_INFO (0x%x)\n", DriverIndex);
   Print (L"    Signature               - 0x%08x\n", DriverInfo->Header.Signature);
   Print (L"    Length                  - 0x%04x\n", DriverInfo->Header.Length);
-  Print (L"    Revision                - 0x%04x\n", DriverInfo->Header.Revision);  
+  Print (L"    Revision                - 0x%04x\n", DriverInfo->Header.Revision);
   GetDriverNameString (DriverInfo);
   Print (L"    FileName                - %s\n", &mNameString);
   Print (L"    ImageBase               - 0x%016lx\n", DriverInfo->ImageBase);
@@ -324,7 +324,7 @@ DumpMemoryProfileContext (
   Print (L"MEMORY_PROFILE_CONTEXT\n");
   Print (L"  Signature                     - 0x%08x\n", Context->Header.Signature);
   Print (L"  Length                        - 0x%04x\n", Context->Header.Length);
-  Print (L"  Revision                      - 0x%04x\n", Context->Header.Revision);  
+  Print (L"  Revision                      - 0x%04x\n", Context->Header.Revision);
   Print (L"  CurrentTotalUsage             - 0x%016lx\n", Context->CurrentTotalUsage);
   Print (L"  PeakTotalUsage                - 0x%016lx\n", Context->PeakTotalUsage);
   for (TypeIndex = 0; TypeIndex <= EfiMaxMemoryType; TypeIndex++) {
@@ -369,7 +369,7 @@ DumpMemoryProfileDescriptor (
   Print (L"  MEMORY_PROFILE_DESCRIPTOR (0x%x)\n", DescriptorIndex);
   Print (L"    Signature               - 0x%08x\n", Descriptor->Header.Signature);
   Print (L"    Length                  - 0x%04x\n", Descriptor->Header.Length);
-  Print (L"    Revision                - 0x%04x\n", Descriptor->Header.Revision);  
+  Print (L"    Revision                - 0x%04x\n", Descriptor->Header.Revision);
   Print (L"    Address                 - 0x%016lx\n", Descriptor->Address);
   Print (L"    Size                    - 0x%016lx\n", Descriptor->Size);
 
@@ -398,7 +398,7 @@ DumpMemoryProfileFreeMemory (
   Print (L"MEMORY_PROFILE_FREE_MEMORY\n");
   Print (L"  Signature                     - 0x%08x\n", FreeMemory->Header.Signature);
   Print (L"  Length                        - 0x%04x\n", FreeMemory->Header.Length);
-  Print (L"  Revision                      - 0x%04x\n", FreeMemory->Header.Revision);  
+  Print (L"  Revision                      - 0x%04x\n", FreeMemory->Header.Revision);
   Print (L"  TotalFreeMemoryPages          - 0x%016lx\n", FreeMemory->TotalFreeMemoryPages);
   Print (L"  FreeMemoryEntryCount          - 0x%08x\n", FreeMemory->FreeMemoryEntryCount);
 
@@ -435,7 +435,7 @@ DumpMemoryProfileMemoryRange (
   Print (L"MEMORY_PROFILE_MEMORY_RANGE\n");
   Print (L"  Signature                     - 0x%08x\n", MemoryRange->Header.Signature);
   Print (L"  Length                        - 0x%04x\n", MemoryRange->Header.Length);
-  Print (L"  Revision                      - 0x%04x\n", MemoryRange->Header.Revision);  
+  Print (L"  Revision                      - 0x%04x\n", MemoryRange->Header.Revision);
   Print (L"  MemoryRangeCount              - 0x%08x\n", MemoryRange->MemoryRangeCount);
 
   Descriptor = (MEMORY_PROFILE_DESCRIPTOR *) ((UINTN) MemoryRange + MemoryRange->Header.Length);
@@ -698,9 +698,9 @@ GetSmramProfileData (
   The user Entry Point for Application. The user code starts with this function
   as the real entry point for the image goes into a library that calls this function.
 
-  @param[in] ImageHandle    The firmware allocated handle for the EFI image.  
+  @param[in] ImageHandle    The firmware allocated handle for the EFI image.
   @param[in] SystemTable    A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS       The entry point is executed successfully.
   @retval other             Some error occurs when executing this entry point.
 

@@ -67,12 +67,12 @@
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid                 ## PRODUCES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInitializationPolicy         ## PRODUCES
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpmAutoDetection                ## CONSUMES 
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmAutoDetection                ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmBaseAddress                  ## SOMETIMES_CONSUMES
 
 [Depex]
   gEfiPeiMasterBootModePpiGuid AND
   gEfiPeiReadOnlyVariable2PpiGuid
-  
+
 [UserExtensions.TianoCore."ExtraFiles"]
   TrEEConfigPeiExtra.uni

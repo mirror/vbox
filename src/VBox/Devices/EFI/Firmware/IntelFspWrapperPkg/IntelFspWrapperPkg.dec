@@ -62,7 +62,7 @@
   ## Indicates the base address of the factory FSP binary.
   gFspWrapperTokenSpaceGuid.PcdFlashFvFspBase|0xFFF80000|UINT32|0x10000003
   ## Indicates the base address of the updatable FSP binary to support Dual FSP.
-  #  There could be two FSP images at different locations in a flash - 
+  #  There could be two FSP images at different locations in a flash -
   #  one factory version (default) and updatable version (updatable).
   #  TempRamInit, FspMemoryInit and TempRamExit are always executed from factory version.
   #  FspSiliconInit and NotifyPhase can be executed from updatable version if it is available,

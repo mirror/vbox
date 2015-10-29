@@ -146,7 +146,7 @@ FtwVariableSpace (
 
 
 /**
-  Update the variable region with Variable information. These are the same 
+  Update the variable region with Variable information. These are the same
   arguments as the EFI Variable services.
 
   @param[in] VariableName       Name of variable.
@@ -179,7 +179,7 @@ UpdateVariable (
 
 /**
   Return TRUE if ExitBootServices () has been called.
-  
+
   @retval TRUE If ExitBootServices () has been called.
 **/
 BOOLEAN
@@ -190,8 +190,8 @@ AtRuntime (
 /**
   Initializes a basic mutual exclusion lock.
 
-  This function initializes a basic mutual exclusion lock to the released state 
-  and returns the lock.  Each lock provides mutual exclusion access at its task 
+  This function initializes a basic mutual exclusion lock to the released state
+  and returns the lock.  Each lock provides mutual exclusion access at its task
   priority level.  Since there is no preemption or multiprocessor support in EFI,
   acquiring the lock only consists of raising to the locks TPL.
   If Lock is NULL, then ASSERT().
@@ -209,7 +209,7 @@ InitializeLock (
   IN EFI_TPL        Priority
   );
 
-  
+
 /**
   Acquires lock only at boot time. Simply returns at runtime.
 
@@ -243,7 +243,7 @@ AcquireLockOnlyAtBootTime (
 VOID
 ReleaseLockOnlyAtBootTime (
   IN EFI_LOCK  *Lock
-  );  
+  );
 
 /**
   Retrive the FVB protocol interface by HANDLE.
@@ -255,7 +255,7 @@ ReleaseLockOnlyAtBootTime (
   @retval EFI_SUCCESS           The interface information for the specified protocol was returned.
   @retval EFI_UNSUPPORTED       The device does not support the FVB protocol.
   @retval EFI_INVALID_PARAMETER FvBlockHandle is not a valid EFI_HANDLE or FvBlock is NULL.
-  
+
 **/
 EFI_STATUS
 GetFvbByHandle (
@@ -281,7 +281,7 @@ GetSarProtocol (
 
 /**
   Function returns an array of handles that support the FVB protocol
-  in a buffer allocated from pool. 
+  in a buffer allocated from pool.
 
   @param[out]  NumberHandles    The number of handles returned in Buffer.
   @param[out]  Buffer           A pointer to the buffer to return the requested
@@ -292,7 +292,7 @@ GetSarProtocol (
   @retval EFI_NOT_FOUND         No FVB handle was found.
   @retval EFI_OUT_OF_RESOURCES  There is not enough pool memory to store the matching results.
   @retval EFI_INVALID_PARAMETER NumberHandles is NULL or Buffer is NULL.
-  
+
 **/
 EFI_STATUS
 GetFvbCountAndBuffer (
@@ -314,12 +314,12 @@ VariableCommonInitialize (
 
 /**
   This function reclaims variable storage if free size is below the threshold.
-  
+
 **/
 VOID
 ReclaimForOS(
   VOID
-  );  
+  );
 
 
 /**
@@ -333,7 +333,7 @@ EFI_STATUS
 VariableWriteServiceInitialize (
   VOID
   );
-  
+
 /**
   Retrive the SMM Fault Tolerent Write protocol interface.
 
@@ -374,7 +374,7 @@ GetFvbInfoByAddress (
   @param DataSize                   Size of Data found. If size is less than the
                                     data, this value contains the required size.
   @param Data                       Data pointer.
-                      
+
   @return EFI_INVALID_PARAMETER     Invalid parameter.
   @return EFI_SUCCESS               Find the specified variable.
   @return EFI_NOT_FOUND             Not found.
@@ -491,7 +491,7 @@ VariableServiceQueryVariableInfo (
   OUT UINT64                 *MaximumVariableStorageSize,
   OUT UINT64                 *RemainingVariableStorageSize,
   OUT UINT64                 *MaximumVariableSize
-  );  
+  );
 
 /**
   Mark a variable that will become read-only after leaving the DXE phase of execution.

@@ -28,9 +28,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 INTN
 PasswordCallback (
-  OUT  CHAR8  *Buf, 
-  IN   INTN   Size, 
-  IN   INTN   Flag, 
+  OUT  CHAR8  *Buf,
+  IN   INTN   Size,
+  IN   INTN   Flag,
   IN   VOID   *Key
   )
 {

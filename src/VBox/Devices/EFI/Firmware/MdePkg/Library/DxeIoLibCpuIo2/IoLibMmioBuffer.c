@@ -67,7 +67,7 @@ MmioReadBuffer8 (
   If Length is greater than (MAX_ADDRESS - Buffer + 1), then ASSERT().
 
   If Length is not aligned on a 16-bit boundary, then ASSERT().
-  
+
   If Buffer is not aligned on a 16-bit boundary, then ASSERT().
 
   @param  StartAddress    The starting address for the MMIO region to be copied from.
@@ -170,7 +170,7 @@ MmioReadBuffer32 (
   If Length is greater than (MAX_ADDRESS - Buffer + 1), then ASSERT().
 
   If Length is not aligned on a 64-bit boundary, then ASSERT().
- 
+
   If Buffer is not aligned on a 64-bit boundary, then ASSERT().
 
   @param  StartAddress    The starting address for the MMIO region to be copied from.

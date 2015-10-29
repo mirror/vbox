@@ -34,7 +34,7 @@
   IoHighLevel.c
   IoLib.c
   IoLibMmioBuffer.c
- 
+
 [Packages]
   MdePkg/MdePkg.dec
 

@@ -9,7 +9,7 @@
 ;*   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 ;*   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 ;*
-;*    
+;*
 ;------------------------------------------------------------------------------
 
 
@@ -17,7 +17,7 @@
     .model  flat,C
     .const
 ;
-; Float control word initial value: 
+; Float control word initial value:
 ; all exceptions masked, double-precision, round-to-nearest
 ;
 mFpuControlWord       DW      027Fh
@@ -25,7 +25,7 @@ mFpuControlWord       DW      027Fh
 ; Multimedia-extensions control word:
 ; all exceptions masked, round-to-nearest, flush to zero for masked underflow
 ;
-mMmxControlWord       DD      01F80h 
+mMmxControlWord       DD      01F80h
 
     .xmm
     .code
@@ -47,7 +47,7 @@ InitializeFloatingPointUnits PROC PUBLIC
     ;
     finit
     fldcw   mFpuControlWord
-    
+
     ;
     ; Use CpuId instructuion (CPUID.01H:EDX.SSE[bit 25] = 1) to test
     ; whether the processor supports SSE instruction.
@@ -56,14 +56,14 @@ InitializeFloatingPointUnits PROC PUBLIC
     cpuid
     bt      edx, 25
     jnc     Done
-    
+
     ;
     ; Set OSFXSR bit 9 in CR4
     ;
     mov     eax, cr4
     or      eax, BIT9
     mov     cr4, eax
-    
+
     ;
     ; The processor should support SSE instruction and we can use
     ; ldmxcsr instruction

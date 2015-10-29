@@ -24,14 +24,14 @@ EFI_DEBUG_SUPPORT_PROTOCOL  mDebugSupportProtocolInterface = {
 
 
 /**
-  Debug Support Driver entry point. 
+  Debug Support Driver entry point.
 
-  Checks to see if there's not already a Debug Support protocol installed for 
+  Checks to see if there's not already a Debug Support protocol installed for
   the selected processor before installing it.
 
-  @param[in] ImageHandle       The firmware allocated handle for the EFI image.  
+  @param[in] ImageHandle       The firmware allocated handle for the EFI image.
   @param[in] SystemTable       A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS          The entry point is executed successfully.
   @retval EFI_ALREADY_STARTED  Debug Support protocol is installed already.
   @retval other                Some error occurs when executing this entry point.
@@ -105,7 +105,7 @@ InitializeDebugSupportDriver (
   LoadedImageProtocolPtr->Unload = PlUnloadDebugSupportDriver;
 
   //
-  // Call hook for processor specific initialization 
+  // Call hook for processor specific initialization
   //
   Status = PlInitializeDebugSupportDriver ();
   ASSERT (!EFI_ERROR (Status));

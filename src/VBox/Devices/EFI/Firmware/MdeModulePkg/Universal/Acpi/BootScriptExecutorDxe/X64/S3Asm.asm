@@ -18,10 +18,10 @@ EXTERN mOriginalHandler:QWORD
 EXTERN PageFaultHandler:PROC
 
     .code
-    
+
 EXTERNDEF   AsmFixAddress16:DWORD
 EXTERNDEF   AsmJmpAddr32:DWORD
-    
+
 AsmTransferControl  PROC
     ; rcx S3WakingVector    :DWORD
     ; rdx AcpiLowMemoryBase :DWORD
@@ -30,8 +30,8 @@ AsmTransferControl  PROC
     or    rax, r8
     push  rax
     shrd  ebx, ecx, 20
-    and   ecx, 0fh          
-    mov   bx, cx          
+    and   ecx, 0fh
+    mov   bx, cx
     mov   @jmp_addr, ebx
     retf
 @@:
@@ -42,7 +42,7 @@ AsmTransferControl  PROC
     mov   gs, eax
     mov   ss, eax
     mov   rax, cr0
-    mov   rbx, cr4        
+    mov   rbx, cr4
     DB    66h
     and   eax, ((NOT 080000001h) AND 0ffffffffh)
     and   bl, NOT (1 SHL 5)
@@ -61,7 +61,7 @@ AsmTransferControl32  PROC
     ; S3WakingVector    :DWORD
     ; AcpiLowMemoryBase :DWORD
     push  rbp
-    mov   ebp, esp    
+    mov   ebp, esp
     DB    8dh, 05h          ;  lea   eax, AsmTransferControl16
 AsmFixAddress16  DD ?
     push  28h               ; CS
@@ -76,7 +76,7 @@ AsmTransferControl16  PROC
     mov   fs, ax
     mov   gs, ax
     mov   ss, ax
-    mov   rax, cr0          ; Get control register 0  
+    mov   rax, cr0          ; Get control register 0
     DB    66h
     DB    83h, 0e0h, 0feh   ; and    eax, 0fffffffeh  ; Clear PE bit (bit #0)
     DB    0fh, 22h, 0c0h    ; mov    cr0, eax         ; Activate real mode
@@ -105,7 +105,7 @@ PageFaultHandlerHook PROC
     add     rsp, -20h
     call    PageFaultHandler
     add     rsp, 20h
-    
+
     ; load volatile fp registers
     ldmxcsr [rsp + 60h]
     movdqa  xmm0,  [rsp + 0h]
@@ -117,7 +117,7 @@ PageFaultHandlerHook PROC
     add     rsp, 68h
 
     test    al, al
-    
+
     pop     r11
     pop     r10
     pop     r9

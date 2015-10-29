@@ -41,15 +41,15 @@ typedef enum {
 ///
 typedef struct {
   ///
-  /// Describes whether this child handler will be invoked in response to a USB legacy 
-  /// emulation event, such as port-trap on the PS/2* keyboard control registers, or to a 
+  /// Describes whether this child handler will be invoked in response to a USB legacy
+  /// emulation event, such as port-trap on the PS/2* keyboard control registers, or to a
   /// USB wake event, such as resumption from a sleep state.
   ///
   EFI_USB_SMI_TYPE          Type;
   ///
-  /// The device path is part of the context structure and describes the location of the 
+  /// The device path is part of the context structure and describes the location of the
   /// particular USB host controller in the system for which this register event will occur.
-  /// This location is important because of the possible integration of several USB host 
+  /// This location is important because of the possible integration of several USB host
   /// controllers in a system.
   ///
   EFI_DEVICE_PATH_PROTOCOL  *Device;
@@ -61,14 +61,14 @@ typedef struct _EFI_SMM_USB_DISPATCH2_PROTOCOL EFI_SMM_USB_DISPATCH2_PROTOCOL;
   Provides the parent dispatch service for the USB SMI source generator.
 
   This service registers a function (DispatchFunction) which will be called when the USB-
-  related SMI specified by RegisterContext has occurred. On return, DispatchHandle 
+  related SMI specified by RegisterContext has occurred. On return, DispatchHandle
   contains a unique handle which may be used later to unregister the function using UnRegister().
-  The DispatchFunction will be called with Context set to the same value as was passed into 
-  this function in RegisterContext and with CommBuffer containing NULL and 
+  The DispatchFunction will be called with Context set to the same value as was passed into
+  this function in RegisterContext and with CommBuffer containing NULL and
   CommBufferSize containing zero.
 
   @param[in]  This               Pointer to the EFI_SMM_USB_DISPATCH2_PROTOCOL instance.
-  @param[in]  DispatchFunction   Function to register for handler when a USB-related SMI occurs. 
+  @param[in]  DispatchFunction   Function to register for handler when a USB-related SMI occurs.
   @param[in]  RegisterContext    Pointer to the dispatch function's context.
                                  The caller fills this context in before calling
                                  the register function to indicate to the register
@@ -95,11 +95,11 @@ EFI_STATUS
 /**
   Unregisters a USB service.
 
-  This service removes the handler associated with DispatchHandle so that it will no longer be 
+  This service removes the handler associated with DispatchHandle so that it will no longer be
   called when the USB event occurs.
 
   @param[in]  This               Pointer to the EFI_SMM_USB_DISPATCH2_PROTOCOL instance.
-  @param[in]  DispatchHandle     Handle of the service to remove. 
+  @param[in]  DispatchHandle     Handle of the service to remove.
 
   @retval EFI_SUCCESS            The dispatch function has been successfully
                                  unregistered and the SMI source has been disabled

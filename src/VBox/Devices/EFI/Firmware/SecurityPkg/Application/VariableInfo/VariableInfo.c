@@ -1,15 +1,15 @@
 /** @file
-  If the Variable services have PcdVariableCollectStatistics set to TRUE then 
-  this utility will print out the statistics information. You can use console 
+  If the Variable services have PcdVariableCollectStatistics set to TRUE then
+  this utility will print out the statistics information. You can use console
   redirection to capture the data.
-  
+
 Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -34,13 +34,13 @@ EFI_SMM_COMMUNICATION_PROTOCOL  *mSmmCommunication = NULL;
 
 /**
 
-  This function get the variable statistics data from SMM variable driver. 
+  This function get the variable statistics data from SMM variable driver.
 
   @param[in, out] SmmCommunicateHeader In input, a pointer to a collection of data that will
-                                       be passed into an SMM environment. In output, a pointer 
+                                       be passed into an SMM environment. In output, a pointer
                                        to a collection of data that comes from an SMM environment.
   @param[in, out] SmmCommunicateSize   The size of the SmmCommunicateHeader.
-                      
+
   @retval EFI_SUCCESS               Get the statistics data information.
   @retval EFI_NOT_FOUND             Not found.
   @retval EFI_BUFFER_TO_SMALL       DataSize is too small for the result.
@@ -61,26 +61,26 @@ GetVariableStatisticsData (
 
   SmmVariableFunctionHeader = (SMM_VARIABLE_COMMUNICATE_HEADER *) &SmmCommunicateHeader->Data[0];
   SmmVariableFunctionHeader->Function = SMM_VARIABLE_FUNCTION_GET_STATISTICS;
-  
+
   Status = mSmmCommunication->Communicate (mSmmCommunication, SmmCommunicateHeader, SmmCommunicateSize);
   ASSERT_EFI_ERROR (Status);
-  
-  Status = SmmVariableFunctionHeader->ReturnStatus; 
+
+  Status = SmmVariableFunctionHeader->ReturnStatus;
   return Status;
 }
 
 
 /**
 
-  This function get and print the variable statistics data from SMM variable driver. 
-                     
+  This function get and print the variable statistics data from SMM variable driver.
+
   @retval EFI_SUCCESS               Print the statistics information successfully.
   @retval EFI_NOT_FOUND             Not found the statistics information.
 
 **/
 EFI_STATUS
 PrintInfoFromSmm (
-  VOID  
+  VOID
   )
 {
   EFI_STATUS                                     Status;
@@ -90,7 +90,7 @@ PrintInfoFromSmm (
   UINTN                                          CommSize;
   SMM_VARIABLE_COMMUNICATE_HEADER                *FunctionHeader;
   EFI_SMM_VARIABLE_PROTOCOL                      *Smmvariable;
-  
+
 
   Status = gBS->LocateProtocol (&gEfiSmmVariableProtocolGuid, NULL, (VOID **) &Smmvariable);
   if (EFI_ERROR (Status)) {
@@ -100,13 +100,13 @@ PrintInfoFromSmm (
   Status = gBS->LocateProtocol (&gEfiSmmCommunicationProtocolGuid, NULL, (VOID **) &mSmmCommunication);
   if (EFI_ERROR (Status)) {
     return Status;
-  }  
+  }
 
   CommSize  = SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE;
   RealCommSize = CommSize;
   CommBuffer = AllocateZeroPool (CommSize);
   ASSERT (CommBuffer != NULL);
-  
+
   Print (L"Non-Volatile SMM Variables:\n");
   do {
     Status = GetVariableStatisticsData (CommBuffer, &CommSize);
@@ -118,7 +118,7 @@ PrintInfoFromSmm (
       Status = GetVariableStatisticsData (CommBuffer, &CommSize);
     }
 
-    if (EFI_ERROR (Status) || (CommSize <= SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE)) { 
+    if (EFI_ERROR (Status) || (CommSize <= SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE)) {
       break;
     }
 
@@ -131,8 +131,8 @@ PrintInfoFromSmm (
 
     if (!VariableInfo->Volatile) {
       Print (
-          L"%g R%03d(%03d) W%03d D%03d:%s\n", 
-          &VariableInfo->VendorGuid,  
+          L"%g R%03d(%03d) W%03d D%03d:%s\n",
+          &VariableInfo->VendorGuid,
           VariableInfo->ReadCount,
           VariableInfo->CacheCount,
           VariableInfo->WriteCount,
@@ -141,7 +141,7 @@ PrintInfoFromSmm (
           );
     }
   } while (TRUE);
-  
+
   Print (L"Volatile SMM Variables:\n");
   ZeroMem (CommBuffer, CommSize);
   do {
@@ -154,7 +154,7 @@ PrintInfoFromSmm (
       Status = GetVariableStatisticsData (CommBuffer, &CommSize);
     }
 
-    if (EFI_ERROR (Status) || (CommSize <= SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE)) { 
+    if (EFI_ERROR (Status) || (CommSize <= SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE)) {
       break;
     }
 
@@ -167,8 +167,8 @@ PrintInfoFromSmm (
 
     if (VariableInfo->Volatile) {
       Print (
-          L"%g R%03d(%03d) W%03d D%03d:%s\n", 
-          &VariableInfo->VendorGuid,  
+          L"%g R%03d(%03d) W%03d D%03d:%s\n",
+          &VariableInfo->VendorGuid,
           VariableInfo->ReadCount,
           VariableInfo->CacheCount,
           VariableInfo->WriteCount,
@@ -178,18 +178,18 @@ PrintInfoFromSmm (
     }
   } while (TRUE);
 
-  FreePool (CommBuffer);  
+  FreePool (CommBuffer);
   return Status;
 }
 
 /**
   The user Entry Point for Application. The user code starts with this function
-  as the real entry point for the image goes into a library that calls this 
+  as the real entry point for the image goes into a library that calls this
   function.
 
-  @param[in] ImageHandle    The firmware allocated handle for the EFI image.  
+  @param[in] ImageHandle    The firmware allocated handle for the EFI image.
   @param[in] SystemTable    A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS       The entry point is executed successfully.
   @retval other             Some error occurs when executing this entry point.
 
@@ -215,7 +215,7 @@ UefiMain (
     if (!EFI_ERROR (Status)) {
       return Status;
     }
-  }  
+  }
 
   if (!EFI_ERROR (Status) && (Entry != NULL)) {
     Print (L"Non-Volatile EFI Variables:\n");
@@ -223,8 +223,8 @@ UefiMain (
     do {
       if (!VariableInfo->Volatile) {
         Print (
-          L"%g R%03d(%03d) W%03d D%03d:%s\n", 
-          &VariableInfo->VendorGuid,  
+          L"%g R%03d(%03d) W%03d D%03d:%s\n",
+          &VariableInfo->VendorGuid,
           VariableInfo->ReadCount,
           VariableInfo->CacheCount,
           VariableInfo->WriteCount,
@@ -241,8 +241,8 @@ UefiMain (
     do {
       if (VariableInfo->Volatile) {
         Print (
-          L"%g R%03d(%03d) W%03d D%03d:%s\n", 
-          &VariableInfo->VendorGuid,  
+          L"%g R%03d(%03d) W%03d D%03d:%s\n",
+          &VariableInfo->VendorGuid,
           VariableInfo->ReadCount,
           VariableInfo->CacheCount,
           VariableInfo->WriteCount,

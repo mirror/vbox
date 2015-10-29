@@ -1,5 +1,5 @@
 /** @file
-  Definition of USB Mass Storage Class and its value, USB Mass Transport Protocol, 
+  Definition of USB Mass Storage Class and its value, USB Mass Transport Protocol,
   and other common definitions.
 
 Copyright (c) 2007 - 2012, Intel Corporation. All rights reserved.<BR>

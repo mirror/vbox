@@ -49,11 +49,11 @@
 
 [Protocols]
   gEfiSmmCommunicationProtocolGuid     ## SOMETIMES_CONSUMES
-  
+
     ## UNDEFINED           # Used to do smm communication
-    ## SOMETIMES_CONSUMES 
-  gEfiSmmVariableProtocolGuid 
-  
+    ## SOMETIMES_CONSUMES
+  gEfiSmmVariableProtocolGuid
+
 [Guids]
   gEfiAuthenticatedVariableGuid        ## SOMETIMES_CONSUMES    ## SystemTable
   gEfiVariableGuid                     ## CONSUMES              ## SystemTable

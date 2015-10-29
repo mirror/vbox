@@ -1163,7 +1163,7 @@ UsbBusAddWantedUsbIoDP (
     DevicePathPtr = DuplicateDevicePath ((EFI_DEVICE_PATH_PROTOCOL *) &mAllUsbClassDevicePath);
   } else if (!IsDevicePathEnd (RemainingDevicePath)) {
     //
-    // If RemainingDevicePath isn't the End of Device Path Node, 
+    // If RemainingDevicePath isn't the End of Device Path Node,
     // Create new Usb device path according to the usb part in remaining device path
     //
     DevicePathPtr = GetUsbDPFromFullDP (RemainingDevicePath);
@@ -1171,7 +1171,7 @@ UsbBusAddWantedUsbIoDP (
     //
     // If RemainingDevicePath is the End of Device Path Node,
     // skip enumerate any device and return EFI_SUCESSS
-    // 
+    //
     return EFI_SUCCESS;
   }
 

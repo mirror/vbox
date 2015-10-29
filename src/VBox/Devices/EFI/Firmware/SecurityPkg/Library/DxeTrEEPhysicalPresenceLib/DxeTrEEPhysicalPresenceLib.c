@@ -8,12 +8,12 @@
   TrEEExecutePendingTpmRequest() will receive untrusted input and do validation.
 
 Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials 
-are licensed and made available under the terms and conditions of the BSD License 
-which accompanies this distribution.  The full text of the license may be found at 
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
 http://opensource.org/licenses/bsd-license.php
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, 
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
@@ -109,9 +109,9 @@ Done:
   @param[in]      PlatformAuth        platform auth value. NULL means no platform auth change.
   @param[in]      CommandCode         Physical presence operation value.
   @param[in, out] PpiFlags            The physical presence interface flags.
-  
+
   @retval TREE_PP_OPERATION_RESPONSE_BIOS_FAILURE  Unknown physical presence operation.
-  @retval TREE_PP_OPERATION_RESPONSE_BIOS_FAILURE  Error occurred during sending command to TPM or 
+  @retval TREE_PP_OPERATION_RESPONSE_BIOS_FAILURE  Error occurred during sending command to TPM or
                                                    receiving response from TPM.
   @retval Others                                   Return code from the TPM device after command execution.
 **/
@@ -171,8 +171,8 @@ TrEEReadUserKey (
   EFI_STATUS                        Status;
   EFI_INPUT_KEY                     Key;
   UINT16                            InputKey;
-      
-  InputKey = 0; 
+
+  InputKey = 0;
   do {
     Status = gBS->CheckEvent (gST->ConIn->WaitForKey);
     if (!EFI_ERROR (Status)) {
@@ -186,24 +186,24 @@ TrEEReadUserKey (
       if ((Key.ScanCode == SCAN_F12) && CautionKey) {
         InputKey = Key.ScanCode;
       }
-    }      
+    }
   } while (InputKey == 0);
 
   if (InputKey != SCAN_ESC) {
     return TRUE;
   }
-  
+
   return FALSE;
 }
 
 /**
   The constructor function register UNI strings into imageHandle.
-  
-  It will ASSERT() if that operation fails and it will always return EFI_SUCCESS. 
+
+  It will ASSERT() if that operation fails and it will always return EFI_SUCCESS.
 
   @param  ImageHandle   The firmware allocated handle for the EFI image.
   @param  SystemTable   A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS   The constructor successfully added string package.
   @retval Other value   The constructor can't add string package.
 **/
@@ -235,12 +235,12 @@ TrEEUserConfirm (
 {
   CHAR16                            *ConfirmText;
   CHAR16                            *TmpStr1;
-  CHAR16                            *TmpStr2; 
+  CHAR16                            *TmpStr2;
   UINTN                             BufSize;
   BOOLEAN                           CautionKey;
   UINT16                            Index;
   CHAR16                            DstStr[81];
-    
+
   TmpStr2     = NULL;
   CautionKey  = FALSE;
   BufSize     = CONFIRM_BUFFER_SIZE;
@@ -263,7 +263,7 @@ TrEEUserConfirm (
       TmpStr1 = TrEEPhysicalPresenceGetStringById (STRING_TOKEN (TPM_WARNING_CLEAR));
       StrnCat (ConfirmText, TmpStr1, (BufSize / sizeof (CHAR16)) - StrLen (ConfirmText) - 1);
       StrnCat (ConfirmText, L" \n\n", (BufSize / sizeof (CHAR16)) - StrLen (ConfirmText) - 1);
-      FreePool (TmpStr1);      
+      FreePool (TmpStr1);
 
       TmpStr1 = TrEEPhysicalPresenceGetStringById (STRING_TOKEN (TPM_CAUTION_KEY));
       StrnCat (ConfirmText, TmpStr1, (BufSize / sizeof (CHAR16)) - StrLen (ConfirmText) - 1);
@@ -285,7 +285,7 @@ TrEEUserConfirm (
       TmpStr1 = TrEEPhysicalPresenceGetStringById (STRING_TOKEN (TPM_WARNING_CLEAR));
       StrnCat (ConfirmText, TmpStr1, (BufSize / sizeof (CHAR16)) - StrLen (ConfirmText) - 1);
       StrnCat (ConfirmText, L" \n\n", (BufSize / sizeof (CHAR16)) - StrLen (ConfirmText) - 1);
-      FreePool (TmpStr1); 
+      FreePool (TmpStr1);
 
       TmpStr1 = TrEEPhysicalPresenceGetStringById (STRING_TOKEN (TPM_CAUTION_KEY));
       StrnCat (ConfirmText, TmpStr1, (BufSize / sizeof (CHAR16)) - StrLen (ConfirmText) - 1);
@@ -311,10 +311,10 @@ TrEEUserConfirm (
 
   DstStr[80] = L'\0';
   for (Index = 0; Index < StrLen (ConfirmText); Index += 80) {
-    StrnCpy(DstStr, ConfirmText + Index, 80);    
-    Print (DstStr);    
+    StrnCpy(DstStr, ConfirmText + Index, 80);
+    Print (DstStr);
   }
-  
+
   FreePool (TmpStr1);
   FreePool (TmpStr2);
   FreePool (ConfirmText);
@@ -323,17 +323,17 @@ TrEEUserConfirm (
     return TRUE;
   }
 
-  return FALSE;  
+  return FALSE;
 }
 
 /**
-  Check if there is a valid physical presence command request. Also updates parameter value 
+  Check if there is a valid physical presence command request. Also updates parameter value
   to whether the requested physical presence command already confirmed by user
- 
-   @param[in]  TcgPpData                 EFI TrEE Physical Presence request data. 
+
+   @param[in]  TcgPpData                 EFI TrEE Physical Presence request data.
    @param[in]  Flags                     The physical presence interface flags.
    @param[out] RequestConfirmed            If the physical presence operation command required user confirm from UI.
-                                             True, it indicates the command doesn't require user confirm, or already confirmed 
+                                             True, it indicates the command doesn't require user confirm, or already confirmed
                                                    in last boot cycle by user.
                                              False, it indicates the command need user confirm from UI.
 
@@ -465,7 +465,7 @@ TrEEExecutePendingTpmRequest (
   } else {
     if (!RequestConfirmed) {
       //
-      // Print confirm text and wait for approval. 
+      // Print confirm text and wait for approval.
       //
       RequestConfirmed = TrEEUserConfirm (TcgPpData->PPRequest
                                           );
@@ -477,7 +477,7 @@ TrEEExecutePendingTpmRequest (
     TcgPpData->PPResponse = TREE_PP_OPERATION_RESPONSE_USER_ABORT;
     NewFlags = Flags;
     if (RequestConfirmed) {
-      TcgPpData->PPResponse = TrEEExecutePhysicalPresence (PlatformAuth, TcgPpData->PPRequest, 
+      TcgPpData->PPResponse = TrEEExecutePhysicalPresence (PlatformAuth, TcgPpData->PPRequest,
                                                            &NewFlags);
     }
   }
@@ -492,7 +492,7 @@ TrEEExecutePendingTpmRequest (
                       EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
                       sizeof (EFI_TREE_PHYSICAL_PRESENCE_FLAGS),
                       &NewFlags
-                      ); 
+                      );
   }
 
   //
@@ -500,7 +500,7 @@ TrEEExecutePendingTpmRequest (
   //
   if ((NewFlags.PPFlags & TREE_VENDOR_LIB_FLAG_RESET_TRACK) == 0) {
     TcgPpData->LastPPRequest = TcgPpData->PPRequest;
-    TcgPpData->PPRequest = TREE_PHYSICAL_PRESENCE_NO_ACTION;    
+    TcgPpData->PPRequest = TREE_PHYSICAL_PRESENCE_NO_ACTION;
   }
 
   //
@@ -547,19 +547,19 @@ TrEEExecutePendingTpmRequest (
 
   Print (L"Rebooting system to make TPM2 settings in effect\n");
   gRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
-  ASSERT (FALSE);  
+  ASSERT (FALSE);
 }
 
 /**
   Check and execute the pending TPM request.
 
-  The TPM request may come from OS or BIOS. This API will display request information and wait 
+  The TPM request may come from OS or BIOS. This API will display request information and wait
   for user confirmation if TPM request exists. The TPM request will be sent to TPM device after
-  the TPM request is confirmed, and one or more reset may be required to make TPM request to 
+  the TPM request is confirmed, and one or more reset may be required to make TPM request to
   take effect.
-  
+
   This API should be invoked after console in and console out are all ready as they are required
-  to display request information and get user input to confirm the request.  
+  to display request information and get user input to confirm the request.
 
   @param[in]  PlatformAuth                   platform auth value. NULL means no platform auth change.
 **/
@@ -609,7 +609,7 @@ TrEEPhysicalPresenceLibProcessRequest (
   DEBUG ((EFI_D_INFO, "[TPM2] PpiFlags = %x\n", PpiFlags.PPFlags));
 
   //
-  // This flags variable controls whether physical presence is required for TPM command. 
+  // This flags variable controls whether physical presence is required for TPM command.
   // It should be protected from malicious software. We set it as read-only variable here.
   //
   Status = gBS->LocateProtocol (&gEdkiiVariableLockProtocolGuid, NULL, (VOID **)&VariableLockProtocol);
@@ -624,7 +624,7 @@ TrEEPhysicalPresenceLibProcessRequest (
       ASSERT_EFI_ERROR (Status);
     }
   }
-  
+
   //
   // Initialize physical presence variable.
   //
@@ -656,7 +656,7 @@ TrEEPhysicalPresenceLibProcessRequest (
 
   //
   // Execute pending TPM request.
-  //  
+  //
   TrEEExecutePendingTpmRequest (PlatformAuth, &TcgPpData, PpiFlags);
   DEBUG ((EFI_D_INFO, "[TPM2] PPResponse = %x (LastPPRequest=%x, Flags=%x)\n", TcgPpData.PPResponse, TcgPpData.LastPPRequest, PpiFlags.PPFlags));
 
@@ -667,7 +667,7 @@ TrEEPhysicalPresenceLibProcessRequest (
 
   The TPM request may come from OS. This API will check if TPM request exists and need user
   input to confirmation.
-  
+
   @retval    TRUE        TPM needs input to confirm user physical presence.
   @retval    FALSE       TPM doesn't need input to confirm user physical presence.
 
@@ -716,7 +716,7 @@ TrEEPhysicalPresenceLibNeedUserConfirm(
   if (EFI_ERROR (Status)) {
     return FALSE;
   }
-  
+
   if (TcgPpData.PPRequest == TREE_PHYSICAL_PRESENCE_NO_ACTION) {
     //
     // No operation request

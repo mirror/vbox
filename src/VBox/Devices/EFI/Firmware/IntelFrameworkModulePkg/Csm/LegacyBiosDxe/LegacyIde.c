@@ -76,7 +76,7 @@ LegacyBiosBuildIdeData (
                                           (VOID *) &LocalHddInfo
                                           );
   if (!EFI_ERROR (Status)) {
-    IdeController = HandleBuffer[0];    
+    IdeController = HandleBuffer[0];
     //
     // Force IDE drive spin up!
     //
@@ -279,8 +279,8 @@ InitLegacyIdeController (
   // and has PCI I/O resources allocated
   //
   Status = gBS->HandleProtocol (
-                  IdeController, 
-                  &gEfiPciIoProtocolGuid, 
+                  IdeController,
+                  &gEfiPciIoProtocolGuid,
                   (VOID **)&PciIo
                   );
   if (EFI_ERROR (Status)) {

@@ -101,14 +101,14 @@ PxeBcSelectBootPrompt (
   //
   // According to the PXE specification 2.1, Table 2-1 PXE DHCP Options,
   // we must not consider a boot prompt or boot menu if all of the following hold:
-  //   - the PXE_DISCOVERY_CONTROL tag(6) is present inside the Vendor Options(43), and has bit 3 set  
+  //   - the PXE_DISCOVERY_CONTROL tag(6) is present inside the Vendor Options(43), and has bit 3 set
   //   - a boot file name has been presented in the initial DHCP or ProxyDHCP offer packet.
   //
   if (IS_DISABLE_PROMPT_MENU (VendorOpt->DiscoverCtrl) &&
       Cache->Dhcp4.OptList[PXEBC_DHCP4_TAG_INDEX_BOOTFILE] != NULL) {
     return EFI_ABORTED;
   }
-  
+
   if (!IS_VALID_BOOT_PROMPT (VendorOpt->BitMap)) {
     return EFI_TIMEOUT;
   }
@@ -470,7 +470,7 @@ PxeBcDhcp4BootInfo (
   UINT16                      Value;
   PXEBC_VENDOR_OPTION         *VendorOpt;
   PXEBC_BOOT_SVR_ENTRY        *Entry;
-  
+
   PxeBc       = &Private->PxeBc;
   Mode        = PxeBc->Mode;
   Status      = EFI_SUCCESS;
@@ -778,8 +778,8 @@ PxeBcExtractDiscoverInfo (
       if (Info->IpCnt >= 1) {
         *DiscoverInfo = AllocatePool (sizeof (*Info) + (Info->IpCnt - 1) * sizeof (**SrvList));
         if (*DiscoverInfo == NULL) {
-          return EFI_OUT_OF_RESOURCES;       
-        }     
+          return EFI_OUT_OF_RESOURCES;
+        }
         CopyMem (*DiscoverInfo, Info, sizeof (*Info));
         Info = *DiscoverInfo;
       }
@@ -940,7 +940,7 @@ PxeBcDiscoverBootFile (
           &Mode->ProxyOffer.Dhcpv4,
           &Mode->PxeReply.Dhcpv4,
           Private->PxeReply.Dhcp4.Packet.Ack.Length
-          );      
+          );
       }
       Mode->ProxyOfferReceived = TRUE;
     }

@@ -138,9 +138,9 @@ typedef struct _EDKII_MEMORY_PROFILE_PROTOCOL EDKII_MEMORY_PROFILE_PROTOCOL;
   @param[in, out] ProfileSize       On entry, points to the size in bytes of the ProfileBuffer.
                                     On return, points to the size of the data returned in ProfileBuffer.
   @param[out]     ProfileBuffer     Profile buffer.
-                      
+
   @return EFI_SUCCESS               Get the memory profile data successfully.
-  @return EFI_BUFFER_TO_SMALL       The ProfileSize is too small for the resulting data. 
+  @return EFI_BUFFER_TO_SMALL       The ProfileSize is too small for the resulting data.
                                     ProfileSize is updated with the size required.
 
 **/

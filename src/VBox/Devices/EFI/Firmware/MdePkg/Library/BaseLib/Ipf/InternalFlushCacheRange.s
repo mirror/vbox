@@ -1,18 +1,18 @@
 //++
 // Copyright (c) 2006 - 2009, Intel Corporation. All rights reserved.<BR>
-// This program and the accompanying materials                          
-// are licensed and made available under the terms and conditions of the BSD License         
-// which accompanies this distribution.  The full text of the license may be found at        
-// http://opensource.org/licenses/bsd-license.php.                                            
-//                                                                                           
-// THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-// WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
-// 
+// This program and the accompanying materials
+// are licensed and made available under the terms and conditions of the BSD License
+// which accompanies this distribution.  The full text of the license may be found at
+// http://opensource.org/licenses/bsd-license.php.
+//
+// THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+// WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+//
 //  Module Name:
-//    InternalFlushCacheRange.s 
+//    InternalFlushCacheRange.s
 //
 //  Abstract:
-//    Assemble routine to flush cache lines 
+//    Assemble routine to flush cache lines
 //
 // Revision History:
 //
@@ -43,7 +43,7 @@
 //  @param  Length  The number of bytes to invalidate from the instruction cache.
 //
 //  @return Address
-//  
+//
 //  VOID *
 //  EFIAPI
 //  InternalFlushCacheRange (
@@ -54,39 +54,39 @@
 PROCEDURE_ENTRY (InternalFlushCacheRange)
 
       NESTED_SETUP (5,8,0,0)
-            
+
       mov         loc2 = ar.lc
-      
+
       mov         loc3 = in0                  // Start address.
       mov         loc4 = in1;;                // Length in bytes.
-      
+
       cmp.eq  p6,p7 = loc4, r0;;               // If Length is zero then don't flush any cache
-      (p6)  br.spnt.many DoneFlushingC;;         
-      
-      add         loc4 = loc4,loc3 
+      (p6)  br.spnt.many DoneFlushingC;;
+
+      add         loc4 = loc4,loc3
       mov         loc5 = 1;;
       sub         loc4 = loc4, loc5 ;; // the End address to flush
-                                         
-      dep         loc3 = r0,loc3,0,5          
-      dep         loc4 = r0,loc4,0,5;;         
-      shr         loc3 = loc3,5             
+
+      dep         loc3 = r0,loc3,0,5
+      dep         loc4 = r0,loc4,0,5;;
+      shr         loc3 = loc3,5
       shr         loc4 = loc4,5;;    // 32 byte cache line
-      
-      sub         loc4 = loc4,loc3;; // total flush count, It should be add 1 but 
-                                     // the br.cloop will first execute one time 
-      mov         loc3 = in0                  
-      mov         loc5 = 32      
+
+      sub         loc4 = loc4,loc3;; // total flush count, It should be add 1 but
+                                     // the br.cloop will first execute one time
+      mov         loc3 = in0
+      mov         loc5 = 32
       mov         ar.lc = loc4;;
 
 StillFlushingC:
-      fc          loc3;; 
+      fc          loc3;;
       sync.i;;
       srlz.i;;
       add         loc3 = loc5,loc3;;
       br.cloop.sptk.few StillFlushingC;;
 
-DoneFlushingC:      
-      mov         ar.lc = loc2     
+DoneFlushingC:
+      mov         ar.lc = loc2
       mov          r8   = in0       // return *Address
       NESTED_RETURN
 

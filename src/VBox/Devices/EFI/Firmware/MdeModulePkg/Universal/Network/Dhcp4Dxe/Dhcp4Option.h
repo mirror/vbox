@@ -1,6 +1,6 @@
 /** @file
   To validate, parse and process the DHCP options.
-  
+
 Copyright (c) 2006 - 2009, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -128,7 +128,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define DHCP_OPTION_MAGIC         0x63538263 // Network byte order
 #define DHCP_MAX_OPTIONS          256
 
- 
+
 //
 // DHCP option types, this is used to validate the DHCP options.
 //

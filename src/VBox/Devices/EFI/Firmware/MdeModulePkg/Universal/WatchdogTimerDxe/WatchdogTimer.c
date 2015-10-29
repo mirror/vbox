@@ -1,6 +1,6 @@
 /** @file
   Implementation of Watchdog Timer Architectural Protocol using UEFI APIs.
-  
+
 Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -74,7 +74,7 @@ WatchdogTimerDriverExpires (
   if (mWatchdogTimerNotifyFunction != NULL) {
     mWatchdogTimerNotifyFunction (mWatchdogTimerPeriod);
   }
-  
+
   DEBUG ((EFI_D_ERROR, "Watchdog Timer reseting system\n"));
 
   //

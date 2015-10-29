@@ -98,9 +98,9 @@ AssignVendorGuid (
 
   @param[in]  VarName           A Null-terminated string that is the name of the vendor's variable.
   @param[in]  VendorGuid        A unique identifier for the vendor.
-  @param[in]  VarData           The content of the variable data.  
-  @param[in]  VarSize           The size of the variable data.  
- 
+  @param[in]  VarData           The content of the variable data.
+  @param[in]  VarSize           The size of the variable data.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_OUT_OF_RESOURCES  Out of memory.
 **/
@@ -152,8 +152,8 @@ AddDataMeasured (
 
   @param[in]  VarName           A Null-terminated string that is the name of the vendor's variable.
   @param[in]  VendorGuid        A unique identifier for the vendor.
-  @param[in]  VarData           The content of the variable data.  
-  @param[in]  VarSize           The size of the variable data.  
+  @param[in]  VarData           The content of the variable data.
+  @param[in]  VarSize           The size of the variable data.
 
   @retval TRUE  The data is already measured.
   @retval FALSE The data is not measured yet.
@@ -198,7 +198,7 @@ IsSecureAuthorityVariable (
   UINTN   Index;
 
   for (Index = 0; Index < sizeof(mVariableType)/sizeof(mVariableType[0]); Index++) {
-    if ((StrCmp (VariableName, mVariableType[Index].VariableName) == 0) && 
+    if ((StrCmp (VariableName, mVariableType[Index].VariableName) == 0) &&
         (CompareGuid (VendorGuid, mVariableType[Index].VendorGuid))) {
       return TRUE;
     }
@@ -211,9 +211,9 @@ IsSecureAuthorityVariable (
 
   @param[in]  VarName           A Null-terminated string that is the name of the vendor's variable.
   @param[in]  VendorGuid        A unique identifier for the vendor.
-  @param[in]  VarData           The content of the variable data.  
-  @param[in]  VarSize           The size of the variable data.  
- 
+  @param[in]  VarData           The content of the variable data.
+  @param[in]  VarSize           The size of the variable data.
+
   @retval EFI_SUCCESS           Operation completed successfully.
   @retval EFI_OUT_OF_RESOURCES  Out of memory.
   @retval EFI_DEVICE_ERROR      The operation was unsuccessful.

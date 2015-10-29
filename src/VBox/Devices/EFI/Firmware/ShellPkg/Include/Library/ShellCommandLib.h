@@ -507,10 +507,10 @@ ShellCommandConsistMappingUnInitialize (
   );
 
 /**
-  Create a consistent mapped name for the device specified by DevicePath 
+  Create a consistent mapped name for the device specified by DevicePath
   based on the Table.
 
-  This must be called after ShellCommandConsistMappingInitialize() and 
+  This must be called after ShellCommandConsistMappingInitialize() and
   before ShellCommandConsistMappingUnInitialize() is called.
 
   @param[in] DevicePath   The pointer to the dev path for the device.

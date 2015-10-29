@@ -420,7 +420,7 @@ TerminalConOutQueryMode (
   //
   // Get Terminal device data structure pointer.
   //
-  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);  
+  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
   *Columns = TerminalDevice->TerminalConsoleModeData[ModeNumber].Columns;
   *Rows    = TerminalDevice->TerminalConsoleModeData[ModeNumber].Rows;
 
@@ -438,7 +438,7 @@ TerminalConOutQueryMode (
   @param ModeNumber    The text mode to set.
 
   @retval EFI_SUCCESS       The requested text mode is set.
-  @retval EFI_DEVICE_ERROR  The requested text mode cannot be set 
+  @retval EFI_DEVICE_ERROR  The requested text mode cannot be set
                             because of serial device error.
   @retval EFI_UNSUPPORTED   The text mode number is not valid.
 
@@ -856,7 +856,7 @@ TerminalIsValidTextGraphics (
   Detects if a valid ASCII char.
 
   @param  Ascii        An ASCII character.
-                       
+
   @retval TRUE         If it is a valid ASCII character.
   @retval FALSE        If it is not a valid ASCII character.
 
@@ -880,7 +880,7 @@ TerminalIsValidAscii (
   Detects if a valid EFI control character.
 
   @param  CharC        An input EFI Control character.
-                       
+
   @retval TRUE         If it is a valid EFI control character.
   @retval FALSE        If it is not a valid EFI control character.
 

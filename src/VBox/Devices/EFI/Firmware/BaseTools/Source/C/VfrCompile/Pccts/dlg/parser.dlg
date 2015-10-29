@@ -65,7 +65,7 @@ void  xxputc(int c) {						/* MR1 */
       fputc(c,OUT);						/* MR1 */
     };								/* MR1 */
   }  								/* MR1 */
-  
+
 #ifdef __USE_PROTOS
   void xxprintf(char *format,char *string) {			/* MR1 */
 #else
@@ -94,13 +94,13 @@ void  xxputc(int c) {						/* MR1 */
 [\r\t\ ]+
 	<<
 		NLA = 2;
-    zzskip();   
+    zzskip();
 	>>
 
 \n
 	<<
 		NLA = 3;
-    zzline++; zzskip(); DAWDLE;   
+    zzline++; zzskip(); DAWDLE;
 	>>
 
 \@
@@ -116,7 +116,7 @@ void  xxputc(int c) {						/* MR1 */
 \%\%[a-zA-Z_][a-zA-Z0-9_]*
 	<<
 		NLA = NAME_PER_PER;
-    p_mode_def(&zzlextext[2],lex_mode_counter++);   
+    p_mode_def(&zzlextext[2],lex_mode_counter++);
 	>>
 
 \<\<\%\%lexmember
@@ -133,7 +133,7 @@ void  xxputc(int c) {						/* MR1 */
 \<\<\%\%lexaction
 	<<
 		NLA = LEXACTION;
-    lexAction=1;zzmode(ACT);  
+    lexAction=1;zzmode(ACT);
 	>>
 
 \<\<\%\%parserclass
@@ -146,7 +146,7 @@ void  xxputc(int c) {						/* MR1 */
 \<\<\%\%lexprefix
 	<<
 		NLA = LEXPREFIX;
-    lexPrefix=1;zzmode(ACT);  
+    lexPrefix=1;zzmode(ACT);
 	>>
 
 \<\<
@@ -222,55 +222,55 @@ void  xxputc(int c) {						/* MR1 */
 \\0[0-7]*
 	<<
 		NLA = OCTAL_VALUE;
-    {int t; sscanf(&zzlextext[1],"%o",&t); zzlextext[0] = t;}  
+    {int t; sscanf(&zzlextext[1],"%o",&t); zzlextext[0] = t;}
 	>>
 
 \\0[Xx][0-9a-fA-F]+
 	<<
 		NLA = HEX_VALUE;
-    {int t; sscanf(&zzlextext[3],"%x",&t); zzlextext[0] = t;}  
+    {int t; sscanf(&zzlextext[3],"%x",&t); zzlextext[0] = t;}
 	>>
 
 \\[1-9][0-9]*
 	<<
 		NLA = DEC_VALUE;
-    {int t; sscanf(&zzlextext[1],"%d",&t); zzlextext[0] = t;}  
+    {int t; sscanf(&zzlextext[1],"%d",&t); zzlextext[0] = t;}
 	>>
 
 \\t
 	<<
 		NLA = TAB;
-    zzlextext[0] = '\t';  
+    zzlextext[0] = '\t';
 	>>
 
 \\n
 	<<
 		NLA = NL;
-    zzlextext[0] = '\n';  
+    zzlextext[0] = '\n';
 	>>
 
 \\r
 	<<
 		NLA = CR;
-    zzlextext[0] = '\r';  
+    zzlextext[0] = '\r';
 	>>
 
 \\b
 	<<
 		NLA = BS;
-    zzlextext[0] = '\b';  
+    zzlextext[0] = '\b';
 	>>
 
 \\ \n
 	<<
 		NLA = CONTINUATION;
-    zzline++; zzskip();  
+    zzline++; zzskip();
 	>>
 
 \\~[tnrb]
 	<<
 		NLA = LIT;
-    zzlextext[0] = zzlextext[1];  
+    zzlextext[0] = zzlextext[1];
 	>>
 
 ~[\\]
@@ -284,7 +284,7 @@ void  xxputc(int c) {						/* MR1 */
 @
 	<<
 		NLA = 1;
-    error("unterminated action", zzline); zzmode(START);   
+    error("unterminated action", zzline); zzmode(START);
 	>>
 
 \>\>
@@ -297,7 +297,7 @@ void  xxputc(int c) {						/* MR1 */
     /* MR1				via <<%%lexmember ...>>			    */
     /* MR1			This is a consequence of not saving actions         */
     /* MR1									    */
-    /* MR1 */	   parserClass=0;		
+    /* MR1 */	   parserClass=0;
     /* MR1 */	   lexPrefix=0;
     /* MR1 */	   lexAction=0;
     /* MR1 */	   lexMember=0;
@@ -306,25 +306,25 @@ void  xxputc(int c) {						/* MR1 */
 \>
 	<<
 		NLA = 34;
-    xxputc(zzlextext[0]); zzskip();   
+    xxputc(zzlextext[0]); zzskip();
 	>>
 
 \\\>
 	<<
 		NLA = 35;
-    xxputc('>'); zzskip();   
+    xxputc('>'); zzskip();
 	>>
 
 \\
 	<<
 		NLA = 36;
-    xxputc('\\'); zzskip();   
+    xxputc('\\'); zzskip();
 	>>
 
 \n
 	<<
 		NLA = 37;
-    xxputc(zzlextext[0]); ++zzline; zzskip();   
+    xxputc(zzlextext[0]); ++zzline; zzskip();
 	>>
 
 /\*
@@ -344,7 +344,7 @@ void  xxputc(int c) {						/* MR1 */
 ~[]
 	<<
 		NLA = 40;
-    xxputc(zzlextext[0]); zzskip();   
+    xxputc(zzlextext[0]); zzskip();
 	>>
 
 
@@ -365,13 +365,13 @@ void  xxputc(int c) {						/* MR1 */
 [\n\r]
 	<<
 		NLA = 42;
-    zzline++; xxputc(zzlextext[0]); zzskip();  
+    zzline++; xxputc(zzlextext[0]); zzskip();
 	>>
 
 ~[]
 	<<
 		NLA = 43;
-    xxputc(zzlextext[0]); zzskip();  
+    xxputc(zzlextext[0]); zzskip();
 	>>
 
 
@@ -392,7 +392,7 @@ void  xxputc(int c) {						/* MR1 */
 ~[]
 	<<
 		NLA = 45;
-    xxputc(zzlextext[0]); zzskip();  
+    xxputc(zzlextext[0]); zzskip();
 	>>
 
 %%

@@ -1,6 +1,6 @@
 /** @file
-  PPI that is installed after the initialization of a serial stream device 
-  is complete.  
+  PPI that is installed after the initialization of a serial stream device
+  is complete.
 
   Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials

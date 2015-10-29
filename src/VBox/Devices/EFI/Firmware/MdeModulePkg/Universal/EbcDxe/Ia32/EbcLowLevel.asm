@@ -1,17 +1,17 @@
 ;/** @file
-;  
+;
 ;    This code provides low level routines that support the Virtual Machine
 ;    for option ROMs.
-;  
+;
 ;  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
 ;  This program and the accompanying materials
 ;  are licensed and made available under the terms and conditions of the BSD License
 ;  which accompanies this distribution.  The full text of the license may be found at
 ;  http://opensource.org/licenses/bsd-license.php
-;  
+;
 ;  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 ;  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
-;  
+;
 ;**/
 
   page    ,132
@@ -133,7 +133,7 @@ EbcLLEbcInterpret PROC PUBLIC
     ; +-----------+
     ; |   Arg16   |
     ; +-----------+
-    ; 
+    ;
 
     ; Construct new stack
     push ebp
@@ -148,7 +148,7 @@ EbcLLEbcInterpret PROC PUBLIC
     add  edi, 4
     mov  ecx, 16
     rep  movsd
-    
+
     ; call C-code
     call EbcInterpret
     add  esp, 44h
@@ -188,15 +188,15 @@ EbcLLExecuteEbcImageEntryPoint PROC PUBLIC
     ; +-----------+
     ; |SystemTable|
     ; +-----------+
-    ; 
-    
+    ;
+
     ; Construct new stack
     mov  [esp - 0Ch], eax
     mov  eax, [esp + 04h]
     mov  [esp - 08h], eax
     mov  eax, [esp + 08h]
     mov  [esp - 04h], eax
-    
+
     ; call C-code
     sub  esp, 0Ch
     call ExecuteEbcImageEntryPoint

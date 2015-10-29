@@ -31,11 +31,11 @@ DumpLoadedImageProtocolInfo (
   CHAR16 *TheString;
 
   TheString = GetProtocolInformationDump(TheHandle, &gEfiLoadedImageProtocolGuid, TRUE);
-  
+
   ShellPrintEx(-1, -1, L"%s", TheString);
 
   SHELL_FREE_NON_NULL(TheString);
-  
+
   return (EFI_SUCCESS);
 }
 
@@ -117,7 +117,7 @@ ShellCommandRunUnload (
         if (ShellCommandLineGetFlag(Package, L"-v") || ShellCommandLineGetFlag(Package, L"-verbose")) {
           DumpLoadedImageProtocolInfo(TheHandle);
         }
-        
+
         if (!ShellCommandLineGetFlag(Package, L"-n")) {
           Status = ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN(STR_UNLOAD_CONF), gShellDriver1HiiHandle, (UINTN)TheHandle);
           Status = ShellPromptForResponse(ShellPromptResponseTypeYesNo, NULL, (VOID**)&Resp);

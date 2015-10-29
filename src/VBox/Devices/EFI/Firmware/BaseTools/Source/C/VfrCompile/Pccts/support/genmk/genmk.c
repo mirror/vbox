@@ -193,7 +193,7 @@ char *t;
 		pSor(NULL);
 		warn("sorcerer input file before any '-sor' option");
 	}
-		
+
 	require(num_sfiles[num_sors-1]<MAX_SFILES,
 		 "exceeded max # of sorcerer input files");
 	sfiles[num_sors-1][num_sfiles[num_sors-1]++] = t;
@@ -378,10 +378,10 @@ char **argv;
 #endif
 {
 	int i;
-	
+
 	if ( argc == 1 ) { help(); DIE; }
 	for(i=0;i<MAX_SORS;i++) num_sfiles[i]=0;
-	
+
 	ProcessArgs(argc-1, &(argv[1]), options);
 
 	strcpy(ATOKENBUFFER_O, ATOKENBUFFER_C);
@@ -476,7 +476,7 @@ char **argv;
 	else printf("# ANTLR-defined token types\n");
 	printf("#\n");
 /***********
-	printf(".SUFFIXES:\n.SUFFIXES:\t.o .cpp .c .h .g .i .dlg .sor\n"); 
+	printf(".SUFFIXES:\n.SUFFIXES:\t.o .cpp .c .h .g .i .dlg .sor\n");
  ***********/
 	if ( user_token_types!=NULL ) {
 		printf("# Make sure #tokdefs directive in ANTLR grammar lists this file:\n");
@@ -821,7 +821,7 @@ char **argv;
 			pclasses(&sclasses[i], 1, CPP_FILE_SUFFIX_NO_DOT);
 			printf(" ");
 			pclasses(&sclasses[i], 1, "h");
-			if ( strcmp(hdr,"stdpccts.h")!=0 ) 
+			if ( strcmp(hdr,"stdpccts.h")!=0 )
 			{
 				printf(" ");
 				printf("$(HDR_FILE) stdpccts.h");
@@ -842,7 +842,7 @@ char **argv;
 		printf("STreeParser%s ",OBJ_FILE_SUFFIX);
 		printf("$(SOR_LIB)%sSTreeParser.cpp\n\n",DirectorySymbol);
 	}
-	
+
 	printf("$(ANTLR_SPAWN) : $(GRM)\n");
 	printf("\t$(ANTLR) $(AFLAGS) $(GRM)\n");
 
@@ -1056,7 +1056,7 @@ char *DIR()
 #endif
 {
 	static char buf[200+1];
-	
+
 	if ( strcmp(outdir,TopDirectory)==0 ) return "";
 	sprintf(buf, "%s%s", outdir, DirectorySymbol);
 	return buf;

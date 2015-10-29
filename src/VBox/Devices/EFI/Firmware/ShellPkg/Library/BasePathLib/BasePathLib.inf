@@ -31,7 +31,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   ShellPkg/ShellPkg.dec
-  
+
 
 [LibraryClasses]
   BaseMemoryLib

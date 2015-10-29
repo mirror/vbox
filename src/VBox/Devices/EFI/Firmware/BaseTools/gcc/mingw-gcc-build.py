@@ -332,7 +332,7 @@ class SourceFiles:
                         print '* You can try to download this file separately',
                         print 'and rerun this script'
                         raise Exception()
-                
+
                 except KeyboardInterrupt:
                     print '[KeyboardInterrupt]'
                     return False

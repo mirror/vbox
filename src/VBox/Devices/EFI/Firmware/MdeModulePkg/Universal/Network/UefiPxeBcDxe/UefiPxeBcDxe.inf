@@ -34,7 +34,7 @@
 #
 #  VALID_ARCHITECTURES           = IA32 X64 IPF
 #
-#  DRIVER_BINDING                =  gPxeBcDriverBinding                        
+#  DRIVER_BINDING                =  gPxeBcDriverBinding
 #  COMPONENT_NAME                =  gPxeBcComponentName
 #  COMPONENT_NAME2               =  gPxeBcComponentName2
 #
@@ -51,7 +51,7 @@
   PxeBcDhcp.c
   PxeBcMtftp.h
   PxeBcDriver.h
- 
+
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -85,8 +85,8 @@
   gEfiIp4ServiceBindingProtocolGuid                ## TO_START
   gEfiIp4ProtocolGuid                              ## TO_START
 
-[Pcd]  
-  gEfiMdeModulePkgTokenSpaceGuid.PcdTftpBlockSize  ## SOMETIMES_CONSUMES  
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTftpBlockSize  ## SOMETIMES_CONSUMES
 
 [UserExtensions.TianoCore."ExtraFiles"]
   UefiPxe4BcDxeExtra.uni

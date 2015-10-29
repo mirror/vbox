@@ -16,8 +16,8 @@
     .code
 
 ;
-; FspInfoHeaderRelativeOff is patched during build process and initialized to offset of the  AsmGetFspBaseAddress 
-; from the FSP Info header. 
+; FspInfoHeaderRelativeOff is patched during build process and initialized to offset of the  AsmGetFspBaseAddress
+; from the FSP Info header.
 ;
 FspInfoHeaderRelativeOff    PROC      NEAR    PUBLIC
    ;
@@ -27,7 +27,7 @@ FspInfoHeaderRelativeOff    PROC      NEAR    PUBLIC
 FspInfoHeaderRelativeOff    ENDP
 
 ;
-; Returns FSP Base Address. 
+; Returns FSP Base Address.
 ;
 ; This function gets the FSP Info Header using relative addressing and returns the FSP Base from the header structure
 ;
@@ -45,13 +45,13 @@ AsmGetFspBaseAddress        ENDP
 AsmGetFspBaseAddressNoStack    PROC      NEAR    PUBLIC
    mov   eax, AsmGetFspBaseAddress
    sub   eax, dword ptr [FspInfoHeaderRelativeOff]
-   add   eax, 01Ch   
+   add   eax, 01Ch
    mov   eax, dword ptr [eax]
    jmp   edi
 AsmGetFspBaseAddressNoStack    ENDP
 
 ;
-; Returns FSP Info Header. 
+; Returns FSP Info Header.
 ;
 ; This function gets the FSP Info Header using relative addressing and returns it
 ;

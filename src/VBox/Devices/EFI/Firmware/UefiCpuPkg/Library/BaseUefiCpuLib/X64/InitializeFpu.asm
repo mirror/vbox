@@ -15,7 +15,7 @@
 
 .const
 ;
-; Float control word initial value: 
+; Float control word initial value:
 ; all exceptions masked, double-extended-precision, round-to-nearest
 ;
 mFpuControlWord       DW      037Fh
@@ -23,7 +23,7 @@ mFpuControlWord       DW      037Fh
 ; Multimedia-extensions control word:
 ; all exceptions masked, round-to-nearest, flush to zero for masked underflow
 ;
-mMmxControlWord       DD      01F80h 
+mMmxControlWord       DD      01F80h
 
 .code
 
@@ -41,12 +41,12 @@ InitializeFloatingPointUnits PROC PUBLIC
     ;
     ; Initialize floating point units
     ;
-    ; The following opcodes stand for instruction 'finit' 
+    ; The following opcodes stand for instruction 'finit'
     ; to be supported by some 64-bit assemblers
     ;
     DB      9Bh, 0DBh, 0E3h
     fldcw   mFpuControlWord
-    
+
     ;
     ; Set OSFXSR bit 9 in CR4
     ;
@@ -55,7 +55,7 @@ InitializeFloatingPointUnits PROC PUBLIC
     mov     cr4, rax
 
     ldmxcsr mMmxControlWord
-    
+
     ret
 InitializeFloatingPointUnits ENDP
 

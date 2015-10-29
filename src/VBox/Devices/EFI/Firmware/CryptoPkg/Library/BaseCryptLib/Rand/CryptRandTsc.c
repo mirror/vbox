@@ -69,7 +69,7 @@ RandomSeed (
       sizeof (DefaultSeed),
       "UEFI Crypto Library default seed (%ld)",
       AsmReadTsc ()
-      ); 
+      );
 
     RAND_seed (DefaultSeed, sizeof (DefaultSeed));
   }

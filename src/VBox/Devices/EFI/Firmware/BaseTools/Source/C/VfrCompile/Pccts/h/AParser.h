@@ -228,7 +228,7 @@ public:
 	virtual ~ANTLRParser();
 
 	virtual void init();
-	
+
 	ANTLRTokenType LA(int i)
 	{
 //
@@ -274,7 +274,7 @@ public:
 					 SetWordType *whatFollows);
 	virtual int _match_wdfltsig(ANTLRTokenType tokenWanted,
 					 SetWordType *whatFollows);
-	
+
 	const ANTLRChar * parserTokenName(int tok);			// MR1
 
     int                 traceOptionValueDefault;        // MR11

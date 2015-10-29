@@ -1,16 +1,16 @@
 /** @file
 
-  This library registers CRC32 guided section handler 
+  This library registers CRC32 guided section handler
   to parse CRC32 encapsulation section and extract raw data.
 
 Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -89,7 +89,7 @@ PeiCrc32GuidedSectionExtractLibCalculateCrc32 (
   if (Data == NULL || DataSize == 0 || CrcOut == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   //
   // Initialize CRC32 table.
   //
@@ -120,7 +120,7 @@ PeiCrc32GuidedSectionExtractLibCalculateCrc32 (
 /**
 
   GetInfo gets raw data size and attribute of the input guided section.
-  It first checks whether the input guid section is supported. 
+  It first checks whether the input guid section is supported.
   If not, EFI_INVALID_PARAMETER will return.
 
   @param InputSection       Buffer containing the input GUIDed section to be processed.
@@ -128,7 +128,7 @@ PeiCrc32GuidedSectionExtractLibCalculateCrc32 (
   @param ScratchBufferSize  The size of ScratchBuffer.
   @param SectionAttribute   The attribute of the input guided section.
 
-  @retval EFI_SUCCESS            The size of destination buffer, the size of scratch buffer and 
+  @retval EFI_SUCCESS            The size of destination buffer, the size of scratch buffer and
                                  the attribute of the input section are successull retrieved.
   @retval EFI_INVALID_PARAMETER  The GUID in InputSection does not match this instance guid.
 
@@ -181,7 +181,7 @@ Crc32GuidedSectionGetInfo (
 
   Extraction handler tries to extract raw data from the input guided section.
   It also does authentication check for 32bit CRC value in the input guided section.
-  It first checks whether the input guid section is supported. 
+  It first checks whether the input guid section is supported.
   If not, EFI_INVALID_PARAMETER will return.
 
   @param InputSection    Buffer containing the input GUIDed section to be processed.
@@ -217,7 +217,7 @@ Crc32GuidedSectionHandler (
         &(((EFI_GUID_DEFINED_SECTION2 *) InputSection)->SectionDefinitionGuid))) {
       return EFI_INVALID_PARAMETER;
     }
-  
+
     //
     // Get section Crc32 checksum.
     //
@@ -239,7 +239,7 @@ Crc32GuidedSectionHandler (
         &(((EFI_GUID_DEFINED_SECTION *) InputSection)->SectionDefinitionGuid))) {
       return EFI_INVALID_PARAMETER;
     }
-  
+
     //
     // Get section Crc32 checksum.
     //

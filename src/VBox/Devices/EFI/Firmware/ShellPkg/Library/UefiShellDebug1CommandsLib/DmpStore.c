@@ -1,6 +1,6 @@
 /** @file
   Main file for DmpStore shell Debug1 function.
-   
+
   (C) Copyright 2013-2014, Hewlett-Packard Development Company, L.P.
   Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
@@ -52,7 +52,7 @@ GetAttrType (
 
   BufLen      = 0;
   RetString   = NULL;
- 
+
   if ((Atts & EFI_VARIABLE_NON_VOLATILE) != 0) {
     StrnCatGrow (&RetString, &BufLen, L"+NV", 0);
   }
@@ -122,11 +122,11 @@ LoadVariablesFromFile (
   if (EFI_ERROR (Status)) {
     return SHELL_DEVICE_ERROR;
   }
-  
+
   ShellStatus = SHELL_SUCCESS;
-  
+
   InitializeListHead (&List);
-  
+
   Position = 0;
   while (Position < FileSize) {
     //
@@ -185,7 +185,7 @@ LoadVariablesFromFile (
     }
 
     Position += BufferSize + sizeof (Crc32);
-    
+
     Variable = AllocateZeroPool (sizeof (*Variable) + NameSize + DataSize);
     if (Variable == NULL) {
       FreePool (Buffer);
@@ -204,20 +204,20 @@ LoadVariablesFromFile (
     InsertTailList (&List, &Variable->Link);
     FreePool (Buffer);
   }
-    
+
   if ((Position != FileSize) || (ShellStatus != SHELL_SUCCESS)) {
     ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_DMPSTORE_LOAD_BAD_FILE), gShellDebug1HiiHandle);
     if (Position != FileSize) {
       ShellStatus = SHELL_VOLUME_CORRUPTED;
     }
   }
-  
+
   for ( Link = GetFirstNode (&List)
       ; !IsNull (&List, Link) && (ShellStatus == SHELL_SUCCESS)
       ; Link = GetNextNode (&List, Link)
       ) {
     Variable = CR (Link, DMP_STORE_VARIABLE, Link, DMP_STORE_VARIABLE_SIGNATURE);
-    
+
     if (((Name == NULL) || gUnicodeCollation->MetaiMatch (gUnicodeCollation, Variable->Name, (CHAR16 *) Name)) &&
         ((Guid == NULL) || CompareGuid (&Variable->Guid, Guid))
        ) {
@@ -334,19 +334,19 @@ AppendSingleVariableToFile (
   Status = ShellWriteFile (FileHandle, &BufferSize, Buffer);
   FreePool (Buffer);
 
-  if (!EFI_ERROR (Status) && 
+  if (!EFI_ERROR (Status) &&
       (BufferSize != sizeof (NameSize) + sizeof (DataSize) + sizeof (*Guid) + sizeof (Attributes) + NameSize + DataSize)
     ) {
     Status = EFI_DEVICE_ERROR;
   }
-  
+
   return Status;
 }
 
 /**
   Recursive function to display or delete variables.
 
-  This function will call itself to create a stack-based list of allt he variables to process, 
+  This function will call itself to create a stack-based list of allt he variables to process,
   then fromt he last to the first, they will do either printing or deleting.
 
   This is necessary since once a delete happens GetNextVariableName() will work.
@@ -440,9 +440,9 @@ CascadeProcessVariables (
   // No matter what happened we process our own variable
   // Only continue if Guid and VariableName are each either NULL or a match
   //
-  if ( ( Name == NULL 
+  if ( ( Name == NULL
       || gUnicodeCollation->MetaiMatch(gUnicodeCollation, FoundVarName, (CHAR16*) Name) )
-     && ( Guid == NULL 
+     && ( Guid == NULL
       || CompareGuid(&FoundVarGuid, Guid) )
       ) {
     DataSize      = 0;
@@ -571,7 +571,7 @@ ProcessVariables (
       ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_DMPSTORE_NO_VAR_FOUND), gShellDebug1HiiHandle);
     } else if (Name == NULL && Guid != NULL) {
       ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_DMPSTORE_NO_VAR_FOUND_G), gShellDebug1HiiHandle, Guid);
-    } 
+    }
     return (SHELL_NOT_FOUND);
   }
   return (ShellStatus);

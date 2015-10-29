@@ -1,17 +1,17 @@
 @REM @file
-@REM   This stand-alone program is typically called by the edksetup.bat file, 
+@REM   This stand-alone program is typically called by the edksetup.bat file,
 @REM   however it may be executed directly from the BaseTools project folder
 @REM   if the file is not executed within a WORKSPACE\BaseTools folder.
 @REM
 @REM Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 @REM
 @REM This program and the accompanying materials are licensed and made available
-@REM under the terms and conditions of the BSD License which accompanies this 
+@REM under the terms and conditions of the BSD License which accompanies this
 @REM distribution.  The full text of the license may be found at:
 @REM   http://opensource.org/licenses/bsd-license.php
 @REM
 @REM THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-@REM WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR 
+@REM WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR
 @REM IMPLIED.
 @REM
 
@@ -265,10 +265,10 @@ goto end
     @REM see if we can find FreezePython.ex
     if exist "%PYTHON_HOME%\Tools\cx_Freeze-3.0.3\FreezePython.exe" (
       set PYTHON_FREEZER_PATH=%PYTHON_HOME%\Tools\cx_Freeze-3.0.3
-    ) 
+    )
     if exist "%PYTHON_HOME%\Tools\cx_Freeze\FreezePython.exe" (
       set PYTHON_FREEZER_PATH=%PYTHON_HOME%\Tools\cx_Freeze
-    ) 
+    )
     if exist "C:\cx_Freeze\FreezePython.exe" (
         set PYTHON_FREEZER_PATH=C:\cx_Freeze
     )
@@ -286,7 +286,7 @@ goto end
       set PATHEXT=%PATHEXT%;.py
     )
   )
-  
+
   echo BASE_TOOLS_PATH     = %BASE_TOOLS_PATH%
   echo     PYTHON_PATH     = %PYTHON_PATH%
   echo PYTHON_FREEZER_PATH = %PYTHON_FREEZER_PATH%
@@ -342,11 +342,11 @@ goto end
   @echo.
   echo  Usage: "%0 [-h | -help | --help | /h | /help | /?] [ Rebuild | ForceRebuild ] [Reconfig] [base_tools_path [edk_tools_path]]"
   @echo.
-  @echo         base_tools_path   BaseTools project path, BASE_TOOLS_PATH will be set to this path. 
+  @echo         base_tools_path   BaseTools project path, BASE_TOOLS_PATH will be set to this path.
   @echo         edk_tools_path    EDK_TOOLS_PATH will be set to this path.
-  @echo         Rebuild           If sources are available perform an Incremental build, only 
+  @echo         Rebuild           If sources are available perform an Incremental build, only
   @echo                           build those updated tools.
-  @echo         ForceRebuild      If sources are available, rebuild all tools regardless of 
+  @echo         ForceRebuild      If sources are available, rebuild all tools regardless of
   @echo                           whether they have been updated or not.
   @echo         Reconfig          Reinstall target.txt, tools_def.txt and build_rule.txt.
   @echo.

@@ -58,7 +58,7 @@ static int class_nest_level = 0;
 
 /* MR20 G. Hobbelt extern definitions moved to antlr.h */
 
-  
+
 
 void
 #ifdef __USE_PROTOS
@@ -81,7 +81,7 @@ grammar()
       if ( (LA(1)==94) ) {
         zzmatch(94); zzCONSUME;
         zzmatch(Action);
-        
+
         if ( HdrAction==NULL ) {
           HdrAction = (char *) calloc(strlen(LATEXT(1))+1, sizeof(char));
           require(HdrAction!=NULL, "rule grammar: cannot allocate header action");
@@ -95,7 +95,7 @@ grammar()
         if ( (LA(1)==95) ) {
           zzmatch(95); zzCONSUME;
           zzmatch(Action);
-          
+
           if ( FirstAction==NULL ) {
             FirstAction = (char *) calloc(strlen(LATEXT(1))+1, sizeof(char));
             require(FirstAction!=NULL, "rule grammar: cannot allocate #first action");
@@ -110,7 +110,7 @@ grammar()
           if ( (LA(1)==96) ) {
             zzmatch(96); zzCONSUME;
             zzmatch(QuotedTerm);
-            
+
             if ( GenCC ) {
               warn("#parser meta-op incompatible with -CC; ignored");
             }
@@ -220,7 +220,7 @@ grammar()
                           else {
                             if ( (LA(1)==98) ) {
                               zzmatch(98);
-                              
+
                               if ( class_nest_level==0 )
                               warn("missing class definition for trailing '}'");
                               class_nest_level--;
@@ -256,7 +256,7 @@ grammar()
         rule();
         if ( zzaArg(zztasp2,1 ).left!=NULL ) {
           g.right = NULL;
-          
+
 /* MR21a */             /*  Avoid use of a malformed graph when CannotContinue */
           /* MR21a */             /*  is already set                                     */
           /* MR21a */
@@ -292,7 +292,7 @@ grammar()
                   else {
                     if ( (LA(1)==98) ) {
                       zzmatch(98);
-                      
+
                       if ( class_nest_level==0 )
                       warn("missing class definition for trailing '}'");
                       class_nest_level--;
@@ -360,7 +360,7 @@ grammar()
                     else {
                       if ( (LA(1)==98) ) {
                         zzmatch(98);
-                        
+
                         if ( class_nest_level==0 )
                         warn("missing class definition for trailing '}'");
                         class_nest_level--;
@@ -386,7 +386,7 @@ grammar()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd1, 0x10);
   }
@@ -427,7 +427,7 @@ class_def()
     zzEXIT(zztasp2);
     }
   }
-  
+
   if ( CurrentClassName[0]!='\0' && strcmp(CurrentClassName,name)!=0
   && GenCC ) {
     err("only one grammar class allowed in this release");
@@ -467,7 +467,7 @@ class_def()
     }
   }
   zzmatch(102);
-  
+
   no_classes_found = 0;
   if ( class_nest_level>=1 ) {warn("cannot have nested classes");}
   else class_nest_level++;
@@ -477,7 +477,7 @@ class_def()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd1, 0x40);
   }
@@ -494,8 +494,8 @@ rule()
   zzBLOCK(zztasp1);
   zzMake0;
   {
-  
-  
+
+
 			ExceptionGroup *eg;
   RuleEntry *q; Junction *p; Graph r; int f, l; ECnode *e;
   set toksrefd, rulesrefd;
@@ -620,7 +620,7 @@ rule()
     zzEXIT(zztasp2);
     }
   }
-  
+
   if ( GenEClasseForRules && q!=NULL ) {
     e = newECnode;
     require(e!=NULL, "cannot allocate error class node");
@@ -671,9 +671,9 @@ rule()
   CurRuleBlk->end = p;
   if ( q!=NULL ) q->rulenum = NumRules;
   zzaArg(zztasp1,7) = r;
-  
+
   /* MR23 */      CurBlockID_array[BlkLevel] = (-1);
-  /* MR23 */      CurAltNum_array[BlkLevel] = (-1);                
+  /* MR23 */      CurAltNum_array[BlkLevel] = (-1);
   --BlkLevel;
   altFixup();leFixup();egFixup();
   zzmatch(107);
@@ -726,7 +726,7 @@ rule()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd2, 0x10);
   }
@@ -746,7 +746,7 @@ laction()
   char *a;
   zzmatch(108); zzCONSUME;
   zzmatch(Action);
-  
+
   a = (char *) calloc(strlen(LATEXT(1))+1, sizeof(char));
   require(a!=NULL, "rule laction: cannot allocate action");
   strcpy(a, LATEXT(1));
@@ -757,7 +757,7 @@ laction()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd2, 0x20);
   }
@@ -777,7 +777,7 @@ lmember()
   char *a;
   zzmatch(109); zzCONSUME;
   zzmatch(Action);
-  
+
   /* MR1 */		if (! GenCC) {
     /* MR1 */		  err("Use #lexmember only in C++ mode (to insert code in DLG class header");
     /* MR1 */	        } else {
@@ -793,7 +793,7 @@ lmember()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd2, 0x40);
   }
@@ -813,7 +813,7 @@ lprefix()
   char *a;
   zzmatch(110); zzCONSUME;
   zzmatch(Action);
-  
+
   /* MR1 */		if (! GenCC) {
     /* MR1 */		  err("Use #lexprefix only in C++ mode (to insert code in DLG class header");
     /* MR1 */	        } else {
@@ -829,7 +829,7 @@ lprefix()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd2, 0x80);
   }
@@ -854,7 +854,7 @@ aPred()
   int           save_line;
   int           predExprPresent=0;
   zzmatch(111);
-  
+
   MR_usingPredNames=1;      /* will need to use -mrhoist version of genPredTree */
  zzCONSUME;
 
@@ -862,13 +862,13 @@ aPred()
   name=mystrdup(LATEXT(1));
  zzCONSUME;
 
-  
+
   /* don't free - referenced in predicates */
-  
+
             CurPredName=(char *)calloc(1,strlen(name) + 10);
   strcat(CurPredName,"#pred ");
   strcat(CurPredName,name);
-  
+
             predEntry=(PredEntry *) hash_get(Pname,name);
   if (predEntry != NULL) {
   warnFL(eMsg1("#pred %s previously defined - ignored",name),
@@ -904,12 +904,12 @@ aPred()
         }
       }
       if (predLiteral != NULL && name != NULL) {
-        
+
                       /*
         *  predExpr may be NULL due to syntax errors
         *    or simply omitted by the user
         */
-        
+
                       predEntry=newPredEntry(name);
         predEntry->file=save_file;
         predEntry->line=save_line;
@@ -996,7 +996,7 @@ predOrExpr()
   Predicate     **tail=NULL;
    predExpr  = predAndExpr();
 
-  
+
   ORnode=new_pred();
   ORnode->expr=PRED_OR_LIST;
   if (predExpr != NULL) {
@@ -1011,7 +1011,7 @@ predOrExpr()
       zzmatch(112); zzCONSUME;
        predExpr  = predAndExpr();
 
-      
+
       if (predExpr != NULL) {
         *tail=predExpr;
         tail=&predExpr->right;
@@ -1021,14 +1021,14 @@ predOrExpr()
     zzEXIT(zztasp2);
     }
   }
-  
+
   _retv=ORnode;
   ORnode=NULL;
   zzEXIT(zztasp1);
   return _retv;
 fail:
   zzEXIT(zztasp1);
-  predicate_free(ORnode);  
+  predicate_free(ORnode);
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd3, 0x20);
   return _retv;
@@ -1053,7 +1053,7 @@ predAndExpr()
   Predicate     **tail=NULL;
    predExpr  = predPrimary();
 
-  
+
   ANDnode=new_pred();
   ANDnode->expr=PRED_AND_LIST;
   if (predExpr != NULL) {
@@ -1068,7 +1068,7 @@ predAndExpr()
       zzmatch(113); zzCONSUME;
        predExpr  = predPrimary();
 
-      
+
       if (predExpr != NULL) {
         *tail=predExpr;
         tail=&predExpr->right;
@@ -1078,14 +1078,14 @@ predAndExpr()
     zzEXIT(zztasp2);
     }
   }
-  
+
   _retv=ANDnode;
   ANDnode=NULL;
   zzEXIT(zztasp1);
   return _retv;
 fail:
   zzEXIT(zztasp1);
-  predicate_free(ANDnode);  
+  predicate_free(ANDnode);
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd3, 0x40);
   return _retv;
@@ -1105,7 +1105,7 @@ predPrimary()
   PCCTS_PURIFY(_retv,sizeof(Predicate *  ))
   zzMake0;
   {
-  
+
   char          *name=NULL;
   PredEntry     *predEntry=NULL;
   Predicate     *predExpr=NULL;
@@ -1114,7 +1114,7 @@ predPrimary()
     name=mystrdup(LATEXT(1));
  zzCONSUME;
 
-    
+
     predEntry=(PredEntry *) hash_get(Pname,name);
     if (predEntry == NULL) {
       warnFL(eMsg1("no previously defined #pred with name \"%s\"",name),
@@ -1133,7 +1133,7 @@ predPrimary()
        predExpr  = predOrExpr();
 
       zzmatch(115);
-      
+
       _retv=predExpr;
  zzCONSUME;
 
@@ -1143,7 +1143,7 @@ predPrimary()
         zzmatch(103); zzCONSUME;
          predExpr  = predPrimary();
 
-        
+
         predExpr->inverted=!predExpr->inverted;
         _retv=predExpr;
       }
@@ -1154,7 +1154,7 @@ predPrimary()
   return _retv;
 fail:
   zzEXIT(zztasp1);
-  
+
   predicate_free(predExpr);
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd3, 0x80);
@@ -1182,7 +1182,7 @@ aLexclass()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd4, 0x1);
   }
@@ -1322,7 +1322,7 @@ error()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd4, 0x4);
   }
@@ -1389,7 +1389,7 @@ tclass()
     zzEXIT(zztasp2);
     }
   }
-  
+
   /* MR23 */         if (p!= NULL && akaString != NULL) {
     /* MR23 */           if (p->akaString != NULL) {
       /* MR23 */             if (strcmp(p->akaString,akaString) != 0) {
@@ -1492,7 +1492,7 @@ tclass()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd4, 0x20);
   }
@@ -1598,7 +1598,7 @@ token()
     {
     if ( (LA(1)==Action) ) {
       zzmatch(Action);
-      
+
       a = (char *) calloc(strlen(LATEXT(1))+1, sizeof(char));
       require(a!=NULL, "rule token: cannot allocate action");
       strcpy(a, LATEXT(1));
@@ -1647,7 +1647,7 @@ token()
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd5, 0x10);
   }
@@ -1666,7 +1666,7 @@ set *rulesrefd ;
   zzBLOCK(zztasp1);
   zzMake0;
   {
-  
+
   Graph g, b;
   set saveblah;
   int saveinalt = inAlt;
@@ -1677,12 +1677,12 @@ set *rulesrefd ;
   CurBlockID++;
   /* MR23 */      CurBlockID_array[BlkLevel] = CurBlockID;
   CurAltNum = 1;
-  /* MR23 */      CurAltNum_array[BlkLevel] = CurAltNum;                
+  /* MR23 */      CurAltNum_array[BlkLevel] = CurAltNum;
   saveblah = attribsRefdFromAction;
   attribsRefdFromAction = empty;
   alt( toksrefd,rulesrefd );
   b = g = zzaArg(zztasp1,1);
-  
+
   if ( ((Junction *)g.left)->p1->ntype == nAction )
   {
     ActionNode *actionNode=(ActionNode *)
@@ -1704,7 +1704,7 @@ set *rulesrefd ;
     while ( (LA(1)==133) ) {
        eg  = exception_group();
 
-      
+
       if ( eg!=NULL ) {
         /* MR7 *****       	eg->altID = makeAltID(CurBlockID,CurAltNum);        *****/
         /* MR7 *****		CurAltStart->exception_label = eg->altID;           *****/
@@ -1728,7 +1728,7 @@ set *rulesrefd ;
 
       alt( toksrefd,rulesrefd );
       g = Or(g, zzaArg(zztasp2,2));
-      
+
       ((Junction *)g.left)->blockid = CurBlockID;
       {
         zzBLOCK(zztasp3);
@@ -1737,7 +1737,7 @@ set *rulesrefd ;
         while ( (LA(1)==133) ) {
            eg  = exception_group();
 
-          
+
           if ( eg!=NULL ) {
             /* MR7 *****       	eg->altID = makeAltID(CurBlockID,CurAltNum);        *****/
             /* MR7 *****		CurAltStart->exception_label = eg->altID;           *****/
@@ -1761,7 +1761,7 @@ set *rulesrefd ;
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd5, 0x20);
   }
@@ -1783,7 +1783,7 @@ set *rulesrefd ;
   int n=0; Graph g; int e_num=0, old_not=0; Node *node; set elems, dif;
   int first_on_line = 1, use_def_MT_handler = 0;
   g.left=NULL; g.right=NULL;
-  
+
 			CurAltStart = NULL;
   elems = empty;
   inAlt = 1;
@@ -1833,7 +1833,7 @@ set *rulesrefd ;
        node  = element( old_not, first_on_line, use_def_MT_handler );
 
       if ( node!=NULL && node->ntype!=nAction ) first_on_line = 0;
-      
+
       if ( zzaArg(zztasp2,2 ).left!=NULL ) {
         g = Cat(g, zzaArg(zztasp2,2));
         n++;
@@ -1887,7 +1887,7 @@ inAlt = 0;
   return;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd6, 0x2);
   }
@@ -1911,7 +1911,7 @@ element_label()
   lab = mystrdup(LATEXT(1));
  zzCONSUME;
 
-  
+
   UsedNewStyleLabel = 1;
   if ( UsedOldStyleAttrib ) err("cannot mix with new-style labels with old-style $i");
   t = (TermEntry *) hash_get(Tname, lab);
@@ -1969,7 +1969,7 @@ int use_def_MT_handler ;
   PCCTS_PURIFY(_retv,sizeof(Node *  ))
   zzMake0;
   {
-  
+
   Attrib blk;
   Predicate *pred = NULL;
   int local_use_def_MT_handler=0;
@@ -1984,9 +1984,9 @@ int use_def_MT_handler ;
   int   ampersandStyle;
   int   height;         /* MR11 */
   int   equal_height;   /* MR11 */
-  
+
           char* pFirstSetSymbol = NULL; /* MR21 */
-  
+
 		  _retv = NULL;
   if ( (setwd6[LA(1)]&0x8) ) {
     {
@@ -2011,7 +2011,7 @@ int use_def_MT_handler ;
       {
       if ( (LA(1)==TokenTerm) ) {
         zzmatch(TokenTerm);
-        
+
         term = (TermEntry *) hash_get(Tname, LATEXT(1));
         if ( term==NULL && UserDefdTokens ) {
           err("implicit token definition not allowed with #tokdefs");
@@ -2068,7 +2068,7 @@ int use_def_MT_handler ;
           zzEXIT(zztasp3);
           }
         }
-        
+
         if ( p!=NULL && (p->upper_range!=0 || p->tclass ||  old_not) )
         list_add(&MetaTokenNodes, (void *)p);
         {
@@ -2116,7 +2116,7 @@ int use_def_MT_handler ;
           zzEXIT(zztasp3);
           }
         }
-        
+
         if ( p!=NULL &&  first_on_line ) {
           CurAltStart = (Junction *)zzaRet.left;
           altAdd(CurAltStart);                                 /* MR7 */
@@ -2129,7 +2129,7 @@ int use_def_MT_handler ;
       else {
         if ( (LA(1)==QuotedTerm) ) {
           zzmatch(QuotedTerm);
-          
+
           term = (TermEntry *) hash_get(Texpr, LATEXT(1));
           if ( term==NULL && UserDefdTokens ) {
             err("implicit token definition not allowed with #tokdefs");
@@ -2227,10 +2227,10 @@ int use_def_MT_handler ;
             zzEXIT(zztasp3);
             }
           }
-          
+
           if ( p!=NULL && (p->upper_range!=0 || p->tclass ||  old_not) )
           list_add(&MetaTokenNodes, (void *)p);
-          
+
           if (  first_on_line ) {
             CurAltStart = (Junction *)zzaRet.left;
             altAdd(CurAltStart);                                 /* MR7 */
@@ -2275,7 +2275,7 @@ int use_def_MT_handler ;
               }
             }
             list_add(&MetaTokenNodes, (void *)p);
-            
+
             if (  first_on_line ) {
               CurAltStart = (Junction *)zzaRet.left;
               altAdd(CurAltStart);                                 /* MR7 */
@@ -2355,7 +2355,7 @@ int use_def_MT_handler ;
                 if ( (LA(1)==105) ) {
                   zzmatch(105); zzCONSUME;
                   zzmatch(PassAction);
-                  
+
                   a = (char *) calloc(strlen(LATEXT(1))+1, sizeof(char));
                   require(a!=NULL, "rule element: cannot allocate assignment");
                   strcpy(a, LATEXT(1));
@@ -2371,7 +2371,7 @@ int use_def_MT_handler ;
                 zzEXIT(zztasp3);
                 }
               }
-              
+
               if ( label!=NULL ) {
                 rr->el_label = label->str;
                 label->elem = (Node *)rr;
@@ -2423,7 +2423,7 @@ int use_def_MT_handler ;
           char *a;
           if ( (LA(1)==PassAction) ) {
             zzmatch(PassAction);
-            
+
             a = (char *) calloc(strlen(LATEXT(1))+1, sizeof(char));
             require(a!=NULL, "rule element: cannot allocate predicate fail action");
             strcpy(a, LATEXT(1));
@@ -2510,7 +2510,7 @@ int use_def_MT_handler ;
                 {
                 if ( (LA(1)==NonTerminal) ) {
                   zzmatch(NonTerminal);
-                  
+
                   /* MR21 */                     pFirstSetSymbol = (char *) calloc(strlen(LATEXT(1))+1,
                   /* MR21 */                                                    sizeof(char));
                   /* MR21 */                          require(pFirstSetSymbol!=NULL,
@@ -2523,7 +2523,7 @@ int use_def_MT_handler ;
                 else {
                   if ( (LA(1)==TokenTerm) ) {
                     zzmatch(TokenTerm);
-                    
+
                     /* MR21 */                      pFirstSetSymbol = (char *) calloc(strlen(LATEXT(1))+1,
                     /* MR21 */                                                        sizeof(char));
                     /* MR21 */                      require(pFirstSetSymbol!=NULL,
@@ -2558,7 +2558,7 @@ int use_def_MT_handler ;
               zzmatch(115);
               blk = zzaRet = zzaArg(zztasp2,2);
               /* MR23 */      CurBlockID_array[BlkLevel] = (-1);
-              /* MR23 */      CurAltNum_array[BlkLevel] = (-1);                
+              /* MR23 */      CurAltNum_array[BlkLevel] = (-1);
               --BlkLevel;
  zzCONSUME;
 
@@ -2626,7 +2626,7 @@ int use_def_MT_handler ;
                             char *a;
                             if ( (LA(1)==PassAction) ) {
                               zzmatch(PassAction);
-                              
+
                               a = (char *)calloc(strlen(LATEXT(1))+1, sizeof(char));
                               require(a!=NULL, "rule element: cannot allocate predicate fail action");
                               strcpy(a, LATEXT(1));
@@ -2647,7 +2647,7 @@ int use_def_MT_handler ;
                             altAdd(CurAltStart);                     /* MR7 */
                           };
                           _retv = (Node *)act;
-                          
+
                           pred = computePredFromContextGuard(blk,&predMsgDone);           /* MR10 */
                           if ( pred==NULL) {                                              /* MR10 */
                             if ( !predMsgDone) err("invalid or missing context guard");   /* MR10 */
@@ -2706,7 +2706,7 @@ int use_def_MT_handler ;
                 zzEXIT(zztasp3);
                 }
               }
-              
+
               if ( pred==NULL && !predMsgDone) {                                      /* MR10 */
                 ((Junction *)((Junction *)zzaRet.left)->p1)->blockid = CurBlockID;
                 ((Junction *)((Junction *)zzaRet.left)->p1)->tokrefs = toksrefd;
@@ -2724,10 +2724,10 @@ int use_def_MT_handler ;
                 block( &toksrefd,&rulesrefd );
                 zzaRet = makeOpt(zzaArg(zztasp2,2),approx,pFirstSetSymbol);
                 /* MR23 */      CurBlockID_array[BlkLevel] = (-1);
-                /* MR23 */      CurAltNum_array[BlkLevel] = (-1);                
+                /* MR23 */      CurAltNum_array[BlkLevel] = (-1);
                 --BlkLevel;
                 zzmatch(98);
-                
+
                 ((Junction *)((Junction *)zzaRet.left)->p1)->blockid = CurBlockID;
                 ((Junction *)((Junction *)zzaRet.left)->p1)->tokrefs = toksrefd;
                 ((Junction *)((Junction *)zzaRet.left)->p1)->rulerefs = rulesrefd;
@@ -2786,7 +2786,7 @@ int use_def_MT_handler ;
   return _retv;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd9, 0x1);
   return _retv;
@@ -2841,7 +2841,7 @@ exception_group()
     char *p;
     if ( (LA(1)==PassAction) ) {
       zzmatch(PassAction);
-      
+
       p = LATEXT(1)+1;
       p[strlen(p)-1] = '\0';		/* kill trailing space */
       label = (LabelEntry *) hash_get(Elabel, LATEXT(1)+1);
@@ -2905,7 +2905,7 @@ exception_group()
     zzEXIT(zztasp2);
     }
   }
-  
+
   if ( label!=NULL ) {
     /* Record ex group in sym tab for this label */
     if ( label->ex_group!=NULL ) {
@@ -2934,9 +2934,9 @@ exception_group()
         } /* end switch */
         /* MR6 */	  }; /* end test on label->elem */
     } /* end test on label->ex_group */
-    
+
 		} /* end test on exception label */
-  
+
 /* MR7 */
   /* MR7 */   if (BlkLevel == 1 && label == NULL) {
     /* MR7 */     _retv->forRule=1;
@@ -2957,7 +2957,7 @@ exception_group()
   return _retv;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd9, 0x10);
   return _retv;
@@ -2979,7 +2979,7 @@ exception_handler()
   {
   ;
   zzmatch(135);
-  
+
   _retv = (ExceptionHandler *)calloc(1, sizeof(ExceptionHandler));
   require(_retv!=NULL, "exception: cannot allocate handler");
  zzCONSUME;
@@ -2990,7 +2990,7 @@ exception_handler()
     {
     if ( (LA(1)==NonTerminal) ) {
       zzmatch(NonTerminal);
-      
+
       _retv->signalname = (char *) calloc(strlen(LATEXT(1))+1, sizeof(char));
       require(_retv->signalname!=NULL, "exception: cannot allocate sig name");
       strcpy(_retv->signalname, LATEXT(1));
@@ -3000,7 +3000,7 @@ exception_handler()
     else {
       if ( (LA(1)==TokenTerm) ) {
         zzmatch(TokenTerm);
-        
+
         _retv->signalname = (char *) calloc(strlen(LATEXT(1))+1, sizeof(char));
         require(_retv->signalname!=NULL, "exception: cannot allocate sig name");
         strcpy(_retv->signalname, LATEXT(1));
@@ -3020,7 +3020,7 @@ exception_handler()
     _retv->action = NULL;
     if ( (LA(1)==Action) ) {
       zzmatch(Action);
-      
+
       _retv->action = (char *) calloc(strlen(LATEXT(1))+1, sizeof(char));
       require(_retv->action!=NULL, "exception: cannot allocate action");
       strcpy(_retv->action, LATEXT(1));
@@ -3039,7 +3039,7 @@ exception_handler()
   return _retv;
 fail:
   zzEXIT(zztasp1);
-  CannotContinue=TRUE;  
+  CannotContinue=TRUE;
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd9, 0x40);
   return _retv;
@@ -3158,15 +3158,15 @@ defines(fname)
  zzCONSUME;
 
       zzmatch(INT);
-      
+
       v = atoi(LATEXT(1));
       /*			fprintf(stderr, "#token %s=%d\n", t, v);*/
-      
+
 	/* MR2 Andreas Magnusson (Andreas.Magnusson@mailbox.swipnet.se) */
       /* MR2 Fix to bug introduced by 1.33MR1 for #tokdefs            */
       /* MR2 Don't let #tokdefs be confused by 			*/
       /* MR2   DLGminToken and DLGmaxToken     			*/
-      
+
 			if ( ! isDLGmaxToken(t)) {		/* MR2 */
       TokenNum = v;
       if ( v>maxt ) maxt=v;
@@ -3233,7 +3233,7 @@ enum_def(fname)
     zzEXIT(zztasp2);
     }
   }
-  
+
   /*			fprintf(stderr, "#token %s=%d\n", t, v);*/
   TokenNum = v;
   if ( v>maxt ) maxt=v;				/* MR3 */
@@ -3297,7 +3297,7 @@ enum_def(fname)
               zzEXIT(zztasp4);
               }
             }
-            
+
             /*					fprintf(stderr, "#token %s=%d\n", t, v);*/
             TokenNum = v;
             if ( v>maxt ) maxt=v;				/* MR3 */

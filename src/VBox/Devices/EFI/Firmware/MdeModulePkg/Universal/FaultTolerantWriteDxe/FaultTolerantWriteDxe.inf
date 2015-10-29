@@ -1,7 +1,7 @@
 ## @file
 # Fault Tolerant Write Dxe Driver.
 #
-# This driver installs Fault Tolerant Write (FTW) protocol, 
+# This driver installs Fault Tolerant Write (FTW) protocol,
 # which provides fault tolerant write capability for block devices.
 # Its implementation depends on the full functionality FVB protocol that support read, write/erase flash access.
 #

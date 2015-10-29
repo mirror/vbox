@@ -91,7 +91,7 @@ ShellCommandRunSmbiosView (
 
       //
       // Init Lib
-      
+
       Status = LibSmbiosInit ();
       if (EFI_ERROR (Status)) {
         ShellStatus = SHELL_NOT_FOUND;

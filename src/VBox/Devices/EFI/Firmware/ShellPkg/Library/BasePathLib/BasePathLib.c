@@ -15,7 +15,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/PathLib.h>
 #include <Library/BaseLib.h>
-#include <Protocol/SimpleTextIn.h> 
+#include <Protocol/SimpleTextIn.h>
 
 /**
   Removes the last directory or file entry in a path by changing the last
@@ -53,13 +53,13 @@ PathRemoveLastItem(
 }
 
 /**
-  Function to clean up paths.  
-  
+  Function to clean up paths.
+
   - Single periods in the path are removed.
   - Double periods in the path are removed along with a single parent directory.
   - Forward slashes L'/' are converted to backward slashes L'\'.
 
-  This will be done inline and the existing buffer may be larger than required 
+  This will be done inline and the existing buffer may be larger than required
   upon completion.
 
   @param[in] Path       The pointer to the string containing the path.

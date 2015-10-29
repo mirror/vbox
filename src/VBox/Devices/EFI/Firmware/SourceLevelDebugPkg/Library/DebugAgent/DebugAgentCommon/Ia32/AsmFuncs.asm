@@ -307,12 +307,12 @@ NoExtrPush:
     mov edi, esp
     db 0fh, 0aeh, 00000111y ;fxsave [edi]
 
-    ;; save the exception data    
+    ;; save the exception data
     push    dword ptr [ebp + 8]
 
     ;; Clear Direction Flag
     cld
-    	
+
     ; call the C interrupt process function
     push    esp     ; Structure
     push    ebx     ; vector

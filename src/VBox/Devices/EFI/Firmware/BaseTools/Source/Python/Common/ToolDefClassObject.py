@@ -184,7 +184,7 @@ class ToolDefClassObject(object):
                 Value = Value.replace(Ref, "")
             else:
                 Value = Value.replace(Ref, self.MacroDictionary[Ref])
- 
+
 
         MacroReference = gMacroRefPattern.findall(Value)
         for Ref in MacroReference:

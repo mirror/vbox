@@ -1,7 +1,7 @@
 ## @file
 # Instance of S3 I/O Library based on I/O and S3 BootScript Library.
 #
-# S3 I/O and MMIO Library Services that do I/O and also 
+# S3 I/O and MMIO Library Services that do I/O and also
 # enable the I/O operatation to be replayed during an S3 resume.
 #
 # Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
@@ -23,7 +23,7 @@
   FILE_GUID                      = B13F938E-47DF-4516-A397-8927A4E42B61
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = S3IoLib 
+  LIBRARY_CLASS                  = S3IoLib
 
 
 #

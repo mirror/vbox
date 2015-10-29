@@ -25,9 +25,9 @@
   FILE_GUID                      = 601ECB06-7874-489e-A280-805780F6C861
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = TrEEPhysicalPresenceLib|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SAL_DRIVER UEFI_APPLICATION UEFI_DRIVER 
+  LIBRARY_CLASS                  = TrEEPhysicalPresenceLib|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SAL_DRIVER UEFI_APPLICATION UEFI_DRIVER
   CONSTRUCTOR                    = TrEEPhysicalPresenceLibConstructor
-  
+
 #
 # The following information is for reference only and not required by the build tools.
 #

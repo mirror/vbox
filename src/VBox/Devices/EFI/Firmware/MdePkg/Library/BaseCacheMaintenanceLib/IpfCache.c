@@ -194,7 +194,7 @@ InvalidateDataCache (
   )
 {
   //
-  // Invalidation of the entire data cache without writing back is not supported 
+  // Invalidation of the entire data cache without writing back is not supported
   // on IPF architecture, so a write back and invalidate operation is performed.
   //
   WriteBackInvalidateDataCache ();

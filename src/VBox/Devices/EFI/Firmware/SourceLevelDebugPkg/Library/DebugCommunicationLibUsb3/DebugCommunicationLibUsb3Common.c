@@ -51,7 +51,7 @@ UINT16   mSerialNumberStrDesc[] = {
 **/
 VOID
 XhcSetR32Bit(
-  IN OUT  UINTN  Register, 
+  IN OUT  UINTN  Register,
   IN      UINT32 BitMask
   )
 {
@@ -70,7 +70,7 @@ XhcSetR32Bit(
 **/
 VOID
 XhcClearR32Bit(
-  IN OUT  UINTN  Register, 
+  IN OUT  UINTN  Register,
   IN      UINT32 BitMask
   )
 {
@@ -97,10 +97,10 @@ XhcWriteDebugReg (
   )
 {
   EFI_PHYSICAL_ADDRESS  DebugCapabilityBase;
-  
+
   DebugCapabilityBase = Handle->DebugCapabilityBase;
   MmioWrite32 ((UINTN)(DebugCapabilityBase + Offset), Data);
-  
+
   return;
 }
 
@@ -121,7 +121,7 @@ XhcReadDebugReg (
 {
   UINT32                  Data;
   EFI_PHYSICAL_ADDRESS    DebugCapabilityBase;
-  
+
   DebugCapabilityBase = Handle->DebugCapabilityBase;
   Data = MmioRead32 ((UINTN)(DebugCapabilityBase + Offset));
 
@@ -165,7 +165,7 @@ ProgramXhciBaseAddress (
   UINT32                      Low;
   UINT32                      High;
   EFI_PHYSICAL_ADDRESS        XhciMmioBase;
-  
+
   Low = PciRead32 (PcdGet32(PcdUsbXhciPciAddress) + PCI_BASE_ADDRESSREG_OFFSET);
   High = PciRead32 (PcdGet32(PcdUsbXhciPciAddress) + PCI_BASE_ADDRESSREG_OFFSET + 4);
   XhciMmioBase = (EFI_PHYSICAL_ADDRESS) (LShiftU64 ((UINT64) High, 32) | Low);
@@ -188,7 +188,7 @@ ProgramXhciBaseAddress (
 
 /**
   Check if the timer is timeout.
-  
+
   @param[in] UsbDebugPortHandle  Pointer to USB Debug port handle
   @param[in] Timer               The start timer from the begin.
   @param[in] TimeoutTicker       Ticker number need time out.
@@ -217,7 +217,7 @@ IsTimerTimeout (
       Delta = Timer - CurrentTimer;
     } else {
       //
-      // Handle one roll-over. 
+      // Handle one roll-over.
       //
       Delta = UsbDebugPortHandle->TimerCycle - (CurrentTimer - Timer);
     }
@@ -229,12 +229,12 @@ IsTimerTimeout (
       Delta = CurrentTimer - Timer;
     } else {
       //
-      // Handle one roll-over. 
+      // Handle one roll-over.
       //
       Delta = UsbDebugPortHandle->TimerCycle - (Timer - CurrentTimer);
     }
   }
- 
+
   return (BOOLEAN) (Delta >= TimeoutTicker);
 }
 
@@ -290,7 +290,7 @@ CalculateUsbDebugPortMmioBase (
 
   VendorId = PciRead16 (PcdGet32(PcdUsbXhciPciAddress) + PCI_VENDOR_ID_OFFSET);
   DeviceId = PciRead16 (PcdGet32(PcdUsbXhciPciAddress) + PCI_DEVICE_ID_OFFSET);
-  
+
   if ((VendorId == 0xFFFF) || (DeviceId == 0xFFFF)) {
     goto Done;
   }
@@ -298,7 +298,7 @@ CalculateUsbDebugPortMmioBase (
   ProgInterface = PciRead8 (PcdGet32(PcdUsbXhciPciAddress) + PCI_CLASSCODE_OFFSET);
   SubClassCode  = PciRead8 (PcdGet32(PcdUsbXhciPciAddress) + PCI_CLASSCODE_OFFSET + 1);
   BaseCode      = PciRead8 (PcdGet32(PcdUsbXhciPciAddress) + PCI_CLASSCODE_OFFSET + 2);
-  
+
   if ((ProgInterface != PCI_IF_XHCI) || (SubClassCode != PCI_CLASS_SERIAL_USB) || (BaseCode != PCI_CLASS_SERIAL)) {
     goto Done;
   }
@@ -309,7 +309,7 @@ CalculateUsbDebugPortMmioBase (
   // Get capability pointer from HCCPARAMS at offset 0x10
   //
   CapabilityPointer = Handle->XhciMmioBase + (MmioRead32 ((UINTN)(Handle->XhciMmioBase + XHC_HCCPARAMS_OFFSET)) >> 16) * 4;
- 
+
   //
   // Search XHCI debug capability
   //
@@ -400,7 +400,7 @@ CreateEventRing (
   EVENT_RING_SEG_TABLE_ENTRY  *ERSTBase;
 
   ASSERT (EventRing != NULL);
-  
+
   //
   // Allocate Event Ring
   //
@@ -413,7 +413,7 @@ CreateEventRing (
   EventRing->TrbNumber        = EVENT_RING_TRB_NUMBER;
   EventRing->EventRingDequeue = (EFI_PHYSICAL_ADDRESS)(UINTN) EventRing->EventRingSeg0;
   EventRing->EventRingEnqueue = (EFI_PHYSICAL_ADDRESS)(UINTN) EventRing->EventRingSeg0;
-  
+
   //
   // Software maintains an Event Ring Consumer Cycle State (CCS) bit, initializing it to '1'
   // and toggling it every time the Event Ring Dequeue Pointer wraps back to the beginning of the Event Ring.
@@ -496,7 +496,7 @@ CreateTransferRing (
 {
   VOID                  *Buf;
   LINK_TRB              *EndTrb;
- 
+
   Buf = AllocateAlignBuffer (sizeof (TRB_TEMPLATE) * TrbNum);
   ASSERT (Buf != NULL);
   ASSERT (((UINTN) Buf & 0xF) == 0);
@@ -546,7 +546,7 @@ CreateDebugCapabilityContext (
   UINT8                       *ManufacturerStrDesc;
   UINT8                       *ProductStrDesc;
   UINT8                       *SerialNumberStrDesc;
-  
+
   //
   // Allocate debug device context
   //
@@ -554,10 +554,10 @@ CreateDebugCapabilityContext (
   ASSERT (Buf != NULL);
   ASSERT (((UINTN) Buf & 0xF) == 0);
   ZeroMem (Buf, sizeof (XHC_DC_CONTEXT));
-  
+
   DebugCapabilityContext = (XHC_DC_CONTEXT *)(UINTN) Buf;
   Handle->DebugCapabilityContext = (EFI_PHYSICAL_ADDRESS)(UINTN) DebugCapabilityContext;
-  
+
   //
   // Initialize DbcInfoContext.
   //
@@ -573,7 +573,7 @@ CreateDebugCapabilityContext (
   DebugCapabilityContext->EpOutContext.EPType           = ED_BULK_OUT;
   DebugCapabilityContext->EpOutContext.MaxPacketSize    = XHCI_DEBUG_DEVICE_MAX_PACKET_SIZE;
   DebugCapabilityContext->EpOutContext.AverageTRBLength = 0x1000;
-  
+
   //
   // Initialize EpInContext.
   //
@@ -581,7 +581,7 @@ CreateDebugCapabilityContext (
   DebugCapabilityContext->EpInContext.EPType           = ED_BULK_IN;
   DebugCapabilityContext->EpInContext.MaxPacketSize    = XHCI_DEBUG_DEVICE_MAX_PACKET_SIZE;
   DebugCapabilityContext->EpInContext.AverageTRBLength = 0x1000;
-  
+
   //
   // Update string descriptor address
   //
@@ -590,19 +590,19 @@ CreateDebugCapabilityContext (
   ZeroMem (String0Desc, STRING0_DESC_LEN + MANU_DESC_LEN + PRODUCT_DESC_LEN + SERIAL_DESC_LEN);
   CopyMem (String0Desc, mString0Desc, STRING0_DESC_LEN);
   DebugCapabilityContext->DbcInfoContext.String0DescAddress = (UINT64)(UINTN)String0Desc;
-  
+
   ManufacturerStrDesc = String0Desc + STRING0_DESC_LEN;
   CopyMem (ManufacturerStrDesc, mManufacturerStrDesc, MANU_DESC_LEN);
   DebugCapabilityContext->DbcInfoContext.ManufacturerStrDescAddress = (UINT64)(UINTN)ManufacturerStrDesc;
-  
+
   ProductStrDesc = ManufacturerStrDesc + MANU_DESC_LEN;
   CopyMem (ProductStrDesc, mProductStrDesc, PRODUCT_DESC_LEN);
   DebugCapabilityContext->DbcInfoContext.ProductStrDescAddress = (UINT64)(UINTN)ProductStrDesc;
-  
+
   SerialNumberStrDesc = ProductStrDesc + PRODUCT_DESC_LEN;
   CopyMem (SerialNumberStrDesc, mSerialNumberStrDesc, SERIAL_DESC_LEN);
   DebugCapabilityContext->DbcInfoContext.SerialNumberStrDescAddress = (UINT64)(UINTN)SerialNumberStrDesc;
-  
+
   //
   // Allocate and initialize the Transfer Ring for the Input Endpoint Context.
   //
@@ -702,7 +702,7 @@ InitializeUsbDebugHardware (
 
   if (Handle->Initialized == USB3DBG_NOT_ENABLED) {
     //
-    // If XHCI supports debug capability, hardware resource has been allocated, 
+    // If XHCI supports debug capability, hardware resource has been allocated,
     // but it has not been enabled, try to enable again.
     //
     goto Enable;
@@ -723,7 +723,7 @@ InitializeUsbDebugHardware (
 
   //
   // Reset port to get debug device discovered
-  //  
+  //
   for (Index = 0; Index < TotalUsb3Port; Index++) {
     XhcSetR32Bit ((UINTN)XhciOpRegister + XHC_PORTSC_OFFSET + Index * 0x10, BIT4);
     MicroSecondDelay (10 * 1000);
@@ -735,20 +735,20 @@ InitializeUsbDebugHardware (
   Handle->UrbIn.Data  = (EFI_PHYSICAL_ADDRESS)(UINTN) Buffer;
   Handle->Data        = (EFI_PHYSICAL_ADDRESS)(UINTN) Buffer + XHCI_DEBUG_DEVICE_MAX_PACKET_SIZE;
   Handle->UrbOut.Data = Handle->UrbIn.Data + XHCI_DEBUG_DEVICE_MAX_PACKET_SIZE * 2;
-   
+
   //
   // Initialize event ring
   //
   ZeroMem (&Handle->EventRing, sizeof (EVENT_RING));
   Status = CreateEventRing (Handle, &Handle->EventRing);
   ASSERT_EFI_ERROR (Status);
-  
+
   //
   // Init IN and OUT endpoint context
   //
   Status = CreateDebugCapabilityContext (Handle);
   ASSERT_EFI_ERROR (Status);
-  
+
   //
   // Init DCDDI1 and DCDDI2
   //
@@ -756,7 +756,7 @@ InitializeUsbDebugHardware (
    Handle,
    XHC_DC_DCDDI1,
    (UINT32)((XHCI_DEBUG_DEVICE_VENDOR_ID << 16) | XHCI_DEBUG_DEVICE_PROTOCOL)
-   ); 
+   );
 
   XhcWriteDebugReg (
    Handle,
@@ -767,7 +767,7 @@ InitializeUsbDebugHardware (
 Enable:
   if ((Handle->Initialized == USB3DBG_NOT_ENABLED) && (!Handle->ChangePortPower)) {
     //
-    // If the first time detection is failed, turn port power off and on in order to 
+    // If the first time detection is failed, turn port power off and on in order to
     // reset port status this time, then try to check if debug device is ready again.
     //
     for (Index = 0; Index < TotalUsb3Port; Index++) {
@@ -783,9 +783,9 @@ Enable:
   // Set DCE bit and LSE bit to "1" in DCCTRL in first initialization
   //
   XhcSetDebugRegBit (Handle, XHC_DC_DCCTRL, BIT1|BIT31);
-  
+
   XhcDetectDebugCapabilityReady (Handle);
-  
+
   Status = RETURN_SUCCESS;
   if (!Handle->Ready) {
     Handle->Initialized = USB3DBG_NOT_ENABLED;
@@ -853,14 +853,14 @@ DebugPortReadBuffer (
   } else {
     UsbDebugPortHandle = (USB3_DEBUG_PORT_HANDLE *)Handle;
   }
-  
+
   if (UsbDebugPortHandle->Initialized == USB3DBG_NO_DBG_CAB) {
     return 0;
   }
-  
+
   XhciMmioBase = ProgramXhciBaseAddress ();
   UpdateXhcResource (UsbDebugPortHandle, XhciMmioBase);
-  
+
   if (NeedReinitializeHardware(UsbDebugPortHandle)) {
     Status = InitializeUsbDebugHardware (UsbDebugPortHandle);
     if (RETURN_ERROR(Status)) {
@@ -897,7 +897,7 @@ DebugPortReadBuffer (
   // If Timeout is equal to 0, then it means it should always wait until all data required are received.
   //
   Begin         = 0;
-  TimeoutTicker = 0;  
+  TimeoutTicker = 0;
   TimerRound    = 0;
   if (Timeout != 0) {
     Begin = GetPerformanceCounter ();
@@ -1029,7 +1029,7 @@ DebugPortWriteBuffer (
   } else {
     UsbDebugPortHandle = (USB3_DEBUG_PORT_HANDLE *)Handle;
   }
-  
+
   if (UsbDebugPortHandle->Initialized == USB3DBG_NO_DBG_CAB) {
     return 0;
   }
@@ -1064,7 +1064,7 @@ DebugPortWriteBuffer (
     Status = XhcDataTransfer (UsbDebugPortHandle, EfiUsbDataOut, Buffer + Total, &Sent, DATA_TRANSFER_WRITE_TIMEOUT);
     Total += Sent;
   }
-  
+
   return Total;
 }
 
@@ -1108,14 +1108,14 @@ DebugPortPollBuffer (
 
   XhciMmioBase = ProgramXhciBaseAddress ();
   UpdateXhcResource (UsbDebugPortHandle, XhciMmioBase);
-  
+
   if (NeedReinitializeHardware(UsbDebugPortHandle)) {
     Status = InitializeUsbDebugHardware(UsbDebugPortHandle);
     if (RETURN_ERROR(Status)) {
       return FALSE;
     }
   }
-  
+
   //
   // If the data buffer is not empty, then return TRUE directly.
   // Otherwise initialize a usb read transaction and read data to internal data buffer.
@@ -1183,7 +1183,7 @@ DebugPortInitialize (
   UINT64                    TimerEndValue;
 
   //
-  // Validate the PCD PcdDebugPortHandleBufferSize value 
+  // Validate the PCD PcdDebugPortHandleBufferSize value
   //
   ASSERT (PcdGet16 (PcdDebugPortHandleBufferSize) == sizeof (USB3_DEBUG_PORT_HANDLE));
 
@@ -1205,12 +1205,12 @@ DebugPortInitialize (
   } else {
     UsbDebugPortHandle->TimerCountDown = FALSE;
     UsbDebugPortHandle->TimerCycle     = TimerEndValue - TimerStartValue;
-  }   
+  }
 
   if (Function == NULL && Context != NULL) {
     return (DEBUG_PORT_HANDLE *) Context;
   }
-  
+
   //
   // Read 64-bit MMIO base address
   //

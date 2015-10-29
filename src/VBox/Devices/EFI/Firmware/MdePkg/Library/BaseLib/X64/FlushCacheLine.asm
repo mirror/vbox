@@ -25,7 +25,7 @@
 
 ;------------------------------------------------------------------------------
 ; VOID *
-; EFIAPI 
+; EFIAPI
 ; AsmFlushCacheLine (
 ;   IN      VOID                      *LinearAddress
 ;   );

@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/DebugLib.h>
 
 //
-// File operations are not required for building Open SSL, 
+// File operations are not required for building Open SSL,
 // so FILE is mapped to VOID * to pass build
 //
 typedef VOID  *FILE;

@@ -19,7 +19,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/NetLib.h>
- 
+
 #define MD5_HASHSIZE  16
 
 typedef struct _MD5_CTX {
@@ -77,4 +77,4 @@ MD5Final (
   OUT UINT8        *HashVal
   );
 
-#endif 
+#endif

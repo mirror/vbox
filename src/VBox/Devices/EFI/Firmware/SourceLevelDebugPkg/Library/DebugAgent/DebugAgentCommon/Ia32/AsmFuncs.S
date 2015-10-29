@@ -310,7 +310,7 @@ NoExtrPush:
 
 ## Clear Direction Flag
   cld
-	
+
 ## Prepare parameter and call C function
   pushl   %esp
   pushl   %ebx
@@ -387,4 +387,4 @@ NoExtrPush:
   popl    %ebp
   addl    $8,%esp   # skip eax
   iretl
-  
+

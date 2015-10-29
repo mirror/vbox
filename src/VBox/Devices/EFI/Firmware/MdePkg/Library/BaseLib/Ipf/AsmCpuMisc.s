@@ -34,12 +34,12 @@ MemoryFence::
 
         // do we need the mf.a also here?
         mf.a    // wait for any IO to complete?
-        
+
         // not sure if we need serialization here, just put it, in case...
-        
+
         srlz.d;;
         srlz.i;;
-        
+
         br.ret.dpnt    b0;;
 .endp MemoryFence
 

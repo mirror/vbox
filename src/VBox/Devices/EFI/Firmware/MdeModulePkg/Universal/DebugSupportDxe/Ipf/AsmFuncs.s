@@ -180,7 +180,7 @@ ChainHandler:
 // Next, copy the patch code into the IVT
         movl        out0=PatchCode                 // out0 = source buffer of patch code
         addl        out1=PATCH_OFFSET, r2          // out1 = destination buffer - in IVT
-        mov         out2=PATCH_CODE_SIZE;;       
+        mov         out2=PATCH_CODE_SIZE;;
         shr         out2=out2, 4;;                 // out2 = number of bundles to copy
         br.call.sptk.few    b0 = CopyBundles
 

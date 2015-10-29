@@ -24,7 +24,7 @@ MAKEFILE     = antlrPPC.make
 Includes     = ¶
 		-i "::h:" ¶
 		-i "::support:set:"
-Sym¥PPC      = 
+Sym¥PPC      =
 ObjDir¥PPC   = :Obj:
 PPCCOptions  = {Includes} {Sym¥PPC} -w off -d MPW -d __STDC__=1 -d USER_ZZSYN
 Objects¥PPC  = ¶

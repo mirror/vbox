@@ -150,7 +150,7 @@ struct clockframe {
 
 /*
  * Give a profiling tick to the current process when the user profiling
- * buffer pages are invalid. XXX:Fixme.... On the ia64 I haven't yet figured 
+ * buffer pages are invalid. XXX:Fixme.... On the ia64 I haven't yet figured
  * out what to do about this.. XXX.
  */
 
@@ -171,8 +171,8 @@ int	cpu_maxproc(void); /*XXX: Fill in machdep.c */
 #define	cpu_proc_fork(p1, p2) /* XXX: Look into this. */
 
 
-/* XXX: TODO: generic microtime support kern/kern_microtime.c 
- * #define microtime(tv)	cc_microtime(tv) 
+/* XXX: TODO: generic microtime support kern/kern_microtime.c
+ * #define microtime(tv)	cc_microtime(tv)
  */
 
 

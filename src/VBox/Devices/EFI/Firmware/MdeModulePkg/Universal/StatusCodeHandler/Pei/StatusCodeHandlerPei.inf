@@ -19,7 +19,7 @@
   MODULE_UNI_FILE                = StatusCodeHandlerPei.uni
   FILE_GUID                      = 9D225237-FA01-464C-A949-BAABC02D31D0
   MODULE_TYPE                    = PEIM
-  VERSION_STRING                 = 1.0  
+  VERSION_STRING                 = 1.0
   ENTRY_POINT                    = StatusCodeHandlerPeiEntry
 
 #
@@ -48,13 +48,13 @@
   PrintLib
   DebugLib
   BaseMemoryLib
-  
+
 [Guids]
   ## SOMETIMES_PRODUCES   ## HOB
   ## SOMETIMES_CONSUMES   ## HOB
   gMemoryStatusCodeRecordGuid
   gEfiStatusCodeDataTypeStringGuid              ## SOMETIMES_CONSUMES   ## UNDEFINED
-  
+
 [Ppis]
   gEfiPeiRscHandlerPpiGuid                      ## CONSUMES
 

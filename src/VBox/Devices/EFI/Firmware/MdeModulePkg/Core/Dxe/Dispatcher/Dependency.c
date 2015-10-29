@@ -409,7 +409,7 @@ CoreIsSchedulable (
     case EFI_DEP_REPLACE_TRUE:
       CopyMem (&DriverGuid, Iterator + 1, sizeof (EFI_GUID));
       DEBUG ((DEBUG_DISPATCH, "  PUSH GUID(%g) = TRUE\n", &DriverGuid));
-      
+
       Status = PushBool (TRUE);
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_DISPATCH, "  RESULT = FALSE (Unexpected error)\n"));

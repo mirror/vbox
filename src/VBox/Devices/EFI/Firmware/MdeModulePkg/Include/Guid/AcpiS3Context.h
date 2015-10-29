@@ -47,7 +47,7 @@ typedef struct {
   EFI_PHYSICAL_ADDRESS  S3NvsPageTableAddress;
   EFI_PHYSICAL_ADDRESS  BootScriptStackBase;
   UINT64                BootScriptStackSize;
-  EFI_PHYSICAL_ADDRESS  S3DebugBufferAddress;  
+  EFI_PHYSICAL_ADDRESS  S3DebugBufferAddress;
 } ACPI_S3_CONTEXT;
 
 typedef struct {

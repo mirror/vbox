@@ -70,18 +70,18 @@
  *	main()
  *	{
  *	    Sym *scope1=NULL, *scope2=NULL, *a, *p;
- *	
+ *
  *	    zzs_init(101, 100);
- *	
+ *
  *	    a = zzs_new("Apple");	zzs_add(a->symbol, a);	-- No scope
  *	    zzs_scope( &scope1 );	-- enter scope 1
  *	    a = zzs_new("Plum");	zzs_add(a->symbol, a);
  *	    zzs_scope( &scope2 );	-- enter scope 2
  *	    a = zzs_new("Truck");	zzs_add(a->symbol, a);
- *	
+ *
  *    	p = zzs_get("Plum");
  *    	if ( p == NULL ) fprintf(stderr, "Hmmm...Can't find 'Plum'\n");
- *	
+ *
  *    	p = zzs_rmscope(&scope1)
  *    	for (; p!=NULL; p=p->scope) {printf("Scope1:  %s\n", p->symbol);}
  *    	p = zzs_rmscope(&scope2)
@@ -170,11 +170,11 @@ register Sym *rec;
 {
 	register unsigned int h=0;
 	register char *p=key;
-	
+
 	HASH(p, h);
 	rec->hash = h;					/* save hash code for fast comp later */
 	h %= size;
-	
+
 	if ( CurScope != NULL ) {rec->scope = *CurScope; *CurScope = rec;}
 	rec->next = table[h];			/* Add to doubly-linked list */
 	rec->prev = NULL;
@@ -193,9 +193,9 @@ char *key;
 	register unsigned int h=0;
 	register char *p=key;
 	register Sym *q;
-	
+
 	HASH(p, h);
-	
+
 	for (q = table[h%size]; q != NULL; q = q->next)
 	{
 		if ( q->hash == h )		/* do we even have a chance of matching? */
@@ -224,7 +224,7 @@ register Sym *p;
 	if ( p->prev == NULL )	/* Head of list */
 	{
 		register Sym **t = p->head;
-		
+
 		if ( t == NULL ) return;	/* not part of symbol table */
 		(*t) = p->next;
 		if ( (*t) != NULL ) (*t)->prev = NULL;
@@ -295,13 +295,13 @@ void zzs_stat()
 	unsigned int i,n=0,low=0, hi=0;
 	register Sym **p;
 	float avg=0.0;
-	
+
 	for (i=0; i<20; i++) count[i] = 0;
 	for (p=table; p<&(table[size]); p++)
 	{
 		register Sym *q = *p;
 		unsigned int len;
-		
+
 		if ( q != NULL && low==0 ) low = p-table;
 		len = 0;
 		if ( q != NULL ) printf("[%d]", p-table);
@@ -349,14 +349,14 @@ char *text;
 #endif
 {
 	Sym *p;
-	
+
 	if ( (p = (Sym *) calloc(1,sizeof(Sym))) == 0 )
 	{
 		fprintf(stderr,"Out of memory\n");
 		exit(1);
 	}
 	p->symbol = zzs_strdup(text);
-	
+
 	return p;
 }
 

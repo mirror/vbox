@@ -5,14 +5,14 @@
 [Tom Moog 2-Oct-98
 
     Users of Microsoft Visual C++ should download a separate
-    ready-to-run zip file from my web site.  It contains 
+    ready-to-run zip file from my web site.  It contains
     binaries, static library, and a sample project.
 ]
 
 [
   Two notes added by Tom Moog 23-Sep-97.  I believe the *.dsp and
   *.mak files that were once at the end of this file are now obsolete.
-  
+
   The following MSVC .dsp and .mak files for pccts and sorcerer
   were contributed by Stanislaw Bochnak (S.Bochnak@microtool.com.pl)
   and Jeff Vincent (jvincent@novell.com)
@@ -53,22 +53,22 @@
 Date: Sat, 31 Dec 1994 11:40:36 -0500 (EST)
 From: David Seidel <75342.2034@compuserve.com>
 
-I've succesfully build 1.31b3 with djgpp for DOS and MSVC 2.0 for Windows 
-NT.  The only (minor) problem I had was that GNU make (version 3.71, in the 
-djgpp port) complained about "multiple targets" in both the antlr and dlg 
-makefiles.  I got around the error by, in each makefile, commenting out the 
+I've succesfully build 1.31b3 with djgpp for DOS and MSVC 2.0 for Windows
+NT.  The only (minor) problem I had was that GNU make (version 3.71, in the
+djgpp port) complained about "multiple targets" in both the antlr and dlg
+makefiles.  I got around the error by, in each makefile, commenting out the
 $(SRC) dependency, for example:
 
    antlr: $(OBJ) #$(SRC)
 
-I don't know why this is happenning, since you haven't changed that part of 
+I don't know why this is happenning, since you haven't changed that part of
 the makefile at all, and I think this used to work ok...
 
-Here are the makefiles I built from within the MSVC 2.0 environment for antlr 
-and dlg and Windows NT console executables.  Please feel free to pass them 
-on.  Of course, as soon as 1.31 "goes gold", I will send you nice new 
-binaries.  I'm not going to bother to keep doing both Borland and djgpp for 
-DOS however.  Instead, I'll just keep the djgpp version up to date and also 
+Here are the makefiles I built from within the MSVC 2.0 environment for antlr
+and dlg and Windows NT console executables.  Please feel free to pass them
+on.  Of course, as soon as 1.31 "goes gold", I will send you nice new
+binaries.  I'm not going to bother to keep doing both Borland and djgpp for
+DOS however.  Instead, I'll just keep the djgpp version up to date and also
 provide WinNT binaries.
 
 Dave
@@ -118,14 +118,14 @@ other compilers.)
        // DON'T add anything to the loading section of Serialize
        if (!CDocument::OnOpenDocument(pszPathName))
            return FALSE;
-   
+
        // Open input file
        if ((fp = fopen(pszPathName, "r")) == NULL)
            return FALSE;
-   
+
        // Parse input file
        ANTLR(start(), fp);
-   
+
        // Close input file
        fclose(fp);
        return TRUE;
@@ -153,7 +153,7 @@ other compilers.)
         = With 1.33MRxxx the use of __STDC__ was replaced with the     =
         = macro __USE_PROTOS to control the compilation of prototypes. =
         ================================================================
-                        
+
 That last step is important for Visual C++, but may not apply to other
 compilers.  For C++ compilers, whether __STDC__ is defined is
 implementation dependent (ARM, page 379).  Apparently, Visual C++ does

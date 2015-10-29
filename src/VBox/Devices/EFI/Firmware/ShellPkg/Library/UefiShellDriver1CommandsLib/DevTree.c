@@ -58,12 +58,12 @@ DoDevTreeForHandle(
   ChildCount          = 0;
 
   ASSERT(TheHandle    != NULL);
-  
+
   if (ShellGetExecutionBreakFlag()) {
     ShellStatus = SHELL_ABORTED;
     return ShellStatus;
   }
-  
+
   //
   // We want controller handles.  they will not have LoadedImage or DriverBinding (or others...)
   //

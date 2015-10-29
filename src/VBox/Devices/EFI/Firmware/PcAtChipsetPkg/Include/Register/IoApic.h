@@ -1,7 +1,7 @@
 /** @file
-  I/O APIC Register Definitions from 82093AA I/O Advanced Programmable Interrupt 
+  I/O APIC Register Definitions from 82093AA I/O Advanced Programmable Interrupt
   Controller (IOAPIC), 1996.
-  
+
   Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License

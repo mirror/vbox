@@ -384,21 +384,21 @@ IsFontInfoExisted (
 /**
 
    This function invokes the matching registered function.
-    
+
    @param  Private           HII Database driver private structure.
    @param  NotifyType        The type of change concerning the database.
    @param  PackageInstance   Points to the package referred to by the notification.
    @param  PackageType       Package type
    @param  Handle            The handle of the package list which contains the specified package.
-    
-   @retval EFI_SUCCESS            Already checked all registered function and invoked 
+
+   @retval EFI_SUCCESS            Already checked all registered function and invoked
                                   if matched.
    @retval EFI_INVALID_PARAMETER  Any input parameter is not valid.
-     
+
 **/
 EFI_STATUS
 InvokeRegisteredFunction (
-  IN HII_DATABASE_PRIVATE_DATA    *Private, 
+  IN HII_DATABASE_PRIVATE_DATA    *Private,
   IN EFI_HII_DATABASE_NOTIFY_TYPE NotifyType,
   IN VOID                         *PackageInstance,
   IN UINT8                        PackageType,
@@ -432,7 +432,7 @@ GetSystemFont (
 /**
   Parse all string blocks to find a String block specified by StringId.
   If StringId = (EFI_STRING_ID) (-1), find out all EFI_HII_SIBT_FONT blocks
-  within this string package and backup its information. If LastStringId is 
+  within this string package and backup its information. If LastStringId is
   specified, the string id of last string block will also be output.
   If StringId = 0, output the string id of last string block (EFI_HII_SIBT_STRING).
 
@@ -658,8 +658,8 @@ HiiStringToImage (
                                   RowInfoArray or Blt.
   @retval EFI_INVALID_PARAMETER The Blt or PackageList was NULL.
   @retval EFI_INVALID_PARAMETER Flags were invalid combination.
-  @retval EFI_NOT_FOUND         The specified PackageList is not in the Database or the stringid is not 
-                          in the specified PackageList. 
+  @retval EFI_NOT_FOUND         The specified PackageList is not in the Database or the stringid is not
+                          in the specified PackageList.
 
 **/
 EFI_STATUS
@@ -730,7 +730,7 @@ HiiGetGlyph (
   @param  StringInfoOut           Upon return, contains the matching font's information.
                                   If NULL, then no information is returned. This buffer
                                   is allocated with a call to the Boot Service AllocatePool().
-                                  It is the caller's responsibility to call the Boot 
+                                  It is the caller's responsibility to call the Boot
                                   Service FreePool() when the caller no longer requires
                                   the contents of StringInfoOut.
   @param  String                  Points to the string which will be tested to
@@ -915,7 +915,7 @@ HiiDrawImage (
   @retval EFI_SUCCESS             The image was successfully drawn.
   @retval EFI_OUT_OF_RESOURCES    Unable to allocate an output buffer for Blt.
   @retval EFI_INVALID_PARAMETER  The Blt was NULL.
-  @retval EFI_NOT_FOUND          The image specified by ImageId is not in the database. 
+  @retval EFI_NOT_FOUND          The image specified by ImageId is not in the database.
                            The specified PackageList is not in the database.
 
 **/
@@ -1299,7 +1299,7 @@ HiiListPackageLists (
   @retval EFI_NOT_FOUND           The specifiecd Handle could not be found in the
                                   current database.
   @retval EFI_INVALID_PARAMETER   BufferSize was NULL.
-  @retval EFI_INVALID_PARAMETER   The value referenced by BufferSize was not zero 
+  @retval EFI_INVALID_PARAMETER   The value referenced by BufferSize was not zero
                                   and Buffer was NULL.
 
 **/
@@ -1370,7 +1370,7 @@ HiiRegisterPackageNotify (
                                   unregistered.
 
   @retval EFI_SUCCESS             Notification is unregistered successfully.
-  @retval EFI_NOT_FOUND          The incoming notification handle does not exist 
+  @retval EFI_NOT_FOUND          The incoming notification handle does not exist
                            in current hii database.
 
 **/
@@ -1557,8 +1557,8 @@ HiiConfigRoutingExtractConfig (
                                   instance.
   @param  Results                 Null-terminated Unicode string in
                                   <MultiConfigAltResp> format which has all values
-                                  filled in for the entirety of the current HII 
-                                  database. String to be allocated by the  called 
+                                  filled in for the entirety of the current HII
+                                  database. String to be allocated by the  called
                                   function. De-allocation is up to the caller.
 
   @retval EFI_SUCCESS             The Results string is filled with the values
@@ -1709,7 +1709,7 @@ HiiBlockToConfig (
                                   value pair. Block is left updated and
                                   Progress points at the '&' preceding the first
                                   non-<BlockName>.
-  @retval EFI_BUFFER_TOO_SMALL    Block not large enough. Progress undefined. 
+  @retval EFI_BUFFER_TOO_SMALL    Block not large enough. Progress undefined.
                                   BlockSize is updated with the required buffer size.
 
 **/

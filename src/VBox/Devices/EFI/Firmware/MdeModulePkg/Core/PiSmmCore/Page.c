@@ -2,13 +2,13 @@
   SMM Memory page management functions.
 
   Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are licensed and made available 
-  under the terms and conditions of the BSD License which accompanies this 
-  distribution.  The full text of the license may be found at        
-  http://opensource.org/licenses/bsd-license.php                                            
+  This program and the accompanying materials are licensed and made available
+  under the terms and conditions of the BSD License which accompanies this
+  distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -179,7 +179,7 @@ SmmInternalAllocatePages (
                   );
       if (*Memory == (UINTN)-1) {
         return EFI_OUT_OF_RESOURCES;
-      } 
+      }
       break;
     case AllocateAddress:
       *Memory = InternalAllocAddress (
@@ -374,10 +374,10 @@ SmmAddMemoryRegion (
   if ((Attributes & (EFI_ALLOCATED | EFI_NEEDS_TESTING | EFI_NEEDS_ECC_INITIALIZATION)) != 0) {
     return;
   }
-  
+
   //
   // Align range on an EFI_PAGE_SIZE boundary
-  //  
+  //
   AlignedMemBase = (UINTN)(MemBase + EFI_PAGE_MASK) & ~EFI_PAGE_MASK;
   MemLength -= AlignedMemBase - MemBase;
   SmmFreePages (AlignedMemBase, TRUNCATE_TO_PAGES ((UINTN)MemLength));

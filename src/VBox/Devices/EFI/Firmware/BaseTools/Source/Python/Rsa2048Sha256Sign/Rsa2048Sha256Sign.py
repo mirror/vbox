@@ -20,7 +20,7 @@ Rsa2048Sha256Sign
 
 import os
 import sys
-import argparse 
+import argparse
 import subprocess
 import uuid
 import struct
@@ -60,7 +60,7 @@ TEST_SIGNING_PRIVATE_KEY_FILENAME = 'TestSigningPrivateKey.pem'
 if __name__ == '__main__':
   #
   # Create command line argument parser object
-  #  
+  #
   parser = argparse.ArgumentParser(prog=__prog__, version=__version__, usage=__usage__, description=__copyright__, conflict_handler='resolve')
   group = parser.add_mutually_exclusive_group(required=True)
   group.add_argument("-e", action="store_true", dest='Encode', help='encode file')
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
   #
   # Parse command line arguments
-  #  
+  #
   args = parser.parse_args()
 
   #
@@ -92,19 +92,19 @@ if __name__ == '__main__':
   #
   try:
     Process = subprocess.Popen('%s version' % (OpenSslCommand), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  except:  
+  except:
     print 'ERROR: Open SSL command not available.  Please verify PATH or set OPENSSL_PATH'
     sys.exit(1)
-    
+
   Version = Process.communicate()
   if Process.returncode <> 0:
     print 'ERROR: Open SSL command not available.  Please verify PATH or set OPENSSL_PATH'
     sys.exit(Process.returncode)
   print Version[0]
-  
+
   #
   # Read input file into a buffer and save input filename
-  #  
+  #
   args.InputFileName   = args.InputFile.name
   args.InputFileBuffer = args.InputFile.read()
   args.InputFile.close()
@@ -152,19 +152,19 @@ if __name__ == '__main__':
     PublicKeyHexString=PublicKeyHexString[2:]
   if Process.returncode <> 0:
     sys.exit(Process.returncode)
-  
+
   if args.Encode:
-    # 
+    #
     # Sign the input file using the specified private key and capture signature from STDOUT
     #
     Process = subprocess.Popen('%s sha256 -sign "%s"' % (OpenSslCommand, args.PrivateKeyFileName), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     Signature = Process.communicate(input=args.InputFileBuffer)[0]
     if Process.returncode <> 0:
       sys.exit(Process.returncode)
-      
+
     #
     # Write output file that contains hash GUID, Public Key, Signature, and Input data
-    #    
+    #
     args.OutputFile = open(args.OutputFileName, 'wb')
     args.OutputFile.write(EFI_HASH_ALGORITHM_SHA256_GUID.get_bytes_le())
     args.OutputFile.write(PublicKey)
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     #
     Header = EFI_CERT_BLOCK_RSA_2048_SHA256._make(EFI_CERT_BLOCK_RSA_2048_SHA256_STRUCT.unpack_from(args.InputFileBuffer))
     args.InputFileBuffer = args.InputFileBuffer[EFI_CERT_BLOCK_RSA_2048_SHA256_STRUCT.size:]
-    
+
     #
     # Verify that the Hash Type matches the expected SHA256 type
     #
@@ -197,10 +197,10 @@ if __name__ == '__main__':
     # Write Signature to output file
     #
     open(args.OutputFileName, 'wb').write(Header.Signature)
-      
+
     #
     # Verify signature
-    #    
+    #
     Process = subprocess.Popen('%s sha256 -prverify "%s" -signature %s' % (OpenSslCommand, args.PrivateKeyFileName, args.OutputFileName), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     Process.communicate(args.InputFileBuffer)
     if Process.returncode <> 0:
@@ -209,6 +209,6 @@ if __name__ == '__main__':
       sys.exit(Process.returncode)
 
     #
-    # Save output file contents from input file 
-    #    
+    # Save output file contents from input file
+    #
     open(args.OutputFileName, 'wb').write(args.InputFileBuffer)

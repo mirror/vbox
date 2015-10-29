@@ -497,7 +497,7 @@ Ip4ConfigDriverBindingStop (
     gBS->CloseEvent (Instance->Timer);
     Instance->Timer = NULL;
   }
-  
+
   Ip4ConfigCleanConfig (Instance);
   FreePool (Instance);
 

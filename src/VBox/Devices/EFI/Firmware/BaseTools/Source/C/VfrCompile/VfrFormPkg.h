@@ -1,15 +1,15 @@
 /** @file
-  
+
   The definition of CFormPkg's member function
 
 Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
@@ -211,7 +211,7 @@ public:
   VOID        IfrRecordInfoUpdate (IN UINT32, IN UINT32, IN CHAR8*, IN UINT8, IN UINT32);
   VOID        IfrRecordOutput (IN FILE *, IN UINT32 LineNo);
   VOID        IfrRecordOutput (OUT PACKAGE_DATA &);
-  EFI_VFR_RETURN_CODE  IfrRecordAdjust (VOID);   
+  EFI_VFR_RETURN_CODE  IfrRecordAdjust (VOID);
 };
 
 extern CIfrRecordInfoDB gCIfrRecordInfoDB;
@@ -236,7 +236,7 @@ public:
   virtual ~CIfrObj(VOID);
 
   VOID    _EMIT_PENDING_OBJ (VOID);
-  
+
   inline VOID    SetLineNo (IN UINT32 LineNo) {
     mLineNo = LineNo;
   }
@@ -378,7 +378,7 @@ public:
 
 public:
   CIfrQuestionHeader (
-    IN EFI_IFR_QUESTION_HEADER *StartAddr, 
+    IN EFI_IFR_QUESTION_HEADER *StartAddr,
     IN UINT8 Flags = EFI_IFR_QUESTION_FLAG_DEFAULT
   ) : CIfrStatementHeader (QH2SH(StartAddr)) {
     mHeader                         = StartAddr;
@@ -409,7 +409,7 @@ public:
     if (_FLAG_TEST_AND_CLEAR (Flags, EFI_IFR_FLAG_CALLBACK)) {
       mHeader->Flags |= EFI_IFR_FLAG_CALLBACK;
     }
-    
+
     //
     // ignore NVAccessFlag
     //
@@ -418,7 +418,7 @@ public:
     if (_FLAG_TEST_AND_CLEAR (Flags, EFI_IFR_FLAG_RESET_REQUIRED)) {
       mHeader->Flags |= EFI_IFR_FLAG_RESET_REQUIRED;
     }
-    
+
     //
     //  Set LateCheck Flag to compatible for framework flag
     //  but it uses 0x20 as its flag, if in the future UEFI may take this flag
@@ -691,7 +691,7 @@ private:
   EFI_IFR_FORM  *mForm;
 
 public:
-  CIfrForm () : CIfrObj (EFI_IFR_FORM_OP, (CHAR8 **)&mForm), 
+  CIfrForm () : CIfrObj (EFI_IFR_FORM_OP, (CHAR8 **)&mForm),
                 CIfrOpHeader (EFI_IFR_FORM_OP, &mForm->Header) {
     mForm->FormId    = 0;
     mForm->FormTitle = EFI_STRING_ID_INVALID;
@@ -723,7 +723,7 @@ private:
   EFI_IFR_FORM_MAP_METHOD *mMethodMap;
 
 public:
-  CIfrFormMap () : CIfrObj (EFI_IFR_FORM_MAP_OP, (CHAR8 **)&mFormMap, sizeof (EFI_IFR_FORM_MAP), TRUE), 
+  CIfrFormMap () : CIfrObj (EFI_IFR_FORM_MAP_OP, (CHAR8 **)&mFormMap, sizeof (EFI_IFR_FORM_MAP), TRUE),
                    CIfrOpHeader (EFI_IFR_FORM_MAP_OP, &mFormMap->Header) {
     mFormMap->FormId = 0;
     mMethodMap       = (EFI_IFR_FORM_MAP_METHOD *) (mFormMap + 1);
@@ -760,7 +760,7 @@ private:
   EFI_IFR_VARSTORE *mVarStore;
 
 public:
-  CIfrVarStore () : CIfrObj (EFI_IFR_VARSTORE_OP, (CHAR8 **)&mVarStore, sizeof (EFI_IFR_VARSTORE), TRUE), 
+  CIfrVarStore () : CIfrObj (EFI_IFR_VARSTORE_OP, (CHAR8 **)&mVarStore, sizeof (EFI_IFR_VARSTORE), TRUE),
                    CIfrOpHeader (EFI_IFR_VARSTORE_OP, &mVarStore->Header) {
     mVarStore->VarStoreId = EFI_VARSTORE_ID_INVALID;
     mVarStore->Size       = 0;
@@ -856,7 +856,7 @@ private:
   EFI_IFR_VARSTORE_NAME_VALUE *mVarStoreNameValue;
 
 public:
-  CIfrVarStoreNameValue () : CIfrObj (EFI_IFR_VARSTORE_NAME_VALUE_OP, (CHAR8 **)&mVarStoreNameValue), 
+  CIfrVarStoreNameValue () : CIfrObj (EFI_IFR_VARSTORE_NAME_VALUE_OP, (CHAR8 **)&mVarStoreNameValue),
                               CIfrOpHeader (EFI_IFR_VARSTORE_NAME_VALUE_OP, &mVarStoreNameValue->Header) {
     mVarStoreNameValue->VarStoreId = EFI_VAROFFSET_INVALID;
     memset (&mVarStoreNameValue->Guid, 0, sizeof (EFI_GUID));
@@ -1013,7 +1013,7 @@ private:
 
 public:
   CIfrGet (
-  IN UINT32 LineNo  
+  IN UINT32 LineNo
   ) : CIfrObj (EFI_IFR_GET_OP, (CHAR8 **)&mGet),
       CIfrOpHeader (EFI_IFR_GET_OP, &mGet->Header) {
     SetLineNo (LineNo);
@@ -1073,7 +1073,7 @@ private:
 
 public:
   CIfrText () : CIfrObj (EFI_IFR_TEXT_OP, (CHAR8 **)&mText),
-               CIfrOpHeader (EFI_IFR_TEXT_OP, &mText->Header), 
+               CIfrOpHeader (EFI_IFR_TEXT_OP, &mText->Header),
                CIfrStatementHeader (&mText->Statement) {
     mText->TextTwo = EFI_STRING_ID_INVALID;
   }
@@ -1089,7 +1089,7 @@ private:
 
 public:
   CIfrRef () : CIfrObj (EFI_IFR_REF_OP, (CHAR8 **)&mRef),
-              CIfrOpHeader (EFI_IFR_REF_OP, &mRef->Header), 
+              CIfrOpHeader (EFI_IFR_REF_OP, &mRef->Header),
               CIfrQuestionHeader (&mRef->Question) {
     mRef->FormId = 0;
   }
@@ -1105,7 +1105,7 @@ private:
 
 public:
   CIfrRef2 () : CIfrObj (EFI_IFR_REF_OP, (CHAR8 **)&mRef2, sizeof (EFI_IFR_REF2)),
-               CIfrOpHeader (EFI_IFR_REF_OP, &mRef2->Header, sizeof (EFI_IFR_REF2)), 
+               CIfrOpHeader (EFI_IFR_REF_OP, &mRef2->Header, sizeof (EFI_IFR_REF2)),
                CIfrQuestionHeader (&mRef2->Question) {
     mRef2->FormId     = 0;
     mRef2->QuestionId = EFI_QUESTION_ID_INVALID;
@@ -1126,7 +1126,7 @@ private:
 
 public:
   CIfrRef3 () : CIfrObj (EFI_IFR_REF_OP, (CHAR8 **)&mRef3, sizeof(EFI_IFR_REF3)),
-               CIfrOpHeader (EFI_IFR_REF_OP, &mRef3->Header, sizeof (EFI_IFR_REF3)), 
+               CIfrOpHeader (EFI_IFR_REF_OP, &mRef3->Header, sizeof (EFI_IFR_REF3)),
                CIfrQuestionHeader (&mRef3->Question) {
     mRef3->FormId     = 0;
     mRef3->QuestionId = EFI_QUESTION_ID_INVALID;
@@ -1152,7 +1152,7 @@ private:
 
 public:
   CIfrRef4 () : CIfrObj (EFI_IFR_REF_OP, (CHAR8 **)&mRef4, sizeof(EFI_IFR_REF4)),
-               CIfrOpHeader (EFI_IFR_REF_OP, &mRef4->Header, sizeof(EFI_IFR_REF4)), 
+               CIfrOpHeader (EFI_IFR_REF_OP, &mRef4->Header, sizeof(EFI_IFR_REF4)),
                CIfrQuestionHeader (&mRef4->Question) {
     mRef4->FormId     = 0;
     mRef4->QuestionId = EFI_QUESTION_ID_INVALID;
@@ -1183,7 +1183,7 @@ private:
 
 public:
   CIfrRef5 () : CIfrObj (EFI_IFR_REF_OP, (CHAR8 **)&mRef5, sizeof (EFI_IFR_REF5)),
-              CIfrOpHeader (EFI_IFR_REF_OP, &mRef5->Header, sizeof (EFI_IFR_REF5)), 
+              CIfrOpHeader (EFI_IFR_REF_OP, &mRef5->Header, sizeof (EFI_IFR_REF5)),
               CIfrQuestionHeader (&mRef5->Question) {
   }
 };
@@ -1194,7 +1194,7 @@ private:
 
 public:
   CIfrResetButton () : CIfrObj (EFI_IFR_RESET_BUTTON_OP, (CHAR8 **)&mResetButton),
-                       CIfrOpHeader (EFI_IFR_RESET_BUTTON_OP, &mResetButton->Header), 
+                       CIfrOpHeader (EFI_IFR_RESET_BUTTON_OP, &mResetButton->Header),
   CIfrStatementHeader (&mResetButton->Statement) {
     mResetButton->DefaultId = EFI_HII_DEFAULT_CLASS_STANDARD;
   }
@@ -1210,7 +1210,7 @@ private:
 
 public:
   CIfrCheckBox () : CIfrObj (EFI_IFR_CHECKBOX_OP, (CHAR8 **)&mCheckBox),
-                     CIfrOpHeader (EFI_IFR_CHECKBOX_OP, &mCheckBox->Header), 
+                     CIfrOpHeader (EFI_IFR_CHECKBOX_OP, &mCheckBox->Header),
                      CIfrQuestionHeader (&mCheckBox->Question) {
     mCheckBox->Flags = 0;
     gCurrentQuestion  = this;
@@ -1250,7 +1250,7 @@ private:
 
 public:
   CIfrAction () : CIfrObj (EFI_IFR_ACTION_OP, (CHAR8 **)&mAction),
-                 CIfrOpHeader (EFI_IFR_ACTION_OP, &mAction->Header), 
+                 CIfrOpHeader (EFI_IFR_ACTION_OP, &mAction->Header),
                  CIfrQuestionHeader (&mAction->Question) {
     mAction->QuestionConfig = EFI_STRING_ID_INVALID;
   }
@@ -2008,8 +2008,8 @@ public:
     mEqIdVList->ListLength   = 0;
     mEqIdVList->ValueList[0] = 0;
   }
-  
-  VOID UpdateIfrBuffer ( 
+
+  VOID UpdateIfrBuffer (
   ) {
     _EMIT_PENDING_OBJ();
     mEqIdVList = (EFI_IFR_EQ_ID_VAL_LIST *) GetObjBinAddr();
@@ -2634,7 +2634,7 @@ private:
 
 public:
   CIfrMap (
-  IN UINT32 LineNo  
+  IN UINT32 LineNo
   ) : CIfrObj (EFI_IFR_MAP_OP, (CHAR8 **)&mMap),
       CIfrOpHeader (EFI_IFR_MAP_OP, &mMap->Header) {
     SetLineNo (LineNo);

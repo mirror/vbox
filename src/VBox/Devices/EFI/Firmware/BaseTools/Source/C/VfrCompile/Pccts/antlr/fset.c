@@ -231,7 +231,7 @@ set *rk;
                 } else {
                   REACH(p->p1, k, rk, a);
                 }
-    }	
+    }
 
 	/* C a c h e  R e s u l t s */
 
@@ -273,10 +273,10 @@ set *rk;
 		fprintf(stderr, "\n");
 #endif
 	}
-	
+
     if (p->jtype != RuleBlk && p->p2 != NULL && /* MR14 */ ! p->guess) {
        REACH(p->p2, k, rk, b);
-    }	
+    }
 
 	if ( p->jtype==aLoopBlk || p->jtype==RuleBlk ||
 		 p->jtype==aPlusBlk || p->jtype==EndRule )
@@ -421,7 +421,7 @@ set *rk;
 	}
 
 	REACH(p->next, k-1, rk, a);
-	
+
     if (MR_MaintainBackTrace) MR_pointerStackPop(&MR_BackTraceStack);
 
 	return a;
@@ -441,7 +441,7 @@ set *rk;
 
 	require(p!=NULL,			"rJunc: NULL node");
 	require(p->ntype==nAction,	"rJunc: not action");
-	
+
 /* MR11 */    if (p->is_predicate && p->ampersandPred != NULL) {
 /* MR11 */      Predicate   *pred=p->ampersandPred;
 /* MR11 */      if (k <= pred->k) {
@@ -1171,7 +1171,7 @@ int jtype;
 	CurAmbigbtype = sub;
 	CurAmbigfile = alt1->file;
 	CurAmbigline = alt1->line;
-	
+
 	/* Don't do full LL(n) analysis if (...)? block because the block,
 	   by definition, defies LL(n) analysis.
 	   If guess (...)? block and ambiguous then don't remove anything from
@@ -1252,9 +1252,9 @@ int jtype;
 		free((char *)ftbl);
 		return;
 	}
-	
+
 	/* Not resolved with (..)? block.  Do full LL(n) analysis */
-	
+
 	/* ambig is the set of k-tuples truly in common between alt 1 and alt 2 */
     /* MR11 VerifyAmbig once used fset destructively */
 

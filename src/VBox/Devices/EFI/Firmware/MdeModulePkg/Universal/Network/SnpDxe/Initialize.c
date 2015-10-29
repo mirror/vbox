@@ -2,10 +2,10 @@
  		Implementation of initializing a network adapter.
 
 Copyright (c) 2004 - 2008, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed 
-and made available under the terms and conditions of the BSD License which 
-accompanies this distribution. The full text of the license may be found at 
-http://opensource.org/licenses/bsd-license.php 
+This program and the accompanying materials are licensed
+and made available under the terms and conditions of the BSD License which
+accompanies this distribution. The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
 
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
@@ -19,9 +19,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   Call UNDI to initialize the interface.
 
   @param  Snp                   Pointer to snp driver structure.
-  @param  CableDetectFlag       Do/don't detect the cable (depending on what 
+  @param  CableDetectFlag       Do/don't detect the cable (depending on what
                                 undi supports).
-  
+
   @retval EFI_SUCCESS           UNDI is initialized successfully.
   @retval EFI_DEVICE_ERROR      UNDI could not be initialized.
   @retval Other                 Other errors as indicated.
@@ -129,8 +129,8 @@ PxeInit (
 
 
 /**
-  Resets a network adapter and allocates the transmit and receive buffers 
-  required by the network interface; optionally, also requests allocation of 
+  Resets a network adapter and allocates the transmit and receive buffers
+  required by the network interface; optionally, also requests allocation of
   additional transmit and receive buffers.
 
   This function allocates the transmit and receive buffers required by the network
@@ -142,8 +142,8 @@ PxeInit (
 
   @param ExtraRxBufferSize  The size, in bytes, of the extra receive buffer space
                             that the driver should allocate for the network interface.
-                            Some network interfaces will not be able to use the 
-                            extra buffer, and the caller will not know if it is 
+                            Some network interfaces will not be able to use the
+                            extra buffer, and the caller will not know if it is
                             actually being used.
   @param ExtraTxBufferSize  The size, in bytes, of the extra transmit buffer space
                             that the driver should allocate for the network interface.

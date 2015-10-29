@@ -38,7 +38,7 @@
   Crc32.c
   Runtime.h
   Runtime.c
- 
+
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -57,7 +57,7 @@
 [Protocols]
   gEfiRuntimeArchProtocolGuid                   ## PRODUCES
   gEfiLoadedImageProtocolGuid                   ## CONSUMES
- 
+
 [depex]
   TRUE
 

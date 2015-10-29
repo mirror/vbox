@@ -58,7 +58,7 @@
   BaseMemoryLib
   TimerLib
   PcdLib
-  
+
 [Protocols]
   gEfiSimpleTextInProtocolGuid                  ## BY_START
   gEfiSimpleTextInputExProtocolGuid             ## BY_START

@@ -36,10 +36,10 @@ def SetCommon(Common, XmlCommon):
 
     XmlTag = "FeatureFlag"
     Common.FeatureFlag = XmlAttribute(XmlCommon, XmlTag)
-    
+
     XmlTag = "SupArchList"
     Common.SupArchList = XmlAttribute(XmlCommon, XmlTag).split()
-    
+
     XmlTag = XmlNodeName(XmlCommon) + "/" + "HelpText"
     Common.HelpText = XmlElement(XmlCommon, XmlTag)
 
@@ -56,7 +56,7 @@ def SetCommon(Common, XmlCommon):
 #
 def SetIdentification(CommonHeader, XmlCommonHeader, NameTag, FileName):
     XmlParentTag = XmlNodeName(XmlCommonHeader)
-    
+
     XmlTag = XmlParentTag + "/" + NameTag
     CommonHeader.Name = XmlElement(XmlCommonHeader, XmlTag)
 
@@ -102,7 +102,7 @@ def AddToSpecificationDict(SpecificationDict, SpecificationString):
 def SetCommonHeader(CommonHeader, XmlCommonHeader):
     """Set all attributes of CommonHeaderClass object from XmlCommonHeader"""
     XmlParent = XmlNodeName(XmlCommonHeader)
-    
+
     XmlTag = XmlParent + "/" + "Abstract"
     CommonHeader.Abstract = XmlElement(XmlCommonHeader, XmlTag)
 
@@ -144,16 +144,16 @@ def LoadClonedRecord(XmlCloned):
 
     XmlTag = "Cloned/PackageGuid"
     ClonedRecord.PackageGuid = XmlElement(XmlCloned, XmlTag)
-    
+
     XmlTag = "Cloned/PackageVersion"
     ClonedRecord.PackageVersion = XmlElement(XmlCloned, XmlTag)
-    
+
     XmlTag = "Cloned/ModuleGuid"
     ClonedRecord.ModuleGuid = XmlElement(XmlCloned, XmlTag)
-    
+
     XmlTag = "Cloned/ModuleVersion"
     ClonedRecord.ModuleVersion = XmlElement(XmlCloned, XmlTag)
-    
+
     return ClonedRecord
 
 
@@ -169,7 +169,7 @@ def LoadClonedRecord(XmlCloned):
 #
 def LoadGuidProtocolPpiCommon(XmlGuidProtocolPpiCommon):
     GuidProtocolPpiCommon = GuidProtocolPpiCommonClass()
-    
+
     XmlTag = "Name"
     GuidProtocolPpiCommon.Name = XmlAttribute(XmlGuidProtocolPpiCommon, XmlTag)
 
@@ -180,19 +180,19 @@ def LoadGuidProtocolPpiCommon(XmlGuidProtocolPpiCommon):
         XmlTag = "%s/GuidCName" % XmlParent
     else:
         XmlTag = "%s/%sCName" % (XmlParent, XmlParent)
-        
+
     GuidProtocolPpiCommon.CName = XmlElement(XmlGuidProtocolPpiCommon, XmlTag)
-    
+
     XmlTag = XmlParent + "/" + "GuidValue"
     GuidProtocolPpiCommon.Guid = XmlElement(XmlGuidProtocolPpiCommon, XmlTag)
-    
+
     if XmlParent.endswith("Notify"):
         GuidProtocolPpiCommon.Notify = True
 
     XmlTag = "GuidTypeList"
     GuidTypes = XmlAttribute(XmlGuidProtocolPpiCommon, XmlTag)
     GuidProtocolPpiCommon.GuidTypeList = GuidTypes.split()
-    
+
     XmlTag = "SupModuleList"
     SupModules = XmlAttribute(XmlGuidProtocolPpiCommon, XmlTag)
     GuidProtocolPpiCommon.SupModuleList = SupModules.split()
@@ -264,24 +264,24 @@ def LoadLibraryClass(XmlLibraryClass):
     if LibraryClass.LibraryClass == "":
         XmlTag = "Name"
         LibraryClass.LibraryClass = XmlAttribute(XmlLibraryClass, XmlTag)
-    
+
     XmlTag = "LibraryClass/IncludeHeader"
     LibraryClass.IncludeHeader = XmlElement(XmlLibraryClass, XmlTag)
-    
+
     XmlTag = "RecommendedInstanceVersion"
     RecommendedInstanceVersion = XmlAttribute(XmlLibraryClass, XmlTag)
     LibraryClass.RecommendedInstanceVersion = RecommendedInstanceVersion
-    
+
     XmlTag = "RecommendedInstanceGuid"
     RecommendedInstanceGuid = XmlAttribute(XmlLibraryClass, XmlTag)
     LibraryClass.RecommendedInstanceGuid = RecommendedInstanceGuid
-    
+
     XmlTag = "SupModuleList"
     SupModules = XmlAttribute(XmlLibraryClass, XmlTag)
     LibraryClass.SupModuleList = SupModules.split()
-    
+
     SetCommon(LibraryClass, XmlLibraryClass)
-    
+
     return LibraryClass
 
 
@@ -297,24 +297,24 @@ def LoadLibraryClass(XmlLibraryClass):
 def LoadBuildOption(XmlBuildOption):
     """Return a new BuildOptionClass object equivalent to XmlBuildOption"""
     BuildOption = BuildOptionClass()
-    
+
     BuildOption.Option = XmlElementData(XmlBuildOption)
 
     XmlTag = "BuildTargets"
     BuildOption.BuildTargetList = XmlAttribute(XmlBuildOption, XmlTag).split()
-    
+
     XmlTag = "ToolChainFamily"
     BuildOption.ToolChainFamily = XmlAttribute(XmlBuildOption, XmlTag)
-    
+
     XmlTag = "TagName"
     BuildOption.TagName = XmlAttribute(XmlBuildOption, XmlTag)
-    
+
     XmlTag = "ToolCode"
     BuildOption.ToolCode = XmlAttribute(XmlBuildOption, XmlTag)
-    
+
     XmlTag = "SupArchList"
     BuildOption.SupArchList = XmlAttribute(XmlBuildOption, XmlTag).split()
-    
+
     return BuildOption
 
 
@@ -330,15 +330,15 @@ def LoadBuildOption(XmlBuildOption):
 #
 def LoadUserExtensions(XmlUserExtensions):
     UserExtensions = UserExtensionsClass()
-    
+
     XmlTag = "UserID"
     UserExtensions.UserID = XmlAttribute(XmlUserExtensions, XmlTag)
-    
+
     XmlTag = "Identifier"
     UserExtensions.Identifier = XmlAttribute(XmlUserExtensions, XmlTag)
-    
+
     UserExtensions.Content = XmlElementData(XmlUserExtensions)
-    
+
     return UserExtensions
 
 
@@ -490,7 +490,7 @@ def GetTextFileInfo(FileName, TagTuple):
                         ValueTuple[Index] = Value
     except:
         EdkLogger.info("IO Error in reading file %s" % FileName)
-        
+
     return ValueTuple
 
 
@@ -524,7 +524,7 @@ def MigrationOptionParser(Source, Destinate, ToolName, VersionNumber = 1.0):
     UsageString = "%s [-a] [-v|-q] [-o <output_file>] <input_file>" % ToolName
     Version = "%s Version %.2f" % (ToolName, VersionNumber)
     Copyright = "Copyright (c) 2007, Intel Corporation. All rights reserved."
-    
+
     Parser = OptionParser(description=Copyright, version=Version, usage=UsageString)
     Parser.add_option("-o", "--output", dest="OutputFile", help="The name of the %s file to be created." % Destinate)
     Parser.add_option("-a", "--auto", dest="AutoWrite", action="store_true", default=False, help="Automatically create the %s file using the name of the %s file and replacing file extension" % (Source, Destinate))
@@ -540,7 +540,7 @@ def MigrationOptionParser(Source, Destinate, ToolName, VersionNumber = 1.0):
         EdkLogger.setLevel(EdkLogger.QUIET)
     else:
         EdkLogger.setLevel(EdkLogger.INFO)
-        
+
     # error check
     if len(Args) == 0:
         raise MigrationError(PARAMETER_MISSING, name="Input file", usage=Parser.get_usage())

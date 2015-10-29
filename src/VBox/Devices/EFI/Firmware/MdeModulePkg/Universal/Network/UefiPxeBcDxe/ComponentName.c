@@ -316,7 +316,7 @@ PxeBcComponentNameGetControllerName (
   EFI_PXE_BASE_CODE_PROTOCOL  *PxeBc;
   EFI_HANDLE                  NicHandle;
   EFI_STATUS                  Status;
-  
+
   if (ControllerHandle == NULL || ChildHandle != NULL) {
     return EFI_UNSUPPORTED;
   }
