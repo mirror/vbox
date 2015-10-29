@@ -4019,7 +4019,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
               and newer Windows versions do not.</para></footnote>. This file is
               typically located in <computeroutput>C:\Windows\System32</computeroutput>. Copy it
               to the same location in your Windows 7 guest. Make sure you copy the 32-bit or
-              or 64-bit version of the DLL which matches your Windows 7 guest.</para>
+              64-bit version of the DLL which matches your Windows 7 guest.</para>
             </listitem>
           </itemizedlist>
         </sect4>
