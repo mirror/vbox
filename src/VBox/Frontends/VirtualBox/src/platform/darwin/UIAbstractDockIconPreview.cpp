@@ -111,10 +111,10 @@ void UIAbstractDockIconPreviewHelper::initPreviewImages()
         m_dockMonitorGlossy = ::darwinToCGImageRef("monitor_glossy.png");
         Assert(m_dockMonitorGlossy);
         /* This depends on the content of monitor.png */
-        m_updateRect = CGRectMake(m_monitorRect.origin.x + 7 + 1,
-                                  m_monitorRect.origin.y + 8 + 1,
-                                  118 - 7 - 2,
-                                  103 - 8 - 2);
+        m_updateRect = CGRectMake(m_monitorRect.origin.x + 8 /* left-frame */ + 1 /* indent-size */,
+                                  m_monitorRect.origin.y + 8 /* top-frame  */ + 1 /* indent-size */,
+                                  128 /* .png-width  */ - 8 /* left-frame */ -  8 /* right-frame  */ - 2 * 1 /* indent-size */,
+                                  128 /* .png-height */ - 8 /* top-frame  */ - 25 /* bottom-frame */ - 2 * 1 /* frame-size  */);
     }
 }
 
