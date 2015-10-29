@@ -4087,7 +4087,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
 
               <para>From the "File" menu, select "Kernel debug". Under the "NET" tab, specify the UDP port
               number you used in the <computeroutput>paravirtdebug</computeroutput> options. If you didn't
-              specify any, leave it as 50000. Ensure that the UDP port not blocked by a firewall or other
+              specify any, leave it as 50000. Ensure that the UDP port is not blocked by a firewall or other
               security software.</para>
 
               <para>In the "Key" field, enter <computeroutput>1.2.3.4</computeroutput> or the encryption
