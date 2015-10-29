@@ -211,6 +211,8 @@ VBOX_EFI_DEPENDENCIES = \
 
 #
 # The common build.py invocation part.
+# Note! windir isn't set in cygwin on tinderwin2a. SystemRoot is.
+# Note! MAKEFLAGS must be zapped on Windows so nmake don't get confused.
 #
 if1of ($(KBUILD_HOST), win)
  VBOX_EFI_REDIRECT_E_EQUAL:=$(EQUAL)
