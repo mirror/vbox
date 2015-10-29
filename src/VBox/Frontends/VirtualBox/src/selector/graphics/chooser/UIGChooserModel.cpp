@@ -1099,9 +1099,10 @@ void UIGChooserModel::sltStartScrolling()
     QGraphicsView *pView = scene()->views()[0];
     QScrollBar *pVerticalScrollBar = pView->verticalScrollBar();
 
-    /* Request still valid? */
+    /* Convert mouse position to view co-ordinates: */
     QPoint mousePos = pView->mapFromGlobal(QCursor::pos());
-    if (mousePos.y() < m_iScrollingTokenSize)
+    /* Mouse position is at the top of view? */
+    if (mousePos.y() < m_iScrollingTokenSize && mousePos.y() > 0)
     {
         int iValue = mousePos.y();
         if (!iValue) iValue = 1;
@@ -1114,7 +1115,8 @@ void UIGChooserModel::sltStartScrolling()
             QTimer::singleShot(10, this, SLOT(sltStartScrolling()));
         }
     }
-    else if (mousePos.y() > pView->height() - m_iScrollingTokenSize)
+    /* Mouse position is at the bottom of view? */
+    else if (mousePos.y() > pView->height() - m_iScrollingTokenSize && mousePos.y() < pView->height())
     {
         int iValue = pView->height() - mousePos.y();
         if (!iValue) iValue = 1;
