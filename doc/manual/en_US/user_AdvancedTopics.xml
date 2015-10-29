@@ -4062,7 +4062,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
                 ignored completely when using the Hyper-V debug transport. Specify any valid IP and a
                 port greater than 49151 and less than 65536.</para>
 
-                <para>However, the encryption key in the <computeroutput>bcdedit</computeroutput> command is
+                <para>The encryption key in the <computeroutput>bcdedit</computeroutput> command is
                 relevant and must be valid. The key "1.2.3.4" used in the above example is valid
                 and may be used if security is not a concern. If you do not specify any encryption key,
                 <computeroutput>bcdedit</computeroutput> will generate one for you and you will need to copy
