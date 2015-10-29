@@ -253,59 +253,10 @@
   Ia32/DisableCache.asm | INTEL
 
   Ia32/GccInline.c | GCC
-<<<<<<< .working
 # VBox begin (yasm doesn't like the nasm variant) - original:
-#  Ia32/Thunk16.nasm | GCC 
+#  Ia32/Thunk16.nasm | GCC
   Ia32/Thunk16.asm | GCC
 # VBox end
-  Ia32/EnableDisableInterrupts.S | GCC 
-  Ia32/EnablePaging64.S | GCC 
-  Ia32/DisablePaging32.S | GCC 
-  Ia32/EnablePaging32.S | GCC 
-  Ia32/Mwait.S | GCC 
-  Ia32/Monitor.S | GCC 
-  Ia32/CpuIdEx.S | GCC 
-  Ia32/CpuId.S | GCC 
-  Ia32/LongJump.S | GCC 
-  Ia32/SetJump.S | GCC 
-  Ia32/SwapBytes64.S | GCC 
-  Ia32/DivU64x64Remainder.S | GCC 
-  Ia32/DivU64x32Remainder.S | GCC 
-  Ia32/ModU64x32.S | GCC 
-  Ia32/DivU64x32.S | GCC 
-  Ia32/MultU64x64.S | GCC 
-  Ia32/MultU64x32.S | GCC 
-  Ia32/RRotU64.S | GCC 
-  Ia32/LRotU64.S | GCC 
-  Ia32/ARShiftU64.S | GCC 
-  Ia32/RShiftU64.S | GCC 
-  Ia32/LShiftU64.S | GCC 
-||||||| .merge-left.r103776
-  Ia32/Thunk16.nasm | GCC 
-  Ia32/EnableDisableInterrupts.S | GCC 
-  Ia32/EnablePaging64.S | GCC 
-  Ia32/DisablePaging32.S | GCC 
-  Ia32/EnablePaging32.S | GCC 
-  Ia32/Mwait.S | GCC 
-  Ia32/Monitor.S | GCC 
-  Ia32/CpuIdEx.S | GCC 
-  Ia32/CpuId.S | GCC 
-  Ia32/LongJump.S | GCC 
-  Ia32/SetJump.S | GCC 
-  Ia32/SwapBytes64.S | GCC 
-  Ia32/DivU64x64Remainder.S | GCC 
-  Ia32/DivU64x32Remainder.S | GCC 
-  Ia32/ModU64x32.S | GCC 
-  Ia32/DivU64x32.S | GCC 
-  Ia32/MultU64x64.S | GCC 
-  Ia32/MultU64x32.S | GCC 
-  Ia32/RRotU64.S | GCC 
-  Ia32/LRotU64.S | GCC 
-  Ia32/ARShiftU64.S | GCC 
-  Ia32/RShiftU64.S | GCC 
-  Ia32/LShiftU64.S | GCC 
-=======
-  Ia32/Thunk16.nasm | GCC
   Ia32/EnableDisableInterrupts.S | GCC
   Ia32/EnablePaging64.S | GCC
   Ia32/DisablePaging32.S | GCC
@@ -328,7 +279,6 @@
   Ia32/ARShiftU64.S | GCC
   Ia32/RShiftU64.S | GCC
   Ia32/LShiftU64.S | GCC
->>>>>>> .merge-right.r103776
   Ia32/EnableCache.S | GCC
   Ia32/DisableCache.S | GCC
 
