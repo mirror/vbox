@@ -4056,18 +4056,16 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
                   <screen>bcdedit /set {default} loadoptions host_ip=5.5.5.5,host_port=50000,encryption_key=1.2.3.4</screen>
                   <screen>bcdedit /set dbgtransport kdvm.dll</screen>
                   </para>
+                  <para>The IP and port in the <computeroutput>bcdedit</computeroutput> command are
+                  ignored completely when using the Hyper-V debug transport. Specify any valid IP and a
+                  port greater than 49151 and less than 65536.</para>
+
+                  <para>The encryption key in the <computeroutput>bcdedit</computeroutput> command is
+                  relevant and must be valid. The key "1.2.3.4" used in the above example is valid
+                  and may be used if security is not a concern. If you do not specify any encryption key,
+                  <computeroutput>bcdedit</computeroutput> will generate one for you and you will need to copy
+                  this key to later paste into Microsoft WinDbg on the remote end.</para>
                 </listitem>
-
-                <para>The IP and port in the <computeroutput>bcdedit</computeroutput> command are
-                ignored completely when using the Hyper-V debug transport. Specify any valid IP and a
-                port greater than 49151 and less than 65536.</para>
-
-                <para>The encryption key in the <computeroutput>bcdedit</computeroutput> command is
-                relevant and must be valid. The key "1.2.3.4" used in the above example is valid
-                and may be used if security is not a concern. If you do not specify any encryption key,
-                <computeroutput>bcdedit</computeroutput> will generate one for you and you will need to copy
-                this key to later paste into Microsoft WinDbg on the remote end.</para>
-
                 <listitem>
                   <para>Execute one or more of the following commands to enable debugging for
                   the appropriate phase or component of your Windows guest: </para>
