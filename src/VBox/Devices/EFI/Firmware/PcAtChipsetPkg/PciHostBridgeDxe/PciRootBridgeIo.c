@@ -14,10 +14,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "PciHostBridge.h"
 #include "IoFifo.h"
-#ifdef VBOX
-# define IN_RING3
-# include <iprt/asm-amd64-x86.h>
-#endif
 
 typedef struct {
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR     SpaceDesp[TypeMax];
@@ -999,35 +995,51 @@ RootBridgeIoIoRW (
   InStride = mInStride[Width];
   OutStride = mOutStride[Width];
   OperationWidth = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) (Width & 0x03);
-#ifdef VBOX
-  /* rep ins/outs is much faster than single port I/O */
-  if (Count > 1 && Width >= EfiPciWidthFifoUint8 && Width <= EfiPciWidthFifoUint32)
-  {
-    switch (Width)
-    {
-      case EfiPciWidthFifoUint8:
-        if (Write)
-          ASMOutStrU8((RTIOPORT)Address, (const uint8_t*)Buffer, (size_t)Count);
-        else
-          ASMInStrU8((RTIOPORT)Address, (uint8_t*)Buffer, (size_t)Count);
-        break;
-      case EfiPciWidthFifoUint16:
-        if (Write)
-          ASMOutStrU16((RTIOPORT)Address, (const uint16_t*)Buffer, (size_t)Count);
-        else
-          ASMInStrU16((RTIOPORT)Address, (uint16_t*)Buffer, (size_t)Count);
-        break;
-      case EfiPciWidthFifoUint32:
-        if (Write)
-          ASMOutStrU32((RTIOPORT)Address, (const uint32_t*)Buffer, (size_t)Count);
-        else
-          ASMInStrU32((RTIOPORT)Address, (uint32_t*)Buffer, (size_t)Count);
-        break;
-      default:
+
+#if defined (MDE_CPU_IA32) || defined (MDE_CPU_X64)
+  if (InStride == 0) {
+    if (Write) {
+      switch (OperationWidth) {
+        case EfiPciWidthUint8:
+          IoWriteFifo8 ((UINTN) Address, Count, Buffer);
+          return EFI_SUCCESS;
+        case EfiPciWidthUint16:
+          IoWriteFifo16 ((UINTN) Address, Count, Buffer);
+          return EFI_SUCCESS;
+        case EfiPciWidthUint32:
+          IoWriteFifo32 ((UINTN) Address, Count, Buffer);
+          return EFI_SUCCESS;
+        default:
+          //
+          // The RootBridgeIoCheckParameter call above will ensure that this
+          // path is not taken.
+          //
           ASSERT (FALSE);
+          break;
+      }
+    } else {
+      switch (OperationWidth) {
+        case EfiPciWidthUint8:
+          IoReadFifo8 ((UINTN) Address, Count, Buffer);
+          return EFI_SUCCESS;
+        case EfiPciWidthUint16:
+          IoReadFifo16 ((UINTN) Address, Count, Buffer);
+          return EFI_SUCCESS;
+        case EfiPciWidthUint32:
+          IoReadFifo32 ((UINTN) Address, Count, Buffer);
+          return EFI_SUCCESS;
+        default:
+          //
+          // The RootBridgeIoCheckParameter call above will ensure that this
+          // path is not taken.
+          //
+          ASSERT (FALSE);
+          break;
+      }
     }
-  } else {
+  }
 #endif
+
   for (Uint8Buffer = Buffer; Count > 0; Address += InStride, Uint8Buffer += OutStride, Count--) {
     if (Write) {
       switch (OperationWidth) {
@@ -1069,9 +1081,7 @@ RootBridgeIoIoRW (
       }
     }
   }
-#ifdef VBOX
-  }
-#endif
+
   return EFI_SUCCESS;
 }
 
