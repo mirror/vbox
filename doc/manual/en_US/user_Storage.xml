@@ -35,7 +35,7 @@
   section.</para>
 
   <sect1 id="harddiskcontrollers">
-    <title>Hard disk controllers: IDE, SATA (AHCI), SCSI, SAS, USB MSC</title>
+    <title>Hard disk controllers: IDE, SATA (AHCI), SCSI, SAS, USB MSD</title>
 
     <para>In a real PC, hard disks and CD/DVD drives are connected to a device
     called hard disk controller which drives hard disk operation and data
