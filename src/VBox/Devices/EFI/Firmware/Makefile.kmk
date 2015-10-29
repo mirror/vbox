@@ -241,7 +241,7 @@ VBOX_EFI_BUILD_CMD += \
 	-E 'X64_PETOOLS_PREFIX$(VBOX_EFI_REDIRECT_E_EQUAL)' \
 	-E 'ARCH$(VBOX_EFI_REDIRECT_E_EQUAL)' \
 	-E 'IPF_PETOOLS_PREFIX=__no_ipf__' \
-	-E $(if-expr "$(EFI_QUIET)" != "" || "$(KBUILD_VERBOSE)" != "",'EFI_QUIET=','EFI_QUIET=@') \
+	-E $(if-expr "$(KBUILD_VERBOSE)" != "",'EFI_QUIET=','EFI_QUIET=@') \
 	-C '$(VBOX_PATH_EFI_FIRMWARE)' \
 	-- $(VBOX_BLD_PYTHON) "$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python/build/build.py" \
 	-D VBOX=1 \
@@ -253,8 +253,7 @@ VBOX_EFI_BUILD_CMD += \
 	-D "VBOX_RESET_VECTOR_X86=$(VBoxEfiResetVector-x86_1_TARGET)" \
 	-D "VBOX_RESET_VECTOR_AMD64=$(VBoxEfiResetVector-amd64_1_TARGET)" \
 	$(if $(VBOX_OSE),-D "VBOX_OSE=1") \
-	--silent \
-	$(if $(KBUILD_VERBOSE),,--quiet) \
+	$(if-expr "$(KBUILD_VERBOSE)" != "",$(if-expr "$(KBUILD_VERBOSE)" >= 3,-v,),--silent --quiet) \
 	--no-cache \
 	--buildtarget $(VBOX_EFI_BUILD_TARGET) \
 	--tagname $(VBOX_EFI_TOOL_CHAIN)
