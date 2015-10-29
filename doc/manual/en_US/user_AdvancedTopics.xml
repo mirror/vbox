@@ -3911,4 +3911,201 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
     </sect2>
   </sect1>
 
+  <sect1 id="gimdebug">
+    <title>Paravirtualization debug options</title>
+
+    <note>
+      <para>These debug options significantly alter guest operating system behaviour
+      and should only be used by expert users for debugging and diagnostics.</para>
+    </note>
+
+    <para>The paravirtualization debug options are specified as a string of key-value
+    pairs. An empty string is equivalent to disabling all debug options.</para>
+
+    <sect2 id="gimdebughyperv">
+      <title>Hyper-V debug options</title>
+
+      <para>All of the options listed below are optional, and thus the default value
+      specified will be used when the corresponding key-value pair is not
+      specified.</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Key: <emphasis role="bold"><computeroutput>enabled</computeroutput></emphasis></para>
+          <para>Value: <computeroutput>0</computeroutput> or <computeroutput>1</computeroutput></para>
+          <para>Specify <computeroutput>1</computeroutput> to enable the Hyper-V debug
+            interface. If this key-value pair is not specified or the value is not
+            <computeroutput>1</computeroutput>, the Hyper-V debug interface is disabled
+            regardless of other key-value pairs being present.</para>
+        </listitem>
+        <listitem>
+          <para>Key: <emphasis role="bold"><computeroutput>address</computeroutput></emphasis></para>
+          <para>Value: IPv4 address</para>
+          <para>Default: 127.0.0.1</para>
+          <para>Specify the IPv4 address where the remote debugger is connected.</para>
+        </listitem>
+        <listitem>
+          <para>Key: <emphasis role="bold"><computeroutput>port</computeroutput></emphasis></para>
+          <para>Value: UDP port number</para>
+          <para>Default: 50000</para>
+          <para>Specify the UDP port number where the remote debugger is connected.</para>
+        </listitem>
+        <listitem>
+          <para>Key: <emphasis role="bold"><computeroutput>vendorid</computeroutput></emphasis></para>
+          <para>Value: Hyper-V vendor signature reported via CPUID to the guest</para>
+          <para>Default: When debugging is enabled: <computeroutput>Microsoft Hv</computeroutput>,
+          otherwise: <computeroutput>VBoxVBoxVBox</computeroutput></para>
+          <para>Specify the Hyper-V vendor signature which is exposed to the guest via CPUID.
+          For debugging Microsoft Windows guests, it is required the hypervisor reports
+          the Microsoft vendor.</para>
+        </listitem>
+        <listitem>
+          <para>Key: <emphasis role="bold"><computeroutput>hypercallinterface</computeroutput>
+          </emphasis></para>
+          <para>Value: <computeroutput>0</computeroutput> or <computeroutput>1</computeroutput></para>
+          <para>Default: <computeroutput>0</computeroutput></para>
+          <para>Specify whether hypercalls should be suggested for initiating debug data
+          transfers between host and guest rather than MSRs when requested by the guest.</para>
+        </listitem>
+        <listitem>
+          <para>Key: <emphasis role="bold"><computeroutput>vsinterface</computeroutput>
+          </emphasis></para>
+          <para>Value: <computeroutput>0</computeroutput> or <computeroutput>1</computeroutput></para>
+          <para>Default: When debugging is enabled, <computeroutput>1</computeroutput>,
+          otherwise <computeroutput>0</computeroutput></para>
+          <para>Specify whether to expose the "VS#1" (virtualization service interface) to the
+          guest. This interface is required for debugging Microsoft Windows 10 32-bit guests, but
+          is optional for other Windows versions.</para>
+        </listitem>
+      </itemizedlist>
+
+      <sect3 id="gimdebughyperv-windows-setup">
+        <title>Setting up Windows guests for debugging with the Hyper-V paravirtualization provider</title>
+
+        <para>Windows supports debugging over a serial cable, USB, IEEE 1394 Firewire, and Ethernet
+        (only Windows 8 and later). USB and IEEE 1394 are not applicable for virtual machines, and
+        Ethernet requires Windows 8 or later. While serial connection is universally usable, it is
+        slow.</para>
+
+        <para>Debugging using the Hyper-V debug transport, supported on Windows 7 and later,
+        offers significant benefits. It provides excellent performance due to direct host-to-guest
+        transfers, it is easy to set up and requires minimal support from the hypervisor. It can be
+        used with the debugger running on the same host as the VM or with the debugger and VM on
+        separate machines connected over a network.</para>
+
+        <sect4><title>Prerequisites</title>
+          <itemizedlist>
+            <listitem>
+              <para>A VM configured for Hyper-V paravirtualization running a Windows 7 or newer
+              Windows guest. You may check the effective paravirtualization provider for your VM from
+              the output of the following VBoxManage command:</para>
+              <para><screen>VBoxManage showvminfo "VM name"</screen></para>
+            </listitem>
+
+            <listitem>
+              <para>A sufficiently up-to-date version of the Microsoft WinDbg debugger required
+              to debug the version of Windows in your VM.</para>
+            </listitem>
+
+            <listitem>
+              <para>While Windows 8 and newer Windows guests ship with Hyper-V debug support,
+              Windows 7 does not. To enable Hyper-V debugging on a Windows 7 guest, copy the file
+              <computeroutput>kdvm.dll</computeroutput> from a Windows 8.0 installation<footnote>
+              <para>Only Windows 8.0 ships <computeroutput>kdvm.dll</computeroutput>. Windows 8.1
+              and newer Windows guests do not.</para></footnote>. This file is
+              typically located in <computeroutput>C:\Windows\System32</computeroutput>. Copy it
+              to the same location in your Windows 7 guest. Make sure you copy the 32-bit or
+              or 64-bit version of the DLL which matches your Windows 7 guest.</para>
+            </listitem>
+          </itemizedlist>
+        </sect4>
+
+        <sect4><title>VM and guest configuration</title>
+          <orderedlist>
+            <listitem>
+              <para>Power off the VM.</para>
+            </listitem>
+
+            <listitem>
+              <para>Enable the debug options by executing the following VBoxManage command:</para>
+              <para><screen>VBoxManage modifyvm "VM name" --paravirtdebug "enabled=1"</screen></para>
+              <para>The above command assumes your debugger will connect to your host machine
+              on UDP port 50000. However, if you need to run the debugger on a remote machine
+              you may specify the remote address and port here, e.g. using:</para>
+              <para>
+              <screen>VBoxManage modifyvm "VM name" --paravirtdebug "enabled=1,address=192.168.32.1,port=55000"</screen>
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>Start the VM.</para>
+            </listitem>
+
+            <listitem>
+              <para>Once the guest has booted, start a command prompt as Administrator
+              and execute the following commands:</para>
+              <itemizedlist>
+                <listitem><para>For a Windows 8 or newer Windows guest:</para>
+                  <para>
+                  <screen>bcdedit /dbgsettings net hostip:5.5.5.5 port:50000 key:1.2.3.4</screen>
+                  </para>
+                </listitem>
+                <listitem><para>For a Windows 7 guest:</para>
+                  <para>
+                  <screen>bcdedit /set {default} loadoptions host_ip=5.5.5.5,host_port=50000,encryption_key=1.2.3.4</screen>
+                  <screen>bcdedit /set dbgtransport kdvm.dll</screen>
+                  </para>
+                </listitem>
+
+                <para>The IP and port in the <computeroutput>bcdedit</computeroutput> command are
+                ignored completely when using the Hyper-V synthetic debug transport. Specify any valid
+                IP and a port greater than 49151 and less than 65536.</para>
+
+                <para>However, the encryption key in the <computeroutput>bcdedit</computeroutput> command is
+                relevant and must be valid. The key "1.2.3.4" used in the above example is valid
+                and may be used if security is not a concern. If you do not specify any encryption key,
+                <computeroutput>bcdedit</computeroutput> will generate one for you and you will need to copy
+                this key to later paste into Microsoft WinDbg on the remote end.</para>
+
+                <listitem>
+                  <para>Execute one or more of the following commands to enable debugging for
+                  the appropriate phase or component of your Windows guest: </para>
+                  <para>
+                    <screen>bcdedit /set debug on</screen>
+                    <screen>bcdedit /set bootdebug on</screen>
+                    <screen>bcdedit /set bootdebug {bootmgr} on</screen>
+                  </para>
+                  <para>Refer to your official Microsoft documentation for what each of the above
+                  debug option covers.</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>Start Microsoft WinDbg on your host machine or remote host.</para>
+
+              <para>From the "File" menu, select "Kernel debug". Under the "NET" tab, specify the UDP port
+              number you used in the <computeroutput>paravirtdebug</computeroutput> options. If you didn't
+              specify any, leave it as 50000. Ensure that the UDP port not blocked by a firewall or other
+              security software.</para>
+
+              <para>In the "Key" field, enter <computeroutput>1.2.3.4</computeroutput> or the encryption
+              key from the <computeroutput>bcdedit</computeroutput> command in your Windows guest.</para>
+
+              <para>Now press "OK" to start listening for connections. Microsoft WinDbg typically shows
+              a "Waiting to reconnect" message during this phase.</para>
+
+            </listitem>
+
+            <listitem>
+              <para>Reboot your Windows guest and it should then connect as a debuggee with Microsoft
+              WinDbg.</para>
+            </listitem>
+          </orderedlist>
+        </sect4>
+      </sect3>
+    </sect2>
+
+  </sect1>
+
 </chapter>

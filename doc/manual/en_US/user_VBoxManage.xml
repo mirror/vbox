@@ -636,6 +636,15 @@ Statistics update:  disabled</screen></para>
           </listitem>
 
           <listitem>
+            <para><computeroutput>--paravirtdebug &lt;key=value&gt;
+            [,&lt;key=value&gt; ...]</computeroutput>: This setting specifies debugging
+            options specific to the paravirtualization provider
+            configured for this VM. Please refer to the provider specific
+            options under <xref linkend="gimdebug" /> for a list of valid keys
+            -value pairs for each provider.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--nestedpaging on|off</computeroutput>: If
             hardware virtualization is enabled, this additional setting
             enables or disables the use of the nested paging feature in the
@@ -1131,7 +1140,7 @@ Statistics update:  disabled</screen></para>
             number that the Parallel Port feature will be using. Use this
             <emphasis>after</emphasis>
             <computeroutput>--lptmod</computeroutput>. I/O base address and IRQ are
-			the values that guest sees i.e. the values avalable under guest Device Manager.</para>
+            the values that guest sees i.e. the values avalable under guest Device Manager.</para>
           </listitem>
 
           <listitem>
