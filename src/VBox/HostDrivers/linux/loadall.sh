@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ## @file
 # For development, builds and loads all the host drivers.
 #
@@ -22,9 +22,10 @@ if test -f "${MY_DIR}/src/vboxdrv/vboxdrv.ko"; then
     echo "Cleaning build folder."
     make -C "${MY_DIR}/src" clean > /dev/null
 fi
-if test ${#} -eq 0; then
-    sudo "${MY_DIR}/vboxdrv.sh" start
-elif test ${#} -eq 1 && test "x${1}" = x-u; then
+
+if [ ${#} -eq 0 ]; then
+    sudo "${MY_DIR}/vboxdrv.sh" setup
+elif [ ${#} -eq 1  -a "x${1}" = x-u ]; then
     sudo "${MY_DIR}/vboxdrv.sh" cleanup
 else
     echo "Usage: loadall.sh [-u]"
