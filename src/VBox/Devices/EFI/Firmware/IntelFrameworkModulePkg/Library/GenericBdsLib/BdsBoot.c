@@ -2092,8 +2092,8 @@ BdsFindUsbDevice (
         // Load the default boot file \EFI\BOOT\boot{machinename}.EFI from removable Media
         //  machinename is ia32, ia64, x64, ...
         //
-        VBoxLogFlowFuncMark();
 #ifdef VBOX /* We look for serveral files because of apple. */
+        VBoxLogFlowFuncMark();
         {
           INT32 IdxFile;
           for (IdxFile = 0; IdxFile < sizeof(maBdsLibBootFiles) / sizeof(maBdsLibBootFiles[0]); IdxFile++) {
@@ -2404,7 +2404,6 @@ BdsLibBootViaBootOption (
                     0,
                     &ImageHandle
                     );
-
     VBoxLogFlowFuncMarkRC(Status);
     //
     // If we didn't find an image directly, we need to try as if it is a removable device boot option
@@ -3209,7 +3208,6 @@ BdsDeleteAllInvalidEfiBootOption (
   ASSERT_EFI_ERROR (Status);
 
   FreePool (BootOrder);
-
   VBoxLogFlowFuncLeaveRC(Status);
   return Status;
 }
@@ -3619,7 +3617,6 @@ BdsLibEnumerateAllBootOption (
   //
   Status = BdsLibBuildOptionFromVar (BdsBootOptionList, L"BootOrder");
   mEnumBootDevice = TRUE;
-
   VBoxLogFlowFuncLeaveRC(Status);
   return Status;
 }
@@ -3902,7 +3899,7 @@ BdsLibGetBootableHandle (
     //
     // Check whether the device path of boot option is part of the  SimpleFileSystem handle's device path
     //
-    if (Size <= TempSize && CompareMem (TempDevicePath, UpdatedDevicePath, Size)==0) {
+    if (Size <= TempSize && CompareMem (TempDevicePath, UpdatedDevicePath, Size)== 0) {
 #ifdef VBOX
       //
       // Try detect image headers for one of the standard boot files.
