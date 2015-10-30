@@ -1483,9 +1483,6 @@ class PlatformAutoGen(AutoGen):
     ## Summarize the packages used by modules in this platform
     def _GetPackageList(self):
         if self._PackageList == None:
-            # VBox: The order of the package list is (or was) relevant to one or more
-            #       loops, so don't use set.update() but the slower manual updating.
-            #if False: # Original - undefined update order.
             self._PackageList = set()
             for La in self.LibraryAutoGenList:
                 self._PackageList.update(La.DependentPackageList)
@@ -1499,16 +1496,6 @@ class PlatformAutoGen(AutoGen):
                 ModuleData = self.BuildDatabase[ModuleFile, self.Arch, self.BuildTarget, self.ToolChain]
                 PkgSet.update(ModuleData.Packages)
             self._PackageList = list(self._PackageList) + list (PkgSet)
-            #else: # VBox - always update by appending new dependencies.
-            #    self._PackageList = []
-            #    for La in self.LibraryAutoGenList:
-            #        for DepPkg in La.DependentPackageList:
-            #            if DepPkg not in self._PackageList:
-            #                self._PackageList.append(DepPkg)
-            #    for Ma in self.ModuleAutoGenList:
-            #        for DepPkg in Ma.DependentPackageList:
-            #            if DepPkg not in self._PackageList:
-            #                self._PackageList.append(DepPkg)
         return self._PackageList
 
     def _GetNonDynamicPcdDict(self):
