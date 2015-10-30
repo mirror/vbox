@@ -260,7 +260,7 @@ DEFINE GCC_X64_RC_FLAGS            = -I binary -O elf64-x86-64      -B i386 --re
 
   DEBUG_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -Os -fno-omit-frame-pointer
   NOOPT_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -O0 -fno-omit-frame-pointer
-RELEASE_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -O2 -fno-omit-frame-pointer
+RELEASE_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -Os -fno-omit-frame-pointer
 *_UNIXGCC_IA32_RC_FLAGS             = DEF(GCC_IA32_RC_FLAGS)
 *_UNIXGCC_IA32_OBJCOPY_FLAGS        =
 
