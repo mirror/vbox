@@ -220,7 +220,7 @@ if1of ($(KBUILD_HOST), win)
 	-E 'PATH=$(VBOX_PATH_STAGE_EFI_BLDPROGS)$(VBOX_SEP)$(PATH);' \
 	-E 'INCLUDE=$(PATH_ROOT)/include$(VBOX_SEP)$(PATH_OUT)$(VBOX_SEP)$(VBOX_SEP)$(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)$(INCLUDE);' \
 	-E 'COMSPEC=$(firstword $(windir) $(SystemRoot) C:\windows)\system32\cmd.exe' \
-       -E 'MAKEFLAGS='
+	-E 'MAKEFLAGS='
 else
  VBOX_EFI_REDIRECT_E_EQUAL:=
 VBOX_EFI_BUILD_CMD = $(REDIRECT) \
