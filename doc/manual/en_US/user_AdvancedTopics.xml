@@ -3992,7 +3992,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
         Ethernet requires Windows 8 or later. While serial connection is universally usable, it is
         slow.</para>
 
-        <para>Debugging using the Hyper-V debug transport, supported on Windows 7 and later,
+        <para>Debugging using the Hyper-V debug transport, supported on Windows Vista and later,
         offers significant benefits. It provides excellent performance due to direct host-to-guest
         transfers, it is easy to set up and requires minimal support from the hypervisor. It can be
         used with the debugger running on the same host as the VM or with the debugger and VM on
@@ -4001,7 +4001,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
         <sect4><title>Prerequisites</title>
           <itemizedlist>
             <listitem>
-              <para>A VM configured for Hyper-V paravirtualization running a Windows 7 or newer
+              <para>A VM configured for Hyper-V paravirtualization running a Windows Vista or newer
               Windows guest. You may check the effective paravirtualization provider for your VM from
               the output of the following VBoxManage command:</para>
               <para><screen>VBoxManage showvminfo "VM name"</screen></para>
@@ -4014,13 +4014,14 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
 
             <listitem>
               <para>While Windows 8 and newer Windows guests ship with Hyper-V debug support,
-              Windows 7 does not. To use Hyper-V debugging for a Windows 7 guest, copy the file
+              Windows 7 and Vista do not. To use Hyper-V debugging with a Windows 7 or Vista
+              guest, copy the file
               <computeroutput>kdvm.dll</computeroutput> from a Windows 8.0 installation<footnote>
               <para>Only Windows 8.0 ships <computeroutput>kdvm.dll</computeroutput>. Windows 8.1
               and newer Windows versions do not.</para></footnote>. This file is
               typically located in <computeroutput>C:\Windows\System32</computeroutput>. Copy it
-              to the same location in your Windows 7 guest. Make sure you copy the 32-bit or
-              64-bit version of the DLL which matches your Windows 7 guest.</para>
+              to the same location in your Windows 7/Vista guest. Make sure you copy the 32-bit or
+              64-bit version of the DLL which matches your guest OS.</para>
             </listitem>
           </itemizedlist>
         </sect4>
@@ -4047,7 +4048,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
             </listitem>
 
             <listitem>
-              <para>In the guest, start a command prompt as Administrator and execute the
+              <para>In the guest, start an elevated command prompt and execute the
               following commands:</para>
               <itemizedlist>
                 <listitem><para>For a Windows 8 or newer Windows guest:</para>
@@ -4055,14 +4056,14 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
                   <screen>bcdedit /dbgsettings net hostip:5.5.5.5 port:50000 key:1.2.3.4</screen>
                   </para>
                 </listitem>
-                <listitem><para>For a Windows 7 guest:</para>
+                <listitem><para>For a Windows 7 or Vista guest:</para>
                   <para>
-                  <screen>bcdedit /set {default} loadoptions host_ip=5.5.5.5,host_port=50000,encryption_key=1.2.3.4</screen>
+                  <screen>bcdedit /set loadoptions host_ip=5.5.5.5,host_port=50000,encryption_key=1.2.3.4</screen>
                   <screen>bcdedit /set dbgtransport kdvm.dll</screen>
                   </para>
-                  <para>The IP and port in the <computeroutput>bcdedit</computeroutput> command are
-                  ignored completely when using the Hyper-V debug transport. Specify any valid IP and a
-                  port greater than 49151 and less than 65536.</para>
+                  <para>The IP address and port in the <computeroutput>bcdedit</computeroutput> command
+                  are ignored when using the Hyper-V debug transport. Any valid IP and a port number greater
+                  than 49151 and lower than 65536 can be entered.</para>
 
                   <para>The encryption key in the <computeroutput>bcdedit</computeroutput> command is
                   relevant and must be valid. The key "1.2.3.4" used in the above example is valid
@@ -4077,10 +4078,12 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
                   <para>
                     <screen>bcdedit /set debug on</screen>
                     <screen>bcdedit /set bootdebug on</screen>
-                    <screen>bcdedit /set bootdebug {bootmgr} on</screen>
+                    <screen>bcdedit /set {bootmgr} bootdebug on</screen>
                   </para>
-                  <para>Please refer to Microsoft Windows documentation for what each of the above
-                  debug option covers.</para>
+                  <para>Please note that the <computeroutput>bootdebug</computeroutput> options are only
+                  effective on Windows 8 or newer when using the Hyper-V debug transport. Refer to Microsoft
+                  Windows documentation for detailed explanation of <computeroutput>bcdedit</computeroutput>
+                  options.</para>
                 </listitem>
               </itemizedlist>
             </listitem>
