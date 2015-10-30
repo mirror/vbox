@@ -197,6 +197,7 @@ PartitionDriverBindingSupported (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                   );
+
 #ifdef VBOX
   VBoxLogFlowFuncLeaveRC(Status);
 #endif
