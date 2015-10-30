@@ -4014,7 +4014,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
 
             <listitem>
               <para>While Windows 8 and newer Windows guests ship with Hyper-V debug support,
-              Windows 7 does not. To enable Hyper-V debugging on a Windows 7 guest, copy the file
+              Windows 7 does not. To use Hyper-V debugging for a Windows 7 guest, copy the file
               <computeroutput>kdvm.dll</computeroutput> from a Windows 8.0 installation<footnote>
               <para>Only Windows 8.0 ships <computeroutput>kdvm.dll</computeroutput>. Windows 8.1
               and newer Windows versions do not.</para></footnote>. This file is
@@ -4068,7 +4068,8 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
                   relevant and must be valid. The key "1.2.3.4" used in the above example is valid
                   and may be used if security is not a concern. If you do not specify any encryption key,
                   <computeroutput>bcdedit</computeroutput> will generate one for you and you will need to copy
-                  this key to later enter in Microsoft WinDbg on the remote end.</para>
+                  this key to later enter in Microsoft WinDbg on the remote end. This encryption key is used
+                  to encrypt the debug data exchanged between Windows and the debugger.</para>
                 </listitem>
                 <listitem>
                   <para>Execute one or more of the following commands to enable debugging for
