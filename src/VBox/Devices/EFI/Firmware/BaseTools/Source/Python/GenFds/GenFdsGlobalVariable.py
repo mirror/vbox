@@ -633,8 +633,10 @@ class GenFdsGlobalVariable:
     def InfLogger (msg):
         EdkLogger.info(msg)
 
+    # VBox - begin - Used by GenFds to show firmware space allocs during --quiet builds, and maybe more.
     def QuietLogger (msg):
         EdkLogger.quiet(msg)
+    # VBox - end
 
     def ErrorLogger (msg, File = None, Line = None, ExtraData = None):
         EdkLogger.error('GenFds', GENFDS_ERROR, msg, File, Line, ExtraData)
@@ -729,7 +731,7 @@ class GenFdsGlobalVariable:
     VerboseLogger = staticmethod(VerboseLogger)
     InfLogger = staticmethod(InfLogger)
     ErrorLogger = staticmethod(ErrorLogger)
-    QuietLogger = staticmethod(QuietLogger)
+    QuietLogger = staticmethod(QuietLogger) # VBox: Used by GenFds to show firmware space allocs during --quiet builds, and maybe more.
     DebugLogger = staticmethod(DebugLogger)
     MacroExtend = staticmethod (MacroExtend)
     GetPcdValue = staticmethod(GetPcdValue)
