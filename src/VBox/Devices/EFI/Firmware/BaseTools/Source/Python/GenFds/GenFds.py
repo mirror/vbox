@@ -493,7 +493,7 @@ class GenFds :
                 if TotalFound and UsedFound and FreeFound:
                     FvSpaceInfoList.append((FvName, Total, Used, Free))
 
-        GenFdsGlobalVariable.QuietLogger('\nFV Space Information')
+        GenFdsGlobalVariable.QuietLogger('\nFV Space Information') # VBox: We want this info in -quiet builds too.
         for FvSpaceInfo in FvSpaceInfoList:
             Name = FvSpaceInfo[0]
             TotalSizeValue = long(FvSpaceInfo[1], 0)
@@ -504,7 +504,7 @@ class GenFds :
             else:
                 Percentage = str((UsedSizeValue+0.0)/TotalSizeValue)[0:4].lstrip('0.')
 
-            GenFdsGlobalVariable.QuietLogger(Name + ' ' + '[' + Percentage + '%Full] ' + str(TotalSizeValue) + ' total, ' + str(UsedSizeValue) + ' used, ' + str(FreeSizeValue) + ' free')
+            GenFdsGlobalVariable.QuietLogger(Name + ' ' + '[' + Percentage + '%Full] ' + str(TotalSizeValue) + ' total, ' + str(UsedSizeValue) + ' used, ' + str(FreeSizeValue) + ' free') # VBox: Same as above.
 
     ## PreprocessImage()
     #
@@ -559,7 +559,7 @@ class GenFds :
 
         if GuidXRefFile.getvalue():
             SaveFileOnChange(GuidXRefFileName, GuidXRefFile.getvalue(), False)
-            GenFdsGlobalVariable.QuietLogger("\nGUID cross reference file can be found at %s" % GuidXRefFileName)
+            GenFdsGlobalVariable.QuietLogger("\nGUID cross reference file can be found at %s" % GuidXRefFileName) # VBox: We want this info in -quiet builds too.
         elif os.path.exists(GuidXRefFileName):
             os.remove(GuidXRefFileName)
         GuidXRefFile.close()
