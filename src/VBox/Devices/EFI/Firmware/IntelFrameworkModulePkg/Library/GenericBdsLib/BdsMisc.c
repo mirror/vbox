@@ -407,7 +407,6 @@ BdsLibRegisterNewOption (
                   );
   FreePool (TempOptionPtr);
   FreePool (OptionOrderPtr);
-
   VBoxLogFlowFuncLeaveRC(Status);
   return Status;
 }
@@ -1291,23 +1290,21 @@ BdsLibGetImageHeader (
   BufferSize = sizeof (EFI_IMAGE_DOS_HEADER);
   Status = ThisFile->Read (ThisFile, &BufferSize, DosHeader);
   VBoxLogFlowFuncMarkRC(Status);
-  if (
-#ifdef VBOX
-       fAnalyzeDosHeader &&
+#ifdef VBOX /** @todo r=bird: It's anyone's wild guess wtf we do this here...
+             * I mean, the read should fail if DosHeader is NULL, right?
+             * So, why don't we just get rid of this non-sense? */
+ if (fAnalyzeDosHeader)
+ {
 #endif
-         (   EFI_ERROR (Status)
-          || BufferSize < sizeof (EFI_IMAGE_DOS_HEADER)
-          || FileSize <= DosHeader->e_lfanew
-          || DosHeader->e_magic != EFI_IMAGE_DOS_SIGNATURE)) {
+  if (EFI_ERROR (Status) ||
+      BufferSize < sizeof (EFI_IMAGE_DOS_HEADER) ||
+      FileSize <= DosHeader->e_lfanew ||
+      DosHeader->e_magic != EFI_IMAGE_DOS_SIGNATURE) {
     Status = EFI_LOAD_ERROR;
     VBoxLogFlowFuncMarkRC(Status);
     goto Done;
   }
 
-#ifdef VBOX
-    if (fAnalyzeDosHeader)
- {
-#endif
   //
   // Move to PE signature
   //
@@ -1343,7 +1340,7 @@ BdsLibGetImageHeader (
     goto Done;
   }
 #ifdef VBOX
-    }
+ }
 #endif
 
  Done:
