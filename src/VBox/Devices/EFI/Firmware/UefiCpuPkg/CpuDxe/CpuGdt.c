@@ -175,7 +175,7 @@ InitGlobalDescriptorTable (
   //
   // Allocate Runtime Data for the GDT
   //
-  gdt = AllocateReservedPool (sizeof (GdtTemplate) + 8);
+  gdt = AllocateReservedPool (sizeof (GdtTemplate) + 8); /* VBox: Dunno exacly why we want reserved pool, original uses AllocateRuntimePool here. Been doing it forever. */
   ASSERT (gdt != NULL);
   gdt = ALIGN_POINTER (gdt, 8);
 
