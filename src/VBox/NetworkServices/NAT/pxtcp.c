@@ -906,37 +906,42 @@ static void
 pxtcp_pcb_reject(struct tcp_pcb *pcb, int sockerr,
                  struct netif *netif,  struct pbuf *p)
 {
-    struct netif *oif;
     int reset = 0;
-
-    oif = ip_current_netif();
-    ip_current_netif() = netif;
 
     if (sockerr == ECONNREFUSED) {
         reset = 1;
     }
-    else if (PCB_ISIPV6(pcb)) {
-        if (sockerr == EHOSTDOWN) {
-            icmp6_dest_unreach(p, ICMP6_DUR_ADDRESS); /* XXX: ??? */
-        }
-        else if (sockerr == EHOSTUNREACH
-                 || sockerr == ENETDOWN
-                 || sockerr == ENETUNREACH)
-        {
-            icmp6_dest_unreach(p, ICMP6_DUR_NO_ROUTE);
-        }
-    }
-    else {
-        if (sockerr == EHOSTDOWN
-            || sockerr == EHOSTUNREACH
-            || sockerr == ENETDOWN
-            || sockerr == ENETUNREACH)
-        {
-            icmp_dest_unreach(p, ICMP_DUR_HOST);
-        }
-    }
+    else if (p != NULL) {
+        struct netif *oif;
 
-    ip_current_netif() = oif;
+        LWIP_ASSERT1(netif != NULL);
+
+        oif = ip_current_netif();
+        ip_current_netif() = netif;
+
+        if (PCB_ISIPV6(pcb)) {
+            if (sockerr == EHOSTDOWN) {
+                icmp6_dest_unreach(p, ICMP6_DUR_ADDRESS); /* XXX: ??? */
+            }
+            else if (sockerr == EHOSTUNREACH
+                     || sockerr == ENETDOWN
+                     || sockerr == ENETUNREACH)
+            {
+                icmp6_dest_unreach(p, ICMP6_DUR_NO_ROUTE);
+            }
+        }
+        else {
+            if (sockerr == EHOSTDOWN
+                || sockerr == EHOSTUNREACH
+                || sockerr == ENETDOWN
+                || sockerr == ENETUNREACH)
+            {
+                icmp_dest_unreach(p, ICMP_DUR_HOST);
+            }
+        }
+
+        ip_current_netif() = oif;
+    }
 
     tcp_abandon(pcb, reset);
 }
