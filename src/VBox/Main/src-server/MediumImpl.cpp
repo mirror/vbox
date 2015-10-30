@@ -4524,7 +4524,10 @@ MediumVariant_T Medium::i_getPreferredDiffVariant()
         return MediumVariant_Standard;
 
     /* m->variant is const, no need to lock */
-    return m->variant & ~MediumVariant_Fixed | MediumVariant_Diff;
+    ULONG mediumVariantFlags = (ULONG)m->variant;
+    mediumVariantFlags &= ~MediumVariant_Fixed;
+    mediumVariantFlags |= MediumVariant_Diff;
+    return (MediumVariant_T)m->variant;
 }
 
 /**
