@@ -600,8 +600,8 @@ IOAPIC:          on
             [,&lt;key=value&gt; ...]</computeroutput>: This setting specifies debugging
             options specific to the paravirtualization provider
             configured for this VM. Please refer to the provider specific
-            options under <xref linkend="gimdebug" /> for a list of valid keys
-            -value pairs for each provider.</para>
+            options under <xref linkend="gimdebug" /> for a list of supported
+            key-value pairs for each provider.</para>
           </listitem>
 
           <listitem>
