@@ -301,8 +301,8 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
    #
    # Either from the build server.
    #
-   ifndef VBOX_EFI_FIRMWARE_CONFIG_KMK_INCLUDED
-    include $(PATH_ROOT)/src/VBox/Devices/EFI/Firmware/Config.kmk # For VBOX_EFI_MODULES_FLAT.
+   ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
+    include $(PATH_ROOT)/src/VBox/Devices/EFI/Firmware/EfiModules.kmk
    endif
    INSTALLS += buildserver-efifw
    buildserver-efifw_INST = $(INST_BIN)
