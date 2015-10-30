@@ -192,3 +192,9 @@ VBOX_EFI_MODULES = \
 # expanding all the build target macros and then immediately discarding them.)
 VBOX_EFI_MODULES_FLAT = $(notdir $(value VBOX_EFI_MODULES))
 
+if1of ($(KBUILD_TARGET), win)
+ VBOX_EFI_DBG_SUFF := .pdb
+else
+ VBOX_EFI_DBG_SUFF := .debug
+endif
+

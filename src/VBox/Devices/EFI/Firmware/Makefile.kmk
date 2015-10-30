@@ -181,6 +181,22 @@ VBoxEfiResetVector-amd64_SOURCES  = OvmfPkg/ResetVector/ResetVectorCode.asm
 
 
 #
+# The zipfile.
+#
+include $(KBUILD_PATH)/tools/ZIP.kmk
+ifndef TOOL_ZIP_PACK
+ TOOL_ZIP_PACK = zip
+endif
+VBoxEfiFirmware.zip: $(PATH_STAGE)/VBoxEfiFirmware.zip
+$(PATH_STAGE)/VBoxEfiFirmware.zip:
+	$(REDIRECT) -C "$(PATH_STAGE_BIN)" -- $(TOOL_ZIP_PACK) $(TOOL_ZIP_PACKFLAGS) -9X $@ \
+		VBoxEFI32.fd \
+		VBoxEFI64.fd
+	$(REDIRECT) -C "$(PATH_STAGE)$(INST_VBOXDBG_SYMS)" -- $(TOOL_ZIP_PACK) $(TOOL_ZIP_PACKFLAGS) -9X $@ \
+		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),amd64/$(mod)$(VBOX_EFI_DBG_SUFF)) \
+		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),x86/$(mod)$(VBOX_EFI_DBG_SUFF))
+
+#
 # Include the footer early so that we can use VBoxEfiFirmware_0_OUTDIR below.
 #
 include $(FILE_KBUILD_SUB_FOOTER)
