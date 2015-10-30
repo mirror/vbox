@@ -4102,7 +4102,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
               <para>Now press "OK" to start listening for connections. Microsoft WinDbg typically shows
               a "Waiting to reconnect" message during this phase.</para>
 
-              <para>Alternatively, launch WinDbg from the command line to launch a debug session:
+              <para>Alternatively, launch WinDbg from the command line to directly start a debug session:
                 <screen>windbg.exe -k net:port=50000,key=1.2.3.4</screen>
               Please refer to the WinDbg documentation for complete command line syntax.
               </para>
