@@ -286,7 +286,7 @@ DECLINLINE(int) pxtcp_pcb_forward_inbound_done(const struct pxtcp *);
 static void pxtcp_pcb_schedule_poll(struct pxtcp *);
 static void pxtcp_pcb_cancel_poll(struct pxtcp *);
 
-static void pxtcp_pcb_reject(struct netif *, struct tcp_pcb *, struct pbuf *, int);
+static void pxtcp_pcb_reject(struct tcp_pcb *, int, struct netif *, struct pbuf *);
 DECLINLINE(void) pxtcp_pcb_maybe_deferred_delete(struct pxtcp *);
 
 /* poll manager handlers for pxtcp channels */
@@ -903,8 +903,8 @@ pxtcp_schedule_reset(struct pxtcp *pxtcp)
  * send TCP reset.
  */
 static void
-pxtcp_pcb_reject(struct netif *netif, struct tcp_pcb *pcb,
-                 struct pbuf *p, int sockerr)
+pxtcp_pcb_reject(struct tcp_pcb *pcb, int sockerr,
+                 struct netif *netif,  struct pbuf *p)
 {
     struct netif *oif;
     int reset = 0;
@@ -965,7 +965,7 @@ pxtcp_pcb_accept_refuse(void *ctx)
     if (pxtcp->pcb != NULL) {
         struct tcp_pcb *pcb = pxtcp->pcb;
         pxtcp_pcb_dissociate(pxtcp);
-        pxtcp_pcb_reject(pxtcp->netif, pcb, pxtcp->unsent, pxtcp->sockerr);
+        pxtcp_pcb_reject(pcb,  pxtcp->sockerr, pxtcp->netif, pxtcp->unsent);
     }
 
     pollmgr_refptr_unref(pxtcp->rp);
@@ -1060,7 +1060,7 @@ pxtcp_pcb_heard(void *arg, struct tcp_pcb *newpcb, err_t error)
   abort:
     DPRINTF0(("%s: pcb %p, sock %d: %R[sockerr]\n",
               __func__, (void *)newpcb, sock, sockerr));
-    pxtcp_pcb_reject(ip_current_netif(), newpcb, p, sockerr);
+    pxtcp_pcb_reject(newpcb, sockerr, ip_current_netif(), p);
     return ERR_ABRT;
 }
 
