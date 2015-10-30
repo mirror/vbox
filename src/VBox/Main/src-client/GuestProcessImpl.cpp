@@ -40,6 +40,7 @@
 #include "Global.h"
 #include "AutoCaller.h"
 #include "VBoxEvents.h"
+#include "ThreadTask.h"
 
 #include <memory> /* For auto_ptr. */
 
@@ -58,7 +59,7 @@
 #include <VBox/log.h>
 
 
-class GuestProcessTask
+class GuestProcessTask : public ThreadTask
 {
 public:
 
@@ -83,7 +84,15 @@ class GuestProcessStartTask : public GuestProcessTask
 public:
 
     GuestProcessStartTask(GuestProcess *pProcess)
-        : GuestProcessTask(pProcess) { }
+        : GuestProcessTask(pProcess)
+    {
+        m_strTaskName = "gctlPrcStart";
+    }
+
+    void handler()
+    {
+        int vrc = GuestProcess::i_startProcessThread(NULL, this);
+    }
 };
 
 /**
@@ -1127,27 +1136,31 @@ int GuestProcess::i_startProcessAsync(void)
     LogFlowThisFuncEnter();
 
     int vrc;
+    HRESULT hr = S_OK;
 
+    GuestProcessStartTask* pTask = NULL;
     try
     {
-        /* Asynchronously start the process on the guest by kicking off a
-         * worker thread. */
-        std::auto_ptr<GuestProcessStartTask> pTask(new GuestProcessStartTask(this));
-        AssertReturn(pTask->i_isOk(), pTask->i_rc());
-
-        vrc = RTThreadCreate(NULL, GuestProcess::i_startProcessThread,
-                             (void *)pTask.get(), 0,
-                             RTTHREADTYPE_MAIN_WORKER, 0,
-                             "gctlPrcStart");
-        if (RT_SUCCESS(vrc))
+        pTask = new GuestProcessStartTask(this);
+        if (!pTask->i_isOk())
         {
-            /* pTask is now owned by startProcessThread(), so release it. */
-            pTask.release();
+            delete pTask;
+            LogRel2(("GuestProcess: Could not create GuestProcessStartTask object \n"));
+            throw hr = E_FAIL;
         }
+
+        //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
+        hr = pTask->createThread();
     }
     catch(std::bad_alloc &)
     {
         vrc = VERR_NO_MEMORY;
+    }
+    catch(...)
+    {
+        LogRel2(("GuestProcess: Could not create thread for GuestProcessStartTask task \n"));
+        if (hr == E_FAIL)
+            vrc = VERR_NO_MEMORY;
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -1159,8 +1172,7 @@ DECLCALLBACK(int) GuestProcess::i_startProcessThread(RTTHREAD Thread, void *pvUs
 {
     LogFlowFunc(("pvUser=%p\n", pvUser));
 
-    std::auto_ptr<GuestProcessStartTask> pTask(static_cast<GuestProcessStartTask*>(pvUser));
-    AssertPtr(pTask.get());
+    GuestProcessStartTask* pTask = static_cast<GuestProcessStartTask*>(pvUser);
 
     const ComObjPtr<GuestProcess> pProcess(pTask->i_process());
     Assert(!pProcess.isNull());

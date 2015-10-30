@@ -558,24 +558,50 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
         }
         else
         {
+
+            ComObjPtr<Progress> pProgress;
+            SessionTaskUpdateAdditions *pTask = NULL;
             try
             {
-                ComObjPtr<Progress> pProgress;
-                SessionTaskUpdateAdditions *pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */,
-                                                                                   aSource, aArgs, fFlags);
-                rc = pSession->i_startTaskAsync(tr("Updating Guest Additions"), pTask, pProgress);
-                if (RT_SUCCESS(rc))
+                try
+                {
+                    pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */, aSource, aArgs, fFlags);
+                }
+                catch(...)
+                {
+                    hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskUpdateAdditions object "));
+                    throw;
+                }
+
+
+                hr = pTask->Init(Utf8StrFmt(tr("Updating Guest Additions")));
+                if (FAILED(hr))
+                {
+                    delete pTask;
+                    hr = setError(VBOX_E_IPRT_ERROR,
+                                  tr("Creating progress object for SessionTaskUpdateAdditions object failed"));
+                    throw hr;
+                }
+
+                hr = pTask->createThread(NULL, RTTHREADTYPE_MAIN_HEAVY_WORKER);
+
+                if (SUCCEEDED(hr))
                 {
                     /* Return progress to the caller. */
+                    pProgress = pTask->GetProgressObject();
                     hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
                 }
                 else
                     hr = setError(VBOX_E_IPRT_ERROR,
-                                  tr("Starting task for updating Guest Additions on the guest failed: %Rrc"), rc);
+                                  tr("Starting thread for updating Guest Additions on the guest failed "));
             }
             catch(std::bad_alloc &)
             {
                 hr = E_OUTOFMEMORY;
+            }
+            catch(HRESULT eHR)
+            {
+                LogFlowThisFunc(("Exception was caught in the function \n"));
             }
         }
     }
