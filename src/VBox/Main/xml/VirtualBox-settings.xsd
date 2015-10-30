@@ -321,6 +321,12 @@
   <xsd:attribute name="maskedInterfaces" type="xsd:unsignedInt" default="0"/>
 </xsd:complexType>
 
+<xsd:complexType name="TUSBDeviceFilters">
+  <xsd:sequence>
+    <xsd:element name="DeviceFilter" type="TUSBDeviceFilter" minOccurs="0"/>
+  </xsd:sequence>
+</xsd:complexType>
+
 <xsd:complexType name="THostUSBDeviceFilter">
   <xsd:complexContent>
     <xsd:extension base="TUSBDeviceFilter">
@@ -339,6 +345,7 @@
   <xsd:attribute name="HWVirtExEnabled" type="xsd:boolean"/>
   <xsd:attribute name="LogHistoryCount" type="xsd:unsignedInt" default="3"/>
   <xsd:attribute name="defaultVRDEExtPack" type="xsd:string"/>
+  <xsd:attribute name="exclusiveHwVirt" type="xsd:boolean"/>
 </xsd:complexType>
 
 <xsd:complexType name="TExtraData">
@@ -432,11 +439,19 @@
   <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
 
+<xsd:complexType name="THWVirtExUXType">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
 <xsd:complexType name="TSyntheticCpuType">
   <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
 
 <xsd:complexType name="TPAEType">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TLongModeType">
   <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
 
@@ -456,11 +471,11 @@
 </xsd:simpleType>
 
 <xsd:complexType name="TCpuIdLeaf">
-  <xsd:attribute name="id"        type="TUInt32Hex"       use="required"/>
-  <xsd:attribute name="eax"       type="TUInt32Hex"       use="required"/>
-  <xsd:attribute name="ebx"       type="TUInt32Hex"       use="required"/>
-  <xsd:attribute name="ecx"       type="TUInt32Hex"       use="required"/>
-  <xsd:attribute name="edx"       type="TUInt32Hex"       use="required"/>
+  <xsd:attribute name="id"        type="xsd:unsignedInt"       use="required"/>
+  <xsd:attribute name="eax"       type="xsd:unsignedInt"       use="required"/>
+  <xsd:attribute name="ebx"       type="xsd:unsignedInt"       use="required"/>
+  <xsd:attribute name="ecx"       type="xsd:unsignedInt"       use="required"/>
+  <xsd:attribute name="edx"       type="xsd:unsignedInt"       use="required"/>
 </xsd:complexType>
 
 <xsd:complexType name="TCpuIdTree">
@@ -475,7 +490,9 @@
     <xsd:element name="HardwareVirtEx" type="THWVirtExType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExNestedPaging" type="THWVirtExNestedPagingType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/>
+    <xsd:element name="HardwareVirtExUX" type="THWVirtExUXType" minOccurs="0"/>
     <xsd:element name="PAE" type="TPAEType" minOccurs="0"/>
+    <xsd:element name="LongMode" type="TLongModeType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExLargePages" type="THardwareVirtExLargePages" minOccurs="0"/>
     <xsd:element name="HardwareVirtForce" type="THardwareVirtForce" minOccurs="0"/>
     <xsd:element name="SyntheticCpu" type="TSyntheticCpuType" minOccurs="0"/>
@@ -535,6 +552,25 @@
      </xsd:simpleType>
   </xsd:attribute>
   <xsd:attribute name="vertRes" type="xsd:unsignedInt"/>
+</xsd:complexType>
+
+<xsd:complexType name="TVideoCapture">
+  <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="file" type="xsd:string"/>
+  <xsd:attribute name="screens" type="xsd:unsignedLong"/> <!-- todo: fix writing of settings (writes -1) -->
+  <xsd:attribute name="horzRes">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:unsignedInt">
+        <xsd:minInclusive value="4"/>
+        <xsd:maxInclusive value="2097152"/>
+       </xsd:restriction>
+     </xsd:simpleType>
+  </xsd:attribute>
+  <xsd:attribute name="vertRes" type="xsd:unsignedInt"/>
+  <xsd:attribute name="rate" type="xsd:unsignedInt"/>
+  <xsd:attribute name="fps" type="xsd:unsignedInt"/>
+  <xsd:attribute name="maxTime" type="xsd:unsignedInt"/>
+  <xsd:attribute name="maxSize" type="xsd:unsignedInt"/>
 </xsd:complexType>
 
 <xsd:complexType name="TVRDEProperties">
@@ -646,6 +682,8 @@
       <xsd:enumeration value="ICH6"/>
       <xsd:enumeration value="LsiLogicSas"/>
       <xsd:enumeration value="I82078"/>
+      <xsd:enumeration value="USB"/>
+      <xsd:enumeration value="NVMe"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
@@ -727,6 +765,34 @@
   <xsd:attribute name="enabledEhci" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
+<xsd:complexType name="TUSBController2">
+  <xsd:attribute name="name" type="xsd:string" use="required"/>
+  <xsd:attribute name="type" use="required">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:token">
+      <xsd:enumeration value="OHCI"/>
+      <xsd:enumeration value="EHCI"/>
+      <xsd:enumeration value="XHCI"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+</xsd:complexType>
+
+<xsd:complexType name="TUSBControllers">
+  <xsd:sequence>
+    <xsd:element name="Controller" type="TUSBController2"
+                 minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="TUSB">
+  <xsd:sequence>
+    <xsd:element name="Controllers" type="TUSBControllers"/> 
+    <xsd:element name="DeviceFilters" type="TUSBDeviceFilters"/>
+  </xsd:sequence>
+</xsd:complexType>
+
+
 <xsd:complexType name="TAudioAdapter">
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
   <xsd:attribute name="controller" default="AC97">
@@ -799,6 +865,10 @@
   <xsd:attribute name="tcpsnd" type="xsd:unsignedInt"/>
 </xsd:complexType>
 
+<xsd:complexType name="TNetNATNetwork">
+  <xsd:attribute name="name" type="xsd:string" use="required"/>
+</xsd:complexType>
+
 <xsd:complexType name="TNetBridged">
   <xsd:attribute name="name" type="xsd:string" use="required"/>
 </xsd:complexType>
@@ -822,6 +892,7 @@
   <xsd:choice maxOccurs="2">
     <xsd:choice minOccurs="0">
       <xsd:element name="NAT" type="TNetNAT"/>
+      <xsd:element name="NATNetwork" type="TNetNATNetwork"/>
       <xsd:element name="HostInterface" type="TNetBridged"/>
       <xsd:element name="BridgedInterface" type="TNetBridged"/>
       <xsd:element name="InternalNetwork" type="TNetInternal"/>
@@ -832,6 +903,7 @@
       <xsd:complexType>
         <xsd:all>
           <xsd:element name="NAT" type="TNetNAT" minOccurs="0"/>
+          <xsd:element name="NATNetwork" type="TNetNATNetwork" minOccurs="0"/>
           <xsd:element name="HostInterface" type="TNetBridged" minOccurs="0"/>
           <xsd:element name="BridgedInterface" type="TNetBridged" minOccurs="0"/>
           <xsd:element name="InternalNetwork" type="TNetInternal" minOccurs="0"/>
@@ -1132,6 +1204,22 @@
   </xsd:attribute>
 </xsd:complexType>
 
+<xsd:complexType name="TParavirt">
+  <xsd:attribute name="provider" use="required">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:token">
+        <xsd:enumeration value="None"/>
+        <xsd:enumeration value="Default"/>
+        <xsd:enumeration value="Legacy"/>
+        <xsd:enumeration value="Minimal"/>
+        <xsd:enumeration value="HyperV"/>
+        <xsd:enumeration value="KVM"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+  <xsd:attribute name="debug" type="xsd:string"/>
+</xsd:complexType>
+
 <xsd:complexType name="TTeleporter">
   <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
   <xsd:attribute name="port" type="xsd:unsignedShort"/>
@@ -1163,6 +1251,7 @@
     <xsd:element name="HID" type="THID" minOccurs="0"/>
     <xsd:element name="HPET" type="THPET" minOccurs="0"/>
     <xsd:element name="Chipset" type="TChipset" minOccurs="0"/>
+    <xsd:element name="Paravirt" type="TParavirt" minOccurs="0"/>
     <xsd:element name="Boot" type="TBoot">
       <xsd:unique name="THardware-Boot-Order">
         <xsd:selector xpath="vb:Order"/>
@@ -1171,11 +1260,13 @@
     </xsd:element>
     <xsd:element name="Display" type="TDisplay"/>
     <xsd:element name="VideoRecording" type="TVideoRecording" minOccurs="0"/>
+    <xsd:element name="VideoCapture" type="TVideoCapture" minOccurs="0"/>
     <xsd:element name="RemoteDisplay" type="TRemoteDisplay" minOccurs="0"/>
     <xsd:element name="BIOS" type="TBIOS"/>
     <xsd:element name="DVDDrive" type="TDVDDrive" minOccurs="0"/>
     <xsd:element name="FloppyDrive" type="TFloppyDrive" minOccurs="0"/>
-    <xsd:element name="USBController" type="TUSBController"/>
+    <xsd:element name="USBController" type="TUSBController" minOccurs="0"/>
+    <xsd:element name="USB" type="TUSB" minOccurs="0"/>
     <xsd:element name="SATAController" type="TSATAController" minOccurs="0"/> <!-- deprecated -->
     <xsd:element name="Network" type="TNetwork">
       <xsd:unique name="THardware-Network-Adapter">
