@@ -317,7 +317,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
     information as <computeroutput>VBoxManage list vms --long</computeroutput>
     would show for all virtual machines.</para>
 
-    <para>You will get information similar to the following:</para>
+    <para>You will get information that resembles the following example.</para>
 
     <para><screen>$ VBoxManage showvminfo "Windows XP"
 VirtualBox Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
@@ -339,48 +339,8 @@ Boot Device (3): Not Assigned
 Boot Device (4): Not Assigned
 ACPI:            on
 IOAPIC:          on
-PAE:             on
-Time offset:     0 ms
-Hardw. virt.ext: on
-Nested Paging:   on
-VT-x VPID:       off
-State:           powered off (since 2009-10-20T14:52:19.000000000)
-Monitor count:   1
-3D Acceleration: off
-2D Video Acceleration: off
-Teleporter Enabled: off
-Teleporter Port: 0
-Teleporter Address:
-Teleporter Password:
-Storage Controller      (0): IDE Controller
-Storage Controller Type (0): PIIX4
-Storage Controller      (1): Floppy Controller 1
-Storage Controller Type (1): I82078
-IDE Controller (0, 0): /home/user/windows.vdi (UUID: 46f6e53a-4557-460a-9b95-68b0f17d744b)
-IDE Controller (0, 1): /home/user/openbsd-cd46.iso (UUID: 4335e162-59d3-4512-91d5-b63e94eebe0b)
-Floppy Controller 1 (0, 0): /home/user/floppy.img (UUID: 62ac6ccb-df36-42f2-972e-22f836368137)
-NIC 1:           disabled
-NIC 2:           disabled
-NIC 3:           disabled
-NIC 4:           disabled
-NIC 5:           disabled
-NIC 6:           disabled
-NIC 7:           disabled
-NIC 8:           disabled
-UART 1:          disabled
-UART 2:          disabled
-Audio:           disabled (Driver: Unknown)
-Clipboard Mode:  Bidirectional
-VRDE:            disabled
-USB:             disabled
-
-USB Device Filters:
-&lt;none&gt;
-
-Shared folders:
-&lt;none&gt;
-
-Statistics update:  disabled</screen></para>
+...
+</screen></para>
   </sect1>
 
   <sect1 id="vboxmanage-registervm">
