@@ -232,19 +232,10 @@ $$(buildserver-additions_0_OUTDIR)/unpacked.ts +| $(PATH_TARGET)/VBoxGuestAdditi
 	$(APPEND) -t $@ "done"
 
 $$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
-	$(RM) -f $@ $@.tmp
- ifneq ($(KBUILD_HOST),win)
-	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $@.tmp
- else
-	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-additions-affinity-hack
- endif
-	$(CP) -f $@.tmp $@
-	$(RM) -f $@.tmp
+	$(RM) -f -- "$@" "$@.tmp"
+	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename "$@.tmp"
+	$(MV) -f -- "$@.tmp" "$@"
 
- ifeq ($(KBUILD_HOST),win)
-buildserver-additions-affinity-hack:
-	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip.tmp
- endif
 endif # VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
 
 
@@ -276,20 +267,10 @@ $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PA
 	$(APPEND) -t $@ "done"
 
 $$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/documentation.sh | $$(dir $$@)
-	$(RM) -f $@ $@.tmp
- ifneq ($(KBUILD_HOST),win)
-	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $@.tmp
- else
-	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-documentation-affinity-hack
- endif
-	$(CP) -f $@.tmp $@
-	$(RM) -f $@.tmp
-## @todo kBuild: The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has been added to kBuild.
+	$(RM) -f -- "$@" "$@.tmp"
+	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename "$@.tmp"
+	$(MV) -f -- "$@.tmp" "$@"
 
- ifeq ($(KBUILD_HOST),win)
-buildserver-documentation-affinity-hack:
-	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip.tmp
- endif
 endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 
 
@@ -346,17 +327,8 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
    $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: \
 		$(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
 	$(RM) -f -- "$@" "$@.tmp"
-   ifneq ($(KBUILD_HOST),win)
-	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $@.tmp
-   else
-	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-efifw-affinity-hack
-   endif
+	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename "$@.tmp"
 	$(MV) -f -- "$@.tmp" "$@"
-
-   ifeq ($(KBUILD_HOST),win)
-    buildserver-efifw-affinity-hack:
-	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip.tmp
-   endif
 
   else # !VBOX_WITH_EFIFW_FROM_BUILD_SERVER
    #
