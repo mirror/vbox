@@ -4047,8 +4047,8 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
             </listitem>
 
             <listitem>
-              <para>Once the guest has booted, start a command prompt as Administrator
-              and execute the following commands:</para>
+              <para>In the guest, start a command prompt as Administrator and execute the
+              following commands:</para>
               <itemizedlist>
                 <listitem><para>For a Windows 8 or newer Windows guest:</para>
                   <para>
