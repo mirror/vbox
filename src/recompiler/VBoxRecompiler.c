@@ -935,12 +935,10 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
     if (RT_SUCCESS(rc))
     {
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
-        /* Ignore CPU_INTERRUPT_HARD as it only reflects FF. */
-        /* Ignore CPU_INTERRUPT_TIMER as it doesn't seem to be set anywhere anymore and would reflect a FF. */
-        /* Ignore CPU_INTERRUPT_EXTERNAL_HARD as it is subject to races and reflects a FF. */
-        /* Ignore CPU_INTERRUPT_EXTERNAL_TIMER as it is subject to races and reflects a FF. */
-        /* Ignore CPU_INTERRUPT_EXTERNAL_EXIT as it is subject to races and reflects one or more FFs. */
-        Assert(!(interrupt_request & ~(/*CPU_INTERRUPT_HARD |*/ CPU_INTERRUPT_EXITTB /*| CPU_INTERRUPT_TIMER | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT*/ | CPU_INTERRUPT_EXTERNAL_FLUSH_TLB /*| CPU_INTERRUPT_EXTERNAL_TIMER*/)));
+        Assert(!(  interrupt_request
+                 & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER | CPU_INTERRUPT_EXTERNAL_HARD
+                     | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_FLUSH_TLB | CPU_INTERRUPT_EXTERNAL_TIMER
+                     | CPU_INTERRUPT_EXTERNAL_DMA)));
 #ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
         cpu_single_step(&pVM->rem.s.Env, 0);
 #endif
