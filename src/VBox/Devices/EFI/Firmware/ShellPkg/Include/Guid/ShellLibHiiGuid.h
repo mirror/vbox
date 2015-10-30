@@ -70,4 +70,3 @@ extern EFI_GUID gShellNetwork1HiiGuid;
 extern EFI_GUID gShellBcfgHiiGuid;
 
 #endif
-

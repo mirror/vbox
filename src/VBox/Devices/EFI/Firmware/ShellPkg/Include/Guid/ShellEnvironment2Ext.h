@@ -23,4 +23,3 @@
 extern EFI_GUID gEfiShellEnvironment2ExtGuid;
 
 #endif
-
