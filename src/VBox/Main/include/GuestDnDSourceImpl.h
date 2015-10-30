@@ -109,6 +109,8 @@ protected:
          *  At the moment only one transfer at a time is supported. */
         RECVDATACTX mRecvCtx;
     } mData;
+
+    friend class RecvDataTask;
 };
 
 #endif /* !____H_GUESTDNDSOURCEIMPL */

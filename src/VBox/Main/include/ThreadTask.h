@@ -19,20 +19,28 @@
 
 #include "VBox/com/string.h"
 
+struct ThreadVoidData
+{
+public:
+    ThreadVoidData(){};
+    virtual ~ThreadVoidData(){};
+};
+
 class ThreadTask
 {
 public:
-    ThreadTask(const Utf8Str &t) : m_strTaskName(t){};
+    ThreadTask(const Utf8Str &t) : m_pThread(NULL), m_strTaskName(t){};
     virtual ~ThreadTask(){};
-    HRESULT createThread();
+    HRESULT createThread(PRTTHREAD pThread = NULL, RTTHREADTYPE enmType = RTTHREADTYPE_MAIN_WORKER);
     virtual void handler() = 0;
     static DECLCALLBACK(int) taskHandler(RTTHREAD thread, void *pvUser);
-    static HRESULT i_setErrorStatic(HRESULT aResultCode, const Utf8Str &aText);
+    static HRESULT setErrorStatic(HRESULT aResultCode, const Utf8Str &aText);
 
     inline Utf8Str getTaskName() const {return m_strTaskName;};
 
 protected:
     ThreadTask():m_strTaskName("GenericTask"){};
+    PRTTHREAD m_pThread;
     Utf8Str m_strTaskName;
 };
 

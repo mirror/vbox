@@ -19,16 +19,17 @@
 #include "VirtualBoxBase.h"
 #include "ThreadTask.h"
 
-HRESULT ThreadTask::createThread()
+HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
 {
     HRESULT rc = S_OK;
     try
     {
-        int vrc = RTThreadCreate(NULL,
+        m_pThread = pThread;
+        int vrc = RTThreadCreate(m_pThread,
                                  taskHandler,
                                  (void *)this,
                                  0,
-                                 RTTHREADTYPE_MAIN_WORKER,
+                                 enmType,
                                  0,
                                  this->getTaskName().c_str());
         if (RT_FAILURE(vrc))
@@ -88,7 +89,7 @@ HRESULT ThreadTask::createThread()
     return 0;
 }
 
-/*static*/ HRESULT ThreadTask::i_setErrorStatic(HRESULT aResultCode,
+/*static*/ HRESULT ThreadTask::setErrorStatic(HRESULT aResultCode,
                                     const Utf8Str &aText)
 {
     return aResultCode;

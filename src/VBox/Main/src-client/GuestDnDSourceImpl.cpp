@@ -26,6 +26,7 @@
 
 #include "Global.h"
 #include "AutoCaller.h"
+#include "ThreadTask.h"
 
 #include <iprt/asm.h>
 #include <iprt/dir.h>
@@ -46,13 +47,14 @@
 /**
  * Base class for a source task.
  */
-class GuestDnDSourceTask
+class GuestDnDSourceTask : public ThreadTask
 {
 public:
 
     GuestDnDSourceTask(GuestDnDSource *pSource)
-        : mSource(pSource),
-          mRC(VINF_SUCCESS) { }
+        : ThreadTask("GenericGuestDnDSourceTask")
+        , mSource(pSource)
+        , mRC(VINF_SUCCESS) { }
 
     virtual ~GuestDnDSourceTask(void) { }
 
@@ -76,7 +78,15 @@ public:
 
     RecvDataTask(GuestDnDSource *pSource, PRECVDATACTX pCtx)
         : GuestDnDSourceTask(pSource)
-        , mpCtx(pCtx) { }
+        , mpCtx(pCtx)
+    {
+        m_strTaskName = "dndSrcRcvData";
+    }
+
+    void handler()
+    {
+        int vrc = GuestDnDSource::i_receiveDataThread(*m_pThread, this);
+    }
 
     virtual ~RecvDataTask(void) { }
 
@@ -346,6 +356,10 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
     if (FAILED(hr))
         return hr;
 
+    RecvDataTask *pTask = NULL;
+    RTTHREAD threadRcv;
+    int rc = S_OK;
+
     try
     {
         mData.mRecvCtx.mIsActive   = false;
@@ -356,39 +370,46 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
 
         LogRel2(("DnD: Requesting data from guest in format: %s\n", aFormat.c_str()));
 
-        RecvDataTask *pTask = new RecvDataTask(this, &mData.mRecvCtx);
-        AssertReturn(pTask->isOk(), pTask->getRC());
-
-        LogFlowFunc(("Starting thread ...\n"));
-
-        RTTHREAD threadRcv;
-        int rc = RTThreadCreate(&threadRcv, GuestDnDSource::i_receiveDataThread,
-                                (void *)pTask, 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndSrcRcvData");
-        if (RT_SUCCESS(rc))
+        pTask = new RecvDataTask(this, &mData.mRecvCtx);
+        if (!pTask->isOk())
         {
-            rc = RTThreadUserWait(threadRcv, 30 * 1000 /* 30s timeout */);
-            if (RT_SUCCESS(rc))
-            {
-                mDataBase.m_cTransfersPending++;
-
-                hr = pResp->queryProgressTo(aProgress.asOutParam());
-                ComAssertComRC(hr);
-
-                /* Note: pTask is now owned by the worker thread. */
-            }
-            else
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Waiting for receiving thread failed (%Rrc)"), rc);
-        }
-        else
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Starting thread failed (%Rrc)"), rc);
-
-        if (FAILED(hr))
             delete pTask;
+            LogRel2(("DnD: Could not create RecvDataTask object \n"));
+            throw hr = E_FAIL;
+        }
+
+        //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
+        hr = pTask->createThread(&threadRcv);
+
     }
     catch(std::bad_alloc &)
     {
         hr = setError(E_OUTOFMEMORY);
     }
+    catch(...)
+    {
+        LogRel2(("DnD: Could not create thread for RecvDataTask \n"));
+        hr = E_FAIL;
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        rc = RTThreadUserWait(threadRcv, 30 * 1000 /* 30s timeout */);
+        if (RT_SUCCESS(rc))
+        {
+            mDataBase.m_cTransfersPending++;
+
+            hr = pResp->queryProgressTo(aProgress.asOutParam());
+            ComAssertComRC(hr);
+
+            /* Note: pTask is now owned by the worker thread. */
+        }
+        else
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Waiting for receiving thread failed (%Rrc)"), rc);
+    }
+    else
+        hr = setError(VBOX_E_IPRT_ERROR, tr("Starting thread for GuestDnDSource::i_receiveDataThread failed (%Rrc)"), rc);
+    /* Note: mDataBase.mfTransferIsPending will be set to false again by i_receiveDataThread. */
 
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
@@ -1003,9 +1024,6 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveDataThread(RTTHREAD Thread, void *pvU
     AssertRC(rc);
 
     rc = pThis->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
-
-    if (pTask)
-        delete pTask;
 
     AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
 
