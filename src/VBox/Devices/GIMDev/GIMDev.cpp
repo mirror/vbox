@@ -152,7 +152,8 @@ static DECLCALLBACK(int) gimDevR3DbgRecvThread(RTTHREAD ThreadSelf, void *pvUser
         }
 #endif
         else if (   rc != VINF_TRY_AGAIN
-                 && rc != VERR_TRY_AGAIN)
+                 && rc != VERR_TRY_AGAIN
+                 && rc != VERR_NET_CONNECTION_RESET_BY_PEER)
         {
             LogRel(("GIMDev: Debug thread terminating with rc=%Rrc\n", rc));
             break;
