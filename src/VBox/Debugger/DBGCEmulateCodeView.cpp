@@ -1837,13 +1837,13 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
             case X86_SEL_TYPE_SYS_386_INT_GATE:
             case X86_SEL_TYPE_SYS_386_TRAP_GATE:
             {
-                RTSEL sel = pDesc->au16[1];
-                uint64_t off =    pDesc->au16[0]
-                                | ((uint64_t)pDesc->au16[3] << 16)
-                                | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
-                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s%s\n",
-                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
-                                        pDesc->Gen.u2Dpl, pszPresent, pszHyper);
+                RTSEL sel = pDesc->Gate.u16Sel;
+                uint64_t off =            pDesc->Gate.u16OffsetLow
+                             | ((uint64_t)pDesc->Gate.u16OffsetHigh << 16)
+                             | ((uint64_t)pDesc->Gate.u32OffsetTop  << 32);
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%016RX64     DPL=%u %s IST=%u%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gate.u4Type], sel, off,
+                                        pDesc->Gate.u2Dpl, pszPresent, pDesc->Gate.u3IST, pszHyper);
                 if (pfDblEntry)
                     *pfDblEntry = true;
                 break;
