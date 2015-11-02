@@ -611,7 +611,7 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
  */
 static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite)
 {
-    unsigned ulBit;
+    unsigned uBit;
     uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
 
     /*
@@ -625,20 +625,20 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
     if (uMsr <= 0x00001FFF)
     {
         /* Pentium-compatible MSRs. */
-        ulBit = uMsr * 2;
+        uBit = uMsr * 2;
     }
     else if (   uMsr >= 0xC0000000
              && uMsr <= 0xC0001FFF)
     {
         /* AMD Sixth Generation x86 Processor MSRs. */
-        ulBit = (uMsr - 0xC0000000) * 2;
+        uBit = (uMsr - 0xC0000000) * 2;
         pbMsrBitmap += 0x800;
     }
     else if (   uMsr >= 0xC0010000
              && uMsr <= 0xC0011FFF)
     {
         /* AMD Seventh and Eighth Generation Processor MSRs. */
-        ulBit = (uMsr - 0xC0001000) * 2;
+        uBit = (uMsr - 0xC0001000) * 2;
         pbMsrBitmap += 0x1000;
     }
     else
@@ -647,16 +647,16 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
         return;
     }
 
-    Assert(ulBit < 0x3fff /* 16 * 1024 - 1 */);
+    Assert(uBit < 0x3fff /* 16 * 1024 - 1 */);
     if (enmRead == SVMMSREXIT_INTERCEPT_READ)
-        ASMBitSet(pbMsrBitmap, ulBit);
+        ASMBitSet(pbMsrBitmap, uBit);
     else
-        ASMBitClear(pbMsrBitmap, ulBit);
+        ASMBitClear(pbMsrBitmap, uBit);
 
     if (enmWrite == SVMMSREXIT_INTERCEPT_WRITE)
-        ASMBitSet(pbMsrBitmap, ulBit + 1);
+        ASMBitSet(pbMsrBitmap, uBit + 1);
     else
-        ASMBitClear(pbMsrBitmap, ulBit + 1);
+        ASMBitClear(pbMsrBitmap, uBit + 1);
 
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
