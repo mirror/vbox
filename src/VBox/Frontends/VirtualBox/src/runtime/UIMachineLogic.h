@@ -310,7 +310,8 @@ private slots:
     void sltDockPreviewModeChanged(QAction *pAction);
     void sltDockPreviewMonitorChanged(QAction *pAction);
     void sltChangeDockIconUpdate(bool fEnabled);
-    void sltChangeDockIconOverlayAppearance(bool fEnabled);
+    /** Handles dock icon overlay change event. */
+    void sltChangeDockIconOverlayAppearance(bool fDisabled);
 #endif /* RT_OS_DARWIN */
 
     /* Handlers: Keyboard LEDs sync logic: */
@@ -396,6 +397,8 @@ private:
     UIDockIconPreview *m_pDockIconPreview;
     QActionGroup *m_pDockPreviewSelectMonitorGroup;
     int m_DockIconPreviewMonitor;
+    /** Holds whether dock icon overlay disabled. */
+    bool m_fIsDockIconOverlayDisabled;
 #endif /* Q_WS_MAC */
 
     void *m_pHostLedsState;

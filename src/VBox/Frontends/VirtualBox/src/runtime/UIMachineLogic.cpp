@@ -2130,10 +2130,10 @@ void UIMachineLogic::sltChangeDockIconUpdate(bool fEnabled)
     }
 }
 
-void UIMachineLogic::sltChangeDockIconOverlayAppearance(bool fEnabled)
+void UIMachineLogic::sltChangeDockIconOverlayAppearance(bool fDisabled)
 {
     /* Value of flag is directly referenced from extra-data manager later: */
-    Q_UNUSED(fEnabled);
+    Q_UNUSED(fDisabled);
     /* Update dock icon overlay: */
     if (isMachineWindowsCreated())
         updateDockOverlay();

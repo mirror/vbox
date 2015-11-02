@@ -120,8 +120,8 @@ void UIAbstractDockIconPreviewHelper::initPreviewImages()
 
 void UIAbstractDockIconPreviewHelper::drawOverlayIcons(CGContextRef context)
 {
-    /* Determine whether dock icon overlay enabled: */
-    if (gEDataManager->dockIconOverlayEnabled(vboxGlobal().managedVMUuid()))
+    /* Determine whether dock icon overlay is not disabled: */
+    if (!gEDataManager->dockIconOverlayDisabled(vboxGlobal().managedVMUuid()))
     {
         /* Initialize overlayrect: */
         CGRect overlayRect = CGRectMake(0, 0, 0, 0);

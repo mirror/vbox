@@ -135,7 +135,7 @@ const char* UIExtraDataDefs::GUI_StatusBar_IndicatorOrder = "GUI/StatusBar/Indic
 #ifdef Q_WS_MAC
 const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateEnabled = "GUI/RealtimeDockIconUpdateEnabled";
 const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateMonitor = "GUI/RealtimeDockIconUpdateMonitor";
-const char* UIExtraDataDefs::GUI_DockIconOverlayEnabled = "GUI/DockIconOverlayEnabled";
+const char* UIExtraDataDefs::GUI_DockIconOverlayDisabled = "GUI/DockIconOverlayDisabled";
 #endif /* Q_WS_MAC */
 const char* UIExtraDataDefs::GUI_PassCAD = "GUI/PassCAD";
 const char* UIExtraDataDefs::GUI_MouseCapturePolicy = "GUI/MouseCapturePolicy";

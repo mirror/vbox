@@ -1873,7 +1873,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* !Q_WS_MAC */
            << GUI_StatusBar_Enabled << GUI_RestrictedStatusBarIndicators << GUI_StatusBar_IndicatorOrder
 #ifdef Q_WS_MAC
-           << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor << GUI_DockIconOverlayEnabled
+           << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor << GUI_DockIconOverlayDisabled
 #endif /* Q_WS_MAC */
            << GUI_PassCAD
            << GUI_MouseCapturePolicy
@@ -3430,16 +3430,16 @@ void UIExtraDataManager::setRealtimeDockIconUpdateMonitor(int iIndex, const QStr
     setExtraDataString(GUI_RealtimeDockIconUpdateMonitor, iIndex ? QString::number(iIndex) : QString(), strID);
 }
 
-bool UIExtraDataManager::dockIconOverlayEnabled(const QString &strID)
-{
-    /* 'True' unless feature restricted: */
-    return !isFeatureRestricted(GUI_DockIconOverlayEnabled, strID);
+bool UIExtraDataManager::dockIconOverlayDisabled(const QString &strID)
+{   
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_DockIconOverlayDisabled, strID);
 }
 
-void UIExtraDataManager::setdockIconOverlayEnabled(bool fEnabled, const QString &strID)
+void UIExtraDataManager::setdockIconOverlayDisabled(bool fDisabled, const QString &strID)
 {
-    /* 'False' if feature restricted, 'True' otherwise: */
-    setExtraDataString(GUI_DockIconOverlayEnabled, toFeatureRestricted(!fEnabled), strID);
+    /* 'True' if feature allowed, null-string otherwise: */
+    setExtraDataString(GUI_DockIconOverlayDisabled, toFeatureAllowed(fDisabled), strID);
 }
 #endif /* Q_WS_MAC */
 
@@ -3825,8 +3825,8 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
                      strKey == GUI_RealtimeDockIconUpdateMonitor)
                 emit sigDockIconAppearanceChange(!isFeatureRestricted(strKey, strMachineID));
             /* 'Dock icon overlay' appearance changed (allowed if not restricted)? */
-            else if (strKey == GUI_DockIconOverlayEnabled)
-                emit sigDockIconOverlayAppearanceChange(!isFeatureRestricted(strKey, strMachineID));
+            else if (strKey == GUI_DockIconOverlayDisabled)
+                emit sigDockIconOverlayAppearanceChange(isFeatureAllowed(strKey, strMachineID));
 #endif /* Q_WS_MAC */
         }
 
