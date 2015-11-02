@@ -1276,7 +1276,7 @@ pxtcp_pcb_connect(struct pxtcp *pxtcp, const struct fwspec *fwspec)
         goto reset;
     }
 
-    /* nit: comapres PF and AF, but they are the same everywhere */
+    /* nit: compares PF and AF, but they are the same everywhere */
     LWIP_ASSERT1(ss.ss_family == fwspec->sdom);
 
     status = fwany_ipX_addr_set_src(&src_addr, (const struct sockaddr *)&ss);
