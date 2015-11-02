@@ -1028,6 +1028,9 @@ AssertCompileMemberAlignment(HMCPU, Event, 8);
 
 
 #ifdef IN_RING0
+/** @todo r=bird: s/[[:space:]]HM/ hm/ - internal functions starts with a
+ *        lower cased prefix.  HMInternal.h is an internal header, so
+ *        everything here must be internal. */
 VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpu(void);
 VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpuEx(RTCPUID idCpu);
 
