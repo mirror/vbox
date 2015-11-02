@@ -534,6 +534,10 @@ BEGINPROC bs2Trap_XX_32bit
         mov     eax, ss                 ; load flat DS. Using SS here because of conforming IDTE.CS tests.
         mov     ds, ax
 
+        pushfd                          ; Clear the AC flag.
+        and     dword [esp], ~X86_EFL_AC
+        popfd
+
         ;
         ; Benchmark mode? Then resume the action right away!
         ;
