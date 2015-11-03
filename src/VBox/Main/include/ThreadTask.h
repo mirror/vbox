@@ -39,7 +39,7 @@ public:
     inline Utf8Str getTaskName() const {return m_strTaskName;};
 
 protected:
-    ThreadTask():m_strTaskName("GenericTask"){};
+    ThreadTask():m_pThread(NULL), m_strTaskName("GenericTask"){};
     PRTTHREAD m_pThread;
     Utf8Str m_strTaskName;
 };

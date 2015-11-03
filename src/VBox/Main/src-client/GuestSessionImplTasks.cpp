@@ -98,14 +98,6 @@ HRESULT GuestSessionTask::createAndSetProgressObject()
     return hr;
 }
 
-ComObjPtr<Progress> GuestSessionTask::GetProgressObject() const
-{
-    if(mProgress != NULL)
-        return mProgress;
-    else
-        return NULL;
-}
-
 int GuestSessionTask::getGuestProperty(const ComObjPtr<Guest> &pGuest,
                                        const Utf8Str &strPath, Utf8Str &strValue)
 {

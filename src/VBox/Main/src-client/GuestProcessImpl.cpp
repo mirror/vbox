@@ -64,8 +64,9 @@ class GuestProcessTask : public ThreadTask
 public:
 
     GuestProcessTask(GuestProcess *pProcess)
-        : mProcess(pProcess),
-          mRC(VINF_SUCCESS) { }
+        : ThreadTask("GenericGuestProcessTask")
+        , mProcess(pProcess)
+        , mRC(VINF_SUCCESS) { }
 
     virtual ~GuestProcessTask(void) { }
 
@@ -1135,7 +1136,7 @@ int GuestProcess::i_startProcessAsync(void)
 {
     LogFlowThisFuncEnter();
 
-    int vrc;
+    int vrc = VINF_SUCCESS;
     HRESULT hr = S_OK;
 
     GuestProcessStartTask* pTask = NULL;
@@ -1145,10 +1146,10 @@ int GuestProcess::i_startProcessAsync(void)
         if (!pTask->i_isOk())
         {
             delete pTask;
-            LogRel2(("GuestProcess: Could not create GuestProcessStartTask object \n"));
-            throw hr = E_FAIL;
+            LogFlow(("GuestProcess: Could not create GuestProcessStartTask object \n"));
+            throw VERR_MEMOBJ_INIT_FAILED;
         }
-
+        LogFlow(("GuestProcess: Successfully created GuestProcessStartTask object \n"));
         //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
         hr = pTask->createThread();
     }
@@ -1156,11 +1157,10 @@ int GuestProcess::i_startProcessAsync(void)
     {
         vrc = VERR_NO_MEMORY;
     }
-    catch(...)
+    catch(int eVRC)
     {
-        LogRel2(("GuestProcess: Could not create thread for GuestProcessStartTask task \n"));
-        if (hr == E_FAIL)
-            vrc = VERR_NO_MEMORY;
+        vrc = eVRC;
+        LogFlow(("GuestSession: Could not create thread for GuestProcessStartTask task %Rrc\n", vrc));
     }
 
     LogFlowFuncLeaveRC(vrc);

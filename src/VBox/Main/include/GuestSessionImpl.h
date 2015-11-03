@@ -57,7 +57,7 @@ public:
         return hr;
     }
 
-    ComObjPtr<Progress> GetProgressObject() const;
+    const ComObjPtr<Progress>& GetProgressObject() const {return mProgress;}
 
 protected:
 

@@ -1719,7 +1719,7 @@ int GuestSession::i_startSessionAsync(void)
     LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
-    int vrc;
+    int vrc = VINF_SUCCESS;
 
     GuestSessionTaskInternalOpen* pTask = NULL;
     try
@@ -1728,8 +1728,8 @@ int GuestSession::i_startSessionAsync(void)
         if (!pTask->isOk())
         {
             delete pTask;
-            LogRel2(("GuestSession: Could not create GuestSessionTaskInternalOpen object \n"));
-            throw hr = E_FAIL;
+            LogFlow(("GuestSession: Could not create GuestSessionTaskInternalOpen object \n"));
+            throw VERR_MEMOBJ_INIT_FAILED;
         }
 
         /* Asynchronously open the session on the guest by kicking off a
@@ -1742,11 +1742,10 @@ int GuestSession::i_startSessionAsync(void)
     {
         vrc = VERR_NO_MEMORY;
     }
-    catch(...)
+    catch(int eVRC)
     {
-        LogRel2(("GuestSession: Could not create thread for GuestSessionTaskInternalOpen task \n"));
-        if (hr == E_FAIL)
-            vrc = VERR_NO_MEMORY;
+        vrc = eVRC;
+        LogFlow(("GuestSession: Could not create thread for GuestSessionTaskInternalOpen task %Rrc\n", vrc));
     }
 
     LogFlowFuncLeaveRC(vrc);
