@@ -401,7 +401,7 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId const *pDstS
         AssertRCReturn(rc, rc);
     }
 
-    if (VMSVGA3DSURFACE_HAS_HW_SURFACE(pDstSurface))
+    if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pDstSurface))
     {
         /* Unknown surface type; turn it into a texture, which can be used for other purposes too. */
         Log(("vmsvga3dSurfaceStretchBlt: unknown dest surface id=%x type=%d format=%d -> create texture\n", sidDst, pDstSurface->flags, pDstSurface->format));
