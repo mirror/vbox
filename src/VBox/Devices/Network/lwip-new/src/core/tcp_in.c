@@ -589,8 +589,6 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
  * that function when PCB is created in tcp_listen_with_backlog().  I
  * don't want to shuffle code around or mess with visibility for now,
  * so just provide a copy here.
- *
- * XXX: tcp_accept_null() is buggy, it should call tcp_abort().
  */
 static err_t
 tcp_proxy_accept_null(void *arg, struct tcp_pcb *pcb, err_t err)

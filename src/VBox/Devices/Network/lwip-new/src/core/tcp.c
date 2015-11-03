@@ -535,9 +535,9 @@ static err_t
 tcp_accept_null(void *arg, struct tcp_pcb *pcb, err_t err)
 {
   LWIP_UNUSED_ARG(arg);
-  LWIP_UNUSED_ARG(pcb);
   LWIP_UNUSED_ARG(err);
 
+  tcp_abort(pcb);
   return ERR_ABRT;
 }
 #endif /* LWIP_CALLBACK_API */
