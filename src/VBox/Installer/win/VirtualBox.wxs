@@ -73,10 +73,10 @@
     <Property Id='REINSTALLMODE' Value='amus'/>
 
     <!-- VirtualBox properties -->
-    <Property Id="VBOX_INSTALLDESKTOPSHORTCUT" Value="1" />
-    <Property Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" Value="1" />
-    <Property Id="VBOX_REGISTERFILEEXTENSIONS" Value="1" />
-    <Property Id="VBOX_STARTVBOX" Value="1" />
+    <Property Id="VBOXINSTALLDESKTOPSHORTCUT" Value="1" />
+    <Property Id="VBOXINSTALLQUICKLAUNCHSHORTCUT" Value="1" />
+    <Property Id="VBOXREGISTERFILEEXTENSIONS" Value="1" />
+    <Property Id="VBOXSTART" Value="1" />
 
     <!-- Make sure installation will not start on anything other but the NT family -->
 <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
@@ -107,7 +107,7 @@
         NOT VBOXINNOTEK
     </Condition>
 
-    
+
     <!-- *************************** Upgrade packages only ******************************* -->
     <!-- Minimum and Maximum specify the range of versions we are supposed to update with this upgrade.
          IncludeMaximum and IncludeMinimum specify whether the bound value is actually included in the range or not
@@ -169,7 +169,7 @@
             <FileSearch Name="dependency.dep"/>
         </DirectorySearch>
     </Property>
-    
+
     <!--
                             install upgrade uninstall
     VBOXDEPENDENCY             0      1/0      1/0
@@ -178,12 +178,12 @@
     not final                  1       0        1
     -->
 
-    <Condition Message="It was detected an application which has been using currently installed VirtualBox version. 
-    You must remove this application before continuing installation. 
+    <Condition Message="It was detected an application which has been using currently installed VirtualBox version.
+    You must remove this application before continuing installation.
     See the file dependency.dep in the VirtualBox installation directory for details. ">
         NOT (VBOXDEPENDENCY AND UPGRADINGPRODUCTCODE)
     </Condition>
-    
+
     <!-- Detect old Sun installation -->
     <!-- Force a manual uninstall of an already installed Sun VirtualBox version first -->
     <!--<Property Id="VBOXSUN">
@@ -330,7 +330,7 @@
                 </Component>
 
                 <Component Id="cp_DesktopShortcut" Guid="668F8A1A-F5CE-48B3-BB1A-3042EE27B279" Win64="$(var.Property_Win64)">
-                    <Condition>VBOX_INSTALLDESKTOPSHORTCUT</Condition>
+                    <Condition>VBOXINSTALLDESKTOPSHORTCUT</Condition>
                     <Shortcut Id="sc_DesktopVBox" Directory="DesktopFolder" Name="$(env.VBOX_PRODUCT)" Description="$(env.VBOX_PRODUCT)"
                               Target="[INSTALLDIR]VirtualBox.exe" WorkingDirectory="INSTALLDIR"/>
                     <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)" Type="string"
@@ -339,7 +339,7 @@
 
                 <Component Id="cp_QuickLaunchVBox" Guid="CC19E026-938A-41CB-8E77-3F33296244B6" Win64="$(var.Property_Win64)">
                     <CreateFolder/>
-                    <Condition>VBOX_INSTALLQUICKLAUNCHSHORTCUT</Condition>
+                    <Condition>VBOXINSTALLQUICKLAUNCHSHORTCUT</Condition>
                     <Shortcut Id="sc_QuickLaunchVBox" Directory="dir_QuicklaunchFolder" Name="$(env.VBOX_PRODUCT)" Description="$(env.VBOX_PRODUCT)"
                               Target="[INSTALLDIR]VirtualBox.exe" WorkingDirectory="INSTALLDIR"/>
                     <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)"
@@ -438,11 +438,11 @@
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <MergeRef Id="msm_VBoxNetworkAdp" />
                 <MergeRef Id="msm_VBoxNetworkAdp6" />
-                <MergeRef Id="msm_VBoxNetworkLwf" />                
+                <MergeRef Id="msm_VBoxNetworkLwf" />
     <?else ?>
                 <ComponentRef Id="cp_NetAdpDriver" />
                 <ComponentRef Id="cp_NetAdp6Driver" />
-                <ComponentRef Id="cp_NetLwfDriver" />                
+                <ComponentRef Id="cp_NetLwfDriver" />
     <?endif ?>
             </Feature>
 
