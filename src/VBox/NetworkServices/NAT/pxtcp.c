@@ -275,6 +275,8 @@ static err_t pxtcp_pcb_sent(void *, struct tcp_pcb *, u16_t);
 static err_t pxtcp_pcb_poll(void *, struct tcp_pcb *);
 static void pxtcp_pcb_err(void *, err_t);
 
+static err_t pxtcp_pcb_accept_outbound(struct tcp_pcb *, struct pbuf *, int, ipX_addr_t *, u16_t);
+
 static err_t pxtcp_pcb_forward_outbound(struct pxtcp *, struct pbuf *);
 static void pxtcp_pcb_forward_outbound_close(struct pxtcp *);
 
@@ -1003,14 +1005,24 @@ static err_t
 pxtcp_pcb_heard(void *arg, struct tcp_pcb *newpcb, err_t error)
 {
     struct pbuf *p = (struct pbuf *)arg;
+
+    LWIP_UNUSED_ARG(error);     /* always ERR_OK */
+
+    return pxtcp_pcb_accept_outbound(newpcb, p,
+               PCB_ISIPV6(newpcb), &newpcb->local_ip, newpcb->local_port);
+}
+
+
+static err_t
+pxtcp_pcb_accept_outbound(struct tcp_pcb *newpcb, struct pbuf *p,
+                          int is_ipv6, ipX_addr_t *dst_addr, u16_t dst_port)
+{
     struct pxtcp *pxtcp;
-    ipX_addr_t dst_addr;
+    ipX_addr_t mapped_dst_addr;
     int sdom;
     SOCKET sock;
     ssize_t nsent;
     int sockerr = 0;
-
-    LWIP_UNUSED_ARG(error);     /* always ERR_OK */
 
     /*
      * TCP first calls accept callback when it receives the first SYN
@@ -1025,11 +1037,11 @@ pxtcp_pcb_heard(void *arg, struct tcp_pcb *newpcb, err_t error)
 
     tcp_setprio(newpcb, TCP_PRIO_MAX);
 
-    pxremap_outbound_ipX(PCB_ISIPV6(newpcb), &dst_addr, &newpcb->local_ip);
+    pxremap_outbound_ipX(is_ipv6, &mapped_dst_addr, dst_addr);
 
-    sdom = PCB_ISIPV6(newpcb) ? PF_INET6 : PF_INET;
+    sdom = is_ipv6 ? PF_INET6 : PF_INET;
     sock = proxy_connected_socket(sdom, SOCK_STREAM,
-                                  &dst_addr, newpcb->local_port);
+                                  &mapped_dst_addr, dst_port);
     if (sock == INVALID_SOCKET) {
         sockerr = SOCKERRNO();
         goto abort;
