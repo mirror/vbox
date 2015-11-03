@@ -121,6 +121,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Dock_M_DockSettings,
     UIActionIndexRT_M_Dock_M_DockSettings_T_PreviewMonitor,
     UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor,
+    UIActionIndexRT_M_Dock_M_DockSettings_T_OverlayDisabled,
 #endif /* Q_WS_MAC */
 
     /* Maximum index: */

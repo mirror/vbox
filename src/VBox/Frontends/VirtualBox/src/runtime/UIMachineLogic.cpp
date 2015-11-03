@@ -1192,8 +1192,18 @@ void UIMachineLogic::prepareDock()
             this, SLOT(sltDockPreviewModeChanged(QAction*)));
     connect(gEDataManager, SIGNAL(sigDockIconAppearanceChange(bool)),
             this, SLOT(sltChangeDockIconUpdate(bool)));
+
+    /* Get dock icon overlay disabled action: */
+    QAction *pDockIconOverlayDisabled = actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings_T_OverlayDisabled);
+    /* Prepare dock icon overlay disabled action with initial data: */
+    pDockIconOverlayDisabled->setChecked(gEDataManager->dockIconOverlayDisabled(vboxGlobal().managedVMUuid()));
+    /* Connect dock icon overlay disabled signals: */
+    connect(pDockIconOverlayDisabled, SIGNAL(triggered(bool)),
+            this, SLOT(sltDockIconOverlayDisabledChanged(bool)));
     connect(gEDataManager, SIGNAL(sigDockIconOverlayAppearanceChange(bool)),
             this, SLOT(sltChangeDockIconOverlayAppearance(bool)));
+    /* Add dock icon overlay disabled action to the dock settings menu: */
+    pDockSettingsMenu->addAction(pDockIconOverlayDisabled);
 
     /* Monitor selection if there are more than one monitor */
     int cGuestScreens = machine().GetMonitorCount();
@@ -2137,6 +2147,16 @@ void UIMachineLogic::sltChangeDockIconOverlayAppearance(bool fDisabled)
     /* Update dock icon overlay: */
     if (isMachineWindowsCreated())
         updateDockOverlay();
+    /* Make sure to update dock icon action when dock icon overlay disabled changed from extra-data manager: */
+    QAction *pDockIconOverlayDisabled = actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings_T_OverlayDisabled);
+    if (fDisabled != pDockIconOverlayDisabled->isChecked())
+        pDockIconOverlayDisabled->setChecked(fDisabled);
+}
+
+void UIMachineLogic::sltDockIconOverlayDisabledChanged(bool fDisabled)
+{
+    /* Write dock icon overlay flag to extra-data: */
+    gEDataManager->setdockIconOverlayDisabled(fDisabled, vboxGlobal().managedVMUuid());
 }
 #endif /* Q_WS_MAC */
 
