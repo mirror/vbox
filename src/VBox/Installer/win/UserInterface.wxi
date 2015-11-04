@@ -393,15 +393,15 @@
                  change their Windows color scheme.
                  Also see: http://osdir.com/ml/windows.devel.wix.user/2005-02/msg00300.html -->
             <Control Id="DesktopShortcutCheckBox" Type="CheckBox" X="25" Y="95" Width="200" Height="17"
-                Property="VBOXINSTALLDESKTOPSHORTCUT" CheckBoxValue="1">
+                     Property="VBOXINSTALLDESKTOPSHORTCUT" CheckBoxValue="1" Default="no">
                 <Text>!(loc.Customize2Dlg_CreateShortcut)</Text>
             </Control>
             <Control Id="QuicklaunchShortcutCheckBox" Type="CheckBox" X="25" Y="115" Width="200" Height="17"
-                     Property="VBOXINSTALLQUICKLAUNCHSHORTCUT" CheckBoxValue="1">
+                     Property="VBOXINSTALLQUICKLAUNCHSHORTCUT" CheckBoxValue="1" Default="no">
                 <Text>!(loc.Customize2Dlg_CreateQuickLaunch)</Text>
             </Control>
             <Control Id="RegisterFileExtensionsCheckBox" Type="CheckBox" X="25" Y="135" Width="200" Height="17"
-                     Property="VBOXREGISTERFILEEXTENSIONS" CheckBoxValue="1">
+                     Property="VBOXREGISTERFILEEXTENSIONS" CheckBoxValue="1" Default="no">
                 <Text>!(loc.Customize2Dlg_RegisterFileExtensions)</Text>
             </Control>
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17"

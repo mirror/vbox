@@ -72,11 +72,27 @@
     <!-- Force overwriting all files and re-create shortcuts to guarantee a working environment -->
     <Property Id='REINSTALLMODE' Value='amus'/>
 
-    <!-- VirtualBox properties -->
+    <!-- VirtualBox properties (can be modified from command line) -->
+
+    <!-- Whether or not a desktop shortcut should be created. -->
     <Property Id="VBOXINSTALLDESKTOPSHORTCUT" Value="1" />
+    <SetProperty Id="VBOXINSTALLDESKTOPSHORTCUT" After="AppSearch" Sequence="both"
+                 Value="{}"><![CDATA[VBOXINSTALLDESKTOPSHORTCUT="0"]]></SetProperty>
+
+    <!-- Whether or not a desktop shortcut for the Quick Launch Bar should be created -->
     <Property Id="VBOXINSTALLQUICKLAUNCHSHORTCUT" Value="1" />
+    <SetProperty Id="VBOXINSTALLQUICKLAUNCHSHORTCUT" After="AppSearch" Sequence="both"
+                 Value="{}"><![CDATA[VBOXINSTALLQUICKLAUNCHSHORTCUT="0"]]></SetProperty>
+
+    <!-- Whether or not registering of known desktop shortcut for the Quick Launch Bar should be created -->
     <Property Id="VBOXREGISTERFILEEXTENSIONS" Value="1" />
+    <SetProperty Id="VBOXREGISTERFILEEXTENSIONS" After="AppSearch" Sequence="both"
+                 Value="{}"><![CDATA[VBOXREGISTERFILEEXTENSIONS="0"]]></SetProperty>
+
+    <!-- Whether or not VirtualBox should be started automatically right after successful installation -->
     <Property Id="VBOXSTART" Value="1" />
+    <SetProperty Id="VBOXSTART" After="AppSearch" Sequence="both"
+                 Value="{}"><![CDATA[VBOXSTART="0"]]></SetProperty>
 
     <!-- Make sure installation will not start on anything other but the NT family -->
 <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
