@@ -203,7 +203,7 @@
       to control additional behavior and/or features of the Windows host installer:
         <glosslist>
           <glossentry>
-            <glossterm><para>VBOXINSTALLDESKTOPSHORTCUT</para></glossterm>
+            <glossterm><para>VBOX_INSTALLDESKTOPSHORTCUT</para></glossterm>
 
             <glossdef>
               <para>Specifies whether or not a VirtualBox icon on the desktop
@@ -215,7 +215,7 @@
           </glossentry>
 
           <glossentry>
-            <glossterm><para>VBOXINSTALLQUICKLAUNCHSHORTCUT</para></glossterm>
+            <glossterm><para>VBOX_INSTALLQUICKLAUNCHSHORTCUT</para></glossterm>
 
             <glossdef>
               <para>Specifies whether or not a VirtualBox icon in the Quick Launch
@@ -227,7 +227,7 @@
           </glossentry>
 
           <glossentry>
-            <glossterm><para>VBOXREGISTERFILEEXTENSIONS</para></glossterm>
+            <glossterm><para>VBOX_REGISTERFILEEXTENSIONS</para></glossterm>
 
             <glossdef>
               <para>Specifies whether or not the file extensions .vbox,
@@ -241,7 +241,7 @@
           </glossentry>
 
           <glossentry>
-            <glossterm><para>VBOXSTART</para></glossterm>
+            <glossterm><para>VBOX_START</para></glossterm>
 
             <para>Specifies whether or not VirtualBox should be started right after
             successful installation.</para>
