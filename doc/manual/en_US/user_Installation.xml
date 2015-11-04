@@ -243,11 +243,13 @@
           <glossentry>
             <glossterm>VBOX_START</glossterm>
 
-            <para>Specifies whether or not VirtualBox should be started right after
-            successful installation.</para>
+            <glossdef>
+              <para>Specifies whether or not VirtualBox should be started right after
+              successful installation.</para>
 
-            <para>Set to <computeroutput>1</computeroutput> to enable,
-            <computeroutput>0</computeroutput> to disable. Default is 1.</para>
+              <para>Set to <computeroutput>1</computeroutput> to enable,
+              <computeroutput>0</computeroutput> to disable. Default is 1.</para>
+            </glossdef>
           </glossentry>
         </glosslist>
       </para>

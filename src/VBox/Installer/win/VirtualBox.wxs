@@ -346,7 +346,7 @@
                 </Component>
 
                 <Component Id="cp_DesktopShortcut" Guid="668F8A1A-F5CE-48B3-BB1A-3042EE27B279" Win64="$(var.Property_Win64)">
-                    <Condition>VBOXINSTALLDESKTOPSHORTCUT</Condition>
+                    <Condition>VBOX_INSTALLDESKTOPSHORTCUT</Condition>
                     <Shortcut Id="sc_DesktopVBox" Directory="DesktopFolder" Name="$(env.VBOX_PRODUCT)" Description="$(env.VBOX_PRODUCT)"
                               Target="[INSTALLDIR]VirtualBox.exe" WorkingDirectory="INSTALLDIR"/>
                     <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)" Type="string"
@@ -355,7 +355,7 @@
 
                 <Component Id="cp_QuickLaunchVBox" Guid="CC19E026-938A-41CB-8E77-3F33296244B6" Win64="$(var.Property_Win64)">
                     <CreateFolder/>
-                    <Condition>VBOXINSTALLQUICKLAUNCHSHORTCUT</Condition>
+                    <Condition>VBOX_INSTALLQUICKLAUNCHSHORTCUT</Condition>
                     <Shortcut Id="sc_QuickLaunchVBox" Directory="dir_QuicklaunchFolder" Name="$(env.VBOX_PRODUCT)" Description="$(env.VBOX_PRODUCT)"
                               Target="[INSTALLDIR]VirtualBox.exe" WorkingDirectory="INSTALLDIR"/>
                     <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)"
