@@ -600,6 +600,9 @@ tcp_listen_with_backlog(struct tcp_pcb *pcb, u8_t backlog)
   PCB_ISIPV6(lpcb) = PCB_ISIPV6(pcb);
   lpcb->accept_any_ip_version = 0;
 #endif /* LWIP_IPV6 */
+#if LWIP_CONNECTION_PROXY
+  lpcb->accept_on_syn = 0;
+#endif
   ipX_addr_copy(PCB_ISIPV6(pcb), lpcb->local_ip, pcb->local_ip);
   if (pcb->local_port != 0) {
     TCP_RMV(&tcp_bound_pcbs, pcb);
@@ -1558,6 +1561,24 @@ void
 tcp_proxy_accept(tcp_accept_fn accept)
 {
   tcp_proxy_accept_callback = accept;
+}
+
+
+/**
+ * A cross between normal accept and proxy early accept.  Like with
+ * normal accept there's a normal LISTENing pcb.  Like with proxy, the
+ * accept callback will be called on the first SYN.
+ */
+void
+tcp_accept_syn(struct tcp_pcb *pcb, tcp_accept_fn accept)
+{
+  struct tcp_pcb_listen *lpcb;
+
+  LWIP_ASSERT("invalid socket state for accept callback", pcb->state == LISTEN);
+  lpcb = (struct tcp_pcb_listen *)pcb;
+
+  lpcb->accept = accept;
+  lpcb->accept_on_syn = 1;
 }
 #endif /* LWIP_CONNECTION_PROXY */
 

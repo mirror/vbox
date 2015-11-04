@@ -569,6 +569,37 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
       &npcb->remote_ip, PCB_ISIPV6(npcb));
 #endif /* TCP_CALCULATE_EFF_SEND_MSS */
 
+
+#if LWIP_CONNECTION_PROXY
+    /* Early accept on SYN, like we do in tcp_proxy_listen_input() */
+    if (pcb->accept_on_syn) {
+      err_t err;
+
+      /* back off to "delayed" SYN_RCVD, see comments in proxy */
+      npcb->state = SYN_RCVD_0;
+
+      /*
+       * XXX: TODO: how to pass syn pbuf?  Need to be consistent with
+       * proxy version, but can't abuse callback_arg here since it's
+       * actually used in this case.
+       */
+      /* Call the accept function. */
+      TCP_EVENT_ACCEPT(npcb, ERR_OK, err);
+      if (err != ERR_OK) {
+        /* If the accept function returns with an error, we abort
+         * the connection. */
+        /* Already aborted? */
+        if (err != ERR_ABRT) {
+          tcp_abort(npcb);
+        }
+        return ERR_ABRT;
+      }
+      /* Don't send SYN|ACK now, client will call
+       * tcp_proxy_accept_confirm(). */
+      return ERR_OK;
+    }
+#endif
+
     snmp_inc_tcppassiveopens();
 
     /* Send a SYN|ACK together with the MSS option. */

@@ -300,6 +300,9 @@ struct tcp_pcb_listen {
 #if LWIP_IPV6
   u8_t accept_any_ip_version;
 #endif /* LWIP_IPV6 */
+#if LWIP_CONNECTION_PROXY
+  u8_t accept_on_syn;
+#endif
 };
 
 #if LWIP_EVENT_API
@@ -330,6 +333,8 @@ void             tcp_accept  (struct tcp_pcb *pcb, tcp_accept_fn accept);
 /* when proxied connection is accepted there's no listening pcb */
 void             tcp_proxy_arg(void *arg);
 void             tcp_proxy_accept(tcp_accept_fn accept);
+/* but we also provide proxy-like early accept for listening pcbs */
+void             tcp_accept_syn(struct tcp_pcb *lpcb, tcp_accept_fn accept);
 #endif
 void             tcp_recv    (struct tcp_pcb *pcb, tcp_recv_fn recv);
 void             tcp_sent    (struct tcp_pcb *pcb, tcp_sent_fn sent);
