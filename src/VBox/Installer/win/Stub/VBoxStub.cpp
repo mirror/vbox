@@ -880,13 +880,13 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
     /* Parse the parameters. */
     int ch;
-    bool fParsingDone = false;
+    bool fExitEarly = false;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
            && rcExit == RTEXITCODE_SUCCESS
-           && !fParsingDone)
+           && !fExitEarly)
     {
         switch (ch)
         {
@@ -936,7 +936,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 ShowInfo("Version: %d.%d.%d.%d",
                          VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD,
                          VBOX_SVN_REV);
-                fParsingDone = true;
+                fExitEarly = true;
                 break;
 
             case 'v':
@@ -961,7 +961,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                          "%s --extract -path C:\\VBox",
                          VBOX_STUB_TITLE, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
                          argv[0], argv[0]);
-                fParsingDone = true;
+                fExitEarly = true;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -992,6 +992,10 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 break;
         }
     }
+
+    /* Check if we can bail out early. */
+    if (fExitEarly)
+        return rcExit;
 
     if (rcExit != RTEXITCODE_SUCCESS)
         vrc = VERR_PARSE_ERROR;
