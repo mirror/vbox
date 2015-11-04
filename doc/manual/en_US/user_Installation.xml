@@ -192,6 +192,67 @@
       support.</para>
 
     </sect2>
+
+    <sect2>
+      <title>Public properties</title>
+
+      <para>The following public properties can be specified via MSI API,
+      <screen>VirtualBox.exe -msiparams NAME=VALUE [...]</screen>
+      or
+      <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi NAME=VALUE [...]</screen>
+      to control additional behavior and/or features of the Windows host installer:
+        <glosslist>
+          <glossentry>
+            <glossterm><para>VBOXINSTALLDESKTOPSHORTCUT</para></glossterm>
+
+            <glossdef>
+              <para>Specifies whether or not a VirtualBox icon on the desktop
+              should be created.</para>
+
+              <para>Set to <computeroutput>1</computeroutput> to enable,
+              <computeroutput>0</computeroutput> to disable. Default is 1.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm><para>VBOXINSTALLQUICKLAUNCHSHORTCUT</para></glossterm>
+
+            <glossdef>
+              <para>Specifies whether or not a VirtualBox icon in the Quick Launch
+              Bar should be created.</para>
+
+              <para>Set to <computeroutput>1</computeroutput> to enable,
+              <computeroutput>0</computeroutput> to disable. Default is 1.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm><para>VBOXREGISTERFILEEXTENSIONS</para></glossterm>
+
+            <glossdef>
+              <para>Specifies whether or not the file extensions .vbox,
+              .vbox-extpack, .ovf, .ova, .vdi, .vmdk, .vhd and .vdd should be
+              associated with VirtualBox. Files of these types then will be opened
+              with VirtualBox.
+
+              <para>Set to <computeroutput>1</computeroutput> to enable,
+              <computeroutput>0</computeroutput> to disable. Default is 1.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm><para>VBOXSTART</para></glossterm>
+
+            <para>Specifies whether or not VirtualBox should be started right after
+            successful installation.</para>
+
+            <para>Set to <computeroutput>1</computeroutput> to enable,
+            <computeroutput>0</computeroutput> to disable. Default is 1.</para>
+          </glossentry>
+        </glosslist>
+      </para>
+
+    </sect2>
   </sect1>
 
   <sect1>
