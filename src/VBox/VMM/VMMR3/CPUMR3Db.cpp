@@ -176,6 +176,7 @@ typedef struct CPUMDBENTRY
 /** @} */
 
 
+#include "cpus/Intel_Core_i7_5600U.h"
 #include "cpus/Intel_Core_i7_3960X.h"
 #include "cpus/Intel_Core_i5_3570.h"
 #include "cpus/Intel_Core_i7_2635QM.h"
@@ -208,6 +209,9 @@ typedef struct CPUMDBENTRY
  */
 static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 {
+#ifdef VBOX_CPUDB_Intel_Core_i7_5600U
+    &g_Entry_Intel_Core_i7_5600U,
+#endif
 #ifdef VBOX_CPUDB_Intel_Core_i5_3570
     &g_Entry_Intel_Core_i5_3570,
 #endif
