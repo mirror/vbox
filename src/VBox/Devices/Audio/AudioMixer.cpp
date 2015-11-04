@@ -348,19 +348,9 @@ void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
     if (!pSink)
         return;
 
-    PAUDMIXSTREAM pStream = RTListGetFirst(&pSink->lstStreams, AUDMIXSTREAM, Node);
-    while (pStream)
-    {
-        PAUDMIXSTREAM pNext = RTListNodeGetNext(&pStream->Node, AUDMIXSTREAM, Node);
-        bool fLast = RTListNodeIsLast(&pSink->lstStreams, &pStream->Node);
-
+    PAUDMIXSTREAM pStream, pStreamNext;
+    RTListForEachSafe(&pSink->lstStreams, pStream, pStreamNext, AUDMIXSTREAM, Node)
         AudioMixerRemoveStream(pSink, pStream);
-
-        if (fLast)
-            break;
-
-        pStream = pNext;
-    }
 
     Assert(pSink->cStreams == 0);
 
@@ -384,11 +374,13 @@ void AudioMixerRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
     RTListNodeRemove(&pStream->Node);
     pSink->cStreams--;
 
+#ifdef DEBUG
     const char *pszStream = pSink->enmDir == AUDMIXSINKDIR_INPUT
                           ? pStream->pIn->MixBuf.pszName : pStream->pOut->MixBuf.pszName;
 
     LogFlowFunc(("%s: pStream=%s, cStreams=%RU8\n",
-                 pSink->pszName, pszStream, pSink->cStreams));
+                 pSink->pszName, pszStream ? pszStream : "<Unnamed>", pSink->cStreams));
+#endif
 
     audioMixerDestroyStream(pStream);
 }
