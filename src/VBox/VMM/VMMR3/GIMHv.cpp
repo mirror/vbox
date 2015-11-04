@@ -491,21 +491,6 @@ VMMR3_INT_DECL(int) gimR3HvInitCompleted(PVM pVM)
 }
 
 
-#if 0
-VMMR3_INT_DECL(int) gimR3HvInitFinalize(PVM pVM)
-{
-    pVM->gim.s.pfnHypercallR3 = &GIMHvHypercall;
-    if (!HMIsEnabled(pVM))
-    {
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL /* pszModule */, GIMHV_HYPERCALL, &pVM->gim.s.pfnHypercallRC);
-        AssertRCReturn(rc, rc);
-    }
-    rc = PDMR3LdrGetSymbolR0(pVM, NULL /* pszModule */, GIMHV_HYPERCALL, &pVM->gim.s.pfnHypercallR0);
-    AssertRCReturn(rc, rc);
-}
-#endif
-
-
 /**
  * Terminates the Hyper-V GIM provider.
  *
@@ -517,24 +502,6 @@ VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
     gimR3HvReset(pVM);
     gimR3HvTermHypercallSupport(pVM);
     return VINF_SUCCESS;
-}
-
-
-/**
- * Applies relocations to data and code managed by this component.
- *
- * This function will be called at init and whenever the VMM need to relocate
- * itself inside the GC.
- *
- * @param   pVM         The cross context VM structure.
- * @param   offDelta    Relocation delta relative to old location.
- */
-VMMR3_INT_DECL(void) gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
-{
-#if 0
-    int rc = PDMR3LdrGetSymbolRC(pVM, NULL /* pszModule */, GIMHV_HYPERCALL, &pVM->gim.s.pfnHypercallRC);
-    AssertFatalRC(rc);
-#endif
 }
 
 

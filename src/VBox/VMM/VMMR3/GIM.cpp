@@ -215,52 +215,6 @@ VMMR3_INT_DECL(int) GIMR3InitCompleted(PVM pVM)
 
 
 /**
- * Applies relocations to data and code managed by this component.
- *
- * This function will be called at init and whenever the VMM need to relocate
- * itself inside the GC.
- *
- * @param   pVM         The cross context VM structure.
- * @param   offDelta    Relocation delta relative to old location.
- */
-VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
-{
-    LogFlow(("GIMR3Relocate\n"));
-
-    if (   pVM->gim.s.enmProviderId == GIMPROVIDERID_NONE
-        || HMIsEnabled(pVM))
-        return;
-
-    switch (pVM->gim.s.enmProviderId)
-    {
-        case GIMPROVIDERID_MINIMAL:
-        {
-            gimR3MinimalRelocate(pVM, offDelta);
-            break;
-        }
-
-        case GIMPROVIDERID_HYPERV:
-        {
-            gimR3HvRelocate(pVM, offDelta);
-            break;
-        }
-
-        case GIMPROVIDERID_KVM:
-        {
-            gimR3KvmRelocate(pVM, offDelta);
-            break;
-        }
-
-        default:
-        {
-            AssertMsgFailed(("Invalid provider Id %#x\n", pVM->gim.s.enmProviderId));
-            break;
-        }
-    }
-}
-
-
-/**
  * @callback_method_impl{FNSSMINTSAVEEXEC}
  */
 static DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
