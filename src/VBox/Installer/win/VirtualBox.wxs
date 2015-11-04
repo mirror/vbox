@@ -64,7 +64,7 @@
     <!-- Default property for network adapter type -->
     <Property Id="NETWORKTYPE" Value="NDIS6" Secure="yes"/>
     <!-- Force NDIS5 on pre-Vista -->
-    <SetProperty Id="NETWORKTYPE" After="CostFinalize" Value="NDIS5"><![CDATA[VersionNT < 600]]></SetProperty>
+    <SetProperty Id="NETWORKTYPE" After="CostFinalize" Value="NDIS5"><![CDATA[(NETWORKTYPE="NDIS6") AND (VersionNT < 600)]]></SetProperty>
 
     <!-- Install the product for all users on the system -->
     <Property Id="ALLUSERS"><![CDATA[1]]></Property>
