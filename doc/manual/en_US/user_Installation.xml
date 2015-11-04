@@ -233,7 +233,7 @@
               <para>Specifies whether or not the file extensions .vbox,
               .vbox-extpack, .ovf, .ova, .vdi, .vmdk, .vhd and .vdd should be
               associated with VirtualBox. Files of these types then will be opened
-              with VirtualBox.
+              with VirtualBox.</para>
 
               <para>Set to <computeroutput>1</computeroutput> to enable,
               <computeroutput>0</computeroutput> to disable. Default is 1.</para>
