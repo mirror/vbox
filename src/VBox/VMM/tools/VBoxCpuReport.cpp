@@ -3520,7 +3520,9 @@ static int reportMsr_Ia32McCtlStatusAddrMiscN(VBCPUREPMSR const *paMsrs, uint32_
     while (   cDetectedRegs < cMsrs
            && (   paMsrs[cDetectedRegs].uMsr == uMsr + cRegs
                || (cRegs & 3) == 2 /* ADDR may or may not be there, depends on STATUS and CPU. */
-               || (cRegs & 3) == 3 /* MISC may or may not be there, depends on STATUS and CPU. */)
+               || (cRegs & 3) == 3 /* MISC may or may not be there, depends on STATUS and CPU. */
+               || cRegs == 0x13 /* MC4_MISC may not be there, depends on CPU. */
+               || cRegs == 0x14 /* MC5_CTL may not be there, depends on CPU. */)
            && cRegs < 0x7f )
     {
         if (paMsrs[cDetectedRegs].uMsr == uMsr + cRegs)
