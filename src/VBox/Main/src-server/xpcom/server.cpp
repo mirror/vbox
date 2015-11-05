@@ -20,7 +20,6 @@
 
 #include <nsIComponentRegistrar.h>
 
-#include <nsEventQueueUtils.h>
 #include <nsGenericFactory.h>
 
 #include "prio.h"
@@ -57,6 +56,8 @@
 
 #include <nsIGenericFactory.h>
 #include <VirtualBox_XPCOM.h>
+
+#include "VBox/com/NativeEventQueue.h"
 
 #include "ApplianceImpl.h"
 #include "AudioAdapterImpl.h"
@@ -106,72 +107,11 @@ static bool gAutoShutdown = false;
  * VirtualBox instance is released, in ms */
 static uint32_t gShutdownDelayMs = 5000;
 
-static nsCOMPtr<nsIEventQueue> gEventQ  = nsnull;
+static com::NativeEventQueue *gEventQ   = NULL;
 static PRBool volatile gKeepRunning     = PR_TRUE;
 static PRBool volatile gAllowSigUsrQuit = PR_TRUE;
 
 /////////////////////////////////////////////////////////////////////////////
-
-/**
- * Simple but smart PLEvent wrapper.
- *
- * @note Instances must be always created with <tt>operator new</tt>!
- */
-class MyEvent
-{
-public:
-
-    MyEvent()
-    {
-        mEv.that = NULL;
-    };
-
-    /**
-     * Posts this event to the given message queue. This method may only be
-     * called once. @note On success, the event will be deleted automatically
-     * after it is delivered and handled. On failure, the event will delete
-     * itself before this method returns! The caller must not delete it in
-     * either case.
-     */
-    nsresult postTo(nsIEventQueue *aEventQ)
-    {
-        AssertReturn(mEv.that == NULL, NS_ERROR_FAILURE);
-        AssertReturn(aEventQ, NS_ERROR_FAILURE);
-        nsresult rv = aEventQ->InitEvent(&mEv.e, NULL,
-                                         eventHandler, eventDestructor);
-        if (NS_SUCCEEDED(rv))
-        {
-            mEv.that = this;
-            rv = aEventQ->PostEvent(&mEv.e);
-            if (NS_SUCCEEDED(rv))
-                return rv;
-        }
-        delete this;
-        return rv;
-    }
-
-    virtual void *handler() = 0;
-
-private:
-
-    struct Ev
-    {
-        PLEvent e;
-        MyEvent *that;
-    } mEv;
-
-    static void *PR_CALLBACK eventHandler(PLEvent *self)
-    {
-        return reinterpret_cast<Ev *>(self)->that->handler();
-    }
-
-    static void PR_CALLBACK eventDestructor(PLEvent *self)
-    {
-        delete reinterpret_cast<Ev *>(self)->that;
-    }
-};
-
-////////////////////////////////////////////////////////////////////////////////
 
 /**
  *  VirtualBox class factory that destroys the created instance right after
@@ -205,14 +145,7 @@ public:
             /* the last reference held by clients is being released
              * (see GetInstance()) */
 
-            PRBool onMainThread = PR_TRUE;
-            nsCOMPtr<nsIEventQueue> q(gEventQ);
-            if (q)
-            {
-                q->IsOnCurrentThread(&onMainThread);
-                q = nsnull;
-            }
-
+            bool onMainThread = RTThreadIsMain(RTThreadSelf());
             PRBool timerStarted = PR_FALSE;
 
             /* sTimer is null if this call originates from FactoryDestructor()*/
@@ -275,7 +208,7 @@ public:
         return count;
     }
 
-    class MaybeQuitEvent : public MyEvent
+    class MaybeQuitEvent : public NativeEvent
     {
         /* called on the main thread */
         void *handler()
@@ -334,13 +267,13 @@ public:
          * manually ended the server after a destruction has been scheduled
          * and this method was so lucky that it got a chance to run before
          * the timer was killed. */
-        nsCOMPtr<nsIEventQueue> q(gEventQ);
+        com::NativeEventQueue *q = gEventQ;
         AssertReturnVoid(q);
 
         /* post a quit event to the main queue */
         MaybeQuitEvent *ev = new MaybeQuitEvent();
-        nsresult rv = ev->postTo(q);
-        NOREF(rv);
+        if (!q->postEvent(ev))
+            delete ev;
 
         /* A failure above means we've been already stopped (for example
          * by Ctrl-C). FactoryDestructor() (NS_ShutdownXPCOM())
@@ -558,7 +491,7 @@ RegisterSelfComponents(nsIComponentRegistrar *registrar,
 static ipcIService *gIpcServ = nsnull;
 static const char *g_pszPidFile = NULL;
 
-class ForceQuitEvent : public MyEvent
+class ForceQuitEvent : public NativeEvent
 {
     void *handler()
     {
@@ -575,7 +508,7 @@ class ForceQuitEvent : public MyEvent
 
 static void signal_handler(int sig)
 {
-    nsCOMPtr<nsIEventQueue> q(gEventQ);
+    com::NativeEventQueue *q = gEventQ;
     if (q && gKeepRunning)
     {
         if (sig == SIGUSR1)
@@ -583,7 +516,8 @@ static void signal_handler(int sig)
             if (gAllowSigUsrQuit)
             {
                 VirtualBoxClassFactory::MaybeQuitEvent *ev = new VirtualBoxClassFactory::MaybeQuitEvent();
-                ev->postTo(q);
+                if (!q->postEvent(ev))
+                    delete ev;
             }
             /* else do nothing */
         }
@@ -591,7 +525,8 @@ static void signal_handler(int sig)
         {
             /* post a force quit event to the queue */
             ForceQuitEvent *ev = new ForceQuitEvent();
-            ev->postTo(q);
+            if (!q->postEvent(ev))
+                delete ev;
         }
     }
 }
@@ -842,16 +777,6 @@ int main(int argc, char **argv)
             break;
         }
 
-        /* get the main thread's event queue (afaik, the dconnect service always
-         * gets created upon XPCOM startup, so it will use the main (this)
-         * thread's event queue to receive IPC events) */
-        rc = NS_GetMainEventQ(getter_AddRefs(gEventQ));
-        if (NS_FAILED(rc))
-        {
-            RTMsgError("Failed to get the main event queue! (rc=%Rhrc)", rc);
-            break;
-        }
-
         nsCOMPtr<ipcIService> ipcServ(do_GetService(IPC_SERVICE_CONTRACTID, &rc));
         if (NS_FAILED(rc))
         {
@@ -947,34 +872,34 @@ int main(int argc, char **argv)
         else
             RTPrintf("WARNING: failed to obtain per-process file-descriptor limit (%d).\n", errno);
 
-        PLEvent *ev;
-        while (gKeepRunning)
+        /* get the main thread's event queue */
+        gEventQ = com::NativeEventQueue::getMainEventQueue();
+        if (!gEventQ)
         {
-            gEventQ->WaitForEvent(&ev);
-            gEventQ->HandleEvent(ev);
+            RTMsgError("Failed to get the main event queue! (rc=%Rhrc)", rc);
+            break;
         }
 
-        /* stop accepting new events. Clients that happen to resolve our
-         * name and issue a CreateInstance() request after this point will
-         * get NS_ERROR_ABORT once we handle the remaining messages. As a
-         * result, they should try to start a new server process. */
-        gEventQ->StopAcceptingEvents();
+        while (gKeepRunning)
+        {
+            vrc = gEventQ->processEventQueue(RT_INDEFINITE_WAIT);
+            if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
+            {
+                LogRel(("Failed to wait for events! (rc=%Rrc)", vrc));
+                break;
+            }
+        }
+
+        gEventQ = NULL;
+        RTPrintf("Terminated event loop.\n");
 
         /* unregister ourselves. After this point, clients will start a new
          * process because they won't be able to resolve the server name.*/
         gIpcServ->RemoveName(VBOXSVC_IPC_NAME);
-
-        /* process any remaining events. These events may include
-         * CreateInstance() requests received right before we called
-         * StopAcceptingEvents() above, and those will fail. */
-        gEventQ->ProcessPendingEvents();
-
-        RTPrintf("Terminated event loop.\n");
     }
     while (0); // this scopes the nsCOMPtrs
 
     NS_IF_RELEASE(gIpcServ);
-    gEventQ = nsnull;
 
     /* no nsCOMPtrs are allowed to be alive when you call com::Shutdown(). */
 
