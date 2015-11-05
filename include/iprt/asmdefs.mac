@@ -250,7 +250,7 @@
 
 ;;
 ; Global marker which is DECLASM() compatible.
-%macro GLOBALNAME 1,
+%macro GLOBALNAME 1
 %ifndef ASM_FORMAT_BIN
 global NAME(%1)
 %endif
@@ -259,7 +259,7 @@ NAME(%1):
 
 ;;
 ; Global exported marker which is DECLASM() compatible.
-%macro EXPORTEDNAME 1,
+%macro EXPORTEDNAME 1
  %ifdef ASM_FORMAT_PE
   export %1=NAME(%1)
  %endif
@@ -273,7 +273,7 @@ GLOBALNAME %1
 
 ;;
 ; Global marker which is DECLASM() compatible.
-%macro GLOBALNAME_EX 2,
+%macro GLOBALNAME_EX 2
 %ifndef ASM_FORMAT_BIN
  %ifdef ASM_FORMAT_ELF
 global NAME(%1):%2
@@ -286,7 +286,7 @@ NAME(%1):
 
 ;;
 ; Global exported marker which is DECLASM() compatible.
-%macro EXPORTEDNAME_EX 2,
+%macro EXPORTEDNAME_EX 2
  %ifdef ASM_FORMAT_PE
   export %1=NAME(%1)
  %endif
@@ -331,8 +331,10 @@ endproc_frame
  %endif
 GLOBALNAME_EX %1 %+ _EndProc, function hidden
 %ifdef ASM_FORMAT_ELF
+ %ifndef __NASM__ ; nasm does this in the global directive.
 size NAME(%1)               NAME(%1 %+ _EndProc) - NAME(%1)
 size NAME(%1 %+ _EndProc)   0
+ %endif
 %endif
     db  0xCC, 0xCC, 0xCC, 0xCC
 %endmacro
@@ -897,8 +899,12 @@ BEGINPROC RT_NOCRT(%1)
 
 ;;
 ; Structure size assertion macro.
-%define AssertCompileSize(a_Type, a_Size) AssertCompileSizeML a_Type, a_Size
-%macro AssertCompileSizeML 2,
+%ifdef __NASM__
+ %define AssertCompileSize(a_Type, a_Size) ; Not possible?
+%else
+ %define AssertCompileSize(a_Type, a_Size) AssertCompileSizeML a_Type, a_Size
+%endif
+%macro AssertCompileSizeML 2
  %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
   %assign AssertVar_cbActual   %1 %+ _size
   %assign AssertVar_cbExpected %2
@@ -910,8 +916,12 @@ BEGINPROC RT_NOCRT(%1)
 
 ;;
 ; Structure memember offset assertion macro.
-%define AssertCompileMemberOffset(a_Type, a_Member, a_off) AssertCompileMemberOffsetML a_Type, a_Member, a_off
-%macro AssertCompileMemberOffsetML 3,
+%ifdef __NASM__
+ %define AssertCompileMemberOffset(a_Type, a_Member, a_off) ; Not possible?
+%else
+ %define AssertCompileMemberOffset(a_Type, a_Member, a_off) AssertCompileMemberOffsetML a_Type, a_Member, a_off
+%endif
+%macro AssertCompileMemberOffsetML 3
  %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
   %assign AssertVar_offActual   %1 %+ . %+ %2
   %assign AssertVar_offExpected %3
