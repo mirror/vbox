@@ -67,14 +67,12 @@ os_install_service() {
 }
 
 os_enable_service() {
-    /etc/init.d/testboxscript-service start
+    stop_init_script testboxscript-service
     return 0;
 }
 
 os_disable_service() {
-    if [ -f /etc/init.d/testboxscript-service ]; then
-        /etc/init.d/testboxscript-service stop || true # Ignore
-    fi
+    stop_init_script testboxscript-service 2>&1 || true # Ignore
     return 0;
 }
 

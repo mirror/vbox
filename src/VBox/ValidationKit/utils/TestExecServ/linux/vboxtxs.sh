@@ -37,217 +37,44 @@
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
+SCRIPTNAME=vboxtxs.sh
 
 CDROM_PATH=/media/cdrom
 SCRATCH_PATH=/tmp/vboxtxs-scratch
 
-system=unknown
-if [ -f /etc/redhat-release ]; then
-    system=redhat
-    PIDFILE="/var/lock/subsys/vboxtxs"
-elif [ -f /etc/SuSE-release ]; then
-    system=suse
-    PIDFILE="/var/lock/subsys/vboxtxs"
-elif [ -f /etc/debian_version ]; then
-    system=debian
-    PIDFILE="/var/run/vboxtxs"
-elif [ -f /etc/gentoo-release ]; then
-    system=gentoo
-    PIDFILE="/var/run/vboxtxs"
-elif [ -f /etc/arch-release ]; then
-     system=arch
-     PIDFILE="/var/run/vboxtxs"
-elif [ -f /etc/slackware-version ]; then
-    system=slackware
-    PIDFILE="/var/run/vboxtxs"
-elif [ -f /etc/lfs-release ]; then
-    system=lfs
-    PIDFILE="/var/run/vboxtxs.pid"
-else
-    system=other
-    if [ -d /var/run -a -w /var/run ]; then
-        PIDFILE="/var/run/vboxtxs"
-    fi
+PIDFILE="/var/run/vboxtxs"
+
+# Preamble for Gentoo
+if [ "`which $0`" = "/sbin/rc" ]; then
+    shift
 fi
 
-if [ "$system" = "redhat" ]; then
-    . /etc/init.d/functions
-    fail_msg() {
-        echo_failure
-        echo
-    }
+begin_msg()
+{
+    test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
+    logger -t "${SCRIPTNAME}" "${1}."
+}
 
-    succ_msg() {
-        echo_success
-        echo
-    }
+succ_msg()
+{
+    logger -t "${SCRIPTNAME}" "${1}."
+}
 
-    begin() {
-        echo -n "$1"
-    }
-fi
+fail_msg()
+{
+    echo "${SCRIPTNAME}: failed: ${1}." >&2
+    logger -t "${SCRIPTNAME}" "failed: ${1}."
+}
 
-if [ "$system" = "suse" ]; then
-    . /etc/rc.status
-    daemon() {
-        startproc ${1+"$@"}
-    }
-
-    fail_msg() {
-        rc_failed 1
-        rc_status -v
-    }
-
-    succ_msg() {
-        rc_reset
-        rc_status -v
-    }
-
-    begin() {
-        echo -n "$1"
-    }
-fi
-
-if [ "$system" = "debian" ]; then
-    daemon() {
-        start-stop-daemon --start --exec $1 -- $2
-    }
-
-    killproc() {
-        start-stop-daemon --stop --exec $@
-    }
-
-    fail_msg() {
-        echo " ...fail!"
-    }
-
-    succ_msg() {
-        echo " ...done."
-    }
-
-    begin() {
-        echo -n "$1"
-    }
-fi
-
-if [ "$system" = "gentoo" ]; then
-    if [ -f /sbin/functions.sh ]; then
-        . /sbin/functions.sh
-    elif [ -f /etc/init.d/functions.sh ]; then
-        . /etc/init.d/functions.sh
-    fi
-    daemon() {
-        start-stop-daemon --start --exec $1 -- $2
-    }
-
-    killproc() {
-        start-stop-daemon --stop --exec $@
-    }
-
-    fail_msg() {
-        echo " ...fail!"
-    }
-
-    succ_msg() {
-        echo " ...done."
-    }
-
-    begin() {
-        echo -n "$1"
-    }
-
-    if [ "`which $0`" = "/sbin/rc" ]; then
-        shift
-    fi
-fi
-
-if [ "$system" = "arch" ]; then
-    USECOLOR=yes
-    . /etc/rc.d/functions
-    daemon() {
-        $@
-        test $? -eq 0 && add_daemon rc.`basename $1`
-    }
-
-    killproc() {
-        killall $@
-        rm_daemon `basename $@`
-    }
-
-    fail_msg() {
-        stat_fail
-    }
-
-    succ_msg() {
-        stat_done
-    }
-
-    begin() {
-        stat_busy "$1"
-    }
-
-fi
-
-if [ "$system" = "slackware" ]; then
-    daemon() {
-        $1 $2
-    }
-
-    killproc() {
-        killall $1
-        rm -f $PIDFILE
-    }
-
-    fail_msg() {
-        echo " ...fail!"
-    }
-
-    succ_msg() {
-        echo " ...done."
-    }
-
-    begin() {
-        echo -n "$1"
-    }
-
-fi
-
-if [ "$system" = "lfs" ]; then
-    . /etc/rc.d/init.d/functions
-    daemon() {
-        loadproc $1 $2
-    }
-
-    fail_msg() {
-        echo_failure
-    }
-
-    succ_msg() {
-        echo_ok
-    }
-
-    begin() {
-        echo $1
-    }
-
-    status() {
-        statusproc $1
-    }
-fi
-
-if [ "$system" = "other" ]; then
-    fail_msg() {
-        echo " ...fail!"
-    }
-
-    succ_msg() {
-        echo " ...done."
-    }
-
-    begin() {
-        echo -n "$1"
-    }
-fi
+killproc() {
+    kp_binary="${1##*/}"
+    pkill "${kp_binary}" || return 0
+    sleep 1
+    pkill "${kp_binary}" || return 0
+    sleep 1
+    pkill -9 "${kp_binary}"
+    return 0
+}
 
 case "`uname -m`" in
     AMD64|amd64|X86_64|x86_64)
@@ -273,19 +100,19 @@ fixAndTestBinary() {
 
 start() {
     if ! test -f $PIDFILE; then
-        begin "Starting VirtualBox Test Execution Service ";
+        begin_msg "Starting VirtualBox Test Execution Service" console
         fixAndTestBinary
         mount /dev/cdrom "${CDROM_PATH}" 2> /dev/null > /dev/null
-        daemon $binary --auto-upgrade --scratch="${SCRATCH_PATH}" --cdrom="${CDROM_PATH}" --no-display-output > /dev/null
+        $binary --auto-upgrade --scratch="${SCRATCH_PATH}" --cdrom="${CDROM_PATH}" --no-display-output > /dev/null
         RETVAL=$?
         test $RETVAL -eq 0 && sleep 2 && echo `pidof TestExecService` > $PIDFILE
         if ! test -s "${PIDFILE}"; then
             RETVAL=5
         fi
         if test $RETVAL -eq 0; then
-            succ_msg
+            succ_msg "VirtualBox Test Execution service started"
         else
-            fail_msg
+            fail_msg "VirtualBox Test Execution service failed to start"
         fi
     fi
     return $RETVAL
@@ -293,13 +120,9 @@ start() {
 
 stop() {
     if test -f $PIDFILE; then
-        begin "Stopping VirtualBox Test Execution Service ";
+        begin_msg "Stopping VirtualBox Test Execution Service" console
         killproc $binary
-        RETVAL=$?
-        test $RETVAL -eq 0 && rm -f $PIDFILE
-        succ_msg
     fi
-    return $RETVAL
 }
 
 restart() {
