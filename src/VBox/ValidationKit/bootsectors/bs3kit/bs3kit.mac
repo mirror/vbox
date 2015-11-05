@@ -1,0 +1,173 @@
+; $Id$
+;; @file
+; BS3Kit - structures, symbols, macros and stuff.
+;
+
+;
+; Copyright (C) 2007-2015 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; The contents of this file may alternatively be used under the terms
+; of the Common Development and Distribution License Version 1.0
+; (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+; VirtualBox OSE distribution, in which case the provisions of the
+; CDDL are applicable instead of those of the GPL.
+;
+; You may elect to license modified versions of this file under the
+; terms and conditions of either the GPL or the CDDL or both.
+;
+
+%ifndef ___bs3kit_mac___
+%define ___bs3kit_mac___
+
+%include "iprt/asmdefs.mac"
+%include "iprt/x86.mac"
+
+
+;; @name Static Memory Allocation
+; @{
+;; The flat load address for the code after the bootsector.
+%define BS3_LOAD_ADDR           010000h
+;; Where we save the boot registers during init.
+; Located right before the code.
+%define BS3_REG_SAVE_ADDR       (BS3_LOAD_ADDR - BS3REGS_size - 8)
+;; Where the stack starts (initial RSP value).
+; Located right before the saved registers. SS.BASE=0.
+%define BS3_STACK_ADDR          (BS3_REG_SAVE_ADDR - 16)
+;; @}
+
+
+;;
+; Registers.  Used by traps and such.
+;
+struc BS3REGS
+        .rax    resq 1
+        .rbx    resq 1
+        .rcx    resq 1
+        .rdx    resq 1
+        .rdi    resq 1
+        .rsi    resq 1
+        .rbp    resq 1
+        .rsp    resq 1
+        .rip    resq 1
+        .r8     resq 1
+        .r9     resq 1
+        .r10    resq 1
+        .r11    resq 1
+        .r12    resq 1
+        .r13    resq 1
+        .r14    resq 1
+        .r15    resq 1
+        .rflags resq 1
+        .cs     resw 1
+        .ds     resw 1
+        .es     resw 1
+        .fs     resw 1
+        .gs     resw 1
+        .ss     resw 1
+        .cBits  resb 1
+        .pad    resb 3
+        .cr0    resq 1
+        .cr2    resq 1
+        .cr3    resq 1
+        .cr4    resq 1
+        .cr8    resq 1
+        ;; @todo Add floating point registers when they are active.
+endstruc
+
+
+
+;;
+; Trap record.
+;
+struc BS3TRAPREC
+        ;; The trap location relative to the base address given at
+        ; registration time.
+        .offWhere               resd 1
+        ;; What to add to .offWhere to calculate the resume address.
+        .offResumeAddend        resb 1
+        ;; The trap number.
+        .u8TrapNo               resb 1
+        ;; The error code if the trap takes one.
+        .u16ErrCd               resw 1
+endstruc
+
+;; The size shift.
+%define BS3TRAPREC_SIZE_SHIFT   3
+
+
+;; @name Segment definitions.
+;; @{
+%macro BS3_BEGIN_TEXT16 0
+ %ifndef BS3_BEGIN_TEXT16_NOT_FIRST
+  %define BS3_BEGIN_TEXT16_NOT_FIRST
+        section TEXT16 CLASS=CODE16 PUBLIC USE16 ALIGN=1
+ %else
+        section TEXT16
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_DATA16 0
+ %ifndef BS3_BEGIN_DATA16_NOT_FIRST
+  %define BS3_BEGIN_DATA16_NOT_FIRST
+        section DATA16 CLASS=DATA16 PUBLIC USE16 ALIGN=2
+ %else
+        section DATA16
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_TEXT32 0
+ %ifndef BS3_BEGIN_TEXT16_NOT_FIRST
+  %define BS3_BEGIN_TEXT16_NOT_FIRST
+        section TEXT32 CLASS=CODE32 PUBLIC USE32 ALIGN=1
+ %else
+        section TEXT32
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_DATA32 0
+ %ifndef BS3_BEGIN_DATA32_NOT_FIRST
+  %define BS3_BEGIN_DATA32_NOT_FIRST
+        section DATA32 CLASS=DATA32 PUBLIC USE32 ALIGN=16
+ %else
+        section DATA32
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_TEXT64 0
+ %ifndef BS3_BEGIN_TEXT64_NOT_FIRST
+  %define BS3_BEGIN_TEXT64_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section TEXT64 ALIGN=1
+  %else
+        section TEXT64 CLASS=CODE64 PUBLIC USE32 ALIGN=1
+  %endif
+ %else
+        section TEXT64
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_DATA64 0
+ %ifndef BS3_BEGIN_DATA64_NOT_FIRST
+  %define BS3_BEGIN_DATA64_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section DATA64 ALIGN=16
+  %else
+        section DATA64 CLASS=DATA64 PUBLIC USE32 ALIGN=16
+  %endif
+ %else
+        section DATA64
+ %endif
+%endmacro
+
+;; @}
+
+%endif
+
