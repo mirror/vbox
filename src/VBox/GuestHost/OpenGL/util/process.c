@@ -14,6 +14,9 @@
 #include <signal.h>
 #ifndef WINDOWS
 #include <unistd.h>
+# ifdef VBOX
+#  include <string.h>
+# endif
 #else
 #pragma warning ( disable : 4127 )
 #define snprintf _snprintf
@@ -129,6 +132,24 @@ void crGetProcName( char *name, int maxLen )
 			break;
 	}
 #else
+#ifdef VBOX
+    const char *pszExecName, *pszProgName;
+#  ifdef SunOS
+    pszExecName = getexecname();
+#  else
+    extern const char *__progname;
+    pszExecName = __progname;
+#  endif
+    if (!pszExecName)
+        pszExecName = "<unknown>";
+    pszProgName = strrchr(pszExecName, '/');
+    if (pszProgName && *(pszProgName + 1))
+        pszProgName++;
+    else
+        pszProgName = pszExecName;
+    strncpy(name, pszProgName, maxLen);
+    name[maxLen - 1] = '\0';
+# else
 	/* Unix:
 	 * Call getpid() to get our process ID.
 	 * Then use system() to write the output of 'ps' to a temp file.
@@ -148,17 +169,9 @@ void crGetProcName( char *name, int maxLen )
 		return;
 	/* pipe output of ps to temp file */
 #ifndef SunOS
-# ifdef VBOX
-	snprintf(command, sizeof(command), "ps > %s", tmp);
-# else
 	sprintf(command, "ps > %s", tmp);
-# endif
 #else
-# ifdef VBOX
-	snprintf(command, sizeof(command), "ps -e -o 'pid tty time comm'> %s", tmp);
-# else
 	sprintf(command, "ps -e -o 'pid tty time comm'> %s", tmp);
-# endif
 #endif
 	system(command);
 
@@ -187,6 +200,7 @@ void crGetProcName( char *name, int maxLen )
 		fclose(f);
 	}
 	remove(tmp);
+# endif
 #endif
 }
 
