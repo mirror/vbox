@@ -94,6 +94,7 @@ static err_t tcp_timewait_input(struct tcp_pcb *pcb);
 
 #if LWIP_CONNECTION_PROXY
 static err_t tcp_proxy_listen_input(struct pbuf *p);
+static void tcp_restore_pbuf(struct pbuf *p);
 
 void
 tcp_proxy_input(struct pbuf *p, struct netif *inp)
@@ -254,7 +255,6 @@ tcp_input1(struct pbuf *p, struct netif *inp)
        * IP header so that proxy can save it and use it later to
        * create ICMP datagram.
        */
-      pbuf_header(p, ip_current_header_tot_len() + hdrlen * 4);
       tcp_proxy_listen_input(p);
       pbuf_free(p);
       return;
@@ -612,6 +612,29 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
 }
 
 #if LWIP_CONNECTION_PROXY
+/*
+ * Proxy accept callback will be passed the pbuf with the SYN segment
+ * so that it can use it for ICMP errors if necessary.  Undo changes
+ * we've done to the pbuf so that it's suitable to be passed to
+ * icmp_send_response().
+ */
+static void
+tcp_restore_pbuf(struct pbuf *p)
+{
+    u8_t hdrlen = TCPH_HDRLEN(tcphdr);
+
+    /* Reveal IP and TCP headers. */
+    pbuf_header(p, ip_current_header_tot_len() + hdrlen * 4);
+
+    /* Convert fields in the TCP header back to network byte order. */
+    tcphdr->src = htons(tcphdr->src);
+    tcphdr->dest = htons(tcphdr->dest);
+    tcphdr->seqno = htonl(tcphdr->seqno);
+    tcphdr->ackno = htonl(tcphdr->ackno);
+    tcphdr->wnd = htons(tcphdr->wnd);
+}
+
+
 /**
  * We run proxied packets through tcp_input() since it mostly does
  * what we need, the only exception is creation of new connections.
@@ -706,21 +729,10 @@ tcp_proxy_listen_input(struct pbuf *p)
      *
      * For the proxy to be able to create ICMP unreachable datagram we
      * need to keep the beginning of the pbuf around.  We pass is as
-     * callback arg here and let callback decide.  Payload is already
-     * moved back to the IP header by the caller.
+     * callback arg here and let callback decide.
      */
 
-    /*
-     * Convert fields in the TCP header back to network byte order
-     * (for ICMP).  I think it's safe to do now, as tcphdr will not be
-     * accessed after this.
-     */
-    tcphdr->src = htons(tcphdr->src);
-    tcphdr->dest = htons(tcphdr->dest);
-    tcphdr->seqno = htonl(tcphdr->seqno);
-    tcphdr->ackno = htonl(tcphdr->ackno);
-    tcphdr->wnd = htons(tcphdr->wnd);
-
+    tcp_restore_pbuf(p);
     npcb->callback_arg = (void *)p;
  
     /* Call the accept function. */
