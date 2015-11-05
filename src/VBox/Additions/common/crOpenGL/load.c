@@ -985,7 +985,11 @@ stubInitLocked(void)
         if (!ns.conn)
         {
             crWarning("Failed to connect to host. Make sure 3D acceleration is enabled for this VM.");
+# ifdef VBOXOGL_FAKEDRI
             return false;
+# else
+            exit(1);
+# endif
         }
         else
         {
