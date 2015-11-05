@@ -81,10 +81,6 @@ Options:
                          file.  The default location is:
                            "${CONFIGURATION_FILE}"
 
-  --install              Install the service to run at system start-up.
-
-  --uninstall            Revert the installation done by the "--install" option.
-
   --help|--usage         Print this text.
 
 The optional configuration file should contain a series of lines of the form
@@ -273,7 +269,6 @@ SCRIPT_FOLDER=$(dirname "${SCRIPT_NAME}")"/"
 . "${SCRIPT_FOLDER}generated.sh"
 
 # Parse our arguments.
-do_install=""
 while [ "$#" -gt 0 ]; do
   case $1 in
     -c|--conf-file)
@@ -290,12 +285,6 @@ while [ "$#" -gt 0 ]; do
       usage
       exit 0
       ;;
-    --install)
-      do_install="install"
-      ;;
-    --uninstall)
-      do_install="uninstall"
-      ;;
     *)
       banner
       abort_usage "Unknown argument $1.\n"
@@ -305,17 +294,6 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ -r "${CONFIGURATION_FILE}" ] && . "${CONFIGURATION_FILE}"
-
-if [ -n "${do_install}" ]; then
-  SCRIPT_FOLDER=$(cd "${SCRIPT_FOLDER}" && pwd)"/"
-  CONFIGURATION_FILE_ESCAPED=$(echo "${CONFIGURATION_FILE}" | sed 's/\([ \%]\)/\\\1/g')
-  if [ "x${do_install}" = "xinstall" ]; then
-    ${SCRIPT_FOLDER}install_service --enable -- --command "${SCRIPT_FOLDER}"$(basename "${SCRIPT_NAME}") --arguments "--conf-file ${CONFIGURATION_FILE_ESCAPED}" --service-name "${SERVICE_NAME}" --description "${SERVICE_DESCRIPTION}"
-  else
-    ${SCRIPT_FOLDER}install_service --remove -- --service-name "${SERVICE_NAME}"
-  fi
-  exit 0
-fi
 
 # Change to the root directory so we don't hold any other open.
 cd /

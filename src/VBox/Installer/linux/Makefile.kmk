@@ -20,10 +20,8 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 
-# We do not install VBoxHeadlessXOrg.sh any more, so neither of these are
-# needed.
+# We do not install VBoxHeadlessXOrg.sh any more, so this is not needed.
 #
-# include $(PATH_SUB_CURRENT)/install_service/Makefile.kmk
 # ifdef VBOX_WITH_TESTCASES
 #  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 # endif
