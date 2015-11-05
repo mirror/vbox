@@ -1106,7 +1106,7 @@ raise(SIGINT);*/
  * Returns TRUE on success, FALSE otherwise.
  */
 bool
-#if defined(LINUX) || !defined(VBOXOGL_FAKEDRI)
+#if defined(LINUX) && !defined(VBOXOGL_FAKEDRI)
 __attribute__ ((constructor))
 #endif 
 stubInit(void)
