@@ -1427,7 +1427,6 @@ static int usbProxyLinuxUrbQueueSplit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pU
             rc = usbProxyLinuxSubmitURB(pProxyDev, pCur, pUrb, &fUnplugged);
             if (RT_FAILURE(rc))
                 break;
-            usbProxyLinuxUrbLinkInFlight(USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX), pCur);
         }
     }
 
