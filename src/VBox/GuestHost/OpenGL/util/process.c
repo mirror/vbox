@@ -136,6 +136,8 @@ void crGetProcName( char *name, int maxLen )
     const char *pszExecName, *pszProgName;
 #  ifdef SunOS
     pszExecName = getexecname();
+#  elif defined(DARWIN)
+    pszExecName = getprogname();
 #  else
     extern const char *__progname;
     pszExecName = __progname;
