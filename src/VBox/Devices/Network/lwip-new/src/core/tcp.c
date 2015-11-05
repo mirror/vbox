@@ -531,7 +531,7 @@ tcp_proxy_bind(struct tcp_pcb *pcb, ip_addr_t *ipaddr, u16_t port)
 /**
  * Default accept callback if no accept callback is specified by the user.
  */
-static err_t
+err_t
 tcp_accept_null(void *arg, struct tcp_pcb *pcb, err_t err)
 {
   LWIP_UNUSED_ARG(arg);

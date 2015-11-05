@@ -63,9 +63,7 @@
 #endif /* LWIP_ND6_TCP_REACHABILITY_HINTS */
 
 #if LWIP_CONNECTION_PROXY
-static err_t tcp_proxy_accept_null(void *arg, struct tcp_pcb *pcb, err_t err);
-
-tcp_accept_fn tcp_proxy_accept_callback = tcp_proxy_accept_null;
+tcp_accept_fn tcp_proxy_accept_callback = tcp_accept_null;
 #endif
 
 /* These variables are global to all functions involved in the input
@@ -614,24 +612,6 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
 }
 
 #if LWIP_CONNECTION_PROXY
-/**
- * XXX: This is a copy-pasted tcp_accept_null(), a static function
- * from tcp.c.  For normal listening PCB tcp_pcb::accept is set to
- * that function when PCB is created in tcp_listen_with_backlog().  I
- * don't want to shuffle code around or mess with visibility for now,
- * so just provide a copy here.
- */
-static err_t
-tcp_proxy_accept_null(void *arg, struct tcp_pcb *pcb, err_t err)
-{
-  LWIP_UNUSED_ARG(arg);
-  LWIP_UNUSED_ARG(err);
-
-  tcp_abort(pcb);
-  return ERR_ABRT;
-}
-
-
 /**
  * We run proxied packets through tcp_input() since it mostly does
  * what we need, the only exception is creation of new connections.

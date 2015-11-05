@@ -484,6 +484,7 @@ u16_t tcp_eff_send_mss_impl(u16_t sendmss, ipX_addr_t *dest
 #endif /* TCP_CALCULATE_EFF_SEND_MSS */
 
 #if LWIP_CALLBACK_API
+err_t tcp_accept_null(void *arg, struct tcp_pcb *pcb, err_t err);
 err_t tcp_recv_null(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err);
 #endif /* LWIP_CALLBACK_API */
 
