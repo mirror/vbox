@@ -1143,8 +1143,8 @@
 #define VERR_VMM_RING3_CALL_DISABLED        (-2703)
 /** The VMMR0.r0 module version does not match VBoxVMM.dll/so/dylib.
  * If you just upgraded VirtualBox, please terminate all VMs and make sure
- * VBoxNetDHCP is not running.  Then try again.  If this error persists, try
- * re-installing VirtualBox. */
+ * that neither VBoxNetDHCP nor VBoxNetNAT is running.  Then try again.
+ * If this error persists, try re-installing VirtualBox. */
 #define VERR_VMM_R0_VERSION_MISMATCH        (-2704)
 /** The VMMRC.rc module version does not match VBoxVMM.dll/so/dylib.
  * Re-install if you are a user.  Developers should make sure the build is
