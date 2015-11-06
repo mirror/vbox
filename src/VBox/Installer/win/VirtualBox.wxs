@@ -60,39 +60,12 @@
     <Property Id="ARPPRODUCTICON">IconVirtualBox</Property>
     <Property Id="ARPURLINFOABOUT">http://www.virtualbox.org</Property>
     <Property Id="ARPURLUPDATEINFO">http://www.virtualbox.org</Property>
-
-    <!-- Default property for network adapter type -->
-    <Property Id="NETWORKTYPE" Value="NDIS6" Secure="yes"/>
-    <!-- Force NDIS5 on pre-Vista -->
-    <SetProperty Id="NETWORKTYPE" After="CostFinalize" Value="NDIS5"><![CDATA[(NETWORKTYPE="NDIS6") AND (VersionNT < 600)]]></SetProperty>
-
+    
     <!-- Install the product for all users on the system -->
     <Property Id="ALLUSERS"><![CDATA[1]]></Property>
 
     <!-- Force overwriting all files and re-create shortcuts to guarantee a working environment -->
     <Property Id='REINSTALLMODE' Value='amus'/>
-
-    <!-- VirtualBox properties (can be modified from command line) -->
-
-    <!-- Whether or not a desktop shortcut should be created. -->
-    <Property Id="VBOX_INSTALLDESKTOPSHORTCUT" Value="1" Secure="yes"/>
-    <SetProperty Id="VBOX_INSTALLDESKTOPSHORTCUT" After="AppSearch" Sequence="both"
-                 Value="{}"><![CDATA[VBOX_INSTALLDESKTOPSHORTCUT="0"]]></SetProperty>
-
-    <!-- Whether or not a desktop shortcut for the Quick Launch Bar should be created -->
-    <Property Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" Value="1" Secure="yes"/>
-    <SetProperty Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" After="AppSearch" Sequence="both"
-                 Value="{}"><![CDATA[VBOX_INSTALLQUICKLAUNCHSHORTCUT="0"]]></SetProperty>
-
-    <!-- Whether or not registering of known desktop shortcut for the Quick Launch Bar should be created -->
-    <Property Id="VBOX_REGISTERFILEEXTENSIONS" Value="1" Secure="yes"/>
-    <SetProperty Id="VBOX_REGISTERFILEEXTENSIONS" After="AppSearch" Sequence="both"
-                 Value="{}"><![CDATA[VBOX_REGISTERFILEEXTENSIONS="0"]]></SetProperty>
-
-    <!-- Whether or not VirtualBox should be started automatically right after successful installation -->
-    <Property Id="VBOX_START" Value="1" Secure="yes"/>
-    <SetProperty Id="VBOX_START" After="AppSearch" Sequence="both"
-                 Value="{}"><![CDATA[VBOX_START="0"]]></SetProperty>
 
     <!-- Make sure installation will not start on anything other but the NT family -->
 <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
