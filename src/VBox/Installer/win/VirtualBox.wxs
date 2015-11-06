@@ -60,12 +60,14 @@
     <Property Id="ARPPRODUCTICON">IconVirtualBox</Property>
     <Property Id="ARPURLINFOABOUT">http://www.virtualbox.org</Property>
     <Property Id="ARPURLUPDATEINFO">http://www.virtualbox.org</Property>
-    
+
     <!-- Install the product for all users on the system -->
     <Property Id="ALLUSERS"><![CDATA[1]]></Property>
 
     <!-- Force overwriting all files and re-create shortcuts to guarantee a working environment -->
     <Property Id='REINSTALLMODE' Value='amus'/>
+
+    <?include PublicProperties.wxi ?>
 
     <!-- Make sure installation will not start on anything other but the NT family -->
 <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>

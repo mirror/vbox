@@ -48,6 +48,8 @@
                  Platform="$(var.Property_Platform)"
                  SummaryCodepage="1252"/>
 
+        <?include PublicProperties.wxi ?>
+
         <!-- Here comes the file/directory list -->
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="msm_VBoxApplicationFolder" FileSource=".">
