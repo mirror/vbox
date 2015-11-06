@@ -31,14 +31,15 @@
 # include <QTextEdit>
 
 /* GUI includes: */
-# include "UIVMLogViewer.h"
+# include "QIFileDialog.h"
 # include "QITabWidget.h"
-# include "UIIconPool.h"
-# include "UISpecialControls.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
-# include "VBoxUtils.h"
 # include "UIExtraDataManager.h"
+# include "UIIconPool.h"
+# include "UIMessageCenter.h"
+# include "UISpecialControls.h"
+# include "UIVMLogViewer.h"
+# include "VBoxGlobal.h"
+# include "VBoxUtils.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -789,16 +790,29 @@ bool UIVMLogViewer::close()
 void UIVMLogViewer::save()
 {
     /* Prepare "save as" dialog: */
-    QFileInfo fileInfo(m_book.at(m_pViewerContainer->currentIndex()).first);
-    QDateTime dtInfo = fileInfo.lastModified();
-    QString strDtString = dtInfo.toString("yyyy-MM-dd-hh-mm-ss");
-    QString strDefaultFileName = QString("%1-%2.log").arg(m_machine.GetName()).arg(strDtString);
-    QString strDefaultFullName = QDir::toNativeSeparators(QDir::home().absolutePath() + "/" + strDefaultFileName);
-    QString strNewFileName = QFileDialog::getSaveFileName(this, tr("Save VirtualBox Log As"), strDefaultFullName);
-
-    /* Copy log into the file: */
+    const QFileInfo fileInfo(m_book.at(m_pViewerContainer->currentIndex()).first);
+    /* Prepare default filename: */
+    const QDateTime dtInfo = fileInfo.lastModified();
+    const QString strDtString = dtInfo.toString("yyyy-MM-dd-hh-mm-ss");
+    const QString strDefaultFileName = QString("%1-%2.log").arg(m_machine.GetName()).arg(strDtString);
+    const QString strDefaultFullName = QDir::toNativeSeparators(QDir::home().absolutePath() + "/" + strDefaultFileName);
+    /* Show "save as" dialog: */
+    const QString strNewFileName = QIFileDialog::getSaveFileName(strDefaultFullName,
+                                                                 "",
+                                                                 this,
+                                                                 tr("Save VirtualBox Log As"),
+                                                                 0 /* selected filter */,
+                                                                 true /* resolve symlinks */,
+                                                                 true /* confirm overwrite */);
+    /* Make sure file-name is not empty: */
     if (!strNewFileName.isEmpty())
+    {
+        /* Delete the previous file if already exists as user already confirmed: */
+        if (QFile::exists(strNewFileName))
+            QFile::remove(strNewFileName);
+        /* Copy log into the file: */
         QFile::copy(m_machine.QueryLogFilename(m_pViewerContainer->currentIndex()), strNewFileName);
+    }
 }
 
 void UIVMLogViewer::filter()
