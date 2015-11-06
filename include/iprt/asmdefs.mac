@@ -347,50 +347,52 @@ size NAME(%1 %+ _EndProc)   0
 ; it's only to make sure the .bss section ends up last (it's not declared here).
 ;
 %ifdef ASM_FORMAT_OMF
+ %ifndef RT_NOINC_SEGMENTS
 
- ; 16-bit segments first (OMF / OS/2 specific).
- %ifdef RT_INCL_16BIT_SEGMENTS
-  segment DATA16 public CLASS=FAR_DATA align=16 use16
-  segment DATA16_INIT public CLASS=FAR_DATA align=16 use16
-  group DGROUP16 DATA16 DATA16_INIT
+  ; 16-bit segments first (OMF / OS/2 specific).
+  %ifdef RT_INCL_16BIT_SEGMENTS
+   segment DATA16 public CLASS=FAR_DATA align=16 use16
+   segment DATA16_INIT public CLASS=FAR_DATA align=16 use16
+   group DGROUP16 DATA16 DATA16_INIT
 
-  ;;
-  ; Begins 16-bit data
-  %macro BEGINDATA16 0
-   segment DATA16
-  %endmacro
+   ;;
+   ; Begins 16-bit data
+   %macro BEGINDATA16 0
+    segment DATA16
+   %endmacro
 
-  ;;
-  ; Begins 16-bit init data
-  %macro BEGINDATA16INIT 0
-   segment DATA16_INIT
-  %endmacro
+   ;;
+   ; Begins 16-bit init data
+   %macro BEGINDATA16INIT 0
+    segment DATA16_INIT
+   %endmacro
 
-  segment CODE16 public CLASS=FAR_CODE align=16 use16
-  segment CODE16_INIT public CLASS=FAR_CODE align=16 use16
-  group CGROUP16 CODE16 CODE16_INIT
+   segment CODE16 public CLASS=FAR_CODE align=16 use16
+   segment CODE16_INIT public CLASS=FAR_CODE align=16 use16
+   group CGROUP16 CODE16 CODE16_INIT
 
-  ;;
-  ; Begins 16-bit code
-  %macro BEGINCODE16 0
-   segment CODE16
-  %endmacro
+   ;;
+   ; Begins 16-bit code
+   %macro BEGINCODE16 0
+    segment CODE16
+   %endmacro
 
-  ;;
-  ; Begins 16-bit init code
-  %macro BEGINCODE16INIT 0
-   segment CODE16_INIT
-  %endmacro
+   ;;
+   ; Begins 16-bit init code
+   %macro BEGINCODE16INIT 0
+    segment CODE16_INIT
+   %endmacro
 
- %endif
+  %endif
 
- ; 32-bit segments.
- segment TEXT32 public CLASS=CODE align=16 use32 flat
- segment DATA32 public CLASS=DATA align=16 use32 flat
- segment BSS32  public CLASS=BSS  align=16 use32 flat
+  ; 32-bit segments.
+  segment TEXT32 public CLASS=CODE align=16 use32 flat
+  segment DATA32 public CLASS=DATA align=16 use32 flat
+  segment BSS32  public CLASS=BSS  align=16 use32 flat
 
- ; Make the TEXT32 segment default.
- segment TEXT32
+  ; Make the TEXT32 segment default.
+  segment TEXT32
+ %endif ; RT_NOINC_SEGMENTS
 %endif
 
 %ifdef ASM_FORMAT_MACHO
