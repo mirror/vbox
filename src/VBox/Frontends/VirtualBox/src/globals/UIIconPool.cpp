@@ -350,6 +350,7 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("MacOS1010_64",    ":/os_macosx_64.png");
     m_guestOSTypeIconNames.insert("MacOS1011_64",    ":/os_macosx_64.png");
     m_guestOSTypeIconNames.insert("JRockitVE",       ":/os_jrockitve.png");
+    m_guestOSTypeIconNames.insert("VBoxBS_64",       ":/os_other_64.png");
 }
 
 QPixmap UIIconPoolGeneral::guestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize /* = 0 */) const

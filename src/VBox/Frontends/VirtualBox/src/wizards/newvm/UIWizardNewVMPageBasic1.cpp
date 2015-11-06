@@ -165,6 +165,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ne.*B.*32",            Qt::CaseInsensitive), "NetBSD" },
     { QRegExp("Net",                  Qt::CaseInsensitive), "Netware" },
     { QRegExp("Rocki",                Qt::CaseInsensitive), "JRockitVE" },
+    { QRegExp("bs[23]{0,1}-",         Qt::CaseInsensitive), "VBoxBS_64" }, /* bootsector tests */
     { QRegExp("Ot",                   Qt::CaseInsensitive), "Other" },
 };
 
