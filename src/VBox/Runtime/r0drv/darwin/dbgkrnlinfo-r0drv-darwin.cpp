@@ -44,6 +44,8 @@ RT_C_DECLS_END
 # include <sys/systm.h>
 # include <vfs/vfs_support.h>
 /*# include <miscfs/specfs/specdev.h>*/
+#else
+# include <stdio.h> /* for printf */
 #endif
 
 #include "internal/iprt.h"
@@ -1031,20 +1033,14 @@ static void rtR0DbgKrnlDarwinDtor(RTDBGKRNLINFOINT *pThis)
 }
 
 
-RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
+static int rtR0DbgKrnlDarwinOpen(PRTDBGKRNLINFO phKrnlInfo, const char *pszKernelFile)
 {
-    AssertPtrReturn(phKrnlInfo, VERR_INVALID_POINTER);
-    *phKrnlInfo = NIL_RTDBGKRNLINFO;
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
-
     RTDBGKRNLINFOINT *pThis = (RTDBGKRNLINFOINT *)RTMemAllocZ(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
     pThis->hFile = NIL_RTFILE;
 
-    int rc = RTFileOpen(&pThis->hFile, "/mach_kernel", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (rc == VERR_FILE_NOT_FOUND)
-        rc = RTFileOpen(&pThis->hFile, "/System/Library/Kernels/kernel", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    int rc = RTFileOpen(&pThis->hFile, pszKernelFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
         rc = rtR0DbgKrnlDarwinLoadFileHeaders(pThis);
     if (RT_SUCCESS(rc))
@@ -1073,6 +1069,66 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
     }
     else
         rtR0DbgKrnlDarwinDtor(pThis);
+    return rc;
+}
+
+
+RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
+{
+    AssertPtrReturn(phKrnlInfo, VERR_INVALID_POINTER);
+    *phKrnlInfo = NIL_RTDBGKRNLINFO;
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
+    /*
+     * Go thru likely kernel locations
+     *
+     * Note! Check the OS X version and reorder the list?
+     * Note! We should try fish kcsuffix out of bootargs or somewhere one day.
+     */
+    static bool s_fFirstCall = true;
+    struct
+    {
+        const char *pszLocation;
+        int         rc;
+    } aKernels[] =
+    {
+        { "/System/Library/Kernels/kernel", VERR_WRONG_ORDER },
+        { "/System/Library/Kernels/kernel.development", VERR_WRONG_ORDER },
+        { "/System/Library/Kernels/kernel.debug", VERR_WRONG_ORDER },
+        { "/mach_kernel", VERR_WRONG_ORDER },
+    };
+    int rc;
+    for (uint32_t i = 0; i < RT_ELEMENTS(aKernels); i++)
+    {
+        aKernels[i].rc = rc = rtR0DbgKrnlDarwinOpen(phKrnlInfo, aKernels[i].pszLocation);
+        if (RT_SUCCESS(rc))
+        {
+            if (s_fFirstCall)
+            {
+                printf("RTR0DbgKrnlInfoOpen: Using kernel file '%s'\n", aKernels[i].pszLocation);
+                s_fFirstCall = false;
+            }
+            return rc;
+        }
+    }
+
+    /*
+     * Failed.
+     */
+    /* Pick the best error code. */
+    for (uint32_t i = 0; rc == VERR_FILE_NOT_FOUND && i < RT_ELEMENTS(aKernels); i++)
+        if (aKernels[i].rc != VERR_FILE_NOT_FOUND)
+            rc = aKernels[i].rc;
+
+    /* Bitch about it. */
+    printf("RTR0DbgKrnlInfoOpen: failed to find matching kernel file! rc=%d\n", rc);
+    if (s_fFirstCall)
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(aKernels); i++)
+            printf("RTR0DbgKrnlInfoOpen: '%s' -> %d\n", aKernels[i].pszLocation, aKernels[i].rc);
+        s_fFirstCall = false;
+    }
+
     return rc;
 }
 
