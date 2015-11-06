@@ -376,6 +376,9 @@ typedef struct PDMAUDIOGSTSTRMSTATE
     bool                   fEmpty;
     /** Name of this stream. */
     char                  *pszName;
+    /** Number of references to this stream. Only can be
+     *  destroyed if the reference count is reaching 0. */
+    uint8_t                cRefs;
 } PDMAUDIOGSTSTRMSTATE, *PPDMAUDIOGSTSTRMSTATE;
 
 /**
@@ -450,6 +453,24 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnWrite, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut, const void *pvBuf, uint32_t cbSize, uint32_t *pcbWritten));
 
     /**
+     * Checks whether a specific guest input stream is active or not.
+     *
+     * @returns Whether the specified stream is active or not.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pGstStrmIn      Pointer to guest input stream.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsActiveIn, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn));
+
+    /**
+     * Checks whether a specific guest output stream is active or not.
+     *
+     * @returns Whether the specified stream is active or not.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pGstStrmOut     Pointer to guest output stream.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsActiveOut, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut));
+
+    /**
      * Checks whether the specified guest input stream is in a working state.
      *
      * @returns True if a host voice in is available, false if not.
@@ -496,23 +517,7 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnEnableIn, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn, bool fEnable));
 
     /**
-     * Closes a specific guest input stream.
-     *
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pGstStrmIn      Pointer to guest input stream.
-     */
-    DECLR3CALLBACKMEMBER(void, pfnCloseIn, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn));
-
-    /**
-     * Closes a specific guest output stream.
-     *
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pGstStrmOut     Pointer to guest output stream.
-     */
-    DECLR3CALLBACKMEMBER(void, pfnCloseOut, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut));
-
-    /**
-     * Opens an input audio channel.
+     * Creates a guest input stream.
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
@@ -521,12 +526,12 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   pCfg                 Pointer to PDMAUDIOSTREAMCFG to use.
      * @param   ppGstStrmIn          Pointer where to return the guest guest input stream on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnOpenIn, (PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
-                                          PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg,
-                                          PPDMAUDIOGSTSTRMIN *ppGstStrmIn));
+    DECLR3CALLBACKMEMBER(int, pfnCreateIn, (PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
+                                            PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg,
+                                            PPDMAUDIOGSTSTRMIN *ppGstStrmIn));
 
     /**
-     * Opens an output audio channel.
+     * Creates a guest output stream.
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
@@ -534,8 +539,24 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   pCfg                 Pointer to PDMAUDIOSTREAMCFG to use.
      * @param   ppGstStrmOut         Pointer where to return the guest guest input stream on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnOpenOut, (PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
-                                           PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMOUT *ppGstStrmOut));
+    DECLR3CALLBACKMEMBER(int, pfnCreateOut, (PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
+                                             PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMOUT *ppGstStrmOut));
+
+    /**
+     * Destroys a guest input stream.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pGstStrmIn      Pointer to guest input stream.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnDestroyIn, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn));
+
+    /**
+     * Destroys a guest output stream.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pGstStrmOut     Pointer to guest output stream.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnDestroyOut, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut));
 
     /**
      * Plays (transfers) all available samples via the connected host backend.
@@ -546,28 +567,10 @@ typedef struct PDMIAUDIOCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnPlayOut, (PPDMIAUDIOCONNECTOR pInterface, uint32_t *pcSamplesPlayed));
 
-    /**
-     * Checks whether a specific guest input stream is active or not.
-     *
-     * @returns Whether the specified stream is active or not.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pGstStrmIn      Pointer to guest input stream.
-     */
-    DECLR3CALLBACKMEMBER(bool, pfnIsActiveIn, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn));
-
-    /**
-     * Checks whether a specific guest output stream is active or not.
-     *
-     * @returns Whether the specified stream is active or not.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pGstStrmOut     Pointer to guest output stream.
-     */
-    DECLR3CALLBACKMEMBER(bool, pfnIsActiveOut, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut));
-
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "a41ca770-ed07-4f57-a0a6-41377d9d484f"
+#define PDMIAUDIOCONNECTOR_IID                  "7bbb9565-8dd2-4fab-81d6-4d78985e5daa"
 
 
 /**

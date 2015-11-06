@@ -573,23 +573,26 @@ int drvAudioDestroyGstOut(PDRVAUDIO pThis, PPDMAUDIOGSTSTRMOUT pGstStrmOut)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    if (pGstStrmOut)
+    if (!pGstStrmOut)
+        return VINF_SUCCESS;
+
+    if (pGstStrmOut->State.cRefs > 1) /* Do other objects still have a reference to it? Bail out. */
+        return VERR_WRONG_ORDER;
+
+    drvAudioGstOutFreeRes(pGstStrmOut);
+
+    if (pGstStrmOut->pHstStrmOut)
     {
-        drvAudioGstOutFreeRes(pGstStrmOut);
+        /* Unregister from parent first. */
+        RTListNodeRemove(&pGstStrmOut->Node);
 
-        if (pGstStrmOut->pHstStrmOut)
-        {
-            /* Unregister from parent first. */
-            RTListNodeRemove(&pGstStrmOut->Node);
-
-            /* Try destroying the associated host output stream. This could
-             * be skipped if there are other guest output streams with this
-             * host stream. */
-            drvAudioDestroyHstOut(pThis, pGstStrmOut->pHstStrmOut);
-        }
-
-        RTMemFree(pGstStrmOut);
+        /* Try destroying the associated host output stream. This could
+         * be skipped if there are other guest output streams with this
+         * host stream. */
+        drvAudioDestroyHstOut(pThis, pGstStrmOut->pHstStrmOut);
     }
+
+    RTMemFree(pGstStrmOut);
 
     return VINF_SUCCESS;
 }
@@ -665,6 +668,7 @@ int drvAudioGstOutInit(PPDMAUDIOGSTSTRMOUT pGstStrmOut, PPDMAUDIOHSTSTRMOUT pHos
 
         if (RT_SUCCESS(rc))
         {
+            pGstStrmOut->State.cRefs   = 1;
             pGstStrmOut->State.fActive = false;
             pGstStrmOut->State.fEmpty  = true;
 
@@ -920,6 +924,7 @@ int drvAudioGstInInit(PPDMAUDIOGSTSTRMIN pGstStrmIn, PPDMAUDIOHSTSTRMIN pHstStrm
 #ifdef DEBUG
             drvAudioStreamCfgPrint(pCfg);
 #endif
+            pGstStrmIn->State.cRefs   = 1;
             pGstStrmIn->State.fActive = false;
             pGstStrmIn->State.fEmpty  = true;
 
@@ -1157,23 +1162,26 @@ static int drvAudioDestroyGstIn(PDRVAUDIO pThis, PPDMAUDIOGSTSTRMIN pGstStrmIn)
 
     LogFlowFunc(("%s\n", pGstStrmIn->MixBuf.pszName));
 
-    if (pGstStrmIn)
+    if (!pGstStrmIn)
+        return VINF_SUCCESS;
+
+    if (pGstStrmIn->State.cRefs > 1) /* Do other objects still have a reference to it? Bail out. */
+        return VERR_WRONG_ORDER;
+
+    drvAudioGstInFreeRes(pGstStrmIn);
+
+    if (pGstStrmIn->pHstStrmIn)
     {
-        drvAudioGstInFreeRes(pGstStrmIn);
+        /* Unlink child. */
+        pGstStrmIn->pHstStrmIn->pGstStrmIn = NULL;
 
-        if (pGstStrmIn->pHstStrmIn)
-        {
-            /* Unlink child. */
-            pGstStrmIn->pHstStrmIn->pGstStrmIn = NULL;
-
-            /* Try destroying the associated host input stream. This could
-             * be skipped if there are other guest input streams with this
-             * host stream. */
-            drvAudioDestroyHstIn(pThis, pGstStrmIn->pHstStrmIn);
-        }
-
-        RTMemFree(pGstStrmIn);
+        /* Try destroying the associated host input stream. This could
+         * be skipped if there are other guest input streams with this
+         * host stream. */
+        drvAudioDestroyHstIn(pThis, pGstStrmIn->pHstStrmIn);
     }
+
+    RTMemFree(pGstStrmIn);
 
     return VINF_SUCCESS;
 }
@@ -1719,9 +1727,9 @@ static DECLCALLBACK(bool) drvAudioIsOutputOK(PPDMIAUDIOCONNECTOR pInterface,
     return (pGstStrmOut != NULL);
 }
 
-static DECLCALLBACK(int) drvAudioOpenIn(PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
-                                        PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg,
-                                        PPDMAUDIOGSTSTRMIN *ppGstStrmIn)
+static DECLCALLBACK(int) drvAudioCreateIn(PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
+                                          PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg,
+                                          PPDMAUDIOGSTSTRMIN *ppGstStrmIn)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(ppGstStrmIn, VERR_INVALID_POINTER);
@@ -1785,8 +1793,8 @@ static DECLCALLBACK(int) drvAudioOpenIn(PPDMIAUDIOCONNECTOR pInterface, const ch
     return rc;
 }
 
-static DECLCALLBACK(int) drvAudioOpenOut(PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
-                                         PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMOUT *ppGstStrmOut)
+static DECLCALLBACK(int) drvAudioCreateOut(PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
+                                           PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMOUT *ppGstStrmOut)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
@@ -1890,14 +1898,14 @@ static DECLCALLBACK(bool) drvAudioIsActiveOut(PPDMIAUDIOCONNECTOR pInterface, PP
     return pGstStrmOut ? pGstStrmOut->State.fActive : false;
 }
 
-static DECLCALLBACK(void) drvAudioCloseIn(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn)
+static DECLCALLBACK(void) drvAudioDestroyIn(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn)
 {
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
     if (pGstStrmIn)
         drvAudioDestroyGstIn(pThis, pGstStrmIn);
 }
 
-static DECLCALLBACK(void) drvAudioCloseOut(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut)
+static DECLCALLBACK(void) drvAudioDestroyOut(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut)
 {
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
     if (pGstStrmOut)
@@ -1981,18 +1989,18 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     pThis->IAudioConnector.pfnQueryStatus            = drvAudioQueryStatus;
     pThis->IAudioConnector.pfnRead                   = drvAudioRead;
     pThis->IAudioConnector.pfnWrite                  = drvAudioWrite;
+    pThis->IAudioConnector.pfnIsActiveIn             = drvAudioIsActiveIn;
+    pThis->IAudioConnector.pfnIsActiveOut            = drvAudioIsActiveOut;
     pThis->IAudioConnector.pfnIsInputOK              = drvAudioIsInputOK;
     pThis->IAudioConnector.pfnIsOutputOK             = drvAudioIsOutputOK;
     pThis->IAudioConnector.pfnInitNull               = drvAudioInitNull;
     pThis->IAudioConnector.pfnEnableOut              = drvAudioEnableOut;
     pThis->IAudioConnector.pfnEnableIn               = drvAudioEnableIn;
-    pThis->IAudioConnector.pfnCloseIn                = drvAudioCloseIn;
-    pThis->IAudioConnector.pfnCloseOut               = drvAudioCloseOut;
-    pThis->IAudioConnector.pfnOpenIn                 = drvAudioOpenIn;
-    pThis->IAudioConnector.pfnOpenOut                = drvAudioOpenOut;
+    pThis->IAudioConnector.pfnDestroyIn              = drvAudioDestroyIn;
+    pThis->IAudioConnector.pfnDestroyOut             = drvAudioDestroyOut;
+    pThis->IAudioConnector.pfnCreateIn               = drvAudioCreateIn;
+    pThis->IAudioConnector.pfnCreateOut              = drvAudioCreateOut;
     pThis->IAudioConnector.pfnPlayOut                = drvAudioPlayOut;
-    pThis->IAudioConnector.pfnIsActiveIn             = drvAudioIsActiveIn;
-    pThis->IAudioConnector.pfnIsActiveOut            = drvAudioIsActiveOut;
 
     /*
      * Attach driver below and query its connector interface.

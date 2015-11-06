@@ -2302,22 +2302,22 @@ DECLINLINE(void) hdaInitTransferDescriptor(PHDASTATE pThis, PHDABDLEDESC pBdle, 
 #endif
 }
 
-static DECLCALLBACK(void) hdaCloseIn(PHDASTATE pThis, PDMAUDIORECSOURCE enmRecSource)
+static DECLCALLBACK(void) hdaDestroyIn(PHDASTATE pThis, PDMAUDIORECSOURCE enmRecSource)
 {
     NOREF(pThis);
     NOREF(enmRecSource);
     LogFlowFuncEnter();
 }
 
-static DECLCALLBACK(void) hdaCloseOut(PHDASTATE pThis)
+static DECLCALLBACK(void) hdaDestroyOut(PHDASTATE pThis)
 {
     NOREF(pThis);
     LogFlowFuncEnter();
 }
 
-static DECLCALLBACK(int) hdaOpenIn(PHDASTATE pThis,
-                                   const char *pszName, PDMAUDIORECSOURCE enmRecSource,
-                                   PPDMAUDIOSTREAMCFG pCfg)
+static DECLCALLBACK(int) hdaCreateIn(PHDASTATE pThis,
+                                     const char *pszName, PDMAUDIORECSOURCE enmRecSource,
+                                     PPDMAUDIOSTREAMCFG pCfg)
 {
     PAUDMIXSINK pSink;
 
@@ -2348,8 +2348,8 @@ static DECLCALLBACK(int) hdaOpenIn(PHDASTATE pThis,
             break;
         }
 
-        rc = pDrv->pConnector->pfnOpenIn(pDrv->pConnector, pszDesc, enmRecSource, pCfg, &pDrv->LineIn.pStrmIn);
-        LogFlowFunc(("LUN#%RU8: Opened input \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
+        rc = pDrv->pConnector->pfnCreateIn(pDrv->pConnector, pszDesc, enmRecSource, pCfg, &pDrv->LineIn.pStrmIn);
+        LogFlowFunc(("LUN#%RU8: Created input \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
         if (rc == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
         {
             AudioMixerRemoveStream(pSink, pDrv->LineIn.phStrmIn);
@@ -2365,8 +2365,8 @@ static DECLCALLBACK(int) hdaOpenIn(PHDASTATE pThis,
     return rc;
 }
 
-static DECLCALLBACK(int) hdaOpenOut(PHDASTATE pThis,
-                                    const char *pszName, PPDMAUDIOSTREAMCFG pCfg)
+static DECLCALLBACK(int) hdaCreateOut(PHDASTATE pThis,
+                                      const char *pszName, PPDMAUDIOSTREAMCFG pCfg)
 {
     int rc = VINF_SUCCESS;
     char *pszDesc;
@@ -2380,8 +2380,8 @@ static DECLCALLBACK(int) hdaOpenOut(PHDASTATE pThis,
             break;
         }
 
-        rc = pDrv->pConnector->pfnOpenOut(pDrv->pConnector, pszDesc, pCfg, &pDrv->Out.pStrmOut);
-        LogFlowFunc(("LUN#%RU8: Opened output \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
+        rc = pDrv->pConnector->pfnCreateOut(pDrv->pConnector, pszDesc, pCfg, &pDrv->Out.pStrmOut);
+        LogFlowFunc(("LUN#%RU8: Created output \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
         if (rc == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
         {
             AudioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
@@ -3760,12 +3760,12 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Out of memory allocating HDA codec state"));
 
         /* Audio driver callbacks for multiplexing. */
-        pThis->pCodec->pfnCloseIn   = hdaCloseIn;
-        pThis->pCodec->pfnCloseOut  = hdaCloseOut;
-        pThis->pCodec->pfnOpenIn    = hdaOpenIn;
-        pThis->pCodec->pfnOpenOut   = hdaOpenOut;
-        pThis->pCodec->pfnReset     = hdaCodecReset;
-        pThis->pCodec->pfnSetVolume = hdaSetVolume;
+        pThis->pCodec->pfnDestroyIn  = hdaDestroyIn;
+        pThis->pCodec->pfnDestroyOut = hdaDestroyOut;
+        pThis->pCodec->pfnCreateIn   = hdaCreateIn;
+        pThis->pCodec->pfnCreateOut  = hdaCreateOut;
+        pThis->pCodec->pfnReset      = hdaCodecReset;
+        pThis->pCodec->pfnSetVolume  = hdaSetVolume;
 
         pThis->pCodec->pHDAState = pThis; /* Assign HDA controller state to codec. */
 

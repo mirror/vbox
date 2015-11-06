@@ -2610,16 +2610,16 @@ int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, PPDMAUDIO
     switch (enmSoundSource)
     {
         case PI_INDEX:
-            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.in", PDMAUDIORECSOURCE_LINE_IN, pCfg);
+            rc = pThis->pfnCreateIn(pThis->pHDAState, "hda.in", PDMAUDIORECSOURCE_LINE_IN, pCfg);
             break;
 
         case PO_INDEX:
-            rc = pThis->pfnOpenOut(pThis->pHDAState, "hda.out", pCfg);
+            rc = pThis->pfnCreateOut(pThis->pHDAState, "hda.out", pCfg);
             break;
 
 #ifdef VBOX_WITH_HDA_MIC_IN
         case MC_INDEX:
-            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.mc", PDMAUDIORECSOURCE_MIC, pCfg);
+            rc = pThis->pfnCreateIn(pThis->pHDAState, "hda.mc", PDMAUDIORECSOURCE_MIC, pCfg);
             break;
 #endif
         default:

@@ -106,6 +106,10 @@ int AudioMixerAddStreamIn(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPD
         LogFlowFunc(("%s: pStream=%p, cStreams=%RU8\n",
                      pSink->pszName, pMixStream, pSink->cStreams));
 
+        /* Increase the stream's reference count to let others know
+         * we're reyling on it to be around now. */
+        pStream->State.cRefs++;
+
         if (ppStream)
             *ppStream = pMixStream;
 
@@ -143,6 +147,10 @@ int AudioMixerAddStreamOut(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PP
 
         LogFlowFunc(("%s: pStream=%p, cStreams=%RU8\n",
                      pSink->pszName, pMixStream, pSink->cStreams));
+
+        /* Increase the stream's reference count to let others know
+         * we're reyling on it to be around now. */
+        pStream->State.cRefs++;
 
         if (ppStream)
             *ppStream = pMixStream;
@@ -200,30 +208,24 @@ int AudioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer)
 
 void AudioMixerDestroy(PAUDIOMIXER pMixer)
 {
-    if (pMixer)
+    if (!pMixer)
+        return;
+
+    LogFlowFunc(("Destroying %s ...\n", pMixer->pszName));
+
+    PAUDMIXSINK pSink, pSinkNext;
+    RTListForEachSafe(&pMixer->lstSinks, pSink, pSinkNext, AUDMIXSINK, Node)
+        AudioMixerRemoveSink(pMixer, pSink);
+
+    Assert(pMixer->cSinks == 0);
+
+    if (pMixer->pszName)
     {
-        LogFlowFunc(("Destroying %s ...\n", pMixer->pszName));
-
-        PAUDMIXSINK pSink = RTListGetFirst(&pMixer->lstSinks, AUDMIXSINK, Node);
-        while (pSink)
-        {
-            PAUDMIXSINK pNext = RTListNodeGetNext(&pSink->Node, AUDMIXSINK, Node);
-            bool fLast = RTListNodeIsLast(&pMixer->lstSinks, &pSink->Node);
-
-            AudioMixerRemoveSink(pMixer, pSink);
-
-            if (fLast)
-                break;
-
-            pSink = pNext;
-        }
-
-        Assert(pMixer->cSinks == 0);
-
         RTStrFree(pMixer->pszName);
-
-        RTMemFree(pMixer);
+        pMixer->pszName = NULL;
     }
+
+    RTMemFree(pMixer);
 }
 
 static void audioMixerDestroySink(PAUDMIXSINK pSink)
@@ -232,7 +234,8 @@ static void audioMixerDestroySink(PAUDMIXSINK pSink)
     if (!pSink)
         return;
 
-    RTStrFree(pSink->pszName);
+    if (pSink->pszName)
+        RTStrFree(pSink->pszName);
 
     RTMemFree(pSink);
 }
@@ -381,6 +384,28 @@ void AudioMixerRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
     LogFlowFunc(("%s: pStream=%s, cStreams=%RU8\n",
                  pSink->pszName, pszStream ? pszStream : "<Unnamed>", pSink->cStreams));
 #endif
+
+    /* Decrease the reference count again. */
+    switch (pSink->enmDir)
+    {
+        case AUDMIXSINKDIR_INPUT:
+        {
+            Assert(pStream->pIn->State.cRefs);
+            pStream->pIn->State.cRefs--;
+            break;
+        }
+
+        case AUDMIXSINKDIR_OUTPUT:
+        {
+            Assert(pStream->pOut->State.cRefs);
+            pStream->pOut->State.cRefs--;
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("Not implemented\n"));
+            break;
+    }
 
     audioMixerDestroyStream(pStream);
 }

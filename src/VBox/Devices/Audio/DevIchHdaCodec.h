@@ -110,10 +110,10 @@ typedef struct HDACODEC
     const uint8_t           u8DacLineOut;
 #endif
     /** Callbacks to the HDA controller, mostly used for multiplexing to the various host backends. */
-    DECLR3CALLBACKMEMBER(void, pfnCloseIn, (PHDASTATE pThis, PDMAUDIORECSOURCE enmRecSource));
-    DECLR3CALLBACKMEMBER(void, pfnCloseOut, (PHDASTATE pThis));
-    DECLR3CALLBACKMEMBER(int, pfnOpenIn, (PHDASTATE pThis, const char *pszName, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg));
-    DECLR3CALLBACKMEMBER(int, pfnOpenOut, (PHDASTATE pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg));
+    DECLR3CALLBACKMEMBER(void, pfnDestroyIn, (PHDASTATE pThis, PDMAUDIORECSOURCE enmRecSource));
+    DECLR3CALLBACKMEMBER(void, pfnDestroyOut, (PHDASTATE pThis));
+    DECLR3CALLBACKMEMBER(int, pfnCreateIn, (PHDASTATE pThis, const char *pszName, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg));
+    DECLR3CALLBACKMEMBER(int, pfnCreateOut, (PHDASTATE pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg));
     DECLR3CALLBACKMEMBER(int, pfnSetVolume, (PHDASTATE pThis, ENMSOUNDSOURCE enmSource, bool fMute, uint8_t uVolLeft, uint8_t uVolRight));
     /** Callbacks by codec implementation. */
     DECLR3CALLBACKMEMBER(int, pfnLookup, (PHDACODEC pThis, uint32_t verb, PPFNHDACODECVERBPROCESSOR));
