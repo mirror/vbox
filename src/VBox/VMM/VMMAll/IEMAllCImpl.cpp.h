@@ -16,7 +16,6 @@
  */
 
 
-#define IEM_IMPLEMENTS_CALLGATE
 /** @name Misc Helpers
  * @{
  */
