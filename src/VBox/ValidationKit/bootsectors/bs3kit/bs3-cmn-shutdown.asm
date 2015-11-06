@@ -26,7 +26,7 @@
 
 %include "bs3kit-template-header.mac"
 
-extern TMPL_CMN_NM(Bs3Panic)
+EXTERN_CMN_NM Bs3Panic
 
 BEGINPROC TMPL_CMN_NM(Bs3Shutdown)
         cli
@@ -43,7 +43,7 @@ BEGINPROC TMPL_CMN_NM(Bs3Shutdown)
         dec     bl
         jnz     .retry
         ; Shutdown failed!
-        jmp     TMPL_CMN_NM(Bs3Panic)
+        jmp     Bs3Panic
 .s_szShutdown:
         db      'Shutdown', 0
 ENDPROC TMPL_CMN_NM(Bs3Shutdown)
