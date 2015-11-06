@@ -16,6 +16,7 @@
  */
 
 
+#define IEM_IMPLEMENTS_CALLGATE
 /** @name Misc Helpers
  * @{
  */
@@ -4906,7 +4907,9 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
         /*
          * CR3 is relatively simple, although AMD and Intel have different
          * accounts of how setting reserved bits are handled.  We take intel's
-         * word for the lower bits and AMD's for the high bits (63:52).
+         * word for the lower bits and AMD's for the high bits (63:52).  The
+         * lower reserved bits are ignored and left alone; OpenBSD 5.8 relies
+         * on this.
          */
         /** @todo Testcase: Setting reserved bits in CR3, especially before
          *        enabling paging. */
@@ -4922,14 +4925,12 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             uint64_t fValid;
             if (   (pCtx->cr4 & X86_CR4_PAE)
                 && (pCtx->msrEFER & MSR_K6_EFER_LME))
-                fValid = UINT64_C(0x000ffffffffff014);
-            else if (pCtx->cr4 & X86_CR4_PAE)
-                fValid = UINT64_C(0xfffffff4);
+                fValid = UINT64_C(0x000fffffffffffff);
             else
-                fValid = UINT64_C(0xfffff014);
+                fValid = UINT64_C(0xffffffff);
             if (uNewCrX & ~fValid)
             {
-                Log(("Automatically clearing reserved bits in CR3 load: NewCR3=%#llx ClearedBits=%#llx\n",
+                Log(("Automatically clearing reserved MBZ bits in CR3 load: NewCR3=%#llx ClearedBits=%#llx\n",
                      uNewCrX, uNewCrX & ~fValid));
                 uNewCrX &= fValid;
             }
