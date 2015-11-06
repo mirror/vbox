@@ -399,6 +399,10 @@ const Global::OSType Global::sOSTypes[] =
         VBOXOSTYPE_JRockitVE,     VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_PAE,
         1024, 4,  8 * _1G64, NetworkAdapterType_I82545EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_BusLogic, StorageBus_SCSI, ChipsetType_PIIX3, AudioControllerType_AC97, AudioCodecType_STAC9700  },
+    { "Other",   "Other",             "VBoxBS_64",          "VirtualBox Bootsector Test (64-bit)",
+        VBOXOSTYPE_VBoxBS_x64,    VBOXOSHINT_HWVIRTEX | VBOXOSHINT_FLOPPY | VBOXOSHINT_IOAPIC | VBOXOSHINT_PAE | VBOXOSHINT_64BIT,
+        128, 4,  0, NetworkAdapterType_I82545EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
+        StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 };
 
 uint32_t Global::cOSTypes = RT_ELEMENTS(Global::sOSTypes);

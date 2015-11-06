@@ -132,6 +132,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_JRockitVE        = 0xC0000,
     VBOXOSTYPE_Haiku            = 0xD0000,
     VBOXOSTYPE_Haiku_x64        = 0xD0100,
+    VBOXOSTYPE_VBoxBS_x64       = 0xE0100,
 /** The bit number which indicates 64-bit or 32-bit. */
 #define VBOXOSTYPE_x64_BIT       8
     /** The mask which indicates 64-bit. */
