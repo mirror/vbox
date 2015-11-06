@@ -267,7 +267,7 @@ static void pxtcp_pcb_write_inbound(void *);
 static void pxtcp_pcb_pull_inbound(void *);
 
 /* tcp pcb callbacks */
-static err_t pxtcp_pcb_heard(void *, struct tcp_pcb *, err_t); /* global */
+static err_t pxtcp_pcb_heard(void *, struct tcp_pcb *, struct pbuf *); /* global */
 static err_t pxtcp_pcb_accept(void *, struct tcp_pcb *, err_t);
 static err_t pxtcp_pcb_connected(void *, struct tcp_pcb *, err_t);
 static err_t pxtcp_pcb_recv(void *, struct tcp_pcb *, struct pbuf *, err_t);
@@ -1002,13 +1002,11 @@ pxtcp_schedule_reject(struct pxtcp *pxtcp)
  * connections from guest(s).
  */
 static err_t
-pxtcp_pcb_heard(void *arg, struct tcp_pcb *newpcb, err_t error)
+pxtcp_pcb_heard(void *arg, struct tcp_pcb *newpcb, struct pbuf *syn)
 {
-    struct pbuf *p = (struct pbuf *)arg;
+    LWIP_UNUSED_ARG(arg);
 
-    LWIP_UNUSED_ARG(error);     /* always ERR_OK */
-
-    return pxtcp_pcb_accept_outbound(newpcb, p,
+    return pxtcp_pcb_accept_outbound(newpcb, syn,
                PCB_ISIPV6(newpcb), &newpcb->local_ip, newpcb->local_port);
 }
 

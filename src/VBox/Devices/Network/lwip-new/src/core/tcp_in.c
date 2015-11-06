@@ -63,7 +63,7 @@
 #endif /* LWIP_ND6_TCP_REACHABILITY_HINTS */
 
 #if LWIP_CONNECTION_PROXY
-tcp_accept_fn tcp_proxy_accept_callback = tcp_accept_null;
+tcp_accept_syn_fn tcp_proxy_accept_callback = tcp_accept_syn_null;
 #endif
 
 /* These variables are global to all functions involved in the input
@@ -89,11 +89,11 @@ static err_t tcp_process(struct tcp_pcb *pcb);
 static void tcp_receive(struct tcp_pcb *pcb);
 static void tcp_parseopt(struct tcp_pcb *pcb);
 
-static err_t tcp_listen_input(struct tcp_pcb_listen *pcb);
+static err_t tcp_listen_input(struct tcp_pcb_listen *pcb, struct pbuf *syn);
 static err_t tcp_timewait_input(struct tcp_pcb *pcb);
 
 #if LWIP_CONNECTION_PROXY
-static err_t tcp_proxy_listen_input(struct pbuf *p);
+static err_t tcp_proxy_listen_input(struct pbuf *syn);
 static void tcp_restore_pbuf(struct pbuf *p);
 
 void
@@ -313,7 +313,7 @@ tcp_input1(struct pbuf *p, struct netif *inp)
       }
     
       LWIP_DEBUGF(TCP_INPUT_DEBUG, ("tcp_input: packed for LISTENing connection.\n"));
-      tcp_listen_input(lpcb);
+      tcp_listen_input(lpcb, p);
       pbuf_free(p);
       return;
     }
@@ -497,7 +497,7 @@ dropped:
  *       involved is passed as a parameter to this function
  */
 static err_t
-tcp_listen_input(struct tcp_pcb_listen *pcb)
+tcp_listen_input(struct tcp_pcb_listen *pcb, struct pbuf *syn)
 {
   struct tcp_pcb *npcb;
   err_t rc;
@@ -571,18 +571,27 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
 #if LWIP_CONNECTION_PROXY
     /* Early accept on SYN, like we do in tcp_proxy_listen_input() */
     if (pcb->accept_on_syn) {
+      tcp_accept_syn_fn accept_syn;
       err_t err;
 
       /* back off to "delayed" SYN_RCVD, see comments in proxy */
       npcb->state = SYN_RCVD_0;
 
       /*
-       * XXX: TODO: how to pass syn pbuf?  Need to be consistent with
-       * proxy version, but can't abuse callback_arg here since it's
-       * actually used in this case.
+       * Call the accept syn function.  Note, that it comes from the
+       * listening pcb and we reset the normal accept callback of the
+       * new pcb.  The latter should be set by the client along with
+       * other callbacks if necessary.
        */
-      /* Call the accept function. */
-      TCP_EVENT_ACCEPT(npcb, ERR_OK, err);
+      accept_syn = (tcp_accept_syn_fn)npcb->accept;
+      npcb->accept = tcp_accept_null;
+
+      /* TCP_EVENT_ACCEPT_SYN */
+      if (accept_syn != NULL)
+        err = (*accept_syn)(npcb->callback_arg, npcb, syn);
+      else
+        err = ERR_ARG;
+
       if (err != ERR_OK) {
         /* If the accept function returns with an error, we abort
          * the connection. */
@@ -644,7 +653,7 @@ tcp_restore_pbuf(struct pbuf *p)
  * all ports of all IP addresses.
  */
 static err_t
-tcp_proxy_listen_input(struct pbuf *p)
+tcp_proxy_listen_input(struct pbuf *syn)
 {
   struct tcp_pcb *npcb;
   err_t err;
@@ -699,7 +708,7 @@ tcp_proxy_listen_input(struct pbuf *p)
     npcb->snd_wl1 = seqno - 1;/* initialise to seqno-1 to force window update */
     npcb->callback_arg = /* pcb->callback_arg */ NULL;
 #if LWIP_CALLBACK_API
-    npcb->accept = /* pcb->accept */ tcp_proxy_accept_callback;
+    npcb->accept = /* pcb->accept */ tcp_accept_null;
 #endif /* LWIP_CALLBACK_API */
     /* inherit socket options */
     npcb->so_options = /* pcb->so_options & SOF_INHERITED */ 0;
@@ -732,11 +741,14 @@ tcp_proxy_listen_input(struct pbuf *p)
      * callback arg here and let callback decide.
      */
 
-    tcp_restore_pbuf(p);
-    npcb->callback_arg = (void *)p;
- 
-    /* Call the accept function. */
-    TCP_EVENT_ACCEPT(npcb, ERR_OK, err);
+    tcp_restore_pbuf(syn);
+
+    /* TCP_EVENT_ACCEPT_SYN */
+    if (tcp_proxy_accept_callback != NULL)
+      err = (*tcp_proxy_accept_callback)(NULL, npcb, syn);
+    else
+      err = ERR_ARG;
+
     if (err != ERR_OK) {
         /* If the accept function returns with an error, we abort
          * the connection. */

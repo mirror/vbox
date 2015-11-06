@@ -61,6 +61,18 @@ struct tcp_pcb;
  */
 typedef err_t (*tcp_accept_fn)(void *arg, struct tcp_pcb *newpcb, err_t err);
 
+#if LWIP_CONNECTION_PROXY
+/** Function prototype for tcp accept callback functions. Called when
+ * a new connection is about to be accepted by the proxy or on a
+ * listening pcb that requested proxy-like accept on syn.
+ *
+ * @param arg Additional argument to pass to the callback function (@see tcp_arg())
+ * @param newpcb The new connection pcb
+ * @param syn The pbuf with the SYN segment (may be used to reply with ICMP).
+ */
+typedef err_t (*tcp_accept_syn_fn)(void *arg, struct tcp_pcb *newpcb, struct pbuf *syn);
+#endif /* LWIP_CONNECTION_PROXY */
+
 /** Function prototype for tcp receive callback functions. Called when data has
  * been received.
  *
@@ -332,9 +344,9 @@ void             tcp_accept  (struct tcp_pcb *pcb, tcp_accept_fn accept);
 #if LWIP_CONNECTION_PROXY
 /* when proxied connection is accepted there's no listening pcb */
 void             tcp_proxy_arg(void *arg);
-void             tcp_proxy_accept(tcp_accept_fn accept);
+void             tcp_proxy_accept(tcp_accept_syn_fn accept);
 /* but we also provide proxy-like early accept for listening pcbs */
-void             tcp_accept_syn(struct tcp_pcb *lpcb, tcp_accept_fn accept);
+void             tcp_accept_syn(struct tcp_pcb *lpcb, tcp_accept_syn_fn accept);
 #endif
 void             tcp_recv    (struct tcp_pcb *pcb, tcp_recv_fn recv);
 void             tcp_sent    (struct tcp_pcb *pcb, tcp_sent_fn sent);

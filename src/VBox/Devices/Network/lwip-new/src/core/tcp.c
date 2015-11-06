@@ -542,6 +542,21 @@ tcp_accept_null(void *arg, struct tcp_pcb *pcb, err_t err)
 }
 #endif /* LWIP_CALLBACK_API */
 
+#if LWIP_CONNECTION_PROXY
+/**
+ * Default proxy accept syn callback if no accept callback is specified by the user.
+ */
+err_t
+tcp_accept_syn_null(void *arg, struct tcp_pcb *newpcb, struct pbuf *syn)
+{
+  LWIP_UNUSED_ARG(arg);
+  LWIP_UNUSED_ARG(syn);
+
+  tcp_abort(newpcb);
+  return ERR_ABRT;
+}
+#endif /* LWIP_CONNECTION_PROXY */
+
 /**
  * Set the state of the connection to be LISTEN, which means that it
  * is able to accept incoming connections. The protocol control block
@@ -1558,9 +1573,9 @@ tcp_accept(struct tcp_pcb *pcb, tcp_accept_fn accept)
  *        host
  */ 
 void
-tcp_proxy_accept(tcp_accept_fn accept)
+tcp_proxy_accept(tcp_accept_syn_fn accept_syn)
 {
-  tcp_proxy_accept_callback = accept;
+  tcp_proxy_accept_callback = accept_syn;
 }
 
 
@@ -1570,14 +1585,14 @@ tcp_proxy_accept(tcp_accept_fn accept)
  * accept callback will be called on the first SYN.
  */
 void
-tcp_accept_syn(struct tcp_pcb *pcb, tcp_accept_fn accept)
+tcp_accept_syn(struct tcp_pcb *pcb, tcp_accept_syn_fn accept_syn)
 {
   struct tcp_pcb_listen *lpcb;
 
   LWIP_ASSERT("invalid socket state for accept callback", pcb->state == LISTEN);
   lpcb = (struct tcp_pcb_listen *)pcb;
 
-  lpcb->accept = accept;
+  lpcb->accept = (tcp_accept_fn)accept_syn;
   lpcb->accept_on_syn = 1;
 }
 #endif /* LWIP_CONNECTION_PROXY */

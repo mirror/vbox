@@ -313,7 +313,7 @@ extern u32_t tcp_ticks;
 extern u8_t tcp_active_pcbs_changed;
 
 #if LWIP_CONNECTION_PROXY
-extern tcp_accept_fn tcp_proxy_accept_callback;
+extern tcp_accept_syn_fn tcp_proxy_accept_callback;
 #endif
 
 /* The TCP PCB lists. */
@@ -487,6 +487,10 @@ u16_t tcp_eff_send_mss_impl(u16_t sendmss, ipX_addr_t *dest
 err_t tcp_accept_null(void *arg, struct tcp_pcb *pcb, err_t err);
 err_t tcp_recv_null(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err);
 #endif /* LWIP_CALLBACK_API */
+
+#if LWIP_CONNECTION_PROXY
+err_t tcp_accept_syn_null(void *arg, struct tcp_pcb *newpcb, struct pbuf *syn);
+#endif /* LWIP_CONNECTION_PROXY */
 
 #if TCP_DEBUG || TCP_INPUT_DEBUG || TCP_OUTPUT_DEBUG
 void tcp_debug_print(struct tcp_hdr *tcphdr);
