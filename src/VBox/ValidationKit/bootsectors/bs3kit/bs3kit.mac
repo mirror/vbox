@@ -27,12 +27,127 @@
 %ifndef ___bs3kit_mac___
 %define ___bs3kit_mac___
 
+;
+; Before we can include anything, we need to override NAME and switch section.
+; If we don't do the latter we end up with an unused 'text' section.
+;
+
+;; @name Segment definitions.
+;; @{
+%macro BS3_BEGIN_TEXT16 0
+ %ifndef  BS3_BEGIN_TEXT16_NOT_FIRST
+  %define BS3_BEGIN_TEXT16_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3TEXT16 align=1 progbits alloc exec nowrite
+  %else
+        section BS3TEXT16 align=1 CLASS=CODE16 PUBLIC USE16
+  %endif
+
+ %else
+        section BS3TEXT16
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_DATA16 0
+ %ifndef  BS3_BEGIN_DATA16_NOT_FIRST
+  %define BS3_BEGIN_DATA16_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3DATA16 align=2 progbits alloc noexec write
+  %else
+        section BS3DATA16 align=2 CLASS=FAR_DATA PUBLIC USE16
+  %endif
+ %else
+        section BS3DATA16
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_TEXT32 0
+ %ifndef  BS3_BEGIN_TEXT32_NOT_FIRST
+  %define BS3_BEGIN_TEXT32_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3TEXT32 align=1 progbits alloc exec nowrite
+  %else
+        section BS3TEXT32 align=1 CLASS=CODE32 PUBLIC USE32
+  %endif
+ %else
+        section BS3TEXT32
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_DATA32 0
+ %ifndef  BS3_BEGIN_DATA32_NOT_FIRST
+  %define BS3_BEGIN_DATA32_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3DATA32 align=16 progbits alloc noexec write
+  %else
+        section BS3DATA32 align=16 CLASS=DATA32 PUBLIC USE32
+  %endif
+ %else
+        section BS3DATA32
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_TEXT64 0
+ %ifndef  BS3_BEGIN_TEXT64_NOT_FIRST
+  %define BS3_BEGIN_TEXT64_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3TEXT64 align=1 progbits alloc exec nowrite
+  %else
+        section BS3TEXT64 align=1 CLASS=CODE64 PUBLIC USE32
+  %endif
+ %else
+        section BS3TEXT64
+ %endif
+%endmacro
+
+%macro BS3_BEGIN_DATA64 0
+ %ifndef  BS3_BEGIN_DATA64_NOT_FIRST
+  %define BS3_BEGIN_DATA64_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3DATA64 align=16 progbits alloc noexec write
+  %else
+        section BS3DATA64 align=16 CLASS=DATA64 PUBLIC USE32
+  %endif
+ %else
+        section BS3DATA64
+ %endif
+%endmacro
+
+;; Default text section.
+%macro BS3_BEGIN_DEFAULT_TEXT 0
+ %if ARCH_BITS == 16
+  BS3_BEGIN_TEXT16
+ %elif ARCH_BITS == 32
+  BS3_BEGIN_TEXT32
+ %elif ARCH_BITS == 64
+  BS3_BEGIN_TEXT64
+ %else
+  %error "ARCH_BITS must be defined as either 16, 32, or 64!"
+  INVALID_ARCH_BITS
+ %endif
+%endmacro
+
+;; @}
+
+
+;
+; Now, ditch the default 'text' section and define our own NAME macro.
+;
+%ifndef ASM_FORMAT_BIN
+ BS3_BEGIN_DEFAULT_TEXT
+ BS3_BEGIN_DEFAULT_TEXT ; stupid nasm automagically repeats the segment attributes.
+%endif
 
 ;; When using watcom + OMF, we're using __cdecl by default, which
 ; get an underscore added in front.
 %ifdef ASM_FORMAT_OMF
  %define NAME(name) _ %+ NAME_OVERLOAD(name)
 %endif
+
+
+;
+; Include the standard headers from iprt.
+;
 
 
 %include "iprt/asmdefs.mac"
@@ -139,89 +254,6 @@ endstruc
 ;; The size shift.
 %define BS3TRAPREC_SIZE_SHIFT   3
 
-
-;; @name Segment definitions.
-;; @{
-%macro BS3_BEGIN_TEXT16 0
- %ifndef  BS3_BEGIN_TEXT16_NOT_FIRST
-  %define BS3_BEGIN_TEXT16_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3TEXT16 align=1 progbits alloc exec nowrite
-  %else
-        section BS3TEXT16 align=1 CLASS=CODE16 PUBLIC USE16
-  %endif
-
- %else
-        section BS3TEXT16
- %endif
-%endmacro
-
-%macro BS3_BEGIN_DATA16 0
- %ifndef  BS3_BEGIN_DATA16_NOT_FIRST
-  %define BS3_BEGIN_DATA16_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3DATA16 align=2 progbits alloc noexec write
-  %else
-        section BS3DATA16 align=2 CLASS=FAR_DATA PUBLIC USE16
-  %endif
- %else
-        section BS3DATA16
- %endif
-%endmacro
-
-%macro BS3_BEGIN_TEXT32 0
- %ifndef  BS3_BEGIN_TEXT32_NOT_FIRST
-  %define BS3_BEGIN_TEXT32_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3TEXT32 align=1 progbits alloc exec nowrite
-  %else
-        section BS3TEXT32 align=1 CLASS=CODE32 PUBLIC USE32
-  %endif
- %else
-        section BS3TEXT32
- %endif
-%endmacro
-
-%macro BS3_BEGIN_DATA32 0
- %ifndef  BS3_BEGIN_DATA32_NOT_FIRST
-  %define BS3_BEGIN_DATA32_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3DATA32 align=16 progbits alloc noexec write
-  %else
-        section BS3DATA32 align=16 CLASS=DATA32 PUBLIC USE32
-  %endif
- %else
-        section BS3DATA32
- %endif
-%endmacro
-
-%macro BS3_BEGIN_TEXT64 0
- %ifndef  BS3_BEGIN_TEXT64_NOT_FIRST
-  %define BS3_BEGIN_TEXT64_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3TEXT64 align=1 progbits alloc exec nowrite
-  %else
-        section BS3TEXT64 align=1 CLASS=CODE64 PUBLIC USE32
-  %endif
- %else
-        section BS3TEXT64
- %endif
-%endmacro
-
-%macro BS3_BEGIN_DATA64 0
- %ifndef  BS3_BEGIN_DATA64_NOT_FIRST
-  %define BS3_BEGIN_DATA64_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3DATA64 align=16 progbits alloc noexec write
-  %else
-        section BS3DATA64 align=16 CLASS=DATA64 PUBLIC USE32
-  %endif
- %else
-        section BS3DATA64
- %endif
-%endmacro
-
-;; @}
 
 %endif
 

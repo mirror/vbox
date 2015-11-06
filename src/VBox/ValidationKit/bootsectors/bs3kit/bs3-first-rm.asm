@@ -56,6 +56,9 @@ extern NAME(Main_rm)
 BS3_BEGIN_TEXT16
 BITS 16
 GLOBALNAME start
+    mov     ax, BS3DATA16
+    mov     es, ax
+    mov     ds, ax
     call    NAME(Main_rm)
     call    NAME(Bs3Shutdown_p16)
 

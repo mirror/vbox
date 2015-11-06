@@ -35,6 +35,11 @@ include $(KBUILD_PATH)/subheader.kmk
 # The bs3kit source directory.
 VBOX_PATH_BS3KIT_SRC = $(VBOX_PATH_VALIDATIONKIT_SRC)/bootsectors/bs3kit
 
+# Boot Sector post-link tool used below.
+BLDPROGS += VBoxBs3Linker
+VBoxBs3Linker_TEMPLATE = VBoxBldProg
+VBoxBs3Linker_SOURCES  = $(VBOX_PATH_BS3KIT_SRC)/VBoxBs3Linker.cpp
+
 # Dummy CP "linker" tool.
 TOOL_VBoxBsCpLd = Dummy copy linker.
 TOOL_VBoxBsCpLd_LINK_MISCBIN_OUTPUT =
@@ -61,7 +66,7 @@ TEMPLATE_VBoxBS3KitImg_BINSUFF  = .img
 TEMPLATE_VBoxBS3KitImg_MODE     = 0644
 TEMPLATE_VBoxBS3KitImg_ASTOOL   = NASM
 TEMPLATE_VBoxBS3KitImg_ASFLAGS := -f obj -g -w+orphan-labels
-TEMPLATE_VBoxBS3KitImg_ASDEFS   = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
+TEMPLATE_VBoxBS3KitImg_ASDEFS   = ASM_FORMAT_OMF RT_NOINC_SEGMENTS ARCH_BITS=16 __NASM__
 TEMPLATE_VBoxBS3KitImg_ARTOOL   = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL    = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL  = OPENWATCOM-16
@@ -90,17 +95,25 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
         clname DATA32 \
  	  segment BS3DATA32 \
  	  segment DATA32
+TEMPLATE_VBoxBS3KitImg_DEPS = \
+	$(bs3-bootsector_1_TARGET) \
+	$(VBoxBs3Linker_1_TARGET)
+TEMPLATE_VBoxBS3KitImg_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY)\
+	,,$(QUIET)$(MV_EXT) -f -- "$(out)" "$(out).tmp" \
+	$$(NLTAB)$(QUIET)$(VBoxBs3Linker_1_TARGET) -o $(out) $(bs3-bootsector_1_TARGET) $(out).tmp \
+	$$(NLTAB)$(QUIET)$(RM_EXT) -f -- "$(out).tmp")
+
 TEMPLATE_VBoxBS3KitImg_LIBS = \
-    $(PATH_OBJ)/bs3kit-common-16/bs3kit-common-16.lib \
-    $(PATH_OBJ)/bs3kit-common-32/bs3kit-common-32.lib \
-    $(PATH_OBJ)/bs3kit-common-64/bs3kit-common-64.lib
+	$(PATH_OBJ)/bs3kit-common-16/bs3kit-common-16.lib \
+	$(PATH_OBJ)/bs3kit-common-32/bs3kit-common-32.lib \
+	$(PATH_OBJ)/bs3kit-common-64/bs3kit-common-64.lib
 
 # BS3Kit template for 32-bit code.
 TEMPLATE_VBoxBS3KitImg32 = Template for building BS3Kit test images.
 TEMPLATE_VBoxBS3KitImg32_INSTTYPE = none
 TEMPLATE_VBoxBS3KitImg32_ASTOOL   = NASM
 TEMPLATE_VBoxBS3KitImg32_ASFLAGS := -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
-TEMPLATE_VBoxBS3KitImg32_ASDEFS   = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
+TEMPLATE_VBoxBS3KitImg32_ASDEFS   = ASM_FORMAT_OMF RT_NOINC_SEGMENTS ARCH_BITS=32 __NASM__
 TEMPLATE_VBoxBS3KitImg32_ARTOOL   = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL    = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL  = OPENWATCOM
@@ -114,7 +127,7 @@ TEMPLATE_VBoxBS3KitImg64 = Template for building BS3Kit test images.
 TEMPLATE_VBoxBS3KitImg64_INSTTYPE = none
 TEMPLATE_VBoxBS3KitImg64_ASTOOL   = NASM
 TEMPLATE_VBoxBS3KitImg64_ASFLAGS := -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
-TEMPLATE_VBoxBS3KitImg64_ASDEFS   = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
+TEMPLATE_VBoxBS3KitImg64_ASDEFS   = ASM_FORMAT_OMF RT_NOINC_SEGMENTS ARCH_BITS=64 __NASM__
 TEMPLATE_VBoxBS3KitImg64_ARTOOL   = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg64_INCS     = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg64_CTOOL    = VBoxBsUnusedLd
@@ -129,7 +142,7 @@ TEMPLATE_VBoxBS3KitBS_BINSUFF  = .img
 TEMPLATE_VBoxBS3KitBS_MODE     = 0644
 TEMPLATE_VBoxBS3KitBS_ASTOOL   = YASM
 TEMPLATE_VBoxBS3KitBS_ASFLAGS := -f bin --mapfile
-TEMPLATE_VBoxBS3KitBS_ASDEFS   = ASM_FORMAT_BIN RT_NOINC_SEGMENTS __YASM__
+TEMPLATE_VBoxBS3KitBS_ASDEFS   = ASM_FORMAT_BIN RT_NOINC_SEGMENTS ARCH_BITS=16 __YASM__
 TEMPLATE_VBoxBS3KitBS_INCS     = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitBS_LDTOOL   = VBoxBsCpLd
 

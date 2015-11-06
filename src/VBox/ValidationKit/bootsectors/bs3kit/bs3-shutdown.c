@@ -1,7 +1,9 @@
+
+/* Just a sample. */
 void Main_rm(void)
 {
-    for (;;)
-        { }
+//    for (;;)
+//        { }
     return;
 }
 
