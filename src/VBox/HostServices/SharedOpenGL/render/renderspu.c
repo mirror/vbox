@@ -470,7 +470,7 @@ static void renderCompareGLExtensions(const char *pszAvailableExts, const char *
                 fPrintHeader = 0;
                 crInfo("Host does not support OpenGL extension(s):");
             }
-            crInfo("%.*s", offExtEnd, pszExt);
+            crInfo("  %.*s", offExtEnd, pszExt);
         }
 
         pszExt += offExtEnd;
