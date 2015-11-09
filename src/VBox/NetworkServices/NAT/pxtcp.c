@@ -275,8 +275,6 @@ static err_t pxtcp_pcb_sent(void *, struct tcp_pcb *, u16_t);
 static err_t pxtcp_pcb_poll(void *, struct tcp_pcb *);
 static void pxtcp_pcb_err(void *, err_t);
 
-static err_t pxtcp_pcb_accept_outbound(struct tcp_pcb *, struct pbuf *, int, ipX_addr_t *, u16_t);
-
 static err_t pxtcp_pcb_forward_outbound(struct pxtcp *, struct pbuf *);
 static void pxtcp_pcb_forward_outbound_close(struct pxtcp *);
 
@@ -1011,7 +1009,7 @@ pxtcp_pcb_heard(void *arg, struct tcp_pcb *newpcb, struct pbuf *syn)
 }
 
 
-static err_t
+err_t
 pxtcp_pcb_accept_outbound(struct tcp_pcb *newpcb, struct pbuf *p,
                           int is_ipv6, ipX_addr_t *dst_addr, u16_t dst_port)
 {
