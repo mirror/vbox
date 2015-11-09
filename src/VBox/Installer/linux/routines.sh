@@ -166,7 +166,7 @@ install_init_script()
     test -L "/sbin/rc${name}" && rm "/sbin/rc${name}"
     ln -s "${script}" "/sbin/rc${name}"
     if test -x "`which systemctl 2>/dev/null`"; then
-        if ! test -L /sbin/init || ls -l /sbin/init | grep -q ">.*systemd"; then
+        if ! test -f /sbin/init || ls -l /sbin/init | grep -q ">.*systemd"; then
             { systemd_wrap_init_script "$script" "$name"; return; }
         fi
     fi
