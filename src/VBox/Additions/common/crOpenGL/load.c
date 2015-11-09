@@ -1110,9 +1110,6 @@ raise(SIGINT);*/
  * Returns TRUE on success, FALSE otherwise.
  */
 bool
-#if defined(LINUX) && !defined(VBOXOGL_FAKEDRI)
-__attribute__ ((constructor))
-#endif 
 stubInit(void)
 {
     bool bRc = true;
@@ -1128,12 +1125,6 @@ stubInit(void)
 
 /* Sigh -- we can't do initialization at load time, since Windows forbids
  * the loading of other libraries from DLLMain. */
-
-#ifdef LINUX
-/** @todo remove this, but only once we are sure it is not needed. */
-/* GCC crap
- *void (*stub_init_ptr)(void) __attribute__((section(".ctors"))) = __stubInit; */
-#endif
 
 #ifdef WINDOWS
 #define WIN32_LEAN_AND_MEAN
