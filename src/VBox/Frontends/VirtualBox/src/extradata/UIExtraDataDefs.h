@@ -656,5 +656,26 @@ enum MiniToolbarAlignment
 };
 #endif /* !Q_WS_MAC */
 
+/** Runtime UI: Information-element types. */
+enum InformationElementType
+{
+    InformationElementType_Invalid,
+    InformationElementType_General,
+    InformationElementType_System,
+    InformationElementType_Preview,
+    InformationElementType_Display,
+    InformationElementType_Storage,
+    InformationElementType_Audio,
+    InformationElementType_Network,
+    InformationElementType_Serial,
+#ifdef VBOX_WITH_PARALLEL_PORTS
+    InformationElementType_Parallel,
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+    InformationElementType_USB,
+    InformationElementType_SF,
+    InformationElementType_UI,
+    InformationElementType_Description
+};
+
 #endif /* !___UIExtraDataDefs_h___ */
 
