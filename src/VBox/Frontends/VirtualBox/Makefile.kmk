@@ -181,6 +181,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/runtime/normal \
 	./src/runtime/scale \
 	./src/runtime/seamless \
+	./src/runtime/information \
 	./src/selector \
 	./src/selector/graphics/chooser \
 	./src/selector/graphics/details \
@@ -469,7 +470,17 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
 	src/wizards/firstrun/UIWizardFirstRun.h \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.h \
+	src/runtime/information/UIGInformation.h \
+	src/runtime/information/UIGInformationElement.h \
+	src/runtime/information/UIGInformationElements.h \
+	src/runtime/information/UIGInformationGroup.h \
+	src/runtime/information/UIGInformationItem.h \
+	src/runtime/information/UIGInformationModel.h \
+	src/runtime/information/UIGInformationPreview.h \
+	src/runtime/information/UIGInformationSet.h \
+	src/runtime/information/UIGInformationView.h \
+	src/runtime/information/UIVMInformationDialog.h
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VirtualBox_QT_MOCHDRS += \
@@ -755,7 +766,17 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp \
+	src/runtime/information/UIGInformation.cpp \
+	src/runtime/information/UIGInformationElement.cpp \
+	src/runtime/information/UIGInformationElements.cpp \
+	src/runtime/information/UIGInformationGroup.cpp \
+	src/runtime/information/UIGInformationItem.cpp \
+	src/runtime/information/UIGInformationModel.cpp \
+	src/runtime/information/UIGInformationPreview.cpp \
+	src/runtime/information/UIGInformationSet.cpp \
+	src/runtime/information/UIGInformationView.cpp \
+	src/runtime/information/UIVMInformationDialog.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VirtualBox_SOURCES += \
