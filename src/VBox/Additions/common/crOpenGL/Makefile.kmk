@@ -227,7 +227,7 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
   endif
  else
   VBoxOGL_SONAME.linux = libGL.so.1
-  VBoxOGL_LDFLAGS += -Wl,-e,LibMain
+  VBoxOGL_LDFLAGS.linux += -Wl,-e,LibMain
  endif
 endif
 ifdef VBOX_WITH_CRHGSMI
