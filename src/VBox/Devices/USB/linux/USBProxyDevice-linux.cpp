@@ -1614,8 +1614,9 @@ static VUSBSTATUS vusbProxyLinuxStatusToVUsbStatus(int iStatus)
         //case -ENOSR:
         //    return VUSBSTATUS_BUFFER_UNDERRUN;
 
-        //case -EPROTO:
-        //    return VUSBSTATUS_BIT_STUFFING;
+        case -EPROTO:
+            Log(("vusbProxyLinuxStatusToVUsbStatus: DNR/EPPROTO!!\n"));
+            return VUSBSTATUS_DNR;
 
         case -EPIPE:
             Log(("vusbProxyLinuxStatusToVUsbStatus: STALL/EPIPE!!\n"));
