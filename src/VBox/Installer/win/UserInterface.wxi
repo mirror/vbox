@@ -585,7 +585,7 @@
         <!-- This dialog is called after successful installation -->
         <Dialog Id="VBoxExitDlg" Width="370" Height="270" Title="[ProductName] !(loc.Setup)" NoMinimize="yes">
             <Control Id="Finish" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="!(loc.ButtonText_Finish)">
-                <Publish Event="DoAction" Value="ca_StartVBox"><![CDATA[VBOXSTART]]></Publish>
+                <Publish Event="DoAction" Value="ca_StartVBox"><![CDATA[VBOX_START]]></Publish>
                 <Publish Event="EndDialog" Value="Return">1</Publish>
             </Control>
 
