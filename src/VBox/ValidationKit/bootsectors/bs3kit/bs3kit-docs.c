@@ -40,9 +40,10 @@
  * lots of includes and macros controlling what we needed.  The functions are no
  * in separate files and compiled/assembled into libraries, so the linker will
  * only include exactly what is needed.  The current linker is the OpenWatcom
- * one, wlink, that we're already using when building the BIOSes.  It's possible
- * that we might be able to convince the binutils ELF linker to do the job
- * eventually,
+ * one, wlink, that we're already using when building the BIOSes.  If it wasn't
+ * for the segment/selector fixups in 16-bit code (mostly), maybe we could
+ * convince the ELF linker from GNU binutils to do the job too (with help from
+ * the ).
  *
  *
  *

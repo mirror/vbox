@@ -40,6 +40,11 @@ BLDPROGS += VBoxBs3Linker
 VBoxBs3Linker_TEMPLATE = VBoxBldProg
 VBoxBs3Linker_SOURCES  = $(VBOX_PATH_BS3KIT_SRC)/VBoxBs3Linker.cpp
 
+# 64-bit relocation conversion tool
+BLDPROGS += VBoxBs3ObjConverter
+VBoxBs3ObjConverter_TEMPLATE = VBoxBldProg
+VBoxBs3ObjConverter_SOURCES  = $(VBOX_PATH_BS3KIT_SRC)/VBoxBs3ObjConverter.cpp
+
 # Dummy CP "linker" tool.
 TOOL_VBoxBsCpLd = Dummy copy linker.
 TOOL_VBoxBsCpLd_LINK_MISCBIN_OUTPUT =
