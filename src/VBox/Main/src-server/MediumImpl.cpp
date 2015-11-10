@@ -4527,7 +4527,7 @@ MediumVariant_T Medium::i_getPreferredDiffVariant()
     ULONG mediumVariantFlags = (ULONG)m->variant;
     mediumVariantFlags &= ~MediumVariant_Fixed;
     mediumVariantFlags |= MediumVariant_Diff;
-    return (MediumVariant_T)m->variant;
+    return (MediumVariant_T)mediumVariantFlags;
 }
 
 /**
