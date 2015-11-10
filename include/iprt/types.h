@@ -977,6 +977,8 @@ typedef const RTHCUINT     *PCRTHCUINT;
 typedef int32_t             RTHCINTPTR;
 #elif HC_ARCH_BITS == 64
 typedef int64_t             RTHCINTPTR;
+#elif HC_ARCH_BITS == 16
+typedef int16_t             RTHCINTPTR;
 #else
 # error Unsupported HC_ARCH_BITS value.
 #endif
@@ -987,14 +989,18 @@ typedef const RTHCINTPTR   *PCRTHCINTPTR;
 /** Max RTHCINTPTR value. */
 #if HC_ARCH_BITS == 32
 # define RTHCINTPTR_MAX     INT32_MAX
-#else
+#elif HC_ARCH_BITS == 64
 # define RTHCINTPTR_MAX     INT64_MAX
+#else
+# define RTHCINTPTR_MAX     INT16_MAX
 #endif
 /** Min RTHCINTPTR value. */
 #if HC_ARCH_BITS == 32
 # define RTHCINTPTR_MIN     INT32_MIN
-#else
+#elif HC_ARCH_BITS == 64
 # define RTHCINTPTR_MIN     INT64_MIN
+#else
+# define RTHCINTPTR_MIN     INT16_MIN
 #endif
 
 /** Signed integer which can contain a HC ring-3 pointer. */
@@ -1002,6 +1008,8 @@ typedef const RTHCINTPTR   *PCRTHCINTPTR;
 typedef int32_t             RTR3INTPTR;
 #elif R3_ARCH_BITS == 64
 typedef int64_t             RTR3INTPTR;
+#elif R3_ARCH_BITS == 16
+typedef int16_t             RTR3INTPTR;
 #else
 #  error Unsupported R3_ARCH_BITS value.
 #endif
@@ -1012,14 +1020,18 @@ typedef const RTR3INTPTR   *PCRTR3INTPTR;
 /** Max RTR3INTPTR value. */
 #if R3_ARCH_BITS == 32
 # define RTR3INTPTR_MAX     INT32_MAX
-#else
+#elif R3_ARCH_BITS == 64
 # define RTR3INTPTR_MAX     INT64_MAX
+#else
+# define RTR3INTPTR_MAX     INT16_MAX
 #endif
 /** Min RTR3INTPTR value. */
 #if R3_ARCH_BITS == 32
 # define RTR3INTPTR_MIN     INT32_MIN
-#else
+#elif R3_ARCH_BITS == 64
 # define RTR3INTPTR_MIN     INT64_MIN
+#else
+# define RTR3INTPTR_MIN     INT16_MIN
 #endif
 
 /** Signed integer which can contain a HC ring-0 pointer. */
@@ -1027,6 +1039,8 @@ typedef const RTR3INTPTR   *PCRTR3INTPTR;
 typedef int32_t             RTR0INTPTR;
 #elif R0_ARCH_BITS == 64
 typedef int64_t             RTR0INTPTR;
+#elif R0_ARCH_BITS == 16
+typedef int16_t             RTR0INTPTR;
 #else
 # error Unsupported R0_ARCH_BITS value.
 #endif
@@ -1037,14 +1051,18 @@ typedef const RTR0INTPTR   *PCRTR0INTPTR;
 /** Max RTR0INTPTR value. */
 #if R0_ARCH_BITS == 32
 # define RTR0INTPTR_MAX     INT32_MAX
-#else
+#elif R0_ARCH_BITS == 64
 # define RTR0INTPTR_MAX     INT64_MAX
+#else
+# define RTR0INTPTR_MAX     INT16_MAX
 #endif
 /** Min RTHCINTPTR value. */
 #if R0_ARCH_BITS == 32
 # define RTR0INTPTR_MIN     INT32_MIN
-#else
+#elif R0_ARCH_BITS == 64
 # define RTR0INTPTR_MIN     INT64_MIN
+#else
+# define RTR0INTPTR_MIN     INT16_MIN
 #endif
 
 
@@ -1053,6 +1071,8 @@ typedef const RTR0INTPTR   *PCRTR0INTPTR;
 typedef uint32_t            RTHCUINTPTR;
 #elif HC_ARCH_BITS == 64
 typedef uint64_t            RTHCUINTPTR;
+#elif HC_ARCH_BITS == 16
+typedef uint16_t            RTHCUINTPTR;
 #else
 # error Unsupported HC_ARCH_BITS value.
 #endif
@@ -1063,8 +1083,10 @@ typedef const RTHCUINTPTR  *PCRTHCUINTPTR;
 /** Max RTHCUINTTPR value. */
 #if HC_ARCH_BITS == 32
 # define RTHCUINTPTR_MAX    UINT32_MAX
-#else
+#elif HC_ARCH_BITS == 64
 # define RTHCUINTPTR_MAX    UINT64_MAX
+#else
+# define RTHCUINTPTR_MAX    UINT16_MAX
 #endif
 
 /** Unsigned integer which can contain a HC ring-3 pointer. */
@@ -1072,6 +1094,8 @@ typedef const RTHCUINTPTR  *PCRTHCUINTPTR;
 typedef uint32_t            RTR3UINTPTR;
 #elif R3_ARCH_BITS == 64
 typedef uint64_t            RTR3UINTPTR;
+#elif R3_ARCH_BITS == 16
+typedef uint16_t            RTR3UINTPTR;
 #else
 # error Unsupported R3_ARCH_BITS value.
 #endif
@@ -1082,8 +1106,10 @@ typedef const RTR3UINTPTR  *PCRTR3UINTPTR;
 /** Max RTHCUINTTPR value. */
 #if R3_ARCH_BITS == 32
 # define RTR3UINTPTR_MAX    UINT32_MAX
-#else
+#elif R3_ARCH_BITS == 64
 # define RTR3UINTPTR_MAX    UINT64_MAX
+#else
+# define RTR3UINTPTR_MAX    UINT16_MAX
 #endif
 
 /** Unsigned integer which can contain a HC ring-0 pointer. */
@@ -1091,6 +1117,8 @@ typedef const RTR3UINTPTR  *PCRTR3UINTPTR;
 typedef uint32_t            RTR0UINTPTR;
 #elif R0_ARCH_BITS == 64
 typedef uint64_t            RTR0UINTPTR;
+#elif R0_ARCH_BITS == 16
+typedef uint16_t            RTR0UINTPTR;
 #else
 # error Unsupported R0_ARCH_BITS value.
 #endif
@@ -1099,10 +1127,12 @@ typedef RTR0UINTPTR        *PRTR0UINTPTR;
 /** Pointer to unsigned integer which can contain a HC ring-0 pointer. */
 typedef const RTR0UINTPTR  *PCRTR0UINTPTR;
 /** Max RTR0UINTTPR value. */
-#if HC_ARCH_BITS == 32
+#if R0_ARCH_BITS == 32
 # define RTR0UINTPTR_MAX    UINT32_MAX
-#else
+#elif R0_ARCH_BITS == 64
 # define RTR0UINTPTR_MAX    UINT64_MAX
+#else
+# define RTR0UINTPTR_MAX    UINT16_MAX
 #endif
 
 
@@ -1188,6 +1218,8 @@ typedef const RTR0PTR      *PCRTR0PTR;
 typedef uint32_t            RTHCUINTREG;
 #elif HC_ARCH_BITS == 64
 typedef uint64_t            RTHCUINTREG;
+#elif HC_ARCH_BITS == 16
+typedef uint16_t            RTHCUINTREG;
 #else
 # error "Unsupported HC_ARCH_BITS!"
 #endif
@@ -1201,6 +1233,8 @@ typedef const RTHCUINTREG  *PCRTHCUINTREG;
 typedef uint32_t            RTR3UINTREG;
 #elif R3_ARCH_BITS == 64
 typedef uint64_t            RTR3UINTREG;
+#elif R3_ARCH_BITS == 16
+typedef uint16_t            RTR3UINTREG;
 #else
 # error "Unsupported R3_ARCH_BITS!"
 #endif
@@ -1214,6 +1248,8 @@ typedef const RTR3UINTREG  *PCRTR3UINTREG;
 typedef uint32_t            RTR0UINTREG;
 #elif R0_ARCH_BITS == 64
 typedef uint64_t            RTR0UINTREG;
+#elif R0_ARCH_BITS == 16
+typedef uint16_t            RTR0UINTREG;
 #else
 # error "Unsupported R3_ARCH_BITS!"
 #endif
@@ -1507,6 +1543,8 @@ typedef const RTCCPHYS *PCRTCCPHYS;
 typedef uint32_t                RTCCUINTREG;
 #elif ARCH_BITS == 64
 typedef uint64_t                RTCCUINTREG;
+#elif ARCH_BITS == 16
+typedef uint16_t                RTCCUINTREG;
 #else
 # error "Unsupported ARCH_BITS!"
 #endif
@@ -1520,6 +1558,8 @@ typedef RTCCUINTREG const      *PCRTCCUINTREG;
 typedef int32_t                 RTCCINTREG;
 #elif ARCH_BITS == 64
 typedef int64_t                 RTCCINTREG;
+#elif ARCH_BITS == 16
+typedef int16_t                 RTCCINTREG;
 #endif
 /** Pointer to a signed integer register in the current context. */
 typedef RTCCINTREG             *PRTCCINTREG;
