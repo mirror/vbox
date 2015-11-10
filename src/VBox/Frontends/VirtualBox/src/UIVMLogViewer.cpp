@@ -1031,8 +1031,8 @@ void UIVMLogViewer::loadSettings()
     {
         /* Getting available geometry to calculate default geometry: */
         const QRect desktopRect = vboxGlobal().availableGeometry(this);
-        int iDefaultWidth = desktopRect.width() * 0.5;
-        int iDefaultHeight = desktopRect.height() * 0.75;
+        int iDefaultWidth = desktopRect.width() / 2;
+        int iDefaultHeight = desktopRect.height() * 3 / 4;
 
         /* Calculate default width to fit 132 characters: */
         QTextEdit *pCurrentLogPage = currentLogPage();
