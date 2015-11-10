@@ -1192,7 +1192,7 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
             if (uProtocol == RTNETIPV4_PROT_TCP)
                 enmGsoType = PDMNETWORKGSOTYPE_IPV6_TCP;
             else if (uProtocol == RTNETIPV4_PROT_UDP)
-                enmGsoType = PDMNETWORKGSOTYPE_IPV4_UDP;
+                enmGsoType = PDMNETWORKGSOTYPE_IPV6_UDP;
             else
                 enmGsoType = PDMNETWORKGSOTYPE_INVALID;
             break;
