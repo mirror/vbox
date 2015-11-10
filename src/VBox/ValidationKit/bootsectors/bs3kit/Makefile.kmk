@@ -79,7 +79,7 @@ TOOL_Bs3Gcc64Elf64_CFLAGS.profile   ?= -O2 #-g -pg
 TOOL_Bs3Gcc64Elf64_CFLAGS.release   ?= -O2
 TOOL_Bs3Gcc64Elf64_CINCS            ?=
 TOOL_Bs3Gcc64Elf64_CDEFS            ?=
-TOOL_Bs3Gcc64Elf64_COMPILE_C_DEPEND =
+TOOL_Bs3Gcc64Elf64_COMPILE_C_DEPEND = $(VBoxBs3ObjConverter_1_TARGET)
 TOOL_Bs3Gcc64Elf64_COMPILE_C_DEPORD =
 TOOL_Bs3Gcc64Elf64_COMPILE_C_OUTPUT =
 define TOOL_Bs3Gcc64Elf64_COMPILE_C_CMDS
@@ -88,6 +88,8 @@ define TOOL_Bs3Gcc64Elf64_COMPILE_C_CMDS
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
+	ls -la $(obj)
+	-$(VBoxBs3ObjConverter_1_TARGET) -vv "$(obj)"
 	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 
@@ -99,7 +101,7 @@ TOOL_Bs3Gcc64Elf64_CXXFLAGS.profile ?= -O2 #-g -pg
 TOOL_Bs3Gcc64Elf64_CXXFLAGS.release ?= -O2
 TOOL_Bs3Gcc64Elf64_CXXINCS          ?=
 TOOL_Bs3Gcc64Elf64_CXXDEFS          ?=
-TOOL_Bs3Gcc64Elf64_COMPILE_CXX_DEPEND =
+TOOL_Bs3Gcc64Elf64_COMPILE_CXX_DEPEND = $(VBoxBs3ObjConverter_1_TARGET)
 TOOL_Bs3Gcc64Elf64_COMPILE_CXX_DEPORD =
 TOOL_Bs3Gcc64Elf64_COMPILE_CXX_OUTPUT =
 define TOOL_Bs3Gcc64Elf64_COMPILE_CXX_CMDS
@@ -108,8 +110,18 @@ define TOOL_Bs3Gcc64Elf64_COMPILE_CXX_CMDS
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
+	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) -v "$(obj)"
 	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
+
+# Debug info format depends on what we use for 64-bit.
+if1of ($(KBUILD_HOST), win)
+ BS3_OW_DBG_OPT   = -hc
+ BS3_OW_DBG_LDOPT = codeview
+else
+ BS3_OW_DBG_OPT   = -hd
+ BS3_OW_DBG_LDOPT = dwarf
+endif
 
 # BS3Kit template for assembly and 16-bit code.
 TEMPLATE_VBoxBS3KitImg = Template for building BS3Kit test images.
@@ -125,15 +137,15 @@ TEMPLATE_VBoxBS3KitImg_DEFS         = ARCH_BITS=16 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = OPENWATCOM-16
-TEMPLATE_VBoxBS3KitImg_CFLAGS       = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc -hc -d1+
-TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc -hc -d1+
+TEMPLATE_VBoxBS3KitImg_CFLAGS       = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc $(BS3_OW_DBG_OPT) -d1+
+TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc $(BS3_OW_DBG_OPT) -d1+
 TEMPLATE_VBoxBS3KitImg_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 # 	option quiet, nofarcalls\
 #	disable 1014, 1023, 2120, 1080
 
 TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
-	debug codeview all \
+	debug $(BS3_OW_DBG_LDOPT) all \
 	option quiet, map, statics, verbose, symfile, start=_start \
        disable 1014, 1080, 1150 \
 	\
@@ -190,8 +202,8 @@ TEMPLATE_VBoxBS3KitImg32_DEFS         = ARCH_BITS=32 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL        = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = OPENWATCOM
-TEMPLATE_VBoxBS3KitImg32_CFLAGS       = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf -hc -d1
-TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf -hc -d1
+TEMPLATE_VBoxBS3KitImg32_CFLAGS       = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf $(BS3_OW_DBG_OPT) -d1
+TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf $(BS3_OW_DBG_OPT) -d1
 TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg32_LDTOOL       = VBoxBsUnusedLd
 
@@ -201,7 +213,7 @@ TEMPLATE_VBoxBS3KitImg64_BLD_TRG      = os-agnostic
 TEMPLATE_VBoxBS3KitImg64_BLD_TRG_ARCH = amd64
 TEMPLATE_VBoxBS3KitImg64_INSTTYPE     = none
 TEMPLATE_VBoxBS3KitImg64_ASTOOL       = NASM
-TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
+TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g #--allow-64bit-code-anywhere -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg64_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg64_DEFS         = IN_BS3KIT ARCH_BITS=64
 TEMPLATE_VBoxBS3KitImg64_ARTOOL       = OPENWATCOM
@@ -220,8 +232,8 @@ else
   TEMPLATE_VBoxBS3KitImg64_CTOOL     := $(VBOX_GCC_TOOL)
   TEMPLATE_VBoxBS3KitImg64_CXXTOOL   := $(VBOX_GCC_TOOL)
  endif
- TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g0 -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_C)
- TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g0 -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_CXX)
+ TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_C)
+ TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_CXX)
 endif
 TEMPLATE_VBoxBS3KitImg64_LDTOOL       = VBoxBsUnusedLd
 

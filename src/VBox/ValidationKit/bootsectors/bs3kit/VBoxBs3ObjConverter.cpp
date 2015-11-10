@@ -36,6 +36,7 @@
 #include <iprt/assert.h>
 
 #include <iprt/formats/elf64.h>
+#include <iprt/formats/elf-amd64.h>
 
 
 /*********************************************************************************************************************************
@@ -82,7 +83,7 @@ static bool readfile(const char *pszFile, void **ppvFile, size_t *pcbFile)
         /*
          * Figure the size.
          */
-        if (fseek(pFile, SEEK_END, 0) == 0)
+        if (fseek(pFile, 0, SEEK_END) == 0)
         {
             long cbFile = ftell(pFile);
             if (cbFile > 0)
@@ -169,10 +170,40 @@ static bool error(const char *pszFile, const char *pszFormat, ...)
 }
 
 
+/** AMD64 relocation type names for ELF. */
+static const char * const g_apszElfAmd64RelTypes[] =
+{
+    "R_X86_64_NONE",
+    "R_X86_64_64",
+    "R_X86_64_PC32",
+    "R_X86_64_GOT32",
+    "R_X86_64_PLT32",
+    "R_X86_64_COPY",
+    "R_X86_64_GLOB_DAT",
+    "R_X86_64_JMP_SLOT",
+    "R_X86_64_RELATIVE",
+    "R_X86_64_GOTPCREL",
+    "R_X86_64_32",
+    "R_X86_64_32S",
+    "R_X86_64_16",
+    "R_X86_64_PC16",
+    "R_X86_64_8",
+    "R_X86_64_PC8",
+    "R_X86_64_DTPMOD64",
+    "R_X86_64_DTPOFF64",
+    "R_X86_64_TPOFF64",
+    "R_X86_64_TLSGD",
+    "R_X86_64_TLSLD",
+    "R_X86_64_DTPOFF32",
+    "R_X86_64_GOTTPOFF",
+    "R_X86_64_TPOFF32",
+};
+
+
 static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
 {
     /*
-     * Validate the header.
+     * Validate the header and our other expectations.
      */
     Elf64_Ehdr const *pEhdr = (Elf64_Ehdr const *)pbFile;
     if (   pEhdr->e_ident[EI_CLASS] != ELFCLASS64
@@ -185,48 +216,69 @@ static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
         return error(pszFile, "Expected relocatable ELF file (e_type=%d)\n", pEhdr->e_type);
     if (pEhdr->e_machine != EM_X86_64)
         return error(pszFile, "Expected relocatable ELF file (e_type=%d)\n", pEhdr->e_machine);
+    if (pEhdr->e_phnum != 0)
+        return error(pszFile, "Expected e_phnum to be zero not %u\n", pEhdr->e_phnum);
+    if (pEhdr->e_shnum < 2)
+        return error(pszFile, "Expected e_shnum to be two or higher\n");
+    if (pEhdr->e_shstrndx >= pEhdr->e_shnum || pEhdr->e_shstrndx == 0)
+        return error(pszFile, "Bad e_shstrndx=%u (e_shnum=%u)\n", pEhdr->e_shstrndx, pEhdr->e_shnum);
+    if (   pEhdr->e_shoff >= cbFile
+        || pEhdr->e_shoff + pEhdr->e_shnum * sizeof(Elf64_Shdr) > cbFile)
+        return error(pszFile, "Section table is outside the file (e_shoff=%#llx, e_shnum=%u, cbFile=%#llx)\n",
+                     pEhdr->e_shstrndx, pEhdr->e_shnum, (uint64_t)cbFile);
 
-#if 0
-    if (    pEhdr->e_phoff < pEhdr->e_ehsize
-        &&  !(pEhdr->e_phoff && pEhdr->e_phnum)
-        &&  pEhdr->e_phnum)
-    {
-        Log(("RTLdrELF: %s: The program headers overlap with the ELF header! e_phoff=" FMT_ELF_OFF "\n",
-             pszLogName, pEhdr->e_phoff));
-        return VERR_BAD_EXE_FORMAT;
-    }
-    if (    pEhdr->e_phoff + pEhdr->e_phnum * pEhdr->e_phentsize > cbRawImage
-        ||  pEhdr->e_phoff + pEhdr->e_phnum * pEhdr->e_phentsize < pEhdr->e_phoff)
-    {
-        Log(("RTLdrELF: %s: The program headers extends beyond the file! e_phoff=" FMT_ELF_OFF " e_phnum=" FMT_ELF_HALF "\n",
-             pszLogName, pEhdr->e_phoff, pEhdr->e_phnum));
-        return VERR_BAD_EXE_FORMAT;
-    }
+    /*
+     * Locate the section name string table.
+     * We assume it's okay as we only reference it in verbose mode.
+     */
+    Elf64_Shdr const *paShdrs = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
+    const char * pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
 
-
-    if (    pEhdr->e_shoff < pEhdr->e_ehsize
-        &&  !(pEhdr->e_shoff && pEhdr->e_shnum))
+    /*
+     * Work the section table.
+     */
+    for (uint32_t i = 1; i < pEhdr->e_shnum; i++)
     {
-        Log(("RTLdrELF: %s: The section headers overlap with the ELF header! e_shoff=" FMT_ELF_OFF "\n",
-             pszLogName, pEhdr->e_shoff));
-        return VERR_BAD_EXE_FORMAT;
-    }
-    if (    pEhdr->e_shoff + pEhdr->e_shnum * pEhdr->e_shentsize > cbRawImage
-        ||  pEhdr->e_shoff + pEhdr->e_shnum * pEhdr->e_shentsize < pEhdr->e_shoff)
-    {
-        Log(("RTLdrELF: %s: The section headers extends beyond the file! e_shoff=" FMT_ELF_OFF " e_shnum=" FMT_ELF_HALF "\n",
-             pszLogName, pEhdr->e_shoff, pEhdr->e_shnum));
-        return VERR_BAD_EXE_FORMAT;
-    }
+        if (g_cVerbose)
+            printf("shdr[%u]: name=%#x '%s' type=%#x flags=%#llx addr=%#llx off=%#llx size=%#llx\n"
+                   "          link=%u info=%#x align=%#llx entsize=%#llx\n",
+                   i, paShdrs[i].sh_name, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_type, paShdrs[i].sh_flags,
+                   paShdrs[i].sh_addr, paShdrs[i].sh_offset, paShdrs[i].sh_size,
+                   paShdrs[i].sh_link, paShdrs[i].sh_info, paShdrs[i].sh_addralign, paShdrs[i].sh_entsize);
+        if (paShdrs[i].sh_type == SHT_RELA)
+        {
+            if (paShdrs[i].sh_entsize != sizeof(Elf64_Rela))
+                return error(pszFile, "Expected sh_entsize to be %u not %u for section #%u (%s)\n", (unsigned)sizeof(Elf64_Rela),
+                             paShdrs[i].sh_entsize, i, &pszStrTab[paShdrs[i].sh_name]);
+            uint32_t const cRelocs = paShdrs[i].sh_size / sizeof(Elf64_Rela);
+            if (cRelocs * sizeof(Elf64_Rela) != paShdrs[i].sh_size)
+                return error(pszFile, "Uneven relocation entry count in #%u (%s): sh_size=%#llx\n", (unsigned)sizeof(Elf64_Rela),
+                             paShdrs[i].sh_entsize, i, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_size);
+            if (   paShdrs[i].sh_offset > cbFile
+                || paShdrs[i].sh_size  >= cbFile
+                || paShdrs[i].sh_offset + paShdrs[i].sh_size > cbFile)
+                return error(pszFile, "The content of section #%u '%s' is outside the file (%#llx LB %#llx, cbFile=%#lx)\n",
+                             i, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_offset, paShdrs[i].sh_size, (unsigned long)cbFile);
+            Elf64_Rela *paRels = (Elf64_Rela *)&pbFile[paShdrs[i].sh_offset];
+            for (uint32_t j = 0; j < cRelocs; j++)
+            {
+                uint8_t const bType = ELF64_R_TYPE(paRels[j].r_info);
+                if (g_cVerbose > 1)
+                    printf("%#018llx  %#018llx %s  %+lld\n", paRels[j].r_offset, paRels[j].r_info,
+                           bType < RT_ELEMENTS(g_apszElfAmd64RelTypes) ? g_apszElfAmd64RelTypes[bType] : "unknown", paRels[j].r_addend);
 
-    if (pEhdr->e_shstrndx == 0 || pEhdr->e_shstrndx > pEhdr->e_shnum)
-    {
-        Log(("RTLdrELF: %s: The section headers string table is out of bounds! e_shstrndx=" FMT_ELF_HALF " e_shnum=" FMT_ELF_HALF "\n",
-             pszLogName, pEhdr->e_shstrndx, pEhdr->e_shnum));
-        return VERR_BAD_EXE_FORMAT;
+                /* Truncate 64-bit wide absolute relocations, ASSUMING that the high bits
+                   are already zero and won't be non-zero after calculating the fixup value. */
+                if (bType == R_X86_64_64)
+                {
+                    paRels[j].r_info &= ~(uint64_t)0xff;
+                    paRels[j].r_info |= R_X86_64_32;
+                }
+            }
+        }
+        else if (paShdrs[i].sh_type == SHT_REL)
+            return error(pszFile, "Did not expect SHT_REL sections (#%u '%s')\n", i, &pszStrTab[paShdrs[i].sh_name]);
     }
-#endif
-
     return true;
 }
 
@@ -252,7 +304,8 @@ static int convertit(const char *pszFile)
             && pbFile[3] == ELFMAG3)
             fRc = convertelf(pszFile, pbFile, cbFile);
         else
-            fprintf(stderr, "error: Don't recognize format of '%s'\n", pszFile);
+            fprintf(stderr, "error: Don't recognize format of '%s' (%#x %#x %#x %#x, cbFile=%lu)\n",
+                    pszFile, pbFile[0], pbFile[1], pbFile[2], pbFile[3], (unsigned long)cbFile);
         if (fRc)
             fRc = writefile(pszFile, pvFile, cbFile);
         free(pvFile);
