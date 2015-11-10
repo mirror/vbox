@@ -609,7 +609,7 @@
                  change their Windows color scheme.
                  Also see: http://osdir.com/ml/windows.devel.wix.user/2005-02/msg00300.html -->
             <Control Id="StartVBoxCheckBox" Type="CheckBox" X="135" Y="115" Width="200" Height="17"
-                Property="VBOXSTART" CheckBoxValue="1">
+                     Property="VBOX_START" CheckBoxValue="1" Default="no">
                 <Text>!(loc.ExitDlg_StartVBox)</Text>
                 <Condition Action="hide">
                     <![CDATA[(InstallMode="Repair") OR (InstallMode="Remove") OR
@@ -1190,4 +1190,3 @@
     </UI>
 
 </Include>
-
