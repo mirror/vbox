@@ -176,6 +176,7 @@ typedef struct CPUMDBENTRY
 /** @} */
 
 
+#include "cpus/Intel_Core_i7_6700K.h"
 #include "cpus/Intel_Core_i7_5600U.h"
 #include "cpus/Intel_Core_i7_3960X.h"
 #include "cpus/Intel_Core_i5_3570.h"
