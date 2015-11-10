@@ -295,7 +295,7 @@ int main(int argc, char **argv)
 
         if (ferror(paInputs[i].pFile))
         {
-            fprintf(stderr, "error: Error reading '%s'.\n", paInputs[i]);
+            fprintf(stderr, "error: Error reading '%s'.\n", paInputs[i].pszFile);
             rcExit = 1;
         }
     }
