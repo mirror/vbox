@@ -178,4 +178,5 @@ xf86SetDesiredModes
 xf86SetModeDefaultName
 xf86SetSingleMode
 xf86UpdateDesktopDimensions
+XNFcallocarray
 __xstat64

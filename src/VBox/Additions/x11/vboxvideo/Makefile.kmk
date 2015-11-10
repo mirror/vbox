@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 vboxvideo_70_DEFS := \
-	IN_MODULE XORG_7X RENDER=1 IN_RT_STATIC
+	IN_MODULE XORG_7X RENDER=1 IN_RT_STATIC X_BYTE_ORDER=X_LITTLE_ENDIAN
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxvideo_70_DEFS += __EXTENSIONS__  ## @todo Why this?
 endif
@@ -383,6 +383,20 @@ vboxvideo_drv_117_INCS = \
 vboxvideo_drv_117_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_117_SOURCES := $(vboxvideo_drv_17_SOURCES)
 
+
+#
+# vboxvideo_drv_118
+#
+DLLS += vboxvideo_drv_118
+vboxvideo_drv_118_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_118_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
+vboxvideo_drv_118_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=11800000
+vboxvideo_drv_118_INCS = \
+	$(vboxvideo_xorg_INCS) \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.18.0
+vboxvideo_drv_118_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
+vboxvideo_drv_118_SOURCES := $(vboxvideo_drv_17_SOURCES)
+
 ifdef VBOX_USE_SYSTEM_XORG_HEADERS
  # Build using local X.Org headers.  We assume X.Org Server 1.7 or later.
  DLLS    := $(filter-out vboxvideo_drv_%,$(DLLS)) vboxvideo_drv_system
@@ -436,7 +450,7 @@ $$(vboxvideo_drv_0_OUTDIR)/tstvboxvideo68.run: $$(vboxvideo_drv_1_STAGE_TARGET)
 	$$(QUIET)$$(APPEND) -t "$$@" "done"
     endef
 
-    $(foreach ver, _70 _71 _13 _14 _15 _16 _17 _18 _19 _110 _111 _112 _113 _114 _115 _116 _117, $(eval $(def_vboxvideo_test)))
+    $(foreach ver, _70 _71 _13 _14 _15 _16 _17 _18 _19 _110 _111 _112 _113 _114 _115 _116 _117 _118, $(eval $(def_vboxvideo_test)))
 
     endif # ! VBOX_ONLY_SDK
    endif # eq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
