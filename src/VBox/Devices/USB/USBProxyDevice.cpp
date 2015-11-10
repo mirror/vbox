@@ -113,7 +113,7 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
                 cRetries++;
                 if (cRetries < VUSBSTATUS_DNR_RETRIES)
                 {
-                    Log(("GetStdDescSync: Retrying %u/%u\n", cRetries, max_retries));
+                    Log(("GetStdDescSync: Retrying %u/%u\n", cRetries, VUSBSTATUS_DNR_RETRIES));
                     continue;
                 }
             }
