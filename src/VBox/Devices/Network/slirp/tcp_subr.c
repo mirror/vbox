@@ -425,6 +425,22 @@ int tcp_fconnect(PNATState pData, struct socket *so)
             switch(RT_N2H_U32(so->so_faddr.s_addr) & ~pData->netmask)
             {
                 case CTL_DNS:
+                    /*
+                     * TCP DNS proxy.  We only support "forwarding" to
+                     * single server.  We don't have infrastructure in
+                     * place to re-try connections to other servers.
+                     */
+                    if (   pData->fUseDnsProxy
+                        && so->so_fport == RT_H2N_U16_C(53))
+                    {
+                        struct dns_entry *ns = TAILQ_LAST(&pData->pDnsList, dns_list_head);
+                        if (ns != NULL)
+                        {
+                            addr.sin_addr = ns->de_addr;
+                            break;
+                        }
+                    }
+                    /* FALLTHROUGH */
                 case CTL_ALIAS:
                 default:
                     addr.sin_addr = loopback_addr;
