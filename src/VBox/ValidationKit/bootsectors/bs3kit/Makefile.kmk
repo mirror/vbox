@@ -123,7 +123,8 @@ TEMPLATE_VBoxBS3KitImg_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY)\
 TEMPLATE_VBoxBS3KitImg_LIBS = \
 	$(PATH_OBJ)/bs3kit-common-16/bs3kit-common-16.lib \
 	$(PATH_OBJ)/bs3kit-common-32/bs3kit-common-32.lib \
-	$(PATH_OBJ)/bs3kit-common-64/bs3kit-common-64.lib
+	$(PATH_OBJ)/bs3kit-common-64-asm/bs3kit-common-64-asm.lib \
+	$(PATH_OBJ)/bs3kit-common-64-c/bs3kit-common-64-c.lib
 
 # BS3Kit template for 32-bit code.
 TEMPLATE_VBoxBS3KitImg32 = Template for building BS3Kit test images.
@@ -162,8 +163,8 @@ if1of ($(KBUILD_HOST), win)
 else
  TEMPLATE_VBoxBS3KitImg64_CTOOL      := $(VBOX_GCC_TOOL)
  TEMPLATE_VBoxBS3KitImg64_CXXTOOL    := $(VBOX_GCC_TOOL)
- TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_C)
- TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_CXX)
+ TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g0 -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_C)
+ TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g0 -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_CXX)
 endif
 TEMPLATE_VBoxBS3KitImg64_LDTOOL       = VBoxBsUnusedLd
 
@@ -212,10 +213,16 @@ bs3kit-common-32_DEFS     = TMPL_PE32 BS3_CMN_ONLY
 bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES)
 
 # The 64-bit BS3Kit library.
-LIBRARIES += bs3kit-common-64
-bs3kit-common-64_TEMPLATE = VBoxBS3KitImg64
-bs3kit-common-64_DEFS     = TMPL_LM64 BS3_CMN_ONLY
-bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES)
+LIBRARIES += bs3kit-common-64-asm
+bs3kit-common-64-asm_TEMPLATE = VBoxBS3KitImg64
+bs3kit-common-64-asm_DEFS     = TMPL_LM64 BS3_CMN_ONLY
+bs3kit-common-64-asm_SOURCES  = $(filter %.asm,$(VBOX_BS3KIT_COMMON_SOURCES))
+
+# The 64-bit BS3Kit library.
+LIBRARIES += bs3kit-common-64-c
+bs3kit-common-64-c_TEMPLATE = VBoxBS3KitImg64
+bs3kit-common-64-c_DEFS     = TMPL_LM64 BS3_CMN_ONLY
+bs3kit-common-64-c_SOURCES  = $(filter-out %.asm,$(VBOX_BS3KIT_COMMON_SOURCES))
 
 #
 # shutdown example.
