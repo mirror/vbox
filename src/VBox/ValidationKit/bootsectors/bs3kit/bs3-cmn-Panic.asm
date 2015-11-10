@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3Shutdown
+; BS3Kit - Bs3Panic, Common.
 ;
 
 ;
@@ -26,25 +26,11 @@
 
 %include "bs3kit-template-header.mac"
 
-EXTERN_CMN_NM Bs3Panic
 
-BEGINPROC TMPL_CMN_NM(Bs3Shutdown)
+BS3_PROC_BEGIN_CMN Bs3Panic
         cli
-        mov     bl, 64
-        mov     dx, 08900h
-%ifdef TMPL_16BIT
-        mov     ax, cs
-        mov     ds, ax
-%endif
-.retry:
-        mov     ecx, 8
-        mov     esi, .s_szShutdown
-        rep outsb
-        dec     bl
-        jnz     .retry
-        ; Shutdown failed!
-        jmp     Bs3Panic
-.s_szShutdown:
-        db      'Shutdown', 0
-ENDPROC TMPL_CMN_NM(Bs3Shutdown)
+.panic_again:
+        hlt
+        jmp     .panic_again
+BS3_PROC_END_CMN   Bs3Panic
 

@@ -32,6 +32,94 @@
 ; If we don't do the latter we end up with an unused 'text' section.
 ;
 
+;; Wrapper around BITS.
+; Updates __BITS__ (built-in variable in nasm, we work it for yasm).
+; @param    %1      The CPU bit count: 16, 32 or 64
+; @remarks ARCH_BITS is not modified and will remain what it was on the
+;          assembler command line.
+%macro BS3_SET_BITS 1
+ BITS %1
+
+ %ifdef __YASM__
+  %undef  __BITS__
+  %define __BITS__ %1
+ %endif
+
+ %undef  BS3_NAME_UNDERSCORE
+ %if %1 == 64
+  %define BS3_NAME_UNDERSCORE
+ %else
+  %define BS3_NAME_UNDERSCORE _
+ %endif
+
+ %undef   BS3_ONLY_16BIT
+ %if %1 == 16
+  %define BS3_ONLY_16BIT(a_Expr)    a_Expr
+ %else
+  %define BS3_ONLY_16BIT(a_Expr)
+ %endif
+
+ %undef   BS3_WRT_RIP
+ %if %1 == 64
+  %define BS3_WRT_RIP               wrt rip
+ %else
+  %define BS3_WRT_RIP
+ %endif
+%endmacro
+
+;; Emulate the __BITS__ macro in NASM 2.0+. Follows BS3_SET_BITS.
+%ifdef __YASM__
+ %define __BITS__                   ARCH_BITS
+%endif
+
+;; Mostly internal macro. Follows BS3_SET_BITS.
+%if ARCH_BITS == 64
+ %define BS3_NAME_UNDERSCORE
+%else
+ %define BS3_NAME_UNDERSCORE        _
+%endif
+
+;; For RIP relative addressing in 64-bit mode and absolute addressing in
+; other modes. Follows BS3_SET_BITS.
+%if ARCH_BITS == 64
+ %define BS3_WRT_RIP                wrt rip
+%else
+ %define BS3_WRT_RIP
+%endif
+
+;; For segment overrides and stuff. Follows BS3_SET_BITS.
+%if ARCH_BITS == 16
+ %define BS3_ONLY_16BIT(a_Expr)     a_Expr
+%else
+ %define BS3_ONLY_16BIT(a_Expr)
+%endif
+
+;;
+; For instruction that should only be emitted in 16-bit mode. Follows BS3_SET_BITS.
+%macro BS3_ONLY_16BIT_STMT 1+
+ %if __BITS__ == 16
+        %1
+ %endif
+%endmacro
+
+;;
+; For instruction that should only be emitted in 32-bit mode. Follows BS3_SET_BITS.
+%macro BS3_ONLY_32BIT_STMT 1+
+ %if __BITS__ == 32
+        %1
+ %endif
+%endmacro
+
+;;
+; For instruction that should only be emitted in 64-bit mode. Follows BS3_SET_BITS.
+%macro BS3_ONLY_64BIT_STMT 1+
+ %if __BITS__ == 64
+        %1
+ %endif
+%endmacro
+
+
+
 ;; @name Segment definitions.
 ;; @{
 %macro BS3_BEGIN_TEXT16 0
@@ -40,12 +128,13 @@
   %ifdef ASM_FORMAT_ELF
         section BS3TEXT16 align=1 progbits alloc exec nowrite
   %else
-        section BS3TEXT16 align=1 CLASS=CODE16 PUBLIC USE16
+        section BS3TEXT16 align=1 CLASS=BS3CODE16 PUBLIC USE16
   %endif
 
  %else
         section BS3TEXT16
  %endif
+        BS3_SET_BITS 16
 %endmacro
 
 %macro BS3_BEGIN_DATA16 0
@@ -59,6 +148,7 @@
  %else
         section BS3DATA16
  %endif
+        BS3_SET_BITS 16
 %endmacro
 
 %macro BS3_BEGIN_TEXT32 0
@@ -67,11 +157,12 @@
   %ifdef ASM_FORMAT_ELF
         section BS3TEXT32 align=1 progbits alloc exec nowrite
   %else
-        section BS3TEXT32 align=1 CLASS=CODE32 PUBLIC USE32
+        section BS3TEXT32 align=1 CLASS=BS3CODE32 PUBLIC USE32
   %endif
  %else
         section BS3TEXT32
  %endif
+        BS3_SET_BITS 32
 %endmacro
 
 %macro BS3_BEGIN_DATA32 0
@@ -80,11 +171,12 @@
   %ifdef ASM_FORMAT_ELF
         section BS3DATA32 align=16 progbits alloc noexec write
   %else
-        section BS3DATA32 align=16 CLASS=DATA32 PUBLIC USE32
+        section BS3DATA32 align=16 CLASS=FAR_DATA PUBLIC USE32
   %endif
  %else
         section BS3DATA32
  %endif
+        BS3_SET_BITS 32
 %endmacro
 
 %macro BS3_BEGIN_TEXT64 0
@@ -93,11 +185,12 @@
   %ifdef ASM_FORMAT_ELF
         section BS3TEXT64 align=1 progbits alloc exec nowrite
   %else
-        section BS3TEXT64 align=1 CLASS=CODE64 PUBLIC USE32
+        section BS3TEXT64 align=1 CLASS=CODE PUBLIC USE32       ; class=CODE here because of 64-bit cl and/or wlink.exe
   %endif
  %else
         section BS3TEXT64
  %endif
+        BS3_SET_BITS 64
 %endmacro
 
 %macro BS3_BEGIN_DATA64 0
@@ -106,11 +199,12 @@
   %ifdef ASM_FORMAT_ELF
         section BS3DATA64 align=16 progbits alloc noexec write
   %else
-        section BS3DATA64 align=16 CLASS=DATA64 PUBLIC USE32
+        section BS3DATA64 align=16 CLASS=DATA PUBLIC USE32      ; class=DATA here because of 64-bit cl and/or wlink.exe
   %endif
  %else
         section BS3DATA64
  %endif
+        BS3_SET_BITS 64
 %endmacro
 
 ;; Default text section.
@@ -155,32 +249,193 @@
 
 
 ;;
-; Extern macro which mangles the name correctly.
+; Extern macro which mangles the name using NAME().
 %macro EXTERN 1
  extern NAME(%1)
 %endmacro
 
 ;;
+; Mangles a common name according to the current cpu bit count.
+; @remarks Requires the use of the BS3_SET_BITS macro instead of the BITS directive.
+%define BS3_CMN_NM(a_Name)     BS3_NAME_UNDERSCORE %+ a_Name %+ _c %+ __BITS__
+
+;;
 ; Extern macro which mangles the common name correctly, redefining the unmangled
 ; name with to the mangled one for ease of use.
-%macro EXTERN_CMN_NM 1
- %ifdef TMPL_64BIT
-  extern NAME(%1 %+ _p64)
-  %define %1 NAME(%1 %+ _p64)
+;
+; @param    %1  The unmangled common name.
+;
+; @remarks  Must enter the segment in which this name is defined.
+;
+%macro BS3_EXTERN_CMN 1
+ extern BS3_CMN_NM(%1)
+ %undef  %1
+ %define %1 BS3_CMN_NM(%1)
+%endmacro
 
- %elifdef TMPL_32BIT
-  extern NAME(%1 %+ _p32)
-  %define %1 NAME(%1 %+ _p32)
-
- %elifdef TMPL_16BIT
-  extern NAME(%1 %+ _p16)
-  %define %1 NAME(%1 %+ _p16)
-
+;;
+; Global name with ELF attributes and size.
+;
+; This differs from GLOBALNAME_EX in that it expects a mangled symbol name,
+; and allows for nasm style symbol size expressions.
+;
+; @param    %1  The mangled name.
+; @param    %2  Symbol attributes.
+; @param    %3  The size expression.
+;
+%macro BS3_GLOBAL_NAME_EX 3
+%ifdef ASM_FORMAT_ELF
+ %ifdef __NASM__
+global %1:%2 %3
  %else
-  %error "Missing TMPL_xxBIT!"
+global %1:%2
+ %endif
+%else
+global %1
+%endif
+%1:
+%endmacro
+
+;;
+; Starts a procedure.
+;
+; This differs from BEGINPROC in that it expects a mangled symbol name and
+; does the NASM symbol size stuff.
+;
+; @param    %1      The mangled name.
+;
+%macro BS3_PROC_BEGIN 1
+BS3_GLOBAL_NAME_EX %1, function, (%1 %+ _EndProc - %1)
+%endmacro
+
+;;
+; Ends a procedure.
+;
+; Counter part to BS3_PROC_BEGIN.
+;
+; @param    %1      The mangled name.
+;
+%macro BS3_PROC_END  1
+BS3_GLOBAL_NAME_EX %1 %+ _EndProc, function hidden, (%1 %+ _EndProc - %1)
+ %ifdef ASM_FORMAT_ELF
+  %ifdef __YASM__
+size %1                 %1 %+ _EndProc - %1
+size %1 %+ _EndProc     0
+  %endif
  %endif
 %endmacro
 
+;; Convenience macro for defining common procedures.
+%macro BS3_PROC_BEGIN_CMN 1
+ BS3_PROC_BEGIN     BS3_CMN_NM(%1)
+%endmacro
+
+;; Convenience macro for defining common procedures.
+%macro BS3_PROC_END_CMN 1
+ BS3_PROC_END       BS3_CMN_NM(%1)
+%endmacro
+
+;;
+; Prologue hacks for 64-bit code.
+;
+; This saves the four register parameters onto the stack so we can pretend
+; the calling convention is stack based.  The 64-bit calling convension is
+; the microsoft one, so this is straight forward.
+;
+; Pairs with BS3_CALL_CONV_EPILOG.
+;
+; @param    %1      The number of parameters.
+;
+; @remarks  Must be invoked before any stack changing instructions are emitted.
+;
+%macro BS3_CALL_CONV_PROLOG 1
+ %undef  BS3_CALL_CONV_PROLOG_PARAMS
+ %define BS3_CALL_CONV_PROLOG_PARAMS %1
+ %if __BITS__ == 64
+  %if %1 >= 1
+        mov         [rsp + 008h], rcx
+  %elifdef BS3_STRICT
+        and         qword [rsp + 008h], 1
+  %endif
+  %if %1 >= 2
+        mov         [rsp + 010h], rdx
+  %elifdef BS3_STRICT
+        and         qword [rsp + 010h], 2
+  %endif
+  %if %1 >= 3
+        mov         [rsp + 018h], r8
+  %elifdef BS3_STRICT
+        and         qword [rsp + 018h], 3
+  %endif
+  %if %1 >= 4
+        mov         [rsp + 020h], r9
+  %elifdef BS3_STRICT
+        and         qword [rsp + 020h], 4
+  %endif
+ %endif
+%endmacro
+
+;;
+; Epilogue hacks for 64-bit code.
+;
+; Counter part to BS3_CALL_CONV_PROLOG.
+;
+; @param    %1      The number of parameters.
+;
+; @remarks  Must be invoked right before the return instruction as it uses RSP.
+;
+%macro BS3_CALL_CONV_EPILOG 1
+ %if BS3_CALL_CONV_PROLOG_PARAMS != %1
+  %error "BS3_CALL_CONV_EPILOG argument differs from BS3_CALL_CONV_PROLOG."
+ %endif
+ %if __BITS__ == 64
+  %ifdef BS3_STRICT
+        mov         dword [rsp + 008h], 31h
+        mov         dword [rsp + 010h], 32h
+        mov         dword [rsp + 018h], 33h
+        mov         dword [rsp + 020h], 34h
+  %endif
+ %endif
+%endmacro
+
+;;
+; Wrapper for the call instruction that hides calling convension differences.
+;
+; This always calls %1.
+; In 64-bit code, it will load up to 4 parameters into register.
+;
+; @param    %1      The function to call (mangled).
+; @param    %2      The number of parameters.
+;
+%macro BS3_CALL 2
+ %if __BITS__ == 64
+  %if %2 >= 1
+        mov         rcx, [rsp + 008h]
+   %ifdef BS3_STRICT
+        and         qword [rsp + 008h], 11h
+   %endif
+  %endif
+  %if %2 >= 2
+        mov         rdx, [rsp + 010h]
+   %ifdef BS3_STRICT
+        and         qword [rsp + 010h], 12h
+   %endif
+  %endif
+  %if %2 >= 3
+        mov         r8,  [rsp + 018h]
+   %ifdef BS3_STRICT
+        and         qword [rsp + 018h], 13h
+   %endif
+  %endif
+  %if %2 >= 4
+        mov         r9,  [rsp + 020h]
+   %ifdef BS3_STRICT
+        and         qword [rsp + 020h], 14h
+   %endif
+  %endif
+ %endif
+        call        %1
+%endmacro
 
 
 ;; @name Static Memory Allocation

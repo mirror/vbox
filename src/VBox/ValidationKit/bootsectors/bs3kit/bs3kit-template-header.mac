@@ -91,8 +91,8 @@
  %define TMPL_16BIT
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          Name %+ _rm
- %define TMPL_NM_CMN(Name)      Name %+ _r86
+ %define TMPL_NM(Name)          _ %+ Name %+ _rm
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
  %define TMPL_MODE_STR          'real mode'
  %define TMPL_HAVE_BIOS
  %define TMPL_CMN_R86
@@ -140,8 +140,8 @@
  %define TMPL_16BIT
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          Name %+ _pe16
- %define TMPL_NM_CMN(Name)      Name %+ _p16
+ %define TMPL_NM(Name)          _ %+ Name %+ _pe16
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
  %define TMPL_MODE_STR          '16-bit unpaged protected mode'
 %endif
 
@@ -187,8 +187,8 @@
  %define TMPL_32BIT
  %define TMPL_BITS              32
  %define TMPL_PTR_DEF           dd
- %define TMPL_NM(Name)          Name %+ _pe32
- %define TMPL_NM_CMN(Name)      Name %+ _p32
+ %define TMPL_NM(Name)          _ %+ Name %+ _pe32
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
  %define TMPL_MODE_STR          '32-bit unpaged protected mode'
 %endif
 
@@ -235,8 +235,8 @@
  %define TMPL_16BIT
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          Name %+ _pev86
- %define TMPL_NM_CMN(Name)      Name %+ _r86
+ %define TMPL_NM(Name)          _ %+ Name %+ _pev86
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
  %define TMPL_MODE_STR          'v8086 unpaged protected mode'
 %endif
 
@@ -282,8 +282,8 @@
  %define TMPL_16BIT
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          Name %+ _pp16
- %define TMPL_NM_CMN(Name)      Name %+ _p16
+ %define TMPL_NM(Name)          _ %+ Name %+ _pp16
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
  %define TMPL_MODE_STR          '16-bit paged protected mode'
 %endif
 
@@ -329,8 +329,8 @@
  %define TMPL_32BIT
  %define TMPL_BITS              32
  %define TMPL_PTR_DEF           dd
- %define TMPL_NM(Name)          Name %+ _pp32
- %define TMPL_NM_CMN(Name)      Name %+ _p32
+ %define TMPL_NM(Name)          _ %+ Name %+ _pp32
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
  %define TMPL_MODE_STR          '32-bit paged protected mode'
 %endif
 
@@ -378,7 +378,7 @@
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
  %define TMPL_NM(Name)          Name %+ _ppv86
- %define TMPL_NM_CMN(Name)      Name %+ _r86
+ %define BS3_CMN_NM(Name)       Name %+ _c86
  %define TMPL_MODE_STR          'v8086 paged protected mode'
 %endif
 
@@ -424,8 +424,8 @@
  %define TMPL_CMN_P16
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          Name %+ _pae16
- %define TMPL_NM_CMN(Name)      Name %+ _p16
+ %define TMPL_NM(Name)          _ %+ Name %+ _pae16
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
  %define TMPL_MODE_STR          '16-bit pae protected mode'
 %endif
 
@@ -471,8 +471,8 @@
  %define TMPL_32BIT
  %define TMPL_BITS              32
  %define TMPL_PTR_DEF           dd
- %define TMPL_NM(Name)          Name %+ _pae32
- %define TMPL_NM_CMN(Name)      Name %+ _p32
+ %define TMPL_NM(Name)          _ %+ Name %+ _pae32
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
  %define TMPL_MODE_STR          '32-bit pae protected mode'
 %endif
 
@@ -519,8 +519,8 @@
  %define TMPL_16BIT
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          Name %+ _paev86
- %define TMPL_NM_CMN(Name)      Name %+ _r86
+ %define TMPL_NM(Name)          _ %+ Name %+ _paev86
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c86
  %define TMPL_MODE_STR          'v8086 pae protected mode'
 %endif
 
@@ -566,8 +566,8 @@
  %define TMPL_16BIT
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          Name %+ _lm16
- %define TMPL_NM_CMN(Name)      Name %+ _p16
+ %define TMPL_NM(Name)          _ %+ Name %+ _lm16
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
  %define TMPL_MODE_STR          '16-bit long mode'
 %endif
 
@@ -613,8 +613,8 @@
  %define TMPL_32BIT
  %define TMPL_BITS              32
  %define TMPL_PTR_DEF           dd
- %define TMPL_NM(Name)          Name %+ _lm32
- %define TMPL_NM_CMN(Name)      Name %+ _p32
+ %define TMPL_NM(Name)          _ %+ Name %+ _lm32
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
  %define TMPL_MODE_STR          '32-bit long mode'
 %endif
 
@@ -660,20 +660,14 @@
  %define TMPL_64BIT
  %define TMPL_BITS              64
  %define TMPL_PTR_DEF           dq
- %define TMPL_NM(Name)          Name %+ _lm64
- %define TMPL_NM_CMN(Name)      Name %+ _p64
+ %define TMPL_NM(Name)          Name %+ _lm64   ; No underscore (C/C++ compatibility).
+ %define BS3_CMN_NM(Name)       Name %+ _c64    ; No underscore (C/C++ compatibility).
  %define TMPL_MODE_STR          '64-bit long mode'
 %endif
 
 %ifndef TMPL_MODE_STR
  %error "internal error"
 %endif
-
-
-;
-; Preferred spelling of TMPL_NM_CMN in BS3.
-;
-%define TMPL_CMN_NM(Name)      TMPL_NM_CMN(Name)
 
 
 ;
@@ -734,6 +728,7 @@
  %endif
 %endif
 
+
 ;
 ; Register names corresponding to the max size for pop/push <reg>.
 ;
@@ -773,7 +768,7 @@
 %endif
 
 ;
-; Default code segment.
+; Default code segment (changes BITS too).
 ;
 %ifdef TMPL_64BIT
  %define TMPL_BEGIN_TEXT BS3_BEGIN_TEXT64
@@ -786,16 +781,4 @@
 %endif
 TMPL_BEGIN_TEXT
 
-;
-; Change the bitness.
-;
-%ifdef TMPL_64BIT
-BITS 64
-%else
- %ifdef TMPL_32BIT
-BITS 32
- %else
-BITS 16
- %endif
-%endif
 
