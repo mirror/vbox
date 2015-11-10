@@ -255,6 +255,7 @@ setup()
     case $x_version in
         1.17.99.902 )
             # special case for Fedora 23 :-/
+            x_version_short="1.18"
             xserver_version="X.Org Server ${x_version_short}"
             vboxvideo_src=vboxvideo_drv_`echo ${x_version_short} | sed 's/\.//'`.so
             setupxorgconf=""
