@@ -650,6 +650,7 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/ValidationKit/docs/ \
 	src/VBox/ValidationKit/testdriver/ \
 	src/VBox/ValidationKit/bootsectors/ \
+	src/VBox/ValidationKit/bootsectors/bs3kit/ \
 	src/VBox/ValidationKit/tests/ \
 	src/VBox/ValidationKit/tests/additions/ \
 	src/VBox/ValidationKit/tests/api/ \
