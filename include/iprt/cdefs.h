@@ -214,8 +214,10 @@
 #if !defined(ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64)
 #  define ARCH_BITS 64
-# else
+# elif !defined(__I86__) || !defined(__WATCOMC__)
 #  define ARCH_BITS 32
+# else
+#  define ARCH_BITS 16
 # endif
 #endif
 
@@ -859,7 +861,9 @@
 /** @def RT_COMPILER_GROKS_64BIT_BITFIELDS
  * Macro that is defined if the compiler understands 64-bit bitfields. */
 #if !defined(RT_OS_OS2) || (!defined(__IBMC__) && !defined(__IBMCPP__))
-# define RT_COMPILER_GROKS_64BIT_BITFIELDS
+# if !defined(__WATCOMC__) /* watcom compiler doesn't grok it either. */
+#  define RT_COMPILER_GROKS_64BIT_BITFIELDS
+# endif
 #endif
 
 /** @def RT_COMPILER_WITH_80BIT_LONG_DOUBLE
@@ -2259,6 +2263,9 @@
 #endif
 #if defined(__IBMC__) || defined(__IBMCPP__)
 # define RT_BREAKPOINT()        __interrupt(3)
+#endif
+#if defined(__WATCOMC__)
+# define RT_BREAKPOINT()        _asm { int 3 }
 #endif
 #ifndef RT_BREAKPOINT
 # error "This compiler/arch is not supported!"
