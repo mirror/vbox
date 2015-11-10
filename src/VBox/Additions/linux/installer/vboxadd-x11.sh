@@ -253,6 +253,19 @@ setup()
         esac
     fi
     case $x_version in
+        1.17.99.902 )
+            # special case for Fedora 23 :-/
+            xserver_version="X.Org Server ${x_version_short}"
+            vboxvideo_src=vboxvideo_drv_`echo ${x_version_short} | sed 's/\.//'`.so
+            setupxorgconf=""
+            test -f "${lib_dir}/${vboxvideo_src}" ||
+            {
+                echo "Warning: unknown version of the X Window System installed.  Not installing"
+                echo "X Window System drivers."
+                dox11config=""
+                vboxvideo_src=""
+            }
+            ;;
         1.*.99.* )
             echo "Warning: unsupported pre-release version of X.Org Server installed.  Not"
             echo "installing the X.Org drivers."
