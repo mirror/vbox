@@ -560,6 +560,13 @@ PREDEFINED += \
     GMMR0DECL(type)=type \
     GMMR3DECL(type)=type 
 
+# BS3Kit
+PREDEFINED += \
+    BS3_FAR= \
+    BS3_NEAR= \
+    BS3_DECL(a_Type)=a_Type \
+    BS3_CMN_NM(a_Name)=a_Name
+
 # templated fun.
 PREDEFINED += \
     "PGM_BTH_DECL(type,name)=type pgmBth##name" \
