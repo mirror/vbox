@@ -188,8 +188,6 @@ typedef struct _VBOXNETLWF_MODULE {
     /** Work Item to deliver offloading indications at passive IRQL */
     NDIS_HANDLE hWorkItem;
 #endif /* !VBOXNETLWF_SYNC_SEND */
-    /** Name of underlying adapter */
-    ANSI_STRING strMiniportName;
     /** MAC address of underlying adapter */
     RTMAC MacAddr;
     /** Saved offload configuration */
@@ -202,6 +200,8 @@ typedef struct _VBOXNETLWF_MODULE {
     bool fActive;
     /** true if the host wants the adapter to be in promisc mode */
     bool fHostPromisc;
+    /** Name of underlying adapter */
+    char szMiniportName[1];
 } VBOXNETLWF_MODULE;
 typedef VBOXNETLWF_MODULE *PVBOXNETLWF_MODULE;
 
@@ -774,15 +774,35 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     PVBOXNETLWFGLOBALS pGlobals = (PVBOXNETLWFGLOBALS)hDriverCtx;
     AssertReturn(pGlobals, NDIS_STATUS_FAILURE);
 
+    ANSI_STRING strMiniportName;
+    /* We use the miniport name to associate this filter module with the netflt instance */
+    NTSTATUS rc = RtlUnicodeStringToAnsiString(&strMiniportName,
+                                               pParameters->BaseMiniportName,
+                                               TRUE);
+    if (rc != STATUS_SUCCESS)
+    {
+        Log(("ERROR! vboxNetLwfWinAttach: RtlUnicodeStringToAnsiString(%ls) failed with 0x%x\n",
+             pParameters->BaseMiniportName, rc));
+        return NDIS_STATUS_FAILURE;
+    }
+    DbgPrint("vboxNetLwfWinAttach: friendly name=%wZ\n", pParameters->BaseMiniportInstanceName);
+    DbgPrint("vboxNetLwfWinAttach: name=%Z\n", strMiniportName);
+
+    UINT cbModuleWithNameExtra = sizeof(VBOXNETLWF_MODULE) + strMiniportName.Length;
     PVBOXNETLWF_MODULE pModuleCtx = (PVBOXNETLWF_MODULE)NdisAllocateMemoryWithTagPriority(hFilter,
-                                                                      sizeof(VBOXNETLWF_MODULE),
+                                                                      cbModuleWithNameExtra,
                                                                       VBOXNETLWF_MEM_TAG,
                                                                       LowPoolPriority);
     if (!pModuleCtx)
+    {
+        RtlFreeAnsiString(&strMiniportName);
         return NDIS_STATUS_RESOURCES;
+    }
     Log4(("vboxNetLwfWinAttach: allocated module context 0x%p\n", pModuleCtx));
 
-    NdisZeroMemory(pModuleCtx, sizeof(VBOXNETLWF_MODULE));
+    NdisZeroMemory(pModuleCtx, cbModuleWithNameExtra);
+    NdisMoveMemory(pModuleCtx->szMiniportName, strMiniportName.Buffer, strMiniportName.Length);
+    RtlFreeAnsiString(&strMiniportName);
 
     pModuleCtx->hWorkItem = NdisAllocateIoWorkItem(g_VBoxNetLwfGlobals.hFilterDriver);
     if (!pModuleCtx->hWorkItem)
@@ -792,21 +812,6 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         NdisFreeMemory(pModuleCtx, 0, 0);
         return NDIS_STATUS_RESOURCES;
     }
-
-    /* We use the miniport name to associate this filter module with the netflt instance */
-    NTSTATUS rc = RtlUnicodeStringToAnsiString(&pModuleCtx->strMiniportName,
-                                               pParameters->BaseMiniportName,
-                                               TRUE);
-    if (rc != STATUS_SUCCESS)
-    {
-        Log(("ERROR! vboxNetLwfWinAttach: RtlUnicodeStringToAnsiString(%ls) failed with 0x%x\n",
-             pParameters->BaseMiniportName, rc));
-        NdisFreeIoWorkItem(pModuleCtx->hWorkItem);
-        NdisFreeMemory(pModuleCtx, 0, 0);
-        return NDIS_STATUS_FAILURE;
-    }
-    DbgPrint("vboxNetLwfWinAttach: friendly name=%wZ\n", pParameters->BaseMiniportInstanceName);
-    DbgPrint("vboxNetLwfWinAttach: name=%Z\n", pModuleCtx->strMiniportName);
 
     Assert(pParameters->MacAddressLength == sizeof(RTMAC));
     NdisMoveMemory(&pModuleCtx->MacAddr, pParameters->CurrentMacAddress, RT_MIN(sizeof(RTMAC), pParameters->MacAddressLength));
@@ -843,7 +848,6 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     if (!pModuleCtx->hPool)
     {
         Log(("ERROR! vboxNetLwfWinAttach: NdisAllocateNetBufferListPool failed\n"));
-        RtlFreeAnsiString(&pModuleCtx->strMiniportName);
         NdisFreeIoWorkItem(pModuleCtx->hWorkItem);
         NdisFreeMemory(pModuleCtx, 0, 0);
         return NDIS_STATUS_RESOURCES;
@@ -862,7 +866,6 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         Log(("ERROR! vboxNetLwfWinAttach: NdisFSetAttributes failed with 0x%x\n", Status));
         NdisFreeNetBufferListPool(pModuleCtx->hPool);
         Log4(("vboxNetLwfWinAttach: freed NBL+NB pool 0x%p\n", pModuleCtx->hPool));
-        RtlFreeAnsiString(&pModuleCtx->strMiniportName);
         NdisFreeIoWorkItem(pModuleCtx->hWorkItem);
         NdisFreeMemory(pModuleCtx, 0, 0);
         return NDIS_STATUS_RESOURCES;
@@ -916,7 +919,6 @@ static VOID vboxNetLwfWinDetach(IN NDIS_HANDLE hModuleCtx)
         NdisFreeNetBufferListPool(pModuleCtx->hPool);
         Log4(("vboxNetLwfWinDetach: freed NBL+NB pool 0x%p\n", pModuleCtx->hPool));
     }
-    RtlFreeAnsiString(&pModuleCtx->strMiniportName);
     NdisFreeIoWorkItem(pModuleCtx->hWorkItem);
     NdisFreeMemory(hModuleCtx, 0, 0);
     Log4(("vboxNetLwfWinDetach: freed module context 0x%p\n", pModuleCtx));
@@ -2126,7 +2128,7 @@ VOID vboxNetLwfWinToggleOffloading(PVOID WorkItemContext, NDIS_HANDLE NdisIoWork
         }
         else
         {
-            DbgPrint("VBoxNetLwf: no saved offload config to modify for %Z\n", pModuleCtx->strMiniportName);
+            DbgPrint("VBoxNetLwf: no saved offload config to modify for %s\n", pModuleCtx->szMiniportName);
             NdisZeroMemory(&OffloadConfig, sizeof(OffloadConfig));
             OffloadConfig.Header.Type = NDIS_OBJECT_TYPE_OFFLOAD;
             OffloadConfig.Header.Revision = NDIS_OFFLOAD_REVISION_1;
@@ -2144,7 +2146,7 @@ VOID vboxNetLwfWinToggleOffloading(PVOID WorkItemContext, NDIS_HANDLE NdisIoWork
             Log(("vboxNetLwfWinToggleOffloading: restored offloading config\n"));
         }
         else
-            DbgPrint("VBoxNetLwf: no saved offload config to restore for %Z\n", pModuleCtx->strMiniportName);
+            DbgPrint("VBoxNetLwf: no saved offload config to restore for %s\n", pModuleCtx->szMiniportName);
     }
 }
 
@@ -2331,14 +2333,12 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     LogFlow(("==>vboxNetFltOsInitInstance: instance=%p context=%p\n", pThis, pvContext));
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
     Log(("vboxNetFltOsInitInstance: trunk name=%s\n", pThis->szName));
-    ANSI_STRING strInst;
-    RtlInitAnsiString(&strInst, pThis->szName);
     PVBOXNETLWF_MODULE pModuleCtx = NULL;
     NdisAcquireSpinLock(&g_VBoxNetLwfGlobals.Lock);
     RTListForEach(&g_VBoxNetLwfGlobals.listModules, pModuleCtx, VBOXNETLWF_MODULE, node)
     {
-        DbgPrint("vboxNetFltOsInitInstance: evaluating module, name=%Z\n", pModuleCtx->strMiniportName);
-        if (RtlEqualString(&strInst, &pModuleCtx->strMiniportName, TRUE))
+        DbgPrint("vboxNetFltOsInitInstance: evaluating module, name=%s\n", pModuleCtx->szMiniportName);
+        if (!RTStrICmp(pThis->szName, pModuleCtx->szMiniportName))
         {
             NdisReleaseSpinLock(&g_VBoxNetLwfGlobals.Lock);
             Log(("vboxNetFltOsInitInstance: found matching module, name=%s\n", pThis->szName));
