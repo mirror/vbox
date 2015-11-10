@@ -59,6 +59,53 @@ define TOOL_VBoxBsUnusedLd_LINK_MISCBIN_CMDS
 	exit 1
 endef
 
+# elf cross compiling 64-bit gcc (mac): sudo port install x86_64-elf-gcc
+TOOL_Bs3Gcc64Elf64 := AMD64/ELF64 gcc/g++ cross compiler for mac.
+TOOL_Bs3Gcc64Elf64_CC  ?= x86_64-elf-gcc$(HOSTSUFF_EXE) -m64
+TOOL_Bs3Gcc64Elf64_CXX ?= x86_64-elf-g++$(HOSTSUFF_EXE) -m64
+ifdef SLKRUNS
+ TOOL_Bs3Gcc64Elf64_CC  += -fmessage-length=0
+ TOOL_Bs3Gcc64Elf64_CXX += -fmessage-length=0
+endif
+TOOL_Bs3Gcc64Elf64_COBJSUFF         ?= .o
+TOOL_Bs3Gcc64Elf64_CFLAGS           ?=
+TOOL_Bs3Gcc64Elf64_CFLAGS.debug     ?= -g
+TOOL_Bs3Gcc64Elf64_CFLAGS.profile   ?= -O2 #-g -pg
+TOOL_Bs3Gcc64Elf64_CFLAGS.release   ?= -O2
+TOOL_Bs3Gcc64Elf64_CINCS            ?=
+TOOL_Bs3Gcc64Elf64_CDEFS            ?=
+TOOL_Bs3Gcc64Elf64_COMPILE_C_DEPEND =
+TOOL_Bs3Gcc64Elf64_COMPILE_C_DEPORD =
+TOOL_Bs3Gcc64Elf64_COMPILE_C_OUTPUT =
+define TOOL_Bs3Gcc64Elf64_COMPILE_C_CMDS
+	$(QUIET)$(TOOL_Bs3Gcc64Elf64_CC) -c\
+		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-o $(obj)\
+		$(abspath $(source))
+	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+endef
+
+TOOL_Bs3Gcc64Elf64_CXXOBJSUFF       ?= .o
+TOOL_Bs3Gcc64Elf64_CXXOBJSUFF       ?= .o
+TOOL_Bs3Gcc64Elf64_CXXFLAGS         ?=
+TOOL_Bs3Gcc64Elf64_CXXFLAGS.debug   ?= -g0 # no debug info, thank you
+TOOL_Bs3Gcc64Elf64_CXXFLAGS.profile ?= -O2 #-g -pg
+TOOL_Bs3Gcc64Elf64_CXXFLAGS.release ?= -O2
+TOOL_Bs3Gcc64Elf64_CXXINCS          ?=
+TOOL_Bs3Gcc64Elf64_CXXDEFS          ?=
+TOOL_Bs3Gcc64Elf64_COMPILE_CXX_DEPEND =
+TOOL_Bs3Gcc64Elf64_COMPILE_CXX_DEPORD =
+TOOL_Bs3Gcc64Elf64_COMPILE_CXX_OUTPUT =
+define TOOL_Bs3Gcc64Elf64_COMPILE_CXX_CMDS
+	$(QUIET)$(TOOL_Bs3Gcc64Elf64_CXX) -c\
+		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-o $(obj)\
+		$(abspath $(source))
+	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+endef
+
 # BS3Kit template for assembly and 16-bit code.
 TEMPLATE_VBoxBS3KitImg = Template for building BS3Kit test images.
 TEMPLATE_VBoxBS3KitImg_BLD_TRG      = os-agnostic
@@ -161,8 +208,13 @@ if1of ($(KBUILD_HOST), win)
  TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -O1 -Oi -GF -GS- -Gy -Gs65536
  TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -O1 -Oi -GF -GS- -Gy -Gs65536
 else
- TEMPLATE_VBoxBS3KitImg64_CTOOL      := $(VBOX_GCC_TOOL)
- TEMPLATE_VBoxBS3KitImg64_CXXTOOL    := $(VBOX_GCC_TOOL)
+ if1of ($(KBUILD_HOST), darwin)
+  TEMPLATE_VBoxBS3KitImg64_CTOOL     := Bs3Gcc64Elf64
+  TEMPLATE_VBoxBS3KitImg64_CXXTOOL   := Bs3Gcc64Elf64
+ else
+  TEMPLATE_VBoxBS3KitImg64_CTOOL     := $(VBOX_GCC_TOOL)
+  TEMPLATE_VBoxBS3KitImg64_CXXTOOL   := $(VBOX_GCC_TOOL)
+ endif
  TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g0 -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_C)
  TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g0 -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_CXX)
 endif
