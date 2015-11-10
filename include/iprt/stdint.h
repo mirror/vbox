@@ -111,10 +111,18 @@ typedef signed short        int16_t;
 typedef unsigned short      uint16_t;
 #   endif
 #   if !defined(_INT32_T_DECLARED)  && !defined(_INT32_T)
+#    if ARCH_BITS != 16
 typedef signed int          int32_t;
+#    else
+typedef signed long         int32_t;
+#    endif
 #   endif
 #   if !defined(_UINT32_T_DECLARED) && !defined(_UINT32_T)
+#    if ARCH_BITS != 16
 typedef unsigned int        uint32_t;
+#    else
+typedef unsigned long       uint32_t;
+#    endif
 #   endif
 #   if defined(_MSC_VER)
 #    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
@@ -122,6 +130,13 @@ typedef signed _int64       int64_t;
 #    endif
 #    if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
 typedef unsigned _int64     uint64_t;
+#    endif
+#   elif defined(__WATCOMC__)
+#    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
+typedef signed __int64      int64_t;
+#    endif
+#    if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
+typedef unsigned __int64    uint64_t;
 #    endif
 #   elif defined(IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES)
 #    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
@@ -194,12 +209,19 @@ typedef uint64_t            uintptr_t;
  || !defined(UINTMAX_C)
 # define INT8_C(Value)      (Value)
 # define INT16_C(Value)     (Value)
-# define INT32_C(Value)     (Value)
-# define INT64_C(Value)     (Value ## LL)
 # define UINT8_C(Value)     (Value)
 # define UINT16_C(Value)    (Value)
-# define UINT32_C(Value)    (Value ## U)
-# define UINT64_C(Value)    (Value ## ULL)
+# if ARCH_BITS != 16
+#  define INT32_C(Value)    (Value)
+#  define UINT32_C(Value)   (Value ## U)
+#  define INT64_C(Value)    (Value ## LL)
+#  define UINT64_C(Value)   (Value ## ULL)
+# else
+#  define INT32_C(Value)    (Value ## L)
+#  define UINT32_C(Value)   (Value ## UL)
+#  define INT64_C(Value)    (Value ## LL)
+#  define UINT64_C(Value)   (Value ## ULL)
+# endif
 # define INTMAX_C(Value)    INT64_C(Value)
 # define UINTMAX_C(Value)   UINT64_C(Value)
 #endif
