@@ -179,8 +179,8 @@ TEMPLATE_VBoxBS3KitImg_DEFS         = ARCH_BITS=16 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = OPENWATCOM-16
-TEMPLATE_VBoxBS3KitImg_CFLAGS       = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc $(BS3_OW_DBG_OPT) -d1+
-TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc $(BS3_OW_DBG_OPT) -d1+
+TEMPLATE_VBoxBS3KitImg_CFLAGS       = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc $(BS3_OW_DBG_OPT) -d2
+TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc $(BS3_OW_DBG_OPT) -d2
 TEMPLATE_VBoxBS3KitImg_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 # 	option quiet, nofarcalls\
@@ -244,8 +244,8 @@ TEMPLATE_VBoxBS3KitImg32_DEFS         = ARCH_BITS=32 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL        = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = OPENWATCOM
-TEMPLATE_VBoxBS3KitImg32_CFLAGS       = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf $(BS3_OW_DBG_OPT) -d1
-TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf $(BS3_OW_DBG_OPT) -d1
+TEMPLATE_VBoxBS3KitImg32_CFLAGS       = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf $(BS3_OW_DBG_OPT) -d2
+TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf $(BS3_OW_DBG_OPT) -d2
 TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg32_LDTOOL       = VBoxBsUnusedLd
 
