@@ -2155,7 +2155,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 #endif
             pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH;
             pCaps->MaxPointerHeight = VBOXWDDM_C_POINTER_MAX_HEIGHT;
-            pCaps->PointerCaps.Value = 3; /* Monochrome , Color*/ /* MaskedColor == Value | 4, disable for now */
+            pCaps->PointerCaps.Value = 2; /* Color */ /* Disable bit 0 (Monochrome) and bit 3 (MaskedColor) */
 #ifdef VBOX_WDDM_WIN8
             if (!g_VBoxDisplayOnly)
 #endif

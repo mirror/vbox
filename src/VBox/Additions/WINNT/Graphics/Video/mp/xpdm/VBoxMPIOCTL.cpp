@@ -414,7 +414,7 @@ BOOLEAN VBoxMPQueryPointerCapabilities(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_CAPAB
 
     pStatus->Information = sizeof(VIDEO_POINTER_CAPABILITIES);
 
-    pCaps->Flags = VIDEO_MODE_ASYNC_POINTER | VIDEO_MODE_COLOR_POINTER | VIDEO_MODE_MONO_POINTER;
+    pCaps->Flags = VIDEO_MODE_ASYNC_POINTER | VIDEO_MODE_COLOR_POINTER;
     /* Up to 64x64 shapes */
     pCaps->MaxWidth  = 64;
     pCaps->MaxHeight = 64;
