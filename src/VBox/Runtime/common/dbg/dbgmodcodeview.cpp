@@ -527,6 +527,24 @@ static int rtDbgModCvAddSymbol(PRTDBGMODCV pThis, uint32_t iSeg, uint64_t off, c
     }
 
     int rc = RTDbgModSymbolAdd(pThis->hCnt, pszName, iSeg, off, cbSym, 0 /*fFlags*/, NULL);
+
+    /* Simple duplicate symbol mangling, just to get more details. */
+    if (rc == VERR_DBG_DUPLICATE_SYMBOL && cchName < _2K)
+    {
+        char szTmpName[_2K + 96];
+        memcpy(szTmpName, pszName, cchName);
+        szTmpName[cchName] = '_';
+        for (uint32_t i = 1; i < 32; i++)
+        {
+            RTStrFormatU32(&szTmpName[cchName + 1], 80, i, 10, 0, 0, 0);
+            pszName = RTStrCacheEnterN(g_hDbgModStrCache, szTmpName, cchName + 1 + 1 + (i >= 10));
+            rc = RTDbgModSymbolAdd(pThis->hCnt, pszName, iSeg, off, cbSym, 0 /*fFlags*/, NULL);
+            if (rc != VERR_DBG_DUPLICATE_SYMBOL)
+                break;
+        }
+
+    }
+
     Log(("Symbol: %04x:%08x %.*s [%Rrc]\n", iSeg, off, cchName, pchName, rc));
     if (rc == VERR_DBG_ADDRESS_CONFLICT || rc == VERR_DBG_DUPLICATE_SYMBOL)
         rc = VINF_SUCCESS;
@@ -627,15 +645,31 @@ static int rtDbgModCvSsProcessV4PlusSymTab(PRTDBGMODCV pThis, void const *pvSymT
 
                 /** @todo add GProc and LProc so we can gather sizes as well as just symbols. */
 
-                case kCvSymType_V3_LData:
-                case kCvSymType_V3_GData:
-                case kCvSymType_V3_Pub:
+                case kCvSymType_V3_Label:
                 {
                     PCRTCVSYMV3LABEL pLabel = (PCRTCVSYMV3LABEL)uCursor.pv;
                     RTDBGMODCV_CHECK_NOMSG_RET_BF(cbRec >= sizeof(*pLabel));
                     uint16_t cchName = rtDbgModCvValidateZeroString(pLabel->szName, pLabel, cbRec);
                     if (cchName != UINT16_MAX && cchName > 0)
                         rc = rtDbgModCvAddSymbol(pThis, pLabel->iSection, pLabel->offSection, pLabel->szName, cchName, 0, 0);
+                    else
+                        Log3(("      cchName=%#x sec:off=%#x:%#x %.*Rhxs\n",
+                              cchName, pLabel->iSection, pLabel->offSection, cbRec, pLabel));
+                    break;
+                }
+
+                case kCvSymType_V3_LData:
+                case kCvSymType_V3_GData:
+                case kCvSymType_V3_Pub:
+                {
+                    PCRTCVSYMV3TYPEDNAME pData = (PCRTCVSYMV3TYPEDNAME)uCursor.pv;
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cbRec >= sizeof(*pData));
+                    uint16_t cchName = rtDbgModCvValidateZeroString(pData->szName, pData, cbRec);
+                    if (cchName != UINT16_MAX && cchName > 0)
+                        rc = rtDbgModCvAddSymbol(pThis, pData->iSection, pData->offSection, pData->szName, cchName, 0, 0);
+                    else
+                        Log3(("      cchName=%#x sec:off=%#x:%#x idType=%#x %.*Rhxs\n",
+                              cchName, pData->iSection, pData->offSection, pData->idType, cbRec, pData));
                     break;
                 }
 
@@ -648,6 +682,9 @@ static int rtDbgModCvSsProcessV4PlusSymTab(PRTDBGMODCV pThis, void const *pvSymT
                     if (cchName != UINT16_MAX && cchName > 0)
                         rc = rtDbgModCvAddSymbol(pThis, pProc->iSection, pProc->offSection, pProc->szName, cchName,
                                                  0, pProc->cbProc);
+                    else
+                        Log3(("      cchName=%#x sec:off=%#x:%#x LB %#x\n",
+                              cchName, pProc->iSection, pProc->offSection, pProc->cbProc));
                     break;
                 }
 
@@ -682,7 +719,7 @@ static int rtDbgModCvSsProcessV8SymTab(PRTDBGMODCV pThis, void const *pvSymTab, 
     {
         RTDBGMODCV_CHECK_RET_BF(cbSymTab > sizeof(RTCV8SYMBOLSBLOCK), ("cbSymTab=%zu\n", cbSymTab));
         PCRTCV8SYMBOLSBLOCK pBlockHdr = (PCRTCV8SYMBOLSBLOCK)uCursor.pv;
-        Log3(("    %p: uType=%#04x LB %#x\n", (uint8_t *)pBlockHdr - (uint8_t *)pvSymTab, pBlockHdr->uType, pBlockHdr->cb));
+        Log3(("  %p: uType=%#04x LB %#x\n", (uint8_t *)pBlockHdr - (uint8_t *)pvSymTab, pBlockHdr->uType, pBlockHdr->cb));
         RTDBGMODCV_CHECK_RET_BF(pBlockHdr->cb <= cbSymTab - sizeof(RTCV8SYMBOLSBLOCK),
                                 ("cb=%#u cbSymTab=%zu\n", pBlockHdr->cb, cbSymTab));
 
