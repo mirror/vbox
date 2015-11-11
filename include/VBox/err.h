@@ -246,6 +246,8 @@
 #define VERR_EM_CANNOT_EXEC_GUEST           (-1156)
 /** Reason for leaving RC: Inject a TRPM event. */
 #define VINF_EM_RAW_INJECT_TRPM_EVENT       1157
+/** Guest tried to trigger a CPU hang.  The guest is probably up to no good. */
+#define VERR_EM_GUEST_CPU_HANG              (-1158)
 /** @} */
 
 
