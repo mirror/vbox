@@ -477,9 +477,8 @@ add_driver()
             exit 1
         fi
         return 1
-    elif test "$REMOTEINST" -eq 1 && test "$?" -eq 0; then
-        subprint "Added: $moddesc driver"
     fi
+    subprint "Added: $moddesc driver"
     return 0
 }
 
@@ -505,8 +504,8 @@ rem_driver()
             $BIN_REMDRV $BASEDIR_OPT $modname >/dev/null 2>&1
         fi
         # for remote installs, don't bother with return values of rem_drv
-        if test $? -eq 0; then
-            subprint "Removed: $moddesc module"
+        if test "$?" -eq 0 || test "$REMOTEINST" -eq 1; then
+            subprint "Removed: $moddesc driver"
             return 0
         else
             subprint "Removing: $moddesc  ...FAILED!"
