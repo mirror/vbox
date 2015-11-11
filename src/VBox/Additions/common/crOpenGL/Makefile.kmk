@@ -161,7 +161,7 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
   endif
  else
   VBoxOGL_SOURCES.linux += \
-  	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+  	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.c
   VBoxOGL_SOURCES.solaris += \
   	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports.c
   VBoxOGL_SOURCES.freebsd += \
@@ -180,7 +180,7 @@ VBoxOGL_CLEAN          = \
 	$(VBOX_PATH_CROGL_GENFILES)/NULLfuncs.c \
 	$(VBOX_PATH_CROGL_GENFILES)/tsfuncs.c
 VBoxOGL_CLEAN.linux        += \
-	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm
+	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.c
 VBoxOGL_CLEAN.solaris        += \
 	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports.c
 VBoxOGL_CLEAN.win      = \
@@ -332,8 +332,8 @@ $(VBOX_PATH_CROGL_GENFILES)/freebsd_exports.c: \
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
   else
-$(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
-		$(PATH_SUB_CURRENT)/Linux_i386_exports.py \
+$(VBOX_PATH_CROGL_GENFILES)/linux_exports.c: \
+		$(PATH_SUB_CURRENT)/Linux_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
