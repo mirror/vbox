@@ -64,7 +64,9 @@ define TOOL_VBoxBsUnusedLd_LINK_MISCBIN_CMDS
 	exit 1
 endef
 
+#
 # elf cross compiling 64-bit gcc (mac): sudo port install x86_64-elf-gcc
+#
 TOOL_Bs3Gcc64Elf64 := AMD64/ELF64 gcc/g++ cross compiler for mac.
 TOOL_Bs3Gcc64Elf64_CC  ?= x86_64-elf-gcc$(HOSTSUFF_EXE) -m64
 TOOL_Bs3Gcc64Elf64_CXX ?= x86_64-elf-g++$(HOSTSUFF_EXE) -m64
@@ -112,6 +114,46 @@ define TOOL_Bs3Gcc64Elf64_COMPILE_CXX_CMDS
 		$(abspath $(source))
 	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) -v "$(obj)"
 	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+endef
+
+#
+# VCC elf cross compiling 64-bit gcc (mac): sudo port install x86_64-elf-gcc
+#
+TOOL_Bs3Vcc64 := Visual C++ 64-bit
+TOOL_Bs3Vcc64_CC  = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CC)
+TOOL_Bs3Vcc64_CXX = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXX)
+TOOL_Bs3Vcc64_COBJSUFF                 = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COBJSUFF)
+TOOL_Bs3Vcc64_CFLAGS                   = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CFLAGS)
+TOOL_Bs3Vcc64_CFLAGS.debug             =
+TOOL_Bs3Vcc64_CFLAGS.dbgopt            = -O1
+TOOL_Bs3Vcc64_CFLAGS.profile           = -O1
+TOOL_Bs3Vcc64_CFLAGS.release           = -O1
+TOOL_Bs3Vcc64_CINCS                    = $(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_INC)
+TOOL_Bs3Vcc64_CDEFS                    =
+TOOL_Bs3Vcc64_COMPILE_C_DEPEND         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_DEPEND) $(VBoxBs3ObjConverter_1_TARGET)
+TOOL_Bs3Vcc64_COMPILE_C_DEPORD         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_DEPORD)
+TOOL_Bs3Vcc64_COMPILE_C_OUTPUT         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT)
+TOOL_Bs3Vcc64_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT_MAYBE)
+define TOOL_Bs3Vcc64_COMPILE_C_CMDS
+$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_CMDS)
+	-$(VBoxBs3ObjConverter_1_TARGET) -vv "$(obj)"
+endef
+
+TOOL_Bs3Vcc64_CXXOBJSUFF               = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXOBJSUFF)
+TOOL_Bs3Vcc64_CXXFLAGS                 = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXFLAGS)
+TOOL_Bs3Vcc64_CXXFLAGS.debug           =
+TOOL_Bs3Vcc64_CXXFLAGS.dbgopt          = -O1
+TOOL_Bs3Vcc64_CXXFLAGS.profile         = -O1
+TOOL_Bs3Vcc64_CXXFLAGS.release         = -O1
+TOOL_Bs3Vcc64_CXXINCS                  = $(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_INC)
+TOOL_Bs3Vcc64_CXXDEFS                  =
+TOOL_Bs3Vcc64_COMPILE_CXX_DEPEND       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_DEPEND) $(VBoxBs3ObjConverter_1_TARGET)
+TOOL_Bs3Vcc64_COMPILE_CXX_DEPORD       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_DEPORD)
+TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT)
+TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT_MAYBE)
+define TOOL_Bs3Vcc64_COMPILE_CXX_CMDS
+$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_CMDS)
+	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) -v "$(obj)"
 endef
 
 # Debug info format depends on what we use for 64-bit.
@@ -213,17 +255,16 @@ TEMPLATE_VBoxBS3KitImg64_BLD_TRG      = os-agnostic
 TEMPLATE_VBoxBS3KitImg64_BLD_TRG_ARCH = amd64
 TEMPLATE_VBoxBS3KitImg64_INSTTYPE     = none
 TEMPLATE_VBoxBS3KitImg64_ASTOOL       = NASM
-TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g #--allow-64bit-code-anywhere -w+orphan-labels
+TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg64_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg64_DEFS         = IN_BS3KIT ARCH_BITS=64
 TEMPLATE_VBoxBS3KitImg64_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg64_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 if1of ($(KBUILD_HOST), win)
- TEMPLATE_VBoxBS3KitImg64_BLD_TYPE   := release# Must avoid debug info as it contains fixups not supported by the linker.
- TEMPLATE_VBoxBS3KitImg64_CTOOL      := $(VBOX_VCC_TOOL_STEM)AMD64
- TEMPLATE_VBoxBS3KitImg64_CXXTOOL    := $(VBOX_VCC_TOOL_STEM)AMD64
- TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -O1 -Oi -GF -GS- -Gy -Gs65536
- TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -O1 -Oi -GF -GS- -Gy -Gs65536
+ TEMPLATE_VBoxBS3KitImg64_CTOOL      := Bs3Vcc64
+ TEMPLATE_VBoxBS3KitImg64_CXXTOOL    := Bs3Vcc64
+ TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -Zi -O1 -Oi -GF -GS- -Gy -Gs65536
+ TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -Zi -O1 -Oi -GF -GS- -Gy -Gs65536
 else
  if1of ($(KBUILD_HOST), darwin)
   TEMPLATE_VBoxBS3KitImg64_CTOOL     := Bs3Gcc64Elf64

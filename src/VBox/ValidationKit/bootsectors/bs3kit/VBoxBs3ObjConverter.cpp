@@ -37,6 +37,7 @@
 
 #include <iprt/formats/elf64.h>
 #include <iprt/formats/elf-amd64.h>
+#include <iprt/formats/pecoff.h>
 
 
 /*********************************************************************************************************************************
@@ -283,6 +284,136 @@ static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
 }
 
 
+/** AMD64 relocation type names for (Microsoft) COFF. */
+static const char * const g_apszCoffAmd64RelTypes[] =
+{
+    "ABSOLUTE",
+    "ADDR64",
+    "ADDR32",
+    "ADDR32NB",
+    "REL32",
+    "REL32_1",
+    "REL32_2",
+    "REL32_3",
+    "REL32_4",
+    "REL32_5",
+    "SECTION",
+    "SECREL",
+    "SECREL7",
+    "TOKEN",
+    "SREL32",
+    "PAIR",
+    "SSPAN32"
+};
+
+static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
+{
+    /*
+     * Validate the header and our other expectations.
+     */
+    PIMAGE_FILE_HEADER pHdr = (PIMAGE_FILE_HEADER)pbFile;
+    if (pHdr->Machine != IMAGE_FILE_MACHINE_AMD64)
+        return error(pszFile, "Expected IMAGE_FILE_MACHINE_AMD64 not %#x\n", pHdr->Machine);
+    if (pHdr->SizeOfOptionalHeader != 0)
+        return error(pszFile, "Expected SizeOfOptionalHeader to be zero, not %#x\n", pHdr->SizeOfOptionalHeader);
+    if (pHdr->NumberOfSections == 0)
+        return error(pszFile, "Expected NumberOfSections to be non-zero\n");
+    uint32_t const cbHeaders = pHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER) + sizeof(*pHdr);
+    if (cbHeaders > cbFile)
+        return error(pszFile, "Section table goes beyond the end of the of the file (cSections=%#x)\n", pHdr->NumberOfSections);
+    if (pHdr->NumberOfSymbols)
+    {
+        if (   pHdr->PointerToSymbolTable >= cbFile
+            || pHdr->NumberOfSymbols * (uint64_t)IMAGE_SIZE_OF_SYMBOL > cbFile)
+            return error(pszFile, "Symbol table goes beyond the end of the of the file (cSyms=%#x, offFile=%#x)\n",
+                         pHdr->NumberOfSymbols, pHdr->PointerToSymbolTable);
+    }
+
+    /* Switch it to a x86 machine. */
+    pHdr->Machine = IMAGE_FILE_MACHINE_I386;
+
+    /*
+     * Work the section table.
+     */
+    PCIMAGE_SECTION_HEADER paShdrs   = (PCIMAGE_SECTION_HEADER)(pHdr + 1);
+    for (uint32_t i = 0; i < pHdr->NumberOfSections; i++)
+    {
+        if (g_cVerbose)
+            printf("shdr[%2u]:       rva=%#010x  cbVirt=%#010x '%-8.8s'\n"
+                   "            offFile=%#010x  cbFile=%#010x\n"
+                   "          offRelocs=%#010x cRelocs=%#010x\n"
+                   "           offLines=%#010x  cLines=%#010x Characteristics=%#010x\n",
+                   i, paShdrs[i].VirtualAddress, paShdrs[i].Misc.VirtualSize, paShdrs[i].Name,
+                   paShdrs[i].PointerToRawData, paShdrs[i].SizeOfRawData,
+                   paShdrs[i].PointerToRelocations, paShdrs[i].NumberOfRelocations,
+                   paShdrs[i].PointerToLinenumbers, paShdrs[i].NumberOfLinenumbers, paShdrs[i].Characteristics);
+        uint32_t const cRelocs = paShdrs[i].NumberOfRelocations;
+        if (cRelocs > 0)
+        {
+            if (   paShdrs[i].PointerToRelocations < cbHeaders
+                || paShdrs[i].PointerToRelocations >= cbFile
+                || paShdrs[i].PointerToRelocations + cRelocs * sizeof(IMAGE_RELOCATION) > cbFile)
+                return error(pszFile, "Relocation beyond the end of the file or overlapping the headers (section #%u)\n", i);
+
+            /*
+             * Convert from AMD64 fixups to I386 ones, assuming 64-bit addresses
+             * being fixed up doesn't need the high dword and that it's
+             * appropriately initialized already.
+             */
+            PIMAGE_RELOCATION paRelocs = (PIMAGE_RELOCATION)&pbFile[paShdrs[i].PointerToRelocations];
+            for (uint32_t j = 0; j < cRelocs; j++)
+            {
+                if (g_cVerbose > 1)
+                    printf("%#010x  %#010x %s\n",
+                           paRelocs[j].u.VirtualAddress,
+                           paRelocs[j].SymbolTableIndex,
+                           paRelocs[j].Type < RT_ELEMENTS(g_apszCoffAmd64RelTypes)
+                           ? g_apszCoffAmd64RelTypes[paRelocs[j].Type] : "unknown");
+                switch (paRelocs[j].Type)
+                {
+                    case IMAGE_REL_AMD64_ABSOLUTE:
+                        paRelocs[j].Type = IMAGE_REL_I386_ABSOLUTE; /* same */
+                        break;
+                    case IMAGE_REL_AMD64_ADDR64:
+                        /** @todo check the high dword. */
+                        paRelocs[j].Type = IMAGE_REL_I386_DIR32;
+                        break;
+                    case IMAGE_REL_AMD64_ADDR32:
+                        paRelocs[j].Type = IMAGE_REL_I386_DIR32;
+                        break;
+                    case IMAGE_REL_AMD64_ADDR32NB:
+                        paRelocs[j].Type = IMAGE_REL_I386_DIR32NB;
+                        break;
+                    case IMAGE_REL_AMD64_REL32:
+                        paRelocs[j].Type = IMAGE_REL_I386_REL32;
+                        break;
+                    case IMAGE_REL_AMD64_SECTION:
+                        /** @todo check the high dword. */
+                        paRelocs[j].Type = IMAGE_REL_I386_SECTION;
+                        break;
+                    case IMAGE_REL_AMD64_SECREL:
+                        /** @todo check the high dword. */
+                        paRelocs[j].Type = IMAGE_REL_I386_SECREL;
+                        break;
+                    case IMAGE_REL_AMD64_SECREL7:
+                        paRelocs[j].Type = IMAGE_REL_I386_SECREL7;
+                        break;
+
+                    default:
+                        return error(pszFile, "Unsupported fixup type %#x (%s) at rva=%#x in section #%u '%-8.8'\n",
+                                     paRelocs[j].Type,
+                                     paRelocs[j].Type < RT_ELEMENTS(g_apszCoffAmd64RelTypes)
+                                     ? g_apszCoffAmd64RelTypes[paRelocs[j].Type] : "unknown",
+                                     paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
+                }
+            }
+        }
+    }
+    return true;
+}
+
+
+
 /**
  * Does the convertion using convertelf and convertcoff.
  *
@@ -303,6 +434,12 @@ static int convertit(const char *pszFile)
             && pbFile[2] == ELFMAG2
             && pbFile[3] == ELFMAG3)
             fRc = convertelf(pszFile, pbFile, cbFile);
+        else if (   cbFile > sizeof(IMAGE_FILE_HEADER)
+                 && RT_MAKE_U16(pbFile[0], pbFile[1]) == IMAGE_FILE_MACHINE_AMD64
+                 &&   RT_MAKE_U16(pbFile[2], pbFile[3]) * sizeof(IMAGE_SECTION_HEADER) + sizeof(IMAGE_FILE_HEADER)
+                    < cbFile
+                 && RT_MAKE_U16(pbFile[2], pbFile[3]) > 0)
+            fRc = convertcoff(pszFile, pbFile, cbFile);
         else
             fprintf(stderr, "error: Don't recognize format of '%s' (%#x %#x %#x %#x, cbFile=%lu)\n",
                     pszFile, pbFile[0], pbFile[1], pbFile[2], pbFile[3], (unsigned long)cbFile);
