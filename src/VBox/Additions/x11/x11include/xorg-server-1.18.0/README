@@ -16,3 +16,12 @@ edid-new.h
 mv ${PATH_VBOX}/src/VBox/Additions/x11/x11include/xorg-server-1.18.0/\
 edid-new.h \
 ${PATH_VBOX}/src/VBox/Additions/x11/x11include/xorg-server-1.18.0/edid.h
+sed 's/\(fake.*\)\[0\]/\1\[1\]/g' \
+    ${PATH_VBOX}/src/VBox/Additions/x11/x11include/xorg-server-1.18.0/\
+xf86platformBus.h \
+    > ${PATH_VBOX}/src/VBox/Additions/x11/x11include/xorg-server-1.18.0/\
+xf86platformBus-new.h
+mv ${PATH_VBOX}/src/VBox/Additions/x11/x11include/xorg-server-1.18.0/\
+xf86platformBus-new.h \
+${PATH_VBOX}/src/VBox/Additions/x11/x11include/xorg-server-1.18.0/\
+xf86platformBus.h

@@ -104,7 +104,7 @@ xf86_platform_odev_attributes(int index)
 #define _ODEV_ATTRIB_STRING_CHECK(x)    ((int (*)[_ODEV_ATTRIB_IS_STRING(x)-1]) 0)
 
 static inline char *
-_xf86_get_platform_device_attrib(struct xf86_platform_device *device, int attrib, int (*fake)[0])
+_xf86_get_platform_device_attrib(struct xf86_platform_device *device, int attrib, int (*fake)[1])
 {
     switch (attrib) {
     case ODEV_ATTRIB_PATH:
@@ -129,7 +129,7 @@ _xf86_get_platform_device_attrib(struct xf86_platform_device *device, int attrib
 #define _ODEV_ATTRIB_INT_CHECK(x,def)           ((int (*)[_ODEV_ATTRIB_IS_INT(x)*_ODEV_ATTRIB_DEFAULT_CHECK(x,def)-1]) 0)
 
 static inline int
-_xf86_get_platform_device_int_attrib(struct xf86_platform_device *device, int attrib, int (*fake)[0])
+_xf86_get_platform_device_int_attrib(struct xf86_platform_device *device, int attrib, int (*fake)[1])
 {
     switch (attrib) {
     case ODEV_ATTRIB_FD:
