@@ -397,6 +397,14 @@ HRESULT GuestOSType::getRecommendedUSB(BOOL *aRecommendedUSB)
     return S_OK;
 }
 
+HRESULT GuestOSType::getRecommendedUSB3(BOOL *aRecommendedUSB3)
+{
+    /* Value is constant during life time, no need to lock */
+    *aRecommendedUSB3 = !!(mOSHint & VBOXOSHINT_USB3);
+
+    return S_OK;
+}
+
 HRESULT GuestOSType::getRecommendedTFReset(BOOL *aRecommendedTFReset)
 {
     /* recommended triple fault behavior is constant during life time, no need to lock */

@@ -77,6 +77,7 @@ private:
     HRESULT getRecommendedAudioCodec(AudioCodecType_T *aAudioCodec);
     HRESULT getRecommendedFloppy(BOOL *aRecommendedFloppy);
     HRESULT getRecommendedUSB(BOOL *aRecommendedUSB);
+    HRESULT getRecommendedUSB3(BOOL *aRecommendedUSB3);
     HRESULT getRecommendedTFReset(BOOL *aRecommendedTFReset);
 
 

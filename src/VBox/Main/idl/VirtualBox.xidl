@@ -9551,7 +9551,7 @@ and "VAR" for unsetting. -->
     name="IGuestOSType" extends="$unknown"
     uuid="03cd409d-20f5-43f9-8de1-4a129620990b"
     wsmap="struct"
-    reservedAttributes="16"
+    reservedAttributes="15"
     >
     <desc>
     </desc>
@@ -9666,6 +9666,10 @@ and "VAR" for unsetting. -->
 
     <attribute name="recommendedUSB" type="boolean" readonly="yes">
       <desc>Returns @c true a USB controller is recommended for this OS type.</desc>
+    </attribute>
+
+    <attribute name="recommendedUSB3" type="boolean" readonly="yes">
+      <desc>Returns @c true an xHCI (USB 3) controller is recommended for this OS type.</desc>
     </attribute>
 
     <attribute name="recommendedTFReset" type="boolean" readonly="yes">
