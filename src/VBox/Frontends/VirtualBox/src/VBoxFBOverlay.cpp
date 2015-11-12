@@ -718,7 +718,7 @@ int VBoxVHWAGlProgram::init()
         vboxglGetProgramInfoLog(mProgram, 16300, NULL, pBuf);
         VBOXQGLLOG(("link log: %s\n", pBuf));
         Assert(linked);
-        delete pBuf;
+        delete[] pBuf;
 #endif
 
         if(linked)
