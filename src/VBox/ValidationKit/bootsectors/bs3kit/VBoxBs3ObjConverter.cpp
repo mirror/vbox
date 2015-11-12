@@ -355,6 +355,13 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                 || paShdrs[i].PointerToRelocations + cRelocs * sizeof(IMAGE_RELOCATION) > cbFile)
                 return error(pszFile, "Relocation beyond the end of the file or overlapping the headers (section #%u)\n", i);
 
+            uint32_t const cbRawData = paShdrs[i].SizeOfRawData;
+            if (   paShdrs[i].PointerToRawData < cbHeaders
+                || paShdrs[i].PointerToRawData >= cbFile
+                || paShdrs[i].PointerToRawData + cbRawData > cbFile)
+                return error(pszFile, "Raw data beyond the end of the file or overlapping the headers (section #%u)\n", i);
+            uint8_t *pbRawData = &pbFile[paShdrs[i].PointerToRawData];
+
             /*
              * Convert from AMD64 fixups to I386 ones, assuming 64-bit addresses
              * being fixed up doesn't need the high dword and that it's
@@ -363,21 +370,83 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
             PIMAGE_RELOCATION paRelocs = (PIMAGE_RELOCATION)&pbFile[paShdrs[i].PointerToRelocations];
             for (uint32_t j = 0; j < cRelocs; j++)
             {
+                RTPTRUNION uLoc;
+                uLoc.pu8 = paRelocs[j].u.VirtualAddress < cbRawData ? &pbRawData[paRelocs[j].u.VirtualAddress] : NULL;
+
+                /* Print it. */
                 if (g_cVerbose > 1)
-                    printf("%#010x  %#010x %s\n",
-                           paRelocs[j].u.VirtualAddress,
-                           paRelocs[j].SymbolTableIndex,
+                {
+                    size_t off = printf("%#010x  %#010x", paRelocs[j].u.VirtualAddress, paRelocs[j].SymbolTableIndex);
+                    switch (paRelocs[j].Type)
+                    {
+                        case IMAGE_REL_AMD64_ADDR64:
+                            if (uLoc.pu64)
+                                off += printf("  %#018llx", *uLoc.pu64);
+                            break;
+                        case IMAGE_REL_AMD64_ADDR32:
+                        case IMAGE_REL_AMD64_ADDR32NB:
+                        case IMAGE_REL_AMD64_REL32:
+                        case IMAGE_REL_AMD64_REL32_1:
+                        case IMAGE_REL_AMD64_REL32_2:
+                        case IMAGE_REL_AMD64_REL32_3:
+                        case IMAGE_REL_AMD64_REL32_4:
+                        case IMAGE_REL_AMD64_REL32_5:
+                        case IMAGE_REL_AMD64_SECREL:
+                            if (uLoc.pu32)
+                                off += printf("  %#010x", *uLoc.pu32);
+                            break;
+                        case IMAGE_REL_AMD64_SECTION:
+                            if (uLoc.pu16)
+                                off += printf("  %#06x", *uLoc.pu16);
+                            break;
+                        case IMAGE_REL_AMD64_SECREL7:
+                            if (uLoc.pu8)
+                                off += printf("  %#04x", *uLoc.pu8);
+                            break;
+                    }
+                    while (off < 36)
+                        off += printf(" ");
+                    printf(" %s\n",
                            paRelocs[j].Type < RT_ELEMENTS(g_apszCoffAmd64RelTypes)
                            ? g_apszCoffAmd64RelTypes[paRelocs[j].Type] : "unknown");
+                }
+
+                /* Convert it. */
                 switch (paRelocs[j].Type)
                 {
-                    case IMAGE_REL_AMD64_ABSOLUTE:
-                        paRelocs[j].Type = IMAGE_REL_I386_ABSOLUTE; /* same */
-                        break;
                     case IMAGE_REL_AMD64_ADDR64:
-                        /** @todo check the high dword. */
+                    {
+                        uint64_t uAddend = 0;
+                        if (uLoc.pu64)
+                        {
+                            if (paRelocs[j].u.VirtualAddress + 8 > cbRawData)
+                                return error(pszFile, "ADDR64 at %#x in section %u '%-8.8s' not fully in raw data\n",
+                                             paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
+                            uAddend = *uLoc.pu64;
+                        }
+                        if (uAddend > _1G)
+                            return error(pszFile, "ADDR64 with large addend (%#llx) at %#x in section %u '%-8.8s'\n",
+                                         uAddend, paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
                         paRelocs[j].Type = IMAGE_REL_I386_DIR32;
                         break;
+                    }
+
+                    case IMAGE_REL_AMD64_REL32_1:
+                    case IMAGE_REL_AMD64_REL32_2:
+                    case IMAGE_REL_AMD64_REL32_3:
+                    case IMAGE_REL_AMD64_REL32_4:
+                    case IMAGE_REL_AMD64_REL32_5:
+                    {
+                        if (paRelocs[j].u.VirtualAddress + 4 > cbRawData)
+                            return error(pszFile, "%s at %#x in section %u '%-8.8s' is not (fully) in raw data\n",
+                                         g_apszCoffAmd64RelTypes[paRelocs[j].Type], paRelocs[j].u.VirtualAddress, i,
+                                         paShdrs[i].Name);
+                        *uLoc.pu32 += paRelocs[j].Type - IMAGE_REL_AMD64_REL32;
+                        paRelocs[j].Type = IMAGE_REL_I386_REL32;
+                        break;
+                    }
+
+                    /* These are 1:1 conversions: */
                     case IMAGE_REL_AMD64_ADDR32:
                         paRelocs[j].Type = IMAGE_REL_I386_DIR32;
                         break;
@@ -388,15 +457,16 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                         paRelocs[j].Type = IMAGE_REL_I386_REL32;
                         break;
                     case IMAGE_REL_AMD64_SECTION:
-                        /** @todo check the high dword. */
                         paRelocs[j].Type = IMAGE_REL_I386_SECTION;
                         break;
                     case IMAGE_REL_AMD64_SECREL:
-                        /** @todo check the high dword. */
                         paRelocs[j].Type = IMAGE_REL_I386_SECREL;
                         break;
                     case IMAGE_REL_AMD64_SECREL7:
                         paRelocs[j].Type = IMAGE_REL_I386_SECREL7;
+                        break;
+                    case IMAGE_REL_AMD64_ABSOLUTE: /* no-op for alignment. */
+                        paRelocs[j].Type = IMAGE_REL_I386_ABSOLUTE;
                         break;
 
                     default:
