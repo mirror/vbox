@@ -508,10 +508,13 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
 #endif
             /* Skip 0xc0011012..13 as it seems to be bad for our health (Phenom II X6 1100T). */
             /* Ditto for 0x0000002a (EBL_CR_POWERON) and 0x00000277 (MSR_IA32_CR_PAT) on Intel (Atom 330). */
+            /* And more of the same for 0x280 on Intel Pentium III. */
             if (   ((uMsr >= 0xc0011012 && uMsr <= 0xc0011013) && g_enmVendor == CPUMCPUVENDOR_AMD)
                 || (   (uMsr == 0x2a || uMsr == 0x277)
                     && g_enmVendor == CPUMCPUVENDOR_INTEL
-                    && g_enmMicroarch == kCpumMicroarch_Intel_Atom_Bonnell))
+                    && g_enmMicroarch == kCpumMicroarch_Intel_Atom_Bonnell)
+                || (   (uMsr == 0x280)
+                    && g_enmMicroarch == kCpumMicroarch_Intel_P6_III)) 
                 vbCpuRepDebug("Skipping %#x\n", uMsr);
             else
             {
@@ -3256,6 +3259,9 @@ static int reportMsr_Ia32ApicBase(uint32_t uMsr, uint64_t uValue)
     uint64_t fSkipMask = RT_BIT_64(11);
     if (vbCpuRepSupportsX2Apic())
         fSkipMask |= RT_BIT_64(10);
+    /* For some reason, twiddling this bit kills a Tualatin PIII-S. */
+    if (g_enmMicroarch == kCpumMicroarch_Intel_P6_III)
+        fSkipMask |= RT_BIT(9);
     return reportMsr_GenFunctionEx(uMsr, "Ia32ApicBase", uValue, fSkipMask, 0, NULL);
 }
 
