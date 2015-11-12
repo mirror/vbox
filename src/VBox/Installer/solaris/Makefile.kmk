@@ -449,12 +449,13 @@ ifdef VBOX_WITH_PYTHON
 	$(VBOXINST_SDK_BINDINGS_XPCOM_PYTHON_FILES) \
 	$(VBOXINST_SDK_INSTALLER_PYTHON_FILES)
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
+  SOLARIS_PYTHON_32_ON_64_BINS = $(notdir $(wildcard $(PATH_STAGE_BIN)/VBoxPython*_x86.so))
   ifdef VBOX_WITH_32_ON_64_MAIN_API
-   SOLARIS_COMMON_STRIP_BINS   += VBoxPython2_6_x86.so
+   SOLARIS_COMMON_STRIP_BINS   += $(SOLARIS_PYTHON_32_ON_64_BINS)
   endif
-  SOLARIS_COMMON_64_STRIP_BINS += VBoxPython.so VBoxPython2_6.so
+  SOLARIS_COMMON_64_STRIP_BINS += $(filter-out $(SOLARIS_PYTHON_32_ON_64_BINS), $(notdir $(wildcard $(PATH_STAGE_BIN)/VBoxPython*.so)))
  else
-  SOLARIS_COMMON_STRIP_BINS    += VBoxPython.so VBoxPython2_6.so
+  SOLARIS_COMMON_STRIP_BINS    += $(notdir $(wildcard $(PATH_STAGE_BIN)/VBoxPython*.so)))
  endif
 endif
 

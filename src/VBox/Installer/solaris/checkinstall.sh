@@ -133,7 +133,7 @@ fi
 infoprint "Checking package dependencies..."
 
 if test -x "$BIN_PKG"; then
-    checkdep_ips "runtime/python-26"
+    checkdep_ips_either "runtime/python-26" "runtime/python-27"
     checkdep_ips_either "system/library/iconv/utf-8" "system/library/iconv/iconv-core"
 else
     PKG_MISSING_IPS="runtime/python-26 system/library/iconv/utf-8"
