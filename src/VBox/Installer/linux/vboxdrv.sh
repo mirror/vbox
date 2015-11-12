@@ -508,7 +508,8 @@ restart)
     stop && start
     ;;
 setup)
-    stop && setup && start
+    MODULE_BUILT=
+    start
     ;;
 cleanup)
     stop && cleanup
