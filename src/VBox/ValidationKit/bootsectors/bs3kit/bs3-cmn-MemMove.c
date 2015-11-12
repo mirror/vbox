@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3MemPCpy
+ * BS3Kit - Bs3MemMove
  */
 
 /*
@@ -26,23 +26,56 @@
 
 #include "bs3kit-template-header.h"
 
-#undef Bs3MemPCpy
-BS3_DECL(void BS3_FAR *) BS3_CMN_NM(Bs3MemPCpy)(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy)
+#undef Bs3MemMove
+BS3_DECL(void BS3_FAR *) BS3_CMN_NM(Bs3MemMove)(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy)
 {
     size_t          cLargeRounds;
-    BS3CPTRUNION    uSrc;
+    BS3CVPTRUNION   uSrc;
     BS3PTRUNION     uDst;
     uSrc.pv = pvSrc;
     uDst.pv = pvDst;
 
-    cLargeRounds = cbToCopy / sizeof(*uSrc.pcb);
-    while (cLargeRounds-- > 0)
-        *uDst.pcb++ = *uSrc.pcb++;
+    /* We don't care about segment wrapping here. */
+    if ((uintptr_t)pvDst > (uintptr_t)pvSrc + cbToCopy)
+    {
+        /* Reverse copy. */
+        uSrc.pb += cbToCopy;
+        uDst.pb += cbToCopy;
 
-    cbToCopy %= sizeof(*uSrc.pcb);
-    while (cbToCopy-- > 0)
-        *uDst.pb++ = *uSrc.pb++;
+        cLargeRounds = cbToCopy / sizeof(*uSrc.pcb);
+        while (cLargeRounds-- > 0)
+        {
+            size_t uTmp = *--uSrc.pcb;
+            *--uDst.pcb = uTmp;
+        }
 
-    return uDst.pv;
+        cbToCopy %= sizeof(*uSrc.pcb);
+        while (cbToCopy-- > 0)
+        {
+            uint8_t b = *--uSrc.pb;
+            *--uDst.pb = b;
+        }
+    }
+    else
+    {
+        /* Forward copy. */
+        cLargeRounds = cbToCopy / sizeof(*uSrc.pcb);
+        while (cLargeRounds-- > 0)
+        {
+            size_t uTmp = *uSrc.pcb++;
+            *uDst.pcb++ = uTmp;
+        }
+
+        cbToCopy %= sizeof(*uSrc.pcb);
+        while (cbToCopy-- > 0)
+        {
+            uint8_t b = *uSrc.pb++;
+            *uDst.pb++ = b;
+        }
+    }
+    return pvDst;
 }
+
+
+
 

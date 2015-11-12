@@ -313,6 +313,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-StrCpy.c \
        bs3-cmn-MemCpy.c \
        bs3-cmn-MemPCpy.c \
+       bs3-cmn-MemMove.c \
 
 # The BS3Kit library.
 LIBRARIES += bs3kit-common-16

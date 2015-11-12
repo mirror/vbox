@@ -217,7 +217,7 @@ BS3_DECL(char BS3_FAR *) Bs3StrCpy_c64(char BS3_FAR *pszDst, const char BS3_FAR 
 #define Bs3StrCpy BS3_CMN_NM(Bs3StrCpy) /**< Selects #Bs3StrCpy_c16, #Bs3StrCpy_c32 or #Bs3StrCpy_c64. */
 
 /**
- * CRT style memcpy
+ * CRT style memcpy.
  *
  * @returns pvDst
  * @param   pvDst           The destination buffer.
@@ -230,7 +230,7 @@ BS3_DECL(void BS3_FAR *) Bs3MemCpy_c64(void BS3_FAR *pvDst, const void BS3_FAR *
 #define Bs3MemCpy BS3_CMN_NM(Bs3MemCpy) /**< Selects #Bs3MemCpy_c16, #Bs3MemCpy_c32 or #Bs3MemCpy_c64. */
 
 /**
- * GNU (?) style mempcpy
+ * GNU (?) style mempcpy.
  *
  * @returns pvDst + cbCopy
  * @param   pvDst           The destination buffer.
@@ -241,6 +241,20 @@ BS3_DECL(void BS3_FAR *) Bs3MemPCpy_c16(void BS3_FAR *pvDst, const void BS3_FAR 
 BS3_DECL(void BS3_FAR *) Bs3MemPCpy_c32(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemPCpy_c16 */
 BS3_DECL(void BS3_FAR *) Bs3MemPCpy_c64(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemPCpy_c16 */
 #define Bs3MemPCpy BS3_CMN_NM(Bs3MemPCpy) /**< Selects #Bs3MemPCpy_c16, #Bs3MemPCpy_c32 or #Bs3MemPCpy_c64. */
+
+/**
+ * CRT style memmove (overlapping buffers is fine).
+ *
+ * @returns pvDst
+ * @param   pvDst           The destination buffer.
+ * @param   pvSrc           The source buffer.
+ * @param   cbCopy          The number of bytes to copy.
+ */
+BS3_DECL(void BS3_FAR *) Bs3MemMove_c16(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy);
+BS3_DECL(void BS3_FAR *) Bs3MemMove_c32(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemMove_c16 */
+BS3_DECL(void BS3_FAR *) Bs3MemMove_c64(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemMove_c16 */
+#define Bs3MemMove BS3_CMN_NM(Bs3MemMove) /**< Selects #Bs3MemMove_c16, #Bs3MemMove_c32 or #Bs3MemMove_c64. */
+
 
 /** @} */
 
