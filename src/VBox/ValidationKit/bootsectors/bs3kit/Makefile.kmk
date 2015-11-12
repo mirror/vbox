@@ -90,8 +90,7 @@ define TOOL_Bs3Gcc64Elf64_COMPILE_C_CMDS
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-	ls -la $(obj)
-	-$(VBoxBs3ObjConverter_1_TARGET) -vv "$(obj)"
+	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 
@@ -112,7 +111,7 @@ define TOOL_Bs3Gcc64Elf64_COMPILE_CXX_CMDS
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) -v "$(obj)"
+	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 
@@ -136,7 +135,7 @@ TOOL_Bs3Vcc64_COMPILE_C_OUTPUT         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT_MAYBE)
 define TOOL_Bs3Vcc64_COMPILE_C_CMDS
 $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_CMDS)
-	-$(VBoxBs3ObjConverter_1_TARGET) -vv "$(obj)"
+	-$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 endef
 
 TOOL_Bs3Vcc64_CXXOBJSUFF               = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXOBJSUFF)
@@ -153,7 +152,7 @@ TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT_MAYBE)
 define TOOL_Bs3Vcc64_COMPILE_CXX_CMDS
 $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_CMDS)
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) -v "$(obj)"
+	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET)  "$(obj)"
 endef
 
 # Debug info format depends on what we use for 64-bit.
@@ -309,6 +308,11 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-PrintU32.asm \
        bs3-cmn-PrintStrColonSpaces.asm \
        bs3-cmn-PrintStrSpacesColonSpace.c \
+       bs3-cmn-StrLen.c \
+       bs3-cmn-StrNLen.c \
+       bs3-cmn-StrCpy.c \
+       bs3-cmn-MemCpy.c \
+       bs3-cmn-MemPCpy.c \
 
 # The BS3Kit library.
 LIBRARIES += bs3kit-common-16

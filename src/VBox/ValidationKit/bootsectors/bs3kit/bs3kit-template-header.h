@@ -24,7 +24,7 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#include "bs3kit.mac"
+#include "bs3kit.h"
 
 /** @defgroup grp_bs3kit_tmpl       BS3Kit Multi-Mode Code Templates
  * @ingroup grp_bs3kit
@@ -114,6 +114,8 @@
 /** @} */
 
 #else /* !DOXYGEN_RUNNING */
+
+#undef BS3_CMN_NM
 
 #ifdef TMPL_RM
 # ifdef TMPL_PE16
