@@ -261,7 +261,7 @@
 
 ;;
 ; Extern macro which mangles the common name correctly, redefining the unmangled
-; name with to the mangled one for ease of use.
+; name to the mangled one for ease of use.
 ;
 ; @param    %1  The unmangled common name.
 ;
@@ -271,6 +271,21 @@
  extern BS3_CMN_NM(%1)
  %undef  %1
  %define %1 BS3_CMN_NM(%1)
+%endmacro
+
+;;
+; Extern macro which mangles a DATA16 symbol correctly, redefining the
+; unmangled name to the mangled one for ease of use.
+;
+; @param    %1  The unmangled common name.
+;
+; @remarks  Will change to the DATA16 segment, use must switch back afterwards!
+;
+%macro BS3_EXTERN_DATA16 1
+ BS3_BEGIN_DATA16
+ extern _ %+ %1
+ %undef  %1
+ %define %1  _ %+ %1
 %endmacro
 
 ;;
@@ -509,6 +524,15 @@ endstruc
 ;; The size shift.
 %define BS3TRAPREC_SIZE_SHIFT   3
 
+
+;; The system call vector.
+%define BS3_TRAP_SYSCALL        20h
+
+;; @name System call numbers
+;; @{
+;; Print char (cl).
+%define BS3_SYSCALL_PRINT_CHR   0ca110001h
+;; @}
 
 %endif
 

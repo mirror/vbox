@@ -305,7 +305,9 @@ bs3-bootsector_SOURCES  = bs3-bootsector.asm
 VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-Shutdown.asm \
 	bs3-cmn-Panic.asm \
+	bs3-cmn-PrintChr.asm \
 	bs3-cmn-PrintU32.asm \
+	bs3-cmn-PrintStr.c \
        bs3-cmn-PrintStrColonSpaces.asm \
        bs3-cmn-PrintStrSpacesColonSpace.c \
        bs3-cmn-StrLen.c \
@@ -314,6 +316,10 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-MemCpy.c \
        bs3-cmn-MemPCpy.c \
        bs3-cmn-MemMove.c \
+       bs3-cmn-TestData.c \
+       bs3-cmn-TestInit.c \
+	bs3-cmn-TestSendStrCmd.asm \
+	bs3-cmn-TestIsVmmDevTestingPresent.asm \
 
 # The BS3Kit library.
 LIBRARIES += bs3kit-common-16
