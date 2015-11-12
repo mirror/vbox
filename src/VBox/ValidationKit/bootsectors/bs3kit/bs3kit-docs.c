@@ -91,6 +91,17 @@
  * 16-bit code.  This is especially true if switching CPU mode, e.g. from 32-bit
  * protected mode to 32-bit long mode.
  *
+ * Return values are returned in the xAX register, but with the following
+ * caveats for values larger than ARCH_BITS:
+ *      - 16-bit code:
+ *          - 32-bit values are returned in AX:DX, where AX holds bits 15:0 and
+ *            DX bits 31:16.
+ *          - 64-bit values are returned in DX:CX:BX:AX, where DX holds bits
+ *            15:0, CX bits 31:16, BX bits 47:32, and AX bits 63:48.
+ *      - 32-bit code:
+ *          - 64-bit values are returned in EAX:EDX, where eax holds the least
+ *            significant bits.
+ *
  * For an in depth coverage of x86 and AMD64 calling convensions, see
  * http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/function-calling-conventions.html
  *
