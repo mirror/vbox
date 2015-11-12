@@ -234,8 +234,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_RealtimeDockIconUpdateEnabled;
         /** Mac OS X: Holds guest-screen which Dock icon should reflect at runtime. */
         extern const char* GUI_RealtimeDockIconUpdateMonitor;
-        /** Mac OS X: Holds whether Dock icon should disable guest-os overlay. */
-        extern const char* GUI_DockIconOverlayDisabled;
+        /** Mac OS X: Holds whether Dock icon should have overlay disabled. */
+        extern const char* GUI_DockIconDisableOverlay;
 #endif /* Q_WS_MAC */
         /** Holds whether machine should pass CAD to guest. */
         extern const char* GUI_PassCAD;

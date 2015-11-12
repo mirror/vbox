@@ -463,9 +463,9 @@ public:
         void setRealtimeDockIconUpdateMonitor(int iIndex, const QString &strID);
 
         /** Mac OS X: Returns whether Dock icon overlay is disabled. */
-        bool dockIconOverlayDisabled(const QString &strID);
-        /** Mac OS X: Defines whether Dock icon overlay @a fDisabled. */
-        void setdockIconOverlayDisabled(bool fDisabled, const QString &strID);
+        bool dockIconDisableOverlay(const QString &strID);
+        /** Mac OS X: Defines whether Dock icon overlay is @a fDisabled. */
+        void setDockIconDisableOverlay(bool fDisabled, const QString &strID);
 #endif /* Q_WS_MAC */
 
         /** Returns whether machine should pass CAD to guest. */

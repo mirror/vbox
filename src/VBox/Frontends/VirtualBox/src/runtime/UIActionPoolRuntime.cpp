@@ -1839,13 +1839,13 @@ protected:
     }
 };
 
-class UIActionToggleDockIconOverlayDisabled : public UIActionToggle
+class UIActionToggleDockIconDisableOverlay : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    UIActionToggleDockIconOverlayDisabled(UIActionPool *pParent)
+    UIActionToggleDockIconDisableOverlay(UIActionPool *pParent)
         : UIActionToggle(pParent) {}
 
 protected:
@@ -2148,7 +2148,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Dock_M_DockSettings] = new UIActionMenuDockSettings(this);
     m_pool[UIActionIndexRT_M_Dock_M_DockSettings_T_PreviewMonitor] = new UIActionToggleDockPreviewMonitor(this);
     m_pool[UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor] = new UIActionToggleDockDisableMonitor(this);
-    m_pool[UIActionIndexRT_M_Dock_M_DockSettings_T_OverlayDisabled] = new UIActionToggleDockIconOverlayDisabled(this);
+    m_pool[UIActionIndexRT_M_Dock_M_DockSettings_T_DisableOverlay] = new UIActionToggleDockIconDisableOverlay(this);
 #endif /* Q_WS_MAC */
 
     /* Prepare update-handlers for known menus: */
