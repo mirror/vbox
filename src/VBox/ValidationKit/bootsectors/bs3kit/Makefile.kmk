@@ -165,6 +165,10 @@ else
 endif
 
 # BS3Kit template for assembly and 16-bit code.
+# Note! Using -d1 as -d1+ and -d2 causes suboptimal code to be generated (strlen
+#       reloading string pointer argument all the time).
+# Note! Optimization options should come after debug stuff as -d2 for instance
+#       disables all optimziations.
 TEMPLATE_VBoxBS3KitImg = Template for building BS3Kit test images.
 TEMPLATE_VBoxBS3KitImg_BLD_TRG      = os-agnostic
 TEMPLATE_VBoxBS3KitImg_BLD_TRG_ARCH = x86
@@ -178,8 +182,10 @@ TEMPLATE_VBoxBS3KitImg_DEFS         = ARCH_BITS=16 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = OPENWATCOM-16
-TEMPLATE_VBoxBS3KitImg_CFLAGS       = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc $(BS3_OW_DBG_OPT) -d2
-TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = -nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -s -oafs -mc $(BS3_OW_DBG_OPT) -d2
+TEMPLATE_VBoxBS3KitImg_CFLAGS       = \
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = \
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 # 	option quiet, nofarcalls\
@@ -243,8 +249,10 @@ TEMPLATE_VBoxBS3KitImg32_DEFS         = ARCH_BITS=32 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL        = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = OPENWATCOM
-TEMPLATE_VBoxBS3KitImg32_CFLAGS       = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf $(BS3_OW_DBG_OPT) -d2
-TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = -nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -s -oas -mf $(BS3_OW_DBG_OPT) -d2
+TEMPLATE_VBoxBS3KitImg32_CFLAGS       = \
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = \
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg32_LDTOOL       = VBoxBsUnusedLd
 
