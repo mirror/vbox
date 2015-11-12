@@ -596,10 +596,9 @@ load_module()
     fatal=$3
     $BIN_MODLOAD -p $modname
     if test $? -eq 0; then
-        subprint "Loaded: $moddesc module"
         return 0
     else
-        subprint "Loading: $moddesc  ...FAILED!"
+        subprint "Loading: $moddesc module ...FAILED!"
         if test "$fatal" = "$FATALOP"; then
             exit 1
         fi
