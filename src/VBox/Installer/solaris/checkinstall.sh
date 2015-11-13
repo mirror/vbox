@@ -40,7 +40,7 @@ checkdep_svr4()
         return 1
     fi
     $BIN_PKGINFO $BASEDIR_OPT "$1" >/dev/null 2>&1
-    if test $? -eq 0; then
+    if test "$?" -eq 0; then
         return 0
     fi
     PKG_MISSING_SVR4="$PKG_MISSING_SVR4 $1"
@@ -55,7 +55,7 @@ checkdep_ips()
     fi
     # using "list" without "-a" only lists installed pkgs which is what we need
     $BIN_PKG $BASEDIR_OPT list "$1" >/dev/null 2>&1
-    if test $? -eq 0; then
+    if test "$?" -eq 0; then
         return 0
     fi
     PKG_MISSING_IPS="$PKG_MISSING_IPS $1"
@@ -70,11 +70,11 @@ checkdep_ips_either()
     fi
     # using "list" without "-a" only lists installed pkgs which is what we need
     $BIN_PKG $BASEDIR_OPT list "$1" >/dev/null 2>&1
-    if test $? -eq 0; then
+    if test "$?" -eq 0; then
         return 0
     fi
     $BIN_PKG $BASEDIR_OPT list "$2" >/dev/null 2>&1
-    if test $? -eq 0; then
+    if test "$?" -eq 0; then
         return 0
     fi
     PKG_MISSING_IPS="$PKG_MISSING_IPS $1 or $2"
@@ -109,7 +109,7 @@ fi
 
 # Nothing to check for non-global zones
 currentzone=`zonename`
-if test "$currentzone" != "global"; then
+if test "x$currentzone" != "xglobal"; then
     exit 0
 fi
 
@@ -146,7 +146,7 @@ else
     PKG_MISSING_SVR4="SUNWPython SUNWPython-devel SUNWuiu8"
 fi
 
-if test "$PKG_MISSING_IPS" != "" && test "$PKG_MISSING_SVR4" != ""; then
+if test "x$PKG_MISSING_IPS" != "x" && test "x$PKG_MISSING_SVR4" != "x"; then
     if test ! -x "$BIN_PKG" && test ! -x "$BIN_PKGINFO"; then
         errorprint "Missing or non-executable binaries: pkg ($BIN_PKG) and pkginfo ($BIN_PKGINFO)."
         errorprint "Cannot check for dependencies."

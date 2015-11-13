@@ -19,7 +19,7 @@
 #
 
 currentzone=`zonename`
-if test "$currentzone" = "global"; then
+if test "x$currentzone" = "xglobal"; then
     echo "Removing VirtualBox services and drivers..."
     ${PKG_INSTALL_ROOT:=/}/opt/VirtualBox/vboxconfig.sh --preremove
     if test "$?" -eq 0; then
