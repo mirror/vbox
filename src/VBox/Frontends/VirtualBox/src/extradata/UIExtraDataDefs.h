@@ -255,6 +255,8 @@ namespace UIExtraDataDefs
       * @{ */
         /** Holds information-window geometry. */
         extern const char* GUI_InformationWindowGeometry;
+        /** Holds information-window elements. */
+        extern const char* GUI_InformationWindowElements;
     /** @} */
 
     /** @name Virtual Machine: Close dialog

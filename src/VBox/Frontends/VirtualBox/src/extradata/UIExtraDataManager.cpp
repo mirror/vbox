@@ -1881,6 +1881,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_HidLedsSync
            << GUI_ScaleFactor << GUI_Scaling_Optimization
            << GUI_InformationWindowGeometry
+           << GUI_InformationWindowElements
            << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
            << GUI_LastCloseAction << GUI_CloseActionHook
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -3560,6 +3561,48 @@ void UIExtraDataManager::setInformationWindowGeometry(const QRect &geometry, boo
     setExtraDataStringList(GUI_InformationWindowGeometry, data, strID);
 }
 
+QMap<InformationElementType, bool> UIExtraDataManager::informationWindowElements()
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_InformationWindowElements);
+
+    /* Desearialize passed elements: */
+    QMap<InformationElementType, bool> elements;
+    foreach (QString strItem, data)
+    {
+        bool fOpened = true;
+        if (strItem.endsWith("Closed", Qt::CaseInsensitive))
+        {
+            fOpened = false;
+            strItem.remove("Closed");
+        }
+        InformationElementType type = gpConverter->fromInternalString<InformationElementType>(strItem);
+        if (type != InformationElementType_Invalid)
+            elements[type] = fOpened;
+    }
+
+    /* Return elements: */
+    return elements;
+}
+
+void UIExtraDataManager::setInformationWindowElements(const QMap<InformationElementType, bool> &elements)
+{
+    /* Prepare corresponding extra-data: */
+    QStringList data;
+
+    /* Searialize passed elements: */
+    foreach (InformationElementType type, elements.keys())
+    {
+        QString strValue = gpConverter->toInternalString(type);
+        if (!elements[type])
+            strValue += "Closed";
+        data << strValue;
+    }
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_InformationWindowElements, data);
+}
+
 MachineCloseAction UIExtraDataManager::defaultMachineCloseAction(const QString &strID)
 {
     return gpConverter->fromInternalString<MachineCloseAction>(extraDataString(GUI_DefaultCloseAction, strID));
@@ -3723,7 +3766,7 @@ QRect UIExtraDataManager::logWindowGeometry(QWidget *pWidget, const QRect &defau
 
     /* Parse loaded data: */
     int iX = 0, iY = 0, iW = 0, iH = 0;
-    bool fOk = data.size() >= 4;    
+    bool fOk = data.size() >= 4;
     do
     {
         if (!fOk) break;
