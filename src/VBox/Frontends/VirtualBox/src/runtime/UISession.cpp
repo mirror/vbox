@@ -1714,33 +1714,16 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 
     /* Create a ARGB image out of the shape data. */
     QImage image  (uWidth, uHeight, QImage::Format_ARGB32);
-    const uint8_t* pbSrcMask = static_cast<const uint8_t*> (srcAndMaskPtr);
-    unsigned cbSrcMaskLine = RT_ALIGN (uWidth, 8) / 8;
-    for (unsigned int y = 0; y < uHeight; ++y)
+
+    if (fHasAlpha)
     {
-        for (unsigned int x = 0; x < uWidth; ++x)
-        {
-           unsigned int color = ((unsigned int*)srcShapePtr)[y*uWidth+x];
-           /* If the alpha channel isn't in the shape data, we have to
-            * create them from the and-mask. This is a bit field where 1
-            * represent transparency & 0 opaque respectively. */
-           if (!fHasAlpha)
-           {
-               if (!(pbSrcMask[x / 8] & (1 << (7 - (x % 8)))))
-                   color  |= 0xff000000;
-               else
-               {
-                   /* This isn't quite right, but it's the best we can do I think... */
-                   if (color & 0x00ffffff)
-                       color = 0xff000000;
-                   else
-                       color = 0x00000000;
-               }
-           }
-           image.setPixel (x, y, color);
-        }
-        /* Move one scanline forward. */
-        pbSrcMask += cbSrcMaskLine;
+        memcpy(image.bits(), srcShapePtr, uHeight * uWidth * 4);
+    }
+    else
+    {
+        renderCursorPixels((uint32_t *)srcShapePtr, srcAndMaskPtr,
+                           uWidth, uHeight,
+                           (uint32_t *)image.bits(), uHeight * uWidth * 4);
     }
 
     /* Set the new cursor: */
