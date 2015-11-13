@@ -674,8 +674,12 @@ enum InformationElementType
     InformationElementType_USB,
     InformationElementType_SF,
     InformationElementType_UI,
-    InformationElementType_Description
+    InformationElementType_Description,
+    InformationElementType_RuntimeAttributes,
+    InformationElementType_StorageStatistics,
+    InformationElementType_NetworkStatistics
 };
+Q_DECLARE_METATYPE(InformationElementType);
 
 #endif /* !___UIExtraDataDefs_h___ */
 
