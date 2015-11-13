@@ -53,6 +53,7 @@ template<> bool canConvert<UIExtraDataMetaDefs::MenuWindowActionType>() { return
 #endif /* Q_WS_MAC */
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
+template<> bool canConvert<InformationElementType>() { return true; }
 template<> bool canConvert<PreviewUpdateIntervalType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
@@ -1540,4 +1541,151 @@ template<> MiniToolbarAlignment fromInternalString<MiniToolbarAlignment>(const Q
     return values.at(keys.indexOf(QRegExp(strMiniToolbarAlignment, Qt::CaseInsensitive)));
 }
 #endif /* !Q_WS_MAC */
+
+/* QString <= InformationElementType: */
+template<> QString toString(const InformationElementType &informationElementType)
+{
+    QString strResult;
+    /* Reusing translations from 'DetailsElementType': */
+    switch (informationElementType)
+    {
+        case InformationElementType_General:     strResult = QApplication::translate("VBoxGlobal", "General", "DetailsElementType"); break;
+        case InformationElementType_Preview:     strResult = QApplication::translate("VBoxGlobal", "Preview", "DetailsElementType"); break;
+        case InformationElementType_System:      strResult = QApplication::translate("VBoxGlobal", "System", "DetailsElementType"); break;
+        case InformationElementType_Display:     strResult = QApplication::translate("VBoxGlobal", "Display", "DetailsElementType"); break;
+        case InformationElementType_Storage:     strResult = QApplication::translate("VBoxGlobal", "Storage", "DetailsElementType"); break;
+        case InformationElementType_Audio:       strResult = QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType"); break;
+        case InformationElementType_Network:     strResult = QApplication::translate("VBoxGlobal", "Network", "DetailsElementType"); break;
+        case InformationElementType_Serial:      strResult = QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType"); break;
+#ifdef VBOX_WITH_PARALLEL_PORTS
+        case InformationElementType_Parallel:    strResult = QApplication::translate("VBoxGlobal", "Parallel ports", "DetailsElementType"); break;
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+        case InformationElementType_USB:         strResult = QApplication::translate("VBoxGlobal", "USB", "DetailsElementType"); break;
+        case InformationElementType_SF:          strResult = QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); break;
+        case InformationElementType_UI:          strResult = QApplication::translate("VBoxGlobal", "User interface", "DetailsElementType"); break;
+        case InformationElementType_Description: strResult = QApplication::translate("VBoxGlobal", "Description", "DetailsElementType"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for information element type=%d", informationElementType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* InformationElementType <= QString: */
+template<> InformationElementType fromString<InformationElementType>(const QString &strInformationElementType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;                                                                      QList<InformationElementType> values;
+    /* Reusing translations from 'DetailsElementType': */
+    keys << QApplication::translate("VBoxGlobal", "General", "DetailsElementType");        values << InformationElementType_General;
+    keys << QApplication::translate("VBoxGlobal", "Preview", "DetailsElementType");        values << InformationElementType_Preview;
+    keys << QApplication::translate("VBoxGlobal", "System", "DetailsElementType");         values << InformationElementType_System;
+    keys << QApplication::translate("VBoxGlobal", "Display", "DetailsElementType");        values << InformationElementType_Display;
+    keys << QApplication::translate("VBoxGlobal", "Storage", "DetailsElementType");        values << InformationElementType_Storage;
+    keys << QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType");          values << InformationElementType_Audio;
+    keys << QApplication::translate("VBoxGlobal", "Network", "DetailsElementType");        values << InformationElementType_Network;
+    keys << QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType");   values << InformationElementType_Serial;
+#ifdef VBOX_WITH_PARALLEL_PORTS
+    keys << QApplication::translate("VBoxGlobal", "Parallel ports", "DetailsElementType"); values << InformationElementType_Parallel;
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+    keys << QApplication::translate("VBoxGlobal", "USB", "DetailsElementType");            values << InformationElementType_USB;
+    keys << QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); values << InformationElementType_SF;
+    keys << QApplication::translate("VBoxGlobal", "User interface", "DetailsElementType"); values << InformationElementType_UI;
+    keys << QApplication::translate("VBoxGlobal", "Description", "DetailsElementType");    values << InformationElementType_Description;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strInformationElementType, Qt::CaseInsensitive))
+        return InformationElementType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strInformationElementType, Qt::CaseInsensitive)));
+}
+
+/* QString <= InformationElementType: */
+template<> QString toInternalString(const InformationElementType &informationElementType)
+{
+    QString strResult;
+    switch (informationElementType)
+    {
+        case InformationElementType_General:     strResult = "general"; break;
+        case InformationElementType_Preview:     strResult = "preview"; break;
+        case InformationElementType_System:      strResult = "system"; break;
+        case InformationElementType_Display:     strResult = "display"; break;
+        case InformationElementType_Storage:     strResult = "storage"; break;
+        case InformationElementType_Audio:       strResult = "audio"; break;
+        case InformationElementType_Network:     strResult = "network"; break;
+        case InformationElementType_Serial:      strResult = "serialPorts"; break;
+#ifdef VBOX_WITH_PARALLEL_PORTS
+        case InformationElementType_Parallel:    strResult = "parallelPorts"; break;
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+        case InformationElementType_USB:         strResult = "usb"; break;
+        case InformationElementType_SF:          strResult = "sharedFolders"; break;
+        case InformationElementType_UI:          strResult = "userInterface"; break;
+        case InformationElementType_Description: strResult = "description"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for information element type=%d", informationElementType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* InformationElementType <= QString: */
+template<> InformationElementType fromInternalString<InformationElementType>(const QString &strInformationElementType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;        QList<InformationElementType> values;
+    keys << "general";       values << InformationElementType_General;
+    keys << "preview";       values << InformationElementType_Preview;
+    keys << "system";        values << InformationElementType_System;
+    keys << "display";       values << InformationElementType_Display;
+    keys << "storage";       values << InformationElementType_Storage;
+    keys << "audio";         values << InformationElementType_Audio;
+    keys << "network";       values << InformationElementType_Network;
+    keys << "serialPorts";   values << InformationElementType_Serial;
+#ifdef VBOX_WITH_PARALLEL_PORTS
+    keys << "parallelPorts"; values << InformationElementType_Parallel;
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+    keys << "usb";           values << InformationElementType_USB;
+    keys << "sharedFolders"; values << InformationElementType_SF;
+    keys << "userInterface"; values << InformationElementType_UI;
+    keys << "description";   values << InformationElementType_Description;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strInformationElementType, Qt::CaseInsensitive))
+        return InformationElementType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strInformationElementType, Qt::CaseInsensitive)));
+}
+
+/* QIcon <= InformationElementType: */
+template<> QIcon toIcon(const InformationElementType &informationElementType)
+{
+    switch (informationElementType)
+    {
+        case InformationElementType_General:     return UIIconPool::iconSet(":/machine_16px.png");
+        case InformationElementType_Preview:     return UIIconPool::iconSet(":/machine_16px.png");
+        case InformationElementType_System:      return UIIconPool::iconSet(":/chipset_16px.png");
+        case InformationElementType_Display:     return UIIconPool::iconSet(":/vrdp_16px.png");
+        case InformationElementType_Storage:     return UIIconPool::iconSet(":/hd_16px.png");
+        case InformationElementType_Audio:       return UIIconPool::iconSet(":/sound_16px.png");
+        case InformationElementType_Network:     return UIIconPool::iconSet(":/nw_16px.png");
+        case InformationElementType_Serial:      return UIIconPool::iconSet(":/serial_port_16px.png");
+#ifdef VBOX_WITH_PARALLEL_PORTS
+        case InformationElementType_Parallel:    return UIIconPool::iconSet(":/parallel_port_16px.png");
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+        case InformationElementType_USB:         return UIIconPool::iconSet(":/usb_16px.png");
+        case InformationElementType_SF:          return UIIconPool::iconSet(":/sf_16px.png");
+        case InformationElementType_UI:          return UIIconPool::iconSet(":/interface_16px.png");
+        case InformationElementType_Description: return UIIconPool::iconSet(":/description_16px.png");
+        default:
+        {
+            AssertMsgFailed(("No icon for information element type=%d", informationElementType));
+            break;
+        }
+    }
+    return QIcon();
+}
 
