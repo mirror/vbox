@@ -1478,29 +1478,29 @@ typedef X86PGPAEUINT const *PCX86PGPAEUINT;
 typedef struct X86PTEBITS
 {
     /** Flags whether(=1) or not the page is present. */
-    unsigned    u1Present : 1;
+    uint32_t    u1Present : 1;
     /** Read(=0) / Write(=1) flag. */
-    unsigned    u1Write : 1;
+    uint32_t    u1Write : 1;
     /** User(=1) / Supervisor (=0) flag. */
-    unsigned    u1User : 1;
+    uint32_t    u1User : 1;
     /** Write Thru flag. If PAT enabled, bit 0 of the index. */
-    unsigned    u1WriteThru : 1;
+    uint32_t    u1WriteThru : 1;
     /** Cache disabled flag. If PAT enabled, bit 1 of the index. */
-    unsigned    u1CacheDisable : 1;
+    uint32_t    u1CacheDisable : 1;
     /** Accessed flag.
      * Indicates that the page have been read or written to. */
-    unsigned    u1Accessed : 1;
+    uint32_t    u1Accessed : 1;
     /** Dirty flag.
      * Indicates that the page has been written to. */
-    unsigned    u1Dirty : 1;
+    uint32_t    u1Dirty : 1;
     /** Reserved / If PAT enabled, bit 2 of the index.  */
-    unsigned    u1PAT : 1;
+    uint32_t    u1PAT : 1;
     /** Global flag. (Ignored in all but final level.) */
-    unsigned    u1Global : 1;
+    uint32_t    u1Global : 1;
     /** Available for use to system software. */
-    unsigned    u3Available : 3;
+    uint32_t    u3Available : 3;
     /** Physical Page number of the next level. */
-    unsigned    u20PageNo : 20;
+    uint32_t    u20PageNo : 20;
 } X86PTEBITS;
 /** Pointer to a page table entry. */
 typedef X86PTEBITS *PX86PTEBITS;
@@ -1672,28 +1672,28 @@ typedef const X86PTPAE *PCX86PTPAE;
 typedef struct X86PDEBITS
 {
     /** Flags whether(=1) or not the page is present. */
-    unsigned    u1Present : 1;
+    uint32_t    u1Present : 1;
     /** Read(=0) / Write(=1) flag. */
-    unsigned    u1Write : 1;
+    uint32_t    u1Write : 1;
     /** User(=1) / Supervisor (=0) flag. */
-    unsigned    u1User : 1;
+    uint32_t    u1User : 1;
     /** Write Thru flag. If PAT enabled, bit 0 of the index. */
-    unsigned    u1WriteThru : 1;
+    uint32_t    u1WriteThru : 1;
     /** Cache disabled flag. If PAT enabled, bit 1 of the index. */
-    unsigned    u1CacheDisable : 1;
+    uint32_t    u1CacheDisable : 1;
     /** Accessed flag.
      * Indicates that the page has been read or written to. */
-    unsigned    u1Accessed : 1;
+    uint32_t    u1Accessed : 1;
     /** Reserved / Ignored (dirty bit). */
-    unsigned    u1Reserved0 : 1;
+    uint32_t    u1Reserved0 : 1;
     /** Size bit if PSE is enabled - in any event it's 0. */
-    unsigned    u1Size : 1;
+    uint32_t    u1Size : 1;
     /** Reserved / Ignored (global bit). */
-    unsigned    u1Reserved1 : 1;
+    uint32_t    u1Reserved1 : 1;
     /** Available for use to system software. */
-    unsigned    u3Available : 3;
+    uint32_t    u3Available : 3;
     /** Physical Page number of the next level. */
-    unsigned    u20PageNo : 20;
+    uint32_t    u20PageNo : 20;
 } X86PDEBITS;
 /** Pointer to a page directory entry. */
 typedef X86PDEBITS *PX86PDEBITS;
@@ -3087,39 +3087,39 @@ typedef const X86DESC *PCX86DESC;
 typedef struct X86DESC64GENERIC
 {
     /** Limit - Low word - *IGNORED*. */
-    unsigned    u16LimitLow : 16;
+    uint32_t    u16LimitLow : 16;
     /** Base address - low word. - *IGNORED*
      * Don't try set this to 24 because MSC is doing stupid things then. */
-    unsigned    u16BaseLow : 16;
+    uint32_t    u16BaseLow : 16;
     /** Base address - first 8 bits of high word. - *IGNORED* */
-    unsigned    u8BaseHigh1 : 8;
+    uint32_t    u8BaseHigh1 : 8;
     /** Segment Type. */
-    unsigned    u4Type : 4;
+    uint32_t    u4Type : 4;
     /** Descriptor Type. System(=0) or code/data selector */
-    unsigned    u1DescType : 1;
+    uint32_t    u1DescType : 1;
     /** Descriptor Privilege level. */
-    unsigned    u2Dpl : 2;
+    uint32_t    u2Dpl : 2;
     /** Flags selector present(=1) or not. */
-    unsigned    u1Present : 1;
+    uint32_t    u1Present : 1;
     /** Segment limit 16-19. - *IGNORED* */
-    unsigned    u4LimitHigh : 4;
+    uint32_t    u4LimitHigh : 4;
     /** Available for system software. - *IGNORED* */
-    unsigned    u1Available : 1;
+    uint32_t    u1Available : 1;
     /** Long mode flag. */
-    unsigned    u1Long : 1;
+    uint32_t    u1Long : 1;
     /** This flags meaning depends on the segment type. Try make sense out
      * of the intel manual yourself.  */
-    unsigned    u1DefBig : 1;
+    uint32_t    u1DefBig : 1;
     /** Granularity of the limit. If set 4KB granularity is used, if
      * clear byte. - *IGNORED* */
-    unsigned    u1Granularity : 1;
+    uint32_t    u1Granularity : 1;
     /** Base address - highest 8 bits. - *IGNORED* */
-    unsigned    u8BaseHigh2 : 8;
+    uint32_t    u8BaseHigh2 : 8;
     /** Base address - bits 63-32. */
-    unsigned    u32BaseHigh3    : 32;
-    unsigned    u8Reserved      : 8;
-    unsigned    u5Zeros         : 5;
-    unsigned    u19Reserved     : 19;
+    uint32_t    u32BaseHigh3    : 32;
+    uint32_t    u8Reserved      : 8;
+    uint32_t    u5Zeros         : 5;
+    uint32_t    u19Reserved     : 19;
 } X86DESC64GENERIC;
 #pragma pack()
 /** Pointer to a generic descriptor entry. */
@@ -3136,39 +3136,39 @@ typedef const X86DESC64GENERIC *PCX86DESC64GENERIC;
 typedef struct X86DESC64SYSTEM
 {
     /** Limit - Low word. */
-    unsigned    u16LimitLow     : 16;
+    uint32_t    u16LimitLow     : 16;
     /** Base address - lowe word.
      * Don't try set this to 24 because MSC is doing stupid things then. */
-    unsigned    u16BaseLow      : 16;
+    uint32_t    u16BaseLow      : 16;
     /** Base address - first 8 bits of high word. */
-    unsigned    u8BaseHigh1     : 8;
+    uint32_t    u8BaseHigh1     : 8;
     /** Segment Type. */
-    unsigned    u4Type          : 4;
+    uint32_t    u4Type          : 4;
     /** Descriptor Type. System(=0) or code/data selector */
-    unsigned    u1DescType      : 1;
+    uint32_t    u1DescType      : 1;
     /** Descriptor Privilege level. */
-    unsigned    u2Dpl           : 2;
+    uint32_t    u2Dpl           : 2;
     /** Flags selector present(=1) or not. */
-    unsigned    u1Present       : 1;
+    uint32_t    u1Present       : 1;
     /** Segment limit 16-19. */
-    unsigned    u4LimitHigh     : 4;
+    uint32_t    u4LimitHigh     : 4;
     /** Available for system software. */
-    unsigned    u1Available     : 1;
+    uint32_t    u1Available     : 1;
     /** Reserved - 0. */
-    unsigned    u1Reserved      : 1;
+    uint32_t    u1Reserved      : 1;
     /** This flags meaning depends on the segment type. Try make sense out
      * of the intel manual yourself.  */
-    unsigned    u1DefBig        : 1;
+    uint32_t    u1DefBig        : 1;
     /** Granularity of the limit. If set 4KB granularity is used, if
      * clear byte. */
-    unsigned    u1Granularity   : 1;
+    uint32_t    u1Granularity   : 1;
     /** Base address - bits 31-24. */
-    unsigned    u8BaseHigh2     : 8;
+    uint32_t    u8BaseHigh2     : 8;
     /** Base address - bits 63-32. */
-    unsigned    u32BaseHigh3    : 32;
-    unsigned    u8Reserved      : 8;
-    unsigned    u5Zeros         : 5;
-    unsigned    u19Reserved     : 19;
+    uint32_t    u32BaseHigh3    : 32;
+    uint32_t    u8Reserved      : 8;
+    uint32_t    u5Zeros         : 5;
+    uint32_t    u19Reserved     : 19;
 } X86DESC64SYSTEM;
 #pragma pack()
 /** Pointer to a system descriptor entry. */
@@ -3182,31 +3182,31 @@ typedef const X86DESC64SYSTEM *PCX86DESC64SYSTEM;
 typedef struct X86DESC64GATE
 {
     /** Target code segment offset - Low word. */
-    unsigned    u16OffsetLow : 16;
+    uint32_t    u16OffsetLow : 16;
     /** Target code segment selector. */
-    unsigned    u16Sel : 16;
+    uint32_t    u16Sel : 16;
     /** Interrupt stack table for interrupt- and trap-gates.
      * Ignored by call-gates. */
-    unsigned    u3IST : 3;
+    uint32_t    u3IST : 3;
     /** Reserved / ignored. */
-    unsigned    u5Reserved : 5;
+    uint32_t    u5Reserved : 5;
     /** Segment Type. */
-    unsigned    u4Type : 4;
+    uint32_t    u4Type : 4;
     /** Descriptor Type (0 = system). */
-    unsigned    u1DescType : 1;
+    uint32_t    u1DescType : 1;
     /** Descriptor Privilege level. */
-    unsigned    u2Dpl : 2;
+    uint32_t    u2Dpl : 2;
     /** Flags selector present(=1) or not. */
-    unsigned    u1Present : 1;
+    uint32_t    u1Present : 1;
     /** Target code segment offset - High word.
      * Ignored if task-gate. */
-    unsigned    u16OffsetHigh : 16;
+    uint32_t    u16OffsetHigh : 16;
     /** Target code segment offset - Top dword.
      * Ignored if task-gate. */
-    unsigned    u32OffsetTop : 32;
+    uint32_t    u32OffsetTop : 32;
     /** Reserved / ignored / must be zero.
      * For call-gates bits 8 thru 12 must be zero, the other gates ignores this. */
-    unsigned    u32Reserved : 32;
+    uint32_t    u32Reserved : 32;
 } X86DESC64GATE;
 AssertCompileSize(X86DESC64GATE, 16);
 /** Pointer to a Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
