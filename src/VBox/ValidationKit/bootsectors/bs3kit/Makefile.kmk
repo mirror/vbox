@@ -164,7 +164,9 @@ else
  BS3_OW_DBG_LDOPT = dwarf
 endif
 
+#
 # BS3Kit template for assembly and 16-bit code.
+#
 # Note! Using -d1 as -d1+ and -d2 causes suboptimal code to be generated (strlen
 #       reloading string pointer argument all the time).
 # Note! Optimization options should come after debug stuff as -d2 for instance
@@ -191,6 +193,23 @@ TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 # 	option quiet, nofarcalls\
 #	disable 1014, 1023, 2120, 1080
 
+# linker options:
+#      system dos:                 Link a 16-bit DOS binary.
+#      output raw ...:             Produce a raw DOS binary for loading at flat address 10000h.
+#                                  The following is for ordering segments.
+#      option start=_start: 	    The start symbol in bs3-first-xxx.asm.
+#      debug codeview/dwarf all:   Full debug information either in codeview or dwarf.
+#      option symfile:             Produce a separate symbol file with the debug info.
+#      option map:                 Produce a map file.
+#      option statics:             ?
+#      option verbose:             Verbose map file?
+#  	option disable 1014:        Disable warning about
+#  	option disable 1080:        Disable warning about
+#  	option disable 1150:        Disable warning about
+#
+# Note! We're pushing DATA16 to 0x20000 because it's impossible to force wlink
+#       to give us a real-mode + GDT compatible alignment (0ffffff80h), i.e.
+#       real-mode address on the form 0fff8:0000.
 TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
 	debug $(BS3_OW_DBG_LDOPT) all \
 	option quiet, map, statics, verbose, symfile, start=_start \
@@ -198,14 +217,17 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
 	\
  	output raw offset=0x10000 \
  	order \
- 	 clname BS3CODE16  segaddr=0x1000 \
+ 	 clname BS3CODE16 segaddr=0x1000 \
  	  segment BS3TEXT16 \
- 	  segment text \
+ 	  segment BS3TEXT16_END \
+        clname BS3SYSTEM16 segaddr=0x2000 \
+         segment BS3SYSTEM16 \
  	 clname FAR_DATA \
- 	  segment BS3DATA16 \
+ 	  segment BS3DATA16 segaddr=0x2700 \
  	  segment BS3DATA16CONST \
  	  segment BS3DATA16CONST2 \
  	  segment BS3DATA16_DATA \
+ 	  segment BS3DATA16_END \
 	  segment BS3DATA32 \
 	  segment BS3DATA32_CONST \
 	  segment BS3DATA32_CONST2 \
@@ -220,7 +242,7 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
  	  segment .text \
  	  segment .rdata \
         clname DATA \
- 	  segment BS3DATA64 \
+	  segment BS3DATA64 \
  	  segment DATA64 \
  	  segment .data
 TEMPLATE_VBoxBS3KitImg_DEPS = \
@@ -333,7 +355,8 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 LIBRARIES += bs3kit-common-16
 bs3kit-common-16_TEMPLATE = VBoxBS3KitImg
 bs3kit-common-16_DEFS     = TMPL_PE16 BS3_CMN_ONLY
-bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES)
+bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
+	bs3-system-data.asm
 
 # The 32-bit BS3Kit library.
 LIBRARIES += bs3kit-common-32

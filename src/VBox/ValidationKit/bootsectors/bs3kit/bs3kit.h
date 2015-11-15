@@ -35,10 +35,222 @@
 #ifndef DOXYGEN_RUNNING
 # undef  IN_RING0
 #endif
+#include <iprt/x86.h>
 
 
 /** @defgroup grp_bs3kit     BS3Kit
  * @{ */
+
+
+/** @name BS3_ADDR_XXX - Static Memory Allocation
+ * @{ */
+/** The flat load address for the code after the bootsector. */
+#define BS3_ADDR_LOAD           0x10000
+/** Where we save the boot registers during init.
+ * Located right before the code. */
+#define BS3_ADDR_REG_SAVE       (BS3_ADDR_LOAD - sizeof(BS3REGS) - 8)
+/** Where the stack starts (initial RSP value).
+ * Located 16 bytes (assumed by boot sector) before the saved registers.
+ * SS.BASE=0. The size is a little short of 32KB  */
+#define BS3_ADDR_STACK          (BS3_ADDR_REG_SAVE - 16)
+/** The ring-0 stack (8KB) for ring transitions. */
+#define BS3_ADDR_STACK_R0       0x06000
+/** The ring-1 stack (8KB) for ring transitions. */
+#define BS3_ADDR_STACK_R1       0x04000
+/** The ring-2 stack (8KB) for ring transitions. */
+#define BS3_ADDR_STACK_R2       0x02000
+/** IST1 ring-0 stack for long mode (4KB), used for double faults elsewhere. */
+#define BS3_ADDR_STACK_R0_IST1  0x09000
+/** IST2 ring-0 stack for long mode (3KB), used for spare 0 stack elsewhere. */
+#define BS3_ADDR_STACK_R0_IST2  0x08000
+/** IST3 ring-0 stack for long mode (1KB). */
+#define BS3_ADDR_STACK_R0_IST3  0x07400
+/** IST4 ring-0 stack for long mode (1KB), used for spare 1 stack elsewhere. */
+#define BS3_ADDR_STACK_R0_IST4  0x07000
+/** IST5 ring-0 stack for long mode (1KB). */
+#define BS3_ADDR_STACK_R0_IST5  0x06c00
+/** IST6 ring-0 stack for long mode (1KB). */
+#define BS3_ADDR_STACK_R0_IST6  0x06800
+/** IST7 ring-0 stack for long mode (1KB). */
+#define BS3_ADDR_STACK_R0_IST7  0x06400
+
+/** The base address of the BS3TEXT16 segment (same as BS3_LOAD_ADDR).
+ * @sa BS3_SEL_TEXT16 */
+#define BS3_ADDR_BS3TEXT16      0x10000
+/** The base address of the BS3SYSTEM16 segment.
+ * @sa BS3_SEL_SYSTEM16 */
+#define BS3_ADDR_BS3SYSTEM16    0x20000
+/** The base address of the BS3DATA16 segment.
+ * @sa BS3_SEL_DATA16 */
+#define BS3_ADDR_BS3DATA16      0x27000
+/** @} */
+
+/** @name BS3_SEL_XXX - GDT selector assignments.
+ *
+ * The real mode segment numbers for BS16TEXT, BS16DATA and BS16SYSTEM are
+ * present in the GDT, this allows the 16-bit C/C++ and assembly code to
+ * continue using the real mode segment values in ring-0 protected mode.
+ *
+ * The three segments have fixed locations:
+ * | segment     | flat address | real mode segment |
+ * | ----------- | ------------ | ----------------- |
+ * | BS3TEXT16   |   0x00010000 |             1000h |
+ * | BS3SYSTEM16 |   0x00020000 |             2000h |
+ * | BS3DATA16   |   0x00027000 |             2700h |
+ *
+ * This means that we've got a lot of GDT space to play around with.
+ *
+ * @{ */
+#define BS3_SEL_LDT                 0x0010 /**< The LDT selector for Bs3Ldt. */
+#define BS3_SEL_TSS16               0x0020 /**< The 16-bit TSS selector. */
+#define BS3_SEL_TSS16_DF            0x0028 /**< The 16-bit TSS selector for double faults. */
+#define BS3_SEL_TSS16_SPARE0        0x0030 /**< The 16-bit TSS selector for testing. */
+#define BS3_SEL_TSS16_SPARE1        0x0038 /**< The 16-bit TSS selector for testing. */
+#define BS3_SEL_TSS32               0x0040 /**< The 32-bit TSS selector. */
+#define BS3_SEL_TSS32_DF            0x0048 /**< The 32-bit TSS selector for double faults. */
+#define BS3_SEL_TSS32_SPARE0        0x0050 /**< The 32-bit TSS selector for testing. */
+#define BS3_SEL_TSS32_SPARE1        0x0058 /**< The 32-bit TSS selector for testing. */
+#define BS3_SEL_TSS32_IOBP_IRB      0x0060 /**< The 32-bit TSS selector with I/O permission and interrupt redirection bitmaps. */
+#define BS3_SEL_TSS32_IRB           0x0068 /**< The 32-bit TSS selector with only interrupt redirection bitmap (IOPB stripped by limit). */
+#define BS3_SEL_TSS64               0x0070 /**< The 64-bit TSS selector. */
+#define BS3_SEL_TSS64_SPARE0        0x0080 /**< The 64-bit TSS selector. */
+#define BS3_SEL_TSS64_SPARE1        0x0090 /**< The 64-bit TSS selector. */
+#define BS3_SEL_TSS64_IOBP          0x00a0 /**< The 64-bit TSS selector. */
+
+#define BS3_SEL_VMMDEV_MMIO16       0x00f8 /**< Selector for accessing the VMMDev MMIO segment at 0100000h from 16-bit code. */
+
+#define BS3_SEL_R0_FIRST            0x0100 /**< The first selector in the ring-0 block. */
+#define BS3_SEL_R0_CS16             0x0100 /**< ring-0: 16-bit code selector,  base 0x10000. */
+#define BS3_SEL_R0_DS16             0x0108 /**< ring-0: 16-bit data selector,  base 0x23000. */
+#define BS3_SEL_R0_SS16             0x0110 /**< ring-0: 16-bit stack selector, base 0x00000. */
+#define BS3_SEL_R0_CS32             0x0118 /**< ring-0: 32-bit flat code selector. */
+#define BS3_SEL_R0_DS32             0x0120 /**< ring-0: 32-bit flat data selector. */
+#define BS3_SEL_R0_SS32             0x0128 /**< ring-0: 32-bit flat stack selector. */
+#define BS3_SEL_R0_CS64             0x0130 /**< ring-0: 64-bit flat code selector. */
+#define BS3_SEL_R0_DS64             0x0138 /**< ring-0: 64-bit flat data & stack selector. */
+#define BS3_SEL_R0_CS16_EO          0x0140 /**< ring-0: 16-bit execute-only code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R0_CS16_CNF         0x0148 /**< ring-0: 16-bit conforming code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R0_CS16_CNF_EO      0x0150 /**< ring-0: 16-bit execute-only conforming code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R0_CS32_EO          0x0158 /**< ring-0: 32-bit execute-only code selector, not accessed, flat. */
+#define BS3_SEL_R0_CS32_CNF         0x0160 /**< ring-0: 32-bit conforming code selector, not accessed, flat. */
+#define BS3_SEL_R0_CS32_CNF_EO      0x0168 /**< ring-0: 32-bit execute-only conforming code selector, not accessed, flat. */
+#define BS3_SEL_R0_CS64_EO          0x0170 /**< ring-0: 64-bit execute-only code selector, not accessed, flat. */
+#define BS3_SEL_R0_CS64_CNF         0x0178 /**< ring-0: 64-bit conforming code selector, not accessed, flat. */
+#define BS3_SEL_R0_CS64_CNF_EO      0x0180 /**< ring-0: 64-bit execute-only conforming code selector, not accessed, flat. */
+
+#define BS3_SEL_R1_FIRST            0x0200 /**< The first selector in the ring-1 block. */
+#define BS3_SEL_R1_CS16             0x0200 /**< ring-1: 16-bit code selector,  base 0x10000. */
+#define BS3_SEL_R1_DS16             0x0208 /**< ring-1: 16-bit data selector,  base 0x23000. */
+#define BS3_SEL_R1_SS16             0x0210 /**< ring-1: 16-bit stack selector, base 0x00000. */
+#define BS3_SEL_R1_CS32             0x0218 /**< ring-1: 32-bit flat code selector. */
+#define BS3_SEL_R1_DS32             0x0220 /**< ring-1: 32-bit flat data selector. */
+#define BS3_SEL_R1_SS32             0x0228 /**< ring-1: 32-bit flat stack selector. */
+#define BS3_SEL_R1_CS64             0x0230 /**< ring-1: 64-bit flat code selector. */
+#define BS3_SEL_R1_DS64             0x0238 /**< ring-1: 64-bit flat data & stack selector. */
+#define BS3_SEL_R1_CS16_EO          0x0240 /**< ring-1: 16-bit execute-only code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R1_CS16_CNF         0x0248 /**< ring-1: 16-bit conforming code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R1_CS16_CNF_EO      0x0250 /**< ring-1: 16-bit execute-only conforming code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R1_CS32_EO          0x0258 /**< ring-1: 32-bit execute-only code selector, not accessed, flat. */
+#define BS3_SEL_R1_CS32_CNF         0x0260 /**< ring-1: 32-bit conforming code selector, not accessed, flat. */
+#define BS3_SEL_R1_CS32_CNF_EO      0x0268 /**< ring-1: 32-bit execute-only conforming code selector, not accessed, flat. */
+#define BS3_SEL_R1_CS64_EO          0x0270 /**< ring-1: 64-bit execute-only code selector, not accessed, flat. */
+#define BS3_SEL_R1_CS64_CNF         0x0278 /**< ring-1: 64-bit conforming code selector, not accessed, flat. */
+#define BS3_SEL_R1_CS64_CNF_EO      0x0280 /**< ring-1: 64-bit execute-only conforming code selector, not accessed, flat. */
+
+#define BS3_SEL_R2_FIRST            0x0300 /**< The first selector in the ring-2 block. */
+#define BS3_SEL_R2_CS16             0x0300 /**< ring-2: 16-bit code selector,  base 0x10000. */
+#define BS3_SEL_R2_DS16             0x0308 /**< ring-2: 16-bit data selector,  base 0x23000. */
+#define BS3_SEL_R2_SS16             0x0310 /**< ring-2: 16-bit stack selector, base 0x00000. */
+#define BS3_SEL_R2_CS32             0x0318 /**< ring-2: 32-bit flat code selector. */
+#define BS3_SEL_R2_DS32             0x0320 /**< ring-2: 32-bit flat data selector. */
+#define BS3_SEL_R2_SS32             0x0328 /**< ring-2: 32-bit flat stack selector. */
+#define BS3_SEL_R2_CS64             0x0330 /**< ring-2: 64-bit flat code selector. */
+#define BS3_SEL_R2_DS64             0x0338 /**< ring-2: 64-bit flat data & stack selector. */
+#define BS3_SEL_R2_CS16_EO          0x0340 /**< ring-2: 16-bit execute-only code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R2_CS16_CNF         0x0348 /**< ring-2: 16-bit conforming code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R2_CS16_CNF_EO      0x0350 /**< ring-2: 16-bit execute-only conforming code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R2_CS32_EO          0x0358 /**< ring-2: 32-bit execute-only code selector, not accessed, flat. */
+#define BS3_SEL_R2_CS32_CNF         0x0360 /**< ring-2: 32-bit conforming code selector, not accessed, flat. */
+#define BS3_SEL_R2_CS32_CNF_EO      0x0368 /**< ring-2: 32-bit execute-only conforming code selector, not accessed, flat. */
+#define BS3_SEL_R2_CS64_EO          0x0370 /**< ring-2: 64-bit execute-only code selector, not accessed, flat. */
+#define BS3_SEL_R2_CS64_CNF         0x0378 /**< ring-2: 64-bit conforming code selector, not accessed, flat. */
+#define BS3_SEL_R2_CS64_CNF_EO      0x0380 /**< ring-2: 64-bit execute-only conforming code selector, not accessed, flat. */
+
+#define BS3_SEL_R3_FIRST            0x0400 /**< The first selector in the ring-3 block. */
+#define BS3_SEL_R3_CS16             0x0400 /**< ring-3: 16-bit code selector,  base 0x10000. */
+#define BS3_SEL_R3_DS16             0x0408 /**< ring-3: 16-bit data selector,  base 0x23000. */
+#define BS3_SEL_R3_SS16             0x0410 /**< ring-3: 16-bit stack selector, base 0x00000. */
+#define BS3_SEL_R3_CS32             0x0418 /**< ring-3: 32-bit flat code selector. */
+#define BS3_SEL_R3_DS32             0x0420 /**< ring-3: 32-bit flat data selector. */
+#define BS3_SEL_R3_SS32             0x0428 /**< ring-3: 32-bit flat stack selector. */
+#define BS3_SEL_R3_CS64             0x0430 /**< ring-3: 64-bit flat code selector. */
+#define BS3_SEL_R3_DS64             0x0438 /**< ring-3: 64-bit flat data & stack selector. */
+#define BS3_SEL_R3_CS16_EO          0x0440 /**< ring-3: 16-bit execute-only code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R3_CS16_CNF         0x0448 /**< ring-3: 16-bit conforming code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R3_CS16_CNF_EO      0x0450 /**< ring-3: 16-bit execute-only conforming code selector, not accessed, 0xfffe limit, CS16 base. */
+#define BS3_SEL_R3_CS32_EO          0x0458 /**< ring-3: 32-bit execute-only code selector, not accessed, flat. */
+#define BS3_SEL_R3_CS32_CNF         0x0460 /**< ring-3: 32-bit conforming code selector, not accessed, flat. */
+#define BS3_SEL_R3_CS32_CNF_EO      0x0468 /**< ring-3: 32-bit execute-only conforming code selector, not accessed, flat. */
+#define BS3_SEL_R3_CS64_EO          0x0470 /**< ring-3: 64-bit execute-only code selector, not accessed, flat. */
+#define BS3_SEL_R3_CS64_CNF         0x0478 /**< ring-3: 64-bit conforming code selector, not accessed, flat. */
+#define BS3_SEL_R3_CS64_CNF_EO      0x0480 /**< ring-3: 64-bit execute-only conforming code selector, not accessed, flat. */
+
+#define BS3_SEL_SPARE_FIRST         0x0500 /**< The first selector in the spare block */
+#define BS3_SEL_SPARE_00            0x0500 /**< Spare selector number 00h. */
+#define BS3_SEL_SPARE_01            0x0508 /**< Spare selector number 01h. */
+#define BS3_SEL_SPARE_02            0x0510 /**< Spare selector number 02h. */
+#define BS3_SEL_SPARE_03            0x0518 /**< Spare selector number 03h. */
+#define BS3_SEL_SPARE_04            0x0520 /**< Spare selector number 04h. */
+#define BS3_SEL_SPARE_05            0x0528 /**< Spare selector number 05h. */
+#define BS3_SEL_SPARE_06            0x0530 /**< Spare selector number 06h. */
+#define BS3_SEL_SPARE_07            0x0538 /**< Spare selector number 07h. */
+#define BS3_SEL_SPARE_08            0x0540 /**< Spare selector number 08h. */
+#define BS3_SEL_SPARE_09            0x0548 /**< Spare selector number 09h. */
+#define BS3_SEL_SPARE_0a            0x0550 /**< Spare selector number 0ah. */
+#define BS3_SEL_SPARE_0b            0x0558 /**< Spare selector number 0bh. */
+#define BS3_SEL_SPARE_0c            0x0560 /**< Spare selector number 0ch. */
+#define BS3_SEL_SPARE_0d            0x0568 /**< Spare selector number 0dh. */
+#define BS3_SEL_SPARE_0e            0x0570 /**< Spare selector number 0eh. */
+#define BS3_SEL_SPARE_0f            0x0578 /**< Spare selector number 0fh. */
+#define BS3_SEL_SPARE_10            0x0580 /**< Spare selector number 10h. */
+#define BS3_SEL_SPARE_11            0x0588 /**< Spare selector number 11h. */
+#define BS3_SEL_SPARE_12            0x0590 /**< Spare selector number 12h. */
+#define BS3_SEL_SPARE_13            0x0598 /**< Spare selector number 13h. */
+#define BS3_SEL_SPARE_14            0x05a0 /**< Spare selector number 14h. */
+#define BS3_SEL_SPARE_15            0x05a8 /**< Spare selector number 15h. */
+#define BS3_SEL_SPARE_16            0x05b0 /**< Spare selector number 16h. */
+#define BS3_SEL_SPARE_17            0x05b8 /**< Spare selector number 17h. */
+#define BS3_SEL_SPARE_18            0x05c0 /**< Spare selector number 18h. */
+#define BS3_SEL_SPARE_19            0x05c8 /**< Spare selector number 19h. */
+#define BS3_SEL_SPARE_1a            0x05d0 /**< Spare selector number 1ah. */
+#define BS3_SEL_SPARE_1b            0x05d8 /**< Spare selector number 1bh. */
+#define BS3_SEL_SPARE_1c            0x05e0 /**< Spare selector number 1ch. */
+#define BS3_SEL_SPARE_1d            0x05e8 /**< Spare selector number 1dh. */
+#define BS3_SEL_SPARE_1e            0x05f0 /**< Spare selector number 1eh. */
+#define BS3_SEL_SPARE_1f            0x05f8 /**< Spare selector number 1fh. */
+
+#define BS3_SEL_TILED               0x0600 /**< 16-bit data tiling: First - base=0x00000000, limit=64KB. */
+#define BS3_SEL_TILED_LAST          0x0df8 /**< 16-bit data tiling: Last  - base=0x00ff0000, limit=64KB. */
+#define BS3_SEL_TILED_AREA_SIZE     0x001000000 /**< 16-bit data tiling: Size of addressable area, in bytes. (16 MB) */
+
+#define BS3_SEL_FREE_PART1          0x0e00 /**< Free selector space - part \#1. */
+#define BS3_SEL_FREE_PART1_LAST     0x0ff8 /**< Free selector space - part \#1, last entry. */
+
+#define BS3_SEL_TEXT16              0x1000 /**< The BS3TEXT16 selector. */
+
+#define BS3_SEL_FREE_PART2          0x1008 /**< Free selector space - part \#2. */
+#define BS3_SEL_FREE_PART2_LAST     0x1ff8 /**< Free selector space - part \#2, last entry. */
+
+#define BS3_SEL_SYSTEM16            0x2000 /**< The BS3SYSTEM16 selector. */
+
+#define BS3_SEL_FREE_PART3          0x2008 /**< Free selector space - part \#3. */
+#define BS3_SEL_FREE_PART3_LAST     0x26f8 /**< Free selector space - part \#3, last entry. */
+
+#define BS3_SEL_DATA16              0x2700 /**< The BS3DATA16 selector. */
+
+#define BS3_SEL_GDT_LIMIT           0x2707 /**< The GDT limit. */
+/** @} */
+
 
 /** @def BS3_FAR
  * For inidicating far pointers in 16-bit code.
@@ -89,6 +301,19 @@
 #define BS3_CMN_NM(a_Name)  RT_CONCAT3(a_Name,_c,ARCH_BITS)
 
 /**
+ * Constructs a data name.
+ *
+ * Example: BS3_DATA_NM(Bs3Gdt)
+ *
+ * @param   a_Name      The name of the global variable.
+ */
+#if ARCH_BITS == 64
+# define BS3_DATA_NM(a_Name)  RT_CONCAT(_,a_Name)
+#else
+# define BS3_DATA_NM(a_Name)  a_Name
+#endif
+
+/**
  * Template for createing a pointer union type.
  * @param   a_BaseName      The base type name.
  * @param   a_Modifier      The type modifier.
@@ -137,6 +362,202 @@ BS3_PTR_UNION_TEMPLATE(BS3PTRUNION, RT_NOTHING);
 BS3_PTR_UNION_TEMPLATE(BS3CPTRUNION, const);
 BS3_PTR_UNION_TEMPLATE(BS3VPTRUNION, volatile);
 BS3_PTR_UNION_TEMPLATE(BS3CVPTRUNION, const volatile);
+
+
+/** @defgroup grp_bs3kit_system System structures
+ * @{ */
+/** The GDT, indexed by BS3_SEL_XXX shifted by 3. */
+extern X86DESC BS3_DATA_NM(Bs3Gdt)[(BS3_SEL_GDT_LIMIT + 1) / 8];
+
+extern X86DESC64 BS3_DATA_NM(Bs3Gdt_Ldt);                   /**< @see BS3_SEL_LDT */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss16);                  /**< @see BS3_SEL_TSS16  */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss16DoubleFault);       /**< @see BS3_SEL_TSS16_DF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss16Spare0);            /**< @see BS3_SEL_TSS16_SPARE0 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss16Spare1);            /**< @see BS3_SEL_TSS16_SPARE1 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss32);                  /**< @see BS3_SEL_TSS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss32DoubleFault);       /**< @see BS3_SEL_TSS32_DF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss32Spare0);            /**< @see BS3_SEL_TSS32_SPARE0 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss32Spare1);            /**< @see BS3_SEL_TSS32_SPARE1 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss32IobpIntRedirBm);    /**< @see BS3_SEL_TSS32_IOBP_IRB */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss32IntRedirBm);        /**< @see BS3_SEL_TSS32_IRB */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss64);                  /**< @see BS3_SEL_TSS64 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss64Spare0);            /**< @see BS3_SEL_TSS64_SPARE0 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss64Spare1);            /**< @see BS3_SEL_TSS64_SPARE1 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_Tss64Iobp);              /**< @see BS3_SEL_TSS64_IOBP */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_MMIO16);              /**< @see BS3_SEL_VMMDEV_MMIO16 */
+
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_First);               /**< @see BS3_SEL_R0_FIRST */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS16);                /**< @see BS3_SEL_R0_CS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_DS16);                /**< @see BS3_SEL_R0_DS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_SS16);                /**< @see BS3_SEL_R0_SS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS32);                /**< @see BS3_SEL_R0_CS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_DS32);                /**< @see BS3_SEL_R0_DS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_SS32);                /**< @see BS3_SEL_R0_SS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS64);                /**< @see BS3_SEL_R0_CS64 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_DS64);                /**< @see BS3_SEL_R0_DS64 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS16_EO);             /**< @see BS3_SEL_R0_CS16_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS16_CNF);            /**< @see BS3_SEL_R0_CS16_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS16_CND_EO);         /**< @see BS3_SEL_R0_CS16_CNF_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS32_EO);             /**< @see BS3_SEL_R0_CS32_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS32_CNF);            /**< @see BS3_SEL_R0_CS32_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS32_CNF_EO);         /**< @see BS3_SEL_R0_CS32_CNF_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS64_EO);             /**< @see BS3_SEL_R0_CS64_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS64_CNF);            /**< @see BS3_SEL_R0_CS64_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R0_CS64_CNF_EO);         /**< @see BS3_SEL_R0_CS64_CNF_EO */
+
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_First);               /**< @see BS3_SEL_R1_FIRST */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS16);                /**< @see BS3_SEL_R1_CS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_DS16);                /**< @see BS3_SEL_R1_DS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_SS16);                /**< @see BS3_SEL_R1_SS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS32);                /**< @see BS3_SEL_R1_CS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_DS32);                /**< @see BS3_SEL_R1_DS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_SS32);                /**< @see BS3_SEL_R1_SS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS64);                /**< @see BS3_SEL_R1_CS64 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_DS64);                /**< @see BS3_SEL_R1_DS64 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS16_EO);             /**< @see BS3_SEL_R1_CS16_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS16_CNF);            /**< @see BS3_SEL_R1_CS16_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS16_CND_EO);         /**< @see BS3_SEL_R1_CS16_CNF_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS32_EO);             /**< @see BS3_SEL_R1_CS32_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS32_CNF);            /**< @see BS3_SEL_R1_CS32_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS32_CNF_EO);         /**< @see BS3_SEL_R1_CS32_CNF_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS64_EO);             /**< @see BS3_SEL_R1_CS64_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS64_CNF);            /**< @see BS3_SEL_R1_CS64_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R1_CS64_CNF_EO);         /**< @see BS3_SEL_R1_CS64_CNF_EO */
+
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_First);               /**< @see BS3_SEL_R2_FIRST */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS16);                /**< @see BS3_SEL_R2_CS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_DS16);                /**< @see BS3_SEL_R2_DS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_SS16);                /**< @see BS3_SEL_R2_SS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS32);                /**< @see BS3_SEL_R2_CS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_DS32);                /**< @see BS3_SEL_R2_DS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_SS32);                /**< @see BS3_SEL_R2_SS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS64);                /**< @see BS3_SEL_R2_CS64 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_DS64);                /**< @see BS3_SEL_R2_DS64 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS16_EO);             /**< @see BS3_SEL_R2_CS16_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS16_CNF);            /**< @see BS3_SEL_R2_CS16_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS16_CND_EO);         /**< @see BS3_SEL_R2_CS16_CNF_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS32_EO);             /**< @see BS3_SEL_R2_CS32_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS32_CNF);            /**< @see BS3_SEL_R2_CS32_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS32_CNF_EO);         /**< @see BS3_SEL_R2_CS32_CNF_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS64_EO);             /**< @see BS3_SEL_R2_CS64_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS64_CNF);            /**< @see BS3_SEL_R2_CS64_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R2_CS64_CNF_EO);         /**< @see BS3_SEL_R2_CS64_CNF_EO */
+
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_First);               /**< @see BS3_SEL_R3_FIRST */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS16);                /**< @see BS3_SEL_R3_CS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_DS16);                /**< @see BS3_SEL_R3_DS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_SS16);                /**< @see BS3_SEL_R3_SS16 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS32);                /**< @see BS3_SEL_R3_CS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_DS32);                /**< @see BS3_SEL_R3_DS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_SS32);                /**< @see BS3_SEL_R3_SS32 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS64);                /**< @see BS3_SEL_R3_CS64 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_DS64);                /**< @see BS3_SEL_R3_DS64 */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS16_EO);             /**< @see BS3_SEL_R3_CS16_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS16_CNF);            /**< @see BS3_SEL_R3_CS16_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS16_CND_EO);         /**< @see BS3_SEL_R3_CS16_CNF_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS32_EO);             /**< @see BS3_SEL_R3_CS32_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS32_CNF);            /**< @see BS3_SEL_R3_CS32_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS32_CNF_EO);         /**< @see BS3_SEL_R3_CS32_CNF_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS64_EO);             /**< @see BS3_SEL_R3_CS64_EO */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS64_CNF);            /**< @see BS3_SEL_R3_CS64_CNF */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_R3_CS64_CNF_EO);         /**< @see BS3_SEL_R3_CS64_CNF_EO */
+
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare00); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_00 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare01); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_01 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare02); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_02 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare03); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_03 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare04); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_04 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare05); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_05 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare06); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_06 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare07); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_07 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare08); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_08 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare09); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_09 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare0a); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0a */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare0b); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0b */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare0c); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0c */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare0d); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0d */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare0e); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0e */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare0f); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0f */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare10); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_10 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare11); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_11 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare12); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_12 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare13); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_13 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare14); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_14 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare15); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_15 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare16); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_16 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare17); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_17 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare18); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_18 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare19); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_19 */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare1a); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1a */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare1b); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1b */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare1c); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1c */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare1d); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1d */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare1e); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1e */
+extern X86DESC BS3_DATA_NM(Bs3GdteSpare1f); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1f */
+
+/** GDTs setting up the tiled 16-bit access to the first 16 MBs of memory.
+ * @see BS3_SEL_TILED, BS3_SEL_TILED_LAST, BS3_SEL_TILED_AREA_SIZE */
+extern X86DESC BS3_DATA_NM(Bs3GdteTiled)[256];
+/** Free GDTes, part \#1. */
+extern X86DESC BS3_DATA_NM(Bs3GdteFreePart1)[64];
+/** The BS3CODE16 GDT entry. @see BS3_SEL_TEXT16   */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_CODE16);
+/** Free GDTes, part \#2. */
+extern X86DESC BS3_DATA_NM(Bs3GdteFreePart2)[511];
+/** The BS3SYSTEM16 GDT entry. */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_SYSTEM16);
+/** Free GDTes, part \#3. */
+extern X86DESC BS3_DATA_NM(Bs3GdteFreePart3)[223];
+/** The BS3DATA16 GDT entry. */
+extern X86DESC BS3_DATA_NM(Bs3Gdte_DATA16);
+/** The end of the GDT (exclusive). */
+extern X86DESC BS3_DATA_NM(Bs3GdtEnd);
+
+/** The default 16-bit TSS. */
+extern X86TSS16  BS3_DATA_NM(Bs3Tss16);
+extern X86TSS16  BS3_DATA_NM(Bs3Tss16DoubleFault);
+extern X86TSS16  BS3_DATA_NM(Bs3Tss16Spare0);
+extern X86TSS16  BS3_DATA_NM(Bs3Tss16Spare1);
+/** The default 32-bit TSS. */
+extern X86TSS32  BS3_DATA_NM(Bs3Tss32);
+extern X86TSS32  BS3_DATA_NM(Bs3Tss32DoubleFault);
+extern X86TSS32  BS3_DATA_NM(Bs3Tss32Spare0);
+extern X86TSS32  BS3_DATA_NM(Bs3Tss32Spare1);
+/** The default 64-bit TSS. */
+extern X86TSS64  BS3_DATA_NM(Bs3Tss64);
+extern X86TSS64  BS3_DATA_NM(Bs3Tss64Spare0);
+extern X86TSS64  BS3_DATA_NM(Bs3Tss64Spare1);
+extern X86TSS64  BS3_DATA_NM(Bs3Tss64WithIopb);
+extern X86TSS32  BS3_DATA_NM(Bs3Tss32WithIopb);
+/** Interrupt redirection bitmap used by Bs3Tss32WithIopb. */
+extern uint8_t   BS3_DATA_NM(Bs3SharedIntRedirBm)[32];
+/** I/O permission bitmap used by Bs3Tss32WithIopb and Bs3Tss64WithIopb. */
+extern uint8_t   BS3_DATA_NM(Bs3SharedIobp)[8192+2];
+/** End of the I/O permission bitmap (exclusive). */
+extern uint8_t   BS3_DATA_NM(Bs3SharedIobpEnd);
+/** 16-bit IDT. */
+extern X86DESC   BS3_DATA_NM(Bs3Idt16)[256];
+/** 32-bit IDT. */
+extern X86DESC   BS3_DATA_NM(Bs3Idt32)[256];
+/** 64-bit IDT. */
+extern X86DESC64 BS3_DATA_NM(Bs3Idt64)[256];
+/** Structure for the LIDT instruction for loading the 16-bit IDT. */
+extern X86XDTR64 BS3_DATA_NM(Bs3Lidt_Idt16);
+/** Structure for the LIDT instruction for loading the 32-bit IDT. */
+extern X86XDTR64 BS3_DATA_NM(Bs3Lidt_Idt32);
+/** Structure for the LIDT instruction for loading the 64-bit IDT. */
+extern X86XDTR64 BS3_DATA_NM(Bs3Lidt_Idt64);
+/** Structure for the LIDT instruction for loading the real mode interrupt
+ *  vector table.. */
+extern X86XDTR64 BS3_DATA_NM(Bs3Lidt_Ivt);
+/** Structure for the LGDT instruction for loading the GDT. */
+extern X86XDTR64 BS3_DATA_NM(Bs3Lgdt_Gdt);
+/** The LDT (all entries are empty, fill in for testing). */
+extern X86DESC   BS3_DATA_NM(Bs3Ldt)[118];
+/** The end of the LDT (exclusive).   */
+extern X86DESC   BS3_DATA_NM(Bs3LdtEnd);
+
+
 
 
 /** @defgroup grp_bs3kit_cmn    Common Functions and Data

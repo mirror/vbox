@@ -103,17 +103,17 @@ bs3InitCode:
         cli
 
         ; save the registers.
-        mov     [cs:BS3_REG_SAVE_ADDR + BS3REGS.rax], eax
-        mov     [cs:BS3_REG_SAVE_ADDR + BS3REGS.rsp], esp
-        mov     [cs:BS3_REG_SAVE_ADDR + BS3REGS.rbp], ebp
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.rax], eax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.rsp], esp
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.rbp], ebp
         mov     ax, ss
-        mov     [cs:BS3_REG_SAVE_ADDR + BS3REGS.ss], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.ss], ax
         mov     ax, ds
-        mov     [cs:BS3_REG_SAVE_ADDR + BS3REGS.ds], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.ds], ax
         mov     ax, es
-        mov     [cs:BS3_REG_SAVE_ADDR + BS3REGS.es], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.es], ax
         mov     ax, fs
-        mov     [cs:BS3_REG_SAVE_ADDR + BS3REGS.fs], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.fs], ax
         mov     ax, gs
 
         ; set up the segment reisters and stack.
@@ -123,37 +123,37 @@ bs3InitCode:
         mov     fs, ax
         mov     gs, ax
         mov     ss, ax
-        mov     esp, BS3_STACK_ADDR
-        mov     [esp],  eax             ; clear the first 16 bytes
-        mov     [esp + 04h],  eax
-        mov     [esp + 08h],  eax       ; fake rbp.
-        mov     [esp + 0ch],  eax       ; fake ebp and bp
+        mov     esp, BS3_ADDR_STACK
         mov     ebp, esp
+        mov     [ebp], eax               ; clear the first 16 bytes (terminates the ebp chain)
+        mov     [ebp + 04h], eax
+        mov     [ebp + 08h], eax
+        mov     [ebp + 0ch], eax
 
         ; Save more registers now that ds is known and the stack is usable.
         pushfd
         pop     eax
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.rflags], eax
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.rbx], ebx
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.rcx], ecx
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.rdx], edx
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.rsi], esi
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.rdi], edi
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rflags], eax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rbx], ebx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rcx], ecx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rdx], edx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rsi], esi
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rdi], edi
         mov     eax, cr2
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.cr2], eax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr2], eax
         mov     eax, cr3
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.cr3], eax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr3], eax
         mov     eax, cr4
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.cr4], eax
-        mov     byte [BS3_REG_SAVE_ADDR + BS3REGS.cBits], 16
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr4], eax
+        mov     byte [BS3_ADDR_REG_SAVE + BS3REGS.cBits], 16
         xor     eax, eax
-        mov     [cs:BS3_REG_SAVE_ADDR + BS3REGS.cs], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.cs], ax
         mov     ax, start
-        mov     [cs:BS3_REG_SAVE_ADDR + BS3REGS.rip], eax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.rip], eax
 
         ; Make sure caching is enabled and alignment is off.
         mov     eax, cr0
-        mov     [BS3_REG_SAVE_ADDR + BS3REGS.cr0], eax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr0], eax
         and     eax, ~(X86_CR0_NW | X86_CR0_CD | X86_CR0_AM)
         mov     cr0, eax
 
@@ -164,7 +164,7 @@ bs3InitCode:
         ;
         ; Call the user 'main' procedure (shouldn't return).
         ;
-        call    1000h:0000h
+        call    BS3_SEL_TEXT16:0000h
 
         ; Panic/hang.
 Bs3Panic:
@@ -213,7 +213,7 @@ BEGINPROC bs3InitLoadImage
         ;
         mov     esi, [g_cLargeTotalSectors]
         dec     esi
-        mov     di, BS3_LOAD_ADDR / 16  ; The current load segment.
+        mov     di, BS3_ADDR_LOAD / 16  ; The current load segment.
         mov     cx, 0002h               ; ch/cylinder=0 (0-based); cl/sector=2 (1-based)
         xor     dh, dh                  ; dh/head=0
 .the_load_loop:

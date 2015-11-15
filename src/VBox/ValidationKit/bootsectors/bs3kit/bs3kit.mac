@@ -126,11 +126,10 @@
  %ifndef  BS3_BEGIN_TEXT16_NOT_FIRST
   %define BS3_BEGIN_TEXT16_NOT_FIRST
   %ifdef ASM_FORMAT_ELF
-        section BS3TEXT16 align=1 progbits alloc exec nowrite
+        section BS3TEXT16 align=2 progbits alloc exec nowrite
   %else
-        section BS3TEXT16 align=1 CLASS=BS3CODE16 PUBLIC USE16
+        section BS3TEXT16 align=2 CLASS=BS3CODE16 PUBLIC USE16
   %endif
-
  %else
         section BS3TEXT16
  %endif
@@ -207,6 +206,21 @@
         BS3_SET_BITS 64
 %endmacro
 
+;; The system data segment containing the GDT, TSSes and IDTs.
+%macro BS3_BEGIN_SYSTEM16 0
+ %ifndef  BS3_BEGIN_SYSTEM16_NOT_FIRST
+  %define BS3_BEGIN_SYSTEM16_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3SYSTEM16 align=16 progbits alloc noexec write
+  %else
+        section BS3SYSTEM16 align=16 CLASS=BS3SYSTEM16 PUBLIC USE16
+  %endif
+ %else
+        section BS3SYSTEM16
+ %endif
+        BS3_SET_BITS 16
+%endmacro
+
 ;; Default text section.
 %macro BS3_BEGIN_DEFAULT_TEXT 0
  %if ARCH_BITS == 16
@@ -274,6 +288,11 @@
 %endmacro
 
 ;;
+; Mangles a 16-bit and 32-bit accessible data name.
+; @remarks Requires the use of the BS3_SET_BITS macro instead of the BITS directive.
+%define BS3_DATA_NM(a_Name)     _ %+ a_Name
+
+;;
 ; Extern macro which mangles a DATA16 symbol correctly, redefining the
 ; unmangled name to the mangled one for ease of use.
 ;
@@ -309,6 +328,16 @@ global %1:%2
 global %1
 %endif
 %1:
+%endmacro
+
+;;
+; Global data unmangled label.
+;
+; @param    %1  The unmangled name.
+; @param    %2  The size (0 is fine).
+;
+%macro BS3_GLOBAL_DATA 2
+BS3_GLOBAL_NAME_EX BS3_DATA_NM(%1), , %2
 %endmacro
 
 ;;
@@ -456,13 +485,43 @@ size %1 %+ _EndProc     0
 ;; @name Static Memory Allocation
 ; @{
 ;; The flat load address for the code after the bootsector.
-%define BS3_LOAD_ADDR           010000h
+%define BS3_ADDR_LOAD           010000h
 ;; Where we save the boot registers during init.
 ; Located right before the code.
-%define BS3_REG_SAVE_ADDR       (BS3_LOAD_ADDR - BS3REGS_size - 8)
+%define BS3_ADDR_REG_SAVE       (BS3_ADDR_LOAD - BS3REGS_size - 8)
 ;; Where the stack starts (initial RSP value).
-; Located right before the saved registers. SS.BASE=0.
-%define BS3_STACK_ADDR          (BS3_REG_SAVE_ADDR - 16)
+; Located 16 bytes (assumed by boot sector) before the saved registers. SS.BASE=0.
+%define BS3_ADDR_STACK          (BS3_ADDR_REG_SAVE - 16)
+;; The ring-0 stack (8KB) for ring transitions.
+%define BS3_ADDR_STACK_R0       006000h
+;; The ring-1 stack (8KB) for ring transitions.
+%define BS3_ADDR_STACK_R1       004000h
+;; The ring-2 stack (8KB) for ring transitions.
+%define BS3_ADDR_STACK_R2       002000h
+;; IST1 ring-0 stack for long mode (4KB), used for double faults elsewhere.
+%define BS3_ADDR_STACK_R0_IST1  009000h
+;; IST2 ring-0 stack for long mode (3KB), used for spare 0 stack elsewhere.
+%define BS3_ADDR_STACK_R0_IST2  008000h
+;; IST3 ring-0 stack for long mode (1KB).
+%define BS3_ADDR_STACK_R0_IST3  007400h
+;; IST4 ring-0 stack for long mode (1KB), used for spare 1 stack elsewhere.
+%define BS3_ADDR_STACK_R0_IST4  007000h
+;; IST5 ring-0 stack for long mode (1KB).
+%define BS3_ADDR_STACK_R0_IST5  006c00h
+;; IST6 ring-0 stack for long mode (1KB).
+%define BS3_ADDR_STACK_R0_IST6  006800h
+;; IST7 ring-0 stack for long mode (1KB).
+%define BS3_ADDR_STACK_R0_IST7  006400h
+
+;; The base address of the BS3TEXT16 segment (same as BS3_LOAD_ADDR).
+;; @sa BS3_SEL_TEXT16
+%define BS3_ADDR_BS3TEXT16      010000h
+;; The base address of the BS3SYSTEM16 segment.
+;; @sa BS3_SEL_SYSTEM16
+%define BS3_ADDR_BS3SYSTEM16    020000h
+;; The base address of the BS3DATA16 segment.
+;; @sa BS3_SEL_DATA16
+%define BS3_ADDR_BS3DATA16      027000h
 ;; @}
 
 
@@ -533,6 +592,184 @@ endstruc
 ;; Print char (cl).
 %define BS3_SYSCALL_PRINT_CHR   0ca110001h
 ;; @}
+
+
+
+;; @name BS3_SEL_XXX - GDT selectors
+;; @{
+
+%define BS3_SEL_LDT                 0010h ;;< The LDT selector (requires setting up).
+%define BS3_SEL_TSS16               0020h ;;< The 16-bit TSS selector.
+%define BS3_SEL_TSS16_DF            0028h ;;< The 16-bit TSS selector for double faults.
+%define BS3_SEL_TSS16_SPARE0        0030h ;;< The 16-bit TSS selector for testing.
+%define BS3_SEL_TSS16_SPARE1        0038h ;;< The 16-bit TSS selector for testing.
+%define BS3_SEL_TSS32               0040h ;;< The 32-bit TSS selector.
+%define BS3_SEL_TSS32_DF            0048h ;;< The 32-bit TSS selector for double faults.
+%define BS3_SEL_TSS32_SPARE0        0050h ;;< The 32-bit TSS selector for testing.
+%define BS3_SEL_TSS32_SPARE1        0058h ;;< The 32-bit TSS selector for testing.
+%define BS3_SEL_TSS32_IOBP_IRB      0060h ;;< The 32-bit TSS selector with I/O permission and interrupt redirection bitmaps.
+%define BS3_SEL_TSS32_IRB           0068h ;;< The 32-bit TSS selector with only interrupt redirection bitmap (IOPB stripped by limit).
+%define BS3_SEL_TSS64               0070h ;;< The 64-bit TSS selector.
+%define BS3_SEL_TSS64_SPARE0        0080h ;;< The 64-bit TSS selector.
+%define BS3_SEL_TSS64_SPARE1        0090h ;;< The 64-bit TSS selector.
+%define BS3_SEL_TSS64_IOBP          00a0h ;;< The 64-bit TSS selector.
+
+%define BS3_SEL_TSS16               0020h ;;< The 16-bit TSS selector.
+%define BS3_SEL_TSS16_DF            0028h ;;< The 16-bit TSS selector for double faults.
+%define BS3_SEL_TSS32               0030h ;;< The 32-bit TSS selector.
+%define BS3_SEL_TSS32_DF            0038h ;;< The 32-bit TSS selector for double faults.
+%define BS3_SEL_TSS64               0040h ;;< The 64-bit TSS selector.
+%define BS3_SEL_VMMDEV_MMIO16       00f8h ;;< Selector for accessing the VMMDev MMIO segment at 0100000h from 16-bit code.
+
+%define BS3_SEL_R0_FIRST            0100h ;;< The first selector in the ring-0 block.
+%define BS3_SEL_R0_CS16             0100h ;;< ring-0: 16-bit code selector,  base 0x10000.
+%define BS3_SEL_R0_DS16             0108h ;;< ring-0: 16-bit data selector,  base 0x23000.
+%define BS3_SEL_R0_SS16             0110h ;;< ring-0: 16-bit stack selector, base 0x00000.
+%define BS3_SEL_R0_CS32             0118h ;;< ring-0: 32-bit flat code selector.
+%define BS3_SEL_R0_DS32             0120h ;;< ring-0: 32-bit flat data selector.
+%define BS3_SEL_R0_SS32             0128h ;;< ring-0: 32-bit flat stack selector.
+%define BS3_SEL_R0_CS64             0130h ;;< ring-0: 64-bit flat code selector.
+%define BS3_SEL_R0_DS64             0138h ;;< ring-0: 64-bit flat data & stack selector.
+%define BS3_SEL_R0_CS16_EO          0140h ;;< ring-0: 16-bit execute-only code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R0_CS16_CNF         0148h ;;< ring-0: 16-bit conforming code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R0_CS16_CNF_EO      0150h ;;< ring-0: 16-bit execute-only conforming code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R0_CS32_EO          0158h ;;< ring-0: 32-bit execute-only code selector, not accessed, flat.
+%define BS3_SEL_R0_CS32_CNF         0160h ;;< ring-0: 32-bit conforming code selector, not accessed, flat.
+%define BS3_SEL_R0_CS32_CNF_EO      0168h ;;< ring-0: 32-bit execute-only conforming code selector, not accessed, flat.
+%define BS3_SEL_R0_CS64_EO          0170h ;;< ring-0: 64-bit execute-only code selector, not accessed, flat.
+%define BS3_SEL_R0_CS64_CNF         0178h ;;< ring-0: 64-bit conforming code selector, not accessed, flat.
+%define BS3_SEL_R0_CS64_CNF_EO      0180h ;;< ring-0: 64-bit execute-only conforming code selector, not accessed, flat.
+
+%define BS3_SEL_R1_FIRST            0200h ;;< The first selector in the ring-1 block.
+%define BS3_SEL_R1_CS16             0200h ;;< ring-1: 16-bit code selector,  base 0x10000.
+%define BS3_SEL_R1_DS16             0208h ;;< ring-1: 16-bit data selector,  base 0x23000.
+%define BS3_SEL_R1_SS16             0210h ;;< ring-1: 16-bit stack selector, base 0x00000.
+%define BS3_SEL_R1_CS32             0218h ;;< ring-1: 32-bit flat code selector.
+%define BS3_SEL_R1_DS32             0220h ;;< ring-1: 32-bit flat data selector.
+%define BS3_SEL_R1_SS32             0228h ;;< ring-1: 32-bit flat stack selector.
+%define BS3_SEL_R1_CS64             0230h ;;< ring-1: 64-bit flat code selector.
+%define BS3_SEL_R1_DS64             0238h ;;< ring-1: 64-bit flat data & stack selector.
+%define BS3_SEL_R1_CS16_EO          0240h ;;< ring-1: 16-bit execute-only code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R1_CS16_CNF         0248h ;;< ring-1: 16-bit conforming code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R1_CS16_CNF_EO      0250h ;;< ring-1: 16-bit execute-only conforming code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R1_CS32_EO          0258h ;;< ring-1: 32-bit execute-only code selector, not accessed, flat.
+%define BS3_SEL_R1_CS32_CNF         0260h ;;< ring-1: 32-bit conforming code selector, not accessed, flat.
+%define BS3_SEL_R1_CS32_CNF_EO      0268h ;;< ring-1: 32-bit execute-only conforming code selector, not accessed, flat.
+%define BS3_SEL_R1_CS64_EO          0270h ;;< ring-1: 64-bit execute-only code selector, not accessed, flat.
+%define BS3_SEL_R1_CS64_CNF         0278h ;;< ring-1: 64-bit conforming code selector, not accessed, flat.
+%define BS3_SEL_R1_CS64_CNF_EO      0280h ;;< ring-1: 64-bit execute-only conforming code selector, not accessed, flat.
+
+%define BS3_SEL_R2_FIRST            0300h ;;< The first selector in the ring-2 block.
+%define BS3_SEL_R2_CS16             0300h ;;< ring-2: 16-bit code selector,  base 0x10000.
+%define BS3_SEL_R2_DS16             0308h ;;< ring-2: 16-bit data selector,  base 0x23000.
+%define BS3_SEL_R2_SS16             0310h ;;< ring-2: 16-bit stack selector, base 0x00000.
+%define BS3_SEL_R2_CS32             0318h ;;< ring-2: 32-bit flat code selector.
+%define BS3_SEL_R2_DS32             0320h ;;< ring-2: 32-bit flat data selector.
+%define BS3_SEL_R2_SS32             0328h ;;< ring-2: 32-bit flat stack selector.
+%define BS3_SEL_R2_CS64             0330h ;;< ring-2: 64-bit flat code selector.
+%define BS3_SEL_R2_DS64             0338h ;;< ring-2: 64-bit flat data & stack selector.
+%define BS3_SEL_R2_CS16_EO          0340h ;;< ring-2: 16-bit execute-only code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R2_CS16_CNF         0348h ;;< ring-2: 16-bit conforming code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R2_CS16_CNF_EO      0350h ;;< ring-2: 16-bit execute-only conforming code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R2_CS32_EO          0358h ;;< ring-2: 32-bit execute-only code selector, not accessed, flat.
+%define BS3_SEL_R2_CS32_CNF         0360h ;;< ring-2: 32-bit conforming code selector, not accessed, flat.
+%define BS3_SEL_R2_CS32_CNF_EO      0368h ;;< ring-2: 32-bit execute-only conforming code selector, not accessed, flat.
+%define BS3_SEL_R2_CS64_EO          0370h ;;< ring-2: 64-bit execute-only code selector, not accessed, flat.
+%define BS3_SEL_R2_CS64_CNF         0378h ;;< ring-2: 64-bit conforming code selector, not accessed, flat.
+%define BS3_SEL_R2_CS64_CNF_EO      0380h ;;< ring-2: 64-bit execute-only conforming code selector, not accessed, flat.
+
+%define BS3_SEL_R3_FIRST            0400h ;;< The first selector in the ring-3 block.
+%define BS3_SEL_R3_CS16             0400h ;;< ring-3: 16-bit code selector,  base 0x10000.
+%define BS3_SEL_R3_DS16             0408h ;;< ring-3: 16-bit data selector,  base 0x23000.
+%define BS3_SEL_R3_SS16             0410h ;;< ring-3: 16-bit stack selector, base 0x00000.
+%define BS3_SEL_R3_CS32             0418h ;;< ring-3: 32-bit flat code selector.
+%define BS3_SEL_R3_DS32             0420h ;;< ring-3: 32-bit flat data selector.
+%define BS3_SEL_R3_SS32             0428h ;;< ring-3: 32-bit flat stack selector.
+%define BS3_SEL_R3_CS64             0430h ;;< ring-3: 64-bit flat code selector.
+%define BS3_SEL_R3_DS64             0438h ;;< ring-3: 64-bit flat data & stack selector.
+%define BS3_SEL_R3_CS16_EO          0440h ;;< ring-3: 16-bit execute-only code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R3_CS16_CNF         0448h ;;< ring-3: 16-bit conforming code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R3_CS16_CNF_EO      0450h ;;< ring-3: 16-bit execute-only conforming code selector, not accessed, 0xfffe limit, CS16 base.
+%define BS3_SEL_R3_CS32_EO          0458h ;;< ring-3: 32-bit execute-only code selector, not accessed, flat.
+%define BS3_SEL_R3_CS32_CNF         0460h ;;< ring-3: 32-bit conforming code selector, not accessed, flat.
+%define BS3_SEL_R3_CS32_CNF_EO      0468h ;;< ring-3: 32-bit execute-only conforming code selector, not accessed, flat.
+%define BS3_SEL_R3_CS64_EO          0470h ;;< ring-3: 64-bit execute-only code selector, not accessed, flat.
+%define BS3_SEL_R3_CS64_CNF         0478h ;;< ring-3: 64-bit conforming code selector, not accessed, flat.
+%define BS3_SEL_R3_CS64_CNF_EO      0480h ;;< ring-3: 64-bit execute-only conforming code selector, not accessed, flat.
+
+%define BS3_SEL_SPARE_FIRST         0500h ;;< The first selector in the spare block
+%define BS3_SEL_SPARE_00            0500h ;;< Spare selector number 00h.
+%define BS3_SEL_SPARE_01            0508h ;;< Spare selector number 01h.
+%define BS3_SEL_SPARE_02            0510h ;;< Spare selector number 02h.
+%define BS3_SEL_SPARE_03            0518h ;;< Spare selector number 03h.
+%define BS3_SEL_SPARE_04            0520h ;;< Spare selector number 04h.
+%define BS3_SEL_SPARE_05            0528h ;;< Spare selector number 05h.
+%define BS3_SEL_SPARE_06            0530h ;;< Spare selector number 06h.
+%define BS3_SEL_SPARE_07            0538h ;;< Spare selector number 07h.
+%define BS3_SEL_SPARE_08            0540h ;;< Spare selector number 08h.
+%define BS3_SEL_SPARE_09            0548h ;;< Spare selector number 09h.
+%define BS3_SEL_SPARE_0a            0550h ;;< Spare selector number 0ah.
+%define BS3_SEL_SPARE_0b            0558h ;;< Spare selector number 0bh.
+%define BS3_SEL_SPARE_0c            0560h ;;< Spare selector number 0ch.
+%define BS3_SEL_SPARE_0d            0568h ;;< Spare selector number 0dh.
+%define BS3_SEL_SPARE_0e            0570h ;;< Spare selector number 0eh.
+%define BS3_SEL_SPARE_0f            0578h ;;< Spare selector number 0fh.
+%define BS3_SEL_SPARE_10            0580h ;;< Spare selector number 10h.
+%define BS3_SEL_SPARE_11            0588h ;;< Spare selector number 11h.
+%define BS3_SEL_SPARE_12            0590h ;;< Spare selector number 12h.
+%define BS3_SEL_SPARE_13            0598h ;;< Spare selector number 13h.
+%define BS3_SEL_SPARE_14            05a0h ;;< Spare selector number 14h.
+%define BS3_SEL_SPARE_15            05a8h ;;< Spare selector number 15h.
+%define BS3_SEL_SPARE_16            05b0h ;;< Spare selector number 16h.
+%define BS3_SEL_SPARE_17            05b8h ;;< Spare selector number 17h.
+%define BS3_SEL_SPARE_18            05c0h ;;< Spare selector number 18h.
+%define BS3_SEL_SPARE_19            05c8h ;;< Spare selector number 19h.
+%define BS3_SEL_SPARE_1a            05d0h ;;< Spare selector number 1ah.
+%define BS3_SEL_SPARE_1b            05d8h ;;< Spare selector number 1bh.
+%define BS3_SEL_SPARE_1c            05e0h ;;< Spare selector number 1ch.
+%define BS3_SEL_SPARE_1d            05e8h ;;< Spare selector number 1dh.
+%define BS3_SEL_SPARE_1e            05f0h ;;< Spare selector number 1eh.
+%define BS3_SEL_SPARE_1f            05f8h ;;< Spare selector number 1fh.
+
+%define BS3_SEL_TILED               0600h  ;;< 16-bit data tiling: First - base=0x00000000, limit=64KB.
+%define BS3_SEL_TILED_LAST          0df8h  ;;< 16-bit data tiling: Last  - base=0x00ff0000, limit=64KB.
+%define BS3_SEL_TILED_AREA_SIZE     001000000h ;;< 16-bit data tiling: Size of addressable area, in bytes. (16 MB)
+
+%define BS3_SEL_FREE_PART1          0e00h ;;< Free selector space - part \#1.
+%define BS3_SEL_FREE_PART1_LAST     0ff8h ;;< Free selector space - part \#1, last entry.
+
+%define BS3_SEL_TEXT16              1000h ;;< The BS3TEXT16 selector.
+
+%define BS3_SEL_FREE_PART2          1008h ;;< Free selector space - part \#2.
+%define BS3_SEL_FREE_PART2_LAST     1ff8h ;;< Free selector space - part \#2, last entry.
+
+%define BS3_SEL_SYSTEM16            2000h ;;< The BS3SYSTEM16 selector.
+
+%define BS3_SEL_FREE_PART3          2008h ;;< Free selector space - part \#3.
+%define BS3_SEL_FREE_PART3_LAST     26f8h ;;< Free selector space - part \#3, last entry.
+
+%define BS3_SEL_DATA16              2700h ;;< The BS3DATA16 selector.
+
+%define BS3_SEL_GDT_LIMIT           2707h ;;< The GDT limit.
+
+;; @}
+
+
+;
+; Sanity checks.
+;
+%if BS3_ADDR_BS3TEXT16 != BS3_ADDR_LOAD
+ %error "BS3_ADDR_BS3TEXT16 and BS3_ADDR_LOAD are out of sync"
+%endif
+%if (BS3_ADDR_BS3TEXT16 / 16) != BS3_SEL_TEXT16
+ %error "BS3_ADDR_BS3TEXT16 and BS3_SEL_TEXT16 are out of sync"
+%endif
+%if (BS3_ADDR_BS3DATA16 / 16) != BS3_SEL_DATA16
+ %error "BS3_ADDR_BS3DATA16 and BS3_SEL_DATA16 are out of sync"
+%endif
+%if (BS3_ADDR_BS3SYSTEM16 / 16) != BS3_SEL_SYSTEM16
+ %error "BS3_ADDR_BS3SYSTEM16 and BS3_SEL_SYSTEM16 are out of sync"
+%endif
 
 %endif
 
