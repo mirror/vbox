@@ -266,6 +266,27 @@
 # define BS3_NEAR
 #endif
 
+#if ARCH_BITS == 16 || defined(DOXYGEN_RUNNING)
+/** @def BS3_FP_SEG
+ * Get the selector (segment) part of a far pointer.
+ * @returns selector.
+ * @param   a_pv        Far pointer.
+ */
+# define BS3_FP_SEG(a_pv)            ((uint16_t)(void __seg *)(void BS3_FAR *)(a_pv))
+/** @def BS3_FP_OFF
+ * Get the segment offset part of a far pointer.
+ * @returns offset.
+ * @param   a_pv        Far pointer.
+ */
+# define BS3_FP_OFF(a_pv)            ((uint16_t)(void __near *)(a_pv))
+/** @def BS3_FP_MAKE
+ * Create a far pointer.
+ * @returns selector.
+ * @param   a_pv        Far pointer.
+ */
+# define BS3_FP_MAKE(a_uSeg, a_off)  ((void __seg *)(a_uSeg) + (void __near *)(a_off))
+#endif
+
 /** @def BS3_CALL
  * The calling convension used by BS3 functions.  */
 #if ARCH_BITS != 64
@@ -599,6 +620,41 @@ BS3_DECL(void) Bs3PrintU32_c16(uint32_t uValue);
 BS3_DECL(void) Bs3PrintU32_c32(uint32_t uValue); /**< @copydoc Bs3PrintU32_c16 */
 BS3_DECL(void) Bs3PrintU32_c64(uint32_t uValue); /**< @copydoc Bs3PrintU32_c16 */
 #define Bs3PrintU32 BS3_CMN_NM(Bs3PrintU32) /**< Selects #Bs3PrintU32_c16, #Bs3PrintU32_c32 or #Bs3PrintU32_c64. */
+
+/**
+ * Formats and prints a string to the screen.
+ *
+ * @param   pszFormat       The format string.  See #Bs3PrintFV for supported
+ *                          format types and flags.
+ * @param   ...             Format arguments.
+ */
+BS3_DECL(size_t) Bs3PrintF_c16(const char BS3_FAR *pszFormat, ...);
+BS3_DECL(size_t) Bs3PrintF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3PrintF_c16 */
+BS3_DECL(size_t) Bs3PrintF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3PrintF_c16 */
+#define Bs3PrintF BS3_CMN_NM(Bs3PrintF) /**< Selects #Bs3PrintF_c16, #Bs3PrintF_c32 or #Bs3PrintF_c64. */
+
+/**
+ * Formats and prints a string to the screen, va_list version.
+ *
+ * Supported types:
+ *      - %RI8, %RI16, %RI32, %RI64
+ *      - %RU8, %RU16, %RU32, %RU64
+ *      - %RX8, %RX16, %RX32, %RX64
+ *      - %i, %d
+ *      - %u
+ *      - %x
+ *      - %c
+ *      - %p (far pointer)
+ *      - %s (far pointer)
+ *
+ * @param   pszFormat       The format string.  See #Bs3PrintFV for supported
+ *                          format types and flags.
+ * @param   va              Format arguments.
+ */
+BS3_DECL(size_t) Bs3PrintFV_c16(const char BS3_FAR *pszFormat, va_list va);
+BS3_DECL(size_t) Bs3PrintFV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3PrintFV_c16 */
+BS3_DECL(size_t) Bs3PrintFV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3PrintFV_c16 */
+#define Bs3PrintFV BS3_CMN_NM(Bs3PrintFV) /**< Selects #Bs3PrintFV_c16, #Bs3PrintFV_c32 or #Bs3PrintFV_c64. */
 
 /**
  * Prints a string to the screen.
