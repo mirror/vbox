@@ -894,18 +894,28 @@ BEGINPROC RT_NOCRT(%1)
 
 
 ;
+; NASM sets __PASS__ to 0 in preprocess-only mode, and to 3 when only generating dependencies.
+; YASM has no such setting which is why we must rely on kBuild to tell us what we're doing.
+; For simplicity, we'll set the kBuild macro when using NASM.
+;
+%ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
+ %ifdef __NASM__
+  %if __PASS__ == 0 || __PASS__ == 3
+   %define KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
+  %endif
+ %endif
+%endif
+
+
+;
 ; Some simple compile time assertions.
 ;
-; Note! Requires new kBuild to work.
+; Note! Requires new kBuild to work with YASM (see above).
 ;
 
 ;;
 ; Structure size assertion macro.
-%ifdef __NASM__
- %define AssertCompileSize(a_Type, a_Size) ; Not possible?
-%else
- %define AssertCompileSize(a_Type, a_Size) AssertCompileSizeML a_Type, a_Size
-%endif
+%define AssertCompileSize(a_Type, a_Size) AssertCompileSizeML a_Type, a_Size
 %macro AssertCompileSizeML 2
  %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
   %assign AssertVar_cbActual   %1 %+ _size
@@ -918,11 +928,7 @@ BEGINPROC RT_NOCRT(%1)
 
 ;;
 ; Structure memember offset assertion macro.
-%ifdef __NASM__
- %define AssertCompileMemberOffset(a_Type, a_Member, a_off) ; Not possible?
-%else
- %define AssertCompileMemberOffset(a_Type, a_Member, a_off) AssertCompileMemberOffsetML a_Type, a_Member, a_off
-%endif
+%define AssertCompileMemberOffset(a_Type, a_Member, a_off) AssertCompileMemberOffsetML a_Type, a_Member, a_off
 %macro AssertCompileMemberOffsetML 3
  %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
   %assign AssertVar_offActual   %1 %+ . %+ %2
@@ -934,3 +940,4 @@ BEGINPROC RT_NOCRT(%1)
 %endmacro
 
 %endif
+
