@@ -182,8 +182,9 @@ struc X86TSS32
         .padding_ldt    resw 1
         .fDebugTrap     resw 1
         .offIoBitmap    resw 1
-        .IntRedirBitmap resb 32
+        ;.IntRedirBitmap resb 32 - this is optional.
 endstruc
+AssertCompileSize(X86TSS32,104)
 
 
 struc X86TSS64
@@ -201,9 +202,10 @@ struc X86TSS64
         .ist7           resq 1
         .u16Reserved    resw 5
         .offIoBitmap    resw 1
-        .IntRedirBitmap resb 32
+        ;.IntRedirBitmap resb 32 - this isn't really there!! VBox addition for x86TSS32 structure compatibility in x86.h.
 endstruc
-AssertCompileSize(X86TSS64, 136)
+AssertCompileSize(X86TSS64, 104)
+
 
 %endif
 
