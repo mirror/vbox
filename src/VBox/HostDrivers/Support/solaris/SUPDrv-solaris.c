@@ -1272,16 +1272,16 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     va_list     args;
     char        szMsg[512];
 
+    /* cmn_err() acquires adaptive mutexes. Not preemption safe, see @bugref{6657}. */
+    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+        return 0;
+
     va_start(args, pszFormat);
     RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, args);
     va_end(args);
 
     szMsg[sizeof(szMsg) - 1] = '\0';
-    /* cmn_err() acquires adaptive mutexes. Not preemption safe, see @bugref{6657}. */
-    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-        cmn_err(CE_CONT, "%s", szMsg);
-    else
-        cmn_err(CE_CONT, "[!BadPreemptCtx!] %s", szMsg);
+    cmn_err(CE_CONT, "%s", szMsg);
     return 0;
 }
 
