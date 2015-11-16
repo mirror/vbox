@@ -186,6 +186,8 @@ void * _ReturnAddress(void);
 # define ASMCompilerBarrier()   do { __asm__ __volatile__("" : : : "memory"); } while (0)
 #elif RT_INLINE_ASM_USES_INTRIN
 # define ASMCompilerBarrier()   do { _ReadWriteBarrier(); } while (0)
+#elif defined(__WATCOMC__)
+void ASMCompilerBarrier(void);
 #else /* 2003 should have _ReadWriteBarrier() but I guess we're at 2002 level then... */
 DECLINLINE(void) ASMCompilerBarrier(void)
 {
@@ -4477,9 +4479,9 @@ DECLINLINE(void) ASMBitSetRange(volatile void *pvBitmap, int32_t iBitStart, int3
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(int) ASMBitFirstClear(const volatile void *pvBitmap, uint32_t cBits);
+DECLASM(int32_t) ASMBitFirstClear(const volatile void *pvBitmap, uint32_t cBits);
 #else
-DECLINLINE(int) ASMBitFirstClear(const volatile void *pvBitmap, uint32_t cBits)
+DECLINLINE(int32_t) ASMBitFirstClear(const volatile void *pvBitmap, uint32_t cBits)
 {
     if (cBits)
     {
@@ -4632,9 +4634,9 @@ DECLINLINE(int) ASMBitNextClear(const volatile void *pvBitmap, uint32_t cBits, u
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(int) ASMBitFirstSet(const volatile void *pvBitmap, uint32_t cBits);
+DECLASM(int32_t) ASMBitFirstSet(const volatile void *pvBitmap, uint32_t cBits);
 #else
-DECLINLINE(int) ASMBitFirstSet(const volatile void *pvBitmap, uint32_t cBits)
+DECLINLINE(int32_t) ASMBitFirstSet(const volatile void *pvBitmap, uint32_t cBits)
 {
     if (cBits)
     {
@@ -4987,18 +4989,22 @@ DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64)
  * @param   u32                 The value to rotate.
  * @param   cShift              How many bits to rotate by.
  */
+#ifdef __WATCOMC__
+DECLASM(uint32_t) ASMRotateLeftU32(uint32_t u32, unsigned cShift);
+#else
 DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift)
 {
-#if RT_INLINE_ASM_USES_INTRIN
+# if RT_INLINE_ASM_USES_INTRIN
     return _rotl(u32, cShift);
-#elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+# elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     __asm__ __volatile__("roll %b1, %0" : "=g" (u32) : "Ic" (cShift), "0" (u32));
     return u32;
-#else
+# else
     cShift &= 31;
     return (u32 << cShift) | (u32 >> (32 - cShift));
-#endif
+# endif
 }
+#endif
 
 
 /**
@@ -5008,18 +5014,22 @@ DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift)
  * @param   u32                 The value to rotate.
  * @param   cShift              How many bits to rotate by.
  */
+#ifdef __WATCOMC__
+DECLASM(uint32_t) ASMRotateRightU32(uint32_t u32, unsigned cShift);
+#else
 DECLINLINE(uint32_t) ASMRotateRightU32(uint32_t u32, uint32_t cShift)
 {
-#if RT_INLINE_ASM_USES_INTRIN
+# if RT_INLINE_ASM_USES_INTRIN
     return _rotr(u32, cShift);
-#elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+# elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     __asm__ __volatile__("rorl %b1, %0" : "=g" (u32) : "Ic" (cShift), "0" (u32));
     return u32;
-#else
+# else
     cShift &= 31;
     return (u32 >> cShift) | (u32 << (32 - cShift));
-#endif
+# endif
 }
+#endif
 
 
 /**
@@ -5096,6 +5106,16 @@ DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift)
 }
 
 /** @} */
+
+
+/*
+ * Include #pragma aux definitions for Watcom C/C++.
+ */
+#if defined(__WATCOMC__) && ARCH_BITS == 16 && defined(RT_ARCH_X86)
+# include "asm-watcom-x86-16.h"
+#elif defined(__WATCOMC__) && ARCH_BITS == 32 && defined(RT_ARCH_X86)
+# include "asm-watcom-x86-32.h"
+#endif
 
 
 /** @} */
