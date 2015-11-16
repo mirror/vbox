@@ -1566,6 +1566,32 @@ typedef RTCCINTREG             *PRTCCINTREG;
 /** Pointer to a const signed integer register in the current context. */
 typedef RTCCINTREG const       *PCRTCCINTREG;
 
+
+/** Unsigned integer register in the current context.
+ * @remarks This is for dealing with EAX in 16-bit mode. */
+#if ARCH_BITS == 16 && defined(RT_ARCH_X86)
+typedef uint32_t                RTCCUINTXREG;
+#else
+typedef RTCCUINTREG             RTCCUINTXREG;
+#endif
+/** Pointer to an unsigned integer register in the current context. */
+typedef RTCCUINTREG            *PRTCCUINTREG;
+/** Pointer to a const unsigned integer register in the current context. */
+typedef RTCCUINTREG const      *PCRTCCUINTREG;
+
+/** Signed integer extended register in the current context.
+ * @remarks This is for dealing with EAX in 16-bit mode. */
+#if ARCH_BITS == 16 && defined(RT_ARCH_X86)
+typedef int32_t                 RTCCINTXREG;
+#else
+typedef RTCCINTREG              RTCCINTXREG;
+#endif
+/** Pointer to a signed integer extended register in the current context. */
+typedef RTCCINTXREG            *PRTCCINTXREG;
+/** Pointer to a const signed integer extended register in the current
+ * context. */
+typedef RTCCINTXREG const      *PCRTCCINTXREG;
+
 /** @} */
 
 
