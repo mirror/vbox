@@ -3204,6 +3204,8 @@ int vboxCmdVBVACmdHostCtl(PPDMIDISPLAYVBVACALLBACKS pInterface,
 {
     PVGASTATE pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
     struct VBOXVDMAHOST *pVdma = pVGAState->pVdma;
+    if (pVdma == NULL)
+        return VERR_INVALID_STATE;
     pCmd->CalloutList.List.pNext = NULL;
     return vdmaVBVACtlOpaqueHostSubmit(pVdma, pCmd, cbCmd, pfnCompletion, pvCompletion);
 }
@@ -3281,6 +3283,8 @@ DECLCALLBACK(int) vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface
 {
     PVGASTATE pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
     struct VBOXVDMAHOST *pVdma = pVGAState->pVdma;
+    if (pVdma == NULL)
+        return VERR_INVALID_STATE;
     VBOXCMDVBVA_CMDHOSTCTL_SYNC Data;
     Data.pVdma = pVdma;
     Data.fProcessing = 1;
