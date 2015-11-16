@@ -3321,6 +3321,9 @@ DECLINLINE(void) ASMSetAC(void)
 
 #endif /* !_MSC_VER) || !RT_ARCH_AMD64 */
 
+/*
+ * Include #pragma aux definitions for Watcom C/C++.
+ */
 #if defined(__WATCOMC__) && ARCH_BITS == 16
 # include "asm-amd64-x86-watcom-16.h"
 #elif defined(__WATCOMC__) && ARCH_BITS == 32
