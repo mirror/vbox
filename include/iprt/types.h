@@ -1575,9 +1575,9 @@ typedef uint32_t                RTCCUINTXREG;
 typedef RTCCUINTREG             RTCCUINTXREG;
 #endif
 /** Pointer to an unsigned integer register in the current context. */
-typedef RTCCUINTREG            *PRTCCUINTREG;
+typedef RTCCUINTREG            *PRTCCUINTXREG;
 /** Pointer to a const unsigned integer register in the current context. */
-typedef RTCCUINTREG const      *PCRTCCUINTREG;
+typedef RTCCUINTREG const      *PCRTCCUINTXREG;
 
 /** Signed integer extended register in the current context.
  * @remarks This is for dealing with EAX in 16-bit mode. */
