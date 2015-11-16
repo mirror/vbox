@@ -152,7 +152,7 @@
     "shr  eax, 16" \
     "mov  ecx, edx" \
     "shr  ecx, 16" \
-    parm [es si] [dx cx bx ax] \
+    parm [es si] \
     value [dx cx bx ax] \
     modify exact [dx cx bx ax];
 
@@ -168,7 +168,7 @@
     "shr  eax, 16" \
     "mov  ecx, edx" \
     "shr  ecx, 16" \
-    parm [es si] [dx cx bx ax] \
+    parm [es si] \
     value [dx cx bx ax] \
     modify exact [dx cx bx ax];
 
