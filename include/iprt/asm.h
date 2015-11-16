@@ -141,7 +141,7 @@
  * when in PIC mode on x86.
  */
 #ifndef RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
-# ifdef DOXYGEN_RUNNING
+# if defined(DOXYGEN_RUNNING) || defined(__WATCOMC__) /* Watcom has trouble with the expression below */
 #  define RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC 1
 # else
 #  define RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC \
@@ -165,6 +165,8 @@ void * _ReturnAddress(void);
 # define ASMReturnAddress() _ReturnAddress()
 #elif defined(__GNUC__) || defined(DOXYGEN_RUNNING)
 # define ASMReturnAddress() __builtin_return_address(0)
+#elif defined(__WATCOMC__)
+# define ASMReturnAddress() Watcom_does_not_appear_to_have_intrinsic_return_address_function()
 #else
 # error "Unsupported compiler."
 #endif
@@ -509,7 +511,7 @@ DECLINLINE(int64_t) ASMAtomicXchgS64(volatile int64_t *pi64, int64_t i64)
  */
 DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, const void *pv)
 {
-#if ARCH_BITS == 32
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
     return (void *)ASMAtomicXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
 #elif ARCH_BITS == 64
     return (void *)ASMAtomicXchgU64((volatile uint64_t *)(void *)ppv, (uint64_t)pv);
@@ -564,7 +566,7 @@ DECLINLINE(RTRCPTR) ASMAtomicXchgRCPtr(RTRCPTR volatile *ppvRC, RTRCPTR pvRC)
  */
 DECLINLINE(RTR0PTR) ASMAtomicXchgR0Ptr(RTR0PTR volatile *ppvR0, RTR0PTR pvR0)
 {
-#if R0_ARCH_BITS == 32
+#if R0_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
     return (RTR0PTR)ASMAtomicXchgU32((volatile uint32_t *)(void *)ppvR0, (uint32_t)pvR0);
 #elif R0_ARCH_BITS == 64
     return (RTR0PTR)ASMAtomicXchgU64((volatile uint64_t *)(void *)ppvR0, (uint64_t)pvR0);
@@ -583,7 +585,7 @@ DECLINLINE(RTR0PTR) ASMAtomicXchgR0Ptr(RTR0PTR volatile *ppvR0, RTR0PTR pvR0)
  */
 DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile *ppvR3, RTR3PTR pvR3)
 {
-#if R3_ARCH_BITS == 32
+#if R3_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
     return (RTR3PTR)ASMAtomicXchgU32((volatile uint32_t *)(void *)ppvR3, (uint32_t)pvR3);
 #elif R3_ARCH_BITS == 64
     return (RTR3PTR)ASMAtomicXchgU64((volatile uint64_t *)(void *)ppvR3, (uint64_t)pvR3);
@@ -602,7 +604,7 @@ DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile *ppvR3, RTR3PTR pvR3)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
 # define ASMAtomicXchgHandle(ph, hNew, phRes) \
    do { \
        AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
@@ -921,7 +923,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t *pi64, const int64_t i64, 
  */
 DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void * volatile *ppv, const void *pvNew, const void *pvOld)
 {
-#if ARCH_BITS == 32
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
     return ASMAtomicCmpXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld);
 #elif ARCH_BITS == 64
     return ASMAtomicCmpXchgU64((volatile uint64_t *)(void *)ppv, (uint64_t)pvNew, (uint64_t)pvOld);
@@ -970,7 +972,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void * volatile *ppv, const void *pvNew
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
 # define ASMAtomicCmpXchgHandle(ph, hNew, hOld, fRc) \
    do { \
        AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
@@ -1219,7 +1221,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
 # define ASMAtomicCmpXchgExHandle(ph, hNew, hOld, fRc, phOldVal) \
     do { \
         AssertCompile(sizeof(*ph)       == sizeof(uint32_t)); \
@@ -1277,7 +1279,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
  */
 DECLINLINE(bool) ASMAtomicCmpXchgExPtrVoid(void * volatile *ppv, const void *pvNew, const void *pvOld, void **ppvOld)
 {
-#if ARCH_BITS == 32
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
     return ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld, (uint32_t *)ppvOld);
 #elif ARCH_BITS == 64
     return ASMAtomicCmpXchgExU64((volatile uint64_t *)(void *)ppv, (uint64_t)pvNew, (uint64_t)pvOld, (uint64_t *)ppvOld);
@@ -1755,6 +1757,9 @@ DECLINLINE(size_t) ASMAtomicReadZ(size_t volatile *pcb)
     return ASMAtomicReadU64((uint64_t volatile *)pcb);
 #elif ARCH_BITS == 32
     return ASMAtomicReadU32((uint32_t volatile *)pcb);
+#elif ARCH_BITS == 16
+    AssertCompileSize(size_t, 2);
+    return ASMAtomicReadU16((uint16_t volatile *)pcb);
 #else
 # error "Unsupported ARCH_BITS value"
 #endif
@@ -1769,10 +1774,13 @@ DECLINLINE(size_t) ASMAtomicReadZ(size_t volatile *pcb)
  */
 DECLINLINE(size_t) ASMAtomicUoReadZ(size_t volatile *pcb)
 {
-#if ARCH_BITS == 64
+#if ARCH_BITS == 64 || (ARCH_BITS == 16 && RT_FAR_DATA)
     return ASMAtomicUoReadU64((uint64_t volatile *)pcb);
 #elif ARCH_BITS == 32
     return ASMAtomicUoReadU32((uint32_t volatile *)pcb);
+#elif ARCH_BITS == 16
+    AssertCompileSize(size_t, 2);
+    return ASMAtomicUoReadU16((uint16_t volatile *)pcb);
 #else
 # error "Unsupported ARCH_BITS value"
 #endif
@@ -1790,7 +1798,7 @@ DECLINLINE(size_t) ASMAtomicUoReadZ(size_t volatile *pcb)
  */
 DECLINLINE(void *) ASMAtomicReadPtr(void * volatile *ppv)
 {
-#if ARCH_BITS == 32
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
     return (void *)ASMAtomicReadU32((volatile uint32_t *)(void *)ppv);
 #elif ARCH_BITS == 64
     return (void *)ASMAtomicReadU64((volatile uint64_t *)(void *)ppv);
@@ -1831,7 +1839,7 @@ DECLINLINE(void *) ASMAtomicReadPtr(void * volatile *ppv)
  */
 DECLINLINE(void *) ASMAtomicUoReadPtr(void * volatile *ppv)
 {
-#if ARCH_BITS == 32
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
     return (void *)ASMAtomicUoReadU32((volatile uint32_t *)(void *)ppv);
 #elif ARCH_BITS == 64
     return (void *)ASMAtomicUoReadU64((volatile uint64_t *)(void *)ppv);
@@ -1895,7 +1903,7 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
 # define ASMAtomicReadHandle(ph, phRes) \
     do { \
         AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
@@ -1922,7 +1930,7 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
 # define ASMAtomicUoReadHandle(ph, phRes) \
     do { \
         AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
@@ -2217,7 +2225,7 @@ DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool *pf, bool f)
  */
 DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
 {
-#if ARCH_BITS == 32
+#if ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
     ASMAtomicWriteU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
 #elif ARCH_BITS == 64
     ASMAtomicWriteU64((volatile uint64_t *)(void *)ppv, (uint64_t)pv);
@@ -2361,7 +2369,7 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
 # define ASMAtomicWriteHandle(ph, hNew) \
     do { \
         AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
@@ -2386,7 +2394,7 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 || (ARCH_BITS == 16 && RT_FAR_DATA)
 # define ASMAtomicUoWriteHandle(ph, hNew) \
     do { \
         AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
@@ -2439,6 +2447,17 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
         } \
     } while (0)
 
+
+
+/**
+ * Atomically exchanges and adds to a 16-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pu16        Pointer to the value.
+ * @param   u16         Number to add.
+ * @remarks Currently not implemented, just to make 16-bit code happy.
+ */
+DECLASM(uint16_t) ASMAtomicAddU16(uint16_t volatile *pu16, uint32_t u16);
 
 
 /**
@@ -2561,9 +2580,14 @@ DECLINLINE(int64_t) ASMAtomicAddS64(int64_t volatile *pi64, int64_t i64)
 DECLINLINE(size_t) ASMAtomicAddZ(size_t volatile *pcb, size_t cb)
 {
 #if ARCH_BITS == 64
+    AssertCompileSize(size_t, 8);
     return ASMAtomicAddU64((uint64_t volatile *)pcb, cb);
 #elif ARCH_BITS == 32
+    AssertCompileSize(size_t, 4);
     return ASMAtomicAddU32((uint32_t volatile *)pcb, cb);
+#elif ARCH_BITS == 16
+    AssertCompileSize(size_t, 2);
+    return ASMAtomicAddU16((uint16_t volatile *)pcb, cb);
 #else
 # error "Unsupported ARCH_BITS value"
 #endif
@@ -2586,6 +2610,33 @@ DECLINLINE(size_t) ASMAtomicAddZ(size_t volatile *pcb, size_t cb)
             default: AssertMsgFailed(("ASMAtomicAddSize: size %d is not supported\n", sizeof(*(pu)))); \
         } \
     } while (0)
+
+
+
+/**
+ * Atomically exchanges and subtracts to an unsigned 16-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pu16        Pointer to the value.
+ * @param   u16         Number to subtract.
+ */
+DECLINLINE(uint16_t) ASMAtomicSubU16(uint16_t volatile *pu16, uint32_t u16)
+{
+    return ASMAtomicAddU16(pu16, (uint16_t)-(int16_t)u16);
+}
+
+
+/**
+ * Atomically exchanges and subtracts to a signed 16-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pi16        Pointer to the value.
+ * @param   i16         Number to subtract.
+ */
+DECLINLINE(int16_t) ASMAtomicSubS16(int16_t volatile *pi16, int16_t i16)
+{
+    return (int16_t)ASMAtomicAddU16((uint16_t volatile *)pi16, (uint16_t)-i16);
+}
 
 
 /**
@@ -2653,6 +2704,9 @@ DECLINLINE(size_t) ASMAtomicSubZ(size_t volatile *pcb, size_t cb)
     return ASMAtomicSubU64((uint64_t volatile *)pcb, cb);
 #elif ARCH_BITS == 32
     return ASMAtomicSubU32((uint32_t volatile *)pcb, cb);
+#elif ARCH_BITS == 16
+    AssertCompileSize(size_t, 2);
+    return ASMAtomicSubU16((uint16_t volatile *)pcb, cb);
 #else
 # error "Unsupported ARCH_BITS value"
 #endif
@@ -2675,6 +2729,17 @@ DECLINLINE(size_t) ASMAtomicSubZ(size_t volatile *pcb, size_t cb)
             default: AssertMsgFailed(("ASMAtomicSubSize: size %d is not supported\n", sizeof(*(pu)))); \
         } \
     } while (0)
+
+
+
+/**
+ * Atomically increment a 16-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pu16        Pointer to the value to increment.
+ * @remarks Not implemented. Just to make 16-bit code happy.
+ */
+DECLASM(uint16_t) ASMAtomicIncU16(uint16_t volatile *pu16);
 
 
 /**
@@ -2788,10 +2853,23 @@ DECLINLINE(int64_t) ASMAtomicIncZ(size_t volatile *pcb)
     return ASMAtomicIncU64((uint64_t volatile *)pcb);
 #elif ARCH_BITS == 32
     return ASMAtomicIncU32((uint32_t volatile *)pcb);
+#elif ARCH_BITS == 16
+    return ASMAtomicIncU16((uint16_t volatile *)pcb);
 #else
 # error "Unsupported ARCH_BITS value"
 #endif
 }
+
+
+
+/**
+ * Atomically decrement an unsigned 32-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pu32        Pointer to the value to decrement.
+ * @remarks Not implemented. Just to make 16-bit code happy.
+ */
+DECLASM(uint32_t) ASMAtomicDecU16(uint16_t volatile *pu16);
 
 
 /**
@@ -2904,6 +2982,8 @@ DECLINLINE(int64_t) ASMAtomicDecZ(size_t volatile *pcb)
     return ASMAtomicDecU64((uint64_t volatile *)pcb);
 #elif ARCH_BITS == 32
     return ASMAtomicDecU32((uint32_t volatile *)pcb);
+#elif ARCH_BITS == 16
+    return ASMAtomicDecU16((uint16_t volatile *)pcb);
 #else
 # error "Unsupported ARCH_BITS value"
 #endif
