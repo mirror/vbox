@@ -272,7 +272,7 @@
  * @returns selector.
  * @param   a_pv        Far pointer.
  */
-# define BS3_FP_SEG(a_pv)            ((uint16_t)(void __seg *)(void BS3_FAR *)(a_pv))
+# define BS3_FP_SEG(a_pv)            ((uint16_t)(__segment)(void BS3_FAR *)(a_pv))
 /** @def BS3_FP_OFF
  * Get the segment offset part of a far pointer.
  * @returns offset.
@@ -284,7 +284,7 @@
  * @returns selector.
  * @param   a_pv        Far pointer.
  */
-# define BS3_FP_MAKE(a_uSeg, a_off)  ((void __seg *)(a_uSeg) + (void __near *)(a_off))
+# define BS3_FP_MAKE(a_uSeg, a_off)  (((__segment)(a_uSeg)) :> ((void __near *)(a_off)))
 #endif
 
 /** @def BS3_CALL
@@ -578,6 +578,175 @@ extern X86DESC   BS3_DATA_NM(Bs3Ldt)[118];
 /** The end of the LDT (exclusive).   */
 extern X86DESC   BS3_DATA_NM(Bs3LdtEnd);
 
+/** @} */
+
+
+#ifdef __WATCOMC__
+/**
+ * Executes the SMSW instruction and returns the value.
+ *
+ * @returns Machine status word.
+ */
+uint16_t Bs3AsmSmsw(void);
+# pragma aux Bs3AsmSmsw = \
+        "smsw ax" \
+        value [ax] modify exact [ax] nomemory;
+#endif
+
+
+/** @def BS3_IS_PROTECTED_MODE
+ * @returns true if protected mode, false if not. */
+#if ARCH_BITS != 16
+# define BS3_IS_PROTECTED_MODE() (true)
+#else
+# define BS3_IS_PROTECTED_MODE() (Bs3AsmSmsw() & 1 /*PE*/)
+#endif
+
+
+/** @defgroup bs3kit_cross_ptr  Cross context pointer type
+ *
+ * The cross context pointer type is
+ *
+ * @{ */
+
+/**
+ * Cross context pointer base type.
+ */
+#pragma pack(4)
+typedef union BS3XPTR
+{
+    /** The flat pointer.   */
+    uint32_t        uFlat;
+    /** 16-bit view. */
+    struct
+    {
+        uint16_t    uLow;
+        uint16_t    uHigh;
+    } u;
+#if ARCH_BITS == 16
+    /** 16-bit near pointer. */
+    void __near    *pvNear;
+#elif ARCH_BITS == 32
+    /** 32-bit pointer. */
+    void           *pvRaw;
+#endif
+} BS3XPTR;
+#pragma pack()
+
+
+/** @def BS3_XPTR_DEF_INTERNAL
+ * Internal worker.
+ *
+ * @param   a_Scope     RT_NOTHING if structure or global, static or extern
+ *                      otherwise.
+ * @param   a_Type      The type we're pointing to.
+ * @param   a_Name      The member or variable name.
+ * @internal
+ */
+#if ARCH_BITS == 16
+# define BS3_XPTR_DEF_INTERNAL(a_Scope, a_Type, a_Name) \
+    a_Scope union \
+    { \
+        BS3XPTR         XPtr; \
+        a_Type __near  *pNearTyped; \
+    } a_Name
+#elif ARCH_BITS == 32
+# define BS3_XPTR_DEF_INTERNAL(a_Scope, a_Type, a_Name) \
+    a_Scope union \
+    { \
+        BS3XPTR         XPtr; \
+        a_Type         *pTyped; \
+    } a_Name
+#elif ARCH_BITS == 64
+# define BS3_XPTR_DEF_INTERNAL(a_Scope, a_Type, a_Name) \
+    a_Scope union \
+    { \
+        BS3XPTR         XPtr; \
+        a_Type         *pTyped; \
+    } a_Name
+#else
+# error "ARCH_BITS"
+#endif
+
+/** @def BS3_XPTR_DEF_MEMB
+ * Defines a pointer member that can be shared by all CPU modes.
+ *
+ * @param   a_Type      The type we're pointing to.
+ * @param   a_Name      The member or variable name.
+ */
+#define BS3_XPTR_MEMBER(a_Type, a_Name) BS3_XPTR_DEF_INTERNAL(RT_NOTHING, a_Type, a_Name)
+
+/** @def BS3_XPTR_SET
+ * Sets a cross context pointer.
+ *
+ * @param   a_Type      The type we're pointing to.
+ * @param   a_Name      The member or variable name.
+ * @param   a_uFlatPtr  The flat pointer value to assign.  If the x-pointer is
+ *                      used in real mode, this must be less than 1MB.
+ *                      Otherwise the limit is 16MB (due to selector tiling).
+ */
+#define BS3_XPTR_SET(a_Type, a_Name, a_uFlatPtr) \
+    do { a_Name.XPtr.uFlat = (a_uFlatPtr); } while (0)
+
+
+#if ARCH_BITS == 16
+
+/**
+ * Gets the current ring number.
+ * @returns Ring number.
+ */
+DECLINLINE(uint16_t) Bs3Sel16GetCurRing(void);
+# pragma aux Bs3Sel16GetCurRing = \
+            "mov ax, ss" \
+            "and ax, 3" \
+            value [ax dx] modify exact [ax] nomemory;
+
+/**
+ * Converts the high word of a flat pointer into a 16-bit selector.
+ *
+ * This makes use of the tiled area.  It also handles real mode.
+ *
+ * @returns Segment selector value.
+ * @param   uHigh       The high part of flat pointer.
+ * @sa BS3_XPTR_GET, BS3_XPTR_SET
+ */
+DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
+{
+    if (BS3_IS_PROTECTED_MODE())
+        return (__segment)(((uHigh << 3) + BS3_SEL_TILED) | Bs3Sel16GetCurRing());
+    return (__segment)(uHigh << 12);
+}
+
+#endif /* ARCH_BITS == 16*/
+
+/** @def BS3_XPTR_GET
+ * Gets the current context pointer value.
+ *
+ * @returns Usable pointer.
+ * @param   a_Type      The type we're pointing to.
+ * @param   a_Name      The member or variable name.
+ */
+#if ARCH_BITS == 16
+# define BS3_XPTR_GET(a_Type, a_Name) \
+    ((a_Type BS3_FAR *)BS3_FP_MAKE(Bs3Sel16HighFlatPtrToSelector((a_Name).XPtr.u.uHigh), (a_Name).pNearTyped))
+#elif ARCH_BITS == 32
+# define BS3_XPTR_GET(a_Type, a_Name)       ((a_Name).pTyped)
+#elif ARCH_BITS == 64
+# define BS3_XPTR_GET(a_Type, a_Name)       ((a_Type *)(uintptr_t)(a_Name).XPtr.uFlat))
+#else
+# error "ARCH_BITS"
+#endif
+
+
+/** @def BS3_XPTR_IS_NULL
+ * Checks if the cross context pointer is NULL.
+ *
+ * @returns true if NULL, false if not.
+ * @param   a_Type      The type we're pointing to.
+ * @param   a_Name      The member or variable name.
+ */
+#define BS3_XPTR_IS_NULL(a_Type, a_Name)    ((a_Name).XPtr.uFlat == 0)
+/** @} */
 
 
 
@@ -765,6 +934,22 @@ BS3_DECL(void) Bs3TestInit_c32(const char BS3_FAR *pszTest); /**< @copydoc Bs3Te
 BS3_DECL(void) Bs3TestInit_c64(const char BS3_FAR *pszTest); /**< @copydoc Bs3TestInit_c16 */
 #define Bs3TestInit BS3_CMN_NM(Bs3TestInit) /**< Selects #Bs3TestInit_c16, #Bs3TestInit_c32 or #Bs3TestInit_c64. */
 
+
+typedef struct BS3SLABLIST
+{
+    /** Pointer to the first slab. */
+    BS3_XPTR_MEMBER(struct BS3SLAB *, pNext);
+    /** The allocation chunk size. */
+    uint16_t    cbBlock;
+
+} BS3SLABLIST;
+
+typedef struct BS3SLAB
+{
+    /** Pointer to the next slab in this list. */
+    BS3_XPTR_MEMBER(struct BS3SLAB *, pNext);
+
+} BS3SLAB;
 
 /** @} */
 
