@@ -171,6 +171,32 @@ endif
 #       reloading string pointer argument all the time).
 # Note! Optimization options should come after debug stuff as -d2 for instance
 #       disables all optimziations.
+#
+# Compiler options explained:
+#       -nt=xxxx               Sets the text segment name.
+#       -nc=xxxx               Sets the text segment class name.
+#       -nd=xxxx               Sets the data segment name.
+#       -ecc                   Sets the default calling convension to __cdecl
+#                              Update: We don't use this in 16-bit code as it causes unfavorable reloading of DS before calling
+#                                      inlined functions (e.g. iprt/asm.h). Instead we use -ecw and __cdecl where needed.
+#       -ecw                   Sets the default calling convension to __watcall ()
+#       -q                     Quiet, no logos or stuff.
+#       -3                     Use 386 instruction set (16-bit only).
+#       -wx                    Maxium warning level.
+#       -zl                    Don't emit default library information.
+#       -zu                    Assume SS != DS.
+#       -mc                    Compact memory model, far data, small code.
+#       -mf                    Flat memory model (32-bit).
+#       -d1                    Debug info: Globals and line numbers.
+#       -s                     No stack overflow checks.
+#       -oa                    Relaxed aliasing constraints.
+#       -ob                    Branch prediction.
+#       -of                    Generate stack frames when needed.
+#       -oi                    Inline instrinsics functions.
+#       -ol                    Loop optimizations.
+#       -or                    Reorder for best pipeline.
+#       -os                    Favor size over speed.
+#
 TEMPLATE_VBoxBS3KitImg = Template for building BS3Kit test images.
 TEMPLATE_VBoxBS3KitImg_BLD_TRG      = os-agnostic
 TEMPLATE_VBoxBS3KitImg_BLD_TRG_ARCH = x86
@@ -185,9 +211,9 @@ TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CFLAGS       = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -3 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecc -q -3 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -3 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 # 	option quiet, nofarcalls\
@@ -272,9 +298,9 @@ TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL        = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CFLAGS       = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zu -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg32_LDTOOL       = VBoxBsUnusedLd
 
