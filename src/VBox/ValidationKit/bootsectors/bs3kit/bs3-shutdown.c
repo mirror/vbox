@@ -8,7 +8,7 @@ AssertCompileSize(uint64_t, 8);
 
 
 /* Just a sample. */
-void Main_rm(void)
+BS3_DECL(void) Main_rm(void)
 {
     Bs3TestInit("bs3-shutdown");
 
