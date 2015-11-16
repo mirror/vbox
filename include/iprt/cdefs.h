@@ -2720,7 +2720,8 @@
  * The ASM* functions will then be implemented in external .asm files.
  */
 #if (defined(_MSC_VER) && defined(RT_ARCH_AMD64)) \
- || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
+ || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)) \
+ || defined(__WATCOMC__)
 # define RT_INLINE_ASM_EXTERNAL 1
 #else
 # define RT_INLINE_ASM_EXTERNAL 0
@@ -2729,7 +2730,7 @@
 /** @def RT_INLINE_ASM_GNU_STYLE
  * Defined as 1 if the compiler understands GNU style inline assembly.
  */
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 # define RT_INLINE_ASM_GNU_STYLE 0
 #else
 # define RT_INLINE_ASM_GNU_STYLE 1
@@ -2762,6 +2763,16 @@
 # endif
 #elif defined(__GNUC__) && defined(__cplusplus)
 /* 4.5 or later, I think, if in ++11 mode... */
+#endif
+
+/** @def RT_FAR_DATA
+ * Set to 1 if we're in 16-bit mode and use far pointers.
+ */
+#if ARCH_BITS == 16 && defined(__WATCOMC__) \
+  && (defined(__COMPACT__) || defined(__LARGE__))
+# define RT_FAR_DATA 1
+#else
+# define RT_FAR_DATA 0
 #endif
 
 /** @} */
