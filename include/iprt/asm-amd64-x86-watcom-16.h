@@ -117,12 +117,6 @@
     value [ax] \
     modify exact [ax] nomemory;
 
-#pragma aux ASMGetGS = \
-    "mov ax, gs" \
-    parm [] nomemory \
-    value [ax] \
-    modify exact [ax] nomemory;
-
 /** @todo ASMGetSegAttr   */
 
 #pragma aux ASMGetFlags = \
