@@ -96,6 +96,41 @@ disable_service()
     fi
 }
 
+# find_bin_path()
+# !! failure is always fatal
+find_bin_path()
+{
+    if test -z "$1"; then
+        errorprint "missing argument to find_bin_path()"
+        exit 1
+    fi
+
+    binfilename=`basename $1`
+    binfilepath=`which $binfilename 2> /dev/null`
+    if test -x "$binfilepath"; then
+        echo "$binfilepath"
+        return 0
+    else
+        errorprint "$1 missing or is not an executable"
+        exit 1
+    fi
+}
+
+# find_bins()
+# !! failure is always fatal
+find_mandatory_bins()
+{
+    # Search only for binaries that might be in different locations
+    if test ! -x "$BIN_SVCS"; then
+        BIN_SVCS=`find_bin_path "$BIN_SVCS"`
+    fi
+
+    if test ! -x "$BIN_SVCADM"; then
+        BIN_SVCADM=`find_bin_path "$BIN_SVCADM"`
+    fi
+}
+
+
 #
 # Begin execution
 #
@@ -115,20 +150,13 @@ fi
 
 PKG_MISSING_IPS=""
 PKG_MISSING_SVR4=""
-BIN_PKGINFO=`which pkginfo 2> /dev/null`
-BIN_PKG=`which pkg 2> /dev/null`
-BIN_SVCS=`which svcs 2> /dev/null`
+BIN_PKGINFO=/usr/bin/pkginfo
+BIN_PKG=/usr/bin/pkg
+BIN_SVCS=/usr/bin/svcs
 BIN_SVCADM=/usr/sbin/svcadm
 
-# Check if our binaries are fine
-if test ! -x "$BIN_SVCS"; then
-    errorprint "Missing or non-executable binary: svcs ($BIN_SVCS)."
-    exit 1
-fi
-if test ! -x "$BIN_SVCADM"; then
-    errorprint "Missing or non-executable binary: svcadm ($BIN_SVCADM)."
-    exit 1
-fi
+# Check non-optional binaries
+find_mandatory_bins
 
 infoprint "Checking package dependencies..."
 
