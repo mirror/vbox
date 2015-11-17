@@ -24,7 +24,13 @@
         <File Id="file_VBoxNetAdp.cat" Name="VBoxNetAdp.cat"
               Source="$(env.PATH_OUT)\bin\VBoxNetAdp.cat" />
 <?endif ?>
-        <Condition><![CDATA[NETWORKTYPE="NDIS5"]]></Condition>
+
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+        <Condition><![CDATA[(localMSMNetworkType="NDIS5")]]></Condition>
+<?else ?>
+        <Condition><![CDATA[(NETWORKTYPE="NDIS5")]]></Condition>
+<?endif ?>
+
     </Component>
 
 </Include>

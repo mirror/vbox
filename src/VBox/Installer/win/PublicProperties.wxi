@@ -19,12 +19,6 @@
 <!-- Define our own public properties here in order to get those also recognized in case
      case we're building the installer as MSM modules -->
 
-<!-- Default property for network adapter type -->
-<Property Id="NETWORKTYPE" Value="NDIS6" Secure="yes"/>
-
-<!-- Force NDIS5 on pre-Vista -->
-<SetProperty Id="NETWORKTYPE" After="CostFinalize" Value="NDIS5"><![CDATA[(NETWORKTYPE="NDIS6") AND (VersionNT < 600)]]></SetProperty>
-
   <!-- Whether or not a desktop shortcut should be created. -->
   <Property Id="VBOX_INSTALLDESKTOPSHORTCUT" Value="1" Secure="yes"/>
   <SetProperty Id="VBOX_INSTALLDESKTOPSHORTCUT" After="AppSearch" Sequence="both"

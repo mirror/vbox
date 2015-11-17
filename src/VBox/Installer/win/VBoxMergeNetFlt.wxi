@@ -29,7 +29,13 @@
         <File Id="file_VBoxNetFlt.cat" Name="VBoxNetFlt.cat"
               Source="$(env.PATH_OUT)\bin\VBoxNetFlt.cat" />
 <?endif ?>
-        <Condition><![CDATA[NETWORKTYPE="NDIS5"]]></Condition>
+
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+        <Condition><![CDATA[(localMSMNetworkType="NDIS5")]]></Condition>
+<?else ?>
+        <Condition><![CDATA[(NETWORKTYPE="NDIS5")]]></Condition>
+<?endif ?>
+
     </Component>
 
 <?endif ?> <!-- VBOX_WITH_NETFLT -->

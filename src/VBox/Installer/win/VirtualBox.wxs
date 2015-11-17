@@ -60,6 +60,13 @@
     <Property Id="ARPPRODUCTICON">IconVirtualBox</Property>
     <Property Id="ARPURLINFOABOUT">http://www.virtualbox.org</Property>
     <Property Id="ARPURLUPDATEINFO">http://www.virtualbox.org</Property>
+    
+    <Property Id="NETWORKTYPE" Value="NDIS6" Secure="yes"/>
+
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
+    <!-- Force NDIS5 on pre-Vista -->
+    <SetProperty Id="NETWORKTYPE" After="CostFinalize" Value="NDIS5"><![CDATA[(VersionNT < 600)]]></SetProperty>
+<?endif ?>
 
     <!-- Install the product for all users on the system -->
     <Property Id="ALLUSERS"><![CDATA[1]]></Property>
@@ -240,7 +247,9 @@
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
                         <Directory Id="dir_NetFlt" Name="netflt">
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-                            <Merge Id="msm_VBoxNetworkFlt" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkFlt)" DiskId="1" />
+                            <Merge Id="msm_VBoxNetworkFlt" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkFlt)" DiskId="1">
+                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/> 
+                            </Merge>
     <?else ?>
                             <Directory Id="msm_VBoxNetworkFltFolder" FileSource=".">
                                 <?include VBoxMergeNetFlt.wxi ?>
@@ -250,7 +259,9 @@
 <?endif ?>
                         <Directory Id="dir_NetAdp" Name="netadp">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-                            <Merge Id="msm_VBoxNetworkAdp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp)" DiskId="1" />
+                            <Merge Id="msm_VBoxNetworkAdp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp)" DiskId="1">
+                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/> 
+                            </Merge>
 <?else ?>
                             <Directory Id="msm_VBoxNetworkAdpFolder" FileSource=".">
                                 <?include VBoxMergeNetAdp.wxi ?>
@@ -261,7 +272,9 @@
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
                         <Directory Id="dir_NetLwf" Name="netlwf">
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-                            <Merge Id="msm_VBoxNetworkLwf" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkLwf)" DiskId="1" />
+                            <Merge Id="msm_VBoxNetworkLwf" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkLwf)" DiskId="1">
+                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/> 
+                            </Merge>
     <?else ?>
                             <Directory Id="msm_VBoxNetworkLwfFolder" FileSource=".">
                                 <?include VBoxMergeNetLwf.wxi ?>
@@ -271,7 +284,9 @@
 <?endif ?>
                         <Directory Id="dir_NetAdp6" Name="netadp6">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-                            <Merge Id="msm_VBoxNetworkAdp6" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp6)" DiskId="1" />
+                            <Merge Id="msm_VBoxNetworkAdp6" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp6)" DiskId="1">
+                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/> 
+                            </Merge>
 <?else ?>
                             <Directory Id="msm_VBoxNetworkAdp6Folder" FileSource=".">
                                 <?include VBoxMergeNetAdp6.wxi ?>
