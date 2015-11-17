@@ -41,6 +41,18 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#if ARCH_BITS == 64 && !defined(RT_OS_WINDOWS)
+# define ELF_FMT_X64  "lx"
+# define ELF_FMT_D64  "ld"
+#else
+# define ELF_FMT_X64  "llx"
+# define ELF_FMT_D64  "lld"
+#endif
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Verbosity level. */
@@ -241,8 +253,8 @@ static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
     for (uint32_t i = 1; i < pEhdr->e_shnum; i++)
     {
         if (g_cVerbose)
-            printf("shdr[%u]: name=%#x '%s' type=%#x flags=%#llx addr=%#llx off=%#llx size=%#llx\n"
-                   "          link=%u info=%#x align=%#llx entsize=%#llx\n",
+            printf("shdr[%u]: name=%#x '%s' type=%#x flags=%#" ELF_FMT_X64 " addr=%#" ELF_FMT_X64 " off=%#" ELF_FMT_X64 " size=%#" ELF_FMT_X64 "\n"
+                   "          link=%u info=%#x align=%#" ELF_FMT_X64 " entsize=%#" ELF_FMT_X64 "\n",
                    i, paShdrs[i].sh_name, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_type, paShdrs[i].sh_flags,
                    paShdrs[i].sh_addr, paShdrs[i].sh_offset, paShdrs[i].sh_size,
                    paShdrs[i].sh_link, paShdrs[i].sh_info, paShdrs[i].sh_addralign, paShdrs[i].sh_entsize);
@@ -253,19 +265,19 @@ static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                              paShdrs[i].sh_entsize, i, &pszStrTab[paShdrs[i].sh_name]);
             uint32_t const cRelocs = paShdrs[i].sh_size / sizeof(Elf64_Rela);
             if (cRelocs * sizeof(Elf64_Rela) != paShdrs[i].sh_size)
-                return error(pszFile, "Uneven relocation entry count in #%u (%s): sh_size=%#llx\n", (unsigned)sizeof(Elf64_Rela),
+                return error(pszFile, "Uneven relocation entry count in #%u (%s): sh_size=%#" ELF_FMT_X64 "\n", (unsigned)sizeof(Elf64_Rela),
                              paShdrs[i].sh_entsize, i, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_size);
             if (   paShdrs[i].sh_offset > cbFile
                 || paShdrs[i].sh_size  >= cbFile
                 || paShdrs[i].sh_offset + paShdrs[i].sh_size > cbFile)
-                return error(pszFile, "The content of section #%u '%s' is outside the file (%#llx LB %#llx, cbFile=%#lx)\n",
+                return error(pszFile, "The content of section #%u '%s' is outside the file (%#" ELF_FMT_X64 " LB %#" ELF_FMT_X64 ", cbFile=%#lx)\n",
                              i, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_offset, paShdrs[i].sh_size, (unsigned long)cbFile);
             Elf64_Rela *paRels = (Elf64_Rela *)&pbFile[paShdrs[i].sh_offset];
             for (uint32_t j = 0; j < cRelocs; j++)
             {
                 uint8_t const bType = ELF64_R_TYPE(paRels[j].r_info);
                 if (g_cVerbose > 1)
-                    printf("%#018llx  %#018llx %s  %+lld\n", paRels[j].r_offset, paRels[j].r_info,
+                    printf("%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 " %s  %+" ELF_FMT_D64 "\n", paRels[j].r_offset, paRels[j].r_info,
                            bType < RT_ELEMENTS(g_apszElfAmd64RelTypes) ? g_apszElfAmd64RelTypes[bType] : "unknown", paRels[j].r_addend);
 
                 /* Truncate 64-bit wide absolute relocations, ASSUMING that the high bits
@@ -381,7 +393,7 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                     {
                         case IMAGE_REL_AMD64_ADDR64:
                             if (uLoc.pu64)
-                                off += printf("  %#018llx", *uLoc.pu64);
+                                off += printf("  %#018" ELF_FMT_X64 "", *uLoc.pu64);
                             break;
                         case IMAGE_REL_AMD64_ADDR32:
                         case IMAGE_REL_AMD64_ADDR32NB:
