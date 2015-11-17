@@ -480,7 +480,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/information/UIGInformationPreview.h \
 	src/runtime/information/UIGInformationSet.h \
 	src/runtime/information/UIGInformationView.h \
-	src/runtime/information/UIVMInformationDialog.h
+	src/runtime/information/UIVMInformationDialog.h \
+	src/runtime/information/UIGRuntimeInformation.h
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VirtualBox_QT_MOCHDRS += \
@@ -776,7 +777,8 @@ VirtualBox_SOURCES = \
 	src/runtime/information/UIGInformationPreview.cpp \
 	src/runtime/information/UIGInformationSet.cpp \
 	src/runtime/information/UIGInformationView.cpp \
-	src/runtime/information/UIVMInformationDialog.cpp
+	src/runtime/information/UIVMInformationDialog.cpp \
+	src/runtime/information/UIGRuntimeInformation.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VirtualBox_SOURCES += \
