@@ -2868,7 +2868,7 @@ DECLINLINE(int64_t) ASMAtomicIncZ(size_t volatile *pcb)
  * Atomically decrement an unsigned 32-bit value, ordered.
  *
  * @returns The new value.
- * @param   pu32        Pointer to the value to decrement.
+ * @param   pu16        Pointer to the value to decrement.
  * @remarks Not implemented. Just to make 16-bit code happy.
  */
 DECLASM(uint32_t) ASMAtomicDecU16(uint16_t volatile *pu16);
