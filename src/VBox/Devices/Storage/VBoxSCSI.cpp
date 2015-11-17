@@ -175,6 +175,9 @@ int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal)
             else if (pVBoxSCSI->enmState == VBOXSCSISTATE_READ_CDB_SIZE_BUFHI)
             {
                 uint8_t cbCDB = uVal & 0x0F;
+
+                if (cbCDB == 0)
+                    cbCDB = 16;
                 if (cbCDB > VBOXSCSI_CDB_SIZE_MAX)
                     vboxscsiReset(pVBoxSCSI, true /*fEverything*/);
                 else

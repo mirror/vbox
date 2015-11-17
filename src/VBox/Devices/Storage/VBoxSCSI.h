@@ -87,7 +87,7 @@ typedef enum VBOXSCSISTATE
 #define VBOXSCSI_TXDIR_TO_DEVICE   1
 
 /** Maximum CDB size the BIOS driver sends. */
-#define VBOXSCSI_CDB_SIZE_MAX     10
+#define VBOXSCSI_CDB_SIZE_MAX     16
 
 typedef struct VBOXSCSI
 {
@@ -100,7 +100,7 @@ typedef struct VBOXSCSI
     /** The size of the CDB we are issuing. */
     uint8_t              cbCDB;
     /** The command to issue. */
-    uint8_t              abCDB[12];
+    uint8_t              abCDB[VBOXSCSI_CDB_SIZE_MAX + 4];
     /** Current position in the array. */
     uint8_t              iCDB;
 

@@ -144,7 +144,9 @@ void put_str_near(uint16_t action, const char __near *s)
 //
 //   Supports %[format_width][length]format
 //   where format can be x,X,u,d,s,S,c
-//   and the optional length modifier is l (ell)
+//   and the optional length modifier is l (ell, long 32-bit) or ll
+//   (long long, 64-bit).
+//   Only x,X work with ll
 //--------------------------------------------------------------------------
 void bios_printf(uint16_t action, const char *s, ...)
 {
@@ -188,6 +190,32 @@ void bios_printf(uint16_t action, const char *s, ...)
                 }
                 else if (c == 'u') {
                     put_uint(action, arg, format_width, 0);
+                }
+                else if (c == 'l' && s[1] == 'l') {
+                    uint64_t llval;
+                    uint16_t *cp16;
+
+                    s += 2;
+                    c = *s;
+                    cp16 = (uint16_t *)&llval;
+                    cp16[0] = arg;
+                    cp16[1] = va_arg( args, uint16_t );
+                    cp16[2] = va_arg( args, uint16_t );
+                    cp16[3] = va_arg( args, uint16_t );
+                    if (c == 'x' || c == 'X') {
+                        if (format_width == 0)
+                            format_width = 16;
+                        if (c == 'x')
+                            hexadd = 'a';
+                        else
+                            hexadd = 'A';
+                        for (i=format_width-1; i>=0; i--) {
+                            nibble =  (llval >> (i * 4)) & 0x000f;
+                            send (action, (nibble<=9)? (nibble+'0') : (nibble-10+hexadd));
+                        }
+                    } else {
+                        BX_PANIC("bios_printf: unknown %ll format\n");
+                    }
                 }
                 else if (c == 'l') {
                     s++;

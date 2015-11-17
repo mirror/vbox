@@ -359,8 +359,8 @@ static uint16_t ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
     ahci->abCmd[7]  = RT_BIT_32(6); /* LBA access. */
 
     ahci->abCmd[8]  = (bios_dsk->drqp.lba >> 24) & 0xff;
-    ahci->abCmd[9]  = 0;
-    ahci->abCmd[10] = 0;
+    ahci->abCmd[9]  = (bios_dsk->drqp.lba >> 32) & 0xff;
+    ahci->abCmd[10] = (bios_dsk->drqp.lba >> 40) & 0xff;
     ahci->abCmd[11] = 0;
 
     ahci->abCmd[12] = (uint8_t)(n_sect & 0xff);
@@ -524,9 +524,9 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
     if (device_id > BX_MAX_AHCI_DEVICES)
         BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
 
-    DBG_AHCI("%s: %u sectors @ LBA %lu, device %d, port %d\n", __func__,
-             bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
-             bios_dsk->ahcidev[device_id].port);
+    DBG_AHCI("%s: %u sectors @ LBA 0x%llx, device %d, port %d\n", __func__,
+             bios_dsk->drqp.nsect, bios_dsk->drqp.lba,
+             device_id, bios_dsk->ahcidev[device_id].port);
 
     high_bits_save(bios_dsk->ahci_seg :> 0);
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
@@ -556,7 +556,7 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
     if (device_id > BX_MAX_AHCI_DEVICES)
         BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
 
-    DBG_AHCI("%s: %u sectors @ LBA %lu, device %d, port %d\n", __func__,
+    DBG_AHCI("%s: %u sectors @ LBA 0x%llx, device %d, port %d\n", __func__,
              bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
              bios_dsk->ahcidev[device_id].port);
 
@@ -601,7 +601,7 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     DBG_AHCI("%s: reading %u %u-byte sectors\n", __func__,
              bios_dsk->drqp.nsect, bios_dsk->drqp.sect_sz);
 
-    bios_dsk->drqp.lba     = (uint32_t)length << 8;     //@todo: xfer length limit
+    bios_dsk->drqp.lba     = length << 8;     //@todo: xfer length limit
     bios_dsk->drqp.buffer  = buffer;
     bios_dsk->drqp.nsect   = length / bios_dsk->drqp.sect_sz;
 //    bios_dsk->drqp.sect_sz = 2048;
@@ -689,7 +689,7 @@ void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
             VBOXAHCI_PORT_READ_REG(ahci->iobase, u8Port, AHCI_REG_PORT_SIG, val);
             if (val == 0x101)
             {
-                uint32_t    sectors;
+                uint64_t    sectors;
                 uint16_t    cylinders, heads, spt;
                 chs_t       lgeo;
                 uint8_t     idxCmosChsBase;
@@ -712,11 +712,10 @@ void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 spt       = *(uint16_t *)(abBuffer+(6*2));  // word 6
                 sectors   = *(uint32_t *)(abBuffer+(60*2)); // word 60 and word 61
 
-                /** @todo update sectors to be a 64 bit number (also lba...). */
                 if (sectors == 0x0FFFFFFF)  /* For disks bigger than ~128GB */
-                    sectors = *(uint32_t *)(abBuffer+(100*2)); // words 100 to 103 (someday)
+                    sectors = *(uint64_t *)(abBuffer+(100*2)); // words 100 to 103
 
-                DBG_AHCI("AHCI: %ld sectors\n", sectors);
+                DBG_AHCI("AHCI: 0x%llx sectors\n", sectors);
 
                 bios_dsk->ahcidev[devcount_ahci].port = u8Port;
                 bios_dsk->devices[hd_index].type        = DSK_TYPE_AHCI;
@@ -758,8 +757,9 @@ void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 else
                     set_geom_lba(&lgeo, sectors);   /* Default EDD-style translated LBA geometry. */
 
-                BX_INFO("AHCI %d-P#%d: PCHS=%u/%u/%u LCHS=%u/%u/%u %lu sectors\n", devcount_ahci,
-                        u8Port, cylinders, heads, spt, lgeo.cylinders, lgeo.heads, lgeo.spt, sectors);
+                BX_INFO("AHCI %d-P#%d: PCHS=%u/%u/%u LCHS=%u/%u/%u 0x%llx sectors\n", devcount_ahci,
+                        u8Port, cylinders, heads, spt, lgeo.cylinders, lgeo.heads, lgeo.spt,
+                        sectors);
 
                 bios_dsk->devices[hd_index].lchs = lgeo;
 

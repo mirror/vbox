@@ -98,12 +98,14 @@ dsk_acc_t   dskacc[DSKTYP_CNT] = {
  * Phoenix EDD 3.0. This is used as a fallback to generate sane logical
  * geometry in case none was provided in CMOS.
  */
-void set_geom_lba(chs_t __far *lgeo, uint32_t nsectors)
+void set_geom_lba(chs_t __far *lgeo, uint64_t nsectors64)
 {
     uint32_t    limit = 8257536;    /* 1024 * 128 * 63 */
+    uint32_t    nsectors;
     unsigned    heads = 255;
     int         i;
 
+    nsectors = (nsectors64 >> 32) ? 0xFFFFFFFFL : (uint32_t)nsectors64;
     /* Start with ~4GB limit, go down to 504MB. */
     for (i = 0; i < 4; ++i) {
         if (nsectors <= limit)
@@ -330,7 +332,7 @@ int13_success_noah:
 
 void BIOSCALL int13_harddisk_ext(disk_regs_t r)
 {
-    uint32_t            lba;
+    uint64_t            lba;
     uint16_t            ebda_seg = read_word(0x0040,0x000E);
     uint16_t            segment, offset;
     uint16_t            npc, nph, npspt;
@@ -383,18 +385,13 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         segment = i13_ext->segment;
         offset  = i13_ext->offset;
 
-        BX_DEBUG_INT13_HD("%s: %d sectors from lba %lu @ %04x:%04x\n", __func__,
-                          count, i13_ext->lba1, segment, offset);
-
-        // Can't use 64 bits lba
+        // Get 64 bits lba and check
         lba = i13_ext->lba2;
-        if (lba != 0L) {
-            BX_PANIC("%s: function %02x. Can't use 64bits lba\n", __func__, GET_AH());
-            goto int13x_fail;
-        }
+        lba <<= 32;
+        lba |= i13_ext->lba1;
 
-        // Get 32 bits lba and check
-        lba = i13_ext->lba1;
+        BX_DEBUG_INT13_HD("%s: %d sectors from LBA 0x%llx @ %04x:%04x\n", __func__,
+                          count, lba, segment, offset);
 
         type = bios_dsk->devices[device].type;
         if (lba >= bios_dsk->devices[device].sectors) {
@@ -466,8 +463,8 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             dpt->heads     = nph;
             dpt->spt       = npspt;
             dpt->blksize   = blksize;
-            dpt->sector_count1 = lba;   // FIXME should be Bit64
-            dpt->sector_count2 = 0;
+            dpt->sector_count1 = lba;
+            dpt->sector_count2 = lba >> 32;
         }
 
         /* Fill in EDD 2.x table. */
