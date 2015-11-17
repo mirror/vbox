@@ -80,6 +80,9 @@ void UIGRuntimeInformation::prepareModel()
 {
     /* Setup details-model: */
     m_pDetailsModel = new UIGInformationModel(this);
+    QMap<InformationElementType, bool> settings;
+    settings.insert(InformationElementType_RuntimeAttributes, true);
+    m_pDetailsModel->setInformationWindowElements(settings);
 }
 
 void UIGRuntimeInformation::prepareView()

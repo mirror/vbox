@@ -49,7 +49,7 @@ public:
     /** Constructs details-element interface for passed @a pParent set.
       * @param type    brings the details-element type this element belongs to.
       * @param fOpened brings whether the details-element should be visually opened. */
-    UIGInformationElementInterface(UIGInformationSet *pParent, DetailsElementType type, bool fOpened);
+    UIGInformationElementInterface(UIGInformationSet *pParent, InformationElementType type, bool fOpened);
 
 protected:
 
@@ -139,7 +139,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementGeneral(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_General, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_General, fOpened) {}
 
 private:
 
@@ -175,7 +175,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementSystem(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_System, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_System, fOpened) {}
 
 private:
 
@@ -211,7 +211,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementDisplay(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_Display, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_Display, fOpened) {}
 
 private:
 
@@ -247,7 +247,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementStorage(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_Storage, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_Storage, fOpened) {}
 
 private:
 
@@ -283,7 +283,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementAudio(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_Audio, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_Audio, fOpened) {}
 
 private:
 
@@ -322,7 +322,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementNetwork(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_Network, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_Network, fOpened) {}
 
 private:
 
@@ -358,7 +358,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementSerial(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_Serial, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_Serial, fOpened) {}
 
 private:
 
@@ -395,7 +395,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementParallel(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_Parallel, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_Parallel, fOpened) {}
 
 private:
 
@@ -432,7 +432,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementUSB(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_USB, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_USB, fOpened) {}
 
 private:
 
@@ -468,7 +468,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementSF(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_SF, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_SF, fOpened) {}
 
 private:
 
@@ -504,7 +504,7 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementUI(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_UI, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_UI, fOpened) {}
 
 private:
 
@@ -540,12 +540,47 @@ public:
     /** Constructs details-element object for passed @a pParent set.
       * @param fOpened brings whether the details-element should be visually opened. */
     UIGInformationElementDescription(UIGInformationSet *pParent, bool fOpened)
-        : UIGInformationElementInterface(pParent, DetailsElementType_Description, fOpened) {}
+        : UIGInformationElementInterface(pParent, InformationElementType_Description, fOpened) {}
 
 private:
 
     /** Creates update task for this element. */
     UITask* createUpdateTask() { return new UIGInformationUpdateTaskDescription(machine()); }
+};
+
+/** UITask extension used as update task for the details-element type 'Description'. */
+class UIGInformationUpdateTaskRuntimeAttributes : public UIGInformationUpdateTask
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs update task passing @a machine to the base-class. */
+    UIGInformationUpdateTaskRuntimeAttributes(const CMachine &machine)
+        : UIGInformationUpdateTask(machine) {}
+
+private:
+
+    /** Contains update task body. */
+    void run();
+};
+
+/** UIGInformationElementInterface extension for the details-element type 'Description'. */
+class UIGInformationElementRuntimeAttributes : public UIGInformationElementInterface
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs details-element object for passed @a pParent set.
+      * @param fOpened brings whether the details-element should be visually opened. */
+    UIGInformationElementRuntimeAttributes(UIGInformationSet *pParent, bool fOpened)
+        : UIGInformationElementInterface(pParent, InformationElementType_RuntimeAttributes, fOpened) {}
+
+private:
+
+    /** Creates update task for this element. */
+    UITask* createUpdateTask() { return new UIGInformationUpdateTaskRuntimeAttributes(machine()); }
 };
 
 #endif /* !___UIGInformationElements_h___ */

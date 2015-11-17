@@ -51,7 +51,7 @@ UIGInformationModel::UIGInformationModel(QObject *pParent)
     loadSettings();
 
     /* Register meta-type: */
-    qRegisterMetaType<DetailsElementType>();
+    qRegisterMetaType<InformationElementType>();
 }
 
 UIGInformationModel::~UIGInformationModel()
@@ -104,13 +104,23 @@ void UIGInformationModel::setItems(const QList<UIVMItem*> &items)
     m_pRoot->buildGroup(items);
 }
 
+QMap<InformationElementType, bool> UIGInformationModel::informationWindowElements()
+{
+    return m_settings;
+}
+
+void UIGInformationModel::setInformationWindowElements(const QMap<InformationElementType, bool> &elements)
+{
+    //m_settings = elements;
+}
+
 void UIGInformationModel::sltHandleViewResize()
 {
     /* Relayout: */
     updateLayout();
 }
 
-void UIGInformationModel::sltToggleElements(DetailsElementType type, bool fToggled)
+void UIGInformationModel::sltToggleElements(InformationElementType type, bool fToggled)
 {
     /* Make sure it is not started yet: */
     if (m_pAnimationCallback)
@@ -118,8 +128,8 @@ void UIGInformationModel::sltToggleElements(DetailsElementType type, bool fToggl
 
     /* Prepare/configure animation callback: */
     m_pAnimationCallback = new UIGInformationElementAnimationCallback(this, type, fToggled);
-    connect(m_pAnimationCallback, SIGNAL(sigAllAnimationFinished(DetailsElementType, bool)),
-            this, SLOT(sltToggleAnimationFinished(DetailsElementType, bool)), Qt::QueuedConnection);
+    connect(m_pAnimationCallback, SIGNAL(sigAllAnimationFinished(InformationElementType, bool)),
+            this, SLOT(sltToggleAnimationFinished(InformationElementType, bool)), Qt::QueuedConnection);
     /* For each the set of the group: */
     foreach (UIGInformationItem *pSetItem, m_pRoot->items())
     {
@@ -148,7 +158,7 @@ void UIGInformationModel::sltToggleElements(DetailsElementType type, bool fToggl
     updateLayout();
 }
 
-void UIGInformationModel::sltToggleAnimationFinished(DetailsElementType type, bool fToggled)
+void UIGInformationModel::sltToggleAnimationFinished(InformationElementType type, bool fToggled)
 {
     /* Cleanup animation callback: */
     delete m_pAnimationCallback;
@@ -176,7 +186,7 @@ void UIGInformationModel::sltElementTypeToggled()
 {
     /* Which item was toggled? */
     QAction *pAction = qobject_cast<QAction*>(sender());
-    DetailsElementType type = pAction->data().value<DetailsElementType>();
+    InformationElementType type = pAction->data().value<InformationElementType>();
 
     /* Toggle element visibility status: */
     if (m_settings.contains(type))
@@ -226,29 +236,27 @@ void UIGInformationModel::prepareRoot()
 
 void UIGInformationModel::loadSettings()
 {
-    /* Load settings: */
-    m_settings = gEDataManager->selectorWindowDetailsElements();
     /* If settings are empty: */
-    if (m_settings.isEmpty())
+    //if (m_settings.isEmpty())
     {
         /* Propose the defaults: */
-        m_settings[DetailsElementType_General] = true;
-        m_settings[DetailsElementType_Preview] = true;
-        m_settings[DetailsElementType_System] = true;
-        m_settings[DetailsElementType_Display] = true;
-        m_settings[DetailsElementType_Storage] = true;
-        m_settings[DetailsElementType_Audio] = true;
-        m_settings[DetailsElementType_Network] = true;
-        m_settings[DetailsElementType_USB] = true;
-        m_settings[DetailsElementType_SF] = true;
-        m_settings[DetailsElementType_Description] = true;
+        m_settings[InformationElementType_General] = true;
+        m_settings[InformationElementType_System] = true;
+        m_settings[InformationElementType_Display] = true;
+        m_settings[InformationElementType_Storage] = true;
+        m_settings[InformationElementType_Audio] = true;
+        m_settings[InformationElementType_Network] = true;
+        m_settings[InformationElementType_USB] = true;
+        m_settings[InformationElementType_SF] = true;
+        m_settings[InformationElementType_Description] = true;
+        m_settings[InformationElementType_RuntimeAttributes] = true;
     }
 }
 
 void UIGInformationModel::saveSettings()
 {
     /* Save settings: */
-    gEDataManager->setSelectorWindowDetailsElements(m_settings);
+    //gEDataManager->setInformationWindowElements(m_settings);
 }
 
 void UIGInformationModel::cleanupRoot()
@@ -287,9 +295,9 @@ bool UIGInformationModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent
     /* Prepare context-menu: */
     QMenu contextMenu;
     /* Enumerate elements settings: */
-    for (int iType = DetailsElementType_General; iType <= DetailsElementType_Description; ++iType)
+    for (int iType = InformationElementType_General; iType <= InformationElementType_RuntimeAttributes; ++iType)
     {
-        DetailsElementType currentElementType = (DetailsElementType)iType;
+        InformationElementType currentElementType = (InformationElementType)iType;
         QAction *pAction = contextMenu.addAction(gpConverter->toString(currentElementType), this, SLOT(sltElementTypeToggled()));
         pAction->setCheckable(true);
         pAction->setChecked(m_settings.contains(currentElementType));
@@ -302,7 +310,7 @@ bool UIGInformationModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent
     return true;
 }
 
-UIGInformationElementAnimationCallback::UIGInformationElementAnimationCallback(QObject *pParent, DetailsElementType type, bool fToggled)
+UIGInformationElementAnimationCallback::UIGInformationElementAnimationCallback(QObject *pParent, InformationElementType type, bool fToggled)
     : QObject(pParent)
     , m_type(type)
     , m_fToggled(fToggled)

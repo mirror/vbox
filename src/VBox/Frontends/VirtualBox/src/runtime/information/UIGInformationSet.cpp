@@ -62,7 +62,7 @@ UIGInformationSet::~UIGInformationSet()
     parentItem()->removeItem(this);
 }
 
-void UIGInformationSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QMap<DetailsElementType, bool> &settings)
+void UIGInformationSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QMap<InformationElementType, bool> &settings)
 {
     /* Remember passed arguments: */
     m_pMachineItem = pMachineItem;
@@ -74,8 +74,8 @@ void UIGInformationSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QM
     /* Cleanup superfluous items: */
     if (!m_fFullSet || !m_fHasDetails)
     {
-        int iFirstItem = m_fHasDetails ? DetailsElementType_Display : DetailsElementType_General;
-        int iLastItem = DetailsElementType_Description;
+        int iFirstItem = m_fHasDetails ? InformationElementType_Display : InformationElementType_General;
+        int iLastItem = InformationElementType_RuntimeAttributes;
         bool fCleanupPerformed = false;
         for (int i = iFirstItem; i <= iLastItem; ++i)
             if (m_elements.contains(i))
@@ -98,12 +98,12 @@ void UIGInformationSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QM
     }
 
     /* Choose last-step number: */
-    m_iLastStepNumber = m_fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
+    m_iLastStepNumber = m_fFullSet ? InformationElementType_Description : InformationElementType_Preview;
 
     /* Fetch USB controller restrictions: */
     const CUSBDeviceFilters &filters = m_machine.GetUSBDeviceFilters();
     if (filters.isNull() || !m_machine.GetUSBProxyAvailable())
-        m_settings.remove(DetailsElementType_USB);
+        m_settings.remove(InformationElementType_USB);
 
     /* Start building set: */
     rebuildSet();
@@ -123,7 +123,7 @@ void UIGInformationSet::sltBuildStep(QString strStepId, int iStepNumber)
     if (iStepNumber >= 0 && iStepNumber <= m_iLastStepNumber)
     {
         /* Load details settings: */
-        DetailsElementType elementType = (DetailsElementType)iStepNumber;
+        InformationElementType elementType = (InformationElementType)iStepNumber;
         /* Should the element be visible? */
         bool fVisible = m_settings.contains(elementType);
         /* Should the element be opened? */
@@ -241,7 +241,7 @@ void UIGInformationSet::addItem(UIGInformationItem *pItem)
         case UIGInformationItemType_Element:
         {
             UIGInformationElement *pElement = pItem->toElement();
-            DetailsElementType type = pElement->elementType();
+            InformationElementType type = pElement->elementType();
             AssertMsg(!m_elements.contains(type), ("Element already added!"));
             m_elements.insert(type, pItem);
             break;
@@ -261,7 +261,7 @@ void UIGInformationSet::removeItem(UIGInformationItem *pItem)
         case UIGInformationItemType_Element:
         {
             UIGInformationElement *pElement = pItem->toElement();
-            DetailsElementType type = pElement->elementType();
+            InformationElementType type = pElement->elementType();
             AssertMsg(m_elements.contains(type), ("Element do not present (type = %d)!", (int)type));
             m_elements.remove(type);
             break;
@@ -320,7 +320,7 @@ void UIGInformationSet::clearItems(UIGInformationItemType type /* = UIGInformati
     }
 }
 
-UIGInformationElement* UIGInformationSet::element(DetailsElementType elementType) const
+UIGInformationElement* UIGInformationSet::element(InformationElementType elementType) const
 {
     UIGInformationItem *pItem = m_elements.value(elementType, 0);
     if (pItem)
@@ -372,28 +372,29 @@ int UIGInformationSet::minimumWidthHint() const
         UIGInformationElement *pElement = pItem->toElement();
         switch (pElement->elementType())
         {
-            case DetailsElementType_General:
-            case DetailsElementType_System:
-            case DetailsElementType_Display:
-            case DetailsElementType_Storage:
-            case DetailsElementType_Audio:
-            case DetailsElementType_Network:
-            case DetailsElementType_Serial:
+            case InformationElementType_General:
+            case InformationElementType_System:
+            case InformationElementType_Display:
+            case InformationElementType_Storage:
+            case InformationElementType_Audio:
+            case InformationElementType_Network:
+            case InformationElementType_Serial:
 #ifdef VBOX_WITH_PARALLEL_PORTS
-            case DetailsElementType_Parallel:
+            case InformationElementType_Parallel:
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-            case DetailsElementType_USB:
-            case DetailsElementType_SF:
-            case DetailsElementType_UI:
-            case DetailsElementType_Description:
+            case InformationElementType_USB:
+            case InformationElementType_SF:
+            case InformationElementType_UI:
+            case InformationElementType_Description:
+            case InformationElementType_RuntimeAttributes:
             {
                 iMinimumWidthHint = qMax(iMinimumWidthHint, pItem->minimumWidthHint());
                 break;
             }
-            case DetailsElementType_Preview:
+            case InformationElementType_Preview:
             {
-                UIGInformationItem *pGeneralItem = element(DetailsElementType_General);
-                UIGInformationItem *pSystemItem = element(DetailsElementType_System);
+                UIGInformationItem *pGeneralItem = element(InformationElementType_General);
+                UIGInformationItem *pSystemItem = element(InformationElementType_System);
                 int iGeneralElementWidth = pGeneralItem ? pGeneralItem->minimumWidthHint() : 0;
                 int iSystemElementWidth = pSystemItem ? pSystemItem->minimumWidthHint() : 0;
                 int iFirstColumnWidth = qMax(iGeneralElementWidth, iSystemElementWidth);
@@ -432,25 +433,26 @@ int UIGInformationSet::minimumHeightHint() const
         UIGInformationElement *pElement = pItem->toElement();
         switch (pElement->elementType())
         {
-            case DetailsElementType_General:
-            case DetailsElementType_System:
-            case DetailsElementType_Display:
-            case DetailsElementType_Storage:
-            case DetailsElementType_Audio:
-            case DetailsElementType_Network:
-            case DetailsElementType_Serial:
+            case InformationElementType_General:
+            case InformationElementType_System:
+            case InformationElementType_Display:
+            case InformationElementType_Storage:
+            case InformationElementType_Audio:
+            case InformationElementType_Network:
+            case InformationElementType_Serial:
 #ifdef VBOX_WITH_PARALLEL_PORTS
-            case DetailsElementType_Parallel:
+            case InformationElementType_Parallel:
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-            case DetailsElementType_USB:
-            case DetailsElementType_SF:
-            case DetailsElementType_UI:
-            case DetailsElementType_Description:
+            case InformationElementType_USB:
+            case InformationElementType_SF:
+            case InformationElementType_UI:
+            case InformationElementType_Description:
+            case InformationElementType_RuntimeAttributes:
             {
                 iMinimumHeightHint += (pItem->minimumHeightHint() + iSpacing);
                 break;
             }
-            case DetailsElementType_Preview:
+            case InformationElementType_Preview:
             {
                 iMinimumHeightHint = qMax(iMinimumHeightHint, pItem->minimumHeightHint() + iSpacing);
                 break;
@@ -487,28 +489,29 @@ void UIGInformationSet::updateLayout()
         UIGInformationElement *pElement = pItem->toElement();
         switch (pElement->elementType())
         {
-            case DetailsElementType_General:
-            case DetailsElementType_System:
-            case DetailsElementType_Display:
-            case DetailsElementType_Storage:
-            case DetailsElementType_Audio:
-            case DetailsElementType_Network:
-            case DetailsElementType_Serial:
+            case InformationElementType_General:
+            case InformationElementType_System:
+            case InformationElementType_Display:
+            case InformationElementType_Storage:
+            case InformationElementType_Audio:
+            case InformationElementType_Network:
+            case InformationElementType_Serial:
 #ifdef VBOX_WITH_PARALLEL_PORTS
-            case DetailsElementType_Parallel:
+            case InformationElementType_Parallel:
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-            case DetailsElementType_USB:
-            case DetailsElementType_SF:
-            case DetailsElementType_UI:
-            case DetailsElementType_Description:
+            case InformationElementType_USB:
+            case InformationElementType_SF:
+            case InformationElementType_UI:
+            case InformationElementType_Description:
+            case InformationElementType_RuntimeAttributes:
             {
                 /* Move element: */
                 pElement->setPos(iMargin, iVerticalIndent);
                 /* Calculate required width: */
                 int iWidth = iMaximumWidth - 2 * iMargin;
-                if (pElement->elementType() == DetailsElementType_General ||
-                    pElement->elementType() == DetailsElementType_System)
-                    if (UIGInformationElement *pPreviewElement = element(DetailsElementType_Preview))
+                if (pElement->elementType() == InformationElementType_General ||
+                    pElement->elementType() == InformationElementType_System)
+                    if (UIGInformationElement *pPreviewElement = element(InformationElementType_Preview))
                         if (pPreviewElement->isVisible())
                             iWidth -= (iSpacing + pPreviewElement->minimumWidthHint());
                 /* If element width is wrong: */
@@ -531,7 +534,7 @@ void UIGInformationSet::updateLayout()
                 iVerticalIndent += (iHeight + iSpacing);
                 break;
             }
-            case DetailsElementType_Preview:
+            case InformationElementType_Preview:
             {
                 /* Prepare variables: */
                 int iWidth = pElement->minimumWidthHint();
@@ -567,29 +570,30 @@ void UIGInformationSet::rebuildSet()
     m_strSetId = QUuid::createUuid().toString();
 
     /* Request to build first step: */
-    emit sigBuildStep(m_strSetId, DetailsElementType_General);
+    emit sigBuildStep(m_strSetId, InformationElementType_General);
 }
 
-UIGInformationElement* UIGInformationSet::createElement(DetailsElementType elementType, bool fOpen)
+UIGInformationElement* UIGInformationSet::createElement(InformationElementType elementType, bool fOpen)
 {
     /* Element factory: */
     switch (elementType)
     {
-        case DetailsElementType_General:     return new UIGInformationElementGeneral(this, fOpen);
-        case DetailsElementType_System:      return new UIGInformationElementSystem(this, fOpen);
-        case DetailsElementType_Preview:     return new UIGInformationElementPreview(this, fOpen);
-        case DetailsElementType_Display:     return new UIGInformationElementDisplay(this, fOpen);
-        case DetailsElementType_Storage:     return new UIGInformationElementStorage(this, fOpen);
-        case DetailsElementType_Audio:       return new UIGInformationElementAudio(this, fOpen);
-        case DetailsElementType_Network:     return new UIGInformationElementNetwork(this, fOpen);
-        case DetailsElementType_Serial:      return new UIGInformationElementSerial(this, fOpen);
+        case InformationElementType_General:     return new UIGInformationElementGeneral(this, fOpen);
+        case InformationElementType_System:      return new UIGInformationElementSystem(this, fOpen);
+        case InformationElementType_Preview:     return new UIGInformationElementPreview(this, fOpen);
+        case InformationElementType_Display:     return new UIGInformationElementDisplay(this, fOpen);
+        case InformationElementType_Storage:     return new UIGInformationElementStorage(this, fOpen);
+        case InformationElementType_Audio:       return new UIGInformationElementAudio(this, fOpen);
+        case InformationElementType_Network:     return new UIGInformationElementNetwork(this, fOpen);
+        case InformationElementType_Serial:      return new UIGInformationElementSerial(this, fOpen);
 #ifdef VBOX_WITH_PARALLEL_PORTS
-        case DetailsElementType_Parallel:    return new UIGInformationElementParallel(this, fOpen);
+        case InformationElementType_Parallel:    return new UIGInformationElementParallel(this, fOpen);
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-        case DetailsElementType_USB:         return new UIGInformationElementUSB(this, fOpen);
-        case DetailsElementType_SF:          return new UIGInformationElementSF(this, fOpen);
-        case DetailsElementType_UI:          return new UIGInformationElementUI(this, fOpen);
-        case DetailsElementType_Description: return new UIGInformationElementDescription(this, fOpen);
+        case InformationElementType_USB:         return new UIGInformationElementUSB(this, fOpen);
+        case InformationElementType_SF:          return new UIGInformationElementSF(this, fOpen);
+        case InformationElementType_UI:          return new UIGInformationElementUI(this, fOpen);
+        case InformationElementType_Description: return new UIGInformationElementDescription(this, fOpen);
+        case InformationElementType_RuntimeAttributes:         return new UIGInformationElementRuntimeAttributes(this, fOpen);
     }
     return 0;
 }

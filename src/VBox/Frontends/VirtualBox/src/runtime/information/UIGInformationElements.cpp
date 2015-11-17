@@ -62,7 +62,7 @@ UIGInformationUpdateTask::UIGInformationUpdateTask(const CMachine &machine)
     setProperty("machine", QVariant::fromValue(machine));
 }
 
-UIGInformationElementInterface::UIGInformationElementInterface(UIGInformationSet *pParent, DetailsElementType type, bool fOpened)
+UIGInformationElementInterface::UIGInformationElementInterface(UIGInformationSet *pParent, InformationElementType type, bool fOpened)
     : UIGInformationElement(pParent, type, fOpened)
     , m_pTask(0)
 {
@@ -122,7 +122,7 @@ void UIGInformationElementInterface::sltUpdateAppearanceFinished(UITask *pTask)
 
 
 UIGInformationElementPreview::UIGInformationElementPreview(UIGInformationSet *pParent, bool fOpened)
-    : UIGInformationElement(pParent, DetailsElementType_Preview, fOpened)
+    : UIGInformationElement(pParent, InformationElementType_Preview, fOpened)
 {
     /* Assign corresponding icon: */
     setIcon(gpConverter->toIcon(elementType()));
@@ -955,5 +955,10 @@ void UIGInformationUpdateTaskDescription::run()
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+void UIGInformationUpdateTaskRuntimeAttributes::run()
+{
+
 }
 

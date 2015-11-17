@@ -71,8 +71,10 @@ public:
     /* API: Current-item(s) stuff: */
     void setItems(const QList<UIVMItem*> &items);
 
-    /** Returns the details settings. */
-    const QMap<DetailsElementType, bool>& settings() const { return m_settings; }
+    /** Returns information-window elements. */
+    QMap<InformationElementType, bool> informationWindowElements();
+    /** Defines information-window @a elements. */
+    void setInformationWindowElements(const QMap<InformationElementType, bool> &elements);
 
 private slots:
 
@@ -80,8 +82,8 @@ private slots:
     void sltHandleViewResize();
 
     /* Handlers: Element-items stuff: */
-    void sltToggleElements(DetailsElementType type, bool fToggled);
-    void sltToggleAnimationFinished(DetailsElementType type, bool fToggled);
+    void sltToggleElements(InformationElementType type, bool fToggled);
+    void sltToggleAnimationFinished(InformationElementType type, bool fToggled);
     void sltElementTypeToggled();
 
     /* Handlers: Chooser stuff: */
@@ -122,7 +124,7 @@ private:
     UIGInformationGroup *m_pRoot;
     UIGInformationElementAnimationCallback *m_pAnimationCallback;
     /** Holds the details settings. */
-    QMap<DetailsElementType, bool> m_settings;
+    QMap<InformationElementType, bool> m_settings;
 };
 
 /* Details-element animation callback: */
@@ -133,12 +135,12 @@ class UIGInformationElementAnimationCallback : public QObject
 signals:
 
     /* Notifier: Complete stuff: */
-    void sigAllAnimationFinished(DetailsElementType type, bool fToggled);
+    void sigAllAnimationFinished(InformationElementType type, bool fToggled);
 
 public:
 
     /* Constructor: */
-    UIGInformationElementAnimationCallback(QObject *pParent, DetailsElementType type, bool fToggled);
+    UIGInformationElementAnimationCallback(QObject *pParent, InformationElementType type, bool fToggled);
 
     /* API: Notifiers stuff: */
     void addNotifier(UIGInformationItem *pItem);
@@ -152,7 +154,7 @@ private:
 
     /* Variables: */
     QList<UIGInformationItem*> m_notifiers;
-    DetailsElementType m_type;
+    InformationElementType m_type;
     bool m_fToggled;
 };
 

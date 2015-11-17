@@ -40,6 +40,7 @@
 # include "UIGInformation.h"
 # include "UIMachine.h"
 # include "UIVMItem.h"
+# include "UIGRuntimeInformation.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -268,7 +269,7 @@ void UIVMInformationDialog::retranslateUi()
     }
 
     /* Statistics page update: */
-    refreshStatistics();
+    //refreshStatistics();
 }
 
 bool UIVMInformationDialog::event(QEvent *pEvent)
@@ -330,7 +331,7 @@ void UIVMInformationDialog::sltProcessStatistics()
     }
 
     /* Update VM statistics page: */
-    refreshStatistics();
+    //refreshStatistics();
 }
 
 void UIVMInformationDialog::sltHandlePageChanged(int iIndex)
@@ -405,60 +406,39 @@ void UIVMInformationDialog::prepareCentralWidget()
 
 void UIVMInformationDialog::prepareTabWidget()
 {
+    /* List of VM items: */
+    QList<UIVMItem*> items;
+    items << new UIVMItem(gpMachine->uisession()->machine());
+
     /* Create tab-widget: */
     m_pTabWidget = new QITabWidget;
     AssertPtrReturnVoid(m_pTabWidget);
     {
-        /* Create tabs: */
-        /* Create Configuration details tab: */
-
-        UIGInformation *pInformationWidget = new UIGInformation(this);
-        QList<UIVMItem*> items;
-        items << new UIVMItem(gpMachine->uisession()->machine());
-        pInformationWidget->setItems(items);
-        m_tabs.insert(0, pInformationWidget);
-
-        m_pTabWidget->addTab(m_tabs.value(0), QString());
-
-        for (int iTabIndex = 1; iTabIndex < 2; ++iTabIndex)
-            prepareTab(iTabIndex);
-        /* Configure tab-widget: */
+        /* Prepare tab-widget: */
         m_pTabWidget->setTabIcon(0, UIIconPool::iconSet(":/session_info_details_16px.png"));
         m_pTabWidget->setTabIcon(1, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
         m_pTabWidget->setCurrentIndex(1);
         /* Add tab-widget into main-layout: */
         centralWidget()->layout()->addWidget(m_pTabWidget);
-    }
-}
 
-void UIVMInformationDialog::prepareTab(int iTabIndex)
-{
-    /* Create tab: */
-    m_tabs.insert(iTabIndex, new QWidget);
-    AssertPtrReturnVoid(m_tabs.value(iTabIndex));
-    {
-        /* Create tab-layout: */
-        QVBoxLayout *pLayout = new QVBoxLayout(m_tabs.value(iTabIndex));
+        /* Create tabs: */
+        /* Create Configuration details tab: */
+        UIGInformation *pInformationWidget = new UIGInformation(this);
+        AssertPtrReturnVoid(pInformationWidget);
         {
-            /* Configure tab-layout: */
-            pLayout->setContentsMargins(0, 0, 0, 0);
-            /* Create browser: */
-            m_browsers.insert(iTabIndex, new QRichTextEdit);
-            AssertPtrReturnVoid(m_browsers.value(iTabIndex));
-            {
-                /* Configure browser: */
-                m_browsers[iTabIndex]->setReadOnly(true);
-                m_browsers[iTabIndex]->setFrameShadow(QFrame::Plain);
-                m_browsers[iTabIndex]->setFrameShape(QFrame::NoFrame);
-                m_browsers[iTabIndex]->setViewportMargins(5, 5, 5, 5);
-                m_browsers[iTabIndex]->viewport()->setAutoFillBackground(false);
-                m_tabs[iTabIndex]->setFocusProxy(m_browsers.value(iTabIndex));
-                /* Add browser into tab-layout: */
-                pLayout->addWidget(m_browsers.value(iTabIndex));
-            }
+            pInformationWidget->setItems(items);
+            m_tabs.insert(0, pInformationWidget);
+            m_pTabWidget->addTab(m_tabs.value(0), QString());
         }
-        /* Add tab into tab-widget: */
-        m_pTabWidget->addTab(m_tabs.value(iTabIndex), QString());
+
+        /* Create Runtime information tab: */
+        UIGRuntimeInformation *pRuntimeInformationWidget = new UIGRuntimeInformation(this);
+        AssertPtrReturnVoid(pRuntimeInformationWidget);
+        {
+            pRuntimeInformationWidget->setItems(items);
+            m_tabs.insert(1, pRuntimeInformationWidget);
+            m_pTabWidget->addTab(m_tabs.value(1), QString());
+        }
     }
 }
 

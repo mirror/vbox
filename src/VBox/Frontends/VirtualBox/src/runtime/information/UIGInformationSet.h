@@ -50,7 +50,7 @@ public:
     ~UIGInformationSet();
 
     /* API: Build stuff: */
-    void buildSet(UIVMItem *pMachineItem, bool fFullSet, const QMap<DetailsElementType, bool> &settings);
+    void buildSet(UIVMItem *pMachineItem, bool fFullSet, const QMap<InformationElementType, bool> &settings);
 
     /* API: Machine stuff: */
     const CMachine& machine() const { return m_machine; }
@@ -90,7 +90,7 @@ private:
     QList<UIGInformationItem*> items(UIGInformationItemType type = UIGInformationItemType_Element) const;
     bool hasItems(UIGInformationItemType type = UIGInformationItemType_Element) const;
     void clearItems(UIGInformationItemType type = UIGInformationItemType_Element);
-    UIGInformationElement* element(DetailsElementType elementType) const;
+    UIGInformationElement* element(InformationElementType elementType) const;
 
     /* Helpers: Prepare stuff: */
     void prepareSet();
@@ -103,7 +103,7 @@ private:
 
     /* Helpers: Build stuff: */
     void rebuildSet();
-    UIGInformationElement* createElement(DetailsElementType elementType, bool fOpen);
+    UIGInformationElement* createElement(InformationElementType elementType, bool fOpen);
 
     /** Machine-item this set built for. */
     UIVMItem *m_pMachineItem;
@@ -121,7 +121,7 @@ private:
     UIInformationBuildStep *m_pBuildStep;
     int m_iLastStepNumber;
     QString m_strSetId;
-    QMap<DetailsElementType, bool> m_settings;
+    QMap<InformationElementType, bool> m_settings;
 };
 
 #endif /* __UIGInformationSet_h__ */

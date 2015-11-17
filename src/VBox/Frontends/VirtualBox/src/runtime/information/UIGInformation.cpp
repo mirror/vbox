@@ -24,6 +24,7 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "UIExtraDataManager.h"
 # include "UIGInformation.h"
 # include "UIGInformationModel.h"
 # include "UIGInformationView.h"
@@ -80,6 +81,7 @@ void UIGInformation::prepareModel()
 {
     /* Setup details-model: */
     m_pDetailsModel = new UIGInformationModel(this);
+    m_pDetailsModel->setInformationWindowElements(gEDataManager->informationWindowElements());
 }
 
 void UIGInformation::prepareView()

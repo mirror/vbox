@@ -112,7 +112,7 @@ void UIGInformationGroup::sltBuildStep(QString strStepId, int iStepNumber)
         m_pBuildStep = new UIInformationBuildStep(this, pSet, strStepId, iStepNumber + 1);
 
         /* Build set: */
-        pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, model()->settings());
+        pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, model()->informationWindowElements());
     }
     else
     {

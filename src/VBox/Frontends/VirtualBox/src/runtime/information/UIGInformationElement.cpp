@@ -41,7 +41,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIGInformationElement::UIGInformationElement(UIGInformationSet *pParent, DetailsElementType type, bool fOpened)
+UIGInformationElement::UIGInformationElement(UIGInformationSet *pParent, InformationElementType type, bool fOpened)
     : UIGInformationItem(pParent)
     , m_pSet(pParent)
     , m_type(type)
@@ -437,7 +437,7 @@ void UIGInformationElement::prepareElement()
     /* Start state-machine: */
     m_pHighlightMachine->start();
 
-    connect(this, SIGNAL(sigToggleElement(DetailsElementType, bool)), model(), SLOT(sltToggleElements(DetailsElementType, bool)));
+    connect(this, SIGNAL(sigToggleElement(InformationElementType, bool)), model(), SLOT(sltToggleElements(InformationElementType, bool)));
     connect(this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             model(), SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
 }
@@ -457,6 +457,8 @@ void UIGInformationElement::prepareTextPane()
 {
     /* Create text-pane: */
     m_pTextPane = new UIGraphicsTextPane(this, model()->paintDevice());
+    /* Make sure item text is selectable: */
+    m_pTextPane->setFlag(QGraphicsItem::ItemIsSelectable);
     connect(m_pTextPane, SIGNAL(sigGeometryChanged()), this, SLOT(sltUpdateGeometry()));
     connect(m_pTextPane, SIGNAL(sigAnchorClicked(const QString&)), this, SLOT(sltHandleAnchorClicked(const QString&)));
 }
@@ -620,11 +622,14 @@ void UIGInformationElement::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
     /* Process link click: */
     pEvent->accept();
     QString strCategory;
-    if (m_type >= DetailsElementType_General &&
-        m_type < DetailsElementType_Description)
+    if (m_type >= InformationElementType_General &&
+        m_type < InformationElementType_Description)
         strCategory = QString("#%1").arg(gpConverter->toInternalString(m_type));
-    else if (m_type == DetailsElementType_Description)
+    else if (m_type == InformationElementType_Description)
         strCategory = QString("#%1%%mTeDescription").arg(gpConverter->toInternalString(m_type));
+    else if (m_type >= InformationElementType_RuntimeAttributes &&
+             m_type < InformationElementType_NetworkStatistics)
+        strCategory = QString("#%1").arg(gpConverter->toInternalString(m_type));
     emit sigLinkClicked(strCategory, QString(), machine().GetId());
 }
 
@@ -649,7 +654,7 @@ void UIGInformationElement::updateButtonVisibility()
 void UIGInformationElement::handleHoverEvent(QGraphicsSceneHoverEvent *pEvent)
 {
     /* Not for 'preview' element type: */
-    if (m_type == DetailsElementType_Preview)
+    if (m_type == InformationElementType_Preview)
         return;
 
     /* Prepare variables: */
