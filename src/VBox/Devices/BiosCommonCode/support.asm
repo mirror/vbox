@@ -21,6 +21,8 @@
 ;*******************************************************************************
 public          __U4D
 public          __U4M
+public          __U8LS
+public          __U8RS
 ifndef          VBOX_PC_BIOS
 public          __I4D
 public          __I4M
@@ -42,7 +44,7 @@ _TEXT           segment public 'CODE' use16
 ; @param    dx:ax   Dividend.
 ; @param    cx:bx   Divisor.
 ; @returns  dx:ax   Quotient.
-;           cx:bx   Reminder.
+;           cx:bx   Remainder.
 ;
 __U4D:
                 pushf
@@ -58,7 +60,7 @@ __U4D:
                 shr     ecx, 16
                 mov     cx, bx
 
-                div     ecx                 ; eax:edx / ecx -> eax=quotient, edx=reminder.
+                div     ecx                 ; eax:edx / ecx -> eax=quotient, edx=remainder.
 
                 mov     bx, dx
                 pop     ecx
@@ -83,7 +85,7 @@ ifndef          VBOX_PC_BIOS
 ; @param    dx:ax   Dividend.
 ; @param    cx:bx   Divisor.
 ; @returns  dx:ax   Quotient.
-;           cx:bx   Reminder.
+;           cx:bx   Remainder.
 ;
 __I4D:
                 pushf
@@ -99,7 +101,7 @@ __I4D:
                 shr     ecx, 16
                 mov     cx, bx
 
-                idiv    ecx                 ; eax:edx / ecx -> eax=quotient, edx=reminder.
+                idiv    ecx                 ; eax:edx / ecx -> eax=quotient, edx=remainder.
 
                 mov     bx, dx
                 pop     ecx
@@ -156,8 +158,7 @@ __U4M:
 
 ifndef          VBOX_PC_BIOS
 ;;
-; 32-bit unsigned multiplication.
-; memset taking a far pointer.
+; 32-bit signed multiplication.
 ;
 ; @param    dx:ax   Factor 1.
 ; @param    cx:bx   Factor 2.
@@ -197,6 +198,52 @@ endif           ; VBOX_PC_BIOS
 
 
 ;;
+; 64-bit left shift.
+;
+; @param    ax:bx:cx:dx Value.
+; @param    si          Shift count.
+; @returns  ax:bx:cx:dx Shifted value.
+; si is zeroed
+;
+__U8LS:
+
+                test    si, si
+                jz      u8ls_quit
+u8ls_rot:
+                shl     dx, 1
+                rcl     cx, 1
+                rcl     bx, 1
+                rcl     ax, 1
+                dec     si
+                jnz     u8ls_rot
+u8ls_quit:
+                ret
+
+
+;;
+; 64-bit unsigned right shift.
+;
+; @param    ax:bx:cx:dx Value.
+; @param    si          Shift count.
+; @returns  ax:bx:cx:dx Shifted value.
+; si is zeroed
+;
+__U8RS:
+
+                test    si, si
+                jz      u8rs_quit
+u8rs_rot:
+                shr     ax, 1
+                rcr     bx, 1
+                rcr     cx, 1
+                rcr     dx, 1
+                dec     si
+                jnz     u8rs_rot
+u8rs_quit:
+                ret
+
+
+;;
 ; memset taking a far pointer.
 ;
 ; cx, es may be modified; di is preserved
@@ -220,7 +267,7 @@ _fmemset_:
 
 
 ;;
-; memset taking far pointers.
+; memcpy taking far pointers.
 ;
 ; cx, es may be modified; si, di are preserved
 ;
