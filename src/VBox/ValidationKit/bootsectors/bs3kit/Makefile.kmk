@@ -372,6 +372,11 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-MemCpy.c \
        bs3-cmn-MemPCpy.c \
        bs3-cmn-MemMove.c \
+       bs3-cmn-MemZero.asm \
+       bs3-cmn-SlabInit.c \
+       bs3-cmn-SlabListInit.c \
+       bs3-cmn-SlabListAdd.c \
+       bs3-cmn-SlabListAlloc.c \
        bs3-cmn-TestData.c \
        bs3-cmn-TestInit.c \
 	bs3-cmn-TestSendStrCmd.asm \

@@ -37,6 +37,7 @@
 #endif
 #include <iprt/x86.h>
 
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_bs3kit     BS3Kit
  * @{ */
@@ -685,8 +686,16 @@ typedef union BS3XPTR
  *                      used in real mode, this must be less than 1MB.
  *                      Otherwise the limit is 16MB (due to selector tiling).
  */
-#define BS3_XPTR_SET(a_Type, a_Name, a_uFlatPtr) \
+#define BS3_XPTR_SET_FLAT(a_Type, a_Name, a_uFlatPtr) \
     do { a_Name.XPtr.uFlat = (a_uFlatPtr); } while (0)
+
+/** @def BS3_XPTR_GET_FLAT
+ * Gets the flat address of a cross context pointer.
+ *
+ * @param   a_Type      The type we're pointing to.
+ * @param   a_Name      The member or variable name.
+ */
+#define BS3_XPTR_GET_FLAT(a_Type, a_Name) (a_Name.XPtr.uFlat)
 
 
 #if ARCH_BITS == 16
@@ -737,6 +746,39 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
 # error "ARCH_BITS"
 #endif
 
+/** @def BS3_XPTR_SET
+ * Gets the current context pointer value.
+ *
+ * @returns Usable pointer.
+ * @param   a_Type      The type we're pointing to.
+ * @param   a_Name      The member or variable name.
+ * @param   a_pValue    The new pointer value, current context pointer.
+ */
+#if ARCH_BITS == 16
+# define BS3_XPTR_SET(a_Type, a_Name, a_pValue) \
+    do { \
+        a_Type BS3_FAR *pTypeCheck = (a_pValue); \
+        if (BS3_IS_PROTECTED_MODE()) \
+        { \
+            (a_Name).XPtr.u.Low  = BS3_FP_OFF(pTypeCheck); \
+            (a_Name).XPtr.u.High = (BS3_FP_SEG(pTypeCheck) & UINT16_C(0xfff8)) - BS3_SEL_TILED; \
+        } \
+        else \
+            (a_Name).XPtr.uFlat = BS3_FP_OFF(pTypeCheck) + (BS3_FP_SEG(pTypeCheck) << 4); \
+    } while (0)
+#elif ARCH_BITS == 32
+# define BS3_XPTR_SET(a_Type, a_Name, a_pValue) \
+    do { (a_Name).pTyped = (a_pValue); } while (0)
+#elif ARCH_BITS == 64
+# define BS3_XPTR_SET(a_Type, a_Name, a_pValue) \
+    do { \
+        a_Type *pTypeCheck  = (a_pValue);  \
+        (a_Name).XPtr.uFlat = (uint32_t)(uintptr_t)pTypeCheck; \
+    } while (0)
+#else
+# error "ARCH_BITS"
+#endif
+
 
 /** @def BS3_XPTR_IS_NULL
  * Checks if the cross context pointer is NULL.
@@ -758,6 +800,8 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
  *
  * @{
  */
+
+#define BS3_ASSERT(a_Expr) do { } while (0) /**< @todo later */
 
 /**
  * Panic, never return.
@@ -922,6 +966,17 @@ BS3_DECL(void BS3_FAR *) Bs3MemMove_c32(void BS3_FAR *pvDst, const void BS3_FAR 
 BS3_DECL(void BS3_FAR *) Bs3MemMove_c64(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemMove_c16 */
 #define Bs3MemMove BS3_CMN_NM(Bs3MemMove) /**< Selects #Bs3MemMove_c16, #Bs3MemMove_c32 or #Bs3MemMove_c64. */
 
+/**
+ * BSD style bzero.
+ *
+ * @param   pvDst           The buffer to be zeroed.
+ * @param   cbDst           The number of bytes to zero.
+ */
+BS3_DECL(void) Bs3MemZero_c16(void BS3_FAR *pvDst, size_t cbDst);
+BS3_DECL(void) Bs3MemZero_c32(void BS3_FAR *pvDst, size_t cbDst); /** @copydoc Bs3MemZero_c16 */
+BS3_DECL(void) Bs3MemZero_c64(void BS3_FAR *pvDst, size_t cbDst); /** @copydoc Bs3MemZero_c16 */
+#define Bs3MemZero BS3_CMN_NM(Bs3MemZero) /**< Selects #Bs3MemZero_c16, #Bs3MemZero_c32 or #Bs3MemZero_c64. */
+
 
 
 /**
@@ -935,21 +990,176 @@ BS3_DECL(void) Bs3TestInit_c64(const char BS3_FAR *pszTest); /**< @copydoc Bs3Te
 #define Bs3TestInit BS3_CMN_NM(Bs3TestInit) /**< Selects #Bs3TestInit_c16, #Bs3TestInit_c32 or #Bs3TestInit_c64. */
 
 
-typedef struct BS3SLABLIST
+/**
+ * Slab control structure list head.
+ *
+ * The slabs on the list must all have the same chunk size.
+ */
+typedef struct BS3SLABHEAD
 {
     /** Pointer to the first slab. */
-    BS3_XPTR_MEMBER(struct BS3SLAB *, pNext);
+    BS3_XPTR_MEMBER(struct BS3SLABCLT, pFirst);
     /** The allocation chunk size. */
-    uint16_t    cbBlock;
+    uint16_t                        cbChunk;
+    /** Number of slabs in the list. */
+    uint16_t                        cSlabs;
+    /** Number of chunks in the list. */
+    uint32_t                        cChunks;
+    /** Number of free chunks. */
+    uint32_t                        cFreeChunks;
+} BS3SLABHEAD;
+/** Pointer to a slab list head. */
+typedef BS3SLABHEAD BS3_FAR *PBS3SLABHEAD;
 
-} BS3SLABLIST;
-
-typedef struct BS3SLAB
+/**
+ * Allocation slab control structure.
+ *
+ * This may live at the start of the slab for 4KB slabs, while in a separate
+ * static location for the larger ones.
+ */
+typedef struct BS3SLABCLT
 {
-    /** Pointer to the next slab in this list. */
-    BS3_XPTR_MEMBER(struct BS3SLAB *, pNext);
+    /** Pointer to the next slab control structure in this list. */
+    BS3_XPTR_MEMBER(struct BS3SLABCLT, pNext);
+    /** Pointer to the slab list head. */
+    BS3_XPTR_MEMBER(BS3SLABHEAD,    pHead);
+    /** The base address of the slab. */
+    BS3_XPTR_MEMBER(uint8_t,        pbStart);
+    /** Number of chunks in this slab. */
+    uint16_t                        cChunks;
+    /** Number of currently free chunks. */
+    uint16_t                        cFreeChunks;
+    /** The chunk size. */
+    uint16_t                        cbChunk;
+    /** Number of bits in the bitmap (cChunks rounded up to 32). */
+    uint16_t                        cBits;
+    /** Bitmap where set bits indicates allocated blocks (variable size,
+     * multiple of 4). */
+    uint8_t                         bmAllocated[4];
+} BS3SLABCLT;
+/** Pointer to a bs3kit slab control structure. */
+typedef BS3SLABCLT BS3_FAR *PBS3SLABCLT;
 
-} BS3SLAB;
+/**
+ * Initializes a slab.
+ *
+ * @param   pSlabCtl        The slab control structure to initialize.
+ * @param   cbSlabCtl       The size of the slab control structure.
+ * @param   uFlatSlabPtr    The base address of the slab.
+ * @param   cbSlab          The size of the slab.
+ * @param   cbChunk         The chunk size.
+ */
+BS3_DECL(void) Bs3SlabInit_c16(PBS3SLABCLT pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr, uint32_t cbSlab, uint16_t cbChunk);
+/** @copydoc Bs3SlabInit_c16 */
+BS3_DECL(void) Bs3SlabInit_c32(PBS3SLABCLT pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr, uint32_t cbSlab, uint16_t cbChunk);
+/** @copydoc Bs3SlabInit_c16 */
+BS3_DECL(void) Bs3SlabInit_c64(PBS3SLABCLT pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr, uint32_t cbSlab, uint16_t cbChunk);
+#define Bs3SlabInit BS3_CMN_NM(Bs3SlabInit) /**< Selects #Bs3SlabInit_c16, #Bs3SlabInit_c32 or #Bs3SlabInit_c64. */
+
+
+/**
+ * Initializes the given slab list head.
+ *
+ * @param   pHead       The slab list head.
+ * @param   cbChunk     The chunk size.
+ */
+BS3_DECL(void) Bs3SlabListInit_c16(PBS3SLABHEAD pHead, uint16_t cbChunk);
+BS3_DECL(void) Bs3SlabListInit_c32(PBS3SLABHEAD pHead, uint16_t cbChunk); /**< @copydoc Bs3SlabListInit_c16 */
+BS3_DECL(void) Bs3SlabListInit_c64(PBS3SLABHEAD pHead, uint16_t cbChunk); /**< @copydoc Bs3SlabListInit_c16 */
+#define Bs3SlabListInit BS3_CMN_NM(Bs3SlabListInit) /**< Selects #Bs3SlabListInit_c16, #Bs3SlabListInit_c32 or #Bs3SlabListInit_c64. */
+
+/**
+ * Adds an initialized slab control structure to the list.
+ *
+ * @param   pHead           The slab list head to add it to.
+ * @param   pSlabCtl        The slab control structure to add.
+ */
+BS3_DECL(void) Bs3SlabListAdd_c16(PBS3SLABHEAD pHead, PBS3SLABCLT pSlabCtl);
+/** @copydoc Bs3SlabListAdd_c16 */
+BS3_DECL(void) Bs3SlabListAdd_c32(PBS3SLABHEAD pHead, PBS3SLABCLT pSlabCtl);
+/** @copydoc Bs3SlabListAdd_c16 */
+BS3_DECL(void) Bs3SlabListAdd_c64(PBS3SLABHEAD pHead, PBS3SLABCLT pSlabCtl);
+#define Bs3SlabListAdd BS3_CMN_NM(Bs3SlabListAdd) /**< Selects #Bs3SlabListAdd_c16, #Bs3SlabListAdd_c32 or #Bs3SlabListAdd_c64. */
+
+/**
+ * Allocates one or more chunks.
+ *
+ * @returns Pointer to a chunk on success, NULL if we're out of chunks.
+ * @param   pHead           The slab list to allocate from.
+ * @param   cChunks         The number of contiguous chunks we want.
+ */
+BS3_DECL(void BS3_FAR *) Bs3SlabListAlloc_c16(PBS3SLABHEAD pHead, uint16_t cChunks);
+BS3_DECL(void BS3_FAR *) Bs3SlabListAlloc_c32(PBS3SLABHEAD pHead, uint16_t cChunks); /**< @copydoc Bs3SlabListAlloc_c16 */
+BS3_DECL(void BS3_FAR *) Bs3SlabListAlloc_c64(PBS3SLABHEAD pHead, uint16_t cChunks); /**< @copydoc Bs3SlabListAlloc_c16 */
+#define Bs3SlabListAlloc BS3_CMN_NM(Bs3SlabListAlloc) /**< Selects #Bs3SlabListAlloc_c16, #Bs3SlabListAlloc_c32 or #Bs3SlabListAlloc_c64. */
+
+/**
+ * Frees one or more chunks.
+ *
+ * @param   pHead           The slab list to allocate from.
+ * @param   pvChunks        Pointer to the first chunk to free.
+ * @param   cChunks         The number of contiguous chunks we want.
+ */
+BS3_DECL(void) Bs3SlabListFree_c16(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks);
+BS3_DECL(void) Bs3SlabListFree_c32(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks); /**< @copydoc Bs3SlabListFree_c16 */
+BS3_DECL(void) Bs3SlabListFree_c64(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks); /**< @copydoc Bs3SlabListFree_c16 */
+#define Bs3SlabListFree BS3_CMN_NM(Bs3SlabListFree) /**< Selects #Bs3SlabListFree_c16, #Bs3SlabListFree_c32 or #Bs3SlabListFree_c64. */
+
+/**
+ * Allocation addressing constraints.
+ */
+typedef enum BS3MEMKIND
+{
+    /** Invalid zero type. */
+    BS3MEMKIND_INVALID = 0,
+    /** Real mode addressable memory. */
+    BS3MEMKIND_REAL,
+    /** Memory addressable using the 16-bit protected mode tiling. */
+    BS3MEMKIND_TILED,
+    /** Memory addressable using 32-bit flat addressing. */
+    BS3MEMKIND_FLAT32,
+    /** Memory addressable using 64-bit flat addressing. */
+    BS3MEMKIND_FLAT64,
+    /** End of valid types. */
+    BS3MEMKIND_END,
+} BS3MEMKIND;
+
+/**
+ * Allocates low memory.
+ *
+ * @returns Pointer to a chunk on success, NULL if we're out of chunks.
+ * @param   enmKind     The kind of addressing constraints imposed on the
+ *                      allocation.
+ * @param   cb          How much to allocate.  Must be 4KB or less.
+ */
+BS3_DECL(void BS3_FAR *) Bs3MemAlloc_c16(BS3MEMKIND enmKind, size_t cb);
+BS3_DECL(void BS3_FAR *) Bs3MemAlloc_c32(BS3MEMKIND enmKind, size_t cb); /**< @copydoc Bs3MemAlloc_c16 */
+BS3_DECL(void BS3_FAR *) Bs3MemAlloc_c64(BS3MEMKIND enmKind, size_t cb); /**< @copydoc Bs3MemAlloc_c16 */
+#define Bs3MemAlloc BS3_CMN_NM(Bs3MemAlloc) /**< Selects #Bs3MemAlloc_c16, #Bs3MemAlloc_c32 or #Bs3MemAlloc_c64. */
+
+/**
+ * Allocates zero'ed memory.
+ *
+ * @param   enmKind     The kind of addressing constraints imposed on the
+ *                      allocation.
+ * @param   cb          How much to allocate.  Must be 4KB or less.
+ */
+BS3_DECL(void BS3_FAR *) Bs3MemAllocZ_c16(BS3MEMKIND enmKind, size_t cb);
+BS3_DECL(void BS3_FAR *) Bs3MemAllocZ_c32(BS3MEMKIND enmKind, size_t cb); /**< @copydoc Bs3MemAllocZ_c16 */
+BS3_DECL(void BS3_FAR *) Bs3MemAllocZ_c64(BS3MEMKIND enmKind, size_t cb); /**< @copydoc Bs3MemAllocZ_c16 */
+#define Bs3MemAllocZ BS3_CMN_NM(Bs3MemAllocZ) /**< Selects #Bs3MemAllocZ_c16, #Bs3MemAllocZ_c32 or #Bs3MemAllocZ_c64. */
+
+/**
+ * Frees memory.
+ *
+ * @returns Pointer to a chunk on success, NULL if we're out of chunks.
+ * @param   pv          The memory to free (returned by #Bs3MemAlloc).
+ * @param   cb          The size of the allocation.
+ */
+BS3_DECL(void) Bs3MemFree_c16(void BS3_FAR *pv, size_t cb);
+BS3_DECL(void) Bs3MemFree_c32(void BS3_FAR *pv, size_t cb); /**< @copydoc Bs3MemFree_c16 */
+BS3_DECL(void) Bs3MemFree_c64(void BS3_FAR *pv, size_t cb); /**< @copydoc Bs3MemFree_c16 */
+#define Bs3MemFree BS3_CMN_NM(Bs3MemFree) /**< Selects #Bs3MemFree_c16, #Bs3MemFree_c32 or #Bs3MemFree_c64. */
 
 /** @} */
 
@@ -967,6 +1177,8 @@ typedef struct BS3SLAB
 
 
 /** @} */
+
+RT_C_DECLS_END
 
 #endif
 
