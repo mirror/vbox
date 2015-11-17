@@ -341,7 +341,7 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
         strcpy(mntinf.name, pszShareName);
         strcpy(mntinf.nls_name, "\0");
 
-        int r = mount(NULL,
+        int r = mount(pszShareName,
                       pszMountPoint,
                       "vboxsf",
                       fFlags,
@@ -402,7 +402,7 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
                     /* We checked before that we have enough space */
                     strcpy(mntinf.name, pszMountPoint + cchCWD);
                 }
-                r = mount(NULL, pszMountPoint, "vboxsf", fFlags, &mntinf);
+                r = mount(mntinf.name, pszMountPoint, "vboxsf", fFlags, &mntinf);
             }
             if (errno == EPROTO)
             {
@@ -416,7 +416,7 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
                 mntinf_old.uid = mntinf.uid;
                 mntinf_old.gid = mntinf.gid;
                 mntinf_old.ttl = mntinf.ttl;
-                r = mount(NULL, pszMountPoint, "vboxsf", fFlags, &mntinf_old);
+                r = mount(mntinf_old.name, pszMountPoint, "vboxsf", fFlags, &mntinf_old);
             }
             if (r == -1) /* Was there some error from one of the tries above? */
             {
