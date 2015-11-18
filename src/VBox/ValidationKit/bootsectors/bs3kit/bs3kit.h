@@ -35,7 +35,18 @@
 #ifndef DOXYGEN_RUNNING
 # undef  IN_RING0
 #endif
+
+/*
+ * We may want to reuse some IPRT code in the common name space, so we
+ * redefine the RT_MANGLER to work like BS3_CMN_NM.  (We cannot use
+ * BS3_CMN_NM yet, as we need to include IPRT headers with function
+ * declarations before we can define it. Thus the duplciate effort.)
+ */
+#define RT_MANGLER(a_Name) RT_CONCAT3(a_Name,_c,ARCH_BITS)
+#include <iprt/mangling.h>
 #include <iprt/x86.h>
+
+
 
 RT_C_DECLS_BEGIN
 
@@ -335,6 +346,7 @@ RT_C_DECLS_BEGIN
 # define BS3_DATA_NM(a_Name)  a_Name
 #endif
 
+
 /**
  * Template for createing a pointer union type.
  * @param   a_BaseName      The base type name.
@@ -384,6 +396,7 @@ BS3_PTR_UNION_TEMPLATE(BS3PTRUNION, RT_NOTHING);
 BS3_PTR_UNION_TEMPLATE(BS3CPTRUNION, const);
 BS3_PTR_UNION_TEMPLATE(BS3VPTRUNION, volatile);
 BS3_PTR_UNION_TEMPLATE(BS3CVPTRUNION, const volatile);
+
 
 
 /** @defgroup grp_bs3kit_system System structures
@@ -1179,6 +1192,7 @@ BS3_DECL(void) Bs3MemFree_c64(void BS3_FAR *pv, size_t cb); /**< @copydoc Bs3Mem
 /** @} */
 
 RT_C_DECLS_END
+
 
 #endif
 

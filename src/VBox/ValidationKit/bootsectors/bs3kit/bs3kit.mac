@@ -32,6 +32,9 @@
 ; If we don't do the latter we end up with an unused 'text' section.
 ;
 
+; Drop the asmdefs-first.mac header for native bs3kit files.
+%undef RT_ASMDEFS_INC_FIRST_FILE
+
 ;; Wrapper around BITS.
 ; Updates __BITS__ (built-in variable in nasm, we work it for yasm).
 ; @param    %1      The CPU bit count: 16, 32 or 64

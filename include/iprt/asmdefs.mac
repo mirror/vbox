@@ -23,6 +23,11 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+; Special hack for bs3kit.
+%ifdef RT_ASMDEFS_INC_FIRST_FILE
+ %include "asmdefs-first.mac"
+%endif
+
 %ifndef ___iprt_asmdefs_mac
 %define ___iprt_asmdefs_mac
 
