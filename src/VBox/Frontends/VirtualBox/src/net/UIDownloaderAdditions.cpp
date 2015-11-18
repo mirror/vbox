@@ -57,9 +57,31 @@ UIDownloaderAdditions::UIDownloaderAdditions()
     if (!m_spInstance)
         m_spInstance = this;
 
+    /* Get version number and adjust it for test and trunk builds, both have
+       odd build numbers.  The server only has official releases. */
+    QString strVersion = vboxGlobal().vboxVersionStringNormalized();
+    QChar qchLastDigit = strVersion[strVersion.length() - 1];
+    if (   qchLastDigit == '1'
+        || qchLastDigit == '3'
+        || qchLastDigit == '5'
+        || qchLastDigit == '7'
+        || qchLastDigit == '9')
+    {
+        if (   !strVersion.endsWith(".51")
+            && !strVersion.endsWith(".53")
+            && !strVersion.endsWith(".97")
+            && !strVersion.endsWith(".99"))
+            strVersion[strVersion.length() - 1] = qchLastDigit.toAscii() - 1;
+        else
+        {
+            strVersion.chop(2);
+            strVersion += "10"; /* Current for 5.0.x */
+        }
+    }
+
     /* Prepare source/target: */
-    const QString &strName = QString("VBoxGuestAdditions_%1.iso").arg(vboxGlobal().vboxVersionStringNormalized());
-    const QString &strSource = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vboxGlobal().vboxVersionStringNormalized()) + strName;
+    const QString &strName = QString("VBoxGuestAdditions_%1.iso").arg(strVersion);
+    const QString &strSource = QString("http://download.virtualbox.org/virtualbox/%1/").arg(strVersion) + strName;
     const QString &strTarget = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strName);
 
     /* Set source/target: */
