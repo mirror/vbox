@@ -1996,7 +1996,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
   </sect1>
 
   <sect1 id="guitweaks">
-    <title>Locking down the VirtualBox manager GUI</title>
+    <title>Locking down the VirtualBox GUI</title>
 
     <sect2>
       <title>Customizing the VM manager</title>
@@ -2881,6 +2881,67 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
               powering off the VM.</para>
           </glossdef>
         </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Detach</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't allow the user to detach from the VM process if the
+              VM was started in separate mode.</para>
+          </glossdef>
+        </glossentry>
+
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. If all
+        options are specified, the VM cannot be shut down at all.</para>
+    </sect2>
+
+    <sect2>
+      <title>Default action when terminating the VM</title>
+
+      <para>You can define a specific action for terminating a VM. In contrast to
+        the setting decribed in the previous section, this setting allows only
+        one action when the user terminates the VM. No exit menu is shown.</para>
+
+      <para><screen>VBoxManage setextradata "VM name" GUI/DefaultCloseAction ACTION</screen></para>
+
+      <para>where <computeroutput>ACTION</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>SaveState</computeroutput></glossterm>
+          <glossdef>
+            <para>Save the VM state before terminating the VM process.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Shutdown</computeroutput></glossterm>
+          <glossdef>
+            <para>The VM is shut down by sending the ACPI power-off event to the guest.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
+          <glossdef>
+            <para>The VM is powered off.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>PowerOffRestoringSnapshot</computeroutput></glossterm>
+          <glossdef>
+            <para>The VM is powered off and the saved state returns to the last snapshot.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Detach</computeroutput></glossterm>
+          <glossdef>
+            <para>Terminate the frontend but leave the VM process running.</para>
+          </glossdef>
+        </glossentry>
+
       </glosslist>
 
       <para>This is a per-VM setting. Any combination of the above is allowed. If all
