@@ -33,14 +33,14 @@
 BEGINCODE
 
 ;;
-; Finds the first clear bit in a bitmap.
+; Finds the first set bit in a bitmap.
 ;
 ; @returns (32/64:eax, 16:ax+dx)   Index of the first zero bit.
-; @returns (32/64:eax, 16:ax+dx)  -1 if no clear bit was found.
+; @returns (32/64:eax, 16:ax+dx)  -1 if no set bit was found.
 ; @param   msc:rcx gcc:rdi pvBitmap    Pointer to the bitmap.
 ; @param   msc:edx gcc:rsi cBits       The number of bits in the bitmap. Multiple of 32.
 ;
-BEGINPROC_EXPORTED ASMBitFirstClear
+BEGINPROC_EXPORTED ASMBitFirstSet
         ;
         ; if (cBits)
         ; Put cBits in ecx first.
@@ -80,17 +80,17 @@ BEGINPROC_EXPORTED ASMBitFirstClear
         add     ecx, 31                 ; 32 bit aligned
         shr     ecx, 5                  ; number of dwords to scan.
         mov     xDX, xDI                ; xDX = saved pvBitmap
-        mov     eax, 0ffffffffh
-        repe scasd                      ; Scan for the first dword with any clear bit.
+        xor     eax, eax
+        repe scasd                      ; Scan for the first dword with any bit set.
         je      .failed_restore
 
         ; find the bit in question
         sub     xDI, 4                  ; one step back.
 %if ARCH_BITS == 16
         movzx   edi, di
-        xor     eax, [es:xDI]           ; eax = NOT [rdi]
+        mov     eax, [es:xDI]           ; eax = NOT [rdi]
 %else
-        xor     eax, [edi]              ; eax = NOT [rdi]
+        mov     eax, [edi]              ; eax = NOT [rdi]
 %endif
         sub     xDI, xDX
         shl     edi, 3                  ; calc bit offset.
@@ -123,5 +123,5 @@ BEGINPROC_EXPORTED ASMBitFirstClear
         leave
 %endif
         ret
-ENDPROC ASMBitFirstClear
+ENDPROC ASMBitFirstSet
 
