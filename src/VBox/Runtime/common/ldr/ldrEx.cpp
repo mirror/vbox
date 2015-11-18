@@ -39,8 +39,8 @@
 #include <iprt/mem.h>
 #include <iprt/sha.h>
 #include <iprt/string.h>
+#include <iprt/formats/mz.h>
 #include "internal/ldr.h"
-#include "internal/ldrMZ.h"
 
 #ifdef LDR_ONLY_PE
 # undef LDR_WITH_PE

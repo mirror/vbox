@@ -59,10 +59,10 @@
 #include <iprt/string.h>
 #include <iprt/strcache.h>
 #include "internal/dbgmod.h"
-#include "internal/ldrPE.h"
 #include "internal/magics.h"
 
 #include <iprt/formats/codeview.h>
+#include <iprt/formats/pecoff.h>
 
 
 /*********************************************************************************************************************************

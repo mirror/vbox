@@ -38,8 +38,8 @@
 #include <iprt/log.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/formats/mz.h>
 #include "internal/ldr.h"
-#include "internal/ldrMZ.h"
 
 
 /*********************************************************************************************************************************
