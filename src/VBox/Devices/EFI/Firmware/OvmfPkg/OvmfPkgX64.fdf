@@ -78,7 +78,12 @@ FV = SECFV
 ################################################################################
 
 [FD.MEMFD]
-BaseAddress   = 0x800000
+!ifndef $(VBOX)
+  BaseAddress   = 0x800000
+!else
+  # Need to relocate this or it interferes with certain OS X bootloaders breaking OS X guests
+  BaseAddress   = 0x2000000
+!endif
 Size          = 0x900000
 ErasePolarity = 1
 BlockSize     = 0x10000
