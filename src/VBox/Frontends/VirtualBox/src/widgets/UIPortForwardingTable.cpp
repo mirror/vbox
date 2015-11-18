@@ -722,17 +722,21 @@ bool UIPortForwardingTable::validate() const
         const IpData hostIp = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostIp), Qt::EditRole).value<IpData>();
         const IpData guestIp = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_GuestIp), Qt::EditRole).value<IpData>();
 
-        /* If at aleast one port is 'zero': */
+        /* If at least one port is 'zero': */
         if (hostPort.value() == 0 || guestPort.value() == 0)
             return msgCenter().warnAboutIncorrectPort(window());
-        /* If at aleast one address is incorrect: */
+        /* If at least one address is incorrect: */
         if (!hostIp.trimmed().isEmpty() &&
-            (   !RTNetIsIPv4AddrStr(hostIp.toAscii().constData())
-             || RTNetStrIsIPv4AddrAny(hostIp.toAscii().constData())))
+            (   (   !RTNetIsIPv4AddrStr(hostIp.toAscii().constData())
+                 && !RTNetIsIPv6AddrStr(hostIp.toAscii().constData()))
+             || RTNetStrIsIPv4AddrAny(hostIp.toAscii().constData())
+             || RTNetStrIsIPv6AddrAny(hostIp.toAscii().constData())))
             return msgCenter().warnAboutIncorrectAddress(window());
         if (!guestIp.trimmed().isEmpty() &&
-            (   !RTNetIsIPv4AddrStr(guestIp.toAscii().constData())
-             || RTNetStrIsIPv4AddrAny(guestIp.toAscii().constData())))
+            (   (   !RTNetIsIPv4AddrStr(guestIp.toAscii().constData())
+                 && !RTNetIsIPv6AddrStr(guestIp.toAscii().constData()))
+             || RTNetStrIsIPv4AddrAny(guestIp.toAscii().constData())
+             || RTNetStrIsIPv6AddrAny(guestIp.toAscii().constData())))
             return msgCenter().warnAboutIncorrectAddress(window());
         /* If empty guest address is not allowed: */
         if (   !m_fAllowEmptyGuestIPs
