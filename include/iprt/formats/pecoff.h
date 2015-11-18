@@ -61,8 +61,51 @@ typedef IMAGE_FILE_HEADER const *PCIMAGE_FILE_HEADER;
 /** @name PE & COFF machine types.
  * Used by IMAGE_FILE_HEADER::Machine and IMAGE_SEPARATE_DEBUG_HEADER::Machine.
  * @{ */
+/** X86 compatible CPU, 32-bit instructions.   */
 #define IMAGE_FILE_MACHINE_I386             UINT16_C(0x014c)
+/** AMD64 compatible CPU, 64-bit instructions.   */
 #define IMAGE_FILE_MACHINE_AMD64            UINT16_C(0x8664)
+
+/** Unknown target CPU. */
+#define IMAGE_FILE_MACHINE_UNKNOWN          UINT16_C(0x0000)
+/** Matshushita AM33 CPU. */
+#define IMAGE_FILE_MACHINE_AM33             UINT16_C(0x01d3)
+/** Little endian ARM CPU. */
+#define IMAGE_FILE_MACHINE_ARM              UINT16_C(0x01c0)
+/** ARM or Thumb stuff. */
+#define IMAGE_FILE_MACHINE_THUMB            UINT16_C(0x01c2)
+/** ARMv7 or higher CPU, Thumb mode. */
+#define IMAGE_FILE_MACHINE_ARMNT            UINT16_C(0x01c4)
+/** ARMv8 CPU, 64-bit mode. */
+#define IMAGE_FILE_MACHINE_ARM64            UINT16_C(0xaa64)
+/** EFI byte code. */
+#define IMAGE_FILE_MACHINE_EBC              UINT16_C(0x0ebc)
+/** "Itanic" CPU. */
+#define IMAGE_FILE_MACHINE_IA64             UINT16_C(0x0200)
+/** Mitsubishi M32R CPU, little endian. */
+#define IMAGE_FILE_MACHINE_M32R             UINT16_C(0x9041)
+/** MIPS CPU, compact 16-bit instructions only? */
+#define IMAGE_FILE_MACHINE_MIPS16           UINT16_C(0x0266)
+/** MIPS CPU with FPU, full 32-bit instructions only? */
+#define IMAGE_FILE_MACHINE_MIPSFPU          UINT16_C(0x0366)
+/** MIPS CPU with FPU, compact 16-bit instructions? */
+#define IMAGE_FILE_MACHINE_MIPSFPU16        UINT16_C(0x0466)
+/** MIPS CPU, little endian, Windows CE (?) v2 designation. */
+#define IMAGE_FILE_MACHINE_WCEMIPSV2        UINT16_C(0x0169)
+/** Power PC CPU, little endian. */
+#define IMAGE_FILE_MACHINE_POWERPC          UINT16_C(0x01f0)
+/** Power PC CPU with FPU, also little endian? */
+#define IMAGE_FILE_MACHINE_POWERPCFP        UINT16_C(0x01f1)
+/** MIPS R4000 CPU, little endian. */
+#define IMAGE_FILE_MACHINE_R4000            UINT16_C(0x0166)
+/** Hitachi SH3 CPU. */
+#define IMAGE_FILE_MACHINE_SH3              UINT16_C(0x01a2)
+/** Hitachi SH3 DSP. */
+#define IMAGE_FILE_MACHINE_SH3DSP           UINT16_C(0x01a3)
+/** Hitachi SH4 CPU. */
+#define IMAGE_FILE_MACHINE_SH4              UINT16_C(0x01a6)
+/** Hitachi SH5 CPU. */
+#define IMAGE_FILE_MACHINE_SH5              UINT16_C(0x01a8)
 /** @} */
 
 /** @name File header characteristics (IMAGE_FILE_HEADER::Characteristics)
