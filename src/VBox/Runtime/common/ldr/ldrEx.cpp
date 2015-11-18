@@ -729,3 +729,26 @@ DECLHIDDEN(int) rtLdrReadAt(RTLDRMOD hLdrMod, void *pvBuf, uint32_t iDbgInfo, RT
     return pMod->pReader->pfnRead(pMod->pReader, pvBuf, cb, off);
 }
 
+
+/**
+ * Translates a RTLDRARCH value to a string.
+ *
+ * @returns Name corresponding to @a enmArch
+ * @param   enmArch             The value to name.
+ */
+DECLHIDDEN(const char *) rtLdrArchName(RTLDRARCH enmArch)
+{
+    switch (enmArch)
+    {
+        case RTLDRARCH_INVALID:     return "INVALID";
+        case RTLDRARCH_WHATEVER:    return "WHATEVER";
+        case RTLDRARCH_HOST:        return "HOST";
+        case RTLDRARCH_AMD64:       return "AMD64";
+        case RTLDRARCH_X86_32:      return "X86_32";
+
+        case RTLDRARCH_END:
+        case RTLDRARCH_32BIT_HACK:
+            break;
+    }
+    return "UNKNOWN";
+}

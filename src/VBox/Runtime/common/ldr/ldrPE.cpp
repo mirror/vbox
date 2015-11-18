@@ -3622,6 +3622,18 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
 }
 
 
+static const char *rtldrPEGetArchName(uint16_t uMachine)
+{
+    switch (uMachine)
+    {
+        case IMAGE_FILE_MACHINE_I386:   return "X86_32";
+        case IMAGE_FILE_MACHINE_AMD64:  return "AMD64";
+        default:                        return "Unknown";
+    }
+}
+
+
+
 /**
  * Open a PE image.
  *
@@ -3658,7 +3670,8 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
              && !(fFlags & RTLDR_O_WHATEVER_ARCH)) )
     {
         if (!(fFlags & RTLDR_O_IGNORE_ARCH_IF_NO_CODE))
-            return VERR_LDR_ARCH_MISMATCH;
+            return RTErrInfoSetF(pErrInfo, VERR_LDR_ARCH_MISMATCH, "Image is for '%s', only accepting images for '%s'.",
+                                 rtldrPEGetArchName(FileHdr.Machine), rtLdrArchName(enmArch));
         fArchNoCodeCheckPending = true;
     }
 
@@ -3675,7 +3688,9 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
     if (RT_FAILURE(rc))
         return rc;
     if (fArchNoCodeCheckPending && OptHdr.SizeOfCode != 0)
-        return VERR_LDR_ARCH_MISMATCH;
+        return RTErrInfoSetF(pErrInfo, VERR_LDR_ARCH_MISMATCH,
+                             "Image is for '%s' and contains code (%#x), only accepting images for '%s' with code.",
+                             rtldrPEGetArchName(FileHdr.Machine), OptHdr.SizeOfCode, rtLdrArchName(enmArch));
 
     /*
      * Read and validate section headers.
