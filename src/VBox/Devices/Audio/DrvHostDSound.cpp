@@ -66,6 +66,17 @@ typedef FNDIRECTSOUNDENUMERATEW *PFNDIRECTSOUNDENUMERATEW;
 typedef HRESULT WINAPI FNDIRECTSOUNDCAPTUREENUMERATEW(LPDSENUMCALLBACKW pDSEnumCallback, LPVOID pContext);
 typedef FNDIRECTSOUNDCAPTUREENUMERATEW *PFNDIRECTSOUNDCAPTUREENUMERATEW;
 
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+# define VBOX_DSOUND_MAX_EVENTS 3
+
+typedef enum DSOUNDEVENT
+{
+    DSOUNDEVENT_NOTIFY = 0,
+    DSOUNDEVENT_INPUT,
+    DSOUNDEVENT_OUTPUT,
+ } DSOUNDEVENT;
+#endif /* VBOX_WITH_AUDIO_CALLBACKS */
+
 typedef struct DSOUNDHOSTCFG
 {
     DWORD   cbBufferIn;
@@ -75,20 +86,6 @@ typedef struct DSOUNDHOSTCFG
     RTUUID  uuidCapture;
     LPCGUID pGuidCapture;
 } DSOUNDHOSTCFG, *PDSOUNDHOSTCFG;
-
-typedef struct DRVHOSTDSOUND
-{
-    /** Pointer to the driver instance structure. */
-    PPDMDRVINS    pDrvIns;
-    /** Pointer to host audio interface. */
-    PDMIHOSTAUDIO IHostAudio;
-    /** List of found host input devices. */
-    RTLISTANCHOR  lstDevInput;
-    /** List of found host output devices. */
-    RTLISTANCHOR  lstDevOutput;
-    /** DirectSound configuration options. */
-    DSOUNDHOSTCFG cfg;
-} DRVHOSTDSOUND, *PDRVHOSTDSOUND;
 
 typedef struct DSOUNDSTREAMOUT
 {
@@ -113,6 +110,35 @@ typedef struct DSOUNDSTREAMIN
     PDMAUDIOSTREAMCFG           streamCfg;
 } DSOUNDSTREAMIN, *PDSOUNDSTREAMIN;
 
+typedef struct DRVHOSTDSOUND
+{
+    /** Pointer to the driver instance structure. */
+    PPDMDRVINS    pDrvIns;
+    /** Pointer to host audio interface. */
+    PDMIHOSTAUDIO IHostAudio;
+    /** List of found host input devices. */
+    RTLISTANCHOR  lstDevInput;
+    /** List of found host output devices. */
+    RTLISTANCHOR  lstDevOutput;
+    /** DirectSound configuration options. */
+    DSOUNDHOSTCFG cfg;
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    /** Stopped indicator. */
+    bool          fStopped;
+    /** Shutdown indicator. */
+    bool          fShutdown;
+    /** Notification thread. */
+    RTTHREAD      Thread;
+    /** Array of events to wait for in notification thread. */
+    HANDLE        aEvents[VBOX_DSOUND_MAX_EVENTS];
+    /** Number of events to wait for in notification thread.
+     *  Must not exceed VBOX_DSOUND_MAX_EVENTS. */
+    uint8_t       cEvents;
+    PDSOUNDSTREAMIN pStrmIn;
+    PDSOUNDSTREAMOUT pStrmOut;
+#endif
+} DRVHOSTDSOUND, *PDRVHOSTDSOUND;
+
 /**
  * Callback context for enumeration callbacks
  */
@@ -134,6 +160,9 @@ typedef struct DSOUNDDEV
     ( (PDRVHOSTDSOUND)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTDSOUND, IHostAudio)) )
 
 static void dsoundDevRemove(PDSOUNDDEV pDev);
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+static int dsoundNotifyThread(PDRVHOSTDSOUND pThis, bool fShutdown);
+#endif
 
 static DWORD dsoundRingDistance(DWORD offEnd, DWORD offBegin, DWORD cSize)
 {
@@ -375,8 +404,11 @@ static HRESULT directSoundPlayInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREA
     return hr;
 }
 
-static void directSoundPlayClose(PDSOUNDSTREAMOUT pDSoundStrmOut)
+static void directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
 {
+    AssertPtrReturnVoid(pThis);
+    AssertPtrReturnVoid(pDSoundStrmOut);
+
     DSLOG(("DSound: Closing playback stream %p, buffer %p\n", pDSoundStrmOut, pDSoundStrmOut->pDSB));
 
     if (pDSoundStrmOut->pDSB)
@@ -385,6 +417,18 @@ static void directSoundPlayClose(PDSOUNDSTREAMOUT pDSoundStrmOut)
         if (FAILED(hr))
             DSLOGREL(("DSound: Stop playback stream %p when closing %Rhrc\n", pDSoundStrmOut, hr));
 
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+        if (pThis->aEvents[DSOUNDEVENT_OUTPUT] != NULL)
+        {
+            CloseHandle(pThis->aEvents[DSOUNDEVENT_OUTPUT]);
+            pThis->aEvents[DSOUNDEVENT_OUTPUT] = NULL;
+
+            if (pThis->cEvents)
+                pThis->cEvents--;
+
+            pThis->pStrmOut = NULL;
+        }
+#endif
         IDirectSoundBuffer8_Release(pDSoundStrmOut->pDSB);
         pDSoundStrmOut->pDSB = NULL;
     }
@@ -409,7 +453,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
     {
         /* Should not happen but be forgiving. */
         DSLOGREL(("DSound: DirectSoundBuffer already exists\n"));
-        directSoundPlayClose(pDSoundStrmOut);
+        directSoundPlayClose(pThis, pDSoundStrmOut);
     }
 
     WAVEFORMATEX wfx;
@@ -424,23 +468,27 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
     do /* To use breaks. */
     {
         LPDIRECTSOUNDBUFFER pDSB = NULL;
+
         DSBUFFERDESC bd;
         RT_ZERO(bd);
-        bd.dwSize = sizeof(bd);
-        bd.lpwfxFormat = &wfx;
-        bd.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2;
+        bd.dwSize        = sizeof(bd);
+        bd.lpwfxFormat   = &wfx;
+        bd.dwFlags       = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2;
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+        bd.dwFlags      |= DSBCAPS_CTRLPOSITIONNOTIFY;
+#endif
         bd.dwBufferBytes = pThis->cfg.cbBufferOut;
-        hr = IDirectSound8_CreateSoundBuffer(pDSoundStrmOut->pDS,
-                                             &bd, &pDSB, NULL);
+
+        hr = IDirectSound8_CreateSoundBuffer(pDSoundStrmOut->pDS, &bd, &pDSB, NULL);
         if (FAILED(hr))
         {
             DSLOGREL(("DSound: CreateSoundBuffer %Rhrc\n", hr));
             break;
         }
 
-        /* "Upgrade" to IDirectSoundBuffer8 intarface. */
-        hr = IDirectSoundBuffer_QueryInterface(pDSB, IID_IDirectSoundBuffer8, (void **)&pDSoundStrmOut->pDSB);
-        pDSB->Release();
+        /* "Upgrade" to IDirectSoundBuffer8 interface. */
+        hr = IDirectSoundBuffer_QueryInterface(pDSB, IID_IDirectSoundBuffer8, (LPVOID *)&pDSoundStrmOut->pDSB);
+        IDirectSoundBuffer_Release(pDSB);
         if (FAILED(hr))
         {
             DSLOGREL(("DSound: Query IDirectSoundBuffer8 %Rhrc\n", hr));
@@ -501,10 +549,58 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
         pDSoundStrmOut->csPlaybackBufferSize = bc.dwBufferBytes >> pDSoundStrmOut->strmOut.Props.cShift;
         DSLOG(("DSound: csPlaybackBufferSize=%RU32\n", pDSoundStrmOut->csPlaybackBufferSize));
 
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+        /*
+         * Install notification.
+         */
+        pThis->aEvents[DSOUNDEVENT_OUTPUT] = CreateEvent(NULL /* Security attribute */,
+                                                         FALSE /* bManualReset */, FALSE /* bInitialState */,
+                                                         NULL /* lpName */);
+        if (pThis->aEvents[DSOUNDEVENT_OUTPUT] == NULL)
+        {
+            hr = HRESULT_FROM_WIN32(GetLastError());
+            DSLOGREL(("DSound: CreateEvent for output failed with hr=%Rhrc\n", hr));
+            break;
+        }
+
+        LPDIRECTSOUNDNOTIFY8 pNotify;
+        hr = IDirectSoundNotify_QueryInterface(pDSoundStrmOut->pDSB, IID_IDirectSoundNotify8, (LPVOID *)&pNotify);
+        if (SUCCEEDED(hr))
+        {
+            DSBPOSITIONNOTIFY dsBufPosNotify;
+            RT_ZERO(dsBufPosNotify);
+            dsBufPosNotify.dwOffset     = DSBPN_OFFSETSTOP;
+            dsBufPosNotify.hEventNotify = pThis->aEvents[DSOUNDEVENT_OUTPUT];
+
+            hr = IDirectSoundNotify_SetNotificationPositions(pNotify, 1 /* Count */, &dsBufPosNotify);
+            if (FAILED(hr))
+                DSLOGREL(("DSound: IDirectSoundNotify_SetNotificationPositions failed with hr=%Rhrc\n", hr));
+
+            IDirectSoundNotify_Release(pNotify);
+        }
+        else
+            DSLOGREL(("DSound: IDirectSoundNotify_QueryInterface failed with hr=%Rhrc\n", hr));
+
+        if (FAILED(hr))
+            break;
+
+        pThis->pStrmOut = pDSoundStrmOut;
+
+        Assert(pThis->cEvents < VBOX_DSOUND_MAX_EVENTS);
+        pThis->cEvents++;
+
+        /* Let the thread know. */
+        dsoundNotifyThread(pThis, false /* fShutdown */);
+
+        /* Trigger the just installed output notification. */
+        hr = IDirectSoundBuffer8_Play(pDSoundStrmOut->pDSB, 0, 0, 0);
+
+#endif /* VBOX_WITH_AUDIO_CALLBACKS */
+
     } while (0);
 
     if (FAILED(hr))
-        directSoundPlayClose(pDSoundStrmOut);
+        directSoundPlayClose(pThis, pDSoundStrmOut);
 
     return hr;
 }
@@ -1070,7 +1166,7 @@ static DECLCALLBACK(int) drvHostDSoundControlOut(PPDMIHOSTAUDIO pInterface,
             HRESULT hr = directSoundPlayStart(pDSoundStrmOut);
             if (FAILED(hr))
             {
-                directSoundPlayClose(pDSoundStrmOut);
+                directSoundPlayClose(pThis, pDSoundStrmOut);
                 directSoundPlayOpen(pThis, pDSoundStrmOut);
 
                 hr = directSoundPlayStart(pDSoundStrmOut);
@@ -1130,9 +1226,7 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
         {
             hr = directSoundPlayRestore(pDSB);
             if (SUCCEEDED(hr))
-            {
                 hr = IDirectSoundBuffer8_GetCurrentPosition(pDSB, &cbPlayPos, NULL);
-            }
         }
 
         if (FAILED(hr))
@@ -1240,11 +1334,12 @@ static DECLCALLBACK(int) drvHostDSoundFiniOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAMOUT pDSoundStrmOut = (PDSOUNDSTREAMOUT)pHstStrmOut;
 
-    directSoundPlayClose(pDSoundStrmOut);
+    directSoundPlayClose(pThis, pDSoundStrmOut);
 
-    pDSoundStrmOut->cbPlayWritePos = 0;
-    pDSoundStrmOut->fRestartPlayback = true;
+    pDSoundStrmOut->cbPlayWritePos       = 0;
+    pDSoundStrmOut->fRestartPlayback     = true;
     pDSoundStrmOut->csPlaybackBufferSize = 0;
+
     RT_ZERO(pDSoundStrmOut->streamCfg);
 
     return VINF_SUCCESS;
@@ -1554,9 +1649,122 @@ static DECLCALLBACK(int) drvHostDSoundGetConf(PPDMIHOSTAUDIO pInterface, PPDMAUD
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+static int dsoundNotifyThread(PDRVHOSTDSOUND pThis, bool fShutdown)
+{
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    if (fShutdown)
+    {
+        LogFlowFunc(("Shutting down thread ...\n"));
+        pThis->fShutdown = fShutdown;
+    }
+
+    /* Set the notification event so that the thread is being notified. */
+    BOOL fRc = SetEvent(pThis->aEvents[DSOUNDEVENT_NOTIFY]);
+    Assert(fRc);
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) drvHostDSoundThread(RTTHREAD hThreadSelf, void *pvUser)
+{
+    PDRVHOSTDSOUND pThis = (PDRVHOSTDSOUND)pvUser;
+    AssertPtr(pThis);
+
+    LogFlowFuncEnter();
+
+    /* Let caller know that we're done initializing, regardless of the result. */
+    int rc = RTThreadUserSignal(hThreadSelf);
+    AssertRC(rc);
+
+    HRESULT hr;
+
+    do
+    {
+        HANDLE aEvents[VBOX_DSOUND_MAX_EVENTS];
+        DWORD  cEvents = 0;
+        for (uint8_t i = 0; i < VBOX_DSOUND_MAX_EVENTS; i++)
+        {
+            if (pThis->aEvents[i])
+                aEvents[cEvents++] = pThis->aEvents[i];
+        }
+        Assert(cEvents);
+
+        LogFlowFunc(("Waiting: cEvents=%ld\n", cEvents));
+
+        DWORD dwObj = WaitForMultipleObjects(cEvents, aEvents, FALSE /* bWaitAll */, INFINITE);
+        switch (dwObj)
+        {
+            case WAIT_FAILED:
+            {
+                rc = VERR_CANCELLED;
+                break;
+            }
+
+            case WAIT_TIMEOUT:
+            {
+                rc = VERR_TIMEOUT;
+                break;
+            }
+
+            default:
+            {
+                dwObj = WAIT_OBJECT_0 + cEvents - 1;
+                if (aEvents[dwObj] == pThis->aEvents[DSOUNDEVENT_NOTIFY])
+                {
+                    LogFlowFunc(("Notify\n"));
+                }
+                else if (aEvents[dwObj] == pThis->aEvents[DSOUNDEVENT_INPUT])
+                {
+
+                }
+                else if (aEvents[dwObj] == pThis->aEvents[DSOUNDEVENT_OUTPUT])
+                {
+                    DWORD cbPlayPos;
+                    hr = IDirectSoundCaptureBuffer8_GetCurrentPosition(pThis->pStrmOut->pDSB, NULL, &cbPlayPos);
+                    LogFlowFunc(("Output: hr=%Rhrc, dwPlayPos=%ld\n", hr, cbPlayPos));
+                }
+                break;
+            }
+        }
+
+        if (pThis->fShutdown)
+            break;
+
+    } while (RT_SUCCESS(rc));
+
+    pThis->fStopped = true;
+
+    LogFlowFunc(("Exited with fShutdown=%RTbool, rc=%Rrc\n", pThis->fShutdown, rc));
+    return rc;
+}
+#endif /* VBOX_WITH_AUDIO_CALLBACKS */
+
 static DECLCALLBACK(void) drvHostDSoundShutdown(PPDMIHOSTAUDIO pInterface)
 {
-    NOREF(pInterface);
+    PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+
+    LogFlowFuncEnter();
+
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    int rc = dsoundNotifyThread(pThis, true /* fShutdown */);
+    AssertRC(rc);
+
+    int rcThread;
+    rc = RTThreadWait(pThis->Thread,  15 * 1000 /* 15s timeout */, &rcThread);
+    LogFlowFunc(("rc=%Rrc, rcThread=%Rrc\n", rc, rcThread));
+
+    Assert(pThis->fStopped);
+
+    if (pThis->aEvents[DSOUNDEVENT_NOTIFY])
+    {
+        CloseHandle(pThis->aEvents[DSOUNDEVENT_NOTIFY]);
+        pThis->aEvents[DSOUNDEVENT_NOTIFY] = NULL;
+    }
+#endif
+
+    LogFlowFuncLeave();
 }
 
 static DECLCALLBACK(int) drvHostDSoundInit(PPDMIHOSTAUDIO pInterface)
@@ -1565,16 +1773,43 @@ static DECLCALLBACK(int) drvHostDSoundInit(PPDMIHOSTAUDIO pInterface)
 
     LogFlowFuncEnter();
 
+    int rc;
+
     /* Verify that IDirectSound is available. */
     LPDIRECTSOUND pDirectSound = NULL;
     HRESULT hr = CoCreateInstance(CLSID_DirectSound, NULL, CLSCTX_ALL,
                                   IID_IDirectSound, (void **)&pDirectSound);
     if (SUCCEEDED(hr))
+    {
         IDirectSound_Release(pDirectSound);
-    else
-        DSLOGREL(("DSound: DirectSound not available %Rhrc\n", hr));
 
-    int rc = SUCCEEDED(hr) ? VINF_SUCCESS: VERR_NOT_SUPPORTED;
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+        /* Create notification event. */
+        pThis->aEvents[DSOUNDEVENT_NOTIFY] = CreateEvent(NULL /* Security attribute */,
+                                                         FALSE /* bManualReset */, FALSE /* bInitialState */,
+                                                         NULL /* lpName */);
+        Assert(pThis->aEvents[DSOUNDEVENT_NOTIFY] != NULL);
+
+        /* Start notification thread. */
+        rc = RTThreadCreate(&pThis->Thread, drvHostDSoundThread,
+                            pThis /*pvUser*/, 0 /*cbStack*/,
+                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "dSoundNtfy");
+        if (RT_SUCCESS(rc))
+        {
+            /* Wait for the thread to initialize. */
+            rc = RTThreadUserWait(pThis->Thread, RT_MS_1MIN);
+            if (RT_FAILURE(rc))
+                DSLOGREL(("DSound: Waiting for thread to initialize failed with rc=%Rrc\n", rc));
+        }
+        else
+            DSLOGREL(("DSound: Creating thread failed with rc=%Rrc\n", rc));
+#endif
+    }
+    else
+    {
+        DSLOGREL(("DSound: DirectSound not available %Rhrc\n", hr));
+        rc = VERR_NOT_SUPPORTED;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1673,6 +1908,14 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     RTListInit(&pThis->lstDevInput);
     RTListInit(&pThis->lstDevOutput);
 
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    pThis->fStopped  = false;
+    pThis->fShutdown = false;
+
+    RT_ZERO(pThis->aEvents);
+    pThis->cEvents = 0;
+#endif
+
     /*
      * Initialize configuration values.
      */
@@ -1697,7 +1940,7 @@ const PDMDRVREG g_DrvHostDSound =
     /* pszDescription */
     "DirectSound Audio host driver",
     /* fFlags */
-     PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
+    PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
     /* fClass. */
     PDM_DRVREG_CLASS_AUDIO,
     /* cMaxInstances */
