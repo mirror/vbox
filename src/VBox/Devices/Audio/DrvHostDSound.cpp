@@ -113,29 +113,31 @@ typedef struct DSOUNDSTREAMIN
 typedef struct DRVHOSTDSOUND
 {
     /** Pointer to the driver instance structure. */
-    PPDMDRVINS    pDrvIns;
-    /** Pointer to host audio interface. */
-    PDMIHOSTAUDIO IHostAudio;
+    PPDMDRVINS          pDrvIns;
+    /** Our audio host audio interface. */
+    PDMIHOSTAUDIO       IHostAudio;
     /** List of found host input devices. */
-    RTLISTANCHOR  lstDevInput;
+    RTLISTANCHOR        lstDevInput;
     /** List of found host output devices. */
-    RTLISTANCHOR  lstDevOutput;
+    RTLISTANCHOR        lstDevOutput;
     /** DirectSound configuration options. */
-    DSOUNDHOSTCFG cfg;
+    DSOUNDHOSTCFG       cfg;
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
+    /** Pointer to the audio connector interface of the driver/device above us. */
+    PPDMIAUDIOCONNECTOR pUpIAudioConnector;
     /** Stopped indicator. */
-    bool          fStopped;
+    bool                fStopped;
     /** Shutdown indicator. */
-    bool          fShutdown;
+    bool                fShutdown;
     /** Notification thread. */
-    RTTHREAD      Thread;
+    RTTHREAD            Thread;
     /** Array of events to wait for in notification thread. */
-    HANDLE        aEvents[VBOX_DSOUND_MAX_EVENTS];
+    HANDLE              aEvents[VBOX_DSOUND_MAX_EVENTS];
     /** Number of events to wait for in notification thread.
      *  Must not exceed VBOX_DSOUND_MAX_EVENTS. */
-    uint8_t       cEvents;
-    PDSOUNDSTREAMIN pStrmIn;
-    PDSOUNDSTREAMOUT pStrmOut;
+    uint8_t             cEvents;
+    PDSOUNDSTREAMIN     pStrmIn;
+    PDSOUNDSTREAMOUT    pStrmOut;
 #endif
 } DRVHOSTDSOUND, *PDRVHOSTDSOUND;
 
@@ -428,6 +430,9 @@ static void directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundS
 
             pThis->pStrmOut = NULL;
         }
+
+        int rc2 = dsoundNotifyThread(pThis, false /* fShutdown */);
+        AssertRC(rc2);
 #endif
         IDirectSoundBuffer8_Release(pDSoundStrmOut->pDSB);
         pDSoundStrmOut->pDSB = NULL;
@@ -1723,8 +1728,16 @@ static DECLCALLBACK(int) drvHostDSoundThread(RTTHREAD hThreadSelf, void *pvUser)
                 {
                     DWORD cbPlayPos;
                     hr = IDirectSoundCaptureBuffer8_GetCurrentPosition(pThis->pStrmOut->pDSB, NULL, &cbPlayPos);
+                    if (SUCCEEDED(hr))
+                    {
                         LogFlowFunc(("Output: hr=%Rhrc, dwPlayPos=%ld\n", hr, cbPlayPos));
+
+                        uint32_t cbFree = pThis->pStrmOut->csPlaybackBufferSize - pThis->pStrmOut->cbPlayWritePos;
+
+                        AssertPtr(pThis->pUpIAudioConnector);
+                        pThis->pUpIAudioConnector->pfnCallback(pThis->pUpIAudioConnector, PDMAUDIOCALLBACKTYPE_OUTPUT, &cbFree, sizeof(cbFree));
                     }
+                }
                 break;
             }
         }
@@ -1899,7 +1912,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     }
 
     /*
-     * Init the static parts.
+     * Init basic data members and interfaces.
      */
     pThis->pDrvIns                   = pDrvIns;
     /* IBase */
@@ -1907,6 +1920,21 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IHostAudio */
     PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvHostDSound);
 
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    /*
+     * Get the IAudioConnector interface of the above driver/device.
+     */
+    pThis->pUpIAudioConnector = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIOCONNECTOR);
+    if (!pThis->pUpIAudioConnector)
+    {
+        AssertMsgFailed(("Configuration error: No audio connector interface above!\n"));
+        return VERR_PDM_MISSING_INTERFACE_ABOVE;
+    }
+#endif
+
+    /*
+     * Init the static parts.
+     */
     RTListInit(&pThis->lstDevInput);
     RTListInit(&pThis->lstDevOutput);
 
