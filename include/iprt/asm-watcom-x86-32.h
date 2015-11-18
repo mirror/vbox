@@ -34,11 +34,14 @@
 #endif
 
 /*
- * Turns out we cannot use 'ds' for segment stuff here because the compiler
- * seems to insists on loading the DGROUP segment into 'ds' before calling
- * stuff when using -ecc.  Using 'es' instead as this seems to work fine.
+ * Note! The #undef that preceds the #pragma aux statements is for undoing
+ *       the mangling, because the symbol in #pragma aux [symbol] statements
+ *       doesn't get subjected to preprocessing.  This is also why we include
+ *       the watcom header at the top rather than at the bottom of the
+ *       asm-amd64-x86.h file.
  */
 
+#undef       ASMCompilerBarrier
 #if 0 /* overkill version. */
 # pragma aux ASMCompilerBarrier = \
     "nop" \
@@ -51,6 +54,7 @@
     modify exact [];
 #endif
 
+#undef      ASMNopPause
 #pragma aux ASMNopPause = \
     ".686p" \
     ".xmm2" \
@@ -58,24 +62,28 @@
     parm [] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMAtomicXchgU8
 #pragma aux ASMAtomicXchgU8 = \
     "xchg [ecx], al" \
     parm [ecx] [al] \
     value [al] \
     modify exact [al];
 
+#undef      ASMAtomicXchgU16
 #pragma aux ASMAtomicXchgU16 = \
     "xchg [ecx], ax" \
     parm [ecx] [ax] \
     value [ax] \
     modify exact [ax];
 
+#undef      ASMAtomicXchgU32
 #pragma aux ASMAtomicXchgU32 = \
     "xchg [ecx], eax" \
     parm [ecx] [eax] \
     value [eax] \
     modify exact [eax];
 
+#undef      ASMAtomicXchgU64
 #pragma aux ASMAtomicXchgU64 = \
     ".586" \
     "try_again:" \
@@ -85,6 +93,7 @@
     value [eax edx] \
     modify exact [edx ecx ebx eax];
 
+#undef      ASMAtomicCmpXchgU8
 #pragma aux ASMAtomicCmpXchgU8 = \
     ".486" \
     "lock cmpxchg [edx], cl" \
@@ -93,6 +102,7 @@
     value [al] \
     modify exact [al];
 
+#undef      ASMAtomicCmpXchgU16
 #pragma aux ASMAtomicCmpXchgU16 = \
     ".486" \
     "lock cmpxchg [edx], cx" \
@@ -101,6 +111,7 @@
     value [al] \
     modify exact [ax];
 
+#undef      ASMAtomicCmpXchgU32
 #pragma aux ASMAtomicCmpXchgU32 = \
     ".486" \
     "lock cmpxchg [edx], ecx" \
@@ -109,6 +120,7 @@
     value [al] \
     modify exact [eax];
 
+#undef      ASMAtomicCmpXchgU64
 #pragma aux ASMAtomicCmpXchgU64 = \
     ".586" \
     "lock cmpxchg8b [edi]" \
@@ -117,6 +129,7 @@
     value [al] \
     modify exact [eax edx];
 
+#undef      ASMAtomicCmpXchgExU32
 #pragma aux ASMAtomicCmpXchgExU32 = \
     ".586" \
     "lock cmpxchg [edx], ecx" \
@@ -126,6 +139,7 @@
     value [al] \
     modify exact [eax];
 
+#undef      ASMAtomicCmpXchgExU64
 #pragma aux ASMAtomicCmpXchgExU64 = \
     ".586" \
     "lock cmpxchg8b [edi]" \
@@ -136,6 +150,7 @@
     value [al] \
     modify exact [eax edx];
 
+#undef      ASMSerializeInstruction
 #pragma aux ASMSerializeInstruction = \
     ".586" \
     "xor eax, eax" \
@@ -143,6 +158,7 @@
     parm [] \
     modify exact [eax ebx ecx edx];
 
+#undef      ASMAtomicReadU64
 #pragma aux ASMAtomicReadU64 = \
     ".586" \
     "xor eax, eax" \
@@ -154,6 +170,7 @@
     value [eax edx] \
     modify exact [eax ebx ecx edx];
 
+#undef      ASMAtomicUoReadU64
 #pragma aux ASMAtomicUoReadU64 = \
     ".586" \
     "xor eax, eax" \
@@ -165,6 +182,7 @@
     value [eax edx] \
     modify exact [eax ebx ecx edx];
 
+#undef      ASMAtomicAddU16
 #pragma aux ASMAtomicAddU16 = \
     ".486" \
     "lock xadd [ecx], ax" \
@@ -172,6 +190,7 @@
     value [ax] \
     modify exact [ax];
 
+#undef      ASMAtomicAddU32
 #pragma aux ASMAtomicAddU32 = \
     ".486" \
     "lock xadd [ecx], eax" \
@@ -179,6 +198,7 @@
     value [eax] \
     modify exact [eax];
 
+#undef      ASMAtomicIncU16
 #pragma aux ASMAtomicIncU16 = \
     ".486" \
     "mov ax, 1" \
@@ -188,6 +208,7 @@
     value [ax] \
     modify exact [ax];
 
+#undef      ASMAtomicIncU32
 #pragma aux ASMAtomicIncU32 = \
     ".486" \
     "mov eax, 1" \
@@ -199,6 +220,7 @@
 
 /* ASMAtomicIncU64: Should be done by C inline or in external file. */
 
+#undef      ASMAtomicDecU16
 #pragma aux ASMAtomicDecU16 = \
     ".486" \
     "mov ax, 0ffffh" \
@@ -208,6 +230,7 @@
     value [ax] \
     modify exact [ax];
 
+#undef      ASMAtomicDecU32
 #pragma aux ASMAtomicDecU32 = \
     ".486" \
     "mov eax, 0ffffffffh" \
@@ -219,6 +242,7 @@
 
 /* ASMAtomicDecU64: Should be done by C inline or in external file. */
 
+#undef      ASMAtomicOrU32
 #pragma aux ASMAtomicOrU32 = \
     "lock or [ecx], eax" \
     parm [ecx] [eax] \
@@ -226,6 +250,7 @@
 
 /* ASMAtomicOrU64: Should be done by C inline or in external file. */
 
+#undef      ASMAtomicAndU32
 #pragma aux ASMAtomicAndU32 = \
     "lock and [ecx], eax" \
     parm [ecx] [eax] \
@@ -233,6 +258,7 @@
 
 /* ASMAtomicAndU64: Should be done by C inline or in external file. */
 
+#undef      ASMAtomicUoOrU32
 #pragma aux ASMAtomicUoOrU32 = \
     "or [ecx], eax" \
     parm [ecx] [eax] \
@@ -240,6 +266,7 @@
 
 /* ASMAtomicUoOrU64: Should be done by C inline or in external file. */
 
+#undef      ASMAtomicUoAndU32
 #pragma aux ASMAtomicUoAndU32 = \
     "and [ecx], eax" \
     parm [ecx] [eax] \
@@ -247,6 +274,7 @@
 
 /* ASMAtomicUoAndU64: Should be done by C inline or in external file. */
 
+#undef      ASMAtomicUoIncU32
 #pragma aux ASMAtomicUoIncU32 = \
     ".486" \
     "xadd [ecx], eax" \
@@ -255,6 +283,7 @@
     value [eax] \
     modify exact [eax];
 
+#undef      ASMAtomicUoDecU32
 #pragma aux ASMAtomicUoDecU32 = \
     ".486" \
     "mov eax, 0ffffffffh" \
@@ -264,6 +293,7 @@
     value [eax] \
     modify exact [eax];
 
+#undef      ASMMemZeroPage
 #pragma aux ASMMemZeroPage = \
     "mov ecx, 1024" \
     "xor eax, eax" \
@@ -271,6 +301,7 @@
     parm [edi] \
     modify exact [eax ecx edi];
 
+#undef      ASMMemZero32
 #pragma aux ASMMemZero32 = \
     "shr ecx, 2" \
     "xor eax, eax" \
@@ -278,49 +309,58 @@
     parm [edi] [ecx] \
     modify exact [eax ecx edi];
 
+#undef      ASMMemZero32
 #pragma aux ASMMemZero32 = \
     "shr ecx, 2" \
     "rep stosd"  \
     parm [edi] [ecx] [eax]\
     modify exact [ecx edi];
 
+#undef      ASMProbeReadByte
 #pragma aux ASMProbeReadByte = \
     "mov al, [ecx]" \
     parm [ecx] \
     value [al] \
     modify exact [al];
 
+#undef      ASMBitSet
 #pragma aux ASMBitSet = \
     "bts [ecx], eax" \
     parm [ecx] [eax] \
     modify exact [];
 
+#undef      ASMAtomicBitSet
 #pragma aux ASMAtomicBitSet = \
     "lock bts [ecx], eax" \
     parm [ecx] [eax] \
     modify exact [];
 
+#undef      ASMBitClear
 #pragma aux ASMBitClear = \
     "btr [ecx], eax" \
     parm [ecx] [eax] \
     modify exact [];
 
+#undef      ASMAtomicBitClear
 #pragma aux ASMAtomicBitClear = \
     "lock btr [ecx], eax" \
     parm [ecx] [eax] \
     modify exact [];
 
+#undef      ASMBitToggle
 #pragma aux ASMBitToggle = \
     "btc [ecx], eax" \
     parm [ecx] [eax] \
     modify exact [];
 
+#undef      ASMAtomicBitToggle
 #pragma aux ASMAtomicBitToggle = \
     "lock btc [ecx], eax" \
     parm [ecx] [eax] \
     modify exact [];
 
 
+#undef      ASMBitTestAndSet
 #pragma aux ASMBitTestAndSet = \
     "bts [ecx], eax" \
     "setc al" \
@@ -328,6 +368,7 @@
     value [al] \
     modify exact [eax];
 
+#undef      ASMAtomicBitTestAndSet
 #pragma aux ASMAtomicBitTestAndSet = \
     "lock bts [ecx], eax" \
     "setc al" \
@@ -335,6 +376,7 @@
     value [al] \
     modify exact [eax];
 
+#undef      ASMBitTestAndClear
 #pragma aux ASMBitTestAndClear = \
     "btr [ecx], eax" \
     "setc al" \
@@ -342,6 +384,7 @@
     value [al] \
     modify exact [eax];
 
+#undef      ASMAtomicBitTestAndClear
 #pragma aux ASMAtomicBitTestAndClear = \
     "lock btr [ecx], eax" \
     "setc al" \
@@ -349,6 +392,7 @@
     value [al] \
     modify exact [eax];
 
+#undef      ASMBitTestAndToggle
 #pragma aux ASMBitTestAndToggle = \
     "btc [ecx], eax" \
     "setc al" \
@@ -356,6 +400,7 @@
     value [al] \
     modify exact [eax];
 
+#undef      ASMAtomicBitTestAndToggle
 #pragma aux ASMAtomicBitTestAndToggle = \
     "lock btc [ecx], eax" \
     "setc al" \
@@ -364,6 +409,7 @@
     modify exact [eax];
 
 /** @todo this is way to much inline assembly, better off in an external function. */
+#undef      ASMBitFirstClear
 #pragma aux ASMBitFirstClear = \
     "mov edx, edi" /* save start of bitmap for later */ \
     "add ecx, 31" \
@@ -386,6 +432,7 @@
 /* ASMBitNextClear: Too much work, do when needed. */
 
 /** @todo this is way to much inline assembly, better off in an external function. */
+#undef      ASMBitFirstSet
 #pragma aux ASMBitFirstSet = \
     "mov edx, edi" /* save start of bitmap for later */ \
     "add ecx, 31" \
@@ -407,6 +454,7 @@
 
 /* ASMBitNextSet: Too much work, do when needed. */
 
+#undef      ASMBitFirstSetU32
 #pragma aux ASMBitFirstSetU32 = \
     "bsf eax, eax" \
     "jz  not_found" \
@@ -419,6 +467,7 @@
     value [eax] \
     modify exact [eax] nomemory;
 
+#undef      ASMBitLastSetU32
 #pragma aux ASMBitLastSetU32 = \
     "bsr eax, eax" \
     "jz  not_found" \
@@ -431,24 +480,28 @@
     value [eax] \
     modify exact [eax] nomemory;
 
+#undef      ASMByteSwapU16
 #pragma aux ASMByteSwapU16 = \
     "ror ax, 8" \
     parm [ax] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
 
+#undef      ASMByteSwapU32
 #pragma aux ASMByteSwapU32 = \
     "bswap eax" \
     parm [eax] nomemory \
     value [eax] \
     modify exact [eax] nomemory;
 
+#undef      ASMRotateLeftU32
 #pragma aux ASMRotateLeftU32 = \
     "rol    eax, cl" \
     parm [eax] [ecx] nomemory \
     value [eax] \
     modify exact [eax] nomemory;
 
+#undef      ASMRotateRightU32
 #pragma aux ASMRotateRightU32 = \
     "ror    eax, cl" \
     parm [eax] [ecx] nomemory \

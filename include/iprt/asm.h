@@ -81,6 +81,16 @@
 # endif
 #endif
 
+/*
+ * Include #pragma aux definitions for Watcom C/C++.
+ */
+#if defined(__WATCOMC__) && ARCH_BITS == 16 && defined(RT_ARCH_X86)
+# include "asm-watcom-x86-16.h"
+#elif defined(__WATCOMC__) && ARCH_BITS == 32 && defined(RT_ARCH_X86)
+# include "asm-watcom-x86-32.h"
+#endif
+
+
 
 /** @defgroup grp_rt_asm    ASM - Assembly Routines
  * @ingroup grp_rt
@@ -5106,16 +5116,6 @@ DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift)
 }
 
 /** @} */
-
-
-/*
- * Include #pragma aux definitions for Watcom C/C++.
- */
-#if defined(__WATCOMC__) && ARCH_BITS == 16 && defined(RT_ARCH_X86)
-# include "asm-watcom-x86-16.h"
-#elif defined(__WATCOMC__) && ARCH_BITS == 32 && defined(RT_ARCH_X86)
-# include "asm-watcom-x86-32.h"
-#endif
 
 
 /** @} */

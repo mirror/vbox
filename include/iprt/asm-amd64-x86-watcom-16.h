@@ -37,13 +37,21 @@
  * Turns out we cannot use 'ds' for segment stuff here because the compiler
  * seems to insists on loading the DGROUP segment into 'ds' before calling
  * stuff when using -ecc.  Using 'es' instead as this seems to work fine.
+ *
+ * Note! The #undef that preceds the #pragma aux statements is for undoing
+ *       the mangling, because the symbol in #pragma aux [symbol] statements
+ *       doesn't get subjected to preprocessing.  This is also why we include
+ *       the watcom header at the top rather than at the bottom of the
+ *       asm-amd64-x86.h file.
  */
 
+#undef      ASMGetIDTR
 #pragma aux ASMGetIDTR = \
     "sidt fword ptr es:[bx]" \
     parm [es bx] \
     modify exact [];
 
+#undef      ASMGetIdtrLimit
 #pragma aux ASMGetIdtrLimit = \
     "sub  sp, 8" \
     "mov  bx, sp" \
@@ -54,63 +62,74 @@
     value [bx] \
     modify exact [bx];
 
+#undef      ASMSetIDTR
 #pragma aux ASMSetIDTR = \
     "lidt fword ptr es:[bx]" \
     parm [es bx] nomemory \
     modify nomemory;
 
+#undef      ASMGetGDTR
 #pragma aux ASMGetGDTR = \
     "sgdt fword ptr es:[bx]" \
     parm [es bx] \
     modify exact [];
 
+#undef      ASMSetGDTR
 #pragma aux ASMSetGDTR = \
     "lgdt fword ptr es:[bx]" \
     parm [es bx] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMGetCS
 #pragma aux ASMGetCS = \
     "mov ax, cs" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
 
+#undef      ASMGetDS
 #pragma aux ASMGetDS = \
     "mov ax, ds" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
 
+#undef      ASMGetES
 #pragma aux ASMGetES = \
     "mov ax, es" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
 
+#undef      ASMGetFS
 #pragma aux ASMGetFS = \
     "mov ax, fs" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
 
+#undef      ASMGetGS
 #pragma aux ASMGetGS = \
     "mov ax, gs" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
 
+#undef      ASMGetSS
 #pragma aux ASMGetSS = \
     "mov ax, ss" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
 
+#undef      ASMGetTR
 #pragma aux ASMGetTR = \
     "str ax" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
 
+#undef      ASMGetLDTR
 #pragma aux ASMGetLDTR = \
     "sldt ax" \
     parm [] nomemory \
@@ -119,6 +138,7 @@
 
 /** @todo ASMGetSegAttr   */
 
+#undef      ASMGetFlags
 #pragma aux ASMGetFlags = \
     "pushf" \
     "pop ax" \
@@ -126,12 +146,14 @@
     value [ax] \
     modify exact [ax] nomemory;
 
+#undef      ASMSetFlags
 #pragma aux ASMSetFlags = \
     "push ax" \
     "popf" \
     parm [ax] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMChangeFlags
 #pragma aux ASMChangeFlags = \
     "pushf" \
     "pop ax" \
@@ -143,6 +165,7 @@
     value [ax] \
     modify exact [dx] nomemory;
 
+#undef      ASMAddFlags
 #pragma aux ASMAddFlags = \
     "pushf" \
     "pop ax" \
@@ -153,6 +176,7 @@
     value [ax] \
     modify exact [dx] nomemory;
 
+#undef      ASMClearFlags
 #pragma aux ASMClearFlags = \
     "pushf" \
     "pop ax" \
@@ -165,6 +189,7 @@
 
 /* Note! Must use the 64-bit integer return value convension.
          The order of registers in the value [set] does not seem to mean anything. */
+#undef      ASMReadTSC
 #pragma aux ASMReadTSC = \
     ".586" \
     "rdtsc" \
@@ -198,6 +223,7 @@
             si:dx, di:dx
             si:di
          This ordering seems to apply to parameter values too. */
+#undef      ASMGetCR0
 #pragma aux ASMGetCR0 = \
     "mov eax, cr0" \
     "mov edx, eax" \
@@ -206,6 +232,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMSetCR0
 #pragma aux ASMSetCR0 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -213,6 +240,7 @@
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
 
+#undef      ASMGetCR2
 #pragma aux ASMGetCR2 = \
     "mov eax, cr2" \
     "mov edx, eax" \
@@ -221,6 +249,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMSetCR2
 #pragma aux ASMSetCR2 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -228,6 +257,7 @@
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
 
+#undef      ASMGetCR3
 #pragma aux ASMGetCR3 = \
     "mov eax, cr3" \
     "mov edx, eax" \
@@ -236,6 +266,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMSetCR3
 #pragma aux ASMSetCR3 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -243,12 +274,14 @@
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
 
+#undef      ASMReloadCR3
 #pragma aux ASMReloadCR3 = \
     "mov eax, cr3" \
     "mov cr3, eax" \
     parm [] nomemory \
     modify exact [ax] nomemory;
 
+#undef      ASMGetCR4
 #pragma aux ASMGetCR4 = \
     "mov eax, cr4" \
     "mov edx, eax" \
@@ -257,6 +290,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMSetCR4
 #pragma aux ASMSetCR4 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -267,16 +301,19 @@
 /* ASMGetCR8: Don't bother for 16-bit. */
 /* ASMSetCR8: Don't bother for 16-bit. */
 
+#undef      ASMIntEnable
 #pragma aux ASMIntEnable = \
     "sti" \
     parm [] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMIntDisable
 #pragma aux ASMIntDisable = \
     "cli" \
     parm [] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMIntDisableFlags
 #pragma aux ASMIntDisableFlags = \
     "pushf" \
     "cli" \
@@ -285,11 +322,13 @@
     value [ax] \
     modify exact [] nomemory;
 
+#undef      ASMHalt
 #pragma aux ASMHalt = \
     "hlt" \
     parm [] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMRdMsr
 #pragma aux ASMRdMsr = \
     ".586" \
     "shl ecx, 16" \
@@ -308,6 +347,7 @@
 /* ASMRdMsrEx: Implemented externally, lazy bird. */
 /* ASMWrMsrEx: Implemented externally, lazy bird. */
 
+#undef      ASMRdMsr_Low
 #pragma aux ASMRdMsr_Low = \
     ".586" \
     "shl ecx, 16" \
@@ -319,6 +359,7 @@
     value [ax dx] \
     modify exact [ax bx cx dx] nomemory;
 
+#undef      ASMRdMsr_High
 #pragma aux ASMRdMsr_High = \
     ".586" \
     "shl ecx, 16" \
@@ -331,6 +372,7 @@
     modify exact [ax bx cx dx] nomemory;
 
 
+#undef      ASMGetDR0
 #pragma aux ASMGetDR0 = \
     "mov eax, dr0" \
     "mov edx, eax" \
@@ -339,6 +381,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMGetDR1
 #pragma aux ASMGetDR1 = \
     "mov eax, dr1" \
     "mov edx, eax" \
@@ -347,6 +390,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMGetDR2
 #pragma aux ASMGetDR2 = \
     "mov eax, dr2" \
     "mov edx, eax" \
@@ -355,6 +399,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMGetDR3
 #pragma aux ASMGetDR3 = \
     "mov eax, dr3" \
     "mov edx, eax" \
@@ -363,6 +408,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMGetDR6
 #pragma aux ASMGetDR6 = \
     "mov eax, dr6" \
     "mov edx, eax" \
@@ -371,6 +417,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMGetAndClearDR6
 #pragma aux ASMGetAndClearDR6 = \
     "mov edx, 0ffff0ff0h" \
     "mov eax, dr6" \
@@ -381,6 +428,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMGetDR7
 #pragma aux ASMGetDR7 = \
     "mov eax, dr7" \
     "mov edx, eax" \
@@ -389,6 +437,7 @@
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMSetDR0
 #pragma aux ASMSetDR0 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -396,6 +445,7 @@
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
 
+#undef      ASMSetDR1
 #pragma aux ASMSetDR1 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -403,6 +453,7 @@
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
 
+#undef      ASMSetDR2
 #pragma aux ASMSetDR2 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -410,6 +461,7 @@
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
 
+#undef      ASMSetDR3
 #pragma aux ASMSetDR3 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -417,6 +469,7 @@
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
 
+#undef      ASMSetDR6
 #pragma aux ASMSetDR6 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -424,6 +477,7 @@
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
 
+#undef      ASMSetDR7
 #pragma aux ASMSetDR7 = \
     "shl edx, 16" \
     "mov dx, ax" \
@@ -432,28 +486,34 @@
     modify exact [dx] nomemory;
 
 /* Yeah, could've used outp here, but this keeps the main file simpler. */
+#undef      ASMOutU8
 #pragma aux ASMOutU8 = \
     "out dx, al" \
     parm [dx] [al] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMInU8
 #pragma aux ASMInU8 = \
     "in al, dx" \
     parm [dx] nomemory \
     value [al] \
     modify exact [] nomemory;
 
+#undef      ASMOutU16
+#undef      ASMOutU16
 #pragma aux ASMOutU16 = \
     "out dx, ax" \
     parm [dx] [ax] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMInU16
 #pragma aux ASMInU16 = \
     "in ax, dx" \
     parm [dx] nomemory \
     value [ax] \
     modify exact [] nomemory;
 
+#undef      ASMOutU32
 #pragma aux ASMOutU32 = \
     "shl ecx, 16" \
     "mov cx, ax" \
@@ -462,6 +522,7 @@
     parm [dx] [ax cx] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMInU32
 #pragma aux ASMInU32 = \
     "in eax, dx" \
     "mov ecx, eax" \
@@ -470,34 +531,40 @@
     value [ax cx] \
     modify exact [] nomemory;
 
+#undef      ASMOutStrU8
 #pragma aux ASMOutStrU8 = \
     "mov ds, bx" \
     "rep outsb" \
     parm [dx] [bx si] [cx] nomemory \
     modify exact [si cx ds] nomemory;
 
+#undef      ASMInStrU8
 #pragma aux ASMInStrU8 = \
     "rep insb" \
     parm [dx] [es di] [cx] \
     modify exact [di cx];
 
+#undef      ASMOutStrU16
 #pragma aux ASMOutStrU16 = \
     "mov ds, bx" \
     "rep outsw" \
     parm [dx] [bx si] [cx] nomemory \
     modify exact [si cx ds] nomemory;
 
+#undef      ASMInStrU16
 #pragma aux ASMInStrU16 = \
     "rep insw" \
     parm [dx] [es di] [cx] \
     modify exact [di cx];
 
+#undef      ASMOutStrU32
 #pragma aux ASMOutStrU32 = \
     "mov ds, bx" \
     "rep outsd" \
     parm [dx] [bx si] [cx] nomemory \
     modify exact [si cx ds] nomemory;
 
+#undef      ASMInStrU32
 #pragma aux ASMInStrU32 = \
     "rep insd" \
     parm [dx] [es di] [cx] \
@@ -505,12 +572,14 @@
 
 /* ASMInvalidatePage: When needed. */
 
+#undef      ASMWriteBackAndInvalidateCaches
 #pragma aux ASMWriteBackAndInvalidateCaches = \
     ".486" \
     "wbinvd" \
     parm [] nomemory \
     modify exact [] nomemory;
 
+#undef      ASMInvalidateInternalCaches
 #pragma aux ASMInvalidateInternalCaches = \
     ".486" \
     "invd" \
