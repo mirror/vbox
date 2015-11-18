@@ -1723,8 +1723,8 @@ static DECLCALLBACK(int) drvHostDSoundThread(RTTHREAD hThreadSelf, void *pvUser)
                 {
                     DWORD cbPlayPos;
                     hr = IDirectSoundCaptureBuffer8_GetCurrentPosition(pThis->pStrmOut->pDSB, NULL, &cbPlayPos);
-                    LogFlowFunc(("Output: hr=%Rhrc, dwPlayPos=%ld\n", hr, cbPlayPos));
-                }
+                        LogFlowFunc(("Output: hr=%Rhrc, dwPlayPos=%ld\n", hr, cbPlayPos));
+                    }
                 break;
             }
         }
@@ -1803,6 +1803,8 @@ static DECLCALLBACK(int) drvHostDSoundInit(PPDMIHOSTAUDIO pInterface)
         }
         else
             DSLOGREL(("DSound: Creating thread failed with rc=%Rrc\n", rc));
+#else
+        rc = VINF_SUCCESS;
 #endif
     }
     else
@@ -1899,9 +1901,9 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init the static parts.
      */
-    pThis->pDrvIns                    = pDrvIns;
+    pThis->pDrvIns                   = pDrvIns;
     /* IBase */
-    pDrvIns->IBase.pfnQueryInterface  = drvHostDSoundQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface = drvHostDSoundQueryInterface;
     /* IHostAudio */
     PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvHostDSound);
 
