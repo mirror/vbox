@@ -2275,8 +2275,24 @@ static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uin
             case TRUST_E_NOSIGNATURE:             pszErrConst = "TRUST_E_NOSIGNATURE";          break;
             case TRUST_E_FAIL:                    pszErrConst = "TRUST_E_FAIL";                 break;
             case TRUST_E_EXPLICIT_DISTRUST:       pszErrConst = "TRUST_E_EXPLICIT_DISTRUST";    break;
+            case CERT_E_EXPIRED:                  pszErrConst = "CERT_E_EXPIRED";               break;
+            case CERT_E_VALIDITYPERIODNESTING:    pszErrConst = "CERT_E_VALIDITYPERIODNESTING"; break;
+            case CERT_E_ROLE:                     pszErrConst = "CERT_E_ROLE";                  break;
+            case CERT_E_PATHLENCONST:             pszErrConst = "CERT_E_PATHLENCONST";          break;
+            case CERT_E_CRITICAL:                 pszErrConst = "CERT_E_CRITICAL";              break;
+            case CERT_E_PURPOSE:                  pszErrConst = "CERT_E_PURPOSE";               break;
+            case CERT_E_ISSUERCHAINING:           pszErrConst = "CERT_E_ISSUERCHAINING";        break;
+            case CERT_E_MALFORMED:                pszErrConst = "CERT_E_MALFORMED";             break;
+            case CERT_E_UNTRUSTEDROOT:            pszErrConst = "CERT_E_UNTRUSTEDROOT";         break;
             case CERT_E_CHAINING:                 pszErrConst = "CERT_E_CHAINING";              break;
+            case CERT_E_REVOKED:                  pszErrConst = "CERT_E_REVOKED";               break;
+            case CERT_E_UNTRUSTEDTESTROOT:        pszErrConst = "CERT_E_UNTRUSTEDTESTROOT";     break;
             case CERT_E_REVOCATION_FAILURE:       pszErrConst = "CERT_E_REVOCATION_FAILURE";    break;
+            case CERT_E_CN_NO_MATCH:              pszErrConst = "CERT_E_CN_NO_MATCH";           break;
+            case CERT_E_WRONG_USAGE:              pszErrConst = "CERT_E_WRONG_USAGE";           break;
+            case CERT_E_UNTRUSTEDCA:              pszErrConst = "CERT_E_UNTRUSTEDCA";           break;
+            case CERT_E_INVALID_POLICY:           pszErrConst = "CERT_E_INVALID_POLICY";        break;
+            case CERT_E_INVALID_NAME:             pszErrConst = "CERT_E_INVALID_NAME";          break;
             case CRYPT_E_FILE_ERROR:              pszErrConst = "CRYPT_E_FILE_ERROR";           break;
             case CRYPT_E_REVOKED:                 pszErrConst = "CRYPT_E_REVOKED";              break;
         }
