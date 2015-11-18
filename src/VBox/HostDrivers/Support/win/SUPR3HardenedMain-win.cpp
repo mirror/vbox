@@ -1154,6 +1154,28 @@ static void supR3HardenedWinVerifyCacheProcessWvtTodos(void)
 
 
 /**
+ * Translates VBox status code (from supHardenedWinVerifyImageTrust) to an NT
+ * status.
+ *
+ * @returns NT status.
+ * @param   rc                      VBox status code.
+ */
+static NTSTATUS supR3HardenedScreenImageCalcStatus(int rc)
+{
+    /* This seems to be what LdrLoadDll returns when loading a 32-bit DLL into
+       a 64-bit process.  At least here on windows 10 (2015-11-xx).
+
+       NtCreateSection probably returns something different, possibly a warning,
+       we currently don't distinguish between the too, so we stick with the
+       LdrLoadDll one as it's definitely an error.*/
+    if (rc == VERR_LDR_ARCH_MISMATCH)
+        return STATUS_INVALID_IMAGE_FORMAT;
+
+    return STATUS_TRUST_FAILURE;
+}
+
+
+/**
  * Screens an image file or file mapped with execute access.
  *
  * @returns NT status code.
@@ -1263,7 +1285,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnore
             supR3HardenedError(VINF_SUCCESS, false,
                                "supR3HardenedScreenImage/%s: cached rc=%Rrc fImage=%d fProtect=%#x fAccess=%#x cHits=%u %ls\n",
                                pszCaller, pCacheHit->rc, fImage, *pfProtect, *pfAccess, cHits, uBuf.UniStr.Buffer);
-        return STATUS_TRUST_FAILURE;
+        return supR3HardenedScreenImageCalcStatus(pCacheHit->rc);
     }
 
     /*
@@ -1449,7 +1471,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnore
                            pszCaller, rc, fImage, *pfAccess, *pfProtect, uBuf.UniStr.Buffer, ErrInfo.pszMsg);
         if (hMyFile != hFile)
             supR3HardenedWinVerifyCacheInsert(&uBuf.UniStr, hMyFile, rc, fWinVerifyTrust, fFlags);
-        return STATUS_TRUST_FAILURE;
+        return supR3HardenedScreenImageCalcStatus(rc);
     }
 
     /*
