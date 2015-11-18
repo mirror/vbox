@@ -2800,7 +2800,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
  else
 # Generate a SED script from mangling.h that checks for known symbols.
 	$(QUIET)$(SED) \
-		-e '/# *define.*RT_MANGLER/!d' \
+		-e '/^# *define.*RT_MANGLER/!d' \
 		-e 's/^.*RT_MANGLER(\([^)][^)]*\)).*$(DOLLAR)/\/^\1$(DOLLAR)\/b ok/' \
 		$(PATH_ROOT)/include/iprt/mangling.h \
 		--output "$@"
