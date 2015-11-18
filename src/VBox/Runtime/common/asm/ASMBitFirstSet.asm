@@ -88,9 +88,9 @@ BEGINPROC_EXPORTED ASMBitFirstSet
         sub     xDI, 4                  ; one step back.
 %if ARCH_BITS == 16
         movzx   edi, di
-        mov     eax, [es:xDI]           ; eax = NOT [rdi]
+        mov     eax, [es:xDI]
 %else
-        mov     eax, [edi]              ; eax = NOT [rdi]
+        mov     eax, [xDI]
 %endif
         sub     xDI, xDX
         shl     edi, 3                  ; calc bit offset.

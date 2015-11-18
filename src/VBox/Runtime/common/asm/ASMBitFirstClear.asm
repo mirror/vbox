@@ -90,7 +90,7 @@ BEGINPROC_EXPORTED ASMBitFirstClear
         movzx   edi, di
         xor     eax, [es:xDI]           ; eax = NOT [rdi]
 %else
-        xor     eax, [edi]              ; eax = NOT [rdi]
+        xor     eax, [xDI]              ; eax = NOT [rdi]
 %endif
         sub     xDI, xDX
         shl     edi, 3                  ; calc bit offset.
