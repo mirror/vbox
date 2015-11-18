@@ -2077,7 +2077,7 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl)
         {
             case CURLE_URL_MALFORMAT:
             case CURLE_COULDNT_RESOLVE_HOST:
-                rc = VERR_HTTP_NOT_FOUND;
+                rc = VERR_HTTP_HOST_NOT_FOUND;
                 break;
             case CURLE_COULDNT_CONNECT:
                 rc = VERR_HTTP_COULDNT_CONNECT;
