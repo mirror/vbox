@@ -54,6 +54,7 @@ public:
         NoError,
         ConnectionRefusedError,
         RemoteHostClosedError,
+        UrlNotFoundError,
         HostNotFoundError,
         OperationCanceledError,
         SslHandshakeFailedError,

@@ -950,6 +950,7 @@ QString UINetworkReplyPrivate::errorString() const
     {
         case UINetworkReply::NoError:                     break;
         case UINetworkReply::RemoteHostClosedError:       return m_strErrorTemplate.arg(m_pThread->context(), tr("Unable to initialize HTTP library"));
+        case UINetworkReply::UrlNotFoundError:            return m_strErrorTemplate.arg(m_pThread->context(), tr("Url not found on the server"));
         case UINetworkReply::HostNotFoundError:           return m_strErrorTemplate.arg(m_pThread->context(), tr("Host not found"));
         case UINetworkReply::ContentAccessDenied:         return m_strErrorTemplate.arg(m_pThread->context(), tr("Content access denied"));
         case UINetworkReply::ProtocolFailure:             return m_strErrorTemplate.arg(m_pThread->context(), tr("Protocol failure"));
@@ -971,7 +972,8 @@ void UINetworkReplyPrivate::sltFinished()
     {
         case VINF_SUCCESS:                         m_error = UINetworkReply::NoError; break;
         case VERR_HTTP_INIT_FAILED:                m_error = UINetworkReply::RemoteHostClosedError; break;
-        case VERR_HTTP_NOT_FOUND:                  m_error = UINetworkReply::HostNotFoundError; break;
+        case VERR_HTTP_NOT_FOUND:                  m_error = UINetworkReply::UrlNotFoundError; break;
+        case VERR_HTTP_HOST_NOT_FOUND:             m_error = UINetworkReply::HostNotFoundError; break;
         case VERR_HTTP_ACCESS_DENIED:              m_error = UINetworkReply::ContentAccessDenied; break;
         case VERR_HTTP_BAD_REQUEST:                m_error = UINetworkReply::ProtocolFailure; break;
         case VERR_HTTP_COULDNT_CONNECT:            m_error = UINetworkReply::ConnectionRefusedError; break;
