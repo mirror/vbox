@@ -1,6 +1,6 @@
-; $Id: $
+; $Id$
 ;; @file
-; IPRT - ASMBitFirstClear().
+; IPRT - ASMBitFirstSet().
 ;
 
 ;
