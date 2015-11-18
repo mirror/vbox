@@ -163,7 +163,6 @@ RuntimeWin64ASM_SOURCES = \
 	win/amd64/ASMAtomicReadU64.asm \
 	win/amd64/ASMAtomicXchgU16.asm \
 	win/amd64/ASMAtomicXchgU8.asm \
-	win/amd64/ASMBitFirstClear.asm \
 	win/amd64/ASMBitFirstSet.asm \
 	win/amd64/ASMGetCS.asm \
 	win/amd64/ASMGetDS.asm \
@@ -181,6 +180,7 @@ RuntimeWin64ASM_SOURCES = \
 	win/amd64/ASMGetDR6.asm \
 	win/amd64/ASMGetDR7.asm \
 	common/asm/ASMAtomicCmpXchgU8.asm \
+	common/asm/ASMBitFirstClear.asm \
 	common/asm/ASMMultU32ByU32DivByU32.asm \
 	common/asm/ASMMultU64ByU32DivByU32.asm \
 	common/asm/ASMCpuId_Idx_ECX.asm \
