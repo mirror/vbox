@@ -32,6 +32,10 @@ PROGRAMS += \
 	SUPUninstall \
 	SUPLoggerCtl
 ifdef VBOX_WITH_TESTCASES
+ if defined(VBOX_WITH_HARDENING)
+PROGRAMS += \
+	tstSupVerify
+ endif
  if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "win"
 PROGRAMS += \
 	tstPage \
@@ -123,6 +127,12 @@ tstSupSem-Zombie_SOURCES  = tstSupSem-Zombie.cpp
 
 tstSupTscDelta_TEMPLATE = VBOXR3TSTEXE
 tstSupTscDelta_SOURCES  = tstSupTscDelta.cpp
+
+# For testing supR3HardenedVerifyFile on windows.
+tstSupVerify_TEMPLATE = VBOXR3TSTEXE
+tstSupVerify_SOURCES  = tstSupVerify.cpp
+
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
