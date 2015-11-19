@@ -2289,37 +2289,111 @@
 /** 32 K (Kilo)                   (32 678). */
 #define _32K                    0x00008000
 /** 64 K (Kilo)                   (65 536). */
-#define _64K                    0x00010000
+#if ARCH_BITS != 16
+# define _64K                   0x00010000
+#else
+# define _64K           UINT32_C(0x00010000)
+#endif
 /** 128 K (Kilo)                 (131 072). */
-#define _128K                   0x00020000
+#if ARCH_BITS != 16
+# define _128K                   0x00020000
+#else
+# define _128K          UINT32_C(0x00020000)
+#endif
 /** 256 K (Kilo)                 (262 144). */
-#define _256K                   0x00040000
+#if ARCH_BITS != 16
+# define _256K                   0x00040000
+#else
+# define _256K          UINT32_C(0x00040000)
+#endif
 /** 512 K (Kilo)                 (524 288). */
-#define _512K                   0x00080000
+#if ARCH_BITS != 16
+# define _512K                   0x00080000
+#else
+# define _512K          UINT32_C(0x00080000)
+#endif
 /** 1 M (Mega)                 (1 048 576). */
-#define _1M                     0x00100000
+#if ARCH_BITS != 16
+# define _1M                     0x00100000
+#else
+# define _1M            UINT32_C(0x00100000)
+#endif
 /** 2 M (Mega)                 (2 097 152). */
-#define _2M                     0x00200000
+#if ARCH_BITS != 16
+# define _2M                     0x00200000
+#else
+# define _2M            UINT32_C(0x00200000)
+#endif
 /** 4 M (Mega)                 (4 194 304). */
-#define _4M                     0x00400000
+#if ARCH_BITS != 16
+# define _4M                     0x00400000
+#else
+# define _4M            UINT32_C(0x00400000)
+#endif
+/** 8 M (Mega)                 (8 388 608). */
+#define _8M             UINT32_C(0x00800000)
+/** 16 M (Mega)               (16 777 216). */
+#define _16M            UINT32_C(0x01000000)
+/** 32 M (Mega)               (33 554 432). */
+#define _32M            UINT32_C(0x02000000)
+/** 64 M (Mega)               (67 108 864). */
+#define _64M            UINT32_C(0x04000000)
+/** 128 M (Mega)             (134 217 728). */
+#define _128M           UINT32_C(0x08000000)
+/** 256 M (Mega)             (268 435 456). */
+#define _256M           UINT32_C(0x10000000)
+/** 512 M (Mega)             (536 870 912). */
+#define _512M           UINT32_C(0x20000000)
 /** 1 G (Giga)             (1 073 741 824). (32-bit) */
-#define _1G                     0x40000000
+#if ARCH_BITS != 16
+# define _1G                     0x40000000
+#else
+# define _1G            UINT32_C(0x40000000)
+#endif
 /** 1 G (Giga)             (1 073 741 824). (64-bit) */
-#define _1G64                   0x40000000LL
+#if ARCH_BITS != 16
+# define _1G64                   0x40000000LL
+#else
+# define _1G64          UINT64_C(0x40000000)
+#endif
 /** 2 G (Giga)             (2 147 483 648). (32-bit) */
-#define _2G32                   0x80000000U
+#define _2G32           UINT32_C(0x80000000)
 /** 2 G (Giga)             (2 147 483 648). (64-bit) */
-#define _2G             0x0000000080000000LL
+#if ARCH_BITS != 16
+# define _2G             0x0000000080000000LL
+#else
+# define _2G    UINT64_C(0x0000000080000000)
+#endif
 /** 4 G (Giga)             (4 294 967 296). */
-#define _4G             0x0000000100000000LL
+#if ARCH_BITS != 16
+# define _4G             0x0000000100000000LL
+#else
+# define _4G    UINT64_C(0x0000000100000000)
+#endif
 /** 1 T (Tera)         (1 099 511 627 776). */
-#define _1T             0x0000010000000000LL
+#if ARCH_BITS != 16
+# define _1T             0x0000010000000000LL
+#else
+# define _1T    UINT64_C(0x0000010000000000)
+#endif
 /** 1 P (Peta)     (1 125 899 906 842 624). */
-#define _1P             0x0004000000000000LL
+#if ARCH_BITS != 16
+# define _1P             0x0004000000000000LL
+#else
+# define _1P    UINT64_C(0x0004000000000000)
+#endif
 /** 1 E (Exa)  (1 152 921 504 606 846 976). */
-#define _1E             0x1000000000000000LL
+#if ARCH_BITS != 16
+# define _1E             0x1000000000000000LL
+#else
+# define _1E    UINT64_C(0x1000000000000000)
+#endif
 /** 2 E (Exa)  (2 305 843 009 213 693 952). */
-#define _2E             0x2000000000000000ULL
+#if ARCH_BITS != 16
+# define _2E             0x2000000000000000ULL
+#else
+# define _2E    UINT64_C(0x2000000000000000)
+#endif
 /** @} */
 
 /** @defgroup grp_rt_cdefs_decimal_grouping   Decimal Constant Grouping Macros
