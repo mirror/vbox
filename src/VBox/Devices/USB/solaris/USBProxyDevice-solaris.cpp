@@ -691,7 +691,7 @@ static DECLCALLBACK(PVUSBURB) usbProxySolarisUrbReap(PUSBPROXYDEV pProxyDev, RTM
     {
         for (;;)
         {
-            int cMilliesWait = cMillies == RT_INDEFINITE_WAIT ? -1 : cMillies;
+            int cMilliesWait = cMillies == RT_INDEFINITE_WAIT ? -1 : (int)cMillies;
             struct pollfd pfd[2];
 
             pfd[0].fd = RTFileToNative(pDevSol->hFile);
