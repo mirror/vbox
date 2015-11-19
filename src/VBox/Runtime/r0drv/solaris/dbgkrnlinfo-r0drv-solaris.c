@@ -268,12 +268,17 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySize(RTDBGKRNLINFO hKrnlInfo, const char *pszM
     else
     {
         char *pszMod = RTStrDup(pszModule);
-        int rc = rtR0DbgKrnlInfoModRetain(pszMod, &pMod, &pCtf);
-        RTStrFree(pszMod);
-        if (RT_FAILURE(rc))
-            return VERR_MODULE_NOT_FOUND;
-        AssertPtrReturn(pMod, VERR_INTERNAL_ERROR_5);
-        AssertPtrReturn(pCtf, VERR_INTERNAL_ERROR_4);
+        if (RT_LIKELY(pszMod))
+        {
+            int rc = rtR0DbgKrnlInfoModRetain(pszMod, &pMod, &pCtf);
+            RTStrFree(pszMod);
+            if (RT_FAILURE(rc))
+                return VERR_MODULE_NOT_FOUND;
+            AssertPtrReturn(pMod, VERR_INTERNAL_ERROR_5);
+            AssertPtrReturn(pCtf, VERR_INTERNAL_ERROR_4);
+        }
+        else
+            return VERR_NO_MEMORY;
     }
 
     int rc = VERR_NOT_FOUND;
