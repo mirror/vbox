@@ -1311,6 +1311,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.enmHostMode      = SUPPAGINGMODE_INVALID;
     pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1; /* default; checked later */
     pVM->pgm.s.GCPtrPrevRamRangeMapping = MM_HYPER_AREA_ADDRESS;
+    pVM->pgm.s.fRestoreVirginRomPagesDuringReset = false;
 
     rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "RamPreAlloc", &pVM->pgm.s.fRamPreAlloc,
 #ifdef VBOX_WITH_PREALLOC_RAM_BY_DEFAULT

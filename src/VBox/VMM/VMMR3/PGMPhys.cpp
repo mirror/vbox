@@ -3572,14 +3572,15 @@ int pgmR3PhysRomReset(PVM pVM)
             }
         }
 
-#ifdef VBOX_STRICT
         /*
-         * Verify that the virgin page is unchanged if possible.
+         * Restore virgin ROM pages after a saved state load or check that the
+         * virgin pages are unchanged if possible.
          */
         if (pRom->pvOriginal)
         {
             size_t         cbSrcLeft = pRom->cbOriginal;
             uint8_t const *pbSrcPage = (uint8_t const *)pRom->pvOriginal;
+            bool           fChanged = false;
             for (uint32_t iPage = 0; iPage < cPages && cbSrcLeft > 0; iPage++, pbSrcPage += PAGE_SIZE)
             {
                 const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
@@ -3590,22 +3591,29 @@ int pgmR3PhysRomReset(PVM pVM)
 
                 if (memcmp(pvDstPage, pbSrcPage, RT_MIN(cbSrcLeft, PAGE_SIZE)))
                 {
-# ifdef DEBUG_bird /* This is darn handy for EFI debugging w/ snapshots, should be made default later. */
-                    void *pvDstPageW;
-                    rc = pgmPhysPageMap(pVM, &pRom->aPages[iPage].Virgin, GCPhys, &pvDstPageW);
-                    AssertRCReturn(rc, rc);
-                    memcpy(pvDstPageW, pbSrcPage, RT_MIN(cbSrcLeft, PAGE_SIZE));
-# else
-                    LogRel(("pgmR3PhysRomReset: %RGp rom page changed (%s) - loaded saved state?\n",
-                            GCPhys, pRom->pszDesc));
-# endif
+                    if (pVM->pgm.s.fRestoreVirginRomPagesDuringReset)
+                    {
+                        void *pvDstPageW;
+                        rc = pgmPhysPageMap(pVM, &pRom->aPages[iPage].Virgin, GCPhys, &pvDstPageW);
+                        AssertLogRelRCReturn(rc, rc);
+                        memcpy(pvDstPageW, pbSrcPage, RT_MIN(cbSrcLeft, PAGE_SIZE));
+                        fChanged = true;
+                    }
+                    else
+                    {
+#ifdef VBOX_STRICT
+                        LogRel(("pgmR3PhysRomReset: %RGp rom page changed (%s)?\n", GCPhys, pRom->pszDesc));
+#endif
+                    }
                 }
                 cbSrcLeft -= RT_MIN(cbSrcLeft, PAGE_SIZE);
             }
+            if (fChanged)
+                LogRel(("PGM: ROM \"%s\" changed - restored original\n", pRom->pszDesc));
         }
-#endif
     }
 
+    pVM->pgm.s.fRestoreVirginRomPagesDuringReset = false;
     return VINF_SUCCESS;
 }
 
