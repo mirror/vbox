@@ -673,7 +673,7 @@
     GEN_CHECK_OFF(PGM, paDynPageMap32BitPTEsGC);
     GEN_CHECK_OFF(PGM, paDynPageMapPaePTEsGC);
     GEN_CHECK_OFF(PGM, enmHostMode);
-    GEN_CHECK_OFF(PGM, fRestoreVirginRomPagesDuringReset);
+    GEN_CHECK_OFF(PGM, fRestoreRomPagesAtReset);
     GEN_CHECK_OFF(PGM, GCPhys4MBPSEMask);
     GEN_CHECK_OFF(PGM, pRamRangesXR3);
     GEN_CHECK_OFF(PGM, pRamRangesXR0);

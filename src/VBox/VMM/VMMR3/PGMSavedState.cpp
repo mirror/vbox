@@ -335,8 +335,6 @@ static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
                 AssertLogRelMsg(pRom->idSavedState != UINT8_MAX,
                                 ("The \"%s\" ROM was not found in the saved state. Probably due to some misconfiguration\n",
                                  pRom->pszDesc));
-
-            pVM->pgm.s.fRestoreVirginRomPagesDuringReset = true;
             return VINF_SUCCESS;        /* the end */
         }
         AssertLogRelReturn(id != 0, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
@@ -3298,6 +3296,17 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 
 
 /**
+ * @callback_method_impl{FNSSMINTLOADDONE}
+ */
+static DECLCALLBACK(int) pgmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
+{
+    pVM->pgm.s.fRestoreRomPagesAtReset = true;
+    NOREF(pSSM);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Registers the saved state callbacks with SSM.
  *
  * @returns VBox status code.
@@ -3309,6 +3318,6 @@ int pgmR3InitSavedState(PVM pVM, uint64_t cbRam)
     return SSMR3RegisterInternal(pVM, "pgm", 1, PGM_SAVED_STATE_VERSION, (size_t)cbRam + sizeof(PGM),
                                  pgmR3LivePrep, pgmR3LiveExec, pgmR3LiveVote,
                                  NULL,          pgmR3SaveExec, pgmR3SaveDone,
-                                 pgmR3LoadPrep, pgmR3Load,     NULL);
+                                 pgmR3LoadPrep, pgmR3Load,     pgmR3LoadDone);
 }
 
