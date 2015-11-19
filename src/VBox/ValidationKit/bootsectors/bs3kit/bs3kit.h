@@ -721,7 +721,7 @@ DECLINLINE(uint16_t) Bs3Sel16GetCurRing(void);
 # pragma aux Bs3Sel16GetCurRing = \
             "mov ax, ss" \
             "and ax, 3" \
-            value [ax dx] modify exact [ax] nomemory;
+            value [ax] modify exact [ax] nomemory;
 
 /**
  * Converts the high word of a flat pointer into a 16-bit selector.
@@ -754,7 +754,7 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
 #elif ARCH_BITS == 32
 # define BS3_XPTR_GET(a_Type, a_Name)       ((a_Name).pTyped)
 #elif ARCH_BITS == 64
-# define BS3_XPTR_GET(a_Type, a_Name)       ((a_Type *)(uintptr_t)(a_Name).XPtr.uFlat))
+# define BS3_XPTR_GET(a_Type, a_Name)       ((a_Type *)(uintptr_t)(a_Name).XPtr.uFlat)
 #else
 # error "ARCH_BITS"
 #endif
@@ -773,8 +773,8 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
         a_Type BS3_FAR *pTypeCheck = (a_pValue); \
         if (BS3_IS_PROTECTED_MODE()) \
         { \
-            (a_Name).XPtr.u.Low  = BS3_FP_OFF(pTypeCheck); \
-            (a_Name).XPtr.u.High = (BS3_FP_SEG(pTypeCheck) & UINT16_C(0xfff8)) - BS3_SEL_TILED; \
+            (a_Name).XPtr.u.uLow  = BS3_FP_OFF(pTypeCheck); \
+            (a_Name).XPtr.u.uHigh = (BS3_FP_SEG(pTypeCheck) & UINT16_C(0xfff8)) - BS3_SEL_TILED; \
         } \
         else \
             (a_Name).XPtr.uFlat = BS3_FP_OFF(pTypeCheck) + (BS3_FP_SEG(pTypeCheck) << 4); \
