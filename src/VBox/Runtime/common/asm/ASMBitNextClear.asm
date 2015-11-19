@@ -33,7 +33,7 @@
 BEGINCODE
 
 ;;
-; Finds the first clear bit in a bitmap.
+; Finds the next clear bit in a bitmap.
 ;
 ; @returns (32/64:eax, 16:ax+dx)   Index of the first zero bit.
 ; @returns (32/64:eax, 16:ax+dx)  -1 if no clear bit was found.
