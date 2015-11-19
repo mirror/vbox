@@ -199,8 +199,12 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHAND
         default:
         case SHFL_CF_ACCESS_NONE:
         {
-            /** @todo treat this as read access, but theoretically this could be a no access request. */
-            fOpen |= RTFILE_O_READ;
+#ifdef RT_OS_WINDOWS
+            if (BIT_FLAG(fShflFlags, SHFL_CF_ACCESS_MASK_ATTR) != SHFL_CF_ACCESS_ATTR_NONE)
+                fOpen |= RTFILE_O_ATTR_ONLY;
+            else
+#endif
+                fOpen |= RTFILE_O_READ;
             Log(("FLAG: SHFL_CF_ACCESS_NONE\n"));
             break;
         }
