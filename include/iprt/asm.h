@@ -4796,7 +4796,7 @@ DECLINLINE(int) ASMBitNextSet(const volatile void *pvBitmap, uint32_t cBits, uin
  * @returns index [1..32] of the first set bit.
  * @returns 0 if all bits are cleared.
  * @param   u32     Integer to search for set bits.
- * @remarks Similar to ffs() in BSD.
+ * @remark  Similar to ffs() in BSD.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(unsigned) ASMBitFirstSetU32(uint32_t u32);
@@ -4852,26 +4852,6 @@ DECLINLINE(unsigned) ASMBitFirstSetS32(int32_t i32)
 {
     return ASMBitFirstSetU32((uint32_t)i32);
 }
-
-
-/**
- * Finds the first bit which is set in the given 16-bit integer.
- *
- * Bits are numbered from 1 (least significant) to 16.
- *
- * @returns index [1..16] of the first set bit.
- * @returns 0 if all bits are cleared.
- * @param   u16     Integer to search for set bits.
- * @remarks For 16-bit bs3kit code.
- */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(unsigned) ASMBitFirstSetU16(uint32_t u16);
-#else
-DECLINLINE(unsigned) ASMBitFirstSetU16(uint32_t u16)
-{
-    return ASMBitFirstSetU32((uint32_t)u16);
-}
-#endif
 
 
 /**
@@ -4937,27 +4917,6 @@ DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32)
 {
     return ASMBitLastSetU32((uint32_t)i32);
 }
-
-
-/**
- * Finds the last bit which is set in the given 16-bit integer.
- *
- * Bits are numbered from 1 (least significant) to 16.
- *
- * @returns index [1..16] of the last set bit.
- * @returns 0 if all bits are cleared.
- * @param   u16     Integer to search for set bits.
- * @remarks For 16-bit bs3kit code.
- */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(unsigned) ASMBitLastSetU16(uint32_t u16);
-#else
-DECLINLINE(unsigned) ASMBitLastSetU16(uint32_t u16)
-{
-    return ASMBitLastSetU32((uint32_t)u16);
-}
-#endif
-
 
 /**
  * Reverse the byte order of the given 16-bit integer.
