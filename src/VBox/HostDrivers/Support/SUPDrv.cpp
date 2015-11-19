@@ -329,6 +329,9 @@ static SUPFUNC g_aFunctions[] =
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
     { "RTR0DbgKrnlInfoOpen",                    (void *)RTR0DbgKrnlInfoOpen },          /* only-darwin, only-solaris */
     { "RTR0DbgKrnlInfoQueryMember",             (void *)RTR0DbgKrnlInfoQueryMember },   /* only-darwin, only-solaris */
+# if defined(RT_OS_SOLARIS)
+    { "RTR0DbgKrnlInfoQuerySize",               (void *)RTR0DbgKrnlInfoQuerySize },     /* only-solaris */
+# endif
     { "RTR0DbgKrnlInfoQuerySymbol",             (void *)RTR0DbgKrnlInfoQuerySymbol },   /* only-darwin, only-solaris */
     { "RTR0DbgKrnlInfoRelease",                 (void *)RTR0DbgKrnlInfoRelease },       /* only-darwin, only-solaris */
     { "RTR0DbgKrnlInfoRetain",                  (void *)RTR0DbgKrnlInfoRetain },        /* only-darwin, only-solaris */
