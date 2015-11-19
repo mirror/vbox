@@ -339,8 +339,8 @@
     parm [es di] [cx] \
     modify exact [ax cx di];
 
-#undef      ASMMemZero32
-#pragma aux ASMMemZero32 = \
+#undef      ASMMemFill32
+#pragma aux ASMMemFill32 = \
     "and ecx, 0ffffh" /* probably not necessary, lazy bird should check... */ \
     "shr ecx, 2" \
     "shr eax, 16" \
@@ -465,6 +465,17 @@
     value [al] \
     modify exact [ax dx];
 
+#undef      ASMBitTest
+#pragma aux ASMBitTest = \
+    "shl edx, 16" \
+    "mov dx, ax" \
+    "bt  es:[bx], edx" \
+    "setc al" \
+    parm [es bx] [ax dx] nomemory \
+    value [al] \
+    modify exact [ax dx] nomemory;
+
+#if 0
 /** @todo this is way to much inline assembly, better off in an external function. */
 #undef      ASMBitFirstClear
 #pragma aux ASMBitFirstClear = \
@@ -520,6 +531,12 @@
     modify exact [ax bx cx dx di];
 
 /* ASMBitNextSet: Too much work, do when needed. */
+#else
+/* ASMBitFirstClear: External file.  */
+/* ASMBitNextClear:  External file.  */
+/* ASMBitFirstSet:   External file.  */
+/* ASMBitNextSet:    External file.  */
+#endif
 
 #undef      ASMBitFirstSetU32
 #pragma aux ASMBitFirstSetU32 = \
