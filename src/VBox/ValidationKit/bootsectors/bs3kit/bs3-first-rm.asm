@@ -43,6 +43,9 @@ section BS3TEXT16_END   align=2 progbits alloc exec nowrite
 %else
 section BS3TEXT16_END   align=2 CLASS=BS3CODE16 PUBLIC USE16
 %endif
+
+BS3_GLOBAL_DATA Bs3Text16_Size, 2
+    dw  BS3_DATA_NM(Bs3Text16_EndOfSegment) wrt BS3TEXT16
 BS3_GLOBAL_DATA Bs3Text16_EndOfSegment, 0
 
 %ifndef ASM_FORMAT_ELF
@@ -64,6 +67,7 @@ section BS3DATA16CONST2 align=2   CLASS=FAR_DATA PUBLIC USE16
 section BS3DATA16_DATA  align=2   CLASS=FAR_DATA PUBLIC USE16
 section BS3DATA16_END   align=2   CLASS=FAR_DATA PUBLIC USE16
 %endif
+
 BS3_GLOBAL_DATA Bs3Data16_EndOfSegment, 0
 
 %ifndef ASM_FORMAT_ELF
@@ -80,6 +84,8 @@ section BS3TEXT32_END   align=1 progbits alloc exec nowrite
 %else
 section BS3TEXT32_END   align=1 CLASS=BS3CODE32 PUBLIC USE32 FLAT
 %endif
+BS3_GLOBAL_DATA Bs3Data16_Size, 4
+    dd  BS3_DATA_NM(Bs3Data16_EndOfSegment) wrt BS3DATA16
 BS3_GLOBAL_DATA Bs3Text32_EndOfSegment, 0
 
 ; 64-bit text
@@ -114,6 +120,13 @@ section BS3DATA64_END   align=16   progbits alloc noexec write
 %else
 section BS3DATA64_END   align=16   CLASS=DATA PUBLIC USE32 FLAT
 %endif
+
+ALIGNDATA(16)
+    db      10,13,'eye-catcher: sizes  ',10,13
+BS3_GLOBAL_DATA Bs3Data16Thru64Text32And64_TotalSize, 4
+    dd  BS3_DATA_NM(Bs3Data64_EndOfSegment) wrt BS3DATA16
+BS3_GLOBAL_DATA Bs3TotalImageSize, 4
+    dd  BS3_DATA_NM(Bs3Data64_EndOfSegment) wrt BS3TEXT16
 BS3_GLOBAL_DATA Bs3Data64_EndOfSegment, 0
 
 BS3_BEGIN_SYSTEM16
@@ -139,14 +152,6 @@ GLOBALNAME start
     jmp     .after_eye_catcher
     db      10,13,'eye-catcher: BS3TEXT16',10,13
 .after_eye_catcher:
-mov     ax, BS3SYSTEM16
-mov     ds, ax
-lgdt    [BS3_DATA_NM(Bs3Lgdt_Gdt)]
-mov ax, X86_CR0_PE
-lmsw ax
-cli
-hlt
-
     mov     ax, BS3DATA16
     mov     es, ax
     mov     ds, ax

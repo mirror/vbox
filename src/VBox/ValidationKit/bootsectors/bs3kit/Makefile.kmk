@@ -395,7 +395,8 @@ bs3kit-common-16_TEMPLATE = VBoxBS3KitImg
 bs3kit-common-16_DEFS     = TMPL_PE16 BS3_CMN_ONLY
 bs3kit-common-16_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
-	bs3-system-data.asm
+	bs3-system-data.asm \
+	bs3-rm-InitMemory.c
 
 # The 32-bit BS3Kit library.
 LIBRARIES += bs3kit-common-32

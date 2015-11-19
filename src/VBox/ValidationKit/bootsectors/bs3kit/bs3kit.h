@@ -595,6 +595,52 @@ extern X86DESC   BS3_DATA_NM(Bs3LdtEnd);
 /** @} */
 
 
+/** @name Segment start and end markers, sizes.
+ * @{ */
+/** Start of the BS3TEXT16 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Text16_StartOfSegment);
+/** End of the BS3TEXT16 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Text16_EndOfSegment);
+/** The size of the BS3TEXT16 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Text16_Size);
+
+/** Start of the BS3SYSTEM16 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3System16_StartOfSegment);
+/** End of the BS3SYSTEM16 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3System16_EndOfSegment);
+
+/** Start of the BS3DATA16 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Data16_StartOfSegment);
+/** End of the BS3DATA16 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Data16_EndOfSegment);
+
+/** Start of the BS3TEXT32 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Text32_StartOfSegment);
+/** Start of the BS3TEXT32 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Text32_EndOfSegment);
+
+/** Start of the BS3DATA32 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Data32_StartOfSegment);
+/** Start of the BS3DATA32 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Data32_EndOfSegment);
+
+/** Start of the BS3TEXT64 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Text64_StartOfSegment);
+/** Start of the BS3TEXT64 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Text64_EndOfSegment);
+
+/** Start of the BS3DATA64 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Data64_StartOfSegment);
+/** Start of the BS3DATA64 segment.   */
+extern uint8_t BS3_DATA_NM(Bs3Data64_EndOfSegment);
+
+/** The size of the Data16, Text32, Text64, Data32 and Data64 blob. */
+extern uint8_t BS3_DATA_NM(Bs3Data16Thru64Text32And64_TotalSize);
+/** The total image size (from Text16 thu Data64). */
+extern uint8_t BS3_DATA_NM(Bs3TotalImageSize);
+/** @} */
+
+
 #ifdef __WATCOMC__
 /**
  * Executes the SMSW instruction and returns the value.
@@ -1232,6 +1278,11 @@ BS3_DECL(void) Bs3MemFree_c64(void BS3_FAR *pv, size_t cb); /**< @copydoc Bs3Mem
 
 /** @} */
 
+
+/**
+ * Initializes the REAL and TILED memory pools.
+ */
+BS3_DECL(void) Bs3InitMemory_rm(void);
 
 
 /** @defgroup grp_bs3kit_mode   Mode Specific Functions and Data
