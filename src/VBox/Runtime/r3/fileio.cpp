@@ -130,8 +130,13 @@ int rtFileRecalcAndValidateFlags(uint64_t *pfOpen)
             fOpen |= g_fOpenReadWriteSet;
             fOpen &= ~g_fOpenReadWriteMask;
             break;
+#ifdef RT_OS_WINDOWS
+        case RTFILE_O_ATTR_ONLY:
+            if (fOpen & RTFILE_O_ACCESS_ATTR_MASK)
+                break;
+#endif
         default:
-            AssertMsgFailed(("Invalid RW value, fOpen=%#llx\n", fOpen));
+            AssertMsgFailed(("Invalid access mode value, fOpen=%#llx\n", fOpen));
             return VERR_INVALID_PARAMETER;
     }
 
