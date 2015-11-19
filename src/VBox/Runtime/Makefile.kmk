@@ -181,6 +181,7 @@ RuntimeWin64ASM_SOURCES = \
 	common/asm/ASMAtomicCmpXchgU8.asm \
 	common/asm/ASMBitFirstClear.asm \
 	common/asm/ASMBitFirstSet.asm \
+	common/asm/ASMBitNextSet.asm \
 	common/asm/ASMMultU32ByU32DivByU32.asm \
 	common/asm/ASMMultU64ByU32DivByU32.asm \
 	common/asm/ASMCpuId_Idx_ECX.asm \
