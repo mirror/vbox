@@ -607,8 +607,8 @@
   #
 !ifndef $(VBOX)
   MdeModulePkg/Bus/Pci/UhciDxe/UhciDxe.inf
-  MdeModulePkg/Bus/Pci/EhciDxe/EhciDxe.inf
 !else
+  MdeModulePkg/Bus/Pci/EhciDxe/EhciDxe.inf
   MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe.inf
 !endif
   MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
