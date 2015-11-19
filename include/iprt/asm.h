@@ -5036,7 +5036,7 @@ DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64)
                          : "=r" (iBit)
                          : "rm" (u64));
 # else
-    unsigned iBit = ASMBitLastSetU32((uint32_t)(u64 >> 32);
+    unsigned iBit = ASMBitLastSetU32((uint32_t)(u64 >> 32));
     if (iBit)
         iBit += 32;
     else
