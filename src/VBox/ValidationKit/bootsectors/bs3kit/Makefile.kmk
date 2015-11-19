@@ -381,7 +381,10 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-TestInit.c \
 	bs3-cmn-TestSendStrCmd.asm \
 	bs3-cmn-TestIsVmmDevTestingPresent.asm \
-       ../../../Runtime/common/asm/ASMBitFirstClear.asm
+       ../../../Runtime/common/asm/ASMBitFirstClear.asm \
+       ../../../Runtime/common/asm/ASMBitFirstSet.asm \
+       ../../../Runtime/common/asm/ASMBitNextClear.asm \
+       ../../../Runtime/common/asm/ASMBitNextSet.asm
 
 # The BS3Kit library.
 LIBRARIES += bs3kit-common-16
