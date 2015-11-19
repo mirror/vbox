@@ -273,6 +273,7 @@ INF  MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
 !ifdef $(VBOX)
 INF MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru.inf
 INF MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe.inf
+INF MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
 INF VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
 INF VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
 INF VBoxPkg/VBoxFsDxe/VBoxIso9660.inf

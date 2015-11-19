@@ -546,6 +546,7 @@
 !else
  MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru.inf
  MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe.inf
+ MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
  VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
  VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
  VBoxPkg/VBoxFsDxe/VBoxIso9660.inf

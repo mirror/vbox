@@ -51,6 +51,7 @@ VBOX_EFI_MODULES = \
 	MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe/$(VBOX_EFI_DEBUG_DIR)/AtaBusDxe \
 	MdeModulePkg/Bus/Pci/EhciDxe/EhciDxe/$(VBOX_EFI_DEBUG_DIR)/EhciDxe \
 	MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe/$(VBOX_EFI_DEBUG_DIR)/PciBusDxe \
+	MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe/$(VBOX_EFI_DEBUG_DIR)/NvmExpressDxe \
 	MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe/$(VBOX_EFI_DEBUG_DIR)/ScsiBus \
 	MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe/$(VBOX_EFI_DEBUG_DIR)/ScsiDisk \
 	MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe/$(VBOX_EFI_DEBUG_DIR)/UsbBusDxe \
