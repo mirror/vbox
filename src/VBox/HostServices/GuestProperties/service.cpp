@@ -1587,7 +1587,7 @@ int Service::uninit()
         int rc = RTReqQueueCall(mhReqQNotifyHost, &pReq, 10000, (PFNRT)wakeupNotifyHost, 0);
         if (RT_SUCCESS(rc))
             RTReqRelease(pReq);
-        rc = RTThreadWait(mhThreadNotifyHost, 1000, NULL);
+        rc = RTThreadWait(mhThreadNotifyHost, 10000, NULL);
         AssertRC(rc);
         rc = RTReqQueueDestroy(mhReqQNotifyHost);
         AssertRC(rc);
