@@ -135,7 +135,7 @@ TOOL_Bs3Vcc64_COMPILE_C_OUTPUT         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT_MAYBE)
 define TOOL_Bs3Vcc64_COMPILE_C_CMDS
 $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_CMDS)
-	-$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
+	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 endef
 
 TOOL_Bs3Vcc64_CXXOBJSUFF               = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXOBJSUFF)
@@ -374,9 +374,12 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-MemMove.c \
        bs3-cmn-MemZero.asm \
        bs3-cmn-SlabInit.c \
+       bs3-cmn-SlabFree.c \
        bs3-cmn-SlabListInit.c \
        bs3-cmn-SlabListAdd.c \
        bs3-cmn-SlabListAlloc.c \
+       bs3-cmn-SlabListAllocEx.c \
+       bs3-cmn-SlabListFree.c \
        bs3-cmn-TestData.c \
        bs3-cmn-TestInit.c \
 	bs3-cmn-TestSendStrCmd.asm \

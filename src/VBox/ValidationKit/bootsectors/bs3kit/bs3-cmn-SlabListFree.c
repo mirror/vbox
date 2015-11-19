@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3SlabListAlloc
+ * BS3Kit - Bs3SlabListFree
  */
 
 /*
@@ -25,35 +25,29 @@
  */
 
 #include "bs3kit-template-header.h"
-#include <iprt/asm.h>
 
 
-BS3_DECL(void BS3_FAR *) Bs3SlabListAlloc(PBS3SLABHEAD pHead)
+BS3_DECL(void) Bs3SlabListFree(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks)
 {
-    if (pHead->cFreeChunks)
+    BS3_ASSERT(cChunks > 0);
+    if (cChunks > 0)
     {
-        PBS3SLABCLT pCur;
+        PBS3SLABCLT         pCur;
+        BS3_XPTR_AUTO(void, pvFlatChunk);
+        BS3_XPTR_SET(void,  pvFlatChunk, pvChunks);
+
         for (pCur = BS3_XPTR_GET(BS3SLABCLT, pHead->pFirst);
              pCur != NULL;
              pCur = BS3_XPTR_GET(BS3SLABCLT, pCur->pNext))
         {
-            if (pCur->cFreeChunks)
+            if (  ((BS3_XPTR_GET_FLAT(void, pvFlatChunk) - BS3_XPTR_GET_FLAT(uint8_t, pCur->pbStart)) >> pCur->cChunkShift)
+                < pCur->cChunks)
             {
-                int32_t iBit = ASMBitFirstClear(&pCur->bmAllocated, pCur->cChunks);
-                if (iBit >= 0)
-                {
-                    BS3_XPTR_AUTO(void, pvRet);
-                    ASMBitSet(&pCur->bmAllocated, iBit);
-                    pCur->cFreeChunks  -= 1;
-                    pHead->cFreeChunks -= 1;
-
-                    BS3_XPTR_SET_FLAT(void, pvRet,
-                                      BS3_XPTR_GET_FLAT(uint8_t, pCur->pbStart) + ((uint32_t)iBit << pCur->cChunkShift));
-                    return BS3_XPTR_GET(void, pvRet);
-                }
+                pHead->cFreeChunks += Bs3SlabFree(pCur, BS3_XPTR_GET_FLAT(void, pvFlatChunk), cChunks);
+                return;
             }
         }
+        BS3_ASSERT(0);
     }
-    return NULL;
 }
 
