@@ -490,8 +490,8 @@
   }
 
   OvmfPkg/BlockMmioToBlockIoDxe/BlockIo.inf
-!ifndef $(VBOX)
   OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
+!ifndef $(VBOX)
   OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
   OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
   OvmfPkg/QemuFlashFvbServicesRuntimeDxe/FvbServicesRuntimeDxe.inf
@@ -587,7 +587,6 @@
   #
   # Network Support
   #
-!ifndef $(VBOX)
   MdeModulePkg/Universal/Network/SnpDxe/SnpDxe.inf
   MdeModulePkg/Universal/Network/DpcDxe/DpcDxe.inf
   MdeModulePkg/Universal/Network/MnpDxe/MnpDxe.inf
@@ -602,15 +601,16 @@
   MdeModulePkg/Universal/Network/UefiPxeBcDxe/UefiPxeBcDxe.inf
   MdeModulePkg/Universal/Network/IScsiDxe/IScsiDxe.inf
   OvmfPkg/VirtioNetDxe/VirtioNet.inf
-!endif
 
   #
   # Usb Support
   #
 !ifndef $(VBOX)
   MdeModulePkg/Bus/Pci/UhciDxe/UhciDxe.inf
-!endif
   MdeModulePkg/Bus/Pci/EhciDxe/EhciDxe.inf
+!else
+  MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe.inf
+!endif
   MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
   MdeModulePkg/Bus/Usb/UsbKbDxe/UsbKbDxe.inf
   MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe.inf
