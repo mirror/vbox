@@ -536,6 +536,44 @@
     value [ax] \
     modify exact [ax dx] nomemory;
 
+#undef      ASMBitFirstSetU64
+#pragma aux ASMBitFirstSetU64 = \
+    "shl ecx, 16" \
+    "mov cx, dx" \
+    "bsf ecx, ecx" \
+    "jz  not_found_low" \
+    "mov ax, cx" \
+    "inc ax" \
+    "jmp done" \
+    \
+    "not_found_low:" \
+    "shr eax, 16" \
+    "mov ax, bx" \
+    "bsf eax, eax" \
+    "jz  not_found_high" \
+    "add ax, 33" \
+    "jmp done" \
+    \
+    "not_found_high:" \
+    "xor ax, ax" \
+    "done:" \
+    parm [dx cx bx ax] nomemory \
+    value [ax] \
+    modify exact [ax cx] nomemory;
+
+#undef      ASMBitFirstSetU16
+#pragma aux ASMBitFirstSetU16 = \
+    "bsf ax, ax" \
+    "jz  not_found" \
+    "inc ax" \
+    "jmp done" \
+    "not_found:" \
+    "xor ax, ax" \
+    "done:" \
+    parm [ax] nomemory \
+    value [ax] \
+    modify exact [ax] nomemory;
+
 #undef      ASMBitLastSetU32
 #pragma aux ASMBitLastSetU32 = \
     "shl edx, 16" \
@@ -550,6 +588,44 @@
     parm [ax dx] nomemory \
     value [ax] \
     modify exact [ax dx] nomemory;
+
+#undef      ASMBitLastSetU64
+#pragma aux ASMBitLastSetU64 = \
+    "shl ecx, 16" \
+    "mov cx, dx" \
+    "bsf ecx, ecx" \
+    "jz  not_found_low" \
+    "mov ax, cx" \
+    "inc ax" \
+    "jmp done" \
+    \
+    "not_found_low:" \
+    "shr eax, 16" \
+    "mov ax, bx" \
+    "bsf eax, eax" \
+    "jz  not_found_high" \
+    "add ax, 33" \
+    "jmp done" \
+    \
+    "not_found_high:" \
+    "xor ax, ax" \
+    "done:" \
+    parm [dx cx bx ax] nomemory \
+    value [ax] \
+    modify exact [ax cx] nomemory;
+
+#undef      ASMBitLastSetU16
+#pragma aux ASMBitLastSetU16 = \
+    "bsr ax, ax" \
+    "jz  not_found" \
+    "inc ax" \
+    "jmp done" \
+    "not_found:" \
+    "xor ax, ax" \
+    "done:" \
+    parm [ax] nomemory \
+    value [ax] \
+    modify exact [ax] nomemory;
 
 #undef      ASMByteSwapU16
 #pragma aux ASMByteSwapU16 = \
