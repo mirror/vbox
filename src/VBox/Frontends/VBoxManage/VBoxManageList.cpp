@@ -1154,7 +1154,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                 net->COMGETTER(IPv6Enabled)(&fEnabled);
                 RTPrintf("IPv6 Enabled:   %s\n", fEnabled ? "Yes" : "No");
                 Bstr ipv6prefix;
-                net->COMGETTER(Network)(network.asOutParam());
+                net->COMGETTER(IPv6Prefix)(ipv6prefix.asOutParam());
                 RTPrintf("IPv6 Prefix:    %ls\n", ipv6prefix.raw());
                 net->COMGETTER(NeedDhcpServer)(&fEnabled);
                 RTPrintf("DHCP Enabled:   %s\n", fEnabled ? "Yes" : "No");
