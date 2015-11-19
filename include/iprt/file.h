@@ -97,6 +97,10 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
 
 /** @name Open flags
  * @{ */
+/** Attribute access only.
+ * @remarks Only accepted on windows, requires RTFILE_O_ACCESS_ATTR_MASK
+ *          to yield a non-zero result.  Otherwise, this is invalid. */
+#define RTFILE_O_ATTR_ONLY              UINT32_C(0x00000000)
 /** Open the file with read access. */
 #define RTFILE_O_READ                   UINT32_C(0x00000001)
 /** Open the file with write access. */
@@ -104,7 +108,7 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
 /** Open the file with read & write access. */
 #define RTFILE_O_READWRITE              UINT32_C(0x00000003)
 /** The file access mask.
- * @remarks The value 0 is invalid. */
+ * @remarks The value 0 is invalid, except for windows special case. */
 #define RTFILE_O_ACCESS_MASK            UINT32_C(0x00000003)
 
 /** Open file in APPEND mode, so all writes to the file handle will
