@@ -495,13 +495,49 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
 }
 
 
+/** @name Selected OMF record types.
+ * @{ */
 #define PUBDEF  UINT8_C(0x90)
+#define LPUBDEF UINT8_C(0xb6)
 #define THEADR  UINT8_C(0x80)
-#define EXTDEF  UINT8_C(0x88)
+#define EXTDEF  UINT8_C(0x8c)
 #define SEGDEF  UINT8_C(0x98)
 #define LNAMES  UINT8_C(0x96)
 #define GRPDEF  UINT8_C(0x9a)
 #define REC32   UINT8_C(0x01) /**< Flag indicating 32-bit record. */
+/** @} */
+
+/** Watcom intrinsics we need to modify so we can mix 32-bit and 16-bit
+ * code, since the 16 and 32 bit compilers share several names.
+ * The names are length prefixed.
+ */
+static const char * const g_apszExtDefRenames[] =
+{
+    "\x05" "__I4D",
+    "\x05" "__I4M",
+    "\x06" "__I8DQ",
+    "\x07" "__I8DQE",
+    "\x06" "__I8DR",
+    "\x07" "__I8DRE",
+    "\x06" "__I8LS",
+    "\x05" "__I8M",
+    "\x06" "__I8ME",
+    "\x06" "__I8RS",
+    "\x05" "__PIA",
+    "\x05" "__PIS",
+    "\x05" "__PTC",
+    "\x05" "__PTS",
+    "\x05" "__U4D",
+    "\x05" "__U4M",
+    "\x06" "__U8DQ",
+    "\x07" "__U8DQE",
+    "\x06" "__U8DR",
+    "\x07" "__U8DRE",
+    "\x06" "__U8LS",
+    "\x05" "__U8M",
+    "\x06" "__U8ME",
+    "\x06" "__U8RS",
+};
 
 /**
  * Renames references to intrinsic helper functions so they won't clash between
@@ -512,12 +548,13 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
  * @param   pbFile      Pointer to the file content.
  * @param   cbFile      Size of the file content.
  */
-static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
+static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, const char **papchLNames, uint32_t cLNamesMax)
 {
-    const char    **papchLNames = (const char **)calloc(sizeof(*papchLNames), _64K);
     uint32_t        cLNames = 0;
+    uint32_t        cExtDefs = 0;
+    uint32_t        cPubDefs = 0;
     bool            fProbably32bit = false;
-    uint32_t        off;
+    uint32_t        off = 0;
 
     while (off + 3 < cbFile)
     {
@@ -533,6 +570,10 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
 
         uint32_t offRec = 0;
         uint8_t *pbRec  = &pbFile[off + 3];
+#define OMF_CHECK_RET(a_cbReq, a_Name) /* Not taking the checksum into account, so we're good with 1 or 2 byte fields. */ \
+            if (offRec + (a_cbReq) <= cbRec) {/*likely*/} \
+            else return error(pszFile, "Malformed " #a_Name "! off=%#x offRec=%#x cbRec=%#x cbNeeded=%#x line=%d\n", \
+                              off, offRec, cbRec, (a_cbReq), __LINE__)
         switch (bRecType)
         {
             /*
@@ -540,6 +581,49 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
              */
             case EXTDEF:
             {
+                while (offRec + 1 < cbRec)
+                {
+                    uint8_t cch = pbRec[offRec++];
+                    OMF_CHECK_RET(cch, EXTDEF);
+                    char *pchName = (char *)&pbRec[offRec];
+                    offRec += cch;
+
+                    OMF_CHECK_RET(2, EXTDEF);
+                    uint16_t idxType = pbRec[offRec++];
+                    if (idxType & 0x80)
+                        idxType = ((idxType & 0x7f) << 8) | pbRec[offRec++];
+
+                    if (g_cVerbose > 2)
+                        printf("  EXTDEF [%u]: %-*.*s type=%#x\n", cExtDefs, cch, cch, pchName, idxType);
+                    else if (g_cVerbose > 0)
+                        printf("              U %-*.*s\n", cch, cch, pchName);
+
+                    /* Look for g_apszExtDefRenames entries that requires changing. */
+                    if (   cch >= 5
+                        && cch <= 7
+                        && pchName[0] == '_'
+                        && pchName[1] == '_'
+                        && (   pchName[2] == 'U'
+                            || pchName[2] == 'I'
+                            || pchName[2] == 'P')
+                        && (   pchName[3] == '4'
+                            || pchName[3] == '8'
+                            || pchName[3] == 'I'
+                            || pchName[3] == 'T') )
+                    {
+                        uint32_t i = RT_ELEMENTS(g_apszExtDefRenames);
+                        while (i-- > 0)
+                            if (   cch == (uint8_t)g_apszExtDefRenames[i][0]
+                                && memcmp(&g_apszExtDefRenames[i][1], pchName, cch) == 0)
+                            {
+                                pchName[0] = fProbably32bit ? '3' : '1';
+                                pchName[1] = fProbably32bit ? '2' : '6';
+                                break;
+                            }
+                    }
+
+                    cExtDefs++;
+                }
                 break;
             }
 
@@ -550,10 +634,21 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
             {
                 while (offRec + 1 < cbRec)
                 {
-                    uint8_t cch = *pbRec[offRec];
-                    if (offRec + 1 + cch >= cb)
-                    {
-                    }
+                    uint8_t cch = pbRec[offRec];
+                    if (offRec + 1 + cch >= cbRec)
+                        return error(pszFile, "Invalid LNAME string length at %#x+3+%#x: %#x (cbFile=%#lx)\n",
+                                     off, offRec, cch, (unsigned long)cbFile);
+                    if (cLNames + 1 >= cLNamesMax)
+                        return error(pszFile, "Too many LNAME strings\n");
+
+                    if (g_cVerbose > 2)
+                        printf("  LNAME[%u]: %-*.*s\n", cLNames, cch, cch, &pbRec[offRec + 1]);
+
+                    papchLNames[cLNames++] = (const char *)&pbRec[offRec];
+                    if (cch == 4 && memcmp(&pbRec[offRec + 1], "FLAT", 4) == 0)
+                        fProbably32bit = true;
+
+                    offRec += cch + 1;
                 }
                 break;
             }
@@ -563,11 +658,73 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
              */
             case PUBDEF:
             case PUBDEF | REC32:
+            case LPUBDEF:
+            case LPUBDEF | REC32:
+            {
                 if (g_cVerbose > 0)
                 {
+                    char const  chType  = bRecType == PUBDEF || bRecType == (PUBDEF | REC32) ? 'T' : 't';
+                    const char *pszRec = "LPUBDEF";
+                    if (chType == 'T')
+                        pszRec++;
 
+                    OMF_CHECK_RET(2, [L]PUBDEF);
+                    uint16_t idxGrp = pbRec[offRec++];
+                    if (idxGrp & 0x80)
+                        idxGrp = ((idxGrp & 0x7f) << 8) | pbRec[offRec++];
+
+                    OMF_CHECK_RET(2, [L]PUBDEF);
+                    uint16_t idxSeg = pbRec[offRec++];
+                    if (idxSeg & 0x80)
+                        idxSeg = ((idxSeg & 0x7f) << 8) | pbRec[offRec++];
+
+                    uint16_t uFrameBase = 0;
+                    if (idxSeg == 0)
+                    {
+                        OMF_CHECK_RET(2, [L]PUBDEF);
+                        uFrameBase = RT_MAKE_U16(pbRec[offRec], pbRec[offRec + 1]);
+                        offRec += 2;
+                    }
+                    if (g_cVerbose > 2)
+                        printf("  %s: idxGrp=%#x idxSeg=%#x uFrameBase=%#x\n", pszRec, idxGrp, idxSeg, uFrameBase);
+                    uint16_t const uSeg = idxSeg ? idxSeg : uFrameBase;
+
+                    while (offRec + 1 < cbRec)
+                    {
+                        uint8_t cch = pbRec[offRec++];
+                        OMF_CHECK_RET(cch, [L]PUBDEF);
+                        const char *pchName = (const char *)&pbRec[offRec];
+                        offRec += cch;
+
+                        uint32_t offSeg;
+                        if (bRecType & REC32)
+                        {
+                            OMF_CHECK_RET(4, [L]PUBDEF);
+                            offSeg = RT_MAKE_U32_FROM_U8(pbRec[offRec], pbRec[offRec + 1], pbRec[offRec + 2], pbRec[offRec + 3]);
+                            offRec += 4;
+                        }
+                        else
+                        {
+                            OMF_CHECK_RET(2, [L]PUBDEF);
+                            offSeg = RT_MAKE_U16(pbRec[offRec], pbRec[offRec + 1]);
+                            offRec += 2;
+                        }
+
+                        OMF_CHECK_RET(2, [L]PUBDEF);
+                        uint16_t idxType = pbRec[offRec++];
+                        if (idxType & 0x80)
+                            idxType = ((idxType & 0x7f) << 8) | pbRec[offRec++];
+
+                        if (g_cVerbose > 2)
+                            printf("  %s[%u]: off=%#010x type=%#x %-*.*s\n", pszRec, cPubDefs, offSeg, idxType, cch, cch, pchName);
+                        else if (g_cVerbose > 0)
+                            printf("%04x:%08x %c %-*.*s\n", uSeg, offSeg, chType, cch, cch, pchName);
+
+                        cPubDefs++;
+                    }
                 }
                 break;
+            }
         }
 
         /* advance */
@@ -606,7 +763,11 @@ static int convertit(const char *pszFile)
         else if (   cbFile >= 8
                  && pbFile[0] == THEADR
                  && RT_MAKE_U16(pbFile[1], pbFile[2]) < cbFile)
-            fRc = convertomf(pszFile, pbFile, cbFile);
+        {
+            const char **papchLNames = (const char **)calloc(sizeof(*papchLNames), _32K);
+            fRc = convertomf(pszFile, pbFile, cbFile, papchLNames, _32K);
+            free(papchLNames);
+        }
         else
             fprintf(stderr, "error: Don't recognize format of '%s' (%#x %#x %#x %#x, cbFile=%lu)\n",
                     pszFile, pbFile[0], pbFile[1], pbFile[2], pbFile[3], (unsigned long)cbFile);
