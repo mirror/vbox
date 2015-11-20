@@ -34,9 +34,7 @@
 
 #include <Wbemidl.h>
 #include <comdef.h>
-#ifdef VBOXNETCFG_DELAYEDRENAME
 #include <Ws2tcpip.h>
-#endif /* VBOXNETCFG_DELAYEDRENAME */
 
 
 #ifndef Assert   /** @todo r=bird: where would this be defined? */
@@ -1891,7 +1889,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinDhcpRediscover(IN const GUID *pGuid)
     return hr;
 }
 
-#ifdef VBOXNETCFG_DELAYEDRENAME
 static const char *vboxNetCfgWinAddrToStr(char *pszBuf, LPSOCKADDR pAddr)
 {
     switch (pAddr->sa_family)
@@ -1920,7 +1917,6 @@ static const char *vboxNetCfgWinAddrToStr(char *pszBuf, LPSOCKADDR pAddr)
     }
     return pszBuf;
 }
-#endif /* VBOXNETCFG_DELAYEDRENAME */
 
 typedef bool (*PFNVBOXNETCFG_IPSETTINGS_CALLBACK) (ULONG ip, ULONG mask, PVOID pContext);
 
