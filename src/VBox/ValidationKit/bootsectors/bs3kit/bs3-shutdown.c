@@ -22,6 +22,8 @@ Bs3PrintStr("Bs3PrintX32:");
 Bs3PrintX32(UINT32_C(0xfdb97531));
 Bs3PrintStr("\r\n");
 
+Bs3PrintF("Bs3PrintF: RX32=%RX32\n", UINT32_C(0xfdb97531));
+
 pvTmp2 = Bs3MemAlloc(BS3MEMKIND_REAL, _4K);
 Bs3PrintStr("pvTmp2=");
 Bs3PrintX32((uintptr_t)pvTmp2);

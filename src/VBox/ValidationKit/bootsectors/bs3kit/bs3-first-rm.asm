@@ -140,6 +140,7 @@ BS3_BEGIN_SYSTEM16
 BS3_BEGIN_TEXT16
 extern BS3_CMN_NM(Bs3Shutdown)
 extern NAME(Main_rm)
+extern _Bs3PrintF_c32
 
 BS3_BEGIN_SYSTEM16
 extern BS3_DATA_NM(Bs3Gdt)

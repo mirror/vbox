@@ -641,6 +641,12 @@ extern uint32_t BS3_DATA_NM(Bs3TotalImageSize);
 /** @} */
 
 
+/** Lower case hex digits. */
+extern char const BS3_DATA_NM(g_achBs3HexDigits)[16+1];
+/** Upper case hex digits. */
+extern char const BS3_DATA_NM(g_achBs3HexDigitsUpper)[16+1];
+
+
 #ifdef __WATCOMC__
 /**
  * Executes the SMSW instruction and returns the value.
@@ -928,6 +934,20 @@ BS3_DECL(void) Bs3PrintX32_c16(uint32_t uValue);
 BS3_DECL(void) Bs3PrintX32_c32(uint32_t uValue); /**< @copydoc Bs3PrintX32_c16 */
 BS3_DECL(void) Bs3PrintX32_c64(uint32_t uValue); /**< @copydoc Bs3PrintX32_c16 */
 #define Bs3PrintX32 BS3_CMN_NM(Bs3PrintX32) /**< Selects #Bs3PrintX32_c16, #Bs3PrintX32_c32 or #Bs3PrintX32_c64. */
+
+/**
+ * Converts a 64-bit unsigned integer to a string.
+ *
+ * @returns The length for the formatted string.
+ * @param   pszDst      The destination buffer.  Caller is responsible for
+ *                      ensuring sufficient space.
+ * @param   uValue      The 64-bit value.
+ * @param   uBase       The base to format the number in: 2, 8,10 or 16.
+ */
+BS3_DECL(size_t) Bs3FormatU64_c16(char BS3_FAR *pszDst, uint64_t uValue, unsigned uBase);
+BS3_DECL(size_t) Bs3FormatU64_c32(char BS3_FAR *pszDst, uint64_t uValue, unsigned uBase); /**< @copydoc Bs3FormatU64_c16 */
+BS3_DECL(size_t) Bs3FormatU64_c64(char BS3_FAR *pszDst, uint64_t uValue, unsigned uBase); /**< @copydoc Bs3FormatU64_c16 */
+#define Bs3FormatU64 BS3_CMN_NM(Bs3FormatU64) /**< Selects #Bs3FormatU64_c16, #Bs3FormatU64_c32 or #Bs3FormatU64_c64. */
 
 /**
  * Formats and prints a string to the screen.

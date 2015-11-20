@@ -116,7 +116,7 @@ define TOOL_Bs3Gcc64Elf64_COMPILE_CXX_CMDS
 endef
 
 #
-# VCC elf cross compiling 64-bit gcc (mac): sudo port install x86_64-elf-gcc
+# Visual C++ tool variant that runs the object converter afterwards.
 #
 TOOL_Bs3Vcc64 := Visual C++ 64-bit
 TOOL_Bs3Vcc64_CC  = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CC)
@@ -152,6 +152,47 @@ TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT_MAYBE)
 define TOOL_Bs3Vcc64_COMPILE_CXX_CMDS
 $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_CMDS)
+	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET)  "$(obj)"
+endef
+
+#
+# 32-bit OpenWatcom C/C++ tool variant that runs the object converter afterwards
+# to rename intrinsic functions so they don't clash with the 16-bit compiler.
+#
+TOOL_Bs3Ow32 := Visual C++ 64-bit
+TOOL_Bs3Ow32_CC  = $(TOOL_OPENWATCOM_CC)
+TOOL_Bs3Ow32_CXX = $(TOOL_OPENWATCOM_CXX)
+TOOL_Bs3Ow32_COBJSUFF                 = $(TOOL_OPENWATCOM_COBJSUFF)
+TOOL_Bs3Ow32_CFLAGS                   = $(TOOL_OPENWATCOM_CFLAGS)
+TOOL_Bs3Ow32_CFLAGS.debug             = $(TOOL_OPENWATCOM_CFLAGS.debug)
+TOOL_Bs3Ow32_CFLAGS.dbgopt            = $(TOOL_OPENWATCOM_CFLAGS.dbgopt)
+TOOL_Bs3Ow32_CFLAGS.profile           = $(TOOL_OPENWATCOM_CFLAGS.profile)
+TOOL_Bs3Ow32_CFLAGS.release           = $(TOOL_OPENWATCOM_CFLAGS.release)
+TOOL_Bs3Ow32_CINCS                    = $(TOOL_OPENWATCOM_CINCS)
+TOOL_Bs3Ow32_CDEFS                    =
+TOOL_Bs3Ow32_COMPILE_C_DEPEND         = $(TOOL_OPENWATCOM_COMPILE_C_DEPEND) $(VBoxBs3ObjConverter_1_TARGET)
+TOOL_Bs3Ow32_COMPILE_C_DEPORD         = $(TOOL_OPENWATCOM_COMPILE_C_DEPORD)
+TOOL_Bs3Ow32_COMPILE_C_OUTPUT         = $(TOOL_OPENWATCOM_COMPILE_C_OUTPUT)
+TOOL_Bs3Ow32_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_OPENWATCOM_COMPILE_C_OUTPUT_MAYBE)
+define TOOL_Bs3Ow32_COMPILE_C_CMDS
+$(TOOL_OPENWATCOM_COMPILE_C_CMDS)
+#	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
+endef
+
+TOOL_Bs3Ow32_CXXOBJSUFF               = $(TOOL_OPENWATCOM_CXXOBJSUFF)
+TOOL_Bs3Ow32_CXXFLAGS                 = $(TOOL_OPENWATCOM_CXXFLAGS)
+TOOL_Bs3Ow32_CXXFLAGS.debug           = $(TOOL_OPENWATCOM_CXXFLAGS.debug)
+TOOL_Bs3Ow32_CXXFLAGS.dbgopt          = $(TOOL_OPENWATCOM_CXXFLAGS.dbgopt)
+TOOL_Bs3Ow32_CXXFLAGS.profile         = $(TOOL_OPENWATCOM_CXXFLAGS.profile)
+TOOL_Bs3Ow32_CXXFLAGS.release         = $(TOOL_OPENWATCOM_CXXFLAGS.release)
+TOOL_Bs3Ow32_CXXINCS                  = $(TOOL_OPENWATCOM_CXXINCS)
+TOOL_Bs3Ow32_CXXDEFS                  =
+TOOL_Bs3Ow32_COMPILE_CXX_DEPEND       = $(TOOL_OPENWATCOM_COMPILE_CXX_DEPEND) $(VBoxBs3ObjConverter_1_TARGET)
+TOOL_Bs3Ow32_COMPILE_CXX_DEPORD       = $(TOOL_OPENWATCOM_COMPILE_CXX_DEPORD)
+TOOL_Bs3Ow32_COMPILE_CXX_OUTPUT       = $(TOOL_OPENWATCOM_COMPILE_CXX_OUTPUT)
+TOOL_Bs3Ow32_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_OPENWATCOM_COMPILE_CXX_OUTPUT_MAYBE)
+define TOOL_Bs3Ow32_COMPILE_CXX_CMDS
+$(TOOL_OPENWATCOM_COMPILE_CXX_CMDS)
 	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET)  "$(obj)"
 endef
 
@@ -295,8 +336,8 @@ TEMPLATE_VBoxBS3KitImg32_ASFLAGS      = -f obj -g --allow-64bit-code-anywhere -w
 TEMPLATE_VBoxBS3KitImg32_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg32_DEFS         = ARCH_BITS=32 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
-TEMPLATE_VBoxBS3KitImg32_CTOOL        = OPENWATCOM
-TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = OPENWATCOM
+TEMPLATE_VBoxBS3KitImg32_CTOOL        = Bs3Ow32
+TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CFLAGS       = \
 	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = \
@@ -362,6 +403,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-Shutdown.asm \
 	bs3-cmn-Panic.asm \
 	bs3-cmn-PrintChr.asm \
+	bs3-cmn-PrintF.c \
 	bs3-cmn-PrintU32.asm \
 	bs3-cmn-PrintX32.asm \
 	bs3-cmn-PrintStr.c \
@@ -402,7 +444,8 @@ bs3kit-common-16_DEFS     = TMPL_PE16 BS3_CMN_ONLY
 bs3kit-common-16_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 	bs3-system-data.asm \
-	bs3-rm-InitMemory.c
+	bs3-rm-InitMemory.c \
+	bs3-cmn-hexdigits.c
 
 # The 32-bit BS3Kit library.
 LIBRARIES += bs3kit-common-32
