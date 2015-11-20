@@ -33,8 +33,8 @@ endif
 
 # PNG support (for screenshots).
 if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_VALIDATIONKIT) \
- && "$(SDK_VBOX_LIBPNG_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.2.53"
- include $(PATH_SUB_CURRENT)/libpng-1.2.53/Makefile.kmk
+ && "$(SDK_VBOX_LIBPNG_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.2.54"
+ include $(PATH_SUB_CURRENT)/libpng-1.2.54/Makefile.kmk
 endif # !VBOX_ONLY_DOCS
 
 # Libcurl for inet access
