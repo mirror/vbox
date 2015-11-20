@@ -138,8 +138,8 @@ static void rtR0DbgKrnlInfoModRelease(modctl_t *pMod, ctf_file_t *pCTF)
  * Helper for opening the specified kernel module.
  *
  * @param pszModule         The name of the module.
- * @param pMod              Where to store the module handle.
- * @param pCtf              Where to store the CTF handle.
+ * @param ppMod             Where to store the module handle.
+ * @param ppCtf             Where to store the module's CTF handle.
  *
  * @returns Pointer to the CTF structure for the module.
  */
