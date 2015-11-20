@@ -94,7 +94,13 @@
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
     <Component Id="cp_RegisterExtensions" Guid="FEB8943E-5D60-4E2D-846F-458207019D40"
                Win64="$(var.Property_Win64)" KeyPath="yes">
-        <Condition>VBOX_REGISTERFILEEXTENSIONS</Condition>
+               
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+            <Condition><![CDATA[(local_VBOX_REGISTERFILEEXTENSIONS="1")]]></Condition>
+<?else ?>
+            <Condition><![CDATA[(VBOX_REGISTERFILEEXTENSIONS)]]></Condition>
+<?endif ?>
+
         <!-- Register file extensions. Note: Extension IDs *must not* be changed! These specify the actual
              file extension to handle. Also, here would be the place to add more fancy DDE stuff later.
              Important: The IDs in "IconIndex" *must* be matching "Resources\resource.h" -->

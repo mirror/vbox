@@ -68,6 +68,14 @@
     <SetProperty Id="NETWORKTYPE" After="CostFinalize" Value="NDIS5"><![CDATA[(VersionNT < 600)]]></SetProperty>
 <?endif ?>
 
+    <!-- Whether or not registering of known desktop shortcut for the Quick Launch Bar should be created -->
+    <Property Id="VBOX_REGISTERFILEEXTENSIONS" Value="1" Secure="yes"/>
+
+    <SetProperty Id="VBOX_REGISTERFILEEXTENSIONS" After="AppSearch" Sequence="both" Value="{}">
+        <![CDATA[VBOX_REGISTERFILEEXTENSIONS="0"]]>
+     </SetProperty>
+
+
     <!-- Install the product for all users on the system -->
     <Property Id="ALLUSERS"><![CDATA[1]]></Property>
 
@@ -221,7 +229,9 @@
             <Directory Id="VENDOR" Name="$(env.VBOX_VENDOR_SHORT)">
                 <Directory Id="INSTALLDIR" Name="VirtualBox">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-                <Merge Id="msm_VBoxApp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeApp)" DiskId="1" />
+                <Merge Id="msm_VBoxApp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeApp)" DiskId="1">
+                    <ConfigurationData Name="argRegesterExtensions" Value="[VBOX_REGISTERFILEEXTENSIONS]"/> 
+                </Merge>
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
                 <Merge Id="msm_VBoxCOM32On64" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeCOM32On64)" DiskId="1" />
     <?endif ?>
