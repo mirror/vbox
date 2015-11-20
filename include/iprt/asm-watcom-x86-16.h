@@ -343,7 +343,7 @@
 #pragma aux ASMMemFill32 = \
     "and ecx, 0ffffh" /* probably not necessary, lazy bird should check... */ \
     "shr ecx, 2" \
-    "shr eax, 16" \
+    "shl eax, 16" \
     "mov ax, dx" \
     "rol eax, 16" \
     "rep stosd"  \
