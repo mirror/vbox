@@ -353,5 +353,5 @@ RELEASE_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -Os -fno-omit-frame
 ##################
 *_*_*_NASM_PATH                = DEF(NASM_BIN)
 # NASMB uses NASM produce a .bin from a .nasmb NASM source file
-*_*_*_NASMB_FLAGS              = -f bin -D__YASM__ -DASM_FORMAT_BIN
+*_*_*_NASMB_FLAGS              = -f bin -D__YASM__ -DASM_FORMAT_BIN -DVBOX
 
