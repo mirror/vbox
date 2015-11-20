@@ -117,49 +117,49 @@ DECLHIDDEN(int) rtR0InitNative(void)
         /*
          * Mandatory: Preemption offsets.
          */
-        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, "cpu_t", "cpu_runrun", &g_offrtSolCpuPreempt);
+        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, NULL, "cpu_t", "cpu_runrun", &g_offrtSolCpuPreempt);
         if (RT_FAILURE(rc))
         {
             cmn_err(CE_NOTE, "Failed to find cpu_t::cpu_runrun!\n");
             goto errorbail;
         }
 
-        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, "cpu_t", "cpu_kprunrun", &g_offrtSolCpuForceKernelPreempt);
+        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, NULL, "cpu_t", "cpu_kprunrun", &g_offrtSolCpuForceKernelPreempt);
         if (RT_FAILURE(rc))
         {
             cmn_err(CE_NOTE, "Failed to find cpu_t::cpu_kprunrun!\n");
             goto errorbail;
         }
 
-        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, "kthread_t", "t_preempt", &g_offrtSolThreadPreempt);
+        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, NULL, "kthread_t", "t_preempt", &g_offrtSolThreadPreempt);
         if (RT_FAILURE(rc))
         {
             cmn_err(CE_NOTE, "Failed to find kthread_t::t_preempt!\n");
             goto errorbail;
         }
 
-        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, "kthread_t", "t_did", &g_offrtSolThreadId);
+        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, NULL, "kthread_t", "t_did", &g_offrtSolThreadId);
         if (RT_FAILURE(rc))
         {
             cmn_err(CE_NOTE, "Failed to find kthread_t::t_did!\n");
             goto errorbail;
         }
 
-        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, "kthread_t", "t_intr", &g_offrtSolThreadIntrThread);
+        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, NULL, "kthread_t", "t_intr", &g_offrtSolThreadIntrThread);
         if (RT_FAILURE(rc))
         {
             cmn_err(CE_NOTE, "Failed to find kthread_t::t_intr!\n");
             goto errorbail;
         }
 
-        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, "kthread_t", "t_lockp", &g_offrtSolThreadLock);
+        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, NULL, "kthread_t", "t_lockp", &g_offrtSolThreadLock);
         if (RT_FAILURE(rc))
         {
             cmn_err(CE_NOTE, "Failed to find kthread_t::t_lockp!\n");
             goto errorbail;
         }
 
-        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, "kthread_t", "t_procp", &g_offrtSolThreadProc);
+        rc = RTR0DbgKrnlInfoQueryMember(g_hKrnlDbgInfo, NULL, "kthread_t", "t_procp", &g_offrtSolThreadProc);
         if (RT_FAILURE(rc))
         {
             cmn_err(CE_NOTE, "Failed to find kthread_t::t_procp!\n");

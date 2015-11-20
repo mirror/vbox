@@ -83,10 +83,10 @@ DECLEXPORT(int) TSTR0DbgKrnlInfoSrvReqHandler(PSUPDRVSESSION pSession, uint32_t 
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0), VINF_SUCCESS);
 
             size_t offMemb;
-            RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQueryMember(NULL, "Test", "Test", &offMemb), VERR_INVALID_HANDLE);
-            RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQueryMember(hKrnlInfo, NULL, "Test", &offMemb), VERR_INVALID_PARAMETER);
-            RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQueryMember(hKrnlInfo, "Test", NULL, &offMemb), VERR_INVALID_PARAMETER);
-            RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQueryMember(hKrnlInfo, "Test", "Test", NULL), VERR_INVALID_PARAMETER);
+            RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQueryMember(NULL, NULL, "Test", "Test", &offMemb), VERR_INVALID_HANDLE);
+            RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQueryMember(hKrnlInfo, NULL, NULL, "Test", &offMemb), VERR_INVALID_PARAMETER);
+            RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQueryMember(hKrnlInfo, NULL, "Test", NULL, &offMemb), VERR_INVALID_PARAMETER);
+            RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQueryMember(hKrnlInfo, NULL, "Test", "Test", NULL), VERR_INVALID_PARAMETER);
 
             void *pvSymbol;
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQuerySymbol(NULL, "Test", "Test", &pvSymbol), VERR_INVALID_HANDLE);
