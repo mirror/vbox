@@ -363,6 +363,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-Panic.asm \
 	bs3-cmn-PrintChr.asm \
 	bs3-cmn-PrintU32.asm \
+	bs3-cmn-PrintX32.asm \
 	bs3-cmn-PrintStr.c \
        bs3-cmn-PrintStrColonSpaces.asm \
        bs3-cmn-PrintStrSpacesColonSpace.c \
@@ -373,7 +374,12 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-MemPCpy.c \
        bs3-cmn-MemMove.c \
        bs3-cmn-MemZero.asm \
+       bs3-cmn-MemAlloc.c \
+       bs3-cmn-MemAllocZ.c \
+       bs3-cmn-MemFree.c \
        bs3-cmn-SlabInit.c \
+       bs3-cmn-SlabAlloc.c \
+       bs3-cmn-SlabAllocEx.c \
        bs3-cmn-SlabFree.c \
        bs3-cmn-SlabListInit.c \
        bs3-cmn-SlabListAdd.c \

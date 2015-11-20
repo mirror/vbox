@@ -27,13 +27,14 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(void) Bs3SlabListAdd(PBS3SLABHEAD pHead, PBS3SLABCLT pSlabCtl)
+BS3_DECL(void) Bs3SlabListAdd(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl)
 {
     BS3_ASSERT(pHead->cbChunk == pSlabCtl->cbChunk);
     BS3_ASSERT(BS3_XPTR_IS_NULL(BS3SLABHEAD, pSlabCtl->pNext));
 
-    BS3_XPTR_SET_FLAT(BS3SLABCLT, pSlabCtl->pNext, BS3_XPTR_GET_FLAT(BS3SLABCLT, pHead->pFirst));
-    BS3_XPTR_SET(BS3SLABCLT, pHead->pFirst, pSlabCtl);
+    BS3_XPTR_SET_FLAT(BS3SLABCTL, pSlabCtl->pNext, BS3_XPTR_GET_FLAT(BS3SLABCTL, pHead->pFirst));
+    BS3_XPTR_SET(BS3SLABCTL, pHead->pFirst, pSlabCtl);
+
     pHead->cSlabs      += 1;
     pHead->cChunks     += pSlabCtl->cChunks;
     pHead->cFreeChunks += pSlabCtl->cFreeChunks;

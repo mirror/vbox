@@ -28,33 +28,50 @@
 #define ___bs3_cmn_memory_h
 
 #include "bs3kit.h"
+#include <iprt/asm.h>
 
 RT_C_DECLS_BEGIN;
 
 
-typedef union BS3SLABCLTLOW
+typedef union BS3SLABCTLLOW
 {
-    BS3SLABCLT  Core;
-    uint32_t    au32Alloc[(sizeof(BS3SLABCLT) + (0xA0000 / _4K / 8) ) / 4];
-} BS3SLABCLTLOW;
-extern BS3SLABCLTLOW            BS3_DATA_NM(g_LowMemory);
+    BS3SLABCTL  Core;
+    uint32_t    au32Alloc[(sizeof(BS3SLABCTL) + (0xA0000 / _4K / 8) ) / 4];
+} BS3SLABCTLLOW;
+extern BS3SLABCTLLOW            BS3_DATA_NM(g_Bs3Mem4KLow);
 
 
 typedef union BS3SLABCTLUPPERTILED
 {
-    BS3SLABCLT  Core;
-    uint32_t    au32Alloc[(sizeof(BS3SLABCLT) + ((BS3_SEL_TILED_AREA_SIZE - _1M) / _4K / 8) ) / 4];
+    BS3SLABCTL  Core;
+    uint32_t    au32Alloc[(sizeof(BS3SLABCTL) + ((BS3_SEL_TILED_AREA_SIZE - _1M) / _4K / 8) ) / 4];
 } BS3SLABCTLUPPERTILED;
-extern BS3SLABCTLUPPERTILED     BS3_DATA_NM(g_UpperTiledMemory);
+extern BS3SLABCTLUPPERTILED     BS3_DATA_NM(g_Bs3Mem4KUpperTiled);
 
 
 /** The number of chunk sizes used by the slab list arrays
  * (g_aBs3LowSlabLists, g_aBs3UpperTiledSlabLists, more?). */
 #define BS3_MEM_SLAB_LIST_COUNT 6
 
+extern uint8_t const            BS3_DATA_NM(g_aiBs3SlabListsByPowerOfTwo)[12];
 extern uint16_t const           BS3_DATA_NM(g_acbBs3SlabLists)[BS3_MEM_SLAB_LIST_COUNT];
 extern BS3SLABHEAD              BS3_DATA_NM(g_aBs3LowSlabLists)[BS3_MEM_SLAB_LIST_COUNT];
 extern BS3SLABHEAD              BS3_DATA_NM(g_aBs3UpperTiledSlabLists)[BS3_MEM_SLAB_LIST_COUNT];
+extern uint16_t const           BS3_DATA_NM(g_cbBs3SlabCtlSizesforLists)[BS3_MEM_SLAB_LIST_COUNT];
+
+
+/**
+ * Translates a allocation request size to a slab list index.
+ *
+ * @returns Slab list index if small request, UINT8_MAX if large.
+ * @param   cbRequest   The number of bytes requested.
+ */
+DECLINLINE(uint8_t) bs3MemSizeToSlabListIndex(size_t cbRequest)
+{
+    if (cbRequest <= BS3_DATA_NM(g_acbBs3SlabLists)[BS3_MEM_SLAB_LIST_COUNT - 1])
+        return BS3_DATA_NM(g_aiBs3SlabListsByPowerOfTwo)[cbRequest ? ASMBitLastSetU16((uint16_t)(cbRequest - 1)) : 0];
+    return UINT8_MAX;
+}
 
 
 RT_C_DECLS_END;

@@ -32,24 +32,18 @@ BS3_DECL(void BS3_FAR *) Bs3SlabListAlloc(PBS3SLABHEAD pHead)
 {
     if (pHead->cFreeChunks)
     {
-        PBS3SLABCLT pCur;
-        for (pCur = BS3_XPTR_GET(BS3SLABCLT, pHead->pFirst);
+        PBS3SLABCTL pCur;
+        for (pCur = BS3_XPTR_GET(BS3SLABCTL, pHead->pFirst);
              pCur != NULL;
-             pCur = BS3_XPTR_GET(BS3SLABCLT, pCur->pNext))
+             pCur = BS3_XPTR_GET(BS3SLABCTL, pCur->pNext))
         {
             if (pCur->cFreeChunks)
             {
-                int32_t iBit = ASMBitFirstClear(&pCur->bmAllocated, pCur->cChunks);
-                if (iBit >= 0)
+                void BS3_FAR *pvRet = Bs3SlabAlloc(pCur);
+                if (pvRet)
                 {
-                    BS3_XPTR_AUTO(void, pvRet);
-                    ASMBitSet(&pCur->bmAllocated, iBit);
-                    pCur->cFreeChunks  -= 1;
                     pHead->cFreeChunks -= 1;
-
-                    BS3_XPTR_SET_FLAT(void, pvRet,
-                                      BS3_XPTR_GET_FLAT(uint8_t, pCur->pbStart) + ((uint32_t)iBit << pCur->cChunkShift));
-                    return BS3_XPTR_GET(void, pvRet);
+                    return pvRet;
                 }
             }
         }

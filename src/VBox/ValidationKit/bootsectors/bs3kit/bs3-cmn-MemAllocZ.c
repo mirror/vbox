@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3SlabListAllocEx
+ * BS3Kit - Bs3MemAllocZ
  */
 
 /*
@@ -24,31 +24,19 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
+#include "bs3-cmn-memory.h"
 #include <iprt/asm.h>
 
 
-BS3_DECL(void BS3_FAR *) Bs3SlabListAllocEx(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags)
+BS3_DECL(void BS3_FAR *) Bs3MemAllocZ(BS3MEMKIND enmKind, size_t cb)
 {
-    BS3_ASSERT(!(fFlags & ~BS3_SLAB_ALLOC_F_SAME_TILE));
-    if (pHead->cFreeChunks >= cChunks)
-    {
-        PBS3SLABCTL pCur;
-        for (pCur = BS3_XPTR_GET(BS3SLABCTL, pHead->pFirst);
-             pCur != NULL;
-             pCur = BS3_XPTR_GET(BS3SLABCTL, pCur->pNext))
-        {
-            if (pCur->cFreeChunks >= cChunks)
-            {
-                void BS3_FAR *pvRet = Bs3SlabAllocEx(pCur, cChunks, fFlags);
-                if (pvRet)
-                {
-                    pHead->cFreeChunks -= cChunks;
-                    return pvRet;
-                }
-            }
-        }
-    }
-    return NULL;
+    void BS3_FAR *pvRet = Bs3MemAlloc(enmKind, cb);
+    if (pvRet)
+        Bs3MemZero(pvRet, cb);
+    return pvRet;
 }
 

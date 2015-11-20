@@ -28,7 +28,7 @@
 #include <iprt/asm.h>
 
 
-BS3_DECL(uint16_t) Bs3SlabFree(PBS3SLABCLT pSlabCtl, uint32_t uFlatChunkPtr, uint16_t cChunks)
+BS3_DECL(uint16_t) Bs3SlabFree(PBS3SLABCTL pSlabCtl, uint32_t uFlatChunkPtr, uint16_t cChunks)
 {
     uint16_t cFreed = 0;
     BS3_ASSERT(cChunks > 0);

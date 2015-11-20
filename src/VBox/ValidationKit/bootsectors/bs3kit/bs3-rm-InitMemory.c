@@ -98,10 +98,28 @@ BS3_DECL(uint32_t) Bs3BiosInt15hE820(INT15E820ENTRY BS3_FAR *pEntry, size_t cbEn
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Slab control structure for the 4K management of low memory (< 1MB). */
-BS3SLABCLTLOW           BS3_DATA_NM(g_Bs3Mem4KLow);
+BS3SLABCTLLOW           BS3_DATA_NM(g_Bs3Mem4KLow);
 /** Slab control structure for the 4K management of tiled upper memory,
  *  between 1 MB and 16MB. */
 BS3SLABCTLUPPERTILED    BS3_DATA_NM(g_Bs3Mem4KUpperTiled);
+
+
+/** Translates a power of two request size to an slab list index. */
+uint8_t const           BS3_DATA_NM(g_aiBs3SlabListsByPowerOfTwo)[12] =
+{
+    /* 2^0  =    1 */  0,
+    /* 2^1  =    2 */  0,
+    /* 2^2  =    4 */  0,
+    /* 2^3  =    8 */  0,
+    /* 2^4  =   16 */  0,
+    /* 2^5  =   32 */  1,
+    /* 2^6  =   64 */  2,
+    /* 2^7  =  128 */  3,
+    /* 2^8  =  256 */  4,
+    /* 2^9  =  512 */  5,
+    /* 2^10 = 1024 */  -1
+    /* 2^11 = 2048 */  -1
+};
 
 /** The slab list chunk sizes. */
 uint16_t const          BS3_DATA_NM(g_acbBs3SlabLists)[BS3_MEM_SLAB_LIST_COUNT] =
@@ -113,10 +131,23 @@ uint16_t const          BS3_DATA_NM(g_acbBs3SlabLists)[BS3_MEM_SLAB_LIST_COUNT] 
     256,
     512,
 };
+
 /** Low memory slab lists, sizes given by g_acbBs3SlabLists. */
 BS3SLABHEAD             BS3_DATA_NM(g_aBs3LowSlabLists)[BS3_MEM_SLAB_LIST_COUNT];
 /** Upper tiled memory slab lists, sizes given by g_acbBs3SlabLists. */
 BS3SLABHEAD             BS3_DATA_NM(g_aBs3UpperTiledSlabLists)[BS3_MEM_SLAB_LIST_COUNT];
+
+/** Slab control structure sizes for the slab lists.
+ * This is to help the allocator when growing a list. */
+uint16_t const          BS3_DATA_NM(g_cbBs3SlabCtlSizesforLists)[BS3_MEM_SLAB_LIST_COUNT] =
+{
+    RT_ALIGN(sizeof(BS3SLABCTL) - 4 + (4096 / 16  / 8 /*=32*/), 16),
+    RT_ALIGN(sizeof(BS3SLABCTL) - 4 + (4096 / 32  / 8 /*=16*/), 32),
+    RT_ALIGN(sizeof(BS3SLABCTL) - 4 + (4096 / 64  / 8 /*=8*/),  64),
+    RT_ALIGN(sizeof(BS3SLABCTL) - 4 + (4096 / 128 / 8 /*=4*/), 128),
+    RT_ALIGN(sizeof(BS3SLABCTL) - 4 + (4096 / 256 / 8 /*=2*/), 256),
+    RT_ALIGN(sizeof(BS3SLABCTL) - 4 + (4096 / 512 / 8 /*=1*/), 512),
+};
 
 
 
@@ -140,42 +171,44 @@ BS3_DECL(void) Bs3InitMemory_rm(void)
      *      - 0xc8000 to 0xeffff - ROMs, tables, unusable.
      *      - 0xf0000 to 0xfffff - PC BIOS.
      */
-    Bs3SlabInit(&g_Bs3Mem4KLow.Core, sizeof(g_Bs3Mem4KLow), 0 /*uFlatSlabPtr*/, 0xA0000 /* 640 KB*/, _4K);
+    Bs3SlabInit(&BS3_DATA_NM(g_Bs3Mem4KLow).Core, sizeof(BS3_DATA_NM(g_Bs3Mem4KLow)),
+                0 /*uFlatSlabPtr*/, 0xA0000 /* 640 KB*/, _4K);
 
     /* Mark the stacks and whole image as allocated. */
     cPages  = (BS3_DATA_NM(Bs3TotalImageSize) + _4K - 1U) >> 12;
-    ASMBitSetRange(g_Bs3Mem4KLow.Core.bmAllocated, 0, 0x10 + cPages);
+    ASMBitSetRange(BS3_DATA_NM(g_Bs3Mem4KLow).Core.bmAllocated, 0, 0x10 + cPages);
 
     /* Mark any unused pages between BS3TEXT16 and BS3SYSTEM16 as free. */
     cPages = (BS3_DATA_NM(Bs3Text16_Size) + _4K - 1U) >> 12;
-    ASMBitClearRange(g_Bs3Mem4KLow.Core.bmAllocated, 0x10U + cPages, 0x20U);
+    ASMBitClearRange(BS3_DATA_NM(g_Bs3Mem4KLow).Core.bmAllocated, 0x10U + cPages, 0x20U);
 
     /* In case the system has less than 640KB of memory, check the BDA variable for it. */
     cPages = *(uint16_t BS3_FAR *)BS3_FP_MAKE(0x0000, 0x0413); /* KB of low memory */
     if (cPages < 640)
     {
         cPages = 640 - cPages;
+        cPages = RT_ALIGN(cPages, 4);
         cPages >>= 2;
-        ASMBitSetRange(g_Bs3Mem4KLow.Core.bmAllocated, 0xA0 - cPages, 0xA0);
+        ASMBitSetRange(BS3_DATA_NM(g_Bs3Mem4KLow).Core.bmAllocated, 0xA0 - cPages, 0xA0);
     }
     else
-        ASMBitSet(g_Bs3Mem4KLow.Core.bmAllocated, 0x9F);
+        ASMBitSet(BS3_DATA_NM(g_Bs3Mem4KLow).Core.bmAllocated, 0x9F);
 
     /* Recalc free pages. */
     cPages = 0;
-    i = g_Bs3Mem4KLow.Core.cChunks;
+    i = BS3_DATA_NM(g_Bs3Mem4KLow).Core.cChunks;
     while (i-- > 0)
-        cPages += ASMBitTest(g_Bs3Mem4KLow.Core.bmAllocated, i);
-    g_Bs3Mem4KLow.Core.cFreeChunks = cPages;
-
+        cPages += !ASMBitTest(BS3_DATA_NM(g_Bs3Mem4KLow).Core.bmAllocated, i);
+    BS3_DATA_NM(g_Bs3Mem4KLow).Core.cFreeChunks = cPages;
 
     /*
      * First 16 MB of memory above 1MB.  We start out by marking it all allocated.
      */
-    Bs3SlabInit(&g_Bs3Mem4KUpperTiled.Core, sizeof(g_Bs3Mem4KUpperTiled), _1M, BS3_SEL_TILED_AREA_SIZE - _1M, _4K);
+    Bs3SlabInit(&BS3_DATA_NM(g_Bs3Mem4KUpperTiled).Core, sizeof(BS3_DATA_NM(g_Bs3Mem4KUpperTiled)),
+                _1M, BS3_SEL_TILED_AREA_SIZE - _1M, _4K);
 
-    ASMBitSetRange(g_Bs3Mem4KUpperTiled.Core.bmAllocated, 0, g_Bs3Mem4KUpperTiled.Core.cChunks);
-    g_Bs3Mem4KUpperTiled.Core.cFreeChunks = 0;
+    ASMBitSetRange(BS3_DATA_NM(g_Bs3Mem4KUpperTiled).Core.bmAllocated, 0, BS3_DATA_NM(g_Bs3Mem4KUpperTiled).Core.cChunks);
+    BS3_DATA_NM(g_Bs3Mem4KUpperTiled).Core.cFreeChunks = 0;
 
     /* Ask the BIOS about where there's memory, and make pages in between 1MB
        and BS3_SEL_TILED_AREA_SIZE present.  This means we're only interested
@@ -234,8 +267,8 @@ BS3_DECL(void) Bs3InitMemory_rm(void)
                             i = uRange >> 12; /*div _4K*/
                             while (cPages-- > 0)
                             {
-                                g_Bs3Mem4KUpperTiled.Core.cFreeChunks += !ASMBitTestAndSet(g_Bs3Mem4KUpperTiled.Core.bmAllocated,
-                                                                                            i);
+                                uint16_t uLineToLong = ASMBitTestAndClear(g_Bs3Mem4KUpperTiled.Core.bmAllocated, i);
+                                BS3_DATA_NM(g_Bs3Mem4KUpperTiled).Core.cFreeChunks += uLineToLong;
                                 i++;
                             }
                         }

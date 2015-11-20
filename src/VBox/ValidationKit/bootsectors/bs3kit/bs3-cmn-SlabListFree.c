@@ -32,13 +32,13 @@ BS3_DECL(void) Bs3SlabListFree(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint1
     BS3_ASSERT(cChunks > 0);
     if (cChunks > 0)
     {
-        PBS3SLABCLT         pCur;
+        PBS3SLABCTL         pCur;
         BS3_XPTR_AUTO(void, pvFlatChunk);
         BS3_XPTR_SET(void,  pvFlatChunk, pvChunks);
 
-        for (pCur = BS3_XPTR_GET(BS3SLABCLT, pHead->pFirst);
+        for (pCur = BS3_XPTR_GET(BS3SLABCTL, pHead->pFirst);
              pCur != NULL;
-             pCur = BS3_XPTR_GET(BS3SLABCLT, pCur->pNext))
+             pCur = BS3_XPTR_GET(BS3SLABCTL, pCur->pNext))
         {
             if (  ((BS3_XPTR_GET_FLAT(void, pvFlatChunk) - BS3_XPTR_GET_FLAT(uint8_t, pCur->pbStart)) >> pCur->cChunkShift)
                 < pCur->cChunks)

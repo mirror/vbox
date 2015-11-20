@@ -30,11 +30,11 @@
 BS3_EXTERN_CMN Bs3PrintStr
 
 ;;
-; Prints a 32-bit unsigned integer value.
+; Prints a 32-bit unsigned integer value as hex.
 ;
 ; @param    [xBP + xCB*2]   32-bit value to format and print.
 ;
-BS3_PROC_BEGIN_CMN Bs3PrintU32
+BS3_PROC_BEGIN_CMN Bs3PrintX32
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
@@ -54,10 +54,14 @@ BS3_PROC_BEGIN_CMN Bs3PrintU32
         add     xBX, 2fh
         mov     byte [xBX], 0
 
-        mov     ecx, 10                 ; what to divide by
+        mov     ecx, 16                 ; what to divide by
 .next:
         xor     edx, edx
         div     ecx                     ; edx:eax / ecx -> eax and rest in edx.
+        cmp     dl, 10
+        jb      .decimal
+        add     dl, 'a' - '0' - 10
+.decimal:
         add     dl, '0'
         dec     xBX
         mov     [BS3_ONLY_16BIT(ss:)xBX], dl
@@ -78,5 +82,5 @@ BS3_PROC_BEGIN_CMN Bs3PrintU32
         leave
         BS3_CALL_CONV_EPILOG 1
         ret
-BS3_PROC_END_CMN   Bs3PrintU32
+BS3_PROC_END_CMN   Bs3PrintX32
 
