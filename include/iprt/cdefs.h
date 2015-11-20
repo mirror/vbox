@@ -982,7 +982,7 @@
  * @remarks The regparm(0) in the X86/GNUC variant deals with -mregparm=x use in
  *          the linux kernel and potentially elsewhere (3rd party).
  */
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 # define RTCALL                 __cdecl
 #elif defined(RT_OS_OS2)
 # define RTCALL                 __cdecl
