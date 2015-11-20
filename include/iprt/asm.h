@@ -4410,16 +4410,16 @@ DECLINLINE(void) ASMBitClearRange(volatile void *pvBitmap, int32_t iBitStart, in
     if (iBitStart < iBitEnd)
     {
         volatile uint32_t *pu32 = (volatile uint32_t *)pvBitmap + (iBitStart >> 5);
-        int iStart = iBitStart & ~31;
-        int iEnd   = iBitEnd & ~31;
+        int32_t iStart = iBitStart & ~31;
+        int32_t iEnd   = iBitEnd & ~31;
         if (iStart == iEnd)
-            *pu32 &= ((1U << (iBitStart & 31)) - 1) | ~((1U << (iBitEnd & 31)) - 1);
+            *pu32 &= ((UINT32_C(1) << (iBitStart & 31)) - 1) | ~((UINT32_C(1) << (iBitEnd & 31)) - 1);
         else
         {
             /* bits in first dword. */
             if (iBitStart & 31)
             {
-                *pu32 &= (1U << (iBitStart & 31)) - 1;
+                *pu32 &= (UINT32_C(1) << (iBitStart & 31)) - 1;
                 pu32++;
                 iBitStart = iStart + 32;
             }
@@ -4432,7 +4432,7 @@ DECLINLINE(void) ASMBitClearRange(volatile void *pvBitmap, int32_t iBitStart, in
             if (iBitEnd & 31)
             {
                 pu32 = (volatile uint32_t *)pvBitmap + (iBitEnd >> 5);
-                *pu32 &= ~((1U << (iBitEnd & 31)) - 1);
+                *pu32 &= ~((UINT32_C(1) << (iBitEnd & 31)) - 1);
             }
         }
     }
@@ -4451,16 +4451,16 @@ DECLINLINE(void) ASMBitSetRange(volatile void *pvBitmap, int32_t iBitStart, int3
     if (iBitStart < iBitEnd)
     {
         volatile uint32_t *pu32 = (volatile uint32_t *)pvBitmap + (iBitStart >> 5);
-        int iStart = iBitStart & ~31;
-        int iEnd   = iBitEnd & ~31;
+        int32_t iStart = iBitStart & ~31;
+        int32_t iEnd   = iBitEnd & ~31;
         if (iStart == iEnd)
-            *pu32 |= ((1U << (iBitEnd - iBitStart)) - 1) << (iBitStart & 31);
+            *pu32 |= ((UINT32_C(1) << (iBitEnd - iBitStart)) - 1) << (iBitStart & 31);
         else
         {
             /* bits in first dword. */
             if (iBitStart & 31)
             {
-                *pu32 |= ~((1U << (iBitStart & 31)) - 1);
+                *pu32 |= ~((UINT32_C(1) << (iBitStart & 31)) - 1);
                 pu32++;
                 iBitStart = iStart + 32;
             }
@@ -4473,7 +4473,7 @@ DECLINLINE(void) ASMBitSetRange(volatile void *pvBitmap, int32_t iBitStart, int3
             if (iBitEnd & 31)
             {
                 pu32 = (volatile uint32_t *)pvBitmap + (iBitEnd >> 5);
-                *pu32 |= (1U << (iBitEnd & 31)) - 1;
+                *pu32 |= (UINT32_C(1) << (iBitEnd & 31)) - 1;
             }
         }
     }
