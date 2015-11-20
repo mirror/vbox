@@ -27,18 +27,10 @@
 #
 
 [Binaries.Ia32]
-#!ifndef $(VBOX)
-#  RAW|ResetVector.ia32.raw|*
-#!else
-  RAW|$(VBOX_RESET_VECTOR_X86)|*
-#!endif
+  RAW|ResetVector.ia32.raw|*
 
 [Binaries.X64]
-#!ifndef $(VBOX)
-#  RAW|ResetVector.x64.raw|*
-#!else
-  RAW|$(VBOX_RESET_VECTOR_AMD64)|*
-#!endif
+  RAW|ResetVector.x64.raw|*
 
 [UserExtensions.TianoCore."ExtraFiles"]
   ResetVectorExtra.uni
