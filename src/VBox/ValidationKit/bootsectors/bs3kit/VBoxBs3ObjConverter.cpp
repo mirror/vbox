@@ -495,6 +495,87 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
 }
 
 
+#define PUBDEF  UINT8_C(0x90)
+#define THEADR  UINT8_C(0x80)
+#define EXTDEF  UINT8_C(0x88)
+#define SEGDEF  UINT8_C(0x98)
+#define LNAMES  UINT8_C(0x96)
+#define GRPDEF  UINT8_C(0x9a)
+#define REC32   UINT8_C(0x01) /**< Flag indicating 32-bit record. */
+
+/**
+ * Renames references to intrinsic helper functions so they won't clash between
+ * 32-bit and 16-bit code.
+ *
+ * @returns true / false.
+ * @param   pszFile     File name for complaining.
+ * @param   pbFile      Pointer to the file content.
+ * @param   cbFile      Size of the file content.
+ */
+static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
+{
+    const char    **papchLNames = (const char **)calloc(sizeof(*papchLNames), _64K);
+    uint32_t        cLNames = 0;
+    bool            fProbably32bit = false;
+    uint32_t        off;
+
+    while (off + 3 < cbFile)
+    {
+        uint8_t     bRecType = pbFile[off];
+        uint16_t    cbRec    = RT_MAKE_U16(pbFile[off + 1], pbFile[off + 2]);
+        if (g_cVerbose > 2)
+            printf( "%#07x: type=%#04x len=%#06x\n", off, bRecType, cbRec);
+        if (off + cbRec > cbFile)
+            return error(pszFile, "Invalid record length at %#x: %#x (cbFile=%#lx)\n", off, cbRec, (unsigned long)cbFile);
+
+        if (bRecType & REC32)
+            fProbably32bit = true;
+
+        uint32_t offRec = 0;
+        uint8_t *pbRec  = &pbFile[off + 3];
+        switch (bRecType)
+        {
+            /*
+             * Scan external definitions for intrinsics needing mangling.
+             */
+            case EXTDEF:
+            {
+                break;
+            }
+
+            /*
+             * Record LNAME records, scanning for FLAT.
+             */
+            case LNAMES:
+            {
+                while (offRec + 1 < cbRec)
+                {
+                    uint8_t cch = *pbRec[offRec];
+                    if (offRec + 1 + cch >= cb)
+                    {
+                    }
+                }
+                break;
+            }
+
+            /*
+             * Display public names if -v is specified.
+             */
+            case PUBDEF:
+            case PUBDEF | REC32:
+                if (g_cVerbose > 0)
+                {
+
+                }
+                break;
+        }
+
+        /* advance */
+        off += cbRec + 3;
+    }
+    return true;
+}
+
 
 /**
  * Does the convertion using convertelf and convertcoff.
@@ -522,6 +603,10 @@ static int convertit(const char *pszFile)
                     < cbFile
                  && RT_MAKE_U16(pbFile[2], pbFile[3]) > 0)
             fRc = convertcoff(pszFile, pbFile, cbFile);
+        else if (   cbFile >= 8
+                 && pbFile[0] == THEADR
+                 && RT_MAKE_U16(pbFile[1], pbFile[2]) < cbFile)
+            fRc = convertomf(pszFile, pbFile, cbFile);
         else
             fprintf(stderr, "error: Don't recognize format of '%s' (%#x %#x %#x %#x, cbFile=%lu)\n",
                     pszFile, pbFile[0], pbFile[1], pbFile[2], pbFile[3], (unsigned long)cbFile);
