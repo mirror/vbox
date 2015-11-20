@@ -675,8 +675,14 @@ int netIfNetworkInterfaceHelperServer(SVCHlpClient *aClient,
             Bstr name;
             Bstr bstrErr;
 
+#ifdef VBOXNETCFG_DELAYEDRENAME
+            Bstr devId;
+            hrc = VBoxNetCfgWinCreateHostOnlyNetworkInterface(NULL, false, guid.asOutParam(), devId.asOutParam(),
+                                                              bstrErr.asOutParam());
+#else /* !VBOXNETCFG_DELAYEDRENAME */
             hrc = VBoxNetCfgWinCreateHostOnlyNetworkInterface(NULL, false, guid.asOutParam(), name.asOutParam(),
                                                               bstrErr.asOutParam());
+#endif /* !VBOXNETCFG_DELAYEDRENAME */
 
             if (hrc == S_OK)
             {
@@ -688,8 +694,16 @@ int netIfNetworkInterfaceHelperServer(SVCHlpClient *aClient,
                      * i.e. 192.168.xxx.0, assign  192.168.xxx.1 for the hostonly adapter */
                     ip = ip | (1 << 24);
                     hrc = VBoxNetCfgWinEnableStaticIpConfig((const GUID*)guid.raw(), ip, mask);
+                    if (hrc != S_OK)
+                        LogRel(("VBoxNetCfgWinEnableStaticIpConfig failed (0x%x)\n", hrc));
                 }
-
+                else
+                    LogRel(("VBoxNetCfgWinGenHostOnlyNetworkNetworkIp failed (0x%x)\n", hrc));
+#ifdef VBOXNETCFG_DELAYEDRENAME
+                hrc = VBoxNetCfgWinRenameHostOnlyConnection((const GUID*)guid.raw(), devId.raw(), name.asOutParam());
+                if (hrc != S_OK)
+                    LogRel(("VBoxNetCfgWinRenameHostOnlyConnection failed, error = 0x%x", hrc));
+#endif /* VBOXNETCFG_DELAYEDRENAME */
                 /* write success followed by GUID */
                 vrc = aClient->write(SVCHlpMsg::CreateHostOnlyNetworkInterface_OK);
                 if (RT_FAILURE(vrc)) break;

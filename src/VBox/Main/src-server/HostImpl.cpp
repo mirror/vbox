@@ -1542,7 +1542,7 @@ HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
 
     if (!found)
         return setError(E_INVALIDARG,
-                        HostNetworkInterface::tr("The host network interface with the given name could not be found"));
+                        HostNetworkInterface::tr("The host network interface named '%s' could not be found"), aName.c_str());
 
     return found.queryInterfaceTo(aNetworkInterface.asOutParam());
 #endif

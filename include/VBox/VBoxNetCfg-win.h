@@ -27,6 +27,15 @@
 #ifndef ___VBox_VBoxNetCfg_win_h
 #define ___VBox_VBoxNetCfg_win_h
 
+/*
+ * Defining VBOXNETCFG_DELAYEDRENAME postpones renaming of host-only adapter
+ * connection during adapter creation after it has been assigned with an
+ * IP address. This hopefully prevents collisions that may happen when we
+ * attempt to rename a connection too early, while its configuration is
+ * still being 'committed' by the network setup engine.
+ */
+#define VBOXNETCFG_DELAYEDRENAME
+
 #include <winsock2.h>
 #include <Windows.h>
 #include <Netcfgn.h>
@@ -70,9 +79,16 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetLwfUninstall(IN INetCfg *pNc);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, IN LPCWSTR pwszId);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpInstall(IN INetCfg *pNc,IN LPCWSTR const pInfFullPath);
 
+#ifndef VBOXNETCFG_DELAYEDRENAME
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile,
                                                                         OUT GUID *pGuid, OUT BSTR *lppszName,
                                                                         OUT BSTR *pErrMsg);
+#else /* VBOXNETCFG_DELAYEDRENAME */
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile,
+                                                                        OUT GUID *pGuid, OUT BSTR *lppszId,
+                                                                        OUT BSTR *pErrMsg);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameHostOnlyConnection(IN const GUID *pGuid, IN LPCWSTR pszId,  OUT BSTR *pDevName);
+#endif /* VBOXNETCFG_DELAYEDRENAME */
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUpdateHostOnlyNetworkInterface(LPCWSTR pcsxwInf, BOOL *pbRebootRequired, LPCWSTR pcsxwId);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const GUID *pGUID, OUT BSTR *pErrMsg);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveAllNetDevicesOfId(IN LPCWSTR lpszPnPId);
