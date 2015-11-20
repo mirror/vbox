@@ -144,43 +144,6 @@ VBoxEfiFirmwareCleanup:
 
 
 #
-# The reset vector code.
-#
-
-# Dummy Linker.
-TOOL_VBoxEfiResetVectorLd = Dummy linker for the EFI reset vectors.
-TOOL_VBoxEfiResetVectorLd_LINK_MISCBIN_OUTPUT =
-TOOL_VBoxEfiResetVectorLd_LINK_MISCBIN_DEPEND =
-TOOL_VBoxEfiResetVectorLd_LINK_MISCBIN_DEPORD =
-define TOOL_VBoxEfiResetVectorLd_LINK_MISCBIN_CMDS
-	$(VBOX_BLD_PYTHON) $(VBOX_PATH_EFI_FIRMWARE)/UefiCpuPkg/ResetVector/Vtf0/Tools/FixupForRawSection.py \
-		"$(objs)" \
-		"$(out)"
-endef
-
-# Makes a boot sector test image.
-TEMPLATE_VBoxEfiResetVectorRaw = kBuild tool config for building the EFI reset vectors.
-TEMPLATE_VBoxEfiResetVectorRaw_INSTTYPE = none
-TEMPLATE_VBoxEfiResetVectorRaw_BINSUFF = .raw
-TEMPLATE_VBoxEfiResetVectorRaw_MODE    = 0644
-TEMPLATE_VBoxEfiResetVectorRaw_ASTOOL  = YASM
-TEMPLATE_VBoxEfiResetVectorRaw_ASFLAGS:= -f bin $(VBOX_YASM_Wno-segreg-in-64bit) --mapfile
-TEMPLATE_VBoxEfiResetVectorRaw_ASDEFS  = ASM_FORMAT_BIN __YASM__
-TEMPLATE_VBoxEfiResetVectorRaw_INCS    = UefiCpuPkg/ResetVector/Vtf0
-TEMPLATE_VBoxEfiResetVectorRaw_LDTOOL  = VBoxEfiResetVectorLd
-
-MISCBINS += VBoxEfiResetVector-x86
-VBoxEfiResetVector-x86_TEMPLATE = VBoxEfiResetVectorRaw
-VBoxEfiResetVector-x86_DEFS     = ARCH_IA32 RT_ARCH_X86 DEBUG_NONE
-VBoxEfiResetVector-x86_SOURCES  = OvmfPkg/ResetVector/ResetVectorCode.asm
-
-MISCBINS += VBoxEfiResetVector-amd64
-VBoxEfiResetVector-amd64_TEMPLATE = VBoxEfiResetVectorRaw
-VBoxEfiResetVector-amd64_DEFS     = ARCH_X64 RT_ARCH_AMD64 DEBUG_NONE
-VBoxEfiResetVector-amd64_SOURCES  = OvmfPkg/ResetVector/ResetVectorCode.asm
-
-
-#
 # The zipfile.
 #
 include $(KBUILD_PATH)/tools/ZIP.kmk
@@ -266,8 +229,6 @@ VBOX_EFI_BUILD_CMD += \
 	-D VBOX_REV=$(VBOX_SVN_REV) \
 	-D "VBOX_OUTPUT_BASE_DIR=$(VBoxEfiFirmware_0_OUTDIR)" \
 	-D "VBOX_PATH_ROOT=$(PATH_ROOT)" \
-	-D "VBOX_RESET_VECTOR_X86=$(VBoxEfiResetVector-x86_1_TARGET)" \
-	-D "VBOX_RESET_VECTOR_AMD64=$(VBoxEfiResetVector-amd64_1_TARGET)" \
 	-D "FD_SIZE_2MB=1" \
 	$(if $(VBOX_OSE),-D "VBOX_OSE=1") \
 	$(if-expr "$(KBUILD_VERBOSE)" != "",$(if-expr "$(KBUILD_VERBOSE)" >= 3,-v,),--silent --quiet) \
