@@ -265,17 +265,27 @@ RT_C_DECLS_BEGIN
 
 
 /** @def BS3_FAR
- * For inidicating far pointers in 16-bit code.
+ * For indicating far pointers in 16-bit code.
  * Does nothing in 32-bit and 64-bit code. */
 /** @def BS3_NEAR
- * For inidicating near pointers in 16-bit code.
+ * For indicating near pointers in 16-bit code.
+ * Does nothing in 32-bit and 64-bit code. */
+/** @def BS3_FAR_CODE
+ * For indicating far 16-bit functions.
+ * Does nothing in 32-bit and 64-bit code. */
+/** @def BS3_NEAR_CODE
+ * For indicating near 16-bit functions.
  * Does nothing in 32-bit and 64-bit code. */
 #ifdef M_I86
 # define BS3_FAR            __far
 # define BS3_NEAR           __near
+# define BS3_FAR_CODE       __far
+# define BS3_NEAR_CODE      __near
 #else
 # define BS3_FAR
 # define BS3_NEAR
+# define BS3_FAR_CODE
+# define BS3_NEAR_CODE
 #endif
 
 #if ARCH_BITS == 16 || defined(DOXYGEN_RUNNING)
@@ -317,11 +327,14 @@ RT_C_DECLS_BEGIN
 
 /** @def BS3_DECL
  * Declares a BS3Kit function.
+ *
+ * Until we outgrow BS3TEXT16, we use all near functions in 16-bit.
+ *
  * @param a_Type        The return type. */
 #ifdef IN_BS3KIT
-# define BS3_DECL(a_Type)   DECLEXPORT(a_Type) BS3_CALL
+# define BS3_DECL(a_Type)   DECLEXPORT(a_Type) BS3_NEAR_CODE BS3_CALL
 #else
-# define BS3_DECL(a_Type)   DECLIMPORT(a_Type) BS3_CALL
+# define BS3_DECL(a_Type)   DECLIMPORT(a_Type) BS3_NEAR_CODE BS3_CALL
 #endif
 
 /**
@@ -983,13 +996,15 @@ BS3_DECL(void) Bs3PrintChr_c64(char ch); /**< @copydoc Bs3PrintChr_c16 */
 
 
 /**
- * Pointer to a #Bs3StrFormatV output function.
+ * An output function for #Bs3StrFormatV.
  *
  * @returns Number of characters written.
  * @param   ch      The character to write. Zero in the final call.
  * @param   pvUser  User argument supplied to #Bs3StrFormatV.
  */
-typedef size_t (BS3_CALL *PFNBS3STRFORMATOUTPUT)(char ch, void *pvUser);
+typedef size_t BS3_CALL FNBS3STRFORMATOUTPUT(char ch, void BS3_FAR *pvUser);
+/** Pointer to an output function for #Bs3StrFormatV. */
+typedef FNBS3STRFORMATOUTPUT BS3_NEAR_CODE *PFNBS3STRFORMATOUTPUT;
 
 /**
  * Formats a string, sending the output to @a pfnOutput.
@@ -1011,11 +1026,14 @@ typedef size_t (BS3_CALL *PFNBS3STRFORMATOUTPUT)(char ch, void *pvUser);
  * @param   pfnOutput   The output function.
  * @param   pvUser      The user argument for the output function.
  */
-BS3_DECL(size_t) Bs3StrFormatV_c16(const char BS3_FAR *pszFormat, va_list va, PFNBS3STRFORMATOUTPUT pfnOutput, void *pvUser);
+BS3_DECL(size_t) Bs3StrFormatV_c16(const char BS3_FAR *pszFormat, va_list va,
+                                   PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser);
 /** @copydoc Bs3StrFormatV_c16  */
-BS3_DECL(size_t) Bs3StrFormatV_c32(const char BS3_FAR *pszFormat, va_list va, PFNBS3STRFORMATOUTPUT pfnOutput, void *pvUser);
+BS3_DECL(size_t) Bs3StrFormatV_c32(const char BS3_FAR *pszFormat, va_list va,
+                                   PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser);
 /** @copydoc Bs3StrFormatV_c16  */
-BS3_DECL(size_t) Bs3StrFormatV_c64(const char BS3_FAR *pszFormat, va_list va, PFNBS3STRFORMATOUTPUT pfnOutput, void *pvUser);
+BS3_DECL(size_t) Bs3StrFormatV_c64(const char BS3_FAR *pszFormat, va_list va,
+                                   PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser);
 #define Bs3StrFormatV BS3_CMN_NM(Bs3StrFormatV) /**< Selects #Bs3StrFormatV_c16, #Bs3StrFormatV_c32 or #Bs3StrFormatV_c64. */
 
 /**

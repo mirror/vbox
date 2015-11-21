@@ -360,7 +360,8 @@ static size_t bs3StrFormatS16(PBS3FMTSTATE pState, int16_t iValue)
 #endif
 
 
-BS3_DECL(size_t) Bs3StrFormatV(const char BS3_FAR *pszFormat, va_list va, PFNBS3STRFORMATOUTPUT pfnOutput, void *pvUser)
+BS3_DECL(size_t) Bs3StrFormatV(const char BS3_FAR *pszFormat, va_list va,
+                               PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser)
 {
     BS3FMTSTATE State;
     size_t      cchRet = 0;
@@ -371,7 +372,7 @@ BS3_DECL(size_t) Bs3StrFormatV(const char BS3_FAR *pszFormat, va_list va, PFNBS3
 
     while ((ch = *pszFormat++) != '\0')
     {
-        char        chArgSize;
+        char chArgSize;
 
         /*
          * Deal with plain chars.

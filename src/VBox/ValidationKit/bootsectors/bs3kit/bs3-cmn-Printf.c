@@ -28,11 +28,11 @@
 #include <iprt/ctype.h>
 
 
-BS3_DECL(size_t) bs3PrintFmtOutput(char ch, void *pvUser)
+BS3_DECL(size_t) bs3PrintFmtOutput(char ch, void BS3_FAR *pvUser)
 {
-    if (ch)
+    if (ch != '\0')
     {
-        if (ch != '\n')
+        if (ch == '\n')
             Bs3PrintChr('\r');
         Bs3PrintChr(ch);
         return 1;
