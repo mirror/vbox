@@ -936,53 +936,30 @@ BS3_DECL(void) Bs3PrintX32_c64(uint32_t uValue); /**< @copydoc Bs3PrintX32_c16 *
 #define Bs3PrintX32 BS3_CMN_NM(Bs3PrintX32) /**< Selects #Bs3PrintX32_c16, #Bs3PrintX32_c32 or #Bs3PrintX32_c64. */
 
 /**
- * Converts a 64-bit unsigned integer to a string.
- *
- * @returns The length for the formatted string.
- * @param   pszDst      The destination buffer.  Caller is responsible for
- *                      ensuring sufficient space.
- * @param   uValue      The 64-bit value.
- * @param   uBase       The base to format the number in: 2, 8,10 or 16.
- */
-BS3_DECL(size_t) Bs3FormatU64_c16(char BS3_FAR *pszDst, uint64_t uValue, unsigned uBase);
-BS3_DECL(size_t) Bs3FormatU64_c32(char BS3_FAR *pszDst, uint64_t uValue, unsigned uBase); /**< @copydoc Bs3FormatU64_c16 */
-BS3_DECL(size_t) Bs3FormatU64_c64(char BS3_FAR *pszDst, uint64_t uValue, unsigned uBase); /**< @copydoc Bs3FormatU64_c16 */
-#define Bs3FormatU64 BS3_CMN_NM(Bs3FormatU64) /**< Selects #Bs3FormatU64_c16, #Bs3FormatU64_c32 or #Bs3FormatU64_c64. */
-
-/**
  * Formats and prints a string to the screen.
  *
- * @param   pszFormat       The format string.  See #Bs3PrintFV for supported
- *                          format types and flags.
+ * See #Bs3StrFormatV_c16 for supported format types.
+ *
+ * @param   pszFormat       The format string.
  * @param   ...             Format arguments.
  */
-BS3_DECL(size_t) Bs3PrintF_c16(const char BS3_FAR *pszFormat, ...);
-BS3_DECL(size_t) Bs3PrintF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3PrintF_c16 */
-BS3_DECL(size_t) Bs3PrintF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3PrintF_c16 */
-#define Bs3PrintF BS3_CMN_NM(Bs3PrintF) /**< Selects #Bs3PrintF_c16, #Bs3PrintF_c32 or #Bs3PrintF_c64. */
+BS3_DECL(size_t) Bs3Printf_c16(const char BS3_FAR *pszFormat, ...);
+BS3_DECL(size_t) Bs3Printf_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3Printf_c16 */
+BS3_DECL(size_t) Bs3Printf_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3Printf_c16 */
+#define Bs3Printf BS3_CMN_NM(Bs3Printf) /**< Selects #Bs3Printf_c16, #Bs3Printf_c32 or #Bs3Printf_c64. */
 
 /**
  * Formats and prints a string to the screen, va_list version.
  *
- * Supported types:
- *      - %RI8, %RI16, %RI32, %RI64
- *      - %RU8, %RU16, %RU32, %RU64
- *      - %RX8, %RX16, %RX32, %RX64
- *      - %i, %d
- *      - %u
- *      - %x
- *      - %c
- *      - %p (far pointer)
- *      - %s (far pointer)
+ * See #Bs3Format_c16 for supported format types.
  *
- * @param   pszFormat       The format string.  See #Bs3PrintFV for supported
- *                          format types and flags.
+ * @param   pszFormat       The format string.
  * @param   va              Format arguments.
  */
-BS3_DECL(size_t) Bs3PrintFV_c16(const char BS3_FAR *pszFormat, va_list va);
-BS3_DECL(size_t) Bs3PrintFV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3PrintFV_c16 */
-BS3_DECL(size_t) Bs3PrintFV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3PrintFV_c16 */
-#define Bs3PrintFV BS3_CMN_NM(Bs3PrintFV) /**< Selects #Bs3PrintFV_c16, #Bs3PrintFV_c32 or #Bs3PrintFV_c64. */
+BS3_DECL(size_t) Bs3PrintfV_c16(const char BS3_FAR *pszFormat, va_list va);
+BS3_DECL(size_t) Bs3PrintfV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3PrintfV_c16 */
+BS3_DECL(size_t) Bs3PrintfV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3PrintfV_c16 */
+#define Bs3PrintfV BS3_CMN_NM(Bs3PrintfV) /**< Selects #Bs3PrintfV_c16, #Bs3PrintfV_c32 or #Bs3PrintfV_c64. */
 
 /**
  * Prints a string to the screen.
@@ -1003,6 +980,81 @@ BS3_DECL(void) Bs3PrintChr_c16(char ch);
 BS3_DECL(void) Bs3PrintChr_c32(char ch); /**< @copydoc Bs3PrintChr_c16 */
 BS3_DECL(void) Bs3PrintChr_c64(char ch); /**< @copydoc Bs3PrintChr_c16 */
 #define Bs3PrintChr BS3_CMN_NM(Bs3PrintChr) /**< Selects #Bs3PrintChr_c16, #Bs3PrintChr_c32 or #Bs3PrintChr_c64. */
+
+
+/**
+ * Pointer to a #Bs3StrFormatV output function.
+ *
+ * @returns Number of characters written.
+ * @param   ch      The character to write. Zero in the final call.
+ * @param   pvUser  User argument supplied to #Bs3StrFormatV.
+ */
+typedef size_t (BS3_CALL *PFNBS3STRFORMATOUTPUT)(char ch, void *pvUser);
+
+/**
+ * Formats a string, sending the output to @a pfnOutput.
+ *
+ * Supported types:
+ *      - %RI8, %RI16, %RI32, %RI64
+ *      - %RU8, %RU16, %RU32, %RU64
+ *      - %RX8, %RX16, %RX32, %RX64
+ *      - %i, %d
+ *      - %u
+ *      - %x
+ *      - %c
+ *      - %p (far pointer)
+ *      - %s (far pointer)
+ *
+ * @returns Sum of @a pfnOutput return values.
+ * @param   pszFormat   The format string.
+ * @param   va          Format arguments.
+ * @param   pfnOutput   The output function.
+ * @param   pvUser      The user argument for the output function.
+ */
+BS3_DECL(size_t) Bs3StrFormatV_c16(const char BS3_FAR *pszFormat, va_list va, PFNBS3STRFORMATOUTPUT pfnOutput, void *pvUser);
+/** @copydoc Bs3StrFormatV_c16  */
+BS3_DECL(size_t) Bs3StrFormatV_c32(const char BS3_FAR *pszFormat, va_list va, PFNBS3STRFORMATOUTPUT pfnOutput, void *pvUser);
+/** @copydoc Bs3StrFormatV_c16  */
+BS3_DECL(size_t) Bs3StrFormatV_c64(const char BS3_FAR *pszFormat, va_list va, PFNBS3STRFORMATOUTPUT pfnOutput, void *pvUser);
+#define Bs3StrFormatV BS3_CMN_NM(Bs3StrFormatV) /**< Selects #Bs3StrFormatV_c16, #Bs3StrFormatV_c32 or #Bs3StrFormatV_c64. */
+
+/**
+ * Formats a string into a buffer.
+ *
+ * See #Bs3Format_c16 for supported format types.
+ *
+ * @returns The length of the formatted string (excluding terminator).
+ *          This will be higher or equal to @c cbBuf in case of an overflow.
+ * @param   pszBuf      The output buffer.
+ * @param   cbBuf       The size of the output buffer.
+ * @param   pszFormat   The format string.
+ * @param   va          Format arguments.
+ */
+BS3_DECL(size_t) Bs3StrPrintfV_c16(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va);
+/** @copydoc Bs3StrPrintfV_c16  */
+BS3_DECL(size_t) Bs3StrPrintfV_c32(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va);
+/** @copydoc Bs3StrPrintfV_c16  */
+BS3_DECL(size_t) Bs3StrPrintfV_c64(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va);
+#define Bs3StrPrintfV BS3_CMN_NM(Bs3StrPrintfV) /**< Selects #Bs3StrPrintfV_c16, #Bs3StrPrintfV_c32 or #Bs3StrPrintfV_c64. */
+
+/**
+ * Formats a string into a buffer.
+ *
+ * See #Bs3Format_c16 for supported format types.
+ *
+ * @returns The length of the formatted string (excluding terminator).
+ *          This will be higher or equal to @c cbBuf in case of an overflow.
+ * @param   pszBuf      The output buffer.
+ * @param   cbBuf       The size of the output buffer.
+ * @param   pszFormat   The format string.
+ * @param   ...         Format arguments.
+ */
+BS3_DECL(size_t) Bs3StrPrintf_c16(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, ...);
+/** @copydoc Bs3StrPrintf_c16  */
+BS3_DECL(size_t) Bs3StrPrintf_c32(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, ...);
+/** @copydoc Bs3StrPrintf_c16  */
+BS3_DECL(size_t) Bs3StrPrintf_c64(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, ...);
+#define Bs3StrPrintf BS3_CMN_NM(Bs3StrPrintf) /**< Selects #Bs3StrPrintf_c16, #Bs3StrPrintf_c32 or #Bs3StrPrintf_c64. */
 
 
 /**
