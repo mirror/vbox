@@ -84,7 +84,6 @@ BS3_BEGIN_TEXT16
         or      eax, X86_CR0_PE
         mov     cr0, eax
         jmp     BS3_SEL_R0_CS32:dword .thirty_two_bit wrt FLAT
-extern TODO_CONVINCE_WATCOM_TO_DO_FLAT_RELOCS
 BS3_BEGIN_TEXT32
 .thirty_two_bit:
 
@@ -103,8 +102,8 @@ BS3_BEGIN_TEXT32
         add     eax, BS3_ADDR_BS3TEXT16 ; Convert it to a flat address.
         mov     [esp + 8], eax          ; Store it in the place right for 32-bit returns.
  %endif
-        pop     esp
         popfd
+        pop     eax
         ret
 
  %if TMPL_BITS != 32

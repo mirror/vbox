@@ -119,6 +119,13 @@ BS3_BEGIN_TEXT64
 BS3_GLOBAL_DATA Bs3Text64_StartOfSegment, 0
     db      10,13,'eye-catcher: BS3TEXT64',10,13
 
+%ifdef ASM_FORMAT_OMF
+section TEXT64 align=4 CLASS=CODE PUBLIC USE32
+;section .text  align=4 CLASS=CODE PUBLIC USE32 - nasm doesn't do '.' at the start of segments in OMF mode. Not that this helps anyways...
+;section .rdata align=4 CLASS=CODE PUBLIC USE32
+;GROUP CODE64 TEXT64 _text _rdata
+%endif
+
 %ifdef ASM_FORMAT_ELF
 section BS3TEXT64_END   align=1 progbits alloc exec nowrite
 %else

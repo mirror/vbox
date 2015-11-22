@@ -125,6 +125,24 @@
 
 ;; @name Segment definitions.
 ;; @{
+
+%ifdef ASM_FORMAT_OMF
+; !!HACK ALERT!!
+;
+;   To make FLAT actually be flat, i.e. have a base of 0 rather than the same as
+;   the target (?) segment, we tweak it a little bit here.  We associate a segment
+;   with it so that we can get at it in the class/segment ordering directives
+;   we pass to the linker.  The segment does not contain any data or anything, it
+;   is just an empty one which we assign the address of zero.
+;
+;   Look for 'clname BS3FLAT segaddr=0x0000' and 'segment BS3FLAT segaddr=0x0000'
+;   in the makefile.
+;
+; !!HACK ALERT!!
+segment BS3FLAT use32 class=BS3FLAT
+GROUP FLAT BS3FLAT
+%endif
+
 %macro BS3_BEGIN_TEXT16 0
  %ifndef  BS3_BEGIN_TEXT16_NOT_FIRST
   %define BS3_BEGIN_TEXT16_NOT_FIRST

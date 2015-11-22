@@ -347,6 +347,7 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
     /*
      * Work the section table.
      */
+    bool fRet = true;
     PCIMAGE_SECTION_HEADER paShdrs   = (PCIMAGE_SECTION_HEADER)(pHdr + 1);
     for (uint32_t i = 0; i < pHdr->NumberOfSections; i++)
     {
@@ -373,6 +374,11 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                 || paShdrs[i].PointerToRawData + cbRawData > cbFile)
                 return error(pszFile, "Raw data beyond the end of the file or overlapping the headers (section #%u)\n", i);
             uint8_t *pbRawData = &pbFile[paShdrs[i].PointerToRawData];
+
+            /* Is this a section which ends up in the binary? */
+            bool const fInBinary = !(paShdrs[i].Characteristics & (IMAGE_SCN_LNK_REMOVE | IMAGE_SCN_LNK_INFO));
+            bool const fIsPData  = fInBinary
+                                && memcmp(paShdrs[i].Name, RT_STR_TUPLE(".pdata\0")) == 0;
 
             /*
              * Convert from AMD64 fixups to I386 ones, assuming 64-bit addresses
@@ -424,6 +430,7 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                 }
 
                 /* Convert it. */
+                uint8_t uDir = IMAGE_REL_AMD64_ABSOLUTE;
                 switch (paRelocs[j].Type)
                 {
                     case IMAGE_REL_AMD64_ADDR64:
@@ -440,6 +447,7 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                             return error(pszFile, "ADDR64 with large addend (%#llx) at %#x in section %u '%-8.8s'\n",
                                          uAddend, paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
                         paRelocs[j].Type = IMAGE_REL_I386_DIR32;
+                        uDir = IMAGE_REL_AMD64_ADDR64;
                         break;
                     }
 
@@ -461,9 +469,11 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                     /* These are 1:1 conversions: */
                     case IMAGE_REL_AMD64_ADDR32:
                         paRelocs[j].Type = IMAGE_REL_I386_DIR32;
+                        uDir = IMAGE_REL_AMD64_ADDR32;
                         break;
                     case IMAGE_REL_AMD64_ADDR32NB:
                         paRelocs[j].Type = IMAGE_REL_I386_DIR32NB;
+                        uDir = IMAGE_REL_AMD64_ADDR32NB;
                         break;
                     case IMAGE_REL_AMD64_REL32:
                         paRelocs[j].Type = IMAGE_REL_I386_REL32;
@@ -488,10 +498,23 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                                      ? g_apszCoffAmd64RelTypes[paRelocs[j].Type] : "unknown",
                                      paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
                 }
+
+                /*
+                 * Error no absolute fixup that we care about. We continue so
+                 * the developer can get the full story before failing.
+                 */
+                if (   fInBinary
+                    && !fIsPData
+                    && uDir != IMAGE_REL_AMD64_ABSOLUTE)
+                {
+                    error(pszFile, "%s at %#x in section %u '%-8.8s': wlink won't get this right\n",
+                          g_apszCoffAmd64RelTypes[uDir], paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
+                    fRet = false;
+                }
             }
         }
     }
-    return true;
+    return fRet;
 }
 
 

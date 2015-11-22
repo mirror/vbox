@@ -122,7 +122,7 @@ TOOL_Bs3Vcc64 := Visual C++ 64-bit
 TOOL_Bs3Vcc64_CC  = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CC)
 TOOL_Bs3Vcc64_CXX = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXX)
 TOOL_Bs3Vcc64_COBJSUFF                 = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COBJSUFF)
-TOOL_Bs3Vcc64_CFLAGS                   = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CFLAGS)
+TOOL_Bs3Vcc64_CFLAGS                   = $(filter-out -TC,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CFLAGS)) -TP # compile as C++
 TOOL_Bs3Vcc64_CFLAGS.debug             =
 TOOL_Bs3Vcc64_CFLAGS.dbgopt            = -O1
 TOOL_Bs3Vcc64_CFLAGS.profile           = -O1
@@ -326,6 +326,8 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
 	\
  	output raw offset=0x10000 \
  	order \
+ 	 clname BS3FLAT segaddr=0x0000 \
+ 	   segment BS3FLAT segaddr=0x0000 \
  	 clname BS3CODE16 segaddr=0x1000 \
  	  segment BS3TEXT16 \
  	  segment BS3TEXT16_END \
@@ -353,7 +355,10 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
         clname DATA \
 	  segment BS3DATA64 \
  	  segment DATA64 \
- 	  segment .data
+ 	  segment .data \
+ 	  segment .pdata \
+ 	  segment .xdata \
+
 TEMPLATE_VBoxBS3KitImg_DEPS = \
 	$(bs3-bootsector_1_TARGET) \
 	$(VBoxBs3Linker_1_TARGET)
