@@ -8,13 +8,12 @@ AssertCompileSize(uint64_t, 8);
 
 
 /* Just a sample. */
-BS3_DECL(void) Main_rm(void)
+BS3_DECL(void) Main_pe16(void)
 {
     void BS3_FAR *pvTmp1;
     void BS3_FAR *pvTmp2;
     void BS3_FAR *pvTmp3;
     void BS3_FAR *pvTmp4;
-    Bs3InitMemory_rm();
 
     Bs3TestInit("bs3-shutdown");
 
@@ -22,7 +21,7 @@ Bs3PrintStr("Bs3PrintX32:");
 Bs3PrintX32(UINT32_C(0xfdb97531));
 Bs3PrintStr("\r\n");
 
-Bs3Printf("Bs3Printf: RX32=%#'RX32 string='%s' d=%d p=%p\n", UINT32_C(0xfdb97531), "my string", 42, Main_rm);
+Bs3Printf("Bs3Printf: RX32=%#'RX32 string='%s' d=%d p=%p\n", UINT32_C(0xfdb97531), "my string", 42, Main_pe16);
 
 pvTmp2 = Bs3MemAlloc(BS3MEMKIND_REAL, _4K);
 Bs3PrintStr("pvTmp2=");

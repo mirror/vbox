@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - First Object, calling real-mode main().
+; BS3Kit - Bs3SwitchToRing0
 ;
 
 ;
@@ -24,26 +24,28 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+%include "bs3kit-template-header.mac"
 
-
-%include "bs3kit.mac"
-
+;;
+; @cproto   BS3_DECL(void) Bs3SwitchToRing0(void);
 ;
-; Segment defs, grouping and related variables.
-; Defines the entry point 'start' as well, leaving us in BS3TEXT16.
-;
-%include "bs3-first-common.mac"
+BS3_PROC_BEGIN_CMN Bs3SwitchToRing0
+        push    sAX
 
+%if TMPL_BITS == 16
+        smsw    ax
+        test    ax, X86_CR0_PE
+        jz      .return                 ; real mode.
+%endif
+        mov     ax, cs
+        test    ax, 3
+        jz      .return
 
-EXTERN Main_rm
-BS3_EXTERN_CMN Bs3Shutdown
+        mov     eax, BS3_SYSCALL_TO_RING0
+        int     BS3_TRAP_SYSCALL
 
-    ;
-    ; Nothing to init here, just call main and shutdown if it returns.
-    ;
-    mov     ax, BS3DATA16
-    mov     es, ax
-    mov     ds, ax
-    call    NAME(Main_rm)
-    call    Bs3Shutdown
+.return:
+        pop     sAX
+        ret
+BS3_PROC_END_CMN   Bs3SwitchToRing0
 

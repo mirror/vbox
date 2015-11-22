@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - First Object, calling real-mode main().
+; BS3Kit - Bs3SwitchTo16Bit
 ;
 
 ;
@@ -24,26 +24,39 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+%include "bs3kit-template-header.mac"
 
-
-%include "bs3kit.mac"
-
+;;
+; @cproto   BS3_DECL(void) Bs3SwitchTo16Bit(void);
 ;
-; Segment defs, grouping and related variables.
-; Defines the entry point 'start' as well, leaving us in BS3TEXT16.
-;
-%include "bs3-first-common.mac"
+BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
+%if TMPL_BITS == 16
+        ret
+%else
+        push    xAX                     ; reserve space for far return
+        push    xAX
 
+        ; Far return, offset part. bits 63/31:16 must be zero.
+        movzx   eax, word [xSP + xCB * 3] ; returning to 16-bit, so bit 16 and out must be zero.
+        mov     [xSP + xCB * 2], xAX
 
-EXTERN Main_rm
-BS3_EXTERN_CMN Bs3Shutdown
+        mov     ax, cs
+        and     ax, 3
+        shl     ax, BS3_SEL_RING_SHIFT  ; ring addend.
+        add     ax, BS3_SEL_R0_CS16
+        mov     [esp + xCB * 3], xAX
 
-    ;
-    ; Nothing to init here, just call main and shutdown if it returns.
-    ;
-    mov     ax, BS3DATA16
-    mov     es, ax
-    mov     ds, ax
-    call    NAME(Main_rm)
-    call    Bs3Shutdown
+        ; Load 16-bit segment registers.
+        add     ax, BS3_SEL_R0_SS16 - BS3_SEL_R0_CS16
+        mov     ss, ax
+
+        add     ax, BS3_SEL_R0_DS16 - BS3_SEL_R0_SS16
+        mov     ds, ax
+        mov     es, ax
+
+        ; Restore and return.
+        pop     xAX
+        retf
+%endif
+BS3_PROC_END_CMN   Bs3SwitchTo16Bit
 

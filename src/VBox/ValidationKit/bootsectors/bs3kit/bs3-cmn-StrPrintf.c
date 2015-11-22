@@ -46,7 +46,7 @@ typedef BS3STRPRINTFSTATE BS3_FAR *PBS3STRPRINTFSTATE;
 
 
 
-BS3_DECL(size_t) bs3StrPrintfFmtOutput(char ch, void BS3_FAR *pvUser)
+static BS3_DECL_CALLBACK(size_t) bs3StrPrintfFmtOutput(char ch, void BS3_FAR *pvUser)
 {
     PBS3STRPRINTFSTATE pState = (PBS3STRPRINTFSTATE)pvUser;
     if (ch)

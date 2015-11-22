@@ -501,8 +501,8 @@
  %ifdef TMPL_PAE16
   %error "Both 'TMPL_PAEV86' and 'TMPL_PAE16' are defined."
  %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_PAEV86' and 'TMPL_PAEV86' are defined."
+ %ifdef TMPL_PAE32
+  %error "Both 'TMPL_PAEV86' and 'TMPL_PAE32' are defined."
  %endif
  %ifdef TMPL_LM16
   %error "Both 'TMPL_PAEV86' and 'TMPL_LM16' are defined."

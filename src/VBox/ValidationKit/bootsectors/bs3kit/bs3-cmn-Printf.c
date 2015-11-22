@@ -28,7 +28,7 @@
 #include <iprt/ctype.h>
 
 
-BS3_DECL(size_t) bs3PrintFmtOutput(char ch, void BS3_FAR *pvUser)
+static BS3_DECL_CALLBACK(size_t) bs3PrintFmtOutput(char ch, void BS3_FAR *pvUser)
 {
     if (ch != '\0')
     {
