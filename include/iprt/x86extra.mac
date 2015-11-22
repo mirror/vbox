@@ -52,6 +52,10 @@
 
 %define PAGE_SIZE               0x1000
 
+;; Same a ~(X86_CR0_PE | X86_CR0_PG) except it won't cause assembler warnings.
+%define X86_CR0_NO_PE_NO_PG 0x7ffffffe
+
+
 
 ;;
 ; 32-bit protected mode fstenv image.
