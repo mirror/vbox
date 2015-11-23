@@ -230,6 +230,24 @@ static APPLE_FRAMEBUFFERINFO_PROTOCOL gAppleFrameBufferInfo =
     NULL
 };
 
+
+/*
+ *   @todo move this function to the library.
+ */
+UINT32 VBoxVgaGetVmVariable(UINT32 Variable, CHAR8* Buffer, UINT32 Size)
+{
+    UINT32 VarLen, i;
+
+    ASMOutU32(EFI_INFO_PORT, Variable);
+    VarLen = ASMInU32(EFI_INFO_PORT);
+
+    for (i = 0; i < VarLen && i < Size; i++)
+        Buffer[i] = ASMInU8(EFI_INFO_PORT);
+
+    return VarLen;
+}
+
+
 /**
   VBoxVgaControllerDriverSupported
 

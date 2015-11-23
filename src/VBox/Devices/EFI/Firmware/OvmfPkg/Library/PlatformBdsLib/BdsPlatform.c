@@ -16,11 +16,7 @@
 #include "QemuBootOrder.h"
 #ifdef VBOX
 #include "VBoxPkg.h"
-#include "DevEFI.h"
-#include "iprt/asm.h"
 #include "Library/PrintLib.h"
-/* Hmmm Uga Draw wasn't pointed in BDS, so perhaps it's totally dead */
-#include <Protocol/UgaDraw.h>
 #include <Guid/EventGroup.h> /* gEfiEventReadyToBootGuid */
 #endif
 
@@ -34,84 +30,6 @@ EFI_EVENT     mEfiDevPathEvent;
 VOID          *mEmuVariableEventReg;
 EFI_EVENT     mEmuVariableEvent;
 BOOLEAN       mDetectVgaOnly;
-
-#ifdef VBOX
-static EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *TextOutputProtocol;
-static EFI_GRAPHICS_OUTPUT_PROTOCOL    *Gop;
-static EFI_UGA_DRAW_PROTOCOL           *Uga;
-
-/*
- *   @todo move this function to the library.
- */
-static UINT32
-GetVmVariable(UINT32 Variable, CHAR8* Buffer, UINT32 Size )
-{
-    UINT32 VarLen, i;
-
-
-    ASMOutU32(EFI_INFO_PORT, Variable);
-    VarLen = ASMInU32(EFI_INFO_PORT);
-
-    for (i=0; i < VarLen && i < Size; i++)
-    {
-        Buffer[i] = ASMInU8(EFI_INFO_PORT);
-    }
-
-    return VarLen;
-}
-
-static VOID
-EFIAPI
-VBoxConsoleSwitchMode (
-  IN EFI_EVENT                Event,
-  IN VOID                     *Context
-  )
-{
-    EFI_STATUS r = EFI_NOT_FOUND; /* Neither GOP nor UGA is found*/
-    EFI_TPL               OldTpl;
-    OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
-
-    gBS->LocateProtocol(&gEfiSimpleTextOutProtocolGuid, NULL, (VOID **)&TextOutputProtocol);
-    gBS->LocateProtocol(&gEfiUgaDrawProtocolGuid, NULL, (VOID **)&Uga);
-    gBS->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID **)&Gop);
-
-    if (Gop)
-    {
-        UINT32 mode = 2;
-        GetVmVariable(EFI_INFO_INDEX_GOP_MODE, (CHAR8 *)&mode, sizeof(UINT32));
-        r = Gop->SetMode(Gop, mode);
-    }
-    else if (Uga)
-    {
-        UINT32 H = 1027;
-        UINT32 V = 768;
-        GetVmVariable(EFI_INFO_INDEX_UGA_HORIZONTAL_RESOLUTION, (CHAR8 *)&H, sizeof(UINT32));
-        GetVmVariable(EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION, (CHAR8 *)&V, sizeof(UINT32));
-        r = Uga->SetMode(Uga, H, V, 32, 60);
-    }
-
-    if(EFI_ERROR(r))
-        goto done;
-
-    r = TextOutputProtocol->SetMode(TextOutputProtocol, TextOutputProtocol->Mode->MaxMode);
-    if(EFI_ERROR(r))
-        goto done;
-    done:
-    gBS->RestoreTPL (OldTpl);
-    return;
-}
-
-EFI_STATUS
-EFIAPI
-VBoxConsoleInit()
-{
-    EFI_EVENT event;
-
-    gBS->CreateEventEx(EVT_NOTIFY_SIGNAL, TPL_NOTIFY, VBoxConsoleSwitchMode, NULL, &gEfiEventReadyToBootGuid, &event);
-    return EFI_SUCCESS;
-}
-#endif /* VBOX */
-
 
 //
 // Type definitions
@@ -1385,9 +1303,6 @@ Returns:
       break;
     }
   }
-#ifdef VBOX
-  VBoxConsoleInit();
-#endif
 
   //
   // Check whether the user input after the duration time has expired

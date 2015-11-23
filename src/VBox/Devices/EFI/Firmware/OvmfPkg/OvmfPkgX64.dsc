@@ -548,7 +548,10 @@
  MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe.inf
  MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
  VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
- VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
+ VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf {
+    <LibraryClasses>
+      PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
+ }
  VBoxPkg/VBoxFsDxe/VBoxIso9660.inf
  VBoxPkg/VBoxFsDxe/VBoxHfs.inf
  VBoxPkg/VBoxSysTables/VBoxSysTables.inf

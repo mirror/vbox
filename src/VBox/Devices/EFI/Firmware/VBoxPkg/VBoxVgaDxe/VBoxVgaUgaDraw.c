@@ -332,6 +332,8 @@ VBoxVgaUgaDrawConstructor (
   )
 {
   EFI_UGA_DRAW_PROTOCOL *UgaDraw;
+  UINT32                HorizontalResolution = 1027;
+  UINT32                VerticalResolution = 768;
 
   //
   // Fill in Private->UgaDraw protocol
@@ -352,6 +354,11 @@ VBoxVgaUgaDrawConstructor (
   //
   // Initialize the hardware
   //
+  VBoxVgaGetVmVariable(EFI_INFO_INDEX_UGA_HORIZONTAL_RESOLUTION, (CHAR8 *)&HorizontalResolution,
+                       sizeof(HorizontalResolution));
+  VBoxVgaGetVmVariable(EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION, (CHAR8 *)&VerticalResolution,
+                       sizeof(VerticalResolution));
+
   UgaDraw->SetMode (
             UgaDraw,
             Private->ModeData[Private->CurrentMode].HorizontalResolution,
@@ -364,6 +371,8 @@ VBoxVgaUgaDrawConstructor (
     Private->ModeData[Private->CurrentMode].HorizontalResolution,
     Private->ModeData[Private->CurrentMode].VerticalResolution
     );
+  PcdSet32(PcdVideoHorizontalResolution, HorizontalResolution);
+  PcdSet32(PcdVideoVerticalResolution, VerticalResolution);
 
   return EFI_SUCCESS;
 }

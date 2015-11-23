@@ -89,6 +89,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
   VBoxPkg/VBoxPkg.dec
 
 [LibraryClasses]
@@ -118,3 +119,5 @@
 
 [Pcd]
   gVBoxVgaPkgTokenSpaceGuid.PcdDriverSupportedEfiVersion
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVideoHorizontalResolution  ## PRODUCES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVideoVerticalResolution    ## PRODUCES

@@ -443,7 +443,7 @@ VBoxVgaGraphicsOutputConstructor (
 {
   EFI_STATUS                   Status;
   EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
-
+  UINT32                        GopMode = 2;
 
   GraphicsOutput            = &Private->GraphicsOutput;
   GraphicsOutput->QueryMode = VBoxVgaGraphicsOutputQueryMode;
@@ -477,12 +477,15 @@ VBoxVgaGraphicsOutputConstructor (
   //
   // Initialize the hardware
   //
-  GraphicsOutput->SetMode (GraphicsOutput, 2);
+  VBoxVgaGetVmVariable(EFI_INFO_INDEX_GOP_MODE, (CHAR8 *)&GopMode, sizeof(GopMode));
+  GraphicsOutput->SetMode (GraphicsOutput, GopMode);
   DrawLogo (
     Private,
     Private->ModeData[Private->GraphicsOutput.Mode->Mode].HorizontalResolution,
     Private->ModeData[Private->GraphicsOutput.Mode->Mode].VerticalResolution
     );
+  PcdSet32(PcdVideoHorizontalResolution, Private->ModeData[Private->GraphicsOutput.Mode->Mode].HorizontalResolution);
+  PcdSet32(PcdVideoVerticalResolution, Private->ModeData[Private->GraphicsOutput.Mode->Mode].VerticalResolution);
 
   return EFI_SUCCESS;
 }
