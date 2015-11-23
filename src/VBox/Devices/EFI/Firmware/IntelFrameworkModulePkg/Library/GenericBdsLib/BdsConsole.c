@@ -742,7 +742,16 @@ ConvertBmpToGopBlt (
 
   if ((BmpHeader->Size != BmpImageSize) ||
       (BmpHeader->Size < BmpHeader->ImageOffset) ||
+#ifndef VBOX
       (BmpHeader->Size - BmpHeader->ImageOffset !=  BmpHeader->PixelHeight * DataSizePerLine)) {
+#else
+      /*
+       * Our boot logo size is two bytes bigger (some 4 byte alignment in the file I guess)
+       * than the calculated size which makes the above line fail. Just let it pass as long as there
+       * is no data underrun.
+       */
+      (BmpHeader->Size - BmpHeader->ImageOffset <  BmpHeader->PixelHeight * DataSizePerLine)) {
+#endif
     return EFI_INVALID_PARAMETER;
   }
 
