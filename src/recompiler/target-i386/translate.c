@@ -7449,8 +7449,6 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             gen_op_st_T0_A0(OT_WORD + s->mem_index);
             gen_add_A0_im(s, 2);
             tcg_gen_ld_tl(cpu_T[0], cpu_env, offsetof(CPUX86State, gdt.base));
-            if (!s->dflag)
-                gen_op_andl_T0_im(0xffffff);
             gen_op_st_T0_A0(CODE64(s) + OT_LONG + s->mem_index);
             break;
         case 1:
@@ -7495,8 +7493,6 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
                 gen_op_st_T0_A0(OT_WORD + s->mem_index);
                 gen_add_A0_im(s, 2);
                 tcg_gen_ld_tl(cpu_T[0], cpu_env, offsetof(CPUX86State, idt.base));
-                if (!s->dflag)
-                    gen_op_andl_T0_im(0xffffff);
                 gen_op_st_T0_A0(CODE64(s) + OT_LONG + s->mem_index);
             }
             break;
