@@ -504,7 +504,12 @@ void UIMachineSettingsSystem::polishPage()
     m_pLabelParavirtProvider->setEnabled(isMachineOffline());
     m_pComboParavirtProvider->setEnabled(isMachineOffline());
     m_pLabelVirtualization->setEnabled(isMachineOffline());
+    /* Prevent user from toggling 'VT-x/AMD-V' checkbox-button as it is always used/enabled on Mac OS X: */
+#ifdef Q_WS_MAC
+    m_pCheckBoxVirtualization->setEnabled(false);
+#else /* !Q_WS_MAC */
     m_pCheckBoxVirtualization->setEnabled(isMachineOffline());
+#endif /* !Q_WS_MAC */
     m_pCheckBoxNestedPaging->setEnabled(isMachineOffline() && m_pCheckBoxVirtualization->isChecked());
 }
 
