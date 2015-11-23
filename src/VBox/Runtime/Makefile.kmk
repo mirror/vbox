@@ -1196,7 +1196,7 @@ RuntimeR3_SOURCES.haiku = \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/sched-generic.cpp \
-	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),ockless-,)generic.cpp \
+	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp\
@@ -1754,6 +1754,7 @@ RuntimeR0_SOURCES      := \
 	common/time/timesup.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/critsect-generic.cpp \
+	generic/critsectrw-generic.cpp \
 	\
 	$(RuntimeNoCrt_SOURCES)
 

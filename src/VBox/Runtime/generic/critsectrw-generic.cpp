@@ -66,6 +66,11 @@ RTDECL(int) RTCritSectRwInitEx(PRTCRITSECTRW pThis, uint32_t fFlags,
      */
     pThis->u32Magic         = RTCRITSECTRW_MAGIC_DEAD;
     pThis->fNeedReset       = false;
+#ifdef IN_RING0
+    pThis->fFlags           = (uint16_t)(fFlags | RTCRITSECT_FLAGS_RING0);
+#else
+    pThis->fFlags           = (uint16_t)(fFlags & ~RTCRITSECT_FLAGS_RING0);
+#endif
     pThis->u64State         = 0;
     pThis->hNativeWriter    = NIL_RTNATIVETHREAD;
     pThis->cWriterReads     = 0;
@@ -137,6 +142,11 @@ RTDECL(uint32_t) RTCritSectRwSetSubClass(PRTCRITSECTRW pThis, uint32_t uSubClass
 {
     AssertPtrReturn(pThis, RTLOCKVAL_SUB_CLASS_INVALID);
     AssertReturn(pThis->u32Magic == RTCRITSECTRW_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
+#ifdef IN_RING0
+    Assert(pThis->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 #ifdef RTCRITSECTRW_STRICT
     AssertReturn(!(pThis->fFlags & RTCRITSECT_FLAGS_NOP), RTLOCKVAL_SUB_CLASS_INVALID);
 
@@ -157,6 +167,11 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
      */
     AssertPtr(pThis);
     AssertReturn(pThis->u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+#ifdef IN_RING0
+    Assert(pThis->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
 #ifdef RTCRITSECTRW_STRICT
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
@@ -256,13 +271,15 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
                     rc = RTLockValidatorRecSharedCheckBlocking(pThis->pValidatorRead, hThreadSelf, pSrcPos, true,
                                                                RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_READ, false);
                     if (RT_SUCCESS(rc))
-#else
+#elif defined(IN_RING3)
                     RTTHREAD hThreadSelf = RTThreadSelf();
                     RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, false);
 #endif
                     {
                         rc = RTSemEventMultiWait(pThis->hEvtRead, RT_INDEFINITE_WAIT);
+#ifdef IN_RING3
                         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
+#endif
                         if (pThis->u32Magic != RTCRITSECTRW_MAGIC)
                             return VERR_SEM_DESTROYED;
                     }
@@ -387,6 +404,11 @@ RTDECL(int) RTCritSectRwLeaveShared(PRTCRITSECTRW pThis)
      */
     AssertPtr(pThis);
     AssertReturn(pThis->u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+#ifdef IN_RING0
+    Assert(pThis->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
     /*
      * Check the direction and take action accordingly.
@@ -460,6 +482,11 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
      */
     AssertPtr(pThis);
     AssertReturn(pThis->u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+#ifdef IN_RING0
+    Assert(pThis->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
 #ifdef RTCRITSECTRW_STRICT
     RTTHREAD hThreadSelf = NIL_RTTHREAD;
@@ -583,13 +610,15 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
             rc = RTLockValidatorRecExclCheckBlocking(pThis->pValidatorWrite, hThreadSelf, pSrcPos, true,
                                                      RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_WRITE, false);
             if (RT_SUCCESS(rc))
-#else
+#elif defined(IN_RING3)
             RTTHREAD hThreadSelf = RTThreadSelf();
             RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, false);
 #endif
             {
                 rc = RTSemEventWait(pThis->hEvtWrite, RT_INDEFINITE_WAIT);
+#ifdef IN_RING3
                 RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+#endif
                 if (pThis->u32Magic != RTCRITSECTRW_MAGIC)
                     return VERR_SEM_DESTROYED;
             }
@@ -681,6 +710,11 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
      */
     AssertPtr(pThis);
     AssertReturn(pThis->u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+#ifdef IN_RING0
+    Assert(pThis->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
     RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
     RTNATIVETHREAD hNativeWriter;
@@ -772,6 +806,11 @@ RTDECL(bool) RTCritSectRwIsWriteOwner(PRTCRITSECTRW pThis)
      */
     AssertPtr(pThis);
     AssertReturn(pThis->u32Magic == RTCRITSECTRW_MAGIC, false);
+#ifdef IN_RING0
+    Assert(pThis->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
     /*
      * Check ownership.
@@ -791,6 +830,11 @@ RTDECL(bool) RTCritSectRwIsReadOwner(PRTCRITSECTRW pThis, bool fWannaHear)
      */
     AssertPtr(pThis);
     AssertReturn(pThis->u32Magic == RTCRITSECTRW_MAGIC, false);
+#ifdef IN_RING0
+    Assert(pThis->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
     /*
      * Inspect the state.
@@ -890,6 +934,11 @@ RTDECL(int) RTCritSectRwDelete(PRTCRITSECTRW pThis)
     //Assert(pThis->cNestings == 0);
     //Assert(pThis->cLockers == -1);
     Assert(pThis->hNativeWriter == NIL_RTNATIVETHREAD);
+#ifdef IN_RING0
+    Assert(pThis->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
     /*
      * Invalidate the structure and free the semaphores.
@@ -908,8 +957,10 @@ RTDECL(int) RTCritSectRwDelete(PRTCRITSECTRW pThis)
     int rc1 = RTSemEventDestroy(hEvtWrite);     AssertRC(rc1);
     int rc2 = RTSemEventMultiDestroy(hEvtRead); AssertRC(rc2);
 
+#ifndef IN_RING0
     RTLockValidatorRecSharedDestroy(&pThis->pValidatorRead);
     RTLockValidatorRecExclDestroy(&pThis->pValidatorWrite);
+#endif
 
     return RT_SUCCESS(rc1) ? rc2 : rc1;
 }
