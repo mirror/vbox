@@ -113,6 +113,7 @@ private:
     // Internal methods
     int i_recalculateIpv4AddressAssignments();
     int i_findFirstAvailableOffset(ADDRESSLOOKUPTYPE, uint32_t *);
+    int i_recalculateIPv6Prefix();
 
     typedef std::map<Utf8Str, settings::NATRule> NATRuleMap;
     typedef NATRuleMap::const_iterator constNATRuleMapIterator;

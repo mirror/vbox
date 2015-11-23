@@ -139,7 +139,7 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, com::Utf8Str aName)
     m = new Data();
     m->offGateway = 1;
     m->IPv4NetworkCidr = "10.0.2.0/24";
-    m->IPv6Prefix = "fe80::/64";
+    i_recalculateIPv6Prefix();  /* set m->IPv6Prefix based on IPv4 */
 
     settings::NATHostLoopbackOffset off;
     off.strLoopbackHostAddress = "127.0.0.1";
@@ -178,6 +178,13 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
     m->fAdvertiseDefaultIPv6Route = data.fAdvertiseDefaultIPv6Route;
     m->fNeedDhcpServer = data.fNeedDhcpServer;
     m->fIPv6Enabled = data.fIPv6;
+
+    if (   data.strIPv6Prefix.isEmpty()
+           /* also clean up bogus old default */
+        || data.strIPv6Prefix == "fe80::/64")
+        i_recalculateIPv6Prefix(); /* set m->IPv6Prefix based on IPv4 */
+    else
+        m->IPv6Prefix = data.strIPv6Prefix;
 
     m->u32LoopbackIp6 = data.u32HostLoopback6Offset;
 
@@ -955,5 +962,44 @@ int NATNetwork::i_recalculateIpv4AddressAssignments()
     m->IPv4NetworkMask = szTmpIp;
 
     LogFlowFunc(("getaway:%RTnaipv4, netmask:%RTnaipv4\n", gateway, netmask));
+    return VINF_SUCCESS;
+}
+
+
+int NATNetwork::i_recalculateIPv6Prefix()
+{
+    int rc;
+
+    RTNETADDRIPV4 net, mask;
+    rc = RTCidrStrToIPv4(Utf8Str(m->IPv4NetworkCidr).c_str(), &net, &mask);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    net.u = RT_H2N_U32(net.u);  /* XXX: fix RTCidrStrToIPv4! */
+
+    /*
+     * [fd17:625c:f037:XXXX::/64] - RFC 4193 (ULA) Locally Assigned
+     * Global ID where XXXX, 16 bit Subnet ID, are two bytes from the
+     * middle of the IPv4 address, e.g. :dead: for 10.222.173.1
+     */
+    RTNETADDRIPV6 prefix;
+    RT_ZERO(prefix);
+
+    prefix.au8[0] = 0xFD;
+    prefix.au8[1] = 0x17;
+
+    prefix.au8[2] = 0x62;
+    prefix.au8[3] = 0x5C;
+
+    prefix.au8[4] = 0xF0;
+    prefix.au8[5] = 0x37;
+
+    prefix.au8[6] = net.au8[1];
+    prefix.au8[7] = net.au8[2];
+
+    char szBuf[32];
+    RTStrPrintf(szBuf, sizeof(szBuf), "%RTnaipv6/64", &prefix);
+
+    m->IPv6Prefix = szBuf;
     return VINF_SUCCESS;
 }
