@@ -452,7 +452,7 @@ void UIMachineLogicFullscreen::sltHostScreenCountChange()
 
 void UIMachineLogicFullscreen::sltHostScreenAvailableAreaChange()
 {
-    LogRel(("GUI: UIMachineLogicFullscreen: Host-screen available-area change ignored\n"));
+    LogRel2(("GUI: UIMachineLogicFullscreen: Host-screen available-area change ignored\n"));
 }
 
 void UIMachineLogicFullscreen::prepareActionGroups()

@@ -1055,8 +1055,8 @@ void UIVMLogViewer::loadSettings()
 #else /* Q_WS_MAC */
         setGeometry(m_geometry);
 #endif /* !Q_WS_MAC */
-        LogRel(("GUI: UIVMLogViewer: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
-                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        LogRel2(("GUI: UIVMLogViewer: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
         /* Maximize (if necessary): */
         if (gEDataManager->logWindowShouldBeMaximized())
@@ -1075,8 +1075,8 @@ void UIVMLogViewer::saveSettings()
 #else /* Q_WS_MAC */
         gEDataManager->setLogWindowGeometry(saveGeometry, isMaximized());
 #endif /* !Q_WS_MAC */
-        LogRel(("GUI: UIVMLogViewer: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
-                saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
+        LogRel2(("GUI: UIVMLogViewer: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
+                 saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
     }
 }
 

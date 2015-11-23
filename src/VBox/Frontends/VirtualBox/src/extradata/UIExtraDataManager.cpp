@@ -1561,8 +1561,8 @@ void UIExtraDataManagerWindow::loadSettings()
 #else /* Q_WS_MAC */
         setGeometry(m_geometry);
 #endif /* !Q_WS_MAC */
-        LogRel(("GUI: UIExtraDataManagerWindow: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
-                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        LogRel2(("GUI: UIExtraDataManagerWindow: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
         /* Maximize (if necessary): */
         if (gEDataManager->extraDataManagerShouldBeMaximized())
@@ -1590,8 +1590,8 @@ void UIExtraDataManagerWindow::saveSettings()
 #else /* Q_WS_MAC */
         gEDataManager->setExtraDataManagerGeometry(m_geometry, isMaximized());
 #endif /* !Q_WS_MAC */
-        LogRel(("GUI: UIExtraDataManagerWindow: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
-                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        LogRel2(("GUI: UIExtraDataManagerWindow: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
     }
 }
 

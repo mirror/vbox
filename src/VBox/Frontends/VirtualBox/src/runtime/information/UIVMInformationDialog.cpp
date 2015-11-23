@@ -469,8 +469,8 @@ void UIVMInformationDialog::loadSettings()
 #else /* Q_WS_MAC */
         setGeometry(m_geometry);
 #endif /* !Q_WS_MAC */
-        LogRel(("GUI: UIVMInformationDialog: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
-                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        LogRel2(("GUI: UIVMInformationDialog: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
         /* Maximize (if necessary): */
         if (gEDataManager->informationWindowShouldBeMaximized(vboxGlobal().managedVMUuid()))
@@ -488,8 +488,8 @@ void UIVMInformationDialog::saveSettings()
 #else /* Q_WS_MAC */
         gEDataManager->setInformationWindowGeometry(m_geometry, isMaximized(), vboxGlobal().managedVMUuid());
 #endif /* !Q_WS_MAC */
-        LogRel(("GUI: UIVMInformationDialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
-                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        LogRel2(("GUI: UIVMInformationDialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
     }
 }
 
