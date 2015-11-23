@@ -373,6 +373,7 @@ setup()
     export BUILD_TYPE
     export USERNAME
 
+    rm $LOG
     MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
     chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
