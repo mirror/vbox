@@ -196,17 +196,6 @@ int scsi_cmd_data_out(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
     return 0;
 }
 
-static uint64_t swap_64(uint64_t val)
-{
-    uint64_t rval;
-
-    rval = swap_32(val & 0xffffffff);
-    rval <<= 32;
-    rval |= swap_32(val >> 32);
-
-    return rval;
-}
-
 /**
  * Read sectors from an attached SCSI device.
  *
