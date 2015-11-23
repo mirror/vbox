@@ -144,7 +144,8 @@ int rtFileRecalcAndValidateFlags(uint64_t *pfOpen)
      * Validate                                                                                                                                       .
      */
 #ifdef RT_OS_WINDOWS
-    AssertMsgReturn((fOpen & RTFILE_O_ACCESS_MASK) || (fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_ATTR_ONLY, ("Missing RTFILE_O_READ/WRITE/ATTR_ONLY: fOpen=%#llx\n", fOpen), VERR_INVALID_PARAMETER);
+    AssertMsgReturn((fOpen & RTFILE_O_ACCESS_MASK) || (fOpen & RTFILE_O_ACCESS_ATTR_MASK),
+                    ("Missing RTFILE_O_READ/WRITE/ACCESS_ATTR: fOpen=%#llx\n", fOpen), VERR_INVALID_PARAMETER);
 #else
     AssertMsgReturn(fOpen & RTFILE_O_ACCESS_MASK, ("Missing RTFILE_O_READ/WRITE: fOpen=%#llx\n", fOpen), VERR_INVALID_PARAMETER);
 #endif
