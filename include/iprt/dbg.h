@@ -1590,6 +1590,8 @@ RTR0DECL(uint32_t)  RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo);
  * @retval  VERR_INVALID_POINTER if any of the pointers are bad.
  *
  * @param   hKrnlInfo       The kernel info handle.
+ * @param   pszModule       The name of the module to search, pass NULL to
+ *                          search the default kernel module(s).
  * @param   pszStructure    The structure name.
  * @param   pszMember       The member name.
  * @param   poffMember      Where to return the offset.
@@ -1637,7 +1639,7 @@ RTR0DECL(int)       RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const ch
  *
  * @param   hKrnlInfo       The kernel info handle.
  * @param   pszModule       The name of the module to search, pass NULL to
- *                          search the default kernel module.
+ *                          search the default kernel module(s).
  * @param   pszType         The type name.
  * @param   pcbType         Where to return the size of the type.
  */
