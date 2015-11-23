@@ -727,7 +727,7 @@ GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, 
  * Release the 'used' lock when owning it in exclusive mode.
  *
  * @returns IPRT status code, see RTSemFastMutexRelease.
- * @param   pGVMM   The GVMM instance data.
+ * @param   a_pGVMM     The GVMM instance data.
  * @sa      GVMMR0_USED_EXCLUSIVE_LOCK, GVMMR0_USED_SHARED_UNLOCK
  */
 #define GVMMR0_USED_EXCLUSIVE_UNLOCK(a_pGVMM)   RTCritSectRwLeaveExcl(&(a_pGVMM)->UsedLock)
