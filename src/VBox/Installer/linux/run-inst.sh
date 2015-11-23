@@ -420,8 +420,14 @@ for i in "$INSTALLATION_DIR/init/"*; do
   if test -r "$i"; then
     install_init_script "$i" "`basename "$i"`" 2>> "${LOGFILE}"
     addrunlevel "`basename "$i"`" 2>> "${LOGFILE}"
-    test -n "$DO_SETUP" && grep -q '^# *setup_script *$' "${i}" && "${i}" setup 1>&2 2>> "${LOGFILE}"
-    start_init_script "`basename "$i"`" 2>> "${LOGFILE}"
+    if test -n "$DO_SETUP" && grep -q '^# *setup_script *$' "${i}"; then
+        if "${i}" setup 1>&2 2>> "${LOGFILE}"; then
+            start_init_script "`basename "$i"`" 2>> "${LOGFILE}"
+        else
+            echo 1>&2 "Failed to set up service `basename "$i"`, please check the log file"
+            echo 1>&2 "${LOGFILE} for details."
+        fi
+    fi
   fi
 done
 

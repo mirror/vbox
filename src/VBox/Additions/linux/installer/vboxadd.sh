@@ -377,9 +377,12 @@ setup()
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
     chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
 
-    setup_modules || \
+    if setup_modules; then
+        mod_succ=0
+    else
+        mod_succ=1
         show_error "Please check that you have gcc, make, the header files for your Linux kernel and possibly perl installed."
-    mod_succ="$?"
+    fi
     extra_setup
     if [ "$mod_succ" -eq "0" ]; then
         if running_vboxguest || running_vboxadd; then
