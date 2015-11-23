@@ -289,8 +289,10 @@ static EFI_STATUS fsw_efi_ReMount(IN FSW_VOLUME_DATA *pVolume,
         Status = BS->InstallMultipleProtocolInterfaces(&ControllerHandle,
                                                        &PROTO_NAME(SimpleFileSystemProtocol), &pVolume->FileSystem,
                                                        NULL);
+#if DEBUG_LEVEL /* This error is always printed and destroys the boot logo. */
         if (EFI_ERROR(Status))
             Print(L"Fsw ERROR: InstallMultipleProtocolInterfaces returned %x\n", Status);
+#endif
     }
     VBoxLogFlowFuncLeaveRC(Status);
     return Status;
