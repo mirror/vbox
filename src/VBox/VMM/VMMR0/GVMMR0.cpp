@@ -62,6 +62,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
+#include <iprt/critsect.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
 #include <iprt/time.h>
@@ -259,17 +260,20 @@ typedef struct GVMM
     uint32_t volatile   cHaltedEMTs;
     /** Alignment padding. */
     uint32_t            u32Alignment;
+    /** Mini lock for restricting early wake-ups to one thread. */
+    bool volatile       fDoingEarlyWakeUps;
+    bool                afPadding[3]; /**< explicit alignment padding. */
     /** When the next halted or sleeping EMT will wake up.
      * This is set to 0 when it needs recalculating and to UINT64_MAX when
      * there are no halted or sleeping EMTs in the GVMM. */
     uint64_t            uNsNextEmtWakeup;
     /** The lock used to serialize VM creation, destruction and associated events that
      * isn't performance critical. Owners may acquire the list lock. */
-    RTSEMFASTMUTEX      CreateDestroyLock;
+    RTCRITSECT          CreateDestroyLock;
     /** The lock used to serialize used list updates and accesses.
      * This indirectly includes scheduling since the scheduler will have to walk the
      * used list to examin running VMs. Owners may not acquire any other locks. */
-    RTSEMFASTMUTEX      UsedLock;
+    RTCRITSECTRW        UsedLock;
     /** The handle array.
      * The size of this array defines the maximum number of currently running VMs.
      * The first entry is unused as it represents the NIL handle. */
@@ -289,19 +293,26 @@ typedef struct GVMM
      */
     uint32_t            nsMinSleepCompany;
     /** @gcfgm{/GVMM/EarlyWakeUp1, 32-bit, 0, 100000000, 25000, ns}
-     * The limit for the first round of early wakeups, given in nano seconds.
+     * The limit for the first round of early wake-ups, given in nano seconds.
      */
     uint32_t            nsEarlyWakeUp1;
     /** @gcfgm{/GVMM/EarlyWakeUp2, 32-bit, 0, 100000000, 50000, ns}
-     * The limit for the second round of early wakeups, given in nano seconds.
+     * The limit for the second round of early wake-ups, given in nano seconds.
      */
     uint32_t            nsEarlyWakeUp2;
+
+    /** Set if we're doing early wake-ups.
+     * This reflects  nsEarlyWakeUp1 and nsEarlyWakeUp2.  */
+    bool volatile       fDoEarlyWakeUps;
 
     /** The number of entries in the host CPU array (aHostCpus). */
     uint32_t            cHostCpus;
     /** Per host CPU data (variable length). */
     GVMMHOSTCPU         aHostCpus[1];
 } GVMM;
+AssertCompileMemberAlignment(GVMM, CreateDestroyLock, 8);
+AssertCompileMemberAlignment(GVMM, UsedLock, 8);
+AssertCompileMemberAlignment(GVMM, uNsNextEmtWakeup, 8);
 /** Pointer to the GVMM instance data. */
 typedef GVMM *PGVMM;
 
@@ -376,10 +387,11 @@ GVMMR0DECL(int) GVMMR0Init(void)
     PGVMM pGVMM = (PGVMM)RTMemAllocZ(RT_UOFFSETOF(GVMM, aHostCpus[cHostCpus]));
     if (!pGVMM)
         return VERR_NO_MEMORY;
-    int rc = RTSemFastMutexCreate(&pGVMM->CreateDestroyLock);
+    int rc = RTCritSectInitEx(&pGVMM->CreateDestroyLock, 0, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE,
+                              "GVMM-CreateDestroyLock");
     if (RT_SUCCESS(rc))
     {
-        rc = RTSemFastMutexCreate(&pGVMM->UsedLock);
+        rc = RTCritSectRwInitEx(&pGVMM->UsedLock, 0, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "GVMM-UsedLock");
         if (RT_SUCCESS(rc))
         {
             pGVMM->u32Magic = GVMM_MAGIC;
@@ -426,6 +438,7 @@ GVMMR0DECL(int) GVMMR0Init(void)
                 pGVMM->nsEarlyWakeUp1    = 0;
                 pGVMM->nsEarlyWakeUp2    = 0;
             }
+            pGVMM->fDoEarlyWakeUps = pGVMM->nsEarlyWakeUp1 > 0 && pGVMM->nsEarlyWakeUp2 > 0;
 
             /* The host CPU data. */
             pGVMM->cHostCpus = cHostCpus;
@@ -490,11 +503,9 @@ GVMMR0DECL(int) GVMMR0Init(void)
             }
 
             /* bail out. */
-            RTSemFastMutexDestroy(pGVMM->UsedLock);
-            pGVMM->UsedLock = NIL_RTSEMFASTMUTEX;
+            RTCritSectRwDelete(&pGVMM->UsedLock);
         }
-        RTSemFastMutexDestroy(pGVMM->CreateDestroyLock);
-        pGVMM->CreateDestroyLock = NIL_RTSEMFASTMUTEX;
+        RTCritSectDelete(&pGVMM->CreateDestroyLock);
     }
 
     RTMemFree(pGVMM);
@@ -542,10 +553,8 @@ GVMMR0DECL(void) GVMMR0Term(void)
      * Invalidate the and free resources.
      */
     pGVMM->u32Magic = ~GVMM_MAGIC;
-    RTSemFastMutexDestroy(pGVMM->UsedLock);
-    pGVMM->UsedLock = NIL_RTSEMFASTMUTEX;
-    RTSemFastMutexDestroy(pGVMM->CreateDestroyLock);
-    pGVMM->CreateDestroyLock = NIL_RTSEMFASTMUTEX;
+    RTCritSectRwDelete(&pGVMM->UsedLock);
+    RTCritSectDelete(&pGVMM->CreateDestroyLock);
 
     pGVMM->iFreeHead = 0;
     if (pGVMM->iUsedHead)
@@ -619,14 +628,20 @@ GVMMR0DECL(int) GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, ui
     else if (!strcmp(pszName, "EarlyWakeUp1"))
     {
         if (u64Value <= RT_NS_100MS)
+        {
             pGVMM->nsEarlyWakeUp1 = u64Value;
+            pGVMM->fDoEarlyWakeUps = pGVMM->nsEarlyWakeUp1 > 0 && pGVMM->nsEarlyWakeUp2 > 0;
+        }
         else
             rc = VERR_OUT_OF_RANGE;
     }
     else if (!strcmp(pszName, "EarlyWakeUp2"))
     {
         if (u64Value <= RT_NS_100MS)
+        {
             pGVMM->nsEarlyWakeUp2 = u64Value;
+            pGVMM->fDoEarlyWakeUps = pGVMM->nsEarlyWakeUp1 > 0 && pGVMM->nsEarlyWakeUp2 > 0;
+        }
         else
             rc = VERR_OUT_OF_RANGE;
     }
@@ -680,33 +695,44 @@ GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, 
 
 
 /**
- * Try acquire the 'used' lock.
+ * Acquire the 'used' lock in shared mode.
+ *
+ * This prevents destruction of the VM while we're in ring-0.
  *
  * @returns IPRT status code, see RTSemFastMutexRequest.
- * @param   pGVMM   The GVMM instance data.
+ * @param   a_pGVMM     The GVMM instance data.
+ * @sa      GVMMR0_USED_SHARED_UNLOCK, GVMMR0_USED_EXCLUSIVE_LOCK
  */
-DECLINLINE(int) gvmmR0UsedLock(PGVMM pGVMM)
-{
-    LogFlow(("++gvmmR0UsedLock(%p)\n", pGVMM));
-    int rc = RTSemFastMutexRequest(pGVMM->UsedLock);
-    LogFlow(("gvmmR0UsedLock(%p)->%Rrc\n", pGVMM, rc));
-    return rc;
-}
-
+#define GVMMR0_USED_SHARED_LOCK(a_pGVMM)        RTCritSectRwEnterShared(&(a_pGVMM)->UsedLock)
 
 /**
- * Release the 'used' lock.
+ * Release the 'used' lock in when owning it in shared mode.
+ *
+ * @returns IPRT status code, see RTSemFastMutexRequest.
+ * @param   a_pGVMM     The GVMM instance data.
+ * @sa      GVMMR0_USED_SHARED_LOCK
+ */
+#define GVMMR0_USED_SHARED_UNLOCK(a_pGVMM)      RTCritSectRwLeaveShared(&(a_pGVMM)->UsedLock)
+
+/**
+ * Acquire the 'used' lock in exclusive mode.
+ *
+ * Only use this function when making changes to the used list.
+ *
+ * @returns IPRT status code, see RTSemFastMutexRequest.
+ * @param   a_pGVMM     The GVMM instance data.
+ * @sa      GVMMR0_USED_EXCLUSIVE_UNLOCK
+ */
+#define GVMMR0_USED_EXCLUSIVE_LOCK(a_pGVMM)     RTCritSectRwEnterExcl(&(a_pGVMM)->UsedLock)
+
+/**
+ * Release the 'used' lock when owning it in exclusive mode.
  *
  * @returns IPRT status code, see RTSemFastMutexRelease.
  * @param   pGVMM   The GVMM instance data.
+ * @sa      GVMMR0_USED_EXCLUSIVE_LOCK, GVMMR0_USED_SHARED_UNLOCK
  */
-DECLINLINE(int) gvmmR0UsedUnlock(PGVMM pGVMM)
-{
-    LogFlow(("--gvmmR0UsedUnlock(%p)\n", pGVMM));
-    int rc = RTSemFastMutexRelease(pGVMM->UsedLock);
-    AssertRC(rc);
-    return rc;
-}
+#define GVMMR0_USED_EXCLUSIVE_UNLOCK(a_pGVMM)   RTCritSectRwLeaveExcl(&(a_pGVMM)->UsedLock)
 
 
 /**
@@ -718,7 +744,7 @@ DECLINLINE(int) gvmmR0UsedUnlock(PGVMM pGVMM)
 DECLINLINE(int) gvmmR0CreateDestroyLock(PGVMM pGVMM)
 {
     LogFlow(("++gvmmR0CreateDestroyLock(%p)\n", pGVMM));
-    int rc = RTSemFastMutexRequest(pGVMM->CreateDestroyLock);
+    int rc = RTCritSectEnter(&pGVMM->CreateDestroyLock);
     LogFlow(("gvmmR0CreateDestroyLock(%p)->%Rrc\n", pGVMM, rc));
     return rc;
 }
@@ -733,7 +759,7 @@ DECLINLINE(int) gvmmR0CreateDestroyLock(PGVMM pGVMM)
 DECLINLINE(int) gvmmR0CreateDestroyUnlock(PGVMM pGVMM)
 {
     LogFlow(("--gvmmR0CreateDestroyUnlock(%p)\n", pGVMM));
-    int rc = RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+    int rc = RTCritSectLeave(&pGVMM->CreateDestroyLock);
     AssertRC(rc);
     return rc;
 }
@@ -829,7 +855,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                 /*
                  * Move the handle from the free to used list and perform permission checks.
                  */
-                rc = gvmmR0UsedLock(pGVMM);
+                rc = GVMMR0_USED_EXCLUSIVE_LOCK(pGVMM);
                 AssertRC(rc);
 
                 pGVMM->iFreeHead = pHandle->iNext;
@@ -843,7 +869,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                 pHandle->hEMT0    = NIL_RTNATIVETHREAD;
                 pHandle->ProcId   = NIL_RTPROCESS;
 
-                gvmmR0UsedUnlock(pGVMM);
+                GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
 
                 rc = SUPR0ObjVerifyAccess(pHandle->pvObj, pSession, NULL);
                 if (RT_SUCCESS(rc))
@@ -923,7 +949,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         AssertPtr((void *)pVM->paVMPagesR3);
 
                                         /* complete the handle - take the UsedLock sem just to be careful. */
-                                        rc = gvmmR0UsedLock(pGVMM);
+                                        rc = GVMMR0_USED_EXCLUSIVE_LOCK(pGVMM);
                                         AssertRC(rc);
 
                                         pHandle->pVM                  = pVM;
@@ -940,13 +966,15 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         {
                                             VBOXVMM_R0_GVMM_VM_CREATED(pGVM, pVM, ProcId, (void *)hEMT0, cCpus);
 
-                                            gvmmR0UsedUnlock(pGVMM);
+                                            GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
                                             gvmmR0CreateDestroyUnlock(pGVMM);
 
                                             *ppVM = pVM;
                                             Log(("GVMMR0CreateVM: pVM=%p pVMR3=%p pGVM=%p hGVM=%d\n", pVM, pVM->pVMR3, pGVM, iHandle));
                                             return VINF_SUCCESS;
                                         }
+
+                                        GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
                                     }
 
                                     RTR0MemObjFree(pGVM->gvmm.s.VMMapObj, false /* fFreeMappings */);
@@ -1240,7 +1268,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
 
     int rc = gvmmR0CreateDestroyLock(pGVMM);
     AssertRC(rc);
-    rc = gvmmR0UsedLock(pGVMM);
+    rc = GVMMR0_USED_EXCLUSIVE_LOCK(pGVMM);
     AssertRC(rc);
 
     /*
@@ -1249,7 +1277,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
     if (RT_UNLIKELY(pHandle->iNext >= RT_ELEMENTS(pGVMM->aHandles)))
     {
         SUPR0Printf("GVM: used list index %d is out of range!\n", pHandle->iNext);
-        gvmmR0UsedUnlock(pGVMM);
+        GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
         gvmmR0CreateDestroyUnlock(pGVMM);
         return;
     }
@@ -1265,7 +1293,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
             if (RT_UNLIKELY(iPrev >= RT_ELEMENTS(pGVMM->aHandles)))
             {
                 SUPR0Printf("GVM: used list index %d is out of range!\n", iPrev);
-                gvmmR0UsedUnlock(pGVMM);
+                GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
                 gvmmR0CreateDestroyUnlock(pGVMM);
                 return;
             }
@@ -1282,7 +1310,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
         if (!iPrev)
         {
             SUPR0Printf("GVM: can't find the handle previous previous of %d!\n", pHandle->iSelf);
-            gvmmR0UsedUnlock(pGVMM);
+            GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
             gvmmR0CreateDestroyUnlock(pGVMM);
             return;
         }
@@ -1301,7 +1329,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
         &&  pGVM->u32Magic == GVM_MAGIC)
     {
         pGVMM->cEMTs -= pGVM->cCpus;
-        gvmmR0UsedUnlock(pGVMM);
+        GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
 
         gvmmR0CleanupVM(pGVM);
 
@@ -1347,7 +1375,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
         RTMemFree(pGVM);
 
         /* Re-acquire the UsedLock before freeing the handle since we're updating handle fields. */
-        rc = gvmmR0UsedLock(pGVMM);
+        rc = GVMMR0_USED_EXCLUSIVE_LOCK(pGVMM);
         AssertRC(rc);
     }
     /* else: GVMMR0CreateVM cleanup. */
@@ -1364,7 +1392,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
     ASMAtomicWriteHandle(&pHandle->hEMT0,        NIL_RTNATIVETHREAD);
     ASMAtomicWriteU32(&pHandle->ProcId,          NIL_RTPROCESS);
 
-    gvmmR0UsedUnlock(pGVMM);
+    GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
     gvmmR0CreateDestroyUnlock(pGVMM);
     LogFlow(("gvmmR0HandleObjDestructor: returns\n"));
 }
@@ -1388,7 +1416,7 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PVM pVM, VMCPUID idCpu)
      */
     PGVM pGVM;
     PGVMM pGVMM;
-    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, false /* fTakeUsedLock */);
+    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, false /* fTakeUsedLock */); /** @todo take lock here. */
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1444,9 +1472,11 @@ GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM)
  * @param   pVM             The cross context VM structure.
  * @param   ppGVM           Where to store the GVM pointer.
  * @param   ppGVMM          Where to store the pointer to the GVMM instance data.
- * @param   fTakeUsedLock   Whether to take the used lock or not.
- *                          Be very careful if not taking the lock as it's possible that
- *                          the VM will disappear then.
+ * @param   fTakeUsedLock   Whether to take the used lock or not.  We take it in
+ *                          shared mode when requested.
+ *
+ *                          Be very careful if not taking the lock as it's
+ *                          possible that the VM will disappear then!
  *
  * @remark  This will not assert on an invalid pVM but try return silently.
  */
@@ -1478,7 +1508,7 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
     PGVM pGVM;
     if (fTakeUsedLock)
     {
-        int rc = gvmmR0UsedLock(pGVMM);
+        int rc = GVMMR0_USED_SHARED_LOCK(pGVMM);
         AssertRCReturn(rc, rc);
 
         pGVM = pHandle->pGVM;
@@ -1488,7 +1518,7 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
                         ||  !VALID_PTR(pGVM)
                         ||  pGVM->pVM != pVM))
         {
-            gvmmR0UsedUnlock(pGVMM);
+            GVMMR0_USED_SHARED_UNLOCK(pGVMM);
             return VERR_INVALID_HANDLE;
         }
     }
@@ -1523,6 +1553,8 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
  *
  * @remark  This will not take the 'used'-lock because it doesn't do
  *          nesting and this function will be used from under the lock.
+ *          Update: This is no longer true.  Consider taking the lock in shared
+ *          mode!
  */
 GVMMR0DECL(int) GVMMR0ByVM(PVM pVM, PGVM *ppGVM)
 {
@@ -1680,8 +1712,7 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
      * Skip this if we've got disabled because of high resolution wakeups or by
      * the user.
      */
-    if (   !pGVMM->nsEarlyWakeUp1
-        && !pGVMM->nsEarlyWakeUp2)
+    if (!pGVMM->fDoEarlyWakeUps)
         return 0;
 
 /** @todo Rewrite this algorithm. See performance defect XYZ. */
@@ -1692,6 +1723,12 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
     const uint64_t  uNsEarlyWakeUp2 = u64Now + pGVMM->nsEarlyWakeUp2;
     if (   pGVMM->cHaltedEMTs == 0
         || uNsEarlyWakeUp2 > pGVMM->uNsNextEmtWakeup)
+        return 0;
+
+    /*
+     * Only one thread doing this at a time.
+     */
+    if (!ASMAtomicCmpXchgBool(&pGVMM->fDoingEarlyWakeUps, true, false))
         return 0;
 
     /*
@@ -1808,6 +1845,7 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
      */
     pGVMM->uNsNextEmtWakeup = u64Min;
 
+    ASMAtomicWriteBool(&pGVMM->fDoingEarlyWakeUps, false);
     return cWoken;
 }
 
@@ -1843,13 +1881,16 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
     Assert(!pCurGVCpu->gvmm.s.u64HaltExpire);
 
     /*
-     * Take the UsedList semaphore, get the current time
-     * and check if anyone needs waking up.
-     * Interrupts must NOT be disabled at this point because we ask for GIP time!
+     * If we're doing early wake-ups, we must take the UsedList lock before we
+     * start querying the current time.
+     * Note! Interrupts must NOT be disabled at this point because we ask for GIP time!
      */
-    rc = gvmmR0UsedLock(pGVMM);
-    AssertRC(rc);
-    GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+    bool const fDoEarlyWakeUps = pGVMM->fDoEarlyWakeUps;
+    if (fDoEarlyWakeUps)
+    {
+        rc = GVMMR0_USED_SHARED_LOCK(pGVMM); AssertRC(rc);
+        GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+    }
 
     pCurGVCpu->gvmm.s.iCpuEmt = ASMGetApicId();
 
@@ -1860,8 +1901,12 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
     const uint64_t u64NowSys = RTTimeSystemNanoTS();
     const uint64_t u64NowGip = RTTimeNanoTS();
     GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-    pGVM->gvmm.s.StatsSched.cHaltWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64NowGip);
-    GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+
+    if (fDoEarlyWakeUps)
+    {
+        pGVM->gvmm.s.StatsSched.cHaltWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64NowGip);
+        GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+    }
 
     /*
      * Go to sleep if we must...
@@ -1876,11 +1921,14 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
         pGVM->gvmm.s.StatsSched.cHaltBlocking++;
         if (cNsInterval > RT_NS_1SEC)
             u64ExpireGipTime = u64NowGip + RT_NS_1SEC;
-        if (u64ExpireGipTime < pGVMM->uNsNextEmtWakeup)
-            pGVMM->uNsNextEmtWakeup = u64ExpireGipTime;
         ASMAtomicWriteU64(&pCurGVCpu->gvmm.s.u64HaltExpire, u64ExpireGipTime);
         ASMAtomicIncU32(&pGVMM->cHaltedEMTs);
-        gvmmR0UsedUnlock(pGVMM);
+        if (fDoEarlyWakeUps)
+        {
+            if (u64ExpireGipTime < pGVMM->uNsNextEmtWakeup)
+                pGVMM->uNsNextEmtWakeup = u64ExpireGipTime;
+            GVMMR0_USED_SHARED_UNLOCK(pGVMM);
+        }
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 
         rc = RTSemEventMultiWaitEx(pCurGVCpu->gvmm.s.HaltEventMulti,
@@ -1906,7 +1954,8 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
     else
     {
         pGVM->gvmm.s.StatsSched.cHaltNotBlocking++;
-        gvmmR0UsedUnlock(pGVMM);
+        if (fDoEarlyWakeUps)
+            GVMMR0_USED_SHARED_UNLOCK(pGVMM);
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
         RTSemEventMultiReset(pCurGVCpu->gvmm.s.HaltEventMulti);
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
@@ -1992,7 +2041,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
             rc = gvmmR0SchedWakeUpOne(pGVM, &pGVM->aCpus[idCpu]);
             GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 
-            if (fTakeUsedLock)
+            if (fTakeUsedLock && pGVMM->fDoEarlyWakeUps)
             {
                 /*
                  * While we're here, do a round of scheduling.
@@ -2008,7 +2057,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
 
         if (fTakeUsedLock)
         {
-            int rc2 = gvmmR0UsedUnlock(pGVMM);
+            int rc2 = GVMMR0_USED_SHARED_UNLOCK(pGVMM);
             AssertRC(rc2);
             GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
         }
@@ -2091,7 +2140,7 @@ GVMMR0DECL(int) GVMMR0SchedPokeEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
 
         if (fTakeUsedLock)
         {
-            int rc2 = gvmmR0UsedUnlock(pGVMM);
+            int rc2 = GVMMR0_USED_SHARED_UNLOCK(pGVMM);
             AssertRC(rc2);
         }
     }
@@ -2164,7 +2213,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PVM pVM, PCVMCPUSET pSleepSet, PCVM
             }
         }
 
-        int rc2 = gvmmR0UsedUnlock(pGVMM);
+        int rc2 = GVMMR0_USED_SHARED_UNLOCK(pGVMM);
         AssertRC(rc2);
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
     }
@@ -2218,22 +2267,29 @@ GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, VMCPUID idCpu, bool fYield)
     int rc = gvmmR0ByVMAndEMT(pVM, idCpu, &pGVM, &pGVMM);
     if (RT_SUCCESS(rc))
     {
-        rc = gvmmR0UsedLock(pGVMM);
-        AssertRC(rc);
-        pGVM->gvmm.s.StatsSched.cPollCalls++;
-
-        Assert(ASMGetFlags() & X86_EFL_IF);
-        const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
-
-        if (!fYield)
-            pGVM->gvmm.s.StatsSched.cPollWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
-        else
+        /*
+         * We currently only implement helping doing wakeups (fYield = false), so don't
+         * bother taking the lock if gvmmR0SchedDoWakeUps is not going to do anything.
+         */
+        if (!fYield && pGVMM->fDoEarlyWakeUps)
         {
-            /** @todo implement this... */
-            rc = VERR_NOT_IMPLEMENTED;
-        }
+            rc = GVMMR0_USED_SHARED_LOCK(pGVMM); AssertRC(rc);
+            pGVM->gvmm.s.StatsSched.cPollCalls++;
 
-        gvmmR0UsedUnlock(pGVMM);
+            Assert(ASMGetFlags() & X86_EFL_IF);
+            const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
+
+            pGVM->gvmm.s.StatsSched.cPollWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
+
+            GVMMR0_USED_SHARED_UNLOCK(pGVMM);
+        }
+        /*
+         * Not quite sure what we could do here...
+         */
+        else if (fYield)
+            rc = VERR_NOT_IMPLEMENTED; /** @todo implement this... */
+        else
+            rc = VINF_SUCCESS;
     }
 
     LogFlow(("GVMMR0SchedWakeUp: returns %Rrc\n", rc));
@@ -2445,7 +2501,7 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
         GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
         memset(&pStats->SchedVM, 0, sizeof(pStats->SchedVM));
 
-        int rc = gvmmR0UsedLock(pGVMM);
+        int rc = GVMMR0_USED_SHARED_LOCK(pGVMM);
         AssertRCReturn(rc, rc);
     }
 
@@ -2518,7 +2574,7 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
     }
     pStats->cHostCpus = iDstCpu;
 
-    gvmmR0UsedUnlock(pGVMM);
+    GVMMR0_USED_SHARED_UNLOCK(pGVMM);
 
     return VINF_SUCCESS;
 }
@@ -2593,7 +2649,7 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
     {
         GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
-        int rc = gvmmR0UsedLock(pGVMM);
+        int rc = GVMMR0_USED_SHARED_LOCK(pGVMM);
         AssertRCReturn(rc, rc);
     }
 
@@ -2633,7 +2689,7 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
         }
     }
 
-    gvmmR0UsedUnlock(pGVMM);
+    GVMMR0_USED_SHARED_UNLOCK(pGVMM);
 
     return VINF_SUCCESS;
 }
