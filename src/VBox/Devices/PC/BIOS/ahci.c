@@ -234,12 +234,12 @@ void eax_hi_wr(uint16_t);
     "shl    eax, 16"    \
     parm [ax] modify nomemory;
 
-void high_bits_save(ahci_t __far *ahci)
+void inline high_bits_save(ahci_t __far *ahci)
 {
     ahci->saved_eax_hi = eax_hi_rd();
 }
 
-void high_bits_restore(ahci_t __far *ahci)
+void inline high_bits_restore(ahci_t __far *ahci)
 {
     eax_hi_wr(ahci->saved_eax_hi);
 }
@@ -247,7 +247,7 @@ void high_bits_restore(ahci_t __far *ahci)
 /**
  * Sets a given set of bits in a register.
  */
-static void ahci_ctrl_set_bits(uint16_t iobase, uint16_t reg, uint32_t mask)
+static void inline ahci_ctrl_set_bits(uint16_t iobase, uint16_t reg, uint32_t mask)
 {
     outpd(iobase + AHCI_REG_IDX, reg);
     outpd(iobase + AHCI_REG_DATA, inpd(iobase + AHCI_REG_DATA) | mask);
@@ -256,7 +256,7 @@ static void ahci_ctrl_set_bits(uint16_t iobase, uint16_t reg, uint32_t mask)
 /**
  * Clears a given set of bits in a register.
  */
-static void ahci_ctrl_clear_bits(uint16_t iobase, uint16_t reg, uint32_t mask)
+static void inline ahci_ctrl_clear_bits(uint16_t iobase, uint16_t reg, uint32_t mask)
 {
     outpd(iobase + AHCI_REG_IDX, reg);
     outpd(iobase + AHCI_REG_DATA, inpd(iobase + AHCI_REG_DATA) & ~mask);
@@ -266,7 +266,7 @@ static void ahci_ctrl_clear_bits(uint16_t iobase, uint16_t reg, uint32_t mask)
  * Returns whether at least one of the bits in the given mask is set
  * for a register.
  */
-static uint8_t ahci_ctrl_is_bit_set(uint16_t iobase, uint16_t reg, uint32_t mask)
+static uint8_t inline ahci_ctrl_is_bit_set(uint16_t iobase, uint16_t reg, uint32_t mask)
 {
     outpd(iobase + AHCI_REG_IDX, reg);
     return (inpd(iobase + AHCI_REG_DATA) & mask) != 0;
@@ -342,7 +342,6 @@ static uint16_t ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
     ahci_t __far    *ahci  = bios_dsk->ahci_seg :> 0;
     uint16_t        n_sect = bios_dsk->drqp.nsect;
     uint16_t        sectsz = bios_dsk->drqp.sect_sz;
-    uint16_t        prdt_idx;
     fis_d2h __far   *d2h;
 
     _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
@@ -372,25 +371,25 @@ static uint16_t ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
              (uint32_t)n_sect * sectsz, bios_dsk->drqp.skip_a);
     vds_build_sg_list(&ahci->edds, bios_dsk->drqp.buffer, (uint32_t)n_sect * sectsz);
 
-    prdt_idx = ahci->cur_prd;
-
     /* Set up the PRDT. */
-    ahci->aPrdt[prdt_idx].len       = ahci->edds.u.sg[0].size - 1;
-    ahci->aPrdt[prdt_idx].phys_addr = ahci->edds.u.sg[0].phys_addr;
-    ++prdt_idx;
+    ahci->aPrdt[ahci->cur_prd].len       = ahci->edds.u.sg[0].size - 1;
+    ahci->aPrdt[ahci->cur_prd].phys_addr = ahci->edds.u.sg[0].phys_addr;
+    ++ahci->cur_prd;
 
     if (bios_dsk->drqp.skip_a) {
-        ahci->aPrdt[prdt_idx].len       = bios_dsk->drqp.skip_a - 1;
-        ahci->aPrdt[prdt_idx].phys_addr = ahci->sink_buf_phys;
-        ++prdt_idx;
+        ahci->aPrdt[ahci->cur_prd].len       = bios_dsk->drqp.skip_a - 1;
+        ahci->aPrdt[ahci->cur_prd].phys_addr = ahci->sink_buf_phys;
+        ++ahci->cur_prd;
     }
 
-    ahci->cur_prd = prdt_idx;
+#if DEBUG_AHCI
+    {
+        uint16_t     prdt_idx;
 
-#ifdef DEBUG_AHCI
-    for (prdt_idx = 0; prdt_idx < ahci->cur_prd; ++prdt_idx) {
-        DBG_AHCI("S/G entry %u: %5lu bytes @ %08lX\n", prdt_idx,
-                 ahci->aPrdt[prdt_idx].len + 1, ahci->aPrdt[prdt_idx].phys_addr);
+        for (prdt_idx = 0; prdt_idx < ahci->cur_prd; ++prdt_idx) {
+            DBG_AHCI("S/G entry %u: %5lu bytes @ %08lX\n", prdt_idx,
+                     ahci->aPrdt[prdt_idx].len + 1, ahci->aPrdt[prdt_idx].phys_addr);
+        }
     }
 #endif
 
