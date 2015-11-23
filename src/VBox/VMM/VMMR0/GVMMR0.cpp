@@ -258,8 +258,6 @@ typedef struct GVMM
     uint32_t volatile   cEMTs;
     /** The number of EMTs that have halted in GVMMR0SchedHalt. */
     uint32_t volatile   cHaltedEMTs;
-    /** Alignment padding. */
-    uint32_t            u32Alignment;
     /** Mini lock for restricting early wake-ups to one thread. */
     bool volatile       fDoingEarlyWakeUps;
     bool                afPadding[3]; /**< explicit alignment padding. */
