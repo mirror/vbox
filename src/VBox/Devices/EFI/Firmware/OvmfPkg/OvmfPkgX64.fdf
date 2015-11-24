@@ -282,6 +282,7 @@ INF VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
 INF IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe.inf
 INF MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe.inf
 INF MdeModulePkg/Universal/ReportStatusCodeRouter/RuntimeDxe/ReportStatusCodeRouterRuntimeDxe.inf
+INF MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
 !endif
 
 INF  PcAtChipsetPkg/IsaAcpiDxe/IsaAcpi.inf
@@ -321,11 +322,7 @@ FILE FREEFORM = PCD(gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdLogoFile) {
 !ifndef $(VBOX)
   SECTION RAW = MdeModulePkg/Logo/Logo.bmp
 !else
-  !ifndef $(VBOX_OSE)
-    SECTION RAW = $(VBOX_PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/puel_logo.bmp
-  !else
-    SECTION RAW = $(VBOX_PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/ose_logo2.bmp
-  !endif
+  SECTION RAW = VBoxPkg/Logo/boot_logo.bmp
 !endif
 }
 
