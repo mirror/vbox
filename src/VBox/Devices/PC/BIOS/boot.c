@@ -337,3 +337,4 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     // return the boot segment
     return (((uint32_t)bootdrv) << 16) + bootseg;
 }
+
