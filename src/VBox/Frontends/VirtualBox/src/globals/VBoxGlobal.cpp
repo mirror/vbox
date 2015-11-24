@@ -2099,6 +2099,13 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
                                                     fMount, false /* retry? */);
             }
         }
+        /* Mounting successful: */
+        else
+        {
+            /* Disable First RUN Wizard: */
+            if (gEDataManager->machineFirstTimeStarted(machine.GetId()))
+                gEDataManager->setMachineFirstTimeStarted(false, machine.GetId());
+        }
     }
 
     /* Save settings: */
