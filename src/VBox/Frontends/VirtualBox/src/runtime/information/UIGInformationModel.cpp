@@ -80,7 +80,7 @@ QGraphicsView* UIGInformationModel::paintDevice() const
 
 QGraphicsItem* UIGInformationModel::itemAt(const QPointF &position) const
 {
-    return scene()->itemAt(position);
+    return scene()->itemAt(position, QTransform());
 }
 
 void UIGInformationModel::updateLayout()
