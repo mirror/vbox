@@ -1442,7 +1442,11 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     if (!pausePixmap().isNull())
     {
         /* We have a snapshot for the paused state: */
+#if QT_VERSION >= 0x050000
+        QRect rect = pPaintEvent->rect().intersected(viewport()->rect());
+#else /* QT_VERSION < 0x050000 */
         QRect rect = pPaintEvent->rect().intersect(viewport()->rect());
+#endif /* QT_VERSION < 0x050000 */
         QPainter painter(viewport());
         /* Take the scale-factor into account: */
         if (frameBuffer()->scaleFactor() == 1.0 && !frameBuffer()->scaledSize().isValid())
