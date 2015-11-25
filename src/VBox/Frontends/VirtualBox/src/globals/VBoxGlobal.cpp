@@ -24,6 +24,9 @@
 # include <QToolTip>
 # include <QTranslator>
 # include <QDesktopWidget>
+# if QT_VERSION >= 0x050000
+#  include <QStandardPaths>
+# endif /* QT_VERSION >= 0x050000 */
 # include <QDesktopServices>
 # include <QMutex>
 # include <QToolButton>
@@ -34,17 +37,14 @@
 # include <QDir>
 # include <QLocale>
 # include <QSpinBox>
-
 # ifdef Q_WS_WIN
 #  include <QEventLoop>
 # endif /* Q_WS_WIN */
-
 # ifdef Q_WS_X11
 #  include <QTextBrowser>
 #  include <QScrollBar>
 #  include <QX11Info>
 # endif /* Q_WS_X11 */
-
 # ifdef VBOX_GUI_WITH_PIDFILE
 #  include <QTextStream>
 # endif /* VBOX_GUI_WITH_PIDFILE */
@@ -73,7 +73,6 @@
 # include "UIModalWindowManager.h"
 # include "UIIconPool.h"
 # include "UIVirtualBoxEventHandler.h"
-
 # ifdef Q_WS_X11
 #  include "UIHostComboEditor.h"
 #  include "UIDesktopWidgetWatchdog.h"
@@ -81,13 +80,11 @@
 #   include "VBoxLicenseViewer.h"
 #  endif /* VBOX_OSE */
 # endif /* Q_WS_X11 */
-
 # ifdef Q_WS_MAC
 #  include "VBoxUtils-darwin.h"
 #  include "UIMachineWindowFullscreen.h"
 #  include "UIMachineWindowSeamless.h"
 # endif /* Q_WS_MAC */
-
 # ifdef VBOX_WITH_VIDEOHWACCEL
 #  include "VBoxFBOverlay.h"
 # endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -125,10 +122,10 @@
 # ifdef Q_WS_X11
 #  include <iprt/mem.h>
 # endif /* Q_WS_X11 */
-
 # include <VBox/sup.h>
 # include <VBox/com/Guid.h>
 
+/* External includes: */
 # ifdef Q_WS_WIN
 #  include "shlobj.h"
 # endif /* Q_WS_WIN */
@@ -142,25 +139,24 @@
 # include "VirtualBox_XPCOM.h"
 #endif /* VBOX_WITH_XPCOM */
 
+/* Qt includes: */
 #include <QLibraryInfo>
 #include <QProgressDialog>
 #include <QSettings>
 #include <QStyleOptionSpinBox>
 
+/* Other VBox includes: */
 #include <VBox/VBoxOGL.h>
 #include <VBox/vd.h>
-
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
 
+/* External includes: */
+# include <math.h>
 #ifdef Q_WS_MAC
 # include <sys/utsname.h>
 #endif /* Q_WS_MAC */
-
-/* External includes: */
-# include <math.h>
-
 #ifdef Q_WS_X11
 # undef BOOL /* typedef CARD8 BOOL in Xmd.h conflicts with #define BOOL PRBool
               * in COMDefs.h. A better fix would be to isolate X11-specific
@@ -170,7 +166,6 @@
 # include <X11/Xlib.h>
 # include <X11/Xatom.h>
 # include <X11/extensions/Xinerama.h>
-
 # define BOOL PRBool
 #endif /* Q_WS_X11 */
 
@@ -3642,7 +3637,11 @@ QList <QPair <QString, QString> > VBoxGlobal::FloppyBackends()
 /* static */
 QString VBoxGlobal::documentsPath()
 {
+#if QT_VERSION >= 0x050000
+    QString path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#else /* QT_VERSION < 0x050000 */
     QString path = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif /* QT_VERSION < 0x050000 */
     QDir dir(path);
     if (dir.exists())
         return QDir::cleanPath(dir.canonicalPath());

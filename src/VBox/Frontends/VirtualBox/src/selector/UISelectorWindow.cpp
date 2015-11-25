@@ -20,15 +20,19 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QDesktopServices>
 # include <QMenuBar>
 # include <QStatusBar>
 # include <QResizeEvent>
 # include <QStackedWidget>
 # include <QToolButton>
 # include <QTimer>
+# if QT_VERSION >= 0x050000
+#  include <QStandardPaths>
+# else /* QT_VERSION < 0x050000 */
+#  include <QDesktopServices>
+# endif /* QT_VERSION < 0x050000 */
 
-/* Local includes: */
+/* GUI includes: */
 # include "QISplitter.h"
 # include "QIFileDialog.h"
 # include "UIBar.h"
@@ -60,7 +64,6 @@
 # include "UIVMItem.h"
 # include "UIExtraDataManager.h"
 # include "VBoxGlobal.h"
-
 # ifdef Q_WS_MAC
 #  include "VBoxUtils.h"
 #  include "UIWindowMenuManager.h"
@@ -967,7 +970,11 @@ void UISelectorWindow::sltPerformCreateMachineShortcut()
         /* Create shortcut for this VM: */
         const CMachine &machine = pItem->machine();
         UIDesktopServices::createMachineShortcut(machine.GetSettingsFilePath(),
+#if QT_VERSION >= 0x050000
+                                                 QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
+#else /* QT_VERSION < 0x050000 */
                                                  QDesktopServices::storageLocation(QDesktopServices::DesktopLocation),
+#endif /* QT_VERSION < 0x050000 */
                                                  machine.GetName(), machine.GetId());
     }
 }
