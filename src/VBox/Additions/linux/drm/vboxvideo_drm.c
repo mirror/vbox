@@ -70,6 +70,16 @@
 # define DRM_NEW_BUS_INIT 1
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+# ifdef RHEL_RELEASE_CODE
+#  if RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(7, 2)
+#   define DRM_HAVE_DRM_MAP
+#  endif
+# else
+#  define DRM_HAVE_DRM_MAP
+# endif
+#endif
+
 static struct pci_device_id pciidlist[] = {
         vboxvideo_PCI_IDS
 };
@@ -89,7 +99,7 @@ static struct file_operations driver_fops =
         .open = drm_open,
         .release = drm_release,
         .unlocked_ioctl = drm_ioctl,
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+# ifdef DRM_HAVE_DRM_MAP
         /* This shouldn't be necessary even for old kernels as there is
          * nothing sensible to mmap. But we play safe and keep it for
          * legacy reasons. */

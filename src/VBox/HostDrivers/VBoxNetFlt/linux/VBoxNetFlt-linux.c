@@ -67,12 +67,6 @@ typedef struct VBOXNETFLTNOTIFIER {
 typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 20, 0)
-# define vlan_tx_tag_get(skb)       skb_vlan_tag_get(skb)
-# define vlan_tx_tag_present(skb)   skb_vlan_tag_present(skb)
-#endif
-
-
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -128,6 +122,21 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 # endif
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 20, 0)
+# define VBOX_HAVE_SKB_VLAN
+#else
+# ifdef RHEL_RELEASE_CODE
+#  if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(7, 2)
+#   define VBOX_HAVE_SKB_VLAN
+#  endif
+# endif
+#endif
+
+#ifdef VBOX_HAVE_SKB_VLAN
+# define vlan_tx_tag_get(skb)       skb_vlan_tag_get(skb)
+# define vlan_tx_tag_present(skb)   skb_vlan_tag_present(skb)
+#endif
+
 #ifndef NET_IP_ALIGN
 # define NET_IP_ALIGN 2
 #endif
@@ -139,6 +148,7 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+
 /** Indicates that the linux kernel may send us GSO frames. */
 # define VBOXNETFLT_WITH_GSO                1
 
@@ -156,12 +166,13 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
  *  to the internal network.  */
 # define VBOXNETFLT_WITH_GSO_RECV           1
 
-#endif
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18) */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
 /** This enables or disables handling of GSO frames coming from the wire (GRO). */
 # define VBOXNETFLT_WITH_GRO                1
 #endif
+
 /*
  * GRO support was backported to RHEL 5.4
  */
