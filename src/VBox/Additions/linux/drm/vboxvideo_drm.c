@@ -80,6 +80,16 @@
 # endif
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+# ifdef RHEL_RELEASE_CODE
+#  if RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(7, 2)
+#   define DRM_WANTS_SET_BUSID
+#  endif
+# else
+#  define DRM_WANTS_SET_BUSID
+# endif
+#endif
+
 static struct pci_device_id pciidlist[] = {
         vboxvideo_PCI_IDS
 };
@@ -113,7 +123,7 @@ static struct drm_driver driver =
 {
     /* .driver_features = DRIVER_USE_MTRR, */
     .load = vboxvideo_driver_load,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#ifdef DRM_WANTS_SET_BUSID
     /* If this is missing a warning gets printed to dmesg.  We will not
      * attempt to make kernels work to which the change (915b4d11b) got back-
      * ported, as the problem is only cosmetic. */
