@@ -81,13 +81,12 @@
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+# define DRM_WANTS_SET_BUSID
+#else
 # ifdef RHEL_RELEASE_CODE
 #  if RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(7, 2)
 #   define DRM_WANTS_SET_BUSID
 #  endif
-# else
-#  define DRM_WANTS_SET_BUSID
-# endif
 #endif
 
 static struct pci_device_id pciidlist[] = {
