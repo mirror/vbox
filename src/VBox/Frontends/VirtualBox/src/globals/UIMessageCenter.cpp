@@ -2805,7 +2805,7 @@ QString UIMessageCenter::errorInfoToString(const COMErrorInfo &info,
 
         if (haveInterfaceID)
         {
-            QString s = info.interfaceID();
+            QString s = info.interfaceID().toString();
             if (!info.interfaceName().isEmpty())
                 s = info.interfaceName() + ' ' + s;
             formatted += QString("<tr><td>%1</td><td>%2</td></tr>")
@@ -2814,7 +2814,7 @@ QString UIMessageCenter::errorInfoToString(const COMErrorInfo &info,
 
         if (!info.calleeIID().isNull() && info.calleeIID() != info.interfaceID())
         {
-            QString s = info.calleeIID();
+            QString s = info.calleeIID().toString();
             if (!info.calleeName().isEmpty())
                 s = info.calleeName() + ' ' + s;
             formatted += QString("<tr><td>%1</td><td>%2</td></tr>")
