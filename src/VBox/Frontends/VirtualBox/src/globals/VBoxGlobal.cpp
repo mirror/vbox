@@ -3561,7 +3561,7 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
 
     /* Find the first children of aParent with the appropriate properties.
      * Please note that this call is recursively. */
-    QList<QWidget *> list = qFindChildren<QWidget *> (aParent, aName);
+    QList<QWidget *> list = aParent->findChildren<QWidget*>(aName);
     foreach(QWidget *child, list)
     {
         if (!aClassName || strcmp (child->metaObject()->className(), aClassName) == 0)
