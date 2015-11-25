@@ -32,7 +32,7 @@ fi
 PATH_TMP="`cd \`dirname $1\`; pwd`/.vbox_modules"
 PATH_OUT=$PATH_TMP
 FILE_OUT="`cd \`dirname $1\`; pwd`/`basename $1`"
-PATH_ROOT="${MY_DIR}/../../../..; pwd`"
+PATH_ROOT="`cd ${MY_DIR}/../../../..; pwd`"
 PATH_LINUX="$PATH_ROOT/src/VBox/HostDrivers/linux"
 PATH_VBOXDRV="$PATH_ROOT/src/VBox/HostDrivers/Support"
 PATH_VBOXNET="$PATH_ROOT/src/VBox/HostDrivers/VBoxNetFlt"

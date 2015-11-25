@@ -28,7 +28,7 @@ fi
 PATH_TMP="`cd \`dirname $1\`; pwd`/.vbox_modules"
 PATH_OUT=$PATH_TMP
 FILE_OUT="`cd \`dirname $1\`; pwd`/`basename $1`"
-PATH_ROOT="${MY_DIR}/../../../..; pwd`"
+PATH_ROOT="`cd ${MY_DIR}/../../../..; pwd`"
 PATH_LINUX="$PATH_ROOT/src/VBox/Additions/linux"
 PATH_VBOXGUEST="$PATH_ROOT/src/VBox/Additions/common/VBoxGuest"
 PATH_VBOXSF="$PATH_ROOT/src/VBox/Additions/linux/sharedfolders"
