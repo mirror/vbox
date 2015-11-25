@@ -87,6 +87,7 @@
 #  if RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(7, 2)
 #   define DRM_WANTS_SET_BUSID
 #  endif
+# endif
 #endif
 
 static struct pci_device_id pciidlist[] = {
