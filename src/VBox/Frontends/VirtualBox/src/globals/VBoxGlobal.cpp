@@ -4070,11 +4070,20 @@ void VBoxGlobal::prepare()
     bool fSeparateProcess = false;
     QString vmNameOrUuid;
 
+#if QT_VERSION >= 0x050000
+    const QStringList arguments = qApp->arguments();
+    const int argc = arguments.size();
+#else /* QT_VERSION < 0x050000 */
     int argc = qApp->argc();
+#endif /* QT_VERSION < 0x050000 */
     int i = 1;
     while (i < argc)
     {
+#if QT_VERSION >= 0x050000
+        const char *arg = arguments.at(i).toLocal8Bit().constData();
+#else /* QT_VERSION < 0x050000 */
         const char *arg = qApp->argv() [i];
+#endif /* QT_VERSION < 0x050000 */
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in main.cpp and hardenedmain.cpp exactly,
          * otherwise there will be weird error messages. */
@@ -4083,7 +4092,11 @@ void VBoxGlobal::prepare()
         {
             if (++i < argc)
             {
+#if QT_VERSION >= 0x050000
+                vmNameOrUuid = arguments.at(i);
+#else /* QT_VERSION < 0x050000 */
                 vmNameOrUuid = QString (qApp->argv() [i]);
+#endif /* QT_VERSION < 0x050000 */
                 startVM = true;
             }
         }
@@ -4095,7 +4108,11 @@ void VBoxGlobal::prepare()
         else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
         {
             if (++i < argc)
+# if QT_VERSION >= 0x050000
+                m_strPidfile = arguments.at(i);
+# else /* QT_VERSION < 0x050000 */
                 m_strPidfile = QString(qApp->argv()[i]);
+# endif /* QT_VERSION < 0x050000 */
         }
 #endif /* VBOX_GUI_WITH_PIDFILE */
         /* Visual state type options: */
@@ -4112,7 +4129,11 @@ void VBoxGlobal::prepare()
         {
             if (++i < argc)
             {
+#if QT_VERSION >= 0x050000
+                RTStrCopy(mSettingsPw, sizeof(mSettingsPw), arguments.at(i).toLocal8Bit().constData());
+#else /* QT_VERSION < 0x050000 */
                 RTStrCopy(mSettingsPw, sizeof(mSettingsPw), qApp->argv() [i]);
+#endif /* QT_VERSION < 0x050000 */
                 mSettingsPwSet = true;
             }
         }
@@ -4121,7 +4142,11 @@ void VBoxGlobal::prepare()
             if (++i < argc)
             {
                 size_t cbFile;
+#if QT_VERSION >= 0x050000
+                const char *pszFile = arguments.at(i).toLocal8Bit().constData();
+#else /* QT_VERSION < 0x050000 */
                 char *pszFile = qApp->argv() [i];
+#endif /* QT_VERSION < 0x050000 */
                 bool fStdIn = !::strcmp(pszFile, "stdin");
                 int vrc = VINF_SUCCESS;
                 PRTSTREAM pStrm;
@@ -4165,12 +4190,20 @@ void VBoxGlobal::prepare()
         else if (!::strcmp(arg, "--fda"))
         {
             if (++i < argc)
+# if QT_VERSION >= 0x050000
+                m_strFloppyImage = arguments.at(i);
+# else /* QT_VERSION < 0x050000 */
                 m_strFloppyImage = qApp->argv()[i];
+# endif /* QT_VERSION < 0x050000 */
         }
         else if (!::strcmp(arg, "--dvd") || !::strcmp(arg, "--cdrom"))
         {
             if (++i < argc)
+# if QT_VERSION >= 0x050000
+                m_strDvdImage = arguments.at(i);
+# else /* QT_VERSION < 0x050000 */
                 m_strDvdImage = qApp->argv()[i];
+# endif /* QT_VERSION < 0x050000 */
         }
         /* VMM Options: */
         else if (!::strcmp(arg, "--disable-patm"))
@@ -4188,7 +4221,11 @@ void VBoxGlobal::prepare()
         else if (!::strcmp(arg, "--warp-pct"))
         {
             if (++i < argc)
+#if QT_VERSION >= 0x050000
+                mWarpPct = RTStrToUInt32(arguments.at(i).toLocal8Bit().constData());
+#else /* QT_VERSION < 0x050000 */
                 mWarpPct = RTStrToUInt32(qApp->argv() [i]);
+#endif /* QT_VERSION < 0x050000 */
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /* Debugger/Debugging options: */
