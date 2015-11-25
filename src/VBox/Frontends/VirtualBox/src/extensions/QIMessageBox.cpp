@@ -27,6 +27,7 @@
 # include <QCheckBox>
 # include <QPushButton>
 # include <QStyle>
+# include <QMimeData>
 
 /* GUI includes: */
 # include "QIMessageBox.h"

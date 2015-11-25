@@ -18,11 +18,15 @@
 #ifndef ___UIMediumDefs_h___
 #define ___UIMediumDefs_h___
 
+/* Qt includes: */
+#include <QString>
+
 /* COM includes: */
 #include "COMEnums.h"
 
 /* Other VBox includes: */
 #include <VBox/com/defs.h>
+
 
 /** UIMediumDefs namespace. */
 namespace UIMediumDefs

@@ -23,7 +23,7 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes */
+/* Qt includes: */
 # include <QApplication>
 # include <QClipboard>
 # include <QContextMenuEvent>
@@ -33,8 +33,9 @@
 # include <QMouseEvent>
 # include <QPainter>
 # include <QStyleOptionFocusRect>
+# include <QDrag>
 
-/* Local includes */
+/* GUI includes: */
 # include "QILabel.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */

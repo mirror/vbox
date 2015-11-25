@@ -27,6 +27,7 @@
 # include <QMouseEvent>
 # include <QStatusBar>
 # include <QCheckBox>
+# include <QMimeData>
 # include <QPainter>
 # include <QPixmap>
 # include <QDrag>
@@ -41,7 +42,6 @@
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 
 
 /** QWidget extension

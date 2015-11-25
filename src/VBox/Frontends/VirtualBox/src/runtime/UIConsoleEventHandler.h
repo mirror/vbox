@@ -18,6 +18,9 @@
 #ifndef ___UIConsoleEventHandler_h___
 #define ___UIConsoleEventHandler_h___
 
+/* Qt includes: */
+#include <QObject>
+
 /* COM includes: */
 #include "COMEnums.h"
 #include "CEventListener.h"
@@ -28,6 +31,7 @@
 
 /* Forward declarations: */
 class UISession;
+
 
 /** Active event handler singleton for the CConsole event-source. */
 class UIConsoleEventHandler: public QObject

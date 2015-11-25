@@ -20,9 +20,11 @@
 
 /* Qt includes: */
 #include <QMetaType>
+#include <QObject>
 
 /* Other VBox includes: */
 #include <iprt/cdefs.h>
+
 
 /** Extra-data namespace. */
 namespace UIExtraDataDefs

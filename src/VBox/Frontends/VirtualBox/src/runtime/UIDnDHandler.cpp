@@ -24,6 +24,7 @@
 #include <QKeyEvent>
 #include <QStringList>
 #include <QTimer>
+#include <QDrag>
 #include <QUrl>
 
 /* VirtualBox interface declarations: */
@@ -70,6 +71,7 @@
 #  define DEBUG_DND_QT_LOGFILE "/var/tmp/qt.log"
 # endif /* DEBUG */
 #endif
+
 
 UIDnDHandler::UIDnDHandler(UISession *pSession, QWidget *pParent)
     : m_pSession(pSession)

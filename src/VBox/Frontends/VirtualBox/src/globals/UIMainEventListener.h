@@ -18,6 +18,9 @@
 #ifndef ___UIMainEventListener_h___
 #define ___UIMainEventListener_h___
 
+/* Qt includes: */
+#include <QObject>
+
 /* COM includes: */
 #include "COMEnums.h"
 #include "CVirtualBoxErrorInfo.h"
@@ -27,6 +30,7 @@
 
 /* Other VBox includes: */
 #include <VBox/com/listeners.h>
+
 
 /* Note: On a first look this may seems a little bit complicated.
  * There are two reasons to use a separate class here which handles the events

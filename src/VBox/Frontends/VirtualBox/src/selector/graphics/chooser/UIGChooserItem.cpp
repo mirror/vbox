@@ -29,6 +29,7 @@
 # include <QStateMachine>
 # include <QPropertyAnimation>
 # include <QSignalTransition>
+# include <QDrag>
 
 /* GUI includes: */
 # include "UIGChooserItem.h"

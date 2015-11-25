@@ -18,9 +18,13 @@
 #ifndef ___UIVirtualBoxEventHandler_h___
 #define ___UIVirtualBoxEventHandler_h___
 
+/* Qt includes: */
+#include <QObject>
+
 /* COM includes: */
 #include "COMEnums.h"
 #include "CEventListener.h"
+
 
 /** Active event handler singleton for the CVirtualBoxClient and CVirtualBox event-sources. */
 class UIVirtualBoxEventHandler : public QObject
