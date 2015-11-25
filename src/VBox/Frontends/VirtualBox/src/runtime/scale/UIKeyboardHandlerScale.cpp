@@ -66,7 +66,7 @@ bool UIKeyboardHandlerScale::eventFilter(QObject *pWatchedObject, QEvent *pEvent
                 /* Get key-event: */
                 QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
                 /* Process Host+Home for menu popup: */
-                if (isHostKeyPressed() && pKeyEvent->key() == gShortcutPool->shortcut(GUI_Input_MachineShortcuts, QString("PopupMenu")).sequence())
+                if (isHostKeyPressed() && QKeySequence(pKeyEvent->key()) == gShortcutPool->shortcut(GUI_Input_MachineShortcuts, QString("PopupMenu")).sequence())
                 {
                     /* Post request to show popup-menu: */
                     QTimer::singleShot(0, m_pMachineLogic, SLOT(sltInvokePopupMenu()));
