@@ -48,7 +48,7 @@ UIDnDMIMEData::UIDnDMIMEData(UIDnDHandler *pDnDHandler,
 #ifdef DEBUG
     LogFlowFunc(("Number of formats: %d\n", m_lstFormats.size()));
     for (int i = 0; i < m_lstFormats.size(); i++)
-        LogFlowFunc(("\tFormat %d: %s\n", i, m_lstFormats.at(i).toAscii().constData()));
+        LogFlowFunc(("\tFormat %d: %s\n", i, m_lstFormats.at(i).toUtf8().constData()));
 #endif
 }
 
@@ -57,7 +57,7 @@ QStringList UIDnDMIMEData::formats(void) const
     LogFlowFuncEnter();
 #ifdef DEBUG
     for (int i = 0; i < m_lstFormats.size(); i++)
-        LogFlowFunc(("\tFormat %d: %s\n", i, m_lstFormats.at(i).toAscii().constData()));
+        LogFlowFunc(("\tFormat %d: %s\n", i, m_lstFormats.at(i).toUtf8().constData()));
 #endif
     return m_lstFormats;
 }

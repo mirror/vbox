@@ -497,7 +497,7 @@ void UIGDetailsUpdateTaskStorage::run()
                 StorageSlot attachmentSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
                 AssertMsg(controller.isOk(),
                           ("Unable to acquire controller data: %s\n",
-                           msgCenter().formatRC(controller.lastRC()).toAscii().constData()));
+                           msgCenter().formatRC(controller.lastRC()).toUtf8().constData()));
                 if (!controller.isOk())
                     continue;
                 /* Prepare attachment information: */

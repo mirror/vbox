@@ -727,16 +727,16 @@ bool UIPortForwardingTable::validate() const
             return msgCenter().warnAboutIncorrectPort(window());
         /* If at least one address is incorrect: */
         if (!hostIp.trimmed().isEmpty() &&
-            (   (   !RTNetIsIPv4AddrStr(hostIp.toAscii().constData())
-                 && !RTNetIsIPv6AddrStr(hostIp.toAscii().constData()))
-             || RTNetStrIsIPv4AddrAny(hostIp.toAscii().constData())
-             || RTNetStrIsIPv6AddrAny(hostIp.toAscii().constData())))
+            (   (   !RTNetIsIPv4AddrStr(hostIp.toUtf8().constData())
+                 && !RTNetIsIPv6AddrStr(hostIp.toUtf8().constData()))
+             || RTNetStrIsIPv4AddrAny(hostIp.toUtf8().constData())
+             || RTNetStrIsIPv6AddrAny(hostIp.toUtf8().constData())))
             return msgCenter().warnAboutIncorrectAddress(window());
         if (!guestIp.trimmed().isEmpty() &&
-            (   (   !RTNetIsIPv4AddrStr(guestIp.toAscii().constData())
-                 && !RTNetIsIPv6AddrStr(guestIp.toAscii().constData()))
-             || RTNetStrIsIPv4AddrAny(guestIp.toAscii().constData())
-             || RTNetStrIsIPv6AddrAny(guestIp.toAscii().constData())))
+            (   (   !RTNetIsIPv4AddrStr(guestIp.toUtf8().constData())
+                 && !RTNetIsIPv6AddrStr(guestIp.toUtf8().constData()))
+             || RTNetStrIsIPv4AddrAny(guestIp.toUtf8().constData())
+             || RTNetStrIsIPv6AddrAny(guestIp.toUtf8().constData())))
             return msgCenter().warnAboutIncorrectAddress(window());
         /* If empty guest address is not allowed: */
         if (   !m_fAllowEmptyGuestIPs

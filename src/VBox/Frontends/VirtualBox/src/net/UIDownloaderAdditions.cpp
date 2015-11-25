@@ -71,7 +71,7 @@ UIDownloaderAdditions::UIDownloaderAdditions()
             && !strVersion.endsWith(".53")
             && !strVersion.endsWith(".97")
             && !strVersion.endsWith(".99"))
-            strVersion[strVersion.length() - 1] = qchLastDigit.toAscii() - 1;
+            strVersion[strVersion.length() - 1] = qchLastDigit.toLatin1() - 1;
         else
         {
             strVersion.chop(2);

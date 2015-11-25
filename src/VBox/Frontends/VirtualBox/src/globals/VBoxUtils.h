@@ -41,7 +41,7 @@ private slots:
 
     /** Assigns property value. */
     void sltAssignProperty(const QString &strValue)
-        { parent()->setProperty(m_strName.toAscii().constData(), strValue); }
+        { parent()->setProperty(m_strName.toLatin1().constData(), strValue); }
 
 private:
 

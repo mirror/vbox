@@ -101,7 +101,7 @@ template<> SizeSuffix fromString<SizeSuffix>(const QString &strSizeSuffix)
     list.insert(QApplication::translate("VBoxGlobal", "PB", "size suffix PBytes=1024 TBytes"), SizeSuffix_PetaByte);
     if (!list.contains(strSizeSuffix))
     {
-        AssertMsgFailed(("No value for '%s'", strSizeSuffix.toAscii().constData()));
+        AssertMsgFailed(("No value for '%s'", strSizeSuffix.toUtf8().constData()));
     }
     return list.value(strSizeSuffix);
 }
@@ -265,12 +265,12 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
             LONG iDevice = index % iMaxPort;
             if (iPort < 0 || iPort > iMaxPort)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
             if (iDevice < 0 || iDevice > iMaxDevice)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
             result.bus = bus;
@@ -286,7 +286,7 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
             LONG iDevice = 0;
             if (iPort < 0 || iPort > iMaxPort)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
             result.bus = bus;
@@ -302,7 +302,7 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
             LONG iDevice = 0;
             if (iPort < 0 || iPort > iMaxPort)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
             result.bus = bus;
@@ -318,7 +318,7 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
             LONG iDevice = 0;
             if (iPort < 0 || iPort > iMaxPort)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
             result.bus = bus;
@@ -334,7 +334,7 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
             LONG iDevice = regExp.cap(1).toInt();
             if (iDevice < 0 || iDevice > iMaxDevice)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
             result.bus = bus;
@@ -350,7 +350,7 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
             LONG iDevice = 0;
             if (iPort < 0 || iPort > iMaxPort)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
             result.bus = bus;
@@ -360,7 +360,7 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
         }
         default:
         {
-            AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toAscii().constData()));
+            AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
             break;
         }
     }

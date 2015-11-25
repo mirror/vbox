@@ -171,7 +171,7 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
     if (   m_dndTarget.isOk()
         && enmResult != KDnDAction_Ignore)
     {
-        LogFlowFunc(("strFormat=%s ...\n", strFormat.toAscii().constData()));
+        LogFlowFunc(("strFormat=%s ...\n", strFormat.toUtf8().constData()));
 
         QByteArray arrBytes;
 
@@ -196,14 +196,14 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
          **/
         else
         {
-            LogRel3(("DnD: Guest requested a different format '%s'\n", strFormat.toAscii().constData()));
+            LogRel3(("DnD: Guest requested a different format '%s'\n", strFormat.toUtf8().constData()));
             LogRel3(("DnD: The host offered:\n"));
 #if 0
             for (QStringList::iterator itFmt  = pMimeData->formats().begin();
                                        itFmt != pMimeData->formats().end(); itFmt++)
             {
                 QString strTemp = *itFmt;
-                LogRel3(("DnD: \t%s\n", strTemp.toAscii().constData()));
+                LogRel3(("DnD: \t%s\n", strTemp.toUtf8().constData()));
             }
 #endif
             if (pMimeData->hasText())
@@ -227,7 +227,7 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
             memcpy(vecData.data(), arrBytes.constData(), arrBytes.size());
 
             /* Send data to the guest. */
-            LogRel3(("DnD: Host is sending %d bytes of data as '%s'\n", vecData.size(), strFormat.toAscii().constData()));
+            LogRel3(("DnD: Host is sending %d bytes of data as '%s'\n", vecData.size(), strFormat.toUtf8().constData()));
             CProgress progress = m_dndTarget.SendData(screenID, strFormat, vecData);
 
             if (m_dndTarget.isOk())
@@ -352,7 +352,7 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     LogFlowFunc(("Number of formats: %d\n", lstFormats.size()));
 # ifdef DEBUG
     for (int i = 0; i < lstFormats.size(); i++)
-        LogFlowFunc(("\tFormat %d: %s\n", i, lstFormats.at(i).toAscii().constData()));
+        LogFlowFunc(("\tFormat %d: %s\n", i, lstFormats.at(i).toUtf8().constData()));
 # endif
 
 # ifdef DEBUG_DND_QT
@@ -531,7 +531,7 @@ int UIDnDHandler::dragCheckPending(ulong screenID)
         for (int i = 0; i < vecFormats.size(); i++)
         {
             const QString &strFmtGuest = vecFormats.at(i);
-            LogRelMax3(10, ("DnD: \tFormat %d: %s\n", i, strFmtGuest.toAscii().constData()));
+            LogRelMax3(10, ("DnD: \tFormat %d: %s\n", i, strFmtGuest.toUtf8().constData()));
         }
 
     LogFlowFunc(("defaultAction=0x%x, vecFormatsSize=%d, vecActionsSize=%d\n",

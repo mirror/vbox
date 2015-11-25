@@ -1934,7 +1934,7 @@ void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID)
 {
     /* Make sure it is valid ID: */
     AssertMsgReturnVoid(!strID.isNull() && strID != GlobalID,
-                        ("Invalid VM ID = {%s}\n", strID.toAscii().constData()));
+                        ("Invalid VM ID = {%s}\n", strID.toUtf8().constData()));
     /* Which is not loaded yet: */
     AssertReturnVoid(!m_data.contains(strID));
 

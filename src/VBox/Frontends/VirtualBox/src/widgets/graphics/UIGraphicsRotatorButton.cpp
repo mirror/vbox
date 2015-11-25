@@ -77,11 +77,11 @@ UIGraphicsRotatorButton::UIGraphicsRotatorButton(QIGraphicsWidget *pParent,
     m_pBackwardButtonAnimation->setEndValue(m_fReflected ? 180 : 0);
 
     /* Forward subordinate animation: */
-    m_pForwardSubordinateAnimation = new QPropertyAnimation(pParent, strPropertyName.toAscii(), this);
+    m_pForwardSubordinateAnimation = new QPropertyAnimation(pParent, strPropertyName.toLatin1(), this);
     m_pForwardSubordinateAnimation->setDuration(m_iAnimationDuration);
     m_pForwardSubordinateAnimation->setEasingCurve(QEasingCurve::InCubic);
     /* Backward subordinate animation: */
-    m_pBackwardSubordinateAnimation = new QPropertyAnimation(pParent, strPropertyName.toAscii(), this);
+    m_pBackwardSubordinateAnimation = new QPropertyAnimation(pParent, strPropertyName.toLatin1(), this);
     m_pBackwardSubordinateAnimation->setDuration(m_iAnimationDuration);
     m_pBackwardSubordinateAnimation->setEasingCurve(QEasingCurve::InCubic);
 

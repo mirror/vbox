@@ -1735,13 +1735,13 @@ void UIMachineLogic::sltTakeScreenshot()
         /* Add filetype suffix only if user has not added it explicitly: */
         if (!strFilename.endsWith(QString(".%1").arg(strFormat)))
             tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(QString("%1.%2").arg(strFilename, strFormat))),
-                          strFormat.toAscii().constData());
+                          strFormat.toUtf8().constData());
         else
             tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(strFilename)),
-                          strFormat.toAscii().constData());
+                          strFormat.toUtf8().constData());
 #else /* !Q_WS_X11 */
         tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(strFilename)),
-                      strFormat.toAscii().constData());
+                      strFormat.toUtf8().constData());
 #endif /* !Q_WS_X11 */
     }
     QFile::remove(strTempFile);
@@ -2170,8 +2170,8 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
 //    /* Log statement (printf): */
 //    QString strDt = QDateTime::currentDateTime().toString("HH:mm:ss:zzz");
 //    printf("%s: UIMachineLogic: sltSwitchKeyboardLedsToGuestLeds called, machine name is {%s}\n",
-//           strDt.toAscii().constData(),
-//           machineName().toAscii().constData());
+//           strDt.toUtf8().constData(),
+//           machineName().toUtf8().constData());
 
     /* Here we have to store host LED lock states. */
 
@@ -2201,8 +2201,8 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
 //    /* Log statement (printf): */
 //    QString strDt = QDateTime::currentDateTime().toString("HH:mm:ss:zzz");
 //    printf("%s: UIMachineLogic: sltSwitchKeyboardLedsToPreviousLeds called, machine name is {%s}\n",
-//           strDt.toAscii().constData(),
-//           machineName().toAscii().constData());
+//           strDt.toUtf8().constData(),
+//           machineName().toUtf8().constData());
 
     if (!isHidLedsSyncEnabled())
         return;
@@ -2664,7 +2664,7 @@ void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFo
     const QString &strPathWithoutSuffix = QDir(fi.absolutePath()).absoluteFilePath(fi.baseName());
     const QString &strSuffix = fi.suffix().isEmpty() ? strFormat : fi.suffix();
     bigImg.save(QDir::toNativeSeparators(QFile::encodeName(QString("%1.%2").arg(strPathWithoutSuffix, strSuffix))),
-                strFormat.toAscii().constData());
+                strFormat.toUtf8().constData());
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

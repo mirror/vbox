@@ -362,7 +362,7 @@ QTextLayout* UIGraphicsTextPane::buildTextLayout(const QFont &font, QPaintDevice
     int iLeading = fm.leading();
 
     /* Parse incoming string with UIRichTextString capabilities: */
-    //printf("Text: {%s}\n", strText.toAscii().constData());
+    //printf("Text: {%s}\n", strText.toUtf8().constData());
     UIRichTextString ms(strText);
     ms.setHoveredAnchor(strHoveredAnchor);
 

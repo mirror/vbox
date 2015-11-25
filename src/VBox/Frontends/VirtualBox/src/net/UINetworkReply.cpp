@@ -649,7 +649,7 @@ int UINetworkReplyPrivateThread::applyRawHeaders(RTHTTP hHttp, const UserDiction
     {
         /* Prepare formatted representation: */
         QString strFormattedString = QString("%1: %2").arg(header, headers.value(header));
-        formattedHeaders << strFormattedString.toAscii();
+        formattedHeaders << strFormattedString.toUtf8();
         formattedHeaderPointers << formattedHeaders.last().constData();
     }
     const char **ppFormattedHeaders = formattedHeaderPointers.data();

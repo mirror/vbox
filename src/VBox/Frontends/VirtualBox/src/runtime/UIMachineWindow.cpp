@@ -616,13 +616,13 @@ void UIMachineWindow::handleNativeNotification(const QString &strNativeNotificat
 {
     /* Handle arrived notification: */
     LogRel(("GUI: UIMachineWindow::handleNativeNotification: Notification '%s' received\n",
-            strNativeNotificationName.toAscii().constData()));
+            strNativeNotificationName.toLatin1().constData()));
     AssertPtrReturnVoid(pWidget);
     if (UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(pWidget))
     {
         /* Redirect arrived notification: */
         LogRel2(("UIMachineWindow::handleNativeNotification: Redirecting '%s' notification to corresponding machine-window...\n",
-                 strNativeNotificationName.toAscii().constData()));
+                 strNativeNotificationName.toLatin1().constData()));
         pMachineWindow->handleNativeNotification(strNativeNotificationName);
     }
 }

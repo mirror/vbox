@@ -65,7 +65,7 @@ void UIMachineWindowFullscreen::handleNativeNotification(const QString &strNativ
 
     /* Log all arrived notifications: */
     LogRel(("UIMachineWindowFullscreen::handleNativeNotification: Notification '%s' received.\n",
-            strNativeNotificationName.toAscii().constData()));
+            strNativeNotificationName.toLatin1().constData()));
 
     /* Handle 'NSWindowWillEnterFullScreenNotification' notification: */
     if (strNativeNotificationName == "NSWindowWillEnterFullScreenNotification")

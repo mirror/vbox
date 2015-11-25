@@ -244,7 +244,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                          pThisFormat->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
                          pThisFormat->tymed, pThisFormat->dwAspect));
                 LogRel3(("DnD: Got strFormat=%s, pvData=%p, cbData=%RU32\n",
-                         m_strFormat.toAscii().constData(), m_pvData, m_cbData));
+                         m_strFormat.toUtf8().constData(), m_pvData, m_cbData));
 
                 QVariant::Type vaType;
                 QString strMIMEType;
@@ -290,7 +290,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                     pMedium->tymed = TYMED_HGLOBAL;
                 }
 #endif
-                LogRel3(("DnD: strMIMEType=%s, vaType=%ld\n", strMIMEType.toAscii().constData(), vaType));
+                LogRel3(("DnD: strMIMEType=%s, vaType=%ld\n", strMIMEType.toUtf8().constData(), vaType));
 
                 int rc;
 
@@ -324,7 +324,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                         QStringList lstFiles;
                         for (size_t i = 0; i < lstFilesURI.size(); i++)
                         {
-                            char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).toAscii().constData());
+                            char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).toUtf8().constData());
                             if (pszFilePath)
                             {
                                 lstFiles.append(pszFilePath);
@@ -346,7 +346,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                             size_t cchFiles = 0; /* Number of characters. */
                             for (size_t i = 0; i < cFiles; i++)
                             {
-                                const char *pszFile = lstFiles.at(i).toAscii().constData();
+                                const char *pszFile = lstFiles.at(i).toUtf8().constData();
                                 cchFiles += strlen(pszFile);
                                 cchFiles += 1; /* Terminating '\0'. */
                                 LogFlowThisFunc(("\tFile: %s (cchFiles=%zu)\n", pszFile, cchFiles));
@@ -446,7 +446,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                         Assert(cbSrc);
                         LPCVOID pvSrc = fUnicode
                                       ? (void *)strText.unicode()
-                                      : (void *)strText.toAscii().constData();
+                                      : (void *)strText.toUtf8().constData();
                         AssertPtr(pvSrc);
 
                         LogFlowFunc(("pvSrc=0x%p, cbSrc=%zu, cbCh=%zu, fUnicode=%RTbool\n",
@@ -472,7 +472,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                             hr  = VERR_NO_MEMORY;
                     }
                     else
-                        LogRel2(("DnD: MIME type '%s' not supported\n", strMIMEType.toAscii().constData()));
+                        LogRel2(("DnD: MIME type '%s' not supported\n", strMIMEType.toUtf8().constData()));
 
                     LogFlowThisFunc(("Handling formats ended with rc=%Rrc\n", rc));
                 }

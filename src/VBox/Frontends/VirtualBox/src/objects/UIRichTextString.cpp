@@ -48,7 +48,7 @@ UIRichTextString::UIRichTextString(const QString &strString, Type type /* = Type
     , m_strStringMeta(strStringMeta)
 {
     //printf("Creating new UIRichTextString with string=\"%s\" and string-meta=\"%s\"\n",
-    //       m_strString.toAscii().constData(), m_strStringMeta.toAscii().constData());
+    //       m_strString.toUtf8().constData(), m_strStringMeta.toUtf8().constData());
     parse();
 }
 
@@ -131,13 +131,13 @@ void UIRichTextString::parse()
             /* Search for the maximum level of the current pattern: */
             iMaxLevel = searchForMaxLevel(m_strString, strPattern, strPattern);
             //printf(" Maximum level for the pattern \"%s\" is %d.\n",
-            //       strPattern.toAscii().constData(), iMaxLevel);
+            //       strPattern.toUtf8().constData(), iMaxLevel);
             /* If current pattern of at least level 1 is found: */
             if (iMaxLevel > 0)
             {
                 /* Compose full pattern of the corresponding level: */
                 const QString strFullPattern = composeFullPattern(strPattern, strPattern, iMaxLevel);
-                //printf("  Full pattern: %s\n", strFullPattern.toAscii().constData());
+                //printf("  Full pattern: %s\n", strFullPattern.toUtf8().constData());
                 QRegExp regExp(strFullPattern);
                 regExp.setMinimal(true);
                 const int iPosition = regExp.indexIn(m_strString);

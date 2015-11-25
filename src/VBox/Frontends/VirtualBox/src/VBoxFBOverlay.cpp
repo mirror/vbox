@@ -500,7 +500,7 @@ int VBoxVHWAGlShaderComponent::init()
     QTextStream is(&fi);
     QString program = is.readAll();
 
-    mSource = program.toAscii();
+    mSource = program.toUtf8();
 
     mInitialized = true;
     return VINF_SUCCESS;

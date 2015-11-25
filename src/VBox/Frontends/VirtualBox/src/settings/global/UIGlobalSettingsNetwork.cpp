@@ -151,7 +151,7 @@ bool UIItemNetworkNAT::validate(UIValidationMessage &message)
     {
         /* Correctness validation: */
         RTNETADDRIPV4 network, mask;
-        int rc = RTCidrStrToIPv4(m_data.m_strCIDR.toAscii().constData(), &network, &mask);
+        int rc = RTCidrStrToIPv4(m_data.m_strCIDR.toUtf8().constData(), &network, &mask);
         if (RT_FAILURE(rc))
         {
             if (fNameValid)
@@ -243,15 +243,15 @@ bool UIItemNetworkHost::validate(UIValidationMessage &message)
     if (!m_data.m_interface.m_fDhcpClientEnabled)
     {
         if (!m_data.m_interface.m_strInterfaceAddress.trimmed().isEmpty() &&
-            (   !RTNetIsIPv4AddrStr(m_data.m_interface.m_strInterfaceAddress.toAscii().constData())
-             || RTNetStrIsIPv4AddrAny(m_data.m_interface.m_strInterfaceAddress.toAscii().constData())))
+            (   !RTNetIsIPv4AddrStr(m_data.m_interface.m_strInterfaceAddress.toUtf8().constData())
+             || RTNetStrIsIPv4AddrAny(m_data.m_interface.m_strInterfaceAddress.toUtf8().constData())))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid IPv4 address.").arg(text(0));
             fPass = false;
         }
         if (!m_data.m_interface.m_strInterfaceMask.trimmed().isEmpty() &&
-            (   !RTNetIsIPv4AddrStr(m_data.m_interface.m_strInterfaceMask.toAscii().constData())
-             || RTNetStrIsIPv4AddrAny(m_data.m_interface.m_strInterfaceMask.toAscii().constData())))
+            (   !RTNetIsIPv4AddrStr(m_data.m_interface.m_strInterfaceMask.toUtf8().constData())
+             || RTNetStrIsIPv4AddrAny(m_data.m_interface.m_strInterfaceMask.toUtf8().constData())))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid IPv4 network mask.").arg(text(0));
             fPass = false;
@@ -259,8 +259,8 @@ bool UIItemNetworkHost::validate(UIValidationMessage &message)
         if (m_data.m_interface.m_fIpv6Supported)
         {
             if (!m_data.m_interface.m_strInterfaceAddress6.trimmed().isEmpty() &&
-                (   !RTNetIsIPv6AddrStr(m_data.m_interface.m_strInterfaceAddress6.toAscii().constData())
-                 || RTNetStrIsIPv6AddrAny(m_data.m_interface.m_strInterfaceAddress6.toAscii().constData())))
+                (   !RTNetIsIPv6AddrStr(m_data.m_interface.m_strInterfaceAddress6.toUtf8().constData())
+                 || RTNetStrIsIPv6AddrAny(m_data.m_interface.m_strInterfaceAddress6.toUtf8().constData())))
             {
                 message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid IPv6 address.").arg(text(0));
                 fPass = false;
@@ -280,26 +280,26 @@ bool UIItemNetworkHost::validate(UIValidationMessage &message)
     /* DHCP server validation: */
     if (m_data.m_dhcpserver.m_fDhcpServerEnabled)
     {
-        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpServerAddress.toAscii().constData())
-            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpServerAddress.toAscii().constData()))
+        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData())
+            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server address.").arg(text(0));
             fPass = false;
         }
-        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpServerMask.toAscii().constData())
-            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpServerMask.toAscii().constData()))
+        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData())
+            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server mask.").arg(text(0));
             fPass = false;
         }
-        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpLowerAddress.toAscii().constData())
-            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpLowerAddress.toAscii().constData()))
+        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData())
+            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server lower address bound.").arg(text(0));
             fPass = false;
         }
-        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpUpperAddress.toAscii().constData())
-            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpUpperAddress.toAscii().constData()))
+        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData())
+            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server upper address bound.").arg(text(0));
             fPass = false;
@@ -1113,27 +1113,27 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataNetworkHost &
     else
     {
         AssertMsg(data.m_interface.m_strInterfaceAddress.trimmed().isEmpty() ||
-                  RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceAddress.toAscii().constData()),
+                  RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceAddress.toUtf8().constData()),
                   ("Interface IPv4 address must be empty or IPv4-valid!\n"));
         AssertMsg(data.m_interface.m_strInterfaceMask.trimmed().isEmpty() ||
-                  RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceMask.toAscii().constData()),
+                  RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceMask.toUtf8().constData()),
                   ("Interface IPv4 network mask must be empty or IPv4-valid!\n"));
         if (   (   data.m_interface.m_strInterfaceAddress.trimmed().isEmpty()
-                || RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceAddress.toAscii().constData()))
+                || RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceAddress.toUtf8().constData()))
             && (   data.m_interface.m_strInterfaceMask.trimmed().isEmpty()
-                || RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceMask.toAscii().constData())))
+                || RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceMask.toUtf8().constData())))
             iface.EnableStaticIPConfig(data.m_interface.m_strInterfaceAddress, data.m_interface.m_strInterfaceMask);
         if (iface.GetIPV6Supported())
         {
             AssertMsg(data.m_interface.m_strInterfaceAddress6.trimmed().isEmpty() ||
-                      RTNetIsIPv6AddrStr(data.m_interface.m_strInterfaceAddress6.toAscii().constData()),
+                      RTNetIsIPv6AddrStr(data.m_interface.m_strInterfaceAddress6.toUtf8().constData()),
                       ("Interface IPv6 address must be empty or IPv6-valid!\n"));
             bool fIsMaskPrefixLengthNumber = false;
             const int iMaskPrefixLength = data.m_interface.m_strInterfaceMaskLength6.trimmed().toInt(&fIsMaskPrefixLengthNumber);
             AssertMsg(fIsMaskPrefixLengthNumber && iMaskPrefixLength >= 0 && iMaskPrefixLength <= 128,
                       ("Interface IPv6 network mask prefix length must be empty or IPv6-valid!\n"));
             if (   (   data.m_interface.m_strInterfaceAddress6.trimmed().isEmpty()
-                    || RTNetIsIPv6AddrStr(data.m_interface.m_strInterfaceAddress6.toAscii().constData()))
+                    || RTNetIsIPv6AddrStr(data.m_interface.m_strInterfaceAddress6.toUtf8().constData()))
                 && (   fIsMaskPrefixLengthNumber
                     && iMaskPrefixLength >= 0
                     && iMaskPrefixLength <= 128))
@@ -1148,18 +1148,18 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataNetworkHost &
 
     /* Save DHCP server configuration: */
     dhcp.SetEnabled(data.m_dhcpserver.m_fDhcpServerEnabled);
-    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toAscii().constData()),
+    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()),
               ("DHCP server IPv4 address must be IPv4-valid!\n"));
-    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toAscii().constData()),
+    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()),
               ("DHCP server IPv4 network mask must be IPv4-valid!\n"));
-    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toAscii().constData()),
+    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()),
               ("DHCP server IPv4 lower bound must be IPv4-valid!\n"));
-    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toAscii().constData()),
+    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()),
               ("DHCP server IPv4 upper bound must be IPv4-valid!\n"));
-    if (RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toAscii().constData()) &&
-        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toAscii().constData()) &&
-        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toAscii().constData()) &&
-        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toAscii().constData()))
+    if (RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()) &&
+        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()) &&
+        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()) &&
+        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()))
         dhcp.SetConfiguration(data.m_dhcpserver.m_strDhcpServerAddress, data.m_dhcpserver.m_strDhcpServerMask,
                               data.m_dhcpserver.m_strDhcpLowerAddress, data.m_dhcpserver.m_strDhcpUpperAddress);
 }

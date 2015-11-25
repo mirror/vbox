@@ -3546,7 +3546,7 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
         QWidgetList list = QApplication::topLevelWidgets();
         foreach(QWidget *w, list)
         {
-            if ((!aName || strcmp (w->objectName().toAscii().constData(), aName) == 0) &&
+            if ((!aName || strcmp (w->objectName().toLatin1().constData(), aName) == 0) &&
                 (!aClassName || strcmp (w->metaObject()->className(), aClassName) == 0))
                 return w;
             if (aRecursive)
@@ -4595,7 +4595,7 @@ void VBoxGlobal::initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const 
             *piDbgCfgVar = VBOXGLOBAL_DBG_CFG_VAR_FALSE;
         else
         {
-            LogFunc(("Ignoring unknown value '%s' for '%s'\n", pStr->toAscii().constData(), pStr == &strEnvValue ? pszEnvVar : pszExtraDataName));
+            LogFunc(("Ignoring unknown value '%s' for '%s'\n", pStr->toUtf8().constData(), pStr == &strEnvValue ? pszEnvVar : pszExtraDataName));
             *piDbgCfgVar = fDefault ? VBOXGLOBAL_DBG_CFG_VAR_TRUE : VBOXGLOBAL_DBG_CFG_VAR_FALSE;
         }
     }
