@@ -56,10 +56,11 @@ class UIVMLogViewerSearchPanel : public QIWithRetranslateUI<QWidget>
 public:
 
     /** Constructs search-panel by passing @a pParent to the QWidget base-class constructor.
-      * @a pViewer is the instance of VM Log-Viewer. */
+      * @param  pViewer  Specifies instance of VM Log-Viewer. */
     UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewer *pViewer)
         : QIWithRetranslateUI<QWidget>(pParent)
         , m_pViewer(pViewer)
+        , m_pMainLayout(0)
         , m_pCloseButton(0)
         , m_pSearchLabel(0), m_pSearchEditor(0)
         , m_pNextPrevButtons(0)
@@ -73,7 +74,7 @@ public:
 private slots:
 
     /** Handles find next/back action triggering.
-      * @a iButton specifies id of next/back button. */
+      * @param  iButton  Specifies id of next/back button. */
     void find(int iButton)
     {
         if (iButton)
@@ -83,7 +84,7 @@ private slots:
     }
 
     /** Handles textchanged event from search-editor.
-      * @a strSearchString specifies the search-string. */
+      * @param  strSearchString  Specifies search-string. */
     void findCurrent(const QString &strSearchString)
     {
         m_pNextPrevButtons->setEnabled(0, strSearchString.length());
@@ -108,11 +109,11 @@ private:
     /** Prepares search-panel. */
     void prepare()
     {
-        /* Prepare widgets: */
-        prepareWidgets();
-
         /* Prepare main-layout: */
         prepareMainLayout();
+
+        /* Prepare widgets: */
+        prepareWidgets();
 
         /* Prepare connections: */
         prepareConnections();
@@ -121,101 +122,139 @@ private:
         retranslateUi();
     }
 
+    /** Prepares main-layout. */
+    void prepareMainLayout()
+    {
+        /* Create main-layout: */
+        m_pMainLayout = new QHBoxLayout(this);
+        AssertPtrReturnVoid(m_pMainLayout);
+        {
+            /* Prepare main-layout: */
+            m_pMainLayout->setSpacing(5);
+            /* Not sure 0 margins are default, but just to be safe: */
+            m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        }
+    }
+
     /** Prepares widgets. */
     void prepareWidgets()
     {
         /* Create close-button: */
         m_pCloseButton = new UIMiniCancelButton(this);
         AssertPtrReturnVoid(m_pCloseButton);
+        {
+            /* Add close-button to main-layout: */
+            m_pMainLayout->addWidget(m_pCloseButton);
+        }
 
         /* Create search-editor: */
         m_pSearchEditor = new UISearchField(this);
         AssertPtrReturnVoid(m_pSearchEditor);
-        /* Prepare search-editor: */
-        m_pSearchEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        {
+            /* Configure search-editor: */
+            m_pSearchEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+            /* Add search-editor to main-layout: */
+            m_pMainLayout->addWidget(m_pSearchEditor);
+        }
 
         /* Create search-label: */
         m_pSearchLabel = new QLabel(this);
         AssertPtrReturnVoid(m_pSearchLabel);
-        /* Prepare search-label: */
-        m_pSearchLabel->setBuddy(m_pSearchEditor);
+        {
+            /* Configure search-label: */
+            m_pSearchLabel->setBuddy(m_pSearchEditor);
+            /* Prepare font: */
+#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
+            QFont font = m_pSearchLabel->font();
+            font.setPointSize(::darwinSmallFontSize());
+            m_pSearchLabel->setFont(font);
+#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
+            /* Add search-label to main-layout: */
+            m_pMainLayout->addWidget(m_pSearchLabel);
+        }
 
         /* Create Next/Prev button-box: */
         m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
         AssertPtrReturnVoid(m_pNextPrevButtons);
-        /* Prepare Next/Prev button-box: */
-        m_pNextPrevButtons->setEnabled(0, false);
-        m_pNextPrevButtons->setEnabled(1, false);
+        {
+            /* Prepare Next/Prev button-box: */
+            m_pNextPrevButtons->setEnabled(0, false);
+            m_pNextPrevButtons->setEnabled(1, false);
 #ifndef Q_WS_MAC
-        /* No icons on the Mac: */
-        m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
-        m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+            /* No icons on the Mac: */
+            m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+            m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
 #endif /* !Q_WS_MAC */
+            /* Add Next/Prev button-box to main-layout: */
+            m_pMainLayout->addWidget(m_pNextPrevButtons);
+        }
 
         /* Create case-sensitive checkbox: */
         m_pCaseSensitiveCheckBox = new QCheckBox(this);
         AssertPtrReturnVoid(m_pCaseSensitiveCheckBox);
-        /* Setup focus proxy: */
-        setFocusProxy(m_pCaseSensitiveCheckBox);
+        {
+            /* Configure focus for case-sensitive checkbox: */
+            setFocusProxy(m_pCaseSensitiveCheckBox);
+            /* Prepare font: */
+#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
+            QFont font = m_pCaseSensitiveCheckBox->font();
+            font.setPointSize(::darwinSmallFontSize());
+            m_pCaseSensitiveCheckBox->setFont(font);
+#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
+            /* Add case-sensitive checkbox to main-layout: */
+            m_pMainLayout->addWidget(m_pCaseSensitiveCheckBox);
+        }
 
         /* Create warning-spacer: */
         m_pWarningSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
         AssertPtrReturnVoid(m_pWarningSpacer);
+        {
+            /* Add warning-spacer to main-layout: */
+            m_pMainLayout->addItem(m_pWarningSpacer);
+        }
 
         /* Create warning-icon: */
         m_pWarningIcon = new QLabel(this);
         AssertPtrReturnVoid(m_pWarningIcon);
-        /* Prepare warning-icon: */
-        m_pWarningIcon->hide();
-        QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, this);
-        if (!icon.isNull())
-            m_pWarningIcon->setPixmap(icon.pixmap(16, 16));
+        {
+            /* Confifure warning-icon: */
+            m_pWarningIcon->hide();
+            QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, this);
+            if (!icon.isNull())
+                m_pWarningIcon->setPixmap(icon.pixmap(16, 16));
+            /* Add warning-icon to main-layout: */
+            m_pMainLayout->addWidget(m_pWarningIcon);
+        }
 
         /* Create warning-label: */
         m_pWarningLabel = new QLabel(this);
         AssertPtrReturnVoid(m_pWarningLabel);
-        /* Prepare warning-label: */
-        m_pWarningLabel->hide();
+        {
+            /* Configure warning-label: */
+            m_pWarningLabel->hide();
+            /* Prepare font: */
+#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
+            QFont font = m_pWarningLabel->font();
+            font.setPointSize(::darwinSmallFontSize());
+            m_pWarningLabel->setFont(font);
+#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
+            /* Add warning-label to main-layout: */
+            m_pMainLayout->addWidget(m_pWarningLabel);
+        }
 
         /* Create spacer-item: */
         m_pSpacerItem = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
         AssertPtrReturnVoid(m_pSpacerItem);
-
-        /* Prepare fonts: */
-#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-        QFont font = m_pSearchLabel->font();
-        font.setPointSize(::darwinSmallFontSize());
-        m_pSearchLabel->setFont(font);
-        m_pCaseSensitiveCheckBox->setFont(font);
-        m_pWarningLabel->setFont(font);
-#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-    }
-
-    /** Prepares main-layout. */
-    void prepareMainLayout()
-    {
-        /* Create main-layout: */
-        QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-        AssertPtrReturnVoid(pMainLayout);
         {
-            /* Prepare main-layout: */
-            pMainLayout->setSpacing(5);
-            pMainLayout->setContentsMargins(0, 0, 0, 0);
-            pMainLayout->addWidget(m_pCloseButton);
-            pMainLayout->addWidget(m_pSearchLabel);
-            pMainLayout->addWidget(m_pSearchEditor);
-            pMainLayout->addWidget(m_pNextPrevButtons);
-            pMainLayout->addWidget(m_pCaseSensitiveCheckBox);
-            pMainLayout->addItem(m_pWarningSpacer);
-            pMainLayout->addWidget(m_pWarningIcon);
-            pMainLayout->addWidget(m_pWarningLabel);
-            pMainLayout->addItem(m_pSpacerItem);
+            /* Add spacer-item to main-layout: */
+            m_pMainLayout->addItem(m_pSpacerItem);
         }
     }
 
     /** Prepares connections. */
     void prepareConnections()
     {
+        /* Prepare connections: */
         connect(m_pCloseButton, SIGNAL(clicked()), this, SLOT(hide()));
         connect(m_pSearchEditor, SIGNAL(textChanged(const QString &)),
                 this, SLOT(findCurrent(const QString &)));
@@ -343,8 +382,8 @@ private:
     }
 
     /** Search routine.
-      * @a fForward specifies the direction of search.
-      * @a fStartCurrent specifies if the search should start from beginning of log. */
+      * @param  fForward       Specifies the direction of search.
+      * @param  fStartCurrent  Specifies whether search should start from beginning of the log. */
     void search(bool fForward, bool fStartCurrent = false)
     {
         QTextEdit *pBrowser = m_pViewer->currentLogPage();
@@ -410,6 +449,8 @@ private:
 
     /** Holds the reference to the VM Log-Viewer this search-panel belongs to. */
     UIVMLogViewer *m_pViewer;
+    /** Holds the instance of main-layout we create. */
+    QHBoxLayout *m_pMainLayout;
     /** Holds the instance of close-button we create. */
     UIMiniCancelButton *m_pCloseButton;
     /** Holds the instance of search-label we create. */
@@ -439,10 +480,11 @@ class UIVMLogViewerFilterPanel : public QIWithRetranslateUI<QWidget>
 public:
 
     /** Constructs the filter-panel by passing @a pParent to the QWidget base-class constructor.
-      * @a pViewer specifies the reference to the VM Log-Viewer this filter-panel belongs to. */
+      * @param  pViewer  Specifies reference to the VM Log-Viewer this filter-panel belongs to. */
     UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewer *pViewer)
         : QIWithRetranslateUI<QWidget>(pParent)
         , m_pViewer(pViewer)
+        , m_pMainLayout(0)
         , m_pCloseButton(0)
         , m_pFilterLabel(0), m_pFilterComboBox(0)
     {
@@ -453,7 +495,7 @@ public:
 public slots:
 
     /** Applies filter settings and filters the current log-page.
-      * @a iCurrentIndex specifies index of current log-page, but it is actually not used in the method. */
+      * @param  iCurrentIndex  Specifies index of current log-page, but it is actually not used in the method. */
     void applyFilter(const int iCurrentIndex = 0)
     {
         Q_UNUSED(iCurrentIndex);
@@ -509,11 +551,11 @@ private:
     /** Prepares filter-panel. */
     void prepare()
     {
-        /* Prepare widgets: */
-        prepareWidgets();
-
         /* Prepare main-layout: */
         prepareMainLayout();
+
+        /* Prepare widgets: */
+        prepareWidgets();
 
         /* Prepare connections: */
         prepareConnections();
@@ -522,56 +564,67 @@ private:
         retranslateUi();
     }
 
+    /** Prepares main-layout. */
+    void prepareMainLayout()
+    {
+        /* Create main-layout: */
+        m_pMainLayout = new QHBoxLayout(this);
+        AssertPtrReturnVoid(m_pMainLayout);
+        {
+            /* Prepare main-layout: */
+            m_pMainLayout->setSpacing(5);
+            /* Not sure 0 margins are default, but just to be safe: */
+            m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        }
+    }
+
     /** Prepares widgets. */
     void prepareWidgets()
     {
         /* Create close-button: */
         m_pCloseButton = new UIMiniCancelButton(this);
         AssertPtrReturnVoid(m_pCloseButton);
+        {
+            /* Add close-button to main-layout: */
+            m_pMainLayout->addWidget(m_pCloseButton);
+        }
 
         /* Create filter-combobox: */
         m_pFilterComboBox = new QComboBox(this);
         AssertPtrReturnVoid(m_pFilterComboBox);
-        /* Prepare filter-combobox: */
-        m_pFilterComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        m_pFilterComboBox->setEditable(true);
-        QStringList strFilterPresets;
-        strFilterPresets << "" << "GUI" << "NAT" << "AHCI" << "VD" << "Audio" << "VUSB" << "SUP" << "PGM" << "HDA"
-                         << "HM" << "VMM" << "GIM" << "CPUM";
-        strFilterPresets.sort();
-        m_pFilterComboBox->addItems(strFilterPresets);
+        {
+            /* Configure filter-combobox: */
+            m_pFilterComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+            m_pFilterComboBox->setEditable(true);
+            QStringList strFilterPresets;
+            strFilterPresets << "" << "GUI" << "NAT" << "AHCI" << "VD" << "Audio" << "VUSB" << "SUP" << "PGM" << "HDA"
+                             << "HM" << "VMM" << "GIM" << "CPUM";
+            strFilterPresets.sort();
+            m_pFilterComboBox->addItems(strFilterPresets);
+            /* Add filter-combobox to main-layout: */
+            m_pMainLayout->addWidget(m_pFilterComboBox);
+        }
 
         /* Create filter-label: */
         m_pFilterLabel = new QLabel(this);
         AssertPtrReturnVoid(m_pFilterLabel);
-        /* Prepare filter-label: */
-        m_pFilterLabel->setBuddy(m_pFilterComboBox);
-#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-        QFont font = m_pFilterLabel->font();
-        font.setPointSize(::darwinSmallFontSize());
-        m_pFilterLabel->setFont(font);
-#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-    }
-
-    /** Prepares main-layout. */
-    void prepareMainLayout()
-    {
-        /* Create main-layout: */
-        QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-        AssertPtrReturnVoid(pMainLayout);
         {
-            /* Prepare main-layout: */
-            pMainLayout->setSpacing(5);
-            pMainLayout->setContentsMargins(0, 0, 0, 0);
-            pMainLayout->addWidget(m_pCloseButton);
-            pMainLayout->addWidget(m_pFilterLabel);
-            pMainLayout->addWidget(m_pFilterComboBox);
+            /* Configure filter-label: */
+            m_pFilterLabel->setBuddy(m_pFilterComboBox);
+#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
+            QFont font = m_pFilterLabel->font();
+            font.setPointSize(::darwinSmallFontSize());
+            m_pFilterLabel->setFont(font);
+#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
+            /* Add filter-label to main-layout: */
+            m_pMainLayout->addWidget(m_pFilterLabel);
         }
     }
 
     /** Prepares connections. */
     void prepareConnections()
     {
+        /* Prepare connections: */
         connect(m_pCloseButton, SIGNAL(clicked()), this, SLOT(hide()));
         connect(m_pFilterComboBox, SIGNAL(editTextChanged(const QString &)),
                 this, SLOT(filter(const QString &)));
@@ -636,6 +689,8 @@ private:
 
     /** Holds the reference to VM Log-Viewer this filter-panel belongs to. */
     UIVMLogViewer *m_pViewer;
+    /** Holds the instance of main-layout we create. */
+    QHBoxLayout *m_pMainLayout;
     /** Holds the instance of close-button we create. */
     UIMiniCancelButton *m_pCloseButton;
     /** Holds the instance of filter-label we create. */
@@ -651,13 +706,17 @@ VMLogViewerMap UIVMLogViewer::m_viewers = VMLogViewerMap();
 
 void UIVMLogViewer::showLogViewerFor(QWidget *pCenterWidget, const CMachine &machine)
 {
-    /* If there is no corresponding VM Log Viewer created: */
+    /* If there is no corresponding VM Log-Viewer created: */
     if (!m_viewers.contains(machine.GetName()))
     {
-        /* Creating new VM Log Viewer: */
+        /* Create new VM Log-Viewer: */
         UIVMLogViewer *pLogViewer = new UIVMLogViewer(pCenterWidget, Qt::Window, machine);
-        pLogViewer->setAttribute(Qt::WA_DeleteOnClose);
-        m_viewers[machine.GetName()] = pLogViewer;
+        AssertPtrReturnVoid(pLogViewer);
+        {
+            /* Configure VM Log-Viewer: */
+            pLogViewer->setAttribute(Qt::WA_DeleteOnClose);
+            m_viewers[machine.GetName()] = pLogViewer;
+        }
     }
 
     /* Show VM Log Viewer: */
@@ -685,6 +744,7 @@ UIVMLogViewer::~UIVMLogViewer()
 
 void UIVMLogViewer::search()
 {
+    /* Show/hide search-panel: */
     m_pSearchPanel->isHidden() ? m_pSearchPanel->show() : m_pSearchPanel->hide();
 }
 
@@ -783,7 +843,11 @@ void UIVMLogViewer::refresh()
 
 bool UIVMLogViewer::close()
 {
+    /* Close search-panel: */
     m_pSearchPanel->hide();
+    /* Close filter-panel: */
+    m_pFilterPanel->hide();
+    /* Call to base-class: */
     return QMainWindow::close();
 }
 
@@ -817,6 +881,7 @@ void UIVMLogViewer::save()
 
 void UIVMLogViewer::filter()
 {
+    /* Show/hide filter-panel: */
     m_pFilterPanel->isHidden() ? m_pFilterPanel->show() : m_pFilterPanel->hide();
 }
 
@@ -849,38 +914,49 @@ void UIVMLogViewer::prepareWidgets()
     /* Create VM Log-Viewer container: */
     m_pViewerContainer = new QITabWidget(centralWidget());
     AssertPtrReturnVoid(m_pViewerContainer);
-    /* Layout VM Log-Viewer container: */
-    m_pMainLayout->insertWidget(0, m_pViewerContainer);
+    {
+        /* Layout VM Log-Viewer container: */
+        m_pMainLayout->insertWidget(0, m_pViewerContainer);
+    }
 
     /* Create VM Log-Viewer search-panel: */
     m_pSearchPanel = new UIVMLogViewerSearchPanel(centralWidget(), this);
     AssertPtrReturnVoid(m_pSearchPanel);
-    /* Prepare VM Log-Viewer search-panel: */
-    centralWidget()->installEventFilter(m_pSearchPanel);
-    m_pSearchPanel->hide();
-    /* Layout VM Log-Viewer search-panel: */
-    m_pMainLayout->insertWidget(1, m_pSearchPanel);
+    {
+        /* Configure VM Log-Viewer search-panel: */
+        centralWidget()->installEventFilter(m_pSearchPanel);
+        m_pSearchPanel->hide();
+        /* Layout VM Log-Viewer search-panel: */
+        m_pMainLayout->insertWidget(1, m_pSearchPanel);
+    }
 
     /* Create VM Log-Viewer filter-panel: */
     m_pFilterPanel = new UIVMLogViewerFilterPanel(centralWidget(), this);
     AssertPtrReturnVoid(m_pFilterPanel);
-    /* Prepare VM Log-Viewer filter-panel: */
-    centralWidget()->installEventFilter(m_pFilterPanel);
-    m_pFilterPanel->hide();
-    /* Layout VM Log-Viewer filter-panel: */
-    m_pMainLayout->insertWidget(2, m_pFilterPanel);
+    {
+        /* Configure VM Log-Viewer filter-panel: */
+        centralWidget()->installEventFilter(m_pFilterPanel);
+        m_pFilterPanel->hide();
+        /* Layout VM Log-Viewer filter-panel: */
+        m_pMainLayout->insertWidget(2, m_pFilterPanel);
+    }
 
-    /* Create/Prepare standard buttons from button-box: */
+    /* Get help-button: */
     m_pButtonHelp = m_pButtonBox->button(QDialogButtonBox::Help);
     AssertPtrReturnVoid(m_pButtonHelp);
+    /* Create find-button: */
     m_pButtonFind = m_pButtonBox->addButton(QString::null, QDialogButtonBox::ActionRole);
     AssertPtrReturnVoid(m_pButtonFind);
+    /* Create filter-button: */
     m_pButtonFilter = m_pButtonBox->addButton(QString::null, QDialogButtonBox::ActionRole);
     AssertPtrReturnVoid(m_pButtonFilter);
+    /* Create close-button: */
     m_pButtonClose = m_pButtonBox->button(QDialogButtonBox::Close);
     AssertPtrReturnVoid(m_pButtonClose);
+    /* Create save-button: */
     m_pButtonSave = m_pButtonBox->button(QDialogButtonBox::Save);
     AssertPtrReturnVoid(m_pButtonSave);
+    /* Create refresh-button: */
     m_pButtonRefresh = m_pButtonBox->addButton(QString::null, QDialogButtonBox::ActionRole);
     AssertPtrReturnVoid(m_pButtonRefresh);
 }
@@ -909,6 +985,7 @@ void UIVMLogViewer::cleanup()
             delete m_logMap[pLogPage];
     }
 
+    /* Remove log-viewer: */
     if (!m_machine.isNull())
         m_viewers.remove(m_machine.GetName());
 }
@@ -1003,21 +1080,34 @@ QTextEdit* UIVMLogViewer::currentLogPage()
 
 QTextEdit* UIVMLogViewer::createLogPage(const QString &strName)
 {
+    /* Create page-container: */
     QWidget *pPageContainer = new QWidget;
-    QVBoxLayout *pPageLayout = new QVBoxLayout(pPageContainer);
-    QTextEdit *pLogViewer = new QTextEdit(pPageContainer);
-    pPageLayout->addWidget(pLogViewer);
-    pPageLayout->setContentsMargins(10, 10, 10, 10);
-
-    QFont font = pLogViewer->currentFont();
-    font.setFamily("Courier New,courier");
-    pLogViewer->setFont(font);
-    pLogViewer->setWordWrapMode(QTextOption::NoWrap);
-    pLogViewer->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    pLogViewer->setReadOnly(true);
-
-    m_pViewerContainer->addTab(pPageContainer, strName);
-    return pLogViewer;
+    AssertPtrReturn(pPageContainer, 0);
+    {
+        /* Create page-layout: */
+        QVBoxLayout *pPageLayout = new QVBoxLayout(pPageContainer);
+        AssertPtrReturn(pPageLayout, 0);
+        {
+            pPageLayout->setContentsMargins(10, 10, 10, 10);
+        }
+        /* Create Log-Viewer: */
+        QTextEdit *pLogViewer = new QTextEdit(pPageContainer);
+        AssertPtrReturn(pLogViewer, 0);
+        {
+            /* Configure Log-Viewer: */
+            QFont font = pLogViewer->currentFont();
+            font.setFamily("Courier New,courier");
+            pLogViewer->setFont(font);
+            pLogViewer->setWordWrapMode(QTextOption::NoWrap);
+            pLogViewer->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+            pLogViewer->setReadOnly(true);
+            /* Add Log-Viewer to page-layout: */
+            pPageLayout->addWidget(pLogViewer);
+        }
+        /* Add page-container to viewer-container: */
+        m_pViewerContainer->addTab(pPageContainer, strName);
+        return pLogViewer;
+    }
 }
 
 const QString* UIVMLogViewer::currentLog()

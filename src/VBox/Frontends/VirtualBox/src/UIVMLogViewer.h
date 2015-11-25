@@ -56,14 +56,14 @@ class UIVMLogViewer : public QIWithRetranslateUI2<QMainWindow>,
 public:
 
     /** Static method to create/show VM Log Viewer by passing @a pParent to QWidget base-class constructor.
-      * @a machine specifies the machine for which VM Log-Viewer is requested. */
+      * @param  machine  Specifies the machine for which VM Log-Viewer is requested. */
     static void showLogViewerFor(QWidget *pParent, const CMachine &machine);
 
 protected:
 
     /** Constructs the VM Log-Viewer by passing @a pParent to QWidget base-class constructor.
-      * @a flags specifies Qt window flags.
-      * @a machine specifies the machine for which VM Log-Viewer is requested. */
+      * @param  flags    Specifies Qt window flags.
+      * @param  machine  Specifies the machine for which VM Log-Viewer is requested. */
     UIVMLogViewer(QWidget *pParent, Qt::WindowFlags flags, const CMachine &machine);
     /** Destructs the VM Log-Viewer. */
     ~UIVMLogViewer();
@@ -129,7 +129,7 @@ private:
     /** Holds container for log-pages. */
     QITabWidget *m_pViewerContainer;
 
-    /** Holds the instance of search panel. */
+    /** Holds the instance of search-panel. */
     UIVMLogViewerSearchPanel *m_pSearchPanel;
 
     /** Holds the list of log-pages. */
