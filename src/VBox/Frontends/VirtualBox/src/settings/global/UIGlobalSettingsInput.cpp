@@ -570,8 +570,13 @@ UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const
     verticalHeader()->hide();
     verticalHeader()->setDefaultSectionSize((int)(verticalHeader()->minimumSectionSize() * 1.33));
     horizontalHeader()->setStretchLastSection(false);
+#if QT_VERSION >= 0x050000
+    horizontalHeader()->setSectionResizeMode(UIHotKeyTableSection_Name, QHeaderView::Interactive);
+    horizontalHeader()->setSectionResizeMode(UIHotKeyTableSection_Value, QHeaderView::Stretch);
+#else /* QT_VERSION < 0x050000 */
     horizontalHeader()->setResizeMode(UIHotKeyTableSection_Name, QHeaderView::Interactive);
     horizontalHeader()->setResizeMode(UIHotKeyTableSection_Value, QHeaderView::Stretch);
+#endif /* QT_VERSION < 0x050000 */
 
     /* Reinstall delegate: */
     delete itemDelegate();

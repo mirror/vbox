@@ -388,8 +388,13 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     {
         m_pTreeNetworkNAT->setColumnCount(2);
         m_pTreeNetworkNAT->header()->setStretchLastSection(false);
+#if QT_VERSION >= 0x050000
+        m_pTreeNetworkNAT->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+        m_pTreeNetworkNAT->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+#else /* QT_VERSION < 0x050000 */
         m_pTreeNetworkNAT->header()->setResizeMode(0, QHeaderView::ResizeToContents);
         m_pTreeNetworkNAT->header()->setResizeMode(1, QHeaderView::Stretch);
+#endif /* QT_VERSION < 0x050000 */
         m_pTreeNetworkNAT->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(m_pTreeNetworkNAT, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
                 this, SLOT(sltHandleCurrentItemChangeNetworkNAT()));

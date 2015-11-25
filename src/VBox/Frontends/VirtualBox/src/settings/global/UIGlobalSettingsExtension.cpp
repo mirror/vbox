@@ -96,9 +96,15 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     /* Setup tree-widget: */
     //m_pPackagesTree->header()->hide();
     m_pPackagesTree->header()->setStretchLastSection(false);
+#if QT_VERSION >= 0x050000
+    m_pPackagesTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    m_pPackagesTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+    m_pPackagesTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+#else /* QT_VERSION < 0x050000 */
     m_pPackagesTree->header()->setResizeMode(0, QHeaderView::ResizeToContents);
     m_pPackagesTree->header()->setResizeMode(1, QHeaderView::Stretch);
     m_pPackagesTree->header()->setResizeMode(2, QHeaderView::ResizeToContents);
+#endif /* QT_VERSION < 0x050000 */
     m_pPackagesTree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_pPackagesTree, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
             this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem*)));

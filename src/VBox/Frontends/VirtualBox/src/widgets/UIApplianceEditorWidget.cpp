@@ -1126,7 +1126,11 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = NULL */)
     m_pTvSettings->setAlternatingRowColors(true);
     m_pTvSettings->setAllColumnsShowFocus(true);
     m_pTvSettings->header()->setStretchLastSection(true);
+#if QT_VERSION >= 0x050000
+    m_pTvSettings->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+#else /* QT_VERSION < 0x050000 */
     m_pTvSettings->header()->setResizeMode(QHeaderView::ResizeToContents);
+#endif /* QT_VERSION < 0x050000 */
 
     /* Hidden by default */
     m_pReinitMACsCheckBox->setHidden(true);
