@@ -282,6 +282,32 @@ void UIDnDHandler::dragLeave(ulong screenID)
 #ifdef DEBUG_DND_QT
 QTextStream *g_pStrmLogQt = NULL; /* Output stream for Qt debug logging. */
 
+# if QT_VERSION >= 0x050000
+/* static */
+void UIDnDHandler::debugOutputQt(QtMsgType type, const QMessageLogContext &context, const QString &strMessage)
+{
+    QString strMsg;
+    switch (type)
+    {
+    case QtWarningMsg:
+        strMsg += "[W]";
+        break;
+    case QtCriticalMsg:
+        strMsg += "[C]";
+        break;
+    case QtFatalMsg:
+        strMsg += "[F]";
+        break;
+    case QtDebugMsg:
+    default:
+        strMsg += "[D]";
+        break;
+    }
+
+    if (g_pStrmLogQt)
+        (*g_pStrmLogQt) << strMsg << " " << strMessage << endl;
+}
+# else /* QT_VERSION < 0x050000 */
 /* static */
 void UIDnDHandler::debugOutputQt(QtMsgType type, const char *pszMsg)
 {
@@ -308,6 +334,7 @@ void UIDnDHandler::debugOutputQt(QtMsgType type, const char *pszMsg)
     if (g_pStrmLogQt)
         (*g_pStrmLogQt) << strMsg << " " << pszMsg << endl;
 }
+# endif /* QT_VERSION < 0x050000 */
 #endif /* DEBUG_DND_QT */
 
 /*
@@ -334,7 +361,11 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     {
         g_pStrmLogQt = new QTextStream(pFileDebugQt);
 
+#if QT_VERSION >= 0x050000
+        qInstallMessageHandler(UIDnDHandler::debugOutputQt);
+#else /* QT_VERSION < 0x050000 */
         qInstallMsgHandler(UIDnDHandler::debugOutputQt);
+#endif /* QT_VERSION < 0x050000 */
         qDebug("========================================================================");
     }
 # endif
