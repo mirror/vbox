@@ -31,8 +31,8 @@ public:
 
     static QString getExistingDirectory (const QString &aDir, QWidget *aParent,
                                          const QString &aCaption = QString::null,
-                                         bool aDirOnly = TRUE,
-                                         bool resolveSymlinks = TRUE);
+                                         bool aDirOnly = true,
+                                         bool resolveSymlinks = true);
 
     static QString getSaveFileName (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
                                     const QString &aCaption, QString *aSelectedFilter = 0,
