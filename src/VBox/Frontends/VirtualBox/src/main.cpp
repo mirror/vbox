@@ -225,15 +225,55 @@ static void InstallSignalHandler()
 # endif /* RT_OS_LINUX && DEBUG */
 #endif /* Q_WS_X11 */
 
-/** Qt message handler, function that prints out
-  * debug messages, warnings, critical and fatal error messages.
-  * @param type describes the type of message sent to a message handler.
-  * @param pMsg holds the pointer to the message body. */
+#if QT_VERSION >= 0x050000
+/** Qt5 message handler, function that prints out
+  * debug, warning, critical, fatal and system error messages.
+  * @param  type        Holds the type of the message.
+  * @param  context     Holds the message context.
+  * @param  strMessage  Holds the message body. */
+static void QtMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &strMessage)
+{
+    NOREF(context);
+# ifndef Q_WS_X11
+    NOREF(strMessage);
+# endif /* !Q_WS_X11 */
+    switch (type)
+    {
+        case QtDebugMsg:
+            Log(("Qt DEBUG: %s\n", strMessage.toUtf8().constData()));
+            break;
+        case QtWarningMsg:
+            Log(("Qt WARNING: %s\n", strMessage.toUtf8().constData()));
+# ifdef Q_WS_X11
+            /* Needed for instance for the message ``cannot connect to X server'': */
+            RTStrmPrintf(g_pStdErr, "Qt WARNING: %s\n", strMessage.toUtf8().constData());
+# endif /* Q_WS_X11 */
+            break;
+        case QtCriticalMsg:
+            Log(("Qt CRITICAL: %s\n", strMessage.toUtf8().constData()));
+# ifdef Q_WS_X11
+            /* Needed for instance for the message ``cannot connect to X server'': */
+            RTStrmPrintf(g_pStdErr, "Qt CRITICAL: %s\n", strMessage.toUtf8().constData());
+# endif /* Q_WS_X11 */
+            break;
+        case QtFatalMsg:
+            Log(("Qt FATAL: %s\n", strMessage.toUtf8().constData()));
+# ifdef Q_WS_X11
+            /* Needed for instance for the message ``cannot connect to X server'': */
+            RTStrmPrintf(g_pStdErr, "Qt FATAL: %s\n", strMessage.toUtf8().constData());
+# endif /* Q_WS_X11 */
+    }
+}
+#else /* QT_VERSION < 0x050000 */
+/** Qt4 message handler, function that prints out
+  * debug, warning, critical, fatal and system error messages.
+  * @param  type  Holds the type of the message.
+  * @param  pMsg  Holds the the message body. */
 static void QtMessageOutput(QtMsgType type, const char *pMsg)
 {
-#ifndef Q_WS_X11
+# ifndef Q_WS_X11
     NOREF(pMsg);
-#endif /* !Q_WS_X11 */
+# endif /* !Q_WS_X11 */
     switch (type)
     {
         case QtDebugMsg:
@@ -241,26 +281,27 @@ static void QtMessageOutput(QtMsgType type, const char *pMsg)
             break;
         case QtWarningMsg:
             Log(("Qt WARNING: %s\n", pMsg));
-#ifdef Q_WS_X11
+# ifdef Q_WS_X11
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt WARNING: %s\n", pMsg);
-#endif /* Q_WS_X11 */
+# endif /* Q_WS_X11 */
             break;
         case QtCriticalMsg:
             Log(("Qt CRITICAL: %s\n", pMsg));
-#ifdef Q_WS_X11
+# ifdef Q_WS_X11
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt CRITICAL: %s\n", pMsg);
-#endif /* Q_WS_X11 */
+# endif /* Q_WS_X11 */
             break;
         case QtFatalMsg:
             Log(("Qt FATAL: %s\n", pMsg));
-#ifdef Q_WS_X11
+# ifdef Q_WS_X11
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt FATAL: %s\n", pMsg);
-#endif /* Q_WS_X11 */
+# endif /* Q_WS_X11 */
     }
 }
+#endif /* QT_VERSION < 0x050000 */
 
 /** Shows all available command line parameters. */
 static void ShowHelp()
@@ -388,8 +429,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 # endif /* RT_OS_LINUX && DEBUG */
 #endif /* Q_WS_X11 */
 
+#if QT_VERSION >= 0x050000
+        /* Install Qt console message handler: */
+        qInstallMessageHandler(QtMessageOutput);
+#else /* QT_VERSION < 0x050000 */
         /* Install Qt console message handler: */
         qInstallMsgHandler(QtMessageOutput);
+#endif /* QT_VERSION < 0x050000 */
 
         /* Create application: */
         QApplication a(argc, argv);
