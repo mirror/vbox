@@ -112,7 +112,7 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
                                 mWarningTextEdit->append("- " + text);
                             fWarningsEnabled = true;
                         }
-                        m_pWarningWidget->setShown(fWarningsEnabled);
+                        m_pWarningWidget->setVisible(fWarningsEnabled);
                     }
                 }
             }
