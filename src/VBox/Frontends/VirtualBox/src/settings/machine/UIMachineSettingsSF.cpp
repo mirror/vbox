@@ -203,7 +203,11 @@ UIMachineSettingsSF::UIMachineSettingsSF()
     m_pFoldersToolBar->addAction(mDelAction);
 
     /* Setup connections */
+#if QT_VERSION >= 0x050000
+    mTwFolders->header()->setSectionsMovable(false);
+#else /* QT_VERSION < 0x050000 */
     mTwFolders->header()->setMovable (false);
+#endif /* QT_VERSION < 0x050000 */
     connect (mNewAction, SIGNAL (triggered (bool)), this, SLOT (addTriggered()));
     connect (mEdtAction, SIGNAL (triggered (bool)), this, SLOT (edtTriggered()));
     connect (mDelAction, SIGNAL (triggered (bool)), this, SLOT (delTriggered()));
