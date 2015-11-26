@@ -972,7 +972,7 @@ class SessionWrapper(TdTaskBase):
                 if self.fpApiVer >= 4.3:
                     cOhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_OHCI);
                     if cOhciCtls == 0:
-                        self.o.machine.AddUSBController('OHCI', vboxcon.USBControllerType_OHCI);
+                        self.o.machine.addUSBController('OHCI', vboxcon.USBControllerType_OHCI);
                 else:
                     self.o.machine.usbController.enabled = True;
 
@@ -1008,14 +1008,14 @@ class SessionWrapper(TdTaskBase):
                 if self.fpApiVer >= 4.3:
                     cOhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_OHCI);
                     if cOhciCtls == 0:
-                        self.o.machine.AddUSBController('OHCI', vboxcon.USBControllerType_OHCI);
+                        self.o.machine.addUSBController('OHCI', vboxcon.USBControllerType_OHCI);
                 else:
                     self.o.machine.usbController.enabled = True;
             else:
                 if self.fpApiVer >= 4.3:
                     cOhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_OHCI);
                     if cOhciCtls == 1:
-                        self.o.machine.RemoveUSBController('OHCI');
+                        self.o.machine.removeUSBController('OHCI');
                 else:
                     self.o.machine.usbController.enabled = False;
         except:
@@ -1037,11 +1037,11 @@ class SessionWrapper(TdTaskBase):
                 if self.fpApiVer >= 4.3:
                     cOhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_OHCI);
                     if cOhciCtls == 0:
-                        self.o.machine.AddUSBController('OHCI', vboxcon.USBControllerType_OHCI);
+                        self.o.machine.addUSBController('OHCI', vboxcon.USBControllerType_OHCI);
 
                     cEhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_EHCI);
                     if cEhciCtls == 0:
-                        self.o.machine.AddUSBController('EHCI', vboxcon.USBControllerType_EHCI);
+                        self.o.machine.addUSBController('EHCI', vboxcon.USBControllerType_EHCI);
                 else:
                     self.o.machine.usbController.enabled = True;
                     self.o.machine.usbController.enabledEHCI = True;
@@ -1049,7 +1049,7 @@ class SessionWrapper(TdTaskBase):
                 if self.fpApiVer >= 4.3:
                     cEhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_EHCI);
                     if cEhciCtls == 1:
-                        self.o.machine.RemoveUSBController('EHCI');
+                        self.o.machine.removeUSBController('EHCI');
                 else:
                     self.o.machine.usbController.enabledEHCI = False;
         except:
@@ -1069,11 +1069,11 @@ class SessionWrapper(TdTaskBase):
             if fEnable:
                 cXhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_XHCI);
                 if cXhciCtls == 0:
-                    self.o.machine.AddUSBController('XHCI', vboxcon.USBControllerType_XHCI);
+                    self.o.machine.addUSBController('XHCI', vboxcon.USBControllerType_XHCI);
             else:
                 cXhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_XHCI);
                 if cXhciCtls == 1:
-                    self.o.machine.RemoveUSBController('XHCI');
+                    self.o.machine.removeUSBController('XHCI');
         except:
             reporter.errorXcpt('failed to change XHCI to %s for "%s"' % (fEnable, self.sName));
             fRc = False;
