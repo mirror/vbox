@@ -64,6 +64,10 @@
 # define SUPDRV_LINUX_HAS_SAFE_MSR_API
 # include <asm/msr.h>
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) && defined(CONFIG_DYNAMIC_FTRACE)
+# include <linux/ftrace.h>
+#endif
+
 #include <iprt/asm-amd64-x86.h>
 
 
@@ -939,12 +943,6 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
 }
 
 
-void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
-{
-    NOREF(pDevExt); NOREF(pImage);
-}
-
-
 int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv, const uint8_t *pbImageBits)
 {
     NOREF(pDevExt); NOREF(pImage); NOREF(pv); NOREF(pbImageBits);
@@ -961,6 +959,478 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
 
 void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
+    NOREF(pDevExt); NOREF(pImage);
+}
+
+
+/** @def VBOX_WITH_NON_PROD_HACK_FOR_PERF_STACKS
+ * A very crude hack for debugging using perf and dtrace.
+ *
+ * DO ABSOLUTELY NOT ENABLE IN PRODUCTION BUILDS!  DEVELOPMENT ONLY!!
+ * DO ABSOLUTELY NOT ENABLE IN PRODUCTION BUILDS!  DEVELOPMENT ONLY!!
+ * DO ABSOLUTELY NOT ENABLE IN PRODUCTION BUILDS!  DEVELOPMENT ONLY!!
+ *
+ */
+#if 0 || defined(DOXYGEN_RUNNING)
+# define VBOX_WITH_NON_PROD_HACK_FOR_PERF_STACKS
+#endif
+
+#if defined(VBOX_WITH_NON_PROD_HACK_FOR_PERF_STACKS) && defined(CONFIG_MODULES_TREE_LOOKUP)
+/** Whether g_pfnModTreeInsert and g_pfnModTreeRemove have been initialized.
+ * @remarks can still be NULL after init. */
+static volatile bool g_fLookedForModTreeFunctions = false;
+static void (*g_pfnModTreeInsert)(struct mod_tree_node *) = NULL;   /**< __mod_tree_insert */
+static void (*g_pfnModTreeRemove)(struct mod_tree_node *) = NULL;   /**< __mod_tree_remove */
+#endif
+
+#if 0 /* instant host lockup, can't be bothered debugging it */
+#if defined(VBOX_WITH_NON_PROD_HACK_FOR_PERF_STACKS) \
+ && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) \
+ && defined(CONFIG_MODULES_TREE_LOOKUP) \
+ && defined(CONFIG_DYNAMIC_FTRACE)
+
+/**
+ * Using a static array here because that's what is suggested in the docs to
+ * avoid/reduce potential race conditions.
+ */
+static struct supdrv_ftrace_ops
+{
+    struct ftrace_ops   Core;
+    bool volatile       fUsed;
+} g_aFTraceOps[16] __read_mostly;
+
+/** Stub function for the ugly debug hack below. */
+static void notrace __attribute__((optimize("-fomit-frame-pointer")))
+supdrvLnxFTraceStub(unsigned long ip, unsigned long parent_ip, struct ftrace_ops *op, struct pt_regs *regs)
+{
+     return;
+}
+
+#endif
+#endif
+
+
+void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
+{
+#ifdef VBOX_WITH_NON_PROD_HACK_FOR_PERF_STACKS /* Not for production use!! Debugging only! */
+    /*
+     * This trick stops working with 4.2 when CONFIG_MODULES_TREE_LOOKUP is
+     * defined.  The module lookups are done via a tree structure and we
+     * cannot get at the root of it. :-(
+     */
+# ifdef CONFIG_KALLSYMS
+    size_t const cchName = strlen(pImage->szName);
+# endif
+    struct module *pMyMod, *pSelfMod, *pTestMod, *pTestModByName;
+    IPRT_LINUX_SAVE_EFL_AC();
+
+    pImage->pLnxModHack    = NULL;
+    pImage->pLnxFTraceHack = NULL;
+
+# ifdef CONFIG_MODULES_TREE_LOOKUP
+    /*
+     * This is pretty naive, but works for 4.2 on arch linux.  I don't think we
+     * can count on finding __mod_tree_remove in all kernel builds as it's not
+     * marked noinline like __mod_tree_insert.
+     */
+    if (!g_fLookedForModTreeFunctions)
+    {
+        unsigned long ulInsert = kallsyms_lookup_name("__mod_tree_insert");
+        unsigned long ulRemove = kallsyms_lookup_name("__mod_tree_remove");
+        if (!ulInsert || !ulRemove)
+        {
+            g_fLookedForModTreeFunctions = true;
+            printk(KERN_ERR "vboxdrv: failed to locate __mod_tree_insert and __mod_tree_remove.\n");
+            IPRT_LINUX_RESTORE_EFL_AC();
+            return;
+        }
+        *(unsigned long *)&g_pfnModTreeInsert = ulInsert;
+        *(unsigned long *)&g_pfnModTreeRemove = ulRemove;
+        ASMCompilerBarrier();
+        g_fLookedForModTreeFunctions = true;
+    }
+    else if (!g_pfnModTreeInsert || !g_pfnModTreeRemove)
+        return;
+#endif
+
+    /*
+     * Make sure we've found our own module, otherwise we cannot access the linked list.
+     */
+    mutex_lock(&module_mutex);
+    pSelfMod = find_module("vboxdrv");
+    mutex_unlock(&module_mutex);
+    if (!pSelfMod)
+    {
+        IPRT_LINUX_RESTORE_EFL_AC();
+        return;
+    }
+
+    /*
+     * Cook up a module structure for the image.
+     * We allocate symbol and string tables in the allocation and the module to keep things simple.
+     */
+# ifdef CONFIG_KALLSYMS
+    pMyMod = (struct module *)RTMemAllocZ(sizeof(*pMyMod)
+                                          + sizeof(Elf_Sym) * 3
+                                          + 1 + cchName * 2 + sizeof("_start") + sizeof("_end") + 4 );
+# else
+    pMyMod = (struct module *)RTMemAllocZ(sizeof(*pMyMod));
+# endif
+    if (pMyMod)
+    {
+        int rc = VINF_SUCCESS;
+        //size_t cch;
+# ifdef CONFIG_KALLSYMS
+        Elf_Sym *paSymbols = (Elf_Sym *)(pMyMod + 1);
+        char    *pchStrTab = (char *)(paSymbols + 3);
+# endif
+
+        pMyMod->state = MODULE_STATE_LIVE;
+        INIT_LIST_HEAD(&pMyMod->list);  /* just in case */
+
+        /* Come up with a good name that perf can translate with minimum help... */
+#  if 0
+        cch = strlen(pszFilename);
+        if (cch < sizeof(pMyMod->name))
+            memcpy(pMyMod->name, pszFilename, cch + 1);
+        else
+        {
+            const char *pszTmp = pszFilename;
+            for (;;)
+            {
+                /* skip one path component. */
+                while (*pszTmp == '/')
+                    pszTmp++, cch--;
+                while (*pszTmp != '/' && *pszTmp != '\0')
+                    pszTmp++, cch--;
+
+                /* If we've skipped past the final component, hack something up based on the module name. */
+                if (*pszTmp != '/')
+                {
+                    RTStrPrintf(pMyMod->name, sizeof(pMyMod->name), "/opt/VirtualBox/%s", pImage->szName);
+                    break;
+                }
+                /* When we've got space for two dots and the remaining path, we're done. */
+                if (cch + 2 < sizeof(pMyMod->name))
+                {
+                    pMyMod->name[0] = '.';
+                    pMyMod->name[1] = '.';
+                    memcpy(&pMyMod->name[2], pszTmp, cch + 1);
+                    break;
+                }
+            }
+        }
+#  else
+        /* Perf only matches up files with a .ko extension (maybe .ko.gz),
+           so in order for this crap to work smoothly, we append .ko to the
+           module name and require the user to create symbolic links in
+           /lib/modules/`uname -r`:
+                for i in VMMR0.r0 VBoxDDR0.r0 VBoxDD2R0.r0; do
+                    sudo ln -s /mnt/scratch/vbox/svn/trunk/out/linux.amd64/debug/bin/$i /lib/modules/`uname -r`/$i.ko;
+                done  */
+        RTStrPrintf(pMyMod->name, sizeof(pMyMod->name), "%s", pImage->szName);
+#  endif
+
+        /* sysfs bits. */
+        INIT_LIST_HEAD(&pMyMod->mkobj.kobj.entry); /* rest of kobj is already zeroed, hopefully never accessed... */
+        pMyMod->mkobj.mod           = pMyMod;
+        pMyMod->mkobj.drivers_dir   = NULL;
+        pMyMod->mkobj.mp            = NULL;
+        pMyMod->mkobj.kobj_completion = NULL;
+
+        pMyMod->modinfo_attrs       = NULL; /* hopefully not accessed after setup. */
+        pMyMod->holders_dir         = NULL; /* hopefully not accessed. */
+        pMyMod->version             = "N/A";
+        pMyMod->srcversion          = "N/A";
+
+        /* We export no symbols. */
+        pMyMod->num_syms            = 0;
+        pMyMod->syms                = NULL;
+        pMyMod->crcs                = NULL;
+
+        pMyMod->num_gpl_syms        = 0;
+        pMyMod->gpl_syms            = NULL;
+        pMyMod->gpl_crcs            = NULL;
+
+        pMyMod->num_gpl_future_syms = 0;
+        pMyMod->gpl_future_syms     = NULL;
+        pMyMod->gpl_future_crcs     = NULL;
+
+# if CONFIG_UNUSED_SYMBOLS
+        pMyMod->num_unused_syms     = 0;
+        pMyMod->unused_syms         = NULL;
+        pMyMod->unused_crcs         = NULL;
+
+        pMyMod->num_unused_gpl_syms = 0;
+        pMyMod->unused_gpl_syms     = NULL;
+        pMyMod->unused_gpl_crcs     = NULL;
+# endif
+        /* No kernel parameters either. */
+        pMyMod->kp                  = NULL;
+        pMyMod->num_kp              = 0;
+
+# ifdef CONFIG_MODULE_SIG
+        /* Pretend ok signature. */
+        pMyMod->sig_ok              = true;
+# endif
+        /* No exception table. */
+        pMyMod->num_exentries       = 0;
+        pMyMod->extable             = NULL;
+
+        /* No init function */
+        pMyMod->init                = NULL;
+        pMyMod->module_init         = NULL;
+        pMyMod->init_size           = 0;
+        pMyMod->init_ro_size        = 0;
+        pMyMod->init_text_size      = 0;
+
+        /* The module address and size. It's all text. */
+        pMyMod->module_core         = pImage->pvImage;
+        pMyMod->core_size           = pImage->cbImageBits;
+        pMyMod->core_text_size      = pImage->cbImageBits;
+        pMyMod->core_ro_size        = pImage->cbImageBits;
+
+#ifdef CONFIG_MODULES_TREE_LOOKUP
+        /* Fill in the self pointers for the tree nodes. */
+        pMyMod->mtn_core.mod        = pMyMod;
+        pMyMod->mtn_init.mod        = pMyMod;
+#endif
+        /* They invented the tained bit for us, didn't they? */
+        pMyMod->taints              = 1;
+
+# ifdef CONFIG_GENERIC_BUGS
+        /* No BUGs in our modules. */
+        pMyMod->num_bugs            = 0;
+        INIT_LIST_HEAD(&pMyMod->bug_list);
+        pMyMod->bug_table           = NULL;
+# endif
+
+# ifdef CONFIG_KALLSYMS
+        /* The core stuff is documented as only used when loading. So just zero them. */
+        pMyMod->core_num_syms       = 0;
+        pMyMod->core_symtab         = NULL;
+        pMyMod->core_strtab         = NULL;
+
+        /* Construct a symbol table with start and end symbols.
+           Note! We don't have our own symbol table at this point, image bit
+                 are not uploaded yet! */
+        pMyMod->num_symtab          = 3;
+        pMyMod->symtab              = paSymbols;
+        pMyMod->strtab              = pchStrTab;
+        RT_ZERO(paSymbols[0]);
+        pchStrTab[0] = '\0';
+        paSymbols[1].st_name        = 1;
+        paSymbols[2].st_name        = 2 + RTStrPrintf(&pchStrTab[paSymbols[1].st_name], cchName + sizeof("_start"),
+                                                      "%s_start", pImage->szName);
+        RTStrPrintf(&pchStrTab[paSymbols[2].st_name], cchName + sizeof("_end"), "%s_end", pImage->szName);
+        paSymbols[1].st_info = 't';
+        paSymbols[2].st_info = 'b';
+        paSymbols[1].st_other = 0;
+        paSymbols[2].st_other = 0;
+        paSymbols[1].st_shndx = 0;
+        paSymbols[2].st_shndx = 0;
+        paSymbols[1].st_value = (uintptr_t)pImage->pvImage;
+        paSymbols[2].st_value = (uintptr_t)pImage->pvImage + pImage->cbImageBits - 1;
+        paSymbols[1].st_size  = pImage->cbImageBits - 1;
+        paSymbols[2].st_size  = 1;
+# endif
+        /* No arguments, but seems its always non-NULL so put empty string there. */
+        pMyMod->args                = "";
+
+# ifdef CONFIG_SMP
+        /* No per CPU data. */
+        pMyMod->percpu              = NULL;
+        pMyMod->percpu_size         = 0;
+# endif
+# ifdef CONFIG_TRACEPOINTS
+        /* No tracepoints we like to share. */
+        pMyMod->num_tracepoints     = 0;
+        pMyMod->tracepoints_ptrs    = NULL;
+#endif
+# ifdef HAVE_JUMP_LABEL
+        /* No jump lable stuff either. */
+        pMyMod->jump_entries        = NULL;
+        pMyMod->num_jump_entries    = 0;
+# endif
+# ifdef CONFIG_TRACING
+        pMyMod->num_trace_bprintk_fmt   = 0;
+        pMyMod->trace_bprintk_fmt_start = NULL;
+# endif
+# ifdef CONFIG_EVENT_TRACING
+        pMyMod->trace_events        = NULL;
+        pMyMod->num_trace_events    = 0;
+# endif
+# ifdef CONFIG_FTRACE_MCOUNT_RECORD
+        pMyMod->num_ftrace_callsites = 0;
+        pMyMod->ftrace_callsites    = NULL;
+# endif
+# ifdef CONFIG_MODULE_UNLOAD
+        /* Dependency lists, not worth sharing */
+        INIT_LIST_HEAD(&pMyMod->source_list);
+        INIT_LIST_HEAD(&pMyMod->target_list);
+
+        /* Nobody waiting and no exit function. */
+#  if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
+        pMyMod->waiter              = NULL;
+#  endif
+        pMyMod->exit                = NULL;
+
+        /* References, very important as we must not allow the module
+           to be unloaded using rmmod. */
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+        atomic_set(&pMyMod->refcnt, 42);
+#  else
+        pMyMod->refptr              = alloc_percpu(struct module_ref);
+        if (pMyMod->refptr)
+        {
+            int iCpu;
+            for_each_possible_cpu(iCpu)
+            {
+                per_cpu_ptr(pMyMod->refptr, iCpu)->decs = 0;
+                per_cpu_ptr(pMyMod->refptr, iCpu)->incs = 1;
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+#  endif
+# endif
+# ifdef CONFIG_CONSTRUCTORS
+        /* No constructors. */
+        pMyMod->ctors               = NULL;
+        pMyMod->num_ctors           = 0;
+# endif
+        if (RT_SUCCESS(rc))
+        {
+            bool fIsModText;
+
+            /*
+             * Add the module to the list.
+             */
+            mutex_lock(&module_mutex);
+            list_add_rcu(&pMyMod->list, &pSelfMod->list);
+            pImage->pLnxModHack = pMyMod;
+# ifdef CONFIG_MODULES_TREE_LOOKUP
+            g_pfnModTreeInsert(&pMyMod->mtn_core); /* __mod_tree_insert */
+# endif
+            mutex_unlock(&module_mutex);
+
+#if 0 /* Horrible, non-working hack.  Debug when __mod_tree_remove can't be found on a box we care about.  */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) && defined(CONFIG_MODULES_TREE_LOOKUP)
+#  if defined(CONFIG_DYNAMIC_FTRACE)
+            /*
+             * Starting with 4.2 there's the module tree lookup which thwarts
+             * the above module hack.  So, we must install an additional hack
+             * to get the job done.  This relies on dynmaic ftrace trampolines
+             * and is just as ugly as the above.  Only for debugging!!
+             */
+            uint32_t i = 0;
+            while (i < RT_ELEMENTS(g_aFTraceOps)
+                   && ASMAtomicXchgBool(&g_aFTraceOps[i].fUsed, true) == true)
+                i++;
+            if (i < RT_ELEMENTS(g_aFTraceOps))
+            {
+                struct supdrv_ftrace_ops *pOps = &g_aFTraceOps[i];
+                pOps->Core.func              = supdrvLnxFTraceStub;
+                pOps->Core.flags             = /*FTRACE_OPS_FL_RECURSION_SAFE | FTRACE_OPS_FL_STUB |*/ FTRACE_OPS_FL_DYNAMIC;
+                pOps->Core.trampoline        = (uintptr_t)pImage->pvImage;
+                pOps->Core.trampoline_size   = (uintptr_t)pImage->cbImageBits;
+
+                rc = register_ftrace_function(&pOps->Core);
+                if (rc == 0)
+                    pImage->pLnxFTraceHack = pOps;
+                else
+                    printk(KERN_ERR "vboxdrv: register_ftrace_function failed: %d\n", rc);
+            }
+#  else
+#   error "Sorry, without CONFIG_DYNAMIC_FTRACE currently not possible to get proper stack traces"
+#  endif
+# endif
+#endif
+            /*
+             * Test it.
+             */
+            mutex_lock(&module_mutex);
+            pTestModByName = find_module(pMyMod->name);
+            pTestMod = __module_address((uintptr_t)pImage->pvImage + pImage->cbImageBits / 4);
+            fIsModText = __module_text_address((uintptr_t)pImage->pvImage + pImage->cbImageBits / 2);
+            mutex_unlock(&module_mutex);
+            if (   pTestMod == pMyMod
+                && pTestModByName == pMyMod
+                && fIsModText)
+                printk(KERN_ERR "vboxdrv: fake module works for '%s' (%#lx to %#lx)\n",
+                       pMyMod->name, (unsigned long)paSymbols[1].st_value, (unsigned long)paSymbols[2].st_value);
+            else
+                printk(KERN_ERR "vboxdrv: failed to find fake module (pTestMod=%p, pTestModByName=%p, pMyMod=%p, fIsModText=%d)\n",
+                       pTestMod, pTestModByName, pMyMod, fIsModText);
+        }
+        else
+            RTMemFree(pMyMod);
+    }
+
+    IPRT_LINUX_RESTORE_EFL_AC();
+#else
+    pImage->pLnxModHack    = NULL;
+    pImage->pLnxFTraceHack = NULL;
+#endif
+    NOREF(pDevExt); NOREF(pImage);
+}
+
+
+void VBOXCALL   supdrvOSLdrNotifyUnloaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+#ifdef VBOX_WITH_NON_PROD_HACK_FOR_PERF_STACKS /* Not for production use!! Debugging only! */
+    struct module *pMyMod = pImage->pLnxModHack;
+    pImage->pLnxModHack = NULL;
+    if (pMyMod)
+    {
+        /*
+         * Remove the fake module list entry and free it.
+         */
+        IPRT_LINUX_SAVE_EFL_AC();
+        mutex_lock(&module_mutex);
+        list_del_rcu(&pMyMod->list);
+# ifdef CONFIG_MODULES_TREE_LOOKUP
+        g_pfnModTreeRemove(&pMyMod->mtn_core);
+# endif
+        synchronize_sched();
+        mutex_unlock(&module_mutex);
+
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+        free_percpu(pMyMod->refptr);
+# endif
+        RTMemFree(pMyMod);
+        IPRT_LINUX_RESTORE_EFL_AC();
+    }
+
+#if 0 /* Butt-ugly and ain't working yet. */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) && defined(CONFIG_MODULES_TREE_LOOKUP)
+#  if defined(CONFIG_DYNAMIC_FTRACE)
+    {
+        /*
+         * Undo the ftrace hack.
+         */
+        struct supdrv_ftrace_ops *pOps = pImage->pLnxFTraceHack;
+        pImage->pLnxFTraceHack = NULL;
+        if (pOps)
+        {
+            IPRT_LINUX_SAVE_EFL_AC();
+            int rc = unregister_ftrace_function(&pOps->Core);
+            if (rc == 0)
+                ASMAtomicWriteBool(&pOps->fUsed, false);
+            else
+                printk(KERN_ERR "vboxdrv: unregister_ftrace_function failed: %d\n", rc);
+            IPRT_LINUX_RESTORE_EFL_AC();
+        }
+    }
+#  else
+#   error "Sorry, without CONFIG_DYNAMIC_FTRACE currently not possible to get proper stack traces"
+#  endif
+# endif
+#endif
+
+#else
+    Assert(pImage->pLnxModHack == NULL);
+#endif
     NOREF(pDevExt); NOREF(pImage);
 }
 

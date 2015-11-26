@@ -4649,7 +4649,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pReq->u.Out.pvImageBase   = pImage->pvImage;
     pReq->u.Out.fNeedsLoading = true;
     pReq->u.Out.fNativeLoader = pImage->fNative;
-    supdrvOSLdrNotifyOpened(pDevExt, pImage);
+    supdrvOSLdrNotifyOpened(pDevExt, pImage, pReq->u.In.szFilename);
 
     supdrvLdrUnlock(pDevExt);
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
@@ -5398,9 +5398,11 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     /* Inform the tracing component. */
     supdrvTracerModuleUnloading(pDevExt, pImage);
 
-    /* do native unload if appropriate. */
+    /* Do native unload if appropriate, then inform the native code about the
+       unloading (mainly for non-native loading case). */
     if (pImage->fNative)
         supdrvOSLdrUnload(pDevExt, pImage);
+    supdrvOSLdrNotifyUnloaded(pDevExt, pImage);
 
     /* free the image */
     pImage->cUsage  = 0;

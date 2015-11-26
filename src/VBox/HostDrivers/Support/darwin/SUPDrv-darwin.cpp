@@ -1135,32 +1135,6 @@ bool VBOXCALL supdrvOSAreTscDeltasInSync(void)
     return false;
 }
 
-void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
-{
-#if 1
-    NOREF(pDevExt); NOREF(pImage);
-#else
-    /*
-     * Try store the image load address in NVRAM so we can retrived it on panic.
-     * Note! This only works if you're root! - Acutally, it doesn't work at all at the moment. FIXME!
-     */
-    IORegistryEntry *pEntry = IORegistryEntry::fromPath("/options", gIODTPlane);
-    if (pEntry)
-    {
-        char szVar[80];
-        RTStrPrintf(szVar, sizeof(szVar), "vboximage"/*-%s*/, pImage->szName);
-        char szValue[48];
-        RTStrPrintf(szValue, sizeof(szValue), "%#llx,%#llx", (uint64_t)(uintptr_t)pImage->pvImage,
-                    (uint64_t)(uintptr_t)pImage->pvImage + pImage->cbImageBits - 1);
-        bool fRc = pEntry->setProperty(szVar, szValue); NOREF(fRc);
-        pEntry->release();
-        SUPR0Printf("fRc=%d '%s'='%s'\n", fRc, szVar, szValue);
-    }
-    /*else
-        SUPR0Printf("failed to find /options in gIODTPlane\n");*/
-#endif
-}
-
 
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
@@ -1184,6 +1158,45 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
 
 
 void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    NOREF(pDevExt); NOREF(pImage);
+}
+
+
+void VBOXCALL   supdrvOSLdrNotifyLoaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    NOREF(pDevExt); NOREF(pImage);
+}
+
+
+void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
+{
+#if 1
+    NOREF(pDevExt); NOREF(pImage); NOREF(pszFilename);
+#else
+    /*
+     * Try store the image load address in NVRAM so we can retrived it on panic.
+     * Note! This only works if you're root! - Acutally, it doesn't work at all at the moment. FIXME!
+     */
+    IORegistryEntry *pEntry = IORegistryEntry::fromPath("/options", gIODTPlane);
+    if (pEntry)
+    {
+        char szVar[80];
+        RTStrPrintf(szVar, sizeof(szVar), "vboximage"/*-%s*/, pImage->szName);
+        char szValue[48];
+        RTStrPrintf(szValue, sizeof(szValue), "%#llx,%#llx", (uint64_t)(uintptr_t)pImage->pvImage,
+                    (uint64_t)(uintptr_t)pImage->pvImage + pImage->cbImageBits - 1);
+        bool fRc = pEntry->setProperty(szVar, szValue); NOREF(fRc);
+        pEntry->release();
+        SUPR0Printf("fRc=%d '%s'='%s'\n", fRc, szVar, szValue);
+    }
+    /*else
+        SUPR0Printf("failed to find /options in gIODTPlane\n");*/
+#endif
+}
+
+
+void VBOXCALL   supdrvOSLdrNotifyUnloaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
     NOREF(pDevExt); NOREF(pImage);
 }
