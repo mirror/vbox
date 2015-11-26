@@ -63,6 +63,9 @@
 /* X11 includes: */
 # include <QX11Info>
 # include <X11/Xlib.h>
+# if QT_VERSION >= 0x050000
+#  undef Bool // Qt5 vs Xlib gift..
+# endif /* QT_VERSION >= 0x050000 */
 #endif /* Q_WS_X11 */
 
 
