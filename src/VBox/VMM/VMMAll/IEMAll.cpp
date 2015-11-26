@@ -10339,7 +10339,7 @@ IEM_STATIC void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
     { \
         if (pOrgXState->a_Field != pDebugXState->a_Field) \
         { \
-            switch (sizeof(pOrgCtx->a_Field)) \
+            switch (sizeof(pOrgXState->a_Field)) \
             { \
                 case 1: RTAssertMsg2Weak("  %8s differs - iem=%02x - %s=%02x\n", #a_Field, pDebugXState->a_Field, pszWho, pOrgXState->a_Field); break; \
                 case 2: RTAssertMsg2Weak("  %8s differs - iem=%04x - %s=%04x\n", #a_Field, pDebugXState->a_Field, pszWho, pOrgXState->a_Field); break; \
