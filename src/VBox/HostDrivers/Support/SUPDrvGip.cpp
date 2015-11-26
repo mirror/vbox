@@ -4137,12 +4137,12 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                  * regular, interruptible sleep here and ignore wake ups due to signals.
                  * See task_contributes_to_load() in include/linux/sched.h in the Linux sources.
                  */
-                rc = RTThreadUserWaitNoResume(pDevExt->hTscDeltaThread, pDevExt->cMsTscDeltaTimeout);
+                rc = RTThreadUserWaitNoResume(hThread, pDevExt->cMsTscDeltaTimeout);
                 if (   RT_FAILURE(rc)
                     && rc != VERR_TIMEOUT
                     && rc != VERR_INTERRUPTED)
                     return supdrvTscDeltaThreadButchered(pDevExt, false /* fSpinlockHeld */, "RTThreadUserWait", rc);
-                RTThreadUserReset(pDevExt->hTscDeltaThread);
+                RTThreadUserReset(hThread);
                 break;
             }
 
