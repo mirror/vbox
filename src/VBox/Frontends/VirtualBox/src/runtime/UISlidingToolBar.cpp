@@ -23,11 +23,9 @@
 # include <QMdiSubWindow>
 # include <QHBoxLayout>
 # include <QMdiArea>
-# ifdef Q_WS_X11
-#  include <QX11Info>
-# endif /* Q_WS_X11 */
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
 # include "UISlidingToolBar.h"
 # include "UIAnimationFramework.h"
 # include "UIMachineWindow.h"
@@ -79,7 +77,7 @@ void UISlidingToolBar::prepare()
     /* Use Qt API to enable translucency: */
     setAttribute(Qt::WA_TranslucentBackground);
 #elif defined(Q_WS_X11)
-    if (QX11Info::isCompositingManagerRunning())
+    if (vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Qt API to enable translucency: */
         setAttribute(Qt::WA_TranslucentBackground);
@@ -156,7 +154,7 @@ void UISlidingToolBar::prepareGeometry()
     }
 
 #ifdef Q_WS_X11
-    if (!QX11Info::isCompositingManagerRunning())
+    if (!vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
         setMask(m_pEmbeddedWidget->geometry());
@@ -213,7 +211,7 @@ void UISlidingToolBar::adjustGeometry()
     m_pEmbeddedWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
 
 #ifdef Q_WS_X11
-    if (!QX11Info::isCompositingManagerRunning())
+    if (!vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
         setMask(m_pEmbeddedWidget->geometry());
@@ -305,7 +303,7 @@ void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
     m_pEmbeddedWidget->setGeometry(rect);
 
 #ifdef Q_WS_X11
-    if (!QX11Info::isCompositingManagerRunning())
+    if (!vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
         setMask(m_pEmbeddedWidget->geometry());

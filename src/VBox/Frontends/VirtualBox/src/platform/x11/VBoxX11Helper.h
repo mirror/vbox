@@ -29,6 +29,9 @@ enum X11WMType
     X11WMType_Xfwm4,
 };
 
+/** X11: Determines and returns whether the compositing manager is running. */
+bool X11IsCompositingManagerRunning();
+
 /** X11: Determines and returns current Window Manager type. */
 X11WMType X11WindowManagerType();
 

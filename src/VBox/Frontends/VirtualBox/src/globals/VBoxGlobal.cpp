@@ -230,6 +230,7 @@ VBoxGlobal::VBoxGlobal()
     , m_fSeparateProcess(false)
     , m_pMediumEnumerator(0)
 #ifdef Q_WS_X11
+    , m_fCompositingManagerRunning(false)
     , m_enmWindowManagerType(X11WMType_Unknown)
     , m_pDesktopWidgetWatchdog(0)
 #endif /* Q_WS_X11 */
@@ -3364,7 +3365,7 @@ bool VBoxGlobal::supportsFullScreenMonitorsProtocolX11()
 /* static */
 bool VBoxGlobal::setFullScreenMonitorX11(QWidget *pWidget, ulong uScreenId)
 {
-    return XXSendClientMessage(pWidget->x11Info().display(),
+    return XXSendClientMessage(QX11Info::display(),
                                pWidget->window()->winId(),
                                "_NET_WM_FULLSCREEN_MONITORS",
                                uScreenId, uScreenId, uScreenId, uScreenId,
@@ -3375,7 +3376,7 @@ bool VBoxGlobal::setFullScreenMonitorX11(QWidget *pWidget, ulong uScreenId)
 QVector<Atom> VBoxGlobal::flagsNetWmState(QWidget *pWidget)
 {
     /* Get display: */
-    Display *pDisplay = pWidget->x11Info().display();
+    Display *pDisplay = QX11Info::display();
 
     /* Prepare atoms: */
     QVector<Atom> resultNetWmState;
@@ -3419,7 +3420,7 @@ QVector<Atom> VBoxGlobal::flagsNetWmState(QWidget *pWidget)
 bool VBoxGlobal::isFullScreenFlagSet(QWidget *pWidget)
 {
     /* Get display: */
-    Display *pDisplay = pWidget->x11Info().display();
+    Display *pDisplay = QX11Info::display();
 
     /* Prepare atoms: */
     Atom net_wm_state_fullscreen = XInternAtom(pDisplay, "_NET_WM_STATE_FULLSCREEN", True /* only if exists */);
@@ -3432,7 +3433,7 @@ bool VBoxGlobal::isFullScreenFlagSet(QWidget *pWidget)
 void VBoxGlobal::setFullScreenFlag(QWidget *pWidget)
 {
     /* Get display: */
-    Display *pDisplay = pWidget->x11Info().display();
+    Display *pDisplay = QX11Info::display();
 
     /* Prepare atoms: */
     QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
@@ -4047,6 +4048,9 @@ void VBoxGlobal::prepare()
     UIVisualStateType visualStateType = UIVisualStateType_Invalid;
 
 #ifdef Q_WS_X11
+    /* Check whether we have compositing manager running: */
+    m_fCompositingManagerRunning = X11IsCompositingManagerRunning();
+
     /* Acquire current Window Manager type: */
     m_enmWindowManagerType = X11WindowManagerType();
 

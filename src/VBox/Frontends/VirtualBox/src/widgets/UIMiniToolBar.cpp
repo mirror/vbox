@@ -29,9 +29,6 @@
 # include <QToolButton>
 # include <QStateMachine>
 # include <QPainter>
-# ifdef Q_WS_X11
-#  include <QX11Info>
-# endif /* Q_WS_X11 */
 
 /* GUI includes: */
 # include "UIMiniToolBar.h"
@@ -275,7 +272,7 @@ void UIMiniToolBarPrivate::prepare()
 
     /* Left margin: */
 #ifdef Q_WS_X11
-    if (QX11Info::isCompositingManagerRunning())
+    if (vboxGlobal().isCompositingManagerRunning())
         m_spacings << widgetForAction(addWidget(new QWidget));
 #else /* !Q_WS_X11 */
     m_spacings << widgetForAction(addWidget(new QWidget));
@@ -330,7 +327,7 @@ void UIMiniToolBarPrivate::prepare()
 
     /* Right margin: */
 #ifdef Q_WS_X11
-    if (QX11Info::isCompositingManagerRunning())
+    if (vboxGlobal().isCompositingManagerRunning())
         m_spacings << widgetForAction(addWidget(new QWidget));
 #else /* !Q_WS_X11 */
     m_spacings << widgetForAction(addWidget(new QWidget));
@@ -343,7 +340,7 @@ void UIMiniToolBarPrivate::prepare()
 void UIMiniToolBarPrivate::rebuildShape()
 {
 #ifdef Q_WS_X11
-    if (!QX11Info::isCompositingManagerRunning())
+    if (!vboxGlobal().isCompositingManagerRunning())
         return;
 #endif /* Q_WS_X11 */
 
@@ -552,7 +549,7 @@ void UIMiniToolBar::prepare()
     setAttribute(Qt::WA_TranslucentBackground);
 #elif defined(Q_WS_X11)
     /* Enable translucency through Qt API if supported: */
-    if (QX11Info::isCompositingManagerRunning())
+    if (vboxGlobal().isCompositingManagerRunning())
         setAttribute(Qt::WA_TranslucentBackground);
 #endif /* Q_WS_X11 */
 

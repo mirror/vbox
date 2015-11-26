@@ -18,15 +18,14 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QDesktopWidget>
-#ifdef Q_WS_X11
-# include <QX11Info>
-#endif /* Q_WS_X11 */
 
 /* GUI includes: */
+#include "VBoxGlobal.h"
 #include "UIDesktopWidgetWatchdog.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
+
 
 /** QWidget extension used as
   * an invisible window on the basis of which we
@@ -66,7 +65,7 @@ UIInvisibleWindow::UIInvisibleWindow(int iHostScreenIndex)
     setMask(QRect(0, 0, 1, 1));
 #ifdef Q_WS_X11
     /* For composite WMs make this 1 pixel transparent: */
-    if (QX11Info::isCompositingManagerRunning())
+    if (vboxGlobal().isCompositingManagerRunning())
         setAttribute(Qt::WA_TranslucentBackground);
 #else /* !Q_WS_X11 */
     /* Make this 1 pixel transparent: */
