@@ -31,7 +31,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
 UIGInformation::UIGInformation(QWidget *pParent)
     : QWidget(pParent)
     , m_pMainLayout(0)
@@ -101,14 +100,6 @@ void UIGInformation::prepareConnections()
             m_pDetailsView, SLOT(sltMinimumWidthHintChanged(int)));
     connect(m_pDetailsModel, SIGNAL(sigRootItemMinimumHeightHintChanged(int)),
             m_pDetailsView, SLOT(sltMinimumHeightHintChanged(int)));
-    connect(m_pDetailsModel, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
-            this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
-    connect(this, SIGNAL(sigSlidingStarted()),
-            m_pDetailsModel, SLOT(sltHandleSlidingStarted()));
-    connect(this, SIGNAL(sigToggleStarted()),
-            m_pDetailsModel, SLOT(sltHandleToggleStarted()));
-    connect(this, SIGNAL(sigToggleFinished()),
-            m_pDetailsModel, SLOT(sltHandleToggleFinished()));
 
     /* Setup details-view connections: */
     connect(m_pDetailsView, SIGNAL(sigResized()),

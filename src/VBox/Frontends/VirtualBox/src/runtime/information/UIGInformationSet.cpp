@@ -33,7 +33,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
 UIGInformationSet::UIGInformationSet(UIGInformationItem *pParent)
     : UIGInformationItem(pParent)
     , m_pMachineItem(0)
@@ -127,18 +126,18 @@ void UIGInformationSet::sltBuildStep(QString strStepId, int iStepNumber)
         /* Should the element be visible? */
         bool fVisible = m_settings.contains(elementType);
         /* Should the element be opened? */
-        bool fOpen = fVisible && m_settings[elementType];
+        //bool fOpen = fVisible && m_settings[elementType];
 
         /* Check if element is present already: */
         UIGInformationElement *pElement = element(elementType);
-        if (pElement && fOpen)
-            pElement->open(false);
+        //if (pElement && fOpen)
+            //pElement->open(false);
         /* Create element if necessary: */
         bool fJustCreated = false;
         if (!pElement)
         {
             fJustCreated = true;
-            pElement = createElement(elementType, fOpen);
+            pElement = createElement(elementType, true);
         }
 
         /* Show element if necessary: */

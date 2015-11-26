@@ -32,7 +32,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
 UIGInformationGroup::UIGInformationGroup(QGraphicsScene *pParent)
     : UIGInformationItem(0)
     , m_iPreviousMinimumWidthHint(0)

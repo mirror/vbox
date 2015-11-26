@@ -39,7 +39,6 @@ UIGInformationModel::UIGInformationModel(QObject *pParent)
     : QObject(pParent)
     , m_pScene(0)
     , m_pRoot(0)
-    , m_pAnimationCallback(0)
 {
     /* Prepare scene: */
     prepareScene();
@@ -120,99 +119,6 @@ void UIGInformationModel::sltHandleViewResize()
     updateLayout();
 }
 
-void UIGInformationModel::sltToggleElements(InformationElementType type, bool fToggled)
-{
-    /* Make sure it is not started yet: */
-    if (m_pAnimationCallback)
-        return;
-
-    /* Prepare/configure animation callback: */
-    m_pAnimationCallback = new UIGInformationElementAnimationCallback(this, type, fToggled);
-    connect(m_pAnimationCallback, SIGNAL(sigAllAnimationFinished(InformationElementType, bool)),
-            this, SLOT(sltToggleAnimationFinished(InformationElementType, bool)), Qt::QueuedConnection);
-    /* For each the set of the group: */
-    foreach (UIGInformationItem *pSetItem, m_pRoot->items())
-    {
-        /* For each the element of the set: */
-        foreach (UIGInformationItem *pElementItem, pSetItem->items())
-        {
-            /* Get each element: */
-            UIGInformationElement *pElement = pElementItem->toElement();
-            /* Check if this element is of required type: */
-            if (pElement->elementType() == type)
-            {
-                if (fToggled && pElement->closed())
-                {
-                    m_pAnimationCallback->addNotifier(pElement);
-                    pElement->open();
-                }
-                else if (!fToggled && pElement->opened())
-                {
-                    m_pAnimationCallback->addNotifier(pElement);
-                    pElement->close();
-                }
-            }
-        }
-    }
-    /* Update layout: */
-    updateLayout();
-}
-
-void UIGInformationModel::sltToggleAnimationFinished(InformationElementType type, bool fToggled)
-{
-    /* Cleanup animation callback: */
-    delete m_pAnimationCallback;
-    m_pAnimationCallback = 0;
-
-    /* Mark animation finished: */
-    foreach (UIGInformationItem *pSetItem, m_pRoot->items())
-    {
-        foreach (UIGInformationItem *pElementItem, pSetItem->items())
-        {
-            UIGInformationElement *pElement = pElementItem->toElement();
-            if (pElement->elementType() == type)
-                pElement->markAnimationFinished();
-        }
-    }
-    /* Update layout: */
-    updateLayout();
-
-    /* Update element open/close status: */
-    if (m_settings.contains(type))
-        m_settings[type] = fToggled;
-}
-
-void UIGInformationModel::sltElementTypeToggled()
-{
-    /* Which item was toggled? */
-    QAction *pAction = qobject_cast<QAction*>(sender());
-    InformationElementType type = pAction->data().value<InformationElementType>();
-
-    /* Toggle element visibility status: */
-    if (m_settings.contains(type))
-        m_settings.remove(type);
-    else
-        m_settings[type] = true;
-
-    /* Rebuild group: */
-    m_pRoot->rebuildGroup();
-}
-
-void UIGInformationModel::sltHandleSlidingStarted()
-{
-    m_pRoot->stopBuildingGroup();
-}
-
-void UIGInformationModel::sltHandleToggleStarted()
-{
-    m_pRoot->stopBuildingGroup();
-}
-
-void UIGInformationModel::sltHandleToggleFinished()
-{
-    m_pRoot->rebuildGroup();
-}
-
 QVariant UIGInformationModel::data(int iKey) const
 {
     switch (iKey)
@@ -226,7 +132,6 @@ QVariant UIGInformationModel::data(int iKey) const
 void UIGInformationModel::prepareScene()
 {
     m_pScene = new QGraphicsScene(this);
-    m_pScene->installEventFilter(this);
 }
 
 void UIGInformationModel::prepareRoot()
@@ -269,72 +174,5 @@ void UIGInformationModel::cleanupScene()
 {
     delete m_pScene;
     m_pScene = 0;
-}
-
-bool UIGInformationModel::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    /* Ignore if no scene object: */
-    if (pObject != scene())
-        return QObject::eventFilter(pObject, pEvent);
-
-    /* Ignore if no context-menu event: */
-    if (pEvent->type() != QEvent::GraphicsSceneContextMenu)
-        return QObject::eventFilter(pObject, pEvent);
-
-    /* Process context menu event: */
-    return processContextMenuEvent(static_cast<QGraphicsSceneContextMenuEvent*>(pEvent));
-}
-
-bool UIGInformationModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
-{
-    /* Pass preview context menu instead: */
-    if (QGraphicsItem *pItem = itemAt(pEvent->scenePos()))
-        if (pItem->type() == UIGInformationItemType_Preview)
-            return false;
-
-    /* Prepare context-menu: */
-    QMenu contextMenu;
-    /* Enumerate elements settings: */
-    for (int iType = InformationElementType_General; iType <= InformationElementType_RuntimeAttributes; ++iType)
-    {
-        InformationElementType currentElementType = (InformationElementType)iType;
-        QAction *pAction = contextMenu.addAction(gpConverter->toString(currentElementType), this, SLOT(sltElementTypeToggled()));
-        pAction->setCheckable(true);
-        pAction->setChecked(m_settings.contains(currentElementType));
-        pAction->setData(QVariant::fromValue(currentElementType));
-    }
-    /* Exec context-menu: */
-    contextMenu.exec(pEvent->screenPos());
-
-    /* Filter: */
-    return true;
-}
-
-UIGInformationElementAnimationCallback::UIGInformationElementAnimationCallback(QObject *pParent, InformationElementType type, bool fToggled)
-    : QObject(pParent)
-    , m_type(type)
-    , m_fToggled(fToggled)
-{
-}
-
-void UIGInformationElementAnimationCallback::addNotifier(UIGInformationItem *pItem)
-{
-    /* Connect notifier: */
-    connect(pItem, SIGNAL(sigToggleElementFinished()), this, SLOT(sltAnimationFinished()));
-    /* Remember notifier: */
-    m_notifiers << pItem;
-}
-
-void UIGInformationElementAnimationCallback::sltAnimationFinished()
-{
-    /* Determine notifier: */
-    UIGInformationItem *pItem = qobject_cast<UIGInformationItem*>(sender());
-    /* Disconnect notifier: */
-    disconnect(pItem, SIGNAL(sigToggleElementFinished()), this, SLOT(sltAnimationFinished()));
-    /* Remove notifier: */
-    m_notifiers.removeAll(pItem);
-    /* Check if we finished: */
-    if (m_notifiers.isEmpty())
-        emit sigAllAnimationFinished(m_type, m_fToggled);
 }
 

@@ -120,7 +120,6 @@ void UIGInformationElementInterface::sltUpdateAppearanceFinished(UITask *pTask)
     emit sigBuildDone();
 }
 
-
 UIGInformationElementPreview::UIGInformationElementPreview(UIGInformationSet *pParent, bool fOpened)
     : UIGInformationElement(pParent, InformationElementType_Preview, fOpened)
 {
@@ -200,19 +199,8 @@ int UIGInformationElementPreview::minimumHeightHint(bool fClosed) const
 
     /* Header height: */
     iProposedHeight += minimumHeaderHeight();
-
-    /* Element is opened? */
-    if (!fClosed)
-    {
-        iProposedHeight += iMargin;
-        iProposedHeight += m_pPreview->minimumSizeHint().toSize().height();
-    }
-    else
-    {
-        /* Additional height during animation: */
-        if (button()->isAnimationRunning())
-            iProposedHeight += additionalHeight();
-    }
+    iProposedHeight += iMargin;
+    iProposedHeight += m_pPreview->minimumSizeHint().toSize().height();
 
     /* Return result: */
     return iProposedHeight;
@@ -222,12 +210,6 @@ void UIGInformationElementPreview::updateLayout()
 {
     /* Call to base-class: */
     UIGInformationElement::updateLayout();
-
-    /* Show/hide preview: */
-    if (closed() && m_pPreview->isVisible())
-        m_pPreview->hide();
-    if (opened() && !m_pPreview->isVisible() && !isAnimationRunning())
-        m_pPreview->show();
 }
 
 void UIGInformationElementPreview::updateAppearance()
@@ -239,7 +221,6 @@ void UIGInformationElementPreview::updateAppearance()
     m_pPreview->setMachine(machine());
     emit sigBuildDone();
 }
-
 
 void UIGInformationUpdateTaskGeneral::run()
 {
@@ -286,7 +267,6 @@ void UIGInformationUpdateTaskGeneral::run()
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
-
 
 void UIGInformationUpdateTaskSystem::run()
 {
@@ -363,7 +343,6 @@ void UIGInformationUpdateTaskSystem::run()
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
-
 
 void UIGInformationUpdateTaskDisplay::run()
 {
@@ -467,7 +446,6 @@ void UIGInformationUpdateTaskDisplay::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-
 void UIGInformationUpdateTaskStorage::run()
 {
     /* Acquire corresponding machine: */
@@ -547,7 +525,6 @@ void UIGInformationUpdateTaskStorage::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-
 void UIGInformationUpdateTaskAudio::run()
 {
     /* Acquire corresponding machine: */
@@ -583,7 +560,6 @@ void UIGInformationUpdateTaskAudio::run()
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
-
 
 void UIGInformationUpdateTaskNetwork::run()
 {
@@ -680,7 +656,6 @@ QString UIGInformationUpdateTaskNetwork::summarizeGenericProperties(const CNetwo
     return strResult;
 }
 
-
 void UIGInformationUpdateTaskSerial::run()
 {
     /* Acquire corresponding machine: */
@@ -723,7 +698,6 @@ void UIGInformationUpdateTaskSerial::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-
 #ifdef VBOX_WITH_PARALLEL_PORTS
 void UIGInformationUpdateTaskParallel::run()
 {
@@ -761,7 +735,6 @@ void UIGInformationUpdateTaskParallel::run()
     setProperty("table", QVariant::fromValue(table));
 }
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-
 
 void UIGInformationUpdateTaskUSB::run()
 {
@@ -812,7 +785,6 @@ void UIGInformationUpdateTaskUSB::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-
 void UIGInformationUpdateTaskSF::run()
 {
     /* Acquire corresponding machine: */
@@ -839,7 +811,6 @@ void UIGInformationUpdateTaskSF::run()
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
-
 
 void UIGInformationUpdateTaskUI::run()
 {
@@ -929,7 +900,6 @@ void UIGInformationUpdateTaskUI::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-
 void UIGInformationUpdateTaskDescription::run()
 {
     /* Acquire corresponding machine: */
@@ -959,6 +929,5 @@ void UIGInformationUpdateTaskDescription::run()
 
 void UIGInformationUpdateTaskRuntimeAttributes::run()
 {
-
 }
 

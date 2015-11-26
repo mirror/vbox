@@ -37,7 +37,7 @@ class QGraphicsSceneContextMenuEvent;
 class QGraphicsView;
 class UIGInformationGroup;
 class UIVMItem;
-class UIGInformationElementAnimationCallback;
+//class UIGInformationElementAnimationCallback;
 class UIGInformationItem;
 
 /* Graphics details-model: */
@@ -52,7 +52,7 @@ signals:
     void sigRootItemMinimumHeightHintChanged(int iRootItemMinimumHeightHint);
 
     /* Notifier: Link processing stuff: */
-    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
+    //void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
 
 public:
 
@@ -81,16 +81,6 @@ private slots:
     /* Handler: Details-view stuff: */
     void sltHandleViewResize();
 
-    /* Handlers: Element-items stuff: */
-    void sltToggleElements(InformationElementType type, bool fToggled);
-    void sltToggleAnimationFinished(InformationElementType type, bool fToggled);
-    void sltElementTypeToggled();
-
-    /* Handlers: Chooser stuff: */
-    void sltHandleSlidingStarted();
-    void sltHandleToggleStarted();
-    void sltHandleToggleFinished();
-
 private:
 
     /* Data enumerator: */
@@ -114,48 +104,14 @@ private:
     void cleanupScene();
 
     /* Handler: Event-filter: */
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
-
-    /* Handler: Context-menu stuff: */
-    bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
+    //bool eventFilter(QObject *pObject, QEvent *pEvent);
 
     /* Variables: */
     QGraphicsScene *m_pScene;
     UIGInformationGroup *m_pRoot;
-    UIGInformationElementAnimationCallback *m_pAnimationCallback;
+    //UIGInformationElementAnimationCallback *m_pAnimationCallback;
     /** Holds the details settings. */
     QMap<InformationElementType, bool> m_settings;
-};
-
-/* Details-element animation callback: */
-class UIGInformationElementAnimationCallback : public QObject
-{
-    Q_OBJECT;
-
-signals:
-
-    /* Notifier: Complete stuff: */
-    void sigAllAnimationFinished(InformationElementType type, bool fToggled);
-
-public:
-
-    /* Constructor: */
-    UIGInformationElementAnimationCallback(QObject *pParent, InformationElementType type, bool fToggled);
-
-    /* API: Notifiers stuff: */
-    void addNotifier(UIGInformationItem *pItem);
-
-private slots:
-
-    /* Handler: Progress stuff: */
-    void sltAnimationFinished();
-
-private:
-
-    /* Variables: */
-    QList<UIGInformationItem*> m_notifiers;
-    InformationElementType m_type;
-    bool m_fToggled;
 };
 
 #endif /* __UIGInformationModel_h__ */

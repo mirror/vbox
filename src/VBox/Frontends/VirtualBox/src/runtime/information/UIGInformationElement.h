@@ -32,7 +32,6 @@ class UIGraphicsRotatorButton;
 class UIGraphicsTextPane;
 class QTextLayout;
 class QStateMachine;
-class QPropertyAnimation;
 
 /* Typedefs: */
 typedef QPair<QString, QString> UITextTableLine;
@@ -43,21 +42,15 @@ typedef QList<UITextTableLine> UITextTable;
 class UIGInformationElement : public UIGInformationItem
 {
     Q_OBJECT;
-    Q_PROPERTY(int animationDarkness READ animationDarkness WRITE setAnimationDarkness);
-    Q_PROPERTY(int additionalHeight READ additionalHeight WRITE setAdditionalHeight);
 
 signals:
 
     /* Notifiers: Hover stuff: */
-    void sigHoverEnter();
     void sigHoverLeave();
 
     /* Notifiers: Toggle stuff: */
     void sigToggleElement(InformationElementType type, bool fToggled);
     void sigToggleElementFinished();
-
-    /* Notifier: Link-click stuff: */
-    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
 
 public:
 
@@ -72,33 +65,13 @@ public:
     /* API: Element type: */
     InformationElementType elementType() const { return m_type; }
 
-    /* API: Open/close stuff: */
-    bool closed() const { return m_fClosed; }
-    bool opened() const { return !m_fClosed; }
-    void close(bool fAnimated = true);
-    void open(bool fAnimated = true);
-
     /* API: Update stuff: */
     virtual void updateAppearance();
 
-    /* API: Animation stuff: */
-    void markAnimationFinished();
-
 protected slots:
-
-    /* Handlers: Toggle stuff: */
-    void sltToggleButtonClicked();
-    void sltElementToggleStart();
-    void sltElementToggleFinish(bool fToggled);
 
     /** Handles children geometry changes. */
     void sltUpdateGeometry() { updateGeometry(); }
-
-    /** Handles children anchor clicks. */
-    void sltHandleAnchorClicked(const QString &strAnchor);
-
-    /** Handles mount storage medium requests. */
-    void sltMountStorageMedium();
 
 protected:
 
@@ -142,16 +115,6 @@ protected:
     int minimumHeightHint() const;
     void updateLayout();
 
-    /* Helpers: Hover stuff: */
-    int animationDarkness() const { return m_iAnimationDarkness; }
-    void setAnimationDarkness(int iAnimationDarkness) { m_iAnimationDarkness = iAnimationDarkness; update(); }
-
-    /* Helpers: Animation stuff: */
-    void setAdditionalHeight(int iAdditionalHeight);
-    int additionalHeight() const { return m_iAdditionalHeight; }
-    UIGraphicsRotatorButton* button() const { return m_pButton; }
-    bool isAnimationRunning() const { return m_fAnimationRunning; }
-
 private:
 
     /* API: Children stuff: */
@@ -163,7 +126,6 @@ private:
 
     /* Helpers: Prepare stuff: */
     void prepareElement();
-    void prepareButton();
     void prepareTextPane();
 
     /* Helpers: Paint stuff: */
@@ -171,20 +133,6 @@ private:
     void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
     void paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
     void paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
-
-    /* Handlers: Mouse stuff: */
-    void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
-    void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
-    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent);
-
-    /* Helpers: Mouse stuff: */
-    void updateButtonVisibility();
-    void handleHoverEvent(QGraphicsSceneHoverEvent *pEvent);
-    void updateNameHoverLink();
-
-    /* Helper: Animation stuff: */
-    void updateAnimationParameters();
 
     /* Variables: */
     UIGInformationSet *m_pSet;
@@ -200,25 +148,8 @@ private:
     int m_iMinimumHeaderWidth;
     int m_iMinimumHeaderHeight;
 
-    /* Variables: Toggle-button stuff: */
-    UIGraphicsRotatorButton *m_pButton;
-    bool m_fClosed;
-    int m_iAdditionalHeight;
-    bool m_fAnimationRunning;
-
     /* Variables: Text-pane stuff: */
     UIGraphicsTextPane *m_pTextPane;
-
-    /* Variables: Hover stuff: */
-    bool m_fHovered;
-    bool m_fNameHovered;
-    QStateMachine *m_pHighlightMachine;
-    QPropertyAnimation *m_pForwardAnimation;
-    QPropertyAnimation *m_pBackwardAnimation;
-    int m_iAnimationDuration;
-    int m_iDefaultDarkness;
-    int m_iHighlightDarkness;
-    int m_iAnimationDarkness;
 
     /* Friends: */
     friend class UIGInformationSet;
