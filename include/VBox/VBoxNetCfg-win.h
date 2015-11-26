@@ -34,7 +34,7 @@
  * attempt to rename a connection too early, while its configuration is
  * still being 'committed' by the network setup engine.
  */
-//#define VBOXNETCFG_DELAYEDRENAME
+#define VBOXNETCFG_DELAYEDRENAME
 
 #include <winsock2.h>
 #include <Windows.h>
