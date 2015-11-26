@@ -1616,15 +1616,9 @@ static HRESULT netIfGetBoundAdaptersFallback(std::list<BoundAdapter> &boundAdapt
 }
 #endif
 
-static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES pAdapter)
+static void netIfFillInfoWithAddressesXp(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES pAdapter)
 {
     PIP_ADAPTER_UNICAST_ADDRESS pAddr;
-
-    if (sizeof(pInfo->MACAddress) != pAdapter->PhysicalAddressLength)
-        netIfLog(("netIfFillInfoWithAddresses: Unexpected physical address length: %u\n", pAdapter->PhysicalAddressLength));
-    else
-        memcpy(pInfo->MACAddress.au8, pAdapter->PhysicalAddress, sizeof(pInfo->MACAddress));
-
     bool fIPFound = false;
     bool fIPv6Found = false;
     for (pAddr = pAdapter->FirstUnicastAddress; pAddr; pAddr = pAddr->Next)
@@ -1638,10 +1632,6 @@ static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES p
                     memcpy(&pInfo->IPAddress,
                            &((struct sockaddr_in *)pAddr->Address.lpSockaddr)->sin_addr.s_addr,
                            sizeof(pInfo->IPAddress));
-                    if (pAddr->OnLinkPrefixLength > 32)
-                        netIfLog(("netIfFillInfoWithAddresses: Invalid IPv4 prefix length of %d\n", pAddr->OnLinkPrefixLength));
-                    else
-                        ASMBitSetRange(&pInfo->IPNetMask, 0, pAddr->OnLinkPrefixLength);
                 }
                 break;
             case AF_INET6:
@@ -1651,15 +1641,121 @@ static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES p
                     memcpy(&pInfo->IPv6Address,
                            ((struct sockaddr_in6 *)pAddr->Address.lpSockaddr)->sin6_addr.s6_addr,
                            sizeof(pInfo->IPv6Address));
-                    if (pAddr->OnLinkPrefixLength > 128)
-                        netIfLog(("netIfFillInfoWithAddresses: Invalid IPv6 prefix length of %d\n", pAddr->OnLinkPrefixLength));
-                    else
-                        ASMBitSetRange(&pInfo->IPv6NetMask, 0, pAddr->OnLinkPrefixLength);
                 }
                 break;
         }
     }
+    PIP_ADAPTER_PREFIX pPrefix;
+    ULONG uPrefixLenV4 = 0;
+    ULONG uPrefixLenV6 = 0;
+    for (pPrefix = pAdapter->FirstPrefix; pPrefix && !(uPrefixLenV4 && uPrefixLenV6); pPrefix = pPrefix->Next)
+    {
+        switch (pPrefix->Address.lpSockaddr->sa_family)
+        {
+            case AF_INET:
+                if (!uPrefixLenV4)
+                {
+                    ULONG ip = ((PSOCKADDR_IN)(pPrefix->Address.lpSockaddr))->sin_addr.s_addr;
+                    netIfLog(("netIfFillInfoWithAddressesXp: prefix=%RTnaipv4 len=%u\n", ip, pPrefix->PrefixLength));
+                    if (   pPrefix->PrefixLength < sizeof(pInfo->IPNetMask) * 8
+                        && pPrefix->PrefixLength > 0
+                        && (ip & 0xF0) < 224)
+                    {
+                        uPrefixLenV4 = pPrefix->PrefixLength;
+                        ASMBitSetRange(&pInfo->IPNetMask, 0, pPrefix->PrefixLength);
+                    }
+                    else
+                        netIfLog(("netIfFillInfoWithAddressesXp: Unexpected IPv4 prefix length of %d\n",
+                             pPrefix->PrefixLength));
+                }
+                break;
+            case AF_INET6:
+                if (!uPrefixLenV6)
+                {
+                    PBYTE ipv6 = ((PSOCKADDR_IN6)(pPrefix->Address.lpSockaddr))->sin6_addr.s6_addr;
+                    netIfLog(("netIfFillInfoWithAddressesXp: prefix=%RTnaipv6 len=%u\n",
+                              ipv6, pPrefix->PrefixLength));
+                    if (   pPrefix->PrefixLength < sizeof(pInfo->IPv6NetMask) * 8
+                        && pPrefix->PrefixLength > 0
+                        && ipv6[0] != 0xFF)
+                    {
+                        uPrefixLenV6 = pPrefix->PrefixLength;
+                        ASMBitSetRange(&pInfo->IPv6NetMask, 0, pPrefix->PrefixLength);
+                    }
+                    else
+                        netIfLog(("netIfFillInfoWithAddressesXp: Unexpected IPv6 prefix length of %d\n",
+                             pPrefix->PrefixLength));
+                }
+                break;
+        }
+    }
+    netIfLog(("netIfFillInfoWithAddressesXp: %RTnaipv4/%u\n",
+              pInfo->IPAddress, uPrefixLenV4));
+    netIfLog(("netIfFillInfoWithAddressesXp: %RTnaipv6/%u\n",
+              &pInfo->IPv6Address, uPrefixLenV6));
 }
+
+static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES pAdapter)
+{
+    PIP_ADAPTER_UNICAST_ADDRESS pAddr;
+
+    if (sizeof(pInfo->MACAddress) != pAdapter->PhysicalAddressLength)
+        netIfLog(("netIfFillInfoWithAddresses: Unexpected physical address length: %u\n", pAdapter->PhysicalAddressLength));
+    else
+        memcpy(pInfo->MACAddress.au8, pAdapter->PhysicalAddress, sizeof(pInfo->MACAddress));
+
+    bool fIPFound = false;
+    bool fIPv6Found = false;
+    for (pAddr = pAdapter->FirstUnicastAddress; pAddr; pAddr = pAddr->Next)
+    {
+        if (pAddr->Length < sizeof(IP_ADAPTER_UNICAST_ADDRESS_LH))
+        {
+            netIfLog(("netIfFillInfoWithAddresses: unicast address is too small (%u < %u), fall back to XP implementation\n",
+                      pAddr->Length, sizeof(IP_ADAPTER_UNICAST_ADDRESS_LH)));
+            return netIfFillInfoWithAddressesXp(pInfo, pAdapter);
+        }
+        PIP_ADAPTER_UNICAST_ADDRESS_LH pAddrLh = (PIP_ADAPTER_UNICAST_ADDRESS_LH)pAddr;
+        switch (pAddrLh->Address.lpSockaddr->sa_family)
+        {
+            case AF_INET:
+                if (!fIPFound)
+                {
+                    fIPFound = true;
+                    memcpy(&pInfo->IPAddress,
+                           &((struct sockaddr_in *)pAddrLh->Address.lpSockaddr)->sin_addr.s_addr,
+                           sizeof(pInfo->IPAddress));
+                    if (pAddrLh->OnLinkPrefixLength > 32)
+                        netIfLog(("netIfFillInfoWithAddresses: Invalid IPv4 prefix length of %d\n", pAddrLh->OnLinkPrefixLength));
+                    else
+                        ASMBitSetRange(&pInfo->IPNetMask, 0, pAddrLh->OnLinkPrefixLength);
+                }
+                break;
+            case AF_INET6:
+                if (!fIPv6Found)
+                {
+                    fIPv6Found = true;
+                    memcpy(&pInfo->IPv6Address,
+                           ((struct sockaddr_in6 *)pAddrLh->Address.lpSockaddr)->sin6_addr.s6_addr,
+                           sizeof(pInfo->IPv6Address));
+                    if (pAddrLh->OnLinkPrefixLength > 128)
+                        netIfLog(("netIfFillInfoWithAddresses: Invalid IPv6 prefix length of %d\n", pAddrLh->OnLinkPrefixLength));
+                    else
+                        ASMBitSetRange(&pInfo->IPv6NetMask, 0, pAddrLh->OnLinkPrefixLength);
+                }
+                break;
+        }
+    }
+    netIfLog(("netIfFillInfoWithAddresses: %RTnaipv4/%u\n",
+              pInfo->IPAddress, ASMBitFirstClear(&pInfo->IPNetMask, sizeof(RTNETADDRIPV4)*8)));
+    netIfLog(("netIfFillInfoWithAddresses: %RTnaipv6/%u\n",
+              &pInfo->IPv6Address, composeIPv6PrefixLenghFromAddress(&pInfo->IPv6NetMask)));
+}
+
+#if (NTDDI_VERSION >= NTDDI_VISTA)
+#define NETIF_GAA_FLAGS GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST
+#else /* (NTDDI_VERSION < NTDDI_VISTA) */
+#define NETIF_GAA_FLAGS GAA_FLAG_INCLUDE_PREFIX | GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST
+#endif /* (NTDDI_VERSION < NTDDI_VISTA) */
 
 int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
 {
@@ -1670,7 +1766,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
     PIP_ADAPTER_ADDRESSES pAddresses = (PIP_ADAPTER_ADDRESSES)RTMemAlloc(uBufLen);
     if (!pAddresses)
         return HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
-    DWORD dwRc = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAddresses, &uBufLen);
+    DWORD dwRc = GetAdaptersAddresses(AF_UNSPEC, NETIF_GAA_FLAGS, NULL, pAddresses, &uBufLen);
     for (int tries = 0; tries < 3 && dwRc == ERROR_BUFFER_OVERFLOW; ++tries)
     {
         /* Get more memory and try again. */
@@ -1678,7 +1774,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
         pAddresses = (PIP_ADAPTER_ADDRESSES)RTMemAlloc(uBufLen);
         if (!pAddresses)
             return HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
-        dwRc = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAddresses, &uBufLen);
+        dwRc = GetAdaptersAddresses(AF_UNSPEC, NETIF_GAA_FLAGS, NULL, pAddresses, &uBufLen);
     }
     if (dwRc != NO_ERROR)
     {
