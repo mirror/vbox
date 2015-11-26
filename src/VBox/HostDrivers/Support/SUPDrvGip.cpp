@@ -4092,7 +4092,7 @@ static int supdrvTscDeltaThreadButchered(PSUPDRVDEVEXT pDevExt, bool fSpinlockHe
 
     pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_Butchered;
     RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-    OSDBGPRINT(("supdrvTscDeltaThreadButchered: %s. rc=%Rrc\n", rcFailed));
+    OSDBGPRINT(("supdrvTscDeltaThreadButchered: %s. rc=%Rrc\n", pszFailed, rcFailed));
     return rcFailed;
 }
 
