@@ -75,9 +75,6 @@
 # include <QX11Info>
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
-# ifndef VBOX_WITHOUT_XCURSOR
-#  include <X11/Xcursor/Xcursor.h>
-# endif /* VBOX_WITHOUT_XCURSOR */
 #endif /* Q_WS_X11 */
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
@@ -1681,39 +1678,10 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     if (hBitmap)
         DeleteObject(hBitmap);
 
-#elif defined (Q_WS_X11) && !defined (VBOX_WITHOUT_XCURSOR)
+#elif defined(Q_WS_X11) || defined(Q_WS_MAC)
 
-    XcursorImage *img = XcursorImageCreate(uWidth, uHeight);
-    Assert(img);
-    if (img)
-    {
-        img->xhot = uXHot;
-        img->yhot = uYHot;
-
-        XcursorPixel *dstShapePtr = img->pixels;
-
-        if (fHasAlpha)
-        {
-            memcpy(dstShapePtr, srcShapePtr, uHeight * srcShapePtrScan);
-        }
-        else
-        {
-            renderCursorPixels((uint32_t *)srcShapePtr, srcAndMaskPtr,
-                               uWidth, uHeight,
-                               dstShapePtr, uHeight * srcShapePtrScan);
-        }
-
-        /* Set the new cursor: */
-        m_cursor = QCursor(XcursorImageLoadCursor(QX11Info::display(), img));
-        m_fIsValidPointerShapePresent = true;
-
-        XcursorImageDestroy(img);
-    }
-
-#elif defined(Q_WS_MAC)
-
-    /* Create a ARGB image out of the shape data. */
-    QImage image  (uWidth, uHeight, QImage::Format_ARGB32);
+    /* Create a ARGB image out of the shape data: */
+    QImage image(uWidth, uHeight, QImage::Format_ARGB32);
 
     if (fHasAlpha)
     {
