@@ -64,9 +64,6 @@
 # define SUPDRV_LINUX_HAS_SAFE_MSR_API
 # include <asm/msr.h>
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) && defined(CONFIG_DYNAMIC_FTRACE)
-# include <linux/ftrace.h>
-#endif
 
 #include <iprt/asm-amd64-x86.h>
 
@@ -983,32 +980,6 @@ static void (*g_pfnModTreeInsert)(struct mod_tree_node *) = NULL;   /**< __mod_t
 static void (*g_pfnModTreeRemove)(struct mod_tree_node *) = NULL;   /**< __mod_tree_remove */
 #endif
 
-#if 0 /* instant host lockup, can't be bothered debugging it */
-#if defined(VBOX_WITH_NON_PROD_HACK_FOR_PERF_STACKS) \
- && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) \
- && defined(CONFIG_MODULES_TREE_LOOKUP) \
- && defined(CONFIG_DYNAMIC_FTRACE)
-
-/**
- * Using a static array here because that's what is suggested in the docs to
- * avoid/reduce potential race conditions.
- */
-static struct supdrv_ftrace_ops
-{
-    struct ftrace_ops   Core;
-    bool volatile       fUsed;
-} g_aFTraceOps[16] __read_mostly;
-
-/** Stub function for the ugly debug hack below. */
-static void notrace __attribute__((optimize("-fomit-frame-pointer")))
-supdrvLnxFTraceStub(unsigned long ip, unsigned long parent_ip, struct ftrace_ops *op, struct pt_regs *regs)
-{
-     return;
-}
-
-#endif
-#endif
-
 
 void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
@@ -1025,7 +996,6 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
     IPRT_LINUX_SAVE_EFL_AC();
 
     pImage->pLnxModHack    = NULL;
-    pImage->pLnxFTraceHack = NULL;
 
 # ifdef CONFIG_MODULES_TREE_LOOKUP
     /*
@@ -1079,7 +1049,6 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
     if (pMyMod)
     {
         int rc = VINF_SUCCESS;
-        //size_t cch;
 # ifdef CONFIG_KALLSYMS
         Elf_Sym *paSymbols = (Elf_Sym *)(pMyMod + 1);
         char    *pchStrTab = (char *)(paSymbols + 3);
@@ -1088,39 +1057,6 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
         pMyMod->state = MODULE_STATE_LIVE;
         INIT_LIST_HEAD(&pMyMod->list);  /* just in case */
 
-        /* Come up with a good name that perf can translate with minimum help... */
-#  if 0
-        cch = strlen(pszFilename);
-        if (cch < sizeof(pMyMod->name))
-            memcpy(pMyMod->name, pszFilename, cch + 1);
-        else
-        {
-            const char *pszTmp = pszFilename;
-            for (;;)
-            {
-                /* skip one path component. */
-                while (*pszTmp == '/')
-                    pszTmp++, cch--;
-                while (*pszTmp != '/' && *pszTmp != '\0')
-                    pszTmp++, cch--;
-
-                /* If we've skipped past the final component, hack something up based on the module name. */
-                if (*pszTmp != '/')
-                {
-                    RTStrPrintf(pMyMod->name, sizeof(pMyMod->name), "/opt/VirtualBox/%s", pImage->szName);
-                    break;
-                }
-                /* When we've got space for two dots and the remaining path, we're done. */
-                if (cch + 2 < sizeof(pMyMod->name))
-                {
-                    pMyMod->name[0] = '.';
-                    pMyMod->name[1] = '.';
-                    memcpy(&pMyMod->name[2], pszTmp, cch + 1);
-                    break;
-                }
-            }
-        }
-#  else
         /* Perf only matches up files with a .ko extension (maybe .ko.gz),
            so in order for this crap to work smoothly, we append .ko to the
            module name and require the user to create symbolic links in
@@ -1129,7 +1065,6 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
                     sudo ln -s /mnt/scratch/vbox/svn/trunk/out/linux.amd64/debug/bin/$i /lib/modules/`uname -r`/$i.ko;
                 done  */
         RTStrPrintf(pMyMod->name, sizeof(pMyMod->name), "%s", pImage->szName);
-#  endif
 
         /* sysfs bits. */
         INIT_LIST_HEAD(&pMyMod->mkobj.kobj.entry); /* rest of kobj is already zeroed, hopefully never accessed... */
@@ -1314,38 +1249,6 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
 # endif
             mutex_unlock(&module_mutex);
 
-#if 0 /* Horrible, non-working hack.  Debug when __mod_tree_remove can't be found on a box we care about.  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) && defined(CONFIG_MODULES_TREE_LOOKUP)
-#  if defined(CONFIG_DYNAMIC_FTRACE)
-            /*
-             * Starting with 4.2 there's the module tree lookup which thwarts
-             * the above module hack.  So, we must install an additional hack
-             * to get the job done.  This relies on dynmaic ftrace trampolines
-             * and is just as ugly as the above.  Only for debugging!!
-             */
-            uint32_t i = 0;
-            while (i < RT_ELEMENTS(g_aFTraceOps)
-                   && ASMAtomicXchgBool(&g_aFTraceOps[i].fUsed, true) == true)
-                i++;
-            if (i < RT_ELEMENTS(g_aFTraceOps))
-            {
-                struct supdrv_ftrace_ops *pOps = &g_aFTraceOps[i];
-                pOps->Core.func              = supdrvLnxFTraceStub;
-                pOps->Core.flags             = /*FTRACE_OPS_FL_RECURSION_SAFE | FTRACE_OPS_FL_STUB |*/ FTRACE_OPS_FL_DYNAMIC;
-                pOps->Core.trampoline        = (uintptr_t)pImage->pvImage;
-                pOps->Core.trampoline_size   = (uintptr_t)pImage->cbImageBits;
-
-                rc = register_ftrace_function(&pOps->Core);
-                if (rc == 0)
-                    pImage->pLnxFTraceHack = pOps;
-                else
-                    printk(KERN_ERR "vboxdrv: register_ftrace_function failed: %d\n", rc);
-            }
-#  else
-#   error "Sorry, without CONFIG_DYNAMIC_FTRACE currently not possible to get proper stack traces"
-#  endif
-# endif
-#endif
             /*
              * Test it.
              */
@@ -1370,7 +1273,6 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
     IPRT_LINUX_RESTORE_EFL_AC();
 #else
     pImage->pLnxModHack    = NULL;
-    pImage->pLnxFTraceHack = NULL;
 #endif
     NOREF(pDevExt); NOREF(pImage);
 }
@@ -1401,32 +1303,6 @@ void VBOXCALL   supdrvOSLdrNotifyUnloaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
         RTMemFree(pMyMod);
         IPRT_LINUX_RESTORE_EFL_AC();
     }
-
-#if 0 /* Butt-ugly and ain't working yet. */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) && defined(CONFIG_MODULES_TREE_LOOKUP)
-#  if defined(CONFIG_DYNAMIC_FTRACE)
-    {
-        /*
-         * Undo the ftrace hack.
-         */
-        struct supdrv_ftrace_ops *pOps = pImage->pLnxFTraceHack;
-        pImage->pLnxFTraceHack = NULL;
-        if (pOps)
-        {
-            IPRT_LINUX_SAVE_EFL_AC();
-            int rc = unregister_ftrace_function(&pOps->Core);
-            if (rc == 0)
-                ASMAtomicWriteBool(&pOps->fUsed, false);
-            else
-                printk(KERN_ERR "vboxdrv: unregister_ftrace_function failed: %d\n", rc);
-            IPRT_LINUX_RESTORE_EFL_AC();
-        }
-    }
-#  else
-#   error "Sorry, without CONFIG_DYNAMIC_FTRACE currently not possible to get proper stack traces"
-#  endif
-# endif
-#endif
 
 #else
     Assert(pImage->pLnxModHack == NULL);

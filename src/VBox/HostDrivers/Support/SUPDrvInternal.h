@@ -394,9 +394,6 @@ typedef struct SUPDRVLDRIMAGE
 #ifdef RT_OS_LINUX
     /** Hack for seeing the module in perf, dtrace and other stack crawlers. */
     struct module                  *pLnxModHack;
-    /** Hack for seeing the module in perf, dtrace and other stack crawlers .
-     * Required for Linux v3.19+. */
-    struct supdrv_ftrace_ops       *pLnxFTraceHack;
 #endif
     /** Whether it's loaded by the native loader or not. */
     bool                            fNative;
