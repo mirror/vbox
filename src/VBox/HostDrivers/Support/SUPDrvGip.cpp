@@ -4248,18 +4248,21 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
 static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTATHREADSTATE enmCurState,
                                     SUPDRVTSCDELTATHREADSTATE enmNewState)
 {
+    SUPDRVTSCDELTATHREADSTATE enmActualState;
+    int rc;
+
     /*
      * Wait a short while for the expected state transition.
      */
-    int rc;
     RTSemEventWait(pDevExt->hTscDeltaEvent, RT_MS_1SEC);
     RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-    if (pDevExt->enmTscDeltaThreadState == enmNewState)
+    enmActualState = pDevExt->enmTscDeltaThreadState;
+    if (enmActualState == enmNewState)
     {
         RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
         rc = VINF_SUCCESS;
     }
-    else if (pDevExt->enmTscDeltaThreadState == enmCurState)
+    else if (enmActualState == enmCurState)
     {
         /*
          * Wait longer if the state has not yet transitioned to the one we want.
@@ -4272,23 +4275,22 @@ static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTATHREADS
             /*
              * Check the state whether we've succeeded.
              */
-            SUPDRVTSCDELTATHREADSTATE enmState;
             RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-            enmState = pDevExt->enmTscDeltaThreadState;
+            enmActualState = pDevExt->enmTscDeltaThreadState;
             RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-            if (enmState == enmNewState)
+            if (enmActualState == enmNewState)
                 rc = VINF_SUCCESS;
-            else if (enmState == enmCurState)
+            else if (enmActualState == enmCurState)
             {
                 rc = VERR_TIMEOUT;
-                OSDBGPRINT(("supdrvTscDeltaThreadWait: timed out state transition. enmState=%d enmNewState=%d\n", enmState,
-                            enmNewState));
+                OSDBGPRINT(("supdrvTscDeltaThreadWait: timed out state transition. enmActualState=%d enmNewState=%d\n",
+                            enmActualState, enmNewState));
             }
             else
             {
                 rc = VERR_INTERNAL_ERROR;
                 OSDBGPRINT(("supdrvTscDeltaThreadWait: invalid state transition from %d to %d, expected %d\n", enmCurState,
-                            enmState, enmNewState));
+                            enmActualState, enmNewState));
             }
         }
         else
@@ -4297,7 +4299,8 @@ static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTATHREADS
     else
     {
         RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-        OSDBGPRINT(("supdrvTscDeltaThreadWait: invalid state transition from %d to %d\n", enmCurState, enmNewState));
+        OSDBGPRINT(("supdrvTscDeltaThreadWait: invalid state %d when transitioning from %d to %d\n",
+                    enmActualState, enmCurState, enmNewState));
         rc = VERR_INTERNAL_ERROR;
     }
 
