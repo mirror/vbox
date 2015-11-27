@@ -49,28 +49,13 @@ typedef enum DBGFCMD
     DBGFCMD_GO,
     /** Single step execution - stepping into calls. */
     DBGFCMD_SINGLE_STEP,
-    /** Set a breakpoint. */
-    DBGFCMD_BREAKPOINT_SET,
-    /** Set a access breakpoint. */
-    DBGFCMD_BREAKPOINT_SET_ACCESS,
-    /** Set a REM breakpoint. */
-    DBGFCMD_BREAKPOINT_SET_REM,
-    /** Clear a breakpoint. */
-    DBGFCMD_BREAKPOINT_CLEAR,
-    /** Enable a breakpoint. */
-    DBGFCMD_BREAKPOINT_ENABLE,
-    /** Disable a breakpoint. */
-    DBGFCMD_BREAKPOINT_DISABLE,
-    /** List breakpoints. */
-    DBGFCMD_BREAKPOINT_LIST,
-
     /** Detaches the debugger.
      * Disabling all breakpoints, watch points and the like. */
-    DBGFCMD_DETACH_DEBUGGER = 0x7ffffffe,
+    DBGFCMD_DETACH_DEBUGGER,
     /** Detached the debugger.
      * The isn't a command as such, it's just that it's necessary for the
      * detaching protocol to be racefree. */
-    DBGFCMD_DETACHED_DEBUGGER = 0x7fffffff
+    DBGFCMD_DETACHED_DEBUGGER
 } DBGFCMD;
 
 /**
@@ -201,6 +186,11 @@ typedef struct DBGF
     /** Offset to the VM structure. */
     int32_t                     offVM;
 
+    /** Set if we've got armed port I/O breakpoints. */
+    bool                        fHasPortIoBps : 1;
+    /** Set if we've got armed memory mapped I/O breakpoints. */
+    bool                        fHasMmioBps : 1;
+
     /** Debugger Attached flag.
      * Set if a debugger is attached, elsewise it's clear.
      */
@@ -246,6 +236,7 @@ typedef struct DBGF
     /** Array of int 3 and REM breakpoints. (4..)
      * @remark This is currently a fixed size array for reasons of simplicity. */
     DBGFBP                      aBreakpoints[32];
+
 } DBGF;
 /** Pointer to DBGF Data. */
 typedef DBGF *PDBGF;

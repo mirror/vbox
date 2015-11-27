@@ -28,6 +28,7 @@
 
 #include <VBox/types.h>
 #include <VBox/dis.h>
+#include <VBox/vmm/dbgf.h>
 
 RT_C_DECLS_BEGIN
 
@@ -336,6 +337,9 @@ VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS G
                                          RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                          RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange);
+
+VMMR3_INT_DECL(void) IOMR3NotifyBreakpointCountChange(PVM pVM, unsigned cPortIo, unsigned cMmio);
+VMMR3_INT_DECL(void) IOMR3NotifyDebugEventChange(PVM pVM, DBGFEVENT enmEvent, bool fEnabled);
 
 /** @} */
 #endif /* IN_RING3 */

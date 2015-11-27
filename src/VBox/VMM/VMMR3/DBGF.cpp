@@ -667,7 +667,7 @@ VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
 #endif
         for (size_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); i++)
             if (    pVM->dbgf.s.aBreakpoints[i].enmType == DBGFBPTYPE_REM
-                &&  pVM->dbgf.s.aBreakpoints[i].GCPtr == eip)
+                &&  pVM->dbgf.s.aBreakpoints[i].u.Rem.GCPtr == eip)
             {
                 pVM->dbgf.s.DbgEvent.u.Bp.iBp = pVM->dbgf.s.aBreakpoints[i].iBp;
                 break;

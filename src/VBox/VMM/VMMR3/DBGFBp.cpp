@@ -28,6 +28,8 @@
 # include <VBox/vmm/iem.h>
 #endif
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/hm.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
@@ -222,11 +224,9 @@ static PDBGFBP dbgfR3BpGetByAddr(PVM pVM, DBGFBPTYPE enmType, RTGCUINTPTR GCPtr)
      * Search.
      */
     for (unsigned iBp = 0; iBp < cBps; iBp++)
-    {
-        if (    paBps[iBp].enmType == enmType
-            &&  paBps[iBp].GCPtr == GCPtr)
+        if (   paBps[iBp].enmType == enmType
+            && paBps[iBp].u.GCPtr == GCPtr)
             return &paBps[iBp];
-    }
 
     return NULL;
 }
@@ -319,10 +319,11 @@ static DECLCALLBACK(int) dbgfR3BpSetInt3(PUVM pUVM, PCDBGFADDRESS pAddress, uint
     pBp = dbgfR3BpAlloc(pVM, DBGFBPTYPE_INT3);
     if (!pBp)
         return VERR_DBGF_NO_MORE_BP_SLOTS;
-    pBp->GCPtr       = pAddress->FlatPtr;
-    pBp->iHitTrigger = *piHitTrigger;
-    pBp->iHitDisable = *piHitDisable;
-    pBp->fEnabled    = true;
+    pBp->u.Int3.GCPtr   = pAddress->FlatPtr;
+    pBp->iHitTrigger    = *piHitTrigger;
+    pBp->iHitDisable    = *piHitDisable;
+    ASMCompilerBarrier();
+    pBp->fEnabled       = true;
 
     /*
      * Now ask REM to set the breakpoint.
@@ -385,7 +386,7 @@ static int dbgfR3BpInt3Arm(PUVM pUVM, PDBGFBP pBp)
      * Save current byte and write int3 instruction.
      */
     DBGFADDRESS Addr;
-    DBGFR3AddrFromFlat(pUVM, &Addr, pBp->GCPtr);
+    DBGFR3AddrFromFlat(pUVM, &Addr, pBp->u.Int3.GCPtr);
     int rc = DBGFR3MemRead(pUVM, idCpu, &Addr, &pBp->u.Int3.bOrg, 1);
     if (RT_SUCCESS(rc))
     {
@@ -414,7 +415,7 @@ static int dbgfR3BpInt3Disarm(PUVM pUVM, PDBGFBP pBp)
      * We currently ignore invalid bytes.
      */
     DBGFADDRESS     Addr;
-    DBGFR3AddrFromFlat(pUVM, &Addr, pBp->GCPtr);
+    DBGFR3AddrFromFlat(pUVM, &Addr, pBp->u.Int3.GCPtr);
     uint8_t         bCurrent;
     int rc = DBGFR3MemRead(pUVM, idCpu, &Addr, &bCurrent, 1);
     if (bCurrent == 0xcc)
@@ -507,13 +508,14 @@ static DECLCALLBACK(int) dbgfR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint6
     pBp = dbgfR3BpAlloc(pVM, DBGFBPTYPE_REG);
     if (!pBp)
         return VERR_DBGF_NO_MORE_BP_SLOTS;
-    pBp->GCPtr       = pAddress->FlatPtr;
     pBp->iHitTrigger = *piHitTrigger;
     pBp->iHitDisable = *piHitDisable;
-    pBp->fEnabled    = true;
     Assert(pBp->iBp == pBp->u.Reg.iReg);
+    pBp->u.Reg.GCPtr = pAddress->FlatPtr;
     pBp->u.Reg.fType = fType;
     pBp->u.Reg.cb    = cb;
+    ASMCompilerBarrier();
+    pBp->fEnabled    = true;
 
     /*
      * Arm the breakpoint.
@@ -641,9 +643,9 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint6
         int rc = VINF_SUCCESS;
         if (!pBp->fEnabled)
 #ifdef VBOX_WITH_REM
-            rc = REMR3BreakpointSet(pVM, pBp->GCPtr);
+            rc = REMR3BreakpointSet(pVM, pBp->u.Rem.GCPtr);
 #else
-            rc = IEMBreakpointSet(pVM, pBp->GCPtr);
+            rc = IEMBreakpointSet(pVM, pBp->u.Rem.GCPtr);
 #endif
         if (RT_SUCCESS(rc))
         {
@@ -660,9 +662,10 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint6
     pBp = dbgfR3BpAlloc(pVM, DBGFBPTYPE_REM);
     if (!pBp)
         return VERR_DBGF_NO_MORE_BP_SLOTS;
-    pBp->GCPtr       = pAddress->FlatPtr;
+    pBp->u.Rem.GCPtr = pAddress->FlatPtr;
     pBp->iHitTrigger = *piHitTrigger;
     pBp->iHitDisable = *piHitDisable;
+    ASMCompilerBarrier();
     pBp->fEnabled    = true;
 
     /*
@@ -710,6 +713,244 @@ VMMR3DECL(int) DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
 }
 
 
+
+/**
+ * Updates IOM on whether we've got any armed I/O port or MMIO breakpoints.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pVM         The cross context VM structure.
+ */
+static int dbgfR3BpUpdateIom(PVM pVM)
+{
+    unsigned cPortIo = 0;
+    unsigned cMmio = 0;
+    for (uint32_t iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
+        if (pVM->dbgf.s.aBreakpoints[iBp].fEnabled)
+        {
+            if (pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_PORT_IO)
+                cPortIo++;
+            else if (pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_MMIO)
+                cMmio++;
+        }
+
+    pVM->dbgf.s.fHasPortIoBps = cPortIo != 0;
+    pVM->dbgf.s.fHasMmioBps   = cMmio   != 0;
+
+    IOMR3NotifyBreakpointCountChange(pVM, cPortIo, cMmio);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * EMT worker for DBGFR3BpSetPortIo.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
+ * @param   uPort           The first I/O port.
+ * @param   cPorts          The number of I/O ports.
+ * @param   fAccess         The access we want to break on.
+ * @param   piHitTrigger    The hit count at which the breakpoint start triggering.
+ *                          Use 0 (or 1) if it's gonna trigger at once.
+ * @param   piHitDisable    The hit count which disables the breakpoint.
+ *                          Use ~(uint64_t) if it's never gonna be disabled.
+ * @param   piBp            Where to store the breakpoint ID.
+ */
+static DECLCALLBACK(int) dbgfR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
+                                           uint64_t const *piHitTrigger, uint64_t const *piHitDisable, uint32_t *piBp)
+{
+    /*
+     * Validate input.
+     */
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    *piBp = ~0;
+
+    /*
+     * Check if the breakpoint already exists.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); i++)
+        if (   pVM->dbgf.s.aBreakpoints[i].enmType == DBGFBPTYPE_PORT_IO
+            && pVM->dbgf.s.aBreakpoints[i].u.PortIo.uPort == uPort
+            && pVM->dbgf.s.aBreakpoints[i].u.PortIo.cPorts == cPorts
+            && pVM->dbgf.s.aBreakpoints[i].u.PortIo.fAccess == fAccess)
+        {
+            if (!pVM->dbgf.s.aBreakpoints[i].fEnabled)
+            {
+                pVM->dbgf.s.aBreakpoints[i].fEnabled = true;
+                dbgfR3BpUpdateIom(pVM);
+            }
+            *piBp = pVM->dbgf.s.aBreakpoints[i].iBp;
+            return VINF_DBGF_BP_ALREADY_EXIST;
+        }
+
+    /*
+     * Allocate and initialize the breakpoint.
+     */
+    PDBGFBP pBp = dbgfR3BpAlloc(pVM, DBGFBPTYPE_PORT_IO);
+    if (!pBp)
+        return VERR_DBGF_NO_MORE_BP_SLOTS;
+    pBp->iHitTrigger        = *piHitTrigger;
+    pBp->iHitDisable        = *piHitDisable;
+    pBp->u.PortIo.uPort     = uPort;
+    pBp->u.PortIo.cPorts    = cPorts;
+    pBp->u.PortIo.fAccess   = fAccess;
+    ASMCompilerBarrier();
+    pBp->fEnabled           = true;
+
+    /*
+     * Tell IOM.
+     */
+    dbgfR3BpUpdateIom(pVM);
+    *piBp = pBp->iBp;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets an I/O port breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pUvm            The user mode VM handle.
+ * @param   uPort           The first I/O port.
+ * @param   cPorts          The number of I/O ports, see DBGFBPIOACCESS_XXX.
+ * @param   fAccess         The access we want to break on.
+ * @param   iHitTrigger     The hit count at which the breakpoint start
+ *                          triggering. Use 0 (or 1) if it's gonna trigger at
+ *                          once.
+ * @param   iHitDisable     The hit count which disables the breakpoint.
+ *                          Use ~(uint64_t) if it's never gonna be disabled.
+ * @param   piBp            Where to store the breakpoint ID. Optional.
+ */
+VMMR3DECL(int)  DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
+                                  uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp)
+{
+    AssertReturn(!(fAccess & ~DBGFBPIOACCESS_VALID_MASK_PORT_IO), VERR_INVALID_FLAGS);
+    AssertReturn(fAccess, VERR_INVALID_FLAGS);
+    if (iHitTrigger > iHitDisable)
+        return VERR_INVALID_PARAMETER;
+    AssertPtrNullReturn(piBp, VERR_INVALID_POINTER);
+    AssertReturn(cPorts > 0, VERR_OUT_OF_RANGE);
+    AssertReturn((RTIOPORT)(uPort + cPorts) < uPort, VERR_OUT_OF_RANGE);
+
+    /*
+     * This must be done on EMT.
+     */
+    uint32_t iBp = -1;
+    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetPortIo, 7,
+                              pUVM, uPort, cPorts, fAccess, &iHitTrigger, &iHitDisable, piBp);
+    if (piBp)
+        *piBp = iBp;
+    LogFlow(("DBGFR3BpSetPortIo: returns %Rrc *piBp=%d\n", rc, iBp));
+    return rc;
+}
+
+
+/**
+ * EMT worker for DBGFR3BpSetMmio.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
+ * @param   pGCPhys         The start of the MMIO range to break on.
+ * @param   cb              The the size of the MMIO range.
+ * @param   fAccess         The access we want to break on.
+ * @param   piHitTrigger    The hit count at which the breakpoint start triggering.
+ *                          Use 0 (or 1) if it's gonna trigger at once.
+ * @param   piHitDisable    The hit count which disables the breakpoint.
+ *                          Use ~(uint64_t) if it's never gonna be disabled.
+ * @param   piBp            Where to store the breakpoint ID.
+ */
+static DECLCALLBACK(int) dbgfR3BpSetMmio(PUVM pUVM, PCRTGCPHYS pGCPhys, uint32_t cb, uint32_t fAccess,
+                                         uint64_t const *piHitTrigger, uint64_t const *piHitDisable, uint32_t *piBp)
+{
+    RTGCPHYS const GCPhys = *pGCPhys;
+
+    /*
+     * Validate input.
+     */
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    *piBp = ~0;
+
+    /*
+     * Check if the breakpoint already exists.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); i++)
+        if (   pVM->dbgf.s.aBreakpoints[i].enmType == DBGFBPTYPE_MMIO
+            && pVM->dbgf.s.aBreakpoints[i].u.Mmio.PhysAddr == GCPhys
+            && pVM->dbgf.s.aBreakpoints[i].u.Mmio.cb == cb
+            && pVM->dbgf.s.aBreakpoints[i].u.Mmio.fAccess == fAccess)
+        {
+            if (!pVM->dbgf.s.aBreakpoints[i].fEnabled)
+            {
+                pVM->dbgf.s.aBreakpoints[i].fEnabled = true;
+                dbgfR3BpUpdateIom(pVM);
+            }
+            *piBp = pVM->dbgf.s.aBreakpoints[i].iBp;
+            return VINF_DBGF_BP_ALREADY_EXIST;
+        }
+
+    /*
+     * Allocate and initialize the breakpoint.
+     */
+    PDBGFBP pBp = dbgfR3BpAlloc(pVM, DBGFBPTYPE_PORT_IO);
+    if (!pBp)
+        return VERR_DBGF_NO_MORE_BP_SLOTS;
+    pBp->iHitTrigger        = *piHitTrigger;
+    pBp->iHitDisable        = *piHitDisable;
+    pBp->u.Mmio.PhysAddr    = GCPhys;
+    pBp->u.Mmio.cb          = cb;
+    pBp->u.Mmio.fAccess     = fAccess;
+    ASMCompilerBarrier();
+    pBp->fEnabled           = true;
+
+    /*
+     * Tell IOM.
+     */
+    dbgfR3BpUpdateIom(pVM);
+    *piBp = pBp->iBp;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets a memory mapped I/O breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pUvm            The user mode VM handle.
+ * @param   GCPhys          The first MMIO address.
+ * @param   cb              The size of the MMIO range to break on.
+ * @param   fAccess         The access we want to break on.
+ * @param   iHitTrigger     The hit count at which the breakpoint start
+ *                          triggering. Use 0 (or 1) if it's gonna trigger at
+ *                          once.
+ * @param   iHitDisable     The hit count which disables the breakpoint.
+ *                          Use ~(uint64_t) if it's never gonna be disabled.
+ * @param   piBp            Where to store the breakpoint ID. Optional.
+ */
+VMMR3DECL(int)  DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t fAccess,
+                                uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp)
+{
+    AssertReturn(!(fAccess & ~DBGFBPIOACCESS_VALID_MASK_MMIO), VERR_INVALID_FLAGS);
+    AssertReturn(fAccess, VERR_INVALID_FLAGS);
+    if (iHitTrigger > iHitDisable)
+        return VERR_INVALID_PARAMETER;
+    AssertPtrNullReturn(piBp, VERR_INVALID_POINTER);
+    AssertReturn(cb, VERR_OUT_OF_RANGE);
+    AssertReturn(GCPhys + cb < GCPhys, VERR_OUT_OF_RANGE);
+
+    /*
+     * This must be done on EMT.
+     */
+    uint32_t iBp = -1;
+    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetMmio, 7,
+                              pUVM, &GCPhys, cb, fAccess, &iHitTrigger, &iHitDisable, piBp);
+    if (piBp)
+        *piBp = iBp;
+    LogFlow(("DBGFR3BpSetMmio: returns %Rrc *piBp=%d\n", rc, iBp));
+    return rc;
+}
+
+
 /**
  * EMT worker for DBGFR3BpClear().
  *
@@ -749,10 +990,15 @@ static DECLCALLBACK(int) dbgfR3BpClear(PUVM pUVM, uint32_t iBp)
 
             case DBGFBPTYPE_REM:
 #ifdef VBOX_WITH_REM
-                rc = REMR3BreakpointClear(pVM, pBp->GCPtr);
+                rc = REMR3BreakpointClear(pVM, pBp->u.Rem.GCPtr);
 #else
-                rc = IEMBreakpointClear(pVM, pBp->GCPtr);
+                rc = IEMBreakpointClear(pVM, pBp->u.Rem.GCPtr);
 #endif
+                break;
+
+            case DBGFBPTYPE_PORT_IO:
+            case DBGFBPTYPE_MMIO:
+                rc = dbgfR3BpUpdateIom(pVM);
                 break;
 
             default:
@@ -831,10 +1077,15 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PUVM pUVM, uint32_t iBp)
 
         case DBGFBPTYPE_REM:
 #ifdef VBOX_WITH_REM
-            rc = REMR3BreakpointSet(pVM, pBp->GCPtr);
+            rc = REMR3BreakpointSet(pVM, pBp->u.Rem.GCPtr);
 #else
-            rc = IEMBreakpointSet(pVM, pBp->GCPtr);
+            rc = IEMBreakpointSet(pVM, pBp->u.Rem.GCPtr);
 #endif
+            break;
+
+        case DBGFBPTYPE_PORT_IO:
+        case DBGFBPTYPE_MMIO:
+            rc = dbgfR3BpUpdateIom(pVM);
             break;
 
         default:
@@ -909,10 +1160,15 @@ static DECLCALLBACK(int) dbgfR3BpDisable(PUVM pUVM, uint32_t iBp)
 
         case DBGFBPTYPE_REM:
 #ifdef VBOX_WITH_REM
-            rc = REMR3BreakpointClear(pVM, pBp->GCPtr);
+            rc = REMR3BreakpointClear(pVM, pBp->u.Rem.GCPtr);
 #else
-            rc = IEMBreakpointClear(pVM, pBp->GCPtr);
+            rc = IEMBreakpointClear(pVM, pBp->u.Rem.GCPtr);
 #endif
+            break;
+
+        case DBGFBPTYPE_PORT_IO:
+        case DBGFBPTYPE_MMIO:
+            rc = dbgfR3BpUpdateIom(pVM);
             break;
 
         default:

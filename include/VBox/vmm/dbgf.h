@@ -492,10 +492,51 @@ typedef enum DBGFBPTYPE
     DBGFBPTYPE_INT3,
     /** Recompiler. */
     DBGFBPTYPE_REM,
+    /** Port I/O breakpoint. */
+    DBGFBPTYPE_PORT_IO,
+    /** Memory mapped I/O breakpoint. */
+    DBGFBPTYPE_MMIO,
     /** ensure 32-bit size. */
     DBGFBPTYPE_32BIT_HACK = 0x7fffffff
 } DBGFBPTYPE;
 
+
+/** @name DBGFBPIOACCESS_XXX - I/O (port + mmio) access types.
+ * @{ */
+/** Byte sized read accesses. */
+#define DBGFBPIOACCESS_READ_BYTE            UINT32_C(0x00000001)
+/** Word sized accesses. */
+#define DBGFBPIOACCESS_READ_WORD            UINT32_C(0x00000002)
+/** Double word sized accesses. */
+#define DBGFBPIOACCESS_READ_DWORD           UINT32_C(0x00000004)
+/** Quad word sized accesses - not available for I/O ports. */
+#define DBGFBPIOACCESS_READ_QWORD           UINT32_C(0x00000008)
+/** Other sized accesses - not available for I/O ports. */
+#define DBGFBPIOACCESS_READ_OTHER           UINT32_C(0x00000010)
+/** Read mask. */
+#define DBGFBPIOACCESS_READ_MASK            UINT32_C(0x0000001f)
+
+/** Byte sized write accesses. */
+#define DBGFBPIOACCESS_WRITE_BYTE           UINT32_C(0x00000100)
+/** Word sized write accesses. */
+#define DBGFBPIOACCESS_WRITE_WORD           UINT32_C(0x00000200)
+/** Double word sized write accesses. */
+#define DBGFBPIOACCESS_WRITE_DWORD          UINT32_C(0x00000400)
+/** Quad word sized write accesses - not available for I/O ports. */
+#define DBGFBPIOACCESS_WRITE_QWORD          UINT32_C(0x00000800)
+/** Other sized write accesses - not available for I/O ports. */
+#define DBGFBPIOACCESS_WRITE_OTHER          UINT32_C(0x00001000)
+/** Write mask. */
+#define DBGFBPIOACCESS_WRITE_MASK           UINT32_C(0x00001f00)
+
+/** All kind of access (read, write, all sizes). */
+#define DBGFBPIOACCESS_ALL                  UINT32_C(0x00001f1f)
+
+/** The acceptable mask for I/O ports.   */
+#define DBGFBPIOACCESS_VALID_MASK_PORT_IO   UINT32_C(0x00000303)
+/** The acceptable mask for MMIO.   */
+#define DBGFBPIOACCESS_VALID_MASK_MMIO      UINT32_C(0x00001f1f)
+/** @} */
 
 /**
  * A Breakpoint.
@@ -509,51 +550,77 @@ typedef struct DBGFBP
     /** The hit number which stops triggering the breakpoint (disables it).
      * Use ~(uint64_t)0 if it should never stop. */
     uint64_t        iHitDisable;
-    /** The Flat GC address of the breakpoint.
-     * (PC register value if REM type?) */
-    RTGCUINTPTR     GCPtr;
     /** The breakpoint id. */
-    uint32_t        iBp;
+    uint16_t        iBp;
     /** The breakpoint status - enabled or disabled. */
     bool            fEnabled;
-
     /** The breakpoint type. */
     DBGFBPTYPE      enmType;
-
-#if GC_ARCH_BITS == 64
-    uint32_t        u32Padding;
-#endif
 
     /** Union of type specific data. */
     union
     {
+        /** The flat GC address breakpoint address for REG, INT3 and REM breakpoints. */
+        RTGCUINTPTR         GCPtr;
+
         /** Debug register data. */
         struct DBGFBPREG
         {
+            /** The flat GC address of the breakpoint. */
+            RTGCUINTPTR     GCPtr;
             /** The debug register number. */
-            uint8_t     iReg;
+            uint8_t         iReg;
             /** The access type (one of the X86_DR7_RW_* value). */
-            uint8_t     fType;
+            uint8_t         fType;
             /** The access size. */
-            uint8_t     cb;
+            uint8_t         cb;
         } Reg;
         /** Recompiler breakpoint data. */
         struct DBGFBPINT3
         {
+            /** The flat GC address of the breakpoint. */
+            RTGCUINTPTR     GCPtr;
             /** The byte value we replaced by the INT 3 instruction. */
-            uint8_t     bOrg;
+            uint8_t         bOrg;
         } Int3;
 
         /** Recompiler breakpoint data. */
         struct DBGFBPREM
         {
-            /** nothing yet */
-            uint8_t fDummy;
+            /** The flat GC address of the breakpoint.
+             * (PC register value?) */
+            RTGCUINTPTR     GCPtr;
         } Rem;
+
+        /** I/O port breakpoint data.   */
+        struct DBGFBPPORTIO
+        {
+            /** The first port. */
+            RTIOPORT        uPort;
+            /** The number of ports. */
+            RTIOPORT        cPorts;
+            /** Valid DBGFBPIOACCESS_XXX selection, max DWORD size. */
+            uint32_t        fAccess;
+        } PortIo;
+
+        /** Memory mapped I/O breakpoint data. */
+        struct DBGFBPMMIO
+        {
+            /** The first MMIO address. */
+            RTGCPHYS        PhysAddr;
+            /** The size of the MMIO range in bytes. */
+            uint32_t        cb;
+            /** Valid DBGFBPIOACCESS_XXX selection, max DWORD size. */
+            uint32_t        fAccess;
+        } Mmio;
+
         /** Paddind to ensure that the size is identical on win32 and linux. */
-        uint64_t    u64Padding;
+        uint64_t    u64Padding[2];
     } u;
 } DBGFBP;
+AssertCompileMembersAtSameOffset(DBGFBP, u.GCPtr, DBGFBP, u.Reg.GCPtr);
+AssertCompileMembersAtSameOffset(DBGFBP, u.GCPtr, DBGFBP, u.Int3.GCPtr);
+AssertCompileMembersAtSameOffset(DBGFBP, u.GCPtr, DBGFBP, u.Rem.GCPtr);
 
 /** Pointer to a breakpoint. */
 typedef DBGFBP *PDBGFBP;
@@ -565,6 +632,10 @@ VMMR3DECL(int)  DBGFR3BpSet(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
 VMMR3DECL(int)  DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
                                uint8_t fType, uint8_t cb, uint32_t *piBp);
 VMMR3DECL(int)  DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
+VMMR3DECL(int)  DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
+                                  uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
+VMMR3DECL(int)  DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t fAccess,
+                                uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
 VMMR3DECL(int)  DBGFR3BpClear(PUVM pUVM, uint32_t iBp);
 VMMR3DECL(int)  DBGFR3BpEnable(PUVM pUVM, uint32_t iBp);
 VMMR3DECL(int)  DBGFR3BpDisable(PUVM pUVM, uint32_t iBp);

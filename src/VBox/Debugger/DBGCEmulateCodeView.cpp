@@ -674,14 +674,17 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PC
     /*
      * BP type and size.
      */
-    char chType;
-    char cb = 1;
+    DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%#4x %c ", pBp->iBp, pBp->fEnabled ? 'e' : 'd');
+    bool fHasAddress = false;
     switch (pBp->enmType)
     {
         case DBGFBPTYPE_INT3:
-            chType = 'p';
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " p %RGv", pBp->u.Int3.GCPtr);
+            fHasAddress = true;
             break;
         case DBGFBPTYPE_REG:
+        {
+            char chType;
             switch (pBp->u.Reg.fType)
             {
                 case X86_DR7_RW_EO: chType = 'x'; break;
@@ -691,40 +694,74 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PC
                 default:            chType = '?'; break;
 
             }
-            cb = pBp->u.Reg.cb;
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%d %c %RGv", pBp->u.Reg.cb, chType, pBp->u.Reg.GCPtr);
+            fHasAddress = true;
             break;
-        case DBGFBPTYPE_REM:
-            chType = 'r';
-            break;
-        default:
-            chType = '?';
-            break;
-    }
+        }
 
-    DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%#4x %c %d %c %RGv %04RX64 (%04RX64 to ",
-                     pBp->iBp, pBp->fEnabled ? 'e' : 'd', (int)cb, chType,
-                     pBp->GCPtr, pBp->cHits, pBp->iHitTrigger);
+        case DBGFBPTYPE_REM:
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " r %RGv", pBp->u.Rem.GCPtr);
+            fHasAddress = true;
+            break;
+
+/** @todo realign the list when I/O and MMIO breakpoint command have been added and it's possible to test this code. */
+        case DBGFBPTYPE_PORT_IO:
+        case DBGFBPTYPE_MMIO:
+        {
+            uint32_t fAccess = pBp->enmType == DBGFBPTYPE_PORT_IO ? pBp->u.PortIo.fAccess : pBp->u.Mmio.fAccess;
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, pBp->enmType == DBGFBPTYPE_PORT_IO ?  " i" : " m");
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " %c%c%c%c%c%c",
+                             fAccess & DBGFBPIOACCESS_READ_MASK   ? 'r' : '-',
+                             fAccess & DBGFBPIOACCESS_READ_BYTE   ? '1' : '-',
+                             fAccess & DBGFBPIOACCESS_READ_WORD   ? '2' : '-',
+                             fAccess & DBGFBPIOACCESS_READ_DWORD  ? '4' : '-',
+                             fAccess & DBGFBPIOACCESS_READ_QWORD  ? '8' : '-',
+                             fAccess & DBGFBPIOACCESS_READ_OTHER  ? '+' : '-');
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " %c%c%c%c%c%c",
+                             fAccess & DBGFBPIOACCESS_WRITE_MASK  ? 'w' : '-',
+                             fAccess & DBGFBPIOACCESS_WRITE_BYTE  ? '1' : '-',
+                             fAccess & DBGFBPIOACCESS_WRITE_WORD  ? '2' : '-',
+                             fAccess & DBGFBPIOACCESS_WRITE_DWORD ? '4' : '-',
+                             fAccess & DBGFBPIOACCESS_WRITE_QWORD ? '8' : '-',
+                             fAccess & DBGFBPIOACCESS_WRITE_OTHER ? '+' : '-');
+            if (pBp->enmType == DBGFBPTYPE_PORT_IO)
+                DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " %04x-%04x",
+                                 pBp->u.PortIo.uPort, pBp->u.PortIo.uPort + pBp->u.PortIo.cPorts - 1);
+            else
+                DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%RGp LB %03x", pBp->u.Mmio.PhysAddr, pBp->u.Mmio.cb);
+            break;
+        }
+
+        default:
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " unknown type %d!!", pBp->enmType);
+            AssertFailed();
+            break;
+
+    }
     if (pBp->iHitDisable == ~(uint64_t)0)
-        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "~0)  ");
+        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " %04RX64 (%04RX64 to ~0)  ", pBp->cHits, pBp->iHitTrigger);
     else
-        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%04RX64)", pBp->iHitDisable);
+        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " %04RX64 (%04RX64 to %04RX64)", pBp->cHits, pBp->iHitTrigger, pBp->iHitDisable);
 
     /*
-     * Try resolve the address.
+     * Try resolve the address if it has one.
      */
-    RTDBGSYMBOL Sym;
-    RTINTPTR    off;
-    DBGFADDRESS Addr;
-    int rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, pBp->GCPtr),
-                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &off, &Sym, NULL);
-    if (RT_SUCCESS(rc))
+    if (fHasAddress)
     {
-        if (!off)
-            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s", Sym.szName);
-        else if (off > 0)
-            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s+%RGv", Sym.szName, off);
-        else
-            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s-%RGv", Sym.szName, -off);
+        RTDBGSYMBOL Sym;
+        RTINTPTR    off;
+        DBGFADDRESS Addr;
+        int rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, pBp->u.GCPtr),
+                                      RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &off, &Sym, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            if (!off)
+                DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s", Sym.szName);
+            else if (off > 0)
+                DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s+%RGv", Sym.szName, off);
+            else
+                DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s-%RGv", Sym.szName, -off);
+        }
     }
 
     /*
