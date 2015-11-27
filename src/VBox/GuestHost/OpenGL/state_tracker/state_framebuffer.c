@@ -497,6 +497,7 @@ unsigned int crLog2Floor(unsigned int x)
 
 static GLuint crStateFramebufferGet(CRFramebufferObjectState *fbo, GLenum target, CRFramebufferObject **apFBOs)
 {
+    /** @todo Since this function returns not more than one FBO, callers can be cleaned up. */
     GLuint cPBOs = 0;
     switch (target)
     {
@@ -504,22 +505,13 @@ static GLuint crStateFramebufferGet(CRFramebufferObjectState *fbo, GLenum target
             cPBOs = 1;
             apFBOs[0] = fbo->readFB;
             break;
+        /* OpenGL glFramebufferTexture, glFramebufferRenderbuffer, glFramebufferRenderbuffer specs:
+         * "GL_FRAMEBUFFER is equivalent to GL_DRAW_FRAMEBUFFER."
+         */
+        case GL_FRAMEBUFFER:
         case GL_DRAW_FRAMEBUFFER:
             cPBOs = 1;
             apFBOs[0] = fbo->drawFB;
-            break;
-        case GL_FRAMEBUFFER:
-            if (fbo->readFB == fbo->drawFB)
-            {
-                cPBOs = 1;
-                apFBOs[0] = fbo->readFB;
-            }
-            else
-            {
-                cPBOs = 2;
-                apFBOs[0] = fbo->readFB;
-                apFBOs[1] = fbo->drawFB;
-            }
             break;
         default:
             crWarning("unexpected target value: 0x%x", target);
