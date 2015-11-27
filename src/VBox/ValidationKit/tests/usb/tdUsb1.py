@@ -70,6 +70,12 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             'High':  ('beaglebone', 'BeagleBoneBlack'),
             'Super': ('odroidxu3', 'ODroid-XU3')
         },
+        'archusb': {
+            'Low':   ('odroidxu3', 'ODroid-XU3'),
+            'Full':  ('odroidxu3', 'ODroid-XU3'),
+            'High':  ('odroidxu3', 'ODroid-XU3'),
+            'Super': ('odroidxu3', 'ODroid-XU3')
+        },
     };
 
     # Mappings of USB controllers to supported USB device speeds.
