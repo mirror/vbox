@@ -149,6 +149,7 @@ ExecStop=${script} stop
 [Install]
 WantedBy=multi-user.target
 EOF
+    systemctl daemon-reexec
 }
 
 ## Installs a file containing a shell script as an init script
