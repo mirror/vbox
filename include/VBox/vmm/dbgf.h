@@ -147,17 +147,22 @@ typedef enum DBGFEVENTTYPE
      */
     DBGFEVENT_INVALID_COMMAND,
 
-
     /** Fatal error.
      * This notifies a fatal error in the VMM and that the debugger get's a
      * chance to first hand information about the the problem.
      */
-    DBGFEVENT_FATAL_ERROR = 100,
+    DBGFEVENT_FATAL_ERROR,
     /** Breakpoint Hit.
      * This notifies that a breakpoint installed by the debugger was hit. The
      * identifier of the breakpoint can be found in the DBGFEVENT::u::Bp::iBp member.
      */
     DBGFEVENT_BREAKPOINT,
+    /** I/O port breakpoint.
+     * @todo not yet implemented. */
+    DBGFEVENT_BREAKPOINT_IO,
+    /** MMIO breakpoint.
+     * @todo not yet implemented. */
+    DBGFEVENT_BREAKPOINT_MMIO,
     /** Breakpoint Hit in the Hypervisor.
      * This notifies that a breakpoint installed by the debugger was hit. The
      * identifier of the breakpoint can be found in the DBGFEVENT::u::Bp::iBp member.
@@ -184,10 +189,177 @@ typedef enum DBGFEVENTTYPE
      */
     DBGFEVENT_POWERING_OFF,
 
+    /** The first selectable event.
+     * Whether the debugger wants or doesn't want these events can be configured
+     * via DBGFR3xxx and queried via DBGFR3yyy.  */
+    DBGFEVENT_FIRST_SELECTABLE,
+    /** Tripple fault.
+     * @todo not yet implemented.  */
+    DBGFEVENT_TRIPPLE_FAULT = DBGFEVENT_FIRST_SELECTABLE,
+    DBGFEVENT_XCPT_DE,      /**< 0x00 - \#DE - Fault - NoErr - Integer divide error (zero/overflow). */
+    DBGFEVENT_XCPT_DB,      /**< 0x01 - \#DB - trap/fault - NoErr - debug event. */
+    DBGFEVENT_XCPT_02,      /**< 0x02 - Reserved for NMI, see interrupt events. */
+    DBGFEVENT_XCPT_BP,      /**< 0x03 - \#BP - Trap  - NoErr - Breakpoint, INT 3 instruction. */
+    DBGFEVENT_XCPT_OF,      /**< 0x04 - \#OF - Trap  - NoErr - Overflow, INTO instruction. */
+    DBGFEVENT_XCPT_BR,      /**< 0x05 - \#BR - Fault - NoErr - BOUND Range Exceeded, BOUND instruction. */
+    DBGFEVENT_XCPT_UD,      /**< 0x06 - \#UD - Fault - NoErr - Undefined(/Invalid) Opcode. */
+    DBGFEVENT_XCPT_NM,      /**< 0x07 - \#NM - Fault - NoErr - Device not available, FP or (F)WAIT instruction. */
+    DBGFEVENT_XCPT_DF,      /**< 0x08 - \#DF - Abort - Err=0 - Double fault. */
+    DBGFEVENT_XCPT_09,      /**< 0x09 - Int9 - Fault - NoErr - Coprocessor Segment Overrun (obsolete). */
+    DBGFEVENT_XCPT_TS,      /**< 0x0a - \#TS - Fault - ErrCd - Invalid TSS, Taskswitch or TSS access. */
+    DBGFEVENT_XCPT_NP,      /**< 0x0b - \#NP - Fault - ErrCd - Segment not present. */
+    DBGFEVENT_XCPT_SS,      /**< 0x0c - \#SS - Fault - ErrCd - Stack-Segment fault. */
+    DBGFEVENT_XCPT_GP,      /**< 0x0d - \#GP - Fault - ErrCd - General protection fault. */
+    DBGFEVENT_XCPT_PF,      /**< 0x0e - \#PF - Fault - ErrCd - Page fault. - interrupt gate!!! */
+    DBGFEVENT_XCPT_0f,      /**< 0x0f - Rsvd - Resvd - Resvd - Intel Reserved. */
+    DBGFEVENT_XCPT_MF,      /**< 0x10 - \#MF - Fault - NoErr - x86 FPU Floating-Point Error (Math fault), FP or (F)WAIT instruction. */
+    DBGFEVENT_XCPT_AC,      /**< 0x11 - \#AC - Fault - Err=0 - Alignment Check. */
+    DBGFEVENT_XCPT_MC,      /**< 0x12 - \#MC - Abort - NoErr - Machine Check. */
+    DBGFEVENT_XCPT_XM,      /**< 0x13 - \#XF - Fault - NoErr - SIMD Floating-Point Exception. */
+    DBGFEVENT_XCPT_VE,      /**< 0x14 - \#VE - Fault - Noerr - Virtualization exception. */
+    DBGFEVENT_XCPT_15,      /**< 0x15 - Intel Reserved. */
+    DBGFEVENT_XCPT_16,      /**< 0x16 - Intel Reserved. */
+    DBGFEVENT_XCPT_17,      /**< 0x17 - Intel Reserved. */
+    DBGFEVENT_XCPT_18,      /**< 0x18 - Intel Reserved. */
+    DBGFEVENT_XCPT_19,      /**< 0x19 - Intel Reserved. */
+    DBGFEVENT_XCPT_1a,      /**< 0x1a - Intel Reserved. */
+    DBGFEVENT_XCPT_1b,      /**< 0x1b - Intel Reserved. */
+    DBGFEVENT_XCPT_1c,      /**< 0x1c - Intel Reserved. */
+    DBGFEVENT_XCPT_1d,      /**< 0x1d - Intel Reserved. */
+    DBGFEVENT_XCPT_1e,      /**< 0x1e - \#SX - Fault - ErrCd - Security Exception. */
+    DBGFEVENT_XCPT_1f,      /**< 0x1f - Intel Reserved. */
+    /** The first exception event. */
+    DBGFEVENT_XCPT_FIRST = DBGFEVENT_XCPT_DE,
+    /** The last exception event. */
+    DBGFEVENT_XCPT_LAST  = DBGFEVENT_XCPT_1f,
+    /** Interrupt event.
+     * @todo not yet implemented.  */
+    DBGFEVENT_INT,
+    /** Access to an unassigned I/O port.
+     * @todo not yet implemented. */
+    DBGFEVENT_IOPORT_UNASSIGNED,
+    /** Access to an unused I/O port on a device.
+     * @todo not yet implemented.  */
+    DBGFEVENT_IOPORT_UNUSED,
+    /** Unassigned memory event.
+     * @todo not yet implemented.  */
+    DBGFEVENT_MEMORY_UNASSIGNED,
+    /** Attempt to write to unshadowed ROM.
+     * @todo not yet implemented.  */
+    DBGFEVENT_MEMORY_ROM_WRITE,
+
+    /** Exit - Task switch.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_TASK_SWITCH,
+    /** Exit - HALT instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_HALT,
+    /** Exit - MWAIT instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_MWAIT,
+    /** Exit - MONITOR instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_MONITOR,
+    /** Exit - CPUID instruction (missing stuff in raw-mode).
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_CPUID,
+    /** Exit - INV instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_INV,
+    /** Exit - WBINVD instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_WBINVD,
+    /** Exit - INVLPG instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_INVLPG,
+    /** Exit - RDTSC instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_RDTSC,
+    /** Exit - RDTSCP instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_RDTSCP,
+    /** Exit - RDPMC instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_RDPMC,
+    /** Exit - RDMSR instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_RDMSR,
+    /** Exit - WRMSR instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_WRMSR,
+    /** Exit - CRx read instruction (missing smsw in raw-mode).
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_CRX_READ,
+    /** Exit - CRx write instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_CRX_WRITE,
+    /** Exit - DRx read instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_DRX_READ,
+    /** Exit - DRx write instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_DRx_WRITE,
+    /** Exit - PAUSE instruction (not in raw-mode).
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_PAUSE,
+    /** Exit - XSETBV instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_XSETBV,
+    /** Exit - VMCALL (intel) or VMMCALL (AMD) instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VMM_CALL,
+    /** Exit - VT-x VMCLEAR instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMCLEAR,
+    /** Exit - VT-x VMLAUNCH instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMLAUNCH,
+    /** Exit - VT-x VMPTRLD instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMPTRLD,
+    /** Exit - VT-x VMPTRST instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMPTRST,
+    /** Exit - VT-x VMREAD instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMREAD,
+    /** Exit - VT-x VMRESUME instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMRESUME,
+    /** Exit - VT-x VMWRITE instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMWRITE,
+    /** Exit - VT-x VMXOFF instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMXOFF,
+    /** Exit - VT-x VMXON instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMXON,
+    /** Exit - VT-x VMFUNC instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VTX_VMFUNC,
+    /** Exit - AMD-V VMRUN instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_SVM_VMRUN,
+    /** Exit - AMD-V VMLOAD instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_SVM_VMLOAD,
+    /** Exit - AMD-V VMSAVE instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_SVM_VMSAVE,
+    /** Exit - AMD-V STGI instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_SVM_STGI,
+    /** Exit - AMD-V CLGI instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_SVM_CLGI,
+
+    /** End of valid event values. */
+    DBGFEVENT_END,
     /** The usual 32-bit hack. */
     DBGFEVENT_32BIT_HACK = 0x7fffffff
 } DBGFEVENTTYPE;
-
+AssertCompile(DBGFEVENT_XCPT_LAST - DBGFEVENT_XCPT_FIRST == 0x1f);
 
 /**
  * The context of an event.
