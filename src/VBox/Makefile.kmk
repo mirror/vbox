@@ -81,6 +81,8 @@ else
  include $(PATH_SUB_CURRENT)/Frontends/Makefile.kmk
  ifdef VBOX_WITH_VRDP
   include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
+ else ifdef VBOX_WITH_VRDP_RDESKTOP
+  include $(PATH_SUB_CURRENT)/RDP/client-1.8.3/Makefile.kmk
  endif
  if defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_HGSMI) || defined(VBOX_WITH_HGCM)
   include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
