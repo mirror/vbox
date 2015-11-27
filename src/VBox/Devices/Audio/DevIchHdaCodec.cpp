@@ -2610,16 +2610,16 @@ int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, PPDMAUDIO
     switch (enmSoundSource)
     {
         case PI_INDEX:
-            rc = pThis->pfnCreateIn(pThis->pHDAState, "hda.in", PDMAUDIORECSOURCE_LINE_IN, pCfg);
+            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.in", PDMAUDIORECSOURCE_LINE_IN, pCfg);
             break;
 
         case PO_INDEX:
-            rc = pThis->pfnCreateOut(pThis->pHDAState, "hda.out", pCfg);
+            rc = pThis->pfnOpenOut(pThis->pHDAState, "hda.out", pCfg);
             break;
 
 #ifdef VBOX_WITH_HDA_MIC_IN
         case MC_INDEX:
-            rc = pThis->pfnCreateIn(pThis->pHDAState, "hda.mc", PDMAUDIORECSOURCE_MIC, pCfg);
+            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.mc", PDMAUDIORECSOURCE_MIC, pCfg);
             break;
 #endif
         default:
@@ -2661,6 +2661,8 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
             fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
             break;
 
+        /* Since version 4 a flexible node count is supported. */
+        case HDA_SSM_VERSION_4:
         case HDA_SSM_VERSION:
         {
             uint32_t cNodes;
