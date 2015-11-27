@@ -230,6 +230,10 @@ public:
     QSize lastFullScreenSize(ulong uScreenId) const;
     void setLastFullScreenSize(ulong uScreenId, QSize size);
 
+    /** Returns whether guest-screen is undrawable.
+     *  @todo: extend this method to all the states when guest-screen is undrawable. */
+    bool isGuestScreenUnDrawable() const { return machineState() == KMachineState_Stopping; }
+
     /* Returns existing framebuffer for the given screen-number;
      * Returns 0 (asserts) if screen-number attribute is out of bounds: */
     UIFrameBuffer* frameBuffer(ulong uScreenId) const;

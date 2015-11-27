@@ -265,6 +265,9 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     if (uisession()->isGuestResizeIgnored())
         return;
 
+    if (uisession()->isGuestScreenUnDrawable())
+        return;
+
     /* If machine-window is visible: */
     if (uisession()->isScreenVisible(m_uScreenId))
     {
