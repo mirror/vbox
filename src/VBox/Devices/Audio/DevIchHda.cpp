@@ -540,7 +540,7 @@ typedef struct HDABDLESTATE
     uint8_t      au8FIFO[HDA_SDONFIFO_256B + 1];
     /** Current offset in DMA buffer (in bytes).*/
     uint32_t     u32BufOff;
-    uint8_t      Padding;
+    uint32_t     Padding;
 } HDABDLESTATE, *PHDABDLESTATE;
 
 /**
@@ -575,10 +575,9 @@ typedef struct HDASTREAMSTATE
     /** Current BDLE to use. Wraps around to 0 if
      *  maximum (cBDLE) is reached. */
     uint16_t            uCurBDLE;
-    uint8_t             Padding0;
+    uint32_t            Padding;
     /** Array of BDLEs. */
     R3PTRTYPE(PHDABDLE) paBDLE;
-    uint8_t             Padding1[7];
 } HDASTREAMSTATE, *PHDASTREAMSTATE;
 
 /**
@@ -591,7 +590,7 @@ typedef struct HDASTREAM
 {
     /** Stream number (SDn). */
     uint8_t        u8Strm;
-    uint8_t        Padding0[4];
+    uint8_t        Padding0[7];
     /** DMA base address (SDnBDPU - SDnBDPL). */
     uint64_t       u64BaseDMA;
     /** Cyclic Buffer Length (SDnCBL).
@@ -607,7 +606,7 @@ typedef struct HDASTREAM
     uint16_t       u16FIFOS;
     /** Last Valid Index (SDnLVI). */
     uint16_t       u16LVI;
-    uint8_t        Padding1[4];
+    uint16_t       Padding1[3];
     /** Internal state of this stream. */
     HDASTREAMSTATE State;
 } HDASTREAM, *PHDASTREAM;
