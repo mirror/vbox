@@ -275,14 +275,14 @@ ifdef VBOX_WITH_VRDP
   VBOX_LNX_STRIP_BIN += \
   	VBoxVRDP.so
  endif
- ifdef VBOX_WITH_VRDP_RDESKTOP
-  VBOX_LNX_NO_STRIP += \
-  	rdesktop-vrdp.tar.gz
-  VBOX_LNX_NO_STRIP += \
-  	rdesktop-vrdp-keymaps
-  VBOX_LNX_STRIP_BIN += \
-  	rdesktop-vrdp
- endif
+endif
+ifdef VBOX_WITH_VRDP_RDESKTOP
+ VBOX_LNX_NO_STRIP += \
+	rdesktop-vrdp.tar.gz
+ VBOX_LNX_NO_STRIP += \
+ 	rdesktop-vrdp-keymaps
+ VBOX_LNX_STRIP_BIN += \
+ 	rdesktop-vrdp
 endif
 
 # Python XPCOM glue
