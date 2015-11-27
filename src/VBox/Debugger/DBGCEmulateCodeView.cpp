@@ -72,6 +72,9 @@ static FNDBGCCMD dbgcCmdRegHyper;
 static FNDBGCCMD dbgcCmdRegTerse;
 static FNDBGCCMD dbgcCmdSearchMem;
 static FNDBGCCMD dbgcCmdSearchMemType;
+static FNDBGCCMD dbgcCmdEventCtrl;
+static FNDBGCCMD dbgcCmdEventCtrlList;
+static FNDBGCCMD dbgcCmdEventCtrlReset;
 static FNDBGCCMD dbgcCmdStack;
 static FNDBGCCMD dbgcCmdTrace;
 static FNDBGCCMD dbgcCmdUnassemble;
@@ -278,6 +281,22 @@ static const DBGCVARDESC    g_aArgSearchMemType[] =
 };
 
 
+/** 'sxe', 'sxn', 'sxi', 'sx-' arguments. */
+static const DBGCVARDESC    g_aArgEventCtrl[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "-c",           "The -c option, requires <cmds>." },
+    {  0,           1,          DBGCVAR_CAT_STRING,     DBGCVD_FLAGS_DEP_PREV,          "cmds",         "Command to execute on this event." },
+    {  1,           ~0U,        DBGCVAR_CAT_STRING,     0,                              "event",        "One or more events, 'all' refering to all events." },
+};
+
+/** 'sx' and 'sr' arguments. */
+static const DBGCVARDESC    g_aArgEventCtrlOpt[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           ~0U,        DBGCVAR_CAT_STRING,     0,                              "event",        "Zero or more events, 'all' refering to all events and being the default." },
+};
+
 /** 'u' arguments. */
 static const DBGCVARDESC    g_aArgUnassemble[] =
 {
@@ -362,6 +381,12 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "sq",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more quad words." },
     { "su",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for an unicode string." },
     { "sw",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more words." },
+    { "sx",         0,        0,        &g_aArgEventCtrlOpt[0], RT_ELEMENTS(g_aArgEventCtrlOpt), 0,  dbgcCmdEventCtrlList,  "[<event> [..]]", "Lists settings for exceptions, exits and other events.  All if no filter is specified." },
+    { "sx-",        2,       ~0U,       &g_aArgEventCtrl[0], RT_ELEMENTS(g_aArgEventCtrl),  0,       dbgcCmdEventCtrl,      "-c <cmd> <event> [..]", "Modifies the command for one or more exceptions, exits or other event.  'all' addresses all." },
+    { "sxe",        2,       ~0U,       &g_aArgEventCtrl[0], RT_ELEMENTS(g_aArgEventCtrl),  0,       dbgcCmdEventCtrl,      "[-c <cmd>] <event> [..]", "Enable: Break into the debugger on the specified exceptions, exits and other events.  'all' addresses all." },
+    { "sxn",        2,       ~0U,       &g_aArgEventCtrl[0], RT_ELEMENTS(g_aArgEventCtrl),  0,       dbgcCmdEventCtrl,      "[-c <cmd>] <event> [..]", "Notify: Display info in the debugger and continue on the specified exceptions, exits and other events. 'all' addresses all." },
+    { "sxi",        2,       ~0U,       &g_aArgEventCtrl[0], RT_ELEMENTS(g_aArgEventCtrl),  0,       dbgcCmdEventCtrl,      "[-c <cmd>] <event> [..]", "Ignore: Ignore the specified exceptions, exits and other events ('all' = all of them).  Without the -c option, the guest runs like normal." },
+    { "sxr",        0,        0,        &g_aArgEventCtrlOpt[0], RT_ELEMENTS(g_aArgEventCtrlOpt), 0,  dbgcCmdEventCtrlReset, "",                    "Reset the settings to default for exceptions, exits and other events. All if no filter is specified." },
     { "t",          0,        0,        NULL,               0,                              0,       dbgcCmdTrace,       "",                     "Instruction trace (step into)." },
     { "u",          0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble." },
     { "u64",        0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 64-bit code." },
@@ -3888,6 +3913,34 @@ static DECLCALLBACK(int) dbgcCmdSearchMemType(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs >= 2 && DBGCVAR_ISGCPOINTER(paArgs[0].enmType));
     return dbgcCmdWorkerSearchMem(pCmdHlp, pUVM, &paArgs[0], 25, pCmd->pszCmd[1], paArgs + 1, cArgs - 1, NULL);
 }
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'sx[eni-]' commands.}
+ */
+static DECLCALLBACK(int) dbgcCmdEventCtrl(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'sx' commands.}
+ */
+static DECLCALLBACK(int) dbgcCmdEventCtrlList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'sxr' commands.}
+ */
+static DECLCALLBACK(int) dbgcCmdEventCtrlReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 
 
 /**
