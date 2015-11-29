@@ -337,7 +337,7 @@ typedef FNVMXEXITHANDLER *PFNVMXEXITHANDLER;
 static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush);
 static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMXFLUSHVPID enmFlush, RTGCPTR GCPtr);
 static void               hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu);
-static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
+static VBOXSTRICTRC       hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
                                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress,
                                                  bool fStepping, uint32_t *puIntState);
 #if HC_ARCH_BITS == 32
@@ -3414,7 +3414,7 @@ static int hmR0VmxLoadGuestIntrState(PVMCPU pVCpu, uint32_t uIntrState)
     AssertMsg(!(uIntrState & 0xfffffff0), ("%#x\n", uIntrState));   /* Bits 31:4 MBZ. */
     Assert((uIntrState & 0x3) != 0x3);                              /* Block-by-STI and MOV SS cannot be simultaneously set. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, uIntrState);
-    AssertRCReturn(rc, rc);
+    AssertRC(rc);
     return rc;
 }
 
@@ -6653,7 +6653,7 @@ VMMR0_INT_DECL(int) HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixed
  * Check per-VM and per-VCPU force flag actions that require us to go back to
  * ring-3 for one reason or another.
  *
- * @returns VBox status code (information status code included).
+ * @returns Strict VBox status code (information status code included).
  * @retval VINF_SUCCESS if we don't have any actions that require going back to
  *         ring-3.
  * @retval VINF_PGM_SYNC_CR3 if we have pending PGM CR3 sync.
@@ -6670,80 +6670,85 @@ VMMR0_INT_DECL(int) HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixed
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
+ * @param   fStepping       Running in hmR0VmxRunGuestCodeStep().
  */
-static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStepping)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
-    if (   VM_FF_IS_PENDING(pVM, !pVCpu->hm.s.fSingleInstruction
-                            ? VM_FF_HP_R0_PRE_HM_MASK : VM_FF_HP_R0_PRE_HM_STEP_MASK)
-        || VMCPU_FF_IS_PENDING(pVCpu, !pVCpu->hm.s.fSingleInstruction
-                               ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
+    /*
+     * Anything pending?  Should be more likely than not if we're doing a good job.
+     */
+    if (  !fStepping
+        ?    !VM_FF_IS_PENDING(pVM, VM_FF_HP_R0_PRE_HM_MASK)
+          && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HP_R0_PRE_HM_MASK)
+        :    !VM_FF_IS_PENDING(pVM, VM_FF_HP_R0_PRE_HM_STEP_MASK)
+          && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
+        return VINF_SUCCESS;
+
+    /* We need the control registers now, make sure the guest-CPU context is updated. */
+    int rc3 = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+    AssertRCReturn(rc3, rc3);
+
+    /* Pending HM CR3 sync. */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
     {
-        /* We need the control registers now, make sure the guest-CPU context is updated. */
-        int rc3 = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
-        AssertRCReturn(rc3, rc3);
+        int rc2 = PGMUpdateCR3(pVCpu, pMixedCtx->cr3);
+        AssertMsgReturn(rc2 == VINF_SUCCESS || rc2 == VINF_PGM_SYNC_CR3,
+                        ("%Rrc\n", rc2), RT_FAILURE_NP(rc2) ? rc2 : VERR_IPE_UNEXPECTED_INFO_STATUS);
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+    }
 
-        /* Pending HM CR3 sync. */
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
-        {
-            int rc2 = PGMUpdateCR3(pVCpu, pMixedCtx->cr3);
-            AssertMsgReturn(rc2 == VINF_SUCCESS || rc2 == VINF_PGM_SYNC_CR3,
-                            ("%Rrc\n", rc2), RT_FAILURE_NP(rc2) ? rc2 : VERR_IPE_UNEXPECTED_INFO_STATUS);
-            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
-        }
+    /* Pending HM PAE PDPEs. */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+    {
+        PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+    }
 
-        /* Pending HM PAE PDPEs. */
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+    /* Pending PGM C3 sync. */
+    if (VMCPU_FF_IS_PENDING(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+    {
+        VBOXSTRICTRC rcStrict2 = PGMSyncCR3(pVCpu, pMixedCtx->cr0, pMixedCtx->cr3, pMixedCtx->cr4,
+                                            VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+        if (rcStrict2 != VINF_SUCCESS)
         {
-            PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
-            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+            AssertRC(rcStrict2);
+            Log4(("hmR0VmxCheckForceFlags: PGMSyncCR3 forcing us back to ring-3. rc2=%d\n", VBOXSTRICTRC_VAL(rcStrict2)));
+            return rcStrict2;
         }
+    }
 
-        /* Pending PGM C3 sync. */
-        if (VMCPU_FF_IS_PENDING(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
-        {
-            int rc2 = PGMSyncCR3(pVCpu, pMixedCtx->cr0, pMixedCtx->cr3, pMixedCtx->cr4,
-                                 VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
-            if (rc2 != VINF_SUCCESS)
-            {
-                AssertRC(rc2);
-                Log4(("hmR0VmxCheckForceFlags: PGMSyncCR3 forcing us back to ring-3. rc2=%d\n", rc2));
-                return rc2;
-            }
-        }
+    /* Pending HM-to-R3 operations (critsects, timers, EMT rendezvous etc.) */
+    if (   VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK)
+        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+    {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
+        int rc2 = RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
+        Log4(("hmR0VmxCheckForceFlags: HM_TO_R3 forcing us back to ring-3. rc=%d\n", rc2));
+        return rc2;
+    }
 
-        /* Pending HM-to-R3 operations (critsects, timers, EMT rendezvous etc.) */
-        if (   VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
-        {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
-            int rc2 = RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
-            Log4(("hmR0VmxCheckForceFlags: HM_TO_R3 forcing us back to ring-3. rc=%d\n", rc2));
-            return rc2;
-        }
+    /* Pending VM request packets, such as hardware interrupts. */
+    if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+    {
+        Log4(("hmR0VmxCheckForceFlags: Pending VM request forcing us back to ring-3\n"));
+        return VINF_EM_PENDING_REQUEST;
+    }
 
-        /* Pending VM request packets, such as hardware interrupts. */
-        if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
-        {
-            Log4(("hmR0VmxCheckForceFlags: Pending VM request forcing us back to ring-3\n"));
-            return VINF_EM_PENDING_REQUEST;
-        }
+    /* Pending PGM pool flushes. */
+    if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
+    {
+        Log4(("hmR0VmxCheckForceFlags: PGM pool flush pending forcing us back to ring-3\n"));
+        return VINF_PGM_POOL_FLUSH_PENDING;
+    }
 
-        /* Pending PGM pool flushes. */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
-        {
-            Log4(("hmR0VmxCheckForceFlags: PGM pool flush pending forcing us back to ring-3\n"));
-            return VINF_PGM_POOL_FLUSH_PENDING;
-        }
-
-        /* Pending DMA requests. */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_PDM_DMA))
-        {
-            Log4(("hmR0VmxCheckForceFlags: Pending DMA request forcing us back to ring-3\n"));
-            return VINF_EM_RAW_TO_R3;
-        }
+    /* Pending DMA requests. */
+    if (VM_FF_IS_PENDING(pVM, VM_FF_PDM_DMA))
+    {
+        Log4(("hmR0VmxCheckForceFlags: Pending DMA request forcing us back to ring-3\n"));
+        return VINF_EM_RAW_TO_R3;
     }
 
     return VINF_SUCCESS;
@@ -7419,7 +7424,7 @@ DECLINLINE(void) hmR0VmxSetPendingDebugXcptVmcs(PVMCPU pVCpu)
  * Injects any pending events into the guest if the guest is in a state to
  * receive them.
  *
- * @returns VBox status code (informational status codes included).
+ * @returns Strict VBox status code (informational status codes included).
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
@@ -7428,7 +7433,7 @@ DECLINLINE(void) hmR0VmxSetPendingDebugXcptVmcs(PVMCPU pVCpu)
  *                          return VINF_EM_DBG_STEPPED if the event was
  *                          dispatched directly.
  */
-static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStepping)
+static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStepping)
 {
     HMVMX_ASSERT_PREEMPT_SAFE();
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
@@ -7443,7 +7448,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSte
     Assert(!fBlockSti || pMixedCtx->eflags.Bits.u1IF);       /* Cannot set block-by-STI when interrupts are disabled. */
     Assert(!TRPMHasTrap(pVCpu));
 
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (pVCpu->hm.s.Event.fPending)
     {
         /*
@@ -7472,9 +7477,10 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSte
 #endif
         Log4(("Injecting pending event vcpu[%RU32] u64IntInfo=%#RX64 Type=%#x\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntInfo,
               (uint8_t)uIntType));
-        rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntInfo, pVCpu->hm.s.Event.cbInstr,
-                                    pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, fStepping, &uIntrState);
-        AssertRCReturn(rc, rc);
+        rcStrict = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntInfo, pVCpu->hm.s.Event.cbInstr,
+                                          pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress,
+                                          fStepping, &uIntrState);
+        AssertRCReturn(VBOXSTRICTRC_VAL(rcStrict), rcStrict);
 
         /* Update the interruptibility-state as it could have been changed by
            hmR0VmxInjectEventVmcs() (e.g. real-on-v86 guest injecting software interrupts) */
@@ -7522,9 +7528,9 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSte
     int rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
     AssertRC(rc2);
 
-    Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET || (rc == VINF_EM_DBG_STEPPED && fStepping));
+    Assert(rcStrict == VINF_SUCCESS || rcStrict == VINF_EM_RESET || (rcStrict == VINF_EM_DBG_STEPPED && fStepping));
     NOREF(fBlockMovSS); NOREF(fBlockSti);
-    return rc;
+    return rcStrict;
 }
 
 
@@ -7560,7 +7566,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *                          This interruptibility-state will be updated if
  *                          necessary. This cannot not be NULL.
  */
-DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStepping, uint32_t *puIntrState)
+DECLINLINE(VBOXSTRICTRC) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStepping, uint32_t *puIntrState)
 {
     uint32_t u32IntInfo  = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
@@ -7626,8 +7632,8 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
  *                              This interruptibility-state will be updated if
  *                              necessary. This cannot not be NULL.
  */
-DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErrorCodeValid, uint32_t u32ErrorCode,
-                                    bool fStepping, uint32_t *puIntrState)
+DECLINLINE(VBOXSTRICTRC) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErrorCodeValid, uint32_t u32ErrorCode,
+                                             bool fStepping, uint32_t *puIntrState)
 {
     uint32_t u32IntInfo  = X86_XCPT_GP | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
@@ -7686,13 +7692,13 @@ DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint16_
  * Pushes a 2-byte value onto the real-mode (in virtual-8086 mode) guest's
  * stack.
  *
- * @returns VBox status code (information status code included).
- * @retval VINF_EM_RESET if pushing a value to the stack caused a triple-fault.
+ * @returns Strict VBox status code (information status code included).
+ * @retval  VINF_EM_RESET if pushing a value to the stack caused a triple-fault.
  * @param   pVM         The cross context VM structure.
  * @param   pMixedCtx   Pointer to the guest-CPU context.
  * @param   uValue      The value to push to the guest stack.
  */
-DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint16_t uValue)
+DECLINLINE(VBOXSTRICTRC) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint16_t uValue)
 {
     /*
      * The stack limit is 0xffff in real-on-virtual 8086 mode. Real-mode with weird stack limits cannot be run in
@@ -7703,7 +7709,7 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
         return VINF_EM_RESET;
     pMixedCtx->sp -= sizeof(uint16_t);       /* May wrap around which is expected behaviour. */
     int rc = PGMPhysSimpleWriteGCPhys(pVM, pMixedCtx->ss.u64Base + pMixedCtx->sp, &uValue, sizeof(uint16_t));
-    AssertRCReturn(rc, rc);
+    AssertRC(rc);
     return rc;
 }
 
@@ -7712,9 +7718,9 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  * Injects an event into the guest upon VM-entry by updating the relevant fields
  * in the VM-entry area in the VMCS.
  *
- * @returns VBox status code (informational error codes included).
- * @retval VINF_SUCCESS if the event is successfully injected into the VMCS.
- * @retval VINF_EM_RESET if event injection resulted in a triple-fault.
+ * @returns Strict VBox status code (informational error codes included).
+ * @retval  VINF_SUCCESS if the event is successfully injected into the VMCS.
+ * @retval  VINF_EM_RESET if event injection resulted in a triple-fault.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pMixedCtx           Pointer to the guest-CPU context. The data may
@@ -7738,8 +7744,9 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  * @remarks Requires CR0!
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
-                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, bool fStepping, uint32_t *puIntrState)
+static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
+                                           uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, bool fStepping,
+                                           uint32_t *puIntrState)
 {
     /* Intel spec. 24.8.3 "VM-Entry Controls for Event Injection" specifies the interruption-information field to be 32-bits. */
     AssertMsg(u64IntInfo >> 32 == 0, ("%#RX64\n", u64IntInfo));
@@ -7838,13 +7845,15 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
             AssertRCReturn(rc, rc);
 
             /* Construct the stack frame for the interrupt/exception handler. */
-            rc  = hmR0VmxRealModeGuestStackPush(pVM, pMixedCtx, pMixedCtx->eflags.u32);
-            rc |= hmR0VmxRealModeGuestStackPush(pVM, pMixedCtx, pMixedCtx->cs.Sel);
-            rc |= hmR0VmxRealModeGuestStackPush(pVM, pMixedCtx, uGuestIp);
-            AssertRCReturn(rc, rc);
+            VBOXSTRICTRC rcStrict;
+            rcStrict  = hmR0VmxRealModeGuestStackPush(pVM, pMixedCtx, pMixedCtx->eflags.u32);
+            if (rcStrict == VINF_SUCCESS)
+                rcStrict = hmR0VmxRealModeGuestStackPush(pVM, pMixedCtx, pMixedCtx->cs.Sel);
+            if (rcStrict == VINF_SUCCESS)
+                rcStrict = hmR0VmxRealModeGuestStackPush(pVM, pMixedCtx, uGuestIp);
 
             /* Clear the required eflag bits and jump to the interrupt/exception handler. */
-            if (rc == VINF_SUCCESS)
+            if (rcStrict == VINF_SUCCESS)
             {
                 pMixedCtx->eflags.u32 &= ~(X86_EFL_IF | X86_EFL_TF | X86_EFL_RF | X86_EFL_AC);
                 pMixedCtx->rip         = IdtEntry.offSel;
@@ -7879,10 +7888,11 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
 
                 /* Make hmR0VmxPreRunGuest return if we're stepping since we've changed cs:rip. */
                 if (fStepping)
-                    rc = VINF_EM_DBG_STEPPED;
+                    rcStrict = VINF_EM_DBG_STEPPED;
             }
-            Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET || (rc == VINF_EM_DBG_STEPPED && fStepping));
-            return rc;
+            AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_EM_RESET || (rcStrict == VINF_EM_DBG_STEPPED && fStepping),
+                      ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
         }
 
         /*
@@ -7911,7 +7921,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
           u32IntInfo, u32ErrCode, cbInstr, pMixedCtx->cr2));
 
     AssertRCReturn(rc, rc);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -8350,7 +8360,7 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  *                          ring-3, and return VINF_EM_DBG_STEPPED if event
  *                          dispatching took place.
  */
-static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, bool fStepping)
+static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, bool fStepping)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
@@ -8359,9 +8369,11 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
 #endif
 
     /* Check force flag actions that might require us to go back to ring-3. */
-    int rc = hmR0VmxCheckForceFlags(pVM, pVCpu, pMixedCtx);
-    if (rc != VINF_SUCCESS)
-        return rc;
+    VBOXSTRICTRC rcStrict = hmR0VmxCheckForceFlags(pVM, pVCpu, pMixedCtx, fStepping);
+    if (rcStrict == VINF_SUCCESS)
+    { /* FFs doesn't get set all the time. */ }
+    else
+        return rcStrict;
 
 #ifndef IEM_VERIFICATION_MODE_FULL
     /* Setup the Virtualized APIC accesses. pMixedCtx->msrApicBase is always up-to-date. It's not part of the VMCS. */
@@ -8374,7 +8386,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
         /* Unalias any existing mapping. */
-        rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
+        int rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
         AssertRCReturn(rc, rc);
 
         /* Map the HC APIC-access page into the GC space, this also updates the shadow page tables if necessary. */
@@ -8394,11 +8406,14 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
      * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus needs to be done with
      * longjmps or interrupts + preemption enabled. Event injection might also result in triple-faulting the VM.
      */
-    rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx, fStepping);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    rcStrict = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx, fStepping);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    { /* likely */ }
+    else
     {
-        Assert(rc == VINF_EM_RESET || (rc == VINF_EM_DBG_STEPPED && fStepping));
-        return rc;
+        AssertMsg(rcStrict == VINF_EM_RESET || (rcStrict == VINF_EM_DBG_STEPPED && fStepping),
+                  ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
     }
 
     /*
@@ -8428,29 +8443,33 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
      * executing guest code.
      */
     pVmxTransient->fEFlags = ASMIntDisableFlags();
-    if (  (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
-           || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
-        && (   !fStepping /* Optimized for the non-stepping case, of course. */
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK & ~(VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT))) )
-    {
-        ASMSetFlags(pVmxTransient->fEFlags);
-        VMMRZCallRing3Enable(pVCpu);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
-        return VINF_EM_RAW_TO_R3;
-    }
 
-    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
+    if (   (   !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
+            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+        || (   fStepping /* Optimized for the non-stepping case, so a bit of unnecessary work when stepping. */
+            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK & ~(VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT))) )
     {
-        ASMSetFlags(pVmxTransient->fEFlags);
-        VMMRZCallRing3Enable(pVCpu);
+        if (!RTThreadPreemptIsPending(NIL_RTTHREAD))
+        {
+            /* We've injected any pending events. This is really the point of no return (to ring-3). */
+            pVCpu->hm.s.Event.fPending = false;
+
+            return VINF_SUCCESS;
+        }
+
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
-        return VINF_EM_RAW_INTERRUPT;
+        rcStrict = VINF_EM_RAW_INTERRUPT;
+    }
+    else
+    {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
+        rcStrict = VINF_EM_RAW_TO_R3;
     }
 
-    /* We've injected any pending events. This is really the point of no return (to ring-3). */
-    pVCpu->hm.s.Event.fPending = false;
+    ASMSetFlags(pVmxTransient->fEFlags);
+    VMMRZCallRing3Enable(pVCpu);
 
-    return VINF_SUCCESS;
+    return rcStrict;
 }
 
 
