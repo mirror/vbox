@@ -55,10 +55,6 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-/** Number of tests implemented at the moment. */
-#define USBTEST_TEST_CASES      25
-
-
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -120,39 +116,52 @@ typedef struct USBDEVDESC
 static const RTGETOPTDEF g_aCmdOptions[] =
 {
     {"--device",           'd', RTGETOPT_REQ_STRING },
-    {"--help",             'h', RTGETOPT_REQ_NOTHING}
+    {"--help",             'h', RTGETOPT_REQ_NOTHING},
+    {"--exclude",          'e', RTGETOPT_REQ_UINT32}
 };
 
-/** (Sort of) Descriptive test descriptions. */
-static const char *g_apszTests[] =
+/**
+ * USB test descriptor.
+ */
+typedef struct USBTESTDESC
 {
-    "NOP",
-    "Non-queued Bulk write",
-    "Non-queued Bulk read",
-    "Non-queued Bulk write variabe size",
-    "Non-queued Bulk read variabe size",
-    "Queued Bulk write",
-    "Queued Bulk read",
-    "Queued Bulk write variabe size",
-    "Queued Bulk read variabe size",
-    "Chapter 9 Control Test",
-    "Queued control messaging",
-    "Unlink reads",
-    "Unlink writes",
-    "Set/Clear halts",
-    "Control writes",
-    "Isochronous write",
-    "Isochronous read",
-    "Bulk write unaligned (DMA)",
-    "Bulk read unaligned (DMA)",
-    "Bulk write unaligned (no DMA)",
-    "Bulk read unaligned (no DMA)",
-    "Control writes unaligned",
-    "Isochronous write unaligned",
-    "Isochronous read unaligned",
-    "Unlink queued Bulk"
+    /** (Sort of) Descriptive test name. */
+    const char *pszName;
+    /** Flag whether the test is excluded. */
+    bool        fExcluded;
+} USBTESTDESC;
+/** Pointer a USB test descriptor. */
+typedef USBTESTDESC *PUSBTESTDESC;
+
+static USBTESTDESC g_aTests[] =
+{
+    /* pszTest                             fExcluded */
+    {"NOP",                                false},
+    {"Non-queued Bulk write",              false},
+    {"Non-queued Bulk read",               false},
+    {"Non-queued Bulk write variabe size", false},
+    {"Non-queued Bulk read variabe size",  false},
+    {"Queued Bulk write",                  false},
+    {"Queued Bulk read",                   false},
+    {"Queued Bulk write variabe size",     false},
+    {"Queued Bulk read variabe size",      false},
+    {"Chapter 9 Control Test",             false},
+    {"Queued control messaging",           false},
+    {"Unlink reads",                       false},
+    {"Unlink writes",                      false},
+    {"Set/Clear halts",                    false},
+    {"Control writes",                     false},
+    {"Isochronous write",                  false},
+    {"Isochronous read",                   false},
+    {"Bulk write unaligned (DMA)",         false},
+    {"Bulk read unaligned (DMA)",          false},
+    {"Bulk write unaligned (no DMA)",      false},
+    {"Bulk read unaligned (no DMA)",       false},
+    {"Control writes unaligned",           false},
+    {"Isochronous write unaligned",        false},
+    {"Isochronous read unaligned",         false},
+    {"Unlink queued Bulk",                 false}
 };
-AssertCompile(RT_ELEMENTS(g_apszTests) == USBTEST_TEST_CASES);
 
 /** The test handle. */
 static RTTEST g_hTest;
@@ -177,6 +186,9 @@ static void usbTestUsage(PRTSTREAM pStrm)
                 break;
             case 'd':
                 pszHelp = "Use the specified test device";
+                break;
+            case 'e':
+                pszHelp = "Exclude the given test id from the list";
                 break;
             default:
                 pszHelp = "Option undocumented";
@@ -288,9 +300,15 @@ static void usbTestExec(const char *pszDevice)
         Params.cbVariation = 512;
         Params.cSgLength = 32;
 
-        for (unsigned i = 0; i < USBTEST_TEST_CASES; i++)
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
         {
-            RTTestSub(g_hTest, g_apszTests[i]);
+            RTTestSub(g_hTest, g_aTests[i].pszName);
+
+            if (g_aTests[i].fExcluded)
+            {
+                RTTestSkipped(g_hTest, "Excluded from list");
+                continue;
+            }
 
             Params.idxTest = i;
 
@@ -345,6 +363,16 @@ int main(int argc, char *argv[])
                 return RTEXITCODE_SUCCESS;
             case 'd':
                 pszDevice = ValueUnion.psz;
+                break;
+            case 'e':
+                if (ValueUnion.u32 < RT_ELEMENTS(g_aTests))
+                    g_aTests[ValueUnion.u32].fExcluded = true;
+                else
+                {
+                    RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Failed to find a test device\n");
+                    RTTestErrorInc(g_hTest);
+                    return RTGetOptPrintError(VERR_INVALID_PARAMETER, &ValueUnion);
+                }
                 break;
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);

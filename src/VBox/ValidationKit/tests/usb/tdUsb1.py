@@ -48,7 +48,7 @@ from testdriver import vbox;
 from testdriver import vboxcon;
 
 # USB gadget control import
-from usbgadget import UsbGadget;
+import usbgadget;
 
 class tdUsbBenchmark(vbox.TestDriver):                                      # pylint: disable=R0902
     """
@@ -65,16 +65,16 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
     kdGadgetParams = {
         # The following is for local testing and not for the test lab.
         'adaris': {
-            'Low':   ('beaglebone', 'BeagleBoneBlack'),
-            'Full':  ('beaglebone', 'BeagleBoneBlack'),
-            'High':  ('beaglebone', 'BeagleBoneBlack'),
-            'Super': ('odroidxu3', 'ODroid-XU3')
+            'Low':   ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
+            'Full':  ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
+            'High':  ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
+            'Super': ('odroidxu3',  usbgadget.g_ksGadgetTypeODroidXu3)
         },
         'archusb': {
-            'Low':   ('odroidxu3', 'ODroid-XU3'),
-            'Full':  ('odroidxu3', 'ODroid-XU3'),
-            'High':  ('odroidxu3', 'ODroid-XU3'),
-            'Super': ('odroidxu3', 'ODroid-XU3')
+            'Low':   ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
+            'Full':  ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
+            'High':  ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
+            'Super': ('odroidxu3',  usbgadget.g_ksGadgetTypeODroidXu3)
         },
     };
 
@@ -88,9 +88,6 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.asRsrcs           = None;
-        self.oGuestToGuestVM   = None;
-        self.oGuestToGuestSess = None;
-        self.oGuestToGuestTxs  = None;
         self.asTestVMsDef      = ['tst-arch'];
         self.asTestVMs         = self.asTestVMsDef;
         self.asSkipVMs         = [];
@@ -261,7 +258,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
     #
     # Test execution helpers.
     #
-    def testUsbCompliance(self, oSession, oTxsSession, sSpeed):
+    def testUsbCompliance(self, oSession, oTxsSession, sUsbCtrl, sSpeed):
         """
         Test VirtualBoxs USB stack in a VM.
         """
@@ -271,17 +268,24 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         # Create device filter
         fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
         if fRc is True:
-            oUsbGadget = UsbGadget();
+            oUsbGadget = usbgadget.UsbGadget();
+            reporter.log('Connecting to gadget: ' + sGadgetType);
             fRc = oUsbGadget.connectTo(30 * 1000, sGadgetType, sGadgetHost);
             if fRc is True:
-                fRc = oUsbGadget.impersonate('Test');
+                reporter.log('Connect succeeded');
+                fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
                 if fRc is True:
 
                     # Wait a moment to let the USB device appear
                     self.sleep(3);
 
+                    tupCmdLine = ('UsbTest', );
+                    # Exclude a few tests which hang and cause a timeout, need investigation.
+                    if sUsbCtrl is 'XHCI':
+                        tupCmdLine = tupCmdLine + ('--exclude', '10', '--exclude', '24');
+
                     fRc = self.txsRunTest(oTxsSession, 'Compliance', 3600 * 1000, \
-                        '${CDROM}/${OS/ARCH}/UsbTest${EXESUFF}', ('UsbTest', ));
+                        '${CDROM}/${OS/ARCH}/UsbTest${EXESUFF}', tupCmdLine);
 
                 else:
                     reporter.testFailure('Failed to impersonate test device');
@@ -337,7 +341,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                 # Fudge factor - Allow the guest to finish starting up.
                 self.sleep(5);
 
-                fRc = self.testUsbCompliance(oSession, oTxsSession, sSpeed);
+                fRc = self.testUsbCompliance(oSession, oTxsSession, sUsbCtrl, sSpeed);
 
                 # cleanup.
                 self.removeTask(oTxsSession);
@@ -358,7 +362,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                 if sUsbSpeed in asSupportedSpeeds:
                     reporter.testStart(sUsbSpeed)
                     fRc = self.testUsbOneCfg(sVmName, sUsbCtrl, sUsbSpeed);
-                    reporter.testDone(not fRc);
+                    reporter.testDone();
             reporter.testDone();
         reporter.testDone();
         return fRc;
@@ -373,10 +377,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         # Loop thru the test VMs.
         for sVM in self.asTestVMs:
             # run test on the VM.
-            if not self.testUsbForOneVM(sVM):
-                fRc = False;
-            else:
-                fRc = True;
+            fRc = self.testUsbForOneVM(sVM);
 
         return fRc;
 

@@ -34,6 +34,22 @@ __version__ = "$Revision$"
 import testdriver.txsclient as txsclient;
 import testdriver.reporter as reporter;
 
+## @name USB gadget type string constants.
+## @{
+g_ksGadgetTypeInvalid     = 'Invalid';
+g_ksGadgetTypeBeaglebone  = 'BeagleBone';
+g_ksGadgetTypeODroidXu3   = 'ODroidXu3';
+## @}
+
+## @name USB gadget imeprsonation string constants.
+## @{
+g_ksGadgetImpersonationInvalid = 'Invalid';
+g_ksGadgetImpersonationTest    = 'Test';
+g_ksGadgetImpersonationMsd     = 'Msd';
+g_ksGadgetImpersonationWebcam  = 'Webcam';
+g_ksGadgetImpersonationEther   = 'Ether';
+## @}
+
 class UsbGadget(object):
     """
     USB Gadget control class using the TesteXecService to talk to the external
@@ -43,8 +59,8 @@ class UsbGadget(object):
 
     def __init__(self):
         self.oTxsSession = None;
-        self.sImpersonation = 'Invalid';
-        self.sGadgetType    = 'Invalid';
+        self.sImpersonation = g_ksGadgetImpersonationInvalid;
+        self.sGadgetType    = g_ksGadgetTypeInvalid;
 
     def _loadModule(self, sModule):
         """
@@ -56,10 +72,16 @@ class UsbGadget(object):
         if self.oTxsSession is not None:
             fRc = self.oTxsSession.syncExecEx('/usr/bin/modprobe', ('/usr/bin/modprobe', sModule));
             # For the ODroid-XU3 gadget we have to do a soft connect for the attached host to recognise the device.
-            if self.sGadgetType == 'ODroid-XU3':
+            if self.sGadgetType == g_ksGadgetTypeODroidXu3:
                 fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
                         ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/12400000.dwc3/soft_connect'));
-
+            elif self.sGadgetType == g_ksGadgetTypeBeaglebone:
+                # Do a soft disconnect/reconnect cycle or the device will not be recognised as high speed after the first test.
+                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
+                        ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
+                if fRc:
+                    fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
+                            ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
         return fRc;
 
     def _unloadModule(self, sModule):
@@ -71,9 +93,13 @@ class UsbGadget(object):
         fRc = False;
         if self.oTxsSession is not None:
             # For the ODroid-XU3 gadget we do a soft disconnect before unloading the gadget driver.
-            if self.sGadgetType == 'ODroid-XU3':
+            if self.sGadgetType == g_ksGadgetTypeODroidXu3:
                 fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
                         ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/12400000.dwc3/soft_connect'));
+            elif self.sGadgetType == g_ksGadgetTypeBeaglebone:
+                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
+                        ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
+
             fRc = self.oTxsSession.syncExecEx('/usr/bin/rmmod', ('/usr/bin/rmmod', sModule));
 
         return fRc;
@@ -82,19 +108,19 @@ class UsbGadget(object):
         """
         Removes the current impersonation of the gadget.
         """
-        if self.sImpersonation == 'Invalid':
+        if self.sImpersonation == g_ksGadgetImpersonationInvalid:
             self._unloadModule('g_zero');
             self._unloadModule('g_mass_storage');
             self._unloadModule('g_webcam');
             self._unloadModule('g_ether');
             return True;
-        elif self.sImpersonation == 'Test':
+        elif self.sImpersonation == g_ksGadgetImpersonationTest:
             return self._unloadModule('g_zero');
-        elif self.sImpersonation == 'Msd':
+        elif self.sImpersonation == g_ksGadgetImpersonationMsd:
             return self._unloadModule('g_mass_storage');
-        elif self.sImpersonation == 'Webcam':
+        elif self.sImpersonation == g_ksGadgetImpersonationWebcam:
             return self._unloadModule('g_webcam');
-        elif self.sImpersonation == 'Network':
+        elif self.sImpersonation == g_ksGadgetImpersonationEther:
             return self._unloadModule('g_ether');
         else:
             reporter.log('Invalid impersonation');
@@ -110,17 +136,17 @@ class UsbGadget(object):
         self._clearImpersonation();
         self.sImpersonation = sImpersonation;
 
-        if sImpersonation == 'Invalid':
+        if sImpersonation == g_ksGadgetImpersonationInvalid:
             return False;
-        elif sImpersonation == 'Test':
+        elif sImpersonation == g_ksGadgetImpersonationTest:
             return self._loadModule('g_zero');
-        elif sImpersonation == 'Msd':
+        elif sImpersonation == g_ksGadgetImpersonationMsd:
             # @todo: Not complete
             return self._loadModule('g_mass_storage');
-        elif sImpersonation == 'Webcam':
+        elif sImpersonation == g_ksGadgetImpersonationWebcam:
             # @todo: Not complete
             return self._loadModule('g_webcam');
-        elif sImpersonation == 'Network':
+        elif sImpersonation == g_ksGadgetImpersonationEther:
             return self._loadModule('g_ether');
         else:
             reporter.log('Invalid impersonation');
