@@ -1121,7 +1121,7 @@ typedef struct VM
             /** Bitmap of selected events.
              * This includes non-selectable events too for simplicity, we maintain the
              * state for some of these, as it may come in handy. */
-            uint32_t                    bmSelectedEvents[(DBGFEVENT_END + 31) / 32];
+            uint64_t                    bmSelectedEvents[(DBGFEVENT_END + 63) / 64];
             /** Enabled hardware interrupt breakpoints. */
             uint32_t                    cHardIntBreakpoints;
             /** Enabled software interrupt breakpoints. */
