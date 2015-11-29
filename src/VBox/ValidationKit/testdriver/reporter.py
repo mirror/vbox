@@ -475,8 +475,8 @@ class LocalReporter(ReporterBase):
             errorXcpt('open(%s)' % oFileWrapper.oSubXmlName);
             oFileWrapper.oSubXmlFile = None;
         else:
-            self._xmlWrite('<Include timestamp="%s" filename="%s"/>\n'
-                    % (utils.getIsoTimestamp(), self._xmlEscAttr(os.path.basename(sSubXmlName))));
+            self._xmlWrite(['<Include timestamp="%s" filename="%s"/>\n'
+                    % (utils.getIsoTimestamp(), self._xmlEscAttr(os.path.basename(sSubXmlName)))]);
         return None;
 
     def subXmlWrite(self, oFileWrapper, sRawXml, sCaller):
