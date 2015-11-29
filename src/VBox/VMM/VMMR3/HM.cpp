@@ -251,10 +251,10 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(SVM_EXIT_GDTR_READ          ,103, "Read GDTR"),
     EXIT_REASON(SVM_EXIT_LDTR_READ          ,104, "Read LDTR."),
     EXIT_REASON(SVM_EXIT_TR_READ            ,105, "Read TR."),
-    EXIT_REASON(SVM_EXIT_TR_READ            ,106, "Write IDTR."),
-    EXIT_REASON(SVM_EXIT_TR_READ            ,107, "Write GDTR."),
-    EXIT_REASON(SVM_EXIT_TR_READ            ,108, "Write LDTR."),
-    EXIT_REASON(SVM_EXIT_TR_READ            ,109, "Write TR."),
+    EXIT_REASON(SVM_EXIT_IDTR_WRITE         ,106, "Write IDTR."),
+    EXIT_REASON(SVM_EXIT_GDTR_WRITE         ,107, "Write GDTR."),
+    EXIT_REASON(SVM_EXIT_LDTR_WRITE         ,108, "Write LDTR."),
+    EXIT_REASON(SVM_EXIT_TR_WRITE           ,109, "Write TR."),
     EXIT_REASON(SVM_EXIT_RDTSC              ,110, "RDTSC instruction."),
     EXIT_REASON(SVM_EXIT_RDPMC              ,111, "RDPMC instruction."),
     EXIT_REASON(SVM_EXIT_PUSHF              ,112, "PUSHF instruction."),
@@ -286,7 +286,10 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(SVM_EXIT_MONITOR            ,138, "MONITOR instruction."),
     EXIT_REASON(SVM_EXIT_MWAIT              ,139, "MWAIT instruction."),
     EXIT_REASON(SVM_EXIT_MWAIT_ARMED        ,140, "MWAIT instruction when armed."),
+    EXIT_REASON(SVM_EXIT_XSETBV             ,141, "XSETBV instruction."),
     EXIT_REASON(SVM_EXIT_NPF                ,1024, "Nested paging fault."),
+    EXIT_REASON(SVM_EXIT_AVIC_INCOMPLETE_IPI,1025, "AVIC incomplete IPI delivery."),
+    EXIT_REASON(SVM_EXIT_AVIC_NOACCEL       ,1026, "AVIC unaccelerated register."),
     EXIT_REASON_NIL()
 };
 # undef EXIT_REASON

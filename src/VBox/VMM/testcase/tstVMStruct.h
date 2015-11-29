@@ -208,7 +208,12 @@
     GEN_CHECK_SIZE(AVLROIOPORTNODECORE);
 
     GEN_CHECK_SIZE(DBGF);
-    GEN_CHECK_OFF(DBGF, offVM);
+    GEN_CHECK_OFF(DBGF, bmHardIntBreakpoints);
+    GEN_CHECK_OFF(DBGF, bmSoftIntBreakpoints);
+    GEN_CHECK_OFF(DBGF, bmSelectedEvents);
+    GEN_CHECK_OFF(DBGF, cHardIntBreakpoints);
+    GEN_CHECK_OFF(DBGF, cSoftIntBreakpoints);
+    GEN_CHECK_OFF(DBGF, cSelectedEvents);
     GEN_CHECK_OFF(DBGF, fAttached);
     GEN_CHECK_OFF(DBGF, fStoppedInHyper);
     GEN_CHECK_OFF(DBGF, PingPong);
@@ -217,10 +222,13 @@
     GEN_CHECK_OFF(DBGF, VMMCmdData);
     //GEN_CHECK_OFF(DBGF, pInfoFirst);
     //GEN_CHECK_OFF(DBGF, InfoCritSect);
-    GEN_CHECK_OFF(DBGF, cHwBreakpoints);
-    GEN_CHECK_OFF(DBGF, cBreakpoints);
+    GEN_CHECK_OFF(DBGF, cEnabledHwBreakpoints);
+    GEN_CHECK_OFF(DBGF, cEnabledHwIoBreakpoints);
     GEN_CHECK_OFF(DBGF, aHwBreakpoints);
     GEN_CHECK_OFF(DBGF, aBreakpoints);
+    GEN_CHECK_OFF(DBGF, Mmio);
+    GEN_CHECK_OFF(DBGF, PortIo);
+    GEN_CHECK_OFF(DBGF, Int3);
     //GEN_CHECK_OFF(DBGF, hAsDbLock);
     //GEN_CHECK_OFF(DBGF, hRegDbLock);
     //GEN_CHECK_OFF(DBGF, RegSetSpace);
@@ -230,6 +238,15 @@
     GEN_CHECK_SIZE(DBGFCPU);
     GEN_CHECK_OFF(DBGFCPU, iActiveBp);
     GEN_CHECK_OFF(DBGFCPU, fSingleSteppingRaw);
+    GEN_CHECK_OFF(DBGFCPU, cEvents);
+    GEN_CHECK_OFF(DBGFCPU, aEvents);
+    GEN_CHECK_OFF(DBGFCPU, aEvents[1]);
+    GEN_CHECK_OFF(DBGFCPU, aEvents[1].Event);
+    GEN_CHECK_OFF(DBGFCPU, aEvents[1].Event.enmCtx);
+    GEN_CHECK_OFF(DBGFCPU, aEvents[1].Event.enmType);
+    GEN_CHECK_OFF(DBGFCPU, aEvents[1].Event.u.Bp.iBp);
+    GEN_CHECK_OFF(DBGFCPU, aEvents[1].rip);
+    GEN_CHECK_OFF(DBGFCPU, aEvents[1].enmState);
     //GEN_CHECK_OFF(DBGFCPU, pGuestRegSet);
     //GEN_CHECK_OFF(DBGFCPU, pHyperRegSet);
 

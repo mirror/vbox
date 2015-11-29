@@ -1217,6 +1217,369 @@ VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
 
 
 /**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3EventConfigNotifyAllCpus(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    /* Don't do anything, just make sure all CPUs goes thru EM. */
+    NOREF(pVM); NOREF(pVCpu); NOREF(pvUser);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker for DBGFR3EventConfigEx.
+ *
+ * @returns VBox status code. Will not return VBOX_INTERRUPTED.
+ * @param   pUVM        The user mode VM handle.
+ * @param   paConfigs   The event to configure and their new state.
+ * @param   cConfigs    Number of entries in @a paConfigs.
+ */
+static DECLCALLBACK(int) dbgfR3EventConfigEx(PUVM pUVM, DBGFEVENTCONFIG volatile const *paConfigs, size_t cConfigs)
+{
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    /*
+     * Apply the changes.
+     */
+    unsigned cChanges = 0;
+    for (uint32_t i = 0; i < cConfigs; i++)
+    {
+        DBGFEVENTTYPE enmType = paConfigs[i].enmType;
+        AssertReturn(enmType >= DBGFEVENT_FIRST_SELECTABLE && enmType < DBGFEVENT_END, VERR_INVALID_PARAMETER);
+        if (paConfigs[i].fEnabled)
+            cChanges += ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, enmType) == false;
+        else
+            cChanges += ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, enmType) == true;
+    }
+
+    /*
+     * If this is an SMP setup, we must interrupt the other CPUs if there were
+     * changes just to make sure their execution engines are aware of them.
+     */
+    int rc = VINF_SUCCESS;
+    if (cChanges > 0 && pVM->cCpus > 1)
+        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3EventConfigNotifyAllCpus, NULL);
+    return rc;
+}
+
+
+/**
+ * Configures (enables/disables) multiple selectable debug events.
+ *
+ * @returns VBox status code.
+ * @param   pUVM        The user mode VM handle.
+ * @param   paConfigs   The event to configure and their new state.
+ * @param   cConfigs    Number of entries in @a paConfigs.
+ */
+VMMR3DECL(int) DBGFR3EventConfigEx(PUVM pUVM, PCDBGFEVENTCONFIG paConfigs, size_t cConfigs)
+{
+    /*
+     * Validate input.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    size_t i = cConfigs;
+    while (i-- > 0)
+    {
+        AssertReturn(paConfigs[i].enmType >= DBGFEVENT_FIRST_SELECTABLE, VERR_INVALID_PARAMETER);
+        AssertReturn(paConfigs[i].enmType <  DBGFEVENT_END, VERR_INVALID_PARAMETER);
+    }
+
+    /*
+     * Apply the changes in EMT(0).
+     */
+    return VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3EventConfigEx, 3, pUVM, paConfigs, cConfigs);
+}
+
+
+/**
+ * Enables or disables a selectable debug event.
+ *
+ * @returns VBox status code.
+ * @param   pUVM        The user mode VM handle.
+ * @param   enmEvent    The selectable debug event.
+ * @param   fEnabled    The new state.
+ */
+VMMR3DECL(int) DBGFR3EventConfig(PUVM pUVM, DBGFEVENTTYPE enmEvent, bool fEnabled)
+{
+    /*
+     * Convert to an array call.
+     */
+    DBGFEVENTCONFIG EvtCfg = { enmEvent, fEnabled };
+    return DBGFR3EventConfigEx(pUVM, &EvtCfg, 1);
+}
+
+
+/**
+ * Checks if the given selectable event is enabled.
+ *
+ * @returns true if enabled, false if not or invalid input.
+ * @param   pUVM        The user mode VM handle.
+ * @param   enmEvent    The selectable debug event.
+ * @sa      DBGFR3EventQuery
+ */
+VMMR3DECL(bool) DBGFR3EventIsEnabled(PUVM pUVM, DBGFEVENTTYPE enmEvent)
+{
+    /*
+     * Validate input.
+     */
+    AssertReturn(   enmEvent >= DBGFEVENT_HALT_DONE
+                 && enmEvent <  DBGFEVENT_END, false);
+    Assert(   enmEvent >= DBGFEVENT_FIRST_SELECTABLE
+           || enmEvent == DBGFEVENT_BREAKPOINT
+           || enmEvent == DBGFEVENT_BREAKPOINT_IO
+           || enmEvent == DBGFEVENT_BREAKPOINT_MMIO);
+
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+
+    /*
+     * Check the event status.
+     */
+    return ASMBitTest(&pVM->dbgf.s.bmSelectedEvents, enmEvent);
+}
+
+
+/**
+ * Queries the status of a set of events.
+ *
+ * @returns VBox status code.
+ * @param   pUVM        The user mode VM handle.
+ * @param   paConfigs   The events to query and where to return the state.
+ * @param   cConfigs    The number of elements in @a paConfigs.
+ * @sa      DBGFR3EventIsEnabled, DBGF_IS_EVENT_ENABLED
+ */
+VMMR3DECL(int) DBGFR3EventQuery(PUVM pUVM, PDBGFEVENTCONFIG paConfigs, size_t cConfigs)
+{
+    /*
+     * Validate input.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+
+    for (size_t i = 0; i < cConfigs; i++)
+    {
+        DBGFEVENTTYPE enmType = paConfigs[i].enmType;
+        AssertReturn(   enmType >= DBGFEVENT_HALT_DONE
+                     && enmType <  DBGFEVENT_END, VERR_INVALID_PARAMETER);
+        Assert(   enmType >= DBGFEVENT_FIRST_SELECTABLE
+               || enmType == DBGFEVENT_BREAKPOINT
+               || enmType == DBGFEVENT_BREAKPOINT_IO
+               || enmType == DBGFEVENT_BREAKPOINT_MMIO);
+        paConfigs[i].fEnabled = ASMBitTest(&pVM->dbgf.s.bmSelectedEvents, paConfigs[i].enmType);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker for DBGFR3InterruptConfigEx.
+ *
+ * @returns VBox status code. Will not return VBOX_INTERRUPTED.
+ * @param   pUVM        The user mode VM handle.
+ * @param   paConfigs   The event to configure and their new state.
+ * @param   cConfigs    Number of entries in @a paConfigs.
+ */
+static DECLCALLBACK(int) dbgfR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFIG paConfigs, size_t cConfigs)
+{
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    /*
+     * Apply the changes.
+     */
+    bool fChanged;
+    for (uint32_t i = 0; i < cConfigs; i++)
+    {
+        /*
+         * Hardware interrupts.
+         */
+        if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_ENABLED)
+        {
+            fChanged = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == false;
+            if (fChanged)
+            {
+                Assert(pVM->dbgf.s.cHardIntBreakpoints < 256);
+                pVM->dbgf.s.cHardIntBreakpoints++;
+            }
+        }
+        else if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_DISABLED)
+        {
+            fChanged = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == true;
+            if (fChanged)
+            {
+                Assert(pVM->dbgf.s.cHardIntBreakpoints > 0);
+                pVM->dbgf.s.cHardIntBreakpoints--;
+            }
+        }
+
+        /*
+         * Software interrupts.
+         */
+        if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_ENABLED)
+        {
+            fChanged = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == false;
+            if (fChanged)
+            {
+                Assert(pVM->dbgf.s.cSoftIntBreakpoints < 256);
+                pVM->dbgf.s.cSoftIntBreakpoints++;
+            }
+        }
+        else if (paConfigs[i].enmSoftState == DBGFINTERRUPTSTATE_DISABLED)
+        {
+            fChanged = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == true;
+            if (fChanged)
+            {
+                Assert(pVM->dbgf.s.cSoftIntBreakpoints > 0);
+                pVM->dbgf.s.cSoftIntBreakpoints--;
+            }
+        }
+    }
+
+    /*
+     * Update the event bitmap entries and see if we need to notify other CPUs.
+     */
+    fChanged = false;
+    if (pVM->dbgf.s.cHardIntBreakpoints > 0)
+        fChanged |= ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_HARDWARE) == false;
+    else
+        fChanged |= ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_HARDWARE) == true;
+
+    if (pVM->dbgf.s.cSoftIntBreakpoints > 0)
+        fChanged |= ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_SOFTWARE) == false;
+    else
+        fChanged |= ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_SOFTWARE) == true;
+
+    int rc = VINF_SUCCESS;
+    if (fChanged && pVM->cCpus > 1)
+        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3EventConfigNotifyAllCpus, NULL);
+    return rc;
+}
+
+
+/**
+ * Changes
+ *
+ * @returns VBox status code.
+ * @param   pUVM        The user mode VM handle.
+ * @param   paConfigs   The events to query and where to return the state.
+ * @param   cConfigs    The number of elements in @a paConfigs.
+ * @sa      DBGFR3InterruptConfigHardware, DBGFR3InterruptConfigSoftware
+ */
+VMMR3DECL(int) DBGFR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFIG paConfigs, size_t cConfigs)
+{
+    /*
+     * Validate input.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    size_t i = cConfigs;
+    while (i-- > 0)
+    {
+        AssertReturn(paConfigs[i].enmHardState <= DBGFINTERRUPTSTATE_DONT_TOUCH, VERR_INVALID_PARAMETER);
+        AssertReturn(paConfigs[i].enmSoftState <= DBGFINTERRUPTSTATE_DONT_TOUCH, VERR_INVALID_PARAMETER);
+    }
+
+    /*
+     * Apply the changes in EMT(0).
+     */
+    return VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3InterruptConfigEx, 3, pUVM, paConfigs, cConfigs);
+}
+
+
+/**
+ * Configures interception of a hardware interrupt.
+ *
+ * @returns VBox status code.
+ * @param   pUVM        The user mode VM handle.
+ * @param   iInterrupt  The interrupt number.
+ * @param   fEnabled    Whether interception is enabled or not.
+ * @sa      DBGFR3InterruptSoftwareConfig, DBGFR3InterruptConfigEx
+ */
+VMMR3DECL(int) DBGFR3InterruptHardwareConfig(PUVM pUVM, uint8_t iInterrupt, bool fEnabled)
+{
+    /*
+     * Convert to DBGFR3InterruptConfigEx call.
+     */
+    DBGFINTERRUPTCONFIG IntCfg = { iInterrupt, (uint8_t)fEnabled, DBGFINTERRUPTSTATE_DONT_TOUCH };
+    return DBGFR3InterruptConfigEx(pUVM, &IntCfg, 1);
+}
+
+
+/**
+ * Configures interception of a software interrupt.
+ *
+ * @returns VBox status code.
+ * @param   pUVM        The user mode VM handle.
+ * @param   iInterrupt  The interrupt number.
+ * @param   fEnabled    Whether interception is enabled or not.
+ * @sa      DBGFR3InterruptHardwareConfig, DBGFR3InterruptConfigEx
+ */
+VMMR3DECL(int) DBGFR3InterruptSoftwareConfig(PUVM pUVM, uint8_t iInterrupt, bool fEnabled)
+{
+    /*
+     * Convert to DBGFR3InterruptConfigEx call.
+     */
+    DBGFINTERRUPTCONFIG IntCfg = { iInterrupt, DBGFINTERRUPTSTATE_DONT_TOUCH, (uint8_t)fEnabled };
+    return DBGFR3InterruptConfigEx(pUVM, &IntCfg, 1);
+}
+
+
+/**
+ * Checks whether interception is enabled for a hardware interrupt.
+ *
+ * @returns true if enabled, false if not or invalid input.
+ * @param   pUVM        The user mode VM handle.
+ * @param   iInterrupt  The interrupt number.
+ * @sa      DBGFR3InterruptSoftwareIsEnabled, DBGF_IS_HARDWARE_INT_ENABLED,
+ *          DBGF_IS_SOFTWARE_INT_ENABLED
+ */
+VMMR3DECL(int) DBGFR3InterruptHardwareIsEnabled(PUVM pUVM, uint8_t iInterrupt)
+{
+    /*
+     * Validate input.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+
+    /*
+     * Check it.
+     */
+    return ASMBitTest(&pVM->dbgf.s.bmHardIntBreakpoints, iInterrupt);
+}
+
+
+/**
+ * Checks whether interception is enabled for a software interrupt.
+ *
+ * @returns true if enabled, false if not or invalid input.
+ * @param   pUVM        The user mode VM handle.
+ * @param   iInterrupt  The interrupt number.
+ * @sa      DBGFR3InterruptHardwareIsEnabled, DBGF_IS_SOFTWARE_INT_ENABLED,
+ *          DBGF_IS_HARDWARE_INT_ENABLED,
+ */
+VMMR3DECL(int) DBGFR3InterruptSoftwareIsEnabled(PUVM pUVM, uint8_t iInterrupt)
+{
+    /*
+     * Validate input.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+
+    /*
+     * Check it.
+     */
+    return ASMBitTest(&pVM->dbgf.s.bmSoftIntBreakpoints, iInterrupt);
+}
+
+
+
+/**
  * Call this to single step programmatically.
  *
  * You must pass down the return code to the EM loop! That's

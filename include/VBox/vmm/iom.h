@@ -338,7 +338,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS G
                                          RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange);
 
-VMMR3_INT_DECL(void) IOMR3NotifyBreakpointCountChange(PVM pVM, unsigned cPortIo, unsigned cMmio);
+VMMR3_INT_DECL(void) IOMR3NotifyBreakpointCountChange(PVM pVM, bool fPortIo, bool fMmio);
 VMMR3_INT_DECL(void) IOMR3NotifyDebugEventChange(PVM pVM, DBGFEVENT enmEvent, bool fEnabled);
 
 /** @} */

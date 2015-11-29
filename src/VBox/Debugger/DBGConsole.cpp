@@ -656,10 +656,12 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
         }
 
         case DBGFEVENT_BREAKPOINT:
+        case DBGFEVENT_BREAKPOINT_IO:
+        case DBGFEVENT_BREAKPOINT_MMIO:
         case DBGFEVENT_BREAKPOINT_HYPER:
         {
             bool fRegCtxGuest = pDbgc->fRegCtxGuest;
-            pDbgc->fRegCtxGuest = pEvent->enmType == DBGFEVENT_BREAKPOINT;
+            pDbgc->fRegCtxGuest = pEvent->enmType != DBGFEVENT_BREAKPOINT_HYPER;
 
             rc = dbgcBpExec(pDbgc, pEvent->u.Bp.iBp);
             switch (rc)

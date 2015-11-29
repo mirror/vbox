@@ -189,6 +189,13 @@ typedef enum DBGFEVENTTYPE
      */
     DBGFEVENT_POWERING_OFF,
 
+    /** Hardware Interrupt break.
+     * @todo not yet implemented. */
+    DBGFEVENT_INTERRUPT_HARDWARE,
+    /** Software Interrupt break.
+     * @todo not yet implemented. */
+    DBGFEVENT_INTERRUPT_SOFTWARE,
+
     /** The first selectable event.
      * Whether the debugger wants or doesn't want these events can be configured
      * via DBGFR3xxx and queried via DBGFR3yyy.  */
@@ -434,6 +441,7 @@ typedef struct DBGFEVENT
         uint64_t        au64Padding[4];
     } u;
 } DBGFEVENT;
+AssertCompileSizeAlignment(DBGFEVENT, 8);
 /** Pointer to VMM Debug Event. */
 typedef DBGFEVENT *PDBGFEVENT;
 /** Pointer to const VMM Debug Event. */
@@ -477,7 +485,109 @@ VMMR3DECL(int)          DBGFR3Resume(PUVM pUVM);
 VMMR3DECL(int)          DBGFR3Step(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(int)          DBGFR3InjectNMI(PUVM pUVM, VMCPUID idCpu);
 
+/**
+ * Event configuration array element, see DBGFR3EventConfigEx.
+ */
+typedef struct DBGFEVENTCONFIG
+{
+    /** The event to configure */
+    DBGFEVENTTYPE   enmType;
+    /** The new state. */
+    bool            fEnabled;
+} DBGFEVENTCONFIG;
+/** Pointer to an event config. */
+typedef DBGFEVENTCONFIG *PDBGFEVENTCONFIG;
+/** Pointer to a const event config. */
+typedef const DBGFEVENTCONFIG *PCDBGFEVENTCONFIG;
+
+VMMR3DECL(int)          DBGFR3EventConfigEx(PUVM pUVM, PCDBGFEVENTCONFIG paConfigs, size_t cConfigs);
+VMMR3DECL(int)          DBGFR3EventConfig(PUVM pUVM, DBGFEVENTTYPE enmEvent, bool fEnabled);
+VMMR3DECL(bool)         DBGFR3EventIsEnabled(PUVM pUVM, DBGFEVENTTYPE enmEvent);
+VMMR3DECL(int)          DBGFR3EventQuery(PUVM pUVM, PDBGFEVENTCONFIG paConfigs, size_t cConfigs);
+
+/** @name DBGFINTERRUPTSTATE_XXX - interrupt break state.
+ * @{ */
+#define DBGFINTERRUPTSTATE_DISABLED     0
+#define DBGFINTERRUPTSTATE_ENABLED      1
+#define DBGFINTERRUPTSTATE_DONT_TOUCH   2
+/** @} */
+
+/**
+ * Interrupt break state configuration entry.
+ */
+typedef struct DBGFINTERRUPTCONFIG
+{
+    /** The interrupt number. */
+    uint8_t     iInterrupt;
+    /** The hardware interrupt state (DBGFINTERRUPTSTATE_XXX). */
+    uint8_t     enmHardState;
+    /** The software interrupt state (DBGFINTERRUPTSTATE_XXX). */
+    uint8_t     enmSoftState;
+} DBGFINTERRUPTCONFIG;
+/** Pointer to an interrupt break state config entyr. */
+typedef DBGFINTERRUPTCONFIG *PDBGFINTERRUPTCONFIG;
+/** Pointer to a const interrupt break state config entyr. */
+typedef DBGFINTERRUPTCONFIG const *PCDBGFINTERRUPTCONFIG;
+
+VMMR3DECL(int) DBGFR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFIG paConfigs, size_t cConfigs);
+VMMR3DECL(int) DBGFR3InterruptHardwareConfig(PUVM pUVM, uint8_t iInterrupt, bool fEnabled);
+VMMR3DECL(int) DBGFR3InterruptSoftwareConfig(PUVM pUVM, uint8_t iInterrupt, bool fEnabled);
+VMMR3DECL(int) DBGFR3InterruptHardwareIsEnabled(PUVM pUVM, uint8_t iInterrupt);
+VMMR3DECL(int) DBGFR3InterruptSoftwareIsEnabled(PUVM pUVM, uint8_t iInterrupt);
+
 #endif /* IN_RING3 */
+
+/** @def DBGF_IS_EVENT_ENABLED
+ * Checks if a selectable debug event is enabled or not (fast).
+ *
+ * @returns true/false.
+ * @param   a_pVM       Pointer to the cross context VM structure.
+ * @param   a_enmEvent  The selectable event to check.
+ * @remarks Only for use internally in the VMM. Use DBGFR3EventIsEnabled elsewhere.
+ */
+#if defined(VBOX_STRICT) && defined(RT_COMPILER_SUPPORTS_LAMBDA)
+# define DBGF_IS_EVENT_ENABLED(a_pVM, a_enmEvent) \
+    ([](PVM a_pLambdaVM, DBGFEVENTTYPE a_enmLambdaEvent) -> bool { \
+        Assert(a_enmLambdaEvent >= DBGFEVENT_FIRST_SELECTABLE); \
+        Assert(a_enmLambdaEvent < DBGFEVENT_END); \
+        return ASMBitTest(&a_pLambdaVM->dbgf.ro.bmSelectedEvents, a_enmLambdaEvent); \
+    }(a_pVM, a_enmEvent))
+#elif defined(VBOX_STRICT) && defined(__GNUC__)
+# define DBGF_IS_EVENT_ENABLED(a_pVM, a_enmEvent) \
+    __extension__ ({ \
+        Assert((a_enmEvent) >= DBGFEVENT_FIRST_SELECTABLE); \
+        Assert((a_enmEvent) < DBGFEVENT_END); \
+        ASMBitTest(&(a_pVM)->dbgf.ro.bmSelectedEvents, (a_enmEvent)); \
+    })
+#else
+# define DBGF_IS_EVENT_ENABLED(a_pVM, a_enmEvent) \
+        ASMBitTest(&(a_pVM)->dbgf.ro.bmSelectedEvents, (a_enmEvent))
+#endif
+
+
+/** @def DBGF_IS_HARDWARE_INT_ENABLED
+ * Checks if hardware interrupt interception is enabled or not for an interrupt.
+ *
+ * @returns true/false.
+ * @param   a_pVM           Pointer to the cross context VM structure.
+ * @param   a_iInterrupt    Interrupt to check.
+ * @remarks Only for use internally in the VMM.  Use
+ *          DBGFR3InterruptHardwareIsEnabled elsewhere.
+ */
+#define DBGF_IS_HARDWARE_INT_ENABLED(a_pVM, a_iInterrupt) \
+        ASMBitTest(&(a_pVM)->dbgf.ro.bmHardIntBreakpoints, (uint8_t)(a_iInterrupt))
+
+/** @def DBGF_IS_SOFTWARE_INT_ENABLED
+ * Checks if software interrupt interception is enabled or not for an interrupt.
+ *
+ * @returns true/false.
+ * @param   a_pVM           Pointer to the cross context VM structure.
+ * @param   a_iInterrupt    Interrupt to check.
+ * @remarks Only for use internally in the VMM.  Use
+ *          DBGFR3InterruptSoftwareIsEnabled elsewhere.
+ */
+#define DBGF_IS_SOFTWARE_INT_ENABLED(a_pVM, a_iInterrupt) \
+        ASMBitTest(&(a_pVM)->dbgf.ro.bmSoftIntBreakpoints, (uint8_t)(a_iInterrupt))
 
 
 
@@ -643,7 +753,8 @@ VMMR3DECL(int)  DBGFR3BpDisable(PUVM pUVM, uint32_t iBp);
 /**
  * Breakpoint enumeration callback function.
  *
- * @returns VBox status code. Any failure will stop the enumeration.
+ * @returns VBox status code.
+ *          The enumeration stops on failure status and VINF_CALLBACK_RETURN.
  * @param   pUVM        The user mode VM handle.
  * @param   pvUser      The user argument.
  * @param   pBp         Pointer to the breakpoint information. (readonly)

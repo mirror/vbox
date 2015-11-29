@@ -216,7 +216,7 @@ typedef struct VMCPU
 #ifdef ___DBGFInternal_h
         struct DBGFCPU      s;
 #endif
-        uint8_t             padding[64];        /* multiple of 64 */
+        uint8_t             padding[256];       /* multiple of 64 */
     } dbgf;
 
     /** GIM part. */
@@ -229,7 +229,7 @@ typedef struct VMCPU
     } gim;
 
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[3584];
+    uint8_t                 abAlignment2[3392];
 
     /** PGM part. */
     union
@@ -982,7 +982,7 @@ typedef struct VM
         struct CPUM s;
 #endif
 #ifdef ___VBox_vmm_cpum_h
-        /** Read only info exposed about the host and guest CPUs.   */
+        /** Read only info exposed about the host and guest CPUs. */
         struct
         {
             /** Padding for hidden fields. */
@@ -1109,6 +1109,26 @@ typedef struct VM
     {
 #ifdef ___DBGFInternal_h
         struct DBGF s;
+#endif
+#ifdef ___VBox_vmm_dbgf_h
+        /** Read only info exposed about interrupt breakpoints and selected events. */
+        struct
+        {
+            /** Bitmap of enabled hardware interrupt breakpoints. */
+            uint32_t                    bmHardIntBreakpoints[256 / 32];
+            /** Bitmap of enabled software interrupt breakpoints. */
+            uint32_t                    bmSoftIntBreakpoints[256 / 32];
+            /** Bitmap of selected events.
+             * This includes non-selectable events too for simplicity, we maintain the
+             * state for some of these, as it may come in handy. */
+            uint32_t                    bmSelectedEvents[(DBGFEVENT_END + 31) / 32];
+            /** Enabled hardware interrupt breakpoints. */
+            uint32_t                    cHardIntBreakpoints;
+            /** Enabled software interrupt breakpoints. */
+            uint32_t                    cSoftIntBreakpoints;
+            /** Number of selected events. */
+            uint32_t                    cSelectedEvents;
+        } const     ro;
 #endif
         uint8_t     padding[2368];      /* multiple of 64 */
     } dbgf;

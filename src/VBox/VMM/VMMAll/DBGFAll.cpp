@@ -27,6 +27,17 @@
 #include <iprt/assert.h>
 
 
+/*
+ * Check the read-only VM members.
+ */
+AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.bmSoftIntBreakpoints,  VM, dbgf.ro.bmSoftIntBreakpoints);
+AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.bmHardIntBreakpoints,  VM, dbgf.ro.bmHardIntBreakpoints);
+AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.bmSelectedEvents,      VM, dbgf.ro.bmSelectedEvents);
+AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.cHardIntBreakpoints,   VM, dbgf.ro.cHardIntBreakpoints);
+AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.cSoftIntBreakpoints,   VM, dbgf.ro.cSoftIntBreakpoints);
+AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.cSelectedEvents,       VM, dbgf.ro.cSelectedEvents);
+
+
 /**
  * Gets the hardware breakpoint configuration as DR7.
  *
@@ -119,14 +130,11 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
  *
  * @returns true if armed, false if not.
  * @param   pVM        The cross context VM structure.
+ * @remarks Don't call this from CPUMRecalcHyperDRx!
  */
 VMM_INT_DECL(bool) DBGFBpIsHwArmed(PVM pVM)
 {
-    Assert(RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints) == 4);
-    return (pVM->dbgf.s.aHwBreakpoints[0].fEnabled && pVM->dbgf.s.aHwBreakpoints[0].enmType == DBGFBPTYPE_REG)
-        || (pVM->dbgf.s.aHwBreakpoints[1].fEnabled && pVM->dbgf.s.aHwBreakpoints[1].enmType == DBGFBPTYPE_REG)
-        || (pVM->dbgf.s.aHwBreakpoints[2].fEnabled && pVM->dbgf.s.aHwBreakpoints[2].enmType == DBGFBPTYPE_REG)
-        || (pVM->dbgf.s.aHwBreakpoints[3].fEnabled && pVM->dbgf.s.aHwBreakpoints[3].enmType == DBGFBPTYPE_REG);
+    return pVM->dbgf.s.cEnabledHwBreakpoints > 0;
 }
 
 
@@ -135,27 +143,11 @@ VMM_INT_DECL(bool) DBGFBpIsHwArmed(PVM pVM)
  *
  * @returns true if armed, false if not.
  * @param   pVM        The cross context VM structure.
+ * @remarks Don't call this from CPUMRecalcHyperDRx!
  */
 VMM_INT_DECL(bool) DBGFBpIsHwIoArmed(PVM pVM)
 {
-    Assert(RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints) == 4);
-    /** @todo cache this! */
-    return (   pVM->dbgf.s.aHwBreakpoints[0].u.Reg.fType == X86_DR7_RW_IO
-            && pVM->dbgf.s.aHwBreakpoints[0].fEnabled
-            && pVM->dbgf.s.aHwBreakpoints[0].enmType     == DBGFBPTYPE_REG
-           )
-        || (   pVM->dbgf.s.aHwBreakpoints[1].u.Reg.fType == X86_DR7_RW_IO
-            && pVM->dbgf.s.aHwBreakpoints[1].fEnabled
-            && pVM->dbgf.s.aHwBreakpoints[1].enmType     == DBGFBPTYPE_REG
-           )
-        || (   pVM->dbgf.s.aHwBreakpoints[2].u.Reg.fType == X86_DR7_RW_IO
-            && pVM->dbgf.s.aHwBreakpoints[2].fEnabled
-            && pVM->dbgf.s.aHwBreakpoints[2].enmType     == DBGFBPTYPE_REG
-           )
-        || (   pVM->dbgf.s.aHwBreakpoints[3].u.Reg.fType == X86_DR7_RW_IO
-            && pVM->dbgf.s.aHwBreakpoints[3].fEnabled
-            && pVM->dbgf.s.aHwBreakpoints[3].enmType     == DBGFBPTYPE_REG
-           );
+    return pVM->dbgf.s.cEnabledHwIoBreakpoints > 0;
 }
 
 
@@ -184,24 +176,27 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, 
      * Check hyper breakpoints first as the VMM debugger has priority over
      * the guest.
      */
-    for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
+    if (pVM->dbgf.s.cEnabledHwIoBreakpoints > 0)
     {
-        if (   pVM->dbgf.s.aHwBreakpoints[iBp].u.Reg.fType == X86_DR7_RW_IO
-            && pVM->dbgf.s.aHwBreakpoints[iBp].fEnabled
-            && pVM->dbgf.s.aHwBreakpoints[iBp].enmType     == DBGFBPTYPE_REG )
+        for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
         {
-            uint8_t  cbReg      = pVM->dbgf.s.aHwBreakpoints[iBp].u.Reg.cb; Assert(RT_IS_POWER_OF_TWO(cbReg));
-            uint64_t uDrXFirst  = pVM->dbgf.s.aHwBreakpoints[iBp].u.Reg.GCPtr & ~(uint64_t)(cbReg - 1);
-            uint64_t uDrXLast   = uDrXFirst + cbReg - 1;
-            if (uDrXFirst <= uIoPortLast && uDrXLast >= uIoPortFirst)
+            if (   pVM->dbgf.s.aHwBreakpoints[iBp].u.Reg.fType == X86_DR7_RW_IO
+                && pVM->dbgf.s.aHwBreakpoints[iBp].fEnabled
+                && pVM->dbgf.s.aHwBreakpoints[iBp].enmType     == DBGFBPTYPE_REG )
             {
-                /* (See also DBGFRZTrap01Handler.) */
-                pVCpu->dbgf.s.iActiveBp = pVM->dbgf.s.aHwBreakpoints[iBp].iBp;
-                pVCpu->dbgf.s.fSingleSteppingRaw = false;
+                uint8_t  cbReg      = pVM->dbgf.s.aHwBreakpoints[iBp].u.Reg.cb; Assert(RT_IS_POWER_OF_TWO(cbReg));
+                uint64_t uDrXFirst  = pVM->dbgf.s.aHwBreakpoints[iBp].u.Reg.GCPtr & ~(uint64_t)(cbReg - 1);
+                uint64_t uDrXLast   = uDrXFirst + cbReg - 1;
+                if (uDrXFirst <= uIoPortLast && uDrXLast >= uIoPortFirst)
+                {
+                    /* (See also DBGFRZTrap01Handler.) */
+                    pVCpu->dbgf.s.iActiveBp = pVM->dbgf.s.aHwBreakpoints[iBp].iBp;
+                    pVCpu->dbgf.s.fSingleSteppingRaw = false;
 
-                LogFlow(("DBGFBpCheckIo: hit hw breakpoint %d at %04x:%RGv (iop %#x)\n",
-                         pVM->dbgf.s.aHwBreakpoints[iBp].iBp, pCtx->cs.Sel, pCtx->rip, uIoPort));
-                return VINF_EM_DBG_BREAKPOINT;
+                    LogFlow(("DBGFBpCheckIo: hit hw breakpoint %d at %04x:%RGv (iop %#x)\n",
+                             pVM->dbgf.s.aHwBreakpoints[iBp].iBp, pCtx->cs.Sel, pCtx->rip, uIoPort));
+                    return VINF_EM_DBG_BREAKPOINT;
+                }
             }
         }
     }

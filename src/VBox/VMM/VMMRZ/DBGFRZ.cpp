@@ -56,9 +56,10 @@ VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     /*
      * A breakpoint?
      */
-    if (uDr6 & (X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3))
+    AssertCompile(X86_DR6_B0 == 1 && X86_DR6_B1 == 2 && X86_DR6_B2 == 4 && X86_DR6_B3 == 8);
+    if (   (uDr6 & (X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3))
+        && pVM->dbgf.s.cEnabledHwBreakpoints > 0)
     {
-        Assert(X86_DR6_B0 == 1 && X86_DR6_B1 == 2 && X86_DR6_B2 == 4 && X86_DR6_B3 == 8);
         for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
         {
             if (    ((uint32_t)uDr6 & RT_BIT_32(iBp))
@@ -124,7 +125,8 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
      * Get the trap address and look it up in the breakpoint table.
      * Don't bother if we don't have any breakpoints.
      */
-    if (pVM->dbgf.s.cBreakpoints > 0)
+    unsigned cToSearch = pVM->dbgf.s.Int3.cToSearch;
+    if (cToSearch > 0)
     {
         RTGCPTR pPc;
         int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss.Sel, pRegFrame->cs.Sel, &pRegFrame->cs,
@@ -136,10 +138,11 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
                                               &pPc);
         AssertRCReturn(rc, rc);
 
-        for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
+        unsigned iBp = pVM->dbgf.s.Int3.iStartSearch;
+        while (cToSearch-- > 0)
         {
-            if (    pVM->dbgf.s.aBreakpoints[iBp].u.GCPtr == (RTGCUINTPTR)pPc
-                &&  pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_INT3)
+            if (   pVM->dbgf.s.aBreakpoints[iBp].u.GCPtr == (RTGCUINTPTR)pPc
+                && pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_INT3)
             {
                 pVM->dbgf.s.aBreakpoints[iBp].cHits++;
                 pVCpu->dbgf.s.iActiveBp = pVM->dbgf.s.aBreakpoints[iBp].iBp;
@@ -151,6 +154,7 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
                      ? VINF_EM_DBG_HYPER_BREAKPOINT
                      : VINF_EM_DBG_BREAKPOINT;
             }
+            iBp++;
         }
     }
 

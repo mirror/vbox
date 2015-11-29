@@ -102,24 +102,34 @@ int dbgfR3BpInit(PVM pVM)
 static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
 {
     /*
-     * Determine which array to search.
+     * Determine which array to search and where in the array to start
+     * searching (latter for grouping similar BPs, reducing runtime overhead).
      */
+    unsigned    iStart;
     unsigned    cBps;
-    uint32_t   *pcBpsCur;
     PDBGFBP     paBps;
     switch (enmType)
     {
         case DBGFBPTYPE_REG:
             cBps = RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
             paBps = &pVM->dbgf.s.aHwBreakpoints[0];
-            pcBpsCur = &pVM->dbgf.s.cHwBreakpoints;
+            iStart = 0;
             break;
 
         case DBGFBPTYPE_INT3:
         case DBGFBPTYPE_REM:
+        case DBGFBPTYPE_PORT_IO:
+        case DBGFBPTYPE_MMIO:
             cBps = RT_ELEMENTS(pVM->dbgf.s.aBreakpoints);
             paBps = &pVM->dbgf.s.aBreakpoints[0];
-            pcBpsCur = &pVM->dbgf.s.cBreakpoints;
+            if (enmType == DBGFBPTYPE_PORT_IO)
+                iStart = cBps / 4 * 2;
+            else if (enmType == DBGFBPTYPE_MMIO)
+                iStart = cBps / 4 * 1;
+            else if (enmType == DBGFBPTYPE_REM)
+                iStart = cBps / 4 * 3;
+            else
+                iStart = 0;
             break;
 
         default:
@@ -128,19 +138,55 @@ static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
     }
 
     /*
-     * Search.
+     * Search for a free breakpoint entry.
      */
-    for (unsigned iBp = 0; iBp < cBps; iBp++)
+    unsigned iBp;
+    for (iBp = iStart; iBp < cBps; iBp++)
         if (paBps[iBp].enmType == DBGFBPTYPE_FREE)
+            break;
+    if (iBp >= cBps && iStart != 0)
+        for (iBp = 0; iBp < cBps; iBp++)
+            if (paBps[iBp].enmType == DBGFBPTYPE_FREE)
+                break;
+    if (iBp < cBps)
+    {
+        /*
+         * Return what we found.
+         */
+        paBps[iBp].fEnabled = false;
+        paBps[iBp].cHits    = 0;
+        paBps[iBp].enmType  = enmType;
+        return &paBps[iBp];
+    }
+
+    LogFlow(("dbgfR3BpAlloc: returns NULL - we're out of breakpoint slots! cBps=%u\n", cBps));
+    return NULL;
+}
+
+
+/**
+ * Updates IOM on whether we've got any armed I/O port or MMIO breakpoints.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pVM         The cross context VM structure.
+ * @param   enmType     The breakpoint type.
+ * @param   pOpt        The breakpoint optimization structure to update.
+ */
+static int dbgfR3BpUpdateSearchOptimizations(PVM pVM, DBGFBPTYPE enmType, PDBGFBPSEARCHOPT pOpt)
+{
+    DBGFBPSEARCHOPT Opt  = { UINT32_MAX, 0 };
+
+    for (uint32_t iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
+        if (   pVM->dbgf.s.aBreakpoints[iBp].enmType == enmType
+            && pVM->dbgf.s.aBreakpoints[iBp].fEnabled)
         {
-            ++*pcBpsCur;
-            paBps[iBp].cHits   = 0;
-            paBps[iBp].enmType = enmType;
-            return &paBps[iBp];
+            if (Opt.iStartSearch > iBp)
+                Opt.iStartSearch = iBp;
+            Opt.cToSearch = iBp - Opt.iStartSearch + 1;
         }
 
-    LogFlow(("dbgfR3BpAlloc: returns NULL - we're out of breakpoint slots! %u/%u\n", *pcBpsCur, cBps));
-    return NULL;
+    *pOpt = Opt;
+    return VINF_SUCCESS;
 }
 
 
@@ -175,6 +221,8 @@ static PDBGFBP dbgfR3BpGet(PVM pVM, uint32_t iBp)
         case DBGFBPTYPE_REG:
         case DBGFBPTYPE_INT3:
         case DBGFBPTYPE_REM:
+        case DBGFBPTYPE_PORT_IO:
+        case DBGFBPTYPE_MMIO:
             break;
 
         default:
@@ -247,14 +295,14 @@ static void dbgfR3BpFree(PVM pVM, PDBGFBP pBp)
             return;
 
         case DBGFBPTYPE_REG:
-            Assert(pVM->dbgf.s.cHwBreakpoints > 0);
-            pVM->dbgf.s.cHwBreakpoints--;
+            Assert(pBp - &pVM->dbgf.s.aHwBreakpoints[0] < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints));
             break;
 
         case DBGFBPTYPE_INT3:
         case DBGFBPTYPE_REM:
-            Assert(pVM->dbgf.s.cBreakpoints > 0);
-            pVM->dbgf.s.cBreakpoints--;
+        case DBGFBPTYPE_PORT_IO:
+        case DBGFBPTYPE_MMIO:
+            Assert(pBp - &pVM->dbgf.s.aBreakpoints[0] < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints));
             break;
 
         default:
@@ -263,6 +311,7 @@ static void dbgfR3BpFree(PVM pVM, PDBGFBP pBp)
 
     }
     pBp->enmType = DBGFBPTYPE_FREE;
+    NOREF(pVM);
 }
 
 
@@ -324,6 +373,7 @@ static DECLCALLBACK(int) dbgfR3BpSetInt3(PUVM pUVM, PCDBGFADDRESS pAddress, uint
     pBp->iHitDisable    = *piHitDisable;
     ASMCompilerBarrier();
     pBp->fEnabled       = true;
+    dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
 
     /*
      * Now ask REM to set the breakpoint.
@@ -359,8 +409,7 @@ VMMR3DECL(int) DBGFR3BpSet(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigg
     /*
      * This must be done on EMT.
      */
-    /** @todo SMP? */
-    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetInt3, 5,
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpSetInt3, 5,
                               pUVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
     LogFlow(("DBGFR3BpSet: returns %Rrc\n", rc));
     return rc;
@@ -555,7 +604,7 @@ VMMR3DECL(int) DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetReg, 7,
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpSetReg, 7,
                               pUVM, pAddress, &iHitTrigger, &iHitDisable, fType, cb, piBp);
     LogFlow(("DBGFR3BpSetReg: returns %Rrc\n", rc));
     return rc;
@@ -566,20 +615,40 @@ VMMR3DECL(int) DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
 /**
  * @callback_method_impl{FNVMMEMTRENDEZVOUS}
  */
-DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     NOREF(pVM); NOREF(pvUser);
+
+    /*
+     * CPU 0 updates the enabled hardware breakpoint counts.
+     */
+    if (pVCpu->idCpu == 0)
+    {
+        pVM->dbgf.s.cEnabledHwBreakpoints   = 0;
+        pVM->dbgf.s.cEnabledHwIoBreakpoints = 0;
+
+        for (uint32_t iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
+            if (   pVM->dbgf.s.aHwBreakpoints[iBp].fEnabled
+                && pVM->dbgf.s.aHwBreakpoints[iBp].enmType == DBGFBPTYPE_REG)
+            {
+                pVM->dbgf.s.cEnabledHwBreakpoints   += 1;
+                pVM->dbgf.s.cEnabledHwIoBreakpoints += pVM->dbgf.s.aHwBreakpoints[iBp].u.Reg.fType == X86_DR7_RW_IO;
+            }
+    }
+
     return CPUMRecalcHyperDRx(pVCpu, UINT8_MAX, false);
 }
 
 
 /**
  * Arms a debug register breakpoint.
+ *
  * This is used to implement both DBGFR3BpSetReg() and DBGFR3BpEnable().
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pBp         The breakpoint.
+ * @thread  EMT(0)
  */
 static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
 {
@@ -590,11 +659,13 @@ static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
 
 /**
  * Disarms a debug register breakpoint.
+ *
  * This is used to implement both DBGFR3BpClear() and DBGFR3BpDisable().
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pBp         The breakpoint.
+ * @thread  EMT(0)
  */
 static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)
 {
@@ -614,7 +685,7 @@ static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)
  * @param   piHitDisable    The hit count which disables the breakpoint.
  *                          Use ~(uint64_t) if it's never gonna be disabled.
  * @param   piBp            Where to store the breakpoint id. (optional)
- * @thread  EMT
+ * @thread  EMT(0)
  * @internal
  */
 static DECLCALLBACK(int) dbgfR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger,
@@ -706,12 +777,11 @@ VMMR3DECL(int) DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetREM, 5,
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpSetREM, 5,
                               pUVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
     LogFlow(("DBGFR3BpSetREM: returns %Rrc\n", rc));
     return rc;
 }
-
 
 
 /**
@@ -719,24 +789,23 @@ VMMR3DECL(int) DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
  *
  * @returns VINF_SUCCESS
  * @param   pVM         The cross context VM structure.
+ * @thread  EMT(0)
  */
 static int dbgfR3BpUpdateIom(PVM pVM)
 {
-    unsigned cPortIo = 0;
-    unsigned cMmio = 0;
-    for (uint32_t iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
-        if (pVM->dbgf.s.aBreakpoints[iBp].fEnabled)
-        {
-            if (pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_PORT_IO)
-                cPortIo++;
-            else if (pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_MMIO)
-                cMmio++;
-        }
+    dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_PORT_IO, &pVM->dbgf.s.PortIo);
+    if (pVM->dbgf.s.PortIo.cToSearch)
+        ASMAtomicBitSet(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_BREAKPOINT_IO);
+    else
+        ASMAtomicBitClear(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_BREAKPOINT_IO);
 
-    pVM->dbgf.s.fHasPortIoBps = cPortIo != 0;
-    pVM->dbgf.s.fHasMmioBps   = cMmio   != 0;
+    dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_MMIO, &pVM->dbgf.s.Mmio);
+    if (pVM->dbgf.s.Mmio.cToSearch)
+        ASMAtomicBitSet(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_BREAKPOINT_MMIO);
+    else
+        ASMAtomicBitClear(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_BREAKPOINT_MMIO);
 
-    IOMR3NotifyBreakpointCountChange(pVM, cPortIo, cMmio);
+    IOMR3NotifyBreakpointCountChange(pVM, pVM->dbgf.s.PortIo.cToSearch != 0, pVM->dbgf.s.Mmio.cToSearch != 0);
     return VINF_SUCCESS;
 }
 
@@ -754,6 +823,7 @@ static int dbgfR3BpUpdateIom(PVM pVM)
  * @param   piHitDisable    The hit count which disables the breakpoint.
  *                          Use ~(uint64_t) if it's never gonna be disabled.
  * @param   piBp            Where to store the breakpoint ID.
+ * @thread  EMT(0)
  */
 static DECLCALLBACK(int) dbgfR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
                                            uint64_t const *piHitTrigger, uint64_t const *piHitDisable, uint32_t *piBp)
@@ -820,6 +890,7 @@ static DECLCALLBACK(int) dbgfR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT c
  * @param   iHitDisable     The hit count which disables the breakpoint.
  *                          Use ~(uint64_t) if it's never gonna be disabled.
  * @param   piBp            Where to store the breakpoint ID. Optional.
+ * @thread  Any thread.
  */
 VMMR3DECL(int)  DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
                                   uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp)
@@ -836,11 +907,11 @@ VMMR3DECL(int)  DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, ui
      * This must be done on EMT.
      */
     uint32_t iBp = -1;
-    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetPortIo, 7,
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpSetPortIo, 7,
                               pUVM, uPort, cPorts, fAccess, &iHitTrigger, &iHitDisable, piBp);
     if (piBp)
         *piBp = iBp;
-    LogFlow(("DBGFR3BpSetPortIo: returns %Rrc *piBp=%d\n", rc, iBp));
+    LogFlow(("DBGFR3BpSetPortIo: returns %Rrc iBp=%d\n", rc, iBp));
     return rc;
 }
 
@@ -858,6 +929,7 @@ VMMR3DECL(int)  DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, ui
  * @param   piHitDisable    The hit count which disables the breakpoint.
  *                          Use ~(uint64_t) if it's never gonna be disabled.
  * @param   piBp            Where to store the breakpoint ID.
+ * @thread  EMT(0)
  */
 static DECLCALLBACK(int) dbgfR3BpSetMmio(PUVM pUVM, PCRTGCPHYS pGCPhys, uint32_t cb, uint32_t fAccess,
                                          uint64_t const *piHitTrigger, uint64_t const *piHitDisable, uint32_t *piBp)
@@ -926,6 +998,7 @@ static DECLCALLBACK(int) dbgfR3BpSetMmio(PUVM pUVM, PCRTGCPHYS pGCPhys, uint32_t
  * @param   iHitDisable     The hit count which disables the breakpoint.
  *                          Use ~(uint64_t) if it's never gonna be disabled.
  * @param   piBp            Where to store the breakpoint ID. Optional.
+ * @thread  Any thread.
  */
 VMMR3DECL(int)  DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t fAccess,
                                 uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp)
@@ -942,11 +1015,11 @@ VMMR3DECL(int)  DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_
      * This must be done on EMT.
      */
     uint32_t iBp = -1;
-    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetMmio, 7,
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpSetMmio, 7,
                               pUVM, &GCPhys, cb, fAccess, &iHitTrigger, &iHitDisable, piBp);
     if (piBp)
         *piBp = iBp;
-    LogFlow(("DBGFR3BpSetMmio: returns %Rrc *piBp=%d\n", rc, iBp));
+    LogFlow(("DBGFR3BpSetMmio: returns %Rrc iBp=%d\n", rc, iBp));
     return rc;
 }
 
@@ -957,7 +1030,7 @@ VMMR3DECL(int)  DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_
  * @returns VBox status code.
  * @param   pUVM        The user mode VM handle.
  * @param   iBp         The id of the breakpoint which should be removed (cleared).
- * @thread  EMT
+ * @thread  EMT(0)
  * @internal
  */
 static DECLCALLBACK(int) dbgfR3BpClear(PUVM pUVM, uint32_t iBp)
@@ -986,6 +1059,7 @@ static DECLCALLBACK(int) dbgfR3BpClear(PUVM pUVM, uint32_t iBp)
 
             case DBGFBPTYPE_INT3:
                 rc = dbgfR3BpInt3Disarm(pUVM, pBp);
+                dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
                 break;
 
             case DBGFBPTYPE_REM:
@@ -1028,7 +1102,7 @@ VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, uint32_t iBp)
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpClear, 2, pUVM, iBp);
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpClear, 2, pUVM, iBp);
     LogFlow(("DBGFR3BpClear: returns %Rrc\n", rc));
     return rc;
 }
@@ -1040,7 +1114,7 @@ VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, uint32_t iBp)
  * @returns VBox status code.
  * @param   pUVM        The user mode VM handle.
  * @param   iBp         The id of the breakpoint which should be enabled.
- * @thread  EMT
+ * @thread  EMT(0)
  * @internal
  */
 static DECLCALLBACK(int) dbgfR3BpEnable(PUVM pUVM, uint32_t iBp)
@@ -1072,6 +1146,7 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PUVM pUVM, uint32_t iBp)
             break;
 
         case DBGFBPTYPE_INT3:
+            dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
             rc = dbgfR3BpInt3Arm(pUVM, pBp);
             break;
 
@@ -1111,7 +1186,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PUVM pUVM, uint32_t iBp)
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpEnable, 2, pUVM, iBp);
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpEnable, 2, pUVM, iBp);
     LogFlow(("DBGFR3BpEnable: returns %Rrc\n", rc));
     return rc;
 }
@@ -1123,7 +1198,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PUVM pUVM, uint32_t iBp)
  * @returns VBox status code.
  * @param   pUVM        The user mode VM handle.
  * @param   iBp         The id of the breakpoint which should be disabled.
- * @thread  EMT
+ * @thread  EMT(0)
  * @internal
  */
 static DECLCALLBACK(int) dbgfR3BpDisable(PUVM pUVM, uint32_t iBp)
@@ -1156,6 +1231,7 @@ static DECLCALLBACK(int) dbgfR3BpDisable(PUVM pUVM, uint32_t iBp)
 
         case DBGFBPTYPE_INT3:
             rc = dbgfR3BpInt3Disarm(pUVM, pBp);
+            dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
             break;
 
         case DBGFBPTYPE_REM:
@@ -1192,7 +1268,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PUVM pUVM, uint32_t iBp)
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpDisable, 2, pUVM, iBp);
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpDisable, 2, pUVM, iBp);
     LogFlow(("DBGFR3BpDisable: returns %Rrc\n", rc));
     return rc;
 }
@@ -1225,7 +1301,7 @@ static DECLCALLBACK(int) dbgfR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void
         if (pVM->dbgf.s.aHwBreakpoints[i].enmType != DBGFBPTYPE_FREE)
         {
             int rc = pfnCallback(pUVM, pvUser, &pVM->dbgf.s.aHwBreakpoints[i]);
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(rc) || rc == VINF_CALLBACK_RETURN)
                 return rc;
         }
 
@@ -1236,7 +1312,7 @@ static DECLCALLBACK(int) dbgfR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void
         if (pVM->dbgf.s.aBreakpoints[i].enmType != DBGFBPTYPE_FREE)
         {
             int rc = pfnCallback(pUVM, pvUser, &pVM->dbgf.s.aBreakpoints[i]);
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(rc) || rc == VINF_CALLBACK_RETURN)
                 return rc;
         }
 
@@ -1258,7 +1334,7 @@ VMMR3DECL(int) DBGFR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpEnum, 3, pUVM, pfnCallback, pvUser);
+    int rc = VMR3ReqPriorityCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpEnum, 3, pUVM, pfnCallback, pvUser);
     LogFlow(("DBGFR3BpClear: returns %Rrc\n", rc));
     return rc;
 }

@@ -169,13 +169,21 @@ typedef DBGFOS *PDBGFOS;
 typedef DBGFOS const *PCDBGFOS;
 
 
-
 /**
- * Converts a DBGF pointer into a VM pointer.
- * @returns Pointer to the VM structure the CPUM is part of.
- * @param   pDBGF   Pointer to DBGF instance data.
+ * Breakpoint search optimization.
  */
-#define DBGF2VM(pDBGF)  ( (PVM)((char*)pDBGF - pDBGF->offVM) )
+typedef struct DBGFBPSEARCHOPT
+{
+    /** Where to start searching for hits.
+     * (First enabled is #DBGF::aBreakpoints[iStartSearch]). */
+    uint32_t volatile       iStartSearch;
+    /** The number of aBreakpoints entries to search.
+     * (Last enabled is #DBGF::aBreakpoints[iStartSearch + cToSearch - 1])  */
+    uint32_t volatile       cToSearch;
+} DBGFBPSEARCHOPT;
+/** Pointer to a breakpoint search optimziation structure. */
+typedef DBGFBPSEARCHOPT *PDBGFBPSEARCHOPT;
+
 
 
 /**
@@ -183,13 +191,22 @@ typedef DBGFOS const *PCDBGFOS;
  */
 typedef struct DBGF
 {
-    /** Offset to the VM structure. */
-    int32_t                     offVM;
+    /** Bitmap of enabled hardware interrupt breakpoints. */
+    uint32_t                    bmHardIntBreakpoints[256 / 32];
+    /** Bitmap of enabled software interrupt breakpoints. */
+    uint32_t                    bmSoftIntBreakpoints[256 / 32];
+    /** Bitmap of selected events.
+     * This includes non-selectable events too for simplicity, we maintain the
+     * state for some of these, as it may come in handy. */
+    uint32_t                    bmSelectedEvents[(DBGFEVENT_END + 31) / 32];
 
-    /** Set if we've got armed port I/O breakpoints. */
-    bool                        fHasPortIoBps : 1;
-    /** Set if we've got armed memory mapped I/O breakpoints. */
-    bool                        fHasMmioBps : 1;
+    /** Enabled hardware interrupt breakpoints. */
+    uint32_t                    cHardIntBreakpoints;
+    /** Enabled software interrupt breakpoints. */
+    uint32_t                    cSoftIntBreakpoints;
+
+    /** Number of selected events. */
+    uint32_t                    cSelectedEvents;
 
     /** Debugger Attached flag.
      * Set if a debugger is attached, elsewise it's clear.
@@ -207,6 +224,7 @@ typedef struct DBGF
      * the Debugger.
      */
     RTPINGPONG                  PingPong;
+    RTHCUINTPTR                 uPtrPadding; /**< Alignment padding. */
 
     /** The Event to the debugger.
      * The VMM will ping the debugger when the event is ready. The event is
@@ -226,10 +244,14 @@ typedef struct DBGF
      * Not all commands take data. */
     DBGFCMDDATA                 VMMCmdData;
 
-    /** The number of hardware breakpoints. */
-    uint32_t                    cHwBreakpoints;
-    /** The number of active breakpoints. */
-    uint32_t                    cBreakpoints;
+    uint32_t                    u32Padding; /**< Alignment padding. */
+
+    /** The number of enabled hardware breakpoints. */
+    uint8_t                     cEnabledHwBreakpoints;
+    /** The number of enabled hardware I/O breakpoints. */
+    uint8_t                     cEnabledHwIoBreakpoints;
+    uint8_t                     abPadding[2]; /**< Unused padding space up for grabs. */
+
     /** Array of hardware breakpoints. (0..3)
      * This is shared among all the CPUs because life is much simpler that way. */
     DBGFBP                      aHwBreakpoints[4];
@@ -237,9 +259,39 @@ typedef struct DBGF
      * @remark This is currently a fixed size array for reasons of simplicity. */
     DBGFBP                      aBreakpoints[32];
 
+    /** MMIO breakpoint search optimizations. */
+    DBGFBPSEARCHOPT             Mmio;
+    /** I/O port breakpoint search optimizations. */
+    DBGFBPSEARCHOPT             PortIo;
+    /** INT3 breakpoint search optimizations. */
+    DBGFBPSEARCHOPT             Int3;
 } DBGF;
+AssertCompileMemberAlignment(DBGF, DbgEvent, 8);
+AssertCompileMemberAlignment(DBGF, aHwBreakpoints, 8);
+AssertCompileMemberAlignment(DBGF, bmHardIntBreakpoints, 8);
 /** Pointer to DBGF Data. */
 typedef DBGF *PDBGF;
+
+
+/**
+ * Event state (for DBGFCPU::aEvents).
+ */
+typedef enum DBGFEVENTSTATE
+{
+    /** Invalid event stack entry. */
+    DBGFEVENTSTATE_INVALID = 0,
+    /** The current event stack entry. */
+    DBGFEVENTSTATE_CURRENT,
+    /** Event that should be ignored but hasn't yet actually been ignored. */
+    DBGFEVENTSTATE_IGNORE,
+    /** Event that has been ignored but may be restored to IGNORE should another
+     * debug event fire before the instruction is completed. */
+    DBGFEVENTSTATE_RESTORABLE,
+    /** End of valid events.   */
+    DBGFEVENTSTATE_END,
+    /** Make sure we've got a 32-bit type. */
+    DBGFEVENTSTATE_32BIT_HACK = 0x7fffffff
+} DBGFEVENTSTATE;
 
 
 /** Converts a DBGFCPU pointer into a VM pointer. */
@@ -258,15 +310,55 @@ typedef struct DBGFCPU
      * This is ~0U if not active. It is set when a execution engine
      * encounters a breakpoint and returns VINF_EM_DBG_BREAKPOINT. This is
      * currently not used for REM breakpoints because of the lazy coupling
-     * between VBox and REM. */
+     * between VBox and REM.
+     *
+     * @todo drop this in favor of aEvents!  */
     uint32_t                iActiveBp;
     /** Set if we're singlestepping in raw mode.
      * This is checked and cleared in the \#DB handler. */
     bool                    fSingleSteppingRaw;
 
-    /** Padding the structure to 16 bytes. */
-    bool                    afReserved[7];
+    /** Alignment padding. */
+    bool                    afPadding[3];
+
+    /** The number of events on the stack (aEvents).
+     * The pending event is the last one (aEvents[cEvents - 1]), but only when
+     * enmState is DBGFEVENTSTATE_CURRENT. */
+    uint32_t                cEvents;
+    /** Events - current, ignoring and ignored.
+     *
+     * We maintain a stack of events in order to try avoid ending up in an infinit
+     * loop when resuming after an event fired.  There are cases where we may end
+     * generating additional events before the instruction can be executed
+     * successfully.  Like for instance an XCHG on MMIO with separate read and write
+     * breakpoints, or a MOVSB instruction working on breakpointed MMIO as both
+     * source and destination.
+     *
+     * So, when resuming after dropping into the debugger for an event, we convert
+     * the DBGFEVENTSTATE_CURRENT event into a DBGFEVENTSTATE_IGNORE event, leaving
+     * cEvents unchanged.  If the event is reported again, we will ignore it and
+     * tell the reporter to continue executing.  The event change to the
+     * DBGFEVENTSTATE_RESTORABLE state.
+     *
+     * Currently, the event reporter has to figure out that it is a nested event and
+     * tell DBGF to restore DBGFEVENTSTATE_RESTORABLE events (and keep
+     * DBGFEVENTSTATE_IGNORE, should they happen out of order for some weird
+     * reason).
+     */
+    struct
+    {
+        /** The event details. */
+        DBGFEVENT           Event;
+        /** The RIP at which this happend (for validating ignoring). */
+        uint64_t            rip;
+        /** The event state. */
+        DBGFEVENTSTATE      enmState;
+        /** Alignment padding. */
+        uint32_t            u32Alignment;
+    } aEvents[3];
 } DBGFCPU;
+AssertCompileMemberAlignment(DBGFCPU, aEvents, 8);
+AssertCompileMemberSizeAlignment(DBGFCPU, aEvents[0], 8);
 /** Pointer to DBGFCPU data. */
 typedef DBGFCPU *PDBGFCPU;
 

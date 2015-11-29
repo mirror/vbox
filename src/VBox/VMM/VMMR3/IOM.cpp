@@ -1652,10 +1652,10 @@ VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GC
  * accesses where there are armed breakpoints.
  *
  * @param   pVM         The cross context VM structure.
- * @param   cPortIo     Number of armed I/O port breakpoints.
- * @param   cMmio       Number of armed MMIO breakpoints.
+ * @param   fPortIo     True if there are armed I/O port breakpoints.
+ * @param   fMmio       True if there are armed MMIO breakpoints.
  */
-VMMR3_INT_DECL(void) IOMR3NotifyBreakpointCountChange(PVM pVM, unsigned cPortIo, unsigned cMmio)
+VMMR3_INT_DECL(void) IOMR3NotifyBreakpointCountChange(PVM pVM, bool fPortIo, bool fMmio)
 {
     /** @todo I/O breakpoints. */
 }
