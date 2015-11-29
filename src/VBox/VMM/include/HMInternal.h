@@ -595,7 +595,16 @@ typedef struct VMCSCACHE
 typedef VMCSCACHE *PVMCSCACHE;
 AssertCompileSizeAlignment(VMCSCACHE, 8);
 
-/** VMX StartVM function. */
+/**
+ * VMX StartVM function.
+ *
+ * @returns VBox status code (no informational stuff).
+ * @param   fResume     Whether to use VMRESUME (true) or VMLAUNCH (false).
+ * @param   pCtx        The CPU register context.
+ * @param   pCache      The VMCS cache.
+ * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pVCpu       Pointer to the cross context per-CPU structure.
+ */
 typedef DECLCALLBACK(int) FNHMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 /** Pointer to a VMX StartVM function. */
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
