@@ -6713,7 +6713,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
                                             VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
         if (rcStrict2 != VINF_SUCCESS)
         {
-            AssertRC(rcStrict2);
+            AssertRC(VBOXSTRICTRC_VAL(rcStrict2));
             Log4(("hmR0VmxCheckForceFlags: PGMSyncCR3 forcing us back to ring-3. rc2=%d\n", VBOXSTRICTRC_VAL(rcStrict2)));
             return rcStrict2;
         }
