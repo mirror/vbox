@@ -265,6 +265,11 @@ typedef struct HMGLOBALCPUINFO
     RTCPUID             idCpu;
     /** The VM_HSAVE_AREA (AMD-V) / VMXON region (Intel) memory backing. */
     RTR0MEMOBJ          hMemObj;
+    /** The physical address of the first page in hMemObj (it's a
+     *  physcially contigous allocation if it spans multiple pages). */
+    RTHCPHYS            HCPhysMemObj;
+    /** The address of the memory (for pfnEnable). */
+    void               *pvMemObj;
     /** Current ASID (AMD-V) / VPID (Intel). */
     uint32_t            uCurrentAsid;
     /** TLB flush count. */

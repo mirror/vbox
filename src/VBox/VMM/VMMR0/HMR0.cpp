@@ -617,8 +617,10 @@ VMMR0_INT_DECL(int) HMR0Init(void)
     g_HmR0.EnableAllCpusOnce = s_OnceInit;
     for (unsigned i = 0; i < RT_ELEMENTS(g_HmR0.aCpuInfo); i++)
     {
-        g_HmR0.aCpuInfo[i].hMemObj = NIL_RTR0MEMOBJ;
-        g_HmR0.aCpuInfo[i].idCpu   = NIL_RTCPUID;
+        g_HmR0.aCpuInfo[i].idCpu        = NIL_RTCPUID;
+        g_HmR0.aCpuInfo[i].hMemObj      = NIL_RTR0MEMOBJ;
+        g_HmR0.aCpuInfo[i].HCPhysMemObj = NIL_RTHCPHYS;
+        g_HmR0.aCpuInfo[i].pvMemObj     = NULL;
     }
 
     /* Fill in all callbacks with placeholders. */
@@ -768,7 +770,9 @@ VMMR0_INT_DECL(int) HMR0Term(void)
             if (g_HmR0.aCpuInfo[i].hMemObj != NIL_RTR0MEMOBJ)
             {
                 RTR0MemObjFree(g_HmR0.aCpuInfo[i].hMemObj, false);
-                g_HmR0.aCpuInfo[i].hMemObj = NIL_RTR0MEMOBJ;
+                g_HmR0.aCpuInfo[i].hMemObj      = NIL_RTR0MEMOBJ;
+                g_HmR0.aCpuInfo[i].HCPhysMemObj = NIL_RTHCPHYS;
+                g_HmR0.aCpuInfo[i].pvMemObj     = NULL;
             }
         }
     }
@@ -853,13 +857,10 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     else
     {
         AssertLogRelMsgReturn(pCpu->hMemObj != NIL_RTR0MEMOBJ, ("hmR0EnableCpu failed idCpu=%u.\n", idCpu), VERR_HM_IPE_1);
-        void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
-        RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0 /* iPage */);
-
         if (g_HmR0.vmx.fSupported)
-            rc = g_HmR0.pfnEnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage, false, &g_HmR0.vmx.Msrs);
+            rc = g_HmR0.pfnEnableCpu(pCpu, pVM, pCpu->pvMemObj, pCpu->HCPhysMemObj, false, &g_HmR0.vmx.Msrs);
         else
-            rc = g_HmR0.pfnEnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage, false, NULL /* pvArg */);
+            rc = g_HmR0.pfnEnableCpu(pCpu, pVM, pCpu->pvMemObj, pCpu->HCPhysMemObj, false, NULL /* pvArg */);
     }
     if (RT_SUCCESS(rc))
         pCpu->fConfigured = true;
@@ -913,6 +914,8 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
     for (unsigned i = 0; i < RT_ELEMENTS(g_HmR0.aCpuInfo); i++)
     {
         Assert(g_HmR0.aCpuInfo[i].hMemObj == NIL_RTR0MEMOBJ);
+        Assert(g_HmR0.aCpuInfo[i].HCPhysMemObj == NIL_RTHCPHYS);
+        Assert(g_HmR0.aCpuInfo[i].pvMemObj == NULL);
         Assert(!g_HmR0.aCpuInfo[i].fConfigured);
         Assert(!g_HmR0.aCpuInfo[i].cTlbFlushes);
         Assert(!g_HmR0.aCpuInfo[i].uCurrentAsid);
@@ -948,11 +951,17 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
 
             if (RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(i)))
             {
+                /** @todo NUMA */
                 rc = RTR0MemObjAllocCont(&g_HmR0.aCpuInfo[i].hMemObj, PAGE_SIZE, false /* executable R0 mapping */);
                 AssertLogRelRCReturn(rc, rc);
 
-                void *pvR0 = RTR0MemObjAddress(g_HmR0.aCpuInfo[i].hMemObj); Assert(pvR0);
-                ASMMemZeroPage(pvR0);
+                g_HmR0.aCpuInfo[i].HCPhysMemObj = RTR0MemObjGetPagePhysAddr(g_HmR0.aCpuInfo[i].hMemObj, 0);
+                Assert(g_HmR0.aCpuInfo[i].HCPhysMemObj != NIL_RTHCPHYS);
+                Assert(!(g_HmR0.aCpuInfo[i].HCPhysMemObj & PAGE_OFFSET_MASK));
+
+                g_HmR0.aCpuInfo[i].pvMemObj     = RTR0MemObjAddress(g_HmR0.aCpuInfo[i].hMemObj);
+                AssertPtr(g_HmR0.aCpuInfo[i].pvMemObj);
+                ASMMemZeroPage(g_HmR0.aCpuInfo[i].pvMemObj);
             }
         }
 
@@ -1011,14 +1020,13 @@ static int hmR0DisableCpu(RTCPUID idCpu)
 
     if (pCpu->hMemObj == NIL_RTR0MEMOBJ)
         return pCpu->fConfigured ? VERR_NO_MEMORY : VINF_SUCCESS /* not initialized. */;
+    AssertPtr(pCpu->pvMemObj);
+    Assert(pCpu->HCPhysMemObj != NIL_RTHCPHYS);
 
     int rc;
     if (pCpu->fConfigured)
     {
-        void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
-        RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
-
-        rc = g_HmR0.pfnDisableCpu(pCpu, pvCpuPage, HCPhysCpuPage);
+        rc = g_HmR0.pfnDisableCpu(pCpu, pCpu->pvMemObj, pCpu->HCPhysMemObj);
         AssertRCReturn(rc, rc);
 
         pCpu->fConfigured = false;
@@ -1698,12 +1706,10 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
 
     /* Ok, disable VT-x. */
     PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
-    AssertReturn(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ, VERR_HM_IPE_2);
+    AssertReturn(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ && pCpu->pvMemObj && pCpu->HCPhysMemObj != NIL_RTHCPHYS, VERR_HM_IPE_2);
 
     *pfVTxDisabled = true;
-    void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
-    RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
-    return VMXR0DisableCpu(pCpu, pvCpuPage, HCPhysCpuPage);
+    return VMXR0DisableCpu(pCpu, pCpu->pvMemObj, pCpu->HCPhysMemObj);
 }
 
 
@@ -1730,11 +1736,9 @@ VMMR0_INT_DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
         Assert(g_HmR0.fGlobalInit);
 
         PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
-        AssertReturnVoid(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ);
+        AssertReturnVoid(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ && pCpu->pvMemObj && pCpu->HCPhysMemObj != NIL_RTHCPHYS);
 
-        void           *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
-        RTHCPHYS        HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
-        VMXR0EnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage, false, &g_HmR0.vmx.Msrs);
+        VMXR0EnableCpu(pCpu, pVM, pCpu->pvMemObj, pCpu->HCPhysMemObj, false, &g_HmR0.vmx.Msrs);
     }
 }
 

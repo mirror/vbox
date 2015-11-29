@@ -5089,7 +5089,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 #endif
 
     PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
-    RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
+    RTHCPHYS HCPhysCpuPage = pCpu->HCPhysMemObj;
 
     /* Clear VMCS. Marking it inactive, clearing implementation-specific data and writing VMCS data back to memory. */
     VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
@@ -5148,7 +5148,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     NOREF(fResume);
 
     PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
-    RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
+    RTHCPHYS HCPhysCpuPage = pCpu->HCPhysMemObj;
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     pCache->uPos = 1;
