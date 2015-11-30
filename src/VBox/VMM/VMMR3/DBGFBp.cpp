@@ -880,7 +880,7 @@ static DECLCALLBACK(int) dbgfR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT c
  * Sets an I/O port breakpoint.
  *
  * @returns VBox status code.
- * @param   pUvm            The user mode VM handle.
+ * @param   pUVM            The user mode VM handle.
  * @param   uPort           The first I/O port.
  * @param   cPorts          The number of I/O ports, see DBGFBPIOACCESS_XXX.
  * @param   fAccess         The access we want to break on.
@@ -988,7 +988,7 @@ static DECLCALLBACK(int) dbgfR3BpSetMmio(PUVM pUVM, PCRTGCPHYS pGCPhys, uint32_t
  * Sets a memory mapped I/O breakpoint.
  *
  * @returns VBox status code.
- * @param   pUvm            The user mode VM handle.
+ * @param   pUVM            The user mode VM handle.
  * @param   GCPhys          The first MMIO address.
  * @param   cb              The size of the MMIO range to break on.
  * @param   fAccess         The access we want to break on.
