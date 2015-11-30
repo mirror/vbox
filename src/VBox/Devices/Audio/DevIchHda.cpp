@@ -851,7 +851,7 @@ static void hdaBDLEReset(PHDABDLE pBDLE);
 /** Offset of the SD0 register map. */
 #define HDA_REG_DESC_SD0_BASE 0x80
 
-/* Turn a short global register name into an memory index and a stringized name. */
+/** Turn a short global register name into an memory index and a stringized name. */
 #define HDA_REG_IDX(abbrev)  HDA_MEM_IND_NAME(abbrev), #abbrev
 
 /** Turns a short stream register name into an memory index and a stringized name. */
@@ -955,7 +955,7 @@ static const struct HDAREGDESC
     HDA_REG_MAP_DEF_STREAM(1, SD1),
     HDA_REG_MAP_DEF_STREAM(2, SD2),
     HDA_REG_MAP_DEF_STREAM(3, SD3),
-    /* 8 Output Stream Descriptors (OSD). */
+    /* 4 Output Stream Descriptors (OSD). */
     HDA_REG_MAP_DEF_STREAM(4, SD4),
     HDA_REG_MAP_DEF_STREAM(5, SD5),
     HDA_REG_MAP_DEF_STREAM(6, SD6),
