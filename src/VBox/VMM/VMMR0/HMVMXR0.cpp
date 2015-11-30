@@ -5611,12 +5611,12 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Handle a condition that occurred while delivering an event through the guest
  * IDT.
  *
- * @returns VBox status code (informational error codes included).
- * @retval VINF_SUCCESS if we should continue handling the VM-exit.
- * @retval VINF_HM_DOUBLE_FAULT if a \#DF condition was detected and we ought to
- *         continue execution of the guest which will delivery the \#DF.
- * @retval VINF_EM_RESET if we detected a triple-fault condition.
- * @retval VERR_EM_GUEST_CPU_HANG if we detected a guest CPU hang.
+ * @returns Strict VBox status code (informational error codes included).
+ * @retval  VINF_SUCCESS if we should continue handling the VM-exit.
+ * @retval  VINF_HM_DOUBLE_FAULT if a \#DF condition was detected and we ought
+ *          to continue execution of the guest which will delivery the \#DF.
+ * @retval  VINF_EM_RESET if we detected a triple-fault condition.
+ * @retval  VERR_EM_GUEST_CPU_HANG if we detected a guest CPU hang.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
@@ -5626,15 +5626,16 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     uint32_t uExitVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntInfo);
 
-    int rc = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
-    AssertRCReturn(rc, rc);
-    rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
-    AssertRCReturn(rc, rc);
+    int rc2 = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
+    AssertRCReturn(rc2, rc2);
+    rc2 = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+    AssertRCReturn(rc2, rc2);
 
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (VMX_IDT_VECTORING_INFO_VALID(pVmxTransient->uIdtVectoringInfo))
     {
         uint32_t uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
@@ -5739,15 +5740,15 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 uint32_t u32ErrCode = 0;
                 if (VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo))
                 {
-                    rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
-                    AssertRCReturn(rc, rc);
+                    rc2 = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
+                    AssertRCReturn(rc2, rc2);
                     u32ErrCode = pVmxTransient->uIdtVectoringErrorCode;
                 }
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCS if it's a guest #PF. See hmR0VmxExitXcptPF(). */
                 hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
                                        0 /* cbInstr */,  u32ErrCode, pMixedCtx->cr2);
-                rc = VINF_SUCCESS;
+                rcStrict = VINF_SUCCESS;
                 Log4(("IDT: vcpu[%RU32] Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->idCpu,
                       pVCpu->hm.s.Event.u64IntInfo, pVCpu->hm.s.Event.u32ErrCode));
 
@@ -5757,7 +5758,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             case VMXREFLECTXCPT_DF:
             {
                 hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
-                rc = VINF_HM_DOUBLE_FAULT;
+                rcStrict = VINF_HM_DOUBLE_FAULT;
                 Log4(("IDT: vcpu[%RU32] Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->idCpu,
                       pVCpu->hm.s.Event.u64IntInfo, uIdtVector, uExitVector));
 
@@ -5766,7 +5767,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 
             case VMXREFLECTXCPT_TF:
             {
-                rc = VINF_EM_RESET;
+                rcStrict = VINF_EM_RESET;
                 Log4(("IDT: vcpu[%RU32] Pending vectoring triple-fault uIdt=%#x uExit=%#x\n", pVCpu->idCpu, uIdtVector,
                       uExitVector));
                 break;
@@ -5774,12 +5775,12 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 
             case VMXREFLECTXCPT_HANG:
             {
-                rc = VERR_EM_GUEST_CPU_HANG;
+                rcStrict = VERR_EM_GUEST_CPU_HANG;
                 break;
             }
 
             default:
-                Assert(rc == VINF_SUCCESS);
+                Assert(rcStrict == VINF_SUCCESS);
                 break;
         }
     }
@@ -5801,8 +5802,9 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         }
     }
 
-    Assert(rc == VINF_SUCCESS || rc == VINF_HM_DOUBLE_FAULT || rc == VINF_EM_RESET || rc == VERR_EM_GUEST_CPU_HANG);
-    return rc;
+    Assert(   rcStrict == VINF_SUCCESS  || rcStrict == VINF_HM_DOUBLE_FAULT
+           || rcStrict == VINF_EM_RESET || rcStrict == VERR_EM_GUEST_CPU_HANG);
+    return rcStrict;
 }
 
 
@@ -7578,7 +7580,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 /**
  * Injects a double-fault (\#DF) exception into the VM.
  *
- * @returns VBox status code (informational status code included).
+ * @returns Strict VBox status code (informational status code included).
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
@@ -7640,7 +7642,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
 /**
  * Injects a general-protection (\#GP) fault into the VM.
  *
- * @returns VBox status code (informational status code included).
+ * @returns Strict VBox status code (informational status code included).
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pMixedCtx           Pointer to the guest-CPU context. The data may be
  *                              out-of-sync. Make sure to update the required fields
