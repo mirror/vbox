@@ -304,7 +304,9 @@ typedef struct VTGDESCPROVIDER
     VTGDESCATTR     AttrNames;
     VTGDESCATTR     AttrArguments;
     uint8_t         bReserved;
+    uint32_t        cProbesEnabled;
 } VTGDESCPROVIDER;
+AssertCompileSize(VTGDESCPROVIDER, 28);
 /** Pointer to a VTG provider descriptor. */
 typedef VTGDESCPROVIDER    *PVTGDESCPROVIDER;
 /** Pointer to a const VTG provider descriptor. */
@@ -411,7 +413,7 @@ typedef VTGOBJHDR          *PVTGOBJHDR;
 typedef VTGOBJHDR const    *PCVTGOBJHDR;
 
 /** The current VTGOBJHDR::szMagic value. */
-#define VTGOBJHDR_MAGIC     "VTG Object Header v1.5\0"
+#define VTGOBJHDR_MAGIC     "VTG Object Header v1.6\0"
 
 /** The name of the VTG data object header symbol in the object file. */
 extern VTGOBJHDR            g_VTGObjHeader;

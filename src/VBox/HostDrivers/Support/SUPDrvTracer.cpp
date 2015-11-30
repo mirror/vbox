@@ -537,6 +537,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const ui
         MY_VALIDATE_ATTR(pProvider->AttrNames);
         MY_VALIDATE_ATTR(pProvider->AttrArguments);
         MY_CHECK_RET(pProvider->bReserved == 0, VERR_SUPDRV_VTG_BAD_PROVIDER);
+        MY_CHECK_RET(pProvider->cProbesEnabled == 0, VERR_SUPDRV_VTG_BAD_PROVIDER);
     }
 
     /*

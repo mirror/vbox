@@ -532,7 +532,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "VTG_GLOBAL g_VTGObjHeader, data\n"
                     "                ;0         1         2         3\n"
                     "                ;012345678901234567890123456789012\n"
-                    "    db          'VTG Object Header v1.5', 0, 0\n"
+                    "    db          'VTG Object Header v1.6', 0, 0\n"
                     "    dd          %u\n"
                     "    dd          NAME(g_acVTGProbeEnabled_End) - NAME(g_VTGObjHeader)\n"
                     "    dd          NAME(g_achVTGStringTable)     - NAME(g_VTGObjHeader)\n"
@@ -737,6 +737,8 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                         "    db %d, %d, %d ; AttrName\n"
                         "    db %d, %d, %d ; AttrArguments\n"
                         "    db 0       ; reserved\n"
+                        "VTG_GLOBAL g_cVTGProviderProbesEnabled_%s, data\n"
+                        "    dd 0\n"
                         ,
                         iProvider, pProvider->pszName,
                         strtabGetOff(pProvider->pszName),
@@ -746,7 +748,8 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                         pProvider->AttrModules.enmCode,     pProvider->AttrModules.enmData,     pProvider->AttrModules.enmDataDep,
                         pProvider->AttrFunctions.enmCode,   pProvider->AttrFunctions.enmData,   pProvider->AttrFunctions.enmDataDep,
                         pProvider->AttrName.enmCode,        pProvider->AttrName.enmData,        pProvider->AttrName.enmDataDep,
-                        pProvider->AttrArguments.enmCode,   pProvider->AttrArguments.enmData,   pProvider->AttrArguments.enmDataDep);
+                        pProvider->AttrArguments.enmCode,   pProvider->AttrArguments.enmData,   pProvider->AttrArguments.enmDataDep,
+                        pProvider->pszName);
         iProvider++;
     }
     ScmStreamPrintf(pStrm, "VTG_GLOBAL g_aVTGProviders_End, data\n");
@@ -908,6 +911,20 @@ static RTEXITCODE generateProbeDefineName(char *pszBuf, size_t cbBuf, const char
 }
 
 
+static RTEXITCODE generateProviderDefineName(char *pszBuf, size_t cbBuf, const char *pszProvider)
+{
+    size_t cbMax = strlen(pszProvider) + 1;
+    if (cbMax > cbBuf || cbMax > 80)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Provider '%s' ends up with a too long defined\n", pszProvider);
+
+    while (*pszProvider)
+        *pszBuf++ = RT_C_TO_UPPER(*pszProvider++);
+
+    *pszBuf = '\0';
+    return RTEXITCODE_SUCCESS;
+}
+
+
 /**
  * Called via generateFile to generate the header file.
  *
@@ -979,6 +996,21 @@ static RTEXITCODE generateHeader(PSCMSTREAM pStrm)
     PVTGARG      pArg;
     RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
     {
+        /* This macro is not available in ring-3 because we don't have
+           anything similar available for native dtrace. */
+        ScmStreamPrintf(pStrm, "\n\n");
+        if (g_fTypeContext != VTG_TYPE_CTX_R3)
+        {
+            generateProviderDefineName(szTmp, sizeof(szTmp), pProv->pszName);
+            ScmStreamPrintf(pStrm,
+                            "extern uint32_t        g_cVTGProviderProbesEnabled_%s;\n"
+                            "# define %s_ANY_PROBES_ENABLED() \\\n"
+                            "    (RT_UNLIKELY(g_cVTGProviderProbesEnabled_%s))\n"
+                            "\n",
+                            pProv->pszName,
+                            szTmp, pProv->pszName);
+        }
+
         RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
             PVTGARG const pFirstArg = RTListGetFirst(&pProbe->ArgHead, VTGARG, ListEntry);
@@ -1285,6 +1317,7 @@ static RTEXITCODE parseErrorAbs(PSCMSTREAM pStrm, size_t off, const char *pszMsg
     return parseError(pStrm, 0, pszMsg);
 }
 
+
 /**
  * Handles a C++ one line comment.
  *
@@ -1296,6 +1329,7 @@ static RTEXITCODE parseOneLineComment(PSCMSTREAM pStrm)
     ScmStreamSeekByLine(pStrm, ScmStreamTellLine(pStrm) + 1);
     return RTEXITCODE_SUCCESS;
 }
+
 
 /**
  * Handles a multi-line C/C++ comment.
