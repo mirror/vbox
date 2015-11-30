@@ -848,7 +848,49 @@ static void hdaBDLEReset(PHDABDLE pBDLE);
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 
-/* see 302349 p 6.2. */
+/** Offset of the SD0 register map. */
+#define HDA_REG_DESC_SD0_BASE 0x80
+
+/* Turn a short global register name into an memory index and a stringized name. */
+#define HDA_REG_IDX(abbrev)  HDA_MEM_IND_NAME(abbrev), #abbrev
+
+/** Turns a short stream register name into an memory index and a stringized name. */
+#define HDA_REG_IDX_STRM(reg, suff) HDA_MEM_IND_NAME(reg ## suff), #reg ## #suff
+
+/** Same as above for a register *not* stored in memory. */
+#define HDA_REG_IDX_LOCAL(abbrev)  0, #abbrev
+
+/** Emits a single audio stream register set (e.g. OSD0) at a specified offset. */
+#define HDA_REG_MAP_STRM(offset, name) \
+    /* offset        size     read mask   write mask  read callback   write callback     index + abbrev                  description */ \
+    /* -------       -------  ----------  ----------  --------------  -----------------  ------------------------------  ----------- */ \
+    /* Offset 0x80 (SD0) */ \
+    { offset,        0x00003, 0x00FF001F, 0x00F0001F, hdaRegReadU24 , hdaRegWriteSDCTL , HDA_REG_IDX_STRM(name, CTL)  , #name ## " Stream Descriptor Control" }, \
+    /* Offset 0x83 (SD0) */ \
+    { offset + 0x3,  0x00001, 0x0000001C, 0x0000003C, hdaRegReadU8  , hdaRegWriteSDSTS , HDA_REG_IDX_STRM(name, STS)  , #name ## " Status" }, \
+    /* Offset 0x84 (SD0) */ \
+    { offset + 0x4,  0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadLPIB, hdaRegWriteU32   , HDA_REG_IDX_STRM(name, LPIB) , #name ## " Link Position In Buffer" }, \
+    /* Offset 0x88 (SD0) */ \
+    { offset + 0x8,  0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32, hdaRegWriteU32    , HDA_REG_IDX_STRM(name, CBL)  , #name ## " Cyclic Buffer Length" }, \
+    /* Offset 0x8C (SD0) */ \
+    { offset + 0xC,  0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16, hdaRegWriteSDLVI  , HDA_REG_IDX_STRM(name, LVI)  , #name ## " Last Valid Index" }, \
+    /* Reserved: FIFO Watermark. ** @todo Document this! */ \
+    { offset + 0xE,  0x00002, 0x00000007, 0x00000007, hdaRegReadU16, hdaRegWriteSDFIFOW, HDA_REG_IDX_STRM(name, FIFOW), #name ## " FIFO Watermark" }, \
+    /* Offset 0x90 (SD0) */ \
+    { offset + 0x10, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16, hdaRegWriteSDFIFOS, HDA_REG_IDX_STRM(name, FIFOS), #name ## " FIFO Size" }, \
+    /* Offset 0x92 (SD0) */ \
+    { offset + 0x12, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16, hdaRegWriteSDFMT  , HDA_REG_IDX_STRM(name, FMT)  , #name ## " Format" }, \
+    /* Reserved: 0x94 - 0x98. */ \
+    /* Offset 0x98 (SD0) */ \
+    { offset + 0x18, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32, hdaRegWriteSDBDPL , HDA_REG_IDX_STRM(name, BDPL) , #name ## " Buffer Descriptor List Pointer-Lower Base Address" }, \
+    /* Offset 0x9C (SD0) */ \
+    { offset + 0x1C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32, hdaRegWriteSDBDPU , HDA_REG_IDX_STRM(name, BDPU) , #name ## " Buffer Descriptor List Pointer-Upper Base Address" }
+
+/** Defines a single audio stream register set (e.g. OSD0). */
+#define HDA_REG_MAP_DEF_STREAM(index, name) \
+    HDA_REG_MAP_STRM(HDA_REG_DESC_SD0_BASE + (index * 32 /* 0x20 */), name)
+
+/* See 302349 p 6.2. */
 static const struct HDAREGDESC
 {
     /** Register offset in the register space. */
@@ -867,143 +909,57 @@ static const struct HDAREGDESC
     uint32_t    mem_idx;
     /** Abbreviated name. */
     const char *abbrev;
+    /** Descripton. */
+    const char *desc;
 } g_aHdaRegMap[HDA_NREGS] =
 
-/* Turn a short register name into an memory index and a stringized name. */
-#define RA(abbrev)  HDA_MEM_IND_NAME(abbrev), #abbrev
-/* Same as above for an input stream ('I' prefixed). */
-#define IA(abbrev)  HDA_MEM_IND_NAME(abbrev), "I"#abbrev
-/* Same as above for an output stream ('O' prefixed). */
-#define OA(abbrev)  HDA_MEM_IND_NAME(abbrev), "O"#abbrev
-/* Same as above for a register *not* stored in memory. */
-#define UA(abbrev)  0, #abbrev
-
 {
-    /* offset  size     read mask   write mask         read callback         write callback         abbrev     */
-    /*-------  -------  ----------  ----------  -----------------------  ------------------------ ----------   */
-    { 0x00000, 0x00002, 0x0000FFFB, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , RA(GCAP)      }, /* Global Capabilities */
-    { 0x00002, 0x00001, 0x000000FF, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimpl     , RA(VMIN)      }, /* Minor Version */
-    { 0x00003, 0x00001, 0x000000FF, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimpl     , RA(VMAJ)      }, /* Major Version */
-    { 0x00004, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , RA(OUTPAY)    }, /* Output Payload Capabilities */
-    { 0x00006, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , RA(INPAY)     }, /* Input Payload Capabilities */
-    { 0x00008, 0x00004, 0x00000103, 0x00000103, hdaRegReadU32          , hdaRegWriteGCTL       , RA(GCTL)      }, /* Global Control */
-    { 0x0000c, 0x00002, 0x00007FFF, 0x00007FFF, hdaRegReadU16          , hdaRegWriteU16        , RA(WAKEEN)    }, /* Wake Enable */
-    { 0x0000e, 0x00002, 0x00000007, 0x00000007, hdaRegReadU8           , hdaRegWriteSTATESTS   , RA(STATESTS)  }, /* State Change Status */
-    { 0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimpl       , hdaRegWriteUnimpl     , RA(GSTS)      }, /* Global Status */
-    { 0x00018, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , RA(OUTSTRMPAY)}, /* Output Stream Payload Capability */
-    { 0x0001A, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , RA(INSTRMPAY) }, /* Input Stream Payload Capability */
-    { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, hdaRegReadU32          , hdaRegWriteU32        , RA(INTCTL)    }, /* Interrupt Control */
-    { 0x00024, 0x00004, 0xC00000FF, 0x00000000, hdaRegReadINTSTS       , hdaRegWriteUnimpl     , RA(INTSTS)    }, /* Interrupt Status */
-    { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadWALCLK       , hdaRegWriteUnimpl     , UA(WALCLK)    }, /* Wall Clock Counter */
-    /// @todo r=michaln: Doesn't the SSYNC register need to actually stop the stream(s)?
-    { 0x00034, 0x00004, 0x000000FF, 0x000000FF, hdaRegReadU32          , hdaRegWriteU32        , RA(SSYNC)     }, /* Stream Synchronization */
-    { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase       , RA(CORBLBASE) }, /* CORB Lower Base Address */
-    { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase       , RA(CORBUBASE) }, /* CORB Upper Base Address */
-    { 0x00048, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteCORBWP     , RA(CORBWP)    }, /* CORB Write Pointer */
-    { 0x0004A, 0x00002, 0x000080FF, 0x000080FF, hdaRegReadU16          , hdaRegWriteCORBRP     , RA(CORBRP)    }, /* CORB Read Pointer */
-    { 0x0004C, 0x00001, 0x00000003, 0x00000003, hdaRegReadU8           , hdaRegWriteCORBCTL    , RA(CORBCTL)   }, /* CORB Control */
-    { 0x0004D, 0x00001, 0x00000001, 0x00000001, hdaRegReadU8           , hdaRegWriteCORBSTS    , RA(CORBSTS)   }, /* CORB Status */
-    { 0x0004E, 0x00001, 0x000000F3, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimpl     , RA(CORBSIZE)  }, /* CORB Size */
-    { 0x00050, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase       , RA(RIRBLBASE) }, /* RIRB Lower Base Address */
-    { 0x00054, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase       , RA(RIRBUBASE) }, /* RIRB Upper Base Address */
-    { 0x00058, 0x00002, 0x000000FF, 0x00008000, hdaRegReadU8           , hdaRegWriteRIRBWP     , RA(RIRBWP)    }, /* RIRB Write Pointer */
-    { 0x0005A, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16        , RA(RINTCNT)   }, /* Response Interrupt Count */
-    { 0x0005C, 0x00001, 0x00000007, 0x00000007, hdaRegReadU8           , hdaRegWriteU8         , RA(RIRBCTL)   }, /* RIRB Control */
-    { 0x0005D, 0x00001, 0x00000005, 0x00000005, hdaRegReadU8           , hdaRegWriteRIRBSTS    , RA(RIRBSTS)   }, /* RIRB Status */
-    { 0x0005E, 0x00001, 0x000000F3, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimpl     , RA(RIRBSIZE)  }, /* RIRB Size */
-    { 0x00060, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32        , RA(IC)        }, /* Immediate Command */
-    { 0x00064, 0x00004, 0x00000000, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteUnimpl     , RA(IR)        }, /* Immediate Response */
-    { 0x00068, 0x00002, 0x00000002, 0x00000002, hdaRegReadIRS          , hdaRegWriteIRS        , RA(IRS)       }, /* Immediate Command Status */
-    { 0x00070, 0x00004, 0xFFFFFFFF, 0xFFFFFF81, hdaRegReadU32          , hdaRegWriteBase       , RA(DPLBASE)   }, /* MA Position Lower Base */
-    { 0x00074, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase       , RA(DPUBASE)   }, /* DMA Position Upper Base */
-
-    { 0x00080, 0x00003, 0x00FF001F, 0x00F0001F, hdaRegReadU24          , hdaRegWriteSDCTL      , IA(SD0CTL)    }, /* Input Stream Descriptor 0 (ICD0) Control */
-    { 0x00083, 0x00001, 0x0000001C, 0x0000003C, hdaRegReadU8           , hdaRegWriteSDSTS      , IA(SD0STS)    }, /* ISD0 Status */
-    { 0x00084, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadLPIB         , hdaRegWriteUnimpl     , IA(SD0LPIB)   }, /* ISD0 Link Position In Buffer (RO) */
-    { 0x00088, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDCBL      , IA(SD0CBL)    }, /* ISD0 Cyclic Buffer Length */
-    { 0x0008C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI      , IA(SD0LVI)    }, /* ISD0 Last Valid Index */
-    { 0x0008E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW    , IA(SD0FIFOW)  }, /* ISD0 FIFO Watermark */
-    { 0x00090, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16        , IA(SD0FIFOS)  }, /* ISD0 FIFO Size */
-    { 0x00092, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteSDFMT      , IA(SD0FMT)    }, /* ISD0 Format */
-    { 0x00098, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL     , IA(SD0BDPL)   }, /* ISD0 Buffer Descriptor List Pointer-Lower Base Address */
-    { 0x0009C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU     , IA(SD0BDPU)   }, /* ISD0 Buffer Descriptor List Pointer-Upper Base Address */
-
-    { 0x000A0, 0x00003, 0x00FF001F, 0x00F0001F, hdaRegReadU24          , hdaRegWriteSDCTL      , IA(SD1CTL)    }, /* Input Stream Descriptor 1 (ISD1) Control */
-    { 0x000A3, 0x00001, 0x0000001C, 0x0000003C, hdaRegReadU8           , hdaRegWriteSDSTS      , IA(SD1STS)    }, /* ISD1 Status */
-    { 0x000A4, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadLPIB         , hdaRegWriteUnimpl     , IA(SD1LPIB)   }, /* ISD1 Link Position In Buffer (RO). */
-    { 0x000A8, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDCBL      , IA(SD1CBL)    }, /* ISD1 Cyclic Buffer Length */
-    { 0x000AC, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI      , IA(SD1LVI)    }, /* ISD1 Last Valid Index */
-    { 0x000AE, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW    , IA(SD1FIFOW)  }, /* ISD1 FIFO Watermark */
-    { 0x000B0, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16        , IA(SD1FIFOS)  }, /* ISD1 FIFO Size */
-    { 0x000B2, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteSDFMT      , IA(SD1FMT)    }, /* ISD1 Format */
-    { 0x000B8, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL     , IA(SD1BDPL)   }, /* ISD1 Buffer Descriptor List Pointer-Lower Base Address */
-    { 0x000BC, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU     , IA(SD1BDPU)   }, /* ISD1 Buffer Descriptor List Pointer-Upper Base Address */
-
-    { 0x000C0, 0x00003, 0x00FF001F, 0x00F0001F, hdaRegReadU24          , hdaRegWriteSDCTL      , IA(SD2CTL)    }, /* Input Stream Descriptor 2 (ISD2) Control */
-    { 0x000C3, 0x00001, 0x0000001C, 0x0000003C, hdaRegReadU8           , hdaRegWriteSDSTS      , IA(SD2STS)    }, /* ISD2 Status */
-    { 0x000C4, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadLPIB         , hdaRegWriteUnimpl     , IA(SD2LPIB)   }, /* ISD2 Link Position In Buffer (RO) */
-    { 0x000C8, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDCBL      , IA(SD2CBL)    }, /* ISD2 Cyclic Buffer Length */
-    { 0x000CC, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI      , IA(SD2LVI)    }, /* ISD2 Last Valid Index */
-    { 0x000CE, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW    , IA(SD2FIFOW)  }, /* ISD2 FIFO Watermark */
-    { 0x000D0, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16        , IA(SD2FIFOS)  }, /* ISD2 FIFO Size */
-    { 0x000D2, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteSDFMT      , IA(SD2FMT)    }, /* ISD2 Format */
-    { 0x000D8, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL     , IA(SD2BDPL)   }, /* ISD2 Buffer Descriptor List Pointer-Lower Base Address */
-    { 0x000DC, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU     , IA(SD2BDPU)   }, /* ISD2 Buffer Descriptor List Pointer-Upper Base Address */
-
-    { 0x000E0, 0x00003, 0x00FF001F, 0x00F0001F, hdaRegReadU24          , hdaRegWriteSDCTL      , IA(SD3CTL)    }, /* Input Stream Descriptor 3 (ISD3) Control */
-    { 0x000E3, 0x00001, 0x0000001C, 0x0000003C, hdaRegReadU8           , hdaRegWriteSDSTS      , IA(SD3STS)    }, /* ISD3 Status */
-    { 0x000E4, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadLPIB         , hdaRegWriteUnimpl     , IA(SD3LPIB)   }, /* ISD3 Link Position In Buffer (RO) */
-    { 0x000E8, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDCBL      , IA(SD3CBL)    }, /* ISD3 Cyclic Buffer Length */
-    { 0x000EC, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI      , IA(SD3LVI)    }, /* ISD3 Last Valid Index */
-    { 0x000EE, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW    , IA(SD3FIFOW)  }, /* ISD3 FIFO Watermark */
-    { 0x000F0, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16        , IA(SD3FIFOS)  }, /* ISD3 FIFO Size */
-    { 0x000F2, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteSDFMT      , IA(SD3FMT)    }, /* ISD3 Format */
-    { 0x000F8, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL     , IA(SD3BDPL)   }, /* ISD3 Buffer Descriptor List Pointer-Lower Base Address */
-    { 0x000FC, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU     , IA(SD3BDPU)   }, /* ISD3 Buffer Descriptor List Pointer-Upper Base Address */
-
-    { 0x00100, 0x00003, 0x00FF001F, 0x00F0001F, hdaRegReadU24          , hdaRegWriteSDCTL      , OA(SD4CTL)    }, /* Output Stream Descriptor 4 (OSD4) Control */
-    { 0x00103, 0x00001, 0x0000001C, 0x0000003C, hdaRegReadU8           , hdaRegWriteSDSTS      , OA(SD4STS)    }, /* OSD4 Status */
-    { 0x00104, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadLPIB         , hdaRegWriteUnimpl     , OA(SD4LPIB)   }, /* OSD4 Link Position In Buffer (RO) */
-    { 0x00108, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDCBL      , OA(SD4CBL)    }, /* OSD4 Cyclic Buffer Length */
-    { 0x0010C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI      , OA(SD4LVI)    }, /* OSD4 Last Valid Index */
-    { 0x0010E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW    , OA(SD4FIFOW)  }, /* OSD4 FIFO Watermark */
-    { 0x00110, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS    , OA(SD4FIFOS)  }, /* OSD4 FIFO Size */
-    { 0x00112, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteSDFMT      , OA(SD4FMT)    }, /* OSD4 Format */
-    { 0x00118, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL     , OA(SD4BDPL)   }, /* OSD4 Buffer Descriptor List Pointer-Lower Base Address */
-    { 0x0011C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU     , OA(SD4BDPU)   }, /* OSD4 Buffer Descriptor List Pointer-Upper Base Address */
-
-    { 0x00120, 0x00003, 0x00FF001F, 0x00F0001F, hdaRegReadU24          , hdaRegWriteSDCTL      , OA(SD5CTL)    }, /* Output Stream Descriptor 5 (OSD5) Control */
-    { 0x00123, 0x00001, 0x0000001C, 0x0000003C, hdaRegReadU8           , hdaRegWriteSDSTS      , OA(SD5STS)    }, /* OSD5 Status */
-    { 0x00124, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadLPIB         , hdaRegWriteUnimpl     , OA(SD5LPIB)   }, /* OSD5 Link Position In Buffer (RO) */
-    { 0x00128, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDCBL      , OA(SD5CBL)    }, /* OSD5 Cyclic Buffer Length */
-    { 0x0012C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI      , OA(SD5LVI)    }, /* OSD5 Last Valid Index */
-    { 0x0012E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW    , OA(SD5FIFOW)  }, /* OSD5 FIFO Watermark */
-    { 0x00130, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS    , OA(SD5FIFOS)  }, /* OSD5 FIFO Size */
-    { 0x00132, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteSDFMT      , OA(SD5FMT)    }, /* OSD5 Format */
-    { 0x00138, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL     , OA(SD5BDPL)   }, /* OSD5 Buffer Descriptor List Pointer-Lower Base Address */
-    { 0x0013C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU     , OA(SD5BDPU)   }, /* OSD5 Buffer Descriptor List Pointer-Upper Base Address */
-
-    { 0x00140, 0x00003, 0x00FF001F, 0x00F0001F, hdaRegReadU24          , hdaRegWriteSDCTL      , OA(SD6CTL)    }, /* Output Stream Descriptor 6 (OSD6) Control */
-    { 0x00143, 0x00001, 0x0000001C, 0x0000003C, hdaRegReadU8           , hdaRegWriteSDSTS      , OA(SD6STS)    }, /* OSD6 Status */
-    { 0x00144, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadLPIB         , hdaRegWriteUnimpl     , OA(SD6LPIB)   }, /* OSD6 Link Position In Buffer (RO) */
-    { 0x00148, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDCBL      , OA(SD6CBL)    }, /* OSD6 Cyclic Buffer Length */
-    { 0x0014C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI      , OA(SD6LVI)    }, /* OSD6 Last Valid Index */
-    { 0x0014E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW    , OA(SD6FIFOW)  }, /* OSD6 FIFO Watermark */
-    { 0x00150, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS    , OA(SD6FIFOS)  }, /* OSD6 FIFO Size */
-    { 0x00152, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteSDFMT      , OA(SD6FMT)    }, /* OSD6 Format */
-    { 0x00158, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL     , OA(SD6BDPL)   }, /* OSD6 Buffer Descriptor List Pointer-Lower Base Address */
-    { 0x0015C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU     , OA(SD6BDPU)   }, /* OSD6 Buffer Descriptor List Pointer-Upper Base Address */
-
-    { 0x00160, 0x00003, 0x00FF001F, 0x00F0001F, hdaRegReadU24          , hdaRegWriteSDCTL      , OA(SD7CTL)    }, /* Output Stream Descriptor 7 (OSD7) Control */
-    { 0x00163, 0x00001, 0x0000001C, 0x0000003C, hdaRegReadU8           , hdaRegWriteSDSTS      , OA(SD7STS)    }, /* OSD7 Status */
-    { 0x00164, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadLPIB         , hdaRegWriteUnimpl     , OA(SD7LPIB)   }, /* OSD7 Link Position In Buffer (RO) */
-    { 0x00168, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDCBL      , OA(SD7CBL)    }, /* OSD7 Cyclic Buffer Length */
-    { 0x0016C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI      , OA(SD7LVI)    }, /* OSD7 Last Valid Index */
-    { 0x0016E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW    , OA(SD7FIFOW)  }, /* OSD7 FIFO Watermark */
-    { 0x00170, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS    , OA(SD7FIFOS)  }, /* OSD7 FIFO Size */
-    { 0x00172, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteSDFMT      , OA(SD7FMT)    }, /* OSD7 Format */
-    { 0x00178, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL     , OA(SD7BDPL)   }, /* OSD7 Buffer Descriptor List Pointer-Lower Base Address */
-    { 0x0017C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU     , OA(SD7BDPU)   }, /* OSD7 Buffer Descriptor List Pointer-Upper Base Address */
+    /* offset  size     read mask   write mask  read callback            write callback         index + abbrev   */
+    /*-------  -------  ----------  ----------  -----------------------  ---------------------- ---------------- */
+    { 0x00000, 0x00002, 0x0000FFFB, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , HDA_REG_IDX(GCAP)         }, /* Global Capabilities */
+    { 0x00002, 0x00001, 0x000000FF, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimpl     , HDA_REG_IDX(VMIN)         }, /* Minor Version */
+    { 0x00003, 0x00001, 0x000000FF, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimpl     , HDA_REG_IDX(VMAJ)         }, /* Major Version */
+    { 0x00004, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , HDA_REG_IDX(OUTPAY)       }, /* Output Payload Capabilities */
+    { 0x00006, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , HDA_REG_IDX(INPAY)        }, /* Input Payload Capabilities */
+    { 0x00008, 0x00004, 0x00000103, 0x00000103, hdaRegReadU32          , hdaRegWriteGCTL       , HDA_REG_IDX(GCTL)         }, /* Global Control */
+    { 0x0000c, 0x00002, 0x00007FFF, 0x00007FFF, hdaRegReadU16          , hdaRegWriteU16        , HDA_REG_IDX(WAKEEN)       }, /* Wake Enable */
+    { 0x0000e, 0x00002, 0x00000007, 0x00000007, hdaRegReadU8           , hdaRegWriteSTATESTS   , HDA_REG_IDX(STATESTS)     }, /* State Change Status */
+    { 0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimpl       , hdaRegWriteUnimpl     , HDA_REG_IDX(GSTS)         }, /* Global Status */
+    { 0x00018, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , HDA_REG_IDX(OUTSTRMPAY)   }, /* Output Stream Payload Capability */
+    { 0x0001A, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimpl     , HDA_REG_IDX(INSTRMPAY)    }, /* Input Stream Payload Capability */
+    { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, hdaRegReadU32          , hdaRegWriteU32        , HDA_REG_IDX(INTCTL)       }, /* Interrupt Control */
+    { 0x00024, 0x00004, 0xC00000FF, 0x00000000, hdaRegReadINTSTS       , hdaRegWriteUnimpl     , HDA_REG_IDX(INTSTS)       }, /* Interrupt Status */
+    { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadWALCLK       , hdaRegWriteUnimpl     , HDA_REG_IDX_LOCAL(WALCLK) }, /* Wall Clock Counter */
+    { 0x00034, 0x00004, 0x000000FF, 0x000000FF, hdaRegReadU32          , hdaRegWriteU32        , HDA_REG_IDX(SSYNC)        }, /* Stream Synchronization */
+    { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase       , HDA_REG_IDX(CORBLBASE)    }, /* CORB Lower Base Address */
+    { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase       , HDA_REG_IDX(CORBUBASE)    }, /* CORB Upper Base Address */
+    { 0x00048, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteCORBWP     , HDA_REG_IDX(CORBWP)       }, /* CORB Write Pointer */
+    { 0x0004A, 0x00002, 0x000080FF, 0x000080FF, hdaRegReadU16          , hdaRegWriteCORBRP     , HDA_REG_IDX(CORBRP)       }, /* CORB Read Pointer */
+    { 0x0004C, 0x00001, 0x00000003, 0x00000003, hdaRegReadU8           , hdaRegWriteCORBCTL    , HDA_REG_IDX(CORBCTL)      }, /* CORB Control */
+    { 0x0004D, 0x00001, 0x00000001, 0x00000001, hdaRegReadU8           , hdaRegWriteCORBSTS    , HDA_REG_IDX(CORBSTS)      }, /* CORB Status */
+    { 0x0004E, 0x00001, 0x000000F3, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimpl     , HDA_REG_IDX(CORBSIZE)     }, /* CORB Size */
+    { 0x00050, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase       , HDA_REG_IDX(RIRBLBASE)    }, /* RIRB Lower Base Address */
+    { 0x00054, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase       , HDA_REG_IDX(RIRBUBASE)    }, /* RIRB Upper Base Address */
+    { 0x00058, 0x00002, 0x000000FF, 0x00008000, hdaRegReadU8           , hdaRegWriteRIRBWP     , HDA_REG_IDX(RIRBWP)       }, /* RIRB Write Pointer */
+    { 0x0005A, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16        , HDA_REG_IDX(RINTCNT)      }, /* Response Interrupt Count */
+    { 0x0005C, 0x00001, 0x00000007, 0x00000007, hdaRegReadU8           , hdaRegWriteU8         , HDA_REG_IDX(RIRBCTL)      }, /* RIRB Control */
+    { 0x0005D, 0x00001, 0x00000005, 0x00000005, hdaRegReadU8           , hdaRegWriteRIRBSTS    , HDA_REG_IDX(RIRBSTS)      }, /* RIRB Status */
+    { 0x0005E, 0x00001, 0x000000F3, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimpl     , HDA_REG_IDX(RIRBSIZE)     }, /* RIRB Size */
+    { 0x00060, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32        , HDA_REG_IDX(IC)           }, /* Immediate Command */
+    { 0x00064, 0x00004, 0x00000000, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteUnimpl     , HDA_REG_IDX(IR)           }, /* Immediate Response */
+    { 0x00068, 0x00002, 0x00000002, 0x00000002, hdaRegReadIRS          , hdaRegWriteIRS        , HDA_REG_IDX(IRS)          }, /* Immediate Command Status */
+    { 0x00070, 0x00004, 0xFFFFFFFF, 0xFFFFFF81, hdaRegReadU32          , hdaRegWriteBase       , HDA_REG_IDX(DPLBASE)      }, /* MA Position Lower Base */
+    { 0x00074, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase       , HDA_REG_IDX(DPUBASE)      }, /* DMA Position Upper Base */
+    /* 4 Input Stream Descriptors (ISD). */
+    HDA_REG_MAP_DEF_STREAM(0, SD0),
+    HDA_REG_MAP_DEF_STREAM(1, SD1),
+    HDA_REG_MAP_DEF_STREAM(2, SD2),
+    HDA_REG_MAP_DEF_STREAM(3, SD3),
+    /* 8 Output Stream Descriptors (OSD). */
+    HDA_REG_MAP_DEF_STREAM(4, SD4),
+    HDA_REG_MAP_DEF_STREAM(5, SD5),
+    HDA_REG_MAP_DEF_STREAM(6, SD6),
+    HDA_REG_MAP_DEF_STREAM(7, SD7)
 };
 
 /**
