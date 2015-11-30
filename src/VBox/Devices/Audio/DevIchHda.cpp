@@ -832,6 +832,7 @@ static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t *pcbProc
 
 #ifdef IN_RING3
 static int hdaBDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry);
+static void hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStrmSt, uint32_t u32LPIB);
 # ifdef LOG_ENABLED
 static void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BaseDMA, uint16_t u16LVI);
 # endif
