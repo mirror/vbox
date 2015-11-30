@@ -63,7 +63,14 @@
 # include <X11/keysym.h>
 # if QT_VERSION >= 0x050000
 #  include <xcb/xcb.h>
-# endif /* QT_VERSION >= 0x050000 */
+# else /* QT_VERSION < 0x050000 */
+#  ifdef KeyPress
+const int XKeyPress = KeyPress;
+const int XKeyRelease = KeyRelease;
+#   undef KeyPress
+#   undef KeyRelease
+#  endif /* KeyPress */
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_X11 */
 
 /* Namespaces: */
