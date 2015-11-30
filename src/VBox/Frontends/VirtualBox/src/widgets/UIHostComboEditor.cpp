@@ -21,49 +21,50 @@
 
 /* Qt includes: */
 # include <QApplication>
+# include <QKeyEvent>
 # include <QStyleOption>
 # include <QStylePainter>
-# include <QKeyEvent>
 # include <QTimer>
+# ifdef Q_WS_X11
+#  include <QX11Info>
+# endif /* Q_WS_X11 */
 
 /* GUI includes: */
 # include "UIHostComboEditor.h"
 # include "UIExtraDataDefs.h"
 # include "UIIconPool.h"
-# include "QIToolButton.h"
 # include "VBoxGlobal.h"
+# include "QIToolButton.h"
+#ifdef Q_WS_MAC
+# include "UICocoaApplication.h"
+# include "VBoxUtils-darwin.h"
+#endif /* Q_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* GUI includes: */
+#ifdef Q_WS_MAC
+# include "DarwinKeyboard.h"
+#endif /* Q_WS_MAC */
 #ifdef Q_WS_WIN
-# undef LOWORD
-# undef HIWORD
-# undef LOBYTE
-# undef HIBYTE
-# include <windows.h>
 # include "WinKeyboard.h"
 #endif /* Q_WS_WIN */
+#ifdef Q_WS_X11
+# include "XKeyboard.h"
+#endif /* Q_WS_X11 */
 
+/* External includes: */
+#ifdef Q_WS_MAC
+# include <Carbon/Carbon.h>
+#endif /* Q_WS_MAC */
 #ifdef Q_WS_X11
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
 # include <X11/keysym.h>
-# ifdef KeyPress
-   const int XKeyPress = KeyPress;
-   const int XKeyRelease = KeyRelease;
-#  undef KeyPress
-#  undef KeyRelease
-# endif /* KeyPress */
-# include "XKeyboard.h"
-# include <QX11Info>
+# if QT_VERSION >= 0x050000
+#  include <xcb/xcb.h>
+# endif /* QT_VERSION >= 0x050000 */
 #endif /* Q_WS_X11 */
-
-#ifdef Q_WS_MAC
-# include "UICocoaApplication.h"
-# include "DarwinKeyboard.h"
-# include "VBoxUtils.h"
-# include <Carbon/Carbon.h>
-#endif /* Q_WS_MAC */
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
@@ -517,8 +518,39 @@ bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
 #endif /* Q_WS_WIN */
 
 #ifdef Q_WS_X11
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+# if QT_VERSION >= 0x050000
+bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
+{
+    /* Make sure it's XCB event: */
+    AssertReturn(eventType == "xcb_generic_event_t", QLineEdit::nativeEvent(eventType, pMessage, pResult));
+    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
+
+    /* Check if some XCB event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    switch (pEvent->response_type & ~0x80)
+    {
+        /* Watch for key-events: */
+        case XCB_KEY_PRESS:
+        case XCB_KEY_RELEASE:
+        {
+            /* Parse key-event: */
+            xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
+            const KeySym ks = ::XKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0);
+            const int iKeySym = static_cast<const int>(ks);
+            /* Handle key-event: */
+            return processKeyEvent(iKeySym, (pEvent->response_type & ~0x80) == XCB_KEY_PRESS);
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QLineEdit::nativeEvent(eventType, pMessage, pResult);
+}
+# else /* QT_VERSION < 0x050000 */
 bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
 {
     switch (pEvent->type)
@@ -541,7 +573,8 @@ bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
 
     return false;
 }
-#pragma GCC diagnostic pop
+# endif /* QT_VERSION < 0x050000 */
+# pragma GCC diagnostic pop
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
