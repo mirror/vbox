@@ -315,7 +315,7 @@ typedef VMXMSREXITWRITE* PVMXMSREXITWRITE;
 /**
  * VMX VM-exit handler.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required
@@ -323,11 +323,33 @@ typedef VMXMSREXITWRITE* PVMXMSREXITWRITE;
  * @param   pVmxTransient   Pointer to the VMX-transient structure.
  */
 #ifndef HMVMX_USE_FUNCTION_TABLE
-typedef int FNVMXEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+typedef DECLINLINE(VBOXSTRICTRC)    FNVMXEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 #else
-typedef DECLCALLBACK(int) FNVMXEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+typedef DECLCALLBACK(VBOXSTRICTRC)  FNVMXEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 /** Pointer to VM-exit handler. */
-typedef FNVMXEXITHANDLER *PFNVMXEXITHANDLER;
+typedef FNVMXEXITHANDLER           *PFNVMXEXITHANDLER;
+#endif
+
+/**
+ * VMX VM-exit handler, non-strict status code.
+ *
+ * This is generally the same as FNVMXEXITHANDLER, the NSRC bit is just FYI.
+ *
+ * @returns VBox status code, no informational status code returned.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
+ *                          out-of-sync. Make sure to update the required
+ *                          fields before using them.
+ * @param   pVmxTransient   Pointer to the VMX-transient structure.
+ *
+ * @remarks This is not used on anything returning VERR_EM_INTERPRETER as the
+ *          use of that status code will be replaced with VINF_EM_SOMETHING
+ *          later when switching over to IEM.
+ */
+#ifndef HMVMX_USE_FUNCTION_TABLE
+typedef DECLINLINE(int)             FNVMXEXITHANDLERNSRC(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+#else
+typedef FNVMXEXITHANDLER            FNVMXEXITHANDLERNSRC;
 #endif
 
 
@@ -344,62 +366,65 @@ static VBOXSTRICTRC       hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCt
 static int                hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu);
 #endif
 #ifndef HMVMX_USE_FUNCTION_TABLE
-DECLINLINE(int)           hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason);
-# define HMVMX_EXIT_DECL  static int
+DECLINLINE(VBOXSTRICTRC)  hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason);
+# define HMVMX_EXIT_DECL  DECLINLINE(VBOXSTRICTRC)
+# define HMVMX_EXIT_NSRC_DECL DECLINLINE(int)
 #else
-# define HMVMX_EXIT_DECL  static DECLCALLBACK(int)
+# define HMVMX_EXIT_DECL  static DECLCALLBACK(VBOXSTRICTRC)
+# define HMVMX_EXIT_NSRC_DECL HMVMX_EXIT_DECL
 #endif
+
 DECLINLINE(VBOXSTRICTRC)  hmR0VmxHandleExitStep(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient,
                                                 uint32_t uExitReason, uint16_t uCsStart, uint64_t uRipStart);
 
 /** @name VM-exit handlers.
  * @{
  */
-static FNVMXEXITHANDLER hmR0VmxExitXcptOrNmi;
-static FNVMXEXITHANDLER hmR0VmxExitExtInt;
-static FNVMXEXITHANDLER hmR0VmxExitTripleFault;
-static FNVMXEXITHANDLER hmR0VmxExitInitSignal;
-static FNVMXEXITHANDLER hmR0VmxExitSipi;
-static FNVMXEXITHANDLER hmR0VmxExitIoSmi;
-static FNVMXEXITHANDLER hmR0VmxExitSmi;
-static FNVMXEXITHANDLER hmR0VmxExitIntWindow;
-static FNVMXEXITHANDLER hmR0VmxExitNmiWindow;
-static FNVMXEXITHANDLER hmR0VmxExitTaskSwitch;
-static FNVMXEXITHANDLER hmR0VmxExitCpuid;
-static FNVMXEXITHANDLER hmR0VmxExitGetsec;
-static FNVMXEXITHANDLER hmR0VmxExitHlt;
-static FNVMXEXITHANDLER hmR0VmxExitInvd;
-static FNVMXEXITHANDLER hmR0VmxExitInvlpg;
-static FNVMXEXITHANDLER hmR0VmxExitRdpmc;
-static FNVMXEXITHANDLER hmR0VmxExitVmcall;
-static FNVMXEXITHANDLER hmR0VmxExitRdtsc;
-static FNVMXEXITHANDLER hmR0VmxExitRsm;
-static FNVMXEXITHANDLER hmR0VmxExitSetPendingXcptUD;
-static FNVMXEXITHANDLER hmR0VmxExitMovCRx;
-static FNVMXEXITHANDLER hmR0VmxExitMovDRx;
-static FNVMXEXITHANDLER hmR0VmxExitIoInstr;
-static FNVMXEXITHANDLER hmR0VmxExitRdmsr;
-static FNVMXEXITHANDLER hmR0VmxExitWrmsr;
-static FNVMXEXITHANDLER hmR0VmxExitErrInvalidGuestState;
-static FNVMXEXITHANDLER hmR0VmxExitErrMsrLoad;
-static FNVMXEXITHANDLER hmR0VmxExitErrUndefined;
-static FNVMXEXITHANDLER hmR0VmxExitMwait;
-static FNVMXEXITHANDLER hmR0VmxExitMtf;
-static FNVMXEXITHANDLER hmR0VmxExitMonitor;
-static FNVMXEXITHANDLER hmR0VmxExitPause;
-static FNVMXEXITHANDLER hmR0VmxExitErrMachineCheck;
-static FNVMXEXITHANDLER hmR0VmxExitTprBelowThreshold;
-static FNVMXEXITHANDLER hmR0VmxExitApicAccess;
-static FNVMXEXITHANDLER hmR0VmxExitXdtrAccess;
-static FNVMXEXITHANDLER hmR0VmxExitXdtrAccess;
-static FNVMXEXITHANDLER hmR0VmxExitEptViolation;
-static FNVMXEXITHANDLER hmR0VmxExitEptMisconfig;
-static FNVMXEXITHANDLER hmR0VmxExitRdtscp;
-static FNVMXEXITHANDLER hmR0VmxExitPreemptTimer;
-static FNVMXEXITHANDLER hmR0VmxExitWbinvd;
-static FNVMXEXITHANDLER hmR0VmxExitXsetbv;
-static FNVMXEXITHANDLER hmR0VmxExitRdrand;
-static FNVMXEXITHANDLER hmR0VmxExitInvpcid;
+static FNVMXEXITHANDLER     hmR0VmxExitXcptOrNmi;
+static FNVMXEXITHANDLER     hmR0VmxExitExtInt;
+static FNVMXEXITHANDLER     hmR0VmxExitTripleFault;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitInitSignal;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitSipi;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitIoSmi;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitSmi;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitIntWindow;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitNmiWindow;
+static FNVMXEXITHANDLER     hmR0VmxExitTaskSwitch;
+static FNVMXEXITHANDLER     hmR0VmxExitCpuid;
+static FNVMXEXITHANDLER     hmR0VmxExitGetsec;
+static FNVMXEXITHANDLER     hmR0VmxExitHlt;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitInvd;
+static FNVMXEXITHANDLER     hmR0VmxExitInvlpg;
+static FNVMXEXITHANDLER     hmR0VmxExitRdpmc;
+static FNVMXEXITHANDLER     hmR0VmxExitVmcall;
+static FNVMXEXITHANDLER     hmR0VmxExitRdtsc;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitRsm;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitSetPendingXcptUD;
+static FNVMXEXITHANDLER     hmR0VmxExitMovCRx;
+static FNVMXEXITHANDLER     hmR0VmxExitMovDRx;
+static FNVMXEXITHANDLER     hmR0VmxExitIoInstr;
+static FNVMXEXITHANDLER     hmR0VmxExitRdmsr;
+static FNVMXEXITHANDLER     hmR0VmxExitWrmsr;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitErrInvalidGuestState;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitErrMsrLoad;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitErrUndefined;
+static FNVMXEXITHANDLER     hmR0VmxExitMwait;
+static FNVMXEXITHANDLER     hmR0VmxExitMtf;
+static FNVMXEXITHANDLER     hmR0VmxExitMonitor;
+static FNVMXEXITHANDLER     hmR0VmxExitPause;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitErrMachineCheck;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitTprBelowThreshold;
+static FNVMXEXITHANDLER     hmR0VmxExitApicAccess;
+static FNVMXEXITHANDLER     hmR0VmxExitXdtrAccess;
+static FNVMXEXITHANDLER     hmR0VmxExitXdtrAccess;
+static FNVMXEXITHANDLER     hmR0VmxExitEptViolation;
+static FNVMXEXITHANDLER     hmR0VmxExitEptMisconfig;
+static FNVMXEXITHANDLER     hmR0VmxExitRdtscp;
+static FNVMXEXITHANDLER     hmR0VmxExitPreemptTimer;
+static FNVMXEXITHANDLERNSRC hmR0VmxExitWbinvd;
+static FNVMXEXITHANDLER     hmR0VmxExitXsetbv;
+static FNVMXEXITHANDLER     hmR0VmxExitRdrand;
+static FNVMXEXITHANDLER     hmR0VmxExitInvpcid;
 /** @} */
 
 static int          hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
@@ -8969,59 +8994,65 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 #ifndef HMVMX_USE_FUNCTION_TABLE
-DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason)
+DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason)
 {
-#ifdef DEBUG_ramshankar
-# define SVVMCS()       do { int rc2 = hmR0VmxSaveGuestState(pVCpu, pMixedCtx); AssertRC(rc2); } while (0)
-# define LDVMCS()       do { HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST); } while (0)
-#endif
-    int rc;
+# ifdef DEBUG_ramshankar
+#  define RETURN_EXIT_CALL(a_CallExpr) \
+       do { \
+            /* int rc2 = hmR0VmxSaveGuestState(pVCpu, pMixedCtx); AssertRC(rc2); */ \
+            VBOXSTRICTRC rcStrict = a_CallExpr; \
+            /* HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST); */ \
+            return rcStrict; \
+        } while (0)
+# else
+#  define RETURN_EXIT_CALL(a_CallExpr) return a_CallExpr
+# endif
     switch (rcReason)
     {
-        case VMX_EXIT_EPT_MISCONFIG:           /* SVVMCS(); */ rc = hmR0VmxExitEptMisconfig(pVCpu, pMixedCtx, pVmxTransient);      /* LDVMCS(); */ break;
-        case VMX_EXIT_EPT_VIOLATION:           /* SVVMCS(); */ rc = hmR0VmxExitEptViolation(pVCpu, pMixedCtx, pVmxTransient);      /* LDVMCS(); */ break;
-        case VMX_EXIT_IO_INSTR:                /* SVVMCS(); */ rc = hmR0VmxExitIoInstr(pVCpu, pMixedCtx, pVmxTransient);           /* LDVMCS(); */ break;
-        case VMX_EXIT_CPUID:                   /* SVVMCS(); */ rc = hmR0VmxExitCpuid(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
-        case VMX_EXIT_RDTSC:                   /* SVVMCS(); */ rc = hmR0VmxExitRdtsc(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
-        case VMX_EXIT_RDTSCP:                  /* SVVMCS(); */ rc = hmR0VmxExitRdtscp(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_APIC_ACCESS:             /* SVVMCS(); */ rc = hmR0VmxExitApicAccess(pVCpu, pMixedCtx, pVmxTransient);        /* LDVMCS(); */ break;
-        case VMX_EXIT_XCPT_OR_NMI:             /* SVVMCS(); */ rc = hmR0VmxExitXcptOrNmi(pVCpu, pMixedCtx, pVmxTransient);         /* LDVMCS(); */ break;
-        case VMX_EXIT_MOV_CRX:                 /* SVVMCS(); */ rc = hmR0VmxExitMovCRx(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_EXT_INT:                 /* SVVMCS(); */ rc = hmR0VmxExitExtInt(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_INT_WINDOW:              /* SVVMCS(); */ rc = hmR0VmxExitIntWindow(pVCpu, pMixedCtx, pVmxTransient);         /* LDVMCS(); */ break;
-        case VMX_EXIT_MWAIT:                   /* SVVMCS(); */ rc = hmR0VmxExitMwait(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
-        case VMX_EXIT_MONITOR:                 /* SVVMCS(); */ rc = hmR0VmxExitMonitor(pVCpu, pMixedCtx, pVmxTransient);           /* LDVMCS(); */ break;
-        case VMX_EXIT_TASK_SWITCH:             /* SVVMCS(); */ rc = hmR0VmxExitTaskSwitch(pVCpu, pMixedCtx, pVmxTransient);        /* LDVMCS(); */ break;
-        case VMX_EXIT_PREEMPT_TIMER:           /* SVVMCS(); */ rc = hmR0VmxExitPreemptTimer(pVCpu, pMixedCtx, pVmxTransient);      /* LDVMCS(); */ break;
-        case VMX_EXIT_RDMSR:                   /* SVVMCS(); */ rc = hmR0VmxExitRdmsr(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
-        case VMX_EXIT_WRMSR:                   /* SVVMCS(); */ rc = hmR0VmxExitWrmsr(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
-        case VMX_EXIT_MOV_DRX:                 /* SVVMCS(); */ rc = hmR0VmxExitMovDRx(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_TPR_BELOW_THRESHOLD:     /* SVVMCS(); */ rc = hmR0VmxExitTprBelowThreshold(pVCpu, pMixedCtx, pVmxTransient); /* LDVMCS(); */ break;
-        case VMX_EXIT_HLT:                     /* SVVMCS(); */ rc = hmR0VmxExitHlt(pVCpu, pMixedCtx, pVmxTransient);               /* LDVMCS(); */ break;
-        case VMX_EXIT_INVD:                    /* SVVMCS(); */ rc = hmR0VmxExitInvd(pVCpu, pMixedCtx, pVmxTransient);              /* LDVMCS(); */ break;
-        case VMX_EXIT_INVLPG:                  /* SVVMCS(); */ rc = hmR0VmxExitInvlpg(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_RSM:                     /* SVVMCS(); */ rc = hmR0VmxExitRsm(pVCpu, pMixedCtx, pVmxTransient);               /* LDVMCS(); */ break;
-        case VMX_EXIT_MTF:                     /* SVVMCS(); */ rc = hmR0VmxExitMtf(pVCpu, pMixedCtx, pVmxTransient);               /* LDVMCS(); */ break;
-        case VMX_EXIT_PAUSE:                   /* SVVMCS(); */ rc = hmR0VmxExitPause(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
-        case VMX_EXIT_XDTR_ACCESS:             /* SVVMCS(); */ rc = hmR0VmxExitXdtrAccess(pVCpu, pMixedCtx, pVmxTransient);        /* LDVMCS(); */ break;
-        case VMX_EXIT_TR_ACCESS:               /* SVVMCS(); */ rc = hmR0VmxExitXdtrAccess(pVCpu, pMixedCtx, pVmxTransient);        /* LDVMCS(); */ break;
-        case VMX_EXIT_WBINVD:                  /* SVVMCS(); */ rc = hmR0VmxExitWbinvd(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_XSETBV:                  /* SVVMCS(); */ rc = hmR0VmxExitXsetbv(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_RDRAND:                  /* SVVMCS(); */ rc = hmR0VmxExitRdrand(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_INVPCID:                 /* SVVMCS(); */ rc = hmR0VmxExitInvpcid(pVCpu, pMixedCtx, pVmxTransient);           /* LDVMCS(); */ break;
-        case VMX_EXIT_GETSEC:                  /* SVVMCS(); */ rc = hmR0VmxExitGetsec(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
-        case VMX_EXIT_RDPMC:                   /* SVVMCS(); */ rc = hmR0VmxExitRdpmc(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
-        case VMX_EXIT_VMCALL:                  /* SVVMCS(); */ rc = hmR0VmxExitVmcall(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
+        case VMX_EXIT_EPT_MISCONFIG:           RETURN_EXIT_CALL(hmR0VmxExitEptMisconfig(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_EPT_VIOLATION:           RETURN_EXIT_CALL(hmR0VmxExitEptViolation(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_IO_INSTR:                RETURN_EXIT_CALL(hmR0VmxExitIoInstr(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_CPUID:                   RETURN_EXIT_CALL(hmR0VmxExitCpuid(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_RDTSC:                   RETURN_EXIT_CALL(hmR0VmxExitRdtsc(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_RDTSCP:                  RETURN_EXIT_CALL(hmR0VmxExitRdtscp(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_APIC_ACCESS:             RETURN_EXIT_CALL(hmR0VmxExitApicAccess(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_XCPT_OR_NMI:             RETURN_EXIT_CALL(hmR0VmxExitXcptOrNmi(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_MOV_CRX:                 RETURN_EXIT_CALL(hmR0VmxExitMovCRx(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_EXT_INT:                 RETURN_EXIT_CALL(hmR0VmxExitExtInt(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_INT_WINDOW:              RETURN_EXIT_CALL(hmR0VmxExitIntWindow(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_MWAIT:                   RETURN_EXIT_CALL(hmR0VmxExitMwait(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_MONITOR:                 RETURN_EXIT_CALL(hmR0VmxExitMonitor(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_TASK_SWITCH:             RETURN_EXIT_CALL(hmR0VmxExitTaskSwitch(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_PREEMPT_TIMER:           RETURN_EXIT_CALL(hmR0VmxExitPreemptTimer(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_RDMSR:                   RETURN_EXIT_CALL(hmR0VmxExitRdmsr(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_WRMSR:                   RETURN_EXIT_CALL(hmR0VmxExitWrmsr(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_MOV_DRX:                 RETURN_EXIT_CALL(hmR0VmxExitMovDRx(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_TPR_BELOW_THRESHOLD:     RETURN_EXIT_CALL(hmR0VmxExitTprBelowThreshold(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_HLT:                     RETURN_EXIT_CALL(hmR0VmxExitHlt(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_INVD:                    RETURN_EXIT_CALL(hmR0VmxExitInvd(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_INVLPG:                  RETURN_EXIT_CALL(hmR0VmxExitInvlpg(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_RSM:                     RETURN_EXIT_CALL(hmR0VmxExitRsm(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_MTF:                     RETURN_EXIT_CALL(hmR0VmxExitMtf(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_PAUSE:                   RETURN_EXIT_CALL(hmR0VmxExitPause(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_XDTR_ACCESS:             RETURN_EXIT_CALL(hmR0VmxExitXdtrAccess(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_TR_ACCESS:               RETURN_EXIT_CALL(hmR0VmxExitXdtrAccess(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_WBINVD:                  RETURN_EXIT_CALL(hmR0VmxExitWbinvd(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_XSETBV:                  RETURN_EXIT_CALL(hmR0VmxExitXsetbv(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_RDRAND:                  RETURN_EXIT_CALL(hmR0VmxExitRdrand(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_INVPCID:                 RETURN_EXIT_CALL(hmR0VmxExitInvpcid(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_GETSEC:                  RETURN_EXIT_CALL(hmR0VmxExitGetsec(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_RDPMC:                   RETURN_EXIT_CALL(hmR0VmxExitRdpmc(pVCpu, pMixedCtx, pVmxTransient));
+        case VMX_EXIT_VMCALL:                  RETURN_EXIT_CALL(hmR0VmxExitVmcall(pVCpu, pMixedCtx, pVmxTransient));
 
-        case VMX_EXIT_TRIPLE_FAULT:            rc = hmR0VmxExitTripleFault(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_NMI_WINDOW:              rc = hmR0VmxExitNmiWindow(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_INIT_SIGNAL:             rc = hmR0VmxExitInitSignal(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_SIPI:                    rc = hmR0VmxExitSipi(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_IO_SMI:                  rc = hmR0VmxExitIoSmi(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_SMI:                     rc = hmR0VmxExitSmi(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_ERR_MSR_LOAD:            rc = hmR0VmxExitErrMsrLoad(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_ERR_INVALID_GUEST_STATE: rc = hmR0VmxExitErrInvalidGuestState(pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_ERR_MACHINE_CHECK:       rc = hmR0VmxExitErrMachineCheck(pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_TRIPLE_FAULT:            return hmR0VmxExitTripleFault(pVCpu, pMixedCtx, pVmxTransient);
+        case VMX_EXIT_NMI_WINDOW:              return hmR0VmxExitNmiWindow(pVCpu, pMixedCtx, pVmxTransient);
+        case VMX_EXIT_INIT_SIGNAL:             return hmR0VmxExitInitSignal(pVCpu, pMixedCtx, pVmxTransient);
+        case VMX_EXIT_SIPI:                    return hmR0VmxExitSipi(pVCpu, pMixedCtx, pVmxTransient);
+        case VMX_EXIT_IO_SMI:                  return hmR0VmxExitIoSmi(pVCpu, pMixedCtx, pVmxTransient);
+        case VMX_EXIT_SMI:                     return hmR0VmxExitSmi(pVCpu, pMixedCtx, pVmxTransient);
+        case VMX_EXIT_ERR_MSR_LOAD:            return hmR0VmxExitErrMsrLoad(pVCpu, pMixedCtx, pVmxTransient);
+        case VMX_EXIT_ERR_INVALID_GUEST_STATE: return hmR0VmxExitErrInvalidGuestState(pVCpu, pMixedCtx, pVmxTransient);
+        case VMX_EXIT_ERR_MACHINE_CHECK:       return hmR0VmxExitErrMachineCheck(pVCpu, pMixedCtx, pVmxTransient);
 
         case VMX_EXIT_VMCLEAR:
         case VMX_EXIT_VMLAUNCH:
@@ -9037,16 +9068,13 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         case VMX_EXIT_VMFUNC:
         case VMX_EXIT_XSAVES:
         case VMX_EXIT_XRSTORS:
-            rc = hmR0VmxExitSetPendingXcptUD(pVCpu, pMixedCtx, pVmxTransient);
-            break;
+            return hmR0VmxExitSetPendingXcptUD(pVCpu, pMixedCtx, pVmxTransient);
         case VMX_EXIT_RESERVED_60:
         case VMX_EXIT_RDSEED: /* only spurious exits, so undefined */
         case VMX_EXIT_RESERVED_62:
         default:
-            rc = hmR0VmxExitErrUndefined(pVCpu, pMixedCtx, pVmxTransient);
-            break;
+            return hmR0VmxExitErrUndefined(pVCpu, pMixedCtx, pVmxTransient);
     }
-    return rc;
 }
 #endif /* !HMVMX_USE_FUNCTION_TABLE */
 
@@ -9193,7 +9221,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitStep(PVMCPU pVCpu, PCPUMCTX pMixedCtx,
 /**
  * Advances the guest RIP after reading it from the VMCS.
  *
- * @returns VBox status code.
+ * @returns VBox status code, no informational status codes.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data maybe
  *                          out-of-sync. Make sure to update the required fields
@@ -9222,7 +9250,7 @@ DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         && pMixedCtx->eflags.Bits.u1TF)
         hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -9880,13 +9908,15 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     }
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
-    rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    VBOXSTRICTRC rcStrictRc1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
+    if (RT_UNLIKELY(rcStrictRc1 == VINF_SUCCESS))
+    { /* likely */ }
+    else
     {
-        if (rc == VINF_HM_DOUBLE_FAULT)
-            rc = VINF_SUCCESS;
+        if (rcStrictRc1 == VINF_HM_DOUBLE_FAULT)
+            rcStrictRc1 = VINF_SUCCESS;
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
-        return rc;
+        return rcStrictRc1;
     }
 
     uint32_t uExitIntInfo = pVmxTransient->uExitIntInfo;
@@ -9972,7 +10002,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 /**
  * VM-exit handler for interrupt-window exiting (VMX_EXIT_INT_WINDOW).
  */
-HMVMX_EXIT_DECL hmR0VmxExitIntWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitIntWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
@@ -9988,7 +10018,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIntWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 /**
  * VM-exit handler for NMI-window exiting (VMX_EXIT_NMI_WINDOW).
  */
-HMVMX_EXIT_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     if (RT_UNLIKELY(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT)))
@@ -10025,7 +10055,7 @@ HMVMX_EXIT_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 /**
  * VM-exit handler for WBINVD (VMX_EXIT_WBINVD). Conditional VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitWbinvd(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitWbinvd(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWbinvd);
@@ -10036,7 +10066,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWbinvd(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 /**
  * VM-exit handler for INVD (VMX_EXIT_INVD). Unconditional VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitInvd(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitInvd(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvd);
@@ -10122,7 +10152,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     rc = EMInterpretRdtscp(pVM, pVCpu, pMixedCtx);
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    if (RT_SUCCESS(rc))
     {
         rc  = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         Assert(pVmxTransient->cbInstr == 3);
@@ -10190,17 +10220,19 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
         /** @todo pre-increment RIP before hypercall will break when we have to implement
          *  continuing hypercalls (e.g. Hyper-V). */
+        /** @todo r=bird: GIMHypercall will probably have to be able to return
+         *        informational status codes, so it should be made VBOXSTRICTRC. Not
+         *        doing that now because the status code handling isn't clean (i.e.
+         *        if you use RT_SUCCESS(rc) on the result of something, you don't
+         *        return rc in the success case, you return VINF_SUCCESS). */
         rc = GIMHypercall(pVCpu, pMixedCtx);
         /* If the hypercall changes anything other than guest general-purpose registers,
            we would need to reload the guest changed bits here before VM-entry. */
         return rc;
     }
-    else
-    {
-        Log4(("hmR0VmxExitVmcall: Hypercalls not enabled\n"));
-        hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
-    }
 
+    Log4(("hmR0VmxExitVmcall: Hypercalls not enabled\n"));
+    hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
     return VINF_SUCCESS;
 }
 
@@ -10218,17 +10250,14 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     rc    |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
-    VBOXSTRICTRC rc2 = EMInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), pVmxTransient->uExitQualification);
-    rc = VBOXSTRICTRC_VAL(rc2);
-    if (RT_LIKELY(rc == VINF_SUCCESS))
-        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
+    VBOXSTRICTRC rcStrict = EMInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), pVmxTransient->uExitQualification);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        rcStrict = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
     else
-    {
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0VmxExitInvlpg: EMInterpretInvlpg %#RX64 failed with %Rrc\n",
-                                              pVmxTransient->uExitQualification, rc));
-    }
+        AssertMsg(rcStrict == VERR_EM_INTERPRETER, ("hmR0VmxExitInvlpg: EMInterpretInvlpg %#RX64 failed with %Rrc\n",
+                                                    pVmxTransient->uExitQualification, VBOXSTRICTRC_VAL(rcStrict)));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpg);
-    return rc;
+    return rcStrict;
 }
 
 
@@ -10298,7 +10327,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMwait(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 /**
  * VM-exit handler for RSM (VMX_EXIT_RSM). Unconditional VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitRsm(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitRsm(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     /*
      * Execution of RSM outside of SMM mode causes #UD regardless of VMX root or VMX non-root mode. In theory, we should never
@@ -10315,7 +10344,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRsm(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
 /**
  * VM-exit handler for SMI (VMX_EXIT_SMI). Unconditional VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     /*
      * This can only happen if we support dual-monitor treatment of SMI, which can be activated by executing VMCALL in VMX
@@ -10332,7 +10361,7 @@ HMVMX_EXIT_DECL hmR0VmxExitSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
 /**
  * VM-exit handler for IO SMI (VMX_EXIT_IO_SMI). Unconditional VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitIoSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitIoSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     /* Same treatment as VMX_EXIT_SMI. See comment in hmR0VmxExitSmi(). */
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
@@ -10344,7 +10373,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 /**
  * VM-exit handler for SIPI (VMX_EXIT_SIPI). Conditional VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitSipi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitSipi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     /*
      * SIPI exits can only occur in VMX non-root operation when the "wait-for-SIPI" guest activity state is used. We currently
@@ -10361,7 +10390,7 @@ HMVMX_EXIT_DECL hmR0VmxExitSipi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT 
  * VM-exit handler for INIT signal (VMX_EXIT_INIT_SIGNAL). Unconditional
  * VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitInitSignal(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitInitSignal(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     /*
      * INIT signals are blocked in VMX root operation by VMXON and by SMI in SMM.
@@ -10415,7 +10444,7 @@ HMVMX_EXIT_DECL hmR0VmxExitHlt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
  * VM-exit handler for instructions that result in a \#UD exception delivered to
  * the guest.
  */
-HMVMX_EXIT_DECL hmR0VmxExitSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
@@ -10458,7 +10487,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
     pVCpu->hm.s.fLoadSaveGuestXcr0 = (pMixedCtx->cr4 & X86_CR4_OSXSAVE) && pMixedCtx->aXcr[0] != ASMGetXcr0();
 
-    return VBOXSTRICTRC_TODO(rcStrict);
+    return rcStrict;
 }
 
 
@@ -10479,7 +10508,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
  * VM-exit handler for invalid-guest-state (VMX_EXIT_ERR_INVALID_GUEST_STATE).
  * Error VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
@@ -10533,7 +10562,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
  * VM-exit handler for VM-entry failure due to an MSR-load
  * (VMX_EXIT_ERR_MSR_LOAD). Error VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitErrMsrLoad(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrMsrLoad(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     NOREF(pVmxTransient);
     AssertMsgFailed(("Unexpected MSR-load exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx)); NOREF(pMixedCtx);
@@ -10545,7 +10574,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrMsrLoad(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
  * VM-exit handler for VM-entry failure due to a machine-check event
  * (VMX_EXIT_ERR_MACHINE_CHECK). Error VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitErrMachineCheck(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrMachineCheck(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     NOREF(pVmxTransient);
     AssertMsgFailed(("Unexpected machine-check event exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx)); NOREF(pMixedCtx);
@@ -10557,7 +10586,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrMachineCheck(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
  * VM-exit handler for all undefined reasons. Should never ever happen.. in
  * theory.
  */
-HMVMX_EXIT_DECL hmR0VmxExitErrUndefined(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrUndefined(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     AssertMsgFailed(("Huh!? Undefined VM-exit reason %d. pVCpu=%p pMixedCtx=%p\n", pVmxTransient->uExitReason, pVCpu, pMixedCtx));
     NOREF(pVCpu); NOREF(pMixedCtx); NOREF(pVmxTransient);
@@ -10644,7 +10673,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER,
               ("hmR0VmxExitRdmsr: failed, invalid error code %Rrc\n", rc));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    if (RT_SUCCESS(rc))
     {
         rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         Assert(pVmxTransient->cbInstr == 2);
@@ -10678,7 +10707,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER, ("hmR0VmxExitWrmsr: failed, invalid error code %Rrc\n", rc));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
 
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    if (RT_SUCCESS(rc))
     {
         rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
 
@@ -10789,7 +10818,7 @@ HMVMX_EXIT_DECL hmR0VmxExitPause(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
  * VM-exit handler for when the TPR value is lowered below the specified
  * threshold (VMX_EXIT_TPR_BELOW_THRESHOLD). Conditional VM-exit.
  */
-HMVMX_EXIT_DECL hmR0VmxExitTprBelowThreshold(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitTprBelowThreshold(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW);
@@ -10838,7 +10867,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             rcStrict = IEMExecDecodedMovCRxWrite(pVCpu, pVmxTransient->cbInstr,
                                                  VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification),
                                                  VMX_EXIT_QUALIFICATION_CRX_GENREG(uExitQualification));
-            AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT || rcStrict == VINF_PGM_CHANGE_MODE
+            AssertMsg(   rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT || rcStrict == VINF_PGM_CHANGE_MODE
                       || rcStrict == VINF_PGM_SYNC_CR3, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             switch (VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification))
             {
@@ -10927,7 +10956,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     HMCPU_CF_SET(pVCpu, rcStrict != VINF_IEM_RAISED_XCPT ? HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS : HM_CHANGED_ALL_GUEST);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
     NOREF(pVM);
-    return VBOXSTRICTRC_TODO(rcStrict);
+    return rcStrict;
 }
 
 
@@ -11163,7 +11192,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 #endif
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
-    return VBOXSTRICTRC_TODO(rcStrict);
+    return rcStrict;
 }
 
 
@@ -11241,21 +11270,23 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
-    int rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
+    if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
+    { /* likely */ }
+    else
     {
-        if (rc == VINF_HM_DOUBLE_FAULT)
-            rc = VINF_SUCCESS;
-        return rc;
+        if (rcStrict1 == VINF_HM_DOUBLE_FAULT)
+            rcStrict1 = VINF_SUCCESS;
+        return rcStrict1;
     }
 
 #if 0
     /** @todo Investigate if IOMMMIOPhysHandler() requires a lot of state, for now
      *   just sync the whole thing. */
-    rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
 #else
     /* Aggressive state sync. for now. */
-    rc  = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
+    int rc  = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
@@ -11264,6 +11295,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
 
     /* See Intel spec. 27-6 "Exit Qualifications for APIC-access VM-exits from Linear Accesses & Guest-Phyiscal Addresses" */
     uint32_t uAccessType = VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(pVmxTransient->uExitQualification);
+    VBOXSTRICTRC rcStrict2;
     switch (uAccessType)
     {
         case VMX_APIC_ACCESS_TYPE_LINEAR_WRITE:
@@ -11280,34 +11312,33 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
             Log4(("ApicAccess uAccessType=%#x GCPhys=%#RGv Off=%#x\n", uAccessType, GCPhys,
                  VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification)));
 
-            VBOXSTRICTRC rc2 = IOMMMIOPhysHandler(pVM, pVCpu,
-                                                  uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ ? 0 : X86_TRAP_PF_RW,
-                                                  CPUMCTX2CORE(pMixedCtx), GCPhys);
-            rc = VBOXSTRICTRC_VAL(rc2);
-            Log4(("ApicAccess rc=%d\n", rc));
-            if (   rc == VINF_SUCCESS
-                || rc == VERR_PAGE_TABLE_NOT_PRESENT
-                || rc == VERR_PAGE_NOT_PRESENT)
+            rcStrict2 = IOMMMIOPhysHandler(pVM, pVCpu,
+                                           uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ ? 0 : X86_TRAP_PF_RW,
+                                           CPUMCTX2CORE(pMixedCtx), GCPhys);
+            Log4(("ApicAccess rcStrict2=%d\n", VBOXSTRICTRC_VAL(rcStrict2)));
+            if (   rcStrict2 == VINF_SUCCESS
+                || rcStrict2 == VERR_PAGE_TABLE_NOT_PRESENT
+                || rcStrict2 == VERR_PAGE_NOT_PRESENT)
             {
                 HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                                     | HM_CHANGED_GUEST_RSP
                                     | HM_CHANGED_GUEST_RFLAGS
                                     | HM_CHANGED_VMX_GUEST_APIC_STATE);
-                rc = VINF_SUCCESS;
+                rcStrict2 = VINF_SUCCESS;
             }
             break;
         }
 
         default:
             Log4(("ApicAccess uAccessType=%#x\n", uAccessType));
-            rc = VINF_EM_RAW_EMULATE_INSTR;
+            rcStrict2 = VINF_EM_RAW_EMULATE_INSTR;
             break;
     }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitApicAccess);
-    if (rc != VINF_SUCCESS)
+    if (rcStrict2 != VINF_SUCCESS)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchApicAccessToR3);
-    return rc;
+    return rcStrict2;
 }
 
 
@@ -11326,7 +11357,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         HMVMX_RETURN_UNEXPECTED_EXIT();
     }
 
-    int rc = VERR_INTERNAL_ERROR_5;
     if (   !pVCpu->hm.s.fSingleInstruction
         && !pVmxTransient->fWasHyperDebugStateActive)
     {
@@ -11335,7 +11365,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
         /* Don't intercept MOV DRx any more. */
         pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
         AssertRCReturn(rc, rc);
 
         /* We're playing with the host CPU state here, make sure we can't preempt or longjmp. */
@@ -11365,9 +11395,9 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
      * EMInterpretDRx[Write|Read]() calls CPUMIsGuestIn64BitCode() which requires EFER, CS. EFER is always up-to-date.
      * Update the segment registers and DR7 from the CPU.
      */
-    rc  = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
+    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     Log4(("CS:RIP=%04x:%08RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
 
@@ -11394,6 +11424,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     {
         int rc2 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc2, rc2);
+        return VINF_SUCCESS;
     }
     return rc;
 }
@@ -11409,16 +11440,18 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
-    int rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
+    if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
+    { /* likely */ }
+    else
     {
-        if (rc == VINF_HM_DOUBLE_FAULT)
-            rc = VINF_SUCCESS;
-        return rc;
+        if (rcStrict1 == VINF_HM_DOUBLE_FAULT)
+            rcStrict1 = VINF_SUCCESS;
+        return rcStrict1;
     }
 
     RTGCPHYS GCPhys = 0;
-    rc = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
+    int rc = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
 
 #if 0
     rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
@@ -11438,21 +11471,20 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
      * weird case. See @bugref{6043}.
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    VBOXSTRICTRC rc2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pMixedCtx), GCPhys, UINT32_MAX);
-    rc = VBOXSTRICTRC_VAL(rc2);
-    Log4(("EPT misconfig at %#RGv RIP=%#RX64 rc=%d\n", GCPhys, pMixedCtx->rip, rc));
-    if (   rc == VINF_SUCCESS
-        || rc == VERR_PAGE_TABLE_NOT_PRESENT
-        || rc == VERR_PAGE_NOT_PRESENT)
+    VBOXSTRICTRC rcStrict2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pMixedCtx), GCPhys, UINT32_MAX);
+    Log4(("EPT misconfig at %#RGv RIP=%#RX64 rc=%Rrc\n", GCPhys, pMixedCtx->rip, VBOXSTRICTRC_VAL(rcStrict2)));
+    if (   rcStrict2 == VINF_SUCCESS
+        || rcStrict2 == VERR_PAGE_TABLE_NOT_PRESENT
+        || rcStrict2 == VERR_PAGE_NOT_PRESENT)
     {
         /* Successfully handled MMIO operation. */
         HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                             | HM_CHANGED_GUEST_RSP
                             | HM_CHANGED_GUEST_RFLAGS
                             | HM_CHANGED_VMX_GUEST_APIC_STATE);
-        rc = VINF_SUCCESS;
+        return VINF_SUCCESS;
     }
-    return rc;
+    return rcStrict2;
 }
 
 
@@ -11466,16 +11498,18 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
-    int rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
+    if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
+    { /* likely */ }
+    else
     {
-        if (rc == VINF_HM_DOUBLE_FAULT)
-            rc = VINF_SUCCESS;
-        return rc;
+        if (rcStrict1 == VINF_HM_DOUBLE_FAULT)
+            rcStrict1 = VINF_SUCCESS;
+        return rcStrict1;
     }
 
     RTGCPHYS GCPhys = 0;
-    rc  = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
+    int rc  = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
     rc |= hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
 #if 0
     rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
@@ -11505,13 +11539,13 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
 
     /* Handle the pagefault trap for the nested shadow table. */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, PGMMODE_EPT, uErrorCode, CPUMCTX2CORE(pMixedCtx), GCPhys);
+    VBOXSTRICTRC rcStrict2 = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, PGMMODE_EPT, uErrorCode, CPUMCTX2CORE(pMixedCtx), GCPhys);
     TRPMResetTrap(pVCpu);
 
     /* Same case as PGMR0Trap0eHandlerNPMisconfig(). See comment above, @bugref{6043}. */
-    if (   rc == VINF_SUCCESS
-        || rc == VERR_PAGE_TABLE_NOT_PRESENT
-        || rc == VERR_PAGE_NOT_PRESENT)
+    if (   rcStrict2 == VINF_SUCCESS
+        || rcStrict2 == VERR_PAGE_TABLE_NOT_PRESENT
+        || rcStrict2 == VERR_PAGE_NOT_PRESENT)
     {
         /* Successfully synced our nested page tables. */
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf);
@@ -11521,8 +11555,8 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
         return VINF_SUCCESS;
     }
 
-    Log4(("EPT return to ring-3 rc=%Rrc\n", rc));
-    return rc;
+    Log4(("EPT return to ring-3 rcStrict2=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict2)));
+    return rcStrict2;
 }
 
 /** @} */
