@@ -107,10 +107,42 @@ typedef struct USBDEVDESC
 
 #define USBTEST_REQUEST _IOWR('U', 100, USBTESTPARMS)
 
+/**
+ * Callback to set up the test parameters for a specific test.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS    if setting the parameters up succeeded. Any other error code
+ *                          otherwise indicating the kind of error.
+ * @param   idxTest         The test index.
+ * @param   pszTest         Test name.
+ * @param   pParams         The USB test parameters to set up.
+ */
+typedef DECLCALLBACK(int) FNUSBTESTPARAMSSETUP(unsigned idxTest, const char *pszTest, PUSBTESTPARAMS pParams);
+/** Pointer to a USB test parameters setup callback. */
+typedef FNUSBTESTPARAMSSETUP *PFNUSBTESTPARAMSSETUP;
+
+/**
+ * USB test descriptor.
+ */
+typedef struct USBTESTDESC
+{
+    /** (Sort of) Descriptive test name. */
+    const char           *pszName;
+    /** Flag whether the test is excluded. */
+    bool                  fExcluded;
+    /** The parameter setup callback. */
+    PFNUSBTESTPARAMSSETUP pfnParamsSetup;
+} USBTESTDESC;
+/** Pointer a USB test descriptor. */
+typedef USBTESTDESC *PUSBTESTDESC;
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+
+/** Some forward method declarations. */
+static DECLCALLBACK(int) usbTestParamsSetupReadWrite(unsigned idxTest, const char *pszTest, PUSBTESTPARAMS pParams);
+static DECLCALLBACK(int) usbTestParamsSetupControlWrites(unsigned idxTest, const char *pszTest, PUSBTESTPARAMS pParams);
 
 /** Command line parameters */
 static const RTGETOPTDEF g_aCmdOptions[] =
@@ -120,53 +152,82 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     {"--exclude",          'e', RTGETOPT_REQ_UINT32}
 };
 
-/**
- * USB test descriptor.
- */
-typedef struct USBTESTDESC
-{
-    /** (Sort of) Descriptive test name. */
-    const char *pszName;
-    /** Flag whether the test is excluded. */
-    bool        fExcluded;
-} USBTESTDESC;
-/** Pointer a USB test descriptor. */
-typedef USBTESTDESC *PUSBTESTDESC;
-
 static USBTESTDESC g_aTests[] =
 {
-    /* pszTest                             fExcluded */
-    {"NOP",                                false},
-    {"Non-queued Bulk write",              false},
-    {"Non-queued Bulk read",               false},
-    {"Non-queued Bulk write variabe size", false},
-    {"Non-queued Bulk read variabe size",  false},
-    {"Queued Bulk write",                  false},
-    {"Queued Bulk read",                   false},
-    {"Queued Bulk write variabe size",     false},
-    {"Queued Bulk read variabe size",      false},
-    {"Chapter 9 Control Test",             false},
-    {"Queued control messaging",           false},
-    {"Unlink reads",                       false},
-    {"Unlink writes",                      false},
-    {"Set/Clear halts",                    false},
-    {"Control writes",                     false},
-    {"Isochronous write",                  false},
-    {"Isochronous read",                   false},
-    {"Bulk write unaligned (DMA)",         false},
-    {"Bulk read unaligned (DMA)",          false},
-    {"Bulk write unaligned (no DMA)",      false},
-    {"Bulk read unaligned (no DMA)",       false},
-    {"Control writes unaligned",           false},
-    {"Isochronous write unaligned",        false},
-    {"Isochronous read unaligned",         false},
-    {"Unlink queued Bulk",                 false}
+    /* pszTest                             fExcluded      pfnParamsSetup */
+    {"NOP",                                false,         usbTestParamsSetupReadWrite},
+    {"Non-queued Bulk write",              false,         usbTestParamsSetupReadWrite},
+    {"Non-queued Bulk read",               false,         usbTestParamsSetupReadWrite},
+    {"Non-queued Bulk write variabe size", false,         usbTestParamsSetupReadWrite},
+    {"Non-queued Bulk read variabe size",  false,         usbTestParamsSetupReadWrite},
+    {"Queued Bulk write",                  false,         usbTestParamsSetupReadWrite},
+    {"Queued Bulk read",                   false,         usbTestParamsSetupReadWrite},
+    {"Queued Bulk write variabe size",     false,         usbTestParamsSetupReadWrite},
+    {"Queued Bulk read variabe size",      false,         usbTestParamsSetupReadWrite},
+    {"Chapter 9 Control Test",             false,         usbTestParamsSetupReadWrite},
+    {"Queued control messaging",           false,         usbTestParamsSetupReadWrite},
+    {"Unlink reads",                       false,         usbTestParamsSetupReadWrite},
+    {"Unlink writes",                      false,         usbTestParamsSetupReadWrite},
+    {"Set/Clear halts",                    false,         usbTestParamsSetupReadWrite},
+    {"Control writes",                     false,         usbTestParamsSetupControlWrites},
+    {"Isochronous write",                  false,         usbTestParamsSetupReadWrite},
+    {"Isochronous read",                   false,         usbTestParamsSetupReadWrite},
+    {"Bulk write unaligned (DMA)",         false,         usbTestParamsSetupReadWrite},
+    {"Bulk read unaligned (DMA)",          false,         usbTestParamsSetupReadWrite},
+    {"Bulk write unaligned (no DMA)",      false,         usbTestParamsSetupReadWrite},
+    {"Bulk read unaligned (no DMA)",       false,         usbTestParamsSetupReadWrite},
+    {"Control writes unaligned",           false,         usbTestParamsSetupControlWrites},
+    {"Isochronous write unaligned",        false,         usbTestParamsSetupReadWrite},
+    {"Isochronous read unaligned",         false,         usbTestParamsSetupReadWrite},
+    {"Unlink queued Bulk",                 false,         usbTestParamsSetupReadWrite}
 };
 
 /** The test handle. */
 static RTTEST g_hTest;
 
+/**
+ * Setup callback for basic read/write (bulk, isochronous) tests.
+ *
+ * @copydoc FNUSBTESTPARAMSSETUP
+ */
+static DECLCALLBACK(int) usbTestParamsSetupReadWrite(unsigned idxTest, const char *pszTest, PUSBTESTPARAMS pParams)
+{
+    NOREF(idxTest);
+    NOREF(pszTest);
 
+    pParams->cIterations = 1000;
+    pParams->cbData = 512;
+    pParams->cbVariation = 512;
+    pParams->cSgLength = 32;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Setup callback for the control writes test.
+ *
+ * @copydoc FNUSBTESTPARAMSSETUP
+ */
+static DECLCALLBACK(int) usbTestParamsSetupControlWrites(unsigned idxTest, const char *pszTest, PUSBTESTPARAMS pParams)
+{
+    NOREF(idxTest);
+    NOREF(pszTest);
+
+    pParams->cIterations = 1000;
+    pParams->cbData = 512;
+    /*
+     * Must be smaller than cbData or the parameter check in the usbtest module fails,
+     * no idea yet why it must be this.
+     */
+    pParams->cbVariation = 256;
+    pParams->cSgLength = 32;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Shows tool usage text.
+ */
 static void usbTestUsage(PRTSTREAM pStrm)
 {
     char szExec[RTPATH_MAX];
@@ -291,15 +352,6 @@ static void usbTestExec(const char *pszDevice)
 
         RTTestPassed(g_hTest, "Opening device successful\n");
 
-        /*
-         * Fill params with some defaults.
-         * @todo: Make them configurable.
-         */
-        Params.cIterations = 1000;
-        Params.cbData = 512;
-        Params.cbVariation = 512;
-        Params.cSgLength = 32;
-
         for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
         {
             RTTestSub(g_hTest, g_aTests[i].pszName);
@@ -310,23 +362,29 @@ static void usbTestExec(const char *pszDevice)
                 continue;
             }
 
-            Params.idxTest = i;
-
-            /* Assume the test interface has the number 0 for now. */
-            int rcPosix = usbTestIoctl(iDevFd, 0, &Params);
-            if (rcPosix < 0 && errno == EOPNOTSUPP)
+            int rc = g_aTests[i].pfnParamsSetup(i, g_aTests[i].pszName, &Params);
+            if (RT_SUCCESS(rc))
             {
-                RTTestSkipped(g_hTest, "Not supported");
-                continue;
-            }
+                Params.idxTest = i;
 
-            if (rcPosix < 0)
-                RTTestFailed(g_hTest, "Test failed with %Rrc\n", RTErrConvertFromErrno(errno));
+                /* Assume the test interface has the number 0 for now. */
+                int rcPosix = usbTestIoctl(iDevFd, 0, &Params);
+                if (rcPosix < 0 && errno == EOPNOTSUPP)
+                {
+                    RTTestSkipped(g_hTest, "Not supported");
+                    continue;
+                }
+
+                if (rcPosix < 0)
+                    RTTestFailed(g_hTest, "Test failed with %Rrc\n", RTErrConvertFromErrno(errno));
+                else
+                {
+                    uint64_t u64Ns = Params.TimeTest.tv_sec * RT_NS_1SEC + Params.TimeTest.tv_usec * RT_NS_1US;
+                    RTTestValue(g_hTest, "Runtime", u64Ns, RTTESTUNIT_NS);
+                }
+            }
             else
-            {
-                uint64_t u64Ns = Params.TimeTest.tv_sec * RT_NS_1SEC + Params.TimeTest.tv_usec * RT_NS_1US;
-                RTTestValue(g_hTest, "Runtime", u64Ns, RTTESTUNIT_NS);
-            }
+                RTTestFailed(g_hTest, "Setting up test parameters failed with %Rrc\n", rc);
             RTTestSubDone(g_hTest);
         }
 
@@ -369,7 +427,7 @@ int main(int argc, char *argv[])
                     g_aTests[ValueUnion.u32].fExcluded = true;
                 else
                 {
-                    RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Failed to find a test device\n");
+                    RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Invalid test number passed to --exclude\n");
                     RTTestErrorInc(g_hTest);
                     return RTGetOptPrintError(VERR_INVALID_PARAMETER, &ValueUnion);
                 }
@@ -386,15 +444,17 @@ int main(int argc, char *argv[])
 
     /* Find the first test device if none was given. */
     if (!pszDevice)
+    {
+        RTTestSub(g_hTest, "Detecting device");
         pszDevice = usbTestFindDevice();
+        if (!pszDevice)
+            RTTestFailed(g_hTest, "Failed to find suitable device\n");
+
+        RTTestSubDone(g_hTest);
+    }
 
     if (pszDevice)
         usbTestExec(pszDevice);
-    else
-    {
-        RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Failed to find a test device\n");
-        RTTestErrorInc(g_hTest);
-    }
 
     RTEXITCODE rcExit = RTTestSummaryAndDestroy(g_hTest);
     return rcExit;
