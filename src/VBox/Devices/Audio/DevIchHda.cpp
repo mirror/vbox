@@ -2250,14 +2250,6 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             {
                 LogRel(("HDA: %s DMA position buffer\n", fEnabled ? "Enabled" : "Disabled"));
                 pThis->fDMAPosition = fEnabled;
-
-                if (pThis->fDMAPosition)
-                {
-                    /* Immediately tell the position. */
-                    hdaStreamUpdateLPIB(pThis, &pThis->StrmStLineIn, HDA_STREAM_REG(pThis, LPIB, pThis->StrmStLineIn.u8Strm));
-                    hdaStreamUpdateLPIB(pThis, &pThis->StrmStMicIn,  HDA_STREAM_REG(pThis, LPIB, pThis->StrmStMicIn.u8Strm));
-                    hdaStreamUpdateLPIB(pThis, &pThis->StrmStOut,    HDA_STREAM_REG(pThis, LPIB, pThis->StrmStOut.u8Strm));
-                }
             }
             break;
         }
