@@ -276,8 +276,7 @@
 #define HDA_REG_DPUBASE             33 /* 0x74 */
 #define HDA_RMX_DPUBASE             31
 #define DPUBASE(pThis)              (HDA_REG((pThis), DPUBASE))
-/** DMA Position Buffer Enable (3.3.32). */
-#define DPBASE_ENABLED              RT_BIT(0)
+
 #define DPBASE_ADDR_MASK            (~(uint64_t)0x7f)
 
 #define HDA_STREAM_REG_DEF(name, num)           (HDA_REG_SD##num##name)
@@ -703,6 +702,8 @@ typedef struct HDASTATE
     /** DMA base address.
      *  Made out of DPLBASE + DPUBASE (3.3.32 + 3.3.33). */
     uint64_t                           u64DPBase;
+    /** DMA position buffer enable bit. */
+    bool                               fDMAPosition;
     /** Pointer to CORB buffer. */
     R3PTRTYPE(uint32_t *)              pu32CorbBuf;
     /** Size in bytes of CORB buffer. */
@@ -768,12 +769,6 @@ typedef struct HDACALLBACKCTX
     PHDADRIVER pDriver;
 } HDACALLBACKCTX, *PHDACALLBACKCTX;
 #endif
-
-#define ISD0FMT_TO_AUDIO_SELECTOR(pThis) \
-    ( AUDIO_FORMAT_SELECTOR((pThis)->pCodec, In, SDFMT_BASE_RATE(pThis, 0), SDFMT_MULT(pThis, 0), SDFMT_DIV(pThis, 0)) )
-#define OSD0FMT_TO_AUDIO_SELECTOR(pThis) \
-    ( AUDIO_FORMAT_SELECTOR((pThis)->pCodec, Out, SDFMT_BASE_RATE(pThis, 4), SDFMT_MULT(pThis, 4), SDFMT_DIV(pThis, 4)) )
-
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -948,7 +943,7 @@ static const struct HDAREGDESC
     { 0x00060, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32        , HDA_REG_IDX(IC)           }, /* Immediate Command */
     { 0x00064, 0x00004, 0x00000000, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteUnimpl     , HDA_REG_IDX(IR)           }, /* Immediate Response */
     { 0x00068, 0x00002, 0x00000002, 0x00000002, hdaRegReadIRS          , hdaRegWriteIRS        , HDA_REG_IDX(IRS)          }, /* Immediate Command Status */
-    { 0x00070, 0x00004, 0xFFFFFFFF, 0xFFFFFF81, hdaRegReadU32          , hdaRegWriteBase       , HDA_REG_IDX(DPLBASE)      }, /* MA Position Lower Base */
+    { 0x00070, 0x00004, 0xFFFFFFFF, 0xFFFFFF81, hdaRegReadU32          , hdaRegWriteBase       , HDA_REG_IDX(DPLBASE)      }, /* DMA Position Lower Base */
     { 0x00074, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase       , HDA_REG_IDX(DPUBASE)      }, /* DMA Position Upper Base */
     /* 4 Input Stream Descriptors (ISD). */
     HDA_REG_MAP_DEF_STREAM(0, SD0),
@@ -1021,14 +1016,14 @@ DECLINLINE(void) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStrmSt, uint32
 
     Assert(u32LPIB <= pStrmSt->u32CBL);
 
-    LogFlowFunc(("uStrm=%RU8, LPIB=%RU32 (DMA Position: %RTbool)\n",
-                 pStrmSt->u8Strm, u32LPIB, RT_BOOL(pThis->u64DPBase & DPBASE_ENABLED)));
+    LogFlowFunc(("uStrm=%RU8, LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",
+                 pStrmSt->u8Strm, u32LPIB, pThis->fDMAPosition));
 
     /* Update LPIB in any case. */
     HDA_STREAM_REG(pThis, LPIB, pStrmSt->u8Strm) = u32LPIB;
 
     /* Do we need to tell the current DMA position? */
-    if (pThis->u64DPBase & DPBASE_ENABLED)
+    if (pThis->fDMAPosition)
     {
         int rc2 = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
                                         (pThis->u64DPBase & DPBASE_ADDR_MASK) + (pStrmSt->u8Strm * 8),
@@ -1129,6 +1124,10 @@ DECLINLINE(PHDABDLE) hdaStreamGetNextBDLE(PHDASTATE pThis, PHDASTREAM pStrmSt)
     uint32_t uOldBDLE = pStrmSt->State.uCurBDLE;
 #endif
 
+    /*
+     * Switch to the next BDLE entry and do a wrap around
+     * if we reached the end of the Buffer Descriptor List (BDL).
+     */
     pStrmSt->State.uCurBDLE++;
     if (pStrmSt->State.uCurBDLE == pStrmSt->State.cBDLE)
     {
@@ -1145,7 +1144,8 @@ DECLINLINE(PHDABDLE) hdaStreamGetNextBDLE(PHDASTATE pThis, PHDASTREAM pStrmSt)
     hdaBDLEReset(pBDLE);
 
 #ifdef DEBUG
-    LogFlowFunc(("uOldBDLE=%RU16, uCurBDLE=%RU16 %R[bdle]\n", uOldBDLE, pStrmSt->State.uCurBDLE, pBDLE));
+    LogFlowFunc(("uOldBDLE=%RU16, uCurBDLE=%RU16, cBDLE=%RU32, %R[bdle]\n",
+                 uOldBDLE, pStrmSt->State.uCurBDLE, pStrmSt->State.cBDLE, pBDLE));
 #endif
     return pBDLE;
 }
@@ -2239,16 +2239,33 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             pThis->u64RIRBBase |= ((uint64_t)pThis->au32Regs[iRegMem] << 32);
             break;
         case HDA_REG_DPLBASE:
-            /** @todo: first bit has special meaning */
+        {
             pThis->u64DPBase &= UINT64_C(0xFFFFFFFF00000000);
             pThis->u64DPBase |= pThis->au32Regs[iRegMem];
+
+            /* Also make sure to handle the DMA position enable bit. */
+            bool fEnabled = pThis->au32Regs[iRegMem] & RT_BIT_32(0);
+            if (pThis->fDMAPosition != fEnabled)
+            {
+                LogRel(("HDA: %s DMA position buffer\n", fEnabled ? "Enabled" : "Disabled"));
+                pThis->fDMAPosition = fEnabled;
+
+                if (pThis->fDMAPosition)
+                {
+                    /* Immediately tell the position. */
+                    hdaStreamUpdateLPIB(pThis, &pThis->StrmStLineIn, HDA_STREAM_REG(pThis, LPIB, pThis->StrmStLineIn.u8Strm));
+                    hdaStreamUpdateLPIB(pThis, &pThis->StrmStMicIn,  HDA_STREAM_REG(pThis, LPIB, pThis->StrmStMicIn.u8Strm));
+                    hdaStreamUpdateLPIB(pThis, &pThis->StrmStOut,    HDA_STREAM_REG(pThis, LPIB, pThis->StrmStOut.u8Strm));
+                }
+            }
             break;
+        }
         case HDA_REG_DPUBASE:
             pThis->u64DPBase &= UINT64_C(0x00000000FFFFFFFF);
             pThis->u64DPBase |= ((uint64_t)pThis->au32Regs[iRegMem] << 32);
             break;
         default:
-            AssertMsgFailed(("Invalid index"));
+            AssertMsgFailed(("Invalid index\n"));
             break;
     }
 
