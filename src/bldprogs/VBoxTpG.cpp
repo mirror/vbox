@@ -1029,11 +1029,12 @@ static RTEXITCODE generateHeader(PSCMSTREAM pStrm)
             generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszMangledName);
             ScmStreamPrintf(pStrm,
                             ");\n"
-                            "# define %s_ENABLED() \\\n"
-                            "    (RT_UNLIKELY(g_cVTGProbeEnabled_%s_%s)) \n"
+                            "# define %s_ENABLED() (RT_UNLIKELY(g_cVTGProbeEnabled_%s_%s))\n"
+                            "# define %s_ENABLED_RAW() (g_cVTGProbeEnabled_%s_%s)\n"
                             "# define %s("
-                            , szTmp,
-                            pProv->pszName, pProbe->pszMangledName,
+                            ,
+                            szTmp, pProv->pszName, pProbe->pszMangledName,
+                            szTmp, pProv->pszName, pProbe->pszMangledName,
                             szTmp);
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
