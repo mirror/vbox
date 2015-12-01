@@ -21,26 +21,26 @@
 
 /* Qt includes: */
 # include <QCloseEvent>
-# include <QTimer>
 # include <QProcess>
+# include <QTimer>
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIConverter.h"
+# include "UIModalWindowManager.h"
+# include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
-# include "UIKeyboardHandler.h"
-# include "UIMachineWindow.h"
+# include "UISession.h"
 # include "UIMachineLogic.h"
-# include "UIMachineView.h"
+# include "UIMachineWindow.h"
 # include "UIMachineWindowNormal.h"
 # include "UIMachineWindowFullscreen.h"
 # include "UIMachineWindowSeamless.h"
 # include "UIMachineWindowScale.h"
+# include "UIMachineView.h"
+# include "UIKeyboardHandler.h"
 # include "UIMouseHandler.h"
-# include "UISession.h"
 # include "UIVMCloseDialog.h"
-# include "UIConverter.h"
-# include "UIModalWindowManager.h"
-# include "UIExtraDataManager.h"
 
 /* COM includes: */
 # include "CConsole.h"
@@ -56,8 +56,11 @@
 
 /* External includes: */
 #ifdef Q_WS_X11
-# include <X11/Xlib.h>
+# if QT_VERSION < 0x050000
+#  include <X11/Xlib.h>
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_X11 */
+
 
 /* static */
 UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, ulong uScreenId)
@@ -258,6 +261,7 @@ void UIMachineWindow::retranslateUi()
 }
 
 #ifdef Q_WS_X11
+# if QT_VERSION < 0x050000
 bool UIMachineWindow::x11Event(XEvent *pEvent)
 {
     // TODO: Is that really needed?
@@ -278,6 +282,7 @@ bool UIMachineWindow::x11Event(XEvent *pEvent)
     }
     return false;
 }
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_X11 */
 
 void UIMachineWindow::showEvent(QShowEvent *pShowEvent)

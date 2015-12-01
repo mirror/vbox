@@ -19,34 +19,38 @@
 #define ___UIKeyboardHandler_h___
 
 /* Qt includes: */
-#include <QObject>
 #include <QMap>
+#include <QObject>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
-#ifdef Q_WS_MAC
-# include <CoreFoundation/CFBase.h>
-# include <Carbon/Carbon.h>
-#endif /* Q_WS_MAC */
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CKeyboard.h"
+/* Other VBox includes: */
+#include <VBox/com/defs.h>
+
+/* External includes: */
+#ifdef Q_WS_MAC
+# include <Carbon/Carbon.h>
+# include <CoreFoundation/CFBase.h>
+#endif /* Q_WS_MAC */
 
 /* Forward declarations: */
 class QWidget;
-class UISession;
+class VBoxGlobalSettings;
 class UIActionPool;
+class UISession;
 class UIMachineLogic;
 class UIMachineWindow;
 class UIMachineView;
-class VBoxGlobalSettings;
+class CKeyboard;
 #if defined(Q_WS_WIN)
 class WinAltGrMonitor;
 #elif defined(Q_WS_X11)
-typedef union  _XEvent XEvent;
+# if QT_VERSION < 0x050000
+typedef union _XEvent XEvent;
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_X11 */
-class CKeyboard;
+
 
 /* Delegate to control VM keyboard functionality: */
 class UIKeyboardHandler : public QObject
@@ -70,8 +74,10 @@ public:
 
     /* Commands to capture/release keyboard: */
 #ifdef Q_WS_X11
+# if QT_VERSION < 0x050000
     bool checkForX11FocusEvents(unsigned long hWindow);
-#endif
+# endif /* QT_VERSION < 0x050000 */
+#endif /* Q_WS_X11 */
     void captureKeyboard(ulong uScreenId);
     void releaseKeyboard();
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
@@ -98,8 +104,12 @@ public:
     /** Holds the object monitoring key event stream for problematic AltGr events. */
     WinAltGrMonitor *m_pAltGrMonitor;
 #elif defined(Q_WS_X11)
+# if QT_VERSION >= 0x050000
+    bool nativeEventFilter(void *pMessage, ulong uScreenId);
+# else /* QT_VERSION < 0x050000 */
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
-#endif
+# endif /* QT_VERSION < 0x050000 */
+#endif /* Q_WS_X11 */
 
 protected slots:
 
@@ -143,7 +153,7 @@ protected:
     bool keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags, LONG *pCodes, uint *puCodesCount);
     bool keyEventHostComboHandled(int iKey, wchar_t *pUniKey, bool isHostComboStateChanged, bool *pfResult);
     void keyEventHandleHostComboRelease(ulong uScreenId);
-    void keyEventReleaseHostComboKeys(CKeyboard keyboard);
+    void keyEventReleaseHostComboKeys(const CKeyboard &keyboard);
     /* Separate function to handle most of existing keyboard-events: */
     bool keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScreenId, wchar_t *pUniKey = 0);
     bool processHotKey(int iHotKey, wchar_t *pUniKey);

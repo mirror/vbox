@@ -19,27 +19,30 @@
 #define ___UIMouseHandler_h___
 
 /* Qt includes: */
+#include <QMap>
 #include <QObject>
 #include <QPoint>
-#include <QMap>
-#include <QRect>
 #include <QPointer>
+#include <QRect>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
-class QWidget;
 class QTouchEvent;
+class QWidget;
 class UISession;
 class UIMachineLogic;
 class UIMachineWindow;
 class UIMachineView;
-#ifdef Q_WS_X11
-typedef union  _XEvent XEvent;
-#endif /* Q_WS_X11 */
 class CDisplay;
 class CMouse;
+#ifdef Q_WS_X11
+# if QT_VERSION < 0x050000
+typedef union _XEvent XEvent;
+# endif /* QT_VERSION < 0x050000 */
+#endif /* Q_WS_X11 */
+
 
 /* Delegate to control VM mouse functionality: */
 class UIMouseHandler : public QObject
@@ -72,7 +75,10 @@ public:
     int state() const;
 
 #ifdef Q_WS_X11
+# if QT_VERSION < 0x050000
+    /** X11: Qt4: Handles all native events. */
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_X11 */
 
 protected slots:

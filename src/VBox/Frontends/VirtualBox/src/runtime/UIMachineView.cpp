@@ -22,83 +22,96 @@
 /* Qt includes: */
 # include <QDesktopWidget>
 # include <QMainWindow>
-# include <QTimer>
 # include <QPainter>
 # include <QScrollBar>
-# include <QMainWindow>
+# include <QTimer>
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
-# include "UIFrameBuffer.h"
-# include "VBoxFBOverlay.h"
 # include "UISession.h"
-# include "UIKeyboardHandler.h"
-# include "UIMouseHandler.h"
 # include "UIMachineLogic.h"
 # include "UIMachineWindow.h"
 # include "UIMachineViewNormal.h"
 # include "UIMachineViewFullscreen.h"
 # include "UIMachineViewSeamless.h"
 # include "UIMachineViewScale.h"
-# include "UIExtraDataManager.h"
+# include "UIKeyboardHandler.h"
+# include "UIMouseHandler.h"
+# include "UIFrameBuffer.h"
+# include "VBoxFBOverlay.h"
+# ifdef Q_WS_MAC
+#  include "UICocoaApplication.h"
+# endif /* Q_WS_MAC */
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include "UIDnDHandler.h"
 # endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* VirtualBox interface declarations: */
-#ifndef VBOX_WITH_XPCOM
-# include "VirtualBox.h"
-#else /* !VBOX_WITH_XPCOM */
-# include "VirtualBox_XPCOM.h"
-#endif /* VBOX_WITH_XPCOM */
+# ifndef VBOX_WITH_XPCOM
+#  include "VirtualBox.h"
+# else /* VBOX_WITH_XPCOM */
+#  include "VirtualBox_XPCOM.h"
+# endif /* VBOX_WITH_XPCOM */
 
 /* COM includes: */
-# include "CSession.h"
 # include "CConsole.h"
 # include "CDisplay.h"
-# include "CFramebuffer.h"
+# include "CSession.h"
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include "CDnDSource.h"
 #  include "CDnDTarget.h"
 #  include "CGuest.h"
-#  include "CGuestDnDSource.h"
-#  include "CGuestDnDTarget.h"
 # endif /* VBOX_WITH_DRAG_AND_DROP */
+
+/* Other VBox includes: */
+# include <iprt/asm.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Other VBox includes: */
-#include <iprt/asm.h>
-#include <VBox/VBoxOGL.h>
-#include <VBox/VBoxVideo.h>
-
-#ifdef Q_WS_X11
-# include <X11/XKBlib.h>
-# include <QX11Info>
-# ifdef KeyPress
-const int XFocusOut = FocusOut;
-const int XFocusIn = FocusIn;
-const int XKeyPress = KeyPress;
-const int XKeyRelease = KeyRelease;
-#  undef KeyRelease
-#  undef KeyPress
-#  undef FocusOut
-#  undef FocusIn
-# endif
-#endif /* Q_WS_X11 */
-
+/* GUI includes: */
 #ifdef Q_WS_MAC
-# include "DockIconPreview.h"
 # include "DarwinKeyboard.h"
-# include "UICocoaApplication.h"
-# include <VBox/err.h>
-# include <Carbon/Carbon.h>
+# include "DockIconPreview.h"
 #endif /* Q_WS_MAC */
 
-/* Other includes: */
-#include <math.h>
+/* COM includes: */
+#include "CFramebuffer.h"
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "CGuestDnDSource.h"
+# include "CGuestDnDTarget.h"
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 
+/* Other VBox includes: */
+#include <VBox/VBoxOGL.h>
+#include <VBox/VBoxVideo.h>
+#ifdef Q_WS_MAC
+# include <VBox/err.h>
+#endif /* Q_WS_MAC */
+
+/* External includes: */
+#include <math.h>
+#ifdef Q_WS_MAC
+# include <Carbon/Carbon.h>
+#endif /* Q_WS_MAC */
+#ifdef Q_WS_X11
+# if QT_VERSION >= 0x050000
+#  include <xcb/xcb.h>
+# else /* QT_VERSION < 0x050000 */
+#  include <X11/XKBlib.h>
+#  ifdef KeyPress
+const int XFocusIn = FocusIn;
+const int XFocusOut = FocusOut;
+const int XKeyPress = KeyPress;
+const int XKeyRelease = KeyRelease;
+#   undef KeyRelease
+#   undef KeyPress
+#   undef FocusOut
+#   undef FocusIn
+#  endif /* KeyPress */
+# endif /* QT_VERSION < 0x050000 */
+#endif /* Q_WS_X11 */
 
 #ifdef DEBUG_andy
 /* Macro for debugging drag and drop actions which usually would
@@ -108,6 +121,50 @@ const int XKeyRelease = KeyRelease;
 # define DNDDEBUG(x)
 #endif
 
+
+#ifdef Q_WS_X11
+# if QT_VERSION >= 0x050000
+/*********************************************************************************************************************************
+*   Class UIViewport implementation.                                                                                             *
+*********************************************************************************************************************************/
+
+UIViewport::UIViewport(UIMachineView *pParent)
+    : QWidget(pParent)
+    , m_pMachineView(pParent)
+{
+}
+
+bool UIViewport::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
+{
+    /* Make sure it's XCB event: */
+    AssertReturn(eventType == "xcb_generic_event_t", QWidget::nativeEvent(eventType, pMessage, pResult));
+    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
+
+    /* Check if some XCB event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    switch (pEvent->response_type & ~0x80)
+    {
+        /* Watch for key-events: */
+        case XCB_KEY_PRESS:
+        case XCB_KEY_RELEASE:
+        {
+            /* Delegate key-event handling to the keyboard-handler: */
+            return machineView()->machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, machineView()->screenId());
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QWidget::nativeEvent(eventType, pMessage, pResult);
+}
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_X11 */
+
+/*********************************************************************************************************************************
+*   Class UIMachineView implementation.                                                                                          *
+*********************************************************************************************************************************/
 
 /* static */
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
@@ -590,6 +647,11 @@ UIMachineView::~UIMachineView()
 void UIMachineView::prepareViewport()
 {
     /* Prepare viewport: */
+#ifdef Q_WS_X11
+# if QT_VERSION >= 0x050000
+    setViewport(new UIViewport(this));
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_X11 */
     AssertPtrReturnVoid(viewport());
     {
         /* Enable manual painting: */
@@ -1694,6 +1756,7 @@ bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
 
 #elif defined(Q_WS_X11)
 
+# if QT_VERSION < 0x050000
 bool UIMachineView::x11Event(XEvent *pEvent)
 {
     AssertPtrReturn(pEvent, false);
@@ -1704,8 +1767,8 @@ bool UIMachineView::x11Event(XEvent *pEvent)
     bool fResult = false; /* Pass to Qt by default. */
     switch (pEvent->type)
     {
-        case XFocusOut:
         case XFocusIn:
+        case XFocusOut:
         case XKeyPress:
         case XKeyRelease:
         {
@@ -1725,6 +1788,7 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 
     return fResult;
 }
+# endif /* QT_VERSION < 0x050000 */
 
 #endif /* Q_WS_X11 */
 

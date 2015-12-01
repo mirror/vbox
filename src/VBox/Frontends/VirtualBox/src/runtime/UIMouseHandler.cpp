@@ -26,50 +26,46 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
 # include "UIPopupCenter.h"
-# include "UIKeyboardHandler.h"
-# include "UIMouseHandler.h"
 # include "UISession.h"
 # include "UIMachineLogic.h"
 # include "UIMachineWindow.h"
 # include "UIMachineView.h"
+# include "UIKeyboardHandler.h"
+# include "UIMouseHandler.h"
 # include "UIFrameBuffer.h"
-# include "UIExtraDataManager.h"
-
+# ifdef Q_WS_MAC
+#  include "VBoxUtils-darwin.h"
+# endif /* Q_WS_MAC */
 # ifdef Q_WS_WIN
 #  include "VBoxUtils-win.h"
 # endif /* Q_WS_WIN */
 
-# ifdef Q_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif /* Q_WS_MAC */
-
 /* COM includes: */
-# include "CConsole.h"
 # include "CDisplay.h"
 
+/* Other VBox includes: */
 # include <iprt/time.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Qt includes: */
 #include <QTouchEvent>
 
+/* COM includes: */
 #include "CMouse.h"
 
-
+/* External includes: */
 #ifdef Q_WS_X11
-# include <X11/XKBlib.h>
-# ifdef KeyPress
+# if QT_VERSION < 0x050000
+#  include <X11/Xlib.h>
+#  ifdef FocusOut
 const int XFocusOut = FocusOut;
-const int XFocusIn = FocusIn;
-const int XKeyPress = KeyPress;
-const int XKeyRelease = KeyRelease;
-#  undef KeyRelease
-#  undef KeyPress
-#  undef FocusOut
-#  undef FocusIn
-# endif /* KeyPress */
+#   undef FocusOut
+#  endif /* FocusOut */
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_X11 */
 
 
@@ -268,6 +264,7 @@ int UIMouseHandler::state() const
 }
 
 #ifdef Q_WS_X11
+# if QT_VERSION < 0x050000
 bool UIMouseHandler::x11EventFilter(XEvent *pEvent, ulong /* uScreenId */)
 {
     /* Check if some system event should be filtered-out.
@@ -295,6 +292,7 @@ bool UIMouseHandler::x11EventFilter(XEvent *pEvent, ulong /* uScreenId */)
     /* Return result: */
     return fResult;
 }
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_X11 */
 
 /* Machine state-change handler: */
