@@ -84,7 +84,7 @@ provider vboxvmm
     /** \#GP - general protection fault.  */
     probe xcpt__gp(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
     /** \#PG - page fault.  */
-    probe xcpt__pg(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
+    probe xcpt__pg(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr, uint64_t a_cr2);
     /** \#MF - math fault (FPU).  */
     probe xcpt__mf(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
     /** \#AC - alignment check.  */
