@@ -67,6 +67,7 @@
  *      - Level 4 (Log4): Decoding mnemonics w/ EIP.
  *      - Level 5 (Log5): Decoding details.
  *      - Level 6 (Log6): Enables/disables the lockstep comparison with REM.
+ *      - Level 7 (Log7): iret++ execution logging.
  *
  */
 
