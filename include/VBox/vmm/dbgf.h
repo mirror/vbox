@@ -222,7 +222,7 @@ typedef enum DBGFEVENTTYPE
     DBGFEVENT_XCPT_MF,      /**< 0x10 - \#MF - Fault - NoErr - x86 FPU Floating-Point Error (Math fault), FP or (F)WAIT instruction. */
     DBGFEVENT_XCPT_AC,      /**< 0x11 - \#AC - Fault - Err=0 - Alignment Check. */
     DBGFEVENT_XCPT_MC,      /**< 0x12 - \#MC - Abort - NoErr - Machine Check. */
-    DBGFEVENT_XCPT_XM,      /**< 0x13 - \#XF - Fault - NoErr - SIMD Floating-Point Exception. */
+    DBGFEVENT_XCPT_XF,      /**< 0x13 - \#XF - Fault - NoErr - SIMD Floating-Point Exception. */
     DBGFEVENT_XCPT_VE,      /**< 0x14 - \#VE - Fault - Noerr - Virtualization exception. */
     DBGFEVENT_XCPT_15,      /**< 0x15 - Intel Reserved. */
     DBGFEVENT_XCPT_16,      /**< 0x16 - Intel Reserved. */
