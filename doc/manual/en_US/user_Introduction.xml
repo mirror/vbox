@@ -596,7 +596,7 @@
 
               <listitem>
                 <para>Disk image encryption with AES algorithm;
-                  see <xref linkend="vrde-crypt" />.</para>
+                  see <xref linkend="diskencryption" />.</para>
               </listitem>
             </orderedlist></para>
 
