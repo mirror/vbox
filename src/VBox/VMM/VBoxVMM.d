@@ -100,6 +100,7 @@ provider vboxvmm
     probe int__software(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint8_t a_iInterrupt);
     /** Hardware interrupt being dispatched. */
     probe int__hardware(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint8_t a_iInterrupt, uint32_t a_uTag, uint32_t a_idSource);
+
 };
 
 #pragma D attributes Evolving/Evolving/Common provider vboxvmm provider
