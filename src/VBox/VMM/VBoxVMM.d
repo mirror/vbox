@@ -57,6 +57,49 @@ provider vboxvmm
 
     probe r0__vmm__return__to__ring3__rc(struct VMCPU *a_pVCpu, struct CPUMCTX *p_Ctx, int a_rc);
     probe r0__vmm__return__to__ring3__hm(struct VMCPU *a_pVCpu, struct CPUMCTX *p_Ctx, int a_rc);
+
+
+    /** \#DE - integer divide error.  */
+    probe xcpt__de(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#DB - debug fault / trap.  */
+    probe xcpt__db(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint64_t a_dr6);
+    /** \#BP - breakpoint (INT3).  */
+    probe xcpt__bp(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#OF - overflow (INTO).  */
+    probe xcpt__of(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#BR - bound range exceeded (BOUND).  */
+    probe xcpt__br(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#UD - undefined opcode.  */
+    probe xcpt__ud(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#NM - FPU not avaible and more.  */
+    probe xcpt__nm(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#DF - double fault.  */
+    probe xcpt__df(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#TS - TSS related fault.  */
+    probe xcpt__ts(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
+    /** \#NP - segment not present.  */
+    probe xcpt__np(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
+    /** \#SS - stack segment fault.  */
+    probe xcpt__ss(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
+    /** \#GP - general protection fault.  */
+    probe xcpt__gp(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
+    /** \#PG - page fault.  */
+    probe xcpt__pg(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
+    /** \#MF - math fault (FPU).  */
+    probe xcpt__mf(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#AC - alignment check.  */
+    probe xcpt__ac(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#XF - SIMD floating point exception.  */
+    probe xcpt__xf(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#VE - virtualization exception.  */
+    probe xcpt__ve(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** \#SX - security exception.  */
+    probe xcpt__sx(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
+
+    /** Software interrupt (INT XXh). */
+    probe int__software(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint8_t a_iInterrupt);
+    /** Hardware interrupt being dispatched. */
+    probe int__hardware(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint8_t a_iInterrupt, uint32_t a_uTag, uint32_t a_idSource);
 };
 
 #pragma D attributes Evolving/Evolving/Common provider vboxvmm provider
