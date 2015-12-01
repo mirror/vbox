@@ -371,7 +371,10 @@ typedef struct HM
     bool                        fGlobalInit;
     /** Set when TPR patching is active. */
     bool                        fTPRPatchingActive;
-    bool                        u8Alignment[3];
+    /** Set when the debug facility has breakpoints/events enabled that requires
+     *  us to use the debug execution loop in ring-0. */
+    bool                        fUseDebugLoop;
+    bool                        u8Alignment[2];
 
     /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
     uint32_t                    fHostKernelFeatures;
@@ -630,6 +633,9 @@ typedef struct HMCPU
     volatile bool               fCheckedTLBFlush;
     /** Whether we're executing a single instruction. */
     bool                        fSingleInstruction;
+    /** Whether we should use the debug loop because of single stepping or special
+     *  debug breakpoints / events are armed. */
+    bool                        fUseDebugLoop;
     /** Set if we need to clear the trap flag because of single stepping. */
     bool                        fClearTrapFlag;
     /** Whether we've completed the inner HM leave function. */
@@ -646,7 +652,7 @@ typedef struct HMCPU
     bool                        fGIMTrapXcptUD;
     /** Whether paravirt. hypercalls are enabled. */
     bool                        fHypercallsEnabled;
-    uint8_t                     u8Alignment0[5];
+    uint8_t                     u8Alignment0[4];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;

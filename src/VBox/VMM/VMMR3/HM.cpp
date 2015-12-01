@@ -2753,6 +2753,66 @@ VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
 
 
 /**
+ * Noticiation callback from DBGF when interrupt breakpoints or generic debug
+ * event settings changes.
+ *
+ * DBGF will call HMR3NotifyDebugEventChangedPerCpu on each CPU afterwards, this
+ * function is just updating the VM globals.
+ *
+ * @param   pVM         The VM cross context VM structure.
+ * @thread  EMT(0)
+ */
+VMMR3_INT_DECL(void) HMR3NotifyDebugEventChanged(PVM pVM)
+{
+    /* Interrupts. */
+    bool fUseDebugLoop = pVM->dbgf.ro.cSoftIntBreakpoints > 0
+                      || pVM->dbgf.ro.cHardIntBreakpoints > 0;
+
+    /* CPU Exceptions. */
+    for (DBGFEVENTTYPE enmEvent = DBGFEVENT_XCPT_FIRST;
+         !fUseDebugLoop && enmEvent <= DBGFEVENT_XCPT_LAST;
+         enmEvent = (DBGFEVENTTYPE)(enmEvent + 1))
+        fUseDebugLoop = DBGF_IS_EVENT_ENABLED(pVM, enmEvent);
+
+    /* Common VM exits. */
+    for (DBGFEVENTTYPE enmEvent = DBGFEVENT_EXIT_FIRST;
+         !fUseDebugLoop && enmEvent <= DBGFEVENT_EXIT_LAST_COMMON;
+         enmEvent = (DBGFEVENTTYPE)(enmEvent + 1))
+        fUseDebugLoop = DBGF_IS_EVENT_ENABLED(pVM, enmEvent);
+
+    /* Vendor specific VM exits. */
+    if (HMR3IsVmxEnabled(pVM->pUVM))
+        for (DBGFEVENTTYPE enmEvent = DBGFEVENT_EXIT_VMX_FIRST;
+             !fUseDebugLoop && enmEvent <= DBGFEVENT_EXIT_VMX_LAST;
+             enmEvent = (DBGFEVENTTYPE)(enmEvent + 1))
+            fUseDebugLoop = DBGF_IS_EVENT_ENABLED(pVM, enmEvent);
+    else
+        for (DBGFEVENTTYPE enmEvent = DBGFEVENT_EXIT_SVM_FIRST;
+             !fUseDebugLoop && enmEvent <= DBGFEVENT_EXIT_SVM_LAST;
+             enmEvent = (DBGFEVENTTYPE)(enmEvent + 1))
+            fUseDebugLoop = DBGF_IS_EVENT_ENABLED(pVM, enmEvent);
+
+    /* Done. */
+    pVM->hm.s.fUseDebugLoop = fUseDebugLoop;
+}
+
+
+/**
+ * Follow up notification callback to HMR3NotifyDebugEventChanged for each CPU.
+ *
+ * HM uses this to combine the decision made by HMR3NotifyDebugEventChanged with
+ * per CPU settings.
+ *
+ * @param   pVM         The VM cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ */
+VMMR3_INT_DECL(void) HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu)
+{
+    pVCpu->hm.s.fUseDebugLoop = pVCpu->hm.s.fSingleInstruction | pVM->hm.s.fUseDebugLoop;
+}
+
+
+/**
  * Notification from EM about a rescheduling into hardware assisted execution
  * mode.
  *

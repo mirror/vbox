@@ -1221,8 +1221,8 @@ VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
  */
 static DECLCALLBACK(VBOXSTRICTRC) dbgfR3EventConfigNotifyAllCpus(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    /* Don't do anything, just make sure all CPUs goes thru EM. */
-    NOREF(pVM); NOREF(pVCpu); NOREF(pvUser);
+    if (pvUser /*fIsHmEnabled*/)
+        HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
     return VINF_SUCCESS;
 }
 
@@ -1255,12 +1255,19 @@ static DECLCALLBACK(int) dbgfR3EventConfigEx(PUVM pUVM, DBGFEVENTCONFIG volatile
     }
 
     /*
-     * If this is an SMP setup, we must interrupt the other CPUs if there were
-     * changes just to make sure their execution engines are aware of them.
+     * Inform HM about changes.  In an SMP setup, interrupt execution on the
+     * other CPUs so their execution loop can be reselected.
      */
     int rc = VINF_SUCCESS;
-    if (cChanges > 0 && pVM->cCpus > 1)
-        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3EventConfigNotifyAllCpus, NULL);
+    if (cChanges > 0)
+    {
+        bool const fIsHmEnabled = HMIsEnabled(pVM);
+        if (fIsHmEnabled)
+            HMR3NotifyDebugEventChanged(pVM);
+        if (pVM->cCpus > 1 || fIsHmEnabled)
+            rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3EventConfigNotifyAllCpus,
+                                    (void *)(uintptr_t)fIsHmEnabled);
+    }
     return rc;
 }
 
@@ -1392,7 +1399,8 @@ static DECLCALLBACK(int) dbgfR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFI
     /*
      * Apply the changes.
      */
-    bool fChanged;
+    bool fChanged = false;
+    bool fThis;
     for (uint32_t i = 0; i < cConfigs; i++)
     {
         /*
@@ -1400,8 +1408,8 @@ static DECLCALLBACK(int) dbgfR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFI
          */
         if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_ENABLED)
         {
-            fChanged = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == false;
-            if (fChanged)
+            fChanged |= fThis = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == false;
+            if (fThis)
             {
                 Assert(pVM->dbgf.s.cHardIntBreakpoints < 256);
                 pVM->dbgf.s.cHardIntBreakpoints++;
@@ -1409,8 +1417,8 @@ static DECLCALLBACK(int) dbgfR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFI
         }
         else if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_DISABLED)
         {
-            fChanged = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == true;
-            if (fChanged)
+            fChanged |= fThis = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == true;
+            if (fThis)
             {
                 Assert(pVM->dbgf.s.cHardIntBreakpoints > 0);
                 pVM->dbgf.s.cHardIntBreakpoints--;
@@ -1422,8 +1430,8 @@ static DECLCALLBACK(int) dbgfR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFI
          */
         if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_ENABLED)
         {
-            fChanged = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == false;
-            if (fChanged)
+            fChanged |= fThis = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == false;
+            if (fThis)
             {
                 Assert(pVM->dbgf.s.cSoftIntBreakpoints < 256);
                 pVM->dbgf.s.cSoftIntBreakpoints++;
@@ -1431,8 +1439,8 @@ static DECLCALLBACK(int) dbgfR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFI
         }
         else if (paConfigs[i].enmSoftState == DBGFINTERRUPTSTATE_DISABLED)
         {
-            fChanged = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == true;
-            if (fChanged)
+            fChanged |= fThis = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == true;
+            if (fThis)
             {
                 Assert(pVM->dbgf.s.cSoftIntBreakpoints > 0);
                 pVM->dbgf.s.cSoftIntBreakpoints--;
@@ -1441,9 +1449,8 @@ static DECLCALLBACK(int) dbgfR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFI
     }
 
     /*
-     * Update the event bitmap entries and see if we need to notify other CPUs.
+     * Update the event bitmap entries.
      */
-    fChanged = false;
     if (pVM->dbgf.s.cHardIntBreakpoints > 0)
         fChanged |= ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_HARDWARE) == false;
     else
@@ -1454,9 +1461,21 @@ static DECLCALLBACK(int) dbgfR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFI
     else
         fChanged |= ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_SOFTWARE) == true;
 
+
+    /*
+     * Inform HM about changes.  In an SMP setup, interrupt execution on the
+     * other CPUs so their execution loop can be reselected.
+     */
     int rc = VINF_SUCCESS;
-    if (fChanged && pVM->cCpus > 1)
-        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3EventConfigNotifyAllCpus, NULL);
+    if (fChanged)
+    {
+        bool const fIsHmEnabled = HMIsEnabled(pVM);
+        if (fIsHmEnabled)
+            HMR3NotifyDebugEventChanged(pVM);
+        if (pVM->cCpus > 1 || fIsHmEnabled)
+            rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3EventConfigNotifyAllCpus,
+                                    (void *)(uintptr_t)fIsHmEnabled);
+    }
     return rc;
 }
 

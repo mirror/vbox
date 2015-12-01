@@ -255,9 +255,11 @@ typedef enum DBGFEVENTTYPE
      * @todo not yet implemented.  */
     DBGFEVENT_MEMORY_ROM_WRITE,
 
+    /** The first VM exit event. */
+    DBGFEVENT_EXIT_FIRST,
     /** Exit - Task switch.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_TASK_SWITCH,
+    DBGFEVENT_EXIT_TASK_SWITCH = DBGFEVENT_EXIT_FIRST,
     /** Exit - HALT instruction.
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_HALT,
@@ -315,39 +317,49 @@ typedef enum DBGFEVENTTYPE
     /** Exit - VMCALL (intel) or VMMCALL (AMD) instruction.
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_VMM_CALL,
+    /** Exit - the last common event. */
+    DBGFEVENT_EXIT_LAST_COMMON = DBGFEVENT_EXIT_VMM_CALL,
+
+    /** Exit - VT-x - First. */
+    DBGFEVENT_EXIT_VMX_FIRST,
     /** Exit - VT-x VMCLEAR instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMCLEAR,
+    DBGFEVENT_EXIT_VMX_VMCLEAR = DBGFEVENT_EXIT_VMX_FIRST,
     /** Exit - VT-x VMLAUNCH instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMLAUNCH,
+    DBGFEVENT_EXIT_VMX_VMLAUNCH,
     /** Exit - VT-x VMPTRLD instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMPTRLD,
+    DBGFEVENT_EXIT_VMX_VMPTRLD,
     /** Exit - VT-x VMPTRST instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMPTRST,
+    DBGFEVENT_EXIT_VMX_VMPTRST,
     /** Exit - VT-x VMREAD instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMREAD,
+    DBGFEVENT_EXIT_VMX_VMREAD,
     /** Exit - VT-x VMRESUME instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMRESUME,
+    DBGFEVENT_EXIT_VMX_VMRESUME,
     /** Exit - VT-x VMWRITE instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMWRITE,
+    DBGFEVENT_EXIT_VMX_VMWRITE,
     /** Exit - VT-x VMXOFF instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMXOFF,
+    DBGFEVENT_EXIT_VMX_VMXOFF,
     /** Exit - VT-x VMXON instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMXON,
+    DBGFEVENT_EXIT_VMX_VMXON,
     /** Exit - VT-x VMFUNC instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_VTX_VMFUNC,
+    DBGFEVENT_EXIT_VMX_VMFUNC,
+    /** Exit - VT-x - Last. */
+    DBGFEVENT_EXIT_VMX_LAST = DBGFEVENT_EXIT_VMX_VMFUNC,
+
+    /** Exit - AMD-V - first */
+    DBGFEVENT_EXIT_SVM_FIRST,
     /** Exit - AMD-V VMRUN instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_SVM_VMRUN,
+    DBGFEVENT_EXIT_SVM_VMRUN = DBGFEVENT_EXIT_SVM_FIRST,
     /** Exit - AMD-V VMLOAD instruction.
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_SVM_VMLOAD,
@@ -360,6 +372,12 @@ typedef enum DBGFEVENTTYPE
     /** Exit - AMD-V CLGI instruction.
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_SVM_CLGI,
+    /** The last ADM-V VM exit event. */
+    DBGFEVENT_EXIT_SVM_LAST = DBGFEVENT_EXIT_SVM_CLGI,
+
+    /** The last VM exit event. */
+    DBGFEVENT_EXIT_LAST = DBGFEVENT_EXIT_SVM_LAST,
+
 
     /** End of valid event values. */
     DBGFEVENT_END,

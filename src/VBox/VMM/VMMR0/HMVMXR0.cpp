@@ -8854,7 +8854,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
  *
  * @note    Mostly the same as hmR0VmxRunGuestCodeNormal().
  */
-static VBOXSTRICTRC hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     VMXTRANSIENT VmxTransient;
     VmxTransient.fUpdateTscOffsettingAndPreemptTimer = true;
@@ -8958,6 +8958,42 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
 
 
 /**
+ * Checks if any expensive dtrace probes are enabled and we should go to the
+ * debug loop.
+ *
+ * @returns true if we should use debug loop, false if not.
+ */
+static bool hmR0VmxAnyExpensiveProbesEnabled(void)
+{
+    /* It's probably faster to OR the raw 32-bit counter variables together.
+       Since the variables are in an array and the probes are next to one
+       another (more or less), we have good locality. So, better read two three
+       cache lines ever time and only have one conditional, than 20+ conditionals. */
+    return (  VBOXVMM_XCPT_DE_ENABLED_RAW()
+            | VBOXVMM_XCPT_DB_ENABLED_RAW()
+            | VBOXVMM_XCPT_BP_ENABLED_RAW()
+            | VBOXVMM_XCPT_OF_ENABLED_RAW()
+            | VBOXVMM_XCPT_BR_ENABLED_RAW()
+            | VBOXVMM_XCPT_UD_ENABLED_RAW()
+            | VBOXVMM_XCPT_NM_ENABLED_RAW()
+            | VBOXVMM_XCPT_DF_ENABLED_RAW()
+            | VBOXVMM_XCPT_TS_ENABLED_RAW()
+            | VBOXVMM_XCPT_NP_ENABLED_RAW()
+            | VBOXVMM_XCPT_SS_ENABLED_RAW()
+            | VBOXVMM_XCPT_GP_ENABLED_RAW()
+            | VBOXVMM_XCPT_PG_ENABLED_RAW()
+            | VBOXVMM_XCPT_MF_ENABLED_RAW()
+            | VBOXVMM_XCPT_AC_ENABLED_RAW()
+            | VBOXVMM_XCPT_XF_ENABLED_RAW()
+            | VBOXVMM_XCPT_VE_ENABLED_RAW()
+            | VBOXVMM_XCPT_SX_ENABLED_RAW()
+            | VBOXVMM_INT_SOFTWARE_ENABLED_RAW()
+            | VBOXVMM_INT_HARDWARE_ENABLED_RAW()
+           ) != 0;
+}
+
+
+/**
  * Runs the guest code using VT-x.
  *
  * @returns Strict VBox status code.
@@ -8974,10 +9010,11 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VMMRZCallRing3SetNotification(pVCpu, hmR0VmxCallRing3Callback, pCtx);
 
     VBOXSTRICTRC rcStrict;
-    if (!pVCpu->hm.s.fSingleInstruction)
+    if (   !pVCpu->hm.s.fUseDebugLoop
+        && (!VBOXVMM_ANY_PROBES_ENABLED() || !hmR0VmxAnyExpensiveProbesEnabled()) )
         rcStrict = hmR0VmxRunGuestCodeNormal(pVM, pVCpu, pCtx);
     else
-        rcStrict = hmR0VmxRunGuestCodeStep(pVM, pVCpu, pCtx);
+        rcStrict = hmR0VmxRunGuestCodeDebug(pVM, pVCpu, pCtx);
 
     if (rcStrict == VERR_EM_INTERPRETER)
         rcStrict = VINF_EM_RAW_EMULATE_INSTR;

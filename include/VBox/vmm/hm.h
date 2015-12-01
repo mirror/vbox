@@ -226,6 +226,8 @@ VMMR3_INT_DECL(void)            HMR3CheckError(PVM pVM, int iStatusCode);
 VMMR3DECL(bool)                 HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
 VMMR3_INT_DECL(void)            HMR3NotifyScheduled(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)            HMR3NotifyEmulated(PVMCPU pVCpu);
+VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChanged(PVM pVM);
+VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(bool)            HMR3IsActive(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)            HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 VMMR3_INT_DECL(int)             HMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx);
