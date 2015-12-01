@@ -71,17 +71,7 @@ class UsbGadget(object):
         fRc = False;
         if self.oTxsSession is not None:
             fRc = self.oTxsSession.syncExecEx('/usr/bin/modprobe', ('/usr/bin/modprobe', sModule));
-            # For the ODroid-XU3 gadget we have to do a soft connect for the attached host to recognise the device.
-            if self.sGadgetType == g_ksGadgetTypeODroidXu3:
-                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
-                        ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/12400000.dwc3/soft_connect'));
-            elif self.sGadgetType == g_ksGadgetTypeBeaglebone:
-                # Do a soft disconnect/reconnect cycle or the device will not be recognised as high speed after the first test.
-                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
-                        ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
-                if fRc:
-                    fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
-                            ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
+            fRc = fRc and self.connectUsb();
         return fRc;
 
     def _unloadModule(self, sModule):
@@ -92,14 +82,7 @@ class UsbGadget(object):
         """
         fRc = False;
         if self.oTxsSession is not None:
-            # For the ODroid-XU3 gadget we do a soft disconnect before unloading the gadget driver.
-            if self.sGadgetType == g_ksGadgetTypeODroidXu3:
-                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
-                        ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/12400000.dwc3/soft_connect'));
-            elif self.sGadgetType == g_ksGadgetTypeBeaglebone:
-                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
-                        ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
-
+            self.disconnectUsb();
             fRc = self.oTxsSession.syncExecEx('/usr/bin/rmmod', ('/usr/bin/rmmod', sModule));
 
         return fRc;
@@ -126,6 +109,31 @@ class UsbGadget(object):
             reporter.log('Invalid impersonation');
 
         return False;
+
+    def disconnectUsb(self):
+        """
+        Disconnects the USB gadget from the host. (USB connection not network
+        connection used for control)
+        """
+        if self.sGadgetType == g_ksGadgetTypeODroidXu3:
+            fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
+                    ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/12400000.dwc3/soft_connect'));
+        elif self.sGadgetType == g_ksGadgetTypeBeaglebone:
+            fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
+                    ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
+        return fRc;
+
+    def connectUsb(self):
+        """
+        Connect the USB gadget to the host.
+        """
+        if self.sGadgetType == g_ksGadgetTypeODroidXu3:
+            fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
+                    ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/12400000.dwc3/soft_connect'));
+        elif self.sGadgetType == g_ksGadgetTypeBeaglebone:
+            fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
+                    ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
+        return fRc;
 
     def impersonate(self, sImpersonation):
         """

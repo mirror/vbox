@@ -87,19 +87,23 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
     def __init__(self):
         vbox.TestDriver.__init__(self);
-        self.asRsrcs           = None;
-        self.asTestVMsDef      = ['tst-arch'];
-        self.asTestVMs         = self.asTestVMsDef;
-        self.asSkipVMs         = [];
-        self.asVirtModesDef    = ['hwvirt', 'hwvirt-np', 'raw'];
-        self.asVirtModes       = self.asVirtModesDef;
-        self.acCpusDef         = [1, 2,];
-        self.acCpus            = self.acCpusDef;
-        self.asUsbCtrlsDef     = ['OHCI', 'EHCI', 'XHCI'];
-        self.asUsbCtrls        = self.asUsbCtrlsDef;
-        self.asUsbSpeedDef     = ['Low', 'Full', 'High', 'Super'];
-        self.asUsbSpeed        = self.asUsbSpeedDef;
-        self.sHostname         = socket.gethostname().lower();
+        self.asRsrcs               = None;
+        self.asTestVMsDef          = ['tst-arch'];
+        self.asTestVMs             = self.asTestVMsDef;
+        self.asSkipVMs             = [];
+        self.asVirtModesDef        = ['hwvirt', 'hwvirt-np', 'raw'];
+        self.asVirtModes           = self.asVirtModesDef;
+        self.acCpusDef             = [1, 2,];
+        self.acCpus                = self.acCpusDef;
+        self.asUsbCtrlsDef         = ['OHCI', 'EHCI', 'XHCI'];
+        self.asUsbCtrls            = self.asUsbCtrlsDef;
+        self.asUsbSpeedDef         = ['Low', 'Full', 'High', 'Super'];
+        self.asUsbSpeed            = self.asUsbSpeedDef;
+        self.asUsbTestsDef         = ['Compliance', 'Reattach'];
+        self.asUsbTests            = self.asUsbTestsDef;
+        self.cUsbReattachCyclesDef = 100;
+        self.cUsbReattachCycles    = self.cUsbReattachCyclesDef;
+        self.sHostname             = socket.gethostname().lower();
 
     #
     # Overridden methods.
@@ -122,6 +126,10 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         reporter.log('      Default: %s' % (':'.join(str(c) for c in self.asUsbCtrlsDef)));
         reporter.log('  --usb-speed     <s1[:s2[:]]');
         reporter.log('      Default: %s' % (':'.join(str(c) for c in self.asUsbSpeedDef)));
+        reporter.log('  --usb-tests     <s1[:s2[:]]');
+        reporter.log('      Default: %s' % (':'.join(str(c) for c in self.asUsbTestsDef)));
+        reporter.log('  --usb-reattach-cycles <cycles>');
+        reporter.log('      Default: %s' % (self.cUsbReattachCyclesDef));
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -171,6 +179,20 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             for s in self.asUsbSpeed:
                 if s not in self.asUsbSpeedDef:
                     reporter.log('warning: The "--usb-speed" value "%s" is not a valid USB speed.' % (s));
+        elif asArgs[iArg] == '--usb-tests':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--usb-tests" takes a colon separated list of USB tests');
+            self.asUsbTests = asArgs[iArg].split(':');
+            for s in self.asUsbTests:
+                if s not in self.asUsbTestsDef:
+                    reporter.log('warning: The "--usb-tests" value "%s" is not a valid USB test.' % (s));
+        elif asArgs[iArg] == '--usb-reattach-cycles':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--usb-reattach-cycles" takes cycle count');
+            try:    self.cUsbReattachCycles = int(asArgs[iArg]);
+            except: raise base.InvalidOption('The "--usb-reattach-cycles" value "%s" is not an integer' % (asArgs[iArg],));
+            if self.cUsbReattachCycles <= 0:
+                raise base.InvalidOption('The "--usb-reattach-cycles" value "%s" is zero or negative.' % (self.cUsbReattachCycles,));
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -284,8 +306,10 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                     if sUsbCtrl is 'XHCI':
                         tupCmdLine = tupCmdLine + ('--exclude', '10', '--exclude', '24');
 
-                    fRc = self.txsRunTest(oTxsSession, 'Compliance', 3600 * 1000, \
+                    fRc = self.txsRunTest(oTxsSession, 'UsbTest', 3600 * 1000, \
                         '${CDROM}/${OS/ARCH}/UsbTest${EXESUFF}', tupCmdLine);
+                    if not fRc:
+                        reporter.testFailure('Running USB test utility failed');
 
                 else:
                     reporter.testFailure('Failed to impersonate test device');
@@ -298,9 +322,52 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
         return fRc;
 
-    def testUsbOneCfg(self, sVmName, sUsbCtrl, sSpeed):
+    def testUsbReattach(self, oSession, oTxsSession, sUsbCtrl, sSpeed):
         """
-        Runs the specified VM thru test #1.
+        Tests that rapid connect/disconnect cycles work.
+        """
+        # Get configured USB test devices from hostname we are running on
+        sGadgetHost, sGadgetType = self.getGadgetParams(self.sHostname, sSpeed);
+
+        # Create device filter
+        fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
+        if fRc is True:
+            oUsbGadget = usbgadget.UsbGadget();
+            reporter.log('Connecting to gadget: ' + sGadgetType);
+            fRc = oUsbGadget.connectTo(30 * 1000, sGadgetType, sGadgetHost);
+            if fRc is True:
+                reporter.log('Connect succeeded');
+                fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
+                if fRc is True:
+
+                    self.sleep(1);
+
+                    # Do a rapid disconnect reconnect cycle. Wait a second before disconnecting
+                    # again or it will happen so fast that the VM can't attach the new device.
+                    # @todo: Get rid of the constant wait and use an event to get notified when
+                    # the device was attached.
+                    for iCycle in xrange (0, self.cUsbReattachCycles):
+                        fRc = oUsbGadget.disconnectUsb();
+                        fRc = fRc and oUsbGadget.connectUsb();
+                        if not fRc:
+                            reporter.testFailure('Reattach cycle %s failed on the gadget device' % (iCycle));
+                            break;
+                        self.sleep(1);
+
+                else:
+                    reporter.testFailure('Failed to impersonate test device');
+
+                oUsbGadget.disconnectFrom();
+            else:
+                reporter.testFailure('Failed to connect to USB gadget');
+        else:
+            reporter.testFailure('Failed to create USB device filter');
+
+        return fRc;
+
+    def testUsbOneCfg(self, sVmName, sUsbCtrl, sSpeed, sUsbTest):
+        """
+        Runs the specified VM thru one specified test.
 
         Returns a success indicator on the general test execution. This is not
         the actual test result.
@@ -341,7 +408,10 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                 # Fudge factor - Allow the guest to finish starting up.
                 self.sleep(5);
 
-                fRc = self.testUsbCompliance(oSession, oTxsSession, sUsbCtrl, sSpeed);
+                if sUsbTest == 'Compliance':
+                    fRc = self.testUsbCompliance(oSession, oTxsSession, sUsbCtrl, sSpeed);
+                elif sUsbTest == 'Reattach':
+                    fRc = self.testUsbReattach(oSession, oTxsSession, sUsbCtrl, sSpeed);
 
                 # cleanup.
                 self.removeTask(oTxsSession);
@@ -361,7 +431,10 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                 asSupportedSpeeds = self.kdUsbSpeedMappings.get(sUsbCtrl);
                 if sUsbSpeed in asSupportedSpeeds:
                     reporter.testStart(sUsbSpeed)
-                    fRc = self.testUsbOneCfg(sVmName, sUsbCtrl, sUsbSpeed);
+                    for sUsbTest in self.asUsbTests:
+                        reporter.testStart(sUsbTest)
+                        fRc = self.testUsbOneCfg(sVmName, sUsbCtrl, sUsbSpeed, sUsbTest);
+                        reporter.testDone();
                     reporter.testDone();
             reporter.testDone();
         reporter.testDone();
