@@ -705,7 +705,7 @@ typedef struct HDASTATE
     /** DMA position buffer enable bit. */
     bool                               fDMAPosition;
     /** Padding for alignment. */
-    uint8_t                            u32Padding0[3];
+    uint8_t                            u32Padding0[7];
     /** Pointer to CORB buffer. */
     R3PTRTYPE(uint32_t *)              pu32CorbBuf;
     /** Size in bytes of CORB buffer. */
