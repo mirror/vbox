@@ -2755,6 +2755,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
          *        reserved flags. We just ignore them. */
     }
     /** @todo Check how this is supposed to work if sp=0xfffe. */
+    Log7(("iemCImpl_iret_real_v8086: uNewCs=%#06x uNewRip=%#010x uNewFlags=%#x uNewRsp=%#18llx\n",
+          uNewCs, uNewEip, uNewFlags, uNewRsp));
 
     /*
      * Check the limit of the new EIP.
@@ -2788,6 +2790,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
         }
         else
             return iemRaiseGeneralProtectionFault0(pIemCpu);
+        Log7(("iemCImpl_iret_real_v8086: u1VM=1: adjusted uNewFlags=%#x\n", uNewFlags));
     }
 
     /*
@@ -2897,6 +2900,7 @@ IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uin
  */
 IEM_CIMPL_DEF_1(iemCImpl_iret_prot_NestedTask, IEMMODE, enmEffOpSize)
 {
+    Log7(("iemCImpl_iret_prot_NestedTask:\n"));
 #ifndef IEM_IMPLEMENTS_TASKSWITCH
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
 #else
@@ -2999,6 +3003,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
     rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uFrame.pv, IEM_ACCESS_STACK_R); /* don't use iemMemStackPopCommitSpecial here. */
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
+    Log7(("iemCImpl_iret_prot: uNewCs=%#06x uNewEip=%#010x uNewFlags=%#x uNewRsp=%#18llx\n", uNewCs, uNewEip, uNewFlags, uNewRsp));
 
     /*
      * We're hopefully not returning to V8086 mode...
@@ -3118,6 +3123,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uFrame.pv, IEM_ACCESS_STACK_R);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
+        Log7(("iemCImpl_iret_prot: uNewSS=%#06x uNewESP=%#010x\n", uNewSS, uNewESP));
 
         /* Read the SS descriptor. */
         if (!(uNewSS & X86_SEL_MASK_OFF_RPL))
@@ -3370,8 +3376,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
     rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uFrame.pv, IEM_ACCESS_STACK_R); /* don't use iemMemStackPopCommitSpecial here. */
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
-    Log2(("iretq stack: cs:rip=%04x:%016RX16 rflags=%016RX16 ss:rsp=%04x:%016RX16\n",
-          uNewCs, uNewRip, uNewFlags, uNewSs, uNewRsp));
+    Log7(("iretq stack: cs:rip=%04x:%016RX64 rflags=%016RX64 ss:rsp=%04x:%016RX64\n", uNewCs, uNewRip, uNewFlags, uNewSs, uNewRsp));
 
     /*
      * Check stuff.
