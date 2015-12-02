@@ -976,6 +976,20 @@
 # endif
 #endif
 
+/** @def RT_COMPILER_SUPPORTS_VA_ARGS
+ * If the defined, the compiler supports the variadic macro feature (..., __VA_ARGS__). */
+#if defined(_MSC_VER)
+# if _MSC_VER >= 1600 /* Visual C++ v10.0 / 2010 */
+#  define RT_COMPILER_SUPPORTS_VA_ARGS
+# endif
+#elif defined(__GNUC__)
+# if __GNUC__ >= 3 /* not entirely sure when this was added */
+#  define RT_COMPILER_SUPPORTS_VA_ARGS
+# endif
+#endif
+
+
+
 /** @def RTCALL
  * The standard calling convention for the Runtime interfaces.
  *
@@ -1413,6 +1427,13 @@
 # define RT_UNLIKELY(expr)      (expr)
 #endif
 
+/** @def RT_EXPAND_2
+ * Helper for RT_EXPAND. */
+#define RT_EXPAND_2(a_Expr)     a_Expr
+/** @def RT_EXPAND
+ * Returns the expanded expression.
+ * @param   a_Expr              The expression to expand. */
+#define RT_EXPAND(a_Expr)       RT_EXPAND_2(a_Expr)
 
 /** @def RT_STR
  * Returns the argument as a string constant.
@@ -1435,6 +1456,63 @@
  *
  * @param   str     String litteral to . */
 #define RT_LSTR(str)            RT_LSTR_2(str)
+
+/** @def RT_UNPACK_CALL
+ * Unpacks the an argument list inside an extra set of parenthesis and turns it
+ * into a call to @a a_Fn.
+ *
+ * @param   a_Fn        Function/macro to call.
+ * @param   a_Args      Parameter list in parenthesis.
+ */
+#define RT_UNPACK_CALL(a_Fn, a_Args) a_Fn a_Args
+
+#if defined(RT_COMPILER_SUPPORTS_VA_ARGS) || defined(DOXYGEN_RUNNING)
+
+/** @def RT_UNPACK_ARGS
+ * Returns the arguments without parenthesis.
+ *
+ * @param   ...         Parameter list in parenthesis.
+ * @remarks Requires RT_COMPILER_SUPPORTS_VA_ARGS.
+ */
+# define RT_UNPACK_ARGS(...)    __VA_ARGS__
+
+/** @def RT_COUNT_VA_ARGS_HLP
+ * Helper for RT_COUNT_VA_ARGS that picks out the argument count from
+ * RT_COUNT_VA_ARGS_REV_SEQ. */
+# define RT_COUNT_VA_ARGS_HLP( \
+    c69, c68, c67, c66, c65, c64, c63, c62, c61, c60, \
+    c59, c58, c57, c56, c55, c54, c53, c52, c51, c50, \
+    c49, c48, c47, c46, c45, c44, c43, c42, c41, c40, \
+    c39, c38, c37, c36, c35, c34, c33, c32, c31, c30, \
+    c29, c28, c27, c26, c25, c24, c23, c22, c21, c20, \
+    c19, c18, c17, c16, c15, c14, c13, c12, c11, c10, \
+     c9,  c8,  c7,  c6,  c5,  c4,  c3,  c2,  c1, cArgs, ...) cArgs
+/** Argument count sequence. */
+# define RT_COUNT_VA_ARGS_REV_SEQ \
+     69,  68,  67,  66,  65,  64,  63,  62,  61,  60, \
+     59,  58,  57,  56,  55,  54,  53,  52,  51,  50, \
+     49,  48,  47,  46,  45,  44,  43,  42,  41,  40, \
+     39,  38,  37,  36,  35,  34,  33,  32,  31,  30, \
+     29,  28,  27,  26,  25,  24,  23,  22,  21,  20, \
+     19,  18,  17,  16,  15,  14,  13,  12,  11,  10, \
+      9,   8,   7,   6,   5,   4,   3,   2,   1,   0
+/** This is for zero arguments. At least Visual C++ requires it. */
+# define RT_COUNT_VA_ARGS_PREFIX_RT_NOTHING       RT_COUNT_VA_ARGS_REV_SEQ
+/**
+ * Counts the number of arguments given to the variadic macro.
+ *
+ * Max is 69.
+ *
+ * @returns Number of arguments in the ellipsis
+ * @param   ...     Arguments to count.
+ * @remarks Requires RT_COMPILER_SUPPORTS_VA_ARGS.
+ */
+# define RT_COUNT_VA_ARGS(...) \
+      RT_UNPACK_CALL(RT_COUNT_VA_ARGS_HLP, (RT_COUNT_VA_ARGS_PREFIX_ ## __VA_ARGS__ ## RT_NOTHING, \
+                                            RT_COUNT_VA_ARGS_REV_SEQ))
+
+#endif /* RT_COMPILER_SUPPORTS_VA_ARGS */
+
 
 /** @def RT_CONCAT
  * Concatenate the expanded arguments without any extra spaces in between.
@@ -1576,6 +1654,178 @@
  * @sa      #RT_BF_GET, #RT_BF_SET, #RT_BF_CLEAR, #RT_BF_MAKE
  */
 #define RT_BF_ZMASK(a_FieldNm)                  ( RT_CONCAT(a_FieldNm,_MASK) >> RT_CONCAT(a_FieldNm,_SHIFT) )
+
+/** Bit field compile time check helper
+ * @internal */
+#define RT_BF_CHECK_DO_XOR_MASK(a_uLeft, a_RightPrefix, a_FieldNm)  ((a_uLeft) ^ RT_CONCAT3(a_RightPrefix, a_FieldNm, _MASK))
+/** Bit field compile time check helper
+ * @internal */
+#define RT_BF_CHECK_DO_OR_MASK(a_uLeft, a_RightPrefix, a_FieldNm)   ((a_uLeft) | RT_CONCAT3(a_RightPrefix, a_FieldNm, _MASK))
+/** Bit field compile time check helper
+ * @internal */
+#define RT_BF_CHECK_DO_1ST_MASK_BIT(a_uLeft, a_RightPrefix, a_FieldNm) \
+    ((a_uLeft) && ( (RT_CONCAT3(a_RightPrefix, a_FieldNm, _MASK) >> RT_CONCAT3(a_RightPrefix, a_FieldNm, _SHIFT)) & 1U ) )
+/** Used to check that a bit field mask does not start too early.
+ * @internal */
+#define RT_BF_CHECK_DO_MASK_START(a_uLeft, a_RightPrefix, a_FieldNm) \
+    (   (a_uLeft) \
+     && (   RT_CONCAT3(a_RightPrefix, a_FieldNm, _SHIFT) == 0 \
+         || (  (  (   ((RT_CONCAT3(a_RightPrefix, a_FieldNm, _MASK) >> RT_CONCAT3(a_RightPrefix, a_FieldNm, _SHIFT)) & 1U) \
+                   << RT_CONCAT3(a_RightPrefix, a_FieldNm, _SHIFT)) /* => single bit mask, correct type */ \
+                - 1U) /* => mask of all bits below the field */ \
+             & RT_CONCAT3(a_RightPrefix, a_FieldNm, _MASK)) == 0 ) )
+/** @name Bit field compile time check recursion workers.
+ * @internal
+ * @{  */
+#define RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix, f1) \
+    a_DoThis(a_uLeft, a_RightPrefix, f1)
+#define RT_BF_CHECK_DO_2(a_DoThis, a_uLeft, a_RightPrefix,                                        f1, f2) \
+    RT_BF_CHECK_DO_1(a_DoThis,  RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2)
+#define RT_BF_CHECK_DO_3(a_DoThis, a_uLeft, a_RightPrefix,                                        f1, f2, f3) \
+    RT_BF_CHECK_DO_2(a_DoThis,  RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3)
+#define RT_BF_CHECK_DO_4(a_DoThis, a_uLeft, a_RightPrefix,                                        f1, f2, f3, f4) \
+    RT_BF_CHECK_DO_3(a_DoThis,  RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4)
+#define RT_BF_CHECK_DO_5(a_DoThis, a_uLeft, a_RightPrefix,                                        f1, f2, f3, f4, f5) \
+    RT_BF_CHECK_DO_4(a_DoThis,  RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5)
+#define RT_BF_CHECK_DO_6(a_DoThis, a_uLeft, a_RightPrefix,                                        f1, f2, f3, f4, f5, f6) \
+    RT_BF_CHECK_DO_5(a_DoThis,  RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6)
+#define RT_BF_CHECK_DO_7(a_DoThis, a_uLeft, a_RightPrefix,                                        f1, f2, f3, f4, f5, f6, f7) \
+    RT_BF_CHECK_DO_6(a_DoThis,  RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7)
+#define RT_BF_CHECK_DO_8(a_DoThis, a_uLeft, a_RightPrefix,                                        f1, f2, f3, f4, f5, f6, f7, f8) \
+    RT_BF_CHECK_DO_7(a_DoThis,  RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8)
+#define RT_BF_CHECK_DO_9(a_DoThis, a_uLeft, a_RightPrefix,                                        f1, f2, f3, f4, f5, f6, f7, f8, f9) \
+    RT_BF_CHECK_DO_8(a_DoThis,  RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9)
+#define RT_BF_CHECK_DO_10(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10) \
+    RT_BF_CHECK_DO_9(a_DoThis,  RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10)
+#define RT_BF_CHECK_DO_11(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11) \
+    RT_BF_CHECK_DO_10(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11)
+#define RT_BF_CHECK_DO_12(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12) \
+    RT_BF_CHECK_DO_11(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12)
+#define RT_BF_CHECK_DO_13(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13) \
+    RT_BF_CHECK_DO_12(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13)
+#define RT_BF_CHECK_DO_14(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14) \
+    RT_BF_CHECK_DO_13(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14)
+#define RT_BF_CHECK_DO_15(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15) \
+    RT_BF_CHECK_DO_14(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15)
+#define RT_BF_CHECK_DO_16(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16) \
+    RT_BF_CHECK_DO_15(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16)
+#define RT_BF_CHECK_DO_17(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17) \
+    RT_BF_CHECK_DO_16(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17)
+#define RT_BF_CHECK_DO_18(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18) \
+    RT_BF_CHECK_DO_17(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18)
+#define RT_BF_CHECK_DO_19(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19) \
+    RT_BF_CHECK_DO_18(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19)
+#define RT_BF_CHECK_DO_20(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20) \
+    RT_BF_CHECK_DO_19(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20)
+#define RT_BF_CHECK_DO_21(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21) \
+    RT_BF_CHECK_DO_20(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21)
+#define RT_BF_CHECK_DO_22(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22) \
+    RT_BF_CHECK_DO_21(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22)
+#define RT_BF_CHECK_DO_23(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23) \
+    RT_BF_CHECK_DO_22(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23)
+#define RT_BF_CHECK_DO_24(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24) \
+    RT_BF_CHECK_DO_23(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24)
+#define RT_BF_CHECK_DO_25(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25) \
+    RT_BF_CHECK_DO_24(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25)
+#define RT_BF_CHECK_DO_26(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26) \
+    RT_BF_CHECK_DO_25(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26)
+#define RT_BF_CHECK_DO_27(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27) \
+    RT_BF_CHECK_DO_26(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27)
+#define RT_BF_CHECK_DO_28(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28) \
+    RT_BF_CHECK_DO_27(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28)
+#define RT_BF_CHECK_DO_29(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29) \
+    RT_BF_CHECK_DO_28(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29)
+#define RT_BF_CHECK_DO_30(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30) \
+    RT_BF_CHECK_DO_29(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30)
+#define RT_BF_CHECK_DO_31(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31) \
+    RT_BF_CHECK_DO_30(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31)
+#define RT_BF_CHECK_DO_32(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32) \
+    RT_BF_CHECK_DO_31(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32)
+#define RT_BF_CHECK_DO_33(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33) \
+    RT_BF_CHECK_DO_32(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33)
+#define RT_BF_CHECK_DO_34(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34) \
+    RT_BF_CHECK_DO_33(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34)
+#define RT_BF_CHECK_DO_35(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35) \
+    RT_BF_CHECK_DO_34(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35)
+#define RT_BF_CHECK_DO_36(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36) \
+    RT_BF_CHECK_DO_35(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36)
+#define RT_BF_CHECK_DO_37(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37) \
+    RT_BF_CHECK_DO_36(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37)
+#define RT_BF_CHECK_DO_38(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38) \
+    RT_BF_CHECK_DO_37(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38)
+#define RT_BF_CHECK_DO_39(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39) \
+    RT_BF_CHECK_DO_38(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39)
+#define RT_BF_CHECK_DO_40(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40) \
+    RT_BF_CHECK_DO_39(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40)
+#define RT_BF_CHECK_DO_41(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41) \
+    RT_BF_CHECK_DO_40(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41)
+#define RT_BF_CHECK_DO_42(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42) \
+    RT_BF_CHECK_DO_41(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42)
+#define RT_BF_CHECK_DO_43(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43) \
+    RT_BF_CHECK_DO_42(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43)
+#define RT_BF_CHECK_DO_44(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44) \
+    RT_BF_CHECK_DO_43(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44)
+#define RT_BF_CHECK_DO_45(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45) \
+    RT_BF_CHECK_DO_44(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45)
+#define RT_BF_CHECK_DO_46(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46) \
+    RT_BF_CHECK_DO_45(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46)
+#define RT_BF_CHECK_DO_47(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47) \
+    RT_BF_CHECK_DO_46(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47)
+#define RT_BF_CHECK_DO_48(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48) \
+    RT_BF_CHECK_DO_47(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48)
+#define RT_BF_CHECK_DO_49(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49) \
+    RT_BF_CHECK_DO_48(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49)
+#define RT_BF_CHECK_DO_50(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50) \
+    RT_BF_CHECK_DO_49(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50)
+#define RT_BF_CHECK_DO_51(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51) \
+    RT_BF_CHECK_DO_40(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51)
+#define RT_BF_CHECK_DO_52(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52) \
+    RT_BF_CHECK_DO_51(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52)
+#define RT_BF_CHECK_DO_53(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53) \
+    RT_BF_CHECK_DO_52(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53)
+#define RT_BF_CHECK_DO_54(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54) \
+    RT_BF_CHECK_DO_53(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54)
+#define RT_BF_CHECK_DO_55(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55) \
+    RT_BF_CHECK_DO_54(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55)
+#define RT_BF_CHECK_DO_56(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56) \
+    RT_BF_CHECK_DO_55(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56)
+#define RT_BF_CHECK_DO_57(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57) \
+    RT_BF_CHECK_DO_56(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57)
+#define RT_BF_CHECK_DO_58(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58) \
+    RT_BF_CHECK_DO_57(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58)
+#define RT_BF_CHECK_DO_59(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59) \
+    RT_BF_CHECK_DO_58(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59)
+#define RT_BF_CHECK_DO_60(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60) \
+    RT_BF_CHECK_DO_59(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60)
+#define RT_BF_CHECK_DO_61(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60, f61) \
+    RT_BF_CHECK_DO_60(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60, f61)
+#define RT_BF_CHECK_DO_62(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60, f61, f62) \
+    RT_BF_CHECK_DO_61(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60, f61, f62)
+#define RT_BF_CHECK_DO_63(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60, f61, f62, f63) \
+    RT_BF_CHECK_DO_62(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60, f61, f62, f63)
+#define RT_BF_CHECK_DO_64(a_DoThis, a_uLeft, a_RightPrefix,                                       f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60, f61, f62, f63, f64) \
+    RT_BF_CHECK_DO_63(a_DoThis, RT_BF_CHECK_DO_1(a_DoThis, a_uLeft, a_RightPrefix,f1), a_RightPrefix, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30, f31, f32, f33, f34, f35, f36, f37, f38, f39, f40, f41, f42, f43, f44, f45, f46, f47, f48, f49, f50, f51, f52, f53, f54, f55, f56, f57, f58, f59, f60, f61, f62, f63, f64)
+/** @} */
+
+/** @def RT_BF_ASSERT_COMPILE_CHECKS
+ * Emits a series of AssertCompile statements checking that the bit-field
+ * declarations doesn't overlap, has holes, and generally makes some sense.
+ *
+ * This requires variadic macros because its too much to type otherwise.
+ */
+#if defined(RT_COMPILER_SUPPORTS_VA_ARGS) || defined(DOXYGEN_RUNNING)
+# define RT_BF_ASSERT_COMPILE_CHECKS(a_Prefix, a_uZero, a_uCovered, a_Fields) \
+    AssertCompile(RT_BF_CHECK_DO_N(RT_BF_CHECK_DO_OR_MASK,     a_uZero, a_Prefix, RT_UNPACK_ARGS a_Fields ) == a_uCovered); \
+    AssertCompile(RT_BF_CHECK_DO_N(RT_BF_CHECK_DO_XOR_MASK, a_uCovered, a_Prefix, RT_UNPACK_ARGS a_Fields ) == 0); \
+    AssertCompile(RT_BF_CHECK_DO_N(RT_BF_CHECK_DO_1ST_MASK_BIT,   true, a_Prefix, RT_UNPACK_ARGS a_Fields ) == true); \
+    AssertCompile(RT_BF_CHECK_DO_N(RT_BF_CHECK_DO_MASK_START,     true, a_Prefix, RT_UNPACK_ARGS a_Fields ) == true)
+/** Bit field compile time check helper
+ * @internal */
+# define RT_BF_CHECK_DO_N(a_DoThis, a_uLeft, a_RightPrefix, ...) \
+        RT_UNPACK_CALL(RT_CONCAT(RT_BF_CHECK_DO_, RT_EXPAND(RT_COUNT_VA_ARGS(__VA_ARGS__))), (a_DoThis, a_uLeft, a_RightPrefix, __VA_ARGS__))
+#else
+# define RT_BF_ASSERT_COMPILE_CHECKS(a_Prefix, a_uZero, a_uCovered, a_Fields) AssertCompile(true)
+#endif
 
 
 /** @def RT_ALIGN

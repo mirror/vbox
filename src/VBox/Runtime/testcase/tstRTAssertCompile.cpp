@@ -150,6 +150,17 @@ int main(int argc, char **argv)
     AssertCompileMembersSameSizeAndOffset(STRUCT1, u32, STRUCT2, u32);
     AssertCompileMembersSameSizeAndOffset(STRUCT1, u64, STRUCT2, u64);
 
+    /*
+     * Check some cdefs.h macros while where here, we'll be using
+     * AssertCompile so it's kind of related.
+     */
+#ifdef RT_COMPILER_SUPPORTS_VA_ARGS
+    AssertCompile(RT_COUNT_VA_ARGS() == 0);
+    AssertCompile(RT_COUNT_VA_ARGS(asdf) == 1);
+    AssertCompile(RT_COUNT_VA_ARGS(yyyy) == 1);
+    AssertCompile(RT_COUNT_VA_ARGS(_) == 1);
+    AssertCompile(RT_COUNT_VA_ARGS(1, 2, 3, 4, 5, 6, 7, 8, 9, 0) == 10);
+#endif
     return 0;
 }
 
