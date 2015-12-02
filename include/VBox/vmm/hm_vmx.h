@@ -1859,10 +1859,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_XDTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 /** The instruction identity (VMX_YYTR_INSINFO_II_XXX values) */
 #define VMX_YYTR_INSINFO_INSTR_ID_SHIFT                         28
 #define VMX_YYTR_INSINFO_INSTR_ID_MASK                          UINT32_C(0x30000000)
-#define VMX_YYTR_INSINFO_II_SGDT                                0 /**< Instruction ID: SGDT */
-#define VMX_YYTR_INSINFO_II_SIDT                                1 /**< Instruction ID: SIDT */
-#define VMX_YYTR_INSINFO_II_LGDT                                2 /**< Instruction ID: LGDT */
-#define VMX_YYTR_INSINFO_II_LIDT                                3 /**< Instruction ID: LIDT */
+#define VMX_YYTR_INSINFO_II_SLDT                                0 /**< Instruction ID: SLDT */
+#define VMX_YYTR_INSINFO_II_STR                                 1 /**< Instruction ID: STR */
+#define VMX_YYTR_INSINFO_II_LLDT                                2 /**< Instruction ID: LLDT */
+#define VMX_YYTR_INSINFO_II_LTR                                 3 /**< Instruction ID: LTR */
 /** Bits 30 & 31 are undefined. */
 #define VMX_YYTR_INSINFO_UNDEF_30_31_SHIFT                      30
 #define VMX_YYTR_INSINFO_UNDEF_30_31_MASK                       UINT32_C(0xc0000000)
