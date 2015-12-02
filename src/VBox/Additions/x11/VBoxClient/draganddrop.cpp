@@ -2409,7 +2409,7 @@ void DragInstance::mouseButtonSet(Window wndDest, int rx, int ry, int iButton, b
 #endif
         LogFlowThisFunc(("Note: XText extension not available or disabled\n"));
 
-        unsigned int mask;
+        unsigned int mask = 0;
 
         if (   rx == -1
             && ry == -1)
