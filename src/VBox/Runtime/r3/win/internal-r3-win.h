@@ -58,15 +58,20 @@ typedef enum RTWINOSTYPE
     kRTWinOSType_NT31       = kRTWinOSType_NTFIRST,
     kRTWinOSType_NT351,
     kRTWinOSType_NT4,
-    kRTWinOSType_2K,
-    kRTWinOSType_XP,
-    kRTWinOSType_2003,
-    kRTWinOSType_VISTA,
-    kRTWinOSType_2008,
-    kRTWinOSType_7,
-    kRTWinOSType_8,
-    kRTWinOSType_81,
-    kRTWinOSType_10,
+    kRTWinOSType_2K,                        /* 5.0 */
+    kRTWinOSType_XP,                        /* 5.1 */
+    kRTWinOSType_XP64,                      /* 5.2, workstation */
+    kRTWinOSType_2003,                      /* 5.2 */
+    kRTWinOSType_VISTA,                     /* 6.0, workstation */
+    kRTWinOSType_2008,                      /* 6.0, server */
+    kRTWinOSType_7,                         /* 6.1, workstation */
+    kRTWinOSType_2008R2,                    /* 6.1, server */
+    kRTWinOSType_8,                         /* 6.2, workstation */
+    kRTWinOSType_2012,                      /* 6.2, server */
+    kRTWinOSType_81,                        /* 6.3, workstation */
+    kRTWinOSType_2012R2,                    /* 6.3, server */
+    kRTWinOSType_10,                        /* 10.0, workstation */
+    kRTWinOSType_2016,                      /* 10.0, server */
     kRTWinOSType_NT_UNKNOWN = 199,
     kRTWinOSType_NT_LAST    = kRTWinOSType_UNKNOWN
 } RTWINOSTYPE;

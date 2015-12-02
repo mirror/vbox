@@ -155,18 +155,38 @@ static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEXW const *pOSInfoE
         }
         else if (   dwMajorVersion == 6
                  && dwMinorVersion == 1)
-            enmVer = kRTWinOSType_7;
+        {
+            if (bProductType != VER_NT_WORKSTATION)
+                enmVer = kRTWinOSType_2008R2;
+            else
+                enmVer = kRTWinOSType_7;
+        }
         else if (   dwMajorVersion == 6
                  && dwMinorVersion == 2)
-            enmVer = kRTWinOSType_8;
+        {
+            if (bProductType != VER_NT_WORKSTATION)
+                enmVer = kRTWinOSType_2012;
+            else
+                enmVer = kRTWinOSType_8;
+        }
         else if (   dwMajorVersion == 6
                  && dwMinorVersion == 3)
-            enmVer = kRTWinOSType_81;
+        {
+            if (bProductType != VER_NT_WORKSTATION)
+               enmVer = kRTWinOSType_2012R2;
+            else
+                enmVer = kRTWinOSType_81;
+        }
         else if (   (   dwMajorVersion == 6
                      && dwMinorVersion == 4)
                  || (   dwMajorVersion == 10
                      && dwMinorVersion == 0))
-            enmVer = kRTWinOSType_10;
+        {
+            (bProductType != VER_NT_WORKSTATION)
+                enmVer = kRTWinOSType_2016;
+            else
+                enmVer = kRTWinOSType_10;
+        }
         else
             enmVer = kRTWinOSType_NT_UNKNOWN;
     }
