@@ -1005,7 +1005,7 @@ static RTEXITCODE generateHeader(PSCMSTREAM pStrm)
             ScmStreamPrintf(pStrm,
                             "extern uint32_t        g_cVTGProviderProbesEnabled_%s;\n"
                             "# define %s_ANY_PROBES_ENABLED() \\\n"
-                            "    (RT_UNLIKELY(g_cVTGProviderProbesEnabled_%s))\n"
+                            "    (RT_UNLIKELY(g_cVTGProviderProbesEnabled_%s != 0))\n"
                             "\n",
                             pProv->pszName,
                             szTmp, pProv->pszName);
@@ -1029,7 +1029,7 @@ static RTEXITCODE generateHeader(PSCMSTREAM pStrm)
             generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszMangledName);
             ScmStreamPrintf(pStrm,
                             ");\n"
-                            "# define %s_ENABLED() (RT_UNLIKELY(g_cVTGProbeEnabled_%s_%s))\n"
+                            "# define %s_ENABLED() (RT_UNLIKELY(g_cVTGProbeEnabled_%s_%s != 0))\n"
                             "# define %s_ENABLED_RAW() (g_cVTGProbeEnabled_%s_%s)\n"
                             "# define %s("
                             ,
