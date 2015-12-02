@@ -183,7 +183,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         ? "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
           "                [-partitions <list of partition numbers> [-mbr <filename>] ]\n"
           "                [-relative]\n"
-          "       Creates a new VMDK image which gives access to an entite host disk (if\n"
+          "       Creates a new VMDK image which gives access to an entire host disk (if\n"
           "       the parameter -partitions is not specified) or some partitions of a\n"
           "       host disk. If access to individual partitions is granted, then the\n"
           "       parameter -mbr can be used to specify an alternative MBR to be used\n"
