@@ -115,6 +115,8 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("((Mac)|(Tig)|(Leop)|(Yose)|(os[ ]*x)).*32",                                      Qt::CaseInsensitive), "MacOS" },
 
     /* Code names for Linux distributions: */
+    { QRegExp("((bianca)|(cassandra)|(celena)|(daryna)|(elyssa)|(felicia)|(gloria)|(helena)|(isadora)|(julia)|(katya)|(lisa)|(maya)|(nadia)|(olivia)|(petra)|(qiana)|(rebecca)|(rafaela)|(rosa)).*64",    Qt::CaseInsensitive), "Ubuntu_64" },
+    { QRegExp("((bianca)|(cassandra)|(celena)|(daryna)|(elyssa)|(felicia)|(gloria)|(helena)|(isadora)|(julia)|(katya)|(lisa)|(maya)|(nadia)|(olivia)|(petra)|(qiana)|(rebecca)|(rafaela)|(rosa)).*32",    Qt::CaseInsensitive), "Ubuntu" },
     { QRegExp("((edgy)|(feisty)|(gutsy)|(hardy)|(intrepid)|(jaunty)|(karmic)|(lucid)|(maverick)|(natty)|(oneiric)|(precise)|(quantal)|(raring)|(saucy)|(trusty)|(utopic)|(vivid)|(wily)|(xenial)).*64",    Qt::CaseInsensitive), "Ubuntu_64" },
     { QRegExp("((edgy)|(feisty)|(gutsy)|(hardy)|(intrepid)|(jaunty)|(karmic)|(lucid)|(maverick)|(natty)|(oneiric)|(precise)|(quantal)|(raring)|(saucy)|(trusty)|(utopic)|(vivid)|(wily)|(xenial)).*32",    Qt::CaseInsensitive), "Ubuntu" },
     { QRegExp("((sarge)|(etch)|(lenny)|(squeeze)|(wheezy)|(jessie)|(sid)).*64",                                                                          Qt::CaseInsensitive), "Debian_64" },
@@ -139,8 +141,8 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("((Red)|(rhel)|(cen)).*32",          Qt::CaseInsensitive), "RedHat" },
     { QRegExp("Tur.*64",                           Qt::CaseInsensitive), "Turbolinux_64" },
     { QRegExp("Tur.*32",                           Qt::CaseInsensitive), "Turbolinux" },
-    { QRegExp("Ub.*64",                            Qt::CaseInsensitive), "Ubuntu_64" },
-    { QRegExp("Ub.*32",                            Qt::CaseInsensitive), "Ubuntu" },
+    { QRegExp("(Ub)|(Min).*64",                    Qt::CaseInsensitive), "Ubuntu_64" },
+    { QRegExp("(Ub)|(Min).*32",                    Qt::CaseInsensitive), "Ubuntu" },
     { QRegExp("Xa.*64",                            Qt::CaseInsensitive), "Xandros_64" },
     { QRegExp("Xa.*32",                            Qt::CaseInsensitive), "Xandros" },
     { QRegExp("((Or)|(oel)|(ol)).*64",             Qt::CaseInsensitive), "Oracle_64" },
