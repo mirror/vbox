@@ -111,7 +111,7 @@ signals:
     /** Notifies about VM window can be shown, allowing to prevent it by @a fVeto with @a strReason. */
     void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
     /** Notifies about VM window with specified @a winId should be shown. */
-    void sigShowWindow(LONG64 &winId); /* use Qt::DirectConnection */
+    void sigShowWindow(qint64 &winId); /* use Qt::DirectConnection */
 
 public:
 

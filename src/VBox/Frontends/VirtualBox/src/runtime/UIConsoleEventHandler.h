@@ -91,7 +91,7 @@ private slots:
     /** Returns whether VM window can be shown. */
     void sltCanShowWindow(bool &fVeto, QString &strReason);
     /** Shows VM window if possible. */
-    void sltShowWindow(LONG64 &winId);
+    void sltShowWindow(qint64 &winId);
 
 private:
 
