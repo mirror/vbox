@@ -207,91 +207,100 @@ static void __exit VBoxPciLinuxUnload(void)
     Log(("VBoxPciLinuxUnload - done\n"));
 }
 
-int vboxPciOsDevRegisterWithIommu(PVBOXRAWPCIINS pIns)
+static int vboxPciLinuxDevRegisterWithIommu(PVBOXRAWPCIINS pIns)
 {
 #ifdef VBOX_WITH_IOMMU
-    int rc;
-    int status;
+    int rc = VINF_SUCCESS;
     struct pci_dev *pPciDev = pIns->pPciDev;
     PVBOXRAWPCIDRVVM pData = VBOX_DRV_VMDATA(pIns);
+    IPRT_LINUX_SAVE_EFL_AC();
 
-    if (!pData)
+    if (RT_LIKELY(pData))
     {
-        vbpci_printk(KERN_DEBUG, pPciDev,
-                     "cannot attach to IOMMU, no VM data\n");
-        return VERR_INVALID_PARAMETER;
+        if (RT_LIKELY(pData->pIommuDomain))
+        {
+            /** @todo: KVM checks IOMMU_CAP_CACHE_COHERENCY and sets
+             *  flag IOMMU_CACHE later used when mapping physical
+             *  addresses, which could improve performance.
+             */
+            int rcLnx = iommu_attach_device(pData->pIommuDomain, &pPciDev->dev);
+            if (!rcLnx)
+            {
+                vbpci_printk(KERN_DEBUG, pPciDev, "attached to IOMMU\n");
+                pIns->fIommuUsed = true;
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                vbpci_printk(KERN_DEBUG, pPciDev, "failed to attach to IOMMU, error %d\n", rcLnx);
+                rc = VERR_INTERNAL_ERROR;
+            }
+        }
+        else
+        {
+           vbpci_printk(KERN_DEBUG, pIns->pPciDev, "cannot attach to IOMMU, no domain\n");
+            rc = VERR_NOT_FOUND;
+        }
+    }
+    else
+    {
+        vbpci_printk(KERN_DEBUG, pPciDev, "cannot attach to IOMMU, no VM data\n");
+        rc = VERR_INVALID_PARAMETER;
     }
 
-    if (!pData->pIommuDomain)
-    {
-        vbpci_printk(KERN_DEBUG, pIns->pPciDev,
-                     "cannot attach to IOMMU, no domain\n");
-        return VERR_NOT_FOUND;
-    }
+    IPRT_LINUX_RESTORE_EFL_AC();
+    return rc;
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
 
-    status = iommu_attach_device(pData->pIommuDomain, &pPciDev->dev);
-    if (status == 0)
+static int vboxPciLinuxDevUnregisterWithIommu(PVBOXRAWPCIINS pIns)
+{
+#ifdef VBOX_WITH_IOMMU
+    int rc = VINF_SUCCESS;
+    struct pci_dev *pPciDev = pIns->pPciDev;
+    PVBOXRAWPCIDRVVM pData = VBOX_DRV_VMDATA(pIns);
+    IPRT_LINUX_SAVE_EFL_AC();
+
+    if (RT_LIKELY(pData))
     {
-        vbpci_printk(KERN_DEBUG, pPciDev, "attached to IOMMU\n");
-        pIns->fIommuUsed = true;
-        rc = VINF_SUCCESS;
+        if (RT_LIKELY(pData->pIommuDomain))
+        {
+            if (pIns->fIommuUsed)
+            {
+                iommu_detach_device(pData->pIommuDomain, &pIns->pPciDev->dev);
+                vbpci_printk(KERN_DEBUG, pPciDev, "detached from IOMMU\n");
+                pIns->fIommuUsed = false;
+            }
+        }
+        else
+        {
+            vbpci_printk(KERN_DEBUG, pPciDev,
+                         "cannot detach from IOMMU, no domain\n");
+            rc = VERR_NOT_FOUND;
+        }
     }
     else
     {
         vbpci_printk(KERN_DEBUG, pPciDev,
-                     "failed to attach to IOMMU, error %d\n", status);
-        rc = VERR_INTERNAL_ERROR;
-    }
-
-    /* @todo: KVM checks IOMMU_CAP_CACHE_COHERENCY and sets
-       flag IOMMU_CACHE later used when mapping physical
-       addresses, which could improve performance. */
-
-    return rc;
-#else
-    return VERR_NOT_SUPPORTED;
-#endif
-}
-
-int vboxPciOsDevUnregisterWithIommu(PVBOXRAWPCIINS pIns)
-{
-#ifdef VBOX_WITH_IOMMU
-    int rc = VINF_SUCCESS;
-    struct pci_dev *pPciDev = pIns->pPciDev;
-    PVBOXRAWPCIDRVVM pData = VBOX_DRV_VMDATA(pIns);
-
-    if (!pData)
-    {
-        vbpci_printk(KERN_DEBUG, pPciDev,
                      "cannot detach from IOMMU, no VM data\n");
-        return VERR_INVALID_PARAMETER;
+        rc = VERR_INVALID_PARAMETER;
     }
 
-    if (!pData->pIommuDomain)
-    {
-        vbpci_printk(KERN_DEBUG, pPciDev,
-                     "cannot detach from IOMMU, no domain\n");
-        return VERR_NOT_FOUND;
-    }
-
-    if (pIns->fIommuUsed)
-    {
-        iommu_detach_device(pData->pIommuDomain, &pIns->pPciDev->dev);
-        vbpci_printk(KERN_DEBUG, pPciDev, "detached from IOMMU\n");
-        pIns->fIommuUsed = false;
-    }
-
+    IPRT_LINUX_RESTORE_EFL_AC();
     return rc;
 #else
     return VERR_NOT_SUPPORTED;
 #endif
 }
 
-int vboxPciOsDevReset(PVBOXRAWPCIINS pIns)
+static int vboxPciLinuxDevReset(PVBOXRAWPCIINS pIns)
 {
     int rc = VINF_SUCCESS;
+    IPRT_LINUX_SAVE_EFL_AC();
 
-    if (pIns->pPciDev)
+    if (RT_LIKELY(pIns->pPciDev))
     {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
         if (pci_reset_function(pIns->pPciDev))
@@ -304,7 +313,10 @@ int vboxPciOsDevReset(PVBOXRAWPCIINS pIns)
         rc = VERR_NOT_SUPPORTED;
 #endif
     }
+    else
+        rc = VERR_INVALID_PARAMETER;
 
+    IPRT_LINUX_RESTORE_EFL_AC();
     return rc;
 }
 
@@ -352,22 +364,7 @@ static int vboxPciFileWrite(struct file* file, unsigned long long offset, unsign
     return ret;
 }
 
-#if 0
-static int vboxPciFileRead(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size)
-{
-    int ret;
-    mm_segment_t fs_save;
-
-    fs_save = get_fs();
-    set_fs(get_ds());
-    ret = vfs_read(file, data, size, &offset);
-    set_fs(fs_save);
-
-    return ret;
-}
-#endif
-
-int vboxPciOsDevDetachHostDriver(PVBOXRAWPCIINS pIns)
+static int vboxPciLinuxDevDetachHostDriver(PVBOXRAWPCIINS pIns)
 {
     struct pci_dev *pPciDev = NULL;
     uint8_t uBus =   (pIns->HostPciAddress) >> 8;
@@ -524,7 +521,7 @@ int vboxPciOsDevDetachHostDriver(PVBOXRAWPCIINS pIns)
     return 0;
 }
 
-int vboxPciOsDevReattachHostDriver(PVBOXRAWPCIINS pIns)
+static int vboxPciLinuxDevReattachHostDriver(PVBOXRAWPCIINS pIns)
 {
     struct pci_dev *pPciDev = pIns->pPciDev;
 
@@ -616,57 +613,69 @@ int vboxPciOsDevReattachHostDriver(PVBOXRAWPCIINS pIns)
     return VINF_SUCCESS;
 }
 
-int  vboxPciOsDevInit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
+DECLHIDDEN(int) vboxPciOsDevInit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
 {
     struct pci_dev *pPciDev = NULL;
-    int rc;
+    int rc = VINF_SUCCESS;
+    IPRT_LINUX_SAVE_EFL_AC();
 
     if (fFlags & PCIRAWDRIVERRFLAG_DETACH_HOST_DRIVER)
     {
-        rc = vboxPciOsDevDetachHostDriver(pIns);
+        rc = vboxPciLinuxDevDetachHostDriver(pIns);
         if (RT_FAILURE(rc))
         {
             printk(KERN_DEBUG "Cannot detach host driver for device %x: %d\n",
                    pIns->HostPciAddress, rc);
-            return VERR_ACCESS_DENIED;
         }
     }
 
+    if (RT_SUCCESS(rc))
+    {
+        pPciDev = PCI_DEV_GET_SLOT((pIns->HostPciAddress) >> 8,
+                                   (pIns->HostPciAddress) & 0xff);
 
-    pPciDev = PCI_DEV_GET_SLOT((pIns->HostPciAddress) >> 8,
-                               (pIns->HostPciAddress) & 0xff);
+        if (RT_LIKELY(pPciDev))
+        {
+            int rcLnx = pci_enable_device(pPciDev);
 
-    if (!pPciDev)
-        return 0;
-
-    pIns->pPciDev = pPciDev;
-    vbpci_printk(KERN_DEBUG, pPciDev, "%s\n", __func__);
-
-    rc = pci_enable_device(pPciDev);
+            if (!rcLnx)
+            {
+                pIns->pPciDev = pPciDev;
+                vbpci_printk(KERN_DEBUG, pPciDev, "%s\n", __func__);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 1)
-    if (pci_enable_msi(pPciDev) == 0)
-    {
-        pIns->fMsiUsed = true;
-    }
+                if (pci_enable_msi(pPciDev) == 0)
+                    pIns->fMsiUsed = true;
 #endif
 
-    // pci_enable_msix(pPciDev, entries, nvec)
+                /** @todo
+                 * pci_enable_msix(pPciDev, entries, nvec)
+                 *
+                 * In fact, if device uses interrupts, and cannot be forced to use MSI or MSI-X
+                 * we have to refuse using it, as we cannot work with shared PCI interrupts (unless we're lucky
+                 * to grab unshared PCI interrupt).
+                 */
+            }
+            else
+                rc = RTErrConvertFromErrno(RT_ABS(rcLnx));
+        }
+        else
+            rc = VERR_NOT_FOUND;
+    }
 
-    /* In fact, if device uses interrupts, and cannot be forced to use MSI or MSI-X
-       we have to refuse using it, as we cannot work with shared PCI interrupts (unless we're lucky
-       to grab unshared PCI interrupt). */
-
-    return VINF_SUCCESS;
+    IPRT_LINUX_RESTORE_EFL_AC();
+    return rc;
 }
 
-int  vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
+DECLHIDDEN(int) vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
 {
+    int rc = VINF_SUCCESS;
     struct pci_dev *pPciDev = pIns->pPciDev;
+    IPRT_LINUX_SAVE_EFL_AC();
 
     vbpci_printk(KERN_DEBUG, pPciDev, "%s\n", __func__);
 
-    if (pPciDev)
+    if (RT_LIKELY(pPciDev))
     {
         int iRegion;
         for (iRegion = 0; iRegion < 7; ++iRegion)
@@ -679,7 +688,7 @@ int  vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
             }
         }
 
-        vboxPciOsDevUnregisterWithIommu(pIns);
+        vboxPciLinuxDevUnregisterWithIommu(pIns);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 1)
         if (pIns->fMsiUsed)
@@ -687,192 +696,216 @@ int  vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
 #endif
         // pci_disable_msix(pPciDev);
         pci_disable_device(pPciDev);
-        vboxPciOsDevReattachHostDriver(pIns);
+        vboxPciLinuxDevReattachHostDriver(pIns);
 
         PCI_DEV_PUT(pPciDev);
         pIns->pPciDev = NULL;
     }
+    else
+        rc = VERR_INVALID_PARAMETER;
 
-    return 0;
+    IPRT_LINUX_RESTORE_EFL_AC();
+    return rc;
 }
 
-int  vboxPciOsDevDestroy(PVBOXRAWPCIINS pIns)
+DECLHIDDEN(int) vboxPciOsDevDestroy(PVBOXRAWPCIINS pIns)
 {
-    return 0;
+    return VINF_SUCCESS;
 }
 
-int  vboxPciOsDevGetRegionInfo(PVBOXRAWPCIINS pIns,
-                               int32_t        iRegion,
-                               RTHCPHYS       *pRegionStart,
-                               uint64_t       *pu64RegionSize,
-                               bool           *pfPresent,
-                               uint32_t       *pfFlags)
+DECLHIDDEN(int) vboxPciOsDevGetRegionInfo(PVBOXRAWPCIINS pIns,
+                                          int32_t        iRegion,
+                                          RTHCPHYS       *pRegionStart,
+                                          uint64_t       *pu64RegionSize,
+                                          bool           *pfPresent,
+                                          uint32_t       *pfFlags)
 {
-    int flags;
+    int rc = VINF_SUCCESS;
     struct pci_dev *pPciDev = pIns->pPciDev;
-    uint32_t fResFlags;
+    IPRT_LINUX_SAVE_EFL_AC();
 
-    if (!pPciDev)
+    if (RT_LIKELY(pPciDev))
     {
-        *pfPresent = false;
-        return 0;
-    }
+        int fFlags = pci_resource_flags(pPciDev, iRegion);
 
-    flags = pci_resource_flags(pPciDev, iRegion);
-    if (((flags & (IORESOURCE_MEM | IORESOURCE_IO)) == 0)
-        ||
-        ((flags & IORESOURCE_DISABLED) != 0))
-    {
-        *pfPresent = false;
-        return 0;
-    }
+        if (   ((fFlags & (IORESOURCE_MEM | IORESOURCE_IO)) == 0)
+            || ((fFlags & IORESOURCE_DISABLED) != 0))
+        {
+            *pfPresent = false;
+            rc = VERR_INVALID_PARAMETER;
+        }
+        else
+        {
+            uint32_t fResFlags = 0;
+            *pfPresent = true;
 
-    *pfPresent = true;
-    fResFlags = 0;
+            if (fFlags & IORESOURCE_MEM)
+                fResFlags |= PCIRAW_ADDRESS_SPACE_MEM;
 
-    if (flags & IORESOURCE_MEM)
-        fResFlags |= PCIRAW_ADDRESS_SPACE_MEM;
-
-    if (flags & IORESOURCE_IO)
-        fResFlags |= PCIRAW_ADDRESS_SPACE_IO;
+            if (fFlags & IORESOURCE_IO)
+                fResFlags |= PCIRAW_ADDRESS_SPACE_IO;
 
 #ifdef IORESOURCE_MEM_64
-    if (flags & IORESOURCE_MEM_64)
-        fResFlags |= PCIRAW_ADDRESS_SPACE_BAR64;
+            if (fFlags & IORESOURCE_MEM_64)
+                fResFlags |= PCIRAW_ADDRESS_SPACE_BAR64;
 #endif
 
-    if (flags & IORESOURCE_PREFETCH)
-        fResFlags |=  PCIRAW_ADDRESS_SPACE_MEM_PREFETCH;
+            if (fFlags & IORESOURCE_PREFETCH)
+                fResFlags |=  PCIRAW_ADDRESS_SPACE_MEM_PREFETCH;
 
-    *pfFlags        = fResFlags;
-    *pRegionStart   = pci_resource_start(pPciDev, iRegion);
-    *pu64RegionSize = pci_resource_len  (pPciDev, iRegion);
+            *pfFlags        = fResFlags;
+            *pRegionStart   = pci_resource_start(pPciDev, iRegion);
+            *pu64RegionSize = pci_resource_len  (pPciDev, iRegion);
 
-    vbpci_printk(KERN_DEBUG, pPciDev,
-                 "region %d: %s %llx+%lld\n",
-                 iRegion, (flags & IORESOURCE_MEM) ? "mmio" : "pio",
-                 *pRegionStart, *pu64RegionSize);
+            vbpci_printk(KERN_DEBUG, pPciDev,
+                         "region %d: %s %llx+%lld\n",
+                         iRegion, (fFlags & IORESOURCE_MEM) ? "mmio" : "pio",
+                         *pRegionStart, *pu64RegionSize);
+        }
+    }
+    else
+    {
+        *pfPresent = false;
+        rc = VERR_INVALID_PARAMETER;
+    }
 
-    return 0;
+    IPRT_LINUX_RESTORE_EFL_AC();
+    return rc;
 }
 
-int  vboxPciOsDevMapRegion(PVBOXRAWPCIINS pIns,
-                           int32_t        iRegion,
-                           RTHCPHYS       RegionStart,
-                           uint64_t       u64RegionSize,
-                           uint32_t       fFlags,
-                           RTR0PTR        *pRegionBase)
+DECLHIDDEN(int) vboxPciOsDevMapRegion(PVBOXRAWPCIINS pIns,
+                                      int32_t        iRegion,
+                                      RTHCPHYS       RegionStart,
+                                      uint64_t       u64RegionSize,
+                                      uint32_t       fFlags,
+                                      RTR0PTR        *pRegionBase)
 {
+    int rc = VINF_SUCCESS;
     struct pci_dev  *pPciDev = pIns->pPciDev;
-    RTR0PTR          result = 0;
-    int              error;
+    IPRT_LINUX_SAVE_EFL_AC();
+
+    if (!pPciDev || iRegion < 0 || iRegion > 0)
+    {
+        if (pPciDev)
+            vbpci_printk(KERN_DEBUG, pPciDev, "invalid region %d\n", iRegion);
+
+        IPRT_LINUX_RESTORE_EFL_AC();
+        return VERR_INVALID_PARAMETER;
+    }
 
     vbpci_printk(KERN_DEBUG, pPciDev, "reg=%d start=%llx size=%lld\n",
                  iRegion, RegionStart, u64RegionSize);
 
-    if (!pPciDev)
-        return VERR_INVALID_PARAMETER;
-
-    if (iRegion < 0 || iRegion > 6)
+    if (   (pci_resource_flags(pPciDev, iRegion) & IORESOURCE_IO)
+        || RegionStart != pci_resource_start(pPciDev, iRegion)
+        || u64RegionSize != pci_resource_len(pPciDev, iRegion))
     {
-        vbpci_printk(KERN_DEBUG, pPciDev, "invalid region %d\n", iRegion);
+        IPRT_LINUX_RESTORE_EFL_AC();
         return VERR_INVALID_PARAMETER;
     }
-
-    if (pci_resource_flags(pPciDev, iRegion) & IORESOURCE_IO)
-        return VERR_INVALID_PARAMETER;
-
-    if (RegionStart != pci_resource_start(pPciDev, iRegion))
-        return VERR_INVALID_PARAMETER;
-
-    if (u64RegionSize != pci_resource_len(pPciDev, iRegion))
-        return VERR_INVALID_PARAMETER;
 
     /*
      * XXX: Current code never calls unmap.  To avoid leaking mappings
      * only request and map resources once.
      */
-    if (pIns->aRegionR0Mapping[iRegion])
+    if (!pIns->aRegionR0Mapping[iRegion])
     {
+        int     rcLnx;
         *pRegionBase = pIns->aRegionR0Mapping[iRegion];
-        return VINF_SUCCESS;
+
+        rcLnx = pci_request_region(pPciDev, iRegion, "vboxpci");
+        if (!rcLnx)
+        {
+            /* For now no caching, try to optimize later. */
+            RTR0PTR R0PtrMapping = ioremap_nocache(pci_resource_start(pPciDev, iRegion),
+                                                   pci_resource_len(pPciDev, iRegion));
+
+            if (R0PtrMapping != NIL_RTR0PTR)
+                pIns->aRegionR0Mapping[iRegion] = R0PtrMapping;
+            else
+            {
+                vbpci_printk(KERN_DEBUG, pPciDev, "ioremap_nocache() failed\n");
+                pci_release_region(pPciDev, iRegion);
+                rc = VERR_MAP_FAILED;
+            }
+        }
+        else
+            rc = VERR_RESOURCE_BUSY;
     }
 
+    if (RT_SUCCESS(rc))
+        *pRegionBase = pIns->aRegionR0Mapping[iRegion];
 
-    error = pci_request_region(pPciDev, iRegion, "vboxpci");
-    if (error)
-        return VERR_RESOURCE_BUSY;
-
-    /* For now no caching, try to optimize later. */
-    result = ioremap_nocache(pci_resource_start(pPciDev, iRegion),
-                             pci_resource_len(pPciDev, iRegion));
-
-    if (!result)
-    {
-        vbpci_printk(KERN_DEBUG, pPciDev, "ioremap_nocache() failed\n");
-        pci_release_region(pPciDev, iRegion);
-        return VERR_MAP_FAILED;
-    }
-
-    *pRegionBase = pIns->aRegionR0Mapping[iRegion] = result;
-
-    return VINF_SUCCESS;
+    IPRT_LINUX_RESTORE_EFL_AC();
+    return rc;
 }
 
-int  vboxPciOsDevUnmapRegion(PVBOXRAWPCIINS pIns,
-                             int32_t        iRegion,
-                             RTHCPHYS       RegionStart,
-                             uint64_t       u64RegionSize,
-                             RTR0PTR        RegionBase)
+DECLHIDDEN(int) vboxPciOsDevUnmapRegion(PVBOXRAWPCIINS pIns,
+                                        int32_t        iRegion,
+                                        RTHCPHYS       RegionStart,
+                                        uint64_t       u64RegionSize,
+                                        RTR0PTR        RegionBase)
 {
     /* XXX: Current code never calls unmap. */
     return VERR_NOT_IMPLEMENTED;
 }
 
-int  vboxPciOsDevPciCfgWrite(PVBOXRAWPCIINS pIns, uint32_t Register, PCIRAWMEMLOC *pValue)
+DECLHIDDEN(int) vboxPciOsDevPciCfgWrite(PVBOXRAWPCIINS pIns, uint32_t Register, PCIRAWMEMLOC *pValue)
 {
     struct pci_dev *pPciDev = pIns->pPciDev;
+    int rc = VINF_SUCCESS;
+    IPRT_LINUX_SAVE_EFL_AC();
 
-    if (!pPciDev)
-        return VINF_SUCCESS;
-
-    switch (pValue->cb)
+    if (RT_LIKELY(pPciDev))
     {
-        case 1:
-            pci_write_config_byte(pPciDev,  Register, pValue->u.u8);
-            break;
-        case 2:
-            pci_write_config_word(pPciDev,  Register, pValue->u.u16);
-            break;
-        case 4:
-            pci_write_config_dword(pPciDev, Register, pValue->u.u32);
-            break;
+        switch (pValue->cb)
+        {
+            case 1:
+                pci_write_config_byte(pPciDev,  Register, pValue->u.u8);
+                break;
+            case 2:
+                pci_write_config_word(pPciDev,  Register, pValue->u.u16);
+                break;
+            case 4:
+                pci_write_config_dword(pPciDev, Register, pValue->u.u32);
+                break;
+        }
     }
+    else
+        rc = VERR_INVALID_PARAMETER;
 
-    return VINF_SUCCESS;
+    IPRT_LINUX_RESTORE_EFL_AC();
+    return rc;
 }
 
-int  vboxPciOsDevPciCfgRead (PVBOXRAWPCIINS pIns, uint32_t Register, PCIRAWMEMLOC *pValue)
+DECLHIDDEN(int) vboxPciOsDevPciCfgRead(PVBOXRAWPCIINS pIns, uint32_t Register, PCIRAWMEMLOC *pValue)
 {
     struct pci_dev *pPciDev = pIns->pPciDev;
+    int rc = VINF_SUCCESS;
 
-    if (!pPciDev)
-        return VINF_SUCCESS;
-
-    switch (pValue->cb)
+    if (RT_LIKELY(pPciDev))
     {
-        case 1:
-            pci_read_config_byte(pPciDev, Register, &pValue->u.u8);
-            break;
-        case 2:
-            pci_read_config_word(pPciDev, Register, &pValue->u.u16);
-            break;
-        case 4:
-            pci_read_config_dword(pPciDev, Register, &pValue->u.u32);
-            break;
-    }
+        IPRT_LINUX_SAVE_EFL_AC();
 
-    return VINF_SUCCESS;
+        switch (pValue->cb)
+        {
+            case 1:
+                pci_read_config_byte(pPciDev, Register, &pValue->u.u8);
+                break;
+            case 2:
+                pci_read_config_word(pPciDev, Register, &pValue->u.u16);
+                break;
+            case 4:
+                pci_read_config_dword(pPciDev, Register, &pValue->u.u32);
+                break;
+        }
+
+        IPRT_LINUX_RESTORE_EFL_AC();
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    return rc;
 }
 
 /**
@@ -903,14 +936,16 @@ static irqreturn_t vboxPciOsIrqHandler(int iIrq, void *pvDevId, struct pt_regs *
     return fTaken;
 }
 
-int vboxPciOsDevRegisterIrqHandler(PVBOXRAWPCIINS pIns, PFNRAWPCIISR pfnHandler, void* pIrqContext, int32_t *piHostIrq)
+DECLHIDDEN(int) vboxPciOsDevRegisterIrqHandler(PVBOXRAWPCIINS pIns, PFNRAWPCIISR pfnHandler, void* pIrqContext, int32_t *piHostIrq)
 {
     int rc;
     int32_t iIrq = pIns->pPciDev->irq;
+    IPRT_LINUX_SAVE_EFL_AC();
 
     if (iIrq == 0)
     {
         vbpci_printk(KERN_NOTICE, pIns->pPciDev, "no irq assigned\n");
+        IPRT_LINUX_RESTORE_EFL_AC();
         return VERR_INVALID_PARAMETER;
     }
 
@@ -940,22 +975,29 @@ int vboxPciOsDevRegisterIrqHandler(PVBOXRAWPCIINS pIns, PFNRAWPCIISR pfnHandler,
     {
         vbpci_printk(KERN_DEBUG, pIns->pPciDev,
                      "could not request irq %d, error %d\n", iIrq, rc);
+        IPRT_LINUX_RESTORE_EFL_AC();
         return VERR_RESOURCE_BUSY;
     }
 
     vbpci_printk(KERN_DEBUG, pIns->pPciDev, "got irq %d\n", iIrq);
     *piHostIrq = iIrq;
+
+    IPRT_LINUX_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 
-int vboxPciOsDevUnregisterIrqHandler(PVBOXRAWPCIINS pIns, int32_t iHostIrq)
+DECLHIDDEN(int) vboxPciOsDevUnregisterIrqHandler(PVBOXRAWPCIINS pIns, int32_t iHostIrq)
 {
+    IPRT_LINUX_SAVE_EFL_AC();
+
     vbpci_printk(KERN_DEBUG, pIns->pPciDev, "freeing irq %d\n", iHostIrq);
     free_irq(iHostIrq, pIns);
+
+    IPRT_LINUX_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }
 
-int  vboxPciOsDevPowerStateChange(PVBOXRAWPCIINS pIns, PCIRAWPOWERSTATE  aState)
+DECLHIDDEN(int) vboxPciOsDevPowerStateChange(PVBOXRAWPCIINS pIns, PCIRAWPOWERSTATE  aState)
 {
     int rc;
 
@@ -964,18 +1006,18 @@ int  vboxPciOsDevPowerStateChange(PVBOXRAWPCIINS pIns, PCIRAWPOWERSTATE  aState)
         case PCIRAW_POWER_ON:
             vbpci_printk(KERN_DEBUG, pIns->pPciDev, "PCIRAW_POWER_ON\n");
             /* Reset device, just in case. */
-            vboxPciOsDevReset(pIns);
+            vboxPciLinuxDevReset(pIns);
             /* register us with IOMMU */
-            rc = vboxPciOsDevRegisterWithIommu(pIns);
+            rc = vboxPciLinuxDevRegisterWithIommu(pIns);
             break;
         case PCIRAW_POWER_RESET:
             vbpci_printk(KERN_DEBUG, pIns->pPciDev, "PCIRAW_POWER_RESET\n");
-            rc = vboxPciOsDevReset(pIns);
+            rc = vboxPciLinuxDevReset(pIns);
             break;
         case PCIRAW_POWER_OFF:
             vbpci_printk(KERN_DEBUG, pIns->pPciDev, "PCIRAW_POWER_OFF\n");
             /* unregister us from IOMMU */
-            rc = vboxPciOsDevUnregisterWithIommu(pIns);
+            rc = vboxPciLinuxDevUnregisterWithIommu(pIns);
             break;
         case PCIRAW_POWER_SUSPEND:
             vbpci_printk(KERN_DEBUG, pIns->pPciDev, "PCIRAW_POWER_SUSPEND\n");
@@ -1000,10 +1042,12 @@ int  vboxPciOsDevPowerStateChange(PVBOXRAWPCIINS pIns, PCIRAWPOWERSTATE  aState)
 
 #ifdef VBOX_WITH_IOMMU
 /** Callback for FNRAWPCICONTIGPHYSMEMINFO. */
-static int vboxPciOsContigMemInfo(PRAWPCIPERVM pVmCtx, RTHCPHYS HostStart, RTGCPHYS GuestStart, uint64_t cMemSize, PCIRAWMEMINFOACTION Action)
+static DECLCALLBACK(int) vboxPciOsContigMemInfo(PRAWPCIPERVM pVmCtx, RTHCPHYS HostStart, RTGCPHYS GuestStart,
+                                                uint64_t cMemSize, PCIRAWMEMINFOACTION Action)
 {
     struct iommu_domain* domain = ((PVBOXRAWPCIDRVVM)(pVmCtx->pDriverData))->pIommuDomain;
     int rc = VINF_SUCCESS;
+    IPRT_LINUX_SAVE_EFL_AC();
 
     switch (Action)
     {
@@ -1042,34 +1086,45 @@ static int vboxPciOsContigMemInfo(PRAWPCIPERVM pVmCtx, RTHCPHYS HostStart, RTGCP
             break;
     }
 
+    IPRT_LINUX_RESTORE_EFL_AC();
     return rc;
 }
 #endif
 
-int  vboxPciOsInitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM, PRAWPCIPERVM pVmData)
+DECLHIDDEN(int) vboxPciOsInitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM, PRAWPCIPERVM pVmData)
 {
+    int rc = VINF_SUCCESS;
+
 #ifdef VBOX_WITH_IOMMU
+    IPRT_LINUX_SAVE_EFL_AC();
+
     if (IOMMU_PRESENT())
     {
         pThis->pIommuDomain = IOMMU_DOMAIN_ALLOC();
         if (!pThis->pIommuDomain)
         {
             vbpci_printk(KERN_DEBUG, NULL, "cannot allocate IOMMU domain\n");
-            return VERR_NO_MEMORY;
+            rc = VERR_NO_MEMORY;
         }
+        else
+        {
+            pVmData->pfnContigMemInfo = vboxPciOsContigMemInfo;
 
-        pVmData->pfnContigMemInfo = vboxPciOsContigMemInfo;
-
-        vbpci_printk(KERN_DEBUG, NULL, "created IOMMU domain %p\n",
-                     pThis->pIommuDomain);
+            vbpci_printk(KERN_DEBUG, NULL, "created IOMMU domain %p\n",
+                         pThis->pIommuDomain);
+        }
     }
+
+    IPRT_LINUX_RESTORE_EFL_AC();
 #endif
-    return VINF_SUCCESS;
+    return rc;
 }
 
-void vboxPciOsDeinitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM)
+DECLHIDDEN(void) vboxPciOsDeinitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM)
 {
 #ifdef VBOX_WITH_IOMMU
+    IPRT_LINUX_SAVE_EFL_AC();
+
     if (pThis->pIommuDomain)
     {
         vbpci_printk(KERN_DEBUG, NULL, "freeing IOMMU domain %p\n",
@@ -1077,5 +1132,7 @@ void vboxPciOsDeinitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM)
         iommu_domain_free(pThis->pIommuDomain);
         pThis->pIommuDomain = NULL;
     }
+
+    IPRT_LINUX_RESTORE_EFL_AC();
 #endif
 }
