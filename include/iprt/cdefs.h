@@ -1512,12 +1512,46 @@
  *      - \<a_FieldNm\>_SHIFT: The shift count to get to the field.
  *      - \<a_FieldNm\>_MASK:  The field mask.
  *
+ * @returns The bit field value.
  * @param   a_uValue        The integer value containing the field.
  * @param   a_FieldNm       The field name prefix for getting at the _SHIFT and
  *                          _MASK macros.
- * @sa      #RT_BF_MAKE, #RT_BF_ZMASK
+ * @sa      #RT_BF_CLEAR, #RT_BF_SET, #RT_BF_MAKE, #RT_BF_ZMASK
  */
 #define RT_BF_GET(a_uValue, a_FieldNm)          ( ((a_uValue) >> RT_CONCAT(a_FieldNm,_SHIFT)) & RT_BF_ZMASK(a_FieldNm) )
+
+/** @def RT_BF_SET
+ * Sets the given bit field in the integer value.
+ *
+ * This requires a couple of macros to be defined for the field:
+ *      - \<a_FieldNm\>_SHIFT: The shift count to get to the field.
+ *      - \<a_FieldNm\>_MASK:  The field mask.  Must have the same type as the
+ *        integer value!!
+ *
+ * @returns Integer value with bit field set to @a a_uFieldValue.
+ * @param   a_uValue        The integer value containing the field.
+ * @param   a_FieldNm       The field name prefix for getting at the _SHIFT and
+ *                          _MASK macros.
+ * @param   a_uFieldValue   The new field value.
+ * @sa      #RT_BF_GET, #RT_BF_CLEAR, #RT_BF_MAKE, #RT_BF_ZMASK
+ */
+#define RT_BF_SET(a_uValue, a_FieldNm, a_uFieldValue) ( RT_BF_CLEAR(a_uValue, a_FieldNm) | RT_BF_MAKE(a_FieldNm, a_uFieldValue) )
+
+/** @def RT_BF_CLEAR
+ * Clears the given bit field in the integer value.
+ *
+ * This requires a couple of macros to be defined for the field:
+ *      - \<a_FieldNm\>_SHIFT: The shift count to get to the field.
+ *      - \<a_FieldNm\>_MASK:  The field mask.  Must have the same type as the
+ *        integer value!!
+ *
+ * @returns Integer value with bit field set to zero.
+ * @param   a_uValue        The integer value containing the field.
+ * @param   a_FieldNm       The field name prefix for getting at the _SHIFT and
+ *                          _MASK macros.
+ * @sa      #RT_BF_GET, #RT_BF_SET, #RT_BF_MAKE, #RT_BF_ZMASK
+ */
+#define RT_BF_CLEAR(a_uValue, a_FieldNm)        ( (a_uValue) & ~RT_CONCAT(a_FieldNm,_MASK) )
 
 /** @def RT_BF_MAKE
  * Shifts and masks a bit field value into position in the integer value.
@@ -1530,7 +1564,7 @@
  *                          _MASK macros.
  * @param   a_uFieldValue   The field value that should be masked and shifted
  *                          into position.
- * @sa      #RT_BF_GET, #RT_BF_ZMASK
+ * @sa      #RT_BF_GET, #RT_BF_SET, #RT_BF_CLEAR, #RT_BF_ZMASK
  */
 #define RT_BF_MAKE(a_FieldNm, a_uFieldValue)    ( ((a_uFieldValue) & RT_BF_ZMASK(a_FieldNm) ) << RT_CONCAT(a_FieldNm,_SHIFT) )
 
@@ -1539,7 +1573,7 @@
  *
  * @param   a_FieldNm       The field name prefix for getting at the _SHIFT and
  *                          _MASK macros.
- * @sa      #RT_BF_GET, #RT_BF_MAKE
+ * @sa      #RT_BF_GET, #RT_BF_SET, #RT_BF_CLEAR, #RT_BF_MAKE
  */
 #define RT_BF_ZMASK(a_FieldNm)                  ( RT_CONCAT(a_FieldNm,_MASK) >> RT_CONCAT(a_FieldNm,_SHIFT) )
 
