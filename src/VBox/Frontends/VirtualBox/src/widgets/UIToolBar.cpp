@@ -22,7 +22,6 @@
 /* Qt includes: */
 # include <QLayout>
 # include <QMainWindow>
-# include <QWindowsStyle>
 
 /* GUI includes: */
 # include "UIToolBar.h"
@@ -32,7 +31,11 @@
 
 #endif /* Q_WS_MAC */
 
-#include <QCleanlooksStyle>
+/* Qt includes: */
+#if QT_VERSION < 0x050000
+# include <QWindowsStyle>
+# include <QCleanlooksStyle>
+#endif /* QT_VERSION < 0x050000 */
 
 
 UIToolBar::UIToolBar(QWidget *pParent /* = 0 */)
@@ -89,11 +92,13 @@ void UIToolBar::prepare()
     setFloatable(false);
     setMovable(false);
 
+#if QT_VERSION < 0x050000
     /* Remove that ugly frame panel around the toolbar.
      * Doing that currently for Cleanlooks & Windows styles. */
-    if (qobject_cast <QCleanlooksStyle*>(QToolBar::style()) ||
-        qobject_cast <QWindowsStyle*>(QToolBar::style()))
+    if (qobject_cast <QWindowsStyle*>(QToolBar::style()) ||
+        qobject_cast <QCleanlooksStyle*>(QToolBar::style()))
         setStyleSheet("QToolBar { border: 0px none black; }");
+#endif /* QT_VERSION < 0x050000 */
 
     /* Configure tool-bar' layout: */
     if (layout())

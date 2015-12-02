@@ -24,7 +24,6 @@
 # include <QHeaderView>
 # include <QMenu>
 # include <QScrollBar>
-# include <QWindowsStyle>
 # include <QPointer>
 # include <QApplication>
 
@@ -45,6 +44,11 @@
 # include "CConsole.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+/* Qt includes: */
+#if QT_VERSION < 0x050000
+# include <QWindowsStyle>
+#endif /* QT_VERSION < 0x050000 */
 
 
 /**
@@ -371,6 +375,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
 
     mTreeWidget->header()->hide();
 
+#if QT_VERSION < 0x050000
     /* The snapshots widget is not very useful if there are a lot
      * of snapshots in a tree and the current Qt style decides not
      * to draw lines (branches) between the snapshot nodes; it is
@@ -383,6 +388,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     mTreeWidget->setStyle (treeWidgetStyle);
     connect (mTreeWidget, SIGNAL (destroyed (QObject *)), treeWidgetStyle, SLOT (deleteLater()));
 // #endif
+#endif /* QT_VERSION < 0x050000 */
 
     /* Cache pixmaps: */
     m_offlineSnapshotIcon = UIIconPool::iconSet(":/snapshot_offline_16px.png");

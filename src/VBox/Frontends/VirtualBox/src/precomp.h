@@ -200,7 +200,7 @@
 #include <QVector>
 #include <QWaitCondition>
 #include <QWidget>
-#include <QWindowsStyle>
+//#include <QWindowsStyle> - only used twice
 //#include <QWindowsVistaStyle> - only used once
 #include <QWizard>
 #include <QWizardPage>
