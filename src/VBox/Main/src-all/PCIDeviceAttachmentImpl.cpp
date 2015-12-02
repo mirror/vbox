@@ -65,10 +65,18 @@ HRESULT PCIDeviceAttachment::init(IMachine      *aParent,
                                   LONG          aGuestAddress,
                                   BOOL          fPhysical)
 {
-    (void)aParent;
+    NOREF(aParent);
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
     m = new Data(aDevName, aHostAddress, aGuestAddress, fPhysical);
 
-    return m != NULL ? S_OK : E_FAIL;
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
+    return S_OK;
 }
 
 HRESULT PCIDeviceAttachment::i_loadSettings(IMachine *aParent,
@@ -95,11 +103,13 @@ HRESULT PCIDeviceAttachment::i_saveSettings(settings::HostPCIDeviceAttachment &d
  */
 void PCIDeviceAttachment::uninit()
 {
-    if (m)
-    {
-        delete m;
-        m = NULL;
-    }
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan(this);
+    if (autoUninitSpan.uninitDone())
+        return;
+
+    delete m;
+    m = NULL;
 }
 
 // IPCIDeviceAttachment properties

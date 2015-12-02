@@ -572,7 +572,7 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
         LONG guest = 0;
         PCIBusAddress GuestPCIAddress;
 
-        assignment->COMGETTER(GuestAddress)(&guest);
+        hrc = assignment->COMGETTER(GuestAddress)(&guest);   H();
         GuestPCIAddress.fromLong(guest);
         Assert(GuestPCIAddress.valid());
 
@@ -625,9 +625,9 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
         LONG host, guest;
         Bstr aDevName;
 
-        assignment->COMGETTER(HostAddress)(&host);
-        assignment->COMGETTER(GuestAddress)(&guest);
-        assignment->COMGETTER(Name)(aDevName.asOutParam());
+        hrc = assignment->COMGETTER(HostAddress)(&host);            H();
+        hrc = assignment->COMGETTER(GuestAddress)(&guest);          H();
+        hrc = assignment->COMGETTER(Name)(aDevName.asOutParam());   H();
 
         InsertConfigNode(pPCIDevs, Utf8StrFmt("%d", iDev).c_str(), &pInst);
         InsertConfigInteger(pInst, "Trusted", 1);
