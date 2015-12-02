@@ -182,7 +182,7 @@ static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEXW const *pOSInfoE
                  || (   dwMajorVersion == 10
                      && dwMinorVersion == 0))
         {
-            (bProductType != VER_NT_WORKSTATION)
+            if (bProductType != VER_NT_WORKSTATION)
                 enmVer = kRTWinOSType_2016;
             else
                 enmVer = kRTWinOSType_10;
