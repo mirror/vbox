@@ -830,7 +830,7 @@ static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t pu32Value);
 
 static void hdaStreamDestroy(PHDASTREAM pStrmSt);
 
-static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t *pcbProcessed);
+static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t cbMax, uint32_t *pcbProcessed);
 
 #ifdef IN_RING3
 static int hdaBDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry);
@@ -1517,7 +1517,7 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStrmSt, uint8_t u8Strm)
 {
     AssertPtrReturnVoid(pThis);
     AssertPtrReturnVoid(pStrmSt);
-    AssertReturnVoid(u8Strm <= 7); /** @todo Use a define for MAX_STRAEMS! */
+    AssertReturnVoid(u8Strm <= 7); /** @todo Use a define for MAX_STREAMS! */
 
     /*
      * Initialize stream state.
@@ -2303,7 +2303,7 @@ static void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BaseDMA, uint16_t cBDLE)
     if (!pThis->u64DPBase) /* No DMA base given? Bail out. */
         return;
 
-    for (int i = 0; i < 8; i++) /** @todo Use a define. */
+    for (int i = 0; i < 8; i++) /** @todo Use a define for MAX_STREAMS! */
     {
         uint32_t uDMACnt;
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), (pThis->u64DPBase & DPBASE_ADDR_MASK) + i * 8, /** @todo Use a define. */
@@ -2361,10 +2361,13 @@ static void hdaBDLEReset(PHDABDLE pBDLE)
  *
  * @return Number of bytes for the DMA engine to process.
  */
-DECLINLINE(uint32_t) hdaStreamGetTransferSize(PHDASTATE pThis, PHDASTREAM pStrmSt)
+DECLINLINE(uint32_t) hdaStreamGetTransferSize(PHDASTATE pThis, PHDASTREAM pStrmSt, uint32_t cbMax)
 {
     AssertPtrReturn(pThis, 0);
     AssertPtrReturn(pStrmSt, 0);
+
+    if (!cbMax)
+        return 0;
 
     PHDABDLE pBDLE = hdaStreamGetCurrentBDLE(pThis, pStrmSt);
 
@@ -2376,6 +2379,9 @@ DECLINLINE(uint32_t) hdaStreamGetTransferSize(PHDASTATE pThis, PHDASTREAM pStrmS
 
         /* Make sure we only copy as much as the stream's FIFO can hold (SDFIFOS, 18.2.39). */
         cbFree = RT_MIN(cbFree, pStrmSt->u16FIFOS);
+
+        /* Make sure we only transfer as many bytes as requested. */
+        cbFree = RT_MIN(cbFree, cbMax);
 
         if (pBDLE->State.cbBelowFIFOW)
         {
@@ -2446,7 +2452,9 @@ DECLINLINE(bool) hdaStreamNeedsNextBDLE(PHDASTATE pThis, PHDASTREAM pStrmSt)
     /* Do we need to use the next BDLE entry? Either because we reached
      * the CBL limit or our internal DMA buffer is full. */
     bool fNeedsNextBDLE   = (   fCBLLimitReached
-                             || pBDLE->State.u32BufOff >= pBDLE->u32BufSize);
+                             || (   pBDLE->State.u32BufOff
+                                 && pBDLE->State.u32BufOff >= pBDLE->u32BufSize)
+                            );
 
     Assert(u32LPIB                <= pStrmSt->u32CBL);
     Assert(pBDLE->State.u32BufOff <= pBDLE->u32BufSize);
@@ -2556,7 +2564,7 @@ static bool hdaStreamTransferIsComplete(PHDASTATE pThis, PHDASTREAM pStrmSt)
  * Note: This function writes to the DMA buffer immediately,
  *       but "reports bytes" when all conditions are met (FIFOW).
  */
-static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, PAUDMIXSINK pSink, uint32_t *pcbRead)
+static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, PAUDMIXSINK pSink, uint32_t cbMax, uint32_t *pcbRead)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStrmSt, VERR_INVALID_POINTER);
@@ -2567,43 +2575,42 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, PAUDMIXSINK pSink, 
 
     int rc;
     uint32_t cbRead = 0;
-    uint32_t cbBuf = hdaStreamGetTransferSize(pThis, pStrmSt);
+    uint32_t cbBuf  = hdaStreamGetTransferSize(pThis, pStrmSt, cbMax);
 
     LogFlowFunc(("cbBuf=%RU32, %R[bdle]\n", cbBuf, pBDLE));
 
     if (!cbBuf)
     {
         /* Nothing to write, bail out. */
-        rc = VERR_NO_DATA;
+        rc = VINF_EOF;
     }
     else
     {
-        uint32_t cbReadFromSink = 0;
-        rc = AudioMixerProcessSinkIn(pSink, AUDMIXOP_BLEND, pBDLE->State.au8FIFO, cbBuf, &cbReadFromSink);
+        rc = AudioMixerProcessSinkIn(pSink, AUDMIXOP_BLEND, pBDLE->State.au8FIFO, cbBuf, &cbRead);
         if (RT_SUCCESS(rc))
         {
-            Assert(cbReadFromSink);
-            Assert(cbReadFromSink == cbBuf);
-            Assert(cbReadFromSink <= pBDLE->u32BufSize - pBDLE->State.u32BufOff);
+            Assert(cbRead);
+            Assert(cbRead == cbBuf);
+            Assert(cbRead <= pBDLE->u32BufSize - pBDLE->State.u32BufOff);
 
             /*
              * Write to the BDLE's DMA buffer.
              */
             rc = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
                                        pBDLE->u64BufAdr + pBDLE->State.u32BufOff,
-                                       pBDLE->State.au8FIFO, cbReadFromSink);
+                                       pBDLE->State.au8FIFO, cbRead);
             AssertRC(rc);
 
-            if (pBDLE->State.cbBelowFIFOW + cbReadFromSink > hdaStreamGetFIFOW(pThis, pStrmSt))
+            if (pBDLE->State.cbBelowFIFOW + cbRead > hdaStreamGetFIFOW(pThis, pStrmSt))
             {
-                pBDLE->State.u32BufOff    += cbReadFromSink;
+                pBDLE->State.u32BufOff    += cbRead;
                 pBDLE->State.cbBelowFIFOW  = 0;
                 //hdaBackendReadTransferReported(pBDLE, cbDMAData, cbRead, &cbRead, pcbAvail);
             }
             else
             {
-                pBDLE->State.u32BufOff    += cbReadFromSink;
-                pBDLE->State.cbBelowFIFOW += cbReadFromSink;
+                pBDLE->State.u32BufOff    += cbRead;
+                pBDLE->State.cbBelowFIFOW += cbRead;
                 Assert(pBDLE->State.cbBelowFIFOW <= hdaStreamGetFIFOW(pThis, pStrmSt));
                 //hdaBackendTransferUnreported(pThis, pBDLE, pStreamDesc, cbRead, pcbAvail);
 
@@ -2612,10 +2619,7 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, PAUDMIXSINK pSink, 
         }
     }
 
-    //Assert(cbRead <= (SDFIFOS(pThis, pStrmSt->u8Strm) + 1));
-
-    LogFunc(("BDLE(off:%RU32, size:%RU32), cbTransferred=%RU32, rc=%Rrc\n",
-             pBDLE->State.u32BufOff, pBDLE->u32BufSize, cbRead, rc));
+    Assert(cbRead <= pStrmSt->u16FIFOS);
 
     if (RT_SUCCESS(rc))
     {
@@ -2623,10 +2627,11 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, PAUDMIXSINK pSink, 
             *pcbRead = cbRead;
     }
 
+    LogFunc(("Returning cbRead=%RU32, rc=%Rrc\n", cbRead, rc));
     return rc;
 }
 
-static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, uint32_t *pcbWritten)
+static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, uint32_t cbMax, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pThis,      VERR_INVALID_POINTER);
     AssertPtrReturn(pStrmSt,    VERR_INVALID_POINTER);
@@ -2637,7 +2642,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, uint32_t *pcbWritt
     int rc;
 
     uint32_t cbWritten = 0;
-    uint32_t cbData    = hdaStreamGetTransferSize(pThis, pStrmSt);
+    uint32_t cbData    = hdaStreamGetTransferSize(pThis, pStrmSt, cbMax);
 
     LogFlowFunc(("cbData=%RU32, %R[bdle]\n", cbData, pBDLE));
 
@@ -2923,14 +2928,14 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     if (cbOutMin)
     {
         Assert(cbOutMin != UINT32_MAX);
-        hdaTransfer(pThis, PO_INDEX, NULL /* pcbProcessed */); /** @todo Add rc! */
+        hdaTransfer(pThis, PO_INDEX, cbOutMin /* cbMax */, NULL /* pcbProcessed */); /** @todo Add rc! */
     }
 
     /*
      * Recording.
      */
     if (cbInMax)
-        hdaTransfer(pThis, PI_INDEX, NULL /* pcbProcessed */); /** @todo Add rc! */
+        hdaTransfer(pThis, PI_INDEX, cbInMax /* cbMax */, NULL /* pcbProcessed */); /** @todo Add rc! */
 
     TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTicks);
 
@@ -2953,7 +2958,7 @@ static DECLCALLBACK(int) hdaCallbackInput(PDMAUDIOCALLBACKTYPE enmType, void *pv
     PPDMAUDIOCALLBACKDATAIN pData = (PPDMAUDIOCALLBACKDATAIN)pvUser;
     AssertReturn(cbUser == sizeof(PDMAUDIOCALLBACKDATAIN), VERR_INVALID_PARAMETER);
 
-    return hdaTransfer(pCtx->pThis, PI_INDEX, &pData->cbOutRead);
+    return hdaTransfer(pCtx->pThis, PI_INDEX, UINT32_MAX, &pData->cbOutRead);
 }
 
 static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCALLBACKTYPE enmType, void *pvCtx, size_t cbCtx, void *pvUser, size_t cbUser)
@@ -2972,7 +2977,7 @@ static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCALLBACKTYPE enmType, void *p
 
     PHDASTATE pThis = pCtx->pThis;
 
-    int rc = hdaTransfer(pCtx->pThis, PO_INDEX, &pData->cbOutWritten);
+    int rc = hdaTransfer(pCtx->pThis, PO_INDEX, UINT32_MAX, &pData->cbOutWritten);
     if (   RT_SUCCESS(rc)
         && pData->cbOutWritten)
     {
@@ -2987,12 +2992,12 @@ static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCALLBACKTYPE enmType, void *p
 }
 #endif /* VBOX_WITH_AUDIO_CALLBACKS */
 
-static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t *pcbProcessed)
+static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t cbMax, uint32_t *pcbProcessed)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     /* pcbProcessed is optional. */
 
-    LogFlowFunc(("enmSrc=%RU32\n", enmSrc));
+    LogFlowFunc(("enmSrc=%RU32, cbMax=%RU32\n", enmSrc, cbMax));
 
     PHDASTREAM pStrmSt;
     switch (enmSrc)
@@ -3044,15 +3049,16 @@ static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t *pcbProc
         return VINF_SUCCESS;
     }
 
-    Assert(pStrmSt->u8Strm <= 7); /** @todo Use a define for MAX_STRAEMS! */
+    Assert(pStrmSt->u8Strm <= 7); /** @todo Use a define for MAX_STREAMS! */
     Assert(pStrmSt->u64BaseDMA);
     Assert(pStrmSt->u32CBL);
 
     int      rc;
+    uint32_t cbToProcess      = cbMax;
     uint32_t cbProcessedTotal = 0;
     bool     fIsComplete      = false;
 
-    do
+    while (cbToProcess)
     {
         /* Do we need to fetch the next Buffer Descriptor Entry (BDLE)? */
         if (hdaStreamNeedsNextBDLE(pThis, pStrmSt))
@@ -3065,14 +3071,14 @@ static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t *pcbProc
         switch (enmSrc)
         {
             case PI_INDEX:
-                rc = hdaReadAudio(pThis, pStrmSt, pThis->pSinkLineIn, &cbProcessed);
+                rc = hdaReadAudio(pThis, pStrmSt, pThis->pSinkLineIn, cbToProcess, &cbProcessed);
                 break;
             case PO_INDEX:
-                rc = hdaWriteAudio(pThis, pStrmSt, &cbProcessed);
+                rc = hdaWriteAudio(pThis, pStrmSt, cbToProcess, &cbProcessed);
                 break;
 #ifdef VBOX_WITH_HDA_MIC_IN
             case MC_INDEX:
-                rc = hdaReadAudio(pThis, pStrmSt, pThis->pSinkMicIn, &cbProcessed);
+                rc = hdaReadAudio(pThis, pStrmSt, pThis->pSinkMicIn, cbToProcess, &cbProcessed);
                 break;
 #endif
             default:
@@ -3089,9 +3095,11 @@ static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t *pcbProc
 
         hdaStreamTransferUpdate(pThis, pStrmSt, cbProcessed);
 
+        cbToProcess      -= RT_MIN(cbToProcess,  cbProcessed);
         cbProcessedTotal += cbProcessed;
 
-        LogFlowFunc(("cbProcessed=%RU32, cbProcessedTotal=%RU32, rc=%Rrc\n", cbProcessed, cbProcessedTotal, rc));
+        LogFlowFunc(("cbProcessed=%RU32, cbToProcess=%RU32, cbProcessedTotal=%RU32, rc=%Rrc\n",
+                     cbProcessed, cbToProcess, cbProcessedTotal, rc));
 
         if (rc == VINF_EOF)
             fIsComplete = true;
@@ -3099,7 +3107,9 @@ static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t *pcbProc
         if (!fIsComplete)
             fIsComplete = hdaStreamTransferIsComplete(pThis, pStrmSt);
 
-    } while (!fIsComplete);
+        if (fIsComplete)
+            break;
+    }
 
     if (RT_SUCCESS(rc))
     {
