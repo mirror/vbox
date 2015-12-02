@@ -2763,7 +2763,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
     SP_DEVINFO_DATA DeviceInfoData;
     PVOID pQueueCallbackContext = NULL;
     DWORD ret = 0;
-    BOOL found = FALSE;
     BOOL registered = FALSE;
     BOOL destroyList = FALSE;
     WCHAR pWCfgGuidString [50];
@@ -2773,8 +2772,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
     INetCfg *pNetCfg = NULL;
     LPWSTR lpszApp = NULL;
 
-    do
+    for (int attempt = 0; attempt < 2; ++attempt)
     {
+        BOOL found = FALSE;
         GUID netGuid;
         SP_DRVINFO_DATA DriverInfoData;
         SP_DEVINSTALL_PARAMS DeviceInstallParams;
@@ -3055,20 +3055,13 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
         if (hkey == INVALID_HANDLE_VALUE)
             SetErrBreak(("SetupDiOpenDevRegKey failed (0x%08X)", GetLastError()));
 
-        SC_HANDLE hSCM = NULL;
-        SC_HANDLE hService = NULL;
-
-        hSCM = OpenSCManager(NULL, NULL, GENERIC_READ);
-        if (hSCM)
-            hService = OpenService(hSCM, _T("NetSetupSvc"), GENERIC_READ);
-        else
-            NonStandardLogFlow(("OpenSCManager failed (0x%x)", GetLastError()));
-
         /* Query the instance ID; on Windows 10, the registry key may take a short
          * while to appear. Microsoft recommends waiting for up to 5 seconds, but
-         * we want to be on the safe side, so let's wait for a minute.
+         * we want to be on the safe side, so let's wait for 20 seconds. Waiting
+         * longer is harmful as network setup service will shut down after a period
+         * of inactivity.
          */
-        for (int retries = 0; retries < 2 * 60; ++retries)
+        for (int retries = 0; retries < 2 * 20; ++retries)
         {
             cbSize = sizeof(pWCfgGuidString);
             ret = RegQueryValueExW (hkey, L"NetCfgInstanceId", NULL,
@@ -3078,54 +3071,38 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
                 Sleep(500); /* half second */
             else
                 break;
-            /* Bail out as soon as NetSetupSvc has stopped. */
-            if (hService && retries > 10 && vboxNetCfgWinIsNetSetupStopped(hService))
-                break;
         }
 
-        if (ret == ERROR_FILE_NOT_FOUND && hService)
+        if (ret == ERROR_FILE_NOT_FOUND && attempt == 0)
         {
-            NonStandardLogFlow(("Timed out while waiting for NetCfgInstanceId, trying to obtain INetCfg...\n"));
             /*
-             * NetCfgInstanceId still is not there, let's try to nudge network
-             * configuration engine by obtaining INetCfg. The idea is to trigger
-             * NetSetupSvc start, which will re-enumerate devices, and we need to
-             * obtain INetCfg anyway later on. Note that we need to make sure
-             * NetSetupSvc has stopped before we attempt to obtain INetCfg.
+             * This is the first time we fail to obtain NetCfgInstanceId, let us
+             * retry it once. It is needed to handle the situation when network
+             * setup fails to recognize the arrival of our device node while it
+             * is busy removing another host-only interface, and it gets stuck
+             * with no matching network interface created for our device node.
+             * See @bugref{7973} for details.
              */
-            for (int retries = 0; retries < 60 && !vboxNetCfgWinIsNetSetupStopped(hService); ++retries)
-                Sleep(1000);
-            HRESULT hr = VBoxNetCfgWinQueryINetCfg(&pNetCfg, TRUE, L"VirtualBox Host-Only Creation",
-                                                   30 * 1000, /* on Vista we often get 6to4svc.dll holding the lock, wait for 30 sec.  */
-                                                   &lpszApp);
-            if (hr != S_OK)
-                NonStandardLogFlow(("VBoxNetCfgWinCreateHostOnlyNetworkInterface: failed to obtain INetCfg (0x%x)\n", hr));
-            for (int retries = 0; retries < 30; ++retries)
+            NonStandardLogFlow(("Timed out while waiting for NetCfgInstanceId, remove the device and try again...\n"));
+            if (hkey != INVALID_HANDLE_VALUE)
             {
-                /*
-                 * Once again, there is no point in checking for NetCfgInstanceId
-                 * while NetSetupSvc is down. Also if it is not enough to check once,
-                 * because it may take a while for NetSetupSvc to complete network
-                 * configuration changes.
-                 */
-                if (vboxNetCfgWinIsNetSetupRunning(hService))
-                {
-                    /* Retry querying NetCfgInstanceId */
-                    cbSize = sizeof(pWCfgGuidString);
-                    ret = RegQueryValueExW (hkey, L"NetCfgInstanceId", NULL,
-                                            &dwValueType, (LPBYTE) pWCfgGuidString, &cbSize);
-                    if (ret != ERROR_FILE_NOT_FOUND)
-                        break;
-                }
-                Sleep(1000);
+                RegCloseKey (hkey);
+                hkey = (HKEY)INVALID_HANDLE_VALUE;
             }
+            if (pQueueCallbackContext)
+            {
+                SetupTermDefaultQueueCallback(pQueueCallbackContext);
+                pQueueCallbackContext = NULL;
+            }
+            SetupDiCallClassInstaller(DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
+            SetupDiDeleteDeviceInfo(hDeviceInfo, &DeviceInfoData);
+            SetupDiDestroyDriverInfoList(hDeviceInfo, &DeviceInfoData,
+                                         SPDIT_CLASSDRIVER);
+            SetupDiDestroyDeviceInfoList(hDeviceInfo);
+            destroyList = FALSE;
+            registered = FALSE;
+            continue;
         }
-        if (hService)
-            CloseServiceHandle(hService);
-        else
-            NonStandardLogFlow(("OpenService failed (0x%x)\n", GetLastError()));
-        if (hSCM)
-            CloseServiceHandle(hSCM);
 
         if (ret != ERROR_SUCCESS)
             SetErrBreak(("Querying NetCfgInstanceId failed (0x%08X)", ret));
@@ -3168,8 +3145,10 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
             SetErrBreak (("SetupDiGetDeviceInstanceId failed (0x%08X)",
                           GetLastError()));
 #endif /* !VBOXNETCFG_DELAYEDRENAME */
+
+        /* Success, don't need another attempt */
+        break;
     }
-    while (0);
 
     /*
      * cleanup
@@ -3186,7 +3165,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
         if (ret != 0 && registered)
             SetupDiCallClassInstaller(DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
 
-        found = SetupDiDeleteDeviceInfo(hDeviceInfo, &DeviceInfoData);
+        SetupDiDeleteDeviceInfo(hDeviceInfo, &DeviceInfoData);
 
         /* destroy the driver info list */
         if (destroyList)
