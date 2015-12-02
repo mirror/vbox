@@ -396,7 +396,19 @@ InstallBootGraphicsResourceTable (
     mBootGraphicsResourceTableTemplate.ImageOffsetY = (UINT32) mLogoDestY;
   }
 
+#ifndef VBOX
   mBootGraphicsResourceTableTemplate.Status = (UINT8) (mIsLogoValid ? EFI_ACPI_5_0_BGRT_STATUS_VALID : EFI_ACPI_5_0_BGRT_STATUS_INVALID);
+#else
+  /*
+   * Make sure the Logo is always redrawn by the Windows bootloader. The _VALID and _INVALID names are actually a bitsmisleading.
+   * EFI_ACPI_5_0_BGRT_STATUS_INVALID means that the screen content probably changed and makes the Windows bootloader redraw our logo.
+   * EFI_ACPI_5_0_BGRT_STATUS_VALID in contrast means that the screen content didn't change inbetween so Windows will not redraw
+   * our logo but just draw the spinner.
+   * As we can't determine reliable whether the screen changed (in our case someone is clearing it between the initial display and
+   * the OS taking over).
+   */
+  mBootGraphicsResourceTableTemplate.Status = (UINT8)EFI_ACPI_5_0_BGRT_STATUS_INVALID;
+#endif
 
   //
   // Update Checksum.
