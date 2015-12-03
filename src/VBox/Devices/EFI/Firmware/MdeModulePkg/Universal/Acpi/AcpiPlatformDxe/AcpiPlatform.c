@@ -354,7 +354,8 @@ AcpiPlatformEntryPoint (
     if (CurrentTable) {
       Size = CurrentTable->Length;
       DEBUG((EFI_D_ERROR, "adding %p %d\n", CurrentTable, Size));
-    }
+    } else
+      Size = 0; // Just to shut up the compiler.
 #else
     Status = FwVol->ReadSection (
                       FwVol,
