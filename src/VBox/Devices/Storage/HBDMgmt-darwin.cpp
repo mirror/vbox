@@ -24,6 +24,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/list.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/once.h>
