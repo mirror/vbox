@@ -532,7 +532,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "VTG_GLOBAL g_VTGObjHeader, data\n"
                     "                ;0         1         2         3\n"
                     "                ;012345678901234567890123456789012\n"
-                    "    db          'VTG Object Header v1.6', 0, 0\n"
+                    "    db          'VTG Object Header v1.7', 0, 0\n"
                     "    dd          %u\n"
                     "    dd          NAME(g_acVTGProbeEnabled_End) - NAME(g_VTGObjHeader)\n"
                     "    dd          NAME(g_achVTGStringTable)     - NAME(g_VTGObjHeader)\n"
@@ -739,6 +739,8 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                         "    db 0       ; reserved\n"
                         "VTG_GLOBAL g_cVTGProviderProbesEnabled_%s, data\n"
                         "    dd 0\n"
+                        "VTG_GLOBAL g_cVTGProviderSettingsSeqNo_%s, data\n"
+                        "    dd 0\n"
                         ,
                         iProvider, pProvider->pszName,
                         strtabGetOff(pProvider->pszName),
@@ -749,6 +751,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                         pProvider->AttrFunctions.enmCode,   pProvider->AttrFunctions.enmData,   pProvider->AttrFunctions.enmDataDep,
                         pProvider->AttrName.enmCode,        pProvider->AttrName.enmData,        pProvider->AttrName.enmDataDep,
                         pProvider->AttrArguments.enmCode,   pProvider->AttrArguments.enmData,   pProvider->AttrArguments.enmDataDep,
+                        pProvider->pszName,
                         pProvider->pszName);
         iProvider++;
     }
@@ -1003,10 +1006,14 @@ static RTEXITCODE generateHeader(PSCMSTREAM pStrm)
         {
             generateProviderDefineName(szTmp, sizeof(szTmp), pProv->pszName);
             ScmStreamPrintf(pStrm,
-                            "extern uint32_t        g_cVTGProviderProbesEnabled_%s;\n"
+                            "extern uint32_t const volatile g_cVTGProviderProbesEnabled_%s;\n"
                             "# define %s_ANY_PROBES_ENABLED() \\\n"
                             "    (RT_UNLIKELY(g_cVTGProviderProbesEnabled_%s != 0))\n"
+                            "extern uint32_t const volatile g_cVTGProviderSettingsSeqNo_%s;\n"
+                            "# define %s_GET_SETTINGS_SEQ_NO() (g_cVTGProviderSettingsSeqNo_%s)\n"
                             "\n",
+                            pProv->pszName,
+                            szTmp, pProv->pszName,
                             pProv->pszName,
                             szTmp, pProv->pszName);
         }
