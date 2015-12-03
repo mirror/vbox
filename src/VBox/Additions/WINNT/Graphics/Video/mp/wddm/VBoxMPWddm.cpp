@@ -7436,7 +7436,7 @@ DriverEntry(
 #endif
 
 #ifdef VBOX_WDDM_WIN8
-    LOGREL(("VBox WDDM Driver for Windows 8 version %d.%d.%dr%d, %d bit; Built %s %s",
+    LOGREL(("VBox WDDM Driver for Windows 8+ version %d.%d.%dr%d, %d bit; Built %s %s",
             VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
             (sizeof (void*) << 3), __DATE__, __TIME__));
 #else
@@ -7445,11 +7445,9 @@ DriverEntry(
             (sizeof (void*) << 3), __DATE__, __TIME__));
 #endif
 
-    if (! ARGUMENT_PRESENT(DriverObject) ||
-        ! ARGUMENT_PRESENT(RegistryPath))
-    {
+    if (   !ARGUMENT_PRESENT(DriverObject)
+        || !ARGUMENT_PRESENT(RegistryPath))
         return STATUS_INVALID_PARAMETER;
-    }
 
     vboxWddmDrvCfgInit(RegistryPath);
 
