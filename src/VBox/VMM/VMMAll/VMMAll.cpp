@@ -115,13 +115,17 @@ static DECLCALLBACK(size_t) vmmFormatTypeVmCpuSet(PFNRTSTROUTPUT pfnOutput, void
             int off = 0;
             if (cCpus != 0)
                 szTmp[off++] = ',';
+            cCpus++;
             off += vmmFormatTypeShortNumber(&szTmp[off], iCpu);
 
             /* Check for sequence. */
             uint32_t const iStart = ++iCpu;
             while (   iCpu < RT_ELEMENTS(pSet->au32Bitmap) * 32
                    && VMCPUSET_IS_PRESENT(pSet, iCpu))
+            {
                 iCpu++;
+                cCpus++;
+            }
             if (iCpu != iStart)
             {
                 szTmp[off++] = '-';
