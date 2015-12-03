@@ -22,9 +22,9 @@
 #define LOG_GROUP LOG_GROUP_DRV_VD
 #include <VBox/cdefs.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/list.h>
-#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/once.h>
