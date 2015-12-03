@@ -7457,7 +7457,7 @@ DriverEntry(
     BOOLEAN checkedBuild = PsGetVersion(&major, &minor, &build, NULL);
     BOOLEAN f3DRequired = FALSE;
 
-    LOGREL(("OsVersion( %d, %d, %d )", major, minor, build));
+    LOGREL(("OsVersion(%d, %d, %d)", major, minor, build));
 
     NTSTATUS Status = STATUS_SUCCESS;
     /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
