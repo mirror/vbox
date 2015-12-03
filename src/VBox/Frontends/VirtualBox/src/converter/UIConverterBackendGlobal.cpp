@@ -216,6 +216,22 @@ template<> QString toString(const StorageSlot &storageSlot)
             strResult = QApplication::translate("VBoxGlobal", "USB Port %1", "StorageSlot").arg(storageSlot.port);
             break;
         }
+        case KStorageBus_PCIe:
+        {
+            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
+            {
+                AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
+                break;
+            }
+            if (storageSlot.device != 0)
+            {
+                AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
+                break;
+            }
+            strResult = QApplication::translate("VBoxGlobal", "NVMe Port %1", "StorageSlot").arg(storageSlot.port);
+            break;
+        }
         default:
         {
             AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));

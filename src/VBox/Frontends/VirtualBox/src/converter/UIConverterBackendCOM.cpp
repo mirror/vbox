@@ -474,6 +474,7 @@ template<> QString toString(const KStorageBus &bus)
         case KStorageBus_Floppy: return QApplication::translate("VBoxGlobal", "Floppy", "StorageBus");
         case KStorageBus_SAS:    return QApplication::translate("VBoxGlobal", "SAS", "StorageBus");
         case KStorageBus_USB:    return QApplication::translate("VBoxGlobal", "USB", "StorageControllerType"); // TODO: change to proper context later
+        case KStorageBus_PCIe:   return QApplication::translate("VBoxGlobal", "PCIe", "StorageBus");
         default: AssertMsgFailed(("No text for %d", bus)); break;
     }
     return QString();
@@ -493,6 +494,7 @@ template<> QString toString(const KStorageControllerType &type)
         case KStorageControllerType_I82078:      return QApplication::translate("VBoxGlobal", "I82078", "StorageControllerType");
         case KStorageControllerType_LsiLogicSas: return QApplication::translate("VBoxGlobal", "LsiLogic SAS", "StorageControllerType");
         case KStorageControllerType_USB:         return QApplication::translate("VBoxGlobal", "USB", "StorageControllerType");
+        case KStorageControllerType_NVMe:        return QApplication::translate("VBoxGlobal", "NVMe", "StorageControllerType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -643,6 +645,7 @@ template<> KStorageControllerType fromString<KStorageControllerType>(const QStri
     list.insert(QApplication::translate("VBoxGlobal", "I82078", "StorageControllerType"),       KStorageControllerType_I82078);
     list.insert(QApplication::translate("VBoxGlobal", "LsiLogic SAS", "StorageControllerType"), KStorageControllerType_LsiLogicSas);
     list.insert(QApplication::translate("VBoxGlobal", "USB", "StorageControllerType"),          KStorageControllerType_USB);
+    list.insert(QApplication::translate("VBoxGlobal", "NVMe", "StorageControllerType"),         KStorageControllerType_NVMe);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));

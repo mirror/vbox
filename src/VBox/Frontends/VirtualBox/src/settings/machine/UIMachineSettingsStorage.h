@@ -82,6 +82,9 @@ enum PixmapType
     USBControllerNormal,
     USBControllerExpand,
     USBControllerCollapse,
+    PCIeControllerNormal,
+    PCIeControllerExpand,
+    PCIeControllerCollapse,
     FloppyControllerNormal,
     FloppyControllerExpand,
     FloppyControllerCollapse,
@@ -94,6 +97,8 @@ enum PixmapType
     SCSIControllerAddDis,
     USBControllerAddEn,
     USBControllerAddDis,
+    PCIeControllerAddEn,
+    PCIeControllerAddDis,
     FloppyControllerAddEn,
     FloppyControllerAddDis,
 
@@ -218,6 +223,19 @@ class USBStorageControllerType : public AbstractControllerType
 public:
 
     USBStorageControllerType (KStorageControllerType aSubType);
+
+private:
+
+    KStorageControllerType first() const;
+    uint size() const;
+};
+
+/* PCIe Controller Type */
+class PCIeStorageControllerType : public AbstractControllerType
+{
+public:
+
+    PCIeStorageControllerType (KStorageControllerType aSubType);
 
 private:
 
@@ -439,6 +457,7 @@ public:
         R_IsMoreFloppyControllersPossible,
         R_IsMoreSASControllersPossible,
         R_IsMoreUSBControllersPossible,
+        R_IsMorePCIeControllersPossible,
         R_IsMoreAttachmentsPossible,
 
         R_CtrName,
@@ -707,6 +726,7 @@ private slots:
     void addFloppyController();
     void addSASController();
     void addUSBController();
+    void addPCIeController();
     void delController();
 
     void addAttachment();
@@ -788,6 +808,7 @@ private:
     QAction *mAddSASCtrAction;
     QAction *mAddFloppyCtrAction;
     QAction *mAddUSBCtrAction;
+    QAction *mAddPCIeCtrAction;
     QAction *mAddAttAction;
     QAction *mDelAttAction;
     QAction *mAddHDAttAction;
