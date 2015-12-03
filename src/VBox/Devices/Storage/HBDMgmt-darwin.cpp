@@ -449,11 +449,18 @@ DECLHIDDEN(int) HBDMgrClaimBlockDevice(HBDMGR hHbdMgr, const char *pszFilename)
                         rc = VERR_NO_MEMORY;
                 }
                 else if (RT_SUCCESS(rc))
+                {
                     rc = hbdMgrDAReturn2VBoxStatus(CalllbackArgs.rcDA);
+                    LogRel(("HBDMgrClaimBlockDevice: DADiskUnmount(\"%s\") failed with %Rrc\n",
+                            pszFilename, rc));
+                }
             }
             else if (RT_SUCCESS(rc))
+            {
                 rc = hbdMgrDAReturn2VBoxStatus(CalllbackArgs.rcDA);
-
+                LogRel(("HBDMgrClaimBlockDevice: DADiskClaim(\"%s\") failed with %Rrc\n",
+                        pszFilename, rc));
+            }
             if (RT_FAILURE(rc))
                 CFRelease(hDiskRef);
         }
