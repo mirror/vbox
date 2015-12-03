@@ -642,7 +642,7 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
                                 && memcmp(&g_apszExtDefRenames[i][1], pchName, cch) == 0)
                             {
                                 pchName[0] = fProbably32bit ? '?' : '_';
-                                pchName[1] = fProbably32bit ? '?' : '?';
+                                pchName[1] = '?';
                                 break;
                             }
                     }
