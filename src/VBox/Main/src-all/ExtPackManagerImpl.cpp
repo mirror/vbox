@@ -2089,7 +2089,7 @@ HRESULT ExtPackManager::cleanup(void)
          * Take the write lock to prevent conflicts with other calls to this
          * VBoxSVC instance.
          */
-         hrc = i_runSetUidToRootHelper(NULL,
+        hrc = i_runSetUidToRootHelper(NULL,
                                       "cleanup",
                                       "--base-dir", m->strBaseDir.c_str(),
                                       (const char *)NULL);
@@ -2616,7 +2616,7 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
         ExtPack *pExtPack;
 
         hrc = i_isThereAnyRunningVM();
-        if(SUCCEEDED(hrc))
+        if (SUCCEEDED(hrc))
         {
             LogRel(("Install extension pack '%s' failed because at least one VM is still running.", pStrName->c_str()));
             hrc = setError(E_FAIL,tr("Install extension pack '%s' failed because at least one VM is still running"),
@@ -2753,7 +2753,7 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
         ExtPack *pExtPack;
 
         hrc = i_isThereAnyRunningVM();
-        if(SUCCEEDED(hrc))
+        if (SUCCEEDED(hrc))
         {
             LogRel(("Uninstall extension pack '%s' failed because at least one VM is still running.", a_pstrName->c_str()));
             hrc = setError(E_FAIL,tr("Uninstall extension pack '%s' failed because at least one VM is still running"),
