@@ -83,8 +83,8 @@ provider vboxvmm
     probe xcpt__ss(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
     /** \#GP - general protection fault.  */
     probe xcpt__gp(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr);
-    /** \#PG - page fault.  */
-    probe xcpt__pg(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr, uint64_t a_cr2);
+    /** \#PF - page fault.  */
+    probe xcpt__pf(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_uErr, uint64_t a_cr2);
     /** \#MF - math fault (FPU).  */
     probe xcpt__mf(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
     /** \#AC - alignment check.  */
@@ -101,6 +101,122 @@ provider vboxvmm
     /** Hardware interrupt being dispatched. */
     probe int__hardware(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint8_t a_iInterrupt, uint32_t a_uTag, uint32_t a_idSource);
 
+    /** Exit - Task switch. */
+    probe exit__task__switch(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - HALT instruction.
+     * @todo not yet implemented. */
+    probe exit__halt(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - MWAIT instruction. */
+    probe exit__mwait(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - MONITOR instruction. */
+    probe exit__monitor(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - CPUID instruction (missing stuff in raw-mode). */
+    probe exit__cpuid(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t uLeaf, uint32_t uSubLeaf);
+    /** Exit - INVD instruction.  */
+    probe exit__invd(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - WBINVD instruction. */
+    probe exit__wbinvd(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - INVLPG instruction. */
+    probe exit__invlpg(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - RDTSC instruction.  */
+    probe exit__rdtsc(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - RDTSCP instruction. */
+    probe exit__rdtscp(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - RDPMC instruction.  */
+    probe exit__rdpmc(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - RDMSR instruction.  */
+    probe exit__rdmsr(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_idMsr);
+    /** Exit - WRMSR instruction.  */
+    probe exit__wrmsr(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint32_t a_idMsr, uint64_t a_uValue);
+    /** Exit - CRx read instruction (missing smsw in raw-mode,
+     *  and reads in general in VT-x). */
+    probe exit__crx__read(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint8_t a_iReg);
+    /** Exit - CRx write instruction. */
+    probe exit__crx__write(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint8_t a_iReg);
+    /** Exit - DRx read instruction. */
+    probe exit__drx__read(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint8_t a_iReg);
+    /** Exit - DRx write instruction. */
+    probe exit__drx__write(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint8_t a_iReg);
+    /** Exit - PAUSE instruction (not in raw-mode). */
+    probe exit__pause(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - XSETBV instruction. */
+    probe exit__xsetbv(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - SIDT instruction.  */
+    probe exit__sidt(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - LIDT instruction. */
+    probe exit__lidt(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - SGDT instruction. */
+    probe exit__sgdt(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - LGDT instruction. */
+    probe exit__lgdt(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - SLDT instruction. */
+    probe exit__sldt(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - LLDT instruction. */
+    probe exit__lldt(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - STR instruction. */
+    probe exit__str(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - LTR instruction. */
+    probe exit__ltr(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - GETSEC instruction. */
+    probe exit__getsec(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - RSM instruction. */
+    probe exit__rsm(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - RDRAND instruction. */
+    probe exit__rdrand(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - RDSEED instruction. */
+    probe exit__rdseed(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - XSAVES instruction. */
+    probe exit__xsaves(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - XRSTORS instruction.  */
+    probe exit__xrstors(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VMCALL (intel) or VMMCALL (AMD) instruction. */
+    probe exit__vmm__call(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+
+    /** Exit - VT-x VMCLEAR instruction. */
+    probe exit__vmx__vmclear(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x VMLAUNCH instruction. */
+    probe exit__vmx__vmlaunch(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x VMPTRLD instruction. */
+    probe exit__vmx__vmptrld(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x VMPTRST instruction. */
+    probe exit__vmx__vmptrst(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x VMREAD instruction. */
+    probe exit__vmx__vmread(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x VMRESUME instruction. */
+    probe exit__vmx__vmresume(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x VMWRITE instruction. */
+    probe exit__vmx__vmwrite(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x VMXOFF instruction. */
+    probe exit__vmx__vmxoff(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x VMXON instruction. */
+    probe exit__vmx__vmxon(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x VMFUNC instruction. */
+    probe exit__vmx__vmfunc(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x INVEPT instruction. */
+    probe exit__vmx__invept(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x INVVPID instruction. */
+    probe exit__vmx__invvpid(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x INVPCID instruction. */
+    probe exit__vmx__invpcid(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x EPT violation. */
+    probe exit__vmx__ept__violation(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x EPT misconfiguration. */
+    probe exit__vmx__ept__misconfig(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x Virtual APIC page access. */
+    probe exit__vmx__vapic__access(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - VT-x Virtual APIC page write needing virtualizing. */
+    probe exit__vmx__vapic__write(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+
+    /** Exit - AMD-V VMRUN instruction. */
+    probe exit__svm__vmrun(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - AMD-V VMLOAD instruction. */
+    probe exit__svm__vmload(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - AMD-V VMSAVE instruction. */
+    probe exit__svm__vmsave(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - AMD-V STGI instruction. */
+    probe exit__svm__stgi(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
+    /** Exit - AMD-V CLGI instruction. */
+    probe exit__svm__clgi(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
 };
 
 #pragma D attributes Evolving/Evolving/Common provider vboxvmm provider
