@@ -983,6 +983,8 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_WBINVD                                         54
 /** 55 XSETBV. Guest software attempted to execute XSETBV. */
 #define VMX_EXIT_XSETBV                                         55
+/** 56 APIC write. Guest completed write to virtual-APIC. */
+#define VMX_EXIT_APIC_WRITE                                     56
 /** 57 RDRAND. Guest software attempted to execute RDRAND. */
 #define VMX_EXIT_RDRAND                                         57
 /** 58 INVPCID. Guest software attempted to execute INVPCID. */
