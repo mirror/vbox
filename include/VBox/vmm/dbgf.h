@@ -202,7 +202,7 @@ typedef enum DBGFEVENTTYPE
     DBGFEVENT_FIRST_SELECTABLE,
     /** Tripple fault.
      * @todo not yet implemented.  */
-    DBGFEVENT_TRIPPLE_FAULT = DBGFEVENT_FIRST_SELECTABLE,
+    DBGFEVENT_TRIPLE_FAULT = DBGFEVENT_FIRST_SELECTABLE,
     DBGFEVENT_XCPT_DE,      /**< 0x00 - \#DE - Fault - NoErr - Integer divide error (zero/overflow). */
     DBGFEVENT_XCPT_DB,      /**< 0x01 - \#DB - trap/fault - NoErr - debug event. */
     DBGFEVENT_XCPT_02,      /**< 0x02 - Reserved for NMI, see interrupt events. */
@@ -233,15 +233,12 @@ typedef enum DBGFEVENTTYPE
     DBGFEVENT_XCPT_1b,      /**< 0x1b - Intel Reserved. */
     DBGFEVENT_XCPT_1c,      /**< 0x1c - Intel Reserved. */
     DBGFEVENT_XCPT_1d,      /**< 0x1d - Intel Reserved. */
-    DBGFEVENT_XCPT_1e,      /**< 0x1e - \#SX - Fault - ErrCd - Security Exception. */
+    DBGFEVENT_XCPT_SX,      /**< 0x1e - \#SX - Fault - ErrCd - Security Exception. */
     DBGFEVENT_XCPT_1f,      /**< 0x1f - Intel Reserved. */
     /** The first exception event. */
     DBGFEVENT_XCPT_FIRST = DBGFEVENT_XCPT_DE,
     /** The last exception event. */
     DBGFEVENT_XCPT_LAST  = DBGFEVENT_XCPT_1f,
-    /** Interrupt event.
-     * @todo not yet implemented.  */
-    DBGFEVENT_INT,
     /** Access to an unassigned I/O port.
      * @todo not yet implemented. */
     DBGFEVENT_IOPORT_UNASSIGNED,
@@ -272,9 +269,9 @@ typedef enum DBGFEVENTTYPE
     /** Exit - CPUID instruction (missing stuff in raw-mode).
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_CPUID,
-    /** Exit - INV instruction.
+    /** Exit - INVD instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_INV,
+    DBGFEVENT_EXIT_INVD,
     /** Exit - WBINVD instruction.
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_WBINVD,
@@ -296,7 +293,8 @@ typedef enum DBGFEVENTTYPE
     /** Exit - WRMSR instruction.
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_WRMSR,
-    /** Exit - CRx read instruction (missing smsw in raw-mode).
+    /** Exit - CRx read instruction (missing smsw in raw-mode, and reads in
+     *  general in VT-x).
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_CRX_READ,
     /** Exit - CRx write instruction.
@@ -307,13 +305,55 @@ typedef enum DBGFEVENTTYPE
     DBGFEVENT_EXIT_DRX_READ,
     /** Exit - DRx write instruction.
      * @todo not yet implemented.  */
-    DBGFEVENT_EXIT_DRx_WRITE,
+    DBGFEVENT_EXIT_DRX_WRITE,
     /** Exit - PAUSE instruction (not in raw-mode).
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_PAUSE,
     /** Exit - XSETBV instruction.
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_XSETBV,
+    /** Exit - SIDT instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_SIDT,
+    /** Exit - LIDT instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_LIDT,
+    /** Exit - SGDT instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_SGDT,
+    /** Exit - LGDT instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_LGDT,
+    /** Exit - SLDT instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_SLDT,
+    /** Exit - LLDT instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_LLDT,
+    /** Exit - STR instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_STR,
+    /** Exit - LTR instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_LTR,
+    /** Exit - GETSEC instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_GETSEC,
+    /** Exit - RSM instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_RSM,
+    /** Exit - RDRAND instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_RDRAND,
+    /** Exit - RDSEED instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_RDSEED,
+    /** Exit - XSAVES instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_XSAVES,
+    /** Exit - XRSTORS instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_XRSTORS,
     /** Exit - VMCALL (intel) or VMMCALL (AMD) instruction.
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_VMM_CALL,
@@ -352,8 +392,25 @@ typedef enum DBGFEVENTTYPE
     /** Exit - VT-x VMFUNC instruction.
      * @todo not yet implemented.  */
     DBGFEVENT_EXIT_VMX_VMFUNC,
+    /** Exit - VT-x INVEPT instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VMX_INVEPT,
+    /** Exit - VT-x INVVPID instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VMX_INVVPID,
+    /** Exit - VT-x INVPCID instruction.
+     * @todo not yet implemented.  */
+    DBGFEVENT_EXIT_VMX_INVPCID,
+    /** Exit - VT-x EPT violation. */
+    DBGFEVENT_EXIT_VMX_EPT_VIOLATION,
+    /** Exit - VT-x EPT misconfiguration. */
+    DBGFEVENT_EXIT_VMX_EPT_MISCONFIG,
+    /** Exit - VT-x Virtual APIC page access. */
+    DBGFEVENT_EXIT_VMX_VAPIC_ACCESS,
+    /** Exit - VT-x Virtual APIC write. */
+    DBGFEVENT_EXIT_VMX_VAPIC_WRITE,
     /** Exit - VT-x - Last. */
-    DBGFEVENT_EXIT_VMX_LAST = DBGFEVENT_EXIT_VMX_VMFUNC,
+    DBGFEVENT_EXIT_VMX_LAST = DBGFEVENT_EXIT_VMX_INVEPT,
 
     /** Exit - AMD-V - first */
     DBGFEVENT_EXIT_SVM_FIRST,
@@ -793,6 +850,7 @@ VMM_INT_DECL(bool)          DBGFBpIsHwArmed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFBpIsHwIoArmed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFIsStepping(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTIOPORT uIoPort, uint8_t cbValue);
+VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uEventArg);
 
 
 #ifdef IN_RING3 /* The CPU mode API only works in ring-3. */
