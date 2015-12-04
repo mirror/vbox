@@ -79,6 +79,7 @@ private:
     Data *m;
 
     friend class ExtPackManager;
+    friend class ExtPackInstallTask;
 };
 #endif
 
@@ -211,7 +212,7 @@ public:
     /** @}  */
 
 private:
-    HRESULT     i_isThereAnyRunningVM() const;
+    HRESULT i_isThereAnyRunningVM() const;
     // wrapped IExtPackManager properties
     HRESULT getInstalledExtPacks(std::vector<ComPtr<IExtPack> > &aInstalledExtPacks);
 
@@ -239,6 +240,8 @@ private:
     struct Data;
     /** Pointer to the private instance. */
     Data *m;
+
+    friend class ExtPackUninstallTask;
 };
 
 #endif
