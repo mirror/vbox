@@ -632,9 +632,9 @@ VMMR3DECL(int) DBGFR3InterruptSoftwareIsEnabled(PUVM pUVM, uint8_t iInterrupt);
 #elif defined(VBOX_STRICT) && defined(__GNUC__)
 # define DBGF_IS_EVENT_ENABLED(a_pVM, a_enmEvent) \
     __extension__ ({ \
-        Assert((a_enmEvent) >= DBGFEVENT_FIRST_SELECTABLE \
-               (a_enmEvent) == DBGFEVENT_INTERRUPT_HARDWARE \
-               (a_enmEvent) == DBGFEVENT_INTERRUPT_SOFTWARE); \
+        Assert(   (a_enmEvent) >= DBGFEVENT_FIRST_SELECTABLE \
+               || (a_enmEvent) == DBGFEVENT_INTERRUPT_HARDWARE \
+               || (a_enmEvent) == DBGFEVENT_INTERRUPT_SOFTWARE); \
         Assert((a_enmEvent) < DBGFEVENT_END); \
         ASMBitTest(&(a_pVM)->dbgf.ro.bmSelectedEvents, (a_enmEvent)); \
     })
