@@ -54,6 +54,7 @@
 
 #include "VBoxDD.h"
 
+#include "AudioMixBuffer.h"
 #include "AudioMixer.h"
 
 /** Current saved state version. */
@@ -177,11 +178,14 @@ typedef struct SB16STATE
     R3PTRTYPE(PAUDIOMIXER)         pMixer;
     /** Audio sink for PCM output. */
     R3PTRTYPE(PAUDMIXSINK)         pSinkOutput;
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
     /** The emulation timer for handling I/O of the attached LUN drivers. */
     PTMTIMERR3                     pTimerIO;
     /** Timer ticks for handling the LUN drivers. */
-    uint64_t                       uTicksIO;
-
+    uint64_t                       uTimerTicksIO;
+    /** Timestamp (delta) since last timer call. */
+    uint64_t                       uTimerTSIO;
+#endif
     PTMTIMER  pTimerIRQ;
     PPDMIBASE pDrvBase;
     /** LUN\#0: Base interface. */
@@ -1519,13 +1523,12 @@ static IO_READ_PROTO(mixer_read)
 static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
                           uint32_t dma_len, int len)
 {
-    uint8_t     tmpbuf[_4K]; /** @todo Have a buffer on the heap. */
-    uint32_t    cbToWrite = len;
-    uint32_t    cbWrittenTotal = 0;
+    uint8_t  tmpbuf[_4K]; /** @todo Have a buffer on the heap. */
+    uint32_t cbToWrite = len;
+    uint32_t cbWrittenTotal = 0;
 
     while (cbToWrite)
     {
-        uint32_t cbWrittenMin = UINT32_MAX;
         uint32_t cbToRead;
         uint32_t cbRead;
 
@@ -1545,20 +1548,15 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
         {
             int rc2 = pDrv->pConnector->pfnWrite(pDrv->pConnector, pDrv->Out.pStrmOut,
                                                  tmpbuf, cbToRead, &cbWritten);
-            AssertRCBreak(rc);
-            if (RT_FAILURE(rc2))
-                continue;
-
-            cbWrittenMin = RT_MIN(cbWrittenMin, cbWritten);
-            LogFlowFunc(("\tLUN#%RU8: cbWritten=%RU32, cWrittenMin=%RU32\n", pDrv->uLUN, cbWritten, cbWrittenMin));
+            LogFlowFunc(("\tLUN#%RU8: rc=%Rrc, cbWritten=%RU32, cWrittenMin=%RU32\n", pDrv->uLUN, rc2, cbWritten));
         }
 
-        Assert(cbToWrite >= cbWrittenMin);
-        cbToWrite      -= cbWrittenMin;
-        dma_pos         = (dma_pos + cbWrittenMin) % dma_len;
-        cbWrittenTotal += cbWrittenMin;
+        Assert(cbToWrite >= cbToRead);
+        cbToWrite      -= cbToRead;
+        dma_pos         = (dma_pos + cbToRead) % dma_len;
+        cbWrittenTotal += cbToRead;
 
-        if (!cbRead || !cbWrittenMin)
+        if (!cbRead)
             break;
     }
 
@@ -1663,38 +1661,42 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 
     PSB16DRIVER pDrv;
 
-    uint32_t cbIn, cbOut, cSamplesLive;
+    uint32_t cbIn, cbOut;
+
+    uint64_t uTicksNow     = PDMDevHlpTMTimeVirtGet(pDevIns);
+    uint64_t uTicksElapsed = uTicksNow  - pThis->uTimerTSIO;
+    uint64_t uTicksPerSec  = PDMDevHlpTMTimeVirtGetFreq(pDevIns);
+
+    pThis->uTimerTSIO = uTicksNow;
+
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
+        cbIn = cbOut = 0;
         rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                              &cbIn, &cbOut, &cSamplesLive);
+                                              &cbIn, &cbOut, NULL /* cSamplesLive */);
         if (RT_SUCCESS(rc))
+            rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* cSamplesPlayed */);
+
+        uint32_t cSamplesMin  = (int)((2 * uTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + uTicksPerSec) / uTicksPerSec / 2);
+        uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
+
+        LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbOut=%RU32, cSamplesMin=%RU32, cbSamplesMin=%RU32\n",
+                     pDrv->uLUN, rc, cbOut, cSamplesMin, cbSamplesMin));
+
+        if (   RT_FAILURE(rc)
+            && cbSamplesMin > cbOut)
         {
-            LogFlowFunc(("\tLUN#%RU8: [1] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
-
-            if (cSamplesLive)
-            {
-                uint32_t cSamplesPlayed;
-                int rc2 = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, &cSamplesPlayed);
-                if (RT_SUCCESS(rc2))
-                    LogFlowFunc(("LUN#%RU8: cSamplesLive=%RU32, cSamplesPlayed=%RU32\n",
-                                 pDrv->uLUN, cSamplesLive, cSamplesPlayed));
-
-                if (cSamplesPlayed)
-                {
-                    rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                                          &cbIn, &cbOut, &cSamplesLive);
-                    if (RT_SUCCESS(rc))
-                        LogFlowFunc(("\tLUN#%RU8: [2] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
-                }
-            }
-
-            cbInMax  = RT_MAX(cbInMax, cbIn);
-            cbOutMin = RT_MIN(cbOutMin, cbOut);
+            LogFlowFunc(("LUN#%RU8: Adj: %RU32 -> %RU32\n", pDrv->uLUN, cbOut, cbSamplesMin));
+            cbOut = cbSamplesMin;
         }
+
+        cbOutMin = RT_MIN(cbOutMin, cbOut);
+        cbInMax  = RT_MAX(cbInMax, cbIn);
     }
 
+#ifdef DEBUG_TIMER
     LogFlowFunc(("cbInMax=%RU32, cbOutMin=%RU32\n", cbInMax, cbOutMin));
+#endif
 
     if (cbOutMin == UINT32_MAX)
         cbOutMin = 0;
@@ -1715,7 +1717,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
      */
     /** @todo Implement recording. */
 
-    TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->uTicksIO);
+    TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->uTimerTicksIO);
 }
 
 static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
@@ -2167,44 +2169,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     sb16ResetLegacy(pThis);
 
-    PSB16DRIVER pDrv;
-    uLUN = 0;
-    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-    {
-        PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
-        AssertPtr(pCon);
-
-        bool fIsOK = pCon->pfnIsOutputOK(pCon, pDrv->Out.pStrmOut);
-        if (fIsOK)
-        {
-            rc = pCon->pfnEnableOut(pCon, pDrv->Out.pStrmOut, true /* fEnable */);
-            fIsOK = RT_SUCCESS(rc);
-        }
-
-        if (!fIsOK)
-        {
-            /*
-             * Only primary drivers are critical for the VM to run. Everything else
-             * might not worth showing an own error message box in the GUI.
-             */
-            if (!(pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY))
-                continue;
-
-            LogRel(("SB16: Warning: Unable to enable/use output for LUN#%RU8\n", uLUN));
-
-            pCon->pfnDestroyOut(pCon, pDrv->Out.pStrmOut);
-            pDrv->Out.pStrmOut = NULL;
-
-            pThis->pDrv->pfnInitNull(pThis->pDrv);
-
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                N_("No audio devices could be opened. Selecting the NULL audio backend "
-                   "with the consequence that no sound is audible"));
-        }
-
-        uLUN++;
-    }
-
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
     if (RT_SUCCESS(rc))
     {
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIO, pThis,
@@ -2213,15 +2178,47 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             AssertMsgFailedReturn(("Error creating I/O timer, rc=%Rrc\n", rc), rc);
         else
         {
-            pThis->uTicksIO = PDMDevHlpTMTimeVirtGetFreq(pDevIns) / 200; /** Hz. @todo Make this configurable! */
-            if (pThis->uTicksIO < 100)
-                pThis->uTicksIO = 100;
-            LogFunc(("I/O timer ticks=%RU64\n", pThis->uTicksIO));
+            pThis->uTimerTicksIO = PDMDevHlpTMTimeVirtGetFreq(pDevIns) / 200; /** Hz. @todo Make this configurable! */
+            pThis->uTimerTSIO    = PDMDevHlpTMTimeVirtGet(pDevIns);
+            if (pThis->uTimerTicksIO < 100)
+                pThis->uTimerTicksIO = 100;
+            LogFunc(("I/O timer ticks=%RU64\n", pThis->uTimerTicksIO));
 
             /* Fire off timer. */
-            TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->uTicksIO);
+            TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->uTimerTicksIO);
         }
     }
+#else
+    if (RT_SUCCESS(rc))
+    {
+        PSB16DRIVER pDrv;
+        RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+        {
+            /* Only register primary driver.
+             * The device emulation does the output multiplexing then. */
+            if (pDrv->Flags != PDMAUDIODRVFLAG_PRIMARY)
+                continue;
+
+            PDMAUDIOCALLBACK AudioCallbacks[2];
+
+            SB16CALLBACKCTX Ctx = { pThis, pDrv };
+
+            AudioCallbacks[0].enmType     = PDMAUDIOCALLBACKTYPE_INPUT;
+            AudioCallbacks[0].pfnCallback = sb16CallbackInput;
+            AudioCallbacks[0].pvCtx       = &Ctx;
+            AudioCallbacks[0].cbCtx       = sizeof(SB16CALLBACKCTX);
+
+            AudioCallbacks[1].enmType     = PDMAUDIOCALLBACKTYPE_OUTPUT;
+            AudioCallbacks[1].pfnCallback = sb16CallbackOutput;
+            AudioCallbacks[1].pvCtx       = &Ctx;
+            AudioCallbacks[1].cbCtx       = sizeof(SB16CALLBACKCTX);
+
+            rc = pDrv->pConnector->pfnRegisterCallbacks(pDrv->pConnector, AudioCallbacks, RT_ELEMENTS(AudioCallbacks));
+            if (RT_FAILURE(rc))
+                break;
+        }
+    }
+#endif
 
     return VINF_SUCCESS;
 }

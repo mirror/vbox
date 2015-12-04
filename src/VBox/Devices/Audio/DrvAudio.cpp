@@ -1052,6 +1052,13 @@ static DECLCALLBACK(int) drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIO
               ("Writing to disabled host output stream \"%s\" not possible\n",
               pHstStrmOut->MixBuf.pszName));
 
+    if (!AudioMixBufFreeBytes(&pGstStrmOut->MixBuf))
+    {
+        if (pcbWritten)
+            *pcbWritten = 0;
+        return VINF_SUCCESS;
+    }
+
     /*
      * First, write data from the device emulation into our
      * guest mixing buffer.
@@ -1751,53 +1758,57 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
         PPDMAUDIOHSTSTRMOUT pHstStrmOut = pGstStrmOut->pHstStrmOut;
         AssertPtr(pHstStrmOut);
 
-        if (pGstStrmOut->State.fActive != fEnable) /* Only process real state changes. */
+        if (fEnable)
         {
-            if (fEnable)
+            /* Is a pending disable outstanding? Then disable first. */
+            if (pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE)
             {
-                pHstStrmOut->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE;
-                if (!(pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED))
-                    rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_ENABLE);
-            }
-            else /* Disable */
-            {
-                if (pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED)
-                {
-                    uint32_t cGstStrmsActive = 0;
-
-                    /*
-                     * Check if there are any active guest streams assigned
-                     * to this host stream which still are being marked as active.
-                     *
-                     * In that case we have to defer closing the host stream and
-                     * wait until all guest streams have been finished.
-                     */
-                    PPDMAUDIOGSTSTRMOUT pIter;
-                    RTListForEach(&pHstStrmOut->lstGstStrmOut, pIter, PDMAUDIOGSTSTRMOUT, Node)
-                    {
-                        if (pIter->State.fActive)
-                        {
-                            cGstStrmsActive++;
-                            break; /* At least one assigned & active guest stream is enough. */
-                        }
-                    }
-
-                    /* Do we need to defer closing the host stream? */
-                    if (cGstStrmsActive >= 1)
-                        pHstStrmOut->fStatus |= PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE;
-
-                    /* Can we close the host stream now instead of deferring it? */
-                    if (!(pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE))
-                        rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
-                }
+                rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
+                if (RT_SUCCESS(rc))
+                    pHstStrmOut->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE;
             }
 
             if (RT_SUCCESS(rc))
-                pGstStrmOut->State.fActive = fEnable;
-
-            LogFlowFunc(("%s: fEnable=%RTbool, fStatus=0x%x, rc=%Rrc\n",
-                         pGstStrmOut->MixBuf.pszName, fEnable, pHstStrmOut->fStatus, rc));
+                rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_ENABLE);
         }
+        else /* Disable */
+        {
+            if (pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED)
+            {
+                uint32_t cGstStrmsActive = 0;
+
+                /*
+                 * Check if there are any active guest streams assigned
+                 * to this host stream which still are being marked as active.
+                 *
+                 * In that case we have to defer closing the host stream and
+                 * wait until all guest streams have been finished.
+                 */
+                PPDMAUDIOGSTSTRMOUT pIter;
+                RTListForEach(&pHstStrmOut->lstGstStrmOut, pIter, PDMAUDIOGSTSTRMOUT, Node)
+                {
+                    if (pIter->State.fActive)
+                    {
+                        cGstStrmsActive++;
+                        break; /* At least one assigned & active guest stream is enough. */
+                    }
+                }
+
+                /* Do we need to defer closing the host stream? */
+                if (cGstStrmsActive >= 1)
+                    pHstStrmOut->fStatus |= PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE;
+
+                /* Can we close the host stream now instead of deferring it? */
+                if (!(pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE))
+                    rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+            pGstStrmOut->State.fActive = fEnable;
+
+        LogFlowFunc(("%s: fEnable=%RTbool, fStatus=0x%x, rc=%Rrc\n",
+                     pGstStrmOut->MixBuf.pszName, fEnable, pHstStrmOut->fStatus, rc));
     }
 
     return rc;

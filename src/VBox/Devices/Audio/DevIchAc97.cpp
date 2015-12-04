@@ -32,6 +32,8 @@
 #endif
 
 #include "VBoxDD.h"
+
+#include "AudioMixBuffer.h"
 #include "AudioMixer.h"
 
 
@@ -275,11 +277,15 @@ typedef struct AC97STATE
     /** Bus Master Control Registers for PCM in, PCM out, and Mic in */
     AC97BusMasterRegs       bm_regs[3];
     uint8_t                 mixer_data[256];
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
     /** The emulation timer for handling the attached
      *  LUN drivers. */
     PTMTIMERR3              pTimer;
     /** Timer ticks for handling the LUN drivers. */
-    uint64_t                uTicks;
+    uint64_t                uTimerTicks;
+    /** Timestamp (delta) since last timer call. */
+    uint64_t                uTimerTS;
+#endif
 #ifdef VBOX_WITH_STATISTICS
 # if HC_ARCH_BITS == 32
     uint32_t                u32Alignment0;
@@ -364,7 +370,9 @@ enum
 
 #define GET_BM(a_idx)   ( ((a_idx) >> 4) & 3 )
 
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
+#endif
 static int ichac97TransferAudio(PAC97STATE pThis, int index, uint32_t cbElapsed);
 
 static void ichac97WarmReset(PAC97STATE pThis)
@@ -1004,8 +1012,6 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97BMREG pReg, uint32_t cbMax, 
 
     while (cbToWrite)
     {
-        uint32_t cbWrittenMin = UINT32_MAX;
-
         cbToRead = RT_MIN(cbToWrite, pThis->cbReadWriteBuf);
         PDMDevHlpPhysRead(pDevIns, addr, pThis->pvReadWriteBuf, cbToRead); /** @todo Check rc? */
 
@@ -1018,28 +1024,16 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97BMREG pReg, uint32_t cbMax, 
         {
             int rc2 = pDrv->pConnector->pfnWrite(pDrv->pConnector, pDrv->Out.pStrmOut,
                                                  pThis->pvReadWriteBuf, cbToRead, &cbWritten);
-            AssertRCBreak(rc);
-            if (RT_FAILURE(rc2))
-                continue;
-
-            cbWrittenMin = RT_MIN(cbWrittenMin, cbWritten);
-            LogFlowFunc(("\tLUN#%RU8: cbWritten=%RU32, cWrittenMin=%RU32\n", pDrv->uLUN, cbWritten, cbWrittenMin));
+            LogFlowFunc(("\tLUN#%RU8: rc=%Rrc, cbWritten=%RU32\n", pDrv->uLUN, rc2, cbWritten));
         }
 
-        LogFlowFunc(("\tcbToRead=%RU32, cbWrittenMin=%RU32, cbToWrite=%RU32, cbLeft=%RU32\n",
-                     cbToRead, cbWrittenMin, cbToWrite, cbToWrite - cbWrittenMin));
+        LogFlowFunc(("\tcbToRead=%RU32, cbToWrite=%RU32, cbLeft=%RU32\n",
+                     cbToRead, cbToWrite, cbToWrite - cbWrittenTotal));
 
-        if (!cbWrittenMin)
-        {
-            rc = VINF_EOF;
-            break;
-        }
-
-        Assert(cbWrittenMin != UINT32_MAX);
-        Assert(cbToWrite >= cbWrittenMin);
-        cbToWrite      -= cbWrittenMin;
-        addr           += cbWrittenMin;
-        cbWrittenTotal += cbWrittenMin;
+        Assert(cbToWrite >= cbToRead);
+        cbToWrite      -= cbToRead;
+        addr           += cbToRead;
+        cbWrittenTotal += cbToRead;
     }
 
     pReg->bd.addr = addr;
@@ -1162,6 +1156,8 @@ static int ichac97ReadAudio(PAC97STATE pThis, PAC97BMREG pReg, uint32_t cbMax, u
     return rc;
 }
 
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
@@ -1177,38 +1173,36 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     PAC97DRIVER pDrv;
 
     uint32_t cbIn, cbOut, cSamplesLive;
+
+    uint64_t uTicksNow     = PDMDevHlpTMTimeVirtGet(pDevIns);
+    uint64_t uTicksElapsed = uTicksNow  - pThis->uTimerTS;
+    uint64_t uTicksPerSec  = PDMDevHlpTMTimeVirtGetFreq(pDevIns);
+
+    pThis->uTimerTS = uTicksNow;
+
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
+        cbIn = cbOut = 0;
         rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                              &cbIn, &cbOut, &cSamplesLive);
+                                              &cbIn, &cbOut, NULL /* cSamplesLive */);
         if (RT_SUCCESS(rc))
-        {
-#ifdef DEBUG_TIMER
-            LogFlowFunc(("\tLUN#%RU8: [1] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
-#endif
-            if (cSamplesLive)
-            {
-                uint32_t cSamplesPlayed;
-                int rc2 = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, &cSamplesPlayed);
-#ifdef DEBUG_TIMER
-                if (RT_SUCCESS(rc2))
-                    LogFlowFunc(("LUN#%RU8: cSamplesLive=%RU32, cSamplesPlayed=%RU32\n",
-                                 pDrv->uLUN, cSamplesLive, cSamplesPlayed));
-#endif
-                if (cSamplesPlayed)
-                {
-                    rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                                          &cbIn, &cbOut, &cSamplesLive);
-#ifdef DEBUG_TIMER
-                    if (RT_SUCCESS(rc))
-                        LogFlowFunc(("\tLUN#%RU8: [2] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
-#endif
-                }
-            }
+            rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* cSamplesPlayed */);
 
-            cbInMax  = RT_MAX(cbInMax, cbIn);
-            cbOutMin = RT_MIN(cbOutMin, cbOut);
+        uint32_t cSamplesMin  = (int)((2 * uTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + uTicksPerSec) / uTicksPerSec / 2);
+        uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
+
+        LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbOut=%RU32, cSamplesMin=%RU32, cbSamplesMin=%RU32\n",
+                     pDrv->uLUN, rc, cbOut, cSamplesMin, cbSamplesMin));
+
+        if (   RT_FAILURE(rc)
+            && cbSamplesMin > cbOut)
+        {
+            LogFlowFunc(("LUN#%RU8: Adj: %RU32 -> %RU32\n", pDrv->uLUN, cbOut, cbSamplesMin));
+            cbOut = cbSamplesMin;
         }
+
+        cbOutMin = RT_MIN(cbOutMin, cbOut);
+        cbInMax  = RT_MAX(cbInMax, cbIn);
     }
 
 #ifdef DEBUG_TIMER
@@ -1233,10 +1227,12 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     if (cbInMax)
         ichac97TransferAudio(pThis, PI_INDEX, cbInMax); /** @todo Add rc! */
 
-    TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTicks);
+    TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTimerTicks);
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
+
+#endif
 
 static int ichac97TransferAudio(PAC97STATE pThis, int index, uint32_t cbElapsed)
 {
@@ -2324,6 +2320,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             rc = VERR_NO_MEMORY;
     }
 
+# ifndef VBOX_WITH_AUDIO_CALLBACKS
     if (RT_SUCCESS(rc))
     {
         /* Start the emulation timer. */
@@ -2333,15 +2330,47 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
         if (RT_SUCCESS(rc))
         {
-            pThis->uTicks = PDMDevHlpTMTimeVirtGetFreq(pDevIns) / 200; /** Hz. @todo Make this configurable! */
-            if (pThis->uTicks < 100)
-                pThis->uTicks = 100;
-            LogFunc(("Timer ticks=%RU64\n", pThis->uTicks));
+            pThis->uTimerTicks = PDMDevHlpTMTimeVirtGetFreq(pDevIns) / 200; /** Hz. @todo Make this configurable! */
+            pThis->uTimerTS    = PDMDevHlpTMTimeVirtGet(pDevIns);
+            if (pThis->uTimerTicks < 100)
+                pThis->uTimerTicks = 100;
+            LogFunc(("Timer ticks=%RU64\n", pThis->uTimerTicks));
 
             /* Fire off timer. */
-            TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTicks);
+            TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTimerTicks);
         }
     }
+# else
+    if (RT_SUCCESS(rc))
+    {
+        PAC97DRIVER pDrv;
+        RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
+        {
+            /* Only register primary driver.
+             * The device emulation does the output multiplexing then. */
+            if (pDrv->Flags != PDMAUDIODRVFLAG_PRIMARY)
+                continue;
+
+            PDMAUDIOCALLBACK AudioCallbacks[2];
+
+            AC97CALLBACKCTX Ctx = { pThis, pDrv };
+
+            AudioCallbacks[0].enmType     = PDMAUDIOCALLBACKTYPE_INPUT;
+            AudioCallbacks[0].pfnCallback = ac97CallbackInput;
+            AudioCallbacks[0].pvCtx       = &Ctx;
+            AudioCallbacks[0].cbCtx       = sizeof(AC97CALLBACKCTX);
+
+            AudioCallbacks[1].enmType     = PDMAUDIOCALLBACKTYPE_OUTPUT;
+            AudioCallbacks[1].pfnCallback = ac97CallbackOutput;
+            AudioCallbacks[1].pvCtx       = &Ctx;
+            AudioCallbacks[1].cbCtx       = sizeof(AC97CALLBACKCTX);
+
+            rc = pDrv->pConnector->pfnRegisterCallbacks(pDrv->pConnector, AudioCallbacks, RT_ELEMENTS(AudioCallbacks));
+            if (RT_FAILURE(rc))
+                break;
+        }
+    }
+# endif
 
 # ifdef VBOX_WITH_STATISTICS
     if (RT_SUCCESS(rc))
