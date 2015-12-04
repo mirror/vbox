@@ -5506,7 +5506,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVM pVM, PVMCPU pVCpu)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
 
-    if (fOffsettedTsc)
+    if (fOffsettedTsc && RT_LIKELY(!pVCpu->hm.s.fDebugWantRdTscExit))
     {
         /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
         rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);     AssertRC(rc);
@@ -8876,7 +8876,7 @@ typedef struct VMXRUNDBGSTATE
      *  configured against. */
     uint32_t    uDtraceSettingsSeqNo;
     /** Exits to check (one bit per exit). */
-    uint32_t    bmExitsToCheck[2];
+    uint32_t    bmExitsToCheck[3];
 
     /** The initial VMX_VMCS32_CTRL_PROC_EXEC value (helps with restore). */
     uint32_t    fProcCtlsInitial;
@@ -8886,7 +8886,7 @@ typedef struct VMXRUNDBGSTATE
     uint32_t    bmXcptInitial;
 
 } VMXRUNDBGSTATE;
-AssertCompileMemberSize(VMXRUNDBGSTATE, bmExitsToCheck, (VMX_EXIT_MAX + 31) / 32 * 4);
+AssertCompileMemberSize(VMXRUNDBGSTATE, bmExitsToCheck, (VMX_EXIT_MAX + 1 + 31) / 32 * 4);
 typedef VMXRUNDBGSTATE *PVMXRUNDBGSTATE;
 
 
@@ -8944,13 +8944,15 @@ DECLINLINE(void) hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE
         pVCpu->hm.s.vmx.u32ProcCtls   |= pDbgState->fCpe1Extra;
         pVCpu->hm.s.vmx.u32ProcCtls   &= ~pDbgState->fCpe1Unwanted;
         VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS32_CTRL_PROC_EXEC: %#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls));
         pDbgState->fModifiedProcCtls   = true;
     }
 
     if ((pVCpu->hm.s.vmx.u32ProcCtls2 & pDbgState->fCpe2Extra) != pDbgState->fCpe2Extra)
     {
         pVCpu->hm.s.vmx.u32ProcCtls2  |= pDbgState->fCpe2Extra;
-        VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls2);
+        VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, pVCpu->hm.s.vmx.u32ProcCtls2);
+        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS32_CTRL_PROC_EXEC2: %#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls2));
         pDbgState->fModifiedProcCtls2  = true;
     }
 
@@ -8958,6 +8960,7 @@ DECLINLINE(void) hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE
     {
         pVCpu->hm.s.vmx.u32XcptBitmap |= pDbgState->bmXcptExtra;
         VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
+        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS32_CTRL_EXCEPTION_BITMAP: %#RX32\n", pVCpu->hm.s.vmx.u32XcptBitmap));
         pDbgState->fModifiedXcptBitmap = true;
     }
 
@@ -8965,12 +8968,14 @@ DECLINLINE(void) hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE
     {
         pVCpu->hm.s.vmx.u32CR0Mask = 0;
         VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, 0);
+        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS_CTRL_CR0_MASK: 0\n"));
     }
 
     if (pDbgState->fClearCr4Mask && pVCpu->hm.s.vmx.u32CR4Mask != 0)
     {
         pVCpu->hm.s.vmx.u32CR4Mask = 0;
         VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, 0);
+        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS_CTRL_CR4_MASK: 0\n"));
     }
 }
 
@@ -8996,7 +9001,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugStateRevert(PVMCPU pVCpu, PVMXRUNDBGSTAT
     /* We're currently the only ones messing with this one, so just restore the
        cached value and reload the field. */
     if (   pDbgState->fModifiedProcCtls2
-        && pVCpu->hm.s.vmx.u32ProcCtls2 != pDbgState->fProcCtlsInitial)
+        && pVCpu->hm.s.vmx.u32ProcCtls2 != pDbgState->fProcCtls2Initial)
     {
         int rc2 = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, pDbgState->fProcCtls2Initial);
         AssertRCReturn(rc2, rc2);
@@ -9029,12 +9034,15 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugStateRevert(PVMCPU pVCpu, PVMXRUNDBGSTAT
  * This updates @a pDbgState and the VMCS execution control fields to reflect
  * the necessary exits demanded by DBGF and DTrace.
  *
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest-CPU context.
- * @param   pDbgState   The debug state.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pDbgState       The debug state.
+ * @param   pVmxTransient   Pointer to the VMX transient structure.  May update
+ *                          fUpdateTscOffsettingAndPreemptTimer.
  */
-static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PVMXRUNDBGSTATE pDbgState)
+static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx,
+                                               PVMXRUNDBGSTATE pDbgState, PVMXTRANSIENT pVmxTransient)
 {
     /*
      * Take down the dtrace serial number so we can spot changes.
@@ -9104,23 +9112,29 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
         (    DBGF_IS_EVENT_ENABLED(a_pVM, RT_CONCAT(DBGFEVENT_, a_EventSubName)) \
          ||  RT_CONCAT3(VBOXVMM_, a_EventSubName, _ENABLED)() )
 #define SET_ONLY_XBM_IF_EITHER_EN(a_EventSubName, a_uExit) \
-        if (IS_EITHER_ENABLED(pVM, a_EventSubName)) ASMBitSet((pDbgState)->bmExitsToCheck, a_uExit); else do { } while (0)
+        if (IS_EITHER_ENABLED(pVM, a_EventSubName)) \
+        {   AssertCompile((unsigned)(a_uExit) < sizeof(pDbgState->bmExitsToCheck) * 8); \
+            ASMBitSet((pDbgState)->bmExitsToCheck, a_uExit); \
+        } else do { } while (0)
 #define SET_CPE1_XBM_IF_EITHER_EN(a_EventSubName, a_uExit, a_fCtrlProcExec) \
         if (IS_EITHER_ENABLED(pVM, a_EventSubName)) \
         { \
             (pDbgState)->fCpe1Extra |= (a_fCtrlProcExec); \
+            AssertCompile((unsigned)(a_uExit) < sizeof(pDbgState->bmExitsToCheck) * 8); \
             ASMBitSet((pDbgState)->bmExitsToCheck, a_uExit); \
         } else do { } while (0)
 #define SET_CPEU_XBM_IF_EITHER_EN(a_EventSubName, a_uExit, a_fUnwantedCtrlProcExec) \
         if (IS_EITHER_ENABLED(pVM, a_EventSubName)) \
         { \
             (pDbgState)->fCpe1Unwanted |= (a_fUnwantedCtrlProcExec); \
+            AssertCompile((unsigned)(a_uExit) < sizeof(pDbgState->bmExitsToCheck) * 8); \
             ASMBitSet((pDbgState)->bmExitsToCheck, a_uExit); \
         } else do { } while (0)
 #define SET_CPE2_XBM_IF_EITHER_EN(a_EventSubName, a_uExit, a_fCtrlProcExec2) \
         if (IS_EITHER_ENABLED(pVM, a_EventSubName)) \
         { \
             (pDbgState)->fCpe2Extra |= (a_fCtrlProcExec2); \
+            AssertCompile((unsigned)(a_uExit) < sizeof(pDbgState->bmExitsToCheck) * 8); \
             ASMBitSet((pDbgState)->bmExitsToCheck, a_uExit); \
         } else do { } while (0)
 
@@ -9135,7 +9149,6 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
     SET_CPE1_XBM_IF_EITHER_EN(EXIT_HALT,                VMX_EXIT_HLT,      VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT); /* paranoia */
     SET_ONLY_XBM_IF_EITHER_EN(EXIT_INVD,                VMX_EXIT_INVD);             /* unconditional */
     SET_CPE1_XBM_IF_EITHER_EN(EXIT_INVLPG,              VMX_EXIT_INVLPG,   VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT);
-#if 0
     SET_CPE1_XBM_IF_EITHER_EN(EXIT_RDPMC,               VMX_EXIT_RDPMC,    VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT);
     SET_CPE1_XBM_IF_EITHER_EN(EXIT_RDTSC,               VMX_EXIT_RDTSC,    VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT);
     SET_ONLY_XBM_IF_EITHER_EN(EXIT_RSM,                 VMX_EXIT_RSM);              /* unconditional */
@@ -9158,8 +9171,10 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
         rc2    |= hmR0VmxSaveGuestApicState(pVCpu, pCtx);
         AssertRC(rc2);
 
+#if 0 /** @todo fix me */
         pDbgState->fClearCr0Mask = true;
         pDbgState->fClearCr4Mask = true;
+#endif
         if (IS_EITHER_ENABLED(pVM, EXIT_CRX_READ))
             pDbgState->fCpe1Extra |= VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT;
         if (IS_EITHER_ENABLED(pVM, EXIT_CRX_WRITE))
@@ -9194,7 +9209,9 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
     SET_CPEU_XBM_IF_EITHER_EN(EXIT_WRMSR,               VMX_EXIT_WRMSR,     VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS);
     SET_CPE1_XBM_IF_EITHER_EN(EXIT_MWAIT,               VMX_EXIT_MWAIT,     VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT);   /* parnoia */
     SET_CPE1_XBM_IF_EITHER_EN(EXIT_MONITOR,             VMX_EXIT_MONITOR,   VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT); /* parnoia */
+#if 0 /** @todo too slow, fix handler. */
     SET_CPE1_XBM_IF_EITHER_EN(EXIT_PAUSE,               VMX_EXIT_PAUSE,     VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT);
+#endif
 
     if (   IS_EITHER_ENABLED(pVM, EXIT_SGDT)
         || IS_EITHER_ENABLED(pVM, EXIT_SIDT)
@@ -9225,7 +9242,7 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
     SET_CPE2_XBM_IF_EITHER_EN(EXIT_RDSEED,              VMX_EXIT_RDSEED,    VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT);
     SET_ONLY_XBM_IF_EITHER_EN(EXIT_XSAVES,              VMX_EXIT_XSAVES);           /* unconditional (enabled by host, guest cfg) */
     SET_ONLY_XBM_IF_EITHER_EN(EXIT_XRSTORS,             VMX_EXIT_XRSTORS);          /* unconditional (enabled by host, guest cfg) */
-#endif
+
 #undef IS_EITHER_ENABLED
 #undef SET_ONLY_XBM_IF_EITHER_EN
 #undef SET_CPE1_XBM_IF_EITHER_EN
@@ -9235,9 +9252,17 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
     /*
      * Sanitize the control stuff.
      */
+    pDbgState->fCpe2Extra       &= pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1;
+    if (pDbgState->fCpe2Extra)
+        pDbgState->fCpe1Extra   |= VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL;
     pDbgState->fCpe1Extra       &= pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1;
     pDbgState->fCpe1Unwanted    &= ~pVM->hm.s.vmx.Msrs.VmxProcCtls.n.disallowed0;
-    pDbgState->fCpe2Extra       &= pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1;
+    if (pVCpu->hm.s.fDebugWantRdTscExit != RT_BOOL(pDbgState->fCpe1Extra & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
+    {
+        pVCpu->hm.s.fDebugWantRdTscExit ^= true;
+        pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
+    }
+
     Log6(("HM: debug state: cpe1=%#RX32 cpeu=%#RX32 cpe2=%#RX32%s%s\n",
           pDbgState->fCpe1Extra, pDbgState->fCpe1Unwanted, pDbgState->fCpe2Extra,
           pDbgState->fClearCr0Mask ? " clr-cr0" : "",
@@ -9253,10 +9278,11 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
  * either.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pMixedCtx   Pointer to the guest-CPU context.
- * @param   pDbgState   The debug state.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pMixedCtx       Pointer to the guest-CPU context.
+ * @param   pVmxTransient   Pointer to the VMX-transient structure.
+ * @param   uExitReason     The VM-exit reason.
  *
  * @remarks The name of this function is displayed by dtrace, so keep it short
  *          and to the point. No longer than 33 chars long, please.
@@ -9731,14 +9757,15 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     VmxTransient.fUpdateTscOffsettingAndPreemptTimer = true;
 
     /* Set HMCPU indicators.  */
-    bool const fSavedSingleInstruction = pVCpu->hm.s.fSingleInstruction;
-    pVCpu->hm.s.fSingleInstruction = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
-    pVCpu->hm.s.fUsingDebugLoop = true;
+    bool const fSavedSingleInstruction  = pVCpu->hm.s.fSingleInstruction;
+    pVCpu->hm.s.fSingleInstruction      = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
+    pVCpu->hm.s.fDebugWantRdTscExit     = false;
+    pVCpu->hm.s.fUsingDebugLoop         = true;
 
     /* State we keep to help modify and later restore the VMCS fields we alter, and for detecting steps.  */
     VMXRUNDBGSTATE DbgState;
     hmR0VmxRunDebugStateInit(pVCpu, pCtx, &DbgState);
-    hmR0VmxPreRunGuestDebugStateUpdate(pVM, pVCpu, pCtx, &DbgState);
+    hmR0VmxPreRunGuestDebugStateUpdate(pVM, pVCpu, pCtx, &DbgState, &VmxTransient);
 
     /*
      * The loop.
@@ -9831,7 +9858,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
          * Update when dtrace settings changes (DBGF kicks us, so no need to check).
          */
         if (VBOXVMM_GET_SETTINGS_SEQ_NO() != DbgState.uDtraceSettingsSeqNo)
-            hmR0VmxPreRunGuestDebugStateUpdate(pVM, pVCpu, pCtx, &DbgState);
+            hmR0VmxPreRunGuestDebugStateUpdate(pVM, pVCpu, pCtx, &DbgState, &VmxTransient);
     }
 
     /*
@@ -9855,8 +9882,9 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     rcStrict = hmR0VmxRunDebugStateRevert(pVCpu, &DbgState, rcStrict);
 
     /* Restore HMCPU indicators. */
-    pVCpu->hm.s.fUsingDebugLoop = false;
-    pVCpu->hm.s.fSingleInstruction = fSavedSingleInstruction;
+    pVCpu->hm.s.fUsingDebugLoop     = false;
+    pVCpu->hm.s.fDebugWantRdTscExit = false;
+    pVCpu->hm.s.fSingleInstruction  = fSavedSingleInstruction;
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
     return rcStrict;

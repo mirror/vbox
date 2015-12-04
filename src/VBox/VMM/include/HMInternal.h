@@ -631,16 +631,6 @@ typedef struct HMCPU
     bool                        fActive;
     /** Set when the TLB has been checked until we return from the world switch. */
     volatile bool               fCheckedTLBFlush;
-    /** Whether we're executing a single instruction. */
-    bool                        fSingleInstruction;
-    /** Whether we should use the debug loop because of single stepping or special
-     *  debug breakpoints / events are armed. */
-    bool                        fUseDebugLoop;
-    /** Whether we are currently executing in the debug loop.
-     *  Mainly for assertions. */
-    bool                        fUsingDebugLoop;
-    /** Set if we need to clear the trap flag because of single stepping. */
-    bool                        fClearTrapFlag;
     /** Whether we've completed the inner HM leave function. */
     bool                        fLeaveDone;
     /** Whether we're using the hyper DR7 or guest DR7. */
@@ -651,11 +641,24 @@ typedef struct HMCPU
      * code execution. */
     bool                        fLoadSaveGuestXcr0;
 
+    /** Whether we should use the debug loop because of single stepping or special
+     *  debug breakpoints / events are armed. */
+    bool                        fUseDebugLoop;
+    /** Whether we are currently executing in the debug loop.
+     *  Mainly for assertions. */
+    bool                        fUsingDebugLoop;
+    /** Set if we using the debug loop and wish to intercept RDTSC. */
+    bool                        fDebugWantRdTscExit;
+    /** Whether we're executing a single instruction. */
+    bool                        fSingleInstruction;
+    /** Set if we need to clear the trap flag because of single stepping. */
+    bool                        fClearTrapFlag;
+
     /** Whether \#UD needs to be intercepted (required by certain GIM providers). */
     bool                        fGIMTrapXcptUD;
     /** Whether paravirt. hypercalls are enabled. */
     bool                        fHypercallsEnabled;
-    uint8_t                     u8Alignment0[3];
+    uint8_t                     u8Alignment0[2];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;
