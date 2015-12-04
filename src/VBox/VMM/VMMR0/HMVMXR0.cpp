@@ -9322,6 +9322,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
                             case DBGFEVENT_XCPT_XF: fDtrace = VBOXVMM_XCPT_XF_ENABLED(); break;
                             case DBGFEVENT_XCPT_VE: fDtrace = VBOXVMM_XCPT_VE_ENABLED(); break;
                             case DBGFEVENT_XCPT_SX: fDtrace = VBOXVMM_XCPT_SX_ENABLED(); break;
+                            default:                                                     break;
                         }
                     }
                     else
