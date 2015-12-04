@@ -2019,7 +2019,7 @@ class TestDriver(base.TestDriver):                                              
                      sDvdImage = None, sKind = "Other", fIoApic = None, fPae = None, fFastBootLogo = True, \
                      eNic0Type = None, eNic0AttachType = None, sNic0NetName = 'default', sNic0MacAddr = 'grouped', \
                      sFloppy = None, fNatForwardingForTxs = None, sHddControllerType = 'IDE Controller', \
-                     fVmmDevTestingPart = None, fVmmDevTestingMmio = False):
+                     fVmmDevTestingPart = None, fVmmDevTestingMmio = False, sFirmwareType = 'bios'):
         """
         Creates a test VM with a immutable HD from the test resources.
         """
@@ -2101,6 +2101,10 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.setupVrdp(True, self.uVrdpBasePort + iGroup);
             if fRc and fVmmDevTestingPart is not None:
                 fRc = oSession.enableVmmDevTestingPart(fVmmDevTestingPart, fVmmDevTestingMmio);
+            if fRc and sFirmwareType == 'bios':
+                fRc = oSession.setFirmwareType(vboxcon.FirmwareType_BIOS);
+            elif sFirmwareType == 'efi':
+                fRc = oSession.setFirmwareType(vboxcon.FirmwareType_EFI);
 
             if fRc: fRc = oSession.saveSettings();
             if not fRc:   oSession.discardSettings(True);
