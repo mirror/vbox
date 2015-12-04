@@ -16814,6 +16814,7 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
         case 0:
             return FNIEMOP_CALL_1(iemOp_grp3_test_Eb, bRm);
         case 1:
+/** @todo testcase: Present on <=386, most 486 (not early), Pentiums, and current CPUs too. CPUUNDOC.EXE */
             return IEMOP_RAISE_INVALID_OPCODE();
         case 2:
             IEMOP_MNEMONIC("not Eb");
@@ -16851,6 +16852,7 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
         case 0:
             return FNIEMOP_CALL_1(iemOp_grp3_test_Ev, bRm);
         case 1:
+/** @todo testcase: Present on <=386, most 486 (not early), Pentiums, and current CPUs too. CPUUNDOC.EXE */
             return IEMOP_RAISE_INVALID_OPCODE();
         case 2:
             IEMOP_MNEMONIC("not Ev");
