@@ -299,7 +299,9 @@ typedef struct CPUMCPUIDLEAF
     /** Flags. */
     uint32_t    fFlags;
 } CPUMCPUIDLEAF;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMCPUIDLEAF, 32);
+#endif
 /** Pointer to a CPUID leaf. */
 typedef CPUMCPUIDLEAF *PCPUMCPUIDLEAF;
 /** Pointer to a const CPUID leaf. */
@@ -882,10 +884,12 @@ typedef struct CPUMMSRRANGE
     STAMCOUNTER cGps;
 #endif
 } CPUMMSRRANGE;
-#ifdef VBOX_WITH_STATISTICS
+#ifndef VBOX_FOR_DTRACE_LIB
+# ifdef VBOX_WITH_STATISTICS
 AssertCompileSize(CPUMMSRRANGE, 128);
-#else
+# else
 AssertCompileSize(CPUMMSRRANGE, 96);
+# endif
 #endif
 /** Pointer to an MSR range. */
 typedef CPUMMSRRANGE *PCPUMMSRRANGE;
@@ -1010,6 +1014,7 @@ typedef CPUMFEATURES *PCPUMFEATURES;
 typedef CPUMFEATURES const *PCCPUMFEATURES;
 
 
+#ifndef VBOX_FOR_DTRACE_LIB
 
 /** @name Guest Register Getters.
  * @{ */
@@ -1478,6 +1483,7 @@ VMMR0_INT_DECL(void)    CPUMR0SetLApic(PVMCPU pVCpu, uint32_t iHostCpuSet);
 /** @} */
 #endif /* IN_RING0 */
 
+#endif /* !VBOX_FOR_DTRACE_LIB */
 /** @} */
 RT_C_DECLS_END
 

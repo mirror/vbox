@@ -26,12 +26,9 @@
 #else
 # pragma D depends_on library x86.d
 # pragma D depends_on library cpumctx.d
+# pragma D depends_on library cpum.d
 
 /* Some fudging. */
-typedef uint32_t CPUMMICROARCH;
-typedef uint32_t CPUMUNKNOWNCPUID;
-typedef struct CPUMCPUIDLEAF *PCPUMCPUIDLEAF;
-typedef struct CPUMMSRRANGE  *PCPUMMSRRANGE;
 typedef uint64_t STAMCOUNTER;
 #endif
 
@@ -359,7 +356,9 @@ typedef struct CPUMHOSTCTX
      *  FXSAVE/FXRSTOR (since bit 0 will always be set, we only need to test it). */
     uint64_t                    fXStateMask;
 } CPUMHOSTCTX;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSizeAlignment(CPUMHOSTCTX, 64);
+#endif
 /** Pointer to the saved host CPU state. */
 typedef CPUMHOSTCTX *PCPUMHOSTCTX;
 
@@ -426,8 +425,10 @@ typedef struct CPUM
     STAMCOUNTER             cMsrReadsUnknown;
     /** @} */
 } CPUM;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileMemberOffset(CPUM, HostFeatures, 64);
 AssertCompileMemberOffset(CPUM, GuestFeatures, 96);
+#endif
 /** Pointer to the CPUM instance data residing in the shared VM structure. */
 typedef CPUM *PCPUM;
 

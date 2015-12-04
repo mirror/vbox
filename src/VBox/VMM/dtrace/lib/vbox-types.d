@@ -47,7 +47,6 @@ typedef uint32_t                PVMRC;
 typedef struct VM              *PVMR0;
 typedef struct SUPDRVSESSION   *PSUPDRVSESSION;
 typedef struct UVM             *PUVM;
-typedef uint32_t                CPUMCPUVENDOR;
 typedef struct CPUMCTXCORE     *PCPUMCTXCORE;
 
 typedef struct VBOXGDTR
