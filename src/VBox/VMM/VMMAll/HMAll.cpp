@@ -497,14 +497,16 @@ VMM_INT_DECL(int) HMAmdIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu3
  * EMR3HmSingleInstruction.
  *
  * @returns The old flag state.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   fEnable The new flag state.
  */
-VMM_INT_DECL(bool) HMSetSingleInstruction(PVMCPU pVCpu, bool fEnable)
+VMM_INT_DECL(bool) HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     bool fOld = pVCpu->hm.s.fSingleInstruction;
     pVCpu->hm.s.fSingleInstruction = fEnable;
+    pVCpu->hm.s.fUseDebugLoop = fEnable || pVM->hm.s.fUseDebugLoop;
     return fOld;
 }
 

@@ -68,6 +68,7 @@ struc HMCPU
         .fCheckedTLBFlush       resb    1
         .fSingleInstruction     resb    1
         .fUseDebugLoop          resb    1
+        .fUsingDebugLoop        resb    1
         .fClearTrapFlag         resb    1
         .fLeaveDone             resb    1
         .fUsingHyperDR7         resb    1

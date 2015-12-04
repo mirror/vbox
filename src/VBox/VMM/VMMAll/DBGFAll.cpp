@@ -260,3 +260,10 @@ VMM_INT_DECL(bool) DBGFIsStepping(PVMCPU pVCpu)
     return pVCpu->dbgf.s.fSingleSteppingRaw;
 }
 
+
+VMM_INT_DECL(VBOXSTRICTRC) DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uEventArg)
+{
+    return VINF_SUCCESS;
+}
+
+

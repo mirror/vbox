@@ -143,7 +143,7 @@ VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
 VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
 VMM_INT_DECL(int)               HMAmdIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
-VMM_INT_DECL(bool)              HMSetSingleInstruction(PVMCPU pVCpu, bool fEnable);
+VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 VMM_INT_DECL(void)              HMHypercallsEnable(PVMCPU pVCpu);
 VMM_INT_DECL(void)              HMHypercallsDisable(PVMCPU pVCpu);
 

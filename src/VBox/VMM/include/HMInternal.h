@@ -636,6 +636,9 @@ typedef struct HMCPU
     /** Whether we should use the debug loop because of single stepping or special
      *  debug breakpoints / events are armed. */
     bool                        fUseDebugLoop;
+    /** Whether we are currently executing in the debug loop.
+     *  Mainly for assertions. */
+    bool                        fUsingDebugLoop;
     /** Set if we need to clear the trap flag because of single stepping. */
     bool                        fClearTrapFlag;
     /** Whether we've completed the inner HM leave function. */
@@ -652,7 +655,7 @@ typedef struct HMCPU
     bool                        fGIMTrapXcptUD;
     /** Whether paravirt. hypercalls are enabled. */
     bool                        fHypercallsEnabled;
-    uint8_t                     u8Alignment0[4];
+    uint8_t                     u8Alignment0[3];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;
