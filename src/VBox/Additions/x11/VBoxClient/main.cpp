@@ -52,7 +52,7 @@ static int (*gpfnOldIOErrorHandler)(Display *) = NULL;
 struct VBCLSERVICE **g_pService;
 /** The name of our pidfile.  It is global for the benefit of the cleanup
  * routine. */
-static char g_szPidFile[RTPATH_MAX];
+static char g_szPidFile[RTPATH_MAX] = "";
 /** The file handle of our pidfile.  It is global for the benefit of the
  * cleanup routine. */
 static RTFILE g_hPidFile;
@@ -164,7 +164,7 @@ void vboxClientUsage(const char *pcszFileName)
 # ifdef VBOX_WITH_GUEST_PROPS
              "--checkhostversion|"
 #endif
-             "--seamless [-d|--nodaemon]\n", pcszFileName);
+             "--seamless|check3d [-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Starts the VirtualBox X Window System guest services.\n\n");
     RTPrintf("Options:\n");
     RTPrintf("  --clipboard        starts the shared clipboard service\n");
@@ -175,6 +175,7 @@ void vboxClientUsage(const char *pcszFileName)
 #ifdef VBOX_WITH_GUEST_PROPS
     RTPrintf("  --checkhostversion starts the host version notifier service\n");
 #endif
+    RTPrintf("  --check3d          tests whether 3D pass-through is enabled\n");
     RTPrintf("  --seamless         starts the seamless windows service\n");
     RTPrintf("  -d, --nodaemon     continues running as a system service\n");
     RTPrintf("  -h, --help         shows this help text\n");
@@ -259,6 +260,12 @@ int main(int argc, char *argv[])
             g_pService = VBClGetDragAndDropService();
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
+        else if (!strcmp(argv[i], "--check3d"))
+        {
+            if (g_pService)
+                break;
+            g_pService = VBClCheck3DService();
+        }
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pcszFileName);
@@ -286,23 +293,26 @@ int main(int argc, char *argv[])
     rc = RTCritSectInit(&g_critSect);
     if (RT_FAILURE(rc))
         VBClFatalError(("Initialising critical section: %Rrc\n", rc));
-    rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Getting home directory for pid-file: %Rrc\n", rc));
-    rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile),
-                      (*g_pService)->getPidFilePath());
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Creating pid-file path: %Rrc\n", rc));
-    if (fDaemonise)
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &cRespawn);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Daemonizing: %Rrc\n", rc));
-    if (g_szPidFile[0])
-        rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
-    if (rc == VERR_FILE_LOCK_VIOLATION)  /* Already running. */
-        return 0;
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Creating pid-file: %Rrc\n", rc));
+    if ((*g_pService)->getPidFilePath)
+    {
+        rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
+        if (RT_FAILURE(rc))
+            VBClFatalError(("Getting home directory for pid-file: %Rrc\n", rc));
+        rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile),
+                          (*g_pService)->getPidFilePath());
+        if (RT_FAILURE(rc))
+            VBClFatalError(("Creating pid-file path: %Rrc\n", rc));
+        if (fDaemonise)
+            rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &cRespawn);
+        if (RT_FAILURE(rc))
+            VBClFatalError(("Daemonizing: %Rrc\n", rc));
+        if (g_szPidFile[0])
+            rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
+        if (rc == VERR_FILE_LOCK_VIOLATION)  /* Already running. */
+            return 0;
+        if (RT_FAILURE(rc))
+            VBClFatalError(("Creating pid-file: %Rrc\n", rc));
+    }
     /* Set signal handlers to clean up on exit. */
     vboxClientSetSignalHandlers();
 #ifndef VBOXCLIENT_WITHOUT_X11

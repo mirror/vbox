@@ -841,6 +841,12 @@ VBGLR3DECL(int) VbglR3WriteVideoMode(unsigned cDisplay, unsigned cx,
                                      unsigned y, unsigned fEnabled);
 /** @} */
 
+/** @name Generic HGCM
+ * @{ */
+VBGLR3DECL(int)     VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidClient);
+VBGLR3DECL(int)     VbglR3HGCMDisconnect(HGCMCLIENTID idClient);
+/** @} */
+
 #endif /* IN_RING3 */
 /** @} */
 
