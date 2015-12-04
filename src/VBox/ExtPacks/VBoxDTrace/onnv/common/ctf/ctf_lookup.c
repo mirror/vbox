@@ -135,7 +135,12 @@ ctf_lookup_by_name(ctf_file_t *fp, const char *name)
 
 		for (lp = fp->ctf_lookups; lp->ctl_prefix != NULL; lp++) {
 			if (lp->ctl_prefix[0] == '\0' ||
+#ifdef VBOX
+			    (   strncmp(p, lp->ctl_prefix, (size_t)(q - p)) == 0
+			     && lp->ctl_len <= (size_t)(q - p)) /* don't push 'p' to far and crash */ ) {
+#else
 			    strncmp(p, lp->ctl_prefix, (size_t)(q - p)) == 0) {
+#endif
 				for (p += lp->ctl_len; isspace(*p); p++)
 					continue; /* skip prefix and next ws */
 
