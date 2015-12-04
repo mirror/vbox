@@ -212,7 +212,7 @@ public:
     /** @}  */
 
 private:
-    HRESULT i_isThereAnyRunningVM() const;
+    bool    isThereAnyRunningVM() const;
     // wrapped IExtPackManager properties
     HRESULT getInstalledExtPacks(std::vector<ComPtr<IExtPack> > &aInstalledExtPacks);
 
