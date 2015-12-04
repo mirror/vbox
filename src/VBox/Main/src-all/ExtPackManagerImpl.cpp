@@ -2167,14 +2167,13 @@ HRESULT ExtPackManager::cleanup(void)
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
     {
-        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
-
         /*
          * Run the set-uid-to-root binary that performs the cleanup.
          *
          * Take the write lock to prevent conflicts with other calls to this
          * VBoxSVC instance.
          */
+        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
         hrc = i_runSetUidToRootHelper(NULL,
                                       "cleanup",
                                       "--base-dir", m->strBaseDir.c_str(),
