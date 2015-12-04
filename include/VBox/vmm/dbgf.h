@@ -410,7 +410,7 @@ typedef enum DBGFEVENTTYPE
     /** Exit - VT-x Virtual APIC write. */
     DBGFEVENT_EXIT_VMX_VAPIC_WRITE,
     /** Exit - VT-x - Last. */
-    DBGFEVENT_EXIT_VMX_LAST = DBGFEVENT_EXIT_VMX_INVEPT,
+    DBGFEVENT_EXIT_VMX_LAST = DBGFEVENT_EXIT_VMX_VAPIC_WRITE,
 
     /** Exit - AMD-V - first */
     DBGFEVENT_EXIT_SVM_FIRST,
@@ -623,14 +623,18 @@ VMMR3DECL(int) DBGFR3InterruptSoftwareIsEnabled(PUVM pUVM, uint8_t iInterrupt);
 #if defined(VBOX_STRICT) && defined(RT_COMPILER_SUPPORTS_LAMBDA)
 # define DBGF_IS_EVENT_ENABLED(a_pVM, a_enmEvent) \
     ([](PVM a_pLambdaVM, DBGFEVENTTYPE a_enmLambdaEvent) -> bool { \
-        Assert(a_enmLambdaEvent >= DBGFEVENT_FIRST_SELECTABLE); \
+        Assert(   a_enmLambdaEvent >= DBGFEVENT_FIRST_SELECTABLE \
+               || a_enmLambdaEvent == DBGFEVENT_INTERRUPT_HARDWARE \
+               || a_enmLambdaEvent == DBGFEVENT_INTERRUPT_SOFTWARE); \
         Assert(a_enmLambdaEvent < DBGFEVENT_END); \
         return ASMBitTest(&a_pLambdaVM->dbgf.ro.bmSelectedEvents, a_enmLambdaEvent); \
     }(a_pVM, a_enmEvent))
 #elif defined(VBOX_STRICT) && defined(__GNUC__)
 # define DBGF_IS_EVENT_ENABLED(a_pVM, a_enmEvent) \
     __extension__ ({ \
-        Assert((a_enmEvent) >= DBGFEVENT_FIRST_SELECTABLE); \
+        Assert((a_enmEvent) >= DBGFEVENT_FIRST_SELECTABLE \
+               (a_enmEvent) == DBGFEVENT_INTERRUPT_HARDWARE \
+               (a_enmEvent) == DBGFEVENT_INTERRUPT_SOFTWARE); \
         Assert((a_enmEvent) < DBGFEVENT_END); \
         ASMBitTest(&(a_pVM)->dbgf.ro.bmSelectedEvents, (a_enmEvent)); \
     })
