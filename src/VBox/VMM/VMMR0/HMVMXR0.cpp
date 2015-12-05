@@ -9144,27 +9144,45 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
     SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VAPIC_ACCESS,    VMX_EXIT_APIC_ACCESS);      /* feature dependent, nothing to enable here */
     SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VAPIC_WRITE,     VMX_EXIT_APIC_WRITE);       /* feature dependent, nothing to enable here */
 
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_CPUID,               VMX_EXIT_CPUID);            /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_GETSEC,              VMX_EXIT_GETSEC);           /* unconditional */
-    SET_CPE1_XBM_IF_EITHER_EN(EXIT_HALT,                VMX_EXIT_HLT,      VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT); /* paranoia */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_INVD,                VMX_EXIT_INVD);             /* unconditional */
-    SET_CPE1_XBM_IF_EITHER_EN(EXIT_INVLPG,              VMX_EXIT_INVLPG,   VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT);
-    SET_CPE1_XBM_IF_EITHER_EN(EXIT_RDPMC,               VMX_EXIT_RDPMC,    VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT);
-    SET_CPE1_XBM_IF_EITHER_EN(EXIT_RDTSC,               VMX_EXIT_RDTSC,    VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT);
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_RSM,                 VMX_EXIT_RSM);              /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMM_CALL,            VMX_EXIT_VMCALL);           /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMCLEAR,         VMX_EXIT_VMCLEAR);          /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMLAUNCH,        VMX_EXIT_VMLAUNCH);         /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMPTRLD,         VMX_EXIT_VMPTRLD);          /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMPTRST,         VMX_EXIT_VMPTRST);          /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMREAD,          VMX_EXIT_VMREAD);           /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMRESUME,        VMX_EXIT_VMRESUME);         /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMWRITE,         VMX_EXIT_VMWRITE);          /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMXOFF,          VMX_EXIT_VMXOFF);           /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMXON,           VMX_EXIT_VMXON);            /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_CPUID,              VMX_EXIT_CPUID);            /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_CPUID,              VMX_EXIT_CPUID);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_GETSEC,             VMX_EXIT_GETSEC);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_GETSEC,             VMX_EXIT_GETSEC);
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_HALT,               VMX_EXIT_HLT,      VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT); /* paranoia */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_HALT,               VMX_EXIT_HLT);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_INVD,               VMX_EXIT_INVD);             /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_INVD,               VMX_EXIT_INVD);
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_INVLPG,             VMX_EXIT_INVLPG,   VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_INVLPG,             VMX_EXIT_INVLPG);
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_RDPMC,              VMX_EXIT_RDPMC,    VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDPMC,              VMX_EXIT_RDPMC);
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_RDTSC,              VMX_EXIT_RDTSC,    VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDTSC,              VMX_EXIT_RDTSC);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_RSM,                VMX_EXIT_RSM);              /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RSM,                VMX_EXIT_RSM);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMM_CALL,           VMX_EXIT_VMCALL);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMM_CALL,           VMX_EXIT_VMCALL);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMCLEAR,        VMX_EXIT_VMCLEAR);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMCLEAR,        VMX_EXIT_VMCLEAR);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMLAUNCH,       VMX_EXIT_VMLAUNCH);         /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMLAUNCH,       VMX_EXIT_VMLAUNCH);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMPTRLD,        VMX_EXIT_VMPTRLD);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMPTRLD,        VMX_EXIT_VMPTRLD);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMPTRST,        VMX_EXIT_VMPTRST);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMPTRST,        VMX_EXIT_VMPTRST);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMREAD,         VMX_EXIT_VMREAD);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMREAD,         VMX_EXIT_VMREAD);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMRESUME,       VMX_EXIT_VMRESUME);         /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMRESUME,       VMX_EXIT_VMRESUME);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMWRITE,        VMX_EXIT_VMWRITE);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMWRITE,        VMX_EXIT_VMWRITE);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMXOFF,         VMX_EXIT_VMXOFF);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMXOFF,         VMX_EXIT_VMXOFF);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMXON,          VMX_EXIT_VMXON);            /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMXON,          VMX_EXIT_VMXON);
 
-    if (   IS_EITHER_ENABLED(pVM, EXIT_CRX_READ)
-        || IS_EITHER_ENABLED(pVM, EXIT_CRX_WRITE))
+    if (   IS_EITHER_ENABLED(pVM, INSTR_CRX_READ)
+        || IS_EITHER_ENABLED(pVM, INSTR_CRX_WRITE))
     {
         int rc2 = hmR0VmxSaveGuestCR0(pVCpu, pCtx);
         rc2    |= hmR0VmxSaveGuestCR4(pVCpu, pCtx);
@@ -9175,9 +9193,9 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
         pDbgState->fClearCr0Mask = true;
         pDbgState->fClearCr4Mask = true;
 #endif
-        if (IS_EITHER_ENABLED(pVM, EXIT_CRX_READ))
+        if (IS_EITHER_ENABLED(pVM, INSTR_CRX_READ))
             pDbgState->fCpe1Extra |= VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT;
-        if (IS_EITHER_ENABLED(pVM, EXIT_CRX_WRITE))
+        if (IS_EITHER_ENABLED(pVM, INSTR_CRX_WRITE))
             pDbgState->fCpe1Extra |= VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT;
         pDbgState->fCpe1Unwanted |= VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW; /* risky? */
         /* Note! We currently don't use VMX_VMCS32_CTRL_CR3_TARGET_COUNT.  It would
@@ -9197,51 +9215,79 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
             HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR4);
         }
     }
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_CRX_READ,           VMX_EXIT_MOV_CRX);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_CRX_WRITE,          VMX_EXIT_MOV_CRX);
 
-    if (   IS_EITHER_ENABLED(pVM, EXIT_DRX_READ)
-        || IS_EITHER_ENABLED(pVM, EXIT_DRX_WRITE))
+    if (   IS_EITHER_ENABLED(pVM, INSTR_DRX_READ)
+        || IS_EITHER_ENABLED(pVM, INSTR_DRX_WRITE))
     {
         /** @todo later, need to fix handler as it assumes this won't usually happen. */
         ASMBitSet(pDbgState->bmExitsToCheck, VMX_EXIT_MOV_DRX);
     }
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_DRX_READ,           VMX_EXIT_MOV_DRX);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_DRX_WRITE,          VMX_EXIT_MOV_DRX);
 
-    SET_CPEU_XBM_IF_EITHER_EN(EXIT_RDMSR,               VMX_EXIT_RDMSR,     VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS); /* risky clearing this? */
-    SET_CPEU_XBM_IF_EITHER_EN(EXIT_WRMSR,               VMX_EXIT_WRMSR,     VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS);
-    SET_CPE1_XBM_IF_EITHER_EN(EXIT_MWAIT,               VMX_EXIT_MWAIT,     VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT);   /* parnoia */
-    SET_CPE1_XBM_IF_EITHER_EN(EXIT_MONITOR,             VMX_EXIT_MONITOR,   VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT); /* parnoia */
+    SET_CPEU_XBM_IF_EITHER_EN(INSTR_RDMSR,               VMX_EXIT_RDMSR,     VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS); /* risky clearing this? */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDMSR,               VMX_EXIT_RDMSR);
+    SET_CPEU_XBM_IF_EITHER_EN(INSTR_WRMSR,               VMX_EXIT_WRMSR,     VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_WRMSR,               VMX_EXIT_WRMSR);
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_MWAIT,               VMX_EXIT_MWAIT,     VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT);   /* parnoia */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_MWAIT,               VMX_EXIT_MWAIT);
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_MONITOR,             VMX_EXIT_MONITOR,   VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT); /* parnoia */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_MONITOR,             VMX_EXIT_MONITOR);
 #if 0 /** @todo too slow, fix handler. */
-    SET_CPE1_XBM_IF_EITHER_EN(EXIT_PAUSE,               VMX_EXIT_PAUSE,     VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT);
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_PAUSE,               VMX_EXIT_PAUSE,     VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT);
 #endif
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_PAUSE,               VMX_EXIT_PAUSE);
 
-    if (   IS_EITHER_ENABLED(pVM, EXIT_SGDT)
-        || IS_EITHER_ENABLED(pVM, EXIT_SIDT)
-        || IS_EITHER_ENABLED(pVM, EXIT_LGDT)
-        || IS_EITHER_ENABLED(pVM, EXIT_LIDT))
+    if (   IS_EITHER_ENABLED(pVM, INSTR_SGDT)
+        || IS_EITHER_ENABLED(pVM, INSTR_SIDT)
+        || IS_EITHER_ENABLED(pVM, INSTR_LGDT)
+        || IS_EITHER_ENABLED(pVM, INSTR_LIDT))
     {
         pDbgState->fCpe2Extra |= VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT;
         ASMBitSet(pDbgState->bmExitsToCheck, VMX_EXIT_XDTR_ACCESS);
     }
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SGDT,               VMX_EXIT_XDTR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SIDT,               VMX_EXIT_XDTR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LGDT,               VMX_EXIT_XDTR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LIDT,               VMX_EXIT_XDTR_ACCESS);
 
-    if (   IS_EITHER_ENABLED(pVM, EXIT_SLDT)
-        || IS_EITHER_ENABLED(pVM, EXIT_STR)
-        || IS_EITHER_ENABLED(pVM, EXIT_LLDT)
-        || IS_EITHER_ENABLED(pVM, EXIT_LTR))
+    if (   IS_EITHER_ENABLED(pVM, INSTR_SLDT)
+        || IS_EITHER_ENABLED(pVM, INSTR_STR)
+        || IS_EITHER_ENABLED(pVM, INSTR_LLDT)
+        || IS_EITHER_ENABLED(pVM, INSTR_LTR))
     {
         pDbgState->fCpe2Extra |= VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT;
         ASMBitSet(pDbgState->bmExitsToCheck, VMX_EXIT_TR_ACCESS);
     }
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SLDT,               VMX_EXIT_TR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_STR,                VMX_EXIT_TR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LLDT,               VMX_EXIT_TR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LTR,                VMX_EXIT_TR_ACCESS);
 
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_INVEPT,          VMX_EXIT_INVEPT);           /* unconditional */
-    SET_CPE1_XBM_IF_EITHER_EN(EXIT_RDTSCP,              VMX_EXIT_RDTSCP,    VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT);
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_INVVPID,         VMX_EXIT_INVVPID);          /* unconditional */
-    SET_CPE2_XBM_IF_EITHER_EN(EXIT_WBINVD,              VMX_EXIT_WBINVD,    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT);
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_XSETBV,              VMX_EXIT_XSETBV);           /* unconditional */
-    SET_CPE2_XBM_IF_EITHER_EN(EXIT_RDRAND,              VMX_EXIT_RDRAND,    VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT);
-    SET_CPE1_XBM_IF_EITHER_EN(EXIT_VMX_INVPCID,         VMX_EXIT_INVPCID,   VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT);
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VMFUNC,          VMX_EXIT_VMFUNC);           /* unconditional for the current setup */
-    SET_CPE2_XBM_IF_EITHER_EN(EXIT_RDSEED,              VMX_EXIT_RDSEED,    VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT);
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_XSAVES,              VMX_EXIT_XSAVES);           /* unconditional (enabled by host, guest cfg) */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_XRSTORS,             VMX_EXIT_XRSTORS);          /* unconditional (enabled by host, guest cfg) */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_INVEPT,         VMX_EXIT_INVEPT);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_INVEPT,         VMX_EXIT_INVEPT);
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_RDTSCP,             VMX_EXIT_RDTSCP,    VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDTSCP,             VMX_EXIT_RDTSCP);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_INVVPID,        VMX_EXIT_INVVPID);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_INVVPID,        VMX_EXIT_INVVPID);
+    SET_CPE2_XBM_IF_EITHER_EN(INSTR_WBINVD,             VMX_EXIT_WBINVD,    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_WBINVD,             VMX_EXIT_WBINVD);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_XSETBV,             VMX_EXIT_XSETBV);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_XSETBV,             VMX_EXIT_XSETBV);
+    SET_CPE2_XBM_IF_EITHER_EN(INSTR_RDRAND,             VMX_EXIT_RDRAND,    VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDRAND,             VMX_EXIT_RDRAND);
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_VMX_INVPCID,        VMX_EXIT_INVPCID,   VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_INVPCID,        VMX_EXIT_INVPCID);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMFUNC,         VMX_EXIT_VMFUNC);           /* unconditional for the current setup */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMFUNC,         VMX_EXIT_VMFUNC);
+    SET_CPE2_XBM_IF_EITHER_EN(INSTR_RDSEED,             VMX_EXIT_RDSEED,    VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDSEED,             VMX_EXIT_RDSEED);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_XSAVES,             VMX_EXIT_XSAVES);           /* unconditional (enabled by host, guest cfg) */
+    SET_ONLY_XBM_IF_EITHER_EN(EXIT_XSAVES,              VMX_EXIT_XSAVES);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_XRSTORS,            VMX_EXIT_XRSTORS);          /* unconditional (enabled by host, guest cfg) */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_XRSTORS,            VMX_EXIT_XRSTORS);
 
 #undef IS_EITHER_ENABLED
 #undef SET_ONLY_XBM_IF_EITHER_EN
@@ -9300,12 +9346,22 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
      *       Added/removed events must also be reflected in the next section
      *       where we dispatch dtrace events.
      */
-    bool            fDtrace   = false;
-    DBGFEVENTTYPE   enmEvent  = DBGFEVENT_END;
-    uint32_t        uEventArg = 0;
+    bool            fDtrace1   = false;
+    bool            fDtrace2   = false;
+    DBGFEVENTTYPE   enmEvent1  = DBGFEVENT_END;
+    DBGFEVENTTYPE   enmEvent2  = DBGFEVENT_END;
+    uint32_t        uEventArg  = 0;
+#define SET_EXIT(a_EventSubName) \
+        do { \
+            enmEvent2 = RT_CONCAT(DBGFEVENT_EXIT_,  a_EventSubName); \
+            fDtrace2  = RT_CONCAT3(VBOXVMM_EXIT_,   a_EventSubName, _ENABLED)(); \
+        } while (0)
 #define SET_BOTH(a_EventSubName) \
-        do { enmEvent = RT_CONCAT(DBGFEVENT_, a_EventSubName); \
-            fDtrace = RT_CONCAT3(VBOXVMM_, a_EventSubName, _ENABLED)(); \
+        do { \
+            enmEvent1 = RT_CONCAT(DBGFEVENT_INSTR_, a_EventSubName); \
+            enmEvent2 = RT_CONCAT(DBGFEVENT_EXIT_,  a_EventSubName); \
+            fDtrace1  = RT_CONCAT3(VBOXVMM_INSTR_,  a_EventSubName, _ENABLED)(); \
+            fDtrace2  = RT_CONCAT3(VBOXVMM_EXIT_,   a_EventSubName, _ENABLED)(); \
         } while (0)
     switch (uExitReason)
     {
@@ -9327,28 +9383,28 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
                             hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
                             uEventArg = pVmxTransient->uExitIntErrorCode;
                         }
-                        enmEvent = (DBGFEVENTTYPE)(DBGFEVENT_XCPT_FIRST + idxVector);
-                        switch (enmEvent)
+                        enmEvent1 = (DBGFEVENTTYPE)(DBGFEVENT_XCPT_FIRST + idxVector);
+                        switch (enmEvent1)
                         {
-                            case DBGFEVENT_XCPT_DE: fDtrace = VBOXVMM_XCPT_DE_ENABLED(); break;
-                            case DBGFEVENT_XCPT_DB: fDtrace = VBOXVMM_XCPT_DB_ENABLED(); break;
-                            case DBGFEVENT_XCPT_BP: fDtrace = VBOXVMM_XCPT_BP_ENABLED(); break;
-                            case DBGFEVENT_XCPT_OF: fDtrace = VBOXVMM_XCPT_OF_ENABLED(); break;
-                            case DBGFEVENT_XCPT_BR: fDtrace = VBOXVMM_XCPT_BR_ENABLED(); break;
-                            case DBGFEVENT_XCPT_UD: fDtrace = VBOXVMM_XCPT_UD_ENABLED(); break;
-                            case DBGFEVENT_XCPT_NM: fDtrace = VBOXVMM_XCPT_NM_ENABLED(); break;
-                            case DBGFEVENT_XCPT_DF: fDtrace = VBOXVMM_XCPT_DF_ENABLED(); break;
-                            case DBGFEVENT_XCPT_TS: fDtrace = VBOXVMM_XCPT_TS_ENABLED(); break;
-                            case DBGFEVENT_XCPT_NP: fDtrace = VBOXVMM_XCPT_NP_ENABLED(); break;
-                            case DBGFEVENT_XCPT_SS: fDtrace = VBOXVMM_XCPT_SS_ENABLED(); break;
-                            case DBGFEVENT_XCPT_GP: fDtrace = VBOXVMM_XCPT_GP_ENABLED(); break;
-                            case DBGFEVENT_XCPT_PF: fDtrace = VBOXVMM_XCPT_PF_ENABLED(); break;
-                            case DBGFEVENT_XCPT_MF: fDtrace = VBOXVMM_XCPT_MF_ENABLED(); break;
-                            case DBGFEVENT_XCPT_AC: fDtrace = VBOXVMM_XCPT_AC_ENABLED(); break;
-                            case DBGFEVENT_XCPT_XF: fDtrace = VBOXVMM_XCPT_XF_ENABLED(); break;
-                            case DBGFEVENT_XCPT_VE: fDtrace = VBOXVMM_XCPT_VE_ENABLED(); break;
-                            case DBGFEVENT_XCPT_SX: fDtrace = VBOXVMM_XCPT_SX_ENABLED(); break;
-                            default:                                                     break;
+                            case DBGFEVENT_XCPT_DE: fDtrace1 = VBOXVMM_XCPT_DE_ENABLED(); break;
+                            case DBGFEVENT_XCPT_DB: fDtrace1 = VBOXVMM_XCPT_DB_ENABLED(); break;
+                            case DBGFEVENT_XCPT_BP: fDtrace1 = VBOXVMM_XCPT_BP_ENABLED(); break;
+                            case DBGFEVENT_XCPT_OF: fDtrace1 = VBOXVMM_XCPT_OF_ENABLED(); break;
+                            case DBGFEVENT_XCPT_BR: fDtrace1 = VBOXVMM_XCPT_BR_ENABLED(); break;
+                            case DBGFEVENT_XCPT_UD: fDtrace1 = VBOXVMM_XCPT_UD_ENABLED(); break;
+                            case DBGFEVENT_XCPT_NM: fDtrace1 = VBOXVMM_XCPT_NM_ENABLED(); break;
+                            case DBGFEVENT_XCPT_DF: fDtrace1 = VBOXVMM_XCPT_DF_ENABLED(); break;
+                            case DBGFEVENT_XCPT_TS: fDtrace1 = VBOXVMM_XCPT_TS_ENABLED(); break;
+                            case DBGFEVENT_XCPT_NP: fDtrace1 = VBOXVMM_XCPT_NP_ENABLED(); break;
+                            case DBGFEVENT_XCPT_SS: fDtrace1 = VBOXVMM_XCPT_SS_ENABLED(); break;
+                            case DBGFEVENT_XCPT_GP: fDtrace1 = VBOXVMM_XCPT_GP_ENABLED(); break;
+                            case DBGFEVENT_XCPT_PF: fDtrace1 = VBOXVMM_XCPT_PF_ENABLED(); break;
+                            case DBGFEVENT_XCPT_MF: fDtrace1 = VBOXVMM_XCPT_MF_ENABLED(); break;
+                            case DBGFEVENT_XCPT_AC: fDtrace1 = VBOXVMM_XCPT_AC_ENABLED(); break;
+                            case DBGFEVENT_XCPT_XF: fDtrace1 = VBOXVMM_XCPT_XF_ENABLED(); break;
+                            case DBGFEVENT_XCPT_VE: fDtrace1 = VBOXVMM_XCPT_VE_ENABLED(); break;
+                            case DBGFEVENT_XCPT_SX: fDtrace1 = VBOXVMM_XCPT_SX_ENABLED(); break;
+                            default:                                                      break;
                         }
                     }
                     else
@@ -9357,75 +9413,75 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
 
                 case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT:
                     uEventArg = idxVector;
-                    enmEvent  = DBGFEVENT_INTERRUPT_SOFTWARE;
-                    fDtrace   = VBOXVMM_INT_SOFTWARE_ENABLED();
+                    enmEvent1 = DBGFEVENT_INTERRUPT_SOFTWARE;
+                    fDtrace1  = VBOXVMM_INT_SOFTWARE_ENABLED();
                     break;
             }
             break;
         }
 
         case VMX_EXIT_TRIPLE_FAULT:
-            enmEvent = DBGFEVENT_TRIPLE_FAULT;
-            //fDtrace  = VBOXVMM_EXIT_TRIPLE_FAULT_ENABLED();
+            enmEvent1 = DBGFEVENT_TRIPLE_FAULT;
+            //fDtrace1  = VBOXVMM_EXIT_TRIPLE_FAULT_ENABLED();
             break;
-        case VMX_EXIT_TASK_SWITCH:      SET_BOTH(EXIT_TASK_SWITCH); break;
-        case VMX_EXIT_EPT_VIOLATION:    SET_BOTH(EXIT_VMX_EPT_VIOLATION); break;
-        case VMX_EXIT_EPT_MISCONFIG:    SET_BOTH(EXIT_VMX_EPT_MISCONFIG); break;
-        case VMX_EXIT_APIC_ACCESS:      SET_BOTH(EXIT_VMX_VAPIC_ACCESS); break;
-        case VMX_EXIT_APIC_WRITE:       SET_BOTH(EXIT_VMX_VAPIC_WRITE); break;
+        case VMX_EXIT_TASK_SWITCH:      SET_EXIT(TASK_SWITCH); break;
+        case VMX_EXIT_EPT_VIOLATION:    SET_EXIT(VMX_EPT_VIOLATION); break;
+        case VMX_EXIT_EPT_MISCONFIG:    SET_EXIT(VMX_EPT_MISCONFIG); break;
+        case VMX_EXIT_APIC_ACCESS:      SET_EXIT(VMX_VAPIC_ACCESS); break;
+        case VMX_EXIT_APIC_WRITE:       SET_EXIT(VMX_VAPIC_WRITE); break;
 
         /* Instruction specific VM-exits: */
-        case VMX_EXIT_CPUID:            SET_BOTH(EXIT_CPUID); break;
-        case VMX_EXIT_GETSEC:           SET_BOTH(EXIT_GETSEC); break;
-        case VMX_EXIT_HLT:              SET_BOTH(EXIT_HALT); break;
-        case VMX_EXIT_INVD:             SET_BOTH(EXIT_INVD); break;
-        case VMX_EXIT_INVLPG:           SET_BOTH(EXIT_INVLPG); break;
-        case VMX_EXIT_RDPMC:            SET_BOTH(EXIT_RDPMC); break;
-        case VMX_EXIT_RDTSC:            SET_BOTH(EXIT_RDTSC); break;
-        case VMX_EXIT_RSM:              SET_BOTH(EXIT_RSM); break;
-        case VMX_EXIT_VMCALL:           SET_BOTH(EXIT_VMM_CALL); break;
-        case VMX_EXIT_VMCLEAR:          SET_BOTH(EXIT_VMX_VMCLEAR); break;
-        case VMX_EXIT_VMLAUNCH:         SET_BOTH(EXIT_VMX_VMLAUNCH); break;
-        case VMX_EXIT_VMPTRLD:          SET_BOTH(EXIT_VMX_VMPTRLD); break;
-        case VMX_EXIT_VMPTRST:          SET_BOTH(EXIT_VMX_VMPTRST); break;
-        case VMX_EXIT_VMREAD:           SET_BOTH(EXIT_VMX_VMREAD); break;
-        case VMX_EXIT_VMRESUME:         SET_BOTH(EXIT_VMX_VMRESUME); break;
-        case VMX_EXIT_VMWRITE:          SET_BOTH(EXIT_VMX_VMWRITE); break;
-        case VMX_EXIT_VMXOFF:           SET_BOTH(EXIT_VMX_VMXOFF); break;
-        case VMX_EXIT_VMXON:            SET_BOTH(EXIT_VMX_VMXON); break;
+        case VMX_EXIT_CPUID:            SET_BOTH(CPUID); break;
+        case VMX_EXIT_GETSEC:           SET_BOTH(GETSEC); break;
+        case VMX_EXIT_HLT:              SET_BOTH(HALT); break;
+        case VMX_EXIT_INVD:             SET_BOTH(INVD); break;
+        case VMX_EXIT_INVLPG:           SET_BOTH(INVLPG); break;
+        case VMX_EXIT_RDPMC:            SET_BOTH(RDPMC); break;
+        case VMX_EXIT_RDTSC:            SET_BOTH(RDTSC); break;
+        case VMX_EXIT_RSM:              SET_BOTH(RSM); break;
+        case VMX_EXIT_VMCALL:           SET_BOTH(VMM_CALL); break;
+        case VMX_EXIT_VMCLEAR:          SET_BOTH(VMX_VMCLEAR); break;
+        case VMX_EXIT_VMLAUNCH:         SET_BOTH(VMX_VMLAUNCH); break;
+        case VMX_EXIT_VMPTRLD:          SET_BOTH(VMX_VMPTRLD); break;
+        case VMX_EXIT_VMPTRST:          SET_BOTH(VMX_VMPTRST); break;
+        case VMX_EXIT_VMREAD:           SET_BOTH(VMX_VMREAD); break;
+        case VMX_EXIT_VMRESUME:         SET_BOTH(VMX_VMRESUME); break;
+        case VMX_EXIT_VMWRITE:          SET_BOTH(VMX_VMWRITE); break;
+        case VMX_EXIT_VMXOFF:           SET_BOTH(VMX_VMXOFF); break;
+        case VMX_EXIT_VMXON:            SET_BOTH(VMX_VMXON); break;
         case VMX_EXIT_MOV_CRX:
             hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
 /** @todo r=bird: I feel these macros aren't very descriptive and needs to be at least 30 chars longer! ;-)
 * Sensible abbreviations strongly recommended here because even with 130 columns this stuff get too wide! */
             if (   VMX_EXIT_QUALIFICATION_CRX_ACCESS(pVmxTransient->uExitQualification)
                 == VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ)
-                SET_BOTH(EXIT_CRX_READ);
+                SET_BOTH(CRX_READ);
             else
-                SET_BOTH(EXIT_CRX_WRITE);
+                SET_BOTH(CRX_WRITE);
             uEventArg = VMX_EXIT_QUALIFICATION_CRX_REGISTER(pVmxTransient->uExitQualification);
             break;
         case VMX_EXIT_MOV_DRX:
             hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
             if (   VMX_EXIT_QUALIFICATION_DRX_DIRECTION(pVmxTransient->uExitQualification)
                 == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_READ)
-                SET_BOTH(EXIT_DRX_READ);
+                SET_BOTH(DRX_READ);
             else
-                SET_BOTH(EXIT_DRX_WRITE);
+                SET_BOTH(DRX_WRITE);
             uEventArg = VMX_EXIT_QUALIFICATION_DRX_REGISTER(pVmxTransient->uExitQualification);
             break;
-        case VMX_EXIT_RDMSR:            SET_BOTH(EXIT_RDMSR); break;
-        case VMX_EXIT_WRMSR:            SET_BOTH(EXIT_WRMSR); break;
-        case VMX_EXIT_MWAIT:            SET_BOTH(EXIT_MWAIT); break;
-        case VMX_EXIT_MONITOR:          SET_BOTH(EXIT_MONITOR); break;
-        case VMX_EXIT_PAUSE:            SET_BOTH(EXIT_PAUSE); break;
+        case VMX_EXIT_RDMSR:            SET_BOTH(RDMSR); break;
+        case VMX_EXIT_WRMSR:            SET_BOTH(WRMSR); break;
+        case VMX_EXIT_MWAIT:            SET_BOTH(MWAIT); break;
+        case VMX_EXIT_MONITOR:          SET_BOTH(MONITOR); break;
+        case VMX_EXIT_PAUSE:            SET_BOTH(PAUSE); break;
         case VMX_EXIT_XDTR_ACCESS:
             hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
             switch (RT_BF_GET(pVmxTransient->ExitInstrInfo.u, VMX_XDTR_INSINFO_INSTR_ID))
             {
-                case VMX_XDTR_INSINFO_II_SGDT: SET_BOTH(EXIT_SGDT); break;
-                case VMX_XDTR_INSINFO_II_SIDT: SET_BOTH(EXIT_SIDT); break;
-                case VMX_XDTR_INSINFO_II_LGDT: SET_BOTH(EXIT_LGDT); break;
-                case VMX_XDTR_INSINFO_II_LIDT: SET_BOTH(EXIT_LIDT); break;
+                case VMX_XDTR_INSINFO_II_SGDT: SET_BOTH(SGDT); break;
+                case VMX_XDTR_INSINFO_II_SIDT: SET_BOTH(SIDT); break;
+                case VMX_XDTR_INSINFO_II_LGDT: SET_BOTH(LGDT); break;
+                case VMX_XDTR_INSINFO_II_LIDT: SET_BOTH(LIDT); break;
             }
             break;
 
@@ -9433,24 +9489,24 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
             hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
             switch (RT_BF_GET(pVmxTransient->ExitInstrInfo.u, VMX_YYTR_INSINFO_INSTR_ID))
             {
-                case VMX_YYTR_INSINFO_II_SLDT: SET_BOTH(EXIT_SLDT); break;
-                case VMX_YYTR_INSINFO_II_STR:  SET_BOTH(EXIT_STR); break;
-                case VMX_YYTR_INSINFO_II_LLDT: SET_BOTH(EXIT_LLDT); break;
-                case VMX_YYTR_INSINFO_II_LTR:  SET_BOTH(EXIT_LTR); break;
+                case VMX_YYTR_INSINFO_II_SLDT: SET_BOTH(SLDT); break;
+                case VMX_YYTR_INSINFO_II_STR:  SET_BOTH(STR); break;
+                case VMX_YYTR_INSINFO_II_LLDT: SET_BOTH(LLDT); break;
+                case VMX_YYTR_INSINFO_II_LTR:  SET_BOTH(LTR); break;
             }
             break;
 
-        case VMX_EXIT_INVEPT:           SET_BOTH(EXIT_VMX_INVEPT); break;
-        case VMX_EXIT_RDTSCP:           SET_BOTH(EXIT_RDTSCP); break;
-        case VMX_EXIT_INVVPID:          SET_BOTH(EXIT_VMX_INVVPID); break;
-        case VMX_EXIT_WBINVD:           SET_BOTH(EXIT_WBINVD); break;
-        case VMX_EXIT_XSETBV:           SET_BOTH(EXIT_XSETBV); break;
-        case VMX_EXIT_RDRAND:           SET_BOTH(EXIT_RDRAND); break;
-        case VMX_EXIT_INVPCID:          SET_BOTH(EXIT_VMX_INVPCID); break;
-        case VMX_EXIT_VMFUNC:           SET_BOTH(EXIT_VMX_VMFUNC); break;
-        case VMX_EXIT_RDSEED:           SET_BOTH(EXIT_RDSEED); break;
-        case VMX_EXIT_XSAVES:           SET_BOTH(EXIT_XSAVES); break;
-        case VMX_EXIT_XRSTORS:          SET_BOTH(EXIT_XRSTORS); break;
+        case VMX_EXIT_INVEPT:           SET_BOTH(VMX_INVEPT); break;
+        case VMX_EXIT_RDTSCP:           SET_BOTH(RDTSCP); break;
+        case VMX_EXIT_INVVPID:          SET_BOTH(VMX_INVVPID); break;
+        case VMX_EXIT_WBINVD:           SET_BOTH(WBINVD); break;
+        case VMX_EXIT_XSETBV:           SET_BOTH(XSETBV); break;
+        case VMX_EXIT_RDRAND:           SET_BOTH(RDRAND); break;
+        case VMX_EXIT_INVPCID:          SET_BOTH(VMX_INVPCID); break;
+        case VMX_EXIT_VMFUNC:           SET_BOTH(VMX_VMFUNC); break;
+        case VMX_EXIT_RDSEED:           SET_BOTH(RDSEED); break;
+        case VMX_EXIT_XSAVES:           SET_BOTH(XSAVES); break;
+        case VMX_EXIT_XRSTORS:          SET_BOTH(XRSTORS); break;
 
         /* Events that aren't relevant at this point. */
         case VMX_EXIT_EXT_INT:
@@ -9476,6 +9532,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
             break;
     }
 #undef SET_BOTH
+#undef SET_EXIT
 
     /*
      * Dtrace tracepoints go first.   We do them here at once so we don't
@@ -9483,13 +9540,14 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
      * Down side is that we've got to repeat the switch, though this time
      * we use enmEvent since the probes are a subset of what DBGF does.
      */
-    if (fDtrace)
+    if (fDtrace1 || fDtrace2)
     {
         hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
         hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-        switch (enmEvent)
+        switch (enmEvent1)
         {
             /** @todo consider which extra parameters would be helpful for each probe.   */
+            case DBGFEVENT_END: break;
             case DBGFEVENT_XCPT_DE:                 VBOXVMM_XCPT_DE(pVCpu, pMixedCtx); break;
             case DBGFEVENT_XCPT_DB:                 VBOXVMM_XCPT_DB(pVCpu, pMixedCtx, pMixedCtx->dr[6]); break;
             case DBGFEVENT_XCPT_BP:                 VBOXVMM_XCPT_BP(pVCpu, pMixedCtx); break;
@@ -9509,6 +9567,59 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
             case DBGFEVENT_XCPT_VE:                 VBOXVMM_XCPT_VE(pVCpu, pMixedCtx); break;
             case DBGFEVENT_XCPT_SX:                 VBOXVMM_XCPT_SX(pVCpu, pMixedCtx, uEventArg); break;
             case DBGFEVENT_INTERRUPT_SOFTWARE:      VBOXVMM_INT_SOFTWARE(pVCpu, pMixedCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_INSTR_CPUID:             VBOXVMM_INSTR_CPUID(pVCpu, pMixedCtx, pMixedCtx->eax, pMixedCtx->ecx); break;
+            case DBGFEVENT_INSTR_GETSEC:            VBOXVMM_INSTR_GETSEC(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_HALT:              VBOXVMM_INSTR_HALT(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_INVD:              VBOXVMM_INSTR_INVD(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_INVLPG:            VBOXVMM_INSTR_INVLPG(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_RDPMC:             VBOXVMM_INSTR_RDPMC(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_RDTSC:             VBOXVMM_INSTR_RDTSC(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_RSM:               VBOXVMM_INSTR_RSM(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_CRX_READ:          VBOXVMM_INSTR_CRX_READ(pVCpu, pMixedCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_INSTR_CRX_WRITE:         VBOXVMM_INSTR_CRX_WRITE(pVCpu, pMixedCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_INSTR_DRX_READ:          VBOXVMM_INSTR_DRX_READ(pVCpu, pMixedCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_INSTR_DRX_WRITE:         VBOXVMM_INSTR_DRX_WRITE(pVCpu, pMixedCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_INSTR_RDMSR:             VBOXVMM_INSTR_RDMSR(pVCpu, pMixedCtx, pMixedCtx->ecx); break;
+            case DBGFEVENT_INSTR_WRMSR:             VBOXVMM_INSTR_WRMSR(pVCpu, pMixedCtx, pMixedCtx->ecx,
+                                                                        RT_MAKE_U64(pMixedCtx->eax, pMixedCtx->edx)); break;
+            case DBGFEVENT_INSTR_MWAIT:             VBOXVMM_INSTR_MWAIT(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_MONITOR:           VBOXVMM_INSTR_MONITOR(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_PAUSE:             VBOXVMM_INSTR_PAUSE(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_SGDT:              VBOXVMM_INSTR_SGDT(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_SIDT:              VBOXVMM_INSTR_SIDT(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_LGDT:              VBOXVMM_INSTR_LGDT(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_LIDT:              VBOXVMM_INSTR_LIDT(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_SLDT:              VBOXVMM_INSTR_SLDT(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_STR:               VBOXVMM_INSTR_STR(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_LLDT:              VBOXVMM_INSTR_LLDT(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_LTR:               VBOXVMM_INSTR_LTR(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_RDTSCP:            VBOXVMM_INSTR_RDTSCP(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_WBINVD:            VBOXVMM_INSTR_WBINVD(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_XSETBV:            VBOXVMM_INSTR_XSETBV(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_RDRAND:            VBOXVMM_INSTR_RDRAND(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_RDSEED:            VBOXVMM_INSTR_RDSEED(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_XSAVES:            VBOXVMM_INSTR_XSAVES(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_XRSTORS:           VBOXVMM_INSTR_XRSTORS(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMM_CALL:          VBOXVMM_INSTR_VMM_CALL(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMCLEAR:       VBOXVMM_INSTR_VMX_VMCLEAR(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMLAUNCH:      VBOXVMM_INSTR_VMX_VMLAUNCH(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMPTRLD:       VBOXVMM_INSTR_VMX_VMPTRLD(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMPTRST:       VBOXVMM_INSTR_VMX_VMPTRST(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMREAD:        VBOXVMM_INSTR_VMX_VMREAD(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMRESUME:      VBOXVMM_INSTR_VMX_VMRESUME(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMWRITE:       VBOXVMM_INSTR_VMX_VMWRITE(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMXOFF:        VBOXVMM_INSTR_VMX_VMXOFF(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMXON:         VBOXVMM_INSTR_VMX_VMXON(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_INVEPT:        VBOXVMM_INSTR_VMX_INVEPT(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_INVVPID:       VBOXVMM_INSTR_VMX_INVVPID(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_INVPCID:       VBOXVMM_INSTR_VMX_INVPCID(pVCpu, pMixedCtx); break;
+            case DBGFEVENT_INSTR_VMX_VMFUNC:        VBOXVMM_INSTR_VMX_VMFUNC(pVCpu, pMixedCtx); break;
+            default: AssertMsgFailed(("enmEvent1=%d uExitReason=%d\n", enmEvent1, uExitReason)); break;
+        }
+        switch (enmEvent2)
+        {
+            /** @todo consider which extra parameters would be helpful for each probe. */
+            case DBGFEVENT_END: break;
             case DBGFEVENT_EXIT_TASK_SWITCH:        VBOXVMM_EXIT_TASK_SWITCH(pVCpu, pMixedCtx); break;
             case DBGFEVENT_EXIT_CPUID:              VBOXVMM_EXIT_CPUID(pVCpu, pMixedCtx, pMixedCtx->eax, pMixedCtx->ecx); break;
             case DBGFEVENT_EXIT_GETSEC:             VBOXVMM_EXIT_GETSEC(pVCpu, pMixedCtx); break;
@@ -9561,7 +9672,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
             case DBGFEVENT_EXIT_VMX_EPT_VIOLATION:  VBOXVMM_EXIT_VMX_EPT_VIOLATION(pVCpu, pMixedCtx); break;
             case DBGFEVENT_EXIT_VMX_VAPIC_ACCESS:   VBOXVMM_EXIT_VMX_VAPIC_ACCESS(pVCpu, pMixedCtx); break;
             case DBGFEVENT_EXIT_VMX_VAPIC_WRITE:    VBOXVMM_EXIT_VMX_VAPIC_WRITE(pVCpu, pMixedCtx); break;
-            default:                                AssertMsgFailed(("enmEvent=%d uExitReason=%d\n", enmEvent, uExitReason)); break;
+            default: AssertMsgFailed(("enmEvent2=%d uExitReason=%d\n", enmEvent2, uExitReason)); break;
         }
     }
 
@@ -9570,11 +9681,20 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
      * the DBGF call will do a full check).
      *
      * Note! DBGF sets DBGFEVENT_INTERRUPT_SOFTWARE in the bitmap.
+     * Note! If we have to events, we prioritize the first, i.e. the instruction
+     *       one, in order to avoid event nesting.
      */
-    if (   enmEvent != DBGFEVENT_END
-        && DBGF_IS_EVENT_ENABLED(pVM, enmEvent))
+    if (   enmEvent1 != DBGFEVENT_END
+        && DBGF_IS_EVENT_ENABLED(pVM, enmEvent1))
     {
-        VBOXSTRICTRC rcStrict = DBGFEventGenericWithArg(pVM, pVCpu, enmEvent, uEventArg);
+        VBOXSTRICTRC rcStrict = DBGFEventGenericWithArg(pVM, pVCpu, enmEvent1, uEventArg);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+    else if (   enmEvent2 != DBGFEVENT_END
+             && DBGF_IS_EVENT_ENABLED(pVM, enmEvent2))
+    {
+        VBOXSTRICTRC rcStrict = DBGFEventGenericWithArg(pVM, pVCpu, enmEvent2, uEventArg);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
     }
@@ -9905,8 +10025,8 @@ static bool hmR0VmxAnyExpensiveProbesEnabled(void)
     /* It's probably faster to OR the raw 32-bit counter variables together.
        Since the variables are in an array and the probes are next to one
        another (more or less), we have good locality.  So, better read
-       four-five cache lines ever time and only have one conditional, than
-       70+ conditionals, right? */
+       eight-nine cache lines ever time and only have one conditional, than
+       128+ conditionals, right? */
     return (  VBOXVMM_R0_HMVMX_VMEXIT_ENABLED_RAW() /* expensive too due to context */
             | VBOXVMM_XCPT_DE_ENABLED_RAW()
             | VBOXVMM_XCPT_DB_ENABLED_RAW()
@@ -9928,7 +10048,55 @@ static bool hmR0VmxAnyExpensiveProbesEnabled(void)
             | VBOXVMM_XCPT_SX_ENABLED_RAW()
             | VBOXVMM_INT_SOFTWARE_ENABLED_RAW()
             | VBOXVMM_INT_HARDWARE_ENABLED_RAW()
-            | VBOXVMM_EXIT_TASK_SWITCH_ENABLED_RAW()
+           ) != 0
+        || (  VBOXVMM_INSTR_HALT_ENABLED_RAW()
+            | VBOXVMM_INSTR_MWAIT_ENABLED_RAW()
+            | VBOXVMM_INSTR_MONITOR_ENABLED_RAW()
+            | VBOXVMM_INSTR_CPUID_ENABLED_RAW()
+            | VBOXVMM_INSTR_INVD_ENABLED_RAW()
+            | VBOXVMM_INSTR_WBINVD_ENABLED_RAW()
+            | VBOXVMM_INSTR_INVLPG_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDTSC_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDTSCP_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDPMC_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDMSR_ENABLED_RAW()
+            | VBOXVMM_INSTR_WRMSR_ENABLED_RAW()
+            | VBOXVMM_INSTR_CRX_READ_ENABLED_RAW()
+            | VBOXVMM_INSTR_CRX_WRITE_ENABLED_RAW()
+            | VBOXVMM_INSTR_DRX_READ_ENABLED_RAW()
+            | VBOXVMM_INSTR_DRX_WRITE_ENABLED_RAW()
+            | VBOXVMM_INSTR_PAUSE_ENABLED_RAW()
+            | VBOXVMM_INSTR_XSETBV_ENABLED_RAW()
+            | VBOXVMM_INSTR_SIDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_LIDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_SGDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_LGDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_SLDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_LLDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_STR_ENABLED_RAW()
+            | VBOXVMM_INSTR_LTR_ENABLED_RAW()
+            | VBOXVMM_INSTR_GETSEC_ENABLED_RAW()
+            | VBOXVMM_INSTR_RSM_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDRAND_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDSEED_ENABLED_RAW()
+            | VBOXVMM_INSTR_XSAVES_ENABLED_RAW()
+            | VBOXVMM_INSTR_XRSTORS_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMM_CALL_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMCLEAR_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMLAUNCH_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMPTRLD_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMPTRST_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMREAD_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMRESUME_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMWRITE_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMXOFF_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMXON_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_VMFUNC_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_INVEPT_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_INVVPID_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMX_INVPCID_ENABLED_RAW()
+           ) != 0
+        || (  VBOXVMM_EXIT_TASK_SWITCH_ENABLED_RAW()
             | VBOXVMM_EXIT_HALT_ENABLED_RAW()
             | VBOXVMM_EXIT_MWAIT_ENABLED_RAW()
             | VBOXVMM_EXIT_MONITOR_ENABLED_RAW()
