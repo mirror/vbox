@@ -116,6 +116,7 @@ filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxService"'    
 # Manifest class action scripts
 filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/vboxservice.xml"'                   '$2 = "manifest";$6 = "sys"'
 filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/vboxmslnk.xml"'                     '$2 = "manifest";$6 = "sys"'
+filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/vboxsetup3d.xml"'                   '$2 = "manifest";$6 = "sys"'
 
 # vboxguest
 filelist_fixup prototype '$3 == "usr/kernel/drv/vboxguest"'                                                  '$6="sys"'

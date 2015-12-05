@@ -344,7 +344,7 @@ groupadd vboxsf >/dev/null 2>&1
 if test "$currentzone" = "global"; then
     /usr/sbin/devfsadm -i vboxguest
 
-    # Setup VBoxService and vboxmslnk and start the services automatically
+    # Setup VBoxService, vboxmslnk and vboxsetup3d and start the services automatically
     echo "Configuring services (this might take a while)..."
     cmax=32
     cslept=0
@@ -355,7 +355,7 @@ if test "$currentzone" = "global"; then
     # take a while to complete, using disable/enable -s doesn't work either. So we restart it, and poll in
     # 1 second intervals to see if our service has been successfully imported and timeout after 'cmax' seconds.
     /usr/sbin/svcadm restart svc:system/manifest-import:default
-    /usr/bin/svcs virtualbox/vboxservice virtualbox/vboxmslnk >/dev/null 2>&1
+    /usr/bin/svcs virtualbox/vboxservice virtualbox/vboxmslnk virtualbox/vboxsetup3d >/dev/null 2>&1
     while test "$?" -ne 0;
     do
         sleep 1
@@ -364,12 +364,13 @@ if test "$currentzone" = "global"; then
             success=1
             break
         fi
-        /usr/bin/svcs virtualbox/vboxservice virtualbox/vboxmslnk >/dev/null 2>&1
+        /usr/bin/svcs virtualbox/vboxservice virtualbox/vboxmslnk virtualbox/vboxsetup3d >/dev/null 2>&1
     done
     if test "$success" -eq 0; then
         echo "Enabling services..."
         /usr/sbin/svcadm enable -s virtualbox/vboxservice
         /usr/sbin/svcadm enable -s virtualbox/vboxmslnk
+        /usr/sbin/svcadm enable -s virtualbox/vboxsetup3d
     else
         echo "## Service import failed."
         echo "## See /var/svc/log/system-manifest-import:default.log for details."
