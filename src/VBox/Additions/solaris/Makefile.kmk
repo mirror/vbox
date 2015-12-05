@@ -419,5 +419,5 @@ $(addprefix $(SOLARIS_ADD_USRBIN_DIR)/,$(SOLARIS_ADD_USRBIN_LINKS)): \
 # Symlinks from /usr/sbin/ to /opt/VirtualBoxAdditions
 #
 $(addprefix $(SOLARIS_ADD_USRSBIN_DIR)/,$(SOLARIS_ADD_USRSBIN_LINKS)): \
-		$(SOLARIS_ADD_USRSBIN_DIR)/% : $(SOLARIS_VBOXADDINST_SUBDIR)/% | $$(dir $$@)
+		$(SOLARIS_ADD_USRSBIN_DIR)/% : $(SOLARIS_VBOXADDINST_DIR)/% | $$(dir $$@)
 	$(LN_SYMLINK) -f ../..$(SOLARIS_VBOXADDINST_SUBDIR)/$< $@
