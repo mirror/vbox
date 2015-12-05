@@ -120,7 +120,6 @@ solaris-addcommonbins_SOURCES = \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient=>1099.vboxclient \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg_modeless.conf \
-	$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh \
 	$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/VBox.sh
 
 solaris-addcommon_INST = bin/additions/
@@ -420,5 +419,5 @@ $(addprefix $(SOLARIS_ADD_USRBIN_DIR)/,$(SOLARIS_ADD_USRBIN_LINKS)): \
 # Symlinks from /usr/sbin/ to /opt/VirtualBoxAdditions
 #
 $(addprefix $(SOLARIS_ADD_USRSBIN_DIR)/,$(SOLARIS_ADD_USRSBIN_LINKS)): \
-		$(SOLARIS_ADD_USRSBIN_DIR)/% : % | $$(dir $$@)
+		$(SOLARIS_ADD_USRSBIN_DIR)/% : $(SOLARIS_VBOXADDINST_SUBDIR)/% | $$(dir $$@)
 	$(LN_SYMLINK) -f ../..$(SOLARIS_VBOXADDINST_SUBDIR)/$< $@
