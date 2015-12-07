@@ -108,10 +108,10 @@
 -->
 <xsl:template match="if" mode="begin">
   <xsl:if test="@target='xpidl'">
-    <xsl:text>#if !defined(Q_WS_WIN32)&#x0A;</xsl:text>
+    <xsl:text>#if !defined(Q_WS_WIN)&#x0A;</xsl:text>
   </xsl:if>
   <xsl:if test="@target='midl'">
-    <xsl:text>#if defined(Q_WS_WIN32)&#x0A;</xsl:text>
+    <xsl:text>#if defined(Q_WS_WIN)&#x0A;</xsl:text>
   </xsl:if>
 </xsl:template>
 <xsl:template match="if" mode="end">

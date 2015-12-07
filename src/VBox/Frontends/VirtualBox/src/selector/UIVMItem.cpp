@@ -44,7 +44,7 @@
 /// @todo Remove. See @c todo in #switchTo() below.
 #if 0
 
-#if defined (Q_WS_WIN32)
+#if defined (Q_WS_WIN)
 
 struct EnumWindowsProcData
 {
@@ -111,7 +111,7 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
  */
 static WId FindWindowIdFromPid(ULONG aPid)
 {
-#if defined (Q_WS_WIN32)
+#if defined (Q_WS_WIN)
 
     EnumWindowsProcData d = { aPid, (WId) ~0 };
     EnumWindows(EnumWindowsProc, (LPARAM) &d);
@@ -334,7 +334,7 @@ bool UIVMItem::switchTo()
     if (id == 0)
         return true;
 
-#if defined (Q_WS_WIN32) || defined (Q_WS_X11)
+#if defined (Q_WS_WIN) || defined (Q_WS_X11)
 
     return vboxGlobal().activateWindow(id, true);
 
@@ -365,7 +365,7 @@ bool UIVMItem::switchTo()
     if (!canSwitchTo())
         return false;
 
-#if defined (Q_WS_WIN32)
+#if defined (Q_WS_WIN)
 
     HWND hwnd = mWinId;
 

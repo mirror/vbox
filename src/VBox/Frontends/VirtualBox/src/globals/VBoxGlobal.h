@@ -629,7 +629,7 @@ private:
     enum StartRunning m_enmStartRunning;
 #endif
 
-#if defined (Q_WS_WIN32)
+#if defined (Q_WS_WIN)
     DWORD dwHTMLHelpCookie;
 #endif
 

@@ -2673,7 +2673,7 @@ void UIMessageCenter::sltResetSuppressedMessages()
 
 void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 {
-#if defined (Q_WS_WIN32)
+#if defined (Q_WS_WIN)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
 #elif defined (Q_WS_X11)
 # ifndef VBOX_OSE
