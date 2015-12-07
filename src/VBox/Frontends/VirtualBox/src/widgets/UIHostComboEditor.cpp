@@ -35,29 +35,26 @@
 # include "UIIconPool.h"
 # include "VBoxGlobal.h"
 # include "QIToolButton.h"
-#ifdef Q_WS_MAC
-# include "UICocoaApplication.h"
-# include "VBoxUtils-darwin.h"
-#endif /* Q_WS_MAC */
+# ifdef Q_WS_MAC
+#  include "UICocoaApplication.h"
+#  include "VBoxUtils-darwin.h"
+# endif /* Q_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC)
 # include "DarwinKeyboard.h"
-#endif /* Q_WS_MAC */
-#ifdef Q_WS_WIN
+#elif defined(Q_WS_WIN)
 # include "WinKeyboard.h"
-#endif /* Q_WS_WIN */
-#ifdef Q_WS_X11
+#elif defined(Q_WS_X11)
 # include "XKeyboard.h"
 #endif /* Q_WS_X11 */
 
 /* External includes: */
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC)
 # include <Carbon/Carbon.h>
-#endif /* Q_WS_MAC */
-#ifdef Q_WS_X11
+#elif defined(Q_WS_X11)
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
 # include <X11/keysym.h>
@@ -77,6 +74,10 @@ const int XKeyRelease = KeyRelease;
 using namespace UIExtraDataDefs;
 
 
+/*********************************************************************************************************************************
+*   Namespace UINativeHotKey implementation.                                                                                     *
+*********************************************************************************************************************************/
+
 #ifdef Q_WS_X11
 namespace UINativeHotKey
 {
@@ -88,7 +89,8 @@ QString UINativeHotKey::toString(int iKeyCode)
 {
     QString strKeyName;
 
-#ifdef Q_WS_WIN
+#if defined(Q_WS_WIN)
+
     /* MapVirtualKey doesn't distinguish between right and left vkeys,
      * even under XP, despite that it stated in MSDN. Do it by hands.
      * Besides that it can't recognize such virtual keys as
@@ -119,9 +121,9 @@ QString UINativeHotKey::toString(int iKeyCode)
         strKeyName = UIHostComboEditor::tr("<key_%1>").arg(iKeyCode);
     }
     delete[] pKeyName;
-#endif /* Q_WS_WIN */
 
-#ifdef Q_WS_X11
+#elif defined(Q_WS_X11)
+
     if (char *pNativeKeyName = ::XKeysymToString((KeySym)iKeyCode))
     {
         strKeyName = m_keyNames[pNativeKeyName].isEmpty() ?
@@ -132,9 +134,9 @@ QString UINativeHotKey::toString(int iKeyCode)
         AssertMsgFailed(("That key have no name!\n"));
         strKeyName = UIHostComboEditor::tr("<key_%1>").arg(iKeyCode);
     }
-#endif /* Q_WS_X11 */
 
-#ifdef Q_WS_MAC
+#elif defined(Q_WS_MAC)
+
     UInt32 modMask = DarwinKeyCodeToDarwinModifierMask(iKeyCode);
     switch (modMask)
     {
@@ -172,14 +174,20 @@ QString UINativeHotKey::toString(int iKeyCode)
             strKeyName += QChar(kCommandUnicode);
             break;
     }
-#endif /* Q_WS_MAC */
+
+#else
+
+# warning "port me!"
+
+#endif
 
     return strKeyName;
 }
 
 bool UINativeHotKey::isValidKey(int iKeyCode)
 {
-#ifdef Q_WS_WIN
+#if defined(Q_WS_WIN)
+
     return ((iKeyCode >= VK_SHIFT && iKeyCode <= VK_CAPITAL) ||
             (iKeyCode >= VK_LSHIFT && iKeyCode <= VK_RMENU) ||
             (iKeyCode >= VK_F1 && iKeyCode <= VK_F24) ||
@@ -187,18 +195,18 @@ bool UINativeHotKey::isValidKey(int iKeyCode)
             iKeyCode == VK_LWIN || iKeyCode == VK_RWIN ||
             iKeyCode == VK_APPS ||
             iKeyCode == VK_PRINT);
-#endif /* Q_WS_WIN */
 
-#ifdef Q_WS_X11
+#elif defined(Q_WS_X11)
+
     return (IsModifierKey(iKeyCode) /* allow modifiers */ ||
             IsFunctionKey(iKeyCode) /* allow function keys */ ||
             IsMiscFunctionKey(iKeyCode) /* allow miscellaneous function keys */ ||
             iKeyCode == XK_Scroll_Lock /* allow 'Scroll Lock' missed in IsModifierKey() */) &&
            (iKeyCode != NoSymbol /* ignore some special symbol */ &&
             iKeyCode != XK_Insert /* ignore 'insert' included into IsMiscFunctionKey */);
-#endif /* Q_WS_X11 */
 
-#ifdef Q_WS_MAC
+#elif defined(Q_WS_MAC)
+
     UInt32 modMask = ::DarwinKeyCodeToDarwinModifierMask(iKeyCode);
     switch (modMask)
     {
@@ -214,12 +222,18 @@ bool UINativeHotKey::isValidKey(int iKeyCode)
         default:
             return false;
     }
-#endif /* Q_WS_MAC */
+
+#else
+
+# warning "port me!"
+
+#endif
 
     return false;
 }
 
-#ifdef Q_WS_WIN
+#if defined(Q_WS_WIN)
+
 int UINativeHotKey::distinguishModifierVKey(int wParam, int lParam)
 {
     int iKeyCode = wParam;
@@ -258,9 +272,9 @@ int UINativeHotKey::distinguishModifierVKey(int wParam, int lParam)
     }
     return iKeyCode;
 }
-#endif /* Q_WS_WIN */
 
-#ifdef Q_WS_X11
+#elif defined(Q_WS_X11)
+
 void UINativeHotKey::retranslateKeyNames()
 {
     m_keyNames["Shift_L"]          = UIHostComboEditor::tr("Left Shift");
@@ -276,8 +290,13 @@ void UINativeHotKey::retranslateKeyNames()
     m_keyNames["Caps_Lock"]        = UIHostComboEditor::tr("Caps Lock");
     m_keyNames["Scroll_Lock"]      = UIHostComboEditor::tr("Scroll Lock");
 }
+
 #endif /* Q_WS_X11 */
 
+
+/*********************************************************************************************************************************
+*   Namespace UIHostCombo implementation.                                                                                        *
+*********************************************************************************************************************************/
 
 namespace UIHostCombo
 {
@@ -330,6 +349,10 @@ bool UIHostCombo::isValidKeyCombo(const QString &strKeyCombo)
     return true;
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIHostComboEditor implementation.                                                                                      *
+*********************************************************************************************************************************/
 
 UIHostComboEditor::UIHostComboEditor(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -395,6 +418,10 @@ UIHostComboWrapper UIHostComboEditor::combo() const
     return m_pEditor->combo();
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIHostComboEditorPrivate implementation.                                                                               *
+*********************************************************************************************************************************/
 
 UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     : m_pReleaseTimer(0)
@@ -480,7 +507,51 @@ void UIHostComboEditorPrivate::sltClear()
     emit sigDataChanged();
 }
 
-#ifdef Q_WS_WIN
+#if QT_VERSION >= 0x050000
+
+bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
+{
+# if defined(Q_WS_X11)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+    /* Make sure it's generic XCB event: */
+    if (eventType != "xcb_generic_event_t")
+        return QLineEdit::nativeEvent(eventType, pMessage, pResult);
+    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
+
+    /* Check if some XCB event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    switch (pEvent->response_type & ~0x80)
+    {
+        /* Watch for key-events: */
+        case XCB_KEY_PRESS:
+        case XCB_KEY_RELEASE:
+        {
+            /* Parse key-event: */
+            xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
+            const KeySym ks = ::XKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0);
+            const int iKeySym = static_cast<const int>(ks);
+
+            /* Handle key-event: */
+            return processKeyEvent(iKeySym, (pEvent->response_type & ~0x80) == XCB_KEY_PRESS);
+        }
+        default:
+            break;
+    }
+
+#  pragma GCC diagnostic pop
+# endif /* Q_WS_X11 */
+
+    /* Call to base-class: */
+    return QLineEdit::nativeEvent(eventType, pMessage, pResult);
+}
+
+#else /* QT_VERSION < 0x050000 */
+
+# if defined(Q_WS_WIN)
+
 bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
 {
     switch (pMsg->message)
@@ -522,42 +593,11 @@ bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
 
     return false;
 }
-#endif /* Q_WS_WIN */
 
-#ifdef Q_WS_X11
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-# if QT_VERSION >= 0x050000
-bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
-{
-    /* Make sure it's XCB event: */
-    AssertReturn(eventType == "xcb_generic_event_t", QLineEdit::nativeEvent(eventType, pMessage, pResult));
-    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
+# elif defined(Q_WS_X11)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-    /* Check if some XCB event should be filtered out.
-     * Returning @c true means filtering-out,
-     * Returning @c false means passing event to Qt. */
-    switch (pEvent->response_type & ~0x80)
-    {
-        /* Watch for key-events: */
-        case XCB_KEY_PRESS:
-        case XCB_KEY_RELEASE:
-        {
-            /* Parse key-event: */
-            xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
-            const KeySym ks = ::XKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0);
-            const int iKeySym = static_cast<const int>(ks);
-            /* Handle key-event: */
-            return processKeyEvent(iKeySym, (pEvent->response_type & ~0x80) == XCB_KEY_PRESS);
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return QLineEdit::nativeEvent(eventType, pMessage, pResult);
-}
-# else /* QT_VERSION < 0x050000 */
 bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
 {
     switch (pEvent->type)
@@ -580,11 +620,10 @@ bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
 
     return false;
 }
-# endif /* QT_VERSION < 0x050000 */
-# pragma GCC diagnostic pop
-#endif /* Q_WS_X11 */
 
-#ifdef Q_WS_MAC
+#  pragma GCC diagnostic pop
+# elif defined(Q_WS_MAC)
+
 /* static */
 bool UIHostComboEditorPrivate::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
@@ -640,7 +679,10 @@ bool UIHostComboEditorPrivate::darwinKeyboardEvent(const void *pvCocoaEvent, Eve
     }
     return false;
 }
-#endif /* Q_WS_MAC */
+
+# endif /* Q_WS_MAC */
+
+#endif /* QT_VERSION < 0x050000 */
 
 void UIHostComboEditorPrivate::keyPressEvent(QKeyEvent *pEvent)
 {

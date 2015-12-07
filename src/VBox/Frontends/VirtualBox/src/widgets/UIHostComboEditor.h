@@ -19,8 +19,8 @@
 #define ___UIHostComboEditor_h___
 
 /* Qt includes: */
-#include <QMetaType>
 #include <QLineEdit>
+#include <QMetaType>
 #include <QMap>
 #include <QSet>
 
@@ -28,11 +28,12 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class UIHostComboEditorPrivate;
 class QIToolButton;
+class UIHostComboEditorPrivate;
 #ifdef Q_WS_WIN
 class WinAltGrMonitor;
 #endif /* Q_WS_WIN */
+
 
 /* Native hot-key namespace to unify
  * all the related hot-key processing stuff: */
@@ -40,10 +41,9 @@ namespace UINativeHotKey
 {
     QString toString(int iKeyCode);
     bool isValidKey(int iKeyCode);
-#ifdef Q_WS_WIN
+#if defined(Q_WS_WIN)
     int distinguishModifierVKey(int wParam, int lParam);
-#endif /* Q_WS_WIN */
-#ifdef Q_WS_X11
+#elif defined(Q_WS_X11)
     void retranslateKeyNames();
 #endif /* Q_WS_X11 */
 }
@@ -142,20 +142,18 @@ public slots:
 
 protected:
 
-#ifdef Q_WS_WIN
-    bool winEvent(MSG *pMsg, long *pResult);
-#endif /* Q_WS_WIN */
-#ifdef Q_WS_X11
-# if QT_VERSION >= 0x050000
+#if QT_VERSION >= 0x050000
     bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult);
-# else /* QT_VERSION < 0x050000 */
+#else /* QT_VERSION < 0x050000 */
+# if defined(Q_WS_WIN)
+    bool winEvent(MSG *pMsg, long *pResult);
+# elif defined(Q_WS_X11)
     bool x11Event(XEvent *pEvent);
-# endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
-#ifdef Q_WS_MAC
+# elif defined(Q_WS_MAC)
     static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
     bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
-#endif /* Q_WS_MAC */
+# endif /* Q_WS_MAC */
+#endif /* QT_VERSION < 0x050000 */
 
     void keyPressEvent(QKeyEvent *pEvent);
     void keyReleaseEvent(QKeyEvent *pEvent);
