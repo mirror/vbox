@@ -178,7 +178,10 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         goto done_free_mbuf;
     }
 
-    LogFunc(("uh src: %RTnaipv4:%d, dst: %RTnaipv4:%d\n", ip->ip_src, RT_H2N_U16_C(uh->uh_sport), ip->ip_dst, RT_H2N_U16_C(uh->uh_dport)));
+    LogFunc(("uh src: %RTnaipv4:%d, dst: %RTnaipv4:%d\n",
+             ip->ip_src.s_addr, RT_N2H_U16(uh->uh_sport),
+             ip->ip_dst.s_addr, RT_N2H_U16(uh->uh_dport)));
+
     if (   pData->fUseHostResolver
         && uh->uh_dport == RT_H2N_U16_C(53)
         && CTL_CHECK(ip->ip_dst.s_addr, CTL_DNS))
@@ -197,6 +200,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         LogFlowFuncLeave();
         return;
     }
+
     /*
      *  handle TFTP
      */
