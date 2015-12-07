@@ -2492,44 +2492,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameConnection (LPWSTR pGuid, PCWSTR 
     return S_OK;
 }
 
-static const char *vboxNetCfgWinGetStateText(DWORD dwState)
-{
-    switch (dwState)
-    {
-        case SERVICE_STOPPED: return "is not running";
-        case SERVICE_STOP_PENDING: return "is stopping";
-        case SERVICE_CONTINUE_PENDING: return "continue is pending";
-        case SERVICE_PAUSE_PENDING: return "pause is pending";
-        case SERVICE_PAUSED: return "is paused";
-        case SERVICE_RUNNING: return "is running";
-        case SERVICE_START_PENDING: return "is starting";
-    }
-    return "state is invalid";
-}
-
-static DWORD vboxNetCfgWinGetNetSetupState(SC_HANDLE hService)
-{
-    SERVICE_STATUS status;
-    status.dwCurrentState = SERVICE_RUNNING;
-    if (hService) {
-        if (QueryServiceStatus(hService, &status))
-            NonStandardLogFlow(("NetSetupSvc %s\n", vboxNetCfgWinGetStateText(status.dwCurrentState)));
-        else
-            NonStandardLogFlow(("QueryServiceStatus failed (0x%x)\n", GetLastError()));
-    }
-    return status.dwCurrentState;
-}
-
-DECLINLINE(bool) vboxNetCfgWinIsNetSetupRunning(SC_HANDLE hService)
-{
-    return vboxNetCfgWinGetNetSetupState(hService) == SERVICE_RUNNING;
-}
-
-DECLINLINE(bool) vboxNetCfgWinIsNetSetupStopped(SC_HANDLE hService)
-{
-    return vboxNetCfgWinGetNetSetupState(hService) == SERVICE_STOPPED;
-}
-
 #define DRIVERHWID _T("sun_VBoxNetAdp")
 
 #define SetErrBreak(strAndArgs) \
@@ -2754,8 +2716,46 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUpdateHostOnlyNetworkInterface(LPCWSTR 
     return VBoxDrvCfgDrvUpdate(pcsxwId, pcsxwInf, pbRebootRequired);
 }
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile,
-                                                                        OUT GUID *pGuid, OUT BSTR *lppszName, OUT BSTR *pErrMsg)
+static const char *vboxNetCfgWinGetStateText(DWORD dwState)
+{
+    switch (dwState)
+    {
+        case SERVICE_STOPPED: return "is not running";
+        case SERVICE_STOP_PENDING: return "is stopping";
+        case SERVICE_CONTINUE_PENDING: return "continue is pending";
+        case SERVICE_PAUSE_PENDING: return "pause is pending";
+        case SERVICE_PAUSED: return "is paused";
+        case SERVICE_RUNNING: return "is running";
+        case SERVICE_START_PENDING: return "is starting";
+    }
+    return "state is invalid";
+}
+
+static DWORD vboxNetCfgWinGetNetSetupState(SC_HANDLE hService)
+{
+    SERVICE_STATUS status;
+    status.dwCurrentState = SERVICE_RUNNING;
+    if (hService) {
+        if (QueryServiceStatus(hService, &status))
+            NonStandardLogFlow(("NetSetupSvc %s\n", vboxNetCfgWinGetStateText(status.dwCurrentState)));
+        else
+            NonStandardLogFlow(("QueryServiceStatus failed (0x%x)\n", GetLastError()));
+    }
+    return status.dwCurrentState;
+}
+
+DECLINLINE(bool) vboxNetCfgWinIsNetSetupRunning(SC_HANDLE hService)
+{
+    return vboxNetCfgWinGetNetSetupState(hService) == SERVICE_RUNNING;
+}
+
+DECLINLINE(bool) vboxNetCfgWinIsNetSetupStopped(SC_HANDLE hService)
+{
+    return vboxNetCfgWinGetNetSetupState(hService) == SERVICE_STOPPED;
+}
+
+static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile,
+                                                           OUT GUID *pGuid, OUT BSTR *lppszName, OUT BSTR *pErrMsg)
 {
     HRESULT hrc = S_OK;
 
@@ -2772,7 +2772,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
     INetCfg *pNetCfg = NULL;
     LPWSTR lpszApp = NULL;
 
-    for (int attempt = 0; attempt < 2; ++attempt)
+    do
     {
         BOOL found = FALSE;
         GUID netGuid;
@@ -3073,35 +3073,10 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
                 break;
         }
 
-        if (ret == ERROR_FILE_NOT_FOUND && attempt == 0)
+        if (ret == ERROR_FILE_NOT_FOUND)
         {
-            /*
-             * This is the first time we fail to obtain NetCfgInstanceId, let us
-             * retry it once. It is needed to handle the situation when network
-             * setup fails to recognize the arrival of our device node while it
-             * is busy removing another host-only interface, and it gets stuck
-             * with no matching network interface created for our device node.
-             * See @bugref{7973} for details.
-             */
-            NonStandardLogFlow(("Timed out while waiting for NetCfgInstanceId, remove the device and try again...\n"));
-            if (hkey != INVALID_HANDLE_VALUE)
-            {
-                RegCloseKey (hkey);
-                hkey = (HKEY)INVALID_HANDLE_VALUE;
-            }
-            if (pQueueCallbackContext)
-            {
-                SetupTermDefaultQueueCallback(pQueueCallbackContext);
-                pQueueCallbackContext = NULL;
-            }
-            SetupDiCallClassInstaller(DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
-            SetupDiDeleteDeviceInfo(hDeviceInfo, &DeviceInfoData);
-            SetupDiDestroyDriverInfoList(hDeviceInfo, &DeviceInfoData,
-                                         SPDIT_CLASSDRIVER);
-            SetupDiDestroyDeviceInfoList(hDeviceInfo);
-            destroyList = FALSE;
-            registered = FALSE;
-            continue;
+            hrc = E_ABORT;
+            break;
         }
 
         if (ret != ERROR_SUCCESS)
@@ -3145,10 +3120,8 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
             SetErrBreak (("SetupDiGetDeviceInstanceId failed (0x%08X)",
                           GetLastError()));
 #endif /* !VBOXNETCFG_DELAYEDRENAME */
-
-        /* Success, don't need another attempt */
-        break;
     }
+    while (0);
 
     /*
      * cleanup
@@ -3251,6 +3224,64 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
     if (pErrMsg && bstrError.length())
         *pErrMsg = bstrError.Detach();
 
+    return hrc;
+}
+
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile,
+                                                                        OUT GUID *pGuid, OUT BSTR *lppszName, OUT BSTR *pErrMsg)
+{
+    HRESULT hrc = vboxNetCfgWinCreateHostOnlyNetworkInterface(pInfPath, bIsInfPathFile, pGuid, lppszName, pErrMsg);
+    if (hrc == E_ABORT)
+    {
+        NonStandardLogFlow(("Timed out while waiting for NetCfgInstanceId, try again immediately...\n"));
+        /*
+         * This is the first time we fail to obtain NetCfgInstanceId, let us
+         * retry it once. It is needed to handle the situation when network
+         * setup fails to recognize the arrival of our device node while it
+         * is busy removing another host-only interface, and it gets stuck
+         * with no matching network interface created for our device node.
+         * See @bugref{7973} for details.
+         */
+        hrc = vboxNetCfgWinCreateHostOnlyNetworkInterface(pInfPath, bIsInfPathFile, pGuid, lppszName, pErrMsg);
+        if (hrc == E_ABORT)
+        {
+            NonStandardLogFlow(("Timed out again while waiting for NetCfgInstanceId, try again after a while...\n"));
+            /*
+             * This is the second time we fail to obtain NetCfgInstanceId, let us
+             * retry it once more. This time we wait to network setup service
+             * to go down before retrying. Hopefully it will resolve all error
+             * conditions. See @bugref{7973} for details.
+             */
+
+            SC_HANDLE hSCM = NULL;
+            SC_HANDLE hService = NULL;
+
+            hSCM = OpenSCManager(NULL, NULL, GENERIC_READ);
+            if (hSCM)
+            {
+                hService = OpenService(hSCM, _T("NetSetupSvc"), GENERIC_READ);
+                if (hService)
+                {
+                    for (int retries = 0; retries < 60 && !vboxNetCfgWinIsNetSetupStopped(hService); ++retries)
+                        Sleep(1000);
+                    CloseServiceHandle(hService);
+                    hrc = vboxNetCfgWinCreateHostOnlyNetworkInterface(pInfPath, bIsInfPathFile, pGuid, lppszName, pErrMsg);
+                }
+                else
+                    NonStandardLogFlow(("OpenService failed (0x%x)\n", GetLastError()));
+                CloseServiceHandle(hSCM);
+            }
+            else
+                NonStandardLogFlow(("OpenSCManager failed (0x%x)", GetLastError()));
+            /* Give up and report the error. */
+            if (hrc == E_ABORT)
+            {
+                bstr_t bstrError = bstr_printf("Querying NetCfgInstanceId failed (0x%08X)", ERROR_FILE_NOT_FOUND);
+                *pErrMsg = bstrError.Detach();
+                hrc = E_FAIL;
+            }
+        }
+    }
     return hrc;
 }
 
