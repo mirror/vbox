@@ -234,7 +234,7 @@ QString QIFileDialog::getExistingDirectory (const QString &aDir,
                                             bool aDirOnly,
                                             bool aResolveSymlinks)
 {
-#if defined Q_WS_WIN
+#if defined(Q_WS_WIN) && (QT_VERSION < 0x050000)
 
     /**
      *  QEvent class reimplementation to carry Win32 API
@@ -402,7 +402,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
                                        bool           aResolveSymlinks /* = true */,
                                        bool           fConfirmOverwrite /* = false */)
 {
-#if defined Q_WS_WIN
+#if defined(Q_WS_WIN) && (QT_VERSION < 0x050000)
 
     /* Further code (WinAPI call to GetSaveFileName() in other thread)
      * seems not necessary any more since the MS COM issue has been fixed,
