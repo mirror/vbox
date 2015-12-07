@@ -1,4 +1,4 @@
-#!/bin/ksh93
+#!/bin/ksh
 #
 # Based on mesa_vendor_select from Solaris 11.3 with the following copyright:
 #
@@ -26,6 +26,12 @@
 #
 
 LINKDIR=/system/volatile/opengl
+if [[ ! -d ${LINKDIR] ]] ; then
+    LINKDIR=/var/run/opengl
+fi
+if [[ ! -d ${LINKDIR] ]] ; then
+    exit 1
+fi
 MESA_SELECT=/lib/opengl/ogl_select/mesa_vendor_select
 
 PATH=/usr/bin:/usr/sbin
