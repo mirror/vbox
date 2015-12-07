@@ -42,6 +42,13 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Qt includes: */
+#ifdef Q_WS_WIN
+# if QT_VERSION >= 0x050000
+#  include <QAbstractNativeEventFilter>
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_WIN */
+
 /* GUI includes: */
 #if defined(Q_WS_MAC)
 # include "DarwinKeyboard.h"
@@ -72,6 +79,41 @@ const int XKeyRelease = KeyRelease;
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
+
+
+#ifdef Q_WS_WIN
+# if QT_VERSION >= 0x050000
+/** QAbstractNativeEventFilter extension
+  * allowing to handle native Windows (MSG) events.
+  * Why do we need it? It's because Qt5 have unhandled
+  * well .. let's call it 'a bug' about native keyboard events
+  * which come to top-level widget (window) instead of focused sub-widget
+  * which actually supposed to get them. The funny thing is that target of
+  * those events (MSG::hwnd) is indeed top-level widget, not the sub-widget
+  * we expect, so that's probably the reason Qt devs haven't fixed that bug. */
+class WinEventFilter : public QAbstractNativeEventFilter
+{
+public:
+
+    /** Constructor which takes the passed @a pParent to redirect events to. */
+    WinEventFilter(UIHostComboEditorPrivate *pParent)
+        : m_pParent(pParent)
+    {}
+
+    /** Handles all native events. */
+    bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult)
+    {
+        /* Redirect event to parent: */
+        return m_pParent->nativeEvent(eventType, pMessage, pResult);
+    }
+
+private:
+
+    /** Holds the passed parent reference. */
+    UIHostComboEditorPrivate *m_pParent;
+};
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_WIN */
 
 
 /*********************************************************************************************************************************
@@ -427,6 +469,9 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     : m_pReleaseTimer(0)
     , m_fStartNewSequence(true)
 #ifdef Q_WS_WIN
+# if QT_VERSION >= 0x050000
+    , m_pWinEventFilter(0)
+# endif /* QT_VERSION >= 0x050000 */
     , m_pAltGrMonitor(0)
 #endif /* Q_WS_WIN */
 {
@@ -442,15 +487,20 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     connect(m_pReleaseTimer, SIGNAL(timeout()), this, SLOT(sltReleasePendingKeys()));
 
 #if defined(Q_WS_MAC)
-     m_uDarwinKeyModifiers = 0;
-     UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
-     ::DarwinGrabKeyboard(false /* just modifiers */);
+    m_uDarwinKeyModifiers = 0;
+    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
+    ::DarwinGrabKeyboard(false /* just modifiers */);
 #elif defined(Q_WS_WIN)
+# if QT_VERSION >= 0x050000
+    /* Prepare Windows event filter: */
+    m_pWinEventFilter = new WinEventFilter(this);
+    qApp->installNativeEventFilter(m_pWinEventFilter);
+# endif /* QT_VERSION >= 0x050000 */
     /* Prepare AltGR monitor: */
     m_pAltGrMonitor = new WinAltGrMonitor;
 #elif defined(Q_WS_X11)
-     /* Initialize the X keyboard subsystem: */
-     initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
+    /* Initialize the X keyboard subsystem: */
+    initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
 #endif /* Q_WS_X11 */
 }
 
@@ -463,6 +513,12 @@ UIHostComboEditorPrivate::~UIHostComboEditorPrivate()
     /* Cleanup AltGR monitor: */
     delete m_pAltGrMonitor;
     m_pAltGrMonitor = 0;
+# if QT_VERSION >= 0x050000
+    /* Cleanup Windows event filter: */
+    qApp->removeNativeEventFilter(m_pWinEventFilter);
+    delete m_pWinEventFilter;
+    m_pWinEventFilter = 0;
+# endif /* QT_VERSION >= 0x050000 */
 #endif /* Q_WS_WIN */
 }
 
@@ -511,7 +567,55 @@ void UIHostComboEditorPrivate::sltClear()
 
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
 {
-# if defined(Q_WS_X11)
+# if defined(Q_WS_WIN)
+
+    /* Make sure it's generic MSG event: */
+    if (eventType != "windows_generic_MSG")
+        return QLineEdit::nativeEvent(eventType, pMessage, pResult);
+    MSG *pEvent = static_cast<MSG*>(pMessage);
+
+    /* Check if some MSG event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    switch (pEvent->message)
+    {
+        /* Watch for key-events: */
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYUP:
+        {
+            /* Parse key-event: */
+            int iKeyCode = UINativeHotKey::distinguishModifierVKey((int)pEvent->wParam, (int)pEvent->lParam);
+            unsigned iDownScanCode = (pEvent->lParam >> 16) & 0x7F;
+            const bool fPressed = !(pEvent->lParam & 0x80000000);
+            const bool fExtended = pEvent->lParam & 0x1000000;
+
+            /* If present - why not just assert this? */
+            if (m_pAltGrMonitor)
+            {
+                /* Update AltGR monitor state from key-event: */
+                m_pAltGrMonitor->updateStateFromKeyEvent(iDownScanCode, fPressed, fExtended);
+                /* And release left Ctrl key early (if required): */
+                if (m_pAltGrMonitor->isLeftControlReleaseNeeded())
+                {
+                    m_pressedKeys.remove(VK_LCONTROL);
+                    m_shownKeys.remove(VK_LCONTROL);
+                }
+                /* Fake LCtrl release events can also end up in the released
+                 * key set.  Detect them on the immediately following RAlt up. */
+                if (!m_pressedKeys.contains(VK_LCONTROL))
+                    m_releasedKeys.remove(VK_LCONTROL);
+            }
+
+            /* Handle key-event: */
+            return processKeyEvent(iKeyCode, (pEvent->message == WM_KEYDOWN || pEvent->message == WM_SYSKEYDOWN));
+        }
+        default:
+            break;
+    }
+
+# elif defined(Q_WS_X11)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -542,7 +646,11 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
     }
 
 #  pragma GCC diagnostic pop
-# endif /* Q_WS_X11 */
+# else
+
+#  warning "port me!"
+
+# endif
 
     /* Call to base-class: */
     return QLineEdit::nativeEvent(eventType, pMessage, pResult);

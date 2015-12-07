@@ -31,6 +31,9 @@
 class QIToolButton;
 class UIHostComboEditorPrivate;
 #ifdef Q_WS_WIN
+# if QT_VERSION >= 0x050000
+class WinEventFilter;
+# endif /* QT_VERSION >= 0x050000 */
 class WinAltGrMonitor;
 #endif /* Q_WS_WIN */
 
@@ -186,6 +189,13 @@ private:
       * key was pressed when we get a kEventRawKeyModifiersChanged event. */
      uint32_t m_uDarwinKeyModifiers;
 #elif defined(Q_WS_WIN)
+# if QT_VERSION >= 0x050000
+    /** Win: Holds the native event filter instance. */
+    WinEventFilter *m_pWinEventFilter;
+    /** Win: Allows the native event filter to
+      * redirect events directly to nativeEvent handler. */
+    friend class WinEventFilter;
+# endif /* QT_VERSION >= 0x050000 */
     /** Win: Holds the object monitoring key event
       * stream for problematic AltGr events. */
     WinAltGrMonitor *m_pAltGrMonitor;
