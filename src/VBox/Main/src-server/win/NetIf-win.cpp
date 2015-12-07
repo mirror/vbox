@@ -1483,6 +1483,55 @@ struct BoundAdapter
     PIP_ADAPTER_ADDRESSES pAdapter;
 };
 
+static int netIfGetUnboundHostOnlyAdapters(INetCfg *pNetCfg, std::list<BoundAdapter> &adapters)
+{
+    INetCfgComponent     *pMiniport;
+    HRESULT              hr;
+    IEnumNetCfgComponent  *pEnumComponent;
+
+    if ((hr = pNetCfg->EnumComponents(&GUID_DEVCLASS_NET, &pEnumComponent)) != S_OK)
+        netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to enumerate network adapter components (0x%x)\n", hr));
+    else
+    {
+        while ((hr = pEnumComponent->Next(1, &pMiniport, NULL)) == S_OK)
+        {
+            GUID guid;
+            ULONG uComponentStatus;
+            struct BoundAdapter adapter;
+            memset(&adapter, 0, sizeof(adapter));
+            if ((hr = pMiniport->GetDisplayName(&adapter.pName)) != S_OK)
+                netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to get device display name (0x%x)\n", hr));
+            else if ((hr = pMiniport->GetDeviceStatus(&uComponentStatus)) != S_OK)
+                netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to get device status (0x%x)\n", hr));
+            else if (uComponentStatus != 0)
+                netIfLog(("netIfGetUnboundHostOnlyAdapters: wrong device status (0x%x)\n", uComponentStatus));
+            else if ((hr = pMiniport->GetId(&adapter.pHwId)) != S_OK)
+                netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to get device id (0x%x)\n", hr));
+            else if (_wcsnicmp(adapter.pHwId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
+                netIfLog(("netIfGetUnboundHostOnlyAdapters: not host-only id = %ls, ignored\n", adapter.pHwId));
+            else if ((hr = pMiniport->GetInstanceGuid(&guid)) != S_OK)
+                netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to get instance id (0x%x)\n", hr));
+            else
+            {
+                adapter.guid = *(Guid(guid).raw());
+                netIfLog(("netIfGetUnboundHostOnlyAdapters: guid=%RTuuid, name=%ls id = %ls\n", &adapter.guid, adapter.pName, adapter.pHwId));
+                adapters.push_back(adapter);
+                adapter.pName = adapter.pHwId = NULL; /* do not free, will be done later */
+            }
+            if (adapter.pHwId)
+                CoTaskMemFree(adapter.pHwId);
+            if (adapter.pName)
+                CoTaskMemFree(adapter.pName);
+            pMiniport->Release();
+        }
+        Assert(hr == S_OK || hr == S_FALSE);
+
+        pEnumComponent->Release();
+    }
+    netIfLog(("netIfGetUnboundHostOnlyAdapters: return\n"));
+    return VINF_SUCCESS;
+}
+
 static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
 {
     INetCfg              *pNetCfg = NULL;
@@ -1503,8 +1552,10 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
         return hr;
     }
 
-    if ((hr = pNetCfg->FindComponent(L"oracle_VBoxNetLwf", &pFilter)) != S_OK)
-        netIfLog(("netIfGetBoundAdapters: could not find 'oracle_VBoxNetLwf' component (0x%x)\n", hr));
+    if ((hr = pNetCfg->FindComponent(L"oracle_VBoxNetLwf", &pFilter)) != S_OK
+        /* fall back to NDIS5 miniport lookup */
+        && (hr = pNetCfg->FindComponent(L"sun_VBoxNetFlt", &pFilter)))
+        netIfLog(("netIfGetBoundAdapters: could not find either 'oracle_VBoxNetLwf' or 'sun_VBoxNetFlt' components (0x%x)\n", hr));
     else
     {
         INetCfgComponentBindings *pFilterBindings;
@@ -1568,6 +1619,8 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                                         if ((hr = pAdapter->GetId(&pwszHwId)) != S_OK)
                                             netIfLog(("netIfGetBoundAdapters: %ls: failed to get hardware id (0x%x)\n",
                                                       pwszName, hr));
+                                        else if (!_wcsnicmp(pwszHwId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
+                                            netIfLog(("netIfGetBoundAdapters: host-only adapter %ls, ignored\n", pwszName));
                                         else if ((hr = pAdapter->GetInstanceGuid(&guid)) != S_OK)
                                             netIfLog(("netIfGetBoundAdapters: %ls: failed to get instance GUID (0x%x)\n",
                                                       pwszName, hr));
@@ -1604,6 +1657,8 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
         }
         pFilter->Release();
     }
+    /* Host-only adapters are not necessarily bound, add them separately. */
+    netIfGetUnboundHostOnlyAdapters(pNetCfg, boundAdapters);
     VBoxNetCfgWinReleaseINetCfg(pNetCfg, FALSE);
 
     return S_OK;
@@ -1812,7 +1867,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                     pszUuid[len] = 0;
                     for (it = boundAdapters.begin(); it != boundAdapters.end(); ++it)
                     {
-                        if (!RTUuidCompareStr(Guid((*it).guid).raw(), pszUuid + 1))
+                        if (!RTUuidCompareStr(&(*it).guid, pszUuid + 1))
                         {
                             (*it).pAdapter = pAdapter;
                             break;
