@@ -54,7 +54,7 @@ HKCR
 <xsl:template match="idl/library">
   NoRemove AppID
   {
-    {<xsl:value-of select="@appUuid"/>} = s '<xsl:value-of select="@name"/> Application'
+    ForceRemove {<xsl:value-of select="@appUuid"/>} = s '<xsl:value-of select="@name"/> Application'
   }
 
 <xsl:apply-templates select="module[@name=$Module]/class"/>
