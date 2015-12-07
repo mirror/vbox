@@ -840,7 +840,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
     {
 #ifdef Q_WS_WIN
         /* Send pending WM_PAINT events: */
-        ::UpdateWindow(m_viewports[uScreenId]->winId());
+        ::UpdateWindow((HWND)m_viewports[uScreenId]->winId());
 #endif
         mouse().PutMouseEvent(globalPos.x() - m_lastMousePos.x(),
                               globalPos.y() - m_lastMousePos.y(),

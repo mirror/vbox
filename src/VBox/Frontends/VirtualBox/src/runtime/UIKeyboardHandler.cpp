@@ -847,7 +847,7 @@ void UIKeyboardHandler::sltMachineStateChanged()
                     /* Capture keyboard: */
 #ifdef Q_WS_WIN
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
-                        GetAncestor(m_views[theListOfViewIds[i]]->winId(), GA_ROOT) == GetForegroundWindow())
+                        GetAncestor((HWND)m_views[theListOfViewIds[i]]->winId(), GA_ROOT) == GetForegroundWindow())
 #else /* Q_WS_WIN */
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
 #endif /* !Q_WS_WIN */
@@ -1078,7 +1078,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     /* Capture keyboard: */
 #ifdef Q_WS_WIN
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
-                        GetAncestor(pWatchedView->winId(), GA_ROOT) == GetForegroundWindow())
+                        GetAncestor((HWND)pWatchedView->winId(), GA_ROOT) == GetForegroundWindow())
 #else /* Q_WS_WIN */
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
 #endif /* !Q_WS_WIN */
@@ -1199,7 +1199,7 @@ bool UIKeyboardHandler::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &eve
         return true;
 
     MSG message;
-    message.hwnd = m_views[m_iKeyboardHookViewIndex]->winId();
+    message.hwnd = (HWND)m_views[m_iKeyboardHookViewIndex]->winId();
     message.message = msg;
     message.wParam = event.vkCode;
     message.lParam = 1 | (event.scanCode & 0xFF) << 16 | (event.flags & 0xFF) << 24;
