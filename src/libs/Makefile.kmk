@@ -55,8 +55,8 @@ if !defined(VBOX_ONLY_SDK) \
  include $(PATH_SUB_CURRENT)/openssl-1.0.1q/Makefile.kmk
 endif
 
-# libjpeg for VRDP video redirection
-if defined(VBOX_WITH_VRDP)
+# libjpeg for VRDP video redirection and ExtPack's DrvHostWebcam
+if defined(VBOX_WITH_VRDP) || defined(VBOX_WITH_EXTPACK)
  include $(PATH_SUB_CURRENT)/jpeg-8a/Makefile.kmk
 endif
 
