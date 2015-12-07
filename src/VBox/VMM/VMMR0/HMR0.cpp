@@ -1294,8 +1294,6 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
     /* Make sure we don't touch HM after we've disabled HM in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&g_HmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
-    LogRel(("pVM=%p EMT=%p\n", pVM, RTThreadNativeSelf()));
-
     /* On first entry we'll sync everything. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
         HMCPU_CF_RESET_TO(&pVM->aCpus[i], HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
