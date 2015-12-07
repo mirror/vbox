@@ -2880,6 +2880,13 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			\
 			-e '/^_Z[[:digit:]]\+dbus/d' \
 			-e '/^_Z13RTDBusLoadLibv/d' \
+                       \
+			-e '/^g_[ac]VTG/d' \
+			-e '/^g_VTGObjHeader/d' \
+			-e '/^g_VTGProbeData/d' \
+			-e '/^VTGProbeStub/d' \
+			-e '/^g_achVTGStringTable/d' \
+			-e '/^g_acVTGProbeEnabled/d' \
 			\
 			-e '/^VBoxHost_/d'\
 			-e '/^VBoxGuest_/d'\
@@ -2912,6 +2919,13 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^g_Logger/d' \
 			-e '/^g_RelLogger/d' \
 			-e '/^g_VM/d',) \
+                       \
+			-e '/^g_[ac]VTG/d' \
+			-e '/^g_VTGObjHeader/d' \
+			-e '/^g_VTGProbeData/d' \
+			-e '/^VTGProbeStub/d' \
+			-e '/^g_achVTGStringTable/d' \
+			-e '/^g_acVTGProbeEnabled/d' \
 			\
 			-e '/^RTDBusLoadLib/d' \
 			\
