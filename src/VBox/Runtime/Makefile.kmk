@@ -1363,6 +1363,9 @@ endif
 ifdef RTALLOC_REPLACE_MALLOC
  VBoxRT_DEFS                  += RTALLOC_REPLACE_MALLOC
 endif
+ifdef VBOX_WITH_DTRACE_R3
+ VBoxRT_DEFS                  += IPRT_WITH_DTRACE=  IPRT_DTRACE_INCLUDE=\"dtrace/iprt.h\"
+endif
 VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
@@ -1375,6 +1378,10 @@ ifdef VBOX_WITH_LIBCURL
  VBoxRT_SOURCES               += \
  	common/misc/s3.cpp \
  	generic/http-curl.cpp
+endif
+ifdef VBOX_WITH_DTRACE_R3
+ VBoxRT_SOURCES               += \
+  	iprt.d
 endif
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
@@ -1703,8 +1710,12 @@ RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR0_DEFS        += RT_NO_GIP
 endif
+ifdef VBOX_WITH_DTRACE_R0
+ RuntimeR0_DEFS        += IPRT_WITH_DTRACE=VBOXVMM_  IPRT_DTRACE_INCLUDE=\"dtrace/VBoxVMM.h\"
+endif
 RuntimeR0_INCS          = include
 RuntimeR0_SOURCES      := \
+	../VMM/VBoxVMM.d \
 	common/log/logellipsis.cpp \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \

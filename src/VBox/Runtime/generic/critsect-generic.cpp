@@ -40,6 +40,22 @@
 #include "internal/thread.h"
 #include "internal/strict.h"
 
+/* Two issues here, (1) the tracepoint generator uses IPRT, and (2) only one .d
+   file per module. */
+#ifdef IPRT_WITH_DTRACE
+# include IPRT_DTRACE_INCLUDE
+# define IPRT_CRITSECT_ENTERED  RT_CONCAT(IPRT_WITH_DTRACE,IPRT_CRITSECT_ENTERED)
+# define IPRT_CRITSECT_LEAVING  RT_CONCAT(IPRT_WITH_DTRACE,IPRT_CRITSECT_LEAVING)
+# define IPRT_CRITSECT_BUSY     RT_CONCAT(IPRT_WITH_DTRACE,IPRT_CRITSECT_BUSY)
+# define IPRT_CRITSECT_WAITING  RT_CONCAT(IPRT_WITH_DTRACE,IPRT_CRITSECT_WAITING)
+#else
+# define IPRT_CRITSECT_ENTERED(a_pvCritSect, a_pszName, a_cLockers, a_cNestings)            do {} while (0)
+# define IPRT_CRITSECT_LEAVING(a_pvCritSect, a_pszName, a_cLockers, a_cNestings)            do {} while (0)
+# define IPRT_CRITSECT_BUSY(   a_pvCritSect, a_pszName, a_cLockers, a_pvNativeOwnerThread)  do {} while (0)
+# define IPRT_CRITSECT_WAITING(a_pvCritSect, a_pszName, a_cLockers, a_pvNativeOwnerThread)  do {} while (0)
+#endif
+
+
 
 RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect)
 {
@@ -164,13 +180,15 @@ DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCP
                 if (RT_FAILURE(rc9))
                     return rc9;
 #endif
-                ASMAtomicIncS32(&pCritSect->cLockers);
+                int32_t cLockers = ASMAtomicIncS32(&pCritSect->cLockers); NOREF(cLockers);
                 pCritSect->cNestings++;
+                IPRT_CRITSECT_ENTERED(pCritSect, NULL, cLockers, pCritSect->cNestings);
                 return VINF_SUCCESS;
             }
             AssertMsgFailed(("Nested entry of critsect %p\n", pCritSect));
             return VERR_SEM_NESTED;
         }
+        IPRT_CRITSECT_BUSY(pCritSect, NULL, pCritSect->cLockers, (void *)pCritSect->NativeThreadOwner);
         return VERR_SEM_BUSY;
     }
 
@@ -182,6 +200,7 @@ DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCP
 #ifdef RTCRITSECT_STRICT
     RTLockValidatorRecExclSetOwner(pCritSect->pValidatorRec, NIL_RTTHREAD, pSrcPos, true);
 #endif
+    IPRT_CRITSECT_ENTERED(pCritSect, NULL, 0, 1);
 
     return VINF_SUCCESS;
 }
@@ -244,7 +263,8 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
      * Increment the waiter counter.
      * This becomes 0 when the section is free.
      */
-    if (ASMAtomicIncS32(&pCritSect->cLockers) > 0)
+    int32_t cLockers = ASMAtomicIncS32(&pCritSect->cLockers);
+    if (cLockers > 0)
     {
         /*
          * Nested?
@@ -262,6 +282,7 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
                 }
 #endif
                 pCritSect->cNestings++;
+                IPRT_CRITSECT_ENTERED(pCritSect, NULL, cLockers, pCritSect->cNestings);
                 return VINF_SUCCESS;
             }
 
@@ -273,6 +294,7 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
         /*
          * Wait for the current owner to release it.
          */
+        IPRT_CRITSECT_WAITING(pCritSect, NULL, cLockers, (void *)pCritSect->NativeThreadOwner);
 #ifndef RTCRITSECT_STRICT
         RTTHREAD hThreadSelf = RTThreadSelf();
 #endif
@@ -312,6 +334,7 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
 #ifdef RTCRITSECT_STRICT
     RTLockValidatorRecExclSetOwner(pCritSect->pValidatorRec, hThreadSelf, pSrcPos, true);
 #endif
+    IPRT_CRITSECT_ENTERED(pCritSect, NULL, 0, 1);
 
     return VINF_SUCCESS;
 }
@@ -368,8 +391,9 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
     /*
      * Decrement nestings, if <= 0 when we'll release the critsec.
      */
-    pCritSect->cNestings--;
-    if (pCritSect->cNestings > 0)
+    uint32_t cNestings = --pCritSect->cNestings;
+    IPRT_CRITSECT_LEAVING(pCritSect, NULL, ASMAtomicUoReadS32(&pCritSect->cLockers) - 1, cNestings);
+    if (cNestings > 0)
         ASMAtomicDecS32(&pCritSect->cLockers);
     else
     {
