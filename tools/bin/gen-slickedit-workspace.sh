@@ -968,7 +968,7 @@ my_generate_project "bldprogs"      "src/bldprogs"                          --be
 my_generate_project "zlib"          "src/libs/zlib-1.2.8"                   --begin-incs "include"                                          --end-includes "src/libs/zlib-1.2.8/*.c" "src/libs/zlib-1.2.8/*.h"
 my_generate_project "liblzf"        "src/libs/liblzf-3.4"                   --begin-incs "include"                                          --end-includes "src/libs/liblzf-3.4"
 my_generate_project "libpng"        "src/libs/libpng-1.2.54"                --begin-incs "include"                                          --end-includes "src/libs/libpng-1.2.54/*.c" "src/libs/libpng-1.2.54/*.h"
-my_generate_project "openssl"       "src/libs/openssl-1.0.1p"               --begin-incs "include" "src/libs/openssl-1.0.1p/crypto"         --end-includes "src/libs/openssl-1.0.1p"
+my_generate_project "openssl"       "src/libs/openssl-1.0.1q"               --begin-incs "include" "src/libs/openssl-1.0.1q/crypto"         --end-includes "src/libs/openssl-1.0.1q"
 my_generate_project "curl"          "src/libs/curl-7.45.0"                  --begin-incs "include" "src/libs/curl-7.45.0/include"           --end-includes "src/libs/curl-7.45.0"
 my_generate_project "kStuff"        "src/libs/kStuff"                       --begin-incs "include" "src/libs/kStuff/kStuff/include"         --end-includes "src/libs/kStuff"
 
