@@ -39,6 +39,7 @@
  *
  * @returns VBox status code
  * @returns VERR_NOT_SUPPORTED if pass-through is not available on the host.
+ * @param   pszServiceName  Name of the host service.
  * @param   pidClient       Where to put the client ID on success. The client ID
  *                          must be passed to all the other calls to the service.
  */
