@@ -3059,7 +3059,7 @@ static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t cbMax, u
     Assert(pStrmSt->u64BaseDMA);
     Assert(pStrmSt->u32CBL);
 
-    int      rc;
+    int      rc               = VINF_SUCCESS;
     uint32_t cbToProcess      = cbMax;
     uint32_t cbProcessedTotal = 0;
     bool     fIsComplete      = false;
