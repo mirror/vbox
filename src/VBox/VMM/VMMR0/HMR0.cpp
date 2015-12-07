@@ -119,6 +119,9 @@ static struct
         /** Host EFER value (set by ring-0 VMX init) */
         uint64_t                    u64HostEfer;
 
+        /** Host SMM monitor control (used for logging/diagnostics) */
+        uint64_t                    u64HostSmmMonitorCtl;
+
         /** VMX MSR values */
         VMXMSRS                     Msrs;
 
@@ -382,21 +385,22 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
             /*
              * Read all relevant registers and MSRs.
              */
-            g_HmR0.vmx.u64HostCr4          = ASMGetCR4();
-            g_HmR0.vmx.u64HostEfer         = ASMRdMsr(MSR_K6_EFER);
-            g_HmR0.vmx.Msrs.u64BasicInfo   = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
-            g_HmR0.vmx.Msrs.VmxPinCtls.u   = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
-            g_HmR0.vmx.Msrs.VmxProcCtls.u  = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-            g_HmR0.vmx.Msrs.VmxExit.u      = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
-            g_HmR0.vmx.Msrs.VmxEntry.u     = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
-            g_HmR0.vmx.Msrs.u64Misc        = ASMRdMsr(MSR_IA32_VMX_MISC);
-            g_HmR0.vmx.Msrs.u64Cr0Fixed0   = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
-            g_HmR0.vmx.Msrs.u64Cr0Fixed1   = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
-            g_HmR0.vmx.Msrs.u64Cr4Fixed0   = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
-            g_HmR0.vmx.Msrs.u64Cr4Fixed1   = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
-            g_HmR0.vmx.Msrs.u64VmcsEnum    = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
+            g_HmR0.vmx.u64HostCr4           = ASMGetCR4();
+            g_HmR0.vmx.u64HostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
+            g_HmR0.vmx.u64HostEfer          = ASMRdMsr(MSR_K6_EFER);
+            g_HmR0.vmx.Msrs.u64BasicInfo    = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
+            g_HmR0.vmx.Msrs.VmxPinCtls.u    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+            g_HmR0.vmx.Msrs.VmxProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+            g_HmR0.vmx.Msrs.VmxExit.u       = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+            g_HmR0.vmx.Msrs.VmxEntry.u      = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+            g_HmR0.vmx.Msrs.u64Misc         = ASMRdMsr(MSR_IA32_VMX_MISC);
+            g_HmR0.vmx.Msrs.u64Cr0Fixed0    = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
+            g_HmR0.vmx.Msrs.u64Cr0Fixed1    = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
+            g_HmR0.vmx.Msrs.u64Cr4Fixed0    = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
+            g_HmR0.vmx.Msrs.u64Cr4Fixed1    = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
+            g_HmR0.vmx.Msrs.u64VmcsEnum     = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
             /* VPID 16 bits ASID. */
-            g_HmR0.uMaxAsid                = 0x10000; /* exclusive */
+            g_HmR0.uMaxAsid                 = 0x10000; /* exclusive */
 
             if (g_HmR0.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
             {
@@ -1213,6 +1217,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     pVM->hm.s.vmx.cPreemptTimerShift    = g_HmR0.vmx.cPreemptTimerShift;
     pVM->hm.s.vmx.u64HostCr4            = g_HmR0.vmx.u64HostCr4;
     pVM->hm.s.vmx.u64HostEfer           = g_HmR0.vmx.u64HostEfer;
+    pVM->hm.s.vmx.u64HostSmmMonitorCtl  = g_HmR0.vmx.u64HostSmmMonitorCtl;
     pVM->hm.s.vmx.Msrs                  = g_HmR0.vmx.Msrs;
     pVM->hm.s.svm.u64MsrHwcr            = g_HmR0.svm.u64MsrHwcr;
     pVM->hm.s.svm.u32Rev                = g_HmR0.svm.u32Rev;
@@ -1288,6 +1293,8 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
 
     /* Make sure we don't touch HM after we've disabled HM in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&g_HmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
+
+    LogRel(("pVM=%p EMT=%p\n", pVM, RTThreadNativeSelf()));
 
     /* On first entry we'll sync everything. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)

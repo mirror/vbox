@@ -448,7 +448,8 @@ typedef struct HM
 
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    u64HostCr4;
-
+        /** Host SMM monitor control (set by ring-0 VMX init) */
+        uint64_t                    u64HostSmmMonitorCtl;
         /** Host EFER value (set by ring-0 VMX init) */
         uint64_t                    u64HostEfer;
         /** Whether the CPU supports VMCS fields for swapping EFER. */
