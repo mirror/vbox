@@ -89,7 +89,47 @@ QString UINativeHotKey::toString(int iKeyCode)
 {
     QString strKeyName;
 
-#if defined(Q_WS_WIN)
+#if defined(Q_WS_MAC)
+
+    UInt32 modMask = DarwinKeyCodeToDarwinModifierMask(iKeyCode);
+    switch (modMask)
+    {
+        case shiftKey:
+        case optionKey:
+        case controlKey:
+        case cmdKey:
+            strKeyName = UIHostComboEditor::tr("Left ");
+            break;
+        case rightShiftKey:
+        case rightOptionKey:
+        case rightControlKey:
+        case kEventKeyModifierRightCmdKeyMask:
+            strKeyName = UIHostComboEditor::tr("Right ");
+            break;
+        default:
+            AssertMsgFailedReturn(("modMask=%#x\n", modMask), QString());
+    }
+    switch (modMask)
+    {
+        case shiftKey:
+        case rightShiftKey:
+            strKeyName += QChar(kShiftUnicode);
+            break;
+        case optionKey:
+        case rightOptionKey:
+            strKeyName += QChar(kOptionUnicode);
+            break;
+        case controlKey:
+        case rightControlKey:
+            strKeyName += QChar(kControlUnicode);
+            break;
+        case cmdKey:
+        case kEventKeyModifierRightCmdKeyMask:
+            strKeyName += QChar(kCommandUnicode);
+            break;
+    }
+
+#elif defined(Q_WS_WIN)
 
     /* MapVirtualKey doesn't distinguish between right and left vkeys,
      * even under XP, despite that it stated in MSDN. Do it by hands.
@@ -135,46 +175,6 @@ QString UINativeHotKey::toString(int iKeyCode)
         strKeyName = UIHostComboEditor::tr("<key_%1>").arg(iKeyCode);
     }
 
-#elif defined(Q_WS_MAC)
-
-    UInt32 modMask = DarwinKeyCodeToDarwinModifierMask(iKeyCode);
-    switch (modMask)
-    {
-        case shiftKey:
-        case optionKey:
-        case controlKey:
-        case cmdKey:
-            strKeyName = UIHostComboEditor::tr("Left ");
-            break;
-        case rightShiftKey:
-        case rightOptionKey:
-        case rightControlKey:
-        case kEventKeyModifierRightCmdKeyMask:
-            strKeyName = UIHostComboEditor::tr("Right ");
-            break;
-        default:
-            AssertMsgFailedReturn(("modMask=%#x\n", modMask), QString());
-    }
-    switch (modMask)
-    {
-        case shiftKey:
-        case rightShiftKey:
-            strKeyName += QChar(kShiftUnicode);
-            break;
-        case optionKey:
-        case rightOptionKey:
-            strKeyName += QChar(kOptionUnicode);
-            break;
-        case controlKey:
-        case rightControlKey:
-            strKeyName += QChar(kControlUnicode);
-            break;
-        case cmdKey:
-        case kEventKeyModifierRightCmdKeyMask:
-            strKeyName += QChar(kCommandUnicode);
-            break;
-    }
-
 #else
 
 # warning "port me!"
@@ -186,7 +186,25 @@ QString UINativeHotKey::toString(int iKeyCode)
 
 bool UINativeHotKey::isValidKey(int iKeyCode)
 {
-#if defined(Q_WS_WIN)
+#if defined(Q_WS_MAC)
+
+    UInt32 modMask = ::DarwinKeyCodeToDarwinModifierMask(iKeyCode);
+    switch (modMask)
+    {
+        case shiftKey:
+        case optionKey:
+        case controlKey:
+        case rightShiftKey:
+        case rightOptionKey:
+        case rightControlKey:
+        case cmdKey:
+        case kEventKeyModifierRightCmdKeyMask:
+            return true;
+        default:
+            return false;
+    }
+
+#elif defined(Q_WS_WIN)
 
     return ((iKeyCode >= VK_SHIFT && iKeyCode <= VK_CAPITAL) ||
             (iKeyCode >= VK_LSHIFT && iKeyCode <= VK_RMENU) ||
@@ -204,24 +222,6 @@ bool UINativeHotKey::isValidKey(int iKeyCode)
             iKeyCode == XK_Scroll_Lock /* allow 'Scroll Lock' missed in IsModifierKey() */) &&
            (iKeyCode != NoSymbol /* ignore some special symbol */ &&
             iKeyCode != XK_Insert /* ignore 'insert' included into IsMiscFunctionKey */);
-
-#elif defined(Q_WS_MAC)
-
-    UInt32 modMask = ::DarwinKeyCodeToDarwinModifierMask(iKeyCode);
-    switch (modMask)
-    {
-        case shiftKey:
-        case optionKey:
-        case controlKey:
-        case rightShiftKey:
-        case rightOptionKey:
-        case rightControlKey:
-        case cmdKey:
-        case kEventKeyModifierRightCmdKeyMask:
-            return true;
-        default:
-            return false;
-    }
 
 #else
 
@@ -441,29 +441,29 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     m_pReleaseTimer->setInterval(200);
     connect(m_pReleaseTimer, SIGNAL(timeout()), this, SLOT(sltReleasePendingKeys()));
 
-#if defined(Q_WS_X11)
-     /* Initialize the X keyboard subsystem: */
-     initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
-#elif defined(Q_WS_MAC)
+#if defined(Q_WS_MAC)
      m_uDarwinKeyModifiers = 0;
      UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
      ::DarwinGrabKeyboard(false /* just modifiers */);
 #elif defined(Q_WS_WIN)
     /* Prepare AltGR monitor: */
     m_pAltGrMonitor = new WinAltGrMonitor;
-#endif /* Q_WS_WIN */
+#elif defined(Q_WS_X11)
+     /* Initialize the X keyboard subsystem: */
+     initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
+#endif /* Q_WS_X11 */
 }
 
 UIHostComboEditorPrivate::~UIHostComboEditorPrivate()
 {
-#if defined(Q_WS_WIN)
+#if defined(Q_WS_MAC)
+    ::DarwinReleaseKeyboard();
+    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
+#elif defined(Q_WS_WIN)
     /* Cleanup AltGR monitor: */
     delete m_pAltGrMonitor;
     m_pAltGrMonitor = 0;
-#elif defined(Q_WS_MAC)
-    ::DarwinReleaseKeyboard();
-    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
-#endif /* Q_WS_MAC */
+#endif /* Q_WS_WIN */
 }
 
 void UIHostComboEditorPrivate::setCombo(const UIHostComboWrapper &strCombo)
@@ -550,7 +550,65 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
 
 #else /* QT_VERSION < 0x050000 */
 
-# if defined(Q_WS_WIN)
+# if defined(Q_WS_MAC)
+
+/* static */
+bool UIHostComboEditorPrivate::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
+{
+    UIHostComboEditorPrivate *pEditor = static_cast<UIHostComboEditorPrivate*>(pvUser);
+    EventRef inEvent = (EventRef)pvCarbonEvent;
+    UInt32 EventClass = ::GetEventClass(inEvent);
+    if (EventClass == kEventClassKeyboard)
+        return pEditor->darwinKeyboardEvent(pvCocoaEvent, inEvent);
+    return false;
+}
+
+bool UIHostComboEditorPrivate::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
+{
+    /* Ignore key changes unless we're the focus widget: */
+    if (!hasFocus())
+        return false;
+
+    UInt32 eventKind = ::GetEventKind(inEvent);
+    switch (eventKind)
+    {
+        //case kEventRawKeyDown:
+        //case kEventRawKeyUp:
+        //case kEventRawKeyRepeat:
+        case kEventRawKeyModifiersChanged:
+        {
+            /* Get modifier mask: */
+            UInt32 modifierMask = 0;
+            ::GetEventParameter(inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
+                                sizeof(modifierMask), NULL, &modifierMask);
+            modifierMask = ::DarwinAdjustModifierMask(modifierMask, pvCocoaEvent);
+            UInt32 changed = m_uDarwinKeyModifiers ^ modifierMask;
+
+            if (!changed)
+                break;
+
+            /* Convert to keycode: */
+            unsigned uKeyCode = ::DarwinModifierMaskToDarwinKeycode(changed);
+
+            if (!uKeyCode || uKeyCode == ~0U)
+                return false;
+
+            /* Process the key event: */
+            if (processKeyEvent(uKeyCode, changed & modifierMask))
+            {
+                /* Save the new modifier mask state. */
+                m_uDarwinKeyModifiers = modifierMask;
+                return true;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return false;
+}
+
+# elif defined(Q_WS_WIN)
 
 bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
 {
@@ -622,65 +680,7 @@ bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
 }
 
 #  pragma GCC diagnostic pop
-# elif defined(Q_WS_MAC)
-
-/* static */
-bool UIHostComboEditorPrivate::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
-{
-    UIHostComboEditorPrivate *pEditor = static_cast<UIHostComboEditorPrivate*>(pvUser);
-    EventRef inEvent = (EventRef)pvCarbonEvent;
-    UInt32 EventClass = ::GetEventClass(inEvent);
-    if (EventClass == kEventClassKeyboard)
-        return pEditor->darwinKeyboardEvent(pvCocoaEvent, inEvent);
-    return false;
-}
-
-bool UIHostComboEditorPrivate::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
-{
-    /* Ignore key changes unless we're the focus widget: */
-    if (!hasFocus())
-        return false;
-
-    UInt32 eventKind = ::GetEventKind(inEvent);
-    switch (eventKind)
-    {
-        //case kEventRawKeyDown:
-        //case kEventRawKeyUp:
-        //case kEventRawKeyRepeat:
-        case kEventRawKeyModifiersChanged:
-        {
-            /* Get modifier mask: */
-            UInt32 modifierMask = 0;
-            ::GetEventParameter(inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
-                                sizeof(modifierMask), NULL, &modifierMask);
-            modifierMask = ::DarwinAdjustModifierMask(modifierMask, pvCocoaEvent);
-            UInt32 changed = m_uDarwinKeyModifiers ^ modifierMask;
-
-            if (!changed)
-                break;
-
-            /* Convert to keycode: */
-            unsigned uKeyCode = ::DarwinModifierMaskToDarwinKeycode(changed);
-
-            if (!uKeyCode || uKeyCode == ~0U)
-                return false;
-
-            /* Process the key event: */
-            if (processKeyEvent(uKeyCode, changed & modifierMask))
-            {
-                /* Save the new modifier mask state. */
-                m_uDarwinKeyModifiers = modifierMask;
-                return true;
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    return false;
-}
-
-# endif /* Q_WS_MAC */
+# endif /* Q_WS_X11 */
 
 #endif /* QT_VERSION < 0x050000 */
 

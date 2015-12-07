@@ -143,16 +143,21 @@ public slots:
 protected:
 
 #if QT_VERSION >= 0x050000
+    /** Qt5: Handles all native events. */
     bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult);
 #else /* QT_VERSION < 0x050000 */
-# if defined(Q_WS_WIN)
+# if defined(Q_WS_MAC)
+    /** Mac: Qt4: Handles all native events (static callback). */
+    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+    /** Mac: Qt4: Handles all native events. */
+    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
+# elif defined(Q_WS_WIN)
+    /** Win: Qt4: Handles all native events. */
     bool winEvent(MSG *pMsg, long *pResult);
 # elif defined(Q_WS_X11)
+    /** X11: Qt4: Handles all native events. */
     bool x11Event(XEvent *pEvent);
-# elif defined(Q_WS_MAC)
-    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
-    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
-# endif /* Q_WS_MAC */
+# endif /* Q_WS_X11 */
 #endif /* QT_VERSION < 0x050000 */
 
     void keyPressEvent(QKeyEvent *pEvent);
@@ -181,7 +186,8 @@ private:
       * key was pressed when we get a kEventRawKeyModifiersChanged event. */
      uint32_t m_uDarwinKeyModifiers;
 #elif defined(Q_WS_WIN)
-    /** Holds the object monitoring key event stream for problematic AltGr events. */
+    /** Win: Holds the object monitoring key event
+      * stream for problematic AltGr events. */
     WinAltGrMonitor *m_pAltGrMonitor;
 #endif /* Q_WS_WIN */
 };
