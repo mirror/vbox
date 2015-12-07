@@ -17,29 +17,29 @@
 
 provider iprt
 {
-    probe critsect__entered(void *pvCritSect, const char *pszLaterNm, int32_t cLockers, uint32_t cNestings);
-    probe critsect__leaving(void *pvCritSect, const char *pszLaterNm, int32_t cLockers, uint32_t cNestings);
-    probe critsect__waiting(void *pvCritSect, const char *pszLaterNm, int32_t cLockers, void *pvNativeThreadOwner);
-    probe critsect__busy(   void *pvCritSect, const char *pszLaterNm, int32_t cLockers, void *pvNativeThreadOwner);
+    probe critsect__entered(void *a_pvCritSect, const char *a_pszLaterNm, int32_t a_cLockers, uint32_t a_cNestings);
+    probe critsect__leaving(void *a_pvCritSect, const char *a_pszLaterNm, int32_t a_cLockers, uint32_t a_cNestings);
+    probe critsect__waiting(void *a_pvCritSect, const char *a_pszLaterNm, int32_t a_cLockers, void *a_pvNativeThreadOwner);
+    probe critsect__busy(   void *a_pvCritSect, const char *a_pszLaterNm, int32_t a_cLockers, void *a_pvNativeThreadOwner);
 
-    probe critsectrw__excl_entered(void *pvCritSect, const char *pszLaterNm, uint32_t cNestings,
-                                   uint32_t cWaitingReaders, uint32_t cWriters);
-    probe critsectrw__excl_leaving(void *pvCritSect, const char *pszLaterNm, uint32_t cNestings,
-                                   uint32_t cWaitingReaders, uint32_t cWriters);
-    probe critsectrw__excl_waiting(void *pvCritSect, const char *pszLaterNm, bool a_fWriteMode, uint32_t a_cWaitingReaders,
+    probe critsectrw__excl_entered(void *a_pvCritSect, const char *a_pszLaterNm, uint32_t a_cNestings,
+                                   uint32_t a_cWaitingReaders, uint32_t cWriters);
+    probe critsectrw__excl_leaving(void *a_pvCritSect, const char *a_pszLaterNm, uint32_t a_cNestings,
+                                   uint32_t a_cWaitingReaders, uint32_t cWriters);
+    probe critsectrw__excl_waiting(void *a_pvCritSect, const char *a_pszLaterNm, uint8_t a_fWriteMode, uint32_t a_cWaitingReaders,
                                    uint32_t a_cReaders, uint32_t a_cWriters, void *a_pvNativeOwnerThread);
-    probe critsectrw__excl_busy(   void *pvCritSect, const char *pszLaterNm, bool a_fWriteMode, uint32_t a_cWaitingReaders,
+    probe critsectrw__excl_busy(   void *a_pvCritSect, const char *a_pszLaterNm, uint8_t a_fWriteMode, uint32_t a_cWaitingReaders,
                                    uint32_t a_cReaders, uint32_t a_cWriters, void *a_pvNativeOwnerThread);
-    probe critsectrw__excl_entered_shared(void *pvCritSect, const char *pszLaterNm, uint32_t cNestings,
-                                          uint32_t cWaitingReaders, uint32_t cWriters);
-    probe critsectrw__excl_leaving_shared(void *pvCritSect, const char *pszLaterNm, uint32_t cNestings,
-                                          uint32_t cWaitingReaders, uint32_t cWriters);
-    probe critsectrw__shared_entered(void *pvCritSect, const char *pszLaterNm, uint32_t cReaders, uint32_t cNestings);
-    probe critsectrw__shared_leaving(void *pvCritSect, const char *pszLaterNm, uint32_t cReaders, uint32_t cNestings);
-    probe critsectrw__shared_waiting(void *pvCritSect, const char *pszLaterNm, void *pvNativeThreadOwner,
+    probe critsectrw__excl_entered_shared(void *a_pvCritSect, const char *a_pszLaterNm, uint32_t a_cNestings,
+                                          uint32_t a_cWaitingReaders, uint32_t a_cWriters);
+    probe critsectrw__excl_leaving_shared(void *a_pvCritSect, const char *a_pszLaterNm, uint32_t a_cNestings,
+                                          uint32_t a_cWaitingReaders, uint32_t a_cWriters);
+    probe critsectrw__shared_entered(void *a_pvCritSect, const char *a_pszLaterNm, uint32_t a_cReaders, uint32_t a_cNestings);
+    probe critsectrw__shared_leaving(void *a_pvCritSect, const char *a_pszLaterNm, uint32_t a_cReaders, uint32_t a_cNestings);
+    probe critsectrw__shared_waiting(void *a_pvCritSect, const char *a_pszLaterNm, void *a_pvNativeThreadOwner,
                                      uint32_t cWaitingReaders, uint32_t cWriters);
-    probe critsectrw__shared_busy(   void *pvCritSect, const char *pszLaterNm, void *pvNativeThreadOwner,
-                                     uint32_t cWaitingReaders, uint32_t cWriters);
+    probe critsectrw__shared_busy(   void *a_pvCritSect, const char *a_pszLaterNm, void *a_pvNativeThreadOwner,
+                                     uint32_t a_cWaitingReaders, uint32_t a_cWriters);
 
 };
 
