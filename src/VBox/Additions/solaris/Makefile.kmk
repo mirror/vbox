@@ -130,7 +130,6 @@ solaris-addcommon_SOURCES = \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop \
 	$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml \
 	$(PATH_ROOT)/src/VBox/Additions/solaris/Mouse/vboxmslnk.xml \
-	$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxsetup3d.xml \
 	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE
 
 #
@@ -216,8 +215,7 @@ SOLARIS_ADD_USRBIN_LINKS = \
 	VBoxControl
 
 SOLARIS_ADD_USRSBIN_LINKS = \
-	vboxmslnk \
-	vboxguest.sh
+	vboxmslnk
 
 SOLARIS_ADD_COMMON = \
 	vboxclient.desktop \
@@ -227,8 +225,7 @@ SOLARIS_ADD_COMMON = \
 
 SOLARIS_ADD_SERVICES = \
 	vboxservice.xml \
-	vboxmslnk.xml \
-	vboxsetup3d.xml
+	vboxmslnk.xml
 
 ifdef VBOX_COMPRESS
  SOLARIS_ADD_COMPRESS_FILES = \
@@ -283,7 +280,6 @@ $(PATH_STAGE_BIN)/additions/$(PKGFILENAME): \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml \
 		$(PATH_ROOT)/src/VBox/Additions/solaris/Mouse/vboxmslnk.xml \
-		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxsetup3d.xml \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/VBox.sh \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15sol.pl \
@@ -329,7 +325,6 @@ else # !VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 endif
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                    $(SOLARIS_ADD_SERVICESINST_DIR)/vboxservice.xml
 	$(QUIET)$(INSTALL) -m 0644 	$(PATH_ROOT)/src/VBox/Additions/solaris/Mouse/vboxmslnk.xml                      $(SOLARIS_ADD_SERVICESINST_DIR)/vboxmslnk.xml
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxsetup3d.xml                    $(SOLARIS_ADD_SERVICESINST_DIR)/vboxsetup3d.xml
 	$(QUIET)$(SOLARIS_ADDINST_OUT_DIR)/makepackage.sh $(SOLARIS_ADDINST_OUT_DIR) $(PKGFILENAME) $(VBOX_SVN_REV) $(VBOX_SOL_PKG_DEV)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADDINST_OUT_DIR)/$(PKGFILENAME) $(PATH_STAGE_BIN)/additions/$(PKGFILENAME)
 	$(QUIET)$(RM) -f $(SOLARIS_ADDINST_OUT_DIR)/$(PKGFILENAME)
@@ -419,5 +414,5 @@ $(addprefix $(SOLARIS_ADD_USRBIN_DIR)/,$(SOLARIS_ADD_USRBIN_LINKS)): \
 # Symlinks from /usr/sbin/ to /opt/VirtualBoxAdditions
 #
 $(addprefix $(SOLARIS_ADD_USRSBIN_DIR)/,$(SOLARIS_ADD_USRSBIN_LINKS)): \
-		$(SOLARIS_ADD_USRSBIN_DIR)/% : | $$(dir $$@)
-	$(LN_SYMLINK) -f ../..$(SOLARIS_VBOXADDINST_SUBDIR)/$(notdir $@) $@
+		$(SOLARIS_ADD_USRSBIN_DIR)/% : % | $$(dir $$@)
+	$(LN_SYMLINK) -f ../..$(SOLARIS_VBOXADDINST_SUBDIR)/$< $@

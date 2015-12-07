@@ -177,44 +177,6 @@ stop_vboxms()
     fi
 }
 
-install_3d()
-{
-    # 32-bit crogl opengl library replacement
-    if test -f /system/volatile/opengl/lib/libGL.so.1 && test -f /usr/lib/VBoxOGL.so && \
-        /usr/bin/VBoxClient --check3d; then
-        rm -f /system/volatile/opengl/lib/libGL.so.1
-        ln -sf /usr/lib/VBoxOGL.so /system/volatile/opengl/lib/libGL.so.1
-    fi
-
-    # 64-bit crogl opengl library replacement
-    if test -f /system/volatile/opengl/lib/amd64/libGL.so.1 && test -f /usr/lib/amd64/VBoxOGL.so && \
-        /usr/bin/VBoxClient --check3d; then
-        rm -f /system/volatile/opengl/lib/amd64/libGL.so.1
-        ln -sf /usr/lib/amd64/VBoxOGL.so /system/volatile/opengl/lib/amd64/libGL.so.1
-    fi
-}
-
-remove_3d()
-{
-    # 32-bit crogl opengl library replacement
-    if test -f /system/volatile/opengl/lib/libGL.so.1 && test -f "/usr/lib/mesa/libGL.so.1"; then
-        rm -f /system/volatile/opengl/lib/libGL.so.1
-        ln -sf /usr/lib/mesa/libGL.so.1 /system/volatile/opengl/lib/libGL.so.1
-    elif test -f /system/volatile/opengl/lib/libGL.so.1 && test -f "/usr/X11/lib/mesa/libGL.so.1"; then
-        rm -f /system/volatile/opengl/lib/libGL.so.1
-        ln -sf /usr/X11/lib/mesa/libGL.so.1 /system/volatile/opengl/lib/libGL.so.1
-    fi
-
-    # 64-bit crogl opengl library replacement
-    if test -f /system/volatile/opengl/lib/amd64/libGL.so.1 && test -f "/usr/lib/mesa/amd64/libGL.so.1"; then
-        rm -f /system/volatile/opengl/lib/amd64/libGL.so.1
-        ln -sf /usr/lib/mesa/amd64/libGL.so.1 /system/volatile/opengl/lib/amd64/libGL.so.1
-    elif test -f /system/volatile/opengl/lib/amd64/libGL.so.1 && test -f "/usr/X11/lib/mesa/amd64/libGL.so.1"; then
-        rm -f /system/volatile/opengl/lib/amd64/libGL.so.1
-        ln -sf /usr/X11/lib/mesa/amd64/libGL.so.1 /system/volatile/opengl/lib/amd64/libGL.so.1
-    fi
-}
-
 status_module()
 {
     if vboxguest_loaded; then
@@ -226,7 +188,6 @@ status_module()
 
 stop_all()
 {
-    remove_3d
     stop_vboxms
     stop_vboxfs
     stop_module
@@ -239,7 +200,6 @@ restart_all()
     start_module
     start_vboxfs
     start_vboxms
-    install_3d
     return 0
 }
 
@@ -260,10 +220,8 @@ restartall)
 start)
     start_module
     start_vboxms
-    install_3d
     ;;
 stop)
-    remove_3d
     stop_vboxms
     stop_module
     ;;
@@ -281,12 +239,6 @@ vmsstart)
     ;;
 vmsstop)
     stop_vboxms
-    ;;
-3dstart)
-    install_3d
-    ;;
-3dstop)
-    remove_3d
     ;;
 *)
     echo "Usage: $0 {start|stop|restart|status}"
