@@ -718,10 +718,12 @@ static HRESULT directSoundPlayGetStatus(LPDIRECTSOUNDBUFFER8 pDSB, DWORD *pdwSta
     return hr;
 }
 
-static void directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
+static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
 {
-    AssertPtrReturnVoid(pThis);
-    AssertPtrReturnVoid(pDSoundStrmOut);
+    AssertPtrReturn(pThis, E_POINTER);
+    AssertPtrReturn(pDSoundStrmOut, E_POINTER);
+
+    HRESULT hr;
 
     if (pDSoundStrmOut->pDSB != NULL)
     {
@@ -730,13 +732,17 @@ static void directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundSt
 
         DSLOG(("DSound: Stopping playback\n"));
 
-        /* @todo Wait until all data in the buffer has been played. */
-        HRESULT hr = IDirectSoundBuffer8_Stop(pDSoundStrmOut->pDSB);
+        /** @todo Wait until all data in the buffer has been played. */
+        hr = IDirectSoundBuffer8_Stop(pDSoundStrmOut->pDSB);
         if (SUCCEEDED(hr))
             dsoundPlayClearSamples(pDSoundStrmOut);
         else
             DSLOGREL(("DSound: Stop playback %Rhrc\n", hr));
     }
+    else
+        hr = E_UNEXPECTED;
+
+    return hr;
 }
 
 static HRESULT directSoundPlayStart(PDSOUNDSTREAMOUT pDSoundStrmOut)
@@ -1012,18 +1018,24 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSo
     return hr;
 }
 
-static void directSoundCaptureStop(PDSOUNDSTREAMIN pDSoundStrmIn)
+static HRESULT directSoundCaptureStop(PDSOUNDSTREAMIN pDSoundStrmIn)
 {
-    AssertPtrReturnVoid(pDSoundStrmIn);
+    AssertPtrReturn(pDSoundStrmIn, E_POINTER);
+
+    HRESULT hr;
 
     if (pDSoundStrmIn->pDSCB)
     {
         DSLOG(("DSound: Stopping capture\n"));
 
-        HRESULT hr = IDirectSoundCaptureBuffer_Stop(pDSoundStrmIn->pDSCB);
+        hr = IDirectSoundCaptureBuffer_Stop(pDSoundStrmIn->pDSCB);
         if (FAILED(hr))
             DSLOGREL(("DSound: Capture buffer stop %Rhrc\n", hr));
     }
+    else
+        hr = E_UNEXPECTED;
+
+    return hr;
 }
 
 static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn)
@@ -1220,13 +1232,15 @@ static DECLCALLBACK(int) drvHostDSoundControlOut(PPDMIHOSTAUDIO pInterface,
     PDSOUNDSTREAMOUT pDSoundStrmOut = (PDSOUNDSTREAMOUT)pHstStrmOut;
 
     int rc = VINF_SUCCESS;
+
+    HRESULT hr;
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
             DSLOG(("DSound: Playback PDMAUDIOSTREAMCMD_ENABLE\n"));
             /* Try to start playback. If it fails, then reopen and try again. */
-            HRESULT hr = directSoundPlayStart(pDSoundStrmOut);
+            hr = directSoundPlayStart(pDSoundStrmOut);
             if (FAILED(hr))
             {
                 directSoundPlayClose(pThis, pDSoundStrmOut);
@@ -1245,7 +1259,9 @@ static DECLCALLBACK(int) drvHostDSoundControlOut(PPDMIHOSTAUDIO pInterface,
         case PDMAUDIOSTREAMCMD_DISABLE:
         {
             DSLOG(("DSound: Playback PDMAUDIOSTREAMCMD_DISABLE\n"));
-            directSoundPlayStop(pThis, pDSoundStrmOut);
+            hr = directSoundPlayStop(pThis, pDSoundStrmOut);
+            if (SUCCEEDED(hr))
+                pThis->fEnabledOut = false;
             break;
         }
 
@@ -1465,12 +1481,13 @@ static DECLCALLBACK(int) drvHostDSoundControlIn(PPDMIHOSTAUDIO pInterface, PPDMA
 
     int rc = VINF_SUCCESS;
 
+    HRESULT hr;
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
             /* Try to start capture. If it fails, then reopen and try again. */
-            HRESULT hr = directSoundCaptureStart(pThis, pDSoundStrmIn);
+            hr = directSoundCaptureStart(pThis, pDSoundStrmIn);
             if (FAILED(hr))
             {
                 directSoundCaptureClose(pDSoundStrmIn);
@@ -1488,7 +1505,9 @@ static DECLCALLBACK(int) drvHostDSoundControlIn(PPDMIHOSTAUDIO pInterface, PPDMA
 
         case PDMAUDIOSTREAMCMD_DISABLE:
         {
-            directSoundCaptureStop(pDSoundStrmIn);
+            hr = directSoundCaptureStop(pDSoundStrmIn);
+            if (SUCCEEDED(hr))
+                pThis->fEnabledIn = false;
             break;
         }
 
