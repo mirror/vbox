@@ -1473,7 +1473,7 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
 }
 
 
-#define netIfLog LogRel
+#define netIfLog Log
 
 struct BoundAdapter
 {
@@ -1490,7 +1490,7 @@ static int netIfGetUnboundHostOnlyAdapters(INetCfg *pNetCfg, std::list<BoundAdap
     IEnumNetCfgComponent  *pEnumComponent;
 
     if ((hr = pNetCfg->EnumComponents(&GUID_DEVCLASS_NET, &pEnumComponent)) != S_OK)
-        netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to enumerate network adapter components (0x%x)\n", hr));
+        LogRel(("netIfGetUnboundHostOnlyAdapters: failed to enumerate network adapter components (0x%x)\n", hr));
     else
     {
         while ((hr = pEnumComponent->Next(1, &pMiniport, NULL)) == S_OK)
@@ -1500,17 +1500,17 @@ static int netIfGetUnboundHostOnlyAdapters(INetCfg *pNetCfg, std::list<BoundAdap
             struct BoundAdapter adapter;
             memset(&adapter, 0, sizeof(adapter));
             if ((hr = pMiniport->GetDisplayName(&adapter.pName)) != S_OK)
-                netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to get device display name (0x%x)\n", hr));
+                LogRel(("netIfGetUnboundHostOnlyAdapters: failed to get device display name (0x%x)\n", hr));
             else if ((hr = pMiniport->GetDeviceStatus(&uComponentStatus)) != S_OK)
                 netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to get device status (0x%x)\n", hr));
             else if (uComponentStatus != 0)
                 netIfLog(("netIfGetUnboundHostOnlyAdapters: wrong device status (0x%x)\n", uComponentStatus));
             else if ((hr = pMiniport->GetId(&adapter.pHwId)) != S_OK)
-                netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to get device id (0x%x)\n", hr));
+                LogRel(("netIfGetUnboundHostOnlyAdapters: failed to get device id (0x%x)\n", hr));
             else if (_wcsnicmp(adapter.pHwId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
                 netIfLog(("netIfGetUnboundHostOnlyAdapters: not host-only id = %ls, ignored\n", adapter.pHwId));
             else if ((hr = pMiniport->GetInstanceGuid(&guid)) != S_OK)
-                netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to get instance id (0x%x)\n", hr));
+                LogRel(("netIfGetUnboundHostOnlyAdapters: failed to get instance id (0x%x)\n", hr));
             else
             {
                 adapter.guid = *(Guid(guid).raw());
@@ -1548,25 +1548,25 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
     Assert(hr == S_OK);
     if (hr != S_OK)
     {
-        netIfLog(("netIfGetBoundAdapters: failed to query INetCfg (0x%x)\n", hr));
+        LogRel(("netIfGetBoundAdapters: failed to query INetCfg (0x%x)\n", hr));
         return hr;
     }
 
     if ((hr = pNetCfg->FindComponent(L"oracle_VBoxNetLwf", &pFilter)) != S_OK
         /* fall back to NDIS5 miniport lookup */
         && (hr = pNetCfg->FindComponent(L"sun_VBoxNetFlt", &pFilter)))
-        netIfLog(("netIfGetBoundAdapters: could not find either 'oracle_VBoxNetLwf' or 'sun_VBoxNetFlt' components (0x%x)\n", hr));
+        LogRel(("netIfGetBoundAdapters: could not find either 'oracle_VBoxNetLwf' or 'sun_VBoxNetFlt' components (0x%x)\n", hr));
     else
     {
         INetCfgComponentBindings *pFilterBindings;
         if ((pFilter->QueryInterface(IID_INetCfgComponentBindings, (PVOID*)&pFilterBindings)) != S_OK)
-            netIfLog(("netIfGetBoundAdapters: failed to query INetCfgComponentBindings (0x%x)\n", hr));
+            LogRel(("netIfGetBoundAdapters: failed to query INetCfgComponentBindings (0x%x)\n", hr));
         else
         {
             IEnumNetCfgBindingPath *pEnumBp;
             INetCfgBindingPath     *pBp;
             if ((pFilterBindings->EnumBindingPaths(EBP_BELOW, &pEnumBp)) != S_OK)
-                netIfLog(("netIfGetBoundAdapters: failed to enumerate binding paths (0x%x)\n", hr));
+                LogRel(("netIfGetBoundAdapters: failed to enumerate binding paths (0x%x)\n", hr));
             else
             {
                 pEnumBp->Reset();
@@ -1582,7 +1582,7 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                         continue;
                     }
                     if ((pBp->EnumBindingInterfaces(&pEnumBi)) != S_OK)
-                        netIfLog(("netIfGetBoundAdapters: failed to enumerate binding interfaces (0x%x)\n", hr));
+                        LogRel(("netIfGetBoundAdapters: failed to enumerate binding interfaces (0x%x)\n", hr));
                     else
                     {
                         hr = pEnumBi->Reset();
@@ -1590,12 +1590,12 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                         {
                             INetCfgComponent *pAdapter;
                             if ((hr = pBi->GetLowerComponent(&pAdapter)) != S_OK)
-                                netIfLog(("netIfGetBoundAdapters: failed to get lower component (0x%x)\n", hr));
+                                LogRel(("netIfGetBoundAdapters: failed to get lower component (0x%x)\n", hr));
                             else
                             {
                                 LPWSTR pwszName = NULL;
                                 if ((hr = pAdapter->GetDisplayName(&pwszName)) != S_OK)
-                                    netIfLog(("netIfGetBoundAdapters: failed to get display name (0x%x)\n", hr));
+                                    LogRel(("netIfGetBoundAdapters: failed to get display name (0x%x)\n", hr));
                                 else
                                 {
                                     ULONG uStatus;
@@ -1617,12 +1617,12 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                                         GUID guid;
                                         LPWSTR pwszHwId = NULL;
                                         if ((hr = pAdapter->GetId(&pwszHwId)) != S_OK)
-                                            netIfLog(("netIfGetBoundAdapters: %ls: failed to get hardware id (0x%x)\n",
+                                            LogRel(("netIfGetBoundAdapters: %ls: failed to get hardware id (0x%x)\n",
                                                       pwszName, hr));
                                         else if (!_wcsnicmp(pwszHwId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
                                             netIfLog(("netIfGetBoundAdapters: host-only adapter %ls, ignored\n", pwszName));
                                         else if ((hr = pAdapter->GetInstanceGuid(&guid)) != S_OK)
-                                            netIfLog(("netIfGetBoundAdapters: %ls: failed to get instance GUID (0x%x)\n",
+                                            LogRel(("netIfGetBoundAdapters: %ls: failed to get instance GUID (0x%x)\n",
                                                       pwszName, hr));
                                         else
                                         {
@@ -1833,7 +1833,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
     }
     if (dwRc != NO_ERROR)
     {
-        netIfLog(("NetIfList: GetAdaptersAddresses failed (0x%x)\n", dwRc));
+        LogRel(("NetIfList: GetAdaptersAddresses failed (0x%x)\n", dwRc));
         hr = HRESULT_FROM_WIN32(dwRc);
     }
     else
@@ -1845,7 +1845,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
             hr = netIfGetBoundAdaptersFallback(boundAdapters);
 #endif
         if (hr != S_OK)
-            netIfLog(("NetIfList: netIfGetBoundAdapters failed (0x%x)\n", hr));
+            LogRel(("NetIfList: netIfGetBoundAdapters failed (0x%x)\n", hr));
         else
         {
             PIP_ADAPTER_ADDRESSES pAdapter;
@@ -1855,12 +1855,12 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                 char *pszUuid = RTStrDup(pAdapter->AdapterName);
                 if (!pszUuid)
                 {
-                    netIfLog(("NetIfList: out of memory\n"));
+                    LogRel(("NetIfList: out of memory\n"));
                     break;
                 }
                 size_t len = strlen(pszUuid) - 1;
                 if (pszUuid[0] != '{' || pszUuid[len] != '}')
-                    netIfLog(("NetIfList: ignoring invalid GUID %s\n", pAdapter->AdapterName));
+                    LogRel(("NetIfList: ignoring invalid GUID %s\n", pAdapter->AdapterName));
                 else
                 {
                     std::list<BoundAdapter>::iterator it;
@@ -1904,7 +1904,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                         enmType == HostNetworkInterfaceType_HostOnly ? "host-only" : "unknown"));
                 int rc = iface->init((*it).pName, enmType, &info);
                 if (FAILED(rc))
-                    netIfLog(("NetIfList: HostNetworkInterface::init() -> %Rrc\n", rc));
+                    LogRel(("NetIfList: HostNetworkInterface::init() -> %Rrc\n", rc));
                 else
                 {
                     if (info.bIsDefault)
