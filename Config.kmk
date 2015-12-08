@@ -526,6 +526,8 @@ VBOX_WITH_USB_CARDREADER = 1
 VBOX_WITH_PLUGIN_CRYPT = 1
 # VirtualKD stub/loader device, only relevant on Windows host
 VBOX_WITH_VIRTUALKD = 1
+# NVMe device emulation
+VBOX_WITH_NVME_IMPL = 1
 ## @}
 
 # legacy
