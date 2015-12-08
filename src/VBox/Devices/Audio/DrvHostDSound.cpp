@@ -1424,8 +1424,8 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
 
     if (RT_SUCCESS(rc))
     {
-    if (pcSamplesPlayed)
-        *pcSamplesPlayed = cReadTotal;
+        if (pcSamplesPlayed)
+            *pcSamplesPlayed = cReadTotal;
     }
 
     return rc;
@@ -1560,10 +1560,10 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
     {
         if (pDSCB == NULL)
         {
-                pThis->fEnabledIn = false;
+            pThis->fEnabledIn = false;
 
-                rc = VERR_NOT_AVAILABLE;
-                break;
+            rc = VERR_NOT_AVAILABLE;
+            break;
         }
 
         /* Get DirectSound capture position in bytes. */
@@ -1577,8 +1577,8 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
                 pDSoundStrmIn->hrLastCaptureIn = hr;
             }
 
-                rc = VERR_NOT_AVAILABLE;
-                break;
+            rc = VERR_NOT_AVAILABLE;
+            break;
         }
 
         pDSoundStrmIn->hrLastCaptureIn = hr;
@@ -1592,7 +1592,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
         /* Number of samples available in the DirectSound capture buffer. */
         DWORD csCaptured = dsoundRingDistance(csReadPos, pDSoundStrmIn->csCaptureReadPos, pDSoundStrmIn->csCaptureBufferSize);
         if (csCaptured == 0)
-                break;
+            break;
 
         /* Using as an intermediate not circular buffer. */
         AudioMixBufReset(&pHstStrmIn->MixBuf);
@@ -1602,7 +1602,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
         if (csMixFree == 0)
         {
             DSLOGF(("DSound: Capture buffer full\n"));
-                break;
+            break;
         }
 
         DSLOGF(("DSound: Capture csMixFree=%RU32, csReadPos=%ld, csCaptureReadPos=%ld, csCaptured=%ld\n",
@@ -1621,8 +1621,8 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
                                     0 /* dwFlags */);
         if (FAILED(hr))
         {
-                rc = VERR_ACCESS_DENIED;
-                break;
+            rc = VERR_ACCESS_DENIED;
+            break;
         }
 
         DWORD len1 = AUDIOMIXBUF_B2S(&pHstStrmIn->MixBuf, cb1);
@@ -1650,14 +1650,14 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
 
         directSoundCaptureUnlock(pDSCB, pv1, pv2, cb1, cb2);
 
-            if (csWrittenTotal) /* Captured something? */
-                rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, csWrittenTotal, &cCaptured);
+        if (csWrittenTotal) /* Captured something? */
+            rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, csWrittenTotal, &cCaptured);
 
         if (RT_SUCCESS(rc))
         {
-                pDSoundStrmIn->csCaptureReadPos = (pDSoundStrmIn->csCaptureReadPos + cCaptured) % pDSoundStrmIn->csCaptureBufferSize;
+            pDSoundStrmIn->csCaptureReadPos = (pDSoundStrmIn->csCaptureReadPos + cCaptured) % pDSoundStrmIn->csCaptureBufferSize;
             DSLOGF(("DSound: Capture %ld (%ld+%ld), processed %RU32/%RU32\n",
-                        csCaptured, len1, len2, cCaptured, csWrittenTotal));
+                    csCaptured, len1, len2, cCaptured, csWrittenTotal));
         }
 
     } while (0);
@@ -2090,7 +2090,7 @@ const PDMDRVREG g_DrvHostDSound =
     /* pszDescription */
     "DirectSound Audio host driver",
     /* fFlags */
-     PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
+    PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
     /* fClass. */
     PDM_DRVREG_CLASS_AUDIO,
     /* cMaxInstances */
