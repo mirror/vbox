@@ -100,6 +100,7 @@ EXPORTS
     RTTimeNanoTS
     ASMMultU64ByU32DivByU32             ; not-os2
     ASMAtomicXchgU8                     ; not-x86
+    ASMAtomicXchgU16                    ; not-x86
     ASMBitFirstSet                      ; not-x86
     ASMNopPause                         ; not-x86
     nocrt_memchr
