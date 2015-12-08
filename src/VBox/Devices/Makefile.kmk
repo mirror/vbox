@@ -1354,19 +1354,20 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
   VBoxNvmeR3_TEMPLATE = VBoxR3ExtPackPuel
   VBoxNvmeR3_SOURCES  = \
  	Storage/DevNVMe.cpp
-  VBoxNvmeR3_SOURCES.win = \
- 	build/VBoxNvmeR3.rc
+  $(call VBOX_SET_VER_INFO_DLL,VBoxNvmeR3,PUEL Extension Pack - NVMe Device)
 
   SYSMODS += VBoxNvmeR0
   VBoxNvmeR0_TEMPLATE = VBoxR0ExtPackPuel
   VBoxNvmeR0_SOURCES  = \
  	Storage/DevNVMe.cpp
+  $(call VBOX_SET_VER_INFO_R0,VBoxNvmeR0,PUEL Extension Pack - NVMe Device$(COMMA) ring-0)
 
   ifdef VBOX_WITH_RAW_MODE
    SYSMODS += VBoxNvmeRC
    VBoxNvmeRC_TEMPLATE = VBoxRcExtPackPuel
    VBoxNvmeRC_SOURCES  = \
  	Storage/DevNVMe.cpp
+  $(call VBOX_SET_VER_INFO_RC,VBoxNvmeRC,PUEL Extension Pack - NVMe Device$(COMMA) raw-mode)
   endif
 
   # Hacky but MSI support *must* be enabled
