@@ -460,39 +460,46 @@ static HRESULT directSoundPlayInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREA
     return hr;
 }
 
-static void directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
+static HRESULT directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
 {
-    AssertPtrReturnVoid(pThis);
-    AssertPtrReturnVoid(pDSoundStrmOut);
+    AssertPtrReturn(pThis, E_POINTER);
+    AssertPtrReturn(pDSoundStrmOut, E_POINTER);
 
     DSLOG(("DSound: Closing playback stream %p, buffer %p\n", pDSoundStrmOut, pDSoundStrmOut->pDSB));
 
+    HRESULT hr = S_OK;
+
     if (pDSoundStrmOut->pDSB)
     {
-        HRESULT hr = IDirectSoundBuffer8_Stop(pDSoundStrmOut->pDSB);
-        if (FAILED(hr))
-            DSLOGREL(("DSound: Stop playback stream %p when closing %Rhrc\n", pDSoundStrmOut, hr));
-
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-        if (pThis->aEvents[DSOUNDEVENT_OUTPUT] != NULL)
+        hr = IDirectSoundBuffer8_Stop(pDSoundStrmOut->pDSB);
+        if (SUCCEEDED(hr))
         {
-            CloseHandle(pThis->aEvents[DSOUNDEVENT_OUTPUT]);
-            pThis->aEvents[DSOUNDEVENT_OUTPUT] = NULL;
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+            if (pThis->aEvents[DSOUNDEVENT_OUTPUT] != NULL)
+            {
+                CloseHandle(pThis->aEvents[DSOUNDEVENT_OUTPUT]);
+                pThis->aEvents[DSOUNDEVENT_OUTPUT] = NULL;
 
-            if (pThis->cEvents)
-                pThis->cEvents--;
+                if (pThis->cEvents)
+                    pThis->cEvents--;
 
-            pThis->pDSStrmOut = NULL;
-        }
+                pThis->pDSStrmOut = NULL;
+            }
 
-        int rc2 = dsoundNotifyThread(pThis, false /* fShutdown */);
-        AssertRC(rc2);
+            int rc2 = dsoundNotifyThread(pThis, false /* fShutdown */);
+            AssertRC(rc2);
 #endif
-        IDirectSoundBuffer8_Release(pDSoundStrmOut->pDSB);
-        pDSoundStrmOut->pDSB = NULL;
+            IDirectSoundBuffer8_Release(pDSoundStrmOut->pDSB);
+            pDSoundStrmOut->pDSB = NULL;
+        }
+        else
+            DSLOGREL(("DSound: Stop playback stream %p when closing %Rhrc\n", pDSoundStrmOut, hr));
     }
 
-    directSoundPlayInterfaceRelease(pDSoundStrmOut);
+    if (SUCCEEDED(hr))
+        directSoundPlayInterfaceRelease(pDSoundStrmOut);
+
+    return hr;
 }
 
 static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
@@ -530,9 +537,9 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
 
         DSBUFFERDESC bd;
         RT_ZERO(bd);
-        bd.dwSize        = sizeof(bd);
-        bd.lpwfxFormat   = &wfx;
-        bd.dwFlags       = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2;
+        bd.dwSize = sizeof(bd);
+        bd.lpwfxFormat = &wfx;
+        bd.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2;
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
         bd.dwFlags      |= DSBCAPS_CTRLPOSITIONNOTIFY;
 #endif
@@ -695,16 +702,22 @@ static HRESULT directSoundPlayGetStatus(LPDIRECTSOUNDBUFFER8 pDSB, DWORD *pdwSta
     AssertPtrReturn(pDSB, E_POINTER);
     /* pdwStatus is optional. */
 
+    bool fRestoreBuffer = false;
+
     DWORD dwStatus = 0;
     HRESULT hr = IDirectSoundBuffer8_GetStatus(pDSB, &dwStatus);
     if (SUCCEEDED(hr))
     {
-        if ((dwStatus & DSBSTATUS_BUFFERLOST) != 0)
-        {
-            hr = directSoundPlayRestore(pDSB);
-            if (SUCCEEDED(hr))
-                hr = IDirectSoundBuffer8_GetStatus(pDSB, &dwStatus);
-        }
+        fRestoreBuffer = RT_BOOL(dwStatus & DSBSTATUS_BUFFERLOST);
+    }
+    else if (hr == DSERR_BUFFERLOST)
+        fRestoreBuffer = true;
+
+    if (fRestoreBuffer)
+    {
+        hr = directSoundPlayRestore(pDSB);
+        if (SUCCEEDED(hr))
+            hr = IDirectSoundBuffer8_GetStatus(pDSB, &dwStatus);
     }
 
     if (SUCCEEDED(hr))
@@ -875,23 +888,30 @@ static HRESULT directSoundCaptureInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDST
     return hr;
 }
 
-static void directSoundCaptureClose(PDSOUNDSTREAMIN pDSoundStrmIn)
+static HRESULT directSoundCaptureClose(PDSOUNDSTREAMIN pDSoundStrmIn)
 {
-    AssertPtrReturnVoid(pDSoundStrmIn);
+    AssertPtrReturn(pDSoundStrmIn, E_POINTER);
 
     DSLOG(("DSound: pDSoundStrmIn=%p, pDSCB=%p\n", pDSoundStrmIn, pDSoundStrmIn->pDSCB));
 
+    HRESULT hr = S_OK;
+
     if (pDSoundStrmIn->pDSCB)
     {
-        HRESULT hr = IDirectSoundCaptureBuffer_Stop(pDSoundStrmIn->pDSCB);
-        if (FAILED(hr))
+        hr = IDirectSoundCaptureBuffer_Stop(pDSoundStrmIn->pDSCB);
+        if (SUCCEEDED(hr))
+        {
+            IDirectSoundCaptureBuffer8_Release(pDSoundStrmIn->pDSCB);
+            pDSoundStrmIn->pDSCB = NULL;
+        }
+        else
             DSLOGREL(("DSound: Stop capture buffer %Rhrc\n", hr));
-
-        IDirectSoundCaptureBuffer8_Release(pDSoundStrmIn->pDSCB);
-        pDSoundStrmIn->pDSCB = NULL;
     }
 
-    directSoundCaptureInterfaceRelease(pDSoundStrmIn);
+    if (SUCCEEDED(hr))
+        directSoundCaptureInterfaceRelease(pDSoundStrmIn);
+
+    return hr;
 }
 
 static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn)
@@ -1331,7 +1351,7 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
         LPVOID pv1, pv2;
         DWORD cb1, cb2;
         HRESULT hr = directSoundPlayLock(pDSB, &pHstStrmOut->Props, pDSoundStrmOut->cbPlayWritePos, cbLive,
-                                         &pv1, &pv2, &cb1, &cb2, 0 /* dwFlags */);
+                                 &pv1, &pv2, &cb1, &cb2, 0 /* dwFlags */);
         if (FAILED(hr))
         {
             rc = VERR_ACCESS_DENIED;
@@ -1404,8 +1424,8 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
 
     if (RT_SUCCESS(rc))
     {
-        if (pcSamplesPlayed)
-            *pcSamplesPlayed = cReadTotal;
+    if (pcSamplesPlayed)
+        *pcSamplesPlayed = cReadTotal;
     }
 
     return rc;
@@ -1418,8 +1438,8 @@ static DECLCALLBACK(int) drvHostDSoundFiniOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
 
     directSoundPlayClose(pThis, pDSoundStrmOut);
 
-    pDSoundStrmOut->cbPlayWritePos       = 0;
-    pDSoundStrmOut->fRestartPlayback     = true;
+    pDSoundStrmOut->cbPlayWritePos = 0;
+    pDSoundStrmOut->fRestartPlayback = true;
     pDSoundStrmOut->csPlaybackBufferSize = 0;
 
     RT_ZERO(pDSoundStrmOut->streamCfg);
@@ -1490,10 +1510,13 @@ static DECLCALLBACK(int) drvHostDSoundControlIn(PPDMIHOSTAUDIO pInterface, PPDMA
             hr = directSoundCaptureStart(pThis, pDSoundStrmIn);
             if (FAILED(hr))
             {
-                directSoundCaptureClose(pDSoundStrmIn);
-                directSoundCaptureOpen(pThis, pDSoundStrmIn);
-
-                hr = directSoundCaptureStart(pThis, pDSoundStrmIn);
+                hr = directSoundCaptureClose(pDSoundStrmIn);
+                if (SUCCEEDED(hr))
+                {
+                    hr = directSoundCaptureOpen(pThis, pDSoundStrmIn);
+                    if (SUCCEEDED(hr))
+                        hr = directSoundCaptureStart(pThis, pDSoundStrmIn);
+                }
             }
 
             if (FAILED(hr))
@@ -1516,7 +1539,7 @@ static DECLCALLBACK(int) drvHostDSoundControlIn(PPDMIHOSTAUDIO pInterface, PPDMA
             AssertMsgFailed(("Invalid command %ld\n", enmStreamCmd));
             rc = VERR_INVALID_PARAMETER;
             break;
-        }
+    }
     }
 
     return rc;
@@ -1537,10 +1560,10 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
     {
         if (pDSCB == NULL)
         {
-            pThis->fEnabledIn = false;
+                pThis->fEnabledIn = false;
 
-            rc = VERR_NOT_AVAILABLE;
-            break;
+                rc = VERR_NOT_AVAILABLE;
+                break;
         }
 
         /* Get DirectSound capture position in bytes. */
@@ -1554,8 +1577,8 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
                 pDSoundStrmIn->hrLastCaptureIn = hr;
             }
 
-            rc = VERR_NOT_AVAILABLE;
-            break;
+                rc = VERR_NOT_AVAILABLE;
+                break;
         }
 
         pDSoundStrmIn->hrLastCaptureIn = hr;
@@ -1569,7 +1592,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
         /* Number of samples available in the DirectSound capture buffer. */
         DWORD csCaptured = dsoundRingDistance(csReadPos, pDSoundStrmIn->csCaptureReadPos, pDSoundStrmIn->csCaptureBufferSize);
         if (csCaptured == 0)
-            break;
+                break;
 
         /* Using as an intermediate not circular buffer. */
         AudioMixBufReset(&pHstStrmIn->MixBuf);
@@ -1579,7 +1602,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
         if (csMixFree == 0)
         {
             DSLOGF(("DSound: Capture buffer full\n"));
-            break;
+                break;
         }
 
         DSLOGF(("DSound: Capture csMixFree=%RU32, csReadPos=%ld, csCaptureReadPos=%ld, csCaptured=%ld\n",
@@ -1598,8 +1621,8 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
                                     0 /* dwFlags */);
         if (FAILED(hr))
         {
-            rc = VERR_ACCESS_DENIED;
-            break;
+                rc = VERR_ACCESS_DENIED;
+                break;
         }
 
         DWORD len1 = AUDIOMIXBUF_B2S(&pHstStrmIn->MixBuf, cb1);
@@ -1627,14 +1650,14 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
 
         directSoundCaptureUnlock(pDSCB, pv1, pv2, cb1, cb2);
 
-        if (csWrittenTotal) /* Captured something? */
-            rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, csWrittenTotal, &cCaptured);
+            if (csWrittenTotal) /* Captured something? */
+                rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, csWrittenTotal, &cCaptured);
 
         if (RT_SUCCESS(rc))
         {
-            pDSoundStrmIn->csCaptureReadPos = (pDSoundStrmIn->csCaptureReadPos + cCaptured) % pDSoundStrmIn->csCaptureBufferSize;
+                pDSoundStrmIn->csCaptureReadPos = (pDSoundStrmIn->csCaptureReadPos + cCaptured) % pDSoundStrmIn->csCaptureBufferSize;
             DSLOGF(("DSound: Capture %ld (%ld+%ld), processed %RU32/%RU32\n",
-                    csCaptured, len1, len2, cCaptured, csWrittenTotal));
+                        csCaptured, len1, len2, cCaptured, csWrittenTotal));
         }
 
     } while (0);
@@ -1869,7 +1892,7 @@ static DECLCALLBACK(void) drvHostDSoundShutdown(PPDMIHOSTAUDIO pInterface)
     {
         CloseHandle(pThis->aEvents[DSOUNDEVENT_NOTIFY]);
         pThis->aEvents[DSOUNDEVENT_NOTIFY] = NULL;
-    }
+}
 #endif
 
     LogFlowFuncLeave();
@@ -1909,7 +1932,7 @@ static DECLCALLBACK(int) drvHostDSoundInit(PPDMIHOSTAUDIO pInterface)
             if (RT_FAILURE(rc))
                 DSLOGREL(("DSound: Waiting for thread to initialize failed with rc=%Rrc\n", rc));
         }
-        else
+    else
             DSLOGREL(("DSound: Creating thread failed with rc=%Rrc\n", rc));
 #else
         rc = VINF_SUCCESS;
@@ -2036,8 +2059,8 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->fEnabledIn  = false;
     pThis->fEnabledOut = false;
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
-    pThis->fStopped    = false;
-    pThis->fShutdown   = false;
+    pThis->fStopped  = false;
+    pThis->fShutdown = false;
 
     RT_ZERO(pThis->aEvents);
     pThis->cEvents = 0;
@@ -2067,7 +2090,7 @@ const PDMDRVREG g_DrvHostDSound =
     /* pszDescription */
     "DirectSound Audio host driver",
     /* fFlags */
-    PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
+     PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
     /* fClass. */
     PDM_DRVREG_CLASS_AUDIO,
     /* cMaxInstances */
