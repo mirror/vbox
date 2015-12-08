@@ -179,6 +179,8 @@ RuntimeWin64ASM_SOURCES = \
 	win/amd64/ASMGetDR6.asm \
 	win/amd64/ASMGetDR7.asm \
 	common/asm/ASMAtomicCmpXchgU8.asm \
+	common/asm/ASMAtomicCmpXchgU16.asm \
+	common/asm/ASMAtomicXchgU16.asm \
 	common/asm/ASMBitFirstClear.asm \
 	common/asm/ASMBitFirstSet.asm \
 	common/asm/ASMBitNextClear.asm \
