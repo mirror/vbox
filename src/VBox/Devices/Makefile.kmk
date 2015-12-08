@@ -608,6 +608,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/slirp/tcp_subr.c \
  	Network/slirp/tcp_timer.c \
  	Network/slirp/udp.c \
+	Network/slirp/hostres.c \
  	Network/slirp/dnsproxy/hash.c \
  	Network/slirp/tftp.c \
  	Network/slirp/dnsproxy/dnsproxy.c
@@ -636,7 +637,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/slirp/libalias/alias_mod.c \
  	Network/slirp/libalias/alias_proxy.c \
  	Network/slirp/libalias/alias_ftp.c \
- 	Network/slirp/libalias/alias_dns.c \
  	Network/slirp/libalias/alias_nbt.c \
  	Network/slirp/libalias/alias_util.c
 

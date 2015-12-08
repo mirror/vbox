@@ -182,20 +182,29 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
              ip->ip_src.s_addr, RT_N2H_U16(uh->uh_sport),
              ip->ip_dst.s_addr, RT_N2H_U16(uh->uh_dport)));
 
+    /*
+     * handle DNS host resolver without creating a socket
+     */
     if (   pData->fUseHostResolver
         && uh->uh_dport == RT_H2N_U16_C(53)
         && CTL_CHECK(ip->ip_dst.s_addr, CTL_DNS))
     {
         struct sockaddr_in dst, src;
+        int error;
+
         src.sin_addr.s_addr = ip->ip_dst.s_addr;
         src.sin_port = uh->uh_dport;
         dst.sin_addr.s_addr = ip->ip_src.s_addr;
         dst.sin_port = uh->uh_sport;
 
+        m_adj(m, sizeof(struct udpiphdr));
+
+        error = hostresolver(pData, m);
+        if (error)
+            goto done_free_mbuf;
+
         slirpMbufTagService(pData, m, CTL_DNS);
-        /* udp_output2() expects a pointer to the body of UDP packet. */
-        m->m_data += sizeof(struct udpiphdr);
-        m->m_len -= sizeof(struct udpiphdr);
+
         udp_output2(pData, NULL, m, &src, &dst, IPTOS_LOWDELAY);
         LogFlowFuncLeave();
         return;

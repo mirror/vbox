@@ -245,16 +245,10 @@ int slirpInitializeDnsSettings(PNATState pData)
          */
         if (get_dns_addr_domain(pData, NULL) < 0)
         {
-            /* Load the DNS handler if host resolver mode was not used before. */
-            if (!pData->fUseHostResolver)
-                dns_alias_load(pData);
             pData->fUseHostResolver = true;
         }
         else
         {
-            /* Unload to not intercept in the future. */
-            if (pData->fUseHostResolver)
-                dns_alias_unload(pData);
             pData->fUseHostResolver = false;
             dnsproxy_init(pData);
         }

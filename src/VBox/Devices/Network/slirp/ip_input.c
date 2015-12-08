@@ -113,6 +113,12 @@ ip_input(PNATState pData, struct mbuf *m)
         }
         else
             m->m_flags &= ~M_SKIP_FIREWALL;
+
+        /*
+         * XXX: TODO: this is most likely a leftover spooky action at
+         * a distance from alias_dns.c host resolver code and can be
+         * g/c'ed.
+         */
         if (m->m_len != RT_N2H_U16(ip->ip_len))
             m->m_len = RT_N2H_U16(ip->ip_len);
     }

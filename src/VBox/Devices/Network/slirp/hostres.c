@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * libalias helper for using the host resolver instead of dnsproxy.
+ * Host resolver
  */
 
 /*
@@ -21,9 +21,7 @@
 #include <iprt/ctype.h>
 #include <iprt/assert.h>
 #include <slirp.h>
-#include "alias.h"
-#include "alias_local.h"
-#include "alias_mod.h"
+
 #define isdigit(ch)    RT_C_IS_DIGIT(ch)
 #define isalpha(ch)    RT_C_IS_ALPHA(ch)
 
@@ -67,37 +65,20 @@ struct dnsmsg_answer
 };
 
 /* see RFC 1035(4.1) */
-static int  dns_alias_handler(PNATState pData, int type);
 static void CStr2QStr(const char *pcszStr, char *pszQStr, size_t cQStr);
 static void QStr2CStr(const char *pcszQStr, char *pszStr, size_t cStr);
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
 static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHostent);
 #endif
 
-static int
-fingerprint(struct libalias *la, struct ip *pIp, struct alias_data *ah)
+
+static void
+doanswer(struct mbuf *m, struct hostent *pHostent)
 {
-
-    NOREF(la);
-    NOREF(pIp);
-    if (!ah->dport || !ah->sport || !ah->lnk)
-        return -1;
-
-    Log(("NAT:%s: ah(dport: %hd, sport: %hd) oaddr:%RTnaipv4 aaddr:%RTnaipv4\n",
-        RT_GCC_EXTENSION __FUNCTION__, ntohs(*ah->dport), ntohs(*ah->sport),
-        ah->oaddr, ah->aaddr));
-
-    if (   (ntohs(*ah->dport) == DNS_CONTROL_PORT_NUMBER
-        || ntohs(*ah->sport) == DNS_CONTROL_PORT_NUMBER)
-        && (ah->oaddr->s_addr == htonl(ntohl(la->pData->special_addr.s_addr)|CTL_DNS)))
-        return 0;
-
-    return -1;
-}
-
-static void doanswer(union dnsmsg_header *pHdr, struct dns_meta_data *pReqMeta, char *pszQname, struct ip *pIp, struct hostent *pHostent)
-{
+    union dnsmsg_header *pHdr;
     int i;
+
+    pHdr = mtod(m, union dnsmsg_header *);
 
     if (!pHostent)
     {
@@ -108,35 +89,16 @@ static void doanswer(union dnsmsg_header *pHdr, struct dns_meta_data *pReqMeta, 
     }
     else
     {
-        char *query;
         char *answers;
         uint16_t off;
         char **cstr;
         char *c;
-        uint16_t packet_len = 0;
+        size_t anslen = 0;
         uint16_t addr_off = (uint16_t)~0;
         struct dns_meta_data *meta;
 
-#if 0
-        /* here is no compressed names+answers + new query */
-        m_inc(m, pHostent->h_length * sizeof(struct dnsmsg_answer) + strlen(pszQname) + 2 * sizeof(uint16_t));
-#endif
-        packet_len = (pIp->ip_hl << 2)
-                   + sizeof(struct udphdr)
-                   + sizeof(union dnsmsg_header)
-                   + strlen(pszQname)
-                   + sizeof(struct dns_meta_data); /* ip + udp + header + query */
-        query = (char *)&pHdr[1];
-
-        strcpy(query, pszQname);
-        query += strlen(pszQname) + 1;
-        /* class & type informations lay right after symbolic inforamtion. */
-        meta = (struct dns_meta_data *)query;
-        meta->type = pReqMeta->type;
-        meta->class = pReqMeta->class;
-
         /* answers zone lays after query in response packet */
-        answers = (char *)&meta[1];
+        answers = (char *)pHdr + m->m_len;
 
         off = (char *)&pHdr[1] - (char *)pHdr;
         off |= (0x3 << 14);
@@ -160,11 +122,11 @@ static void doanswer(union dnsmsg_header *pHdr, struct dns_meta_data *pReqMeta, 
             if (addr_off == (uint16_t)~0)
                 addr_off = off;
             answers = (char *)&ans[1] + len - 2;  /* note: 1 symbol already counted */
-            packet_len += sizeof(struct dnsmsg_answer) + len - 2;
+            anslen += sizeof(struct dnsmsg_answer) + len - 2;
             pHdr->X.ancount++;
         }
-        /* add addresses */
 
+        /* add addresses */
         for(i = 0; i < pHostent->h_length && pHostent->h_addr_list[i] != NULL; ++i)
         {
             struct dnsmsg_answer *ans = (struct dnsmsg_answer *)answers;
@@ -176,7 +138,7 @@ static void doanswer(union dnsmsg_header *pHdr, struct dns_meta_data *pReqMeta, 
             ans->rdata_len = htons(4); /* IPv4 */
             *(uint32_t *)ans->rdata = *(uint32_t *)pHostent->h_addr_list[i];
             answers = (char *)&ans[1] + 2;
-            packet_len += sizeof(struct dnsmsg_answer) + 3;
+            anslen += sizeof(struct dnsmsg_answer) + 3;
             pHdr->X.ancount++;
         }
         pHdr->X.qr = 1; /* response */
@@ -185,13 +147,13 @@ static void doanswer(union dnsmsg_header *pHdr, struct dns_meta_data *pReqMeta, 
         pHdr->X.ra = 1;
         pHdr->X.rcode = 0;
         HTONS(pHdr->X.ancount);
-        /* don't forget update m_len */
-        pIp->ip_len = htons(packet_len);
+
+        m->m_len += anslen;
     }
 }
 
-static int
-protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
+int
+hostresolver(PNATState pData, struct mbuf *m)
 {
     int i;
     /* Parse dns request */
@@ -201,19 +163,16 @@ protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
     int cname_len = 0;
     struct dns_meta_data *meta;
 
-    struct udphdr *udp = NULL;
     union dnsmsg_header *pHdr = NULL;
-    NOREF(la);
-    NOREF(ah);
-    udp = (struct udphdr *)ip_next(pIp);
-    pHdr = (union dnsmsg_header *)udp_next(udp);
+
+    pHdr = mtod(m, union dnsmsg_header *);
 
     if (pHdr->X.qr == 1)
-        return 0; /* this is respose */
+        return 1; /* this is respose */
 
     memset(pszCname, 0, sizeof(pszCname));
     qw_qname = (char *)&pHdr[1];
-    Assert((ntohs(pHdr->X.qdcount) == 1));
+
     if ((ntohs(pHdr->X.qdcount) != 1))
     {
         static bool fMultiWarn;
@@ -225,7 +184,6 @@ protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
         return 1;
     }
 
-    for (i = 0; i < ntohs(pHdr->X.qdcount); ++i)
     {
         meta = (struct dns_meta_data *)(qw_qname + strlen(qw_qname) + 1);
         Log(("pszQname:%s qtype:%hd qclass:%hd\n",
@@ -247,20 +205,12 @@ protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
         pHostent = gethostbyname(pszCname);
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
         if (   pHostent
-            && !LIST_EMPTY(&la->pData->DNSMapHead))
-            alterHostentWithDataFromDNSMap(la->pData, pHostent);
+            && !LIST_EMPTY(&pData->DNSMapHead))
+            alterHostentWithDataFromDNSMap(pData, pHostent);
 #endif
-        doanswer(pHdr, meta, qw_qname, pIp, pHostent);
+        doanswer(m, pHostent);
     }
 
-    /*
-     * We have changed the size and the content of udp, to avoid double csum calculation
-     * will assign to zero
-     */
-    udp->uh_sum = 0;
-    udp->uh_ulen = ntohs(htons(pIp->ip_len) - (pIp->ip_hl << 2));
-    pIp->ip_sum = 0;
-    pIp->ip_sum = LibAliasInternetChecksum(la, (uint16_t *)pIp, pIp->ip_hl << 2);
     return 0;
 }
 
@@ -323,55 +273,6 @@ static void CStr2QStr(const char *pcszStr, char *pszQStr, size_t cQStr)
         }
     }
     *q = '\0';
-}
-
-
-int
-dns_alias_load(PNATState pData)
-{
-    return dns_alias_handler(pData, MOD_LOAD);
-}
-
-int
-dns_alias_unload(PNATState pData)
-{
-    return dns_alias_handler(pData, MOD_UNLOAD);
-}
-
-#define handlers pData->dns_module
-static int
-dns_alias_handler(PNATState pData, int type)
-{
-    int error;
-
-    if (!handlers)
-        handlers = RTMemAllocZ(2 * sizeof(struct proto_handler));
-
-    handlers[0].pri = 20;
-    handlers[0].dir = IN;
-    handlers[0].proto = UDP;
-    handlers[0].fingerprint = &fingerprint;
-    handlers[0].protohandler = &protohandler;
-    handlers[1].pri = EOH;
-
-    switch (type)
-    {
-        case MOD_LOAD:
-            error = 0;
-            LibAliasAttachHandlers(pData, handlers);
-            break;
-
-        case MOD_UNLOAD:
-            error = 0;
-            LibAliasDetachHandlers(pData, handlers);
-            RTMemFree(handlers);
-            handlers = NULL;
-            break;
-
-        default:
-            error = EINVAL;
-    }
-    return error;
 }
 
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER

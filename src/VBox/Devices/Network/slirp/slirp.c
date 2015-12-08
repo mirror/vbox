@@ -406,8 +406,6 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         LibAliasSetAddress(pData->proxy_alias, proxy_addr);
         ftp_alias_load(pData);
         nbt_alias_load(pData);
-        if (pData->fUseHostResolver)
-            dns_alias_load(pData);
     }
 #ifdef VBOX_WITH_NAT_SEND2HOME
     /* @todo: we should know all interfaces available on host. */
@@ -522,7 +520,6 @@ void slirp_term(PNATState pData)
     nbt_alias_unload(pData);
     if (pData->fUseHostResolver)
     {
-        dns_alias_unload(pData);
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
         while (!LIST_EMPTY(&pData->DNSMapHead))
         {

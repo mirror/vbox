@@ -350,6 +350,9 @@ u_int8_t tcp_tos (struct socket *);
 int tcp_ctl (PNATState, struct socket *);
 struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 
+/* hostres.c */
+int hostresolver(PNATState, struct mbuf *);
+
 /*slirp.c*/
 void slirp_arp_who_has(PNATState pData, uint32_t dst);
 int slirp_arp_cache_update_or_add(PNATState pData, uint32_t dst, const uint8_t *mac);
@@ -464,8 +467,6 @@ int ftp_alias_load(PNATState);
 int ftp_alias_unload(PNATState);
 int nbt_alias_load(PNATState);
 int nbt_alias_unload(PNATState);
-int dns_alias_load(PNATState);
-int dns_alias_unload(PNATState);
 int slirp_arp_lookup_ip_by_ether(PNATState, const uint8_t *, uint32_t *);
 int slirp_arp_lookup_ether_by_ip(PNATState, uint32_t, uint8_t *);
 
