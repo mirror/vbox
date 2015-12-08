@@ -2303,6 +2303,25 @@ static BOOL vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority(IN INetCfg *pNc,
                                             if (FAILED(hr))
                                                 NonStandardLogFlow(("Unable to move interface, hr (0x%x)\n", hr));
                                             bFoundIface = true;
+                                            /*
+                                             * Enable binding paths for host-only adapters bound to bridged filter
+                                             * (see @bugref{8140}).
+                                             */
+                                            HRESULT hr2;
+                                            LPWSTR pwszHwId = NULL;
+                                            if ((hr2 = pNcc->GetId(&pwszHwId)) != S_OK)
+                                                NonStandardLogFlow(("Failed to get HW ID, hr (0x%x)\n", hr2));
+                                            else if (_wcsnicmp(pwszHwId, VBOXNETCFGWIN_NETLWF_ID,
+                                                               sizeof(VBOXNETCFGWIN_NETLWF_ID)/2))
+                                                NonStandardLogFlow(("Ignoring component %ls\n", pwszHwId));
+                                            else if ((hr2 = pNetCfgBindPath->IsEnabled()) != S_FALSE)
+                                                NonStandardLogFlow(("Already enabled binding path, hr (0x%x)\n", hr2));
+                                            else if ((hr2 = pNetCfgBindPath->Enable(TRUE)) != S_OK)
+                                                NonStandardLogFlow(("Failed to enable binding path, hr (0x%x)\n", hr2));
+                                            else
+                                                NonStandardLogFlow(("Enabled binding path\n"));
+                                            if (pwszHwId)
+                                                CoTaskMemFree(pwszHwId);
                                         }
                                     }
                                     pNetCfgCompo->Release();
@@ -2769,8 +2788,6 @@ static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, 
     WCHAR DevName[256];
     HKEY hkey = (HKEY)INVALID_HANDLE_VALUE;
     bstr_t bstrError;
-    INetCfg *pNetCfg = NULL;
-    LPWSTR lpszApp = NULL;
 
     do
     {
@@ -3152,6 +3169,8 @@ static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, 
     if (SUCCEEDED(hrc))
     {
         HRESULT hr;
+        INetCfg *pNetCfg = NULL;
+        LPWSTR lpszApp = NULL;
 #ifndef VBOXNETCFG_DELAYEDRENAME
         WCHAR ConnectionName[128];
         ULONG cbName = sizeof(ConnectionName);
@@ -3177,14 +3196,10 @@ static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, 
                 NonStandardLogFlow(("CLSIDFromString failed, hrc (0x%x)\n", hrc));
         }
 
-        /* Check if INetCfg has been queried already, query if it hasn't been. */
-        if (pNetCfg == NULL)
-            hr = VBoxNetCfgWinQueryINetCfg(&pNetCfg, TRUE, L"VirtualBox Host-Only Creation",
-                                           30 * 1000, /* on Vista we often get 6to4svc.dll holding the lock, wait for 30 sec.  */
-                                           /* TODO: special handling for 6to4svc.dll ???, i.e. several retrieves */
-                                           &lpszApp);
-        else
-            hr = S_OK;
+        hr = VBoxNetCfgWinQueryINetCfg(&pNetCfg, TRUE, L"VirtualBox Host-Only Creation",
+                                       30 * 1000, /* on Vista we often get 6to4svc.dll holding the lock, wait for 30 sec.  */
+                                       /* TODO: special handling for 6to4svc.dll ???, i.e. several retrieves */
+                                       &lpszApp);
         if (hr == S_OK)
         {
             hr = vboxNetCfgWinEnumNetCfgComponents(pNetCfg,
