@@ -161,7 +161,6 @@ RuntimeWin64ASM_SOURCES = \
 	win/amd64/ASMAtomicBitTestAndToggle.asm \
 	win/amd64/ASMAtomicBitToggle.asm \
 	win/amd64/ASMAtomicReadU64.asm \
-	win/amd64/ASMAtomicXchgU16.asm \
 	win/amd64/ASMAtomicXchgU8.asm \
 	win/amd64/ASMGetCS.asm \
 	win/amd64/ASMGetDS.asm \
@@ -203,6 +202,8 @@ RuntimeWin64ASM_SOURCES = \
 #
 RuntimeWin32ASM_SOURCES = \
 	common/asm/ASMAtomicCmpXchgU8.asm \
+	common/asm/ASMAtomicCmpXchgU16.asm \
+	common/asm/ASMAtomicXchgU16.asm \
 	common/asm/ASMMultU32ByU32DivByU32.asm \
 	common/asm/ASMMultU64ByU32DivByU32.asm \
 	common/asm/ASMCpuId_Idx_ECX.asm \
