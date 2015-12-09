@@ -3784,9 +3784,9 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
     <para>
       VirtualBox ships a simple heartbeat service. Once the Guest Additions are
       active, the guest sends frequent heartbeat pings to the host. If the guest
-      stops sending the heartbeat pings without properly termination the service,
+      stops sending the heartbeat pings without properly terminating the service,
       the VM process will log this event in the VBox.log file. In the future it
-      might be possible to configure dedicated actions but for there is only a
+      might be possible to configure dedicated actions but for now there is only a
       warning in the log file.</para>
 
     <para>
