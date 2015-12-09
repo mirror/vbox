@@ -544,6 +544,8 @@ typedef struct DBGFEVENTCONFIG
     DBGFEVENTTYPE   enmType;
     /** The new state. */
     bool            fEnabled;
+    /** Unused. */
+    uint8_t         abUnused[3];
 } DBGFEVENTCONFIG;
 /** Pointer to an event config. */
 typedef DBGFEVENTCONFIG *PDBGFEVENTCONFIG;

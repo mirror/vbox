@@ -1055,6 +1055,8 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
     {
         if (pVM)
             DBGFR3PlugInLoadAll(pDbgc->pUVM);
+        dbgcEventInit(pDbgc);
+
         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
         if (RT_SUCCESS(rc))
         {
@@ -1091,6 +1093,7 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
                 RTDbgCfgRelease(hDbgCfg);
             }
         }
+        dbgcEventTerm(pDbgc);
     }
     else
         pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\nDBGCCreate error: %Rrc\n", rc);

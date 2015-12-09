@@ -97,6 +97,15 @@ VMMR3DECL(int) DBGFR3EventWait(PUVM pUVM, RTMSINTERVAL cMillies, PCDBGFEVENT *pp
 {
     return VERR_INTERNAL_ERROR;
 }
+VMMR3DECL(int) DBGFR3EventConfigEx(PUVM pUVM, PCDBGFEVENTCONFIG paConfigs, size_t cConfigs)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(int) DBGFR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFIG paConfigs, size_t cConfigs)
+{
+    return VERR_INTERNAL_ERROR;
+}
+
 VMMR3DECL(int) DBGFR3Halt(PUVM pUVM)
 {
     return VERR_INTERNAL_ERROR;
