@@ -2156,6 +2156,24 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
 RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax);
 
 /**
+ * Checks whether @a pszString starts with @a pszStart.
+ *
+ * @returns true / false.
+ * @param   pszString   The string to check.
+ * @param   pszStart    The start string to check for.
+ */
+RTDECL(int) RTStrStartsWith(const char *pszString, const char *pszStart);
+
+/**
+ * Checks whether @a pszString starts with @a pszStart, case insensitive.
+ *
+ * @returns true / false.
+ * @param   pszString   The string to check.
+ * @param   pszStart    The start string to check for.
+ */
+RTDECL(int) RTStrIStartsWith(const char *pszString, const char *pszStart);
+
+/**
  * Locates a case sensitive substring.
  *
  * If any of the two strings are NULL, then NULL is returned. If the needle is

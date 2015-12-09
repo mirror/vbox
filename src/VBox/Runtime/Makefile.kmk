@@ -507,6 +507,8 @@ RuntimeR3_SOURCES       = \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
 	common/string/RTStrPrintHexBytes.cpp \
+	common/string/RTStrStartsWith.cpp \
+	common/string/RTStrIStartsWith.cpp \
 	common/string/RTStrStr.cpp \
 	common/string/RTUtf16Copy.cpp \
 	common/string/RTUtf16CopyAscii.cpp \
