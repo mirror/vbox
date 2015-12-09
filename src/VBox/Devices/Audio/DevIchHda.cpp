@@ -4305,8 +4305,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         }
     }
 
-    LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
-
     if (RT_SUCCESS(rc))
     {
         /* Construct codec. */
