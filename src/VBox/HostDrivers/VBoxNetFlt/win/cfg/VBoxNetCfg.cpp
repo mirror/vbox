@@ -3316,9 +3316,22 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameHostOnlyConnection(IN const GUID 
         DevInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
         if (SetupDiOpenDeviceInfo(hDevInfo, pwszId, NULL, 0, &DevInfoData))
         {
-            if (SetupDiGetDeviceRegistryPropertyW(hDevInfo, &DevInfoData,
-                                                  SPDRP_FRIENDLYNAME, NULL,
-                                                  (PBYTE)wszDevName, RT_ELEMENTS(wszDevName), NULL))
+            DWORD err = ERROR_SUCCESS;
+            if (!SetupDiGetDeviceRegistryPropertyW(hDevInfo, &DevInfoData,
+                                                   SPDRP_FRIENDLYNAME, NULL,
+                                                   (PBYTE)wszDevName, RT_ELEMENTS(wszDevName), NULL))
+            {
+                err = GetLastError();
+                if (err == ERROR_INVALID_DATA)
+                {
+                    err = SetupDiGetDeviceRegistryPropertyW(hDevInfo, &DevInfoData,
+                                                            SPDRP_DEVICEDESC, NULL,
+                                                            (PBYTE)wszDevName, RT_ELEMENTS(wszDevName), NULL)
+                        ? ERROR_SUCCESS
+                        : GetLastError();
+                }
+            }
+            if (err == ERROR_SUCCESS)
             {
                 hr = VBoxNetCfgWinGenHostonlyConnectionName(wszDevName, wszConnectionNewName, &cbName);
                 if (SUCCEEDED(hr))
@@ -3329,19 +3342,19 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameHostOnlyConnection(IN const GUID 
                     {
                         hr = VBoxNetCfgWinRenameConnection(wszGuid, wszConnectionNewName);
                         if (FAILED(hr))
-                            NonStandardLogFlow(("NetIf: VBoxNetCfgWinRenameConnection failed (0x%x)\n", hr));
+                            NonStandardLogFlow(("VBoxNetCfgWinRenameHostOnlyConnection: VBoxNetCfgWinRenameConnection failed (0x%x)\n", hr));
                     }
                     else
                     {
-                        DWORD winEr = GetLastError();
-                        hr = HRESULT_FROM_WIN32(winEr);
+                        err = GetLastError();
+                        hr = HRESULT_FROM_WIN32(err);
                         if (SUCCEEDED(hr))
                             hr = E_FAIL;
-                        NonStandardLogFlow(("StringFromGUID2 failed winEr=%u, hr=0x%x\n", winEr, hr));
+                        NonStandardLogFlow(("StringFromGUID2 failed err=%u, hr=0x%x\n", err, hr));
                     }
                 }
                 else
-                    NonStandardLogFlow(("NetIf: VBoxNetCfgWinGenHostonlyConnectionName failed (0x%x)\n", hr));
+                    NonStandardLogFlow(("VBoxNetCfgWinRenameHostOnlyConnection: VBoxNetCfgWinGenHostonlyConnectionName failed (0x%x)\n", hr));
                 if (SUCCEEDED(hr) && pDevName)
                 {
                     *pDevName = SysAllocString((const OLECHAR *)wszDevName);
@@ -3354,16 +3367,15 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameHostOnlyConnection(IN const GUID 
             }
             else
             {
-                DWORD winEr = GetLastError();
-                hr = HRESULT_FROM_WIN32(winEr);
-                NonStandardLogFlow(("NetIf: SetupDiGetDeviceRegistryPropertyW failed (0x%x)\n", winEr));
+                hr = HRESULT_FROM_WIN32(err);
+                NonStandardLogFlow(("VBoxNetCfgWinRenameHostOnlyConnection: SetupDiGetDeviceRegistryPropertyW failed (0x%x)\n", err));
             }
         }
         else
         {
-            DWORD winEr = GetLastError();
-            hr = HRESULT_FROM_WIN32(winEr);
-            NonStandardLogFlow(("NetIf: SetupDiOpenDeviceInfo failed (0x%x)\n", winEr));
+            DWORD err = GetLastError();
+            hr = HRESULT_FROM_WIN32(err);
+            NonStandardLogFlow(("VBoxNetCfgWinRenameHostOnlyConnection: SetupDiOpenDeviceInfo failed (0x%x)\n", err));
         }
         SetupDiDestroyDeviceInfoList(hDevInfo);
     }
