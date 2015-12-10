@@ -340,6 +340,7 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_EM_DBG_HYPER_STEPPED:
         case VINF_EM_DBG_HYPER_ASSERTION:
         case VINF_EM_DBG_STOP:
+        case VINF_EM_DBG_EVENT:
             break;
 
         /*

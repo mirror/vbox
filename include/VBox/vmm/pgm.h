@@ -525,6 +525,7 @@ VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock
 # define PGM_PHYS_RW_IS_SUCCESS(a_rcStrict) \
     (   (a_rcStrict) == VINF_SUCCESS \
      || (a_rcStrict) == VINF_EM_DBG_STOP \
+     || (a_rcStrict) == VINF_EM_DBG_EVENT \
      || (a_rcStrict) == VINF_EM_DBG_BREAKPOINT \
     )
 #elif defined(IN_RING0)
@@ -535,6 +536,7 @@ VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock
      || (a_rcStrict) == VINF_EM_RESET \
      || (a_rcStrict) == VINF_EM_HALT \
      || (a_rcStrict) == VINF_EM_DBG_STOP \
+     || (a_rcStrict) == VINF_EM_DBG_EVENT \
      || (a_rcStrict) == VINF_EM_DBG_BREAKPOINT \
     )
 #elif defined(IN_RC)
@@ -547,6 +549,7 @@ VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock
      || (a_rcStrict) == VINF_SELM_SYNC_GDT \
      || (a_rcStrict) == VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT \
      || (a_rcStrict) == VINF_EM_DBG_STOP \
+     || (a_rcStrict) == VINF_EM_DBG_EVENT \
      || (a_rcStrict) == VINF_EM_DBG_BREAKPOINT \
     )
 #endif

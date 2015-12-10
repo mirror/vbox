@@ -849,6 +849,10 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
                 rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, NULL, 0, NULL, NULL);
                 break;
 
+            case VINF_EM_DBG_EVENT:
+                rc = DBGFR3EventHandlePending(pVM, pVCpu);
+                break;
+
             case VINF_EM_DBG_HYPER_STEPPED:
                 rc = DBGFR3Event(pVM, DBGFEVENT_STEPPED_HYPER);
                 break;
@@ -893,6 +897,7 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
                  */
                 case VINF_EM_DBG_STEP:
                 case VINF_EM_DBG_STOP:
+                case VINF_EM_DBG_EVENT:
                 case VINF_EM_DBG_STEPPED:
                 case VINF_EM_DBG_BREAKPOINT:
                 case VINF_EM_DBG_HYPER_STEPPED:
@@ -2356,6 +2361,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_DBG_STEPPED:
                 case VINF_EM_DBG_STOP:
+                case VINF_EM_DBG_EVENT:
                 case VINF_EM_DBG_BREAKPOINT:
                 case VINF_EM_DBG_STEP:
                     if (enmOldState == EMSTATE_RAW)

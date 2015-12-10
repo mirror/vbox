@@ -25,6 +25,7 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>
+#include <iprt/asm.h>
 
 
 /*
@@ -261,9 +262,116 @@ VMM_INT_DECL(bool) DBGFIsStepping(PVMCPU pVCpu)
 }
 
 
-VMM_INT_DECL(VBOXSTRICTRC) DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uEventArg)
+/**
+ * Checks if the specified generic event is enabled or not.
+ *
+ * @returns true / false.
+ * @param   pVM                 The cross context VM structure.
+ * @param   enmEvent            The generic event being raised.
+ * @param   uEventArg           The argument of that event.
+ */
+DECLINLINE(bool) dbgfEventIsGenericWithArgEnabled(PVM pVM, DBGFEVENTTYPE enmEvent, uint64_t uEventArg)
 {
-    return VINF_SUCCESS;
+    if (DBGF_IS_EVENT_ENABLED(pVM, enmEvent))
+    {
+        switch (enmEvent)
+        {
+            case DBGFEVENT_INTERRUPT_HARDWARE:
+                AssertReturn(uEventArg < 256, false);
+                return ASMBitTest(pVM->dbgf.s.bmHardIntBreakpoints, (uint32_t)uEventArg);
+
+            case DBGFEVENT_INTERRUPT_SOFTWARE:
+                AssertReturn(uEventArg < 256, false);
+                return ASMBitTest(pVM->dbgf.s.bmSoftIntBreakpoints, (uint32_t)uEventArg);
+
+            default:
+                return true;
+
+        }
+    }
+    return false;
 }
 
+
+/**
+ * Raises a generic debug event if enabled and not being ignored.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_EM_DBG_EVENT if the event was raised and the caller should
+ *          return ASAP to the debugger (via EM).
+ * @retval  VINF_SUCCESS if the event was disabled or ignored.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   enmEvent            The generic event being raised.
+ * @param   uEventArg           The argument of that event.
+ * @param   enmCtx              The context in which this event is being raised.
+ *
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uEventArg,
+                                                   DBGFEVENTCTX enmCtx)
+{
+    /*
+     * Is it enabled.
+     */
+    if (dbgfEventIsGenericWithArgEnabled(pVM, enmEvent, uEventArg))
+    {
+        /*
+         * Any events on the stack. Should the incoming event be ignored?
+         */
+        uint64_t const rip = CPUMGetGuestRIP(pVCpu);
+        uint32_t i = pVCpu->dbgf.s.cEvents;
+        if (i > 0)
+        {
+            while (i-- > 0)
+            {
+                if (   pVCpu->dbgf.s.aEvents[i].Event.enmType   == enmEvent
+                    && pVCpu->dbgf.s.aEvents[i].enmState        == DBGFEVENTSTATE_IGNORE
+                    && pVCpu->dbgf.s.aEvents[i].rip             == rip)
+                {
+                    pVCpu->dbgf.s.aEvents[i].enmState = DBGFEVENTSTATE_RESTORABLE;
+                    return VINF_SUCCESS;
+                }
+                Assert(pVCpu->dbgf.s.aEvents[i].enmState != DBGFEVENTSTATE_CURRENT);
+            }
+
+            /*
+             * Trim the event stack.
+             */
+            i = pVCpu->dbgf.s.cEvents;
+            while (i-- > 0)
+            {
+                if (   pVCpu->dbgf.s.aEvents[i].rip == rip
+                    && (   pVCpu->dbgf.s.aEvents[i].enmState == DBGFEVENTSTATE_RESTORABLE
+                        || pVCpu->dbgf.s.aEvents[i].enmState == DBGFEVENTSTATE_IGNORE) )
+                    pVCpu->dbgf.s.aEvents[i].enmState = DBGFEVENTSTATE_IGNORE;
+                else
+                {
+                    if (i + 1 != pVCpu->dbgf.s.cEvents)
+                        memmove(&pVCpu->dbgf.s.aEvents[i], &pVCpu->dbgf.s.aEvents[i + 1],
+                                (pVCpu->dbgf.s.cEvents - i) * sizeof(pVCpu->dbgf.s.aEvents));
+                    pVCpu->dbgf.s.cEvents--;
+                }
+            }
+
+            i = pVCpu->dbgf.s.cEvents;
+            AssertStmt(i < RT_ELEMENTS(pVCpu->dbgf.s.aEvents), i = RT_ELEMENTS(pVCpu->dbgf.s.aEvents) - 1);
+        }
+
+        /*
+         * Push the event.
+         */
+        pVCpu->dbgf.s.aEvents[i].enmState               = DBGFEVENTSTATE_CURRENT;
+        pVCpu->dbgf.s.aEvents[i].rip                    = rip;
+        pVCpu->dbgf.s.aEvents[i].Event.enmType          = enmEvent;
+        pVCpu->dbgf.s.aEvents[i].Event.enmCtx           = enmCtx;
+        pVCpu->dbgf.s.aEvents[i].Event.u.Generic.uArg   = uEventArg;
+        pVCpu->dbgf.s.cEvents = i + 1;
+
+        return VINF_EM_DBG_EVENT;
+    }
+
+    return VINF_SUCCESS;
+}
 

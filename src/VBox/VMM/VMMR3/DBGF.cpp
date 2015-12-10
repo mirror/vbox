@@ -747,6 +747,7 @@ static int dbgfR3VMMWait(PVM pVM)
                     case VINF_EM_DBG_STEPPED:
                     case VINF_EM_DBG_STEP:
                     case VINF_EM_DBG_STOP:
+                    case VINF_EM_DBG_EVENT:
                         AssertMsgFailed(("rc=%Rrc\n", rc));
                         break;
 

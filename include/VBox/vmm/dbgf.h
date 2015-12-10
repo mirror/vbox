@@ -487,6 +487,14 @@ typedef struct DBGFEVENT
             /** The identifier of the breakpoint which was hit. */
             RTUINT                  iBp;
         } Bp;
+
+        /** Generic debug event. */
+        struct DBGFEVENTGENERIC
+        {
+            /** Argument. */
+            uint64_t                uArg;
+        } Generic;
+
         /** Padding for ensuring that the structure is 8 byte aligned. */
         uint64_t        au64Padding[4];
     } u;
@@ -831,7 +839,8 @@ VMM_INT_DECL(bool)          DBGFBpIsHwArmed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFBpIsHwIoArmed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFIsStepping(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTIOPORT uIoPort, uint8_t cbValue);
-VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uEventArg);
+VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uEventArg,
+                                                    DBGFEVENTCTX enmCtx);
 
 
 #ifdef IN_RING3 /* The CPU mode API only works in ring-3. */

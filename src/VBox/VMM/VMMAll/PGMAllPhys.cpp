@@ -78,6 +78,7 @@
      \
      || (a_rcStrict) == VINF_EM_RAW_EMULATE_INSTR  \
      || (a_rcStrict) == VINF_EM_DBG_STOP \
+     || (a_rcStrict) == VINF_EM_DBG_EVENT \
      || (a_rcStrict) == VINF_EM_DBG_BREAKPOINT \
      || (a_rcStrict) == VINF_EM_OFF \
      || (a_rcStrict) == VINF_EM_SUSPEND \
@@ -123,6 +124,7 @@
      \
      || (a_rcStrict) == VINF_EM_RAW_EMULATE_INSTR \
      || (a_rcStrict) == VINF_EM_DBG_STOP \
+     || (a_rcStrict) == VINF_EM_DBG_EVENT \
      || (a_rcStrict) == VINF_EM_DBG_BREAKPOINT \
     )
 #else

@@ -117,6 +117,8 @@
  * EM will first send this to the debugger, and if the issue isn't
  * resolved there it will enter guru meditation. */
 #define VINF_EM_DBG_HYPER_ASSERTION         1103
+/** Generic debug event, suspend the VM for debugging. */
+#define VINF_EM_DBG_EVENT                   1104
 /** Indicating that the VM should be suspended for debugging because
  * the developer wants to inspect the VM state. */
 #define VINF_EM_DBG_STOP                    1105
