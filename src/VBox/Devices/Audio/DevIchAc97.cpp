@@ -364,9 +364,6 @@ typedef struct AC97STATE
     uint64_t                uTimerTS;
 #endif
 #ifdef VBOX_WITH_STATISTICS
-# if HC_ARCH_BITS == 32
-    uint32_t                u32Alignment0;
-# endif
     STAMPROFILE             StatTimer;
     STAMCOUNTER             StatBytesRead;
     STAMCOUNTER             StatBytesWritten;
