@@ -103,5 +103,8 @@ The install:
 25. Create a shortcut to C:\autoexec-testbox.cmd and drag it into
     "Start" -> "All Programs" -> "Startup".
 
+26. If this is an Intel box and the CPU is capable of Nested Paging, edit C:\autoexec-testbox.cmd
+    and append '--nested-paging'
+
 That's currently it.
 
