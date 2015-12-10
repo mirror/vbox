@@ -97,6 +97,10 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     setTabOrder(m_pSelectorTable, m_pMachineFilterEditor);
     setTabOrder(m_pMachineFilterEditor, m_pMachineTable);
 
+    /* In the VM process we start by displaying the machine tab: */
+    if (VBoxGlobal::instance()->isVMConsoleProcess())
+        m_pTabWidget->setCurrentWidget(pMachineTab);
+
     /* Prepare validation: */
     prepareValidation();
 
