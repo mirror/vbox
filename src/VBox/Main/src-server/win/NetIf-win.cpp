@@ -1609,7 +1609,7 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                                     else if (uStatus != 0)
                                         netIfLog(("netIfGetBoundAdapters: %ls: wrong status 0x%x\n",
                                                   pwszName, uStatus));
-                                    else if ((dwChars & NCF_HIDDEN) || !(dwChars & (NCF_VIRTUAL | NCF_PHYSICAL)))
+                                    else if (dwChars & NCF_HIDDEN)
                                         netIfLog(("netIfGetBoundAdapters: %ls: wrong characteristics 0x%x\n",
                                                   pwszName, dwChars));
                                     else
