@@ -455,6 +455,16 @@ void UIMachineLogicFullscreen::sltHostScreenAvailableAreaChange()
     LogRel2(("GUI: UIMachineLogicFullscreen: Host-screen available-area change ignored\n"));
 }
 
+void UIMachineLogicFullscreen::sltAdditionsStateChanged()
+{
+    /* Call to base-class: */
+    UIMachineLogic::sltAdditionsStateChanged();
+
+    LogRel(("GUI: UIMachineLogicFullscreen: Additions-state actual-change event, rebuild multi-screen layout\n"));
+    /* Rebuild multi-screen layout: */
+    m_pScreenLayout->rebuild();
+}
+
 void UIMachineLogicFullscreen::prepareActionGroups()
 {
     /* Call to base-class: */

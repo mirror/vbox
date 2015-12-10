@@ -109,6 +109,8 @@ private slots:
     virtual void sltHostScreenCountChange();
     /** Handles host-screen available-area change. */
     virtual void sltHostScreenAvailableAreaChange();
+    /** Handles additions-state change. */
+    virtual void sltAdditionsStateChanged();
 
 private:
 

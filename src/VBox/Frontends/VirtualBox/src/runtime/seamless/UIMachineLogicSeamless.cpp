@@ -206,6 +206,16 @@ void UIMachineLogicSeamless::sltHostScreenCountChange()
     UIMachineLogic::sltHostScreenCountChange();
 }
 
+void UIMachineLogicSeamless::sltAdditionsStateChanged()
+{
+    /* Call to base-class: */
+    UIMachineLogic::sltAdditionsStateChanged();
+
+    LogRel(("GUI: UIMachineLogicSeamless: Additions-state actual-change event, rebuild multi-screen layout\n"));
+    /* Rebuild multi-screen layout: */
+    m_pScreenLayout->rebuild();
+}
+
 void UIMachineLogicSeamless::prepareActionGroups()
 {
     /* Call to base-class: */

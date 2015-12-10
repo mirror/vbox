@@ -66,6 +66,8 @@ private slots:
     virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     /** Handles host-screen count change. */
     virtual void sltHostScreenCountChange();
+    /** Handles additions-state change. */
+    virtual void sltAdditionsStateChanged();
 
 #ifndef RT_OS_DARWIN
     /** Invokes popup-menu. */

@@ -227,7 +227,10 @@ void UIMachineLogicNormal::sltHandleActionTriggerViewScreenToggle(int iIndex, bo
     KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
     display().GetScreenResolution(iIndex, uWidth, uHeight, uBitsPerPixel, uOriginX, uOriginY, monitorStatus);
     if (!fEnabled)
+    {
         display().SetVideoModeHint(iIndex, false, false, 0, 0, 0, 0, 0);
+        uisession()->setScreenVisibleHostDesires(iIndex, false);
+    }
     else
     {
         /* Defaults: */
@@ -236,6 +239,7 @@ void UIMachineLogicNormal::sltHandleActionTriggerViewScreenToggle(int iIndex, bo
         if (!uHeight)
             uHeight = 600;
         display().SetVideoModeHint(iIndex, true, false, 0, 0, uWidth, uHeight, 32);
+        uisession()->setScreenVisibleHostDesires(iIndex, true);
     }
 }
 

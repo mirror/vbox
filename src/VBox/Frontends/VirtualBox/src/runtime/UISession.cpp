@@ -1211,6 +1211,13 @@ void UISession::prepareScreens()
         if (countOfVisibleWindows() < 1)
             m_monitorVisibilityVector[0] = true;
     }
+
+    /* Prepare initial screen visibility status of host-desires.
+     * This is mostly dummy initialization as host-desires should get updated later in multi-screen layout.
+     * By default making host-desires same as facts. */
+    m_monitorVisibilityVectorHostDesires.resize(machine().GetMonitorCount());
+    for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
+        m_monitorVisibilityVectorHostDesires[iScreenIndex] = m_monitorVisibilityVector[iScreenIndex];
 }
 
 void UISession::prepareFramebuffers()
@@ -1864,6 +1871,24 @@ bool UISession::postprocessInitialization()
 
     /* True by default: */
     return true;
+}
+
+bool UISession::isScreenVisibleHostDesires(ulong uScreenId) const
+{
+    /* Make sure index feats the bounds: */
+    AssertReturn(uScreenId < (ulong)m_monitorVisibilityVectorHostDesires.size(), false);
+
+    /* Return 'actual' (host-desire) visibility status: */
+    return m_monitorVisibilityVectorHostDesires.value((int)uScreenId);
+}
+
+void UISession::setScreenVisibleHostDesires(ulong uScreenId, bool fIsMonitorVisible)
+{
+    /* Make sure index feats the bounds: */
+    AssertReturnVoid(uScreenId < (ulong)m_monitorVisibilityVectorHostDesires.size());
+
+    /* Remember 'actual' (host-desire) visibility status: */
+    m_monitorVisibilityVectorHostDesires[(int)uScreenId] = fIsMonitorVisible;
 }
 
 bool UISession::isScreenVisible(ulong uScreenId) const
