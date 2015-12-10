@@ -515,6 +515,12 @@ static int dbgfR3SendEvent(PVM pVM)
 }
 
 
+VMMR3_INT_DECL(VBOXSTRICTRC) DBGFR3EventHandlePending(PVM pVM, PVMCPU pVCpu)
+{
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Send a generic debugger event which takes no data.
  *

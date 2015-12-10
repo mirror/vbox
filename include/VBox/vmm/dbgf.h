@@ -524,6 +524,7 @@ VMMR3_INT_DECL(int)     DBGFR3Term(PVM pVM);
 VMMR3_INT_DECL(void)    DBGFR3PowerOff(PVM pVM);
 VMMR3_INT_DECL(void)    DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)     DBGFR3VMMForcedAction(PVM pVM);
+VMMR3_INT_DECL(VBOXSTRICTRC)    DBGFR3EventHandlePending(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)          DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent);
 VMMR3DECL(int)          DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine,
                                        const char *pszFunction, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(6, 7);
