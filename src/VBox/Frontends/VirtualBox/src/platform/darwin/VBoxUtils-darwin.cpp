@@ -240,11 +240,6 @@ uint64_t darwinGetCurrentProcessId()
     return processId;
 }
 
-CGContextRef darwinToCGContextRef(QWidget *pWidget)
-{
-    return static_cast<CGContext *>(pWidget->macCGHandle());
-}
-
 /* Proxy icon creation */
 QPixmap darwinCreateDragPixmap(const QPixmap& aPixmap, const QString &aText)
 {

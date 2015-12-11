@@ -195,7 +195,6 @@ NativeNSButtonRef darwinNativeButtonOfWindow(QWidget *pWidget, StandardWindowBut
  * @returns CGContextRef of the QWidget.
  * @param   pWidget      Pointer to the QWidget
  */
-CGContextRef darwinToCGContextRef(QWidget *pWidget);
 CGImageRef darwinToCGImageRef(const QImage *pImage);
 CGImageRef darwinToCGImageRef(const QPixmap *pPixmap);
 CGImageRef darwinToCGImageRef(const char *pczSource);
