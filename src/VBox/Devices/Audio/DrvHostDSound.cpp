@@ -851,6 +851,7 @@ static void directSoundCaptureInterfaceRelease(PDSOUNDSTREAMIN pDSoundStrmIn)
 {
     if (pDSoundStrmIn->pDSC)
     {
+        LogFlowFuncEnter();
         IDirectSoundCapture_Release(pDSoundStrmIn->pDSC);
         pDSoundStrmIn->pDSC = NULL;
     }
@@ -885,6 +886,7 @@ static HRESULT directSoundCaptureInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDST
         }
     }
 
+    LogFlowFunc(("Returning %Rhrc\n", hr));
     return hr;
 }
 
@@ -911,6 +913,7 @@ static HRESULT directSoundCaptureClose(PDSOUNDSTREAMIN pDSoundStrmIn)
     if (SUCCEEDED(hr))
         directSoundCaptureInterfaceRelease(pDSoundStrmIn);
 
+    LogFlowFunc(("Returning %Rhrc\n", hr));
     return hr;
 }
 
@@ -1035,6 +1038,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSo
     if (FAILED(hr))
         directSoundCaptureClose(pDSoundStrmIn);
 
+    LogFlowFunc(("Returning %Rhrc\n", hr));
     return hr;
 }
 
@@ -1055,6 +1059,7 @@ static HRESULT directSoundCaptureStop(PDSOUNDSTREAMIN pDSoundStrmIn)
     else
         hr = E_UNEXPECTED;
 
+    LogFlowFunc(("Returning %Rhrc\n", hr));
     return hr;
 }
 
@@ -1092,10 +1097,9 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDS
         }
     }
     else
-    {
         hr = E_UNEXPECTED;
-    }
 
+    LogFlowFunc(("Returning %Rhrc\n", hr));
     return hr;
 }
 
