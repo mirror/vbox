@@ -29,7 +29,9 @@
 
 /* Qt includes: */
 #ifdef Q_WS_MAC
-# include <qmacstyle_mac.h>
+# if QT_VERSION < 0x050000
+#  include <qmacstyle_mac.h>
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_MAC */
 
 /* GUI includes: */
@@ -48,9 +50,11 @@ QIListView::QIListView (QWidget *aParent /* = 0 */)
     setLineWidth (0);
     setFrameShape (QFrame::Box);
     focusChanged (NULL, qApp->focusWidget());
+# if QT_VERSION < 0x050000
     /* Nesty hack to disable the focus rect on the list view. This interface
      * may change at any time! */
     static_cast<QMacStyle *> (style())->setFocusRectPolicy (this, QMacStyle::FocusDisabled);
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_MAC */
 }
 
