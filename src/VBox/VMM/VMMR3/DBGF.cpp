@@ -515,9 +515,42 @@ static int dbgfR3SendEvent(PVM pVM)
 }
 
 
+/**
+ * Processes a pending event on the current CPU.
+ *
+ * This is called by EM in response to VINF_EM_DBG_EVENT.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context per CPU structure.
+ *
+ * @thread  EMT(pVCpu)
+ */
 VMMR3_INT_DECL(VBOXSTRICTRC) DBGFR3EventHandlePending(PVM pVM, PVMCPU pVCpu)
 {
-    return VINF_SUCCESS;
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /*
+     * Check that we've got an event first.
+     */
+    AssertReturn(pVCpu->dbgf.s.cEvents > 0, VINF_SUCCESS);
+    AssertReturn(pVCpu->dbgf.s.aEvents[pVCpu->dbgf.s.cEvents - 1].enmState == DBGFEVENTSTATE_CURRENT, VINF_SUCCESS);
+    PDBGFEVENT pEvent = &pVCpu->dbgf.s.aEvents[pVCpu->dbgf.s.cEvents - 1].Event;
+
+    /*
+     * Make sure we've got a debugger and is allowed to speak to it.
+     */
+    int rc = dbgfR3EventPrologue(pVM, pEvent->enmType);
+    if (RT_FAILURE(rc))
+        return rc;
+
+/** @todo SMP + debugger speaker logic  */
+    /*
+     * Copy the event over and mark it as ignore.
+     */
+    pVM->dbgf.s.DbgEvent = *pEvent;
+    pVCpu->dbgf.s.aEvents[pVCpu->dbgf.s.cEvents - 1].enmState = DBGFEVENTSTATE_IGNORE;
+    return dbgfR3SendEvent(pVM);
 }
 
 
@@ -1223,59 +1256,58 @@ VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
 }
 
 
-/**
- * @callback_method_impl{FNVMMEMTRENDEZVOUS}
- */
-static DECLCALLBACK(VBOXSTRICTRC) dbgfR3EventConfigNotifyAllCpus(PVM pVM, PVMCPU pVCpu, void *pvUser)
-{
-    if (pvUser /*fIsHmEnabled*/)
-        HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
-    return VINF_SUCCESS;
-}
-
 
 /**
- * Worker for DBGFR3EventConfigEx.
- *
- * @returns VBox status code. Will not return VBOX_INTERRUPTED.
- * @param   pUVM        The user mode VM handle.
- * @param   paConfigs   The event to configure and their new state.
- * @param   cConfigs    Number of entries in @a paConfigs.
+ * dbgfR3EventConfigEx argument packet.
  */
-static DECLCALLBACK(int) dbgfR3EventConfigEx(PUVM pUVM, DBGFEVENTCONFIG volatile const *paConfigs, size_t cConfigs)
+typedef struct DBGFR3EVENTCONFIGEXARGS
 {
-    PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    PCDBGFEVENTCONFIG   paConfigs;
+    size_t              cConfigs;
+    int                 rc;
+} DBGFR3EVENTCONFIGEXARGS;
+/** Pointer to a dbgfR3EventConfigEx argument packet. */
+typedef DBGFR3EVENTCONFIGEXARGS *PDBGFR3EVENTCONFIGEXARGS;
 
-    /*
-     * Apply the changes.
-     */
-    unsigned cChanges = 0;
-    for (uint32_t i = 0; i < cConfigs; i++)
-    {
-        DBGFEVENTTYPE enmType = paConfigs[i].enmType;
-        AssertReturn(enmType >= DBGFEVENT_FIRST_SELECTABLE && enmType < DBGFEVENT_END, VERR_INVALID_PARAMETER);
-        if (paConfigs[i].fEnabled)
-            cChanges += ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, enmType) == false;
-        else
-            cChanges += ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, enmType) == true;
-    }
 
-    /*
-     * Inform HM about changes.  In an SMP setup, interrupt execution on the
-     * other CPUs so their execution loop can be reselected.
-     */
-    int rc = VINF_SUCCESS;
-    if (cChanges > 0)
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS, Worker for DBGFR3EventConfigEx.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3EventConfigEx(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    if (pVCpu->idCpu == 0)
     {
-        bool const fIsHmEnabled = HMIsEnabled(pVM);
-        if (fIsHmEnabled)
+        PDBGFR3EVENTCONFIGEXARGS        pArgs = (PDBGFR3EVENTCONFIGEXARGS)pvUser;
+        DBGFEVENTCONFIG volatile const *paConfigs = pArgs->paConfigs;
+        size_t                          cConfigs  = pArgs->cConfigs;
+
+        /*
+         * Apply the changes.
+         */
+        unsigned cChanges = 0;
+        for (uint32_t i = 0; i < cConfigs; i++)
+        {
+            DBGFEVENTTYPE enmType = paConfigs[i].enmType;
+            AssertReturn(enmType >= DBGFEVENT_FIRST_SELECTABLE && enmType < DBGFEVENT_END, VERR_INVALID_PARAMETER);
+            if (paConfigs[i].fEnabled)
+                cChanges += ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, enmType) == false;
+            else
+                cChanges += ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, enmType) == true;
+        }
+
+        /*
+         * Inform HM about changes.
+         */
+        if (cChanges > 0 && HMIsEnabled(pVM))
+        {
             HMR3NotifyDebugEventChanged(pVM);
-        if (pVM->cCpus > 1 || fIsHmEnabled)
-            rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3EventConfigNotifyAllCpus,
-                                    (void *)(uintptr_t)fIsHmEnabled);
+            HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+        }
     }
-    return rc;
+    else if (HMIsEnabled(pVM))
+        HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1292,18 +1324,25 @@ VMMR3DECL(int) DBGFR3EventConfigEx(PUVM pUVM, PCDBGFEVENTCONFIG paConfigs, size_
     /*
      * Validate input.
      */
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     size_t i = cConfigs;
     while (i-- > 0)
     {
         AssertReturn(paConfigs[i].enmType >= DBGFEVENT_FIRST_SELECTABLE, VERR_INVALID_PARAMETER);
         AssertReturn(paConfigs[i].enmType <  DBGFEVENT_END, VERR_INVALID_PARAMETER);
     }
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
-     * Apply the changes in EMT(0).
+     * Apply the changes in EMT(0) and rendezvous with the other CPUs so they
+     * can sync their data and execution with new debug state.
      */
-    return VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3EventConfigEx, 3, pUVM, paConfigs, cConfigs);
+    DBGFR3EVENTCONFIGEXARGS Args = { paConfigs, cConfigs, VINF_SUCCESS };
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING, dbgfR3EventConfigEx, &Args);
+    if (RT_SUCCESS(rc))
+        rc = Args.rc;
+    return rc;
 }
 
 
@@ -1370,9 +1409,9 @@ VMMR3DECL(int) DBGFR3EventQuery(PUVM pUVM, PDBGFEVENTCONFIG paConfigs, size_t cC
     /*
      * Validate input.
      */
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     for (size_t i = 0; i < cConfigs; i++)
     {
@@ -1391,99 +1430,107 @@ VMMR3DECL(int) DBGFR3EventQuery(PUVM pUVM, PDBGFEVENTCONFIG paConfigs, size_t cC
 
 
 /**
- * Worker for DBGFR3InterruptConfigEx.
- *
- * @returns VBox status code. Will not return VBOX_INTERRUPTED.
- * @param   pUVM        The user mode VM handle.
- * @param   paConfigs   The event to configure and their new state.
- * @param   cConfigs    Number of entries in @a paConfigs.
+ * dbgfR3InterruptConfigEx argument packet.
  */
-static DECLCALLBACK(int) dbgfR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFIG paConfigs, size_t cConfigs)
+typedef struct DBGFR3INTERRUPTCONFIGEXARGS
 {
-    PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    PCDBGFINTERRUPTCONFIG   paConfigs;
+    size_t                  cConfigs;
+    int                     rc;
+} DBGFR3INTERRUPTCONFIGEXARGS;
+/** Pointer to a dbgfR3InterruptConfigEx argument packet. */
+typedef DBGFR3INTERRUPTCONFIGEXARGS *PDBGFR3INTERRUPTCONFIGEXARGS;
 
-    /*
-     * Apply the changes.
-     */
-    bool fChanged = false;
-    bool fThis;
-    for (uint32_t i = 0; i < cConfigs; i++)
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS,
+ *      Worker for DBGFR3InterruptConfigEx.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3InterruptConfigEx(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    if (pVCpu->idCpu == 0)
     {
-        /*
-         * Hardware interrupts.
-         */
-        if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_ENABLED)
-        {
-            fChanged |= fThis = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == false;
-            if (fThis)
-            {
-                Assert(pVM->dbgf.s.cHardIntBreakpoints < 256);
-                pVM->dbgf.s.cHardIntBreakpoints++;
-            }
-        }
-        else if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_DISABLED)
-        {
-            fChanged |= fThis = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == true;
-            if (fThis)
-            {
-                Assert(pVM->dbgf.s.cHardIntBreakpoints > 0);
-                pVM->dbgf.s.cHardIntBreakpoints--;
-            }
-        }
+        PDBGFR3INTERRUPTCONFIGEXARGS    pArgs = (PDBGFR3INTERRUPTCONFIGEXARGS)pvUser;
+        PCDBGFINTERRUPTCONFIG           paConfigs = pArgs->paConfigs;
+        size_t                          cConfigs  = pArgs->cConfigs;
 
         /*
-         * Software interrupts.
+         * Apply the changes.
          */
-        if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_ENABLED)
+        bool fChanged = false;
+        bool fThis;
+        for (uint32_t i = 0; i < cConfigs; i++)
         {
-            fChanged |= fThis = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == false;
-            if (fThis)
+            /*
+             * Hardware interrupts.
+             */
+            if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_ENABLED)
             {
-                Assert(pVM->dbgf.s.cSoftIntBreakpoints < 256);
-                pVM->dbgf.s.cSoftIntBreakpoints++;
+                fChanged |= fThis = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == false;
+                if (fThis)
+                {
+                    Assert(pVM->dbgf.s.cHardIntBreakpoints < 256);
+                    pVM->dbgf.s.cHardIntBreakpoints++;
+                }
+            }
+            else if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_DISABLED)
+            {
+                fChanged |= fThis = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmHardIntBreakpoints, paConfigs[i].iInterrupt) == true;
+                if (fThis)
+                {
+                    Assert(pVM->dbgf.s.cHardIntBreakpoints > 0);
+                    pVM->dbgf.s.cHardIntBreakpoints--;
+                }
+            }
+
+            /*
+             * Software interrupts.
+             */
+            if (paConfigs[i].enmHardState == DBGFINTERRUPTSTATE_ENABLED)
+            {
+                fChanged |= fThis = ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == false;
+                if (fThis)
+                {
+                    Assert(pVM->dbgf.s.cSoftIntBreakpoints < 256);
+                    pVM->dbgf.s.cSoftIntBreakpoints++;
+                }
+            }
+            else if (paConfigs[i].enmSoftState == DBGFINTERRUPTSTATE_DISABLED)
+            {
+                fChanged |= fThis = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == true;
+                if (fThis)
+                {
+                    Assert(pVM->dbgf.s.cSoftIntBreakpoints > 0);
+                    pVM->dbgf.s.cSoftIntBreakpoints--;
+                }
             }
         }
-        else if (paConfigs[i].enmSoftState == DBGFINTERRUPTSTATE_DISABLED)
+
+        /*
+         * Update the event bitmap entries.
+         */
+        if (pVM->dbgf.s.cHardIntBreakpoints > 0)
+            fChanged |= ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_HARDWARE) == false;
+        else
+            fChanged |= ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_HARDWARE) == true;
+
+        if (pVM->dbgf.s.cSoftIntBreakpoints > 0)
+            fChanged |= ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_SOFTWARE) == false;
+        else
+            fChanged |= ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_SOFTWARE) == true;
+
+        /*
+         * Inform HM about changes.
+         */
+        if (fChanged && HMIsEnabled(pVM))
         {
-            fChanged |= fThis = ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSoftIntBreakpoints, paConfigs[i].iInterrupt) == true;
-            if (fThis)
-            {
-                Assert(pVM->dbgf.s.cSoftIntBreakpoints > 0);
-                pVM->dbgf.s.cSoftIntBreakpoints--;
-            }
-        }
-    }
-
-    /*
-     * Update the event bitmap entries.
-     */
-    if (pVM->dbgf.s.cHardIntBreakpoints > 0)
-        fChanged |= ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_HARDWARE) == false;
-    else
-        fChanged |= ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_HARDWARE) == true;
-
-    if (pVM->dbgf.s.cSoftIntBreakpoints > 0)
-        fChanged |= ASMAtomicBitTestAndSet(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_SOFTWARE) == false;
-    else
-        fChanged |= ASMAtomicBitTestAndClear(&pVM->dbgf.s.bmSelectedEvents, DBGFEVENT_INTERRUPT_SOFTWARE) == true;
-
-
-    /*
-     * Inform HM about changes.  In an SMP setup, interrupt execution on the
-     * other CPUs so their execution loop can be reselected.
-     */
-    int rc = VINF_SUCCESS;
-    if (fChanged)
-    {
-        bool const fIsHmEnabled = HMIsEnabled(pVM);
-        if (fIsHmEnabled)
             HMR3NotifyDebugEventChanged(pVM);
-        if (pVM->cCpus > 1 || fIsHmEnabled)
-            rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3EventConfigNotifyAllCpus,
-                                    (void *)(uintptr_t)fIsHmEnabled);
+            HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+        }
     }
-    return rc;
+    else if (HMIsEnabled(pVM))
+        HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1501,7 +1548,6 @@ VMMR3DECL(int) DBGFR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFIG paConfig
     /*
      * Validate input.
      */
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     size_t i = cConfigs;
     while (i-- > 0)
     {
@@ -1509,10 +1555,19 @@ VMMR3DECL(int) DBGFR3InterruptConfigEx(PUVM pUVM, PCDBGFINTERRUPTCONFIG paConfig
         AssertReturn(paConfigs[i].enmSoftState <= DBGFINTERRUPTSTATE_DONT_TOUCH, VERR_INVALID_PARAMETER);
     }
 
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
     /*
-     * Apply the changes in EMT(0).
+     * Apply the changes in EMT(0) and rendezvous with the other CPUs so they
+     * can sync their data and execution with new debug state.
      */
-    return VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3InterruptConfigEx, 3, pUVM, paConfigs, cConfigs);
+    DBGFR3INTERRUPTCONFIGEXARGS Args = { paConfigs, cConfigs, VINF_SUCCESS };
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING, dbgfR3InterruptConfigEx, &Args);
+    if (RT_SUCCESS(rc))
+        rc = Args.rc;
+    return rc;
 }
 
 
