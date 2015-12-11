@@ -563,7 +563,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
     }
     return dlg.exec() == QDialog::Accepted ? dlg.selectedFiles().value (0, "") : QString::null;
 
-#elif defined (Q_WS_MAC) && (QT_VERSION >= 0x040600)
+#elif defined (Q_WS_MAC) && (QT_VERSION >= 0x040600) && (QT_VERSION < 0x050000)
 
     /* After 4.5 exec ignores the Qt::Sheet flag.
      * See "New Ways of Using Dialogs" in http://doc.trolltech.com/qq/QtQuarterly30.pdf why.
@@ -820,7 +820,7 @@ QStringList QIFileDialog::getOpenFileNames (const QString &aStartWith,
     }
     return dlg.exec() == QDialog::Accepted ? dlg.selectedFiles() : QStringList() << QString::null;
 
-#elif defined (Q_WS_MAC) && (QT_VERSION >= 0x040600)
+#elif defined (Q_WS_MAC) && (QT_VERSION >= 0x040600) && (QT_VERSION < 0x050000)
 
     /* After 4.5 exec ignores the Qt::Sheet flag.
      * See "New Ways of Using Dialogs" in http://doc.trolltech.com/qq/QtQuarterly30.pdf why.
