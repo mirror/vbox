@@ -465,7 +465,9 @@
       <para>VirtualBox is available in a number of package formats native to
       various common Linux distributions (see <xref linkend="hostossupport" />
       for details). In addition, there is an alternative generic installer
-      (.run) which should work on most Linux distributions.</para>
+      (.run) which should work on most Linux distributions. The generic
+      installer packages are built on EL5 systems and thus require reasonable
+      old versions of glibc (version 2.5) and other system libraries.</para>
 
       <sect3>
         <title>Installing VirtualBox from a Debian/Ubuntu package</title>
