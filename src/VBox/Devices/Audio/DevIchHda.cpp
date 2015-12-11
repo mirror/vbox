@@ -2904,17 +2904,27 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         if (RT_SUCCESS(rc))
             rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* cSamplesPlayed */);
 
-        uint32_t cSamplesMin  = (int)((2 * uTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + uTicksPerSec) / uTicksPerSec / 2);
-        uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
+#ifdef DEBUG_TIMER
+        LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, rc, cbIn, cbOut));
+#endif
+        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut);
 
-        LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbOut=%RU32, cSamplesMin=%RU32, cbSamplesMin=%RU32\n",
-                     pDrv->uLUN, rc, cbOut, cSamplesMin, cbSamplesMin));
-
+        /* If we there was an error handling (available) output or there simply is no output available,
+         * then calculate the minimum data rate which must be processed by the device emulation in order
+         * to function correctly.
+         *
+         * This is not the optimal solution, but as we have to deal with this on a timer-based approach
+         * (until we have the audio callbacks) we need to have device' DMA engines running. */
         if (   RT_FAILURE(rc)
-            && cbSamplesMin > cbOut)
+            || !fIsActiveOut)
         {
-            LogFlowFunc(("LUN#%RU8: Adj: %RU32 -> %RU32\n", pDrv->uLUN, cbOut, cbSamplesMin));
-            cbOut = cbSamplesMin;
+            uint32_t cSamplesMin  = (int)((2 * uTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + uTicksPerSec) / uTicksPerSec / 2);
+            uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
+
+#ifdef DEBUG_TIMER
+            LogFlowFunc(("\trc=%Rrc, cSamplesMin=%RU32, cbSamplesMin=%RU32\n", rc, cSamplesMin, cbSamplesMin));
+#endif
+            cbOut = RT_MAX(cbOut, cbSamplesMin);
         }
 
         cbOutMin = RT_MIN(cbOutMin, cbOut);

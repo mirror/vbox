@@ -1244,9 +1244,6 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
-    if (!pThis->pHostDrvAudio->pfnIsEnabled(pThis->pHostDrvAudio, PDMAUDIODIR_OUT))
-        return VERR_NOT_AVAILABLE;
-
     int rc = VINF_SUCCESS;
     uint32_t cSamplesLive = 0;
 
@@ -1298,8 +1295,9 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
                  * so that it can start writing PCM data to us. */
                 cbFree2 = RT_MIN(cbFree2, AUDIOMIXBUF_S2B_RATIO(&pGstStrmOut->MixBuf,
                                                                 AudioMixBufFree(&pGstStrmOut->MixBuf)));
-
-                //LogFlowFunc(("\t[%s] cbFree=%RU32\n", pGstStrmOut->MixBuf.pszName, cbFree2));
+#ifdef DEBUG_andy
+                LogFlowFunc(("\t[%s] cbFreeOut=%RU32\n", pGstStrmOut->MixBuf.pszName, cbFree2));
+#endif
             }
         }
 
@@ -1328,8 +1326,9 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
         {
             cbAvailIn = RT_MAX(cbAvailIn, AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf,
                                                           AudioMixBufMixed(&pHstStrmIn->MixBuf)));
-
-            LogFlowFunc(("\t[%s] cbFree=%RU32\n", pHstStrmIn->MixBuf.pszName, cbAvailIn));
+#ifdef DEBUG_andy
+            LogFlowFunc(("\t[%s] cbAvailIn=%RU32\n", pHstStrmIn->MixBuf.pszName, cbAvailIn));
+#endif
         }
     }
 
