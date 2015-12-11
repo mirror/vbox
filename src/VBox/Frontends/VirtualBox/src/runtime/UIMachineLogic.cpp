@@ -1228,8 +1228,13 @@ void UIMachineLogic::prepareDock()
 
     pDockMenu->addMenu(pDockSettingsMenu);
 
+# if QT_VERSION < 0x050000
     /* Add it to the dock. */
     ::darwinSetDockIconMenu(pDockMenu);
+# else /* QT_VERSION >= 0x050000 */
+    /* Add it to the dock: */
+    pDockMenu->setAsDockMenu();
+# endif /* QT_VERSION >= 0x050000 */
 
     /* Now the dock icon preview */
     QString osTypeId = guest().GetOSTypeId();
