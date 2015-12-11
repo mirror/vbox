@@ -1257,6 +1257,7 @@ static DECLCALLBACK(int) drvHostDSoundControlOut(PPDMIHOSTAUDIO pInterface,
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
+        case PDMAUDIOSTREAMCMD_RESUME:
         {
             DSLOG(("DSound: Playback PDMAUDIOSTREAMCMD_ENABLE\n"));
             /* Try to start playback. If it fails, then reopen and try again. */
@@ -1277,6 +1278,7 @@ static DECLCALLBACK(int) drvHostDSoundControlOut(PPDMIHOSTAUDIO pInterface,
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
+        case PDMAUDIOSTREAMCMD_PAUSE:
         {
             DSLOG(("DSound: Playback PDMAUDIOSTREAMCMD_DISABLE\n"));
             hr = directSoundPlayStop(pThis, pDSoundStrmOut);
@@ -1505,6 +1507,7 @@ static DECLCALLBACK(int) drvHostDSoundControlIn(PPDMIHOSTAUDIO pInterface, PPDMA
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
+        case PDMAUDIOSTREAMCMD_RESUME:
         {
             /* Try to start capture. If it fails, then reopen and try again. */
             hr = directSoundCaptureStart(pThis, pDSoundStrmIn);
@@ -1527,6 +1530,7 @@ static DECLCALLBACK(int) drvHostDSoundControlIn(PPDMIHOSTAUDIO pInterface, PPDMA
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
+        case PDMAUDIOSTREAMCMD_PAUSE:
         {
             hr = directSoundCaptureStop(pDSoundStrmIn);
             if (SUCCEEDED(hr))
@@ -1539,7 +1543,7 @@ static DECLCALLBACK(int) drvHostDSoundControlIn(PPDMIHOSTAUDIO pInterface, PPDMA
             AssertMsgFailed(("Invalid command %ld\n", enmStreamCmd));
             rc = VERR_INVALID_PARAMETER;
             break;
-    }
+        }
     }
 
     return rc;

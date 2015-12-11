@@ -428,6 +428,46 @@ static int drvAudioControlHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN pHstStrmIn, 
             break;
         }
 
+        case PDMAUDIOSTREAMCMD_PAUSE:
+        {
+            if (!(pHstStrmIn->fStatus & PDMAUDIOSTRMSTS_FLAG_PAUSED))
+            {
+                Assert(pHstStrmIn->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED);
+                rc = pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn, PDMAUDIOSTREAMCMD_PAUSE);
+                if (RT_SUCCESS(rc))
+                {
+                    LogFunc(("[%s] Pausing stream\n", pHstStrmIn->MixBuf.pszName));
+                    pHstStrmIn->fStatus |= PDMAUDIOSTRMSTS_FLAG_PAUSED;
+                }
+                else
+                    LogFlowFunc(("Backend vetoed pausing input stream, rc=%Rrc\n", rc));
+            }
+            else
+                rc = VINF_SUCCESS;
+
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_RESUME:
+        {
+            if (pHstStrmIn->fStatus & PDMAUDIOSTRMSTS_FLAG_PAUSED)
+            {
+                Assert(pHstStrmIn->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED);
+                rc = pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn, PDMAUDIOSTREAMCMD_RESUME);
+                if (RT_SUCCESS(rc))
+                {
+                    pHstStrmIn->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PAUSED;
+                    LogFunc(("[%s] Resumed stream\n", pHstStrmIn->MixBuf.pszName));
+                }
+                else
+                    LogFlowFunc(("Backend vetoed resuming input stream, rc=%Rrc\n", rc));
+            }
+            else
+                rc = VINF_SUCCESS;
+
+            break;
+        }
+
         default:
             AssertMsgFailed(("Command %ld not implemented\n", enmStreamCmd));
             rc = VERR_NOT_IMPLEMENTED;
@@ -493,7 +533,7 @@ static int drvAudioControlHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOu
             if (!(pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_PAUSED))
             {
                 Assert(pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED);
-                rc = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
+                rc = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_PAUSE);
                 if (RT_SUCCESS(rc))
                 {
                     pHstStrmOut->fStatus |= PDMAUDIOSTRMSTS_FLAG_PAUSED;
@@ -513,7 +553,7 @@ static int drvAudioControlHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOu
             if (pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_PAUSED)
             {
                 Assert(pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED);
-                rc = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_ENABLE);
+                rc = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_RESUME);
                 if (RT_SUCCESS(rc))
                 {
                     pHstStrmOut->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PAUSED;

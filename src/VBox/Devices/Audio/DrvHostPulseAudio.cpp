@@ -991,6 +991,7 @@ static DECLCALLBACK(int) drvHostPulseAudioControlOut(PPDMIHOSTAUDIO pInterface,
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
+        case PDMAUDIOSTREAMCMD_RESUME:
         {
             pa_threaded_mainloop_lock(g_pMainLoop);
 
@@ -1015,6 +1016,7 @@ static DECLCALLBACK(int) drvHostPulseAudioControlOut(PPDMIHOSTAUDIO pInterface,
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
+        case PDMAUDIOSTREAMCMD_PAUSE:
         {
             /* Pause audio output (the Pause bit of the AC97 x_CR register is set).
              * Note that we must return immediately from here! */
@@ -1057,6 +1059,7 @@ static DECLCALLBACK(int) drvHostPulseAudioControlIn(PPDMIHOSTAUDIO pInterface, P
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
+        case PDMAUDIOSTREAMCMD_RESUME:
         {
             pa_threaded_mainloop_lock(g_pMainLoop);
             /* This should return immediately. */
@@ -1068,6 +1071,7 @@ static DECLCALLBACK(int) drvHostPulseAudioControlIn(PPDMIHOSTAUDIO pInterface, P
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
+        case PDMAUDIOSTREAMCMD_PAUSE:
         {
             pa_threaded_mainloop_lock(g_pMainLoop);
             if (pThisStrmIn->pu8PeekBuf) /* Do we need to drop the peek buffer?*/

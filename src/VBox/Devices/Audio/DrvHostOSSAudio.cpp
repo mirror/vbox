@@ -358,6 +358,7 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
+        case PDMAUDIOSTREAMCMD_RESUME:
         {
             DrvAudioClearBuf(&pHstStrmOut->Props,
                              pThisStrmOut->pvPCMBuf, pThisStrmOut->cbPCMBuf, AudioMixBufSize(&pHstStrmOut->MixBuf));
@@ -373,6 +374,7 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
+        case PDMAUDIOSTREAMCMD_PAUSE:
         {
             mask = 0;
             if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
