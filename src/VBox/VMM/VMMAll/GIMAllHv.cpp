@@ -1028,6 +1028,7 @@ VMM_INT_DECL(int) gimHvXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
             /*
              * Update RIP and perform the hypercall.
              */
+            /** @todo pre-incrementing of RIP will break when we implement continuing hypercalls. */
             pCtx->rip += pDis->cbInstr;
             rc = gimHvHypercall(pVCpu, pCtx);
         }
