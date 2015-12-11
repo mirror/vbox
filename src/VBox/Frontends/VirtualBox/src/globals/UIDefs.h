@@ -35,8 +35,6 @@
 #include <VBox/com/defs.h>
 
 /* Defines: */
-#define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)
-
 #ifdef DEBUG
 # define AssertWrapperOk(w)      \
     AssertMsg (w.isOk(), (#w " is not okay (RC=0x%08X)", w.lastRC()))

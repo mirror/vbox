@@ -672,13 +672,3 @@
 # include "VBoxX11Helper.h"
 #endif
 
-
-/*
- * Final tweaks.
- */
-#ifdef Q_WS_MAC
-# if MAC_LEOPARD_STYLE /* This is defined by UIDefs.h and must come after it was included */
-//#  include <qmacstyle_mac.h> - only used once
-# endif
-#endif
-

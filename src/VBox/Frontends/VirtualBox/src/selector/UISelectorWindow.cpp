@@ -1156,10 +1156,8 @@ void UISelectorWindow::prepare()
     retranslateUi();
 
 #ifdef Q_WS_MAC
-# if MAC_LEOPARD_STYLE
-    /* Enable unified toolbars on Mac OS X: */
+    /* Enable unified toolbar: */
     m_pToolBar->enableMacToolbar();
-# endif /* MAC_LEOPARD_STYLE */
 
     /* Beta label? */
     if (vboxGlobal().isBeta())
@@ -1508,12 +1506,12 @@ void UISelectorWindow::prepareWidgets()
     m_pContainerDetails->addWidget(m_pPaneDesktop);
 
     /* Layout all the widgets: */
-#if MAC_LEOPARD_STYLE
+#ifdef Q_WS_MAC
     addToolBar(m_pToolBar);
     /* Central widget @ horizontal layout: */
     setCentralWidget(m_pSplitter);
     m_pSplitter->addWidget(m_pPaneChooser);
-#else /* MAC_LEOPARD_STYLE */
+#else /* !Q_WS_MAC */
     QWidget *pCentralWidget = new QWidget(this);
     setCentralWidget(pCentralWidget);
     QVBoxLayout *pCentralLayout = new QVBoxLayout(pCentralWidget);
@@ -1524,7 +1522,7 @@ void UISelectorWindow::prepareWidgets()
     pCentralLayout->addWidget(m_pBar);
     pCentralLayout->addWidget(m_pSplitter);
     m_pSplitter->addWidget(m_pPaneChooser);
-#endif /* !MAC_LEOPARD_STYLE */
+#endif /* !Q_WS_MAC */
     m_pSplitter->addWidget(m_pContainerDetails);
 
     /* Set the initial distribution. The right site is bigger. */

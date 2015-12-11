@@ -1309,15 +1309,15 @@ void UIExtraDataManagerWindow::prepareCentralWidget()
         AssertReturnVoid(m_pMainLayout && centralWidget()->layout() &&
                          m_pMainLayout == centralWidget()->layout());
         {
-#if MAC_LEOPARD_STYLE
+#ifdef Q_WS_MAC
             /* No spacing/margins on the Mac: */
             m_pMainLayout->setContentsMargins(0, 0, 0, 0);
             m_pMainLayout->insertSpacing(0, 10);
-#else /* !MAC_LEOPARD_STYLE */
+#else /* !Q_WS_MAC */
             /* Set spacing/margin like in the selector window: */
             m_pMainLayout->setSpacing(5);
             m_pMainLayout->setContentsMargins(5, 5, 5, 5);
-#endif /* !MAC_LEOPARD_STYLE */
+#endif /* !Q_WS_MAC */
             /* Prepare tool-bar: */
             prepareToolBar();
             /* Prepare splitter: */
@@ -1347,14 +1347,14 @@ void UIExtraDataManagerWindow::prepareToolBar()
         m_pToolBar->addAction(m_pActionLoad);
         m_pToolBar->addAction(m_pActionSave);
         /* Integrate tool-bar into dialog: */
-#if MAC_LEOPARD_STYLE
+#ifdef Q_WS_MAC
         /* Enable unified tool-bars on Mac OS X. Available on Qt >= 4.3: */
         addToolBar(m_pToolBar);
         m_pToolBar->enableMacToolbar();
-#else /* !MAC_LEOPARD_STYLE */
+#else /* !Q_WS_MAC */
         /* Add tool-bar into main-layout: */
         m_pMainLayout->addWidget(m_pToolBar);
-#endif /* !MAC_LEOPARD_STYLE */
+#endif /* !Q_WS_MAC */
     }
 }
 

@@ -1153,20 +1153,20 @@ void UIMediumManager::prepareToolBar()
             m_pToolBar->addAction(m_pActionRefresh);
         /* Integrate tool-bar into dialog: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
-#if MAC_LEOPARD_STYLE
+#ifdef Q_WS_MAC
         /* Enable unified tool-bars on Mac OS X. Available on Qt >= 4.3: */
         addToolBar(m_pToolBar);
         m_pToolBar->enableMacToolbar();
         /* No spacing/margin on the Mac: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
         pMainLayout->insertSpacing(0, 10);
-#else /* MAC_LEOPARD_STYLE */
+#else /* !Q_WS_MAC */
         /* Add the tool-bar: */
         pMainLayout->insertWidget(0, m_pToolBar);
         /* Set spacing/margin like in the selector window: */
         pMainLayout->setSpacing(5);
         pMainLayout->setContentsMargins(5, 5, 5, 5);
-#endif /* !MAC_LEOPARD_STYLE */
+#endif /* !Q_WS_MAC */
     }
 }
 
