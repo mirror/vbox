@@ -81,6 +81,7 @@
 #ifdef RT_OS_WINDOWS
 # include "win/svchlp.h"
 # include "win/VBoxComEvents.h"
+#include "ThreadTask.h"
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2390,13 +2391,71 @@ HRESULT VirtualBox::i_removeProgress(IN_GUID aId)
 
 #ifdef RT_OS_WINDOWS
 
-struct StartSVCHelperClientData
+class StartSVCHelperClientData : public ThreadTask
 {
+public:
+    StartSVCHelperClientData()
+    {
+        LogFlowFuncEnter();
+        m_strTaskName = "SVCHelper";
+        threadVoidData = NULL;
+        initialized = false;
+    }
+
+    virtual ~StartSVCHelperClientData()
+    {
+        LogFlowFuncEnter();
+        if (threadVoidData!=NULL)
+        {
+            delete threadVoidData;
+            threadVoidData=NULL;
+        }
+    };
+
+    void handler()
+    {
+        int vrc = VirtualBox::SVCHelperClientThread(NULL, this);
+    }
+
+    const ComPtr<Progress>& GetProgressObject() const {return progress;}
+
+    bool init(VirtualBox* aVbox,
+              Progress* aProgress,
+              bool aPrivileged,
+              VirtualBox::SVCHelperClientFunc aFunc,
+              void *aUser)
+    {
+        LogFlowFuncEnter();
+        that = aVbox;
+        progress = aProgress;
+        privileged = aPrivileged;
+        func = aFunc;
+        user = aUser;
+
+        initThreadVoidData();
+
+        initialized = true;
+
+	return initialized;
+    }
+
+    bool isOk() const{ return initialized;}
+
+    bool initialized;
     ComObjPtr<VirtualBox> that;
     ComObjPtr<Progress> progress;
     bool privileged;
     VirtualBox::SVCHelperClientFunc func;
     void *user;
+    ThreadVoidData *threadVoidData;
+
+private:
+    bool initThreadVoidData()
+    {
+        LogFlowFuncEnter();
+        threadVoidData = static_cast<ThreadVoidData*>(user);
+        return true;
+    }
 };
 
 /**
@@ -2451,6 +2510,7 @@ HRESULT VirtualBox::i_startSVCHelperClient(bool aPrivileged,
                                            SVCHelperClientFunc aFunc,
                                            void *aUser, Progress *aProgress)
 {
+    LogFlowFuncEnter();
     AssertReturn(aFunc, E_POINTER);
     AssertReturn(aProgress, E_POINTER);
 
@@ -2458,28 +2518,38 @@ HRESULT VirtualBox::i_startSVCHelperClient(bool aPrivileged,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* create the SVCHelperClientThread() argument */
-    std::auto_ptr <StartSVCHelperClientData>
-        d(new StartSVCHelperClientData());
-    AssertReturn(d.get(), E_OUTOFMEMORY);
 
-    d->that = this;
-    d->progress = aProgress;
-    d->privileged = aPrivileged;
-    d->func = aFunc;
-    d->user = aUser;
-
+    HRESULT hr = S_OK;
+    StartSVCHelperClientData *pTask = NULL;
     RTTHREAD tid = NIL_RTTHREAD;
-    int vrc = RTThreadCreate(&tid, SVCHelperClientThread,
-                             static_cast <void *>(d.get()),
-                             0, RTTHREADTYPE_MAIN_WORKER,
-                             RTTHREADFLAGS_WAITABLE, "SVCHelper");
-    if (RT_FAILURE(vrc))
-        return setError(E_FAIL, "Could not create SVCHelper thread (%Rrc)", vrc);
+    try
+    {
+        pTask = new StartSVCHelperClientData();
 
-    /* d is now owned by SVCHelperClientThread(), so release it */
-    d.release();
+        pTask->init(this, aProgress, aPrivileged, aFunc, aUser);
 
-    return S_OK;
+        if (!pTask->isOk())
+        {
+            delete pTask;
+            LogRel(("Could not init StartSVCHelperClientData object \n"));
+            throw E_FAIL;
+        }
+
+        //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
+        hr = pTask->createThread(&tid, RTTHREADTYPE_MAIN_WORKER);
+
+    }
+    catch(std::bad_alloc &)
+    {
+        hr = setError(E_OUTOFMEMORY);
+    }
+    catch(...)
+    {
+        LogRel(("Could not create thread for StartSVCHelperClientData \n"));
+        hr = E_FAIL;
+    }
+
+    return hr;
 }
 
 /**
@@ -2491,15 +2561,13 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
 {
     LogFlowFuncEnter();
 
-    std::auto_ptr<StartSVCHelperClientData>
-        d(static_cast<StartSVCHelperClientData*>(aUser));
-
+    StartSVCHelperClientData* d = static_cast<StartSVCHelperClientData*>(aUser);
     HRESULT rc = S_OK;
     bool userFuncCalled = false;
 
     do
     {
-        AssertBreakStmt(d.get(), rc = E_POINTER);
+        AssertBreakStmt(d, rc = E_POINTER);
         AssertReturn(!d->progress.isNull(), E_POINTER);
 
         /* protect VirtualBox from uninitialization */

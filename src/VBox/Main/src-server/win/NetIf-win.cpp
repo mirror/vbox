@@ -45,6 +45,7 @@
 #include "ProgressImpl.h"
 #include "VirtualBoxImpl.h"
 #include "netif.h"
+#include "ThreadTask.h"
 
 #ifdef VBOX_WITH_NETFLT
 #include <Wbemidl.h>
@@ -236,8 +237,12 @@ struct StaticIpV6Config
     ULONG          IPV6NetMaskLength;
 };
 
-struct NetworkInterfaceHelperClientData
+class NetworkInterfaceHelperClientData : public ThreadVoidData
 {
+public:
+    NetworkInterfaceHelperClientData(){};
+    ~NetworkInterfaceHelperClientData(){};
+
     SVCHlpMsg::Code msgCode;
     /* for SVCHlpMsg::CreateHostOnlyNetworkInterface */
     Bstr name;
@@ -251,7 +256,6 @@ struct NetworkInterfaceHelperClientData
         StaticIpConfig StaticIP;
         StaticIpV6Config StaticIPV6;
     } u;
-
 
 };
 
@@ -268,8 +272,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
                  E_POINTER);
     AssertReturn(aUser, E_POINTER);
 
-    std::auto_ptr<NetworkInterfaceHelperClientData>
-        d(static_cast<NetworkInterfaceHelperClientData *>(aUser));
+    NetworkInterfaceHelperClientData* d = static_cast<NetworkInterfaceHelperClientData *>(aUser);
 
     if (aClient == NULL)
     {
@@ -1160,9 +1163,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
             iface.queryInterfaceTo(aHostNetworkInterface);
 
             /* create the networkInterfaceHelperClient() argument */
-            std::auto_ptr<NetworkInterfaceHelperClientData>
-                d(new NetworkInterfaceHelperClientData());
-            AssertReturn(d.get(), E_OUTOFMEMORY);
+            NetworkInterfaceHelperClientData* d = new NetworkInterfaceHelperClientData();
 
             d->msgCode = SVCHlpMsg::CreateHostOnlyNetworkInterface;
 //            d->name = aName;
@@ -1171,13 +1172,10 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
 
             rc = pVirtualBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
                                                      netIfNetworkInterfaceHelperClient,
-                                                     static_cast<void *>(d.get()),
+                                                     static_cast<void *>(d),
                                                      progress);
-            if (SUCCEEDED(rc))
-            {
-                /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
-                d.release();
-            }
+            /* d is now owned by netIfNetworkInterfaceHelperClient(), no need to delete one here */
+
         }
     }
 
@@ -1207,23 +1205,17 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, IN_GUID aId,
             progress.queryInterfaceTo(aProgress);
 
             /* create the networkInterfaceHelperClient() argument */
-            std::auto_ptr<NetworkInterfaceHelperClientData>
-                d(new NetworkInterfaceHelperClientData());
-            AssertReturn(d.get(), E_OUTOFMEMORY);
+            NetworkInterfaceHelperClientData* d = new NetworkInterfaceHelperClientData();
 
             d->msgCode = SVCHlpMsg::RemoveHostOnlyNetworkInterface;
             d->guid = aId;
 
             rc = pVirtualBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
                                                      netIfNetworkInterfaceHelperClient,
-                                                     static_cast<void *>(d.get()),
+                                                     static_cast<void *>(d),
                                                      progress);
+            /* d is now owned by netIfNetworkInterfaceHelperClient(), no need to delete one here */
 
-            if (SUCCEEDED(rc))
-            {
-                /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
-                d.release();
-            }
         }
     }
 
@@ -1261,9 +1253,7 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
 //                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
-                    std::auto_ptr<NetworkInterfaceHelperClientData>
-                        d(new NetworkInterfaceHelperClientData());
-                    AssertReturn(d.get(), E_OUTOFMEMORY);
+                    NetworkInterfaceHelperClientData* d = new NetworkInterfaceHelperClientData();
 
                     d->msgCode = SVCHlpMsg::EnableStaticIpConfig;
                     d->guid = Guid(guid);
@@ -1273,14 +1263,12 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
 
                     rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
                                                       netIfNetworkInterfaceHelperClient,
-                                                      static_cast<void *>(d.get()),
+                                                      static_cast<void *>(d),
                                                       progress);
+                    /* d is now owned by netIfNetworkInterfaceHelperClient(), no need to delete one here */
 
                     if (SUCCEEDED(rc))
                     {
-                        /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
-                        d.release();
-
                         progress->WaitForCompletion(-1);
                     }
                 }
@@ -1323,9 +1311,7 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
 //                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
-                    std::auto_ptr<NetworkInterfaceHelperClientData>
-                        d(new NetworkInterfaceHelperClientData());
-                    AssertReturn(d.get(), E_OUTOFMEMORY);
+                    NetworkInterfaceHelperClientData* d = new NetworkInterfaceHelperClientData();
 
                     d->msgCode = SVCHlpMsg::EnableStaticIpConfigV6;
                     d->guid = guid;
@@ -1335,14 +1321,12 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
 
                     rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
                                                       netIfNetworkInterfaceHelperClient,
-                                                      static_cast<void *>(d.get()),
+                                                      static_cast<void *>(d),
                                                       progress);
+                    /* d is now owned by netIfNetworkInterfaceHelperClient(), no need to delete one here */
 
                     if (SUCCEEDED(rc))
                     {
-                        /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
-                        d.release();
-
                         progress->WaitForCompletion(-1);
                     }
                 }
@@ -1384,9 +1368,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
 //                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
-                    std::auto_ptr<NetworkInterfaceHelperClientData>
-                        d(new NetworkInterfaceHelperClientData());
-                    AssertReturn(d.get(), E_OUTOFMEMORY);
+                    NetworkInterfaceHelperClientData* d = new NetworkInterfaceHelperClientData();
 
                     d->msgCode = SVCHlpMsg::EnableDynamicIpConfig;
                     d->guid = guid;
@@ -1394,14 +1376,12 @@ int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
 
                     rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
                                                       netIfNetworkInterfaceHelperClient,
-                                                      static_cast<void *>(d.get()),
+                                                      static_cast<void *>(d),
                                                       progress);
+                    /* d is now owned by netIfNetworkInterfaceHelperClient(), no need to delete one here */
 
                     if (SUCCEEDED(rc))
                     {
-                        /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
-                        d.release();
-
                         progress->WaitForCompletion(-1);
                     }
                 }
@@ -1443,9 +1423,7 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
 //                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
-                    std::auto_ptr<NetworkInterfaceHelperClientData>
-                        d(new NetworkInterfaceHelperClientData());
-                    AssertReturn(d.get(), E_OUTOFMEMORY);
+                    NetworkInterfaceHelperClientData* d = new NetworkInterfaceHelperClientData();
 
                     d->msgCode = SVCHlpMsg::DhcpRediscover;
                     d->guid = guid;
@@ -1453,14 +1431,12 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
 
                     rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
                                                       netIfNetworkInterfaceHelperClient,
-                                                      static_cast<void *>(d.get()),
+                                                      static_cast<void *>(d),
                                                       progress);
+                    /* d is now owned by netIfNetworkInterfaceHelperClient(), no need to delete one here */
 
                     if (SUCCEEDED(rc))
                     {
-                        /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
-                        d.release();
-
                         progress->WaitForCompletion(-1);
                     }
                 }

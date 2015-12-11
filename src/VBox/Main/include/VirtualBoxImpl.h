@@ -380,8 +380,10 @@ private:
     static DECLCALLBACK(int) AsyncEventHandler(RTTHREAD thread, void *pvUser);
 
 #ifdef RT_OS_WINDOWS
+    friend class StartSVCHelperClientData;
     static DECLCALLBACK(int) SVCHelperClientThread(RTTHREAD aThread, void *aUser);
 #endif
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////

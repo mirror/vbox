@@ -21,6 +21,9 @@
 
 struct ThreadVoidData
 {
+/*
+ * The class ThreadVoidData is used as a base class for any data which we want to pass into a thread
+ */
 public:
     ThreadVoidData(){};
     virtual ~ThreadVoidData(){};

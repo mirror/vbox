@@ -42,7 +42,7 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
         rc = eRC;
         delete this;
     }
-    catch(std::exception& e)
+    catch(std::exception& )
     {
         rc = E_FAIL;
         delete this;
@@ -73,9 +73,9 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
     }
     catch(HRESULT eRC)
     {
-        rc = E_FAIL;
+        rc = eRC;
     }
-    catch(std::exception& e)
+    catch(std::exception& )
     {
         rc = E_FAIL;
     }
