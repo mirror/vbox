@@ -286,7 +286,7 @@ CGImageRef darwinToCGImageRef(const QImage *pImage)
     Assert(!imageCopy->isNull());
 
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    CGDataProviderRef dp = CGDataProviderCreateWithData(imageCopy, pImage->bits(), pImage->numBytes(), darwinDataProviderReleaseQImage);
+    CGDataProviderRef dp = CGDataProviderCreateWithData(imageCopy, pImage->bits(), pImage->byteCount(), darwinDataProviderReleaseQImage);
 
     CGBitmapInfo bmpInfo = kCGImageAlphaFirst | kCGBitmapByteOrder32Host;
     CGImageRef ir = CGImageCreate(imageCopy->width(), imageCopy->height(), 8, 32, imageCopy->bytesPerLine(), cs,
