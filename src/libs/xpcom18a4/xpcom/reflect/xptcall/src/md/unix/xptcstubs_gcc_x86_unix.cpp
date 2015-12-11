@@ -62,6 +62,8 @@ PrepareAndDispatch(uint32 methodIndex, nsXPTCStubBase* self, PRUint32* args)
 
     self->GetInterfaceInfo(&iface_info);
     NS_ASSERTION(iface_info,"no interface info");
+    if (!iface_info)
+        return NS_ERROR_UNEXPECTED;
 
     iface_info->GetMethodInfo(PRUint16(methodIndex), &info);
     NS_ASSERTION(info,"no interface info");
