@@ -416,10 +416,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             default: break;
         }
 
-# ifdef QT_MAC_USE_COCOA
         /* Instantiate own NSApplication before QApplication do it for us: */
         UICocoaApplication::instance();
-# endif /* QT_MAC_USE_COCOA */
 #endif /* Q_WS_MAC */
 
 #ifdef Q_WS_X11

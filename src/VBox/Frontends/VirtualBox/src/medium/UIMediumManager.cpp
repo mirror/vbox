@@ -1775,14 +1775,12 @@ void UIMediumManager::retranslateUi()
 
     /* Translate tool-bar: */
 #ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
     /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
        the necessary size of the toolbar is increased. Also for some languages
        the with doesn't match if the text increase. So manually adjust the size
        after changing the text. */
     if (m_pToolBar)
         m_pToolBar->updateLayout();
-# endif /* QT_MAC_USE_COCOA */
 #endif /* Q_WS_MAC */
 
     /* Translate tab-widget: */

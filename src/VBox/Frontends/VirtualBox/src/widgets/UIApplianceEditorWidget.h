@@ -198,6 +198,7 @@ private:
 class VirtualSystemDelegate: public QItemDelegate
 {
 public:
+
     VirtualSystemDelegate(QAbstractProxyModel *pProxy, QObject *pParent = NULL);
 
     QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const;
@@ -218,11 +219,13 @@ public:
     }
 
 protected:
-#ifdef QT_MAC_USE_COCOA
+
+#ifdef Q_WS_MAC
     bool eventFilter(QObject *pObject, QEvent *pEvent);
-#endif /* QT_MAC_USE_COCOA */
+#endif /* Q_WS_MAC */
 
 private:
+
     /* Private member vars */
     QAbstractProxyModel *mProxy;
 };

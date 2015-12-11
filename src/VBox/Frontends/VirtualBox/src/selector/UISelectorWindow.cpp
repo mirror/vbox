@@ -1024,10 +1024,10 @@ void UISelectorWindow::retranslateUi()
     /* Ensure the details and screenshot view are updated: */
     sltHandleChooserPaneIndexChange();
 
-#ifdef QT_MAC_USE_COCOA
+#ifdef Q_WS_MAC
     /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
     m_pToolBar->updateLayout();
-#endif /* QT_MAC_USE_COCOA */
+#endif /* Q_WS_MAC */
 }
 
 bool UISelectorWindow::event(QEvent *pEvent)
@@ -1830,10 +1830,10 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
 
-#ifdef QT_MAC_USE_COCOA
+#ifdef Q_WS_MAC
     /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
     m_pToolBar->updateLayout();
-#endif /* QT_MAC_USE_COCOA */
+#endif /* Q_WS_MAC */
 }
 
 bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items)

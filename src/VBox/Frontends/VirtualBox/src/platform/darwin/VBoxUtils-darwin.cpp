@@ -75,12 +75,8 @@ void darwinLabelWindow(QWidget *pWidget, QPixmap *pPixmap, bool fCenter)
 
 void darwinSetHidesAllTitleButtons(QWidget *pWidget)
 {
-#ifdef QT_MAC_USE_COCOA
     /* Currently only necessary in the Cocoa version */
     ::darwinSetHidesAllTitleButtonsImpl(::darwinToNativeWindow(pWidget));
-#else /* QT_MAC_USE_COCOA */
-    NOREF(pWidget);
-#endif /* !QT_MAC_USE_COCOA */
 }
 
 void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled)
@@ -110,21 +106,13 @@ void darwinTest(QWidget *pWidget1, QWidget *pWidget2, int h)
 
 void darwinWindowInvalidateShape(QWidget *pWidget)
 {
-#ifdef QT_MAC_USE_COCOA
     /* Here a simple update is enough! */
     pWidget->update();
-#else /* QT_MAC_USE_COCOA */
-    ::darwinWindowInvalidateShapeImpl(::darwinToNativeWindow(pWidget));
-#endif /* QT_MAC_USE_COCOA */
 }
-;
+
 void darwinWindowInvalidateShadow(QWidget *pWidget)
 {
-#ifdef QT_MAC_USE_COCOA
     ::darwinWindowInvalidateShadowImpl(::darwinToNativeWindow(pWidget));
-#else /* QT_MAC_USE_COCOA */
-    NOREF(pWidget);
-#endif /* QT_MAC_USE_COCOA */
 }
 
 void darwinSetShowsResizeIndicator(QWidget *pWidget, bool fEnabled)
@@ -134,13 +122,8 @@ void darwinSetShowsResizeIndicator(QWidget *pWidget, bool fEnabled)
 
 bool darwinIsWindowMaximized(QWidget *pWidget)
 {
-#ifdef QT_MAC_USE_COCOA
     /* Currently only necessary in the Cocoa version */
     return ::darwinIsWindowMaximized(::darwinToNativeWindow(pWidget));
-#else /* QT_MAC_USE_COCOA */
-    NOREF(pWidget);
-    return false;
-#endif /* !QT_MAC_USE_COCOA */
 }
 
 void darwinMinaturizeWindow(QWidget *pWidget)
@@ -228,12 +211,8 @@ void darwinDisableIconsInMenus(void)
 
 int darwinWindowToolBarHeight(QWidget *pWidget)
 {
-#ifndef QT_MAC_USE_COCOA
-    return ::darwinWindowToolBarHeight(::darwinToNativeWindow(pWidget));
-#else /* QT_MAC_USE_COCOA */
     NOREF(pWidget);
     return 0;
-#endif /* QT_MAC_USE_COCOA */
 }
 
 bool darwinIsToolbarVisible(QToolBar *pToolBar)
