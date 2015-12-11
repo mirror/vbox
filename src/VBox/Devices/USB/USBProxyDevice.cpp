@@ -868,7 +868,10 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
 
     rc = pThis->pOps->pfnOpen(pThis, szAddress, pvBackend);
     if (RT_FAILURE(rc))
+    {
+        LogRel(("usbProxyConstruct: Failed to open '%s', rc=%Rrc\n", szAddress, rc));
         return rc;
+    }
     pThis->fOpened = true;
 
     /*
