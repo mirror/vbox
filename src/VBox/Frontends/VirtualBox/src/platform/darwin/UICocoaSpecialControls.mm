@@ -28,12 +28,25 @@
 #import <AppKit/NSFont.h>
 #import <AppKit/NSImage.h>
 #import <AppKit/NSSegmentedControl.h>
+#if QT_VERSION >= 0x050000
+# import <AppKit/NSEvent.h>
+# import <AppKit/NSColor.h>
+# import <AppKit/NSSearchFieldCell.h>
+# import <AppKit/NSSearchField.h>
+# import <AppKit/NSSegmentedCell.h>
+#endif /* QT_VERSION >= 0x050000 */
 
 /* Qt includes */
 #include <QApplication>
 #include <QIcon>
 #include <QKeyEvent>
 #include <QMacCocoaViewContainer>
+
+/* Interface Builder Constant,
+ * hmm, where is it declared with Qt4? */
+#if QT_VERSION >= 0x050000
+# define IBAction void
+#endif /* QT_VERSION >= 0x050000 */
 
 /*
  * Private interfaces

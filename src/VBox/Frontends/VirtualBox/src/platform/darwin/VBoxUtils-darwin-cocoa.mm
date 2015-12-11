@@ -25,6 +25,11 @@
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSColor.h>
 #import <AppKit/NSFont.h>
+#if QT_VERSION >= 0x050000
+# import <AppKit/NSScreen.h>
+# import <AppKit/NSWindow.h>
+# import <AppKit/NSImageView.h>
+#endif /* QT_VERSION >= 0x050000 */
 
 #import <objc/objc-class.h>
 
