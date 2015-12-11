@@ -378,7 +378,6 @@ static int usbProxyWinAbortEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     USBSUP_CLEAR_ENDPOINT in;
     DWORD cbReturned;
-    int  rc;
 
     Assert(pPriv);
 
