@@ -1194,23 +1194,16 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
     pThis->uTimerTS = uTicksNow;
 
-    LogFlowFunc(("pDevIns=%p\n", pDevIns));
-
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
         cbIn = cbOut = 0;
         rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
                                               &cbIn, &cbOut, NULL /* cSamplesLive */);
-        LogFlowFunc(("rc1=%Rrc\n", rc));
         if (RT_SUCCESS(rc))
             rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* cSamplesPlayed */);
 
-        LogFlowFunc(("rc2=%Rrc\n", rc));
-
         uint32_t cSamplesMin  = (int)((2 * uTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + uTicksPerSec) / uTicksPerSec / 2);
         uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
-
-        LogFlowFunc(("rc3=%Rrc\n", rc));
 
         LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbOut=%RU32, cSamplesMin=%RU32, cbSamplesMin=%RU32\n",
                      pDrv->uLUN, rc, cbOut, cSamplesMin, cbSamplesMin));
