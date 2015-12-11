@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QtGlobal>
 # ifdef Q_WS_MAC
 #  include <QApplication>
 #  include <QPainter>
