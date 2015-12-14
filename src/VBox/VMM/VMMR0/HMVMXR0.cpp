@@ -8655,7 +8655,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  * @param   rcVMRun         Return code of VMLAUNCH/VMRESUME.
  *
- * @remarks Called with interrupts disabled, and returns with interrups enabled!
+ * @remarks Called with interrupts disabled, and returns with interrupts enabled!
  *
  * @remarks No-long-jump zone!!! This function will however re-enable longjmps
  *          unconditionally when it is safe to do so.
@@ -8840,7 +8840,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
  * method completely and override selected helpers to add necessary adjustments
  * to their core operation.
  *
- * The goal is to keep the "parent" code lean and mean, so as not to acrifice
+ * The goal is to keep the "parent" code lean and mean, so as not to sacrifice
  * any performance for debug and analysis features.
  *
  * @{
@@ -8850,7 +8850,7 @@ typedef struct VMXRUNDBGSTATE
 {
     /** The RIP we started executing at.  This is for detecting that we stepped.  */
     uint64_t    uRipStart;
-    /** The CS we started exectuing with.  */
+    /** The CS we started executing with.  */
     uint16_t    uCsStart;
 
     /** Whether we've actually modified the 1st execution control field. */
@@ -9102,7 +9102,7 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
     /*
      * Process events and probes for VM exits, making sure we get the wanted exits.
      *
-     * Note! This is the reverse of waht hmR0VmxHandleExitDtraceEvents does.
+     * Note! This is the reverse of waft hmR0VmxHandleExitDtraceEvents does.
      *       So, when adding/changing/removing please don't forget to update it.
      *
      * Some of the macros are picking up local variables to save horizontal space,
@@ -9231,9 +9231,9 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDMSR,               VMX_EXIT_RDMSR);
     SET_CPEU_XBM_IF_EITHER_EN(INSTR_WRMSR,               VMX_EXIT_WRMSR,     VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS);
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_WRMSR,               VMX_EXIT_WRMSR);
-    SET_CPE1_XBM_IF_EITHER_EN(INSTR_MWAIT,               VMX_EXIT_MWAIT,     VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT);   /* parnoia */
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_MWAIT,               VMX_EXIT_MWAIT,     VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT);   /* paranoia */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_MWAIT,               VMX_EXIT_MWAIT);
-    SET_CPE1_XBM_IF_EITHER_EN(INSTR_MONITOR,             VMX_EXIT_MONITOR,   VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT); /* parnoia */
+    SET_CPE1_XBM_IF_EITHER_EN(INSTR_MONITOR,             VMX_EXIT_MONITOR,   VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT); /* paranoia */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_MONITOR,             VMX_EXIT_MONITOR);
 #if 0 /** @todo too slow, fix handler. */
     SET_CPE1_XBM_IF_EITHER_EN(INSTR_PAUSE,               VMX_EXIT_PAUSE,     VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT);
@@ -13136,7 +13136,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
             {
                 uint16_t uVector = pDis->Param1.uValue & 0xff;
                 hmR0VmxSetPendingIntN(pVCpu, pMixedCtx, uVector, pDis->cbInstr);
-                /* INT clears EFLAGS.TF, we mustn't set any pending debug exceptions here. */
+                /* INT clears EFLAGS.TF, we must not set any pending debug exceptions here. */
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInt);
                 break;
             }
@@ -13146,7 +13146,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 if (pMixedCtx->eflags.Bits.u1OF)
                 {
                     hmR0VmxSetPendingXcptOF(pVCpu, pMixedCtx, pDis->cbInstr);
-                    /* INTO clears EFLAGS.TF, we mustn't set any pending debug exceptions here. */
+                    /* INTO clears EFLAGS.TF, we must not set any pending debug exceptions here. */
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInt);
                 }
                 else
