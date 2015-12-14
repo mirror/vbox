@@ -81,7 +81,7 @@ int USBProxyBackendSolaris::init(void)
     rc = USBLibInit();
     if (RT_FAILURE(rc))
     {
-        RTSemEventDestroy(&mNotifyEventSem);
+        RTSemEventDestroy(mNotifyEventSem);
         return rc;
     }
 
@@ -128,7 +128,7 @@ void *USBProxyBackendSolaris::insertFilter(PCUSBFILTER aFilter)
 }
 
 
-voidUSBProxyBackendSolaris::removeFilter(void *pvID)
+void USBProxyBackendSolaris::removeFilter(void *pvID)
 {
     USBLibRemoveFilter(pvID);
 }
@@ -381,7 +381,7 @@ void USBProxyBackendSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool
      */
     LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->i_getBackendUserData()));
     if (!aSuccess && aDevice->i_getBackendUserData())
-        USBLibRemoveFilter(aDevice->mOneShotId);
+        USBLibRemoveFilter(aDevice->i_getBackendUserData());
     aDevice->i_setBackendUserData(NULL);
 }
 
@@ -436,7 +436,7 @@ void USBProxyBackendSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool
      */
     LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->i_getBackendUserData()));
     if (!aSuccess && aDevice->i_getBackendUserData())
-        USBLibRemoveFilter(aDevice->i_getBackendUser());
+        USBLibRemoveFilter(aDevice->i_getBackendUserData());
     aDevice->i_setBackendUserData(NULL);
 }
 
