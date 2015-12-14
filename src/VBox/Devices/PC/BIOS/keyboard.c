@@ -55,6 +55,21 @@ extern  void    post(void);
 void jmp_post(void);
 #pragma aux jmp_post = "jmp far ptr post" aborts;
 
+extern void eoi_master_pic(void);    /* in assembly code */
+#pragma aux eoi_master_pic "*";
+
+/* Manually save/restore BP around invoking user Ctrl-Break handler.
+ * The handler could conceivably clobber BP and the compiler does not
+ * believe us when we say 'modify [bp]' (BP is considered unalterable).
+ */
+void int_1b(void);
+#pragma aux int_1b =    \
+    "push bp"           \
+    "int 1Bh"           \
+    "pop bp"            \
+    value [bp] modify [bp];
+
+
 #define none 0
 #define MAX_SCAN_CODE 0x58
 
@@ -357,10 +372,17 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
         return;
     }
 
-
-    shift_flags = read_byte(0x0040, 0x17);
     mf2_flags = read_byte(0x0040, 0x18);
     mf2_state = read_byte(0x0040, 0x96);
+    /* Check if suspend flag set but no E1 prefix (i.e. not Pause). */
+    if ((mf2_flags & 0x08) && !(shift_flags & 0x01)) {
+        /* Pause had been pressed. Clear suspend flag and do nothing. */
+        mf2_flags &= ~0x08;
+        write_byte(0x0040, 0x18, mf2_flags);
+        return;
+    }
+
+    shift_flags = read_byte(0x0040, 0x17);
     asciicode = 0;
 
     switch (scancode) {
@@ -440,31 +462,57 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
         }
         break;
 
-    case 0x45: /* Num Lock press */
+    case 0x45: /* Num Lock/Pause press */
         if ((mf2_state & 0x03) == 0) {
+            /* Num Lock */
             mf2_flags |= 0x20;
             write_byte(0x0040, 0x18, mf2_flags);
             shift_flags ^= 0x20;
             write_byte(0x0040, 0x17, shift_flags);
+        } else {
+            /* Pause */
+            mf2_flags |= 0x08;  /* Set the suspend flag */
+            write_byte(0x0040, 0x18, mf2_flags);
+
+            /* Enable keyboard and send EOI. */
+            outp(0x64, 0xae);
+            eoi_master_pic();
+
+            while (read_byte(0x0040, 0x18) & 0x08)
+                ;   /* Hold on and wait... */
+
+            //@todo: We will send EOI again (and enable keyboard) on the way out; we shouldn't
         }
         break;
-    case 0xc5: /* Num Lock release */
+    case 0xc5: /* Num Lock/Pause release */
         if ((mf2_state & 0x03) == 0) {
             mf2_flags &= ~0x20;
             write_byte(0x0040, 0x18, mf2_flags);
         }
         break;
 
-    case 0x46: /* Scroll Lock press */
-        mf2_flags |= 0x10;
-        write_byte(0x0040, 0x18, mf2_flags);
-        shift_flags ^= 0x10;
-        write_byte(0x0040, 0x17, shift_flags);
+    case 0x46: /* Scroll Lock/Break press */
+        if (mf2_state & 0x02) { /* E0 prefix? */
+            /* Zap the keyboard buffer. */
+            write_word(0x0040, 0x001c, read_word(0x0040, 0x001a));
+
+            write_byte(0x0040, 0x71, 0x80); /* Set break flag */
+            outp(0x64, 0xae);               /* Enable keyboard */
+            int_1b();                       /* Invoke user handler */
+            enqueue_key(0, 0);              /* Dummy key press*/
+        } else {
+            mf2_flags |= 0x10;
+            write_byte(0x0040, 0x18, mf2_flags);
+            shift_flags ^= 0x10;
+            write_byte(0x0040, 0x17, shift_flags);
+        }
         break;
 
-    case 0xc6: /* Scroll Lock release */
-        mf2_flags &= ~0x10;
-        write_byte(0x0040, 0x18, mf2_flags);
+    case 0xc6: /* Scroll Lock/Break release */
+        if (!(mf2_state & 0x02)) {  /* Only if no E0 prefix */
+            mf2_flags &= ~0x10;
+            write_byte(0x0040, 0x18, mf2_flags);
+        }
         break;
 
     case 0x53: /* Del press */

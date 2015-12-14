@@ -907,19 +907,15 @@ endif
 		jne	int09_check_pause
 		xor	ax, ax
 		mov	ds, ax
-		mov	al, ds:[496h]	; mf2_state |= 0x02
-		or	al, 2		; TODO: why not RMW?
-		mov	ds:[496h], al
+		or	byte ptr ds:[496h], 2	; mf2_state |= 0x02
 		jmp	int09_done
 
 int09_check_pause:
 		cmp	al, 0E1h	; pause key?
 		jne	int09_process_key
 		xor	ax, ax
-		mov	ds, ax		; TODO: haven't we just done that??
-		mov	al, ds:[496h]
-		or	al, 1
-		mov	ds:[496h], al	; TODO: why not RMW?
+		mov	ds, ax
+		or	byte ptr ds:[496h], 1	; mf2_state | 0x01
 		jmp	int09_done
 
 int09_process_key:
