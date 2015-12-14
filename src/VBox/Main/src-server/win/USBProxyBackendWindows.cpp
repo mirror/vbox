@@ -38,7 +38,7 @@
  * Initialize data members.
  */
 USBProxyBackendWindows::USBProxyBackendWindows(USBProxyService *aUsbProxyService)
-    : USBProxyBackend(aHost), mhEventInterrupt(INVALID_HANDLE_VALUE)
+    : USBProxyBackend(aUsbProxyService), mhEventInterrupt(INVALID_HANDLE_VALUE)
 {
     LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
 }
@@ -113,11 +113,11 @@ void *USBProxyBackendWindows::insertFilter(PCUSBFILTER aFilter)
 {
     AssertReturn(aFilter, NULL);
 
-    LogFlow(("USBProxyServiceWindows::insertFilter()\n"));
+    LogFlow(("USBProxyBackendWindows::insertFilter()\n"));
 
     void *pvId = USBLibAddFilter(aFilter);
 
-    LogFlow(("USBProxyServiceWindows::insertFilter(): returning pvId=%p\n", pvId));
+    LogFlow(("USBProxyBackendWindows::insertFilter(): returning pvId=%p\n", pvId));
 
     return pvId;
 }
@@ -125,7 +125,7 @@ void *USBProxyBackendWindows::insertFilter(PCUSBFILTER aFilter)
 
 void USBProxyBackendWindows::removeFilter(void *aID)
 {
-    LogFlow(("USBProxyServiceWindows::removeFilter(): id=%p\n", aID));
+    LogFlow(("USBProxyBackendWindows::removeFilter(): id=%p\n", aID));
 
     AssertReturnVoid(aID);
 
@@ -224,7 +224,7 @@ bool USBProxyBackendWindows::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVIC
     AssertReturn(aDevice, false);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
     /* Nothing special here so far, so fall back on parent */
-    return USBProxyService::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
+    return USBProxyBackend::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
 }
 
 
@@ -247,7 +247,7 @@ PUSBDEVICE USBProxyBackendWindows::getDevices(void)
     PUSBDEVICE pDevices = NULL;
     uint32_t cDevices = 0;
 
-    Log(("USBProxyServiceWindows::getDevices\n"));
+    Log(("USBProxyBackendWindows::getDevices\n"));
     USBLibGetDevices(&pDevices, &cDevices);
     return pDevices;
 }

@@ -162,7 +162,7 @@ bool USBProxyBackendFreeBSD::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVIC
 void USBProxyBackendFreeBSD::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines,
                                          PUSBDEVICE aUSBDevice)
 {
-    USBProxyService::deviceAdded(aDevice, llOpenedMachines, aUSBDevice);
+    USBProxyBackend::deviceAdded(aDevice, llOpenedMachines, aUSBDevice);
 }
 
 int USBProxyBackendFreeBSD::wait(RTMSINTERVAL aMillies)

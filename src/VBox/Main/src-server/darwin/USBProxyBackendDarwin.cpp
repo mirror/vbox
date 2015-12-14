@@ -223,7 +223,7 @@ bool USBProxyBackendDarwin::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE
     AssertReturn(aDevice, false);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
     /* Nothing special here so far, so fall back on parent. */
-    return USBProxyService::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
+    return USBProxyBackend::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
 }
 
 
@@ -278,6 +278,6 @@ void USBProxyBackendDarwin::serviceThreadTerm(void)
  */
 void DarwinFreeUSBDeviceFromIOKit(PUSBDEVICE pCur)
 {
-    USBProxyService::freeDevice(pCur);
+    USBProxyBackend::freeDevice(pCur);
 }
 
