@@ -59,20 +59,20 @@
 /**
  * Initialize data members.
  */
-USBProxyServiceLinux::USBProxyServiceLinux(Host *aHost)
-    : USBProxyService(aHost), mhFile(NIL_RTFILE), mhWakeupPipeR(NIL_RTPIPE),
+USBProxyBackendLinux::USBProxyBackendLinux(USBProxyService *aUsbProxyService)
+    : USBProxyBackend(aUsbProxyService), mhFile(NIL_RTFILE), mhWakeupPipeR(NIL_RTPIPE),
       mhWakeupPipeW(NIL_RTPIPE), mUsingUsbfsDevices(true /* see init */),
       mUdevPolls(0), mpWaiter(NULL)
 {
-    LogFlowThisFunc(("aHost=%p\n", aHost));
+    LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
 }
 
 /**
  * Initializes the object (called right after construction).
  *
- * @returns S_OK on success and non-fatal failures, some COM error otherwise.
+ * @returns VBox status code.
  */
-HRESULT USBProxyServiceLinux::init(void)
+int USBProxyBackendLinux::init(void)
 {
     const char *pcszDevicesRoot;
     int rc = USBProxyLinuxChooseMethod(&mUsingUsbfsDevices, &pcszDevicesRoot);
@@ -85,8 +85,8 @@ HRESULT USBProxyServiceLinux::init(void)
                                : "Failed to initialise host USB using %s\n",
                 mUsingUsbfsDevices ? "USBFS" : "sysfs"));
     }
-    mLastError = rc;
-    return S_OK;
+
+    return rc;
 }
 
 /**
@@ -94,7 +94,7 @@ HRESULT USBProxyServiceLinux::init(void)
  *
  * @returns iprt status code.
  */
-int USBProxyServiceLinux::initUsbfs(void)
+int USBProxyBackendLinux::initUsbfs(void)
 {
     Assert(mUsingUsbfsDevices);
 
@@ -127,7 +127,7 @@ int USBProxyServiceLinux::initUsbfs(void)
                 mhWakeupPipeW = mhWakeupPipeR = NIL_RTPIPE;
             }
             else
-                Log(("USBProxyServiceLinux::USBProxyServiceLinux: RTFilePipe failed with rc=%Rrc\n", rc));
+                Log(("USBProxyBackendLinux::USBProxyBackendLinux: RTFilePipe failed with rc=%Rrc\n", rc));
             RTFileClose(mhFile);
         }
 
@@ -136,7 +136,7 @@ int USBProxyServiceLinux::initUsbfs(void)
     else
     {
         rc = VERR_NO_MEMORY;
-        Log(("USBProxyServiceLinux::USBProxyServiceLinux: out of memory!\n"));
+        Log(("USBProxyBackendLinux::USBProxyBackendLinux: out of memory!\n"));
     }
 
     LogFlowThisFunc(("returns failure!!! (rc=%Rrc)\n", rc));
@@ -149,7 +149,7 @@ int USBProxyServiceLinux::initUsbfs(void)
  *
  * @returns iprt status code
  */
-int USBProxyServiceLinux::initSysfs(void)
+int USBProxyBackendLinux::initSysfs(void)
 {
     Assert(!mUsingUsbfsDevices);
 
@@ -180,7 +180,7 @@ int USBProxyServiceLinux::initSysfs(void)
 /**
  * Stop all service threads and free the device chain.
  */
-USBProxyServiceLinux::~USBProxyServiceLinux()
+USBProxyBackendLinux::~USBProxyBackendLinux()
 {
     LogFlowThisFunc(("\n"));
 
@@ -205,7 +205,7 @@ USBProxyServiceLinux::~USBProxyServiceLinux()
  * If any Usbfs-related resources are currently allocated, then free them
  * and mark them as freed.
  */
-void USBProxyServiceLinux::doUsbfsCleanupAsNeeded()
+void USBProxyBackendLinux::doUsbfsCleanupAsNeeded()
 {
     /*
      * Free resources.
@@ -219,7 +219,7 @@ void USBProxyServiceLinux::doUsbfsCleanupAsNeeded()
 }
 
 
-int USBProxyServiceLinux::captureDevice(HostUSBDevice *aDevice)
+int USBProxyBackendLinux::captureDevice(HostUSBDevice *aDevice)
 {
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
@@ -238,7 +238,7 @@ int USBProxyServiceLinux::captureDevice(HostUSBDevice *aDevice)
 }
 
 
-int USBProxyServiceLinux::releaseDevice(HostUSBDevice *aDevice)
+int USBProxyBackendLinux::releaseDevice(HostUSBDevice *aDevice)
 {
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
@@ -257,14 +257,14 @@ int USBProxyServiceLinux::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-bool USBProxyServiceLinux::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
+bool USBProxyBackendLinux::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
                                              SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
     AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
     if (    aUSBDevice->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
-        &&  aDevice->mUsb->enmState == USBDEVICESTATE_USED_BY_HOST)
+        &&  aDevice->i_getUsbData()->enmState == USBDEVICESTATE_USED_BY_HOST)
         LogRel(("USBProxy: Device %04x:%04x (%s) has become accessible.\n",
                 aUSBDevice->idVendor, aUSBDevice->idProduct, aUSBDevice->pszAddress));
     devLock.release();
@@ -277,7 +277,7 @@ bool USBProxyServiceLinux::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE 
  *
  * See USBProxyService::deviceAdded for details.
  */
-void USBProxyServiceLinux::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines,
+void USBProxyBackendLinux::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines,
                                        PUSBDEVICE aUSBDevice)
 {
     AssertReturnVoid(aDevice);
@@ -291,11 +291,11 @@ void USBProxyServiceLinux::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, Sessio
     }
 
     devLock.release();
-    USBProxyService::deviceAdded(aDevice, llOpenedMachines, aUSBDevice);
+    USBProxyBackend::deviceAdded(aDevice, llOpenedMachines, aUSBDevice);
 }
 
 
-int USBProxyServiceLinux::wait(RTMSINTERVAL aMillies)
+int USBProxyBackendLinux::wait(RTMSINTERVAL aMillies)
 {
     int rc;
     if (mUsingUsbfsDevices)
@@ -311,7 +311,7 @@ int USBProxyServiceLinux::wait(RTMSINTERVAL aMillies)
 /** Length of the string written. */
 #define WAKE_UP_STRING_LEN  ( sizeof(WAKE_UP_STRING) - 1 )
 
-int USBProxyServiceLinux::waitUsbfs(RTMSINTERVAL aMillies)
+int USBProxyBackendLinux::waitUsbfs(RTMSINTERVAL aMillies)
 {
     struct pollfd PollFds[2];
 
@@ -346,7 +346,7 @@ int USBProxyServiceLinux::waitUsbfs(RTMSINTERVAL aMillies)
 }
 
 
-int USBProxyServiceLinux::waitSysfs(RTMSINTERVAL aMillies)
+int USBProxyBackendLinux::waitSysfs(RTMSINTERVAL aMillies)
 {
 #ifdef VBOX_USB_WITH_SYSFS
     int rc = mpWaiter->Wait(aMillies);
@@ -362,7 +362,7 @@ int USBProxyServiceLinux::waitSysfs(RTMSINTERVAL aMillies)
 }
 
 
-int USBProxyServiceLinux::interruptWait(void)
+int USBProxyBackendLinux::interruptWait(void)
 {
     AssertReturn(!isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
@@ -384,7 +384,7 @@ int USBProxyServiceLinux::interruptWait(void)
 }
 
 
-PUSBDEVICE USBProxyServiceLinux::getDevices(void)
+PUSBDEVICE USBProxyBackendLinux::getDevices(void)
 {
     return USBProxyLinuxGetDevices(mDevicesRoot.c_str(), !mUsingUsbfsDevices);
 }

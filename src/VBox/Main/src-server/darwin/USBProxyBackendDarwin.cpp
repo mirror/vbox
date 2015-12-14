@@ -48,26 +48,24 @@ USBProxyServiceDarwin::USBProxyServiceDarwin(Host *aHost)
 /**
  * Initializes the object (called right after construction).
  *
- * @returns S_OK on success and non-fatal failures, some COM error otherwise.
+ * @returns VBox status code.
  */
-HRESULT USBProxyServiceDarwin::init(void)
+int USBProxyServiceDarwin::init(void)
 {
     /*
      * Initialize the USB library.
      */
     int rc = USBLibInit();
     if (RT_FAILURE(rc))
-    {
-        mLastError = rc;
-        return S_OK;
-    }
+        return rc;
+
     mUSBLibInitialized = true;
 
     /*
      * Start the poller thread.
      */
     start();
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
 
@@ -134,7 +132,7 @@ int USBProxyServiceDarwin::captureDevice(HostUSBDevice *aDevice)
 
     int rc = DarwinReEnumerateUSBDevice(aDevice->mUsb);
     if (RT_SUCCESS(rc))
-        aDevice->mOneShotId = pvId;
+        aDevice->i_setBackendUserData(pvId);
     else
     {
         USBLibRemoveFilter(pvId);
@@ -152,10 +150,10 @@ void USBProxyServiceDarwin::captureDeviceCompleted(HostUSBDevice *aDevice, bool 
     /*
      * Remove the one-shot filter if necessary.
      */
-    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->mOneShotId));
-    if (!aSuccess && aDevice->mOneShotId)
-        USBLibRemoveFilter(aDevice->mOneShotId);
-    aDevice->mOneShotId = NULL;
+    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->i_getBackendUserData()));
+    if (!aSuccess && aDevice->i_getBackendUserData())
+        USBLibRemoveFilter(aDevice->i_getBackendUserData());
+    aDevice->i_setBackendUserData(NULL);
 }
 
 
@@ -188,7 +186,7 @@ int USBProxyServiceDarwin::releaseDevice(HostUSBDevice *aDevice)
 
     int rc = DarwinReEnumerateUSBDevice(aDevice->mUsb);
     if (RT_SUCCESS(rc))
-        aDevice->mOneShotId = pvId;
+        aDevice->i_setBackendUserData(pvId);
     else
     {
         USBLibRemoveFilter(pvId);
@@ -206,10 +204,10 @@ void USBProxyServiceDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool 
     /*
      * Remove the one-shot filter if necessary.
      */
-    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->mOneShotId));
-    if (!aSuccess && aDevice->mOneShotId)
-        USBLibRemoveFilter(aDevice->mOneShotId);
-    aDevice->mOneShotId = NULL;
+    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->i_getBackendUserData()));
+    if (!aSuccess && aDevice->i_getBackendUserData())
+        USBLibRemoveFilter(aDevice->i_getBackendUserData());
+    aDevice->i_setBackendUserData(NULL);
 }
 
 

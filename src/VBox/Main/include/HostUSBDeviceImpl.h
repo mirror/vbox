@@ -20,15 +20,12 @@
 
 #include "VirtualBoxBase.h"
 #include "USBDeviceFilterImpl.h"
-/* #include "USBProxyService.h" circular on Host/HostUSBDevice, the includer
- * must include this. */
-
 #include <VBox/usb.h>
 #include "Logging.h"
 #include "HostUSBDeviceWrap.h"
 
 class SessionMachine;
-class USBProxyService;
+class USBProxyBackend;
 
 /**
  * The unified state machine of HostUSBDevice.
@@ -178,7 +175,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(PUSBDEVICE aUsb, USBProxyService *aUSBProxyService);
+    HRESULT init(PUSBDEVICE aUsb, USBProxyBackend *aUSBProxyBackend);
     void uninit();
 
     // public methods only for internal purposes
@@ -206,6 +203,8 @@ public:
     /** @note Must be called from under the object read lock. */
     PCUSBDEVICE i_getUsbData() const { return mUsb; }
 
+    USBProxyBackend *i_getUsbProxyBackend() const { return mUSBProxyBackend; }
+
     com::Utf8Str i_getName();
 
     HRESULT i_requestCaptureForVM(SessionMachine *aMachine, bool aSetError,
@@ -226,6 +225,9 @@ public:
     static const char *i_stateName(HostUSBDeviceState aState,
                                    HostUSBDeviceState aPendingState = kHostUSBDeviceState_Invalid,
                                    HostUSBDeviceSubState aSubState = kHostUSBDeviceSubState_Default);
+
+    void *i_getBackendUserData() { return m_pvBackendUser; }
+    void i_setBackendUserData(void *pvBackendUser) { m_pvBackendUser = pvBackendUser; }
 
 protected:
 
@@ -260,6 +262,7 @@ private:
     HRESULT getRemote(BOOL *aRemote);
     HRESULT getName(com::Utf8Str &aName);
     HRESULT getState(USBDeviceState_T *aState);
+    HRESULT getBackend(com::Utf8Str &aBackend);
 
 
     const Guid mId;
@@ -288,8 +291,8 @@ private:
 
     /** The machine the usb device is (being) attached to. */
     ComObjPtr<SessionMachine> mMachine;
-    /** Pointer to the USB Proxy Service instance. */
-    USBProxyService *mUSBProxyService;
+    /** Pointer to the USB Proxy Backend instance. */
+    USBProxyBackend *mUSBProxyBackend;
     /** Pointer to the USB Device structure owned by this device.
      * Only used for host devices. */
     PUSBDEVICE mUsb;
@@ -303,26 +306,8 @@ private:
     const char *mName;
     /** The filename to capture the USB traffic to. */
     com::Utf8Str mCaptureFilename;
-
-    friend class USBProxyService;
-#ifdef RT_OS_SOLARIS
-    friend class USBProxyServiceSolaris;
-
-    /** One-shot filter id only for new code */
-    void *mOneShotId;
-#endif
-#ifdef RT_OS_LINUX
-    friend class USBProxyServiceLinux;
-#endif
-#ifdef RT_OS_DARWIN
-    /** One-shot filter id. */
-    void *mOneShotId;
-
-    friend class USBProxyServiceDarwin;
-#endif
-#ifdef RT_OS_FreeBSD
-    friend class USBProxyServiceFreeBSD;
-#endif
+    /** Optional opaque user data assigned by the USB proxy backend owning the device. */
+    void        *m_pvBackendUser;
 };
 
 #endif // ____H_HOSTUSBDEVICEIMPL

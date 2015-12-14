@@ -18020,7 +18020,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IUSBDevice" extends="$unknown"
     uuid="5915d179-83c7-4f2b-a323-9a97f46f4e29"
     wsmap="managed"
-    reservedAttributes="4"
+    reservedAttributes="3"
     >
     <desc>
       The IUSBDevice interface represents a virtual USB device attached to the
@@ -18101,6 +18101,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Whether the device is physically connected to a remote VRDE
         client or to a local host machine.
+      </desc>
+    </attribute>
+
+    <attribute name="backend" type="wstring" readonly="yes">
+      <desc>
+        The backend which will be used to communicate with this device.
       </desc>
     </attribute>
 

@@ -64,19 +64,16 @@ USBProxyServiceSolaris::USBProxyServiceSolaris(Host *aHost)
 /**
  * Initializes the object (called right after construction).
  *
- * @returns S_OK on success and non-fatal failures, some COM error otherwise.
+ * @returns VBox status code.
  */
-HRESULT USBProxyServiceSolaris::init(void)
+int USBProxyServiceSolaris::init(void)
 {
     /*
      * Create semaphore.
      */
     int rc = RTSemEventCreate(&mNotifyEventSem);
     if (RT_FAILURE(rc))
-    {
-        mLastError = rc;
-        return E_FAIL;
-    }
+        return rc;
 
     /*
      * Initialize the USB library.
@@ -84,16 +81,17 @@ HRESULT USBProxyServiceSolaris::init(void)
     rc = USBLibInit();
     if (RT_FAILURE(rc))
     {
-        mLastError = rc;
-        return S_OK;
+        RTSemEventDestroy(&mNotifyEventSem);
+        return rc;
     }
+
     mUSBLibInitialized = true;
 
     /*
      * Start the poller thread.
      */
     start();
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
 
@@ -341,7 +339,7 @@ int USBProxyServiceSolaris::captureDevice(HostUSBDevice *aDevice)
     LogFlowThisFunc(("aDevice=%s\n", aDevice->i_getName().c_str()));
 
     Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_Capturing);
-    AssertReturn(aDevice->mUsb, VERR_INVALID_POINTER);
+    AssertReturn(aDevice->i_getUsbData(), VERR_INVALID_POINTER);
 
     /*
      * Create a one-shot capture filter for the device and reset the device.
@@ -357,10 +355,10 @@ int USBProxyServiceSolaris::captureDevice(HostUSBDevice *aDevice)
         return VERR_GENERAL_FAILURE;
     }
 
-    PUSBDEVICE pDev = aDevice->mUsb;
+    PUSBDEVICE pDev = aDevice->i_getUsbData();
     int rc = USBLibResetDevice(pDev->pszDevicePath, true);
     if (RT_SUCCESS(rc))
-        aDevice->mOneShotId = pvId;
+        aDevice->i_setBackendUserData(pvId);
     else
     {
         USBLibRemoveFilter(pvId);
@@ -377,10 +375,10 @@ void USBProxyServiceSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool
     /*
      * Remove the one-shot filter if necessary.
      */
-    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->mOneShotId));
-    if (!aSuccess && aDevice->mOneShotId)
+    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->i_getBackendUserData()));
+    if (!aSuccess && aDevice->i_getBackendUserData())
         USBLibRemoveFilter(aDevice->mOneShotId);
-    aDevice->mOneShotId = NULL;
+    aDevice->i_setBackendUserData(NULL);
 }
 
 
@@ -396,7 +394,7 @@ int USBProxyServiceSolaris::releaseDevice(HostUSBDevice *aDevice)
     LogFlowThisFunc(("aDevice=%s\n", aDevice->i_getName().c_str()));
 
     Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_ReleasingToHost);
-    AssertReturn(aDevice->mUsb, VERR_INVALID_POINTER);
+    AssertReturn(aDevice->i_getUsbData(), VERR_INVALID_POINTER);
 
     /*
      * Create a one-shot ignore filter for the device and reset it.
@@ -412,10 +410,10 @@ int USBProxyServiceSolaris::releaseDevice(HostUSBDevice *aDevice)
         return VERR_GENERAL_FAILURE;
     }
 
-    PUSBDEVICE pDev = aDevice->mUsb;
+    PUSBDEVICE pDev = aDevice->i_getUsbData();
     int rc = USBLibResetDevice(pDev->pszDevicePath, true /* Re-attach */);
     if (RT_SUCCESS(rc))
-        aDevice->mOneShotId = pvId;
+        aDevice->i_setBackendUserData(pvId);
     else
     {
         USBLibRemoveFilter(pvId);
@@ -432,10 +430,10 @@ void USBProxyServiceSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool
     /*
      * Remove the one-shot filter if necessary.
      */
-    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->mOneShotId));
-    if (!aSuccess && aDevice->mOneShotId)
-        USBLibRemoveFilter(aDevice->mOneShotId);
-    aDevice->mOneShotId = NULL;
+    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->i_getBackendUserData()));
+    if (!aSuccess && aDevice->i_getBackendUserData())
+        USBLibRemoveFilter(aDevice->i_getBackendUser());
+    aDevice->i_setBackendUserData(NULL);
 }
 
 

@@ -97,6 +97,8 @@ typedef struct USBDEVICE
     const char     *pszSerialNumber;
     /** The address of the device. */
     const char     *pszAddress;
+    /** The backend to use for this device. */
+    const char     *pszBackend;
 
     /** Vendor ID. */
     uint16_t        idVendor;

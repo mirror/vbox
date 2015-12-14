@@ -448,19 +448,21 @@ VBoxSVC_SOURCES.freebsd = \
 
 ifdef VBOX_WITH_USB
  ifdef VBOX_WITH_SYSFS_BY_DEFAULT
-  src-server/linux/USBProxyServiceLinux.cpp_DEFS += VBOX_WITH_SYSFS_BY_DEFAULT
+  src-server/linux/USBProxyBackendLinux.cpp_DEFS += VBOX_WITH_SYSFS_BY_DEFAULT
  endif
  VBoxSVC_SOURCES  += \
 	src-server/USBDeviceFilterImpl.cpp \
 	src-server/USBProxyService.cpp \
+	src-server/USBProxyBackend.cpp \
+	src-server/generic/USBProxyBackendUsbIp.cpp \
 	src-server/HostUSBDeviceImpl.cpp
- VBoxSVC_SOURCES.darwin  +=  src-server/darwin/USBProxyServiceDarwin.cpp
- VBoxSVC_SOURCES.linux   +=   src-server/linux/USBProxyServiceLinux.cpp
+ VBoxSVC_SOURCES.darwin  +=  src-server/darwin/USBProxyBackendDarwin.cpp
+ VBoxSVC_SOURCES.linux   +=   src-server/linux/USBProxyBackendLinux.cpp
  VBoxSVC_SOURCES.linux   +=   src-server/linux/USBGetDevices.cpp
- VBoxSVC_SOURCES.os2     +=     src-server/os2/USBProxyServiceOs2.cpp
- VBoxSVC_SOURCES.solaris += src-server/solaris/USBProxyServiceSolaris.cpp
- VBoxSVC_SOURCES.win     +=     src-server/win/USBProxyServiceWindows.cpp
- VBoxSVC_SOURCES.freebsd += src-server/freebsd/USBProxyServiceFreeBSD.cpp
+ VBoxSVC_SOURCES.os2     +=     src-server/os2/USBProxyBackendOs2.cpp
+ VBoxSVC_SOURCES.solaris += src-server/solaris/USBProxyBackendSolaris.cpp
+ VBoxSVC_SOURCES.win     +=     src-server/win/USBProxyBackendWindows.cpp
+ VBoxSVC_SOURCES.freebsd += src-server/freebsd/USBProxyBackendFreeBSD.cpp
 endif
 
 ifdef VBOX_WITH_NETFLT

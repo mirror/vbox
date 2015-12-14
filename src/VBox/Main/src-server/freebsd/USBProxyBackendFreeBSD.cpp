@@ -71,23 +71,20 @@ USBProxyServiceFreeBSD::USBProxyServiceFreeBSD(Host *aHost)
  *
  * @returns S_OK on success and non-fatal failures, some COM error otherwise.
  */
-HRESULT USBProxyServiceFreeBSD::init(void)
+int USBProxyServiceFreeBSD::init(void)
 {
     /*
      * Create semaphore.
      */
     int rc = RTSemEventCreate(&mNotifyEventSem);
     if (RT_FAILURE(rc))
-    {
-        mLastError = rc;
-        return E_FAIL;
-    }
+        return rc;
 
     /*
      * Start the poller thread.
      */
     start();
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
 

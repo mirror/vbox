@@ -1351,6 +1351,7 @@ static void fillInDeviceFromSysfs(USBDEVICE *Dev, USBDeviceInfo *pInfo)
     RTStrAPrintf(&pszAddress, "sysfs:%s//device:%s", pszSysfsPath,
                  pInfo->mDevice);
     Dev->pszAddress = pszAddress;
+    Dev->pszBackend = RTStrDup("host");
 
     /* Work out from the data collected whether we can support this device. */
     Dev->enmState = usbDeterminState(Dev);

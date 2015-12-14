@@ -39,7 +39,15 @@
 /** A dummy name used early during the construction phase to avoid log crashes. */
 static char g_szDummyName[] = "proxy xxxx:yyyy";
 
-
+/**
+ * Array of supported proxy backends.
+ */
+static PCUSBPROXYBACK g_aUsbProxies[] =
+{
+    &g_USBProxyDeviceHost,
+    &g_USBProxyDeviceVRDP,
+    &g_USBProxyDeviceUsbIp
+};
 
 /* Synchronously obtain a standard USB descriptor for a device, used in order
  * to grab configuration descriptors when we first add the device
@@ -846,8 +854,8 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     int rc = CFGMR3QueryString(pCfg, "Address", szAddress, sizeof(szAddress));
     AssertRCReturn(rc, rc);
 
-    bool fRemote;
-    rc = CFGMR3QueryBool(pCfg, "Remote", &fRemote);
+    char szBackend[64];
+    rc = CFGMR3QueryString(pCfg, "Backend", szBackend, sizeof(szBackend));
     AssertRCReturn(rc, rc);
 
     void *pvBackend;
@@ -857,10 +865,18 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     /*
      * Select backend and open the device.
      */
-    if (!fRemote)
-        pThis->pOps = &g_USBProxyDeviceHost;
-    else
-        pThis->pOps = &g_USBProxyDeviceVRDP;
+    rc = VERR_NOT_FOUND;
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aUsbProxies); i++)
+    {
+        if (!RTStrICmp(szBackend, g_aUsbProxies[i]->pszName))
+        {
+            pThis->pOps = g_aUsbProxies[i];
+            rc = VINF_SUCCESS;
+            break;
+        }
+    }
+    if (RT_FAILURE(rc))
+        return PDMUSB_SET_ERROR(pUsbIns, rc, N_("USBProxy: Failed to find backend"));
 
     pThis->pvInstanceDataR3 = RTMemAllocZ(pThis->pOps->cbBackend);
     if (!pThis->pvInstanceDataR3)

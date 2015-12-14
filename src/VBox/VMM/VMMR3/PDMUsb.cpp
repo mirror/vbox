@@ -982,14 +982,14 @@ VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
  * @param   pUuid               The UUID to be associated with the device.
- * @param   fRemote             Whether it's a remove or local device.
+ * @param   pszBackend          The proxy backend to use.
  * @param   pszAddress          The address string.
  * @param   pvBackend           Pointer to the backend.
  * @param   iUsbVersion         The preferred USB version.
  * @param   fMaskedIfs          The interfaces to hide from the guest.
  * @param   pszCaptureFilename  Path to the file for USB traffic capturing, optional.
  */
-VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend,
+VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, const char *pszBackend, const char *pszAddress, void *pvBackend,
                                          uint32_t iUsbVersion, uint32_t fMaskedIfs, const char *pszCaptureFilename)
 {
     /*
@@ -1039,7 +1039,7 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
         char szUuid[RTUUID_STR_LENGTH];
         rc = RTUuidToStr(pUuid, &szUuid[0], sizeof(szUuid));                    AssertRCBreak(rc);
         rc = CFGMR3InsertString(pConfig,  "UUID", szUuid);                      AssertRCBreak(rc);
-        rc = CFGMR3InsertInteger(pConfig, "Remote", fRemote);                   AssertRCBreak(rc);
+        rc = CFGMR3InsertString(pConfig, "Backend", pszBackend);                AssertRCBreak(rc);
         rc = CFGMR3InsertInteger(pConfig, "USBVersion", iUsbVersion);           AssertRCBreak(rc);
         rc = CFGMR3InsertInteger(pConfig, "pvBackend", (uintptr_t)pvBackend);   AssertRCBreak(rc);
         rc = CFGMR3InsertInteger(pConfig, "MaskedIfs", fMaskedIfs);             AssertRCBreak(rc);

@@ -276,21 +276,7 @@ HRESULT Host::init(VirtualBox *aParent)
     /*
      * Create and initialize the USB Proxy Service.
      */
-# if defined(RT_OS_DARWIN)
-    m->pUSBProxyService = new USBProxyServiceDarwin(this);
-# elif defined(RT_OS_LINUX)
-    m->pUSBProxyService = new USBProxyServiceLinux(this);
-# elif defined(RT_OS_OS2)
-    m->pUSBProxyService = new USBProxyServiceOs2(this);
-# elif defined(RT_OS_SOLARIS)
-    m->pUSBProxyService = new USBProxyServiceSolaris(this);
-# elif defined(RT_OS_WINDOWS)
-    m->pUSBProxyService = new USBProxyServiceWindows(this);
-# elif defined(RT_OS_FREEBSD)
-    m->pUSBProxyService = new USBProxyServiceFreeBSD(this);
-# else
     m->pUSBProxyService = new USBProxyService(this);
-# endif
     hrc = m->pUSBProxyService->init();
     AssertComRCReturn(hrc, hrc);
 #endif /* VBOX_WITH_USB */

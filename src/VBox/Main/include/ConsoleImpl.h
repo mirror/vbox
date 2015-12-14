@@ -706,7 +706,7 @@ private:
     HRESULT i_detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice);
 
     static DECLCALLBACK(int) i_usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, PCRTUUID aUuid,
-                                                 bool aRemote, const char *aAddress, void *pvRemoteBackend,
+                                                 const char *aBackend, const char *aAddress, void *pvRemoteBackend,
                                                  USHORT aPortVersion, ULONG aMaskedIfs, const char *pszCaptureFilename);
     static DECLCALLBACK(int) i_usbDetachCallback(Console *that, PUVM pUVM, PCRTUUID aUuid);
 #endif

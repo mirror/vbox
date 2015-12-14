@@ -174,6 +174,8 @@ typedef const USBPROXYBACK *PCUSBPROXYBACK;
 extern const USBPROXYBACK g_USBProxyDeviceHost;
 /** The remote desktop backend. */
 extern const USBPROXYBACK g_USBProxyDeviceVRDP;
+/** The USB/IP backend. */
+extern const USBPROXYBACK g_USBProxyDeviceUsbIp;
 
 #ifdef RDESKTOP
 typedef struct VUSBDEV

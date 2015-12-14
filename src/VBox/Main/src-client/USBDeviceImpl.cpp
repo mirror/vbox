@@ -86,6 +86,10 @@ HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
     ComAssertComRCRet(hrc, hrc);
     unconst(mData.address) = Utf8Str(tmp);
 
+    hrc = aUSBDevice->COMGETTER(Backend)(bptr);
+    ComAssertComRCRet(hrc, hrc);
+    unconst(mData.backend) = Utf8Str(tmp);
+
     hrc = aUSBDevice->COMGETTER(Port)(&unconst(mData.port));
     ComAssertComRCRet(hrc, hrc);
 
@@ -136,6 +140,7 @@ void OUSBDevice::uninit()
     unconst(mData.serialNumber).setNull();
 
     unconst(mData.address).setNull();
+    unconst(mData.backend).setNull();
 
     unconst(mData.port) = 0;
     unconst(mData.version) = 1;
@@ -301,6 +306,20 @@ HRESULT OUSBDevice::getRemote(BOOL *aRemote)
 {
     /* this is const, no need to lock */
     *aRemote = mData.remote;
+
+    return S_OK;
+}
+
+/**
+ * Returns the device specific backend.
+ *
+ * @returns COM status code
+ * @param   aBackend          Where to put the return string.
+ */
+HRESULT OUSBDevice::getBackend(com::Utf8Str &aBackend)
+{
+    /* this is const, no need to lock */
+    aBackend = mData.backend;
 
     return S_OK;
 }

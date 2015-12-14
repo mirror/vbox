@@ -25,6 +25,7 @@
 #include "VirtualBoxBase.h"
 #include "VirtualBoxImpl.h"
 #include "HostUSBDeviceImpl.h"
+#include "USBProxyBackend.h"
 class Host;
 
 /**
@@ -51,9 +52,14 @@ public:
 
     bool isActive(void);
     int getLastError(void);
-    HRESULT getLastErrorMessage(BSTR *aError);
 
     RWLockHandle *lockHandle() const;
+
+    /** @name Interface for the USBController and the Host object.
+     * @{ */
+    void *insertFilter(PCUSBFILTER aFilter);
+    void removeFilter(void *aId);
+    /** @} */
 
     /** @name Host Interfaces
      * @{ */
@@ -68,313 +74,30 @@ public:
     HRESULT detachAllDevicesFromVM(SessionMachine *aMachine, bool aDone, bool aAbnormal);
     /** @} */
 
-    /** @name Interface for the USBController and the Host object.
-     * @{ */
-    virtual void *insertFilter(PCUSBFILTER aFilter);
-    virtual void removeFilter(void *aId);
-    /** @} */
+    typedef std::list< ComObjPtr<HostUSBDeviceFilter> > USBDeviceFilterList;
 
-    /** @name Interfaces for the HostUSBDevice
-     * @{ */
-    virtual int captureDevice(HostUSBDevice *aDevice);
-    virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
-    /** @todo unused */
-    virtual void detachingDevice(HostUSBDevice *aDevice);
-    virtual int releaseDevice(HostUSBDevice *aDevice);
-    virtual void releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
-    /** @} */
+    void i_updateDeviceList(USBProxyBackend *pUsbProxyBackend, PUSBDEVICE pDevices);
+    void i_getUSBFilters(USBDeviceFilterList *pGlobalFiltes);
 
 protected:
-    int start(void);
-    int stop(void);
-    virtual void serviceThreadInit(void);
-    virtual void serviceThreadTerm(void);
-
-    virtual int wait(RTMSINTERVAL aMillies);
-    virtual int interruptWait(void);
-    virtual PUSBDEVICE getDevices(void);
-    virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice);
-    virtual void deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice);
-    virtual void deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList *pllOpenedMachines, SessionMachine *aIgnoreMachine);
-    bool updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
-
     ComObjPtr<HostUSBDevice> findDeviceById(IN_GUID aId);
 
     static HRESULT setError(HRESULT aResultCode, const char *aText, ...);
 
-    static void initFilterFromDevice(PUSBFILTER aFilter, HostUSBDevice *aDevice);
-    static void freeDeviceMembers(PUSBDEVICE pDevice);
-public:
-    static void freeDevice(PUSBDEVICE pDevice);
-
 private:
-    HRESULT runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice,
-                                  SessionMachinesList &llOpenedMachines,
-                                  SessionMachine *aIgnoreMachine);
-    bool runMachineFilters(SessionMachine *aMachine, ComObjPtr<HostUSBDevice> &aDevice);
-    void processChanges(void);
-    static DECLCALLBACK(int) serviceThread(RTTHREAD Thread, void *pvUser);
 
-protected:
     /** Pointer to the Host object. */
     Host *mHost;
-    /** Thread handle of the service thread. */
-    RTTHREAD mThread;
-    /** Flag which stop() sets to cause serviceThread to return. */
-    bool volatile mTerminate;
-    /** VBox status code of the last failure.
-     * (Only used by start(), stop() and the child constructors.) */
-    int mLastError;
-    /** Optional error message to complement mLastError. */
-    Bstr mLastErrorMessage;
     /** List of smart HostUSBDevice pointers. */
     typedef std::list<ComObjPtr<HostUSBDevice> > HostUSBDeviceList;
     /** List of the known USB devices. */
     HostUSBDeviceList mDevices;
+    /** List of USBProxyBackend pointers. */
+    typedef std::list<USBProxyBackend *> USBProxyBackendList;
+    /** List of active USB backends. */
+    USBProxyBackendList mBackends;
+    int                 mLastError;
 };
-
-
-# ifdef RT_OS_DARWIN
-#  include <VBox/param.h>
-#  undef PAGE_SHIFT
-#  undef PAGE_SIZE
-#  define OSType Carbon_OSType
-#  include <Carbon/Carbon.h>
-#  undef OSType
-
-/**
- * The Darwin hosted USB Proxy Service.
- */
-class USBProxyServiceDarwin : public USBProxyService
-{
-public:
-    USBProxyServiceDarwin(Host *aHost);
-    HRESULT init(void);
-    ~USBProxyServiceDarwin();
-
-    virtual void *insertFilter(PCUSBFILTER aFilter);
-    virtual void removeFilter(void *aId);
-
-    virtual int captureDevice(HostUSBDevice *aDevice);
-    virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
-    /** @todo unused */
-    virtual void detachingDevice(HostUSBDevice *aDevice);
-    virtual int releaseDevice(HostUSBDevice *aDevice);
-    virtual void releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
-
-protected:
-    virtual int wait(RTMSINTERVAL aMillies);
-    virtual int interruptWait (void);
-    virtual PUSBDEVICE getDevices (void);
-    virtual void serviceThreadInit (void);
-    virtual void serviceThreadTerm (void);
-    virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
-
-private:
-    /** Reference to the runloop of the service thread.
-     * This is NULL if the service thread isn't running. */
-    CFRunLoopRef mServiceRunLoopRef;
-    /** The opaque value returned by DarwinSubscribeUSBNotifications. */
-    void *mNotifyOpaque;
-    /** A hack to work around the problem with the usb device enumeration
-     * not including newly attached devices. */
-    bool mWaitABitNextTime;
-    /** Whether we've successfully initialized the USBLib and should call USBLibTerm in the destructor. */
-    bool mUSBLibInitialized;
-};
-# endif /* RT_OS_DARWIN */
-
-
-# ifdef RT_OS_LINUX
-#  include <stdio.h>
-#  ifdef VBOX_USB_WITH_SYSFS
-#   include <HostHardwareLinux.h>
-#  endif
-
-/**
- * The Linux hosted USB Proxy Service.
- */
-class USBProxyServiceLinux
-    : public USBProxyService
-{
-public:
-    USBProxyServiceLinux(Host *aHost);
-    HRESULT init(void);
-    ~USBProxyServiceLinux();
-
-    virtual int captureDevice(HostUSBDevice *aDevice);
-    virtual int releaseDevice(HostUSBDevice *aDevice);
-
-protected:
-    int initUsbfs(void);
-    int initSysfs(void);
-    void doUsbfsCleanupAsNeeded(void);
-    virtual int wait(RTMSINTERVAL aMillies);
-    virtual int interruptWait(void);
-    virtual PUSBDEVICE getDevices(void);
-    virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
-
-private:
-    int waitUsbfs(RTMSINTERVAL aMillies);
-    int waitSysfs(RTMSINTERVAL aMillies);
-
-private:
-    /** File handle to the '/proc/bus/usb/devices' file. */
-    RTFILE mhFile;
-    /** Pipe used to interrupt wait(), the read end. */
-    RTPIPE mhWakeupPipeR;
-    /** Pipe used to interrupt wait(), the write end. */
-    RTPIPE mhWakeupPipeW;
-    /** The root of usbfs. */
-    Utf8Str mDevicesRoot;
-    /** Whether we're using <mUsbfsRoot>/devices or /sys/whatever. */
-    bool mUsingUsbfsDevices;
-    /** Number of 500ms polls left to do. See usbDeterminState for details. */
-    unsigned mUdevPolls;
-#  ifdef VBOX_USB_WITH_SYSFS
-    /** Object used for polling for hotplug events from hal. */
-    VBoxMainHotplugWaiter *mpWaiter;
-#  endif
-};
-# endif /* RT_OS_LINUX */
-
-
-# ifdef RT_OS_OS2
-#  include <usbcalls.h>
-
-/**
- * The Linux hosted USB Proxy Service.
- */
-class USBProxyServiceOs2 : public USBProxyService
-{
-public:
-    USBProxyServiceOs2 (Host *aHost);
-    /// @todo virtual HRESULT init(void);
-    ~USBProxyServiceOs2();
-
-    virtual int captureDevice (HostUSBDevice *aDevice);
-    virtual int releaseDevice (HostUSBDevice *aDevice);
-
-protected:
-    virtual int wait(RTMSINTERVAL aMillies);
-    virtual int interruptWait(void);
-    virtual PUSBDEVICE getDevices(void);
-    int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
-
-private:
-    /** The notification event semaphore */
-    HEV mhev;
-    /** The notification id. */
-    USBNOTIFY mNotifyId;
-    /** The usbcalls.dll handle. */
-    HMODULE mhmod;
-    /** UsbRegisterChangeNotification */
-    APIRET (APIENTRY *mpfnUsbRegisterChangeNotification)(PUSBNOTIFY, HEV, HEV);
-    /** UsbDeregisterNotification */
-    APIRET (APIENTRY *mpfnUsbDeregisterNotification)(USBNOTIFY);
-    /** UsbQueryNumberDevices */
-    APIRET (APIENTRY *mpfnUsbQueryNumberDevices)(PULONG);
-    /** UsbQueryDeviceReport */
-    APIRET (APIENTRY *mpfnUsbQueryDeviceReport)(ULONG, PULONG, PVOID);
-};
-# endif /* RT_OS_LINUX */
-
-
-# ifdef RT_OS_SOLARIS
-#  include <libdevinfo.h>
-
-/**
- * The Solaris hosted USB Proxy Service.
- */
-class USBProxyServiceSolaris : public USBProxyService
-{
-public:
-    USBProxyServiceSolaris(Host *aHost);
-    HRESULT init(void);
-    ~USBProxyServiceSolaris();
-
-    virtual void *insertFilter (PCUSBFILTER aFilter);
-    virtual void removeFilter (void *aID);
-
-    virtual int captureDevice (HostUSBDevice *aDevice);
-    virtual int releaseDevice (HostUSBDevice *aDevice);
-    virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
-    virtual void releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
-
-protected:
-    virtual int wait(RTMSINTERVAL aMillies);
-    virtual int interruptWait(void);
-    virtual PUSBDEVICE getDevices(void);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
-
-private:
-    RTSEMEVENT mNotifyEventSem;
-    /** Whether we've successfully initialized the USBLib and should call USBLibTerm in the destructor. */
-    bool mUSBLibInitialized;
-};
-#endif  /* RT_OS_SOLARIS */
-
-
-# ifdef RT_OS_WINDOWS
-/**
- * The Windows hosted USB Proxy Service.
- */
-class USBProxyServiceWindows : public USBProxyService
-{
-public:
-    USBProxyServiceWindows(Host *aHost);
-    HRESULT init(void);
-    ~USBProxyServiceWindows();
-
-    virtual void *insertFilter (PCUSBFILTER aFilter);
-    virtual void removeFilter (void *aID);
-
-    virtual int captureDevice (HostUSBDevice *aDevice);
-    virtual int releaseDevice (HostUSBDevice *aDevice);
-
-protected:
-    virtual int wait(RTMSINTERVAL aMillies);
-    virtual int interruptWait(void);
-    virtual PUSBDEVICE getDevices(void);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
-
-private:
-
-    HANDLE mhEventInterrupt;
-};
-# endif /* RT_OS_WINDOWS */
-
-# ifdef RT_OS_FREEBSD
-/**
- * The FreeBSD hosted USB Proxy Service.
- */
-class USBProxyServiceFreeBSD : public USBProxyService
-{
-public:
-    USBProxyServiceFreeBSD(Host *aHost);
-    HRESULT init(void);
-    ~USBProxyServiceFreeBSD();
-
-    virtual int captureDevice(HostUSBDevice *aDevice);
-    virtual int releaseDevice(HostUSBDevice *aDevice);
-
-protected:
-    int initUsbfs(void);
-    int initSysfs(void);
-    virtual int wait(RTMSINTERVAL aMillies);
-    virtual int interruptWait(void);
-    virtual PUSBDEVICE getDevices(void);
-    int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
-    virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
-
-private:
-    RTSEMEVENT mNotifyEventSem;
-};
-# endif /* RT_OS_FREEBSD */
 
 #endif /* !____H_USBPROXYSERVICE */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * USBProxyServiceLinux test case.
+ * USBProxyBackendLinux test case.
  */
 
 /*
@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 
-#include "USBProxyService.h"
+#include "USBProxyBackend.h"
 #include "USBGetDevices.h"
 
 #include <VBox/err.h>
@@ -31,41 +31,36 @@
 
 /*** BEGIN STUBS ***/
 
-USBProxyService::USBProxyService(Host*) {}
-USBProxyService::~USBProxyService() {}
-HRESULT USBProxyService::init() { return S_OK; }
-int USBProxyService::start() { return VINF_SUCCESS; }
-int USBProxyService::stop() { return VINF_SUCCESS; }
-RWLockHandle *USBProxyService::lockHandle() const { return NULL; }
-void *USBProxyService::insertFilter(USBFILTER const*) { return NULL; }
-void USBProxyService::removeFilter(void*) {}
-int USBProxyService::captureDevice(HostUSBDevice*) { return VINF_SUCCESS; }
-void USBProxyService::captureDeviceCompleted(HostUSBDevice*, bool) {}
-void USBProxyService::detachingDevice(HostUSBDevice*) {}
-int USBProxyService::releaseDevice(HostUSBDevice*) { return VINF_SUCCESS; }
-void USBProxyService::releaseDeviceCompleted(HostUSBDevice*, bool) {}
-void USBProxyService::serviceThreadInit() {}
-void USBProxyService::serviceThreadTerm() {}
-int USBProxyService::wait(unsigned int) { return VINF_SUCCESS; }
-int USBProxyService::interruptWait() { return VINF_SUCCESS; }
-PUSBDEVICE USBProxyService::getDevices() { return NULL; }
-void USBProxyService::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice) {}
-void USBProxyService::deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice) {}
-void USBProxyService::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList*, SessionMachine*) {}
-bool USBProxyService::updateDeviceState(HostUSBDevice*, USBDEVICE*, bool*, SessionMachine**) { return true; }
-bool USBProxyService::updateDeviceStateFake(HostUSBDevice*, USBDEVICE*, bool*, SessionMachine**) { return true; }
-bool USBProxyService::isActive() { return true; }
+USBProxyBackend::USBProxyBackend(USBProxyService*) {}
+USBProxyBackend::~USBProxyBackend() {}
+int USBProxyBackend::init() { return VINF_SUCCESS; }
+int USBProxyBackend::start() { return VINF_SUCCESS; }
+int USBProxyBackend::stop() { return VINF_SUCCESS; }
+RWLockHandle *USBProxyBackend::lockHandle() const { return NULL; }
+void *USBProxyBackend::insertFilter(USBFILTER const*) { return NULL; }
+void USBProxyBackend::removeFilter(void*) {}
+int USBProxyBackend::captureDevice(HostUSBDevice*) { return VINF_SUCCESS; }
+void USBProxyBackend::captureDeviceCompleted(HostUSBDevice*, bool) {}
+void USBProxyBackend::detachingDevice(HostUSBDevice*) {}
+int USBProxyBackend::releaseDevice(HostUSBDevice*) { return VINF_SUCCESS; }
+void USBProxyBackend::releaseDeviceCompleted(HostUSBDevice*, bool) {}
+void USBProxyBackend::serviceThreadInit() {}
+void USBProxyBackend::serviceThreadTerm() {}
+int USBProxyBackend::wait(unsigned int) { return VINF_SUCCESS; }
+int USBProxyBackend::interruptWait() { return VINF_SUCCESS; }
+PUSBDEVICE USBProxyBackend::getDevices() { return NULL; }
+void USBProxyBackend::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice) {}
+void USBProxyBackend::deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice) {}
+void USBProxyBackend::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList*, SessionMachine*) {}
+bool USBProxyBackend::updateDeviceState(HostUSBDevice*, USBDEVICE*, bool*, SessionMachine**) { return true; }
+bool USBProxyBackend::updateDeviceStateFake(HostUSBDevice*, USBDEVICE*, bool*, SessionMachine**) { return true; }
+bool USBProxyBackend::isActive() { return true; }
 
 VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(char const*) {}
 
 com::Utf8Str HostUSBDevice::i_getName()
 {
     return Utf8Str();
-}
-
-int USBProxyService::getLastError(void)
-{
-    return mLastError;
 }
 
 void SysFreeString(BSTR bstr)
