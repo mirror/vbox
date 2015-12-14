@@ -30,7 +30,8 @@ if1of ($(KBUILD_TARGET), win linux solaris freebsd)
     VBoxOGLarrayspu \
     VBoxOGLpassthroughspu \
     VBoxOGLpackspu \
-    VBoxOGLfeedbackspu
+    VBoxOGLfeedbackspu \
+    VBoxEGL
 endif
 
 VBOX_OGL_X86_GUEST_DLLS = \
@@ -705,6 +706,12 @@ $(VBOX_PATH_CROGL_GENFILES)/feedbackspu_state.c: $(addprefix $(PATH_SUB_CURRENT)
 $(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h: $(addprefix $(PATH_SUB_CURRENT)/feedback/,feedbackspu_proto.py feedback_special select_special feedback_state_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+VBoxEGL_TEMPLATE       = VBOXCROGLR3GUESTDLL
+VBoxEGL_SOURCES        = egl.c
+VBoxEGL_INCS           = $(VBOX_PATH_X11_ROOT)/mesa-11.0.7
+VBoxEGL_LIBS           = $(VBOX_LIB_OGL) $(VBOX_LIB_IPRT_GUEST_R3_SHARED)
+VBoxEGL_SONAME.linux   = libEGL.so.1
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
