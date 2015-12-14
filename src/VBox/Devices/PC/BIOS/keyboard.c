@@ -374,14 +374,6 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
 
     mf2_flags = read_byte(0x0040, 0x18);
     mf2_state = read_byte(0x0040, 0x96);
-    /* Check if suspend flag set but no E1 prefix (i.e. not Pause). */
-    if ((mf2_flags & 0x08) && !(shift_flags & 0x01)) {
-        /* Pause had been pressed. Clear suspend flag and do nothing. */
-        mf2_flags &= ~0x08;
-        write_byte(0x0040, 0x18, mf2_flags);
-        return;
-    }
-
     shift_flags = read_byte(0x0040, 0x17);
     asciicode = 0;
 
@@ -524,6 +516,14 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
         /* fall through */
 
     default:
+        /* Check if suspend flag set. */
+        if (mf2_flags & 0x08) {
+            /* Pause had been pressed. Clear suspend flag and do nothing. */
+            mf2_flags &= ~0x08;
+            write_byte(0x0040, 0x18, mf2_flags);
+            return;
+        }
+
         if (scancode & 0x80) {
             /* Set ack/resend flags if appropriate. */
             if (scancode == 0xFA) {
