@@ -30,8 +30,7 @@ if1of ($(KBUILD_TARGET), win linux solaris freebsd)
     VBoxOGLarrayspu \
     VBoxOGLpassthroughspu \
     VBoxOGLpackspu \
-    VBoxOGLfeedbackspu \
-    VBoxEGL
+    VBoxOGLfeedbackspu
 endif
 
 VBOX_OGL_X86_GUEST_DLLS = \
@@ -47,7 +46,8 @@ endif
 
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  #VBoxOGL_DRI = 1
- ifn1of ($(KBUILD_TARGET),solaris)   # No DRI on Solaris yet
+ DLLS += VBoxEGL
+ ifn1of ($(KBUILD_TARGET),linux solaris)   # No DRI on Solaris yet
   VBoxOGL_FAKEDRI = 1
  endif
 

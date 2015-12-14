@@ -2267,14 +2267,11 @@ ifdef VBOX_WITH_CROGL
  endif
 
  ifeq ($(KBUILD_TARGET),win)
-  VBOX_LIB_OGL = $(PATH_OBJ)/VBoxOGLcrutil/VBoxOGL$(VBOX_SUFF_LIB)
   VBOX_LIB_OGL_CRUTIL = $(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
   VBOX_LIB_OGL_HOSTCRUTIL = $(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
   ifeq ($(KBUILD_TARGET),x86)
-   VBOX_LIB_OGL_X86             = $(VBOX_LIB_OGL)
    VBOX_LIB_OGL_CRUTIL_X86      = $(VBOX_LIB_OGL_CRUTIL)
   else
-   VBOX_LIB_OGL_X86             = $(PATH_OBJ)/VBoxOGLcrutil-x86/VBoxOGL-x86$(VBOX_SUFF_LIB)
    VBOX_LIB_OGL_CRUTIL_X86      = $(PATH_OBJ)/VBoxOGLcrutil-x86/VBoxOGLcrutil-x86$(VBOX_SUFF_LIB)
   endif
  else
