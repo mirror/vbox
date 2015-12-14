@@ -325,6 +325,7 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
     pDev->pszHubName = RTStrDup(lpszHubName);
     pDev->bNumConfigurations = 0;
     pDev->u64SerialHash = 0;
+    pDev->pszBackend = RTStrDup("host");
 
     for (; pDrList; pDrList = pDrList->pNext)
     {
