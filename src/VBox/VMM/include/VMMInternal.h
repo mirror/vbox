@@ -265,7 +265,7 @@ typedef struct VMM
     uint32_t                    cbRCRelLogger;
     /** Whether log flushing has been disabled or not. */
     bool                        fRCLoggerFlushingDisabled;
-    bool                        afAlignment[5]; /**< Alignment padding. */
+    bool                        afAlignment1[5]; /**< Alignment padding. */
     /** @} */
 
     /** Whether the stack guard pages have been stationed or not. */
@@ -295,6 +295,16 @@ typedef struct VMM
     RTSEMEVENTMULTI             hEvtMulRendezvousDone;
     /** Semaphore the VMMR3EmtRendezvous caller waits on at the end. */
     RTSEMEVENT                  hEvtRendezvousDoneCaller;
+    /** Semaphore to wait on upon recursing. */
+    RTSEMEVENTMULTI             hEvtMulRendezvousRecursionPush;
+    /** Semaphore to wait on after done with recursion (caller restoring state). */
+    RTSEMEVENTMULTI             hEvtMulRendezvousRecursionPop;
+    /** Semaphore the initiator waits on while the EMTs are getting into position
+     *  on hEvtMulRendezvousRecursionPush. */
+    RTSEMEVENT                  hEvtRendezvousRecursionPushCaller;
+    /** Semaphore the initiator waits on while the EMTs sitting on
+     *  hEvtMulRendezvousRecursionPop wakes up and leave. */
+    RTSEMEVENT                  hEvtRendezvousRecursionPopCaller;
     /** Callback. */
     R3PTRTYPE(PFNVMMEMTRENDEZVOUS) volatile pfnRendezvous;
     /** The user argument for the callback. */
@@ -311,11 +321,17 @@ typedef struct VMM
     volatile int32_t            i32RendezvousStatus;
     /** Spin lock. */
     volatile uint32_t           u32RendezvousLock;
-    /** @} */
+    /** The recursion depth. */
+    volatile uint32_t           cRendezvousRecursions;
+    /** The number of EMTs that have entered the recursion routine. */
+    volatile uint32_t           cRendezvousEmtsRecursingPush;
+    /** The number of EMTs that have leaft the recursion routine. */
+    volatile uint32_t           cRendezvousEmtsRecursingPop;
+    /** Triggers rendezvous recursion in the other threads. */
+    volatile bool               fRendezvousRecursion;
 
-#if HC_ARCH_BITS == 32
-    uint32_t                    u32Alignment; /**< Alignment padding. */
-#endif
+    /** @} */
+    bool                        afAlignment2[HC_ARCH_BITS == 32 ? 7 : 3]; /**< Alignment padding. */
 
     /** Buffer for storing the standard assertion message for a ring-0 assertion.
      * Used for saving the assertion message text for the release log and guru
