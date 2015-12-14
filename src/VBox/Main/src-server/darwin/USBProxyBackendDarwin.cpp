@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "USBProxyService.h"
+#include "USBProxyBackend.h"
 #include "Logging.h"
 #include "iokit.h"
 
@@ -38,10 +38,10 @@
 /**
  * Initialize data members.
  */
-USBProxyServiceDarwin::USBProxyServiceDarwin(Host *aHost)
-    : USBProxyService(aHost), mServiceRunLoopRef(NULL), mNotifyOpaque(NULL), mWaitABitNextTime(false), mUSBLibInitialized(false)
+USBProxyBackendDarwin::USBProxyBackendDarwin(USBProxyService *aUsbProxyService)
+    : USBProxyBackend(aUsbProxyService), mServiceRunLoopRef(NULL), mNotifyOpaque(NULL), mWaitABitNextTime(false), mUSBLibInitialized(false)
 {
-    LogFlowThisFunc(("aHost=%p\n", aHost));
+    LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
 }
 
 
@@ -50,7 +50,7 @@ USBProxyServiceDarwin::USBProxyServiceDarwin(Host *aHost)
  *
  * @returns VBox status code.
  */
-int USBProxyServiceDarwin::init(void)
+int USBProxyBackendDarwin::init(void)
 {
     /*
      * Initialize the USB library.
@@ -72,7 +72,7 @@ int USBProxyServiceDarwin::init(void)
 /**
  * Stop all service threads and free the device chain.
  */
-USBProxyServiceDarwin::~USBProxyServiceDarwin()
+USBProxyBackendDarwin::~USBProxyBackendDarwin()
 {
     LogFlowThisFunc(("\n"));
 
@@ -93,19 +93,19 @@ USBProxyServiceDarwin::~USBProxyServiceDarwin()
 }
 
 
-void *USBProxyServiceDarwin::insertFilter(PCUSBFILTER aFilter)
+void *USBProxyBackendDarwin::insertFilter(PCUSBFILTER aFilter)
 {
     return USBLibAddFilter(aFilter);
 }
 
 
-void USBProxyServiceDarwin::removeFilter(void *aId)
+void USBProxyBackendDarwin::removeFilter(void *aId)
 {
     USBLibRemoveFilter(aId);
 }
 
 
-int USBProxyServiceDarwin::captureDevice(HostUSBDevice *aDevice)
+int USBProxyBackendDarwin::captureDevice(HostUSBDevice *aDevice)
 {
     /*
      * Check preconditions.
@@ -143,7 +143,7 @@ int USBProxyServiceDarwin::captureDevice(HostUSBDevice *aDevice)
 }
 
 
-void USBProxyServiceDarwin::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
+void USBProxyBackendDarwin::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
     AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
 
@@ -157,7 +157,7 @@ void USBProxyServiceDarwin::captureDeviceCompleted(HostUSBDevice *aDevice, bool 
 }
 
 
-int USBProxyServiceDarwin::releaseDevice(HostUSBDevice *aDevice)
+int USBProxyBackendDarwin::releaseDevice(HostUSBDevice *aDevice)
 {
     /*
      * Check preconditions.
@@ -197,7 +197,7 @@ int USBProxyServiceDarwin::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-void USBProxyServiceDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
+void USBProxyBackendDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
     AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
 
@@ -212,13 +212,13 @@ void USBProxyServiceDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool 
 
 
 /** @todo unused */
-void USBProxyServiceDarwin::detachingDevice(HostUSBDevice *aDevice)
+void USBProxyBackendDarwin::detachingDevice(HostUSBDevice *aDevice)
 {
     NOREF(aDevice);
 }
 
 
-bool USBProxyServiceDarwin::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
+bool USBProxyBackendDarwin::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
@@ -227,7 +227,7 @@ bool USBProxyServiceDarwin::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE
 }
 
 
-int USBProxyServiceDarwin::wait(RTMSINTERVAL aMillies)
+int USBProxyBackendDarwin::wait(RTMSINTERVAL aMillies)
 {
     SInt32 rc = CFRunLoopRunInMode(CFSTR(VBOX_IOKIT_MODE_STRING),
                                    mWaitABitNextTime && aMillies >= 1000
@@ -242,7 +242,7 @@ int USBProxyServiceDarwin::wait(RTMSINTERVAL aMillies)
 }
 
 
-int USBProxyServiceDarwin::interruptWait(void)
+int USBProxyBackendDarwin::interruptWait(void)
 {
     if (mServiceRunLoopRef)
         CFRunLoopStop(mServiceRunLoopRef);
@@ -250,21 +250,21 @@ int USBProxyServiceDarwin::interruptWait(void)
 }
 
 
-PUSBDEVICE USBProxyServiceDarwin::getDevices(void)
+PUSBDEVICE USBProxyBackendDarwin::getDevices(void)
 {
     /* call iokit.cpp */
     return DarwinGetUSBDevices();
 }
 
 
-void USBProxyServiceDarwin::serviceThreadInit(void)
+void USBProxyBackendDarwin::serviceThreadInit(void)
 {
     mServiceRunLoopRef = CFRunLoopGetCurrent();
     mNotifyOpaque = DarwinSubscribeUSBNotifications();
 }
 
 
-void USBProxyServiceDarwin::serviceThreadTerm(void)
+void USBProxyBackendDarwin::serviceThreadTerm(void)
 {
     DarwinUnsubscribeUSBNotifications(mNotifyOpaque);
     mServiceRunLoopRef = NULL;

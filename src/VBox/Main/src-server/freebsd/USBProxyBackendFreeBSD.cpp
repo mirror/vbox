@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "USBProxyService.h"
+#include "USBProxyBackend.h"
 #include "Logging.h"
 
 #include <VBox/usb.h>
@@ -59,10 +59,10 @@
 /**
  * Initialize data members.
  */
-USBProxyServiceFreeBSD::USBProxyServiceFreeBSD(Host *aHost)
-    : USBProxyService(aHost)
+USBProxyBackendFreeBSD::USBProxyBackendFreeBSD(USBProxyService *aUsbProxyService)
+    : USBProxyBackend(aHost)
 {
-    LogFlowThisFunc(("aHost=%p\n", aHost));
+    LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
 }
 
 
@@ -71,7 +71,7 @@ USBProxyServiceFreeBSD::USBProxyServiceFreeBSD(Host *aHost)
  *
  * @returns S_OK on success and non-fatal failures, some COM error otherwise.
  */
-int USBProxyServiceFreeBSD::init(void)
+int USBProxyBackendFreeBSD::init(void)
 {
     /*
      * Create semaphore.
@@ -91,7 +91,7 @@ int USBProxyServiceFreeBSD::init(void)
 /**
  * Stop all service threads and free the device chain.
  */
-USBProxyServiceFreeBSD::~USBProxyServiceFreeBSD()
+USBProxyBackendFreeBSD::~USBProxyBackendFreeBSD()
 {
     LogFlowThisFunc(("\n"));
 
@@ -106,7 +106,7 @@ USBProxyServiceFreeBSD::~USBProxyServiceFreeBSD()
 }
 
 
-int USBProxyServiceFreeBSD::captureDevice(HostUSBDevice *aDevice)
+int USBProxyBackendFreeBSD::captureDevice(HostUSBDevice *aDevice)
 {
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
@@ -125,7 +125,7 @@ int USBProxyServiceFreeBSD::captureDevice(HostUSBDevice *aDevice)
 }
 
 
-int USBProxyServiceFreeBSD::releaseDevice(HostUSBDevice *aDevice)
+int USBProxyBackendFreeBSD::releaseDevice(HostUSBDevice *aDevice)
 {
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
@@ -144,7 +144,7 @@ int USBProxyServiceFreeBSD::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-bool USBProxyServiceFreeBSD::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
+bool USBProxyBackendFreeBSD::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
                                                SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
@@ -159,19 +159,19 @@ bool USBProxyServiceFreeBSD::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVIC
  *
  * See USBProxyService::deviceAdded for details.
  */
-void USBProxyServiceFreeBSD::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines,
+void USBProxyBackendFreeBSD::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines,
                                          PUSBDEVICE aUSBDevice)
 {
     USBProxyService::deviceAdded(aDevice, llOpenedMachines, aUSBDevice);
 }
 
-int USBProxyServiceFreeBSD::wait(RTMSINTERVAL aMillies)
+int USBProxyBackendFreeBSD::wait(RTMSINTERVAL aMillies)
 {
     return RTSemEventWait(mNotifyEventSem, aMillies < 1000 ? 1000 : 5000);
 }
 
 
-int USBProxyServiceFreeBSD::interruptWait(void)
+int USBProxyBackendFreeBSD::interruptWait(void)
 {
     return RTSemEventSignal(mNotifyEventSem);
 }
@@ -217,7 +217,7 @@ DECLINLINE(void) usbLogDevice(PUSBDEVICE pDev)
     Log3(("OS device address: %s\n", pDev->pszAddress));
 }
 
-PUSBDEVICE USBProxyServiceFreeBSD::getDevices(void)
+PUSBDEVICE USBProxyBackendFreeBSD::getDevices(void)
 {
     PUSBDEVICE pDevices = NULL;
     int FileUsb = 0;

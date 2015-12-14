@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "USBProxyService.h"
+#include "USBProxyBackend.h"
 #include "Logging.h"
 
 #include <VBox/usb.h>
@@ -37,10 +37,10 @@
 /**
  * Initialize data members.
  */
-USBProxyServiceWindows::USBProxyServiceWindows(Host *aHost)
-    : USBProxyService(aHost), mhEventInterrupt(INVALID_HANDLE_VALUE)
+USBProxyBackendWindows::USBProxyBackendWindows(USBProxyService *aUsbProxyService)
+    : USBProxyBackend(aHost), mhEventInterrupt(INVALID_HANDLE_VALUE)
 {
-    LogFlowThisFunc(("aHost=%p\n", aHost));
+    LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
 }
 
 
@@ -49,7 +49,7 @@ USBProxyServiceWindows::USBProxyServiceWindows(Host *aHost)
  *
  * @returns S_OK on success and non-fatal failures, some COM error otherwise.
  */
-int USBProxyServiceWindows::init(void)
+int USBProxyBackendWindows::init(void)
 {
     /*
      * Create the semaphore (considered fatal).
@@ -87,7 +87,7 @@ int USBProxyServiceWindows::init(void)
 /**
  * Stop all service threads and free the device chain.
  */
-USBProxyServiceWindows::~USBProxyServiceWindows()
+USBProxyBackendWindows::~USBProxyBackendWindows()
 {
     LogFlowThisFunc(("\n"));
 
@@ -109,7 +109,7 @@ USBProxyServiceWindows::~USBProxyServiceWindows()
 }
 
 
-void *USBProxyServiceWindows::insertFilter(PCUSBFILTER aFilter)
+void *USBProxyBackendWindows::insertFilter(PCUSBFILTER aFilter)
 {
     AssertReturn(aFilter, NULL);
 
@@ -123,7 +123,7 @@ void *USBProxyServiceWindows::insertFilter(PCUSBFILTER aFilter)
 }
 
 
-void USBProxyServiceWindows::removeFilter(void *aID)
+void USBProxyBackendWindows::removeFilter(void *aID)
 {
     LogFlow(("USBProxyServiceWindows::removeFilter(): id=%p\n", aID));
 
@@ -133,7 +133,7 @@ void USBProxyServiceWindows::removeFilter(void *aID)
 }
 
 
-int USBProxyServiceWindows::captureDevice(HostUSBDevice *aDevice)
+int USBProxyBackendWindows::captureDevice(HostUSBDevice *aDevice)
 {
     /*
      * Check preconditions.
@@ -175,7 +175,7 @@ int USBProxyServiceWindows::captureDevice(HostUSBDevice *aDevice)
 }
 
 
-int USBProxyServiceWindows::releaseDevice(HostUSBDevice *aDevice)
+int USBProxyBackendWindows::releaseDevice(HostUSBDevice *aDevice)
 {
     /*
      * Check preconditions.
@@ -218,7 +218,7 @@ int USBProxyServiceWindows::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-bool USBProxyServiceWindows::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
+bool USBProxyBackendWindows::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
                                                SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
@@ -228,13 +228,13 @@ bool USBProxyServiceWindows::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVIC
 }
 
 
-int USBProxyServiceWindows::wait(unsigned aMillies)
+int USBProxyBackendWindows::wait(unsigned aMillies)
 {
     return USBLibWaitChange(aMillies);
 }
 
 
-int USBProxyServiceWindows::interruptWait(void)
+int USBProxyBackendWindows::interruptWait(void)
 {
     return USBLibInterruptWaitChange();
 }
@@ -242,7 +242,7 @@ int USBProxyServiceWindows::interruptWait(void)
 /**
  * Gets a list of all devices the VM can grab
  */
-PUSBDEVICE USBProxyServiceWindows::getDevices(void)
+PUSBDEVICE USBProxyBackendWindows::getDevices(void)
 {
     PUSBDEVICE pDevices = NULL;
     uint32_t cDevices = 0;

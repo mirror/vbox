@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "USBProxyService.h"
+#include "USBProxyBackend.h"
 #include "Logging.h"
 
 #include <VBox/usb.h>
@@ -54,10 +54,10 @@ typedef USBDEVICELIST *PUSBDEVICELIST;
 /**
  * Initialize data members.
  */
-USBProxyServiceSolaris::USBProxyServiceSolaris(Host *aHost)
-    : USBProxyService(aHost), mUSBLibInitialized(false)
+USBProxyBackendSolaris::USBProxyBackendSolaris(USBProxyService *aUsbProxyService)
+    : USBProxyBackend(aUsbProxyService), mUSBLibInitialized(false)
 {
-    LogFlowThisFunc(("aHost=%p\n", aHost));
+    LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
 }
 
 
@@ -66,7 +66,7 @@ USBProxyServiceSolaris::USBProxyServiceSolaris(Host *aHost)
  *
  * @returns VBox status code.
  */
-int USBProxyServiceSolaris::init(void)
+int USBProxyBackendSolaris::init(void)
 {
     /*
      * Create semaphore.
@@ -98,7 +98,7 @@ int USBProxyServiceSolaris::init(void)
 /**
  * Stop all service threads and free the device chain.
  */
-USBProxyServiceSolaris::~USBProxyServiceSolaris()
+USBProxyBackendSolaris::~USBProxyBackendSolaris()
 {
     LogFlowThisFunc(("destruct\n"));
 
@@ -122,31 +122,31 @@ USBProxyServiceSolaris::~USBProxyServiceSolaris()
 }
 
 
-void *USBProxyServiceSolaris::insertFilter(PCUSBFILTER aFilter)
+void *USBProxyBackendSolaris::insertFilter(PCUSBFILTER aFilter)
 {
     return USBLibAddFilter(aFilter);
 }
 
 
-void USBProxyServiceSolaris::removeFilter(void *pvID)
+voidUSBProxyBackendSolaris::removeFilter(void *pvID)
 {
     USBLibRemoveFilter(pvID);
 }
 
 
-int USBProxyServiceSolaris::wait(RTMSINTERVAL aMillies)
+int USBProxyBackendSolaris::wait(RTMSINTERVAL aMillies)
 {
     return RTSemEventWait(mNotifyEventSem, aMillies < 1000 ? 1000 : RT_MIN(aMillies, 5000));
 }
 
 
-int USBProxyServiceSolaris::interruptWait(void)
+int USBProxyBackendSolaris::interruptWait(void)
 {
     return RTSemEventSignal(mNotifyEventSem);
 }
 
 
-PUSBDEVICE USBProxyServiceSolaris::getDevices(void)
+PUSBDEVICE USBProxyBackendSolaris::getDevices(void)
 {
     USBDEVICELIST DevList;
     DevList.pHead = NULL;
@@ -327,7 +327,7 @@ static USBDEVICESTATE solarisDetermineUSBDeviceState(PUSBDEVICE pDevice, di_node
 }
 
 
-int USBProxyServiceSolaris::captureDevice(HostUSBDevice *aDevice)
+int USBProxyBackendSolaris::captureDevice(HostUSBDevice *aDevice)
 {
     /*
      * Check preconditions.
@@ -369,7 +369,7 @@ int USBProxyServiceSolaris::captureDevice(HostUSBDevice *aDevice)
 }
 
 
-void USBProxyServiceSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
+void USBProxyBackendSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
     AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
     /*
@@ -382,7 +382,7 @@ void USBProxyServiceSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool
 }
 
 
-int USBProxyServiceSolaris::releaseDevice(HostUSBDevice *aDevice)
+int USBProxyBackendSolaris::releaseDevice(HostUSBDevice *aDevice)
 {
     /*
      * Check preconditions.
@@ -424,7 +424,7 @@ int USBProxyServiceSolaris::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-void USBProxyServiceSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
+void USBProxyBackendSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
     AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
     /*
@@ -437,7 +437,7 @@ void USBProxyServiceSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool
 }
 
 
-bool USBProxyServiceSolaris::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
+bool USBProxyBackendSolaris::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
                                                SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);

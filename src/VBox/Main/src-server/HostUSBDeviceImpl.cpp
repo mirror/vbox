@@ -988,10 +988,8 @@ int HostUSBDevice::i_compare(PCUSBDEVICE aDev2)
 /*static*/
 int HostUSBDevice::i_compare(PCUSBDEVICE aDev1, PCUSBDEVICE aDev2, bool aIsAwaitingReAttach /*= false */)
 {
-    if (strcmp(aDev1->pszBackend, aDev2->pszBackend))
-    {
-        return 1;
-    }
+    /* Comparing devices from different backends doesn't make any sense and should not happen. */
+    AssertReturn(!strcmp(aDev1->pszBackend, aDev2->pszBackend), -1);
 
     /*
      * Things that stays the same everywhere.
