@@ -1004,6 +1004,9 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                     pCur->pszProduct = RTStrDup("Bluetooth");
                 darwinDictDupString(PropsRef, CFSTR("USB Serial Number"),   (char **)&pCur->pszSerialNumber);
 
+                pCur->pszBackend = RTStrDup("host");
+                AssertBreak(pCur->pszBackend);
+
 #if 0           /* leave the remainder as zero for now. */
                 /*
                  * Create a plugin interface for the service and query its USB Device interface.

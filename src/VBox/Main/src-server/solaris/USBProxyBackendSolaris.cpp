@@ -262,9 +262,13 @@ static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
             char szBuf[PATH_MAX + 48];
             RTStrPrintf(szBuf, sizeof(szBuf), "%#x:%#x:%d:%s", pCur->idVendor, pCur->idProduct, pCur->bcdDevice, pszDevicePath);
             pCur->pszAddress = RTStrDup(szBuf);
+            AssertBreak(pCur->pszAddress);
 
             pCur->pszDevicePath = RTStrDup(pszDevicePath);
             AssertBreak(pCur->pszDevicePath);
+
+            pCur->pszBackend = RTStrDup("host");
+            AssertBreak(pCur->pszBackend);
 
             /*
              * Optional (some devices don't have all these)

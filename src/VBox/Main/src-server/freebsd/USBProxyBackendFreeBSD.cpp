@@ -333,6 +333,7 @@ PUSBDEVICE USBProxyBackendFreeBSD::getDevices(void)
                 pDevice->u64SerialHash  += PlugTime;
 
             pDevice->pszAddress = RTStrDup(pszDevicePath);
+            pDevice->pszBackend = RTStrDup("host");
             pDevice->enmState   = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
 
             usbLogDevice(pDevice);

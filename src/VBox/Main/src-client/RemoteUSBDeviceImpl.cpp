@@ -75,8 +75,7 @@ HRESULT RemoteUSBDevice::init(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevDesc,
     char id[64];
     RTStrPrintf(id, sizeof(id), REMOTE_USB_BACKEND_PREFIX_S "0x%08X&0x%08X", pDevDesc->id, u32ClientId);
     unconst(mData.address)      = id;
-    RTStrPrintf(id, sizeof(id), "vrdp");
-    unconst(mData.backend)      = id;
+    unconst(mData.backend)      = "vrdp";
 
     unconst(mData.port)         = pDevDesc->idPort;
     unconst(mData.version)      = pDevDesc->bcdUSB >> 8;
