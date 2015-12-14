@@ -2101,7 +2101,7 @@ static VBOXSTRICTRC vmmR3EmtRendezvousRecursive(PVM pVM, PVMCPU pVCpu, uint32_t 
  * @param   fFlags          Flags indicating execution methods. See
  *                          grp_VMMR3EmtRendezvous_fFlags.  The one-by-one,
  *                          descending and ascending rendezvous types support
- *                          recursion.
+ *                          recursion from inside @a pfnRendezvous.
  * @param   pfnRendezvous   The callback.
  * @param   pvUser          User argument for the callback.
  *

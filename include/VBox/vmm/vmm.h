@@ -318,15 +318,20 @@ VMMR3_INT_DECL(bool)    VMMR3EmtRendezvousSetDisabled(PVMCPU pVCpu, bool fDisabl
 #define VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK            UINT32_C(0x00000007)
 /** Invalid execution type. */
 #define VMMEMTRENDEZVOUS_FLAGS_TYPE_INVALID         UINT32_C(0)
-/** Let the EMTs execute the callback one by one (in no particular order). */
+/** Let the EMTs execute the callback one by one (in no particular order).
+ * Recursion from within the callback possible.  */
 #define VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE      UINT32_C(1)
-/** Let all the EMTs execute the callback at the same time. */
+/** Let all the EMTs execute the callback at the same time.
+ * Cannot recurse from the callback.  */
 #define VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE     UINT32_C(2)
-/** Only execute the callback on one EMT (no particular one). */
+/** Only execute the callback on one EMT (no particular one).
+ * Cannot recurse from the callback.  */
 #define VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE            UINT32_C(3)
-/** Let the EMTs execute the callback one by one in ascending order. */
+/** Let the EMTs execute the callback one by one in ascending order.
+ * Recursion from within the callback possible. */
 #define VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING       UINT32_C(4)
-/** Let the EMTs execute the callback one by one in descending order. */
+/** Let the EMTs execute the callback one by one in descending order.
+ * Recursion from within the callback possible. */
 #define VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING      UINT32_C(5)
 /** Stop after the first error.
  * This is not valid for any execution type where more than one EMT is active
