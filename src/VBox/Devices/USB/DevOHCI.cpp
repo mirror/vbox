@@ -2184,7 +2184,7 @@ static void ohciCalcTimerIntervals(POHCI pThis, uint32_t u32FrameRate)
  * @returns nothing.
  * @param   pThis    The OHCI device data.
  */
-static void ohciFramerateCalcNew(POHCI pThis)
+static bool ohciFramerateCalcNew(POHCI pThis)
 {
     uint32_t uNewFrameRate = pThis->uFrameRate;
 
@@ -2218,7 +2218,9 @@ static void ohciFramerateCalcNew(POHCI pThis)
     {
         LogFlow(("Frame rate changed from %u to %u\n", pThis->uFrameRate, uNewFrameRate));
         ohciCalcTimerIntervals(pThis, uNewFrameRate);
+        return true;
     }
+    return false;
 }
 
 
@@ -2608,9 +2610,10 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
     /* finally write back the endpoint descriptor. */
     ohciWriteEd(pThis, pUrb->Hci.EdAddr, &Ed);
 
-    /* Calculate new frame rate and wakeup the . */
-    ohciFramerateCalcNew(pThis);
-    RTSemEventMultiSignal(pThis->hSemEventFrame);
+    /* Calculate new frame rate and wakeup the framer thread if the rate was chnaged. */
+    if (ohciFramerateCalcNew(pThis))
+        RTSemEventMultiSignal(pThis->hSemEventFrame);
+
     RTCritSectLeave(&pThis->CritSect);
 }
 
