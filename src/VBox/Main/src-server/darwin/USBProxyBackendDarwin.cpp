@@ -130,7 +130,7 @@ int USBProxyBackendDarwin::captureDevice(HostUSBDevice *aDevice)
     if (!pvId)
         return VERR_GENERAL_FAILURE;
 
-    int rc = DarwinReEnumerateUSBDevice(aDevice->mUsb);
+    int rc = DarwinReEnumerateUSBDevice(aDevice->i_getUsbData());
     if (RT_SUCCESS(rc))
         aDevice->i_setBackendUserData(pvId);
     else
@@ -184,7 +184,7 @@ int USBProxyBackendDarwin::releaseDevice(HostUSBDevice *aDevice)
     if (!pvId)
         return VERR_GENERAL_FAILURE;
 
-    int rc = DarwinReEnumerateUSBDevice(aDevice->mUsb);
+    int rc = DarwinReEnumerateUSBDevice(aDevice->i_getUsbData());
     if (RT_SUCCESS(rc))
         aDevice->i_setBackendUserData(pvId);
     else
