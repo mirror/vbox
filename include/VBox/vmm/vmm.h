@@ -325,7 +325,7 @@ VMMR3_INT_DECL(bool)    VMMR3EmtRendezvousSetDisabled(PVMCPU pVCpu, bool fDisabl
  * Cannot recurse from the callback.  */
 #define VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE     UINT32_C(2)
 /** Only execute the callback on one EMT (no particular one).
- * Cannot recurse from the callback.  */
+ * Recursion from within the callback possible.  */
 #define VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE            UINT32_C(3)
 /** Let the EMTs execute the callback one by one in ascending order.
  * Recursion from within the callback possible. */

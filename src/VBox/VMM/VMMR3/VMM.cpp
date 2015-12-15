@@ -1728,9 +1728,14 @@ static VBOXSTRICTRC vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCall
              */
             if (!fIsCaller)
             {
-                rc = RTSemEventMultiWait(pVM->vmm.s.hEvtMulRendezvousDone, RT_INDEFINITE_WAIT);
-                AssertLogRelRC(rc);
-                Assert(!pVM->vmm.s.fRendezvousRecursion);
+                for (;;)
+                {
+                    rc = RTSemEventMultiWait(pVM->vmm.s.hEvtMulRendezvousDone, RT_INDEFINITE_WAIT);
+                    AssertLogRelRC(rc);
+                    if (!pVM->vmm.s.fRendezvousRecursion)
+                        break;
+                    rcStrictRecursion = vmmR3EmtRendezvousCommonRecursion(pVM, pVCpu, rcStrictRecursion);
+                }
 
                 return vmmR3EmtRendezvousNonCallerReturn(pVM, rcStrictRecursion);
             }
@@ -1763,8 +1768,14 @@ static VBOXSTRICTRC vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCall
             {
                 rc = RTSemEventSignal(pVM->vmm.s.pahEvtRendezvousEnterOrdered[iFirst]);
                 AssertLogRelRC(rc);
-                rc = RTSemEventWait(pVM->vmm.s.pahEvtRendezvousEnterOrdered[pVCpu->idCpu], RT_INDEFINITE_WAIT);
-                AssertLogRelRC(rc);
+                for (;;)
+                {
+                    rc = RTSemEventWait(pVM->vmm.s.pahEvtRendezvousEnterOrdered[pVCpu->idCpu], RT_INDEFINITE_WAIT);
+                    AssertLogRelRC(rc);
+                    if (!pVM->vmm.s.fRendezvousRecursion)
+                        break;
+                    rcStrictRecursion = vmmR3EmtRendezvousCommonRecursion(pVM, pVCpu, rcStrictRecursion);
+                }
             }
         }
         /* else: execute the handler on the current EMT and wake up one or more threads afterwards. */
@@ -1923,7 +1934,8 @@ static VBOXSTRICTRC vmmR3EmtRendezvousRecursive(PVM pVM, PVMCPU pVCpu, uint32_t 
      */
     AssertReturn(   (fParentFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING
                  || (fParentFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING
-                 || (fParentFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE,
+                 || (fParentFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE
+                 || (fParentFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE,
                  VERR_INTERNAL_ERROR);
     AssertReturn(pVM->vmm.s.cRendezvousEmtsEntered == pVM->cCpus, VERR_INTERNAL_ERROR_2);
     AssertReturn(pVM->vmm.s.cRendezvousEmtsReturned == 0, VERR_INTERNAL_ERROR_3);
@@ -1944,17 +1956,16 @@ static VBOXSTRICTRC vmmR3EmtRendezvousRecursive(PVM pVM, PVMCPU pVCpu, uint32_t 
      * Usher the other thread into the recursion routine.
      */
     ASMAtomicWriteU32(&pVM->vmm.s.cRendezvousEmtsRecursingPush, 0);
-    ASMAtomicWriteU32(&pVM->vmm.s.cRendezvousEmtsRecursingPop, 0);
     ASMAtomicWriteBool(&pVM->vmm.s.fRendezvousRecursion, true);
 
     uint32_t cLeft = pVM->cCpus - (cParentDone + 1U);
-    if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE)
+    if ((fParentFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE)
         while (cLeft-- > 0)
         {
             rc = RTSemEventSignal(pVM->vmm.s.hEvtRendezvousEnterOneByOne);
             AssertLogRelRC(rc);
         }
-    else if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING)
+    else if ((fParentFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING)
     {
         Assert(cLeft == pVM->cCpus - (pVCpu->idCpu + 1U));
         for (VMCPUID iCpu = pVCpu->idCpu + 1U; iCpu < pVM->cCpus; iCpu++)
@@ -1963,17 +1974,18 @@ static VBOXSTRICTRC vmmR3EmtRendezvousRecursive(PVM pVM, PVMCPU pVCpu, uint32_t 
             AssertLogRelRC(rc);
         }
     }
-    else if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING)
+    else if ((fParentFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING)
     {
         Assert(cLeft == pVCpu->idCpu);
-        for (VMCPUID iCpu = pVCpu->idCpu; iCpu > pVM->cCpus; iCpu--)
+        for (VMCPUID iCpu = pVCpu->idCpu; iCpu > 0; iCpu--)
         {
             rc = RTSemEventSignal(pVM->vmm.s.pahEvtRendezvousEnterOrdered[iCpu - 1U]);
             AssertLogRelRC(rc);
         }
     }
     else
-        AssertLogRelFailedReturn(VERR_INTERNAL_ERROR_4);
+        AssertLogRelReturn((fParentFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE,
+                           VERR_INTERNAL_ERROR_4);
 
     rc = RTSemEventMultiSignal(pVM->vmm.s.hEvtMulRendezvousDone);
     AssertLogRelRC(rc);
@@ -2068,9 +2080,10 @@ static VBOXSTRICTRC vmmR3EmtRendezvousRecursive(PVM pVM, PVMCPU pVCpu, uint32_t 
     /*
      * Usher the other EMTs back to their parent recursion routine, waiting
      * for them to all get there before we return (makes sure they've been
-     * scheduled and are in position again - paranoia, shouldn't be needed).
+     * scheduled and are past the pop event sem, see below).
      */
-    rc = RTSemEventMultiSignal(pVM->vmm.s.hEvtMulRendezvousRecursionPush);
+    ASMAtomicWriteU32(&pVM->vmm.s.cRendezvousEmtsRecursingPop, 0);
+    rc = RTSemEventMultiSignal(pVM->vmm.s.hEvtMulRendezvousRecursionPop);
     AssertLogRelRC(rc);
 
     if (ASMAtomicIncU32(&pVM->vmm.s.cRendezvousEmtsRecursingPop) != pVM->cCpus)
@@ -2078,6 +2091,13 @@ static VBOXSTRICTRC vmmR3EmtRendezvousRecursive(PVM pVM, PVMCPU pVCpu, uint32_t 
         rc = RTSemEventWait(pVM->vmm.s.hEvtRendezvousRecursionPopCaller, RT_INDEFINITE_WAIT);
         AssertLogRelRC(rc);
     }
+
+    /*
+     * We must reset the pop semaphore on the way out (doing the pop caller too,
+     * just in case).  The parent may be another recursion.
+     */
+    rc = RTSemEventMultiReset(pVM->vmm.s.hEvtMulRendezvousRecursionPop);    AssertLogRelRC(rc);
+    rc = vmmR3HlpResetEvent(pVM->vmm.s.hEvtRendezvousRecursionPopCaller);   AssertLogRelMsg(rc == VERR_TIMEOUT, ("%Rrc\n", rc));
 
     ASMAtomicDecU32(&pVM->vmm.s.cRendezvousRecursions);
 
@@ -2134,10 +2154,34 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
         /*
          * Shortcut for the single EMT case.
          */
-        AssertLogRelReturn(!pVCpu->vmm.s.fInRendezvous, VERR_DEADLOCK);
-        pVCpu->vmm.s.fInRendezvous = true;
-        rcStrict = pfnRendezvous(pVM, pVCpu, pvUser);
-        pVCpu->vmm.s.fInRendezvous = false;
+        if (!pVCpu->vmm.s.fInRendezvous)
+        {
+            pVCpu->vmm.s.fInRendezvous  = true;
+            pVM->vmm.s.fRendezvousFlags = fFlags;
+            rcStrict = pfnRendezvous(pVM, pVCpu, pvUser);
+            pVCpu->vmm.s.fInRendezvous  = false;
+        }
+        else
+        {
+            /* Recursion. Do the same checks as in the SMP case. */
+            uint32_t fType = pVM->vmm.s.fRendezvousFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK;
+            AssertLogRelReturn(   !pVCpu->vmm.s.fInRendezvous
+                               || fType == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING
+                               || fType == VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING
+                               || fType == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE
+                               || fType == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE
+                               , VERR_DEADLOCK);
+
+            AssertLogRelReturn(pVM->vmm.s.cRendezvousRecursions < 3, VERR_DEADLOCK);
+            pVM->vmm.s.cRendezvousRecursions++;
+            uint32_t const fParentFlags = pVM->vmm.s.fRendezvousFlags;
+            pVM->vmm.s.fRendezvousFlags = fFlags;
+
+            rcStrict = pfnRendezvous(pVM, pVCpu, pvUser);
+
+            pVM->vmm.s.fRendezvousFlags = fParentFlags;
+            pVM->vmm.s.cRendezvousRecursions--;
+        }
     }
     else
     {
@@ -2154,6 +2198,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
                 && (   (pVM->vmm.s.fRendezvousFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING
                     || (pVM->vmm.s.fRendezvousFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING
                     || (pVM->vmm.s.fRendezvousFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE
+                    || (pVM->vmm.s.fRendezvousFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE
                        ))
                 return VBOXSTRICTRC_TODO(vmmR3EmtRendezvousRecursive(pVM, pVCpu, fFlags, pfnRendezvous, pvUser));
 
