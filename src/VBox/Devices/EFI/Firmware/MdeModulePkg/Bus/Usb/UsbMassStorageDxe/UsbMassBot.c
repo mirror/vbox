@@ -577,6 +577,11 @@ UsbBotGetMaxLun (
                             &Result
                             );
 
+  // It is possible for the request to fail and return garbage in MaxLun.
+  if (Status != EFI_SUCCESS) {
+    *MaxLun = 0;
+  }
+
   return Status;
 }
 
