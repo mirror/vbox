@@ -1842,7 +1842,7 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
                 hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
 
                 const char *pszUser;
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
                 /* If a domain name is given, construct an UPN (User Principle Name) with
                  * the domain name built-in, e.g. "joedoe@example.com". */
                 char *pszUserUPN = NULL;
@@ -1859,7 +1859,7 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
                 }
 
                 if (!pszUserUPN) /* Fallback */
-#endif
+# endif
                     pszUser = pSessionThread->StartupInfo.szUser;
 
                 rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
