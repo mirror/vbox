@@ -13599,6 +13599,29 @@ HRESULT SessionMachine::authenticateExternal(const std::vector<com::Utf8Str> &aA
 
     HRESULT hr = S_OK;
 
+    if (!mAuthLibCtx.hAuthLibrary)
+    {
+        /* Load the external authentication library. */
+        Bstr authLibrary;
+        mVRDEServer->COMGETTER(AuthLibrary)(authLibrary.asOutParam());
+
+        Utf8Str filename = authLibrary;
+
+        int rc = AuthLibLoad(&mAuthLibCtx, filename.c_str());
+        if (RT_FAILURE(rc))
+        {
+            hr = setError(E_FAIL,
+                          tr("Could not load the external authentication library '%s' (%Rrc)"),
+                          filename.c_str(), rc);
+        }
+    }
+
+    /* The auth library might need the machine lock. */
+    alock.release();
+
+    if (FAILED(hr))
+       return hr;
+
     if (aAuthParams[0] == "VRDEAUTH" && aAuthParams.size() == 7)
     {
         enum VRDEAuthParams
@@ -13613,36 +13636,16 @@ HRESULT SessionMachine::authenticateExternal(const std::vector<com::Utf8Str> &aA
 
         AuthResult result = AuthResultAccessDenied;
 
-        if (!mAuthLibCtx.hAuthLibrary)
-        {
-            /* Load the external authentication library. */
-            Bstr authLibrary;
-            mVRDEServer->COMGETTER(AuthLibrary)(authLibrary.asOutParam());
+        Guid uuid(aAuthParams[parmUuid]);
+        AuthGuestJudgement guestJudgement = (AuthGuestJudgement)aAuthParams[parmGuestJudgement].toUInt32();
+        uint32_t u32ClientId = aAuthParams[parmClientId].toUInt32();
 
-            Utf8Str filename = authLibrary;
-
-            int rc = AuthLibLoad(&mAuthLibCtx, filename.c_str());
-            if (RT_FAILURE(rc))
-            {
-                hr = setError(E_FAIL,
-                              tr("Could not load the external authentication library '%s' (%Rrc)"),
-                              filename.c_str(), rc);
-            }
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            Guid uuid(aAuthParams[parmUuid]);
-            AuthGuestJudgement guestJudgement = (AuthGuestJudgement)aAuthParams[parmGuestJudgement].toUInt32();
-            uint32_t u32ClientId = aAuthParams[parmClientId].toUInt32();
-
-            result = AuthLibAuthenticate(&mAuthLibCtx,
-                                         uuid.raw(), guestJudgement,
-                                         aAuthParams[parmUser].c_str(),
-                                         aAuthParams[parmPassword].c_str(),
-                                         aAuthParams[parmDomain].c_str(),
-                                         u32ClientId);
-        }
+        result = AuthLibAuthenticate(&mAuthLibCtx,
+                                     uuid.raw(), guestJudgement,
+                                     aAuthParams[parmUser].c_str(),
+                                     aAuthParams[parmPassword].c_str(),
+                                     aAuthParams[parmDomain].c_str(),
+                                     u32ClientId);
 
         /* Hack: aAuthParams[parmPassword] is const but the code believes in writable memory. */
         size_t cbPassword = aAuthParams[parmPassword].length();
