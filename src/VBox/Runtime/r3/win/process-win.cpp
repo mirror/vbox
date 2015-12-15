@@ -601,16 +601,15 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
  * Logs on a specified user and returns its primary token.
  *
  * @returns IPRT status code.
- * @param   pwszUser            User name.
+ * @param   pwszUser            User name. A domain name can be specified (as part of a UPN, User Principal Name),
+ *                              e.g. "joedoe@example.com".
  * @param   pwszPassword        Password.
- * @param   pwszDomain          Domain (not used at the moment).
  * @param   phToken             Pointer to store the logon token.
  */
-static int rtProcWinUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain, HANDLE *phToken)
+static int rtProcWinUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, HANDLE *phToken)
 {
     AssertPtrReturn(pwszUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pwszPassword, VERR_INVALID_POINTER);
-    NOREF(pwszDomain); /** @todo Add domain support! */
 
     /*
      * Because we have to deal with http://support.microsoft.com/kb/245683
@@ -620,9 +619,10 @@ static int rtProcWinUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16
      * The SE_TCB_NAME (Policy: Act as part of the operating system) right
      * is required on older windows versions (NT4, W2K, possibly XP).
      */
-    PCRTUTF16 pwszDomainToUse = g_enmWinVer < kRTWinOSType_2K ? L"" /* NT4 and older */ : NULL /* Windows 2000 and up */;
+    PCRTUTF16 pwszDomainNone = g_enmWinVer < kRTWinOSType_2K ? L"" /* NT4 and older */ : NULL /* Windows 2000 and up */;
     BOOL fRc = LogonUserW(pwszUser,
-                          pwszDomainToUse,
+                          /* The domain always is passed as part of the UPN (user name). */
+                          pwszDomainNone,
                           pwszPassword,
                           LOGON32_LOGON_INTERACTIVE,
                           LOGON32_PROVIDER_DEFAULT,
@@ -1303,7 +1303,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
      */
     DWORD   dwErr       = NO_ERROR;
     HANDLE  hTokenLogon = INVALID_HANDLE_VALUE;
-    int rc = rtProcWinUserLogon(pwszUser, pwszPassword, NULL /* Domain */, &hTokenLogon);
+    int rc = rtProcWinUserLogon(pwszUser, pwszPassword, &hTokenLogon);
     if (RT_SUCCESS(rc))
     {
         DWORD  fRc;
@@ -1619,7 +1619,7 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
     {
         RTENV  hEnvToUse = NIL_RTENV;
         HANDLE hToken;
-        rc = rtProcWinUserLogon(pwszUser, pwszPassword, NULL /* Domain */, &hToken);
+        rc = rtProcWinUserLogon(pwszUser, pwszPassword, &hToken);
         if (RT_SUCCESS(rc))
         {
             /* CreateEnvFromToken docs says we should load the profile, though
@@ -2042,7 +2042,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                        TRUE,         /* fInheritHandles */
                                        dwCreationFlags,
                                        pwszzBlock,
-                                       NULL,          /* pCurrentDirectory */
+                                       NULL,         /* pCurrentDirectory */
                                        &StartupInfo,
                                        &ProcInfo))
                         rc = VINF_SUCCESS;
