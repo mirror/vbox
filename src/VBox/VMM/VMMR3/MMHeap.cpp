@@ -109,7 +109,7 @@ void mmR3HeapDestroy(PMMHEAP pHeap)
     }
 
     /*
-     * Free the stat nodes.                                                                     e
+     * Free the stat nodes.
      */
     /** @todo free all nodes in a AVL tree. */
     RTMemFree(pHeap);
