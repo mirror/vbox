@@ -138,7 +138,7 @@
  *
  * We need to intercept all exceptions manually except:
  * - \#NM, \#MF handled in hmR0VmxLoadSharedCR0().
- * - \#AC and #DB are always intercepted to prevent the CPU from deadlocking
+ * - \#AC and \#DB are always intercepted to prevent the CPU from deadlocking
  *   due to bugs in Intel CPUs.
  * - \#PF need not be intercepted even in real-mode if we have Nested Paging
  * support.
