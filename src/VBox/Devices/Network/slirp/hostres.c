@@ -29,7 +29,7 @@
 /* see RFC 1035(4.1.1) */
 struct dnsmsg_header
 {
-    uint16_t id;
+    unsigned id:16;
 
     /* XXX: endianness */
     unsigned rd:1;
