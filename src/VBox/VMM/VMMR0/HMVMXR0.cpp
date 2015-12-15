@@ -8314,13 +8314,14 @@ static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 /**
  * Worker for loading the guest-state bits in the inner VT-x execution loop.
  *
+ * @returns Strict VBox status code (i.e. informational status codes too).
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
  */
-DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static VBOXSTRICTRC hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     HMVMX_ASSERT_PREEMPT_SAFE();
 
@@ -8329,16 +8330,29 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
     HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 #endif
 
+    VBOXSTRICTRC rcStrict;
     if (HMCPU_CF_IS_SET_ONLY(pVCpu, HM_CHANGED_GUEST_RIP))
     {
-        int rc = hmR0VmxLoadGuestRip(pVCpu, pMixedCtx);
-        AssertRC(rc);
+        rcStrict = hmR0VmxLoadGuestRip(pVCpu, pMixedCtx);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /* likely */}
+        else
+        {
+            AssertLogRelMsgFailedReturn(("hmR0VmxLoadGuestStateOptimal: hmR0VmxLoadGuestRip failed! rc=%Rrc\n",
+                                         VBOXSTRICTRC_VAL(rcStrict)), rcStrict);
+        }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadMinimal);
     }
     else if (HMCPU_CF_VALUE(pVCpu))
     {
-        int rc = hmR0VmxLoadGuestState(pVM, pVCpu, pMixedCtx);
-        AssertRC(rc);
+        rcStrict = hmR0VmxLoadGuestState(pVM, pVCpu, pMixedCtx);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /* likely */}
+        else
+        {
+            AssertLogRelMsgFailedReturn(("hmR0VmxLoadGuestStateOptimal: hmR0VmxLoadGuestState failed! rc=%Rrc\n",
+                                         VBOXSTRICTRC_VAL(rcStrict)), rcStrict);
+        }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
     }
 
@@ -8346,6 +8360,7 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
     AssertMsg(   !HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_ALL_GUEST)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
               ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
+    return rcStrict;
 }
 
 
@@ -8445,7 +8460,11 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
      * RIP and some segment registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
      * Hence, this needs to be done -after- injection of events.
      */
-    hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
+    rcStrict = hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    { /* likely */ }
+    else
+        return rcStrict;
 
     /*
      * No longjmps to ring-3 from this point on!!!
@@ -8833,6 +8852,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
 
 
 /** @name Execution loop for single stepping, DBGF events and expensive Dtrace
+ *  probes.
  *
  * The following few functions and associated structure contains the bloat
  * necessary for providing detailed debug events and dtrace probes as well as
@@ -9030,7 +9050,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugStateRevert(PVMCPU pVCpu, PVMXRUNDBGSTAT
 
 
 /**
- * Configures exit controls for current DBGF and DTrace settings.
+ * Configures VM-exit controls for current DBGF and DTrace settings.
  *
  * This updates @a pDbgState and the VMCS execution control fields to reflect
  * the necessary exits demanded by DBGF and DTrace.
@@ -9997,7 +10017,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
      *        accessing APIC page in protected mode. */
 
     /*
-     * Restore exit control settings as we may not reenter this function the
+     * Restore VM-exit control settings as we may not reenter this function the
      * next time around.
      */
     rcStrict = hmR0VmxRunDebugStateRevert(pVCpu, &DbgState, rcStrict);
