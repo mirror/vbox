@@ -1203,12 +1203,13 @@ static void vgsvcGstCtrlProcessFreeArgv(char **papszArgv)
  * @param   phStdErr                    Handle for the process' stderr pipe.
  * @param   pszAsUser                   User name (account) to start the process under.
  * @param   pszPassword                 Password of the specified user.
+ * @param   pszDomain                   Domain to use for authentication.
  * @param   phProcess                   Pointer which will receive the process handle after
  *                                      successful process start.
  */
 static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
                                             PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
-                                            const char *pszPassword, PRTPROCESS phProcess)
+                                            const char *pszPassword, const char *pszDomain, PRTPROCESS phProcess)
 {
     AssertPtrReturn(pszExec, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
@@ -1349,13 +1350,35 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
 #endif
             VGSvcVerbose(3, "Starting process '%s' ...\n", szExecExp);
 
+            const char *pszUser;
+#ifdef RT_OS_WINDOWS
+            /* If a domain name is given, construct an UPN (User Principle Name) with
+             * the domain name built-in, e.g. "joedoe@example.com". */
+            char *pszUserUPN = NULL;
+            if (strlen(pszDomain))
+            {
+                int cbUserUPN = RTStrAPrintf(&pszUserUPN, "%s@%s", pszAsUser, pszDomain);
+                if (cbUserUPN > 0)
+                {
+                    pszUser = pszUserUPN;
+                    VGSvcVerbose(3, "Using UPN: %s\n", pszUserUPN);
+                }
+            }
+
+            if (!pszUserUPN) /* Fallback */
+#endif
+                pszUser = pszAsUser;
+
             /* Do normal execution. */
             rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, uProcFlags,
                                 phStdIn, phStdOut, phStdErr,
-                                pszAsUser   && *pszAsUser   ? pszAsUser   : NULL,
+                                pszUser,
                                 pszPassword && *pszPassword ? pszPassword : NULL,
                                 phProcess);
-
+#ifdef RT_OS_WINDOWS
+            if (pszUserUPN)
+                RTStrFree(pszUserUPN);
+#endif
             VGSvcVerbose(3, "Starting process '%s' returned rc=%Rrc\n", szExecExp, rc);
 
             vgsvcGstCtrlProcessFreeArgv(papszArgsExp);
@@ -1574,8 +1597,9 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                 rc = vgsvcGstCtrlProcessCreateProcess(pProcess->StartupInfo.szCmd, papszArgs, hEnv,
                                                                  pProcess->StartupInfo.uFlags,
                                                                  phStdIn, phStdOut, phStdErr,
-                                                                 fNeedsImpersonation ? pProcess->StartupInfo.szUser : NULL,
+                                                                 fNeedsImpersonation ? pProcess->StartupInfo.szUser     : NULL,
                                                                  fNeedsImpersonation ? pProcess->StartupInfo.szPassword : NULL,
+                                                                 fNeedsImpersonation ? pProcess->StartupInfo.szDomain   : NULL,
                                                                  &pProcess->hProcess);
                                 if (RT_FAILURE(rc))
                                     VGSvcError("Error starting process, rc=%Rrc\n", rc);

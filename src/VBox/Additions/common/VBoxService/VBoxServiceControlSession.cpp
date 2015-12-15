@@ -1711,6 +1711,12 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
         {
             apszArgs[idxArg++] = "--user";
             apszArgs[idxArg++] = pSessionThread->StartupInfo.szUser;
+
+            if (strlen(pSessionThread->StartupInfo.szDomain))
+            {
+                apszArgs[idxArg++] = "--domain";
+                apszArgs[idxArg++] = pSessionThread->StartupInfo.szDomain;
+            }
         }
 
         /* Add same verbose flags as parent process. */
@@ -1835,12 +1841,36 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
             {
                 hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
 
+                const char *pszUser;
+#ifdef RT_OS_WINDOWS
+                /* If a domain name is given, construct an UPN (User Principle Name) with
+                 * the domain name built-in, e.g. "joedoe@example.com". */
+                char *pszUserUPN = NULL;
+                if (strlen(pSessionThread->StartupInfo.szDomain))
+                {
+                    int cbUserUPN = RTStrAPrintf(&pszUserUPN, "%s@%s",
+                                                 pSessionThread->StartupInfo.szUser,
+                                                 pSessionThread->StartupInfo.szDomain);
+                    if (cbUserUPN > 0)
+                    {
+                        pszUser = pszUserUPN;
+                        VGSvcVerbose(3, "Using UPN: %s\n", pszUserUPN);
+                    }
+                }
+
+                if (!pszUserUPN) /* Fallback */
+#endif
+                    pszUser = pSessionThread->StartupInfo.szUser;
+
                 rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
                                     &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
-                                    !fAnonymous ? pSessionThread->StartupInfo.szUser : NULL,
+                                    !fAnonymous ? pszUser : NULL,
                                     !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
                                     &pSessionThread->hProcess);
-
+# ifdef RT_OS_WINDOWS
+                if (pszUserUPN)
+                    RTStrFree(pszUserUPN);
+# endif
                 RTFileClose(hStdOutAndErr.u.hFile);
             }
 
