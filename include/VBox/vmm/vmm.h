@@ -311,7 +311,6 @@ VMMR3_INT_DECL(void)    VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu);
 VMMR3DECL(int)          VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)          VMMR3DeregisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)          VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser);
-VMMR3_INT_DECL(bool)    VMMR3EmtRendezvousSetDisabled(PVMCPU pVCpu, bool fDisabled);
 /** @defgroup grp_VMMR3EmtRendezvous_fFlags     VMMR3EmtRendezvous flags
  *  @{ */
 /** Execution type mask. */

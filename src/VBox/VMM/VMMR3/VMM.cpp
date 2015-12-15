@@ -1874,10 +1874,12 @@ static VBOXSTRICTRC vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCall
 VMMR3_INT_DECL(int) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
 {
     Assert(!pVCpu->vmm.s.fInRendezvous);
+    Log(("VMMR3EmtRendezvousFF: EMT%#u\n", pVCpu->idCpu));
     pVCpu->vmm.s.fInRendezvous = true;
     VBOXSTRICTRC rcStrict = vmmR3EmtRendezvousCommon(pVM, pVCpu, false /* fIsCaller */, pVM->vmm.s.fRendezvousFlags,
                                                      pVM->vmm.s.pfnRendezvous, pVM->vmm.s.pvRendezvousUser);
     pVCpu->vmm.s.fInRendezvous = false;
+    Log(("VMMR3EmtRendezvousFF: EMT%#u returns %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict)));
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 
@@ -1918,7 +1920,9 @@ static int vmmR3HlpResetEvent(RTSEMEVENT hEvt)
 static VBOXSTRICTRC vmmR3EmtRendezvousRecursive(PVM pVM, PVMCPU pVCpu, uint32_t fFlags,
                                                 PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser)
 {
+    Log(("vmmR3EmtRendezvousRecursive: %#x EMT#%u depth=%d\n", fFlags, pVCpu->idCpu, pVM->vmm.s.cRendezvousRecursions));
     AssertLogRelReturn(pVM->vmm.s.cRendezvousRecursions < 3, VERR_DEADLOCK);
+    Assert(pVCpu->vmm.s.fInRendezvous);
 
     /*
      * Save the current state.
@@ -2101,6 +2105,8 @@ static VBOXSTRICTRC vmmR3EmtRendezvousRecursive(PVM pVM, PVMCPU pVCpu, uint32_t 
 
     ASMAtomicDecU32(&pVM->vmm.s.cRendezvousRecursions);
 
+    Log(("vmmR3EmtRendezvousRecursive: %#x EMT#%u depth=%d returns %Rrc\n",
+         fFlags, pVCpu->idCpu, pVM->vmm.s.cRendezvousRecursions, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
 
@@ -2147,8 +2153,12 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
         /*
          * Forward the request to an EMT thread.
          */
+    {
+        Log(("VMMR3EmtRendezvous: %#x non-EMT\n", fFlags));
         rcStrict = VMR3ReqCallWait(pVM, VMCPUID_ANY,
                                    (PFNRT)VMMR3EmtRendezvous, 4, pVM, fFlags, pfnRendezvous, pvUser);
+        Log(("VMMR3EmtRendezvous: %#x non-EMT returns %Rrc\n", fFlags, VBOXSTRICTRC_VAL(rcStrict)));
+    }
     else if (pVM->cCpus == 1)
     {
         /*
@@ -2156,6 +2166,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
          */
         if (!pVCpu->vmm.s.fInRendezvous)
         {
+            Log(("VMMR3EmtRendezvous: %#x EMT (uni)\n", fFlags));
             pVCpu->vmm.s.fInRendezvous  = true;
             pVM->vmm.s.fRendezvousFlags = fFlags;
             rcStrict = pfnRendezvous(pVM, pVCpu, pvUser);
@@ -2164,6 +2175,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
         else
         {
             /* Recursion. Do the same checks as in the SMP case. */
+            Log(("VMMR3EmtRendezvous: %#x EMT (uni), recursion depth=%d\n", fFlags, pVM->vmm.s.cRendezvousRecursions));
             uint32_t fType = pVM->vmm.s.fRendezvousFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK;
             AssertLogRelReturn(   !pVCpu->vmm.s.fInRendezvous
                                || fType == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING
@@ -2182,6 +2194,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
             pVM->vmm.s.fRendezvousFlags = fParentFlags;
             pVM->vmm.s.cRendezvousRecursions--;
         }
+        Log(("VMMR3EmtRendezvous: %#x EMT (uni) returns %Rrc\n", fFlags, VBOXSTRICTRC_VAL(rcStrict)));
     }
     else
     {
@@ -2205,6 +2218,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
             AssertLogRelMsgReturn(!pVCpu->vmm.s.fInRendezvous, ("fRendezvousFlags=%#x\n", pVM->vmm.s.fRendezvousFlags),
                                   VERR_DEADLOCK);
 
+            Log(("VMMR3EmtRendezvous: %#x EMT#%u, waiting for lock...\n", fFlags, pVCpu->idCpu));
             while (!ASMAtomicCmpXchgU32(&pVM->vmm.s.u32RendezvousLock, 0x77778888, 0))
             {
                 if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
@@ -2219,6 +2233,8 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
                 ASMNopPause();
             }
         }
+
+        Log(("VMMR3EmtRendezvous: %#x EMT#%u\n", fFlags, pVCpu->idCpu));
         Assert(!VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS));
         Assert(!pVCpu->vmm.s.fInRendezvous);
         pVCpu->vmm.s.fInRendezvous = true;
@@ -2290,6 +2306,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
             &&  (   rcStrict == VINF_SUCCESS
                  || rcStrict > rcStrict3))
             rcStrict = rcStrict3;
+        Log(("VMMR3EmtRendezvous: %#x EMT#%u returns %Rrc\n", fFlags, pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict)));
     }
 
     AssertLogRelMsgReturn(   rcStrict <= VINF_SUCCESS
@@ -2297,25 +2314,6 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
                           ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
                           VERR_IPE_UNEXPECTED_INFO_STATUS);
     return VBOXSTRICTRC_VAL(rcStrict);
-}
-
-
-/**
- * Disables/enables EMT rendezvous.
- *
- * This is used to make sure EMT rendezvous does not take place while
- * processing a priority request.
- *
- * @returns Old rendezvous-disabled state.
- * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   fDisabled       True if disabled, false if enabled.
- */
-VMMR3_INT_DECL(bool) VMMR3EmtRendezvousSetDisabled(PVMCPU pVCpu, bool fDisabled)
-{
-    VMCPU_ASSERT_EMT(pVCpu);
-    bool fOld = pVCpu->vmm.s.fInRendezvous;
-    pVCpu->vmm.s.fInRendezvous = fDisabled;
-    return fOld;
 }
 
 
