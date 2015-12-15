@@ -57,13 +57,13 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
 }
 
 /**
- * Static method that can get passed to RTThreadCreate to have a 
+ * Static method that can get passed to RTThreadCreate to have a
  * thread started for a Task.
  */
 /* static */ DECLCALLBACK(int) ThreadTask::taskHandler(RTTHREAD /* thread */, void *pvUser)
 {
     HRESULT rc = S_OK;
-    if(pvUser == NULL)
+    if (pvUser == NULL)
         return VERR_INVALID_POINTER;
 
     ThreadTask *pTask = static_cast<ThreadTask *>(pvUser);
@@ -92,6 +92,7 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
 /*static*/ HRESULT ThreadTask::setErrorStatic(HRESULT aResultCode,
                                     const Utf8Str &aText)
 {
+    NOREF(aText);
     return aResultCode;
 }
 
