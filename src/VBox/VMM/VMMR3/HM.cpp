@@ -631,7 +631,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                     break;
 
                 case VERR_VMX_MSR_ALL_VMX_DISABLED:
-                    pszMsg = "VT-x is disabled in the BIOS for both all CPU modes";
+                    pszMsg = "VT-x is disabled in the BIOS for all CPU modes";
                     break;
 
                 case VERR_VMX_MSR_LOCKING_FAILED:
