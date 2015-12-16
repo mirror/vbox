@@ -140,7 +140,6 @@ static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHos
 struct mbuf *
 hostresolver(PNATState pData, struct mbuf *m)
 {
-    struct label *l;
     int error;
 
     struct response res;
@@ -282,7 +281,7 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
     size_t off;
     size_t qname;
     uint16_t qtype, qclass;
-    struct label *l, **pparent;
+    struct label *l;
 
     /**
      * Copy the request into the contiguous buffer for the response
@@ -635,10 +634,7 @@ append_name(struct response *res, const char *name)
     struct label *tail, **graft;
     uint8_t *buf;
     size_t wr, oend;
-    uint8_t terminator;
     const char *s;
-
-    char namestr[DNS_MAX_NAME_LEN + 1];
 
     size = -1;
     oend = res->end;
