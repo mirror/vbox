@@ -47,6 +47,7 @@ using namespace guestControl;
 enum
 {
     VBOXSERVICESESSIONOPT_FIRST = 1000, /* For initialization. */
+    VBOXSERVICESESSIONOPT_DOMAIN,
 #ifdef DEBUG
     VBOXSERVICESESSIONOPT_DUMP_STDOUT,
     VBOXSERVICESESSIONOPT_DUMP_STDERR,
@@ -2115,6 +2116,7 @@ RTEXITCODE VGSvcGstCtrlSessionSpawnInit(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
+        { "--domain",          VBOXSERVICESESSIONOPT_DOMAIN,          RTGETOPT_REQ_STRING },
 #ifdef DEBUG
         { "--dump-stdout",     VBOXSERVICESESSIONOPT_DUMP_STDOUT,     RTGETOPT_REQ_NOTHING },
         { "--dump-stderr",     VBOXSERVICESESSIONOPT_DUMP_STDERR,     RTGETOPT_REQ_NOTHING },
@@ -2147,13 +2149,9 @@ RTEXITCODE VGSvcGstCtrlSessionSpawnInit(int argc, char **argv)
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
-            case VBOXSERVICESESSIONOPT_LOG_FILE:
-            {
-                int rc = RTStrCopy(g_szLogFile, sizeof(g_szLogFile), ValueUnion.psz);
-                if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error copying log file name: %Rrc", rc);
+            case VBOXSERVICESESSIONOPT_DOMAIN:
+                /* Information not needed right now, skip. */
                 break;
-            }
 #ifdef DEBUG
             case VBOXSERVICESESSIONOPT_DUMP_STDOUT:
                 fSession |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT;
@@ -2163,10 +2161,6 @@ RTEXITCODE VGSvcGstCtrlSessionSpawnInit(int argc, char **argv)
                 fSession |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR;
                 break;
 #endif
-            case VBOXSERVICESESSIONOPT_USERNAME:
-                /* Information not needed right now, skip. */
-                break;
-
             case VBOXSERVICESESSIONOPT_SESSION_ID:
                 g_Session.StartupInfo.uSessionID = ValueUnion.u32;
                 break;
@@ -2174,12 +2168,23 @@ RTEXITCODE VGSvcGstCtrlSessionSpawnInit(int argc, char **argv)
             case VBOXSERVICESESSIONOPT_SESSION_PROTO:
                 g_Session.StartupInfo.uProtocol = ValueUnion.u32;
                 break;
-
 #ifdef DEBUG
             case VBOXSERVICESESSIONOPT_THREAD_ID:
                 /* Not handled. Mainly for processs listing. */
                 break;
 #endif
+            case VBOXSERVICESESSIONOPT_LOG_FILE:
+            {
+                int rc = RTStrCopy(g_szLogFile, sizeof(g_szLogFile), ValueUnion.psz);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error copying log file name: %Rrc", rc);
+                break;
+            }
+
+            case VBOXSERVICESESSIONOPT_USERNAME:
+                /* Information not needed right now, skip. */
+                break;
+
             /** @todo Implement help? */
 
             case 'v':
