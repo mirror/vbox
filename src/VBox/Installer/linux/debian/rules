@@ -318,9 +318,10 @@ endif
 ifeq ($(DEBUG),)
 	dh_strip --keep-debug --exclude=libQtCoreVBox.so.4 --exclude=libQtGuiVBox.so.4 --exclude=libQtOpenGLVBox.so.4 --exclude=libqtaccessiblewidgets.so
 endif
-	mkdir -p $(current)/debian/$(verpkg)-dbg/usr/lib
+	mkdir -p $(current)/debian/$(verpkg)-dbg/usr/lib/$(package)
+	mv $(prefix)/usr/lib/$(package)/*.debug $(current)/debian/$(verpkg)-dbg/usr/lib/$(package)
 ifeq ($(DEBUG),)
-	mv $(current)/debian/$(verpkg)/usr/lib/debug $(current)/debian/$(verpkg)-dbg/usr/lib
+	mv $(prefix)/usr/lib/debug $(current)/debian/$(verpkg)-dbg/usr/lib
 endif
 	$(if $(filter _Ubuntu_hardy _Ubuntu_lucid,$(debrel)),dh_pycentral,dh_python2)
 	dh_compress -X.pdf -X.chm -X LICENSE -X.py
