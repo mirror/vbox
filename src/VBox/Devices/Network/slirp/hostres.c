@@ -29,17 +29,17 @@
 /* see RFC 1035(4.1.1) */
 struct dnsmsg_header
 {
-    unsigned id:16;
+    uint16_t id;
 
     /* XXX: endianness */
-    unsigned rd:1;
-    unsigned tc:1;
-    unsigned aa:1;
-    unsigned opcode:4;
-    unsigned qr:1;
-    unsigned rcode:4;
-    unsigned Z:3;
-    unsigned ra:1;
+    uint16_t rd:1;
+    uint16_t tc:1;
+    uint16_t aa:1;
+    uint16_t opcode:4;
+    uint16_t qr:1;
+    uint16_t rcode:4;
+    uint16_t Z:3;
+    uint16_t ra:1;
 
     uint16_t qdcount;
     uint16_t ancount;
