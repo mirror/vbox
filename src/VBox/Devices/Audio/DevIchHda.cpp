@@ -576,7 +576,6 @@ typedef struct HDASTREAMSTATE
     /** Current BDLE to use. Wraps around to 0 if
      *  maximum (cBDLE) is reached. */
     uint16_t            uCurBDLE;
-    uint32_t            Padding;
     /** Stop indicator. */
     volatile bool       fDoStop;
     /** Flag indicating whether this stream is in an
@@ -585,6 +584,8 @@ typedef struct HDASTREAMSTATE
     /** Flag indicating whether this stream currently is
      *  in reset mode and therefore not acccessible by the guest. */
     volatile bool       fInReset;
+    /** Unused, padding. */
+    bool                fPadding;
     /** Event signalling that the stream's state has been changed. */
     RTSEMEVENT          hStateChangedEvent;
     /** Array of BDLEs. */
