@@ -398,6 +398,7 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
     }
 
     if (   qtype != Type_A
+        && qtype != Type_CNAME
         && qtype != Type_ANY)
     {
         LogErr(("NAT: hostres: unsupported qtype %d\n", qtype));
@@ -440,6 +441,9 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
         alterHostentWithDataFromDNSMap(pData, h);
 #endif
 
+    /*
+     * Emit CNAME record if canonical name differs from the qname.
+     */
     if (   h->h_name != NULL
         && RTStrICmp(h->h_name, name) != 0)
     {
@@ -461,13 +465,22 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
                 goto out;
             }
         }
+
+        /*
+         * rfc1034#section-3.6.2 - ... a type CNAME or * query should
+         * return just the CNAME.
+         */
+        if (qtype == Type_CNAME || qtype == Type_ANY)
+            goto out;
+    }
+    else if (qtype == Type_CNAME)
+    {
+        LogErr(("NAT: hostres: %s is already canonical\n", name));
+        goto out; /* NB: RCode_NoError without an answer, not RCode_NXDomain */
     }
 
     /*
-     * XXX: TODO: rfc1034#section-3.6.2
-     *
-     * If the query is Type_ANY and the name is CNAME, we should only
-     * return the CNAME, but not the A RRs.
+     * Emit A records.
      */
     for (i = 0; h->h_addr_list[i] != NULL; ++i)
     {
