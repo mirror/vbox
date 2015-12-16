@@ -301,7 +301,7 @@ endif
 	    usr/bin/VBox                        usr/bin/VBoxAutostart \
 	    usr/bin/VBox                        usr/bin/vboxautostart \
 	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
-	    $(if $(NOVBOXIMG),,usr/lib/virtualbox/vbox-img usr/bin/vboxwebsrv) \
+	    $(if $(NOVBOXIMG),,usr/lib/virtualbox/vbox-img usr/bin/vbox-img) \
 	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
 	dh_desktop
 	$(if $(NOMODS),,dh_installmodules)
