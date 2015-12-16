@@ -119,6 +119,12 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
     updateAppearanceOf(UIVisualElement_FeaturesStuff);
 }
 
+void UIMachineWindowNormal::sltHandleSessionInitialized()
+{
+    /* Update virtualization stuff: */
+    updateAppearanceOf(UIVisualElement_FeaturesStuff);
+}
+
 #ifndef RT_OS_DARWIN
 void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QString &strMachineID)
 {
@@ -228,6 +234,8 @@ void UIMachineWindowNormal::prepareSessionConnections()
             this, SLOT(sltVideoCaptureChange()));
     connect(machineLogic()->uisession(), SIGNAL(sigCPUExecutionCapChange()),
             this, SLOT(sltCPUExecutionCapChange()));
+    connect(machineLogic()->uisession(), SIGNAL(sigInitialized()),
+            this, SLOT(sltHandleSessionInitialized()));
 }
 
 #ifndef Q_WS_MAC

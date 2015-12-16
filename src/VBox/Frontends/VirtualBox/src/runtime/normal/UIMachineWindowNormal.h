@@ -64,6 +64,8 @@ private slots:
     void sltVideoCaptureChange();
     /** Handles CPU execution cap change event. */
     void sltCPUExecutionCapChange();
+    /** Handles UISession initialized event. */
+    void sltHandleSessionInitialized();
 
 #ifndef RT_OS_DARWIN
     /** Handles menu-bar configuration-change. */
