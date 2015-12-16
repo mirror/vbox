@@ -61,12 +61,6 @@
 /** The module description as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV                                 "VirtualBox USB"
 
-/** Endpoint states. */
-#define VBOXUSB_EP_INITIALIZED                          0xa1fa1fa
-#define VBOXUSB_EP_STATE_NONE                           RT_BIT(0)
-#define VBOXUSB_EP_STATE_CLOSED                         RT_BIT(1)
-#define VBOXUSB_EP_STATE_OPENED                         RT_BIT(2)
-
 /** -=-=-=-=-=-=- Standard Specifics -=-=-=-=-=-=- */
 /** Max. supported endpoints. */
 #define VBOXUSB_MAX_ENDPOINTS                           32
@@ -192,7 +186,6 @@ static struct modlinkage g_VBoxUSBSolarisModLinkage =
 typedef struct vboxusb_ep_t
 {
     bool                    fInitialized;        /* Whether this Endpoint is initialized */
-    uint_t                  EpState;             /* Endpoint state */
     usb_ep_descr_t          EpDesc;              /* Endpoint descriptor */
     usb_pipe_handle_t       pPipe;               /* Endpoint pipe handle */
     usb_pipe_policy_t       PipePolicy;          /* Endpoint policy */
@@ -2428,7 +2421,6 @@ LOCAL int vboxUsbSolarisInitEp(vboxusb_state_t *pState, usb_ep_data_t *pEpData)
     if (!pEp->fInitialized)
     {
         pEp->pPipe = NULL;
-        pEp->EpState = VBOXUSB_EP_STATE_CLOSED;
         bzero(&pEp->PipePolicy, sizeof(pEp->PipePolicy));
         pEp->PipePolicy.pp_max_async_reqs = VBOXUSB_MAX_PIPE_ASYNC_REQS;
         pEp->fIsocPolling = false;
@@ -2675,7 +2667,6 @@ LOCAL int vboxUsbSolarisOpenPipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
     if ((pEp->EpDesc.bEndpointAddress & USB_EP_NUM_MASK) == 0)
     {
         pEp->pPipe = pState->pDevDesc->dev_default_ph;
-        pEp->EpState |= VBOXUSB_EP_STATE_OPENED;
         Log((DEVICE_NAME ": vboxUsbSolarisOpenPipe: Default pipe opened\n"));
         return VINF_SUCCESS;
     }
@@ -2717,7 +2708,6 @@ LOCAL int vboxUsbSolarisOpenPipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
                  pEp->cbMaxIsocData));
         }
 
-        pEp->EpState |= VBOXUSB_EP_STATE_OPENED;
         rc = VINF_SUCCESS;
     }
     else
@@ -2745,8 +2735,6 @@ LOCAL void vboxUsbSolarisClosePipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
 
     if (pEp->pPipe)
     {
-        pEp->EpState &= ~(VBOXUSB_EP_STATE_OPENED);
-
         /*
          * Default pipe: allow completion of pending requests.
          */
