@@ -25,7 +25,7 @@ endif
 #
 # Generic stuff.
 #
-VBOX_PATH_INST_COMMON_SRC := $(PATH_SUB_CURRENT)/common
+VBOX_PATH_INST_COMMON_SRC := $(PATH_ROOT)/src/VBox/Installer/common
 
 
 ifdef VBOX_WITH_PYTHON
