@@ -150,8 +150,8 @@ int NetworkServiceRunner::stop()
 
     if (fDoKillProc)
     {
-        int rc = RTProcTerminate(m->mProcess);
-        rc = RTProcWait(m->mProcess, RTPROCWAIT_FLAGS_BLOCK, NULL);
+        RTProcTerminate(m->mProcess);
+        int rc = RTProcWait(m->mProcess, RTPROCWAIT_FLAGS_BLOCK, NULL);
     }
 
     m->mProcess = NIL_RTPROCESS;
