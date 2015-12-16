@@ -426,7 +426,7 @@ DECLVBGL(int)     VbglSetMouseStatus(uint32_t fFeatures);
  * Ring 3 VBGL declaration.
  * @param   type    The return type of the function declaration.
  */
-# define VBGLR3DECL(type) type VBOXCALL
+# define VBGLR3DECL(type) DECLHIDDEN(type) VBOXCALL
 
 /** @name General-purpose functions
  * @{ */
