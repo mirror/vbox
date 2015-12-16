@@ -400,7 +400,7 @@ static int rtSchedCreateThread(void *(*pfnThread)(void *pvArg), void *pvArg)
                     do
                     {
                         rc = pthread_join(Thread, &pvRet);
-                    } while (errno == EINTR);
+                    } while (rc == EINTR);
                     if (rc)
                         return RTErrConvertFromErrno(rc);
                     return (int)(uintptr_t)pvRet;
