@@ -1039,14 +1039,22 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
         }
     }
 
-    /* Register statistics counter. */
-    /** @todo aeichner: Find a way to put the instance number of the attached
-     * controller device when we support more than one controller of the same type.
-     * At the moment we have the 0 hardcoded. */
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                            "Amount of data read.", "/Devices/SCSI0/%d/ReadBytes", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                            "Amount of data written.", "/Devices/SCSI0/%d/WrittenBytes", pDrvIns->iInstance);
+    const char *pszCtrl = NULL;
+    uint32_t iCtrlInstance = 0;
+    uint32_t iCtrlLun = 0;
+
+    rc = pThis->pDevScsiPort->pfnQueryDeviceLocation(pThis->pDevScsiPort, &pszCtrl, &iCtrlInstance, &iCtrlLun);
+    if (RT_SUCCESS(rc))
+    {
+        const char *pszCtrlId =   strcmp(pszCtrl, "Msd") == 0 ? "USB"
+                                : strcmp(pszCtrl, "lsilogicsas") == 0 ? "SAS"
+                                : "SCSI";
+        /* Register statistics counter. */
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                                "Amount of data read.", "/Devices/%s%u/%d/ReadBytes", pszCtrlId, iCtrlInstance, iCtrlLun);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                                "Amount of data written.", "/Devices/%s%u/%d/WrittenBytes", pszCtrlId, iCtrlInstance, iCtrlLun);
+    }
 
     pThis->StatIoDepth = 0;
 
