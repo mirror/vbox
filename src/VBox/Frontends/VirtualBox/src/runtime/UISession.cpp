@@ -224,6 +224,9 @@ bool UISession::initialize()
     }
     machineLogic()->initializePostPowerUp();
 
+    /* Load VM settings: */
+    loadVMSettings();
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Log whether 2D video acceleration is enabled: */
     LogRel(("GUI: 2D video acceleration is %s\n",
@@ -950,6 +953,8 @@ UISession::UISession(UIMachine *pMachine)
     , m_fIsMouseIntegrated(true)
     , m_fIsValidPointerShapePresent(false)
     , m_fIsHidingHostPointer(true)
+    /* VM settings flags: */
+    , m_fIsHWVirtExEnabled(false)
 {
 }
 
@@ -1936,6 +1941,13 @@ int UISession::countOfVisibleWindows()
         if (m_monitorVisibilityVector[i])
             ++cCountOfVisibleWindows;
     return cCountOfVisibleWindows;
+}
+
+void UISession::loadVMSettings()
+{
+    /* Load VM settings: */
+    /* CPU hardware virtualization extensions: */
+    m_fIsHWVirtExEnabled = m_debugger.GetHWVirtExEnabled();
 }
 
 UIFrameBuffer* UISession::frameBuffer(ulong uScreenId) const
