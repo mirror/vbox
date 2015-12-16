@@ -770,6 +770,23 @@
     </sect2>
 
     <sect2>
+      <title>PCnet driver failure in 32-bit Windows Server 2003 guests</title>
+
+      <para>Certain editions of Windows 2000 and 2003 servers support more
+      than 4 GB RAM on 32-bit systems. The AMD PCnet network driver shipped with 
+      Windows Server 2003 fails to load if the 32-bit guest OS uses paging
+      extensions (which will occur with more than approximately 3.5 GB RAM
+      assigned to the VM).</para>
+
+      <para>This problem is known to occur with version 4.38.0.0 of the PCnet
+      driver. The issue was fixed in version 4.51.0.0 of the driver, which
+      is available as a separate download. An alternative solution may be
+      changing the emulated NIC type to Intel PRO/1000 MT Desktop (82540EM),
+      or reducing the RAM assigned to the VM to approximately 3.5 GB or less.
+      </para>
+    </sect2>
+
+    <sect2>
       <title>No networking in Windows Vista guests</title>
 
       <para>With Windows Vista, Microsoft dropped support for the AMD PCNet
