@@ -1126,26 +1126,6 @@ stubInit(void)
 /* Sigh -- we can't do initialization at load time, since Windows forbids
  * the loading of other libraries from DLLMain. */
 
-/** @note On Linux we make our shared library executable as a quick way of
- * testing whether a particular guest supports 3D in the current configuration.
- * If 3D is not enabled, the constructor will exit with status 1.  If the
- * library cannot be loaded at all (e.g. missing dependencies) executing it will
- * also fail. */
-#ifdef RT_OS_LINUX
-# ifdef RT_ARCH_AMD64
-const char pszInterpreter[] __attribute__((section(".interp"))) = "/lib64/ld-linux-x86-64.so.2";
-# else
-const char pszInterpreter[] __attribute__((section(".interp"))) = "/lib/ld-linux.so.2";
-# endif
-
-extern void LibMain()
-{
-   if (!stubInit())
-       _exit(1);
-   _exit(0);
-}
-#endif
-
 #ifdef WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
