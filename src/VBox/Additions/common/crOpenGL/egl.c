@@ -578,7 +578,7 @@ DECLEXPORT(EGLSurface) eglCreatePbufferSurface(EGLDisplay hDisplay, EGLConfig co
         setEGLError(EGL_NOT_INITIALIZED);
         return EGL_NO_SURFACE;
     }
-    for (i = 0; i < sizeof(acIndices); ++i)
+    for (i = 0; i < RT_ELEMENTS(acIndices); ++i)
         acIndices[i] = -1;
     if (paAttributes != NULL)
         while (*paAttributes != EGL_NONE)
