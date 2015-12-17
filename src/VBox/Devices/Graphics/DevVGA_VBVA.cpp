@@ -2394,7 +2394,7 @@ static int vbvaHandleQueryModeHints(PVGASTATE pVGAState, const VBVAQUERYMODEHINT
         memcpy(pbHint, &pCtx->aModeHints[iHint],
                RT_MIN(parms.cbHintStructureGuest, sizeof(VBVAMODEHINT)));
         pbHint += parms.cbHintStructureGuest;
-        Assert(pbHint - (uint8_t *)pQueryModeHints <= cbBuffer);
+        Assert((uintptr_t)(pbHint - (uint8_t *)pQueryModeHints) <= cbBuffer);
     }
 
     return VINF_SUCCESS;
