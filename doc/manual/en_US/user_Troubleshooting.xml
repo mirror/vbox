@@ -1437,58 +1437,11 @@ VirtualBox</screen>
 
       <para>If USB is not working on your Linux host, make sure that the
       current user is a member of the
-      <computeroutput>vboxusers</computeroutput> group. On older hosts, you
-      need to make sure that the user has permission to access the USB
-      filesystem (<computeroutput>usbfs</computeroutput>), which VirtualBox
-      relies on to retrieve valid information about your host's USB devices.
-      The rest of this section only applies to those older systems.</para>
-
-      <para>As <computeroutput>usbfs</computeroutput> is a virtual filesystem,
-      a <computeroutput>chmod</computeroutput> on
-      <computeroutput>/proc/bus/usb</computeroutput> has no effect. The
-      permissions for <computeroutput>usbfs</computeroutput> can therefore
-      <emphasis>only</emphasis> be changed by editing the
-      <computeroutput>/etc/fstab</computeroutput> file.</para>
-
-      <para>For example, most Linux distributions have a user group called
-      <computeroutput>usb</computeroutput> or similar, of which the current
-      user must be a member. To give all users of that group access to usbfs,
-      make sure the following line is present:<screen># 85 is the USB group
-none     /proc/bus/usb     usbfs      devgid=85,devmode=664    0    0</screen>Replace
-      85 with the group ID that matches your system (search
-      <computeroutput>/etc/group</computeroutput> for "usb" or similar).
-      Alternatively, if you don't mind the security hole, give all users
-      access to USB by changing "664" to "666".</para>
-
-      <para>The various distributions are very creative from which script the
-      <computeroutput>usbfs</computeroutput> filesystem is mounted. Sometimes
-      the command is hidden in unexpected places. For SuSE 10.0 the mount
-      command is part of the udev configuration file
-      <computeroutput>/etc/udev/rules.d/50-udev.rules</computeroutput>. As
-      this distribution has no user group called
-      <computeroutput>usb</computeroutput>, you may e.g. use the
-      <computeroutput>vboxusers</computeroutput> group which was created by
-      the VirtualBox installer. Since group numbers are allocated dynamically,
-      the following example uses 85 as a placeholder. Modify the line
-      containing (a linebreak has been inserted to improve
-      readability)<screen>DEVPATH="/module/usbcore", ACTION=="add",
-    RUN+="/bin/mount -t usbfs usbfs /proc/bus/usb"</screen> and add the
-      necessary options (make sure that everything is in a single
-      line):<screen>DEVPATH="/module/usbcore", ACTION=="add",
-    RUN+="/bin/mount -t usbfs usbfs /proc/bus/usb -o devgid=85,devmode=664"</screen></para>
-
-      <para>Debian Etch has the mount command in
-      <computeroutput>/etc/init.d/mountkernfs.sh</computeroutput>. Since that
-      distribution has no group <computeroutput>usb</computeroutput>, it is
-      also the easiest solution to allow all members of the group
-      <computeroutput>vboxusers</computeroutput> to access the USB subsystem.
-      Modify the line <screen>domount usbfs usbdevfs /proc/bus/usb -onoexec,nosuid,nodev</screen>
-      so that it contains <screen>domount usbfs usbdevfs /proc/bus/usb -onoexec,nosuid,nodev,devgid=85,devmode=664</screen>
-      As usual, replace the 85 with the actual group number which should get
-      access to USB devices.</para>
-
-      <para>Other distributions do similar operations in scripts stored in the
-      <computeroutput>/etc/init.d</computeroutput> directory.</para>
+      <computeroutput>vboxusers</computeroutput> group.
+      Please keep in mind that group membership does not take effect immediately
+      but rather at the next login. If available, the 
+      <computeroutput>newgrp</computeroutput> command may avoid the need for 
+      logout/login.</para>
     </sect2>
 
     <sect2>
