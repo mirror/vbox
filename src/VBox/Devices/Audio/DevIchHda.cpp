@@ -4105,7 +4105,9 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
 
     LogFunc(("Resetting ...\n"));
 
-    /* Stop any audio currently playing. */
+    /*
+     * Stop any audio currently playing and/or recording.
+     */
     PHDADRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
@@ -4155,7 +4157,12 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
             pStrmSt = &pThis->StrmStLineIn;
 
         if (pStrmSt)
+        {
+            /* Remove the RUN bit from SDnCTL in case the stream was in a running state before. */
+            HDA_STREAM_REG(pThis, CTL, u8Strm) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN);
+
             hdaStreamReset(pThis, pStrmSt, u8Strm);
+        }
     }
 
     /* Emulation of codec "wake up" (HDA spec 5.5.1 and 6.5). */
