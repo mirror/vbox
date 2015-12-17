@@ -1484,6 +1484,11 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStrmSt, uint8_t u8Strm)
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStrmSt, VERR_INVALID_POINTER);
 
+#ifdef VBOX_STRICT
+    AssertReleaseMsg(!RT_BOOL(HDA_STREAM_REG(pThis, CTL, u8Strm) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)),
+                     ("Cannot initialize stream %RU8 while in running state\n", u8Strm));
+#endif
+
     pStrmSt->u8Strm     = u8Strm;
     pStrmSt->u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, u8Strm),
                                       HDA_STREAM_REG(pThis, BDPU, u8Strm));
@@ -1582,15 +1587,10 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStrmSt, uint8_t u8Strm)
     AssertPtrReturnVoid(pStrmSt);
     AssertReturnVoid(u8Strm <= 7); /** @todo Use a define for MAX_STREAMS! */
 
-    /*
-     * Stop the stream and wait until our internal processing is done.
-     */
-    int rc2 = hdaStreamStop(pStrmSt);
-    if (RT_FAILURE(rc2))
-    {
-        AssertReleaseMsgFailed(("HDA: Unable to stop stream %RU8, rc=%Rrc\n", pStrmSt->u8Strm, rc2));
-        return;
-    }
+#ifdef VBOX_STRICT
+    AssertReleaseMsg(!RT_BOOL(HDA_STREAM_REG(pThis, CTL, u8Strm) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)),
+                     ("Cannot reset stream %RU8 while in running state\n", u8Strm));
+#endif
 
     /*
      * Set reset state.
@@ -1599,19 +1599,22 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStrmSt, uint8_t u8Strm)
     ASMAtomicXchgBool(&pStrmSt->State.fInReset, true);
 
     /*
-     * First, initialize the internal stream state.
+     * First, reset the internal stream state.
      */
-    rc2 = hdaStreamInit(pThis, pStrmSt, u8Strm);
-    AssertRC(rc2);
+    pStrmSt->u8Strm     = u8Strm;
+    pStrmSt->u64BaseDMA = 0;
+    pStrmSt->u32CBL     = 0;
+    pStrmSt->u16FMT     = 0;
+    pStrmSt->u16FIFOS   = 0;
+    pStrmSt->u16LVI     = 0;
 
     /*
-     * Second, initialize registers.
+     * Second, initialize the registers.
      */
     HDA_STREAM_REG(pThis, STS,   u8Strm) = 0;
     /* According to the ICH6 datasheet, 0x40000 is the default value for stream descriptor register 23:20
      * bits are reserved for stream number 18.2.33, resets SDnCTL except SRST bit. */
     HDA_STREAM_REG(pThis, CTL,   u8Strm) = 0x40000 | (HDA_STREAM_REG(pThis, CTL, u8Strm) & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
-
     /* ICH6 defines default values (0x77 for input and 0xBF for output descriptors) of FIFO size. 18.2.39. */
     HDA_STREAM_REG(pThis, FIFOS, u8Strm) = u8Strm < 4 ? HDA_SDINFIFO_120B : HDA_SDONFIFO_192B;
     /* See 18.2.38: Always defaults to 0x4 (32 bytes). */
@@ -1623,16 +1626,13 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStrmSt, uint8_t u8Strm)
     HDA_STREAM_REG(pThis, BDPU,  u8Strm) = 0;
     HDA_STREAM_REG(pThis, BDPL,  u8Strm) = 0;
 
+    /* Report that we're done resetting this stream. */
+    HDA_STREAM_REG(pThis, CTL,   u8Strm) = 0;
+
     LogFunc(("[SD%RU8]: Reset\n", u8Strm));
 
     /* Exit reset mode. */
     ASMAtomicXchgBool(&pStrmSt->State.fInReset, false);
-
-    /*
-     * Start stream again.
-     */
-    rc2 = hdaStreamStart(pStrmSt);
-    AssertRC(rc2);
 }
 
 static int hdaStreamStart(PHDASTREAM pStrmSt)
@@ -1997,6 +1997,15 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     {
 #ifdef IN_RING3
         /*
+         * Only (re-)initialize the stream when not running.
+         */
+        if (!fRun && !fInRun)
+        {
+            int rc2 = hdaStreamInit(pThis, pStrmSt, u8Strm);
+            AssertRC(rc2);
+        }
+
+        /*
          * We enter here to change DMA states only.
          */
         if (fInRun != fRun)
@@ -2035,13 +2044,6 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
                     break;
             }
         }
-
-        if (pStrmSt)
-        {
-            int rc2 = hdaStreamInit(pThis, pStrmSt, u8Strm);
-            AssertRC(rc2);
-        }
-
 #else /* !IN_RING3 */
         return VINF_IOM_R3_MMIO_WRITE;
 #endif /* IN_RING3 */
@@ -4153,12 +4155,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
             pStrmSt = &pThis->StrmStLineIn;
 
         if (pStrmSt)
-        {
-            /* hdaStreamReset prevents changing the SRST bit, so we force it to zero here. */
-            HDA_STREAM_REG(pThis, CTL, u8Strm) = 0;
-
             hdaStreamReset(pThis, pStrmSt, u8Strm);
-        }
     }
 
     /* Emulation of codec "wake up" (HDA spec 5.5.1 and 6.5). */
