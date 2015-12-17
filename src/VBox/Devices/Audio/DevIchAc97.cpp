@@ -844,6 +844,8 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL m
                 break;
         }
     }
+    else
+        rc = VERR_NOT_SUPPORTED;
 
     if (RT_FAILURE(rc))
         return rc;
