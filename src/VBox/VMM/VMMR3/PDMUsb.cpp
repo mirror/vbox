@@ -602,7 +602,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     //pUsbIns->Internal.s.pHub                = NULL;
     pUsbIns->Internal.s.iPort               = UINT32_MAX; /* to be determined. */
     /* Set the flag accordingly.
-     * Oherwise VMPowerOff, VMSuspend will not be called for devices attached at runtime.
+     * Otherwise VMPowerOff, VMSuspend will not be called for devices attached at runtime.
      */
     pUsbIns->Internal.s.fVMSuspended        = !fAtRuntime;
     //pUsbIns->Internal.s.pfnAsyncNotify      = NULL;
