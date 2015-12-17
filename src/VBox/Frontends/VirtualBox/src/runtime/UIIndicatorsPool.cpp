@@ -831,22 +831,21 @@ private:
         const CMachineDebugger debugger = m_pSession->debugger();
 
         /* VT-x/AMD-V feature: */
-        bool bVirtEnabled = debugger.GetHWVirtExEnabled();
-        QString virtualization = bVirtEnabled ?
-            VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
-            VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
+        const QString strVirtualization = m_pSession->isHWVirtExEnabled() ?
+                                          VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
+                                          VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
 
         /* Nested Paging feature: */
         bool bNestEnabled = debugger.GetHWVirtExNestedPagingEnabled();
-        QString nestedPaging = bNestEnabled ?
-            VBoxGlobal::tr("Active", "details report (Nested Paging)") :
-            VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
+        const QString strNestedPaging = bNestEnabled ?
+                                        VBoxGlobal::tr("Active", "details report (Nested Paging)") :
+                                        VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
 
         /* Unrestricted Execution feature: */
         bool bUXEnabled = debugger.GetHWVirtExUXEnabled();
-        QString unrestrictExec = bUXEnabled ?
-            VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
-            VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
+        const QString strUnrestrictExec = bUXEnabled ?
+                                          VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
+                                          VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
 
         /* CPU Execution Cap feature: */
         QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());
@@ -862,9 +861,9 @@ private:
                                             "<br><nobr><b>%5:</b>&nbsp;%6</nobr>"
                                             "<br><nobr><b>%7:</b>&nbsp;%8%</nobr>",
                                             "Virtualization Stuff LED")
-                    .arg(VBoxGlobal::tr("VT-x/AMD-V", "details report"), virtualization)
-                    .arg(VBoxGlobal::tr("Nested Paging"), nestedPaging)
-                    .arg(VBoxGlobal::tr("Unrestricted Execution"), unrestrictExec)
+                    .arg(VBoxGlobal::tr("VT-x/AMD-V", "details report"), strVirtualization)
+                    .arg(VBoxGlobal::tr("Nested Paging"), strNestedPaging)
+                    .arg(VBoxGlobal::tr("Unrestricted Execution"), strUnrestrictExec)
                     .arg(VBoxGlobal::tr("Execution Cap", "details report"), strCPUExecCap));
 
         // TODO: We had to use that large NLS above for now.
@@ -882,7 +881,7 @@ private:
         /* Update tool-tip: */
         setToolTip(tip);
         /* Update indicator state: */
-        setState(bVirtEnabled);
+        setState(m_pSession->isHWVirtExEnabled());
     }
 };
 

@@ -662,16 +662,16 @@ void UIVMInfoDialog::refreshStatistics()
 
         /* Deterine virtualization attributes: */
         CMachineDebugger debugger = console.GetDebugger();
-        QString strVirtualization = debugger.GetHWVirtExEnabled() ?
-            VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
-            VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
-        QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
-            VBoxGlobal::tr("Active", "details report (Nested Paging)") :
-            VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
-        QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
-            VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
-            VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
-        QString strParavirtProvider = gpConverter->toString(m.GetEffectiveParavirtProvider());
+        const QString strVirtualization = m_pMachineWindow->uisession()->isHWVirtExEnabled() ?
+                                          VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
+                                          VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
+        const QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
+                                        VBoxGlobal::tr("Active", "details report (Nested Paging)") :
+                                        VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
+        const QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
+                                                 VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
+                                                 VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
+        const QString strParavirtProvider = gpConverter->toString(m.GetEffectiveParavirtProvider());
 
         /* Guest information: */
         CGuest guest = console.GetGuest();
