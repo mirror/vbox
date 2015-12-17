@@ -1027,10 +1027,18 @@ int VBoxUSBMonSolarisElectDriver(usb_dev_descr_t *pDevDesc, usb_dev_str_t *pDevS
     }
 
     *ppszDrv = ddi_strdup(VBOXUSB_DRIVER_NAME, KM_SLEEP);
+#if 0
     LogRel((DEVICE_NAME ": Capturing %s %s %#x:%#x:%s Bus=%d Port=%d\n",
             pDevStrings->usb_mfg ? pDevStrings->usb_mfg : "<Unknown Manufacturer>",
             pDevStrings->usb_product ? pDevStrings->usb_product : "<Unnamed USB device>",
             pDevDesc->idVendor, pDevDesc->idProduct, pszDevicePath, Bus, Port));
+#else
+    /* Until IPRT R0 logging is fixed. See @bugref{6657#c7} */
+    cmn_err(CE_CONT, "Capturing %s %s 0x%x:0x%x:%s Bus=%d Port=%d\n",
+            pDevStrings->usb_mfg ? pDevStrings->usb_mfg : "<Unknown Manufacturer>",
+            pDevStrings->usb_product ? pDevStrings->usb_product : "<Unnamed USB device>",
+            pDevDesc->idVendor, pDevDesc->idProduct, pszDevicePath, Bus, Port);
+#endif
     return USB_SUCCESS;
 }
 

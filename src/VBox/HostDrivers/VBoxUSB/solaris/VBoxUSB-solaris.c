@@ -695,8 +695,14 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                     rc = VBoxUSBMonSolarisRegisterClient(pState->pDip, &pState->ClientInfo);
                                                     if (RT_SUCCESS(rc))
                                                     {
+#if 0
                                                         LogRel((DEVICE_NAME ": Captured %s %s (Ident=%s)\n", pState->szMfg,
                                                                 pState->szProduct, pState->ClientInfo.szDeviceIdent));
+#else
+                                                        /* Until IPRT R0 logging is fixed. See @bugref{6657#c7} */
+                                                        cmn_err(CE_CONT, "Captured %s %s (Ident=%s)\n", pState->szMfg,
+                                                                pState->szProduct, pState->ClientInfo.szDeviceIdent);
+#endif
                                                         return DDI_SUCCESS;
                                                     }
 
@@ -885,8 +891,13 @@ int VBoxUSBSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 
             ddi_remove_minor_node(pState->pDip, NULL);
 
+#if 0
             LogRel((DEVICE_NAME ": Released %s %s (Ident=%s)\n", pState->szMfg, pState->szProduct,
                     pState->ClientInfo.szDeviceIdent));
+#else
+            /* Until IPRT R0 logging is fixed. See @bugref{6657#c7} */
+            cmn_err(CE_CONT, "Released %s %s (Ident=%s)\n", pState->szMfg, pState->szProduct, pState->ClientInfo.szDeviceIdent);
+#endif
 
             ddi_soft_state_free(g_pVBoxUSBSolarisState, instance);
             pState = NULL;
