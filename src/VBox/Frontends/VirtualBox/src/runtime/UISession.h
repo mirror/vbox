@@ -253,8 +253,13 @@ public:
     /** Updates Video Capture action state. */
     void updateStatusVideoCapture() { sltVideoCaptureChange(); }
 
-    /** Returns whether HW virtualization extension is enabled. */
+    /** @name CPU hardware virtualization features for VM.
+     ** @{ */
+    /** Returns whether CPU hardware virtualization extension is enabled. */
     bool isHWVirtExEnabled() const { return m_fIsHWVirtExEnabled; }
+    /** Returns whether nested-paging CPU hardware virtualization extension is enabled. */
+    bool isHWVirtExNestedPagingEnabled() const { return m_fIsHWVirtExNestedPagingEnabled; }
+    /** @} */
 
 signals:
 
@@ -517,8 +522,13 @@ private:
     bool m_fIsValidPointerShapePresent : 1;
     bool m_fIsHidingHostPointer : 1;
 
-    /** Holds whether HW virtualization extension is enabled. */
+    /** @name CPU hardware virtualization features for VM.
+     ** @{ */
+    /** Holds whether CPU hardware virtualization extension is enabled. */
     bool m_fIsHWVirtExEnabled;
+    /** Holds whether nested-paging CPU hardware virtualization extension is enabled. */
+    bool m_fIsHWVirtExNestedPagingEnabled;
+    /** @} */
 
     /* Friend classes: */
     friend class UIConsoleEventHandler;

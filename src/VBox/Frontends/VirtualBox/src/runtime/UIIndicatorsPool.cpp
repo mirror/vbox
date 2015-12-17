@@ -836,8 +836,7 @@ private:
                                           VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
 
         /* Nested Paging feature: */
-        bool bNestEnabled = debugger.GetHWVirtExNestedPagingEnabled();
-        const QString strNestedPaging = bNestEnabled ?
+        const QString strNestedPaging = m_pSession->isHWVirtExNestedPagingEnabled() ?
                                         VBoxGlobal::tr("Active", "details report (Nested Paging)") :
                                         VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
 
