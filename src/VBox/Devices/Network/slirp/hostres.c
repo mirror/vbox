@@ -107,10 +107,15 @@ struct response
 
 static int verify_header(PNATState pData, struct mbuf **pMBuf);
 static struct mbuf *respond(PNATState pData, struct mbuf *m, struct response *res);
-struct mbuf *resolve(PNATState pData, struct mbuf *m, struct response *res, size_t qname, uint16_t qtype);
+struct mbuf *resolve(PNATState pData, struct mbuf *m, struct response *res,
+                     uint16_t qtype, size_t qname);
+struct mbuf *resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
+                             uint16_t qtype, size_t qname, struct in_addr addr);
 struct mbuf *refuse(PNATState pData, struct mbuf *m, unsigned int rcode);
 static ssize_t append_a(struct response *res, const char *name, struct in_addr addr);
 static ssize_t append_cname(struct response *res, const char *name, const char *cname);
+static ssize_t append_ptr(struct response *res, const char *inaddrname, const char *name);
+static ssize_t append_name_rr(struct response *res, const char *question, int type, const char *answer);
 static ssize_t append_rrhdr(struct response *res, const char *name, uint16_t type, uint32_t ttl);
 static ssize_t append_name(struct response *res, const char *name);
 static ssize_t append_u32(struct response *res, uint32_t value);
@@ -119,6 +124,8 @@ static ssize_t append_u8(struct response *res, uint8_t value);
 static ssize_t append_bytes(struct response *res, uint8_t *p, size_t size);
 static ssize_t check_space(struct response *res, size_t size);
 
+static int get_in_addr_arpa(struct in_addr *paddr, struct label *root);
+static int labelstrcmp(struct label *l, const char *s);
 static void strnlabels(char *namebuf, size_t nbuflen, const uint8_t *msg, size_t off);
 
 static void LogLabelsTree(const char *before, struct label *l, const char *after);
@@ -281,6 +288,7 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
     size_t off;
     size_t qname;
     uint16_t qtype, qclass;
+    struct in_addr in_addr_arpa;
     struct label *l;
 
     /**
@@ -399,19 +407,28 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
 
     if (   qtype != Type_A
         && qtype != Type_CNAME
+        && qtype != Type_PTR
         && qtype != Type_ANY)
     {
         LogErr(("NAT: hostres: unsupported qtype %d\n", qtype));
         return refuse(pData, m, RCode_NotImp);
     }
 
-    return resolve(pData, m, res, qname, qtype);
+    /*
+     * Check for IN-ADDR.ARPA.  Use the fact that res->labels at this
+     * point contains only the qname, so we have easy top-down access
+     * to its components.
+     */
+    if (get_in_addr_arpa(&in_addr_arpa, res->labels))
+        return resolve_reverse(pData, m, res, qtype, qname, in_addr_arpa);
+    else
+        return resolve(pData, m, res, qtype, qname);
 }
 
 
 struct mbuf *
 resolve(PNATState pData, struct mbuf *m, struct response *res,
-        size_t qname, uint16_t qtype)
+        uint16_t qtype, size_t qname)
 {
     struct dnsmsg_header *pHdr;
     struct hostent *h;
@@ -428,6 +445,12 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
 
     strnlabels(name, sizeof(name), res->buf, qname);
     LogDbg(("NAT: hostres: qname=\"%s\"\n", name));
+
+    if (qtype != Type_A && qtype != Type_CNAME && qtype != Type_ANY)
+    {
+        goto out; /* NB: RCode_NoError without an answer, not RCode_NXDomain */
+    }
+
 
     h = gethostbyname(name);
     if (h == NULL)
@@ -550,6 +573,78 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
 }
 
 
+struct mbuf *
+resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
+                uint16_t qtype, size_t qname, struct in_addr in_addr_arpa)
+{
+    struct dnsmsg_header *pHdr;
+    struct hostent *h;
+    size_t oend;
+    size_t nanswers;
+    ssize_t nbytes;
+    int i;
+
+    pHdr = (struct dnsmsg_header *)res->buf;
+    nanswers = 0;
+    oend = res->end;
+
+    LogDbg(("NAT: hostres: %RTnaipv4\n", in_addr_arpa.s_addr));
+
+    if (qtype != Type_PTR && qtype != Type_ANY)
+    {
+        /* can't answer CNAME to PTR queries using gethostby* */
+        goto out; /* NB: RCode_NoError without an answer, not RCode_NXDomain */
+    }
+
+    /* XXX: TODO: apply HostResolverMappings */
+    h = gethostbyaddr(&in_addr_arpa, sizeof(struct in_addr), AF_INET);
+    if (h == NULL)
+    {
+        /* LogErr: h_errno */
+        return refuse(pData, m, RCode_NXDomain);
+    }
+
+    if (h->h_name != NULL)
+    {
+        char name[DNS_MAX_NAME_LEN+1];
+        strnlabels(name, sizeof(name), res->buf, qname);
+
+        LogDbg(("NAT: hostres: %s PTR %s\n", name, h->h_name));
+        nbytes = append_ptr(res, name, h->h_name);
+        if (nbytes > 0)
+        {
+            ++nanswers;
+        }
+        else
+        {
+            LogErr(("NAT: hostres: failed to add %s PTR %s\n",
+                    name, h->h_name));
+            if (nbytes < 0)
+                return refuse(pData, m, RCode_ServFail);
+            else
+            {
+                pHdr->tc = 1;
+                goto out;
+            }
+        }
+    }
+
+  out:
+    if (nanswers > 0)
+    {
+        int ok = m_append(pData, m, res->end - oend, (caddr_t)&res->buf[oend]);
+        if (!ok)
+        {
+            /* XXX: this may fail part way: restore old lenght, clear TC? */
+            return refuse(pData, m, RCode_ServFail);
+        }
+        pHdr->ancount = RT_H2N_U16(nanswers);
+    }
+    memcpy(mtod(m, char *), res->buf, sizeof(struct dnsmsg_header));
+    return m;
+}
+
+
 
 #define APPEND_PROLOGUE()                       \
     ssize_t size = -1;                          \
@@ -600,17 +695,35 @@ append_a(struct response *res, const char *name, struct in_addr addr)
 static ssize_t
 append_cname(struct response *res, const char *name, const char *cname)
 {
+    return append_name_rr(res, name, Type_CNAME, cname);
+}
+
+
+/*
+ * PTR RR - rfc1035#section-3.3.12
+ */
+static ssize_t
+append_ptr(struct response *res, const char *inaddrname, const char *name)
+{
+    return append_name_rr(res, inaddrname, Type_PTR, name);
+}
+
+
+static ssize_t
+append_name_rr(struct response *res, const char *question,
+               int type, const char *answer)
+{
     size_t rdlpos;
     uint16_t rdlength;
 
     APPEND_PROLOGUE();
 
-    CHECKED( append_rrhdr(res, name, Type_CNAME, 3600) );
+    CHECKED( append_rrhdr(res, question, type, 3600) );
 
     rdlpos = res->end;
     CHECKED( append_u16(res, 0) ); /* RDLENGTH placeholder */
 
-    CHECKED( append_name(res, cname) );
+    CHECKED( append_name(res, answer) );
 
     rdlength = RT_H2N_U16(nbytes);
     memcpy(&res->buf[rdlpos], &rdlength, sizeof(rdlength));
@@ -850,6 +963,75 @@ check_space(struct response *res, size_t size)
         return 0;
 
     return size;
+}
+
+
+static int
+get_in_addr_arpa(struct in_addr *paddr, struct label *root)
+{
+    RTNETADDRIPV4 addr;
+    struct label *l;
+    int i;
+
+    l = root;
+    if (l == NULL || labelstrcmp(l, "arpa") != 0)
+        return 0;
+
+    l = l->children;
+    if (l == NULL || labelstrcmp(l, "in-addr") != 0)
+        return 0;
+
+    for (i = 0; i < 4; ++i)
+    {
+        char buf[4];
+        size_t llen;
+        int rc;
+        uint8_t octet;
+
+        l = l->children;
+        if (l == NULL)
+            return 0;
+
+        llen = l->buf[l->off];
+        Assert((llen & DNS_LABEL_PTR) == 0);
+
+        /* valid octet values are at most 3 digits */
+        if (llen > 3)
+            return 0;
+
+        /* copy to avoid dealing with trailing bytes */
+        memcpy(buf, &l->buf[l->off + 1], llen);
+        buf[llen] = '\0';
+
+        rc = RTStrToUInt8Full(buf, 10, &octet);
+        if (rc != VINF_SUCCESS)
+            return 0;
+
+        addr.au8[i] = octet;
+    }
+
+    if (l->children != NULL)
+        return 0;               /* too many components */
+
+    if (paddr != NULL)
+        paddr->s_addr = addr.u;
+
+    return 1;
+}
+
+
+/*
+ * Compare label with string.
+ */
+static int
+labelstrcmp(struct label *l, const char *s)
+{
+    size_t llen;
+
+    llen = l->buf[l->off];
+    Assert((llen & DNS_LABEL_PTR) == 0);
+
+    return RTStrNICmp((char *)&l->buf[l->off + 1], s, llen);
 }
 
 
