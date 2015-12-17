@@ -1056,11 +1056,9 @@ void VBoxMpCrCtlConInit()
     int rc = VBoxMpCrCtlConConnectHgcm(&CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &u32ClientID);
     if (RT_FAILURE(rc))
     {
-        LOGREL(("VBoxMpCrCtlConConnectHgcm failed with rc(%d), 3D not supported!"));
+        LOGREL(("VBoxMpCrCtlConConnectHgcm failed with rc(%d), 3D not supported!", rc));
         return;
     }
-
-    g_VBoxMpCr3DSupported = 1;
 
     rc = vboxMpCrCtlConGetCapsNew(&CrCtlCon, u32ClientID, &g_VBoxMpCrHostCapsInfo);
     if (RT_FAILURE(rc))
@@ -1073,6 +1071,17 @@ void VBoxMpCrCtlConInit()
             WARN(("vboxMpCrCtlConGetCapsLegacy failed rc (%d), ignoring..", rc));
             g_VBoxMpCrHostCapsInfo.u32Caps = 0;
         }
+    }
+
+    if (g_VBoxMpCrHostCapsInfo.u32Caps & CR_VBOX_CAP_HOST_CAPS_NOT_SUFFICIENT)
+    {
+        LOGREL(("Insufficient host 3D capabilities"));
+        g_VBoxMpCr3DSupported = 0;
+        memset(&g_VBoxMpCrHostCapsInfo, 0, sizeof (g_VBoxMpCrHostCapsInfo));
+    }
+    else
+    {
+        g_VBoxMpCr3DSupported = 1;
     }
 
 #if 0 //ndef DEBUG_misha

@@ -1455,6 +1455,13 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
                 rc = VINF_SUCCESS;
             }
 
+            if (g_crvboxhgcm.u32HostCaps & CR_VBOX_CAP_HOST_CAPS_NOT_SUFFICIENT)
+            {
+                crDebug("HGCM connect: insufficient host capabilities\n");
+                g_crvboxhgcm.u32HostCaps = 0;
+                return FALSE;
+            }
+
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return RT_SUCCESS(rc);
         }
