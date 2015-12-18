@@ -111,28 +111,8 @@ if (!(expr)) \
 #define VBOX_NAME               "VBoxVideo"
 #define VBOX_DRIVER_NAME        "vboxvideo"
 
-#ifdef VBOX_DRI_OLD
-/* DRI support */
-#define _XF86DRI_SERVER_
-/* Hack to work around a libdrm header which is broken on Solaris */
-#define u_int64_t uint64_t
-/* Get rid of a warning due to a broken header file */
-enum drm_bo_type { DRM_BO_TYPE };
-#include "dri.h"
-#undef u_int64_t
-#include "sarea.h"
-#include "GL/glxint.h"
-
-/* For some reason this is not in the header files. */
-extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
-                                void **configprivs);
-#endif
-
 #define VBOX_VIDEO_MAJOR  VBOX_VERSION_MAJOR
 #define VBOX_VIDEO_MINOR  VBOX_VERSION_MINOR
-#define VBOX_DRM_DRIVER_NAME  "vboxvideo"  /* For now, as this driver is basically a stub. */
-#define VBOX_DRI_DRIVER_NAME  "vboxvideo"  /* For starters. */
-#define VBOX_MAX_DRAWABLES    256          /* At random. */
 
 #define VBOX_VIDEO_MIN_SIZE    64
 #define VBOX_VIDEO_MAX_VIRTUAL (INT16_MAX - 1)
@@ -225,15 +205,6 @@ typedef struct VBOXRec
     HGSMIGUESTCOMMANDCONTEXT guestCtx;
     /** Unrestricted horizontal resolution flag. */
     Bool fAnyX;
-#ifdef VBOX_DRI
-    Bool useDRI;
-#ifdef VBOX_DRI_OLD
-    int cVisualConfigs;
-    __GLXvisualConfig *pVisualConfigs;
-    DRIInfoRec *pDRIInfo;
-# endif
-    int drmFD;
-#endif
 } VBOXRec, *VBOXPtr;
 
 /* helpers.c */
@@ -285,13 +256,6 @@ extern void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, b
 extern void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
 extern void vbvxSetUpLinuxACPI(ScreenPtr pScreen);
 extern void vbvxCleanUpLinuxACPI(ScreenPtr pScreen);
-
-/* DRI stuff */
-extern Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen,
-                              VBOXPtr pVBox);
-extern Bool VBOXDRIFinishScreenInit(ScreenPtr pScreen);
-extern void VBOXDRIUpdateStride(ScrnInfoPtr pScrn, VBOXPtr pVBox);
-extern void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox);
 
 #endif /* _VBOXVIDEO_H_ */
 

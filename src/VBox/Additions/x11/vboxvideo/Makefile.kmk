@@ -26,25 +26,18 @@ endif
 vboxvideo_13_DEFS := $(vboxvideo_70_DEFS) VBOXVIDEO_13
 vboxvideo_15_DEFS := \
 	$(vboxvideo_13_DEFS) NO_ANSIC PCIACCESS XSERVER_LIBPCIACCESS _XORG_SERVER_H_ _DIX_CONFIG_H_
-if1of ($(KBUILD_TARGET), linux solaris)
- vboxvideo_15_DEFS += \
- 	VBOX_DRI
-endif
 vboxvideo_xorg_INCS = \
-	$(VBOX_PATH_X11_ROOT)/dri2proto-2.8 \
 	$(VBOX_PATH_X11_ROOT)/fontsproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
 	$(VBOX_PATH_X11_ROOT)/MesaLib-8.0.4-GL \
 	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
 	$(VBOX_PATH_X11_ROOT)/kbproto-1.0.6 \
-	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/libpciaccess-0.10.8 \
 	$(VBOX_PATH_X11_ROOT)/libXext-1.3.1 \
 	$(VBOX_PATH_X11_ROOT)/pixman-0.16.0 \
 	$(VBOX_PATH_X11_ROOT)/randrproto-1.3.0 \
 	$(VBOX_PATH_X11_ROOT)/renderproto-0.11 \
 	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
-	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18
 
 vboxvideo.c_DEPS = $(VBOX_SVN_REV_HEADER)
@@ -193,19 +186,11 @@ DLLS += vboxvideo_drv_15
 vboxvideo_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_15_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_15_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=10503000
-if1of ($(KBUILD_TARGET), linux solaris)
- vboxvideo_drv_15_DEFS += \
- 	VBOX_DRI_OLD
-endif
 vboxvideo_drv_15_INCS = \
 	$(vboxvideo_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.5.3
 vboxvideo_drv_15_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_15_SOURCES  = $(vboxvideo_drv_13_SOURCES)
-if1of ($(KBUILD_TARGET), linux solaris)
- vboxvideo_drv_15_SOURCES += \
- 	vboxvideo_dri.c
-endif
 
 
 #
@@ -215,10 +200,6 @@ DLLS += vboxvideo_drv_16
 vboxvideo_drv_16_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_16_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_16_DEFS := $(vboxvideo_15_DEFS) XORG_VERSION_CURRENT=10600000
-if1of ($(KBUILD_TARGET), linux solaris)
- vboxvideo_drv_16_DEFS += \
- 	VBOX_DRI_OLD
-endif
 vboxvideo_drv_16_INCS = \
 	$(vboxvideo_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.5 \
@@ -238,10 +219,6 @@ vboxvideo_drv_17_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.7.7
 vboxvideo_drv_17_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_17_SOURCES := $(vboxvideo_drv_13_SOURCES)
-if1of ($(KBUILD_TARGET), linux solaris)
- vboxvideo_drv_17_SOURCES += \
- 	vboxvideo_dri2.c
-endif
 
 
 #
@@ -408,8 +385,6 @@ ifdef VBOX_USE_SYSTEM_XORG_HEADERS
  vboxvideo_drv_system_INCS += \
         $(PATH_ROOT)/src/VBox/Runtime/include \
         /usr/include/x11 \
-        /usr/include/X11/dri \
-        /usr/include/libdrm \
         /usr/include/xorg \
         /usr/include/pixman-1
  vboxvideo_drv_system_SOURCES := $(vboxvideo_drv_17_SOURCES)

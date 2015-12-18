@@ -78,10 +78,6 @@
 #include "shadowfb.h"
 /* VGA hardware functions for setting and restoring text mode */
 #include "vgaHW.h"
-#ifdef VBOX_DRI
-# include "xf86drm.h"
-# include "xf86drmMode.h"
-#endif
 #ifdef VBOXVIDEO_13
 /* X.org 1.3+ mode setting */
 # define _HAVE_STRING_ARCH_strsep /* bits/string2.h, __strsep_1c. */
@@ -285,10 +281,6 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     }
     pScrn->displayWidth = pScrn->virtualX = adjustedWidth;
     pScrn->virtualY = height;
-#ifdef VBOX_DRI_OLD
-    if (pVBox->useDRI)
-        VBOXDRIUpdateStride(pScrn, pVBox);
-#endif
     return TRUE;
 }
 
@@ -862,18 +854,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (!xf86LoadSubModule(pScrn, "vgahw"))
         return FALSE;
 
-#ifdef VBOX_DRI_OLD
-    /* Load the dri module. */
-    if (!xf86LoadSubModule(pScrn, "dri"))
-        return FALSE;
-#else
-# ifdef VBOX_DRI
-    /* Load the dri module. */
-    if (!xf86LoadSubModule(pScrn, "dri2"))
-        return FALSE;
-# endif
-#endif
-
 #ifndef PCIACCESS
     if (pVBox->pEnt->location.type != BUS_PCI)
         return FALSE;
@@ -946,7 +926,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
 #endif /* !VBOXVIDEO_13 */
 
-    /* Needed before we initialise DRI. */
     pScrn->displayWidth = pScrn->virtualX;
 
     xf86PrintModes(pScrn);
@@ -1208,15 +1187,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     if (!miSetPixmapDepths())
         return (FALSE);
 
-#ifdef VBOX_DRI
-    pVBox->useDRI = VBOXDRIScreenInit(pScrn, pScreen, pVBox);
-# ifndef VBOX_DRI_OLD  /* DRI2 */
-    if (pVBox->drmFD >= 0)
-        /* Tell the kernel driver, if present, that we are taking over. */
-        drmIoctl(pVBox->drmFD, VBOXVIDEO_IOCTL_DISABLE_HGSMI, NULL);
-# endif
-#endif
-
     if (!fbScreenInit(pScreen, pVBox->base,
                       pScrn->virtualX, pScrn->virtualY,
                       pScrn->xDpi, pScrn->yDpi,
@@ -1366,11 +1336,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "Unable to start the VirtualBox mouse pointer integration with the host system.\n");
 
-#ifdef VBOX_DRI_OLD
-    if (pVBox->useDRI)
-        pVBox->useDRI = VBOXDRIFinishScreenInit(pScreen);
-#endif
-
     return (TRUE);
 }
 
@@ -1389,16 +1354,6 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
 
     TRACE_ENTRY();
     updateGraphicsCapability(pScrn, TRUE);
-#ifdef VBOX_DRI_OLD
-    if (pVBox->useDRI)
-        DRIUnlock(xf86ScrnToScreen(pScrn));
-#elif defined(VBOX_DRI)  /* DRI2 */
-    if (pVBox->drmFD >= 0)
-    {
-        /* Tell the kernel driver, if present, that we are taking over. */
-        drmSetMaster(pVBox->drmFD);
-    }
-#endif
     vbvxSetUpHGSMIHeapInGuest(pVBox, pScrn->videoRam * 1024);
     vboxEnableVbva(pScrn);
     /* Re-set video mode */
@@ -1432,13 +1387,6 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
 #endif
     vboxDisableVbva(pScrn);
     vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * (pScrn->bitsPerPixel / 8), 0);
-#ifdef VBOX_DRI_OLD
-    if (pVBox->useDRI)
-        DRILock(xf86ScrnToScreen(pScrn), 0);
-#elif defined(VBOX_DRI)  /* DRI2 */
-    if (pVBox->drmFD >= 0)
-        drmDropMaster(pVBox->drmFD);
-#endif
     VBOXRestoreMode(pScrn);
     TRACE_EXIT();
 }
@@ -1447,9 +1395,6 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-#if defined(VBOX_DRI) && !defined(VBOX_DRI_OLD)  /* DRI2 */
-    BOOL fRestore = TRUE;
-#endif
     BOOL ret;
 
     if (pScrn->vtSema)
@@ -1463,22 +1408,8 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
         vboxDisableVbva(pScrn);
         vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * (pScrn->bitsPerPixel / 8), 0);
     }
-#ifdef VBOX_DRI
-# ifndef VBOX_DRI_OLD  /* DRI2 */
-    if (   pVBox->drmFD >= 0
-        /* Tell the kernel driver, if present, that we are going away. */
-        && drmIoctl(pVBox->drmFD, VBOXVIDEO_IOCTL_ENABLE_HGSMI, NULL) >= 0)
-        fRestore = false;
-# endif
-    if (pVBox->useDRI)
-        VBOXDRICloseScreen(pScreen, pVBox);
-    pVBox->useDRI = false;
-#endif
-#if defined(VBOX_DRI) && !defined(VBOX_DRI_OLD)  /* DRI2 */
-    if (fRestore)
-#endif
-        if (pScrn->vtSema)
-            VBOXRestoreMode(pScrn);
+    if (pScrn->vtSema)
+        VBOXRestoreMode(pScrn);
     if (pScrn->vtSema)
         VBOXUnmapVidMem(pScrn);
     pScrn->vtSema = FALSE;
@@ -1601,21 +1532,8 @@ VBOXRestoreMode(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     vgaRegPtr vgaReg;
-#ifdef VBOX_DRI
-    drmModeResPtr pRes;
-#endif
 
     TRACE_ENTRY();
-#ifdef VBOX_DRI
-    /* Do not try to re-set the VGA state if a mode-setting driver is loaded. */
-    if (   pVBox->drmFD >= 0
-        && LoaderSymbol("drmModeGetResources") != NULL
-        && (pRes = drmModeGetResources(pVBox->drmFD)) != NULL)
-    {
-        drmModeFreeResources(pRes);
-        return;
-    }
-#endif
     vgaReg = &VGAHWPTR(pScrn)->SavedReg;
     vgaHWRestore(pScrn, vgaReg, VGA_SR_ALL);
     if (pVBox->fSavedVBEMode)
