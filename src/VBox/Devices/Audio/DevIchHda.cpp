@@ -3020,11 +3020,11 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 
     PHDADRIVER pDrv;
 
-    uint64_t uTicksNow     = TMTimerGet(pTimer);
-    uint64_t cTicksElapsed = uTicksNow  - pThis->uTimerTS;
+    uint64_t cTicksNow     = TMTimerGet(pTimer);
+    uint64_t cTicksElapsed = cTicksNow  - pThis->uTimerTS;
     uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
-    pThis->uTimerTS = uTicksNow;
+    pThis->uTimerTS = cTicksNow;
 
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
@@ -3076,7 +3076,7 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     /* Kick the timer again. */
     uint64_t cTicks = pThis->cTimerTicks;
     /** @todo adjust cTicks down by now much cbOutMin represents. */
-    TMTimerSet(pThis->pTimer, uTicksNow + cTicks);
+    TMTimerSet(pThis->pTimer, cTicksNow + cTicks);
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
