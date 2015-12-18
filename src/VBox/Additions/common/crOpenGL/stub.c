@@ -524,6 +524,9 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
         pWindow->pVisibleRegions = pXRects;
         pWindow->cVisibleRegions = cRects;
 
+        if (cRects == 0)
+            return GL_TRUE;
+
         pGLRects = crAlloc(4*cRects*sizeof(GLint));
         if (!pGLRects)
         {
