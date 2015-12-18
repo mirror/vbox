@@ -1136,6 +1136,10 @@ stubInit(void)
  * can do, better for GLX to fail than the whole X server).  To keep things as
  * simple and fail-safe as possible, we use a fixed path to the system GL
  * library. */
+#ifndef RTLD_DEEPBIND
+# define RTLD_DEEPBIND 0x8
+#endif
+
 void __attribute__ ((constructor)) checkServerGLX(void)
 {
     char *pszDisplay = getenv("DISPLAY");
