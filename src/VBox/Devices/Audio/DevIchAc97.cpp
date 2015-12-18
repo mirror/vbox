@@ -303,18 +303,8 @@ typedef struct AC97OUTPUTSTREAM
 typedef struct AC97STATE *PAC97STATE;
 typedef struct AC97DRIVER
 {
-    union
-    {
-        /** Node for storing this driver in our device driver
-         *  list of AC97STATE. */
-        RTLISTNODE                     Node;
-        struct
-        {
-            R3PTRTYPE(void *)          dummy1;
-            R3PTRTYPE(void *)          dummy2;
-        } dummy;
-    };
-
+    /** Node for storing this driver in our device driver list of AC97STATE. */
+    RTLISTNODER3                       Node;
     /** Pointer to AC97 controller (state). */
     R3PTRTYPE(PAC97STATE)              pAC97State;
     /** Driver flags. */
@@ -355,12 +345,12 @@ typedef struct AC97STATE
     /** Stream state for output. */
     AC97STREAM              StrmStOut;
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
-    /** The emulation timer for handling the attached
-     *  LUN drivers. */
+    /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3              pTimer;
-    /** Timer ticks for handling the LUN drivers. */
-    uint64_t                uTimerTicks;
-    /** Timestamp (delta) since last timer call. */
+    /** The timer interval for pumping data thru the LUN drivers in timer ticks. */
+    uint64_t                cTimerTicks;
+    /** Timestamp of the last timer callback (ac97Timer).
+     * Used to calculate the time actually elapsed between two timer callbacks. */
     uint64_t                uTimerTS;
 #endif
 #ifdef VBOX_WITH_STATISTICS
@@ -368,7 +358,7 @@ typedef struct AC97STATE
     STAMCOUNTER             StatBytesRead;
     STAMCOUNTER             StatBytesWritten;
 #endif
-    /** List of associated LUN drivers. */
+    /** List of associated LUN drivers (AC97DRIVER). */
     RTLISTANCHOR            lstDrv;
     /** The device' software mixer. */
     R3PTRTYPE(PAUDIOMIXER)  pMixer;
@@ -1176,8 +1166,9 @@ static int ichac97ReadAudio(PAC97STATE pThis, PAC97STREAM pStrmSt, uint32_t cbMa
 
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
-    AssertPtrReturnVoid(pThis);
+    PAC97STATE pThis = (PAC97STATE)pvUser;
+    Assert(pThis == PDMINS_2_DATA(pDevIns, PAC97STATE));
+    AssertPtr(pThis);
 
     STAM_PROFILE_START(&pThis->StatTimer, a);
 
@@ -1190,15 +1181,17 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
     uint32_t cbIn, cbOut;
 
-    uint64_t uTicksNow     = PDMDevHlpTMTimeVirtGet(pDevIns);
-    uint64_t uTicksElapsed = uTicksNow  - pThis->uTimerTS;
-    uint64_t uTicksPerSec  = PDMDevHlpTMTimeVirtGetFreq(pDevIns);
+    uint64_t cTicksNow     = TMTimerGet(pTimer);
+    uint64_t cTicksElapsed = cTicksNow  - pThis->uTimerTS;
+    uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
-    pThis->uTimerTS = uTicksNow;
+    pThis->uTimerTS = cTicksNow;
 
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
-        cbIn = cbOut = 0;
+        uint32_t cbIn = 0;
+        uint32_t cbOut = 0;
+
         rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
                                               &cbIn, &cbOut, NULL /* cSamplesLive */);
         if (RT_SUCCESS(rc))
@@ -1218,7 +1211,7 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
         if (   RT_FAILURE(rc)
             || !fIsActiveOut)
         {
-            uint32_t cSamplesMin  = (int)((2 * uTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + uTicksPerSec) / uTicksPerSec / 2);
+            uint32_t cSamplesMin  = (int)((2 * cTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + cTicksPerSec) / cTicksPerSec / 2);
             uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
 
 #ifdef DEBUG_TIMER
@@ -1253,7 +1246,10 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     if (cbInMax)
         ichac97TransferAudio(pThis, PI_INDEX, cbInMax); /** @todo Add rc! */
 
-    TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTimerTicks);
+    /* Kick the timer again. */
+    uint64_t cTicks = pThis->cTimerTicks;
+    /** @todo adjust cTicks down by now much cbOutMin represents. */
+    TMTimerSet(pThis->pTimer, cTicksNow + cTicks);
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
@@ -2484,14 +2480,12 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
         if (RT_SUCCESS(rc))
         {
-            pThis->uTimerTicks = PDMDevHlpTMTimeVirtGetFreq(pDevIns) / 200; /** Hz. @todo Make this configurable! */
-            pThis->uTimerTS    = PDMDevHlpTMTimeVirtGet(pDevIns);
-            if (pThis->uTimerTicks < 100)
-                pThis->uTimerTicks = 100;
-            LogFunc(("Timer ticks=%RU64\n", pThis->uTimerTicks));
+            pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / 200; /** @todo Make this configurable! */
+            pThis->uTimerTS    = TMTimerGet(pThis->pTimer);
+            LogFunc(("Timer ticks=%RU64\n", pThis->cTimerTicks));
 
             /* Fire off timer. */
-            TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTimerTicks);
+            TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);
         }
     }
 # else
