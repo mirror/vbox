@@ -1179,8 +1179,6 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
     PAC97DRIVER pDrv;
 
-    uint32_t cbIn, cbOut;
-
     uint64_t cTicksNow     = TMTimerGet(pTimer);
     uint64_t cTicksElapsed = cTicksNow  - pThis->uTimerTS;
     uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
