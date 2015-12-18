@@ -169,6 +169,8 @@ RTDECL(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     {
         /* Submit the buffer to the host. */
         VBoxVideoCmnPortWriteUlong(pCtx->port, offBuffer);
+        /* Make the compiler aware that the host has changed memory. */
+        ASMCompilerBarrier();
         return VINF_SUCCESS;
     }
 
