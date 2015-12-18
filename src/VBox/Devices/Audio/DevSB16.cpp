@@ -2058,7 +2058,8 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "DMA\0"
                               "DMA16\0"
                               "Port\0"
-                              "Version\0"))
+                              "Version\0"
+                              "TimerHz\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for SB16 device"));
 

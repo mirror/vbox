@@ -4296,7 +4296,8 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      * Validations.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "R0Enabled\0"
-                                          "RCEnabled\0"))
+                                          "RCEnabled\0"
+                                          "TimerHz\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_ ("Invalid configuration for the Intel HDA device"));
 

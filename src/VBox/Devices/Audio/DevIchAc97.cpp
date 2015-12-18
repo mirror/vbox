@@ -2242,10 +2242,21 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Validations.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Codec\0"))
+    if (!CFGMR3AreValuesValid(pCfg,
+                              "Codec\0"
+                              "TimerHz\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for the AC'97 device"));
-    int rc;
+
+    /*
+     * Read config data.
+     */
+    char szCodec[20];
+    int rc = CFGMR3QueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("AC'97 configuration error: Querying \"Codec\" as string failed"));
+
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
     uint16_t uTimerHz;
     rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 200 /* Hz */);
@@ -2253,15 +2264,6 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC'97 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
 #endif
-
-    /*
-     * Determine the codec model.
-     */
-    char szCodec[20];
-    rc = CFGMR3QueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("AC'97 configuration error: Querying \"Codec\" as string failed"));
 
     /*
      * The AD1980 codec (with corresponding PCI subsystem vendor ID) is whitelisted
