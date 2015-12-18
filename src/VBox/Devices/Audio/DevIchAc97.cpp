@@ -2245,12 +2245,20 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (!CFGMR3AreValuesValid(pCfg, "Codec\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for the AC'97 device"));
+    int rc;
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+    uint16_t uTimerHz;
+    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 200 /* Hz */);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AC'97 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
+#endif
 
     /*
      * Determine the codec model.
      */
     char szCodec[20];
-    int rc = CFGMR3QueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
+    rc = CFGMR3QueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("AC'97 configuration error: Querying \"Codec\" as string failed"));
@@ -2478,9 +2486,9 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
         if (RT_SUCCESS(rc))
         {
-            pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / 200; /** @todo Make this configurable! */
+            pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / uTimerHz;
             pThis->uTimerTS    = TMTimerGet(pThis->pTimer);
-            LogFunc(("Timer ticks=%RU64\n", pThis->cTimerTicks));
+            LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, uTimerHz));
 
             /* Fire off timer. */
             TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);

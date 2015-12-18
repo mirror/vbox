@@ -2047,7 +2047,6 @@ static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
-    int rc;
 
     /*
      * Validations.
@@ -2061,34 +2060,34 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "Port\0"
                               "Version\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Invalid configuration for sb16 device"));
+                                N_("Invalid configuration for SB16 device"));
 
     /*
      * Read config data.
      */
-    rc = CFGMR3QuerySIntDef(pCfgHandle, "IRQ", &pThis->irq, 5);
+    int rc = CFGMR3QuerySIntDef(pCfgHandle, "IRQ", &pThis->irq, 5);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"IRQ\" value"));
+                                N_("SB16 configuration error: Failed to get the \"IRQ\" value"));
     pThis->irqCfg  = pThis->irq;
 
     rc = CFGMR3QuerySIntDef(pCfgHandle, "DMA", &pThis->dma, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"DMA\" value"));
+                                N_("SB16 configuration error: Failed to get the \"DMA\" value"));
     pThis->dmaCfg  = pThis->dma;
 
     rc = CFGMR3QuerySIntDef(pCfgHandle, "DMA16", &pThis->hdma, 5);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"DMA16\" value"));
+                                N_("SB16 configuration error: Failed to get the \"DMA16\" value"));
     pThis->hdmaCfg = pThis->hdma;
 
     RTIOPORT Port;
     rc = CFGMR3QueryPortDef(pCfgHandle, "Port", &Port, 0x220);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"Port\" value"));
+                                N_("SB16 configuration error: Failed to get the \"Port\" value"));
     pThis->port    = Port;
     pThis->portCfg = Port;
 
@@ -2096,7 +2095,16 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = CFGMR3QueryU16Def(pCfgHandle, "Version", &u16Version, 0x0405);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"Version\" value"));
+                                N_("SB16 configuration error: Failed to get the \"Version\" value"));
+
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+    uint16_t uTimerHz;
+    rc = CFGMR3QueryU16Def(pCfgHandle, "TimerHz", &uTimerHz, 200 /* Hz */);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("SB16 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
+#endif
+
     pThis->ver     = u16Version;
     pThis->verCfg  = u16Version;
 
@@ -2179,9 +2187,9 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             AssertMsgFailedReturn(("Error creating I/O timer, rc=%Rrc\n", rc), rc);
         else
         {
-            pThis->cTimerTicksIO = TMTimerGetFreq(pThis->pTimerIO) / 200; /** @todo Make this configurable! */
+            pThis->cTimerTicksIO = TMTimerGetFreq(pThis->pTimerIO) / uTimerHz;
             pThis->uTimerTSIO    = TMTimerGet(pThis->pTimerIO);
-            LogFunc(("Timer ticks=%RU64\n", pThis->cTimerTicksIO));
+            LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicksIO, uTimerHz));
 
             /* Fire off timer. */
             TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->cTimerTicksIO);

@@ -4308,6 +4308,13 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read R0Enabled as boolean"));
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+    uint16_t uTimerHz;
+    rc = CFGMR3QueryU16Def(pCfgHandle, "TimerHz", &uTimerHz, 500 /* Hz */);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
+#endif
 
     /*
      * Initialize data (most of it anyway).
@@ -4614,9 +4621,9 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             /** @todo Investigate why sounds is getting corrupted if the "ticks" value is too
              *        low, e.g. "PDMDevHlpTMTimeVirtGetFreq / 200".
              *  Update: Because the guest doesn't prepare enough data at a time. */
-            pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / 500; /** @todo Make this configurable! */
+            pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / uTimerHz;
             pThis->uTimerTS    = TMTimerGet(pThis->pTimer);
-            LogFunc(("Timer ticks=%RU64\n", pThis->cTimerTicks));
+            LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, uTimerHz));
 
             /* Fire off timer. */
             TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);
