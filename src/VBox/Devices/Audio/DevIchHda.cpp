@@ -736,12 +736,12 @@ typedef struct HDASTATE
     /** Flag whether the RC part is enabled. */
     bool                               fRCEnabled;
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
-    /** The emulation timer for handling the attached
-     *  LUN drivers. */
+    /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3                         pTimer;
-    /** Timer ticks for handling the LUN drivers. */
-    uint64_t                           uTimerTicks;
-    /** Timestamp (delta) since last timer call. */
+    /** The timer interval for pumping data thru the LUN drivers in timer ticks. */
+    uint64_t                           cTimerTicks;
+    /** Timestamp of the last timer callback (hdaTimer).
+     * Used to calculate the time actually elapsed between two timer callbacks. */
     uint64_t                           uTimerTS;
 #endif
 #ifdef VBOX_WITH_STATISTICS
@@ -755,7 +755,7 @@ typedef struct HDASTATE
     R3PTRTYPE(PHDACODEC)               pCodec;
     union
     {
-        /** List of associated LUN drivers. */
+        /** List of associated LUN drivers (HDADRIVER). */
         RTLISTANCHOR                   lstDrv;
         /** Padding for alignment. */
         struct
@@ -3027,33 +3027,31 @@ static DECLCALLBACK(int) hdaSetVolume(PHDASTATE pThis, ENMSOUNDSOURCE enmSource,
 
 static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
-    AssertPtrReturnVoid(pThis);
+    PHDASTATE pThis = (PHDASTATE)pvUser;
+    Assert(pThis == PDMINS_2_DATA(pDevIns, PHDASTATE));
+    AssertPtr(pThis);
 
     STAM_PROFILE_START(&pThis->StatTimer, a);
-
-    int rc = VINF_SUCCESS;
 
     uint32_t cbInMax  = 0;
     uint32_t cbOutMin = UINT32_MAX;
 
     PHDADRIVER pDrv;
 
-    uint32_t cbIn, cbOut;
-
-    uint64_t uTicksNow     = PDMDevHlpTMTimeVirtGet(pDevIns);
-    uint64_t uTicksElapsed = uTicksNow  - pThis->uTimerTS;
-    uint64_t uTicksPerSec  = PDMDevHlpTMTimeVirtGetFreq(pDevIns);
+    uint64_t uTicksNow     = TMTimerGet(pTimer);
+    uint64_t cTicksElapsed = uTicksNow  - pThis->uTimerTS;
+    uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
     pThis->uTimerTS = uTicksNow;
 
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
-        cbIn = cbOut = 0;
-        rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                              &cbIn, &cbOut, NULL /* cSamplesLive */);
+        uint32_t cbIn = 0;
+        uint32_t cbOut = 0;
+
+        int rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector, &cbIn, &cbOut, NULL /* pcSamplesLive */);
         if (RT_SUCCESS(rc))
-            rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* cSamplesPlayed */);
+            rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* pcSamplesPlayed */);
 
 #ifdef DEBUG_TIMER
         LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, rc, cbIn, cbOut));
@@ -3069,7 +3067,7 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         if (   RT_FAILURE(rc)
             || !fIsActiveOut)
         {
-            uint32_t cSamplesMin  = (int)((2 * uTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + uTicksPerSec) / uTicksPerSec / 2);
+            uint32_t cSamplesMin  = (int)((2 * cTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + cTicksPerSec) / cTicksPerSec / 2);
             uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
 
 #ifdef DEBUG_TIMER
@@ -3094,7 +3092,9 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     hdaTransfer(pThis, PI_INDEX, cbInMax  /* cbToProcess */, NULL /* pcbProcessed */);
 
     /* Kick the timer again. */
-    TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTimerTicks);
+    uint64_t cTicks = pThis->cTimerTicks;
+    /** @todo adjust cTicks down by now much cbOutMin represents. */
+    TMTimerSet(pThis->pTimer, uTicksNow + cTicks);
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
@@ -4173,7 +4173,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
      */
     if (pThis->pTimer)
     {
-        rc2 = TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTimerTicks);
+        rc2 = TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);
         AssertRC(rc2);
     }
 
@@ -4631,15 +4631,14 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         if (RT_SUCCESS(rc))
         {
             /** @todo Investigate why sounds is getting corrupted if the "ticks" value is too
-             *        low, e.g. "PDMDevHlpTMTimeVirtGetFreq / 200". */
-            pThis->uTimerTicks = PDMDevHlpTMTimeVirtGetFreq(pDevIns) / 500; /** @todo Make this configurable! */
-            pThis->uTimerTS    = PDMDevHlpTMTimeVirtGet(pDevIns);
-            if (pThis->uTimerTicks < 100)
-                pThis->uTimerTicks = 100;
-            LogFunc(("Timer ticks=%RU64\n", pThis->uTimerTicks));
+             *        low, e.g. "PDMDevHlpTMTimeVirtGetFreq / 200".
+             *  Update: Because the guest doesn't prepare enough data at a time. */
+            pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / 500; /** @todo Make this configurable! */
+            pThis->uTimerTS    = TMTimerGet(pThis->pTimer);
+            LogFunc(("Timer ticks=%RU64\n", pThis->cTimerTicks));
 
             /* Fire off timer. */
-            TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTimerTicks);
+            TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);
         }
     }
 # else
