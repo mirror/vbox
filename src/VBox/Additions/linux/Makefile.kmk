@@ -133,7 +133,8 @@ VBOX_ADD_STRIP_LIB += \
 	VBoxOGLfeedbackspu.so \
 	VBoxOGLpackspu.so \
 	VBoxOGLpassthroughspu.so \
-	VBoxOGL.so
+	VBoxOGL.so \
+	VBoxEGL.so
 endif
 
 VBOX_ADD_STRIP_MOD.linux = \

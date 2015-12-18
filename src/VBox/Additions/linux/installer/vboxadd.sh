@@ -44,10 +44,12 @@ cpu=`uname -m`;
 case "$cpu" in
   i[3456789]86|x86)
     cpu="x86"
+    ldconfig_arch="(libc6)"
     lib_candidates="/usr/lib/i386-linux-gnu /usr/lib /lib"
     ;;
   x86_64|amd64)
     cpu="amd64"
+    ldconfig_arch="(libc6,x86-64)"
     lib_candidates="/usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64 /lib"
     ;;
 esac
@@ -208,6 +210,23 @@ start()
 
     # This is needed as X.Org Server 1.13 does not auto-load the module.
     running_vboxvideo || $MODPROBE vboxvideo > /dev/null 2>&1
+    rm -rf /etc/ld.so.conf.d/00vboxvideo.conf
+    ldconfig
+    if /usr/bin/VBoxClient --check3d; then
+        rm -r /tmp/VBoxOGL
+        mkdir -m 0755 /tmp/VBoxOGL
+        mkdir -m 0755 /tmp/VBoxOGL/system
+        ldconfig -p | while read -r line; do
+            case "${line}" in "libGL.so.1 ${ldconfig_arch} => "*)
+                ln -s "${line#libGL.so.1 ${ldconfig_arch} => }" /tmp/VBoxOGL/system/libGL.so.1
+                break
+            esac
+        done
+        echo "/tmp/VBoxOGL" > /etc/ld.so.conf.d/00vboxvideo.conf
+        ln -s "${INSTALL_DIR}/lib/VBoxOGL.so" /tmp/VBoxOGL/libGL.so.1
+        ln -s "${INSTALL_DIR}/lib/VBoxEGL.so" /tmp/VBoxOGL/libEGL.so.1
+        ldconfig
+    fi
 
     # Mount all shared folders from /etc/fstab. Normally this is done by some
     # other startup script but this requires the vboxdrv kernel module loaded.
@@ -221,6 +240,10 @@ start()
 stop()
 {
     begin "Stopping VirtualBox Additions" console;
+    if test -r /etc/ld.so.conf.d/00vboxvideo.conf; then
+        rm /etc/ld.so.conf.d/00vboxvideo.conf
+        ldconfig
+    fi
     if ! umount -a -t vboxsf 2>/dev/null; then
         fail "Cannot unmount vboxsf folders"
     fi
