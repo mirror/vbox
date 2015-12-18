@@ -86,18 +86,8 @@ typedef struct SB16OUTPUTSTREAM
 typedef struct SB16STATE *PSB16STATE;
 typedef struct SB16DRIVER
 {
-    union
-    {
-        /** Node for storing this driver in our device driver
-         *  list of SB16STATE. */
-        RTLISTNODE                     Node;
-        struct
-        {
-            R3PTRTYPE(void *)          dummy1;
-            R3PTRTYPE(void *)          dummy2;
-        } dummy;
-    };
-
+    /** Node for storing this driver in our device driver list of SB16STATE. */
+    RTLISTNODER3                       Node;
     /** Pointer to SB16 controller (state). */
     R3PTRTYPE(PSB16STATE)              pSB16State;
     /** Driver flags. */
@@ -179,11 +169,12 @@ typedef struct SB16STATE
     /** Audio sink for PCM output. */
     R3PTRTYPE(PAUDMIXSINK)         pSinkOutput;
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
-    /** The emulation timer for handling I/O of the attached LUN drivers. */
+    /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3                     pTimerIO;
-    /** Timer ticks for handling the LUN drivers. */
-    uint64_t                       uTimerTicksIO;
-    /** Timestamp (delta) since last timer call. */
+    /** The timer interval for pumping data thru the LUN drivers in timer ticks. */
+    uint64_t                       cTimerTicksIO;
+    /** Timestamp of the last timer callback (sb16TimerIO).
+     * Used to calculate the time actually elapsed between two timer callbacks. */
     uint64_t                       uTimerTSIO;
 #endif
     PTMTIMER  pTimerIRQ;
@@ -1651,8 +1642,9 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
 
 static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
-    AssertPtrReturnVoid(pThis);
+    PSB16STATE pThis = (PSB16STATE)pvUser;
+    Assert(pThis == PDMINS_2_DATA(pDevIns, PSB16STATE));
+    AssertPtr(pThis);
 
     int rc = VINF_SUCCESS;
 
@@ -1661,42 +1653,48 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 
     PSB16DRIVER pDrv;
 
-    uint32_t cbIn, cbOut;
+    uint64_t cTicksNow     = TMTimerGet(pTimer);
+    uint64_t cTicksElapsed = cTicksNow  - pThis->uTimerTSIO;
+    uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
-    uint64_t uTicksNow     = PDMDevHlpTMTimeVirtGet(pDevIns);
-    uint64_t uTicksElapsed = uTicksNow  - pThis->uTimerTSIO;
-    uint64_t uTicksPerSec  = PDMDevHlpTMTimeVirtGetFreq(pDevIns);
-
-    pThis->uTimerTSIO = uTicksNow;
+    pThis->uTimerTSIO = cTicksNow;
 
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        cbIn = cbOut = 0;
+        uint32_t cbIn = 0;
+        uint32_t cbOut = 0;
+
         rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
                                               &cbIn, &cbOut, NULL /* cSamplesLive */);
         if (RT_SUCCESS(rc))
             rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* cSamplesPlayed */);
 
-        uint32_t cSamplesMin  = (int)((2 * uTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + uTicksPerSec) / uTicksPerSec / 2);
-        uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
+        Log2Func(("LUN#%RU8: rc=%Rrc, cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, rc, cbIn, cbOut));
 
-        LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbOut=%RU32, cSamplesMin=%RU32, cbSamplesMin=%RU32\n",
-                     pDrv->uLUN, rc, cbOut, cSamplesMin, cbSamplesMin));
+        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut);
 
+        /* If we there was an error handling (available) output or there simply is no output available,
+         * then calculate the minimum data rate which must be processed by the device emulation in order
+         * to function correctly.
+         *
+         * This is not the optimal solution, but as we have to deal with this on a timer-based approach
+         * (until we have the audio callbacks) we need to have device' DMA engines running. */
         if (   RT_FAILURE(rc)
-            && cbSamplesMin > cbOut)
+            || !fIsActiveOut)
         {
-            LogFlowFunc(("LUN#%RU8: Adj: %RU32 -> %RU32\n", pDrv->uLUN, cbOut, cbSamplesMin));
-            cbOut = cbSamplesMin;
+            uint32_t cSamplesMin  = (int)((2 * cTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + cTicksPerSec) / cTicksPerSec / 2);
+            uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
+
+            Log2Func(("\trc=%Rrc, cSamplesMin=%RU32, cbSamplesMin=%RU32\n", rc, cSamplesMin, cbSamplesMin));
+
+            cbOut = RT_MAX(cbOut, cbSamplesMin);
         }
 
         cbOutMin = RT_MIN(cbOutMin, cbOut);
         cbInMax  = RT_MAX(cbInMax, cbIn);
     }
 
-#ifdef DEBUG_TIMER
-    LogFlowFunc(("cbInMax=%RU32, cbOutMin=%RU32\n", cbInMax, cbOutMin));
-#endif
+    Log2Func(("cbInMax=%RU32, cbOutMin=%RU32\n", cbInMax, cbOutMin));
 
     if (cbOutMin == UINT32_MAX)
         cbOutMin = 0;
@@ -1717,7 +1715,10 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
      */
     /** @todo Implement recording. */
 
-    TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->uTimerTicksIO);
+    /* Kick the timer again. */
+    uint64_t cTicks = pThis->cTimerTicksIO;
+    /** @todo adjust cTicks down by now much cbOutMin represents. */
+    TMTimerSet(pThis->pTimerIO, cTicksNow + cTicks);
 }
 
 static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
@@ -2178,14 +2179,12 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             AssertMsgFailedReturn(("Error creating I/O timer, rc=%Rrc\n", rc), rc);
         else
         {
-            pThis->uTimerTicksIO = PDMDevHlpTMTimeVirtGetFreq(pDevIns) / 200; /** Hz. @todo Make this configurable! */
-            pThis->uTimerTSIO    = PDMDevHlpTMTimeVirtGet(pDevIns);
-            if (pThis->uTimerTicksIO < 100)
-                pThis->uTimerTicksIO = 100;
-            LogFunc(("I/O timer ticks=%RU64\n", pThis->uTimerTicksIO));
+            pThis->cTimerTicksIO = TMTimerGetFreq(pThis->pTimerIO) / 200; /** @todo Make this configurable! */
+            pThis->uTimerTSIO    = TMTimerGet(pThis->pTimerIO);
+            LogFunc(("Timer ticks=%RU64\n", pThis->cTimerTicksIO));
 
             /* Fire off timer. */
-            TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->uTimerTicksIO);
+            TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->cTimerTicksIO);
         }
     }
 #else
