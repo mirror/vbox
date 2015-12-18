@@ -69,6 +69,17 @@ typedef RTLISTANCHOR *PRTLISTANCHOR;
 /** Pointer to a const doubly linked list anchor. */
 typedef RTLISTANCHOR const *PCRTLISTANCHOR;
 
+/** Version of RTLISTNODE for holding a ring-3 only list in data which gets
+ * shared between multiple contexts */
+#if defined(IN_RING3)
+typedef RTLISTNODE RTLISTNODER3;
+#else
+typedef struct { RTR3PTR aOffLimits[2]; } RTLISTNODER3;
+#endif
+/** Version of RTLISTANCHOR for holding a ring-3 only list in data which gets
+ * shared between multiple contexts */
+typedef RTLISTNODER3 RTLISTANCHORR3;
+
 
 /**
  * Initialize a list.

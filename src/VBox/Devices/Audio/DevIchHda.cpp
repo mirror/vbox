@@ -650,17 +650,8 @@ typedef struct HDAOUTPUTSTREAM
  */
 typedef struct HDADRIVER
 {
-    union
-    {
-        /** Node for storing this driver in our device driver
-         *  list of HDASTATE. */
-        RTLISTNODE                     Node;
-        struct
-        {
-            R3PTRTYPE(void *)          dummy1;
-            R3PTRTYPE(void *)          dummy2;
-        } dummy;
-    };
+    /** Node for storing this driver in our device driver list of HDASTATE. */
+    RTLISTNODER3                       Node;
 
     /** Pointer to HDA controller (state). */
     R3PTRTYPE(PHDASTATE)               pHDAState;
@@ -753,17 +744,8 @@ typedef struct HDASTATE
 #endif
     /** Pointer to HDA codec to use. */
     R3PTRTYPE(PHDACODEC)               pCodec;
-    union
-    {
-        /** List of associated LUN drivers (HDADRIVER). */
-        RTLISTANCHOR                   lstDrv;
-        /** Padding for alignment. */
-        struct
-        {
-            R3PTRTYPE(void *)          dummy1;
-            R3PTRTYPE(void *)          dummy2;
-        } dummy;
-    };
+    /** List of associated LUN drivers (HDADRIVER). */
+    RTLISTANCHORR3                     lstDrv;
     /** The device' software mixer. */
     R3PTRTYPE(PAUDIOMIXER)             pMixer;
     /** Audio sink for PCM output. */
