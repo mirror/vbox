@@ -652,7 +652,6 @@ typedef struct HDADRIVER
 {
     /** Node for storing this driver in our device driver list of HDASTATE. */
     RTLISTNODER3                       Node;
-
     /** Pointer to HDA controller (state). */
     R3PTRTYPE(PHDASTATE)               pHDAState;
     /** Driver flags. */
