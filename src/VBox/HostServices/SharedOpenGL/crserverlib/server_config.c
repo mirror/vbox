@@ -58,6 +58,9 @@ setDefaults(void)
 }
 
 /* Check if host reports minimal OpenGL capabilities.
+ *
+ * Require OpenGL 2.1 or later.
+ *
  * For example, on Windows host this may happen if host has no graphics
  * card drivers installed or drivers were not properly signed or VBox
  * is running via remote desktop session etc. Currently, we take care
@@ -66,19 +69,31 @@ setDefaults(void)
  * rest of hosts. */
 static bool crServerHasInsufficientCaps()
 {
-    const char *sRealRender;
-    const char *sRealVersion;
+    const char *pszRealVersion;
+    int rc;
+    uint32_t u32VerMajor = 0;
+    uint32_t u32VerMinor = 0;
+    char *pszNext = NULL;
 
     if (!cr_server.head_spu)
         return true;
 
-    sRealRender  = (const char *)cr_server.head_spu->dispatch_table.GetString(GL_REAL_RENDERER);
-    sRealVersion = (const char *)cr_server.head_spu->dispatch_table.GetString(GL_REAL_VERSION);
+    pszRealVersion = (const char *)cr_server.head_spu->dispatch_table.GetString(GL_REAL_VERSION);
+    if (!pszRealVersion)
+        return true; /* No version == insufficient. */
 
-    if (sRealRender && RTStrCmp(sRealRender, "GDI Generic") == 0)
-        if (sRealVersion && RTStrCmp(sRealVersion, "1.1.0") == 0)
-            return true;
-    return false;
+    rc = RTStrToUInt32Ex(pszRealVersion, &pszNext, 10, &u32VerMajor);
+    if (   RT_SUCCESS(rc)
+        && *pszNext == '.')
+            RTStrToUInt32Ex(pszNext + 1, NULL, 10, &u32VerMinor);
+
+    crInfo("Host supports version %d.%d [%s]", u32VerMajor, u32VerMinor, pszRealVersion);
+
+    if (   u32VerMajor > 2
+        || (u32VerMajor == 2 && u32VerMinor >= 1))
+        return false; /* >= 2.1, i.e. good enough. */
+
+    return true; /* Insufficient. */
 }
 
 void crServerSetVBoxConfiguration()
