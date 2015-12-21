@@ -33,6 +33,11 @@ LOG="/var/log/vboxadd-install-x11.log"
 CONFIG_DIR="/var/lib/VBoxGuestAdditions"
 CONFIG="config"
 SCRIPTNAME=vboxadd-x11.sh
+MODPROBE=/sbin/modprobe
+
+if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
+  MODPROBE="$MODPROBE --allow-unsupported-modules"
+fi
 
 # Check architecture
 cpu=`uname -m`;
@@ -253,20 +258,6 @@ setup()
         esac
     fi
     case $x_version in
-        1.17.99.902* )
-            # special case for Fedora 23 :-/
-            x_version_short="1.18"
-            xserver_version="X.Org Server ${x_version_short}"
-            vboxvideo_src=vboxvideo_drv_`echo ${x_version_short} | sed 's/\.//'`.so
-            setupxorgconf=""
-            test -f "${lib_dir}/${vboxvideo_src}" ||
-            {
-                echo "Warning: unknown version of the X Window System installed.  Not installing"
-                echo "X Window System drivers."
-                dox11config=""
-                vboxvideo_src=""
-            }
-            ;;
         1.*.99.* )
             echo "Warning: unsupported pre-release version of X.Org Server installed.  Not"
             echo "installing the X.Org drivers."
@@ -366,8 +357,7 @@ setup()
                     ;;
             esac
             ;;
-        * )
-            # Anything else, including all X server versions as of 1.12.
+        1.12.* | 1.13.* | 1.14.* | 1.15.* | 1.16.* )
             xserver_version="X.Org Server ${x_version_short}"
             vboxvideo_src=vboxvideo_drv_`echo ${x_version_short} | sed 's/\.//'`.so
             setupxorgconf=""
@@ -378,6 +368,12 @@ setup()
                 dox11config=""
                 vboxvideo_src=""
             }
+            ;;
+        * )
+            # For anything else, assume kernel drivers.
+            dox11config=""
+            $MODPROBE vboxvideo ||
+                echo "Warning: failed to set up the X Window System display integration."
             ;;
     esac
     test -n "${dox11config}" &&

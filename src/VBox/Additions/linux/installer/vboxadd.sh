@@ -224,6 +224,12 @@ start()
                 break
             esac
         done
+        ldconfig -p | while read -r line; do
+            case "${line}" in "libEGL.so.1 ${ldconfig_arch} => "*)
+                ln -s "${line#libEGL.so.1 ${ldconfig_arch} => }" /tmp/VBoxOGL/system/libEGL.so.1
+                break
+            esac
+        done
         echo "/tmp/VBoxOGL" > /etc/ld.so.conf.d/00vboxvideo.conf
         ln -s "${INSTALL_DIR}/lib/VBoxOGL.so" /tmp/VBoxOGL/libGL.so.1
         ln -s "${INSTALL_DIR}/lib/VBoxEGL.so" /tmp/VBoxOGL/libEGL.so.1
