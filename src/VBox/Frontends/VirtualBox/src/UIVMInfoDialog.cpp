@@ -670,7 +670,7 @@ void UIVMInfoDialog::refreshStatistics()
         const QString strUnrestrictedExecution = m_pMachineWindow->uisession()->isHWVirtExUXEnabled() ?
                                                  VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
                                                  VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
-        const QString strParavirtProvider = gpConverter->toString(m.GetEffectiveParavirtProvider());
+        const QString strParavirtProvider = gpConverter->toString(m_pMachineWindow->uisession()->paraVirtProvider());
 
         /* Guest information: */
         CGuest guest = console.GetGuest();

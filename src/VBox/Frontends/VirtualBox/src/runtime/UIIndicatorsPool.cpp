@@ -849,7 +849,7 @@ private:
         QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());
 
         /* Paravirtualization feature: */
-        const QString strParavirt = gpConverter->toString(machine.GetEffectiveParavirtProvider());
+        const QString strParavirt = gpConverter->toString(m_pSession->paraVirtProvider());
 
         /* Prepare tool-tip: */
         QString tip(QApplication::translate("UIIndicatorsPool",

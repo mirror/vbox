@@ -263,6 +263,9 @@ public:
     bool isHWVirtExUXEnabled() const { return m_fIsHWVirtExUXEnabled; }
     /** @} */
 
+    /** Returns VM's effective paravirtualization provider. */
+    KParavirtProvider paraVirtProvider() const { return m_paraVirtProvider; }
+
 signals:
 
     /** Notifies about frame-buffer resize. */
@@ -533,6 +536,9 @@ private:
     /** Holds whether the VM is currently making use of the unrestricted execution feature of VT-x. */
     bool m_fIsHWVirtExUXEnabled;
     /** @} */
+
+    /** Holds VM's effective paravirtualization provider. */
+    KParavirtProvider m_paraVirtProvider;
 
     /* Friend classes: */
     friend class UIConsoleEventHandler;
