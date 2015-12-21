@@ -225,13 +225,6 @@ verify_header(PNATState pData, struct mbuf **pMBuf)
         return 1;
     }
 
-    if (RT_UNLIKELY(pHdr->Z != 0))
-    {
-        LogErr(("NAT: hostres: MBZ bits are not\n"));
-        refuse(pData, m, RCode_FormErr);
-        return 1;
-    }
-
     if (RT_UNLIKELY(pHdr->qdcount != RT_H2N_U16_C(1)))
     {
         LogErr(("NAT: hostres: multiple questions\n"));
@@ -306,6 +299,7 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
     pHdr->rcode = RCode_NoError;
     pHdr->ra = 1;               /* the host provides recursion */
     pHdr->aa = 0;               /* we are not authoritative */
+    pHdr->Z = 0;                /* clear rfc2535 dnssec bits */
 
     off = sizeof(*pHdr);
     qname = off;
