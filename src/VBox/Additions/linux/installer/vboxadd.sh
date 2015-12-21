@@ -210,6 +210,8 @@ start()
 
     # This is needed as X.Org Server 1.13 does not auto-load the module.
     running_vboxvideo || $MODPROBE vboxvideo > /dev/null 2>&1
+    # Install the guest OpenGL drivers.  For now we don't support
+    # multi-architecture installations
     rm -rf /etc/ld.so.conf.d/00vboxvideo.conf
     ldconfig
     if /usr/bin/VBoxClient --check3d; then

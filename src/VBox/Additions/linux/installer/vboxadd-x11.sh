@@ -473,17 +473,6 @@ EOF
     # completely irrelevant on the target system.
     chcon -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
     semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
-    # Install the guest OpenGL drivers.  For now we don't support
-    # multi-architecture installations
-    for dir in /usr/lib/dri /usr/lib32/dri /usr/lib64/dri \
-        /usr/lib/xorg/modules/dri /usr/lib32/xorg/modules/dri \
-        /usr/lib64/xorg/modules/dri /usr/lib/i386-linux-gnu/dri \
-        /usr/lib/x86_64-linux-gnu/dri; do
-        if [ -d $dir ]; then
-            rm -f "$dir/vboxvideo_dri.so"
-            ln -s "$LIB/VBoxOGL.so" "$dir/vboxvideo_dri.so"
-        fi
-    done
 
     # And set up VBoxClient to start when the X session does
     install_x11_startup_app "$lib_dir/98vboxadd-xclient" "$share_dir/vboxclient.desktop" VBoxClient VBoxClient-all ||
