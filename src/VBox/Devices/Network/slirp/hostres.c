@@ -239,20 +239,6 @@ verify_header(PNATState pData, struct mbuf **pMBuf)
         return 1;
     }
 
-    if (RT_UNLIKELY(pHdr->nscount != 0))
-    {
-        LogErr(("NAT: hostres: authority RRs in query\n"));
-        refuse(pData, m, RCode_NotImp);
-        return 1;
-    }
-
-    if (RT_UNLIKELY(pHdr->arcount != 0))
-    {
-        LogErr(("NAT: hostres: additional info RRs in query\n"));
-        refuse(pData, m, RCode_NotImp);
-        return 1;
-    }
-
     if (RT_UNLIKELY(mlen < sizeof(*pHdr)
                              + /* qname  */ 1
                              + /* qtype  */ 2
@@ -378,9 +364,9 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
     /*
      * QTYPE and QCLASS
      */
-    if (RT_UNLIKELY(off + 4 != mlen))
+    if (RT_UNLIKELY(off + 4 > mlen))
     {
-        LogErr(("NAT: hostres: question too short / too long\n"));
+        LogErr(("NAT: hostres: question too short\n"));
         return refuse(pData, m, RCode_FormErr);
     }
 
@@ -407,6 +393,43 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
         LogErr(("NAT: hostres: unsupported qtype %d\n", qtype));
         return refuse(pData, m, RCode_NotImp);
     }
+
+
+    /**
+     * Check if there's anything after the question.  If query says it
+     * has authority or additional records, ignore and drop them
+     * without parsing.
+     *
+     * We have already rejected queries with answer(s) before.  We
+     * have ensured that qname in the question doesn't contain
+     * pointers, so truncating the buffer is safe.
+     */
+    if (off < mlen)
+    {
+        int trailer = mlen - off;
+
+        LogDbg(("NAT: hostres: question %zu < mlen %zu\n", off, mlen));
+
+        if (pHdr->nscount == 0 && pHdr->arcount == 0)
+        {
+            LogErr(("NAT: hostres: unexpected %d bytes after the question\n", trailer));
+            return refuse(pData, m, RCode_FormErr);
+        }
+
+        LogDbg(("NAT: hostres: ignoring %d bytes of %s%s%s records\n",
+                trailer,
+                pHdr->nscount != 0 ? "authority" : "",
+                pHdr->nscount != 0 && pHdr->arcount != 0 ? " and " : "",
+                pHdr->arcount != 0 ? "additional" : ""));
+
+        m_adj(m, -trailer);
+        mlen -= trailer;
+        res->end = res->qlen = mlen;
+
+        pHdr->nscount = 0;
+        pHdr->arcount = 0;
+    }
+
 
     /*
      * Check for IN-ADDR.ARPA.  Use the fact that res->labels at this
