@@ -259,6 +259,8 @@ public:
     bool isHWVirtExEnabled() const { return m_fIsHWVirtExEnabled; }
     /** Returns whether nested-paging CPU hardware virtualization extension is enabled. */
     bool isHWVirtExNestedPagingEnabled() const { return m_fIsHWVirtExNestedPagingEnabled; }
+    /** Returns whether the VM is currently making use of the unrestricted execution feature of VT-x. */
+    bool isHWVirtExUXEnabled() const { return m_fIsHWVirtExUXEnabled; }
     /** @} */
 
 signals:
@@ -528,6 +530,8 @@ private:
     bool m_fIsHWVirtExEnabled;
     /** Holds whether nested-paging CPU hardware virtualization extension is enabled. */
     bool m_fIsHWVirtExNestedPagingEnabled;
+    /** Holds whether the VM is currently making use of the unrestricted execution feature of VT-x. */
+    bool m_fIsHWVirtExUXEnabled;
     /** @} */
 
     /* Friend classes: */

@@ -661,14 +661,13 @@ void UIVMInfoDialog::refreshStatistics()
         QString strDnDMode = gpConverter->toString(m.GetDnDMode());
 
         /* Deterine virtualization attributes: */
-        CMachineDebugger debugger = console.GetDebugger();
         const QString strVirtualization = m_pMachineWindow->uisession()->isHWVirtExEnabled() ?
                                           VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
                                           VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
         const QString strNestedPaging = m_pMachineWindow->uisession()->isHWVirtExNestedPagingEnabled() ?
                                         VBoxGlobal::tr("Active", "details report (Nested Paging)") :
                                         VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
-        const QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
+        const QString strUnrestrictedExecution = m_pMachineWindow->uisession()->isHWVirtExUXEnabled() ?
                                                  VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
                                                  VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
         const QString strParavirtProvider = gpConverter->toString(m.GetEffectiveParavirtProvider());

@@ -841,8 +841,7 @@ private:
                                         VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
 
         /* Unrestricted Execution feature: */
-        bool bUXEnabled = debugger.GetHWVirtExUXEnabled();
-        const QString strUnrestrictExec = bUXEnabled ?
+        const QString strUnrestrictExec = m_pSession->isHWVirtExUXEnabled() ?
                                           VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
                                           VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
 
