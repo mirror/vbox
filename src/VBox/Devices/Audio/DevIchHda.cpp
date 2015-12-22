@@ -3588,7 +3588,8 @@ static int hdaSaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStrm)
 
     for (uint32_t i = 0; i < pStrm->State.cBDLE; i++)
     {
-        rc = SSMR3PutStructEx(pSSM, &pStrm->State.paBDLE[i], sizeof(HDABDLE), 0 /*fFlags*/, g_aSSMBDLEStateFields5, NULL);
+        rc = SSMR3PutStructEx(pSSM, &pStrm->State.paBDLE[i].State, sizeof(HDABDLESTATE),
+                              0 /*fFlags*/, g_aSSMBDLEStateFields5, NULL);
         AssertRCReturn(rc, rc);
     }
 
@@ -3672,6 +3673,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
         /* Since version 4 we store the register count to stay flexible. */
         case HDA_SSM_VERSION_4:
+        case HDA_SSM_VERSION_5:
         case HDA_SSM_VERSION:
             rc = SSMR3GetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
             if (cRegs != RT_ELEMENTS(pThis->au32Regs))
@@ -3758,6 +3760,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         }
 
         /* Since v5 we support flexible stream and BDLE counts. */
+        case HDA_SSM_VERSION_5:
         case HDA_SSM_VERSION:
         {
             uint32_t cStreams;
@@ -3793,18 +3796,28 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                         break;
                 }
 
+                RT_BZERO(pStrm, sizeof(HDASTREAM));
                 rc = SSMR3GetStructEx(pSSM, &pStrm->State, sizeof(HDASTREAMSTATE), 0 /* fFlags */, g_aSSMStreamStateFields5, NULL);
                 AssertRCBreak(rc);
 
                 rc = hdaStreamInit(pThis, pStrm, uStreamID);
                 AssertRCBreak(rc);
 
-                /* Load BDLE states. */
-                for (uint32_t a = 0; a < pStrm->State.cBDLE; a++)
+                if (uVersion == HDA_SSM_VERSION_5)
                 {
-                    rc = SSMR3GetStructEx(pSSM, &pStrm->State.paBDLE[a].State, sizeof(HDABDLESTATE),
-                                          0 /* fFlags */, g_aSSMBDLEStateFields5, NULL);
+                    /* v5 did not save the BDLE state correctly, so skip. */
+                    rc = SSMR3Skip(pSSM, 0x120 /* sizeof(HDABLDE) in v5 */);
                     AssertRCBreak(rc);
+                }
+                else
+                {
+                    /* Load BDLE states. */
+                    for (uint32_t a = 0; a < pStrm->State.cBDLE; a++)
+                    {
+                        rc = SSMR3GetStructEx(pSSM, &pStrm->State.paBDLE[a].State, sizeof(HDABDLESTATE),
+                                              0 /* fFlags */, g_aSSMBDLEStateFields5, NULL);
+                        AssertRCBreak(rc);
+                    }
                 }
 
                 /* Destroy dummy again. */
