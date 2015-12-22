@@ -2155,8 +2155,10 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
          */
     {
         Log(("VMMR3EmtRendezvous: %#x non-EMT\n", fFlags));
-        rcStrict = VMR3ReqCallWait(pVM, VMCPUID_ANY,
-                                   (PFNRT)VMMR3EmtRendezvous, 4, pVM, fFlags, pfnRendezvous, pvUser);
+        if (!(fFlags & VMMEMTRENDEZVOUS_FLAGS_PRIORITY))
+            rcStrict = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMR3EmtRendezvous, 4, pVM, fFlags, pfnRendezvous, pvUser);
+        else
+            rcStrict = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMR3EmtRendezvous, 4, pVM, fFlags, pfnRendezvous, pvUser);
         Log(("VMMR3EmtRendezvous: %#x non-EMT returns %Rrc\n", fFlags, VBOXSTRICTRC_VAL(rcStrict)));
     }
     else if (pVM->cCpus == 1)

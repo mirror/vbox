@@ -336,8 +336,10 @@ VMMR3DECL(int)          VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRE
  * This is not valid for any execution type where more than one EMT is active
  * at a time. */
 #define VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR        UINT32_C(0x00000008)
+/** Use VMREQFLAGS_PRIORITY when contacting the EMTs. */
+#define VMMEMTRENDEZVOUS_FLAGS_PRIORITY             UINT32_C(0x00000010)
 /** The valid flags. */
-#define VMMEMTRENDEZVOUS_FLAGS_VALID_MASK           UINT32_C(0x0000000f)
+#define VMMEMTRENDEZVOUS_FLAGS_VALID_MASK           UINT32_C(0x0000001f)
 /** @} */
 VMMR3_INT_DECL(int)     VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)     VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0Addr, void *pvBuf, size_t cbRead);
