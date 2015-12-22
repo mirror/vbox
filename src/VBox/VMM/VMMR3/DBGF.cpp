@@ -279,6 +279,13 @@ VMMR3_INT_DECL(void) DBGFR3PowerOff(PVM pVM)
                         LogFlow(("DBGFR3PowerOff: VMR3ReqProcess -> %Rrc\n", rc));
                         cPollHack = 1;
                     }
+                    /* Need to handle rendezvous too, for generic debug event management. */
+                    else if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+                    {
+                        rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
+                        AssertLogRel(rc == VINF_SUCCESS);
+                        cPollHack = 1;
+                    }
                     else if (cPollHack < 120)
                         cPollHack++;
 
