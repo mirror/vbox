@@ -36,49 +36,51 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
         ret
  %else
   %if TMPL_BITS == 16
-        sub     sp, 6
-        push    bp
-        mov     bp, sp
+        sub     sp, 6                   ; Space for extended return value (corrected in 64-bit mode).
   %else
-        push    xPRE [xSP]                ; duplicate the return address
+        push    xPRE [xSP]              ; Duplicate the return address.
+        and     dword [xSP + xCB], 0    ; Clear the high dword or it.
   %endif
+        push    dword 0
         push    sAX
-
-  %if TMPL_BITS == 16
-        ; Convert the 16-bit near return into a 32-bit far return
-        movzx   eax, word [bp + 8]
-        add     eax, BS3_ADDR_BS3TEXT16
-        mov     [bp + 2], eax
-  %endif
+        push    dword 0
+        pushfd
+        cli
 
         ; Calc ring addend.
         mov     ax, cs
-        and     ax, 3
-        shl     ax, BS3_SEL_RING_SHIFT
+        and     xAX, 3
+        shl     xAX, BS3_SEL_RING_SHIFT
+        add     xAX, BS3_SEL_R0_CS32
 
-        ; Set return segment.
-        add     ax, BS3_SEL_R0_CS64
-  %if TMPL_BITS == 16
-        mov     [bp + 6], eax
-  %else
-        mov     [xSP + xCB*2], eax
-  %endif
+        ; setup far return.
+        push    sAX
+ %if TMPL_BITS == 16
+        push    dword .sixty_four_bit
+        o32 retf
+ %else
+        push    .sixty_four_bit
+        retf
+ %endif
 
+BS3_SET_BITS 64
+.sixty_four_bit:
         ; Load 64-bit segment registers (SS64==DS64).
-        add     ax, BS3_SEL_R0_DS64 - BS3_SEL_R0_CS64
+        add     eax, BS3_SEL_R0_DS64 - BS3_SEL_R0_CS64
         mov     ss, ax
         mov     ds, ax
         mov     es, ax
 
-        ; Restore and return.
-        pop     sAX
- %if TMPL_BITS == 16
-        leave
-        o32 retf
- %else
-        retf
+  %if TMPL_BITS == 16
+        movzx   eax, word [rsp + 8*2+6]
+        add     eax, BS3_ADDR_BS3TEXT16
+        mov     [rsp + 8*2], rax
+  %endif
+
+        popf
+        pop     rax
+        ret
  %endif
-%endif
 BS3_PROC_END_CMN   Bs3SwitchTo64Bit
 
 %endif

@@ -34,50 +34,52 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
         ret
 %else
  %if TMPL_BITS == 16
-        sub     sp, 6
-        push    bp
-        mov     bp, sp
+        push    ax                      ; Reserve space for larger return value (adjusted in 32-bit code).
+        push    eax
+        pushfd
  %else
-        push    xPRE [xSP]                ; duplicate the return address
+        pushfq
+        mov     [rsp + 4], eax
  %endif
-        push    sAX
-
- %if TMPL_BITS == 16
-        ; Convert the 16-bit near return into a 32-bit far return
-        movzx   eax, word [bp + 8]
-        add     eax, BS3_ADDR_BS3TEXT16
-        mov     [bp + 2], eax
- %endif
+        cli
 
         ; Calc ring addend.
         mov     ax, cs
-        and     ax, 3
-        shl     ax, BS3_SEL_RING_SHIFT
+        and     xAX, 3
+        shl     xAX, BS3_SEL_RING_SHIFT
+        add     xAX, BS3_SEL_R0_CS32
 
-        ; Set return segment.
-        add     ax, BS3_SEL_R0_CS32
+        ; Create far return for switching to 32-bit mode.
+        push    sAX
  %if TMPL_BITS == 16
-        mov     [bp + 6], eax
+        push    dword .thirty_two_bit wrt FLAT
+        o32 retf
  %else
-        mov     [xSP + xCB*2], eax
+        push    .thirty_two_bit
+        o64 retf
  %endif
 
+BS3_SET_BITS 32
+.thirty_two_bit:
         ; Load 32-bit segment registers.
-        add     ax, BS3_SEL_R0_SS32 - BS3_SEL_R0_CS32
+        add     eax, BS3_SEL_R0_SS32 - BS3_SEL_R0_CS32
         mov     ss, ax
 
-        add     ax, BS3_SEL_R0_DS32 - BS3_SEL_R0_SS32
+        add     eax, BS3_SEL_R0_DS32 - BS3_SEL_R0_SS32
         mov     ds, ax
         mov     es, ax
 
-        ; Restore and return.
-        pop     sAX
  %if TMPL_BITS == 16
-        leave
-        o32 retf
- %else
-        retf
+        ; Adjust the return address.
+        movsx   eax, word [esp + 4*2 + 2]
+        add     eax, BS3_ADDR_BS3TEXT16
+        mov     [esp + 4*2], eax
  %endif
+
+        ; Restore and return.
+        popfd
+        pop     eax
+        ret
 %endif
 BS3_PROC_END_CMN   Bs3SwitchTo32Bit
 

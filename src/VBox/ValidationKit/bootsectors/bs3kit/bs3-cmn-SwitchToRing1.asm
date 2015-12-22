@@ -40,7 +40,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchToRing1
         mov     eax, BS3_SYSCALL_TO_RING1
         int     BS3_TRAP_SYSCALL
 
-.return
+.return:
         pop     sAX
         ret
 BS3_PROC_END_CMN   Bs3SwitchToRing1

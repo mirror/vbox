@@ -404,6 +404,7 @@ size %1                 %1 %+ _EndProc - %1
 size %1 %+ _EndProc     0
   %endif
  %endif
+ int3                                   ; handy and avoids overlapping labels.
 %endmacro
 
 

@@ -33,19 +33,23 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
 %if TMPL_BITS == 16
         ret
 %else
-        push    xAX                     ; reserve space for far return
         push    xAX
+        xPUSHF
+        cli
 
-        ; Far return, offset part. bits 63/31:16 must be zero.
-        movzx   eax, word [xSP + xCB * 3] ; returning to 16-bit, so bit 16 and out must be zero.
-        mov     [xSP + xCB * 2], xAX
-
+        ; Calc new CS.
         mov     ax, cs
-        and     ax, 3
-        shl     ax, BS3_SEL_RING_SHIFT  ; ring addend.
-        add     ax, BS3_SEL_R0_CS16
-        mov     [esp + xCB * 3], xAX
+        and     xAX, 3
+        shl     xAX, BS3_SEL_RING_SHIFT  ; ring addend.
+        add     xAX, BS3_SEL_R0_CS16
 
+        ; Construct a far return for switching to 16-bit code.
+        push    xAX
+        push    .sixteen_bit
+        xRETF
+
+BS3_BEGIN_TEXT16
+.sixteen_bit:
         ; Load 16-bit segment registers.
         add     ax, BS3_SEL_R0_SS16 - BS3_SEL_R0_CS16
         mov     ss, ax
@@ -54,9 +58,16 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
         mov     ds, ax
         mov     es, ax
 
-        ; Restore and return.
-        pop     xAX
-        retf
+        popfd
+ %if TMPL_BITS == 64
+        add     sp, 4
+ %endif
+        pop     eax
+ %if TMPL_BITS == 64
+        add     sp, 4
+ %endif
+        ret     sCB - 2                 ; Return and pop 2 or 6 bytes of "parameters" (unused return value)
+TMPL_BEGIN_TEXT
 %endif
 BS3_PROC_END_CMN   Bs3SwitchTo16Bit
 

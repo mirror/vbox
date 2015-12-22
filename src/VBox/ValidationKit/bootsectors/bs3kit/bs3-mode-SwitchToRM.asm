@@ -72,6 +72,7 @@ BS3_BEGIN_TEXT16
 %ifdef TMPL_LM
  extern TODO_FIX_LM_MODE_RETURN
 %endif
+
         push    eax
         mov     eax, cr0
         and     eax, X86_CR0_NO_PE_NO_PG

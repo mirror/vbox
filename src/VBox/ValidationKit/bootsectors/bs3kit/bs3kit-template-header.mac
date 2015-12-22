@@ -689,6 +689,7 @@
  %define xWrtRIP wrt rip
  %define xPUSHF pushq
  %define xPOPF  popfq
+ %define xRETF  o64 retf
 %else
  %ifdef TMPL_32BIT
   %define xCB  4
@@ -706,6 +707,7 @@
   %define xWrtRIP
   %define xPUSHF pushfd
   %define xPOPF  popfd
+  %define xRETF  retf
  %else
   %ifndef TMPL_16BIT
    %error "TMPL_XXBIT is not defined."
@@ -725,6 +727,7 @@
   %define xWrtRIP
   %define xPUSHF pushf
   %define xPOPF  popf
+  %define xRETF  retf
  %endif
 %endif
 
