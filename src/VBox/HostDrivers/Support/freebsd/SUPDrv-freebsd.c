@@ -74,7 +74,7 @@ static int VBoxDrvFreeBSDUnload(void);
 
 static d_open_t     VBoxDrvFreeBSDOpenUsr;
 static d_open_t     VBoxDrvFreeBSDOpenSys;
-static void         VBoxDrvFreeBSDDtr(void *pvData);
+static void         vboxdrvFreeBSDDtr(void *pvData);
 static d_ioctl_t    VBoxDrvFreeBSDIOCtl;
 static int          VBoxDrvFreeBSDIOCtlSlow(PSUPDRVSESSION pSession, u_long ulCmd, caddr_t pvData, struct thread *pTd);
 
