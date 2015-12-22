@@ -4376,7 +4376,6 @@ static int dbgcEventApplyChanges(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PDBGFINTERRUPTC
     /*
      * Apply changes to DBGF.
      */
-#if 0 /// @todo fix API again
     if (!fChangeCmdOnly)
     {
         if (cIntCfgs)
@@ -4392,7 +4391,6 @@ static int dbgcEventApplyChanges(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PDBGFINTERRUPTC
                 return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3EventConfigEx: %Rrc\n", rc);
         }
     }
-#endif
 
     return VINF_SUCCESS;
 }
