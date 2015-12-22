@@ -191,7 +191,7 @@ GROUP FLAT BS3FLAT
   %ifdef ASM_FORMAT_ELF
         section BS3DATA32 align=16 progbits alloc noexec write
   %else
-        section BS3DATA32 align=16 CLASS=FAR_DATA PUBLIC USE32 FLAT
+        section BS3DATA32 align=16 CLASS=FAR_DATA PUBLIC USE32 ;FLAT - compiler doesn't make data flat.
   %endif
  %else
         section BS3DATA32
@@ -219,7 +219,7 @@ GROUP FLAT BS3FLAT
   %ifdef ASM_FORMAT_ELF
         section BS3DATA64 align=16 progbits alloc noexec write
   %else
-        section BS3DATA64 align=16 CLASS=DATA PUBLIC USE32 FLAT  ; class=DATA here because of 64-bit cl and/or wlink.exe
+        section BS3DATA64 align=16 CLASS=DATA PUBLIC USE32 ;FLAT (see DATA32) ; class=DATA here because of 64-bit cl and/or wlink.exe
   %endif
  %else
         section BS3DATA64
