@@ -2724,6 +2724,11 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     }
 #endif
 
+    /* At least verify VMX is enabled, since we can't check if we're in VMX root mode without #GP'ing. */
+    RTCCUINTREG uHostCR4 = ASMGetCR4();
+    if (RT_UNLIKELY(!(uHostCR4 & X86_CR4_VMXE)))
+        return VERR_VMX_NOT_IN_VMX_ROOT_MODE;
+
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
@@ -3099,12 +3104,10 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Figures out if we need to swap the EFER MSR which is
- * particularly expensive.
+ * Figures out if we need to swap the EFER MSR which is particularly expensive.
  *
- * We check all relevant bits. For now, that's everything
- * besides LMA/LME, as these two bits are handled by VM-entry,
- * see hmR0VmxLoadGuestExitCtls() and
+ * We check all relevant bits. For now, that's everything besides LMA/LME, as
+ * these two bits are handled by VM-entry, see hmR0VmxLoadGuestExitCtls() and
  * hmR0VMxLoadGuestEntryCtls().
  *
  * @returns true if we need to load guest EFER, false otherwise.
@@ -7988,9 +7991,9 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     Assert(HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
 
 #ifdef VBOX_STRICT
-    /* Make sure we're in VMX root mode. */
-    RTCCUINTREG u32HostCR4 = ASMGetCR4();
-    if (!(u32HostCR4 & X86_CR4_VMXE))
+    /* At least verify VMX is enabled, since we can't check if we're in VMX root mode without #GP'ing. */
+    RTCCUINTREG uHostCR4 = ASMGetCR4();
+    if (!(uHostCR4 & X86_CR4_VMXE))
     {
         LogRel(("VMXR0Enter: X86_CR4_VMXE bit in CR4 is not set!\n"));
         return VERR_VMX_X86_CR4_VMXE_CLEARED;
