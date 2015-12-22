@@ -669,4 +669,4 @@ bs3-shutdown_SOURCES = \
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
-.PRECIOUS: E:/vbox/svn/trunk/out/win.amd64/debug/obj/bs3-shutdown/bs3-shutdown.map
+.PRECIOUS: $(PATH_OBJ)/bs3-shutdown/bs3-shutdown.map
