@@ -31,15 +31,23 @@ struct dnsmsg_header
 {
     uint16_t id;
 
+#ifdef RT_OS_WINDOWS
+  /* size of the type forces alignment */
+# define U16_BIT_FIELD_T uint16_t
+#else
+  /* gcc -pedantic complains about implementaion-defined types */
+# define U16_BIT_FIELD_T unsigned int
+#endif
+
     /* XXX: endianness */
-    uint16_t rd:1;
-    uint16_t tc:1;
-    uint16_t aa:1;
-    uint16_t opcode:4;
-    uint16_t qr:1;
-    uint16_t rcode:4;
-    uint16_t Z:3;
-    uint16_t ra:1;
+    U16_BIT_FIELD_T rd:1;
+    U16_BIT_FIELD_T tc:1;
+    U16_BIT_FIELD_T aa:1;
+    U16_BIT_FIELD_T opcode:4;
+    U16_BIT_FIELD_T qr:1;
+    U16_BIT_FIELD_T rcode:4;
+    U16_BIT_FIELD_T Z:3;
+    U16_BIT_FIELD_T ra:1;
 
     uint16_t qdcount;
     uint16_t ancount;
