@@ -1204,7 +1204,7 @@ static int drvNATConstructDNSMappings(unsigned iInstance, PDRVNAT pThis, PCFGMNO
             return PDMDRV_SET_ERROR(pThis->pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                     N_("Unknown configuration in dns mapping"));
         char szHostNameOrPattern[255];
-        bool fMatch = false;    /* false used for equal matching, and true if wildcard pattern is used. */
+        bool fPattern = false;
         RT_ZERO(szHostNameOrPattern);
         GET_STRING(rc, pThis, pNode, "HostName", szHostNameOrPattern[0], sizeof(szHostNameOrPattern));
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -1218,7 +1218,7 @@ static int drvNATConstructDNSMappings(unsigned iInstance, PDRVNAT pThis, PCFGMNO
                 LogRel(("NAT: Neither 'HostName' nor 'HostNamePattern' is specified for mapping %s\n", szNodeName));
                 continue;
             }
-            fMatch = true;
+            fPattern = true;
         }
         struct in_addr HostIP;
         GETIP_DEF(rc, pThis, pNode, HostIP, INADDR_ANY);
@@ -1227,7 +1227,7 @@ static int drvNATConstructDNSMappings(unsigned iInstance, PDRVNAT pThis, PCFGMNO
             LogRel(("NAT: DNS mapping %s is ignored (address not pointed)\n", szHostNameOrPattern));
             continue;
         }
-        slirp_add_host_resolver_mapping(pThis->pNATState, fMatch ? NULL : szHostNameOrPattern, fMatch ? szHostNameOrPattern : NULL, HostIP.s_addr);
+        slirp_add_host_resolver_mapping(pThis->pNATState, szHostNameOrPattern, fPattern, HostIP.s_addr);
     }
     LogFlowFunc(("LEAVE: %Rrc\n", rc));
     return rc;

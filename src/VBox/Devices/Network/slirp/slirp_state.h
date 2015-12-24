@@ -57,19 +57,16 @@ LIST_HEAD(dns_domain_list_head, dns_domain_entry);
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
 typedef struct DNSMAPPINGENTRY
 {
-    /** host name to map.
-     * @note If pszCName isn't null pszPattern won't be used (see alias_dns.c for
-     *       details).
-     */
-    char        *pszCName;
-    /** Pattern (simple) of hostnames to map to the specified IP. */
-    char        *pszPattern;
+    /** Literal or pattern. */
+    bool        fPattern;
+    /** Host name or pattern to map. */
+    char        *pszName;
     /** The IP Address. */
     uint32_t    u32IpAddress;
     /** List entry.  */
-    LIST_ENTRY(DNSMAPPINGENTRY) MapList;
+    STAILQ_ENTRY(DNSMAPPINGENTRY) MapList;
 } DNSMAPPINGENTRY, *PDNSMAPPINGENTRY;
-typedef LIST_HEAD(DNSMAPPINGLISTHEAD, DNSMAPPINGENTRY) DNSMAPPINGLISTHEAD;
+typedef STAILQ_HEAD(DNSMAPPINGHEAD, DNSMAPPINGENTRY) DNSMAPPINGHEAD;
 #endif
 
 struct dns_entry
@@ -309,7 +306,8 @@ typedef struct NATState
     int cInHomeAddressSize;
 #endif
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
-    DNSMAPPINGLISTHEAD DNSMapHead;
+    DNSMAPPINGHEAD DNSMapNames;
+    DNSMAPPINGHEAD DNSMapPatterns;
 #endif
 } NATState;
 

@@ -132,7 +132,7 @@ static void LogLabelsTree(const char *before, struct label *l, const char *after
 static void free_labels(struct label *root);
 
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
-static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHostent);
+static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *h);
 #endif
 
 #if 1 /* XXX */
@@ -476,9 +476,21 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
         return refuse(pData, m, RCode_NXDomain);
     }
 
+    if (h->h_length != sizeof(RTNETADDRIPV4))
+    {
+        /* Log: what kind of address did we get?! */
+        goto out;
+    }
+
+    if (   h->h_addr_list == NULL
+        || h->h_addr_list[0] == NULL)
+    {
+        /* Log: shouldn't happen */
+        goto out;
+    }
+
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
-    if (!LIST_EMPTY(&pData->DNSMapHead))
-        alterHostentWithDataFromDNSMap(pData, h);
+    alterHostentWithDataFromDNSMap(pData, h);
 #endif
 
     /*
@@ -1186,67 +1198,98 @@ free_labels(struct label *root)
 }
 
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
-static bool isDnsMappingEntryMatchOrEqual2Str(const PDNSMAPPINGENTRY pDNSMapingEntry, const char *pcszString)
+void
+slirp_add_host_resolver_mapping(PNATState pData,
+                                const char *pszHostName, bool fPattern,
+                                uint32_t u32HostIP)
 {
-    return (    (   pDNSMapingEntry->pszCName
-                 && !strcmp(pDNSMapingEntry->pszCName, pcszString))
-            || (   pDNSMapingEntry->pszPattern
-                && RTStrSimplePatternMultiMatch(pDNSMapingEntry->pszPattern, RTSTR_MAX, pcszString, RTSTR_MAX, NULL)));
+    LogRel(("ENTER: pszHostName:%s%s, u32HostIP:%RTnaipv4\n",
+                 pszHostName ? pszHostName : "(null)",
+                 fPattern ? " (pattern)" : "",
+                 u32HostIP));
+
+    if (   pszHostName != NULL
+        && u32HostIP != INADDR_ANY
+        && u32HostIP != INADDR_BROADCAST)
+    {
+        PDNSMAPPINGENTRY pDnsMapping = RTMemAllocZ(sizeof(DNSMAPPINGENTRY));
+        if (!pDnsMapping)
+        {
+            LogFunc(("Can't allocate DNSMAPPINGENTRY\n"));
+            LogFlowFuncLeave();
+            return;
+        }
+
+        pDnsMapping->u32IpAddress = u32HostIP;
+        pDnsMapping->fPattern = fPattern;
+        pDnsMapping->pszName = RTStrDup(pszHostName);
+
+        if (pDnsMapping->pszName == NULL)
+        {
+            LogFunc(("Can't allocate enough room for host name\n"));
+            RTMemFree(pDnsMapping);
+            LogFlowFuncLeave();
+            return;
+        }
+
+        if (fPattern) /* there's no case-insensitive pattern-match function */
+            RTStrToLower(pDnsMapping->pszName);
+
+        STAILQ_INSERT_TAIL(fPattern ? &pData->DNSMapPatterns : &pData->DNSMapNames,
+                           pDnsMapping, MapList);
+
+        LogRel(("NAT: User-defined mapping %s%s = %RTnaipv4 is registered\n",
+                pDnsMapping->pszName,
+                pDnsMapping->fPattern ? " (pattern)" : "",
+                pDnsMapping->u32IpAddress));
+    }
+    LogFlowFuncLeave();
 }
 
-static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHostent)
+
+static void
+alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *h)
 {
     PDNSMAPPINGENTRY pDNSMapingEntry = NULL;
-    bool fMatch = false;
-    LIST_FOREACH(pDNSMapingEntry, &pData->DNSMapHead, MapList)
+    char **pszAlias;
+
+    STAILQ_FOREACH(pDNSMapingEntry, &pData->DNSMapNames, MapList)
     {
-        char **pszAlias = NULL;
-        if (isDnsMappingEntryMatchOrEqual2Str(pDNSMapingEntry, pHostent->h_name))
-        {
-            fMatch = true;
-            break;
-        }
+        Assert(!pDNSMapingEntry->fPattern);
 
-        for (pszAlias = pHostent->h_aliases; *pszAlias && !fMatch; pszAlias++)
-        {
-            if (isDnsMappingEntryMatchOrEqual2Str(pDNSMapingEntry, *pszAlias))
-            {
+        if (RTStrICmp(pDNSMapingEntry->pszName, h->h_name) == 0)
+            goto done;
 
-                PDNSMAPPINGENTRY pDnsMapping = RTMemAllocZ(sizeof(DNSMAPPINGENTRY));
-                fMatch = true;
-                if (!pDnsMapping)
-                {
-                    LogFunc(("Can't allocate DNSMAPPINGENTRY\n"));
-                    LogFlowFuncLeave();
-                    return;
-                }
-                pDnsMapping->u32IpAddress = pDNSMapingEntry->u32IpAddress;
-                pDnsMapping->pszCName = RTStrDup(pHostent->h_name);
-                if (!pDnsMapping->pszCName)
-                {
-                    LogFunc(("Can't allocate enough room for %s\n", pHostent->h_name));
-                    RTMemFree(pDnsMapping);
-                    LogFlowFuncLeave();
-                    return;
-                }
-                LIST_INSERT_HEAD(&pData->DNSMapHead, pDnsMapping, MapList);
-                LogRel(("NAT: User-defined mapping %s: %RTnaipv4 is registered\n",
-                        pDnsMapping->pszCName ? pDnsMapping->pszCName : pDnsMapping->pszPattern,
-                        pDnsMapping->u32IpAddress));
-            }
+        for (pszAlias = h->h_aliases; *pszAlias != NULL; ++pszAlias)
+        {
+            if (RTStrICmp(pDNSMapingEntry->pszName, *pszAlias) == 0)
+                goto done;
         }
-        if (fMatch)
-            break;
     }
 
-    /* h_lenght is lenght of h_addr_list in bytes, so we check that we have enough space for IPv4 address */
-    if (   fMatch
-        && pHostent->h_length >= sizeof(uint32_t)
-        && pDNSMapingEntry)
+
+#   define MATCH(_pattern, _string) \
+        (RTStrSimplePatternMultiMatch((_pattern), RTSTR_MAX, (_string), RTSTR_MAX, NULL))
+
+    STAILQ_FOREACH(pDNSMapingEntry, &pData->DNSMapPatterns, MapList)
     {
-        pHostent->h_length = 1;
-        *(uint32_t *)pHostent->h_addr_list[0] = pDNSMapingEntry->u32IpAddress;
+        RTStrToLower(h->h_name);
+        if (MATCH(pDNSMapingEntry->pszName, h->h_name))
+            goto done;
+
+        for (pszAlias = h->h_aliases; *pszAlias != NULL; ++pszAlias)
+        {
+            RTStrToLower(*pszAlias);
+            if (MATCH(pDNSMapingEntry->pszName, h->h_name))
+                goto done;
+        }
     }
 
+  done:
+    if (pDNSMapingEntry != NULL)
+    {
+        *(uint32_t *)h->h_addr_list[0] = pDNSMapingEntry->u32IpAddress;
+        h->h_addr_list[1] = NULL;
+    }
 }
 #endif
