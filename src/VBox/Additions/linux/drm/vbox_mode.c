@@ -413,21 +413,20 @@ static int vbox_get_modes(struct drm_connector *pConnector)
     struct vbox_connector *pVBoxConnector = NULL;
     struct drm_display_mode *pMode = NULL;
     unsigned cModes = 0;
+    int cxPreferred, cyPreferred;
 
     LogFunc(("vboxvideo: %d: pConnector=%p\n", __LINE__, pConnector));
     pVBoxConnector = to_vbox_connector(pConnector);
     cModes = drm_add_modes_noedid(pConnector, 2560, 1600);
-    if (pVBoxConnector->modeHint.cX && pVBoxConnector->modeHint.cY)
+    cxPreferred = pVBoxConnector->modeHint.cX ? pVBoxConnector->modeHint.cX : 1024;
+    cyPreferred = pVBoxConnector->modeHint.cY ? pVBoxConnector->modeHint.cY : 768;
+    pMode = drm_cvt_mode(pConnector->dev, cxPreferred, cyPreferred, 60, false,
+                         false, false);
+    if (pMode)
     {
-        pMode = drm_cvt_mode(pConnector->dev, pVBoxConnector->modeHint.cX,
-                             pVBoxConnector->modeHint.cY, 60, false, false,
-                             false);
-        if (pMode)
-        {
-            pMode->type |= DRM_MODE_TYPE_PREFERRED;
-            drm_mode_probed_add(pConnector, pMode);
-            ++cModes;
-        }
+        pMode->type |= DRM_MODE_TYPE_PREFERRED;
+        drm_mode_probed_add(pConnector, pMode);
+        ++cModes;
     }
     return cModes;
 }
