@@ -133,6 +133,7 @@ struct vbox_connector
     {
         uint16_t cX;
         uint16_t cY;
+        bool fDisconnected;
     } modeHint;
 };
 

@@ -455,9 +455,14 @@ static void vbox_connector_destroy(struct drm_connector *pConnector)
 }
 
 static enum drm_connector_status
-vbox_connector_detect(struct drm_connector *connector, bool force)
+vbox_connector_detect(struct drm_connector *pConnector, bool fForce)
 {
-    return connector_status_connected;
+    struct vbox_connector *pVBoxConnector = NULL;
+
+    (void) fForce;
+    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, pConnector));
+    pVBoxConnector = to_vbox_connector(pConnector);
+    return !pVBoxConnector->modeHint.fDisconnected;
 }
 
 static const struct drm_connector_helper_funcs vbox_connector_helper_funcs =
@@ -493,11 +498,21 @@ ssize_t vbox_connector_write_sysfs(struct device *pDev,
     pVBox = pDrmDev->dev_private;
     if (sscanf(psz, "%5dx%5d\n%c", &cX, &cY, &ch) != 2)
         return -EINVAL;
-    if (   cX < 64 || cX > VBE_DISPI_MAX_XRES
-        || cY < 64 || cY > VBE_DISPI_MAX_YRES)
-        return -EINVAL;
-    pVBoxConnector->modeHint.cX = (uint16_t)cX;
-    pVBoxConnector->modeHint.cY = (uint16_t)cY;
+    if (cX == -1 && cY == -1)
+    {
+        pVBoxConnector->modeHint.fDisconnected = true;
+        pVBoxConnector->modeHint.cX = 0;
+        pVBoxConnector->modeHint.cY = 0;
+    }
+    else
+    {
+        if (   cX < 64 || cX > VBE_DISPI_MAX_XRES
+            || cY < 64 || cY > VBE_DISPI_MAX_YRES)
+            return -EINVAL;
+        pVBoxConnector->modeHint.fDisconnected = false;
+        pVBoxConnector->modeHint.cX = (uint16_t)cX;
+        pVBoxConnector->modeHint.cY = (uint16_t)cY;
+    }
     drm_helper_hpd_irq_event(pVBoxConnector->base.dev);
     if (pVBox->fbdev)
         drm_fb_helper_hotplug_event(&pVBox->fbdev->helper);
