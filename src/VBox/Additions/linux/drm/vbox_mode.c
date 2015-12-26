@@ -531,7 +531,7 @@ ssize_t vbox_connector_write_sysfs(struct device *pDev,
         pVBoxConnector->modeHint.cX = (uint16_t)cX;
         pVBoxConnector->modeHint.cY = (uint16_t)cY;
     }
-    drm_helper_hpd_irq_event(pVBoxConnector->base.dev);
+    drm_kms_helper_hotplug_event(pVBoxConnector->base.dev);
     if (pVBox->fbdev)
         drm_fb_helper_hotplug_event(&pVBox->fbdev->helper);
     LogFunc(("vboxvideo: %d\n", __LINE__));
@@ -581,10 +581,6 @@ int vbox_connector_init(struct drm_device *pDev, unsigned cScreen,
 #else
     drm_connector_register(pConnector);
 #endif
-
-    /* The connector supports hot-plug detection: we promise to call
-     * "drm_helper_hpd_irq_event" when hot-plugging occurs. */
-    pConnector->polled = DRM_CONNECTOR_POLL_HPD;
 
     drm_mode_connector_attach_encoder(pConnector, pEncoder);
 
