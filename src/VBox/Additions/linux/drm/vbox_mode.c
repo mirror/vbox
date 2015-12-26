@@ -465,6 +465,24 @@ vbox_connector_detect(struct drm_connector *pConnector, bool fForce)
     return !pVBoxConnector->modeHint.fDisconnected;
 }
 
+static int vbox_fill_modes(struct drm_connector *pConnector, uint32_t xMax, uint32_t yMax)
+{
+    struct vbox_connector *pVBoxConnector;
+    struct drm_device *pDrmDev;
+    struct drm_display_mode *pMode, *pIter;
+
+    LogFunc(("vboxvideo: %d: pConnector=%p, xMax=%lu, yMax = %lu\n", __LINE__,
+             pConnector, (unsigned long)xMax, (unsigned long)yMax));
+    pVBoxConnector = to_vbox_connector(pConnector);
+    pDrmDev = pVBoxConnector->base.dev;
+    list_for_each_entry_safe(pMode, pIter, &pConnector->modes, head)
+    {
+        list_del(&pMode->head);
+        drm_mode_destroy(pDrmDev, pMode);
+    }
+    return drm_helper_probe_single_connector_modes(pConnector, xMax, yMax);
+}
+
 static const struct drm_connector_helper_funcs vbox_connector_helper_funcs =
 {
     .mode_valid = vbox_mode_valid,
@@ -476,7 +494,7 @@ static const struct drm_connector_funcs vbox_connector_funcs =
 {
     .dpms = drm_helper_connector_dpms,
     .detect = vbox_connector_detect,
-    .fill_modes = drm_helper_probe_single_connector_modes,
+    .fill_modes = vbox_fill_modes,
     .destroy = vbox_connector_destroy,
 };
 
