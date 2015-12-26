@@ -416,7 +416,7 @@ static int vbox_get_modes(struct drm_connector *pConnector)
 
     LogFunc(("vboxvideo: %d: pConnector=%p\n", __LINE__, pConnector));
     pVBoxConnector = to_vbox_connector(pConnector);
-    cModes = drm_add_modes_noedid(pConnector, 1024, 768);
+    cModes = drm_add_modes_noedid(pConnector, 2560, 1600);
     if (pVBoxConnector->modeHint.cX && pVBoxConnector->modeHint.cY)
     {
         pMode = drm_cvt_mode(pConnector->dev, pVBoxConnector->modeHint.cX,
