@@ -666,7 +666,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
      * Equipment byte.
      */
     if (cFDs > 0)
-        u32 = 0x01;                        /* floppy installed, 2 drives. */
+        u32 = ((cFDs - 1) << 6) | 0x01;    /* floppy installed, additional drives. */
     else
         u32 = 0x00;                        /* floppy not installed. */
     u32 |= RT_BIT(1);                      /* math coprocessor installed  */
