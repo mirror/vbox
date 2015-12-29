@@ -3201,7 +3201,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
 
         /*
-         * Configure DBGF (Debug(ger) Facility).
+         * Configure DBGF (Debug(ger) Facility) and DBGC (Debugger Console).
          */
         {
             PCFGMNODE pDbgf;
@@ -3212,16 +3212,19 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             Utf8Str strSettingsPath(bstr);
             bstr.setNull();
             strSettingsPath.stripFilename();
+            strSettingsPath.append("/");
 
-            char szHomeDir[RTPATH_MAX];
-            rc = RTPathUserHome(szHomeDir, sizeof(szHomeDir));
-            if (RT_FAILURE(rc))
+            char szHomeDir[RTPATH_MAX + 1];
+            int rc2 = RTPathUserHome(szHomeDir, sizeof(szHomeDir) - 1);
+            if (RT_FAILURE(rc2))
                 szHomeDir[0] = '\0';
+            RTPathEnsureTrailingSeparator(szHomeDir, sizeof(szHomeDir));
+
 
             Utf8Str strPath;
-            strPath.append(strSettingsPath).append("/debug/;");
-            strPath.append(strSettingsPath).append("/;");
-            strPath.append(szHomeDir).append("/");
+            strPath.append(strSettingsPath).append("debug/;");
+            strPath.append(strSettingsPath).append(";");
+            strPath.append(szHomeDir);
 
             InsertConfigString(pDbgf, "Path", strPath.c_str());
 
@@ -3239,6 +3242,33 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             hrc = pMachine->COMGETTER(AllowTracingToAccessVM)(&fAllowTracingToAccessVM);    H();
             if (fAllowTracingToAccessVM)
                 InsertConfigInteger(pPDM, "AllowTracingToAccessVM", 1);
+
+            /* Debugger console config. */
+            PCFGMNODE pDbgc;
+            InsertConfigNode(pRoot, "DBGC", &pDbgc);
+
+            hrc = virtualBox->COMGETTER(HomeFolder)(bstr.asOutParam());                     H();
+            Utf8Str strVBoxHome = bstr;
+            bstr.setNull();
+            if (strVBoxHome.isNotEmpty())
+                strVBoxHome.append("/");
+            else
+            {
+                strVBoxHome = szHomeDir;
+                strVBoxHome.append("/.vbox");
+            }
+
+            Utf8Str strFile(strVBoxHome);
+            strFile.append("dbgc-history");
+            InsertConfigString(pDbgc, "HistoryFile", strFile);
+
+            strFile = strSettingsPath;
+            strFile.append("dbgc-init");
+            InsertConfigString(pDbgc, "LocalInitScript", strFile);
+
+            strFile = strVBoxHome;
+            strFile.append("dbgc-init");
+            InsertConfigString(pDbgc, "GlobalInitScript", strFile);
         }
     }
     catch (ConfigError &x)

@@ -160,6 +160,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGC
 #include <VBox/dbg.h>
+#include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/vmapi.h> /* VMR3GetVM() */
 #include <VBox/vmm/hm.h>    /* HMR3IsEnabled */
@@ -168,7 +169,9 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/file.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 
 #include "DBGCInternal.h"
@@ -890,6 +893,105 @@ int dbgcRun(PDBGC pDbgc)
 
 
 /**
+ * Run the init scripts, if present.
+ *
+ * @param   pDbgc               The console instance.
+ */
+static void dbgcRunInitScripts(PDBGC pDbgc)
+{
+    /*
+     * Do the global one, if it exists.
+     */
+    if (    pDbgc->pszGlobalInitScript
+        && *pDbgc->pszGlobalInitScript != '\0'
+        &&  RTFileExists(pDbgc->pszGlobalInitScript))
+        dbgcEvalScript(pDbgc, pDbgc->pszGlobalInitScript, true /*fAnnounce*/);
+
+    /*
+     * Then do the local one, if it exists.
+     */
+    if (    pDbgc->pszLocalInitScript
+        && *pDbgc->pszLocalInitScript != '\0'
+        &&  RTFileExists(pDbgc->pszLocalInitScript))
+        dbgcEvalScript(pDbgc, pDbgc->pszLocalInitScript, true /*fAnnounce*/);
+}
+
+
+/**
+ * Reads the CFGM configuration of the DBGC.
+ *
+ * Popuplates the PDBGC::pszHistoryFile, PDBGC::pszGlobalInitScript and
+ * PDBGC::pszLocalInitScript members.
+ *
+ * @returns VBox status code.
+ * @param   pDbgc               The console instance.
+ * @param   pUVM                The user mode VM handle.
+ */
+static int dbgcReadConfig(PDBGC pDbgc, PUVM pUVM)
+{
+    /*
+     * Get and validate the configuration node.
+     */
+    PCFGMNODE pNode = CFGMR3GetChild(CFGMR3GetRootU(pUVM), "DBGC");
+    int rc = CFGMR3ValidateConfig(pNode, "/DBGC/",
+                                  "HistoryFile|"
+                                  "LocalInitScript|"
+                                  "GlobalInitScript",
+                                  "", "DBGC", 0);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Query the values.
+     */
+    char szHomeDefault[RTPATH_MAX];
+    rc = RTPathUserHome(szHomeDefault, sizeof(szHomeDefault) - 32);
+    AssertLogRelRCReturn(rc, rc);
+    size_t cchHome = strlen(szHomeDefault);
+
+    /** @cfgm{/DBGC/HistoryFile, string, ${HOME}/.vboxdbgc-history}
+     * The command history file of the VBox debugger. */
+    rc = RTPathAppend(szHomeDefault, sizeof(szHomeDefault), ".vboxdbgc-history");
+    AssertLogRelRCReturn(rc, rc);
+
+    char szPath[RTPATH_MAX];
+    rc = CFGMR3QueryStringDef(pNode, "HistoryFile", szPath, sizeof(szPath), szHomeDefault);
+    AssertLogRelRCReturn(rc, rc);
+
+    pDbgc->pszHistoryFile = RTStrDup(szPath);
+    AssertReturn(pDbgc->pszHistoryFile, VERR_NO_STR_MEMORY);
+
+    /** @cfgm{/DBGC/GlobalInitFile, string, ${HOME}/.vboxdbgc-init}
+     * The global init script of the VBox debugger. */
+    szHomeDefault[cchHome] = '\0';
+    rc = RTPathAppend(szHomeDefault, sizeof(szHomeDefault), ".vboxdbgc-init");
+    AssertLogRelRCReturn(rc, rc);
+
+    rc = CFGMR3QueryStringDef(pNode, "GlobalInitScript", szPath, sizeof(szPath), szHomeDefault);
+    AssertLogRelRCReturn(rc, rc);
+
+    pDbgc->pszGlobalInitScript = RTStrDup(szPath);
+    AssertReturn(pDbgc->pszGlobalInitScript, VERR_NO_STR_MEMORY);
+
+    /** @cfgm{/DBGC/LocalInitFile, string, none}
+     * The VM local init script of the VBox debugger. */
+    rc = CFGMR3QueryString(pNode, "LocalInitScript", szPath, sizeof(szPath));
+    if (RT_SUCCESS(rc))
+    {
+        pDbgc->pszLocalInitScript = RTStrDup(szPath);
+        AssertReturn(pDbgc->pszLocalInitScript, VERR_NO_STR_MEMORY);
+    }
+    else
+    {
+        AssertLogRelReturn(rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT, rc);
+        pDbgc->pszLocalInitScript = NULL;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+
+/**
  * Creates a a new instance.
  *
  * @returns VBox status code.
@@ -954,6 +1056,10 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
     //pDbgc->rcOutput         = 0;
     //pDbgc->rcCmd            = 0;
 
+    //pDbgc->pszHistoryFile       = NULL;
+    //pDbgc->pszGlobalInitScript  = NULL;
+    //pDbgc->pszLocalInitScript   = NULL;
+
     dbgcEvalInit();
 
     *ppDbgc = pDbgc;
@@ -979,7 +1085,15 @@ void dbgcDestroy(PDBGC pDbgc)
     if (pDbgc->pUVM)
         DBGFR3Detach(pDbgc->pUVM);
 
-    /* finally, free the instance memory. */
+    /* Free config strings. */
+    RTStrFree(pDbgc->pszGlobalInitScript);
+    pDbgc->pszGlobalInitScript = NULL;
+    RTStrFree(pDbgc->pszLocalInitScript);
+    pDbgc->pszLocalInitScript = NULL;
+    RTStrFree(pDbgc->pszHistoryFile);
+    pDbgc->pszHistoryFile = NULL;
+
+    /* Finally, free the instance memory. */
     RTMemFree(pDbgc);
 }
 
@@ -997,7 +1111,7 @@ void dbgcDestroy(PDBGC pDbgc)
  * @param   pBack       Pointer to the backend structure. This must contain
  *                      a full set of function pointers to service the console.
  * @param   fFlags      Reserved, must be zero.
- * @remark  A forced termination of the console is easiest done by forcing the
+ * @remarks A forced termination of the console is easiest done by forcing the
  *          callbacks to return fatal failures.
  */
 DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
@@ -1034,18 +1148,24 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
      */
     if (RT_SUCCESS(rc) && pUVM)
     {
-        rc = DBGFR3Attach(pUVM);
+        rc = dbgcReadConfig(pDbgc, pUVM);
         if (RT_SUCCESS(rc))
         {
-            pDbgc->pVM   = pVM;
-            pDbgc->pUVM  = pUVM;
-            pDbgc->idCpu = 0;
-            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
-                                         "Current VM is %08x, CPU #%u\n" /** @todo get and print the VM name! */
-                                         , pDbgc->pVM, pDbgc->idCpu);
+            rc = DBGFR3Attach(pUVM);
+            if (RT_SUCCESS(rc))
+            {
+                pDbgc->pVM   = pVM;
+                pDbgc->pUVM  = pUVM;
+                pDbgc->idCpu = 0;
+                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                                             "Current VM is %08x, CPU #%u\n" /** @todo get and print the VM name! */
+                                             , pDbgc->pVM, pDbgc->idCpu);
+            }
+            else
+                rc = pDbgc->CmdHlp.pfnVBoxError(&pDbgc->CmdHlp, rc, "When trying to attach to VM %p\n", pDbgc->pVM);
         }
         else
-            rc = pDbgc->CmdHlp.pfnVBoxError(&pDbgc->CmdHlp, rc, "When trying to attach to VM %p\n", pDbgc->pVM);
+            rc = pDbgc->CmdHlp.pfnVBoxError(&pDbgc->CmdHlp, rc, "Error reading configuration\n");
     }
 
     /*
@@ -1056,6 +1176,7 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
         if (pVM)
             DBGFR3PlugInLoadAll(pDbgc->pUVM);
         dbgcEventInit(pDbgc);
+        dbgcRunInitScripts(pDbgc);
 
         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
         if (RT_SUCCESS(rc))

@@ -30,6 +30,8 @@
 #include <iprt/string.h>
 #include <iprt/ctype.h>
 
+#include <stdio.h>
+
 #include "DBGCInternal.h"
 
 /** Rewrite in progress.  */
@@ -1477,6 +1479,81 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
         }
     }
 
+    return rc;
+}
+
+
+/**
+ * Loads the script in @a pszFilename and executes the commands within.
+ *
+ * @returns VBox status code.  Will complain about error to console.
+ * @param   pDbgc       Debugger console instance data.
+ * @param   pszFilename The path to the script file.
+ * @param   fAnnounce   Whether to announce the script.
+ */
+int dbgcEvalScript(PDBGC pDbgc, const char *pszFilename, bool fAnnounce)
+{
+    FILE *pFile = fopen(pszFilename, "r");
+    if (!pFile)
+        return DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Failed to open '%s'.\n", pszFilename);
+    if (fAnnounce)
+        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Running script '%s'...\n", pszFilename);
+
+    /*
+     * Execute it line by line.
+     */
+    int rc = VINF_SUCCESS;
+    unsigned iLine = 0;
+    char szLine[8192];
+    while (fgets(szLine, sizeof(szLine), pFile))
+    {
+        /* check that the line isn't too long. */
+        char *pszEnd = strchr(szLine, '\0');
+        if (pszEnd == &szLine[sizeof(szLine) - 1])
+        {
+            rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "runscript error: Line #%u is too long\n", iLine);
+            break;
+        }
+        iLine++;
+
+        /* strip leading blanks and check for comment / blank line. */
+        char *psz = RTStrStripL(szLine);
+        if (    *psz == '\0'
+            ||  *psz == '\n'
+            ||  *psz == '#')
+            continue;
+
+        /* strip trailing blanks and check for empty line (\r case). */
+        while (     pszEnd > psz
+               &&   RT_C_IS_SPACE(pszEnd[-1])) /* RT_C_IS_SPACE includes \n and \r normally. */
+            *--pszEnd = '\0';
+
+        /** @todo check for Control-C / Cancel at this point... */
+
+        /*
+         * Execute the command.
+         *
+         * This is a bit wasteful with scratch space btw., can fix it later.
+         * The whole return code crap should be fixed too, so that it's possible
+         * to know whether a command succeeded (RT_SUCCESS()) or failed, and
+         * more importantly why it failed.
+         */
+        /** @todo optimize this.   */
+        rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "%s", psz);
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_BUFFER_OVERFLOW)
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "runscript error: Line #%u is too long (exec overflowed)\n", iLine);
+            break;
+        }
+        if (rc == VWRN_DBGC_CMD_PENDING)
+        {
+            rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "runscript error: VWRN_DBGC_CMD_PENDING on line #%u, script terminated\n", iLine);
+            break;
+        }
+    }
+
+    fclose(pFile);
     return rc;
 }
 

@@ -908,74 +908,9 @@ static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
         return DBGCCmdHlpPrintf(pCmdHlp, "parser error\n");
 
-    /** @todo Load the script here, but someone else should do the actual
-     *        evaluation and execution of it.  */
-
-    /*
-     * Try open the script.
-     */
+    /* Pass it on to a common function. */
     const char *pszFilename = paArgs[0].u.pszString;
-    FILE *pFile = fopen(pszFilename, "r");
-    if (!pFile)
-        return DBGCCmdHlpPrintf(pCmdHlp, "Failed to open '%s'.\n", pszFilename);
-
-    /*
-     * Execute it line by line.
-     */
-    int rc = 0;
-    unsigned iLine = 0;
-    char szLine[8192];
-    while (fgets(szLine, sizeof(szLine), pFile))
-    {
-        /* check that the line isn't too long. */
-        char *pszEnd = strchr(szLine, '\0');
-        if (pszEnd == &szLine[sizeof(szLine) - 1])
-        {
-            rc = DBGCCmdHlpPrintf(pCmdHlp, "runscript error: Line #%u is too long\n", iLine);
-            break;
-        }
-        iLine++;
-
-        /* strip leading blanks and check for comment / blank line. */
-        char *psz = RTStrStripL(szLine);
-        if (    *psz == '\0'
-            ||  *psz == '\n'
-            ||  *psz == '#')
-            continue;
-
-        /* strip trailing blanks and check for empty line (\r case). */
-        while (     pszEnd > psz
-               &&   RT_C_IS_SPACE(pszEnd[-1])) /* RT_C_IS_SPACE includes \n and \r normally. */
-            *--pszEnd = '\0';
-
-        /** @todo check for Control-C / Cancel at this point... */
-
-        /*
-         * Execute the command.
-         *
-         * This is a bit wasteful with scratch space btw., can fix it later.
-         * The whole return code crap should be fixed too, so that it's possible
-         * to know whether a command succeeded (RT_SUCCESS()) or failed, and
-         * more importantly why it failed.
-         */
-        rc = pCmdHlp->pfnExec(pCmdHlp, "%s", psz);
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_BUFFER_OVERFLOW)
-                rc = DBGCCmdHlpPrintf(pCmdHlp, "runscript error: Line #%u is too long (exec overflowed)\n", iLine);
-            break;
-        }
-        if (rc == VWRN_DBGC_CMD_PENDING)
-        {
-            rc = DBGCCmdHlpPrintf(pCmdHlp, "runscript error: VWRN_DBGC_CMD_PENDING on line #%u, script terminated\n", iLine);
-            break;
-        }
-    }
-
-    fclose(pFile);
-
-    NOREF(pCmd); NOREF(pUVM);
-    return rc;
+    return dbgcEvalScript(DBGC_CMDHLP2DBGC(pCmdHlp), pszFilename, false /*fAnnounce*/);
 }
 
 

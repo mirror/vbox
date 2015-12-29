@@ -127,7 +127,7 @@ typedef struct DBGC
     /** Pointer to the commands for the current debugger emulation. */
     PCDBGCCMD           paEmulationCmds;
     /** The number of commands paEmulationCmds points to. */
-    unsigned            cEmulationCmds;
+    uint32_t            cEmulationCmds;
     /** Pointer to the functions for the current debugger emulation. */
     PCDBGCFUNC          paEmulationFuncs;
     /** The number of functions paEmulationFuncs points to. */
@@ -221,6 +221,13 @@ typedef struct DBGC
     /** rc from the last command. */
     int                 rcCmd;
     /** @} */
+
+    /** The command history file (not yet implemented). */
+    char               *pszHistoryFile;
+    /** The global debugger init script. */
+    char               *pszGlobalInitScript;
+    /** The per VM debugger init script. */
+    char               *pszLocalInitScript;
 } DBGC;
 /** Pointer to debugger console instance data. */
 typedef DBGC *PDBGC;
@@ -415,6 +422,7 @@ int     dbgcBpExec(PDBGC pDbgc, RTUINT iBp);
 void    dbgcEvalInit(void);
 int     dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCategory, PDBGCVAR pResult);
 int     dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute);
+int     dbgcEvalScript(PDBGC pDbgc, const char *pszFilename, bool fAnnounce);
 
 int     dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGCVAR pResult);
 PCDBGCSYM   dbgcLookupRegisterSymbol(PDBGC pDbgc, const char *pszSymbol);

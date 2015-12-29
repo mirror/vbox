@@ -4153,7 +4153,7 @@ static bool dbgcEventIsMatchingInt(PCDBGCVAR pPattern, const char *pszEvtName, P
         if (pPattern->enmRangeType == DBGCVAR_RANGE_NONE)
             *pcInts = 1;
         else
-            *pcInts = RT_MIN(RT_MAX(pPattern->u64Range, 256 - *piFirst), 1);
+            *pcInts = RT_MAX(RT_MIN((uint16_t)pPattern->u64Range, 256 - *piFirst), 1);
         return true;
     }
     return false;
