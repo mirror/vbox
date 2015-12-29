@@ -74,11 +74,17 @@ uint8_t send_to_mouse_ctrl(uint8_t sendbyte)
 
 uint8_t get_mouse_data(uint8_t __far *data)
 {
-    int         retries = 10000;
+    int         retries = 10000;    /* ~150ms timeout */
     uint8_t     response;
 
     while ((inb(0x64) & 0x21) != 0x21 && retries)
+    {
+        /* Wait until the 15us refresh counter toggles. */
+        response = inb(0x61) & 0x10;
+        while((inb(0x61) & 0x10) == response)
+            ;
         --retries;
+    }
 
     if (!retries)
         return(1);
