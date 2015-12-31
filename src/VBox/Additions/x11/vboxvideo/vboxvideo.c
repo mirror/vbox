@@ -93,6 +93,11 @@
 #ifdef XORG_7X
 # include <stdlib.h>
 # include <string.h>
+# include <sys/stat.h>
+# define xf86stat stat
+# define xf86stat_s stat
+#else
+# include <xf86_ansic.h>
 #endif
 
 /* Mandatory functions */
@@ -822,6 +827,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     VBOXPtr pVBox;
     Gamma gzeros = {0.0, 0.0, 0.0};
     rgb rzeros = {0, 0, 0};
+    struct xf86stat_s sstat;
 
     TRACE_ENTRY();
     /* Are we really starting the server, or is this just a dummy run? */
@@ -830,15 +836,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VirtualBox guest additions video driver version " VBOX_VERSION_STRING "r%d\n",
                VBOX_SVN_REV);
-
-    /* Get our private data from the ScrnInfoRec structure. */
-    VBOXSetRec(pScrn);
-    pVBox = VBOXGetRec(pScrn);
-    if (!pVBox)
-        return FALSE;
-
-    /* Entity information seems to mean bus information. */
-    pVBox->pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
 
     /* The ramdac module is needed for the hardware cursor. */
     if (!xf86LoadSubModule(pScrn, "ramdac"))
@@ -853,6 +850,21 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     if (!xf86LoadSubModule(pScrn, "vgahw"))
         return FALSE;
+
+    if (xf86stat("/dev/dri/card0", &sstat) == 0)
+    {
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "kernel driver found, not loading.\n");
+        return FALSE;
+    }
+
+    /* Get our private data from the ScrnInfoRec structure. */
+    VBOXSetRec(pScrn);
+    pVBox = VBOXGetRec(pScrn);
+    if (!pVBox)
+        return FALSE;
+
+    /* Entity information seems to mean bus information. */
+    pVBox->pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
 
 #ifndef PCIACCESS
     if (pVBox->pEnt->location.type != BUS_PCI)
