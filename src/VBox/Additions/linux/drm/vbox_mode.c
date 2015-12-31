@@ -97,6 +97,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
                                 crtc->x * cBPP / 8 + crtc->y * pitch,
                                 pitch, width, height,
                                 vbox_crtc->fBlanked ? 0 : cBPP, fFlags);
+    VBoxHGSMISendCapsInfo(&vbox->Ctx, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
@@ -408,6 +409,26 @@ struct drm_encoder *vbox_encoder_init(struct drm_device *dev, unsigned i)
     return &vbox_encoder->base;
 }
 
+static void vboxUpdateHints(struct vbox_connector *pVBoxConnector)
+{
+    struct vbox_private *pVBox;
+    int rc;
+
+    LogFunc(("vboxvideo: %d: pVBoxConnector=%p\n", __LINE__, pVBoxConnector));
+    pVBox = pVBoxConnector->base.dev->dev_private;
+    rc = VBoxHGSMIGetModeHints(&pVBox->Ctx, pVBox->cCrtcs, pVBox->paVBVAModeHints);
+    AssertMsgRCReturnVoid(rc, ("VBoxHGSMIGetModeHints failed, rc=%Rrc.\n", rc));
+    if (pVBox->paVBVAModeHints[pVBoxConnector->iCrtc].magic == VBVAMODEHINT_MAGIC)
+    {
+        pVBoxConnector->modeHint.cX = pVBox->paVBVAModeHints[pVBoxConnector->iCrtc].cx & 0x8fff;
+        pVBoxConnector->modeHint.cY = pVBox->paVBVAModeHints[pVBoxConnector->iCrtc].cy & 0x8fff;
+        pVBoxConnector->modeHint.fDisconnected = !(pVBox->paVBVAModeHints[pVBoxConnector->iCrtc].fEnabled);
+        LogFunc(("vboxvideo: %d: cX=%u, cY=%u, fDisconnected=%RTbool\n", __LINE__,
+                 (unsigned)pVBoxConnector->modeHint.cX, (unsigned)pVBoxConnector->modeHint.cY,
+                 pVBoxConnector->modeHint.fDisconnected));
+    }
+}
+
 static int vbox_get_modes(struct drm_connector *pConnector)
 {
     struct vbox_connector *pVBoxConnector = NULL;
@@ -417,6 +438,7 @@ static int vbox_get_modes(struct drm_connector *pConnector)
 
     LogFunc(("vboxvideo: %d: pConnector=%p\n", __LINE__, pConnector));
     pVBoxConnector = to_vbox_connector(pConnector);
+    vboxUpdateHints(pVBoxConnector);
     cModes = drm_add_modes_noedid(pConnector, 2560, 1600);
     cxPreferred = pVBoxConnector->modeHint.cX ? pVBoxConnector->modeHint.cX : 1024;
     cyPreferred = pVBoxConnector->modeHint.cY ? pVBoxConnector->modeHint.cY : 768;
@@ -461,6 +483,7 @@ vbox_connector_detect(struct drm_connector *pConnector, bool fForce)
     (void) fForce;
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, pConnector));
     pVBoxConnector = to_vbox_connector(pConnector);
+    vboxUpdateHints(pVBoxConnector);
     return !pVBoxConnector->modeHint.fDisconnected;
 }
 
@@ -502,38 +525,16 @@ ssize_t vbox_connector_write_sysfs(struct device *pDev,
                                    const char *psz, size_t cch)
 {
     struct vbox_connector *pVBoxConnector;
-    struct drm_device *pDrmDev;
     struct vbox_private *pVBox;
-    int cX, cY;
-    char ch;
 
     LogFunc(("vboxvideo: %d: pDev=%p, pAttr=%p, psz=%s, cch=%llu\n", __LINE__,
              pDev, pAttr, psz, (unsigned long long)cch));
     pVBoxConnector = container_of(pAttr, struct vbox_connector,
                                   deviceAttribute);
-    pDrmDev = pVBoxConnector->base.dev;
-    pVBox = pDrmDev->dev_private;
-    if (sscanf(psz, "%5dx%5d\n%c", &cX, &cY, &ch) != 2)
-        return -EINVAL;
-    if (cX == -1 && cY == -1)
-    {
-        pVBoxConnector->modeHint.fDisconnected = true;
-        pVBoxConnector->modeHint.cX = 0;
-        pVBoxConnector->modeHint.cY = 0;
-    }
-    else
-    {
-        if (   cX < 64 || cX > VBE_DISPI_MAX_XRES
-            || cY < 64 || cY > VBE_DISPI_MAX_YRES)
-            return -EINVAL;
-        pVBoxConnector->modeHint.fDisconnected = false;
-        pVBoxConnector->modeHint.cX = (uint16_t)cX;
-        pVBoxConnector->modeHint.cY = (uint16_t)cY;
-    }
+    pVBox = pVBoxConnector->base.dev->dev_private;
     drm_kms_helper_hotplug_event(pVBoxConnector->base.dev);
     if (pVBox->fbdev)
         drm_fb_helper_hotplug_event(&pVBox->fbdev->helper);
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return cch;
 }
 
@@ -551,6 +552,7 @@ int vbox_connector_init(struct drm_device *pDev, unsigned cScreen,
         return -ENOMEM;
 
     pConnector = &pVBoxConnector->base;
+    pVBoxConnector->iCrtc = cScreen;
 
     /*
      * Set up the sysfs file we use for getting video mode hints from user

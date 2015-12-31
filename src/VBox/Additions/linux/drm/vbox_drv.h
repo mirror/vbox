@@ -101,6 +101,8 @@ struct vbox_private
     uint32_t full_vram_size;
     /** Amount of available VRAM, not including space used for buffers. */
     uint32_t vram_size;
+    /** Array of structures for receiving mode hints. */
+    VBVAMODEHINT *paVBVAModeHints;
 
     struct vbox_fbdev *fbdev;
 
@@ -126,6 +128,7 @@ struct vbox_connector
 {
     struct drm_connector base;
     char szName[32];
+    unsigned iCrtc;
     /** Device attribute for sysfs file used for receiving mode hints from user
      * space. */
     struct device_attribute deviceAttribute;

@@ -102,6 +102,9 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                                                + iCrtc * VBVA_MIN_BUFFER_SIZE);
                 if (!VBoxVBVAEnable(&vbox->paVBVACtx[iCrtc], &vbox->Ctx, pVBVA, iCrtc))
                     AssertReleaseMsgFailed(("VBoxVBVAEnable failed - heap allocation error, very old host or driver error.\n"));
+                /* Assume that if the user knows to send dirty rectangle information
+                 * they can also handle hot-plug events. */
+                VBoxHGSMISendCapsInfo(&vbox->Ctx, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
             }
             if (   CRTC_FB(crtc) != fb
                 || pRects[i].x1 >   crtc->x
@@ -270,6 +273,18 @@ static HGSMIENV g_hgsmiEnv =
 };
 
 
+/** Do we support the 4.3 plus mode hint reporting interface? */
+static bool haveHGSMIModeHintAndCursorReportingInterface(struct vbox_private *pVBox)
+{
+    uint32_t fModeHintReporting, fCursorReporting;
+
+    return    RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->Ctx, VBOX_VBVA_CONF32_MODE_HINT_REPORTING, &fModeHintReporting))
+           && RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->Ctx, VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING, &fCursorReporting))
+           && fModeHintReporting == VINF_SUCCESS
+           && fCursorReporting == VINF_SUCCESS;
+}
+
+
 /** Set up our heaps and data exchange buffers in VRAM before handing the rest
  *  to the memory manager. */
 static int setupAcceleration(struct vbox_private *pVBox, uint32_t *poffBase)
@@ -291,6 +306,11 @@ static int setupAcceleration(struct vbox_private *pVBox, uint32_t *poffBase)
     pVBox->vram_size = offBase;
     /* Linux drm represents monitors as a 32-bit array. */
     pVBox->cCrtcs = RT_MIN(VBoxHGSMIGetMonitorCount(&pVBox->Ctx), 32);
+    if (!haveHGSMIModeHintAndCursorReportingInterface(pVBox))
+        return -ENOTSUPP;
+    pVBox->paVBVAModeHints = kzalloc(sizeof(VBVAMODEHINT) * pVBox->cCrtcs, GFP_KERNEL);
+    if (!pVBox->paVBVAModeHints)
+        return -ENOMEM;
     return vbox_vbva_init(pVBox);
 }
 
