@@ -449,6 +449,120 @@ static const char *rtDbgModCvSsSymTypeName(RTCVSYMTYPE enmSymType)
 }
 
 
+/**
+ * Adds a string to the g_hDbgModStrCache after sanitizing it.
+ *
+ * IPRT only deals with UTF-8 strings, so the string will be forced to UTF-8
+ * encoding.  Also, codeview generally have length prefixed
+ *
+ * @returns String cached copy of the string.
+ * @param   pch                 The string to copy to the cache.
+ * @param   cch                 The length of the string.  RTSTR_MAX if zero
+ *                              terminated.
+ */
+static const char *rtDbgModCvAddSanitizedStringToCache(const char *pch, size_t cch)
+{
+    /*
+     * If the string is valid UTF-8 and or the right length, we're good.
+     * This is usually the case.
+     */
+    const char *pszRet;
+    int rc;
+    if (cch != RTSTR_MAX)
+        rc = RTStrValidateEncodingEx(pch, cch, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+    else
+        rc = RTStrValidateEncodingEx(pch, cch, 0);
+    if (RT_SUCCESS(rc))
+        pszRet = RTStrCacheEnterN(g_hDbgModStrCache, pch, cch);
+    else
+    {
+        /*
+         * Need to sanitize the string, so make a copy of it.
+         */
+        char *pszCopy = (char *)RTMemDupEx(pch, cch, 1);
+        AssertPtrReturn(pszCopy, NULL);
+
+        /* Deal with anyembedded zero chars. */
+        char *psz = RTStrEnd(pszCopy, cch);
+        while (psz)
+        {
+            *psz = '_';
+            psz = RTStrEnd(psz, cch - (psz - pszCopy));
+        }
+
+        /* Force valid UTF-8 encoding. */
+        size_t cchTmp = RTStrPurgeEncoding(pszCopy);
+        NOREF(cchTmp); Assert(cchTmp == cch);
+
+        /* Enter it into the cache and free the temp copy. */
+        pszRet = RTStrCacheEnterN(g_hDbgModStrCache, pszCopy, cch);
+        RTMemFree(pszCopy);
+    }
+    return pszRet;
+}
+
+
+/**
+ * Translates a codeview segment and offset into our segment layout.
+ *
+ * @returns
+ * @param   pThis               .
+ * @param   piSeg               .
+ * @param   poff                .
+ */
+DECLINLINE(int) rtDbgModCvAdjustSegAndOffset(PRTDBGMODCV pThis, uint32_t *piSeg, uint64_t *poff)
+{
+    uint32_t iSeg = *piSeg;
+    if (iSeg == 0)
+        iSeg = RTDBGSEGIDX_ABS;
+    else if (pThis->pSegMap)
+    {
+        if (pThis->fHaveDosFrames)
+        {
+            if (   iSeg > pThis->pSegMap->Hdr.cSegs
+                || iSeg == 0)
+                return VERR_CV_BAD_FORMAT;
+            if (*poff <= pThis->pSegMap->aDescs[iSeg - 1].cb + pThis->pSegMap->aDescs[iSeg - 1].off)
+                *poff -= pThis->pSegMap->aDescs[iSeg - 1].off;
+            else
+            {
+                /* Workaround for VGABIOS where _DATA symbols like vgafont8 are
+                   reported in the VGAROM segment. */
+                uint64_t uAddrSym = *poff + ((uint32_t)pThis->pSegMap->aDescs[iSeg - 1].iFrame << 4);
+                uint16_t j = pThis->pSegMap->Hdr.cSegs;
+                while (j-- > 0)
+                {
+                    uint64_t uAddrFirst = (uint64_t)pThis->pSegMap->aDescs[j].off
+                                        + ((uint32_t)pThis->pSegMap->aDescs[j].iFrame << 4);
+                    if (uAddrSym - uAddrFirst < pThis->pSegMap->aDescs[j].cb)
+                    {
+                        Log(("CV addr fix: %04x:%08x -> %04x:%08x\n", iSeg, *poff, j + 1, uAddrSym - uAddrFirst));
+                        *poff  = uAddrSym - uAddrFirst;
+                        iSeg = j + 1;
+                        break;
+                    }
+                }
+                if (j == UINT16_MAX)
+                    return VERR_CV_BAD_FORMAT;
+            }
+        }
+        else
+        {
+            if (   iSeg > pThis->pSegMap->Hdr.cSegs
+                || iSeg == 0
+                || *poff > pThis->pSegMap->aDescs[iSeg - 1].cb)
+                return VERR_CV_BAD_FORMAT;
+            *poff += pThis->pSegMap->aDescs[iSeg - 1].off;
+        }
+        if (pThis->pSegMap->aDescs[iSeg - 1].fFlags & RTCVSEGMAPDESC_F_ABS)
+            iSeg = RTDBGSEGIDX_ABS;
+        else
+            iSeg = pThis->pSegMap->aDescs[iSeg - 1].iGroup;
+    }
+    *piSeg = iSeg;
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Adds a symbol to the container.
@@ -465,95 +579,49 @@ static const char *rtDbgModCvSsSymTypeName(RTCVSYMTYPE enmSymType)
 static int rtDbgModCvAddSymbol(PRTDBGMODCV pThis, uint32_t iSeg, uint64_t off, const char *pchName,
                                uint32_t cchName, uint32_t fFlags, uint32_t cbSym)
 {
-    const char *pszName = RTStrCacheEnterN(g_hDbgModStrCache, pchName, cchName);
-    if (!pszName)
-        return VERR_NO_STR_MEMORY;
+    const char *pszName = rtDbgModCvAddSanitizedStringToCache(pchName, cchName);
+    int rc;
+    if (pszName)
+    {
 #if 1
-    Log2(("CV Sym: %04x:%08x %.*s\n", iSeg, off, cchName, pchName));
-    if (iSeg == 0)
-        iSeg = RTDBGSEGIDX_ABS;
-    else if (pThis->pSegMap)
-    {
-        if (pThis->fHaveDosFrames)
+        Log2(("CV Sym: %04x:%08x %.*s\n", iSeg, off, cchName, pchName));
+        rc = rtDbgModCvAdjustSegAndOffset(pThis, &iSeg, &off);
+        if (RT_SUCCESS(rc))
         {
-            if (   iSeg > pThis->pSegMap->Hdr.cSegs
-                || iSeg == 0)
-            {
-                Log(("Invalid segment index/offset %#06x:%08x for symbol %.*s\n", iSeg, off, cchName, pchName));
-                return VERR_CV_BAD_FORMAT;
-            }
-            if (off <= pThis->pSegMap->aDescs[iSeg - 1].cb + pThis->pSegMap->aDescs[iSeg - 1].off)
-                off -= pThis->pSegMap->aDescs[iSeg - 1].off;
-            else
-            {
-                /* Workaround for VGABIOS where _DATA symbols like vgafont8 are
-                   reported in the VGAROM segment. */
-                uint64_t uAddrSym = off + ((uint32_t)pThis->pSegMap->aDescs[iSeg - 1].iFrame << 4);
-                uint16_t j = pThis->pSegMap->Hdr.cSegs;
-                while (j-- > 0)
-                {
-                    uint64_t uAddrFirst = (uint64_t)pThis->pSegMap->aDescs[j].off
-                                        + ((uint32_t)pThis->pSegMap->aDescs[j].iFrame << 4);
-                    if (uAddrSym - uAddrFirst < pThis->pSegMap->aDescs[j].cb)
-                    {
-                        Log(("CV addr fix: %04x:%08x -> %04x:%08x\n", iSeg, off, j + 1, uAddrSym - uAddrFirst));
-                        off  = uAddrSym - uAddrFirst;
-                        iSeg = j + 1;
-                        break;
-                    }
-                }
-                if (j == UINT16_MAX)
-                {
-                    Log(("Invalid segment index/offset %#06x:%08x for symbol %.*s [2]\n", iSeg, off, cchName, pchName));
-                    return VERR_CV_BAD_FORMAT;
-                }
-            }
-        }
-        else
-        {
-            if (   iSeg > pThis->pSegMap->Hdr.cSegs
-                || iSeg == 0
-                || off > pThis->pSegMap->aDescs[iSeg - 1].cb)
-            {
-                Log(("Invalid segment index/offset %#06x:%08x for symbol %.*s\n", iSeg, off, cchName, pchName));
-                return VERR_CV_BAD_FORMAT;
-            }
-            off += pThis->pSegMap->aDescs[iSeg - 1].off;
-        }
-        if (pThis->pSegMap->aDescs[iSeg - 1].fFlags & RTCVSEGMAPDESC_F_ABS)
-            iSeg = RTDBGSEGIDX_ABS;
-        else
-            iSeg = pThis->pSegMap->aDescs[iSeg - 1].iGroup;
-    }
-
-    int rc = RTDbgModSymbolAdd(pThis->hCnt, pszName, iSeg, off, cbSym, 0 /*fFlags*/, NULL);
-
-    /* Simple duplicate symbol mangling, just to get more details. */
-    if (rc == VERR_DBG_DUPLICATE_SYMBOL && cchName < _2K)
-    {
-        char szTmpName[_2K + 96];
-        memcpy(szTmpName, pszName, cchName);
-        szTmpName[cchName] = '_';
-        for (uint32_t i = 1; i < 32; i++)
-        {
-            RTStrFormatU32(&szTmpName[cchName + 1], 80, i, 10, 0, 0, 0);
-            pszName = RTStrCacheEnterN(g_hDbgModStrCache, szTmpName, cchName + 1 + 1 + (i >= 10));
             rc = RTDbgModSymbolAdd(pThis->hCnt, pszName, iSeg, off, cbSym, 0 /*fFlags*/, NULL);
-            if (rc != VERR_DBG_DUPLICATE_SYMBOL)
-                break;
+
+            /* Simple duplicate symbol mangling, just to get more details. */
+            if (rc == VERR_DBG_DUPLICATE_SYMBOL && cchName < _2K)
+            {
+                char szTmpName[_2K + 96];
+                memcpy(szTmpName, pszName, cchName);
+                szTmpName[cchName] = '_';
+                for (uint32_t i = 1; i < 32; i++)
+                {
+                    RTStrFormatU32(&szTmpName[cchName + 1], 80, i, 10, 0, 0, 0);
+                    rc = RTDbgModSymbolAdd(pThis->hCnt, szTmpName, iSeg, off, cbSym, 0 /*fFlags*/, NULL);
+                    if (rc != VERR_DBG_DUPLICATE_SYMBOL)
+                        break;
+                }
+
+            }
+
+            Log(("Symbol: %04x:%08x %.*s [%Rrc]\n", iSeg, off, cchName, pchName, rc));
+            if (rc == VERR_DBG_ADDRESS_CONFLICT || rc == VERR_DBG_DUPLICATE_SYMBOL)
+                rc = VINF_SUCCESS;
         }
+        else
+            Log(("Invalid segment index/offset %#06x:%08x for symbol %.*s\n", iSeg, off, cchName, pchName));
 
-    }
-
-    Log(("Symbol: %04x:%08x %.*s [%Rrc]\n", iSeg, off, cchName, pchName, rc));
-    if (rc == VERR_DBG_ADDRESS_CONFLICT || rc == VERR_DBG_DUPLICATE_SYMBOL)
-        rc = VINF_SUCCESS;
-    RTStrCacheRelease(g_hDbgModStrCache, pszName);
-    return rc;
 #else
-    Log(("Symbol: %04x:%08x %.*s\n", iSeg, off, cchName, pchName));
-    return VINF_SUCCESS;
+        Log(("Symbol: %04x:%08x %.*s\n", iSeg, off, cchName, pchName));
+        rc = VINF_SUCCESS;
 #endif
+        RTStrCacheRelease(g_hDbgModStrCache, pszName);
+    }
+    else
+        rc = VERR_NO_STR_MEMORY;
+    return rc;
 }
 
 
@@ -836,6 +904,100 @@ rtDbgModCvSs_Symbols_PublicSym_AlignSym(PRTDBGMODCV pThis, void const *pvSubSect
 }
 
 
+/** @callback_method_impl{FNDBGMODCVSUBSECTCALLBACK,
+ * Parses kCvSst_SrcModule adding line numbers it finds to the container.}
+ */
+static DECLCALLBACK(int)
+rtDbgModCvSs_SrcModule(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect, PCRTCVDIRENT32 pDirEnt)
+{
+    Log(("rtDbgModCvSs_SrcModule: uCurStyle=%#x\n%.*Rhxd\n", pThis->uCurStyle, cbSubSect, pvSubSect));
+
+    /* Check the header. */
+    PCRTCVSRCMODULE pHdr = (PCRTCVSRCMODULE)pvSubSect;
+    AssertReturn(cbSubSect >= RT_OFFSETOF(RTCVSRCMODULE, aoffSrcFiles), VERR_CV_BAD_FORMAT);
+    size_t cbHdr = sizeof(RTCVSRCMODULE)
+                 + pHdr->cFiles * sizeof(uint32_t)
+                 + pHdr->cSegs * sizeof(uint32_t) * 2
+                 + pHdr->cSegs * sizeof(uint16_t);
+    Log2(("RTDbgModCv: SrcModule: cFiles=%u cSegs=%u\n", pHdr->cFiles, pHdr->cFiles));
+    RTDBGMODCV_CHECK_RET_BF(cbSubSect >= cbHdr, ("cbSubSect=%#x cbHdr=%zx\n", cbSubSect, cbHdr));
+    if (LogIs2Enabled())
+    {
+        for (uint32_t i = 0; i < pHdr->cFiles; i++)
+            Log2(("RTDbgModCv:   source file #%u: %#x\n", i, pHdr->aoffSrcFiles[i]));
+        PCRTCVSRCRANGE  paSegRanges = (PCRTCVSRCRANGE)&pHdr->aoffSrcFiles[pHdr->cFiles];
+        uint16_t const *paidxSegs   = (uint16_t const *)&paSegRanges[pHdr->cSegs];
+        for (uint32_t i = 0; i < pHdr->cSegs; i++)
+            Log2(("RTDbgModCv:   seg #%u: %#010x-%#010x\n", paidxSegs[i], paSegRanges[i].offStart, paSegRanges[i].offEnd));
+    }
+
+    /*
+     * Work over the source files.
+     */
+    for (uint32_t i = 0; i < pHdr->cFiles; i++)
+    {
+        uint32_t const  offSrcFile  = pHdr->aoffSrcFiles[i];
+        RTDBGMODCV_CHECK_RET_BF(cbSubSect - RT_OFFSETOF(RTCVSRCFILE, aoffSrcLines) >= offSrcFile,
+                                ("cbSubSect=%#x (- %#x) aoffSrcFiles[%u]=%#x\n",
+                                 cbSubSect, RT_OFFSETOF(RTCVSRCFILE, aoffSrcLines), i, offSrcFile));
+        PCRTCVSRCFILE   pSrcFile    = (PCRTCVSRCFILE)((uint8_t const *)pvSubSect + offSrcFile);
+        size_t         cbSrcFileHdr = RT_OFFSETOF(RTCVSRCFILE, aoffSrcLines[pSrcFile->cSegs])
+                                    + sizeof(RTCVSRCRANGE) * pSrcFile->cSegs
+                                    + sizeof(uint8_t);
+        RTDBGMODCV_CHECK_RET_BF(cbSubSect >= offSrcFile + cbSrcFileHdr && cbSubSect > cbSrcFileHdr,
+                                ("cbSubSect=%#x aoffSrcFiles[%u]=%#x cbSrcFileHdr=%#x\n", cbSubSect, offSrcFile, i, cbSrcFileHdr));
+        PCRTCVSRCRANGE  paSegRanges = (PCRTCVSRCRANGE)&pSrcFile->aoffSrcLines[pSrcFile->cSegs];
+        uint8_t const  *pcchName    = (uint8_t const *)&paSegRanges[pSrcFile->cSegs]; /** @todo TIS NB09 docs say 16-bit length... */
+        const char     *pchName     = (const char *)(pcchName + 1);
+        RTDBGMODCV_CHECK_RET_BF(cbSubSect >= offSrcFile + cbSrcFileHdr + *pcchName,
+                                ("cbSubSect=%#x offSrcFile=%#x cbSubSect=%#x *pcchName=%#x\n",
+                                 cbSubSect, offSrcFile, cbSubSect, *pcchName));
+        Log2(("RTDbgModCv:   source file #%u/%#x: cSegs=%#x '%.*s'\n", i, offSrcFile, pSrcFile->cSegs, *pcchName, pchName));
+        const char *pszName = rtDbgModCvAddSanitizedStringToCache(pchName, *pcchName);
+
+        /*
+         * Work the segments this source file contributes code to.
+         */
+        for (uint32_t iSeg = 0; iSeg < pSrcFile->cSegs; iSeg++)
+        {
+            uint32_t const  offSrcLine  = pSrcFile->aoffSrcLines[iSeg];
+            RTDBGMODCV_CHECK_RET_BF(cbSubSect - RT_OFFSETOF(RTCVSRCLINE, aoffLines) >= offSrcLine,
+                                    ("cbSubSect=%#x (- %#x) aoffSrcFiles[%u]=%#x\n",
+                                     cbSubSect, RT_OFFSETOF(RTCVSRCLINE, aoffLines), iSeg, offSrcLine));
+            PCRTCVSRCLINE   pSrcLine    = (PCRTCVSRCLINE)((uint8_t const *)pvSubSect + offSrcLine);
+            size_t          cbSrcLine   = RT_OFFSETOF(RTCVSRCLINE, aoffLines[pSrcLine->cPairs])
+                                        + pSrcLine->cPairs * sizeof(uint16_t);
+            RTDBGMODCV_CHECK_RET_BF(cbSubSect >= offSrcLine + cbSrcLine,
+                                    ("cbSubSect=%#x aoffSrcFiles[%u]=%#x cbSrcLine=%#x\n",
+                                     cbSubSect, iSeg, offSrcLine, cbSrcLine));
+            uint16_t const *paiLines    = (uint16_t const *)&pSrcLine->aoffLines[pSrcLine->cPairs];
+            Log2(("RTDbgModCv:     seg #%u, %u pairs (off %#x)\n", pSrcLine->idxSeg, pSrcLine->cPairs, offSrcLine));
+            for (uint32_t iPair = 0; iPair < pSrcLine->cPairs; iPair++)
+            {
+
+                uint32_t idxSeg = pSrcLine->idxSeg;
+                uint64_t off    = pSrcLine->aoffLines[iPair];
+                int rc = rtDbgModCvAdjustSegAndOffset(pThis, &idxSeg, &off);
+                if (RT_SUCCESS(rc))
+                    rc = RTDbgModLineAdd(pThis->hCnt, pszName, paiLines[iPair], idxSeg, off, NULL);
+                if (RT_SUCCESS(rc))
+                    Log3(("RTDbgModCv:       %#x:%#010llx  %0u\n", idxSeg, off, paiLines[iPair]));
+                /* Note! Wlink produces the sstSrcModule subsections from LINNUM records, however the
+                         CVGenLines() function assumes there is only one segment contributing to the
+                         line numbers.  So, when we do assembly that jumps between segments, it emits
+                         the wrong addresses for some line numbers and we end up here, typically with
+                         VERR_DBG_ADDRESS_CONFLICT. */
+                else
+                    Log(( "RTDbgModCv:       %#x:%#010llx  %0u - rc=%Rrc!! (org: idxSeg=%#x off=%#x)\n",
+                          idxSeg, off, paiLines[iPair], rc, pSrcLine->idxSeg, pSrcLine->aoffLines[iPair]));
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
 {
     /*
@@ -1098,9 +1260,10 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
                     pszName = pThis->pszzSegNames + paDescs[iBest].offSegName;
                 else
                     RTStrPrintf(szName, sizeof(szName), "Seg%02u", iSeg);
-                Log(("CV: %#010x LB %#010x %s uRVA=%#010x iBest=%u cOverlaps=%u\n",
-                     uBestAddr, paDescs[iBest].cb, szName, uBestAddr - uImageBase, iBest, cOverlaps));
-                rc = RTDbgModSegmentAdd(pThis->hCnt, uBestAddr - uImageBase, paDescs[iBest].cb, pszName, 0 /*fFlags*/, NULL);
+                RTDBGSEGIDX idxDbgSeg = NIL_RTDBGSEGIDX;
+                rc = RTDbgModSegmentAdd(pThis->hCnt, uBestAddr - uImageBase, paDescs[iBest].cb, pszName, 0 /*fFlags*/, &idxDbgSeg);
+                Log(("CV: %#010x LB %#010x %s uRVA=%#010x iBest=%u cOverlaps=%u [idxDbgSeg=%#x iSeg=%#x]\n",
+                     uBestAddr, paDescs[iBest].cb, szName, uBestAddr - uImageBase, iBest, cOverlaps, idxDbgSeg, idxDbgSeg));
 
                 /* Update translations. */
                 paDescs[iBest].iGroup = iSeg;
@@ -1543,11 +1706,17 @@ static int rtDbgModCvLoadCodeViewInfo(PRTDBGMODCV pThis)
             case kCvSst_OldCompacted:
             case kCvSst_OldSrcLnSeg:
             case kCvSst_OldSrcLines3:
+                /** @todo implement more. */
+                break;
 
             case kCvSst_Types:
             case kCvSst_Public:
             case kCvSst_SrcLnSeg:
+                /** @todo implement more. */
+                break;
             case kCvSst_SrcModule:
+                pfnCallback = rtDbgModCvSs_SrcModule;
+                break;
             case kCvSst_Libraries:
             case kCvSst_GlobalTypes:
             case kCvSst_MPC:

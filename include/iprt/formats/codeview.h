@@ -321,6 +321,98 @@ typedef RTCVSEGMAP const *PCRTCVSEGMAP;
 
 
 /**
+ * CV4 line number segment contribution start/end table entry.
+ * Part of RTCVSRCMODULE.
+ */
+typedef struct RTCVSRCRANGE
+{
+    /** Start segment offset. */
+    uint32_t        offStart;
+    /** End segment offset (inclusive?). */
+    uint32_t        offEnd;
+} RTCVSRCRANGE;
+/** Pointer to a line number segment contributation. */
+typedef RTCVSRCRANGE *PRTCVSRCRANGE;
+/** Pointer to a const line number segment contributation. */
+typedef RTCVSRCRANGE const *PCRTCVSRCRANGE;
+
+/**
+ * CV4 header for a line number subsection, used by kCvSst_SrcModule.
+ *
+ * The aoffSrcFiles member is followed by an array of segment ranges
+ * (RTCVSRCRANGE), cSegs in length.  This may contain zero entries if the
+ * information is not known or not possible to express in this manner.
+ *
+ * After the range table, a segment index (uint16_t) mapping table follows, also
+ * cSegs in length.
+ */
+typedef struct RTCVSRCMODULE
+{
+    /** The number of files described in this subsection. */
+    uint16_t        cFiles;
+    /** The number of code segments this module contributes to. */
+    uint16_t        cSegs;
+    /** Offsets of the RTCVSRCFILE entries in this subsection, length given by
+     * the above cFiles member. */
+    uint32_t        aoffSrcFiles[1 /*cFiles*/];
+    /* RTCVSRCRANGE   aSegRanges[cSegs]; */
+    /* uint16_t       aidxSegs[cSegs]; */
+} RTCVSRCMODULE;
+/** Pointer to a source module subsection header. */
+typedef RTCVSRCMODULE *PRTCVSRCMODULE;
+/** Pointer to a const source module subsection header. */
+typedef RTCVSRCMODULE const *PCRTCVSRCMODULE;
+
+/**
+ * CV4 source file, inside a kCvSst_SrcModule (see RTCVSRCMODULE::aoffSrcFiles)
+ *
+ * The aoffSrcLines member is followed by an array of segment ranges
+ * (RTCVSRCRANGE), cSegs in length.  Just like for RTCVSRCMODULE this may
+ * contain zero entries.
+ *
+ * After the range table is the filename, which is preceeded by a 8-bit length
+ * (actually documented to be 16-bit, but seeing 8-bit here with wlink).
+ */
+typedef struct RTCVSRCFILE
+{
+    /** The number segments that this source file contributed to. */
+    uint16_t        cSegs;
+    /** Alignment padding. */
+    uint16_t        uPadding;
+    /** Offsets of the RTCVSRCLN entries for this source file, length given by
+     * the above cSegs member.  Relative to the start of the subsection. */
+    uint32_t        aoffSrcLines[1 /*cSegs*/];
+    /* RTCVSRCRANGE aSegRanges[cSegs]; */
+    /* uint8_t/uint16_t cchName; */
+    /* char         achName[cchName]; */
+} RTCVSRCFILE;
+/** Pointer to a source file. */
+typedef RTCVSRCFILE *PRTCVSRCFILE;
+/** Pointer to a const source file. */
+typedef RTCVSRCFILE const *PCRTCVSRCFILE;
+
+/**
+ * CV4 line numbers header.
+ *
+ * The aoffLines member is followed by an array of line numbers (uint16_t).
+ */
+typedef struct RTCVSRCLINE
+{
+    /** The index of the segment these line numbers belong to. */
+    uint16_t        idxSeg;
+    /** The number of line number pairs the two following tables. */
+    uint16_t        cPairs;
+    /** Segment offsets, cPairs long. */
+    uint32_t        aoffLines[1 /*cPairs*/];
+    /* uint16_t     aiLines[cPairs]; */
+} RTCVSRCLINE;
+/** Pointer to a line numbers header. */
+typedef RTCVSRCLINE *PRTCVSRCLINE;
+/** Pointer to a const line numbers header. */
+typedef RTCVSRCLINE const *PCRTCVSRCLINE;
+
+
+/**
  * Global symbol table header, used by kCvSst_GlobalSym and kCvSst_GlobalPub.
  */
 typedef struct RTCVGLOBALSYMTABHDR
