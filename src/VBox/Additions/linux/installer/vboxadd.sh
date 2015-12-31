@@ -186,8 +186,10 @@ start()
 
         $MODPROBE vboxguest >/dev/null 2>&1 || {
             setup
-            $MODPROBE vboxguest >/dev/null 2>&1 ||
+            $MODPROBE vboxguest >/dev/null 2>&1 || {
+                /sbin/rcvboxadd-x11 cleanup
                 fail "modprobe vboxguest failed"
+            }
         }
         case "$no_udev" in 1)
             sleep .5;;
@@ -208,8 +210,7 @@ start()
         }
     }
 
-    # This is needed as X.Org Server 1.13 does not auto-load the module.
-    running_vboxvideo || $MODPROBE vboxvideo > /dev/null 2>&1
+    /sbin/rcvboxadd-x11 setup
     # Install the guest OpenGL drivers.  For now we don't support
     # multi-architecture installations
     rm -rf /etc/ld.so.conf.d/00vboxvideo.conf
