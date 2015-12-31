@@ -914,7 +914,7 @@ rtDbgModCvSs_SrcModule(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSec
 
     /* Check the header. */
     PCRTCVSRCMODULE pHdr = (PCRTCVSRCMODULE)pvSubSect;
-    AssertReturn(cbSubSect >= RT_OFFSETOF(RTCVSRCMODULE, aoffSrcFiles), VERR_CV_BAD_FORMAT);
+    AssertReturn(cbSubSect >= RT_UOFFSETOF(RTCVSRCMODULE, aoffSrcFiles), VERR_CV_BAD_FORMAT);
     size_t cbHdr = sizeof(RTCVSRCMODULE)
                  + pHdr->cFiles * sizeof(uint32_t)
                  + pHdr->cSegs * sizeof(uint32_t) * 2
@@ -937,11 +937,11 @@ rtDbgModCvSs_SrcModule(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSec
     for (uint32_t i = 0; i < pHdr->cFiles; i++)
     {
         uint32_t const  offSrcFile  = pHdr->aoffSrcFiles[i];
-        RTDBGMODCV_CHECK_RET_BF(cbSubSect - RT_OFFSETOF(RTCVSRCFILE, aoffSrcLines) >= offSrcFile,
+        RTDBGMODCV_CHECK_RET_BF(cbSubSect - RT_UOFFSETOF(RTCVSRCFILE, aoffSrcLines) >= offSrcFile,
                                 ("cbSubSect=%#x (- %#x) aoffSrcFiles[%u]=%#x\n",
-                                 cbSubSect, RT_OFFSETOF(RTCVSRCFILE, aoffSrcLines), i, offSrcFile));
+                                 cbSubSect, RT_UOFFSETOF(RTCVSRCFILE, aoffSrcLines), i, offSrcFile));
         PCRTCVSRCFILE   pSrcFile    = (PCRTCVSRCFILE)((uint8_t const *)pvSubSect + offSrcFile);
-        size_t         cbSrcFileHdr = RT_OFFSETOF(RTCVSRCFILE, aoffSrcLines[pSrcFile->cSegs])
+        size_t         cbSrcFileHdr = RT_UOFFSETOF(RTCVSRCFILE, aoffSrcLines[pSrcFile->cSegs])
                                     + sizeof(RTCVSRCRANGE) * pSrcFile->cSegs
                                     + sizeof(uint8_t);
         RTDBGMODCV_CHECK_RET_BF(cbSubSect >= offSrcFile + cbSrcFileHdr && cbSubSect > cbSrcFileHdr,
@@ -961,11 +961,11 @@ rtDbgModCvSs_SrcModule(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSec
         for (uint32_t iSeg = 0; iSeg < pSrcFile->cSegs; iSeg++)
         {
             uint32_t const  offSrcLine  = pSrcFile->aoffSrcLines[iSeg];
-            RTDBGMODCV_CHECK_RET_BF(cbSubSect - RT_OFFSETOF(RTCVSRCLINE, aoffLines) >= offSrcLine,
+            RTDBGMODCV_CHECK_RET_BF(cbSubSect - RT_UOFFSETOF(RTCVSRCLINE, aoffLines) >= offSrcLine,
                                     ("cbSubSect=%#x (- %#x) aoffSrcFiles[%u]=%#x\n",
-                                     cbSubSect, RT_OFFSETOF(RTCVSRCLINE, aoffLines), iSeg, offSrcLine));
+                                     cbSubSect, RT_UOFFSETOF(RTCVSRCLINE, aoffLines), iSeg, offSrcLine));
             PCRTCVSRCLINE   pSrcLine    = (PCRTCVSRCLINE)((uint8_t const *)pvSubSect + offSrcLine);
-            size_t          cbSrcLine   = RT_OFFSETOF(RTCVSRCLINE, aoffLines[pSrcLine->cPairs])
+            size_t          cbSrcLine   = RT_UOFFSETOF(RTCVSRCLINE, aoffLines[pSrcLine->cPairs])
                                         + pSrcLine->cPairs * sizeof(uint16_t);
             RTDBGMODCV_CHECK_RET_BF(cbSubSect >= offSrcLine + cbSrcLine,
                                     ("cbSubSect=%#x aoffSrcFiles[%u]=%#x cbSrcLine=%#x\n",
