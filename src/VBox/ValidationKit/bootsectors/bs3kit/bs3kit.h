@@ -45,6 +45,7 @@
 #define RT_MANGLER(a_Name) RT_CONCAT3(a_Name,_c,ARCH_BITS)
 #include <iprt/mangling.h>
 #include <iprt/x86.h>
+#include <iprt/err.h>
 
 
 
@@ -1435,6 +1436,18 @@ BS3_DECL(void) Bs3MemFree_c16(void BS3_FAR *pv, size_t cb);
 BS3_DECL(void) Bs3MemFree_c32(void BS3_FAR *pv, size_t cb); /**< @copydoc Bs3MemFree_c16 */
 BS3_DECL(void) Bs3MemFree_c64(void BS3_FAR *pv, size_t cb); /**< @copydoc Bs3MemFree_c16 */
 #define Bs3MemFree BS3_CMN_NM(Bs3MemFree) /**< Selects #Bs3MemFree_c16, #Bs3MemFree_c32 or #Bs3MemFree_c64. */
+
+
+/**
+ * Initializes root page tables for page protected mode (PP16, PP32).
+ *
+ * @returns IPRT status code.
+ */
+BS3_DECL(int) Bs3PagingInitRootForPP_c16(void);
+BS3_DECL(int) Bs3PagingInitRootForPP_c32(void); /**< @copydoc Bs3PagingInitRootForPP_c16 */
+BS3_DECL(int) Bs3PagingInitRootForPP_c64(void); /**< @copydoc Bs3PagingInitRootForPP_c16 */
+#define Bs3PagingInitRootForPP BS3_CMN_NM(Bs3PagingInitRootForPP) /**< Selects #Bs3PagingInitRootForPP_c16, #Bs3PagingInitRootForPP_c32 or #Bs3PagingInitRootForPP_c64. */
+
 
 /** @} */
 

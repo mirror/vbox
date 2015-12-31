@@ -81,7 +81,8 @@ BS3_BEGIN_TEXT16
 .cr4_is_fine:
 
         ;
-        ; Get the page directory (returned in eax).  Will lazy init page tables.
+        ; Get the page directory (returned in eax).
+        ; Will lazy init page tables (in 16-bit prot mode).
         ;
         extern NAME(Bs3PagingGetRootForPP32_rm)
         call   NAME(Bs3PagingGetRootForPP32_rm)

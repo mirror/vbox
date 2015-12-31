@@ -485,6 +485,8 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-MemAlloc.c \
        bs3-cmn-MemAllocZ.c \
        bs3-cmn-MemFree.c \
+       bs3-cmn-PagingData.c \
+       bs3-cmn-PagingInitRootForPP.c \
        bs3-cmn-SlabInit.c \
        bs3-cmn-SlabAlloc.c \
        bs3-cmn-SlabAllocEx.c \
@@ -565,6 +567,8 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-SwitchToPP16.asm \
 	bs3-mode-SwitchToPP32.asm \
 	bs3-mode-EnteredMode.asm \
+	bs3-mode-PagingGetRootForPP16.asm \
+	bs3-mode-PagingGetRootForPP32.asm \
 
 # The 16-bit real mode BS3Kit library.
 LIBRARIES += bs3kit-rm
