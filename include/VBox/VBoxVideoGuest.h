@@ -222,6 +222,8 @@ RTDECL(void)     VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
                                              uint32_t *poffGuestHeapMemory,
                                              uint32_t *pcbGuestHeapMemory,
                                              uint32_t *poffHostFlags);
+RTDECL(int)      VBoxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                              HGSMIOFFSET offLocation);
 RTDECL(int)      VBoxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                        uint32_t fCaps);
 /** @todo we should provide a cleanup function too as part of the API */

@@ -287,16 +287,15 @@ static bool haveHGSMIModeHintAndCursorReportingInterface(struct vbox_private *pV
 
 /** Set up our heaps and data exchange buffers in VRAM before handing the rest
  *  to the memory manager. */
-static int setupAcceleration(struct vbox_private *pVBox, uint32_t *poffBase)
+static int setupAcceleration(struct vbox_private *pVBox)
 {
-    uint32_t offBase, offGuestHeap, cbGuestHeap;
+    uint32_t offBase, offGuestHeap, cbGuestHeap, offHostFlags;
     void *pvGuestHeap;
 
     VBoxHGSMIGetBaseMappingInfo(pVBox->full_vram_size, &offBase, NULL,
-                                &offGuestHeap, &cbGuestHeap, NULL);
-    if (poffBase)
-        *poffBase = offBase;
+                                &offGuestHeap, &cbGuestHeap, &offHostFlags);
     pvGuestHeap =   ((uint8_t *)pVBox->vram) + offBase + offGuestHeap;
+    pVBox->offHostFlags = offBase + offHostFlags;
     if (RT_FAILURE(VBoxHGSMISetupGuestContext(&pVBox->Ctx, pvGuestHeap,
                                               cbGuestHeap,
                                               offBase + offGuestHeap,
@@ -319,7 +318,6 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
 {
     struct vbox_private *vbox;
     int ret = 0;
-    uint32_t offBase;
 
     LogFunc(("vboxvideo: %d: dev=%p\n", __LINE__, dev));
     if (!VBoxHGSMIIsSupported())
@@ -343,7 +341,7 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
     vbox->fAnyX = VBoxVideoAnyWidthAllowed();
     DRM_INFO("VRAM %08x\n", vbox->full_vram_size);
 
-    ret = setupAcceleration(vbox, &offBase);
+    ret = setupAcceleration(vbox);
     if (ret)
         goto out_free;
 

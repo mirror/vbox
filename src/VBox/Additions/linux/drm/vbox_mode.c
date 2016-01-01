@@ -97,6 +97,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
                                 crtc->x * cBPP / 8 + crtc->y * pitch,
                                 pitch, width, height,
                                 vbox_crtc->fBlanked ? 0 : cBPP, fFlags);
+    VBoxHGSMIReportFlagsLocation(&vbox->Ctx, vbox->offHostFlags);
     VBoxHGSMISendCapsInfo(&vbox->Ctx, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }

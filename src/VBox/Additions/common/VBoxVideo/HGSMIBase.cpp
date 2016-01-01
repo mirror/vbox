@@ -206,6 +206,23 @@ static int vboxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 }
 
 
+/**
+ * Inform the host of the location of the host flags in VRAM via an HGSMI
+ * command.
+ * @returns  IPRT status value.
+ * @returns  VERR_NOT_IMPLEMENTED  if the host does not support the command.
+ * @returns  VERR_NO_MEMORY        if a heap allocation fails.
+ * @param    pCtx                  the context of the guest heap to use.
+ * @param    offLocation           the offset chosen for the flags withing guest
+ *                                 VRAM.
+ */
+RTDECL(int) VBoxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                         HGSMIOFFSET offLocation)
+{
+    return vboxHGSMIReportFlagsLocation(pCtx, offLocation);
+}
+
+
 /** Notify the host of HGSMI-related guest capabilities via an HGSMI command.
  */
 static int vboxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,

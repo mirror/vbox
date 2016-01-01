@@ -101,6 +101,8 @@ struct vbox_private
     uint32_t full_vram_size;
     /** Amount of available VRAM, not including space used for buffers. */
     uint32_t vram_size;
+    /** Offset to the host flags in the VRAM. */
+    uint32_t offHostFlags;
     /** Array of structures for receiving mode hints. */
     VBVAMODEHINT *paVBVAModeHints;
 
