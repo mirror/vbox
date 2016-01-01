@@ -20,7 +20,7 @@
  * with the following copyright and permission notice:
  *
  * Copyright 2012 Red Hat Inc.
- * Parts based on xf86-video-vbox
+ * Parts based on xf86-video-ast
  * Copyright (c) 2005 ASPEED Technology Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
