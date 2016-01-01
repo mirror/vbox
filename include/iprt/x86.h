@@ -1505,6 +1505,9 @@ typedef struct X86PTEBITS
     /** Physical Page number of the next level. */
     uint32_t    u20PageNo : 20;
 } X86PTEBITS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PTEBITS, 4);
+#endif
 /** Pointer to a page table entry. */
 typedef X86PTEBITS *PX86PTEBITS;
 /** Pointer to a const page table entry. */
@@ -1526,6 +1529,9 @@ typedef union X86PTE
     /** 8-bit view. */
     uint8_t         au8[4];
 } X86PTE;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PTE, 4);
+#endif
 /** Pointer to a page table entry. */
 typedef X86PTE *PX86PTE;
 /** Pointer to a const page table entry. */
@@ -1568,6 +1574,9 @@ typedef struct X86PTEPAEBITS
     /** No Execute flag. */
     uint32_t    u1NoExecute : 1;
 } X86PTEPAEBITS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PTEPAEBITS, 8);
+#endif
 /** Pointer to a page table entry. */
 typedef X86PTEPAEBITS *PX86PTEPAEBITS;
 /** Pointer to a page table entry. */
@@ -1589,6 +1598,9 @@ typedef union X86PTEPAE
     /** 8-bit view. */
     uint8_t         au8[8];
 } X86PTEPAE;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PTEPAE, 8);
+#endif
 /** Pointer to a PAE page table entry. */
 typedef X86PTEPAE *PX86PTEPAE;
 /** Pointer to a const PAE page table entry. */
@@ -1603,6 +1615,9 @@ typedef struct X86PT
     /** PTE Array. */
     X86PTE     a[X86_PG_ENTRIES];
 } X86PT;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PT, 4096);
+#endif
 /** Pointer to a page table. */
 typedef X86PT *PX86PT;
 /** Pointer to a const page table. */
@@ -1622,6 +1637,9 @@ typedef struct X86PTPAE
     /** PTE Array. */
     X86PTEPAE  a[X86_PG_PAE_ENTRIES];
 } X86PTPAE;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PTPAE, 4096);
+#endif
 /** Pointer to a page table. */
 typedef X86PTPAE *PX86PTPAE;
 /** Pointer to a const page table. */
@@ -1698,6 +1716,9 @@ typedef struct X86PDEBITS
     /** Physical Page number of the next level. */
     uint32_t    u20PageNo : 20;
 } X86PDEBITS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDEBITS, 4);
+#endif
 /** Pointer to a page directory entry. */
 typedef X86PDEBITS *PX86PDEBITS;
 /** Pointer to a const page directory entry. */
@@ -1739,6 +1760,9 @@ typedef struct X86PDEPAEBITS
     /** No Execute flag. */
     uint32_t    u1NoExecute : 1;
 } X86PDEPAEBITS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDEPAEBITS, 8);
+#endif
 /** Pointer to a page directory entry. */
 typedef X86PDEPAEBITS *PX86PDEPAEBITS;
 /** Pointer to a const page directory entry. */
@@ -1803,37 +1827,40 @@ typedef const X86PDEPAEBITS *PCX86PDEPAEBITS;
 typedef struct X86PDE4MBITS
 {
     /** Flags whether(=1) or not the page is present. */
-    unsigned    u1Present : 1;
+    uint32_t    u1Present : 1;
     /** Read(=0) / Write(=1) flag. */
-    unsigned    u1Write : 1;
+    uint32_t    u1Write : 1;
     /** User(=1) / Supervisor (=0) flag. */
-    unsigned    u1User : 1;
+    uint32_t    u1User : 1;
     /** Write Thru flag. If PAT enabled, bit 0 of the index. */
-    unsigned    u1WriteThru : 1;
+    uint32_t    u1WriteThru : 1;
     /** Cache disabled flag. If PAT enabled, bit 1 of the index. */
-    unsigned    u1CacheDisable : 1;
+    uint32_t    u1CacheDisable : 1;
     /** Accessed flag.
      * Indicates that the page have been read or written to. */
-    unsigned    u1Accessed : 1;
+    uint32_t    u1Accessed : 1;
     /** Dirty flag.
      * Indicates that the page has been written to. */
-    unsigned    u1Dirty : 1;
+    uint32_t    u1Dirty : 1;
     /** Page size flag - always 1 for 4MB entries. */
-    unsigned    u1Size : 1;
+    uint32_t    u1Size : 1;
     /** Global flag.  */
-    unsigned    u1Global : 1;
+    uint32_t    u1Global : 1;
     /** Available for use to system software. */
-    unsigned    u3Available : 3;
+    uint32_t    u3Available : 3;
     /** Reserved / If PAT enabled, bit 2 of the index.  */
-    unsigned    u1PAT : 1;
+    uint32_t    u1PAT : 1;
     /** Bits 32-39 of the page number on AMD64.
      * This AMD64 hack allows accessing 40bits of physical memory without PAE. */
-    unsigned    u8PageNoHigh : 8;
+    uint32_t    u8PageNoHigh : 8;
     /** Reserved. */
-    unsigned    u1Reserved : 1;
+    uint32_t    u1Reserved : 1;
     /** Physical Page number of the page. */
-    unsigned    u10PageNo : 10;
+    uint32_t    u10PageNo : 10;
 } X86PDE4MBITS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDE4MBITS, 4);
+#endif
 /** Pointer to a page table entry. */
 typedef X86PDE4MBITS *PX86PDE4MBITS;
 /** Pointer to a const page table entry. */
@@ -1880,6 +1907,9 @@ typedef struct X86PDE2MPAEBITS
     /** No Execute flag. */
     uint32_t    u1NoExecute : 1;
 } X86PDE2MPAEBITS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDE2MPAEBITS, 8);
+#endif
 /** Pointer to a 2MB PAE page table entry. */
 typedef X86PDE2MPAEBITS *PX86PDE2MPAEBITS;
 /** Pointer to a 2MB PAE page table entry. */
@@ -1905,6 +1935,9 @@ typedef union X86PDE
     /** 32 bit unsigned integer view. */
     uint32_t        au32[1];
 } X86PDE;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDE, 4);
+#endif
 /** Pointer to a page directory entry. */
 typedef X86PDE *PX86PDE;
 /** Pointer to a const page directory entry. */
@@ -1928,6 +1961,9 @@ typedef union X86PDEPAE
     /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
 } X86PDEPAE;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDEPAE, 8);
+#endif
 /** Pointer to a page directory entry. */
 typedef X86PDEPAE *PX86PDEPAE;
 /** Pointer to a const page directory entry. */
@@ -1941,6 +1977,9 @@ typedef struct X86PD
     /** PDE Array. */
     X86PDE      a[X86_PG_ENTRIES];
 } X86PD;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PD, 4096);
+#endif
 /** Pointer to a page directory. */
 typedef X86PD *PX86PD;
 /** Pointer to a const page directory. */
@@ -1960,6 +1999,9 @@ typedef struct X86PDPAE
     /** PDE Array. */
     X86PDEPAE   a[X86_PG_PAE_ENTRIES];
 } X86PDPAE;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDPAE, 4096);
+#endif
 /** Pointer to a PAE page directory. */
 typedef X86PDPAE *PX86PDPAE;
 /** Pointer to a const PAE page directory. */
@@ -2030,6 +2072,9 @@ typedef struct X86PDPEBITS
     /** MBZ bits */
     uint32_t    u12Reserved : 12;
 } X86PDPEBITS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDPEBITS, 8);
+#endif
 /** Pointer to a page directory pointer table entry. */
 typedef X86PDPEBITS *PX86PTPEBITS;
 /** Pointer to a const page directory pointer table entry. */
@@ -2066,6 +2111,9 @@ typedef struct X86PDPEAMD64BITS
     /** No Execute flag. */
     uint32_t    u1NoExecute : 1;
 } X86PDPEAMD64BITS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDPEAMD64BITS, 8);
+#endif
 /** Pointer to a page directory pointer table entry. */
 typedef X86PDPEAMD64BITS *PX86PDPEAMD64BITS;
 /** Pointer to a const page directory pointer table entry. */
@@ -2089,6 +2137,9 @@ typedef union X86PDPE
     /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
 } X86PDPE;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDPE, 8);
+#endif
 /** Pointer to a page directory pointer table entry. */
 typedef X86PDPE *PX86PDPE;
 /** Pointer to a const page directory pointer table entry. */
@@ -2103,6 +2154,9 @@ typedef struct X86PDPT
     /** PDE Array. */
     X86PDPE         a[X86_PG_AMD64_PDPE_ENTRIES];
 } X86PDPT;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDPT, 4096);
+#endif
 /** Pointer to a page directory pointer table. */
 typedef X86PDPT *PX86PDPT;
 /** Pointer to a const page directory pointer table. */
@@ -2175,6 +2229,9 @@ typedef struct X86PML4EBITS
     /** No Execute flag. */
     uint32_t    u1NoExecute : 1;
 } X86PML4EBITS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PML4EBITS, 8);
+#endif
 /** Pointer to a page map level-4 entry. */
 typedef X86PML4EBITS *PX86PML4EBITS;
 /** Pointer to a const page map level-4 entry. */
@@ -2196,6 +2253,9 @@ typedef union X86PML4E
     /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
 } X86PML4E;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PML4E, 8);
+#endif
 /** Pointer to a page map level-4 entry. */
 typedef X86PML4E *PX86PML4E;
 /** Pointer to a const page map level-4 entry. */
@@ -2210,6 +2270,9 @@ typedef struct X86PML4
     /** PDE Array. */
     X86PML4E        a[X86_PG_PAE_ENTRIES];
 } X86PML4;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PML4, 4096);
+#endif
 /** Pointer to a page map level-4. */
 typedef X86PML4 *PX86PML4;
 /** Pointer to a const page map level-4. */
