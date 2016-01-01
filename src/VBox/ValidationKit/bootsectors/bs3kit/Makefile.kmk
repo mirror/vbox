@@ -464,6 +464,11 @@ bs3-bootsector_SOURCES  = bs3-bootsector.asm
 # Common sources to be compiled into _p16, _p32 and _p64 versions.
 #
 VBOX_BS3KIT_COMMON_SOURCES = \
+	bs3-cmn-A20Disable.asm \
+	bs3-cmn-A20Enable.asm \
+	bs3-cmn-KbdRead.asm \
+	bs3-cmn-KbdWait.asm \
+	bs3-cmn-KbdWrite.asm \
 	bs3-cmn-Shutdown.asm \
 	bs3-cmn-Panic.asm \
 	bs3-cmn-PrintChr.asm \

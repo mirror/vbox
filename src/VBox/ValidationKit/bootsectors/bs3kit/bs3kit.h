@@ -895,7 +895,7 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
         if (BS3_IS_PROTECTED_MODE()) \
         { \
             (a_Name).XPtr.u.uLow  = BS3_FP_OFF(pTypeCheck); \
-            (a_Name).XPtr.u.uHigh = (BS3_FP_SEG(pTypeCheck) & UINT16_C(0xfff8)) - BS3_SEL_TILED; \
+            (a_Name).XPtr.u.uHigh = ((BS3_FP_SEG(pTypeCheck) & UINT16_C(0xfff8)) - BS3_SEL_TILED) >> 3; \
         } \
         else \
             (a_Name).XPtr.uFlat = BS3_FP_OFF(pTypeCheck) + ((uint32_t)BS3_FP_SEG(pTypeCheck) << 4); \
@@ -1439,6 +1439,55 @@ BS3_DECL(void) Bs3MemFree_c64(void BS3_FAR *pv, size_t cb); /**< @copydoc Bs3Mem
 
 
 /**
+ * Enables the A20 gate.
+ */
+BS3_DECL(void) Bs3A20Enable_c16(void);
+BS3_DECL(void) Bs3A20Enable_c32(void); /**< @copydoc Bs3A20Enable_c16 */
+BS3_DECL(void) Bs3A20Enable_c64(void); /**< @copydoc Bs3A20Enable_c16 */
+#define Bs3A20Enable BS3_CMN_NM(Bs3A20Enable) /**< Selects #Bs3A20Enable_c16, #Bs3A20Enable_c32 or #Bs3A20Enable_c64. */
+
+/**
+ * Enables the A20 gate via the keyboard controller
+ */
+BS3_DECL(void) Bs3A20EnableViaKbd_c16(void);
+BS3_DECL(void) Bs3A20EnableViaKbd_c32(void); /**< @copydoc Bs3A20EnableViaKbd_c16 */
+BS3_DECL(void) Bs3A20EnableViaKbd_c64(void); /**< @copydoc Bs3A20EnableViaKbd_c16 */
+#define Bs3A20EnableViaKbd BS3_CMN_NM(Bs3A20EnableViaKbd) /**< Selects #Bs3A20EnableViaKbd_c16, #Bs3A20EnableViaKbd_c32 or #Bs3A20EnableViaKbd_c64. */
+
+/**
+ * Enables the A20 gate via the PS/2 control port A.
+ */
+BS3_DECL(void) Bs3A20EnableViaPortA_c16(void);
+BS3_DECL(void) Bs3A20EnableViaPortA_c32(void); /**< @copydoc Bs3A20EnableViaPortA_c16 */
+BS3_DECL(void) Bs3A20EnableViaPortA_c64(void); /**< @copydoc Bs3A20EnableViaPortA_c16 */
+#define Bs3A20EnableViaPortA BS3_CMN_NM(Bs3A20EnableViaPortA) /**< Selects #Bs3A20EnableViaPortA_c16, #Bs3A20EnableViaPortA_c32 or #Bs3A20EnableViaPortA_c64. */
+
+/**
+ * Disables the A20 gate.
+ */
+BS3_DECL(void) Bs3A20Disable_c16(void);
+BS3_DECL(void) Bs3A20Disable_c32(void); /**< @copydoc Bs3A20Disable_c16 */
+BS3_DECL(void) Bs3A20Disable_c64(void); /**< @copydoc Bs3A20Disable_c16 */
+#define Bs3A20Disable BS3_CMN_NM(Bs3A20Disable) /**< Selects #Bs3A20Disable_c16, #Bs3A20Disable_c32 or #Bs3A20Disable_c64. */
+
+/**
+ * Disables the A20 gate via the keyboard controller
+ */
+BS3_DECL(void) Bs3A20DisableViaKbd_c16(void);
+BS3_DECL(void) Bs3A20DisableViaKbd_c32(void); /**< @copydoc Bs3A20DisableViaKbd_c16 */
+BS3_DECL(void) Bs3A20DisableViaKbd_c64(void); /**< @copydoc Bs3A20DisableViaKbd_c16 */
+#define Bs3A20DisableViaKbd BS3_CMN_NM(Bs3A20DisableViaKbd) /**< Selects #Bs3A20DisableViaKbd_c16, #Bs3A20DisableViaKbd_c32 or #Bs3A20DisableViaKbd_c64. */
+
+/**
+ * Disables the A20 gate via the PS/2 control port A.
+ */
+BS3_DECL(void) Bs3A20DisableViaPortA_c16(void);
+BS3_DECL(void) Bs3A20DisableViaPortA_c32(void); /**< @copydoc Bs3A20DisableViaPortA_c16 */
+BS3_DECL(void) Bs3A20DisableViaPortA_c64(void); /**< @copydoc Bs3A20DisableViaPortA_c16 */
+#define Bs3A20DisableViaPortA BS3_CMN_NM(Bs3A20DisableViaPortA) /**< Selects #Bs3A20DisableViaPortA_c16, #Bs3A20DisableViaPortA_c32 or #Bs3A20DisableViaPortA_c64. */
+
+
+/**
  * Initializes root page tables for page protected mode (PP16, PP32).
  *
  * @returns IPRT status code.
@@ -1448,6 +1497,42 @@ BS3_DECL(int) Bs3PagingInitRootForPP_c32(void); /**< @copydoc Bs3PagingInitRootF
 BS3_DECL(int) Bs3PagingInitRootForPP_c64(void); /**< @copydoc Bs3PagingInitRootForPP_c16 */
 #define Bs3PagingInitRootForPP BS3_CMN_NM(Bs3PagingInitRootForPP) /**< Selects #Bs3PagingInitRootForPP_c16, #Bs3PagingInitRootForPP_c32 or #Bs3PagingInitRootForPP_c64. */
 
+
+/**
+ * Waits for the keyboard controller to become ready.
+ */
+BS3_DECL(void) Bs3KbdWait_c16(void);
+BS3_DECL(void) Bs3KbdWait_c32(void); /**< @copydoc Bs3KbdWait_c16 */
+BS3_DECL(void) Bs3KbdWait_c64(void); /**< @copydoc Bs3KbdWait_c16 */
+#define Bs3KbdWait BS3_CMN_NM(Bs3KbdWait) /**< Selects #Bs3KbdWait_c16, #Bs3KbdWait_c32 or #Bs3KbdWait_c64. */
+
+/**
+ * Sends a read command to the keyboard controller and gets the result.
+ *
+ * The caller is responsible for making sure the keyboard controller is ready
+ * for a command (call #Bs3KbdWait if unsure).
+ *
+ * @returns      The value read is returned (in al).
+ * @param        bCmd            The read command.
+ */
+BS3_DECL(uint8_t) Bs3KbdRead_c16(uint8_t bCmd);
+BS3_DECL(uint8_t) Bs3KbdRead_c32(uint8_t bCmd); /**< @copydoc Bs3KbdRead_c16 */
+BS3_DECL(uint8_t) Bs3KbdRead_c64(uint8_t bCmd); /**< @copydoc Bs3KbdRead_c16 */
+#define Bs3KbdRead BS3_CMN_NM(Bs3KbdRead) /**< Selects #Bs3KbdRead_c16, #Bs3KbdRead_c32 or #Bs3KbdRead_c64. */
+
+/**
+ * Sends a write command to the keyboard controller and then sends the data.
+ *
+ * The caller is responsible for making sure the keyboard controller is ready
+ * for a command (call #Bs3KbdWait if unsure).
+ *
+ * @param        bCmd           The write command.
+ * @param        bData          The data to write.
+ */
+BS3_DECL(void) Bs3KbdWrite_c16(uint8_t bCmd, uint8_t bData);
+BS3_DECL(void) Bs3KbdWrite_c32(uint8_t bCmd, uint8_t bData); /**< @copydoc Bs3KbdWrite_c16 */
+BS3_DECL(void) Bs3KbdWrite_c64(uint8_t bCmd, uint8_t bData); /**< @copydoc Bs3KbdWrite_c16 */
+#define Bs3KbdWrite BS3_CMN_NM(Bs3KbdWrite) /**< Selects #Bs3KbdWrite_c16, #Bs3KbdWrite_c32 or #Bs3KbdWrite_c64. */
 
 /** @} */
 

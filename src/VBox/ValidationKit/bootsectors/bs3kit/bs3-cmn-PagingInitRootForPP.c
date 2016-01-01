@@ -43,8 +43,10 @@ BS3_DECL(int) Bs3PagingInitRootForPP(void)
      * By default we do a identity mapping of the entire address space
      * using 4 GB pages.  So, we only really need one page directory,
      * that's all.
+     *
+     * ASSUMES page size extension available, i.e. pentium+.
      */
-    pPgDir = (PX86PD)Bs3MemAlloc(BS3MEMKIND_TILED, _4K);
+    pPgDir = (X86PD BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_TILED, _4K);
     if (pPgDir)
     {
         BS3_XPTR_AUTO(X86PD, XptrPgDir);

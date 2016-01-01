@@ -68,15 +68,18 @@ BS3_BEGIN_TEXT16
         BS3_SET_BITS 16
 
         push    eax
+        push    ecx
         pushfd
 
         ;
         ; Make sure PAE is really off.
         ;
         mov     eax, cr4
-        test    eax, X86_CR4_PAE
-        jz      .cr4_is_fine
+        mov     ecx, eax
         and     eax, ~X86_CR4_PAE
+        or      eax, X86_CR4_PSE
+        cmp     eax, ecx
+        je      .cr4_is_fine
         mov     cr4, eax
 .cr4_is_fine:
 
@@ -113,7 +116,7 @@ BS3_BEGIN_TEXT32
         call    NAME(Bs3EnteredMode_pe32)
 
         ;
-        ; Restore eax and flags (IF).
+        ; Restore ecx, eax and flags (IF).
         ;
  %if TMPL_BITS < 32
         and     esp, 0ffffh             ; Make sure the high word is zero.
@@ -121,7 +124,8 @@ BS3_BEGIN_TEXT32
         add     eax, BS3_ADDR_BS3TEXT16 ; Convert it to a flat address.
         mov     [esp + 8], eax          ; Store it in the place right for 32-bit returns.
  %endif
-        pop     esp
+        pop     ecx
+        pop     eax
         popfd
         ret
 
