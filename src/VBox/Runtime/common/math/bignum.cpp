@@ -263,7 +263,7 @@ static void rtBigNumElement2xDiv2xBy1x(RTBIGNUMELEMENT2X *puQuotient, RTBIGNUMEL
     uDivisor2x.s.Lo = uDivisor;
     /** @todo optimize this. */
     RTUInt128DivRem(puQuotient, &uRemainder2x, &uDividend, &uDivisor2x);
-    puRemainder->u = uRemainder2x.s.Lo;
+    *puRemainder = uRemainder2x.s.Lo;
 # else
     puQuotient->u  = uDividend.u / uDivisor;
     puRemainder->u = uDividend.u % uDivisor;

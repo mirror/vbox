@@ -460,9 +460,3 @@ RTDECL(uint32_t) ASMByteSwapU32(uint32_t u32)
     return RT_MAKE_U32_FROM_U8(RT_BYTE4(u32), RT_BYTE3(u32), RT_BYTE2(u32), RT_BYTE1(u32));
 }
 
-RTDECL(uint64_t) ASMByteSwapU64(uint64_t u64)
-{
-    return RT_MAKE_U64_FROM_U8(RT_BYTE8(u64), RT_BYTE7(u64), RT_BYTE6(u64), RT_BYTE5(u64),
-                               RT_BYTE4(u64), RT_BYTE3(u64), RT_BYTE2(u64), RT_BYTE1(u64));
-}
-

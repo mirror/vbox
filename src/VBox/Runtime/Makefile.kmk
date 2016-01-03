@@ -426,7 +426,6 @@ RuntimeR3_SOURCES       = \
 	common/misc/RTFileOpenF.cpp \
 	common/misc/RTFileOpenV.cpp \
 	common/misc/RTMemWipeThoroughly.cpp \
-	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/cidr.cpp \
@@ -642,14 +641,18 @@ RuntimeR3_SOURCES       = \
 #endif
 
 RuntimeR3_SOURCES.x86 += \
-	generic/RTMpGetDescription-generic.cpp
+	generic/RTMpGetDescription-generic.cpp \
+	common/misc/RTSystemIsInsideVM-amd64-x86.cpp
 RuntimeR3_SOURCES.amd64 += \
-	generic/RTMpGetDescription-generic.cpp
+	generic/RTMpGetDescription-generic.cpp \
+	common/misc/RTSystemIsInsideVM-amd64-x86.cpp
 RuntimeR3_SOURCES.sparc32 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
+	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/asm-fake.cpp
 RuntimeR3_SOURCES.sparc64 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
+	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/asm-fake.cpp
 
 ifdef IPRT_WITH_LZJB
@@ -714,6 +717,12 @@ endif
 if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
 RuntimeR3_SOURCES += \
 	$(if $(VBOX_WITH_DBUS),VBox/dbus.cpp,)
+endif
+
+if1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
+RuntimeR3_SOURCES := \
+	$(filter-out common/misc/zero.asm, $(RuntimeR3_SOURCES)) \
+	common/misc/zero.cpp
 endif
 
 VBOX_WITH_NT_DIRENUM = 1
