@@ -44,5 +44,6 @@ extern uint32_t BS3_DATA_NM(g_PhysPagingRootLM);
 
 RT_C_DECLS_END;
 
+
 #endif
 

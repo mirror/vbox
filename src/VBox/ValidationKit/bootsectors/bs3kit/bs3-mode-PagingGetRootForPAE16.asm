@@ -1,10 +1,10 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3Panic, Common.
+; BS3Kit - Bs3PagingGetRootForPAE16
 ;
 
 ;
-; Copyright (C) 2007-2015 Oracle Corporation
+; Copyright (C) 2007-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -27,12 +27,21 @@
 %include "bs3kit-template-header.mac"
 
 
-BS3_PROC_BEGIN_CMN Bs3Panic
-        push    xBP
-        mov     xBP, xSP
-        cli
-.panic_again:
-        hlt
-        jmp     .panic_again
-BS3_PROC_END_CMN   Bs3Panic
+BS3_EXTERN_DATA16 g_PhysPagingRootPAE
+TMPL_BEGIN_TEXT
+extern TMPL_NM(Bs3PagingGetRootForPAE32)
+
+
+;;
+; @cproto   BS3_DECL(uint32_t) Bs3PagingGetRootForPAE16(void)
+;
+; @returns  eax
+;
+; @uses     ax
+;
+; @remarks  returns value in EAX, not dx:ax!
+;
+BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPAE16
+        jmp     TMPL_NM(Bs3PagingGetRootForPAE32)
+BS3_PROC_END_MODE   Bs3PagingGetRootForPAE16
 

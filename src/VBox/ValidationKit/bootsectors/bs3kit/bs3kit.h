@@ -1491,11 +1491,36 @@ BS3_DECL(void) Bs3A20DisableViaPortA_c64(void); /**< @copydoc Bs3A20DisableViaPo
  * Initializes root page tables for page protected mode (PP16, PP32).
  *
  * @returns IPRT status code.
+ * @remarks Must not be called in real-mode!
  */
 BS3_DECL(int) Bs3PagingInitRootForPP_c16(void);
 BS3_DECL(int) Bs3PagingInitRootForPP_c32(void); /**< @copydoc Bs3PagingInitRootForPP_c16 */
 BS3_DECL(int) Bs3PagingInitRootForPP_c64(void); /**< @copydoc Bs3PagingInitRootForPP_c16 */
 #define Bs3PagingInitRootForPP BS3_CMN_NM(Bs3PagingInitRootForPP) /**< Selects #Bs3PagingInitRootForPP_c16, #Bs3PagingInitRootForPP_c32 or #Bs3PagingInitRootForPP_c64. */
+
+/**
+ * Initializes root page tables for PAE page protected mode (PAE16, PAE32).
+ *
+ * @returns IPRT status code.
+ * @remarks The default long mode page tables depends on the PAE ones.
+ * @remarks Must not be called in real-mode!
+ */
+BS3_DECL(int) Bs3PagingInitRootForPAE_c16(void);
+BS3_DECL(int) Bs3PagingInitRootForPAE_c32(void); /**< @copydoc Bs3PagingInitRootForPAE_c16 */
+BS3_DECL(int) Bs3PagingInitRootForPAE_c64(void); /**< @copydoc Bs3PagingInitRootForPAE_c16 */
+#define Bs3PagingInitRootForPAE BS3_CMN_NM(Bs3PagingInitRootForPAE) /**< Selects #Bs3PagingInitRootForPAE_c16, #Bs3PagingInitRootForPAE_c32 or #Bs3PagingInitRootForPAE_c64. */
+
+/**
+ * Initializes root page tables for long mode (LM16, LM32, LM64).
+ *
+ * @returns IPRT status code.
+ * @remarks The default long mode page tables depends on the PAE ones.
+ * @remarks Must not be called in real-mode!
+ */
+BS3_DECL(int) Bs3PagingInitRootForLM_c16(void);
+BS3_DECL(int) Bs3PagingInitRootForLM_c32(void); /**< @copydoc Bs3PagingInitRootForLM_c16 */
+BS3_DECL(int) Bs3PagingInitRootForLM_c64(void); /**< @copydoc Bs3PagingInitRootForLM_c16 */
+#define Bs3PagingInitRootForLM BS3_CMN_NM(Bs3PagingInitRootForLM) /**< Selects #Bs3PagingInitRootForLM_c16, #Bs3PagingInitRootForLM_c32 or #Bs3PagingInitRootForLM_c64. */
 
 
 /**
