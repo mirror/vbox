@@ -673,11 +673,6 @@ endstruc
 %define BS3_SEL_TSS64_SPARE1        0090h ;;< The 64-bit TSS selector.
 %define BS3_SEL_TSS64_IOBP          00a0h ;;< The 64-bit TSS selector.
 
-%define BS3_SEL_TSS16               0020h ;;< The 16-bit TSS selector.
-%define BS3_SEL_TSS16_DF            0028h ;;< The 16-bit TSS selector for double faults.
-%define BS3_SEL_TSS32               0030h ;;< The 32-bit TSS selector.
-%define BS3_SEL_TSS32_DF            0038h ;;< The 32-bit TSS selector for double faults.
-%define BS3_SEL_TSS64               0040h ;;< The 64-bit TSS selector.
 %define BS3_SEL_VMMDEV_MMIO16       00f8h ;;< Selector for accessing the VMMDev MMIO segment at 0100000h from 16-bit code.
 
 %define BS3_SEL_RING_SHIFT          8     ;;< For the formula: BS3_SEL_R0_XXX + ((cs & 3) << BS3_SEL_RING_SHIFT)

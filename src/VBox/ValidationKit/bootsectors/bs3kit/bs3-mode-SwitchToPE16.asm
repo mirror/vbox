@@ -64,7 +64,8 @@ BS3_BEGIN_TEXT16
         BS3_SET_BITS 16
 
         push    ax
-        pushfd
+        push    cx
+        pushf
         cli
 
         ;
@@ -81,12 +82,21 @@ BS3_BEGIN_TEXT16
         lmsw    ax
 
         ;
-        ; Call rountine for doing mode specific setups.
+        ; Convert from real mode stack to protected mode stack.
+        ;
+        mov     ax, .p16_stack
+        extern  NAME(Bs3ConvertRMStackToP16UsingCxReturnToAx_c16)
+        jmp     NAME(Bs3ConvertRMStackToP16UsingCxReturnToAx_c16)
+.p16_stack:
+
+        ;
+        ; Call routine for doing mode specific setups.
         ;
         extern  NAME(Bs3EnteredMode_pe16)
         call    NAME(Bs3EnteredMode_pe16)
 
-        popfd
+        popf
+        pop     cx
         pop     ax
         ret
 

@@ -36,10 +36,11 @@
 ;           cleared if caller is in 16-bit mode.
 ;
 ; @remarks  Obviously returns to 32-bit mode, even if the caller was
-;           in 16-bit or 64-bit mode.
+;           in 16-bit or 64-bit mode.  It doesn't not preserve the callers
+;           ring, but instead changes to ring-0.
 ;
 BS3_PROC_BEGIN_MODE Bs3SwitchToPP32
-%ifdef TMPL_PE32
+%ifdef TMPL_PP32
         ret
 
 %else
@@ -72,7 +73,7 @@ BS3_BEGIN_TEXT16
         pushfd
 
         ;
-        ; Make sure PAE is really off.
+        ; Make sure PAE is really off and that PSE is on.
         ;
         mov     eax, cr4
         mov     ecx, eax
@@ -110,23 +111,34 @@ BS3_BEGIN_TEXT32
 .thirty_two_bit:
 
         ;
+        ; Convert the (now) real mode stack pointer to 32-bit flat.
+        ;
+        xor     eax, eax
+        mov     ax, ss
+        shl     eax, 4
+        and     esp, 0ffffh
+        add     esp, eax
+
+        mov     ax, BS3_SEL_R0_SS32
+        mov     ss, ax
+
+        ;
         ; Call rountine for doing mode specific setups.
         ;
-        extern  NAME(Bs3EnteredMode_pe32)
-        call    NAME(Bs3EnteredMode_pe32)
+        extern  NAME(Bs3EnteredMode_pp32)
+        call    NAME(Bs3EnteredMode_pp32)
 
         ;
         ; Restore ecx, eax and flags (IF).
         ;
  %if TMPL_BITS < 32
-        and     esp, 0ffffh             ; Make sure the high word is zero.
-        movzx   eax, word [esp + 8 + 2] ; Load return address.
-        add     eax, BS3_ADDR_BS3TEXT16 ; Convert it to a flat address.
-        mov     [esp + 8], eax          ; Store it in the place right for 32-bit returns.
+        movzx   eax, word [esp + 12 + 2] ; Load return address.
+        add     eax, BS3_ADDR_BS3TEXT16  ; Convert it to a flat address.
+        mov     [esp + 12], eax          ; Store it in the place right for 32-bit returns.
  %endif
+        popfd
         pop     ecx
         pop     eax
-        popfd
         ret
 
  %if TMPL_BITS != 32

@@ -51,6 +51,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
 BS3_BEGIN_TEXT16
 .sixteen_bit:
         ; Load 16-bit segment registers.
+        ;; @todo support non-standard stacks?
         add     ax, BS3_SEL_R0_SS16 - BS3_SEL_R0_CS16
         mov     ss, ax
 

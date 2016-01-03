@@ -53,7 +53,10 @@ EXTERN Bs3SwitchTo32Bit_c32
 EXTERN Bs3SwitchTo16Bit_c16
 EXTERN Bs3SwitchTo16Bit_c32
 EXTERN Bs3SwitchToPP16_rm
+EXTERN Bs3SwitchToPP32_rm
 EXTERN Bs3SwitchToRM_pe32
+EXTERN Bs3SwitchToRM_pp16
+EXTERN Bs3SwitchToRM_pp32
 EXTERN Bs3InitMemory_rm
 BS3_EXTERN_CMN Bs3Shutdown
 
@@ -79,8 +82,15 @@ BS3_BEGIN_TEXT16
     call    NAME(Bs3SwitchToRM_pe32)
     BS3_SET_BITS 16
     call    NAME(Bs3SwitchToPE16_rm)
+    call    NAME(Bs3SwitchToRM_pe16)
 
     call    NAME(Bs3SwitchToPP16_rm)
+    call    NAME(Bs3SwitchToRM_pp16)
+
+    call    NAME(Bs3SwitchToPP32_rm)
+    BS3_SET_BITS 32
+    call    NAME(Bs3SwitchToRM_pp32)
+    BS3_SET_BITS 16
 
     ;
     ; Call main, if it returns shutdown the system.

@@ -26,6 +26,13 @@
 
 %include "bs3kit-template-header.mac"
 
+%ifndef TMPL_PP16
+extern  NAME(Bs3EnteredMode_pp16)
+ %ifdef TMPL_PP32
+ BS3_EXTERN_CMN Bs3SwitchTo16Bit
+ %else
+ %endif
+%endif
 
 ;;
 ; Switch to 16-bit paged protected mode from any other mode.
@@ -38,23 +45,34 @@
 ;           in 32-bit or 64-bit mode.
 ;
 BS3_PROC_BEGIN_MODE Bs3SwitchToPP16
-%ifdef TMPL_PE16
+%ifdef TMPL_PP16
         ret
-
 %else
         ;
-        ; Switch to 16-bit mode and prepare for returning in 16-bit mode.
+        ; Switch to 16-bit text segment and prepare for returning in 16-bit mode.
         ;
  %if TMPL_BITS != 16
         shl     xPRE [xSP + xCB], TMPL_BITS - 16    ; Adjust the return address.
         add     xSP, xCB - 2
 
-        ; Must be in 16-bit segment when calling Bs3SwitchTo16Bit.
+        ; Must be in 16-bit segment when calling Bs3SwitchToRM and Bs3SwitchTo16Bit.
         jmp     .sixteen_bit_segment
 BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
 .sixteen_bit_segment:
  %endif
+
+ %ifdef TMPL_PP32
+        ;
+        ; No need to go to real-mode here, we use the same CR3 and stuff.
+        ; Just switch to 32-bit mode and call the Bs3EnteredMode routine to
+        ; load the right descriptor tables.
+        ;
+        call    Bs3SwitchTo16Bit
+        BS3_SET_BITS 16
+        call    NAME(Bs3EnteredMode_pp16)
+        ret
+ %else
 
         ;
         ; Switch to real mode.
@@ -106,9 +124,16 @@ BS3_BEGIN_TEXT16
 .reload_cs_and_stuff:
 
         ;
+        ; Convert the (now) real mode stack to 16-bit.
+        ;
+        mov     ax, .stack_fix_return
+        extern  NAME(Bs3ConvertRMStackToP16UsingCxReturnToAx_c16)
+        jmp     NAME(Bs3ConvertRMStackToP16UsingCxReturnToAx_c16)
+.stack_fix_return:
+
+        ;
         ; Call rountine for doing mode specific setups.
         ;
-        extern  NAME(Bs3EnteredMode_pp16)
         call    NAME(Bs3EnteredMode_pp16)
 
         popfd
@@ -116,6 +141,7 @@ BS3_BEGIN_TEXT16
         pop     eax
         ret
 
+ %endif ; !TMPL_PP32
  %if TMPL_BITS != 16
 TMPL_BEGIN_TEXT
  %endif

@@ -35,6 +35,8 @@
 ; @remarks  ASSUMES we're in ring-0 when not in some kind of real mode.
 ;
 BS3_PROC_BEGIN_MODE Bs3EnteredMode
+        push    xBP
+        mov     xBP, xSP
         push    xAX
 
         ;
@@ -131,6 +133,7 @@ TMPL_BEGIN_TEXT
 %endif
 
         pop     xAX
+        leave
         ret
 BS3_PROC_END_MODE   Bs3EnteredMode
 

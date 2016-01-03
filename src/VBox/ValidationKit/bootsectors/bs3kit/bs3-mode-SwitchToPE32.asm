@@ -88,6 +88,18 @@ BS3_BEGIN_TEXT32
 .thirty_two_bit:
 
         ;
+        ; Convert the (now) real mode stack pointer to 32-bit flat.
+        ;
+        xor     eax, eax
+        mov     ax, ss
+        shl     eax, 4
+        and     esp, 0ffffh
+        add     esp, eax
+
+        mov     ax, BS3_SEL_R0_SS32
+        mov     ss, ax
+
+        ;
         ; Call rountine for doing mode specific setups.
         ;
         extern  NAME(Bs3EnteredMode_pe32)
