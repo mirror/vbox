@@ -604,6 +604,22 @@ static const char *dbgcGetEventCtx(DBGFEVENTCTX enmCtx)
 
 
 /**
+ * Looks up a generic debug event.
+ *
+ * @returns Pointer to DBGCSXEVT structure if found, otherwise NULL.
+ * @param   enmType     The possibly generic event to find the descriptor for.
+ */
+static PCDBGCSXEVT dbgcEventLookup(DBGFEVENTTYPE enmType)
+{
+    uint32_t i = g_cDbgcSxEvents;
+    while (i-- > 0)
+        if (g_aDbgcSxEvents[i].enmType == enmType)
+            return &g_aDbgcSxEvents[i];
+    return NULL;
+}
+
+
+/**
  * Processes debugger events.
  *
  * @returns VBox status code.
@@ -763,7 +779,39 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
 
         default:
         {
-            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf/dbgc error: Unknown event %d!\n", pEvent->enmType);
+            /*
+             * Probably a generic event. Look it up to find its name.
+             */
+            PCDBGCSXEVT pEvtDesc = dbgcEventLookup(pEvent->enmType);
+            if (pEvtDesc)
+            {
+                if (pEvtDesc->enmKind == kDbgcSxEventKind_Interrupt)
+                {
+                    Assert(pEvtDesc->pszDesc);
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s no %#llx! (%s)\n",
+                                                 pEvtDesc->pszDesc, pEvent->u.Generic.uArg, pEvtDesc->pszName);
+                }
+                else if (   (pEvtDesc->fFlags & DBGCSXEVT_F_TAKE_ARG)
+                         || pEvent->u.Generic.uArg != 0)
+                {
+                    if (pEvtDesc->pszDesc)
+                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s - %s! arg=%#llx\n",
+                                                     pEvtDesc->pszName, pEvtDesc->pszDesc, pEvent->u.Generic.uArg);
+                    else
+                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s! arg=%#llx\n",
+                                                     pEvtDesc->pszName, pEvent->u.Generic.uArg);
+                }
+                else
+                {
+                    if (pEvtDesc->pszDesc)
+                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s - %s!\n",
+                                                     pEvtDesc->pszName, pEvtDesc->pszDesc);
+                    else
+                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s!\n", pEvtDesc->pszName);
+                }
+            }
+            else
+                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf/dbgc error: Unknown event %d!\n", pEvent->enmType);
             break;
         }
     }

@@ -400,14 +400,28 @@ typedef enum
  */
 typedef struct DBGCSXEVT
 {
+    /** The event type. */
     DBGFEVENTTYPE   enmType;
+    /** The event name. */
     const char     *pszName;
+    /** Alternative event name (optional). */
     const char     *pszAltNm;
+    /** The kind of event. */
     DBGCSXEVENTKIND enmKind;
+    /** The default state. */
     DBGCEVTSTATE    enmDefault;
+    /** Flags, DBGCSXEVT_F_XXX. */
+    uint32_t        fFlags;
+    /** Description for use when reporting the event, optional. */
+    const char     *pszDesc;
 } DBGCSXEVT;
 /** Pointer to a constant selectable debug event descriptor. */
 typedef DBGCSXEVT const *PCDBGCSXEVT;
+
+/** @name DBGCSXEVT_F_XXX
+ * @{ */
+#define DBGCSXEVT_F_TAKE_ARG        RT_BIT_32(0)
+/** @} */
 
 
 /*******************************************************************************
