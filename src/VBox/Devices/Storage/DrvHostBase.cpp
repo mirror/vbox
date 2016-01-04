@@ -174,7 +174,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
                 RT_BYTE4(cBlocks), RT_BYTE3(cBlocks), RT_BYTE2(cBlocks), RT_BYTE1(cBlocks),
                 0, 0, 0, 0, 0
             };
-            rc = DRVHostBaseScsiCmd(pThis, abCmd, 12, PDMBLOCKTXDIR_FROM_DEVICE, pvBuf, &cbRead32, NULL, 0, 0);
+            rc = DRVHostBaseScsiCmd(pThis, abCmd, 12, PDMMEDIATXDIR_FROM_DEVICE, pvBuf, &cbRead32, NULL, 0, 0);
 
             off    += cbRead32;
             cbRead -= cbRead32;
@@ -699,7 +699,7 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
                     SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, false, 0,
                     0,0,0,0,0,0,0,0,0,0
                 };
-                DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
+                DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
             }
             return VINF_SUCCESS;
         }
@@ -1166,7 +1166,7 @@ static DECLCALLBACK(int) drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *p
         SCSI_READ_CAPACITY, 0, 0, 0, 0, 0, 0,
         0,0,0,0,0,0,0,0,0
     };
-    int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_FROM_DEVICE, &Buf, &cbBuf, NULL, 0, 0);
+    int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_FROM_DEVICE, &Buf, &cbBuf, NULL, 0, 0);
     if (RT_SUCCESS(rc))
     {
         Assert(cbBuf == sizeof(Buf));
@@ -1237,7 +1237,7 @@ static DECLCALLBACK(int) drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *p
  * @param pbCmd             Pointer to the SCSI command.
  * @param cbCmd             The size of the SCSI command.
  * @param enmTxDir          The transfer direction.
- * @param pvBuf             The buffer. Can be NULL if enmTxDir is PDMBLOCKTXDIR_NONE.
+ * @param pvBuf             The buffer. Can be NULL if enmTxDir is PDMMEDIATXDIR_NONE.
  * @param pcbBuf            Where to get the buffer size from and put the actual transfer size. Can be NULL.
  * @param pbSense           Where to put the sense data. Can be NULL.
  * @param cbSense           Size of the sense data buffer.
@@ -1249,15 +1249,15 @@ static DECLCALLBACK(int) drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *p
  *
  * @todo Fix VERR_UNRESOLVED_ERROR abuse.
  */
-DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMBLOCKTXDIR enmTxDir,
+DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMMEDIATXDIR enmTxDir,
                                      void *pvBuf, uint32_t *pcbBuf, uint8_t *pbSense, size_t cbSense, uint32_t cTimeoutMillies)
 {
     /*
      * Minimal input validation.
      */
-    Assert(enmTxDir == PDMBLOCKTXDIR_NONE || enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE || enmTxDir == PDMBLOCKTXDIR_TO_DEVICE);
+    Assert(enmTxDir == PDMMEDIATXDIR_NONE || enmTxDir == PDMMEDIATXDIR_FROM_DEVICE || enmTxDir == PDMMEDIATXDIR_TO_DEVICE);
     Assert(!pvBuf || pcbBuf);
-    Assert(pvBuf || enmTxDir == PDMBLOCKTXDIR_NONE);
+    Assert(pvBuf || enmTxDir == PDMMEDIATXDIR_NONE);
     Assert(pbSense || !cbSense);
     AssertPtr(pbCmd);
     Assert(cbCmd <= 16 && cbCmd >= 1);
@@ -1281,13 +1281,13 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
         AssertBreak(irc == kIOReturnSuccess);
 
         /* Setup the buffer. */
-        if (enmTxDir == PDMBLOCKTXDIR_NONE)
+        if (enmTxDir == PDMMEDIATXDIR_NONE)
             irc = (*ppScsiTaskI)->SetScatterGatherEntries(ppScsiTaskI, NULL, 0, 0, kSCSIDataTransfer_NoDataTransfer);
         else
         {
             IOVirtualRange Range = { (IOVirtualAddress)pvBuf, cbBuf };
             irc = (*ppScsiTaskI)->SetScatterGatherEntries(ppScsiTaskI, &Range, 1, cbBuf,
-                                                          enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE
+                                                          enmTxDir == PDMMEDIATXDIR_FROM_DEVICE
                                                           ? kSCSIDataTransfer_FromTargetToInitiator
                                                           : kSCSIDataTransfer_FromInitiatorToTarget);
         }
@@ -1326,9 +1326,9 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
             rc = VERR_MEDIA_NOT_PRESENT; */
         else
         {
-            rc = enmTxDir == PDMBLOCKTXDIR_NONE
+            rc = enmTxDir == PDMMEDIATXDIR_NONE
                ? VERR_DEV_IO_ERROR
-               : enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE
+               : enmTxDir == PDMMEDIATXDIR_FROM_DEVICE
                ? VERR_READ_ERROR
                : VERR_WRITE_ERROR;
             if (pThis->cLogRelErrors++ < 10)
@@ -1378,9 +1378,9 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
         memcpy(&pDeviceCCB->csio.cdb_io.cdb_bytes, pbCmd, cbCmd);
 
         /* Set direction. */
-        if (enmTxDir == PDMBLOCKTXDIR_NONE)
+        if (enmTxDir == PDMMEDIATXDIR_NONE)
             fFlags = CAM_DIR_NONE;
-        else if (enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
+        else if (enmTxDir == PDMMEDIATXDIR_FROM_DEVICE)
             fFlags = CAM_DIR_IN;
         else
             fFlags = CAM_DIR_OUT;
