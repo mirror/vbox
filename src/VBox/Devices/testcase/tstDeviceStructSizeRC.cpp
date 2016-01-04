@@ -891,8 +891,7 @@ int main()
     GEN_CHECK_OFF(ATADevState, fOverwriteInquiry);
     GEN_CHECK_OFF(ATADevState, cErrors);
     GEN_CHECK_OFF(ATADevState, pDrvBase);
-    GEN_CHECK_OFF(ATADevState, pDrvBlock);
-    GEN_CHECK_OFF(ATADevState, pDrvBlockBios);
+    GEN_CHECK_OFF(ATADevState, pDrvMedia);
     GEN_CHECK_OFF(ATADevState, pDrvMount);
     GEN_CHECK_OFF(ATADevState, IBase);
     GEN_CHECK_OFF(ATADevState, IPort);
@@ -1348,9 +1347,8 @@ int main()
     GEN_CHECK_OFF(AHCIPort, u32TasksRedo);
     GEN_CHECK_OFF(AHCIPort, u32CurrentCommandSlot);
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
-    GEN_CHECK_OFF(AHCIPort, pDrvBlock);
-    GEN_CHECK_OFF(AHCIPort, pDrvBlockAsync);
-    GEN_CHECK_OFF(AHCIPort, pDrvBlockBios);
+    GEN_CHECK_OFF(AHCIPort, pDrvMedia);
+    GEN_CHECK_OFF(AHCIPort, pDrvMediaAsync);
     GEN_CHECK_OFF(AHCIPort, pDrvMount);
     GEN_CHECK_OFF(AHCIPort, IBase);
     GEN_CHECK_OFF(AHCIPort, IPort);

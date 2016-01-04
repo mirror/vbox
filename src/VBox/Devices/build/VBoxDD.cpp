@@ -221,9 +221,6 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvKeyboardQueue);
     if (RT_FAILURE(rc))
         return rc;
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvBlock);
-    if (RT_FAILURE(rc))
-        return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVD);
     if (RT_FAILURE(rc))
         return rc;
@@ -237,12 +234,6 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 #endif
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvMediaISO);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRawImage);
-    if (RT_FAILURE(rc))
-        return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNAT);
     if (RT_FAILURE(rc))
         return rc;

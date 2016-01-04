@@ -4293,7 +4293,15 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
         }
         else
         {
-            InsertConfigString(pLunL0, "Driver", "Block");
+#if 0 /* Enable for I/O debugging */
+            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
+            InsertConfigString(pLunL0, "Driver", "DiskIntegrity");
+            InsertConfigNode(pLunL0, "Config", &pCfg);
+            InsertConfigInteger(pCfg, "CheckConsistency", 0);
+            InsertConfigInteger(pCfg, "CheckDoubleCompletions", 1);
+#endif
+
+            InsertConfigString(pLunL0, "Driver", "VD");
             InsertConfigNode(pLunL0, "Config", &pCfg);
             switch (enmType)
             {
@@ -4349,18 +4357,6 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                 }
                 /* Index of last image */
                 uImage--;
-
-#if 0 /* Enable for I/O debugging */
-                InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-                InsertConfigString(pLunL0, "Driver", "DiskIntegrity");
-                InsertConfigNode(pLunL0, "Config", &pCfg);
-                InsertConfigInteger(pCfg, "CheckConsistency", 0);
-                InsertConfigInteger(pCfg, "CheckDoubleCompletions", 1);
-#endif
-
-                InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
-                InsertConfigString(pLunL1, "Driver", "VD");
-                InsertConfigNode(pLunL1, "Config", &pCfg);
 
 # ifdef VBOX_WITH_EXTPACK
                 static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
@@ -4435,19 +4431,6 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                         InsertConfigInteger(pCfg, "MergeTarget", 1);
                 }
 
-                switch (enmType)
-                {
-                    case DeviceType_DVD:
-                        InsertConfigString(pCfg, "Type", "DVD");
-                        break;
-                    case DeviceType_Floppy:
-                        InsertConfigString(pCfg, "Type", "Floppy");
-                        break;
-                    case DeviceType_HardDisk:
-                    default:
-                        InsertConfigString(pCfg, "Type", "HardDisk");
-                }
-
                 if (pcszBwGroup)
                     InsertConfigString(pCfg, "BwGroup", pcszBwGroup);
 
@@ -4499,6 +4482,13 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
 
                 if (fEncrypted)
                     m_cDisksEncrypted++;
+            }
+            else
+            {
+                /* Set empty drive flag for DVD or floppy without media. */
+                if (   enmType == DeviceType_DVD
+                    || enmType == DeviceType_Floppy)
+                    InsertConfigInteger(pCfg, "EmptyDrive", 1);
             }
         }
 #undef H

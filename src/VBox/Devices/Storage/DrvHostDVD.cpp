@@ -150,7 +150,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce, b
                 SCSI_START_STOP_UNIT, 0, 0, 0, 2 /*eject+stop*/, 0,
                 0,0,0,0,0,0,0,0,0,0
             };
-            rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
+            rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
 
 #elif defined(RT_OS_LINUX)
             rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROMEJECT, 0);
@@ -240,7 +240,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
         SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, fLock, 0,
         0,0,0,0,0,0,0,0,0,0
     };
-    int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
+    int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
 
 #elif defined(RT_OS_LINUX)
     int rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_LOCKDOOR, (int)fLock);
@@ -334,7 +334,7 @@ static DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
     bool fMediaPresent = false;
     uint8_t abCmd[16] = { SCSI_TEST_UNIT_READY, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
     uint8_t abSense[32];
-    int rc2 = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, abSense, sizeof(abSense), 0);
+    int rc2 = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, abSense, sizeof(abSense), 0);
     if (RT_SUCCESS(rc2))
         fMediaPresent = true;
     else if (   rc2 == VERR_UNRESOLVED_ERROR
@@ -413,12 +413,12 @@ static DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
 #endif /* USE_MEDIA_POLLING */
 
 
-/** @copydoc PDMIBLOCK::pfnSendCmd */
-static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
-                                           PDMBLOCKTXDIR enmTxDir, void *pvBuf, uint32_t *pcbBuf,
+/** @copydoc PDMIMEDIA::pfnSendCmd */
+static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIMEDIA pInterface, const uint8_t *pbCmd,
+                                           PDMMEDIATXDIR enmTxDir, void *pvBuf, uint32_t *pcbBuf,
                                            uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     int rc;
     LogFlow(("%s: cmd[0]=%#04x txdir=%d pcbBuf=%d timeout=%d\n", __FUNCTION__, pbCmd[0], enmTxDir, *pcbBuf, cTimeoutMillies));
 
@@ -427,9 +427,9 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t 
      * Pass the request on to the internal scsi command interface.
      * The command seems to be 12 bytes long, the docs a bit copy&pasty on the command length point...
      */
-    if (enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
+    if (enmTxDir == PDMMEDIATXDIR_FROM_DEVICE)
         memset(pvBuf, '\0', *pcbBuf); /* we got read size, but zero it anyway. */
-    rc = DRVHostBaseScsiCmd(pThis, pbCmd, 12, PDMBLOCKTXDIR_FROM_DEVICE, pvBuf, pcbBuf, pabSense, cbSense, cTimeoutMillies);
+    rc = DRVHostBaseScsiCmd(pThis, pbCmd, 12, PDMMEDIATXDIR_FROM_DEVICE, pvBuf, pcbBuf, pabSense, cbSense, cTimeoutMillies);
     if (rc == VERR_UNRESOLVED_ERROR)
         /* sense information set */
         rc = VERR_DEV_IO_ERROR;
@@ -440,11 +440,11 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t 
 
     switch (enmTxDir)
     {
-        case PDMBLOCKTXDIR_NONE:
+        case PDMMEDIATXDIR_NONE:
             Assert(*pcbBuf == 0);
             direction = CGC_DATA_NONE;
             break;
-        case PDMBLOCKTXDIR_FROM_DEVICE:
+        case PDMMEDIATXDIR_FROM_DEVICE:
             Assert(*pcbBuf != 0);
             Assert(*pcbBuf <= SCSI_MAX_BUFFER_SIZE);
             /* Make sure that the buffer is clear for commands reading
@@ -457,7 +457,7 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t 
             memset(pThis->pbDoubleBuffer, '\0', *pcbBuf);
             direction = CGC_DATA_READ;
             break;
-        case PDMBLOCKTXDIR_TO_DEVICE:
+        case PDMMEDIATXDIR_TO_DEVICE:
             Assert(*pcbBuf != 0);
             Assert(*pcbBuf <= SCSI_MAX_BUFFER_SIZE);
             memcpy(pThis->pbDoubleBuffer, pvBuf, *pcbBuf);
@@ -494,7 +494,7 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t 
     }
     switch (enmTxDir)
     {
-        case PDMBLOCKTXDIR_FROM_DEVICE:
+        case PDMMEDIATXDIR_FROM_DEVICE:
             memcpy(pvBuf, pThis->pbDoubleBuffer, *pcbBuf);
             break;
         default:
@@ -513,13 +513,13 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t 
 
     switch (enmTxDir)
     {
-        case PDMBLOCKTXDIR_NONE:
+        case PDMMEDIATXDIR_NONE:
             Assert(*pcbBuf == 0);
             usc.uscsi_flags = USCSI_READ;
             /* nothing to do */
             break;
 
-        case PDMBLOCKTXDIR_FROM_DEVICE:
+        case PDMMEDIATXDIR_FROM_DEVICE:
             Assert(*pcbBuf != 0);
             /* Make sure that the buffer is clear for commands reading
              * data. The actually received data may be shorter than what
@@ -531,7 +531,7 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t 
             memset(pvBuf, '\0', *pcbBuf);
             usc.uscsi_flags = USCSI_READ;
             break;
-        case PDMBLOCKTXDIR_TO_DEVICE:
+        case PDMMEDIATXDIR_TO_DEVICE:
             Assert(*pcbBuf != 0);
             usc.uscsi_flags = USCSI_WRITE;
             break;
@@ -580,10 +580,10 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t 
 
     switch (enmTxDir)
     {
-        case PDMBLOCKTXDIR_NONE:
+        case PDMMEDIATXDIR_NONE:
             direction = SCSI_IOCTL_DATA_UNSPECIFIED;
             break;
-        case PDMBLOCKTXDIR_FROM_DEVICE:
+        case PDMMEDIATXDIR_FROM_DEVICE:
             Assert(*pcbBuf != 0);
             /* Make sure that the buffer is clear for commands reading
              * data. The actually received data may be shorter than what
@@ -595,7 +595,7 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t 
             memset(pvBuf, '\0', *pcbBuf);
             direction = SCSI_IOCTL_DATA_IN;
             break;
-        case PDMBLOCKTXDIR_TO_DEVICE:
+        case PDMMEDIATXDIR_TO_DEVICE:
             direction = SCSI_IOCTL_DATA_OUT;
             break;
         default:
@@ -753,7 +753,7 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     /*
      * Init instance data.
      */
-    int rc = DRVHostBaseInitData(pDrvIns, pCfg, PDMBLOCKTYPE_DVD);
+    int rc = DRVHostBaseInitData(pDrvIns, pCfg, PDMMEDIATYPE_DVD);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -774,7 +774,7 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
             rc = CFGMR3QueryBool(pCfg, "Passthrough", &fPassthrough);
             if (RT_SUCCESS(rc) && fPassthrough)
             {
-                pThis->IBlock.pfnSendCmd = drvHostDvdSendCmd;
+                pThis->IMedia.pfnSendCmd = drvHostDvdSendCmd;
                 /* Passthrough requires opening the device in R/W mode. */
                 pThis->fReadOnlyConfig = false;
 #ifdef VBOX_WITH_SUID_WRAPPER  /* Solaris setuid for Passthrough mode. */

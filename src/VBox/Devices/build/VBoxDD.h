@@ -91,13 +91,10 @@ extern const PDMDEVREG g_DeviceVirtualKD;
 
 extern const PDMDRVREG g_DrvMouseQueue;
 extern const PDMDRVREG g_DrvKeyboardQueue;
-extern const PDMDRVREG g_DrvBlock;
 extern const PDMDRVREG g_DrvVBoxHDD;
 extern const PDMDRVREG g_DrvVD;
 extern const PDMDRVREG g_DrvHostDVD;
 extern const PDMDRVREG g_DrvHostFloppy;
-extern const PDMDRVREG g_DrvMediaISO;
-extern const PDMDRVREG g_DrvRawImage;
 extern const PDMDRVREG g_DrvISCSI;
 extern const PDMDRVREG g_DrvISCSITransportTcp;
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)

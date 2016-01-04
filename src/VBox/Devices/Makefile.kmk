@@ -172,9 +172,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Serial/DrvNamedPipe.cpp \
  	Serial/DrvTCP.cpp \
  	Serial/DrvRawFile.cpp \
- 	Storage/DrvBlock.cpp \
- 	Storage/DrvMediaISO.cpp \
- 	Storage/DrvRawImage.cpp \
  	Storage/Debug.cpp \
  	Storage/DrvVD.cpp \
  	Storage/ATAPIPassthrough.cpp \

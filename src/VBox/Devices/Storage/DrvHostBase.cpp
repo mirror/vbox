@@ -132,9 +132,9 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 /* -=-=-=-=- IBlock -=-=-=-=- */
 
 /** @copydoc PDMIBLOCK::pfnRead */
-static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, void *pvBuf, size_t cbRead)
+static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     LogFlow(("%s-%d: drvHostBaseRead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, pvBuf, cbRead, pThis->pszDevice));
     RTCritSectEnter(&pThis->CritSect);
@@ -208,9 +208,9 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, vo
 
 
 /** @copydoc PDMIBLOCK::pfnWrite */
-static DECLCALLBACK(int) drvHostBaseWrite(PPDMIBLOCK pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
+static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     LogFlow(("%s-%d: drvHostBaseWrite: off=%#llx pvBuf=%p cbWrite=%#x (%s)\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, pvBuf, cbWrite, pThis->pszDevice));
     Log2(("%s-%d: drvHostBaseWrite: off=%#llx cbWrite=%#x\n"
@@ -254,10 +254,10 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIBLOCK pInterface, uint64_t off, c
 
 
 /** @copydoc PDMIBLOCK::pfnFlush */
-static DECLCALLBACK(int) drvHostBaseFlush(PPDMIBLOCK pInterface)
+static DECLCALLBACK(int) drvHostBaseFlush(PPDMIMEDIA pInterface)
 {
     int rc;
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     LogFlow(("%s-%d: drvHostBaseFlush: (%s)\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDevice));
     RTCritSectEnter(&pThis->CritSect);
@@ -281,17 +281,17 @@ static DECLCALLBACK(int) drvHostBaseFlush(PPDMIBLOCK pInterface)
 
 
 /** @copydoc PDMIBLOCK::pfnIsReadOnly */
-static DECLCALLBACK(bool) drvHostBaseIsReadOnly(PPDMIBLOCK pInterface)
+static DECLCALLBACK(bool) drvHostBaseIsReadOnly(PPDMIMEDIA pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     return pThis->fReadOnly;
 }
 
 
 /** @copydoc PDMIBLOCK::pfnGetSize */
-static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIBLOCK pInterface)
+static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIMEDIA pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     RTCritSectEnter(&pThis->CritSect);
 
     uint64_t cb = 0;
@@ -305,18 +305,18 @@ static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIBLOCK pInterface)
 
 
 /** @copydoc PDMIBLOCK::pfnGetType */
-static DECLCALLBACK(PDMBLOCKTYPE) drvHostBaseGetType(PPDMIBLOCK pInterface)
+static DECLCALLBACK(PDMMEDIATYPE) drvHostBaseGetType(PPDMIMEDIA pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     LogFlow(("%s-%d: drvHostBaseGetType: returns %d\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->enmType));
     return pThis->enmType;
 }
 
 
 /** @copydoc PDMIBLOCK::pfnGetUuid */
-static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid)
+static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
 
     *pUuid = pThis->Uuid;
 
@@ -326,11 +326,11 @@ static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid
 
 
 /** @copydoc PDMIBLOCK::pfnIoBufAlloc */
-static DECLCALLBACK(int) drvHostBaseIoBufAlloc(PPDMIBLOCK pInterface, size_t cb, void **ppvNew)
+static DECLCALLBACK(int) drvHostBaseIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
 {
     LogFlowFunc(("\n"));
     int rc;
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
 
     void *pvNew = RTMemAlloc(cb);
     if (RT_LIKELY(pvNew))
@@ -346,11 +346,11 @@ static DECLCALLBACK(int) drvHostBaseIoBufAlloc(PPDMIBLOCK pInterface, size_t cb,
 }
 
 /** @copydoc PDMIBLOCK::pfnIoBufFree */
-static DECLCALLBACK(int) drvHostBaseIoBufFree(PPDMIBLOCK pInterface, void *pv, size_t cb)
+static DECLCALLBACK(int) drvHostBaseIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
 {
     LogFlowFunc(("\n"));
     int rc = VINF_SUCCESS;
-    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
 
     NOREF(cb);
     RTMemFree(pv);
@@ -360,17 +360,10 @@ static DECLCALLBACK(int) drvHostBaseIoBufFree(PPDMIBLOCK pInterface, void *pv, s
 }
 
 
-
-/* -=-=-=-=- IBlockBios -=-=-=-=- */
-
-/** Makes a PDRVHOSTBASE out of a PPDMIBLOCKBIOS. */
-#define PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface)    ( (PDRVHOSTBASE((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTBASE, IBlockBios))) )
-
-
-/** @copydoc PDMIBLOCKBIOS::pfnGetPCHSGeometry */
-static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
+/** @copydoc PDMIBLOCKBIOS::pfnBiosGetPCHSGeometry */
+static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
-    PDRVHOSTBASE pThis =  PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
@@ -395,10 +388,10 @@ static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIBLOCKBIOS pInterface, P
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnSetPCHSGeometry */
-static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
+/** @copydoc PDMIBLOCKBIOS::pfnBiosSetPCHSGeometry */
+static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     LogFlow(("%s-%d: %s: cCylinders=%d cHeads=%d cSectors=%d\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     RTCritSectEnter(&pThis->CritSect);
@@ -420,9 +413,9 @@ static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIBLOCKBIOS pInterface, P
 
 
 /** @copydoc PDMIBLOCKBIOS::pfnGetLCHSGeometry */
-static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
+static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PDRVHOSTBASE pThis =  PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
@@ -448,9 +441,9 @@ static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIBLOCKBIOS pInterface, P
 
 
 /** @copydoc PDMIBLOCKBIOS::pfnSetLCHSGeometry */
-static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
+static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     LogFlow(("%s-%d: %s: cCylinders=%d cHeads=%d cSectors=%d\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     RTCritSectEnter(&pThis->CritSect);
@@ -472,32 +465,15 @@ static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIBLOCKBIOS pInterface, P
 
 
 /** @copydoc PDMIBLOCKBIOS::pfnIsVisible */
-static DECLCALLBACK(bool) drvHostBaseIsVisible(PPDMIBLOCKBIOS pInterface)
+static DECLCALLBACK(bool) drvHostBaseIsVisible(PPDMIMEDIA pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
     return pThis->fBiosVisible;
-}
-
-
-/** @copydoc PDMIBLOCKBIOS::pfnGetType */
-static DECLCALLBACK(PDMBLOCKTYPE) drvHostBaseBiosGetType(PPDMIBLOCKBIOS pInterface)
-{
-    PDRVHOSTBASE pThis = PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
-    return pThis->enmType;
 }
 
 
 
 /* -=-=-=-=- IMount -=-=-=-=- */
-
-/** @copydoc PDMIMOUNT::pfnMount */
-static DECLCALLBACK(int) drvHostBaseMount(PPDMIMOUNT pInterface, const char *pszFilename, const char *pszCoreDriver)
-{
-    /* We're not mountable. */
-    AssertMsgFailed(("drvHostBaseMount: This shouldn't be called!\n"));
-    return VERR_PDM_MEDIA_MOUNTED;
-}
-
 
 /** @copydoc PDMIMOUNT::pfnUnmount */
 static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
@@ -621,8 +597,7 @@ static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, con
     PDRVHOSTBASE pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCK, &pThis->IBlock);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKBIOS, pThis->fBiosVisible ? &pThis->IBlockBios : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, &pThis->IMount);
     return NULL;
 }
@@ -1886,7 +1861,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
  * @param   pCfg            Configuration handle.
  * @param   enmType         Device type.
  */
-int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMBLOCKTYPE enmType)
+int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMMEDIATYPE enmType)
 {
     PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
     LogFlow(("%s-%d: DRVHostBaseInitData: iInstance=%d\n", pDrvIns->pReg->szName, pDrvIns->iInstance, pDrvIns->iInstance));
@@ -1919,27 +1894,23 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMBLOCKTYPE enmType
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvHostBaseQueryInterface;
 
-    /* IBlock. */
-    pThis->IBlock.pfnRead                   = drvHostBaseRead;
-    pThis->IBlock.pfnWrite                  = drvHostBaseWrite;
-    pThis->IBlock.pfnFlush                  = drvHostBaseFlush;
-    pThis->IBlock.pfnIsReadOnly             = drvHostBaseIsReadOnly;
-    pThis->IBlock.pfnGetSize                = drvHostBaseGetSize;
-    pThis->IBlock.pfnGetType                = drvHostBaseGetType;
-    pThis->IBlock.pfnGetUuid                = drvHostBaseGetUuid;
-    pThis->IBlock.pfnIoBufAlloc             = drvHostBaseIoBufAlloc;
-    pThis->IBlock.pfnIoBufFree              = drvHostBaseIoBufFree;
-
-    /* IBlockBios. */
-    pThis->IBlockBios.pfnGetPCHSGeometry    = drvHostBaseGetPCHSGeometry;
-    pThis->IBlockBios.pfnSetPCHSGeometry    = drvHostBaseSetPCHSGeometry;
-    pThis->IBlockBios.pfnGetLCHSGeometry    = drvHostBaseGetLCHSGeometry;
-    pThis->IBlockBios.pfnSetLCHSGeometry    = drvHostBaseSetLCHSGeometry;
-    pThis->IBlockBios.pfnIsVisible          = drvHostBaseIsVisible;
-    pThis->IBlockBios.pfnGetType            = drvHostBaseBiosGetType;
+    /* IMedia. */
+    pThis->IMedia.pfnRead                   = drvHostBaseRead;
+    pThis->IMedia.pfnWrite                  = drvHostBaseWrite;
+    pThis->IMedia.pfnFlush                  = drvHostBaseFlush;
+    pThis->IMedia.pfnIsReadOnly             = drvHostBaseIsReadOnly;
+    pThis->IMedia.pfnGetSize                = drvHostBaseGetSize;
+    pThis->IMedia.pfnGetType                = drvHostBaseGetType;
+    pThis->IMedia.pfnGetUuid                = drvHostBaseGetUuid;
+    pThis->IMedia.pfnIoBufAlloc             = drvHostBaseIoBufAlloc;
+    pThis->IMedia.pfnIoBufFree              = drvHostBaseIoBufFree;
+    pThis->IMedia.pfnBiosGetPCHSGeometry    = drvHostBaseGetPCHSGeometry;
+    pThis->IMedia.pfnBiosSetPCHSGeometry    = drvHostBaseSetPCHSGeometry;
+    pThis->IMedia.pfnBiosGetLCHSGeometry    = drvHostBaseGetLCHSGeometry;
+    pThis->IMedia.pfnBiosSetLCHSGeometry    = drvHostBaseSetLCHSGeometry;
+    pThis->IMedia.pfnBiosIsVisible          = drvHostBaseIsVisible;
 
     /* IMount. */
-    pThis->IMount.pfnMount                  = drvHostBaseMount;
     pThis->IMount.pfnUnmount                = drvHostBaseUnmount;
     pThis->IMount.pfnIsMounted              = drvHostBaseIsMounted;
     pThis->IMount.pfnLock                   = drvHostBaseLock;
@@ -1949,10 +1920,10 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMBLOCKTYPE enmType
     /*
      * Get the IBlockPort & IMountNotify interfaces of the above driver/device.
      */
-    pThis->pDrvBlockPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIBLOCKPORT);
-    if (!pThis->pDrvBlockPort)
+    pThis->pDrvMediaPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAPORT);
+    if (!pThis->pDrvMediaPort)
     {
-        AssertMsgFailed(("Configuration error: No block port interface above!\n"));
+        AssertMsgFailed(("Configuration error: No media port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
     pThis->pDrvMountNotify = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMOUNTNOTIFY);
@@ -1984,7 +1955,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMBLOCKTYPE enmType
     /* ReadOnly */
     rc = CFGMR3QueryBool(pCfg, "ReadOnly", &pThis->fReadOnlyConfig);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fReadOnlyConfig = enmType == PDMBLOCKTYPE_DVD || enmType == PDMBLOCKTYPE_CDROM ? true : false;
+        pThis->fReadOnlyConfig = enmType == PDMMEDIATYPE_DVD || enmType == PDMMEDIATYPE_CDROM ? true : false;
     else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Query \"ReadOnly\" resulted in %Rrc.\n", rc));
@@ -2111,13 +2082,13 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     UINT uDriveType = GetDriveType(pThis->pszDevice);
     switch (pThis->enmType)
     {
-        case PDMBLOCKTYPE_FLOPPY_360:
-        case PDMBLOCKTYPE_FLOPPY_720:
-        case PDMBLOCKTYPE_FLOPPY_1_20:
-        case PDMBLOCKTYPE_FLOPPY_1_44:
-        case PDMBLOCKTYPE_FLOPPY_2_88:
-        case PDMBLOCKTYPE_FLOPPY_FAKE_15_6:
-        case PDMBLOCKTYPE_FLOPPY_FAKE_63_5:
+        case PDMMEDIATYPE_FLOPPY_360:
+        case PDMMEDIATYPE_FLOPPY_720:
+        case PDMMEDIATYPE_FLOPPY_1_20:
+        case PDMMEDIATYPE_FLOPPY_1_44:
+        case PDMMEDIATYPE_FLOPPY_2_88:
+        case PDMMEDIATYPE_FLOPPY_FAKE_15_6:
+        case PDMMEDIATYPE_FLOPPY_FAKE_63_5:
             if (uDriveType != DRIVE_REMOVABLE)
             {
                 AssertMsgFailed(("Configuration error: '%s' is not a floppy (type=%d)\n",
@@ -2125,8 +2096,8 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
                 return VERR_INVALID_PARAMETER;
             }
             break;
-        case PDMBLOCKTYPE_CDROM:
-        case PDMBLOCKTYPE_DVD:
+        case PDMMEDIATYPE_CDROM:
+        case PDMMEDIATYPE_DVD:
             if (uDriveType != DRIVE_CDROM)
             {
                 AssertMsgFailed(("Configuration error: '%s' is not a cdrom (type=%d)\n",
@@ -2134,7 +2105,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
                 return VERR_INVALID_PARAMETER;
             }
             break;
-        case PDMBLOCKTYPE_HARD_DISK:
+        case PDMMEDIATYPE_HARD_DISK:
         default:
             AssertMsgFailed(("enmType=%d\n", pThis->enmType));
             return VERR_INVALID_PARAMETER;
@@ -2170,7 +2141,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
          * virtual CD/DVD code, which deals more gracefully with unavailable
          * "media" - actually a complete drive in this case.
          */
-        pThis->IBlock.pfnSendCmd = NULL;
+        pThis->IMedia.pfnSendCmd = NULL;
         AssertMsgFailed(("Could not open host device %s, rc=%Rrc\n", pszDevice, rc));
         switch (rc)
         {

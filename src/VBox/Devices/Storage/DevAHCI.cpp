@@ -374,8 +374,8 @@ typedef struct DEVPORTNOTIFIERQUEUEITEM
 
 /**
  * @implements PDMIBASE
- * @implements PDMIBLOCKPORT
- * @implements PDMIBLOCKASYNCPORT
+ * @implements PDMIMEDIAPORT
+ * @implements PDMIMEDIAASYNCPORT
  * @implements PDMIMOUNTNOTIFY
  */
 typedef struct AHCIPort
@@ -504,19 +504,17 @@ typedef struct AHCIPort
     /** Pointer to the attached driver's base interface. */
     R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Pointer to the attached driver's block interface. */
-    R3PTRTYPE(PPDMIBLOCK)           pDrvBlock;
+    R3PTRTYPE(PPDMIMEDIA)           pDrvMedia;
     /** Pointer to the attached driver's async block interface. */
-    R3PTRTYPE(PPDMIBLOCKASYNC)      pDrvBlockAsync;
-    /** Pointer to the attached driver's block bios interface. */
-    R3PTRTYPE(PPDMIBLOCKBIOS)       pDrvBlockBios;
+    R3PTRTYPE(PPDMIMEDIAASYNC)      pDrvMediaAsync;
     /** Pointer to the attached driver's mount interface. */
     R3PTRTYPE(PPDMIMOUNT)           pDrvMount;
     /** The base interface. */
     PDMIBASE                        IBase;
     /** The block port interface. */
-    PDMIBLOCKPORT                   IPort;
+    PDMIMEDIAPORT                   IPort;
     /** The optional block async port interface. */
-    PDMIBLOCKASYNCPORT              IPortAsync;
+    PDMIMEDIAASYNCPORT              IPortAsync;
     /** The mount notify interface. */
     PDMIMOUNTNOTIFY                 IMountNotify;
     /** Physical geometry of this image. */
@@ -970,7 +968,7 @@ RT_C_DECLS_END
 #define PDMIMOUNT_2_PAHCIPORT(pInterface)        ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IMount)) )
 #define PDMIMOUNTNOTIFY_2_PAHCIPORT(pInterface)  ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IMountNotify)) )
 #define PDMIBASE_2_PAHCIPORT(pInterface)         ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IBase)) )
-#define PDMIBLOCKPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IPort)) )
+#define PDMIMEDIAPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IPort)) )
 #define PDMIBASE_2_PAHCI(pInterface)             ( (PAHCI)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCI, IBase)) )
 #define PDMILEDPORTS_2_PAHCI(pInterface)         ( (PAHCI)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCI, ILeds)) )
 
@@ -2669,19 +2667,19 @@ static DECLCALLBACK(void *) ahciR3PortQueryInterface(PPDMIBASE pInterface, const
 {
     PAHCIPort pAhciPort = PDMIBASE_2_PAHCIPORT(pInterface);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pAhciPort->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pAhciPort->IPort);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKASYNCPORT, &pAhciPort->IPortAsync);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pAhciPort->IPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNCPORT, &pAhciPort->IPortAsync);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pAhciPort->IMountNotify);
     return NULL;
 }
 
 /**
- * @interface_method_impl{PDMIBLOCKPORT,pfnQueryDeviceLocation}
+ * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation}
  */
-static DECLCALLBACK(int) ahciR3PortQueryDeviceLocation(PPDMIBLOCKPORT pInterface, const char **ppcszController,
+static DECLCALLBACK(int) ahciR3PortQueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
                                                        uint32_t *piInstance, uint32_t *piLUN)
 {
-    PAHCIPort pAhciPort = PDMIBLOCKPORT_2_PAHCIPORT(pInterface);
+    PAHCIPort pAhciPort = PDMIMEDIAPORT_2_PAHCIPORT(pInterface);
     PPDMDEVINS pDevIns = pAhciPort->CTX_SUFF(pDevIns);
 
     AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
@@ -3098,9 +3096,9 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[66] = RT_H2LE_U16(120); /* recommended DMA multiword tx cycle time */
     p[67] = RT_H2LE_U16(120); /* minimum PIO cycle time without flow control */
     p[68] = RT_H2LE_U16(120); /* minimum PIO cycle time with IORDY flow control */
-    if (   pAhciPort->pDrvBlock->pfnDiscard
+    if (   pAhciPort->pDrvMedia->pfnDiscard
         || ( pAhciPort->fAsyncInterface
-            && pAhciPort->pDrvBlockAsync->pfnStartDiscard)
+            && pAhciPort->pDrvMediaAsync->pfnStartDiscard)
         || pAhciPort->cbSector != 512
         || pAhciPort->fNonRotational)
     {
@@ -3141,9 +3139,9 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     if (pAhciPort->fNonRotational)
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
 
-    if (   pAhciPort->pDrvBlock->pfnDiscard
+    if (   pAhciPort->pDrvMedia->pfnDiscard
         || (   pAhciPort->fAsyncInterface
-            && pAhciPort->pDrvBlockAsync->pfnStartDiscard)) /** @todo: Set bit 14 in word 69 too? (Deterministic read after TRIM). */
+            && pAhciPort->pDrvMediaAsync->pfnStartDiscard)) /** @todo: Set bit 14 in word 69 too? (Deterministic read after TRIM). */
         p[169] = RT_H2LE_U16(1); /* DATA SET MANAGEMENT command supported. */
 
     /* The following are SATA specific */
@@ -4040,11 +4038,11 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
                     ataLBA2MSF(aATAPICmd + 6, iATAPILBA + cReqSectors);
                     break;
             }
-            rc = pAhciPort->pDrvBlock->pfnSendCmd(pAhciPort->pDrvBlock,
+            rc = pAhciPort->pDrvMedia->pfnSendCmd(pAhciPort->pDrvMedia,
                                                   aATAPICmd,
                                                   pAhciReq->enmTxDir == AHCITXDIR_READ
-                                                  ? PDMBLOCKTXDIR_FROM_DEVICE
-                                                  : PDMBLOCKTXDIR_TO_DEVICE,
+                                                  ? PDMMEDIATXDIR_FROM_DEVICE
+                                                  : PDMMEDIATXDIR_TO_DEVICE,
                                                   pbBuf,
                                                   &cbCurrTX,
                                                   abATAPISense,
@@ -4058,18 +4056,18 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
     }
     else
     {
-        PDMBLOCKTXDIR enmBlockTxDir = PDMBLOCKTXDIR_NONE;
+        PDMMEDIATXDIR enmBlockTxDir = PDMMEDIATXDIR_NONE;
 
         if (pAhciReq->enmTxDir == AHCITXDIR_READ)
-            enmBlockTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
+            enmBlockTxDir = PDMMEDIATXDIR_FROM_DEVICE;
         else if (pAhciReq->enmTxDir == AHCITXDIR_WRITE)
-            enmBlockTxDir = PDMBLOCKTXDIR_TO_DEVICE;
+            enmBlockTxDir = PDMMEDIATXDIR_TO_DEVICE;
         else if (pAhciReq->enmTxDir == AHCITXDIR_NONE)
-            enmBlockTxDir = PDMBLOCKTXDIR_NONE;
+            enmBlockTxDir = PDMMEDIATXDIR_NONE;
         else
             AssertMsgFailed(("Invalid transfer direction %d\n", pAhciReq->enmTxDir));
 
-        rc = pAhciPort->pDrvBlock->pfnSendCmd(pAhciPort->pDrvBlock,
+        rc = pAhciPort->pDrvMedia->pfnSendCmd(pAhciPort->pDrvMedia,
                                               pAhciReq->aATAPICmd,
                                               enmBlockTxDir,
                                               pvBuf,
@@ -5475,11 +5473,11 @@ static void *ahciReqMemAlloc(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cb)
     else if (pAhciReq->cbAlloc < cb)
     {
         if (pAhciReq->cbAlloc)
-            pAhciPort->pDrvBlock->pfnIoBufFree(pAhciPort->pDrvBlock, pAhciReq->pvAlloc, pAhciReq->cbAlloc);
+            pAhciPort->pDrvMedia->pfnIoBufFree(pAhciPort->pDrvMedia, pAhciReq->pvAlloc, pAhciReq->cbAlloc);
 
         pAhciReq->pvAlloc = NULL;
         pAhciReq->cbAlloc = RT_ALIGN_Z(cb, _4K);
-        int rc = pAhciPort->pDrvBlock->pfnIoBufAlloc(pAhciPort->pDrvBlock, pAhciReq->cbAlloc, &pAhciReq->pvAlloc);
+        int rc = pAhciPort->pDrvMedia->pfnIoBufAlloc(pAhciPort->pDrvMedia, pAhciReq->cbAlloc, &pAhciReq->pvAlloc);
         if (RT_FAILURE(rc))
             pAhciReq->pvAlloc = NULL;
 
@@ -5506,7 +5504,7 @@ static void ahciReqMemFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, bool fForceFr
     {
         if (pAhciReq->cbAlloc)
         {
-            pAhciPort->pDrvBlock->pfnIoBufFree(pAhciPort->pDrvBlock, pAhciReq->pvAlloc, pAhciReq->cbAlloc);
+            pAhciPort->pDrvMedia->pfnIoBufFree(pAhciPort->pDrvMedia, pAhciReq->pvAlloc, pAhciReq->cbAlloc);
             pAhciReq->cbAlloc = 0;
             pAhciReq->cAllocTooMuch = 0;
         }
@@ -5759,10 +5757,10 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort, PAHCIREQ pAhciReqExcept)
     return true; /* always true for now because tasks don't use guest memory as the buffer which makes canceling a task impossible. */
 }
 
-/* -=-=-=-=- IBlockAsyncPort -=-=-=-=- */
+/* -=-=-=-=- IMediaAsyncPort -=-=-=-=- */
 
-/** Makes a PAHCIPort out of a PPDMIBLOCKASYNCPORT. */
-#define PDMIBLOCKASYNCPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)pInterface - RT_OFFSETOF(AHCIPort, IPortAsync)) )
+/** Makes a PAHCIPort out of a PPDMIMEDIAASYNCPORT. */
+#define PDMIMEDIAASYNCPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)pInterface - RT_OFFSETOF(AHCIPort, IPortAsync)) )
 
 static void ahciWarningDiskFull(PPDMDEVINS pDevIns)
 {
@@ -6241,9 +6239,9 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
  * @param   pvUser       User data.
  * @param   rcReq        IPRT Status code of the completed request.
  */
-static DECLCALLBACK(int) ahciR3TransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rcReq)
+static DECLCALLBACK(int) ahciR3TransferCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, void *pvUser, int rcReq)
 {
-    PAHCIPort pAhciPort = PDMIBLOCKASYNCPORT_2_PAHCIPORT(pInterface);
+    PAHCIPort pAhciPort = PDMIMEDIAASYNCPORT_2_PAHCIPORT(pInterface);
     PAHCIREQ pAhciReq = (PAHCIREQ)pvUser;
 
     ahciLog(("%s: pInterface=%p pvUser=%p uTag=%u\n",
@@ -6274,7 +6272,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
     {
         case ATA_IDENTIFY_DEVICE:
         {
-            if (pAhciPort->pDrvBlock && !pAhciPort->fATAPI)
+            if (pAhciPort->pDrvMedia && !pAhciPort->fATAPI)
             {
                 uint16_t u16Temp[256];
                 size_t cbCopied;
@@ -6525,9 +6523,9 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         case ATA_DATA_SET_MANAGEMENT:
         {
             if (   (   !pAhciPort->fAsyncInterface
-                    && pAhciPort->pDrvBlock->pfnDiscard)
+                    && pAhciPort->pDrvMedia->pfnDiscard)
                 || (   pAhciPort->fAsyncInterface
-                    && pAhciPort->pDrvBlockAsync->pfnStartDiscard))
+                    && pAhciPort->pDrvMediaAsync->pfnStartDiscard))
             {
                 /* Check that the trim bit is set and all other bits are 0. */
                 if (   !(pAhciReq->cmdFis[AHCI_CMDFIS_FET] & UINT16_C(0x01))
@@ -6671,7 +6669,7 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, AHCITXDIR en
         VBOXDD_AHCI_REQ_SUBMIT_TIMESTAMP(pAhciReq, pAhciReq->tsStart);
         if (enmTxDir == AHCITXDIR_FLUSH)
         {
-            rc = pAhciPort->pDrvBlockAsync->pfnStartFlush(pAhciPort->pDrvBlockAsync,
+            rc = pAhciPort->pDrvMediaAsync->pfnStartFlush(pAhciPort->pDrvMediaAsync,
                                                           pAhciReq);
         }
         else if (enmTxDir == AHCITXDIR_TRIM)
@@ -6680,14 +6678,14 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, AHCITXDIR en
             if (RT_SUCCESS(rc))
             {
                 pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                rc = pAhciPort->pDrvBlockAsync->pfnStartDiscard(pAhciPort->pDrvBlockAsync, pAhciReq->u.Trim.paRanges,
+                rc = pAhciPort->pDrvMediaAsync->pfnStartDiscard(pAhciPort->pDrvMediaAsync, pAhciReq->u.Trim.paRanges,
                                                                 pAhciReq->u.Trim.cRanges, pAhciReq);
             }
         }
         else if (enmTxDir == AHCITXDIR_READ)
         {
             pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
-            rc = pAhciPort->pDrvBlockAsync->pfnStartRead(pAhciPort->pDrvBlockAsync, pAhciReq->uOffset,
+            rc = pAhciPort->pDrvMediaAsync->pfnStartRead(pAhciPort->pDrvMediaAsync, pAhciReq->uOffset,
                                                          &pAhciReq->u.Io.DataSeg, 1,
                                                          pAhciReq->cbTransfer,
                                                          pAhciReq);
@@ -6695,7 +6693,7 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, AHCITXDIR en
         else
         {
             pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-            rc = pAhciPort->pDrvBlockAsync->pfnStartWrite(pAhciPort->pDrvBlockAsync, pAhciReq->uOffset,
+            rc = pAhciPort->pDrvMediaAsync->pfnStartWrite(pAhciPort->pDrvMediaAsync, pAhciReq->uOffset,
                                                           &pAhciReq->u.Io.DataSeg, 1,
                                                           pAhciReq->cbTransfer,
                                                           pAhciReq);
@@ -6708,14 +6706,14 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, AHCITXDIR en
     else
     {
         if (enmTxDir == AHCITXDIR_FLUSH)
-            rc = pAhciPort->pDrvBlock->pfnFlush(pAhciPort->pDrvBlock);
+            rc = pAhciPort->pDrvMedia->pfnFlush(pAhciPort->pDrvMedia);
         else if (enmTxDir == AHCITXDIR_TRIM)
         {
             rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
             if (RT_SUCCESS(rc))
             {
                 pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                rc = pAhciPort->pDrvBlock->pfnDiscard(pAhciPort->pDrvBlock, pAhciReq->u.Trim.paRanges,
+                rc = pAhciPort->pDrvMedia->pfnDiscard(pAhciPort->pDrvMedia, pAhciReq->u.Trim.paRanges,
                                                       pAhciReq->u.Trim.cRanges);
                 pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 0;
             }
@@ -6723,7 +6721,7 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, AHCITXDIR en
         else if (enmTxDir == AHCITXDIR_READ)
         {
             pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
-            rc = pAhciPort->pDrvBlock->pfnRead(pAhciPort->pDrvBlock, pAhciReq->uOffset,
+            rc = pAhciPort->pDrvMedia->pfnRead(pAhciPort->pDrvMedia, pAhciReq->uOffset,
                                                pAhciReq->u.Io.DataSeg.pvSeg,
                                                pAhciReq->cbTransfer);
             pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 0;
@@ -6731,7 +6729,7 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, AHCITXDIR en
         else
         {
             pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-            rc = pAhciPort->pDrvBlock->pfnWrite(pAhciPort->pDrvBlock, pAhciReq->uOffset,
+            rc = pAhciPort->pDrvMedia->pfnWrite(pAhciPort->pDrvMedia, pAhciReq->uOffset,
                                                 pAhciReq->u.Io.DataSeg.pvSeg,
                                                 pAhciReq->cbTransfer);
             pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 0;
@@ -7600,12 +7598,12 @@ static DECLCALLBACK(void) ahciR3MountNotify(PPDMIMOUNTNOTIFY pInterface)
     Log(("%s: changing LUN#%d\n", __FUNCTION__, pAhciPort->iLUN));
 
     /* Ignore the call if we're called while being attached. */
-    if (!pAhciPort->pDrvBlock)
+    if (!pAhciPort->pDrvMedia)
         return;
 
     if (pAhciPort->fATAPI)
     {
-        pAhciPort->cTotalSectors = pAhciPort->pDrvBlock->pfnGetSize(pAhciPort->pDrvBlock) / 2048;
+        pAhciPort->cTotalSectors = pAhciPort->pDrvMedia->pfnGetSize(pAhciPort->pDrvMedia) / 2048;
 
         LogRel(("AHCI: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough unchanged\n", pAhciPort->iLUN, pAhciPort->cTotalSectors));
 
@@ -7661,50 +7659,44 @@ static DECLCALLBACK(void) ahciR3UnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
 {
     int          rc = VINF_SUCCESS;
-    PDMBLOCKTYPE enmType;
+    PDMMEDIATYPE enmType;
 
     /*
      * Query the block and blockbios interfaces.
      */
-    pAhciPort->pDrvBlock = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIBLOCK);
-    if (!pAhciPort->pDrvBlock)
+    pAhciPort->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIMEDIA);
+    if (!pAhciPort->pDrvMedia)
     {
         AssertMsgFailed(("Configuration error: LUN#%d hasn't a block interface!\n", pAhciPort->iLUN));
-        return VERR_PDM_MISSING_INTERFACE;
-    }
-    pAhciPort->pDrvBlockBios = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIBLOCKBIOS);
-    if (!pAhciPort->pDrvBlockBios)
-    {
-        AssertMsgFailed(("Configuration error: LUN#%d hasn't a block BIOS interface!\n", pAhciPort->iLUN));
         return VERR_PDM_MISSING_INTERFACE;
     }
 
     pAhciPort->pDrvMount = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIMOUNT);
 
     /* Try to get the optional async block interface. */
-    pAhciPort->pDrvBlockAsync = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIBLOCKASYNC);
+    pAhciPort->pDrvMediaAsync = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIMEDIAASYNC);
 
     /*
      * Validate type.
      */
-    enmType = pAhciPort->pDrvBlock->pfnGetType(pAhciPort->pDrvBlock);
+    enmType = pAhciPort->pDrvMedia->pfnGetType(pAhciPort->pDrvMedia);
 
-    if (   enmType != PDMBLOCKTYPE_HARD_DISK
-        && enmType != PDMBLOCKTYPE_CDROM
-        && enmType != PDMBLOCKTYPE_DVD)
+    if (   enmType != PDMMEDIATYPE_HARD_DISK
+        && enmType != PDMMEDIATYPE_CDROM
+        && enmType != PDMMEDIATYPE_DVD)
     {
         AssertMsgFailed(("Configuration error: LUN#%d isn't a disk or cd/dvd. enmType=%d\n", pAhciPort->iLUN, enmType));
         return VERR_PDM_UNSUPPORTED_BLOCK_TYPE;
     }
 
-    if (   (enmType == PDMBLOCKTYPE_CDROM || enmType == PDMBLOCKTYPE_DVD)
+    if (   (enmType == PDMMEDIATYPE_CDROM || enmType == PDMMEDIATYPE_DVD)
         && !pAhciPort->pDrvMount)
     {
         AssertMsgFailed(("Internal error: CD/DVD-ROM without a mountable interface\n"));
         return VERR_INTERNAL_ERROR;
     }
-    pAhciPort->fATAPI = (enmType == PDMBLOCKTYPE_CDROM || enmType == PDMBLOCKTYPE_DVD);
-    pAhciPort->fATAPIPassthrough = pAhciPort->fATAPI ? (pAhciPort->pDrvBlock->pfnSendCmd != NULL) : false;
+    pAhciPort->fATAPI = (enmType == PDMMEDIATYPE_CDROM || enmType == PDMMEDIATYPE_DVD);
+    pAhciPort->fATAPIPassthrough = pAhciPort->fATAPI ? (pAhciPort->pDrvMedia->pfnSendCmd != NULL) : false;
 
     rc = RTCritSectInit(&pAhciPort->CritSectReqsFree);
     if (RT_FAILURE(rc))
@@ -7720,7 +7712,7 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
 
     if (pAhciPort->fATAPI)
     {
-        pAhciPort->cTotalSectors = pAhciPort->pDrvBlock->pfnGetSize(pAhciPort->pDrvBlock) / 2048;
+        pAhciPort->cTotalSectors = pAhciPort->pDrvMedia->pfnGetSize(pAhciPort->pDrvMedia) / 2048;
         pAhciPort->PCHSGeometry.cCylinders = 0;
         pAhciPort->PCHSGeometry.cHeads     = 0;
         pAhciPort->PCHSGeometry.cSectors   = 0;
@@ -7729,10 +7721,9 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
     }
     else
     {
-        pAhciPort->cbSector = pAhciPort->pDrvBlock->pfnGetSectorSize(pAhciPort->pDrvBlock);
-        pAhciPort->cTotalSectors = pAhciPort->pDrvBlock->pfnGetSize(pAhciPort->pDrvBlock) / pAhciPort->cbSector;
-        rc = pAhciPort->pDrvBlockBios->pfnGetPCHSGeometry(pAhciPort->pDrvBlockBios,
-                                                          &pAhciPort->PCHSGeometry);
+        pAhciPort->cbSector = pAhciPort->pDrvMedia->pfnGetSectorSize(pAhciPort->pDrvMedia);
+        pAhciPort->cTotalSectors = pAhciPort->pDrvMedia->pfnGetSize(pAhciPort->pDrvMedia) / pAhciPort->cbSector;
+        rc = pAhciPort->pDrvMedia->pfnBiosGetPCHSGeometry(pAhciPort->pDrvMedia, &pAhciPort->PCHSGeometry);
         if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
         {
             pAhciPort->PCHSGeometry.cCylinders = 0;
@@ -7755,15 +7746,14 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
             pAhciPort->PCHSGeometry.cHeads = 16;
             pAhciPort->PCHSGeometry.cSectors = 63;
             /* Set the disk geometry information. Ignore errors. */
-            pAhciPort->pDrvBlockBios->pfnSetPCHSGeometry(pAhciPort->pDrvBlockBios,
-                                                         &pAhciPort->PCHSGeometry);
+            pAhciPort->pDrvMedia->pfnBiosSetPCHSGeometry(pAhciPort->pDrvMedia, &pAhciPort->PCHSGeometry);
             rc = VINF_SUCCESS;
         }
         LogRel(("AHCI: LUN#%d: disk, PCHS=%u/%u/%u, total number of sectors %Ld\n",
                  pAhciPort->iLUN, pAhciPort->PCHSGeometry.cCylinders,
                  pAhciPort->PCHSGeometry.cHeads, pAhciPort->PCHSGeometry.cSectors,
                  pAhciPort->cTotalSectors));
-        if (pAhciPort->pDrvBlock->pfnDiscard)
+        if (pAhciPort->pDrvMedia->pfnDiscard)
             LogRel(("AHCI: LUN#%d: Enabled TRIM support\n", pAhciPort->iLUN));
     }
     return rc;
@@ -7878,8 +7868,8 @@ static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *ps
     char szSerial[AHCI_SERIAL_NUMBER_LENGTH+1];
     RTUUID Uuid;
 
-    if (pAhciPort->pDrvBlock)
-        rc = pAhciPort->pDrvBlock->pfnGetUuid(pAhciPort->pDrvBlock, &Uuid);
+    if (pAhciPort->pDrvMedia)
+        rc = pAhciPort->pDrvMedia->pfnGetUuid(pAhciPort->pDrvMedia, &Uuid);
     else
         RTUuidClear(&Uuid);
 
@@ -8055,9 +8045,8 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
      * Zero some important members.
      */
     pAhciPort->pDrvBase = NULL;
-    pAhciPort->pDrvBlock = NULL;
-    pAhciPort->pDrvBlockAsync = NULL;
-    pAhciPort->pDrvBlockBios = NULL;
+    pAhciPort->pDrvMedia = NULL;
+    pAhciPort->pDrvMediaAsync = NULL;
 }
 
 /**
@@ -8082,8 +8071,8 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     /* the usual paranoia */
     AssertMsg(iLUN < pThis->cPortsImpl, ("iLUN=%u", iLUN));
     AssertRelease(!pAhciPort->pDrvBase);
-    AssertRelease(!pAhciPort->pDrvBlock);
-    AssertRelease(!pAhciPort->pDrvBlockAsync);
+    AssertRelease(!pAhciPort->pDrvMedia);
+    AssertRelease(!pAhciPort->pDrvMediaAsync);
     Assert(pAhciPort->iLUN == iLUN);
 
     AssertMsgReturn(   pAhciPort->fHotpluggable
@@ -8112,14 +8101,14 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     if (RT_FAILURE(rc))
     {
         pAhciPort->pDrvBase = NULL;
-        pAhciPort->pDrvBlock = NULL;
+        pAhciPort->pDrvMedia = NULL;
     }
     else
     {
         char szName[24];
         RTStrPrintf(szName, sizeof(szName), "Port%d", iLUN);
 
-        if (   pAhciPort->pDrvBlockAsync
+        if (   pAhciPort->pDrvMediaAsync
             && !pAhciPort->fATAPI)
             pAhciPort->fAsyncInterface = true;
         else
@@ -8617,7 +8606,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
              * the requests into R3.
              * Otherwise we use a event semaphore and a async I/O thread which processes them.
              */
-            if (pAhciPort->pDrvBlockAsync && pThis->fUseAsyncInterfaceIfAvailable)
+            if (pAhciPort->pDrvMediaAsync && pThis->fUseAsyncInterfaceIfAvailable)
             {
                 LogRel(("AHCI: LUN#%d: using async I/O\n", pAhciPort->iLUN));
                 pAhciPort->fAsyncInterface = true;

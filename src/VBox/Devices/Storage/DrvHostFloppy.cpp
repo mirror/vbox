@@ -187,7 +187,7 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init instance data.
      */
-    int rc = DRVHostBaseInitData(pDrvIns, pCfg, PDMBLOCKTYPE_FLOPPY_1_44);
+    int rc = DRVHostBaseInitData(pDrvIns, pCfg, PDMMEDIATYPE_FLOPPY_1_44);
     if (RT_SUCCESS(rc))
     {
         /*
