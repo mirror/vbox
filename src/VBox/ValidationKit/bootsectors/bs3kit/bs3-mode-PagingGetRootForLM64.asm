@@ -51,7 +51,7 @@ TMPL_BEGIN_TEXT
 ; @remarks  returns value in EAX, not dx:ax!
 ;
 BS3_PROC_BEGIN_MODE Bs3PagingGetRootForLM64
-        mov     eax, [g_PhysPagingRootLM]
+        mov     eax, [g_PhysPagingRootLM TMPL_WRT_DATA16_OR_FLAT]
         cmp     eax, 0ffffffffh
         je      .init_root
         ret
@@ -83,7 +83,7 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForLM64
         call    Bs3PagingInitRootForLM
 %endif
 
-        mov     eax, [g_PhysPagingRootLM]
+        mov     eax, [g_PhysPagingRootLM TMPL_WRT_DATA16_OR_FLAT]
         leave
         ret
 BS3_PROC_END_MODE   Bs3PagingGetRootForLM64

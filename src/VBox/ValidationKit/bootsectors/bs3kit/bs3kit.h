@@ -935,11 +935,10 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
  * @{
  */
 
-#define BS3_STRICT  /**< @todo later */
 #ifdef BS3_STRICT
-# define BS3_ASSERT(a_Expr) do { } while (0) /**< @todo later */
+# define BS3_ASSERT(a_Expr) do { if (!!(a_Expr)) { /* likely */ } else { Bs3Panic(); } } while (0) /**< @todo later */
 #else
-# define BS3_ASSERT(a_Expr) do { } while (0) /**< @todo later */
+# define BS3_ASSERT(a_Expr) do { } while (0)
 #endif
 
 /**

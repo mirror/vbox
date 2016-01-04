@@ -51,7 +51,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
         mov     ax, cs
         and     xAX, 3
         shl     xAX, BS3_SEL_RING_SHIFT
-        add     xAX, BS3_SEL_R0_CS32
+        add     xAX, BS3_SEL_R0_CS64
 
         ; setup far return.
         push    sAX
@@ -65,6 +65,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
 
 BS3_SET_BITS 64
 .sixty_four_bit:
+
         ; Load 64-bit segment registers (SS64==DS64).
         add     eax, BS3_SEL_R0_DS64 - BS3_SEL_R0_CS64
         mov     ss, ax
@@ -77,7 +78,7 @@ BS3_SET_BITS 64
         mov     [rsp + 8*2], rax
   %endif
 
-        popf
+        popfq
         pop     rax
         ret
  %endif

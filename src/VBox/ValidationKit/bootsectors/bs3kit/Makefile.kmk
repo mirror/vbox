@@ -290,6 +290,7 @@ TEMPLATE_VBoxBS3KitImg_ASTOOL       = NASM
 TEMPLATE_VBoxBS3KitImg_ASFLAGS      = -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg_DEFS         = ARCH_BITS=16 IN_BS3KIT
+TEMPLATE_VBoxBS3KitImg_DEFS.debug   = BS3_STRICT
 TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = Bs3Ow16
@@ -397,6 +398,7 @@ TEMPLATE_VBoxBS3KitImg32_ASTOOL       = NASM
 TEMPLATE_VBoxBS3KitImg32_ASFLAGS      = -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg32_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg32_DEFS         = ARCH_BITS=32 IN_BS3KIT
+TEMPLATE_VBoxBS3KitImg32_DEFS.debug   = BS3_STRICT
 TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL        = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = Bs3Ow32
@@ -416,6 +418,7 @@ TEMPLATE_VBoxBS3KitImg64_ASTOOL       = NASM
 TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg64_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg64_DEFS         = IN_BS3KIT ARCH_BITS=64
+TEMPLATE_VBoxBS3KitImg64_DEFS.debug   = BS3_STRICT
 TEMPLATE_VBoxBS3KitImg64_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg64_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 if1of ($(KBUILD_HOST), win)
@@ -576,6 +579,7 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-SwitchToPP32.asm \
 	bs3-mode-SwitchToPAE16.asm \
 	bs3-mode-SwitchToPAE32.asm \
+	bs3-mode-SwitchToLM64.asm \
 	bs3-mode-EnteredMode.asm \
 	bs3-mode-PagingGetRootForPP16.asm \
 	bs3-mode-PagingGetRootForPP32.asm \

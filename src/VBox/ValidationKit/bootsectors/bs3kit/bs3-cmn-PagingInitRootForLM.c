@@ -45,10 +45,12 @@ BS3_DECL(int) Bs3PagingInitRootForLM(void)
     pPml4 = (X86PML4 BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_TILED, _4K);
     if (pPml4)
     {
-        X86PDPT BS3_FAR *pPdPtr = (X86PDPT BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_TILED, sizeof(X86PDPE) * 4U);
+        X86PDPT BS3_FAR *pPdPtr = (X86PDPT BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_TILED, _4K);
+        BS3_ASSERT((uintptr_t)pPdPtr != (uintptr_t)pPml4);
         if (pPdPtr)
         {
             X86PDPAE BS3_FAR *paPgDirs = (X86PDPAE BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_TILED, _4K * 4U);
+            BS3_ASSERT((uintptr_t)paPgDirs != (uintptr_t)pPml4);
             if (paPgDirs)
             {
                 unsigned i;
@@ -81,10 +83,12 @@ BS3_DECL(int) Bs3PagingInitRootForLM(void)
                 BS3_XPTR_SET(X86PDPT, XPtrPdPtr, pPdPtr);
                 pPml4->a[0].u = BS3_XPTR_GET_FLAT(X86PDPT, XPtrPdPtr)
                               | X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A;
+                for (i = 1; i < RT_ELEMENTS(pPml4->a); i++)
+                    pPml4->a[i].u = pPml4->a[0].u;
 
                 /* Set the global root pointer and we're done. */
                 BS3_XPTR_SET(X86PML4, XPtrPml4, pPml4);
-                BS3_DATA_NM(g_PhysPagingRootLM) = BS3_XPTR_GET_FLAT(X86PDPT, XPtrPdPtr);
+                BS3_DATA_NM(g_PhysPagingRootLM) = BS3_XPTR_GET_FLAT(X86PML4, XPtrPml4);
                 return VINF_SUCCESS;
             }
             Bs3MemFree(pPdPtr, _4K);

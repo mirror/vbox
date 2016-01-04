@@ -687,7 +687,7 @@
  %define xDI  rdi
  %define xSI  rsi
  %define xWrtRIP wrt rip
- %define xPUSHF pushq
+ %define xPUSHF pushfq
  %define xPOPF  popfq
  %define xRETF  o64 retf
 %else
@@ -768,6 +768,25 @@
  %define sSI  esi
  %define sPUSHF pushfd
  %define sPOPF  popfd
+%endif
+
+;; @def TMPL_WRT_FLAT
+; WRT flat when not in 16-bit modes.
+;
+%ifdef TMPL_16BIT
+ %define TMPL_WRT_FLAT
+%else
+ %define TMPL_WRT_FLAT              wrt FLAT
+%endif
+
+;; @def TMPL_WRT_DATA16_OR_FLAT
+; WRT DATA16 in 16-bit mode, WRT FLAT in 32- and 64-bit modes.
+; This is important when accessing global variables.
+;
+%ifdef TMPL_16BIT
+ %define TMPL_WRT_DATA16_OR_FLAT    wrt BS3DATA16
+%else
+ %define TMPL_WRT_DATA16_OR_FLAT    wrt FLAT
 %endif
 
 ;

@@ -58,12 +58,8 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
         cli
 
  %if TMPL_BITS != 16
-        ; Adjust the return address.
-        mov     ax, [xSP + xCB]
-        mov     [xSP + xCB + xCB - 2], ax
-
         ; Must be in 16-bit segment when calling Bs3SwitchTo16Bit.
-        jmp     .sixteen_bit_segment
+        jmp     .sixteen_bit_segment wrt FLAT
 BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
 .sixteen_bit_segment:
@@ -76,10 +72,6 @@ BS3_BEGIN_TEXT16
         ;
         ; Exit to real mode.
         ;
-%ifdef TMPL_LM
- extern TODO_FIX_LM_MODE_RETURN
-%endif
-
         mov     eax, cr0
         and     eax, X86_CR0_NO_PE_NO_PG
         mov     cr0, eax
@@ -99,7 +91,7 @@ BS3_BEGIN_TEXT16
         adc     ax, 0
 %ifdef BS3_STRICT
         test    ax, 0fff0h
-        jz      .ok
+        jz      .stack_conv_ok
         int3
 .stack_conv_ok:
 %endif
@@ -122,12 +114,13 @@ BS3_BEGIN_TEXT16
         pop     ebx
         pop     eax
         pop     eax
+        retn    6
  %else
         popfd
         pop     ebx
         pop     eax
+        retn    2
  %endif
-        ret
 
  %if TMPL_BITS != 16
 TMPL_BEGIN_TEXT

@@ -71,7 +71,7 @@ BEGINPROC_EXPORTED ASMBitFirstClear
         mov     rdi, rdx                ; rdi = start of scasd (Note! xchg rdx,rcx above)
  %endif
 %elif ARCH_BITS == 32
-        mov     edi, [esp + 4]
+        mov     edi, [esp + 8]
 %elif ARCH_BITS == 16
         mov     ax, [bp + 4 + 2]
         mov     di, [bp + 4]
