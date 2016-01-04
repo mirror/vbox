@@ -2656,9 +2656,8 @@ Virtual system 0:
           zero the free disk space before compressing the virtual disk
           image. For Linux, use the <code>zerofree</code> utility which
           supports ext2/ext3 filesystems. For Mac OS X guests, use the
-          <emphasis>Erase Free Space</emphasis> feature of the built-in
-          <emphasis>Disk Utility</emphasis>. Use
-          <emphasis>Zero Out Data</emphasis> there.</para>
+          <code>diskutil secureErase freespace 0 /</code> command line
+          from an elevated Terminal.</para>
 
           <para>Please note that compacting is currently only available for
           VDI images. A similar effect can be achieved by zeroing out free
