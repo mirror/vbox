@@ -65,11 +65,18 @@ define TOOL_VBoxBsUnusedLd_LINK_MISCBIN_CMDS
 endef
 
 #
-# elf cross compiling 64-bit gcc (mac): sudo port install x86_64-elf-gcc
+# ELF 64-bit compiler tool with object conversion.
 #
-TOOL_Bs3Gcc64Elf64 := AMD64/ELF64 gcc/g++ cross compiler for mac.
-TOOL_Bs3Gcc64Elf64_CC  ?= x86_64-elf-gcc$(HOSTSUFF_EXE) -m64
-TOOL_Bs3Gcc64Elf64_CXX ?= x86_64-elf-g++$(HOSTSUFF_EXE) -m64
+# Mac needs cross compiler: sudo port install x86_64-elf-gcc
+#
+TOOL_Bs3Gcc64Elf64 := AMD64/ELF64 gcc/g++ (cross) compiler.
+ifeq ($(KBUILD_HOST),darwin)
+ TOOL_Bs3Gcc64Elf64_CC  ?= x86_64-elf-gcc$(HOSTSUFF_EXE) -m64
+ TOOL_Bs3Gcc64Elf64_CXX ?= x86_64-elf-g++$(HOSTSUFF_EXE) -m64
+else
+ TOOL_Bs3Gcc64Elf64_CC  ?= gcc$(HOSTSUFF_EXE) -m64
+ TOOL_Bs3Gcc64Elf64_CXX ?= g++$(HOSTSUFF_EXE) -m64
+endif
 ifdef SLKRUNS
  TOOL_Bs3Gcc64Elf64_CC  += -fmessage-length=0
  TOOL_Bs3Gcc64Elf64_CXX += -fmessage-length=0
@@ -427,15 +434,11 @@ if1of ($(KBUILD_HOST), win)
  TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -Zi -O1 -Oi -GF -GS- -Gy -Gs65536
  TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -Zi -O1 -Oi -GF -GS- -Gy -Gs65536
 else
- if1of ($(KBUILD_HOST), darwin)
-  TEMPLATE_VBoxBS3KitImg64_CTOOL     := Bs3Gcc64Elf64
-  TEMPLATE_VBoxBS3KitImg64_CXXTOOL   := Bs3Gcc64Elf64
- else
-  TEMPLATE_VBoxBS3KitImg64_CTOOL     := $(VBOX_GCC_TOOL)
-  TEMPLATE_VBoxBS3KitImg64_CXXTOOL   := $(VBOX_GCC_TOOL)
- endif
- TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_C)
- TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_WARN_PEDANTIC_CXX)
+ TEMPLATE_VBoxBS3KitImg64_CTOOL      := Bs3Gcc64Elf64
+ TEMPLATE_VBoxBS3KitImg64_CXXTOOL    := Bs3Gcc64Elf64
+ # Note! -mx32 would be exactly what we needed here, however it causes internal compiler errors with 4.8.4 on gentoo.
+ TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_WARN_PEDANTIC_C)
+ TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_WARN_PEDANTIC_CXX)
 endif
 TEMPLATE_VBoxBS3KitImg64_LDTOOL       = VBoxBsUnusedLd
 
