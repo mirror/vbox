@@ -500,6 +500,7 @@ static int gctlSignalHandlerInstall(void)
     }
 #else
     signal(SIGINT,   gctlSignalHandler);
+    signal(SIGTERM,  gctlSignalHandler);
 # ifdef SIGBREAK
     signal(SIGBREAK, gctlSignalHandler);
 # endif
@@ -522,6 +523,7 @@ static int gctlSignalHandlerUninstall(void)
     }
 #else
     signal(SIGINT,   SIG_DFL);
+    signal(SIGTERM,  SIG_DFL);
 # ifdef SIGBREAK
     signal(SIGBREAK, SIG_DFL);
 # endif

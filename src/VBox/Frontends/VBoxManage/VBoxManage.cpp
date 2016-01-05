@@ -242,6 +242,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     if (fCancelable)
     {
         signal(SIGINT,   showProgressSignalHandler);
+        signal(SIGTERM,  showProgressSignalHandler);
 #ifdef SIGBREAK
         signal(SIGBREAK, showProgressSignalHandler);
 #endif
@@ -326,6 +327,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     if (fCancelable)
     {
         signal(SIGINT,   SIG_DFL);
+        signal(SIGTERM,  SIG_DFL);
 # ifdef SIGBREAK
         signal(SIGBREAK, SIG_DFL);
 # endif
