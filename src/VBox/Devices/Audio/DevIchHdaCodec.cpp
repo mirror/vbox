@@ -2663,6 +2663,7 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 
         /* Since version 4 a flexible node count is supported. */
         case HDA_SSM_VERSION_4:
+        case HDA_SSM_VERSION_5:
         case HDA_SSM_VERSION:
         {
             uint32_t cNodes;

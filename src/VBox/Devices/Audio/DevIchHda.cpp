@@ -1465,11 +1465,6 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStrmSt, uint8_t u8Strm)
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStrmSt, VERR_INVALID_POINTER);
 
-#ifdef VBOX_STRICT
-    AssertReleaseMsg(!RT_BOOL(HDA_STREAM_REG(pThis, CTL, u8Strm) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)),
-                     ("Cannot initialize stream %RU8 while in running state\n", u8Strm));
-#endif
-
     pStrmSt->u8Strm     = u8Strm;
     pStrmSt->u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, u8Strm),
                                       HDA_STREAM_REG(pThis, BDPU, u8Strm));
@@ -3254,7 +3249,7 @@ static int hdaTransfer(PHDASTATE pThis, ENMSOUNDSOURCE enmSrc, uint32_t cbToProc
 
         hdaStreamTransferUpdate(pThis, pStrmSt, cbProcessed);
 
-        cbToProcess      -= RT_MIN(cbToProcess,  cbProcessed);
+        cbToProcess      -= RT_MIN(cbToProcess, cbProcessed);
         cbProcessedTotal += cbProcessed;
 
         LogFlowFunc(("cbProcessed=%RU32, cbToProcess=%RU32, cbProcessedTotal=%RU32, rc=%Rrc\n",
@@ -3635,14 +3630,17 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    LogFlowFunc(("uVersion=%RU32, uPass=%RU32\n", uVersion, uPass));
+    LogFlowFunc(("uVersion=%RU32, uPass=0x%x\n", uVersion, uPass));
 
     /*
      * Load Codec nodes states.
      */
     int rc = hdaCodecLoadState(pThis->pCodec, pSSM, uVersion);
     if (RT_FAILURE(rc))
+    {
+        LogRel(("HDA: Failed loading codec state (version %RU32, pass 0x%x), rc=%Rrc\n", uVersion, uPass, rc));
         return rc;
+    }
 
     /*
      * Load MMIO registers.
@@ -3681,6 +3679,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             break;
 
         default:
+            LogRel(("HDA: Unsupported / too new saved state version (%RU32)\n", uVersion));
             return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
@@ -3828,6 +3827,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         }
 
         default:
+            AssertReleaseFailed(); /* Never reached. */
             return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
@@ -3838,13 +3838,13 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         /*
          * Update stuff after the state changes.
          */
-        bool fEnableIn    = RT_BOOL(HDA_SDCTL(pThis, 0) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+        bool fEnableIn    = RT_BOOL(HDA_SDCTL(pThis, 0 /** @todo Use a define. */) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 #ifdef VBOX_WITH_HDA_MIC_IN
-        bool fEnableMicIn = RT_BOOL(HDA_SDCTL(pThis, 2) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+        bool fEnableMicIn = RT_BOOL(HDA_SDCTL(pThis, 2 /** @todo Use a define. */) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 #else
         bool fEnableMicIn = fEnableIn; /* Mic In == Line In */
 #endif
-        bool fEnableOut   = RT_BOOL(HDA_SDCTL(pThis, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+        bool fEnableOut   = RT_BOOL(HDA_SDCTL(pThis, 4 /** @todo Use a define. */) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 
         PHDADRIVER pDrv;
         RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
@@ -3867,6 +3867,8 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         pThis->u64RIRBBase = RT_MAKE_U64(HDA_REG(pThis, RIRBLBASE), HDA_REG(pThis, RIRBUBASE));
         pThis->u64DPBase   = RT_MAKE_U64(HDA_REG(pThis, DPLBASE), HDA_REG(pThis, DPUBASE));
     }
+    else
+        LogRel(("HDA: Failed loading device state (version %RU32, pass 0x%x), rc=%Rrc\n", uVersion, uPass, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
