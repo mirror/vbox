@@ -1558,6 +1558,139 @@ BS3_DECL(void) Bs3KbdWrite_c32(uint8_t bCmd, uint8_t bData); /**< @copydoc Bs3Kb
 BS3_DECL(void) Bs3KbdWrite_c64(uint8_t bCmd, uint8_t bData); /**< @copydoc Bs3KbdWrite_c16 */
 #define Bs3KbdWrite BS3_CMN_NM(Bs3KbdWrite) /**< Selects #Bs3KbdWrite_c16, #Bs3KbdWrite_c32 or #Bs3KbdWrite_c64. */
 
+
+/**
+ * BS3 integer register.
+ */
+typedef union BS3REG
+{
+    /** 8-bit unsigned integer. */
+    uint8_t     u8;
+    /** 16-bit unsigned integer. */
+    uint16_t    u16;
+    /** 32-bit unsigned integer. */
+    uint32_t    u32;
+    /** 64-bit unsigned integer. */
+    uint64_t    u64;
+    /** Full unsigned integer. */
+    uint64_t    u;
+    /** High/low byte view. */
+    struct
+    {
+        uint8_t bLo;
+        uint8_t bHi;
+    } b;
+    /** 8-bit view. */
+    uint8_t     au8[8];
+    /** 16-bit view. */
+    uint16_t    au16[4];
+    /** 32-bit view. */
+    uint32_t    au32[2];
+} BS3REG;
+/** Pointer to an integer register. */
+typedef BS3REG BS3_FAR *PBS3REG;
+/** Pointer to a const integer register. */
+typedef BS3REG const BS3_FAR *PCBS3REG;
+
+/**
+ * Register context (without FPU).
+ */
+typedef struct BS3REGCTX
+{
+    BS3REG      rax;
+    BS3REG      rcx;
+    BS3REG      rdx;
+    BS3REG      rbx;
+    BS3REG      rsp;
+    BS3REG      rbp;
+    BS3REG      rsi;
+    BS3REG      rdi;
+    BS3REG      r8;
+    BS3REG      r9;
+    BS3REG      r10;
+    BS3REG      r11;
+    BS3REG      r12;
+    BS3REG      r13;
+    BS3REG      r14;
+    BS3REG      r15;
+    BS3REG      rflags;
+    BS3REG      rip;
+    uint16_t    cs;
+    uint16_t    ds;
+    uint16_t    es;
+    uint16_t    fs;
+    uint16_t    gs;
+    uint16_t    ss;
+    uint8_t     cBits;
+    uint8_t     abPadding[3];
+    BS3REG      cr0;
+    BS3REG      cr2;
+    BS3REG      cr3;
+    BS3REG      cr4;
+} BS3REGCTX;
+/** Pointer to a register context. */
+typedef BS3REGCTX BS3_FAR *PBS3REGCTX;
+/** Pointer to a const register context. */
+typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
+
+
+/**
+ * Trap frame.
+ */
+typedef struct BS3TRAPFRAME
+{
+    /** Exception/interrupt number. */
+    uint8_t     bXcpt;
+    /** Explicit alignment. */
+    uint8_t     bAlignment;
+    /** The handler CS. */
+    uint16_t    uHandlerCc;
+    /** The handler SS. */
+    uint16_t    uHandlerSs;
+    /** The handler RSP (top of iret frame). */
+    uint64_t    uHandlerRsp;
+    /** The handler RFLAGS value. */
+    uint64_t    fHandlerRfl;
+    /** The error code (if applicable). */
+    uint64_t    uErrCd;
+    /** The register context. */
+    BS3REGCTX   Ctx;
+} BS3TRAPFRAME;
+/** Pointer to a trap frame. */
+typedef BS3TRAPFRAME BS3_FAR *PBS3TRAPFRAME;
+/** Pointer to a const trap frame.   */
+typedef BS3TRAPFRAME const BS3_FAR *PCBS3TRAPFRAME;
+
+/**
+ * Resumes execution of a 32-bit trap frame.
+ *
+ * @param   pTrapFrame      Trap frame to resume.
+ * @param   fFlags          Flags, BS3TRAPRESUME_F_XXX.
+ */
+BS3_DECL(void) Bs3Trap32ResumeFrame_c32(BS3TRAPFRAME BS3_FAR *pTrapFrame, uint16_t fFlags);
+#define Bs3Trap32ResumeFrame BS3_CMN_NM(Bs3Trap32ResumeFrame) /**< Selects Bs3Trap32ResumeFrame_c16 (not implemented), #Bs3Trap32ResumeFrame_c32 or Bs3Trap32ResumeFrame_c64 (not implemented). */
+
+/** Skip restoring the CRx registers. */
+#define BS3TRAPRESUME_F_SKIP_CRX    UINT16_C(0x0001)
+
+/**
+ * Modifies the 32-bit IDT entry specified by @a iIdt.
+ *
+ * @param   iIdt        The index of the IDT entry to set.
+ * @param   bType       The gate type (X86_SEL_TYPE_SYS_XXX).
+ * @param   bDpl        The DPL.
+ * @param   uSel        The handler selector.
+ * @param   off         The handler offset (if applicable).
+ * @param   cParams     The parameter count (for call gates).
+ */
+BS3_DECL(void) Bs3Trap32SetGate(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams);
+
+/** The address of Bs3Idt32GenericEntries.
+ * Bs3Idt32GenericEntries is an array of interrupt/trap/whatever entry
+ * points, 8 bytes each, that will create a register frame and call the generic
+ * C compatible trap handlers. */
+extern uint32_t BS3_DATA_NM(g_Bs3Idt32GenericEntriesFlatAddr);
+
 /** @} */
 
 
