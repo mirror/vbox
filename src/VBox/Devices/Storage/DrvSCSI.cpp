@@ -23,6 +23,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_SCSI
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmifs.h>
+#include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/pdmthread.h>
 #include <VBox/vscsi.h>
 #include <VBox/scsi.h>

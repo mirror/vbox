@@ -23,7 +23,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_BUSLOGIC
 #include <VBox/vmm/pdmdev.h>
-#include <VBox/vmm/pdmifs.h>
+#include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/scsi.h>
 #include <iprt/asm.h>

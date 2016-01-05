@@ -112,6 +112,7 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 #endif
 
 #include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmstorageifs.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/path.h>

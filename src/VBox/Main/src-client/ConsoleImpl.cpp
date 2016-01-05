@@ -96,6 +96,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pdmasynccompletion.h>
 #include <VBox/vmm/pdmnetifs.h>
+#include <VBox/vmm/pdmstorageifs.h>
 #ifdef VBOX_WITH_USB
 # include <VBox/vmm/pdmusb.h>
 #endif

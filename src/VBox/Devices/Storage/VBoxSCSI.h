@@ -70,6 +70,7 @@
 *******************************************************************************/
 //#define DEBUG
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/scsi.h>
 
 typedef enum VBOXSCSISTATE
