@@ -3630,7 +3630,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    LogFlowFunc(("uVersion=%RU32, uPass=0x%x\n", uVersion, uPass));
+    LogRel2(("hdaLoadExec: uVersion=%RU32, uPass=0x%x\n", uVersion, uPass));
 
     /*
      * Load Codec nodes states.
@@ -3742,17 +3742,20 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
             /* Output */
             rc = hdaStreamInit(pThis, &pThis->StrmStOut,    4 /* Stream number, hardcoded */);
-            AssertRCBreak(rc);
+            if (RT_FAILURE(rc))
+                break;
             HDA_SSM_LOAD_BDLE_STATE_PRE_V5(uVersion, (   pThis->StrmStOut.State.cBDLE
                                                       ? &pThis->StrmStOut.State.paBDLE[0].State : &StateBDLEDummy));
             /* Microphone-In */
             rc = hdaStreamInit(pThis, &pThis->StrmStMicIn,  2 /* Stream number, hardcoded */);
-            AssertRCBreak(rc);
+            if (RT_FAILURE(rc))
+                break;
             HDA_SSM_LOAD_BDLE_STATE_PRE_V5(uVersion, (   pThis->StrmStMicIn.State.cBDLE
                                                       ? &pThis->StrmStMicIn.State.paBDLE[0].State : &StateBDLEDummy));
             /* Line-In */
             rc = hdaStreamInit(pThis, &pThis->StrmStLineIn, 0 /* Stream number, hardcoded */);
-            AssertRCBreak(rc);
+            if (RT_FAILURE(rc))
+                break;
             HDA_SSM_LOAD_BDLE_STATE_PRE_V5(uVersion, (  pThis->StrmStLineIn.State.cBDLE
                                                       ? &pThis->StrmStLineIn.State.paBDLE[0].State : &StateBDLEDummy));
             break;
@@ -3764,14 +3767,18 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         {
             uint32_t cStreams;
             rc = SSMR3GetU32(pSSM, &cStreams);
-            AssertRCBreak(rc);
+            if (RT_FAILURE(rc))
+                break;
+
+            LogRel2(("hdaLoadExec: cStreams=%RU32\n", cStreams));
 
             /* Load stream states. */
             for (uint32_t i = 0; i < cStreams; i++)
             {
                 uint8_t uStreamID;
                 rc = SSMR3GetU8(pSSM, &uStreamID);
-                AssertRCBreak(rc);
+                if (RT_FAILURE(rc))
+                    break;
 
                 PHDASTREAM pStrm;
                 HDASTREAM  StreamDummy;
@@ -3797,23 +3804,34 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
                 RT_BZERO(pStrm, sizeof(HDASTREAM));
                 rc = SSMR3GetStructEx(pSSM, &pStrm->State, sizeof(HDASTREAMSTATE), 0 /* fFlags */, g_aSSMStreamStateFields5, NULL);
-                AssertRCBreak(rc);
+                if (RT_FAILURE(rc))
+                    break;
 
                 rc = hdaStreamInit(pThis, pStrm, uStreamID);
-                AssertRCBreak(rc);
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("HDA: Stream #%RU32: Inititialization of stream (ID=%RU8, cBDLE=%RU32) failed, rc=%Rrc\n", i, uStreamID, pStrm->State.cBDLE, rc));
+                    break;
+                }
 
                 /* Load BDLE states. */
                 HDABDLESTATE  StateDummy;
                 PHDABDLESTATE pState;
                 for (uint32_t a = 0; a < pStrm->State.cBDLE; a++)
                 {
-                    /* v5 did not save the BDLE state correctly, so skip. */
-                    pState = uVersion == HDA_SSM_VERSION_5
-                           ? &StateDummy : &pStrm->State.paBDLE[a].State;
-
-                    rc = SSMR3GetStructEx(pSSM, pState, sizeof(HDABDLESTATE),
-                                          0 /* fFlags */, g_aSSMBDLEStateFields5, NULL);
-                    AssertRCBreak(rc);
+                    if (uVersion == HDA_SSM_VERSION_5)
+                    {
+                        /* v5 saved the entire HDABDLE struct instead of only HDABDLESTATE,
+                         * so skip. */
+                        rc = SSMR3Skip(pSSM, 0x120 /* sizeof(HDABLDE) in v5 */);
+                    }
+                    else
+                    {
+                        rc = SSMR3GetStructEx(pSSM, &pStrm->State.paBDLE[a].State, sizeof(HDABDLESTATE),
+                                              0 /* fFlags */, g_aSSMBDLEStateFields5, NULL);
+                    }
+                    if (RT_FAILURE(rc))
+                        break;
                 }
 
                 /* Destroy dummy again. */
@@ -3838,8 +3856,6 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         bool fEnableIn    = RT_BOOL(HDA_SDCTL(pThis, 0 /** @todo Use a define. */) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 #ifdef VBOX_WITH_HDA_MIC_IN
         bool fEnableMicIn = RT_BOOL(HDA_SDCTL(pThis, 2 /** @todo Use a define. */) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
-#else
-        bool fEnableMicIn = fEnableIn; /* Mic In == Line In */
 #endif
         bool fEnableOut   = RT_BOOL(HDA_SDCTL(pThis, 4 /** @todo Use a define. */) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 
@@ -3849,9 +3865,11 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             rc = pDrv->pConnector->pfnEnableIn(pDrv->pConnector, pDrv->LineIn.pStrmIn, fEnableIn);
             if (RT_FAILURE(rc))
                 break;
+#ifdef VBOX_WITH_HDA_MIC_IN
             rc = pDrv->pConnector->pfnEnableIn(pDrv->pConnector, pDrv->MicIn.pStrmIn, fEnableMicIn);
             if (RT_FAILURE(rc))
                 break;
+#endif
             rc = pDrv->pConnector->pfnEnableOut(pDrv->pConnector, pDrv->Out.pStrmOut, fEnableOut);
             if (RT_FAILURE(rc))
                 break;
@@ -3862,7 +3880,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     {
         pThis->u64CORBBase = RT_MAKE_U64(HDA_REG(pThis, CORBLBASE), HDA_REG(pThis, CORBUBASE));
         pThis->u64RIRBBase = RT_MAKE_U64(HDA_REG(pThis, RIRBLBASE), HDA_REG(pThis, RIRBUBASE));
-        pThis->u64DPBase   = RT_MAKE_U64(HDA_REG(pThis, DPLBASE), HDA_REG(pThis, DPUBASE));
+        pThis->u64DPBase   = RT_MAKE_U64(HDA_REG(pThis, DPLBASE),   HDA_REG(pThis, DPUBASE));
     }
     else
         LogRel(("HDA: Failed loading device state (version %RU32, pass 0x%x), rc=%Rrc\n", uVersion, uPass, rc));
@@ -4105,8 +4123,10 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
         pDrv->pConnector->pfnEnableIn(pDrv->pConnector, pDrv->LineIn.pStrmIn, false /* Disable */);
+#ifdef VBOX_WITH_HDA_MIC_IN
         /* Ignore rc. */
         pDrv->pConnector->pfnEnableIn(pDrv->pConnector, pDrv->MicIn.pStrmIn, false /* Disable */);
+#endif
         /* Ditto. */
         pDrv->pConnector->pfnEnableOut(pDrv->pConnector, pDrv->Out.pStrmOut, false /* Disable */);
         /* Ditto. */
