@@ -636,20 +636,24 @@ endstruc
 
 
 ;; The system call vector.
-%define BS3_TRAP_SYSCALL        20h
+%define BS3_TRAP_SYSCALL            20h
 
-;; @name System call numbers
+;; @name System call numbers (ax)
 ;; @{
 ;; Print char (cl).
-%define BS3_SYSCALL_PRINT_CHR   0ca110001h
+%define BS3_SYSCALL_PRINT_CHR       0001h
+;; Print string (pointer in ds:[e]si, length in cx).
+%define BS3_SYSCALL_PRINT_STR       0002h
 ;; Switch to ring-0.
-%define BS3_SYSCALL_TO_RING0    0ca110002h
+%define BS3_SYSCALL_TO_RING0        0003h
 ;; Switch to ring-1.
-%define BS3_SYSCALL_TO_RING1    0ca110003h
+%define BS3_SYSCALL_TO_RING1        0004h
 ;; Switch to ring-2.
-%define BS3_SYSCALL_TO_RING2    0ca110004h
+%define BS3_SYSCALL_TO_RING2        0005h
 ;; Switch to ring-3.
-%define BS3_SYSCALL_TO_RING3    0ca110005h
+%define BS3_SYSCALL_TO_RING3        0006h
+;; The last system call value.
+%define BS3_SYSCALL_LAST            BS3_SYSCALL_TO_RING3
 ;; @}
 
 

@@ -93,6 +93,9 @@
  %define TMPL_PTR_DEF           dw
  %define TMPL_NM(Name)          _ %+ Name %+ _rm
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        rm
+ %define TMPL_MODE_UNAME        RM
  %define TMPL_MODE_STR          'real mode'
  %define TMPL_HAVE_BIOS
  %define TMPL_CMN_R86
@@ -142,6 +145,9 @@
  %define TMPL_PTR_DEF           dw
  %define TMPL_NM(Name)          _ %+ Name %+ _pe16
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        pe16
+ %define TMPL_MODE_UNAME        PE16
  %define TMPL_MODE_STR          '16-bit unpaged protected mode'
 %endif
 
@@ -189,6 +195,9 @@
  %define TMPL_PTR_DEF           dd
  %define TMPL_NM(Name)          _ %+ Name %+ _pe32
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        pe32
+ %define TMPL_MODE_UNAME        PE32
  %define TMPL_MODE_STR          '32-bit unpaged protected mode'
 %endif
 
@@ -237,6 +246,9 @@
  %define TMPL_PTR_DEF           dw
  %define TMPL_NM(Name)          _ %+ Name %+ _pev86
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        pev86
+ %define TMPL_MODE_UNAME        PEV86
  %define TMPL_MODE_STR          'v8086 unpaged protected mode'
 %endif
 
@@ -284,6 +296,9 @@
  %define TMPL_PTR_DEF           dw
  %define TMPL_NM(Name)          _ %+ Name %+ _pp16
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        pp16
+ %define TMPL_MODE_UNAME        PP16
  %define TMPL_MODE_STR          '16-bit paged protected mode'
 %endif
 
@@ -331,6 +346,9 @@
  %define TMPL_PTR_DEF           dd
  %define TMPL_NM(Name)          _ %+ Name %+ _pp32
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        pp32
+ %define TMPL_MODE_UNAME        PP32
  %define TMPL_MODE_STR          '32-bit paged protected mode'
 %endif
 
@@ -377,8 +395,11 @@
  %define TMPL_16BIT
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          Name %+ _ppv86
- %define BS3_CMN_NM(Name)       Name %+ _c86
+ %define TMPL_NM(Name)          _ %+ Name %+ _ppv86
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c86
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        ppv86
+ %define TMPL_MODE_UNAME        PPV86
  %define TMPL_MODE_STR          'v8086 paged protected mode'
 %endif
 
@@ -426,6 +447,9 @@
  %define TMPL_PTR_DEF           dw
  %define TMPL_NM(Name)          _ %+ Name %+ _pae16
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        pae16
+ %define TMPL_MODE_UNAME        PAE16
  %define TMPL_MODE_STR          '16-bit pae protected mode'
 %endif
 
@@ -473,6 +497,9 @@
  %define TMPL_PTR_DEF           dd
  %define TMPL_NM(Name)          _ %+ Name %+ _pae32
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        pae32
+ %define TMPL_MODE_UNAME        PAE32
  %define TMPL_MODE_STR          '32-bit pae protected mode'
 %endif
 
@@ -521,6 +548,9 @@
  %define TMPL_PTR_DEF           dw
  %define TMPL_NM(Name)          _ %+ Name %+ _paev86
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c86
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        paev86
+ %define TMPL_MODE_UNAME        PAEV86
  %define TMPL_MODE_STR          'v8086 pae protected mode'
 %endif
 
@@ -568,6 +598,9 @@
  %define TMPL_PTR_DEF           dw
  %define TMPL_NM(Name)          _ %+ Name %+ _lm16
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        lm16
+ %define TMPL_MODE_UNAME        LM16
  %define TMPL_MODE_STR          '16-bit long mode'
 %endif
 
@@ -615,6 +648,9 @@
  %define TMPL_PTR_DEF           dd
  %define TMPL_NM(Name)          _ %+ Name %+ _lm32
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
+ %define TMPL_UNDERSCORE        _
+ %define TMPL_MODE_LNAME        lm32
+ %define TMPL_MODE_UNAME        LM32
  %define TMPL_MODE_STR          '32-bit long mode'
 %endif
 
@@ -662,11 +698,33 @@
  %define TMPL_PTR_DEF           dq
  %define TMPL_NM(Name)          Name %+ _lm64   ; No underscore (C/C++ compatibility).
  %define BS3_CMN_NM(Name)       Name %+ _c64    ; No underscore (C/C++ compatibility).
+ %define TMPL_UNDERSCORE
+ %define TMPL_MODE_LNAME        lm64
+ %define TMPL_MODE_UNAME        LM64
  %define TMPL_MODE_STR          '64-bit long mode'
 %endif
 
 %ifndef TMPL_MODE_STR
  %error "internal error"
+%endif
+
+%ifnidn TMPL_UNDERSCORE,_; RT_CONCAT3 doesn't work with TMPL_UNDERSCORE being empty. duh.
+ %ifidn RT_CONCAT(TestName_,TMPL_MODE_LNAME),TMPL_NM(TestName)
+ %else
+  %error internal error: RT_CONCAT(TestName_,TMPL_MODE_LNAME) vs TMPL_NM(TestName)
+ %endif
+%else
+ %ifidn RT_CONCAT3(TMPL_UNDERSCORE,TestName_,TMPL_MODE_LNAME),TMPL_NM(TestName)
+ %else
+  %error internal error: RT_CONCAT3(TMPL_UNDERSCORE,TestName_,TMPL_MODE_LNAME) vs TMPL_NM(TestName)
+ %endif
+%endif
+
+; TMPL_NM version with uppercased suffix and no underscore separating them.
+%ifnidn TMPL_UNDERSCORE,_
+ %define TMPL_NM_U(Name)        Name %+ TMPL_MODE_UNAME
+%else
+ %define TMPL_NM_U(Name)        TMPL_UNDERSCORE %+ Name %+ TMPL_MODE_UNAME
 %endif
 
 

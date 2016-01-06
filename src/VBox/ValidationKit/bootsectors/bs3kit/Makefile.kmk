@@ -522,6 +522,8 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TestIsVmmDevTestingPresent.asm \
 	bs3-cmn-Trap32Init.c \
 	bs3-cmn-Trap32SetGate.c \
+	bs3-cmn-Trap64SetGate.c \
+	bs3-cmn-TrapSetHandler.c \
        ../../../Runtime/common/asm/ASMBitFirstClear.asm \
        ../../../Runtime/common/asm/ASMBitFirstSet.asm \
        ../../../Runtime/common/asm/ASMBitNextClear.asm \
@@ -587,12 +589,15 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-SwitchToPAE16.asm \
 	bs3-mode-SwitchToPAE32.asm \
 	bs3-mode-SwitchToLM64.asm \
+	bs3-mode-SwitchToLM32.asm \
+	bs3-mode-SwitchToLM16.asm \
 	bs3-mode-EnteredMode.asm \
 	bs3-mode-PagingGetRootForPP16.asm \
 	bs3-mode-PagingGetRootForPP32.asm \
 	bs3-mode-PagingGetRootForPAE16.asm \
 	bs3-mode-PagingGetRootForPAE32.asm \
 	bs3-mode-PagingGetRootForLM64.asm \
+	bs3-mode-TrapSystemCallHandler.asm \
 
 # The 16-bit real mode BS3Kit library.
 LIBRARIES += bs3kit-rm

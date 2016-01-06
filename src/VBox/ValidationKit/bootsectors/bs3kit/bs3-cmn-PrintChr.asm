@@ -33,12 +33,9 @@ BS3_PROC_BEGIN_CMN Bs3PrintChr
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
-        push    sAX
-        push    sCX
+        push    xAX
+        push    xCX
         push    xBX
-
-        ; Load the char.
-        movzx   eax, byte [xBP + xCB*2]
 
 %ifdef TMPL_16BIT
         ; If we're not in protected mode, call the VGA BIOS directly.
@@ -46,6 +43,7 @@ BS3_PROC_BEGIN_CMN Bs3PrintChr
         test    bx, X86_CR0_PE
         jnz     .protected_mode
 
+        mov     al, [xBP + xCB*2]       ; Load the char
         mov     bx, 0ff00h
         mov     ah, 0eh
         int     10h
@@ -54,14 +52,14 @@ BS3_PROC_BEGIN_CMN Bs3PrintChr
 .protected_mode:
 %endif
 
-        mov     ecx, eax
-        mov     eax, BS3_SYSCALL_PRINT_CHR
+        mov     cl, [xBP + xCB*2]       ; Load the char
+        mov     ax, BS3_SYSCALL_PRINT_CHR
         int     BS3_TRAP_SYSCALL
 
 .return:
         pop     xBX
-        pop     sCX
-        pop     sAX
+        pop     xCX
+        pop     xAX
         leave
         BS3_CALL_CONV_EPILOG 1
         ret

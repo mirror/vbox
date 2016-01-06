@@ -446,6 +446,27 @@ BS3_PTR_UNION_TEMPLATE(BS3VPTRUNION, volatile);
 BS3_PTR_UNION_TEMPLATE(BS3CVPTRUNION, const volatile);
 
 
+/** The system call vector. */
+#define BS3_TRAP_SYSCALL        UINT8_C(0x20)
+
+/** @name System call numbers (ax).
+ * Paramenters are generally passed in registers specific to each system call.
+ * @{ */
+/** Print char (cl). */
+#define BS3_SYSCALL_PRINT_CHR   UINT16_C(0x0001)
+/** Print string (pointer in ds:[e]si, length in cx). */
+#define BS3_SYSCALL_PRINT_STR   UINT16_C(0x0002)
+/** Switch to ring-0. */
+#define BS3_SYSCALL_TO_RING0    UINT16_C(0x0003)
+/** Switch to ring-1. */
+#define BS3_SYSCALL_TO_RING1    UINT16_C(0x0004)
+/** Switch to ring-2. */
+#define BS3_SYSCALL_TO_RING2    UINT16_C(0x0005)
+/** Switch to ring-3. */
+#define BS3_SYSCALL_TO_RING3    UINT16_C(0x0006)
+/** @} */
+
+
 
 /** @defgroup grp_bs3kit_system System structures
  * @{ */
@@ -1683,13 +1704,71 @@ BS3_DECL(void) Bs3Trap32ResumeFrame_c32(BS3TRAPFRAME BS3_FAR *pTrapFrame, uint16
  * @param   off         The handler offset (if applicable).
  * @param   cParams     The parameter count (for call gates).
  */
-BS3_DECL(void) Bs3Trap32SetGate(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams);
+BS3_DECL(void) Bs3Trap32SetGate_c16(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams);
+BS3_DECL(void) Bs3Trap32SetGate_c32(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams); /**< @copydoc Bs3Trap32SetGate_c16 */
+BS3_DECL(void) Bs3Trap32SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams); /**< @copydoc Bs3Trap32SetGate_c16 */
+#define Bs3Trap32SetGate BS3_CMN_NM(Bs3Trap32SetGate) /**< Selects #Bs3Trap32SetGate_c16, #Bs3Trap32SetGate_c32 or #Bs3Trap32SetGate_c64. */
 
-/** The address of Bs3Idt32GenericEntries.
- * Bs3Idt32GenericEntries is an array of interrupt/trap/whatever entry
+/** The address of Bs3Trap32GenericEntries.
+ * Bs3Trap32GenericEntries is an array of interrupt/trap/whatever entry
  * points, 8 bytes each, that will create a register frame and call the generic
  * C compatible trap handlers. */
-extern uint32_t BS3_DATA_NM(g_Bs3Idt32GenericEntriesFlatAddr);
+extern uint32_t BS3_DATA_NM(g_Bs3Trap32GenericEntriesFlatAddr);
+
+/**
+ * Modifies the 64-bit IDT entry specified by @a iIdt.
+ *
+ * @param   iIdt        The index of the IDT entry to set.
+ * @param   bType       The gate type (X86_SEL_TYPE_SYS_XXX).
+ * @param   bDpl        The DPL.
+ * @param   uSel        The handler selector.
+ * @param   off         The handler offset (if applicable).
+ * @param   bIst        The interrupt stack to use.
+ */
+BS3_DECL(void) Bs3Trap64SetGate_c16(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint64_t off, uint8_t bIst);
+BS3_DECL(void) Bs3Trap64SetGate_c32(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint64_t off, uint8_t bIst); /**< @copydoc Bs3Trap64SetGate_c16 */
+BS3_DECL(void) Bs3Trap64SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint64_t off, uint8_t bIst); /**< @copydoc Bs3Trap64SetGate_c16 */
+#define Bs3Trap64SetGate BS3_CMN_NM(Bs3Trap64SetGate) /**< Selects #Bs3Trap64SetGate_c16, #Bs3Trap64SetGate_c32 or #Bs3Trap64SetGate_c64. */
+
+/** The address of Bs3Trap64GenericEntries.
+ * Bs3Trap64GenericEntries is an array of interrupt/trap/whatever entry
+ * points, 8 bytes each, that will create a register frame and call the generic
+ * C compatible trap handlers. */
+extern uint32_t BS3_DATA_NM(g_Bs3Trap64GenericEntriesFlatAddr);
+
+/**
+ * C-style trap handler.
+ *
+ * Upon return Bs3Trap16ResumeFrame_c16, #Bs3Trap32ResumeFrame_c32, or
+ * Bs3Trap64ResumeFrame_c64 will be called depending on the current template
+ * context.
+ *
+ * @param   pTrapFrame  The trap frame.  Registers can be modified.
+ */
+typedef BS3_DECL_CALLBACK(void) FNBS3TRAPHANDLER(PBS3TRAPFRAME pTrapFrame);
+/** Pointer to a trap handler (current template context). */
+typedef FNBS3TRAPHANDLER *PFNBS3TRAPHANDLER;
+
+/**
+ * Sets a trap handler (C/C++/assembly) for the current bitness.
+ *
+ * When using a 32-bit IDT, only #Bs3TrapSetHandler_c32 will have any effect.
+ * Likewise, when using a 16-bit IDT, only Bs3TrapSetHandler_c16 will make any
+ * difference.  Ditto 64-bit.
+ *
+ * Rational: It's mainly a C API, can't easily mix function pointers from other
+ * bit counts in C.  Use assembly helpers or something if that is necessary.
+ * Besides, most of the real trap handling goes thru the default handler with
+ * help of trap records.
+ *
+ * @returns Previous handler.
+ * @param   iIdt        The index of the IDT entry to set.
+ * @param   pfnHandler  Pointer to the handler.
+ */
+BS3_DECL(PFNBS3TRAPHANDLER) Bs3TrapSetHandler_c16(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler);
+BS3_DECL(PFNBS3TRAPHANDLER) Bs3TrapSetHandler_c32(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler); /**< @copydoc Bs3Trap32SetHandler_c16 */
+BS3_DECL(PFNBS3TRAPHANDLER) Bs3TrapSetHandler_c64(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler); /**< @copydoc Bs3Trap32SetHandler_c16 */
+#define Bs3Trap32SetHandler BS3_CMN_NM(Bs3Trap32SetHandler) /**< Selects #Bs3Trap32SetHandler_c16, #Bs3Trap32SetHandler_c32 or #Bs3Trap32SetHandler_c64. */
 
 /** @} */
 

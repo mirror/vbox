@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3Trap32Init
+ * BS3Kit - Bs3Trap64SetGate
  */
 
 /*
- * Copyright (C) 2007-2016 Oracle Corporation
+ * Copyright (C) 2007-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,12 +31,24 @@
 #include <iprt/asm.h>
 
 
-BS3_DECL(void) Bs3Trap32Init(void)
+BS3_DECL(void) Bs3Trap64SetGate(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint64_t off, uint8_t bIst)
 {
-    unsigned iIdt = 256;
-    while (iIdt-- > 0)
-        Bs3Trap32SetGate(iIdt, X86_SEL_TYPE_SYS_386_INT_GATE, 0 /*bDpl*/,
-                         BS3_SEL_R0_CS32, BS3_DATA_NM(g_Bs3Trap32GenericEntriesFlatAddr) + iIdt * 8, 0 /*cParams*/);
-    /** @todo Init TSS for double faults and stuff. */
+    X86DESC64 BS3_FAR *pIdte = &BS3_DATA_NM(Bs3Idt64)[iIdt];
+
+    BS3_ASSERT(bDpl <= 3);
+    BS3_ASSERT(bType <= 7);
+    BS3_ASSERT(bIst <= 7);
+    pIdte->Gate.u16OffsetLow    = (uint16_t)off;
+    pIdte->Gate.u16OffsetHigh   = (uint16_t)((uint32_t)off >> 16);
+    pIdte->Gate.u32OffsetTop    = (uint32_t)(off >> 32);
+    pIdte->Gate.u16Sel          = uSel;
+    pIdte->Gate.u3IST           = bIst;
+    pIdte->Gate.u4Type          = bType;
+    pIdte->Gate.u2Dpl           = bDpl;
+    pIdte->Gate.u5Reserved      = 0;
+    pIdte->Gate.u1DescType      = 0; /* system */
+    pIdte->Gate.u1Present       = 1;
+    pIdte->Gate.u32Reserved     = 0;
+
 }
 

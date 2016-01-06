@@ -31,12 +31,12 @@
 %endif
 
 BS3_BEGIN_DATA32
-;; Easy to access flat address of Bs3Idt32GenericEntries.
-BS3_GLOBAL_DATA g_Bs3Idt32GenericEntriesFlatAddr, 4
-        dd Bs3Idt32GenericEntries
+;; Easy to access flat address of Bs3Trap32GenericEntries.
+BS3_GLOBAL_DATA g_Bs3Trap32GenericEntriesFlatAddr, 4
+        dd Bs3Trap32GenericEntries
 
 ;; Pointer C trap handlers.
-BS3_GLOBAL_DATA g_apfnBs3Trap32Handlers, 1024
+BS3_GLOBAL_DATA g_apfnBs3TrapHandlers_c32, 1024
         resd 256
 
 
@@ -48,8 +48,8 @@ BS3_EXTERN_CMN Bs3Trap32ResumeFrame
 ;;
 ; Generic entry points for IDT handlers, 8 byte spacing.
 ;
-BS3_PROC_BEGIN Bs3Idt32GenericEntries
-%macro Bs3Idt32GenericEntry 1
+BS3_PROC_BEGIN Bs3Trap32GenericEntries
+%macro Bs3Trap32GenericEntry 1
         db      06ah, i                 ; push imm8 - note that this is a signextended value.
         jmp     %1
         ALIGNCODE(8)
@@ -57,42 +57,42 @@ BS3_PROC_BEGIN Bs3Idt32GenericEntries
 %endmacro
 
 %assign i 0                             ; start counter.
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 0
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 1
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 2
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 3
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 4
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 5
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 6
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 7
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapErrCode ; 8
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 9
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapErrCode ; a
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapErrCode ; b
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapErrCode ; c
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapErrCode ; d
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapErrCode ; e
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; f  (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 10
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapErrCode ; 11
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 12
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 13
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 14
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 15 (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 16 (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 17 (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 18 (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 19 (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 1a (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 1b (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 1c (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 1d (reserved)
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapErrCode ; 1e
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt   ; 1f (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 0
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 2
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 3
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 4
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 5
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 6
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 7
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; 8
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 9
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; a
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; b
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; c
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; d
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; e
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; f  (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 10
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; 11
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 12
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 13
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 14
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 15 (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 16 (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 17 (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 18 (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 19 (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1a (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1b (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1c (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1d (reserved)
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; 1e
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1f (reserved)
 %rep 224
-        Bs3Idt32GenericEntry bs3Idt32GenericTrapOrInt
+        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt
 %endrep
-BS3_PROC_END  Bs3Idt32GenericEntries
+BS3_PROC_END  Bs3Trap32GenericEntries
 
 
 
@@ -100,7 +100,7 @@ BS3_PROC_END  Bs3Idt32GenericEntries
 ;;
 ; Trap or interrupt (no error code).
 ;
-BS3_PROC_BEGIN bs3Idt32GenericTrapOrInt
+BS3_PROC_BEGIN bs3Trap32GenericTrapOrInt
         pushfd
         cli
         cld
@@ -120,14 +120,14 @@ BS3_PROC_BEGIN bs3Idt32GenericTrapOrInt
         xor     edx, edx
         mov     [esp + BS3TRAPFRAME.uErrCd], edx
         mov     [esp + BS3TRAPFRAME.uErrCd + 4], edx
-        jmp     bs3Idt32GenericCommon
-BS3_PROC_END   bs3Idt32GenericTrapOrInt
+        jmp     bs3Trap32GenericCommon
+BS3_PROC_END   bs3Trap32GenericTrapOrInt
 
 
 ;;
 ; Trap with error code.
 ;
-BS3_PROC_BEGIN bs3Idt32GenericTrapErrCode
+BS3_PROC_BEGIN bs3Trap32GenericTrapErrCode
         pushfd
         cli
         cld
@@ -149,8 +149,8 @@ BS3_PROC_BEGIN bs3Idt32GenericTrapErrCode
         mov     [esp + BS3TRAPFRAME.uErrCd], edx
         xor     edx, edx
         mov     [esp + BS3TRAPFRAME.uErrCd + 4], edx
-        jmp     bs3Idt32GenericCommon
-BS3_PROC_END   bs3Idt32GenericTrapErrCode
+        jmp     bs3Trap32GenericCommon
+BS3_PROC_END   bs3Trap32GenericTrapErrCode
 
 
 ;;
@@ -169,7 +169,7 @@ BS3_PROC_END   bs3Idt32GenericTrapErrCode
 ;                   would be saved if this was a normal call.
 ; @param    edx     Zero (0).
 ;
-BS3_PROC_BEGIN bs3Idt32GenericCommon
+BS3_PROC_BEGIN bs3Trap32GenericCommon
         ;
         ; Fake EBP frame.
         ;
@@ -300,7 +300,7 @@ BS3_PROC_BEGIN bs3Idt32GenericCommon
         ; Dispatch it to C code.
         ;
         movzx   ebx, byte [esp + BS3TRAPFRAME.bXcpt]
-        mov     eax, [BS3_DATA_NM(g_apfnBs3Trap32Handlers) + ebx * 4]
+        mov     eax, [BS3_DATA_NM(g_apfnBs3TrapHandlers_c32) + ebx * 4]
         or      eax, eax
         jnz     .call_handler
         mov     eax, Bs3Trap32DefaultHandler
@@ -319,5 +319,5 @@ BS3_PROC_BEGIN bs3Idt32GenericCommon
         int3
         hlt
         jmp     .panic
-BS3_PROC_END   bs3Idt32GenericCommon
+BS3_PROC_END   bs3Trap32GenericCommon
 

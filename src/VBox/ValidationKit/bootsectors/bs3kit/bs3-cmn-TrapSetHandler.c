@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3Trap32Init
+ * BS3Kit - Bs3Trap32SetHandler
  */
 
 /*
@@ -30,13 +30,13 @@
 #include "bs3kit-template-header.h"
 #include <iprt/asm.h>
 
+extern PFNBS3TRAPHANDLER BS3_DATA_NM(BS3_CMN_NM(g_apfnBs3TrapHandlers))[256];
 
-BS3_DECL(void) Bs3Trap32Init(void)
+
+BS3_DECL(PFNBS3TRAPHANDLER) Bs3TrapSetHandler(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler)
 {
-    unsigned iIdt = 256;
-    while (iIdt-- > 0)
-        Bs3Trap32SetGate(iIdt, X86_SEL_TYPE_SYS_386_INT_GATE, 0 /*bDpl*/,
-                         BS3_SEL_R0_CS32, BS3_DATA_NM(g_Bs3Trap32GenericEntriesFlatAddr) + iIdt * 8, 0 /*cParams*/);
-    /** @todo Init TSS for double faults and stuff. */
+    PFNBS3TRAPHANDLER pfnOld = BS3_DATA_NM(BS3_CMN_NM(g_apfnBs3TrapHandlers))[iIdt];
+    BS3_DATA_NM(BS3_CMN_NM(g_apfnBs3TrapHandlers))[iIdt] = pfnHandler;
+    return pfnOld;
 }
 
