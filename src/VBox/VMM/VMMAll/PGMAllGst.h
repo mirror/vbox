@@ -169,7 +169,7 @@ static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
             PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->Core.GCPhys);
             uint8_t fEffectiveXX     = (uint8_t)pWalk->Pde.u
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                                     & (uint8_t)pWalk->Pde.u
+                                     & (uint8_t)pWalk->Pdpe.u
                                      & (uint8_t)pWalk->Pml4e.u
 #  endif
                                      ;
@@ -178,7 +178,7 @@ static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
             pWalk->Core.fEffectiveNX = (   pWalk->Pde.n.u1NoExecute
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                                        || pWalk->Pde.n.u1NoExecute
+                                        || pWalk->Pdpe.lm.u1NoExecute
                                         || pWalk->Pml4e.n.u1NoExecute
 #  endif
                                        ) && GST_IS_NX_ACTIVE(pVCpu);
@@ -220,7 +220,7 @@ static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
         uint8_t fEffectiveXX     = (uint8_t)pWalk->Pte.u
                                  & (uint8_t)pWalk->Pde.u
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                                 & (uint8_t)pWalk->Pde.u
+                                 & (uint8_t)pWalk->Pdpe.u
                                  & (uint8_t)pWalk->Pml4e.u
 #  endif
                                  ;
@@ -230,7 +230,7 @@ static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
         pWalk->Core.fEffectiveNX = (   pWalk->Pte.n.u1NoExecute
                                     || pWalk->Pde.n.u1NoExecute
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                                    || pWalk->Pde.n.u1NoExecute
+                                    || pWalk->Pdpe.lm.u1NoExecute
                                     || pWalk->Pml4e.n.u1NoExecute
 #  endif
                                    ) && GST_IS_NX_ACTIVE(pVCpu);
