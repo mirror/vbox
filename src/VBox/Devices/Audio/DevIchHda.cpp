@@ -3802,21 +3802,18 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                 rc = hdaStreamInit(pThis, pStrm, uStreamID);
                 AssertRCBreak(rc);
 
-                if (uVersion == HDA_SSM_VERSION_5)
+                /* Load BDLE states. */
+                HDABDLESTATE  StateDummy;
+                PHDABDLESTATE pState;
+                for (uint32_t a = 0; a < pStrm->State.cBDLE; a++)
                 {
                     /* v5 did not save the BDLE state correctly, so skip. */
-                    rc = SSMR3Skip(pSSM, 0x120 /* sizeof(HDABLDE) in v5 */);
+                    pState = uVersion == HDA_SSM_VERSION_5
+                           ? &StateDummy : &pStrm->State.paBDLE[a].State;
+
+                    rc = SSMR3GetStructEx(pSSM, pState, sizeof(HDABDLESTATE),
+                                          0 /* fFlags */, g_aSSMBDLEStateFields5, NULL);
                     AssertRCBreak(rc);
-                }
-                else
-                {
-                    /* Load BDLE states. */
-                    for (uint32_t a = 0; a < pStrm->State.cBDLE; a++)
-                    {
-                        rc = SSMR3GetStructEx(pSSM, &pStrm->State.paBDLE[a].State, sizeof(HDABDLESTATE),
-                                              0 /* fFlags */, g_aSSMBDLEStateFields5, NULL);
-                        AssertRCBreak(rc);
-                    }
                 }
 
                 /* Destroy dummy again. */
