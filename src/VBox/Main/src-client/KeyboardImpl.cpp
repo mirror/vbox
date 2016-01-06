@@ -354,7 +354,7 @@ DECLCALLBACK(void) Keyboard::i_drvDestruct(PPDMDRVINS pDrvIns)
                 pThis->pKeyboard->mpDrv[cDev] = NULL;
                 break;
             }
-            pThis->pKeyboard->mpVMMDev = NULL;
+        pThis->pKeyboard->mpVMMDev = NULL;
     }
 }
 
