@@ -2531,8 +2531,8 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     pDis->bVexDestReg = VEX_2B2INT(byte2);
     uint8_t implOpcode = (byte1 & 0x1f);
 
-    // REX.RXB
-    if (pDis->uCpuMode == DISCPUMODE_64BIT && ~(byte1 & 0xe0))
+    // REX.RXB -- XXX check this!
+    if (pDis->uCpuMode == DISCPUMODE_64BIT && !(byte1 & 0xe0))
         pDis->fRexPrefix |= (byte1 >> 5) ^ 7;
 
     // VEX.W
