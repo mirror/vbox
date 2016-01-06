@@ -117,10 +117,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, u
     {
         rc = VbglHGCMParmUInt32Get(&Msg.msg, puMsg);
         if (RT_SUCCESS(rc))
+        {
             rc = VbglHGCMParmUInt32Get(&Msg.num_parms, puNumParms);
             if (RT_SUCCESS(rc))
                 rc = Msg.hdr.result;
                 /* Ok, so now we know what message type and how much parameters there are. */
+        }
     }
     return rc;
 }
