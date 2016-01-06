@@ -761,9 +761,9 @@ HRESULT Appliance::i_initApplianceIONameMap()
     if (!applianceIONameMap.empty())
         return rc;
 
-        applianceIONameMap.insert(std::make_pair(applianceIOTar, applianceIOTarName));
-        applianceIONameMap.insert(std::make_pair(applianceIOFile, applianceIOFileName));
-        applianceIONameMap.insert(std::make_pair(applianceIOSha, applianceIOShaName));
+    applianceIONameMap.insert(std::make_pair(applianceIOTar, applianceIOTarName));
+    applianceIONameMap.insert(std::make_pair(applianceIOFile, applianceIOFileName));
+    applianceIONameMap.insert(std::make_pair(applianceIOSha, applianceIOShaName));
 
     return rc;
 }
