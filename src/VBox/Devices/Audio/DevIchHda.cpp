@@ -1484,10 +1484,11 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStrmSt, uint8_t u8Strm)
 
     pStrmSt->State.cBDLE = 0;
 
-    if (pStrmSt->u16LVI) /* Any BDLEs to fetch? */
+    if (/* Is there a base DMA address set? */
+           pStrmSt->u64BaseDMA
+        /* Any BDLEs to fetch? */
+        && pStrmSt->u16LVI)
     {
-        AssertMsg(pStrmSt->u64BaseDMA, ("No base DMA address set for stream %RU8\n", u8Strm));
-
         uint32_t cbBDLE = 0;
 
         pStrmSt->State.cBDLE  = pStrmSt->u16LVI + 1; /* See 18.2.37: If LVI is n, then there are n + 1 entries. */
@@ -1974,19 +1975,16 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     {
 #ifdef IN_RING3
         /*
-         * Only (re-)initialize the stream when not running.
-         */
-        if (!fRun && !fInRun)
-        {
-            int rc2 = hdaStreamInit(pThis, pStrmSt, u8Strm);
-            AssertRC(rc2);
-        }
-
-        /*
          * We enter here to change DMA states only.
          */
         if (fInRun != fRun)
         {
+            if (fRun)
+            {
+                int rc2 = hdaStreamInit(pThis, pStrmSt, u8Strm);
+                AssertRC(rc2);
+            }
+
             Assert(!fReset && !fInReset);
             LogFunc(("[SD%RU8]: fRun=%RTbool\n", u8Strm, fRun));
 
