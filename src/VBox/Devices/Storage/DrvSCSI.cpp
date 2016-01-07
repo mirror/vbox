@@ -685,6 +685,7 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, const c
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pThis->IPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pThis->IMountNotify);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNCPORT, &pThis->IPortAsync);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, pThis->pDrvMedia);
     return NULL;
 }
 
