@@ -155,7 +155,11 @@ mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png
 mv UserManual*.pdf $RPM_BUILD_ROOT%{VBOXDOCDIR}
 %{!?is_ose: mv VirtualBox*.chm $RPM_BUILD_ROOT%{VBOXDOCDIR}}
 install -m 755 -d $RPM_BUILD_ROOT/usr/lib/debug/usr/lib/virtualbox
+%if %{?rpm_suse:1}%{!?rpm_suse:0}
+rm *.debug
+%else
 mv *.debug $RPM_BUILD_ROOT/usr/lib/debug/usr/lib/virtualbox
+%endif
 mv * $RPM_BUILD_ROOT/usr/lib/virtualbox
 ln -s ../VBoxVMM.so $RPM_BUILD_ROOT/usr/lib/virtualbox/components/VBoxVMM.so
 for i in VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetNAT VBoxNetAdpCtl; do
