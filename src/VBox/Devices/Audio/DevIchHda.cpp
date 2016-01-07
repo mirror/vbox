@@ -54,10 +54,10 @@
 //#define HDA_AS_PCI_EXPRESS
 #define VBOX_WITH_INTEL_HDA
 
-#if (defined(DEBUG) && defined(DEBUG_andy))
+#ifdef DEBUG_andy
 /* Enables experimental support for separate mic-in handling.
    Do not enable this yet for regular builds, as this needs more testing first! */
-# define VBOX_WITH_HDA_MIC_IN
+//# define VBOX_WITH_HDA_MIC_IN
 #endif
 
 #if defined(VBOX_WITH_HP_HDA)
@@ -3629,13 +3629,19 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
 
     /* Save number of streams. */
+#ifdef VBOX_WITH_HDA_MIC_IN
     SSMR3PutU32(pSSM, 3);
+#else
+    SSMR3PutU32(pSSM, 2);
+#endif
 
     /* Save stream states. */
     int rc = hdaSaveStream(pDevIns, pSSM, &pThis->StrmStOut);
     AssertRCReturn(rc, rc);
+#ifdef VBOX_WITH_HDA_MIC_IN
     rc = hdaSaveStream(pDevIns, pSSM, &pThis->StrmStMicIn);
     AssertRCReturn(rc, rc);
+#endif
     rc = hdaSaveStream(pDevIns, pSSM, &pThis->StrmStLineIn);
     AssertRCReturn(rc, rc);
 
@@ -3807,15 +3813,15 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
                 switch (uStreamID)
                 {
-                    case 0: /** @todo Use a define. */
+                    case 0: /** @todo Implement dynamic stream IDs. */
                         pStrm = &pThis->StrmStLineIn;
                         break;
-
-                    case 2: /** @todo Use a define. */
+#ifdef VBOX_WITH_HDA_MIC_IN
+                    case 2: /** @todo Implement dynamic stream IDs. */
                         pStrm = &pThis->StrmStMicIn;
                         break;
-
-                    case 4: /** @todo Use a define. */
+#endif
+                    case 4: /** @todo Implement dynamic stream IDs. */
                         pStrm = &pThis->StrmStOut;
                         break;
 
@@ -3828,14 +3834,20 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                 rc = SSMR3GetStructEx(pSSM, &pStrm->State, sizeof(HDASTREAMSTATE), 0 /* fFlags */, g_aSSMStreamStateFields5, NULL);
                 if (RT_FAILURE(rc))
                     break;
-
+#ifdef DEBUG
+                uint32_t cBDLE = pStrm->State.cBDLE;
+                LogFlowFunc(("Stream #%RU32: ID=%RU8, cBDLE=%RU32\n", i, uStreamID, cBDLE));
+#endif
                 rc = hdaStreamInit(pThis, pStrm, uStreamID);
                 if (RT_FAILURE(rc))
                 {
                     LogRel(("HDA: Stream #%RU32: Inititialization of stream (ID=%RU8, cBDLE=%RU32) failed, rc=%Rrc\n", i, uStreamID, pStrm->State.cBDLE, rc));
                     break;
                 }
-
+#ifdef DEBUG
+                AssertMsg(cBDLE == pStrm->State.cBDLE, ("Loaded BDLE states (%RU32) vs. emulated ones (%RU32) don't match\n",
+                                                        cBDLE, pStrm->State.cBDLE));
+#endif
                 /* Load BDLE states. */
                 for (uint32_t a = 0; a < pStrm->State.cBDLE; a++)
                 {
@@ -4167,6 +4179,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
 
     pThis->u64BaseTS = PDMDevHlpTMTimeVirtGetNano(pDevIns);
 
+# ifndef VBOX_WITH_AUDIO_CALLBACKS
     /*
      * Stop the timer, if any.
      */
@@ -4176,18 +4189,19 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
         rc2 = TMTimerStop(pThis->pTimer);
         AssertRC(rc2);
     }
+# endif
 
     for (uint8_t u8Strm = 0; u8Strm < 8; u8Strm++) /** @todo Use a define here. */
     {
         PHDASTREAM pStrmSt = NULL;
-        if (u8Strm == 0)
-            pStrmSt = &pThis->StrmStOut;
+        if (u8Strm == 0)      /** @todo Implement dynamic stream IDs. */
+            pStrmSt = &pThis->StrmStLineIn;
 # ifdef VBOX_WITH_HDA_MIC_IN
-        else if (u8Strm == 2)
+        else if (u8Strm == 2) /** @todo Implement dynamic stream IDs. */
             pStrmSt = &pThis->StrmStMicIn;
 # endif
-        else if (u8Strm == 4)
-            pStrmSt = &pThis->StrmStLineIn;
+        else if (u8Strm == 4) /** @todo Implement dynamic stream IDs. */
+            pStrmSt = &pThis->StrmStOut;
 
         if (pStrmSt)
         {
@@ -4201,6 +4215,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
     /* Emulation of codec "wake up" (HDA spec 5.5.1 and 6.5). */
     HDA_REG(pThis, STATESTS) = 0x1;
 
+# ifndef VBOX_WITH_AUDIO_CALLBACKS
     /*
      * Start timer again, if any.
      */
@@ -4209,6 +4224,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
         rc2 = TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);
         AssertRC(rc2);
     }
+# endif
 
     LogRel(("HDA: Reset\n"));
 }
