@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2015 Oracle Corporation
+ * Copyright (C) 2015-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,6 +56,7 @@
 
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
+#include "DrvAudio.h"
 
 /** Current saved state version. */
 #define SB16_SAVE_STATE_VERSION         2
@@ -1646,8 +1647,6 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     Assert(pThis == PDMINS_2_DATA(pDevIns, PSB16STATE));
     AssertPtr(pThis);
 
-    int rc = VINF_SUCCESS;
-
     uint32_t cbInMax  = 0;
     uint32_t cbOutMin = UINT32_MAX;
 
@@ -1659,6 +1658,22 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 
     pThis->uTimerTSIO = cTicksNow;
 
+    /*
+     * Calculate the mixer's (fixed) sampling rate.
+     */
+    AssertPtr(pThis->pMixer);
+
+    PDMAUDIOSTREAMCFG mixerStrmCfg;
+    int rc = AudioMixerGetDeviceFormat(pThis->pMixer, &mixerStrmCfg);
+    AssertRC(rc);
+
+    PDMPCMPROPS mixerStrmProps;
+    rc = DrvAudioStreamCfgToProps(&mixerStrmCfg, &mixerStrmProps);
+    AssertRC(rc);
+
+    uint32_t cMixerSamplesMin  = (int)((2 * cTicksElapsed * mixerStrmCfg.uHz + cTicksPerSec) / cTicksPerSec / 2);
+    uint32_t cbMixerSamplesMin = cMixerSamplesMin << mixerStrmProps.cShift;
+
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
         uint32_t cbIn = 0;
@@ -1669,16 +1684,23 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         if (RT_SUCCESS(rc))
             rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* cSamplesPlayed */);
 
-        Log2Func(("LUN#%RU8: rc=%Rrc, cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, rc, cbIn, cbOut));
-
-        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut);
-
+#ifdef DEBUG_TIMER
+        LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, rc, cbIn, cbOut));
+#endif
         /* If we there was an error handling (available) output or there simply is no output available,
          * then calculate the minimum data rate which must be processed by the device emulation in order
          * to function correctly.
          *
          * This is not the optimal solution, but as we have to deal with this on a timer-based approach
          * (until we have the audio callbacks) we need to have device' DMA engines running. */
+        if (!pDrv->pConnector->pfnIsValidOut(pDrv->pConnector, pDrv->Out.pStrmOut))
+        {
+            /* Use the mixer's (fixed) sampling rate. */
+            cbOut = RT_MAX(cbOut, cbMixerSamplesMin);
+            continue;
+        }
+
+        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut);
         if (   RT_FAILURE(rc)
             || !fIsActiveOut)
         {

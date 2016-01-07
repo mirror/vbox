@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2014-2015 Oracle Corporation
+ * Copyright (C) 2014-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -97,6 +97,7 @@ int AudioMixerAddStreamOut(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PP
 int AudioMixerControlStream(AUDMIXSTREAM pHandle); /** @todo Implement me. */
 int AudioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer);
 void AudioMixerDestroy(PAUDIOMIXER pMixer);
+int AudioMixerGetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg);
 uint32_t AudioMixerGetStreamCount(PAUDIOMIXER pMixer);
 void AudioMixerInvalidate(PAUDIOMIXER pMixer);
 int AudioMixerProcessSinkIn(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbProcessed);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,6 +35,7 @@
 
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
+#include "DrvAudio.h"
 
 
 /*********************************************************************************************************************************
@@ -1172,8 +1173,6 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
     STAM_PROFILE_START(&pThis->StatTimer, a);
 
-    int rc = VINF_SUCCESS;
-
     uint32_t cbInMax  = 0;
     uint32_t cbOutMin = UINT32_MAX;
 
@@ -1184,6 +1183,22 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
     pThis->uTimerTS = cTicksNow;
+
+    /*
+     * Calculate the mixer's (fixed) sampling rate.
+     */
+    AssertPtr(pThis->pMixer);
+
+    PDMAUDIOSTREAMCFG mixerStrmCfg;
+    int rc = AudioMixerGetDeviceFormat(pThis->pMixer, &mixerStrmCfg);
+    AssertRC(rc);
+
+    PDMPCMPROPS mixerStrmProps;
+    rc = DrvAudioStreamCfgToProps(&mixerStrmCfg, &mixerStrmProps);
+    AssertRC(rc);
+
+    uint32_t cMixerSamplesMin  = (int)((2 * cTicksElapsed * mixerStrmCfg.uHz + cTicksPerSec) / cTicksPerSec / 2);
+    uint32_t cbMixerSamplesMin = cMixerSamplesMin << mixerStrmProps.cShift;
 
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
@@ -1198,14 +1213,20 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 #ifdef DEBUG_TIMER
         LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, rc, cbIn, cbOut));
 #endif
-        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut);
-
         /* If we there was an error handling (available) output or there simply is no output available,
          * then calculate the minimum data rate which must be processed by the device emulation in order
          * to function correctly.
          *
          * This is not the optimal solution, but as we have to deal with this on a timer-based approach
          * (until we have the audio callbacks) we need to have device' DMA engines running. */
+        if (!pDrv->pConnector->pfnIsValidOut(pDrv->pConnector, pDrv->Out.pStrmOut))
+        {
+            /* Use the mixer's (fixed) sampling rate. */
+            cbOut = RT_MAX(cbOut, cbMixerSamplesMin);
+            continue;
+        }
+
+        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut);
         if (   RT_FAILURE(rc)
             || !fIsActiveOut)
         {
@@ -2419,11 +2440,11 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             AssertPtr(pCon);
 
             uint8_t cFailed = 0;
-            if (!pCon->pfnIsInputOK (pCon, pDrv->LineIn.pStrmIn))
+            if (!pCon->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
                 cFailed++;
-            if (!pCon->pfnIsInputOK (pCon, pDrv->MicIn.pStrmIn))
+            if (!pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
                 cFailed++;
-            if (!pCon->pfnIsOutputOK(pCon, pDrv->Out.pStrmOut))
+            if (!pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
                 cFailed++;
 
             if (cFailed == 3)
@@ -2442,24 +2463,24 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             }
             else if (cFailed)
             {
-                if (!pDrv->pConnector->pfnIsInputOK(pDrv->pConnector, pDrv->LineIn.pStrmIn))
+                if (!pDrv->pConnector->pfnIsValidIn (pDrv->pConnector, pDrv->LineIn.pStrmIn))
                     LogRel(("AC97: WARNING: Unable to open PCM line input for LUN #%RU32!\n",       pDrv->uLUN));
-                if (!pDrv->pConnector->pfnIsInputOK(pDrv->pConnector, pDrv->MicIn.pStrmIn))
+                if (!pDrv->pConnector->pfnIsValidIn (pDrv->pConnector, pDrv->MicIn.pStrmIn))
                     LogRel(("AC97: WARNING: Unable to open PCM microphone input for LUN #%RU32!\n", pDrv->uLUN));
-                if (!pDrv->pConnector->pfnIsOutputOK(pDrv->pConnector, pDrv->Out.pStrmOut))
+                if (!pDrv->pConnector->pfnIsValidOut(pDrv->pConnector, pDrv->Out.pStrmOut))
                     LogRel(("AC97: WARNING: Unable to open PCM output for LUN #%RU32!\n",           pDrv->uLUN));
 
                 char   szMissingStreams[255];
                 size_t len = 0;
-                if (!pCon->pfnIsInputOK (pCon, pDrv->LineIn.pStrmIn))
+                if (!pCon->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
                     len = RTStrPrintf(szMissingStreams,
                                       sizeof(szMissingStreams), "PCM Input");
-                if (!pCon->pfnIsOutputOK(pCon, pDrv->Out.pStrmOut))
-                    len += RTStrPrintf(szMissingStreams + len,
-                                       sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
-                if (!pCon->pfnIsInputOK (pCon, pDrv->MicIn.pStrmIn))
+                if (!pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
                     len += RTStrPrintf(szMissingStreams + len,
                                        sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
+                if (!pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
+                    len += RTStrPrintf(szMissingStreams + len,
+                                       sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
 
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                     N_("Some AC'97 audio streams (%s) could not be opened. Guest applications generating audio "

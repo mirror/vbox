@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2606,22 +2606,20 @@ int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, PPDMAUDIO
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     int rc;
-
     switch (enmSoundSource)
     {
         case PI_INDEX:
-            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.in", PDMAUDIORECSOURCE_LINE_IN, pCfg);
+            rc = pThis->pfnOpenIn(pThis->pHDAState,  "hda.in", PDMAUDIORECSOURCE_LINE_IN, pCfg);
             break;
-
+#ifdef VBOX_WITH_HDA_MIC_IN
+        case MC_INDEX:
+            rc = pThis->pfnOpenIn(pThis->pHDAState,  "hda.mc", PDMAUDIORECSOURCE_MIC, pCfg);
+            break;
+#endif
         case PO_INDEX:
             rc = pThis->pfnOpenOut(pThis->pHDAState, "hda.out", pCfg);
             break;
 
-#ifdef VBOX_WITH_HDA_MIC_IN
-        case MC_INDEX:
-            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.mc", PDMAUDIORECSOURCE_MIC, pCfg);
-            break;
-#endif
         default:
             AssertMsgFailed(("Index %ld not implemented\n", enmSoundSource));
             rc = VERR_NOT_IMPLEMENTED;
@@ -2730,6 +2728,7 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
     pThis->id        = uLUN;
     pThis->paVerbs   = &g_aCodecVerbs[0];
     pThis->cVerbs    = RT_ELEMENTS(g_aCodecVerbs);
+
     pThis->pfnLookup       = codecLookup;
 #ifdef DEBUG
     pThis->pfnDbgSelector  = codecDbgSelector;
@@ -2746,31 +2745,28 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
     pThis->paNodes[1].node.au32F00_param[5] = CODEC_MAKE_F00_05(1, CODEC_F00_05_AFG);
     pThis->paNodes[1].afg.u32F20_param = CODEC_MAKE_F20(pThis->u16VendorId, pThis->u8BSKU, pThis->u8AssemblyId);
 
-    /* 44.1 kHz. */
-    PDMAUDIOSTREAMCFG as;
-    as.uHz           = 44100;
-    as.cChannels     = 2;
-    as.enmFormat     = AUD_FMT_S16;
-    as.enmEndianness = PDMAUDIOHOSTENDIANNESS;
+    /* This codec uses a fixed setting (44.1 kHz, 16-bit signed, 2 channels). */
+    pThis->strmCfg.uHz           = 44100;
+    pThis->strmCfg.cChannels     = 2;
+    pThis->strmCfg.enmFormat     = AUD_FMT_S16;
+    pThis->strmCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
-    pThis->paNodes[1].node.au32F00_param[0xA] = CODEC_F00_0A_16_BIT;
-
-    hdaCodecOpenStream(pThis, PI_INDEX, &as);
-    hdaCodecOpenStream(pThis, PO_INDEX, &as);
+    hdaCodecOpenStream(pThis, PI_INDEX, &pThis->strmCfg);
 #ifdef VBOX_WITH_HDA_MIC_IN
-    hdaCodecOpenStream(pThis, MC_INDEX, &as);
+    hdaCodecOpenStream(pThis, MC_INDEX, &pThis->strmCfg);
 #endif
+    hdaCodecOpenStream(pThis, PO_INDEX, &pThis->strmCfg);
 
-    pThis->paNodes[1].node.au32F00_param[0xA] |= CODEC_F00_0A_44_1KHZ;
+    /* Initialize the AFG node with the fixed setting. */
+    pThis->paNodes[1].node.au32F00_param[0xA] = CODEC_F00_0A_44_1KHZ | CODEC_F00_0A_16_BIT;
 
-    uint8_t i;
-    Assert(pThis->paNodes);
-    Assert(pThis->pfnCodecNodeReset);
+    AssertPtr(pThis->paNodes);
+    AssertPtr(pThis->pfnCodecNodeReset);
 
-    for (i = 0; i < pThis->cTotalNodes; ++i)
+    for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
         pThis->pfnCodecNodeReset(pThis, i, &pThis->paNodes[i]);
 
-    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_PCM);
+    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params,       PDMAUDIOMIXERCTL_PCM);
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 
     return VINF_SUCCESS;

@@ -1881,13 +1881,13 @@ static DECLCALLBACK(int) drvAudioEnableIn(PPDMIAUDIOCONNECTOR pInterface,
     return rc;
 }
 
-static DECLCALLBACK(bool) drvAudioIsInputOK(PPDMIAUDIOCONNECTOR pInterface,
+static DECLCALLBACK(bool) drvAudioIsValidIn(PPDMIAUDIOCONNECTOR pInterface,
                                             PPDMAUDIOGSTSTRMIN  pGstStrmIn)
 {
     return (pGstStrmIn != NULL);
 }
 
-static DECLCALLBACK(bool) drvAudioIsOutputOK(PPDMIAUDIOCONNECTOR pInterface,
+static DECLCALLBACK(bool) drvAudioIsValidOut(PPDMIAUDIOCONNECTOR pInterface,
                                              PPDMAUDIOGSTSTRMOUT pGstStrmOut)
 {
     return (pGstStrmOut != NULL);
@@ -2166,8 +2166,8 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     pThis->IAudioConnector.pfnWrite                  = drvAudioWrite;
     pThis->IAudioConnector.pfnIsActiveIn             = drvAudioIsActiveIn;
     pThis->IAudioConnector.pfnIsActiveOut            = drvAudioIsActiveOut;
-    pThis->IAudioConnector.pfnIsInputOK              = drvAudioIsInputOK;
-    pThis->IAudioConnector.pfnIsOutputOK             = drvAudioIsOutputOK;
+    pThis->IAudioConnector.pfnIsValidIn              = drvAudioIsValidIn;
+    pThis->IAudioConnector.pfnIsValidOut             = drvAudioIsValidOut;
     pThis->IAudioConnector.pfnInitNull               = drvAudioInitNull;
     pThis->IAudioConnector.pfnEnableOut              = drvAudioEnableOut;
     pThis->IAudioConnector.pfnEnableIn               = drvAudioEnableIn;

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2014-2015 Oracle Corporation
+ * Copyright (C) 2014-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -247,6 +247,17 @@ static void audioMixerDestroyStream(PAUDMIXSTREAM pStream)
         return;
 
     RTMemFree(pStream);
+}
+
+int AudioMixerGetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
+
+    /** @todo Perform a deep copy, if needed. */
+    *pCfg = pMixer->devFmt;
+
+    return VINF_SUCCESS;
 }
 
 uint32_t AudioMixerGetStreamCount(PAUDIOMIXER pMixer)

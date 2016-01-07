@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,6 +45,7 @@
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
 #include "DevIchHdaCodec.h"
+#include "DrvAudio.h"
 
 
 /*********************************************************************************************************************************
@@ -2132,7 +2133,7 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 }
 
 #ifdef IN_RING3
-static int hdaSdFmtToAudSettings(uint32_t u32SdFmt, PPDMAUDIOSTREAMCFG pCfg)
+static int hdaSDFMTToStrmCfg(uint32_t u32SdFmt, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
@@ -2224,8 +2225,8 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     if (u32Value == HDA_REG_IND(pThis, iReg))
         return VINF_SUCCESS;
 
-    PDMAUDIOSTREAMCFG as;
-    int rc = hdaSdFmtToAudSettings(u32Value, &as);
+    PDMAUDIOSTREAMCFG strmCfg;
+    int rc = hdaSDFMTToStrmCfg(u32Value, &strmCfg);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2234,12 +2235,12 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     {
         case HDA_REG_SD0FMT:
             RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
-                rc = hdaCodecOpenStream(pThis->pCodec, PI_INDEX, &as);
+                rc = hdaCodecOpenStream(pThis->pCodec, PI_INDEX, &strmCfg);
             break;
 #  ifdef VBOX_WITH_HDA_MIC_IN
         case HDA_REG_SD2FMT:
             RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
-                rc = hdaCodecOpenStream(pThis->pCodec, MC_INDEX, &as);
+                rc = hdaCodecOpenStream(pThis->pCodec, MC_INDEX, &strmCfg);
             break;
 #  endif
         default:
@@ -3020,26 +3021,47 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 
     pThis->uTimerTS = cTicksNow;
 
+    /*
+     * Calculate the codec's (fixed) sampling rate.
+     */
+    AssertPtr(pThis->pCodec);
+    PDMPCMPROPS codecStrmProps;
+
+    int rc = DrvAudioStreamCfgToProps(&pThis->pCodec->strmCfg, &codecStrmProps);
+    AssertRC(rc);
+
+    uint32_t cCodecSamplesMin  = (int)((2 * cTicksElapsed * pThis->pCodec->strmCfg.uHz + cTicksPerSec) / cTicksPerSec / 2);
+    uint32_t cbCodecSamplesMin = cCodecSamplesMin << codecStrmProps.cShift;
+
+    /*
+     * Process all driver nodes.
+     */
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
         uint32_t cbIn = 0;
         uint32_t cbOut = 0;
 
-        int rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector, &cbIn, &cbOut, NULL /* pcSamplesLive */);
+        rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector, &cbIn, &cbOut, NULL /* pcSamplesLive */);
         if (RT_SUCCESS(rc))
             rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* pcSamplesPlayed */);
 
 #ifdef DEBUG_TIMER
         LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, rc, cbIn, cbOut));
 #endif
-        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut);
-
         /* If we there was an error handling (available) output or there simply is no output available,
          * then calculate the minimum data rate which must be processed by the device emulation in order
          * to function correctly.
          *
          * This is not the optimal solution, but as we have to deal with this on a timer-based approach
          * (until we have the audio callbacks) we need to have device' DMA engines running. */
+        if (!pDrv->pConnector->pfnIsValidOut(pDrv->pConnector, pDrv->Out.pStrmOut))
+        {
+            /* Use the codec's (fixed) sampling rate. */
+            cbOut = RT_MAX(cbOut, cbCodecSamplesMin);
+            continue;
+        }
+
+        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut);
         if (   RT_FAILURE(rc)
             || !fIsActiveOut)
         {
@@ -3815,8 +3837,6 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                 }
 
                 /* Load BDLE states. */
-                HDABDLESTATE  StateDummy;
-                PHDABDLESTATE pState;
                 for (uint32_t a = 0; a < pStrm->State.cBDLE; a++)
                 {
                     if (uVersion == HDA_SSM_VERSION_5)
