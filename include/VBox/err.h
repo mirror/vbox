@@ -1461,6 +1461,18 @@
 #define VERR_PDM_NOT_PCI_BUS_MASTER                 (-2891)
 /** Got into a part of PDM that is not used when HM (VT-x/AMD-V) is enabled. */
 #define VERR_PDM_HM_IPE                             (-2892)
+/** The I/O request was canceled. */
+#define VERR_PDM_MEDIAEX_IOREQ_CANCELED             (-2893)
+/** There is not enough room to store the data. */
+#define VERR_PDM_MEDIAEX_IOBUF_OVERFLOW             (-2894)
+/** There is not enough data to satisfy the request. */
+#define VERR_PDM_MEDIAEX_IOBUF_UNDERFLOW            (-2895)
+/** The I/O request ID is already existing. */
+#define VERR_PDM_MEDIAEX_IOREQID_CONFLICT           (-2896)
+/** The I/O request ID was not found. */
+#define VERR_PDM_MEDIAEX_IOREQID_NOT_FOUND          (-2897)
+/** The I/O request is in progress. */
+#define VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS          2898
 /** @} */
 
 

@@ -38,6 +38,7 @@
 #include <iprt/pipe.h>
 #include <iprt/system.h>
 #include <iprt/memsafer.h>
+#include <iprt/memcache.h>
 
 #ifdef VBOX_WITH_INIP
 /* All lwip header files are not C++ safe. So hack around this. */
@@ -134,10 +135,61 @@ typedef struct DRVVDSTORAGEBACKEND
 } DRVVDSTORAGEBACKEND, *PDRVVDSTORAGEBACKEND;
 
 /**
+ * VD I/O Request Type.
+ */
+typedef enum VDIOREQTYPE
+{
+    /** Invalid tpe. */
+    VDIOREQTYPE_INVALID = 0,
+    /** Flush request. */
+    VDIOREQTYPE_FLUSH,
+    /** Write request. */
+    VDIOREQTYPE_WRITE,
+    /** Read request. */
+    VDIOREQTYPE_READ,
+    /** Discard request. */
+    VDIOREQTYPE_DISCARD
+} VDIOREQTYPE;
+
+/**
+ * VD I/O request state.
+ */
+typedef enum VDIOREQSTATE
+{
+    /** Invalid. */
+    VDIOREQSTATE_INVALID = 0,
+    /** The request is not in use and resides on the free list. */
+    VDIOREQSTATE_FREE,
+    /** The request was allocated and is in use. */
+    VDIOREQSTATE_ACTIVE,
+    /** The request was aborted but wasn't returned as complete from the storage
+     * layer below us. */
+    VDIOREQSTATE_ABORTED,
+    /** 32bit hack. */
+    VDIOREQSTATE_32BIT_HACK = 0x7fffffff
+} VDIOREQSTATE;
+
+/**
+ * VD I/O Request.
+ */
+typedef struct VDIOREQ
+{
+    /** I/O request type. */
+    VDIOREQTYPE                   enmType;
+    /** Request state. */
+    volatile VDIOREQSTATE         enmState;
+    /** Allocator specific memory - variable size. */
+    uint8_t                       abAlloc[1];
+} VDIOREQ;
+/** Pointer to a VD I/O request. */
+typedef VDIOREQ *PVDIOREQ;
+
+/**
  * VBox disk container media main structure, private part.
  *
  * @implements  PDMIMEDIA
  * @implements  PDMIMEDIAASYNC
+ * @implements  PDMIMEDIAEX
  * @implements  PDMIMOUNT
  * @implements  VDINTERFACEERROR
  * @implements  VDINTERFACETCPNET
@@ -259,6 +311,16 @@ typedef struct VBOXDISK
     PPDMISECKEY              pIfSecKey;
     /** The secret key helper interface used to notify about missing keys. */
     PPDMISECKEYHLP           pIfSecKeyHlp;
+    /** @} */
+
+    /** @name IMEDIAEX interface support specific members.
+     * @{ */
+    /** Pointer to the IMEDIAEXPORT interface above us. */
+    PPDMIMEDIAEXPORT         pDrvMediaExPort;
+    /** Our extended media interface. */
+    PDMIMEDIAEX              IMediaEx;
+    /** Memory cache for the I/O requests. */
+    RTMEMCACHE               hIoReqCache;
     /** @} */
 } VBOXDISK, *PVBOXDISK;
 
@@ -2571,6 +2633,92 @@ static DECLCALLBACK(int) drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCR
     return VINF_SUCCESS;
 }
 
+/*********************************************************************************************************************************
+*   Extended media interface methods                                                                                             *
+*********************************************************************************************************************************/
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqAllocSizeSet}
+ */
+static DECLCALLBACK(int) drvvdIoReqAllocSizeSet(PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqAlloc}
+ */
+static DECLCALLBACK(int) drvvdIoReqAlloc(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq, void **ppvIoReqAlloc,
+                                         PDMMEDIAEXIOREQID uIoReqId, uint32_t fFlags)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqFree}
+ */
+static DECLCALLBACK(int) drvvdIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancel}
+ */
+static DECLCALLBACK(int) drvvdIoReqCancel(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQID uIoReqId)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqRead}
+ */
+static DECLCALLBACK(int) drvvdIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbRead)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqWrite}
+ */
+static DECLCALLBACK(int) drvvdIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbWrite)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqFlush}
+ */
+static DECLCALLBACK(int) drvvdIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqDiscard}
+ */
+static DECLCALLBACK(int) drvvdIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, PCRTRANGE paRanges, unsigned cRanges)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqGetActiveCount}
+ */
+static DECLCALLBACK(uint32_t) drvvdIoReqGetActiveCount(PPDMIMEDIAEX pInterface)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    return 0;
+}
+
 /**
  * Loads all configured plugins.
  *
@@ -2736,6 +2884,7 @@ static DECLCALLBACK(void *) drvvdQueryInterface(PPDMIBASE pInterface, const char
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, pThis->fMountable ? &pThis->IMount : NULL);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNC, pThis->fAsyncIOSupported ? &pThis->IMediaAsync : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEX, pThis->pDrvMediaExPort ? &pThis->IMediaEx : NULL);
     return NULL;
 }
 
@@ -2990,6 +3139,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->uMergeTarget                 = VD_LAST_IMAGE;
     pThis->pCfgCrypto                   = NULL;
     pThis->pIfSecKey                    = NULL;
+    pThis->hIoReqCache                  = NIL_RTMEMCACHE;
 
     /* IMedia */
     pThis->IMedia.pfnRead               = drvvdRead;
@@ -3026,6 +3176,17 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IMediaAsync.pfnStartFlush      = drvvdStartFlush;
     pThis->IMediaAsync.pfnStartDiscard    = drvvdStartDiscard;
 
+    /* IMediaEx */
+    pThis->IMediaEx.pfnIoReqAllocSizeSet   = drvvdIoReqAllocSizeSet;
+    pThis->IMediaEx.pfnIoReqAlloc          = drvvdIoReqAlloc;
+    pThis->IMediaEx.pfnIoReqFree           = drvvdIoReqFree;
+    pThis->IMediaEx.pfnIoReqCancel         = drvvdIoReqCancel;
+    pThis->IMediaEx.pfnIoReqRead           = drvvdIoReqRead;
+    pThis->IMediaEx.pfnIoReqWrite          = drvvdIoReqWrite;
+    pThis->IMediaEx.pfnIoReqFlush          = drvvdIoReqFlush;
+    pThis->IMediaEx.pfnIoReqDiscard        = drvvdIoReqDiscard;
+    pThis->IMediaEx.pfnIoReqGetActiveCount = drvvdIoReqGetActiveCount;
+
     /* Initialize supported VD interfaces. */
     pThis->pVDIfsDisk = NULL;
 
@@ -3046,6 +3207,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     /* Try to attach async media port interface above.*/
     pThis->pDrvMediaAsyncPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAASYNCPORT);
     pThis->pDrvMountNotify    = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMOUNTNOTIFY);
+
+    /* Try to attach the optional extended media interface port above. */
+    pThis->pDrvMediaExPort    = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAEXPORT);
 
     /* Before we access any VD API load all given plugins. */
     rc = drvvdLoadPlugins(pThis, pCfg);

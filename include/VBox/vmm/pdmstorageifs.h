@@ -559,6 +559,224 @@ typedef struct PDMIMEDIAASYNC
 
 
 /**
+ * Opaque I/O request handle.
+ *
+ * The specific content depends on the driver implementing this interface.
+ */
+typedef struct PDMMEDIAEXIOREQINT *PDMMEDIAEXIOREQ;
+/** Pointer to an I/O request handle. */
+typedef PDMMEDIAEXIOREQ *PPDMMEDIAEXIOREQ;
+
+/** A I/O request ID. */
+typedef uint64_t PDMMEDIAEXIOREQID;
+
+/** @name I/O request specific flags
+ * @{ */
+/** Default behavior (async I/O).*/
+#define PDMIMEDIAEX_F_DEFAULT                   (0)
+/** The I/O request will be executed synchronously. */
+#define PDMIMEDIAEX_F_SYNC                      RT_BIT_32(0)
+/** @} */
+
+/** Pointer to an extended media notification interface. */
+typedef struct PDMIMEDIAEXPORT *PPDMIMEDIAEXPORT;
+
+/**
+ * Asynchronous version of the media interface (up).
+ * Pair with PDMIMEDIAEXPORT.
+ */
+typedef struct PDMIMEDIAEXPORT
+{
+    /**
+     * Notify completion of a I/O request.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request handle.
+     * @param   pvIoReqAlloc    The allocator specific memory for this request.
+     * @param   rcReq           IPRT Status code of the completed request.
+     *                          VERR_PDM_MEDIAEX_IOREQ_CANCELED if the request was canceled by a call to
+     *                          PDMIMEDIAEX::pfnIoReqCancel.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqCompleteNotify, (PDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                       void *pvIoReqAlloc, int rcReq));
+
+    /**
+     * Copy data from the memory buffer of the caller to the callees memory buffer for the given request.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOBUF_OVERFLOW if there is not enough room to store the data.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request handle.
+     * @param   pvIoReqAlloc    The allocator specific memory for this request.
+     * @param   offDst          The destination offset from the start to write the data to.
+     * @param   pvSrc           Where to read the data from.
+     * @param   cbCopy          How many bytes to copy.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqCopyFromBuf, (PDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                    void *pvIoReqAlloc, uint32_t offDst, const void *pvSrc,
+                                                    size_t cbCopy));
+
+    /**
+     * Copy data to the memory buffer of the caller from the callees memory buffer for the given request.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOBUF_UNDERFLOW if there is not enough data to copy from the buffer.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request handle.
+     * @param   pvIoReqAlloc    The allocator specific memory for this request.
+     * @param   offSrc          The offset from the start of the buffer to read the data from.
+     * @param   pvDst           Where to store the data.
+     * @param   cbCopy          How many bytes to copy.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqCopyToBuf, (PDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                  void *pvIoReqAlloc, uint32_t offSrc, void *pvDst,
+                                                  size_t cbCopy));
+
+} PDMIMEDIAEXPORT;
+
+/** PDMIMEDIAAEXPORT interface ID. */
+#define PDMIMEDIAEXPORT_IID                  "03c197d8-953c-4e24-b5bf-477379471cca"
+
+
+/** Pointer to an extended media interface. */
+typedef struct PDMIMEDIAEX *PPDMIMEDIAEX;
+
+/**
+ * Extended version of PDMIMEDIA (down).
+ * Pair with PDMIMEDIAEXPORT.
+ */
+typedef struct PDMIMEDIAEX
+{
+    /**
+     * Sets the size of the allocator specific memory for a I/O request.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   cbIoReqAlloc    The size of the allocator specific memory in bytes.
+     * @thread  EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqAllocSizeSet, (PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc));
+
+    /**
+     * Allocates a new I/O request.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQID_CONFLICT if the ID belongs to a still active request.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   phIoReq         Where to store the handle to the new I/O request on success.
+     * @param   ppvIoReqAlloc   Where to store the pointer to the allocator specific memory on success.
+     *                          NULL if the memory size was not set or set to 0.
+     * @param   uIoReqId        A custom request ID which can be used to cancel the request.
+     * @param   fFlags          A combination of PDMIMEDIAEX_F_* flags.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqAlloc, (PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq, void **ppvIoReqAlloc,
+                                              PDMMEDIAEXIOREQID uIoReqId, uint32_t fFlags));
+
+    /**
+     * Frees a given I/O request.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request to free.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqFree, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq));
+
+    /**
+     * Cancels a I/O request identified by the ID.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQID_NOT_FOUND if the given ID could not be found in the active request list.
+     *          (The request has either completed already or an invalid ID was given).
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   uIoReqId        The I/O request ID
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqCancel, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQID uIoReqId));
+
+    /**
+     * Start a reading request.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQ_CANCELED if the request was canceled  by a call to
+     *          PDMIMEDIAEX::pfnIoReqCancel.
+     * @retval  VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if the request was successfully submitted but is still in progress.
+     *          Completion will be notified through PDMIMEDIAEXPORT::pfnIoReqCompleteNotify with the appropriate status code.
+     * @retval  VINF_SUCCESS if the request completed successfully.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request to associate the read with.
+     * @param   off             Offset to start reading from. Must be aligned to a sector boundary.
+     * @param   cbRead          Number of bytes to read. Must be aligned to a sector boundary.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqRead, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbRead));
+
+    /**
+     * Start a writing request.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQ_CANCELED if the request was canceled  by a call to
+     *          PDMIMEDIAEX::pfnIoReqCancel.
+     * @retval  VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if the request was successfully submitted but is still in progress.
+     *          Completion will be notified through PDMIMEDIAEXPORT::pfnIoReqCompleteNotify with the appropriate status code.
+     * @retval  VINF_SUCCESS if the request completed successfully.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request to associate the write with.
+     * @param   off             Offset to start reading from. Must be aligned to a sector boundary.
+     * @param   cbWrite         Number of bytes to write. Must be aligned to a sector boundary.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqWrite, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbWrite));
+
+    /**
+     * Flush everything to disk.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQ_CANCELED if the request was canceled  by a call to
+     *          PDMIMEDIAEX::pfnIoReqCancel.
+     * @retval  VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if the request was successfully submitted but is still in progress.
+     *          Completion will be notified through PDMIMEDIAEXPORT::pfnIoReqCompleteNotify with the appropriate status code.
+     * @retval  VINF_SUCCESS if the request completed successfully.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request to associate the flush with.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqFlush, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq));
+
+    /**
+     * Discards the given range.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQ_CANCELED if the request was canceled  by a call to
+     *          PDMIMEDIAEX::pfnIoReqCancel.
+     * @retval  VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if the request was successfully submitted but is still in progress.
+     *          Completion will be notified through PDMIMEDIAEXPORT::pfnIoReqCompleteNotify with the appropriate status code.
+     * @retval  VINF_SUCCESS if the request completed successfully.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request to associate the discard with.
+     * @param   paRanges        Array of ranges to discard.
+     * @param   cRanges         Number of entries in the array.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqDiscard, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, PCRTRANGE paRanges, unsigned cRanges));
+
+    /**
+     * Returns the number of active I/O requests.
+     *
+     * @returns Number of active I/O requests.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnIoReqGetActiveCount, (PPDMIMEDIAEX pInterface));
+
+} PDMIMEDIAEX;
+/** PDMIMEDIAEX interface ID. */
+#define PDMIMEDIAEX_IID                      "d5ee47d8-5f7c-411d-bd9d-1021ee721a88"
+
+/**
  * Data direction.
  */
 typedef enum PDMSCSIREQUESTTXDIR
