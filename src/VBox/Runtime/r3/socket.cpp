@@ -1275,7 +1275,9 @@ RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, si
         *pcbRead = cbRead;
     else if (   errno == EAGAIN
 # ifdef EWOULDBLOCK
+#  if EWOULDBLOCK != EAGAIN
              || errno == EWOULDBLOCK
+#  endif
 # endif
              )
     {
@@ -1331,7 +1333,9 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
         *pcbWritten = cbWritten;
     else if (   errno == EAGAIN
 # ifdef EWOULDBLOCK
+#  if EWOULDBLOCK != EAGAIN
              || errno == EWOULDBLOCK
+#  endif
 # endif
             )
     {
