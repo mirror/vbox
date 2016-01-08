@@ -665,7 +665,7 @@ static DECLCALLBACK(int) vdDiscardHelperAsync(PVDIOCTX pIoCtx);
 static DECLCALLBACK(int) vdWriteHelperAsync(PVDIOCTX pIoCtx);
 static void vdDiskProcessBlockedIoCtx(PVBOXHDD pDisk);
 static int vdDiskUnlock(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc);
-static void vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq);
+static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq);
 
 /**
  * internal: add several backends.
