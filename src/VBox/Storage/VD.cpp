@@ -5648,7 +5648,7 @@ static void vdIfIoIntCallbacksSetup(PVDINTERFACEIOINT pIfIoInt)
 /**
  * Internally used completion handler for synchronous I/O contexts.
  */
-static void vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq)
+static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
     PVBOXHDD pDisk = (PVBOXHDD)pvUser1;
     RTSEMEVENT hEvent = (RTSEMEVENT)pvUser2;
