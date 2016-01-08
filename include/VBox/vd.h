@@ -470,7 +470,7 @@ typedef struct VDFILTERINFO
 /**
  * Request completion callback for the async read/write API.
  */
-typedef DECLCALLBACK(void) (FNVDASYNCTRANSFERCOMPLETE) (void *pvUser1, void *pvUser2, int rcReq);
+typedef DECLCALLBACK(void) FNVDASYNCTRANSFERCOMPLETE (void *pvUser1, void *pvUser2, int rcReq);
 /** Pointer to a transfer compelte callback. */
 typedef FNVDASYNCTRANSFERCOMPLETE *PFNVDASYNCTRANSFERCOMPLETE;
 
