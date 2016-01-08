@@ -29,6 +29,24 @@ include $(KBUILD_PATH)/subheader.kmk
 
 
 #
+# Make sure our Config.kmk gets included when kmk is running from a parent directory.
+#
+ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
+ include $(PATH_SUB_CURRENT)/Config.kmk
+endif
+
+
+#
+# Include sub-makefile.
+#
+if defined(VBOX_WITH_OPEN_WATCOM) && "$(USER)" == "bird"
+ if1of ($(KBUILD_TARGET), win) ## requires patched NASM.
+  include $(PATH_SUB_CURRENT)/bs3kit/Makefile.kmk
+ endif
+endif
+
+
+#
 # Boot Sector "Linker" tool.
 #
 TOOL_VBoxBootSectorLd      = Joins one or more BS2 object files into a floppy img.
