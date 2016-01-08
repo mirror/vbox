@@ -44,10 +44,16 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode
         ;
 %ifdef TMPL_CMN_R86
 BS3_BEGIN_DATA16
+BS3_EXTERN_SYSTEM16 Bs3Lidt_Ivt
 TMPL_BEGIN_TEXT
 extern               TMPL_NM(Bs3TrapSystemCallHandler)
         xor     ax, ax
         mov     ss, ax
+
+        mov     ax, BS3_SEL_SYSTEM16
+        mov     ds, ax
+        lidt    [Bs3Lidt_Ivt]
+
         mov     ax, BS3DATA16
         mov     ds, ax
         mov     es, ax
@@ -100,6 +106,8 @@ TMPL_BEGIN_TEXT
 BS3_EXTERN_SYSTEM16 Bs3Lidt_Idt32
 BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss32
 BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss32DoubleFault
+BS3_EXTERN_SYSTEM16 Bs3Tss32
+BS3_EXTERN_SYSTEM16 Bs3Tss32DoubleFault
 TMPL_BEGIN_TEXT
         mov     ax, BS3_SEL_R0_SS32
         mov     ss, ax
@@ -111,10 +119,14 @@ TMPL_BEGIN_TEXT
         mov     ax, X86DESCGENERIC_BIT_OFF_TYPE + 1
         btr     [Bs3Gdte_Tss32DoubleFault], ax  ; mark it not busy
         btr     [Bs3Gdte_Tss32], ax             ; mark it not busy
+        mov     eax, cr3
+        mov     [Bs3Tss32 + X86TSS32.cr3], eax
+        mov     [Bs3Tss32DoubleFault + X86TSS32.cr3], eax
         mov     ax, BS3_SEL_TSS32
         ltr     ax
 
         mov     ax, BS3_SEL_LDT
+        mov     [Bs3Tss32 + X86TSS32.selLdt], ax
         lldt    ax
 
         mov     ax, BS3_SEL_R0_DS32

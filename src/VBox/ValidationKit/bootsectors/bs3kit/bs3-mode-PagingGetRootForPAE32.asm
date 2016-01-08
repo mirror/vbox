@@ -51,7 +51,11 @@ TMPL_BEGIN_TEXT
 ; @remarks  returns value in EAX, not dx:ax!
 ;
 BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPAE32
+        BS3_ONLY_16BIT_STMT push    ds
+        BS3_ONLY_16BIT_STMT push    BS3DATA16
+        BS3_ONLY_16BIT_STMT pop     ds
         mov     eax, [g_PhysPagingRootPAE TMPL_WRT_DATA16_OR_FLAT]
+        BS3_ONLY_16BIT_STMT pop     ds
         cmp     eax, 0ffffffffh
         je      .init_root
         ret
@@ -59,6 +63,7 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPAE32
 .init_root:
         push    xBP
         mov     xBP, xSP
+        BS3_ONLY_16BIT_STMT push    ds
 
 %ifdef TMPL_RM
         ;
@@ -83,7 +88,10 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPAE32
         call    Bs3PagingInitRootForPAE
 %endif
 
+        BS3_ONLY_16BIT_STMT push    BS3DATA16
+        BS3_ONLY_16BIT_STMT pop     ds
         mov     eax, [g_PhysPagingRootPAE TMPL_WRT_DATA16_OR_FLAT]
+        BS3_ONLY_16BIT_STMT pop     ds
         leave
         ret
 BS3_PROC_END_MODE   Bs3PagingGetRootForPAE32

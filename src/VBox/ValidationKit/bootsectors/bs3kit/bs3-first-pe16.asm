@@ -65,15 +65,17 @@ EXTERN Bs3SwitchToRM_pae32
 extern Bs3SwitchToRM_lm64
 EXTERN Bs3InitMemory_rm
 BS3_EXTERN_CMN Bs3Shutdown
+BS3_EXTERN_CMN Bs3Trap32Init
 
-extern _Bs3Printf_c32
-extern Bs3Printf_c64
+extern _Bs3PrintChr_c32
+extern Bs3PrintChr_c64
 
 BS3_BEGIN_TEXT16
     ;
     ; We need to enter 16-bit protected mode before we can call Main_pe16.
     ;
     call    NAME(Bs3InitMemory_rm)      ; Initialize the memory (must be done from real mode).
+    call    Bs3Trap32Init
     call    NAME(Bs3SwitchToPE16_rm)
 
     call    NAME(Bs3SwitchTo32Bit_c16)
@@ -95,11 +97,15 @@ BS3_BEGIN_TEXT16
 
     call    NAME(Bs3SwitchToPP32_rm)
     BS3_SET_BITS 32
+    push    '!'
+    call    NAME(Bs3PrintChr_c32)
     call    NAME(Bs3SwitchToRM_pp32)
     BS3_SET_BITS 16
 
     call    NAME(Bs3SwitchToPAE32_rm)
     BS3_SET_BITS 32
+    push    '~'
+    call    NAME(Bs3PrintChr_c32)
     call    NAME(Bs3SwitchToRM_pae32)
     BS3_SET_BITS 16
 
@@ -110,6 +116,8 @@ BS3_BEGIN_TEXT16
 
     call    NAME(Bs3SwitchToLM64_rm)
     BS3_SET_BITS 64
+;; todo:    push    '~'
+;; todo:    call    Bs3PrintChr_c64
     call    Bs3SwitchToRM_lm64
     BS3_SET_BITS 16
 

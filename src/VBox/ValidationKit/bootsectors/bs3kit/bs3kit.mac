@@ -859,8 +859,10 @@ struc BS3REGCTX
         .fs             resw 1
         .gs             resw 1
         .ss             resw 1
+        .tr             resw 1
+        .ldtr           resw 1
         .cBits          resb 1
-        .abPadding      resb 3
+        .abPadding      resb 7
         .cr0            resq 1
         .cr2            resq 1
         .cr3            resq 1

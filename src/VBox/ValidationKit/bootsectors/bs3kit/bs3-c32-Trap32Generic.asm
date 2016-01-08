@@ -30,18 +30,22 @@
  %error "32-bit only template"
 %endif
 
-BS3_BEGIN_DATA32
+BS3_BEGIN_DATA16
 ;; Easy to access flat address of Bs3Trap32GenericEntries.
 BS3_GLOBAL_DATA g_Bs3Trap32GenericEntriesFlatAddr, 4
-        dd Bs3Trap32GenericEntries
+        dd Bs3Trap32GenericEntries wrt FLAT
+;; Easy to access flat address of Bs3Trap32DoubleFaultHandler.
+BS3_GLOBAL_DATA g_Bs3Trap32DoubleFaultHandlerFlatAddr, 4
+        dd Bs3Trap32DoubleFaultHandler wrt FLAT
 
+BS3_BEGIN_DATA32
 ;; Pointer C trap handlers.
 BS3_GLOBAL_DATA g_apfnBs3TrapHandlers_c32, 1024
         resd 256
 
 
 TMPL_BEGIN_TEXT
-BS3_EXTERN_CMN Bs3Trap32DefaultHandler
+BS3_EXTERN_CMN Bs3TrapDefaultHandler
 BS3_EXTERN_CMN Bs3Trap32ResumeFrame
 
 
@@ -267,12 +271,18 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
         mov     eax, cr4
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], eax
+        str     ax
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
+        sldt    ax
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], ax
 
         ;
         ; Set context bit width and clear all upper dwords and unused register members.
         ;
-        mov     dword [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cBits], 32
+.clear_and_dispatch_to_handler:         ; The double fault code joins us here.
         xor     edx, edx
+        mov     dword [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cBits], 32
+        mov     dword [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.abPadding + 3], edx
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rax    + 4], edx
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx    + 4], edx
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx    + 4], edx
@@ -303,7 +313,7 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         mov     eax, [BS3_DATA_NM(g_apfnBs3TrapHandlers_c32) + ebx * 4]
         or      eax, eax
         jnz     .call_handler
-        mov     eax, Bs3Trap32DefaultHandler
+        mov     eax, Bs3TrapDefaultHandler
 .call_handler:
         mov     edi, esp
         push    edi
@@ -320,4 +330,133 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         hlt
         jmp     .panic
 BS3_PROC_END   bs3Trap32GenericCommon
+
+
+;;
+; Helper.
+;
+; @retruns  Flat address in eax.
+; @param    ax
+; @uses     eax
+;
+bs3Trap32TssInAxToFlatInEax:
+        ; Get the GDT base address and find the descriptor address (EAX)
+        sub     esp, 16h
+        sgdt    [esp + 2]               ; +2 for correct alignment.
+        and     eax, 0fff8h
+        add     eax, [esp + 4]          ; GDT base address.
+        add     esp, 16h
+
+        ; Get the flat TSS address from the descriptor.
+        push    ecx
+        mov     ecx, [eax + 4]
+        and     eax, 0ffff0000h
+        movzx   eax, word [eax]
+        or      eax, ecx
+        pop     ecx
+
+        ret
+
+;;
+; Double fault handler.
+;
+; We don't have to load any selectors or clear anything in EFLAGS because the
+; TSS specified sane values which got loaded during the task switch.
+;
+BS3_PROC_BEGIN Bs3Trap32DoubleFaultHandler
+        push    0                       ; We'll copy the rip from the other TSS here later to create a more sensible call chain.
+        push    ebp
+        mov     ebp, esp
+
+        ;
+        ; Fill in the non-context trap frame bits.
+        ;
+        pushfd                          ; Get handler flags.
+        pop     ecx
+        xor     edx, edx                ; NULL register.
+
+        sub     esp, BS3TRAPFRAME_size  ; Allocate trap frame.
+        mov     [esp + BS3TRAPFRAME.fHandlerRfl], ecx
+        mov     word [esp + BS3TRAPFRAME.bXcpt], X86_XCPT_DF
+        mov     [esp + BS3TRAPFRAME.uHandlerCs], cs
+        mov     [esp + BS3TRAPFRAME.uHandlerSs], ss
+        lea     ecx, [ebp + 12]
+        mov     [esp + BS3TRAPFRAME.uHandlerRsp], ecx
+        mov     [esp + BS3TRAPFRAME.uHandlerRsp + 4], edx
+        mov     ecx, [ebp + 8]
+        mov     [esp + BS3TRAPFRAME.uErrCd], ecx
+        mov     [esp + BS3TRAPFRAME.uErrCd + 4], edx
+
+        ;
+        ; Copy the register state from the previous task segment.
+        ;
+
+        ; Find our TSS.
+        str     ax
+        call    bs3Trap32TssInAxToFlatInEax
+
+        ; Find the previous TSS.
+        mov     ax, [eax + X86TSS32.selPrev]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
+        call    bs3Trap32TssInAxToFlatInEax
+
+        ; Do the copying.
+        mov     ecx, [eax + X86TSS32.eax]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ecx
+        mov     ecx, [eax + X86TSS32.ecx]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx], ecx
+        mov     ecx, [eax + X86TSS32.edx]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], ecx
+        mov     ecx, [eax + X86TSS32.ebx]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], ecx
+        mov     ecx, [eax + X86TSS32.esp]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
+        mov     ecx, [eax + X86TSS32.ebp]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], ecx
+        mov     [ebp], ecx              ; For better call stacks.
+        mov     ecx, [eax + X86TSS32.esi]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], ecx
+        mov     ecx, [eax + X86TSS32.edi]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], ecx
+        mov     ecx, [eax + X86TSS32.esi]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], ecx
+        mov     ecx, [eax + X86TSS32.eflags]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], ecx
+        mov     ecx, [eax + X86TSS32.eip]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], ecx
+        mov     [ebp + 4], ecx          ; For better call stacks.
+        mov     cx, [eax + X86TSS32.cs]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
+        mov     cx, [eax + X86TSS32.ds]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], cx
+        mov     cx, [eax + X86TSS32.es]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.es], cx
+        mov     cx, [eax + X86TSS32.fs]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], cx
+        mov     cx, [eax + X86TSS32.gs]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], cx
+        mov     cx, [eax + X86TSS32.ss]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
+        mov     cx, [eax + X86TSS32.selLdt]             ; Note! This isn't necessarily the ldtr at the time of the fault.
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], cx
+        mov     cx, [eax + X86TSS32.cr3]                ; Note! This isn't necessarily the cr3 at the time of the fault.
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], ecx
+
+        mov     dword [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cBits], 32
+
+        ;
+        ; Control registers.
+        ;
+        mov     ecx, cr0
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], ecx
+        mov     ecx, cr2
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2], ecx
+        mov     ecx, cr4
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], ecx
+
+        ;
+        ; Join code paths with the generic handler code.
+        ;
+        jmp     bs3Trap32GenericCommon.clear_and_dispatch_to_handler
+BS3_PROC_END   Bs3Trap32DoubleFaultHandler
 

@@ -29,7 +29,6 @@
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
 #include "bs3-cmn-memory.h"
-#include <iprt/asm.h>
 
 
 BS3_DECL(void BS3_FAR *) Bs3MemAllocZ(BS3MEMKIND enmKind, size_t cb)

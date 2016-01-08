@@ -58,6 +58,12 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToLM64
         ; Bs3SwitchToLM32 contains the actual code for switching to avoid
         ; unnecessary 32-bit -> 64-bit -> 32-bit trips.)
         ;
+ %ifdef TMPL_16BIT
+        and     esp, 0ffffh
+        push    word [esp]              ; copy return address.
+        and     word [esp + 2], 0       ; clear upper return address
+        add     dword [esp], BS3_ADDR_BS3TEXT16 ; Add base of return segment, completing 32-bit conversion.
+ %endif
         extern  TMPL_NM(Bs3SwitchToLM32)
         call    TMPL_NM(Bs3SwitchToLM32)
         BS3_SET_BITS 32

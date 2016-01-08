@@ -28,7 +28,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
-#include <iprt/asm.h>
 
 
 BS3_DECL(void) Bs3Trap32SetGate(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams)
@@ -36,7 +35,7 @@ BS3_DECL(void) Bs3Trap32SetGate(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint1
     X86DESC BS3_FAR *pIdte = &BS3_DATA_NM(Bs3Idt32)[iIdt];
 
     BS3_ASSERT(bDpl <= 3);
-    BS3_ASSERT(bType <= 7);
+    BS3_ASSERT(bType <= 15);
     BS3_ASSERT(cParams <= 15);
     pIdte->Gate.u16OffsetLow    = (uint16_t)off;
     pIdte->Gate.u16OffsetHigh   = (uint16_t)(off >> 16);

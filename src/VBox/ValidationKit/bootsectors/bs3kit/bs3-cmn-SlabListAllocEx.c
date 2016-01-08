@@ -24,8 +24,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
-#include <iprt/asm.h>
 
 
 BS3_DECL(void BS3_FAR *) Bs3SlabListAllocEx(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags)

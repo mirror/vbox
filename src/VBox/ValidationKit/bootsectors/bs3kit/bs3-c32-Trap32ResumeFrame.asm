@@ -51,24 +51,56 @@ BS3_PROC_BEGIN_CMN Bs3Trap32ResumeFrame
         je      .skip_cr4
         mov     cr4, eax
 .skip_cr4:
+
         mov     eax, [ebx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3]
         mov     edx, cr3
         cmp     eax, edx
         je      .skip_cr3
         mov     cr3, eax
 .skip_cr3:
+
         mov     eax, [ebx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2]
         mov     edx, cr2
         cmp     eax, edx
         je      .skip_cr2
         mov     cr2, eax
 .skip_cr2:
+
         mov     eax, [ebx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0]
         mov     edx, cr0
         cmp     eax, edx
         je      .skip_cr0
         mov     cr0, eax
 .skip_cr0:
+
+        ; LDTR
+        sldt    ax
+        cmp     ax, [ebx + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr]
+        je      .skip_ldtr
+        lldt    [ebx + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr]
+.skip_ldtr:
+
+        ; TR - complicated because we need to clear the busy bit. ASSUMES GDT.
+        str     ax
+        cmp     ax, [ebx + BS3TRAPFRAME.Ctx + BS3REGCTX.tr]
+        je      .skip_tr
+
+        movzx   eax, word [ebx + BS3TRAPFRAME.Ctx + BS3REGCTX.tr]
+        or      eax, eax                ; check for null.
+        jz      .load_tr
+
+        sub     esp, 10h
+        mov     dword [esp + 8], 0      ; paranoia^2
+        sgdt    [esp + 6]
+        add     eax, [esp + 8]          ; the limit.
+        add     esp, 10h
+
+        add     eax, X86DESCGENERIC_BIT_OFF_TYPE / 8
+        and     byte [eax], ~(X86_SEL_TYPE_SYS_TSS_BUSY_MASK << (X86DESCGENERIC_BIT_OFF_TYPE % 8))
+.load_tr:
+        ltr     [ebx + BS3TRAPFRAME.Ctx + BS3REGCTX.tr]
+.skip_tr:
+
 .skip_control_regs:
 
         ;
