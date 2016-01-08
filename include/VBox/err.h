@@ -1473,6 +1473,8 @@
 #define VERR_PDM_MEDIAEX_IOREQID_NOT_FOUND          (-2897)
 /** The I/O request is in progress. */
 #define VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS          2898
+/** The I/O request is in an invalid state for this operation.. */
+#define VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE        (-2899)
 /** @} */
 
 

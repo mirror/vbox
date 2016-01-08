@@ -599,7 +599,7 @@ typedef struct PDMIMEDIAEXPORT
      *                          PDMIMEDIAEX::pfnIoReqCancel.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIoReqCompleteNotify, (PDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+    DECLR3CALLBACKMEMBER(int, pfnIoReqCompleteNotify, (PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                        void *pvIoReqAlloc, int rcReq));
 
     /**
@@ -614,7 +614,7 @@ typedef struct PDMIMEDIAEXPORT
      * @param   pvSrc           Where to read the data from.
      * @param   cbCopy          How many bytes to copy.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIoReqCopyFromBuf, (PDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+    DECLR3CALLBACKMEMBER(int, pfnIoReqCopyFromBuf, (PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                     void *pvIoReqAlloc, uint32_t offDst, const void *pvSrc,
                                                     size_t cbCopy));
 
@@ -630,7 +630,7 @@ typedef struct PDMIMEDIAEXPORT
      * @param   pvDst           Where to store the data.
      * @param   cbCopy          How many bytes to copy.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIoReqCopyToBuf, (PDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+    DECLR3CALLBACKMEMBER(int, pfnIoReqCopyToBuf, (PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                   void *pvIoReqAlloc, uint32_t offSrc, void *pvDst,
                                                   size_t cbCopy));
 
@@ -679,6 +679,7 @@ typedef struct PDMIMEDIAEX
      * Frees a given I/O request.
      *
      * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE if the given request is still active.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   hIoReq          The I/O request to free.
      * @thread  Any thread.
