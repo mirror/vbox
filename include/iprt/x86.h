@@ -3635,14 +3635,17 @@ typedef struct X86TSS32
     /** Offset relative to the TSS of the start of the I/O Bitmap
      * and the end of the interrupt redirection bitmap. */
     uint16_t    offIoBitmap;
-    /** 32 bytes for the virtual interrupt redirection bitmap. (VME) */
-    uint8_t     IntRedirBitmap[32];
 } X86TSS32;
 #pragma pack()
 /** Pointer to task segment. */
 typedef X86TSS32 *PX86TSS32;
 /** Pointer to const task segment. */
 typedef const X86TSS32 *PCX86TSS32;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86TSS32, X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN + 1);
+AssertCompileMemberOffset(X86TSS32, cr3, 28);
+AssertCompileMemberOffset(X86TSS32, offIoBitmap, 102);
+#endif
 
 /**
  * 64-bit Task segment.
@@ -3673,8 +3676,6 @@ typedef struct X86TSS64
     /** Offset relative to the TSS of the start of the I/O Bitmap
      * and the end of the interrupt redirection bitmap. */
     uint16_t    offIoBitmap;
-    /** 32 bytes for the virtual interrupt redirection bitmap. (VME) */
-    uint8_t     IntRedirBitmap[32];
 } X86TSS64;
 #pragma pack()
 /** Pointer to a 64-bit task segment. */
@@ -3682,7 +3683,7 @@ typedef X86TSS64 *PX86TSS64;
 /** Pointer to a const 64-bit task segment. */
 typedef const X86TSS64 *PCX86TSS64;
 #ifndef VBOX_FOR_DTRACE_LIB
-AssertCompileSize(X86TSS64, 136);
+AssertCompileSize(X86TSS64, X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN + 1);
 #endif
 
 /** @} */

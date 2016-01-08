@@ -3463,14 +3463,14 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
     switch (enmTssType)
     {
         case kTss16:
-            cbTssMin = cbTssMax = sizeof(X86TSS16);
+            cbTssMin = cbTssMax = X86_SEL_TYPE_SYS_286_TSS_LIMIT_MIN + 1;
             break;
         case kTss32:
-            cbTssMin = RT_OFFSETOF(X86TSS32, IntRedirBitmap);
+            cbTssMin = X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN + 1;
             cbTssMax = _64K;
             break;
         case kTss64:
-            cbTssMin = RT_OFFSETOF(X86TSS64, IntRedirBitmap);
+            cbTssMin = X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN + 1;
             cbTssMax = _64K;
             break;
         default:
@@ -3540,7 +3540,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
             else
                 DBGCCmdHlpPrintf(pCmdHlp, "TSS32 at %Dv  (min=%04x)\n", &VarTssAddr, cbTssMin);
             DBGCCmdHlpPrintf(pCmdHlp,
-                             "eax=%08x bx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+                             "eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
                              "eip=%08x esp=%08x ebp=%08x\n"
                              "cs=%04x  ss=%04x  ds=%04x  es=%04x  fs=%04x  gs=%04x         eflags=%08x\n"
                              "ss:esp0=%04x:%08x ss:esp1=%04x:%08x ss:esp2=%04x:%08x\n"
