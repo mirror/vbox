@@ -2582,7 +2582,7 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser)
     return rc;
 }
 
-static void tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq)
+static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
     PVDIOREQ pIoReq = (PVDIOREQ)pvUser1;
     RTSEMEVENT hEventSem = (RTSEMEVENT)pvUser2;
