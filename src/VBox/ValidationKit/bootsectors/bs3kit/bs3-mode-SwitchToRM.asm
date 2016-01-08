@@ -40,6 +40,8 @@ TMPL_BEGIN_TEXT
 ; @remarks  Obviously returns to 16-bit mode, even if the caller was
 ;           in 32-bit or 64-bit mode.
 ;
+; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
+;
 BS3_PROC_BEGIN_MODE Bs3SwitchToRM
 %ifdef TMPL_RM
         ret
@@ -114,13 +116,12 @@ BS3_BEGIN_TEXT16
         pop     ebx
         pop     eax
         pop     eax
-        retn    6
  %else
         popfd
         pop     ebx
         pop     eax
-        retn    2
  %endif
+        retn    BS3_IF_16_32_64BIT(0, 2, 6)
 
  %if TMPL_BITS != 16
 TMPL_BEGIN_TEXT

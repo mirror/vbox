@@ -62,11 +62,48 @@
   %define BS3_ONLY_16BIT(a_Expr)
  %endif
 
+ %undef   BS3_ONLY_64BIT
+ %if %1 == 64
+  %define BS3_ONLY_64BIT(a_Expr)    a_Expr
+ %else
+  %define BS3_ONLY_64BIT(a_Expr)
+ %endif
+
+ %undef   BS3_IF_16_32_64BIT
+ %if %1 == 16
+  %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_16BitExpr
+ %elif %1 == 32
+  %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_32BitExpr
+ %else
+  %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_64BitExpr
+ %endif
+
  %undef   BS3_WRT_RIP
  %if %1 == 64
   %define BS3_WRT_RIP               wrt rip
  %else
   %define BS3_WRT_RIP
+ %endif
+
+ %undef   BS3_IF_16BIT_OTHERWISE
+ %if %1 == 16
+  %define BS3_IF_16BIT_OTHERWISE(a_16BitExpr, a_OtherwiseExpr) a_16BitExpr
+ %else
+  %define BS3_IF_16BIT_OTHERWISE(a_16BitExpr, a_OtherwiseExpr) a_OtherwiseExpr
+ %endif
+
+ %undef   BS3_IF_32BIT_OTHERWISE
+ %if %1 == 32
+  %define BS3_IF_32BIT_OTHERWISE(a_32BitExpr, a_OtherwiseExpr) a_32BitExpr
+ %else
+  %define BS3_IF_32BIT_OTHERWISE(a_32BitExpr, a_OtherwiseExpr) a_OtherwiseExpr
+ %endif
+
+ %undef   BS3_IF_64BIT_OTHERWISE
+ %if %1 == 32
+  %define BS3_IF_64BIT_OTHERWISE(a_64BitExpr, a_OtherwiseExpr) a_32BitExpr
+ %else
+  %define BS3_IF_64BIT_OTHERWISE(a_64BitExpr, a_OtherwiseExpr) a_OtherwiseExpr
  %endif
 %endmacro
 
@@ -96,6 +133,23 @@
 %else
  %define BS3_ONLY_16BIT(a_Expr)
 %endif
+
+;; For odd 64-bit stuff. Follows BS3_SET_BITS.
+%if ARCH_BITS == 64
+ %define BS3_ONLY_64BIT(a_Expr)     a_Expr
+%else
+ %define BS3_ONLY_64BIT(a_Expr)
+%endif
+
+;; For stack cleanups and similar where each bit mode is different. Follows BS3_SET_BITS.
+%if ARCH_BITS == 16
+ %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_16BitExpr
+%elif ARCH_BITS == 32
+ %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_32BitExpr
+%else
+ %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_64BitExpr
+%endif
+
 
 ;;
 ; For instruction that should only be emitted in 16-bit mode. Follows BS3_SET_BITS.
@@ -505,27 +559,27 @@ size %1 %+ _EndProc     0
 %macro BS3_CALL 2
  %if __BITS__ == 64
   %if %2 >= 1
-        mov         rcx, [rsp + 008h]
+        mov         rcx, [rsp]
    %ifdef BS3_STRICT
-        and         qword [rsp + 008h], 11h
+        and         qword [rsp], 11h
    %endif
   %endif
   %if %2 >= 2
-        mov         rdx, [rsp + 010h]
+        mov         rdx, [rsp + 008h]
    %ifdef BS3_STRICT
-        and         qword [rsp + 010h], 12h
+        and         qword [rsp + 008h], 12h
    %endif
   %endif
   %if %2 >= 3
-        mov         r8,  [rsp + 018h]
+        mov         r8,  [rsp + 010h]
    %ifdef BS3_STRICT
-        and         qword [rsp + 018h], 13h
+        and         qword [rsp + 010h], 13h
    %endif
   %endif
   %if %2 >= 4
-        mov         r9,  [rsp + 020h]
+        mov         r9,  [rsp + 018h]
    %ifdef BS3_STRICT
-        and         qword [rsp + 020h], 14h
+        and         qword [rsp + 018h], 14h
    %endif
   %endif
  %endif

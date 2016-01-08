@@ -529,6 +529,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-TestInit.c \
 	bs3-cmn-TestSendStrCmd.asm \
 	bs3-cmn-TestIsVmmDevTestingPresent.asm \
+	bs3-cmn-Trap16SetGate.c \
 	bs3-cmn-Trap32Init.c \
 	bs3-cmn-Trap32SetGate.c \
 	bs3-cmn-Trap64SetGate.c \

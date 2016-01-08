@@ -847,6 +847,15 @@
  %define TMPL_WRT_DATA16_OR_FLAT    wrt FLAT
 %endif
 
+;; @def TMPL_WRT_SYSTEM16_OR_FLAT
+; WRT BS3SYSTEM16 in 16-bit mode, WRT FLAT in 32- and 64-bit modes.
+; This is important when accessing global variables in the BS3SYSTEM16 segment.
+%ifdef TMPL_16BIT
+ %define TMPL_WRT_SYSTEM16_OR_FLAT  wrt BS3SYSTEM16
+%else
+ %define TMPL_WRT_SYSTEM16_OR_FLAT  wrt FLAT
+%endif
+
 ;
 ; Default code segment (changes BITS too).
 ;

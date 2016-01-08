@@ -39,8 +39,10 @@ BS3_EXTERN_CMN Bs3KbdWrite
 ;
 BS3_PROC_BEGIN_CMN Bs3A20Disable
         ; Must call both because they may be ORed together on real HW.
+        BS3_ONLY_64BIT_STMT sub     rsp, 20h
         call    BS3_CMN_NM(Bs3A20DisableViaKbd)
         call    BS3_CMN_NM(Bs3A20DisableViaPortA)
+        BS3_ONLY_64BIT_STMT add     rsp, 20h
         ret
 BS3_PROC_END_CMN   Bs3A20Disable
 
@@ -77,6 +79,7 @@ BS3_PROC_BEGIN_CMN Bs3A20DisableViaKbd
         push    xAX
         pushf
         cli
+        BS3_ONLY_64BIT_STMT sub     rsp, 20h
 
         call    Bs3KbdWait
         push    0d0h                    ; KBD_CCMD_READ_OUTPORT
@@ -93,6 +96,7 @@ BS3_PROC_BEGIN_CMN Bs3A20DisableViaKbd
         out     64h, al
         call    Bs3KbdWait
 
+        BS3_ONLY_64BIT_STMT add     rsp, 20h
         popf
         pop     xAX
         leave

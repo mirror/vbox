@@ -44,6 +44,8 @@ extern  NAME(Bs3EnteredMode_pae16)
 ; @remarks  Obviously returns to 16-bit mode, even if the caller was
 ;           in 32-bit or 64-bit mode.
 ;
+; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
+;
 BS3_PROC_BEGIN_MODE Bs3SwitchToPAE16
 %ifdef TMPL_PAE16
         ret

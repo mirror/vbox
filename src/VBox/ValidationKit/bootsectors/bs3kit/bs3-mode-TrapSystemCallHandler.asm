@@ -114,7 +114,7 @@ BS3_BEGIN_TEXT16
 %endif
 .print_chr:
 %ifndef TMPL_CMN_R86
-        ; Switch to real mode.
+        ; Switch to real mode (20h param scratch area not required).
         extern  TMPL_NM(Bs3SwitchToRM)
         call    TMPL_NM(Bs3SwitchToRM)
         BS3_SET_BITS 16
@@ -127,7 +127,7 @@ BS3_BEGIN_TEXT16
         int     10h
 
 %ifndef TMPL_CMN_R86
-        ; Switch back.
+        ; Switch back (20h param scratch area not required).
         extern  RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
         BS3_SET_BITS TMPL_BITS

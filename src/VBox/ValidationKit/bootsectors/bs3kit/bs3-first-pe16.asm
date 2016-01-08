@@ -67,6 +67,7 @@ EXTERN Bs3InitMemory_rm
 BS3_EXTERN_CMN Bs3Shutdown
 BS3_EXTERN_CMN Bs3Trap32Init
 
+extern _Bs3PrintChr_c16
 extern _Bs3PrintChr_c32
 extern Bs3PrintChr_c64
 
@@ -76,50 +77,82 @@ BS3_BEGIN_TEXT16
     ;
     call    NAME(Bs3InitMemory_rm)      ; Initialize the memory (must be done from real mode).
     call    Bs3Trap32Init
+    sub     xSP, 20h                    ; for 64-bit calls.
     call    NAME(Bs3SwitchToPE16_rm)
+    push    '1'
+    call    NAME(Bs3PrintChr_c16)
 
     call    NAME(Bs3SwitchTo32Bit_c16)
     BS3_SET_BITS 32
     call    NAME(Bs3SwitchTo16Bit_c32)
     BS3_SET_BITS 16
+    push    '2'
+    call    NAME(Bs3PrintChr_c16)
 
     call    NAME(Bs3SwitchToRM_pe16)
 
     call    NAME(Bs3SwitchToPE32_rm)
     BS3_SET_BITS 32
+    push    '3'
+    call    NAME(Bs3PrintChr_c32)
     call    NAME(Bs3SwitchToRM_pe32)
     BS3_SET_BITS 16
+    push    '4'
+    call    NAME(Bs3PrintChr_c16)
+
     call    NAME(Bs3SwitchToPE16_rm)
+    push    '5'
+    call    NAME(Bs3PrintChr_c16)
+
     call    NAME(Bs3SwitchToRM_pe16)
+    push    '6'
+    call    NAME(Bs3PrintChr_c16)
 
     call    NAME(Bs3SwitchToPP16_rm)
+    push    '7'
+    call    NAME(Bs3PrintChr_c16)
+
     call    NAME(Bs3SwitchToRM_pp16)
+    push    '8'
+    call    NAME(Bs3PrintChr_c16)
 
     call    NAME(Bs3SwitchToPP32_rm)
     BS3_SET_BITS 32
-    push    '!'
+    push    '9'
     call    NAME(Bs3PrintChr_c32)
+
     call    NAME(Bs3SwitchToRM_pp32)
     BS3_SET_BITS 16
+    push    'a'
+    call    NAME(Bs3PrintChr_c16)
 
     call    NAME(Bs3SwitchToPAE32_rm)
     BS3_SET_BITS 32
-    push    '~'
+    push    'b'
     call    NAME(Bs3PrintChr_c32)
+
     call    NAME(Bs3SwitchToRM_pae32)
     BS3_SET_BITS 16
+    push    'c'
+    call    NAME(Bs3PrintChr_c16)
 
     call    NAME(Bs3SwitchToPAE16_rm)
-    BS3_SET_BITS 32
+    push    'd'
+    call    NAME(Bs3PrintChr_c16)
+
     call    NAME(Bs3SwitchToRM_pae16)
-    BS3_SET_BITS 16
+    push    'e'
+    call    NAME(Bs3PrintChr_c16)
 
     call    NAME(Bs3SwitchToLM64_rm)
     BS3_SET_BITS 64
-;; todo:    push    '~'
-;; todo:    call    Bs3PrintChr_c64
+    push    'f'
+    BS3_CALL Bs3PrintChr_c64,1
+
     call    Bs3SwitchToRM_lm64
     BS3_SET_BITS 16
+    push    'g'
+    call    NAME(Bs3PrintChr_c16)
 
     ;
     ; Call main, if it returns shutdown the system.

@@ -1744,9 +1744,9 @@ BS3_DECL(void) Bs3Trap64Init_c64(void); /**< @copydoc Bs3Trap64Init_c16 */
  * @param   off         The handler offset (if applicable).
  * @param   cParams     The parameter count (for call gates).
  */
-BS3_DECL(void) Bs3Trap16SetGate_c16(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams);
-BS3_DECL(void) Bs3Trap16SetGate_c32(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams); /**< @copydoc Bs3Trap16SetGate_c16 */
-BS3_DECL(void) Bs3Trap16SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams); /**< @copydoc Bs3Trap16SetGate_c16 */
+BS3_DECL(void) Bs3Trap16SetGate_c16(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint16_t off, uint8_t cParams);
+BS3_DECL(void) Bs3Trap16SetGate_c32(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint16_t off, uint8_t cParams); /**< @copydoc Bs3Trap16SetGate_c16 */
+BS3_DECL(void) Bs3Trap16SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint16_t off, uint8_t cParams); /**< @copydoc Bs3Trap16SetGate_c16 */
 #define Bs3Trap16SetGate BS3_CMN_NM(Bs3Trap16SetGate) /**< Selects #Bs3Trap16SetGate_c16, #Bs3Trap16SetGate_c32 or #Bs3Trap16SetGate_c64. */
 
 /** The address of Bs3Trap16GenericEntries.

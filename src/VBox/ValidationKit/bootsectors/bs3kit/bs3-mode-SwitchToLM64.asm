@@ -38,6 +38,8 @@
 ;           or 32-bit mode.  It doesn't not preserve the callers ring, but
 ;           instead changes to ring-0.
 ;
+; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
+;
 BS3_PROC_BEGIN_MODE Bs3SwitchToLM64
 %ifdef TMPL_LM64
         ret

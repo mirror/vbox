@@ -65,11 +65,12 @@ BS3_PROC_BEGIN_CMN Bs3PrintU32
         jnz     .next
 
         ; Print the string.
+        BS3_ONLY_64BIT_STMT add     rsp, 18h
         BS3_ONLY_16BIT_STMT push    ss
         push    xBX
-        call    Bs3PrintStr
+        BS3_CALL Bs3PrintStr, 1
 
-        add     xSP, 30h + BS3_ONLY_16BIT(2 + ) xCB
+        add     xSP, 30h + BS3_IF_16_32_64BIT(2, 0, 18h) + xCB
         BS3_ONLY_16BIT_STMT pop ds
         pop     sBX
         pop     sCX

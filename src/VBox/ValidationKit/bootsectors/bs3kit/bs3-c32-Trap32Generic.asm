@@ -204,7 +204,7 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         mov     cx, ax
         shl     ax, BS3_SEL_RING_SHIFT
         or      ax, cx
-        and     ax, BS3_SEL_R0_DS32
+        add     ax, BS3_SEL_R0_DS32
         mov     ds, ax
         mov     es, ax
 

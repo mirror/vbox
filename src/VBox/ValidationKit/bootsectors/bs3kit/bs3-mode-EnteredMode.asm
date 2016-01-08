@@ -38,161 +38,137 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode
         push    xBP
         mov     xBP, xSP
         push    xAX
-
-        ;
-        ; Load selectors, IDTs and stuff as appropriate.
-        ;
-%ifdef TMPL_CMN_R86
-BS3_BEGIN_DATA16
-BS3_EXTERN_SYSTEM16 Bs3Lidt_Ivt
-TMPL_BEGIN_TEXT
-extern               TMPL_NM(Bs3TrapSystemCallHandler)
-        xor     ax, ax
-        mov     ss, ax
-
-        mov     ax, BS3_SEL_SYSTEM16
-        mov     ds, ax
-        lidt    [Bs3Lidt_Ivt]
-
-        mov     ax, BS3DATA16
-        mov     ds, ax
-        mov     es, ax
-
-        mov     word [ss: BS3_TRAP_SYSCALL*4], TMPL_NM(Bs3TrapSystemCallHandler) wrt BS3TEXT16
-        mov     word [ss: BS3_TRAP_SYSCALL*4 + 2], BS3TEXT16
-
-%elif TMPL_BITS == 16
-BS3_EXTERN_SYSTEM16 Bs3Lidt_Idt16
-BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss16
-BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss16DoubleFault
-TMPL_BEGIN_TEXT
-        jmp     BS3_SEL_R0_CS16:.reloaded_cs
-.reloaded_cs:
-
-        mov     ax, BS3_SEL_R0_SS16
-        mov     ss, ax
-
-        mov     ax, BS3_SEL_SYSTEM16
-        mov     ds, ax
-        lidt    [Bs3Lidt_Idt16]
-
-        mov     ax, X86DESCGENERIC_BIT_OFF_TYPE + 1
-        btr     [Bs3Gdte_Tss16DoubleFault], ax  ; mark it not busy
-        btr     [Bs3Gdte_Tss16], ax             ; mark it not busy
-        mov     ax, BS3_SEL_TSS16
-        ltr     ax
-
-        mov     ax, BS3_SEL_LDT
-        lldt    ax
-
-        mov     ax, BS3_SEL_R0_DS16
-        mov     ds, ax
-        mov     es, ax
-
- %ifndef TMPL_CMN_LM
-;         BS3_EXTERN_CMN Bs3Trap32SetGate
-;         extern         TMPL_NM(Bs3TrapSystemCallHandler)
-;        push    0                       ; cParams
-;        push    TMPL_NM(Bs3TrapSystemCallHandler) wrt BS3TEXT16
-;        push    BS3_SEL_R0_CS16
-;        push    3                       ; DPL
-;        push    X86_SEL_TYPE_SYS_286_INT_GATE
-;        push    BS3_TRAP_SYSCALL
-;        BS3_CALL Bs3Trap16SetGate,6
-;        add     sp, xCB * 6
- %endif
-
-%elif TMPL_BITS == 32
-BS3_EXTERN_SYSTEM16 Bs3Lidt_Idt32
-BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss32
-BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss32DoubleFault
-BS3_EXTERN_SYSTEM16 Bs3Tss32
-BS3_EXTERN_SYSTEM16 Bs3Tss32DoubleFault
-TMPL_BEGIN_TEXT
-        mov     ax, BS3_SEL_R0_SS32
-        mov     ss, ax
-
-        mov     ax, BS3_SEL_SYSTEM16
-        mov     ds, ax
-        lidt    [Bs3Lidt_Idt32]
-
-        mov     ax, X86DESCGENERIC_BIT_OFF_TYPE + 1
-        btr     [Bs3Gdte_Tss32DoubleFault], ax  ; mark it not busy
-        btr     [Bs3Gdte_Tss32], ax             ; mark it not busy
-        mov     eax, cr3
-        mov     [Bs3Tss32 + X86TSS32.cr3], eax
-        mov     [Bs3Tss32DoubleFault + X86TSS32.cr3], eax
-        mov     ax, BS3_SEL_TSS32
-        ltr     ax
-
-        mov     ax, BS3_SEL_LDT
-        mov     [Bs3Tss32 + X86TSS32.selLdt], ax
-        lldt    ax
-
-        mov     ax, BS3_SEL_R0_DS32
-        mov     ds, ax
-        mov     es, ax
-
- %ifndef TMPL_CMN_LM
-        BS3_EXTERN_CMN Bs3Trap32SetGate
-        extern         TMPL_NM(Bs3TrapSystemCallHandler)
-        push    0                       ; cParams
-        push    TMPL_NM(Bs3TrapSystemCallHandler) wrt FLAT
-        push    BS3_SEL_R0_CS32
-        push    3                       ; DPL
-        push    X86_SEL_TYPE_SYS_386_INT_GATE
-        push    BS3_TRAP_SYSCALL
-        BS3_CALL Bs3Trap32SetGate,6
-        add     esp, xCB * 6
- %endif
-
-%elif TMPL_BITS == 64
-BS3_EXTERN_SYSTEM16 Bs3Lidt_Idt64
-BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss64
-TMPL_BEGIN_TEXT
-        mov     ax, BS3_SEL_R0_DS64
-        mov     ss, ax
-
-        mov     ax, BS3_SEL_SYSTEM16
-        mov     ds, ax
-        lidt    [Bs3Lidt_Idt64]
-
-        mov     eax, X86DESCGENERIC_BIT_OFF_TYPE + 1
-        btr     [Bs3Gdte_Tss64], eax ; mark it not busy
-        mov     ax, BS3_SEL_TSS64
-        ltr     ax
-
-        mov     ax, BS3_SEL_LDT
-        lldt    ax
-
-        mov     ax, BS3_SEL_R0_DS64
-        mov     ds, ax
-        mov     es, ax
-
-%else
- %error "TMPL_BITS"
-%endif
-
- %ifdef TMPL_CMN_LM
-        ;
-        ; In long mode we always use a 64-bit TSS and a IDT with all 64-bit gates.
-        ;
-  %if TMPL_BITS == 64
+%if TMPL_BITS == 64
         push    rcx
         push    rdx
         push    r8
         push    r9
-  %endif
+%endif
 
+        ;
+        ; Load stack selector (not always necessary) and sometimes CS too.
+        ;
+%ifdef TMPL_RM
+        xor     ax, ax
+%elifdef TMPL_CMN_V86
+        extern  v86_versions_of_Bs3EnteredMode_should_not_be_dragged_into_the_link
+        call    v86_versions_of_Bs3EnteredMode_should_not_be_dragged_into_the_link
+%elif TMPL_BITS == 16
+        jmp     BS3_SEL_R0_CS16:.reloaded_cs
+.reloaded_cs:
+        mov     ax, BS3_SEL_R0_SS16
+%elif TMPL_BITS == 32
+        mov     ax, BS3_SEL_R0_SS32
+%elif TMPL_BITS == 64
+        mov     ax, BS3_SEL_R0_DS64
+%else
+ %error "TMPL_BITS"
+%endif
+        mov     ss, ax
+
+        ;
+        ; Load selector appropriate for accessing BS3SYSTEM16 data.
+        ;
+%if TMPL_BITS == 16
+        mov     ax, BS3_SEL_SYSTEM16
+%else
+        mov     ax, RT_CONCAT(BS3_SEL_R0_DS,TMPL_BITS)
+%endif
+        mov     ds, ax
+
+        ;
+        ; Load the appropritate IDT or IVT.
+        ; Always 64-bit in long mode, otherwise according to TMPL_BITS.
+        ;
+%ifdef TMPL_CMN_R86
+        BS3_EXTERN_SYSTEM16 Bs3Lidt_Ivt
+        TMPL_BEGIN_TEXT
+        lidt    [Bs3Lidt_Ivt]
+%elifdef TMPL_CMN_LM
+        BS3_EXTERN_SYSTEM16 Bs3Lidt_Idt64
+        TMPL_BEGIN_TEXT
+        lidt    [Bs3Lidt_Idt64 TMPL_WRT_SYSTEM16_OR_FLAT]
+%else
+        BS3_EXTERN_SYSTEM16 RT_CONCAT(Bs3Lidt_Idt,TMPL_BITS)
+        TMPL_BEGIN_TEXT
+        lidt    [RT_CONCAT(Bs3Lidt_Idt,TMPL_BITS) TMPL_WRT_SYSTEM16_OR_FLAT]
+%endif
+
+%ifndef TMPL_CMN_R86
+        ;
+        ; Load the appropriate task selector.
+        ; Always 64-bit in long mode, otherwise according to TMPL_BITS.
+        ;
+        mov     ax, X86DESCGENERIC_BIT_OFF_TYPE + 1 ; For clearing the busy bit in the TSS descriptor type.
+ %ifdef TMPL_CMN_LM
+        BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss64
+        TMPL_BEGIN_TEXT
+        btr     [Bs3Gdte_Tss64 TMPL_WRT_SYSTEM16_OR_FLAT], ax
+        mov     ax, BS3_SEL_TSS64
+
+ %elif TMPL_BITS == 16
+        BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss16
+        BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss16DoubleFault
+        TMPL_BEGIN_TEXT
+        btr     [Bs3Gdte_Tss16            TMPL_WRT_SYSTEM16_OR_FLAT], ax
+        btr     [Bs3Gdte_Tss16DoubleFault TMPL_WRT_SYSTEM16_OR_FLAT], ax
+        mov     ax, BS3_SEL_TSS16
+
+ %elif TMPL_BITS == 32
+        BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss32
+        BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss32DoubleFault
+        BS3_EXTERN_SYSTEM16 Bs3Tss32
+        BS3_EXTERN_SYSTEM16 Bs3Tss32DoubleFault
+        TMPL_BEGIN_TEXT
+        btr     [Bs3Gdte_Tss32            TMPL_WRT_SYSTEM16_OR_FLAT], ax
+        btr     [Bs3Gdte_Tss32DoubleFault TMPL_WRT_SYSTEM16_OR_FLAT], ax
+        mov     eax, cr3
+        mov     [X86TSS32.cr3 + Bs3Tss32            TMPL_WRT_SYSTEM16_OR_FLAT], eax
+        mov     [X86TSS32.cr3 + Bs3Tss32DoubleFault TMPL_WRT_SYSTEM16_OR_FLAT], eax
+        mov     ax, BS3_SEL_TSS32
+ %else
+ %error "TMPL_BITS"
+ %endif
+        ltr     ax
+%endif ; !TMPL_CMN_R86
+
+%ifndef TMPL_CMN_R86
+        ;
+        ; Load the LDT.
+        ;
+        mov     ax, BS3_SEL_LDT
+        lldt    ax
+%endif
+
+        ;
+        ; Load ds and es.
+        ;
+%ifdef TMPL_CMN_V86
+        mov     ax, BS3_SEL_DATA16
+%else
+        mov     ax, RT_CONCAT(BS3_SEL_R0_DS,TMPL_BITS)
+%endif
+        mov     ds, ax
+        mov     es, ax
+
+        ;
+        ; Install system call handler.
+        ; Always 64-bit in long mode, otherwise according to TMPL_BITS.
+        ;
+%ifdef TMPL_CMN_RM
+        mov     word [ss: BS3_TRAP_SYSCALL*4], TMPL_NM(Bs3TrapSystemCallHandler) wrt BS3TEXT16
+        mov     word [ss: BS3_TRAP_SYSCALL*4 + 2], BS3TEXT16
+%elifdef TMPL_CMN_LM
         BS3_EXTERN_CMN Bs3Trap64SetGate
         extern         Bs3TrapSystemCallHandler_lm64
+        TMPL_BEGIN_TEXT
         push    0                       ; bIst
-  %ifdef TMPL_64BIT
+ %ifdef TMPL_64BIT
         push    Bs3TrapSystemCallHandler_lm64 wrt FLAT
-  %else
+ %else
         push    dword 0                 ; upper offset
         push    dword Bs3TrapSystemCallHandler_lm64 wrt FLAT
-  %endif
+ %endif
         push    BS3_SEL_R0_CS64
         push    3                       ; DPL
         push    AMD64_SEL_TYPE_SYS_INT_GATE
@@ -200,14 +176,44 @@ TMPL_BEGIN_TEXT
         BS3_CALL Bs3Trap64SetGate,6
         add     xSP, xCB * 5 + 8
 
-  %if TMPL_BITS == 64
+%elif TMPL_BITS == 16
+        BS3_EXTERN_CMN Bs3Trap16SetGate
+        extern         TMPL_NM(Bs3TrapSystemCallHandler)
+        TMPL_BEGIN_TEXT
+        push    0                       ; cParams
+        push    TMPL_NM(Bs3TrapSystemCallHandler) wrt BS3TEXT16
+        push    BS3_SEL_R0_CS16
+        push    3                       ; DPL
+        push    X86_SEL_TYPE_SYS_286_INT_GATE
+        push    BS3_TRAP_SYSCALL
+        BS3_CALL Bs3Trap16SetGate,6
+        add     xSP, xCB * 6
+
+%elif TMPL_BITS == 32
+        BS3_EXTERN_CMN Bs3Trap32SetGate
+        extern         TMPL_NM(Bs3TrapSystemCallHandler)
+        TMPL_BEGIN_TEXT
+        push    0                       ; cParams
+        push    TMPL_NM(Bs3TrapSystemCallHandler) wrt FLAT
+        push    BS3_SEL_R0_CS32
+        push    3                       ; DPL
+        push    X86_SEL_TYPE_SYS_386_INT_GATE
+        push    BS3_TRAP_SYSCALL
+        BS3_CALL Bs3Trap32SetGate,6
+        add     xSP, xCB * 6
+%else
+ %error "TMPL_BITS"
+%endif
+
+        ;
+        ; Epilogue.
+        ;
+%if TMPL_BITS == 64
         pop     r9
         pop     r8
         pop     rdx
         pop     rcx
-  %endif
- %endif
-
+%endif
         pop     xAX
         leave
         ret

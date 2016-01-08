@@ -48,6 +48,7 @@ BS3_PROC_BEGIN_CMN Bs3KbdWrite
         push    xBP
         mov     xBP, xSP
         push    xAX
+        BS3_ONLY_64BIT_STMT sub     rsp, 20h
 
         mov     al, [xBP + xCB*2]
         out     64h, al                 ; Write the command.
@@ -57,6 +58,7 @@ BS3_PROC_BEGIN_CMN Bs3KbdWrite
         out     60h, al                 ; Write the data
         call    Bs3KbdWait
 
+        BS3_ONLY_64BIT_STMT add     rsp, 20h
         pop     xAX
         leave
         ret

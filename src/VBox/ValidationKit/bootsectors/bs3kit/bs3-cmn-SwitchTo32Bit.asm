@@ -29,6 +29,8 @@
 ;;
 ; @cproto   BS3_DECL(void) Bs3SwitchTo32Bit(void);
 ;
+; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
+;
 BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
 %if TMPL_BITS == 32
         ret
