@@ -1878,24 +1878,31 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * The USB Controllers.
          */
         com::SafeIfaceArray<IUSBController> usbCtrls;
-        hrc = pMachine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(usbCtrls));        H();
+        hrc = pMachine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(usbCtrls));
         bool fOhciPresent = false; /**< Flag whether at least one OHCI controller is present. */
         bool fXhciPresent = false; /**< Flag whether at least one XHCI controller is present. */
 
-        for (size_t i = 0; i < usbCtrls.size(); ++i)
+        if (SUCCEEDED(hrc))
         {
-            USBControllerType_T enmCtrlType;
-            rc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                   H();
-            if (enmCtrlType == USBControllerType_OHCI)
+            for (size_t i = 0; i < usbCtrls.size(); ++i)
             {
-                fOhciPresent = true;
-                break;
+                USBControllerType_T enmCtrlType;
+                rc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                   H();
+                if (enmCtrlType == USBControllerType_OHCI)
+                {
+                    fOhciPresent = true;
+                    break;
+                }
+                else if (enmCtrlType == USBControllerType_XHCI)
+                {
+                    fXhciPresent = true;
+                    break;
+                }
             }
-            else if (enmCtrlType == USBControllerType_XHCI)
-            {
-                fXhciPresent = true;
-                break;
-            }
+        }
+        else if (hrc != E_NOTIMPL)
+        {
+            H();
         }
 
         /*
