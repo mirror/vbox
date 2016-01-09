@@ -31,7 +31,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Make sure our Config.kmk gets included when kmk is running from a parent directory.
 #
-ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
+ifndef VBOX_BOOTSECTORS_CONFIG_KMK_INCLUDED
  include $(PATH_SUB_CURRENT)/Config.kmk
 endif
 
