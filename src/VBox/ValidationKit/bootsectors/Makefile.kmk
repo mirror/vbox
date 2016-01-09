@@ -39,8 +39,8 @@ endif
 #
 # Include sub-makefile.
 #
-if defined(VBOX_WITH_OPEN_WATCOM) && "$(USER)" == "bird"
- if1of ($(KBUILD_TARGET), win) ## requires patched NASM.
+if defined(VBOX_WITH_OPEN_WATCOM)
+ if1of ($(KBUILD_TARGET), win) # requires patched NASM.
   include $(PATH_SUB_CURRENT)/bs3kit/Makefile.kmk
  endif
 endif
