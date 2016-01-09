@@ -54,10 +54,16 @@ define TOOL_VBoxBsUnusedLd_LINK_MISCBIN_CMDS
 endef
 
 # NASM tool with dependency workarounds (change dir to force consistent results; add -MP).
+# Requires http://permalink.gmane.org/gmane.comp.lang.nasm.devel/3704 to work.
 include $(KBUILD_PATH)/tools/NASM.kmk
 TOOL_VBoxNasm = Our version of the NASM tool
-TOOL_VBoxNasm_PATH    ?= $(PATH_TOOL_NASM)
-ifneq ($(PATH_TOOL_NASM),)
+ifndef TOOL_VBoxNasm_PATH
+ TOOL_VBoxNasm_PATH   := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS_HST)/nasm/v*.*)))
+ if "$(TOOL_VBoxNasm_PATH)" == "" && "$(KBUILD_DEVTOOLS_HST_ALT)" != ""
+  TOOL_VBoxNasm_PATH  := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS_HST_ALT)/nasm/v*.*)))
+ endif
+endif
+ifneq ($(TOOL_VBoxNasm_PATH),)
  TOOL_VBoxNasm_AS     ?= $(TOOL_VBoxNasm_PATH)/nasm$(HOSTSUFF_EXE)
 else
  TOOL_VBoxNasm_AS     ?= nasm$(HOSTSUFF_EXE)
