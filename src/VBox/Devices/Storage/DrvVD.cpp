@@ -139,23 +139,6 @@ typedef struct DRVVDSTORAGEBACKEND
 } DRVVDSTORAGEBACKEND, *PDRVVDSTORAGEBACKEND;
 
 /**
- * VD I/O Request Type.
- */
-typedef enum VDIOREQTYPE
-{
-    /** Invalid tpe. */
-    VDIOREQTYPE_INVALID = 0,
-    /** Flush request. */
-    VDIOREQTYPE_FLUSH,
-    /** Write request. */
-    VDIOREQTYPE_WRITE,
-    /** Read request. */
-    VDIOREQTYPE_READ,
-    /** Discard request. */
-    VDIOREQTYPE_DISCARD
-} VDIOREQTYPE;
-
-/**
  * VD I/O request state.
  */
 typedef enum VDIOREQSTATE
@@ -187,7 +170,7 @@ typedef struct PDMMEDIAEXIOREQINT
     /** List node for the list of allocated requests. */
     RTLISTNODE                    NdAllocatedList;
     /** I/O request type. */
-    VDIOREQTYPE                   enmType;
+    PDMMEDIAEXIOREQTYPE           enmType;
     /** Request state. */
     volatile VDIOREQSTATE         enmState;
     /** I/O request ID. */
@@ -2803,12 +2786,15 @@ static int drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq
  */
 static void drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
 {
-    if (pThis->pCfgCrypto)
-        RTMemSaferFree(pIoReq->DataSeg.pvSeg, pIoReq->DataSeg.cbSeg);
-    else
+    if (pIoReq->DataSeg.pvSeg)
     {
-        size_t cb = RT_ALIGN_Z(pIoReq->DataSeg.cbSeg, _4K);
-        RTMemPageFree(pIoReq->DataSeg.pvSeg, cb);
+        if (pThis->pCfgCrypto)
+            RTMemSaferFree(pIoReq->DataSeg.pvSeg, pIoReq->DataSeg.cbSeg);
+        else
+        {
+            size_t cb = RT_ALIGN_Z(pIoReq->DataSeg.cbSeg, _4K);
+            RTMemPageFree(pIoReq->DataSeg.pvSeg, cb);
+        }
     }
 }
 
@@ -2830,7 +2816,7 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
         ASMAtomicDecU32(&pThis->cIoReqsActive);
 
         if (   RT_SUCCESS(rcReq)
-            && pIoReq->enmType == VDIOREQTYPE_READ)
+            && pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
         {
             /* Sync memory buffer with caller. */
             rc = drvvdMediaExIoReqBufSync(pThis, pIoReq, false /* fToIoBuf */);
@@ -2894,11 +2880,13 @@ static DECLCALLBACK(int) drvvdIoReqAlloc(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOR
     if (RT_UNLIKELY(!pIoReq))
         return VERR_NO_MEMORY;
 
-    pIoReq->uIoReqId = uIoReqId;
-    pIoReq->fFlags   = fFlags;
-    pIoReq->pDisk    = pThis;
-    pIoReq->enmState = VDIOREQSTATE_ALLOCATED;
-    pIoReq->enmType  = VDIOREQTYPE_INVALID;
+    pIoReq->uIoReqId      = uIoReqId;
+    pIoReq->fFlags        = fFlags;
+    pIoReq->pDisk         = pThis;
+    pIoReq->enmState      = VDIOREQSTATE_ALLOCATED;
+    pIoReq->enmType       = PDMMEDIAEXIOREQTYPE_INVALID;
+    pIoReq->DataSeg.pvSeg = NULL;
+    pIoReq->DataSeg.cbSeg = 0;
 
     int rc = drvvdMediaExIoReqInsert(pThis, pIoReq);
     if (RT_SUCCESS(rc))
@@ -2995,13 +2983,13 @@ static DECLCALLBACK(int) drvvdIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ
     PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
     VDIOREQSTATE enmState = (VDIOREQSTATE)ASMAtomicReadU32((volatile uint32_t *)&pIoReq->enmState);
 
-    if (RT_UNLIKELY(enmState != VDIOREQSTATE_CANCELED))
+    if (RT_UNLIKELY(enmState == VDIOREQSTATE_CANCELED))
         return VERR_PDM_MEDIAEX_IOREQ_CANCELED;
 
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
-    pIoReq->enmType = VDIOREQTYPE_READ;
+    pIoReq->enmType = PDMMEDIAEXIOREQTYPE_READ;
     /* Allocate a suitable I/O buffer for this request. */
     int rc = drvvdMediaExIoReqBufAlloc(pThis, pIoReq, cbRead);
     if (RT_SUCCESS(rc))
@@ -3037,13 +3025,13 @@ static DECLCALLBACK(int) drvvdIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
     PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
     VDIOREQSTATE enmState = (VDIOREQSTATE)ASMAtomicReadU32((volatile uint32_t *)&pIoReq->enmState);
 
-    if (RT_UNLIKELY(enmState != VDIOREQSTATE_CANCELED))
+    if (RT_UNLIKELY(enmState == VDIOREQSTATE_CANCELED))
         return VERR_PDM_MEDIAEX_IOREQ_CANCELED;
 
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
-    pIoReq->enmType = VDIOREQTYPE_WRITE;
+    pIoReq->enmType = PDMMEDIAEXIOREQTYPE_WRITE;
     /* Allocate a suitable I/O buffer for this request. */
     int rc = drvvdMediaExIoReqBufAlloc(pThis, pIoReq, cbWrite);
     if (RT_SUCCESS(rc))
@@ -3061,8 +3049,8 @@ static DECLCALLBACK(int) drvvdIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
             }
 
             ASMAtomicIncU32(&pThis->cIoReqsActive);
-            rc = VDAsyncRead(pThis->pDisk, off, cbWrite, &pIoReq->SgBuf,
-                             drvvdMediaExIoReqComplete, pThis, pIoReq);
+            rc = VDAsyncWrite(pThis->pDisk, off, cbWrite, &pIoReq->SgBuf,
+                              drvvdMediaExIoReqComplete, pThis, pIoReq);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
             else if (rc == VINF_VD_ASYNC_IO_FINISHED)
@@ -3085,13 +3073,13 @@ static DECLCALLBACK(int) drvvdIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
     PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
     VDIOREQSTATE enmState = (VDIOREQSTATE)ASMAtomicReadU32((volatile uint32_t *)&pIoReq->enmState);
 
-    if (RT_UNLIKELY(enmState != VDIOREQSTATE_CANCELED))
+    if (RT_UNLIKELY(enmState == VDIOREQSTATE_CANCELED))
         return VERR_PDM_MEDIAEX_IOREQ_CANCELED;
 
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
-    pIoReq->enmType = VDIOREQTYPE_FLUSH;
+    pIoReq->enmType = PDMMEDIAEXIOREQTYPE_FLUSH;
 
     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
     if (RT_UNLIKELY(!fXchg))
@@ -3123,13 +3111,13 @@ static DECLCALLBACK(int) drvvdIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIO
     PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
     VDIOREQSTATE enmState = (VDIOREQSTATE)ASMAtomicReadU32((volatile uint32_t *)&pIoReq->enmState);
 
-    if (RT_UNLIKELY(enmState != VDIOREQSTATE_CANCELED))
+    if (RT_UNLIKELY(enmState == VDIOREQSTATE_CANCELED))
         return VERR_PDM_MEDIAEX_IOREQ_CANCELED;
 
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
-    pIoReq->enmType = VDIOREQTYPE_DISCARD;
+    pIoReq->enmType = PDMMEDIAEXIOREQTYPE_DISCARD;
 
     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
     if (RT_UNLIKELY(!fXchg))

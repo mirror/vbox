@@ -570,6 +570,23 @@ typedef PDMMEDIAEXIOREQ *PPDMMEDIAEXIOREQ;
 /** A I/O request ID. */
 typedef uint64_t PDMMEDIAEXIOREQID;
 
+/**
+ * I/O Request Type.
+ */
+typedef enum PDMMEDIAEXIOREQTYPE
+{
+    /** Invalid tpe. */
+    PDMMEDIAEXIOREQTYPE_INVALID = 0,
+    /** Flush request. */
+    PDMMEDIAEXIOREQTYPE_FLUSH,
+    /** Write request. */
+    PDMMEDIAEXIOREQTYPE_WRITE,
+    /** Read request. */
+    PDMMEDIAEXIOREQTYPE_READ,
+    /** Discard request. */
+    PDMMEDIAEXIOREQTYPE_DISCARD
+} PDMMEDIAEXIOREQTYPE;
+
 /** @name I/O request specific flags
  * @{ */
 /** Default behavior (async I/O).*/
@@ -622,7 +639,7 @@ typedef struct PDMIMEDIAEXPORT
      * Copy data to the memory buffer of the caller from the callees memory buffer for the given request.
      *
      * @returns VBox status code.
-     * @retval  VERR_PDM_MEDIAEX_IOBUF_UNDERFLOW if there is not enough data to copy from the buffer.
+     * @retval  VERR_PDM_MEDIAEX_IOBUF_UNDERRUN if there is not enough data to copy from the buffer.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   hIoReq          The I/O request handle.
      * @param   pvIoReqAlloc    The allocator specific memory for this request.

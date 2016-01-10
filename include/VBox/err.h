@@ -1466,7 +1466,7 @@
 /** There is not enough room to store the data. */
 #define VERR_PDM_MEDIAEX_IOBUF_OVERFLOW             (-2894)
 /** There is not enough data to satisfy the request. */
-#define VERR_PDM_MEDIAEX_IOBUF_UNDERFLOW            (-2895)
+#define VERR_PDM_MEDIAEX_IOBUF_UNDERRUN             (-2895)
 /** The I/O request ID is already existing. */
 #define VERR_PDM_MEDIAEX_IOREQID_CONFLICT           (-2896)
 /** The I/O request ID was not found. */
