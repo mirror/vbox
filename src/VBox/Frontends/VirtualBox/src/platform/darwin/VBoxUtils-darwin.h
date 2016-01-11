@@ -293,6 +293,9 @@ void darwinUnregisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
 
 void darwinMouseGrab(QWidget *pWidget);
 void darwinMouseRelease(QWidget *pWidget);
+
+void* darwinCocoaToCarbonEvent(void *pvCocoaEvent);
+
 #endif /* !__OBJC__ */
 
 #endif /* !___VBoxUtils_darwin_h */

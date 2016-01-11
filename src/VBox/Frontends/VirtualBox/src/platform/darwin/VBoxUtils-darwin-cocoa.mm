@@ -720,3 +720,9 @@ void darwinUninstallResizeDelegate(NativeNSWindowRef pWindow)
     [[UIResizeProxy sharedResizeProxy] removeWindow:pWindow];
 }
 
+void* darwinCocoaToCarbonEvent(void *pvCocoaEvent)
+{
+    NSEvent *pEvent = (NSEvent*)pvCocoaEvent;
+    return (void*)[pEvent eventRef];
+}
+
