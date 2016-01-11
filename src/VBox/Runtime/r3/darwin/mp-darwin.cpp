@@ -208,6 +208,12 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 }
 
 
+RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void)
+{
+    return rtMpDarwinOnlinePhysicalCpus();
+}
+
+
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
 {
     /** @todo figure out how to get the current cpu speed on darwin. Have to check what powermanagement does. */
