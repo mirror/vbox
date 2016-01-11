@@ -30,10 +30,12 @@
 /* Forward declarations: */
 class QIToolButton;
 class UIHostComboEditorPrivate;
-#ifdef Q_WS_WIN
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
 # if QT_VERSION >= 0x050000
-class WinEventFilter;
+class PrivateEventFilter;
 # endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_MAC || Q_WS_WIN */
+#ifdef Q_WS_WIN
 class WinAltGrMonitor;
 #endif /* Q_WS_WIN */
 
@@ -184,18 +186,21 @@ private:
     QTimer* m_pReleaseTimer;
     bool m_fStartNewSequence;
 
-#if defined(Q_WS_MAC)
-     /* The current modifier key mask. Used to figure out which modifier
-      * key was pressed when we get a kEventRawKeyModifiersChanged event. */
-     uint32_t m_uDarwinKeyModifiers;
-#elif defined(Q_WS_WIN)
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
 # if QT_VERSION >= 0x050000
-    /** Win: Holds the native event filter instance. */
-    WinEventFilter *m_pWinEventFilter;
-    /** Win: Allows the native event filter to
+    /** Mac, Win: Holds the native event filter instance. */
+    PrivateEventFilter *m_pPrivateEventFilter;
+    /** Mac, Win: Allows the native event filter to
       * redirect events directly to nativeEvent handler. */
-    friend class WinEventFilter;
+    friend class PrivateEventFilter;
 # endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_MAC || Q_WS_WIN */
+
+#if defined(Q_WS_MAC)
+    /** Mac: Holds the current modifier key mask. Used to figure out which modifier
+      * key was pressed when we get a kEventRawKeyModifiersChanged event. */
+    uint32_t m_uDarwinKeyModifiers;
+#elif defined(Q_WS_WIN)
     /** Win: Holds the object monitoring key event
       * stream for problematic AltGr events. */
     WinAltGrMonitor *m_pAltGrMonitor;

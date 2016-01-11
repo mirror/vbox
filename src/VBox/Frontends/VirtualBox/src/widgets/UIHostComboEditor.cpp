@@ -43,11 +43,11 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#ifdef Q_WS_WIN
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
 # if QT_VERSION >= 0x050000
 #  include <QAbstractNativeEventFilter>
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_WIN */
+#endif /* Q_WS_MAC || Q_WS_WIN */
 
 /* GUI includes: */
 #if defined(Q_WS_MAC)
@@ -81,22 +81,23 @@ const int XKeyRelease = KeyRelease;
 using namespace UIExtraDataDefs;
 
 
-#ifdef Q_WS_WIN
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
 # if QT_VERSION >= 0x050000
 /** QAbstractNativeEventFilter extension
-  * allowing to handle native Windows (MSG) events.
+  * allowing to handle native platform events.
   * Why do we need it? It's because Qt5 have unhandled
   * well .. let's call it 'a bug' about native keyboard events
   * which come to top-level widget (window) instead of focused sub-widget
-  * which actually supposed to get them. The funny thing is that target of
-  * those events (MSG::hwnd) is indeed top-level widget, not the sub-widget
-  * we expect, so that's probably the reason Qt devs haven't fixed that bug. */
-class WinEventFilter : public QAbstractNativeEventFilter
+  * which actually supposed to get them. The strange thing is that target of
+  * those events on at least Windows host (MSG::hwnd) is indeed window itself,
+  * not the sub-widget we expect, so that's probably the reason Qt devs
+  * haven't fixed that bug so far for Windows and Mac OS X hosts. */
+class PrivateEventFilter : public QAbstractNativeEventFilter
 {
 public:
 
     /** Constructor which takes the passed @a pParent to redirect events to. */
-    WinEventFilter(UIHostComboEditorPrivate *pParent)
+    PrivateEventFilter(UIHostComboEditorPrivate *pParent)
         : m_pParent(pParent)
     {}
 
@@ -113,7 +114,7 @@ private:
     UIHostComboEditorPrivate *m_pParent;
 };
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_WIN */
+#endif /* Q_WS_MAC || Q_WS_WIN */
 
 
 /*********************************************************************************************************************************
@@ -468,10 +469,12 @@ UIHostComboWrapper UIHostComboEditor::combo() const
 UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     : m_pReleaseTimer(0)
     , m_fStartNewSequence(true)
-#ifdef Q_WS_WIN
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
 # if QT_VERSION >= 0x050000
-    , m_pWinEventFilter(0)
+    , m_pPrivateEventFilter(0)
 # endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_MAC || Q_WS_WIN */
+#ifdef Q_WS_WIN
     , m_pAltGrMonitor(0)
 #endif /* Q_WS_WIN */
 {
@@ -486,16 +489,21 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     m_pReleaseTimer->setInterval(200);
     connect(m_pReleaseTimer, SIGNAL(timeout()), this, SLOT(sltReleasePendingKeys()));
 
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+# if QT_VERSION >= 0x050000
+    /* Prepare private event filter: */
+    m_pPrivateEventFilter = new PrivateEventFilter(this);
+    qApp->installNativeEventFilter(m_pPrivateEventFilter);
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_MAC || Q_WS_WIN */
+
 #if defined(Q_WS_MAC)
     m_uDarwinKeyModifiers = 0;
+# if QT_VERSION < 0x050000
     UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
     ::DarwinGrabKeyboard(false /* just modifiers */);
+# endif /* QT_VERSION < 0x050000 */
 #elif defined(Q_WS_WIN)
-# if QT_VERSION >= 0x050000
-    /* Prepare Windows event filter: */
-    m_pWinEventFilter = new WinEventFilter(this);
-    qApp->installNativeEventFilter(m_pWinEventFilter);
-# endif /* QT_VERSION >= 0x050000 */
     /* Prepare AltGR monitor: */
     m_pAltGrMonitor = new WinAltGrMonitor;
 #elif defined(Q_WS_X11)
@@ -507,19 +515,24 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
 UIHostComboEditorPrivate::~UIHostComboEditorPrivate()
 {
 #if defined(Q_WS_MAC)
+# if QT_VERSION < 0x050000
     ::DarwinReleaseKeyboard();
     UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
+# endif /* QT_VERSION < 0x050000 */
 #elif defined(Q_WS_WIN)
     /* Cleanup AltGR monitor: */
     delete m_pAltGrMonitor;
     m_pAltGrMonitor = 0;
-# if QT_VERSION >= 0x050000
-    /* Cleanup Windows event filter: */
-    qApp->removeNativeEventFilter(m_pWinEventFilter);
-    delete m_pWinEventFilter;
-    m_pWinEventFilter = 0;
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* Q_WS_WIN */
+
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+# if QT_VERSION >= 0x050000
+    /* Cleanup private event filter: */
+    qApp->removeNativeEventFilter(m_pPrivateEventFilter);
+    delete m_pPrivateEventFilter;
+    m_pPrivateEventFilter = 0;
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_MAC || Q_WS_WIN */
 }
 
 void UIHostComboEditorPrivate::setCombo(const UIHostComboWrapper &strCombo)
@@ -567,7 +580,63 @@ void UIHostComboEditorPrivate::sltClear()
 
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
 {
-# if defined(Q_WS_WIN)
+# if defined(Q_WS_MAC)
+
+    /* Make sure it's generic NSEvent: */
+    if (eventType != "mac_generic_NSEvent")
+        return QLineEdit::nativeEvent(eventType, pMessage, pResult);
+    EventRef event = (EventRef)darwinCocoaToCarbonEvent(pMessage);
+
+    /* Check if some NSEvent should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    switch(::GetEventClass(event))
+    {
+        /* Watch for keyboard-events: */
+        case kEventClassKeyboard:
+        {
+            switch(::GetEventKind(event))
+            {
+                /* Watch for keyboard-modifier-events: */
+                case kEventRawKeyModifiersChanged:
+                {
+                    /* Get modifier mask: */
+                    UInt32 modifierMask = 0;
+                    ::GetEventParameter(event, kEventParamKeyModifiers, typeUInt32,
+                                        NULL, sizeof(modifierMask), NULL, &modifierMask);
+                    modifierMask = ::DarwinAdjustModifierMask(modifierMask, pMessage);
+
+                    /* Do not handle unchanged masks: */
+                    UInt32 uChanged = m_uDarwinKeyModifiers ^ modifierMask;
+                    if (!uChanged)
+                        break;
+
+                    /* Convert to keycode: */
+                    unsigned uKeyCode = ::DarwinModifierMaskToDarwinKeycode(uChanged);
+
+                    /* Do not handle empty and multiple modifier changes: */
+                    if (!uKeyCode || uKeyCode == ~0U)
+                        break;
+
+                    /* Handle key-event: */
+                    if (processKeyEvent(uKeyCode, uChanged & modifierMask))
+                    {
+                        /* Save the new modifier mask state: */
+                        m_uDarwinKeyModifiers = modifierMask;
+                        return true;
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+# elif defined(Q_WS_WIN)
 
     /* Make sure it's generic MSG event: */
     if (eventType != "windows_generic_MSG")
