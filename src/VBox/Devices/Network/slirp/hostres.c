@@ -141,6 +141,7 @@ static void free_labels(struct label *root);
 
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
 static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *h);
+static PDNSMAPPINGENTRY getDNSMapByName(PNATState pData, const char *name);
 #endif
 
 #if 1 /* XXX */
@@ -457,6 +458,9 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
 {
     struct dnsmsg_header *pHdr;
     struct hostent *h;
+    struct hostent hostent;
+    char *h_aliases[1];
+    char *h_addr_list[2];
     size_t oend;
     size_t nanswers;
     ssize_t nbytes;
@@ -476,8 +480,41 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
         goto out; /* NB: RCode_NoError without an answer, not RCode_NXDomain */
     }
 
+    h = NULL;
+#ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
+    {
+        PDNSMAPPINGENTRY pDNSMapingEntry = getDNSMapByName(pData, name);
+        if (pDNSMapingEntry != NULL)
+        {
+            LogDbg(("NAT: hostres: %s resolved from %s%s\n",
+                    name,
+                    pDNSMapingEntry->fPattern ? "pattern " : "mapping",
+                    pDNSMapingEntry->fPattern ? pDNSMapingEntry->pszName : ""));
 
-    h = gethostbyname(name);
+            if (qtype == Type_CNAME)
+            {
+                goto out;
+            }
+
+            hostent.h_name = name;
+            hostent.h_aliases = h_aliases;
+            h_aliases[0] = NULL;
+            hostent.h_addrtype = AF_INET;
+            hostent.h_length = sizeof(RTNETADDRIPV4);
+            hostent.h_addr_list = h_addr_list;
+            h_addr_list[0] = (char *)&pDNSMapingEntry->u32IpAddress;
+            h_addr_list[1] = NULL;
+
+            h = &hostent;
+        }
+    }
+#endif
+
+    if (h == NULL)
+    {
+        h = gethostbyname(name);
+    }
+
     if (h == NULL)
     {
         /* LogErr: h_errno */
@@ -535,7 +572,7 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
     }
     else if (qtype == Type_CNAME)
     {
-        LogErr(("NAT: hostres: %s is already canonical\n", name));
+        LogDbg(("NAT: hostres: %s is already canonical\n", name));
         goto out; /* NB: RCode_NoError without an answer, not RCode_NXDomain */
     }
 
@@ -1255,42 +1292,54 @@ slirp_add_host_resolver_mapping(PNATState pData,
 }
 
 
+static PDNSMAPPINGENTRY
+getDNSMapByName(PNATState pData, const char *pszName)
+{
+    PDNSMAPPINGENTRY pDNSMapingEntry;
+    const char *pszNameLower;
+
+    pszNameLower = RTStrDup(pszName);
+    if (RT_UNLIKELY(pszNameLower == NULL))
+        return NULL;
+    RTStrToLower(pszNameLower);
+
+    STAILQ_FOREACH(pDNSMapingEntry, &pData->DNSMapNames, MapList)
+    {
+        if (RTStrICmp(pDNSMapingEntry->pszName, pszNameLower) == 0)
+            goto done;
+    }
+
+    STAILQ_FOREACH(pDNSMapingEntry, &pData->DNSMapPatterns, MapList)
+    {
+        if (RTStrSimplePatternMultiMatch(pDNSMapingEntry->pszName, RTSTR_MAX,
+                                         pszNameLower, RTSTR_MAX, NULL))
+            goto done;
+    }
+
+  done:
+    RTStrFree(pszNameLower);
+    return pDNSMapingEntry;
+}
+
+
 static void
 alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *h)
 {
     PDNSMAPPINGENTRY pDNSMapingEntry = NULL;
-    char **pszAlias;
+    char **ppszAlias;
 
-    STAILQ_FOREACH(pDNSMapingEntry, &pData->DNSMapNames, MapList)
+    if (h->h_name != NULL)
     {
-        Assert(!pDNSMapingEntry->fPattern);
-
-        if (RTStrICmp(pDNSMapingEntry->pszName, h->h_name) == 0)
+        pDNSMapingEntry = getDNSMapByName(pData, h->h_name);
+        if (pDNSMapingEntry != NULL)
             goto done;
-
-        for (pszAlias = h->h_aliases; *pszAlias != NULL; ++pszAlias)
-        {
-            if (RTStrICmp(pDNSMapingEntry->pszName, *pszAlias) == 0)
-                goto done;
-        }
     }
 
-
-#   define MATCH(_pattern, _string) \
-        (RTStrSimplePatternMultiMatch((_pattern), RTSTR_MAX, (_string), RTSTR_MAX, NULL))
-
-    STAILQ_FOREACH(pDNSMapingEntry, &pData->DNSMapPatterns, MapList)
+    for (ppszAlias = h->h_aliases; *ppszAlias != NULL; ++ppszAlias)
     {
-        RTStrToLower(h->h_name);
-        if (MATCH(pDNSMapingEntry->pszName, h->h_name))
+        pDNSMapingEntry = getDNSMapByName(pData, *ppszAlias);
+        if (pDNSMapingEntry != NULL)
             goto done;
-
-        for (pszAlias = h->h_aliases; *pszAlias != NULL; ++pszAlias)
-        {
-            RTStrToLower(*pszAlias);
-            if (MATCH(pDNSMapingEntry->pszName, h->h_name))
-                goto done;
-        }
     }
 
   done:
@@ -1300,4 +1349,4 @@ alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *h)
         h->h_addr_list[1] = NULL;
     }
 }
-#endif
+#endif /* VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER */
