@@ -192,9 +192,7 @@ public:
     /** @name Internal interfaces used by other Main classes.
      * @{ */
 #if !defined(VBOX_COM_INPROC)
-    static DECLCALLBACK(int) i_doInstallThreadProc(RTTHREAD hThread, void *pvJob);
     HRESULT     i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo);
-    static DECLCALLBACK(int) i_doUninstallThreadProc(RTTHREAD hThread, void *pvJob);
     HRESULT     i_doUninstall(const Utf8Str *a_pstrName, bool a_fForcedRemoval, const Utf8Str *a_pstrDisplayInfo);
 #endif
     void        i_callAllVirtualBoxReadyHooks(void);
@@ -212,7 +210,6 @@ public:
     /** @}  */
 
 private:
-    bool    isThereAnyRunningVM() const;
     // wrapped IExtPackManager properties
     HRESULT getInstalledExtPacks(std::vector<ComPtr<IExtPack> > &aInstalledExtPacks);
 
@@ -231,6 +228,7 @@ private:
     HRESULT isExtPackUsable(const com::Utf8Str &aName,
                             BOOL *aUsable);
 
+    bool        i_areThereAnyRunningVMs(void) const;
     HRESULT     i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo, const char *a_pszCommand, ...);
     ExtPack    *i_findExtPack(const char *a_pszName);
     void        i_removeExtPack(const char *a_pszName);
