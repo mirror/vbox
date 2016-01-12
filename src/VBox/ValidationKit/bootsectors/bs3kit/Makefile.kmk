@@ -116,6 +116,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 # The 16-bit BS3Kit library.
 LIBRARIES += bs3kit-common-16
 bs3kit-common-16_TEMPLATE = VBoxBS3KitImg
+bs3kit-common-16_INSTTYPE = none
 bs3kit-common-16_DEFS     = TMPL_PE16 BS3_CMN_ONLY
 bs3kit-common-16_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
@@ -136,6 +137,7 @@ bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 # The 32-bit BS3Kit library.
 LIBRARIES += bs3kit-common-32
 bs3kit-common-32_TEMPLATE = VBoxBS3KitImg32
+bs3kit-common-32_INSTTYPE = none
 bs3kit-common-32_DEFS     = TMPL_PE32 BS3_CMN_ONLY
 bs3kit-common-32_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
@@ -150,6 +152,7 @@ bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 # The 64-bit BS3Kit library.
 LIBRARIES += bs3kit-common-64-asm
 bs3kit-common-64-asm_TEMPLATE = VBoxBS3KitImg64
+bs3kit-common-64_asm_INSTTYPE = none
 bs3kit-common-64-asm_DEFS     = TMPL_LM64 BS3_CMN_ONLY
 bs3kit-common-64-asm_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-64-asm_SOURCES  = $(filter %.asm,$(VBOX_BS3KIT_COMMON_SOURCES))
@@ -157,6 +160,7 @@ bs3kit-common-64-asm_SOURCES  = $(filter %.asm,$(VBOX_BS3KIT_COMMON_SOURCES))
 # The 64-bit BS3Kit library.
 LIBRARIES += bs3kit-common-64-c
 bs3kit-common-64-c_TEMPLATE = VBoxBS3KitImg64
+bs3kit-common-64_c_INSTTYPE = none
 bs3kit-common-64-c_DEFS     = TMPL_LM64 BS3_CMN_ONLY
 bs3kit-common-64-c_SOURCES  = $(filter-out %.asm,$(VBOX_BS3KIT_COMMON_SOURCES))
 
@@ -186,6 +190,7 @@ VBOX_BS3KIT_MODE_SOURCES = \
 # The 16-bit real mode BS3Kit library.
 LIBRARIES += bs3kit-rm
 bs3kit-rm_TEMPLATE = VBoxBS3KitImg
+bs3kit-rm_INSTTYPE = none
 bs3kit-rm_DEFS     = TMPL_RM
 bs3kit-rm_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-first-rm.asm \
@@ -195,6 +200,7 @@ bs3kit-rm_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 # The 16-bit protected mode BS3Kit library.
 LIBRARIES += bs3kit-pe16
 bs3kit-pe16_TEMPLATE = VBoxBS3KitImg
+bs3kit-pe16_INSTTYPE = none
 bs3kit-pe16_DEFS     = TMPL_PE16
 bs3kit-pe16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-first-pe16.asm \
@@ -203,12 +209,14 @@ bs3kit-pe16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 # The virtual 8086 under protected mode BS3Kit library.
 LIBRARIES += bs3kit-pev86
 bs3kit-pev86_TEMPLATE = VBoxBS3KitImg
+bs3kit-pev86_INSTTYPE = none
 bs3kit-pev86_DEFS     = TMPL_PEV86
 bs3kit-pev86_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 
 # The 32-bit protected mode BS3Kit library.
 LIBRARIES += bs3kit-pe32
-bs3kit-pe32_TEMPLATE = VBoxBS3KitImg
+bs3kit-pe32_TEMPLATE = VBoxBS3KitImg32
+bs3kit-pe32_INSTTYPE = none
 bs3kit-pe32_DEFS     = TMPL_PE32
 bs3kit-pe32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
 
@@ -216,19 +224,22 @@ bs3kit-pe32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
 # The 16-bit paged protected mode BS3Kit library.
 LIBRARIES += bs3kit-pp16
 bs3kit-pp16_TEMPLATE = VBoxBS3KitImg
+bs3kit-pp16_INSTTYPE = none
 bs3kit-pp16_DEFS     = TMPL_PP16
 bs3kit-pp16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-CpuDetect.asm
 
 # The 32-bit paged protected mode BS3Kit library.
 LIBRARIES += bs3kit-pp32
-bs3kit-pp32_TEMPLATE = VBoxBS3KitImg
+bs3kit-pp32_TEMPLATE = VBoxBS3KitImg32
+bs3kit-pp32_INSTTYPE = none
 bs3kit-pp32_DEFS     = TMPL_PP32
 bs3kit-pp32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
 
 # The virtual 8086 under protected mode BS3Kit library.
 LIBRARIES += bs3kit-ppv86
 bs3kit-ppv86_TEMPLATE = VBoxBS3KitImg
+bs3kit-ppv86_INSTTYPE = none
 bs3kit-ppv86_DEFS     = TMPL_PPV86
 bs3kit-ppv86_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 
@@ -236,19 +247,22 @@ bs3kit-ppv86_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 # The 16-bit paged protected mode BS3Kit library.
 LIBRARIES += bs3kit-pae16
 bs3kit-pae16_TEMPLATE = VBoxBS3KitImg
+bs3kit-pae16_INSTTYPE = none
 bs3kit-pae16_DEFS     = TMPL_PAE16
 bs3kit-pae16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-CpuDetect.asm
 
 # The 32-bit paged protected mode BS3Kit library.
 LIBRARIES += bs3kit-pae32
-bs3kit-pae32_TEMPLATE = VBoxBS3KitImg
+bs3kit-pae32_TEMPLATE = VBoxBS3KitImg32
+bs3kit-pae32_INSTTYPE = none
 bs3kit-pae32_DEFS     = TMPL_PAE32
 bs3kit-pae32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
 
 # The virtual 8086 under protected mode BS3Kit library.
 LIBRARIES += bs3kit-paev86
 bs3kit-paev86_TEMPLATE = VBoxBS3KitImg
+bs3kit-paev86_INSTTYPE = none
 bs3kit-paev86_DEFS     = TMPL_PAEV86
 bs3kit-paev86_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 
@@ -256,24 +270,28 @@ bs3kit-paev86_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 # The 16-bit long mode BS3Kit library.
 LIBRARIES += bs3kit-lm16
 bs3kit-lm16_TEMPLATE = VBoxBS3KitImg
+bs3kit-lm16_INSTTYPE = none
 bs3kit-lm16_DEFS     = TMPL_LM16
 bs3kit-lm16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 
 # The 32-bit long mode BS3Kit library.
 LIBRARIES += bs3kit-lm32
-bs3kit-lm32_TEMPLATE = VBoxBS3KitImg
+bs3kit-lm32_TEMPLATE = VBoxBS3KitImg32
+bs3kit-lm32_INSTTYPE = none
 bs3kit-lm32_DEFS     = TMPL_LM32
 bs3kit-lm32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 
 # The 64-bit long mode BS3Kit library.
 LIBRARIES += bs3kit-lm64-asm
-bs3kit-lm64-asm_TEMPLATE = VBoxBS3KitImg
+bs3kit-lm64-asm_TEMPLATE = VBoxBS3KitImg64
+bs3kit-lm64-asm_INSTTYPE = none
 bs3kit-lm64-asm_DEFS     = TMPL_LM64
 bs3kit-lm64-asm_SOURCES  = $(filter %.asm,$(VBOX_BS3KIT_MODE_SOURCES)) \
 
 # The 64-bit long mode BS3Kit library.
 LIBRARIES += bs3kit-lm64-c
-bs3kit-lm64-c_TEMPLATE = VBoxBS3KitImg
+bs3kit-lm64-c_TEMPLATE = VBoxBS3KitImg64
+bs3kit-lm64-c_INSTTYPE = none
 bs3kit-lm64-c_DEFS     = TMPL_LM64
 bs3kit-lm64-c_SOURCES  = $(filter-out %.asm, $(VBOX_BS3KIT_MODE_SOURCES)) \
 
