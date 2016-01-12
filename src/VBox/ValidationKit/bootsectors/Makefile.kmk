@@ -40,8 +40,14 @@ endif
 # Include sub-makefile.
 #
 if defined(VBOX_WITH_OPEN_WATCOM)
- if1of ($(KBUILD_TARGET), linux win) # requires patched NASM.
+ if1of ($(KBUILD_TARGET), win)
   VBOX_WITH_BS3KIT = 1
+ else if $(VBOX_GCC_VERSION_CC) >= 40400 # ms_abi was added in 4.4
+  if1of ($(KBUILD_TARGET), linux) # Requires patched NASM in tools.
+   VBOX_WITH_BS3KIT = 1
+  endif
+ endif
+ ifdef VBOX_WITH_BS3KIT
   include $(PATH_SUB_CURRENT)/bs3kit/Makefile.kmk
  endif
 endif
