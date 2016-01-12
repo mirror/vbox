@@ -41,6 +41,7 @@ endif
 #
 if defined(VBOX_WITH_OPEN_WATCOM)
  if1of ($(KBUILD_TARGET), win) # requires patched NASM.
+  VBOX_WITH_BS3KIT = 1
   include $(PATH_SUB_CURRENT)/bs3kit/Makefile.kmk
  endif
 endif
@@ -202,6 +203,19 @@ $$(bootsector2-vbinstst-32-1_0_OUTDIR)/bs2-vbinstst-32-1.asm: $(VBOX_VBINSTST_GE
 
  endif
 endif # bird-only
+
+
+ifdef VBOX_WITH_BS3KIT
+#
+# Bs3kit
+#
+
+# shutdown example.
+MISCBINS += bs3-cpu-basic-2
+bs3-cpu-basic-2_TEMPLATE = VBoxBS3KitImg
+bs3-cpu-basic-2_SOURCES = \
+	bs3-cpu-basic-2.asm
+endif
 
 
 include $(FILE_KBUILD_SUB_FOOTER)

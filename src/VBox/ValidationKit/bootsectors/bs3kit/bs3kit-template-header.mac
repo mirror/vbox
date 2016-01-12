@@ -50,6 +50,7 @@
 ;       - TMPL_CMN_LM  = TMPL_LM16  | TMPL_LM32  | TMPL_LM64
 ;       - TMPL_CMN_V86 = TMPL_PEV86 | TMPL_PPV86 | TMPL_PAEV86
 ;       - TMPL_CMN_R86 = TMPL_CMN_V86 | TMPL_RM
+;       - TMPL_CMN_PAGING = TMPL_CMN_PP | TMPL_CMN_PAE | TMPL_CMN_LM
 ;
 %ifdef TMPL_RM
  %ifdef TMPL_PE16
@@ -290,6 +291,7 @@
   %error "Both 'TMPL_PP16' and 'TMPL_LM64' are defined."
  %endif
  %define TMPL_CMN_PP
+ %define TMPL_CMN_PAGING
  %define TMPL_CMN_P16
  %define TMPL_16BIT
  %define TMPL_BITS              16
@@ -340,6 +342,7 @@
   %error "Both 'TMPL_PP32' and 'TMPL_LM64' are defined."
  %endif
  %define TMPL_CMN_PP
+ %define TMPL_CMN_PAGING
  %define TMPL_CMN_P32
  %define TMPL_32BIT
  %define TMPL_BITS              32
@@ -390,6 +393,7 @@
   %error "Both 'TMPL_PPV86' and 'TMPL_LM64' are defined."
  %endif
  %define TMPL_CMN_PP
+ %define TMPL_CMN_PAGING
  %define TMPL_CMN_V86
  %define TMPL_CMN_R86
  %define TMPL_16BIT
@@ -441,6 +445,7 @@
   %error "Both 'TMPL_PAE16' and 'TMPL_LM64' are defined."
  %endif
  %define TMPL_CMN_PAE
+ %define TMPL_CMN_PAGING
  %define TMPL_16BIT
  %define TMPL_CMN_P16
  %define TMPL_BITS              16
@@ -491,6 +496,7 @@
   %error "Both 'TMPL_PAE32' and 'TMPL_LM64' are defined."
  %endif
  %define TMPL_CMN_PAE
+ %define TMPL_CMN_PAGING
  %define TMPL_CMN_P32
  %define TMPL_32BIT
  %define TMPL_BITS              32
@@ -541,6 +547,7 @@
   %error "Both 'TMPL_PAEV86' and 'TMPL_LM64' are defined."
  %endif
  %define TMPL_CMN_PAE
+ %define TMPL_CMN_PAGING
  %define TMPL_CMN_V86
  %define TMPL_CMN_R86
  %define TMPL_16BIT
@@ -592,6 +599,7 @@
   %error "Both 'TMPL_LM16' and 'TMPL_LM64' are defined."
  %endif
  %define TMPL_CMN_LM
+ %define TMPL_CMN_PAGING
  %define TMPL_CMN_P16
  %define TMPL_16BIT
  %define TMPL_BITS              16
@@ -642,6 +650,7 @@
   %error "Both 'TMPL_LM32' and 'TMPL_LM64' are defined."
  %endif
  %define TMPL_CMN_LM
+ %define TMPL_CMN_PAGING
  %define TMPL_CMN_P32
  %define TMPL_32BIT
  %define TMPL_BITS              32
@@ -692,6 +701,7 @@
   %error "Both 'TMPL_LM64' and 'TMPL_LM32' are defined."
  %endif
  %define TMPL_CMN_LM
+ %define TMPL_CMN_PAGING
  %define TMPL_CMN_P64
  %define TMPL_64BIT
  %define TMPL_BITS              64
@@ -855,6 +865,16 @@
 %else
  %define TMPL_WRT_SYSTEM16_OR_FLAT  wrt FLAT
 %endif
+
+;; @def BS3_EXTERN_TMPL
+; Mangles the given name into a template specific one.  For ease of use, the
+; name is redefined to the mangled one, just like BS3_EXTERN_CMN does.
+; @note Segment does not change.
+%macro BS3_EXTERN_TMPL 1
+ extern TMPL_NM(%1)
+ %undef  %1
+ %define %1 TMPL_NM(%1)
+%endmacro
 
 ;
 ; Default code segment (changes BITS too).

@@ -48,6 +48,7 @@
 #undef TMPL_CMN_PAE
 #undef TMPL_CMN_LM
 #undef TMPL_CMN_V86
+#undef TMPL_CMN_PAGING
 
 #undef TMPL_CMN_P16
 #undef TMPL_CMN_P32

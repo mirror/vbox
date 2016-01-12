@@ -76,6 +76,7 @@
 # define TMPL_CMN_LM    /**< TMPL_LM16  | TMPL_LM32  | TMPL_LM64   */
 # define TMPL_CMN_V86   /**< TMPL_PEV86 | TMPL_PPV86 | TMPL_PAEV86 */
 # define TMPL_CMN_R86   /**< TMPL_CMN_V86 | TMPL_RM                */
+# define TMPL_CMN_PAGING /**< TMPL_CMN_PP | TMPL_CMN_PAE | TMPL_CMN_LM */
 /** @} */
 
 /** @def TMPL_NM
@@ -355,6 +356,7 @@
 #  error "TMPL_PP16 requires ARCH_BITS to be 16."
 # endif
 # define TMPL_CMN_PP
+# define TMPL_CMN_PAGING
 # define TMPL_CMN_P16
 # define TMPL_16BIT
 # define TMPL_BITS              16
@@ -404,6 +406,7 @@
 #  error "TMPL_PP32 requires ARCH_BITS to be 32."
 # endif
 # define TMPL_CMN_PP
+# define TMPL_CMN_PAGING
 # define TMPL_CMN_P32
 # define TMPL_32BIT
 # define TMPL_BITS              32
@@ -453,6 +456,7 @@
 #  error "TMPL_PPV86 requires ARCH_BITS to be 16."
 # endif
 # define TMPL_CMN_PP
+# define TMPL_CMN_PAGING
 # define TMPL_CMN_V86
 # define TMPL_CMN_R86
 # define TMPL_16BIT
@@ -503,6 +507,7 @@
 #  error "TMPL_PAE16 requires ARCH_BITS to be 16."
 # endif
 # define TMPL_CMN_PAE
+# define TMPL_CMN_PAGING
 # define TMPL_16BIT
 # define TMPL_CMN_P16
 # define TMPL_BITS              16
@@ -552,6 +557,7 @@
 #  error "TMPL_PAE32 requires ARCH_BITS to be 32."
 # endif
 # define TMPL_CMN_PAE
+# define TMPL_CMN_PAGING
 # define TMPL_CMN_P32
 # define TMPL_32BIT
 # define TMPL_BITS              32
@@ -601,6 +607,7 @@
 #  error "TMPL_PAEV86 requires ARCH_BITS to be 16."
 # endif
 # define TMPL_CMN_PAE
+# define TMPL_CMN_PAGING
 # define TMPL_CMN_V86
 # define TMPL_CMN_R86
 # define TMPL_16BIT
@@ -651,6 +658,7 @@
 #  error "TMPL_LM16 requires ARCH_BITS to be 16."
 # endif
 # define TMPL_CMN_LM
+# define TMPL_CMN_PAGING
 # define TMPL_CMN_P16
 # define TMPL_16BIT
 # define TMPL_BITS              16
@@ -700,6 +708,7 @@
 #  error "TMPL_LM32 requires ARCH_BITS to be 32."
 # endif
 # define TMPL_CMN_LM
+# define TMPL_CMN_PAGING
 # define TMPL_CMN_P32
 # define TMPL_32BIT
 # define TMPL_BITS              32
@@ -749,6 +758,7 @@
 #  error "TMPL_LM64 requires ARCH_BITS to be 64."
 # endif
 # define TMPL_CMN_LM
+# define TMPL_CMN_PAGING
 # define TMPL_CMN_P64
 # define TMPL_64BIT
 # define TMPL_BITS              64

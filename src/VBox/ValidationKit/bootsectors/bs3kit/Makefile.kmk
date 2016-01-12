@@ -188,7 +188,8 @@ LIBRARIES += bs3kit-rm
 bs3kit-rm_TEMPLATE = VBoxBS3KitImg
 bs3kit-rm_DEFS     = TMPL_RM
 bs3kit-rm_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
-	bs3-first-rm.asm
+	bs3-first-rm.asm \
+	bs3-mode-CpuDetect.asm
 
 
 # The 16-bit protected mode BS3Kit library.
@@ -196,7 +197,8 @@ LIBRARIES += bs3kit-pe16
 bs3kit-pe16_TEMPLATE = VBoxBS3KitImg
 bs3kit-pe16_DEFS     = TMPL_PE16
 bs3kit-pe16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
-	bs3-first-pe16.asm
+	bs3-first-pe16.asm \
+#	bs3-mode-CpuDetect.asm
 
 # The virtual 8086 under protected mode BS3Kit library.
 LIBRARIES += bs3kit-pev86
@@ -216,6 +218,7 @@ LIBRARIES += bs3kit-pp16
 bs3kit-pp16_TEMPLATE = VBoxBS3KitImg
 bs3kit-pp16_DEFS     = TMPL_PP16
 bs3kit-pp16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-mode-CpuDetect.asm
 
 # The 32-bit paged protected mode BS3Kit library.
 LIBRARIES += bs3kit-pp32
@@ -234,7 +237,8 @@ bs3kit-ppv86_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 LIBRARIES += bs3kit-pae16
 bs3kit-pae16_TEMPLATE = VBoxBS3KitImg
 bs3kit-pae16_DEFS     = TMPL_PAE16
-bs3kit-pae16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
+bs3kit-pae16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-mode-CpuDetect.asm
 
 # The 32-bit paged protected mode BS3Kit library.
 LIBRARIES += bs3kit-pae32
