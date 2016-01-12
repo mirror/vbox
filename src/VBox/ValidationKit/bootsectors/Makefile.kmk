@@ -126,6 +126,14 @@ MISCBINS += bootsector2-cpu-basic-1
 bootsector2-cpu-basic-1_TEMPLATE = VBoxBsTestImg
 bootsector2-cpu-basic-1_SOURCES = bootsector2-cpu-basic-1.asm
 
+MISCBINS += bootsector2-cpu-ac-loop
+bootsector2-cpu-ac-loop_TEMPLATE = VBoxBsTestImg
+bootsector2-cpu-ac-loop_SOURCES = bootsector2-cpu-ac-loop.asm
+
+MISCBINS += bootsector2-cpu-db-loop
+bootsector2-cpu-db-loop_TEMPLATE = VBoxBsTestImg
+bootsector2-cpu-db-loop_SOURCES = bootsector2-cpu-db-loop.asm
+
 MISCBINS += bootsector2-boot-registers-1
 bootsector2-boot-registers-1_TEMPLATE = VBoxBsTestImg
 bootsector2-boot-registers-1_SOURCES = bootsector2-boot-registers-1.asm
