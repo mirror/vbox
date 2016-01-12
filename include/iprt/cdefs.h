@@ -410,6 +410,8 @@
 #  define RT_OPSYS      RT_OPSYS_SOLARIS
 # elif defined(_WIN32) || defined(_WIN64)
 #  define RT_OPSYS      RT_OPSYS_WINDOWS
+# elif defined(MSDOS) || defined(_MSDOS) || defined(DOS16RM) /* OW+MSC || MSC || DMC */
+#  define RT_OPSYS      RT_OPSYS_DOS
 # else
 #  error "Port Me"
 # endif

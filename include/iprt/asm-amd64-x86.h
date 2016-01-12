@@ -1269,13 +1269,16 @@ DECLINLINE(uint32_t) ASMCpuId_EDX(uint32_t uOperator)
  *
  * @returns true if CPUID is supported.
  */
+#ifdef __WATCOMC__
+DECLASM(bool) ASMHasCpuId(void);
+#else
 DECLINLINE(bool) ASMHasCpuId(void)
 {
-#ifdef RT_ARCH_AMD64
+# ifdef RT_ARCH_AMD64
     return true; /* ASSUME that all amd64 compatible CPUs have cpuid. */
-#else /* !RT_ARCH_AMD64 */
+# else /* !RT_ARCH_AMD64 */
     bool        fRet = false;
-# if RT_INLINE_ASM_GNU_STYLE
+#  if RT_INLINE_ASM_GNU_STYLE
     uint32_t    u1;
     uint32_t    u2;
     __asm__ ("pushf\n\t"
@@ -1291,7 +1294,7 @@ DECLINLINE(bool) ASMHasCpuId(void)
              "push  %2\n\t"
              "popf\n\t"
              : "=m" (fRet), "=r" (u1), "=r" (u2));
-# else
+#  else
     __asm
     {
         pushfd
@@ -1307,10 +1310,11 @@ DECLINLINE(bool) ASMHasCpuId(void)
         push    ebx
         popfd
     }
-# endif
+#  endif
     return fRet;
-#endif /* !RT_ARCH_AMD64 */
+# endif /* !RT_ARCH_AMD64 */
 }
+#endif
 
 
 /**

@@ -47,12 +47,14 @@
 
 #undef      ASMGetIDTR
 #pragma aux ASMGetIDTR = \
+    ".286p" \
     "sidt fword ptr es:[bx]" \
     parm [es bx] \
     modify exact [];
 
 #undef      ASMGetIdtrLimit
 #pragma aux ASMGetIdtrLimit = \
+    ".286p" \
     "sub  sp, 8" \
     "mov  bx, sp" \
     "sidt fword ptr ss:[bx]" \
@@ -64,18 +66,21 @@
 
 #undef      ASMSetIDTR
 #pragma aux ASMSetIDTR = \
+    ".286p" \
     "lidt fword ptr es:[bx]" \
     parm [es bx] nomemory \
     modify nomemory;
 
 #undef      ASMGetGDTR
 #pragma aux ASMGetGDTR = \
+    ".286p" \
     "sgdt fword ptr es:[bx]" \
     parm [es bx] \
     modify exact [];
 
 #undef      ASMSetGDTR
 #pragma aux ASMSetGDTR = \
+    ".286p" \
     "lgdt fword ptr es:[bx]" \
     parm [es bx] nomemory \
     modify exact [] nomemory;
@@ -103,6 +108,7 @@
 
 #undef      ASMGetFS
 #pragma aux ASMGetFS = \
+    ".386" \
     "mov ax, fs" \
     parm [] nomemory \
     value [ax] \
@@ -110,6 +116,7 @@
 
 #undef      ASMGetGS
 #pragma aux ASMGetGS = \
+    ".386" \
     "mov ax, gs" \
     parm [] nomemory \
     value [ax] \
@@ -124,6 +131,7 @@
 
 #undef      ASMGetTR
 #pragma aux ASMGetTR = \
+    ".286" \
     "str ax" \
     parm [] nomemory \
     value [ax] \
@@ -131,6 +139,7 @@
 
 #undef      ASMGetLDTR
 #pragma aux ASMGetLDTR = \
+    ".286" \
     "sldt ax" \
     parm [] nomemory \
     value [ax] \
@@ -225,6 +234,7 @@
          This ordering seems to apply to parameter values too. */
 #undef      ASMGetCR0
 #pragma aux ASMGetCR0 = \
+    ".386" \
     "mov eax, cr0" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -234,6 +244,7 @@
 
 #undef      ASMSetCR0
 #pragma aux ASMSetCR0 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov cr0, edx" \
@@ -242,6 +253,7 @@
 
 #undef      ASMGetCR2
 #pragma aux ASMGetCR2 = \
+    ".386" \
     "mov eax, cr2" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -251,6 +263,7 @@
 
 #undef      ASMSetCR2
 #pragma aux ASMSetCR2 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov cr2, edx" \
@@ -259,6 +272,7 @@
 
 #undef      ASMGetCR3
 #pragma aux ASMGetCR3 = \
+    ".386" \
     "mov eax, cr3" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -268,6 +282,7 @@
 
 #undef      ASMSetCR3
 #pragma aux ASMSetCR3 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov cr3, edx" \
@@ -276,6 +291,7 @@
 
 #undef      ASMReloadCR3
 #pragma aux ASMReloadCR3 = \
+    ".386" \
     "mov eax, cr3" \
     "mov cr3, eax" \
     parm [] nomemory \
@@ -283,6 +299,7 @@
 
 #undef      ASMGetCR4
 #pragma aux ASMGetCR4 = \
+    ".386" \
     "mov eax, cr4" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -292,6 +309,7 @@
 
 #undef      ASMSetCR4
 #pragma aux ASMSetCR4 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov cr4, edx" \
@@ -374,6 +392,7 @@
 
 #undef      ASMGetDR0
 #pragma aux ASMGetDR0 = \
+    ".386" \
     "mov eax, dr0" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -383,6 +402,7 @@
 
 #undef      ASMGetDR1
 #pragma aux ASMGetDR1 = \
+    ".386" \
     "mov eax, dr1" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -392,6 +412,7 @@
 
 #undef      ASMGetDR2
 #pragma aux ASMGetDR2 = \
+    ".386" \
     "mov eax, dr2" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -401,6 +422,7 @@
 
 #undef      ASMGetDR3
 #pragma aux ASMGetDR3 = \
+    ".386" \
     "mov eax, dr3" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -410,6 +432,7 @@
 
 #undef      ASMGetDR6
 #pragma aux ASMGetDR6 = \
+    ".386" \
     "mov eax, dr6" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -419,6 +442,7 @@
 
 #undef      ASMGetAndClearDR6
 #pragma aux ASMGetAndClearDR6 = \
+    ".386" \
     "mov edx, 0ffff0ff0h" \
     "mov eax, dr6" \
     "mov dr6, edx" \
@@ -430,6 +454,7 @@
 
 #undef      ASMGetDR7
 #pragma aux ASMGetDR7 = \
+    ".386" \
     "mov eax, dr7" \
     "mov edx, eax" \
     "shr edx, 16" \
@@ -439,6 +464,7 @@
 
 #undef      ASMSetDR0
 #pragma aux ASMSetDR0 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov dr0, edx" \
@@ -447,6 +473,7 @@
 
 #undef      ASMSetDR1
 #pragma aux ASMSetDR1 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov dr1, edx" \
@@ -455,6 +482,7 @@
 
 #undef      ASMSetDR2
 #pragma aux ASMSetDR2 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov dr2, edx" \
@@ -463,6 +491,7 @@
 
 #undef      ASMSetDR3
 #pragma aux ASMSetDR3 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov dr3, edx" \
@@ -471,6 +500,7 @@
 
 #undef      ASMSetDR6
 #pragma aux ASMSetDR6 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov dr6, edx" \
@@ -479,6 +509,7 @@
 
 #undef      ASMSetDR7
 #pragma aux ASMSetDR7 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "mov dr7, edx" \
@@ -515,6 +546,7 @@
 
 #undef      ASMOutU32
 #pragma aux ASMOutU32 = \
+    ".386" \
     "shl ecx, 16" \
     "mov cx, ax" \
     "mov eax, ecx" \
@@ -524,6 +556,7 @@
 
 #undef      ASMInU32
 #pragma aux ASMInU32 = \
+    ".386" \
     "in eax, dx" \
     "mov ecx, eax" \
     "shr ecx, 16" \
@@ -533,6 +566,7 @@
 
 #undef      ASMOutStrU8
 #pragma aux ASMOutStrU8 = \
+    ".186" \
     "mov ds, bx" \
     "rep outsb" \
     parm [dx] [bx si] [cx] nomemory \
@@ -540,12 +574,14 @@
 
 #undef      ASMInStrU8
 #pragma aux ASMInStrU8 = \
+    ".186" \
     "rep insb" \
     parm [dx] [es di] [cx] \
     modify exact [di cx];
 
 #undef      ASMOutStrU16
 #pragma aux ASMOutStrU16 = \
+    ".186" \
     "mov ds, bx" \
     "rep outsw" \
     parm [dx] [bx si] [cx] nomemory \
@@ -553,12 +589,14 @@
 
 #undef      ASMInStrU16
 #pragma aux ASMInStrU16 = \
+    ".186" \
     "rep insw" \
     parm [dx] [es di] [cx] \
     modify exact [di cx];
 
 #undef      ASMOutStrU32
 #pragma aux ASMOutStrU32 = \
+    ".386" \
     "mov ds, bx" \
     "rep outsd" \
     parm [dx] [bx si] [cx] nomemory \
@@ -566,6 +604,7 @@
 
 #undef      ASMInStrU32
 #pragma aux ASMInStrU32 = \
+    ".386" \
     "rep insd" \
     parm [dx] [es di] [cx] \
     modify exact [di cx];

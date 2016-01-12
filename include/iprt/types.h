@@ -763,7 +763,7 @@ typedef const struct RTTIMESPEC *PCRTTIMESPEC;
  */
 
 /** Signed integer which can contain both GC and HC pointers. */
-#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
+#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32) || (HC_ARCH_BITS == 16 || GC_ARCH_BITS == 16)
 typedef int32_t         RTINTPTR;
 #elif (HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64)
 typedef int64_t         RTINTPTR;
@@ -775,7 +775,7 @@ typedef RTINTPTR       *PRTINTPTR;
 /** Pointer const to signed integer which can contain both GC and HC pointers. */
 typedef const RTINTPTR *PCRTINTPTR;
 /** The maximum value the RTINTPTR type can hold. */
-#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
+#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32) || (HC_ARCH_BITS == 16 || GC_ARCH_BITS == 16)
 # define RTINTPTR_MAX   INT32_MAX
 #elif (HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64)
 # define RTINTPTR_MAX   INT64_MAX
@@ -783,7 +783,7 @@ typedef const RTINTPTR *PCRTINTPTR;
 #  error Unsupported HC_ARCH_BITS and/or GC_ARCH_BITS values.
 #endif
 /** The minimum value the RTINTPTR type can hold. */
-#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
+#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32) || (HC_ARCH_BITS == 16 || GC_ARCH_BITS == 16)
 # define RTINTPTR_MIN   INT32_MIN
 #elif (HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64)
 # define RTINTPTR_MIN   INT64_MIN
@@ -792,7 +792,7 @@ typedef const RTINTPTR *PCRTINTPTR;
 #endif
 
 /** Unsigned integer which can contain both GC and HC pointers. */
-#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
+#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32) || (HC_ARCH_BITS == 16 || GC_ARCH_BITS == 16)
 typedef uint32_t        RTUINTPTR;
 #elif (HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64)
 typedef uint64_t        RTUINTPTR;
@@ -804,7 +804,7 @@ typedef RTUINTPTR      *PRTUINTPTR;
 /** Pointer const to unsigned integer which can contain both GC and HC pointers. */
 typedef const RTUINTPTR *PCRTUINTPTR;
 /** The maximum value the RTUINTPTR type can hold. */
-#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
+#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32) || (HC_ARCH_BITS == 16 || GC_ARCH_BITS == 16)
 # define RTUINTPTR_MAX  UINT32_MAX
 #elif (HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64)
 # define RTUINTPTR_MAX  UINT64_MAX
