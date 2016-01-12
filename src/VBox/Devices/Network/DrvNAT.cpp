@@ -391,7 +391,7 @@ static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
  */
 static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
 {
-#ifndef DEBUG_andy /* Assertion happens often to me after resuming a VM -- no time to investigate this now. */
+#if 0 /* Assertion happens often to me after resuming a VM -- no time to investigate this now. */
     Assert(pThis->enmLinkState == PDMNETWORKLINKSTATE_UP);
 #endif
     if (pThis->enmLinkState == PDMNETWORKLINKSTATE_UP)
