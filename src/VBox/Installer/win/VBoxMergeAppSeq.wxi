@@ -2,7 +2,7 @@
 <!--
     VirtualBox Windows Installation Script (WiX)
 
-    Copyright (C) 2006-2015 Oracle Corporation
+    Copyright (C) 2006-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -16,4 +16,40 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
+<?if $(env.VBOX_WITH_MIDL_PROXY_STUB) = "yes" ?>
+    <!--
+        Reverse the typelib and registry writing order to make proxy stub work.
+
+        A few things are ganging up on us here:
+            - A Typelib element is translated into a typelib table entry.
+            - While a Interface element is translated into a registry table
+              entry.
+            - The typelib table is by default processed after writing the
+              registry table.
+            - The typelib processing will set the ProxyStubClsid32 to a
+              dynamic builtin one that uses the typelib, thus overwriting
+              that bit of intformation from our interface elements (the
+              NumMethods bit is kept, go figure).
+           (- If we set the Advertise attribute on the Typelib element to
+              no, we may get a bit futher with ProxyStubClsid32, but we
+              end up with VBoxC being using instead of VBoxSVC. At least
+              in one of the configurations attempted)
+
+        The whole point of the proxy stub DLLs is to not use the default
+        dynamic proxy stub from OLE that loads+parses the typelib each time
+        it creates proxies/stubs.  There are two workarounds:
+            1. Don't use the typelib and interface elements, but instead emit
+               plain registry entries (heat.exe can help).
+            2. Make the registry writing happen after the typelib registration.
+
+        Going with option two for now.
+
+        ASSUMES RegisterTypeLibraries has sequence number 5500 and
+        WriteRegistryValues 5000.  Modifies both.
+     -->
+    <RegisterTypeLibraries Sequence="4999"/>
+    <WriteRegistryValues Sequence="5501"/>
+<?endif?>
+
 </Include>
+

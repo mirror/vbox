@@ -657,16 +657,40 @@ $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
 $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi: \
 		$(PATH_SUB_CURRENT)/VirtualBox_TypeLib.xsl \
 		$(VBOX_XIDL_FILE) \
+		$(MAKEFILE) \
+               $(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),$(PATH_STAGE_BIN)/VBoxProxyStub$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-x86,).dll,) \
 		| $$(dir $$@)
+ifndef VBOX_WITH_MIDL_PROXY_STUB
 	$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
+else
+	$(VBOX_XSLTPROC) -o "$@.xidl" $< $(VBOX_XIDL_FILE)
+	$(VBOX_PATH_WIX)/heat.exe \
+		file $(PATH_STAGE_BIN)/VBoxProxyStub$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-x86,).dll \
+		-nologo -o $@.heat
+	$(SED) -e '/\<Interface Id/!d' -e 's/^[[:space:]]*/    /' $@.heat --output $@.interfaces
+	$(SED) -e '/<\/AppId>/{' -e 'r $@.interfaces' -e '}' "$@.xidl" --output $@
+	$(RM) -f -- "$@.xidl" "$@.heat" "$@.interfaces"
+endif
 
 $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi: \
 		$(PATH_SUB_CURRENT)/VirtualBox_TypeLib.xsl \
 		$(VBOX_XIDL_FILE) \
+               $(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),$(PATH_STAGE_BIN)/VBoxProxyStub-x86.dll,) \
 		| $$(dir $$@)
-	$(VBOX_XSLTPROC) --stringparam "a_sTarget" "VBoxClient-x86"  -o $@.tmp $< $(VBOX_XIDL_FILE)
+ifndef VBOX_WITH_MIDL_PROXY_STUB
+	$(VBOX_XSLTPROC) --stringparam "a_sTarget" "VBoxClient-x86" -o $@.tmp $< $(VBOX_XIDL_FILE)
 	$(SED) -e 's/VBoxC/VBoxClient_x86/g' --output $@ $@.tmp
 	$(RM) -f $@.tmp
+else
+	$(VBOX_XSLTPROC) --stringparam "a_sTarget" "VBoxClient-x86" -o "$@.xidl-pre" $< $(VBOX_XIDL_FILE)
+	$(SED) -e 's/VBoxC/VBoxClient_x86/g' --output "$@.xidl" "$@.xidl-pre"
+	$(VBOX_PATH_WIX)/heat.exe \
+		file $(PATH_STAGE_BIN)/VBoxProxyStub-x86.dll \
+		-nologo -o $@.heat
+	$(SED) -e '/\<Interface Id/!d' -e 's/^[[:space:]]*/    /' $@.heat --output $@.interfaces
+	$(SED) -e '/<\/AppId>/{' -e 'r $@.interfaces' -e '}' $@.xidl --output $@
+	$(RM) -f -- "$@.xidl-pre" "$@.xidl" "$@.tmp2" "$@.heat" "$@.interfaces"
+endif
 
 #
 # Construct the list of GUI translations.

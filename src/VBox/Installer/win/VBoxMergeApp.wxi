@@ -63,13 +63,29 @@
               Source="$(env.PATH_OUT)\bin\VBoxSVC.exe">
         </File>
 
+        <!-- Note: This file ID *must not* be changed because of our typelib template generation file! -->
+<?if $(env.VBOX_WITH_MIDL_PROXY_STUB) != "yes" ?>
         <!-- We set KeyPath on this file to instruct TypeLib to read the TLB resource from it
              and create appropriate Interface registry entries. Note that the same TLB is present
              in VBoxSVC.exe - it's just a matter of choice which one to use -->
-        <!-- Note: This file ID *must not* be changed because of our typelib template generation file! -->
         <File Id="VBoxC" Name="VBoxC.dll"
               Source="$(env.PATH_OUT)\bin\VBoxC.dll" KeyPath="yes">
         </File>
+<?else?>
+        <File Id="VBoxC" Name="VBoxC.dll"
+              Source="$(env.PATH_OUT)\bin\VBoxC.dll" KeyPath="no">
+        </File>
+
+        <!-- We put the typelib in the proxy stub since it's always required to be loaded and is
+             significantly smaller than VBoxC.dll.  So, KeyPath for this element instead of the above. -->
+        <File Id="file_VBoxProxyStub" Name="VBoxProxyStub.dll" KeyPath="yes"
+              Source="$(env.PATH_OUT)\bin\VBoxProxyStub.dll">
+            <!-- TODO: figure how 327E3C00-EE61-462F-AED3-0DFF6CBF9904 is selected. -->
+            <Class Id="{327E3C00-EE61-462F-AED3-0DFF6CBF9904}" Context="InprocServer32"
+                Description="PSFactoryBuffer" ThreadingModel="both" >
+            </Class>
+        </File>
+<?endif?>
 
         <!-- Include the auto-generated TypeLib block -->
         <?include $(env.PATH_TARGET)\VirtualBox_TypeLib.wxi ?>
