@@ -62,10 +62,11 @@
     <TypeLib>
       <xsl:attribute name="Id"><xsl:value-of select="@uuid"/></xsl:attribute>
       <xsl:attribute name="Advertise">yes</xsl:attribute>
-      <xsl:attribute name="MajorVersion">1</xsl:attribute>
-      <xsl:attribute name="MinorVersion">0</xsl:attribute>
+      <xsl:attribute name="MajorVersion"><xsl:value-of select="substring(@version,1,1)"/></xsl:attribute>
+      <xsl:attribute name="MinorVersion"><xsl:value-of select="substring(@version,3)"/></xsl:attribute>
       <xsl:attribute name="Language">0</xsl:attribute>
       <xsl:attribute name="Description"><xsl:value-of select="@desc"/></xsl:attribute>
+      <xsl:attribute name="HelpDirectory"><xsl:text>INSTALLDIR</xsl:text></xsl:attribute>
       <AppId>
         <xsl:attribute name="Id"><xsl:value-of select="@appUuid"/></xsl:attribute>
         <xsl:attribute name="Description"><xsl:value-of select="@name"/> Application</xsl:attribute>
