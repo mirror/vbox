@@ -866,7 +866,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  	src-all/EventImpl.cpp \
  	src-all/Global.cpp \
 	src-all/AutoCaller.cpp \
-        src-all/ThreadTask.cpp \
+ 	src-all/ThreadTask.cpp \
  	src-all/VirtualBoxBase.cpp \
  	src-all/VirtualBoxErrorInfoImpl.cpp \
  	src-client/ClientTokenHolder.cpp \
