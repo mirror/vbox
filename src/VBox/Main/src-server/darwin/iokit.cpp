@@ -49,6 +49,7 @@
 #include <iprt/assert.h>
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
+#include <iprt/system.h>
 #ifdef STANDALONE_TESTCASE
 # include <iprt/initterm.h>
 # include <iprt/stream.h>
@@ -75,12 +76,22 @@
 /** The VBoxUSBDevice class name. */
 #define VBOXUSBDEVICE_CLASS_NAME "org_virtualbox_VBoxUSBDevice"
 
+/** Define the constant for the IOUSBHostDevice class name added in El Capitan. */
+#ifndef kIOUSBHostDeviceClassName
+# define kIOUSBHostDeviceClassName "IOUSBHostDevice"
+#endif
+
+/** The major darwin version indicating OS X El Captian, used to take care of the USB changes. */
+#define VBOX_OSX_EL_CAPTIAN_VER 15
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** The IO Master Port. */
 static mach_port_t g_MasterPort = NULL;
+/** Major darwin version as returned by uname -r. 
+ * Used to  changes to */
+uint32_t g_uMajorDarwin = 0;
 
 
 /**
@@ -94,6 +105,21 @@ static bool darwinOpenMasterPort(void)
     {
         kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort);
         AssertReturn(krc == KERN_SUCCESS, false);
+
+        /* Get the darwin version we are running on. */
+        char aszVersion[16] = { 0 };
+        int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, &aszVersion[0], sizeof(aszVersion));
+        if (RT_SUCCESS(rc))
+        {
+            /* Make sure it is zero terminated (paranoia). */
+            aszVersion[15] = '\0';
+            rc = RTStrToUInt32Ex(&aszVersion[0], NULL, 10, &g_uMajorDarwin);
+            if (   rc != VINF_SUCCESS
+                && rc != VWRN_TRAILING_CHARS)
+                LogRel(("IOKit: Failed to convert the major part of the version string \"%s\" into an integer\n", &aszVersion[0]));
+        }
+        else
+            LogRel(("IOKit: Failed to query the OS release version with %Rrc\n", rc));
     }
     return true;
 }
@@ -516,6 +542,18 @@ typedef struct DARWINUSBNOTIFY
     io_iterator_t DetachIterator;
 } DARWINUSBNOTIFY, *PDARWINUSBNOTIFY;
 
+/**
+ * Returns the correct class name to identify USB devices. El Capitan
+ * introduced a reworked USb stack with changed names.
+ * The old names are still available but the objects don't reveal all the
+ * information required.
+ */
+DECLINLINE(const char *)darwinGetUsbDeviceClassName(void)
+{
+    return   g_uMajorDarwin >= VBOX_OSX_EL_CAPTIAN_VER
+           ? kIOUSBHostDeviceClassName
+           : kIOUSBDeviceClassName;
+}
 
 /**
  * Run thru an iterator.
@@ -618,7 +656,7 @@ void *DarwinSubscribeUSBNotifications(void)
              */
             kern_return_t rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                                 kIOPublishNotification,
-                                                                IOServiceMatching(kIOUSBDeviceClassName),
+                                                                IOServiceMatching(darwinGetUsbDeviceClassName()),
                                                                 darwinUSBAttachNotification1,
                                                                 pNotify,
                                                                 &pNotify->AttachIterator);
@@ -627,7 +665,7 @@ void *DarwinSubscribeUSBNotifications(void)
                 darwinDrainIterator(pNotify->AttachIterator);
                 rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                       kIOMatchedNotification,
-                                                      IOServiceMatching(kIOUSBDeviceClassName),
+                                                      IOServiceMatching(darwinGetUsbDeviceClassName()),
                                                       darwinUSBAttachNotification2,
                                                       pNotify,
                                                       &pNotify->AttachIterator2);
@@ -636,7 +674,7 @@ void *DarwinSubscribeUSBNotifications(void)
                     darwinDrainIterator(pNotify->AttachIterator2);
                     rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                           kIOTerminatedNotification,
-                                                          IOServiceMatching(kIOUSBDeviceClassName),
+                                                          IOServiceMatching(darwinGetUsbDeviceClassName()),
                                                           darwinUSBDetachNotification,
                                                           pNotify,
                                                           &pNotify->DetachIterator);
@@ -819,7 +857,8 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
                     {
                         fUserClientOnly = false;
 
-                        if (!strcmp(szName, "IOUSBMassStorageClass"))
+                        if (   !strcmp(szName, "IOUSBMassStorageClass")
+                            || !strcmp(szName, "IOUSBMassStorageInterfaceNub"))
                         {
                             /* Only permit capturing MSDs that aren't mounted, at least
                                until the GUI starts poping up warnings about data loss
@@ -905,7 +944,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
     /*
      * Create a matching dictionary for searching for USB Devices in the IOKit.
      */
-    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOUSBDeviceClassName);
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(darwinGetUsbDeviceClassName());
     AssertReturn(RefMatchingDict, NULL);
 
     /*
@@ -980,9 +1019,13 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 pCur->bBus = u32LocationId >> 24;
                 darwinDictGetU8(PropsRef, CFSTR("PortNum"), &pCur->bPort); /* Not present in 10.11 beta 3, so ignore failure. (Is set to zero.) */
                 uint8_t bSpeed;
-                AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDevicePropertySpeed),  &bSpeed));
-                Assert(bSpeed <= 3);
-                pCur->enmSpeed = bSpeed == 3 ? USBDEVICESPEED_SUPER
+                AssertBreak(darwinDictGetU8(PropsRef,
+                                              g_uMajorDarwin >= VBOX_OSX_EL_CAPTIAN_VER
+                                            ? CFSTR("USBSpeed")
+                                            : CFSTR(kUSBDevicePropertySpeed),
+                                            &bSpeed));
+                Assert(bSpeed <= 4);
+                pCur->enmSpeed = bSpeed == 3 || bSpeed == 4 ? USBDEVICESPEED_SUPER
                                : bSpeed == 2 ? USBDEVICESPEED_HIGH
                                : bSpeed == 1 ? USBDEVICESPEED_FULL
                                : bSpeed == 0 ? USBDEVICESPEED_LOW
@@ -1133,7 +1176,7 @@ int DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur)
      * Fixes made to this code probably applies there too!
      */
 
-    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOUSBDeviceClassName);
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(darwinGetUsbDeviceClassName());
     AssertReturn(RefMatchingDict, NULL);
 
     uint64_t u64SessionId = 0;
