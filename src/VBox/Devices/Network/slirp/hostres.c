@@ -1296,7 +1296,7 @@ static PDNSMAPPINGENTRY
 getDNSMapByName(PNATState pData, const char *pszName)
 {
     PDNSMAPPINGENTRY pDNSMapingEntry;
-    const char *pszNameLower;
+    char *pszNameLower;
 
     pszNameLower = RTStrDup(pszName);
     if (RT_UNLIKELY(pszNameLower == NULL))
