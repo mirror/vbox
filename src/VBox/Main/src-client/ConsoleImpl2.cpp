@@ -1976,8 +1976,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                    "Because the USB 2.0 controller state is part of the saved "
                                    "VM state, the VM cannot be started. To fix "
                                    "this problem, either install the '%s' or disable USB 2.0 "
-                                   "support in the VM settings"),
-                                s_pszUsbExtPackName);
+                                   "support in the VM settings.\n"
+                                   "Note! This error could also mean that an incompatible version of "
+                                   "the '%s' is installed"),
+                                s_pszUsbExtPackName, s_pszUsbExtPackName);
                     }
 # endif
                 }
