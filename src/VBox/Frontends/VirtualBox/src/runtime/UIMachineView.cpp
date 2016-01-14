@@ -96,9 +96,7 @@
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 #ifdef Q_WS_X11
-# if QT_VERSION >= 0x050000
-#  include <xcb/xcb.h>
-# else /* QT_VERSION < 0x050000 */
+# if QT_VERSION < 0x050000
 #  include <X11/XKBlib.h>
 #  ifdef KeyPress
 const int XFocusIn = FocusIn;
@@ -110,7 +108,9 @@ const int XKeyRelease = KeyRelease;
 #   undef FocusOut
 #   undef FocusIn
 #  endif /* KeyPress */
-# endif /* QT_VERSION < 0x050000 */
+# else /* QT_VERSION >= 0x050000 */
+#  include <xcb/xcb.h>
+# endif /* QT_VERSION >= 0x050000 */
 #endif /* Q_WS_X11 */
 
 #ifdef DEBUG_andy
@@ -121,50 +121,6 @@ const int XKeyRelease = KeyRelease;
 # define DNDDEBUG(x)
 #endif
 
-
-#ifdef Q_WS_X11
-# if QT_VERSION >= 0x050000
-/*********************************************************************************************************************************
-*   Class UIViewport implementation.                                                                                             *
-*********************************************************************************************************************************/
-
-UIViewport::UIViewport(UIMachineView *pParent)
-    : QWidget(pParent)
-    , m_pMachineView(pParent)
-{
-}
-
-bool UIViewport::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
-{
-    /* Make sure it's XCB event: */
-    AssertReturn(eventType == "xcb_generic_event_t", QWidget::nativeEvent(eventType, pMessage, pResult));
-    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
-
-    /* Check if some XCB event should be filtered out.
-     * Returning @c true means filtering-out,
-     * Returning @c false means passing event to Qt. */
-    switch (pEvent->response_type & ~0x80)
-    {
-        /* Watch for key-events: */
-        case XCB_KEY_PRESS:
-        case XCB_KEY_RELEASE:
-        {
-            /* Delegate key-event handling to the keyboard-handler: */
-            return machineView()->machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, machineView()->screenId());
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return QWidget::nativeEvent(eventType, pMessage, pResult);
-}
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
-
-/*********************************************************************************************************************************
-*   Class UIMachineView implementation.                                                                                          *
-*********************************************************************************************************************************/
 
 /* static */
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
@@ -667,11 +623,6 @@ UIMachineView::~UIMachineView()
 void UIMachineView::prepareViewport()
 {
     /* Prepare viewport: */
-#ifdef Q_WS_X11
-# if QT_VERSION >= 0x050000
-    setViewport(new UIViewport(this));
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
     AssertPtrReturnVoid(viewport());
     {
         /* Enable manual painting: */

@@ -57,9 +57,7 @@ class CGuest;
 class CMachine;
 class CSession;
 #ifdef Q_WS_X11
-# if QT_VERSION >= 0x050000
-class UIMachineView;
-# else /* QT_VERSION < 0x050000 */
+# if QT_VERSION < 0x050000
 typedef union _XEvent XEvent;
 # endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_X11 */
@@ -67,41 +65,6 @@ typedef union _XEvent XEvent;
  class CDnDTarget;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
-
-#ifdef Q_WS_X11
-# if QT_VERSION >= 0x050000
-/** X11: Qt5: QWidget extension used as UIMachineView's viewport.
-  * This class is currently required because of Qt5 policy change about
-  * native keyboard events now being delivered directly to a focus-holder
-  * (UIMachineView's viewport) instead of delivering it to top-most widget
-  * (UIMachineWindow) and then propagating down to the focus-holder, which
-  * with Qt4 allowed us to handle such events in focus-holder's focus-proxy
-  * (UIMachineView) instead of focus-holder itself. */
-class UIViewport : public QWidget
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructor which brings the @a pParent machine-view. */
-    UIViewport(UIMachineView *pParent);
-
-    /** Returns the reference to the parent machine-view. */
-    const UIMachineView* machineView() { return m_pMachineView; }
-
-protected:
-
-    /** Qt5: Handles any native @a pMessage of the predefined @a eventType,
-      * allowing to set the @a pResult to be returned to the issuer. */
-    virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult);
-
-private:
-
-    /** Holds the reference to the parent machine-view. */
-    const UIMachineView *m_pMachineView;
-};
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
 
 class UIMachineView : public QAbstractScrollArea
 {
@@ -452,11 +415,6 @@ protected:
     friend class UIFrameBuffer;
     friend class UIFrameBufferPrivate;
     friend class VBoxOverlayFrameBuffer;
-#ifdef Q_WS_X11
-# if QT_VERSION >= 0x050000
-    friend class UIViewport;
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
 };
 
 /* This maintenance class is a part of future roll-back mechanism.
