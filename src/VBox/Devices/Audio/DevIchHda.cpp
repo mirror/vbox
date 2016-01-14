@@ -657,8 +657,9 @@ typedef struct HDADRIVER
     uint8_t                            u32Padding0[3];
     /** LUN to which this driver has been assigned. */
     uint8_t                            uLUN;
-    /** Audio connector interface to the underlying
-     *  host backend. */
+    /** Pointer to attached driver base interface. */
+    R3PTRTYPE(PPDMIBASE)               pDrvBase;
+    /** Audio connector interface to the underlying host backend. */
     R3PTRTYPE(PPDMIAUDIOCONNECTOR)     pConnector;
     /** Stream for line input. */
     HDAINPUTSTREAM                     LineIn;
@@ -683,8 +684,6 @@ typedef struct HDASTATE
     PPDMDEVINSRC                       pDevInsRC;
     /** Padding for alignment. */
     uint32_t                           u32Padding;
-    /** Pointer to the attached audio driver. */
-    R3PTRTYPE(PPDMIBASE)               pDrvBase;
     /** The base interface for LUN\#0. */
     PDMIBASE                           IBase;
     RTGCPHYS                           MMIOBaseAddr;
@@ -4322,27 +4321,25 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
-    AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
-                    ("HDA device does not support hotplugging\n"),
-                    VERR_INVALID_PARAMETER);
-
     /*
      * Attach driver.
      */
     char *pszDesc = NULL;
     if (RTStrAPrintf(&pszDesc, "Audio driver port (HDA) for LUN#%u", uLUN) <= 0)
-        AssertMsgReturn(pszDesc,
-                        ("Not enough memory for HDA driver port description of LUN #%u\n", uLUN),
-                        VERR_NO_MEMORY);
+        AssertReleaseMsgReturn(pszDesc,
+                               ("Not enough memory for HDA driver port description of LUN #%u\n", uLUN),
+                               VERR_NO_MEMORY);
 
+    PPDMIBASE pDrvBase;
     int rc = PDMDevHlpDriverAttach(pDevIns, uLUN,
-                                   &pThis->IBase, &pThis->pDrvBase, pszDesc);
+                                   &pThis->IBase, &pDrvBase, pszDesc);
     if (RT_SUCCESS(rc))
     {
         PHDADRIVER pDrv = (PHDADRIVER)RTMemAllocZ(sizeof(HDADRIVER));
         if (pDrv)
         {
-            pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIAUDIOCONNECTOR);
+            pDrv->pDrvBase   = pDrvBase;
+            pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
             AssertMsg(pDrv->pConnector != NULL, ("Configuration error: LUN#%u has no host audio interface, rc=%Rrc\n", uLUN, rc));
             pDrv->pHDAState  = pThis;
             pDrv->uLUN       = uLUN;
@@ -4362,8 +4359,7 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
         else
             rc = VERR_NO_MEMORY;
     }
-    else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
-             || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
         LogFunc(("No attached driver for LUN #%u\n", uLUN));
     }
@@ -4371,23 +4367,72 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
         AssertMsgFailed(("Failed to attach HDA LUN #%u (\"%s\"), rc=%Rrc\n",
                         uLUN, pszDesc, rc));
 
-    RTStrFree(pszDesc);
+    if (RT_FAILURE(rc))
+    {
+        /* Only free this string on failure;
+         * must remain valid for the live of the driver instance. */
+        RTStrFree(pszDesc);
+    }
 
     LogFunc(("uLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
     return rc;
 }
 
-static DECLCALLBACK(void) hdaDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(void) hdaDetach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    NOREF(pDevIns); NOREF(iLUN); NOREF(fFlags);
+    LogFunc(("iLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+}
 
-    LogFlowFuncEnter();
+static int hdaReattach(PHDASTATE pThis, PCFGMNODE pCfg, PHDADRIVER pDrv, const char *pszDriver)
+{
+    AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pDrv,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pszDriver, VERR_INVALID_POINTER);
+
+    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
+    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
+    PCFGMNODE pDev0 = CFGMR3GetChild(pRoot, "Devices/hda/0/");
+
+    /* Remove LUN branch. */
+    CFGMR3RemoveNode(CFGMR3GetChildF(pDev0, "LUN#%u/", pDrv->uLUN));
+
+    int rc = PDMDevHlpDriverDetach(pThis->pDevInsR3, PDMIBASE_2_PDMDRV(pDrv->pDrvBase), 0 /* fFlags */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+#define RC_CHECK() if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; }
+
+    do
+    {
+        PCFGMNODE pLunL0;
+        rc = CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%u/", pDrv->uLUN);  RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver",       "AUDIO");       RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,   "Config/",       NULL);         RC_CHECK();
+
+        PCFGMNODE pLunL1, pLunL2;
+        rc = CFGMR3InsertNode  (pLunL0, "AttachedDriver/", &pLunL1);    RC_CHECK();
+        rc = CFGMR3InsertNode  (pLunL1,  "Config/",        &pLunL2);    RC_CHECK();
+        rc = CFGMR3InsertString(pLunL1,  "Driver",          pszDriver); RC_CHECK();
+
+        rc = CFGMR3InsertString(pLunL2, "AudioDriver", pszDriver);      RC_CHECK();
+
+    } while (0);
+
+    if (RT_SUCCESS(rc))
+        rc = hdaAttach(pThis->pDevInsR3, pDrv->uLUN, 0 /* fFlags */);
+
+    LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, pDrv->uLUN, pszDriver, rc));
+
+#undef RC_CHECK
+
+    return rc;
 }
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
     Assert(iInstance == 0);
@@ -4396,23 +4441,23 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Validations.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "R0Enabled\0"
-                                          "RCEnabled\0"
-                                          "TimerHz\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "R0Enabled\0"
+                                    "RCEnabled\0"
+                                    "TimerHz\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_ ("Invalid configuration for the Intel HDA device"));
 
-    int rc = CFGMR3QueryBoolDef(pCfgHandle, "RCEnabled", &pThis->fRCEnabled, false);
+    int rc = CFGMR3QueryBoolDef(pCfg, "RCEnabled", &pThis->fRCEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read RCEnabled as boolean"));
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pThis->fR0Enabled, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read R0Enabled as boolean"));
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
     uint16_t uTimerHz;
-    rc = CFGMR3QueryU16Def(pCfgHandle, "TimerHz", &uTimerHz, 200 /* Hz */);
+    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 200 /* Hz */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
@@ -4539,7 +4584,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     for (uLUN = 0; uLUN < UINT8_MAX; uLUN)
     {
         LogFunc(("Trying to attach driver for LUN #%RU32 ...\n", uLUN));
-        rc = hdaAttach(pDevIns, uLUN, PDM_TACH_FLAGS_NOT_HOT_PLUG);
+        rc = hdaAttach(pDevIns, uLUN, 0 /* fFlags */);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
@@ -4606,7 +4651,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         pThis->pCodec->pHDAState = pThis; /* Assign HDA controller state to codec. */
 
         /* Construct the codec. */
-        rc = hdaCodecConstruct(pDevIns, pThis->pCodec, 0 /* Codec index */, pCfgHandle);
+        rc = hdaCodecConstruct(pDevIns, pThis->pCodec, 0 /* Codec index */, pCfg);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
 
@@ -4628,6 +4673,77 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 #endif
         rc = hdaStreamCreate(&pThis->StrmStOut);
         AssertRC(rc);
+
+        PHDADRIVER pDrv;
+        RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
+        {
+            /*
+             * Only primary drivers are critical for the VM to run. Everything else
+             * might not worth showing an own error message box in the GUI.
+             */
+            if (!(pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY))
+                continue;
+
+            PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
+            AssertPtr(pCon);
+
+            uint8_t cFailed = 0;
+            if (!pCon->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
+                cFailed++;
+#ifdef VBOX_WITH_HDA_MIC_IN
+            if (!pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
+                cFailed++;
+#endif
+            if (!pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
+                cFailed++;
+
+#ifdef VBOX_WITH_HDA_MIC_IN
+            if (cFailed == 3)
+#else
+            if (cFailed == 2)
+#endif
+            {
+                LogRel(("HDA: Falling back to NULL backend (no sound audible)\n"));
+
+                hdaReset(pDevIns);
+                hdaReattach(pThis, pCfg, pDrv, "NullAudio");
+
+                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                    N_("No audio devices could be opened. Selecting the NULL audio backend "
+                       "with the consequence that no sound is audible"));
+            }
+            else if (cFailed)
+            {
+                if (!pDrv->pConnector->pfnIsValidIn (pDrv->pConnector, pDrv->LineIn.pStrmIn))
+                    LogRel(("HDA: WARNING: Unable to open PCM line input for LUN #%RU32!\n",       pDrv->uLUN));
+#ifdef VBOX_WITH_HDA_MIC_IN
+                if (!pDrv->pConnector->pfnIsValidIn (pDrv->pConnector, pDrv->MicIn.pStrmIn))
+                    LogRel(("HDA: WARNING: Unable to open PCM microphone input for LUN #%RU32!\n", pDrv->uLUN));
+#endif
+                if (!pDrv->pConnector->pfnIsValidOut(pDrv->pConnector, pDrv->Out.pStrmOut))
+                    LogRel(("HDA: WARNING: Unable to open PCM output for LUN #%RU32!\n",           pDrv->uLUN));
+
+                char   szMissingStreams[255];
+                size_t len = 0;
+                if (!pCon->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
+                    len = RTStrPrintf(szMissingStreams,
+                                      sizeof(szMissingStreams), "PCM Input");
+#ifdef VBOX_WITH_HDA_MIC_IN
+                if (!pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
+                    len += RTStrPrintf(szMissingStreams + len,
+                                       sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
+#endif
+                if (!pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
+                    len += RTStrPrintf(szMissingStreams + len,
+                                       sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
+
+                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                    N_("Some HDA audio streams (%s) could not be opened. Guest applications generating audio "
+                    "output or depending on audio input may hang. Make sure your host audio device "
+                    "is working properly. Check the logfile for error messages of the audio "
+                    "subsystem"), szMissingStreams);
+            }
+        }
     }
 
     if (RT_SUCCESS(rc))
@@ -4818,9 +4934,9 @@ const PDMDEVREG g_DeviceICH6_HDA =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    NULL,
+    hdaAttach,
     /* pfnDetach */
-    NULL,
+    hdaDetach,
     /* pfnQueryInterface. */
     NULL,
     /* pfnInitComplete */

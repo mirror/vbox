@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -177,13 +177,13 @@ typedef FNPDMDEVPOWEROFF *PFNPDMDEVPOWEROFF;
  *
  * This is called to let the device attach to a driver for a specified LUN
  * at runtime. This is not called during VM construction, the device
- * constructor have to attach to all the available drivers.
+ * constructor has to attach to all the available drivers.
  *
  * This is like plugging in the keyboard or mouse after turning on the PC.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
+ * @param   iLUN        The logical unit which is being attached.
  * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
  *
  * @remarks Caller enters the device critical section.
@@ -196,7 +196,7 @@ typedef FNPDMDEVATTACH *PFNPDMDEVATTACH;
  * Detach notification.
  *
  * This is called when a driver is detaching itself from a LUN of the device.
- * The device should adjust it's state to reflect this.
+ * The device should adjust its state to reflect this.
  *
  * This is like unplugging the network cable to use it for the laptop or
  * something while the PC is still running.
@@ -3067,6 +3067,16 @@ typedef struct PDMDEVHLPR3
                                                PPDMIBASE *ppBaseInterface, const char *pszDesc));
 
     /**
+     * Detaches an attached driver (chain) from the device again.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pDrvIns             The driver instance to detach.
+     * @param   fFlags              Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDriverDetach,(PPDMDEVINS pDevIns, PPDMDRVINS pDrvIns, uint32_t fFlags));
+
+    /**
      * Create a queue.
      *
      * @returns VBox status code.
@@ -3671,7 +3681,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 14, 1)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 15, 1)
 
 
 /**
@@ -4934,6 +4944,14 @@ DECLINLINE(void) PDMDevHlpISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLev
 DECLINLINE(int) PDMDevHlpDriverAttach(PPDMDEVINS pDevIns, uint32_t iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
     return pDevIns->pHlpR3->pfnDriverAttach(pDevIns, iLun, pBaseInterface, ppBaseInterface, pszDesc);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnDriverDetach
+ */
+DECLINLINE(int) PDMDevHlpDriverDetach(PPDMDEVINS pDevIns, PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    return pDevIns->pHlpR3->pfnDriverDetach(pDevIns, pDrvIns, fFlags);
 }
 
 /**

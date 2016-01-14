@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1629,8 +1629,24 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t i
     else
         rc = VERR_PDM_NO_ATTACHED_DRIVER;
 
-
     LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnDriverDetach} */
+static DECLCALLBACK(int) pdmR3DevHlp_DriverDetach(PPDMDEVINS pDevIns, PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_DriverDetach: caller='%s'/%d: pDrvIns=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pDrvIns));
+
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+
+    int rc = pdmR3DrvDetach(pDrvIns, fFlags);
+
+    LogFlow(("pdmR3DevHlp_DriverDetach: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -3522,6 +3538,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_ISASetIrq,
     pdmR3DevHlp_ISASetIrqNoWait,
     pdmR3DevHlp_DriverAttach,
+    pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_QueueCreate,
     pdmR3DevHlp_CritSectInit,
     pdmR3DevHlp_CritSectGetNop,
@@ -3773,6 +3790,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_ISASetIrq,
     pdmR3DevHlp_ISASetIrqNoWait,
     pdmR3DevHlp_DriverAttach,
+    pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_QueueCreate,
     pdmR3DevHlp_CritSectInit,
     pdmR3DevHlp_CritSectGetNop,

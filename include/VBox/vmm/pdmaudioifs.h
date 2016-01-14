@@ -538,14 +538,6 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(bool, pfnIsValidOut, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut));
 
     /**
-     * Initializes the NULL audio driver as a fallback in case no host backend is available.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnInitNull, (PPDMIAUDIOCONNECTOR pInterface));
-
-    /**
      * Enables a specific guest output stream and starts the audio device.
      *
      * @returns VBox status code.
