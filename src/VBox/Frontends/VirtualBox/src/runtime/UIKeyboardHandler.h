@@ -99,16 +99,22 @@ public:
 #endif
 
 #ifdef Q_WS_WIN
+    /** Tells the keyboard event handler to skip host keyboard events.
+      * Used for HID LEDs sync when on Windows host a keyboard event
+      * is generated in order to change corresponding LED. */
     void winSkipKeyboardEvents(bool fSkip);
 #endif /* Q_WS_WIN */
 
 #if QT_VERSION < 0x050000
 # if defined(Q_WS_WIN)
+    /** Qt4: Win: Performs final pre-processing of all the native events. */
     bool winEventFilter(MSG *pMsg, ulong uScreenId);
 # elif defined(Q_WS_X11)
+    /** Qt4: X11: Performs final pre-processing of all the native events. */
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
 # endif /* Q_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
+    /** Qt5: Performs final pre-processing of all the native events. */
     bool nativeEventFilter(void *pMessage, ulong uScreenId);
 #endif /* QT_VERSION >= 0x050000 */
 
@@ -143,11 +149,16 @@ protected:
     bool eventFilter(QObject *pWatchedObject, QEvent *pEvent);
 
 #if defined(Q_WS_MAC)
+    /** Mac: Installs/deinstalls low level keyboard hook. */
     void darwinGrabKeyboardEvents(bool fGrab);
+    /** Mac: Performs initial pre-processing of all the native keyboard events. */
     static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+    /** Mac: Performs initial pre-processing of all the native keyboard events. */
     bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
 #elif defined(Q_WS_WIN)
+    /** Win: Performs initial pre-processing of all the native keyboard events. */
     static LRESULT CALLBACK lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+    /** Win: Performs initial pre-processing of all the native keyboard events. */
     bool winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
 #endif /* Q_WS_WIN */
 
@@ -200,19 +211,22 @@ protected:
     bool m_fDebuggerActive : 1;
 
 #if defined(Q_WS_MAC)
-    /* The current modifier key mask. Used to figure out which modifier
-     * key was pressed when we get a kEventRawKeyModifiersChanged event. */
+    /** Holds the current modifiers key mask. */
     UInt32 m_darwinKeyModifiers;
+    /** Holds whether the keyboard is grabbed. */
     bool m_fKeyboardGrabbed;
+    /** Holds the keyboard hook view index. */
     int m_iKeyboardGrabViewIndex;
 #elif defined(Q_WS_WIN)
     /* Currently this is used in winLowKeyboardEvent() only: */
     bool m_bIsHostkeyInCapture;
-    /* Keyboard hook required to capture keyboard event under windows. */
+    /** Holds the keyboard handler reference to be accessible from the keyboard hook. */
     static UIKeyboardHandler *m_spKeyboardHandler;
+    /** Holds the keyboard hook instance. */
     HHOOK m_keyboardHook;
+    /** Holds the keyboard hook view index. */
     int m_iKeyboardHookViewIndex;
-    /* A flag that used to tell kbd event filter to ignore keyboard events */
+    /** Holds whether the keyboard event filter should ignore keyboard events. */
     bool m_fSkipKeyboardEvents;
     /** Holds the object monitoring key event stream for problematic AltGr events. */
     WinAltGrMonitor *m_pAltGrMonitor;
