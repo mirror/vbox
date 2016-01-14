@@ -89,8 +89,7 @@
 *********************************************************************************************************************************/
 /** The IO Master Port. */
 static mach_port_t g_MasterPort = NULL;
-/** Major darwin version as returned by uname -r. 
- * Used to  changes to */
+/** Major darwin version as returned by uname -r. */
 uint32_t g_uMajorDarwin = 0;
 
 
