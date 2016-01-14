@@ -1127,7 +1127,7 @@
     GEN_CHECK_OFF(TMTIMER, enmClock);
     GEN_CHECK_OFF(TMTIMER, enmType);
     GEN_CHECK_OFF_DOT(TMTIMER, u.Dev.pfnTimer);
-    GEN_CHECK_OFF_DOT(TMTIMER, u.Dev.pDevInsR3);
+    GEN_CHECK_OFF_DOT(TMTIMER, u.Dev.pDevIns);
     GEN_CHECK_OFF_DOT(TMTIMER, u.Drv.pfnTimer);
     GEN_CHECK_OFF_DOT(TMTIMER, u.Drv.pDrvIns);
     GEN_CHECK_OFF_DOT(TMTIMER, u.Internal.pfnTimer);
