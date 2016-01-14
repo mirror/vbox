@@ -34,6 +34,11 @@
 
 /* Other VBox includes: */
 #include "VBox/com/ptr.h"
+#ifdef Q_WS_MAC
+# if QT_VERSION >= 0x050000
+#  include <ApplicationServices/ApplicationServices.h>
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_MAC */
 
 /* External includes: */
 #ifdef Q_WS_MAC
