@@ -43,9 +43,10 @@ class UIMachineLogic;
 class UIMachineWindow;
 class UIMachineView;
 class CKeyboard;
-#if defined(Q_WS_WIN)
+#ifdef Q_WS_WIN
 class WinAltGrMonitor;
-#elif defined(Q_WS_X11)
+#endif /* Q_WS_WIN */
+#ifdef Q_WS_X11
 # if QT_VERSION < 0x050000
 typedef union _XEvent XEvent;
 # endif /* QT_VERSION < 0x050000 */
@@ -97,19 +98,19 @@ public:
     void setDebuggerActive(bool aActive = true);
 #endif
 
-    /* External event-filters: */
-#if defined(Q_WS_WIN)
-    bool winEventFilter(MSG *pMsg, ulong uScreenId);
+#ifdef Q_WS_WIN
     void winSkipKeyboardEvents(bool fSkip);
-    /** Holds the object monitoring key event stream for problematic AltGr events. */
-    WinAltGrMonitor *m_pAltGrMonitor;
-#elif defined(Q_WS_X11)
-# if QT_VERSION >= 0x050000
-    bool nativeEventFilter(void *pMessage, ulong uScreenId);
-# else /* QT_VERSION < 0x050000 */
+#endif /* Q_WS_WIN */
+
+#if QT_VERSION < 0x050000
+# if defined(Q_WS_WIN)
+    bool winEventFilter(MSG *pMsg, ulong uScreenId);
+# elif defined(Q_WS_X11)
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
-# endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+# endif /* Q_WS_X11 */
+#else /* QT_VERSION >= 0x050000 */
+    bool nativeEventFilter(void *pMessage, ulong uScreenId);
+#endif /* QT_VERSION >= 0x050000 */
 
 protected slots:
 
@@ -140,14 +141,15 @@ protected:
 
     /* Event handler for registered machine-view(s): */
     bool eventFilter(QObject *pWatchedObject, QEvent *pEvent);
-#if defined(Q_WS_WIN)
+
+#if defined(Q_WS_MAC)
+    void darwinGrabKeyboardEvents(bool fGrab);
+    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
+#elif defined(Q_WS_WIN)
     static LRESULT CALLBACK lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
     bool winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
-#elif defined(Q_WS_MAC)
-    void darwinGrabKeyboardEvents(bool fGrab);
-    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
-    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
-#endif
+#endif /* Q_WS_WIN */
 
     bool keyEventCADHandled(uint8_t uScan);
     bool keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags, LONG *pCodes, uint *puCodesCount);
@@ -197,7 +199,13 @@ protected:
      * Currently only affects auto capturing. */
     bool m_fDebuggerActive : 1;
 
-#if defined(Q_WS_WIN)
+#if defined(Q_WS_MAC)
+    /* The current modifier key mask. Used to figure out which modifier
+     * key was pressed when we get a kEventRawKeyModifiersChanged event. */
+    UInt32 m_darwinKeyModifiers;
+    bool m_fKeyboardGrabbed;
+    int m_iKeyboardGrabViewIndex;
+#elif defined(Q_WS_WIN)
     /* Currently this is used in winLowKeyboardEvent() only: */
     bool m_bIsHostkeyInCapture;
     /* Keyboard hook required to capture keyboard event under windows. */
@@ -206,13 +214,9 @@ protected:
     int m_iKeyboardHookViewIndex;
     /* A flag that used to tell kbd event filter to ignore keyboard events */
     bool m_fSkipKeyboardEvents;
-#elif defined(Q_WS_MAC)
-    /* The current modifier key mask. Used to figure out which modifier
-     * key was pressed when we get a kEventRawKeyModifiersChanged event. */
-    UInt32 m_darwinKeyModifiers;
-    bool m_fKeyboardGrabbed;
-    int m_iKeyboardGrabViewIndex;
-#endif /* Q_WS_MAC */
+    /** Holds the object monitoring key event stream for problematic AltGr events. */
+    WinAltGrMonitor *m_pAltGrMonitor;
+#endif /* Q_WS_WIN */
 
     ULONG m_cMonitors;
 };

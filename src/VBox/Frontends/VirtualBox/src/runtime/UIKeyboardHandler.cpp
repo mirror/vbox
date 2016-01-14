@@ -435,13 +435,17 @@ void UIKeyboardHandler::setDebuggerActive(bool aActive /* = true*/)
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#if defined(Q_WS_WIN)
+#ifdef Q_WS_WIN
 /** Tell keyboard event handler to skip host keyboard events. Used for HID LEDs sync
  * when on Windows host a keyboard event is generated in order to change corresponding LED. */
 void UIKeyboardHandler::winSkipKeyboardEvents(bool fSkip)
 {
     m_fSkipKeyboardEvents = fSkip;
 }
+#endif /* Q_WS_WIN */
+
+#if QT_VERSION < 0x050000
+# if defined(Q_WS_WIN)
 
 bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
 {
@@ -594,104 +598,7 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
     return fResult;
 }
 
-#elif defined(Q_WS_X11)
-# if QT_VERSION >= 0x050000
-
-bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
-{
-    /* Cast to XCB event: */
-    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
-
-    /* Check if some system event should be filtered out.
-     * Returning @c true means filtering-out,
-     * Returning @c false means passing event to Qt. */
-    bool fResult = false; /* Pass to Qt by default. */
-    switch (pEvent->response_type & ~0x80)
-    {
-        /* Watch for keyboard behavior: */
-        case XCB_KEY_PRESS:
-        case XCB_KEY_RELEASE:
-        {
-            /* Cast to XCB key-event: */
-            xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
-
-            /* Translate the keycode to a PC scancode: */
-            unsigned scan = handleXKeyEvent(QX11Info::display(), pKeyEvent->detail);
-
-            /* Scancodes 0x00 (no valid translation) and 0x80 (extended flag) are ignored: */
-            if (!(scan & 0x7F))
-            {
-                fResult = true;
-                break;
-            }
-
-//            /* Fix for http://www.virtualbox.org/ticket/1296:
-//             * when X11 sends events for repeated keys, it always inserts an XKeyRelease before the XKeyPress. */
-//            XEvent returnEvent;
-//            if ((pEvent->type == XKeyRelease) && (XCheckIfEvent(pEvent->xkey.display, &returnEvent,
-//                UIKeyboardHandlerCompEvent, (XPointer)pEvent) == True))
-//            {
-//                XPutBackEvent(pEvent->xkey.display, &returnEvent);
-//                fResult = true;
-//                break;
-//            }
-
-            /* Detect common scancode flags: */
-            int flags = 0;
-            if (scan >> 8)
-                flags |= KeyExtended;
-            if ((pEvent->response_type & ~0x80) == XCB_KEY_PRESS)
-                flags |= KeyPressed;
-
-            /* Remove the extended flag: */
-            scan &= 0x7F;
-
-            /* Special Korean keys must send scancode 0xF1/0xF2
-             * when pressed and nothing when released. */
-            if (scan == 0x71 || scan == 0x72)
-            {
-                if ((pEvent->response_type & ~0x80) == XCB_KEY_RELEASE)
-                {
-                    fResult = true;
-                    break;
-                }
-                /* Re-create the bizarre scancode: */
-                scan |= 0x80;
-            }
-
-            /* Translate the keycode to a keysym: */
-            KeySym ks = ::wrapXkbKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0, 0);
-
-            /* Detect particular scancode flags: */
-            switch (ks)
-            {
-                case XK_Print:
-                    flags |= KeyPrint;
-                    break;
-                case XK_Pause:
-                    if (pKeyEvent->state & ControlMask)
-                    {
-                        ks = XK_Break;
-                        flags |= KeyExtended;
-                        scan = 0x46;
-                    }
-                    else
-                        flags |= KeyPause;
-                    break;
-            }
-
-            /* Handle key-event: */
-            fResult = keyEvent(ks, scan, flags, uScreenId);
-            break;
-        }
-        default:
-            break;
-    }
-    /* Return result: */
-    return fResult;
-}
-
-# else /* QT_VERSION < 0x050000 */
+# elif defined(Q_WS_X11)
 
 static Bool UIKeyboardHandlerCompEvent(Display*, XEvent *pEvent, XPointer pvArg)
 {
@@ -815,8 +722,104 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
     return fResult;
 }
 
-# endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+# endif /* Q_WS_X11 */
+#else /* QT_VERSION >= 0x050000 */
+
+bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
+{
+    /* Cast to XCB event: */
+    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
+
+    /* Check if some system event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    bool fResult = false; /* Pass to Qt by default. */
+    switch (pEvent->response_type & ~0x80)
+    {
+        /* Watch for keyboard behavior: */
+        case XCB_KEY_PRESS:
+        case XCB_KEY_RELEASE:
+        {
+            /* Cast to XCB key-event: */
+            xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
+
+            /* Translate the keycode to a PC scancode: */
+            unsigned scan = handleXKeyEvent(QX11Info::display(), pKeyEvent->detail);
+
+            /* Scancodes 0x00 (no valid translation) and 0x80 (extended flag) are ignored: */
+            if (!(scan & 0x7F))
+            {
+                fResult = true;
+                break;
+            }
+
+//            /* Fix for http://www.virtualbox.org/ticket/1296:
+//             * when X11 sends events for repeated keys, it always inserts an XKeyRelease before the XKeyPress. */
+//            XEvent returnEvent;
+//            if ((pEvent->type == XKeyRelease) && (XCheckIfEvent(pEvent->xkey.display, &returnEvent,
+//                UIKeyboardHandlerCompEvent, (XPointer)pEvent) == True))
+//            {
+//                XPutBackEvent(pEvent->xkey.display, &returnEvent);
+//                fResult = true;
+//                break;
+//            }
+
+            /* Detect common scancode flags: */
+            int flags = 0;
+            if (scan >> 8)
+                flags |= KeyExtended;
+            if ((pEvent->response_type & ~0x80) == XCB_KEY_PRESS)
+                flags |= KeyPressed;
+
+            /* Remove the extended flag: */
+            scan &= 0x7F;
+
+            /* Special Korean keys must send scancode 0xF1/0xF2
+             * when pressed and nothing when released. */
+            if (scan == 0x71 || scan == 0x72)
+            {
+                if ((pEvent->response_type & ~0x80) == XCB_KEY_RELEASE)
+                {
+                    fResult = true;
+                    break;
+                }
+                /* Re-create the bizarre scancode: */
+                scan |= 0x80;
+            }
+
+            /* Translate the keycode to a keysym: */
+            KeySym ks = ::wrapXkbKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0, 0);
+
+            /* Detect particular scancode flags: */
+            switch (ks)
+            {
+                case XK_Print:
+                    flags |= KeyPrint;
+                    break;
+                case XK_Pause:
+                    if (pKeyEvent->state & ControlMask)
+                    {
+                        ks = XK_Break;
+                        flags |= KeyExtended;
+                        scan = 0x46;
+                    }
+                    else
+                        flags |= KeyPause;
+                    break;
+            }
+
+            /* Handle key-event: */
+            fResult = keyEvent(ks, scan, flags, uScreenId);
+            break;
+        }
+        default:
+            break;
+    }
+    /* Return result: */
+    return fResult;
+}
+
+#endif /* QT_VERSION >= 0x050000 */
 
 /* Machine state-change handler: */
 void UIKeyboardHandler::sltMachineStateChanged()
@@ -884,16 +887,16 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_bIsHostComboProcessed(false)
     , m_fPassCADtoGuest(false)
     , m_fDebuggerActive(false)
-#if defined(Q_WS_WIN)
+#if defined(Q_WS_MAC)
+    , m_darwinKeyModifiers(0)
+    , m_fKeyboardGrabbed(false)
+    , m_iKeyboardGrabViewIndex(-1)
+#elif defined(Q_WS_WIN)
     , m_bIsHostkeyInCapture(false)
     , m_iKeyboardHookViewIndex(-1)
     , m_fSkipKeyboardEvents(false)
     , m_pAltGrMonitor(0)
-#elif defined(Q_WS_MAC)
-    , m_darwinKeyModifiers(0)
-    , m_fKeyboardGrabbed(false)
-    , m_iKeyboardGrabViewIndex(-1)
-#endif /* Q_WS_MAC */
+#endif /* Q_WS_WIN */
     , m_cMonitors(1)
 {
     /* Prepare: */
@@ -1157,64 +1160,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
     return QObject::eventFilter(pWatchedObject, pEvent);
 }
 
-#if defined(Q_WS_WIN)
-
-LRESULT CALLBACK UIKeyboardHandler::lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
-{
-    if (nCode == HC_ACTION && m_spKeyboardHandler && m_spKeyboardHandler->winLowKeyboardEvent(wParam, *(KBDLLHOOKSTRUCT*)lParam))
-        return 1;
-
-    return CallNextHookEx(NULL, nCode, wParam, lParam);
-}
-
-bool UIKeyboardHandler::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
-{
-    /* Check what related machine-view was NOT unregistered yet: */
-    if (!m_views.contains(m_iKeyboardHookViewIndex))
-        return false;
-
-    /* It's possible that a key has been pressed while the keyboard was not
-     * captured, but is being released under the capture. Detect this situation
-     * and do not pass on the key press to the virtual machine. */
-    uint8_t what_pressed =      (event.flags & 0x01)
-                             && (event.vkCode != VK_RSHIFT)
-                           ? IsExtKeyPressed : IsKeyPressed;
-    if (   (event.flags & 0x80) /* released */
-        && (   (   UIHostCombo::toKeyCodeList(m_globalSettings.hostCombo()).contains(event.vkCode)
-                && !m_bIsHostkeyInCapture)
-            ||    (  m_pressedKeys[event.scanCode & 0x7F]
-                   & (IsKbdCaptured | what_pressed))
-               == what_pressed))
-        return false;
-
-    if (!m_fIsKeyboardCaptured)
-        return false;
-
-    /* For normal user applications, Windows defines AltGr to be the same as
-     * LControl + RAlt.  Without a low-level hook it is hard to recognise the
-     * additional LControl event inserted, but in a hook we recognise it by
-     * its special 0x21D scan code. */
-    if (   m_views[m_iKeyboardHookViewIndex]->hasFocus()
-        && ((event.scanCode & ~0x80) == 0x21D))
-        return true;
-
-    MSG message;
-    message.hwnd = (HWND)m_views[m_iKeyboardHookViewIndex]->winId();
-    message.message = msg;
-    message.wParam = event.vkCode;
-    message.lParam = 1 | (event.scanCode & 0xFF) << 16 | (event.flags & 0xFF) << 24;
-
-    /* Windows sets here the extended bit when the Right Shift key is pressed,
-     * which is totally wrong. Undo it. */
-    if (event.vkCode == VK_RSHIFT)
-        message.lParam &= ~0x1000000;
-
-    /* We suppose here that this hook is always called on the main GUI thread */
-    long dummyResult;
-    return m_views[m_iKeyboardHookViewIndex]->winEvent(&message, &dummyResult);
-}
-
-#elif defined(Q_WS_MAC)
+#if defined(Q_WS_MAC)
 
 void UIKeyboardHandler::darwinGrabKeyboardEvents(bool fGrab)
 {
@@ -1362,7 +1308,64 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
     return ret;
 }
 
-#endif
+#elif defined(Q_WS_WIN)
+
+LRESULT CALLBACK UIKeyboardHandler::lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode == HC_ACTION && m_spKeyboardHandler && m_spKeyboardHandler->winLowKeyboardEvent(wParam, *(KBDLLHOOKSTRUCT*)lParam))
+        return 1;
+
+    return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+bool UIKeyboardHandler::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
+{
+    /* Check what related machine-view was NOT unregistered yet: */
+    if (!m_views.contains(m_iKeyboardHookViewIndex))
+        return false;
+
+    /* It's possible that a key has been pressed while the keyboard was not
+     * captured, but is being released under the capture. Detect this situation
+     * and do not pass on the key press to the virtual machine. */
+    uint8_t what_pressed =      (event.flags & 0x01)
+                             && (event.vkCode != VK_RSHIFT)
+                           ? IsExtKeyPressed : IsKeyPressed;
+    if (   (event.flags & 0x80) /* released */
+        && (   (   UIHostCombo::toKeyCodeList(m_globalSettings.hostCombo()).contains(event.vkCode)
+                && !m_bIsHostkeyInCapture)
+            ||    (  m_pressedKeys[event.scanCode & 0x7F]
+                   & (IsKbdCaptured | what_pressed))
+               == what_pressed))
+        return false;
+
+    if (!m_fIsKeyboardCaptured)
+        return false;
+
+    /* For normal user applications, Windows defines AltGr to be the same as
+     * LControl + RAlt.  Without a low-level hook it is hard to recognise the
+     * additional LControl event inserted, but in a hook we recognise it by
+     * its special 0x21D scan code. */
+    if (   m_views[m_iKeyboardHookViewIndex]->hasFocus()
+        && ((event.scanCode & ~0x80) == 0x21D))
+        return true;
+
+    MSG message;
+    message.hwnd = (HWND)m_views[m_iKeyboardHookViewIndex]->winId();
+    message.message = msg;
+    message.wParam = event.vkCode;
+    message.lParam = 1 | (event.scanCode & 0xFF) << 16 | (event.flags & 0xFF) << 24;
+
+    /* Windows sets here the extended bit when the Right Shift key is pressed,
+     * which is totally wrong. Undo it. */
+    if (event.vkCode == VK_RSHIFT)
+        message.lParam &= ~0x1000000;
+
+    /* We suppose here that this hook is always called on the main GUI thread */
+    long dummyResult;
+    return m_views[m_iKeyboardHookViewIndex]->winEvent(&message, &dummyResult);
+}
+
+#endif /* Q_WS_WIN */
 
 /**
  * If the user has just completed a control-alt-del combination then handle
