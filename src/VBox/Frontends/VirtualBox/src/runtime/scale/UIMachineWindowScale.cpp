@@ -199,6 +199,7 @@ bool UIMachineWindowScale::event(QEvent *pEvent)
 }
 
 #ifdef Q_WS_WIN
+# if QT_VERSION < 0x050000
 bool UIMachineWindowScale::winEvent(MSG *pMessage, long *pResult)
 {
     /* Try to keep aspect ratio during window resize if:
@@ -243,6 +244,7 @@ bool UIMachineWindowScale::winEvent(MSG *pMessage, long *pResult)
     /* Call to base-class: */
     return UIMachineWindow::winEvent(pMessage, pResult);
 }
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_WIN */
 
 bool UIMachineWindowScale::isMaximizedChecked()

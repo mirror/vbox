@@ -56,8 +56,10 @@ private:
     /** Common @a pEvent handler. */
     bool event(QEvent *pEvent);
 #ifdef Q_WS_WIN
-    /** Windows: Common native @a pEvent handler. */
+# if QT_VERSION < 0x050000
+    /** Qt4: Win: Handles all native messages. */
     bool winEvent(MSG *pMessage, long *pResult);
+# endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_WIN */
 
     /** Returns whether this window is maximized. */
