@@ -1141,10 +1141,10 @@ class VirtualBoxManager(object):
         """
         oSession = self.getSessionObject(self.vbox);
         if fPermitSharing:
-            type_ = self.constants.LockType_Shared
+            eType = self.constants.LockType_Shared
         else:
-            type_ = self.constants.LockType_Write
-        oIMachine.lockMachine(oSession, type_)
+            eType = self.constants.LockType_Write
+        oIMachine.lockMachine(oSession, eType)
         return oSession
 
     def closeMachineSession(self, oSession):
