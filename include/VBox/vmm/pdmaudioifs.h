@@ -616,7 +616,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "7bbb9565-8dd2-4fab-81d6-4d78985e5daa"
+#define PDMIAUDIOCONNECTOR_IID                  "7040b289-306f-454e-87ff-e90889004464"
 
 
 /**
