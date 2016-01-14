@@ -216,6 +216,8 @@ typedef struct VBOXEXTPACKREG
     /** Interface version.
      * This is set to VBOXEXTPACKREG_VERSION. */
     uint32_t                    u32Version;
+    /** The VirtualBox version this extension pack was built against.  */
+    uint32_t                    uVBoxVersion;
 
     /**
      * Hook for doing setups after the extension pack was installed.
@@ -345,11 +347,21 @@ typedef struct VBOXEXTPACKREG
      */
     DECLCALLBACKMEMBER(void *, pfnQueryObject)(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId);
 
+    DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved3,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved4,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved5,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved6,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+
+    /** Reserved for minor structure revisions. */
+    uint32_t                    uReserved7;
+
     /** End of structure marker (VBOXEXTPACKREG_VERSION). */
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKREG;
 /** Current version of the VBOXEXTPACKREG structure.  */
-#define VBOXEXTPACKREG_VERSION        RT_MAKE_U32(0, 1)
+#define VBOXEXTPACKREG_VERSION        RT_MAKE_U32(1, 1)
 
 
 /**

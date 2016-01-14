@@ -94,6 +94,7 @@ static PCVBOXEXTPACKHLP g_pHlp;
 static const VBOXEXTPACKREG g_vboxSkeletonExtPackReg =
 {
     VBOXEXTPACKREG_VERSION,
+    /* .uVBoxFullVersion =  */  VBOX_FULL_VERSION,
     /* .pfnInstalled =      */  NULL,
     /* .pfnUninstall =      */  NULL,
     /* .pfnVirtualBoxReady =*/  NULL,
