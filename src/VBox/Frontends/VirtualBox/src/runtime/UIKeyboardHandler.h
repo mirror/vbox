@@ -70,8 +70,8 @@ public:
     static void destroy(UIKeyboardHandler *pKeyboardHandler);
 
     /* Prepare/cleanup listeners: */
-    void prepareListener(ulong uIndex, UIMachineWindow *pMachineWindow);
-    void cleanupListener(ulong uIndex);
+    void prepareListener(ulong uScreenId, UIMachineWindow *pMachineWindow);
+    void cleanupListener(ulong uScreenId);
 
     /* Commands to capture/release keyboard: */
 #ifdef Q_WS_X11
@@ -90,7 +90,7 @@ public:
     bool isHostKeyPressed() const { return m_bIsHostComboPressed; }
 #ifdef Q_WS_MAC
     bool isHostKeyAlone() const { return m_bIsHostComboAlone; }
-    bool isKeyboardGrabbed() const { return m_fKeyboardGrabbed; }
+    bool isKeyboardGrabbed() const { return m_iKeyboardHookViewIndex != -1; }
 #endif /* Q_WS_MAC */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -152,14 +152,14 @@ protected:
     /** Mac: Installs/deinstalls low level keyboard hook. */
     void darwinGrabKeyboardEvents(bool fGrab);
     /** Mac: Performs initial pre-processing of all the native keyboard events. */
-    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+    static bool macKeyboardProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
     /** Mac: Performs initial pre-processing of all the native keyboard events. */
-    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
+    bool macKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
 #elif defined(Q_WS_WIN)
     /** Win: Performs initial pre-processing of all the native keyboard events. */
-    static LRESULT CALLBACK lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+    static LRESULT CALLBACK winKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
     /** Win: Performs initial pre-processing of all the native keyboard events. */
-    bool winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
+    bool winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
 #endif /* Q_WS_WIN */
 
     bool keyEventCADHandled(uint8_t uScan);
@@ -211,25 +211,23 @@ protected:
     bool m_fDebuggerActive : 1;
 
 #if defined(Q_WS_MAC)
-    /** Holds the current modifiers key mask. */
-    UInt32 m_darwinKeyModifiers;
-    /** Holds whether the keyboard is grabbed. */
-    bool m_fKeyboardGrabbed;
-    /** Holds the keyboard hook view index. */
-    int m_iKeyboardGrabViewIndex;
-#elif defined(Q_WS_WIN)
-    /* Currently this is used in winLowKeyboardEvent() only: */
-    bool m_bIsHostkeyInCapture;
-    /** Holds the keyboard handler reference to be accessible from the keyboard hook. */
-    static UIKeyboardHandler *m_spKeyboardHandler;
-    /** Holds the keyboard hook instance. */
-    HHOOK m_keyboardHook;
     /** Holds the keyboard hook view index. */
     int m_iKeyboardHookViewIndex;
+    /** Holds the current modifiers key mask. */
+    UInt32 m_uDarwinKeyModifiers;
+#elif defined(Q_WS_WIN)
+    /** Holds the keyboard hook view index. */
+    int m_iKeyboardHookViewIndex;
+    /* Currently this is used in winKeyboardEvent() only: */
+    bool m_fIsHostkeyInCapture;
     /** Holds whether the keyboard event filter should ignore keyboard events. */
     bool m_fSkipKeyboardEvents;
+    /** Holds the keyboard hook instance. */
+    HHOOK m_keyboardHook;
     /** Holds the object monitoring key event stream for problematic AltGr events. */
     WinAltGrMonitor *m_pAltGrMonitor;
+    /** Holds the keyboard handler reference to be accessible from the keyboard hook. */
+    static UIKeyboardHandler *m_spKeyboardHandler;
 #endif /* Q_WS_WIN */
 
     ULONG m_cMonitors;

@@ -137,46 +137,46 @@ void UIKeyboardHandler::destroy(UIKeyboardHandler *pKeyboardHandler)
 }
 
 /* Prepare listened objects: */
-void UIKeyboardHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineWindow)
+void UIKeyboardHandler::prepareListener(ulong uScreenId, UIMachineWindow *pMachineWindow)
 {
     /* If that window is NOT registered yet: */
-    if (!m_windows.contains(uIndex))
+    if (!m_windows.contains(uScreenId))
     {
         /* Add window: */
-        m_windows.insert(uIndex, pMachineWindow);
+        m_windows.insert(uScreenId, pMachineWindow);
         /* Install event-filter for window: */
-        m_windows[uIndex]->installEventFilter(this);
+        m_windows[uScreenId]->installEventFilter(this);
     }
 
     /* If that view is NOT registered yet: */
-    if (!m_views.contains(uIndex))
+    if (!m_views.contains(uScreenId))
     {
         /* Add view: */
-        m_views.insert(uIndex, pMachineWindow->machineView());
+        m_views.insert(uScreenId, pMachineWindow->machineView());
         /* Install event-filter for view: */
-        m_views[uIndex]->installEventFilter(this);
+        m_views[uScreenId]->installEventFilter(this);
     }
 }
 
 /* Cleanup listened objects: */
-void UIKeyboardHandler::cleanupListener(ulong uIndex)
+void UIKeyboardHandler::cleanupListener(ulong uScreenId)
 {
     /* Check if we should release keyboard first: */
-    if ((int)uIndex == m_iKeyboardCaptureViewIndex)
+    if ((int)uScreenId == m_iKeyboardCaptureViewIndex)
         releaseKeyboard();
 
     /* If window still registered: */
-    if (m_windows.contains(uIndex))
+    if (m_windows.contains(uScreenId))
     {
         /* Remove window: */
-        m_windows.remove(uIndex);
+        m_windows.remove(uScreenId);
     }
 
     /* If view still registered: */
-    if (m_views.contains(uIndex))
+    if (m_views.contains(uScreenId))
     {
         /* Remove view: */
-        m_views.remove(uIndex);
+        m_views.remove(uScreenId);
     }
 }
 
@@ -405,7 +405,7 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
     for (int i = 0; i < hostCombo.size(); ++i)
         hostComboModifierMask |= ::DarwinKeyCodeToDarwinModifierMask(hostCombo.at(i));
     /* Clear most of the modifiers: */
-    m_darwinKeyModifiers &=
+    m_uDarwinKeyModifiers &=
         alphaLock | kEventKeyModifierNumLockMask |
         (aReleaseHostKey ? 0 : hostComboModifierMask);
 #endif
@@ -888,13 +888,13 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_fPassCADtoGuest(false)
     , m_fDebuggerActive(false)
 #if defined(Q_WS_MAC)
-    , m_darwinKeyModifiers(0)
-    , m_fKeyboardGrabbed(false)
-    , m_iKeyboardGrabViewIndex(-1)
-#elif defined(Q_WS_WIN)
-    , m_bIsHostkeyInCapture(false)
     , m_iKeyboardHookViewIndex(-1)
+    , m_uDarwinKeyModifiers(0)
+#elif defined(Q_WS_WIN)
+    , m_iKeyboardHookViewIndex(-1)
+    , m_fIsHostkeyInCapture(false)
     , m_fSkipKeyboardEvents(false)
+    , m_keyboardHook(NULL)
     , m_pAltGrMonitor(0)
 #endif /* Q_WS_WIN */
     , m_cMonitors(1)
@@ -963,7 +963,7 @@ void UIKeyboardHandler::cleanupCommon()
 #elif defined(Q_WS_MAC)
     /* We have to make sure the callback for the keyboard events
      * is released when closing this view. */
-    if (m_fKeyboardGrabbed)
+    if (m_iKeyboardHookViewIndex != -1)
         darwinGrabKeyboardEvents(false);
 #endif /* Q_WS_MAC */
 }
@@ -1021,7 +1021,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                         m_keyboardHook = NULL;
                     }
                     /* Register new keyboard-hook: */
-                    m_keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, lowLevelKeyboardProc, GetModuleHandle(NULL), 0);
+                    m_keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, UIKeyboardHandler::winKeyboardProc, GetModuleHandle(NULL), 0);
                     AssertMsg(m_keyboardHook, ("SetWindowsHookEx(): err=%d", GetLastError()));
                     /* Remember which view had captured keyboard: */
                     m_iKeyboardHookViewIndex = uScreenId;
@@ -1063,16 +1063,16 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 #ifdef Q_WS_MAC
                 /* If keyboard-event handler is NOT currently installed;
                  * Or installed but NOT for that view: */
-                if (m_iKeyboardGrabViewIndex != (int)uScreenId)
+                if (m_iKeyboardHookViewIndex != (int)uScreenId)
                 {
                     /* If keyboard-event handler is NOT currently installed: */
-                    if (m_iKeyboardGrabViewIndex == -1)
+                    if (m_iKeyboardHookViewIndex == -1)
                     {
                         /* Install the keyboard-event handler: */
                         darwinGrabKeyboardEvents(true);
                     }
                     /* Update the id: */
-                    m_iKeyboardGrabViewIndex = uScreenId;
+                    m_iKeyboardHookViewIndex = uScreenId;
                 }
 #endif /* Q_WS_MAC */
 
@@ -1096,12 +1096,12 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
             {
 #ifdef Q_WS_MAC
                 /* If keyboard-event handler is installed for that view: */
-                if (m_iKeyboardGrabViewIndex == (int)uScreenId)
+                if (m_iKeyboardHookViewIndex == (int)uScreenId)
                 {
                     /* Remove the keyboard-event handler: */
                     darwinGrabKeyboardEvents(false);
                     /* Update the id: */
-                    m_iKeyboardGrabViewIndex = -1;
+                    m_iKeyboardHookViewIndex = -1;
                 }
 #endif /* Q_WS_MAC */
 
@@ -1164,7 +1164,6 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 
 void UIKeyboardHandler::darwinGrabKeyboardEvents(bool fGrab)
 {
-    m_fKeyboardGrabbed = fGrab;
     if (fGrab)
     {
         /* Disable mouse and keyboard event compression/delaying to make sure we *really* get all of the events. */
@@ -1173,13 +1172,13 @@ void UIKeyboardHandler::darwinGrabKeyboardEvents(bool fGrab)
 
         /* Bring the caps lock state up to date, otherwise e.g. a later Shift
          * key press will accidentally inject a CapsLock key press and release,
-         * see UIKeyboardHandler::darwinKeyboardEvent for the code handling
+         * see UIKeyboardHandler::macKeyboardEvent for the code handling
          * modifier key state changes */
-        m_darwinKeyModifiers ^= (m_darwinKeyModifiers ^ ::GetCurrentEventKeyModifiers()) & alphaLock;
+        m_uDarwinKeyModifiers ^= (m_uDarwinKeyModifiers ^ ::GetCurrentEventKeyModifiers()) & alphaLock;
 
         /* Register the event callback/hook and grab the keyboard. */
         UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
-                                                                UIKeyboardHandler::darwinEventHandlerProc, this);
+                                                                UIKeyboardHandler::macKeyboardProc, this);
 
         ::DarwinGrabKeyboard (false);
     }
@@ -1187,11 +1186,11 @@ void UIKeyboardHandler::darwinGrabKeyboardEvents(bool fGrab)
     {
         ::DarwinReleaseKeyboard();
         UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
-                                                                  UIKeyboardHandler::darwinEventHandlerProc, this);
+                                                                  UIKeyboardHandler::macKeyboardProc, this);
     }
 }
 
-bool UIKeyboardHandler::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
+bool UIKeyboardHandler::macKeyboardProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
     UIKeyboardHandler *pKeyboardHandler = (UIKeyboardHandler*)pvUser;
     EventRef inEvent = (EventRef)pvCarbonEvent;
@@ -1205,14 +1204,14 @@ bool UIKeyboardHandler::darwinEventHandlerProc(const void *pvCocoaEvent, const v
     /* All keyboard class events needs to be handled. */
     if (eventClass == kEventClassKeyboard)
     {
-        if (pKeyboardHandler->darwinKeyboardEvent (pvCocoaEvent, inEvent))
+        if (pKeyboardHandler->macKeyboardEvent(pvCocoaEvent, inEvent))
             return true;
     }
     /* Pass the event along. */
     return false;
 }
 
-bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
+bool UIKeyboardHandler::macKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
 {
     bool ret = false;
     UInt32 EventKind = ::GetEventKind(inEvent);
@@ -1255,7 +1254,7 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
                 cbWritten = 0;
             ucs[cbWritten / sizeof(wchar_t)] = 0; /* The api doesn't terminate it. */
 
-            ret = keyEvent(keyCode, scanCode, flags, m_iKeyboardGrabViewIndex, ucs[0] ? ucs : NULL);
+            ret = keyEvent(keyCode, scanCode, flags, m_iKeyboardHookViewIndex, ucs[0] ? ucs : NULL);
         }
     }
     else
@@ -1265,7 +1264,7 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
         ::GetEventParameter(inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
                             sizeof(newMask), NULL, &newMask);
         newMask = ::DarwinAdjustModifierMask(newMask, pvCocoaEvent);
-        UInt32 changed = newMask ^ m_darwinKeyModifiers;
+        UInt32 changed = newMask ^ m_uDarwinKeyModifiers;
         if (changed)
         {
             for (UInt32 bit = 0; bit < 32; bit++)
@@ -1284,7 +1283,7 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
                     if (scanCode & VBOXKEY_EXTENDED)
                         flags |= KeyExtended;
                     scanCode &= VBOXKEY_SCANCODE_MASK;
-                    ret |= keyEvent(keyCode, scanCode & 0xff, flags, m_iKeyboardGrabViewIndex);
+                    ret |= keyEvent(keyCode, scanCode & 0xff, flags, m_iKeyboardHookViewIndex);
                 }
                 else
                 {
@@ -1292,13 +1291,13 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
                     if (scanCode & VBOXKEY_EXTENDED)
                         flags |= KeyExtended;
                     scanCode &= VBOXKEY_SCANCODE_MASK;
-                    keyEvent(keyCode, scanCode, flags | KeyPressed, m_iKeyboardGrabViewIndex);
-                    keyEvent(keyCode, scanCode, flags, m_iKeyboardGrabViewIndex);
+                    keyEvent(keyCode, scanCode, flags | KeyPressed, m_iKeyboardHookViewIndex);
+                    keyEvent(keyCode, scanCode, flags, m_iKeyboardHookViewIndex);
                 }
             }
         }
 
-        m_darwinKeyModifiers = newMask;
+        m_uDarwinKeyModifiers = newMask;
 
         /* Always return true here because we'll otherwise getting a Qt event
            we don't want and that will only cause the Pause warning to pop up. */
@@ -1310,15 +1309,15 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
 
 #elif defined(Q_WS_WIN)
 
-LRESULT CALLBACK UIKeyboardHandler::lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK UIKeyboardHandler::winKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-    if (nCode == HC_ACTION && m_spKeyboardHandler && m_spKeyboardHandler->winLowKeyboardEvent(wParam, *(KBDLLHOOKSTRUCT*)lParam))
+    if (nCode == HC_ACTION && m_spKeyboardHandler && m_spKeyboardHandler->winKeyboardEvent(wParam, *(KBDLLHOOKSTRUCT*)lParam))
         return 1;
 
     return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
-bool UIKeyboardHandler::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
+bool UIKeyboardHandler::winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
 {
     /* Check what related machine-view was NOT unregistered yet: */
     if (!m_views.contains(m_iKeyboardHookViewIndex))
@@ -1332,7 +1331,7 @@ bool UIKeyboardHandler::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &eve
                            ? IsExtKeyPressed : IsKeyPressed;
     if (   (event.flags & 0x80) /* released */
         && (   (   UIHostCombo::toKeyCodeList(m_globalSettings.hostCombo()).contains(event.vkCode)
-                && !m_bIsHostkeyInCapture)
+                && !m_fIsHostkeyInCapture)
             ||    (  m_pressedKeys[event.scanCode & 0x7F]
                    & (IsKbdCaptured | what_pressed))
                == what_pressed))
@@ -1600,8 +1599,8 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
 #ifdef Q_WS_WIN
     if (m_bIsHostComboPressed || isHostComboStateChanged)
     {
-        /* Currently this is used in winLowKeyboardEvent() only: */
-        m_bIsHostkeyInCapture = m_fIsKeyboardCaptured;
+        /* Currently this is used in winKeyboardEvent() only: */
+        m_fIsHostkeyInCapture = m_fIsKeyboardCaptured;
     }
 #endif /* Q_WS_WIN */
 
