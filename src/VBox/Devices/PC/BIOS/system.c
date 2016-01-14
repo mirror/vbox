@@ -714,6 +714,18 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                         EBX = 5;
                         break;
                     case 5:
+                        set_e820_range(ES, DI,
+                                       0xfec00000,
+                                       0xfec00000 + 0x1000, 0, 0, 2); // I/O APIC
+                        EBX = 6;
+                        break;
+                    case 6:
+                        set_e820_range(ES, DI,
+                                       0xfee00000,
+                                       0xfee00000 + 0x1000, 0, 0, 2); // Local APIC
+                        EBX = 7;
+                        break;
+                    case 7:
                         /* 256KB BIOS area at the end of 4 GB */
 #ifdef VBOX
                         /* We don't set the end to 1GB here and rely on the 32-bit
@@ -722,26 +734,26 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                         set_e820_range(ES, DI,
                                        0xfffc0000L, 0x00000000L, 0, 0, 2);
                         if (mcfgStart != 0)
-                            EBX = 6;
+                            EBX = 8;
                         else
                         {
                             if (extra_highbits_memory_size || extra_lowbits_memory_size)
-                                EBX = 7;
+                                EBX = 9;
                             else
                                 EBX = 0;
                         }
                         break;
-                     case 6:
+                     case 8:
                         /* PCI MMIO config space (MCFG) */
                         set_e820_range(ES, DI,
                                        mcfgStart, mcfgStart + mcfgSize, 0, 0, 2);
 
                         if (extra_highbits_memory_size || extra_lowbits_memory_size)
-                            EBX = 7;
+                            EBX = 9;
                         else
                             EBX = 0;
                         break;
-                    case 7:
+                    case 9:
 #ifdef VBOX /* Don't succeeded if no memory above 4 GB.  */
                         /* Mapping of memory above 4 GB if present.
                            Note1: set_e820_range needs do no borrowing in the
