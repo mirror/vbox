@@ -1024,7 +1024,8 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                                             : CFSTR(kUSBDevicePropertySpeed),
                                             &bSpeed));
                 Assert(bSpeed <= 4);
-                pCur->enmSpeed = bSpeed == 3 || bSpeed == 4 ? USBDEVICESPEED_SUPER
+                pCur->enmSpeed = bSpeed == 4 ? USBDEVICESPEED_SUPER /** @todo: Check what 4 really means (USB 3.1 perhaps?), seen on El Capitan. */
+                               : bSpeed == 3 ? USBDEVICESPEED_SUPER
                                : bSpeed == 2 ? USBDEVICESPEED_HIGH
                                : bSpeed == 1 ? USBDEVICESPEED_FULL
                                : bSpeed == 0 ? USBDEVICESPEED_LOW
