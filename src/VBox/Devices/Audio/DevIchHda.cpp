@@ -3850,7 +3850,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                     AssertRC(rc);
 
                     uint32_t u32BDLEIndex;
-                    for (uint16_t i = 0; i < cBDLE; i++)
+                    for (uint16_t a = 0; a < cBDLE; a++)
                     {
                         rc = SSMR3Skip(pSSM, sizeof(uint32_t)); /* Begin marker */
                         AssertRC(rc);
@@ -3864,7 +3864,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                             AssertRC(rc);
                             rc = SSMR3GetMem(pSSM,
                                              &pStrm->State.BDLE.State.au8FIFO,
-                                             sizeof(uint8_t) * 256);                       /* au8FIFO */
+                                             sizeof(pStrm->State.BDLE.State.au8FIFO));     /* au8FIFO */
                             AssertRC(rc);
                             rc = SSMR3GetU32(pSSM, &pStrm->State.BDLE.State.u32BufOff);    /* u32BufOff */
                             AssertRC(rc);
