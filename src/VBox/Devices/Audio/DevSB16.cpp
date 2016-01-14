@@ -263,7 +263,7 @@ static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t 
     return rc;
 }
 
-static void sb16Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
     LogFunc(("iLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
 }

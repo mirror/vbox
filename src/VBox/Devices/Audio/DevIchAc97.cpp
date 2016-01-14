@@ -2246,7 +2246,7 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
     return rc;
 }
 
-static void ichac97Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static DECLCALLBACK(void) ichac97Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
     LogFunc(("iLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
 }
