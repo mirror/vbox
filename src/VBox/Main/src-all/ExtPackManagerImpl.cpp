@@ -1281,27 +1281,6 @@ void ExtPack::i_probeAndLoad(void)
     }
 
     /*
-     * Check for possibly incompatible extpack versions.
-     *
-     * - In 4.3.12 the PDMUSBREG structure was modified without updating the
-     *   version number.
-     * - In 4.3.16 (actually r95499) the VUSBIROOTHUBCONNECTOR interface changed without
-     *   also changing the UUID, with the result that our EHCI device could crash the
-     *   host process.
-     * - In 4.3.12 and 4.3.30 the VUSBREQ structure was updated without updating
-     *   the PDMUSBREG or any other version number.
-     *
-     *  Since this was from before VBOXEXTPACKREG::uVBoxFullVersion was
-     *  added, the check isn't all that generic.
-     */
-    if (   m->Desc.strName.equals("Oracle VM VirtualBox Extension Pack")
-        && RTStrVersionCompare(m->Desc.strVersion.c_str(), "4.3.30") < 0)
-    {
-        m->strWhyUnusable.printf(tr("Incompatible extension pack (version '%s'), please update"), m->Desc.strVersion.c_str());
-        return;
-    }
-
-    /*
      * Load the main DLL and call the predefined entry point.
      */
     bool fIsNative;
