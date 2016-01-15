@@ -123,8 +123,8 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
  ifdef VBOX_WITH_32_ON_64_MAIN_API
   InstallExternalLibs_SOURCES += \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll,x86_)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll,x86_)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
  endif
  ifeq ($(VBOX_VCC_CRT_TYPE),d)
   InstallExternalLibs_SOURCES += \
@@ -134,8 +134,8 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
   	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll)=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll
   ifdef VBOX_WITH_32_ON_64_MAIN_API
   InstallExternalLibs_SOURCES += \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM)d,4).dll)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM)d,4).dll)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM)d,4).dll,x86_)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll \
+  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM)d,4).dll,x86_)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll
   endif
  endif
 endif
