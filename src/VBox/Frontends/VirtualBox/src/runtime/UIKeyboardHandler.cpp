@@ -99,6 +99,7 @@ UIKeyboardHandler* UIKeyboardHandler::create(UIMachineLogic *pMachineLogic,
 {
     /* Prepare keyboard-handler: */
     UIKeyboardHandler *pKeyboardHandler = 0;
+
     /* Depending on visual-state type: */
     switch (visualStateType)
     {
@@ -117,11 +118,13 @@ UIKeyboardHandler* UIKeyboardHandler::create(UIMachineLogic *pMachineLogic,
         default:
             break;
     }
+
 #ifdef Q_WS_WIN
-    /* Its required to have static pointer to created handler
+    /* It is necessary to have static pointer to created handler
      * because windows keyboard-hook works only with static members: */
     m_spKeyboardHandler = pKeyboardHandler;
 #endif /* Q_WS_WIN */
+
     /* Return prepared keyboard-handler: */
     return pKeyboardHandler;
 }
@@ -129,10 +132,13 @@ UIKeyboardHandler* UIKeyboardHandler::create(UIMachineLogic *pMachineLogic,
 /* Factory function to destroy keyboard-handler: */
 void UIKeyboardHandler::destroy(UIKeyboardHandler *pKeyboardHandler)
 {
-    /* Delete keyboard-handler: */
 #ifdef Q_WS_WIN
+    /* It was necessary to have static pointer to created handler
+     * because windows keyboard-hook works only with static members: */
     m_spKeyboardHandler = 0;
 #endif /* Q_WS_WIN */
+
+    /* Delete keyboard-handler: */
     delete pKeyboardHandler;
 }
 
@@ -231,9 +237,18 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         /* Remember which screen had captured keyboard: */
         m_iKeyboardCaptureViewIndex = uScreenId;
 
-#if defined(Q_WS_WIN)
+#if defined(Q_WS_MAC)
+
+        /* On Mac, we use the Qt methods + disabling global hot keys + watching modifiers (for right/left separation). */
+        ::DarwinDisableGlobalHotKeys(true);
+        m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
+
+#elif defined(Q_WS_WIN)
+
         /* On Win, keyboard grabbing is ineffective, a low-level keyboard hook is used instead. */
+
 #elif defined(Q_WS_X11)
+
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
          * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
          * because XGrabKeyboard causes a problem under metacity - a window cannot be moved
@@ -281,13 +296,12 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
             default:
                 break;
         }
-#elif defined(Q_WS_MAC)
-        /* On Mac, we use the Qt methods + disabling global hot keys + watching modifiers (for right/left separation). */
-        ::DarwinDisableGlobalHotKeys(true);
-        m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
+
 #else
+
         /* On other platforms we are just praying Qt method will work. */
         m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
+
 #endif
 
         /* Notify all the listeners: */
@@ -307,9 +321,17 @@ void UIKeyboardHandler::releaseKeyboard()
         /* Store new keyboard-captured state value: */
         m_fIsKeyboardCaptured = false;
 
-#if defined(Q_WS_WIN)
+#if defined(Q_WS_MAC)
+
+        ::DarwinDisableGlobalHotKeys(false);
+        m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
+
+#elif defined(Q_WS_WIN)
+
         /* On Win, keyboard grabbing is ineffective, a low-level keyboard hook is used instead. */
+
 #elif defined(Q_WS_X11)
+
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
          * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
          * because XGrabKeyboard causes a problem under metacity - a window cannot be moved
@@ -343,11 +365,11 @@ void UIKeyboardHandler::releaseKeyboard()
             default:
                 break;
         }
-#elif defined(Q_WS_MAC)
-        ::DarwinDisableGlobalHotKeys(false);
-        m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
+
 #else
+
         m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
+
 #endif
 
         /* Reset keyboard-capture index: */
@@ -408,7 +430,7 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
     m_uDarwinKeyModifiers &=
         alphaLock | kEventKeyModifierNumLockMask |
         (aReleaseHostKey ? 0 : hostComboModifierMask);
-#endif
+#endif /* Q_WS_MAC */
 
     /* Notify all the listeners: */
     emit sigStateChange(state());
@@ -851,7 +873,7 @@ void UIKeyboardHandler::sltMachineStateChanged()
 #ifdef Q_WS_WIN
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
                         GetAncestor((HWND)m_views[theListOfViewIds[i]]->winId(), GA_ROOT) == GetForegroundWindow())
-#else /* Q_WS_WIN */
+#else /* !Q_WS_WIN */
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
 #endif /* !Q_WS_WIN */
                         captureKeyboard(theListOfViewIds[i]);
@@ -938,7 +960,7 @@ void UIKeyboardHandler::loadSettings()
 #ifdef Q_WS_X11
     /* Initialize the X keyboard subsystem: */
     initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
-#endif
+#endif /* Q_WS_X11 */
 
     /* Extra data settings: */
     {
@@ -949,7 +971,15 @@ void UIKeyboardHandler::loadSettings()
 
 void UIKeyboardHandler::cleanupCommon()
 {
-#if defined(Q_WS_WIN)
+#if defined(Q_WS_MAC)
+
+    /* We have to make sure the callback for the keyboard events
+     * is released when closing this view. */
+    if (m_iKeyboardHookViewIndex != -1)
+        darwinGrabKeyboardEvents(false);
+
+#elif defined(Q_WS_WIN)
+
     /* Cleanup AltGR monitor: */
     delete m_pAltGrMonitor;
     m_pAltGrMonitor = 0;
@@ -960,12 +990,8 @@ void UIKeyboardHandler::cleanupCommon()
         UnhookWindowsHookEx(m_keyboardHook);
         m_keyboardHook = NULL;
     }
-#elif defined(Q_WS_MAC)
-    /* We have to make sure the callback for the keyboard events
-     * is released when closing this view. */
-    if (m_iKeyboardHookViewIndex != -1)
-        darwinGrabKeyboardEvents(false);
-#endif /* Q_WS_MAC */
+
+#endif /* Q_WS_WIN */
 }
 
 /* Machine-logic getter: */
@@ -1003,7 +1029,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
         /* Handle window events: */
         switch (pEvent->type())
         {
-#if defined(Q_WS_WIN)
+#ifdef Q_WS_WIN
             /* Install/uninstall low-level keyboard-hook on every activation/deactivation to:
              * a) avoid excess hook calls when we're not active and;
              * b) be always in front of any other possible hooks. */
@@ -1041,7 +1067,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                 }
                 break;
             }
-#endif
+#endif /* Q_WS_WIN */
             default:
                 break;
         }
@@ -1082,7 +1108,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 #ifdef Q_WS_WIN
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
                         GetAncestor((HWND)pWatchedView->winId(), GA_ROOT) == GetForegroundWindow())
-#else /* Q_WS_WIN */
+#else /* !Q_WS_WIN */
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
 #endif /* !Q_WS_WIN */
                         captureKeyboard(uScreenId);
@@ -1706,7 +1732,14 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
     /* Prepare processing result: */
     bool fWasProcessed = false;
 
-#ifdef Q_WS_WIN
+#if defined(Q_WS_MAC)
+
+    Q_UNUSED(iHotKey);
+    if (pHotKey && pHotKey[0] && !pHotKey[1])
+        fWasProcessed = actionPool()->processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(pHotKey[0]).toUpper().unicode()));
+
+#elif defined(Q_WS_WIN)
+
     Q_UNUSED(pHotKey);
     int iKeyboardLayout = GetKeyboardLayoutList(0, NULL);
     Assert(iKeyboardLayout);
@@ -1722,9 +1755,9 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
             fWasProcessed = actionPool()->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + QChar(symbol).toUpper().unicode())));
     }
     delete[] pList;
-#endif /* Q_WS_WIN */
 
-#ifdef Q_WS_X11
+#elif defined(Q_WS_X11)
+
     Q_UNUSED(pHotKey);
     Display *pDisplay = QX11Info::display();
     KeyCode keyCode = XKeysymToKeycode(pDisplay, iHotKey);
@@ -1740,13 +1773,12 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
             fWasProcessed = actionPool()->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + qtSymbol.toUpper().unicode())));
         }
     }
-#endif /* Q_WS_X11 */
 
-#ifdef Q_WS_MAC
-    Q_UNUSED(iHotKey);
-    if (pHotKey && pHotKey[0] && !pHotKey[1])
-        fWasProcessed = actionPool()->processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(pHotKey[0]).toUpper().unicode()));
-#endif /* Q_WS_MAC */
+#else
+
+# warning "port me!"
+
+#endif
 
     /* Grab the key from the Qt if it was processed, or pass it to the Qt otherwise
      * in order to process non-alphanumeric keys in event(), after they are converted to Qt virtual keys: */
@@ -1757,7 +1789,50 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
 {
     /* Synchronize the views of the host and the guest to the modifier keys.
      * This function will add up to 6 additional keycodes to codes. */
-#if defined(Q_WS_X11)
+
+#if defined(Q_WS_MAC)
+
+    /* if (uisession()->numLockAdaptionCnt()) ... - NumLock isn't implemented by Mac OS X so ignore it. */
+    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
+    {
+        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
+        piCodes[(*puCount)++] = 0x3a;
+        piCodes[(*puCount)++] = 0x3a | 0x80;
+        /* Some keyboard layouts require shift to be pressed to break
+         * capslock.  For simplicity, only do this if shift is not
+         * already held down. */
+        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        {
+            piCodes[(*puCount)++] = 0x2a;
+            piCodes[(*puCount)++] = 0x2a | 0x80;
+        }
+    }
+
+#elif defined(Q_WS_WIN)
+
+    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(GetKeyState(VK_NUMLOCK))))
+    {
+        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
+        piCodes[(*puCount)++] = 0x45;
+        piCodes[(*puCount)++] = 0x45 | 0x80;
+    }
+    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(GetKeyState(VK_CAPITAL))))
+    {
+        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
+        piCodes[(*puCount)++] = 0x3a;
+        piCodes[(*puCount)++] = 0x3a | 0x80;
+        /* Some keyboard layouts require shift to be pressed to break
+         * capslock.  For simplicity, only do this if shift is not
+         * already held down. */
+        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        {
+            piCodes[(*puCount)++] = 0x2a;
+            piCodes[(*puCount)++] = 0x2a | 0x80;
+        }
+    }
+
+#elif defined(Q_WS_X11)
+
     Window   wDummy1, wDummy2;
     int      iDummy3, iDummy4, iDummy5, iDummy6;
     unsigned uMask;
@@ -1794,45 +1869,11 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
             piCodes[(*puCount)++] = 0x2a | 0x80;
         }
     }
-#elif defined(Q_WS_WIN)
-    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(GetKeyState(VK_NUMLOCK))))
-    {
-        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x45;
-        piCodes[(*puCount)++] = 0x45 | 0x80;
-    }
-    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(GetKeyState(VK_CAPITAL))))
-    {
-        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x3a;
-        piCodes[(*puCount)++] = 0x3a | 0x80;
-        /* Some keyboard layouts require shift to be pressed to break
-         * capslock.  For simplicity, only do this if shift is not
-         * already held down. */
-        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
-        {
-            piCodes[(*puCount)++] = 0x2a;
-            piCodes[(*puCount)++] = 0x2a | 0x80;
-        }
-    }
-#elif defined(Q_WS_MAC)
-    /* if (uisession()->numLockAdaptionCnt()) ... - NumLock isn't implemented by Mac OS X so ignore it. */
-    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
-    {
-        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x3a;
-        piCodes[(*puCount)++] = 0x3a | 0x80;
-        /* Some keyboard layouts require shift to be pressed to break
-         * capslock.  For simplicity, only do this if shift is not
-         * already held down. */
-        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
-        {
-            piCodes[(*puCount)++] = 0x2a;
-            piCodes[(*puCount)++] = 0x2a | 0x80;
-        }
-    }
+
 #else
-//#warning Adapt UIKeyboardHandler::fixModifierState
+
+# warning "port me!"
+
 #endif
 }
 
