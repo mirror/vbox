@@ -491,7 +491,150 @@ void UIKeyboardHandler::winSkipKeyboardEvents(bool fSkip)
 #endif /* Q_WS_WIN */
 
 #if QT_VERSION < 0x050000
-# if defined(Q_WS_WIN)
+# if defined(Q_WS_MAC)
+
+bool UIKeyboardHandler::macEventFilter(const void *pvCocoaEvent, EventRef event, ulong uScreenId)
+{
+    /* Check if some system event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    bool fResult = false; /* Pass to Qt by default. */
+
+    /* Depending on event kind: */
+    const UInt32 uEventKind = ::GetEventKind(event);
+    switch(uEventKind)
+    {
+        /* Watch for simple key-events: */
+        case kEventRawKeyDown:
+        case kEventRawKeyRepeat:
+        case kEventRawKeyUp:
+        {
+            /* Acquire keycode: */
+            UInt32 uKeyCode = ~0U;
+            ::GetEventParameter(event, kEventParamKeyCode, typeUInt32,
+                                NULL, sizeof(uKeyCode), NULL, &uKeyCode);
+
+            /* The usb keyboard driver translates these codes to different virtual
+             * keycodes depending of the keyboard type. There are ANSI, ISO, JIS
+             * and unknown. For European keyboards (ISO) the key 0xa and 0x32 have
+             * to be switched. Here we are doing this at runtime, cause the user
+             * can have more than one keyboard (of different type), where he may
+             * switch at will all the time. Default is the ANSI standard as defined
+             * in g_aDarwinToSet1. Please note that the "~" on some English ISO
+             * keyboards will be wrongly swapped. This can maybe fixed by
+             * using a Apple keyboard layout in the guest. */
+            if (   (uKeyCode == 0xa || uKeyCode == 0x32)
+                && KBGetLayoutType(LMGetKbdType()) == kKeyboardISO)
+                uKeyCode = 0x3c - uKeyCode;
+
+            /* Translate keycode to set 1 scan code: */
+            unsigned uScanCode = ::DarwinKeycodeToSet1Scancode(uKeyCode);
+
+            /* If scan code is valid: */
+            if (uScanCode)
+            {
+                /* Calculate flags: */
+                int iFlags = 0;
+                if (uEventKind != kEventRawKeyUp)
+                    iFlags |= KeyPressed;
+                if (uScanCode & VBOXKEY_EXTENDED)
+                    iFlags |= KeyExtended;
+                /** @todo KeyPause, KeyPrint. */
+                uScanCode &= VBOXKEY_SCANCODE_MASK;
+
+                /* Get the unicode string (if present): */
+                AssertCompileSize(wchar_t, 2);
+                AssertCompileSize(UniChar, 2);
+                ByteCount cbWritten = 0;
+                wchar_t ucs[8];
+                if (::GetEventParameter(event, kEventParamKeyUnicodes, typeUnicodeText,
+                                        NULL, sizeof(ucs), &cbWritten, &ucs[0]) != 0)
+                    cbWritten = 0;
+                ucs[cbWritten / sizeof(wchar_t)] = 0; /* The api doesn't terminate it. */
+
+                /* Finally, handle parsed key-event: */
+                fResult = keyEvent(uKeyCode, uScanCode, iFlags, uScreenId, ucs[0] ? ucs : NULL);
+            }
+
+            break;
+        }
+        /* Watch for modifier key-events: */
+        case kEventRawKeyModifiersChanged:
+        {
+            /* Acquire new modifier mask, it may contain
+             * multiple modifier changes, kind of annoying: */
+            UInt32 uNewMask = 0;
+            ::GetEventParameter(event, kEventParamKeyModifiers, typeUInt32,
+                                NULL, sizeof(uNewMask), NULL, &uNewMask);
+
+            /* Adjust new modifier mask to distinguish left/right modifiers: */
+            uNewMask = ::DarwinAdjustModifierMask(uNewMask, pvCocoaEvent);
+
+            /* Determine what is really changed: */
+            const UInt32 changed = uNewMask ^ m_uDarwinKeyModifiers;
+            if (changed)
+            {
+                for (UInt32 bit = 0; bit < 32; ++bit)
+                {
+                    /* Skip unchanged bits: */
+                    if (!(changed & (1 << bit)))
+                        continue;
+                    /* Acquire set 1 scan code from new mask: */
+                    unsigned uScanCode = ::DarwinModifierMaskToSet1Scancode(1 << bit);
+                    /* Skip invalid scan codes: */
+                    if (!uScanCode)
+                        continue;
+                    /* Acquire darwin keycode from new mask: */
+                    unsigned uKeyCode = ::DarwinModifierMaskToDarwinKeycode(1 << bit);
+                    /* Assert invalid keycodes: */
+                    Assert(uKeyCode);
+
+                    /* For non-lockable modifier: */
+                    if (!(uScanCode & VBOXKEY_LOCK))
+                    {
+                        /* Calculate flags: */
+                        unsigned uFlags = (uNewMask & (1 << bit)) ? KeyPressed : 0;
+                        if (uScanCode & VBOXKEY_EXTENDED)
+                            uFlags |= KeyExtended;
+                        uScanCode &= VBOXKEY_SCANCODE_MASK;
+
+                        /* Finally, handle parsed key-event: */
+                        keyEvent(uKeyCode, uScanCode & 0xff, uFlags, uScreenId);
+                    }
+                    /* For lockable modifier: */
+                    else
+                    {
+                        /* Calculate flags: */
+                        unsigned uFlags = 0;
+                        if (uScanCode & VBOXKEY_EXTENDED)
+                            uFlags |= KeyExtended;
+                        uScanCode &= VBOXKEY_SCANCODE_MASK;
+
+                        /* Finally, handle parsed press/release pair: */
+                        keyEvent(uKeyCode, uScanCode, uFlags | KeyPressed, uScreenId);
+                        keyEvent(uKeyCode, uScanCode, uFlags, uScreenId);
+                    }
+                }
+            }
+
+            /* Remember new modifier mask: */
+            m_uDarwinKeyModifiers = uNewMask;
+
+            /* Always return true here because we'll otherwise getting a Qt event
+             * we don't want and that will only cause the Pause warning to pop up: */
+            fResult = true;
+
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Return result: */
+    return fResult;
+}
+
+# elif defined(Q_WS_WIN)
 
 bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
 {
@@ -1235,121 +1378,39 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 
 #if defined(Q_WS_MAC)
 
+/* static */
 bool UIKeyboardHandler::macKeyboardProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
-    UIKeyboardHandler *pKeyboardHandler = (UIKeyboardHandler*)pvUser;
-    EventRef inEvent = (EventRef)pvCarbonEvent;
-    UInt32 eventClass = ::GetEventClass(inEvent);
+    /* Determine the event class: */
+    EventRef event = (EventRef)pvCarbonEvent;
+    UInt32 uEventClass = ::GetEventClass(event);
 
     /* Check if this is an application key combo. In that case we will not pass
      * the event to the guest, but let the host process it. */
     if (::darwinIsApplicationCommand(pvCocoaEvent))
         return false;
 
-    /* All keyboard class events needs to be handled. */
-    if (eventClass == kEventClassKeyboard)
-    {
-        if (pKeyboardHandler->macKeyboardEvent(pvCocoaEvent, inEvent))
-            return true;
-    }
-    /* Pass the event along. */
+    /* Get the keyboard handler from the user's void data: */
+    UIKeyboardHandler *pKeyboardHandler = static_cast<UIKeyboardHandler*>(pvUser);
+
+    /* All keyboard class events needs to be handled: */
+    if (uEventClass == kEventClassKeyboard && pKeyboardHandler && pKeyboardHandler->macKeyboardEvent(pvCocoaEvent, event))
+        return true;
+
+    /* Pass the event along: */
     return false;
 }
 
-bool UIKeyboardHandler::macKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
+bool UIKeyboardHandler::macKeyboardEvent(const void *pvCocoaEvent, EventRef event)
 {
-    bool ret = false;
-    UInt32 EventKind = ::GetEventKind(inEvent);
-    if (EventKind != kEventRawKeyModifiersChanged)
-    {
-        /* Convert keycode to set 1 scan code. */
-        UInt32 keyCode = ~0U;
-        ::GetEventParameter(inEvent, kEventParamKeyCode, typeUInt32, NULL, sizeof (keyCode), NULL, &keyCode);
-        /* The usb keyboard driver translates these codes to different virtual
-         * key codes depending of the keyboard type. There are ANSI, ISO, JIS
-         * and unknown. For European keyboards (ISO) the key 0xa and 0x32 have
-         * to be switched. Here we are doing this at runtime, cause the user
-         * can have more than one keyboard (of different type), where he may
-         * switch at will all the time. Default is the ANSI standard as defined
-         * in g_aDarwinToSet1. Please note that the "~" on some English ISO
-         * keyboards will be wrongly swapped. This can maybe fixed by
-         * using a Apple keyboard layout in the guest. */
-        if (   (keyCode == 0xa || keyCode == 0x32)
-            && KBGetLayoutType(LMGetKbdType()) == kKeyboardISO)
-            keyCode = 0x3c - keyCode;
-        unsigned scanCode = ::DarwinKeycodeToSet1Scancode(keyCode);
-        if (scanCode)
-        {
-            /* Calc flags. */
-            int flags = 0;
-            if (EventKind != kEventRawKeyUp)
-                flags |= KeyPressed;
-            if (scanCode & VBOXKEY_EXTENDED)
-                flags |= KeyExtended;
-            /** @todo KeyPause, KeyPrint. */
-            scanCode &= VBOXKEY_SCANCODE_MASK;
+    /* Check what related machine-view was NOT unregistered yet: */
+    if (!m_views.contains(m_iKeyboardHookViewIndex))
+        return false;
 
-            /* Get the unicode string (if present). */
-            AssertCompileSize(wchar_t, 2);
-            AssertCompileSize(UniChar, 2);
-            ByteCount cbWritten = 0;
-            wchar_t ucs[8];
-            if (::GetEventParameter(inEvent, kEventParamKeyUnicodes, typeUnicodeText, NULL,
-                                    sizeof(ucs), &cbWritten, &ucs[0]) != 0)
-                cbWritten = 0;
-            ucs[cbWritten / sizeof(wchar_t)] = 0; /* The api doesn't terminate it. */
-
-            ret = keyEvent(keyCode, scanCode, flags, m_iKeyboardHookViewIndex, ucs[0] ? ucs : NULL);
-        }
-    }
-    else
-    {
-        /* May contain multiple modifier changes, kind of annoying. */
-        UInt32 newMask = 0;
-        ::GetEventParameter(inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
-                            sizeof(newMask), NULL, &newMask);
-        newMask = ::DarwinAdjustModifierMask(newMask, pvCocoaEvent);
-        UInt32 changed = newMask ^ m_uDarwinKeyModifiers;
-        if (changed)
-        {
-            for (UInt32 bit = 0; bit < 32; bit++)
-            {
-                if (!(changed & (1 << bit)))
-                    continue;
-                unsigned scanCode = ::DarwinModifierMaskToSet1Scancode(1 << bit);
-                if (!scanCode)
-                    continue;
-                unsigned keyCode = ::DarwinModifierMaskToDarwinKeycode(1 << bit);
-                Assert(keyCode);
-
-                if (!(scanCode & VBOXKEY_LOCK))
-                {
-                    unsigned flags = (newMask & (1 << bit)) ? KeyPressed : 0;
-                    if (scanCode & VBOXKEY_EXTENDED)
-                        flags |= KeyExtended;
-                    scanCode &= VBOXKEY_SCANCODE_MASK;
-                    ret |= keyEvent(keyCode, scanCode & 0xff, flags, m_iKeyboardHookViewIndex);
-                }
-                else
-                {
-                    unsigned flags = 0;
-                    if (scanCode & VBOXKEY_EXTENDED)
-                        flags |= KeyExtended;
-                    scanCode &= VBOXKEY_SCANCODE_MASK;
-                    keyEvent(keyCode, scanCode, flags | KeyPressed, m_iKeyboardHookViewIndex);
-                    keyEvent(keyCode, scanCode, flags, m_iKeyboardHookViewIndex);
-                }
-            }
-        }
-
-        m_uDarwinKeyModifiers = newMask;
-
-        /* Always return true here because we'll otherwise getting a Qt event
-           we don't want and that will only cause the Pause warning to pop up. */
-        ret = true;
-    }
-
-    return ret;
+    /* Pass event to machine-view's event handler: */
+#if QT_VERSION < 0x050000
+    return m_views[m_iKeyboardHookViewIndex]->macEvent(pvCocoaEvent, event);
+#endif /* QT_VERSION < 0x050000 */
 }
 
 #elif defined(Q_WS_WIN)

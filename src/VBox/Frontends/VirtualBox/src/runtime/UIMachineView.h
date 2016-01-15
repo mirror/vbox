@@ -343,15 +343,27 @@ protected:
     void dropEvent(QDropEvent *pEvent);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
-    /* Platform specific event processors: */
-#if defined(Q_WS_WIN)
-    bool winEvent(MSG *pMsg, long *puResult);
-#elif defined(Q_WS_X11)
-# if QT_VERSION < 0x050000
-    /** X11: Qt4: Handles all native events. */
-    bool x11Event(XEvent *pEvent);
-# endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+#if QT_VERSION < 0x050000
+# if defined(Q_WS_MAC)
+    /** Qt4: Mac: Performs pre-processing of all the native events.
+      * @note     Take into account this function is _not_ called by
+      *           the Qt itself because it has another signature,
+      *           only by the keyboard-hook of the keyboard-handler. */
+    virtual bool macEvent(const void *pvCocoaEvent, EventRef event);
+# elif defined(Q_WS_WIN)
+    /** Qt4: Win: Performs pre-processing of all the native events.
+      * @note     Take into account this function is called by
+      *           the Qt as well opposing to other host (Mac)
+      *           because it has required signature. */
+    virtual bool winEvent(MSG *pMsg, long *piResult);
+# elif defined(Q_WS_X11)
+    /** Qt4: X11: Performs pre-processing of all the native events.
+      * @note     Take into account this function is called by
+      *           the Qt as well opposing to other host (Mac)
+      *           because it has required signature. */
+    virtual bool x11Event(XEvent *pEvent);
+# endif /* Q_WS_X11 */
+#endif /* QT_VERSION < 0x050000 */
 
     /** Scales passed size forward. */
     QSize scaledForward(QSize size) const;

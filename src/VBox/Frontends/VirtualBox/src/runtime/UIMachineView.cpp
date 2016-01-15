@@ -1686,7 +1686,53 @@ void UIMachineView::dropEvent(QDropEvent *pEvent)
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
-#if defined(Q_WS_WIN)
+#if QT_VERSION < 0x050000
+# if defined(Q_WS_MAC)
+
+bool UIMachineView::macEvent(const void *pvCocoaEvent, EventRef event)
+{
+    /* Make sure arguments valid: */
+    AssertPtrReturn(pvCocoaEvent, false);
+    AssertReturn(event != NULL, false);
+
+    /* Check if some system event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    bool fResult = false; /* Pass to Qt by default. */
+    switch(::GetEventClass(event))
+    {
+        /* Watch for keyboard-events: */
+        case kEventClassKeyboard:
+        {
+            switch(::GetEventKind(event))
+            {
+                /* Watch for key-events: */
+                case kEventRawKeyDown:
+                case kEventRawKeyRepeat:
+                case kEventRawKeyUp:
+                case kEventRawKeyModifiersChanged:
+                {
+                    /* Filter using keyboard-filter? */
+                    bool fKeyboardFilteringResult =
+                        machineLogic()->keyboardHandler()->macEventFilter(pvCocoaEvent, event, screenId());
+                    /* Keyboard filter rules the result? */
+                    fResult = fKeyboardFilteringResult;
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Return result: */
+    return fResult;
+}
+
+# elif defined(Q_WS_WIN)
 
 bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
 {
@@ -1725,9 +1771,8 @@ bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
     return fResult;
 }
 
-#elif defined(Q_WS_X11)
+# elif defined(Q_WS_X11)
 
-# if QT_VERSION < 0x050000
 bool UIMachineView::x11Event(XEvent *pEvent)
 {
     AssertPtrReturn(pEvent, false);
@@ -1759,9 +1804,9 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 
     return fResult;
 }
-# endif /* QT_VERSION < 0x050000 */
 
-#endif /* Q_WS_X11 */
+# endif /* Q_WS_X11 */
+#endif /* QT_VERSION < 0x050000 */
 
 QSize UIMachineView::scaledForward(QSize size) const
 {
