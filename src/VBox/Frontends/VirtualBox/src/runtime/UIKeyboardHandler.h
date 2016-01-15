@@ -149,8 +149,6 @@ protected:
     bool eventFilter(QObject *pWatchedObject, QEvent *pEvent);
 
 #if defined(Q_WS_MAC)
-    /** Mac: Installs/deinstalls low level keyboard hook. */
-    void darwinGrabKeyboardEvents(bool fGrab);
     /** Mac: Performs initial pre-processing of all the native keyboard events. */
     static bool macKeyboardProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
     /** Mac: Performs initial pre-processing of all the native keyboard events. */

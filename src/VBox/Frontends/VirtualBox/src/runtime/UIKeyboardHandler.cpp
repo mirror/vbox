@@ -239,13 +239,25 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 
 #if defined(Q_WS_MAC)
 
-        /* On Mac, we use the Qt methods + disabling global hot keys + watching modifiers (for right/left separation). */
+        /* On Mac, keyboard grabbing is ineffective,
+         * a low-level keyboard-hook is used instead.
+         * It is being installed on focus-in event and uninstalled on focus-out.
+         * S.a. UIKeyboardHandler::eventFilter for more information. */
+
+        /* On Mac, we also
+         * use the Qt method to grab the keyboard,
+         * disable global hot keys and
+         * enable watching modifiers (for right/left separation). */
+        // TODO: Is that really needed?
         ::DarwinDisableGlobalHotKeys(true);
         m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
 
 #elif defined(Q_WS_WIN)
 
-        /* On Win, keyboard grabbing is ineffective, a low-level keyboard hook is used instead. */
+        /* On Win, keyboard grabbing is ineffective,
+         * a low-level keyboard-hook is used instead.
+         * It is being installed on window-activate event and uninstalled on window-deactivate.
+         * S.a. UIKeyboardHandler::eventFilter for more information. */
 
 #elif defined(Q_WS_X11)
 
@@ -299,7 +311,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 
 #else
 
-        /* On other platforms we are just praying Qt method will work. */
+        /* On other platforms we are just praying Qt method to work: */
         m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
 
 #endif
@@ -323,12 +335,25 @@ void UIKeyboardHandler::releaseKeyboard()
 
 #if defined(Q_WS_MAC)
 
+        /* On Mac, keyboard grabbing is ineffective,
+         * a low-level keyboard-hook is used instead.
+         * It is being installed on focus-in event and uninstalled on focus-out.
+         * S.a. UIKeyboardHandler::eventFilter for more information. */
+
+        /* On Mac, we also
+         * use the Qt method to release the keyboard,
+         * enable global hot keys and
+         * disable watching modifiers (for right/left separation). */
+        // TODO: Is that really needed?
         ::DarwinDisableGlobalHotKeys(false);
         m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
 
 #elif defined(Q_WS_WIN)
 
-        /* On Win, keyboard grabbing is ineffective, a low-level keyboard hook is used instead. */
+        /* On Win, keyboard grabbing is ineffective,
+         * a low-level keyboard-hook is used instead.
+         * It is being installed on window-activate event and uninstalled on window-deactivate.
+         * S.a. UIKeyboardHandler::eventFilter for more information. */
 
 #elif defined(Q_WS_X11)
 
@@ -368,11 +393,12 @@ void UIKeyboardHandler::releaseKeyboard()
 
 #else
 
+        /* On other platforms we are just praying Qt method to work: */
         m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
 
 #endif
 
-        /* Reset keyboard-capture index: */
+        /* Forget which screen had captured keyboard: */
         m_iKeyboardCaptureViewIndex = -1;
 
         /* Notify all the listeners: */
@@ -458,8 +484,6 @@ void UIKeyboardHandler::setDebuggerActive(bool aActive /* = true*/)
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_WIN
-/** Tell keyboard event handler to skip host keyboard events. Used for HID LEDs sync
- * when on Windows host a keyboard event is generated in order to change corresponding LED. */
 void UIKeyboardHandler::winSkipKeyboardEvents(bool fSkip)
 {
     m_fSkipKeyboardEvents = fSkip;
@@ -973,10 +997,16 @@ void UIKeyboardHandler::cleanupCommon()
 {
 #if defined(Q_WS_MAC)
 
-    /* We have to make sure the callback for the keyboard events
-     * is released when closing this view. */
+    /* Cleanup keyboard-hook: */
     if (m_iKeyboardHookViewIndex != -1)
-        darwinGrabKeyboardEvents(false);
+    {
+        /* Ungrab the keyboard and unregister the event callback/hook: */
+        ::DarwinReleaseKeyboard();
+        UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
+                                                                  UIKeyboardHandler::macKeyboardProc, this);
+        /* Update the id: */
+        m_iKeyboardHookViewIndex = -1;
+    }
 
 #elif defined(Q_WS_WIN)
 
@@ -984,11 +1014,14 @@ void UIKeyboardHandler::cleanupCommon()
     delete m_pAltGrMonitor;
     m_pAltGrMonitor = 0;
 
-    /* Cleaning keyboard-hook: */
+    /* Cleanup keyboard-hook: */
     if (m_keyboardHook)
     {
-        UnhookWindowsHookEx(m_keyboardHook);
+        /* Uninstall existing keyboard-hook: */
+        ::UnhookWindowsHookEx(m_keyboardHook);
         m_keyboardHook = NULL;
+        /* Update the id: */
+        m_iKeyboardHookViewIndex = -1;
     }
 
 #endif /* Q_WS_WIN */
@@ -1087,15 +1120,27 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
             case QEvent::FocusIn:
             {
 #ifdef Q_WS_MAC
-                /* If keyboard-event handler is NOT currently installed;
+                /* If keyboard-hook is NOT installed;
                  * Or installed but NOT for that view: */
-                if (m_iKeyboardHookViewIndex != (int)uScreenId)
+                if ((int)uScreenId != m_iKeyboardHookViewIndex)
                 {
-                    /* If keyboard-event handler is NOT currently installed: */
+                    /* If keyboard-hook is NOT currently installed: */
                     if (m_iKeyboardHookViewIndex == -1)
                     {
-                        /* Install the keyboard-event handler: */
-                        darwinGrabKeyboardEvents(true);
+                        /* Disable mouse and keyboard event compression/delaying
+                         * to make sure we *really* get all of the events: */
+                        ::CGSetLocalEventsSuppressionInterval(0.0);
+                        ::darwinSetMouseCoalescingEnabled(false);
+
+                        /* Bring the caps lock state up to date,
+                         * otherwise e.g. a later Shift key press will accidentally inject a CapsLock key press and release,
+                         * see UIKeyboardHandler::macKeyboardEvent for the code handling modifier key state changes. */
+                        m_uDarwinKeyModifiers ^= (m_uDarwinKeyModifiers ^ ::GetCurrentEventKeyModifiers()) & alphaLock;
+
+                        /* Register the event callback/hook and grab the keyboard: */
+                        UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
+                                                                                UIKeyboardHandler::macKeyboardProc, this);
+                        ::DarwinGrabKeyboard(false);
                     }
                     /* Update the id: */
                     m_iKeyboardHookViewIndex = uScreenId;
@@ -1121,11 +1166,13 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
             case QEvent::FocusOut:
             {
 #ifdef Q_WS_MAC
-                /* If keyboard-event handler is installed for that view: */
-                if (m_iKeyboardHookViewIndex == (int)uScreenId)
+                /* If keyboard-hook is installed: */
+                if ((int)uScreenId == m_iKeyboardHookViewIndex)
                 {
-                    /* Remove the keyboard-event handler: */
-                    darwinGrabKeyboardEvents(false);
+                    /* Ungrab the keyboard and unregister the event callback/hook: */
+                    ::DarwinReleaseKeyboard();
+                    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
+                                                                              UIKeyboardHandler::macKeyboardProc, this);
                     /* Update the id: */
                     m_iKeyboardHookViewIndex = -1;
                 }
@@ -1187,34 +1234,6 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 }
 
 #if defined(Q_WS_MAC)
-
-void UIKeyboardHandler::darwinGrabKeyboardEvents(bool fGrab)
-{
-    if (fGrab)
-    {
-        /* Disable mouse and keyboard event compression/delaying to make sure we *really* get all of the events. */
-        ::CGSetLocalEventsSuppressionInterval(0.0);
-        ::darwinSetMouseCoalescingEnabled(false);
-
-        /* Bring the caps lock state up to date, otherwise e.g. a later Shift
-         * key press will accidentally inject a CapsLock key press and release,
-         * see UIKeyboardHandler::macKeyboardEvent for the code handling
-         * modifier key state changes */
-        m_uDarwinKeyModifiers ^= (m_uDarwinKeyModifiers ^ ::GetCurrentEventKeyModifiers()) & alphaLock;
-
-        /* Register the event callback/hook and grab the keyboard. */
-        UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
-                                                                UIKeyboardHandler::macKeyboardProc, this);
-
-        ::DarwinGrabKeyboard (false);
-    }
-    else
-    {
-        ::DarwinReleaseKeyboard();
-        UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
-                                                                  UIKeyboardHandler::macKeyboardProc, this);
-    }
-}
 
 bool UIKeyboardHandler::macKeyboardProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
