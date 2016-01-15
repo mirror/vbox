@@ -231,12 +231,6 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
     /* If such view exists: */
     if (m_views.contains(uScreenId))
     {
-        /* Store new keyboard-captured state value: */
-        m_fIsKeyboardCaptured = true;
-
-        /* Remember which screen had captured keyboard: */
-        m_iKeyboardCaptureViewIndex = uScreenId;
-
 #if defined(Q_WS_MAC)
 
         /* On Mac, keyboard grabbing is ineffective,
@@ -250,7 +244,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
          * enable watching modifiers (for right/left separation). */
         // TODO: Is that really needed?
         ::DarwinDisableGlobalHotKeys(true);
-        m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
+        m_views[uScreenId]->grabKeyboard();
 
 #elif defined(Q_WS_WIN)
 
@@ -273,9 +267,9 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
             case UIVisualStateType_Scale:
             {
 # if QT_VERSION >= 0x050000
-                xcb_grab_key_checked(QX11Info::connection(), 0, m_views.value(m_iKeyboardCaptureViewIndex)->viewport()->winId(), XCB_MOD_MASK_ANY, XCB_GRAB_ANY, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+                xcb_grab_key_checked(QX11Info::connection(), 0, m_views.value(uScreenId)->viewport()->winId(), XCB_MOD_MASK_ANY, XCB_GRAB_ANY, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
 # else /* QT_VERSION < 0x050000 */
-                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[m_iKeyboardCaptureViewIndex]->winId(), False, GrabModeAsync, GrabModeAsync);
+                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[uScreenId]->winId(), False, GrabModeAsync, GrabModeAsync);
 # endif /* QT_VERSION < 0x050000 */
                 break;
             }
@@ -284,7 +278,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
             case UIVisualStateType_Seamless:
             {
 # if QT_VERSION >= 0x050000
-                xcb_grab_keyboard(QX11Info::connection(), 0, m_views.value(m_iKeyboardCaptureViewIndex)->viewport()->winId(), XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+                xcb_grab_keyboard(QX11Info::connection(), 0, m_views.value(uScreenId)->viewport()->winId(), XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
 # else /* QT_VERSION < 0x050000 */
                 /* Keyboard grabbing can fail because of some keyboard shortcut is still grabbed by window manager.
                  * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
@@ -295,7 +289,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
                 /* Only do our keyboard grab if there are no other focus events
                  * for this window on the queue.  This can prevent problems
                  * including two windows fighting to grab the keyboard. */
-                hWindow = m_windows[m_iKeyboardCaptureViewIndex]->winId();
+                hWindow = m_windows[uScreenId]->winId();
                 if (!checkForX11FocusEvents(hWindow))
                     while (cTriesLeft && XGrabKeyboard(QX11Info::display(),
                            hWindow, False, GrabModeAsync, GrabModeAsync,
@@ -312,9 +306,15 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 #else
 
         /* On other platforms we are just praying Qt method to work: */
-        m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
+        m_views[uScreenId]->grabKeyboard();
 
 #endif
+
+        /* Remember which screen had captured keyboard: */
+        m_iKeyboardCaptureViewIndex = uScreenId;
+
+        /* Store new keyboard-captured state value: */
+        m_fIsKeyboardCaptured = true;
 
         /* Notify all the listeners: */
         emit sigStateChange(state());
@@ -330,9 +330,6 @@ void UIKeyboardHandler::releaseKeyboard()
     /* If such view exists: */
     if (m_views.contains(m_iKeyboardCaptureViewIndex))
     {
-        /* Store new keyboard-captured state value: */
-        m_fIsKeyboardCaptured = false;
-
 #if defined(Q_WS_MAC)
 
         /* On Mac, keyboard grabbing is ineffective,
@@ -400,6 +397,9 @@ void UIKeyboardHandler::releaseKeyboard()
 
         /* Forget which screen had captured keyboard: */
         m_iKeyboardCaptureViewIndex = -1;
+
+        /* Store new keyboard-captured state value: */
+        m_fIsKeyboardCaptured = false;
 
         /* Notify all the listeners: */
         emit sigStateChange(state());
