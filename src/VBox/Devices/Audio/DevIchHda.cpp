@@ -657,6 +657,8 @@ typedef struct HDADRIVER
     uint8_t                            u32Padding0[3];
     /** LUN to which this driver has been assigned. */
     uint8_t                            uLUN;
+    /** Whether this driver is in an attached state or not. */
+    bool                               fAttached;
     /** Pointer to attached driver base interface. */
     R3PTRTYPE(PPDMIBASE)               pDrvBase;
     /** Audio connector interface to the underlying host backend. */
@@ -4305,19 +4307,23 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+
 /**
- * Attach command.
+ * Attach command, internal version.
  *
  * This is called to let the device attach to a driver for a specified LUN
  * during runtime. This is not called during VM construction, the device
- * constructor have to attach to all the available drivers.
+ * constructor has to attach to all the available drivers.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
+ * @param   pDrv        Driver to (re-)use for (re-)attaching to.
+ *                      If NULL is specified, a new driver will be created and appended
+ *                      to the driver list.
  * @param   uLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN, uint32_t fFlags)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
@@ -4335,7 +4341,8 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
                                    &pThis->IBase, &pDrvBase, pszDesc);
     if (RT_SUCCESS(rc))
     {
-        PHDADRIVER pDrv = (PHDADRIVER)RTMemAllocZ(sizeof(HDADRIVER));
+        if (pDrv == NULL)
+            pDrv = (PHDADRIVER)RTMemAllocZ(sizeof(HDADRIVER));
         if (pDrv)
         {
             pDrv->pDrvBase   = pDrvBase;
@@ -4353,8 +4360,12 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
 
             LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->Flags));
 
-            /* Attach to driver list. */
-            RTListAppend(&pThis->lstDrv, &pDrv->Node);
+            /* Attach to driver list if not attached yet. */
+            if (!pDrv->fAttached)
+            {
+                RTListAppend(&pThis->lstDrv, &pDrv->Node);
+                pDrv->fAttached = true;
+            }
         }
         else
             rc = VERR_NO_MEMORY;
@@ -4376,6 +4387,23 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
 
     LogFunc(("uLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
     return rc;
+}
+
+/**
+ * Attach command.
+ *
+ * This is called to let the device attach to a driver for a specified LUN
+ * during runtime. This is not called during VM construction, the device
+ * constructor has to attach to all the available drivers.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   uLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ */
+static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+{
+    return hdaAttachInternal(pDevIns, NULL /* pDrv */, uLUN, fFlags);
 }
 
 static DECLCALLBACK(void) hdaDetach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
@@ -4420,7 +4448,7 @@ static int hdaReattach(PHDASTATE pThis, PCFGMNODE pCfg, PHDADRIVER pDrv, const c
     } while (0);
 
     if (RT_SUCCESS(rc))
-        rc = hdaAttach(pThis->pDevInsR3, pDrv->uLUN, 0 /* fFlags */);
+        rc = hdaAttachInternal(pThis->pDevInsR3, pDrv, pDrv->uLUN, 0 /* fFlags */);
 
     LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, pDrv->uLUN, pszDriver, rc));
 
@@ -4584,7 +4612,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     for (uLUN = 0; uLUN < UINT8_MAX; uLUN)
     {
         LogFunc(("Trying to attach driver for LUN #%RU32 ...\n", uLUN));
-        rc = hdaAttach(pDevIns, uLUN, 0 /* fFlags */);
+        rc = hdaAttachInternal(pDevIns, NULL /* pDrv */, uLUN, 0 /* fFlags */);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_PDM_NO_ATTACHED_DRIVER)

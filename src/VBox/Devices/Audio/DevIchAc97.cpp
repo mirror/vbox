@@ -313,7 +313,9 @@ typedef struct AC97DRIVER
     uint32_t                           PaddingFlags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                            uLUN;
-    uint8_t                            Padding[5];
+    /** Whether this driver is in an attached state or not. */
+    bool                               fAttached;
+    uint8_t                            Padding[4];
     /** Pointer to attached driver base interface. */
     R3PTRTYPE(PPDMIBASE)               pDrvBase;
     /** Audio connector interface to the underlying host backend. */
@@ -2174,18 +2176,21 @@ static DECLCALLBACK(int) ichac97Destruct(PPDMDEVINS pDevIns)
 
 
 /**
- * Attach command.
+ * Attach command, internal version.
  *
  * This is called to let the device attach to a driver for a specified LUN
  * during runtime. This is not called during VM construction, the device
- * constructor have to attach to all the available drivers.
+ * constructor has to attach to all the available drivers.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
+ * @param   pDrv        Driver to (re-)use for (re-)attaching to.
+ *                      If NULL is specified, a new driver will be created and appended
+ *                      to the driver list.
  * @param   uLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER pDrv, unsigned uLUN, uint32_t fFlags)
 {
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
 
@@ -2203,7 +2208,8 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
                                    &pThis->IBase, &pDrvBase, pszDesc);
     if (RT_SUCCESS(rc))
     {
-        PAC97DRIVER pDrv = (PAC97DRIVER)RTMemAllocZ(sizeof(AC97DRIVER));
+        if (pDrv == NULL)
+            pDrv = (PAC97DRIVER)RTMemAllocZ(sizeof(AC97DRIVER));
         if (pDrv)
         {
             pDrv->pDrvBase   = pDrvBase;
@@ -2221,8 +2227,12 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
 
             LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->Flags));
 
-            /* Attach to driver list. */
-            RTListAppend(&pThis->lstDrv, &pDrv->Node);
+            /* Attach to driver list if not attached yet. */
+            if (!pDrv->fAttached)
+            {
+                RTListAppend(&pThis->lstDrv, &pDrv->Node);
+                pDrv->fAttached = true;
+            }
         }
         else
             rc = VERR_NO_MEMORY;
@@ -2244,6 +2254,24 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
 
     LogFunc(("iLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
     return rc;
+}
+
+
+/**
+ * Attach command.
+ *
+ * This is called to let the device attach to a driver for a specified LUN
+ * during runtime. This is not called during VM construction, the device
+ * constructor has to attach to all the available drivers.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   uLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ */
+static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+{
+    return ichac97AttachInternal(pDevIns, NULL /* pDrv */, uLUN, fFlags);
 }
 
 static DECLCALLBACK(void) ichac97Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
@@ -2288,7 +2316,7 @@ static int ichac97Reattach(PAC97STATE pThis, PCFGMNODE pCfg, PAC97DRIVER pDrv, c
     } while (0);
 
     if (RT_SUCCESS(rc))
-        rc = ichac97Attach(pThis->pDevInsR3, pDrv->uLUN, 0 /* fFlags */);
+        rc = ichac97AttachInternal(pThis->pDevInsR3, pDrv, pDrv->uLUN, 0 /* fFlags */);
 
     LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, pDrv->uLUN, pszDriver, rc));
 
@@ -2422,7 +2450,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     for (uLUN = 0; uLUN < UINT8_MAX; uLUN)
     {
         LogFunc(("Trying to attach driver for LUN #%RU8 ...\n", uLUN));
-        rc = ichac97Attach(pDevIns, uLUN, 0 /* fFlags */);
+        rc = ichac97AttachInternal(pDevIns, NULL /* pDrv */, uLUN, 0 /* fFlags */);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
@@ -2510,11 +2538,11 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             }
             else if (cFailed)
             {
-                if (!pDrv->pConnector->pfnIsValidIn (pDrv->pConnector, pDrv->LineIn.pStrmIn))
+                if (!pDrv->pConnector->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
                     LogRel(("AC97: WARNING: Unable to open PCM line input for LUN #%RU32!\n",       pDrv->uLUN));
-                if (!pDrv->pConnector->pfnIsValidIn (pDrv->pConnector, pDrv->MicIn.pStrmIn))
+                if (!pDrv->pConnector->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
                     LogRel(("AC97: WARNING: Unable to open PCM microphone input for LUN #%RU32!\n", pDrv->uLUN));
-                if (!pDrv->pConnector->pfnIsValidOut(pDrv->pConnector, pDrv->Out.pStrmOut))
+                if (!pDrv->pConnector->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
                     LogRel(("AC97: WARNING: Unable to open PCM output for LUN #%RU32!\n",           pDrv->uLUN));
 
                 char   szMissingStreams[255];
@@ -2572,7 +2600,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         {
             /* Only register primary driver.
              * The device emulation does the output multiplexing then. */
-            if (pDrv->Flags != PDMAUDIODRVFLAG_PRIMARY)
+            if (!(pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY))
                 continue;
 
             PDMAUDIOCALLBACK AudioCallbacks[2];

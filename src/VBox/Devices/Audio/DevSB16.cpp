@@ -96,7 +96,9 @@ typedef struct SB16DRIVER
     uint32_t                           PaddingFlags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                            uLUN;
-    uint8_t                            Padding[5];
+    /** Whether this driver is in an attached state or not. */
+    bool                               fAttached;
+    uint8_t                            Padding[4];
     /** Pointer to attached driver base interface. */
     R3PTRTYPE(PPDMIBASE)               pDrvBase;
     /** Audio connector interface to the underlying host backend. */
@@ -191,18 +193,21 @@ typedef struct SB16STATE
 static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg);
 
 /**
- * Attach command.
+ * Attach command, internal version.
  *
  * This is called to let the device attach to a driver for a specified LUN
  * during runtime. This is not called during VM construction, the device
- * constructor have to attach to all the available drivers.
+ * constructor has to attach to all the available drivers.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
+ * @param   pDrv        Driver to (re-)use for (re-)attaching to.
+ *                      If NULL is specified, a new driver will be created and appended
+ *                      to the driver list.
  * @param   uLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static DECLCALLBACK(int) sb16AttachInternal(PPDMDEVINS pDevIns, PSB16DRIVER pDrv, unsigned uLUN, uint32_t fFlags)
 {
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
 
@@ -220,7 +225,8 @@ static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t 
                                    &pThis->IBase, &pDrvBase, pszDesc);
     if (RT_SUCCESS(rc))
     {
-        PSB16DRIVER pDrv = (PSB16DRIVER)RTMemAllocZ(sizeof(SB16DRIVER));
+        if (pDrv == NULL)
+            pDrv = (PSB16DRIVER)RTMemAllocZ(sizeof(SB16DRIVER));
         if (pDrv)
         {
             pDrv->pDrvBase   = pDrvBase;
@@ -238,8 +244,12 @@ static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t 
 
             LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->Flags));
 
-            /* Attach to driver list. */
-            RTListAppend(&pThis->lstDrv, &pDrv->Node);
+            /* Attach to driver list if not attached yet. */
+            if (!pDrv->fAttached)
+            {
+                RTListAppend(&pThis->lstDrv, &pDrv->Node);
+                pDrv->fAttached = true;
+            }
         }
         else
             rc = VERR_NO_MEMORY;
@@ -261,6 +271,23 @@ static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t 
 
     LogFunc(("iLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
     return rc;
+}
+
+/**
+ * Attach command.
+ *
+ * This is called to let the device attach to a driver for a specified LUN
+ * during runtime. This is not called during VM construction, the device
+ * constructor has to attach to all the available drivers.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   uLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ */
+static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+{
+    return sb16AttachInternal(pDevIns, NULL /* pDrv */, uLUN, fFlags);
 }
 
 static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
@@ -305,7 +332,7 @@ static int sb16Reattach(PSB16STATE pThis, PCFGMNODE pCfg, PSB16DRIVER pDrv, cons
     } while (0);
 
     if (RT_SUCCESS(rc))
-        rc = sb16Attach(pThis->pDevInsR3, pDrv->uLUN, 0 /* fFlags */);
+        rc = sb16AttachInternal(pThis->pDevInsR3, pDrv, pDrv->uLUN, 0 /* fFlags */);
 
     LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, pDrv->uLUN, pszDriver, rc));
 
@@ -2240,7 +2267,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     for (uLUN = 0; uLUN < UINT8_MAX; uLUN)
     {
         LogFunc(("Trying to attach driver for LUN #%RU8 ...\n", uLUN));
-        rc = sb16Attach(pDevIns, uLUN, 0 /* fFlags */);
+        rc = sb16AttachInternal(pDevIns, NULL /* pDrv */, uLUN, 0 /* fFlags */);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
