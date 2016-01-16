@@ -80,8 +80,8 @@
              significantly smaller than VBoxC.dll.  So, KeyPath for this element instead of the above. -->
         <File Id="file_VBoxProxyStub" Name="VBoxProxyStub.dll" KeyPath="yes"
               Source="$(env.PATH_OUT)\bin\VBoxProxyStub.dll">
-            <!-- TODO: figure how 327E3C00-EE61-462F-AED3-0DFF6CBF9904 is selected. -->
-            <Class Id="{327E3C00-EE61-462F-AED3-0DFF6CBF9904}" Context="InprocServer32"
+            <!-- Note! 0bb3b78c-1807-4249-5ba5-ea42d66af0bf is hardcoded in Main/Makefile.kmk and VBoxMergeCOM32On64.wxi -->
+            <Class Id="{0bb3b78c-1807-4249-5ba5-ea42d66af0bf}" Context="InprocServer32"
                 Description="PSFactoryBuffer" ThreadingModel="both" >
             </Class>
         </File>

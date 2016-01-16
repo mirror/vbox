@@ -857,7 +857,6 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  VBoxClient-x86_TEMPLATE = VBoxMainComp-x86
  VBoxClient-x86_EXTENDS  = VBoxC
  VBoxClient-x86_DEFS = VBOX_COM_INPROC_API_CLIENT $(VBoxC_DEFS)
- VBoxClient-x86_INST.win = $(INST_DLL)x86/
  VBoxClient-x86_INCS.win = \
  	$(VBoxClient-x86_0_OUTDIR) \
  	$(VBoxCOM-x86_0_OUTDIR) \
@@ -1009,29 +1008,30 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  #
  DLLS += VBoxProxyStub
  VBoxProxyStub_TEMPLATE = VBOXMAINCOMP
- VBoxProxyStub_DEFS     = REGISTER_PROXY_DLL
+ VBoxProxyStub_DEFS     = REGISTER_PROXY_DLL \
+ 	PROXY_CLSID_IS="{0x0bb3b78c,0x1807,0x4249,{0x5b,0xa5,0xea,0x42,0xd6,0x6a,0xf0,0xbf}}"
+	# => 0bb3b78c-1807-4249-5ba5-ea42d66af0bf: Also hardcoded in VBoxMergeCOM32On64.wxi and VBoxMergeApp.wxi!
  VBoxProxyStub_DEFS.win.x86 = WIN32
  VBoxProxyStub_INCS     = $(VBoxCOM_0_OUTDIR)/
  VBoxProxyStub_SOURCES  = \
- 	$(VBoxCOM_0_OUTDIR)/dlldata.c \
  	$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c \
  	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
  	src-all/win/VBoxProxyStub.def \
- 	src-all/win/VBoxProxyStub.rc
+ 	src-all/win/VBoxProxyStub.rc \
+ 	src-all/win/VBoxProxyStub.c
   src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
 
  ifdef VBOX_WITH_32_ON_64_MAIN_API
   DLLS += VBoxProxyStub-x86
   VBoxProxyStub-x86_TEMPLATE = VBoxMainComp-x86
-  VBoxProxyStub-x86_DEFS     = REGISTER_PROXY_DLL
-  VBoxProxyStub-x86_DEFS.win.x86 = WIN32
+  VBoxProxyStub-x86_DEFS     = $(VBoxProxyStub_DEFS) VBOX_PROXY_STUB_32_ON_64 WIN32
   VBoxProxyStub-x86_INCS     = $(VBoxCOM-x86_0_OUTDIR)/
   VBoxProxyStub-x86_SOURCES  = \
-  	$(VBoxCOM-x86_0_OUTDIR)/dlldata.c \
   	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c \
   	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
- 	src-all/win/VBoxProxyStub.def \
- 	src-all/win/VBoxProxyStub-x86.rc
+ 	src-all/win/VBoxProxyStub.c \
+ 	src-all/win/VBoxProxyStub-x86.rc \
+ 	src-all/win/VBoxProxyStub.def
   src-all/win/VBoxProxyStub-x86.rc_DEPS = $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb
  endif
 endif
