@@ -917,6 +917,9 @@ VBoxCOM_SOURCES         = \
 VBoxCOM_INCS          += $(VBOX_MAIN_APIWRAPPER_INCS) \
 	include
 ifeq ($(KBUILD_TARGET),win)
+ ifdef VBOX_WITH_MIDL_PROXY_STUB
+  VBoxCOM_DEFS.win      = VBOX_WITH_AUTO_COM_REG_UPDATE
+ endif
  VBoxCOM_DEFS.x86       = _WIN32_WINNT=0x0500
  VBoxCOM_DEFS.amd64     = _WIN32_WINNT=0x0510
  VBoxCOM_SOURCES       += \
@@ -1012,6 +1015,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  	PROXY_CLSID_IS="{0x0bb3b78c,0x1807,0x4249,{0x5b,0xa5,0xea,0x42,0xd6,0x6a,0xf0,0xbf}}"
 	# => 0bb3b78c-1807-4249-5ba5-ea42d66af0bf: Also hardcoded in VBoxMergeCOM32On64.wxi and VBoxMergeApp.wxi!
  VBoxProxyStub_DEFS.win.x86 = WIN32
+ VBoxProxyStub_SDKS     = VBOX_NTDLL
  VBoxProxyStub_INCS     = $(VBoxCOM_0_OUTDIR)/
  VBoxProxyStub_SOURCES  = \
  	$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c \
@@ -1024,6 +1028,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  ifdef VBOX_WITH_32_ON_64_MAIN_API
   DLLS += VBoxProxyStub-x86
   VBoxProxyStub-x86_TEMPLATE = VBoxMainComp-x86
+  VBoxProxyStub-x86_SDKS     = VBOX_NTDLL
   VBoxProxyStub-x86_DEFS     = $(VBoxProxyStub_DEFS) VBOX_PROXY_STUB_32_ON_64 WIN32
   VBoxProxyStub-x86_INCS     = $(VBoxCOM-x86_0_OUTDIR)/
   VBoxProxyStub-x86_SOURCES  = \
