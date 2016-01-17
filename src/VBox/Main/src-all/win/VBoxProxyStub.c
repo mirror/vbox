@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,6 +31,8 @@
 #include "VirtualBox.h"
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
+#include <iprt/initterm.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -39,12 +41,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def WITH_MANUAL_CLEANUP
- * Manually clean up the registry. */
-#if 1 /*defined(DEBUG) && !defined(VBOX_IN_32_ON_64_MAIN_API) - needed on testboxes (and obviously dev boxes)! */
-# define WITH_MANUAL_CLEANUP
-#endif
-
 #ifdef DEBUG_bird
 # define VBSP_LOG_ENABLED
 #endif
@@ -65,6 +61,12 @@
 # define VBSP_LOG_NEW_KEY(a)        RTAssertMsg2 a
 #else
 # define VBSP_LOG_NEW_KEY(a)        do { } while (0)
+#endif
+
+#ifdef VBSP_LOG_ENABLED
+# define VBSP_LOG_DEL_KEY(a)        RTAssertMsg2 a
+#else
+# define VBSP_LOG_DEL_KEY(a)        do { } while (0)
 #endif
 
 
@@ -93,38 +95,28 @@ static const CLSID          g_ProxyClsId = PROXY_CLSID_IS;
 static HINSTANCE            g_hDllSelf;
 
 
-#ifdef WITH_MANUAL_CLEANUP
-/** Type library GUIDs to clean up manually. */
-static const char * const   g_apszTypelibGuids[] =
+/** Type library GUIDs to clean up manually.
+ * Must be upper case!  */
+static PCRTUTF16 const      g_apwszTypeLibIds[] =
 {
-    "{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}",
-    "{d7569351-1750-46f0-936e-bd127d5bc264}",
-};
-
-/** Same as above but with a "Typelib\\" prefix. */
-static const char * const   g_apszTypelibGuidKeys[] =
-{
-    "TypeLib\\{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}",
-    "TypeLib\\{d7569351-1750-46f0-936e-bd127d5bc264}",
+    L"{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}",
+    L"{D7569351-1750-46F0-936E-BD127D5BC264}",
 };
 
 /** Type library version to clean up manually. */
-static const char * const   g_apszTypelibVersions[] =
+static PCRTUTF16 const      g_apwszTypelibVersions[] =
 {
-    "1.0",
-    "1.3",
+    L"1.0",
+    L"1.3",
 };
-#endif
 
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-#ifdef WITH_MANUAL_CLEANUP
-static void removeOldMess(void);
-#endif
-
-
+/** Proxy stub class IDs we wish to clean up manually.
+ * Must be upper case!  */
+static PCRTUTF16 const      g_apwszProxyStubClsIds[] =
+{
+    L"{0BB3B78C-1807-4249-5BA5-EA42D66AF0BF}",
+    L"{327E3C00-EE61-462F-AED3-0DFF6CBF9904}",
+};
 
 
 /**
@@ -147,7 +139,8 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
             /* We don't need callbacks for thread creation and destruction. */
             DisableThreadLibraryCalls(hInstance);
 
-            /* We don't use IPRT, so no need to init it! */
+            /* Init IPRT. */
+            RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
             break;
 
         case DLL_PROCESS_DETACH:
@@ -508,7 +501,8 @@ static LSTATUS vbpsRegOpenInterfaceKeys(VBPSREGSTATE *pState)
      */
     if (pState->hkeyInterfaceRootDst == NULL)
     {
-        rc = RegOpenKeyExA(pState->hkeyClassesRootDst, "Interface", 0 /*fOptions*/, pState->fSamBoth, &pState->hkeyInterfaceRootDst);
+        rc = RegOpenKeyExW(pState->hkeyClassesRootDst, L"Interface", 0 /*fOptions*/, pState->fSamBoth,
+                           &pState->hkeyInterfaceRootDst);
         AssertMsgReturnStmt(rc == ERROR_SUCCESS, ("%u\n", rc), pState->hkeyInterfaceRootDst = NULL,  pState->rc = rc);
     }
 
@@ -519,7 +513,7 @@ static LSTATUS vbpsRegOpenInterfaceKeys(VBPSREGSTATE *pState)
     while (i-- > 0)
         if (pState->aAltDeletes[i].hkeyInterface == NULL)
         {
-            rc = RegOpenKeyExA(pState->aAltDeletes[i].hkeyClasses, "Interface", 0 /*fOptions*/, pState->fSamDelete,
+            rc = RegOpenKeyExW(pState->aAltDeletes[i].hkeyClasses, L"Interface", 0 /*fOptions*/, pState->fSamDelete,
                                &pState->aAltDeletes[i].hkeyInterface);
             if (rc != ERROR_SUCCESS)
             {
@@ -893,11 +887,61 @@ static LSTATUS vbpsDeleteKeyRecursiveA(VBPSREGSTATE *pState, HKEY hkeyParent, co
     Assert(pszKey);
     AssertReturn(*pszKey != '\0', pState->rc = ERROR_INVALID_PARAMETER);
 
+#ifdef VBSP_LOG_ENABLED
+    {
+        HKEY hkeyLog;
+        rc = RegOpenKeyExA(hkeyParent, pszKey, 0 /*fOptions*/, pState->fSamDelete, &hkeyLog);
+        if (rc != ERROR_FILE_NOT_FOUND)
+            VBSP_LOG_DEL_KEY(("vbpsDeleteKeyRecursiveA: %ls/%s (at %d)\n", vbpsDebugKeyToWSZ(hkeyParent), pszKey, uLine));
+        if (rc == ERROR_SUCCESS)
+            RegCloseKey(hkeyLog);
+    }
+#endif
+
     rc = SHDeleteKeyA(hkeyParent, pszKey);
     if (rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND)
         return ERROR_SUCCESS;
 
     AssertMsgFailed(("%d: delete key '%s' -> %u\n", uLine, pszKey, rc));
+    pState->rc = rc;
+    return rc;
+}
+
+
+/**
+ * Recursively deletes a registry key, wide char version.
+ *
+ * @returns See SHDeleteKeyW (errors are remembered in the state).
+ * @param   pState              The registry modifier state.
+ * @param   hkeyParent          The parent key.
+ * @param   pwszKey             The key under @a hkeyParent that should be
+ *                              deleted.
+ * @param   uLine               The line we're called from.
+ */
+static LSTATUS vbpsDeleteKeyRecursiveW(VBPSREGSTATE *pState, HKEY hkeyParent, PCRTUTF16 pwszKey, unsigned uLine)
+{
+    LSTATUS rc;
+
+    Assert(pState->fDelete);
+    Assert(pwszKey);
+    AssertReturn(*pwszKey != '\0', pState->rc = ERROR_INVALID_PARAMETER);
+
+#ifdef VBSP_LOG_ENABLED
+    {
+        HKEY hkeyLog;
+        rc = RegOpenKeyExW(hkeyParent, pwszKey, 0 /*fOptions*/, pState->fSamDelete, &hkeyLog);
+        if (rc != ERROR_FILE_NOT_FOUND)
+            VBSP_LOG_DEL_KEY(("vbpsDeleteKeyRecursiveW: %ls/%ls (at %d)\n", vbpsDebugKeyToWSZ(hkeyParent), pwszKey, uLine));
+        if (rc == ERROR_SUCCESS)
+            RegCloseKey(hkeyLog);
+    }
+#endif
+
+    rc = SHDeleteKeyW(hkeyParent, pwszKey);
+    if (rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND)
+        return ERROR_SUCCESS;
+
+    AssertMsgFailed(("%d: delete key '%ls' -> %u\n", uLine, pwszKey, rc));
     pState->rc = rc;
     return rc;
 }
@@ -1447,116 +1491,210 @@ HRESULT RegisterXidlModulesAndClasses(PRTUTF16 pwszVBoxDir, bool fDelete, bool f
     return E_FAIL;
 }
 
-#ifdef WITH_MANUAL_CLEANUP
 
 /**
- * Checks if the typelib GUID is one of the ones we wish to clean up.
+ * Checks if the string matches any of our type library versions.
  *
- * @returns true if it should be cleaned up, false if not.
- * @param   pszTypelibGuid  The typelib GUID as bracketed string.
+ * @returns true on match, false on mismatch.
+ * @param   pwszTypeLibVersion      The type library version string.
  */
-static bool isTypelibGuidToRemove(const char *pszTypelibGuid)
+static DECLINLINE(bool) vbpsIsTypeLibVersionToRemove(PCRTUTF16 pwszTypeLibVersion)
 {
-    unsigned i = RT_ELEMENTS(g_apszTypelibGuids);
-    while (i-- > 0)
-        if (!stricmp(g_apszTypelibGuids[i], pszTypelibGuid))
-            return true;
+    AssertCompile(RT_ELEMENTS(g_apwszTypelibVersions) == 2);
+
+    /* ASSUMES: 1.x version strings and that the input buffer is at least 3 wchars long. */
+    if (   g_apwszTypelibVersions[0][3] == pwszTypeLibVersion[3]
+        && RTUtf16Cmp(g_apwszTypelibVersions[0], pwszTypeLibVersion) == 0)
+        return true;
+    if (   g_apwszTypelibVersions[1][3] == pwszTypeLibVersion[3]
+        && RTUtf16Cmp(g_apwszTypelibVersions[1], pwszTypeLibVersion) == 0)
+        return true;
+
     return false;
 }
 
 
 /**
- * Checks if the typelib version is one of the ones we wish to clean up.
+ * Quick check whether the given string looks like a UUID in braces.
  *
- * @returns true if it should be cleaned up, false if not.
- * @param   pszTypelibVer   The typelib version as string.
+ * This does not check the whole string, just do a quick sweep.
+ *
+ * @returns true if possible UUID, false if definitely not.
+ * @param   pwszUuid            Alleged UUID in braces.
  */
-static bool isTypelibVersionToRemove(const char *pszTypelibVer)
+DECLINLINE(bool) vbpsIsUuidInBracesQuickW(PCRTUTF16 pwszUuid)
 {
-    unsigned i = RT_ELEMENTS(g_apszTypelibVersions);
-    while (i-- > 0)
-        if (!strcmp(g_apszTypelibVersions[i], pszTypelibVer))
-            return true;
-    return false;
+    return pwszUuid[ 0] == '{'
+        && pwszUuid[ 9] == '-'
+        && pwszUuid[14] == '-'
+        && pwszUuid[19] == '-'
+        && pwszUuid[24] == '-'
+        && pwszUuid[37] == '}'
+        && pwszUuid[38] == '\0'
+        && RT_C_IS_XDIGIT(pwszUuid[1]);
 }
 
 
 /**
- * Hack to clean out the class IDs belonging to obsolete typelibs on development
- * boxes and such likes.
+ * Compares two UUIDs (in braces).
+ *
+ * @returns true on match, false if no match.
+ * @param   pwszUuid1       The first UUID.
+ * @param   pwszUuid2       The second UUID.
  */
-static void removeOldClassIDs(HKEY hkeyClassesRoot)
+static bool vbpsCompareUuidW(PCRTUTF16 pwszUuid1, PCRTUTF16 pwszUuid2)
 {
-    HKEY hkeyClsId;
-    LONG rc = RegOpenKeyExA(hkeyClassesRoot, "CLSID", 0, DELETE | KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE,
-                            &hkeyClsId);
-    if (rc == ERROR_SUCCESS)
+#define COMPARE_EXACT_RET(a_wch1, a_wch2) \
+        if ((a_wch1) == (a_wch2)) { } else return false
+
+#define COMPARE_XDIGITS_RET(a_wch1, a_wch2) \
+        if ((a_wch1) == (a_wch2)) { } \
+        else if (RT_C_TO_UPPER(a_wch1) != RT_C_TO_UPPER(a_wch2) || (a_wch1) >= 127U || (a_wch2) >= 127U) \
+            return false
+    COMPARE_EXACT_RET(  pwszUuid1[ 0], pwszUuid2[ 0]);  /* {  */
+    COMPARE_XDIGITS_RET(pwszUuid1[ 1], pwszUuid2[ 1]);  /* 5  */
+    COMPARE_XDIGITS_RET(pwszUuid1[ 2], pwszUuid2[ 2]);  /* e  */
+    COMPARE_XDIGITS_RET(pwszUuid1[ 3], pwszUuid2[ 3]);  /* 5  */
+    COMPARE_XDIGITS_RET(pwszUuid1[ 4], pwszUuid2[ 4]);  /* e  */
+    COMPARE_XDIGITS_RET(pwszUuid1[ 5], pwszUuid2[ 5]);  /* 3  */
+    COMPARE_XDIGITS_RET(pwszUuid1[ 6], pwszUuid2[ 6]);  /* 6  */
+    COMPARE_XDIGITS_RET(pwszUuid1[ 7], pwszUuid2[ 7]);  /* 4  */
+    COMPARE_XDIGITS_RET(pwszUuid1[ 8], pwszUuid2[ 8]);  /* 0  */
+    COMPARE_EXACT_RET(  pwszUuid1[ 9], pwszUuid2[ 9]);  /* -  */
+    COMPARE_XDIGITS_RET(pwszUuid1[10], pwszUuid2[10]);  /* 7  */
+    COMPARE_XDIGITS_RET(pwszUuid1[11], pwszUuid2[11]);  /* 4  */
+    COMPARE_XDIGITS_RET(pwszUuid1[12], pwszUuid2[12]);  /* f  */
+    COMPARE_XDIGITS_RET(pwszUuid1[13], pwszUuid2[13]);  /* 3  */
+    COMPARE_EXACT_RET(  pwszUuid1[14], pwszUuid2[14]);  /* -  */
+    COMPARE_XDIGITS_RET(pwszUuid1[15], pwszUuid2[15]);  /* 4  */
+    COMPARE_XDIGITS_RET(pwszUuid1[16], pwszUuid2[16]);  /* 6  */
+    COMPARE_XDIGITS_RET(pwszUuid1[17], pwszUuid2[17]);  /* 8  */
+    COMPARE_XDIGITS_RET(pwszUuid1[18], pwszUuid2[18]);  /* 9  */
+    COMPARE_EXACT_RET(  pwszUuid1[19], pwszUuid2[19]);  /* -  */
+    COMPARE_XDIGITS_RET(pwszUuid1[20], pwszUuid2[20]);  /* 9  */
+    COMPARE_XDIGITS_RET(pwszUuid1[21], pwszUuid2[21]);  /* 7  */
+    COMPARE_XDIGITS_RET(pwszUuid1[22], pwszUuid2[22]);  /* 9  */
+    COMPARE_XDIGITS_RET(pwszUuid1[23], pwszUuid2[23]);  /* f  */
+    COMPARE_EXACT_RET(  pwszUuid1[24], pwszUuid2[24]);  /* -  */
+    COMPARE_XDIGITS_RET(pwszUuid1[25], pwszUuid2[25]);  /* 6  */
+    COMPARE_XDIGITS_RET(pwszUuid1[26], pwszUuid2[26]);  /* b  */
+    COMPARE_XDIGITS_RET(pwszUuid1[27], pwszUuid2[27]);  /* 1  */
+    COMPARE_XDIGITS_RET(pwszUuid1[28], pwszUuid2[28]);  /* b  */
+    COMPARE_XDIGITS_RET(pwszUuid1[29], pwszUuid2[29]);  /* 8  */
+    COMPARE_XDIGITS_RET(pwszUuid1[30], pwszUuid2[30]);  /* d  */
+    COMPARE_XDIGITS_RET(pwszUuid1[31], pwszUuid2[31]);  /* 7  */
+    COMPARE_XDIGITS_RET(pwszUuid1[32], pwszUuid2[32]);  /* 6  */
+    COMPARE_XDIGITS_RET(pwszUuid1[33], pwszUuid2[33]);  /* 0  */
+    COMPARE_XDIGITS_RET(pwszUuid1[34], pwszUuid2[34]);  /* 9  */
+    COMPARE_XDIGITS_RET(pwszUuid1[35], pwszUuid2[35]);  /* a  */
+    COMPARE_XDIGITS_RET(pwszUuid1[36], pwszUuid2[36]);  /* 5  */
+    COMPARE_EXACT_RET(  pwszUuid1[37], pwszUuid2[37]);  /* }  */
+    COMPARE_EXACT_RET(  pwszUuid1[38], pwszUuid2[38]);  /* \0 */
+#undef COMPARE_EXACT_RET
+#undef COMPARE_XDIGITS_RET
+    return true;
+}
+
+
+/**
+ * Checks if the type library ID is one of the ones we wish to clean up.
+ *
+ * @returns true if it should be cleaned up, false if not.
+ * @param   pwszTypeLibId  The type library ID as a bracketed string.
+ */
+static DECLINLINE(bool) vbpsIsTypeLibIdToRemove(PRTUTF16 pwszTypeLibId)
+{
+#ifdef VBOX_STRICT
+    static bool s_fDoneStrict = false;
+    if (s_fDoneStrict) { }
+    else
     {
-        DWORD idxKey;
-        for (idxKey = 0;; idxKey++)
-        {
-            char szCurNm[128 + 128];
-            DWORD cbCurNm = 128;
-            rc = RegEnumKeyExA(hkeyClsId, idxKey, szCurNm, &cbCurNm, NULL, NULL, NULL, NULL);
-            if (rc == ERROR_SUCCESS)
-            {
-                /*
-                 * Get the typelib GUID and program ID with the class ID.
-                 */
-                HKEY hkeyIfTypelib;
-                strcpy(&szCurNm[cbCurNm], "\\TypeLib");
-                rc = RegOpenKeyExA(hkeyClsId, szCurNm, 0, KEY_QUERY_VALUE, &hkeyIfTypelib);
-                if (rc == ERROR_SUCCESS)
-                {
-                    char szTypelibGuid[128];
-                    DWORD cbValue = sizeof(szTypelibGuid) - 1;
-                    rc = RegQueryValueExA(hkeyIfTypelib, NULL, NULL, NULL, (PBYTE)&szTypelibGuid[0], &cbValue);
-                    if (rc != ERROR_SUCCESS)
-                        cbValue = 0;
-                    szTypelibGuid[cbValue] = '\0';
-                    RegCloseKey(hkeyIfTypelib);
-                    if (isTypelibGuidToRemove(szTypelibGuid))
-                    {
-                        /* ProgId */
-                        HKEY hkeyIfProgId;
-                        strcpy(&szCurNm[cbCurNm], "\\ProgId");
-                        rc = RegOpenKeyExA(hkeyClsId, szCurNm, 0, KEY_QUERY_VALUE, &hkeyIfProgId);
-                        if (rc == ERROR_SUCCESS)
-                        {
-                            char szProgId[64];
-                            cbValue = sizeof(szProgId) - 1;
-                            rc = RegQueryValueExA(hkeyIfProgId, NULL, NULL, NULL, (PBYTE)&szProgId[0], &cbValue);
-                            if (rc != ERROR_SUCCESS)
-                                cbValue = 0;
-                            szProgId[cbValue] = '\0';
-                            RegCloseKey(hkeyIfProgId);
-                            if (   rc == ERROR_SUCCESS
-                                && strnicmp(szProgId, RT_STR_TUPLE("VirtualBox.")) == 0)
-                            {
-                                /*
-                                 * Ok, it's an orphaned VirtualBox interface. Delete it.
-                                 */
-                                szCurNm[cbCurNm] = '\0';
-#ifdef DEBUG_bird
-                                RTAssertMsg2("Should delete HCR/CLSID/%s\n", szCurNm);
-#endif
-                                rc = SHDeleteKeyA(hkeyClsId, szCurNm);
-                                Assert(rc == ERROR_SUCCESS);
-                            }
-                        }
-                    }
-                }
-
-            }
-            else
-            {
-                Assert(rc == ERROR_NO_MORE_ITEMS);
-                break;
-            }
-        }
-
-        RegCloseKey(hkeyClsId);
+        Assert(RT_ELEMENTS(g_apwszTypeLibIds) == 2);
+        Assert(g_apwszTypeLibIds[0] == '{');
+        Assert(g_apwszTypeLibIds[1] == '{');
+        Assert(RT_C_IS_XDIGIT(g_apwszTypeLibIds[0][1]));
+        Assert(RT_C_IS_XDIGIT(g_apwszTypeLibIds[1][1]));
+        Assert(RT_C_IS_UPPER(g_apwszTypeLibIds[0][1]) || RT_C_IS_DIGIT(g_apwszTypeLibIds[0][1]));
+        Assert(RT_C_IS_UPPER(g_apwszTypeLibIds[1][1]) || RT_C_IS_DIGIT(g_apwszTypeLibIds[1][1]));
+        s_fDoneStrict = true;
     }
+#endif
+    AssertCompile(RT_ELEMENTS(g_apwszTypeLibIds) == 2);
+
+    /*
+     * Rolled out matching with inlined check of the opening braces
+     * and first two digits.
+     *
+     * ASSUMES input buffer is at least 3 wchars big and uppercased UUID in
+     * our matching array.
+     */
+    if (pwszTypeLibId[0] == '{')
+    {
+        RTUTF16 const wcFirstDigit  = RT_C_TO_UPPER(pwszTypeLibId[1]);
+        RTUTF16 const wcSecondDigit = RT_C_TO_UPPER(pwszTypeLibId[2]);
+        PCRTUTF16     pwsz2 = g_apwszTypeLibIds[0];
+        if (   wcFirstDigit  == pwsz2[1]
+            && wcSecondDigit == pwsz2[2]
+            && vbpsCompareUuidW(pwszTypeLibId, pwsz2))
+            return true;
+        pwsz2 = g_apwszTypeLibIds[1];
+        if (   wcFirstDigit  == pwsz2[1]
+            && wcSecondDigit == pwsz2[2]
+            && vbpsCompareUuidW(pwszTypeLibId, pwsz2))
+            return true;
+    }
+    return false;
+}
+
+
+/**
+ * Checks if the proxy stub class ID is one of the ones we wish to clean up.
+ *
+ * @returns true if it should be cleaned up, false if not.
+ * @param   pwszProxyStubId     The proxy stub class ID.
+ */
+static DECLINLINE(bool) vbpsIsProxyStubClsIdToRemove(PRTUTF16 pwszProxyStubId)
+{
+#ifdef VBOX_STRICT
+    static bool s_fDoneStrict = false;
+    if (s_fDoneStrict) { }
+    else
+    {
+        Assert(RT_ELEMENTS(g_apwszProxyStubClsIds) == 2);
+        Assert(g_apwszProxyStubClsIds[0] == '{');
+        Assert(g_apwszProxyStubClsIds[1] == '{');
+        Assert(RT_C_IS_XDIGIT(g_apwszProxyStubClsIds[0][1]));
+        Assert(RT_C_IS_XDIGIT(g_apwszProxyStubClsIds[1][1]));
+        Assert(RT_C_IS_UPPER(g_apwszProxyStubClsIds[0][1]) || RT_C_IS_DIGIT(g_apwszProxyStubClsIds[0][1]));
+        Assert(RT_C_IS_UPPER(g_apwszProxyStubClsIds[1][1]) || RT_C_IS_DIGIT(g_apwszProxyStubClsIds[1][1]));
+        s_fDoneStrict = true;
+    }
+#endif
+    AssertCompile(RT_ELEMENTS(g_apwszProxyStubClsIds) == 2);
+
+    /*
+     * Rolled out matching with inlined check of the opening braces
+     * and first two digits.
+     *
+     * ASSUMES input buffer is at least 3 wchars big and uppercased UUID in
+     * our matching array.
+     */
+    if (pwszProxyStubId[0] == '{')
+    {
+        RTUTF16 const wcFirstDigit  = RT_C_TO_UPPER(pwszProxyStubId[1]);
+        RTUTF16 const wcSecondDigit = RT_C_TO_UPPER(pwszProxyStubId[2]);
+        PCRTUTF16     pwsz2 = g_apwszProxyStubClsIds[0];
+        if (   wcFirstDigit  == pwsz2[1]
+            && wcSecondDigit == pwsz2[2]
+            && vbpsCompareUuidW(pwszProxyStubId, pwsz2))
+            return true;
+        pwsz2 = g_apwszProxyStubClsIds[1];
+        if (   wcFirstDigit  == pwsz2[1]
+            && wcSecondDigit == pwsz2[2]
+            && vbpsCompareUuidW(pwszProxyStubId, pwsz2))
+            return true;
+    }
+    return false;
 }
 
 
@@ -1564,68 +1702,244 @@ static void removeOldClassIDs(HKEY hkeyClassesRoot)
  * Hack to clean out the interfaces belonging to obsolete typelibs on
  * development boxes and such likes.
  */
-static void removeOldInterfaces(HKEY hkeyClassesRoot)
+static void vbpsRemoveOldInterfaces(VBPSREGSTATE *pState)
 {
-    HKEY hkeyInterface;
-    LONG rc = RegOpenKeyExA(hkeyClassesRoot, "Interface", 0, DELETE | KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE,
-                            &hkeyInterface);
-    if (rc == ERROR_SUCCESS)
+    unsigned iAlt = pState->cAltDeletes;
+    while (iAlt-- > 0)
     {
-        DWORD idxKey;
-        for (idxKey = 0;; idxKey++)
+        /*
+         * Open the interface root key.   Not using the vbpsRegOpenInterfaceKeys feature
+         * here in case it messes things up by keeping the special HKEY_CLASSES_ROOT key
+         * open with possibly pending deletes in parent views or other weird stuff.
+         */
+        HKEY hkeyInterfaces;
+        LRESULT rc = RegOpenKeyExW(pState->aAltDeletes[iAlt].hkeyClasses, L"Interface",
+                                   0 /*fOptions*/, pState->fSamDelete, &hkeyInterfaces);
+        if (rc == ERROR_SUCCESS)
         {
-            char szCurNm[128 + 128];
-            DWORD cbCurNm = 128;
-            rc = RegEnumKeyExA(hkeyInterface, idxKey, szCurNm, &cbCurNm, NULL, NULL, NULL, NULL);
-            if (rc == ERROR_SUCCESS)
+            /*
+             * This is kind of expensive, but we have to check all registered interfaces.
+             * Only use wide APIs to avoid wasting time on string conversion.
+             */
+            DWORD idxKey;
+            for (idxKey = 0;; idxKey++)
             {
-                /*
-                 * Get the typelib GUID and version associated with the interface.
-                 */
-                HKEY hkeyIfTypelib;
-                strcpy(&szCurNm[cbCurNm], "\\TypeLib");
-                rc = RegOpenKeyExA(hkeyInterface, szCurNm, 0, KEY_QUERY_VALUE, &hkeyIfTypelib);
+                RTUTF16 wszCurNm[128 + 48];
+                DWORD   cwcCurNm = 128;
+                rc = RegEnumKeyExW(hkeyInterfaces, idxKey, wszCurNm, &cwcCurNm,
+                                   NULL /*pdwReserved*/, NULL /*pwszClass*/, NULL /*pcwcClass*/, NULL /*pLastWriteTime*/);
                 if (rc == ERROR_SUCCESS)
                 {
-                    char szTypelibGuid[128];
-                    DWORD cbValue = sizeof(szTypelibGuid) - 1;
-                    rc = RegQueryValueExA(hkeyIfTypelib, 0, NULL, NULL, (PBYTE)&szTypelibGuid[0], &cbValue);
-                    if (rc != ERROR_SUCCESS)
-                        cbValue = 0;
-                    szTypelibGuid[cbValue] = '\0';
-                    if (   rc == ERROR_SUCCESS
-                        && isTypelibGuidToRemove(szTypelibGuid))
+                    /*
+                     * We match the interface by type library ID or proxy stub class ID.
+                     *
+                     * We have to check the proxy ID last, as it is almost always there
+                     * and we can safely skip it if there is a mismatching type lib
+                     * associated with the interface.
+                     */
+                    static RTUTF16 const    s_wszTypeLib[] = L"\\TypeLib";
+                    bool                    fDeleteMe      = false;
+                    HKEY                    hkeySub;
+                    RTUTF16                 wszValue[128];
+                    DWORD                   cbValue;
+                    DWORD                   dwType;
+
+                    /* Skip this entry if it doesn't look like a braced UUID. */
+                    wszCurNm[cwcCurNm] = '\0'; /* paranoia */
+                    if (vbpsIsUuidInBracesQuickW(wszCurNm)) { }
+                    else continue;
+
+                    /* Try the TypeLib sub-key. */
+                    memcpy(&wszCurNm[cwcCurNm], s_wszTypeLib, sizeof(s_wszTypeLib));
+                    rc = RegOpenKeyExW(hkeyInterfaces, wszCurNm, 0 /*fOptions*/, KEY_QUERY_VALUE, &hkeySub);
+                    if (rc == ERROR_SUCCESS)
                     {
-                        char szTypelibVer[64];
-                        cbValue = sizeof(szTypelibVer) - 1;
-                        rc = RegQueryValueExA(hkeyIfTypelib, "Version", 0, NULL, (PBYTE)&szTypelibVer[0], &cbValue);
-                        if (rc != ERROR_SUCCESS)
+                        cbValue = sizeof(wszValue) - sizeof(RTUTF16);
+                        rc = RegQueryValueExW(hkeySub, NULL /*pszValueNm*/, NULL /*pdwReserved*/,
+                                              &dwType, (PBYTE)&wszValue[0], &cbValue);
+                        if (rc != ERROR_SUCCESS || dwType != REG_SZ)
                             cbValue = 0;
-                        szTypelibVer[cbValue] = '\0';
+                        wszValue[cbValue / sizeof(RTUTF16)] = '\0';
 
                         if (   rc == ERROR_SUCCESS
-                            && isTypelibVersionToRemove(szTypelibVer))
+                            && vbpsIsTypeLibIdToRemove(wszValue))
                         {
-                            /*
-                             * Ok, it's an orphaned VirtualBox interface. Delete it.
-                             */
-                            szCurNm[cbCurNm] = '\0';
-                            RTAssertMsg2("Should delete HCR/Interface/%s\n", szCurNm);
-                            rc = SHDeleteKeyA(hkeyInterface, szCurNm);
-                            Assert(rc == ERROR_SUCCESS);
+                            /* Check the TypeLib/Version value to make sure. */
+                            cbValue = sizeof(wszValue) - sizeof(RTUTF16);
+                            rc = RegQueryValueExW(hkeySub, L"Version", 0 /*pdwReserved*/, &dwType, (PBYTE)&wszValue[0], &cbValue);
+                            if (rc != ERROR_SUCCESS)
+                                cbValue = 0;
+                            wszValue[cbValue] = '\0';
+
+                            if (   rc == ERROR_SUCCESS
+                                && vbpsIsTypeLibVersionToRemove(wszValue))
+                                fDeleteMe = true;
+                        }
+                        vbpsCloseKey(pState, hkeySub, __LINE__);
+                    }
+                    else if (rc == ERROR_FILE_NOT_FOUND)
+                    {
+                        /* No TypeLib, try the ProxyStubClsid32 sub-key next. */
+                        static RTUTF16 const    s_wszProxyStubClsid32[] = L"\\ProxyStubClsid32";
+                        memcpy(&wszCurNm[cwcCurNm], s_wszProxyStubClsid32, sizeof(s_wszProxyStubClsid32));
+                        rc = RegOpenKeyExW(hkeyInterfaces, wszCurNm, 0 /*fOptions*/, KEY_QUERY_VALUE, &hkeySub);
+                        if (rc == ERROR_SUCCESS)
+                        {
+                            cbValue = sizeof(wszValue) - sizeof(RTUTF16);
+                            rc = RegQueryValueExW(hkeySub, NULL /*pszValueNm*/, NULL /*pdwReserved*/,
+                                                  &dwType, (PBYTE)&wszValue[0], &cbValue);
+                            if (rc != ERROR_SUCCESS || dwType != REG_SZ)
+                                cbValue = 0;
+                            wszValue[cbValue / sizeof(RTUTF16)] = '\0';
+
+                            if (   rc == ERROR_SUCCESS
+                                && vbpsIsProxyStubClsIdToRemove(wszValue))
+                                fDeleteMe = true;
+
+                            vbpsCloseKey(pState, hkeySub, __LINE__);
                         }
                     }
-                    RegCloseKey(hkeyIfTypelib);
+
+                    if (fDeleteMe)
+                    {
+                        /*
+                         * Ok, it's an orphaned VirtualBox interface. Delete it.
+                         */
+                        wszCurNm[cwcCurNm] = '\0';
+                        vbpsDeleteKeyRecursiveW(pState, hkeyInterfaces, wszCurNm, __LINE__);
+                    }
+                }
+                else
+                {
+                    Assert(rc == ERROR_NO_MORE_ITEMS);
+                    break;
                 }
             }
-            else
-            {
-                Assert(rc == ERROR_NO_MORE_ITEMS);
-                break;
-            }
-        }
 
-        RegCloseKey(hkeyInterface);
+            vbpsCloseKey(pState, hkeyInterfaces, __LINE__);
+        }
+    }
+}
+
+
+/**
+ * Hack to clean out the class IDs belonging to obsolete typelibs on development
+ * boxes and such likes.
+ */
+static void vbpsRemoveOldClassIDs(VBPSREGSTATE *pState)
+{
+    unsigned iAlt = pState->cAltDeletes;
+    while (iAlt-- > 0)
+    {
+        /*
+         * Open the CLSID key if it exists.
+         * We don't use the hKeyClsid member for the same paranoid reasons as
+         * already stated in vbpsRemoveOldInterfaces.
+         */
+        HKEY hkeyClsIds;
+        LRESULT rc;
+        rc = RegOpenKeyExW(pState->aAltDeletes[iAlt].hkeyClasses, L"CLSID", 0 /*fOptions*/, pState->fSamDelete, &hkeyClsIds);
+        if (rc == ERROR_SUCCESS)
+        {
+            /*
+             * This is kind of expensive, but we have to check all registered interfaces.
+             * Only use wide APIs to avoid wasting time on string conversion.
+             */
+            DWORD idxKey;
+            for (idxKey = 0;; idxKey++)
+            {
+                RTUTF16 wszCurNm[128 + 48];
+                DWORD   cwcCurNm = 128;
+                rc = RegEnumKeyExW(hkeyClsIds, idxKey, wszCurNm, &cwcCurNm,
+                                   NULL /*pdwReserved*/, NULL /*pwszClass*/, NULL /*pcwcClass*/, NULL /*pLastWriteTime*/);
+                if (rc == ERROR_SUCCESS)
+                {
+                    /*
+                     * Match both the type library ID and the program ID.
+                     */
+                    static RTUTF16 const    s_wszTypeLib[] = L"\\TypeLib";
+                    HKEY                    hkeySub;
+                    RTUTF16                 wszValue[128];
+                    DWORD                   cbValue;
+                    DWORD                   dwType;
+
+
+                    /* Skip this entry if it doesn't look like a braced UUID. (Microsoft
+                       has one two malformed ones plus a hack.) */
+                    wszCurNm[cwcCurNm] = '\0'; /* paranoia */
+                    if (vbpsIsUuidInBracesQuickW(wszCurNm)) { }
+                    else continue;
+
+                    /* The TypeLib sub-key. */
+                    memcpy(&wszCurNm[cwcCurNm], s_wszTypeLib, sizeof(s_wszTypeLib));
+                    rc = RegOpenKeyExW(hkeyClsIds, wszCurNm, 0 /*fOptions*/, KEY_QUERY_VALUE, &hkeySub);
+                    if (rc == ERROR_SUCCESS)
+                    {
+                        bool fDeleteMe = false;
+
+                        cbValue = sizeof(wszValue) - sizeof(RTUTF16);
+                        rc = RegQueryValueExW(hkeySub, NULL /*pszValueNm*/, NULL /*pdwReserved*/,
+                                              &dwType, (PBYTE)&wszValue[0], &cbValue);
+                        if (rc != ERROR_SUCCESS || dwType != REG_SZ)
+                            cbValue = 0;
+                        wszValue[cbValue / sizeof(RTUTF16)] = '\0';
+
+                        if (   rc == ERROR_SUCCESS
+                            && vbpsIsTypeLibIdToRemove(wszValue))
+                            fDeleteMe = true;
+
+                        vbpsCloseKey(pState, hkeySub, __LINE__);
+
+                        if (fDeleteMe)
+                        {
+                            /* The ProgId sub-key. */
+                            static RTUTF16 const    s_wszProgId[] = L"\\ProgId";
+                            memcpy(&wszCurNm[cwcCurNm], s_wszProgId, sizeof(s_wszProgId));
+                            rc = RegOpenKeyExW(hkeyClsIds, wszCurNm, 0 /*fOptions*/, KEY_QUERY_VALUE, &hkeySub);
+                            if (rc == ERROR_SUCCESS)
+                            {
+                                static RTUTF16 const s_wszProgIdPrefix[] = L"VirtualBox.";
+
+                                cbValue = sizeof(wszValue) - sizeof(RTUTF16);
+                                rc = RegQueryValueExW(hkeySub, NULL /*pszValueNm*/, NULL /*pdwReserved*/,
+                                                      &dwType, (PBYTE)&wszValue[0], &cbValue);
+                                if (rc != ERROR_SUCCESS || dwType != REG_SZ)
+                                    cbValue = 0;
+                                wszValue[cbValue / sizeof(RTUTF16)] = '\0';
+
+                                if (   cbValue < sizeof(s_wszProgIdPrefix)
+                                    || memcmp(wszValue, s_wszProgIdPrefix, sizeof(s_wszProgIdPrefix) - sizeof(RTUTF16)) != 0)
+                                    fDeleteMe = false;
+
+                                vbpsCloseKey(pState, hkeySub, __LINE__);
+                            }
+                            else
+                                AssertStmt(rc == ERROR_FILE_NOT_FOUND, fDeleteMe = false);
+
+                            if (fDeleteMe)
+                            {
+                                /*
+                                 * Ok, it's an orphaned VirtualBox interface. Delete it.
+                                 */
+                                wszCurNm[cwcCurNm] = '\0';
+                                vbpsDeleteKeyRecursiveW(pState, hkeyClsIds, wszCurNm, __LINE__);
+                            }
+                        }
+                    }
+                    else
+                        Assert(rc == ERROR_FILE_NOT_FOUND);
+                }
+                else
+                {
+                    Assert(rc == ERROR_NO_MORE_ITEMS);
+                    break;
+                }
+            }
+
+            vbpsCloseKey(pState, hkeyClsIds, __LINE__);
+        }
+        else
+            Assert(rc == ERROR_FILE_NOT_FOUND);
     }
 }
 
@@ -1633,59 +1947,92 @@ static void removeOldInterfaces(HKEY hkeyClassesRoot)
 /**
  * Hack to clean obsolete typelibs on development boxes and such.
  */
-static void removeOldTypelib(HKEY hkeyClassesRoot)
+static void vbpsRemoveOldTypeLibs(VBPSREGSTATE *pState)
 {
-    /*
-     * Open it and verify the identity.
-     */
-    unsigned i = RT_ELEMENTS(g_apszTypelibGuidKeys);
-    while (i-- > 0)
+    unsigned iAlt = pState->cAltDeletes;
+    while (iAlt-- > 0)
     {
-        HKEY hkeyTyplib;
-        LONG rc = RegOpenKeyExA(hkeyClassesRoot, g_apszTypelibGuidKeys[i], 0,
-                                DELETE | KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &hkeyTyplib);
+        /*
+         * Open the TypeLib key, if it exists.
+         */
+        HKEY hkeyTypeLibs;
+        LRESULT rc;
+        rc = RegOpenKeyExW(pState->aAltDeletes[iAlt].hkeyClasses, L"TypeLib", 0 /*fOptions*/, pState->fSamDelete, &hkeyTypeLibs);
         if (rc == ERROR_SUCCESS)
         {
-            unsigned iVer = RT_ELEMENTS(g_apszTypelibVersions);
-            while (iVer-- > 0)
+            /*
+             * Look for our type library IDs.
+             */
+            unsigned iTlb = RT_ELEMENTS(g_apwszTypeLibIds);
+            while (iTlb-- > 0)
             {
-                HKEY hkeyVer;
-                rc = RegOpenKeyExA(hkeyTyplib, g_apszTypelibVersions[iVer], 0, KEY_READ, &hkeyVer);
+                HKEY hkeyTypeLibId;
+                LONG rc = RegOpenKeyExW(hkeyTypeLibs, g_apwszTypeLibIds[iTlb], 0 /*fOptions*/, pState->fSamDelete, &hkeyTypeLibId);
                 if (rc == ERROR_SUCCESS)
                 {
-                    char szValue[128];
-                    DWORD cbValue = sizeof(szValue) - 1;
-                    rc = RegQueryValueExA(hkeyVer, NULL, NULL, NULL, (PBYTE)&szValue[0], &cbValue);
-                    if (rc == ERROR_SUCCESS)
+                    unsigned iVer = RT_ELEMENTS(g_apwszTypelibVersions);
+                    while (iVer-- > 0)
                     {
-                        szValue[cbValue] = '\0';
-                        if (!strcmp(szValue, "VirtualBox Type Library"))
+                        HKEY hkeyVer;
+                        rc = RegOpenKeyExW(hkeyTypeLibId, g_apwszTypelibVersions[iVer], 0, KEY_READ, &hkeyVer);
+                        if (rc == ERROR_SUCCESS)
                         {
-                            RegCloseKey(hkeyVer);
-                            hkeyVer = NULL;
-
-                            /*
-                             * Delete the type library.
-                             */
-                            RTAssertMsg2("Should delete HCR\\%s\\%s\n", g_apszTypelibGuidKeys[i], g_apszTypelibVersions[iVer]);
-                            rc = SHDeleteKeyA(hkeyTyplib, g_apszTypelibVersions[iVer]);
-                            Assert(rc == ERROR_SUCCESS);
+                            char szValue[128];
+                            DWORD cbValue = sizeof(szValue) - 1;
+                            rc = RegQueryValueExA(hkeyVer, NULL, NULL, NULL, (PBYTE)&szValue[0], &cbValue);
+                            vbpsCloseKey(pState, hkeyVer, __LINE__);
+                            if (rc == ERROR_SUCCESS)
+                            {
+                                szValue[cbValue] = '\0';
+                                if (!strcmp(szValue, "VirtualBox Type Library"))
+                                {
+                                    /*
+                                     * Delete the type library version.
+                                     * We do not delete the whole type library ID, just this version of it.
+                                     */
+                                    vbpsDeleteKeyRecursiveW(pState, hkeyTypeLibId, g_apwszTypelibVersions[iVer], __LINE__);
+                                }
+                            }
                         }
                     }
+                    vbpsCloseKey(pState, hkeyTypeLibId, __LINE__);
 
-                    if (hkeyVer != NULL)
-                        RegCloseKey(hkeyVer);
+                    /*
+                     * The type library ID key should be empty now, so we can try remove it (non-recursively).
+                     */
+                    rc = RegDeleteKeyW(hkeyTypeLibs, g_apwszTypeLibIds[iTlb]);
+                    Assert(rc == ERROR_SUCCESS);
                 }
             }
-            RegCloseKey(hkeyTyplib);
-
-            /*
-             * The typelib key should be empty now, so we can try remove it (non-recursively).
-             */
-            rc = RegDeleteKeyA(hkeyClassesRoot, g_apszTypelibGuidKeys[i]);
-            Assert(rc == ERROR_SUCCESS);
         }
+        else
+            Assert(rc == ERROR_FILE_NOT_FOUND);
     }
+}
+
+
+/**
+ * Hack to clean out obsolete typelibs on development boxes and such.
+ */
+static void vbpsRemoveOldMessSub(REGSAM fSamWow)
+{
+    /*
+     * Note! The worker procedures does not use the default destination,
+     *       because it's much much simpler to enumerate alternative locations.
+     */
+    VBPSREGSTATE State;
+    LRESULT rc = vbpsRegInit(&State, HKEY_CLASSES_ROOT, NULL, true /*fDelete*/, false /*fUpdate*/, fSamWow);
+    if (rc == ERROR_SUCCESS)
+    {
+        vbpsRegAddAltDelete(&State, HKEY_CURRENT_USER,  "Software\\Classes");
+        vbpsRegAddAltDelete(&State, HKEY_LOCAL_MACHINE, "Software\\Classes");
+        vbpsRegAddAltDelete(&State, HKEY_CLASSES_ROOT,  NULL);
+
+        vbpsRemoveOldInterfaces(&State);
+        vbpsRemoveOldClassIDs(&State);
+        vbpsRemoveOldTypeLibs(&State);
+    }
+    vbpsRegTerm(&State);
 }
 
 
@@ -1694,31 +2041,12 @@ static void removeOldTypelib(HKEY hkeyClassesRoot)
  */
 static void removeOldMess(void)
 {
-    HKEY hkeyWow64;
-    LONG rc;
-
-    /*
-     * The standard location.
-     */
-    removeOldTypelib(HKEY_CLASSES_ROOT);
-    removeOldInterfaces(HKEY_CLASSES_ROOT);
-    removeOldClassIDs(HKEY_CLASSES_ROOT);
-
-    /*
-     * Wow64 if present.
-     */
-    rc = RegOpenKeyExA(HKEY_CLASSES_ROOT, "Wow6432Node", 0, DELETE | KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &hkeyWow64);
-    if (rc == ERROR_SUCCESS)
-    {
-        removeOldTypelib(hkeyWow64);
-        removeOldInterfaces(hkeyWow64);
-        removeOldClassIDs(hkeyWow64);
-
-        RegCloseKey(hkeyWow64);
-    }
+    vbpsRemoveOldMessSub(0 /*fSamWow*/);
+#if ARCH_BITS == 64 || defined(VBOX_IN_32_ON_64_MAIN_API)
+    vbpsRemoveOldMessSub(KEY_WOW64_32KEY);
+#endif
 }
 
-#endif /* WITH_MANUAL_CLEANUP */
 
 
 /**
@@ -1809,12 +2137,10 @@ HRESULT STDAPICALLTYPE DllUnregisterServer(void)
     hrc2 = RegisterXidlModulesAndClasses(NULL, true /*fDelete*/, false /*fUpdate*/);
     AssertMsgStmt(SUCCEEDED(hrc2), ("%Rhrc\n", hrc2), if (SUCCEEDED(hrc)) hrc = hrc2);
 
-#ifdef WITH_MANUAL_CLEANUP
     /*
      * Purge old mess.
      */
     removeOldMess();
-#endif
 
     return hrc;
 }
@@ -1862,14 +2188,13 @@ DECLEXPORT(uint32_t) VbpsUpdateRegistrations(void)
     vbpsRegTerm(&State);
 
 
-//#if defined(VBOX_IN_32_ON_64_MAIN_API) || (ARCH_BITS == 64 && defined(VBOX_WITH_32_ON_64_MAIN_API))
+/*#if defined(VBOX_IN_32_ON_64_MAIN_API) || (ARCH_BITS == 64 && defined(VBOX_WITH_32_ON_64_MAIN_API)) ?? */
 #ifndef VBOX_IN_32_ON_64_MAIN_API
     /*
      * Update registry entries for the other CPU bitness.
      */
     if (rc == ERROR_SUCCESS)
     {
-        //rc = vbpsRegInit(&State, HKEY_CLASSES_ROOT, "Wow6432Node", fDelete, fUpdate, KEY_WOW64_32KEY);
         rc = vbpsRegInit(&State, HKEY_CLASSES_ROOT, NULL, false /*fDelete*/, true /*fUpdate*/,
                          !fIs32On64 ? KEY_WOW64_32KEY : KEY_WOW64_64KEY);
         if (rc == ERROR_SUCCESS && !vbpsIsUpToDate(&State))
