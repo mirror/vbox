@@ -41,6 +41,7 @@ EXPORTS
     NtDelayExecution                      ;;= _NtDelayExecution@8
     NtDeviceIoControlFile                 ;;= _NtDeviceIoControlFile@40
     NtDuplicateObject                     ;;= _NtDuplicateObject@28
+    NtEnumerateKey                        ;;= _NtEnumerateKey@24
     NtFlushBuffersFile                    ;;= _NtFlushBuffersFile@8
     NtFreeVirtualMemory                   ;;= _NtFreeVirtualMemory@16
     NtGetContextThread                    ;;= _NtGetContextThread@8
@@ -61,6 +62,7 @@ EXPORTS
     NtQueryInformationProcess             ;;= _NtQueryInformationProcess@20
     NtQueryInformationThread              ;;= _NtQueryInformationThread@20
     NtQueryInformationToken               ;;= _NtQueryInformationToken@20
+    NtQueryKey                            ;;= _NtQueryKey@20
     NtQueryObject                         ;;= _NtQueryObject@20
     NtQuerySecurityObject                 ;;= _NtQuerySecurityObject@20
     NtQuerySymbolicLinkObject             ;;= _NtQuerySymbolicLinkObject@12

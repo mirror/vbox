@@ -1538,6 +1538,94 @@ NTSYSAPI NTSTATUS NTAPI NtQueryInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, 
 NTSYSAPI NTSTATUS NTAPI NtQueryDirectoryFile(HANDLE, HANDLE, PIO_APC_ROUTINE, PVOID, PIO_STATUS_BLOCK, PVOID, ULONG,
                                              FILE_INFORMATION_CLASS, BOOLEAN, PUNICODE_STRING, BOOLEAN);
 
+/** For use with KeyBasicInformation. */
+typedef struct _KEY_BASIC_INFORMATION
+{
+    LARGE_INTEGER   LastWriteTime;
+    ULONG           TitleIndex;
+    ULONG           NameLength;
+    WCHAR           Name[1];
+} KEY_BASIC_INFORMATION;
+typedef KEY_BASIC_INFORMATION *PKEY_BASIC_INFORMATION;
+
+/** For use with KeyNodeInformation. */
+typedef struct _KEY_NODE_INFORMATION
+{
+    LARGE_INTEGER   LastWriteTime;
+    ULONG           TitleIndex;
+    ULONG           ClassOffset; /**< Offset from the start of the structure. */
+    ULONG           ClassLength;
+    ULONG           NameLength;
+    WCHAR           Name[1];
+} KEY_NODE_INFORMATION;
+typedef KEY_NODE_INFORMATION *PKEY_NODE_INFORMATION;
+
+/** For use with KeyFullInformation. */
+typedef struct _KEY_FULL_INFORMATION
+{
+    LARGE_INTEGER   LastWriteTime;
+    ULONG           TitleIndex;
+    ULONG           ClassOffset; /**< Offset of the Class member. */
+    ULONG           ClassLength;
+    ULONG           SubKeys;
+    ULONG           MaxNameLen;
+    ULONG           MaxClassLen;
+    ULONG           Values;
+    ULONG           MaxValueNameLen;
+    ULONG           MaxValueDataLen;
+    WCHAR           Class[1];
+} KEY_FULL_INFORMATION;
+typedef KEY_FULL_INFORMATION *PKEY_FULL_INFORMATION;
+
+/** For use with KeyNameInformation. */
+typedef struct _KEY_NAME_INFORMATION
+{
+    ULONG           NameLength;
+    WCHAR           Name[1];
+} KEY_NAME_INFORMATION;
+typedef KEY_NAME_INFORMATION *PKEY_NAME_INFORMATION;
+
+/** For use with KeyCachedInformation. */
+typedef struct _KEY_CACHED_INFORMATION
+{
+    LARGE_INTEGER   LastWriteTime;
+    ULONG           TitleIndex;
+    ULONG           SubKeys;
+    ULONG           MaxNameLen;
+    ULONG           Values;
+    ULONG           MaxValueNameLen;
+    ULONG           MaxValueDataLen;
+    ULONG           NameLength;
+} KEY_CACHED_INFORMATION;
+typedef KEY_CACHED_INFORMATION *PKEY_CACHED_INFORMATION;
+
+/** For use with KeyVirtualizationInformation. */
+typedef struct _KEY_VIRTUALIZATION_INFORMATION
+{
+    ULONG           VirtualizationCandidate : 1;
+    ULONG           VirtualizationEnabled   : 1;
+    ULONG           VirtualTarget           : 1;
+    ULONG           VirtualStore            : 1;
+    ULONG           VirtualSource           : 1;
+    ULONG           Reserved                : 27;
+} KEY_VIRTUALIZATION_INFORMATION;
+typedef KEY_VIRTUALIZATION_INFORMATION *PKEY_VIRTUALIZATION_INFORMATION;
+
+typedef enum _KEY_INFORMATION_CLASS
+{
+    KeyBasicInformation = 0,
+    KeyNodeInformation,
+    KeyFullInformation,
+    KeyNameInformation,
+    KeyCachedInformation,
+    KeyFlagsInformation,
+    KeyVirtualizationInformation,
+    KeyHandleTagsInformation,
+    MaxKeyInfoClass
+} KEY_INFORMATION_CLASS;
+NTSYSAPI NTSTATUS NTAPI NtQueryKey(HANDLE, KEY_INFORMATION_CLASS, PVOID, ULONG, PULONG);
+NTSYSAPI NTSTATUS NTAPI NtEnumerateKey(HANDLE, ULONG, KEY_INFORMATION_CLASS, PVOID, ULONG, PULONG);
+
 typedef struct _MEMORY_SECTION_NAME
 {
     UNICODE_STRING  SectionFileName;
