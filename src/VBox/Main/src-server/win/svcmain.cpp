@@ -346,6 +346,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
     if (!fRun)
     {
+#ifndef VBOX_WITH_MIDL_PROXY_STUB /* VBoxProxyStub.dll does all the registration work. */
         if (fUnregister)
         {
             _Module.UpdateRegistryFromResource(IDR_VIRTUALBOX, FALSE);
@@ -356,6 +357,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
             _Module.UpdateRegistryFromResource(IDR_VIRTUALBOX, TRUE);
             nRet = _Module.RegisterServer(TRUE);
         }
+#endif
         if (pszPipeName)
         {
             Log(("SVCMAIN: Processing Helper request (cmdline=\"%s\")...\n", pszPipeName));
