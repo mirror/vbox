@@ -45,6 +45,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/env.h>
+#include <iprt/ldr.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
@@ -236,11 +237,46 @@ static uint32_t gCOMMainInitCount = 0;
  *
  * @return S_OK on success and a COM result code in case of failure.
  */
-HRESULT Initialize(bool fGui)
+HRESULT Initialize(bool fGui /*= false*/, bool fAutoRegUpdate /*= true*/)
 {
     HRESULT rc = E_FAIL;
+    NOREF(fAutoRegUpdate);
 
 #if !defined(VBOX_WITH_XPCOM)
+
+# ifdef VBOX_WITH_AUTO_COM_REG_UPDATE
+    /*
+     * First time we're called in a process, we refresh the VBox COM registrations.
+     */
+    if (fAutoRegUpdate && gCOMMainThread == NIL_RTTHREAD)
+    {
+        char szPath[RTPATH_MAX];
+        int vrc = RTPathAppPrivateArch(szPath, sizeof(szPath));
+        if (RT_SUCCESS(vrc))
+#  ifndef VBOX_IN_32_ON_64_MAIN_API
+            rc = RTPathAppend(szPath, sizeof(szPath), "VBoxProxyStub.dll");
+#  else
+            rc = RTPathAppend(szPath, sizeof(szPath), "x86\\VBoxProxyStub-x86.dll");
+#  endif
+        if (RT_SUCCESS(vrc))
+        {
+            RTLDRMOD hMod;
+            vrc = RTLdrLoad(szPath, &hMod);
+            if (RT_SUCCESS(vrc))
+            {
+                union
+                {
+                    void *pv;
+                    DECLCALLBACKMEMBER(uint32_t, pfnRegUpdate)(void);
+                } u;
+                rc = RTLdrGetSymbol(hMod, "VbpsUpdateRegistrations", &u.pv);
+                if (RT_SUCCESS(rc))
+                    u.pfnRegUpdate();
+                /* Just keep it loaded. */
+            }
+        }
+    }
+# endif
 
     /*
      * We initialize COM in GUI thread in STA, to be compliant with QT and

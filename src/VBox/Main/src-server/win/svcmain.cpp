@@ -338,7 +338,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     }
 
     int nRet = 0;
-    HRESULT hRes = com::Initialize();
+    HRESULT hRes = com::Initialize(false /*fGui*/, fRun /*fAutoRegUpdate*/);
 
     _ASSERTE(SUCCEEDED(hRes));
     _Module.Init(ObjectMap, hInstance, &LIBID_VirtualBox);
