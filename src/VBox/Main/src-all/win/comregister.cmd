@@ -177,7 +177,7 @@ REM Unregister all first, then register them. The order matters here.
 %windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxC.dll"
 %windir%\syswow64\regsvr32 /s /u "%_VBOX_DIR%x86\VBoxClient-x86.dll"
 %windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxProxyStub.dll"
-%windir%\syswow64\regsvr32 /s /u "%_VBOX_DIR%VBoxProxyStub-x86.dll"
+%windir%\syswow64\regsvr32 /s /u "%_VBOX_DIR%x86\VBoxProxyStub-x86.dll"
 if %fUninstallOnly% == 1 goto end
 "%_VBOX_DIR%VBoxSVC.exe" /RegServer
 %windir%\system32\regsvr32 /s    "%_VBOX_DIR%VBoxC.dll"
