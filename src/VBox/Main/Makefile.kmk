@@ -531,14 +531,17 @@ else
 endif
 
 src-server/win/VBoxSVC.rc_INCS  = $(VBoxSVC_0_OUTDIR)
-src-server/win/VBoxSVC.rc_DEPS  = $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
-src-server/win/VBoxSVC.rc_CLEAN = $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
-
+src-server/win/VBoxSVC.rc_DEPS  = $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
+src-server/win/VBoxSVC.rc_CLEAN = $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
 $$(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$(@D))
 	$(APPEND) -t $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
+ifndef VBOX_WITH_MIDL_PROXY_STUB
+src-server/win/VBoxSVC.rc_DEPS  += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
+src-server/win/VBoxSVC.rc_CLEAN += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
 $$(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
 	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $< $(VBOX_XIDL_FILE)
+endif
 
 ## @todo r=klaus unfortunately we don't have xmllint everywhere, would be
 # good to check the validity for every VirtualBox.xidl change.
