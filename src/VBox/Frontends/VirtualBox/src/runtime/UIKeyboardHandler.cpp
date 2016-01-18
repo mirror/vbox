@@ -267,7 +267,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
             case UIVisualStateType_Scale:
             {
 # if QT_VERSION >= 0x050000
-                xcb_grab_key_checked(QX11Info::connection(), 0, m_views.value(uScreenId)->viewport()->winId(), XCB_MOD_MASK_ANY, XCB_GRAB_ANY, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+                xcb_grab_key_checked(QX11Info::connection(), 0, m_windows.value(uScreenId)->winId(), XCB_MOD_MASK_ANY, XCB_GRAB_ANY, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
 # else /* QT_VERSION < 0x050000 */
                 XGrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[uScreenId]->winId(), False, GrabModeAsync, GrabModeAsync);
 # endif /* QT_VERSION < 0x050000 */
@@ -278,7 +278,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
             case UIVisualStateType_Seamless:
             {
 # if QT_VERSION >= 0x050000
-                xcb_grab_keyboard(QX11Info::connection(), 0, m_views.value(uScreenId)->viewport()->winId(), XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+                xcb_grab_keyboard(QX11Info::connection(), 0, m_windows.value(uScreenId)->winId(), XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
 # else /* QT_VERSION < 0x050000 */
                 /* Keyboard grabbing can fail because of some keyboard shortcut is still grabbed by window manager.
                  * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
@@ -366,7 +366,7 @@ void UIKeyboardHandler::releaseKeyboard()
             case UIVisualStateType_Scale:
             {
 # if QT_VERSION >= 0x050000
-                xcb_ungrab_key(QX11Info::connection(), XCB_GRAB_ANY, m_views.value(m_iKeyboardCaptureViewIndex)->viewport()->winId(), XCB_MOD_MASK_ANY);
+                xcb_ungrab_key(QX11Info::connection(), XCB_GRAB_ANY, m_windows.value(m_iKeyboardCaptureViewIndex)->winId(), XCB_MOD_MASK_ANY);
 # else /* QT_VERSION < 0x050000 */
                 XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[m_iKeyboardCaptureViewIndex]->winId());
 # endif /* QT_VERSION < 0x050000 */
@@ -938,27 +938,39 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
 
 bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 {
-    /* Cast to XCB event: */
-    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
-
     /* Check if some system event should be filtered out.
      * Returning @c true means filtering-out,
      * Returning @c false means passing event to Qt. */
     bool fResult = false; /* Pass to Qt by default. */
+
+# if defined(Q_WS_MAC)
+
+#  warning "implement me!"
+
+# elif defined(Q_WS_WIN)
+
+#  warning "implement me!"
+
+# elif defined(Q_WS_X11)
+
+    /* Cast to XCB event: */
+    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
+
+    /* Depending on event type: */
     switch (pEvent->response_type & ~0x80)
     {
-        /* Watch for keyboard behavior: */
+        /* Watch for key-events: */
         case XCB_KEY_PRESS:
         case XCB_KEY_RELEASE:
         {
             /* Cast to XCB key-event: */
             xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
 
-            /* Translate the keycode to a PC scancode: */
-            unsigned scan = handleXKeyEvent(QX11Info::display(), pKeyEvent->detail);
+            /* Translate the keycode to a PC scan code: */
+            unsigned uScan = handleXKeyEvent(QX11Info::display(), pKeyEvent->detail);
 
-            /* Scancodes 0x00 (no valid translation) and 0x80 (extended flag) are ignored: */
-            if (!(scan & 0x7F))
+            /* Scan codes 0x00 (no valid translation) and 0x80 (extended flag) are ignored: */
+            if (!(uScan & 0x7F))
             {
                 fResult = true;
                 break;
@@ -975,57 +987,65 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 //                break;
 //            }
 
-            /* Detect common scancode flags: */
-            int flags = 0;
-            if (scan >> 8)
-                flags |= KeyExtended;
+            /* Calculate flags: */
+            int iflags = 0;
+            if (uScan >> 8)
+                iflags |= KeyExtended;
             if ((pEvent->response_type & ~0x80) == XCB_KEY_PRESS)
-                flags |= KeyPressed;
+                iflags |= KeyPressed;
 
             /* Remove the extended flag: */
-            scan &= 0x7F;
+            uScan &= 0x7F;
 
-            /* Special Korean keys must send scancode 0xF1/0xF2
+            /* Special Korean keys must send scan code 0xF1/0xF2
              * when pressed and nothing when released. */
-            if (scan == 0x71 || scan == 0x72)
+            if (uScan == 0x71 || uScan == 0x72)
             {
                 if ((pEvent->response_type & ~0x80) == XCB_KEY_RELEASE)
                 {
                     fResult = true;
                     break;
                 }
-                /* Re-create the bizarre scancode: */
-                scan |= 0x80;
+                /* Re-create the bizarre scan code: */
+                uScan |= 0x80;
             }
 
             /* Translate the keycode to a keysym: */
             KeySym ks = ::wrapXkbKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0, 0);
 
-            /* Detect particular scancode flags: */
+            /* Update special flags: */
             switch (ks)
             {
                 case XK_Print:
-                    flags |= KeyPrint;
+                    iflags |= KeyPrint;
                     break;
                 case XK_Pause:
-                    if (pKeyEvent->state & ControlMask)
+                    if (pKeyEvent->state & ControlMask) /* Break */
                     {
                         ks = XK_Break;
-                        flags |= KeyExtended;
-                        scan = 0x46;
+                        iflags |= KeyExtended;
+                        uScan = 0x46;
                     }
                     else
-                        flags |= KeyPause;
+                        iflags |= KeyPause;
                     break;
             }
 
-            /* Handle key-event: */
-            fResult = keyEvent(ks, scan, flags, uScreenId);
+            /* Finally, handle parsed key-event: */
+            fResult = keyEvent(ks, uScan, iflags, uScreenId);
+
             break;
         }
         default:
             break;
     }
+
+# else
+
+#  warning "port me!"
+
+# endif
+
     /* Return result: */
     return fResult;
 }
