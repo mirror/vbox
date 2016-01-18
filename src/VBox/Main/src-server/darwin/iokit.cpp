@@ -541,18 +541,6 @@ typedef struct DARWINUSBNOTIFY
     io_iterator_t DetachIterator;
 } DARWINUSBNOTIFY, *PDARWINUSBNOTIFY;
 
-/**
- * Returns the correct class name to identify USB devices. El Capitan
- * introduced a reworked USb stack with changed names.
- * The old names are still available but the objects don't reveal all the
- * information required.
- */
-DECLINLINE(const char *)darwinGetUsbDeviceClassName(void)
-{
-    return   g_uMajorDarwin >= VBOX_OSX_EL_CAPTIAN_VER
-           ? kIOUSBHostDeviceClassName
-           : kIOUSBDeviceClassName;
-}
 
 /**
  * Run thru an iterator.
@@ -655,7 +643,7 @@ void *DarwinSubscribeUSBNotifications(void)
              */
             kern_return_t rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                                 kIOPublishNotification,
-                                                                IOServiceMatching(darwinGetUsbDeviceClassName()),
+                                                                IOServiceMatching(kIOUSBDeviceClassName),
                                                                 darwinUSBAttachNotification1,
                                                                 pNotify,
                                                                 &pNotify->AttachIterator);
@@ -664,7 +652,7 @@ void *DarwinSubscribeUSBNotifications(void)
                 darwinDrainIterator(pNotify->AttachIterator);
                 rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                       kIOMatchedNotification,
-                                                      IOServiceMatching(darwinGetUsbDeviceClassName()),
+                                                      IOServiceMatching(kIOUSBDeviceClassName),
                                                       darwinUSBAttachNotification2,
                                                       pNotify,
                                                       &pNotify->AttachIterator2);
@@ -673,7 +661,7 @@ void *DarwinSubscribeUSBNotifications(void)
                     darwinDrainIterator(pNotify->AttachIterator2);
                     rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                           kIOTerminatedNotification,
-                                                          IOServiceMatching(darwinGetUsbDeviceClassName()),
+                                                          IOServiceMatching(kIOUSBDeviceClassName),
                                                           darwinUSBDetachNotification,
                                                           pNotify,
                                                           &pNotify->DetachIterator);
@@ -799,19 +787,130 @@ static bool darwinIsMassStorageInterfaceInUse(io_object_t MSDObj, io_name_t pszN
     return false;
 }
 
+/**
+ * Finds the matching IOUSBHostDevice registry entry for the given legacy USB device interface (IOUSBDevice).
+ *
+ * @returns kern_return_t error code.
+ * @param   USBDeviceLegacy    The legacy device I/O Kit object.
+ * @param   pUSBDevice         Where to store the IOUSBHostDevice object on success.
+ */
+static kern_return_t darwinGetUSBHostDeviceFromLegacyDevice(io_object_t USBDeviceLegacy, io_object_t *pUSBDevice)
+{
+    kern_return_t krc = KERN_SUCCESS;
+    uint64_t uIoRegEntryId = 0;
+
+    *pUSBDevice = 0;
+
+    /* Get the registry entry ID to match against. */
+    krc = IORegistryEntryGetRegistryEntryID(USBDeviceLegacy, &uIoRegEntryId);
+    if (krc != KERN_SUCCESS)
+        return krc;
+
+    /*
+     * Create a matching dictionary for searching for USB Devices in the IOKit.
+     */
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOUSBHostDeviceClassName);
+    AssertReturn(RefMatchingDict, KERN_FAILURE);
+
+    /*
+     * Perform the search and get a collection of USB Device back.
+     */
+    io_iterator_t USBDevices = NULL;
+    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
+    AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), KERN_FAILURE);
+    RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
+
+    /*
+     * Walk the devices and check for the matching alternate registry entry ID.
+     */
+    io_object_t USBDevice;
+    while ((USBDevice = IOIteratorNext(USBDevices)) != 0)
+    {
+        DARWIN_IOKIT_DUMP_OBJ(USBDevice);
+
+        CFMutableDictionaryRef PropsRef = 0;
+        krc = IORegistryEntryCreateCFProperties(USBDevice, &PropsRef, kCFAllocatorDefault, kNilOptions);
+        if (krc == KERN_SUCCESS)
+        {
+            uint64_t uAltRegId = 0;
+            if (   darwinDictGetU64(PropsRef,  CFSTR("AppleUSBAlternateServiceRegistryID"), &uAltRegId)
+                && uAltRegId == uIoRegEntryId)
+            {
+                *pUSBDevice = USBDevice;
+                CFRelease(PropsRef);
+                break;
+            }
+
+            CFRelease(PropsRef);
+        }
+        IOObjectRelease(USBDevice);
+    }
+    IOObjectRelease(USBDevices);
+
+    return krc;
+}
+
+static bool darwinUSBDeviceIsGrabbedDetermineState(PUSBDEVICE pCur, io_object_t USBDevice)
+{
+    /*
+     * Iterate the interfaces (among the children of the IOUSBDevice object).
+     */
+    io_iterator_t Interfaces;
+    kern_return_t krc = IORegistryEntryGetChildIterator(USBDevice, kIOServicePlane, &Interfaces);
+    if (krc != KERN_SUCCESS)
+        return false;
+
+    bool fHaveOwner = false;
+    RTPROCESS Owner = NIL_RTPROCESS;
+    bool fHaveClient = false;
+    RTPROCESS Client = NIL_RTPROCESS;
+    io_object_t Interface;
+    while ((Interface = IOIteratorNext(Interfaces)) != 0)
+    {
+        io_name_t szName;
+        krc = IOObjectGetClass(Interface, szName);
+        if (    krc == KERN_SUCCESS
+            &&  !strcmp(szName, VBOXUSBDEVICE_CLASS_NAME))
+        {
+            CFMutableDictionaryRef PropsRef = 0;
+            krc = IORegistryEntryCreateCFProperties(Interface, &PropsRef, kCFAllocatorDefault, kNilOptions);
+            if (krc == KERN_SUCCESS)
+            {
+                fHaveOwner = darwinDictGetProcess(PropsRef, CFSTR(VBOXUSB_OWNER_KEY), &Owner);
+                fHaveClient = darwinDictGetProcess(PropsRef, CFSTR(VBOXUSB_CLIENT_KEY), &Client);
+                CFRelease(PropsRef);
+            }
+        }
+
+        IOObjectRelease(Interface);
+    }
+    IOObjectRelease(Interfaces);
+
+    /*
+     * Calc the status.
+     */
+    if (fHaveOwner)
+    {
+        if (Owner == RTProcSelf())
+            pCur->enmState = !fHaveClient || Client == NIL_RTPROCESS || !Client
+                           ? USBDEVICESTATE_HELD_BY_PROXY
+                           : USBDEVICESTATE_USED_BY_GUEST;
+        else
+            pCur->enmState = USBDEVICESTATE_USED_BY_HOST;
+    }
+
+    return fHaveOwner;
+}
 
 /**
- * Worker function for DarwinGetUSBDevices() that tries to figure out
- * what state the device is in and set enmState.
+ * Worker for determining the USB device state for devices which are not captured by the VBoxUSB driver
+ * Works for both, IOUSBDevice (legacy on release >= El Capitan) and IOUSBHostDevice (available on >= El Capitan).
  *
- * This is mostly a matter of distinguishing between devices that nobody
- * uses, devices that can be seized and devices that cannot be grabbed.
- *
- * @param   pCur        The USB device data.
- * @param   USBDevice   The USB device object.
- * @param   PropsRef    The USB device properties.
+ * @returns nothing.
+ * @param   pCur      The USB device data.
+ * @param   USBDevice I/O Kit USB device object (either IOUSBDevice or IOUSBHostDevice).
  */
-static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice, CFMutableDictionaryRef /* PropsRef */)
+static void darwinDetermineUSBDeviceStateWorker(PUSBDEVICE pCur, io_object_t USBDevice)
 {
     /*
      * Iterate the interfaces (among the children of the IOUSBDevice object).
@@ -821,21 +920,18 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
     if (krc != KERN_SUCCESS)
         return;
 
-    bool fHaveOwner = false;
-    RTPROCESS Owner = NIL_RTPROCESS;
-    bool fHaveClient = false;
-    RTPROCESS Client = NIL_RTPROCESS;
     bool fUserClientOnly = true;
     bool fConfigured = false;
     bool fInUse = false;
     bool fSeizable = true;
     io_object_t Interface;
-    while ((Interface = IOIteratorNext(Interfaces)))
+    while ((Interface = IOIteratorNext(Interfaces)) != 0)
     {
         io_name_t szName;
         krc = IOObjectGetClass(Interface, szName);
         if (    krc == KERN_SUCCESS
-            &&  !strcmp(szName, "IOUSBInterface"))
+            &&  (   !strcmp(szName, "IOUSBInterface")
+                 || !strcmp(szName, "IOUSBHostInterface")))
         {
             fConfigured = true;
 
@@ -848,7 +944,7 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
             if (krc == KERN_SUCCESS)
             {
                 io_object_t Child1;
-                while ((Child1 = IOIteratorNext(Children1)))
+                while ((Child1 = IOIteratorNext(Children1)) != 0)
                 {
                     krc = IOObjectGetClass(Child1, szName);
                     if (    krc == KERN_SUCCESS
@@ -882,22 +978,6 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
                 IOObjectRelease(Children1);
             }
         }
-        /*
-         * Not an interface, could it be VBoxUSBDevice?
-         * If it is, get the owner and client properties.
-         */
-        else if (    krc == KERN_SUCCESS
-                 &&  !strcmp(szName, VBOXUSBDEVICE_CLASS_NAME))
-        {
-            CFMutableDictionaryRef PropsRef = 0;
-            krc = IORegistryEntryCreateCFProperties(Interface, &PropsRef, kCFAllocatorDefault, kNilOptions);
-            if (krc == KERN_SUCCESS)
-            {
-                fHaveOwner = darwinDictGetProcess(PropsRef, CFSTR(VBOXUSB_OWNER_KEY), &Owner);
-                fHaveClient = darwinDictGetProcess(PropsRef, CFSTR(VBOXUSB_CLIENT_KEY), &Client);
-                CFRelease(PropsRef);
-            }
-        }
 
         IOObjectRelease(Interface);
     }
@@ -906,26 +986,61 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
     /*
      * Calc the status.
      */
-    if (fHaveOwner)
-    {
-        if (Owner == RTProcSelf())
-            pCur->enmState = !fHaveClient || Client == NIL_RTPROCESS || !Client
-                           ? USBDEVICESTATE_HELD_BY_PROXY
-                           : USBDEVICESTATE_USED_BY_GUEST;
-        else
-            pCur->enmState = USBDEVICESTATE_USED_BY_HOST;
-    }
-    else if (fUserClientOnly)
-        /** @todo how to detect other user client?!? - Look for IOUSBUserClient! */
-        pCur->enmState = !fConfigured
-                       ? USBDEVICESTATE_UNUSED
-                       : USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
-    else if (!fInUse)
+    if (!fInUse)
         pCur->enmState = USBDEVICESTATE_UNUSED;
     else
         pCur->enmState = fSeizable
                        ? USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
                        : USBDEVICESTATE_USED_BY_HOST;
+}
+
+/**
+ * Worker function for DarwinGetUSBDevices() that tries to figure out
+ * what state the device is in and set enmState.
+ *
+ * This is mostly a matter of distinguishing between devices that nobody
+ * uses, devices that can be seized and devices that cannot be grabbed.
+ *
+ * @param   pCur        The USB device data.
+ * @param   USBDevice   The USB device object.
+ * @param   PropsRef    The USB device properties.
+ */
+static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice, CFMutableDictionaryRef /* PropsRef */)
+{
+
+    if (!darwinUSBDeviceIsGrabbedDetermineState(pCur, USBDevice))
+    {
+        /*
+         * The USB stack was completely reworked on El Capitan and the IOUSBDevice and IOUSBInterface
+         * are deprecated and don't return the information required for the additional checks below.
+         * We also can't directly make use of the new classes (IOUSBHostDevice and IOUSBHostInterface)
+         * because VBoxUSB only exposes the legacy interfaces. Trying to use the new classes results in errors
+         * because the I/O Kit USB library wants to use the new interfaces. The result is us losing the device
+         * form the list when VBoxUSB has attached to the USB device.
+         *
+         * To make the checks below work we have to get hold of the IOUSBHostDevice and IOUSBHostInterface
+         * instances for the current device. Fortunately the IOUSBHostDevice instance contains a
+         * "AppleUSBAlternateServiceRegistryID" which points to the legacy class instance for the same device.
+         * So just iterate over the list of IOUSBHostDevice instances and check whether the 
+         * AppleUSBAlternateServiceRegistryID property matches with the legacy instance.
+         *
+         * The upside is that we can keep VBoxUSB untouched and still compatible with older OS X releases.
+         */
+        if (g_uMajorDarwin >= VBOX_OSX_EL_CAPTIAN_VER)
+        {
+            io_object_t IOUSBDeviceNew = 0;
+
+            io_object_t krc = darwinGetUSBHostDeviceFromLegacyDevice(USBDevice, &IOUSBDeviceNew);
+            if (   krc == KERN_SUCCESS
+                && IOUSBDeviceNew != 0)
+            {
+                darwinDetermineUSBDeviceStateWorker(pCur, IOUSBDeviceNew);
+                IOObjectRelease(IOUSBDeviceNew);
+            }
+        }
+        else
+            darwinDetermineUSBDeviceStateWorker(pCur, USBDevice);
+    }
 }
 
 
@@ -943,7 +1058,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
     /*
      * Create a matching dictionary for searching for USB Devices in the IOKit.
      */
-    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(darwinGetUsbDeviceClassName());
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOUSBDeviceClassName);
     AssertReturn(RefMatchingDict, NULL);
 
     /*
@@ -1018,14 +1133,9 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 pCur->bBus = u32LocationId >> 24;
                 darwinDictGetU8(PropsRef, CFSTR("PortNum"), &pCur->bPort); /* Not present in 10.11 beta 3, so ignore failure. (Is set to zero.) */
                 uint8_t bSpeed;
-                AssertBreak(darwinDictGetU8(PropsRef,
-                                              g_uMajorDarwin >= VBOX_OSX_EL_CAPTIAN_VER
-                                            ? CFSTR("USBSpeed")
-                                            : CFSTR(kUSBDevicePropertySpeed),
-                                            &bSpeed));
-                Assert(bSpeed <= 4);
-                pCur->enmSpeed = bSpeed == 4 ? USBDEVICESPEED_SUPER /** @todo: Check what 4 really means (USB 3.1 perhaps?), seen on El Capitan. */
-                               : bSpeed == 3 ? USBDEVICESPEED_SUPER
+                AssertBreak(darwinDictGetU8(PropsRef, CFSTR(kUSBDevicePropertySpeed), &bSpeed));
+                Assert(bSpeed <= 3);
+                pCur->enmSpeed = bSpeed == 3 ? USBDEVICESPEED_SUPER
                                : bSpeed == 2 ? USBDEVICESPEED_HIGH
                                : bSpeed == 1 ? USBDEVICESPEED_FULL
                                : bSpeed == 0 ? USBDEVICESPEED_LOW
@@ -1176,7 +1286,7 @@ int DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur)
      * Fixes made to this code probably applies there too!
      */
 
-    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(darwinGetUsbDeviceClassName());
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOUSBDeviceClassName);
     AssertReturn(RefMatchingDict, NULL);
 
     uint64_t u64SessionId = 0;
