@@ -333,6 +333,7 @@
 %define MSR_IA32_TSC_ADJUST                 0x3B
 %define MSR_IA32_BIOS_UPDT_TRIG             0x79
 %define MSR_IA32_BIOS_SIGN_ID               0x8B
+%define MSR_IA32_SMM_MONITOR_CTL            0x9B
 %define MSR_IA32_PMC0                       0xC1
 %define MSR_IA32_PMC1                       0xC2
 %define MSR_IA32_PMC2                       0xC3
@@ -524,8 +525,20 @@
 %define X86_PTE_PAE_MBZ_MASK_NO_NX          0xfff0000000000000
 %define X86_PTE_LM_MBZ_MASK_NX              0x0000000000000000
 %define X86_PTE_LM_MBZ_MASK_NO_NX           0x8000000000000000
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_PT_SHIFT                        12
 %define X86_PT_MASK                         0x3ff
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_PT_PAE_SHIFT                    12
 %define X86_PT_PAE_MASK                     0x1ff
 %define X86_PDE_P                           RT_BIT(0)
@@ -543,6 +556,10 @@
 %define X86_PDE_PAE_MBZ_MASK_NO_NX          0xfff0000000000080
 %define X86_PDE_LM_MBZ_MASK_NX              0x0000000000000080
 %define X86_PDE_LM_MBZ_MASK_NO_NX           0x8000000000000080
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_PDE4M_P                         RT_BIT(0)
 %define X86_PDE4M_RW                        RT_BIT(1)
 %define X86_PDE4M_US                        RT_BIT(2)
@@ -565,8 +582,20 @@
 %define X86_PDE2M_PAE_MBZ_MASK_NO_NX        0xfff00000001fe000
 %define X86_PDE2M_LM_MBZ_MASK_NX            0x00000000001fe000
 %define X86_PDE2M_LM_MBZ_MASK_NO_NX         0x80000000001fe000
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_PD_SHIFT                        22
 %define X86_PD_MASK                         0x3ff
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_PD_PAE_SHIFT                    21
 %define X86_PD_PAE_MASK                     0x1ff
 %define X86_PDPE_P                          RT_BIT(0)
@@ -584,6 +613,14 @@
 %define X86_PDPE_LM_MBZ_MASK_NO_NX          0x8000000000000180
 %define X86_PDPE1G_LM_MBZ_MASK_NX           0x000000003fffe000
 %define X86_PDPE1G_LM_MBZ_MASK_NO_NX        0x800000003fffe000
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_PDPT_SHIFT             30
 %define X86_PDPT_MASK_PAE          0x3
 %define X86_PDPT_MASK_AMD64        0x1ff
@@ -598,6 +635,12 @@
 %define X86_PML4E_MBZ_MASK_NX               0x0000000000000080
 %define X86_PML4E_MBZ_MASK_NO_NX            0x8000000000000080
 %define X86_PML4E_NX                        RT_BIT_64(63)
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_PML4_SHIFT              39
 %define X86_PML4_MASK               0x1ff
 %ifndef VBOX_FOR_DTRACE_LIB
@@ -816,6 +859,8 @@
 %define X86_DESC_G                          RT_BIT(23)
 %define X86_SEL_TYPE_SYS_286_TSS_LIMIT_MIN      0x2b
 %define X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN      0x67
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
