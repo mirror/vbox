@@ -192,6 +192,10 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
     /* Set a preliminary maximum size: */
     pMachineView->setMaxGuestSize();
 
+    /* Resend the last resize hint finally: */
+    pMachineView->resendSizeHint();
+
+    /* Return the created view: */
     return pMachineView;
 }
 

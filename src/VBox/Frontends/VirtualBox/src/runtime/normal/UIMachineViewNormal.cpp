@@ -53,8 +53,6 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
                     )
     , m_bIsGuestAutoresizeEnabled(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked())
 {
-    /* Resend the last resize hint: */
-    resendSizeHint();
 }
 
 UIMachineViewNormal::~UIMachineViewNormal()
