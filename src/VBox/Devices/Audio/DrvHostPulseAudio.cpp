@@ -379,7 +379,7 @@ static int drvHostPulseAudioOpen(bool fIn, const char *pszName,
             {
                 LogRel(("PulseAudio: Could not connect input stream \"%s\": %s\n",
                         pszName, pa_strerror(pa_context_errno(g_pContext))));
-                rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
             }
         }
@@ -393,7 +393,7 @@ static int drvHostPulseAudioOpen(bool fIn, const char *pszName,
             {
                 LogRel(("PulseAudio: Could not connect playback stream \"%s\": %s\n",
                         pszName, pa_strerror(pa_context_errno(g_pContext))));
-                rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
             }
         }
@@ -413,7 +413,7 @@ static int drvHostPulseAudioOpen(bool fIn, const char *pszName,
             {
                 LogRel(("PulseAudio: Failed to initialize stream \"%s\" (state %ld)\n",
                         pszName, sstate));
-                rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
             }
         }
@@ -490,7 +490,7 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
         {
             LogRel(("PulseAudio: Failed to start threaded mainloop: %s\n",
                      pa_strerror(pa_context_errno(g_pContext))));
-            rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -504,7 +504,7 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
         {
             LogRel(("PulseAudio: Failed to connect to server: %s\n",
                      pa_strerror(pa_context_errno(g_pContext))));
-            rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -522,7 +522,7 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
                      || cstate == PA_CONTEXT_FAILED)
             {
                 LogRel(("PulseAudio: Failed to initialize context (state %d)\n", cstate));
-                rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
             }
         }

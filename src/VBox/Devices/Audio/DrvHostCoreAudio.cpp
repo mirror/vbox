@@ -749,7 +749,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to determine frame buffer size of the audio input device (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Set the frame buffer size and honor any minimum/maximum restrictions on the device. */
@@ -757,7 +757,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to set frame buffer size for the audio input device (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     ComponentDescription cd;
@@ -771,7 +771,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (cp == 0)
     {
         LogRel(("CoreAudio: Failed to find HAL output component\n")); /** @todo Return error value? */
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Open the default HAL output component. */
@@ -779,7 +779,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to open output component (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Switch the I/O mode for input to on. */
@@ -789,7 +789,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to disable input I/O mode for input stream (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Switch the I/O mode for input to off. This is important, as this is a pure input stream. */
@@ -799,7 +799,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to disable output I/O mode for input stream (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Set the default audio input device as the device for the new AudioUnit. */
@@ -808,7 +808,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to set current device (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /*
@@ -825,7 +825,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to register input callback (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Fetch the current stream format of the device. */
@@ -835,7 +835,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to get device format (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Create an AudioStreamBasicDescription based on our required audio settings. */
@@ -856,7 +856,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
         {
             LogRel(("CoreAudio: Failed to create the audio converte(%RI32). Input Format=%d, Output Foramt=%d\n",
                      err, pStreamIn->deviceFormat, pStreamIn->streamFormat));
-            return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+            return VERR_AUDIO_BACKEND_INIT_FAILED;
         }
 
         if (   pStreamIn->deviceFormat.mChannelsPerFrame == 1 /* Mono */
@@ -875,7 +875,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
             if (err != noErr)
             {
                 LogRel(("CoreAudio: Failed to set channel mapping for the audio input converter (%RI32)\n", err));
-                return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+                return VERR_AUDIO_BACKEND_INIT_FAILED;
             }
         }
 
@@ -885,7 +885,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
         if (err != noErr)
         {
             LogRel(("CoreAudio: Failed to set input format for input stream (%RI32)\n", err));
-            return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+            return VERR_AUDIO_BACKEND_INIT_FAILED;
         }
 #if 0
         /* Set sample rate converter quality to maximum */
@@ -904,7 +904,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to set output format for input stream (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /*
@@ -916,7 +916,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
                                1, &cFrames, sizeof(cFrames));
     if (err != noErr)    {
         LogRel(("CoreAudio: Failed to set maximum frame buffer size for input stream (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Finally initialize the new AudioUnit. */
@@ -924,7 +924,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to initialize audio unit for input stream (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     uSize = sizeof(pStreamIn->deviceFormat);
@@ -933,7 +933,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to get input device format (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /*
@@ -947,7 +947,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to get maximum frame buffer size from input audio device (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Calculate the ratio between the device and the stream sample rate. */
@@ -1094,7 +1094,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to determine frame buffer size of the audio output device (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Set the frame buffer size and honor any minimum/maximum restrictions on the device. */
@@ -1102,7 +1102,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to set frame buffer size for the audio output device (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     ComponentDescription cd;
@@ -1116,7 +1116,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (cp == 0)
     {
         LogRel(("CoreAudio: Failed to find HAL output component\n")); /** @todo Return error value? */
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Open the default HAL output component. */
@@ -1124,7 +1124,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to open output component (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Switch the I/O mode for output to on. */
@@ -1134,7 +1134,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to disable I/O mode for output stream (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Set the default audio output device as the device for the new AudioUnit. */
@@ -1143,7 +1143,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to set current device for output stream (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /*
@@ -1160,7 +1160,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to register output callback (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Fetch the current stream format of the device. */
@@ -1170,7 +1170,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to get device format (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Create an AudioStreamBasicDescription based on our required audio settings. */
@@ -1187,7 +1187,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to set stream format for output stream (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     uSize = sizeof(pStreamOut->deviceFormat);
@@ -1196,7 +1196,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to retrieve device format for output stream (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /*
@@ -1209,7 +1209,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to set maximum frame buffer size for output AudioUnit (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Finally initialize the new AudioUnit. */
@@ -1217,7 +1217,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to initialize the output audio device (%RI32)\n", err));
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /*
@@ -1233,7 +1233,7 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
         LogRel(("CoreAudio: Failed to get maximum frame buffer size from output audio device (%RI32)\n", err));
 
         AudioUnitUninitialize(pStreamOut->audioUnit);
-        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /*
