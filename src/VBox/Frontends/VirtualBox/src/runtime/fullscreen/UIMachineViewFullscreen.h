@@ -35,7 +35,7 @@ protected:
 #endif
     );
     /* Fullscreen machine-view destructor: */
-    virtual ~UIMachineViewFullscreen();
+    virtual ~UIMachineViewFullscreen() {}
 
 private slots:
 

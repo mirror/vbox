@@ -66,15 +66,6 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
     prepareSeamless();
 }
 
-UIMachineViewSeamless::~UIMachineViewSeamless()
-{
-    /* Cleanup seamless mode: */
-    cleanupSeamless();
-
-    /* Cleanup frame buffer: */
-    cleanupFrameBuffer();
-}
-
 void UIMachineViewSeamless::sltAdditionsStateChanged()
 {
     adjustGuestScreenSize();

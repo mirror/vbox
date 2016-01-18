@@ -57,12 +57,6 @@ UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
 {
 }
 
-UIMachineViewScale::~UIMachineViewScale()
-{
-    /* Cleanup frame buffer: */
-    cleanupFrameBuffer();
-}
-
 void UIMachineViewScale::sltPerformGuestScale()
 {
     /* Adjust frame-buffer scaled-size: */

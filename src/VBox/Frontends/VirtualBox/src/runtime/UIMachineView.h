@@ -169,24 +169,25 @@ protected:
 #endif /* VBOX_WITH_VIDEOHWACCEL */
     );
     /* Machine-view destructor: */
-    virtual ~UIMachineView();
+    virtual ~UIMachineView() {}
 
     /* Prepare routines: */
-    void prepareViewport();
-    void prepareFrameBuffer();
+    virtual void loadMachineViewSettings();
+    virtual void prepareViewport();
+    virtual void prepareFrameBuffer();
     virtual void prepareCommon();
     virtual void prepareFilters();
     virtual void prepareConnections();
     virtual void prepareConsoleConnections();
-    void loadMachineViewSettings();
 
     /* Cleanup routines: */
-    //virtual void saveMachineViewSettings() {}
     //virtual void cleanupConsoleConnections() {}
+    //virtual void cleanupConnections() {}
     //virtual void cleanupFilters() {}
     //virtual void cleanupCommon() {}
     virtual void cleanupFrameBuffer();
     //virtual void cleanupViewport();
+    //virtual void saveMachineViewSettings() {}
 
     /** Returns the session UI reference. */
     UISession* uisession() const;

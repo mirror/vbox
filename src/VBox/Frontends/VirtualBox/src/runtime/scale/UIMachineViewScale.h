@@ -35,7 +35,7 @@ protected:
 #endif
     );
     /* Scale machine-view destructor: */
-    virtual ~UIMachineViewScale();
+    virtual ~UIMachineViewScale() {}
 
 private slots:
 

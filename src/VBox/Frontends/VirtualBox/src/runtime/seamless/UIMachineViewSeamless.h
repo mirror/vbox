@@ -35,7 +35,7 @@ protected:
 #endif
     );
     /* Seamless machine-view destructor: */
-    virtual ~UIMachineViewSeamless();
+    virtual ~UIMachineViewSeamless() { cleanupSeamless(); }
 
 private slots:
 

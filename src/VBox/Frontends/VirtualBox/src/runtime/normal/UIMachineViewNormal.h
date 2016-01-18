@@ -35,7 +35,7 @@ protected:
 #endif
     );
     /* Normal machine-view destructor: */
-    virtual ~UIMachineViewNormal();
+    virtual ~UIMachineViewNormal() {}
 
 private slots:
 

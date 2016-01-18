@@ -55,12 +55,6 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
 {
 }
 
-UIMachineViewNormal::~UIMachineViewNormal()
-{
-    /* Cleanup frame buffer: */
-    cleanupFrameBuffer();
-}
-
 void UIMachineViewNormal::sltAdditionsStateChanged()
 {
     adjustGuestScreenSize();

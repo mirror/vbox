@@ -60,12 +60,6 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
 {
 }
 
-UIMachineViewFullscreen::~UIMachineViewFullscreen()
-{
-    /* Cleanup frame buffer: */
-    cleanupFrameBuffer();
-}
-
 void UIMachineViewFullscreen::sltAdditionsStateChanged()
 {
     adjustGuestScreenSize();

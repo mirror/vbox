@@ -170,6 +170,15 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
             break;
     }
 
+    /* Load machine-view settings: */
+    pMachineView->loadMachineViewSettings();
+
+    /* Prepare viewport: */
+    pMachineView->prepareViewport();
+
+    /* Prepare frame-buffer: */
+    pMachineView->prepareFrameBuffer();
+
     /* Prepare common things: */
     pMachineView->prepareCommon();
 
@@ -204,6 +213,9 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
 {
     if (!pMachineView)
         return;
+
+    /* Cleanup frame-buffer: */
+    pMachineView->cleanupFrameBuffer();
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     if (pMachineView->m_pDnDHandler)
@@ -610,18 +622,27 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_fIsDraggingFromGuest(false)
 #endif
 {
-    /* Load machine view settings: */
-    loadMachineViewSettings();
-
-    /* Prepare viewport: */
-    prepareViewport();
-
-    /* Prepare frame buffer: */
-    prepareFrameBuffer();
 }
 
-UIMachineView::~UIMachineView()
+void UIMachineView::loadMachineViewSettings()
 {
+    /* Global settings: */
+    {
+        /* Remember the maximum guest size policy for telling the guest about
+         * video modes we like: */
+        QString maxGuestSize = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
+        if ((maxGuestSize == QString::null) || (maxGuestSize == "auto"))
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Automatic;
+        else if (maxGuestSize == "any")
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Any;
+        else  /** @todo Mea culpa, but what about error checking? */
+        {
+            int width  = maxGuestSize.section(',', 0, 0).toInt();
+            int height = maxGuestSize.section(',', 1, 1).toInt();
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Fixed;
+            m_fixedMaxGuestSize = QSize(width, height);
+        }
+    }
 }
 
 void UIMachineView::prepareViewport()
@@ -801,27 +822,6 @@ void UIMachineView::prepareConsoleConnections()
 {
     /* Machine state-change updater: */
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
-}
-
-void UIMachineView::loadMachineViewSettings()
-{
-    /* Global settings: */
-    {
-        /* Remember the maximum guest size policy for telling the guest about
-         * video modes we like: */
-        QString maxGuestSize = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
-        if ((maxGuestSize == QString::null) || (maxGuestSize == "auto"))
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Automatic;
-        else if (maxGuestSize == "any")
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Any;
-        else  /** @todo Mea culpa, but what about error checking? */
-        {
-            int width  = maxGuestSize.section(',', 0, 0).toInt();
-            int height = maxGuestSize.section(',', 1, 1).toInt();
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Fixed;
-            m_fixedMaxGuestSize = QSize(width, height);
-        }
-    }
 }
 
 void UIMachineView::cleanupFrameBuffer()
