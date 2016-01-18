@@ -638,117 +638,128 @@ bool UIKeyboardHandler::macEventFilter(const void *pvCocoaEvent, EventRef event,
 
 bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
 {
-    /* Check if some system event should be filtered-out.
-     * Returning 'true' means filtering-out,
-     * Returning 'false' means passing event to Qt. */
-    bool fResult = false; /* Pass to Qt by default: */
-
-    /* Skip this event if m_fSkipKeyboardEvents is set by winSkipKeyboardEvents(). */
+    /* Ignore this event if m_fSkipKeyboardEvents is set by winSkipKeyboardEvents(). */
     if (m_fSkipKeyboardEvents)
         return false;
 
+    /* Check if some system event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    bool fResult = false; /* Pass to Qt by default. */
+
+    /* Depending on message type: */
     switch (pMsg->message)
     {
+        /* Watch for key-events: */
         case WM_KEYDOWN:
         case WM_KEYUP:
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
         {
-            /* Check for the special flag possibly set at the end of this function: */
+            /* Check for our own special flag to ignore this event.
+             * That flag could only be set later in this function
+             * so having it here means this event came here
+             * for the second time already. */
             if (pMsg->lParam & (0x1 << 25))
             {
+                /* Remove that flag as well: */
                 pMsg->lParam &= ~(0x1 << 25);
                 fResult = false;
                 break;
             }
 
-            /* Scancodes 0x80 and 0x00 are ignored: */
-            unsigned scan = (pMsg->lParam >> 16) & 0x7F;
-            if (!scan)
+            /* Scan codes 0x80 and 0x00 should be filtered out: */
+            unsigned uScan = (pMsg->lParam >> 16) & 0x7F;
+            if (!uScan)
             {
                 fResult = true;
                 break;
             }
 
-            int vkey = pMsg->wParam;
+            /* Get the virtual key: */
+            int iVKey = pMsg->wParam;
 
-            int flags = 0;
+            /* Calculate flags: */
+            int iFlags = 0;
             if (pMsg->lParam & 0x1000000)
-                flags |= KeyExtended;
+                iFlags |= KeyExtended;
             if (!(pMsg->lParam & 0x80000000))
-                flags |= KeyPressed;
+                iFlags |= KeyPressed;
 
-            /* If present - why not just assert this? */
-            if (m_pAltGrMonitor)
+            /* Make sure AltGr monitor exists: */
+            AssertPtrReturn(m_pAltGrMonitor, false);
             {
-                /* Bail out if we are sure that this is a fake left control. */
-                if (m_pAltGrMonitor->isCurrentEventDefinitelyFake(scan, flags & KeyPressed, flags & KeyExtended))
+                /* Filter event out if we are sure that this is a fake left control event: */
+                if (m_pAltGrMonitor->isCurrentEventDefinitelyFake(uScan, iFlags & KeyPressed, iFlags & KeyExtended))
                 {
                     fResult = true;
                     break;
                 }
                 /* Update AltGR monitor state from key-event: */
-                m_pAltGrMonitor->updateStateFromKeyEvent(scan, flags & KeyPressed, flags & KeyExtended);
+                m_pAltGrMonitor->updateStateFromKeyEvent(uScan, iFlags & KeyPressed, iFlags & KeyExtended);
                 /* And release left Ctrl key early (if required): */
                 if (m_pAltGrMonitor->isLeftControlReleaseNeeded())
                     keyboard().PutScancode(0x1D | 0x80);
             }
 
             /* Check for special Korean keys. Based on the keyboard layout selected
-             * on the host, the scancode in lParam might be 0x71/0x72 or 0xF1/0xF2.
-             * In either case, we must deliver 0xF1/0xF2 scancode to the guest when
+             * on the host, the scan code in lParam might be 0x71/0x72 or 0xF1/0xF2.
+             * In either case, we must deliver 0xF1/0xF2 scan code to the guest when
              * the key is pressed and nothing when it's released. */
-            if (scan == 0x71 || scan == 0x72)
+            if (uScan == 0x71 || uScan == 0x72)
             {
-                scan |= 0x80;
-                flags = KeyPressed;     /* Because a release would be ignored. */
-                vkey  = VK_PROCESSKEY;  /* In case it was 0xFF */
+                uScan |= 0x80;
+                iFlags = KeyPressed;   /* Because a release would be ignored. */
+                iVKey = VK_PROCESSKEY; /* In case it was 0xFF. */
             }
 
             /* When one of the SHIFT keys is held and one of the cursor movement
              * keys is pressed, Windows duplicates SHIFT press/release messages,
-             * but with the virtual key code set to 0xFF. These virtual keys are also
-             * sent in some other situations (Pause, PrtScn, etc.). Ignore suc messages. */
-            if (vkey == 0xFF)
+             * but with the virtual keycode set to 0xFF. These virtual keys are also
+             * sent in some other situations (Pause, PrtScn, etc.). Filter out such messages. */
+            if (iVKey == 0xFF)
             {
                 fResult = true;
                 break;
             }
 
-            switch (vkey)
+            /* Handle special virtual keys: */
+            switch (iVKey)
             {
                 case VK_SHIFT:
                 case VK_CONTROL:
                 case VK_MENU:
                 {
                     /* Overcome Win32 modifier key generalization: */
-                    int keyscan = scan;
-                    if (flags & KeyExtended)
-                        keyscan |= 0xE000;
-                    switch (keyscan)
+                    int iKeyscan = uScan;
+                    if (iFlags & KeyExtended)
+                        iKeyscan |= 0xE000;
+                    switch (iKeyscan)
                     {
-                        case 0x002A: vkey = VK_LSHIFT; break;
-                        case 0x0036: vkey = VK_RSHIFT; break;
-                        case 0x001D: vkey = VK_LCONTROL; break;
-                        case 0xE01D: vkey = VK_RCONTROL; break;
-                        case 0x0038: vkey = VK_LMENU; break;
-                        case 0xE038: vkey = VK_RMENU; break;
+                        case 0x002A: iVKey = VK_LSHIFT;   break;
+                        case 0x0036: iVKey = VK_RSHIFT;   break;
+                        case 0x001D: iVKey = VK_LCONTROL; break;
+                        case 0xE01D: iVKey = VK_RCONTROL; break;
+                        case 0x0038: iVKey = VK_LMENU;    break;
+                        case 0xE038: iVKey = VK_RMENU;    break;
                     }
                     break;
                 }
                 case VK_NUMLOCK:
                     /* Win32 sets the extended bit for the NumLock key. Reset it: */
-                    flags &= ~KeyExtended;
+                    iFlags &= ~KeyExtended;
                     break;
                 case VK_SNAPSHOT:
-                    flags |= KeyPrint;
+                    iFlags |= KeyPrint;
                     break;
                 case VK_PAUSE:
-                    flags |= KeyPause;
+                    iFlags |= KeyPause;
                     break;
             }
 
-            bool result = keyEvent(vkey, scan, flags, uScreenId);
+            /* Finally, handle parsed key-event: */
+            fResult = keyEvent(iVKey, uScan, iFlags, uScreenId);
+
             /* Always let Windows see key releases to prevent stuck keys.
              * Hopefully this won't cause any other issues. */
             if (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
@@ -756,13 +767,14 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
                 fResult = false;
                 break;
             }
-            if (!result && m_fIsKeyboardCaptured)
+
+            /* Above keyEvent() returned that it didn't processed the event, but since the
+             * keyboard is captured, we don't want to pass it to Windows. We just want
+             * to let Qt process the message (to handle non-alphanumeric <HOST>+key
+             * shortcuts for example). So send it directly to the window with the
+             * special flag in the reserved area of lParam (to avoid recursion). */
+            if (!fResult && m_fIsKeyboardCaptured)
             {
-                /* keyEvent() returned that it didn't process the message, but since the
-                 * keyboard is captured, we don't want to pass it to Windows. We just want
-                 * to let Qt process the message (to handle non-alphanumeric <HOST>+key
-                 * shortcuts for example). So send it directly to the window with the
-                 * special flag in the reserved area of lParam (to avoid recursion). */
                 ::SendMessage(pMsg->hwnd, pMsg->message,
                               pMsg->wParam, pMsg->lParam | (0x1 << 25));
                 fResult = true;
@@ -770,19 +782,19 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
             }
 
             /* These special keys have to be handled by Windows as well to update the
-             * internal modifier state and to enable/disable the keyboard LED */
-            if (vkey == VK_NUMLOCK || vkey == VK_CAPITAL || vkey == VK_LSHIFT || vkey == VK_RSHIFT)
+             * internal modifier state and to enable/disable the keyboard LED: */
+            if (iVKey == VK_NUMLOCK || iVKey == VK_CAPITAL || iVKey == VK_LSHIFT || iVKey == VK_RSHIFT)
             {
                 fResult = false;
                 break;
             }
 
-            fResult = result;
             break;
         }
         default:
             break;
     }
+
     /* Return result: */
     return fResult;
 }
@@ -1415,11 +1427,14 @@ bool UIKeyboardHandler::macKeyboardEvent(const void *pvCocoaEvent, EventRef even
 
 #elif defined(Q_WS_WIN)
 
+/* static */
 LRESULT CALLBACK UIKeyboardHandler::winKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
+    /* All keyboard class events needs to be handled: */
     if (nCode == HC_ACTION && m_spKeyboardHandler && m_spKeyboardHandler->winKeyboardEvent(wParam, *(KBDLLHOOKSTRUCT*)lParam))
         return 1;
 
+    /* Pass the event along: */
     return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
@@ -1454,6 +1469,7 @@ bool UIKeyboardHandler::winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
         && ((event.scanCode & ~0x80) == 0x21D))
         return true;
 
+    /* Compose the MSG: */
     MSG message;
     message.hwnd = (HWND)m_views[m_iKeyboardHookViewIndex]->winId();
     message.message = msg;
@@ -1465,9 +1481,11 @@ bool UIKeyboardHandler::winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
     if (event.vkCode == VK_RSHIFT)
         message.lParam &= ~0x1000000;
 
-    /* We suppose here that this hook is always called on the main GUI thread */
+    /* Pass event to view's event handler: */
+#if QT_VERSION < 0x050000
     long dummyResult;
     return m_views[m_iKeyboardHookViewIndex]->winEvent(&message, &dummyResult);
+#endif /* QT_VERSION < 0x050000 */
 }
 
 #endif /* Q_WS_WIN */

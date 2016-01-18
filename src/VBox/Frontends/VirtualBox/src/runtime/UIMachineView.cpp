@@ -1736,6 +1736,7 @@ bool UIMachineView::macEvent(const void *pvCocoaEvent, EventRef event)
 
 bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
 {
+    /* Make sure arguments valid: */
     AssertPtrReturn(pMsg, false);
 
     /* Check if some system event should be filtered out.
@@ -1744,13 +1745,14 @@ bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
     bool fResult = false; /* Pass to Qt by default. */
     switch (pMsg->message)
     {
+        /* Watch for key-events: */
         case WM_KEYDOWN:
         case WM_KEYUP:
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
         {
             /* Can't do COM inter-process calls from a SendMessage handler,
-             * see http://support.microsoft.com/kb/131056 */
+             * see http://support.microsoft.com/kb/131056. */
             if (vboxGlobal().isSeparateProcess() && InSendMessage())
             {
                 PostMessage(pMsg->hwnd, pMsg->message, pMsg->wParam, pMsg->lParam);
@@ -1768,6 +1770,7 @@ bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
             break;
     }
 
+    /* Return result: */
     return fResult;
 }
 
