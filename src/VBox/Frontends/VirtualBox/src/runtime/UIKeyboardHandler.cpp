@@ -250,7 +250,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 
         /* On Win, keyboard grabbing is ineffective,
          * a low-level keyboard-hook is used instead.
-         * It is being installed on window-activate event and uninstalled on window-deactivate.
+         * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
 #elif defined(Q_WS_X11)
@@ -349,7 +349,7 @@ void UIKeyboardHandler::releaseKeyboard()
 
         /* On Win, keyboard grabbing is ineffective,
          * a low-level keyboard-hook is used instead.
-         * It is being installed on window-activate event and uninstalled on window-deactivate.
+         * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
 #elif defined(Q_WS_X11)
@@ -1208,61 +1208,6 @@ CKeyboard& UIKeyboardHandler::keyboard() const
 /* Event handler for prepared listener(s): */
 bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 {
-    /* Check if pWatchedObject object is window: */
-    if (UIMachineWindow *pWatchedWindow = isItListenedWindow(pWatchedObject))
-    {
-        /* Get corresponding screen index: */
-        ulong uScreenId = m_windows.key(pWatchedWindow);
-        NOREF(uScreenId);
-        /* Handle window events: */
-        switch (pEvent->type())
-        {
-#ifdef Q_WS_WIN
-            /* Install/uninstall low-level keyboard-hook on every activation/deactivation to:
-             * a) avoid excess hook calls when we're not active and;
-             * b) be always in front of any other possible hooks. */
-            case QEvent::WindowActivate:
-            {
-                /* If keyboard hook is NOT currently created;
-                 * Or created but NOT for that window: */
-                if (!m_keyboardHook || m_iKeyboardHookViewIndex != uScreenId)
-                {
-                    /* If keyboard-hook present: */
-                    if (m_keyboardHook)
-                    {
-                        /* We should remove existing keyboard-hook first: */
-                        UnhookWindowsHookEx(m_keyboardHook);
-                        m_keyboardHook = NULL;
-                    }
-                    /* Register new keyboard-hook: */
-                    m_keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, UIKeyboardHandler::winKeyboardProc, GetModuleHandle(NULL), 0);
-                    AssertMsg(m_keyboardHook, ("SetWindowsHookEx(): err=%d", GetLastError()));
-                    /* Remember which view had captured keyboard: */
-                    m_iKeyboardHookViewIndex = uScreenId;
-                }
-                break;
-            }
-            case QEvent::WindowDeactivate:
-            {
-                /* If keyboard is currently captured: */
-                if (m_keyboardHook && m_iKeyboardHookViewIndex == uScreenId)
-                {
-                    /* We should remove existing keyboard-hook: */
-                    UnhookWindowsHookEx(m_keyboardHook);
-                    m_keyboardHook = NULL;
-                    /* Remember what there is no window captured keyboard: */
-                    m_iKeyboardHookViewIndex = -1;
-                }
-                break;
-            }
-#endif /* Q_WS_WIN */
-            default:
-                break;
-        }
-    }
-
-    else
-
     /* Check if pWatchedObject object is view: */
     if (UIMachineView *pWatchedView = isItListenedView(pWatchedObject))
     {
@@ -1274,12 +1219,13 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
         {
             case QEvent::FocusIn:
             {
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC)
+
                 /* If keyboard-hook is NOT installed;
                  * Or installed but NOT for that view: */
                 if ((int)uScreenId != m_iKeyboardHookViewIndex)
                 {
-                    /* If keyboard-hook is NOT currently installed: */
+                    /* If keyboard-hook is NOT installed: */
                     if (m_iKeyboardHookViewIndex == -1)
                     {
                         /* Disable mouse and keyboard event compression/delaying
@@ -1300,7 +1246,28 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     /* Update the id: */
                     m_iKeyboardHookViewIndex = uScreenId;
                 }
-#endif /* Q_WS_MAC */
+
+#elif defined(Q_WS_WIN)
+
+                /* If keyboard-hook is NOT installed;
+                 * Or installed but NOT for that view: */
+                if (!m_keyboardHook || (int)uScreenId != m_iKeyboardHookViewIndex)
+                {
+                    /* If keyboard-hook is installed: */
+                    if (m_keyboardHook)
+                    {
+                        /* Uninstall existing keyboard-hook: */
+                        UnhookWindowsHookEx(m_keyboardHook);
+                        m_keyboardHook = 0;
+                    }
+                    /* Install new keyboard-hook: */
+                    m_keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, UIKeyboardHandler::winKeyboardProc, GetModuleHandle(NULL), 0);
+                    AssertMsg(m_keyboardHook, ("SetWindowsHookEx(): err=%d", GetLastError()));
+                    /* Update the id: */
+                    m_iKeyboardHookViewIndex = uScreenId;
+                }
+
+#endif /* Q_WS_WIN */
 
                 if (isSessionRunning())
                 {
@@ -1320,7 +1287,8 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
             }
             case QEvent::FocusOut:
             {
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC)
+
                 /* If keyboard-hook is installed: */
                 if ((int)uScreenId == m_iKeyboardHookViewIndex)
                 {
@@ -1331,7 +1299,20 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     /* Update the id: */
                     m_iKeyboardHookViewIndex = -1;
                 }
-#endif /* Q_WS_MAC */
+
+#elif defined(Q_WS_WIN)
+
+                /* If keyboard-hook is installed: */
+                if (m_keyboardHook)
+                {
+                    /* Uninstall existing keyboard-hook: */
+                    UnhookWindowsHookEx(m_keyboardHook);
+                    m_keyboardHook = 0;
+                    /* Update the id: */
+                    m_iKeyboardHookViewIndex = -1;
+                }
+
+#endif /* Q_WS_WIN */
 
                 /* Release keyboard: */
                 if (isSessionRunning())
