@@ -167,8 +167,6 @@ HRESULT HostUSBDevice::getManufacturer(com::Utf8Str &aManufacturer)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aManufacturer = mUsb->pszManufacturer;
-    if (mUsb->pszManufacturer == NULL || mUsb->pszManufacturer[0] == 0)
-        aManufacturer = USBIdDatabase::findVendor(mUsb->idVendor);
     return S_OK;
 }
 
@@ -178,8 +176,6 @@ HRESULT HostUSBDevice::getProduct(com::Utf8Str &aProduct)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aProduct = mUsb->pszProduct;
-    if (mUsb->pszProduct == NULL || mUsb->pszProduct[0] == 0)
-        aProduct = USBIdDatabase::findProduct(mUsb->idVendor, mUsb->idProduct);
     return S_OK;
 }
 
@@ -315,6 +311,31 @@ HRESULT HostUSBDevice::getBackend(com::Utf8Str &aBackend)
     return S_OK;
 }
 
+
+HRESULT HostUSBDevice::getDeviceInfo(std::vector<com::Utf8Str> &aInfo)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    com::Utf8Str strManufacturer;
+    com::Utf8Str strProduct;
+
+    if (mUsb->pszManufacturer && *mUsb->pszManufacturer)
+        strManufacturer = mUsb->pszManufacturer;
+    else
+        strManufacturer = USBIdDatabase::findVendor(mUsb->idVendor);
+
+    if (mUsb->pszProduct && *mUsb->pszProduct)
+        strProduct = mUsb->pszProduct;
+    else
+        strProduct = USBIdDatabase::findProduct(mUsb->idVendor, mUsb->idProduct);
+
+    aInfo.resize(2);
+    aInfo[0] = strManufacturer;
+    aInfo[1] = strProduct;
+
+    return S_OK;
+}
+
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -334,16 +355,16 @@ com::Utf8Str HostUSBDevice::i_getName()
     bool haveProduct = mUsb->pszProduct && *mUsb->pszProduct;
     if (haveManufacturer && haveProduct)
         name = Utf8StrFmt("%s %s", mUsb->pszManufacturer, mUsb->pszProduct);
-    else if (haveManufacturer)
-        name = mUsb->pszManufacturer;
-    else if (haveProduct)
-        name = mUsb->pszProduct;
     else
     {
         Utf8Str strProduct;
         Utf8Str strVendor = USBIdDatabase::findVendorAndProduct(mUsb->idVendor, mUsb->idProduct, &strProduct);
-        if (strVendor.isNotEmpty() && strProduct.isNotEmpty())
-            name = Utf8StrFmt("%s %s", strVendor.c_str(), strProduct.c_str());
+        if (   (strVendor.isNotEmpty() || haveManufacturer)
+            && (strProduct.isNotEmpty() || haveProduct))
+            name = Utf8StrFmt("%s %s", haveManufacturer ? mUsb->pszManufacturer
+                                                        : strVendor.c_str(),
+                                       haveProduct ? mUsb->pszProduct
+                                                   : strProduct.c_str());
         else
         {
             LogRel(("USB: Unknown USB device detected (idVendor: 0x%04x, idProduct: 0x%04x). Please, report the idVendor and idProduct to virtualbox.org.\n",

@@ -79,6 +79,7 @@ private:
     HRESULT getSpeed(USBConnectionSpeed_T *aSpeed);
     HRESULT getRemote(BOOL *aRemote);
     HRESULT getBackend(com::Utf8Str &aBackend);
+    HRESULT getDeviceInfo(std::vector<com::Utf8Str> &aInfo);
 
     // wrapped IHostUSBDevice properties
     HRESULT getState(USBDeviceState_T *aState);

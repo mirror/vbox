@@ -18020,7 +18020,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IUSBDevice" extends="$unknown"
     uuid="5915d179-83c7-4f2b-a323-9a97f46f4e29"
     wsmap="managed"
-    reservedAttributes="3"
+    reservedAttributes="2"
     >
     <desc>
       The IUSBDevice interface represents a virtual USB device attached to the
@@ -18107,6 +18107,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="backend" type="wstring" readonly="yes">
       <desc>
         The backend which will be used to communicate with this device.
+      </desc>
+    </attribute>
+
+    <attribute name="deviceInfo" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        Array of device attributes as single strings.
+
+        So far the following are used:
+          0: The manufacturer string, if the device doesn't expose the ID one is taken
+             from an internal database or an empty string if none is found.
+          1: The product string, if the device doesn't expose the ID one is taken
+             from an internal database or an empty string if none is found.
       </desc>
     </attribute>
 

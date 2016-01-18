@@ -260,9 +260,9 @@ private:
     HRESULT getPortVersion(USHORT *aPortVersion);
     HRESULT getSpeed(USBConnectionSpeed_T *aSpeed);
     HRESULT getRemote(BOOL *aRemote);
-    HRESULT getName(com::Utf8Str &aName);
     HRESULT getState(USBDeviceState_T *aState);
     HRESULT getBackend(com::Utf8Str &aBackend);
+    HRESULT getDeviceInfo(std::vector<com::Utf8Str> &aInfo);
 
 
     const Guid mId;

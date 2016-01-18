@@ -324,6 +324,16 @@ HRESULT OUSBDevice::getBackend(com::Utf8Str &aBackend)
     return S_OK;
 }
 
+HRESULT OUSBDevice::getDeviceInfo(std::vector<com::Utf8Str> &aInfo)
+{
+    /* this is const, no need to lock */
+    aInfo.resize(2);
+    aInfo[0] = mData.manufacturer;
+    aInfo[1] = mData.product;
+
+    return S_OK;
+}
+
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
