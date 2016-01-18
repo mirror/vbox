@@ -561,7 +561,7 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioRecordingCallback(void            
             err = AudioUnitRender(pStreamIn->audioUnit, pActionFlags, pAudioTS, uBusID, cFrames, &pStreamIn->bufferList);
             if (err != noErr)
             {
-                LogFlowFunc(("Failed rendering audio data (%RI32)\n", err));
+                LogRel2(("CoreAudio: Failed rendering converted audio input data (%RI32)\n", err));
                 rc = VERR_IO_GEN_FAILURE; /** @todo Improve this. */
                 break;
             }
@@ -622,9 +622,14 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioRecordingCallback(void            
         }
         else /* No converter being used. */
         {
+            AssertBreakStmt(pStreamIn->streamFormat.mChannelsPerFrame >= 1,    rc = VERR_INVALID_PARAMETER);
+            AssertBreakStmt(pStreamIn->streamFormat.mBytesPerFrame >= 1,       rc = VERR_INVALID_PARAMETER);
+
+            AssertBreakStmt(pStreamIn->bufferList.mNumberBuffers >= 1,         rc = VERR_INVALID_PARAMETER);
+            AssertBreakStmt(pStreamIn->bufferList.mBuffers[0].mNumberChannels, rc = VERR_INVALID_PARAMETER);
+
             pStreamIn->bufferList.mBuffers[0].mNumberChannels = pStreamIn->streamFormat.mChannelsPerFrame;
             pStreamIn->bufferList.mBuffers[0].mDataByteSize   = pStreamIn->streamFormat.mBytesPerFrame * cFrames;
-            AssertBreakStmt(pStreamIn->bufferList.mBuffers[0].mDataByteSize, rc = VERR_INVALID_PARAMETER);
             pStreamIn->bufferList.mBuffers[0].mData           = RTMemAlloc(pStreamIn->bufferList.mBuffers[0].mDataByteSize);
             if (!pStreamIn->bufferList.mBuffers[0].mData)
             {
@@ -635,17 +640,21 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioRecordingCallback(void            
             err = AudioUnitRender(pStreamIn->audioUnit, pActionFlags, pAudioTS, uBusID, cFrames, &pStreamIn->bufferList);
             if (err != noErr)
             {
-                LogFlowFunc(("Failed rendering audio data (%RI32)\n", err));
+                LogRel2(("CoreAudio: Failed rendering non-coverted audio input data (%RI32)\n", err));
                 rc = VERR_IO_GEN_FAILURE; /** @todo Improve this. */
                 break;
             }
 
-            size_t cbAvail = RT_MIN(RTCircBufFree(pStreamIn->pBuf), pStreamIn->bufferList.mBuffers[0].mDataByteSize);
+            const uint32_t cbDataSize = pStreamIn->bufferList.mBuffers[0].mDataByteSize;
+            const size_t   cbBufFree  = RTCircBufFree(pStreamIn->pBuf);
+                  size_t   cbAvail    = RT_MIN(cbDataSize, cbBufFree);
+
+            LogFlowFunc(("cbDataSize=%RU32, cbBufFree=%zu, cbAvail=%zu\n", cbDataSize, cbBufFree, cbAvail));
 
             /* Iterate as long as data is available. */
             uint8_t *puDst = NULL;
             uint32_t cbWrittenTotal = 0;
-            while(cbAvail)
+            while (cbAvail)
             {
                 /* Try to acquire the necessary space from the ring buffer. */
                 size_t cbToWrite = 0;
@@ -653,7 +662,7 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioRecordingCallback(void            
                 if (!cbToWrite)
                     break;
 
-                /* Copy the data from the core audio buffer to the ring buffer. */
+                /* Copy the data from the Core Audio buffer to the ring buffer. */
                 memcpy(puDst, (uint8_t *)pStreamIn->bufferList.mBuffers[0].mData + cbWrittenTotal, cbToWrite);
 
                 /* Release the ring buffer, so the main thread could start reading this data. */
@@ -664,6 +673,8 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioRecordingCallback(void            
                 Assert(cbAvail >= cbToWrite);
                 cbAvail -= cbToWrite;
             }
+
+            LogFlowFunc(("cbWrittenTotal=%RU32, cbLeft=%zu\n", cbWrittenTotal, cbAvail));
         }
 
     } while (0);
@@ -674,6 +685,7 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioRecordingCallback(void            
         pStreamIn->bufferList.mBuffers[0].mData = NULL;
     }
 
+    LogFlowFuncLeaveRC(rc);
     return err;
 }
 
@@ -759,6 +771,8 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
         LogRel(("CoreAudio: Failed to set frame buffer size for the audio input device (%RI32)\n", err));
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
+
+    LogFlowFunc(("cFrames=%RU32\n", cFrames));
 
     ComponentDescription cd;
     RT_ZERO(cd);
@@ -881,7 +895,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
 
         /* Set the new input format description for the stream. */
         err = AudioUnitSetProperty(pStreamIn->audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input,
-                                   1, &pStreamIn->deviceFormat, sizeof(pStreamIn->deviceFormat));
+                                   1, &pStreamIn->streamFormat, sizeof(pStreamIn->streamFormat));
         if (err != noErr)
         {
             LogRel(("CoreAudio: Failed to set input format for input stream (%RI32)\n", err));
@@ -897,14 +911,16 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
 #endif
         LogRel(("CoreAudio: Input converter is active\n"));
     }
-
-    /* Set the new output format description for the stream. */
-    err = AudioUnitSetProperty(pStreamIn->audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output,
-                               1, &pStreamIn->deviceFormat, sizeof(pStreamIn->deviceFormat));
-    if (err != noErr)
+    else
     {
-        LogRel(("CoreAudio: Failed to set output format for input stream (%RI32)\n", err));
-        return VERR_AUDIO_BACKEND_INIT_FAILED;
+        /* Set the new output format description for the stream. */
+        err = AudioUnitSetProperty(pStreamIn->audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output,
+                                   1, &pStreamIn->streamFormat, sizeof(pStreamIn->streamFormat));
+        if (err != noErr)
+        {
+            LogRel(("CoreAudio: Failed to set output format for input stream (%RI32)\n", err));
+            return VERR_AUDIO_BACKEND_INIT_FAILED; /** @todo Fudge! */
+        }
     }
 
     /*
@@ -942,7 +958,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
      * frame buffer size after the AudioUnit was initialized.
      */
     uSize = sizeof(cFrames);
-    err = AudioUnitGetProperty(pStreamIn->audioUnit, kAudioUnitProperty_MaximumFramesPerSlice,kAudioUnitScope_Global,
+    err = AudioUnitGetProperty(pStreamIn->audioUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global,
                                0, &cFrames, &uSize);
     if (err != noErr)
     {
@@ -971,7 +987,10 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
      * The result is always multiplied by the channels per frame to get the
      * samples count.
      */
-    UInt32 cSamples = cFrames * pStreamIn->streamFormat.mChannelsPerFrame;
+    UInt32 cSamples = RT_MAX(cFrames,
+                             (cFrames * pStreamIn->deviceFormat.mBytesPerFrame * pStreamIn->sampleRatio)
+                              / pStreamIn->streamFormat.mBytesPerFrame)
+                             * pStreamIn->streamFormat.mChannelsPerFrame;
     if (!cSamples)
     {
         LogRel(("CoreAudio: Failed to determine samples buffer count input stream\n"));
@@ -1337,12 +1356,13 @@ static DECLCALLBACK(int) drvHostCoreAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
     do
     {
         size_t cbBuf = AudioMixBufSizeBytes(&pHstStrmIn->MixBuf);
-        size_t cbToWrite = RT_MIN(cbBuf, RTCircBufFree(pStreamIn->pBuf));
-        LogFlowFunc(("cbToWrite=%zu\n", cbToWrite));
+        size_t cbToWrite = RT_MIN(cbBuf, RTCircBufUsed(pStreamIn->pBuf));
 
         uint32_t cWritten, cbWritten;
         uint8_t *puBuf;
         size_t   cbToRead;
+
+        LogFlowFunc(("cbBuf=%zu, cbToWrite=%zu\n", cbBuf, cbToWrite));
 
         while (cbToWrite)
         {
@@ -1364,24 +1384,28 @@ static DECLCALLBACK(int) drvHostCoreAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
             RTCircBufReleaseReadBlock(pStreamIn->pBuf, cbWritten);
 
             Assert(cbToWrite >= cbWritten);
-            cbToWrite -= cbWritten;
+            cbToWrite      -= cbWritten;
             cbWrittenTotal += cbWritten;
         }
+
+        LogFlowFunc(("cbToWrite=%zu, cbWrittenTotal=%RU32\n", cbToWrite, cbWrittenTotal));
     }
     while (0);
 
     if (RT_SUCCESS(rc))
     {
+        uint32_t cCaptured     = 0;
         uint32_t cWrittenTotal = AUDIOMIXBUF_B2S(&pHstStrmIn->MixBuf, cbWrittenTotal);
         if (cWrittenTotal)
-            AudioMixBufFinish(&pHstStrmIn->MixBuf, cWrittenTotal);
+            rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, cWrittenTotal, &cCaptured);
 
-        LogFlowFunc(("cWrittenTotal=%RU32 (%RU32 bytes)\n", cWrittenTotal, cbWrittenTotal));
+        LogFlowFunc(("cWrittenTotal=%RU32 (%RU32 bytes), cCaptured, rc=%Rrc\n", cWrittenTotal, cbWrittenTotal, cCaptured, rc));
 
         if (pcSamplesCaptured)
-            *pcSamplesCaptured = cWrittenTotal;
+            *pcSamplesCaptured = cCaptured;
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
