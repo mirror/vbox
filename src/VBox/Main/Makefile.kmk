@@ -928,6 +928,21 @@ ifeq ($(KBUILD_TARGET),win)
  VBoxCOM_DEFS.amd64     = _WIN32_WINNT=0x0510
  VBoxCOM_SOURCES       += \
 	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c
+ VBoxCOM_CLEAN          = \
+ 	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
+ 	$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c \
+ 	$(VBoxCOM_0_OUTDIR)/dlldata.c \
+ 	$(VBoxCOM_0_OUTDIR)/VirtualBox.h \
+ 	$(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
+ ifeq ($(KBUILD_TARGET_ARCH),amd64)
+  VBoxCOM_CLEAN        += \
+ 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_i.c \
+ 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_p.c \
+ 	$(VBoxCOM_0_OUTDIR)/old64/dlldata.c \
+ 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox.h \
+ 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox.tlb
+  VBoxCOM_BLDDIRS      = $(VBoxCOM_0_OUTDIR)/old64/
+ endif
 else # !win
  VBoxCOM_SOURCES       += \
 	$(VBoxCOM_0_OUTDIR)/VirtualBox_XPCOM_i.c \
@@ -943,6 +958,14 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  LIBRARIES += VBoxCOM-x86
  VBoxCOM-x86_TEMPLATE = VBoxMainLib-x86
  VBoxCOM-x86_EXTENDS  = VBoxCOM
+ ifeq ($(KBUILD_TARGET),win)
+  VBoxCOM-x86_CLEAN   = \
+ 	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
+ 	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c \
+ 	$(VBoxCOM-x86_0_OUTDIR)/dlldata.c \
+ 	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
+ 	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox.tlb
+ endif
 endif
 
 # -MD version for the GUI in -MDd builds.
@@ -1011,7 +1034,12 @@ endif
 
 if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  #
- # Experimental COM proxy + stub DLL.
+ # Experimental COM proxy + stub DLL w/ automatic registration updating.
+ #
+ # The Legacy stub is for older 64-bit windows versions (pre Windows 7) as we
+ # were having various problems on windows server 2003 and 2008 with the code
+ # MIDL generated.  Also, in windows 7 there are some potentially interesting
+ # changes in the generated code where it uses new helpers from OLE32.
  #
  DLLS += VBoxProxyStub
  VBoxProxyStub_TEMPLATE = VBOXMAINCOMP
@@ -1028,6 +1056,19 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  	src-all/win/VBoxProxyStub.rc \
  	src-all/win/VBoxProxyStub.c
   src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
+
+ DLLS += VBoxProxyStubLegacy
+ VBoxProxyStubLegacy_TEMPLATE = VBOXMAINCOMP
+ VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
+ VBoxProxyStubLegacy_DEFS     = $(VBoxProxyStub_DEFS) VBOX_IN_PROXY_STUB_LEGACY
+ VBoxProxyStubLegacy_INCS     = $(VBoxCOM_0_OUTDIR)/old64/
+ VBoxProxyStubLegacy_SOURCES  = \
+ 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_p.c \
+ 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_i.c \
+ 	src-all/win/VBoxProxyStub.def \
+ 	src-all/win/VBoxProxyStub.rc \
+ 	src-all/win/VBoxProxyStub.c
+  src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/old64/VirtualBox.tlb
 
  ifdef VBOX_WITH_32_ON_64_MAIN_API
   DLLS += VBoxProxyStub-x86
@@ -1091,18 +1132,39 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_XPCOM_i.c: $(VBOX_PATH_MAIN_SRC)/idl/xpidl_iid.xs
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
 
+# Note! Because we've got a different proxy stub DLL for pre windows 7 64-bit hosts, we target windows 7 for AMD64.
+#       The output is different and hopefully more efficient, at least memory wise (using more helpers in OLE32).
 $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.h \
 $(if $(VBOX_WITH_MIDL_PROXY_STUB),+ $(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM_0_OUTDIR)/dlldata.c,) \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_WIN_MIDL) /nologo \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64" && "$(KBUILD_HOST)" == "win",/env amd64,/env win32) \
-		/robust /protocol all /target NT51 \
+		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64" && "$(KBUILD_HOST)" == "win" \
+		,/env amd64 /robust /protocol all /target NT61\
+		,/env win32 /robust /protocol all /target NT51) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
+
+if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET_ARCH)" == "amd64"
+# -Windows Server 2003 AMD64 SP1 does not like the result when using '/protocol all' and '/target NT51'.
+# -Vista AMD64 SP1 and Windows Server 2008 AMD64 seems to have some objections as well, but it seemed
+#  that using an older MIDL compiler (v7.00.0499 instead of v7.00.0555) helps. But the W2K3 fix also works.
+$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_i.c \
++ $(VBoxCOM_0_OUTDIR)/old64/VirtualBox_p.c\
++ $(VBoxCOM_0_OUTDIR)/old64/dlldata.c \
++ $(VBoxCOM_0_OUTDIR)/old64/VirtualBox.h \
++ $(VBoxCOM_0_OUTDIR)/old64/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
+	$(VBOX_WIN_MIDL) /nologo \
+		/env win64 /x64 /robust /target NT50 \
+		/out $(call VBOX_FN_MAKE_WIN_PATH,$(dir $@)) \
+		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
+		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
+		/I idl \
+		$(call VBOX_FN_MAKE_WIN_PATH,$<)
+endif
 
 $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \

@@ -6,7 +6,7 @@ REM (both inproc and out-of-process)
 REM
 
 REM
-REM Copyright (C) 2006-2015 Oracle Corporation
+REM Copyright (C) 2006-2016 Oracle Corporation
 REM
 REM This file is part of VirtualBox Open Source Edition (OSE), as
 REM available from http://www.virtualbox.org. This file is free software;
@@ -120,8 +120,6 @@ REM
 REM Parse arguments.
 REM
 set fNoProxy=0
-if "%WinVerMajor%" == "5" set fNoProxy=1
-if "%WinVerMajor%" == "4" set fNoProxy=1
 set fUninstallOnly=0
 
 :arg_loop
@@ -172,18 +170,28 @@ goto end
 
 REM Unregister all first, then register them. The order matters here.
 :register_amd64
+if "%WinVerMajor%" == "5" goto register_amd64_legacy
+if not "%WinVerMajor%" == "6" goto register_amd64_not_legacy
+if not "%WinVerMinor%" == "0" goto register_amd64_not_legacy
+:register_amd64_legacy
+set s64BitProxyStub=VBoxProxyStubLegacy.dll
+goto register_amd64_begin
+:register_amd64_not_legacy
+set s64BitProxyStub=VBoxProxyStub.dll
+:register_amd64_begin
+echo s64BitProxyStub=%s64BitProxyStub%
 @echo on
 "%_VBOX_DIR%VBoxSVC.exe" /UnregServer
 %windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxC.dll"
 %windir%\syswow64\regsvr32 /s /u "%_VBOX_DIR%x86\VBoxClient-x86.dll"
-%windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxProxyStub.dll"
+%windir%\system32\regsvr32 /s /u "%_VBOX_DIR%%s64BitProxyStub%"
 %windir%\syswow64\regsvr32 /s /u "%_VBOX_DIR%x86\VBoxProxyStub-x86.dll"
 if %fUninstallOnly% == 1 goto end
 "%_VBOX_DIR%VBoxSVC.exe" /RegServer
 %windir%\system32\regsvr32 /s    "%_VBOX_DIR%VBoxC.dll"
 %windir%\syswow64\regsvr32 /s    "%_VBOX_DIR%x86\VBoxClient-x86.dll"
 if %fNoProxy% == 1 goto end
-if exist "%_VBOX_DIR%VBoxProxyStub.dll"         %windir%\system32\regsvr32 /s "%_VBOX_DIR%VBoxProxyStub.dll"
+if exist "%_VBOX_DIR%%s64BitProxyStub%"         %windir%\system32\regsvr32 /s "%_VBOX_DIR%%s64BitProxyStub%"
 if exist "%_VBOX_DIR%x86\VBoxProxyStub-x86.dll" %windir%\syswow64\regsvr32 /s "%_VBOX_DIR%x86\VBoxProxyStub-x86.dll"
 @echo off
 

@@ -69,6 +69,19 @@
 # define VBSP_LOG_DEL_KEY(a)        do { } while (0)
 #endif
 
+/**
+ * Selects the proxy stub DLL based on 32-on-64-bit and host OS version.
+ *
+ * The legacy DLL covers 64-bit pre Windows 7 versions of Windows. W2K3-amd64
+ * has trouble parsing the result when MIDL /target NT51 or higher. Vista and
+ * windows server 2008 seems to have trouble with newer IDL compilers.
+ */
+#define VBPS_PROXY_STUB_FILE(a_fIs32On64) \
+    ( (a_fIs32On64) ? "x86\\VBoxProxyStub-x86.dll" \
+      : RT_MAKE_U64(((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMinorVersion, \
+                    ((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMajorVersion) >= RT_MAKE_U64(1/*Lo*/,6/*Hi*/) \
+        ? "VBoxProxyStub.dll" : "VBoxProxyStubLegacy.dll" )
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -141,6 +154,28 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 
             /* Init IPRT. */
             RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
+
+#ifdef VBOX_STRICT
+            {
+                /*
+                 * Check that no interface has more than 256 methods in the stub vtable.
+                 */
+                const ProxyFileInfo **ppProxyFile = &g_apProxyFiles[0];
+                const ProxyFileInfo  *pProxyFile;
+                while ((pProxyFile = *ppProxyFile++) != NULL)
+                {
+                    const PCInterfaceStubVtblList * const   papStubVtbls  = pProxyFile->pStubVtblList;
+                    const char * const                     *papszNames    = pProxyFile->pNamesArray;
+                    unsigned                                iIf           = pProxyFile->TableSize;
+                    AssertStmt(iIf < 1024, iIf = 0);
+                    Assert(pProxyFile->TableVersion == 2);
+
+                    while (iIf-- > 0)
+                        AssertMsg(papStubVtbls[iIf]->header.DispatchTableCount <= 256,
+                                  ("%s: DispatchTableCount=%d\n", papszNames[iIf], papStubVtbls[iIf]->header.DispatchTableCount));
+                }
+            }
+#endif
             break;
 
         case DLL_PROCESS_DETACH:
@@ -1106,7 +1141,8 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
     {
         unsigned i = pState->cAltDeletes;
         while (i-- > 0)
-            vbpsDeleteKeyRecursiveA(pState, pState->aAltDeletes[i].hkeyClsid, szClsId, __LINE__);
+            if (pState->aAltDeletes[i].hkeyClsid != NULL)
+                vbpsDeleteKeyRecursiveA(pState, pState->aAltDeletes[i].hkeyClsid, szClsId, __LINE__);
         vbpsDeleteKeyRecursiveA(pState, pState->hkeyClsidRootDst, szClsId, __LINE__);
     }
 
@@ -1231,7 +1267,7 @@ void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwsz
  */
 static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVBoxDir, bool fIs32On64)
 {
-    const char * const pszTypeLibDll = !fIs32On64 ? "VBoxProxyStub.dll" : "x86\\VBoxProxyStub-x86.dll";
+    const char * const pszTypeLibDll = VBPS_PROXY_STUB_FILE(fIs32On64);
     const char * const pszWinXx      = !fIs32On64 ? "win64"             : "win32";
     const char * const pszDescription = "VirtualBox Type Library";
 
@@ -1315,7 +1351,7 @@ static void vbpsUpdateProxyStubRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwsz
      * Register the proxy stub factory class ID.
      * It's simple compared to the VBox classes, thus all the NULL parameters.
      */
-    const char *pszPsDll = !fIs32On64 ? "VBoxProxyStub.dll" : "x86\\VBoxProxyStub-x86.dll";
+    const char *pszPsDll = VBPS_PROXY_STUB_FILE(fIs32On64);
     Assert(pState->fUpdate && !pState->fDelete);
     VbpsRegisterClassId(pState, &g_ProxyClsId, "PSFactoryBuffer", NULL /*pszAppId*/,
                         NULL /*pszClassName*/, NULL /*pszCurClassNameVerSuffix*/, NULL /*pTypeLibId*/,
