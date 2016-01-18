@@ -18104,12 +18104,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="backend" type="wstring" readonly="yes">
-      <desc>
-        The backend which will be used to communicate with this device.
-      </desc>
-    </attribute>
-
     <attribute name="deviceInfo" type="wstring" readonly="yes" safearray="yes">
       <desc>
         Array of device attributes as single strings.
@@ -18119,6 +18113,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              from an internal database or an empty string if none is found.
           1: The product string, if the device doesn't expose the ID one is taken
              from an internal database or an empty string if none is found.
+      </desc>
+    </attribute>
+
+    <attribute name="backend" type="wstring" readonly="yes">
+      <desc>
+        The backend which will be used to communicate with this device.
       </desc>
     </attribute>
 
