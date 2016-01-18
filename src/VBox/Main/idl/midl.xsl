@@ -198,6 +198,11 @@
     object,
     dual,
     oleautomation
+<xsl:if test="$g_fGenProxy = 'yes'">
+  <!-- Indicates to the typelib that we are using a proxy stub DLL and that interfaces
+       should have any ProxyStubClsid32 or TypeLib keys in the registry. -->
+  <xsl:text>    , proxy</xsl:text>
+</xsl:if>
 ]
 <xsl:text>interface </xsl:text>
   <xsl:variable name="name" select="@name"/>
