@@ -812,10 +812,12 @@ static Bool UIKeyboardHandlerCompEvent(Display*, XEvent *pEvent, XPointer pvArg)
 
 bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
 {
-    /* Check if some system event should be filtered-out.
-     * Returning 'true' means filtering-out,
-     * Returning 'false' means passing event to Qt. */
-    bool fResult = false; /* Pass to Qt by default: */
+    /* Check if some system event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    bool fResult = false; /* Pass to Qt by default. */
+
+    /* Depending on event type: */
     switch (pEvent->type)
     {
         /* We have to handle XFocusOut right here as this event is not passed to UIMachineView::event().
@@ -849,14 +851,15 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
             fResult = false;
             break;
         }
+        /* Watch for key-events: */
         case XKeyPress:
         case XKeyRelease:
         {
-            /* Translate the keycode to a PC scan code. */
-            unsigned scan = handleXKeyEvent(pEvent->xkey.display, pEvent->xkey.keycode);
+            /* Translate the keycode to a PC scan code: */
+            unsigned uScan = handleXKeyEvent(pEvent->xkey.display, pEvent->xkey.keycode);
 
-            /* Scancodes 0x00 (no valid translation) and 0x80 are ignored: */
-            if (!(scan & 0x7F))
+            /* Scan codes 0x00 (no valid translation) and 0x80 (extended flag) are ignored: */
+            if (!(uScan & 0x7F))
             {
                 fResult = true;
                 break;
@@ -873,52 +876,59 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
                 break;
             }
 
-            KeySym ks = ::wrapXkbKeycodeToKeysym(pEvent->xkey.display, pEvent->xkey.keycode, 0, 0);
-
-            int flags = 0;
-            if (scan >> 8)
-                flags |= KeyExtended;
+            /* Calculate flags: */
+            int iFlags = 0;
+            if (uScan >> 8)
+                iFlags |= KeyExtended;
             if (pEvent->type == XKeyPress)
-                flags |= KeyPressed;
+                iFlags |= KeyPressed;
 
             /* Remove the extended flag: */
-            scan &= 0x7F;
+            uScan &= 0x7F;
 
-            /* Special Korean keys must send scancode 0xF1/0xF2 when pressed and nothing
-             * when released.
-             */
-            if (scan == 0x71 || scan == 0x72)
+            /* Special Korean keys must send scan code 0xF1/0xF2
+             * when pressed and nothing when released. */
+            if (uScan == 0x71 || uScan == 0x72)
             {
-                if (pEvent->type == XKeyRelease)  /* Ignore. */
+                if (pEvent->type == XKeyRelease)
                 {
                     fResult = true;
                     break;
                 }
-                scan |= 0x80;   /* Re-create the bizarre scancode. */
+                /* Re-create the bizarre scan code: */
+                uScan |= 0x80;
             }
 
+            /* Translate the keycode to a keysym: */
+            KeySym ks = ::wrapXkbKeycodeToKeysym(pEvent->xkey.display, pEvent->xkey.keycode, 0, 0);
+
+            /* Update special flags: */
             switch (ks)
             {
                 case XK_Print:
-                    flags |= KeyPrint;
+                    iFlags |= KeyPrint;
                     break;
                 case XK_Pause:
                     if (pEvent->xkey.state & ControlMask) /* Break */
                     {
                         ks = XK_Break;
-                        flags |= KeyExtended;
-                        scan = 0x46;
+                        iFlags |= KeyExtended;
+                        uScan = 0x46;
                     }
                     else
-                        flags |= KeyPause;
+                        iFlags |= KeyPause;
                     break;
             }
 
-            fResult = keyEvent(ks, scan, flags, uScreenId);
+            /* Finally, handle parsed key-event: */
+            fResult = keyEvent(ks, uScan, iFlags, uScreenId);
+
+            break;
         }
         default:
             break;
     }
+
     /* Return result: */
     return fResult;
 }
@@ -1512,7 +1522,7 @@ bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags
     uint8_t uWhatPressed = fFlags & KeyExtended ? IsExtKeyPressed : IsKeyPressed;
 
     /* If some key was pressed or some previously pressed key was released =>
-     * we are updating the list of pressed keys and preparing scancodes: */
+     * we are updating the list of pressed keys and preparing scan codes: */
     if ((fFlags & KeyPressed) || (m_pressedKeys[uScan] & uWhatPressed))
     {
         /* If HID LEDs sync is disabled or not supported, check if the guest has the
@@ -1521,21 +1531,21 @@ bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags
             if (fFlags & KeyPressed)
                 fixModifierState(pCodes, puCodesCount);
 
-        /* Prepend 'extended' scancode if needed: */
+        /* Prepend 'extended' scan code if needed: */
         if (fFlags & KeyExtended)
             pCodes[(*puCodesCount)++] = 0xE0;
 
         /* Process key-press: */
         if (fFlags & KeyPressed)
         {
-            /* Append scancode: */
+            /* Append scan code: */
             pCodes[(*puCodesCount)++] = uScan;
             m_pressedKeys[uScan] |= uWhatPressed;
         }
         /* Process key-release if that key was pressed before: */
         else if (m_pressedKeys[uScan] & uWhatPressed)
         {
-            /* Append scancode: */
+            /* Append scan code: */
             pCodes[(*puCodesCount)++] = uScan | 0x80;
             m_pressedKeys[uScan] &= ~uWhatPressed;
         }

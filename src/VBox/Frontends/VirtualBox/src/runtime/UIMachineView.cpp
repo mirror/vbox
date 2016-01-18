@@ -1778,6 +1778,7 @@ bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
 
 bool UIMachineView::x11Event(XEvent *pEvent)
 {
+    /* Make sure arguments valid: */
     AssertPtrReturn(pEvent, false);
 
     /* Check if some system event should be filtered out.
@@ -1786,8 +1787,10 @@ bool UIMachineView::x11Event(XEvent *pEvent)
     bool fResult = false; /* Pass to Qt by default. */
     switch (pEvent->type)
     {
+        /* Watch for focus-events: */
         case XFocusIn:
         case XFocusOut:
+        /* Watch for key-events: */
         case XKeyPress:
         case XKeyRelease:
         {
@@ -1805,6 +1808,7 @@ bool UIMachineView::x11Event(XEvent *pEvent)
             break;
     }
 
+    /* Return result: */
     return fResult;
 }
 
