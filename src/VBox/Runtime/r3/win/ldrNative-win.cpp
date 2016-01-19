@@ -176,6 +176,10 @@ int rtldrNativeLoadSystem(const char *pszFilename, const char *pszExt, uint32_t 
     if (cwcSysDir >= MAX_PATH)
         return VERR_FILENAME_TOO_LONG;
 
+/** @todo On w2k3r1/64 winhttp.dll is only found under WinSxS. Try use
+ *        RtlDosApplyFileIsolationRedirection_Ustr to resolve this issue
+ *        (see http-curl.cpp). */
+
     char szPath[RTPATH_MAX];
     char *pszPath = szPath;
     int rc = RTUtf16ToUtf8Ex(wszSysDir, RTSTR_MAX, &pszPath, sizeof(szPath), NULL);

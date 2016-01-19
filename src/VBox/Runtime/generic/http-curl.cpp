@@ -1353,6 +1353,8 @@ static DECLCALLBACK(int) rtHttpWinResolveImports(void *pvUser)
      * winhttp.dll is not present on NT4 and probably was first introduced with XP.
      */
     RTLDRMOD hMod;
+/** @todo triggers on w2k3r1/64; winhttp.dll found under WinSxS. Try use
+ *        RtlDosApplyFileIsolationRedirection_Ustr to resolve this issue. */
     int rc = RTLdrLoadSystem("winhttp.dll", true /*fNoUnload*/, &hMod);
     if (RT_SUCCESS(rc))
     {
