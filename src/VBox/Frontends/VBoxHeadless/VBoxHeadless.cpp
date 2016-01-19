@@ -43,9 +43,14 @@ using namespace com;
 #include <VBox/VBoxVideo.h>
 
 #ifdef VBOX_WITH_VPX
-#include <cstdlib>
-#include <cerrno>
-#include <iprt/process.h>
+# include <cstdlib>
+# include <cerrno>
+# include <iprt/process.h>
+#endif
+
+#ifdef RT_OS_DARWIN
+# include <dlfcn.h>
+# include <sys/mman.h>
 #endif
 
 //#define VBOX_WITH_SAVESTATE_ON_SIGNAL
@@ -586,6 +591,26 @@ static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const cha
 static CComModule _Module;
 #endif
 
+#ifdef RT_OS_DARWIN
+/**
+ * Mac OS X: Really ugly hack to bypass a set-uid check in AppKit.
+ *
+ * This will modify the issetugid() function to always return zero.  This must
+ * be done _before_ AppKit is initialized, otherwise it will refuse to play ball
+ * with us as it distrusts set-uid processes since Snow Leopard.  We, however,
+ * have carefully dropped all root privileges at this point and there should be
+ * no reason for any security concern here.
+ */
+static void hideSetUidRootFromAppKit()
+{
+    /* Find issetguid() and make it always return 0 by modifying the code: */
+    void *pvAddr = dlsym(RTLD_DEFAULT, "issetugid");
+    int rc = mprotect((void *)((uintptr_t)pvAddr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE | PROT_READ | PROT_EXEC);
+    if (!rc)
+        ASMAtomicWriteU32((volatile uint32_t *)pvAddr, 0xccc3c031); /* xor eax, eax; ret; int3 */
+}
+#endif /* RT_OS_DARWIN */
+
 /**
  *  Entry point.
  */
@@ -683,6 +708,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     };
 
     const char *pcszNameOrUUID = NULL;
+
+#ifdef RT_OS_DARWIN
+    hideSetUidRootFromAppKit();
+#endif
 
     // parse the command line
     int ch;
