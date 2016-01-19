@@ -442,11 +442,15 @@ static HRESULT listUsbHost(const ComPtr<IVirtualBox> &pVirtualBox)
             RTPrintf("USB version/speed:  %u/%s\n", usVersion, pszSpeed);
 
             /* optional stuff. */
+            SafeArray<BSTR> CollDevInfo;
             Bstr bstr;
-            CHECK_ERROR_RET(dev, COMGETTER(Manufacturer)(bstr.asOutParam()), 1);
+            CHECK_ERROR_RET(dev, COMGETTER(DeviceInfo)(ComSafeArrayAsOutParam(CollDevInfo)), 1);
+            if (CollDevInfo.size() >= 1)
+                bstr = Bstr(CollDevInfo[0]);
             if (!bstr.isEmpty())
                 RTPrintf("Manufacturer:       %ls\n", bstr.raw());
-            CHECK_ERROR_RET(dev, COMGETTER(Product)(bstr.asOutParam()), 1);
+            if (CollDevInfo.size() >= 2)
+                bstr = Bstr(CollDevInfo[1]);
             if (!bstr.isEmpty())
                 RTPrintf("Product:            %ls\n", bstr.raw());
             CHECK_ERROR_RET(dev, COMGETTER(SerialNumber)(bstr.asOutParam()), 1);
