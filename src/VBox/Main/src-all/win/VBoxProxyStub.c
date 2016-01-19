@@ -1254,7 +1254,7 @@ void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwsz
                         &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, "VBoxSVC.exe", NULL /*N/A*/);
     /* VBoxC */
     VbpsRegisterClassName(pState, "VirtualBox.Session.1", "Session Class", &CLSID_Session, NULL);
-    VbpsRegisterClassName(pState, "VirtualBox.Session", "Session Class", &CLSID_Session, "VirtualBox.Session.1");
+    VbpsRegisterClassName(pState, "VirtualBox.Session", "Session Class", &CLSID_Session, ".1");
     VbpsRegisterClassId(pState, &CLSID_Session, "Session Class", pszAppId, "VirtualBox.Session", ".1",
                         &LIBID_VirtualBox, "InprocServer32", pwszVBoxDir, pszInprocDll, "Free");
 
@@ -1312,9 +1312,6 @@ static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVB
         if (rc == ERROR_SUCCESS)
         {
             RTUTF16 wszBuf[MAX_PATH * 2];
-#if 0
-            size_t  off;
-#endif
 
             /* {UUID}/Major.Minor/0. */
             HKEY hkey0;
@@ -1332,15 +1329,17 @@ static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVB
             /* {UUID}/Major.Minor/FLAGS */
             vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyMajMin, "FLAGS", "0", __LINE__);
 
-#if 0 /* Skip it. It's for non-existing help files and regsvr32 and msi have different ides about trailing slashes. */
             /* {UUID}/Major.Minor/HELPDIR */
             rc = RTUtf16Copy(wszBuf, MAX_PATH, pwszVBoxDir); AssertRC(rc);
-            off = RTUtf16Len(wszBuf);
-            while (off > 2 && wszBuf[off - 2] != ':' && RTPATH_IS_SLASH(wszBuf[off - 1]))
-                off--;
-            wszBuf[off] = '\0';
-            vbpsCreateRegKeyWithDefaultValueAW(pState, hkeyMajMin, "HELPDIR", wszBuf, __LINE__);
+#if 0 /* MSI: trailing slash;  regsvr32/comregister: strip unnecessary trailing slash.  Go with MSI to avoid user issues. */
+            {
+                size_t off = RTUtf16Len(wszBuf);
+                while (off > 2 && wszBuf[off - 2] != ':' && RTPATH_IS_SLASH(wszBuf[off - 1]))
+                    off--;
+                wszBuf[off] = '\0';
+            }
 #endif
+            vbpsCreateRegKeyWithDefaultValueAW(pState, hkeyMajMin, "HELPDIR", wszBuf, __LINE__);
 
             vbpsCloseKey(pState, hkeyMajMin, __LINE__);
         }
@@ -1396,8 +1395,12 @@ static void vbpsUpdateInterfaceRegistrations(VBPSREGSTATE *pState)
     const ProxyFileInfo  *pProxyFile;
     LSTATUS               rc;
     char                  szProxyClsId[CURLY_UUID_STR_BUF_SIZE];
+    char                  szTypeLibId[CURLY_UUID_STR_BUF_SIZE];
+    char                  szTypeLibVersion[64];
 
     vbpsFormatUuidInCurly(szProxyClsId, &g_ProxyClsId);
+    vbpsFormatUuidInCurly(szTypeLibId, &LIBID_VirtualBox);
+    sprintf(szTypeLibVersion, "%u.%u", kTypeLibraryMajorVersion, kTypeLibraryMinorVersion);
 
     Assert(pState->fUpdate && !pState->fDelete);
     rc = vbpsRegOpenInterfaceKeys(pState);
@@ -1438,11 +1441,17 @@ static void vbpsUpdateInterfaceRegistrations(VBPSREGSTATE *pState)
                                                       pszIfNm, &hkeyIfId, __LINE__);
             if (rc == ERROR_SUCCESS)
             {
+                HKEY hkeyTypeLib;
                 vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyIfId, "ProxyStubClsid32", szProxyClsId, __LINE__);
                 vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyIfId, "NumMethods", szMethods, __LINE__);
-                /** @todo Not having the typelib here means we'll have to fix the orphan cleanup
-                 *        code below.
-                 *  Update: MSI puts the typelib here. Hmm. */
+
+                /* The MSI seems to still be putting TypeLib keys here. So, let's do that too. */
+                rc = vbpsCreateRegKeyWithDefaultValueAAEx(pState, hkeyIfId, "TypeLib", szTypeLibId, &hkeyTypeLib, __LINE__);
+                if (rc == ERROR_SUCCESS)
+                {
+                    vbpsSetRegValueAA(pState, hkeyTypeLib, "Version", szTypeLibVersion, __LINE__);
+                    vbpsCloseKey(pState, hkeyTypeLib, __LINE__);
+                }
 
                 vbpsCloseKey(pState, hkeyIfId, __LINE__);
             }
