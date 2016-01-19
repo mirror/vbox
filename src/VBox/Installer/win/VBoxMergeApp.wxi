@@ -82,7 +82,7 @@
     <Component Id="cp_ProxyStub" Guid="CDD09BA4-8D87-4383-DCA6-1CCCF9D11091" Win64="$(var.Property_Win64)">
     <?if $(env.BUILD_TARGET_ARCH) != "x86" ?>
         <!-- AMD64: Only install this proxy stub DLL on Windows 7 and later (OLE32 imports). -->
-        <Condition><![CDATA[(VersionNT >= 610)]]></Condition>
+        <Condition><![CDATA[(VersionNT >= 601)]]></Condition>
     <?endif ?>
         <File Id="file_VBoxProxyStub" Name="VBoxProxyStub.dll" KeyPath="yes"
               Source="$(env.PATH_OUT)\bin\VBoxProxyStub.dll">
@@ -95,7 +95,7 @@
     <?if $(env.BUILD_TARGET_ARCH) != "x86" ?>
     <Component Id="cp_ProxyStubLegacy" Guid="97F12055-5B6D-481C-E8CD-F41D8C733280" Win64="$(var.Property_Win64)">
         <!-- AMD64: Only install this proxy stub DLL pre-Windows 7 (legacy NDR stuff). -->
-        <Condition><![CDATA[(VersionNT < 610)]]></Condition>
+        <Condition><![CDATA[(VersionNT < 601)]]></Condition>
         <File Id="file_VBoxProxyStubLegacy" Name="VBoxProxyStubLegacy.dll" KeyPath="yes"
               Source="$(env.PATH_OUT)\bin\VBoxProxyStubLegacy.dll">
             <Class Id="$(env.VBOX_MIDL_PROXY_CLSID)" Context="InprocServer32"
