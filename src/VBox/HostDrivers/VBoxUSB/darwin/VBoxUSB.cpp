@@ -1106,7 +1106,7 @@ org_virtualbox_VBoxUSBDevice::probe(IOService *pProvider, SInt32 *pi32Score)
     /*
      * It matched. Save the owner in the provider registry (hope that works).
      */
-    IOService *pRet = IOUSBUserClientInit::probe(pProvider, pi32Score);
+    /*IOService *pRet = IOUSBUserClientInit::probe(pProvider, pi32Score); - call always returns NULL on 10.11+ */
     /*AssertMsg(pRet == this, ("pRet=%p this=%p *pi32Score=%d \n", pRet, this, pi32Score ? *pi32Score : 0)); - call always returns NULL on 10.11+ */
     pRet = this;
     m_Owner = Owner;
@@ -1683,7 +1683,7 @@ org_virtualbox_VBoxUSBInterface::probe(IOService *pProvider, SInt32 *pi32Score)
         return NULL;
     }
 
-    IOService *pRet = IOUSBUserClientInit::probe(pProvider, pi32Score);
+    /* IOService *pRet = IOUSBUserClientInit::probe(pProvider, pi32Score); - call always returns NULL on 10.11+ */
     pRet = this;
     *pi32Score = _1G;
     Log(("VBoxUSBInterface::probe: returns %p and *pi32Score=%d - hijack it.\n", pRet, *pi32Score));
