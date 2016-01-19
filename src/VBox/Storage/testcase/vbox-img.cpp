@@ -1777,7 +1777,7 @@ int main(int argc, char *argv[])
 {
     int exitcode = 0;
 
-    int rc = RTR3InitExe(argc, &argv, 0);
+    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_STANDALONE_APP);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 

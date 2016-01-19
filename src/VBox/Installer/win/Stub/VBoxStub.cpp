@@ -801,8 +801,19 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     char **argv = __argv;
     int argc    = __argc;
 
-    /* Check if we're already running and jump out if so. */
-    /* Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
+    /*
+     * Init IPRT. This is _always_ the very first thing we do.
+     */
+    int vrc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_STANDALONE_APP);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
+
+    /*
+     * Check if we're already running and jump out if so.
+     *
+     * Note! Do not use a global namespace ("Global\\") for mutex name here,
+     *       will blow up NT4 compatibility!
+     */
     HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, "VBoxStubInstaller");
     if (   hMutexAppRunning != NULL
         && GetLastError() == ERROR_ALREADY_EXISTS)
@@ -811,16 +822,6 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         CloseHandle(hMutexAppRunning);
         hMutexAppRunning = NULL;
         return RTEXITCODE_FAILURE;
-    }
-
-    /* Init IPRT. */
-    int vrc = RTR3InitExe(argc, &argv, 0);
-    if (RT_FAILURE(vrc))
-    {
-        /* Close the mutex for this application instance. */
-        CloseHandle(hMutexAppRunning);
-        hMutexAppRunning = NULL;
-        return RTMsgInitFailure(vrc);
     }
 
     /*

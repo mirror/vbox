@@ -34,8 +34,12 @@
 typedef struct MYEXPORT
 {
     struct MYEXPORT    *pNext;
-    bool                fNoName;
+    /** Pointer to unmangled name for stdcall (after szName), NULL if not. */
+    char               *pszUnstdcallName;
+    /** Pointer to the exported name. */
+    char const         *pszExportedNm;
     unsigned            uOrdinal;
+    bool                fNoName;
     char                szName[1];
 } MYEXPORT;
 typedef MYEXPORT *PMYEXPORT;
@@ -53,6 +57,7 @@ static const char  *g_apszInputs[8] = { NULL, NULL, NULL, NULL,  NULL, NULL, NUL
 static unsigned     g_cInputs = 0;
 static bool         g_fIgnoreData = true;
 static bool         g_fWithExplictLoadFunction = false;
+static bool         g_fSystemLibrary = false;
 /** @} */
 
 /** Pointer to the export name list head. */
@@ -175,7 +180,7 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
                 psz = leftStrip(psz + wordLength(psz));
             }
 
-            bool     fNoName  = true;
+            bool     fNoName  = false;
             unsigned uOrdinal = ~0U;
             if (*psz == '@')
             {
@@ -195,13 +200,8 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
                 cch = wordLength(psz);
                 if (WORD_CMP(psz, cch, "NONAME"))
                 {
-#if 0
                     fNoName = true;
                     psz = leftStrip(psz + cch);
-#else
-                    fprintf(stderr, "%s:%u: error: NONAME export not implemented.\n", pszInput, iLine);
-                    return RTEXITCODE_FAILURE;
-#endif
                 }
             }
 
@@ -227,9 +227,25 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
             }
 
             /*
+             * Check for stdcall mangling.
+             */
+            size_t   cbExp = sizeof(MYEXPORT) + cchName;
+            unsigned cchStdcall = 0;
+            if (cchName > 3 && *pchName == '_' && isdigit(pchName[cchName - 1]))
+            {
+                if (cchName > 3 && pchName[cchName - 2] == '@')
+                    cchStdcall = 2;
+                else if (cchName > 4 && pchName[cchName - 3] == '@' && isdigit(pchName[cchName - 2]))
+                    cchStdcall = 3;
+                if (cchStdcall)
+                    cbExp += cchName - 1 - cchStdcall;
+            }
+
+            /*
              * Add the export.
              */
-            PMYEXPORT pExp = (PMYEXPORT)malloc(sizeof(*pExp) + cchName);
+
+            PMYEXPORT pExp = (PMYEXPORT)malloc(cbExp);
             if (!pExp)
             {
                 fprintf(stderr, "%s:%u: error: Out of memory.\n", pszInput, iLine);
@@ -237,11 +253,23 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
             }
             memcpy(pExp->szName, pchName, cchName);
             pExp->szName[cchName] = '\0';
-            pExp->uOrdinal = uOrdinal;
-            pExp->fNoName  = fNoName;
-            pExp->pNext    = NULL;
-            *g_ppExpNext   = pExp;
-            g_ppExpNext    = &pExp->pNext;
+            if (!cchStdcall)
+            {
+                pExp->pszUnstdcallName = NULL;
+                pExp->pszExportedNm = pExp->szName;
+            }
+            else
+            {
+                pExp->pszUnstdcallName = &pExp->szName[cchName + 1];
+                memcpy(pExp->pszUnstdcallName, pchName + 1, cchName - 1 - cchStdcall);
+                pExp->pszUnstdcallName[cchName - 1 - cchStdcall] = '\0';
+                pExp->pszExportedNm = pExp->pszUnstdcallName;
+            }
+            pExp->uOrdinal   = uOrdinal;
+            pExp->fNoName    = fNoName;
+            pExp->pNext      = NULL;
+            *g_ppExpNext     = pExp;
+            g_ppExpNext      = &pExp->pNext;
         }
     }
 
@@ -321,13 +349,26 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             ";\n"
             "BEGINCODE\n");
     for (PMYEXPORT pExp = g_pExpHead; pExp; pExp = pExp->pNext)
-        fprintf(pOutput,
-                "BEGINPROC %s\n"
-                "    jmp RTCCPTR_PRE [g_pfn%s xWrtRIP]\n"
-                "ENDPROC   %s\n",
-                pExp->szName,
-                pExp->szName,
-                pExp->szName);
+        if (!pExp->pszUnstdcallName)
+            fprintf(pOutput,
+                    "BEGINPROC %s\n"
+                    "    jmp   RTCCPTR_PRE [g_pfn%s xWrtRIP]\n"
+                    "ENDPROC   %s\n",
+                    pExp->szName, pExp->szName, pExp->szName);
+        else
+            fprintf(pOutput,
+                    "%%ifdef RT_ARCH_X86\n"
+                    "global    %s\n"
+                    "%s:\n"
+                    "    jmp   RTCCPTR_PRE [g_pfn%s xWrtRIP]\n"
+                    "%%else\n"
+                    "BEGINPROC %s\n"
+                    "    jmp   RTCCPTR_PRE [g_pfn%s xWrtRIP]\n"
+                    "ENDPROC   %s\n"
+                    "%%endif\n",
+                    pExp->szName, pExp->szName, pExp->pszUnstdcallName,
+                    pExp->pszUnstdcallName, pExp->pszUnstdcallName, pExp->pszUnstdcallName);
+
     fprintf(pOutput,
             "\n"
             "\n");
@@ -347,11 +388,12 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
                 "global __imp_%s\n"
                 "__imp_%s:\n"
                 "%%endif\n"
-                "g_pfn%s RTCCPTR_DEF ___LazyLoad___%s\n",
+                "g_pfn%s RTCCPTR_DEF ___LazyLoad___%s\n"
+                "\n",
                 pExp->szName,
                 pExp->szName,
-                pExp->szName,
-                pExp->szName);
+                pExp->pszExportedNm,
+                pExp->pszExportedNm);
     fprintf(pOutput,
             "RTCCPTR_DEF 0 ; Terminator entry for traversal.\n"
             "\n"
@@ -368,13 +410,20 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             "; Imported names.\n"
             ";\n"
             "BEGINCODE\n"
-            "g_szLibrary db '%s',0\n"
+            "g_szLibrary:        db '%s',0\n"
+            "\n"
             "g_szzNames:\n",
             g_pszLibrary);
     for (PMYEXPORT pExp = g_pExpHead; pExp; pExp = pExp->pNext)
-        fprintf(pOutput, "g_sz%s: db '%s',0\n", pExp->szName, pExp->szName);
+        if (!pExp->fNoName)
+            fprintf(pOutput, "  g_sz%s:\n    db '%s',0\n", pExp->pszExportedNm, pExp->pszExportedNm);
+        else
+            fprintf(pOutput, "  g_sz%s:\n    db '#%u',0\n", pExp->pszExportedNm, pExp->uOrdinal);
     fprintf(pOutput,
             "g_EndOfNames: db 0\n"
+            "\n"
+            "g_szFailLoadFmt:    db 'Lazy loader failed to load \"%%s\": %%Rrc', 10, 0\n"
+            "g_szFailResolveFmt: db 'Lazy loader failed to resolve symbol \"%%s\" in \"%%s\": %%Rrc', 10, 0\n"
             "\n"
             "\n");
 
@@ -387,31 +436,64 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             ";\n"
             "BEGINCODE\n");
     for (PMYEXPORT pExp = g_pExpHead; pExp; pExp = pExp->pNext)
-        fprintf(pOutput,
-                "___LazyLoad___%s:\n"
-                /* "int3\n" */
-                "%%ifdef RT_ARCH_AMD64\n"
-                "    lea     rax, [g_sz%s wrt rip]\n"
-                "    lea     r10, [g_pfn%s wrt rip]\n"
-                "%%elifdef RT_ARCH_X86\n"
-                "    push    g_sz%s\n"
-                "    push    g_pfn%s\n"
-                "%%else\n"
-                " %%error \"Unsupported architecture\"\n"
-                "%%endif\n"
-                "    call    LazyLoadResolver\n"
-                "%%ifdef RT_ARCH_X86\n"
-                "    add     esp, 8h\n"
-                "%%endif\n"
-                "    jmp     NAME(%s)\n"
-                "\n"
-                ,
-                pExp->szName,
-                pExp->szName,
-                pExp->szName,
-                pExp->szName,
-                pExp->szName,
-                pExp->szName);
+    {
+        if (!pExp->fNoName)
+            fprintf(pOutput,
+                    "___LazyLoad___%s:\n"
+                    /* "int3\n" */
+                    "%%ifdef RT_ARCH_AMD64\n"
+                    "    lea     rax, [g_sz%s wrt rip]\n"
+                    "    lea     r10, [g_pfn%s wrt rip]\n"
+                    "    call    LazyLoadResolver\n"
+                    "%%elifdef RT_ARCH_X86\n"
+                    "    push    g_sz%s\n"
+                    "    push    g_pfn%s\n"
+                    "    call    LazyLoadResolver\n"
+                    "    add     esp, 8h\n"
+                    "%%else\n"
+                    " %%error \"Unsupported architecture\"\n"
+                    "%%endif\n"
+                    ,
+                    pExp->pszExportedNm,
+                    pExp->pszExportedNm,
+                    pExp->pszExportedNm,
+                    pExp->pszExportedNm,
+                    pExp->pszExportedNm);
+        else
+            fprintf(pOutput,
+                    "___LazyLoad___%s:\n"
+                    /* "int3\n" */
+                    "%%ifdef RT_ARCH_AMD64\n"
+                    "    mov     eax, %u\n"
+                    "    lea     r10, [g_pfn%s wrt rip]\n"
+                    "    call    LazyLoadResolver\n"
+                    "%%elifdef RT_ARCH_X86\n"
+                    "    push    %u\n"
+                    "    push    g_pfn%s\n"
+                    "    call    LazyLoadResolver\n"
+                    "    add     esp, 8h\n"
+                    "%%else\n"
+                    " %%error \"Unsupported architecture\"\n"
+                    "%%endif\n"
+                    ,
+                    pExp->pszExportedNm,
+                    pExp->uOrdinal,
+                    pExp->pszExportedNm,
+                    pExp->uOrdinal,
+                    pExp->pszExportedNm);
+        if (!pExp->pszUnstdcallName)
+            fprintf(pOutput, "    jmp     NAME(%s)\n", pExp->szName);
+        else
+            fprintf(pOutput,
+                    "%%ifdef RT_ARCH_X86\n"
+                    "    jmp     %s\n"
+                    "%%else\n"
+                    "    jmp     NAME(%s)\n"
+                    "%%endif\n"
+                    ,
+                    pExp->szName, pExp->szName);
+        fprintf(pOutput, "\n");
+    }
     fprintf(pOutput,
             "\n"
             "\n"
@@ -436,57 +518,141 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
      * The LazyLoading routine returns the module handle in RCX/ECX, caller
      * saved all necessary registers.
      */
+    if (!g_fSystemLibrary)
+        fprintf(pOutput,
+                ";\n"
+                ";SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod,\n"
+                ";                                           uint32_t fFlags, PRTERRINFO pErrInfo);\n"
+                ";\n"
+                "EXTERN_IMP2 SUPR3HardenedLdrLoadAppPriv\n"
+                "%%ifdef IN_RT_R3\n"
+                "extern NAME(RTAssertMsg2Weak)\n"
+                "%%else\n"
+                "EXTERN_IMP2 RTAssertMsg2Weak\n"
+                "%%endif\n"
+                "BEGINCODE\n"
+                "\n"
+                "LazyLoading:\n"
+                "    mov     xCX, [g_hMod xWrtRIP]\n"
+                "    or      xCX, xCX\n"
+                "    jnz     .return\n"
+                "\n"
+                "%%ifdef ASM_CALL64_GCC\n"
+                "    xor     rcx, rcx               ; pErrInfo\n"
+                "    xor     rdx, rdx               ; fFlags (local load)\n"
+                "    lea     rsi, [g_hMod wrt rip]  ; phLdrMod\n"
+                "    lea     rdi, [g_szLibrary wrt rip] ; pszFilename\n"
+                "    sub     rsp, 08h\n"
+                "    call    IMP2(SUPR3HardenedLdrLoadAppPriv)\n"
+                "    add     rsp, 08h\n"
+                "\n"
+                "%%elifdef ASM_CALL64_MSC\n"
+                "    xor     r9, r9                 ; pErrInfo\n"
+                "    xor     r8, r8                 ; fFlags (local load)\n"
+                "    lea     rdx, [g_hMod wrt rip]  ; phLdrMod\n"
+                "    lea     rcx, [g_szLibrary wrt rip] ; pszFilename\n"
+                "    sub     rsp, 28h\n"
+                "    call    IMP2(SUPR3HardenedLdrLoadAppPriv)\n"
+                "    add     rsp, 28h\n"
+                "\n"
+                "%%elifdef RT_ARCH_X86\n"
+                "    sub     xSP, 0ch\n"
+                "    push    0              ; pErrInfo\n"
+                "    push    0              ; fFlags (local load)\n"
+                "    push    g_hMod         ; phLdrMod\n"
+                "    push    g_szLibrary    ; pszFilename\n"
+                "    call    IMP2(SUPR3HardenedLdrLoadAppPriv)\n"
+                "    add     esp, 1ch\n"
+                "%%else\n"
+                " %%error \"Unsupported architecture\"\n"
+                "%%endif\n");
+    else
+        fprintf(pOutput,
+                ";\n"
+                "; RTDECL(int) RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD phLdrMod);\n"
+                ";\n"
+                "%%ifdef IN_RT_R3\n"
+                "extern NAME(RTLdrLoadSystem)\n"
+                "extern NAME(RTAssertMsg2Weak)\n"
+                "%%else\n"
+                "EXTERN_IMP2 RTLdrLoadSystem\n"
+                "EXTERN_IMP2 RTAssertMsg2Weak\n"
+                "%%endif\n"
+                "BEGINCODE\n"
+                "\n"
+                "LazyLoading:\n"
+                "    mov     xCX, [g_hMod xWrtRIP]\n"
+                "    or      xCX, xCX\n"
+                "    jnz     .return\n"
+                "\n"
+                "%%ifdef ASM_CALL64_GCC\n"
+                "    lea     rdx, [g_hMod wrt rip]  ; phLdrMod\n"
+                "    mov     esi, 1                 ; fNoUnload=true\n"
+                "    lea     rdi, [g_szLibrary wrt rip] ; pszFilename\n"
+                "    sub     rsp, 08h\n"
+                " %%ifdef IN_RT_R3\n"
+                "    call    NAME(RTLdrLoadSystem)\n"
+                " %%else\n"
+                "    call    IMP2(RTLdrLoadSystem)\n"
+                " %%endif\n"
+                "    add     rsp, 08h\n"
+                "\n"
+                "%%elifdef ASM_CALL64_MSC\n"
+                "    lea     r8, [g_hMod wrt rip]   ; phLdrMod\n"
+                "    mov     edx, 1                 ; fNoUnload=true\n"
+                "    lea     rcx, [g_szLibrary wrt rip] ; pszFilename\n"
+                "    sub     rsp, 28h\n"
+                " %%ifdef IN_RT_R3\n"
+                "    call    NAME(RTLdrLoadSystem)\n"
+                " %%else\n"
+                "    call    IMP2(RTLdrLoadSystem)\n"
+                " %%endif\n"
+                "    add     rsp, 28h\n"
+                "\n"
+                "%%elifdef RT_ARCH_X86\n"
+                "    push    g_hMod         ; phLdrMod\n"
+                "    push    1              ; fNoUnload=true\n"
+                "    push    g_szLibrary    ; pszFilename\n"
+                " %%ifdef IN_RT_R3\n"
+                "    call    NAME(RTLdrLoadSystem)\n"
+                " %%else\n"
+                "    call    IMP2(RTLdrLoadSystem)\n"
+                " %%endif\n"
+                "    add     esp, 0ch\n"
+                "%%else\n"
+                " %%error \"Unsupported architecture\"\n"
+                "%%endif\n");
     fprintf(pOutput,
-            ";\n"
-            ";SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod,\n"
-            ";                                           uint32_t fFlags, PRTERRINFO pErrInfo);\n"
-            ";\n"
-            "EXTERN_IMP2 SUPR3HardenedLdrLoadAppPriv\n"
-            "BEGINCODE\n"
-            "\n"
-            "LazyLoading:\n"
-            "    mov     xCX, [g_hMod xWrtRIP]\n"
-            "    or      xCX, xCX\n"
-            "    jnz     .return\n"
-            "\n"
-            "%%ifdef ASM_CALL64_GCC\n"
-            "    xor     rcx, rcx               ; pErrInfo\n"
-            "    xor     rdx, rdx               ; fFlags (local load)\n"
-            "    lea     rsi, [g_hMod wrt rip]  ; phLdrMod\n"
-            "    lea     rdi, [g_szLibrary wrt rip] ; pszFilename\n"
-            "    sub     rsp, 08h\n"
-            "    call    IMP2(SUPR3HardenedLdrLoadAppPriv)\n"
-            "    add     rsp, 08h\n"
-            "\n"
-            "%%elifdef ASM_CALL64_MSC\n"
-            "    xor     r9, r9                 ; pErrInfo\n"
-            "    xor     r8, r8                 ; fFlags (local load)\n"
-            "    lea     rdx, [g_hMod wrt rip]  ; phLdrMod\n"
-            "    lea     rcx, [g_szLibrary wrt rip] ; pszFilename\n"
-            "    sub     rsp, 28h\n"
-            "    call    IMP2(SUPR3HardenedLdrLoadAppPriv)\n"
-            "    add     rsp, 28h\n"
-            "\n"
-            "%%elifdef RT_ARCH_X86\n"
-            "    sub     xSP, 0ch\n"
-            "    push    0              ; pErrInfo\n"
-            "    push    0              ; fFlags (local load)\n"
-            "    push    g_hMod         ; phLdrMod\n"
-            "    push    g_szLibrary    ; pszFilename\n"
-            "    call    IMP2(SUPR3HardenedLdrLoadAppPriv)\n"
-            "    add     esp, 1ch\n"
-            "%%else\n"
-            " %%error \"Unsupported architecture\"\n"
-            "%%endif\n"
             "    or      eax, eax\n"
-            "    jz      .loadok\n"
-            ".badload:\n"
-            "    int3\n"
-            "    jmp     .badload\n"
-            ".loadok:\n"
+            "    jnz    .badload\n"
             "    mov     xCX, [g_hMod xWrtRIP]\n"
             ".return:\n"
             "    ret\n"
+            "\n"
+            ".badload:\n"
+            "%%ifdef ASM_CALL64_GCC\n"
+            "    mov     edx, eax\n"
+            "    lea     rsi, [g_szLibrary wrt rip]\n"
+            "    lea     rdi, [g_szFailLoadFmt wrt rip]\n"
+            "    sub     rsp, 08h\n"
+            "%%elifdef ASM_CALL64_MSC\n"
+            "    mov     r8d, eax\n"
+            "    lea     rdx, [g_szLibrary wrt rip]\n"
+            "    lea     rcx, [g_szFailLoadFmt wrt rip]\n"
+            "    sub     rsp, 28h\n"
+            "%%elifdef RT_ARCH_X86\n"
+            "    push    eax\n"
+            "    push    g_szLibrary\n"
+            "    push    g_szFailLoadFmt\n"
+            "%%endif\n"
+            "%%ifdef IN_RT_R3\n"
+            "    call    NAME(RTAssertMsg2Weak)\n"
+            "%%else\n"
+            "    call    IMP2(RTAssertMsg2Weak)\n"
+            "%%endif\n"
+            ".badloadloop:\n"
+            "    int3\n"
+            "    jmp     .badloadloop\n"
             "LazyLoading_End:\n"
             "\n"
             "\n");
@@ -496,7 +662,11 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             ";\n"
             ";RTDECL(int) RTLdrGetSymbol(RTLDRMOD hLdrMod, const char *pszSymbol, void **ppvValue);\n"
             ";\n"
+            "%%ifdef IN_RT_R3\n"
+            "extern NAME(RTLdrGetSymbol)\n"
+            "%%else\n"
             "EXTERN_IMP2 RTLdrGetSymbol\n"
+            "%%endif\n"
             "BEGINCODE\n"
             "LazyLoadResolver:\n"
             "%%ifdef RT_ARCH_AMD64\n"
@@ -530,13 +700,13 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             "    mov     rdx, r15       ; pszSymbol\n"
             "    mov     r8, r14        ; ppvValue\n"
             " %%endif\n"
+            " %%ifdef IN_RT_R3\n"
+            "    call    NAME(RTLdrGetSymbol)\n"
+            " %%else\n"
             "    call    IMP2(RTLdrGetSymbol)\n"
+            " %%endif\n"
             "    or      eax, eax\n"
-            "    jz      .symok\n"
-            ".badsym:\n"
-            "    int3\n"
-            "    jmp     .badsym\n"
-            ".symok:\n"
+            "    jnz     .badsym\n"
             "\n"
             "    mov     rsp, r12\n"
             " %%ifdef ASM_CALL64_GCC\n"
@@ -561,19 +731,17 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             "    and     esp, 0fffffff0h\n"
             "\n"
             ".loaded:\n"
-            "    mov     eax, [ebp + 4] ; value addr\n"
-            "    push    eax\n"
-            "    mov     edx, [ebp + 8] ; symbol name\n"
-            "    push    edx\n"
-            "    call    LazyLoading    ; returns handle in ecx\n"
-            "    mov     ecx, [g_hMod]\n"
+            "    call    LazyLoading      ; returns handle in ecx\n"
+            "    push    dword [ebp + 8]  ; value addr\n"
+            "    push    dword [ebp + 12] ; symbol name\n"
+            "    push    ecx\n"
+            " %%ifdef IN_RT_R3\n"
+            "    call    NAME(RTLdrGetSymbol)\n"
+            " %%else\n"
             "    call    IMP2(RTLdrGetSymbol)\n"
+            " %%endif\n"
             "    or      eax, eax\n"
-            "    jz      .symok\n"
-            ".badsym:\n"
-            "    int3\n"
-            "    jmp     .badsym\n"
-            ".symok:\n"
+            "    jnz     .badsym\n"
             "    lea     esp, [ebp - 0ch]\n"
             "    pop     edx\n"
             "    pop     ecx\n"
@@ -583,6 +751,35 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             " %%error \"Unsupported architecture\"\n"
             "%%endif\n"
             "    ret\n"
+            "\n"
+            ".badsym:\n"
+            "%%ifdef ASM_CALL64_GCC\n"
+            "    mov     ecx, eax\n"
+            "    lea     rdx, [g_szLibrary wrt rip]\n"
+            "    mov     rsi, r15\n"
+            "    lea     rdi, [g_szFailResolveFmt wrt rip]\n"
+            "    sub     rsp, 08h\n"
+            "%%elifdef ASM_CALL64_MSC\n"
+            "    mov     r9d, eax\n"
+            "    mov     r8, r15\n"
+            "    lea     rdx, [g_szLibrary wrt rip]\n"
+            "    lea     rcx, [g_szFailResolveFmt wrt rip]\n"
+            "    sub     rsp, 28h\n"
+            "%%elifdef RT_ARCH_X86\n"
+            "    push    eax\n"
+            "    push    dword [ebp + 12]\n"
+            "    push    g_szLibrary\n"
+            "    push    g_szFailResolveFmt\n"
+            "%%endif\n"
+            "%%ifdef IN_RT_R3\n"
+            "    call    NAME(RTAssertMsg2Weak)\n"
+            "%%else\n"
+            "    call    IMP2(RTAssertMsg2Weak)\n"
+            "%%endif\n"
+            ".badsymloop:\n"
+            "    int3\n"
+            "    jmp     .badsymloop\n"
+            "\n"
             "LazyLoadResolver_End:\n"
             "\n"
             "\n"
@@ -596,6 +793,12 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
      */
     if (g_fWithExplictLoadFunction)
     {
+        if (g_fSystemLibrary) /* Lazy bird. */
+        {
+            fprintf(stderr, "error: cannot use --system with --explicit-load-function, sorry\n");
+            return RTEXITCODE_FAILURE;
+        }
+
         int cchLibBaseName = (int)(strchr(g_pszLibrary, '.') ? strchr(g_pszLibrary, '.') - g_pszLibrary : strlen(g_pszLibrary));
         fprintf(pOutput,
                 ";;\n"
@@ -834,6 +1037,8 @@ int main(int argc, char **argv)
                 g_fWithExplictLoadFunction = true;
             else if (!strcmp(psz, "--no-explicit-load-function"))
                 g_fWithExplictLoadFunction = false;
+            else if (!strcmp(psz, "--system"))
+                g_fSystemLibrary = true;
             /** @todo Support different load methods so this can be used on system libs and
              *        such if we like. */
             else if (   !strcmp(psz, "--help")

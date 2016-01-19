@@ -32,7 +32,7 @@
 
 DECLHIDDEN(int)  rtR3InitNativeFirst(uint32_t fFlags);
 DECLHIDDEN(int)  rtR3InitNativeFinal(uint32_t fFlags);
-DECLHIDDEN(void) rtR3InitNativeObtrusive(void);
+DECLHIDDEN(void) rtR3InitNativeObtrusive(uint32_t fFlags);
 
 #endif
 

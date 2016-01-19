@@ -56,6 +56,9 @@ RT_C_DECLS_BEGIN
 #define RTR3INIT_FLAGS_UNOBTRUSIVE  RT_BIT(2)
 /** The caller ensures that the argument bector is UTF-8. */
 #define RTR3INIT_FLAGS_UTF8_ARGV    RT_BIT(3)
+/** Indicates that this is a standalone application without any additional
+ * shared libraries in the application directory. Mainly windows loader mess. */
+#define RTR3INIT_FLAGS_STANDALONE_APP RT_BIT(4)
 /** @} */
 
 /** @name RTR3InitEx version

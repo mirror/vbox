@@ -1915,6 +1915,9 @@ VBOX_MAKE_ALTERNATIVE_SOURCE ?= $(PATH_OBJ)/MakeAlternativeSource/MakeAlternativ
 # VBoxDef2LazyLoad (lazy dynamic library loader assembly generator)
 VBOX_DEF_2_LAZY_LOAD ?= $(PATH_OBJ)/VBoxDef2LazyLoad/VBoxDef2LazyLoad$(HOSTSUFF_EXE)
 
+# VBoxCheckImports (checks what we imports from on windows)
+VBOX_CHECK_IMPORTS ?= $(PATH_OBJ)/VBoxCheckImports/VBoxCheckImports$(HOSTSUFF_EXE)
+
 # GNU tar if present.
 if1of ($(KBUILD_TARGET), linux os2 win)
  VBOX_GTAR ?= tar

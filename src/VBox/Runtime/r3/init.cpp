@@ -147,7 +147,7 @@ RTDATADECL(bool) g_fRTAlignmentChecks = false;
 /* Stubs */
 DECLHIDDEN(int)  rtR3InitNativeFirst(uint32_t fFlags) { return VINF_SUCCESS; }
 DECLHIDDEN(int)  rtR3InitNativeFinal(uint32_t fFlags) { return VINF_SUCCESS; }
-DECLHIDDEN(void) rtR3InitNativeObtrusive(void) { }
+DECLHIDDEN(void) rtR3InitNativeObtrusive(uint32_t fFlags) { }
 #endif
 
 
@@ -555,7 +555,8 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *
     Assert(!(fFlags & ~(  RTR3INIT_FLAGS_DLL
                         | RTR3INIT_FLAGS_SUPLIB
                         | RTR3INIT_FLAGS_UNOBTRUSIVE
-                        | RTR3INIT_FLAGS_UTF8_ARGV)));
+                        | RTR3INIT_FLAGS_UTF8_ARGV
+                        | RTR3INIT_FLAGS_STANDALONE_APP)));
     Assert(!(fFlags & RTR3INIT_FLAGS_DLL) || cArgs == 0);
 
     /*
@@ -576,14 +577,18 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *
             g_fInitFlags |= RTR3INIT_FLAGS_SUPLIB;
         }
 #endif
+        g_fInitFlags |= fFlags & RTR3INIT_FLAGS_UTF8_ARGV;
 
         if (   !(fFlags      & RTR3INIT_FLAGS_UNOBTRUSIVE)
             && (g_fInitFlags & RTR3INIT_FLAGS_UNOBTRUSIVE))
         {
             g_fInitFlags &= ~RTR3INIT_FLAGS_UNOBTRUSIVE;
-            rtR3InitNativeObtrusive();
+            g_fInitFlags |= fFlags & RTR3INIT_FLAGS_STANDALONE_APP;
+            rtR3InitNativeObtrusive(g_fInitFlags | fFlags);
             rtThreadReInitObtrusive();
         }
+        else
+            Assert(!(fFlags & RTR3INIT_FLAGS_STANDALONE_APP) || (g_fInitFlags & RTR3INIT_FLAGS_STANDALONE_APP));
 
         int rc = VINF_SUCCESS;
         if (pszProgramPath)

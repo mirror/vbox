@@ -67,6 +67,10 @@ endif
 VBoxPeSetVersion_TEMPLATE = VBoxBldProg
 VBoxPeSetVersion_SOURCES  = VBoxPeSetVersion.cpp
 
+BLDPROGS.win += VBoxCheckImports
+VBoxCheckImports_TEMPLATE = VBoxBldProg
+VBoxCheckImports_SOURCES  = VBoxCheckImports.cpp
+
 BLDPROGS += VBoxDef2LazyLoad
 VBoxDef2LazyLoad_TEMPLATE = VBoxBldProg
 VBoxDef2LazyLoad_SOURCES  = VBoxDef2LazyLoad.cpp

@@ -249,7 +249,7 @@ static void rtR3InitWindowsVersion(void)
 }
 
 
-static int rtR3InitNativeObtrusiveWorker(void)
+static int rtR3InitNativeObtrusiveWorker(uint32_t fFlags)
 {
     /*
      * Disable error popups.
@@ -263,7 +263,8 @@ static int rtR3InitNativeObtrusiveWorker(void)
      *  - The first trick works on XP SP1+ and disables the searching of the
      *    current directory.
      *  - The second trick is W7 w/ KB2533623 and W8+, it restrict the DLL
-     *    searching to the application directory and the System32 directory.
+     *    searching to the application directory (except when
+     *    RTR3INIT_FLAGS_STANDALONE_APP is given) and the System32 directory.
      */
     int rc = VINF_SUCCESS;
 
@@ -277,16 +278,23 @@ static int rtR3InitNativeObtrusiveWorker(void)
             rc = VERR_INTERNAL_ERROR_3;
     }
 
-    /** @bugref{6861} Observed GUI issues on Vista (32-bit and 64-bit). */
-    if (g_enmWinVer > kRTWinOSType_VISTA)
+    /** @bugref{6861} Observed GUI issues on Vista (32-bit and 64-bit) when using
+     *                SetDefaultDllDirectories.
+     *  @bugref{8194} Try use SetDefaultDllDirectories on Vista for standalone apps
+     *                despite potential GUI issues. */
+    if (   g_enmWinVer > kRTWinOSType_VISTA
+        || (fFlags & RTR3INIT_FLAGS_STANDALONE_APP))
     {
         typedef BOOL(WINAPI *PFNSETDEFAULTDLLDIRECTORIES)(DWORD);
         PFNSETDEFAULTDLLDIRECTORIES pfnSetDefDllDirs;
         pfnSetDefDllDirs = (PFNSETDEFAULTDLLDIRECTORIES)GetProcAddress(g_hModKernel32, "SetDefaultDllDirectories");
         if (pfnSetDefDllDirs)
         {
-            if (pfnSetDefDllDirs(LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32))
-                g_enmWinLdrProt = RTR3WINLDRPROT_SAFE;
+            DWORD fDllDirs = LOAD_LIBRARY_SEARCH_SYSTEM32;
+            if (!(fFlags & RTR3INIT_FLAGS_STANDALONE_APP))
+                fDllDirs |= LOAD_LIBRARY_SEARCH_APPLICATION_DIR;
+            if (pfnSetDefDllDirs(fDllDirs))
+                g_enmWinLdrProt = fDllDirs & LOAD_LIBRARY_SEARCH_APPLICATION_DIR ? RTR3WINLDRPROT_SAFE : RTR3WINLDRPROT_SAFER;
             else if (RT_SUCCESS(rc))
                 rc = VERR_INTERNAL_ERROR_4;
         }
@@ -312,7 +320,7 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
 
     int rc = VINF_SUCCESS;
     if (!(fFlags & RTR3INIT_FLAGS_UNOBTRUSIVE))
-        rc = rtR3InitNativeObtrusiveWorker();
+        rc = rtR3InitNativeObtrusiveWorker(fFlags);
 
     /*
      * Resolve some kernel32.dll APIs we may need but aren't necessarily
@@ -326,9 +334,9 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
 }
 
 
-DECLHIDDEN(void) rtR3InitNativeObtrusive(void)
+DECLHIDDEN(void) rtR3InitNativeObtrusive(uint32_t fFlags)
 {
-    rtR3InitNativeObtrusiveWorker();
+    rtR3InitNativeObtrusiveWorker(fFlags);
 }
 
 
