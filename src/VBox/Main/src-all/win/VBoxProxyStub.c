@@ -539,7 +539,7 @@ static LSTATUS vbpsRegOpenInterfaceKeys(VBPSREGSTATE *pState)
     {
         if (pState->fSamUpdate)
             rc = RegCreateKeyExW(pState->hkeyClassesRootDst, L"Interface", 0 /*Reserved*/, NULL /*pszClass*/, 0 /*fOptions*/,
-                                 pState->fSamBoth, NULL /*pSecAttr*/, &pState->hkeyClsidRootDst, NULL /*pdwDisposition*/);
+                                 pState->fSamBoth, NULL /*pSecAttr*/, &pState->hkeyInterfaceRootDst, NULL /*pdwDisposition*/);
         else
             rc = RegOpenKeyExW(pState->hkeyClassesRootDst, L"Interface", 0 /*fOptions*/, pState->fSamBoth,
                                &pState->hkeyClsidRootDst);
@@ -1312,7 +1312,9 @@ static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVB
         if (rc == ERROR_SUCCESS)
         {
             RTUTF16 wszBuf[MAX_PATH * 2];
+#if 0
             size_t  off;
+#endif
 
             /* {UUID}/Major.Minor/0. */
             HKEY hkey0;
@@ -2181,7 +2183,8 @@ HRESULT STDAPICALLTYPE DllUnregisterServer(void)
      */
     hrc2 = NdrDllUnregisterProxy(g_hDllSelf, &g_apProxyFiles[0], &g_ProxyClsId);      /* see DLLREGISTRY_ROUTINES in RpcProxy.h */
     AssertMsgStmt(   SUCCEEDED(hrc2)
-                  || hrc2 == MAKE_HRESULT(SEVERITY_ERROR, FACILITY_WIN32, ERROR_FILE_NOT_FOUND),
+                  || hrc2 == MAKE_HRESULT(SEVERITY_ERROR, FACILITY_WIN32, ERROR_FILE_NOT_FOUND)
+                  || hrc2 == REGDB_E_INVALIDVALUE,
                   ("%Rhrc\n", hrc2), if (SUCCEEDED(hrc)) hrc = hrc2);
 
     /*
