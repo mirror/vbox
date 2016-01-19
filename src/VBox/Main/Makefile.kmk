@@ -1055,18 +1055,20 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  	src-all/win/VBoxProxyStub.c
   src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
 
- DLLS += VBoxProxyStubLegacy
- VBoxProxyStubLegacy_TEMPLATE = VBOXMAINCOMP
- VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
- VBoxProxyStubLegacy_DEFS     = $(VBoxProxyStub_DEFS) VBOX_IN_PROXY_STUB_LEGACY
- VBoxProxyStubLegacy_INCS     = $(VBoxCOM_0_OUTDIR)/old64/
- VBoxProxyStubLegacy_SOURCES  = \
- 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_p.c \
- 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_i.c \
- 	src-all/win/VBoxProxyStub.def \
- 	src-all/win/VBoxProxyStub.rc \
- 	src-all/win/VBoxProxyStub.c
-  src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/old64/VirtualBox.tlb
+ ifeq ($(KBUILD_TARGET_ARCH),amd64)
+  DLLS += VBoxProxyStubLegacy
+  VBoxProxyStubLegacy_TEMPLATE = VBOXMAINCOMP
+  VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
+  VBoxProxyStubLegacy_DEFS     = $(VBoxProxyStub_DEFS) VBOX_IN_PROXY_STUB_LEGACY
+  VBoxProxyStubLegacy_INCS     = $(VBoxCOM_0_OUTDIR)/old64/
+  VBoxProxyStubLegacy_SOURCES  = \
+  	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_p.c \
+  	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_i.c \
+  	src-all/win/VBoxProxyStub.def \
+  	src-all/win/VBoxProxyStubLegacy.rc \
+  	src-all/win/VBoxProxyStub.c
+  src-all/win/VBoxProxyStubLegacy.rc_DEPS = $(VBoxCOM_0_OUTDIR)/old64/VirtualBox.tlb
+ endif
 
  ifdef VBOX_WITH_32_ON_64_MAIN_API
   DLLS += VBoxProxyStub-x86
