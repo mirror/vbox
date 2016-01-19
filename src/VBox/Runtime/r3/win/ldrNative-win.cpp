@@ -29,13 +29,14 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_LDR
-#include <Windows.h>
+#include <iprt/nt/nt-and-windows.h>
 
 #include <iprt/ldr.h>
 #include "internal/iprt.h"
 
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/log.h>
@@ -169,32 +170,135 @@ int rtldrNativeLoadSystem(const char *pszFilename, const char *pszExt, uint32_t 
                      ("rtldrNativeLoadSystem(%s,,) is called before IPRT has configured the windows loader!\n", pszFilename));
 
     /*
-     * We only try the System32 directory.
+     * Resolve side-by-side resolver API.
      */
+    static bool volatile s_fInitialized = false;
+    static decltype(RtlDosApplyFileIsolationRedirection_Ustr) *s_pfnApplyRedir = NULL;
+    if (!s_fInitialized)
+    {
+        s_pfnApplyRedir = (decltype(s_pfnApplyRedir))GetProcAddress(g_hModNtDll,
+                                                                    "RtlDosApplyFileIsolationRedirection_Ustr");
+        ASMCompilerBarrier();
+        s_fInitialized = true;
+    }
+
+    /*
+     * We try WinSxS via undocumented NTDLL API and flal back on the System32
+     * directory. No other locations are supported.
+     */
+    int rc = VERR_TRY_AGAIN;
+    char  szPath[RTPATH_MAX];
+    char *pszPath = szPath;
+
+    /* Get the windows system32 directory so we can sanity check the WinSxS result. */
     WCHAR wszSysDir[MAX_PATH];
     UINT cwcSysDir = GetSystemDirectoryW(wszSysDir, MAX_PATH);
     if (cwcSysDir >= MAX_PATH)
         return VERR_FILENAME_TOO_LONG;
 
-/** @todo On w2k3r1/64 winhttp.dll is only found under WinSxS. Try use
- *        RtlDosApplyFileIsolationRedirection_Ustr to resolve this issue
- *        (see http-curl.cpp). */
-
-    char szPath[RTPATH_MAX];
-    char *pszPath = szPath;
-    int rc = RTUtf16ToUtf8Ex(wszSysDir, RTSTR_MAX, &pszPath, sizeof(szPath), NULL);
-    if (RT_SUCCESS(rc))
+    /* Try side-by-side first (see COMCTL32.DLL). */
+    if (s_pfnApplyRedir)
     {
-        rc = RTPathAppend(szPath, sizeof(szPath), pszFilename);
-        if (pszExt && RT_SUCCESS(rc))
-            rc = RTStrCat(szPath, sizeof(szPath), pszExt);
+        size_t   cwcName = 0;
+        RTUTF16  wszName[MAX_PATH];
+        PRTUTF16 pwszName = wszName;
+        int rc2 = RTStrToUtf16Ex(pszFilename, RTSTR_MAX, &pwszName, RT_ELEMENTS(wszName), &cwcName);
+        if (RT_SUCCESS(rc2))
+        {
+            static UNICODE_STRING const s_DefaultSuffix = RTNT_CONSTANT_UNISTR(L".dll");
+            WCHAR           wszPath[MAX_PATH];
+            UNICODE_STRING  UniStrStatic   = { 0, (USHORT)sizeof(wszPath) - sizeof(WCHAR), wszPath };
+            UNICODE_STRING  UniStrDynamic  = { 0, 0, NULL };
+            PUNICODE_STRING pUniStrResult  = NULL;
+            UNICODE_STRING  UniStrName     =
+            { (USHORT)(cwcName * sizeof(RTUTF16)), (USHORT)((cwcName + 1) * sizeof(RTUTF16)), wszName };
+
+            NTSTATUS rcNt = s_pfnApplyRedir(1 /*fFlags*/,
+                                            &UniStrName,
+                                            (PUNICODE_STRING)&s_DefaultSuffix,
+                                            &UniStrStatic,
+                                            &UniStrDynamic,
+                                            &pUniStrResult,
+                                            NULL /*pNewFlags*/,
+                                            NULL /*pcbFilename*/,
+                                            NULL /*pcbNeeded*/);
+            if (NT_SUCCESS(rcNt))
+            {
+                /*
+                 * Check that the resolved path has similarities to the
+                 * system directory.
+                 *
+                 * ASSUMES the windows directory is a root directory and
+                 * that both System32 and are on the same level.  So, we'll
+                 * have 2 matching components (or more if the resolver
+                 * returns a system32 path for some reason).
+                 */
+                unsigned cMatchingComponents = 0;
+                unsigned cSlashes = 0;
+                size_t   off = 0;
+                while (off < pUniStrResult->Length)
+                {
+                    RTUTF16 wc1 = wszSysDir[off];
+                    RTUTF16 wc2 = pUniStrResult->Buffer[off];
+                    if (!RTPATH_IS_SLASH(wc1))
+                    {
+                        if (wc1 == wc2)
+                            off++;
+                        else if (   wc1 < 127
+                                 && wc2 < 127
+                                 && RT_C_TO_LOWER(wc1) == RT_C_TO_LOWER(wc2) )
+                            off++;
+                        else
+                            break;
+                    }
+                    else if (RTPATH_IS_SLASH(wc2))
+                    {
+                        cMatchingComponents += off > 0;
+                        do
+                            off++;
+                        while (   off < pUniStrResult->Length
+                               && RTPATH_IS_SLASH(wszSysDir[off])
+                               && RTPATH_IS_SLASH(pUniStrResult->Buffer[off]));
+                    }
+                    else
+                        break;
+                }
+                if (cMatchingComponents >= 2)
+                {
+                    pszPath = szPath;
+                    rc2 = RTUtf16ToUtf8Ex(pUniStrResult->Buffer, pUniStrResult->Length / sizeof(RTUTF16),
+                                          &pszPath, sizeof(szPath), NULL);
+                    if (RT_SUCCESS(rc2))
+                        rc = VINF_SUCCESS;
+                }
+                else
+                    AssertMsgFailed(("%s -> '%*.ls'\n", pszFilename, pUniStrResult->Length, pUniStrResult->Buffer));
+                RtlFreeUnicodeString(&UniStrDynamic);
+            }
+        }
+        else
+            AssertMsgFailed(("%Rrc\n", rc));
+    }
+
+    /* If the above didn't succeed, create a system32 path. */
+    if (RT_FAILURE(rc))
+    {
+        rc = RTUtf16ToUtf8Ex(wszSysDir, RTSTR_MAX, &pszPath, sizeof(szPath), NULL);
         if (RT_SUCCESS(rc))
         {
-            if (RTFileExists(szPath))
-                rc = RTLdrLoadEx(szPath, phLdrMod, fFlags, NULL);
-            else
-                rc = VERR_MODULE_NOT_FOUND;
+            rc = RTPathAppend(szPath, sizeof(szPath), pszFilename);
+            if (pszExt && RT_SUCCESS(rc))
+                rc = RTStrCat(szPath, sizeof(szPath), pszExt);
         }
+    }
+
+    /* Do the actual loading, if we were successful constructing a name. */
+    if (RT_SUCCESS(rc))
+    {
+        if (RTFileExists(szPath))
+            rc = RTLdrLoadEx(szPath, phLdrMod, fFlags, NULL);
+        else
+            rc = VERR_MODULE_NOT_FOUND;
     }
 
     return rc;
