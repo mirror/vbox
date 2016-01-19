@@ -59,10 +59,13 @@ class CSession;
 #ifdef Q_WS_X11
 # if QT_VERSION < 0x050000
 typedef union _XEvent XEvent;
-# else /* QT_VERSION >= 0x050000 */
+# endif /* QT_VERSION < 0x050000 */
+#endif /* Q_WS_X11 */
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+# if QT_VERSION >= 0x050000
 class PrivateEventFilter;
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 #ifdef VBOX_WITH_DRAG_AND_DROP
  class CDnDTarget;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
@@ -371,7 +374,7 @@ protected:
       * @note     Take into account this function is _not_ called by
       *           the Qt itself because it has another signature,
       *           only by the keyboard-hook of the keyboard-handler. */
-    virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult);
+    virtual bool nativeEvent(void *pMessage);
 #endif /* QT_VERSION >= 0x050000 */
 
     /** Scales passed size forward. */
@@ -429,7 +432,7 @@ protected:
 # endif
 #endif
 
-#ifdef Q_WS_X11
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 # if QT_VERSION >= 0x050000
     /** X11: Holds the native event filter instance. */
     PrivateEventFilter *m_pPrivateEventFilter;
@@ -437,7 +440,7 @@ protected:
       * redirect events directly to nativeEvent handler. */
     friend class PrivateEventFilter;
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
     /* Friend classes: */
     friend class UIKeyboardHandler;

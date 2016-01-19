@@ -71,11 +71,11 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#ifdef Q_WS_X11
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 # if QT_VERSION >= 0x050000
 #  include <QAbstractNativeEventFilter>
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 /* GUI includes: */
 #ifdef Q_WS_MAC
@@ -129,7 +129,7 @@ const int XKeyRelease = KeyRelease;
 #endif
 
 
-#ifdef Q_WS_X11
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 # if QT_VERSION >= 0x050000
 /** QAbstractNativeEventFilter extension
   * allowing to pre-process native platform events. */
@@ -146,7 +146,8 @@ public:
     bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult)
     {
         /* Redirect event to parent: */
-        return m_pParent->nativeEvent(eventType, pMessage, pResult);
+        Q_UNUSED(eventType); Q_UNUSED(pResult);
+        return m_pParent->nativeEvent(pMessage);
     }
 
 private:
@@ -155,7 +156,7 @@ private:
     UIMachineView *m_pParent;
 };
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
 
 /* static */
@@ -660,11 +661,11 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     , m_fIsDraggingFromGuest(false)
 #endif
-#ifdef Q_WS_X11
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 # if QT_VERSION >= 0x050000
     , m_pPrivateEventFilter(0)
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 {
 }
 
@@ -842,13 +843,13 @@ void UIMachineView::prepareFilters()
     /* We want to be notified on some parent's events: */
     machineWindow()->installEventFilter(this);
 
-#ifdef Q_WS_X11
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 # if QT_VERSION >= 0x050000
     /* Prepare private event-filter: */
     m_pPrivateEventFilter = new PrivateEventFilter(this);
     qApp->installNativeEventFilter(m_pPrivateEventFilter);
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 }
 
 void UIMachineView::prepareConnections()
@@ -878,14 +879,14 @@ void UIMachineView::prepareConsoleConnections()
 
 void UIMachineView::cleanupFilters()
 {
-#ifdef Q_WS_X11
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
 # if QT_VERSION >= 0x050000
     /* Cleanup private event-filter: */
     qApp->removeNativeEventFilter(m_pPrivateEventFilter);
     delete m_pPrivateEventFilter;
     m_pPrivateEventFilter = 0;
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 }
 
 void UIMachineView::cleanupFrameBuffer()
@@ -1883,7 +1884,7 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 # endif /* Q_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
 
-bool UIMachineView::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
+bool UIMachineView::nativeEvent(void *pMessage)
 {
 # if defined(Q_WS_MAC)
 
@@ -1891,7 +1892,26 @@ bool UIMachineView::nativeEvent(const QByteArray &eventType, void *pMessage, lon
 
 # elif defined(Q_WS_WIN)
 
-#  warning "implement me!"
+    /* Cast to generic MSG event: */
+    MSG *pEvent = static_cast<MSG*>(pMessage);
+
+    /* Check if some MSG event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    switch (pEvent->message)
+    {
+        /* Watch for key-events: */
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYUP:
+        {
+            /* Delegate key-event handling to the keyboard-handler: */
+            return machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, screenId());
+        }
+        default:
+            break;
+    }
 
 # elif defined(Q_WS_X11)
 
