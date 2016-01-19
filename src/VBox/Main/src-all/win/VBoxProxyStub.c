@@ -400,7 +400,8 @@ static LSTATUS vbpsRegInit(VBPSREGSTATE *pState, HKEY hkeyRoot, const char *pszS
      */
     rc = RegOpenKeyExA(hkeyRoot, pszSubRoot, 0 /*fOptions*/, pState->fSamBoth, &pState->hkeyClassesRootDst);
     AssertMsgReturn(rc == ERROR_SUCCESS, ("%u\n", rc), pState->rc = rc);
-    rc = RegOpenKeyExA(pState->hkeyClassesRootDst, "CLSID", 0 /*fOptions*/, pState->fSamBoth, &pState->hkeyClsidRootDst);
+    rc = RegCreateKeyExW(pState->hkeyClassesRootDst, L"CLSID", 0 /*Reserved*/, NULL /*pszClass*/, 0 /*fOptions*/,
+                         pState->fSamBoth, NULL /*pSecAttr*/, &pState->hkeyClsidRootDst, NULL /*pdwDisposition*/);
     AssertMsgReturn(rc == ERROR_SUCCESS, ("%u\n", rc), pState->rc = rc);
 
     return ERROR_SUCCESS;
@@ -490,7 +491,7 @@ static LSTATUS vbpsRegAddAltDelete(VBPSREGSTATE *pState, HKEY hkeyAltRoot, const
     if (rc == ERROR_SUCCESS)
     {
         /* Try open the CLSID subkey, it's fine if it doesn't exists. */
-        rc = RegOpenKeyExA(pState->aAltDeletes[i].hkeyClasses, "CLSID", 0 /*fOptions*/, pState->fSamDelete,
+        rc = RegOpenKeyExW(pState->aAltDeletes[i].hkeyClasses, L"CLSID", 0 /*fOptions*/, pState->fSamDelete,
                            &pState->aAltDeletes[i].hkeyClsid);
         if (rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND)
         {
@@ -536,8 +537,12 @@ static LSTATUS vbpsRegOpenInterfaceKeys(VBPSREGSTATE *pState)
      */
     if (pState->hkeyInterfaceRootDst == NULL)
     {
-        rc = RegOpenKeyExW(pState->hkeyClassesRootDst, L"Interface", 0 /*fOptions*/, pState->fSamBoth,
-                           &pState->hkeyInterfaceRootDst);
+        if (pState->fSamUpdate)
+            rc = RegCreateKeyExW(pState->hkeyClassesRootDst, L"Interface", 0 /*Reserved*/, NULL /*pszClass*/, 0 /*fOptions*/,
+                                 pState->fSamBoth, NULL /*pSecAttr*/, &pState->hkeyClsidRootDst, NULL /*pdwDisposition*/);
+        else
+            rc = RegOpenKeyExW(pState->hkeyClassesRootDst, L"Interface", 0 /*fOptions*/, pState->fSamBoth,
+                               &pState->hkeyClsidRootDst);
         AssertMsgReturnStmt(rc == ERROR_SUCCESS, ("%u\n", rc), pState->hkeyInterfaceRootDst = NULL,  pState->rc = rc);
     }
 
@@ -1014,7 +1019,16 @@ LSTATUS VbpsRegisterAppId(VBPSREGSTATE *pState, const char *pszAppId, const char
         }
     }
 
-    rc = RegOpenKeyExW(pState->hkeyClassesRootDst, L"AppID", 0 /*fOptions*/, pState->fSamBoth, &hkeyAppIds);
+    if (pState->fUpdate)
+        rc = RegCreateKeyExW(pState->hkeyClassesRootDst, L"AppID", 0 /*Reserved*/, NULL /*pszClass*/, 0 /*fOptions*/,
+                             pState->fSamBoth, NULL /*pSecAttr*/, &hkeyAppIds, NULL /*pdwDisposition*/);
+
+    else
+    {
+        rc = RegOpenKeyExW(pState->hkeyClassesRootDst, L"AppID", 0 /*fOptions*/, pState->fSamBoth, &hkeyAppIds);
+        if (rc == ERROR_FILE_NOT_FOUND)
+            return ERROR_SUCCESS;
+    }
     AssertMsgReturn(rc == ERROR_SUCCESS, ("%u\n", rc), pState->rc = rc);
 
     if (pState->fDelete)
@@ -1316,6 +1330,7 @@ static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVB
             /* {UUID}/Major.Minor/FLAGS */
             vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyMajMin, "FLAGS", "0", __LINE__);
 
+#if 0 /* Skip it. It's for non-existing help files and regsvr32 and msi have different ides about trailing slashes. */
             /* {UUID}/Major.Minor/HELPDIR */
             rc = RTUtf16Copy(wszBuf, MAX_PATH, pwszVBoxDir); AssertRC(rc);
             off = RTUtf16Len(wszBuf);
@@ -1323,6 +1338,7 @@ static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVB
                 off--;
             wszBuf[off] = '\0';
             vbpsCreateRegKeyWithDefaultValueAW(pState, hkeyMajMin, "HELPDIR", wszBuf, __LINE__);
+#endif
 
             vbpsCloseKey(pState, hkeyMajMin, __LINE__);
         }
@@ -1423,7 +1439,8 @@ static void vbpsUpdateInterfaceRegistrations(VBPSREGSTATE *pState)
                 vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyIfId, "ProxyStubClsid32", szProxyClsId, __LINE__);
                 vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyIfId, "NumMethods", szMethods, __LINE__);
                 /** @todo Not having the typelib here means we'll have to fix the orphan cleanup
-                 *        code below. */
+                 *        code below.
+                 *  Update: MSI puts the typelib here. Hmm. */
 
                 vbpsCloseKey(pState, hkeyIfId, __LINE__);
             }
@@ -2199,6 +2216,9 @@ DECLEXPORT(uint32_t) VbpsUpdateRegistrations(void)
 #else
     bool const      fIs32On64 = false;
 #endif
+
+    /** @todo Should probably skip this when VBoxSVC is already running...  Use
+     *        some mutex or something for checking. */
 
     /*
      * Find the VirtualBox application directory first.
