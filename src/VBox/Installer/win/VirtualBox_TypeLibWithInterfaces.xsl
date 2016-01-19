@@ -229,10 +229,13 @@
   </xsl:variable>
 
   <!-- Compute the result. -->
-  <xsl:value-of select="$cMethods + $cReservedMethods + $cReadOnlyAttributes + ($cReadWriteAttributes * 2) + $cReservedAttributes + $cParent"/>
+  <xsl:variable name="cMethodsTotal"
+    select="$cMethods + $cReservedMethods + $cReadOnlyAttributes
+          + ($cReadWriteAttributes * 2) + $cReservedAttributes + $cParent"/>
+  <xsl:value-of select="$cMethodsTotal"/>
 
   <!-- For debugging! -->
-  <xsl:if test="0">
+  <xsl:if test="0 or $cMethodsTotal > 256">
     <xsl:message terminate="no">
       <xsl:text>Debug: cMethods=</xsl:text><xsl:value-of select="$cMethods"/>
       <xsl:text> cReadOnlyAttributes=</xsl:text><xsl:value-of select="$cReadOnlyAttributes"/>
@@ -243,6 +246,18 @@
       <xsl:text> name=</xsl:text><xsl:value-of select="@name"/>
       <xsl:text> parent=</xsl:text><xsl:value-of select="$sParent"/>
     </xsl:message>
+    <xsl:if test="$cMethodsTotal > 256">
+      <xsl:message terminate="yes">
+        <xsl:text>
+Fatal xidl error: Interface </xsl:text><xsl:value-of select="@name"/>
+        <xsl:text> has </xsl:text><xsl:value-of select="$cMethodsTotal"/>
+        <xsl:text>! The maximum that older windows allows for proxy stubs is 256.
+                  Please try adjust the number of reserved methods or attributes,
+                  though it's clearly time to consider splitting up this monster interface.
+
+</xsl:text>
+      </xsl:message>
+    </xsl:if>
   </xsl:if>
 </xsl:template>
 
