@@ -399,12 +399,20 @@ static LSTATUS vbpsRegInit(VBPSREGSTATE *pState, HKEY hkeyRoot, const char *pszS
      * Open the root keys.
      */
     rc = RegOpenKeyExA(hkeyRoot, pszSubRoot, 0 /*fOptions*/, pState->fSamBoth, &pState->hkeyClassesRootDst);
-    AssertMsgReturn(rc == ERROR_SUCCESS, ("%u\n", rc), pState->rc = rc);
-    rc = RegCreateKeyExW(pState->hkeyClassesRootDst, L"CLSID", 0 /*Reserved*/, NULL /*pszClass*/, 0 /*fOptions*/,
-                         pState->fSamBoth, NULL /*pSecAttr*/, &pState->hkeyClsidRootDst, NULL /*pdwDisposition*/);
-    AssertMsgReturn(rc == ERROR_SUCCESS, ("%u\n", rc), pState->rc = rc);
+    if (rc == ERROR_SUCCESS)
+    {
+        rc = RegCreateKeyExW(pState->hkeyClassesRootDst, L"CLSID", 0 /*Reserved*/, NULL /*pszClass*/, 0 /*fOptions*/,
+                             pState->fSamBoth, NULL /*pSecAttr*/, &pState->hkeyClsidRootDst, NULL /*pdwDisposition*/);
+        if (rc == ERROR_SUCCESS)
+            return ERROR_SUCCESS;
 
-    return ERROR_SUCCESS;
+        /* Ignore access denied errors as these may easily happen for
+           non-admin users. Just give up when this happens */
+        AssertMsgReturn(rc == ERROR_ACCESS_DENIED, ("%u\n", rc), pState->rc = rc);
+    }
+    else
+        AssertMsgReturn(rc == ERROR_ACCESS_DENIED, ("%u\n", rc), pState->rc = rc);
+    return pState->rc = rc;
 }
 
 
