@@ -49,6 +49,7 @@ using namespace com;
 #endif
 
 #ifdef RT_OS_DARWIN
+# include <iprt/asm.h>
 # include <dlfcn.h>
 # include <sys/mman.h>
 #endif
