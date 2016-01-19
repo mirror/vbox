@@ -398,6 +398,10 @@
         <ComponentRef Id="cp_MainCOM_x86" />
     <?endif ?>
         <ComponentRef Id="cp_MainCOM" />
+    <?if $(env.VBOX_WITH_MIDL_PROXY_STUB) = "yes" ?>
+        <ComponentRef Id="cp_ProxyStub" />
+        <ComponentRef Id="cp_ProxyStubLegacy" />
+    <?endif?>
         <ComponentRef Id="cp_MainBinaries" />
     <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <ComponentRef Id="cp_QtAccessible" />

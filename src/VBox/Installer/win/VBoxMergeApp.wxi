@@ -63,34 +63,49 @@
               Source="$(env.PATH_OUT)\bin\VBoxSVC.exe">
         </File>
 
-        <!-- Note: This file ID *must not* be changed because of our typelib template generation file! -->
-<?if $(env.VBOX_WITH_MIDL_PROXY_STUB) != "yes" ?>
         <!-- We set KeyPath on this file to instruct TypeLib to read the TLB resource from it
              and create appropriate Interface registry entries. Note that the same TLB is present
              in VBoxSVC.exe - it's just a matter of choice which one to use -->
+        <!-- Note: This file ID *must not* be changed because of our typelib template generation file! -->
         <File Id="VBoxC" Name="VBoxC.dll"
               Source="$(env.PATH_OUT)\bin\VBoxC.dll" KeyPath="yes">
         </File>
-<?else?>
-        <File Id="VBoxC" Name="VBoxC.dll"
-              Source="$(env.PATH_OUT)\bin\VBoxC.dll" KeyPath="no">
-        </File>
 
-        <!-- We put the typelib in the proxy stub since it's always required to be loaded and is
-             significantly smaller than VBoxC.dll.  So, KeyPath for this element instead of the above. -->
-        <File Id="file_VBoxProxyStub" Name="VBoxProxyStub.dll" KeyPath="yes"
-              Source="$(env.PATH_OUT)\bin\VBoxProxyStub.dll">
-            <!-- Note! 0bb3b78c-1807-4249-5ba5-ea42d66af0bf is hardcoded in Main/Makefile.kmk and VBoxMergeCOM32On64.wxi -->
-            <Class Id="{0bb3b78c-1807-4249-5ba5-ea42d66af0bf}" Context="InprocServer32"
-                Description="PSFactoryBuffer" ThreadingModel="both" >
-            </Class>
-        </File>
-<?endif?>
-
+<?if $(env.VBOX_WITH_MIDL_PROXY_STUB) != "yes" ?>
         <!-- Include the auto-generated TypeLib block -->
         <?include $(env.PATH_TARGET)\VirtualBox_TypeLib.wxi ?>
-
+<?endif?>
     </Component>
+
+<?if $(env.VBOX_WITH_MIDL_PROXY_STUB) = "yes" ?>
+
+    <Component Id="cp_ProxyStub" Guid="CDD09BA4-8D87-4383-DCA6-1CCCF9D11091" Win64="$(var.Property_Win64)">
+    <?if $(env.BUILD_TARGET_ARCH) != "x86" ?>
+        <!-- AMD64: Only install this proxy stub DLL on Windows 7 and later (OLE32 imports). -->
+        <Condition><![CDATA[(VersionNT >= 610)]]></Condition>
+    <?endif ?>
+        <File Id="file_VBoxProxyStub" Name="VBoxProxyStub.dll" KeyPath="yes"
+              Source="$(env.PATH_OUT)\bin\VBoxProxyStub.dll">
+            <Class Id="$(env.VBOX_MIDL_PROXY_CLSID)" Context="InprocServer32"
+                Description="PSFactoryBuffer" ThreadingModel="both" />
+        </File>
+        <?include $(env.PATH_TARGET)\VirtualBox_TypeLib.wxi ?>
+    </Component>
+
+    <?if $(env.BUILD_TARGET_ARCH) != "x86" ?>
+    <Component Id="cp_ProxyStubLegacy" Guid="97F12055-5B6D-481C-E8CD-F41D8C733280" Win64="$(var.Property_Win64)">
+        <!-- AMD64: Only install this proxy stub DLL pre-Windows 7 (legacy NDR stuff). -->
+        <Condition><![CDATA[(VersionNT < 610)]]></Condition>
+        <File Id="file_VBoxProxyStubLegacy" Name="VBoxProxyStubLegacy.dll" KeyPath="yes"
+              Source="$(env.PATH_OUT)\bin\VBoxProxyStubLegacy.dll">
+            <Class Id="$(env.VBOX_MIDL_PROXY_CLSID)" Context="InprocServer32"
+                Description="PSFactoryBuffer" ThreadingModel="both" />
+        </File>
+        <?include $(env.PATH_TARGET)\VirtualBox_TypeLib.wxi ?>
+    </Component>
+    <?endif ?>
+
+<?endif?>
 
     <?include $(env.PATH_TARGET)\DirComponentsAndFiles_DTrace.wxi ?>
 

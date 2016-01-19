@@ -33,10 +33,9 @@
             </File>
             <!-- Our key path, see VBoxMergeApp.wxi. -->
             <File Id="file_VBoxProxyStub_x86" Name="VBoxProxyStub-x86.dll" KeyPath="yes"
-                Source="$(env.PATH_OUT)\bin\VBoxProxyStub-x86.dll"
+                Source="$(env.PATH_OUT)\bin\x86\VBoxProxyStub-x86.dll"
                 DiskId="$(var.Property_DiskIdCommon)">
-                <!-- Note! 0bb3b78c-1807-4249-5ba5-ea42d66af0bf is hardcoded in Main/Makefile.kmk and VBoxMergeApp.wix -->
-                <Class Id="{0bb3b78c-1807-4249-5ba5-ea42d66af0bf}" Context="InprocServer32"
+                <Class Id="$(env.VBOX_MIDL_PROXY_CLSID)" Context="InprocServer32"
                     Description="PSFactoryBuffer" ThreadingModel="both" />
             </File>
     <?endif?>
