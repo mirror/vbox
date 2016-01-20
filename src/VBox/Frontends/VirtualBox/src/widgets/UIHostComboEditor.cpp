@@ -585,7 +585,7 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
     /* Make sure it's generic NSEvent: */
     if (eventType != "mac_generic_NSEvent")
         return QLineEdit::nativeEvent(eventType, pMessage, pResult);
-    EventRef event = (EventRef)darwinCocoaToCarbonEvent(pMessage);
+    EventRef event = static_cast<EventRef>(darwinCocoaToCarbonEvent(pMessage));
 
     /* Check if some NSEvent should be filtered out.
      * Returning @c true means filtering-out,

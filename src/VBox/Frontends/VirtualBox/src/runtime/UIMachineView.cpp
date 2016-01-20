@@ -1888,7 +1888,38 @@ bool UIMachineView::nativeEvent(const QByteArray &eventType, void *pMessage)
 {
 # if defined(Q_WS_MAC)
 
-#  warning "implement me!"
+    /* Make sure it's generic NSEvent: */
+    if (eventType != "mac_generic_NSEvent")
+        return false;
+    EventRef event = static_cast<EventRef>(darwinCocoaToCarbonEvent(pMessage));
+
+    /* Check if some NSEvent should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    switch(::GetEventClass(event))
+    {
+        /* Watch for keyboard-events: */
+        case kEventClassKeyboard:
+        {
+            switch(::GetEventKind(event))
+            {
+                /* Watch for key-events: */
+                case kEventRawKeyDown:
+                case kEventRawKeyRepeat:
+                case kEventRawKeyUp:
+                case kEventRawKeyModifiersChanged:
+                {
+                    /* Delegate key-event handling to the keyboard-handler: */
+                    return machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, screenId());
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
 
 # elif defined(Q_WS_WIN)
 
