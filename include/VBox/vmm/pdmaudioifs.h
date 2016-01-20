@@ -27,6 +27,7 @@
 #define ___VBox_vmm_pdmaudioifs_h
 
 #include <VBox/types.h>
+#include <iprt/critsect.h>
 #include <iprt/list.h>
 
 
@@ -338,6 +339,8 @@ typedef struct PDMAUDIOHSTSTRMIN
     PDMPCMPROPS            Props;
     /** Stream status flag. */
     PDMAUDIOSTRMSTS        fStatus;
+    /** Critical section for serializing access. */
+    RTCRITSECT             CritSect;
     /** This stream's mixing buffer. */
     PDMAUDIOMIXBUF         MixBuf;
     /** Pointer to (parent) guest stream. */
@@ -359,6 +362,8 @@ typedef struct PDMAUDIOHSTSTRMOUT
     PDMPCMPROPS            Props;
     /** Stream status flag. */
     PDMAUDIOSTRMSTS        fStatus;
+    /** Critical section for serializing access. */
+    RTCRITSECT             CritSect;
     /** This stream's mixing buffer. */
     PDMAUDIOMIXBUF         MixBuf;
     /** Associated guest output streams. */

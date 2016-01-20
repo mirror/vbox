@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -46,6 +46,7 @@
 #include <limits.h>
 
 #include <iprt/circbuf.h>
+#include <iprt/critsect.h>
 
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdm.h>
@@ -78,8 +79,8 @@ typedef struct DRVAUDIO
 {
     /** Input/output processing thread. */
     RTTHREAD                hThread;
-    /** Event for input/ouput processing. */
-    RTSEMEVENT              hEvent;
+    /** Critical section for serializing access. */
+    RTCRITSECT              CritSect;
     /** Shutdown indicator. */
     bool                    fTerminate;
     /** Our audio connector interface. */
@@ -88,14 +89,15 @@ typedef struct DRVAUDIO
     PPDMDRVINS              pDrvIns;
     /** Pointer to audio driver below us. */
     PPDMIHOSTAUDIO          pHostDrvAudio;
+    /** List of host input streams. */
     RTLISTANCHOR            lstHstStrmIn;
+    /** List of host output streams. */
     RTLISTANCHOR            lstHstStrmOut;
     /** Max. number of free input streams. */
     uint8_t                 cFreeInputStreams;
     /** Max. number of free output streams. */
     uint8_t                 cFreeOutputStreams;
-    /** Audio configuration settings retrieved
-     *  from the backend. */
+    /** Audio configuration settings retrieved from the backend. */
     PDMAUDIOBACKENDCFG      BackendCfg;
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     /** @todo Use a map with primary key set to the callback type? */
