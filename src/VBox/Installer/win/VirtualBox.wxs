@@ -400,9 +400,7 @@
         <ComponentRef Id="cp_MainCOM" />
     <?if $(env.VBOX_WITH_MIDL_PROXY_STUB) = "yes" ?>
         <ComponentRef Id="cp_ProxyStub" />
-        <?if $(env.BUILD_TARGET_ARCH) != "x86" ?>
         <ComponentRef Id="cp_ProxyStubLegacy" />
-        <?endif?>
     <?endif?>
         <ComponentRef Id="cp_MainBinaries" />
     <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>

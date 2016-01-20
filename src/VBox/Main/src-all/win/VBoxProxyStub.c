@@ -78,13 +78,14 @@
  */
 #if ARCH_BITS == 64 || defined(VBOX_IN_32_ON_64_MAIN_API)
 # define VBPS_PROXY_STUB_FILE(a_fIs32On64) \
-    ( (a_fIs32On64) ? "x86\\VBoxProxyStub-x86.dll" \
-      : RT_MAKE_U64(((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMinorVersion, \
-                    ((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMajorVersion) >= RT_MAKE_U64(1/*Lo*/,6/*Hi*/) \
-        ? "VBoxProxyStub.dll" : "VBoxProxyStubLegacy.dll" )
+    ( (a_fIs32On64) ? "x86\\VBoxProxyStub-x86.dll" : VBPS_PROXY_STUB_FILE_SUB() )
 #else
 # define VBPS_PROXY_STUB_FILE(a_fIs32On64) "VBoxProxyStub.dll"
 #endif
+#define VBPS_PROXY_STUB_FILE_SUB() \
+    ( RT_MAKE_U64(((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMinorVersion, \
+                  ((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMajorVersion) >= RT_MAKE_U64(1/*Lo*/,6/*Hi*/) \
+      ? "VBoxProxyStub.dll" : "VBoxProxyStubLegacy.dll" )
 
 
 /*********************************************************************************************************************************

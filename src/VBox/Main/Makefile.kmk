@@ -934,15 +934,13 @@ ifeq ($(KBUILD_TARGET),win)
  	$(VBoxCOM_0_OUTDIR)/dlldata.c \
  	$(VBoxCOM_0_OUTDIR)/VirtualBox.h \
  	$(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
- ifeq ($(KBUILD_TARGET_ARCH),amd64)
-  VBoxCOM_CLEAN        += \
- 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_i.c \
- 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_p.c \
- 	$(VBoxCOM_0_OUTDIR)/old64/dlldata.c \
- 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox.h \
- 	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox.tlb
-  VBoxCOM_BLDDIRS      = $(VBoxCOM_0_OUTDIR)/old64/
- endif
+ VBoxCOM_CLEAN        += \
+	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
+	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c \
+	$(VBoxCOM_0_OUTDIR)/legacy/dlldata.c \
+	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h \
+	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb
+ VBoxCOM_BLDDIRS      = $(VBoxCOM_0_OUTDIR)/legacy/
 else # !win
  VBoxCOM_SOURCES       += \
 	$(VBoxCOM_0_OUTDIR)/VirtualBox_XPCOM_i.c \
@@ -1046,29 +1044,29 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  VBoxProxyStub_DEFS     = REGISTER_PROXY_DLL PROXY_CLSID_IS="$(VBOX_MIDL_PROXY_CLSID_IS)"
  VBoxProxyStub_DEFS.win.x86 = WIN32
  VBoxProxyStub_SDKS     = VBOX_NTDLL
+ VBoxProxyStub_DEFPATH  = $(VBoxCOM_0_OUTDIR)/# Hack to workaround drive letter in $(VBoxCOM_0_OUTDIR)/ for CFLAGS hack below.
  VBoxProxyStub_INCS     = $(VBoxCOM_0_OUTDIR)/
- VBoxProxyStub_SOURCES  = \
- 	$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c \
- 	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
- 	src-all/win/VBoxProxyStub.def \
- 	src-all/win/VBoxProxyStub.rc \
- 	src-all/win/VBoxProxyStub.c
-  src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
+ VBoxProxyStub_SOURCES := \
+ 	VirtualBox_p.c \
+ 	VirtualBox_i.c \
+ 	$(PATH_SUB_CURRENT)/src-all/win/VBoxProxyStub.def \
+ 	$(PATH_SUB_CURRENT)/src-all/win/VBoxProxyStub.rc \
+ 	$(PATH_SUB_CURRENT)/src-all/win/VBoxProxyStub.c
+ src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
+ VBoxProxyStub_VirtualBox_p.c_CFLAGS.x86 = /Gz # Workaround for incorrect ObjectStublessClient* prototypes in SDK v7.1.
 
- ifeq ($(KBUILD_TARGET_ARCH),amd64)
-  DLLS += VBoxProxyStubLegacy
-  VBoxProxyStubLegacy_TEMPLATE = VBOXMAINCOMP
-  VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
-  VBoxProxyStubLegacy_DEFS     = $(VBoxProxyStub_DEFS) VBOX_IN_PROXY_STUB_LEGACY
-  VBoxProxyStubLegacy_INCS     = $(VBoxCOM_0_OUTDIR)/old64/
-  VBoxProxyStubLegacy_SOURCES  = \
-  	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_p.c \
-  	$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_i.c \
-  	src-all/win/VBoxProxyStub.def \
-  	src-all/win/VBoxProxyStubLegacy.rc \
-  	src-all/win/VBoxProxyStub.c
-  src-all/win/VBoxProxyStubLegacy.rc_DEPS = $(VBoxCOM_0_OUTDIR)/old64/VirtualBox.tlb
- endif
+ DLLS += VBoxProxyStubLegacy
+ VBoxProxyStubLegacy_TEMPLATE = VBOXMAINCOMP
+ VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
+ VBoxProxyStubLegacy_DEFS     = $(VBoxProxyStub_DEFS) VBOX_IN_PROXY_STUB_LEGACY
+ VBoxProxyStubLegacy_INCS     = $(VBoxCOM_0_OUTDIR)/legacy/
+ VBoxProxyStubLegacy_SOURCES  = \
+ 	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c \
+ 	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
+ 	src-all/win/VBoxProxyStub.def \
+ 	src-all/win/VBoxProxyStubLegacy.rc \
+ 	src-all/win/VBoxProxyStub.c
+ src-all/win/VBoxProxyStubLegacy.rc_DEPS = $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb
 
  ifdef VBOX_WITH_32_ON_64_MAIN_API
   DLLS += VBoxProxyStub-x86
@@ -1139,26 +1137,29 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 $(if $(VBOX_WITH_MIDL_PROXY_STUB),+ $(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM_0_OUTDIR)/dlldata.c,) \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_WIN_MIDL) /nologo \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64" && "$(KBUILD_HOST)" == "win" \
+		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64" \
 		,/env amd64 /robust /protocol all /target NT61\
-		,/env win32 /robust /protocol all /target NT51) \
+		,/env win32 /robust /protocol all /target NT61) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 
-if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET_ARCH)" == "amd64"
+if defined(VBOX_WITH_MIDL_PROXY_STUB)
 # -Windows Server 2003 AMD64 SP1 does not like the result when using '/protocol all' and '/target NT51'.
 # -Vista AMD64 SP1 and Windows Server 2008 AMD64 seems to have some objections as well, but it seemed
 #  that using an older MIDL compiler (v7.00.0499 instead of v7.00.0555) helps. But the W2K3 fix also works.
-$(VBoxCOM_0_OUTDIR)/old64/VirtualBox_i.c \
-+ $(VBoxCOM_0_OUTDIR)/old64/VirtualBox_p.c\
-+ $(VBoxCOM_0_OUTDIR)/old64/dlldata.c \
-+ $(VBoxCOM_0_OUTDIR)/old64/VirtualBox.h \
-+ $(VBoxCOM_0_OUTDIR)/old64/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
+# To avoid 32-bit vs. 64-bit differences, we do the same for 32-bit windows versions.
+$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
++ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c\
++ $(VBoxCOM_0_OUTDIR)/legacy/dlldata.c \
++ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h \
++ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_WIN_MIDL) /nologo \
-		/env win64 /x64 /robust /target NT50 \
+		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64" \
+		,/env amd64 /x64 /target NT50 /robust \
+		,/env win32      /target NT51 /robust /protocol all ) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(dir $@)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
@@ -1166,12 +1167,14 @@ $(VBoxCOM_0_OUTDIR)/old64/VirtualBox_i.c \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 endif
 
+# The XP targetted 32-bit proxy stub works with all versions of windows (the
+# issues leading to the VBoxProxyStubLegacy.dll are only on 64-bit windows).
 $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
 $(if $(VBOX_WITH_MIDL_PROXY_STUB),+ $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM-x86_0_OUTDIR)/dlldata.c,) \
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
-	$(VBOX_WIN_MIDL) /nologo /env win32 /target NT51 \
-		/robust /protocol all \
+	$(VBOX_WIN_MIDL) /nologo \
+		/env win32 /target NT51 /robust /protocol all  \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)) \
 		/tlb $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_CC))) \
