@@ -537,11 +537,23 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
 
         DSBUFFERDESC bd;
         RT_ZERO(bd);
-        bd.dwSize = sizeof(bd);
+        bd.dwSize      = sizeof(bd);
         bd.lpwfxFormat = &wfx;
-        bd.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2;
+
+        /*
+         * As we reuse our (secondary) buffer for playing out data as it comes in,
+         * we're using this buffer as a so-called static buffer.
+         *
+         * However, as we do not want to use memory on the sound device directly
+         * (as most modern audio hardware on the host doesn't have this anyway),
+         * we're *not* going to use DSBCAPS_STATIC for that.
+         *
+         * Instead we're specifying DSBCAPS_LOCSOFTWARE, as this fits the bill
+         * of copying own buffer data (from AudioMixBuf) to our secondary's Direct Sound buffer.
+         */
+        bd.dwFlags     = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_LOCSOFTWARE;
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
-        bd.dwFlags      |= DSBCAPS_CTRLPOSITIONNOTIFY;
+        bd.dwFlags    |= DSBCAPS_CTRLPOSITIONNOTIFY;
 #endif
         bd.dwBufferBytes = pThis->cfg.cbBufferOut;
 
@@ -583,6 +595,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
 
         DSLOG(("DSound: Playback format:\n"
                "  dwBufferBytes   = %RI32\n"
+               "  dwFlags         = 0x%x\n"
                "  wFormatTag      = %RI16\n"
                "  nChannels       = %RI16\n"
                "  nSamplesPerSec  = %RU32\n"
@@ -591,6 +604,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
                "  wBitsPerSample  = %RI16\n"
                "  cbSize          = %RI16\n",
                bc.dwBufferBytes,
+               bc.dwFlags,
                wfx.wFormatTag,
                wfx.nChannels,
                wfx.nSamplesPerSec,
@@ -741,19 +755,22 @@ static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
     if (pDSoundStrmOut->pDSB != NULL)
     {
         /* This performs some restore, so call it anyway and ignore result. */
-        directSoundPlayGetStatus(pDSoundStrmOut->pDSB, NULL /* Status */);
-
-        DSLOG(("DSound: Stopping playback\n"));
-
-        /** @todo Wait until all data in the buffer has been played. */
-        hr = IDirectSoundBuffer8_Stop(pDSoundStrmOut->pDSB);
+        hr = directSoundPlayGetStatus(pDSoundStrmOut->pDSB, NULL /* pdwStatus */);
         if (SUCCEEDED(hr))
-            dsoundPlayClearSamples(pDSoundStrmOut);
-        else
-            DSLOGREL(("DSound: Stopping playback failed with %Rhrc\n", hr));
+        {
+            DSLOG(("DSound: Stopping playback\n"));
+
+            /** @todo Wait until all data in the buffer has been played. */
+            hr = IDirectSoundBuffer8_Stop(pDSoundStrmOut->pDSB);
+            if (SUCCEEDED(hr))
+                dsoundPlayClearSamples(pDSoundStrmOut);
+        }
     }
     else
         hr = E_UNEXPECTED;
+
+    if (FAILED(hr))
+        DSLOGREL(("DSound: Stopping playback failed with %Rhrc\n", hr));
 
     return hr;
 }
@@ -789,6 +806,9 @@ static HRESULT directSoundPlayStart(PDSOUNDSTREAMOUT pDSoundStrmOut)
     }
     else
         hr = E_UNEXPECTED;
+
+    if (FAILED(hr))
+        DSLOGREL(("DSound: Starting playback failed with %Rhrc\n", hr));
 
     return hr;
 }
@@ -1006,6 +1026,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSo
 
         DSLOG(("DSound: Capture format:\n"
                "  dwBufferBytes   = %RI32\n"
+               "  dwFlags         = 0x%x\n"
                "  wFormatTag      = %RI16\n"
                "  nChannels       = %RI16\n"
                "  nSamplesPerSec  = %RU32\n"
@@ -1014,6 +1035,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSo
                "  wBitsPerSample  = %RI16\n"
                "  cbSize          = %RI16\n",
                bc.dwBufferBytes,
+               bc.dwFlags,
                wfx.wFormatTag,
                wfx.nChannels,
                wfx.nSamplesPerSec,
@@ -1362,7 +1384,7 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
         LPVOID pv1, pv2;
         DWORD cb1, cb2;
         HRESULT hr = directSoundPlayLock(pDSB, &pHstStrmOut->Props, pDSoundStrmOut->cbPlayWritePos, cbLive,
-                                 &pv1, &pv2, &cb1, &cb2, 0 /* dwFlags */);
+                                         &pv1, &pv2, &cb1, &cb2, 0 /* dwFlags */);
         if (FAILED(hr))
         {
             rc = VERR_ACCESS_DENIED;
