@@ -2272,8 +2272,7 @@ DECLEXPORT(uint32_t) VbpsUpdateRegistrations(void)
     vbpsRegTerm(&State);
 
 
-/*#if defined(VBOX_IN_32_ON_64_MAIN_API) || (ARCH_BITS == 64 && defined(VBOX_WITH_32_ON_64_MAIN_API)) ?? */
-#ifndef VBOX_IN_32_ON_64_MAIN_API
+#if (ARCH_BITS == 64 && defined(VBOX_WITH_32_ON_64_MAIN_API)) /*|| defined(VBOX_IN_32_ON_64_MAIN_API) ??*/
     /*
      * Update registry entries for the other CPU bitness.
      */
