@@ -146,8 +146,8 @@ public:
     bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult)
     {
         /* Redirect event to parent: */
-        Q_UNUSED(eventType); Q_UNUSED(pResult);
-        return m_pParent->nativeEvent(pMessage);
+        Q_UNUSED(pResult);
+        return m_pParent->nativeEvent(eventType, pMessage);
     }
 
 private:
@@ -1884,7 +1884,7 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 # endif /* Q_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
 
-bool UIMachineView::nativeEvent(void *pMessage)
+bool UIMachineView::nativeEvent(const QByteArray &eventType, void *pMessage)
 {
 # if defined(Q_WS_MAC)
 
@@ -1892,7 +1892,9 @@ bool UIMachineView::nativeEvent(void *pMessage)
 
 # elif defined(Q_WS_WIN)
 
-    /* Cast to generic MSG event: */
+    /* Make sure it's generic MSG event: */
+    if (eventType != "windows_generic_MSG")
+        return false;
     MSG *pEvent = static_cast<MSG*>(pMessage);
 
     /* Check if some MSG event should be filtered out.
@@ -1917,7 +1919,7 @@ bool UIMachineView::nativeEvent(void *pMessage)
 
     /* Make sure it's generic XCB event: */
     if (eventType != "xcb_generic_event_t")
-        return QAbstractScrollArea::nativeEvent(eventType, pMessage, pResult);
+        return false;
     xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
 
     /* Check if some XCB event should be filtered out.

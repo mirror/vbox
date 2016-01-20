@@ -1650,7 +1650,8 @@ bool UIKeyboardHandler::winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
     long dummyResult;
     return m_views[m_iKeyboardHookViewIndex]->winEvent(&message, &dummyResult);
 #else /* QT_VERSION >= 0x050000 */
-    return m_views[m_iKeyboardHookViewIndex]->nativeEvent(&message);
+    QByteArray eventType("windows_generic_MSG");
+    return m_views[m_iKeyboardHookViewIndex]->nativeEvent(eventType, &message);
 #endif /* QT_VERSION >= 0x050000 */
 }
 
