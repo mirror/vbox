@@ -76,11 +76,15 @@
  * has trouble parsing the result when MIDL /target NT51 or higher. Vista and
  * windows server 2008 seems to have trouble with newer IDL compilers.
  */
-#define VBPS_PROXY_STUB_FILE(a_fIs32On64) \
+#if ARCH_BITS == 64 || defined(VBOX_IN_32_ON_64_MAIN_API)
+# define VBPS_PROXY_STUB_FILE(a_fIs32On64) \
     ( (a_fIs32On64) ? "x86\\VBoxProxyStub-x86.dll" \
       : RT_MAKE_U64(((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMinorVersion, \
                     ((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMajorVersion) >= RT_MAKE_U64(1/*Lo*/,6/*Hi*/) \
         ? "VBoxProxyStub.dll" : "VBoxProxyStubLegacy.dll" )
+#else
+# define VBPS_PROXY_STUB_FILE(a_fIs32On64) "VBoxProxyStub.dll"
+#endif
 
 
 /*********************************************************************************************************************************
@@ -1289,8 +1293,12 @@ void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwsz
  */
 static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVBoxDir, bool fIs32On64)
 {
-    const char * const pszTypeLibDll = VBPS_PROXY_STUB_FILE(fIs32On64);
-    const char * const pszWinXx      = !fIs32On64 ? "win64"             : "win32";
+    const char * const pszTypeLibDll  = VBPS_PROXY_STUB_FILE(fIs32On64);
+#if ARCH_BITS == 32 && !defined(VBOX_IN_32_ON_64_MAIN_API)
+    const char * const pszWinXx       = "win32";
+#else
+    const char * const pszWinXx       = !fIs32On64 ? "win64"             : "win32";
+#endif
     const char * const pszDescription = "VirtualBox Type Library";
 
     char szTypeLibId[CURLY_UUID_STR_BUF_SIZE];
