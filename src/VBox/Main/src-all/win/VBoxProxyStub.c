@@ -77,10 +77,9 @@
  * windows server 2008 seems to have trouble with newer IDL compilers.
  */
 #if ARCH_BITS == 64 || defined(VBOX_IN_32_ON_64_MAIN_API)
-# define VBPS_PROXY_STUB_FILE(a_fIs32On64) \
-    ( (a_fIs32On64) ? "x86\\VBoxProxyStub-x86.dll" : VBPS_PROXY_STUB_FILE_SUB() )
+# define VBPS_PROXY_STUB_FILE(a_fIs32On64) ( (a_fIs32On64) ? "x86\\VBoxProxyStub-x86.dll" : VBPS_PROXY_STUB_FILE_SUB() )
 #else
-# define VBPS_PROXY_STUB_FILE(a_fIs32On64) "VBoxProxyStub.dll"
+# define VBPS_PROXY_STUB_FILE(a_fIs32On64) VBPS_PROXY_STUB_FILE_SUB()
 #endif
 #define VBPS_PROXY_STUB_FILE_SUB() \
     ( RT_MAKE_U64(((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMinorVersion, \
@@ -1298,7 +1297,7 @@ static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVB
 #if ARCH_BITS == 32 && !defined(VBOX_IN_32_ON_64_MAIN_API)
     const char * const pszWinXx       = "win32";
 #else
-    const char * const pszWinXx       = !fIs32On64 ? "win64"             : "win32";
+    const char * const pszWinXx       = !fIs32On64 ? "win64" : "win32";
 #endif
     const char * const pszDescription = "VirtualBox Type Library";
 
