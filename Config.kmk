@@ -2765,7 +2765,7 @@ ifdef VBOX_SIGNING_MODE
    endif
   endif
 
-  VBOX_RETRY    ?= $(KBUILD_DEVTOOLS)/bin/retry.sh
+  VBOX_RETRY    ?= $(ASH) $(KBUILD_DEVTOOLS)/bin/retry.sh
   VBOX_SIGNTOOL ?= $(VBOX_RETRY) "$(VBOX_PATH_SIGN_TOOLS)/signtool.exe"
   VBOX_INF2CAT  ?= $(VBOX_PATH_SELFSIGN)/inf2cat.exe
 
@@ -2812,14 +2812,16 @@ ifdef VBOX_SIGNING_MODE
   	,/sha1 "$(subst $(SP),,$(VBOX_CERTIFICATE_SHA2_FINGERPRINT))",) # Still using SHA-1 for fingerprinting, it's good enough for that!
 
   ## Commands for signing a driver image after link.
-  VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out)))
+  VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
   ## Sign a file (generic).
   # @param 1  The file to sign.
   # @param 2  File description. Optional.
   # @param 3  Additional parameters. Optional.
+  # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
   ifndef VBOX_SIGN_FILE_FN
    ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
-    VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) sign /fd sha1 \
+    VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
+    	sign /fd sha1\
 	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_STORE_ARGS) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
@@ -2828,8 +2830,8 @@ ifdef VBOX_SIGNING_MODE
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
 	$(1) \
-       && \
-	$(VBOX_SIGNTOOL) sign /as /fd sha256 \
+	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_SIGNTOOL) \
+    	sign /as /fd sha256 \
 	$(VBOX_CROSS_CERTIFICATE_SHA2_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_SHA2_STORE_ARGS) \
 	$(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME_ARGS) \
@@ -2854,7 +2856,8 @@ ifdef VBOX_SIGNING_MODE
   ## Sign an executable image.
   # @param 1  The file to sign.
   # @param 2  File description. Optional.
-  VBOX_SIGN_IMAGE_FN     ?= $(call VBOX_SIGN_FILE_FN,$(1),$(2),/ph)
+  # @param 3  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
+  VBOX_SIGN_IMAGE_FN     ?= $(call VBOX_SIGN_FILE_FN,$(1),$(2),/ph,$(3))
 
   ## Create a security catalog file.
   # @param 1  The directory containing the stuff to sign.
@@ -2864,7 +2867,7 @@ ifdef VBOX_SIGNING_MODE
 	$(RM) -f $(2)\
 	$(NL)$(TAB)$(VBOX_INF2CAT) /driver:$(strip $(1)) /os:$(strip $(subst ;,$(COMMA),$(3))) /verbose \
 	$(NL)$(TAB)$(MV) $(2) $(2) \
-	$(NL)$(TAB)$(call VBOX_SIGN_FILE_FN,$(2))
+	$(NL)$(TAB)$(call VBOX_SIGN_FILE_FN,$(2),,,$(NL)$(TAB))
   VBOX_MAKE_CAT64_FN   ?= $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),XP_X64;Server2003_X64;Vista_X64)
   VBOX_MAKE_CAT32_FN   ?= $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),2000;XP_X86;Server2003_X86;Vista_X86)
   ifeq ($(KBUILD_TARGET_ARCH),x86)
@@ -2876,7 +2879,7 @@ ifdef VBOX_SIGNING_MODE
   # Go nuts, sign everything.
   if "$(VBOX_SIGNING_MODE)" == "release" || defined(VBOX_WITH_HARDENING)
    ## Commands for signing an executable or a dll image after link.
-   VBOX_SIGN_IMAGE_CMDS  ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out)))
+   VBOX_SIGN_IMAGE_CMDS  ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
   endif
   ## Enable signing of the additions.
   VBOX_SIGN_ADDITIONS   ?= 1
