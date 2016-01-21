@@ -65,41 +65,39 @@ typedef struct DRVHOSTCOREAUDIO
  *
  ******************************************************************************/
 
-#ifdef DEBUG
 static void drvHostCoreAudioPrintASBDesc(const char *pszDesc, const AudioStreamBasicDescription *pStreamDesc)
 {
     char pszSampleRate[32];
-    Log(("%s AudioStreamBasicDescription:\n", pszDesc));
-    LogFlowFunc(("Format ID: %RU32 (%c%c%c%c)\n", pStreamDesc->mFormatID,
-                 RT_BYTE4(pStreamDesc->mFormatID), RT_BYTE3(pStreamDesc->mFormatID),
-                 RT_BYTE2(pStreamDesc->mFormatID), RT_BYTE1(pStreamDesc->mFormatID)));
-    LogFlowFunc(("Flags: %RU32", pStreamDesc->mFormatFlags));
+    LogRel2(("CoreAudio: %s description:\n", pszDesc));
+    LogRel2(("CoreAudio: Format ID: %RU32 (%c%c%c%c)\n", pStreamDesc->mFormatID,
+             RT_BYTE4(pStreamDesc->mFormatID), RT_BYTE3(pStreamDesc->mFormatID),
+             RT_BYTE2(pStreamDesc->mFormatID), RT_BYTE1(pStreamDesc->mFormatID)));
+    LogRel2(("CoreAudio: Flags: %RU32", pStreamDesc->mFormatFlags));
     if (pStreamDesc->mFormatFlags & kAudioFormatFlagIsFloat)
-        Log((" Float"));
+        LogRel2((" Float"));
     if (pStreamDesc->mFormatFlags & kAudioFormatFlagIsBigEndian)
-        Log((" BigEndian"));
+        LogRel2((" BigEndian"));
     if (pStreamDesc->mFormatFlags & kAudioFormatFlagIsSignedInteger)
-        Log((" SignedInteger"));
+        LogRel2((" SignedInteger"));
     if (pStreamDesc->mFormatFlags & kAudioFormatFlagIsPacked)
-        Log((" Packed"));
+        LogRel2((" Packed"));
     if (pStreamDesc->mFormatFlags & kAudioFormatFlagIsAlignedHigh)
-        Log((" AlignedHigh"));
+        LogRel2((" AlignedHigh"));
     if (pStreamDesc->mFormatFlags & kAudioFormatFlagIsNonInterleaved)
-        Log((" NonInterleaved"));
+        LogRel2((" NonInterleaved"));
     if (pStreamDesc->mFormatFlags & kAudioFormatFlagIsNonMixable)
-        Log((" NonMixable"));
+        LogRel2((" NonMixable"));
     if (pStreamDesc->mFormatFlags & kAudioFormatFlagsAreAllClear)
-        Log((" AllClear"));
-    Log(("\n"));
+        LogRel2((" AllClear"));
+    LogRel2(("\n"));
     snprintf(pszSampleRate, 32, "%.2f", (float)pStreamDesc->mSampleRate); /** @todo r=andy Use RTStrPrint*. */
-    LogFlowFunc(("SampleRate      : %s\n", pszSampleRate));
-    LogFlowFunc(("ChannelsPerFrame: %RU32\n", pStreamDesc->mChannelsPerFrame));
-    LogFlowFunc(("FramesPerPacket : %RU32\n", pStreamDesc->mFramesPerPacket));
-    LogFlowFunc(("BitsPerChannel  : %RU32\n", pStreamDesc->mBitsPerChannel));
-    LogFlowFunc(("BytesPerFrame   : %RU32\n", pStreamDesc->mBytesPerFrame));
-    LogFlowFunc(("BytesPerPacket  : %RU32\n", pStreamDesc->mBytesPerPacket));
+    LogRel2(("CoreAudio: SampleRate      : %s\n", pszSampleRate));
+    LogRel2(("CoreAudio: ChannelsPerFrame: %RU32\n", pStreamDesc->mChannelsPerFrame));
+    LogRel2(("CoreAudio: FramesPerPacket : %RU32\n", pStreamDesc->mFramesPerPacket));
+    LogRel2(("CoreAudio: BitsPerChannel  : %RU32\n", pStreamDesc->mBitsPerChannel));
+    LogRel2(("CoreAudio: BytesPerFrame   : %RU32\n", pStreamDesc->mBytesPerFrame));
+    LogRel2(("CoreAudio: BytesPerPacket  : %RU32\n", pStreamDesc->mBytesPerPacket));
 }
-#endif /* DEBUG */
 
 static void drvHostCoreAudioPCMInfoToASBDesc(PDMPCMPROPS *pPcmProperties, AudioStreamBasicDescription *pStreamDesc)
 {
@@ -806,7 +804,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
-    /* Switch the I/O mode for input to off. This is important, as this is a pure input stream. */
+    /* Switch the I/O mode for output to off. This is important, as this is a pure input stream. */
     uFlag = 0;
     err = AudioUnitSetProperty(pStreamIn->audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output,
                                0, &uFlag, sizeof(uFlag));
@@ -855,21 +853,20 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     /* Create an AudioStreamBasicDescription based on our required audio settings. */
     drvHostCoreAudioPCMInfoToASBDesc(&pStreamIn->streamIn.Props, &pStreamIn->streamFormat);
 
-#ifdef DEBUG
     drvHostCoreAudioPrintASBDesc("CoreAudio: Input device", &pStreamIn->deviceFormat);
     drvHostCoreAudioPrintASBDesc("CoreAudio: Input stream", &pStreamIn->streamFormat);
-#endif /* DEBUG */
 
     /* If the frequency of the device is different from the requested one we
      * need a converter. The same count if the number of channels is different. */
     if (   pStreamIn->deviceFormat.mSampleRate       != pStreamIn->streamFormat.mSampleRate
         || pStreamIn->deviceFormat.mChannelsPerFrame != pStreamIn->streamFormat.mChannelsPerFrame)
     {
+        LogRel(("CoreAudio: Input converter is active\n"));
+
         err = AudioConverterNew(&pStreamIn->deviceFormat, &pStreamIn->streamFormat, &pStreamIn->converter);
         if (RT_UNLIKELY(err != noErr))
         {
-            LogRel(("CoreAudio: Failed to create the audio converte(%RI32). Input Format=%d, Output Foramt=%d\n",
-                     err, pStreamIn->deviceFormat, pStreamIn->streamFormat));
+            LogRel(("CoreAudio: Failed to create the audio converter (%RI32)\n", err));
             return VERR_AUDIO_BACKEND_INIT_FAILED;
         }
 
@@ -888,18 +885,9 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
             err = AudioConverterSetProperty(pStreamIn->converter, kAudioConverterChannelMap, sizeof(channelMap), channelMap);
             if (err != noErr)
             {
-                LogRel(("CoreAudio: Failed to set channel mapping for the audio input converter (%RI32)\n", err));
+                LogRel(("CoreAudio: Failed to set channel mapping (mono -> stereo) for the audio input converter (%RI32)\n", err));
                 return VERR_AUDIO_BACKEND_INIT_FAILED;
             }
-        }
-
-        /* Set the new input format description for the stream. */
-        err = AudioUnitSetProperty(pStreamIn->audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input,
-                                   1, &pStreamIn->streamFormat, sizeof(pStreamIn->streamFormat));
-        if (err != noErr)
-        {
-            LogRel(("CoreAudio: Failed to set input format for input stream (%RI32)\n", err));
-            return VERR_AUDIO_BACKEND_INIT_FAILED;
         }
 #if 0
         /* Set sample rate converter quality to maximum */
@@ -909,18 +897,16 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
         if (err != noErr)
             LogRel(("CoreAudio: Failed to set input audio converter quality to the maximum (%RI32)\n", err));
 #endif
-        LogRel(("CoreAudio: Input converter is active\n"));
     }
-    else
+
+
+    /* Set the new output format description for the input stream. */
+    err = AudioUnitSetProperty(pStreamIn->audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output,
+                               1, &pStreamIn->streamFormat, sizeof(pStreamIn->streamFormat));
+    if (err != noErr)
     {
-        /* Set the new output format description for the stream. */
-        err = AudioUnitSetProperty(pStreamIn->audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output,
-                                   1, &pStreamIn->streamFormat, sizeof(pStreamIn->streamFormat));
-        if (err != noErr)
-        {
-            LogRel(("CoreAudio: Failed to set output format for input stream (%RI32)\n", err));
-            return VERR_AUDIO_BACKEND_INIT_FAILED; /** @todo Fudge! */
-        }
+        LogRel(("CoreAudio: Failed to set output format for input stream (%RI32)\n", err));
+        return VERR_AUDIO_BACKEND_INIT_FAILED; /** @todo Fudge! */
     }
 
     /*
@@ -1195,10 +1181,8 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     /* Create an AudioStreamBasicDescription based on our required audio settings. */
     drvHostCoreAudioPCMInfoToASBDesc(&pStreamOut->streamOut.Props, &pStreamOut->streamFormat);
 
-#ifdef DEBUG
     drvHostCoreAudioPrintASBDesc("CoreAudio: Output device", &pStreamOut->deviceFormat);
     drvHostCoreAudioPrintASBDesc("CoreAudio: Output format", &pStreamOut->streamFormat);
-#endif /* DEBUG */
 
     /* Set the new output format description for the stream. */
     err = AudioUnitSetProperty(pStreamOut->audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input,
