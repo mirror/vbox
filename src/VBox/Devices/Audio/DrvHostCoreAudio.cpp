@@ -897,16 +897,43 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
         if (err != noErr)
             LogRel(("CoreAudio: Failed to set input audio converter quality to the maximum (%RI32)\n", err));
 #endif
+
+        /* Set the new format description for the stream. */
+        err = AudioUnitSetProperty(pStreamIn->audioUnit,
+                                   kAudioUnitProperty_StreamFormat,
+                                   kAudioUnitScope_Output,
+                                   1,
+                                   &pStreamIn->deviceFormat,
+                                   sizeof(pStreamIn->deviceFormat));
+        if (RT_UNLIKELY(err != noErr))
+        {
+            LogRel(("CoreAudio: Failed to set input stream output format (%RI32)\n", err));
+            return VERR_AUDIO_BACKEND_INIT_FAILED;
+        }
+
+        err = AudioUnitSetProperty(pStreamIn->audioUnit,
+                                   kAudioUnitProperty_StreamFormat,
+                                   kAudioUnitScope_Input,
+                                   1,
+                                   &pStreamIn->deviceFormat,
+                                   sizeof(pStreamIn->deviceFormat));
+        if (RT_UNLIKELY(err != noErr))
+        {
+            LogRel(("CoreAudio: Failed to set stream input format (%RI32)\n", err));
+            return VERR_AUDIO_BACKEND_INIT_FAILED;
+        }
     }
-
-
-    /* Set the new output format description for the input stream. */
-    err = AudioUnitSetProperty(pStreamIn->audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output,
-                               1, &pStreamIn->streamFormat, sizeof(pStreamIn->streamFormat));
-    if (err != noErr)
+    else
     {
-        LogRel(("CoreAudio: Failed to set output format for input stream (%RI32)\n", err));
-        return VERR_AUDIO_BACKEND_INIT_FAILED; /** @todo Fudge! */
+
+        /* Set the new output format description for the input stream. */
+        err = AudioUnitSetProperty(pStreamIn->audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output,
+                                   1, &pStreamIn->streamFormat, sizeof(pStreamIn->streamFormat));
+        if (err != noErr)
+        {
+            LogRel(("CoreAudio: Failed to set output format for input stream (%RI32)\n", err));
+            return VERR_AUDIO_BACKEND_INIT_FAILED;
+        }
     }
 
     /*
@@ -1383,7 +1410,7 @@ static DECLCALLBACK(int) drvHostCoreAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
         if (cWrittenTotal)
             rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, cWrittenTotal, &cCaptured);
 
-        LogFlowFunc(("cWrittenTotal=%RU32 (%RU32 bytes), cCaptured, rc=%Rrc\n", cWrittenTotal, cbWrittenTotal, cCaptured, rc));
+        LogFlowFunc(("cWrittenTotal=%RU32 (%RU32 bytes), cCaptured=%RU32, rc=%Rrc\n", cWrittenTotal, cbWrittenTotal, cCaptured, rc));
 
         if (pcSamplesCaptured)
             *pcSamplesCaptured = cCaptured;
