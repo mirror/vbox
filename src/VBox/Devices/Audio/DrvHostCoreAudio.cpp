@@ -264,18 +264,18 @@ typedef struct COREAUDIOSTREAMOUT
 {
     /** Host stream out. */
     PDMAUDIOHSTSTRMOUT          streamOut;
-    /* Stream description which is default on the device */
+    /** Stream description which is default on the device. */
     AudioStreamBasicDescription deviceFormat;
-    /* Stream description which is selected for using by VBox */
+    /** Stream description which is selected for using with VBox. */
     AudioStreamBasicDescription streamFormat;
-    /* The audio device ID of the currently used device */
+    /** The audio device ID of the currently used device. */
     AudioDeviceID               deviceID;
-    /* The AudioUnit used */
+    /** The AudioUnit being used. */
     AudioUnit                   audioUnit;
-    /* A ring buffer for transferring data to the playback thread. */
+    /** A ring buffer for transferring data to the playback thread. */
     PRTCIRCBUF                  pBuf;
-    /* Initialization status tracker. Used when some of the device parameters
-     * or the device itself is changed during the runtime. */
+    /** Initialization status tracker. Used when some of the device parameters
+     *  or the device itself is changed during the runtime. */
     volatile uint32_t           status;
     /** Flag whether the "default device changed" listener was registered. */
     bool                        fDefDevChgListReg;
@@ -285,26 +285,26 @@ typedef struct COREAUDIOSTREAMIN
 {
     /** Host stream in. */
     PDMAUDIOHSTSTRMIN           streamIn;
-    /* Stream description which is default on the device */
+    /** Stream description which is default on the device. */
     AudioStreamBasicDescription deviceFormat;
-    /* Stream description which is selected for using by VBox */
+    /** Stream description which is selected for using with VBox. */
     AudioStreamBasicDescription streamFormat;
-    /* The audio device ID of the currently used device */
+    /** The audio device ID of the currently used device. */
     AudioDeviceID               deviceID;
-    /* The AudioUnit used */
+    /** The AudioUnit used. */
     AudioUnit                   audioUnit;
-    /* The audio converter if necessary */
+    /** The audio converter if necessary. */
     AudioConverterRef           converter;
-    /* A temporary position value used in the caConverterCallback function */
-    uint32_t                    rpos;
-    /* The ratio between the device & the stream sample rate */
-    Float64                     sampleRatio;
-    /* An extra buffer used for render the audio data in the recording thread */
+    /** Native buffer used for render the audio data in the recording thread. */
     AudioBufferList             bufferList;
-    /* A ring buffer for transferring data from the recording thread */
+    /** Reading offset for the bufferList's buffer. */
+    uint32_t                    offBufferRead;
+    /** The ratio between the device & the stream sample rate. */
+    Float64                     sampleRatio;
+    /** A ring buffer for transferring data from the recording thread. */
     PRTCIRCBUF                  pBuf;
-    /* Initialization status tracker. Used when some of the device parameters
-     * or the device itself is changed during the runtime. */
+    /** Initialization status tracker. Used when some of the device parameters
+     *  or the device itself is changed during the runtime. */
     volatile uint32_t           status;
     /** Flag whether the "default device changed" listener was registered. */
     bool                        fDefDevChgListReg;
@@ -486,9 +486,9 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioConverterCallback(AudioConverterRe
      *        so go through all buffers not only the first one like now. */
 
     /* Use the lower one of the packets to process & the available packets in the buffer. */
-    Assert(pBufferList->mBuffers[0].mDataByteSize >= pStreamIn->rpos);
+    Assert(pBufferList->mBuffers[0].mDataByteSize >= pStreamIn->offBufferRead);
     UInt32 cSize = RT_MIN(*pcPackets * pStreamIn->deviceFormat.mBytesPerPacket,
-                          pBufferList->mBuffers[0].mDataByteSize - pStreamIn->rpos);
+                          pBufferList->mBuffers[0].mDataByteSize - pStreamIn->offBufferRead);
 
     /* Set the new size on output, so the caller know what we have processed. */
     Assert(pStreamIn->deviceFormat.mBytesPerPacket);
@@ -509,9 +509,9 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioConverterCallback(AudioConverterRe
     {
         pBufData->mBuffers[0].mNumberChannels = pBufferList->mBuffers[0].mNumberChannels;
         pBufData->mBuffers[0].mDataByteSize   = cSize;
-        pBufData->mBuffers[0].mData           = (uint8_t *)pBufferList->mBuffers[0].mData + pStreamIn->rpos;
+        pBufData->mBuffers[0].mData           = (uint8_t *)pBufferList->mBuffers[0].mData + pStreamIn->offBufferRead;
 
-        pStreamIn->rpos += cSize;
+        pStreamIn->offBufferRead += cSize;
 
         err = noErr;
     }
@@ -570,6 +570,9 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioRecordingCallback(void            
             AudioBufferList tmpList;
             tmpList.mNumberBuffers = 1;
             tmpList.mBuffers[0].mNumberChannels = pStreamIn->streamFormat.mChannelsPerFrame;
+
+            /* Set the read position to zero. */
+            pStreamIn->offBufferRead = 0;
 
             /* Iterate as long as data is available. */
             uint8_t *puDst = NULL;
@@ -1808,11 +1811,11 @@ static DECLCALLBACK(int) drvHostCoreAudioFiniIn(PPDMIHOSTAUDIO pInterface, PPDMA
             {
                 RTCircBufDestroy(pStreamIn->pBuf);
 
-                pStreamIn->audioUnit   = NULL;
-                pStreamIn->deviceID    = kAudioDeviceUnknown;
-                pStreamIn->pBuf        = NULL;
-                pStreamIn->sampleRatio = 1;
-                pStreamIn->rpos        = 0;
+                pStreamIn->audioUnit     = NULL;
+                pStreamIn->deviceID      = kAudioDeviceUnknown;
+                pStreamIn->pBuf          = NULL;
+                pStreamIn->sampleRatio   = 1;
+                pStreamIn->offBufferRead = 0;
 
                 ASMAtomicXchgU32(&pStreamIn->status, CA_STATUS_UNINIT);
             }
@@ -1934,11 +1937,11 @@ static DECLCALLBACK(int) drvHostCoreAudioInitIn(PPDMIHOSTAUDIO pInterface,
 
     ASMAtomicXchgU32(&pStreamIn->status, CA_STATUS_UNINIT);
 
-    pStreamIn->audioUnit   = NULL;
-    pStreamIn->deviceID    = kAudioDeviceUnknown;
-    pStreamIn->converter   = NULL;
-    pStreamIn->sampleRatio = 1;
-    pStreamIn->rpos        = 0;
+    pStreamIn->audioUnit     = NULL;
+    pStreamIn->deviceID      = kAudioDeviceUnknown;
+    pStreamIn->converter     = NULL;
+    pStreamIn->sampleRatio   = 1;
+    pStreamIn->offBufferRead = 0;
 
     bool fDeviceByUser = false;
 
