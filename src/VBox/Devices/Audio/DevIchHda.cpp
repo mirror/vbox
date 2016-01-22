@@ -2249,7 +2249,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 }
 
 /* Note: Will be called for both, BDPL and BDPU, registers. */
-static DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value, uint8_t u8Strm)
+DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value, uint8_t u8Strm)
 {
     if (!hdaRegWriteSDIsAllowed(pThis, iReg, u32Value))
         return VINF_SUCCESS;
