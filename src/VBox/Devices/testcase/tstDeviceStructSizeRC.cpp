@@ -2019,13 +2019,11 @@ int main()
     GEN_CHECK_OFF(NVME, paNamespaces);
     GEN_CHECK_OFF(NVME, cWrkThrdsCur);
     GEN_CHECK_OFF(NVME, cWrkThrdsActive);
-    GEN_CHECK_OFF(NVME, pListWrkThrds);
+    GEN_CHECK_OFF(NVME, LstWrkThrds);
     GEN_CHECK_OFF(NVME, CritSectWrkThrds);
-    GEN_CHECK_OFF(NVME, pListReqsFree);
-    GEN_CHECK_OFF(NVME, CritSectReqsFree);
     GEN_CHECK_OFF(NVME, fRedo);
     GEN_CHECK_OFF(NVME, fSignalIdle);
-    GEN_CHECK_OFF(NVME, pListReqsRedo);
+    GEN_CHECK_OFF(NVME, LstReqsRedo);
     GEN_CHECK_OFF(NVME, CritSectReqsRedo);
 #endif
 
