@@ -2441,17 +2441,17 @@ static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 #ifdef IN_RING3
 #ifdef LOG_ENABLED
-static void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BaseDMA, uint16_t cBDLE)
+static void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
 {
-    LogFlowFunc(("BDLEs @ 0x%x (%RU16):\n", u64BaseDMA, cBDLE));
-    if (!u64BaseDMA)
+    LogFlowFunc(("BDLEs @ 0x%x (%RU16):\n", u64BDLBase, cBDLE));
+    if (!u64BDLBase)
         return;
 
     uint32_t cbBDLE = 0;
     for (uint16_t i = 0; i < cBDLE; i++)
     {
         uint8_t bdle[16]; /** @todo Use a define. */
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BaseDMA + i * 16, bdle, 16); /** @todo Use a define. */
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BDLBase + i * 16, bdle, 16); /** @todo Use a define. */
 
         uint64_t addr = *(uint64_t *)bdle;
         uint32_t len  = *(uint32_t *)&bdle[8];
@@ -2468,9 +2468,9 @@ static void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BaseDMA, uint16_t cBDLE)
     if (!pThis->u64DPBase) /* No DMA base given? Bail out. */
         return;
 
-    LogFlowFunc(("DMA counters:\n", cbBDLE));
+    LogFlowFunc(("DMA counters:\n"));
 
-    for (int i = 0; i < 8; i++) /** @todo Use a define for MAX_STREAMS! */
+    for (int i = 0; i < cBDLE; i++)
     {
         uint32_t uDMACnt;
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), (pThis->u64DPBase & DPBASE_ADDR_MASK) + (i * 2 * sizeof(uint32_t)),
