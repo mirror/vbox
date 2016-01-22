@@ -2474,7 +2474,7 @@ static void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
     {
         uint32_t uDMACnt;
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), (pThis->u64DPBase & DPBASE_ADDR_MASK) + (i * 2 * sizeof(uint32_t)),
-                          &uDMACnt, sizeof(uint32_t) /* Note: Don't use sizeof(uDMACnt) here -- won't work on 64-bit systems. */ );
+                          &uDMACnt, sizeof(uint32_t) /* Note: Don't use sizeof(uDMACnt) here -- won't work on 64-bit systems. */);
 
         LogFlowFunc(("\t#%03d DMA @ 0x%x\n", i , uDMACnt));
     }
