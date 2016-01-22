@@ -1132,12 +1132,14 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_XPCOM_i.c: $(VBOX_PATH_MAIN_SRC)/idl/xpidl_iid.xs
 
 # Note! Because we've got a different proxy stub DLL for pre windows 7 64-bit hosts, we target windows 7 for AMD64.
 #       The output is different and hopefully more efficient, at least memory wise (using more helpers in OLE32).
+# Note! We're checking for win.amd64 below when setting the target because of the SDK build which happens on linux.amd64
+#       but with a 32-bit Wine.
 $(if $(VBOX_WITH_MIDL_PROXY_STUB),$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM_0_OUTDIR)/dlldata.c +,) \
 $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.h \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_WIN_MIDL) /nologo \
-		/env $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",amd64,win32) \
+		/env $(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" ,amd64,win32) \
 		/robust /protocol all /target $(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),NT61,NT51) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
@@ -1156,7 +1158,7 @@ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
 + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h \
 + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_WIN_MIDL) /nologo \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64" \
+		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" \
 		,/env amd64 /x64 /target NT50 /robust \
 		,/env win32      /target NT51 /robust /protocol all ) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(dir $@)) \
