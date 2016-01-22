@@ -628,11 +628,11 @@ typedef struct PDMIMEDIAEXPORT
      * @param   hIoReq          The I/O request handle.
      * @param   pvIoReqAlloc    The allocator specific memory for this request.
      * @param   offDst          The destination offset from the start to write the data to.
-     * @param   pvSrc           Where to read the data from.
+     * @param   pSgBuf          The S/G buffer to read the data from.
      * @param   cbCopy          How many bytes to copy.
      */
     DECLR3CALLBACKMEMBER(int, pfnIoReqCopyFromBuf, (PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
-                                                    void *pvIoReqAlloc, uint32_t offDst, const void *pvSrc,
+                                                    void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf,
                                                     size_t cbCopy));
 
     /**
@@ -644,17 +644,17 @@ typedef struct PDMIMEDIAEXPORT
      * @param   hIoReq          The I/O request handle.
      * @param   pvIoReqAlloc    The allocator specific memory for this request.
      * @param   offSrc          The offset from the start of the buffer to read the data from.
-     * @param   pvDst           Where to store the data.
+     * @param   pSgBuf          The S/G buffer to write the data to.
      * @param   cbCopy          How many bytes to copy.
      */
     DECLR3CALLBACKMEMBER(int, pfnIoReqCopyToBuf, (PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
-                                                  void *pvIoReqAlloc, uint32_t offSrc, void *pvDst,
+                                                  void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
                                                   size_t cbCopy));
 
 } PDMIMEDIAEXPORT;
 
 /** PDMIMEDIAAEXPORT interface ID. */
-#define PDMIMEDIAEXPORT_IID                  "03c197d8-953c-4e24-b5bf-477379471cca"
+#define PDMIMEDIAEXPORT_IID                  "1385d27b-8648-4174-ac73-02148c479c90"
 
 
 /** Pointer to an extended media interface. */
