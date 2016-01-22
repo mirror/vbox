@@ -547,7 +547,7 @@ VBOX_WITH_MAIN = 1
 # Enables proxy stub for MS COM (speeds up setting IPC for objects).
 # (The VBOX_MIDL_PROXY_CLSID and VBOX_MIDL_PROXY_CLSID_IS are just two
 #  representations of the class ID for the proxy stub.)
-#VBOX_WITH_MIDL_PROXY_STUB = 1
+VBOX_WITH_MIDL_PROXY_STUB = 1
 VBOX_MIDL_PROXY_CLSID    := {0bb3b78c-1807-4249-5ba5-ea42d66af0bf}
 VBOX_MIDL_PROXY_CLSID_IS := {0x0bb3b78c,0x1807,0x4249,{0x5b,0xa5,0xea,0x42,0xd6,0x6a,0xf0,0xbf}}
 # Whether to also ship 32-bit main API on 64-bit systems.
