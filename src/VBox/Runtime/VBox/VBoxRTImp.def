@@ -1008,6 +1008,7 @@ EXPORTS
     RTSgBufCopy
     RTSgBufCopyFromBuf
     RTSgBufCopyToBuf
+    RTSgBufGetNextSegment
     RTSgBufInit
     RTSgBufReset
     RTSgBufSegArrayCreate
