@@ -1159,10 +1159,8 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
          */
         pImage->u64DataOffset     = VHD_FOOTER_DATA_OFFSET_FIXED;
         pImage->uCurrentEndOfFile = cbSize;
-        /** @todo r=klaus replace this with actual data writes, see the experience
-         * with VDI files on Windows, can cause long freezes when writing. */
-        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage,
-                                  pImage->uCurrentEndOfFile + sizeof(VHDFooter));
+        rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pImage->pStorage, pImage->uCurrentEndOfFile + sizeof(VHDFooter),
+                                            0 /* fFlags */, pfnProgress, pvUser, uPercentStart, uPercentSpan);
         if (RT_FAILURE(rc))
         {
             vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VHD: cannot set the file size for '%s'"), pImage->pszFilename);

@@ -431,8 +431,32 @@ typedef struct VDINTERFACEIO
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pStorage        The opaque storage handle to close.
      * @param   cbSize          The new size of the image.
+     *
+     * @note Depending on the host the underlying storage (backing file, etc.)
+     *       might not have all required storage allocated (sparse file) which
+     *       can delay writes or fail with a not enough free space error if there
+     *       is not enough space on the storage medium when writing to the range for
+     *       the first time.
+     *       Use VDINTERFACEIO::pfnSetAllocationSize to make sure the storage is
+     *       really alloacted.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetSize, (void *pvUser, void *pStorage, uint64_t cbSize));
+
+    /**
+     * Sets the size of the opened storage backend making sure the given size
+     * is really allocated.
+     *
+     * @return VBox status code.
+     * @retval VERR_NOT_SUPPORTED if the implementer of the interface doesn't support
+     *         this method.
+     * @param  pvUser          The opaque data passed on container creation.
+     * @param  pStorage        The storage handle.
+     * @param  cbSize          The new size of the image.
+     * @param  fFlags          Flags for controlling the allocation strategy.
+     *                         Reserved for future use, MBZ.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetAllocationSize, (void *pvUser, void *pStorage,
+                                                     uint64_t cbSize, uint32_t fFlags));
 
     /**
      * Synchronous write callback.

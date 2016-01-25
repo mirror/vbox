@@ -635,7 +635,8 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
          * Allocate & commit whole file if fixed image, it must be more
          * effective than expanding file by write operations.
          */
-        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, cbTotal);
+        rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pImage->pStorage, cbTotal, 0 /* fFlags */,
+                                            pfnProgress, pvUser, uPercentStart, uPercentSpan);
         pImage->cbImage = cbTotal;
     }
     else
@@ -690,53 +691,6 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
         rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VDI: writing block pointers failed for '%s'"),
                        pImage->pszFilename);
         goto out;
-    }
-
-    if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
-    {
-        /* Fill image with zeroes. We do this for every fixed-size image since on some systems
-         * (for example Windows Vista), it takes ages to write a block near the end of a sparse
-         * file and the guest could complain about an ATA timeout. */
-
-        /** @todo Starting with Linux 2.6.23, there is an fallocate() system call.
-         *        Currently supported file systems are ext4 and ocfs2. */
-
-        /* Allocate a temporary zero-filled buffer. Use a bigger block size to optimize writing */
-        const size_t cbBuf = 128 * _1K;
-        void *pvBuf = RTMemTmpAllocZ(cbBuf);
-        if (!pvBuf)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-
-        cbFill = (uint64_t)getImageBlocks(&pImage->Header) * pImage->cbTotalBlockData;
-        uOff = 0;
-        /* Write data to all image blocks. */
-        while (uOff < cbFill)
-        {
-            unsigned cbChunk = (unsigned)RT_MIN(cbFill, cbBuf);
-
-            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, pImage->offStartData + uOff,
-                                        pvBuf, cbChunk);
-            if (RT_FAILURE(rc))
-            {
-                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VDI: writing block failed for '%s'"), pImage->pszFilename);
-                RTMemTmpFree(pvBuf);
-                goto out;
-            }
-
-            uOff += cbChunk;
-
-            if (pfnProgress)
-            {
-                rc = pfnProgress(pvUser,
-                                 uPercentStart + uOff * uPercentSpan / cbFill);
-                if (RT_FAILURE(rc))
-                    goto out;
-            }
-        }
-        RTMemTmpFree(pvBuf);
     }
 
 out:

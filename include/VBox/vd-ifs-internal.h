@@ -204,9 +204,34 @@ typedef struct VDINTERFACEIOINT
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pStorage        The storage handle.
      * @param   cbSize          The new size of the image.
+     *
+     * @note Depending on the host the underlying storage (backing file, etc.)
+     *       might not have all required storage allocated (sparse file) which
+     *       can delay writes or fail with a not enough free space error if there
+     *       is not enough space on the storage medium when writing to the range for
+     *       the first time.
+     *       Use VDINTERFACEIOINT::pfnSetAllocationSize to make sure the storage is
+     *       really alloacted.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetSize, (void *pvUser, PVDIOSTORAGE pStorage,
                                            uint64_t cbSize));
+
+    /**
+     * Sets the size of the opened storage backend making sure the given size
+     * is really allocated.
+     *
+     * @return VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pStorage        The storage handle.
+     * @param   cbSize          The new size of the image.
+     * @param   fFlags          Flags for controlling the allocation strategy.
+     *                          Reserved for future use, MBZ.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetAllocationSize, (void *pvUser, PVDIOSTORAGE pStorage,
+                                                     uint64_t cbSize, uint32_t fFlags,
+                                                     PFNVDPROGRESS pfnProgress,
+                                                     void *pvUser, unsigned uPercentStart,
+                                                     unsigned uPercentSpan));
 
     /**
      * Initiate a read request for user data.
@@ -482,6 +507,16 @@ DECLINLINE(int) vdIfIoIntFileSetSize(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pS
                                      uint64_t cbSize)
 {
     return pIfIoInt->pfnSetSize(pIfIoInt->Core.pvUser, pStorage, cbSize);
+}
+
+DECLINLINE(int) vdIfIoIntFileSetAllocationSize(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
+                                               uint64_t cbSize, uint32_t fFlags,
+                                               PFNVDPROGRESS pfnProgress,
+                                               void *pvUser, unsigned uPercentStart,
+                                               unsigned uPercentSpan)
+{
+    return pIfIoInt->pfnSetAllocationSize(pIfIoInt->Core.pvUser, pStorage, cbSize, fFlags,
+                                          pfnProgress, pvUser, uPercentStart, uPercentSpan);
 }
 
 DECLINLINE(int) vdIfIoIntFileWriteSync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,

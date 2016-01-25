@@ -282,48 +282,8 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
 
         /* Allocate & commit whole file if fixed image, it must be more
          * effective than expanding file by write operations. */
-        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, cbSize);
-        if (RT_FAILURE(rc))
-        {
-            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Raw: setting image size failed for '%s'"), pImage->pszFilename);
-            goto out;
-        }
-
-        /* Fill image with zeroes. We do this for every fixed-size image since
-         * on some systems (for example Windows Vista), it takes ages to write
-         * a block near the end of a sparse file and the guest could complain
-         * about an ATA timeout. */
-        pvBuf = RTMemTmpAllocZ(RAW_FILL_SIZE);
-        if (!pvBuf)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-
-        uOff = 0;
-        /* Write data to all image blocks. */
-        while (uOff < cbSize)
-        {
-            unsigned cbChunk = (unsigned)RT_MIN(cbSize - uOff, RAW_FILL_SIZE);
-
-            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, uOff,
-                                        pvBuf, cbChunk);
-            if (RT_FAILURE(rc))
-            {
-                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Raw: writing block failed for '%s'"), pImage->pszFilename);
-                goto out;
-            }
-
-            uOff += cbChunk;
-
-            if (pfnProgress)
-            {
-                rc = pfnProgress(pvUser,
-                                 uPercentStart + uOff * uPercentSpan * 98 / (cbSize * 100));
-                if (RT_FAILURE(rc))
-                    goto out;
-            }
-        }
+        rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pImage->pStorage, cbSize,
+                                            0 /* fFlags */, pfnProgress, pvUser, uPercentStart, uPercentSpan);
     }
 
     if (RT_SUCCESS(rc) && pfnProgress)

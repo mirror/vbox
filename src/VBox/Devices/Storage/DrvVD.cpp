@@ -768,6 +768,13 @@ static DECLCALLBACK(int) drvvdAsyncIOSetSize(void *pvUser, void *pStorage, uint6
     return PDMR3AsyncCompletionEpSetSize(pStorageBackend->pEndpoint, cbSize);
 }
 
+static DECLCALLBACK(int) drvvdAsyncIOSetAllocationSize(void *pvUser, void *pStorage, uint64_t cbSize,
+                                                       uint32_t fFlags)
+{
+    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    return VERR_NOT_SUPPORTED;
+}
+
 #endif /* VBOX_WITH_PDM_ASYNC_COMPLETION */
 
 
@@ -4341,16 +4348,17 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             if (fUseNewIo)
             {
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-                pImage->VDIfIo.pfnOpen       = drvvdAsyncIOOpen;
-                pImage->VDIfIo.pfnClose      = drvvdAsyncIOClose;
-                pImage->VDIfIo.pfnGetSize    = drvvdAsyncIOGetSize;
-                pImage->VDIfIo.pfnSetSize    = drvvdAsyncIOSetSize;
-                pImage->VDIfIo.pfnReadSync   = drvvdAsyncIOReadSync;
-                pImage->VDIfIo.pfnWriteSync  = drvvdAsyncIOWriteSync;
-                pImage->VDIfIo.pfnFlushSync  = drvvdAsyncIOFlushSync;
-                pImage->VDIfIo.pfnReadAsync  = drvvdAsyncIOReadAsync;
-                pImage->VDIfIo.pfnWriteAsync = drvvdAsyncIOWriteAsync;
-                pImage->VDIfIo.pfnFlushAsync = drvvdAsyncIOFlushAsync;
+                pImage->VDIfIo.pfnOpen              = drvvdAsyncIOOpen;
+                pImage->VDIfIo.pfnClose             = drvvdAsyncIOClose;
+                pImage->VDIfIo.pfnGetSize           = drvvdAsyncIOGetSize;
+                pImage->VDIfIo.pfnSetSize           = drvvdAsyncIOSetSize;
+                pImage->VDIfIo.pfnSetAllocationSize = drvvdAsyncIOSetAllocationSize;
+                pImage->VDIfIo.pfnReadSync          = drvvdAsyncIOReadSync;
+                pImage->VDIfIo.pfnWriteSync         = drvvdAsyncIOWriteSync;
+                pImage->VDIfIo.pfnFlushSync         = drvvdAsyncIOFlushSync;
+                pImage->VDIfIo.pfnReadAsync         = drvvdAsyncIOReadAsync;
+                pImage->VDIfIo.pfnWriteAsync        = drvvdAsyncIOWriteAsync;
+                pImage->VDIfIo.pfnFlushAsync        = drvvdAsyncIOFlushAsync;
 #else /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
                 rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                          RT_SRC_POS, N_("DrvVD: Configuration error: Async Completion Framework not compiled in"));

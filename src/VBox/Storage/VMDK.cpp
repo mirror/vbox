@@ -3694,51 +3694,10 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
             return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pExtent->pszFullname);
         if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
         {
-            rc = vdIfIoIntFileSetSize(pImage->pIfIo, pExtent->pFile->pStorage, cbExtent);
+            rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pExtent->pFile->pStorage, cbExtent,
+                                                0 /* fFlags */, pfnProgress, pvUser, uPercentStart + cbOffset * uPercentSpan / cbSize, uPercentSpan / cExtents);
             if (RT_FAILURE(rc))
                 return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
-
-            /* Fill image with zeroes. We do this for every fixed-size image since on some systems
-             * (for example Windows Vista), it takes ages to write a block near the end of a sparse
-             * file and the guest could complain about an ATA timeout. */
-
-            /** @todo Starting with Linux 2.6.23, there is an fallocate() system call.
-             *        Currently supported file systems are ext4 and ocfs2. */
-
-            /* Allocate a temporary zero-filled buffer. Use a bigger block size to optimize writing */
-            const size_t cbBuf = 128 * _1K;
-            void *pvBuf = RTMemTmpAllocZ(cbBuf);
-            if (!pvBuf)
-                return VERR_NO_MEMORY;
-
-            uint64_t uOff = 0;
-            /* Write data to all image blocks. */
-            while (uOff < cbExtent)
-            {
-                unsigned cbChunk = (unsigned)RT_MIN(cbExtent, cbBuf);
-
-                rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pExtent->pFile->pStorage,
-                                            uOff, pvBuf, cbChunk);
-                if (RT_FAILURE(rc))
-                {
-                    RTMemFree(pvBuf);
-                    return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: writing block failed for '%s'"), pImage->pszFilename);
-                }
-
-                uOff += cbChunk;
-
-                if (pfnProgress)
-                {
-                    rc = pfnProgress(pvUser,
-                                     uPercentStart + (cbOffset + uOff) * uPercentSpan / cbSize);
-                    if (RT_FAILURE(rc))
-                    {
-                        RTMemFree(pvBuf);
-                        return rc;
-                    }
-                }
-            }
-            RTMemTmpFree(pvBuf);
         }
 
         /* Place descriptor file information (where integrated). */
