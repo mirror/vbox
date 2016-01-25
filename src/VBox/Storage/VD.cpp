@@ -4011,7 +4011,7 @@ static DECLCALLBACK(int) vdIOSetAllocationSizeFallback(void *pvUser, void *pvSto
 {
     PVDIIOFALLBACKSTORAGE pStorage = (PVDIIOFALLBACKSTORAGE)pvStorage;
 
-    return VERR_NOT_SUPPORTED;
+    return RTFileSetAllocationSize(pStorage->File, cbSize, RTFILE_ALLOC_SIZE_F_DEFAULT);
 }
 
 /**
