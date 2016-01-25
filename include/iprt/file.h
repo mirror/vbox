@@ -1141,7 +1141,7 @@ RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile);
 #define RTFILE_ALLOC_SIZE_F_KEEP_SIZE       RT_BIT(0)
 /** Mask of valid flags. */
 #define RTFILE_ALLOC_SIZE_F_VALID           (RTFILE_ALLOC_SIZE_F_KEEP_SIZE)
-/** @{ */
+/** @} */
 
 /**
  * Sets the current size of the file ensuring that all required blocks
