@@ -868,6 +868,7 @@
 # define RTFileReadAt                                   RT_MANGLER(RTFileReadAt)
 # define RTFileRename                                   RT_MANGLER(RTFileRename)
 # define RTFileSeek                                     RT_MANGLER(RTFileSeek)
+# define RTFileSetAllocationSize                        RT_MANGLER(RTFileSetAllocationSize)
 # define RTFileSetForceFlags                            RT_MANGLER(RTFileSetForceFlags)
 # define RTFileSetMode                                  RT_MANGLER(RTFileSetMode)
 # define RTFileSetOwner                                 RT_MANGLER(RTFileSetOwner)
