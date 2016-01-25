@@ -299,13 +299,13 @@ $(MODULE):
 
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
-	install -m 0664 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
+	install -m 0644 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
 	PATH="$(PATH):/bin:/sbin" depmod -a; \
 	rm -f /etc/vbox/module_not_compiled
 
 install_rpm: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
-	install -m 0664 $(MODULE).$(MODULE_EXT) $(MODULE_DIR)
+	install -m 0644 $(MODULE).$(MODULE_EXT) $(MODULE_DIR)
 
 else # eq ($(MAKECMDGOALS),clean)
 
