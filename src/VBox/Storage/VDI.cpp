@@ -533,8 +533,6 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
 {
     int rc;
     uint64_t cbTotal;
-    uint64_t cbFill;
-    uint64_t uOff;
     uint32_t cbDataAlign = VDI_DATA_ALIGN;
 
     AssertPtr(pPCHSGeometry);
