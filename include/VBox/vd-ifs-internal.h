@@ -230,7 +230,7 @@ typedef struct VDINTERFACEIOINT
     DECLR3CALLBACKMEMBER(int, pfnSetAllocationSize, (void *pvUser, PVDIOSTORAGE pStorage,
                                                      uint64_t cbSize, uint32_t fFlags,
                                                      PFNVDPROGRESS pfnProgress,
-                                                     void *pvUser, unsigned uPercentStart,
+                                                     void *pvProgressUser, unsigned uPercentStart,
                                                      unsigned uPercentSpan));
 
     /**
@@ -512,11 +512,11 @@ DECLINLINE(int) vdIfIoIntFileSetSize(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pS
 DECLINLINE(int) vdIfIoIntFileSetAllocationSize(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
                                                uint64_t cbSize, uint32_t fFlags,
                                                PFNVDPROGRESS pfnProgress,
-                                               void *pvUser, unsigned uPercentStart,
+                                               void *pvProgressUser, unsigned uPercentStart,
                                                unsigned uPercentSpan)
 {
     return pIfIoInt->pfnSetAllocationSize(pIfIoInt->Core.pvUser, pStorage, cbSize, fFlags,
-                                          pfnProgress, pvUser, uPercentStart, uPercentSpan);
+                                          pfnProgress, pvProgressUser, uPercentStart, uPercentSpan);
 }
 
 DECLINLINE(int) vdIfIoIntFileWriteSync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
