@@ -19,46 +19,52 @@
 #include "VirtualBoxBase.h"
 #include "ThreadTask.h"
 
-/** @todo r=bird: DOCUMENTATION!! 'ING DOCUMENTATION!! THIS 'ING FUNCTION
- *        CONSUMES THE this OBJECTED AND YOU AREN'T EXACTLY 'ING TELLING
- *        ANYBODY.  THAT IS REALLY NICE OF YOU. */
+/**
+ *  The function takes ownership of "this" instance (object
+ *  instance which calls this function).
+ *  And the function is responsible for deletion of "this"
+ *  pointer in all cases.
+ *  Possible way of usage:
+ * 
+ *  int vrc = VINF_SUCCESS;
+ *  HRESULT hr = S_OK;
+ * 
+ *  SomeTaskInheritedFromThreadTask* pTask = NULL;
+ *  try
+ *  {
+ *      pTask = new SomeTaskInheritedFromThreadTask(this);
+ *      if (!pTask->Init())//some init procedure
+ *      {
+ *          delete pTask;
+ *          throw E_FAIL;
+ *      }
+ *      //this function delete pTask in case of exceptions, so
+ *      there is no need the call of delete operator
+ * 
+ *      hr = pTask->createThread();
+ *  }
+ *  catch(...)
+ *  {
+ *      vrc = E_FAIL;
+ *  }
+ */
 HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
 {
     HRESULT rc = S_OK;
-    try
+
+    m_pThread = pThread;
+    int vrc = RTThreadCreate(m_pThread,
+                             taskHandler,
+                             (void *)this,
+                             0,
+                             enmType,
+                             0,
+                             this->getTaskName().c_str());
+
+    if (RT_FAILURE(vrc))
     {
-        m_pThread = pThread;
-        int vrc = RTThreadCreate(m_pThread,
-                                 taskHandler,
-                                 (void *)this,
-                                 0,
-                                 enmType,
-                                 0,
-                                 this->getTaskName().c_str());
-        if (RT_FAILURE(vrc))
-        {
-            throw E_FAIL;
-        }
-    }
-    catch(HRESULT eRC)
-    {
-        /** @todo r=bird: only happens in your above throw call.
-         *  Makes you wonder why you don't just do if (RT_SUCCESS(vrc)) return S_OK;
-         *  else {delete pTask; return E_FAIL;}   */
-        rc = eRC;
-        delete this;
-    }
-    catch(std::exception& )
-    {
-        /** @todo r=bird: can't happen, RTThreadCreate+Utf8Str doesn't do this. */
-        rc = E_FAIL;
-        delete this;
-    }
-    catch(...)
-    {
-        /** @todo r=bird: can't happen, RTThreadCreate+Utf8Str doesn't do this. */
-        rc = E_FAIL;
-        delete this;
+        delete this; 
+        return E_FAIL;
     }
 
     return rc;
@@ -75,30 +81,11 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
         return VERR_INVALID_POINTER;
 
     ThreadTask *pTask = static_cast<ThreadTask *>(pvUser);
-    try
-    {
-        pTask->handler();
-    }
-    /** @todo r=bird: This next stuff here is utterly and totally pointless, as
-     *        the handler() method _must_ and _shall_ do this, otherwise there is
-     *        no 'ing way we can know about it, since you (a) you always return
-     *        VINF_SUCCESS (aka '0'), and (b) the thread isn't waitable even if
-     *        you wanted to return anything.  It is much preferred to _crash_ and
-     *        _burn_ if we fail to catch stuff than quietly ignore it, most
-     *        likely the state of the objects involved is butchered by this.  At
-     *        least AssertLogRel()! Gee. */
-    catch(HRESULT eRC)
-    {
-        rc = eRC;
-    }
-    catch(std::exception& )
-    {
-        rc = E_FAIL;
-    }
-    catch(...)
-    {
-        rc = E_FAIL;
-    }
+
+    /*
+    *  handler shall catch and process all possible cases as errors and exceptions.
+    */
+    pTask->handler();
 
     delete pTask;
 
