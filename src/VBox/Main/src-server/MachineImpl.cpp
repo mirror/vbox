@@ -12621,26 +12621,30 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     {
         for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
         {
-            NetworkAttachmentType_T type;
-            HRESULT hrc;
+            BOOL enabled;
+            HRESULT hrc = mNetworkAdapters[slot]->COMGETTER(Enabled)(&enabled);
+            if (   FAILED(hrc)
+                || !enabled)
+                continue;
 
-             hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
-             if (   SUCCEEDED(hrc)
-                 && type == NetworkAttachmentType_NATNetwork)
-             {
-                 Bstr name;
-                 hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
-                 if (SUCCEEDED(hrc))
-                 {
-                     multilock.release();
-                     LogRel(("VM '%s' stops using NAT network '%ls'\n",
-                             mUserData->s.strName.c_str(), name.raw()));
-                     mParent->i_natNetworkRefDec(name.raw());
-                     multilock.acquire();
+            NetworkAttachmentType_T type;
+            hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
+            if (   SUCCEEDED(hrc)
+                && type == NetworkAttachmentType_NATNetwork)
+            {
+                Bstr name;
+                hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
+                if (SUCCEEDED(hrc))
+                {
+                    multilock.release();
+                    LogRel(("VM '%s' stops using NAT network '%ls'\n",
+                            mUserData->s.strName.c_str(), name.raw()));
+                    mParent->i_natNetworkRefDec(name.raw());
+                    multilock.acquire();
                 }
-             }
-         }
-     }
+            }
+        }
+    }
 
     /*
      *  An expected uninitialization can come only from #checkForDeath().
@@ -13031,8 +13035,13 @@ HRESULT SessionMachine::beginPowerUp(const ComPtr<IProgress> &aProgress)
     {
         for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
         {
+            BOOL enabled;
+            HRESULT hrc = mNetworkAdapters[slot]->COMGETTER(Enabled)(&enabled);
+            if (   FAILED(hrc)
+                || !enabled)
+                continue;
+
             NetworkAttachmentType_T type;
-            HRESULT hrc;
             hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
             if (   SUCCEEDED(hrc)
                 && type == NetworkAttachmentType_NATNetwork)
