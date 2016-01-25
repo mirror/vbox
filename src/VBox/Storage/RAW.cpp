@@ -235,8 +235,6 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
 {
     int rc;
     RTFOFF cbFree = 0;
-    uint64_t uOff;
-    void *pvBuf = NULL;
     int32_t fOpen;
 
     uImageFlags |= VD_IMAGE_FLAGS_FIXED;
@@ -294,8 +292,6 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     rc = rawFlushImage(pImage);
 
 out:
-    if (pvBuf)
-        RTMemTmpFree(pvBuf);
 
     if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(pvUser, uPercentStart + uPercentSpan);
