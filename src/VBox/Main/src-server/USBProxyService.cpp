@@ -99,7 +99,6 @@ HRESULT USBProxyService::init(void)
     }
 #endif
 
-    mBackends.push_back(pUsbProxyBackendHost);
     return S_OK;
 }
 
@@ -110,6 +109,13 @@ HRESULT USBProxyService::init(void)
 USBProxyService::~USBProxyService()
 {
     LogFlowThisFunc(("\n"));
+    while (!mBackends.empty())
+    {
+        USBProxyBackend *pUsbProxyBackend = mBackends.front();
+        mBackends.pop_front();
+        delete pUsbProxyBackend;
+    }
+
     mDevices.clear();
     mBackends.clear();
     mHost = NULL;
