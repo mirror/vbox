@@ -171,7 +171,7 @@ ifeq ($(KBUILD_TARGET),darwin)
 		 Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod) \
 		 Frameworks/$(qtmod).framework/Resources=>Versions/4/Resources)
 else
- if defined(VBOX_WITH_QT4_SUN) || defined(VBOX_WITH_QT4_PAYLOAD)
+ if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT4_PAYLOAD)
   include $(KBUILD_PATH)/units/qt4.kmk
   ifeq ($(KBUILD_TARGET),win)
    INSTALLS += qt4-bin
@@ -193,7 +193,7 @@ else
 	$(foreach qtmod,$(VBOX_QT4_MOD_NAMES),$(VBOX_PATH_QT4_LIB)/lib$(qtmod)$(SUFF_DLL).4) \
  	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
   endif
- endif # VBOX_WITH_QT4_SUN
+ endif # VBOX_WITH_ORACLE_QT
 endif
 
 

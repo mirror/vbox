@@ -332,7 +332,7 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_JXPCOM),libvboxjxpcom.so,) \
 	$(if $(VBOX_WITH_QTGUI),\
 	  VBoxKeyboard.so \
-	  $(if $(VBOX_WITH_QT4_SUN),\
+	  $(if $(VBOX_WITH_ORACLE_QT),\
 	    libQtCoreVBox.so.4 \
 	    libQtGuiVBox.so.4 \
 	    $(if $(VBOX_GUI_USE_QGL),libQtOpenGLVBox.so.4,) \
@@ -423,7 +423,7 @@ SOLARIS_QTLIBS.SRC     := $(VBOX_PATH_QT4)/lib
 SOLARIS_QTLIBS.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)
 SOLARIS_QTLIBS =
 ifdef VBOX_WITH_QTGUI
- ifdef VBOX_WITH_QT4_SUN
+ ifdef VBOX_WITH_ORACLE_QT
   SOLARIS_QTLIBS += \
   	libQtXmlVBox.so.4 \
   	libQtSqlVBox.so.4 \
@@ -539,7 +539,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.applications.in \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
 		\
-		$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_QT4_SUN),$(VBOX_PATH_QT4)/bin/qtconfig,) \
+		$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_ORACLE_QT),$(VBOX_PATH_QT4)/bin/qtconfig,) \
 		$(if-expr defined(VBOX_WITH_ADDITIONS_PACKING),$(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.iso,) \
 		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL),$(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
 		\
@@ -602,7 +602,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse	$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/autoresponse
 
 # VirtualBox: Arch specific files.
-	$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_QT4_SUN)\
+	$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_ORACLE_QT)\
 	,$(INSTALL) -m 0755 \
 		$(VBOX_PATH_QT4)/bin/qtconfig	$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/VBoxQtconfig,)
 

@@ -1479,7 +1479,7 @@ EOF
     QT_INTERNAL=`/bin/ls -rd1 $PWD/tools/$BUILD_TARGET.$BUILD_PLATFORM_ARCH/qt/* 2> /dev/null`
     for t in $QT_INTERNAL; do
       if [ -f "$t/Frameworks/QtCoreVBox.framework/QtCoreVBox" ]; then
-        cnf_append "VBOX_WITH_QT4_SUN" "1"
+        cnf_append "VBOX_WITH_ORACLE_QT" "1"
         log_success "use internal version"
         return
       fi
@@ -1589,7 +1589,7 @@ EOF
           # this is not quite right since the qt libpath does not have to be first...
           cnf_append "PATH_SDK_QT4_LIB" '$'"(firstword `strip_L "$LIBQT4"`)"
           if [ "$foundqt4" = "2" ]; then
-            cnf_append "VBOX_WITH_QT4_SUN" "1"
+            cnf_append "VBOX_WITH_ORACLE_QT" "1"
           fi
           if [ "$foundqt4" != "3" ]; then
             TOOLQT4BIN="$TOOLQT4/bin"

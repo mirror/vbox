@@ -5201,11 +5201,11 @@ endif # VBOX_WITH_EXTPACK
 #
 ifdef VBOX_WITH_QTGUI
 
- # Guess VBOX_WITH_QT4_SUN
- ifndef VBOX_WITH_QT4_SUN
+ # Guess VBOX_WITH_ORACLE_QT
+ ifndef VBOX_WITH_ORACLE_QT
   ifndef VBOX_OSE
    if1of ($(KBUILD_TARGET), darwin solaris win)
-    VBOX_WITH_QT4_SUN := 1
+    VBOX_WITH_ORACLE_QT := 1
    endif
   endif
  endif
@@ -5229,7 +5229,7 @@ ifdef VBOX_WITH_QTGUI
   else if1of ($(KBUILD_TARGET), linux solaris)
    VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
    ifneq ($(VBOX_PATH_QT4),)
-    VBOX_WITH_QT4_SUN = 1
+    VBOX_WITH_ORACLE_QT = 1
    endif
   endif
  endif
@@ -5243,7 +5243,7 @@ ifdef VBOX_WITH_QTGUI
  VBOX_PATH_QT4            ?= /usr
  VBOX_PATH_QT4_LIB        ?= $(VBOX_PATH_QT4)/lib
 
- ifdef VBOX_WITH_QT4_SUN
+ ifdef VBOX_WITH_ORACLE_QT
   VBOX_QT4_INFIX=VBox
  endif
 
@@ -5251,7 +5251,7 @@ ifdef VBOX_WITH_QTGUI
  VBOX_QT4_MOD_NAMES = $(foreach qtmod,$(VBOX_QT4_MOD),$(qtmod)$(VBOX_QT4_INFIX))
 
  # Hack LD_LIBRARY_PATH for stuff in tools.
- ifdef VBOX_WITH_QT4_SUN
+ ifdef VBOX_WITH_ORACLE_QT
   if1of ($(KBUILD_TARGET), linux)
    export LD_LIBRARY_PATH := $(VBOX_PATH_QT4_LIB):$(LD_LIBRARY_PATH)
   endif
