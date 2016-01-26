@@ -113,7 +113,7 @@
    def <xsl:value-of select="$fname"/>(self, value):
        req=<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>RequestMsg()
        req._this=self.handle
-       if type(value) in [int, bool, basestring, str, tuple, list]:
+       if type(value) in [int, bool, basestring, str<xsl:if test="$attrsafearray='yes'">, tuple, list</xsl:if>]:
             req._<xsl:value-of select="$attrname"/> = value
        else:
             req._<xsl:value-of select="$attrname"/> = value.handle
