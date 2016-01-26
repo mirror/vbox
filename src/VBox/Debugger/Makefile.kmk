@@ -123,6 +123,7 @@ tstVBoxDbg_QT_MODULES   = Core Gui
 tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
 tstVBoxDbg_LIBS         = \
 	$(LIB_VMM) \
+	$(LIB_REM) \
 	$(LIB_RUNTIME)
   ifeq ($(KBUILD_TARGET),win)
 tstVBoxDbg_LIBS        += \
