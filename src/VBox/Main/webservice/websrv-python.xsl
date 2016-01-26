@@ -113,17 +113,10 @@
    def <xsl:value-of select="$fname"/>(self, value):
        req=<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>RequestMsg()
        req._this=self.handle
-       <xsl:choose>
-         <xsl:when test="$attrsafearray='yes'">
-          <xsl:text>req._</xsl:text><xsl:value-of select="$attrname"/><xsl:text> = value</xsl:text>
-         </xsl:when>
-         <xsl:otherwise>
-           <xsl:text>if type(value) in [int, bool, basestring, str]:
-            req._</xsl:text><xsl:value-of select="$attrname"/><xsl:text> = value
+       if type(value) in [int, bool, basestring, str, tuple, list]:
+            req._<xsl:value-of select="$attrname"/> = value
        else:
-            req._</xsl:text><xsl:value-of select="$attrname"/><xsl:text> = value.handle</xsl:text>
-         </xsl:otherwise>
-       </xsl:choose>
+            req._<xsl:value-of select="$attrname"/> = value.handle
        self.mgr.getPort().<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>(req)
 </xsl:template>
 
