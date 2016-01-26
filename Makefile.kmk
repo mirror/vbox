@@ -158,9 +158,9 @@ ifeq ($(KBUILD_TARGET),darwin)
        )
  ifdef VBOX_WITH_COCOA_QT
   qt4-bin_SOURCES += \
-  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
-  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
-  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
+  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
+  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
+  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
  endif
  ifneq ($(wildcard $(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets.dylib),)
   qt4-bin_SOURCES += \

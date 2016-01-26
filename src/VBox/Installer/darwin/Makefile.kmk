@@ -509,9 +509,9 @@ VBOX_DI_VBAPP_MISC_FILES += \
 	MacOS/VBoxEFI64.fd
 endif
 VBOX_DI_VBAPP_MISC_FILES += \
-	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
-	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
-	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib \
+	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
+	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
+	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib \
 	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/4/Resources/Info.plist)
 
 VBOX_DI_VBAPP_SYMLINKS = \
