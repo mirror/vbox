@@ -2318,7 +2318,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
         /* Note: No input streams available for SB16 yet. */
         bool fValidOut = pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut);
-        if (fValidOut)
+        if (!fValidOut)
         {
             LogRel(("SB16: Falling back to NULL backend (no sound audible)\n"));
 
