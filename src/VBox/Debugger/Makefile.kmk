@@ -91,7 +91,7 @@ if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
 #
 USES += qt4
 DLLS += VBoxDbg
-VBoxDbg_TEMPLATE = VBOXQT4GUI
+VBoxDbg_TEMPLATE = VBOXQTGUI
 VBoxDbg_DEFS = IN_DBG_R3 VBOXDBG_USE_QT4
 VBoxDbg_INCS = .
 VBoxDbg_QT_MODULES = Core Gui
@@ -116,7 +116,7 @@ $(call VBOX_SET_VER_INFO_DLL,VBoxDbg,VirtualBox Debugger GUI)
 # The VBoxDbg testcase (Qt4).
 #
 PROGRAMS += tstVBoxDbg
-tstVBoxDbg_TEMPLATE     = VBOXQT4GUIEXE
+tstVBoxDbg_TEMPLATE     = VBOXQTGUIEXE
 tstVBoxDbg_USES         = qt4
 tstVBoxDbg_QTTOOL       = QT4
 tstVBoxDbg_QT_MODULES   = Core Gui
