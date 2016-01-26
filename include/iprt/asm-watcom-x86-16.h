@@ -82,6 +82,7 @@
 
 #undef      ASMAtomicXchgU32
 #pragma aux ASMAtomicXchgU32 = \
+    ".386" \
     "shl  ecx, 16" \
     "mov  cx, ax" \
     "xchg es:[bx], ecx" \
@@ -149,12 +150,25 @@
 /* ASMAtomicCmpXchgExU64: External assembly implementation, too few registers for parameters.  */
 
 #undef      ASMSerializeInstruction
-#pragma aux ASMSerializeInstruction = \
+#if 1
+# pragma aux ASMSerializeInstruction = \
+    "pushf" \
+    "push cs" \
+    "call foo" /* 'push offset done' doesn't work */ \
+    "jmp  done" \
+    "foo:" \
+    "iret" /* serializing */ \
+    "done:" \
+    parm [] \
+    modify exact [ax];
+#else
+# pragma aux ASMSerializeInstruction = \
     ".586" \
     "xor eax, eax" \
     "cpuid" \
     parm [] \
     modify exact [ax bx cx dx];
+#endif
 
 #undef      ASMAtomicReadU64
 #pragma aux ASMAtomicReadU64 = \
@@ -260,6 +274,7 @@
 
 #undef      ASMAtomicOrU32
 #pragma aux ASMAtomicOrU32 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "lock or es:[bx], edx" \
@@ -270,6 +285,7 @@
 
 #undef      ASMAtomicAndU32
 #pragma aux ASMAtomicAndU32 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "lock and es:[bx], edx" \
@@ -280,6 +296,7 @@
 
 #undef      ASMAtomicUoOrU32
 #pragma aux ASMAtomicUoOrU32 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "or es:[bx], edx" \
@@ -290,6 +307,7 @@
 
 #undef      ASMAtomicUoAndU32
 #pragma aux ASMAtomicUoAndU32 = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "and es:[bx], edx" \
@@ -323,24 +341,59 @@
     modify exact [ax dx];
 
 #undef      ASMMemZeroPage
-#pragma aux ASMMemZeroPage = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMMemZeroPage = \
+    "mov cx, 2048" \
+    "xor ax, ax" \
+    "rep stosw"  \
+    parm [es di] \
+    modify exact [ax cx di];
+#else
+# pragma aux ASMMemZeroPage = \
     "mov ecx, 1024" \
     "xor eax, eax" \
     "rep stosd"  \
     parm [es di] \
     modify exact [ax cx di];
+#endif
 
 #undef      ASMMemZero32
-#pragma aux ASMMemZero32 = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMMemZero32 = \
+    "xor ax, ax" \
+    "mov dx, cx" \
+    "rep stosw" \
+    "mov cx, dx" \
+    "rep stosw" \
+    parm [es di] [cx] \
+    modify exact [ax dx cx di];
+#else
+# pragma aux ASMMemZero32 = \
     "and ecx, 0ffffh" /* probably not necessary, lazy bird should check... */ \
     "shr ecx, 2" \
     "xor eax, eax" \
     "rep stosd"  \
     parm [es di] [cx] \
     modify exact [ax cx di];
+#endif
 
 #undef      ASMMemFill32
-#pragma aux ASMMemFill32 = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMMemFill32 = \
+    "   test    cx, cx" \
+    "   jz      done" \
+    "again:" \
+    "   stosw" \
+    "   xchg    ax, dx" \
+    "   stosw" \
+    "   xchg    ax, dx" \
+    "   dec     cx" \
+    "   jnz     again" \
+    "done:" \
+    parm [es di] [cx] [ax dx]\
+    modify exact [cx di];
+#else
+# pragma aux ASMMemFill32 = \
     "and ecx, 0ffffh" /* probably not necessary, lazy bird should check... */ \
     "shr ecx, 2" \
     "shl eax, 16" \
@@ -349,6 +402,7 @@
     "rep stosd"  \
     parm [es di] [cx] [ax dx]\
     modify exact [ax cx di];
+#endif
 
 #undef      ASMProbeReadByte
 #pragma aux ASMProbeReadByte = \
@@ -358,15 +412,35 @@
     modify exact [al];
 
 #undef      ASMBitSet
-#pragma aux ASMBitSet = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMBitSet = \
+    "   mov     ch, cl" /* Only the three lowest bits are relevant due to 64KB segments */ \
+    "   mov     cl, 5" \
+    "   shl     ch, cl" \
+    "   add     bh, ch" /* Adjust the pointer. */ \
+    "   mov     cl, al" \
+    "   shr     ax, 1"  /* convert to byte offset */ \
+    "   shr     ax, 1" \
+    "   shr     ax, 1" \
+    "   add     bx, ax" /* adjust pointer again */\
+    "   and     cl, 7" \
+    "   mov     al, 1" \
+    "   shl     al, cl" /* al=bitmask */ \
+    "   or      es:[bx], al" \
+    parm [es bx] [ax cx] \
+    modify exact [ax bx cx];
+#else
+# pragma aux ASMBitSet = \
     "shl edx, 16" \
     "mov dx, ax" \
     "bts es:[bx], edx" \
     parm [es bx] [ax dx] \
     modify exact [dx];
+#endif
 
 #undef      ASMAtomicBitSet
 #pragma aux ASMAtomicBitSet = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "lock bts es:[bx], edx" \
@@ -374,15 +448,36 @@
     modify exact [dx];
 
 #undef      ASMBitClear
-#pragma aux ASMBitClear = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMBitClear = \
+    "   mov     ch, cl" /* Only the three lowest bits are relevant due to 64KB segments */ \
+    "   mov     cl, 5" \
+    "   shl     ch, cl" \
+    "   add     bh, ch" /* Adjust the pointer. */ \
+    "   mov     cl, al" \
+    "   shr     ax, 1"  /* convert to byte offset */ \
+    "   shr     ax, 1" \
+    "   shr     ax, 1" \
+    "   add     bx, ax" /* adjust pointer again */\
+    "   and     cl, 7" \
+    "   mov     al, 1" \
+    "   shl     al, cl" \
+    "   not     al" /* al=bitmask */ \
+    "   and     es:[bx], al" \
+    parm [es bx] [ax cx] \
+    modify exact [ax bx cx];
+#else
+# pragma aux ASMBitClear = \
     "shl edx, 16" \
     "mov dx, ax" \
     "btr es:[bx], edx" \
     parm [es bx] [ax dx] \
     modify exact [dx];
+#endif
 
 #undef      ASMAtomicBitClear
 #pragma aux ASMAtomicBitClear = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "lock btr es:[bx], edx" \
@@ -390,15 +485,35 @@
     modify exact [dx];
 
 #undef      ASMBitToggle
-#pragma aux ASMBitToggle = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMBitToggle = \
+    "   mov     ch, cl" /* Only the three lowest bits are relevant due to 64KB segments */ \
+    "   mov     cl, 5" \
+    "   shl     ch, cl" \
+    "   add     bh, ch" /* Adjust the pointer. */ \
+    "   mov     cl, al" \
+    "   shr     ax, 1"  /* convert to byte offset */ \
+    "   shr     ax, 1" \
+    "   shr     ax, 1" \
+    "   add     bx, ax" /* adjust pointer again */\
+    "   and     cl, 7" \
+    "   mov     al, 1" \
+    "   shl     al, cl" /* al=bitmask */ \
+    "   xor     es:[bx], al" \
+    parm [es bx] [ax cx] \
+    modify exact [ax bx cx];
+#else
+# pragma aux ASMBitToggle = \
     "shl edx, 16" \
     "mov dx, ax" \
     "btc es:[bx], edx" \
     parm [es bx] [ax dx] \
     modify exact [dx];
+#endif
 
 #undef      ASMAtomicBitToggle
 #pragma aux ASMAtomicBitToggle = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "lock btc es:[bx], edx" \
@@ -406,7 +521,30 @@
     modify exact [dx];
 
 #undef      ASMBitTestAndSet
-#pragma aux ASMBitTestAndSet = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMBitTestAndSet = \
+    "   mov     ch, cl" /* Only the three lowest bits are relevant due to 64KB segments */ \
+    "   mov     cl, 5" \
+    "   shl     ch, cl" \
+    "   add     bh, ch" /* Adjust the pointer. */ \
+    "   mov     cl, al" \
+    "   shr     ax, 1"  /* convert to byte offset */ \
+    "   shr     ax, 1" \
+    "   shr     ax, 1" \
+    "   add     bx, ax" /* adjust pointer again */\
+    "   and     cl, 7" /* cl=byte shift count */ \
+    "   mov     ah, 1" \
+    "   shl     ah, cl" /* ah=bitmask */ \
+    "   mov     al, es:[bx]" \
+    "   or      ah, al" \
+    "   mov     es:[bx], ah" \
+    "   shr     al, cl" \
+    "   and     al, 1" \
+    parm [es bx] [ax cx] \
+    value [al] \
+    modify exact [ax bx cx];
+#else
+# pragma aux ASMBitTestAndSet = \
     "shl edx, 16" \
     "mov dx, ax" \
     "bts es:[bx], edx" \
@@ -414,9 +552,11 @@
     parm [es bx] [ax dx] \
     value [al] \
     modify exact [ax dx];
+#endif
 
 #undef      ASMAtomicBitTestAndSet
 #pragma aux ASMAtomicBitTestAndSet = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "lock bts es:[bx], edx" \
@@ -426,7 +566,31 @@
     modify exact [ax dx];
 
 #undef      ASMBitTestAndClear
-#pragma aux ASMBitTestAndClear = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMBitTestAndClear = \
+    "   mov     ch, cl" /* Only the three lowest bits are relevant due to 64KB segments */ \
+    "   mov     cl, 5" \
+    "   shl     ch, cl" \
+    "   add     bh, ch" /* Adjust the pointer. */ \
+    "   mov     cl, al" \
+    "   shr     ax, 1"  /* convert to byte offset */ \
+    "   shr     ax, 1" \
+    "   shr     ax, 1" \
+    "   add     bx, ax" /* adjust pointer again */\
+    "   and     cl, 7" /* cl=byte shift count */ \
+    "   mov     ah, 1" \
+    "   shl     ah, cl" \
+    "   not     ah" /* ah=bitmask */ \
+    "   mov     al, es:[bx]" \
+    "   and     ah, al" \
+    "   mov     es:[bx], ah" \
+    "   shr     al, cl" \
+    "   and     al, 1" \
+    parm [es bx] [ax cx] \
+    value [al] \
+    modify exact [ax bx cx];
+#else
+# pragma aux ASMBitTestAndClear = \
     "shl edx, 16" \
     "mov dx, ax" \
     "btr es:[bx], edx" \
@@ -434,9 +598,11 @@
     parm [es bx] [ax dx] \
     value [al] \
     modify exact [ax dx];
+#endif
 
 #undef      ASMAtomicBitTestAndClear
 #pragma aux ASMAtomicBitTestAndClear = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "lock btr es:[bx], edx" \
@@ -446,7 +612,30 @@
     modify exact [ax dx];
 
 #undef      ASMBitTestAndToggle
-#pragma aux ASMBitTestAndToggle = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMBitTestAndToggle = \
+    "   mov     ch, cl" /* Only the three lowest bits are relevant due to 64KB segments */ \
+    "   mov     cl, 5" \
+    "   shl     ch, cl" \
+    "   add     bh, ch" /* Adjust the pointer. */ \
+    "   mov     cl, al" \
+    "   shr     ax, 1"  /* convert to byte offset */ \
+    "   shr     ax, 1" \
+    "   shr     ax, 1" \
+    "   add     bx, ax" /* adjust pointer again */\
+    "   and     cl, 7" /* cl=byte shift count */ \
+    "   mov     ah, 1" \
+    "   shl     ah, cl" /* ah=bitmask */ \
+    "   mov     al, es:[bx]" \
+    "   xor     ah, al" \
+    "   mov     es:[bx], ah" \
+    "   shr     al, cl" \
+    "   and     al, 1" \
+    parm [es bx] [ax cx] \
+    value [al] \
+    modify exact [ax bx cx];
+#else
+# pragma aux ASMBitTestAndToggle = \
     "shl edx, 16" \
     "mov dx, ax" \
     "btc es:[bx], edx" \
@@ -454,9 +643,11 @@
     parm [es bx] [ax dx] \
     value [al] \
     modify exact [ax dx];
+#endif
 
 #undef      ASMAtomicBitTestAndToggle
 #pragma aux ASMAtomicBitTestAndToggle = \
+    ".386" \
     "shl edx, 16" \
     "mov dx, ax" \
     "lock btc es:[bx], edx" \
@@ -466,7 +657,26 @@
     modify exact [ax dx];
 
 #undef      ASMBitTest
-#pragma aux ASMBitTest = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+# pragma aux ASMBitTest = \
+    "   mov     ch, cl" /* Only the three lowest bits are relevant due to 64KB segments */ \
+    "   mov     cl, 5" \
+    "   shl     ch, cl" \
+    "   add     bh, ch" /* Adjust the pointer. */ \
+    "   mov     cl, al" \
+    "   shr     ax, 1"  /* convert to byte offset */ \
+    "   shr     ax, 1" \
+    "   shr     ax, 1" \
+    "   add     bx, ax" /* adjust pointer again */\
+    "   and     cl, 7" \
+    "   mov     al, es:[bx]" \
+    "   shr     al, cl" \
+    "   and     al, 1" \
+    parm [es bx] [ax cx] \
+    value [al] \
+    modify exact [ax bx cx];
+#else
+# pragma aux ASMBitTest = \
     "shl edx, 16" \
     "mov dx, ax" \
     "bt  es:[bx], edx" \
@@ -474,72 +684,18 @@
     parm [es bx] [ax dx] nomemory \
     value [al] \
     modify exact [ax dx] nomemory;
+#endif
 
-#if 0
-/** @todo this is way to much inline assembly, better off in an external function. */
-#undef      ASMBitFirstClear
-#pragma aux ASMBitFirstClear = \
-    "mov bx, di" /* save start of bitmap for later */ \
-    "shl ecx, 16" \
-    "mov cx, ax" /* ecx = cBits */ \
-    "add ecx, 31" \
-    "shr ecx, 5" /* cDWord = RT_ALIGN_32(cBits, 32) / 32; */  \
-    "mov eax, 0ffffffffh" \
-    "mov edx, eax" /* default return value */ \
-    "repe scasd" \
-    "je done" \
-    "sub di, 4" /* rewind di */ \
-    "xor eax, es:[di]" /* load inverted bits */ \
-    "sub di, bx" /* calc byte offset */ \
-    "movzx edi, di" \
-    "shl edi, 3" /* convert byte to bit offset */ \
-    "bsf edx, eax" \
-    "add edx, edi" \
-    "done:" \
-    "mov eax, edx" \
-    "shr edx, 16" \
-    parm [es di] [ax cx] \
-    value [ax dx] \
-    modify exact [ax bx cx dx di];
-
-/* ASMBitNextClear: Too much work, do when needed. */
-
-/** @todo this is way to much inline assembly, better off in an external function. */
-#undef      ASMBitFirstSet
-#pragma aux ASMBitFirstSet = \
-    "mov bx, di" /* save start of bitmap for later */ \
-    "shl ecx, 16" \
-    "mov cx, ax" /* ecx = cBits */ \
-    "add ecx, 31" \
-    "shr ecx, 5" /* cDWord = RT_ALIGN_32(cBits, 32) / 32; */  \
-    "xor eax, eax" \
-    "mov edx, 0ffffffffh" /* default return value */ \
-    "repe scasd" \
-    "je done" \
-    "sub di, 4" /* rewind di */ \
-    "mov eax, es:[di]" /* reload previous dword */ \
-    "sub di, bx" /* calc byte offset */ \
-    "movzx edi, di" \
-    "shl edi, 3" /* convert byte to bit offset */ \
-    "bsf edx, eax" /* find first set bit in dword */ \
-    "add edx, edi" /* calc final bit number */ \
-    "done:" \
-    "mov eax, edx" \
-    "shr edx, 16" \
-    parm [es di] [ax cx] \
-    value [ax dx] \
-    modify exact [ax bx cx dx di];
-
-/* ASMBitNextSet: Too much work, do when needed. */
-#else
 /* ASMBitFirstClear: External file.  */
 /* ASMBitNextClear:  External file.  */
 /* ASMBitFirstSet:   External file.  */
 /* ASMBitNextSet:    External file.  */
-#endif
 
-#undef      ASMBitFirstSetU32
-#pragma aux ASMBitFirstSetU32 = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+/* ASMBitFirstSetU32: External file. */
+#else
+# undef      ASMBitFirstSetU32
+# pragma aux ASMBitFirstSetU32 = \
     "shl edx, 16" \
     "mov dx, ax" \
     "bsf eax, edx" \
@@ -552,9 +708,14 @@
     parm [ax dx] nomemory \
     value [ax] \
     modify exact [ax dx] nomemory;
+#endif
 
-#undef      ASMBitFirstSetU64
-#pragma aux ASMBitFirstSetU64 = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+/* ASMBitFirstSetU64: External file. */
+#else
+# undef      ASMBitFirstSetU64
+# pragma aux ASMBitFirstSetU64 = \
+    ".386" \
     "shl ecx, 16" \
     "mov cx, dx" \
     "bsf ecx, ecx" \
@@ -577,9 +738,13 @@
     parm [dx cx bx ax] nomemory \
     value [ax] \
     modify exact [ax cx] nomemory;
+#endif
 
-#undef      ASMBitFirstSetU16
-#pragma aux ASMBitFirstSetU16 = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+/* ASMBitFirstSetU16: External file. */
+#else
+# undef      ASMBitFirstSetU16
+# pragma aux ASMBitFirstSetU16 = \
     "bsf ax, ax" \
     "jz  not_found" \
     "inc ax" \
@@ -590,9 +755,13 @@
     parm [ax] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
-#undef      ASMBitLastSetU32
-#pragma aux ASMBitLastSetU32 = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+/* ASMBitLastSetU32: External file. */
+#else
+# undef      ASMBitLastSetU32
+# pragma aux ASMBitLastSetU32 = \
     "shl edx, 16" \
     "mov dx, ax" \
     "bsr eax, edx" \
@@ -605,9 +774,14 @@
     parm [ax dx] nomemory \
     value [ax] \
     modify exact [ax dx] nomemory;
+#endif
 
-#undef      ASMBitLastSetU64
-#pragma aux ASMBitLastSetU64 = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+/* ASMBitLastSetU64: External file. */
+#else
+# undef      ASMBitLastSetU64
+# pragma aux ASMBitLastSetU64 = \
+    ".386" \
     "shl ecx, 16" \
     "mov cx, dx" \
     "bsf ecx, ecx" \
@@ -630,9 +804,13 @@
     parm [dx cx bx ax] nomemory \
     value [ax] \
     modify exact [ax cx] nomemory;
+#endif
 
-#undef      ASMBitLastSetU16
-#pragma aux ASMBitLastSetU16 = \
+#if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+/* ASMBitLastSetU16: External file. */
+#else
+# undef      ASMBitLastSetU16
+# pragma aux ASMBitLastSetU16 = \
     "bsr ax, ax" \
     "jz  not_found" \
     "inc ax" \
@@ -643,23 +821,26 @@
     parm [ax] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMByteSwapU16
 #pragma aux ASMByteSwapU16 = \
-    "ror ax, 8" \
+    "xchg al, ah" \
     parm [ax] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
 
 #undef      ASMByteSwapU32
 #pragma aux ASMByteSwapU32 = \
-    "xchg ax, dx" \
+    "xchg dh, al" \
+    "xchg dl, ah" \
     parm [ax dx] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
 
 #undef      ASMRotateLeftU32
 #pragma aux ASMRotateLeftU32 = \
+    ".386" \
     "shl    edx, 16" \
     "mov    dx, ax" \
     "rol    edx, cl" \
@@ -671,6 +852,7 @@
 
 #undef      ASMRotateRightU32
 #pragma aux ASMRotateRightU32 = \
+    ".386" \
     "shl    edx, 16" \
     "mov    dx, ax" \
     "ror    edx, cl" \
