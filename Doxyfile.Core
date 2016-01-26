@@ -565,7 +565,8 @@ PREDEFINED += \
     BS3_FAR= \
     BS3_NEAR= \
     BS3_DECL(a_Type)=a_Type \
-    BS3_CMN_NM(a_Name)=a_Name
+    BS3_CMN_NM(a_Name)=a_Name \
+    "BS3_MODE_EXPAND_PROTOTYPES(a_RetType, a_BaseFnNm, a_Parameters)=a_RetType a_BaseFnNm##_mmm a_Parameters" \
 
 # templated fun.
 PREDEFINED += \

@@ -632,6 +632,22 @@ EOF
 #define RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(a_TypeNm, a_DeclMacro, a_ImplExtNm) int  a_ImplExtNm##_Init(P##a_TypeNm pThis, PCRTASN1ALLOCATORVTABLE pAllocator); int  a_ImplExtNm##_Clone(P##a_TypeNm pThis, PC##a_TypeNm) pSrc, PCRTASN1ALLOCATORVTABLE pAllocator); void a_ImplExtNm##_Delete(P##a_TypeNm pThis); int  a_ImplExtNm##_Enum(P##a_TypeNm pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser); int  a_ImplExtNm##_Compare(PC##a_TypeNm) pLeft, PC##a_TypeNm pRight); int  a_ImplExtNm##_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, P##a_TypeNm pThis, const char *pszErrorTag); int  a_ImplExtNm##_CheckSanity(PC##a_TypeNm pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 #define RTASN1TYPE_STANDARD_PROTOTYPES(a_TypeNm, a_DeclMacro, a_ImplExtNm, a_Asn1CoreNm) inline PRTASN1CORE a_ImplExtNm##_GetAsn1Core(PC##a_TypeNm pThis) { return (PRTASN1CORE)&pThis->a_Asn1CoreNm; } inline bool a_ImplExtNm##_IsPresent(PC##a_TypeNm pThis) { return pThis && RTASN1CORE_IS_PRESENT(&pThis->a_Asn1CoreNm); } RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(a_TypeNm, a_DeclMacro, a_ImplExtNm)
 
+#define BS3_MODE_EXPAND_PROTOTYPES(a_RetType, a_BaseFnNm, a_Parameters) \
+    a_RetType a_BaseFnNm##_mmm    a_Parameters; \
+    a_RetType a_BaseFnNm##_rm     a_Parameters; \
+    a_RetType a_BaseFnNm##_pe16   a_Parameters; \
+    a_RetType a_BaseFnNm##_pe32   a_Parameters; \
+    a_RetType a_BaseFnNm##_pev86  a_Parameters; \
+    a_RetType a_BaseFnNm##_pp16   a_Parameters; \
+    a_RetType a_BaseFnNm##_pp32   a_Parameters; \
+    a_RetType a_BaseFnNm##_ppv86  a_Parameters; \
+    a_RetType a_BaseFnNm##_pae16  a_Parameters; \
+    a_RetType a_BaseFnNm##_pae32  a_Parameters; \
+    a_RetType a_BaseFnNm##_paev86 a_Parameters; \
+    a_RetType a_BaseFnNm##_lm16   a_Parameters; \
+    a_RetType a_BaseFnNm##_lm32   a_Parameters; \
+    a_RetType a_BaseFnNm##_lm64   a_Parameters
+
 EOF
 
     MY_HDR_FILES=`  echo ${MY_ROOT_DIR}/include/VBox/*.h ${MY_ROOT_DIR}/include/VBox/vmm/*.h \
