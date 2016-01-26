@@ -528,7 +528,7 @@ if defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)" != "win"
  # Globals relevant to the SDK.
  #
  VBOXWEB_GLUE_PYTHON           = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_wrappers.py
- VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_server.py
+ VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_services.py
  VBOXWEB_WS_PERL               = $(VBOX_PATH_SDK)/bindings/webservice/perl/lib/vboxService.pm
  VBOXWEB_WS_PHP                = $(VBOX_PATH_SDK)/bindings/webservice/php/lib/vboxServiceWrappers.php
  VBOXWEB_SAMPLES_JAXWS_DIR     = $(VBOX_PATH_SDK)/bindings/webservice/java/jax-ws/samples
@@ -620,6 +620,8 @@ $(VBOXWEB_WS_PYTHON): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
 	$(QUIET)$(MKDIR) -p $(@D)
 # Try both w/o and with --file option
 	$(QUIET)$(REDIRECT) -C $(@D) -- $(SHELL) -c "$(VBOX_WSDL2PY) -b $(VBOXWEBSERVICE_WSDL) || $(VBOX_WSDL2PY) -b  --file $(VBOXWEBSERVICE_WSDL)"
+# Note: the previous command (depending on the version) may or may not create
+# $@, but the Python webservice bindings in the SDK depend on its presence.
 	$(QUIET)$(APPEND) $@ ''
 
 $(VBOXWEB_WS_PERL): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
