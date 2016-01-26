@@ -338,7 +338,7 @@ VBOX_INSTALL_LANG_LPROJ := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
 #
 
 VBOX_DI_VBAPP_DYLIBS = \
-	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/4/$(qtmod)) \
+	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/4/$(qtmod)) \
 	MacOS/VBoxDD.dylib \
 	MacOS/VBoxDD2.dylib \
 	MacOS/VBoxDDU.dylib \
@@ -512,15 +512,15 @@ VBOX_DI_VBAPP_MISC_FILES += \
 	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
 	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
 	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib \
-	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/4/Resources/Info.plist)
+	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/4/Resources/Info.plist)
 
 VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/VirtualBoxVM.app/Contents/MacOS=>../../../MacOS/ \
 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
-	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
+	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 	,Frameworks/$(qtmod).framework/Versions/Current=>4 )
 ifndef VBOX_NOT_OSX_105
-VBOX_DI_VBAPP_SYMLINKS += $(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
+VBOX_DI_VBAPP_SYMLINKS += $(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 	,Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod) \
 	 Frameworks/$(qtmod).framework/Resources=>Versions/4/Resources/ )
 endif
@@ -677,7 +677,7 @@ endif
 #ifdef VBOX_WITH_HARDENING - disabled temporarily
 if 1
 	@# We cannot use @executable_path together with setuid binaries, dyld gets upset about it. So, fix Qt libs and users.
-	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
+	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 		,install_name_tool -id /Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod)$(NLTAB) )
 	$(foreach f, \
@@ -685,7 +685,7 @@ if 1
 		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
 		$(VBOX_DI_VBAPP_PROGS) \
 		,install_name_tool \
-			$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), \
+			$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
 				-change           @executable_path/../Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
 				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
 				-change               $(VBOX_PATH_QT)/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
@@ -712,9 +712,9 @@ endif
 
 	@# Signed the binaries and the application bundle.
 ifdef VBOX_SIGNING_MODE
-	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
+	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
-	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
+	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 		,$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/4,org.virtualbox.app.frameworks.$(qtmod)) )
 	$(foreach dylib, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
