@@ -4418,12 +4418,7 @@ static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN,
             rc = VERR_NO_MEMORY;
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-    {
         LogFunc(("No attached driver for LUN #%u\n", uLUN));
-    }
-    else if (RT_FAILURE(rc))
-        AssertMsgFailed(("Failed to attach HDA LUN #%u (\"%s\"), rc=%Rrc\n",
-                        uLUN, pszDesc, rc));
 
     if (RT_FAILURE(rc))
     {
@@ -4782,21 +4777,17 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
             AssertPtr(pCon);
 
-            uint8_t cFailed = 0;
-            if (!pCon->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
-                cFailed++;
+            bool fValidLineIn = pCon->pfnIsValidIn(pCon, pDrv->LineIn.pStrmIn);
 #ifdef VBOX_WITH_HDA_MIC_IN
-            if (!pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
-                cFailed++;
+            bool fValidMicIn  = pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn);
 #endif
-            if (!pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
-                cFailed++;
+            bool fValidOut    = pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut);
 
+            if (    !fValidLineIn
 #ifdef VBOX_WITH_HDA_MIC_IN
-            if (cFailed == 3)
-#else
-            if (cFailed == 2)
+                 && !fValidMicIn
 #endif
+                 && !fValidOut)
             {
                 LogRel(("HDA: Falling back to NULL backend (no sound audible)\n"));
 
@@ -4807,36 +4798,73 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                     N_("No audio devices could be opened. Selecting the NULL audio backend "
                        "with the consequence that no sound is audible"));
             }
-            else if (cFailed)
+            else
             {
-                if (!pDrv->pConnector->pfnIsValidIn (pDrv->pConnector, pDrv->LineIn.pStrmIn))
-                    LogRel(("HDA: WARNING: Unable to open PCM line input for LUN #%RU32!\n",       pDrv->uLUN));
-#ifdef VBOX_WITH_HDA_MIC_IN
-                if (!pDrv->pConnector->pfnIsValidIn (pDrv->pConnector, pDrv->MicIn.pStrmIn))
-                    LogRel(("HDA: WARNING: Unable to open PCM microphone input for LUN #%RU32!\n", pDrv->uLUN));
-#endif
-                if (!pDrv->pConnector->pfnIsValidOut(pDrv->pConnector, pDrv->Out.pStrmOut))
-                    LogRel(("HDA: WARNING: Unable to open PCM output for LUN #%RU32!\n",           pDrv->uLUN));
+                bool fWarn = false;
 
-                char   szMissingStreams[255];
-                size_t len = 0;
-                if (!pCon->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
-                    len = RTStrPrintf(szMissingStreams,
-                                      sizeof(szMissingStreams), "PCM Input");
+                PDMAUDIOBACKENDCFG backendCfg;
+                int rc2 = pCon->pfnGetConfiguration(pCon, &backendCfg);
+                if (RT_SUCCESS(rc2))
+                {
+                    if (backendCfg.cMaxHstStrmsIn)
+                    {
 #ifdef VBOX_WITH_HDA_MIC_IN
-                if (!pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
-                    len += RTStrPrintf(szMissingStreams + len,
-                                       sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
+                        /* If the audio backend supports two or more input streams at once,
+                         * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
+                        if (backendCfg.cMaxHstStrmsIn >= 2)
+                            fWarn = !fValidLineIn || !fValidMicIn;
+                        /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
+                         * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
+                         * One of the two simply is not in use then. */
+                        else if (backendCfg.cMaxHstStrmsIn == 1)
+                            fWarn = !fValidLineIn && !fValidMicIn;
+                        /* Don't warn if our backend is not able of supporting any input streams at all. */
+#else
+                        /* We only have line-in as input source. */
+                        fWarn = !fValidLineIn;
 #endif
-                if (!pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
-                    len += RTStrPrintf(szMissingStreams + len,
-                                       sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
+                    }
 
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                    N_("Some HDA audio streams (%s) could not be opened. Guest applications generating audio "
-                    "output or depending on audio input may hang. Make sure your host audio device "
-                    "is working properly. Check the logfile for error messages of the audio "
-                    "subsystem"), szMissingStreams);
+                    if (   !fWarn
+                        && backendCfg.cMaxHstStrmsOut)
+                    {
+                        fWarn = !fValidOut;
+                    }
+                }
+                else
+                    AssertReleaseMsgFailed(("Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n",
+                                            pDrv->uLUN, rc2));
+
+                if (fWarn)
+                {
+                    char   szMissingStreams[255];
+                    size_t len = 0;
+                    if (!fValidLineIn)
+                    {
+                        LogRel(("HDA: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
+                        len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
+                    }
+#ifdef VBOX_WITH_HDA_MIC_IN
+                    if (!fValidMicIn)
+                    {
+                        LogRel(("HDA: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
+                        len += RTStrPrintf(szMissingStreams + len,
+                                           sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
+                    }
+#endif
+                    if (!fValidOut)
+                    {
+                        LogRel(("HDA: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
+                        len += RTStrPrintf(szMissingStreams + len,
+                                           sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
+                    }
+
+                    PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                               N_("Some HDA audio streams (%s) could not be opened. Guest applications generating audio "
+                                                  "output or depending on audio input may hang. Make sure your host audio device "
+                                                  "is working properly. Check the logfile for error messages of the audio "
+                                                  "subsystem"), szMissingStreams);
+                }
             }
         }
     }

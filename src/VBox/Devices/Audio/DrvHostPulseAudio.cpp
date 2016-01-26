@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1101,10 +1101,10 @@ static DECLCALLBACK(int) drvHostPulseAudioGetConf(PPDMIHOSTAUDIO pInterface, PPD
     NOREF(pInterface);
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
-    pCfg->cbStreamOut = sizeof(PULSEAUDIOSTREAM);
-    pCfg->cbStreamIn = sizeof(PULSEAUDIOSTREAM);
-    pCfg->cMaxHstStrmsOut = INT_MAX;
-    pCfg->cMaxHstStrmsIn = INT_MAX;
+    pCfg->cbStreamOut     = sizeof(PULSEAUDIOSTREAM);
+    pCfg->cbStreamIn      = sizeof(PULSEAUDIOSTREAM);
+    pCfg->cMaxHstStrmsOut = UINT32_MAX;
+    pCfg->cMaxHstStrmsIn  = UINT32_MAX;
 
     return VINF_SUCCESS;
 }

@@ -170,8 +170,7 @@ static int drvHostALSAAudioClose(snd_pcm_t **pphPCM)
     int rc2 = snd_pcm_close(*pphPCM);
     if (rc2)
     {
-        LogRel(("ALSA: Closing PCM descriptor failed: %s\n",
-                 snd_strerror(rc2)));
+        LogRel(("ALSA: Closing PCM descriptor failed: %s\n", snd_strerror(rc2)));
         rc = VERR_GENERAL_FAILURE; /** @todo */
     }
     else
@@ -385,8 +384,7 @@ static int drvHostALSAAudioOpen(bool fIn,
         const char *pszDev = fIn ? s_ALSAConf.pcm_name_in : s_ALSAConf.pcm_name_out;
         if (!pszDev)
         {
-            LogRel(("ALSA: Invalid or no %s device name set\n",
-                    fIn ? "input" : "output"));
+            LogRel(("ALSA: Invalid or no %s device name set\n", fIn ? "input" : "output"));
             rc = VERR_INVALID_PARAMETER;
             break;
         }
@@ -396,19 +394,19 @@ static int drvHostALSAAudioOpen(bool fIn,
                                SND_PCM_NONBLOCK);
         if (err < 0)
         {
-            LogRel(("ALSA: Failed to open \"%s\" as %s: %s\n", pszDev,
-                    fIn ? "ADC" : "DAC", snd_strerror(err)));
+            LogRel(("ALSA: Failed to open \"%s\" as %s device: %s\n", pszDev, fIn ? "input" : "output", snd_strerror(err)));
             rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
+
+        LogRel(("ALSA: Using %s device \"%s\"\n", fIn ? "input" : "output", pszDev));
 
         snd_pcm_hw_params_t *pHWParms;
         snd_pcm_hw_params_alloca(&pHWParms); /** @todo Check for successful allocation? */
         err = snd_pcm_hw_params_any(phPCM, pHWParms);
         if (err < 0)
         {
-            LogRel(("ALSA: Failed to initialize hardware parameters: %s\n",
-                    snd_strerror(err)));
+            LogRel(("ALSA: Failed to initialize hardware parameters: %s\n", snd_strerror(err)));
             rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
@@ -425,8 +423,7 @@ static int drvHostALSAAudioOpen(bool fIn,
         err = snd_pcm_hw_params_set_format(phPCM, pHWParms, pCfgReq->fmt);
         if (err < 0)
         {
-            LogRel(("ALSA: Failed to set audio format to %d: %s\n",
-                    pCfgReq->fmt, snd_strerror(err)));
+            LogRel(("ALSA: Failed to set audio format to %d: %s\n", pCfgReq->fmt, snd_strerror(err)));
             rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
@@ -434,8 +431,7 @@ static int drvHostALSAAudioOpen(bool fIn,
         err = snd_pcm_hw_params_set_rate_near(phPCM, pHWParms, &uFreq, 0);
         if (err < 0)
         {
-            LogRel(("ALSA: Failed to set frequency to %dHz: %s\n",
-                    pCfgReq->freq, snd_strerror(err)));
+            LogRel(("ALSA: Failed to set frequency to %uHz: %s\n", pCfgReq->freq, snd_strerror(err)));
             rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
@@ -705,8 +701,7 @@ static int drvHostALSAAudioRecover(snd_pcm_t *phPCM)
     int err = snd_pcm_prepare(phPCM);
     if (err < 0)
     {
-        LogFunc(("Failed to recover stream %p: %s\n",
-                 phPCM, snd_strerror(err)));
+        LogFunc(("Failed to recover stream %p: %s\n", phPCM, snd_strerror(err)));
         return VERR_ACCESS_DENIED; /** @todo Find a better rc. */
     }
 
@@ -720,8 +715,7 @@ static int drvHostALSAAudioResume(snd_pcm_t *phPCM)
     int err = snd_pcm_resume(phPCM);
     if (err < 0)
     {
-        LogFunc(("Failed to resume stream %p: %s\n",
-                 phPCM, snd_strerror(err)));
+        LogFunc(("Failed to resume stream %p: %s\n", phPCM, snd_strerror(err)));
         return VERR_ACCESS_DENIED; /** @todo Find a better rc. */
     }
 
@@ -736,18 +730,16 @@ static int drvHostALSAAudioStreamCtl(snd_pcm_t *phPCM, bool fPause)
         err = snd_pcm_drop(phPCM);
         if (err < 0)
         {
-            LogFlow(("Error stopping stream %p: %s\n",
-                     phPCM, snd_strerror(err)));
+            LogRel(("ALSA: Error stopping stream %p: %s\n", phPCM, snd_strerror(err)));
             return VERR_ACCESS_DENIED;
         }
     }
     else
     {
-        err = snd_pcm_prepare (phPCM);
+        err = snd_pcm_prepare(phPCM);
         if (err < 0)
         {
-            LogFlow(("Error preparing stream %p: %s\n",
-                     phPCM, snd_strerror(err)));
+            LogRel(("ALSA: Error preparing stream %p: %s\n", phPCM, snd_strerror(err)));
             return VERR_ACCESS_DENIED;
         }
     }
@@ -855,6 +847,7 @@ static DECLCALLBACK(int) drvHostALSAAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
                 }
 
                 case -EAGAIN:
+                {
                     /*
                      * Don't set error here because EAGAIN means there are no further frames
                      * available at the moment, try later. As we might have read some frames
@@ -862,6 +855,7 @@ static DECLCALLBACK(int) drvHostALSAAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
                      */
                     cbToRead = 0;
                     break;
+                }
 
                 case -EPIPE:
                 {
@@ -874,10 +868,11 @@ static DECLCALLBACK(int) drvHostALSAAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
                 }
 
                 default:
+                {
                     LogFunc(("Failed to read input frames: %s\n", snd_strerror(cRead)));
-                    rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-                    VERR_GENERAL_FAILURE; /** @todo Fudge! */
+                    rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
                     break;
+                }
             }
         }
         else
@@ -1294,10 +1289,13 @@ static DECLCALLBACK(int) drvHostALSAAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDM
     NOREF(pInterface);
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
-    pCfg->cbStreamOut = sizeof(ALSAAUDIOSTREAMOUT);
-    pCfg->cbStreamIn = sizeof(ALSAAUDIOSTREAMIN);
-    pCfg->cMaxHstStrmsOut = INT_MAX;
-    pCfg->cMaxHstStrmsIn = INT_MAX;
+    pCfg->cbStreamIn      = sizeof(ALSAAUDIOSTREAMIN);
+    pCfg->cbStreamOut     = sizeof(ALSAAUDIOSTREAMOUT);
+
+    /* ALSA only allows one input and one output used at a time for
+     * the selected device. */
+    pCfg->cMaxHstStrmsIn  = 1;
+    pCfg->cMaxHstStrmsOut = 1;
 
     return VINF_SUCCESS;
 }

@@ -2238,12 +2238,7 @@ static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER p
             rc = VERR_NO_MEMORY;
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-    {
         LogFunc(("No attached driver for LUN #%u\n", uLUN));
-    }
-    else if (RT_FAILURE(rc))
-        AssertMsgFailed(("Failed to attach AC'97 LUN #%u (\"%s\"), rc=%Rrc\n",
-                        uLUN, pszDesc, rc));
 
     if (RT_FAILURE(rc))
     {
@@ -2538,15 +2533,13 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
             AssertPtr(pCon);
 
-            uint8_t cFailed = 0;
-            if (!pCon->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
-                cFailed++;
-            if (!pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
-                cFailed++;
-            if (!pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
-                cFailed++;
+            bool fValidLineIn = pCon->pfnIsValidIn(pCon, pDrv->LineIn.pStrmIn);
+            bool fValidMicIn  = pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn);
+            bool fValidOut    = pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut);
 
-            if (cFailed == 3)
+            if (    !fValidLineIn
+                 && !fValidMicIn
+                 && !fValidOut)
             {
                 LogRel(("AC97: Falling back to NULL backend (no sound audible)\n"));
 
@@ -2557,32 +2550,66 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                     N_("No audio devices could be opened. Selecting the NULL audio backend "
                        "with the consequence that no sound is audible"));
             }
-            else if (cFailed)
+            else
             {
-                if (!pDrv->pConnector->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
-                    LogRel(("AC97: WARNING: Unable to open PCM line input for LUN #%RU32!\n",       pDrv->uLUN));
-                if (!pDrv->pConnector->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
-                    LogRel(("AC97: WARNING: Unable to open PCM microphone input for LUN #%RU32!\n", pDrv->uLUN));
-                if (!pDrv->pConnector->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
-                    LogRel(("AC97: WARNING: Unable to open PCM output for LUN #%RU32!\n",           pDrv->uLUN));
+                bool fWarn = false;
 
-                char   szMissingStreams[255];
-                size_t len = 0;
-                if (!pCon->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn))
-                    len = RTStrPrintf(szMissingStreams,
-                                      sizeof(szMissingStreams), "PCM Input");
-                if (!pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn))
-                    len += RTStrPrintf(szMissingStreams + len,
-                                       sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
-                if (!pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut))
-                    len += RTStrPrintf(szMissingStreams + len,
-                                       sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
+                PDMAUDIOBACKENDCFG backendCfg;
+                int rc2 = pCon->pfnGetConfiguration(pCon, &backendCfg);
+                if (RT_SUCCESS(rc2))
+                {
+                    if (backendCfg.cMaxHstStrmsIn)
+                    {
+                        /* If the audio backend supports two or more input streams at once,
+                         * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
+                        if (backendCfg.cMaxHstStrmsIn >= 2)
+                            fWarn = !fValidLineIn || !fValidMicIn;
+                        /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
+                         * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
+                         * One of the two simply is not in use then. */
+                        else if (backendCfg.cMaxHstStrmsIn == 1)
+                            fWarn = !fValidLineIn && !fValidMicIn;
+                        /* Don't warn if our backend is not able of supporting any input streams at all. */
+                    }
 
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                    N_("Some AC'97 audio streams (%s) could not be opened. Guest applications generating audio "
-                    "output or depending on audio input may hang. Make sure your host audio device "
-                    "is working properly. Check the logfile for error messages of the audio "
-                    "subsystem"), szMissingStreams);
+                    if (   !fWarn
+                        && backendCfg.cMaxHstStrmsOut)
+                    {
+                        fWarn = !fValidOut;
+                    }
+                }
+                else
+                    AssertReleaseMsgFailed(("Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n",
+                                            pDrv->uLUN, rc2));
+
+                if (fWarn)
+                {
+                    char   szMissingStreams[255];
+                    size_t len = 0;
+                    if (!fValidLineIn)
+                    {
+                        LogRel(("AC97: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
+                        len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
+                    }
+                    if (!fValidMicIn)
+                    {
+                        LogRel(("AC97: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
+                        len += RTStrPrintf(szMissingStreams + len,
+                                           sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
+                    }
+                    if (!fValidOut)
+                    {
+                        LogRel(("AC97: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
+                        len += RTStrPrintf(szMissingStreams + len,
+                                           sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
+                    }
+
+                    PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                               N_("Some AC'97 audio streams (%s) could not be opened. Guest applications generating audio "
+                                                  "output or depending on audio input may hang. Make sure your host audio device "
+                                                  "is working properly. Check the logfile for error messages of the audio "
+                                                  "subsystem"), szMissingStreams);
+                }
             }
         }
     }
