@@ -2046,12 +2046,12 @@ sub CheckForQt4(strOptQt4)
 
    ' Display the result.
    if strPathQt4 = "" then
-      CfgPrint "VBOX_WITH_QT4GUI="
+      CfgPrint "VBOX_WITH_QTGUI="
       PrintResultMsg "Qt4", "not found"
    else
       CfgPrint "PATH_SDK_QT4          := " & strPathQt4
       CfgPrint "PATH_TOOL_QT4         := $(PATH_SDK_QT4)"
-      CfgPrint "VBOX_PATH_QT         := $(PATH_SDK_QT4)"
+      CfgPrint "VBOX_PATH_QT          := $(PATH_SDK_QT4)"
       PrintResult "Qt4 ", strPathQt4
    end if
 end sub
