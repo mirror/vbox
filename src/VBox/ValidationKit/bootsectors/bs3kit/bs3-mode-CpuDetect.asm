@@ -26,18 +26,8 @@
 
 %include "bs3kit-template-header.mac"
 
-%define BS3CPU_8086             1
-%define BS3CPU_V20              2
-%define BS3CPU_80186            3
-%define BS3CPU_80286            4
-%define BS3CPU_80386            5
-%define BS3CPU_80486            6
-%define BS3CPU_80486            7
-%define BS3CPU_Pentium          8
-%define BS3CPU_PPro             9
-%define BS3CPU_PProOrNewer      10
-%define BS3CPU_F_CPUID          0x80
-
+BS3_EXTERN_DATA16 g_uBs3CpuDetected
+TMPL_BEGIN_TEXT
 
 ;;
 ; Rough CPU detection, mainly for detecting really old CPUs.
@@ -214,17 +204,25 @@ CPU 586
 .NewerThanPPro:
         mov     xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID
 
+CPU 8086
+.return:
+        ;
+        ; Save the return value.
+        ;
+        BS3_ONLY_16BIT_STMT push    ds
+        BS3_ONLY_16BIT_STMT mov     bx, seg g_uBs3CpuDetected
+        BS3_ONLY_16BIT_STMT mov     ds, bx
+        mov     [g_uBs3CpuDetected], ax
+        BS3_ONLY_16BIT_STMT pop     ds
+
         ;
         ; Epilogue.
         ;
-CPU 8086
-.return:
         popf
         pop     xBX
         pop     xDX
         pop     xCX
         pop     xBP
-;; @todo cache the return value.
         ret
 BS3_PROC_END_MODE   Bs3EnteredMode
 

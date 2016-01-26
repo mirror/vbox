@@ -729,6 +729,7 @@ extern char const BS3_DATA_NM(g_achBs3HexDigitsUpper)[16+1];
  */
 uint16_t Bs3AsmSmsw(void);
 # pragma aux Bs3AsmSmsw = \
+        ".286" \
         "smsw ax" \
         value [ax] modify exact [ax] nomemory;
 #endif
@@ -1857,6 +1858,8 @@ BS3_DECL(void) Bs3TrapPrintFrame_c64(PCBS3TRAPFRAME pTrapFrame); /**< @copydoc B
 
 /**
  * Initializes the REAL and TILED memory pools.
+ *
+ * For proper operation on OLDer CPUs, call #Bs3CpuDetect_mmm first.
  */
 BS3_DECL(void) Bs3InitMemory_rm(void);
 
@@ -1870,6 +1873,57 @@ BS3_DECL(void) Bs3InitMemory_rm(void);
  *
  * @{
  */
+
+/**
+ * Macro for reducing typing.
+ *
+ * Doxygen knows how to expand this, well, kind of.
+ */
+#define BS3_MODE_EXPAND_PROTOTYPES(a_RetType, a_BaseFnNm, a_Parameters) \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_rm)     a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16)   a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32)   a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pev86)  a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16)   a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32)   a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_ppv86)  a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16)  a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32)  a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_paev86) a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm16)   a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm32)   a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm64)   a_Parameters
+
+/**
+ * Basic CPU detection.
+ *
+ * This sets the #g_bBs3CpuDetected global variable to the return value.
+ *
+ * @returns BS3CPU_XXX value with the BS3CPU_F_CPUID flag set depending on
+ *          capabilities.
+ */
+BS3_MODE_EXPAND_PROTOTYPES(uint8_t, Bs3CpuDetect,(void));
+
+/** @name BS3CPU_XXX - CPU detected by BS3CpuDetect_c16() and friends.
+ * @{ */
+#define BS3CPU_8086             UINT16_C(0x0001)    /**< Both 8086 and 8088. */
+#define BS3CPU_V20              UINT16_C(0x0002)    /**< Both NEC V20, V30 and relatives. */
+#define BS3CPU_80186            UINT16_C(0x0003)    /**< Both 80186 and 80188. */
+#define BS3CPU_80286            UINT16_C(0x0004)
+#define BS3CPU_80386            UINT16_C(0x0005)
+#define BS3CPU_80486            UINT16_C(0x0006)
+#define BS3CPU_Pentium          UINT16_C(0x0007)
+#define BS3CPU_PPro             UINT16_C(0x0008)
+#define BS3CPU_PProOrNewer      UINT16_C(0x0009)
+/** CPU type mask.  This is a full byte so it's possible to use byte access
+ * without and AND'ing to get the type value. */
+#define BS3CPU_TYPE_MASK        UINT16_C(0x00ff)
+/** Flag indicating that the CPUID instruction is supported by the CPU. */
+#define BS3CPU_F_CPUID          UINT16_C(0x0100)
+/** @} */
+
+/** The return value of #Bs3CpuDetect_mmm. (Initial value is BS3CPU_TYPE_MASK.) */
+extern uint16_t BS3_DATA_NM(g_uBs3CpuDetected);
 
 
 /** @} */
