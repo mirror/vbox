@@ -9,7 +9,7 @@
         VirtualBox.xidl. This Python file represents our
         web service API. Depends on WSDL file for actual SOAP bindings.
 
-    Copyright (C) 2008-2015 Oracle Corporation
+    Copyright (C) 2008-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -94,13 +94,13 @@
        req=<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>RequestMsg()
        req._this=self.handle
        val=self.mgr.getPort().<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>(req)
-       <xsl:text>return  </xsl:text>
+       <xsl:text>return </xsl:text>
        <xsl:call-template name="emitOutParam">
            <xsl:with-param name="ifname" select="$ifname" />
            <xsl:with-param name="methodname" select="@name" />
            <xsl:with-param name="type" select="$attrtype" />
            <xsl:with-param name="value" select="concat('val.','_returnval')" />
-           <xsl:with-param name="safearray" select="@safearray"/>
+           <xsl:with-param name="safearray" select="$attrsafearray"/>
          </xsl:call-template>
 </xsl:template>
 
@@ -113,10 +113,17 @@
    def <xsl:value-of select="$fname"/>(self, value):
        req=<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>RequestMsg()
        req._this=self.handle
-       if type(value) in [int, bool, basestring, str]:
-            req._<xsl:value-of select="$attrname"/> = value
+       <xsl:choose>
+         <xsl:when test="$attrsafearray='yes'">
+          <xsl:text>req._</xsl:text><xsl:value-of select="$attrname"/><xsl:text> = value</xsl:text>
+         </xsl:when>
+         <xsl:otherwise>
+           <xsl:text>if type(value) in [int, bool, basestring, str]:
+            req._</xsl:text><xsl:value-of select="$attrname"/><xsl:text> = value
        else:
-            req._<xsl:value-of select="$attrname"/> = value.handle
+            req._</xsl:text><xsl:value-of select="$attrname"/><xsl:text> = value.handle</xsl:text>
+         </xsl:otherwise>
+       </xsl:choose>
        self.mgr.getPort().<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>(req)
 </xsl:template>
 
@@ -240,6 +247,7 @@ class <xsl:value-of select="$ifname"/>(<xsl:value-of select="$base" />):
       <xsl:variable name="attrname"><xsl:value-of select="@name" /></xsl:variable>
       <xsl:variable name="attrtype"><xsl:value-of select="@type" /></xsl:variable>
       <xsl:variable name="attrreadonly"><xsl:value-of select="@readonly" /></xsl:variable>
+      <xsl:variable name="attrsafearray"><xsl:value-of select="@safearray" /></xsl:variable>
       <!-- skip this attribute if it has parameters of a type that has wsmap="suppress" -->
       <xsl:choose>
         <xsl:when test="( $attrtype=($G_setSuppressedInterfaces/@name) )">
@@ -259,6 +267,7 @@ class <xsl:value-of select="$ifname"/>(<xsl:value-of select="$base" />):
             <xsl:with-param name="ifname" select="$ifname" />
             <xsl:with-param name="attrname" select="$attrname" />
             <xsl:with-param name="attrtype" select="$attrtype" />
+            <xsl:with-param name="attrsafearray" select="$attrsafearray" />
           </xsl:call-template>
           <!-- bb) emit a set method if the attribute is read/write -->
           <xsl:if test="not($attrreadonly='yes')">
@@ -266,6 +275,7 @@ class <xsl:value-of select="$ifname"/>(<xsl:value-of select="$base" />):
               <xsl:with-param name="ifname" select="$ifname" />
               <xsl:with-param name="attrname" select="$attrname" />
               <xsl:with-param name="attrtype" select="$attrtype" />
+              <xsl:with-param name="attrsafearray" select="$attrsafearray" />
             </xsl:call-template>
           </xsl:if>
         </xsl:otherwise>
@@ -467,7 +477,7 @@ class <xsl:value-of select="@name"/>:
 </xsl:template>
 
 <xsl:template match="/">
-<xsl:text># Copyright (C) 2008-2015 Oracle Corporation
+<xsl:text># Copyright (C) 2008-2016 Oracle Corporation
 #
 # This file is part of a free software library; you can redistribute
 # it and/or modify it under the terms of the GNU Lesser General
