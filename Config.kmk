@@ -5214,34 +5214,34 @@ ifdef VBOX_WITH_QTGUI
  # Handmade configuration of qt4 - very annoying, this needs to
  # be cleaned up properly later some time (not important now).
  #
- ifeq ($(VBOX_PATH_QT4),)
+ ifeq ($(VBOX_PATH_QT),)
   ifeq ($(KBUILD_TARGET),darwin)
-   VBOX_PATH_QT4 := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
-   ifeq ($(VBOX_PATH_QT4),)
+   VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
+   ifeq ($(VBOX_PATH_QT),)
     ifneq ($(wildcard /Library/Frameworks/QtCore.framework),)
      # Using the global installation (for OSE).
-     VBOX_PATH_QT4 ?= /usr
-     VBOX_PATH_QT4_FRAMEWORKS ?= /Library/Frameworks
+     VBOX_PATH_QT ?= /usr
+     VBOX_PATH_QT_FRAMEWORKS ?= /Library/Frameworks
     endif
    endif
   else if1of ($(KBUILD_TARGET), win)
-   VBOX_PATH_QT4 ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*))))
+   VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*))))
   else if1of ($(KBUILD_TARGET), linux solaris)
-   VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
-   ifneq ($(VBOX_PATH_QT4),)
+   VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
+   ifneq ($(VBOX_PATH_QT),)
     VBOX_WITH_ORACLE_QT = 1
    endif
   endif
  endif
- ifeq ($(VBOX_PATH_QT4),)
+ ifeq ($(VBOX_PATH_QT),)
   if1of ($(USERNAME), bird)
    # gentoo (64-bit)
-   VBOX_PATH_QT4          ?= /usr
-   VBOX_PATH_QT4_LIB      ?= /usr/lib/qt4
+   VBOX_PATH_QT          ?= /usr
+   VBOX_PATH_QT_LIB      ?= /usr/lib/qt4
   endif
  endif
- VBOX_PATH_QT4            ?= /usr
- VBOX_PATH_QT4_LIB        ?= $(VBOX_PATH_QT4)/lib
+ VBOX_PATH_QT            ?= /usr
+ VBOX_PATH_QT_LIB        ?= $(VBOX_PATH_QT)/lib
 
  ifdef VBOX_WITH_ORACLE_QT
   VBOX_QT4_INFIX=VBox
@@ -5253,7 +5253,7 @@ ifdef VBOX_WITH_QTGUI
  # Hack LD_LIBRARY_PATH for stuff in tools.
  ifdef VBOX_WITH_ORACLE_QT
   if1of ($(KBUILD_TARGET), linux)
-   export LD_LIBRARY_PATH := $(VBOX_PATH_QT4_LIB):$(LD_LIBRARY_PATH)
+   export LD_LIBRARY_PATH := $(VBOX_PATH_QT_LIB):$(LD_LIBRARY_PATH)
   endif
  endif
 

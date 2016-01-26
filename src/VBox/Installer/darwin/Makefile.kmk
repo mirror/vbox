@@ -688,7 +688,7 @@ if 1
 			$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), \
 				-change           @executable_path/../Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
 				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
-				-change              $(VBOX_PATH_QT4)/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+				-change               $(VBOX_PATH_QT)/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
 				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
 				-change                          $(PATH_SDK_QT4)/$(qtmod).framework/Versions/4/$(qtmod) \
 				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \

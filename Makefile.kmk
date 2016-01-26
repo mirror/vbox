@@ -162,9 +162,9 @@ ifeq ($(KBUILD_TARGET),darwin)
   	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
   	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
  endif
- ifneq ($(wildcard $(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib),)
+ ifneq ($(wildcard $(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets.dylib),)
   qt4-bin_SOURCES += \
-  	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
+  	$(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
  endif
  qt4-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
  		,Frameworks/$(qtmod).framework/Versions/Current=>4 \
@@ -178,20 +178,20 @@ else
    qt4-bin_MODE = 755
    qt4-bin_INST = $(INST_BIN)
    qt4-bin_SOURCES = \
-   	$(foreach qtmod,$(VBOX_QT4_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT4_LIB)/$(qtmod)4$(SUFF_DLL))) \
-   	$(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4$(SUFF_DLL))=>accessible/qtaccessiblewidgets4$(SUFF_DLL)
+   	$(foreach qtmod,$(VBOX_QT4_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT_LIB)/$(qtmod)4$(SUFF_DLL))) \
+   	$(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT)/plugins/accessible/qtaccessiblewidgets4$(SUFF_DLL))=>accessible/qtaccessiblewidgets4$(SUFF_DLL)
    ifdef VBOX_WITH_QT_PDBS
     qt4-bin_SOURCES += \
-    	$(foreach qtmod,$(VBOX_QT4_MOD_NAMES),$(VBOX_PATH_QT4_LIB)/$(qtmod)4.pdb) \
-    	$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4.pdb=>accessible/qtaccessiblewidgets4.pdb
+    	$(foreach qtmod,$(VBOX_QT4_MOD_NAMES),$(VBOX_PATH_QT_LIB)/$(qtmod)4.pdb) \
+    	$(VBOX_PATH_QT)/plugins/accessible/qtaccessiblewidgets4.pdb=>accessible/qtaccessiblewidgets4.pdb
    endif
   else
    INSTALLS += qt4-bin
    qt4-bin_MODE = 755
    qt4-bin_INST = $(INST_BIN)
    qt4-bin_SOURCES = \
-	$(foreach qtmod,$(VBOX_QT4_MOD_NAMES),$(VBOX_PATH_QT4_LIB)/lib$(qtmod)$(SUFF_DLL).4) \
- 	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
+	$(foreach qtmod,$(VBOX_QT4_MOD_NAMES),$(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).4) \
+ 	$(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
   endif
  endif # VBOX_WITH_ORACLE_QT
 endif

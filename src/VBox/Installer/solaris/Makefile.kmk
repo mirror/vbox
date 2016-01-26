@@ -413,13 +413,13 @@ SOLARIS_COMMON_EXES += \
 
 
 ## @def SOLARIS_QTLIBS
-# List of Qt shared libs that we need to copy from $(VBOX_PATH_QT4)/lib/ to /opt/VirtualBox/$(VBOX_SI_ARCH)/
+# List of Qt shared libs that we need to copy from $(VBOX_PATH_QT)/lib/ to /opt/VirtualBox/$(VBOX_SI_ARCH)/
 # so that we can run VBoxQtConfig.
 SOLARIS_FILE_LIST_VARS += SOLARIS_QTLIBS
 SOLARIS_QTLIBS.SUBDIRS := no
 SOLARIS_QTLIBS.STRIP   := no
 SOLARIS_QTLIBS.MODE    := 0644
-SOLARIS_QTLIBS.SRC     := $(VBOX_PATH_QT4)/lib
+SOLARIS_QTLIBS.SRC     := $(VBOX_PATH_QT)/lib
 SOLARIS_QTLIBS.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)
 SOLARIS_QTLIBS =
 ifdef VBOX_WITH_QTGUI
@@ -539,7 +539,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.applications.in \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
 		\
-		$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_ORACLE_QT),$(VBOX_PATH_QT4)/bin/qtconfig,) \
+		$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_ORACLE_QT),$(VBOX_PATH_QT)/bin/qtconfig,) \
 		$(if-expr defined(VBOX_WITH_ADDITIONS_PACKING),$(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.iso,) \
 		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL),$(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
 		\
@@ -604,7 +604,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 # VirtualBox: Arch specific files.
 	$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_ORACLE_QT)\
 	,$(INSTALL) -m 0755 \
-		$(VBOX_PATH_QT4)/bin/qtconfig	$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/VBoxQtconfig,)
+		$(VBOX_PATH_QT)/bin/qtconfig	$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/VBoxQtconfig,)
 
 	$(if-expr defined(VBOX_WITH_QTGUI) \
 	,$(NLTAB)$(LN_SYMLINK) ../rdesktop-vrdp-keymaps/ $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/rdesktop-vrdp-keymaps,)

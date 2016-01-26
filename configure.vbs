@@ -2051,7 +2051,7 @@ sub CheckForQt4(strOptQt4)
    else
       CfgPrint "PATH_SDK_QT4          := " & strPathQt4
       CfgPrint "PATH_TOOL_QT4         := $(PATH_SDK_QT4)"
-      CfgPrint "VBOX_PATH_QT4         := $(PATH_SDK_QT4)"
+      CfgPrint "VBOX_PATH_QT         := $(PATH_SDK_QT4)"
       PrintResult "Qt4 ", strPathQt4
    end if
 end sub
