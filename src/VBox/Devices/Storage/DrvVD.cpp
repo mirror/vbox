@@ -371,6 +371,7 @@ typedef struct VBOXDISK
 *********************************************************************************************************************************/
 
 static DECLCALLBACK(void) drvvdMediaExIoReqComplete(void *pvUser1, void *pvUser2, int rcReq);
+static void drvvdPowerOffOrDestructOrUnmount(PPDMDRVINS pDrvIns);
 
 /**
  * Internal: allocate new image descriptor and put it in the list
@@ -2405,6 +2406,7 @@ static DECLCALLBACK(int) drvvdUnmount(PPDMIMOUNT pInterface, bool fForce, bool f
 
     /* Media is no longer locked even if it was previously. */
     pThis->fLocked = false;
+    drvvdPowerOffOrDestructOrUnmount(pThis->pDrvIns);
 
     /*
      * Notify driver/device above us.
@@ -3474,7 +3476,7 @@ static DECLCALLBACK(int) drvvdLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
  * @returns nothing.
  * @param   pDrvIns    The driver instance.
  */
-static void drvvdPowerOffOrDestruct(PPDMDRVINS pDrvIns)
+static void drvvdPowerOffOrDestructOrUnmount(PPDMDRVINS pDrvIns)
 {
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlowFunc(("\n"));
@@ -3514,7 +3516,7 @@ static void drvvdPowerOffOrDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    drvvdPowerOffOrDestruct(pDrvIns);
+    drvvdPowerOffOrDestructOrUnmount(pDrvIns);
 }
 
 /**
@@ -3626,7 +3628,7 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
      * destroyed. This method will get called without calling the power off
      * callback first when we reconfigure the driver chain after a snapshot.
      */
-    drvvdPowerOffOrDestruct(pDrvIns);
+    drvvdPowerOffOrDestructOrUnmount(pDrvIns);
     if (pThis->MergeLock != NIL_RTSEMRW)
     {
         int rc = RTSemRWDestroy(pThis->MergeLock);
