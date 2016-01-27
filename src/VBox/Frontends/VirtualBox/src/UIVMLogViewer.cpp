@@ -501,10 +501,9 @@ public slots:
         Q_UNUSED(iCurrentIndex);
         QTextEdit *pCurrentPage = m_pViewer->currentLogPage();
         AssertReturnVoid(pCurrentPage);
-        const QString *pCurrentLog = m_pViewer->currentLog();
-        if (pCurrentLog)
+        QString strInputText = m_pViewer->currentLog();
+        if (!strInputText.isNull())
         {
-            QString strInputText(pCurrentLog->data());
             /* Prepare filter-data: */
             QString strFilteredText;
             const QRegExp rxFilterExp(m_strFilterText, Qt::CaseInsensitive);
@@ -754,12 +753,6 @@ void UIVMLogViewer::refresh()
     disconnect(m_pViewerContainer, SIGNAL(currentChanged(int)), m_pFilterPanel, SLOT(applyFilter(int)));
 
     /* Clearing old data if any: */
-    for (int index = 0; index < m_book.count(); index++)
-    {
-        QTextEdit* pLogPage = m_book.at(index).second;
-        if (pLogPage)
-            delete m_logMap[pLogPage];
-    }
     m_book.clear();
     m_logMap.clear();
     m_pViewerContainer->setEnabled(true);
@@ -804,7 +797,7 @@ void UIVMLogViewer::refresh()
                 /* Add the actual file name and the QTextEdit containing the content to a list: */
                 m_book << qMakePair(strFileName, pLogViewer);
                 /* Add the log-text to the map: */
-                m_logMap[pLogViewer] = new QString(strText);
+                m_logMap[pLogViewer] = strText;
                 isAnyLogPresent = true;
             }
         }
@@ -977,14 +970,6 @@ void UIVMLogViewer::cleanup()
     /* Save settings: */
     saveSettings();
 
-    /* Delete the log if not already: */
-    for (int index = 0; index < m_book.count(); index++)
-    {
-        QTextEdit* pLogPage = m_book.at(index).second;
-        if (pLogPage)
-            delete m_logMap[pLogPage];
-    }
-
     /* Remove log-viewer: */
     if (!m_machine.isNull())
         m_viewers.remove(m_machine.GetName());
@@ -1110,7 +1095,7 @@ QTextEdit* UIVMLogViewer::createLogPage(const QString &strName)
     }
 }
 
-const QString* UIVMLogViewer::currentLog()
+const QString& UIVMLogViewer::currentLog()
 {
     return m_logMap[currentLogPage()];
 }

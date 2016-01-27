@@ -44,7 +44,7 @@ class UIVMLogViewerSearchPanel;
 typedef QMap<QString, UIVMLogViewer*> VMLogViewerMap;
 typedef QPair<QString, QTextEdit*> LogPage;
 typedef QList<LogPage> LogBook;
-typedef QMap<QTextEdit*, QString*> VMLogMap;
+typedef QMap<QTextEdit*, QString> VMLogMap;
 
 /** QMainWindow extension
   * providing GUI with VirtualBox LogViewer. */
@@ -109,7 +109,7 @@ private:
     /** Returns the newly created log-page using @a strPage filename. */
     QTextEdit* createLogPage(const QString &strPage);
     /** Returns the content of current log-page. */
-    const QString* currentLog();
+    const QString& currentLog();
 
     /** Load settings helper. */
     void loadSettings();
