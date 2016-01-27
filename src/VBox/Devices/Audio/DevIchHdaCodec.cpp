@@ -1249,14 +1249,14 @@ static int stac9220Construct(PHDACODEC pThis)
  * Some generic predicate functions.
  */
 
-#define DECLISNODEOFTYPE(type)                                                                  \
-    DECLINLINE(int) hdaCodecIs##type##Node(PHDACODEC pThis, uint8_t cNode)                     \
-    {                                                                                           \
-        Assert(pThis->au8##type##s);                                                           \
-        for (int i = 0; pThis->au8##type##s[i] != 0; ++i)                                      \
-            if (pThis->au8##type##s[i] == cNode)                                               \
-                return 1;                                                                       \
-        return 0;                                                                               \
+#define DECLISNODEOFTYPE(type)                                              \
+    DECLINLINE(bool) hdaCodecIs##type##Node(PHDACODEC pThis, uint8_t cNode) \
+    {                                                                       \
+        Assert(pThis->au8##type##s);                                        \
+        for (int i = 0; pThis->au8##type##s[i] != 0; ++i)                   \
+            if (pThis->au8##type##s[i] == cNode)                            \
+                return true;                                                \
+        return false;                                                       \
     }
 /* hdaCodecIsPortNode */
 DECLISNODEOFTYPE(Port)
@@ -1347,11 +1347,28 @@ DECLINLINE(void) hdaCodecSetRegisterU16(uint32_t *pu32Reg, uint32_t u32Cmd, uint
 /*
  * Verb processor functions.
  */
+DECLINLINE(bool) vrbIsValidNode(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
+{
+    AssertPtrReturn(pThis, false);
+    AssertPtrReturn(pResp, false);
+
+    Assert(CODEC_CAD(cmd) == pThis->id);
+    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
+    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
+    {
+        *pResp = 0;
+
+        AssertMsgFailed(("Invalid node address: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        return false;
+    }
+
+    return true;
+}
 
 static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
     LogFlowFunc(("cmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", cmd,
-        CODEC_CAD(cmd), CODEC_DIRECT(cmd) ? 'N' : 'Y', CODEC_NID(cmd), CODEC_VERBDATA(cmd)));
+                 CODEC_CAD(cmd), CODEC_DIRECT(cmd) ? 'N' : 'Y', CODEC_NID(cmd), CODEC_VERBDATA(cmd)));
     *pResp = 0;
     return VINF_SUCCESS;
 }
@@ -1367,17 +1384,14 @@ static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, uint32_t cmd, uint64_t *p
 /* B-- */
 static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     /* HDA spec 7.3.3.7 Note A */
-    /** @todo: if index out of range response should be 0 */
-    uint8_t u8Index = CODEC_GET_AMP_DIRECTION(cmd) == AMPLIFIER_OUT? 0 : CODEC_GET_AMP_INDEX(cmd);
+    /** @todo: If index out of range response should be 0. */
+    uint8_t u8Index = CODEC_GET_AMP_DIRECTION(cmd) == AMPLIFIER_OUT ? 0 : CODEC_GET_AMP_INDEX(cmd);
 
     PCODECNODE pNode = &pThis->paNodes[CODEC_NID(cmd)];
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
@@ -1411,27 +1425,21 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
                             CODEC_GET_AMP_SIDE(cmd),
                             u8Index);
     else
-        AssertMsgFailedReturn(("access to fields of %x need to be implemented\n", CODEC_NID(cmd)), VINF_SUCCESS);
+        LogRel2(("HDA: Unhandled get amplifier command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 /* 3-- */
 static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    bool fIsLeft = false;
-    bool fIsRight = false;
-    bool fIsOut = false;
-    bool fIsIn = false;
-    uint8_t u8Index = 0;
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
-    PCODECNODE pNode = &pThis->paNodes[CODEC_NID(cmd)];
-    AMPLIFIER *pAmplifier;
+
+    PCODECNODE pNode      = &pThis->paNodes[CODEC_NID(cmd)];
+    AMPLIFIER *pAmplifier = NULL;
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         pAmplifier = &pNode->dac.B_params;
     else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
@@ -1445,16 +1453,22 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
         pAmplifier = &pNode->adc.B_params;
     else
-        AssertFailedReturn(VINF_SUCCESS);
+        LogRel2(("HDA: Unhandled set amplifier command: 0x%x (Payload=%RU16, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD16(cmd), CODEC_NID(cmd)));
 
-    fIsOut = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd);
-    fIsIn = CODEC_SET_AMP_IS_IN_DIRECTION(cmd);
-    fIsRight = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd);
-    fIsLeft = CODEC_SET_AMP_IS_LEFT_SIDE(cmd);
-    u8Index = CODEC_SET_AMP_INDEX(cmd);
+    if (!pAmplifier)
+        return VINF_SUCCESS;
+
+    bool fIsOut     = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd);
+    bool fIsIn      = CODEC_SET_AMP_IS_IN_DIRECTION(cmd);
+    bool fIsRight   = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd);
+    bool fIsLeft    = CODEC_SET_AMP_IS_LEFT_SIDE(cmd);
+    uint8_t u8Index = CODEC_SET_AMP_INDEX(cmd);
+
     if (   (!fIsLeft && !fIsRight)
         || (!fIsOut && !fIsIn))
         return VINF_SUCCESS;
+
     if (fIsIn)
     {
         if (fIsLeft)
@@ -1481,18 +1495,18 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
 
 static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     Assert((cmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F00_PARAM_LENGTH);
     if ((cmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F00_PARAM_LENGTH)
     {
+        *pResp = 0;
+
         LogFlowFunc(("invalid F00 parameter %d\n", (cmd & CODEC_VERB_8BIT_DATA)));
         return VINF_SUCCESS;
     }
+
     *pResp = pThis->paNodes[CODEC_NID(cmd)].node.au32F00_param[cmd & CODEC_VERB_8BIT_DATA];
     return VINF_SUCCESS;
 }
@@ -1500,14 +1514,11 @@ static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, uint32_t cmd, uint
 /* F01 */
 static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].adcmux.u32F01_param;
     else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
@@ -1518,20 +1529,21 @@ static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, 
         *pResp = pThis->paNodes[CODEC_NID(cmd)].adc.u32F01_param;
     else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
+    else
+        LogRel2(("HDA: Unhandled get pin control command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 /* 701 */
 static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
-    uint32_t *pu32Reg;
+
+    uint32_t *pu32Reg = NULL;
     if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].adcmux.u32F01_param;
     else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
@@ -1543,22 +1555,23 @@ static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, 
     else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
     else
-        AssertFailedReturn(VINF_SUCCESS);
-    hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        LogRel2(("HDA: Unhandled set connection select control command: 0x%x (Payload=0x%x, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
+    if (pu32Reg)
+        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+
     return VINF_SUCCESS;
 }
 
 /* F07 */
 static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].port.u32F07_param;
     else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
@@ -1572,22 +1585,20 @@ static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     else
-        AssertMsgFailed(("Unsupported"));
+        LogRel2(("HDA: Unhandled get pin control command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 /* 707 */
 static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
-    uint32_t *pu32Reg;
+
+    uint32_t *pu32Reg = NULL;
     if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].port.u32F07_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
@@ -1602,22 +1613,23 @@ static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64
              && CODEC_NID(cmd) == 0x1b)
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     else
-        AssertFailedReturn(VINF_SUCCESS);
-    hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        LogRel2(("HDA: Unhandled set pin control command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
+    if (pu32Reg)
+        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+
     return VINF_SUCCESS;
 }
 
 /* F08 */
 static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].port.u32F08_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
@@ -1631,22 +1643,21 @@ static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F08_param;
     else
-        AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get unsolicited enabled command: 0x%x (NID=%RU8)\n",
+                 cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 /* 708 */
 static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
-    uint32_t *pu32Reg;
+
+    uint32_t *pu32Reg = NULL;
     if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].port.u32F08_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
@@ -1660,63 +1671,63 @@ static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
     else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digout.u32F08_param;
     else
-        AssertMsgFailedReturn(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)), VINF_SUCCESS);
-    hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        LogRel2(("HDA: Unhandled set unsolicited enabled command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
+    if (pu32Reg)
+        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+
     return VINF_SUCCESS;
 }
 
 /* F09 */
 static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].port.u32F09_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F09_param;
     else
-        AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get pin sense command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 /* 709 */
 static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
-    uint32_t *pu32Reg;
+
+    uint32_t *pu32Reg = NULL;
     if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].port.u32F09_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digin.u32F09_param;
     else
-        AssertFailedReturn(VINF_SUCCESS);
-    hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        LogRel2(("HDA: Unhandled set pin sense command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
+    if (pu32Reg)
+        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    *pResp = 0;
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
+    *pResp = 0;
+
     Assert((cmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F02_PARAM_LENGTH);
     if ((cmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F02_PARAM_LENGTH)
     {
@@ -1730,30 +1741,25 @@ static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, uint32_t
 /* F03 */
 static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].adc.u32F03_param;
+
     return VINF_SUCCESS;
 }
 
 /* 703 */
 static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
         hdaCodecSetRegisterU8(&pThis->paNodes[CODEC_NID(cmd)].adc.u32F03_param, cmd, 0);
     return VINF_SUCCESS;
@@ -1762,31 +1768,26 @@ static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, uint32_t cmd
 /* F0D */
 static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifout.u32F0d_param;
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifin.u32F0d_param;
+
     return VINF_SUCCESS;
 }
 
 static int codecSetDigitalConverter(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
         hdaCodecSetRegisterU8(&pThis->paNodes[CODEC_NID(cmd)].spdifout.u32F0d_param, cmd, u8Offset);
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
@@ -1893,14 +1894,11 @@ static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, uint32_t cmd, uint64_t *p
 /* F05 */
 static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (CODEC_NID(cmd) == 1 /* AFG */)
         *pResp = pThis->paNodes[CODEC_NID(cmd)].afg.u32F05_param;
     else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
@@ -1915,33 +1913,34 @@ static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, uint32_t cmd, uin
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifin.u32F05_param;
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F05_param;
+    else
+        LogRel2(("HDA: Unhandled get power state command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
-/* 705 */
-
 DECLINLINE(void) codecPropogatePowerState(uint32_t *pu32F05_param)
 {
-    Assert(pu32F05_param);
+    AssertPtr(pu32F05_param);
     if (!pu32F05_param)
         return;
-    bool fReset = CODEC_F05_IS_RESET(*pu32F05_param);
+
+    bool fReset  = CODEC_F05_IS_RESET(*pu32F05_param);
     bool fStopOk = CODEC_F05_IS_STOPOK(*pu32F05_param);
     uint8_t u8SetPowerState = CODEC_F05_SET(*pu32F05_param);
+
     *pu32F05_param = CODEC_MAKE_F05(fReset, fStopOk, 0, u8SetPowerState, u8SetPowerState);
 }
 
+/* 705 */
 static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
-    uint32_t *pu32Reg;
+
+    uint32_t *pu32Reg = NULL;
     if (CODEC_NID(cmd) == 1 /* AFG */)
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].afg.u32F05_param;
     else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
@@ -1957,7 +1956,11 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, uint32_t cmd, uin
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F05_param;
     else
-        AssertFailedReturn(VINF_SUCCESS);
+        LogRel2(("HDA: Unhandled set power state command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
+    if (!pu32Reg)
+        return VINF_SUCCESS;
 
     bool fReset = CODEC_F05_IS_RESET(*pu32Reg);
     bool fStopOk = CODEC_F05_IS_STOPOK(*pu32Reg);
@@ -1999,14 +2002,11 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, uint32_t cmd, uin
 
 static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].dac.u32F06_param;
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
@@ -2017,19 +2017,20 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
     else if (CODEC_NID(cmd) == 0x1A)
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F06_param;
+    else
+        LogRel2(("HDA: Unhandled get stream ID command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
+/* F06 */
 static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     uint32_t *pu32addr;
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         pu32addr = &pThis->paNodes[CODEC_NID(cmd)].dac.u32F06_param;
@@ -2042,21 +2043,21 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         pu32addr = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F06_param;
     else
-        AssertFailedReturn(VINF_SUCCESS);
+        LogRel2(("HDA: Unhandled set stream ID command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
     hdaCodecSetRegisterU8(pu32addr, cmd, 0);
     return VINF_SUCCESS;
 }
 
+/* F06 */
 static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].dac.u32A_param;
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
@@ -2065,19 +2066,19 @@ static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, uint32_t cmd
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifout.u32A_param;
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifin.u32A_param;
+    else
+        LogRel2(("HDA: Unhandled get power state command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         hdaCodecSetRegisterU16(&pThis->paNodes[CODEC_NID(cmd)].dac.u32A_param, cmd, 0);
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
@@ -2086,42 +2087,42 @@ static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, uint32_t cmd
         hdaCodecSetRegisterU16(&pThis->paNodes[CODEC_NID(cmd)].spdifout.u32A_param, cmd, 0);
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
         hdaCodecSetRegisterU16(&pThis->paNodes[CODEC_NID(cmd)].spdifin.u32A_param, cmd, 0);
+    else
+        LogRel2(("HDA: Unhandled set converter format command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 /* F0C */
 static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].adcvol.u32F0c_param;
     else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].dac.u32F0c_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F0c_param;
+    else
+        LogRel2(("HDA: Unhandled get EAPD/BTL enable command: 0x%x (Payload=%RU8, NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 /* 70C */
 static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
 
     *pResp = 0;
-    uint32_t *pu32Reg;
+
+    uint32_t *pu32Reg = NULL;
     if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].adcvol.u32F0c_param;
     else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
@@ -2129,8 +2130,11 @@ static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digin.u32F0c_param;
     else
-        AssertFailedReturn(VINF_SUCCESS);
-    hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+        LogRel2(("HDA: Unhandled set EAPD/BTL enable command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
+    if (pu32Reg)
+        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
 
     return VINF_SUCCESS;
 }
@@ -2138,87 +2142,86 @@ static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd
 /* F0F */
 static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
+    else
+        LogRel2(("HDA: Unhandled get volume knob control command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 /* 70F */
 static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
-    uint32_t *pu32Reg = NULL;
+
     *pResp = 0;
+
+    uint32_t *pu32Reg = NULL;
     if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
-    Assert(pu32Reg);
+    else
+        LogRel2(("HDA: Unhandled set volume control command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+
     return VINF_SUCCESS;
 }
 
 /* F17 */
 static DECLCALLBACK(int) vrbProcGetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
-    /* note: this is true for ALC885 */
+
+    /* Note: this is true for ALC885. */
     if (CODEC_NID(cmd) == 0x1 /* AFG */)
         *pResp = pThis->paNodes[1].afg.u32F17_param;
+    else
+        LogRel2(("HDA: Unhandled get GPIO unsolisted command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 /* 717 */
 static DECLCALLBACK(int) vrbProcSetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
-    uint32_t *pu32Reg = NULL;
+
     *pResp = 0;
+
+    uint32_t *pu32Reg = NULL;
     if (CODEC_NID(cmd) == 1 /* AFG */)
         pu32Reg = &pThis->paNodes[1].afg.u32F17_param;
-    Assert(pu32Reg);
+    else
+        LogRel2(("HDA: Unhandled set GPIO unsolisted command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+
     return VINF_SUCCESS;
 }
 
 /* F1C */
 static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
+    if (!vrbIsValidNode(pThis, cmd, pResp))
         return VINF_SUCCESS;
-    }
+
     *pResp = 0;
+
     if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].port.u32F1c_param;
     else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
@@ -2231,18 +2234,14 @@ static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, uint32_t cmd, uint64_
         *pResp = pThis->paNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
+    else
+        LogRel2(("HDA: Unhandled get config command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+
     return VINF_SUCCESS;
 }
 
 static int codecSetConfigX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
 {
-    Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
-    if (CODEC_NID(cmd) >= pThis->cTotalNodes)
-    {
-        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
-        return VINF_SUCCESS;
-    }
     uint32_t *pu32Reg = NULL;
     if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].port.u32F1c_param;
@@ -2256,15 +2255,22 @@ static int codecSetConfigX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].pcbeep.u32F1c_param;
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
-    Assert(pu32Reg);
+    else
+        LogRel2(("HDA: Unhandled set config command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, u8Offset);
+
     return VINF_SUCCESS;
 }
 
 /* 71C */
 static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
+    if (!vrbIsValidNode(pThis, cmd, pResp))
+        return VINF_SUCCESS;
+
     *pResp = 0;
     return codecSetConfigX(pThis, cmd, 0);
 }
@@ -2272,6 +2278,9 @@ static DECLCALLBACK(int) vrbProcSetConfig0(PHDACODEC pThis, uint32_t cmd, uint64
 /* 71D */
 static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
+    if (!vrbIsValidNode(pThis, cmd, pResp))
+        return VINF_SUCCESS;
+
     *pResp = 0;
     return codecSetConfigX(pThis, cmd, 8);
 }
@@ -2279,6 +2288,9 @@ static DECLCALLBACK(int) vrbProcSetConfig1(PHDACODEC pThis, uint32_t cmd, uint64
 /* 71E */
 static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
+    if (!vrbIsValidNode(pThis, cmd, pResp))
+        return VINF_SUCCESS;
+
     *pResp = 0;
     return codecSetConfigX(pThis, cmd, 16);
 }
@@ -2286,6 +2298,9 @@ static DECLCALLBACK(int) vrbProcSetConfig2(PHDACODEC pThis, uint32_t cmd, uint64
 /* 71E */
 static DECLCALLBACK(int) vrbProcSetConfig3(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
+    if (!vrbIsValidNode(pThis, cmd, pResp))
+        return VINF_SUCCESS;
+
     *pResp = 0;
     return codecSetConfigX(pThis, cmd, 24);
 }
