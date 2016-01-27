@@ -4663,7 +4663,7 @@ bool VBoxGlobal::isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-bool VBoxGlobal::showUI()
+void VBoxGlobal::showUI()
 {
     /* Load application settings: */
     VBoxGlobalSettings appSettings = settings();
@@ -4671,11 +4671,11 @@ bool VBoxGlobal::showUI()
     /* Show Selector UI: */
     if (!isVMConsoleProcess())
     {
-        /* Make sure Selector UI is permitted: */
+        /* Make sure Selector UI is permitted, quit if not: */
         if (appSettings.isFeatureActive("noSelector"))
         {
             msgCenter().cannotStartSelector();
-            return false;
+            return QApplication::quit();
         }
 
 #ifdef VBOX_BLEEDING_EDGE
@@ -4697,13 +4697,10 @@ bool VBoxGlobal::showUI()
     /* Show Runtime UI: */
     else
     {
-        /* Make sure machine is started: */
+        /* Make sure machine is started, quit if not: */
         if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
-            return false;
+            return QApplication::quit();
     }
-
-    /* True by default: */
-    return true;
 }
 
 bool VBoxGlobal::switchToMachine(CMachine &machine)

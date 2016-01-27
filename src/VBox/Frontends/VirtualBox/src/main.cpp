@@ -518,9 +518,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             if (vboxGlobal().processArgs())
                 break;
 
-            /* Exit if VBoxGlobal is unable to show UI: */
-            if (!vboxGlobal().showUI())
-                break;
+            /* Request to Show UI _after_ QApplication started: */
+            QMetaObject::invokeMethod(&vboxGlobal(), "showUI", Qt::QueuedConnection);
 
             /* Start application: */
             iResultCode = a.exec();

@@ -193,9 +193,6 @@ public:
 
     bool processArgs();
 
-    /** Shows UI. */
-    bool showUI();
-
     bool switchToMachine(CMachine &machine);
 
     bool launchMachine(CMachine &machine, LaunchMode enmLaunchMode = LaunchMode_Default);
@@ -502,6 +499,9 @@ protected slots:
     /* Handlers: Prepare/cleanup stuff: */
     void prepare();
     void cleanup();
+
+    /** Shows UI. */
+    void showUI();
 
     /** Handles the VBoxSVC availability change. */
     void sltHandleVBoxSVCAvailabilityChange(bool fAvailable);
