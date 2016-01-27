@@ -197,6 +197,8 @@
 <?endif ?>
         <File Id="file_VBoxBalloonCtrl.exe" Name="VBoxBalloonCtrl.exe"
               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
+        <File Id="file_VBoxBugReport.exe" Name="VBoxBugReport.exe"
+              Source="$(env.PATH_OUT)\bin\VBoxBugReport.exe"/>
         <File Id="file_vbox_img.exe" Name="vbox-img.exe"
               Source="$(env.PATH_OUT)\bin\vbox-img.exe"/>
 
