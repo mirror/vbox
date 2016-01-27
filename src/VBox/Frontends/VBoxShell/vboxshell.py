@@ -1443,7 +1443,7 @@ def setvarCmd(ctx, args):
 def setvmextra(_ctx, mach, args):
     key = args[0]
     value = args[1]
-    print "%s: setting %s to %s" % (mach.name, key, value)
+    print "%s: setting %s to %s" % (mach.name, key, value if value else None)
     mach.setExtraData(key, value)
 
 def setExtraDataCmd(ctx, args):
@@ -1454,7 +1454,7 @@ def setExtraDataCmd(ctx, args):
     if len(args) == 4:
         value = args[3]
     else:
-        value = None
+        value = ''
     if args[1] == 'global':
         ctx['vb'].setExtraData(key, value)
         return 0
