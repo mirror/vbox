@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -355,7 +355,7 @@ void BIOSCALL int15_function(sys_regs_t r)
         break;
 
     case 0x83: {
-        if( GET_AL() ) {
+        if( GET_AL() == 0 ) {
             // Set Interval requested.
             if( ( read_byte( 0x40, 0xA0 ) & 1 ) == 0 ) {
                 // Interval not already set.
