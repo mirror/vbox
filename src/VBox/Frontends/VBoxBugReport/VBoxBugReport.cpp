@@ -344,7 +344,7 @@ int BugReportText::addItem(BugReportItem* item)
 
 
 BugReportTarGzip::BugReportTarGzip(const char *pszFileName)
-    : m_hTar(NIL_RTTAR), m_hTarFile(NIL_RTTARFILE), BugReport(pszFileName)
+    : BugReport(pszFileName), m_hTar(NIL_RTTAR), m_hTarFile(NIL_RTTARFILE)
 {
     VfsIoStreamHandle hVfsOut;
     handleRtError(RTVfsIoStrmOpenNormal(pszFileName, RTFILE_O_WRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE,
