@@ -785,7 +785,7 @@ static int vgdrvHeartbeatSend(PVBOXGUESTDEVEXT pDevExt)
     if (pDevExt->pReqGuestHeartbeat)
     {
         rc = VbglGRPerform(pDevExt->pReqGuestHeartbeat);
-        Log(("vgdrvHeartbeatSend: VbglGRPerform vgdrvHeartbeatSend completed with rc=%Rrc\n", rc));
+        Log3(("vgdrvHeartbeatSend: VbglGRPerform vgdrvHeartbeatSend completed with rc=%Rrc\n", rc));
     }
     else
         rc = VERR_INVALID_STATE;
