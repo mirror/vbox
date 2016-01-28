@@ -49,16 +49,9 @@ RTDECL(int) RTFileSetAllocationSize(RTFILE hFile, uint64_t cbSize, uint32_t fFla
 {
     AssertReturn(hFile != NIL_RTFILE, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & ~RTFILE_ALLOC_SIZE_F_VALID), VERR_INVALID_PARAMETER);
-
-    /*
-     * Validate offset.
-     */
-    if (    sizeof(off_t) < sizeof(cbSize)
-        &&  RT_HIDWORD(cbSize) != 0)
-    {
-        AssertMsgFailed(("64-bit filesize not supported! cbSize=%lld\n", cbSize));
-        return VERR_NOT_SUPPORTED;
-    }
+    AssertMsgReturn(sizeof(off_t) >= sizeof(cbSize) &&  RT_HIDWORD(cbSize) == 0,
+                    ("64-bit filesize not supported! cbSize=%lld\n", cbSize),
+                    VERR_NOT_SUPPORTED);
 
     if (fFlags & RTFILE_ALLOC_SIZE_F_KEEP_SIZE)
         return VERR_NOT_SUPPORTED;
