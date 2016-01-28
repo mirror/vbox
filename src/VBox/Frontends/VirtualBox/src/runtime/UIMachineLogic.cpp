@@ -2174,6 +2174,18 @@ void UIMachineLogic::sltDockIconDisableOverlayChanged(bool fDisabled)
 
 void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
 {
+    /* Due to async nature of that feature
+     * it can happen that this slot is called when machine-window is
+     * minimized or not active anymore, we should ignore those cases. */
+    QWidget *pActiveWindow = QApplication::activeWindow();
+    if (   !pActiveWindow                                 // no window is active anymore
+        || !qobject_cast<UIMachineWindow*>(pActiveWindow) // window is not machine one
+        || pActiveWindow->isMinimized())                  // window is minimized
+    {
+        LogRel2(("GUI: HID LEDs Sync: skipping sync because active window is lost or minimized!\n"));
+        return;
+    }
+
 //    /* Log statement (printf): */
 //    QString strDt = QDateTime::currentDateTime().toString("HH:mm:ss:zzz");
 //    printf("%s: UIMachineLogic: sltSwitchKeyboardLedsToGuestLeds called, machine name is {%s}\n",
