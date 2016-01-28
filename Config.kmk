@@ -5218,9 +5218,9 @@ ifdef VBOX_WITH_QTGUI
   ifeq ($(KBUILD_TARGET),darwin)
    ifeq ($(VBOX_WITH_QTGUI_V5),)
     VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
-   else
+   else # VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
-   endif
+   endif # VBOX_WITH_QTGUI_V5
    ifeq ($(VBOX_PATH_QT),)
     ifneq ($(wildcard /Library/Frameworks/QtCore.framework),)
      # Using the global installation (for OSE).
@@ -5231,15 +5231,15 @@ ifdef VBOX_WITH_QTGUI
   else if1of ($(KBUILD_TARGET), win)
    ifeq ($(VBOX_WITH_QTGUI_V5),)
     VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*))))
-   else
+   else # VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*))))
-   endif
+   endif # VBOX_WITH_QTGUI_V5
   else if1of ($(KBUILD_TARGET), linux solaris)
    ifeq ($(VBOX_WITH_QTGUI_V5),)
     VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
-   else
+   else # VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
-   endif
+   endif # VBOX_WITH_QTGUI_V5
    ifneq ($(VBOX_PATH_QT),)
     VBOX_WITH_ORACLE_QT = 1
    endif
@@ -5251,9 +5251,9 @@ ifdef VBOX_WITH_QTGUI
    VBOX_PATH_QT          ?= /usr
    ifeq ($(VBOX_WITH_QTGUI_V5),)
     VBOX_PATH_QT_LIB      ?= /usr/lib/qt4
-   else
+   else # VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT_LIB      ?= /usr/lib/qt5
-   endif
+   endif # VBOX_WITH_QTGUI_V5
   endif
  endif
  VBOX_PATH_QT            ?= /usr
@@ -5265,7 +5265,7 @@ ifdef VBOX_WITH_QTGUI
 
  ifeq ($(VBOX_WITH_QTGUI_V5),)
   VBOX_QT_MOD = QtCore QtGui $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
- else
+ else # VBOX_WITH_QTGUI_V5
   ifeq ($(KBUILD_TARGET), darwin)
    VBOX_QT_MOD = \
     QtCore \
@@ -5286,13 +5286,12 @@ ifdef VBOX_WITH_QTGUI
       Qt5DBus \
       Qt5XcbQpa \
       Qt5X11Extras
-    endif
-    ifeq ($(KBUILD_TARGET), win)
+    else ifeq ($(KBUILD_TARGET), win)
      VBOX_QT_MOD += \
       Qt5WinExtras
-    endif
-  endif
- endif
+    endif # win
+  endif # linux freebsd netbsd openbsd solaris win
+ endif # VBOX_WITH_QTGUI_V5
 
  VBOX_QT_MOD_NAMES = $(foreach qtmod,$(VBOX_QT_MOD),$(qtmod)$(VBOX_QT_INFIX))
 
@@ -5316,7 +5315,7 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_RCCTOOL = QT4
   TEMPLATE_VBOXQTGUIEXE_LRCTOOL = QT4
   TEMPLATE_VBOXQTGUIEXE_SDKS = QT4
- else
+ else # VBOX_WITH_QTGUI_V5
   TEMPLATE_VBOXQTGUIEXE_USES = qt5
   TEMPLATE_VBOXQTGUIEXE_QTTOOL = QT5
   TEMPLATE_VBOXQTGUIEXE_MOCTOOL = QT5
@@ -5324,7 +5323,7 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_RCCTOOL = QT5
   TEMPLATE_VBOXQTGUIEXE_LRCTOOL = QT5
   TEMPLATE_VBOXQTGUIEXE_SDKS = QT5
- endif
+ endif # VBOX_WITH_QTGUI_V5
  TEMPLATE_VBOXQTGUIEXE_QT_INFIX = $(VBOX_QT_INFIX)
  TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS)
  TEMPLATE_VBOXQTGUIEXE_RCDEFS = $(TEMPLATE_VBOXR3EXE_RCDEFS)

@@ -213,7 +213,7 @@ else # VBOX_WITH_QTGUI_V5
    Frameworks/$(qtmod).framework/Versions/Current=>5 \
    Frameworks/$(qtmod).framework/$(qtmod)=>Versions/5/$(qtmod) \
    Frameworks/$(qtmod).framework/Resources=>Versions/5/Resources)
- else # WIN || X11
+ else # win x11
   if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
    include $(KBUILD_PATH)/units/qt5.kmk
    ifeq ($(KBUILD_TARGET),win)
@@ -225,8 +225,8 @@ else # VBOX_WITH_QTGUI_V5
     ifdef VBOX_WITH_QT_PDBS
      qt5-bin_SOURCES += \
       $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/$(qtmod).pdb)
-    endif
-   else # X11
+    endif # VBOX_WITH_QT_PDBS
+   else # x11
     INSTALLS += qt5-bin
     qt5-bin_MODE = 755
     qt5-bin_INST = $(INST_BIN)
@@ -234,9 +234,9 @@ else # VBOX_WITH_QTGUI_V5
      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).5) \
      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).5.5.1) \
      $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL)
-   endif # X11
+   endif # x11
   endif # VBOX_WITH_ORACLE_QT || VBOX_WITH_QT_PAYLOAD
- endif # WIN || X11
+ endif # win x11
 endif # VBOX_WITH_QTGUI_V5
 
 #
