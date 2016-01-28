@@ -1125,7 +1125,6 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
-	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
@@ -1143,6 +1142,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/generic/allocex-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFileSetAllocationSize-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
