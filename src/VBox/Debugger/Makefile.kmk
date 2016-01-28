@@ -89,12 +89,20 @@ if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
 #
 # Debugger GUI component (Qt4).
 #
-USES += qt4
+ifeq ($(VBOX_WITH_QTGUI_V5),)
+ USES += qt4
+else # VBOX_WITH_QTGUI_V5
+ USES += qt5
+endif # VBOX_WITH_QTGUI_V5
 DLLS += VBoxDbg
 VBoxDbg_TEMPLATE = VBOXQTGUI
 VBoxDbg_DEFS = IN_DBG_R3 VBOXDBG_USE_QT4
 VBoxDbg_INCS = .
 VBoxDbg_QT_MODULES = Core Gui
+ifneq ($(VBOX_WITH_QTGUI_V5),)
+ # Qt5 requires additional modules:
+ VBoxDbg_QT_MODULES += Widgets
+endif # VBOX_WITH_QTGUI_V5
 VBoxDbg_QT_MOCHDRS = \
 	VBoxDbgGui.h \
 	VBoxDbgConsole.h \
@@ -117,9 +125,18 @@ $(call VBOX_SET_VER_INFO_DLL,VBoxDbg,VirtualBox Debugger GUI)
 #
 PROGRAMS += tstVBoxDbg
 tstVBoxDbg_TEMPLATE     = VBOXQTGUIEXE
-tstVBoxDbg_USES         = qt4
-tstVBoxDbg_QTTOOL       = QT4
+ifeq ($(VBOX_WITH_QTGUI_V5),)
+ tstVBoxDbg_USES         = qt4
+ tstVBoxDbg_QTTOOL       = QT4
+else # VBOX_WITH_QTGUI_V5
+ tstVBoxDbg_USES         = qt5
+ tstVBoxDbg_QTTOOL       = QT5
+endif # VBOX_WITH_QTGUI_V5
 tstVBoxDbg_QT_MODULES   = Core Gui
+ifneq ($(VBOX_WITH_QTGUI_V5),)
+ # Qt5 requires additional modules:
+ tstVBoxDbg_QT_MODULES += Widgets
+endif # VBOX_WITH_QTGUI_V5
 tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
 tstVBoxDbg_LIBS         = \
 	$(LIB_VMM) \

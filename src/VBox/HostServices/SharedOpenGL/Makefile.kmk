@@ -417,7 +417,11 @@ if (   defined(VBOX_WITH_QTGUI) \
     && !defined(VBOX_WITH_DEBUG_VCC_CRT))
  ifneq ($(KBUILD_TARGET),darwin)
   ifdef VBOX_WITH_VIDEOHWACCEL
-   USES += qt4
+   ifeq ($(VBOX_WITH_QTGUI_V5),)
+    USES += qt4
+   else # VBOX_WITH_QTGUI_V5
+    USES += qt5
+   endif # VBOX_WITH_QTGUI_V5
   endif
   PROGRAMS += VBoxTestOGL
   VBoxTestOGL_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE),VBOXMAINEXE)
@@ -436,6 +440,10 @@ if (   defined(VBOX_WITH_QTGUI) \
     $(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
   ifdef VBOX_WITH_VIDEOHWACCEL
    VBoxTestOGL_QT_MODULES     += Core Gui OpenGL
+   ifneq ($(VBOX_WITH_QTGUI_V5),)
+    # Qt5 requires additional modules:
+    VBoxTestOGL_QT_MODULES += Widgets
+   endif # VBOX_WITH_QTGUI_V5
    VBoxTestOGL_LDFLAGS.darwin += -framework OpenGL
    VBoxTestOGL_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
    if1of ($(KBUILD_TARGET), solaris linux freebsd)

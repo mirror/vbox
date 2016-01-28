@@ -91,7 +91,11 @@ IMAGES         :=
 #
 # VirtualBox - The GUI program.
 #
-USES += qt4
+ifeq ($(VBOX_WITH_QTGUI_V5),)
+ USES += qt4
+else # VBOX_WITH_QTGUI_V5
+ USES += qt5
+endif # VBOX_WITH_QTGUI_V5
 VirtualBox_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
 VirtualBox_NAME = VirtualBox
 ifndef VBOX_WITH_HARDENING      # For the launch trick we need different inode numbers.
@@ -110,6 +114,14 @@ VirtualBox_DEFS.win       += UNICODE QT_DLL
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
 endif
+ifneq ($(VBOX_WITH_QTGUI_V5),)
+ # These important for us Qt4 defines missed in Qt5:
+ VirtualBox_DEFS.linux     += Q_WS_X11
+ VirtualBox_DEFS.solaris   += Q_WS_X11
+ VirtualBox_DEFS.freebsd   += Q_WS_X11
+ VirtualBox_DEFS.darwin    += Q_WS_MAC
+ VirtualBox_DEFS.win       += Q_WS_WIN
+endif # VBOX_WITH_QTGUI_V5
 VirtualBox_DEFS          += \
 	$(if $(VBOX_WITH_ADDITIONS_AUTOUPDATE_UI),VBOX_WITH_ADDITIONS_AUTOUPDATE_UI) \
 	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
@@ -219,6 +231,13 @@ endif
 VirtualBox_LIBS.linux   += Xinerama
 VirtualBox_LIBS.solaris += Xinerama
 VirtualBox_LIBS.freebsd += Xinerama
+
+ifneq ($(VBOX_WITH_QTGUI_V5),)
+ # No Qt5 without Xcb under X11:
+ VirtualBox_LIBS.linux   += xcb
+ VirtualBox_LIBS.solaris += xcb
+ VirtualBox_LIBS.freebsd += xcb
+endif # VBOX_WITH_QTGUI_V5
 
 ifneq ($(KBUILD_TARGET),win)
 VirtualBox_CXXFLAGS += -Wno-switch
@@ -838,6 +857,15 @@ endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
 VirtualBox_QT_MODULES = Core Gui
+ifneq ($(VBOX_WITH_QTGUI_V5),)
+ # Qt5 requires additional modules:
+ VirtualBox_QT_MODULES += Widgets PrintSupport
+ VirtualBox_QT_MODULES.linux   += X11Extras
+ VirtualBox_QT_MODULES.solaris += X11Extras
+ VirtualBox_QT_MODULES.freebsd += X11Extras
+ VirtualBox_QT_MODULES.darwin  += MacExtras
+ VirtualBox_QT_MODULES.win     += WinExtras
+endif # VBOX_WITH_QTGUI_V5
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_QT_MODULES += OpenGL
 endif
@@ -1155,8 +1183,13 @@ endif
 if defined(VBOX_WITH_TESTCASES) && defined(VBOX_GUI_WITH_NETWORK_MANAGER)
  PROGRAMS += tstSSLCertDownloads
  tstSSLCertDownloads_TEMPLATE   = VBOXQTGUIEXE
- tstSSLCertDownloads_USES       = qt4
- tstSSLCertDownloads_QTTOOL     = QT4
+ ifeq ($(VBOX_WITH_QTGUI_V5),)
+  tstSSLCertDownloads_USES       = qt4
+  tstSSLCertDownloads_QTTOOL     = QT4
+ else # VBOX_WITH_QTGUI_V5
+  tstSSLCertDownloads_USES       = qt5
+  tstSSLCertDownloads_QTTOOL     = QT5
+ endif # VBOX_WITH_QTGUI_V5
  tstSSLCertDownloads_QT_MODULES = Core Gui
  tstSSLCertDownloads_DEFS = VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
  tstSSLCertDownloads_INCS = \

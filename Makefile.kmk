@@ -147,55 +147,97 @@ endif
 #       https://developer.apple.com/library/mac/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/FrameworkAnatomy.html
 #       the Info.plist file goes into Resources.
 #
-ifeq ($(KBUILD_TARGET),darwin)
- include $(KBUILD_PATH)/units/qt4.kmk
- INSTALLS += qt4-bin
- qt4-bin_MODE = 755
- qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
- qt4-bin_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES) \
-  	,$(PATH_SDK_QT4_LIB)/$(qtmod).framework/Versions/4/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
-  	 $(PATH_SDK_QT4_LIB)/$(qtmod).framework/Contents/Info.plist=>Frameworks/$(qtmod).framework/Versions/4/Resources/Info.plist \
-       )
- ifdef VBOX_WITH_COCOA_QT
-  qt4-bin_SOURCES += \
-  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
-  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
-  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
- endif
- ifneq ($(wildcard $(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets.dylib),)
-  qt4-bin_SOURCES += \
-  	$(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
- endif
- qt4-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
- 		,Frameworks/$(qtmod).framework/Versions/Current=>4 \
-		 Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod) \
-		 Frameworks/$(qtmod).framework/Resources=>Versions/4/Resources)
-else
- if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
+ifeq ($(VBOX_WITH_QTGUI_V5),)
+ ifeq ($(KBUILD_TARGET),darwin)
   include $(KBUILD_PATH)/units/qt4.kmk
-  ifeq ($(KBUILD_TARGET),win)
-   INSTALLS += qt4-bin
-   qt4-bin_MODE = 755
-   qt4-bin_INST = $(INST_BIN)
-   qt4-bin_SOURCES = \
-   	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT_LIB)/$(qtmod)4$(SUFF_DLL))) \
-   	$(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT)/plugins/accessible/qtaccessiblewidgets4$(SUFF_DLL))=>accessible/qtaccessiblewidgets4$(SUFF_DLL)
-   ifdef VBOX_WITH_QT_PDBS
-    qt4-bin_SOURCES += \
-    	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/$(qtmod)4.pdb) \
-    	$(VBOX_PATH_QT)/plugins/accessible/qtaccessiblewidgets4.pdb=>accessible/qtaccessiblewidgets4.pdb
-   endif
-  else
-   INSTALLS += qt4-bin
-   qt4-bin_MODE = 755
-   qt4-bin_INST = $(INST_BIN)
-   qt4-bin_SOURCES = \
-	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).4) \
- 	$(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
+  INSTALLS += qt4-bin
+  qt4-bin_MODE = 755
+  qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
+  qt4-bin_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES) \
+   ,$(PATH_SDK_QT4_LIB)/$(qtmod).framework/Versions/4/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+    $(PATH_SDK_QT4_LIB)/$(qtmod).framework/Contents/Info.plist=>Frameworks/$(qtmod).framework/Versions/4/Resources/Info.plist \
+      )
+  ifdef VBOX_WITH_COCOA_QT
+   qt4-bin_SOURCES += \
+    $(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
+    $(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
+    $(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
   endif
- endif # VBOX_WITH_ORACLE_QT
-endif
-
+  ifneq ($(wildcard $(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets.dylib),)
+   qt4-bin_SOURCES += \
+    $(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
+  endif
+  qt4-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
+   ,Frameworks/$(qtmod).framework/Versions/Current=>4 \
+    Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod) \
+    Frameworks/$(qtmod).framework/Resources=>Versions/4/Resources)
+ else
+  if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
+   include $(KBUILD_PATH)/units/qt4.kmk
+   ifeq ($(KBUILD_TARGET),win)
+    INSTALLS += qt4-bin
+    qt4-bin_MODE = 755
+    qt4-bin_INST = $(INST_BIN)
+    qt4-bin_SOURCES = \
+     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT_LIB)/$(qtmod)4$(SUFF_DLL))) \
+     $(call VBOX_RE_SIGN_DLL_FN,qt4-bin,$(VBOX_PATH_QT)/plugins/accessible/qtaccessiblewidgets4$(SUFF_DLL))=>accessible/qtaccessiblewidgets4$(SUFF_DLL)
+    ifdef VBOX_WITH_QT_PDBS
+     qt4-bin_SOURCES += \
+      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/$(qtmod)4.pdb) \
+      $(VBOX_PATH_QT)/plugins/accessible/qtaccessiblewidgets4.pdb=>accessible/qtaccessiblewidgets4.pdb
+    endif
+   else
+    INSTALLS += qt4-bin
+    qt4-bin_MODE = 755
+    qt4-bin_INST = $(INST_BIN)
+    qt4-bin_SOURCES = \
+     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).4) \
+     $(VBOX_PATH_QT)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
+   endif
+  endif # VBOX_WITH_ORACLE_QT
+ endif
+else # VBOX_WITH_QTGUI_V5
+ ifeq ($(KBUILD_TARGET),darwin)
+  include $(KBUILD_PATH)/units/qt5.kmk
+  INSTALLS += qt5-bin
+  qt5-bin_MODE = 755
+  qt5-bin_INST = $(INST_VIRTUALBOX)Contents/
+  qt5-bin_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
+   $(PATH_SDK_QT5_LIB)/$(qtmod).framework/Versions/5/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/5/$(qtmod) \
+   $(PATH_SDK_QT5_LIB)/$(qtmod).framework/Versions/5/Resources/Info.plist=>Frameworks/$(qtmod).framework/Versions/5/Resources/Info.plist)
+  qt5-bin_SOURCES += \
+   $(PATH_SDK_QT5)/plugins/platforms/libqcocoa$(SUFF_DLL)=>PlugIns/platforms/libqcocoa$(SUFF_DLL) \
+   $(PATH_SDK_QT5)/plugins/platforms/libqminimal$(SUFF_DLL)=>PlugIns/platforms/libqminimal$(SUFF_DLL) \
+   $(PATH_SDK_QT5)/plugins/platforms/libqoffscreen$(SUFF_DLL)=>PlugIns/platforms/libqoffscreen$(SUFF_DLL)
+  qt5-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
+   Frameworks/$(qtmod).framework/Versions/Current=>5 \
+   Frameworks/$(qtmod).framework/$(qtmod)=>Versions/5/$(qtmod) \
+   Frameworks/$(qtmod).framework/Resources=>Versions/5/Resources)
+ else # WIN || X11
+  if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
+   include $(KBUILD_PATH)/units/qt5.kmk
+   ifeq ($(KBUILD_TARGET),win)
+    INSTALLS += qt5-bin
+    qt5-bin_MODE = 755
+    qt5-bin_INST = $(INST_BIN)
+    qt5-bin_SOURCES = \
+     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/bin/$(qtmod)$(SUFF_DLL)))
+    ifdef VBOX_WITH_QT_PDBS
+     qt5-bin_SOURCES += \
+      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/$(qtmod).pdb)
+    endif
+   else # X11
+    INSTALLS += qt5-bin
+    qt5-bin_MODE = 755
+    qt5-bin_INST = $(INST_BIN)
+    qt5-bin_SOURCES = \
+     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).5) \
+     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).5.5.1) \
+     $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL)
+   endif # X11
+  endif # VBOX_WITH_ORACLE_QT || VBOX_WITH_QT_PAYLOAD
+ endif # WIN || X11
+endif # VBOX_WITH_QTGUI_V5
 
 #
 # For building the combined package, just get the additions .ISO
