@@ -2318,8 +2318,12 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
     const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
                                           vboxGlobal().availableGeometry();
 
+    /* In Windows Qt fails to reposition out of screen window properly, so moving to centre: */
+#ifdef Q_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
-    geometry = geometry.intersected(availableGeometry);
+    if (fOk && geometry.intersects(availableGeometry))
+        geometry.moveCenter(availableGeometry.center());
+#endif /* Q_WS_WIN */
 
     /* Move default-geometry to screen-geometry' center: */
     if (!fOk)
@@ -3522,12 +3526,16 @@ QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *p
     if (pWidget)
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
-    /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
+    /* In Windows Qt fails to reposition out of screen window properly, so moving to centre: */
+#ifdef Q_WS_WIN
+    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
     const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
                                           vboxGlobal().availableGeometry();
 
     /* Make sure resulting geometry is within current bounds: */
-    geometry = geometry.intersected(availableGeometry);
+    if (fOk && geometry.intersects(availableGeometry))
+        geometry.moveCenter(availableGeometry.center());
+#endif /* Q_WS_WIN */
 
     /* Move default-geometry to pParentWidget' geometry center: */
     if (!fOk && pParentWidget)
@@ -3674,12 +3682,16 @@ QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget)
     if (pWidget)
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
-    /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
+    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
     const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
                                           vboxGlobal().availableGeometry();
 
+    /* In Windows Qt fails to reposition out of screen window properly, so moving to centre: */
+#ifdef Q_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
-    geometry = geometry.intersected(availableGeometry);
+    if (fOk && geometry.intersects(availableGeometry))
+        geometry.moveCenter(availableGeometry.center());
+#endif /* Q_WS_WIN */
 
     /* Move default-geometry to current screen center: */
     if (!fOk)
