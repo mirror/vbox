@@ -1428,30 +1428,30 @@ VBoxManage modifyvm "VM name" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</scree
             <para>
               The following command sets a rule for mapping a name to a specified IP:</para>
             <screen>VBoxManage setextradata "VM name" \
-      "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/Config/HostResolverMappings/ \
-      &lt;uniq name of interception rule&gt;/HostIP" &lt;IPv4&gt;
+      "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
+      &lt;unique rule name of interception rule&gt;/HostIP" &lt;IPv4&gt;
 VBoxManage setextradata "VM name" \
-      "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/Config/HostResolverMappings/ \
-      &lt;uniq name of interception rule&gt;/HostName" &lt;name of host&gt;</screen>
+      "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
+      &lt;unique rule name&gt;/HostName" &lt;name of host&gt;</screen>
     <para>The following command sets a rule for mapping a pattern name to a specified IP:</para>
             <screen>VBoxManage setextradata "VM name" \
-      "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/Config/HostResolverMappings/ \
-      &lt;uniq name of interception rule&gt;/HostIP" &lt;IPv4&gt;
+      "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
+      &lt;unique rule name&gt;/HostIP" &lt;IPv4&gt;
 VBoxManage setextradata "VM name" \
-      "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/Config/HostResolverMappings/ \
-      &lt;uniq name of interception rule&gt;/HostNamePattern" &lt;hostpattern&gt;</screen>
+      "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
+      &lt;unique rule name&gt;/HostNamePattern" &lt;hostpattern&gt;</screen>
     <para>The host pattern may include <computeroutput>"|", "?" and "*"</computeroutput>.</para>
     <para>This example demonstrates how to instruct the host-resolver mechanism to resolve
       all domain and probably some mirrors of www.blocked-site.info site with IP 127.0.0.1:</para>
-            <screen>VBoxManage setextradata "VM name" \
-      "VBoxInternal/Devices/e1000/0/LUN#0/Config/HostResolverMappings/ \
+    <screen>VBoxManage setextradata "VM name" \
+      "VBoxInternal/Devices/e1000/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
       all_blocked_site/HostIP" 127.0.0.1
 VBoxManage setextradata "VM name" \
-      "VBoxInternal/Devices/e1000/0/LUN#0/Config/HostResolverMappings/ \
+      "VBoxInternal/Devices/e1000/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
       all_blocked_site/HostNamePattern" "*.blocked-site.*|*.fb.org"</screen>
-           <note><para>The host resolver mechanism should be enabled to use user-defined
-             mapping rules (please see
-             <xref linkend="nat_host_resolver_proxy" /> for more details).</para></note>
+
+    <para>The host resolver mechanism should be enabled to use user-defined
+      mapping rules, otherwise they don't have any effect.</para>
         </sect3>
     </sect2>
 
@@ -4179,6 +4179,67 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       </sect3>
     </sect2>
 
+  </sect1>
+
+  <sect1 id="pcspeaker_passthrough">
+    <title>PC speaker passthrough</title>
+
+    <para>As an experimental feature (primarily due to being limited to Linux
+    host only and unknown Linux distribution coverage) VirtualBox supports
+    passing through the PC speaker to the host, again as PC speaker. This has
+    nothing to do with regular audio/sound card support. The PC speaker
+    (sometimes called system speaker) is a much older and separate way to
+    produce audible feedback like beeps.</para>
+
+    <para>The PC speaker passthrough feature handles beeps ony. More advanced
+    PC speaker use by the VM (such as PCM audio) will not work, resulting in
+    undefined PC speaker behavior on the host.</para>
+
+    <para>To enable PC speaker passthrough use the following command:
+      <screen>VBoxManage setextradata "VM name" "VBoxInternal/Devices/i8254/0/Config/PassthroughSpeaker" 1</screen>
+    Changing this setting will take effect when the VM is started next. It is
+    safe to enable PC speaker passthrough on all host OSes. It will only have
+    an effect on Linux.</para>
+
+    <para>The VM log file, VBox.log, will contain some lines with the prefix
+    <computeroutput>PIT: speaker:</computeroutput> showing the PC speaker
+    passthrough setup activities. It gives hints which emulation mode it
+    picked.</para>
+
+    <para>Enabling PC speaker passthrough is usually the simple part. The real
+    difficulty is making sure that VirtualBox can access the necessary device.
+    PC speaker passthrough tries these devices:
+    <screen>/dev/input/by-path/platform-pcspkr-event-spkr
+/dev/tty0
+/dev/vc/0</screen>
+    The first one is the most reliable way to control the host PC speaker and
+    not some beep emulation through the sound card (showing as emulation mode
+    <computeroutput>evdev</computeroutput>. The other two would show as
+    emulation mode <computeroutput>console</computeroutput>. In any case, the
+    devices are in most linux distributions only accessible by root, and not by
+    the user running an X11 session. You need to find out how your distribution
+    allows changing this. Since there are countless variants, we can only give
+    the general hints that there is either an explicit way to give the X11
+    session user access to additional devices, or you need to find a working
+    solution using a udev configuration file. If everything fails you might
+    try setting the access rights using a script which is run late in the
+    startup.</para>
+
+    <para>As a final fallback if none of the devices above are accessible,
+    VirtualBox will try to get access to the controlling terminal
+    <computeroutput>/dev/tty</computeroutput> and trigger standard beeps. This
+    loses the beep length and frequency, and is often not producing any beeps,
+    because X11 applications frequently have no controlling terminal.</para>
+
+    <para>If you have trouble getting any beeps even if the device permissions
+    are set up and VBox.log confirms that it uses evdev or console for the
+    PC speaker control, check if your system has a PC speaker. Some systems do
+    not have a PC speaker. Other complications can arise from Linux rerouting
+    the PC speaker output to a sound card. Check if the beeps are audible if
+    you (temporarily) connect speakers to your sound card. Today almost all
+    systems have one. Finally, check if the audio mixer control has a channel
+    named "beep" (could be hidden in the mixer settings) and that it isn't
+    muted.</para>
   </sect1>
 
 </chapter>
