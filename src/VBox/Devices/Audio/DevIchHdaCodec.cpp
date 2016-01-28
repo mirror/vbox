@@ -1358,7 +1358,7 @@ DECLINLINE(bool) vrbIsValidNode(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
     {
         *pResp = 0;
 
-        AssertMsgFailed(("Invalid node address: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        AssertMsgFailed(("Invalid node address: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
         return false;
     }
 
@@ -1425,7 +1425,7 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
                             CODEC_GET_AMP_SIDE(cmd),
                             u8Index);
     else
-        LogRel2(("HDA: Unhandled get amplifier command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get amplifier command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -1453,7 +1453,7 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
         pAmplifier = &pNode->adc.B_params;
     else
-        LogRel2(("HDA: Unhandled set amplifier command: 0x%x (Payload=%RU16, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set amplifier command: 0x%x (Payload=%RU16, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD16(cmd), CODEC_NID(cmd)));
 
     if (!pAmplifier)
@@ -1530,7 +1530,7 @@ static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, 
     else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
     else
-        LogRel2(("HDA: Unhandled get pin control command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get pin control command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -1555,7 +1555,7 @@ static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, 
     else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
     else
-        LogRel2(("HDA: Unhandled set connection select control command: 0x%x (Payload=0x%x, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set connection select control command: 0x%x (Payload=0x%x, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     if (pu32Reg)
@@ -1585,7 +1585,7 @@ static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     else
-        LogRel2(("HDA: Unhandled get pin control command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get pin control command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -1613,7 +1613,7 @@ static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64
              && CODEC_NID(cmd) == 0x1b)
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     else
-        LogRel2(("HDA: Unhandled set pin control command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set pin control command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     if (pu32Reg)
@@ -1643,7 +1643,7 @@ static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F08_param;
     else
-        LogRel2(("HDA: Unhandled get unsolicited enabled command: 0x%x (NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled get unsolicited enabled command: 0x%x (NID=0x%x [%RU8])\n",
                  cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
@@ -1671,7 +1671,7 @@ static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
     else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digout.u32F08_param;
     else
-        LogRel2(("HDA: Unhandled set unsolicited enabled command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set unsolicited enabled command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     if (pu32Reg)
@@ -1693,7 +1693,7 @@ static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, uint32_t cmd, uint6
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F09_param;
     else
-        LogRel2(("HDA: Unhandled get pin sense command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get pin sense command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -1712,7 +1712,7 @@ static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, uint32_t cmd, uint6
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digin.u32F09_param;
     else
-        LogRel2(("HDA: Unhandled set pin sense command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set pin sense command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     if (pu32Reg)
@@ -1914,7 +1914,7 @@ static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, uint32_t cmd, uin
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F05_param;
     else
-        LogRel2(("HDA: Unhandled get power state command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get power state command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -1956,7 +1956,7 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, uint32_t cmd, uin
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F05_param;
     else
-        LogRel2(("HDA: Unhandled set power state command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set power state command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     if (!pu32Reg)
@@ -2018,7 +2018,7 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     else if (CODEC_NID(cmd) == 0x1A)
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F06_param;
     else
-        LogRel2(("HDA: Unhandled get stream ID command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get stream ID command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -2043,7 +2043,7 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         pu32addr = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F06_param;
     else
-        LogRel2(("HDA: Unhandled set stream ID command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set stream ID command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     hdaCodecSetRegisterU8(pu32addr, cmd, 0);
@@ -2067,7 +2067,7 @@ static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, uint32_t cmd
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifin.u32A_param;
     else
-        LogRel2(("HDA: Unhandled get power state command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get power state command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -2088,7 +2088,7 @@ static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, uint32_t cmd
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
         hdaCodecSetRegisterU16(&pThis->paNodes[CODEC_NID(cmd)].spdifin.u32A_param, cmd, 0);
     else
-        LogRel2(("HDA: Unhandled set converter format command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set converter format command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
@@ -2109,7 +2109,7 @@ static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F0c_param;
     else
-        LogRel2(("HDA: Unhandled get EAPD/BTL enable command: 0x%x (Payload=%RU8, NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get EAPD/BTL enable command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -2130,7 +2130,7 @@ static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digin.u32F0c_param;
     else
-        LogRel2(("HDA: Unhandled set EAPD/BTL enable command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set EAPD/BTL enable command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     if (pu32Reg)
@@ -2150,7 +2150,7 @@ static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, uint32_t cmd,
     if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
     else
-        LogRel2(("HDA: Unhandled get volume knob control command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get volume knob control command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -2167,7 +2167,7 @@ static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, uint32_t cmd,
     if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
     else
-        LogRel2(("HDA: Unhandled set volume control command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set volume control command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     if (pu32Reg)
@@ -2188,7 +2188,7 @@ static DECLCALLBACK(int) vrbProcGetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd,
     if (CODEC_NID(cmd) == 0x1 /* AFG */)
         *pResp = pThis->paNodes[1].afg.u32F17_param;
     else
-        LogRel2(("HDA: Unhandled get GPIO unsolisted command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get GPIO unsolisted command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -2205,7 +2205,7 @@ static DECLCALLBACK(int) vrbProcSetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd,
     if (CODEC_NID(cmd) == 1 /* AFG */)
         pu32Reg = &pThis->paNodes[1].afg.u32F17_param;
     else
-        LogRel2(("HDA: Unhandled set GPIO unsolisted command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set GPIO unsolisted command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     if (pu32Reg)
@@ -2235,7 +2235,7 @@ static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, uint32_t cmd, uint64_
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
     else
-        LogRel2(("HDA: Unhandled get config command: 0x%x (NID=%RU8)\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Unhandled get config command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -2256,7 +2256,7 @@ static int codecSetConfigX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
     else
-        LogRel2(("HDA: Unhandled set config command: 0x%x (Payload=%RU8, NID=%RU8)\n",
+        LogRel2(("HDA: Unhandled set config command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
     if (pu32Reg)
