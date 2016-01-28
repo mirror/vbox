@@ -4191,7 +4191,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
     (sometimes called system speaker) is a much older and separate way to
     produce audible feedback like beeps.</para>
 
-    <para>The PC speaker passthrough feature handles beeps ony. More advanced
+    <para>The PC speaker passthrough feature handles beeps only. More advanced
     PC speaker use by the VM (such as PCM audio) will not work, resulting in
     undefined PC speaker behavior on the host.</para>
 
