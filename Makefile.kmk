@@ -171,7 +171,7 @@ ifeq ($(KBUILD_TARGET),darwin)
 		 Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod) \
 		 Frameworks/$(qtmod).framework/Resources=>Versions/4/Resources)
 else
- if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT4_PAYLOAD)
+ if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
   include $(KBUILD_PATH)/units/qt4.kmk
   ifeq ($(KBUILD_TARGET),win)
    INSTALLS += qt4-bin
