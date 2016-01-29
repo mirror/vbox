@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -275,6 +275,48 @@ static void pit_irq_timer_update(PPITCHANNEL pChan, uint64_t current_time, uint6
 #endif
 
 
+#ifdef IN_RING3
+# ifdef RT_OS_LINUX
+static int pitTryDeviceOpen(const char *pszPath, int flags)
+{
+    int fd = open(pszPath, flags);
+    if (fd == -1)
+        LogRel(("PIT: speaker: cannot open \"%s\", errno=%d\n", pszPath, errno));
+    else
+        LogRel(("PIT: speaker: opened \"%s\"\n", pszPath));
+    return fd;
+}
+
+static int pitTryDeviceOpenSanitizeIoctl(const char *pszPath, int flags)
+{
+    int fd = open(pszPath, flags);
+    if (fd == -1)
+        LogRel(("PIT: speaker: cannot open \"%s\", errno=%d\n", pszPath, errno));
+    else
+    {
+        int errno_eviocgsnd0 = 0;
+        int errno_kiocsound = 0;
+        if (ioctl(fd, EVIOCGSND(0)) != -1)
+        {
+            errno_eviocgsnd0 = errno;
+            if (ioctl(fd, KIOCSOUND, 1) == -1)
+                errno_kiocsound = errno;
+            else
+                ioctl(fd, KIOCSOUND, 0);
+        }
+        if (errno_eviocgsnd0 && errno_kiocsound)
+        {
+            LogRel(("PIT: speaker: cannot use \"%s\", ioctl failed errno=%d/errno=%d\n", pszPath, errno_eviocgsnd0, errno_kiocsound));
+            close(fd);
+            fd = -1;
+        }
+        else
+            LogRel(("PIT: speaker: opened \"%s\"\n", pszPath));
+    }
+    return fd;
+}
+# endif /* RT_OS_LINUX */
+#endif /* IN_RING3 */
 
 static int pit_get_count(PPITCHANNEL pChan)
 {
@@ -883,7 +925,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                         res = ioctl(pThis->hHostSpeaker, KIOCSOUND, pChan->count);
                         if (res == -1)
                         {
-                            LogRel(("PIT: speaker: ioctl failed errno=%d\n", errno));
+                            LogRel(("PIT: speaker: ioctl failed errno=%d, disabling emulation\n", errno));
                             pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
                         }
                         break;
@@ -900,7 +942,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     case PIT_SPEAKER_EMU_NONE:
                         break;
                     default:
-                        Log2Func(("unknown speaker emulation %d\n", pThis->enmSpeakerEmu));
+                        Log2Func(("unknown speaker emulation %d, disabling emulation\n", pThis->enmSpeakerEmu));
                         pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
                 }
             }
@@ -910,6 +952,13 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 switch (pThis->enmSpeakerEmu)
                 {
                     case PIT_SPEAKER_EMU_CONSOLE:
+                        /* No error checking here. The Linux device driver
+                         * implementation considers it an error (errno=22,
+                         * EINVAL) to stop sound if it hasn't been started.
+                         * Of course we could detect this by checking only
+                         * for enabled->disabled transitions and ignoring
+                         * disabled->disabled ones, but it's not worth the
+                         * effort. */
                         ioctl(pThis->hHostSpeaker, KIOCSOUND, 0);
                         break;
                     case PIT_SPEAKER_EMU_EVDEV:
@@ -924,7 +973,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     case PIT_SPEAKER_EMU_NONE:
                         break;
                     default:
-                        Log2Func(("unknown speaker emulation %d\n", pThis->enmSpeakerEmu));
+                        Log2Func(("unknown speaker emulation %d, disabling emulation\n", pThis->enmSpeakerEmu));
                         pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
                 }
             }
@@ -1255,7 +1304,9 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Irq\0" "Base\0" "SpeakerEnabled\0" "PassthroughSpeaker\0" "R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Irq\0" "Base\0"
+                                    "SpeakerEnabled\0" "PassthroughSpeaker\0" "PassthroughSpeakerDevice\0"
+                                    "R0Enabled\0" "GCEnabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /*
@@ -1276,11 +1327,19 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"SpeakerEnabled\" as a bool failed"));
 
-    bool fPassthroughSpeaker;
-    rc = CFGMR3QueryBoolDef(pCfg, "PassthroughSpeaker", &fPassthroughSpeaker, false);
+    uint8_t uPassthroughSpeaker;
+    char *pszPassthroughSpeakerDevice = NULL;
+    rc = CFGMR3QueryU8Def(pCfg, "PassthroughSpeaker", &uPassthroughSpeaker, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: failed to read PassthroughSpeaker as boolean"));
+                                N_("Configuration error: failed to read PassthroughSpeaker as uint8_t"));
+    if (uPassthroughSpeaker)
+    {
+        rc = CFGMR3QueryStringAllocDef(pCfg, "PassthroughSpeakerDevice", &pszPassthroughSpeakerDevice, NULL);
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc,
+                                    N_("Configuration error: failed to read PassthroughSpeakerDevice as string"));
+    }
 
     rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
     if (RT_FAILURE(rc))
@@ -1295,33 +1354,25 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->pDevIns         = pDevIns;
     pThis->IOPortBaseCfg   = u16Base;
     pThis->fSpeakerCfg     = fSpeaker;
-    if (fPassthroughSpeaker)
+    pThis->enmSpeakerEmu   = PIT_SPEAKER_EMU_NONE;
+    if (uPassthroughSpeaker)
     {
         /** @todo r=klaus move this to a (system-specific) driver */
 #ifdef RT_OS_LINUX
-        int fd;
-        fd = open("/dev/input/by-path/platform-pcspkr-event-spkr", O_WRONLY);
-        if (fd == -1)
-            fd = open("/dev/tty0", O_WRONLY);
-        if (fd == -1)
-            fd = open("/dev/vc/0", O_WRONLY);
-        if (fd == -1)
+        int fd = -1;
+        if ((uPassthroughSpeaker == 1 || uPassthroughSpeaker == 100) && fd == -1)
+            fd = pitTryDeviceOpenSanitizeIoctl("/dev/input/by-path/platform-pcspkr-event-spkr", O_WRONLY);
+        if ((uPassthroughSpeaker == 2 || uPassthroughSpeaker == 100) && fd == -1)
+            fd = pitTryDeviceOpenSanitizeIoctl("/dev/tty", O_WRONLY);
+        if ((uPassthroughSpeaker == 3 || uPassthroughSpeaker == 100) && fd == -1)
         {
-            LogRel(("PIT: speaker: could not open console/speaker device\n"));
-            fd = open("/dev/tty", O_WRONLY);
+            fd = pitTryDeviceOpenSanitizeIoctl("/dev/tty0", O_WRONLY);
             if (fd == -1)
-            {
-                pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
-                LogRel(("PIT: speaker: no emulation possible\n"));
-            }
-            else
-            {
-                pThis->hHostSpeaker = fd;
-                pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_TTY;
-                LogRel(("PIT: speaker: emulation mode tty\n"));
-            }
+                fd = pitTryDeviceOpenSanitizeIoctl("/dev/vc/0", O_WRONLY);
         }
-        else
+        if ((uPassthroughSpeaker == 9 || uPassthroughSpeaker == 100) && pszPassthroughSpeakerDevice && fd == -1)
+            fd = pitTryDeviceOpenSanitizeIoctl(pszPassthroughSpeakerDevice, O_WRONLY);
+        if (pThis->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE && fd != -1)
         {
             pThis->hHostSpeaker = fd;
             if (ioctl(fd, EVIOCGSND(0)) != -1)
@@ -1335,12 +1386,27 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                 LogRel(("PIT: speaker: emulation mode console\n"));
             }
         }
+        if ((uPassthroughSpeaker == 70 || uPassthroughSpeaker == 100) && fd == -1)
+            fd = pitTryDeviceOpen("/dev/tty", O_WRONLY);
+        if ((uPassthroughSpeaker == 79 || uPassthroughSpeaker == 100) && pszPassthroughSpeakerDevice && fd == -1)
+            fd = pitTryDeviceOpen(pszPassthroughSpeakerDevice, O_WRONLY);
+        if (pThis->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE && fd != -1)
+        {
+            pThis->hHostSpeaker = fd;
+            pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_TTY;
+            LogRel(("PIT: speaker: emulation mode tty\n"));
+        }
+        if (pThis->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE)
+        {
+            Assert(fd == -1);
+            LogRel(("PIT: speaker: no emulation possible\n"));
+        }
 #else
-        pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
+        LogRel(("PIT: speaker: emulation deactivated\n"));
 #endif
+        RTStrFree(pszPassthroughSpeakerDevice);
+        pszPassthroughSpeakerDevice = NULL;
     }
-    else
-        pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
     pThis->channels[0].irq = u8Irq;
     for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
     {

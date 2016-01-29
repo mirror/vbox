@@ -119,6 +119,7 @@
 \usepackage{color}
 \usepackage{scrextend}
 \definecolor{darkgreen}{rgb}{0,0.6,0}
+\tymin=21pt
 
 </xsl:text>
   <xsl:if test="$TARGETLANG='de_DE'">\usepackage[ngerman]{babel}&#10;\PrerenderUnicode{ü}</xsl:if>
