@@ -127,13 +127,26 @@ static NTSTATUS vboxVidPnPopulateVideoSignalInfo(D3DKMDT_VIDEO_SIGNAL_INFO *pVsi
     pVsi->VideoStandard  = D3DKMDT_VSS_OTHER;
     pVsi->ActiveSize.cx = pResolution->cx;
     pVsi->ActiveSize.cy = pResolution->cy;
-    pVsi->VSyncFreq.Numerator = VSync * 1000;
-    pVsi->VSyncFreq.Denominator = 1000;
-    pVsi->TotalSize.cx = pVsi->ActiveSize.cx;// + VBOXVDPN_C_DISPLAY_HBLANK_SIZE;
-    pVsi->TotalSize.cy = pVsi->ActiveSize.cy;// + VBOXVDPN_C_DISPLAY_VBLANK_SIZE;
-    pVsi->PixelRate = pVsi->TotalSize.cx * pVsi->TotalSize.cy * VSync;
-    pVsi->HSyncFreq.Numerator = (UINT)((pVsi->PixelRate / pVsi->TotalSize.cy) * 1000);
-    pVsi->HSyncFreq.Denominator = 1000;
+    pVsi->TotalSize = pVsi->ActiveSize;
+    if (VBOXWDDM_IS_DISPLAYONLY())
+    {
+        /* VSYNC is not implemented in display-only mode (#8228).
+         * In this case Windows checks that frequencies are not specified.
+         */
+        pVsi->VSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+        pVsi->VSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+        pVsi->PixelRate = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+        pVsi->HSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+        pVsi->HSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    }
+    else
+    {
+        pVsi->VSyncFreq.Numerator = VSync * 1000;
+        pVsi->VSyncFreq.Denominator = 1000;
+        pVsi->PixelRate = pVsi->TotalSize.cx * pVsi->TotalSize.cy * VSync;
+        pVsi->HSyncFreq.Numerator = (UINT)((pVsi->PixelRate / pVsi->TotalSize.cy) * 1000);
+        pVsi->HSyncFreq.Denominator = 1000;
+    }
     pVsi->ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
 
     return Status;

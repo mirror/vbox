@@ -7300,17 +7300,22 @@ static NTSTATUS vboxWddmInitDisplayOnlyDriver(IN PDRIVER_OBJECT pDriverObject, I
     DriverInitializationData.DxgkDdiCommitVidPn = DxgkDdiCommitVidPn;
     DriverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath = DxgkDdiUpdateActiveVidPnPresentPath;
     DriverInitializationData.DxgkDdiRecommendMonitorModes = DxgkDdiRecommendMonitorModes;
-    DriverInitializationData.DxgkDdiGetScanLine = DxgkDdiGetScanLine;
     DriverInitializationData.DxgkDdiQueryVidPnHWCapability = DxgkDdiQueryVidPnHWCapability;
     DriverInitializationData.DxgkDdiPresentDisplayOnly = DxgkDdiPresentDisplayOnly;
     DriverInitializationData.DxgkDdiStopDeviceAndReleasePostDisplayOwnership = DxgkDdiStopDeviceAndReleasePostDisplayOwnership;
     DriverInitializationData.DxgkDdiSystemDisplayEnable = DxgkDdiSystemDisplayEnable;
     DriverInitializationData.DxgkDdiSystemDisplayWrite = DxgkDdiSystemDisplayWrite;
 //    DriverInitializationData.DxgkDdiGetChildContainerId = DxgkDdiGetChildContainerId;
-    DriverInitializationData.DxgkDdiControlInterrupt = DxgkDdiControlInterrupt;
 //    DriverInitializationData.DxgkDdiSetPowerComponentFState = DxgkDdiSetPowerComponentFState;
 //    DriverInitializationData.DxgkDdiPowerRuntimeControlRequest = DxgkDdiPowerRuntimeControlRequest;
 //    DriverInitializationData.DxgkDdiNotifySurpriseRemoval = DxgkDdiNotifySurpriseRemoval;
+
+    /* Display-only driver is not required to report VSYNC.
+     * The Microsoft KMDOD driver sample does not implement DxgkDdiControlInterrupt and DxgkDdiGetScanLine.
+     * The functions must be either both implemented or none implemented.
+     * Windows 10 10586 guests had problems with VSYNC in display-only driver (#8228).
+     * Therefore the driver does not implement DxgkDdiControlInterrupt and DxgkDdiGetScanLine.
+     */
 
     NTSTATUS Status = DxgkInitializeDisplayOnlyDriver(pDriverObject,
                           pRegistryPath,
