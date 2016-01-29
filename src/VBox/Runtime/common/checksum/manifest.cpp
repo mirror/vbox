@@ -51,6 +51,7 @@ typedef struct RTMANIFESTFILEENTRY
     char *pszManifestFile;
     char *pszManifestDigest;
     PRTMANIFESTTEST pTestPattern;
+    bool fSkipThisFile;
 } RTMANIFESTFILEENTRY;
 typedef RTMANIFESTFILEENTRY* PRTMANIFESTFILEENTRY;
 
@@ -347,7 +348,10 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
 
     /* Fill our compare list */
     for (size_t i = 0; i < cTests; ++i)
+    {
         paFiles[i].pTestPattern = &paTests[i];
+        paFiles[i].fSkipThisFile = false;
+    }
 
     char *pcBuf = (char*)pvBuf;
     size_t cbRead = 0;
@@ -467,6 +471,22 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
                 fFound = true;
                 break;
             }
+            else
+            {
+                /*
+                * use case when manifest file doesn't contain the SHA digest of OVF description file 
+                * OVF2.0 standard says that "The manifest file shall contain SHA digests for all distinct files
+                * referenced in the References element of the OVF descriptor and for no other files." 
+                * So we have OVF description file in our package file list but there is no SHA digest for him.
+                */
+                char *suffix = RTPathSuffix(paFiles[i].pTestPattern->pszTestFile);//get suffix
+
+                if (RTStrICmp(suffix, ".ovf") == 0)
+                {
+                    paFiles[i].fSkipThisFile = true;//workaround for this case
+                    fFound = true;
+                }
+            }
         }
         RTMemTmpFree(pszName);
         RTMemTmpFree(pszDigest);
@@ -487,6 +507,8 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
         rc = VINF_SUCCESS;
         for (size_t i = 0; i < cTests; ++i)
         {
+            if(paFiles[i].fSkipThisFile == true)
+                continue;
             /* If there is an entry in the file list, which hasn't an
              * equivalent in the manifest file, its an error. */
             if (   !paFiles[i].pszManifestFile
