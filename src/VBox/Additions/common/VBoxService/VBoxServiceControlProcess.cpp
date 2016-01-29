@@ -1208,15 +1208,26 @@ static void vgsvcGstCtrlProcessFreeArgv(char **papszArgv)
  *                                      successful process start.
  */
 static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
-                                            PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
-                                            const char *pszPassword, const char *pszDomain, PRTPROCESS phProcess)
+                                            PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr,
+                                            const char *pszAsUser, const char *pszPassword, const char *pszDomain,
+                                            PRTPROCESS phProcess)
 {
     AssertPtrReturn(pszExec, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
+    /* phStdIn is optional. */
+    /* phStdOut is optional. */
+    /* phStdErr is optional. */
+    /* pszPassword is optional. */
+    /* pszDomain is optional. */
     AssertPtrReturn(phProcess, VERR_INVALID_PARAMETER);
 
     int  rc = VINF_SUCCESS;
     char szExecExp[RTPATH_MAX];
+
+#ifdef DEBUG
+    /* Never log this in release mode! */
+    VGSvcVerbose(4, "pszUser=%s, pszPassword=%s, pszDomain=%s\n", pszAsUser, pszPassword, pszDomain);
+#endif
 
 #ifdef RT_OS_WINDOWS
     /*
@@ -1355,7 +1366,8 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
             /* If a domain name is given, construct an UPN (User Principle Name) with
              * the domain name built-in, e.g. "joedoe@example.com". */
             char *pszUserUPN = NULL;
-            if (strlen(pszDomain))
+            if (   pszDomain
+                && strlen(pszDomain))
             {
                 int cbUserUPN = RTStrAPrintf(&pszUserUPN, "%s@%s", pszAsUser, pszDomain);
                 if (cbUserUPN > 0)
