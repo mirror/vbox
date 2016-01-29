@@ -26,6 +26,7 @@
 
 #include <VBox/version.h>
 
+#include <iprt/buildconfig.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
@@ -74,10 +75,11 @@ static const char g_szUsage[] =
     "   If none is given then no machines will be included. Specifying -A overrides\n"
     "   any VM names provided and included all registered machines.\n"
     "Options:\n"
-    "   -h, -help,   --help    Print usage information\n"
-    "   -A, -all,    --all     Include all registered machines\n"
-    "   -o, -output, --output  Specifies the name of the output file\n"
-    "   -t, -text,   --text    Produce a single text file instead of compressed TAR\n"
+    "   -h, -help,    --help     Print usage information\n"
+    "   -A, -all,     --all      Include all registered machines\n"
+    "   -o, -output,  --output   Specifies the name of the output file\n"
+    "   -t, -text,    --text     Produce a single text file instead of compressed TAR\n"
+    "   -V, -version, --version  Print version number and exit\n"
     "\n";
 
 
@@ -490,6 +492,13 @@ void addMachine(MachineInfoList& list, ComPtr<IMachine> machine)
 }
 
 
+static void printHeader(void)
+{
+    RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Bug Report Tool " VBOX_VERSION_STRING "\n"
+                 "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                 "All rights reserved.\n\n");
+}
+
 int main(int argc, char *argv[])
 {
     /*
@@ -497,10 +506,6 @@ int main(int argc, char *argv[])
      * the support driver.
      */
     RTR3InitExe(argc, &argv, 0);
-
-    RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Bug Report Tool " VBOX_VERSION_STRING "\n"
-                 "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                 "All rights reserved.\n\n");
 
     bool fAllMachines = false;
     bool fTextOutput  = false;
@@ -519,6 +524,7 @@ int main(int argc, char *argv[])
         switch(ch)
         {
             case 'h':
+                printHeader();
                 RTStrmPrintf(g_pStdErr, g_szUsage, argv[0]);
                 return 0;
             case 'A':
@@ -530,6 +536,9 @@ int main(int argc, char *argv[])
             case 't':
                 fTextOutput = true;
                 break;
+            case 'V':
+                RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                return 0;
             case VINF_GETOPT_NOT_OPTION:
                 nameList.push_back(ValueUnion.psz);
                 break;
@@ -537,6 +546,8 @@ int main(int argc, char *argv[])
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
+
+    printHeader();
 
     HRESULT hr = S_OK;
     char homeDir[RTPATH_MAX];
