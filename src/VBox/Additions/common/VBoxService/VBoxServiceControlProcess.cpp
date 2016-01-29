@@ -717,7 +717,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
                 fProcessAlive = false;
             }
             else if (RT_FAILURE(rc2))
-                VGSvcError("PID %RU32]: Killing process failed with rc=%Rrc\n", pProcess->uPID, rc2);
+                VGSvcError("[PID %RU32]: Killing process failed with rc=%Rrc\n", pProcess->uPID, rc2);
             RTThreadSleep(500);
         }
 
