@@ -608,8 +608,9 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
  */
 static int rtProcWinUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, HANDLE *phToken)
 {
-    AssertPtrReturn(pwszUser, VERR_INVALID_POINTER);
+    AssertPtrReturn(pwszUser,     VERR_INVALID_POINTER);
     AssertPtrReturn(pwszPassword, VERR_INVALID_POINTER);
+    AssertPtrReturn(phToken,      VERR_INVALID_POINTER);
 
     /*
      * Because we have to deal with http://support.microsoft.com/kb/245683
@@ -1329,24 +1330,31 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
             PSID pSid = (PSID)RTMemAllocZ(cbSid);
             if (pSid)
             {
-                cwcDomain = fRc ? cwcDomain + 2 : _512K;
+                cwcDomain = fRc ? cwcDomain + 2 : _4K;
                 PRTUTF16 pwszDomain = (PRTUTF16)RTMemAllocZ(cwcDomain * sizeof(RTUTF16));
                 if (pwszDomain)
                 {
-                    /* Note: Also supports FQDNs! */
-                    if (   LookupAccountNameW(NULL /*lpSystemName*/, pwszUser, pSid, &cbSid, pwszDomain, &cwcDomain, &SidNameUse)
-                        && IsValidSid(pSid))
+                    /* Note: Just pass in the UPN (User Principal Name), e.g. someone@example.com */
+                    if (LookupAccountNameW(NULL /*lpSystemName*/, pwszUser, pSid, &cbSid, pwszDomain, &cwcDomain, &SidNameUse))
                     {
-                        /* Array of process names we want to look for. */
-                        static const char * const s_papszProcNames[] =
+                        if (IsValidSid(pSid))
                         {
-#ifdef VBOX                 /* The explorer entry is a fallback in case GA aren't installed. */
-                            { "VBoxTray.exe" },
+                            /* Array of process names we want to look for. */
+                            static const char * const s_papszProcNames[] =
+                            {
+#ifdef VBOX                     /* The explorer entry is a fallback in case GA aren't installed. */
+                                { "VBoxTray.exe" },
 #endif
-                            { "explorer.exe" },
-                            NULL
-                        };
-                        fFound = rtProcWinFindTokenByProcess(s_papszProcNames, pSid, &hTokenUserDesktop);
+                                { "explorer.exe" },
+                                NULL
+                            };
+                            fFound = rtProcWinFindTokenByProcess(s_papszProcNames, pSid, &hTokenUserDesktop);
+                        }
+                        else
+                        {
+                            dwErr = GetLastError();
+                            rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_4;
+                        }
                     }
                     else
                     {
@@ -1355,8 +1363,13 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                     }
                     RTMemFree(pwszDomain);
                 }
+                else
+                    rc = VERR_NO_MEMORY;
+
                 RTMemFree(pSid);
             }
+            else
+                rc = VERR_NO_MEMORY;
         }
         /* else: !RTPROC_FLAGS_SERVICE: Nothing to do here right now. */
 
@@ -1485,7 +1498,8 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
 
         if (hTokenUserDesktop != INVALID_HANDLE_VALUE)
             CloseHandle(hTokenUserDesktop);
-        CloseHandle(hTokenLogon);
+        if (hTokenLogon != INVALID_HANDLE_VALUE)
+            CloseHandle(hTokenLogon);
 
         if (rc == VERR_UNRESOLVED_ERROR)
             LogRelFunc(("dwErr=%u (%#x), rc=%Rrc\n", dwErr, dwErr, rc));
@@ -1617,9 +1631,9 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
      */
     else
     {
-        RTENV  hEnvToUse = NIL_RTENV;
-        HANDLE hToken;
-        rc = rtProcWinUserLogon(pwszUser, pwszPassword, &hToken);
+        RTENV  hEnvToUse   = NIL_RTENV;
+        HANDLE hTokenLogon = INVALID_HANDLE_VALUE;
+        rc = rtProcWinUserLogon(pwszUser, pwszPassword, &hTokenLogon);
         if (RT_SUCCESS(rc))
         {
             /* CreateEnvFromToken docs says we should load the profile, though
@@ -1631,12 +1645,12 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
             ProfileInfo.lpUserName = pwszUser;
             ProfileInfo.dwFlags    = PI_NOUI; /* Prevents the display of profile error messages. */
 
-            if (g_pfnLoadUserProfileW(hToken, &ProfileInfo))
+            if (g_pfnLoadUserProfileW(hTokenLogon, &ProfileInfo))
             {
                 /*
                  * Do what we need to do.  Don't keep any temp environment object.
                  */
-                rc = rtProcWinCreateEnvFromToken(hToken, hEnv, fFlags, &hEnvToUse);
+                rc = rtProcWinCreateEnvFromToken(hTokenLogon, hEnv, fFlags, &hEnvToUse);
                 if (RT_SUCCESS(rc))
                 {
                     rc = rtProcWinFindExe(fFlags, hEnv, pszExec, ppwszExec);
@@ -1646,12 +1660,14 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                         RTEnvDestroy(hEnvToUse);
                 }
 
-                if (!g_pfnUnloadUserProfile(hToken, ProfileInfo.hProfile))
+                if (!g_pfnUnloadUserProfile(hTokenLogon, ProfileInfo.hProfile))
                     AssertFailed();
             }
             else
                 rc = RTErrConvertFromWin32(GetLastError());
-            CloseHandle(hToken);
+
+            if (hTokenLogon != INVALID_HANDLE_VALUE)
+                CloseHandle(hTokenLogon);
         }
     }
     if (RT_SUCCESS(rc))
