@@ -902,6 +902,37 @@ RTDECL(int) RTVfsMemorizeIoStreamAsFile(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, 
 
 
 /**
+ * Creates a VFS file from a memory buffer.
+ *
+ * @returns VBox status code.
+ *
+ * @param   hVfsIos         The VFS I/O stream to memorize.  This will be read
+ *                          to the end on success, on failure its position is
+ *                          undefined.
+ * @param   fFlags          A combination of RTFILE_O_READ and RTFILE_O_WRITE.
+ * @param   pvBuf           The buffer.  This will be copied and not referenced
+ *                          after this function returns.
+ * @param   cbBuf           The buffer size.
+ * @param   phVfsFile       Where to return the handle to the memory file on
+ *                          success.
+ */
+RTDECL(int) RTVfsFileFromBuffer(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, void const *pvBuf, size_t cbBuf, PRTVFSFILE phVfsFile);
+
+/**
+ * Creates a memory backed VFS file object for read and write.
+ *
+ * @returns VBox status code.
+ *
+ * @param   hVfsIos         The VFS I/O stream to memorize.  This will be read
+ *                          to the end on success, on failure its position is
+ *                          undefined.
+ * @param   cbEstimate      The estimated file size.
+ * @param   phVfsFile       Where to return the handle to the memory file on
+ *                          success.
+ */
+RTDECL(int) RTVfsMemFileCreate(RTVFSIOSTREAM hVfsIos, size_t cbEstimate, PRTVFSFILE phVfsFile);
+
+/**
  * Pumps data from one I/O stream to another.
  *
  * The data is read in chunks from @a hVfsIosSrc and written to @a hVfsIosDst
