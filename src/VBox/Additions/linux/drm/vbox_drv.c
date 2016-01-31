@@ -84,12 +84,111 @@ static void vbox_pci_remove(struct pci_dev *pdev)
 }
 
 
+
+static int vbox_drm_freeze(struct drm_device *dev)
+{
+    drm_kms_helper_poll_disable(dev);
+
+    pci_save_state(dev->pdev);
+
+    console_lock();
+    vbox_fbdev_set_suspend(dev, 1);
+    console_unlock();
+    return 0;
+}
+
+static int vbox_drm_thaw(struct drm_device *dev)
+{
+    int error = 0;
+
+    drm_mode_config_reset(dev);
+    drm_helper_resume_force_mode(dev);
+
+    console_lock();
+    vbox_fbdev_set_suspend(dev, 0);
+    console_unlock();
+    return error;
+}
+
+static int vbox_drm_resume(struct drm_device *dev)
+{
+    int ret;
+
+    if (pci_enable_device(dev->pdev))
+        return -EIO;
+
+       ret = vbox_drm_thaw(dev);
+    if (ret)
+       return ret;
+
+    drm_kms_helper_poll_enable(dev);
+    return 0;
+}
+
+static int vbox_pm_suspend(struct device *dev)
+{
+    struct pci_dev *pdev = to_pci_dev(dev);
+    struct drm_device *ddev = pci_get_drvdata(pdev);
+    int error;
+
+    error = vbox_drm_freeze(ddev);
+    if (error)
+        return error;
+
+    pci_disable_device(pdev);
+    pci_set_power_state(pdev, PCI_D3hot);
+    return 0;
+}
+
+static int vbox_pm_resume(struct device *dev)
+{
+    struct pci_dev *pdev = to_pci_dev(dev);
+    struct drm_device *ddev = pci_get_drvdata(pdev);
+    return vbox_drm_resume(ddev);
+}
+
+static int vbox_pm_freeze(struct device *dev)
+{
+    struct pci_dev *pdev = to_pci_dev(dev);
+    struct drm_device *ddev = pci_get_drvdata(pdev);
+
+    if (!ddev || !ddev->dev_private)
+        return -ENODEV;
+    return vbox_drm_freeze(ddev);
+
+}
+
+static int vbox_pm_thaw(struct device *dev)
+{
+    struct pci_dev *pdev = to_pci_dev(dev);
+    struct drm_device *ddev = pci_get_drvdata(pdev);
+    return vbox_drm_thaw(ddev);
+}
+
+static int vbox_pm_poweroff(struct device *dev)
+{
+    struct pci_dev *pdev = to_pci_dev(dev);
+    struct drm_device *ddev = pci_get_drvdata(pdev);
+
+    return vbox_drm_freeze(ddev);
+}
+
+static const struct dev_pm_ops vbox_pm_ops = {
+    .suspend = vbox_pm_suspend,
+    .resume = vbox_pm_resume,
+    .freeze = vbox_pm_freeze,
+    .thaw = vbox_pm_thaw,
+    .poweroff = vbox_pm_poweroff,
+    .restore = vbox_pm_resume,
+};
+
 static struct pci_driver vbox_pci_driver =
 {
     .name = DRIVER_NAME,
     .id_table = pciidlist,
     .probe = vbox_pci_probe,
     .remove = vbox_pci_remove,
+    .driver.pm = &vbox_pm_ops,
 };
 
 
@@ -117,7 +216,9 @@ static struct drm_driver driver =
 
     .load = vbox_driver_load,
     .unload = vbox_driver_unload,
-    .lastclose = vbox_driver_lastclose,
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 17, 0)
+    .set_busid = drm_pci_set_busid,
+#endif
 
     .fops = &vbox_fops,
     .name = DRIVER_NAME,

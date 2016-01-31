@@ -65,13 +65,6 @@ static void vbox_user_framebuffer_destroy(struct drm_framebuffer *fb)
     kfree(fb);
 }
 
-static int vbox_user_framebuffer_create_handle(struct drm_framebuffer *fb,
-                          struct drm_file *file,
-                          unsigned int *handle)
-{
-    return -EINVAL;
-}
-
 /** Send information about dirty rectangles to VBVA.  If necessary we enable
  * VBVA first, as this is normally disabled after a mode set in case a user
  * takes over the console that is not aware of VBVA (i.e. the VESA BIOS). */
@@ -97,6 +90,7 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
 
             if (!pVBVA)
             {
+                LogFunc(("vboxvideo: enabling VBVA.\n"));
                 pVBVA = (struct VBVABUFFER *) (  ((uint8_t *)vbox->vram)
                                                + vbox->vram_size
                                                + iCrtc * VBVA_MIN_BUFFER_SIZE);
@@ -142,10 +136,8 @@ static int vbox_user_framebuffer_dirty(struct drm_framebuffer *fb,
     return 0;
 }
 
-static const struct drm_framebuffer_funcs vbox_fb_funcs =
-{
+static const struct drm_framebuffer_funcs vbox_fb_funcs = {
     .destroy = vbox_user_framebuffer_destroy,
-    .create_handle = vbox_user_framebuffer_create_handle,
     .dirty = vbox_user_framebuffer_dirty,
 };
 
@@ -162,8 +154,7 @@ int vbox_framebuffer_init(struct drm_device *dev,
     drm_helper_mode_fill_fb_struct(&vbox_fb->base, mode_cmd);
     vbox_fb->obj = obj;
     ret = drm_framebuffer_init(dev, &vbox_fb->base, &vbox_fb_funcs);
-    if (ret)
-    {
+    if (ret) {
         DRM_ERROR("framebuffer init failed %d\n", ret);
         LogFunc(("vboxvideo: %d\n", __LINE__));
         return ret;
@@ -187,15 +178,13 @@ vbox_user_framebuffer_create(struct drm_device *dev,
         return ERR_PTR(-ENOENT);
 
     vbox_fb = kzalloc(sizeof(*vbox_fb), GFP_KERNEL);
-    if (!vbox_fb)
-    {
+    if (!vbox_fb) {
         drm_gem_object_unreference_unlocked(obj);
         return ERR_PTR(-ENOMEM);
     }
 
     ret = vbox_framebuffer_init(dev, vbox_fb, mode_cmd, obj);
-    if (ret)
-    {
+    if (ret) {
         drm_gem_object_unreference_unlocked(obj);
         kfree(vbox_fb);
         return ERR_PTR(ret);
@@ -204,8 +193,7 @@ vbox_user_framebuffer_create(struct drm_device *dev,
     return &vbox_fb->base;
 }
 
-static const struct drm_mode_config_funcs vbox_mode_funcs =
-{
+static const struct drm_mode_config_funcs vbox_mode_funcs = {
     .fb_create = vbox_user_framebuffer_create,
 };
 
@@ -332,8 +320,7 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
     spin_lock_init(&vbox->dev_lock);
     /* I hope this won't interfere with the memory manager. */
     vbox->vram = pci_iomap(dev->pdev, 0, 0);
-    if (!vbox->vram)
-    {
+    if (!vbox->vram) {
         ret = -EIO;
         goto out_free;
     }
@@ -394,30 +381,6 @@ int vbox_driver_unload(struct drm_device *dev)
     return 0;
 }
 
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
-static bool drm_fb_helper_restore_fbdev_mode_unlocked(struct drm_fb_helper
-                                                          *pHelper)
-{
-       bool rc;
-
-       drm_modeset_lock_all(pHelper->dev);
-       rc = drm_fb_helper_restore_fbdev_mode(pHelper);
-       drm_modeset_unlock_all(pHelper->dev);
-       return rc;
-}
-#endif
-
-
-void vbox_driver_lastclose(struct drm_device *pDev)
-{
-    struct vbox_private *pVBox = pDev->dev_private;
-
-    if (pVBox->fbdev)
-        drm_fb_helper_restore_fbdev_mode_unlocked(&pVBox->fbdev->helper);
-}
-
-
 int vbox_gem_create(struct drm_device *dev,
            u32 size, bool iskernel,
            struct drm_gem_object **obj)
@@ -434,8 +397,7 @@ int vbox_gem_create(struct drm_device *dev,
         return -EINVAL;
 
     ret = vbox_bo_create(dev, size, 0, 0, &vboxbo);
-    if (ret)
-    {
+    if (ret) {
         if (ret != -ERESTARTSYS)
             DRM_ERROR("failed to allocate GEM object\n");
         return ret;
@@ -484,7 +446,7 @@ int vbox_dumb_destroy(struct drm_file *file,
     return drm_gem_handle_delete(file, handle);
 }
 
-void vbox_bo_unref(struct vbox_bo **bo)
+static void vbox_bo_unref(struct vbox_bo **bo)
 {
     struct ttm_buffer_object *tbo;
 
@@ -503,8 +465,6 @@ void vbox_gem_free_object(struct drm_gem_object *obj)
     struct vbox_bo *vbox_bo = gem_to_vbox_bo(obj);
 
     LogFunc(("vboxvideo: %d: vbox_bo=%p\n", __LINE__, vbox_bo));
-    if (!vbox_bo)
-        return;
     vbox_bo_unref(&vbox_bo);
 }
 
@@ -525,14 +485,13 @@ vbox_dumb_mmap_offset(struct drm_file *file,
 {
     struct drm_gem_object *obj;
     int ret;
-    struct vbox_bo *bo = NULL;
+    struct vbox_bo *bo;
 
     LogFunc(("vboxvideo: %d: dev=%p, handle=%u\n", __LINE__,
              dev, (unsigned)handle));
     mutex_lock(&dev->struct_mutex);
     obj = drm_gem_object_lookup(dev, file, handle);
-    if (obj == NULL)
-    {
+    if (obj == NULL) {
         ret = -ENOENT;
         goto out_unlock;
     }

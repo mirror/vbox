@@ -86,8 +86,7 @@ static int vbox_ttm_global_init(struct vbox_private *vbox)
     global_ref->init = &vbox_ttm_mem_global_init;
     global_ref->release = &vbox_ttm_mem_global_release;
     r = drm_global_item_ref(global_ref);
-    if (r != 0)
-    {
+    if (r != 0) {
         DRM_ERROR("Failed setting up TTM memory accounting "
               "subsystem.\n");
         return r;
@@ -101,8 +100,7 @@ static int vbox_ttm_global_init(struct vbox_private *vbox)
     global_ref->init = &ttm_bo_global_init;
     global_ref->release = &ttm_bo_global_release;
     r = drm_global_item_ref(global_ref);
-    if (r != 0)
-    {
+    if (r != 0) {
         DRM_ERROR("Failed setting up TTM BO subsystem.\n");
         drm_global_item_unref(&vbox->ttm.mem_global_ref);
         return r;
@@ -113,7 +111,7 @@ static int vbox_ttm_global_init(struct vbox_private *vbox)
 /**
  * Removes the vbox memory manager object from the global memory manager.
  */
-void
+static void
 vbox_ttm_global_release(struct vbox_private *vbox)
 {
     if (vbox->ttm.mem_global_ref.release == NULL)
@@ -135,7 +133,7 @@ static void vbox_bo_ttm_destroy(struct ttm_buffer_object *tbo)
     kfree(bo);
 }
 
-bool vbox_ttm_bo_is_vbox_bo(struct ttm_buffer_object *bo)
+static bool vbox_ttm_bo_is_vbox_bo(struct ttm_buffer_object *bo)
 {
     if (bo->destroy == &vbox_bo_ttm_destroy)
         return true;
@@ -146,8 +144,7 @@ static int
 vbox_bo_init_mem_type(struct ttm_bo_device *bdev, uint32_t type,
              struct ttm_mem_type_manager *man)
 {
-    switch (type)
-    {
+    switch (type) {
     case TTM_PL_SYSTEM:
         man->flags = TTM_MEMTYPE_FLAG_MAPPABLE;
         man->available_caching = TTM_PL_MASK_CACHING;
@@ -198,8 +195,7 @@ static int vbox_ttm_io_mem_reserve(struct ttm_bo_device *bdev,
     mem->bus.is_iomem = false;
     if (!(man->flags & TTM_MEMTYPE_FLAG_MAPPABLE))
         return -EINVAL;
-    switch (mem->mem_type)
-    {
+    switch (mem->mem_type) {
     case TTM_PL_SYSTEM:
         /* system memory */
         return 0;
@@ -236,13 +232,12 @@ static void vbox_ttm_backend_destroy(struct ttm_tt *tt)
     kfree(tt);
 }
 
-static struct ttm_backend_func vbox_tt_backend_func =
-{
+static struct ttm_backend_func vbox_tt_backend_func = {
     .destroy = &vbox_ttm_backend_destroy,
 };
 
 
-struct ttm_tt *vbox_ttm_tt_create(struct ttm_bo_device *bdev,
+static struct ttm_tt *vbox_ttm_tt_create(struct ttm_bo_device *bdev,
                  unsigned long size, uint32_t page_flags,
                  struct page *dummy_read_page)
 {
@@ -252,8 +247,7 @@ struct ttm_tt *vbox_ttm_tt_create(struct ttm_bo_device *bdev,
     if (tt == NULL)
         return NULL;
     tt->func = &vbox_tt_backend_func;
-    if (ttm_tt_init(tt, bdev, size, page_flags, dummy_read_page))
-    {
+    if (ttm_tt_init(tt, bdev, size, page_flags, dummy_read_page)) {
         kfree(tt);
         return NULL;
     }
@@ -270,8 +264,7 @@ static void vbox_ttm_tt_unpopulate(struct ttm_tt *ttm)
     ttm_pool_unpopulate(ttm);
 }
 
-struct ttm_bo_driver vbox_bo_driver =
-{
+struct ttm_bo_driver vbox_bo_driver = {
     .ttm_tt_create = vbox_ttm_tt_create,
     .ttm_tt_populate = vbox_ttm_tt_populate,
     .ttm_tt_unpopulate = vbox_ttm_tt_unpopulate,
@@ -301,16 +294,14 @@ int vbox_mm_init(struct vbox_private *vbox)
 #endif
                  DRM_FILE_PAGE_OFFSET,
                  true);
-    if (ret)
-    {
+    if (ret) {
         DRM_ERROR("Error initialising bo driver; %d\n", ret);
         return ret;
     }
 
     ret = ttm_bo_init_mm(bdev, TTM_PL_VRAM,
                  vbox->vram_size >> PAGE_SHIFT);
-    if (ret)
-    {
+    if (ret) {
         DRM_ERROR("Failed ttm VRAM init: %d\n", ret);
         return ret;
     }
@@ -329,22 +320,20 @@ int vbox_mm_init(struct vbox_private *vbox)
 
 void vbox_mm_fini(struct vbox_private *vbox)
 {
+#ifdef DRM_MTRR_WC
     struct drm_device *dev = vbox->dev;
+#endif
     ttm_bo_device_release(&vbox->ttm.bdev);
 
     vbox_ttm_global_release(vbox);
 
-    if (vbox->fb_mtrr >= 0)
-    {
 #ifdef DRM_MTRR_WC
-        drm_mtrr_del(vbox->fb_mtrr,
-                 pci_resource_start(dev->pdev, 0),
-                 pci_resource_len(dev->pdev, 0), DRM_MTRR_WC);
+    drm_mtrr_del(vbox->fb_mtrr,
+             pci_resource_start(dev->pdev, 0),
+             pci_resource_len(dev->pdev, 0), DRM_MTRR_WC);
 #else
-        arch_phys_wc_del(vbox->fb_mtrr);
+    arch_phys_wc_del(vbox->fb_mtrr);
 #endif
-        vbox->fb_mtrr = -1;
-    }
 }
 
 void vbox_ttm_placement(struct vbox_bo *bo, int domain)
@@ -368,31 +357,11 @@ void vbox_ttm_placement(struct vbox_bo *bo, int domain)
     bo->placement.num_placement = c;
     bo->placement.num_busy_placement = c;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
-    for (i = 0; i < c; ++i)
-    {
+    for (i = 0; i < c; ++i) {
         bo->placements[i].fpfn = 0;
         bo->placements[i].lpfn = 0;
     }
 #endif
-}
-
-int vbox_bo_reserve(struct vbox_bo *bo, bool no_wait)
-{
-    int ret;
-
-    ret = ttm_bo_reserve(&bo->bo, true, no_wait, false, 0);
-    if (ret)
-    {
-        if (ret != -ERESTARTSYS && ret != -EBUSY)
-            DRM_ERROR("reserve failed %p\n", bo);
-        return ret;
-    }
-    return 0;
-}
-
-void vbox_bo_unreserve(struct vbox_bo *bo)
-{
-    ttm_bo_unreserve(&bo->bo);
 }
 
 int vbox_bo_create(struct drm_device *dev, int size, int align,
@@ -408,8 +377,7 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
         return -ENOMEM;
 
     ret = drm_gem_object_init(dev, &vboxbo->gem, size);
-    if (ret)
-    {
+    if (ret) {
         kfree(vboxbo);
         return ret;
     }
@@ -447,8 +415,7 @@ int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr)
 {
     int i, ret;
 
-    if (bo->pin_count)
-    {
+    if (bo->pin_count) {
         bo->pin_count++;
         if (gpu_addr)
             *gpu_addr = vbox_bo_gpu_offset(bo);
@@ -471,8 +438,7 @@ int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr)
 int vbox_bo_unpin(struct vbox_bo *bo)
 {
     int i, ret;
-    if (!bo->pin_count)
-    {
+    if (!bo->pin_count) {
         DRM_ERROR("unpin bad %p\n", bo);
         return 0;
     }
@@ -495,8 +461,7 @@ int vbox_bo_unpin(struct vbox_bo *bo)
 int vbox_bo_push_sysram(struct vbox_bo *bo)
 {
     int i, ret;
-    if (!bo->pin_count)
-    {
+    if (!bo->pin_count) {
         DRM_ERROR("unpin bad %p\n", bo);
         return 0;
     }
@@ -512,8 +477,7 @@ int vbox_bo_push_sysram(struct vbox_bo *bo)
         PLACEMENT_FLAGS(bo->placements[i]) |= TTM_PL_FLAG_NO_EVICT;
 
     ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
-    if (ret)
-    {
+    if (ret) {
         DRM_ERROR("pushing to VRAM failed\n");
         return ret;
     }

@@ -149,8 +149,7 @@ static void vbox_crtc_dpms(struct drm_crtc *crtc, int mode)
 
     LogFunc(("vboxvideo: %d: vbox_crtc=%p, mode=%d\n", __LINE__, vbox_crtc,
              mode));
-    switch (mode)
-    {
+    switch (mode) {
     case DRM_MODE_DPMS_ON:
         vbox_crtc->fBlanked = false;
         break;
@@ -173,6 +172,7 @@ static bool vbox_crtc_mode_fixup(struct drm_crtc *crtc,
     return true;
 }
 
+/* We move buffers which are not in active use out of VRAM to save memory. */
 static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
                 struct drm_framebuffer *fb,
                 int x, int y, int atomic)
@@ -186,6 +186,17 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
     u64 gpu_addr;
 
     LogFunc(("vboxvideo: %d: fb=%p, vbox_crtc=%p\n", __LINE__, fb, vbox_crtc));
+    /* push the previous fb to system ram */
+    if (!atomic && fb) {
+        vbox_fb = to_vbox_framebuffer(fb);
+        obj = vbox_fb->obj;
+        bo = gem_to_vbox_bo(obj);
+        ret = vbox_bo_reserve(bo, false);
+        if (ret)
+            return ret;
+        vbox_bo_push_sysram(bo);
+        vbox_bo_unreserve(bo);
+    }
 
     vbox_fb = to_vbox_framebuffer(CRTC_FB(crtc));
     obj = vbox_fb->obj;
@@ -196,14 +207,12 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
         return ret;
 
     ret = vbox_bo_pin(bo, TTM_PL_FLAG_VRAM, &gpu_addr);
-    if (ret)
-    {
+    if (ret) {
         vbox_bo_unreserve(bo);
         return ret;
     }
 
-    if (&vbox->fbdev->afb == vbox_fb)
-    {
+    if (&vbox->fbdev->afb == vbox_fb) {
         /* if pushing console in kmap it */
         ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &bo->kmap);
         if (ret)
@@ -263,8 +272,7 @@ static void vbox_crtc_commit(struct drm_crtc *crtc)
 }
 
 
-static const struct drm_crtc_helper_funcs vbox_crtc_helper_funcs =
-{
+static const struct drm_crtc_helper_funcs vbox_crtc_helper_funcs = {
     .dpms = vbox_crtc_dpms,
     .mode_fixup = vbox_crtc_mode_fixup,
     .mode_set = vbox_crtc_mode_set,
@@ -288,8 +296,7 @@ static void vbox_crtc_destroy(struct drm_crtc *crtc)
     kfree(crtc);
 }
 
-static const struct drm_crtc_funcs vbox_crtc_funcs =
-{
+static const struct drm_crtc_funcs vbox_crtc_funcs = {
     .cursor_move = vbox_cursor_move,
 #ifdef DRM_IOCTL_MODE_CURSOR2
     .cursor_set2 = vbox_cursor_set2,
@@ -300,24 +307,23 @@ static const struct drm_crtc_funcs vbox_crtc_funcs =
     .destroy = vbox_crtc_destroy,
 };
 
-int vbox_crtc_init(struct drm_device *pDev, unsigned i)
+static int vbox_crtc_init(struct drm_device *dev, unsigned i)
 {
-    struct vbox_crtc *pCrtc;
+    struct vbox_crtc *crtc;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
-    pCrtc = kzalloc(sizeof(struct vbox_crtc), GFP_KERNEL);
-    if (!pCrtc)
+    crtc = kzalloc(sizeof(struct vbox_crtc), GFP_KERNEL);
+    if (!crtc)
         return -ENOMEM;
-    pCrtc->crtc_id = i;
+    crtc->crtc_id = i;
 
-    drm_crtc_init(pDev, &pCrtc->base, &vbox_crtc_funcs);
-    drm_mode_crtc_set_gamma_size(&pCrtc->base, 256);
-    drm_crtc_helper_add(&pCrtc->base, &vbox_crtc_helper_funcs);
-    LogFunc(("vboxvideo: %d: pCrtc=%p\n", __LINE__, pCrtc));
+    drm_crtc_init(dev, &crtc->base, &vbox_crtc_funcs);
+    drm_mode_crtc_set_gamma_size(&crtc->base, 256);
+    drm_crtc_helper_add(&crtc->base, &vbox_crtc_helper_funcs);
+    LogFunc(("vboxvideo: %d: crtc=%p\n", __LINE__, crtc));
 
     return 0;
 }
-
 
 static void vbox_encoder_destroy(struct drm_encoder *encoder)
 {
@@ -330,27 +336,17 @@ static void vbox_encoder_destroy(struct drm_encoder *encoder)
 static struct drm_encoder *vbox_best_single_encoder(struct drm_connector *connector)
 {
     int enc_id = connector->encoder_ids[0];
-    struct drm_mode_object *obj;
-    struct drm_encoder *encoder;
 
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     /* pick the encoder ids */
     if (enc_id)
-    {
-        obj = drm_mode_object_find(connector->dev, enc_id, DRM_MODE_OBJECT_ENCODER);
-        if (!obj)
-            return NULL;
-        encoder = obj_to_encoder(obj);
-        LogFunc(("vboxvideo: %d: encoder=%p\n", __LINE__, encoder));
-        return encoder;
-    }
+        return drm_encoder_find(connector->dev, enc_id);
     LogFunc(("vboxvideo: %d\n", __LINE__));
     return NULL;
 }
 
 
-static const struct drm_encoder_funcs vbox_enc_funcs =
-{
+static const struct drm_encoder_funcs vbox_enc_funcs = {
     .destroy = vbox_encoder_destroy,
 };
 
@@ -383,8 +379,7 @@ static void vbox_encoder_commit(struct drm_encoder *encoder)
 }
 
 
-static const struct drm_encoder_helper_funcs vbox_enc_helper_funcs =
-{
+static const struct drm_encoder_helper_funcs vbox_enc_helper_funcs = {
     .dpms = vbox_encoder_dpms,
     .mode_fixup = vbox_mode_fixup,
     .prepare = vbox_encoder_prepare,
@@ -392,7 +387,7 @@ static const struct drm_encoder_helper_funcs vbox_enc_helper_funcs =
     .mode_set = vbox_encoder_mode_set,
 };
 
-struct drm_encoder *vbox_encoder_init(struct drm_device *dev, unsigned i)
+static struct drm_encoder *vbox_encoder_init(struct drm_device *dev, unsigned i)
 {
     struct vbox_encoder *vbox_encoder;
 
@@ -410,45 +405,45 @@ struct drm_encoder *vbox_encoder_init(struct drm_device *dev, unsigned i)
     return &vbox_encoder->base;
 }
 
-static void vboxUpdateHints(struct vbox_connector *pVBoxConnector)
+static void vboxUpdateHints(struct vbox_connector *vbox_connector)
 {
     struct vbox_private *pVBox;
     int rc;
 
-    LogFunc(("vboxvideo: %d: pVBoxConnector=%p\n", __LINE__, pVBoxConnector));
-    pVBox = pVBoxConnector->base.dev->dev_private;
+    LogFunc(("vboxvideo: %d: vbox_connector=%p\n", __LINE__, vbox_connector));
+    pVBox = vbox_connector->base.dev->dev_private;
     rc = VBoxHGSMIGetModeHints(&pVBox->Ctx, pVBox->cCrtcs, pVBox->paVBVAModeHints);
     AssertMsgRCReturnVoid(rc, ("VBoxHGSMIGetModeHints failed, rc=%Rrc.\n", rc));
-    if (pVBox->paVBVAModeHints[pVBoxConnector->iCrtc].magic == VBVAMODEHINT_MAGIC)
+    if (pVBox->paVBVAModeHints[vbox_connector->iCrtc].magic == VBVAMODEHINT_MAGIC)
     {
-        pVBoxConnector->modeHint.cX = pVBox->paVBVAModeHints[pVBoxConnector->iCrtc].cx & 0x8fff;
-        pVBoxConnector->modeHint.cY = pVBox->paVBVAModeHints[pVBoxConnector->iCrtc].cy & 0x8fff;
-        pVBoxConnector->modeHint.fDisconnected = !(pVBox->paVBVAModeHints[pVBoxConnector->iCrtc].fEnabled);
+        vbox_connector->modeHint.cX = pVBox->paVBVAModeHints[vbox_connector->iCrtc].cx & 0x8fff;
+        vbox_connector->modeHint.cY = pVBox->paVBVAModeHints[vbox_connector->iCrtc].cy & 0x8fff;
+        vbox_connector->modeHint.fDisconnected = !(pVBox->paVBVAModeHints[vbox_connector->iCrtc].fEnabled);
         LogFunc(("vboxvideo: %d: cX=%u, cY=%u, fDisconnected=%RTbool\n", __LINE__,
-                 (unsigned)pVBoxConnector->modeHint.cX, (unsigned)pVBoxConnector->modeHint.cY,
-                 pVBoxConnector->modeHint.fDisconnected));
+                 (unsigned)vbox_connector->modeHint.cX, (unsigned)vbox_connector->modeHint.cY,
+                 vbox_connector->modeHint.fDisconnected));
     }
 }
 
-static int vbox_get_modes(struct drm_connector *pConnector)
+static int vbox_get_modes(struct drm_connector *connector)
 {
-    struct vbox_connector *pVBoxConnector = NULL;
+    struct vbox_connector *vbox_connector = NULL;
     struct drm_display_mode *pMode = NULL;
     unsigned cModes = 0;
     int cxPreferred, cyPreferred;
 
-    LogFunc(("vboxvideo: %d: pConnector=%p\n", __LINE__, pConnector));
-    pVBoxConnector = to_vbox_connector(pConnector);
-    vboxUpdateHints(pVBoxConnector);
-    cModes = drm_add_modes_noedid(pConnector, 2560, 1600);
-    cxPreferred = pVBoxConnector->modeHint.cX ? pVBoxConnector->modeHint.cX : 1024;
-    cyPreferred = pVBoxConnector->modeHint.cY ? pVBoxConnector->modeHint.cY : 768;
-    pMode = drm_cvt_mode(pConnector->dev, cxPreferred, cyPreferred, 60, false,
+    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
+    vbox_connector = to_vbox_connector(connector);
+    vboxUpdateHints(vbox_connector);
+    cModes = drm_add_modes_noedid(connector, 2560, 1600);
+    cxPreferred = vbox_connector->modeHint.cX ? vbox_connector->modeHint.cX : 1024;
+    cyPreferred = vbox_connector->modeHint.cY ? vbox_connector->modeHint.cY : 768;
+    pMode = drm_cvt_mode(connector->dev, cxPreferred, cyPreferred, 60, false,
                          false, false);
     if (pMode)
     {
         pMode->type |= DRM_MODE_TYPE_PREFERRED;
-        drm_mode_probed_add(pConnector, pMode);
+        drm_mode_probed_add(connector, pMode);
         ++cModes;
     }
     return cModes;
@@ -460,133 +455,131 @@ static int vbox_mode_valid(struct drm_connector *connector,
     return MODE_OK;
 }
 
-static void vbox_connector_destroy(struct drm_connector *pConnector)
+static void vbox_connector_destroy(struct drm_connector *connector)
 {
-    struct vbox_connector *pVBoxConnector = NULL;
+    struct vbox_connector *vbox_connector = NULL;
 
-    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, pConnector));
-    pVBoxConnector = to_vbox_connector(pConnector);
-    device_remove_file(pConnector->dev->dev, &pVBoxConnector->deviceAttribute);
+    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
+    vbox_connector = to_vbox_connector(connector);
+    device_remove_file(connector->dev->dev, &vbox_connector->deviceAttribute);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
-    drm_sysfs_connector_remove(pConnector);
+    drm_sysfs_connector_remove(connector);
 #else
-    drm_connector_unregister(pConnector);
+    drm_connector_unregister(connector);
 #endif
-    drm_connector_cleanup(pConnector);
-    kfree(pConnector);
+    drm_connector_cleanup(connector);
+    kfree(connector);
 }
 
 static enum drm_connector_status
-vbox_connector_detect(struct drm_connector *pConnector, bool fForce)
+vbox_connector_detect(struct drm_connector *connector, bool force)
 {
-    struct vbox_connector *pVBoxConnector = NULL;
+    struct vbox_connector *vbox_connector = NULL;
 
-    (void) fForce;
-    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, pConnector));
-    pVBoxConnector = to_vbox_connector(pConnector);
-    vboxUpdateHints(pVBoxConnector);
-    return !pVBoxConnector->modeHint.fDisconnected;
+    (void) force;
+    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
+    vbox_connector = to_vbox_connector(connector);
+    vboxUpdateHints(vbox_connector);
+    return !vbox_connector->modeHint.fDisconnected;
 }
 
-static int vbox_fill_modes(struct drm_connector *pConnector, uint32_t xMax, uint32_t yMax)
+static int vbox_fill_modes(struct drm_connector *connector, uint32_t xMax, uint32_t yMax)
 {
-    struct vbox_connector *pVBoxConnector;
+    struct vbox_connector *vbox_connector;
     struct drm_device *pDrmDev;
     struct drm_display_mode *pMode, *pIter;
 
-    LogFunc(("vboxvideo: %d: pConnector=%p, xMax=%lu, yMax = %lu\n", __LINE__,
-             pConnector, (unsigned long)xMax, (unsigned long)yMax));
-    pVBoxConnector = to_vbox_connector(pConnector);
-    pDrmDev = pVBoxConnector->base.dev;
-    list_for_each_entry_safe(pMode, pIter, &pConnector->modes, head)
+    LogFunc(("vboxvideo: %d: connector=%p, xMax=%lu, yMax = %lu\n", __LINE__,
+             connector, (unsigned long)xMax, (unsigned long)yMax));
+    vbox_connector = to_vbox_connector(connector);
+    pDrmDev = vbox_connector->base.dev;
+    list_for_each_entry_safe(pMode, pIter, &connector->modes, head)
     {
         list_del(&pMode->head);
         drm_mode_destroy(pDrmDev, pMode);
     }
-    return drm_helper_probe_single_connector_modes(pConnector, xMax, yMax);
+    return drm_helper_probe_single_connector_modes(connector, xMax, yMax);
 }
 
-static const struct drm_connector_helper_funcs vbox_connector_helper_funcs =
-{
+static const struct drm_connector_helper_funcs vbox_connector_helper_funcs = {
     .mode_valid = vbox_mode_valid,
     .get_modes = vbox_get_modes,
     .best_encoder = vbox_best_single_encoder,
 };
 
-static const struct drm_connector_funcs vbox_connector_funcs =
-{
+static const struct drm_connector_funcs vbox_connector_funcs = {
     .dpms = drm_helper_connector_dpms,
     .detect = vbox_connector_detect,
     .fill_modes = vbox_fill_modes,
     .destroy = vbox_connector_destroy,
 };
 
-ssize_t vbox_connector_write_sysfs(struct device *pDev,
+ssize_t vbox_connector_write_sysfs(struct device *dev,
                                    struct device_attribute *pAttr,
                                    const char *psz, size_t cch)
 {
-    struct vbox_connector *pVBoxConnector;
+    struct vbox_connector *vbox_connector;
     struct vbox_private *pVBox;
 
-    LogFunc(("vboxvideo: %d: pDev=%p, pAttr=%p, psz=%s, cch=%llu\n", __LINE__,
-             pDev, pAttr, psz, (unsigned long long)cch));
-    pVBoxConnector = container_of(pAttr, struct vbox_connector,
+    LogFunc(("vboxvideo: %d: dev=%p, pAttr=%p, psz=%s, cch=%llu\n", __LINE__,
+             dev, pAttr, psz, (unsigned long long)cch));
+    vbox_connector = container_of(pAttr, struct vbox_connector,
                                   deviceAttribute);
-    pVBox = pVBoxConnector->base.dev->dev_private;
-    drm_kms_helper_hotplug_event(pVBoxConnector->base.dev);
+    pVBox = vbox_connector->base.dev->dev_private;
+    drm_kms_helper_hotplug_event(vbox_connector->base.dev);
     if (pVBox->fbdev)
         drm_fb_helper_hotplug_event(&pVBox->fbdev->helper);
     return cch;
 }
 
-int vbox_connector_init(struct drm_device *pDev, unsigned cScreen,
-                        struct drm_encoder *pEncoder)
+static int vbox_connector_init(struct drm_device *dev, unsigned cScreen,
+                               struct drm_encoder *encoder)
 {
-    struct vbox_connector *pVBoxConnector;
-    struct drm_connector *pConnector;
+    struct vbox_connector *vbox_connector;
+    struct drm_connector *connector;
     int rc;
 
-    LogFunc(("vboxvideo: %d: pDev=%p, pEncoder=%p\n", __LINE__, pDev,
-             pEncoder));
-    pVBoxConnector = kzalloc(sizeof(struct vbox_connector), GFP_KERNEL);
-    if (!pVBoxConnector)
+    LogFunc(("vboxvideo: %d: dev=%p, encoder=%p\n", __LINE__, dev,
+             encoder));
+    vbox_connector = kzalloc(sizeof(struct vbox_connector), GFP_KERNEL);
+    if (!vbox_connector)
         return -ENOMEM;
 
-    pConnector = &pVBoxConnector->base;
-    pVBoxConnector->iCrtc = cScreen;
+    connector = &vbox_connector->base;
+    vbox_connector->iCrtc = cScreen;
 
     /*
      * Set up the sysfs file we use for getting video mode hints from user
      * space.
      */
-    snprintf(pVBoxConnector->szName, sizeof(pVBoxConnector->szName),
+    snprintf(vbox_connector->szName, sizeof(vbox_connector->szName),
              "vbox_screen_%u", cScreen);
-    pVBoxConnector->deviceAttribute.attr.name = pVBoxConnector->szName;
-    pVBoxConnector->deviceAttribute.attr.mode = S_IWUSR;
-    pVBoxConnector->deviceAttribute.show      = NULL;
-    pVBoxConnector->deviceAttribute.store     = vbox_connector_write_sysfs;
-    rc = device_create_file(pDev->dev, &pVBoxConnector->deviceAttribute);
+    vbox_connector->deviceAttribute.attr.name = vbox_connector->szName;
+    vbox_connector->deviceAttribute.attr.mode = S_IWUSR;
+    vbox_connector->deviceAttribute.show      = NULL;
+    vbox_connector->deviceAttribute.store     = vbox_connector_write_sysfs;
+    rc = device_create_file(dev->dev, &vbox_connector->deviceAttribute);
     if (rc < 0)
     {
-        kfree(pVBoxConnector);
+        kfree(vbox_connector);
         return rc;
     }
-    drm_connector_init(pDev, pConnector, &vbox_connector_funcs,
+    drm_connector_init(dev, connector, &vbox_connector_funcs,
                        DRM_MODE_CONNECTOR_VGA);
-    drm_connector_helper_add(pConnector, &vbox_connector_helper_funcs);
+    drm_connector_helper_add(connector, &vbox_connector_helper_funcs);
 
-    pConnector->interlace_allowed = 0;
-    pConnector->doublescan_allowed = 0;
+    connector->interlace_allowed = 0;
+    connector->doublescan_allowed = 0;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
-    drm_sysfs_connector_add(pConnector);
+    drm_sysfs_connector_add(connector);
 #else
-    drm_connector_register(pConnector);
+    drm_connector_register(connector);
 #endif
 
-    drm_mode_connector_attach_encoder(pConnector, pEncoder);
+    drm_mode_connector_attach_encoder(connector, encoder);
 
-    LogFunc(("vboxvideo: %d: pConnector=%p\n", __LINE__, pConnector));
+    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     return 0;
 }
 
@@ -637,19 +630,19 @@ void vbox_cursor_fini(struct drm_device *dev)
 }
 #endif
 
-int vbox_mode_init(struct drm_device *pDev)
+int vbox_mode_init(struct drm_device *dev)
 {
-    struct vbox_private *pVBox = pDev->dev_private;
-    struct drm_encoder *pEncoder;
+    struct vbox_private *pVBox = dev->dev_private;
+    struct drm_encoder *encoder;
     unsigned i;
     /* vbox_cursor_init(dev); */
-    LogFunc(("vboxvideo: %d: pDev=%p\n", __LINE__, pDev));
+    LogFunc(("vboxvideo: %d: dev=%p\n", __LINE__, dev));
     for (i = 0; i < pVBox->cCrtcs; ++i)
     {
-        vbox_crtc_init(pDev, i);
-        pEncoder = vbox_encoder_init(pDev, i);
-        if (pEncoder)
-            vbox_connector_init(pDev, i, pEncoder);
+        vbox_crtc_init(dev, i);
+        encoder = vbox_encoder_init(dev, i);
+        if (encoder)
+            vbox_connector_init(dev, i, encoder);
     }
     return 0;
 }
@@ -660,15 +653,15 @@ void vbox_mode_fini(struct drm_device *dev)
 }
 
 
-void VBoxRefreshModes(struct drm_device *pDev)
+void VBoxRefreshModes(struct drm_device *dev)
 {
-    struct vbox_private *vbox = pDev->dev_private;
+    struct vbox_private *vbox = dev->dev_private;
     struct drm_crtc *crtci;
     unsigned long flags;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
     spin_lock_irqsave(&vbox->dev_lock, flags);
-    list_for_each_entry(crtci, &pDev->mode_config.crtc_list, head)
+    list_for_each_entry(crtci, &dev->mode_config.crtc_list, head)
         vbox_do_modeset(crtci, &crtci->hwmode);
     spin_unlock_irqrestore(&vbox->dev_lock, flags);
     LogFunc(("vboxvideo: %d\n", __LINE__));
