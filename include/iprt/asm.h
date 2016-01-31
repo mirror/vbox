@@ -1385,23 +1385,24 @@ DECLINLINE(void) ASMSerializeInstructionCpuId(void)
     __asm__ __volatile__ ("cpuid"
                           : "=a" (xAX)
                           : "0" (xAX)
-                          : "rbx", "rcx", "rdx");
+                          : "rbx", "rcx", "rdx", "memory");
 #  elif (defined(PIC) || defined(__PIC__)) && defined(__i386__)
     __asm__ __volatile__ ("push  %%ebx\n\t"
                           "cpuid\n\t"
                           "pop   %%ebx\n\t"
                           : "=a" (xAX)
                           : "0" (xAX)
-                          : "ecx", "edx");
+                          : "ecx", "edx", "memory");
 #  else
     __asm__ __volatile__ ("cpuid"
                           : "=a" (xAX)
                           : "0" (xAX)
-                          : "ebx", "ecx", "edx");
+                          : "ebx", "ecx", "edx", "memory");
 #  endif
 
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
+    _ReadWriteBarrier()
     __cpuid(aInfo, 0);
 
 # else
@@ -1438,14 +1439,14 @@ DECLINLINE(void) ASMSerializeInstructionIRet(void)
                           "pushq %%rax\n\t"
                           "iretq\n\t"
                           "1:\n\t"
-                          ::: "rax", "r10");
+                          ::: "rax", "r10", "memory");
 #  else
     __asm__ __volatile__ ("pushfl\n\t"
                           "pushl %%cs\n\t"
                           "pushl $1f\n\t"
                           "iretl\n\t"
                           "1:\n\t"
-                          :::);
+                          ::: "memory");
 #  endif
 
 # else
@@ -1473,14 +1474,15 @@ DECLINLINE(void) ASMSerializeInstructionRdTscp(void)
     /* rdtscp is not supported by ancient linux build VM of course :-( */
 #  ifdef RT_ARCH_AMD64
     /*__asm__ __volatile__("rdtscp\n\t" ::: "rax", "rdx, "rcx"); */
-    __asm__ __volatile__(".byte 0x0f,0x01,0xf9\n\t" ::: "rax", "rdx", "rcx");
+    __asm__ __volatile__(".byte 0x0f,0x01,0xf9\n\t" ::: "rax", "rdx", "rcx", "memory");
 #  else
     /*__asm__ __volatile__("rdtscp\n\t" ::: "eax", "edx, "ecx"); */
-    __asm__ __volatile__(".byte 0x0f,0x01,0xf9\n\t" ::: "eax", "edx", "ecx");
+    __asm__ __volatile__(".byte 0x0f,0x01,0xf9\n\t" ::: "eax", "edx", "ecx", "memory");
 #  endif
 # else
 #  if RT_INLINE_ASM_USES_INTRIN >= 15
     uint32_t uIgnore;
+    _ReadWriteBarrier();
     (void)__rdtscp(&uIgnore);
     (void)uIgnore;
 #  else
