@@ -195,9 +195,10 @@
 #undef      ASMReadTscWithAux
 #pragma aux ASMReadTscWithAux = \
     0x0f 0x01 0xf9 \
-    parm [ecx] \
+    "mov [ebx], ecx" \
+    parm [ebx] \
     value [eax edx] \
-    modify exact [eax edx];
+    modify exact [eax edx ecx];
 
 /* ASMCpuId: Implemented externally, too many parameters. */
 /* ASMCpuId_Idx_ECX: Implemented externally, too many parameters. */
