@@ -1402,7 +1402,7 @@ DECLINLINE(void) ASMSerializeInstructionCpuId(void)
 
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
-    _ReadWriteBarrier()
+    _ReadWriteBarrier();
     __cpuid(aInfo, 0);
 
 # else
