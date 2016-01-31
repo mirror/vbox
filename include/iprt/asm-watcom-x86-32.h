@@ -150,13 +150,31 @@
     value [al] \
     modify exact [eax edx];
 
-#undef      ASMSerializeInstruction
-#pragma aux ASMSerializeInstruction = \
+#undef      ASMSerializeInstructionCpuId
+#pragma aux ASMSerializeInstructionCpuId = \
     ".586" \
     "xor eax, eax" \
     "cpuid" \
     parm [] \
     modify exact [eax ebx ecx edx];
+
+#undef ASMSerializeInstructionIRet
+#pragma aux ASMSerializeInstructionIRet = \
+    "pushf" \
+    "push cs" \
+    "call foo" /* 'push offset done' doesn't work */ \
+    "jmp  done" \
+    "foo:" \
+    "iret" \
+    "done:" \
+    parm [] \
+    modify exact [];
+
+#undef      ASMSerializeInstructionRdTscp
+#pragma aux ASMSerializeInstructionRdTscp = \
+    0x0f 0x01 0xf9 \
+    parm [] \
+    modify exact [eax edx ecx];
 
 #undef      ASMAtomicReadU64
 #pragma aux ASMAtomicReadU64 = \

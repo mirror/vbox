@@ -1595,7 +1595,7 @@ void tstASMBench(void)
     static uint64_t volatile s_u64;
     static int64_t  volatile s_i64;
     register unsigned i;
-    const unsigned cRounds = _2M;
+    const unsigned cRounds = _2M;       /* Must be multiple of 8 */
     register uint64_t u64Elapsed;
 
     RTTestSub(g_hTest, "Benchmarking");
@@ -1615,11 +1615,42 @@ void tstASMBench(void)
     do { \
         RTThreadYield(); \
         u64Elapsed = RTTimeNanoTS(); \
-        for (i = cRounds; i > 0; i--) \
+        for (i = cRounds / 8; i > 0; i--) \
+        { \
             op; \
+            op; \
+            op; \
+            op; \
+            op; \
+            op; \
+            op; \
+            op; \
+        } \
         u64Elapsed = RTTimeNanoTS() - u64Elapsed; \
         RTTestValue(g_hTest, str, u64Elapsed / cRounds, RTTESTUNIT_NS_PER_CALL); \
     } while (0)
+#endif
+#if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) && !defined(GCC44_32BIT_PIC)
+# define BENCH_TSC(op, str) \
+    do { \
+        RTThreadYield(); \
+        u64Elapsed = ASMReadTSC(); \
+        for (i = cRounds / 8; i > 0; i--) \
+        { \
+            op; \
+            op; \
+            op; \
+            op; \
+            op; \
+            op; \
+            op; \
+            op; \
+        } \
+        u64Elapsed = ASMReadTSC() - u64Elapsed; \
+        RTTestValue(g_hTest, str, u64Elapsed / cRounds, /*RTTESTUNIT_TICKS_PER_CALL*/ RTTESTUNIT_NONE); \
+    } while (0)
+#else
+# define BENCH_TSC(op, str) BENCH(op, str)
 #endif
 
     BENCH(s_u32 = 0,                             "s_u32 = 0");
@@ -1681,18 +1712,23 @@ void tstASMBench(void)
     BENCH(ASMAtomicUoDecU32(&s_u32),             "ASMAtomicUoDecU32");
     BENCH(ASMAtomicUoAndU32(&s_u32, 0xffffffff), "ASMAtomicUoAndU32");
     BENCH(ASMAtomicUoOrU32(&s_u32, 0xffffffff),  "ASMAtomicUoOrU32");
+    BENCH_TSC(ASMSerializeInstructionCpuId(),    "ASMSerializeInstructionCpuId");
+    BENCH_TSC(ASMSerializeInstructionIRet(),     "ASMSerializeInstructionIRet");
 
     /* The Darwin gcc does not like this ... */
 #if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     BENCH(s_u8 = ASMGetApicId(),                "ASMGetApicId");
 #endif
 #if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-    BENCH(s_u64 = ASMReadTSC(),                 "ASMReadTSC");
     uint32_t uAux;
     if (   ASMHasCpuId()
         && ASMIsValidExtRange(ASMCpuId_EAX(0x80000000))
         && (ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_RDTSCP) )
+    {
+        BENCH_TSC(ASMSerializeInstructionRdTscp(), "ASMSerializeInstructionRdTscp");
         BENCH(s_u64 = ASMReadTscWithAux(&uAux),  "ASMReadTscWithAux");
+    }
+    BENCH(s_u64 = ASMReadTSC(),                 "ASMReadTSC");
     union
     {
         uint64_t    u64[2];

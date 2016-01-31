@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2015 Oracle Corporation
+# Copyright (C) 2006-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -674,6 +674,9 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
 	common/asm/ASMXRstor.asm \
+	common/asm/ASMSerializeInstruction-cpuid.asm \
+	common/asm/ASMSerializeInstruction-iret.asm \
+	common/asm/ASMSerializeInstruction-rdtscp.asm \
 	common/math/bignum-amd64-x86.asm
 RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
@@ -689,6 +692,9 @@ RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
 	common/asm/ASMXRstor.asm \
+	common/asm/ASMSerializeInstruction-cpuid.asm \
+	common/asm/ASMSerializeInstruction-iret.asm \
+	common/asm/ASMSerializeInstruction-rdtscp.asm \
 	common/math/bignum-amd64-x86.asm \
 	common/math/RTUInt128MulByU64.asm
 

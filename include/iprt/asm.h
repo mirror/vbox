@@ -1372,32 +1372,32 @@ DECLINLINE(bool) ASMAtomicCmpXchgExPtrVoid(void * volatile *ppv, const void *pvN
 
 
 /**
- * Serialize Instruction.
+ * Virtualization unfriendly serializing instruction, always exits.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMSerializeInstruction(void);
+DECLASM(void) ASMSerializeInstructionCpuId(void);
 #else
-DECLINLINE(void) ASMSerializeInstruction(void)
+DECLINLINE(void) ASMSerializeInstructionCpuId(void)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     RTCCUINTREG xAX = 0;
 #  ifdef RT_ARCH_AMD64
-    __asm__ ("cpuid"
-             : "=a" (xAX)
-             : "0" (xAX)
-             : "rbx", "rcx", "rdx");
+    __asm__ __volatile__ ("cpuid"
+                          : "=a" (xAX)
+                          : "0" (xAX)
+                          : "rbx", "rcx", "rdx");
 #  elif (defined(PIC) || defined(__PIC__)) && defined(__i386__)
-    __asm__ ("push  %%ebx\n\t"
-             "cpuid\n\t"
-             "pop   %%ebx\n\t"
-             : "=a" (xAX)
-             : "0" (xAX)
-             : "ecx", "edx");
+    __asm__ __volatile__ ("push  %%ebx\n\t"
+                          "cpuid\n\t"
+                          "pop   %%ebx\n\t"
+                          : "=a" (xAX)
+                          : "0" (xAX)
+                          : "ecx", "edx");
 #  else
-    __asm__ ("cpuid"
-             : "=a" (xAX)
-             : "0" (xAX)
-             : "ebx", "ecx", "edx");
+    __asm__ __volatile__ ("cpuid"
+                          : "=a" (xAX)
+                          : "0" (xAX)
+                          : "ebx", "ecx", "edx");
 #  endif
 
 # elif RT_INLINE_ASM_USES_INTRIN
@@ -1414,6 +1414,93 @@ DECLINLINE(void) ASMSerializeInstruction(void)
     }
 # endif
 }
+#endif
+
+/**
+ * Virtualization friendly serializing instruction, though more expensive.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMSerializeInstructionIRet(void);
+#else
+DECLINLINE(void) ASMSerializeInstructionIRet(void)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__ ("movq  %%rsp,%%r10\n\t"
+                          "subq  $128, %%rsp\n\t" /*redzone*/
+                          "mov   %%ss, %%eax\n\t"
+                          "pushq %%rax\n\t"
+                          "pushq %%r10\n\t"
+                          "pushfq\n\t"
+                          "movl  %%cs, %%eax\n\t"
+                          "pushq %%rax\n\t"
+                          "leaq  1f(%%rip), %%rax\n\t"
+                          "pushq %%rax\n\t"
+                          "iretq\n\t"
+                          "1:\n\t"
+                          ::: "rax", "r10");
+#  else
+    __asm__ __volatile__ ("pushfl\n\t"
+                          "pushl %%cs\n\t"
+                          "pushl $1f\n\t"
+                          "iretl\n\t"
+                          "1:\n\t"
+                          :::);
+#  endif
+
+# else
+    __asm
+    {
+        pushfd
+        push    cs
+        push    la_ret
+        retd
+    la_ret:
+    }
+# endif
+}
+#endif
+
+/**
+ * Virtualization friendlier serializing instruction, may still cause exits.
+ */
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
+DECLASM(void) ASMSerializeInstructionRdTscp(void);
+#else
+DECLINLINE(void) ASMSerializeInstructionRdTscp(void)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    /* rdtscp is not supported by ancient linux build VM of course :-( */
+#  ifdef RT_ARCH_AMD64
+    /*__asm__ __volatile__("rdtscp\n\t" ::: "rax", "rdx, "rcx"); */
+    __asm__ __volatile__(".byte 0x0f,0x01,0xf9\n\t" ::: "rax", "rdx", "rcx");
+#  else
+    /*__asm__ __volatile__("rdtscp\n\t" ::: "eax", "edx, "ecx"); */
+    __asm__ __volatile__(".byte 0x0f,0x01,0xf9\n\t" ::: "eax", "edx", "ecx");
+#  endif
+# else
+#  if RT_INLINE_ASM_USES_INTRIN >= 15
+    uint32_t uIgnore;
+    (void)__rdtscp(&uIgnore);
+    (void)uIgnore;
+#  else
+    __asm
+    {
+        rdtscp
+    }
+#  endif
+# endif
+}
+#endif
+
+
+/**
+ * Serialize Instruction.
+ */
+#if (defined(RT_ARCH_X86) && ARCH_BITS == 16) || defined(IN_GUEST)
+# define ASMSerializeInstruction() ASMSerializeInstructionIRet()
+#else
+# define ASMSerializeInstruction() ASMSerializeInstructionCpuId()
 #endif
 
 

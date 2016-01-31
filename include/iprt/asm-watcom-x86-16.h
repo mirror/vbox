@@ -149,26 +149,31 @@
 /* ASMAtomicCmpXchgExU32: External assembly implementation, too few registers for parameters.  */
 /* ASMAtomicCmpXchgExU64: External assembly implementation, too few registers for parameters.  */
 
-#undef      ASMSerializeInstruction
-#if 1
-# pragma aux ASMSerializeInstruction = \
-    "pushf" \
-    "push cs" \
-    "call foo" /* 'push offset done' doesn't work */ \
-    "jmp  done" \
-    "foo:" \
-    "iret" /* serializing */ \
-    "done:" \
-    parm [] \
-    modify exact [ax];
-#else
-# pragma aux ASMSerializeInstruction = \
+#undef      ASMSerializeInstructionCpuId
+#pragma aux ASMSerializeInstructionCpuId = \
     ".586" \
     "xor eax, eax" \
     "cpuid" \
     parm [] \
     modify exact [ax bx cx dx];
-#endif
+
+#undef ASMSerializeInstructionIRet
+#pragma aux ASMSerializeInstructionIRet = \
+    "pushf" \
+    "push cs" \
+    "call foo" /* 'push offset done' doesn't work */ \
+    "jmp  done" \
+    "foo:" \
+    "iret" \
+    "done:" \
+    parm [] \
+    modify exact [];
+
+#undef      ASMSerializeInstructionRdTscp
+#pragma aux ASMSerializeInstructionRdTscp = \
+    0x0f 0x01 0xf9 \
+    parm [] \
+    modify exact [ax dx cx];
 
 #undef      ASMAtomicReadU64
 #pragma aux ASMAtomicReadU64 = \
