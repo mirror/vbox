@@ -2021,10 +2021,7 @@ int main()
     GEN_CHECK_OFF(NVME, cWrkThrdsActive);
     GEN_CHECK_OFF(NVME, LstWrkThrds);
     GEN_CHECK_OFF(NVME, CritSectWrkThrds);
-    GEN_CHECK_OFF(NVME, fRedo);
     GEN_CHECK_OFF(NVME, fSignalIdle);
-    GEN_CHECK_OFF(NVME, LstReqsRedo);
-    GEN_CHECK_OFF(NVME, CritSectReqsRedo);
 #endif
 
     return (0);
