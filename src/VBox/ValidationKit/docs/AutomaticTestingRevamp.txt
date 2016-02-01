@@ -395,9 +395,9 @@ address (the test manager resolves the missing one when necessary) as well as
 the system UUID (when obtainable - should be displayed by the testbox script
 installer).  Queries from unregistered testboxes will be declined as a kind of
 security measure, the incident should be logged in the webserver log if
-possible.   In later dealings with the client the System UUID will be the key 
+possible.   In later dealings with the client the System UUID will be the key
 identifier.  It's permittable for the IP address to change when the testbox
-isn't online, but not while testing (just imagine live migration tests and 
+isn't online, but not while testing (just imagine live migration tests and
 network tests).  Ideally, the testboxes should not change IP address.
 
 The testbox edit function must allow changing the name and system UUID.
@@ -578,7 +578,7 @@ Note! Testbox.enabled is not checked here, that is only relevant when it asks
 Note! Should the testbox script detect changes in any of the inputs, it should
       redo the sign in.
 
-Note! In scenario #8, the box will not sign on until it has done the reboot and 
+Note! In scenario #8, the box will not sign on until it has done the reboot and
       cleanup reporting!
 
 
@@ -604,11 +604,11 @@ Actions:
        AND   ip = :ip
        AND   tsExpire = 'infinity'::timestamp;
 
-   If NOT found return DEAD to the testbox client (it will go back to sign on 
+   If NOT found return DEAD to the testbox client (it will go back to sign on
    mode and retry every 60 seconds or so - see scenario #1).
 
    Note! The WUI will do all necessary clean-ups when deleting a testbox, so
-         contrary to the initial plans, we don't need to do anything more for 
+         contrary to the initial plans, we don't need to do anything more for
          the DEAD status.
 
 2. Check with TestBoxStatuses (maybe joined with query from 1).
@@ -857,16 +857,16 @@ Test Manager Implementation Sub-Tasks
 -------------------------------------
 
 The implementation of the test manager and adjusting/completing of the testbox
-script and the test drivers are tasks which can be done by more than one 
-person.  Splitting up the TM implementation into smaller tasks should allow 
+script and the test drivers are tasks which can be done by more than one
+person.  Splitting up the TM implementation into smaller tasks should allow
 parallel development of different tasks and get us working code sooner.
 
 
-Milestone #1 
+Milestone #1
 ------------
 
 The goal is to getting the fundamental testmanager engine implemented, debugged
-and working.  With the exception of testboxes, the configuration will be done 
+and working.  With the exception of testboxes, the configuration will be done
 via SQL inserts.
 
 Tasks in somewhat prioritized order:
@@ -877,9 +877,9 @@ Tasks in somewhat prioritized order:
     - Adjust the testbox script, part one.  There currently is a testbox script
       in att/testbox, this shall be moved up into testboxscript/.  The script
       needs to be adjusted according to the specification layed down earlier
-      in this document.  Installers or installation scripts for all relevant 
+      in this document.  Installers or installation scripts for all relevant
       host OSes are required.  Left for part two is result reporting beyond the
-      primary log.  This task must be 100% feature complete, on all host OSes, 
+      primary log.  This task must be 100% feature complete, on all host OSes,
       there is no room for FIXME, XXX or @todo here.
 
     - Implement the schedule queue generator.
@@ -889,11 +889,11 @@ Tasks in somewhat prioritized order:
 
     - Implement simple testbox management page.
 
-    - Implement some basic activity and result reports so that we can see 
+    - Implement some basic activity and result reports so that we can see
       what's going on.
 
-    - Create a testmanager / testbox test setup.  This lives in selftest/. 
-      
+    - Create a testmanager / testbox test setup.  This lives in selftest/.
+
       1. Set up something that runs, no fiddly bits. Debug till it works.
       2. Create a setup that tests testgroup dependencies, i.e. real tests
          depending on smoke tests.
@@ -912,26 +912,26 @@ The goal is getting to VBox testing.
 Tasks in somewhat prioritized order:
 
     - Implement full result reporting in the testbox script and testbox driver.
-      A testbox script specific reporter needs to be implemented for the 
+      A testbox script specific reporter needs to be implemented for the
       testdriver framework.  The testbox script needs to forward the results to
-      the test manager, or alternatively the testdriver report can talk 
+      the test manager, or alternatively the testdriver report can talk
       directly to the TM.
 
     - Implement the test manager side of the test result reporting.
 
-    - Extend the selftest with some setup that report all kinds of test 
+    - Extend the selftest with some setup that report all kinds of test
       results.
 
-    - Implement script/whatever feeding builds to the test manager from the 
+    - Implement script/whatever feeding builds to the test manager from the
       tinderboxes.
 
     - The toplevel test driver is a VBox thing that must be derived from the
-      base TestDriver class or maybe the VBox one.  It should move from 
+      base TestDriver class or maybe the VBox one.  It should move from
       toptestdriver to testdriver and be renamed to vboxtltd or smth.
 
     - Create a vbox testdriver that boots the t-xppro VM once and that's it.
 
-    - Create a selftest setup which tests booting t-xppro taking builds from 
+    - Create a selftest setup which tests booting t-xppro taking builds from
       the tinderbox.
 
 
@@ -940,7 +940,7 @@ Milestone #3
 
 The goal for this milestone is configuration and converting current testscases,
 the result will be the a minimal test deployment (4-5 new testboxes).
-    
+
 Tasks in somewhat prioritized order:
 
     - Implement testcase configuration.
@@ -975,14 +975,14 @@ Tasks in somewhat prioritized order:
 Further work
 ------------
 
-After milestone #3 has been reached and issues found by the other team members 
-have been addressed, we will probably go for full deployment.  
+After milestone #3 has been reached and issues found by the other team members
+have been addressed, we will probably go for full deployment.
 
 Beyond this point we will need to improve reporting and analysis.  There may be
-configuration aspects needing reporting as well.  
+configuration aspects needing reporting as well.
 
-Once deployed, a golden rule will be that all new features shall have test 
-coverage.  Preferrably, implemented by someone else and prior to the feature 
+Once deployed, a golden rule will be that all new features shall have test
+coverage.  Preferrably, implemented by someone else and prior to the feature
 implementation.
 
 
@@ -1058,5 +1058,5 @@ Discussion Logs
 -----
 
 :Status: $Id$
-:Copyright: Copyright (C) 2010-2015 Oracle Corporation.
+:Copyright: Copyright (C) 2010-2016 Oracle Corporation.
 

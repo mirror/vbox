@@ -70,6 +70,12 @@ Preparations:
 
    See also http://msdn.microsoft.com/en-us/library/windows/desktop/bb787181%28v=vs.85%29.aspx
 
+7c. Enable verbose driver installation logging (C:\Windows\setupapi.dev.log):
+
+   Create the following value under the key
+   HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Setup\
+        LogLevel        [dword] = 0xFF (255)
+
 8. Install firefox or chrome, download the latest testboxscript*.zip from
    the build box.
 
