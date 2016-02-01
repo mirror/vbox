@@ -4259,7 +4259,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
     part. The real difficulty is making sure that VirtualBox can access the
     necessary device, because in a typical Linux install most of them can only
     be accessed by user <computeroutput>root</computeroutput>. You should
-    follow the preferred way to persistently change this, e.g by referring to
+    follow the preferred way to persistently change this, e.g. by referring to
     your distribution's documentation. Since there are countless Linux
     distribution variants, we can only give the general hints that there is
     often a way to give the X11 session user access to additional devices, or
