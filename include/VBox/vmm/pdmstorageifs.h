@@ -874,9 +874,29 @@ typedef struct PDMIMEDIAEX
     DECLR3CALLBACKMEMBER(int, pfnIoReqQuerySuspendedNext, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                            PPDMMEDIAEXIOREQ phIoReqNext, void **ppvIoReqAllocNext));
 
+    /**
+     * Saves the given I/O request state in the provided saved state unit.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pSSM            The SSM handle.
+     * @param   hIoReq          The request handle to save.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqSuspendedSave, (PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq));
+
+    /**
+     * Load a suspended request state from the given saved state unit and link it into the suspended list.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pSSM            The SSM handle to read the state from.
+     * @param   hIoReq          The request handle to load the state into.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqSuspendedLoad, (PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq));
+
 } PDMIMEDIAEX;
 /** PDMIMEDIAEX interface ID. */
-#define PDMIMEDIAEX_IID                      "a1eee1a8-cf51-43ed-a528-9f678a1b2224"
+#define PDMIMEDIAEX_IID                      "8856ba6a-773b-40ce-92a2-431cd06e678e"
 
 /**
  * Data direction.

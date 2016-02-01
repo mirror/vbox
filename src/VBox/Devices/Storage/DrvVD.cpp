@@ -25,6 +25,7 @@
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/pdmasynccompletion.h>
 #include <VBox/vmm/pdmblkcache.h>
+#include <VBox/vmm/ssm.h>
 #include <iprt/asm.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
@@ -98,6 +99,9 @@ extern bool DevINIPConfigured(void);
 /** Converts a pointer to VBOXDISK::IMediaAsync to a PVBOXDISK. */
 #define PDMIMEDIAASYNC_2_VBOXDISK(pInterface) \
     ( (PVBOXDISK)((uintptr_t)pInterface - RT_OFFSETOF(VBOXDISK, IMediaAsync)) )
+
+/** Saved state version of an I/O request .*/
+#define DRVVD_IOREQ_SAVED_STATE_VERSION UINT32_C(1)
 
 /** Forward declaration for the dis kcontainer. */
 typedef struct VBOXDISK *PVBOXDISK;
@@ -3238,10 +3242,11 @@ static DECLCALLBACK(int) drvvdIoReqCancel(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOR
 
                 /*
                  * We might have to try canceling the request multiple times if it transitioned from
-                 * ALLOCATED to ACTIVE between reading the state and trying to change it.
+                 * ALLOCATED to ACTIVE or to SUSPENDED between reading the state and trying to change it.
                  */
                 while (   (   enmStateOld == VDIOREQSTATE_ALLOCATED
-                           || enmStateOld == VDIOREQSTATE_ACTIVE)
+                           || enmStateOld == VDIOREQSTATE_ACTIVE
+                           || enmStateOld == VDIOREQSTATE_SUSPENDED)
                        && !fXchg)
                 {
                     fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIt->enmState, VDIOREQSTATE_CANCELED, enmStateOld);
@@ -3489,6 +3494,141 @@ static DECLCALLBACK(int) drvvdIoReqQuerySuspendedNext(PPDMIMEDIAEX pInterface, P
     RTCritSectLeave(&pThis->CritSectIoReqRedo);
 
     return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqSuspendedSave}
+ */
+static DECLCALLBACK(int) drvvdIoReqSuspendedSave(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
+
+    AssertReturn(!drvvdMediaExIoReqIsVmRunning(pThis), VERR_INVALID_STATE);
+    AssertPtrReturn(pIoReq, VERR_INVALID_HANDLE);
+    AssertReturn(pIoReq->enmState == VDIOREQSTATE_SUSPENDED, VERR_INVALID_STATE);
+
+    SSMR3PutU32(pSSM, DRVVD_IOREQ_SAVED_STATE_VERSION);
+    SSMR3PutU32(pSSM, (uint32_t)pIoReq->enmType);
+    SSMR3PutU32(pSSM, pIoReq->uIoReqId);
+    SSMR3PutU32(pSSM, pIoReq->fFlags);
+    if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+        || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
+    {
+        SSMR3PutU64(pSSM, pIoReq->ReadWrite.offStart);
+        SSMR3PutU64(pSSM, pIoReq->ReadWrite.cbReq);
+        SSMR3PutU64(pSSM, pIoReq->ReadWrite.cbReqLeft);
+    }
+    else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
+    {
+        SSMR3PutU32(pSSM, pIoReq->Discard.cRanges);
+        for (unsigned i = 0; i < pIoReq->Discard.cRanges; i++)
+        {
+            SSMR3PutU64(pSSM, pIoReq->Discard.paRanges[i].offStart);
+            SSMR3PutU64(pSSM, pIoReq->Discard.paRanges[i].cbRange);
+        }
+    }
+
+    return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqSuspendedLoad}
+ */
+static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
+
+    AssertReturn(!drvvdMediaExIoReqIsVmRunning(pThis), VERR_INVALID_STATE);
+    AssertPtrReturn(pIoReq, VERR_INVALID_HANDLE);
+    AssertReturn(pIoReq->enmState == VDIOREQSTATE_ALLOCATED, VERR_INVALID_STATE);
+
+    uint32_t u32;
+    uint64_t u64;
+    int rc = VINF_SUCCESS;
+    bool fPlaceOnRedoList = true;
+
+    SSMR3GetU32(pSSM, &u32);
+    if (u32 <= DRVVD_IOREQ_SAVED_STATE_VERSION)
+    {
+        SSMR3GetU32(pSSM, &u32);
+        AssertReturn(   u32 == PDMMEDIAEXIOREQTYPE_WRITE
+                     || u32 == PDMMEDIAEXIOREQTYPE_READ
+                     || u32 == PDMMEDIAEXIOREQTYPE_DISCARD
+                     || u32 == PDMMEDIAEXIOREQTYPE_FLUSH,
+                     VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        pIoReq->enmType = (PDMMEDIAEXIOREQTYPE)u32;
+
+        SSMR3GetU32(pSSM, &u32);
+        AssertReturn(u32 == pIoReq->uIoReqId, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+        SSMR3GetU32(pSSM, &u32);
+        AssertReturn(u32 == pIoReq->fFlags, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+        if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+            || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
+        {
+            SSMR3GetU64(pSSM, &pIoReq->ReadWrite.offStart);
+            SSMR3GetU64(pSSM, &u64);
+            pIoReq->ReadWrite.cbReq = (size_t)u64;
+            SSMR3GetU64(pSSM, &u64);
+            pIoReq->ReadWrite.cbReqLeft = (size_t)u64;
+
+            /*
+             * Try to allocate enough I/O buffer, if this fails for some reason put it onto the
+             * waitign list instead of the redo list.
+             */
+            pIoReq->ReadWrite.cbIoBuf = 0;
+            rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReq->ReadWrite.IoBuf, pIoReq->ReadWrite.cbReqLeft,
+                                  &pIoReq->ReadWrite.cbIoBuf);
+            if (rc == VERR_NO_MEMORY)
+            {
+                pIoReq->enmState = VDIOREQSTATE_ALLOCATED;
+                ASMAtomicIncU32(&pThis->cIoReqsWaiting);
+                RTListAppend(&pThis->LstIoReqIoBufWait, &pIoReq->NdLstWait);
+                fPlaceOnRedoList = false;
+                rc = VINF_SUCCESS;
+            }
+        }
+        else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
+        {
+            rc = SSMR3GetU32(pSSM, &pIoReq->Discard.cRanges);
+            if (RT_SUCCESS(rc))
+            {
+                pIoReq->Discard.paRanges = (PRTRANGE)RTMemAllocZ(pIoReq->Discard.cRanges * sizeof(RTRANGE));
+                if (RT_LIKELY(pIoReq->Discard.paRanges))
+                {
+                    for (unsigned i = 0; i < pIoReq->Discard.cRanges; i++)
+                    {
+                        SSMR3GetU64(pSSM, &pIoReq->Discard.paRanges[i].offStart);
+                        SSMR3GetU64(pSSM, &u64);
+                        pIoReq->Discard.paRanges[i].cbRange = (size_t)u64;
+                    }
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+            rc = SSMR3GetU32(pSSM, &u32); /* sanity/terminator */
+        if (RT_SUCCESS(rc))
+            AssertReturn(u32 == UINT32_MAX, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        if (   RT_SUCCESS(rc)
+            && fPlaceOnRedoList)
+        {
+            /* Mark as suspended */
+            pIoReq->enmState = VDIOREQSTATE_SUSPENDED;
+
+            /* Link into suspended list so it gets kicked off again when we resume. */
+            RTCritSectEnter(&pThis->CritSectIoReqRedo);
+            RTListAppend(&pThis->LstIoReqRedo, &pIoReq->NdLstWait);
+            RTCritSectLeave(&pThis->CritSectIoReqRedo);
+        }
+    }
+
+    return rc;
 }
 
 /**
@@ -4037,6 +4177,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IMediaEx.pfnIoReqGetSuspendedCount   = drvvdIoReqGetSuspendedCount;
     pThis->IMediaEx.pfnIoReqQuerySuspendedStart = drvvdIoReqQuerySuspendedStart;
     pThis->IMediaEx.pfnIoReqQuerySuspendedNext  = drvvdIoReqQuerySuspendedNext;
+    pThis->IMediaEx.pfnIoReqSuspendedSave       = drvvdIoReqSuspendedSave;
+    pThis->IMediaEx.pfnIoReqSuspendedLoad       = drvvdIoReqSuspendedLoad;
 
     /* Initialize supported VD interfaces. */
     pThis->pVDIfsDisk = NULL;
