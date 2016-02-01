@@ -1283,8 +1283,8 @@ static void rtProcWinStationPrep(HANDLE hTokenToUse, STARTUPINFOW *pStartupInfo,
 
 
 /**
- * Extracts the user name + domain from a given UPN (User Principal Name, joedoe@example.com) or
- * Down-Level Logon Name format (example.com\joedoe) string.
+ * Extracts the user name + domain from a given UPN (User Principal Name, "joedoe@example.com") or
+ * Down-Level Logon Name format ("example.com\\joedoe") string.
  *
  * @return  IPRT status code.
  * @param   pwszString      Pointer to string to extract the account info from.
