@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -586,13 +586,42 @@ typedef enum PDMMEDIAEXIOREQTYPE
     /** Discard request. */
     PDMMEDIAEXIOREQTYPE_DISCARD
 } PDMMEDIAEXIOREQTYPE;
+/** Pointer to a I/O request type. */
+typedef PDMMEDIAEXIOREQTYPE *PPDMMEDIAEXIOREQTYPE;
+
+/**
+ * I/O request state.
+ */
+typedef enum PDMMEDIAEXIOREQSTATE
+{
+    /** Invalid state. */
+    PDMMEDIAEXIOREQSTATE_INVALID = 0,
+    /** The request is active and being processed. */ 
+    PDMMEDIAEXIOREQSTATE_ACTIVE,
+    /** The request is suspended due to an error and no processing will take place. */
+    PDMMEDIAEXIOREQSTATE_SUSPENDED,
+    /** 32bit hack. */
+    PDMMEDIAEXIOREQSTATE_32BIT_HACK = 0x7fffffff
+} PDMMEDIAEXIOREQSTATE;
+/** Pointer to a I/O request state. */
+typedef PDMMEDIAEXIOREQSTATE *PPDMMEDIAEXIOREQSTATE;
 
 /** @name I/O request specific flags
  * @{ */
 /** Default behavior (async I/O).*/
-#define PDMIMEDIAEX_F_DEFAULT                   (0)
+#define PDMIMEDIAEX_F_DEFAULT                    (0)
 /** The I/O request will be executed synchronously. */
-#define PDMIMEDIAEX_F_SYNC                      RT_BIT_32(0)
+#define PDMIMEDIAEX_F_SYNC                       RT_BIT_32(0)
+/** Whether to suspend the VM on a recoverable error with
+ * an appropriate error message (disk full, etc.).
+ * The request will be retried by the driver implementing the interface
+ * when the VM resumes the next time. However before suspending the request
+ * the owner of the request will be notified using the PDMMEDIAEXPORT::pfnIoReqStateChanged.
+ * The same goes for resuming the request after the VM was resumed.
+ */
+#define PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR RT_BIT_32(1)
+ /** Mask of valid flags. */
+#define PDMIMEDIAEX_F_VALID                      (PDMIMEDIAEX_F_SYNC | PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR)
 /** @} */
 
 /** Pointer to an extended media notification interface. */
@@ -651,10 +680,22 @@ typedef struct PDMIMEDIAEXPORT
                                                   void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
                                                   size_t cbCopy));
 
+    /**
+     * Notify the request owner about a state change for the request.
+     *
+     * @returns nothing.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request handle.
+     * @param   pvIoReqAlloc    The allocator specific memory for this request.
+     * @param   enmState        The new state of the request.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnIoReqStateChanged, (PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                      void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState));
+
 } PDMIMEDIAEXPORT;
 
 /** PDMIMEDIAAEXPORT interface ID. */
-#define PDMIMEDIAEXPORT_IID                  "1385d27b-8648-4174-ac73-02148c479c90"
+#define PDMIMEDIAEXPORT_IID                  "779f38d0-bcaa-4a49-af2b-6f63edd4181a"
 
 
 /** Pointer to an extended media interface. */

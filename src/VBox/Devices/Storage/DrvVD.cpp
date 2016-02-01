@@ -152,6 +152,8 @@ typedef enum VDIOREQSTATE
     VDIOREQSTATE_ALLOCATED,
     /** The request was allocated and is in use. */
     VDIOREQSTATE_ACTIVE,
+    /** The request was suspended and is not actively processed. */
+    VDIOREQSTATE_SUSPENDED,
     /** The request is in the last step of completion and syncs memory. */
     VDIOREQSTATE_COMPLETING,
     /** The request completed. */
@@ -170,8 +172,8 @@ typedef struct PDMMEDIAEXIOREQINT
 {
     /** List node for the list of allocated requests. */
     RTLISTNODE                    NdAllocatedList;
-    /** List for requests waiting for I/O memory. */
-    RTLISTNODE                    NdLstIoBufWait;
+    /** List for requests waiting for I/O memory or on the redo list. */
+    RTLISTNODE                    NdLstWait;
     /** I/O request type. */
     PDMMEDIAEXIOREQTYPE           enmType;
     /** Request state. */
@@ -182,16 +184,32 @@ typedef struct PDMMEDIAEXIOREQINT
     PVBOXDISK                     pDisk;
     /** Flags. */
     uint32_t                      fFlags;
-    /** Start offset of the request. */
-    uint64_t                      offStart;
-    /** Size of the request. */
-    size_t                        cbReq;
-    /** Size left for this request. */
-    size_t                        cbReqLeft;
-    /** Size of the allocated I/O buffer. */
-    size_t                        cbIoBuf;
-    /** I/O buffer descriptor. */
-    IOBUFDESC                     IoBuf;
+    /** Type dependent data. */
+    union
+    {
+        /** Read/Write request sepcific data. */
+        struct
+        {
+            /** Start offset of the request. */
+            uint64_t                      offStart;
+            /** Size of the request. */
+            size_t                        cbReq;
+            /** Size left for this request. */
+            size_t                        cbReqLeft;
+            /** Size of the allocated I/O buffer. */
+            size_t                        cbIoBuf;
+            /** I/O buffer descriptor. */
+            IOBUFDESC                     IoBuf;
+        } ReadWrite;
+        /** Discard specific data. */
+        struct
+        {
+            /** Pointer to array of ranges to discard. */
+            PRTRANGE                      paRanges;
+            /** Number of ranges to discard. */
+            unsigned                      cRanges;
+        } Discard;
+    };
     /** Allocator specific memory - variable size. */
     uint8_t                       abAlloc[1];
 } PDMMEDIAEXIOREQINT;
@@ -356,12 +374,20 @@ typedef struct VBOXDISK
     volatile uint32_t        cIoReqsActive;
     /** Bins for allocated requests. */
     VDLSTIOREQALLOC          aIoReqAllocBins[DRVVD_VDIOREQ_ALLOC_BINS];
-    /** List of requests for I/O memory to be available - VDIOREQ::NdLstIoBufWait. */
+    /** List of requests for I/O memory to be available - VDIOREQ::NdLstWait. */
     RTLISTANCHOR             LstIoReqIoBufWait;
     /** Critical section protecting the list of requests waiting for I/O memory. */
     RTCRITSECT               CritSectIoReqsIoBufWait;
     /** Number of requests waiting for a I/O buffer. */
     volatile uint32_t        cIoReqsWaiting;
+    /** Flag whether we have to resubmit requests on resume because the
+     * VM was suspended due to a recoverable I/O error.
+     */
+    volatile bool            fRedo;
+    /** List of requests we have to redo. */
+    RTLISTANCHOR             LstIoReqRedo;
+    /** Criticial section protecting the list of waiting requests. */
+    RTCRITSECT               CritSectIoReqRedo;
     /** @} */
 } VBOXDISK;
 
@@ -2689,6 +2715,74 @@ static DECLCALLBACK(int) drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCR
 *   Extended media interface methods                                                                                             *
 *********************************************************************************************************************************/
 
+static void drvvdMediaExIoReqWarningDiskFull(PPDMDRVINS pDrvIns)
+{
+    int rc;
+    LogRel(("VD#%u: Host disk full\n", pDrvIns->iInstance));
+    rc = PDMDrvHlpVMSetRuntimeError(pDrvIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_DISKFULL",
+                                    N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
+    AssertRC(rc);
+}
+
+static void drvvdMediaExIoReqWarningFileTooBig(PPDMDRVINS pDrvIns)
+{
+    int rc;
+    LogRel(("VD#%u: File too big\n", pDrvIns->iInstance));
+    rc = PDMDrvHlpVMSetRuntimeError(pDrvIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_FILETOOBIG",
+                                    N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
+    AssertRC(rc);
+}
+
+static void drvvdMediaExIoReqWarningISCSI(PPDMDRVINS pDrvIns)
+{
+    int rc;
+    LogRel(("VD#%u: iSCSI target unavailable\n", pDrvIns->iInstance));
+    rc = PDMDrvHlpVMSetRuntimeError(pDrvIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_ISCSIDOWN",
+                                    N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
+    AssertRC(rc);
+}
+
+/**
+ * Checks whether a given status code indicates a recoverable error
+ * suspending the VM if it is.
+ *
+ * @returns Flag indicating whether the status code is a recoverable error
+ *          (full disk, broken network connection).
+ * @param   pThis     VBox disk container instance data.
+ * @param   rc        Status code to check.
+ */
+bool drvvdMediaExIoReqIsRedoSetWarning(PVBOXDISK pThis, int rc)
+{
+    if (rc == VERR_DISK_FULL)
+    {
+        if (ASMAtomicCmpXchgBool(&pThis->fRedo, true, false))
+            drvvdMediaExIoReqWarningDiskFull(pThis->pDrvIns);
+        return true;
+    }
+    if (rc == VERR_FILE_TOO_BIG)
+    {
+        if (ASMAtomicCmpXchgBool(&pThis->fRedo, true, false))
+            drvvdMediaExIoReqWarningFileTooBig(pThis->pDrvIns);
+        return true;
+    }
+    if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
+    {
+        /* iSCSI connection abort (first error) or failure to reestablish
+         * connection (second error). Pause VM. On resume we'll retry. */
+        if (ASMAtomicCmpXchgBool(&pThis->fRedo, true, false))
+            drvvdMediaExIoReqWarningISCSI(pThis->pDrvIns);
+        return true;
+    }
+    if (rc == VERR_VD_DEK_MISSING)
+    {
+        /* Error message already set. */
+        ASMAtomicCmpXchgBool(&pThis->fRedo, true, false);
+        return true;
+    }
+
+    return false;
+}
+
 /**
  * Syncs the memory buffers between the I/O request allocator and the internal buffer.
  *
@@ -2703,19 +2797,23 @@ DECLINLINE(int) drvvdMediaExIoReqBufSync(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
 {
     int rc = VINF_SUCCESS;
 
+    Assert(pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE);
+
     /* Make sure the buffer is reset. */
-    RTSgBufReset(&pIoReq->IoBuf.SgBuf);
+    RTSgBufReset(&pIoReq->ReadWrite.IoBuf.SgBuf);
 
     if (fToIoBuf)
         rc = pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
-                                                       pIoReq->cbReq - pIoReq->cbReqLeft, &pIoReq->IoBuf.SgBuf,
-                                                       RT_MIN(pIoReq->cbIoBuf, pIoReq->cbReqLeft));
+                                                       pIoReq->ReadWrite.cbReq - pIoReq->ReadWrite.cbReqLeft,
+                                                       &pIoReq->ReadWrite.IoBuf.SgBuf,
+                                                       RT_MIN(pIoReq->ReadWrite.cbIoBuf, pIoReq->ReadWrite.cbReqLeft));
     else
         rc = pThis->pDrvMediaExPort->pfnIoReqCopyFromBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
-                                                         pIoReq->cbReq - pIoReq->cbReqLeft, &pIoReq->IoBuf.SgBuf,
-                                                         RT_MIN(pIoReq->cbIoBuf, pIoReq->cbReqLeft));
+                                                         pIoReq->ReadWrite.cbReq - pIoReq->ReadWrite.cbReqLeft,
+                                                         &pIoReq->ReadWrite.IoBuf.SgBuf,
+                                                         RT_MIN(pIoReq->ReadWrite.cbIoBuf, pIoReq->ReadWrite.cbReqLeft));
 
-    RTSgBufReset(&pIoReq->IoBuf.SgBuf);
+    RTSgBufReset(&pIoReq->ReadWrite.IoBuf.SgBuf);
     return rc;
 }
 
@@ -2828,11 +2926,11 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
  */
 DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq, size_t cb)
 {
-    int rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReq->IoBuf, cb, &pIoReq->cbIoBuf);
+    int rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReq->ReadWrite.IoBuf, cb, &pIoReq->ReadWrite.cbIoBuf);
     if (rc == VERR_NO_MEMORY)
     {
         RTCritSectEnter(&pThis->CritSectIoReqsIoBufWait);
-        RTListAppend(&pThis->LstIoReqIoBufWait, &pIoReq->NdLstIoBufWait);
+        RTListAppend(&pThis->LstIoReqIoBufWait, &pIoReq->NdLstWait);
         RTCritSectLeave(&pThis->CritSectIoReqsIoBufWait);
         ASMAtomicIncU32(&pThis->cIoReqsWaiting);
         rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
@@ -2856,13 +2954,13 @@ static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQIN
 
     Assert(pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE);
 
-    while (   pIoReq->cbReqLeft
+    while (   pIoReq->ReadWrite.cbReqLeft
            && rc == VINF_SUCCESS)
     {
-        size_t cbReqIo = RT_MIN(pIoReq->cbReqLeft, pIoReq->cbIoBuf);
+        size_t cbReqIo = RT_MIN(pIoReq->ReadWrite.cbReqLeft, pIoReq->ReadWrite.cbIoBuf);
 
         if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
-            rc = VDAsyncRead(pThis->pDisk, pIoReq->offStart, cbReqIo, &pIoReq->IoBuf.SgBuf,
+            rc = VDAsyncRead(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo, &pIoReq->ReadWrite.IoBuf.SgBuf,
                              drvvdMediaExIoReqComplete, pThis, pIoReq);
         else
         {
@@ -2870,7 +2968,8 @@ static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQIN
             rc = drvvdMediaExIoReqBufSync(pThis, pIoReq, true /* fToIoBuf */);
             if (RT_SUCCESS(rc))
             {
-                rc = VDAsyncWrite(pThis->pDisk, pIoReq->offStart, cbReqIo, &pIoReq->IoBuf.SgBuf,
+                rc = VDAsyncWrite(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo,
+                                  &pIoReq->ReadWrite.IoBuf.SgBuf,
                                   drvvdMediaExIoReqComplete, pThis, pIoReq);
             }
         }
@@ -2883,14 +2982,14 @@ static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQIN
                 rc = drvvdMediaExIoReqBufSync(pThis, pIoReq, false /* fToIoBuf */);
             else
                 rc = VINF_SUCCESS;
-            pIoReq->offStart  += cbReqIo;
-            pIoReq->cbReqLeft -= cbReqIo;
+            pIoReq->ReadWrite.offStart  += cbReqIo;
+            pIoReq->ReadWrite.cbReqLeft -= cbReqIo;
         }
     }
 
     if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
     {
-        Assert(!pIoReq->cbReqLeft || RT_FAILURE(rc));
+        Assert(!pIoReq->ReadWrite.cbReqLeft || RT_FAILURE(rc));
         rc = drvvdMediaExIoReqCompleteWorker(pThis, pIoReq, rc, fUpNotify);
     }
 
@@ -2910,7 +3009,7 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
     if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
         || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
     {
-        IOBUFMgrFreeBuf(&pIoReq->IoBuf);
+        IOBUFMgrFreeBuf(&pIoReq->ReadWrite.IoBuf);
 
         if (ASMAtomicReadU32(&pThis->cIoReqsWaiting) > 0)
         {
@@ -2918,14 +3017,15 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
             RTCritSectEnter(&pThis->CritSectIoReqsIoBufWait);
             PPDMMEDIAEXIOREQINT pIoReqCur, pIoReqNext;
 
-            RTListForEachSafe(&pThis->LstIoReqIoBufWait, pIoReqCur, pIoReqNext, PDMMEDIAEXIOREQINT, NdLstIoBufWait)
+            RTListForEachSafe(&pThis->LstIoReqIoBufWait, pIoReqCur, pIoReqNext, PDMMEDIAEXIOREQINT, NdLstWait)
             {
                 /* Allocate a suitable I/O buffer for this request. */
-                int rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReqCur->IoBuf, pIoReqCur->cbReq, &pIoReqCur->cbIoBuf);
+                int rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReqCur->ReadWrite.IoBuf, pIoReqCur->ReadWrite.cbReq,
+                                          &pIoReqCur->ReadWrite.cbIoBuf);
                 if (rc == VINF_SUCCESS)
                 {
                     ASMAtomicDecU32(&pThis->cIoReqsWaiting);
-                    RTListNodeRemove(&pIoReqCur->NdLstIoBufWait);
+                    RTListNodeRemove(&pIoReqCur->NdLstWait);
 
                     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReqCur->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
                     if (RT_UNLIKELY(!fXchg))
@@ -2965,18 +3065,49 @@ static DECLCALLBACK(void) drvvdMediaExIoReqComplete(void *pvUser1, void *pvUser2
         && pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
         rcReq = drvvdMediaExIoReqBufSync(pThis, pIoReq, false /* fToIoBuf */);
 
-    /* Adjust the remaining amount to transfer. */
-    size_t cbReqIo = RT_MIN(pIoReq->cbReqLeft, pIoReq->cbIoBuf);
-    pIoReq->offStart  += cbReqIo;
-    pIoReq->cbReqLeft -= cbReqIo;
-
+    /*
+     * When the request owner instructs us to handle recoverable errors like full disks
+     * do it. Mark the request as suspended, notify the owner and put the request on the
+     * redo list.
+     */
     if (   RT_FAILURE(rcReq)
-        || !pIoReq->cbReqLeft
-        || (   pIoReq->enmType != PDMMEDIAEXIOREQTYPE_READ
-            && pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE))
-        drvvdMediaExIoReqCompleteWorker(pThis, pIoReq, rcReq, true /* fUpNotify */);
+        && (pIoReq->fFlags & PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR)
+        && drvvdMediaExIoReqIsRedoSetWarning(pThis, rcReq))
+    {
+        int rc;
+        bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_SUSPENDED, VDIOREQSTATE_ACTIVE);
+        if (fXchg)
+        {
+            /* Put on redo list and adjust active request counter. */
+            RTCritSectEnter(&pThis->CritSectIoReqRedo);
+            RTListAppend(&pThis->LstIoReqRedo, &pIoReq->NdLstWait);
+            RTCritSectLeave(&pThis->CritSectIoReqRedo);
+            ASMAtomicDecU32(&pThis->cIoReqsActive);
+            pThis->pDrvMediaExPort->pfnIoReqStateChanged(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
+                                                         PDMMEDIAEXIOREQSTATE_SUSPENDED);
+        }
+        else
+        {
+            /* Request was canceled inbetween, so don't care and notify the owner about the completed request. */
+            Assert(pIoReq->enmState == VDIOREQSTATE_CANCELED);
+            drvvdMediaExIoReqCompleteWorker(pThis, pIoReq, rcReq, true /* fUpNotify */);
+        }
+    }
     else
-        drvvdMediaExIoReqReadWriteProcess(pThis, pIoReq, true /* fUpNotify */);
+    {
+        /* Adjust the remaining amount to transfer. */
+        size_t cbReqIo = RT_MIN(pIoReq->ReadWrite.cbReqLeft, pIoReq->ReadWrite.cbIoBuf);
+        pIoReq->ReadWrite.offStart  += cbReqIo;
+        pIoReq->ReadWrite.cbReqLeft -= cbReqIo;
+
+        if (   RT_FAILURE(rcReq)
+            || !pIoReq->ReadWrite.cbReqLeft
+            || (   pIoReq->enmType != PDMMEDIAEXIOREQTYPE_READ
+                && pIoReq->enmType != PDMMEDIAEXIOREQTYPE_WRITE))
+            drvvdMediaExIoReqCompleteWorker(pThis, pIoReq, rcReq, true /* fUpNotify */);
+        else
+            drvvdMediaExIoReqReadWriteProcess(pThis, pIoReq, true /* fUpNotify */);
+    }
 }
 
 /**
@@ -3001,6 +3132,9 @@ static DECLCALLBACK(int) drvvdIoReqAlloc(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOR
                                          PDMMEDIAEXIOREQID uIoReqId, uint32_t fFlags)
 {
     PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+
+    AssertReturn(!(fFlags & ~PDMIMEDIAEX_F_VALID), VERR_INVALID_PARAMETER);
+
     PPDMMEDIAEXIOREQINT pIoReq = (PPDMMEDIAEXIOREQINT)RTMemCacheAlloc(pThis->hIoReqCache);
 
     if (RT_UNLIKELY(!pIoReq))
@@ -3011,7 +3145,6 @@ static DECLCALLBACK(int) drvvdIoReqAlloc(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOR
     pIoReq->pDisk         = pThis;
     pIoReq->enmState      = VDIOREQSTATE_ALLOCATED;
     pIoReq->enmType       = PDMMEDIAEXIOREQTYPE_INVALID;
-    pIoReq->cbIoBuf       = 0;
 
     int rc = drvvdMediaExIoReqInsert(pThis, pIoReq);
     if (RT_SUCCESS(rc))
@@ -3044,6 +3177,14 @@ static DECLCALLBACK(int) drvvdIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ
 
     /* Free any associated I/O memory. */
     drvvdMediaExIoReqBufFree(pThis, pIoReq);
+
+    /* For discard request discard the range array. */
+    if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD
+        && pIoReq->Discard.paRanges)
+    {
+        RTMemFree(pIoReq->Discard.paRanges);
+        pIoReq->Discard.paRanges = NULL;
+    }
 
     pIoReq->enmState = VDIOREQSTATE_FREE;
     RTMemCacheFree(pThis->hIoReqCache, pIoReq);
@@ -3114,10 +3255,10 @@ static DECLCALLBACK(int) drvvdIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
-    pIoReq->enmType   = PDMMEDIAEXIOREQTYPE_READ;
-    pIoReq->offStart  = off;
-    pIoReq->cbReq     = cbRead;
-    pIoReq->cbReqLeft = cbRead;
+    pIoReq->enmType             = PDMMEDIAEXIOREQTYPE_READ;
+    pIoReq->ReadWrite.offStart  = off;
+    pIoReq->ReadWrite.cbReq     = cbRead;
+    pIoReq->ReadWrite.cbReqLeft = cbRead;
     /* Allocate a suitable I/O buffer for this request. */
     int rc = drvvdMediaExIoReqBufAlloc(pThis, pIoReq, cbRead);
     if (rc == VINF_SUCCESS)
@@ -3152,10 +3293,10 @@ static DECLCALLBACK(int) drvvdIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
-    pIoReq->enmType   = PDMMEDIAEXIOREQTYPE_WRITE;
-    pIoReq->offStart  = off;
-    pIoReq->cbReq     = cbWrite;
-    pIoReq->cbReqLeft = cbWrite;
+    pIoReq->enmType             = PDMMEDIAEXIOREQTYPE_WRITE;
+    pIoReq->ReadWrite.offStart  = off;
+    pIoReq->ReadWrite.cbReq     = cbWrite;
+    pIoReq->ReadWrite.cbReqLeft = cbWrite;
     /* Allocate a suitable I/O buffer for this request. */
     int rc = drvvdMediaExIoReqBufAlloc(pThis, pIoReq, cbWrite);
     if (rc == VINF_SUCCESS)
@@ -3191,8 +3332,6 @@ static DECLCALLBACK(int) drvvdIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
     pIoReq->enmType  = PDMMEDIAEXIOREQTYPE_FLUSH;
-    pIoReq->offStart = 0;
-    pIoReq->cbReq    = 0;
     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
     if (RT_UNLIKELY(!fXchg))
     {
@@ -3229,9 +3368,11 @@ static DECLCALLBACK(int) drvvdIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIO
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
-    pIoReq->enmType  = PDMMEDIAEXIOREQTYPE_DISCARD;
-    pIoReq->offStart = 0;
-    pIoReq->cbReq    = 0;
+    pIoReq->enmType = PDMMEDIAEXIOREQTYPE_DISCARD;
+    /* Copy the ranges over because they might not be valid anymore when this method returns. */
+    pIoReq->Discard.paRanges = (PRTRANGE)RTMemDup(paRanges, cRanges * sizeof(RTRANGE));
+    if (RT_UNLIKELY(!pIoReq->Discard.paRanges))
+        return VERR_NO_MEMORY;
 
     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
     if (RT_UNLIKELY(!fXchg))
@@ -3544,6 +3685,65 @@ static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
         int rc = PDMR3BlkCacheResume(pThis->pBlkCache);
         AssertRC(rc);
     }
+
+    if (pThis->pDrvMediaExPort)
+    {
+        /* Kick of any request we have to redo. */
+        PPDMMEDIAEXIOREQINT pIoReq, pIoReqNext;
+        RTCritSectEnter(&pThis->CritSectIoReqRedo);
+        RTListForEachSafe(&pThis->LstIoReqRedo, pIoReq, pIoReqNext, PDMMEDIAEXIOREQINT, NdLstWait)
+        {
+            int rc;
+            bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_SUSPENDED);
+
+            RTListNodeRemove(&pIoReq->NdLstWait);
+            ASMAtomicIncU32(&pThis->cIoReqsActive);
+
+            if (fXchg)
+            {
+                pThis->pDrvMediaExPort->pfnIoReqStateChanged(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
+                                                             PDMMEDIAEXIOREQSTATE_ACTIVE);
+                if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+                    || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
+                    rc = drvvdMediaExIoReqReadWriteProcess(pThis, pIoReq, false /* fUpNotify */);
+                else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
+                {
+                    rc = VDAsyncFlush(pThis->pDisk, drvvdMediaExIoReqComplete, pThis, pIoReq);
+                    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                        rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
+                    else if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                        rc = VINF_SUCCESS;
+                }
+                else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
+                {
+                    rc = VDAsyncDiscardRanges(pThis->pDisk, pIoReq->Discard.paRanges, pIoReq->Discard.cRanges,
+                                              drvvdMediaExIoReqComplete, pThis, pIoReq);
+                    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                        rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
+                    else if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                        rc = VINF_SUCCESS;
+                }
+
+                if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
+                {
+                    Assert(   (   pIoReq->enmType != PDMMEDIAEXIOREQTYPE_WRITE
+                               && pIoReq->enmType != PDMMEDIAEXIOREQTYPE_READ)
+                           || !pIoReq->ReadWrite.cbReqLeft
+                           || RT_FAILURE(rc));
+                    drvvdMediaExIoReqCompleteWorker(pThis, pIoReq, rc, true /* fUpNotify */);
+                }
+
+            }
+            else
+            {
+                /* Request was canceled inbetween, so don't care and notify the owner about the completed request. */
+                Assert(pIoReq->enmState == VDIOREQSTATE_CANCELED);
+                drvvdMediaExIoReqCompleteWorker(pThis, pIoReq, VERR_PDM_MEDIAEX_IOREQ_CANCELED, true /* fUpNotify */);
+            }
+        }
+        Assert(RTListIsEmpty(&pThis->LstIoReqRedo));
+        RTCritSectLeave(&pThis->CritSectIoReqRedo);
+    }
 }
 
 /**
@@ -3653,6 +3853,8 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
         IOBUFMgrDestroy(pThis->hIoBufMgr);
     if (RTCritSectIsInitialized(&pThis->CritSectIoReqsIoBufWait))
         RTCritSectDelete(&pThis->CritSectIoReqsIoBufWait);
+    if (RTCritSectIsInitialized(&pThis->CritSectIoReqRedo))
+        RTCritSectDelete(&pThis->CritSectIoReqRedo);
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aIoReqAllocBins); i++)
     {
         if (pThis->aIoReqAllocBins[i].hMtxLstIoReqAlloc != NIL_RTSEMFASTMUTEX)
@@ -3786,10 +3988,14 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         if (RT_SUCCESS(rc))
             rc = RTCritSectInit(&pThis->CritSectIoReqsIoBufWait);
 
+        if (RT_SUCCESS(rc))
+            rc = RTCritSectInit(&pThis->CritSectIoReqRedo);
+
         if (RT_FAILURE(rc))
             return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Creating Mutex failed"));
 
         RTListInit(&pThis->LstIoReqIoBufWait);
+        RTListInit(&pThis->LstIoReqRedo);
     }
 
     /* Before we access any VD API load all given plugins. */
