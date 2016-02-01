@@ -102,6 +102,8 @@ extern bool DevINIPConfigured(void);
 
 /** Saved state version of an I/O request .*/
 #define DRVVD_IOREQ_SAVED_STATE_VERSION UINT32_C(1)
+/** Maximum number of request errors in the release log before muting. */
+#define DRVVD_MAX_LOG_REL_ERRORS        100
 
 /** Forward declaration for the dis kcontainer. */
 typedef struct VBOXDISK *PVBOXDISK;
@@ -188,6 +190,8 @@ typedef struct PDMMEDIAEXIOREQINT
     PVBOXDISK                     pDisk;
     /** Flags. */
     uint32_t                      fFlags;
+    /** Timestamp when the request was submitted. */
+    uint64_t                      tsSubmit;
     /** Type dependent data. */
     union
     {
@@ -392,6 +396,8 @@ typedef struct VBOXDISK
     RTLISTANCHOR             LstIoReqRedo;
     /** Criticial section protecting the list of waiting requests. */
     RTCRITSECT               CritSectIoReqRedo;
+    /** Number of errors logged so far. */
+    unsigned                 cErrors;
     /** @} */
 } VBOXDISK;
 
@@ -2907,6 +2913,71 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
 
     ASMAtomicXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_COMPLETED);
 
+    /*
+     * Leave a release log entry if the request was active for more than 25 seconds
+     * (30 seconds is the timeout of the guest).
+     */
+    uint64_t tsNow = RTTimeMilliTS();
+    if (tsNow - pIoReq->tsSubmit >= 25 * 1000)
+    {
+        const char *pcszReq = NULL;
+
+        switch (pIoReq->enmType)
+        {
+            case PDMMEDIAEXIOREQTYPE_READ:
+                pcszReq = "Read";
+                break;
+            case PDMMEDIAEXIOREQTYPE_WRITE:
+                pcszReq = "Write";
+                break;
+            case PDMMEDIAEXIOREQTYPE_FLUSH:
+                pcszReq = "Flush";
+                break;
+            case PDMMEDIAEXIOREQTYPE_DISCARD:
+                pcszReq = "Discard";
+                break;
+            default:
+                pcszReq = "<Invalid>";
+        }
+
+        LogRel(("VD#%u: %s request was active for %llu seconds\n",
+                pThis->pDrvIns->iInstance, pcszReq, (tsNow - pIoReq->tsSubmit) / 1000));
+    }
+
+    if (RT_FAILURE(rcReq))
+    {
+        /* Log the error. */
+        if (pThis->cErrors++ < DRVVD_MAX_LOG_REL_ERRORS)
+        {
+            if (rcReq == VERR_PDM_MEDIAEX_IOREQ_CANCELED)
+            {
+                if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
+                    LogRel(("VD#%u: Aborted flush returned rc=%Rrc\n",
+                            pThis->pDrvIns->iInstance, rcReq));
+                else
+                    LogRel(("VD#%u: Aborted %s (%u bytes left) returned rc=%Rrc\n",
+                            pThis->pDrvIns->iInstance,
+                            pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+                            ? "read"
+                            : "write",
+                            pIoReq->ReadWrite.cbReqLeft, rcReq));
+            }
+            else
+            {
+                if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
+                    LogRel(("VD#%u: Flush returned rc=%Rrc\n",
+                            pThis->pDrvIns->iInstance, rcReq));
+                else
+                    LogRel(("VD#%u: %s (%u bytes left) returned rc=%Rrc\n",
+                            pThis->pDrvIns->iInstance,
+                            pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+                            ? "Read"
+                            : "Write",
+                            pIoReq->ReadWrite.cbReqLeft, rcReq));
+            }
+        }
+    }
+
     if (fUpNotify)
     {
         rc = pThis->pDrvMediaExPort->pfnIoReqCompleteNotify(pThis->pDrvMediaExPort,
@@ -3284,6 +3355,7 @@ static DECLCALLBACK(int) drvvdIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
     pIoReq->enmType             = PDMMEDIAEXIOREQTYPE_READ;
+    pIoReq->tsSubmit            = RTTimeMilliTS();
     pIoReq->ReadWrite.offStart  = off;
     pIoReq->ReadWrite.cbReq     = cbRead;
     pIoReq->ReadWrite.cbReqLeft = cbRead;
@@ -3322,6 +3394,7 @@ static DECLCALLBACK(int) drvvdIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
     pIoReq->enmType             = PDMMEDIAEXIOREQTYPE_WRITE;
+    pIoReq->tsSubmit            = RTTimeMilliTS();
     pIoReq->ReadWrite.offStart  = off;
     pIoReq->ReadWrite.cbReq     = cbWrite;
     pIoReq->ReadWrite.cbReqLeft = cbWrite;
@@ -3360,6 +3433,7 @@ static DECLCALLBACK(int) drvvdIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
     pIoReq->enmType  = PDMMEDIAEXIOREQTYPE_FLUSH;
+    pIoReq->tsSubmit = RTTimeMilliTS();
     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
     if (RT_UNLIKELY(!fXchg))
     {
@@ -3396,7 +3470,8 @@ static DECLCALLBACK(int) drvvdIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIO
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
-    pIoReq->enmType = PDMMEDIAEXIOREQTYPE_DISCARD;
+    pIoReq->enmType  = PDMMEDIAEXIOREQTYPE_DISCARD;
+    pIoReq->tsSubmit = RTTimeMilliTS();
     /* Copy the ranges over because they might not be valid anymore when this method returns. */
     pIoReq->Discard.paRanges = (PRTRANGE)RTMemDup(paRanges, cRanges * sizeof(RTRANGE));
     if (RT_UNLIKELY(!pIoReq->Discard.paRanges))
