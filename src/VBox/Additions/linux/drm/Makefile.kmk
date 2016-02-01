@@ -18,6 +18,8 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+VBOX_WITH_GUEST_KMS_DRIVER = 1
+
 #
 # Populate FILES_VBOXVIDEO_DRM_NOBIN
 #
