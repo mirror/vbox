@@ -831,9 +831,52 @@ typedef struct PDMIMEDIAEX
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnIoReqGetActiveCount, (PPDMIMEDIAEX pInterface));
 
+    /**
+     * Returns the number of suspended requests.
+     *
+     * @returns Number of suspended I/O requests.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnIoReqGetSuspendedCount, (PPDMIMEDIAEX pInterface));
+
+    /**
+     * Gets the first suspended request handle.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_FOUND if there is no suspended request waiting.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   phIoReq         Where to store the request handle on success.
+     * @param   ppvIoReqAlloc   Where to store the pointer to the allocator specific memory on success.
+     * @thread  Any thread.
+     *
+     * @note This should only be called when the VM is suspended to make sure the request doesn't suddenly
+     *       changes into the active state again. The only purpose for this method for now is to make saving the state
+     *       possible without breaking saved state versions.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqQuerySuspendedStart, (PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq, void **ppvIoReqAlloc));
+
+    /**
+     * Gets the next suspended request handle.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_FOUND if there is no suspended request waiting.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The current request handle.
+     * @param   phIoReqNext     Where to store the request handle on success.
+     * @param   ppvIoReqAllocNext Where to store the pointer to the allocator specific memory on success.
+     * @thread  Any thread.
+     *
+     * @note This should only be called when the VM is suspended to make sure the request doesn't suddenly
+     *       changes into the active state again. The only purpose for this method for now is to make saving the state
+     *       possible without breaking saved state versions.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqQuerySuspendedNext, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                           PPDMMEDIAEXIOREQ phIoReqNext, void **ppvIoReqAllocNext));
+
 } PDMIMEDIAEX;
 /** PDMIMEDIAEX interface ID. */
-#define PDMIMEDIAEX_IID                      "d5ee47d8-5f7c-411d-bd9d-1021ee721a88"
+#define PDMIMEDIAEX_IID                      "a1eee1a8-cf51-43ed-a528-9f678a1b2224"
 
 /**
  * Data direction.

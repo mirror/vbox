@@ -3050,6 +3050,29 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
 
 
 /**
+ * Returns whether the VM is in a running state.
+ *
+ * @returns Flag indicating whether the VM is currently in a running state.
+ * @param   pThis     VBox disk container instance data.
+ */
+DECLINLINE(bool) drvvdMediaExIoReqIsVmRunning(PVBOXDISK pThis)
+{
+    VMSTATE enmVmState = PDMDrvHlpVMState(pThis->pDrvIns);
+    if (   enmVmState == VMSTATE_RESUMING
+        || enmVmState == VMSTATE_RUNNING
+        || enmVmState == VMSTATE_RUNNING_LS
+        || enmVmState == VMSTATE_RUNNING_FT
+        || enmVmState == VMSTATE_RESETTING
+        || enmVmState == VMSTATE_RESETTING_LS
+        || enmVmState == VMSTATE_SUSPENDING
+        || enmVmState == VMSTATE_SUSPENDING_LS
+        || enmVmState == VMSTATE_SUSPENDING_EXT_LS)
+        return true;
+
+    return false;
+}
+
+/**
  * @copydoc FNVDASYNCTRANSFERCOMPLETE
  */
 static DECLCALLBACK(void) drvvdMediaExIoReqComplete(void *pvUser1, void *pvUser2, int rcReq)
@@ -3403,6 +3426,69 @@ static DECLCALLBACK(uint32_t) drvvdIoReqGetActiveCount(PPDMIMEDIAEX pInterface)
 {
     PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
     return ASMAtomicReadU32(&pThis->cIoReqsActive);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqGetSuspendedCount}
+ */
+static DECLCALLBACK(uint32_t) drvvdIoReqGetSuspendedCount(PPDMIMEDIAEX pInterface)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+
+    AssertReturn(!drvvdMediaExIoReqIsVmRunning(pThis), 0);
+
+    uint32_t cIoReqSuspended = 0;
+    PPDMMEDIAEXIOREQINT pIoReq;
+    RTCritSectEnter(&pThis->CritSectIoReqRedo);
+    RTListForEach(&pThis->LstIoReqRedo, pIoReq, PDMMEDIAEXIOREQINT, NdLstWait)
+    {
+        cIoReqSuspended++;
+    }
+    RTCritSectLeave(&pThis->CritSectIoReqRedo);
+
+    return cIoReqSuspended;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedFirst}
+ */
+static DECLCALLBACK(int) drvvdIoReqQuerySuspendedStart(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq,
+                                                       void **ppvIoReqAlloc)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+
+    AssertReturn(!drvvdMediaExIoReqIsVmRunning(pThis), VERR_INVALID_STATE);
+    AssertReturn(!RTListIsEmpty(&pThis->LstIoReqRedo), VERR_NOT_FOUND);
+
+    RTCritSectEnter(&pThis->CritSectIoReqRedo);
+    PPDMMEDIAEXIOREQINT pIoReq = RTListGetFirst(&pThis->LstIoReqRedo, PDMMEDIAEXIOREQINT, NdLstWait);
+    *phIoReq       = pIoReq;
+    *ppvIoReqAlloc = &pIoReq->abAlloc[0];
+    RTCritSectLeave(&pThis->CritSectIoReqRedo);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedNext}
+ */
+static DECLCALLBACK(int) drvvdIoReqQuerySuspendedNext(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                      PPDMMEDIAEXIOREQ phIoReqNext, void **ppvIoReqAllocNext)
+{
+    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
+
+    AssertReturn(!drvvdMediaExIoReqIsVmRunning(pThis), VERR_INVALID_STATE);
+    AssertPtrReturn(pIoReq, VERR_INVALID_HANDLE);
+    AssertReturn(!RTListNodeIsLast(&pThis->LstIoReqRedo, &pIoReq->NdLstWait), VERR_NOT_FOUND);
+
+    RTCritSectEnter(&pThis->CritSectIoReqRedo);
+    PPDMMEDIAEXIOREQINT pIoReqNext = RTListNodeGetNext(&pIoReq->NdLstWait, PDMMEDIAEXIOREQINT, NdLstWait);
+    *phIoReqNext       = pIoReqNext;
+    *ppvIoReqAllocNext = &pIoReqNext->abAlloc[0];
+    RTCritSectLeave(&pThis->CritSectIoReqRedo);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -3939,15 +4025,18 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IMediaAsync.pfnStartDiscard    = drvvdStartDiscard;
 
     /* IMediaEx */
-    pThis->IMediaEx.pfnIoReqAllocSizeSet   = drvvdIoReqAllocSizeSet;
-    pThis->IMediaEx.pfnIoReqAlloc          = drvvdIoReqAlloc;
-    pThis->IMediaEx.pfnIoReqFree           = drvvdIoReqFree;
-    pThis->IMediaEx.pfnIoReqCancel         = drvvdIoReqCancel;
-    pThis->IMediaEx.pfnIoReqRead           = drvvdIoReqRead;
-    pThis->IMediaEx.pfnIoReqWrite          = drvvdIoReqWrite;
-    pThis->IMediaEx.pfnIoReqFlush          = drvvdIoReqFlush;
-    pThis->IMediaEx.pfnIoReqDiscard        = drvvdIoReqDiscard;
-    pThis->IMediaEx.pfnIoReqGetActiveCount = drvvdIoReqGetActiveCount;
+    pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvvdIoReqAllocSizeSet;
+    pThis->IMediaEx.pfnIoReqAlloc               = drvvdIoReqAlloc;
+    pThis->IMediaEx.pfnIoReqFree                = drvvdIoReqFree;
+    pThis->IMediaEx.pfnIoReqCancel              = drvvdIoReqCancel;
+    pThis->IMediaEx.pfnIoReqRead                = drvvdIoReqRead;
+    pThis->IMediaEx.pfnIoReqWrite               = drvvdIoReqWrite;
+    pThis->IMediaEx.pfnIoReqFlush               = drvvdIoReqFlush;
+    pThis->IMediaEx.pfnIoReqDiscard             = drvvdIoReqDiscard;
+    pThis->IMediaEx.pfnIoReqGetActiveCount      = drvvdIoReqGetActiveCount;
+    pThis->IMediaEx.pfnIoReqGetSuspendedCount   = drvvdIoReqGetSuspendedCount;
+    pThis->IMediaEx.pfnIoReqQuerySuspendedStart = drvvdIoReqQuerySuspendedStart;
+    pThis->IMediaEx.pfnIoReqQuerySuspendedNext  = drvvdIoReqQuerySuspendedNext;
 
     /* Initialize supported VD interfaces. */
     pThis->pVDIfsDisk = NULL;
