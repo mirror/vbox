@@ -2031,22 +2031,24 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
 
     *pResp = 0;
 
-    uint32_t *pu32addr;
+    uint32_t *pu32Addr = NULL;
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        pu32addr = &pThis->paNodes[CODEC_NID(cmd)].dac.u32F06_param;
+        pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].dac.u32F06_param;
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        pu32addr = &pThis->paNodes[CODEC_NID(cmd)].adc.u32F06_param;
+        pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].adc.u32F06_param;
     else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-        pu32addr = &pThis->paNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
+        pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-        pu32addr = &pThis->paNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
+        pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        pu32addr = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F06_param;
+        pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F06_param;
     else
         LogRel2(("HDA: Unhandled set stream ID command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
 
-    hdaCodecSetRegisterU8(pu32addr, cmd, 0);
+    if (pu32Addr)
+        hdaCodecSetRegisterU8(pu32Addr, cmd, 0);
+
     return VINF_SUCCESS;
 }
 
