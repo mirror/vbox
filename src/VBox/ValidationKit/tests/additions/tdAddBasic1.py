@@ -206,6 +206,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         """
         asLogFile = [];
 
+        fHaveSetupApiDevLog = False;
+
         # Delete relevant log files.
         if oTestVm.sKind in ('WindowsNT4',):
             sWinDir = 'C:/WinNT/';
