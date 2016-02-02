@@ -1065,6 +1065,7 @@ VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
 	src/platform/darwin/PkgInfo \
 	$(VirtualBox.app_0_OUTDIR)/Info.plist \
+	$(VirtualBox.app_0_OUTDIR)/qt.conf=>Resources/qt.conf \
 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns \
 	$(VBOX_BRAND_GUI_VBOX_64PX_PNG)=>Resources/virtualbox.png \
 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
@@ -1088,6 +1089,11 @@ $$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/
 		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		$< > $@
+
+$$(VirtualBox.app_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION_MK) | $$(@D)/
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(APPEND) $@ "[Paths]"
+	$(QUIET)$(APPEND) $@ "Prefix =" $(PATH_OUT)/$(VirtualBox.app_INST)
 
 INSTALLS += VirtualBoxVM.app
 VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Contents/
