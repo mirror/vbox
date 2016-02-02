@@ -183,7 +183,8 @@ private:
                                bool fCreateDigest,
                                PVDINTERFACEIO pCallbacks,
                                PSHASTORAGE pStorage);
-    HRESULT i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack, void *pvBuf, size_t cbSize);
+    HRESULT i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack,
+                                 RTVFSFILE hManifestVfsFile, const char *pszOvfEntry);
 
     HRESULT i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORAGE pStorage);
 

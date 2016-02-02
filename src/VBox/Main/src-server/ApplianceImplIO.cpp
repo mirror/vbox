@@ -750,6 +750,62 @@ int fssRdOnlyGetCurrentName(PFSSRDONLYINTERFACEIO pFssIo, const char **ppszName)
     return VINF_SUCCESS;
 }
 
+/**
+ * Checks if the current file w/o path is equal to the given one.
+ *
+ * @returns true / false.
+ * @param   pFssIo              What TarFssCreateReadOnlyInterfaceForFile
+ *                              returned.
+ * @param   rstrFilename        The filename to compare with.
+ */
+bool fssRdOnlyEqualsCurrentFilename(PFSSRDONLYINTERFACEIO pFssIo, com::Utf8Str const &rstrFilename)
+{
+    const char *pszName;
+    int rc = fssRdOnlyGetCurrentName(pFssIo, &pszName);
+    if (RT_SUCCESS(rc))
+    {
+        pszName = RTPathFilenameEx(pszName, RTPATH_STR_F_STYLE_DOS);
+        return strcmp(pszName, rstrFilename.c_str()) == 0;
+    }
+    return false;
+}
+
+
+/**
+ * Calls RTVfsMemorizeIoStreamAsFile on the current VFS object (ensuring there
+ * is one first).
+ *
+ * @returns VBox status code.
+ * @param   pFssIo              What TarFssCreateReadOnlyInterfaceForFile
+ *                              returned.
+ * @param   phVfsFile           Where to return the VFS file object.
+ */
+int fssRdOnlyMemorizeCurrentAsFile(PFSSRDONLYINTERFACEIO pFssIo, PRTVFSFILE phVfsFile)
+{
+    AssertPtr(pFssIo); AssertPtr(pFssIo->hVfsFss);
+
+    if (pFssIo->hVfsCurObj == NIL_RTVFSOBJ)
+    {
+        if (pFssIo->fEndOfFss)
+            return VERR_EOF;
+        int rc = RTVfsFsStrmNext(pFssIo->hVfsFss, &pFssIo->pszCurName, &pFssIo->enmCurType, &pFssIo->hVfsCurObj);
+        if (RT_FAILURE(rc))
+        {
+            pFssIo->fEndOfFss = rc == VERR_EOF;
+            *phVfsFile = NIL_RTVFSFILE;
+            return rc;
+        }
+    }
+
+    RTVFSIOSTREAM hVfsIoStrm = RTVfsObjToIoStream(pFssIo->hVfsCurObj);
+    int rc = RTVfsMemorizeIoStreamAsFile(hVfsIoStrm, RTFILE_O_READ, phVfsFile);
+    RTVfsIoStrmRelease(hVfsIoStrm);
+
+    if (RT_SUCCESS(rc))
+        rc = fssRdOnlySkipCurrent(pFssIo);
+    return rc;
+}
+
 
 /**
  * Skips the current object.

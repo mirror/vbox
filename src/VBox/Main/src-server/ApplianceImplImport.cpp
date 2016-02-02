@@ -1485,15 +1485,18 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     PVDINTERFACEIO pShaIo = NULL;
     PVDINTERFACEIO pFileIo = NULL;
-    void *pvMfBuf = NULL;
+    RTVFSFILE hManifestVfsFile = NIL_RTVFSFILE;
     void *pvCertBuf = NULL;
     writeLock.release();
 
     /* Create the import stack for the rollback on errors. */
     ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
-
     try
     {
+        int vrc = RTManifestCreate(0 /*fFlags*/, &stack.hSrcDisksManifest);
+        if (RT_FAILURE(vrc))
+            throw setError(E_OUTOFMEMORY);
+
         /* Create the necessary file access interfaces. */
         pFileIo = FileCreateInterface();
         if (!pFileIo)
@@ -1506,9 +1509,9 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
         Utf8Str name = i_applianceIOName(applianceIOFile);
 
-        int vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
-                                 VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
-                                 &storage.pVDImageIfaces);
+        vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
+                             VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
+                             &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
 
@@ -1529,17 +1532,24 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
             storage.fCreateDigest = true;
 
-            size_t cbMfFile = 0;
-
             /* Now import the appliance. */
             i_importMachines(stack, pShaIo, &storage);
+
+            /* Add the digest of the ovf to our verification manifest. */
+            vrc = RTManifestSetAttr(stack.hSrcDisksManifest, RTPathFilename(pTask->locInfo.strPath.c_str()),
+                                    m->strOVFSHADigest.c_str(), m->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_IPRT_ERROR, "Adding OVF digest failed (%Rrc)", vrc);
+
             /* Read & verify the manifest file. */
-            /* Add the ovf file to the digest list. */
-            stack.llSrcDisksDigest.push_front(STRPAIR(pTask->locInfo.strPath, m->strOVFSHADigest));
-            rc = i_readFileToBuf(strMfFile, &pvMfBuf, &cbMfFile, true, pShaIo, &storage);
-            if (FAILED(rc)) throw rc;
-            rc = i_verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfFile);
-            if (FAILED(rc)) throw rc;
+            vrc = RTVfsFileOpenNormal(strMfFile.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hManifestVfsFile);
+            if (RT_SUCCESS(vrc))
+            {
+                rc = i_verifyManifestFile(strMfFile, stack, hManifestVfsFile, RTPathFilename(pTask->locInfo.strPath.c_str()));
+                if (FAILED(rc)) throw rc;
+            }
+            else if (vrc != VERR_FILE_NOT_FOUND)
+                throw setError(VBOX_E_IPRT_ERROR, tr("Error opening manifest file '%s' (%Rrc)"), strMfFile.c_str(), vrc);
 
             size_t cbCertFile = 0;
 
@@ -1591,8 +1601,8 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     writeLock.acquire();
 
     /* Cleanup */
-    if (pvMfBuf)
-        RTMemFree(pvMfBuf);
+    if (hManifestVfsFile != NIL_RTVFSFILE)
+        RTVfsFileRelease(hManifestVfsFile);
     if (pvCertBuf)
         RTMemFree(pvCertBuf);
     if (pShaIo)
@@ -1623,7 +1633,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
 
     PVDINTERFACEIO pShaIo = 0;
-    void *pvMfBuf = NULL;
+    RTVFSFILE hManifestMemFile = NIL_RTVFSFILE;
     void *pvCertBuf = NULL;
     Utf8Str OVFfilename;
 
@@ -1631,9 +1641,12 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     /* Create the import stack for the rollback on errors. */
     ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
-
     try
     {
+        vrc = RTManifestCreate(0 /*fFlags*/, &stack.hSrcDisksManifest);
+        if (RT_FAILURE(vrc))
+            throw setError(E_OUTOFMEMORY);
+
         /* Create the necessary file access interfaces. */
         pShaIo = ShaCreateInterface();
         if (!pShaIo)
@@ -1659,7 +1672,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         pShaIo->Core.pNext            = NULL;
 
         /*
-         * File #1 - the .ova file.
+         * File #1 - the .ovf file.
          *
          * Read the name of the first file. This is how all internal files
          * are named.
@@ -1707,10 +1720,15 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * searching for it. We have to try to open it on all possible places.
          * If it fails here, we will try it again after all disks where read.
          */
-        size_t cbMfFile = 0;
-        rc = i_readTarFileToBuf(pTarIo, strMfFile, &pvMfBuf, &cbMfFile, true, pCallbacks, pStorage);
-        if (FAILED(rc))
-            throw rc;
+        /** @todo r=bird: Consider dropping strict ordering and process subsequent files
+         *  as found.  This is doable while still sharing code with on disk OVF.  It's
+         *  a bit of work though, for OVFs, but more code can ultimately be shared. */
+        if (fssRdOnlyEqualsCurrentFilename(pTarIo, strMfFile))
+        {
+            vrc = fssRdOnlyMemorizeCurrentAsFile(pTarIo, &hManifestMemFile);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_IPRT_ERROR, tr("Failed to read the manifest into a buffer (%Rrc)"), vrc);
+        }
 
         /*
          * File #3 - certificate file (.cer), optional.
@@ -1722,7 +1740,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
         if (RT_SUCCESS(vrc))
         {
-            if (pvMfBuf)
+            if (hManifestMemFile != NIL_RTVFSFILE)
             {
                 if (strCertFile.compare(pszFilename) == 0)
                 {
@@ -1745,48 +1763,56 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         i_importMachines(stack, pCallbacks, pStorage);
 
         /*
-         * The certificate and mainifest files may alternatively be stored
+         * The certificate and manifest files may alternatively be stored
          * after the disk files, so look again if we didn't find them already.
          */
-        if (!pvMfBuf)
+        if (hManifestMemFile == NIL_RTVFSFILE)
         {
             /*
              * File #N-1 - The manifest file, optional.
              */
-            rc = i_readTarFileToBuf(pTarIo, strMfFile, &pvMfBuf, &cbMfFile, true, pCallbacks, pStorage);
-            if (FAILED(rc)) throw rc;
-
-            /* If we were able to read a manifest file we can check it now. */
-            if (pvMfBuf)
+            if (fssRdOnlyEqualsCurrentFilename(pTarIo, strMfFile))
             {
-                /* Add the ovf file to the digest list. */
-                stack.llSrcDisksDigest.push_front(STRPAIR(OVFfilename, m->strOVFSHADigest));
-                rc = i_verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfFile);
-                if (FAILED(rc)) throw rc;
+                vrc = fssRdOnlyMemorizeCurrentAsFile(pTarIo, &hManifestMemFile);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_IPRT_ERROR, tr("Failed to read the manifest into a buffer (%Rrc)"), vrc);
 
                 /*
                  * File #N - The certificate file, optional.
                  * (Requires mainfest, as mention before.)
                  */
-                vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
-                if (RT_SUCCESS(vrc))
+                if (fssRdOnlyEqualsCurrentFilename(pTarIo, strCertFile))
                 {
-                    if (strCertFile.compare(pszFilename) == 0)
-                    {
-                        rc = i_readTarFileToBuf(pTarIo, strCertFile, &pvCertBuf, &cbCertFile, false, pCallbacks, pStorage);
-                        if (FAILED(rc)) throw rc;
-
-                        if (pvCertBuf)
-                        {
-                            /* verify the certificate */
-                            rc = i_verifyCertificateFile(pvCertBuf, cbCertFile, pStorage);
-                            if (FAILED(rc)) throw rc;
-                        }
-                    }
+                    rc = i_readTarFileToBuf(pTarIo, strCertFile, &pvCertBuf, &cbCertFile, false, pCallbacks, pStorage);
+                    if (FAILED(rc)) throw rc;
                 }
             }
         }
-        /** @todo else: Verify the manifest! */
+
+        /*
+         * Check the manifest and its (optional) signature if present.
+         */
+        if (hManifestMemFile != NIL_RTVFSFILE)
+        {
+            /* Add the ovf file digest to the verification list. */
+            vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest, OVFfilename.c_str(), m->fSha256 ? "SHA256" : "SHA1",
+                                         m->strOVFSHADigest.c_str(), m->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_IPRT_ERROR, "RTManifestSetAttr failed on '%s' = '%s' (%Rrc)",
+                               OVFfilename.c_str(), m->strOVFSHADigest.c_str(), vrc);
+
+            /* Perform the verifications. */
+            rc = i_verifyManifestFile(strMfFile, stack, hManifestMemFile, OVFfilename.c_str());
+            if (FAILED(rc)) throw rc;
+
+            /* verify the certificate */
+            if (pvCertBuf)
+            {
+                rc = i_verifyCertificateFile(pvCertBuf, cbCertFile, pStorage);
+                if (FAILED(rc)) throw rc;
+            }
+        }
+
     }
     catch (HRESULT rc2)
     {
@@ -1816,8 +1842,8 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     /* Cleanup */
     fssRdOnlyDestroyInterface(pTarIo);
-    if (pvMfBuf)
-        RTMemFree(pvMfBuf);
+    if (hManifestMemFile != NIL_RTVFSFILE)
+        RTVfsFileRelease(hManifestMemFile);
     if (pShaIo)
         RTMemFree(pShaIo);
     if (pvCertBuf)
@@ -2078,40 +2104,80 @@ HRESULT Appliance::i_readTarFileToBuf(PFSSRDONLYINTERFACEIO pTarIo,
     return rc;
 }
 
-HRESULT Appliance::i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack, void *pvBuf, size_t cbSize)
+/**
+ * Undocumented, you figure it from the name.
+ *
+ * @returns Undocumented
+ * @param   strFile             Undocumented.
+ * @param   stack               Undocumented.
+ * @param   hManifestVfsFile    A VFS file object containing the manifest.  This
+ *                              can be a buffered memory file or a read file.
+ * @param   pszOvfEntry         The name of the manifest entry for the OVF (for
+ *                              the ignore hack).
+ */
+HRESULT Appliance::i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack,
+                                        RTVFSFILE hManifestVfsFile, const char *pszOvfEntry)
 {
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", this));
-    HRESULT rc = S_OK;
+    LogFlowThisFuncEnter();
+    HRESULT hrc;
 
-    PRTMANIFESTTEST paTests = (PRTMANIFESTTEST)RTMemAlloc(sizeof(RTMANIFESTTEST) * stack.llSrcDisksDigest.size());
-    if (!paTests)
-        return E_OUTOFMEMORY;
-
-    size_t i = 0;
-    list<STRPAIR>::const_iterator it1;
-    for (it1 = stack.llSrcDisksDigest.begin();
-         it1 != stack.llSrcDisksDigest.end();
-         ++it1, ++i)
+    /*
+     * Parse the manifest file associated with the import.
+     */
+    RTMANIFEST hOvfManifest;
+    int vrc = RTManifestCreate(0 /*fFlags*/, &hOvfManifest);
+    if (RT_SUCCESS(vrc))
     {
-        paTests[i].pszTestFile = (*it1).first.c_str();
-        paTests[i].pszTestDigest = (*it1).second.c_str();
+        char szErr[256];
+        RTVFSIOSTREAM hVfsIosTmp = RTVfsFileToIoStream(hManifestVfsFile);
+        vrc = RTManifestReadStandardEx(hOvfManifest, hVfsIosTmp, szErr, sizeof(szErr));
+        RTVfsIoStrmRelease(hVfsIosTmp);
+        if (RT_SUCCESS(vrc))
+        {
+            /** @todo Do we need to chop paths off the files in any of the manifests before
+             *        comparing? */
+
+            /*
+             * Hack: If the manifest we just read doesn't have a digest for the OVF, copy
+             *       it from the manifest we got from the caller.
+             * @bugref{6022#c119}
+             */
+            if (   !RTManifestEntryExists(hOvfManifest, pszOvfEntry)
+                && RTManifestEntryExists(stack.hSrcDisksManifest, pszOvfEntry) )
+            {
+                uint32_t fType = 0;
+                char szDigest[512 + 1];
+                vrc = RTManifestEntryQueryAttr(stack.hSrcDisksManifest, pszOvfEntry, NULL, RTMANIFEST_ATTR_ANY,
+                                               szDigest, sizeof(szDigest), &fType);
+                if (RT_SUCCESS(vrc))
+                    vrc = RTManifestEntrySetAttr(hOvfManifest, pszOvfEntry,
+                                                 fType == RTMANIFEST_ATTR_SHA256 ? "SHA256" : "SHA1", szDigest, fType);
+            }
+            if (RT_SUCCESS(vrc))
+            {
+                /*
+                 * Compare with the digests we've created while read/processing the import.
+                 */
+                vrc = RTManifestEqualsEx(hOvfManifest, stack.hSrcDisksManifest, NULL /*papszIgnoreEntries*/,
+                                         NULL /*papszIgnoreAttrs*/, 0 /*fFlags*/, szErr, sizeof(szErr));
+                if (RT_SUCCESS(vrc))
+                    hrc = S_OK;
+                else
+                    hrc = setError(VBOX_E_IPRT_ERROR, tr("Digest mismatch (%Rrc): %s"), vrc, szErr);
+            }
+            else
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("Error fudging missing OVF digest in manifest: %Rrc"), vrc);
+        }
+        else
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Error reading manifest (%s): %Rrc - %s"), strFile.c_str(), vrc, szErr);
+
+        RTManifestRelease(hOvfManifest);
     }
-    size_t iFailed;
-    int vrc = RTManifestVerifyFilesBuf(pvBuf, cbSize, paTests, stack.llSrcDisksDigest.size(), &iFailed);
-    if (RT_UNLIKELY(vrc == VERR_MANIFEST_DIGEST_MISMATCH))
-        rc = setError(VBOX_E_FILE_ERROR,
-                      tr("The SHA digest of '%s' does not match the one in '%s' (%Rrc)"),
-                      RTPathFilename(paTests[iFailed].pszTestFile), RTPathFilename(strFile.c_str()), vrc);
-    else if (RT_FAILURE(vrc))
-        rc = setError(VBOX_E_FILE_ERROR,
-                      tr("Could not verify the content of '%s' against the available files (%Rrc)"),
-                      RTPathFilename(strFile.c_str()), vrc);
+    else
+        hrc = Global::vboxStatusCodeToCOM(vrc);
 
-    RTMemFree(paTests);
-    LogFlowFuncLeave();
-
-    return rc;
+    LogFlowThisFuncLeave();
+    return hrc;
 }
 
 HRESULT Appliance::i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORAGE pStorage)
@@ -2364,10 +2430,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
     /* Get the system properties. */
     SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
 
-    /*
-     * we put strSourceOVF into the stack.llSrcDisksDigest in the end of this
-     * function like a key for a later validation of the SHA digests
-     */
+    /* Keep the source file ref handy for later. */
     const Utf8Str &strSourceOVF = di.strHref;
 
     Utf8Str strSrcFilePath(stack.strSourceDir);
@@ -2668,7 +2731,17 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
     /* Add the newly create disk path + a corresponding digest the our list for
      * later manifest verification. */
-    stack.llSrcDisksDigest.push_back(STRPAIR(strSourceOVF, pStorage ? pStorage->strDigest : ""));
+    if (pStorage) /** @todo figure out when this undocumented parameter could be NULL and what implications it has.  */
+    {
+        vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest,
+                                     strSourceOVF.c_str(),
+                                     pStorage->fSha256 ? "SHA256" : "SHA1",
+                                     pStorage->strDigest.c_str(),
+                                     pStorage->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_IPRT_ERROR, "RTManifestSetAttr failed on '%s' = '%s' (%Rrc)",
+                           strSourceOVF.c_str(), pStorage->strDigest.c_str(), vrc);
+    }
 }
 
 /**

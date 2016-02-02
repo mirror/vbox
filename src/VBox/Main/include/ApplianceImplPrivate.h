@@ -25,6 +25,7 @@ class VirtualSystemDescription;
 #include "ThreadTask.h"
 #include <map>
 #include <vector>
+#include <iprt/manifest.h>
 #include <iprt/vfs.h>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -166,7 +167,7 @@ public:
 
     void handler()
     {
-        int vrc = Appliance::i_taskThreadImportOrExport(NULL, this);
+        int vrc = Appliance::i_taskThreadImportOrExport(NULL, this); NOREF(vrc);
     }
 };
 
@@ -212,7 +213,7 @@ struct Appliance::ImportStack
     // a list of images that we created/imported; this is initially empty
     // and will be cleaned up on errors
     std::list<MyHardDiskAttachment> llHardDiskAttachments;      // disks that were attached
-    std::list<STRPAIR>              llSrcDisksDigest;           // Digests of the source disks
+    RTMANIFEST                      hSrcDisksManifest;  /**< Manifest we build while processing/reading the source disks. */
     std::map<Utf8Str , Utf8Str> mapNewUUIDsToOriginalUUIDs;
 
     ImportStack(const LocationInfo &aLocInfo,
@@ -225,12 +226,22 @@ struct Appliance::ImportStack
           fForceHWVirt(false),
           fForceIOAPIC(false),
           ulMemorySizeMB(0),
-          fSessionOpen(false)
+          fSessionOpen(false),
+          hSrcDisksManifest(NIL_RTMANIFEST)
     {
         // disk images have to be on the same place as the OVF file. So
         // strip the filename out of the full file path
         strSourceDir = aLocInfo.strPath;
         strSourceDir.stripFilename();
+    }
+
+    ~ImportStack()
+    {
+        if (hSrcDisksManifest != NIL_RTMANIFEST)
+        {
+            RTManifestRelease(hSrcDisksManifest);
+            hSrcDisksManifest = NIL_RTMANIFEST;
+        }
     }
 
     HRESULT restoreOriginalUUIDOfAttachedDevice(settings::MachineConfigFile *config);
@@ -286,6 +297,8 @@ typedef struct FSSRDONLYINTERFACEIO *PFSSRDONLYINTERFACEIO;
 int  fssRdOnlyCreateInterfaceForTarFile(const char *pszFilename, PFSSRDONLYINTERFACEIO *pTarIo);
 void fssRdOnlyDestroyInterface(PFSSRDONLYINTERFACEIO pFssIo);
 int  fssRdOnlyGetCurrentName(PFSSRDONLYINTERFACEIO pFssIo, const char **ppszName);
+bool fssRdOnlyEqualsCurrentFilename(PFSSRDONLYINTERFACEIO pFssIo, com::Utf8Str const &rstrFilename);
+int  fssRdOnlyMemorizeCurrentAsFile(PFSSRDONLYINTERFACEIO pFssIo, PRTVFSFILE phVfsFile);
 int  fssRdOnlySkipCurrent(PFSSRDONLYINTERFACEIO pFssIo);
 bool fssRdOnlyIsCurrentDirectory(PFSSRDONLYINTERFACEIO pFssIo);
 
