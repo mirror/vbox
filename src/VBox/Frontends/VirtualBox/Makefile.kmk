@@ -1065,7 +1065,6 @@ VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
 	src/platform/darwin/PkgInfo \
 	$(VirtualBox.app_0_OUTDIR)/Info.plist \
-	$(VirtualBox.app_0_OUTDIR)/qt.conf=>Resources/qt.conf \
 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns \
 	$(VBOX_BRAND_GUI_VBOX_64PX_PNG)=>Resources/virtualbox.png \
 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
@@ -1076,6 +1075,12 @@ VirtualBox.app_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vmdk.icns=>Resources/virtualbox-vmdk.icns \
 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vhd.icns=>Resources/virtualbox-vhd.icns \
 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-hdd.icns=>Resources/virtualbox-hdd.icns
+
+ifneq ($(VBOX_WITH_QTGUI_V5),)
+ # Qt5 requires qt.conf on Mac OS X:
+ VirtualBox.app_SOURCES += \
+ 	$(VirtualBox.app_0_OUTDIR)/qt.conf=>Resources/qt.conf
+endif # VBOX_WITH_QTGUI_V5
 
 $$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
