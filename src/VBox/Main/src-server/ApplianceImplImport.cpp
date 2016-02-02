@@ -1536,8 +1536,8 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             i_importMachines(stack, pShaIo, &storage);
 
             /* Add the digest of the ovf to our verification manifest. */
-            vrc = RTManifestSetAttr(stack.hSrcDisksManifest, RTPathFilename(pTask->locInfo.strPath.c_str()),
-                                    m->strOVFSHADigest.c_str(), m->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
+            vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest, RTPathFilename(pTask->locInfo.strPath.c_str()),
+                                         m->strOVFSHADigest.c_str(), m->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_IPRT_ERROR, "Adding OVF digest failed (%Rrc)", vrc);
 
