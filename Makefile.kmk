@@ -222,6 +222,10 @@ else # VBOX_WITH_QTGUI_V5
     qt5-bin_INST = $(INST_BIN)
     qt5-bin_SOURCES = \
      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/bin/$(qtmod)$(SUFF_DLL)))
+    qt5-bin_SOURCES += \
+     $(PATH_SDK_QT5)/plugins/platforms/qwindows$(SUFF_DLL)=>platforms/qwindows$(SUFF_DLL) \
+     $(PATH_SDK_QT5)/plugins/platforms/qminimal$(SUFF_DLL)=>platforms/qminimal$(SUFF_DLL) \
+     $(PATH_SDK_QT5)/plugins/platforms/qoffscreen$(SUFF_DLL)=>platforms/qoffscreen$(SUFF_DLL)
     ifdef VBOX_WITH_QT_PDBS
      qt5-bin_SOURCES += \
       $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/$(qtmod).pdb)
