@@ -3617,7 +3617,6 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
         return IEM_CIMPL_CALL_1(iemCImpl_iret_real_v8086, enmEffOpSize);
     if (IEM_IS_LONG_MODE(pIemCpu))
         return IEM_CIMPL_CALL_1(iemCImpl_iret_long, enmEffOpSize);
-
     return     IEM_CIMPL_CALL_1(iemCImpl_iret_prot, enmEffOpSize);
 }
 

@@ -7654,9 +7654,12 @@ IEM_STATIC VBOXSTRICTRC iemMemStackPushU32SReg(PIEMCPU pIemCpu, uint32_t u32Valu
            value.  My actual intel CPU here might be zero extending the value
            but it still only writes the lower word... */
         /** @todo Test this on new HW and on AMD and in 64-bit mode.  Also test what
-         *        happens when crossing an electric page boundrary, is the high word
-         *        checked for write accessibility or not? Probably it is.  What about
-         *        segment limits? */
+         * happens when crossing an electric page boundrary, is the high word checked
+         * for write accessibility or not? Probably it is.  What about segment limits?
+         * It appears this behavior is also shared with trap error codes.
+         *
+         * Docs indicate the behavior changed maybe in Pentium or Pentium Pro. Check
+         * ancient hardware when it actually did change. */
         uint16_t *pu16Dst;
         rc = iemMemMap(pIemCpu, (void **)&pu16Dst, sizeof(uint32_t), X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_RW);
         if (rc == VINF_SUCCESS)
