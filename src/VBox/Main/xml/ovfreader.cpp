@@ -661,9 +661,9 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             <rasd:Address>0</rasd:Address>
                             <rasd:BusNumber>0</rasd:BusNumber>
                         </Item> */
-                        if (    i.strCaption.startsWith("sataController", RTCString::CaseInsensitive)
-                             && !i.strResourceSubType.compare("AHCI", RTCString::CaseInsensitive)
-                           )
+                        if (   (   i.strCaption.startsWith("sataController", RTCString::CaseInsensitive) /** @todo r=bird: 'Caption' sounds user settable so this looks plain wrong. tdAppliance1-t4.ova has an empty caption. */
+                                && i.strResourceSubType.compare("AHCI", RTCString::CaseInsensitive) == 0)
+                            || i.strResourceSubType.compare("vmware.sata.ahci", RTCString::CaseInsensitive) == 0)
                         {
                             HardDiskController hdc;
                             hdc.system = HardDiskController::SATA;
@@ -673,10 +673,10 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             vsys.mapControllers[i.ulInstanceID] = hdc;
                         }
                         else
-                            throw OVFLogicError(N_("Error reading \"%s\": Host resource of type \"Other Storage Device (%d)\" is supported with SATA AHCI controllers only, line %d"),
+                            throw OVFLogicError(N_("Error reading \"%s\": Host resource of type \"Other Storage Device (%d)\" is supported with SATA AHCI controllers only, line %d (caption:%s; subtype:%s)"),
                                                 m_strPath.c_str(),
                                                 ResourceType_OtherStorageDevice,
-                                                i.ulLineNumber);
+                                                i.ulLineNumber, i.strCaption.c_str(), i.strResourceSubType.c_str() );
                         break;
                     }
 
