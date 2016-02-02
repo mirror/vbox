@@ -88,7 +88,7 @@
 
 /** For use with AssertLogRel except a_Expr1 from assertions but not LogRel. */
 #ifdef RT_STRICT
-# define VBPS_LOGREL_NO_ASSERT(a_Expr1) (a_Expr)
+# define VBPS_LOGREL_NO_ASSERT(a_Expr) (a_Expr)
 #else
 # define VBPS_LOGREL_NO_ASSERT false
 #endif
@@ -1437,7 +1437,7 @@ static void vbpsUpdateInterfaceRegistrations(VBPSREGSTATE *pState)
     Assert(pState->fUpdate && !pState->fDelete);
     rc = vbpsRegOpenInterfaceKeys(pState);
     if (rc != ERROR_SUCCESS)
-        return rc;
+        return;
 
     /*
      * We walk the proxy file list (even if we only have one).
