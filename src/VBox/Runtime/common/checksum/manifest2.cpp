@@ -1317,26 +1317,31 @@ RTDECL(int) RTManifestReadStandardEx(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos
         /*
          * Read the attribute name.
          */
+        char ch;
         const char * const pszAttr = psz;
         do
             psz++;
-        while (!RT_C_IS_BLANK(*psz) && *psz);
-        if (*psz)
+        while (!RT_C_IS_BLANK((ch = *psz)) && ch && ch != '(');
+        if (ch)
             *psz++ = '\0';
 
         /*
          * The entry name is enclosed in parenthesis and followed by a '='.
          */
-        psz = RTStrStripL(psz);
-        if (*psz != '(')
+        if (ch != '(')
         {
-            RTStrPrintf(pszErr, cbErr, "Expected '(' after %zu on line %u", psz - szLine, iLine);
-            return VERR_PARSE_ERROR;
+            psz = RTStrStripL(psz);
+            ch = *psz++;
+            if (ch != '(')
+            {
+                RTStrPrintf(pszErr, cbErr, "Expected '(' after %zu on line %u", psz - szLine - 1, iLine);
+                return VERR_PARSE_ERROR;
+            }
         }
-        const char * const pszName = ++psz;
-        while (*psz)
+        const char * const pszName = psz;
+        while ((ch = *psz) != '\0')
         {
-            if (*psz == ')')
+            if (ch == ')')
             {
                 char *psz2 = RTStrStripL(psz + 1);
                 if (*psz2 == '=')
