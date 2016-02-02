@@ -86,6 +86,13 @@
                   ((PKUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)->NtMajorVersion) >= RT_MAKE_U64(1/*Lo*/,6/*Hi*/) \
       ? "VBoxProxyStub.dll" : "VBoxProxyStubLegacy.dll" )
 
+/** For use with AssertLogRel except a_Expr1 from assertions but not LogRel. */
+#ifdef RT_STRICT
+# define VBPS_LOGREL_NO_ASSERT(a_Expr1) (a_Expr)
+#else
+# define VBPS_LOGREL_NO_ASSERT false
+#endif
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -224,7 +231,7 @@ HRESULT STDAPICALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID riid, void **pp
      * liking the output of MIDL 7.00.0555 (from the v7.1 SDK), despite
      * /target being set to NT51.
      */
-    AssertMsg(hrc == S_OK, ("%Rhrc\n",  hrc));
+    AssertLogRelMsg(hrc == S_OK, ("%Rhrc\n",  hrc));
     return hrc;
 }
 
@@ -412,10 +419,10 @@ static LSTATUS vbpsRegInit(VBPSREGSTATE *pState, HKEY hkeyRoot, const char *pszS
 
         /* Ignore access denied errors as these may easily happen for
            non-admin users. Just give up when this happens */
-        AssertMsgReturn(rc == ERROR_ACCESS_DENIED, ("%u\n", rc), pState->rc = rc);
+        AssertLogRelMsgReturn(rc == ERROR_ACCESS_DENIED, ("%u\n", rc), pState->rc = rc);
     }
     else
-        AssertMsgReturn(rc == ERROR_ACCESS_DENIED, ("%u\n", rc), pState->rc = rc);
+       AssertLogRelMsgReturn(rc == ERROR_ACCESS_DENIED, ("%u\n", rc), pState->rc = rc);
     return pState->rc = rc;
 }
 
@@ -512,7 +519,7 @@ static LSTATUS vbpsRegAddAltDelete(VBPSREGSTATE *pState, HKEY hkeyAltRoot, const
             pState->cAltDeletes = i + 1;
             return ERROR_SUCCESS;
         }
-        AssertMsgFailed(("%u\n", rc));
+        AssertLogRelMsgFailed(("%u\n", rc));
         RegCloseKey(pState->aAltDeletes[i].hkeyClasses);
     }
     /* No need to add non-existing alternative roots, nothing to delete in the void. */
@@ -520,7 +527,7 @@ static LSTATUS vbpsRegAddAltDelete(VBPSREGSTATE *pState, HKEY hkeyAltRoot, const
         rc = ERROR_SUCCESS;
     else
     {
-        AssertMsgFailed(("%u\n", rc));
+        AssertLogRelMsgFailed(("%u (%#x %s)\n", rc));
         pState->rc = rc;
     }
 
@@ -555,7 +562,7 @@ static LSTATUS vbpsRegOpenInterfaceKeys(VBPSREGSTATE *pState)
         else
             rc = RegOpenKeyExW(pState->hkeyClassesRootDst, L"Interface", 0 /*fOptions*/, pState->fSamBoth,
                                &pState->hkeyClsidRootDst);
-        AssertMsgReturnStmt(rc == ERROR_SUCCESS, ("%u\n", rc), pState->hkeyInterfaceRootDst = NULL,  pState->rc = rc);
+        AssertLogRelMsgReturnStmt(rc == ERROR_SUCCESS, ("%u\n", rc), pState->hkeyInterfaceRootDst = NULL,  pState->rc = rc);
     }
 
     /*
@@ -569,7 +576,7 @@ static LSTATUS vbpsRegOpenInterfaceKeys(VBPSREGSTATE *pState)
                                &pState->aAltDeletes[i].hkeyInterface);
             if (rc != ERROR_SUCCESS)
             {
-                AssertMsgStmt(rc == ERROR_FILE_NOT_FOUND, ("%u\n", rc), pState->rc = rc);
+                AssertMsgStmt(rc == ERROR_FILE_NOT_FOUND || ERROR_ACCESS_DENIED, ("%u\n", rc), pState->rc = rc);
                 pState->aAltDeletes[i].hkeyInterface = NULL;
             }
         }
@@ -701,7 +708,8 @@ static LSTATUS vbpsSetRegValueWW(VBPSREGSTATE *pState, HKEY hkey, PCRTUTF16 pwsz
         return ERROR_SUCCESS;
     }
 
-    AssertMsgFailed(("%d: '%ls'='%ls' -> %u\n", uLine, pwszValueNm, pwszValue, rc));
+    AssertLogRelMsg(VBPS_LOGREL_NO_ASSERT(rc == ERROR_ACCESS_DENIED),
+                    ("%d: '%ls'='%ls' -> %u\n", uLine, pwszValueNm, pwszValue, rc));
     pState->rc = rc;
     return rc;
 }
@@ -767,7 +775,8 @@ static LSTATUS vbpsSetRegValueAA(VBPSREGSTATE *pState, HKEY hkey, const char *ps
         return ERROR_SUCCESS;
     }
 
-    AssertMsgFailed(("%d: '%s'='%s' -> %u\n", uLine, pszValueNm, pszValue, rc));
+    AssertLogRelMsg(VBPS_LOGREL_NO_ASSERT(rc == ERROR_ACCESS_DENIED),
+                    ("%d: '%s'='%s' -> %u\n", uLine, pszValueNm, pszValue, rc));
     pState->rc = rc;
     return rc;
 }
@@ -787,7 +796,7 @@ static LSTATUS vbpsCloseKey(VBPSREGSTATE *pState, HKEY hkey, unsigned uLine)
     if (rc == ERROR_SUCCESS)
         return ERROR_SUCCESS;
 
-    AssertMsgFailed(("%d: close key -> %u\n", uLine, rc));
+    AssertLogRelMsgFailed(("%d: close key -> %u\n", uLine, rc));
     pState->rc = rc;
     return rc;
 }
@@ -821,7 +830,8 @@ static LSTATUS vbpsCreateRegKeyA(VBPSREGSTATE *pState, HKEY hkeyParent, const ch
     }
     else
     {
-        AssertMsgFailed(("%d: create key '%s' -> %u\n", uLine, pszKey,  rc));
+        AssertLogRelMsg(VBPS_LOGREL_NO_ASSERT(rc == ERROR_ACCESS_DENIED),
+                        ("%d: create key '%s' -> %u\n", uLine, pszKey,  rc));
         pState->rc = rc;
         *phkey = NULL;
     }
@@ -852,7 +862,8 @@ static LSTATUS vbpsCreateRegKeyWithDefaultValueAA(VBPSREGSTATE *pState, HKEY hke
     }
     else
     {
-        AssertMsgFailed(("%d: create key '%s'(/Default='%s') -> %u\n", uLine, pszKey, pszValue, rc));
+        AssertLogRelMsg(VBPS_LOGREL_NO_ASSERT(rc == ERROR_ACCESS_DENIED),
+                        ("%d: create key '%s'(/Default='%s') -> %u\n", uLine, pszKey, pszValue, rc));
         pState->rc = rc;
     }
     return rc;
@@ -882,7 +893,8 @@ static LSTATUS vbpsCreateRegKeyWithDefaultValueAW(VBPSREGSTATE *pState, HKEY hke
     }
     else
     {
-        AssertMsgFailed(("%d: create key '%s'(/Default='%ls') -> %u\n", uLine, pszKey, pwszValue, rc));
+        AssertLogRelMsg(VBPS_LOGREL_NO_ASSERT(rc == ERROR_ACCESS_DENIED),
+                        ("%d: create key '%s'(/Default='%ls') -> %u\n", uLine, pszKey, pwszValue, rc));
         pState->rc = rc;
     }
     return rc;
@@ -913,7 +925,8 @@ static LSTATUS vbpsCreateRegKeyWithDefaultValueAAEx(VBPSREGSTATE *pState, HKEY h
     }
     else
     {
-        AssertMsgFailed(("%d: create key '%s'(/Default='%s') -> %u\n", uLine, pszKey, pszValue, rc));
+        AssertLogRelMsg(VBPS_LOGREL_NO_ASSERT(rc == ERROR_ACCESS_DENIED),
+                        ("%d: create key '%s'(/Default='%s') -> %u\n", uLine, pszKey, pszValue, rc));
         pState->rc = rc;
         *phkey = NULL;
     }
@@ -954,7 +967,8 @@ static LSTATUS vbpsDeleteKeyRecursiveA(VBPSREGSTATE *pState, HKEY hkeyParent, co
     if (rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND)
         return ERROR_SUCCESS;
 
-    AssertMsgFailed(("%d: delete key '%s' -> %u\n", uLine, pszKey, rc));
+    AssertLogRelMsg(VBPS_LOGREL_NO_ASSERT(rc == ERROR_ACCESS_DENIED),
+                    ("%d: delete key '%s' -> %u\n", uLine, pszKey, rc));
     pState->rc = rc;
     return rc;
 }
@@ -993,7 +1007,8 @@ static LSTATUS vbpsDeleteKeyRecursiveW(VBPSREGSTATE *pState, HKEY hkeyParent, PC
     if (rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND)
         return ERROR_SUCCESS;
 
-    AssertMsgFailed(("%d: delete key '%ls' -> %u\n", uLine, pwszKey, rc));
+    AssertLogRelMsg(VBPS_LOGREL_NO_ASSERT(rc == ERROR_ACCESS_DENIED),
+                    ("%d: delete key '%ls' -> %u\n", uLine, pwszKey, rc));
     pState->rc = rc;
     return rc;
 }
@@ -1022,7 +1037,7 @@ LSTATUS VbpsRegisterAppId(VBPSREGSTATE *pState, const char *pszAppId, const char
         while (i-- > 0)
         {
             rc = RegOpenKeyExW(pState->aAltDeletes[i].hkeyClasses, L"AppID", 0 /*fOptions*/, pState->fSamDelete, &hkeyAppIds);
-            AssertMsgStmt(rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND, ("%u\n", rc), pState->rc = rc);
+            AssertLogRelMsgStmt(rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND, ("%u\n", rc), pState->rc = rc);
             if (rc == ERROR_SUCCESS)
             {
                 vbpsDeleteKeyRecursiveA(pState, hkeyAppIds, pszAppId, __LINE__);
@@ -1041,7 +1056,7 @@ LSTATUS VbpsRegisterAppId(VBPSREGSTATE *pState, const char *pszAppId, const char
         if (rc == ERROR_FILE_NOT_FOUND)
             return ERROR_SUCCESS;
     }
-    AssertMsgReturn(rc == ERROR_SUCCESS, ("%u\n", rc), pState->rc = rc);
+    AssertLogRelMsgReturn(rc == ERROR_SUCCESS, ("%u\n", rc), pState->rc = rc);
 
     if (pState->fDelete)
         vbpsDeleteKeyRecursiveA(pState, hkeyAppIds, pszAppId, __LINE__);
@@ -1314,7 +1329,8 @@ static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVB
 
     /* Open Classes/TypeLib/. */
     rc = vbpsCreateRegKeyA(pState, pState->hkeyClassesRootDst, "TypeLib", &hkeyTypeLibs, __LINE__);
-    AssertReturnVoid(rc == ERROR_SUCCESS);
+    if (rc != ERROR_SUCCESS)
+        return;
 
     /* Create TypeLib/{UUID}. */
     rc = vbpsCreateRegKeyA(pState, hkeyTypeLibs, vbpsFormatUuidInCurly(szTypeLibId, &LIBID_VirtualBox), &hkeyTypeLibId, __LINE__);
@@ -1420,7 +1436,8 @@ static void vbpsUpdateInterfaceRegistrations(VBPSREGSTATE *pState)
 
     Assert(pState->fUpdate && !pState->fDelete);
     rc = vbpsRegOpenInterfaceKeys(pState);
-    AssertReturnVoid(rc == ERROR_SUCCESS);
+    if (rc != ERROR_SUCCESS)
+        return rc;
 
     /*
      * We walk the proxy file list (even if we only have one).
@@ -1449,8 +1466,6 @@ static void vbpsUpdateInterfaceRegistrations(VBPSREGSTATE *pState)
 
             AssertReturnVoidStmt(cMethods >= 3 && cMethods < 1024, pState->rc = ERROR_INVALID_DATA);
             sprintf(szMethods, "%u", cMethods);
-
-            AssertReturnVoid(rc == ERROR_SUCCESS);
 
             rc = vbpsCreateRegKeyWithDefaultValueAAEx(pState, pState->hkeyInterfaceRootDst,
                                                       vbpsFormatUuidInCurly(szIfId, papStubVtbls[iIf]->header.piid),
