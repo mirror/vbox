@@ -1537,7 +1537,7 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
             /* Add the digest of the ovf to our verification manifest. */
             vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest, RTPathFilename(pTask->locInfo.strPath.c_str()),
-                                         m->fSha256 ? "SHA256" : "SHA1", m->strOVFSHADigest.c_str(),
+                                         NULL /*pszAttr*/, m->strOVFSHADigest.c_str(),
                                          m->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_IPRT_ERROR, "Adding OVF digest failed (%Rrc)", vrc);
@@ -1796,7 +1796,7 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         if (hManifestMemFile != NIL_RTVFSFILE)
         {
             /* Add the ovf file digest to the verification list. */
-            vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest, OVFfilename.c_str(), m->fSha256 ? "SHA256" : "SHA1",
+            vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest, OVFfilename.c_str(), NULL /*pszAttr*/,
                                          m->strOVFSHADigest.c_str(), m->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_IPRT_ERROR, "RTManifestSetAttr failed on '%s' = '%s' (%Rrc)",
@@ -2151,8 +2151,7 @@ HRESULT Appliance::i_verifyManifestFile(const Utf8Str &strFile, ImportStack &sta
                 vrc = RTManifestEntryQueryAttr(stack.hSrcDisksManifest, pszOvfEntry, NULL, RTMANIFEST_ATTR_ANY,
                                                szDigest, sizeof(szDigest), &fType);
                 if (RT_SUCCESS(vrc))
-                    vrc = RTManifestEntrySetAttr(hOvfManifest, pszOvfEntry,
-                                                 fType == RTMANIFEST_ATTR_SHA256 ? "SHA256" : "SHA1", szDigest, fType);
+                    vrc = RTManifestEntrySetAttr(hOvfManifest, pszOvfEntry, NULL /*pszAttr*/, szDigest, fType);
             }
             if (RT_SUCCESS(vrc))
             {
@@ -2736,7 +2735,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
     {
         vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest,
                                      strSourceOVF.c_str(),
-                                     pStorage->fSha256 ? "SHA256" : "SHA1",
+                                     NULL /*pszAttr*/,
                                      pStorage->strDigest.c_str(),
                                      pStorage->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
         if (RT_FAILURE(vrc))
