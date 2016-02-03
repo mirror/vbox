@@ -217,11 +217,6 @@ private:
 
 /* Platform-specific */
 
-#ifdef RT_OS_WINDOWS
 void createBugReportOsSpecific(BugReport* report, const char *pszHome);
-#else /* !RT_OS_WINDOWS */
-/* @todo Replace with platform-specific implementations. */
-void createBugReportOsSpecific(BugReport* report, const char *pszHome) {}
-#endif /* !RT_OS_WINDOWS */
 
 #endif /* !___H_VBOXBUGREPORT */

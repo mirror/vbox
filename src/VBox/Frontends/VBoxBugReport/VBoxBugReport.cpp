@@ -43,14 +43,9 @@
 /* Implementation - Base */
 
 #ifndef RT_OS_WINDOWS
-/*
- * Generic item factory.
- *
- * @todo remove when enough platforms implemented.
- */
-BugReportItemFactory *createBugReportItemFactory(void)
+/* @todo Replace with platform-specific implementations. */
+void createBugReportOsSpecific(BugReport* report, const char *pszHome)
 {
-    return new BugReportItemFactory;
 }
 #endif /* !RT_OS_WINDOWS */
 
