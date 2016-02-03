@@ -363,6 +363,7 @@ private:
                                uint8_t *aCiphertext,
                                size_t aPlaintextSize,
                                size_t aCiphertextSize) const;
+    void i_reportDriverVersions(void);
 
     struct Data;            // opaque data structure, defined in VirtualBoxImpl.cpp
 
