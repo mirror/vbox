@@ -22,6 +22,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN
 #define PROXY_DELEGATION                                                                             /* see generated dlldata.c */
 #include <iprt/nt/nt-and-windows.h>
 #include <rpcproxy.h>
@@ -29,6 +30,7 @@
 #include <stdio.h>
 
 #include "VirtualBox.h"
+#include <VBox/log.h>
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
@@ -90,7 +92,7 @@
 #ifdef RT_STRICT
 # define VBPS_LOGREL_NO_ASSERT(a_Expr) (a_Expr)
 #else
-# define VBPS_LOGREL_NO_ASSERT false
+# define VBPS_LOGREL_NO_ASSERT(a_Expr) false
 #endif
 
 
