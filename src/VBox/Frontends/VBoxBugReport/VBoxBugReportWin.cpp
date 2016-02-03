@@ -50,16 +50,7 @@ private:
     void collectNetCfgComponentInfo(int ident, bool fEnabled, INetCfgComponent *pComponent);
 };
 
-class BugReportItemFactoryWin : public BugReportItemFactory
-{
-public:
-    virtual BugReportItem *createNetworkAdapterReport(void) { return new BugReportNetworkAdaptersWin; };
-};
 
-BugReportItemFactory *createBugReportItemFactory(void)
-{
-    return new BugReportItemFactoryWin;
-}
 
 void BugReportNetworkAdaptersWin::printCharteristics(DWORD dwChars)
 {
@@ -223,4 +214,19 @@ void BugReportNetworkAdaptersWin::collect(void)
         throw;
     }
             
+}
+
+void createBugReportOsSpecific(BugReport* report, const char *pszHome)
+{
+    TCHAR szWinDir[MAX_PATH];
+
+    int cbNeeded = GetWindowsDirectory(szWinDir, RT_ELEMENTS(szWinDir));
+    if (cbNeeded == 0)
+        throw RTCError(RTCStringFmt("Failed to get Windows directory (err=%d)\n", GetLastError()));
+    if (cbNeeded > MAX_PATH)
+        throw RTCError(RTCStringFmt("Failed to get Windows directory (needed %d-byte buffer)\n", cbNeeded));
+    RTCStringFmt WinInfDir("%ls/inf", szWinDir);
+    report->addItem(new BugReportFile(PathJoin(WinInfDir.c_str(), "setupapi.app.log"), "setupapi.app.log"));
+    report->addItem(new BugReportFile(PathJoin(WinInfDir.c_str(), "setupapi.dev.log"), "setupapi.dev.log"));
+    report->addItem(new BugReportNetworkAdaptersWin);
 }

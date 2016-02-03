@@ -119,19 +119,6 @@ MachineInfo::~MachineInfo()
 
 typedef std::list<MachineInfo*> MachineInfoList;
 
-/*
- * An auxiliary class to facilitate in-place path joins.
- */
-class PathJoin
-{
-public:
-    PathJoin(const char *folder, const char *file) { m_path = RTPathJoinA(folder, file); }
-    ~PathJoin() { RTStrFree(m_path); };
-    operator char*() const { return m_path; };
-private:
-    char *m_path;
-};
-
 
 /*
  * An abstract class serving as the root of the bug report item tree.
@@ -223,7 +210,7 @@ BugReportFile::~BugReportFile()
 
 PRTSTREAM BugReportFile::getStream(void)
 {
-    handleRtError(RTStrmOpen(m_pszPath, "r", &m_Strm),
+    handleRtError(RTStrmOpen(m_pszPath, "rb", &m_Strm),
                   "Failed to open '%s'", m_pszPath);
     return m_Strm;
 }
@@ -457,8 +444,6 @@ void BugReportTarGzip::complete(void)
 
 void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& machines)
 {
-    BugReportItemFactory *factory = createBugReportItemFactory();
-
     report->addItem(new BugReportFile(PathJoin(pszHome, "VBoxSVC.log"), "VBoxSVC.log"));
     report->addItem(new BugReportFile(PathJoin(pszHome, "VBoxSVC.log.1"), "VBoxSVC.log.1"));
     report->addItem(new BugReportFile(PathJoin(pszHome, "VirtualBox.xml"), "VirtualBox.xml"));
@@ -472,9 +457,8 @@ void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& ma
                                             g_pszVBoxManage, "guestproperty", "enumerate",
                                             (*it)->getName(), NULL));
     }
-    report->addItem(factory->createNetworkAdapterReport());
 
-    delete factory;
+    createBugReportOsSpecific(report, pszHome);
 }
 
 void addMachine(MachineInfoList& list, ComPtr<IMachine> machine)
