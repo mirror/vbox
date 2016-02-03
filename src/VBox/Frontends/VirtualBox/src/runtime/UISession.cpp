@@ -1721,8 +1721,23 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
                            (uint32_t *)image.bits(), uHeight * uWidth * 4);
     }
 
+    /* Create cursor-pixmap from the image: */
+    QPixmap cursorPixmap = QPixmap::fromImage(image);
+# ifdef Q_WS_MAC
+#  ifdef VBOX_GUI_WITH_HIDPI
+    /* Adjust-backing-scale-factor: */
+    // TODO: In case of multi-monitor setup check whether backing-scale factor and cursor are screen specific.
+    /* Get screen-id of main-window: */
+    const ulong uScreenID = machineLogic()->activeMachineWindow()->screenId();
+    /* Get backing-scale-factor: */
+    const double dBackingScaleFactor = frameBuffer(uScreenID)->backingScaleFactor();
+    /* Adjust-backing-scale-factor if necessary: */
+    if (dBackingScaleFactor > 1.0 && frameBuffer(uScreenID)->useUnscaledHiDPIOutput())
+        cursorPixmap.setDevicePixelRatio(dBackingScaleFactor);
+#  endif /* VBOX_GUI_WITH_HIDPI */
+# endif /* Q_WS_MAC */
     /* Set the new cursor: */
-    m_cursor = QCursor(QPixmap::fromImage(image), uXHot, uYHot);
+    m_cursor = QCursor(cursorPixmap, uXHot, uYHot);
     m_fIsValidPointerShapePresent = true;
     NOREF(srcShapePtrScan);
 
