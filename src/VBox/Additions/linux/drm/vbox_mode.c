@@ -71,7 +71,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
     struct vbox_crtc   *vbox_crtc = to_vbox_crtc(crtc);
     struct vbox_private *vbox;
     int width, height, cBPP, pitch;
-    unsigned iCrtc;
+    unsigned crtc_id;
     uint16_t fFlags;
 
     LogFunc(("vboxvideo: %d: vbox_crtc=%p, CRTC_FB(crtc)=%p\n", __LINE__,
@@ -79,7 +79,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
     vbox = crtc->dev->dev_private;
     width = mode->hdisplay ? mode->hdisplay : 640;
     height = mode->vdisplay ? mode->vdisplay : 480;
-    iCrtc = vbox_crtc->crtc_id;
+    crtc_id = vbox_crtc->crtc_id;
     cBPP = crtc->enabled ? CRTC_FB(crtc)->bits_per_pixel : 32;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
     pitch = crtc->enabled ? CRTC_FB(crtc)->pitch : width * cBPP / 8;
@@ -92,13 +92,13 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
                                   crtc->x, crtc->y); */
     fFlags = VBVA_SCREEN_F_ACTIVE;
     fFlags |= (crtc->enabled ? 0 : VBVA_SCREEN_F_DISABLED);
-    VBoxHGSMIProcessDisplayInfo(&vbox->Ctx, vbox_crtc->crtc_id,
+    VBoxHGSMIProcessDisplayInfo(&vbox->submit_info, vbox_crtc->crtc_id,
                                 crtc->x, crtc->y,
                                 crtc->x * cBPP / 8 + crtc->y * pitch,
                                 pitch, width, height,
-                                vbox_crtc->fBlanked ? 0 : cBPP, fFlags);
-    VBoxHGSMIReportFlagsLocation(&vbox->Ctx, vbox->offHostFlags);
-    VBoxHGSMISendCapsInfo(&vbox->Ctx, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
+                                vbox_crtc->blanked ? 0 : cBPP, fFlags);
+    VBoxHGSMIReportFlagsLocation(&vbox->submit_info, vbox->host_flags_offset);
+    VBoxHGSMISendCapsInfo(&vbox->submit_info, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
@@ -117,18 +117,18 @@ static int vbox_set_view(struct drm_crtc *crtc)
      * second and so on.  The first match wins.  We cheat around this by making
      * the first view be the managed memory plus the first command buffer, the
      * second the same plus the second buffer and so on. */
-    p = VBoxHGSMIBufferAlloc(&vbox->Ctx, sizeof(VBVAINFOVIEW), HGSMI_CH_VBVA,
+    p = VBoxHGSMIBufferAlloc(&vbox->submit_info, sizeof(VBVAINFOVIEW), HGSMI_CH_VBVA,
                              VBVA_INFO_VIEW);
     if (p)
     {
         VBVAINFOVIEW *pInfo = (VBVAINFOVIEW *)p;
         pInfo->u32ViewIndex = vbox_crtc->crtc_id;
-        pInfo->u32ViewOffset = vbox_crtc->offFB;
-        pInfo->u32ViewSize =   vbox->vram_size - vbox_crtc->offFB
+        pInfo->u32ViewOffset = vbox_crtc->fb_offset;
+        pInfo->u32ViewSize =   vbox->vram_size - vbox_crtc->fb_offset
                              + vbox_crtc->crtc_id * VBVA_MIN_BUFFER_SIZE;
-        pInfo->u32MaxScreenSize = vbox->vram_size - vbox_crtc->offFB;
-        VBoxHGSMIBufferSubmit(&vbox->Ctx, p);
-        VBoxHGSMIBufferFree(&vbox->Ctx, p);
+        pInfo->u32MaxScreenSize = vbox->vram_size - vbox_crtc->fb_offset;
+        VBoxHGSMIBufferSubmit(&vbox->submit_info, p);
+        VBoxHGSMIBufferFree(&vbox->submit_info, p);
     }
     else
         return -ENOMEM;
@@ -151,12 +151,12 @@ static void vbox_crtc_dpms(struct drm_crtc *crtc, int mode)
              mode));
     switch (mode) {
     case DRM_MODE_DPMS_ON:
-        vbox_crtc->fBlanked = false;
+        vbox_crtc->blanked = false;
         break;
     case DRM_MODE_DPMS_STANDBY:
     case DRM_MODE_DPMS_SUSPEND:
     case DRM_MODE_DPMS_OFF:
-        vbox_crtc->fBlanked = true;
+        vbox_crtc->blanked = true;
         break;
     }
     spin_lock_irqsave(&vbox->dev_lock, flags);
@@ -221,7 +221,7 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
     vbox_bo_unreserve(bo);
 
     /* vbox_set_start_address_crt1(crtc, (u32)gpu_addr); */
-    vbox_crtc->offFB = gpu_addr;
+    vbox_crtc->fb_offset = gpu_addr;
 
     LogFunc(("vboxvideo: %d: vbox_fb=%p, obj=%p, bo=%p, gpu_addr=%u\n",
              __LINE__, vbox_fb, obj, bo, (unsigned)gpu_addr));
@@ -412,16 +412,16 @@ static void vboxUpdateHints(struct vbox_connector *vbox_connector)
 
     LogFunc(("vboxvideo: %d: vbox_connector=%p\n", __LINE__, vbox_connector));
     pVBox = vbox_connector->base.dev->dev_private;
-    rc = VBoxHGSMIGetModeHints(&pVBox->Ctx, pVBox->cCrtcs, pVBox->paVBVAModeHints);
+    rc = VBoxHGSMIGetModeHints(&pVBox->submit_info, pVBox->num_crtcs, pVBox->last_mode_hints);
     AssertMsgRCReturnVoid(rc, ("VBoxHGSMIGetModeHints failed, rc=%Rrc.\n", rc));
-    if (pVBox->paVBVAModeHints[vbox_connector->iCrtc].magic == VBVAMODEHINT_MAGIC)
+    if (pVBox->last_mode_hints[vbox_connector->crtc_id].magic == VBVAMODEHINT_MAGIC)
     {
-        vbox_connector->modeHint.cX = pVBox->paVBVAModeHints[vbox_connector->iCrtc].cx & 0x8fff;
-        vbox_connector->modeHint.cY = pVBox->paVBVAModeHints[vbox_connector->iCrtc].cy & 0x8fff;
-        vbox_connector->modeHint.fDisconnected = !(pVBox->paVBVAModeHints[vbox_connector->iCrtc].fEnabled);
-        LogFunc(("vboxvideo: %d: cX=%u, cY=%u, fDisconnected=%RTbool\n", __LINE__,
-                 (unsigned)vbox_connector->modeHint.cX, (unsigned)vbox_connector->modeHint.cY,
-                 vbox_connector->modeHint.fDisconnected));
+        vbox_connector->mode_hint.width = pVBox->last_mode_hints[vbox_connector->crtc_id].cx & 0x8fff;
+        vbox_connector->mode_hint.height = pVBox->last_mode_hints[vbox_connector->crtc_id].cy & 0x8fff;
+        vbox_connector->mode_hint.disconnected = !(pVBox->last_mode_hints[vbox_connector->crtc_id].fEnabled);
+        LogFunc(("vboxvideo: %d: width=%u, height=%u, disconnected=%RTbool\n", __LINE__,
+                 (unsigned)vbox_connector->mode_hint.width, (unsigned)vbox_connector->mode_hint.height,
+                 vbox_connector->mode_hint.disconnected));
     }
 }
 
@@ -430,15 +430,15 @@ static int vbox_get_modes(struct drm_connector *connector)
     struct vbox_connector *vbox_connector = NULL;
     struct drm_display_mode *pMode = NULL;
     unsigned cModes = 0;
-    int cxPreferred, cyPreferred;
+    int widthPreferred, heightPreferred;
 
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
     vboxUpdateHints(vbox_connector);
     cModes = drm_add_modes_noedid(connector, 2560, 1600);
-    cxPreferred = vbox_connector->modeHint.cX ? vbox_connector->modeHint.cX : 1024;
-    cyPreferred = vbox_connector->modeHint.cY ? vbox_connector->modeHint.cY : 768;
-    pMode = drm_cvt_mode(connector->dev, cxPreferred, cyPreferred, 60, false,
+    widthPreferred = vbox_connector->mode_hint.width ? vbox_connector->mode_hint.width : 1024;
+    heightPreferred = vbox_connector->mode_hint.height ? vbox_connector->mode_hint.height : 768;
+    pMode = drm_cvt_mode(connector->dev, widthPreferred, heightPreferred, 60, false,
                          false, false);
     if (pMode)
     {
@@ -461,7 +461,7 @@ static void vbox_connector_destroy(struct drm_connector *connector)
 
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
-    device_remove_file(connector->dev->dev, &vbox_connector->deviceAttribute);
+    device_remove_file(connector->dev->dev, &vbox_connector->sysfs_node);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     drm_sysfs_connector_remove(connector);
 #else
@@ -480,7 +480,7 @@ vbox_connector_detect(struct drm_connector *connector, bool force)
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
     vboxUpdateHints(vbox_connector);
-    return !vbox_connector->modeHint.fDisconnected;
+    return !vbox_connector->mode_hint.disconnected;
 }
 
 static int vbox_fill_modes(struct drm_connector *connector, uint32_t xMax, uint32_t yMax)
@@ -524,7 +524,7 @@ ssize_t vbox_connector_write_sysfs(struct device *dev,
     LogFunc(("vboxvideo: %d: dev=%p, pAttr=%p, psz=%s, cch=%llu\n", __LINE__,
              dev, pAttr, psz, (unsigned long long)cch));
     vbox_connector = container_of(pAttr, struct vbox_connector,
-                                  deviceAttribute);
+                                  sysfs_node);
     pVBox = vbox_connector->base.dev->dev_private;
     drm_kms_helper_hotplug_event(vbox_connector->base.dev);
     if (pVBox->fbdev)
@@ -546,19 +546,19 @@ static int vbox_connector_init(struct drm_device *dev, unsigned cScreen,
         return -ENOMEM;
 
     connector = &vbox_connector->base;
-    vbox_connector->iCrtc = cScreen;
+    vbox_connector->crtc_id = cScreen;
 
     /*
      * Set up the sysfs file we use for getting video mode hints from user
      * space.
      */
-    snprintf(vbox_connector->szName, sizeof(vbox_connector->szName),
+    snprintf(vbox_connector->name, sizeof(vbox_connector->name),
              "vbox_screen_%u", cScreen);
-    vbox_connector->deviceAttribute.attr.name = vbox_connector->szName;
-    vbox_connector->deviceAttribute.attr.mode = S_IWUSR;
-    vbox_connector->deviceAttribute.show      = NULL;
-    vbox_connector->deviceAttribute.store     = vbox_connector_write_sysfs;
-    rc = device_create_file(dev->dev, &vbox_connector->deviceAttribute);
+    vbox_connector->sysfs_node.attr.name = vbox_connector->name;
+    vbox_connector->sysfs_node.attr.mode = S_IWUSR;
+    vbox_connector->sysfs_node.show      = NULL;
+    vbox_connector->sysfs_node.store     = vbox_connector_write_sysfs;
+    rc = device_create_file(dev->dev, &vbox_connector->sysfs_node);
     if (rc < 0)
     {
         kfree(vbox_connector);
@@ -637,7 +637,7 @@ int vbox_mode_init(struct drm_device *dev)
     unsigned i;
     /* vbox_cursor_init(dev); */
     LogFunc(("vboxvideo: %d: dev=%p\n", __LINE__, dev));
-    for (i = 0; i < pVBox->cCrtcs; ++i)
+    for (i = 0; i < pVBox->num_crtcs; ++i)
     {
         vbox_crtc_init(dev, i);
         encoder = vbox_encoder_init(dev, i);
@@ -653,7 +653,7 @@ void vbox_mode_fini(struct drm_device *dev)
 }
 
 
-void VBoxRefreshModes(struct drm_device *dev)
+void vbox_refresh_modes(struct drm_device *dev)
 {
     struct vbox_private *vbox = dev->dev_private;
     struct drm_crtc *crtci;
@@ -701,7 +701,7 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 
     if (!handle) {
         /* Hide cursor. */
-        VBoxHGSMIUpdatePointerShape(&vbox->Ctx, 0, 0, 0, 0, 0, NULL, 0);
+        VBoxHGSMIUpdatePointerShape(&vbox->submit_info, 0, 0, 0, 0, 0, NULL, 0);
         return 0;
     }
     if (   width > VBOX_MAX_CURSOR_WIDTH || height > VBOX_MAX_CURSOR_HEIGHT
@@ -732,7 +732,7 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
                                           | VBOX_MOUSE_POINTER_SHAPE
                                           | VBOX_MOUSE_POINTER_ALPHA;
                         copy_cursor_image(src, dst, width, height, cbMask);
-                        rc = VBoxHGSMIUpdatePointerShape(&vbox->Ctx, fFlags,
+                        rc = VBoxHGSMIUpdatePointerShape(&vbox->submit_info, fFlags,
                                                          hot_x, hot_y, width,
                                                          height, dst, cbData);
                         ret = RTErrConvertToErrno(rc);

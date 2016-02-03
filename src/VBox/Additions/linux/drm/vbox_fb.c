@@ -79,17 +79,17 @@
 static int VBoxSetPar(struct fb_info *pInfo)
 {
     struct vbox_fbdev *pVFBDev = pInfo->par;
-    struct drm_device *pDev;
+    struct drm_device *dev;
     struct vbox_private *pVBox;
     unsigned i;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
-    pDev = pVFBDev->helper.dev;
-    pVBox = pDev->dev_private;
-    VBoxRefreshModes(pDev);
-    for (i = 0; i < pVBox->cCrtcs; ++i)
-        VBoxVBVADisable(&pVBox->paVBVACtx[i], &pVBox->Ctx, i);
-    VBoxHGSMISendCapsInfo(&pVBox->Ctx, 0);
+    dev = pVFBDev->helper.dev;
+    pVBox = dev->dev_private;
+    vbox_refresh_modes(dev);
+    for (i = 0; i < pVBox->num_crtcs; ++i)
+        VBoxVBVADisable(&pVBox->vbva_info[i], &pVBox->submit_info, i);
+    VBoxHGSMISendCapsInfo(&pVBox->submit_info, 0);
     return drm_fb_helper_set_par(pInfo);
 }
 
@@ -426,7 +426,7 @@ int vbox_fbdev_init(struct drm_device *dev)
 #else
     drm_fb_helper_prepare(dev, &afbdev->helper, &vbox_fb_helper_funcs);
 #endif
-    ret = drm_fb_helper_init(dev, &afbdev->helper, vbox->cCrtcs, vbox->cCrtcs);
+    ret = drm_fb_helper_init(dev, &afbdev->helper, vbox->num_crtcs, vbox->num_crtcs);
     if (ret)
         goto free;
 

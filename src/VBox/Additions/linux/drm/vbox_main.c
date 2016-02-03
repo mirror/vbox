@@ -69,23 +69,23 @@ static void vbox_user_framebuffer_destroy(struct drm_framebuffer *fb)
  * VBVA first, as this is normally disabled after a mode set in case a user
  * takes over the console that is not aware of VBVA (i.e. the VESA BIOS). */
 void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
-                                       struct drm_clip_rect *pRects,
-                                       unsigned cRects)
+                                       struct drm_clip_rect *rects,
+                                       unsigned num_rects)
 {
     struct vbox_private *vbox = fb->dev->dev_private;
     unsigned i;
     unsigned long flags;
 
-    LogFunc(("vboxvideo: %d: fb=%p, cRects=%u, vbox=%p\n", __LINE__, fb,
-             cRects, vbox));
+    LogFunc(("vboxvideo: %d: fb=%p, num_rects=%u, vbox=%p\n", __LINE__, fb,
+             num_rects, vbox));
     spin_lock_irqsave(&vbox->dev_lock, flags);
-    for (i = 0; i < cRects; ++i)
+    for (i = 0; i < num_rects; ++i)
     {
         struct drm_crtc *crtc;
         list_for_each_entry(crtc, &fb->dev->mode_config.crtc_list, head)
         {
-            unsigned iCrtc = to_vbox_crtc(crtc)->crtc_id;
-            struct VBVABUFFER *pVBVA = vbox->paVBVACtx[iCrtc].pVBVA;
+            unsigned crtc_id = to_vbox_crtc(crtc)->crtc_id;
+            struct VBVABUFFER *pVBVA = vbox->vbva_info[crtc_id].pVBVA;
             VBVACMDHDR cmdHdr;
 
             if (!pVBVA)
@@ -93,31 +93,31 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                 LogFunc(("vboxvideo: enabling VBVA.\n"));
                 pVBVA = (struct VBVABUFFER *) (  ((uint8_t *)vbox->vram)
                                                + vbox->vram_size
-                                               + iCrtc * VBVA_MIN_BUFFER_SIZE);
-                if (!VBoxVBVAEnable(&vbox->paVBVACtx[iCrtc], &vbox->Ctx, pVBVA, iCrtc))
+                                               + crtc_id * VBVA_MIN_BUFFER_SIZE);
+                if (!VBoxVBVAEnable(&vbox->vbva_info[crtc_id], &vbox->submit_info, pVBVA, crtc_id))
                     AssertReleaseMsgFailed(("VBoxVBVAEnable failed - heap allocation error, very old host or driver error.\n"));
                 /* Assume that if the user knows to send dirty rectangle information
                  * they can also handle hot-plug events. */
-                VBoxHGSMISendCapsInfo(&vbox->Ctx, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
+                VBoxHGSMISendCapsInfo(&vbox->submit_info, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
             }
             if (   CRTC_FB(crtc) != fb
-                || pRects[i].x1 >   crtc->x
+                || rects[i].x1 >   crtc->x
                                   + crtc->hwmode.hdisplay
-                || pRects[i].y1 >   crtc->y
+                || rects[i].y1 >   crtc->y
                                   + crtc->hwmode.vdisplay
-                || pRects[i].x2 < crtc->x
-                || pRects[i].y2 < crtc->y)
+                || rects[i].x2 < crtc->x
+                || rects[i].y2 < crtc->y)
                 continue;
-            cmdHdr.x = (int16_t)pRects[i].x1;
-            cmdHdr.y = (int16_t)pRects[i].y1;
-            cmdHdr.w = (uint16_t)pRects[i].x2 - pRects[i].x1;
-            cmdHdr.h = (uint16_t)pRects[i].y2 - pRects[i].y1;
-            if (VBoxVBVABufferBeginUpdate(&vbox->paVBVACtx[iCrtc],
-                                          &vbox->Ctx))
+            cmdHdr.x = (int16_t)rects[i].x1;
+            cmdHdr.y = (int16_t)rects[i].y1;
+            cmdHdr.w = (uint16_t)rects[i].x2 - rects[i].x1;
+            cmdHdr.h = (uint16_t)rects[i].y2 - rects[i].y1;
+            if (VBoxVBVABufferBeginUpdate(&vbox->vbva_info[crtc_id],
+                                          &vbox->submit_info))
             {
-                VBoxVBVAWrite(&vbox->paVBVACtx[iCrtc], &vbox->Ctx, &cmdHdr,
+                VBoxVBVAWrite(&vbox->vbva_info[crtc_id], &vbox->submit_info, &cmdHdr,
                               sizeof(cmdHdr));
-                VBoxVBVABufferEndUpdate(&vbox->paVBVACtx[iCrtc]);
+                VBoxVBVABufferEndUpdate(&vbox->vbva_info[crtc_id]);
             }
         }
     }
@@ -128,11 +128,11 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
 static int vbox_user_framebuffer_dirty(struct drm_framebuffer *fb,
                                        struct drm_file *file_priv,
                                        unsigned flags, unsigned color,
-                                       struct drm_clip_rect *pRects,
-                                       unsigned cRects)
+                                       struct drm_clip_rect *rects,
+                                       unsigned num_rects)
 {
     LogFunc(("vboxvideo: %d, flags=%u\n", __LINE__, flags));
-    vbox_framebuffer_dirty_rectangles(fb, pRects, cRects);
+    vbox_framebuffer_dirty_rectangles(fb, rects, num_rects);
     return 0;
 }
 
@@ -201,12 +201,12 @@ static void disableVBVA(struct vbox_private *pVBox)
 {
     unsigned i;
 
-    if (pVBox->paVBVACtx)
+    if (pVBox->vbva_info)
     {
-        for (i = 0; i < pVBox->cCrtcs; ++i)
-            VBoxVBVADisable(&pVBox->paVBVACtx[i], &pVBox->Ctx, i);
-        kfree(pVBox->paVBVACtx);
-        pVBox->paVBVACtx = NULL;
+        for (i = 0; i < pVBox->num_crtcs; ++i)
+            VBoxVBVADisable(&pVBox->vbva_info[i], &pVBox->submit_info, i);
+        kfree(pVBox->vbva_info);
+        pVBox->vbva_info = NULL;
     }
 }
 
@@ -214,24 +214,24 @@ static int vbox_vbva_init(struct vbox_private *vbox)
 {
     unsigned i;
     bool fRC = true;
-    LogFunc(("vboxvideo: %d: vbox=%p, vbox->cCrtcs=%u, vbox->paVBVACtx=%p\n",
-             __LINE__, vbox, (unsigned)vbox->cCrtcs, vbox->paVBVACtx));
-    if (!vbox->paVBVACtx)
+    LogFunc(("vboxvideo: %d: vbox=%p, vbox->num_crtcs=%u, vbox->vbva_info=%p\n",
+             __LINE__, vbox, (unsigned)vbox->num_crtcs, vbox->vbva_info));
+    if (!vbox->vbva_info)
     {
-        vbox->paVBVACtx = kzalloc(  sizeof(struct VBVABUFFERCONTEXT)
-                                  * vbox->cCrtcs,
+        vbox->vbva_info = kzalloc(  sizeof(struct VBVABUFFERCONTEXT)
+                                  * vbox->num_crtcs,
                                   GFP_KERNEL);
-        if (!vbox->paVBVACtx)
+        if (!vbox->vbva_info)
             return -ENOMEM;
     }
     /* Take a command buffer for each screen from the end of usable VRAM. */
-    vbox->vram_size -= vbox->cCrtcs * VBVA_MIN_BUFFER_SIZE;
-    for (i = 0; i < vbox->cCrtcs; ++i)
-        VBoxVBVASetupBufferContext(&vbox->paVBVACtx[i],
+    vbox->vram_size -= vbox->num_crtcs * VBVA_MIN_BUFFER_SIZE;
+    for (i = 0; i < vbox->num_crtcs; ++i)
+        VBoxVBVASetupBufferContext(&vbox->vbva_info[i],
                                    vbox->vram_size + i * VBVA_MIN_BUFFER_SIZE,
                                    VBVA_MIN_BUFFER_SIZE);
-    LogFunc(("vboxvideo: %d: vbox->paVBVACtx=%p, vbox->vram_size=%u\n",
-             __LINE__, vbox->paVBVACtx, (unsigned)vbox->vram_size));
+    LogFunc(("vboxvideo: %d: vbox->vbva_info=%p, vbox->vram_size=%u\n",
+             __LINE__, vbox->vbva_info, (unsigned)vbox->vram_size));
     return 0;
 }
 
@@ -262,13 +262,13 @@ static HGSMIENV g_hgsmiEnv =
 
 
 /** Do we support the 4.3 plus mode hint reporting interface? */
-static bool haveHGSMIModeHintAndCursorReportingInterface(struct vbox_private *pVBox)
+static bool haveHGSMImode_hintAndCursorReportingInterface(struct vbox_private *pVBox)
 {
-    uint32_t fModeHintReporting, fCursorReporting;
+    uint32_t fmode_hintReporting, fCursorReporting;
 
-    return    RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->Ctx, VBOX_VBVA_CONF32_MODE_HINT_REPORTING, &fModeHintReporting))
-           && RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->Ctx, VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING, &fCursorReporting))
-           && fModeHintReporting == VINF_SUCCESS
+    return    RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->submit_info, VBOX_VBVA_CONF32_MODE_HINT_REPORTING, &fmode_hintReporting))
+           && RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->submit_info, VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING, &fCursorReporting))
+           && fmode_hintReporting == VINF_SUCCESS
            && fCursorReporting == VINF_SUCCESS;
 }
 
@@ -277,14 +277,14 @@ static bool haveHGSMIModeHintAndCursorReportingInterface(struct vbox_private *pV
  *  to the memory manager. */
 static int setupAcceleration(struct vbox_private *pVBox)
 {
-    uint32_t offBase, offGuestHeap, cbGuestHeap, offHostFlags;
+    uint32_t offBase, offGuestHeap, cbGuestHeap, host_flags_offset;
     void *pvGuestHeap;
 
     VBoxHGSMIGetBaseMappingInfo(pVBox->full_vram_size, &offBase, NULL,
-                                &offGuestHeap, &cbGuestHeap, &offHostFlags);
+                                &offGuestHeap, &cbGuestHeap, &host_flags_offset);
     pvGuestHeap =   ((uint8_t *)pVBox->vram) + offBase + offGuestHeap;
-    pVBox->offHostFlags = offBase + offHostFlags;
-    if (RT_FAILURE(VBoxHGSMISetupGuestContext(&pVBox->Ctx, pvGuestHeap,
+    pVBox->host_flags_offset = offBase + host_flags_offset;
+    if (RT_FAILURE(VBoxHGSMISetupGuestContext(&pVBox->submit_info, pvGuestHeap,
                                               cbGuestHeap,
                                               offBase + offGuestHeap,
                                               &g_hgsmiEnv)))
@@ -292,11 +292,11 @@ static int setupAcceleration(struct vbox_private *pVBox)
     /* Reduce available VRAM size to reflect the guest heap. */
     pVBox->vram_size = offBase;
     /* Linux drm represents monitors as a 32-bit array. */
-    pVBox->cCrtcs = RT_MIN(VBoxHGSMIGetMonitorCount(&pVBox->Ctx), 32);
-    if (!haveHGSMIModeHintAndCursorReportingInterface(pVBox))
+    pVBox->num_crtcs = RT_MIN(VBoxHGSMIGetMonitorCount(&pVBox->submit_info), 32);
+    if (!haveHGSMImode_hintAndCursorReportingInterface(pVBox))
         return -ENOTSUPP;
-    pVBox->paVBVAModeHints = kzalloc(sizeof(VBVAMODEHINT) * pVBox->cCrtcs, GFP_KERNEL);
-    if (!pVBox->paVBVAModeHints)
+    pVBox->last_mode_hints = kzalloc(sizeof(VBVAMODEHINT) * pVBox->num_crtcs, GFP_KERNEL);
+    if (!pVBox->last_mode_hints)
         return -ENOMEM;
     return vbox_vbva_init(pVBox);
 }
@@ -325,7 +325,7 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
         goto out_free;
     }
     vbox->full_vram_size = VBoxVideoGetVRAMSize();
-    vbox->fAnyX = VBoxVideoAnyWidthAllowed();
+    vbox->any_pitch = VBoxVideoAnyWidthAllowed();
     DRM_INFO("VRAM %08x\n", vbox->full_vram_size);
 
     ret = setupAcceleration(vbox);
@@ -437,6 +437,7 @@ int vbox_dumb_create(struct drm_file *file,
     return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
 int vbox_dumb_destroy(struct drm_file *file,
              struct drm_device *dev,
              uint32_t handle)
@@ -445,6 +446,7 @@ int vbox_dumb_destroy(struct drm_file *file,
              (unsigned)handle));
     return drm_gem_handle_delete(file, handle);
 }
+#endif
 
 static void vbox_bo_unref(struct vbox_bo **bo)
 {

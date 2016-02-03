@@ -231,7 +231,11 @@ static struct drm_driver driver =
     .gem_free_object = vbox_gem_free_object,
     .dumb_create = vbox_dumb_create,
     .dumb_map_offset = vbox_dumb_mmap_offset,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
     .dumb_destroy = vbox_dumb_destroy,
+#else
+    .dumb_destroy = drm_gem_dumb_destroy,
+#endif
 
 };
 

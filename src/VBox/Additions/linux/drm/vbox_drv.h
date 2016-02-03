@@ -87,31 +87,29 @@
 
 struct vbox_fbdev;
 
-struct vbox_private
-{
+struct vbox_private {
     struct drm_device *dev;
 
     void __iomem *vram;
-    HGSMIGUESTCOMMANDCONTEXT Ctx;
-    struct VBVABUFFERCONTEXT *paVBVACtx;
-    bool fAnyX;
-    unsigned cCrtcs;
+    HGSMIGUESTCOMMANDCONTEXT submit_info;
+    struct VBVABUFFERCONTEXT *vbva_info;
+    bool any_pitch;
+    unsigned num_crtcs;
     bool vga2_clone;
     /** Amount of available VRAM, including space used for buffers. */
     uint32_t full_vram_size;
     /** Amount of available VRAM, not including space used for buffers. */
     uint32_t vram_size;
     /** Offset to the host flags in the VRAM. */
-    uint32_t offHostFlags;
+    uint32_t host_flags_offset;
     /** Array of structures for receiving mode hints. */
-    VBVAMODEHINT *paVBVAModeHints;
+    VBVAMODEHINT *last_mode_hints;
 
     struct vbox_fbdev *fbdev;
 
     int fb_mtrr;
 
-    struct
-    {
+    struct {
         struct drm_global_reference mem_global_ref;
         struct ttm_bo_global_ref bo_global_ref;
         struct ttm_bo_device bdev;
@@ -125,50 +123,43 @@ int vbox_driver_unload(struct drm_device *dev);
 
 struct vbox_gem_object;
 
-struct vbox_connector
-{
+struct vbox_connector {
     struct drm_connector base;
-    char szName[32];
-    unsigned iCrtc;
+    char name[32];
+    unsigned crtc_id;
     /** Device attribute for sysfs file used for receiving mode hints from user
      * space. */
-    struct device_attribute deviceAttribute;
-    struct
-    {
-        uint16_t cX;
-        uint16_t cY;
-        bool fDisconnected;
-    } modeHint;
+    struct device_attribute sysfs_node;
+    struct {
+        uint16_t width;
+        uint16_t height;
+        bool disconnected;
+    } mode_hint;
 };
 
-struct vbox_crtc
-{
+struct vbox_crtc {
     struct drm_crtc base;
-    bool fBlanked;
+    bool blanked;
     unsigned crtc_id;
-    uint32_t offFB;
+    uint32_t fb_offset;
     struct drm_gem_object *cursor_bo;
     uint64_t cursor_addr;
     int cursor_width, cursor_height;
     u8 offset_x, offset_y;
 };
 
-struct vbox_encoder
-{
+struct vbox_encoder {
     struct drm_encoder base;
 };
 
-struct vbox_framebuffer
-{
+struct vbox_framebuffer {
     struct drm_framebuffer base;
     struct drm_gem_object *obj;
 };
 
-struct vbox_fbdev
-{
+struct vbox_fbdev {
     struct drm_fb_helper helper;
     struct vbox_framebuffer afb;
-    struct list_head fbdev_list;
     void *sysram;
     int size;
     struct ttm_bo_kmap_obj mapping;
@@ -182,7 +173,7 @@ struct vbox_fbdev
 
 extern int vbox_mode_init(struct drm_device *dev);
 extern void vbox_mode_fini(struct drm_device *dev);
-extern void VBoxRefreshModes(struct drm_device *pDev);
+extern void vbox_refresh_modes(struct drm_device *dev);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
 # define DRM_MODE_FB_CMD drm_mode_fb_cmd
@@ -197,8 +188,8 @@ extern void VBoxRefreshModes(struct drm_device *pDev);
 #endif
 
 void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
-                                       struct drm_clip_rect *pRects,
-                                       unsigned cRects);
+                                       struct drm_clip_rect *rects,
+                                       unsigned num_rects);
 
 int vbox_framebuffer_init(struct drm_device *dev,
              struct vbox_framebuffer *vbox_fb,
@@ -209,8 +200,7 @@ int vbox_fbdev_init(struct drm_device *dev);
 void vbox_fbdev_fini(struct drm_device *dev);
 void vbox_fbdev_set_suspend(struct drm_device *dev, int state);
 
-struct vbox_bo
-{
+struct vbox_bo {
     struct ttm_buffer_object bo;
     struct ttm_placement placement;
     struct ttm_bo_kmap_obj kmap;
@@ -224,7 +214,8 @@ struct vbox_bo
 };
 #define gem_to_vbox_bo(gobj) container_of((gobj), struct vbox_bo, gem)
 
-static inline struct vbox_bo * vbox_bo(struct ttm_buffer_object *bo)
+static inline struct vbox_bo *
+vbox_bo(struct ttm_buffer_object *bo)
 {
     return container_of(bo, struct vbox_bo, bo);
 }
@@ -235,9 +226,11 @@ static inline struct vbox_bo * vbox_bo(struct ttm_buffer_object *bo)
 extern int vbox_dumb_create(struct drm_file *file,
                struct drm_device *dev,
                struct drm_mode_create_dumb *args);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
 extern int vbox_dumb_destroy(struct drm_file *file,
                 struct drm_device *dev,
                 uint32_t handle);
+#endif
 
 extern void vbox_gem_free_object(struct drm_gem_object *obj);
 extern int vbox_dumb_mmap_offset(struct drm_file *file,
@@ -279,12 +272,7 @@ static inline void vbox_bo_unreserve(struct vbox_bo *bo)
     ttm_bo_unreserve(&bo->bo);
 }
 
-int vbox_bo_reserve(struct vbox_bo *bo, bool no_wait);
-void vbox_bo_unreserve(struct vbox_bo *bo);
 void vbox_ttm_placement(struct vbox_bo *bo, int domain);
 int vbox_bo_push_sysram(struct vbox_bo *bo);
 int vbox_mmap(struct file *filp, struct vm_area_struct *vma);
-
-/* vbox post */
-void vbox_post_gpu(struct drm_device *dev);
 #endif
