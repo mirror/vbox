@@ -84,7 +84,6 @@ HRESULT Appliance::read(const com::Utf8Str &aFile,
         return setError(VBOX_E_FILE_ERROR, tr("Appliance file must have .ovf or .ova extension"));
 
     ComObjPtr<Progress> progress;
-    HRESULT rc = S_OK;
     try
     {
         /* Parse all necessary info out of the URI */
@@ -93,14 +92,12 @@ HRESULT Appliance::read(const com::Utf8Str &aFile,
     }
     catch (HRESULT aRC)
     {
-        rc = aRC;
+        return aRC;
     }
 
-    if (SUCCEEDED(rc))
-        /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress.asOutParam());
-
-    return rc;
+    /* Return progress to the caller */
+    progress.queryInterfaceTo(aProgress.asOutParam());
+    return S_OK;
 }
 
 /**
