@@ -648,6 +648,8 @@ VBOX_WITH_MEMBALLOON = 1
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_CROGL = 1
 endif
+# Enable cURL (required for the network part of the GUI)
+VBOX_WITH_LIBCURL = 1
 # Enable Host=>Guest Drag'n'Drop
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_DRAG_AND_DROP = 1
@@ -3334,8 +3336,6 @@ SDK_VBoxOpenSslExtPack_LIBS    = \
 	$(PATH_STAGE_LIB)/VBoxExtPack-libssl$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxExtPack-libcrypto$(VBOX_SUFF_LIB)
 
-ifdef VBOX_WITH_S3
-VBOX_WITH_LIBCURL = 1
 SDK_VBOX_LIBCURL       = .
 SDK_VBOX_LIBCURL_INCS ?= $(PATH_ROOT)/src/libs/curl-7.47.0/include
 SDK_VBOX_LIBCURL_LIBS ?= $(PATH_STAGE_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
@@ -3345,7 +3345,6 @@ SDK_VBOX_LIBCURL-x86           = .
 SDK_VBOX_LIBCURL-x86_INCS     ?= $(PATH_ROOT)/src/libs/curl-7.47.0/include
 SDK_VBOX_LIBCURL-x86_LIBS.x86 ?= $(PATH_STAGE_LIB)/VBox-libcurl-x86$(VBOX_SUFF_LIB)
 SDK_VBOX_LIBCURL-x86_DEFS     ?= BUILDING_LIBCURL
-endif
 
 SDK_VBOX_VPX       = .
 SDK_VBOX_VPX_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libvpx
