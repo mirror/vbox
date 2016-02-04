@@ -1196,44 +1196,45 @@ void Appliance::i_parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
 /* static */
 DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, void *pvUser)
 {
-    TaskOVF* task = static_cast<TaskOVF*>(pvUser);
-    AssertReturn(task, VERR_GENERAL_FAILURE);
+    TaskOVF *pTask = static_cast<TaskOVF*>(pvUser);
+    AssertReturn(pTask, VERR_GENERAL_FAILURE);
 
-    Appliance *pAppliance = task->pAppliance;
+    Appliance *pAppliance = pTask->pAppliance;
 
     LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p taskType=%d\n", pAppliance, task->taskType));
+    LogFlowFunc(("Appliance %p taskType=%d\n", pAppliance, pTask->taskType));
 
-    HRESULT taskrc = S_OK;
-
-    switch (task->taskType)
+    switch (pTask->taskType)
     {
         case TaskOVF::Read:
-            if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->i_readFS(task);
-            else if (task->locInfo.storageType == VFSType_S3)
-                taskrc = VERR_NOT_IMPLEMENTED;
-        break;
+            if (pTask->locInfo.storageType == VFSType_File)
+                pTask->rc = pAppliance->i_readFS(pTask);
+            else
+                pTask->rc = E_NOTIMPL;
+            break;
 
         case TaskOVF::Import:
-            if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->i_importFS(task);
-            else if (task->locInfo.storageType == VFSType_S3)
-                taskrc = VERR_NOT_IMPLEMENTED;
-        break;
+            if (pTask->locInfo.storageType == VFSType_File)
+                pTask->rc = pAppliance->i_importFS(pTask);
+            else
+                pTask->rc = E_NOTIMPL;
+            break;
 
         case TaskOVF::Write:
-            if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->i_writeFS(task);
-            else if (task->locInfo.storageType == VFSType_S3)
-                taskrc = VERR_NOT_IMPLEMENTED;
-        break;
+            if (pTask->locInfo.storageType == VFSType_File)
+                pTask->rc = pAppliance->i_writeFS(pTask);
+            else
+                pTask->rc = E_NOTIMPL;
+            break;
+
+        default:
+            AssertFailed();
+            pTask->rc = E_FAIL;
+            break;
     }
 
-    task->rc = taskrc;
-
-    if (!task->pProgress.isNull())
-        task->pProgress->i_notifyComplete(taskrc);
+    if (!pTask->pProgress.isNull())
+        pTask->pProgress->i_notifyComplete(pTask->rc);
 
     LogFlowFuncLeave();
 
