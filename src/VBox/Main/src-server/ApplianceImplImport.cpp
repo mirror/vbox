@@ -937,108 +937,70 @@ HRESULT Appliance::i_readFSOVF(TaskOVF *pTask)
 
     PVDINTERFACEIO pShaIo = 0;
     PVDINTERFACEIO pFileIo = 0;
+    RTMANIFEST hOvfManifest = NIL_RTMANIFEST;
+
     do
     {
         try
         {
             /* Create the necessary file access interfaces. */
             pFileIo = FileCreateInterface();
-            if (!pFileIo)
-            {
-                rc = E_OUTOFMEMORY;
-                break;
-            }
+            AssertBreakStmt(pFileIo, rc = E_OUTOFMEMORY);
 
             Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".mf");
 
             SHASTORAGE storage;
             RT_ZERO(storage);
 
+            /* Check and read the manifest file to determine the digests we need to calculate. */
+            uint32_t fTypes = 0;
             if (RTFileExists(strMfFile.c_str()))
             {
-                pShaIo = ShaCreateInterface();
-                if (!pShaIo)
-                {
-                    rc = E_OUTOFMEMORY;
-                    break;
-                }
+                vrc = RTManifestCreate(0 /*fFlags*/, &hOvfManifest);
+                AssertBreakStmt(RT_SUCCESS(vrc), rc = E_OUTOFMEMORY);
 
-                //read the manifest file and find a type of used digest
-                RTFILE pFile = NULL;
-                vrc = RTFileOpen(&pFile, strMfFile.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
-                if (RT_SUCCESS(vrc) && pFile != NULL)
-                {
-                    uint64_t cbFile64 = 0;
-                    uint32_t maxFileSize = _1M;
-                    size_t cbRead = 0;
-                    size_t cbFile;
-                    void  *pBuf; /** @todo r=bird: You leak this buffer! throwing stuff is evil. */
-
-                    vrc = RTFileGetSize(pFile, &cbFile64);
-                    if (cbFile64 > maxFileSize)
-                        throw setError(VBOX_E_FILE_ERROR,
-                                tr("Size of the manifest file '%s' is bigger than 1Mb. Check it, please."),
-                                RTPathFilename(strMfFile.c_str()));
-
-                    cbFile = (size_t)cbFile64;    /* We know it's <= 1M. */
-                    if (RT_SUCCESS(vrc))
-                       pBuf = RTMemAllocZ(cbFile);
-                    else
-                        throw setError(VBOX_E_FILE_ERROR,
-                                tr("Could not get size of the manifest file '%s' "),
-                                RTPathFilename(strMfFile.c_str()));
-
-                    vrc = RTFileRead(pFile, pBuf, cbFile, &cbRead);
-
-                    if (RT_FAILURE(vrc))
-                    {
-                        if (pBuf)
-                            RTMemFree(pBuf);
-                        throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not read the manifest file '%s' (%Rrc)"),
-                               RTPathFilename(strMfFile.c_str()), vrc);
-                    }
-
-                    RTFileClose(pFile);
-
-                    RTDIGESTTYPE digestType;
-                    vrc = RTManifestVerifyDigestType(pBuf, cbRead, &digestType);
-
-                    if (pBuf)
-                        RTMemFree(pBuf);
-
-                    if (RT_FAILURE(vrc))
-                    {
-                        throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not verify supported digest types in the manifest file '%s' (%Rrc)"),
-                               RTPathFilename(strMfFile.c_str()), vrc);
-                    }
-
-                    storage.fCreateDigest = true;
-
-                    if (digestType == RTDIGESTTYPE_SHA256)
-                    {
-                        storage.fSha256 = true;
-                    }
-
-                    Utf8Str name = i_applianceIOName(applianceIOFile);
-
-                    vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
-                                         VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
-                                         &storage.pVDImageIfaces);
-                    if (RT_FAILURE(vrc))
-                        throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
-
-                    rc = i_readFSImpl(pTask, pTask->locInfo.strPath, pShaIo, &storage);
-                    if (FAILED(rc))
-                        break;
-                }
-                else
-                {
+                RTVFSFILE hManifestVfsFile;
+                vrc = RTVfsFileOpenNormal(strMfFile.c_str(),
+                                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hManifestVfsFile);
+                if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not open the manifest file '%s' (%Rrc)"),
-                               RTPathFilename(strMfFile.c_str()), vrc);
-                }
+                                   tr("Could not open the manifest file '%s' (%Rrc)"), strMfFile.c_str(), vrc);
+                char szErr[256];
+                RTVFSIOSTREAM hVfsIosTmp = RTVfsFileToIoStream(hManifestVfsFile);
+                vrc = RTManifestReadStandardEx(hOvfManifest, hVfsIosTmp, szErr, sizeof(szErr));
+                RTVfsIoStrmRelease(hVfsIosTmp);
+                RTVfsFileRelease(hManifestVfsFile);
+                if (RT_FAILURE(vrc))
+                    throw setErrorVrc(vrc, tr("Failed to read or parse manifest file '%s' (%Rrc): %s"),
+                                      strMfFile.c_str(), vrc, szErr);
+
+                vrc = RTManifestQueryAllAttrTypes(hOvfManifest, true /*fEntriesOnly*/, &fTypes);
+                AssertRCBreakStmt(vrc, rc = Global::vboxStatusCodeToCOM(vrc));
+            }
+
+            /* If any digests was found, we must wrap the I/O interface with a SHA calculator. */
+            if (fTypes)
+            {
+                pShaIo = ShaCreateInterface();
+                AssertBreakStmt(pShaIo, rc = E_OUTOFMEMORY);
+
+                storage.fCreateDigest = true;
+
+                Assert(RT_IS_POWER_OF_TWO(fTypes)); /** @todo support anything and mixed (easy when supporting SHA256 for OVA < v2.0).  */
+                if (fTypes & RTMANIFEST_ATTR_SHA256)
+                    storage.fSha256 = true;
+
+                Utf8Str name = i_applianceIOName(applianceIOFile);
+
+                vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
+                                     VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
+                                     &storage.pVDImageIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
+
+                rc = i_readFSImpl(pTask, pTask->locInfo.strPath, pShaIo, &storage);
+                if (FAILED(rc))
+                    break;
             }
             else
             {
@@ -1053,13 +1015,15 @@ HRESULT Appliance::i_readFSOVF(TaskOVF *pTask)
             rc = rc2;
         }
 
-    }while (0);
+    } while (0);
 
     /* Cleanup */
     if (pShaIo)
         RTMemFree(pShaIo);
     if (pFileIo)
         RTMemFree(pFileIo);
+    if (hOvfManifest != NIL_RTMANIFEST)
+        RTManifestRelease(hOvfManifest);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -1154,29 +1118,20 @@ HRESULT Appliance::i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PV
         /* Read & parse the XML structure of the OVF file */
         m->pReader = new ovf::OVFReader(pvTmpBuf, cbSize, pTask->locInfo.strPath);
 
-        if (m->pReader->m_envelopeData.getOVFVersion() == ovf::OVFVersion_2_0)
+        if (   pStorage->fSha256
+            || m->pReader->m_envelopeData.getOVFVersion() == ovf::OVFVersion_2_0)
         {
             m->fSha256 = true;
 
-            uint8_t digest[RTSHA256_HASH_SIZE];
-            size_t cchDigest = RTSHA256_DIGEST_LEN;
-            char *pszDigest;
+            /* Calc the SHA256 sum of the OVF file for later validation */
+            uint8_t abHash[RTSHA256_HASH_SIZE];
+            RTSha256(pvTmpBuf, cbSize, abHash);
 
-            RTSha256(pvTmpBuf, cbSize, &digest[0]);
+            char szDigest[RTSHA256_DIGEST_LEN + 1];
+            vrc = RTSha256ToString(abHash, szDigest, sizeof(szDigest));
+            AssertStmt(RT_SUCCESS(vrc), throw VBOX_E_IPRT_ERROR);
 
-            vrc = RTStrAllocEx(&pszDigest, cchDigest + 1);
-            if (RT_FAILURE(vrc))
-                throw setError(E_OUTOFMEMORY, tr("Could not allocate string for SHA256 digest (%Rrc)"), vrc);
-
-            vrc = RTSha256ToString(digest, pszDigest, cchDigest + 1);
-            if (RT_SUCCESS(vrc))
-                /* Copy the SHA256 sum of the OVF file for later validation */
-                m->strOVFSHADigest = pszDigest;
-            else
-                throw setError(VBOX_E_FILE_ERROR, tr("Converting SHA256 digest to a string was failed (%Rrc)"), vrc);
-
-            RTStrFree(pszDigest);
-
+            m->strOVFSHADigest = szDigest;
         }
         else
         {
