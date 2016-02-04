@@ -885,6 +885,52 @@ RTDECL(int) RTManifestQueryAttr(RTMANIFEST hManifest, const char *pszAttr, uint3
 
 
 /**
+ * Callback employed by RTManifestQueryAllAttrTypes to collect attribute types.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pStr                The attribute string node.
+ * @param   pvUser              Pointer to type flags (uint32_t).
+ */
+static DECLCALLBACK(int) rtMainfestQueryAllAttrTypesEnumAttrCallback(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTATTR pAttr   = (PRTMANIFESTATTR)pStr;
+    uint32_t       *pfTypes = (uint32_t *)pvUser;
+    *pfTypes |= pAttr->fType;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Callback employed by RTManifestQueryAllAttrTypes to collect attribute types
+ * for an entry.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pStr                The attribute string node.
+ * @param   pvUser              Pointer to type flags (uint32_t).
+ */
+static DECLCALLBACK(int) rtMainfestQueryAllAttrTypesEnumEntryCallback(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTENTRY pEntry = RT_FROM_MEMBER(pStr, RTMANIFESTENTRY, StrCore);
+    return RTStrSpaceEnumerate(&pEntry->Attributes, rtMainfestQueryAllAttrTypesEnumAttrCallback, pvUser);
+}
+
+
+RTDECL(int) RTManifestQueryAllAttrTypes(RTMANIFEST hManifest, bool fEntriesOnly, uint32_t *pfTypes)
+{
+    RTMANIFESTINT *pThis = hManifest;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtr(pfTypes);
+
+    *pfTypes = 0;
+    int rc = RTStrSpaceEnumerate(&pThis->Entries, rtMainfestQueryAllAttrTypesEnumEntryCallback, pfTypes);
+    if (RT_SUCCESS(rc) && fEntriesOnly)
+        rc = rtMainfestQueryAllAttrTypesEnumAttrCallback(&pThis->SelfEntry.StrCore, pfTypes);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Validates the name entry.
  *
  * @returns IPRT status code.

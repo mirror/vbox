@@ -1143,6 +1143,7 @@
 # define RTManifestEquals                               RT_MANGLER(RTManifestEquals)
 # define RTManifestEqualsEx                             RT_MANGLER(RTManifestEqualsEx)
 # define RTManifestPtIosAddEntryNow                     RT_MANGLER(RTManifestPtIosAddEntryNow)
+# define RTManifestQueryAllAttrTypes                    RT_MANGLER(RTManifestQueryAllAttrTypes)
 # define RTManifestQueryAttr                            RT_MANGLER(RTManifestQueryAttr)
 # define RTManifestReadStandard                         RT_MANGLER(RTManifestReadStandard)
 # define RTManifestReadStandardEx                       RT_MANGLER(RTManifestReadStandardEx)

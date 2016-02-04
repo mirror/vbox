@@ -139,6 +139,17 @@ RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, con
 RTDECL(int) RTManifestEquals(RTMANIFEST hManifest1, RTMANIFEST hManifest2);
 
 /**
+ *
+ * @returns IPRT status code.
+ * @param   hManifest       Handle to the manifest.
+ * @param   fEntriesOnly    Whether to only gather attribute types from the
+ *                          entries (@c true), or also include the manifest
+ *                          attributes (@c false).
+ * @param   pfTypes         Where to return the attributes.
+ */
+RTDECL(int) RTManifestQueryAllAttrTypes(RTMANIFEST hManifest, bool fEntriesOnly, uint32_t *pfTypes);
+
+/**
  * Sets a manifest attribute.
  *
  * @returns IPRT status code.
