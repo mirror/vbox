@@ -228,7 +228,7 @@ else # VBOX_WITH_QTGUI_V5
      $(PATH_SDK_QT5)/plugins/platforms/qoffscreen$(SUFF_DLL)=>platforms/qoffscreen$(SUFF_DLL)
     ifdef VBOX_WITH_QT_PDBS
      qt5-bin_SOURCES += \
-      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/$(qtmod).pdb)
+      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT5)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
     endif # VBOX_WITH_QT_PDBS
    else # x11
     INSTALLS += qt5-bin
