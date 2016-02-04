@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * IVFSExplorer COM class implementations.
  */
 
@@ -210,11 +209,7 @@ DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::taskThread(RTTHREAD /* aThread *
             if (pVFSExplorer->m->storageType == VFSType_File)
                 rc = pVFSExplorer->i_updateFS(task.get());
             else if (pVFSExplorer->m->storageType == VFSType_S3)
-#ifdef VBOX_WITH_S3
-                rc = pVFSExplorer->i_updateS3(task.get());
-#else
                 rc = VERR_NOT_IMPLEMENTED;
-#endif
             break;
         }
         case TaskVFSExplorer::Delete:
@@ -222,11 +217,7 @@ DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::taskThread(RTTHREAD /* aThread *
             if (pVFSExplorer->m->storageType == VFSType_File)
                 rc = pVFSExplorer->i_deleteFS(task.get());
             else if (pVFSExplorer->m->storageType == VFSType_S3)
-#ifdef VBOX_WITH_S3
-                rc = pVFSExplorer->i_deleteS3(task.get());
-#else
                 rc = VERR_NOT_IMPLEMENTED;
-#endif
             break;
         }
         default:
@@ -395,143 +386,6 @@ HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
 
     return VINF_SUCCESS;
 }
-
-#ifdef VBOX_WITH_S3
-HRESULT VFSExplorer::i_updateS3(TaskVFSExplorer *aTask)
-{
-    LogFlowFuncEnter();
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = S_OK;
-
-    RTS3 hS3 = NULL;
-    std::list<VFSExplorer::Data::DirEntry> fileList;
-    try
-    {
-        int vrc = RTS3Create(&hS3, m->strUsername.c_str(), m->strPassword.c_str(),
-                             m->strHostname.c_str(), "virtualbox-agent/" VBOX_VERSION_STRING);
-        if (RT_FAILURE(vrc))
-            throw setError(E_FAIL, tr ("Can't open S3 storage service (%Rrc)"), vrc);
-
-        RTS3SetProgressCallback(hS3, VFSExplorer::TaskVFSExplorer::uploadProgress, &aTask);
-        /* Do we need the list of buckets or keys? */
-        if (m->strBucket.isEmpty())
-        {
-            PCRTS3BUCKETENTRY pBuckets = NULL;
-            vrc = RTS3GetBuckets(hS3, &pBuckets);
-            if (RT_FAILURE(vrc))
-                throw setError(E_FAIL, tr ("Can't get buckets (%Rrc)"), vrc);
-
-            PCRTS3BUCKETENTRY pTmpBuckets = pBuckets;
-            while (pBuckets)
-            {
-                /* Set always read/write permissions of the current logged in user. */
-                fileList.push_back(VFSExplorer::Data::DirEntry(pBuckets->pszName, FsObjType_Directory,
-                                   0, RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR));
-                pBuckets = pBuckets->pNext;
-            }
-            RTS3BucketsDestroy(pTmpBuckets);
-        }
-        else
-        {
-            PCRTS3KEYENTRY pKeys = NULL;
-            vrc = RTS3GetBucketKeys(hS3, m->strBucket.c_str(), &pKeys);
-            if (RT_FAILURE(vrc))
-                throw setError(E_FAIL, tr ("Can't get keys for bucket (%Rrc)"), vrc);
-
-            PCRTS3KEYENTRY pTmpKeys = pKeys;
-            while (pKeys)
-            {
-                Utf8Str name(pKeys->pszName);
-                /* Set always read/write permissions of the current logged in user. */
-                fileList.push_back(VFSExplorer::Data::DirEntry(pKeys->pszName, FsObjType_File, pKeys->cbFile,
-                                   RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR));
-                pKeys = pKeys->pNext;
-            }
-            RTS3KeysDestroy(pTmpKeys);
-        }
-    }
-    catch(HRESULT aRC)
-    {
-        rc = aRC;
-    }
-
-    if (hS3 != NULL)
-        RTS3Destroy(hS3);
-
-    /* Assign the result on success (this clears the old list) */
-    if (rc == S_OK)
-        m->entryList.assign(fileList.begin(), fileList.end());
-
-    aTask->rc = rc;
-
-    if (!aTask->progress.isNull())
-        aTask->progress->i_notifyComplete(rc);
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return VINF_SUCCESS;
-}
-
-HRESULT VFSExplorer::i_deleteS3(TaskVFSExplorer *aTask)
-{
-    LogFlowFuncEnter();
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = S_OK;
-
-    RTS3 hS3 = NULL;
-    float fPercentStep = 100.0f / aTask->filenames.size();
-    try
-    {
-        int vrc = RTS3Create(&hS3, m->strUsername.c_str(), m->strPassword.c_str(),
-                             m->strHostname.c_str(), "virtualbox-agent/" VBOX_VERSION_STRING);
-        if (RT_FAILURE(vrc))
-            throw setError(E_FAIL, tr ("Can't open S3 storage service (%Rrc)"), vrc);
-
-        RTS3SetProgressCallback(hS3, VFSExplorer::TaskVFSExplorer::uploadProgress, &aTask);
-
-        std::list<Utf8Str>::const_iterator it;
-        size_t i = 0;
-        for (it = aTask->filenames.begin();
-             it != aTask->filenames.end();
-             ++it, ++i)
-        {
-            vrc = RTS3DeleteKey(hS3, m->strBucket.c_str(), (*it).c_str());
-            if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR, tr ("Can't delete file '%s' (%Rrc)"), (*it).c_str(), vrc);
-            if (aTask->progress)
-                aTask->progress->SetCurrentOperationProgress((ULONG)(fPercentStep * i));
-        }
-    }
-    catch(HRESULT aRC)
-    {
-        rc = aRC;
-    }
-
-    aTask->rc = rc;
-
-    if (hS3 != NULL)
-        RTS3Destroy(hS3);
-
-    if (!aTask->progress.isNull())
-        aTask->progress->i_notifyComplete(rc);
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return VINF_SUCCESS;
-}
-#endif /* VBOX_WITH_S3 */
 
 HRESULT VFSExplorer::update(ComPtr<IProgress> &aProgress)
 {

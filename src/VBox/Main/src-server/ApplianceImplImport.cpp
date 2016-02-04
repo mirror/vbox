@@ -832,17 +832,15 @@ HRESULT Appliance::i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
  * Implementation for reading an OVF (via task).
  *
  * This starts a new thread which will call
- * Appliance::taskThreadImportOrExport() which will then call readFS() or
- * readS3(). This will then open the OVF with ovfreader.cpp.
+ * Appliance::taskThreadImportOrExport() which will then call readFS(). This
+ * will then open the OVF with ovfreader.cpp.
  *
- * This is in a separate private method because it is used from three locations:
+ * This is in a separate private method because it is used from two locations:
  *
  * 1) from the public Appliance::Read().
  *
  * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl(), which
  *    called Appliance::readFSOVA(), which called Appliance::i_importImpl(), which then called this again.
- *
- * 3) from Appliance::readS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
  *
  * @param   aLocInfo    The OVF location.
  * @param   aProgress   Where to return the progress object.
@@ -895,12 +893,9 @@ HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
  * Actual worker code for reading an OVF from disk. This is called from Appliance::taskThreadImportOrExport()
  * and therefore runs on the OVF read worker thread. This opens the OVF with ovfreader.cpp.
  *
- * This runs in two contexts:
+ * This runs in one context:
  *
  * 1) in a first worker thread; in that case, Appliance::Read() called Appliance::readImpl();
- *
- * 2) in a second worker thread; in that case, Appliance::Read() called Appliance::readImpl(), which
- *    called Appliance::readS3(), which called Appliance::readImpl(), which then called this.
  *
  * @param pTask
  * @return
@@ -1161,139 +1156,6 @@ HRESULT Appliance::i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PV
     return rc;
 }
 
-#ifdef VBOX_WITH_S3
-/**
- * Worker code for reading OVF from the cloud. This is called from Appliance::taskThreadImportOrExport()
- * in S3 mode and therefore runs on the OVF read worker thread. This then starts a second worker
- * thread to create temporary files (see Appliance::readFS()).
- *
- * @param pTask
- * @return
- */
-HRESULT Appliance::i_readS3(TaskOVF *pTask)
-{
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", this));
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = S_OK;
-    int vrc = VINF_SUCCESS;
-    RTS3 hS3 = NIL_RTS3;
-    char szOSTmpDir[RTPATH_MAX];
-    RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
-    /* The template for the temporary directory created below */
-    char *pszTmpDir = RTPathJoinA(szOSTmpDir, "vbox-ovf-XXXXXX");
-    list< pair<Utf8Str, ULONG> > filesList;
-    Utf8Str strTmpOvf;
-
-    try
-    {
-        /* Extract the bucket */
-        Utf8Str tmpPath = pTask->locInfo.strPath;
-        Utf8Str bucket;
-        i_parseBucket(tmpPath, bucket);
-
-        /* We need a temporary directory which we can put the OVF file & all
-         * disk images in */
-        vrc = RTDirCreateTemp(pszTmpDir, 0700);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot create temporary directory '%s'"), pszTmpDir);
-
-        /* The temporary name of the target OVF file */
-        strTmpOvf = Utf8StrFmt("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
-
-        /* Next we have to download the OVF */
-        vrc = RTS3Create(&hS3,
-                         pTask->locInfo.strUsername.c_str(),
-                         pTask->locInfo.strPassword.c_str(),
-                         pTask->locInfo.strHostname.c_str(),
-                         "virtualbox-agent/" VBOX_VERSION_STRING);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_IPRT_ERROR,
-                           tr("Cannot create S3 service handler"));
-        RTS3SetProgressCallback(hS3, pTask->updateProgress, &pTask);
-
-        /* Get it */
-        char *pszFilename = RTPathFilename(strTmpOvf.c_str());
-        vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strTmpOvf.c_str());
-        if (RT_FAILURE(vrc))
-        {
-            if (vrc == VERR_S3_CANCELED)
-                throw S_OK; /* todo: !!!!!!!!!!!!! */
-            else if (vrc == VERR_S3_ACCESS_DENIED)
-                throw setError(E_ACCESSDENIED,
-                               tr("Cannot download file '%s' from S3 storage server (Access denied). Make sure that "
-                                  "your credentials are right. "
-                                  "Also check that your host clock is properly synced"),
-                               pszFilename);
-            else if (vrc == VERR_S3_NOT_FOUND)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Cannot download file '%s' from S3 storage server (File not found)"), pszFilename);
-            else
-                throw setError(VBOX_E_IPRT_ERROR,
-                               tr("Cannot download file '%s' from S3 storage server (%Rrc)"), pszFilename, vrc);
-        }
-
-        /* Close the connection early */
-        RTS3Destroy(hS3);
-        hS3 = NIL_RTS3;
-
-        pTask->pProgress->SetNextOperation(Bstr(tr("Reading")).raw(), 1);
-
-        /* Prepare the temporary reading of the OVF */
-        ComObjPtr<Progress> progress;
-        LocationInfo li;
-        li.strPath = strTmpOvf;
-        /* Start the reading from the fs */
-        rc = i_readImpl(li, progress);
-        if (FAILED(rc)) throw rc;
-
-        /* Unlock the appliance for the reading thread */
-        appLock.release();
-        /* Wait until the reading is done, but report the progress back to the
-           caller */
-        ComPtr<IProgress> progressInt(progress);
-        i_waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
-
-        /* Again lock the appliance for the next steps */
-        appLock.acquire();
-    }
-    catch(HRESULT aRC)
-    {
-        rc = aRC;
-    }
-    /* Cleanup */
-    RTS3Destroy(hS3);
-    /* Delete all files which where temporary created */
-    if (RTPathExists(strTmpOvf.c_str()))
-    {
-        vrc = RTFileDelete(strTmpOvf.c_str());
-        if (RT_FAILURE(vrc))
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Cannot delete file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
-    }
-    /* Delete the temporary directory */
-    if (RTPathExists(pszTmpDir))
-    {
-        vrc = RTDirRemove(pszTmpDir);
-        if (RT_FAILURE(vrc))
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
-    }
-    if (pszTmpDir)
-        RTStrFree(pszTmpDir);
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return rc;
-}
-#endif /* VBOX_WITH_S3 */
 
 /*******************************************************************************
  * Import stuff
@@ -1306,10 +1168,9 @@ HRESULT Appliance::i_readS3(TaskOVF *pTask)
  * This creates one or more new machines according to the VirtualSystemScription instances created by
  * Appliance::Interpret().
  *
- * This is in a separate private method because it is used from two locations:
+ * This is in a separate private method because it is used from one location:
  *
  * 1) from the public Appliance::ImportMachines().
- * 2) from Appliance::i_importS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
  *
  * @param aLocInfo
  * @param aProgress
@@ -1358,15 +1219,12 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
  * according to the VirtualSystemScription instances created by
  * Appliance::Interpret().
  *
- * This runs in three contexts:
+ * This runs in two contexts:
  *
  * 1) in a first worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl();
  *
  * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl(), which
  *    called Appliance::i_i_importFSOVA(), which called Appliance::i_importImpl(), which then called this again.
- *
- * 3) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl(), which
- *    called Appliance::i_importS3(), which called Appliance::i_importImpl(), which then called this again.
  *
  * @param   pTask       The OVF task data.
  * @return  COM status code.
@@ -1810,203 +1668,6 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     return rc;
 }
-
-#ifdef VBOX_WITH_S3
-/**
- * Worker code for importing OVF from the cloud. This is called from Appliance::taskThreadImportOrExport()
- * in S3 mode and therefore runs on the OVF import worker thread. This then starts a second worker
- * thread to import from temporary files (see Appliance::i_importFS()).
- * @param pTask
- * @return
- */
-HRESULT Appliance::i_importS3(TaskOVF *pTask)
-{
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", this));
-
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-
-    int vrc = VINF_SUCCESS;
-    RTS3 hS3 = NIL_RTS3;
-    char szOSTmpDir[RTPATH_MAX];
-    RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
-    /* The template for the temporary directory created below */
-    char *pszTmpDir = RTPathJoinA(szOSTmpDir, "vbox-ovf-XXXXXX");
-    list< pair<Utf8Str, ULONG> > filesList;
-
-    HRESULT rc = S_OK;
-    try
-    {
-        /* Extract the bucket */
-        Utf8Str tmpPath = pTask->locInfo.strPath;
-        Utf8Str bucket;
-        i_parseBucket(tmpPath, bucket);
-
-        /* We need a temporary directory which we can put the all disk images
-         * in */
-        vrc = RTDirCreateTemp(pszTmpDir, 0700);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
-
-        /* Add every disks of every virtual system to an internal list */
-        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
-        for (it = m->virtualSystemDescriptions.begin();
-             it != m->virtualSystemDescriptions.end();
-             ++it)
-        {
-            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            std::list<VirtualSystemDescriptionEntry*> avsdeHDs =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
-            std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
-            for (itH = avsdeHDs.begin();
-                 itH != avsdeHDs.end();
-                 ++itH)
-            {
-                const Utf8Str &strTargetFile = (*itH)->strOvf;
-                if (!strTargetFile.isEmpty())
-                {
-                    /* The temporary name of the target disk file */
-                    Utf8StrFmt strTmpDisk("%s/%s", pszTmpDir, RTPathFilename(strTargetFile.c_str()));
-                    filesList.push_back(pair<Utf8Str, ULONG>(strTmpDisk, (*itH)->ulSizeMB));
-                }
-            }
-        }
-
-        /* Next we have to download the disk images */
-        vrc = RTS3Create(&hS3,
-                         pTask->locInfo.strUsername.c_str(),
-                         pTask->locInfo.strPassword.c_str(),
-                         pTask->locInfo.strHostname.c_str(),
-                         "virtualbox-agent/" VBOX_VERSION_STRING);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_IPRT_ERROR,
-                           tr("Cannot create S3 service handler"));
-        RTS3SetProgressCallback(hS3, pTask->updateProgress, &pTask);
-
-        /* Download all files */
-        for (list< pair<Utf8Str, ULONG> >::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1)
-        {
-            const pair<Utf8Str, ULONG> &s = (*it1);
-            const Utf8Str &strSrcFile = s.first;
-            /* Construct the source file name */
-            char *pszFilename = RTPathFilename(strSrcFile.c_str());
-            /* Advance to the next operation */
-            if (!pTask->pProgress.isNull())
-                pTask->pProgress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename).raw(), s.second);
-
-            vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strSrcFile.c_str());
-            if (RT_FAILURE(vrc))
-            {
-                if (vrc == VERR_S3_CANCELED)
-                    throw S_OK; /* todo: !!!!!!!!!!!!! */
-                else if (vrc == VERR_S3_ACCESS_DENIED)
-                    throw setError(E_ACCESSDENIED,
-                                   tr("Cannot download file '%s' from S3 storage server (Access denied). "
-                                      "Make sure that your credentials are right. Also check that your host clock is "
-                                      "properly synced"),
-                                   pszFilename);
-                else if (vrc == VERR_S3_NOT_FOUND)
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Cannot download file '%s' from S3 storage server (File not found)"),
-                                   pszFilename);
-                else
-                    throw setError(VBOX_E_IPRT_ERROR,
-                                   tr("Cannot download file '%s' from S3 storage server (%Rrc)"),
-                                   pszFilename, vrc);
-            }
-        }
-
-        /* Provide a OVF file (haven't to exist) so the import routine can
-         * figure out where the disk images/manifest file are located. */
-        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
-        /* Now check if there is an manifest file. This is optional. */
-        Utf8Str strManifestFile; //= queryManifestFileName(strTmpOvf);
-//        Utf8Str strManifestFile = queryManifestFileName(strTmpOvf);
-        char *pszFilename = RTPathFilename(strManifestFile.c_str());
-        if (!pTask->pProgress.isNull())
-            pTask->pProgress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename).raw(), 1);
-
-        /* Try to download it. If the error is VERR_S3_NOT_FOUND, it isn't fatal. */
-        vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strManifestFile.c_str());
-        if (RT_SUCCESS(vrc))
-            filesList.push_back(pair<Utf8Str, ULONG>(strManifestFile, 0));
-        else if (RT_FAILURE(vrc))
-        {
-            if (vrc == VERR_S3_CANCELED)
-                throw S_OK; /* todo: !!!!!!!!!!!!! */
-            else if (vrc == VERR_S3_NOT_FOUND)
-                vrc = VINF_SUCCESS; /* Not found is ok */
-            else if (vrc == VERR_S3_ACCESS_DENIED)
-                throw setError(E_ACCESSDENIED,
-                               tr("Cannot download file '%s' from S3 storage server (Access denied)."
-                                  "Make sure that your credentials are right. "
-                                  "Also check that your host clock is properly synced"),
-                               pszFilename);
-            else
-                throw setError(VBOX_E_IPRT_ERROR,
-                               tr("Cannot download file '%s' from S3 storage server (%Rrc)"),
-                               pszFilename, vrc);
-        }
-
-        /* Close the connection early */
-        RTS3Destroy(hS3);
-        hS3 = NIL_RTS3;
-
-        pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing appliance")).raw(), m->ulWeightForXmlOperation);
-
-        ComObjPtr<Progress> progress;
-        /* Import the whole temporary OVF & the disk images */
-        LocationInfo li;
-        li.strPath = strTmpOvf;
-        rc = i_importImpl(li, progress);
-        if (FAILED(rc)) throw rc;
-
-        /* Unlock the appliance for the fs import thread */
-        appLock.release();
-        /* Wait until the import is done, but report the progress back to the
-           caller */
-        ComPtr<IProgress> progressInt(progress);
-        i_waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
-
-        /* Again lock the appliance for the next steps */
-        appLock.acquire();
-    }
-    catch(HRESULT aRC)
-    {
-        rc = aRC;
-    }
-    /* Cleanup */
-    RTS3Destroy(hS3);
-    /* Delete all files which where temporary created */
-    for (list< pair<Utf8Str, ULONG> >::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1)
-    {
-        const char *pszFilePath = (*it1).first.c_str();
-        if (RTPathExists(pszFilePath))
-        {
-            vrc = RTFileDelete(pszFilePath);
-            if (RT_FAILURE(vrc))
-                rc = setError(VBOX_E_FILE_ERROR,
-                              tr("Cannot delete file '%s' (%Rrc)"), pszFilePath, vrc);
-        }
-    }
-    /* Delete the temporary directory */
-    if (RTPathExists(pszTmpDir))
-    {
-        vrc = RTDirRemove(pszTmpDir);
-        if (RT_FAILURE(vrc))
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
-    }
-    if (pszTmpDir)
-        RTStrFree(pszTmpDir);
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return rc;
-}
-#endif /* VBOX_WITH_S3 */
 
 HRESULT Appliance::i_readFileToBuf(const Utf8Str &strFile,
                                    void **ppvBuf,

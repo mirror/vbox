@@ -728,14 +728,12 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
  * Implementation for writing out the OVF to disk. This starts a new thread which will call
  * Appliance::taskThreadWriteOVF().
  *
- * This is in a separate private method because it is used from two locations:
+ * This is in a separate private method because it is used from one location:
  *
  * 1) from the public Appliance::Write().
  *
  * 2) in a second worker thread; in that case, Appliance::Write() called Appliance::i_writeImpl(), which
  *    called Appliance::i_writeFSOVA(), which called Appliance::i_writeImpl(), which then called this again.
- *
- * 3) from Appliance::i_writeS3(), which got called from a previous instance of Appliance::taskThreadWriteOVF().
  *
  * @param aFormat
  * @param aLocInfo
@@ -1925,14 +1923,11 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
 /**
  * Actual worker code for writing out OVF/OVA to disk. This is called from Appliance::taskThreadWriteOVF()
- * and therefore runs on the OVF/OVA write worker thread. This runs in two contexts:
+ * and therefore runs on the OVF/OVA write worker thread.
+ *
+ * This runs in one context:
  *
  * 1) in a first worker thread; in that case, Appliance::Write() called Appliance::i_writeImpl();
- *
- * 2) in a second worker thread; in that case, Appliance::Write() called Appliance::i_writeImpl(), which
- *    called Appliance::i_writeS3(), which called Appliance::i_writeImpl(), which then called this. In other
- *    words, to write to the cloud, the first worker thread first starts a second worker thread to create
- *    temporary files and then uploads them to the S3 cloud server.
  *
  * @param pTask
  * @return
@@ -2389,179 +2384,3 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
     return rc;
 }
 
-#ifdef VBOX_WITH_S3
-/**
- * Worker code for writing out OVF to the cloud. This is called from Appliance::taskThreadWriteOVF()
- * in S3 mode and therefore runs on the OVF write worker thread. This then starts a second worker
- * thread to create temporary files (see Appliance::i_writeFS()).
- *
- * @param pTask
- * @return
- */
-HRESULT Appliance::i_writeS3(TaskOVF *pTask)
-{
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", this));
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc = S_OK;
-
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-
-    int vrc = VINF_SUCCESS;
-    RTS3 hS3 = NIL_RTS3;
-    char szOSTmpDir[RTPATH_MAX];
-    RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
-    /* The template for the temporary directory created below */
-    char *pszTmpDir = RTPathJoinA(szOSTmpDir, "vbox-ovf-XXXXXX");
-    list< pair<Utf8Str, ULONG> > filesList;
-
-    // todo:
-    // - usable error codes
-    // - seems snapshot filenames are problematic {uuid}.vdi
-    try
-    {
-        /* Extract the bucket */
-        Utf8Str tmpPath = pTask->locInfo.strPath;
-        Utf8Str bucket;
-        i_parseBucket(tmpPath, bucket);
-
-        /* We need a temporary directory which we can put the OVF file & all
-         * disk images in */
-        vrc = RTDirCreateTemp(pszTmpDir, 0700);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
-
-        /* The temporary name of the target OVF file */
-        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
-
-        /* Prepare the temporary writing of the OVF */
-        ComObjPtr<Progress> progress;
-        /* Create a temporary file based location info for the sub task */
-        LocationInfo li;
-        li.strPath = strTmpOvf;
-        rc = i_writeImpl(pTask->enFormat, li, progress);
-        if (FAILED(rc)) throw rc;
-
-        /* Unlock the appliance for the writing thread */
-        appLock.release();
-        /* Wait until the writing is done, but report the progress back to the
-           caller */
-        ComPtr<IProgress> progressInt(progress);
-        i_waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
-
-        /* Again lock the appliance for the next steps */
-        appLock.acquire();
-
-        vrc = RTPathExists(strTmpOvf.c_str()); /* Paranoid check */
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot find source file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
-        /* Add the OVF file */
-        filesList.push_back(pair<Utf8Str, ULONG>(strTmpOvf, m->ulWeightForXmlOperation)); /* Use 1% of the
-                                                                                             total for the OVF file upload */
-        /* Add the manifest file */
-        if (m->fManifest)
-        {
-            Utf8Str strMfFile = Utf8Str(strTmpOvf).stripSuffix().append(".mf");
-            filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightForXmlOperation)); /* Use 1% of the total
-                                                                                                  for the manifest file upload */
-        }
-
-        /* Now add every disks of every virtual system */
-        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
-        for (it = m->virtualSystemDescriptions.begin();
-             it != m->virtualSystemDescriptions.end();
-             ++it)
-        {
-            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            std::list<VirtualSystemDescriptionEntry*> avsdeHDs =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
-            std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
-            for (itH = avsdeHDs.begin();
-                 itH != avsdeHDs.end();
-                 ++itH)
-            {
-                const Utf8Str &strTargetFileNameOnly = (*itH)->strOvf;
-                /* Target path needs to be composed from where the output OVF is */
-                Utf8Str strTargetFilePath(strTmpOvf);
-                strTargetFilePath.stripFilename();
-                strTargetFilePath.append("/");
-                strTargetFilePath.append(strTargetFileNameOnly);
-                vrc = RTPathExists(strTargetFilePath.c_str()); /* Paranoid check */
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Cannot find source file '%s' (%Rrc)"), strTargetFilePath.c_str(), vrc);
-                filesList.push_back(pair<Utf8Str, ULONG>(strTargetFilePath, (*itH)->ulSizeMB));
-            }
-        }
-        /* Next we have to upload the OVF & all disk images */
-        vrc = RTS3Create(&hS3, pTask->locInfo.strUsername.c_str(), pTask->locInfo.strPassword.c_str(),
-                         pTask->locInfo.strHostname.c_str(), "virtualbox-agent/" VBOX_VERSION_STRING);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_IPRT_ERROR,
-                           tr("Cannot create S3 service handler"));
-        RTS3SetProgressCallback(hS3, pTask->updateProgress, &pTask);
-
-        /* Upload all files */
-        for (list< pair<Utf8Str, ULONG> >::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1)
-        {
-            const pair<Utf8Str, ULONG> &s = (*it1);
-            char *pszFilename = RTPathFilename(s.first.c_str());
-            /* Advance to the next operation */
-            pTask->pProgress->SetNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename).raw(), s.second);
-            vrc = RTS3PutKey(hS3, bucket.c_str(), pszFilename, s.first.c_str());
-            if (RT_FAILURE(vrc))
-            {
-                if (vrc == VERR_S3_CANCELED)
-                    break;
-                else if (vrc == VERR_S3_ACCESS_DENIED)
-                    throw setError(E_ACCESSDENIED,
-                                   tr("Cannot upload file '%s' to S3 storage server (Access denied). Make sure that your credentials are right. Also check that your host clock is properly synced"), pszFilename);
-                else if (vrc == VERR_S3_NOT_FOUND)
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Cannot upload file '%s' to S3 storage server (File not found)"), pszFilename);
-                else
-                    throw setError(VBOX_E_IPRT_ERROR,
-                                   tr("Cannot upload file '%s' to S3 storage server (%Rrc)"), pszFilename, vrc);
-            }
-        }
-    }
-    catch(HRESULT aRC)
-    {
-        rc = aRC;
-    }
-    /* Cleanup */
-    RTS3Destroy(hS3);
-    /* Delete all files which where temporary created */
-    for (list< pair<Utf8Str, ULONG> >::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1)
-    {
-        const char *pszFilePath = (*it1).first.c_str();
-        if (RTPathExists(pszFilePath))
-        {
-            vrc = RTFileDelete(pszFilePath);
-            if (RT_FAILURE(vrc))
-                rc = setError(VBOX_E_FILE_ERROR,
-                              tr("Cannot delete file '%s' (%Rrc)"), pszFilePath, vrc);
-        }
-    }
-    /* Delete the temporary directory */
-    if (RTPathExists(pszTmpDir))
-    {
-        vrc = RTDirRemove(pszTmpDir);
-        if (RT_FAILURE(vrc))
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
-    }
-    if (pszTmpDir)
-        RTStrFree(pszTmpDir);
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return rc;
-}
-#endif /* VBOX_WITH_S3 */

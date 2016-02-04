@@ -157,7 +157,6 @@ private:
     HRESULT i_readFSOVF(TaskOVF *pTask);
     HRESULT i_readFSOVA(TaskOVF *pTask);
     HRESULT i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage);
-    HRESULT i_readS3(TaskOVF *pTask);
     /** @}  */
 
     /** @name Import stuff
@@ -168,7 +167,6 @@ private:
     HRESULT i_importFS(TaskOVF *pTask);
     HRESULT i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock);
     HRESULT i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
-    HRESULT i_importS3(TaskOVF *pTask);
 
     HRESULT i_readFileToBuf(const Utf8Str &strFile,
                             void **ppvBuf,
@@ -229,7 +227,6 @@ private:
     HRESULT i_writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock);
     HRESULT i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
     HRESULT i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage);
-    HRESULT i_writeS3(TaskOVF *pTask);
 
     struct XMLStack;
 

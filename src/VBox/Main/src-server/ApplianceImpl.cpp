@@ -1186,8 +1186,9 @@ void Appliance::i_parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
 /**
  * Thread function for the thread started in Appliance::readImpl() and Appliance::importImpl()
  * and Appliance::writeImpl().
- * This will in turn call Appliance::readFS() or Appliance::readS3() or Appliance::importFS()
- * or Appliance::importS3() or Appliance::writeFS() or Appliance::writeS3().
+ *
+ * This will in turn call Appliance::readFS() or Appliance::importFS() or
+ * Appliance::writeFS().
  *
  * @param aThread
  * @param pvUser
@@ -1211,33 +1212,21 @@ DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, 
             if (task->locInfo.storageType == VFSType_File)
                 taskrc = pAppliance->i_readFS(task);
             else if (task->locInfo.storageType == VFSType_S3)
-#ifdef VBOX_WITH_S3
-                taskrc = pAppliance->i_readS3(task);
-#else
                 taskrc = VERR_NOT_IMPLEMENTED;
-#endif
         break;
 
         case TaskOVF::Import:
             if (task->locInfo.storageType == VFSType_File)
                 taskrc = pAppliance->i_importFS(task);
             else if (task->locInfo.storageType == VFSType_S3)
-#ifdef VBOX_WITH_S3
-                taskrc = pAppliance->i_importS3(task);
-#else
                 taskrc = VERR_NOT_IMPLEMENTED;
-#endif
         break;
 
         case TaskOVF::Write:
             if (task->locInfo.storageType == VFSType_File)
                 taskrc = pAppliance->i_writeFS(task);
             else if (task->locInfo.storageType == VFSType_S3)
-#ifdef VBOX_WITH_S3
-                taskrc = pAppliance->i_writeS3(task);
-#else
                 taskrc = VERR_NOT_IMPLEMENTED;
-#endif
         break;
     }
 
