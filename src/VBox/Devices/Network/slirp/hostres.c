@@ -142,6 +142,7 @@ static void free_labels(struct label *root);
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
 static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *h);
 static PDNSMAPPINGENTRY getDNSMapByName(PNATState pData, const char *name);
+static PDNSMAPPINGENTRY getDNSMapByAddr(PNATState pData, const uint32_t *pu32IpAddress);
 #endif
 
 #if 1 /* XXX */
@@ -653,6 +654,9 @@ resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
 {
     struct dnsmsg_header *pHdr;
     struct hostent *h;
+    struct hostent hostent;
+    char *h_aliases[1];
+    char *h_addr_list[2];
     size_t oend;
     size_t nanswers;
     ssize_t nbytes;
@@ -670,8 +674,40 @@ resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
         goto out; /* NB: RCode_NoError without an answer, not RCode_NXDomain */
     }
 
-    /* XXX: TODO: apply HostResolverMappings */
-    h = gethostbyaddr(&in_addr_arpa, sizeof(struct in_addr), AF_INET);
+    h = NULL;
+#ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
+    /*
+     * If the address in the question is unknown to the real resolver
+     * but has a mapping, and if we do the real lookup first, then the
+     * guest will time out before our lookup times out and even though
+     * we reply with the answer from the map, the answer will be lost.
+     */
+    {
+        PDNSMAPPINGENTRY pReverseMapping = getDNSMapByAddr(pData, &in_addr_arpa.s_addr);
+        if (pReverseMapping != NULL)
+        {
+            LogDbg(("NAT: hostres: %RTnaipv4 resolved from mapping\n",
+                    in_addr_arpa.s_addr));
+
+            hostent.h_name = pReverseMapping->pszName;
+            hostent.h_aliases = h_aliases;
+            h_aliases[0] = NULL;
+            hostent.h_addrtype = AF_INET;
+            hostent.h_length = sizeof(RTNETADDRIPV4);
+            hostent.h_addr_list = h_addr_list;
+            h_addr_list[0] = (char *)&in_addr_arpa.s_addr;
+            h_addr_list[1] = NULL;
+
+            h = &hostent;
+        }
+    }
+#endif
+
+    if (h == NULL)
+    {
+        h = gethostbyaddr(&in_addr_arpa, sizeof(struct in_addr), AF_INET);
+    }
+
     if (h == NULL)
     {
         /* LogErr: h_errno */
@@ -1319,6 +1355,24 @@ getDNSMapByName(PNATState pData, const char *pszName)
   done:
     RTStrFree(pszNameLower);
     return pDNSMapingEntry;
+}
+
+
+static PDNSMAPPINGENTRY
+getDNSMapByAddr(PNATState pData, const uint32_t *pu32IpAddress)
+{
+    PDNSMAPPINGENTRY pDNSMapingEntry;
+
+    if (pu32IpAddress == NULL)
+        return NULL;
+
+    STAILQ_FOREACH(pDNSMapingEntry, &pData->DNSMapNames, MapList)
+    {
+        if (pDNSMapingEntry->u32IpAddress == *pu32IpAddress)
+            return pDNSMapingEntry;
+    }
+
+    return NULL;
 }
 
 
