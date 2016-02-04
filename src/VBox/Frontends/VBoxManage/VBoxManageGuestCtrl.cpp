@@ -269,8 +269,8 @@ typedef struct DESTFILEENTRY
     Utf8Str mFileName;
 } DESTFILEENTRY, *PDESTFILEENTRY;
 /*
- * Map for holding destination entires, whereas the key is the destination
- * directory and the mapped value is a vector holding all elements for this directoy.
+ * Map for holding destination entries, whereas the key is the destination
+ * directory and the mapped value is a vector holding all elements for this directory.
  */
 typedef std::map< Utf8Str, std::vector<DESTFILEENTRY> > DESTDIRMAP, *PDESTDIRMAP;
 typedef std::map< Utf8Str, std::vector<DESTFILEENTRY> >::iterator DESTDIRMAPITER, *PDESTDIRMAPITER;
