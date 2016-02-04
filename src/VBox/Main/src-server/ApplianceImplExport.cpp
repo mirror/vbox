@@ -728,7 +728,7 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
  * Implementation for writing out the OVF to disk. This starts a new thread which will call
  * Appliance::taskThreadWriteOVF().
  *
- * This is in a separate private method because it is used from one location:
+ * This is in a separate private method because it is used from two locations:
  *
  * 1) from the public Appliance::Write().
  *
