@@ -90,7 +90,7 @@ HRESULT Appliance::read(const com::Utf8Str &aFile,
     {
         /* Parse all necessary info out of the URI */
         i_parseURI(aFile, m->locInfo);
-        rc = i_readImpl(m->locInfo, progress);
+        i_readImpl(m->locInfo, progress);
     }
     catch (HRESULT aRC)
     {
@@ -844,9 +844,9 @@ HRESULT Appliance::i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
  *
  * @param   aLocInfo    The OVF location.
  * @param   aProgress   Where to return the progress object.
- * @return  COM success status code. COM error codes will be thrown.
+ * @throws  COM error codes will be thrown.
  */
-HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
+void Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
     BstrFmt bstrDesc = BstrFmt(tr("Reading appliance '%s'"),
                                aLocInfo.strPath.c_str());
@@ -871,7 +871,7 @@ HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
     if (FAILED(rc)) throw rc;
 
     /* Initialize our worker task */
-    TaskOVF* task = NULL;
+    TaskOVF *task = NULL;
     try
     {
         task = new TaskOVF(this, TaskOVF::Read, aLocInfo, aProgress);
@@ -879,14 +879,12 @@ HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
     catch(...)
     {
         delete task;
-        throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
-                            tr("Could not create TaskOVF object for reading the OVF from disk"));
+        throw setError(VBOX_E_OBJECT_NOT_FOUND,
+                       tr("Could not create TaskOVF object for reading the OVF from disk"));
     }
 
     rc = task->createThread();
     if (FAILED(rc)) throw rc;
-
-    return rc;
 }
 
 /**
