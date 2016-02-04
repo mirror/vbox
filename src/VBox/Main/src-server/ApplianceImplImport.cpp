@@ -903,8 +903,7 @@ HRESULT Appliance::i_readFS(TaskOVF *pTask)
 
     AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
-
+    HRESULT rc;
     if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
         rc = i_readFSOVF(pTask);
     else
