@@ -876,9 +876,8 @@ void Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aP
     {
         task = new TaskOVF(this, TaskOVF::Read, aLocInfo, aProgress);
     }
-    catch(...)
+    catch (...)
     {
-        delete task;
         throw setError(VBOX_E_OBJECT_NOT_FOUND,
                        tr("Could not create TaskOVF object for reading the OVF from disk"));
     }
