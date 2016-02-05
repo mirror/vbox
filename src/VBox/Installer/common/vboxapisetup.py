@@ -48,8 +48,8 @@ def main(argv):
     vboxDest = os.environ.get("VBOX_MSI_INSTALL_PATH", None)
     if vboxDest is None:
         vboxDest = os.environ.get('VBOX_INSTALL_PATH', None)
-            if vboxDest is None:
-                raise Exception("No VBOX_INSTALL_PATH defined, exiting")
+        if vboxDest is None:
+            raise Exception("No VBOX_INSTALL_PATH defined, exiting")
 
     vboxVersion = os.environ.get("VBOX_VERSION", None)
     if vboxVersion is None:
