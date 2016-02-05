@@ -1161,6 +1161,24 @@ static void vboxBlockHandler(pointer pData, OSTimePtr pTimeout, pointer pReadmas
         setSizesAndCursorIntegration(pScrn, false);
 }
 
+#define DRIVER_ATOM_NAME "VBOXVIDEO_DRIVER"
+/* The memory storing the initial value of the XFree86_has_VT root window
+ * property.  This has to remain available until server start-up, so we just
+ * use a global. */
+static CARD32 InitialPropertyValue = 1;
+
+/** Initialise a property on the root window to say that our driver is running
+ *  for the benefit of VBoxClient. */
+static void initialiseProperty(ScrnInfoPtr pScrn)
+{
+    Atom atom = -1;
+    CARD32 *PropertyValue = &InitialPropertyValue;
+    atom = MakeAtom(DRIVER_ATOM_NAME, sizeof(DRIVER_ATOM_NAME) - 1, TRUE);
+    if (xf86RegisterRootWindowProperty(pScrn->scrnIndex, atom, XA_INTEGER,
+                                       32, 1, PropertyValue) != Success)
+        FatalError("vboxvideo: failed to register driver root window property\n");
+}
+
 /*
  * QUOTE from the XFree86 DESIGN document:
  *
@@ -1347,6 +1365,8 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     if (vbvxCursorInit(pScreen) != TRUE)
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "Unable to start the VirtualBox mouse pointer integration with the host system.\n");
+
+    initialiseProperty(pScrn);
 
     return (TRUE);
 }
