@@ -2303,6 +2303,11 @@ static DECLCALLBACK(int) tstVDIoFileSetSize(void *pvUser, void *pStorage, uint64
     return VDIoBackendStorageSetSize(pIoStorage->pFile->pIoStorage, cbSize);
 }
 
+static DECLCALLBACK(int) tstVDIoFileSetAllocationSize(void *pvUser, void *pStorage, uint64_t cbSize, uint32_t fFlags)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
 static DECLCALLBACK(int) tstVDIoFileWriteSync(void *pvUser, void *pStorage, uint64_t uOffset,
                                               const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten)
 {
@@ -2771,6 +2776,7 @@ static void tstVDIoScriptExec(const char *pszName, const char *pszScript)
     GlobTest.VDIfIo.pfnGetModificationTime = tstVDIoFileGetModificationTime;
     GlobTest.VDIfIo.pfnGetSize             = tstVDIoFileGetSize;
     GlobTest.VDIfIo.pfnSetSize             = tstVDIoFileSetSize;
+    GlobTest.VDIfIo.pfnSetAllocationSize   = tstVDIoFileSetAllocationSize;
     GlobTest.VDIfIo.pfnWriteSync           = tstVDIoFileWriteSync;
     GlobTest.VDIfIo.pfnReadSync            = tstVDIoFileReadSync;
     GlobTest.VDIfIo.pfnFlushSync           = tstVDIoFileFlushSync;
