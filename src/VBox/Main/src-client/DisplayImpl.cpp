@@ -111,6 +111,7 @@ HRESULT Display::FinalConstruct()
 
     mfSeamlessEnabled = false;
     mpRectVisibleRegion = NULL;
+    mcRectVisibleRegion = 0;
 
 #ifdef VBOX_WITH_CROGL
     mfCrOglDataHidden = false;
