@@ -90,7 +90,7 @@ struct vbox_fbdev;
 struct vbox_private {
     struct drm_device *dev;
 
-    void __iomem *vram;
+    uint8_t __iomem *vram;
     HGSMIGUESTCOMMANDCONTEXT submit_info;
     struct VBVABUFFERCONTEXT *vbva_info;
     bool any_pitch;
@@ -116,12 +116,19 @@ struct vbox_private {
     } ttm;
 
     spinlock_t dev_lock;
+    bool isr_installed;
+    struct work_struct hotplug_work;
 };
 
 int vbox_driver_load(struct drm_device *dev, unsigned long flags);
 int vbox_driver_unload(struct drm_device *dev);
 
 struct vbox_gem_object;
+
+#ifndef VGA_PORT_HGSMI_HOST
+# define VGA_PORT_HGSMI_HOST             0x3b0
+# define VGA_PORT_HGSMI_GUEST            0x3d0
+#endif
 
 struct vbox_connector {
     struct drm_connector base;
@@ -186,6 +193,9 @@ extern void vbox_refresh_modes(struct drm_device *dev);
 #else
 # define CRTC_FB(crtc) (crtc)->primary->fb
 #endif
+
+void vbox_enable_vbva(struct vbox_private *vbox, unsigned crtc_id);
+void vbox_enable_caps(struct vbox_private *vbox);
 
 void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                                        struct drm_clip_rect *rects,
@@ -275,4 +285,9 @@ static inline void vbox_bo_unreserve(struct vbox_bo *bo)
 void vbox_ttm_placement(struct vbox_bo *bo, int domain);
 int vbox_bo_push_sysram(struct vbox_bo *bo);
 int vbox_mmap(struct file *filp, struct vm_area_struct *vma);
+
+/* vbox_irq.c */
+int vbox_irq_init(struct vbox_private *vbox);
+void vbox_irq_fini(struct vbox_private *vbox);
+irqreturn_t vbox_irq_handler(int irq, void *arg);
 #endif

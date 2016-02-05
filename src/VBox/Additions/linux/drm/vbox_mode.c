@@ -98,7 +98,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
                                 pitch, width, height,
                                 vbox_crtc->blanked ? 0 : cBPP, fFlags);
     VBoxHGSMIReportFlagsLocation(&vbox->submit_info, vbox->host_flags_offset);
-    VBoxHGSMISendCapsInfo(&vbox->submit_info, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
+    vbox_enable_caps(vbox);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
@@ -217,6 +217,12 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
         ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &bo->kmap);
         if (ret)
             DRM_ERROR("failed to kmap fbcon\n");
+    }
+    else {
+        unsigned i;
+
+        for (i = 0; i < vbox->num_crtcs; ++i)
+            vbox_enable_vbva(vbox, i);
     }
     vbox_bo_unreserve(bo);
 

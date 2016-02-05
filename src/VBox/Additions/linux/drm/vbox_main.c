@@ -65,9 +65,29 @@ static void vbox_user_framebuffer_destroy(struct drm_framebuffer *fb)
     kfree(fb);
 }
 
+void vbox_enable_vbva(struct vbox_private *vbox, unsigned crtc_id)
+{
+    struct VBVABUFFER *pVBVA = vbox->vbva_info[crtc_id].pVBVA;
+
+    if (pVBVA == NULL)     {
+        LogFunc(("vboxvideo: enabling VBVA.\n"));
+        pVBVA = (struct VBVABUFFER *) (  ((uint8_t *)vbox->vram)
+                                       + vbox->vram_size
+                                       + crtc_id * VBVA_MIN_BUFFER_SIZE);
+        if (!VBoxVBVAEnable(&vbox->vbva_info[crtc_id], &vbox->submit_info, pVBVA, crtc_id))
+            AssertReleaseMsgFailed(("VBoxVBVAEnable failed - heap allocation error, very old host or driver error.\n"));
+    }
+}
+
+void vbox_enable_caps(struct vbox_private *vbox)
+{
+    VBoxHGSMISendCapsInfo(&vbox->submit_info, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION | VBVACAPS_IRQ);
+}
+
 /** Send information about dirty rectangles to VBVA.  If necessary we enable
  * VBVA first, as this is normally disabled after a mode set in case a user
- * takes over the console that is not aware of VBVA (i.e. the VESA BIOS). */
+ * takes over the console that is not aware of VBVA (i.e. the VESA BIOS, and
+ * particularly the old X.Org VESA driver). */
 void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                                        struct drm_clip_rect *rects,
                                        unsigned num_rects)
@@ -78,6 +98,13 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
 
     LogFunc(("vboxvideo: %d: fb=%p, num_rects=%u, vbox=%p\n", __LINE__, fb,
              num_rects, vbox));
+    if (vbox->vbva_info[0].pVBVA == NULL) {
+        for (i = 0; i < vbox->num_crtcs; ++i)
+            vbox_enable_vbva(vbox, i);
+        /* Assume that if the user knows to send dirty rectangle information
+         * they can also handle hot-plug events. */
+        vbox_enable_caps(vbox);
+    }
     spin_lock_irqsave(&vbox->dev_lock, flags);
     for (i = 0; i < num_rects; ++i)
     {
@@ -85,21 +112,8 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
         list_for_each_entry(crtc, &fb->dev->mode_config.crtc_list, head)
         {
             unsigned crtc_id = to_vbox_crtc(crtc)->crtc_id;
-            struct VBVABUFFER *pVBVA = vbox->vbva_info[crtc_id].pVBVA;
             VBVACMDHDR cmdHdr;
 
-            if (!pVBVA)
-            {
-                LogFunc(("vboxvideo: enabling VBVA.\n"));
-                pVBVA = (struct VBVABUFFER *) (  ((uint8_t *)vbox->vram)
-                                               + vbox->vram_size
-                                               + crtc_id * VBVA_MIN_BUFFER_SIZE);
-                if (!VBoxVBVAEnable(&vbox->vbva_info[crtc_id], &vbox->submit_info, pVBVA, crtc_id))
-                    AssertReleaseMsgFailed(("VBoxVBVAEnable failed - heap allocation error, very old host or driver error.\n"));
-                /* Assume that if the user knows to send dirty rectangle information
-                 * they can also handle hot-plug events. */
-                VBoxHGSMISendCapsInfo(&vbox->submit_info, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
-            }
             if (   CRTC_FB(crtc) != fb
                 || rects[i].x1 >   crtc->x
                                   + crtc->hwmode.hdisplay
@@ -345,6 +359,10 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
     dev->mode_config.max_width = VBE_DISPI_MAX_XRES;
     dev->mode_config.max_height = VBE_DISPI_MAX_YRES;
 
+    ret = vbox_irq_init(vbox);
+    if (ret)
+        goto out_free;
+
     ret = vbox_mode_init(dev);
     if (ret)
         goto out_free;
@@ -369,8 +387,9 @@ int vbox_driver_unload(struct drm_device *dev)
     struct vbox_private *vbox = dev->dev_private;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
-    vbox_mode_fini(dev);
     vbox_fbdev_fini(dev);
+    vbox_mode_fini(dev);
+    vbox_irq_fini(vbox);
     drm_mode_config_cleanup(dev);
 
     disableVBVA(vbox);

@@ -60,6 +60,7 @@ FILES_VBOXVIDEO_DRM_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_drv.c=>vbox_drv.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_drv.h=>vbox_drv.h \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_fb.c=>vbox_fb.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_irq.c=>vbox_irq.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_main.c=>vbox_main.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_mode.c=>vbox_mode.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_ttm.c=>vbox_ttm.c \
