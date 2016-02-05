@@ -45,9 +45,11 @@ def patchWith(file,install,sdk):
 
 # See http://docs.python.org/distutils/index.html
 def main(argv):
-    vboxDest = os.environ.get("VBOX_INSTALL_PATH", None)
+    vboxDest = os.environ.get("VBOX_MSI_INSTALL_PATH", None)
     if vboxDest is None:
-        raise Exception("No VBOX_INSTALL_PATH defined, exiting")
+        vboxDest = os.environ.get('VBOX_INSTALL_PATH', None)
+            if vboxDest is None:
+                raise Exception("No VBOX_INSTALL_PATH defined, exiting")
 
     vboxVersion = os.environ.get("VBOX_VERSION", None)
     if vboxVersion is None:
