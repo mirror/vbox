@@ -669,6 +669,29 @@ VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, void *pvStorage, 
  */
 VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACEIO pVDIfs, struct VDINTERFACEIOINT *pVDIfsInt, void *pvStorage, uint32_t fFlags, PRTVFSFILE phVfsFile);
 
+/**
+ * Creates an VD I/O interface wrapper around an IPRT VFS I/O stream.
+ *
+ * @return  VBox status code.
+ * @param   hVfsIos         The IPRT VFS I/O stream handle. The handle will be
+ *                          retained by the returned I/O interface (released on
+ *                          close or destruction).
+ * @param   fAccessMode     The access mode (RTFILE_O_ACCESS_MASK) to accept.
+ * @param   ppIoIf          Where to return the pointer to the VD I/O interface.
+ *                          This must be passed to VDIfDestroyFromVfsStream().
+ */
+VBOXDDU_DECL(int) VDIfCreateFromVfsStream(RTVFSIOSTREAM hVfsIos, uint32_t fAccessMode, PVDINTERFACEIO *ppIoIf);
+
+/**
+ * Destroys the VD I/O interface returned by VDIfCreateFromVfsStream.
+ *
+ * @returns VBox status code.
+ * @param   pIoIf           The I/O interface pointer returned by
+ *                          VDIfCreateFromVfsStream.  NULL will be quietly
+ *                          ignored.
+ */
+VBOXDDU_DECL(int) VDIfDestroyFromVfsStream(PVDINTERFACEIO pIoIf);
+
 
 /**
  * Callback which provides progress information about a currently running
