@@ -1664,7 +1664,7 @@ static void hmR0VmxCheckHostEferMsr(PVMCPU pVCpu)
     if (pVCpu->hm.s.vmx.u32ExitCtls & VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR)
     {
         uint64_t u64Val;
-        int rc = VMXReadVmcs64(VMX_VMCS64_HOST_FIELD_EFER_FULL, &u64Val);
+        int rc = VMXReadVmcs64(VMX_VMCS64_HOST_EFER_FULL, &u64Val);
         AssertRC(rc);
 
         uint64_t u64HostEferMsr = ASMRdMsr(MSR_K6_EFER);
@@ -2000,7 +2000,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
               ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
 
     /* Update VMCS with the VPID. */
-    int rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_FIELD_VPID, pVCpu->hm.s.uCurrentAsid);
+    int rc  = VMXWriteVmcs32(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
     AssertRC(rc);
 
 #undef HMVMX_SET_TAGGED_TLB_FLUSHED
@@ -2137,7 +2137,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
     AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
 
-    int rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_FIELD_VPID, pVCpu->hm.s.uCurrentAsid);
+    int rc  = VMXWriteVmcs32(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
     AssertRC(rc);
 }
 
@@ -2926,20 +2926,20 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 #endif
 
     /* Write these host selector fields into the host-state area in the VMCS. */
-    rc  = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_CS, uSelCS);
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_SS, uSelSS);
+    rc  = VMXWriteVmcs32(VMX_VMCS16_HOST_CS_SEL, uSelCS);
+    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_SS_SEL, uSelSS);
 #if HC_ARCH_BITS == 64
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_DS, uSelDS);
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_ES, uSelES);
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_FS, uSelFS);
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_GS, uSelGS);
+    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_DS_SEL, uSelDS);
+    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_ES_SEL, uSelES);
+    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FS_SEL, uSelFS);
+    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_GS_SEL, uSelGS);
 #else
     NOREF(uSelDS);
     NOREF(uSelES);
     NOREF(uSelFS);
     NOREF(uSelGS);
 #endif
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_TR, uSelTR);
+    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_TR_SEL, uSelTR);
     AssertRCReturn(rc, rc);
 
     /*
@@ -3092,7 +3092,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
      */
     if (pVM->hm.s.vmx.fSupportsVmcsEfer)
     {
-        rc = VMXWriteVmcs64(VMX_VMCS64_HOST_FIELD_EFER_FULL, pVM->hm.s.vmx.u64HostEfer);
+        rc = VMXWriteVmcs64(VMX_VMCS64_HOST_EFER_FULL, pVM->hm.s.vmx.u64HostEfer);
         AssertRCReturn(rc, rc);
     }
 
@@ -4429,22 +4429,22 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
         }
 #endif
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_CS, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_CS_SEL, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
                                      VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS, &pMixedCtx->cs);
         AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_SS, VMX_VMCS32_GUEST_SS_LIMIT, VMX_VMCS_GUEST_SS_BASE,
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_SS_SEL, VMX_VMCS32_GUEST_SS_LIMIT, VMX_VMCS_GUEST_SS_BASE,
                                      VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS, &pMixedCtx->ss);
         AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_DS, VMX_VMCS32_GUEST_DS_LIMIT, VMX_VMCS_GUEST_DS_BASE,
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_DS_SEL, VMX_VMCS32_GUEST_DS_LIMIT, VMX_VMCS_GUEST_DS_BASE,
                                      VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS, &pMixedCtx->ds);
         AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_ES, VMX_VMCS32_GUEST_ES_LIMIT, VMX_VMCS_GUEST_ES_BASE,
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_ES_SEL, VMX_VMCS32_GUEST_ES_LIMIT, VMX_VMCS_GUEST_ES_BASE,
                                      VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, &pMixedCtx->es);
         AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_FS, VMX_VMCS32_GUEST_FS_LIMIT, VMX_VMCS_GUEST_FS_BASE,
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FS_SEL, VMX_VMCS32_GUEST_FS_LIMIT, VMX_VMCS_GUEST_FS_BASE,
                                      VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS, &pMixedCtx->fs);
         AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_GS, VMX_VMCS32_GUEST_GS_LIMIT, VMX_VMCS_GUEST_GS_BASE,
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_GS_SEL, VMX_VMCS32_GUEST_GS_LIMIT, VMX_VMCS_GUEST_GS_BASE,
                                      VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS, &pMixedCtx->gs);
         AssertRCReturn(rc, rc);
 
@@ -4515,7 +4515,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(   !(pMixedCtx->tr.u32Limit & 0xfff00000)
                || (u32AccessRights & RT_BIT(15)));              /* Granularity MB1. */
 
-        rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_FIELD_TR,         u16Sel);
+        rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_TR_SEL,           u16Sel);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_LIMIT,         u32Limit);
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_TR_BASE,          u64Base);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS, u32AccessRights);
@@ -4553,7 +4553,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         else
             u32Access = pMixedCtx->ldtr.Attr.u;
 
-        rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_FIELD_LDTR,         pMixedCtx->ldtr.Sel);
+        rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_LDTR_SEL,           pMixedCtx->ldtr.Sel);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_LIMIT,         pMixedCtx->ldtr.u32Limit);
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_LDTR_BASE,          pMixedCtx->ldtr.u64Base);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, u32Access);
@@ -4924,8 +4924,8 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 Log4(("Old Guest Rsp %#RX64 New %#RX64\n", pCtx->rsp, u64Val));
                 rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Val);         AssertRC(rc);
                 Log4(("Old Guest Rflags %#RX32 New %#RX32\n", pCtx->eflags.u32, u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS16_GUEST_FIELD_VPID, &u32Val);   AssertRC(rc);
-                Log4(("VMX_VMCS16_GUEST_FIELD_VPID             %u\n", u32Val));
+                rc = VMXReadVmcs32(VMX_VMCS16_VPID, &u32Val);               AssertRC(rc);
+                Log4(("VMX_VMCS16_VPID  %u\n", u32Val));
 
                 /* Host bits. */
                 rc = VMXReadVmcsHstN(VMX_VMCS_HOST_CR0, &uHCReg);           AssertRC(rc);
@@ -4938,7 +4938,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 RTGDTR      HostGdtr;
                 PCX86DESCHC pDesc;
                 ASMGetGDTR(&HostGdtr);
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_FIELD_CS, &u32Val);      AssertRC(rc);
+                rc = VMXReadVmcs32(VMX_VMCS16_HOST_CS_SEL, &u32Val);      AssertRC(rc);
                 Log4(("Host CS %#08x\n", u32Val));
                 if (u32Val < HostGdtr.cbGdt)
                 {
@@ -4946,7 +4946,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                     HMR0DumpDescriptor(pDesc, u32Val, "CS: ");
                 }
 
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_FIELD_DS, &u32Val);      AssertRC(rc);
+                rc = VMXReadVmcs32(VMX_VMCS16_HOST_DS_SEL, &u32Val);      AssertRC(rc);
                 Log4(("Host DS %#08x\n", u32Val));
                 if (u32Val < HostGdtr.cbGdt)
                 {
@@ -4954,7 +4954,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                     HMR0DumpDescriptor(pDesc, u32Val, "DS: ");
                 }
 
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_FIELD_ES, &u32Val);      AssertRC(rc);
+                rc = VMXReadVmcs32(VMX_VMCS16_HOST_ES_SEL, &u32Val);      AssertRC(rc);
                 Log4(("Host ES %#08x\n", u32Val));
                 if (u32Val < HostGdtr.cbGdt)
                 {
@@ -4962,7 +4962,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                     HMR0DumpDescriptor(pDesc, u32Val, "ES: ");
                 }
 
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_FIELD_FS, &u32Val);      AssertRC(rc);
+                rc = VMXReadVmcs32(VMX_VMCS16_HOST_FS_SEL, &u32Val);      AssertRC(rc);
                 Log4(("Host FS %#08x\n", u32Val));
                 if (u32Val < HostGdtr.cbGdt)
                 {
@@ -4970,7 +4970,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                     HMR0DumpDescriptor(pDesc, u32Val, "FS: ");
                 }
 
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_FIELD_GS, &u32Val);      AssertRC(rc);
+                rc = VMXReadVmcs32(VMX_VMCS16_HOST_GS_SEL, &u32Val);      AssertRC(rc);
                 Log4(("Host GS %#08x\n", u32Val));
                 if (u32Val < HostGdtr.cbGdt)
                 {
@@ -4978,7 +4978,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                     HMR0DumpDescriptor(pDesc, u32Val, "GS: ");
                 }
 
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_FIELD_SS, &u32Val);      AssertRC(rc);
+                rc = VMXReadVmcs32(VMX_VMCS16_HOST_SS_SEL, &u32Val);      AssertRC(rc);
                 Log4(("Host SS %#08x\n", u32Val));
                 if (u32Val < HostGdtr.cbGdt)
                 {
@@ -4986,7 +4986,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                     HMR0DumpDescriptor(pDesc, u32Val, "SS: ");
                 }
 
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_FIELD_TR,  &u32Val);     AssertRC(rc);
+                rc = VMXReadVmcs32(VMX_VMCS16_HOST_TR_SEL,  &u32Val);     AssertRC(rc);
                 Log4(("Host TR %#08x\n", u32Val));
                 if (u32Val < HostGdtr.cbGdt)
                 {
@@ -6348,7 +6348,7 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
      */
     if (pSelReg->Attr.u & X86DESCATTR_UNUSABLE)
     {
-        Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);          /* TR is the only selector that can never be unusable. */
+        Assert(idxSel != VMX_VMCS16_GUEST_TR_SEL);          /* TR is the only selector that can never be unusable. */
 
         /* Masking off: X86DESCATTR_P, X86DESCATTR_LIMIT_HIGH, and X86DESCATTR_AVL. The latter two are really irrelevant. */
         pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_L | X86DESCATTR_D | X86DESCATTR_G
@@ -6367,11 +6367,11 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
 
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 # define VMXLOCAL_READ_SEG(Sel, CtxSel) \
-    hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
+    hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_##Sel##_SEL, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
                           VMX_VMCS_GUEST_##Sel##_BASE_CACHE_IDX, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
 #else
 # define VMXLOCAL_READ_SEG(Sel, CtxSel) \
-    hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
+    hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_##Sel##_SEL, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
                           VMX_VMCS_GUEST_##Sel##_BASE, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
 #endif
 

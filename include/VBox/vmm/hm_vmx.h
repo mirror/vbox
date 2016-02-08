@@ -1159,36 +1159,39 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMCS field encoding - 16 bits guest fields
  * @{
  */
-#define VMX_VMCS16_GUEST_FIELD_VPID                             0x0
-#define VMX_VMCS16_GUEST_FIELD_ES                               0x800
-#define VMX_VMCS16_GUEST_FIELD_CS                               0x802
-#define VMX_VMCS16_GUEST_FIELD_SS                               0x804
-#define VMX_VMCS16_GUEST_FIELD_DS                               0x806
-#define VMX_VMCS16_GUEST_FIELD_FS                               0x808
-#define VMX_VMCS16_GUEST_FIELD_GS                               0x80A
-#define VMX_VMCS16_GUEST_FIELD_LDTR                             0x80C
-#define VMX_VMCS16_GUEST_FIELD_TR                               0x80E
+#define VMX_VMCS16_VPID                                         0x000
+#define VMX_VMCS16_POSTED_INTR_NOTIF_VECTOR                     0x002
+#define VMX_VMCS16_EPTP_INDEX                                   0x004
+#define VMX_VMCS16_GUEST_ES_SEL                                 0x800
+#define VMX_VMCS16_GUEST_CS_SEL                                 0x802
+#define VMX_VMCS16_GUEST_SS_SEL                                 0x804
+#define VMX_VMCS16_GUEST_DS_SEL                                 0x806
+#define VMX_VMCS16_GUEST_FS_SEL                                 0x808
+#define VMX_VMCS16_GUEST_GS_SEL                                 0x80A
+#define VMX_VMCS16_GUEST_LDTR_SEL                               0x80C
+#define VMX_VMCS16_GUEST_TR_SEL                                 0x80E
+#define VMX_VMCS16_GUEST_INTR_STATUS                            0x810
 /** @} */
 
 /** @name VMCS field encoding - 16 bits host fields
  * @{
  */
-#define VMX_VMCS16_HOST_FIELD_ES                                0xC00
-#define VMX_VMCS16_HOST_FIELD_CS                                0xC02
-#define VMX_VMCS16_HOST_FIELD_SS                                0xC04
-#define VMX_VMCS16_HOST_FIELD_DS                                0xC06
-#define VMX_VMCS16_HOST_FIELD_FS                                0xC08
-#define VMX_VMCS16_HOST_FIELD_GS                                0xC0A
-#define VMX_VMCS16_HOST_FIELD_TR                                0xC0C
+#define VMX_VMCS16_HOST_ES_SEL                                  0xC00
+#define VMX_VMCS16_HOST_CS_SEL                                  0xC02
+#define VMX_VMCS16_HOST_SS_SEL                                  0xC04
+#define VMX_VMCS16_HOST_DS_SEL                                  0xC06
+#define VMX_VMCS16_HOST_FS_SEL                                  0xC08
+#define VMX_VMCS16_HOST_GS_SEL                                  0xC0A
+#define VMX_VMCS16_HOST_TR_SEL                                  0xC0C
 /** @}          */
 
 /** @name VMCS field encoding - 64 bits host fields
  * @{
  */
-#define VMX_VMCS64_HOST_FIELD_PAT_FULL                          0x2C00
-#define VMX_VMCS64_HOST_FIELD_PAT_HIGH                          0x2C01
-#define VMX_VMCS64_HOST_FIELD_EFER_FULL                         0x2C02
-#define VMX_VMCS64_HOST_FIELD_EFER_HIGH                         0x2C03
+#define VMX_VMCS64_HOST_PAT_FULL                                0x2C00
+#define VMX_VMCS64_HOST_PAT_HIGH                                0x2C01
+#define VMX_VMCS64_HOST_EFER_FULL                               0x2C02
+#define VMX_VMCS64_HOST_EFER_HIGH                               0x2C03
 #define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                   0x2C04      /**< MSR IA32_PERF_GLOBAL_CTRL */
 #define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                   0x2C05      /**< MSR IA32_PERF_GLOBAL_CTRL */
 /** @}          */
@@ -1229,16 +1232,56 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_CTRL_APIC_ACCESSADDR_HIGH                    0x2015
 
 /** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC) */
+#define VMX_VMCS64_CTRL_POSTED_INTR_DESC_FULL                   0x2016
+#define VMX_VMCS64_CTRL_POSTED_INTR_DESC_HIGH                   0x2017
+
+/** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC) */
 #define VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL                       0x2018
 #define VMX_VMCS64_CTRL_VMFUNC_CTRLS_HIGH                       0x2019
 
 /** Extended page table pointer. */
-#define VMX_VMCS64_CTRL_EPTP_FULL                               0x201a
-#define VMX_VMCS64_CTRL_EPTP_HIGH                               0x201b
+#define VMX_VMCS64_CTRL_EPTP_FULL                               0x201A
+#define VMX_VMCS64_CTRL_EPTP_HIGH                               0x201B
+
+/** EOI-exit bitmap 0. */
+#define VMX_VMCS64_CTRL_EOI_BITMAP_0_FULL                       0x201C
+#define VMX_VMCS64_CTRL_EOI_BITMAP_0_HIGH                       0x201D
+
+/** EOI-exit bitmap 1. */
+#define VMX_VMCS64_CTRL_EOI_BITMAP_1_FULL                       0x201E
+#define VMX_VMCS64_CTRL_EOI_BITMAP_1_HIGH                       0x201F
+
+/** EOI-exit bitmap 2. */
+#define VMX_VMCS64_CTRL_EOI_BITMAP_2_FULL                       0x2020
+#define VMX_VMCS64_CTRL_EOI_BITMAP_2_HIGH                       0x2021
+
+/** EOI-exit bitmap 3. */
+#define VMX_VMCS64_CTRL_EOI_BITMAP_3_FULL                       0x2022
+#define VMX_VMCS64_CTRL_EOI_BITMAP_3_HIGH                       0x2023
 
 /** Extended page table pointer lists. */
 #define VMX_VMCS64_CTRL_EPTP_LIST_FULL                          0x2024
 #define VMX_VMCS64_CTRL_EPTP_LIST_HIGH                          0x2025
+
+/** VM-read bitmap. */
+#define VMX_VMCS64_CTRL_VMREAD_BITMAP_FULL                      0x2026
+#define VMX_VMCS64_CTRL_VMREAD_BITMAP_HIGH                      0x2027
+
+/** VM-write bitmap. */
+#define VMX_VMCS64_CTRL_VMWRITE_BITMAP_FULL                     0x2028
+#define VMX_VMCS64_CTRL_VMWRITE_BITMAP_HIGH                     0x2029
+
+/** Virtualization-exception information address. */
+#define VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_FULL                 0x202A
+#define VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_HIGH                 0x202B
+
+/** XSS-exiting bitmap. */
+#define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_FULL                 0x202C
+#define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH                 0x202D
+
+/** TSC multiplier. */
+#define VMX_VMCS64_CTRL_TSC_MULTIPLIER_FULL                     0x2032
+#define VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH                     0x2033
 
 /** VM-exit guest physical address. */
 #define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL                    0x2400
