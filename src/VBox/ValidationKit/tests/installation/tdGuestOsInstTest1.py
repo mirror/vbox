@@ -140,11 +140,10 @@ class InstallTestVm(vboxtestvms.TestVm):
                 if self.sHddControllerType == self.ksSataController:
                     fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_IntelAhci,
                                                                     self.sHddControllerType);
-                elif self.ksScsiController:
+                    fRc = fRc and oSession.setStorageControllerPortCount(self.sHddControllerType, 1);
+                elif self.sHddControllerType == self.ksScsiController:
                     fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_LsiLogic,
                                                                     self.sHddControllerType);
-                else:
-                    fRc = fRc and oSession.setStorageControllerPortCount(self.sHddControllerType, 1);
                 try:
                     sHddPath = os.path.join(os.path.dirname(oVM.settingsFilePath),
                                             '%s-%s-%s.vdi' % (self.sVmName, sVirtMode, cCpus,));
