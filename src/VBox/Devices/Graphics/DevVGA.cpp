@@ -3056,6 +3056,8 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
                                              | HGSMIHOSTFLAGS_WATCHDOG
 #  endif
                                              | HGSMIHOSTFLAGS_VSYNC
+                                             | HGSMIHOSTFLAGS_HOTPLUG
+                                             | HGSMIHOSTFLAGS_CURSOR_CAPABILITIES
                                              );
                 }
                 else
