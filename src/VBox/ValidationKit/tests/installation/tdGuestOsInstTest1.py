@@ -33,7 +33,6 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os
 import sys
-import random
 
 
 # Only the main script needs to modify the path.
@@ -138,18 +137,14 @@ class InstallTestVm(vboxtestvms.TestVm):
         if fRc is True:
             oSession = oTestDrv.openSession(oVM);
             if oSession is not None:
-                if self.sHddControllerType == self.ksIdeController:
-                    fRc = fRc and oSession.setStorageControllerPortCount(self.sHddControllerType, 1);
+                if self.sHddControllerType == self.ksSataController:
+                    fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_IntelAhci,
+                                                                    self.sHddControllerType);
+                elif self.ksScsiController:
+                    fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_LsiLogic,
+                                                                    self.sHddControllerType);
                 else:
-                    random.seed();
-                    self.sHddControllerType = random.choice([self.ksSataController, self.ksScsiController]);
-
-                    if self.sHddControllerType == self.ksSataController:
-                        fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_IntelAhci,
-                                                                        self.sHddControllerType);
-                    elif self.sHddControllerType == self.ksScsiController:
-                        fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_LsiLogic,
-                                                                        self.sHddControllerType);
+                    fRc = fRc and oSession.setStorageControllerPortCount(self.sHddControllerType, 1);
                 try:
                     sHddPath = os.path.join(os.path.dirname(oVM.settingsFilePath),
                                             '%s-%s-%s.vdi' % (self.sVmName, sVirtMode, cCpus,));
@@ -264,7 +259,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             InstallTestVm(oSet, 'tst-fedora7',      'Fedora',           'fedora7-txs.iso',          InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfUbuntuNewAmdBug | InstallTestVm.kfReqIoApic),
             InstallTestVm(oSet, 'tst-fedora9',      'Fedora',           'fedora9-txs.iso',          InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-fedora18-64',  'Fedora_64',        'fedora18-x64-txs.iso',     InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
-            InstallTestVm(oSet, 'tst-fedora18',     'Fedora',           'fedora18-txs.iso',         InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit),
+            InstallTestVm(oSet, 'tst-fedora18',     'Fedora',           'fedora18-txs.iso',         InstallTestVm.ksScsiController,  8, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-ols6',         'Oracle',           'ols6-i386-txs.iso',        InstallTestVm.ksSataController, 12, InstallTestVm.kf32Bit | InstallTestVm.kfReqPae),
             InstallTestVm(oSet, 'tst-ols6-64',      'Oracle_64',        'ols6-x86_64-txs.iso',      InstallTestVm.ksSataController, 12, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-rhel5',        'RedHat',           'rhel5-txs.iso',            InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfReqPae | InstallTestVm.kfReqIoApic),
@@ -279,7 +274,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             InstallTestVm(oSet, 'tst-ubuntu1404',   'Ubuntu',           'ubuntu1404-txs.iso',       InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfReqPae),
             InstallTestVm(oSet, 'tst-ubuntu1404-64','Ubuntu_64',        'ubuntu1404-amd64-txs.iso', InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-debian7',      'Debian',           'debian-7.0.0-txs.iso',     InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit),
-            InstallTestVm(oSet, 'tst-debian7-64',   'Debian_64',        'debian-7.0.0-x64-txs.iso', InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
+            InstallTestVm(oSet, 'tst-debian7-64',   'Debian_64',        'debian-7.0.0-x64-txs.iso', InstallTestVm.ksScsiController,  8, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-w7-64',        'Windows7_64',      'win7-x64-txs.iso',         InstallTestVm.ksSataController, 25, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-w7-32',        'Windows7',         'win7-x86-txs.iso',         InstallTestVm.ksSataController, 25, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-w2k3',         'Windows2003',      'win2k3ent-txs.iso',        InstallTestVm.ksIdeController,  25, InstallTestVm.kf32Bit),
