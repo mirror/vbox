@@ -197,7 +197,7 @@ static DECLCALLBACK(int) vdIfFromVfs_Close(void *pvUser, void *pvStorage)
 {
     PVDIFFROMVFS pThis = (PVDIFFROMVFS)pvUser;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThis->hVfsIos == (RTVFSIOSTREAM)pvStorage, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->hVfsIos == (RTVFSIOSTREAM)pvStorage, VERR_INVALID_HANDLE);
     AssertReturn(pThis->fOpened, VERR_INVALID_HANDLE);
 
     uint32_t cRefs = RTVfsIoStrmRelease(pThis->hVfsIos);
@@ -212,8 +212,7 @@ static DECLCALLBACK(int) vdIfFromVfs_GetSize(void *pvUser, void *pvStorage, uint
 {
     PVDIFFROMVFS            pThis = (PVDIFFROMVFS)pvUser;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThis->hVfsIos == (RTVFSIOSTREAM)pvStorage, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->fOpened, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->hVfsIos == (RTVFSIOSTREAM)pvStorage, VERR_INVALID_HANDLE);
     AssertReturn(pThis->fOpened, VERR_INVALID_HANDLE);
 
     RTFSOBJINFO ObjInfo;
@@ -229,7 +228,7 @@ static DECLCALLBACK(int) vdIfFromVfs_ReadSync(void *pvUser, void *pvStorage, uin
 {
     PVDIFFROMVFS            pThis = (PVDIFFROMVFS)pvUser;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThis->hVfsIos == (RTVFSIOSTREAM)pvStorage, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->hVfsIos == (RTVFSIOSTREAM)pvStorage, VERR_INVALID_HANDLE);
     AssertReturn(pThis->fOpened, VERR_INVALID_HANDLE);
     AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
     AssertReturn(pThis->fAccessMode & RTFILE_O_READ, VERR_ACCESS_DENIED);
@@ -244,7 +243,7 @@ static DECLCALLBACK(int) vdIfFromVfs_WriteSync(void *pvUser, void *pvStorage, ui
 {
     PVDIFFROMVFS            pThis = (PVDIFFROMVFS)pvUser;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThis->hVfsIos == (RTVFSIOSTREAM)pvStorage, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->hVfsIos == (RTVFSIOSTREAM)pvStorage, VERR_INVALID_HANDLE);
     AssertReturn(pThis->fOpened, VERR_INVALID_HANDLE);
     AssertPtrNullReturn(pcbWritten, VERR_INVALID_POINTER);
     AssertReturn(pThis->fAccessMode & RTFILE_O_WRITE, VERR_ACCESS_DENIED);
