@@ -1021,6 +1021,10 @@ static int vmdkAllocGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 {
     int rc = VINF_SUCCESS;
     size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
+    /** @todo r=bird: This code is unnecessarily confusing pointer states with
+     *        (1) unnecessary initialization of locals, (2) unnecesarily wide
+     *        scoping of variables, (3) instance on goto code structure.  Also,
+     *        having two initialized variables on one line decreases readability. */
     uint32_t *pGD = NULL, *pRGD = NULL;
 
     pGD = (uint32_t *)RTMemAllocZ(cbGD);
@@ -1364,6 +1368,10 @@ out:
     return rc;
 }
 
+/**
+ * @param   ppszUnquoted    Where to store the return value, use RTMemTmpFree to
+ *                          free.
+ */
 static int vmdkStringUnquote(PVMDKIMAGE pImage, const char *pszStr,
                              char **ppszUnquoted, char **ppszNext)
 {
@@ -1567,8 +1575,12 @@ static int vmdkDescBaseGetU32(PVMDKDESCRIPTOR pDescriptor, const char *pszKey,
     return RTStrToUInt32Ex(pszValue, NULL, 10, puValue);
 }
 
+/**
+ * @param   ppszValue       Where to store the return value, use RTMemTmpFree to
+ *                          free.
+ */
 static int vmdkDescBaseGetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
-                              const char *pszKey, const char **ppszValue)
+                              const char *pszKey, char **ppszValue)
 {
     const char *pszValue;
     char *pszValueUnquoted;
@@ -1700,8 +1712,12 @@ static int vmdkDescExtInsert(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
     return VINF_SUCCESS;
 }
 
+/**
+ * @param   ppszValue       Where to store the return value, use RTMemTmpFree to
+ *                          free.
+ */
 static int vmdkDescDDBGetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
-                             const char *pszKey, const char **ppszValue)
+                             const char *pszKey, char **ppszValue)
 {
     const char *pszValue;
     char *pszValueUnquoted;
@@ -2048,7 +2064,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
         return vdIfError(pImage->pIfError, VERR_VD_VMDK_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VMDK: unsupported format version in descriptor in '%s'"), pImage->pszFilename);
 
     /* Get image creation type and determine image flags. */
-    const char *pszCreateType = NULL;   /* initialized to make gcc shut up */
+    char *pszCreateType = NULL;   /* initialized to make gcc shut up */
     rc = vmdkDescBaseGetStr(pImage, &pImage->Descriptor, "createType",
                             &pszCreateType);
     if (RT_FAILURE(rc))
@@ -2063,7 +2079,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
         pImage->uImageFlags |= VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED;
     else if (!strcmp(pszCreateType, "vmfs"))
         pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED | VD_VMDK_IMAGE_FLAGS_ESX;
-    RTStrFree((char *)(void *)pszCreateType);
+    RTMemTmpFree(pszCreateType);
 
     /* Count the number of extent config entries. */
     for (uLine = pImage->Descriptor.uFirstExtent, cExtents = 0;
@@ -3669,7 +3685,10 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
             cbTmp = strlen(pszTmp) + 1;
             char *pszBasename = (char *)RTMemTmpAlloc(cbTmp);
             if (!pszBasename)
+            {
+                RTStrFree(pszTmp);
                 return VERR_NO_MEMORY;
+            }
             memcpy(pszBasename, pszTmp, cbTmp);
             RTStrFree(pszTmp);
             pExtent->pszBasename = pszBasename;
@@ -6242,7 +6261,7 @@ static DECLCALLBACK(int) vmdkGetComment(void *pBackendData, char *pszComment,
 
     if (pImage)
     {
-        const char *pszCommentEncoded = NULL;
+        char *pszCommentEncoded = NULL;
         rc = vmdkDescDDBGetStr(pImage, &pImage->Descriptor,
                               "ddb.comment", &pszCommentEncoded);
         if (rc == VERR_VD_VMDK_VALUE_NOT_FOUND)
@@ -6258,8 +6277,7 @@ static DECLCALLBACK(int) vmdkGetComment(void *pBackendData, char *pszComment,
                 *pszComment = '\0';
             rc = VINF_SUCCESS;
         }
-        if (pszCommentEncoded)
-            RTStrFree((char *)(void *)pszCommentEncoded);
+        RTMemTmpFree(pszCommentEncoded);
     }
     else
         rc = VERR_VD_NOT_OPENED;
