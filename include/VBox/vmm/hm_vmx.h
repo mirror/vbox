@@ -1160,7 +1160,7 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 #define VMX_VMCS16_VPID                                         0x000
-#define VMX_VMCS16_POSTED_INTR_NOTIF_VECTOR                     0x002
+#define VMX_VMCS16_POSTED_INTR_NOTIFY_VECTOR                    0x002
 #define VMX_VMCS16_EPTP_INDEX                                   0x004
 #define VMX_VMCS16_GUEST_ES_SEL                                 0x800
 #define VMX_VMCS16_GUEST_CS_SEL                                 0x802
