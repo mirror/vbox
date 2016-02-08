@@ -33,6 +33,7 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os
 import sys
+import random
 
 
 # Only the main script needs to modify the path.
@@ -53,6 +54,7 @@ class InstallTestVm(vboxtestvms.TestVm):
     """ Installation test VM. """
 
     ## @name The primary controller, to which the disk will be attached.
+    ksScsiController = 'SCSI Controller'
     ksSataController = 'SATA Controller'
     ksIdeController  = 'IDE Controller'
 
@@ -136,11 +138,18 @@ class InstallTestVm(vboxtestvms.TestVm):
         if fRc is True:
             oSession = oTestDrv.openSession(oVM);
             if oSession is not None:
-                if self.sHddControllerType == self.ksSataController:
-                    fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_IntelAhci,
-                                                                    self.sHddControllerType)
-                    fRc = fRc and oSession.setStorageControllerPortCount(self.sHddControllerType, 1)
+                if self.sHddControllerType == self.ksIdeController:
+                    fRc = fRc and oSession.setStorageControllerPortCount(self.sHddControllerType, 1);
+                else:
+                    random.seed();
+                    self.sHddControllerType = random.choice([self.ksSataController, self.ksScsiController]);
 
+                    if self.sHddControllerType == self.ksSataController:
+                        fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_IntelAhci,
+                                                                        self.sHddControllerType);
+                    elif self.sHddControllerType == self.ksScsiController:
+                        fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_LsiLogic,
+                                                                        self.sHddControllerType);
                 try:
                     sHddPath = os.path.join(os.path.dirname(oVM.settingsFilePath),
                                             '%s-%s-%s.vdi' % (self.sVmName, sVirtMode, cCpus,));
