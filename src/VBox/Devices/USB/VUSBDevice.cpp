@@ -1646,7 +1646,16 @@ DECLHIDDEN(int) vusbDevIoThreadExecV(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFu
         rc = RTReqQueueCallV(pDev->hReqQueueSync, &hReq, 0 /* cMillies */, fReqFlags, pfnFunction, cArgs, Args);
         Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
 
-        vusbDevUrbIoThreadWakeup(pDev);
+        /* In case we are called on the I/O thread just process the request. */
+        if (   pDev->hUrbIoThread == RTThreadSelf()
+            && (fFlags & VUSB_DEV_IO_THREAD_EXEC_FLAGS_SYNC))
+        {
+            int rc2 = RTReqQueueProcess(pDev->hReqQueueSync, 0);
+            Assert(RT_SUCCESS(rc2) || rc2 == VERR_TIMEOUT);
+        }
+        else
+            vusbDevUrbIoThreadWakeup(pDev);
+
         if (   rc == VERR_TIMEOUT
             && (fFlags & VUSB_DEV_IO_THREAD_EXEC_FLAGS_SYNC))
         {
@@ -1781,7 +1790,7 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
 
     if (pszCaptureFilename)
     {
-        rc = VUSBSnifferCreate(&pDev->hSniffer, 0, pszCaptureFilename, NULL);
+        rc = VUSBSnifferCreate(&pDev->hSniffer, 0, pszCaptureFilename, NULL, NULL);
         AssertRCReturn(rc, rc);
     }
 

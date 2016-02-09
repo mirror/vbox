@@ -1051,7 +1051,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     if (pszCaptureFilename)
     {
-        rc = VUSBSnifferCreate(&pThis->hSniffer, 0, pszCaptureFilename, NULL);
+        rc = VUSBSnifferCreate(&pThis->hSniffer, 0, pszCaptureFilename, NULL, NULL);
         if (RT_FAILURE(rc))
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                        N_("VUSBSniffer cannot open '%s' for writing. The directory must exist and it must be writable for the current user"),
