@@ -1348,6 +1348,8 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI                      RT_BIT(5)
 /** Activate VMX preemption timer. */
 #define VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER                    RT_BIT(6)
+/** Process interrupts with the posted-interrupt notification vector. */
+#define VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR                      RT_BIT(7)
 /* All other bits are reserved and must be set according to MSR IA32_VMX_PROCBASED_CTLS. */
 /** @} */
 
