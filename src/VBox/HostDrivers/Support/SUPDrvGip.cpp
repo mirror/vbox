@@ -3826,7 +3826,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
             && (   !ASMIsAmdCpu()
                 || ASMGetCpuFamily(u32Tmp = ASMCpuId_EAX(1)) > 0x15
                 || (   ASMGetCpuFamily(u32Tmp)   == 0x15           /* Piledriver+, not bulldozer (FX-4150 didn't like it). */
-                    && ASMGetCpuModelAMD(u32Tmp) >= 0x02) ) )
+                    && ASMGetCpuModelAMD(u32Tmp) >= 0x01) ) )      /* Temporary change */
         || !RTMpIsCpuOnline(idMaster) )
     {
         uint32_t i;
