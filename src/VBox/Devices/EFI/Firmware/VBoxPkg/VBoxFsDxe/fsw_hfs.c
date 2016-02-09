@@ -2,7 +2,8 @@
 /** @file
  * fsw_hfs.c - HFS file system driver code, see
  *
- *   http://developer.apple.com/technotes/tn/tn1150.html
+ *   https://developer.apple.com/legacy/library/technotes/tn/tn1150.html
+ *   (formerly http://developer.apple.com/technotes/tn/tn1150.html)
  *
  * Current limitations:
  *  - Doesn't support permissions
