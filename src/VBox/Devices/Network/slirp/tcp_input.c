@@ -696,7 +696,7 @@ findso:
             }
         }
         else if (   ti->ti_ack == tp->snd_una
-                 && LIST_FIRST(&tp->t_segq)
+                 && LIST_EMPTY(&tp->t_segq)
                  && ti->ti_len <= sbspace(&so->so_rcv))
         {
             /*
