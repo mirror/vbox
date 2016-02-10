@@ -1571,16 +1571,10 @@ HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert
 
         /*
          * Find the start of the certificate part of the file, so we can avoid
-         * upsetting the manifest parser with it.  We exploit the fact that the
-         * above function adds a trailing zero to the buffer, thus permitting strstr.
+         * upsetting the manifest parser with it.
          */
-        char *pszSplit = strstr((char *)pvSignature, "---BEGIN CERTIFICATE");
-        if (!pszSplit)
-            pszSplit = strstr((char *)pvSignature, "BEGIN CERTIFICATE");
-        if (!pszSplit)
-            pszSplit = strstr((char *)pvSignature, "BEGIN\tCERTIFICATE");
-        if (!pszSplit)
-            pszSplit = strstr((char *)pvSignature, "CERTIFICATE");
+        char *pszSplit = (char *)RTCrPemFindFirstSectionInContent(pvSignature, cbSignature,
+                                                                  g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers);
         if (pszSplit)
             while (   pszSplit != (char *)pvSignature
                    && pszSplit[-1] != '\n'
@@ -1588,8 +1582,9 @@ HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert
                 pszSplit--;
         else
         {
+            AssertLogRelMsgFailed(("Failed to find BEGIN CERTIFICATE markers in '%s'::'%s' - impossible unless it's a DER encoded certificate!",
+                                   pTask->locInfo.strPath.c_str(), pszSubFileNm));
             pszSplit = (char *)pvSignature + cbSignature;
-            AssertFailed();
         }
         *pszSplit = '\0';
 
