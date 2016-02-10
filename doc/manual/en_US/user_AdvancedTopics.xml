@@ -4093,6 +4093,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
               <para>
               <screen>VBoxManage modifyvm "VM name" --paravirtdebug "enabled=1,address=192.168.32.1,port=55000"</screen>
               </para>
+              <para>Refer <xref linkend="gimdebughyperv" /> for the complete set of options.</para>
             </listitem>
 
             <listitem>
