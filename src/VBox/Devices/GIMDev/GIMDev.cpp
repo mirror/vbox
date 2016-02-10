@@ -206,18 +206,22 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
             if (pDbgDrvStream)
                 LogRel(("GIMDev: LUN#%u: Debug port configured\n", GIMDEV_DEBUG_LUN));
             else
+            {
                 LogRel(("GIMDev: LUN#%u: No unit\n", GIMDEV_DEBUG_LUN));
-        }
-        else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        {
-            pThis->pDbgDrvBase = NULL;
-            LogRel(("GIMDev: LUN#%u: No debug port configured\n", GIMDEV_DEBUG_LUN));
+                rc = VERR_INTERNAL_ERROR_2;
+            }
         }
         else
         {
-            AssertLogRelMsgFailed(("GIMDev: LUN#%u: Failed to attach to driver on debug port. rc=%Rrc\n", GIMDEV_DEBUG_LUN, rc));
-            /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
-            return rc;
+            pThis->pDbgDrvBase = NULL;
+            LogRel(("GIMDev: LUN#%u: No debug port configured! rc=%Rrc\n", GIMDEV_DEBUG_LUN, rc));
+        }
+
+        if (!pDbgDrvStream)
+        {
+            Assert(rc != VINF_SUCCESS);
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Debug port configuration expected when GIM configured with debugging support"));
         }
 
         void *pvDbgRecvBuf = RTMemAllocZ(pThis->DbgSetup.cbDbgRecvBuf);
