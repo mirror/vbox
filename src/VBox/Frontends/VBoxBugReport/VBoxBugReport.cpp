@@ -212,7 +212,7 @@ PRTSTREAM BugReportFile::getStream(void)
 
 
 BugReportCommand::BugReportCommand(const char *pszTitle, const char *pszExec, ...)
-    : BugReportItem(pszTitle)
+    : BugReportItem(pszTitle), m_Strm(NULL)
 {
     unsigned cArgs = 0;
     m_papszArgs[cArgs++] = RTStrDup(pszExec);
@@ -593,11 +593,20 @@ int main(int argc, char *argv[])
         }
         while(0);
 
+        RTTIMESPEC  TimeSpec;
+        RTTIME      Time;
+        RTTimeExplode(&Time, RTTimeNow(&TimeSpec));
+        RTCStringFmt strOutFile("%04d-%02d-%02d-%02d-%02d-%02d-bugreport.%s",
+                                Time.i32Year, Time.u8Month, Time.u8MonthDay,
+                                Time.u8Hour, Time.u8Minute, Time.u8Second,
+                                fTextOutput ? "txt" : "tgz");
+        if (!pszOutputFile)
+            pszOutputFile = strOutFile.c_str();
         BugReport *pReport;
         if (fTextOutput)
-            pReport = new BugReportText(pszOutputFile ? pszOutputFile : "bugreport.txt");
+            pReport = new BugReportText(pszOutputFile);
         else
-            pReport = new BugReportTarGzip(pszOutputFile ? pszOutputFile : "bugreport.tgz");
+            pReport = new BugReportTarGzip(pszOutputFile);
         createBugReport(pReport, homeDir, list);
         pReport->complete();
         delete pReport;

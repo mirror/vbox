@@ -229,4 +229,12 @@ void createBugReportOsSpecific(BugReport* report, const char *pszHome)
     report->addItem(new BugReportFile(PathJoin(WinInfDir.c_str(), "setupapi.app.log"), "setupapi.app.log"));
     report->addItem(new BugReportFile(PathJoin(WinInfDir.c_str(), "setupapi.dev.log"), "setupapi.dev.log"));
     report->addItem(new BugReportNetworkAdaptersWin);
+    RTCStringFmt WinSysDir("%ls/System32", szWinDir);
+    report->addItem(new BugReportCommand("SystemEvents", PathJoin(WinSysDir.c_str(), "wevtutil.exe"),
+                                         "qe", "System", "/f:text",
+                                         "/q:*[System[Provider[@Name='VBoxUSBMon']]]", NULL));
+    report->addItem(new BugReportCommand("UpdateHistory", PathJoin(WinSysDir.c_str(), "wbem/wmic.exe"),
+                                         "qfe", "list", "brief", NULL));
+    report->addItem(new BugReportCommand("DriverServices", PathJoin(WinSysDir.c_str(), "sc.exe"),
+                                         "query", "type=", "driver", "state=", "all", NULL));
 }
