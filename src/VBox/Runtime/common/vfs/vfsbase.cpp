@@ -2134,7 +2134,7 @@ RTDECL(int) RTVfsIoStrmWriteAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, const void *pv
 }
 
 
-RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
     if (pcbRead)
@@ -2149,7 +2149,7 @@ RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlo
     RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc;
     if (!(pThis->pOps->fFeatures & RTVFSIOSTREAMOPS_FEAT_NO_SG))
-        rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbRead);
+        rc = pThis->pOps->pfnRead(pThis->Base.pvThis, off, pSgBuf, fBlocking, pcbRead);
     else
     {
         size_t cbRead = 0;
@@ -2161,12 +2161,14 @@ RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlo
             RTSgBufInit(&SgBuf, &pSgBuf->paSegs[iSeg], 1);
 
             size_t cbReadSeg = pcbRead ? 0 : pSgBuf->paSegs[iSeg].cbSeg;
-            rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbRead ? &cbReadSeg : NULL);
+            rc = pThis->pOps->pfnRead(pThis->Base.pvThis, off, &SgBuf, fBlocking, pcbRead ? &cbReadSeg : NULL);
             if (RT_FAILURE(rc))
                 break;
             cbRead += cbReadSeg;
             if ((pcbRead && cbReadSeg != SgBuf.paSegs[0].cbSeg) || rc != VINF_SUCCESS)
                 break;
+            if (off != -1)
+                off += cbReadSeg;
         }
 
         if (pcbRead)
@@ -2177,7 +2179,7 @@ RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlo
 }
 
 
-RTDECL(int) RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+RTDECL(int) RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     AssertPtrNullReturn(pcbWritten, VERR_INVALID_POINTER);
     if (pcbWritten)
@@ -2192,7 +2194,7 @@ RTDECL(int) RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBl
     RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc;
     if (!(pThis->pOps->fFeatures & RTVFSIOSTREAMOPS_FEAT_NO_SG))
-        rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
+        rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, off, pSgBuf, fBlocking, pcbWritten);
     else
     {
         size_t cbWritten = 0;
@@ -2204,7 +2206,7 @@ RTDECL(int) RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBl
             RTSgBufInit(&SgBuf, &pSgBuf->paSegs[iSeg], 1);
 
             size_t cbWrittenSeg = 0;
-            rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbWritten ? &cbWrittenSeg : NULL);
+            rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, off, &SgBuf, fBlocking, pcbWritten ? &cbWrittenSeg : NULL);
             if (RT_FAILURE(rc))
                 break;
             if (pcbWritten)
@@ -2212,7 +2214,11 @@ RTDECL(int) RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBl
                 cbWritten += cbWrittenSeg;
                 if (cbWrittenSeg != SgBuf.paSegs[0].cbSeg)
                     break;
+                if (off != -1)
+                    off += cbWrittenSeg;
             }
+            else if (off != -1)
+                off += pSgBuf->paSegs[iSeg].cbSeg;
         }
 
         if (pcbWritten)

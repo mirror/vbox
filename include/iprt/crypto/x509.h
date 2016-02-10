@@ -960,6 +960,10 @@ RTDECL(int) RTCrX509Certificate_VerifySignature(PCRTCRX509CERTIFICATE pThis, PCR
                                                 PRTERRINFO pErrInfo);
 RTDECL(int) RTCrX509Certificate_ReadFromFile(PRTCRX509CERTIFICATE pCertificate, const char *pszFilename, uint32_t fFlags,
                                              PCRTASN1ALLOCATORVTABLE pAllocator, PRTERRINFO pErrInfo);
+RTDECL(int) RTCrX509Certificate_ReadFromBuffer(PRTCRX509CERTIFICATE pCertificate, const void *pvBuf, size_t cbBuf,
+                                               uint32_t fFlags, PCRTASN1ALLOCATORVTABLE pAllocator,
+                                               PRTERRINFO pErrInfo, const char *pszErrorTag);
+
 
 
 /** @name X.509 Certificate Extensions

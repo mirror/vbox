@@ -335,6 +335,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/x509.cpp \
 	common/crypto/digest-core.cpp \
 	common/crypto/digest-builtin.cpp \
+	common/crypto/digest-vfs.cpp \
 	common/crypto/iprt-openssl.cpp \
 	common/crypto/rsa-asn1-decoder.cpp \
 	common/crypto/rsa-core.cpp \

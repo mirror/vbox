@@ -31,6 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/manifest.h>
 
+#include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -90,6 +91,8 @@ typedef struct RTMANIFESTPTIOS
     RTVFSIOSTREAM       hVfsIos;
     /** The hashes.  */
     PRTMANIFESTHASHES   pHashes;
+    /** The current hash position. */
+    RTFOFF              offCurPos;
     /** Whether we're reading or writing. */
     bool                fReadOrWrite;
     /** Whether we've already added the entry to the manifest. */
@@ -314,10 +317,89 @@ static void rtManifestPtIos_UpdateHashes(PRTMANIFESTPTIOS pThis, PCRTSGBUF pSgBu
 static DECLCALLBACK(int) rtManifestPtIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
-    int rc = RTVfsIoStrmSgRead(pThis->hVfsIos, pSgBuf, fBlocking, pcbRead);
-    if (RT_SUCCESS(rc))
-        rtManifestPtIos_UpdateHashes(pThis, pSgBuf, pcbRead ? *pcbRead : ~(size_t)0);
-    Assert(off == -1); NOREF(off);
+    int rc;
+
+    /*
+     * To make sure we're continuing where we left off, we must have the exact
+     * stream position since a previous read using 'off' may change it.
+     */
+    RTFOFF offActual = off == -1 ? RTVfsIoStrmTell(pThis->hVfsIos) : off;
+    if (offActual == pThis->offCurPos)
+    {
+        rc = RTVfsIoStrmSgRead(pThis->hVfsIos, off, pSgBuf, fBlocking, pcbRead);
+        if (RT_SUCCESS(rc))
+        {
+            rtManifestPtIos_UpdateHashes(pThis, pSgBuf, pcbRead ? *pcbRead : ~(size_t)0);
+            if (!pcbRead)
+                for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+                    pThis->offCurPos += pSgBuf->paSegs[iSeg].cbSeg;
+            else
+                pThis->offCurPos += *pcbRead;
+        }
+        Assert(RTVfsIoStrmTell(pThis->hVfsIos) == pThis->offCurPos);
+    }
+    else
+    {
+        /*
+         * If we're skipping over stuff, we need to read the gap and hash it.
+         */
+        if (pThis->offCurPos < offActual)
+        {
+            size_t cbBuf = _8K;
+            void  *pvBuf = alloca(cbBuf);
+            do
+            {
+                RTFOFF cbGap = off - pThis->offCurPos;
+                size_t cbThisRead = cbGap >= (RTFOFF)cbBuf ? cbBuf : (size_t)cbGap;
+                size_t cbActual;
+                rc = RTVfsIoStrmReadAt(pThis->hVfsIos, pThis->offCurPos, pvBuf, cbThisRead, fBlocking, &cbActual);
+                if (RT_FAILURE(rc) || rc == VINF_TRY_AGAIN)
+                    return rc;
+
+                rtManifestHashesUpdate(pThis->pHashes, pvBuf, cbActual);
+                pThis->offCurPos += cbActual;
+
+                if (rc == VINF_EOF)
+                {
+                    if (pcbRead)
+                        *pcbRead = 0;
+                    else
+                        rc = VERR_EOF;
+                    return rc;
+                }
+            } while (pThis->offCurPos < offActual);
+            Assert(RTVfsIoStrmTell(pThis->hVfsIos) == offActual);
+        }
+
+        /*
+         * At this point we've eliminated any gap and can execute the requested read.
+         */
+        rc = RTVfsIoStrmSgRead(pThis->hVfsIos, off, pSgBuf, fBlocking, pcbRead);
+        if (RT_SUCCESS(rc))
+        {
+            /* See if there is anything to update the hash with. */
+            size_t cbLeft = pcbRead ? *pcbRead : ~(size_t)0;
+            for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+            {
+                size_t cbThis = pSgBuf->paSegs[iSeg].cbSeg;
+                if (cbThis > cbLeft)
+                    cbThis = cbLeft;
+
+                if (   offActual >= pThis->offCurPos
+                    && pThis->offCurPos < offActual + (ssize_t)cbThis)
+                {
+                    size_t offSeg = (size_t)(offActual - pThis->offCurPos);
+                    rtManifestHashesUpdate(pThis->pHashes, (uint8_t *)pSgBuf->paSegs[iSeg].pvSeg + offSeg, cbThis - offSeg);
+                    pThis->offCurPos += cbThis - offSeg;
+                }
+
+                cbLeft -= cbThis;
+                if (!cbLeft)
+                    break;
+                offActual += cbThis;
+            }
+        }
+    }
     return rc;
 }
 
@@ -328,10 +410,19 @@ static DECLCALLBACK(int) rtManifestPtIos_Read(void *pvThis, RTFOFF off, PCRTSGBU
 static DECLCALLBACK(int) rtManifestPtIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
-    int rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, pSgBuf, fBlocking, pcbWritten);
+    AssertReturn(off == -1 || off == pThis->offCurPos, VERR_WRONG_ORDER);
+    Assert(RTVfsIoStrmTell(pThis->hVfsIos) == pThis->offCurPos);
+
+    int rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
     if (RT_SUCCESS(rc))
+    {
         rtManifestPtIos_UpdateHashes(pThis, pSgBuf, pcbWritten ? *pcbWritten : ~(size_t)0);
-    Assert(off == -1); NOREF(off);
+        if (!pcbWritten)
+            for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+                pThis->offCurPos += pSgBuf->paSegs[iSeg].cbSeg;
+        else
+            pThis->offCurPos += *pcbWritten;
+    }
     return rc;
 }
 
@@ -424,8 +515,13 @@ RTDECL(int) RTManifestEntryAddPassthruIoStream(RTMANIFEST hManifest, RTVFSIOSTRE
     AssertReturn(fAttrs < RTMANIFEST_ATTR_END, VERR_INVALID_PARAMETER);
     AssertPtr(pszEntry);
     AssertPtr(phVfsIosPassthru);
+
+    RTFOFF const offCurPos = RTVfsIoStrmTell(hVfsIos);
+    AssertReturn(offCurPos >= 0, (int)offCurPos);
+
     uint32_t cRefs = RTManifestRetain(hManifest);
     AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+
     cRefs = RTVfsIoStrmRetain(hVfsIos);
     AssertReturnStmt(cRefs != UINT32_MAX, RTManifestRelease(hManifest), VERR_INVALID_HANDLE);
 
@@ -440,6 +536,7 @@ RTDECL(int) RTManifestEntryAddPassthruIoStream(RTMANIFEST hManifest, RTVFSIOSTRE
     {
         pThis->hVfsIos          = hVfsIos;
         pThis->pHashes          = rtManifestHashesCreate(fAttrs);
+        pThis->offCurPos        = offCurPos;
         pThis->hManifest        = hManifest;
         pThis->fReadOrWrite     = fReadOrWrite;
         pThis->fAddedEntry      = false;
@@ -477,6 +574,24 @@ RTDECL(int) RTManifestPtIosAddEntryNow(RTVFSIOSTREAM hVfsPtIos)
     pThis->fAddedEntry = true;
     rtManifestHashesFinal(pThis->pHashes);
     return rtManifestHashesSetAttrs(pThis->pHashes, pThis->hManifest, pThis->pszEntry);
+}
+
+
+/**
+ * Checks if the give I/O stream is a manifest passthru instance or not.
+ *
+ * @returns true if it's a manifest passthru I/O stream, false if not.
+ * @param   hVfsPtIos   Possible the manifest passthru I/O stream handle.
+ */
+RTDECL(bool) RTManifestPtIosIsInstanceOf(RTVFSIOSTREAM hVfsPtIos)
+{
+    if (hVfsPtIos != NIL_RTVFSIOSTREAM)
+    {
+        PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)RTVfsIoStreamToPrivate(hVfsPtIos, &g_rtManifestPassthruIosOps);
+        if (pThis)
+            return true;
+    }
+    return false;
 }
 
 

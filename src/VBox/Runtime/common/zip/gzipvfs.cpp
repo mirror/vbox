@@ -312,7 +312,7 @@ static int rtZipGzip_ReadOneSeg(PRTZIPGZIPSTREAM pThis, void *pvBuf, size_t cbTo
         if (pThis->Zlib.avail_in == 0)
         {
             size_t cbReadIn = ~(size_t)0;
-            rc = RTVfsIoStrmSgRead(pThis->hVfsIos, &pThis->SgBuf, fBlocking, &cbReadIn);
+            rc = RTVfsIoStrmSgRead(pThis->hVfsIos, -1 /*off*/, &pThis->SgBuf, fBlocking, &cbReadIn);
             if (rc != VINF_SUCCESS)
             {
                 AssertMsg(RT_FAILURE(rc) || rc == VINF_TRY_AGAIN || rc == VINF_EOF, ("%Rrc\n", rc));
@@ -424,7 +424,7 @@ static int rtZipGzip_WriteOutputBuffer(PRTZIPGZIPSTREAM pThis, bool fBlocking)
         RTSgBufReset(&pThis->SgBuf);
 
         cbWrittenOut = ~(size_t)0;
-        rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, &pThis->SgBuf, fBlocking, &cbWrittenOut);
+        rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, -1 /*off*/, &pThis->SgBuf, fBlocking, &cbWrittenOut);
         if (rc != VINF_SUCCESS)
         {
             AssertMsg(RT_FAILURE(rc) || rc == VINF_TRY_AGAIN, ("%Rrc\n", rc));

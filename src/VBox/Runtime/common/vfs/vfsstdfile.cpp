@@ -501,7 +501,10 @@ RTDECL(int) RTVfsIoStrmOpenNormal(const char *pszFilename, uint64_t fOpen, PRTVF
     RTVFSFILE hVfsFile;
     int rc = RTVfsFileOpenNormal(pszFilename, fOpen, &hVfsFile);
     if (RT_SUCCESS(rc))
+    {
         *phVfsIos = RTVfsFileToIoStream(hVfsFile);
+        RTVfsFileRelease(hVfsFile);
+    }
     return rc;
 }
 

@@ -804,7 +804,7 @@ RTDECL(int) RTVfsMemFileCreate(RTVFSIOSTREAM hVfsIos, size_t cbEstimate, PRTVFSF
 }
 
 
-RTDECL(int) RTVfsFileFromBuffer(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, void const *pvBuf, size_t cbBuf, PRTVFSFILE phVfsFile)
+RTDECL(int) RTVfsFileFromBuffer(uint32_t fFlags, void const *pvBuf, size_t cbBuf, PRTVFSFILE phVfsFile)
 {
     /*
      * Create a memory file instance and set the extension size according to the
@@ -831,6 +831,19 @@ RTDECL(int) RTVfsFileFromBuffer(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, void con
             *phVfsFile = hVfsFile;
             return VINF_SUCCESS;
         }
+        RTVfsFileRelease(hVfsFile);
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTVfsIoStrmFromBuffer(uint32_t fFlags, void const *pvBuf, size_t cbBuf, PRTVFSIOSTREAM phVfsIos)
+{
+    RTVFSFILE hVfsFile;
+    int rc = RTVfsFileFromBuffer(fFlags, pvBuf, cbBuf, &hVfsFile);
+    if (RT_SUCCESS(rc))
+    {
+        *phVfsIos = RTVfsFileToIoStream(hVfsFile);
         RTVfsFileRelease(hVfsFile);
     }
     return rc;

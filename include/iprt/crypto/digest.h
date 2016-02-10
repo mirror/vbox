@@ -173,6 +173,7 @@ RTDECL(int) RTCrDigestReset(RTCRDIGEST hDigest);
 RTDECL(uint32_t) RTCrDigestRetain(RTCRDIGEST hDigest);
 RTDECL(uint32_t) RTCrDigestRelease(RTCRDIGEST hDigest);
 RTDECL(int) RTCrDigestUpdate(RTCRDIGEST hDigest, void const *pvData, size_t cbData);
+RTDECL(int) RTCrDigestUpdateFromVfsFile(RTCRDIGEST hDigest, RTVFSFILE hVfsFile, bool fRewindFile);
 RTDECL(int) RTCrDigestFinal(RTCRDIGEST hDigest, void *pvHash, size_t cbHash);
 RTDECL(bool) RTCrDigestMatch(RTCRDIGEST hDigest, void const *pvHash, size_t cbHash);
 RTDECL(uint8_t const *) RTCrDigestGetHash(RTCRDIGEST hDigest);

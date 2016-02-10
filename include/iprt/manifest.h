@@ -319,6 +319,14 @@ RTDECL(int) RTManifestEntryAddPassthruIoStream(RTMANIFEST hManifest, RTVFSIOSTRE
 RTDECL(int) RTManifestPtIosAddEntryNow(RTVFSIOSTREAM hVfsPtIos);
 
 /**
+ * Checks if the give I/O stream is a manifest passthru instance or not.
+ *
+ * @returns true if it's a manifest passthru I/O stream, false if not.
+ * @param   hVfsPtIos   Possible the manifest passthru I/O stream handle.
+ */
+RTDECL(bool) RTManifestPtIosIsInstanceOf(RTVFSIOSTREAM hVfsPtIos);
+
+/**
  * Adds an entry for a file with the specified set of attributes.
  *
  * @returns IPRT status code.

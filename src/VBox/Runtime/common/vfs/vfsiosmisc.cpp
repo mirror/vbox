@@ -32,6 +32,7 @@
 #include <iprt/vfslowlevel.h>
 
 #include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 
 
@@ -121,5 +122,106 @@ RTDECL(int) RTVfsIoStrmValidateUtf8Encoding(RTVFSIOSTREAM hVfsIos, uint32_t fFla
     }
 
     return rc == VINF_EOF ? VINF_SUCCESS : rc;
+}
+
+
+/** Header size.  */
+#define READ_ALL_HEADER_SIZE    0x20
+/** The header magic. It's followed by the size (both size_t). */
+#define READ_ALL_HEADER_MAGIC   UINT32_C(0x11223355)
+
+RTDECL(int) RTVfsIoStrmReadAll(RTVFSIOSTREAM hVfsIos, void **ppvBuf, size_t *pcbBuf)
+{
+    /*
+     * Try query the object information and in case the stream has a known
+     * size we could use for guidance.
+     */
+    RTFSOBJINFO ObjInfo;
+    int    rc = RTVfsIoStrmQueryInfo(hVfsIos, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+    size_t cbAllocated = RT_SUCCESS(rc) && ObjInfo.cbObject > 0 && ObjInfo.cbObject < _1G
+                       ? (size_t)ObjInfo.cbObject + 1 : _16K;
+    cbAllocated += READ_ALL_HEADER_SIZE;
+    void *pvBuf = RTMemAlloc(cbAllocated);
+    if (pvBuf)
+    {
+        memset(pvBuf, 0xfe, READ_ALL_HEADER_SIZE);
+        size_t off = 0;
+        for (;;)
+        {
+            /*
+             * Handle buffer growing and detecting the end of it all.
+             */
+            size_t cbToRead = cbAllocated - off - READ_ALL_HEADER_SIZE - 1;
+            if (!cbToRead)
+            {
+                /* The end? */
+                uint8_t bIgn;
+                size_t cbIgn;
+                rc = RTVfsIoStrmRead(hVfsIos, &bIgn, 0, true /*fBlocking*/, &cbIgn);
+                if (rc == VINF_EOF)
+                    break;
+
+                /* Grow the buffer. */
+                cbAllocated -= READ_ALL_HEADER_SIZE - 1;
+                cbAllocated  = RT_MAX(RT_MIN(cbAllocated, _32M), _1K);
+                cbAllocated  = RT_ALIGN_Z(cbAllocated, _4K);
+                cbAllocated += READ_ALL_HEADER_SIZE + 1;
+
+                void *pvNew = RTMemRealloc(pvBuf, cbAllocated);
+                AssertBreakStmt(pvNew, rc = VERR_NO_MEMORY);
+
+                cbToRead = cbAllocated - off - READ_ALL_HEADER_SIZE - 1;
+            }
+            Assert(cbToRead < cbAllocated);
+
+            /*
+             * Read.
+             */
+            size_t cbActual;
+            rc = RTVfsIoStrmRead(hVfsIos, (uint8_t *)pvBuf + READ_ALL_HEADER_SIZE + off, cbToRead,
+                                 true /*fBlocking*/, &cbActual);
+            if (RT_FAILURE(rc))
+                break;
+            Assert(cbActual > 0);
+            Assert(cbActual <= cbToRead);
+            off += cbActual;
+            if (rc == VINF_EOF)
+                break;
+        }
+        Assert(rc != VERR_EOF);
+        if (RT_SUCCESS(rc))
+        {
+            ((size_t *)pvBuf)[0] = READ_ALL_HEADER_MAGIC;
+            ((size_t *)pvBuf)[1] = off;
+            ((uint8_t *)pvBuf)[READ_ALL_HEADER_SIZE + off] = 0;
+
+            *ppvBuf = (uint8_t *)pvBuf + READ_ALL_HEADER_SIZE;
+            *pcbBuf = off;
+            return VINF_SUCCESS;
+        }
+
+        RTMemFree(pvBuf);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    *ppvBuf = NULL;
+    *pcbBuf = 0;
+    return rc;
+}
+
+
+RTDECL(void) RTVfsIoStrmReadAllFree(void *pvBuf, size_t cbBuf)
+{
+    AssertPtrReturnVoid(pvBuf);
+
+    /* Spool back to the start of the header. */
+    pvBuf = (uint8_t *)pvBuf - READ_ALL_HEADER_SIZE;
+
+    /* Make sure the caller isn't messing with us. Hardcoded, but works. */
+    Assert(((size_t *)pvBuf)[0] == READ_ALL_HEADER_MAGIC);
+    Assert(((size_t *)pvBuf)[1] == cbBuf);
+
+    /* Free it. */
+    RTMemFree(pvBuf);
 }
 

@@ -373,11 +373,11 @@ PCRTCRPKIXENCRYPTIONDESC RTCrPkixEncryptionFindByObjId(PCRTASN1OBJID pObjId, voi
 RTDECL(int) RTCrPkixEncryptionCreateByObjIdString(PRTCRPKIXENCRYPTION phEncryption, const char *pszObjId,
                                                   bool fEncrypt, PCRTASN1BITSTRING pKey,PCRTASN1DYNTYPE pParams);
 RTDECL(int) RTCrPkixEncryptionCreateByObjId(PRTCRPKIXENCRYPTION phEncryption, PCRTASN1OBJID pObjId, bool fEncrypt,
-                                           PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams);
+                                            PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams);
 
 
 RTDECL(int) RTCrPkixEncryptionCreate(PRTCRPKIXENCRYPTION phEncryption, PCRTCRPKIXENCRYPTIONDESC pDesc, void *pvOpaque,
-                                    bool fEncrypt, PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams);
+                                     bool fEncrypt, PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams);
 RTDECL(int) RTCrPkixEncryptionReset(RTCRPKIXENCRYPTION hEncryption);
 RTDECL(uint32_t) RTCrPkixEncryptionRetain(RTCRPKIXENCRYPTION hEncryption);
 RTDECL(uint32_t) RTCrPkixEncryptionRelease(RTCRPKIXENCRYPTION hEncryption);

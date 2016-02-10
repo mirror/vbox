@@ -526,7 +526,7 @@ static DECLCALLBACK(int) rtManifestEntryCompare(PRTSTRSPACECORE pStr, void *pvUs
     PRTMANIFESTENTRY  pEntry2;
 
     /*
-     * Ignore this entry.
+     * Ignore this entry?
      */
     char const * const *ppsz = pEquals->papszIgnoreEntries;
     if (ppsz)
