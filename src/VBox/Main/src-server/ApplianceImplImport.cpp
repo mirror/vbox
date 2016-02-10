@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <iprt/alloca.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
