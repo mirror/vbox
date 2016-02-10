@@ -42,7 +42,12 @@
 *********************************************************************************************************************************/
 static RTCRPEMMARKERWORD const g_aWords_Certificate[]  = { { RT_STR_TUPLE("CERTIFICATE") } };
 /** X509 Certificate markers. */
-static RTCRPEMMARKER     const g_aCertificateMarkers[] = { { g_aWords_Certificate, RT_ELEMENTS(g_aWords_Certificate) } };
+RT_DECL_DATA_CONST(RTCRPEMMARKER const) g_aRTCrX509CertificateMarkers[] =
+{
+    { g_aWords_Certificate, RT_ELEMENTS(g_aWords_Certificate) }
+};
+/** Number of entries in g_aRTCrX509CertificateMarkers. */
+RT_DECL_DATA_CONST(uint32_t const) g_cRTCrX509CertificateMarkers = RT_ELEMENTS(g_aRTCrX509CertificateMarkers);
 
 
 RTDECL(int) RTCrX509Certificate_ReadFromFile(PRTCRX509CERTIFICATE pCertificate, const char *pszFilename, uint32_t fFlags,
@@ -50,7 +55,8 @@ RTDECL(int) RTCrX509Certificate_ReadFromFile(PRTCRX509CERTIFICATE pCertificate, 
 {
     AssertReturn(!fFlags, VERR_INVALID_FLAGS);
     PCRTCRPEMSECTION pSectionHead;
-    int rc = RTCrPemReadFile(pszFilename, 0, g_aCertificateMarkers, RT_ELEMENTS(g_aCertificateMarkers), &pSectionHead, pErrInfo);
+    int rc = RTCrPemReadFile(pszFilename, 0, g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers,
+                             &pSectionHead, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         RTCRX509CERTIFICATE TmpCert;
@@ -84,7 +90,7 @@ RTDECL(int) RTCrX509Certificate_ReadFromBuffer(PRTCRX509CERTIFICATE pCertificate
 {
     AssertReturn(!fFlags, VERR_INVALID_FLAGS);
     PCRTCRPEMSECTION pSectionHead;
-    int rc = RTCrPemParseContent(pvBuf, cbBuf, 0, g_aCertificateMarkers, RT_ELEMENTS(g_aCertificateMarkers),
+    int rc = RTCrPemParseContent(pvBuf, cbBuf, 0, g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers,
                                  &pSectionHead, pErrInfo);
     if (RT_SUCCESS(rc))
     {
@@ -120,7 +126,8 @@ RTDECL(int) RTCrX509Certificates_ReadFromFile(const char *pszFilename, uint32_t 
 {
     AssertReturn(!fFlags, VERR_INVALID_FLAGS);
     PCRTCRPEMSECTION pSectionHead;
-    int rc = RTCrPemReadFile(pszFilename, 0, g_aCertificateMarkers, RT_ELEMENTS(g_aCertificateMarkers), &pSectionHead, pErrInfo);
+    int rc = RTCrPemReadFile(pszFilename, 0, g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers,
+                             &pSectionHead, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         pCertificates->Allocation

@@ -27,6 +27,7 @@
 #define ___iprt_crypto_x509_h
 
 #include <iprt/asn1.h>
+#include <iprt/crypto/pem.h>
 
 
 RT_C_DECLS_BEGIN
@@ -963,6 +964,11 @@ RTDECL(int) RTCrX509Certificate_ReadFromFile(PRTCRX509CERTIFICATE pCertificate, 
 RTDECL(int) RTCrX509Certificate_ReadFromBuffer(PRTCRX509CERTIFICATE pCertificate, const void *pvBuf, size_t cbBuf,
                                                uint32_t fFlags, PCRTASN1ALLOCATORVTABLE pAllocator,
                                                PRTERRINFO pErrInfo, const char *pszErrorTag);
+
+/** X509 Certificate markers for RTCrPemFindFirstSectionInContent et al. */
+extern RTDATADECL(RTCRPEMMARKER const)  g_aRTCrX509CertificateMarkers[];
+/** Number of entries in g_aRTCrX509CertificateMarkers. */
+extern RTDATADECL(uint32_t const)       g_cRTCrX509CertificateMarkers;
 
 
 

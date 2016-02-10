@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,14 +23,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_crypto_spc_h
-#define ___iprt_crypto_spc_h
+#ifndef ___iprt_crypto_pem_h
+#define ___iprt_crypto_pem_h
 
-#include <iprt/asn1.h>
-#include <iprt/crypto/x509.h>
-#include <iprt/crypto/pkcs7.h>
-#include <iprt/md5.h>
-#include <iprt/sha.h>
+#include <iprt/types.h>
 
 
 RT_C_DECLS_BEGIN
@@ -154,6 +150,22 @@ RTDECL(int) RTCrPemReadFile(const char *pszFilename, uint32_t fFlags, PCRTCRPEMM
 /** Continue on encoding error. */
 #define RTCRPEMREADFILE_F_CONTINUE_ON_ENCODING_ERROR    RT_BIT(0)
 /** @} */
+
+/**
+ * Finds the beginning of first PEM section using the specified markers.
+ *
+ * This will not look any further than the first section.  Nor will it check for
+ * binaries.
+ *
+ * @returns Pointer to the "-----BEGIN XXXX" sequence on success.
+ *          NULL if not found.
+ * @param   pvContent       The content bytes to parse.
+ * @param   cbContent       The number of content bytes.
+ * @param   paMarkers       Array of one or more section markers to look for.
+ * @param   cMarkers        Number of markers in the array.
+ */
+RTDECL(const char *) RTCrPemFindFirstSectionInContent(void const *pvContent, size_t cbContent,
+                                                      PCRTCRPEMMARKER paMarkers, size_t cMarkers);
 
 /** @} */
 

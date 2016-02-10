@@ -2742,6 +2742,7 @@
 # define RTCrRsaOtherPrimeInfos_CheckSanity             RT_MANGLER(RTCrRsaOtherPrimeInfos_CheckSanity)
 # define RTCrRsaPrivateKey_CheckSanity                  RT_MANGLER(RTCrRsaPrivateKey_CheckSanity)
 # define RTCrRsaPublicKey_CheckSanity                   RT_MANGLER(RTCrRsaPublicKey_CheckSanity)
+# define RTCrPemFindFirstSectionInContent               RT_MANGLER(RTCrPemFindFirstSectionInContent)
 # define RTCrPemFreeSections                            RT_MANGLER(RTCrPemFreeSections)
 # define RTCrPemParseContent                            RT_MANGLER(RTCrPemParseContent)
 # define RTCrPemReadFile                                RT_MANGLER(RTCrPemReadFile)
@@ -3313,6 +3314,9 @@
 # define g_RTAsn1BitString_Vtable                       RT_MANGLER(g_RTAsn1BitString_Vtable)
 # define g_RTAsn1DefaultAllocator                       RT_MANGLER(g_RTAsn1DefaultAllocator)
 # define g_RTAsn1EFenceAllocator                        RT_MANGLER(g_RTAsn1EFenceAllocator)
+# define g_aRTCrX509CertificateMarkers                  RT_MANGLER(g_aRTCrX509CertificateMarkers)
+# define g_cRTCrX509CertificateMarkers                  RT_MANGLER(g_cRTCrX509CertificateMarkers)
+
 #if 0 /* Disabled for now as I'm not sure the assmbler supports mangling yet. */
 # define g_abRTZeroPage                                 RT_MANGLER(g_abRTZeroPage)
 # define g_abRTZero4K                                   RT_MANGLER(g_abRTZero4K)
