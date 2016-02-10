@@ -45,6 +45,8 @@
 
 #include "vbox_drv.h"
 
+#include <VBox/VBoxVideo.h>
+
 #include <drm/drm_crtc_helper.h>
 
 static void vbox_clear_irq(void)
@@ -77,12 +79,52 @@ irqreturn_t vbox_irq_handler(int irq, void *arg)
 	return IRQ_HANDLED;
 }
 
+/**
+ * Query the host for 
+ */
+static void vbox_update_mode_hints(struct vbox_private *vbox)
+{
+    struct drm_device *dev = vbox->dev;
+    struct drm_connector *connector;
+    struct vbox_connector *vbox_connector;
+    struct VBVAMODEHINT *hints;
+    int rc;
+
+    rc = VBoxHGSMIGetModeHints(&vbox->submit_info, vbox->num_crtcs,
+                               vbox->last_mode_hints);
+    AssertMsgRCReturnVoid(rc, ("VBoxHGSMIGetModeHints failed, rc=%Rrc.\n", rc));
+    drm_modeset_lock_all(dev);
+    list_for_each_entry(connector, &dev->mode_config.connector_list, head) {
+        vbox_connector = to_vbox_connector(connector);
+        hints = &vbox->last_mode_hints[vbox_connector->crtc_id];
+        if (hints->magic == VBVAMODEHINT_MAGIC) {
+            LogFunc(("vboxvideo: %d: crtc_id=%u, mode %hdx%hd(enabled:%d),%hdx%hd\n",
+                     __LINE__, (unsigned)vbox_connector->crtc_id,
+                     (short)hints->cx, (short)hints->cy, (int)hints->fEnabled,
+                     (short)hints->dx, (short)hints->dy));
+            vbox_connector->mode_hint.width = hints->cx & 0x8fff;
+            vbox_connector->mode_hint.height = hints->cy & 0x8fff;
+            vbox_connector->mode_hint.disconnected = !(hints->fEnabled);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+            if ((hints->dx < 0xffff) && (hints->dy < 0xffff)) {
+                drm_object_property_set_value(&connector->base,
+                    dev->mode_config.suggested_x_property, hints->dx & 0x8fff);
+                drm_object_property_set_value(&connector->base,
+                    dev->mode_config.suggested_y_property, hints->dy & 0x8fff);
+            }
+#endif
+        }
+    }
+    drm_modeset_unlock_all(dev);
+}
+
 static void vbox_hotplug_worker(struct work_struct *work)
 {
 	struct vbox_private *vbox = container_of(work, struct vbox_private,
                                              hotplug_work);
 
     LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
+    vbox_update_mode_hints(vbox);
     drm_kms_helper_hotplug_event(vbox->dev);
     if (vbox->fbdev)
         drm_fb_helper_hotplug_event(&vbox->fbdev->helper);
@@ -93,6 +135,7 @@ int vbox_irq_init(struct vbox_private *vbox)
 	int ret;
 
     LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
+    vbox_update_mode_hints(vbox);
 	ret = drm_irq_install(vbox->dev, vbox->dev->pdev->irq);
 	if (unlikely(ret != 0)) {
 	    vbox_irq_fini(vbox);

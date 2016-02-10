@@ -359,11 +359,11 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
     dev->mode_config.max_width = VBE_DISPI_MAX_XRES;
     dev->mode_config.max_height = VBE_DISPI_MAX_YRES;
 
-    ret = vbox_irq_init(vbox);
+    ret = vbox_mode_init(dev);
     if (ret)
         goto out_free;
 
-    ret = vbox_mode_init(dev);
+    ret = vbox_irq_init(vbox);
     if (ret)
         goto out_free;
 
@@ -374,6 +374,7 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
              __LINE__, vbox, vbox->vram, (unsigned)vbox->full_vram_size));
     return 0;
 out_free:
+    vbox_irq_fini(vbox);
     if (vbox->vram)
         pci_iounmap(dev->pdev, vbox->vram);
     kfree(vbox);
@@ -388,8 +389,8 @@ int vbox_driver_unload(struct drm_device *dev)
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
     vbox_fbdev_fini(dev);
-    vbox_mode_fini(dev);
     vbox_irq_fini(vbox);
+    vbox_mode_fini(dev);
     drm_mode_config_cleanup(dev);
 
     disableVBVA(vbox);

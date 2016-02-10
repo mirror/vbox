@@ -411,26 +411,6 @@ static struct drm_encoder *vbox_encoder_init(struct drm_device *dev, unsigned i)
     return &vbox_encoder->base;
 }
 
-static void vboxUpdateHints(struct vbox_connector *vbox_connector)
-{
-    struct vbox_private *pVBox;
-    int rc;
-
-    LogFunc(("vboxvideo: %d: vbox_connector=%p\n", __LINE__, vbox_connector));
-    pVBox = vbox_connector->base.dev->dev_private;
-    rc = VBoxHGSMIGetModeHints(&pVBox->submit_info, pVBox->num_crtcs, pVBox->last_mode_hints);
-    AssertMsgRCReturnVoid(rc, ("VBoxHGSMIGetModeHints failed, rc=%Rrc.\n", rc));
-    if (pVBox->last_mode_hints[vbox_connector->crtc_id].magic == VBVAMODEHINT_MAGIC)
-    {
-        vbox_connector->mode_hint.width = pVBox->last_mode_hints[vbox_connector->crtc_id].cx & 0x8fff;
-        vbox_connector->mode_hint.height = pVBox->last_mode_hints[vbox_connector->crtc_id].cy & 0x8fff;
-        vbox_connector->mode_hint.disconnected = !(pVBox->last_mode_hints[vbox_connector->crtc_id].fEnabled);
-        LogFunc(("vboxvideo: %d: width=%u, height=%u, disconnected=%RTbool\n", __LINE__,
-                 (unsigned)vbox_connector->mode_hint.width, (unsigned)vbox_connector->mode_hint.height,
-                 vbox_connector->mode_hint.disconnected));
-    }
-}
-
 static int vbox_get_modes(struct drm_connector *connector)
 {
     struct vbox_connector *vbox_connector = NULL;
@@ -440,7 +420,6 @@ static int vbox_get_modes(struct drm_connector *connector)
 
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
-    vboxUpdateHints(vbox_connector);
     cModes = drm_add_modes_noedid(connector, 2560, 1600);
     widthPreferred = vbox_connector->mode_hint.width ? vbox_connector->mode_hint.width : 1024;
     heightPreferred = vbox_connector->mode_hint.height ? vbox_connector->mode_hint.height : 768;
@@ -485,7 +464,6 @@ vbox_connector_detect(struct drm_connector *connector, bool force)
     (void) force;
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
-    vboxUpdateHints(vbox_connector);
     return !vbox_connector->mode_hint.disconnected;
 }
 
@@ -577,6 +555,13 @@ static int vbox_connector_init(struct drm_device *dev, unsigned cScreen,
     connector->interlace_allowed = 0;
     connector->doublescan_allowed = 0;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+    drm_mode_create_suggested_offset_properties(dev);
+    drm_object_attach_property(&connector->base,
+                               dev->mode_config.suggested_x_property, 0);
+    drm_object_attach_property(&connector->base,
+                               dev->mode_config.suggested_y_property, 0);
+#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     drm_sysfs_connector_add(connector);
 #else
