@@ -1207,6 +1207,7 @@ DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, 
     switch (pTask->taskType)
     {
         case TaskOVF::Read:
+            pAppliance->m->resetReadData();
             if (pTask->locInfo.storageType == VFSType_File)
                 pTask->rc = pAppliance->i_readFS(pTask);
             else

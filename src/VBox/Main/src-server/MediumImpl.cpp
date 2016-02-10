@@ -623,8 +623,7 @@ public:
                const char *aFilename,
                MediumFormat *aFormat,
                MediumVariant_T aVariant,
-               VDINTERFACEIO *aVDImageIOIf,
-               void *aVDImageIOUser,
+               RTVFSIOSTREAM aVfsIosSrc,
                Medium *aParent,
                MediumLockList *aTargetMediumLockList,
                bool fKeepTargetMediumLockList = false)
@@ -634,6 +633,7 @@ public:
           mVariant(aVariant),
           mParent(aParent),
           mpTargetMediumLockList(aTargetMediumLockList),
+          mpVfsIoIf(NULL),
           mParentCaller(aParent),
           mfKeepTargetMediumLockList(fKeepTargetMediumLockList)
     {
@@ -644,19 +644,25 @@ public:
             return;
 
         mVDImageIfaces = aMedium->m->vdImageIfaces;
-        if (aVDImageIOIf)
-        {
-            int vrc = VDInterfaceAdd(&aVDImageIOIf->Core, "Medium::vdInterfaceIO",
-                                     VDINTERFACETYPE_IO, aVDImageIOUser,
-                                     sizeof(VDINTERFACEIO), &mVDImageIfaces);
-            AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
-        }
+
+        int vrc = VDIfCreateFromVfsStream(aVfsIosSrc, RTFILE_O_READ, &mpVfsIoIf);
+        AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
+
+        vrc = VDInterfaceAdd(&mpVfsIoIf->Core, "Medium::ImportTaskVfsIos",
+                             VDINTERFACETYPE_IO, mpVfsIoIf,
+                             sizeof(VDINTERFACEIO), &mVDImageIfaces);
+        AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
     }
 
     ~ImportTask()
     {
         if (!mfKeepTargetMediumLockList && mpTargetMediumLockList)
             delete mpTargetMediumLockList;
+        if (mpVfsIoIf)
+        {
+            VDIfDestroyFromVfsStream(mpVfsIoIf);
+            mpVfsIoIf = NULL;
+        }
     }
 
     Utf8Str mFilename;
@@ -665,6 +671,7 @@ public:
     const ComObjPtr<Medium> mParent;
     MediumLockList *mpTargetMediumLockList;
     PVDINTERFACE mVDImageIfaces;
+    PVDINTERFACEIO mpVfsIoIf; /**< Pointer to the VFS I/O stream to VD I/O interface wrapper. */
 
 private:
     virtual HRESULT handler();
@@ -5714,9 +5721,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
  * @param aFormat               Medium format for reading @a aFilename.
  * @param aVariant              Which exact image format variant to use
  *                              for the destination image.
- * @param aVDImageIOCallbacks   Pointer to the callback table for a
- *                              VDINTERFACEIO interface. May be NULL.
- * @param aVDImageIOUser        Opaque data for the callbacks.
+ * @param aVfsIosSrc            Handle to the source I/O stream.
  * @param aParent               Parent medium. May be NULL.
  * @param aProgress             Progress object to use.
  * @return
@@ -5725,7 +5730,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
 HRESULT Medium::i_importFile(const char *aFilename,
                              const ComObjPtr<MediumFormat> &aFormat,
                              MediumVariant_T aVariant,
-                             PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
+                             RTVFSIOSTREAM aVfsIosSrc,
                              const ComObjPtr<Medium> &aParent,
                              const ComObjPtr<Progress> &aProgress)
 {
@@ -5784,10 +5789,8 @@ HRESULT Medium::i_importFile(const char *aFilename,
         }
 
         /* setup task object to carry out the operation asynchronously */
-        pTask = new Medium::ImportTask(this, aProgress, aFilename, aFormat,
-                                       aVariant, aVDImageIOIf,
-                                       aVDImageIOUser, aParent,
-                                       pTargetMediumLockList);
+        pTask = new Medium::ImportTask(this, aProgress, aFilename, aFormat, aVariant,
+                                       aVfsIosSrc, aParent, pTargetMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))

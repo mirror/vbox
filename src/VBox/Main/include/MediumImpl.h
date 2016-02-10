@@ -211,7 +211,7 @@ public:
     HRESULT i_importFile(const char *aFilename,
                         const ComObjPtr<MediumFormat> &aFormat,
                         MediumVariant_T aVariant,
-                        PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
+                        RTVFSIOSTREAM hVfsIosSrc,
                         const ComObjPtr<Medium> &aParent,
                         const ComObjPtr<Progress> &aProgress);
 

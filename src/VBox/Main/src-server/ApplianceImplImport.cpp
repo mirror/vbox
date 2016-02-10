@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2015 Oracle Corporation
+ * Copyright (C) 2008-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,11 @@
 #include <iprt/sha.h>
 #include <iprt/manifest.h>
 #include <iprt/tar.h>
+#include <iprt/zip.h>
 #include <iprt/stream.h>
+#include <iprt/crypto/digest.h>
+#include <iprt/crypto/pkix.h>
+#include <iprt/crypto/x509.h>
 
 #include <VBox/vd.h>
 #include <VBox/com/array.h>
@@ -46,7 +50,6 @@
 #include <VBox/version.h>
 #include <VBox/settings.h>
 
-#include <iprt/x509-branch-collision.h>
 #include <set>
 
 using namespace std;
@@ -762,10 +765,9 @@ HRESULT Appliance::importMachines(const std::vector<ImportOptions_T> &aOptions,
         }
     }
 
-    AssertReturn(!(m->optListImport.contains
-                   (ImportOptions_KeepAllMACs)
-                   && m->optListImport.contains(ImportOptions_KeepNATMACs)
-                  ), E_INVALIDARG);
+    AssertReturn(!(   m->optListImport.contains(ImportOptions_KeepAllMACs)
+                   && m->optListImport.contains(ImportOptions_KeepNATMACs) )
+                  , E_INVALIDARG);
 
     // do not allow entering this method if the appliance is busy reading or writing
     if (!i_isApplianceIdle())
@@ -799,25 +801,280 @@ HRESULT Appliance::importMachines(const std::vector<ImportOptions_T> &aOptions,
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT Appliance::i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
-                                               RTCString &availableImage)
+/**
+ * Ensures that there is a look-ahead object ready.
+ *
+ * @returns true if there's an object handy, false if end-of-stream.
+ * @throws HRESULT if the next object isn't a regular file. Sets error info
+ *                 (which is why it's a method on Appliance and not the
+ *                 ImportStack).
+ */
+bool Appliance::i_importEnsureOvaLookAhead(ImportStack &stack)
 {
-    PFSSRDONLYINTERFACEIO pTarIo = (PFSSRDONLYINTERFACEIO)pSHAStorage->pVDImageIfaces->pvUser;
-    const char *pszFilename;
-    int vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
-    if (RT_SUCCESS(vrc))
+    Assert(stack.hVfsFssOva != NULL);
+    if (stack.hVfsIosOvaLookAhead == NIL_RTVFSIOSTREAM)
     {
-        if (!fssRdOnlyIsCurrentDirectory(pTarIo))
-        {
-            availableImage = pszFilename;
-            return S_OK;
-        }
+        RTStrFree(stack.pszOvaLookAheadName);
+        stack.pszOvaLookAheadName = NULL;
 
-        throw setError(VBOX_E_FILE_ERROR, tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
-                       pszFilename, VERR_IS_A_DIRECTORY);
+        RTVFSOBJTYPE enmType;
+        RTVFSOBJ hVfsObj;
+        int vrc = RTVfsFsStrmNext(stack.hVfsFssOva, &stack.pszOvaLookAheadName, &enmType, &hVfsObj);
+        if (RT_SUCCESS(vrc))
+        {
+            stack.hVfsIosOvaLookAhead = RTVfsObjToIoStream(hVfsObj);
+            RTVfsObjRelease(hVfsObj);
+            if (   (   enmType != RTVFSOBJTYPE_FILE
+                    && enmType != RTVFSOBJTYPE_IO_STREAM)
+                || stack.hVfsIosOvaLookAhead == NIL_RTVFSIOSTREAM)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Malformed OVA. '%s' is not a regular file (%d)."), stack.pszOvaLookAheadName, enmType);
+        }
+        else if (vrc == VERR_EOF)
+            return false;
+        else
+            throw setErrorVrc(vrc, tr("RTVfsFsStrmNext failed (%Rrc)"), vrc);
+    }
+    return true;
+}
+
+HRESULT Appliance::i_preCheckImageAvailability(ImportStack &stack)
+{
+    if (i_importEnsureOvaLookAhead(stack))
+        return S_OK;
+    throw setError(VBOX_E_FILE_ERROR, tr("Unexpected end of OVA package"));
+    /** @todo r=bird: dunno why this bother returning a value and the caller
+     *        having a special 'continue' case for it. It always threw all non-OK
+     *        status codes.  It's possibly to handle out of order stuff, so that
+     *        needs adding to the testcase! */
+}
+
+/**
+ * Setup automatic I/O stream digest calculation, adding it to hOurManifest.
+ *
+ * @returns Passthru I/O stream, of @a hVfsIos if no digest calc needed.
+ * @param   hVfsIos             The stream to wrap. Always consumed.
+ * @param   pszManifestEntry    The manifest entry.
+ * @throws  Nothing.
+ */
+RTVFSIOSTREAM Appliance::i_importSetupDigestCalculationForGivenIoStream(RTVFSIOSTREAM hVfsIos, const char *pszManifestEntry)
+{
+    int vrc;
+    Assert(!RTManifestPtIosIsInstanceOf(hVfsIos));
+
+    if (m->fDigestTypes == 0)
+        return hVfsIos;
+
+    /* Create the manifest if necessary. */
+    if (m->hOurManifest == NIL_RTMANIFEST)
+    {
+        vrc = RTManifestCreate(0 /*fFlags*/, &m->hOurManifest);
+        AssertRCReturnStmt(vrc, RTVfsIoStrmRelease(hVfsIos), NIL_RTVFSIOSTREAM);
     }
 
-    throw setError(VBOX_E_FILE_ERROR, tr("Could not open the current file in the OVA package (%Rrc)"), vrc);
+    /* Setup the stream. */
+    RTVFSIOSTREAM hVfsIosPt;
+    vrc = RTManifestEntryAddPassthruIoStream(m->hOurManifest, hVfsIos, pszManifestEntry, m->fDigestTypes,
+                                             true /*fReadOrWrite*/, &hVfsIosPt);
+
+    RTVfsIoStrmRelease(hVfsIos);        /* always consumed! */
+    if (RT_SUCCESS(vrc))
+        return hVfsIosPt;
+
+    setErrorVrc(vrc, "RTManifestEntryAddPassthruIoStream failed with rc=%Rrc", vrc);
+    return NIL_RTVFSIOSTREAM;
+}
+
+/**
+ * Opens a source file (for reading obviously).
+ *
+ * @param   rstrSrcPath         The source file to open.
+ * @param   pszManifestEntry    The manifest entry of the source file.  This is
+ *                              used when constructing our manifest using a pass
+ *                              thru.
+ * @returns I/O stream handle to the source file.
+ * @throws  HRESULT error status, error info set.
+ */
+RTVFSIOSTREAM Appliance::i_importOpenSourceFile(ImportStack &stack, Utf8Str const &rstrSrcPath, const char *pszManifestEntry)
+{
+    /*
+     * Open the source file.  Special considerations for OVAs.
+     */
+    RTVFSIOSTREAM hVfsIosSrc;
+    if (stack.hVfsFssOva != NIL_RTVFSFSSTREAM)
+    {
+        for (uint32_t i = 0;; i++)
+        {
+            if (!i_importEnsureOvaLookAhead(stack))
+                throw setErrorBoth(VBOX_E_FILE_ERROR, VERR_EOF,
+                                   tr("Unexpected end of OVA / internal error - missing '%s' (skipped %u)"),
+                                   rstrSrcPath.c_str(), i);
+            if (RTStrICmp(stack.pszOvaLookAheadName, rstrSrcPath.c_str()) == 0)
+                break;
+
+            /* release the current object, loop to get the next. */
+            RTVfsIoStrmRelease(stack.claimOvaLookAHead());
+        }
+        hVfsIosSrc = stack.claimOvaLookAHead();
+    }
+    else
+    {
+        int vrc = RTVfsIoStrmOpenNormal(rstrSrcPath.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hVfsIosSrc);
+        if (RT_FAILURE(vrc))
+            throw setErrorVrc(vrc, tr("Error opening '%s' for reading (%Rrc)"), rstrSrcPath.c_str(), vrc);
+    }
+
+    /*
+     * Digest calculation filtering.
+     */
+    hVfsIosSrc = i_importSetupDigestCalculationForGivenIoStream(hVfsIosSrc, pszManifestEntry);
+    if (hVfsIosSrc == NIL_RTVFSIOSTREAM)
+        throw E_FAIL;
+
+    return hVfsIosSrc;
+}
+
+/**
+ * Creates the destination file and fills it with bytes from the source stream.
+ *
+ * This assumes that we digest the source when fDigestTypes is non-zero, and
+ * thus calls RTManifestPtIosAddEntryNow when done.
+ *
+ * @param   rstrDstPath     The path to the destination file.  Missing path
+ *                          components will be created.
+ * @param   hVfsIosSrc      The source I/O stream.
+ * @param   rstrSrcLogNm    The name of the source for logging and error
+ *                          messages.
+ * @returns COM status code.
+ * @throws Nothing (as the caller has VFS handles to release).
+ */
+HRESULT Appliance::i_importCreateAndWriteDestinationFile(Utf8Str const &rstrDstPath, RTVFSIOSTREAM hVfsIosSrc,
+                                                         Utf8Str const &rstrSrcLogNm)
+{
+    int vrc;
+
+    /*
+     * Create the output file, including necessary paths.
+     * Any existing file will be overwritten.
+     */
+    HRESULT hrc = VirtualBox::i_ensureFilePathExists(rstrDstPath, true /*fCreate*/);
+    if (SUCCEEDED(hrc))
+    {
+        RTVFSIOSTREAM hVfsIosDst;
+        vrc = RTVfsIoStrmOpenNormal(rstrDstPath.c_str(),
+                                    RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL,
+                                    &hVfsIosDst);
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Pump the bytes thru. If we fail, delete the output file.
+             */
+            vrc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0);
+            if (RT_SUCCESS(vrc))
+                hrc = S_OK;
+            else
+                hrc = setErrorVrc(vrc, tr("Error occured decompressing '%s' to '%s' (%Rrc)"),
+                                  rstrSrcLogNm.c_str(), rstrDstPath.c_str(), vrc);
+            uint32_t cRefs = RTVfsIoStrmRelease(hVfsIosDst);
+            AssertMsg(cRefs == 0, ("cRefs=%u\n", cRefs)); NOREF(cRefs);
+            if (RT_FAILURE(vrc))
+                RTFileDelete(rstrDstPath.c_str());
+        }
+        else
+            hrc = setErrorVrc(vrc, tr("Error opening destionation image '%s' for writing (%Rrc)"), rstrDstPath.c_str(), vrc);
+    }
+    return hrc;
+}
+
+
+/**
+ *
+ * @param   pszManifestEntry    The manifest entry of the source file.  This is
+ *                              used when constructing our manifest using a pass
+ *                              thru.
+ * @throws HRESULT error status, error info set.
+ */
+void Appliance::i_importCopyFile(ImportStack &stack, Utf8Str const &rstrSrcPath, Utf8Str const &rstrDstPath,
+                                 const char *pszManifestEntry)
+{
+    /*
+     * Just open the file (throws error) and write the destination (nothrow).
+     */
+    RTVFSIOSTREAM hVfsIosSrc = i_importOpenSourceFile(stack, rstrSrcPath, pszManifestEntry);
+    HRESULT hrc = i_importCreateAndWriteDestinationFile(rstrDstPath, hVfsIosSrc, rstrSrcPath);
+
+    /*
+     * Before releasing the source stream, make sure we've successfully added
+     * the digest to our manifest.
+     */
+    if (SUCCEEDED(hrc) && m->fDigestTypes)
+    {
+        int vrc = RTManifestPtIosAddEntryNow(hVfsIosSrc);
+        if (RT_FAILURE(vrc))
+            hrc = setErrorVrc(vrc, tr("RTManifestPtIosAddEntryNow failed with %Rrc"), vrc);
+    }
+
+    uint32_t cRefs = RTVfsIoStrmRelease(hVfsIosSrc);
+    AssertMsg(cRefs == 0, ("cRefs=%u\n", cRefs)); NOREF(cRefs);
+    if (SUCCEEDED(hrc))
+        return;
+    throw hrc;
+}
+
+/**
+ *
+ * @param   pszManifestEntry    The manifest entry of the source file.  This is
+ *                              used when constructing our manifest using a pass
+ *                              thru.
+ * @throws HRESULT error status, error info set.
+ */
+void Appliance::i_importDecompressFile(ImportStack &stack, Utf8Str const &rstrSrcPath, Utf8Str const &rstrDstPath,
+                                       const char *pszManifestEntry)
+{
+    RTVFSIOSTREAM hVfsIosSrcCompressed = i_importOpenSourceFile(stack, rstrSrcPath, pszManifestEntry);
+
+    /*
+     * Add a read ahead thread here.  This means reading and digest calculation
+     * is done on one thread, while unpacking and writing is one on this thread.
+     */
+    /** @todo read thread */
+
+    /*
+     * Add decompression step.
+     */
+    RTVFSIOSTREAM hVfsIosSrc;
+    int vrc = RTZipGzipDecompressIoStream(hVfsIosSrcCompressed, 0, &hVfsIosSrc);
+    if (RT_FAILURE(vrc))
+    {
+        RTVfsIoStrmRelease(hVfsIosSrcCompressed);
+        throw setErrorVrc(vrc, tr("Error initializing gzip decompression for '%s' (%Rrc)"), rstrSrcPath.c_str(), vrc);
+    }
+
+    /*
+     * Write the stream to the destination file (nothrow).
+     */
+    HRESULT hrc = i_importCreateAndWriteDestinationFile(rstrDstPath, hVfsIosSrc, rstrSrcPath);
+
+    /*
+     * Before releasing the source stream, make sure we've successfully added
+     * the digest to our manifest.
+     */
+    if (SUCCEEDED(hrc) && m->fDigestTypes)
+    {
+        vrc = RTManifestPtIosAddEntryNow(hVfsIosSrcCompressed);
+        if (RT_FAILURE(vrc))
+            hrc = setErrorVrc(vrc, tr("RTManifestPtIosAddEntryNow failed with %Rrc"), vrc);
+    }
+
+    uint32_t cRefs = RTVfsIoStrmRelease(hVfsIosSrc);
+    AssertMsg(cRefs == 0, ("cRefs=%u\n", cRefs)); NOREF(cRefs);
+
+    cRefs = RTVfsIoStrmRelease(hVfsIosSrcCompressed);
+    AssertMsg(cRefs == 0, ("cRefs=%u\n", cRefs)); NOREF(cRefs);
+
+    if (SUCCEEDED(hrc))
+        return;
+    throw hrc;
 }
 
 /*******************************************************************************
@@ -917,236 +1174,591 @@ HRESULT Appliance::i_readFS(TaskOVF *pTask)
 
 HRESULT Appliance::i_readFSOVF(TaskOVF *pTask)
 {
-    LogFlowFuncEnter();
+    LogFlowFunc(("'%s'\n", pTask->locInfo.strPath.c_str()));
 
-    HRESULT rc = S_OK;
-    int vrc = VINF_SUCCESS;
+    /*
+     * Allocate a buffer for filenames and prep it for suffix appending.
+     */
+    char *pszNameBuf = (char *)alloca(pTask->locInfo.strPath.length() + 16);
+    AssertReturn(pszNameBuf, VERR_NO_TMP_MEMORY);
+    memcpy(pszNameBuf, pTask->locInfo.strPath.c_str(), pTask->locInfo.strPath.length() + 1);
+    RTPathStripSuffix(pszNameBuf);
+    size_t const cchBaseName = strlen(pszNameBuf);
 
-    PVDINTERFACEIO pShaIo = 0;
-    PVDINTERFACEIO pFileIo = 0;
-    RTMANIFEST hOvfManifest = NIL_RTMANIFEST;
+    /*
+     * Open the OVF file first since that is what this is all about.
+     */
+    RTVFSIOSTREAM hIosOvf;
+    int vrc = RTVfsIoStrmOpenNormal(pTask->locInfo.strPath.c_str(),
+                                    RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hIosOvf);
+    if (RT_FAILURE(vrc))
+        return setErrorVrc(vrc, tr("Failed to open OVF file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
 
-    do
+    HRESULT hrc = i_readOVFFile(pTask, hIosOvf, RTPathFilename(pTask->locInfo.strPath.c_str())); /* consumes hIosOvf */
+    if (FAILED(hrc))
+        return hrc;
+
+    /*
+     * Try open the manifest file (for signature purposes and to determine digest type(s)).
+     */
+    RTVFSIOSTREAM hIosMf;
+    strcpy(&pszNameBuf[cchBaseName], ".mf");
+    vrc = RTVfsIoStrmOpenNormal(pszNameBuf, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hIosMf);
+    if (RT_SUCCESS(vrc))
     {
-        try
+        const char * const pszFilenamePart = RTPathFilename(pszNameBuf);
+        hrc = i_readManifestFile(pTask, hIosMf /*consumed*/, pszFilenamePart);
+        if (FAILED(hrc))
+            return hrc;
+
+        /*
+         * Check for the signature file.
+         */
+        RTVFSIOSTREAM hIosCert;
+        strcpy(&pszNameBuf[cchBaseName], ".cert");
+        vrc = RTVfsIoStrmOpenNormal(pszNameBuf, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hIosCert);
+        if (RT_SUCCESS(vrc))
         {
-            /* Create the necessary file access interfaces. */
-            pFileIo = FileCreateInterface();
-            AssertBreakStmt(pFileIo, rc = E_OUTOFMEMORY);
-
-            Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".mf");
-
-            SHASTORAGE storage;
-            RT_ZERO(storage);
-
-            /* Check and read the manifest file to determine the digests we need to calculate. */
-            uint32_t fTypes = 0;
-            if (RTFileExists(strMfFile.c_str()))
-            {
-                vrc = RTManifestCreate(0 /*fFlags*/, &hOvfManifest);
-                AssertBreakStmt(RT_SUCCESS(vrc), rc = E_OUTOFMEMORY);
-
-                RTVFSFILE hManifestVfsFile;
-                vrc = RTVfsFileOpenNormal(strMfFile.c_str(),
-                                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hManifestVfsFile);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the manifest file '%s' (%Rrc)"), strMfFile.c_str(), vrc);
-                char szErr[256];
-                RTVFSIOSTREAM hVfsIosTmp = RTVfsFileToIoStream(hManifestVfsFile);
-                vrc = RTManifestReadStandardEx(hOvfManifest, hVfsIosTmp, szErr, sizeof(szErr));
-                RTVfsIoStrmRelease(hVfsIosTmp);
-                RTVfsFileRelease(hManifestVfsFile);
-                if (RT_FAILURE(vrc))
-                    throw setErrorVrc(vrc, tr("Failed to read or parse manifest file '%s' (%Rrc): %s"),
-                                      strMfFile.c_str(), vrc, szErr);
-
-                vrc = RTManifestQueryAllAttrTypes(hOvfManifest, true /*fEntriesOnly*/, &fTypes);
-                AssertRCBreakStmt(vrc, rc = Global::vboxStatusCodeToCOM(vrc));
-            }
-
-            /* If any digests was found, we must wrap the I/O interface with a SHA calculator. */
-            if (fTypes)
-            {
-                pShaIo = ShaCreateInterface();
-                AssertBreakStmt(pShaIo, rc = E_OUTOFMEMORY);
-
-                storage.fCreateDigest = true;
-
-                Assert(RT_IS_POWER_OF_TWO(fTypes)); /** @todo support anything and mixed (easy when supporting SHA256 for OVA < v2.0).  */
-                if (fTypes & RTMANIFEST_ATTR_SHA256)
-                    storage.fSha256 = true;
-
-                Utf8Str name = i_applianceIOName(applianceIOFile);
-
-                vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
-                                     VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
-                                     &storage.pVDImageIfaces);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
-
-                rc = i_readFSImpl(pTask, pTask->locInfo.strPath, pShaIo, &storage);
-                if (FAILED(rc))
-                    break;
-            }
-            else
-            {
-                storage.fCreateDigest = false;
-                rc = i_readFSImpl(pTask, pTask->locInfo.strPath, pFileIo, &storage);
-                if (FAILED(rc))
-                    break;
-            }
+            hrc = i_readSignatureFile(pTask, hIosCert /*consumed*/, pszFilenamePart);
+            if (FAILED(hrc))
+                return hrc;
         }
-        catch (HRESULT rc2)
-        {
-            rc = rc2;
-        }
+        else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
+            return setErrorVrc(vrc, tr("Failed to open the signature file '%s' (%Rrc)"), pszNameBuf, vrc);
 
-    } while (0);
+    }
+    else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+    {
+        m->fDeterminedDigestTypes = true;
+        m->fDigestTypes           = 0;
+    }
+    else
+        return setErrorVrc(vrc, tr("Failed to open the manifest file '%s' (%Rrc)"), pszNameBuf, vrc);
 
-    /* Cleanup */
-    if (pShaIo)
-        RTMemFree(pShaIo);
-    if (pFileIo)
-        RTMemFree(pFileIo);
-    if (hOvfManifest != NIL_RTMANIFEST)
-        RTManifestRelease(hOvfManifest);
+    /*
+     * Do tail processing (check the signature).
+     */
+    hrc = i_readTailProcessing(pTask);
 
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return rc;
+    LogFlowFunc(("returns %Rhrc\n", hrc));
+    return hrc;
 }
 
 HRESULT Appliance::i_readFSOVA(TaskOVF *pTask)
 {
-    LogFlowFuncEnter();
+    LogFlowFunc(("'%s'\n", pTask->locInfo.strPath.c_str()));
 
     /*
-     * Open the tar file and get a VD I/O interface for it.
+     * Open the tar file as file stream.
      */
-    HRESULT hrc;
-    PFSSRDONLYINTERFACEIO pTarIo;
-    int vrc = fssRdOnlyCreateInterfaceForTarFile(pTask->locInfo.strPath.c_str(), &pTarIo);
-    if (RT_SUCCESS(vrc))
+    RTVFSIOSTREAM hVfsIosOva;
+    int vrc = RTVfsIoStrmOpenNormal(pTask->locInfo.strPath.c_str(),
+                                    RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsIosOva);
+    if (RT_FAILURE(vrc))
+        return setErrorVrc(vrc, tr("Error opening the OVA file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+
+    RTVFSFSSTREAM hVfsFssOva;
+    vrc = RTZipTarFsStreamFromIoStream(hVfsIosOva, 0 /*fFlags*/, &hVfsFssOva);
+    RTVfsIoStrmRelease(hVfsIosOva);
+    if (RT_FAILURE(vrc))
+        return setErrorVrc(vrc, tr("Error reading the OVA file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+
+    /*
+     * Since jumping thru an OVA file with seekable disk backing is rather
+     * efficient, we can process .ovf, .mf and .cert files here without any
+     * strict ordering restrictions.
+     *
+     * (Technically, the .ovf-file comes first, while the manifest and its
+     * optional signature file either follows immediately or at the very end of
+     * the OVA. The manifest is optional.)
+     */
+    char    *pszOvfNameBase = NULL;
+    size_t   cchOvfNameBase = 0;
+    unsigned cLeftToFind = 3;
+    HRESULT  hrc = S_OK;
+    do
+    {
+        char        *pszName = NULL;
+        RTVFSOBJTYPE enmType;
+        RTVFSOBJ     hVfsObj;
+        vrc = RTVfsFsStrmNext(hVfsFssOva, &pszName, &enmType, &hVfsObj);
+        if (RT_FAILURE(vrc))
+        {
+            if (vrc != VERR_EOF)
+                hrc = setErrorVrc(vrc, tr("Error reading OVA '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+            break;
+        }
+
+        /* We only care about entries that are files. Get the I/O stream handle for them. */
+        if (   enmType  == RTVFSOBJTYPE_IO_STREAM
+            || enmType  == RTVFSOBJTYPE_FILE)
+        {
+            /* Find the suffix and check if this is a possibly interesting file. */
+            char *pszSuffix = strrchr(pszName, '.');
+            if (   pszSuffix
+                && (   RTStrICmp(pszSuffix + 1, "ovf") == 0
+                    || RTStrICmp(pszSuffix + 1, "mf") == 0
+                    || RTStrICmp(pszSuffix + 1, "cert") == 0) )
+            {
+                /* Match the OVF base name. */
+                *pszSuffix = '\0';
+                if (   pszOvfNameBase == NULL
+                    || RTStrICmp(pszName, pszOvfNameBase) == 0)
+                {
+                    *pszSuffix = '.';
+
+                    /* Since we're pretty sure we'll be processing this file, get the I/O stream. */
+                    RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
+                    Assert(hVfsIos != NIL_RTVFSIOSTREAM);
+
+                    /* Check for the OVF (should come first). */
+                    if (RTStrICmp(pszSuffix + 1, "ovf") == 0)
+                    {
+                        if (pszOvfNameBase == NULL)
+                        {
+                            hrc = i_readOVFFile(pTask, hVfsIos, pszName);
+                            hVfsIos = NIL_RTVFSIOSTREAM;
+
+                            /* Set the base name. */
+                            *pszSuffix = '\0';
+                            pszOvfNameBase = pszName;
+                            cchOvfNameBase = strlen(pszName);
+                            pszName = NULL;
+                            cLeftToFind--;
+                        }
+                        else
+                            LogRel(("i_readFSOVA: '%s' contains more than one OVF file ('%s'), picking the first one\n",
+                                    pTask->locInfo.strPath.c_str(), pszName));
+                    }
+                    /* Check for manifest. */
+                    else if (RTStrICmp(pszSuffix + 1, "mf") == 0)
+                    {
+                        if (m->hMemFileTheirManifest == NIL_RTVFSFILE)
+                        {
+                            hrc = i_readManifestFile(pTask, hVfsIos, pszName);
+                            hVfsIos = NIL_RTVFSIOSTREAM;  /*consumed*/
+                            cLeftToFind--;
+                        }
+                        else
+                            LogRel(("i_readFSOVA: '%s' contains more than one manifest file ('%s'), picking the first one\n",
+                                    pTask->locInfo.strPath.c_str(), pszName));
+                    }
+                    /* Check for signature. */
+                    else if (RTStrICmp(pszSuffix + 1, "cert") == 0)
+                    {
+                        if (!m->fSignerCertLoaded)
+                        {
+                            hrc = i_readSignatureFile(pTask, hVfsIos, pszName);
+                            hVfsIos = NIL_RTVFSIOSTREAM;  /*consumed*/
+                            cLeftToFind--;
+                        }
+                        else
+                            LogRel(("i_readFSOVA: '%s' contains more than one signature file ('%s'), picking the first one\n",
+                                    pTask->locInfo.strPath.c_str(), pszName));
+                    }
+                    else
+                        AssertFailed();
+                    if (hVfsIos != NIL_RTVFSIOSTREAM)
+                        RTVfsIoStrmRelease(hVfsIos);
+                }
+            }
+        }
+        RTVfsObjRelease(hVfsObj);
+        RTStrFree(pszName);
+    } while (cLeftToFind > 0 && SUCCEEDED(hrc));
+
+    RTVfsFsStrmRelease(hVfsFssOva);
+    RTStrFree(pszOvfNameBase);
+
+    /*
+     * Check that we found and OVF file.
+     */
+    if (SUCCEEDED(hrc) && !pszOvfNameBase)
+        hrc = setError(VBOX_E_FILE_ERROR, tr("OVA '%s' does not contain an .ovf-file"), pTask->locInfo.strPath.c_str());
+    if (SUCCEEDED(hrc))
     {
         /*
-         * Check that the first file is has an .ovf suffix.
+         * Do tail processing (check the signature).
          */
-        const char *pszName;
-        vrc = fssRdOnlyGetCurrentName(pTarIo, &pszName);
-        if (RT_SUCCESS(vrc))
-        {
-            size_t cchName = strlen(pszName);
-            if (   cchName >= sizeof(".ovf")
-                && RTStrICmp(&pszName[cchName - sizeof(".ovf") + 1], ".ovf") == 0)
-            {
-                /*
-                 * Stack the rest of the expected VD I/O stuff.
-                 */
-                PVDINTERFACEIO pShaIo = ShaCreateInterface();
-                if (pShaIo)
-                {
-                    Utf8Str     IoName = i_applianceIOName(applianceIOTar);
-                    SHASTORAGE  ShaStorage;
-                    RT_ZERO(ShaStorage);
-                    vrc = VDInterfaceAdd((PVDINTERFACE)pTarIo, IoName.c_str(),
-                                         VDINTERFACETYPE_IO, pTarIo, sizeof(VDINTERFACEIO),
-                                         &ShaStorage.pVDImageIfaces);
-                    if (RT_SUCCESS(vrc))
-                        /*
-                         * Read and parse the OVF.
-                         */
-                        hrc = i_readFSImpl(pTask, pszName, pShaIo, &ShaStorage);
-                    else
-                        hrc = setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
-                    RTMemFree(pShaIo);
-                }
-                else
-                    hrc = E_OUTOFMEMORY;
-            }
-            else
-                hrc = setError(VBOX_E_FILE_ERROR,
-                               tr("First file in the OVA package must have the extension 'ovf'. But the file '%s' has a different extension."),
-                               pszName);
-        }
-        else
-            hrc = setError(VBOX_E_FILE_ERROR, tr("Error reading OVA file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
-        fssRdOnlyDestroyInterface(pTarIo);
+        hrc = i_readTailProcessing(pTask);
     }
-    else
-        hrc = setError(VBOX_E_FILE_ERROR, tr("Could not open the OVA file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
-
-    LogFlowFunc(("rc=%Rhrc\n", hrc));
-    LogFlowFuncLeave();
+    LogFlowFunc(("returns %Rhrc\n", hrc));
     return hrc;
 }
 
-HRESULT Appliance::i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
+/**
+ * Reads & parses the OVF file.
+ *
+ * @param   pTask               The read task.
+ * @param   hVfsIosOvf          The I/O stream for the OVF.  The reference is
+ *                              always consumed.
+ * @param   pszManifestEntry    The manifest entry name.
+ * @returns COM status code, error info set.
+ * @throws  Nothing
+ */
+HRESULT Appliance::i_readOVFFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosOvf, const char *pszManifestEntry)
 {
-    LogFlowFuncEnter();
+    LogFlowFunc(("%s[%s]\n", pTask->locInfo.strPath.c_str(), pszManifestEntry));
 
-    HRESULT rc = S_OK;
+    /*
+     * Set the OVF manifest entry name (needed for tweaking the manifest
+     * validation during import).
+     */
+    try         { m->strOvfManifestEntry = pszManifestEntry; }
+    catch (...) { return E_OUTOFMEMORY; }
 
-    pStorage->fCreateDigest = true;
+    /*
+     * Set up digest calculation.
+     */
+    hVfsIosOvf = i_importSetupDigestCalculationForGivenIoStream(hVfsIosOvf, pszManifestEntry);
+    if (hVfsIosOvf == NIL_RTVFSIOSTREAM)
+        return VBOX_E_FILE_ERROR;
 
-    void *pvTmpBuf = 0;
+    /*
+     * Read the OVF into a memory buffer and parse it.
+     */
+    void  *pvBufferedOvf;
+    size_t cbBufferedOvf;
+    int vrc = RTVfsIoStrmReadAll(hVfsIosOvf, &pvBufferedOvf, &cbBufferedOvf);
+    uint32_t cRefs = RTVfsIoStrmRelease(hVfsIosOvf);     /* consumes stream handle.  */
+    Assert(cRefs == 0);
+    if (RT_FAILURE(vrc))
+        return setErrorVrc(vrc, tr("Could not read the OVF file for '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+
+    HRESULT hrc;
     try
     {
-        /* Read the OVF into a memory buffer */
-        size_t cbSize = 0;
-        int vrc = readFileIntoBuffer(strFilename.c_str(), &pvTmpBuf, &cbSize, pIfIo, pStorage);
-        if (RT_FAILURE(vrc)
-            || !pvTmpBuf)
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Could not read OVF file '%s' (%Rrc)"),
-                           RTPathFilename(strFilename.c_str()), vrc);
-
-        /* Read & parse the XML structure of the OVF file */
-        m->pReader = new ovf::OVFReader(pvTmpBuf, cbSize, pTask->locInfo.strPath);
-
-        if (   pStorage->fSha256
-            || m->pReader->m_envelopeData.getOVFVersion() == ovf::OVFVersion_2_0)
-        {
-            m->fSha256 = true;
-
-            /* Calc the SHA256 sum of the OVF file for later validation */
-            uint8_t abHash[RTSHA256_HASH_SIZE];
-            RTSha256(pvTmpBuf, cbSize, abHash);
-
-            char szDigest[RTSHA256_DIGEST_LEN + 1];
-            vrc = RTSha256ToString(abHash, szDigest, sizeof(szDigest));
-            AssertStmt(RT_SUCCESS(vrc), throw VBOX_E_IPRT_ERROR);
-
-            m->strOVFSHADigest = szDigest;
-        }
-        else
-        {
-            m->fSha256 = false;
-            /* Copy the SHA1 sum of the OVF file for later validation */
-            m->strOVFSHADigest = pStorage->strDigest;
-        }
-
+        m->pReader = new ovf::OVFReader(pvBufferedOvf, cbBufferedOvf, pTask->locInfo.strPath);
+        hrc = S_OK;
     }
-    catch (RTCError &x)      // includes all XML exceptions
+    catch (RTCError &rXcpt)      // includes all XML exceptions
     {
-        rc = setError(VBOX_E_FILE_ERROR,
-                      x.what());
+        hrc = setError(VBOX_E_FILE_ERROR, rXcpt.what());
     }
     catch (HRESULT aRC)
     {
-        rc = aRC;
+        hrc = aRC;
+    }
+    catch (...)
+    {
+        hrc = E_FAIL;
+    }
+    LogFlowFunc(("OVFReader(%s) -> rc=%Rhrc\n", pTask->locInfo.strPath.c_str(), hrc));
+
+    RTVfsIoStrmReadAllFree(pvBufferedOvf, cbBufferedOvf);
+    if (SUCCEEDED(hrc))
+    {
+        /*
+         * If we see an OVF v2.0 envelope, select only the SHA-256 digest.
+         */
+        if (   !m->fDeterminedDigestTypes
+            && m->pReader->m_envelopeData.getOVFVersion() == ovf::OVFVersion_2_0)
+            m->fDigestTypes &= ~RTMANIFEST_ATTR_SHA256;
     }
 
-    /* Cleanup */
-    if (pvTmpBuf)
-        RTMemFree(pvTmpBuf);
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return rc;
+    return hrc;
 }
+
+/**
+ * Reads & parses the manifest file.
+ *
+ * @param   pTask               The read task.
+ * @param   hVfsIosMf           The I/O stream for the manifest file.  The
+ *                              reference is always consumed.
+ * @param   pszSubFileNm        The manifest filename (no path) for error
+ *                              messages and logging.
+ * @returns COM status code, error info set.
+ * @throws  Nothing
+ */
+HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, const char *pszSubFileNm)
+{
+    LogFlowFunc(("%s[%s]\n", pTask->locInfo.strPath.c_str(), pszSubFileNm));
+
+    /*
+     * Copy the manifest into a memory backed file so we can later do signature
+     * validation indepentend of the algorithms used by the signature.
+     */
+    int vrc = RTVfsMemorizeIoStreamAsFile(hVfsIosMf, RTFILE_O_READ, &m->hMemFileTheirManifest);
+    RTVfsIoStrmRelease(hVfsIosMf);     /* consumes stream handle.  */
+    if (RT_FAILURE(vrc))
+        return setErrorVrc(vrc, tr("Error reading the manifest file '%s' for '%s' (%Rrc)"),
+                           pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc);
+
+    /*
+     * Parse the manifest.
+     */
+    Assert(m->hTheirManifest == NIL_RTMANIFEST);
+    vrc = RTManifestCreate(0 /*fFlags*/, &m->hTheirManifest);
+    AssertStmt(RT_SUCCESS(vrc), Global::vboxStatusCodeToCOM(vrc));
+
+    char szErr[256];
+    RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(m->hMemFileTheirManifest);
+    vrc = RTManifestReadStandardEx(m->hTheirManifest, hVfsIos, szErr, sizeof(szErr));
+    RTVfsIoStrmRelease(hVfsIos);
+    if (RT_FAILURE(vrc))
+        throw setErrorVrc(vrc, tr("Failed to parse manifest file '%s' for '%s' (%Rrc): %s"),
+                          pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, szErr);
+
+    /*
+     * Check which digest files are used.
+     * Note! the file could be empty, in which case fDigestTypes is set to 0.
+     */
+    vrc = RTManifestQueryAllAttrTypes(m->hTheirManifest, true /*fEntriesOnly*/, &m->fDigestTypes);
+    AssertRCReturn(vrc, Global::vboxStatusCodeToCOM(vrc));
+    m->fDeterminedDigestTypes = true;
+
+    m->fSha256 = RT_BOOL(m->fDigestTypes & RTMANIFEST_ATTR_SHA256); /** @todo retire this member */
+    return S_OK;
+}
+
+/**
+ * Reads the signature & certificate file.
+ *
+ * @param   pTask               The read task.
+ * @param   hVfsIosCert         The I/O stream for the signature file.  The
+ *                              reference is always consumed.
+ * @param   pszSubFileNm        The signature filename (no path) for error
+ *                              messages and logging.  Used to construct
+ *                              .mf-file name.
+ * @returns COM status code, error info set.
+ * @throws  Nothing
+ */
+HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert, const char *pszSubFileNm)
+{
+    LogFlowFunc(("%s[%s]\n", pTask->locInfo.strPath.c_str(), pszSubFileNm));
+
+    /*
+     * Construct the manifest filename from pszSubFileNm.
+     */
+    Utf8Str strManifestName;
+    try
+    {
+        const char *pszSuffix = strrchr(pszSubFileNm, '.');
+        AssertReturn(pszSuffix, E_FAIL);
+        strManifestName = Utf8Str(pszSubFileNm, pszSuffix - pszSubFileNm);
+        strManifestName.append(".mf");
+    }
+    catch (...)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    /*
+     * Copy the manifest into a memory buffer.  We'll do the signature processing
+     * later to not force any specific order in the OVAs or any other archive we
+     * may be accessing later.
+     */
+    void  *pvSignature;
+    size_t cbSignature;
+    int vrc = RTVfsIoStrmReadAll(hVfsIosCert, &pvSignature, &cbSignature);
+    RTVfsIoStrmRelease(hVfsIosCert);     /* consumes stream handle.  */
+    if (RT_FAILURE(vrc))
+        return setErrorVrc(vrc, tr("Error reading the signature file '%s' for '%s' (%Rrc)"),
+                           pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc);
+
+    /*
+     * Parse the signing certificate. Unlike the manifest parser we use below,
+     * this API ignores parse of the file that aren't relevant.
+     */
+    RTERRINFOSTATIC StaticErrInfo;
+    vrc = RTCrX509Certificate_ReadFromBuffer(&m->SignerCert, pvSignature, cbSignature, 0 /*fFlags*/,
+                                             &g_RTAsn1DefaultAllocator, RTErrInfoInitStatic(&StaticErrInfo), pszSubFileNm);
+    HRESULT hrc;
+    if (RT_SUCCESS(vrc))
+    {
+        m->fSignerCertLoaded = true;
+
+        /*
+         * Find the start of the certificate part of the file, so we can avoid
+         * upsetting the manifest parser with it.  We exploit the fact that the
+         * above function adds a trailing zero to the buffer, thus permitting strstr.
+         */
+        char *pszSplit = strstr((char *)pvSignature, "---BEGIN CERTIFICATE");
+        if (!pszSplit)
+            pszSplit = strstr((char *)pvSignature, "BEGIN CERTIFICATE");
+        if (!pszSplit)
+            pszSplit = strstr((char *)pvSignature, "BEGIN\tCERTIFICATE");
+        if (!pszSplit)
+            pszSplit = strstr((char *)pvSignature, "CERTIFICATE");
+        if (pszSplit)
+            while (   pszSplit != (char *)pvSignature
+                   && pszSplit[-1] != '\n'
+                   && pszSplit[-1] != '\r')
+                pszSplit--;
+        else
+        {
+            pszSplit = (char *)pvSignature + cbSignature;
+            AssertFailed();
+        }
+        *pszSplit = '\0';
+
+        /*
+         * Now, read the manifest part.  We use the IPRT manifest reader here
+         * to avoid duplicating code and be somewhat flexible wrt the digest
+         * type choosen by the signer.
+         */
+        RTMANIFEST hSignedDigestManifest;
+        vrc = RTManifestCreate(0 /*fFlags*/, &hSignedDigestManifest);
+        if (RT_SUCCESS(vrc))
+        {
+            RTVFSIOSTREAM hVfsIosTmp;
+            vrc = RTVfsIoStrmFromBuffer(RTFILE_O_READ, pvSignature, pszSplit - (char *)pvSignature, &hVfsIosTmp);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTManifestReadStandardEx(hSignedDigestManifest, hVfsIosTmp, StaticErrInfo.szMsg, sizeof(StaticErrInfo.szMsg));
+                RTVfsIoStrmRelease(hVfsIosTmp);
+                if (RT_SUCCESS(vrc))
+                {
+                    /*
+                     * Get signed digest, we prefer SHA-2, so explicitly query those first.
+                     */
+                    uint32_t fDigestType;
+                    char     szSignedDigest[_8K + 1];
+                    vrc = RTManifestEntryQueryAttr(hSignedDigestManifest, strManifestName.c_str(), NULL,
+                                                   RTMANIFEST_ATTR_SHA512 | RTMANIFEST_ATTR_SHA256,
+                                                   szSignedDigest, sizeof(szSignedDigest), &fDigestType);
+                    if (vrc == VERR_MANIFEST_ATTR_TYPE_NOT_FOUND)
+                        vrc = RTManifestEntryQueryAttr(hSignedDigestManifest, strManifestName.c_str(), NULL,
+                                                       RTMANIFEST_ATTR_ANY, szSignedDigest, sizeof(szSignedDigest), &fDigestType);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        const char *pszSignedDigest = RTStrStrip(szSignedDigest);
+                        size_t      cbSignedDigest  = strlen(pszSignedDigest) / 2;
+                        uint8_t     abSignedDigest[sizeof(szSignedDigest) / 2];
+                        vrc = RTStrConvertHexBytes(szSignedDigest, abSignedDigest, cbSignedDigest, 0 /*fFlags*/);
+                        if (RT_SUCCESS(vrc))
+                        {
+                            /*
+                             * Convert it to RTDIGESTTYPE_XXX and save the binary value for later use.
+                             */
+                            switch (fDigestType)
+                            {
+                                case RTMANIFEST_ATTR_SHA1:      m->enmSignedDigestType = RTDIGESTTYPE_SHA1; break;
+                                case RTMANIFEST_ATTR_SHA256:    m->enmSignedDigestType = RTDIGESTTYPE_SHA256; break;
+                                case RTMANIFEST_ATTR_SHA512:    m->enmSignedDigestType = RTDIGESTTYPE_SHA512; break;
+                                case RTMANIFEST_ATTR_MD5:       m->enmSignedDigestType = RTDIGESTTYPE_MD5; break;
+                                default:    AssertFailed();     m->enmSignedDigestType = RTDIGESTTYPE_INVALID; break;
+                            }
+                            if (m->enmSignedDigestType != RTDIGESTTYPE_INVALID)
+                            {
+                                m->pbSignedDigest = (uint8_t *)RTMemDup(abSignedDigest, cbSignedDigest);
+                                m->cbSignedDigest = cbSignedDigest;
+                                hrc = S_OK;
+                            }
+                            else
+                                hrc = setError(E_FAIL, tr("Unsupported signed digest type (%#x)"), fDigestType);
+                        }
+                        else
+                            hrc = setErrorVrc(vrc, tr("Error reading signed manifest digest: %Rrc"), vrc);
+                    }
+                    else if (vrc == VERR_NOT_FOUND)
+                        hrc = setErrorVrc(vrc, tr("Could not locate signed digest for '%s' in the cert-file for '%s'"),
+                                          strManifestName.c_str(), pTask->locInfo.strPath.c_str());
+                    else
+                        hrc = setErrorVrc(vrc, tr("RTManifestEntryQueryAttr failed unexpectedly: %Rrc"), vrc);
+                }
+                else
+                    hrc = setErrorVrc(vrc, tr("Error parsing the .cert-file for '%s': %s"),
+                                      pTask->locInfo.strPath.c_str(), StaticErrInfo.szMsg);
+            }
+            else
+                hrc = E_OUTOFMEMORY;
+            RTManifestRelease(hSignedDigestManifest);
+        }
+        else
+            hrc = E_OUTOFMEMORY;
+    }
+    else
+        hrc = setErrorVrc(vrc, tr("Error reading the signer's certificate from '%s' for '%s' (%Rrc): %s"),
+                          pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, StaticErrInfo.szMsg);
+
+    RTVfsIoStrmReadAllFree(pvSignature, cbSignature);
+    LogFlowFunc(("returns %Rhrc (%Rrc)\n", hrc, vrc));
+    return hrc;
+}
+
+
+/**
+ * Does tail processing after the files have been read in.
+ *
+ * @param   pTask               The read task.
+ * @returns COM status.
+ * @throws  Nothing!
+ */
+HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
+{
+    /*
+     * Parse and validate the signature file.
+     *
+     * The signature file has two parts, manifest part and a PEM encoded
+     * certificate.  The former contains an entry for the manifest file with a
+     * digest that is encrypted with the certificate in the latter part.
+     */
+    if (m->pbSignedDigest)
+    {
+        /* Since we're validating the digest of the manifest, there have to be
+           a manifest.  We cannot allow a the manifest to be missing.  */
+        if (m->hMemFileTheirManifest == NIL_RTVFSFILE)
+            return setError(VBOX_E_FILE_ERROR, tr("Found .cert-file but no .mf-file for '%s'"), pTask->locInfo.strPath.c_str());
+
+        /*
+         * Validate the signed digest.
+         */
+        HRESULT hrc;
+
+        /* Calc the digest of the manifest using the algorithm found above. */
+        RTCRDIGEST hDigest;
+        int vrc = RTCrDigestCreateByType(&hDigest, m->enmSignedDigestType);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTCrDigestUpdateFromVfsFile(hDigest, m->hMemFileTheirManifest, true /*fRewindFile*/);
+            if (RT_SUCCESS(vrc))
+            {
+                /** @todo convert to something like RTCrPkixPubKeyVerifySignature!  */
+                /* Verify the signature using the certificate. */
+                RTCRPKIXSIGNATURE hSignature;
+                vrc = RTCrPkixSignatureCreateByObjId(&hSignature,
+                                                     &m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm,
+                                                     false /*fSigning*/,
+                                                     &m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey,
+                                                     NULL);
+                if (RT_SUCCESS(vrc))
+                {
+                    vrc = RTCrPkixSignatureVerify(hSignature, hDigest, m->pbSignedDigest, m->cbSignedDigest);
+                    if (RT_SUCCESS(vrc))
+                        hrc = S_OK;
+                    else if (vrc == VERR_CR_PKIX_SIGNATURE_MISMATCH)
+                        hrc = setErrorVrc(vrc, tr("The manifest signature does not match"));
+                    else
+                        hrc = setErrorVrc(vrc, tr("Error validating the manifest signature (%Rrc)"), vrc);
+                    RTCrPkixSignatureRelease(hSignature);
+                }
+            }
+            RTCrDigestRelease(hDigest);
+        }
+        else
+            hrc = setErrorVrc(vrc, tr("RTCrDigestCreateByType failed: %Rrc"), vrc);
+
+        /*
+         * If the signed digest checked out, validate the certificate.
+         */
+        if (SUCCEEDED(hrc))
+        {
+            /** @todo certificate validation. */
+        }
+
+    }
+
+    /** @todo provide details about the signatory, signature, etc.  */
+
+    /*
+     * If there is a manifest, check that the OVF digest matches up (if present).
+     */
+
+    NOREF(pTask);
+    return S_OK;
+}
+
 
 
 /*******************************************************************************
@@ -1213,17 +1825,18 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
  *
  * This runs in two contexts:
  *
- * 1) in a first worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl();
+ * 1) in a first worker thread; in that case, Appliance::ImportMachines() called
+ *    Appliance::i_importImpl();
  *
- * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl(), which
- *    called Appliance::i_i_importFSOVA(), which called Appliance::i_importImpl(), which then called this again.
+ * 2) in a second worker thread; in that case, Appliance::ImportMachines()
+ *    called Appliance::i_importImpl(), which called Appliance::i_importFSOVA(),
+ *    which called Appliance::i_importImpl(), which then called this again.
  *
  * @param   pTask       The OVF task data.
  * @return  COM status code.
  */
 HRESULT Appliance::i_importFS(TaskOVF *pTask)
 {
-
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
 
@@ -1246,7 +1859,6 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
         rc = i_importFSOVF(pTask, writeLock);
     else
         rc = i_importFSOVA(pTask, writeLock);
-
     if (FAILED(rc))
     {
         /* With _whatever_ error we've had, do a complete roll-back of
@@ -1278,118 +1890,98 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
-
     return rc;
 }
 
-HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
+HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase &rWriteLock)
+{
+    return i_importDoIt(pTask, rWriteLock);
+}
+
+HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase &rWriteLock)
 {
     LogFlowFuncEnter();
 
-    HRESULT rc = S_OK;
+    /*
+     * Open the tar file as file stream.
+     */
+    RTVFSIOSTREAM hVfsIosOva;
+    int vrc = RTVfsIoStrmOpenNormal(pTask->locInfo.strPath.c_str(),
+                                    RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsIosOva);
+    if (RT_FAILURE(vrc))
+        return setErrorVrc(vrc, tr("Error opening the OVA file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
 
-    PVDINTERFACEIO pShaIo = NULL;
-    PVDINTERFACEIO pFileIo = NULL;
-    RTVFSFILE hManifestVfsFile = NIL_RTVFSFILE;
-    void *pvCertBuf = NULL;
-    writeLock.release();
+    RTVFSFSSTREAM hVfsFssOva;
+    vrc = RTZipTarFsStreamFromIoStream(hVfsIosOva, 0 /*fFlags*/, &hVfsFssOva);
+    RTVfsIoStrmRelease(hVfsIosOva);
+    if (RT_FAILURE(vrc))
+        return setErrorVrc(vrc, tr("Error reading the OVA file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
 
-    /* Create the import stack for the rollback on errors. */
-    ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
+    /*
+     * Join paths with the i_importFSOVF code.
+     *
+     * Note! We don't need to skip the OVF, manifest or signature files, as the
+     *       i_importMachineGeneric, i_importVBoxMachine and i_importOpenSourceFile
+     *       code will deal with this (as there could be other files in the OVA
+     *       that we don't process, like 'de-DE-resources.xml' in EXAMPLE 1,
+     *       Appendix D.1, OVF v2.1.0).
+     */
+    HRESULT hrc = i_importDoIt(pTask, rWriteLock, hVfsFssOva);
+
+    RTVfsFsStrmRelease(hVfsFssOva);
+
+    LogFlowFunc(("returns %Rhrc\n", hrc));
+    return hrc;
+}
+
+/**
+ * Does the actual importing after the caller has made the source accessible.
+ *
+ * @param   pTask               The import task.
+ * @param   rWriteLock          The write lock the caller's caller is holding,
+ *                              will be released for some reason.
+ * @param   hVfsFssOva          The file system stream if OVA, NIL if not.
+ * @returns COM status code.
+ * @throws  Nothing.
+ */
+HRESULT Appliance::i_importDoIt(TaskOVF *pTask, AutoWriteLockBase &rWriteLock, RTVFSFSSTREAM hVfsFssOva /*= NIL_RTVFSFSSTREAM*/)
+{
+    rWriteLock.release();
+
+    HRESULT hrc = E_FAIL;
     try
     {
-        int vrc = RTManifestCreate(0 /*fFlags*/, &stack.hSrcDisksManifest);
-        if (RT_FAILURE(vrc))
-            throw setError(E_OUTOFMEMORY);
-
-        /* Create the necessary file access interfaces. */
-        pFileIo = FileCreateInterface();
-        if (!pFileIo)
-            throw setError(E_OUTOFMEMORY);
-
-        Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".mf");
-
-        SHASTORAGE storage;
-        RT_ZERO(storage);
-
-        Utf8Str name = i_applianceIOName(applianceIOFile);
-
-        vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
-                             VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
-                             &storage.pVDImageIfaces);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
-
-        if (RTFileExists(strMfFile.c_str()))
-        {
-            pShaIo = ShaCreateInterface();
-            if (!pShaIo)
-                throw setError(E_OUTOFMEMORY);
-
-            Utf8Str nameSha = i_applianceIOName(applianceIOSha);
-            /* Fill out interface descriptor. */
-            pShaIo->Core.u32Magic         = VDINTERFACE_MAGIC;
-            pShaIo->Core.cbSize           = sizeof(VDINTERFACEIO);
-            pShaIo->Core.pszInterfaceName = nameSha.c_str();
-            pShaIo->Core.enmInterface     = VDINTERFACETYPE_IO;
-            pShaIo->Core.pvUser           = &storage;
-            pShaIo->Core.pNext            = NULL;
-
-            storage.fCreateDigest = true;
-
-            /* Now import the appliance. */
-            i_importMachines(stack, pShaIo, &storage);
-
-            /* Add the digest of the ovf to our verification manifest. */
-            vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest, RTPathFilename(pTask->locInfo.strPath.c_str()),
-                                         NULL /*pszAttr*/, m->strOVFSHADigest.c_str(),
-                                         m->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
-            if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_IPRT_ERROR, "Adding OVF digest failed (%Rrc)", vrc);
-
-            /* Read & verify the manifest file. */
-            vrc = RTVfsFileOpenNormal(strMfFile.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hManifestVfsFile);
-            if (RT_SUCCESS(vrc))
-            {
-                rc = i_verifyManifestFile(strMfFile, stack, hManifestVfsFile, RTPathFilename(pTask->locInfo.strPath.c_str()));
-                if (FAILED(rc)) throw rc;
-            }
-            else if (vrc != VERR_FILE_NOT_FOUND)
-                throw setError(VBOX_E_IPRT_ERROR, tr("Error opening manifest file '%s' (%Rrc)"), strMfFile.c_str(), vrc);
-
-            size_t cbCertFile = 0;
-
-            /* Save the SHA digest of the manifest file for the next validation */
-            Utf8Str manifestShaDigest = storage.strDigest;
-
-            Utf8Str strCertFile = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".cert");
-            if (RTFileExists(strCertFile.c_str()))
-            {
-                rc = i_readFileToBuf(strCertFile, &pvCertBuf, &cbCertFile, false, pShaIo, &storage);
-                if (FAILED(rc)) throw rc;
-
-                /* verify Certificate */
-                rc = i_verifyCertificateFile(pvCertBuf, cbCertFile, &storage);
-                if (FAILED(rc)) throw rc;
-            }
-        }
-        else
-        {
-            storage.fCreateDigest = false;
-            i_importMachines(stack, pFileIo, &storage);
-        }
-    }
-    catch (HRESULT rc2)
-    {
-        rc = rc2;
         /*
-         * Restoring original UUID from OVF description file.
-         * During import VBox creates new UUIDs for imported images and
-         * assigns them to the images. In case of failure we have to restore
-         * the original UUIDs because those new UUIDs are obsolete now and
-         * won't be used anymore.
+         * Create the import stack for the rollback on errors.
          */
+        ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress, hVfsFssOva);
+
+        try
         {
+            /* Do the importing. */
+            i_importMachines(stack);
+
+            /* We should've processed all the files now, so compare. */
+            hrc = i_verifyManifestFile(stack);
+        }
+        catch (HRESULT hrcXcpt)
+        {
+            hrc = hrcXcpt;
+        }
+        catch (...)
+        {
+            AssertFailed();
+            hrc = E_FAIL;
+        }
+        if (FAILED(hrc))
+        {
+            /*
+             * Restoring original UUID from OVF description file.
+             * During import VBox creates new UUIDs for imported images and
+             * assigns them to the images. In case of failure we have to restore
+             * the original UUIDs because those new UUIDs are obsolete now and
+             * won't be used anymore.
+             */
             ErrorInfoKeeper eik; /* paranoia */
             list< ComObjPtr<VirtualSystemDescription> >::const_iterator itvsd;
             /* Iterate through all virtual systems of that appliance */
@@ -1404,492 +1996,76 @@ HRESULT Appliance::i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             }
         }
     }
-    writeLock.acquire();
-
-    /* Cleanup */
-    if (hManifestVfsFile != NIL_RTVFSFILE)
-        RTVfsFileRelease(hManifestVfsFile);
-    if (pvCertBuf)
-        RTMemFree(pvCertBuf);
-    if (pShaIo)
-        RTMemFree(pShaIo);
-    if (pFileIo)
-        RTMemFree(pFileIo);
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return rc;
-}
-
-HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
-{
-    LogFlowFuncEnter();
-    HRESULT rc = S_OK;
-
-    /*
-     * Open the OVA (TAR) file.
-     */
-    PFSSRDONLYINTERFACEIO pTarIo;
-    int vrc = fssRdOnlyCreateInterfaceForTarFile(pTask->locInfo.strPath.c_str(), &pTarIo);
-    if (RT_FAILURE(vrc))
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Could not open OVA file '%s' (%Rrc)"),
-                        pTask->locInfo.strPath.c_str(), vrc);
-
-
-    PVDINTERFACEIO pShaIo = 0;
-    RTVFSFILE hManifestMemFile = NIL_RTVFSFILE;
-    void *pvCertBuf = NULL;
-    Utf8Str OVFfilename;
-
-    writeLock.release();
-
-    /* Create the import stack for the rollback on errors. */
-    ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
-    try
+    catch (...)
     {
-        vrc = RTManifestCreate(0 /*fFlags*/, &stack.hSrcDisksManifest);
-        if (RT_FAILURE(vrc))
-            throw setError(E_OUTOFMEMORY);
-
-        /* Create the necessary file access interfaces. */
-        pShaIo = ShaCreateInterface();
-        if (!pShaIo)
-            throw setError(E_OUTOFMEMORY);
-
-        Utf8Str nameTar = i_applianceIOName(applianceIOTar);
-        SHASTORAGE storage;
-        RT_ZERO(storage);
-        vrc = VDInterfaceAdd((PVDINTERFACE)pTarIo, nameTar.c_str(),
-                             VDINTERFACETYPE_IO, pTarIo, sizeof(VDINTERFACEIO),
-                             &storage.pVDImageIfaces);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_IPRT_ERROR,
-                           tr("Creation of the VD interface failed (%Rrc)"), vrc);
-
-        /* Fill out interface descriptor. */
-        Utf8Str nameSha = i_applianceIOName(applianceIOSha);
-        pShaIo->Core.u32Magic         = VDINTERFACE_MAGIC;
-        pShaIo->Core.cbSize           = sizeof(VDINTERFACEIO);
-        pShaIo->Core.pszInterfaceName = nameSha.c_str();
-        pShaIo->Core.enmInterface     = VDINTERFACETYPE_IO;
-        pShaIo->Core.pvUser           = &storage;
-        pShaIo->Core.pNext            = NULL;
-
-        /*
-         * File #1 - the .ovf file.
-         *
-         * Read the name of the first file. This is how all internal files
-         * are named.
-         */
-        const char *pszFilename;
-        vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_IPRT_ERROR,
-                           tr("Getting the OVF file within the archive failed (%Rrc)"), vrc);
-        if (vrc == VINF_TAR_DIR_PATH)
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
-                           pszFilename, vrc);
-
-        /* save original OVF filename */
-        OVFfilename = pszFilename;
-        Utf8Str strMfFile = (Utf8Str(pszFilename)).stripSuffix().append(".mf");
-        Utf8Str strCertFile = (Utf8Str(pszFilename)).stripSuffix().append(".cert");
-
-        /* Skip the OVF file, cause this was read in IAppliance::Read already. */
-        vrc = fssRdOnlySkipCurrent(pTarIo);
-        if (RT_SUCCESS(vrc))
-            vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
-        if (   RT_FAILURE(vrc)
-            && vrc != VERR_EOF)
-            throw setError(VBOX_E_IPRT_ERROR, tr("Seeking within the archive failed (%Rrc)"), vrc);
-
-        PVDINTERFACEIO pCallbacks = pShaIo;
-        PSHASTORAGE pStorage = &storage;
-
-        /* We always need to create the digest, cause we don't know if there
-         * is a manifest file in the stream. */
-        pStorage->fCreateDigest = true;
-
-        /*
-         * File #2 - the manifest file (.mf), optional.
-         *
-         * Note: This isn't fatal if the file is not found. The standard
-         * defines 3 cases:
-         *  1. no manifest file
-         *  2. manifest file after the OVF file
-         *  3. manifest file after all disk files
-         *
-         * If we want streaming capabilities, we can't check if it is there by
-         * searching for it. We have to try to open it on all possible places.
-         * If it fails here, we will try it again after all disks where read.
-         */
-        /** @todo r=bird: Consider dropping strict ordering and process subsequent files
-         *  as found.  This is doable while still sharing code with on disk OVF.  It's
-         *  a bit of work though, for OVFs, but more code can ultimately be shared. */
-        if (fssRdOnlyEqualsCurrentFilename(pTarIo, strMfFile))
-        {
-            vrc = fssRdOnlyMemorizeCurrentAsFile(pTarIo, &hManifestMemFile);
-            if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_IPRT_ERROR, tr("Failed to read the manifest into a buffer (%Rrc)"), vrc);
-        }
-
-        /*
-         * File #3 - certificate file (.cer), optional.
-         *
-         * Logic is the same as with manifest file.  This only makes sense if
-         * there is a manifest file.
-         */
-        size_t cbCertFile = 0;
-        vrc = fssRdOnlyGetCurrentName(pTarIo, &pszFilename);
-        if (RT_SUCCESS(vrc))
-        {
-            if (hManifestMemFile != NIL_RTVFSFILE)
-            {
-                if (strCertFile.compare(pszFilename) == 0)
-                {
-                    rc = i_readTarFileToBuf(pTarIo, strCertFile, &pvCertBuf, &cbCertFile, false, pCallbacks, pStorage);
-                    if (FAILED(rc)) throw rc;
-
-                    if (pvCertBuf)
-                    {
-                        /* verify the certificate */
-                        rc = i_verifyCertificateFile(pvCertBuf, cbCertFile, pStorage);
-                        if (FAILED(rc)) throw rc;
-                    }
-                }
-            }
-        }
-
-        /*
-         * Now import the appliance.
-         */
-        i_importMachines(stack, pCallbacks, pStorage);
-
-        /*
-         * The certificate and manifest files may alternatively be stored
-         * after the disk files, so look again if we didn't find them already.
-         */
-        if (hManifestMemFile == NIL_RTVFSFILE)
-        {
-            /*
-             * File #N-1 - The manifest file, optional.
-             */
-            if (fssRdOnlyEqualsCurrentFilename(pTarIo, strMfFile))
-            {
-                vrc = fssRdOnlyMemorizeCurrentAsFile(pTarIo, &hManifestMemFile);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_IPRT_ERROR, tr("Failed to read the manifest into a buffer (%Rrc)"), vrc);
-
-                /*
-                 * File #N - The certificate file, optional.
-                 * (Requires mainfest, as mention before.)
-                 */
-                if (fssRdOnlyEqualsCurrentFilename(pTarIo, strCertFile))
-                {
-                    rc = i_readTarFileToBuf(pTarIo, strCertFile, &pvCertBuf, &cbCertFile, false, pCallbacks, pStorage);
-                    if (FAILED(rc)) throw rc;
-                }
-            }
-        }
-
-        /*
-         * Check the manifest and its (optional) signature if present.
-         */
-        if (hManifestMemFile != NIL_RTVFSFILE)
-        {
-            /* Add the ovf file digest to the verification list. */
-            vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest, OVFfilename.c_str(), NULL /*pszAttr*/,
-                                         m->strOVFSHADigest.c_str(), m->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
-            if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_IPRT_ERROR, "RTManifestSetAttr failed on '%s' = '%s' (%Rrc)",
-                               OVFfilename.c_str(), m->strOVFSHADigest.c_str(), vrc);
-
-            /* Perform the verifications. */
-            rc = i_verifyManifestFile(strMfFile, stack, hManifestMemFile, OVFfilename.c_str());
-            if (FAILED(rc)) throw rc;
-
-            /* verify the certificate */
-            if (pvCertBuf)
-            {
-                rc = i_verifyCertificateFile(pvCertBuf, cbCertFile, pStorage);
-                if (FAILED(rc)) throw rc;
-            }
-        }
-
+        hrc = E_FAIL;
+        AssertFailed();
     }
-    catch (HRESULT rc2)
-    {
-        rc = rc2;
 
-        /*
-         * Restoring original UUID from OVF description file.
-         * During import VBox creates new UUIDs for imported images and
-         * assigns them to the images. In case of failure we have to restore
-         * the original UUIDs because those new UUIDs are obsolete now and
-         * won't be used anymore.
-         */
-        ErrorInfoKeeper eik; /* paranoia */
-        list< ComObjPtr<VirtualSystemDescription> >::const_iterator itvsd;
-        /* Iterate through all virtual systems of that appliance */
-        for (itvsd = m->virtualSystemDescriptions.begin();
-             itvsd != m->virtualSystemDescriptions.end();
-             ++itvsd)
-        {
-            ComObjPtr<VirtualSystemDescription> vsdescThis = (*itvsd);
-            settings::MachineConfigFile *pConfig = vsdescThis->m->pConfig;
-            if(vsdescThis->m->pConfig!=NULL)
-              stack.restoreOriginalUUIDOfAttachedDevice(pConfig);
-        }
-    }
-    writeLock.acquire();
-
-    /* Cleanup */
-    fssRdOnlyDestroyInterface(pTarIo);
-    if (hManifestMemFile != NIL_RTVFSFILE)
-        RTVfsFileRelease(hManifestMemFile);
-    if (pShaIo)
-        RTMemFree(pShaIo);
-    if (pvCertBuf)
-        RTMemFree(pvCertBuf);
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return rc;
-}
-
-HRESULT Appliance::i_readFileToBuf(const Utf8Str &strFile,
-                                   void **ppvBuf,
-                                   size_t *pcbSize,
-                                   bool fCreateDigest,
-                                   PVDINTERFACEIO pCallbacks,
-                                   PSHASTORAGE pStorage)
-{
-    HRESULT rc = S_OK;
-
-    bool fOldDigest = pStorage->fCreateDigest;/* Save the old digest property */
-    pStorage->fCreateDigest = fCreateDigest;
-    int vrc = readFileIntoBuffer(strFile.c_str(), ppvBuf, pcbSize, pCallbacks, pStorage);
-    if (   RT_FAILURE(vrc)
-        && vrc != VERR_FILE_NOT_FOUND)
-        rc = setError(VBOX_E_FILE_ERROR,
-                      tr("Could not read file '%s' (%Rrc)"),
-                      RTPathFilename(strFile.c_str()), vrc);
-    pStorage->fCreateDigest = fOldDigest; /* Restore the old digest creation behavior again. */
-
-    return rc;
-}
-
-HRESULT Appliance::i_readTarFileToBuf(PFSSRDONLYINTERFACEIO pTarIo,
-                                      const Utf8Str &strFile,
-                                      void **ppvBuf,
-                                      size_t *pcbSize,
-                                      bool fCreateDigest,
-                                      PVDINTERFACEIO pCallbacks,
-                                      PSHASTORAGE pStorage)
-{
-    HRESULT rc = S_OK;
-
-    const char *pszCurFile;
-    int vrc = fssRdOnlyGetCurrentName(pTarIo, &pszCurFile);
-    if (RT_SUCCESS(vrc))
-    {
-        if (vrc != VINF_TAR_DIR_PATH)
-        {
-            if (!strcmp(pszCurFile, RTPathFilename(strFile.c_str())))
-                rc = i_readFileToBuf(strFile, ppvBuf, pcbSize, fCreateDigest, pCallbacks, pStorage);
-        }
-        else
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
-                          pszCurFile, vrc);
-    }
-    else if (vrc != VERR_EOF)
-        rc = setError(VBOX_E_IPRT_ERROR, "Seeking within the archive failed (%Rrc)", vrc);
-
-    return rc;
+    rWriteLock.acquire();
+    return hrc;
 }
 
 /**
  * Undocumented, you figure it from the name.
  *
  * @returns Undocumented
- * @param   strFile             Undocumented.
  * @param   stack               Undocumented.
- * @param   hManifestVfsFile    A VFS file object containing the manifest.  This
- *                              can be a buffered memory file or a read file.
- * @param   pszOvfEntry         The name of the manifest entry for the OVF (for
- *                              the ignore hack).
  */
-HRESULT Appliance::i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack,
-                                        RTVFSFILE hManifestVfsFile, const char *pszOvfEntry)
+HRESULT Appliance::i_verifyManifestFile(ImportStack &stack)
 {
     LogFlowThisFuncEnter();
     HRESULT hrc;
+    int vrc;
 
     /*
-     * Parse the manifest file associated with the import.
+     * No manifest is fine, it always matches.
      */
-    RTMANIFEST hOvfManifest;
-    int vrc = RTManifestCreate(0 /*fFlags*/, &hOvfManifest);
-    if (RT_SUCCESS(vrc))
+    if (m->hTheirManifest == NIL_RTMANIFEST)
+        hrc = S_OK;
+    else
     {
-        char szErr[256];
-        RTVFSIOSTREAM hVfsIosTmp = RTVfsFileToIoStream(hManifestVfsFile);
-        vrc = RTManifestReadStandardEx(hOvfManifest, hVfsIosTmp, szErr, sizeof(szErr));
-        RTVfsIoStrmRelease(hVfsIosTmp);
-        if (RT_SUCCESS(vrc))
+        /*
+         * Hack: If the manifest we just read doesn't have a digest for the OVF, copy
+         *       it from the manifest we got from the caller.
+         * @bugref{6022#c119}
+         */
+        if (   !RTManifestEntryExists(m->hTheirManifest, m->strOvfManifestEntry.c_str())
+            && RTManifestEntryExists(m->hOurManifest, m->strOvfManifestEntry.c_str()) )
         {
-            /** @todo Do we need to chop paths off the files in any of the manifests before
-             *        comparing? */
-
-            /*
-             * Hack: If the manifest we just read doesn't have a digest for the OVF, copy
-             *       it from the manifest we got from the caller.
-             * @bugref{6022#c119}
-             */
-            if (   !RTManifestEntryExists(hOvfManifest, pszOvfEntry)
-                && RTManifestEntryExists(stack.hSrcDisksManifest, pszOvfEntry) )
-            {
-                uint32_t fType = 0;
-                char szDigest[512 + 1];
-                vrc = RTManifestEntryQueryAttr(stack.hSrcDisksManifest, pszOvfEntry, NULL, RTMANIFEST_ATTR_ANY,
-                                               szDigest, sizeof(szDigest), &fType);
-                if (RT_SUCCESS(vrc))
-                    vrc = RTManifestEntrySetAttr(hOvfManifest, pszOvfEntry, NULL /*pszAttr*/, szDigest, fType);
-            }
+            uint32_t fType = 0;
+            char szDigest[512 + 1];
+            vrc = RTManifestEntryQueryAttr(m->hOurManifest, m->strOvfManifestEntry.c_str(), NULL, RTMANIFEST_ATTR_ANY,
+                                           szDigest, sizeof(szDigest), &fType);
             if (RT_SUCCESS(vrc))
-            {
-                /*
-                 * Compare with the digests we've created while read/processing the import.
-                 */
-                vrc = RTManifestEqualsEx(hOvfManifest, stack.hSrcDisksManifest, NULL /*papszIgnoreEntries*/,
-                                         NULL /*papszIgnoreAttrs*/, 0 /*fFlags*/, szErr, sizeof(szErr));
-                if (RT_SUCCESS(vrc))
-                    hrc = S_OK;
-                else
-                    hrc = setError(VBOX_E_IPRT_ERROR, tr("Digest mismatch (%Rrc): %s"), vrc, szErr);
-            }
-            else
-                hrc = setError(VBOX_E_IPRT_ERROR, tr("Error fudging missing OVF digest in manifest: %Rrc"), vrc);
+                vrc = RTManifestEntrySetAttr(m->hTheirManifest, m->strOvfManifestEntry.c_str(),
+                                             NULL /*pszAttr*/, szDigest, fType);
+            if (RT_FAILURE(vrc))
+                return setError(VBOX_E_IPRT_ERROR, tr("Error fudging missing OVF digest in manifest: %Rrc"), vrc);
         }
-        else
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Error reading manifest (%s): %Rrc - %s"), strFile.c_str(), vrc, szErr);
 
-        RTManifestRelease(hOvfManifest);
-    }
-    else
-        hrc = Global::vboxStatusCodeToCOM(vrc);
-
-    LogFlowThisFuncLeave();
-    return hrc;
-}
-
-HRESULT Appliance::i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORAGE pStorage)
-{
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", this));
-    HRESULT rc = S_OK;
-
-    int vrc = 0;
-    RTDIGESTTYPE digestType;
-    void * pvCertBuf = pvBuf;
-    size_t cbCertSize = cbSize;
-    Utf8Str manifestDigest = pStorage->strDigest;
-
-    vrc = RTManifestVerifyDigestType(pvCertBuf, cbCertSize, &digestType);
-    if (RT_FAILURE(vrc))
-    {
-        rc = setError(VBOX_E_FILE_ERROR, tr("Digest type of certificate is unknown"));
-    }
-    else
-    {
-        RTX509PrepareOpenSSL();
-
-        vrc = RTRSAVerify(pvCertBuf, (unsigned int)cbCertSize, manifestDigest.c_str(), digestType);
+        /*
+         * Compare with the digests we've created while read/processing the import.
+         *
+         * We specify the RTMANIFEST_EQUALS_IGN_MISSING_ATTRS to ignore attributes
+         * (SHA1, SHA256, etc) that are only present in one of the manifests, as long
+         * as each entry has at least one common attribute that we can check.  This
+         * is important for the OVF in OVAs, for which we generates several digests
+         * since we don't know which are actually used in the manifest (OVF comes
+         * first in an OVA, then manifest).
+         */
+        char szErr[256];
+        vrc = RTManifestEqualsEx(m->hTheirManifest, m->hOurManifest, NULL /*papszIgnoreEntries*/,
+                                 NULL /*papszIgnoreAttrs*/, RTMANIFEST_EQUALS_IGN_MISSING_ATTRS, szErr, sizeof(szErr));
         if (RT_SUCCESS(vrc))
-        {
-            /*
-             * possible step in the future. Not obligatory due to OVF2.0 standard
-             * OVF2.0:"A consumer of the OVF package shall verify the signature and should validate the certificate"
-             */
-            vrc = RTX509CertificateVerify(pvCertBuf, (unsigned int)cbCertSize);
-        }
-
-        /* After first unsuccessful operation */
-        if (RT_FAILURE(vrc))
-        {
-            {
-                /* first stage for getting possible error code and it's description using native openssl method */
-                char* errStrDesc = NULL;
-                unsigned long errValue = RTX509GetErrorDescription(&errStrDesc);
-
-                if(errValue != 0)
-                {
-                    rc = setError(VBOX_E_FILE_ERROR, tr(errStrDesc));
-                    LogFlowFunc(("Error during verifying X509 certificate(internal openssl description): %s\n", errStrDesc));
-                }
-
-                RTMemFree(errStrDesc);
-            }
-
-            {
-                /* second stage for getting possible error code using our defined errors codes. The original error description
-                   will be replaced by our description */
-
-                Utf8Str errStrDesc;
-                switch(vrc)
-                {
-                    case VERR_X509_READING_CERT_FROM_BIO:
-                        errStrDesc = "Error during reading a certificate in PEM format from BIO ";
-                        break;
-                    case VERR_X509_EXTRACT_PUBKEY_FROM_CERT:
-                        errStrDesc = "Error during extraction a public key from the certificate ";
-                        break;
-                    case VERR_X509_EXTRACT_RSA_FROM_PUBLIC_KEY:
-                        errStrDesc = "Error during extraction RSA from the public key ";
-                        break;
-                    case VERR_X509_RSA_VERIFICATION_FUILURE:
-                        errStrDesc = "RSA verification failure ";
-                        break;
-                    case VERR_X509_NO_BASIC_CONSTARAINTS:
-                        errStrDesc = "Basic constraints were not found ";
-                        break;
-                    case VERR_X509_GETTING_EXTENSION_FROM_CERT:
-                        errStrDesc = "Error during getting extensions from the certificate ";
-                        break;
-                    case VERR_X509_GETTING_DATA_FROM_EXTENSION:
-                        errStrDesc = "Error during extraction data from the extension ";
-                        break;
-                    case VERR_X509_PRINT_EXTENSION_TO_BIO:
-                        errStrDesc = "Error during print out an extension to BIO ";
-                        break;
-                    case VERR_X509_CERTIFICATE_VERIFICATION_FAILURE:
-                        errStrDesc = "X509 certificate verification failure ";
-                        break;
-                    default:
-                        errStrDesc = "Unknown error during X509 certificate verification";
-                }
-                rc = setError(VBOX_E_FILE_ERROR, tr(errStrDesc.c_str()));
-            }
-        }
+            hrc = S_OK;
         else
-        {
-            if(vrc == VINF_X509_NOT_SELFSIGNED_CERTIFICATE)
-            {
-                setWarning(VBOX_E_FILE_ERROR,
-                           tr("Signature from the X509 certificate has been verified. "
-                              "But VirtualBox can't validate the given X509 certificate. "
-                              "Only self signed X509 certificates are supported at moment. \n"));
-            }
-        }
+            hrc = setErrorVrc(vrc, tr("Digest mismatch (%Rrc): %s"), vrc, szErr);
     }
 
-    LogFlowFuncLeave();
-    return rc;
+    NOREF(stack);
+    LogFlowThisFunc(("returns %Rhrc\n", hrc));
+    return hrc;
 }
 
 /**
@@ -1996,7 +2172,9 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
 }
 
 /**
- * Imports one disk image. This is common code shared between
+ * Imports one disk image.
+ *
+ * This is common code shared between
  *  --  i_importMachineGeneric() for the OVF case; in that case the information comes from
  *      the OVF virtual systems;
  *  --  i_importVBoxMachine(); in that case, the information comes from the <vbox:Machine>
@@ -2017,21 +2195,16 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
  * @param stack
  */
 void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
-                                     Utf8Str *strTargetPath,
+                                     Utf8Str *pStrDstPath,
                                      ComObjPtr<Medium> &pTargetHD,
-                                     ImportStack &stack,
-                                     PVDINTERFACEIO pCallbacks,
-                                     PSHASTORAGE pStorage)
+                                     ImportStack &stack)
 {
-    SHASTORAGE finalStorage;
-    PSHASTORAGE pRealUsedStorage = pStorage;/* may be changed later to finalStorage */
-    PVDINTERFACEIO pFileIo = NULL;/* used in GZIP case*/
     ComObjPtr<Progress> pProgress;
     pProgress.createObject();
     HRESULT rc = pProgress->init(mVirtualBox,
                                  static_cast<IAppliance*>(this),
                                  BstrFmt(tr("Creating medium '%s'"),
-                                 strTargetPath->c_str()).raw(),
+                                 pStrDstPath->c_str()).raw(),
                                  TRUE);
     if (FAILED(rc)) throw rc;
 
@@ -2041,16 +2214,13 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
     /* Keep the source file ref handy for later. */
     const Utf8Str &strSourceOVF = di.strHref;
 
-    Utf8Str strSrcFilePath(stack.strSourceDir);
-    Utf8Str strTargetDir(*strTargetPath);
-
     /* Construct source file path */
-    Utf8Str name = i_applianceIOName(applianceIOTar);
-
-    if (RTStrNICmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
+    Utf8Str strSrcFilePath;
+    if (stack.hVfsFssOva != NIL_RTVFSFSSTREAM)
         strSrcFilePath = strSourceOVF;
     else
     {
+        strSrcFilePath = stack.strSourceDir;
         strSrcFilePath.append(RTPATH_SLASH_STR);
         strSrcFilePath.append(strSourceOVF);
     }
@@ -2059,7 +2229,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
      * import the disk into an existing path. This is useful for iSCSI for
      * example. */
     RTUUID uuid;
-    int vrc = RTUuidFromStr(&uuid, strTargetPath->c_str());
+    int vrc = RTUuidFromStr(&uuid, pStrDstPath->c_str());
     if (vrc == VINF_SUCCESS)
     {
         rc = mVirtualBox->i_findHardDiskById(Guid(uuid), true, &pTargetHD);
@@ -2067,66 +2237,19 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
     }
     else
     {
-        bool fGzipUsed = di.strCompression.compare("gzip",Utf8Str::CaseInsensitive) == 0;
+        RTVFSIOSTREAM hVfsIosSrc = NIL_RTVFSIOSTREAM;
+
         /* check read file to GZIP compression */
+        bool const fGzipped = di.strCompression.compare("gzip",Utf8Str::CaseInsensitive) == 0;
+        Utf8Str strDeleteTemp;
         try
         {
-            if (fGzipUsed == true)
-            {
-                /*
-                 * Create the necessary file access interfaces.
-                 * For the next step:
-                 * We need to replace the previously created chain of SHA-TAR or SHA-FILE interfaces
-                 * with simple FILE interface because we don't need SHA or TAR interfaces here anymore.
-                 * But we mustn't delete the chain of SHA-TAR or SHA-FILE interfaces.
-                 */
-
-                /* Decompress the GZIP file and save a new file in the target path */
-                strTargetDir = strTargetDir.stripFilename();
-                strTargetDir.append(RTPATH_SLASH_STR);
-                strTargetDir.append("temp_");
-
-                Utf8Str strTempTargetFilename(strSrcFilePath);
-                strTempTargetFilename = strTempTargetFilename.stripPath();
-
-                strTargetDir.append(strTempTargetFilename);
-
-                vrc = decompressImageAndSave(strSrcFilePath.c_str(), strTargetDir.c_str(), pCallbacks, pStorage);
-
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not read the file '%s' (%Rrc)"),
-                                   RTPathFilename(strSrcFilePath.c_str()), vrc);
-
-                /* Create the necessary file access interfaces. */
-                pFileIo = FileCreateInterface();
-                if (!pFileIo)
-                    throw setError(E_OUTOFMEMORY);
-
-                name = i_applianceIOName(applianceIOFile);
-
-                vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
-                                     VDINTERFACETYPE_IO, NULL, sizeof(VDINTERFACEIO),
-                                     &finalStorage.pVDImageIfaces);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_IPRT_ERROR,
-                                   tr("Creation of the VD interface failed (%Rrc)"), vrc);
-
-                /* Correct the source and the target with the actual values */
-                strSrcFilePath = strTargetDir;
-
-                pRealUsedStorage = &finalStorage;
-            }
-
             Utf8Str strTrgFormat = "VMDK";
             ComObjPtr<MediumFormat> trgFormat;
             Bstr bstrFormatName;
             ULONG lCabs = 0;
 
-            //check existence of option "ImportToVDI", in this case all imported disks will be converted to VDI images
-            bool chExt = m->optListImport.contains(ImportOptions_ImportToVDI);
-
-            char *pszSuff = RTPathSuffix(strTargetPath->c_str());
+            char *pszSuff = RTPathSuffix(pStrDstPath->c_str());
             if (pszSuff != NULL)
             {
                 /*
@@ -2141,29 +2264,24 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                  * then we need properly process such format like ISO
                  * Because there is no conversion ISO to VDI
                  */
-
-                pszSuff++;
-                trgFormat = pSysProps->i_mediumFormatFromExtension(pszSuff);
+                trgFormat = pSysProps->i_mediumFormatFromExtension(++pszSuff);
                 if (trgFormat.isNull())
-                {
-                    rc = setError(E_FAIL,
-                           tr("Internal inconsistency looking up medium format for the disk image '%s'"),
-                           di.strHref.c_str());
-                }
+                    throw setError(E_FAIL, tr("Unsupported medium format for disk image '%s'"), di.strHref.c_str());
 
                 rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
                 if (FAILED(rc)) throw rc;
 
                 strTrgFormat = Utf8Str(bstrFormatName);
 
-                if(chExt && strTrgFormat.compare("RAW", Utf8Str::CaseInsensitive) != 0)
+                if (   m->optListImport.contains(ImportOptions_ImportToVDI)
+                    && strTrgFormat.compare("RAW", Utf8Str::CaseInsensitive) != 0)
                 {
                     /* change the target extension */
                     strTrgFormat = "vdi";
                     trgFormat = pSysProps->i_mediumFormatFromExtension(strTrgFormat);
-                    *strTargetPath = strTargetPath->stripSuffix();
-                    *strTargetPath = strTargetPath->append(".");
-                    *strTargetPath = strTargetPath->append(strTrgFormat.c_str());
+                    *pStrDstPath = pStrDstPath->stripSuffix();
+                    *pStrDstPath = pStrDstPath->append(".");
+                    *pStrDstPath = pStrDstPath->append(strTrgFormat.c_str());
                 }
 
                 /* Check the capabilities. We need create capabilities. */
@@ -2181,13 +2299,13 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     && !(lCabs & MediumFormatCapabilities_CreateDynamic) )
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                    tr("Could not find a valid medium format for the target disk '%s'"),
-                                   strTargetPath->c_str());
+                                   pStrDstPath->c_str());
             }
             else
             {
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("The target disk '%s' has no extension "),
-                               strTargetPath->c_str(), VERR_INVALID_NAME);
+                               pStrDstPath->c_str(), VERR_INVALID_NAME);
             }
 
             /* Create an IMedium object. */
@@ -2198,35 +2316,10 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
             {
                 try
                 {
-                    if (fGzipUsed == true)
-                    {
-                        /*
-                         * The source and target pathes are the same.
-                         * It means that we have the needed file already.
-                         * For example, in GZIP case, we decompress the file and save it in the target path,
-                         * but with some prefix like "temp_". See part "check read file to GZIP compression" earlier
-                         * in this function.
-                         * Just rename the file by deleting "temp_" from it's name
-                         */
-                        vrc = RTFileRename(strSrcFilePath.c_str(), strTargetPath->c_str(), RTPATHRENAME_FLAGS_NO_REPLACE);
-                        if (RT_FAILURE(vrc))
-                            throw setError(VBOX_E_FILE_ERROR,
-                                           tr("Could not rename the file '%s' (%Rrc)"),
-                                           RTPathFilename(strSourceOVF.c_str()), vrc);
-                    }
+                    if (fGzipped)
+                        i_importDecompressFile(stack, strSrcFilePath, *pStrDstPath, strSourceOVF.c_str());
                     else
-                    {
-                        /* Calculating SHA digest for ISO file while copying one */
-                        vrc = copyFileAndCalcShaDigest(strSrcFilePath.c_str(),
-                                                       strTargetPath->c_str(),
-                                                       pCallbacks,
-                                                       pRealUsedStorage);
-
-                        if (RT_FAILURE(vrc))
-                            throw setError(VBOX_E_FILE_ERROR,
-                                           tr("Could not copy ISO file '%s' listed in the OVF file (%Rrc)"),
-                                           RTPathFilename(strSourceOVF.c_str()), vrc);
-                    }
+                        i_importCopyFile(stack, strSrcFilePath, *pStrDstPath, strSourceOVF.c_str());
                 }
                 catch (HRESULT /*arc*/)
                 {
@@ -2243,14 +2336,14 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
             {
                 rc = pTargetHD->init(mVirtualBox,
                                      strTrgFormat,
-                                     *strTargetPath,
+                                     *pStrDstPath,
                                      Guid::Empty /* media registry: none yet */,
                                      DeviceType_HardDisk);
                 if (FAILED(rc)) throw rc;
 
                 /* Now create an empty hard disk. */
                 rc = mVirtualBox->CreateMedium(Bstr(strTrgFormat).raw(),
-                                               Bstr(*strTargetPath).raw(),
+                                               Bstr(*pStrDstPath).raw(),
                                                AccessMode_ReadWrite, DeviceType_HardDisk,
                                                ComPtr<IMedium>(pTargetHD).asOutParam());
                 if (FAILED(rc)) throw rc;
@@ -2260,7 +2353,8 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                 {
                     com::SafeArray<MediumVariant_T>  mediumVariant;
                     mediumVariant.push_back(MediumVariant_Standard);
-                    /* Create a dynamic growing disk image with the given capacity. */
+
+                    /* Kick of the creation of a dynamic growing disk image with the given capacity. */
                     rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M,
                                                       ComSafeArrayAsInParam(mediumVariant),
                                                       ComPtr<IProgress>(pProgress).asOutParam());
@@ -2269,7 +2363,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     /* Advance to the next operation. */
                     /* operation's weight, as set up with the IProgress originally */
                     stack.pProgress->SetNextOperation(BstrFmt(tr("Creating disk image '%s'"),
-                                                      strTargetPath->c_str()).raw(),
+                                                      pStrDstPath->c_str()).raw(),
                                                       di.ulSuggestedSizeMB);
                 }
                 else
@@ -2285,17 +2379,43 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                           "or extension of the image"),
                                        RTPathFilename(strSourceOVF.c_str()));
 
-                    /* Clone the source disk image */
+                    /* If gzipped, decompress the GZIP file and save a new file in the target path */
+                    if (fGzipped)
+                    {
+                        Utf8Str strTargetFilePath(*pStrDstPath);
+                        strTargetFilePath.stripFilename();
+                        strTargetFilePath.append(RTPATH_SLASH_STR);
+                        strTargetFilePath.append("temp_");
+                        strTargetFilePath.append(RTPathFilename(strSrcFilePath.c_str()));
+                        strDeleteTemp = strTargetFilePath;
+
+                        i_importDecompressFile(stack, strSrcFilePath, strTargetFilePath, strSourceOVF.c_str());
+
+                        /* Correct the source and the target with the actual values */
+                        strSrcFilePath = strTargetFilePath;
+
+                        /* Open the new source file. */
+                        vrc = RTVfsIoStrmOpenNormal(strSrcFilePath.c_str(), RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                                                    &hVfsIosSrc);
+                        if (RT_FAILURE(vrc))
+                            throw setErrorVrc(vrc, tr("Error opening decompressed image file '%s' (%Rrc)"),
+                                              strSrcFilePath.c_str(), vrc);
+                    }
+                    else
+                        hVfsIosSrc = i_importOpenSourceFile(stack, strSrcFilePath, strSourceOVF.c_str());
+
+                    /* Start the source image cloning operation. */
                     ComObjPtr<Medium> nullParent;
                     rc = pTargetHD->i_importFile(strSrcFilePath.c_str(),
                                                  srcFormat,
                                                  MediumVariant_Standard,
-                                                 pCallbacks, pRealUsedStorage,
+                                                 hVfsIosSrc,
                                                  nullParent,
                                                  pProgress);
-                    if (FAILED(rc)) throw rc;
-
-
+                    RTVfsIoStrmRelease(hVfsIosSrc);
+                    hVfsIosSrc = NIL_RTVFSIOSTREAM;
+                    if (FAILED(rc))
+                        throw rc;
 
                     /* Advance to the next operation. */
                     /* operation's weight, as set up with the IProgress originally */
@@ -2308,44 +2428,29 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                  * HRESULTs on error. */
                 ComPtr<IProgress> pp(pProgress);
                 i_waitForAsyncProgress(stack.pProgress, pp);
-
-                if (fGzipUsed == true)
-                {
-                    /*
-                     * Just delete the temporary file
-                     */
-                    vrc = RTFileDelete(strSrcFilePath.c_str());
-                    if (RT_FAILURE(vrc))
-                        setWarning(VBOX_E_FILE_ERROR,
-                                   tr("Could not delete the file '%s' (%Rrc)"),
-                                   RTPathFilename(strSrcFilePath.c_str()), vrc);
-                }
             }
         }
         catch (...)
         {
-            if (pFileIo)
-                RTMemFree(pFileIo);
-
+            if (strDeleteTemp.isNotEmpty())
+                RTFileDelete(strDeleteTemp.c_str());
             throw;
         }
-    }
 
-    if (pFileIo)
-        RTMemFree(pFileIo);
+        /* Make sure the source file is closed. */
+        if (hVfsIosSrc != NIL_RTVFSIOSTREAM)
+            RTVfsIoStrmRelease(hVfsIosSrc);
 
-    /* Add the newly create disk path + a corresponding digest the our list for
-     * later manifest verification. */
-    if (pStorage) /** @todo figure out when this undocumented parameter could be NULL and what implications it has.  */
-    {
-        vrc = RTManifestEntrySetAttr(stack.hSrcDisksManifest,
-                                     strSourceOVF.c_str(),
-                                     NULL /*pszAttr*/,
-                                     pStorage->strDigest.c_str(),
-                                     pStorage->fSha256 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_IPRT_ERROR, "RTManifestSetAttr failed on '%s' = '%s' (%Rrc)",
-                           strSourceOVF.c_str(), pStorage->strDigest.c_str(), vrc);
+        /*
+         * Delete the temp gunzip result, if any.
+         */
+        if (strDeleteTemp.isNotEmpty())
+        {
+            vrc = RTFileDelete(strSrcFilePath.c_str());
+            if (RT_FAILURE(vrc))
+                setWarning(VBOX_E_FILE_ERROR,
+                           tr("Failed to delete the temporary file '%s' (%Rrc)"), strSrcFilePath.c_str(), vrc);
+        }
     }
 }
 
@@ -2365,9 +2470,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                        ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                        ComPtr<IMachine> &pNewMachine,
-                                       ImportStack &stack,
-                                       PVDINTERFACEIO pCallbacks,
-                                       PSHASTORAGE pStorage)
+                                       ImportStack &stack)
 {
     LogFlowFuncEnter();
     HRESULT rc;
@@ -2847,59 +2950,49 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
             while (oit != stack.mapDisks.end() && cImportedDisks != avsdeHDs.size())
             {
+/** @todo r=bird: Most of the code here is duplicated in the other machine
+ *        import method, factor out. */
                 ovf::DiskImage diCurrent = oit->second;
-                ovf::VirtualDisksMap::const_iterator itVDisk = vsysThis.mapVirtualDisks.begin();
 
-                VirtualSystemDescriptionEntry *vsdeTargetHD = 0;
                 Log(("diCurrent.strDiskId=%s diCurrent.strHref=%s\n", diCurrent.strDiskId.c_str(), diCurrent.strHref.c_str()));
-
-                /*
-                 *
-                 * Iterate over all given disk images of the virtual system
+                /* Iterate over all given disk images of the virtual system
                  * disks description. We need to find the target disk path,
-                 * which could be changed by the user.
-                 *
-                 */
+                 * which could be changed by the user. */
+                VirtualSystemDescriptionEntry *vsdeTargetHD = NULL;
+                for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin();
+                     itHD != avsdeHDs.end();
+                     ++itHD)
                 {
-                    list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
-                    for (itHD = avsdeHDs.begin();
-                         itHD != avsdeHDs.end();
-                         ++itHD)
+                    VirtualSystemDescriptionEntry *vsdeHD = *itHD;
+                    if (vsdeHD->strRef == diCurrent.strDiskId)
                     {
-                        VirtualSystemDescriptionEntry *vsdeHD = *itHD;
-                        if (vsdeHD->strRef == diCurrent.strDiskId)
-                        {
-                            vsdeTargetHD = vsdeHD;
-                            break;
-                        }
+                        vsdeTargetHD = vsdeHD;
+                        break;
                     }
-                    if (!vsdeTargetHD)
-                    {
-                        /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
-                        Log1Warning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
-                                     oit->first.c_str(), vmNameEntry->strOvf.c_str()));
-                        NOREF(vmNameEntry);
-                        ++oit;
-                        continue;
-                    }
-
-                    //diCurrent.strDiskId contains the disk identifier (e.g. "vmdisk1"), which should exist
-                    //in the virtual system's disks map under that ID and also in the global images map
-                    itVDisk = vsysThis.mapVirtualDisks.find(diCurrent.strDiskId);
-                    if (itVDisk == vsysThis.mapVirtualDisks.end())
-                        throw setError(E_FAIL,
-                                       tr("Internal inconsistency looking up disk image '%s'"),
-                                       diCurrent.strHref.c_str());
                 }
+                if (!vsdeTargetHD)
+                {
+                    /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
+                    Log1Warning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
+                                 oit->first.c_str(), vmNameEntry->strOvf.c_str()));
+                    NOREF(vmNameEntry);
+                    ++oit;
+                    continue;
+                }
+
+                //diCurrent.strDiskId contains the disk identifier (e.g. "vmdisk1"), which should exist
+                //in the virtual system's disks map under that ID and also in the global images map
+                ovf::VirtualDisksMap::const_iterator itVDisk = vsysThis.mapVirtualDisks.find(diCurrent.strDiskId);
+                if (itVDisk == vsysThis.mapVirtualDisks.end())
+                    throw setError(E_FAIL,
+                                   tr("Internal inconsistency looking up disk image '%s'"),
+                                   diCurrent.strHref.c_str());
 
                 /*
                  * preliminary check availability of the image
                  * This step is useful if image is placed in the OVA (TAR) package
                  */
-
-                Utf8Str name = i_applianceIOName(applianceIOTar);
-
-                if (strncmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
+                if (stack.hVfsFssOva != NIL_RTVFSFSSTREAM)
                 {
                     /* It means that we possibly have imported the storage earlier on the previous loop steps*/
                     std::set<RTCString>::const_iterator h = disksResolvedNames.find(diCurrent.strHref);
@@ -2909,76 +3002,63 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         ++oit;
                         continue;
                     }
-
-                    RTCString availableImage(diCurrent.strHref);
-
-                    rc = i_preCheckImageAvailability(pStorage, availableImage);
-
+l_skipped:
+                    rc = i_preCheckImageAvailability(stack);
                     if (SUCCEEDED(rc))
                     {
                         /* current opened file isn't the same as passed one */
-                        if (availableImage.compare(diCurrent.strHref, Utf8Str::CaseInsensitive) != 0)
+                        if (RTStrICmp(diCurrent.strHref.c_str(), stack.pszOvaLookAheadName) != 0)
                         {
-                            /*
-                             * availableImage contains the disk file reference (e.g. "disk1.vmdk"), which should exist
-                             * in the global images map.
-                             * And find the disk from the OVF's disk list
-                             *
-                             */
+                            /* availableImage contains the disk file reference (e.g. "disk1.vmdk"), which should
+                             * exist in the global images map.
+                             * And find the disk from the OVF's disk list */
+                            ovf::DiskImagesMap::const_iterator itDiskImage;
+                            for (itDiskImage = stack.mapDisks.begin();
+                                 itDiskImage != stack.mapDisks.end();
+                                 itDiskImage++)
+                                if (itDiskImage->second.strHref.compare(stack.pszOvaLookAheadName,
+                                                                        Utf8Str::CaseInsensitive) == 0)
+                                    break;
+                            if (itDiskImage == stack.mapDisks.end())
                             {
-                                ovf::DiskImagesMap::const_iterator itDiskImage = stack.mapDisks.begin();
-                                while (++itDiskImage != stack.mapDisks.end())
-                                {
-                                    if (itDiskImage->second.strHref.compare(availableImage, Utf8Str::CaseInsensitive) == 0)
-                                        break;
-                                }
-                                if (itDiskImage == stack.mapDisks.end())
-                                {
-                                    throw setError(E_FAIL,
-                                                   tr("Internal inconsistency looking up disk image '%s'. "
-                                                      "Check compliance OVA package structure and file names "
-                                                      "references in the section <References> in the OVF file."),
-                                                   availableImage.c_str());
-                                }
-
-                                /* replace with a new found disk image */
-                                diCurrent = *(&itDiskImage->second);
+                                LogFunc(("Skipping '%s'\n", stack.pszOvaLookAheadName));
+                                RTVfsIoStrmRelease(stack.claimOvaLookAHead());
+                                goto l_skipped;
                             }
+
+                            /* replace with a new found disk image */
+                            diCurrent = *(&itDiskImage->second);
 
                             /*
                              * Again iterate over all given disk images of the virtual system
                              * disks description using the found disk image
                              */
+                            for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin();
+                                 itHD != avsdeHDs.end();
+                                 ++itHD)
                             {
-                                list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
-                                for (itHD = avsdeHDs.begin();
-                                     itHD != avsdeHDs.end();
-                                     ++itHD)
+                                VirtualSystemDescriptionEntry *vsdeHD = *itHD;
+                                if (vsdeHD->strRef == diCurrent.strDiskId)
                                 {
-                                    VirtualSystemDescriptionEntry *vsdeHD = *itHD;
-                                    if (vsdeHD->strRef == diCurrent.strDiskId)
-                                    {
-                                        vsdeTargetHD = vsdeHD;
-                                        break;
-                                    }
+                                    vsdeTargetHD = vsdeHD;
+                                    break;
                                 }
-                                if (!vsdeTargetHD)
-                                {
-                                    /*
-                                     * in this case it's an error because something wrong with OVF description file.
-                                     * May be VBox imports OVA package with wrong file sequence inside the archive.
-                                     */
-                                    throw setError(E_FAIL,
-                                                   tr("Internal inconsistency looking up disk image '%s'"),
-                                                   diCurrent.strHref.c_str());
-                                }
-
-                                itVDisk = vsysThis.mapVirtualDisks.find(diCurrent.strDiskId);
-                                if (itVDisk == vsysThis.mapVirtualDisks.end())
-                                    throw setError(E_FAIL,
-                                                   tr("Internal inconsistency looking up disk image '%s'"),
-                                                   diCurrent.strHref.c_str());
                             }
+
+                            /*
+                             * in this case it's an error because something is wrong with the OVF description file.
+                             * May be VBox imports OVA package with wrong file sequence inside the archive.
+                             */
+                            if (!vsdeTargetHD)
+                                throw setError(E_FAIL,
+                                               tr("Internal inconsistency looking up disk image '%s'"),
+                                               diCurrent.strHref.c_str());
+
+                            itVDisk = vsysThis.mapVirtualDisks.find(diCurrent.strDiskId);
+                            if (itVDisk == vsysThis.mapVirtualDisks.end())
+                                throw setError(E_FAIL,
+                                               tr("Internal inconsistency looking up disk image '%s'"),
+                                               diCurrent.strHref.c_str());
                         }
                         else
                         {
@@ -2997,10 +3077,10 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                     ++oit;
                 }
 
-                const ovf::VirtualDisk &ovfVdisk = itVDisk->second;
-
                 /* very important to store disk name for the next checks */
                 disksResolvedNames.insert(diCurrent.strHref);
+////// end of duplicated code.
+                const ovf::VirtualDisk &ovfVdisk = itVDisk->second;
 
                 ComObjPtr<Medium> pTargetHD;
 
@@ -3009,9 +3089,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 i_importOneDiskImage(diCurrent,
                                      &vsdeTargetHD->strVBoxCurrent,
                                      pTargetHD,
-                                     stack,
-                                     pCallbacks,
-                                     pStorage);
+                                     stack);
 
                 // now use the new uuid to attach the disk image to our new machine
                 ComPtr<IMachine> sMachine;
@@ -3154,9 +3232,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
  */
 void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                     ComPtr<IMachine> &pReturnNewMachine,
-                                    ImportStack &stack,
-                                    PVDINTERFACEIO pCallbacks,
-                                    PSHASTORAGE pStorage)
+                                    ImportStack &stack)
 {
     LogFlowFuncEnter();
     Assert(vsdescThis->m->pConfig);
@@ -3357,49 +3433,54 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
 
     uint32_t cImportedDisks = 0;
 
-    while(oit != stack.mapDisks.end() && cImportedDisks != avsdeHDs.size())
+    while (oit != stack.mapDisks.end() && cImportedDisks != avsdeHDs.size())
     {
+/** @todo r=bird: Most of the code here is duplicated in the other machine
+ *        import method, factor out. */
         ovf::DiskImage diCurrent = oit->second;
 
-        VirtualSystemDescriptionEntry *vsdeTargetHD = 0;
+        Log(("diCurrent.strDiskId=%s diCurrent.strHref=%s\n", diCurrent.strDiskId.c_str(), diCurrent.strHref.c_str()));
 
+        /* Iterate over all given disk images of the virtual system
+         * disks description. We need to find the target disk path,
+         * which could be changed by the user. */
+        VirtualSystemDescriptionEntry *vsdeTargetHD = NULL;
+        for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin();
+             itHD != avsdeHDs.end();
+             ++itHD)
         {
-            /* Iterate over all given disk images of the virtual system
-             * disks description. We need to find the target disk path,
-             * which could be changed by the user. */
-            list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
-            for (itHD = avsdeHDs.begin();
-                 itHD != avsdeHDs.end();
-                 ++itHD)
+            VirtualSystemDescriptionEntry *vsdeHD = *itHD;
+            if (vsdeHD->strRef == oit->first)
             {
-                VirtualSystemDescriptionEntry *vsdeHD = *itHD;
-                if (vsdeHD->strRef == oit->first)
-                {
-                    vsdeTargetHD = vsdeHD;
-                    break;
-                }
-            }
-            if (!vsdeTargetHD)
-            {
-                /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
-                Log1Warning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
-                             oit->first.c_str(), vmNameEntry->strOvf.c_str()));
-                NOREF(vmNameEntry);
-                ++oit;
-                continue;
+                vsdeTargetHD = vsdeHD;
+                break;
             }
         }
+        if (!vsdeTargetHD)
+        {
+            /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
+            Log1Warning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
+                         oit->first.c_str(), vmNameEntry->strOvf.c_str()));
+            NOREF(vmNameEntry);
+            ++oit;
+            continue;
+        }
+
+
+
+
+
+
+
+
 
         /*
          * preliminary check availability of the image
          * This step is useful if image is placed in the OVA (TAR) package
          */
-
-        Utf8Str name = i_applianceIOName(applianceIOTar);
-
-        if (strncmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
+        if (stack.hVfsFssOva != NIL_RTVFSFSSTREAM)
         {
-            /* It means that we possibly have imported the storage earlier on the previous loop steps*/
+            /* It means that we possibly have imported the storage earlier on a previous loop step. */
             std::set<RTCString>::const_iterator h = disksResolvedNames.find(diCurrent.strHref);
             if (h != disksResolvedNames.end())
             {
@@ -3407,33 +3488,34 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                 ++oit;
                 continue;
             }
-
-            RTCString availableImage(diCurrent.strHref);
-
-            rc = i_preCheckImageAvailability(pStorage, availableImage);
-
+l_skipped:
+            rc = i_preCheckImageAvailability(stack);
             if (SUCCEEDED(rc))
             {
                 /* current opened file isn't the same as passed one */
-                if(availableImage.compare(diCurrent.strHref, Utf8Str::CaseInsensitive) != 0)
+                if (RTStrICmp(diCurrent.strHref.c_str(), stack.pszOvaLookAheadName) != 0)
                 {
                     // availableImage contains the disk identifier (e.g. "vmdisk1"), which should exist
                     // in the virtual system's disks map under that ID and also in the global images map
                     // and find the disk from the OVF's disk list
-                    ovf::DiskImagesMap::const_iterator itDiskImage = stack.mapDisks.begin();
-                    while (++itDiskImage != stack.mapDisks.end())
-                    {
-                        if(itDiskImage->second.strHref.compare(availableImage, Utf8Str::CaseInsensitive) == 0 )
+                    ovf::DiskImagesMap::const_iterator itDiskImage;
+                    for (itDiskImage = stack.mapDisks.begin();
+                         itDiskImage != stack.mapDisks.end();
+                         itDiskImage++)
+                        if (itDiskImage->second.strHref.compare(stack.pszOvaLookAheadName,
+                                                                Utf8Str::CaseInsensitive) == 0)
                             break;
-                    }
                     if (itDiskImage == stack.mapDisks.end())
                     {
-                        throw setError(E_FAIL,
-                                       tr("Internal inconsistency looking up disk image '%s'. "
-                                          "Check compliance OVA package structure and file names "
-                                          "references in the section <References> in the OVF file."),
-                                       availableImage.c_str());
+                        LogFunc(("Skipping '%s'\n", stack.pszOvaLookAheadName));
+                        RTVfsIoStrmRelease(stack.claimOvaLookAHead());
+                        goto l_skipped;
                     }
+                        //throw setError(E_FAIL,
+                        //               tr("Internal inconsistency looking up disk image '%s'. "
+                        //                  "Check compliance OVA package structure and file names "
+                        //                  "references in the section <References> in the OVF file."),
+                        //               stack.pszOvaLookAheadName);
 
                     /* replace with a new found disk image */
                     diCurrent = *(&itDiskImage->second);
@@ -3442,8 +3524,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                      * Again iterate over all given disk images of the virtual system
                      * disks description using the found disk image
                      */
-                    list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
-                    for (itHD = avsdeHDs.begin();
+                    for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin();
                          itHD != avsdeHDs.end();
                          ++itHD)
                     {
@@ -3454,14 +3535,20 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                             break;
                         }
                     }
+
+                    /*
+                     * in this case it's an error because something is wrong with the OVF description file.
+                     * May be VBox imports OVA package with wrong file sequence inside the archive.
+                     */
                     if (!vsdeTargetHD)
-                        /*
-                         * in this case it's an error because something wrong with OVF description file.
-                         * May be VBox imports OVA package with wrong file sequence inside the archive.
-                         */
                         throw setError(E_FAIL,
                                        tr("Internal inconsistency looking up disk image '%s'"),
                                        diCurrent.strHref.c_str());
+
+
+
+
+
                 }
                 else
                 {
@@ -3482,7 +3569,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
 
         /* Important! to store disk name for the next checks */
         disksResolvedNames.insert(diCurrent.strHref);
-
+////// end of duplicated code.
         // there must be an image in the OVF disk structs with the same UUID
         bool fFound = false;
         Utf8Str strUuid;
@@ -3550,9 +3637,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                 i_importOneDiskImage(diCurrent,
                                      &vsdeTargetHD->strVBoxCurrent,
                                      pTargetHD,
-                                     stack,
-                                     pCallbacks,
-                                     pStorage);
+                                     stack);
 
                 Bstr hdId;
 
@@ -3661,24 +3746,17 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
     LogFlowFuncLeave();
 }
 
-void Appliance::i_importMachines(ImportStack &stack,
-                                 PVDINTERFACEIO pCallbacks,
-                                 PSHASTORAGE pStorage)
+/**
+ * @throws HRESULT errors.
+ */
+void Appliance::i_importMachines(ImportStack &stack)
 {
-    HRESULT rc = S_OK;
-
     // this is safe to access because this thread only gets started
     const ovf::OVFReader &reader = *m->pReader;
 
-    /*
-     * get the SHA digest version that was set in accordance with the value of attribute "xmlns:ovf"
-     * of the element <Envelope> in the OVF file during reading operation. See readFSImpl().
-     */
-    pStorage->fSha256 = m->fSha256;
-
     // create a session for the machine + disks we manipulate below
-    rc = stack.pSession.createInprocObject(CLSID_Session);
-    if (FAILED(rc)) throw rc;
+    HRESULT rc = stack.pSession.createInprocObject(CLSID_Session);
+    ComAssertComRCThrowRC(rc);
 
     list<ovf::VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
@@ -3775,10 +3853,10 @@ void Appliance::i_importMachines(ImportStack &stack,
         // import vbox:machine or OVF now
         if (vsdescThis->m->pConfig)
             // vbox:Machine config
-            i_importVBoxMachine(vsdescThis, pNewMachine, stack, pCallbacks, pStorage);
+            i_importVBoxMachine(vsdescThis, pNewMachine, stack);
         else
             // generic OVF config
-            i_importMachineGeneric(vsysThis, vsdescThis, pNewMachine, stack, pCallbacks, pStorage);
+            i_importMachineGeneric(vsysThis, vsdescThis, pNewMachine, stack);
 
     } // for (it = pAppliance->m->llVirtualSystems.begin() ...
 }
@@ -3821,5 +3899,16 @@ HRESULT Appliance::ImportStack::restoreOriginalUUIDOfAttachedDevice(settings::Ma
     }
 
     return rc;
+}
+
+/**
+ * @throws Nothing
+ */
+RTVFSIOSTREAM Appliance::ImportStack::claimOvaLookAHead(void)
+{
+    RTVFSIOSTREAM hVfsIos = this->hVfsIosOvaLookAhead;
+    this->hVfsIosOvaLookAhead = NIL_RTVFSIOSTREAM;
+    /* We don't free the name since it may be referenced in error messages and such. */
+    return hVfsIos;
 }
 

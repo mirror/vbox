@@ -156,7 +156,10 @@ private:
     HRESULT i_readFS(TaskOVF *pTask);
     HRESULT i_readFSOVF(TaskOVF *pTask);
     HRESULT i_readFSOVA(TaskOVF *pTask);
-    HRESULT i_readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage);
+    HRESULT i_readOVFFile(TaskOVF *pTask, RTVFSIOSTREAM hIosOvf, const char *pszManifestEntry);
+    HRESULT i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hIosMf, const char *pszSubFileNm);
+    HRESULT i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hIosCert, const char *pszSubFileNm);
+    HRESULT i_readTailProcessing(TaskOVF *pTask);
     /** @}  */
 
     /** @name Import stuff
@@ -165,26 +168,11 @@ private:
     HRESULT i_importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     HRESULT i_importFS(TaskOVF *pTask);
-    HRESULT i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock);
-    HRESULT i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
+    HRESULT i_importFSOVF(TaskOVF *pTask, AutoWriteLockBase &rWriteLock);
+    HRESULT i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase &rWriteLock);
+    HRESULT i_importDoIt(TaskOVF *pTask, AutoWriteLockBase &rWriteLock, RTVFSFSSTREAM hVfsFssOva = NIL_RTVFSFSSTREAM);
 
-    HRESULT i_readFileToBuf(const Utf8Str &strFile,
-                            void **ppvBuf,
-                            size_t *pcbSize,
-                            bool fCreateDigest,
-                            PVDINTERFACEIO pCallbacks,
-                            PSHASTORAGE pStorage);
-    HRESULT i_readTarFileToBuf(struct FSSRDONLYINTERFACEIO *pTarIo,
-                               const Utf8Str &strFile,
-                               void **ppvBuf,
-                               size_t *pcbSize,
-                               bool fCreateDigest,
-                               PVDINTERFACEIO pCallbacks,
-                               PSHASTORAGE pStorage);
-    HRESULT i_verifyManifestFile(const Utf8Str &strFile, ImportStack &stack,
-                                 RTVFSFILE hManifestVfsFile, const char *pszOvfEntry);
-
-    HRESULT i_verifyCertificateFile(void *pvBuf, size_t cbSize, PSHASTORAGE pStorage);
+    HRESULT i_verifyManifestFile(ImportStack &stack);
 
     void i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                        uint32_t ulAddressOnParent,
@@ -195,27 +183,28 @@ private:
     void i_importOneDiskImage(const ovf::DiskImage &di,
                               Utf8Str *strTargetPath,
                               ComObjPtr<Medium> &pTargetHD,
-                              ImportStack &stack,
-                              PVDINTERFACEIO pCallbacks,
-                              PSHASTORAGE pStorage);
+                              ImportStack &stack);
 
     void i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                 ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                 ComPtr<IMachine> &pNewMachine,
-                                ImportStack &stack,
-                                PVDINTERFACEIO pCallbacks,
-                                PSHASTORAGE pStorage);
+                                ImportStack &stack);
     void i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
                              ComPtr<IMachine> &pNewMachine,
-                             ImportStack &stack,
-                             PVDINTERFACEIO pCallbacks,
-                             PSHASTORAGE pStorage);
-    void i_importMachines(ImportStack &stack,
-                          PVDINTERFACEIO pCallbacks,
-                          PSHASTORAGE pStorage);
+                             ImportStack &stack);
+    void i_importMachines(ImportStack &stack);
 
-    HRESULT i_preCheckImageAvailability(PSHASTORAGE pSHAStorage,
-                                        RTCString &availableImage);
+    HRESULT i_preCheckImageAvailability(ImportStack &stack);
+    bool    i_importEnsureOvaLookAhead(ImportStack &stack);
+    RTVFSIOSTREAM i_importSetupDigestCalculationForGivenIoStream(RTVFSIOSTREAM hVfsIos, const char *pszManifestEntry);
+    RTVFSIOSTREAM i_importOpenSourceFile(ImportStack &stack, Utf8Str const &rstrSrcPath, const char *pszManifestEntry);
+    HRESULT i_importCreateAndWriteDestinationFile(Utf8Str const &rstrDstPath,
+                                                  RTVFSIOSTREAM hVfsIosSrc, Utf8Str const &rstrSrcLogNm);
+
+    void    i_importCopyFile(ImportStack &stack, Utf8Str const &rstrSrcPath, Utf8Str const &rstrDstPath,
+                             const char *pszManifestEntry);
+    void    i_importDecompressFile(ImportStack &stack, Utf8Str const &rstrSrcPath, Utf8Str const &rstrDstPath,
+                                   const char *pszManifestEntry);
     /** @} */
 
     /** @name Write stuff
