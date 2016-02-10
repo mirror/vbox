@@ -29,6 +29,13 @@ RT_C_DECLS_END
 #include "VBoxNetAdp-win.h"
 #include "VBox/VBoxNetCmn-win.h"
 
+/*
+ * By default the link speed reported to be 1Gbps. We may wish to lower
+ * it to 100Mbps to work around issues with multi-cast traffic on the host.
+ * See @bugref{6379}.
+ */
+#define VBOXNETADPWIN_LINK_SPEED 1000000000ULL
+
 /* Forward declarations */
 MINIPORT_INITIALIZE                vboxNetAdpWinInitializeEx;
 MINIPORT_HALT                      vboxNetAdpWinHaltEx;
@@ -269,10 +276,10 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
         GAttrs.MediaType = NdisMedium802_3;
         GAttrs.PhysicalMediumType = NdisPhysicalMediumUnspecified;
         GAttrs.MtuSize = 1500; //TODO
-        GAttrs.MaxXmitLinkSpeed = 1000000000ULL;
-        GAttrs.XmitLinkSpeed = 1000000000ULL;
-        GAttrs.MaxRcvLinkSpeed = 1000000000ULL;
-        GAttrs.RcvLinkSpeed = 1000000000ULL;
+        GAttrs.MaxXmitLinkSpeed = VBOXNETADPWIN_LINK_SPEED;
+        GAttrs.XmitLinkSpeed = VBOXNETADPWIN_LINK_SPEED;
+        GAttrs.MaxRcvLinkSpeed = VBOXNETADPWIN_LINK_SPEED;
+        GAttrs.RcvLinkSpeed = VBOXNETADPWIN_LINK_SPEED;
         GAttrs.MediaConnectState = vboxNetAdpWinGetConnectState(pAdapter);
         GAttrs.MediaDuplexState = MediaDuplexStateFull;
         GAttrs.LookaheadSize = 1500; //TODO
