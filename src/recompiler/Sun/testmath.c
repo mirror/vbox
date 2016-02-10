@@ -69,7 +69,7 @@ static __inline__ void set_cw(unsigned cw)
 static __inline__ unsigned get_cw(void)
 {
     unsigned cw;
-    __asm __volatile("fstcw %0" : : "m" (cw));
+    __asm __volatile("fstcw %0" : "=m" (cw));
     return cw & 0xffff;
 }
 
