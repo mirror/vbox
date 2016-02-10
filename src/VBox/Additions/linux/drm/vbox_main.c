@@ -401,6 +401,16 @@ int vbox_driver_unload(struct drm_device *dev)
     return 0;
 }
 
+/** @note this is described in the DRM framework documentation.  AST does not
+ *        have it, but we get an oops on driver unload if it is not present. */
+void vbox_driver_lastclose(struct drm_device *dev)
+{
+    struct vbox_private *vbox = dev->dev_private;
+
+    if (vbox->fbdev)
+        drm_fb_helper_restore_fbdev_mode_unlocked(&vbox->fbdev->helper);
+}
+
 int vbox_gem_create(struct drm_device *dev,
            u32 size, bool iskernel,
            struct drm_gem_object **obj)
