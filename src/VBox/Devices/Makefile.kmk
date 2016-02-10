@@ -396,7 +396,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	USB/VUSBReadAhead.cpp \
  	USB/VUSBUrb.cpp \
  	USB/VUSBSniffer.cpp \
- 	USB/VUSBSnifferPcapNg.cpp
+ 	USB/VUSBSnifferPcapNg.cpp \
+ 	USB/VUSBSnifferVmx.cpp \
+ 	USB/VUSBSnifferUsbMon.cpp
  endif
 
  # --- Networking bits. ---

@@ -99,6 +99,8 @@ typedef const VUSBSNIFFERFMT *PCVUSBSNIFFERFMT;
 extern const VUSBSNIFFERFMT g_VUsbSnifferFmtPcapNg;
 /** VMware VMX log format writer. */
 extern const VUSBSNIFFERFMT g_VUsbSnifferFmtVmx;
+/** Linux UsbMon log format writer. */
+extern const VUSBSNIFFERFMT g_VUsbSnifferFmtUsbMon;
 
 RT_C_DECLS_END
 #endif /** !___VUSBSnifferInternal_h */

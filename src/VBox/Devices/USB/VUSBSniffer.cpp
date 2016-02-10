@@ -65,7 +65,9 @@ typedef VUSBSNIFFERINT *PVUSBSNIFFERINT;
 
 static PCVUSBSNIFFERFMT s_aVUsbSnifferFmts[] =
 {
-    &g_VUsbSnifferFmtPcapNg
+    &g_VUsbSnifferFmtPcapNg,
+    &g_VUsbSnifferFmtUsbMon,
+    &g_VUsbSnifferFmtVmx,
 };
 
 
