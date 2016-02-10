@@ -3994,7 +3994,7 @@ static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
         RTCritSectEnter(&pThis->CritSectIoReqRedo);
         RTListForEachSafe(&pThis->LstIoReqRedo, pIoReq, pIoReqNext, PDMMEDIAEXIOREQINT, NdLstWait)
         {
-            int rc;
+            int rc = VINF_SUCCESS;
             bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_SUSPENDED);
 
             RTListNodeRemove(&pIoReq->NdLstWait);
@@ -4024,6 +4024,8 @@ static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
                     else if (rc == VINF_VD_ASYNC_IO_FINISHED)
                         rc = VINF_SUCCESS;
                 }
+                else
+                    AssertMsgFailed(("Invalid request type %u\n", pIoReq->enmType));
 
                 if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
                 {
