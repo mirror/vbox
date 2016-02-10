@@ -221,7 +221,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         {
             Assert(rc != VINF_SUCCESS);
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Debug port configuration expected when GIM configured with debugging support"));
+                                       N_("Debug port configuration expected when GIM configured with debugging support"));
         }
 
         void *pvDbgRecvBuf = RTMemAllocZ(pThis->DbgSetup.cbDbgRecvBuf);
