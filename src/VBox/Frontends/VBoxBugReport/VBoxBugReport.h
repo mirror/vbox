@@ -51,7 +51,7 @@ inline void handleRtError(int rc, const char *pszMsgFmt, ...)
         va_start(va, pszMsgFmt);
         RTCString msgArgs(pszMsgFmt, va);
         va_end(va);
-        RTCStringFmt msg("%s (rc=%d)\n", msgArgs.c_str(), rc);
+        RTCStringFmt msg("%s. %s (%d)\n", msgArgs.c_str(), RTErrGetFull(rc), rc);
         throw RTCError(msg.c_str());
     }
 }
