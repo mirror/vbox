@@ -1381,6 +1381,15 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Create painter: */
     QPainter painter(m_pMachineView->viewport());
 
+#ifdef Q_WS_MAC
+# if QT_VERSION >= 0x050000
+    /* Replace translucent background with black one: */
+    painter.setCompositionMode(QPainter::CompositionMode_Source);
+    painter.fillRect(paintRect, QColor(Qt::black));
+    painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_MAC */
+
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
