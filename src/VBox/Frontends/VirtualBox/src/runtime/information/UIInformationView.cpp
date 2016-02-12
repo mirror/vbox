@@ -19,20 +19,22 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+# include <QClipboard>
+# include <QDebug>
+
 /* GUI includes: */
 # include "UIInformationView.h"
+# include "UIInformationItem.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 UIInformationView::UIInformationView(QWidget *pParent)
     : QListView(pParent)
 {
-    prepare();
 }
 
-void UIInformationView::prepare()
+void UIInformationView::updateData(const QModelIndex & topLeft, const QModelIndex & bottomRight)
 {
-    /* Prepare information-view: */
-    setSpacing(2);
+    update(topLeft);
 }
 

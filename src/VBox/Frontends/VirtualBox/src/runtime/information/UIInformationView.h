@@ -20,6 +20,7 @@
 
 /* Qt includes: */
 #include <QListView>
+#include <QModelIndex>
 
 /** QListView extension
   * providing GUI with information-view in session-information window. */
@@ -31,9 +32,9 @@ public:
     /** Constructs information-view passing @a pParent to base-class. */
     UIInformationView(QWidget *pParent = 0);
 
-private:
-    /** Prepares information-view. */
-    void prepare();
+public slots:
+    void updateData(const QModelIndex & topLeft, const QModelIndex & bottomRight);
+
 };
 
 #endif /* !___UIInformationView_h___ */
