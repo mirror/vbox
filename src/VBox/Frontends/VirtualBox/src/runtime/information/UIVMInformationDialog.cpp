@@ -37,10 +37,10 @@
 # include "QIDialogButtonBox.h"
 # include "VBoxGlobal.h"
 # include "VBoxUtils.h"
-# include "UIGInformation.h"
+# include "UIInformation.h"
 # include "UIMachine.h"
 # include "UIVMItem.h"
-# include "UIGRuntimeInformation.h"
+# include "UIInformationRuntime.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -473,20 +473,19 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create tabs: */
         /* Create Configuration details tab: */
-        UIGInformation *pInformationWidget = new UIGInformation(this);
+        UIInformation *pInformationWidget = new UIInformation(this, gpMachine->uisession()->machine(), gpMachine->uisession()->console());
         AssertPtrReturnVoid(pInformationWidget);
         {
-            pInformationWidget->setItems(items);
+            //pInformationWidget->setItems(items);
             m_tabs.insert(0, pInformationWidget);
             m_pTabWidget->addTab(m_tabs.value(0), QString());
         }
 
         /* Create Runtime information tab: */
-        UIGRuntimeInformation *pRuntimeInformationWidget = new UIGRuntimeInformation(this);
-        AssertPtrReturnVoid(pRuntimeInformationWidget);
+        UIInformationRuntime *pInformationRuntimeWidget = new UIInformationRuntime(this, gpMachine->uisession()->machine(), gpMachine->uisession()->console());
+        AssertPtrReturnVoid(pInformationRuntimeWidget);
         {
-            pRuntimeInformationWidget->setItems(items);
-            m_tabs.insert(1, pRuntimeInformationWidget);
+            m_tabs.insert(1, pInformationRuntimeWidget);
             m_pTabWidget->addTab(m_tabs.value(1), QString());
         }
     }
@@ -656,14 +655,14 @@ void UIVMInformationDialog::refreshStatistics()
         /* Deterine virtualization attributes: */
         CMachineDebugger debugger = console.GetDebugger();
         QString strVirtualization = debugger.GetHWVirtExEnabled() ?
-            VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
-            VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
+                                    VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
+                                    VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
         QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
-            VBoxGlobal::tr("Active", "details report (Nested Paging)") :
-            VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
+                                  VBoxGlobal::tr("Active", "details report (Nested Paging)") :
+                                  VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
         QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
-            VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
-            VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
+                                           VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
+                                           VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
         QString strParavirtProvider = gpConverter->toString(m.GetEffectiveParavirtProvider());
 
         /* Guest information: */
