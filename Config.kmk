@@ -5479,6 +5479,15 @@ ifdef VBOX_WITH_QTGUI
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
  endif # COM
 
+ ifneq ($(VBOX_WITH_QTGUI_V5),)
+  ifn1of ($(KBUILD_TARGET), darwin os2 win)
+    TEMPLATE_VBOXQTGUIEXE_DEFS     += PIC
+    TEMPLATE_VBOXQTGUIEXE_CFLAGS   += -fPIC
+    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -fPIC
+    TEMPLATE_VBOXQTGUIEXE_LDFLAGS  += -fPIC
+  endif # not darwin, os2 or win
+ endif # VBOX_WITH_QTGUI_V5
+
 
  #
  # Template for building Qt GUI components.
