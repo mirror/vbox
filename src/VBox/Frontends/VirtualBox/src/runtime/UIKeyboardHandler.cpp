@@ -979,7 +979,7 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
 bool UIKeyboardHandler::nativeEventPreprocessor(const QByteArray &eventType, void *pMessage)
 {
     /* Redirect event to machine-view: */
-    return m_views.value(m_iKeyboardHookViewIndex)->nativeEvent(eventType, pMessage);
+    return m_views.contains(m_iKeyboardHookViewIndex) ? m_views.value(m_iKeyboardHookViewIndex)->nativeEvent(eventType, pMessage) : false;
 }
 
 bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId)
