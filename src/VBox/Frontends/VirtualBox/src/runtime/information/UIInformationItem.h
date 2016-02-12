@@ -31,6 +31,7 @@
 
 /* Forward declarations: */
 class QTextLayout;
+class QTextDocument;
 
 /* Typedefs: */
 typedef QPair<QString, QString> UITextTableLine;
@@ -50,7 +51,7 @@ public:
     UIInformationItem(QObject *pParent = 0);
 
     /** Defines the icon of information-item as @a icon. */
-    void setIcon(const QIcon &icon) const;
+    void setIcon(const QString &icon) const;
 
     /** Defines the name of information-item as @a strName. */
     void setName(const QString &strName) const;
@@ -64,43 +65,32 @@ public:
     void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
     /** Size-hint calculation routine. */
-    //QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+
+    /** Updates data for the item with @a index. */
+    void updateData(const QModelIndex &index) const;
+
+    /** returns html data. */
+    QString htmlData();
 
 private:
-    /** Builds text-layout using text @a strText. */
-    QTextLayout* buildTextLayout(const QString &strText) const;
-
     /** Updates text-layout. */
     void updateTextLayout() const;
 
     /** Holds the pixmap of information-item. */
-    mutable QPixmap m_pixmap;
+    mutable QString m_strIcon;
 
     /** Holds the name of information-item. */
     mutable QString m_strName;
 
-    /** Holds the size of pixmap of information-item. */
-    mutable QSize m_pixmapSize;
-
-    /** Holds the size of pixmap of information-item. */
-    mutable QSize m_nameSize;
-
-    /** Holds the font-metrics. */
-    QFontMetrics m_fontMetrics;
-    /** Holds the minimum-width. */
-    mutable int m_iMinimumLeftColumnWidth;
-
     /** Holds the text-data of information-item. */
     mutable UITextTable m_text;
-    /** Holds the left text-layout list. */
-    mutable QList<QTextLayout*> m_leftList;
-    /** Holds the right text-layout list. */
-    mutable QList<QTextLayout*> m_rightList;
 
-    /** Holds the width of text-pane. */
-    mutable int m_textpanewidth;
-    /** Holds the height of text-pane. */
-    mutable int m_textpaneheight;
+    /** Holds the text-data of information-item. */
+    mutable InformationElementType m_type;
+
+    /** Holds the instance of text-dcoument we create. */
+    QTextDocument *m_pTextDocument;
 };
 
 #endif /* !___UIInformationItem_h___ */
