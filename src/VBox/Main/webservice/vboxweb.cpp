@@ -1890,36 +1890,48 @@ int WebServiceSession::authenticate(const char *pcszUsername,
         }
     }
 
-    rc = VERR_WEB_NOT_AUTHENTICATED;
-    AuthResult result;
-    if (pfnAuthEntry3)
+    if (pfnAuthEntry3 || pfnAuthEntry2 || pfnAuthEntry)
     {
-        result = pfnAuthEntry3("webservice", NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
-        WEBDEBUG(("%s(): result of AuthEntry(): %d (%s)\n", __FUNCTION__, result, decodeAuthResult(result)));
+        const char *pszFn;
+        AuthResult result;
+        if (pfnAuthEntry3)
+        {
+            result = pfnAuthEntry3("webservice", NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
+            pszFn = AUTHENTRY3_NAME;
+        }
+        else if (pfnAuthEntry2)
+        {
+            result = pfnAuthEntry2(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
+            pszFn = AUTHENTRY2_NAME;
+        else
+        {
+            result = pfnAuthEntry(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL);
+            pszFn = AUTHENTRY_NAME;
+        }
+        WEBDEBUG(("%s(): result of %s(%s, [%d]): %d (%s)\n",
+                  __FUNCTION__, pszFn, pcszUsername, strlen(pcszPassword), result, decodeAuthResult(result)));
         if (result == AuthResultAccessGranted)
-            rc = 0;
-    }
-    else if (pfnAuthEntry2)
-    {
-        result = pfnAuthEntry2(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
-        WEBDEBUG(("%s(): result of VRDPAuth2(): %d (%s)\n", __FUNCTION__, result, decodeAuthResult(result)));
-        if (result == AuthResultAccessGranted)
-            rc = 0;
-    }
-    else if (pfnAuthEntry)
-    {
-        result = pfnAuthEntry(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL);
-        WEBDEBUG(("%s(): result of VRDPAuth(%s, [%d]): %d (%s)\n", __FUNCTION__, pcszUsername, strlen(pcszPassword), result, decodeAuthResult(result)));
-        if (result == AuthResultAccessGranted)
-            rc = 0;
+        {
+            WebLog(("Access of '%s' granted\n", pcszUsername));
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            if (result == AuthResultAccessDenied)
+                WebLog(("Access of '%s' denied\n", pcszUsername));
+            rc = VERR_WEB_NOT_AUTHENTICATED;
+        }
     }
     else if (fAuthLibLoaded)
-        // fAuthLibLoaded = true but both pointers are NULL:
-        // then the authlib was "null" and auth was disabled
-        rc = 0;
+    {
+        // fAuthLibLoaded = true but all pointers are NULL:
+        // The authlib was "null" and auth was disabled
+        rc = VINF_SUCCESS;
+    }
     else
     {
         WEBDEBUG(("Could not resolve AuthEntry, VRDPAuth2 or VRDPAuth entry point"));
+        rc = VERR_WEB_NOT_AUTHENTICATED;
     }
 
     lock.release();
