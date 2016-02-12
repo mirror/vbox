@@ -27,6 +27,7 @@
 #define ___VBox_vmm_vm_h
 
 #ifndef VBOX_FOR_DTRACE_LIB
+# include <iprt/param.h>
 # include <VBox/types.h>
 # include <VBox/vmm/cpum.h>
 # include <VBox/vmm/stam.h>
