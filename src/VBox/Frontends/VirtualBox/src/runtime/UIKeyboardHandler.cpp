@@ -1409,11 +1409,10 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_bIsHostComboProcessed(false)
     , m_fPassCADtoGuest(false)
     , m_fDebuggerActive(false)
-#if defined(Q_WS_MAC)
     , m_iKeyboardHookViewIndex(-1)
+#if defined(Q_WS_MAC)
     , m_uDarwinKeyModifiers(0)
 #elif defined(Q_WS_WIN)
-    , m_iKeyboardHookViewIndex(-1)
     , m_fIsHostkeyInCapture(false)
     , m_fSkipKeyboardEvents(false)
     , m_keyboardHook(NULL)
@@ -1480,8 +1479,6 @@ void UIKeyboardHandler::cleanupCommon()
         ::DarwinReleaseKeyboard();
         UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
                                                                   UIKeyboardHandler::macKeyboardProc, this);
-        /* Update the id: */
-        m_iKeyboardHookViewIndex = -1;
     }
 
 #elif defined(Q_WS_WIN)
@@ -1490,17 +1487,18 @@ void UIKeyboardHandler::cleanupCommon()
     delete m_pAltGrMonitor;
     m_pAltGrMonitor = 0;
 
-    /* Cleanup keyboard-hook: */
+    /* If keyboard-hook is installed: */
     if (m_keyboardHook)
     {
         /* Uninstall existing keyboard-hook: */
-        ::UnhookWindowsHookEx(m_keyboardHook);
-        m_keyboardHook = NULL;
-        /* Update the id: */
-        m_iKeyboardHookViewIndex = -1;
+        UnhookWindowsHookEx(m_keyboardHook);
+        m_keyboardHook = 0;
     }
 
 #endif /* Q_WS_WIN */
+
+    /* Update keyboard hook view index: */
+    m_iKeyboardHookViewIndex = -1;
 }
 
 /* Machine-logic getter: */
@@ -1564,8 +1562,6 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                                                                                 UIKeyboardHandler::macKeyboardProc, this);
                         ::DarwinGrabKeyboard(false);
                     }
-                    /* Update the id: */
-                    m_iKeyboardHookViewIndex = uScreenId;
                 }
 
 #elif defined(Q_WS_WIN)
@@ -1584,11 +1580,12 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     /* Install new keyboard-hook: */
                     m_keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, UIKeyboardHandler::winKeyboardProc, GetModuleHandle(NULL), 0);
                     AssertMsg(m_keyboardHook, ("SetWindowsHookEx(): err=%d", GetLastError()));
-                    /* Update the id: */
-                    m_iKeyboardHookViewIndex = uScreenId;
                 }
 
 #endif /* Q_WS_WIN */
+
+                /* Update keyboard hook view index: */
+                m_iKeyboardHookViewIndex = uScreenId;
 
                 if (isSessionRunning())
                 {
@@ -1604,6 +1601,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     if (isAutoCaptureDisabled())
                         setAutoCaptureDisabled(false);
                 }
+
                 break;
             }
             case QEvent::FocusOut:
@@ -1617,8 +1615,6 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     ::DarwinReleaseKeyboard();
                     UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
                                                                               UIKeyboardHandler::macKeyboardProc, this);
-                    /* Update the id: */
-                    m_iKeyboardHookViewIndex = -1;
                 }
 
 #elif defined(Q_WS_WIN)
@@ -1629,17 +1625,19 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     /* Uninstall existing keyboard-hook: */
                     UnhookWindowsHookEx(m_keyboardHook);
                     m_keyboardHook = 0;
-                    /* Update the id: */
-                    m_iKeyboardHookViewIndex = -1;
                 }
 
 #endif /* Q_WS_WIN */
+
+                /* Update keyboard hook view index: */
+                m_iKeyboardHookViewIndex = -1;
 
                 /* Release keyboard: */
                 if (isSessionRunning())
                     releaseKeyboard();
                 /* And all pressed keys: */
                 releaseAllPressedKeys(true);
+
                 break;
             }
             case QEvent::KeyPress:
@@ -1679,6 +1677,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     if (uisession()->isPaused())
                         popupCenter().remindAboutPausedVMInput(machineLogic()->activeMachineWindow());
                 }
+
                 break;
             }
             default:

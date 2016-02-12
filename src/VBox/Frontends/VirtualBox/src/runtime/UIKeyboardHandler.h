@@ -211,23 +211,22 @@ protected:
      * Currently only affects auto capturing. */
     bool m_fDebuggerActive : 1;
 
-#if defined(Q_WS_MAC)
     /** Holds the keyboard hook view index. */
     int m_iKeyboardHookViewIndex;
-    /** Holds the current modifiers key mask. */
+
+#if defined(Q_WS_MAC)
+    /** Mac: Holds the current modifiers key mask. */
     UInt32 m_uDarwinKeyModifiers;
 #elif defined(Q_WS_WIN)
-    /** Holds the keyboard hook view index. */
-    int m_iKeyboardHookViewIndex;
-    /* Currently this is used in winKeyboardEvent() only: */
+    /** Win: Currently this is used in winKeyboardEvent() only. */
     bool m_fIsHostkeyInCapture;
-    /** Holds whether the keyboard event filter should ignore keyboard events. */
+    /** Win: Holds whether the keyboard event filter should ignore keyboard events. */
     bool m_fSkipKeyboardEvents;
-    /** Holds the keyboard hook instance. */
+    /** Win: Holds the keyboard hook instance. */
     HHOOK m_keyboardHook;
-    /** Holds the object monitoring key event stream for problematic AltGr events. */
+    /** Win: Holds the object monitoring key event stream for problematic AltGr events. */
     WinAltGrMonitor *m_pAltGrMonitor;
-    /** Holds the keyboard handler reference to be accessible from the keyboard hook. */
+    /** Win: Holds the keyboard handler reference to be accessible from the keyboard hook. */
     static UIKeyboardHandler *m_spKeyboardHandler;
 #endif /* Q_WS_WIN */
 
