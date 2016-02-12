@@ -13,16 +13,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef DEBUG
 #define LOG_GROUP LOG_GROUP_WEBSERVICE
 #include <VBox/log.h>
-#endif
+#include <VBox/err.h>
 
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/Guid.h>
 #include <VBox/com/AutoLock.h>
-
-#include <VBox/err.h>
 
 #include <iprt/asm.h>
 
@@ -34,11 +31,7 @@
  *
  ****************************************************************************/
 
-RT_C_DECLS_BEGIN
-extern void WebLog(const char *pszFormat, ...);
-RT_C_DECLS_END
-
-#define WEBDEBUG(a) do { if (g_fVerbose) { WebLog a; } } while (0)
+#define WEBDEBUG(a) do { if (g_fVerbose) { LogRel(a); } } while (0)
 
 /****************************************************************************
  *

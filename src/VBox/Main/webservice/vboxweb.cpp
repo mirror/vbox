@@ -451,7 +451,7 @@ public:
                 RTSemEventMultiSignal(m_event);
                 qlock.acquire();
             }
-            WebLog("ending queue processing (%d out of %d threads idle)\n", m_cIdleThreads, m_llAllThreads.size());
+            LogRel(("ending queue processing (%d out of %d threads idle)\n", m_cIdleThreads, m_llAllThreads.size()));
         }
 
         RTSemEventMultiDestroy(m_event);
@@ -589,7 +589,7 @@ public:
  */
 void SoapThread::process()
 {
-    WebLog("New SOAP thread started\n");
+    LogRel(("New SOAP thread started\n"));
 
     while (g_fKeepRunning)
     {
@@ -600,14 +600,8 @@ void SoapThread::process()
         if (!soap_valid_socket(m_soap->socket))
             continue;
 
-        WebLog("Processing connection from IP=%lu.%lu.%lu.%lu socket=%d (%d out of %d threads idle)\n",
-               (m_soap->ip >> 24) & 0xFF,
-               (m_soap->ip >> 16) & 0xFF,
-               (m_soap->ip >> 8)  & 0xFF,
-               m_soap->ip         & 0xFF,
-               m_soap->socket,
-               cIdleThreads,
-               cThreads);
+        LogRel(("Processing connection from IP=%RTnaipv4 socket=%d (%d out of %d threads idle)\n",
+                RT_H2N_U32(m_soap->ip), m_soap->socket, cIdleThreads, cThreads));
 
         // Ensure that we don't get stuck indefinitely for connections using
         // keepalive, otherwise stale connections tie up worker threads.
@@ -673,7 +667,7 @@ public:
                 pVSACEv->COMGETTER(Available)(&fAvailable);
                 if (!fAvailable)
                 {
-                    WebLog("VBoxSVC became unavailable\n");
+                    LogRel(("VBoxSVC became unavailable\n"));
                     {
                         util::AutoWriteLock vlock(g_pVirtualBoxLockHandle COMMA_LOCKVAL_SRC_POS);
                         g_pVirtualBox.setNull();
@@ -696,7 +690,7 @@ public:
                 }
                 else
                 {
-                    WebLog("VBoxSVC became available\n");
+                    LogRel(("VBoxSVC became available\n"));
                     util::AutoWriteLock vlock(g_pVirtualBoxLockHandle COMMA_LOCKVAL_SRC_POS);
                     HRESULT hrc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
                     AssertComRC(hrc);
@@ -718,24 +712,6 @@ typedef ListenerImpl<VirtualBoxClientEventListener> VirtualBoxClientEventListene
 VBOX_LISTENER_DECLARE(VirtualBoxClientEventListenerImpl)
 
 /**
- * Prints a message to the webservice log file.
- * @param pszFormat
- * @todo eliminate, has no significant additional value over direct calls to LogRel.
- */
-void WebLog(const char *pszFormat, ...)
-{
-    va_list args;
-    va_start(args, pszFormat);
-    char *psz = NULL;
-    RTStrAPrintfV(&psz, pszFormat, args);
-    va_end(args);
-
-    LogRel(("%s", psz));
-
-    RTStrFree(psz);
-}
-
-/**
  * Helper for printing SOAP error messages.
  * @param soap
  */
@@ -744,15 +720,15 @@ void WebLogSoapError(struct soap *soap)
 {
     if (soap_check_state(soap))
     {
-        WebLog("Error: soap struct not initialized\n");
+        LogRel(("Error: soap struct not initialized\n"));
         return;
     }
 
     const char *pcszFaultString = *soap_faultstring(soap);
     const char **ppcszDetail = soap_faultcode(soap);
-    WebLog("#### SOAP FAULT: %s [%s]\n",
-           pcszFaultString ? pcszFaultString : "[no fault string available]",
-           (ppcszDetail && *ppcszDetail) ? *ppcszDetail : "no details available");
+    LogRel(("#### SOAP FAULT: %s [%s]\n",
+            pcszFaultString ? pcszFaultString : "[no fault string available]",
+            (ppcszDetail && *ppcszDetail) ? *ppcszDetail : "no details available"));
 }
 
 /**
@@ -888,7 +864,7 @@ static void doQueuesLoop()
 #ifdef WITH_OPENSSL
     if (g_fSSL && CRYPTO_thread_setup())
     {
-        WebLog("Failed to set up OpenSSL thread mutex!");
+        LogRel(("Failed to set up OpenSSL thread mutex!"));
         exit(RTEXITCODE_FAILURE);
     }
 #endif /* WITH_OPENSSL */
@@ -919,7 +895,7 @@ static void doQueuesLoop()
         WebLogSoapError(&soap);
     else
     {
-        WebLog("Socket connection successful: host = %s, port = %u, %smaster socket = %d\n",
+        LogRel(("Socket connection successful: host = %s, port = %u, %smaster socket = %d\n",
                (g_pcszBindToHost) ? g_pcszBindToHost : "default (localhost)",
                g_uBindToPort,
 #ifdef WITH_OPENSSL
@@ -927,7 +903,7 @@ static void doQueuesLoop()
 #else /* !WITH_OPENSSL */
                "",
 #endif /*!WITH_OPENSSL */
-               m);
+               m));
 
         // initialize thread queue, mutex and eventsem
         g_pSoapQ = new SoapQ(&soap);
@@ -949,13 +925,13 @@ static void doQueuesLoop()
             // add the socket to the queue and tell worker threads to
             // pick up the job
             size_t cItemsOnQ = g_pSoapQ->add(s);
-            WebLog("Request %llu on socket %d queued for processing (%d items on Q)\n", i, s, cItemsOnQ);
+            LogRel(("Request %llu on socket %d queued for processing (%d items on Q)\n", i, s, cItemsOnQ));
         }
 
         delete g_pSoapQ;
         g_pSoapQ = NULL;
 
-        WebLog("ending SOAP request handling\n");
+        LogRel(("ending SOAP request handling\n"));
 
         delete g_pSoapQ;
         g_pSoapQ = NULL;
@@ -1369,7 +1345,7 @@ int main(int argc, char *argv[])
             RTMsgError("processEventQueue -> %Rrc", rc);
     }
 
-    WebLog("requested termination, cleaning up\n");
+    LogRel(("requested termination, cleaning up\n"));
 
 #ifdef RT_OS_WINDOWS
     if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)websrvSignalHandler, FALSE /* Remove handler */))
@@ -1484,7 +1460,7 @@ static DECLCALLBACK(int) fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
     thrLock.acquire();
     g_mapThreads.erase(RTThreadSelf());
 
-    WebLog("ending Watchdog thread\n");
+    LogRel(("ending Watchdog thread\n"));
     return 0;
 }
 
@@ -1611,7 +1587,7 @@ void Base64DecodeByteArray(struct soap *soap, const std::string& aStr, ComSafeAr
 
     if (cbOut > DECODE_STR_MAX)
     {
-        WebLog("Decode string too long.\n");
+        LogRel(("Decode string too long.\n"));
         RaiseSoapRuntimeFault(soap, idThis, pszMethodName, E_INVALIDARG, pObj, iid);
     }
 
@@ -1619,7 +1595,7 @@ void Base64DecodeByteArray(struct soap *soap, const std::string& aStr, ComSafeAr
     int rc = RTBase64Decode(pszStr, result.raw(), cbOut, NULL, NULL);
     if (FAILED(rc))
     {
-        WebLog("String Decoding Failed. Error code: %Rrc\n", rc);
+        LogRel(("String Decoding Failed. Error code: %Rrc\n", rc));
         RaiseSoapRuntimeFault(soap, idThis, pszMethodName, E_INVALIDARG, pObj, iid);
     }
 
@@ -1647,15 +1623,15 @@ void RaiseSoapRuntimeFault(struct soap *soap,
 
     WEBDEBUG(("   error, raising SOAP exception\n"));
 
-    WebLog("API method name:            %s\n", pcszMethodName);
-    WebLog("API return code:            %#10lx (%Rhrc)\n", apirc, apirc);
+    LogRel(("API method name:            %s\n", pcszMethodName));
+    LogRel(("API return code:            %#10lx (%Rhrc)\n", apirc, apirc));
     if (info.isFullAvailable() || info.isBasicAvailable())
     {
         const com::ErrorInfo *pInfo = &info;
         do
         {
-            WebLog("COM error info result code: %#10lx (%Rhrc)\n", pInfo->getResultCode(), pInfo->getResultCode());
-            WebLog("COM error info text:        %ls\n", pInfo->getText().raw());
+            LogRel(("COM error info result code: %#10lx (%Rhrc)\n", pInfo->getResultCode(), pInfo->getResultCode()));
+            LogRel(("COM error info text:        %ls\n", pInfo->getText().raw()));
 
             pInfo = pInfo->getNext();
         }
@@ -1845,7 +1821,7 @@ int WebServiceSession::authenticate(const char *pcszUsername,
         systemProperties->COMGETTER(WebServiceAuthLibrary)(authLibrary.asOutParam());
         com::Utf8Str filename = authLibrary;
 
-        WEBDEBUG(("external authentication library is '%ls'\n", authLibrary.raw()));
+        LogRel(("External authentication library is '%ls'\n", authLibrary.raw()));
 
         if (filename == "null")
             // authentication disabled, let everyone in:
@@ -1909,17 +1885,17 @@ int WebServiceSession::authenticate(const char *pcszUsername,
             result = pfnAuthEntry(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL);
             pszFn = AUTHENTRY_NAME;
         }
-        WEBDEBUG(("%s(): result of %s(%s, [%d]): %d (%s)\n",
+        WEBDEBUG(("%s(): result of %s('%s', [%d]): %d (%s)\n",
                   __FUNCTION__, pszFn, pcszUsername, strlen(pcszPassword), result, decodeAuthResult(result)));
         if (result == AuthResultAccessGranted)
         {
-            WebLog(("Access of '%s' granted\n", pcszUsername));
+            LogRel(("Access for user '%s' granted\n", pcszUsername));
             rc = VINF_SUCCESS;
         }
         else
         {
             if (result == AuthResultAccessDenied)
-                WebLog(("Access of '%s' denied\n", pcszUsername));
+                LogRel(("Access for user '%s' denied\n", pcszUsername));
             rc = VERR_WEB_NOT_AUTHENTICATED;
         }
     }
