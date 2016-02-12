@@ -28,7 +28,6 @@
 #include "CConsole.h"
 
 /* Forward declartions: */
-class UIVMItem;
 class QVBoxLayout;
 class UIInformationView;
 class UIInformationModel;
