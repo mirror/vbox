@@ -755,6 +755,21 @@ void WebLogSoapError(struct soap *soap)
            (ppcszDetail && *ppcszDetail) ? *ppcszDetail : "no details available");
 }
 
+/**
+ * Helper for decoding AuthResult.
+ * @param result AuthResult
+ */
+static const char * decodeAuthResult(AuthResult result)
+{
+    switch (result)
+    {
+        case AuthResultAccessDenied:    return "access DENIED";
+        case AuthResultAccessGranted:   return "access granted";
+        case AuthResultDelegateToGuest: return "delegated to guest";
+        default:                        return "unknown AuthResult";
+    }
+}
+
 #ifdef WITH_OPENSSL
 /****************************************************************************
  *
@@ -1799,7 +1814,6 @@ WebServiceSession::~WebServiceSession()
  *  @return 0 if the user was successfully authenticated, or an error code
  *  otherwise.
  */
-
 int WebServiceSession::authenticate(const char *pcszUsername,
                                     const char *pcszPassword,
                                     IVirtualBox **ppVirtualBox)
@@ -1848,20 +1862,24 @@ int WebServiceSession::authenticate(const char *pcszUsername,
 
                 if (RT_FAILURE(rc))
                 {
-                    WEBDEBUG(("%s() Failed to load external authentication library. Error code: %Rrc\n", __FUNCTION__, rc));
+                    WEBDEBUG(("%s() Failed to load external authentication library '%s'. Error code: %Rrc\n",
+                              __FUNCTION__, filename.c_str(), rc));
                     break;
                 }
 
                 if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY3_NAME, (void**)&pfnAuthEntry3)))
                 {
-                    WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY3_NAME, rc));
+                    WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n",
+                              __FUNCTION__, AUTHENTRY3_NAME, rc));
 
                     if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY2_NAME, (void**)&pfnAuthEntry2)))
                     {
-                        WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY2_NAME, rc));
+                        WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n",
+                                  __FUNCTION__, AUTHENTRY2_NAME, rc));
 
                         if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY_NAME, (void**)&pfnAuthEntry)))
-                            WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY_NAME, rc));
+                            WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n",
+                                      __FUNCTION__, AUTHENTRY_NAME, rc));
                     }
                 }
 
@@ -1877,21 +1895,21 @@ int WebServiceSession::authenticate(const char *pcszUsername,
     if (pfnAuthEntry3)
     {
         result = pfnAuthEntry3("webservice", NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
-        WEBDEBUG(("%s(): result of AuthEntry(): %d\n", __FUNCTION__, result));
+        WEBDEBUG(("%s(): result of AuthEntry(): %d (%s)\n", __FUNCTION__, result, decodeAuthResult(result)));
         if (result == AuthResultAccessGranted)
             rc = 0;
     }
     else if (pfnAuthEntry2)
     {
         result = pfnAuthEntry2(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
-        WEBDEBUG(("%s(): result of VRDPAuth2(): %d\n", __FUNCTION__, result));
+        WEBDEBUG(("%s(): result of VRDPAuth2(): %d (%s)\n", __FUNCTION__, result, decodeAuthResult(result)));
         if (result == AuthResultAccessGranted)
             rc = 0;
     }
     else if (pfnAuthEntry)
     {
         result = pfnAuthEntry(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL);
-        WEBDEBUG(("%s(): result of VRDPAuth(%s, [%d]): %d\n", __FUNCTION__, pcszUsername, strlen(pcszPassword), result));
+        WEBDEBUG(("%s(): result of VRDPAuth(%s, [%d]): %d (%s)\n", __FUNCTION__, pcszUsername, strlen(pcszPassword), result, decodeAuthResult(result)));
         if (result == AuthResultAccessGranted)
             rc = 0;
     }
