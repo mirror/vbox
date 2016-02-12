@@ -895,22 +895,19 @@ static void doQueuesLoop()
         WebLogSoapError(&soap);
     else
     {
+#ifdef WITH_OPENSSL
+        const char *pszSsl = g_fSSL ? "SSL, " : "";
+#else /* !WITH_OPENSSL */
+        const char *pszSsl = "";
+#endif /*!WITH_OPENSSL */
         LogRel(("Socket connection successful: host = %s, port = %u, %smaster socket = %d\n",
                (g_pcszBindToHost) ? g_pcszBindToHost : "default (localhost)",
-               g_uBindToPort,
-#ifdef WITH_OPENSSL
-               g_fSSL ? "SSL, " : "",
-#else /* !WITH_OPENSSL */
-               "",
-#endif /*!WITH_OPENSSL */
-               m));
+               g_uBindToPort, pszSsl, m));
 
         // initialize thread queue, mutex and eventsem
         g_pSoapQ = new SoapQ(&soap);
 
-        for (uint64_t i = 1;
-             g_fKeepRunning;
-             i++)
+        for (uint64_t i = 1; g_fKeepRunning; i++)
         {
             // call gSOAP to handle incoming SOAP connection
             soap.accept_timeout = 10;
