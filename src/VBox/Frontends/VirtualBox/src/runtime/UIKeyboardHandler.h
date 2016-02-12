@@ -51,6 +51,9 @@ class WinAltGrMonitor;
 typedef union _XEvent XEvent;
 # endif /* QT_VERSION < 0x050000 */
 #endif /* Q_WS_X11 */
+#if QT_VERSION >= 0x050000
+class PrivateEventFilter;
+#endif /* QT_VERSION >= 0x050000 */
 
 
 /* Delegate to control VM keyboard functionality: */
@@ -117,6 +120,8 @@ public:
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
 # endif /* Q_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
+    /** Qt5: Performs pre-processing of all the native events. */
+    bool nativeEventPreprocessor(const QByteArray &eventType, void *pMessage);
     /** Qt5: Performs post-processing of all the native events. */
     bool nativeEventPostprocessor(void *pMessage, ulong uScreenId);
 #endif /* QT_VERSION >= 0x050000 */
@@ -229,6 +234,14 @@ protected:
     /** Win: Holds the keyboard handler reference to be accessible from the keyboard hook. */
     static UIKeyboardHandler *m_spKeyboardHandler;
 #endif /* Q_WS_WIN */
+
+#if QT_VERSION >= 0x050000
+    /** Win: Holds the native event filter instance. */
+    PrivateEventFilter *m_pPrivateEventFilter;
+    /** Win: Allows the native event filter to
+      * redirect events directly to nativeEvent handler. */
+    friend class PrivateEventFilter;
+#endif /* QT_VERSION >= 0x050000 */
 
     ULONG m_cMonitors;
 };

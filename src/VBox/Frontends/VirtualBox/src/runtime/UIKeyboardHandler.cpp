@@ -58,6 +58,11 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Qt includes: */
+#if QT_VERSION >= 0x050000
+# include <QAbstractNativeEventFilter>
+#endif /* QT_VERSION >= 0x050000 */
+
 /* GUI includes: */
 #ifdef Q_WS_MAC
 # include "DarwinKeyboard.h"
@@ -94,6 +99,34 @@ const int XKeyRelease = KeyRelease;
 /* Enums representing different keyboard-states: */
 enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 };
 enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
+
+
+#if QT_VERSION >= 0x050000
+/** QAbstractNativeEventFilter extension
+  * allowing to pre-process native platform events. */
+class PrivateEventFilter : public QAbstractNativeEventFilter
+{
+public:
+
+    /** Constructor which takes the passed @a pParent to redirect events to. */
+    PrivateEventFilter(UIKeyboardHandler *pParent)
+        : m_pParent(pParent)
+    {}
+
+    /** Handles all native events. */
+    bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult)
+    {
+        /* Redirect event to parent: */
+        Q_UNUSED(pResult);
+        return m_pParent->nativeEventPreprocessor(eventType, pMessage);
+    }
+
+private:
+
+    /** Holds the passed parent reference. */
+    UIKeyboardHandler *m_pParent;
+};
+#endif /* QT_VERSION >= 0x050000 */
 
 
 #ifdef Q_WS_WIN
@@ -943,6 +976,12 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
 # endif /* Q_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
 
+bool UIKeyboardHandler::nativeEventPreprocessor(const QByteArray &eventType, void *pMessage)
+{
+    /* Redirect event to machine-view: */
+    return m_views.value(m_iKeyboardHookViewIndex)->nativeEvent(eventType, pMessage);
+}
+
 bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId)
 {
     /* Check if some system event should be filtered out.
@@ -1418,6 +1457,9 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_keyboardHook(NULL)
     , m_pAltGrMonitor(0)
 #endif /* Q_WS_WIN */
+#if QT_VERSION >= 0x050000
+    , m_pPrivateEventFilter(0)
+#endif /* QT_VERSION >= 0x050000 */
     , m_cMonitors(1)
 {
     /* Prepare: */
@@ -1496,6 +1538,17 @@ void UIKeyboardHandler::cleanupCommon()
     }
 
 #endif /* Q_WS_WIN */
+
+#if QT_VERSION >= 0x050000
+    /* If private event-filter is installed: */
+    if (m_pPrivateEventFilter)
+    {
+        /* Uninstall existing private event-filter: */
+        qApp->removeNativeEventFilter(m_pPrivateEventFilter);
+        delete m_pPrivateEventFilter;
+        m_pPrivateEventFilter = 0;
+    }
+#endif /* QT_VERSION >= 0x050000 */
 
     /* Update keyboard hook view index: */
     m_iKeyboardHookViewIndex = -1;
@@ -1584,6 +1637,27 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 
 #endif /* Q_WS_WIN */
 
+#if QT_VERSION >= 0x050000
+# if defined(Q_WS_WIN) || defined(Q_WS_X11)
+                /* If private event-filter is NOT installed;
+                 * Or installed but NOT for that view: */
+                if (!m_pPrivateEventFilter || (int)uScreenId != m_iKeyboardHookViewIndex)
+                {
+                    /* If private event-filter is installed: */
+                    if (m_pPrivateEventFilter)
+                    {
+                        /* Uninstall existing private event-filter: */
+                        qApp->removeNativeEventFilter(m_pPrivateEventFilter);
+                        delete m_pPrivateEventFilter;
+                        m_pPrivateEventFilter = 0;
+                    }
+                    /* Install new private event-filter: */
+                    m_pPrivateEventFilter = new PrivateEventFilter(this);
+                    qApp->installNativeEventFilter(m_pPrivateEventFilter);
+                }
+# endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* QT_VERSION >= 0x050000 */
+
                 /* Update keyboard hook view index: */
                 m_iKeyboardHookViewIndex = uScreenId;
 
@@ -1628,6 +1702,19 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                 }
 
 #endif /* Q_WS_WIN */
+
+#if QT_VERSION >= 0x050000
+# if defined(Q_WS_WIN) || defined(Q_WS_X11)
+                /* If private event-filter is installed: */
+                if (m_pPrivateEventFilter)
+                {
+                    /* Uninstall existing private event-filter: */
+                    qApp->removeNativeEventFilter(m_pPrivateEventFilter);
+                    delete m_pPrivateEventFilter;
+                    m_pPrivateEventFilter = 0;
+                }
+# endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* QT_VERSION >= 0x050000 */
 
                 /* Update keyboard hook view index: */
                 m_iKeyboardHookViewIndex = -1;

@@ -70,13 +70,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Qt includes: */
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
-# if QT_VERSION >= 0x050000
-#  include <QAbstractNativeEventFilter>
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_WIN || Q_WS_X11 */
-
 /* GUI includes: */
 #ifdef Q_WS_MAC
 # include "DarwinKeyboard.h"
@@ -127,36 +120,6 @@ const int XKeyRelease = KeyRelease;
 #else
 # define DNDDEBUG(x)
 #endif
-
-
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
-# if QT_VERSION >= 0x050000
-/** QAbstractNativeEventFilter extension
-  * allowing to pre-process native platform events. */
-class PrivateEventFilter : public QAbstractNativeEventFilter
-{
-public:
-
-    /** Constructor which takes the passed @a pParent to redirect events to. */
-    PrivateEventFilter(UIMachineView *pParent)
-        : m_pParent(pParent)
-    {}
-
-    /** Handles all native events. */
-    bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult)
-    {
-        /* Redirect event to parent: */
-        Q_UNUSED(pResult);
-        return m_pParent->nativeEvent(eventType, pMessage);
-    }
-
-private:
-
-    /** Holds the passed parent reference. */
-    UIMachineView *m_pParent;
-};
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_WIN || Q_WS_X11 */
 
 
 /* static */
@@ -250,9 +213,6 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
 {
     if (!pMachineView)
         return;
-
-    /* Cleanup event-filters: */
-    pMachineView->cleanupFilters();
 
     /* Cleanup frame-buffer: */
     pMachineView->cleanupFrameBuffer();
@@ -661,11 +621,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     , m_fIsDraggingFromGuest(false)
 #endif
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
-# if QT_VERSION >= 0x050000
-    , m_pPrivateEventFilter(0)
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_WIN || Q_WS_X11 */
 {
 }
 
@@ -842,14 +797,6 @@ void UIMachineView::prepareFilters()
 
     /* We want to be notified on some parent's events: */
     machineWindow()->installEventFilter(this);
-
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
-# if QT_VERSION >= 0x050000
-    /* Prepare private event-filter: */
-    m_pPrivateEventFilter = new PrivateEventFilter(this);
-    qApp->installNativeEventFilter(m_pPrivateEventFilter);
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_WIN || Q_WS_X11 */
 }
 
 void UIMachineView::prepareConnections()
@@ -875,18 +822,6 @@ void UIMachineView::prepareConsoleConnections()
 {
     /* Machine state-change updater: */
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
-}
-
-void UIMachineView::cleanupFilters()
-{
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
-# if QT_VERSION >= 0x050000
-    /* Cleanup private event-filter: */
-    qApp->removeNativeEventFilter(m_pPrivateEventFilter);
-    delete m_pPrivateEventFilter;
-    m_pPrivateEventFilter = 0;
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_WIN || Q_WS_X11 */
 }
 
 void UIMachineView::cleanupFrameBuffer()
