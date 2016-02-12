@@ -43,9 +43,6 @@ UIInformationModel::UIInformationModel(QObject *pParent, const CMachine &machine
 {
     /* Prepare information-model: */
     prepare();
-
-    /* Prepare data for information-model: */
-    prepareData();
 }
 
 UIInformationModel::~UIInformationModel()
@@ -71,32 +68,12 @@ void UIInformationModel::prepare()
     QHash<int, QByteArray> roleNames;
     roleNames[Qt::DisplayRole] = "";
     roleNames[Qt::DecorationRole] = "";
-    roleNames[Qt::SizeHintRole] = "";
-    roleNames[Qt::UserRole+1] = "";
+    roleNames[Qt::UserRole + 1] = "";
+    roleNames[Qt::UserRole + 2] = "";
     setRoleNames(roleNames);
 
     /* Register meta-type: */
     qRegisterMetaType<InformationElementType>();
-}
-
-void UIInformationModel::prepareData()
-{
-    /* Prepare data for information-model: */
-    UIInformationDataItem *pGeneral = new UIInformationDataGeneral(m_machine, m_console);
-    AssertPtrReturnVoid(pGeneral);
-    {
-        m_list.append(pGeneral);
-    }
-    UIInformationDataSystem *pSystem = new UIInformationDataSystem(m_machine, m_console);
-    AssertPtrReturnVoid(pSystem);
-    {
-        m_list.append(pSystem);
-    }
-    UIInformationDataDisplay *pDisplay = new UIInformationDataDisplay(m_machine, m_console);
-    AssertPtrReturnVoid(pDisplay);
-    {
-        m_list.append(pDisplay);
-    }
 }
 
 QHash<int, QByteArray> UIInformationModel::roleNames() const
@@ -104,8 +81,19 @@ QHash<int, QByteArray> UIInformationModel::roleNames() const
     QHash<int, QByteArray> roleNames;
     roleNames[Qt::DisplayRole] = "";
     roleNames[Qt::DecorationRole] = "";
-    roleNames[Qt::SizeHintRole] = "";
-    roleNames[Qt::UserRole+1] = "";
+    roleNames[Qt::UserRole + 1] = "";
+    roleNames[Qt::UserRole + 2] = "";
     return roleNames;
+}
+
+void UIInformationModel::addItem(UIInformationDataItem *pItem)
+{
+    AssertPtrReturnVoid(pItem);
+    m_list.append(pItem);
+}
+
+void UIInformationModel::updateData(const QModelIndex &idx)
+{
+    emit dataChanged(idx, idx);
 }
 
