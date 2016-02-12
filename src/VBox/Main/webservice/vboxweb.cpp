@@ -1903,6 +1903,7 @@ int WebServiceSession::authenticate(const char *pcszUsername,
         {
             result = pfnAuthEntry2(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
             pszFn = AUTHENTRY2_NAME;
+        }
         else
         {
             result = pfnAuthEntry(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL);
