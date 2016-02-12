@@ -117,8 +117,8 @@ public:
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
 # endif /* Q_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
-    /** Qt5: Performs final pre-processing of all the native events. */
-    bool nativeEventFilter(void *pMessage, ulong uScreenId);
+    /** Qt5: Performs post-processing of all the native events. */
+    bool nativeEventPostprocessor(void *pMessage, ulong uScreenId);
 #endif /* QT_VERSION >= 0x050000 */
 
 protected slots:

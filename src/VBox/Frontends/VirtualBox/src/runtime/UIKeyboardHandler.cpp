@@ -943,7 +943,7 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
 # endif /* Q_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
 
-bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
+bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId)
 {
     /* Check if some system event should be filtered out.
      * Returning @c true means filtering-out,

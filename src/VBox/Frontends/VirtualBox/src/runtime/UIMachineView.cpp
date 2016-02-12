@@ -1910,7 +1910,7 @@ bool UIMachineView::nativeEvent(const QByteArray &eventType, void *pMessage)
                 case kEventRawKeyModifiersChanged:
                 {
                     /* Delegate key-event handling to the keyboard-handler: */
-                    return machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, screenId());
+                    return machineLogic()->keyboardHandler()->nativeEventPostprocessor(pMessage, screenId());
                 }
                 default:
                     break;
@@ -1940,7 +1940,7 @@ bool UIMachineView::nativeEvent(const QByteArray &eventType, void *pMessage)
         case WM_SYSKEYUP:
         {
             /* Delegate key-event handling to the keyboard-handler: */
-            return machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, screenId());
+            return machineLogic()->keyboardHandler()->nativeEventPostprocessor(pMessage, screenId());
         }
         default:
             break;
@@ -1963,7 +1963,7 @@ bool UIMachineView::nativeEvent(const QByteArray &eventType, void *pMessage)
         case XCB_KEY_RELEASE:
         {
             /* Delegate key-event handling to the keyboard-handler: */
-            return machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, screenId());
+            return machineLogic()->keyboardHandler()->nativeEventPostprocessor(pMessage, screenId());
         }
         default:
             break;
