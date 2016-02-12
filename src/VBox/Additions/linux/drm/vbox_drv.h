@@ -195,7 +195,7 @@ extern void vbox_refresh_modes(struct drm_device *dev);
 # define CRTC_FB(crtc) (crtc)->primary->fb
 #endif
 
-void vbox_enable_vbva(struct vbox_private *vbox, unsigned crtc_id);
+void vbox_enable_accel(struct vbox_private *vbox, unsigned crtc_id);
 void vbox_enable_caps(struct vbox_private *vbox);
 
 void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,

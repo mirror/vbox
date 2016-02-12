@@ -70,9 +70,9 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
 {
     struct vbox_crtc   *vbox_crtc = to_vbox_crtc(crtc);
     struct vbox_private *vbox;
-    int width, height, cBPP, pitch;
+    int width, height, bpp, pitch;
     unsigned crtc_id;
-    uint16_t fFlags;
+    uint16_t flags;
 
     LogFunc(("vboxvideo: %d: vbox_crtc=%p, CRTC_FB(crtc)=%p\n", __LINE__,
              vbox_crtc, CRTC_FB(crtc)));
@@ -80,23 +80,23 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
     width = mode->hdisplay ? mode->hdisplay : 640;
     height = mode->vdisplay ? mode->vdisplay : 480;
     crtc_id = vbox_crtc->crtc_id;
-    cBPP = crtc->enabled ? CRTC_FB(crtc)->bits_per_pixel : 32;
+    bpp = crtc->enabled ? CRTC_FB(crtc)->bits_per_pixel : 32;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
-    pitch = crtc->enabled ? CRTC_FB(crtc)->pitch : width * cBPP / 8;
+    pitch = crtc->enabled ? CRTC_FB(crtc)->pitch : width * bpp / 8;
 #else
-    pitch = crtc->enabled ? CRTC_FB(crtc)->pitches[0] : width * cBPP / 8;
+    pitch = crtc->enabled ? CRTC_FB(crtc)->pitches[0] : width * bpp / 8;
 #endif
     /* if (vbox_crtc->crtc_id == 0 && crtc->enabled)
-        VBoxVideoSetModeRegisters(width, height, pitch * 8 / cBPP,
+        VBoxVideoSetModeRegisters(width, height, pitch * 8 / bpp,
                                   CRTC_FB(crtc)->bits_per_pixel, 0,
                                   crtc->x, crtc->y); */
-    fFlags = VBVA_SCREEN_F_ACTIVE;
-    fFlags |= (crtc->enabled ? 0 : VBVA_SCREEN_F_DISABLED);
+    flags = VBVA_SCREEN_F_ACTIVE;
+    flags |= (crtc->enabled ? 0 : VBVA_SCREEN_F_DISABLED);
     VBoxHGSMIProcessDisplayInfo(&vbox->submit_info, vbox_crtc->crtc_id,
                                 crtc->x, crtc->y,
-                                crtc->x * cBPP / 8 + crtc->y * pitch,
+                                crtc->x * bpp / 8 + crtc->y * pitch,
                                 pitch, width, height,
-                                vbox_crtc->blanked ? 0 : cBPP, fFlags);
+                                vbox_crtc->blanked ? 0 : bpp, flags);
     VBoxHGSMIReportFlagsLocation(&vbox->submit_info, vbox->host_flags_offset);
     vbox_enable_caps(vbox);
     LogFunc(("vboxvideo: %d\n", __LINE__));
@@ -222,7 +222,7 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
         unsigned i;
 
         for (i = 0; i < vbox->num_crtcs; ++i)
-            vbox_enable_vbva(vbox, i);
+            vbox_enable_accel(vbox, i);
     }
     vbox_bo_unreserve(bo);
 
@@ -414,24 +414,24 @@ static struct drm_encoder *vbox_encoder_init(struct drm_device *dev, unsigned i)
 static int vbox_get_modes(struct drm_connector *connector)
 {
     struct vbox_connector *vbox_connector = NULL;
-    struct drm_display_mode *pMode = NULL;
-    unsigned cModes = 0;
-    int widthPreferred, heightPreferred;
+    struct drm_display_mode *mode = NULL;
+    unsigned num_modes = 0;
+    int preferred_width, preferred_height;
 
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
-    cModes = drm_add_modes_noedid(connector, 2560, 1600);
-    widthPreferred = vbox_connector->mode_hint.width ? vbox_connector->mode_hint.width : 1024;
-    heightPreferred = vbox_connector->mode_hint.height ? vbox_connector->mode_hint.height : 768;
-    pMode = drm_cvt_mode(connector->dev, widthPreferred, heightPreferred, 60, false,
+    num_modes = drm_add_modes_noedid(connector, 2560, 1600);
+    preferred_width = vbox_connector->mode_hint.width ? vbox_connector->mode_hint.width : 1024;
+    preferred_height = vbox_connector->mode_hint.height ? vbox_connector->mode_hint.height : 768;
+    mode = drm_cvt_mode(connector->dev, preferred_width, preferred_height, 60, false,
                          false, false);
-    if (pMode)
+    if (mode)
     {
-        pMode->type |= DRM_MODE_TYPE_PREFERRED;
-        drm_mode_probed_add(connector, pMode);
-        ++cModes;
+        mode->type |= DRM_MODE_TYPE_PREFERRED;
+        drm_mode_probed_add(connector, mode);
+        ++num_modes;
     }
-    return cModes;
+    return num_modes;
 }
 
 static int vbox_mode_valid(struct drm_connector *connector,
@@ -467,22 +467,22 @@ vbox_connector_detect(struct drm_connector *connector, bool force)
     return !vbox_connector->mode_hint.disconnected;
 }
 
-static int vbox_fill_modes(struct drm_connector *connector, uint32_t xMax, uint32_t yMax)
+static int vbox_fill_modes(struct drm_connector *connector, uint32_t max_x, uint32_t max_y)
 {
     struct vbox_connector *vbox_connector;
-    struct drm_device *pDrmDev;
-    struct drm_display_mode *pMode, *pIter;
+    struct drm_device *dev;
+    struct drm_display_mode *mode, *iterator;
 
-    LogFunc(("vboxvideo: %d: connector=%p, xMax=%lu, yMax = %lu\n", __LINE__,
-             connector, (unsigned long)xMax, (unsigned long)yMax));
+    LogFunc(("vboxvideo: %d: connector=%p, max_x=%lu, max_y = %lu\n", __LINE__,
+             connector, (unsigned long)max_x, (unsigned long)max_y));
     vbox_connector = to_vbox_connector(connector);
-    pDrmDev = vbox_connector->base.dev;
-    list_for_each_entry_safe(pMode, pIter, &connector->modes, head)
+    dev = vbox_connector->base.dev;
+    list_for_each_entry_safe(mode, iterator, &connector->modes, head)
     {
-        list_del(&pMode->head);
-        drm_mode_destroy(pDrmDev, pMode);
+        list_del(&mode->head);
+        drm_mode_destroy(dev, mode);
     }
-    return drm_helper_probe_single_connector_modes(connector, xMax, yMax);
+    return drm_helper_probe_single_connector_modes(connector, max_x, max_y);
 }
 
 static const struct drm_connector_helper_funcs vbox_connector_helper_funcs = {
@@ -503,16 +503,16 @@ ssize_t vbox_connector_write_sysfs(struct device *dev,
                                    const char *psz, size_t cch)
 {
     struct vbox_connector *vbox_connector;
-    struct vbox_private *pVBox;
+    struct vbox_private *vbox;
 
     LogFunc(("vboxvideo: %d: dev=%p, pAttr=%p, psz=%s, cch=%llu\n", __LINE__,
              dev, pAttr, psz, (unsigned long long)cch));
     vbox_connector = container_of(pAttr, struct vbox_connector,
                                   sysfs_node);
-    pVBox = vbox_connector->base.dev->dev_private;
+    vbox = vbox_connector->base.dev->dev_private;
     drm_kms_helper_hotplug_event(vbox_connector->base.dev);
-    if (pVBox->fbdev)
-        drm_fb_helper_hotplug_event(&pVBox->fbdev->helper);
+    if (vbox->fbdev)
+        drm_fb_helper_hotplug_event(&vbox->fbdev->helper);
     return cch;
 }
 
@@ -574,61 +574,14 @@ static int vbox_connector_init(struct drm_device *dev, unsigned cScreen,
     return 0;
 }
 
-#if 0
-/* allocate cursor cache and pin at start of VRAM */
-int vbox_cursor_init(struct drm_device *dev)
-{
-    struct vbox_private *vbox = dev->dev_private;
-    int size;
-    int ret;
-    struct drm_gem_object *obj;
-    struct vbox_bo *bo;
-    uint64_t gpu_addr;
-
-    size = (AST_HWC_SIZE + AST_HWC_SIGNATURE_SIZE) * AST_DEFAULT_HWC_NUM;
-
-    ret = vbox_gem_create(dev, size, true, &obj);
-    if (ret)
-        return ret;
-    bo = gem_to_vbox_bo(obj);
-    ret = vbox_bo_reserve(bo, false);
-    if (unlikely(ret != 0))
-        goto fail;
-
-    ret = vbox_bo_pin(bo, TTM_PL_FLAG_VRAM, &gpu_addr);
-    vbox_bo_unreserve(bo);
-    if (ret)
-        goto fail;
-
-    /* kmap the object */
-    ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &vbox->cache_kmap);
-    if (ret)
-        goto fail;
-
-    vbox->cursor_cache = obj;
-    vbox->cursor_cache_gpu_addr = gpu_addr;
-    DRM_DEBUG_KMS("pinned cursor cache at %llx\n", vbox->cursor_cache_gpu_addr);
-    return 0;
-fail:
-    return ret;
-}
-
-void vbox_cursor_fini(struct drm_device *dev)
-{
-    struct vbox_private *vbox = dev->dev_private;
-    ttm_bo_kunmap(&vbox->cache_kmap);
-    drm_gem_object_unreference_unlocked(vbox->cursor_cache);
-}
-#endif
-
 int vbox_mode_init(struct drm_device *dev)
 {
-    struct vbox_private *pVBox = dev->dev_private;
+    struct vbox_private *vbox = dev->dev_private;
     struct drm_encoder *encoder;
     unsigned i;
     /* vbox_cursor_init(dev); */
     LogFunc(("vboxvideo: %d: dev=%p\n", __LINE__, dev));
-    for (i = 0; i < pVBox->num_crtcs; ++i)
+    for (i = 0; i < vbox->num_crtcs; ++i)
     {
         vbox_crtc_init(dev, i);
         encoder = vbox_encoder_init(dev, i);
@@ -719,11 +672,11 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
                     src = ttm_kmap_obj_virtual(&uobj_map, &src_isiomem);
                     if (!src_isiomem)
                     {
-                        uint32_t fFlags =   VBOX_MOUSE_POINTER_VISIBLE
+                        uint32_t flags =   VBOX_MOUSE_POINTER_VISIBLE
                                           | VBOX_MOUSE_POINTER_SHAPE
                                           | VBOX_MOUSE_POINTER_ALPHA;
                         copy_cursor_image(src, dst, width, height, cbMask);
-                        rc = VBoxHGSMIUpdatePointerShape(&vbox->submit_info, fFlags,
+                        rc = VBoxHGSMIUpdatePointerShape(&vbox->submit_info, flags,
                                                          hot_x, hot_y, width,
                                                          height, dst, cbData);
                         ret = RTErrConvertToErrno(rc);
