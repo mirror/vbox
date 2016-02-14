@@ -35,6 +35,7 @@
 #include <iprt/bignum.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
+#include <iprt/string.h>
 
 #include <iprt/formats/asn1.h>
 
@@ -70,6 +71,18 @@ typedef struct RTASN1ENCODEWRITEARGS
     /** Pointer to the error info. (optional) */
     PRTERRINFO              pErrInfo;
 } RTASN1ENCODEWRITEARGS;
+
+/**
+ * Argument package for rtAsn1EncodeToBufferCallback passed by
+ * RTAsn1EncodeToBuffer.
+ */
+typedef struct RTASN1ENCODETOBUFARGS
+{
+    /** The destination buffer position (incremented while writing). */
+    uint8_t                *pbDst;
+    /** The size of the destination buffer left (decremented while writing). */
+    size_t                  cbDst;
+} RTASN1ENCODETOBUFARGS;
 
 
 RTDECL(int) RTAsn1EncodeRecalcHdrSize(PRTASN1CORE pAsn1Core, uint32_t fFlags, PRTERRINFO pErrInfo)
@@ -233,8 +246,8 @@ RTDECL(int) RTAsn1EncodePrepare(PRTASN1CORE pRoot, uint32_t fFlags, uint32_t *pc
 }
 
 
-RTDECL(int) RTAsnEncodeWriteHeader(PCRTASN1CORE pAsn1Core, uint32_t fFlags, FNRTASN1ENCODEWRITER pfnWriter, void *pvUser,
-                                   PRTERRINFO pErrInfo)
+RTDECL(int) RTAsn1EncodeWriteHeader(PCRTASN1CORE pAsn1Core, uint32_t fFlags, FNRTASN1ENCODEWRITER pfnWriter, void *pvUser,
+                                    PRTERRINFO pErrInfo)
 {
     AssertReturn((fFlags & RTASN1ENCODE_F_RULE_MASK) == RTASN1ENCODE_F_DER, VERR_INVALID_FLAGS);
 
@@ -376,7 +389,7 @@ static DECLCALLBACK(int) rtAsn1EncodeWriteCallback(PRTASN1CORE pAsn1Core, const 
             /*
              * Generic path. Start by writing the header for this object.
              */
-            rc = RTAsnEncodeWriteHeader(pAsn1Core, pArgs->fFlags, pArgs->pfnWriter, pArgs->pvUser, pArgs->pErrInfo);
+            rc = RTAsn1EncodeWriteHeader(pAsn1Core, pArgs->fFlags, pArgs->pfnWriter, pArgs->pvUser, pArgs->pErrInfo);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -423,5 +436,38 @@ RTDECL(int) RTAsn1EncodeWrite(PCRTASN1CORE pRoot, uint32_t fFlags, FNRTASN1ENCOD
     Args.pvUser     = pvUser;
     Args.pErrInfo   = pErrInfo;
     return rtAsn1EncodeWriteCallback((PRTASN1CORE)pRoot, "root", 0, &Args);
+}
+
+
+static DECLCALLBACK(int) rtAsn1EncodeToBufferCallback(const void *pvBuf, size_t cbToWrite, void *pvUser, PRTERRINFO pErrInfo)
+{
+    RTASN1ENCODETOBUFARGS *pArgs = (RTASN1ENCODETOBUFARGS *)pvUser;
+    if (RT_LIKELY(pArgs->cbDst >= cbToWrite))
+    {
+        memcpy(pArgs->pbDst, pvBuf, cbToWrite);
+        pArgs->cbDst -= cbToWrite;
+        pArgs->pbDst += cbToWrite;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Overflow.
+     */
+    if (pArgs->cbDst)
+    {
+        memcpy(pArgs->pbDst, pvBuf, pArgs->cbDst);
+        pArgs->pbDst -= pArgs->cbDst;
+        pArgs->cbDst  = 0;
+    }
+    return VERR_BUFFER_OVERFLOW;
+}
+
+
+RTDECL(int) RTAsn1EncodeToBuffer(PCRTASN1CORE pRoot, uint32_t fFlags, void *pvBuf, size_t cbBuf, PRTERRINFO pErrInfo)
+{
+    RTASN1ENCODETOBUFARGS Args;
+    Args.pbDst = (uint8_t *)pvBuf;
+    Args.cbDst = cbBuf;
+    return RTAsn1EncodeWrite(pRoot, fFlags, rtAsn1EncodeToBufferCallback, &Args, pErrInfo);
 }
 

@@ -271,7 +271,7 @@ static DECLCALLBACK(int) RTAsn1BitString_EncodeWrite(PRTASN1CORE pThisCore, uint
     /*
      * First the header.
      */
-    int rc = RTAsnEncodeWriteHeader(&pThis->Asn1Core, fFlags, pfnWriter, pvUser, pErrInfo);
+    int rc = RTAsn1EncodeWriteHeader(&pThis->Asn1Core, fFlags, pfnWriter, pvUser, pErrInfo);
     if (RT_SUCCESS(rc) && rc != VINF_ASN1_NOT_ENCODED)
     {
         /*

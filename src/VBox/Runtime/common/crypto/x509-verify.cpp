@@ -33,6 +33,7 @@
 #include <iprt/crypto/pkix.h>
 
 #include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 
 
@@ -75,11 +76,56 @@ RTDECL(int) RTCrX509Certificate_VerifySignature(PCRTCRX509CERTIFICATE pThis, PCR
 
     /*
      * Here we should recode the to-be-signed part as DER, but we'll ASSUME
-     * that it's already in DER encoding.  This is safe.
+     * that it's already in DER encoding and only does this if there the
+     * encoded bits are missing.
      */
-    return RTCrPkixPubKeyVerifySignature(&pThis->SignatureAlgorithm.Algorithm, pParameters, pPublicKey, &pThis->SignatureValue,
-                                         RTASN1CORE_GET_RAW_ASN1_PTR(&pThis->TbsCertificate.SeqCore.Asn1Core),
-                                         RTASN1CORE_GET_RAW_ASN1_SIZE(&pThis->TbsCertificate.SeqCore.Asn1Core),
-                                         pErrInfo);
+    if (   pThis->TbsCertificate.SeqCore.Asn1Core.uData.pu8
+        && pThis->TbsCertificate.SeqCore.Asn1Core.cb > 0)
+        return RTCrPkixPubKeyVerifySignature(&pThis->SignatureAlgorithm.Algorithm, pParameters, pPublicKey, &pThis->SignatureValue,
+                                             RTASN1CORE_GET_RAW_ASN1_PTR(&pThis->TbsCertificate.SeqCore.Asn1Core),
+                                             RTASN1CORE_GET_RAW_ASN1_SIZE(&pThis->TbsCertificate.SeqCore.Asn1Core),
+                                             pErrInfo);
+
+    uint32_t cbEncoded;
+    int rc = RTAsn1EncodePrepare((PRTASN1CORE)&pThis->TbsCertificate.SeqCore.Asn1Core, RTASN1ENCODE_F_DER, &cbEncoded, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        void *pvTbsBits = RTMemTmpAlloc(cbEncoded);
+        if (pvTbsBits)
+        {
+            rc = RTAsn1EncodeToBuffer(&pThis->TbsCertificate.SeqCore.Asn1Core, RTASN1ENCODE_F_DER,
+                                      pvTbsBits, cbEncoded, pErrInfo);
+            if (RT_SUCCESS(rc))
+                rc = RTCrPkixPubKeyVerifySignature(&pThis->SignatureAlgorithm.Algorithm, pParameters, pPublicKey,
+                                                   &pThis->SignatureValue, pvTbsBits, cbEncoded, pErrInfo);
+            else
+                AssertRC(rc);
+            RTMemTmpFree(pvTbsBits);
+        }
+        else
+            rc = VERR_NO_TMP_MEMORY;
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTCrX509Certificate_VerifySignatureSelfSigned(PCRTCRX509CERTIFICATE pThis, PRTERRINFO pErrInfo)
+{
+    /*
+     * Validate the input a little.
+     */
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertReturn(RTCrX509Certificate_IsPresent(pThis), VERR_INVALID_PARAMETER);
+
+    /*
+     * Assemble parameters for the generic verification call.
+     */
+    PCRTCRX509TBSCERTIFICATE const pTbsCert    = &pThis->TbsCertificate;
+    PCRTASN1DYNTYPE                pParameters = NULL;
+    if (   RTASN1CORE_IS_PRESENT(&pTbsCert->SubjectPublicKeyInfo.Algorithm.Parameters.u.Core)
+        && pTbsCert->SubjectPublicKeyInfo.Algorithm.Parameters.enmType != RTASN1TYPE_NULL)
+        pParameters = &pTbsCert->SubjectPublicKeyInfo.Algorithm.Parameters;
+    return RTCrX509Certificate_VerifySignature(pThis, &pTbsCert->SubjectPublicKeyInfo.Algorithm.Algorithm, pParameters,
+                                               &pTbsCert->SubjectPublicKeyInfo.SubjectPublicKey, pErrInfo);
 }
 

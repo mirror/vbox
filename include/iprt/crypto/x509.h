@@ -959,6 +959,7 @@ RTDECL(bool) RTCrX509Certificate_IsSelfSigned(PCRTCRX509CERTIFICATE pCertificate
 RTDECL(int) RTCrX509Certificate_VerifySignature(PCRTCRX509CERTIFICATE pThis, PCRTASN1OBJID pAlgorithm,
                                                 PCRTASN1DYNTYPE pParameters, PCRTASN1BITSTRING pPublicKey,
                                                 PRTERRINFO pErrInfo);
+RTDECL(int) RTCrX509Certificate_VerifySignatureSelfSigned(PCRTCRX509CERTIFICATE pThis, PRTERRINFO pErrInfo);
 RTDECL(int) RTCrX509Certificate_ReadFromFile(PRTCRX509CERTIFICATE pCertificate, const char *pszFilename, uint32_t fFlags,
                                              PCRTASN1ALLOCATORVTABLE pAllocator, PRTERRINFO pErrInfo);
 RTDECL(int) RTCrX509Certificate_ReadFromBuffer(PRTCRX509CERTIFICATE pCertificate, const void *pvBuf, size_t cbBuf,

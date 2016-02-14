@@ -1466,15 +1466,11 @@ RTDECL(int) RTAsn1EncodePrepare(PRTASN1CORE pRoot, uint32_t fFlags, uint32_t *pc
  * @param   pErrInfo            Where to store extended error information.
  *                              Optional.
  */
-RTDECL(int) RTAsnEncodeWriteHeader(PCRTASN1CORE pAsn1Core, uint32_t fFlags, FNRTASN1ENCODEWRITER pfnWriter, void *pvUser,
-                                   PRTERRINFO pErrInfo);
+RTDECL(int) RTAsn1EncodeWriteHeader(PCRTASN1CORE pAsn1Core, uint32_t fFlags, FNRTASN1ENCODEWRITER pfnWriter, void *pvUser,
+                                    PRTERRINFO pErrInfo);
 
 /**
- * Prepares the ASN.1 structure for encoding.
- *
- * The preparations is mainly calculating accurate object size, but may also
- * involve operations like recoding internal UTF-8 strings to the actual ASN.1
- * format and other things that may require memory to allocated/reallocated.
+ * Encodes and writes an ASN.1 object.
  *
  * @returns IPRT status code
  * @param   pRoot               The root of the ASN.1 object tree to encode.
@@ -1487,6 +1483,21 @@ RTDECL(int) RTAsnEncodeWriteHeader(PCRTASN1CORE pAsn1Core, uint32_t fFlags, FNRT
  */
 RTDECL(int) RTAsn1EncodeWrite(PCRTASN1CORE pRoot, uint32_t fFlags, FNRTASN1ENCODEWRITER pfnWriter, void *pvUser,
                               PRTERRINFO pErrInfo);
+
+/**
+ * Encodes and writes an ASN.1 object into a caller allocated memory buffer.
+ *
+ * @returns IPRT status code
+ * @param   pRoot               The root of the ASN.1 object tree to encode.
+ * @param   fFlags              Valid combination of the RTASN1ENCODE_F_XXX
+ *                              flags.  Must include the encoding type.
+ * @param   pvBuf               The output buffer.
+ * @param   cbBuf               The buffer size.  This should have the size
+ *                              returned by RTAsn1EncodePrepare().
+ * @param   pErrInfo            Where to store extended error information.
+ *                              Optional.
+ */
+RTDECL(int) RTAsn1EncodeToBuffer(PCRTASN1CORE pRoot, uint32_t fFlags, void *pvBuf, size_t cbBuf, PRTERRINFO pErrInfo);
 
 /** @} */
 
