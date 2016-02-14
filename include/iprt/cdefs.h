@@ -1550,6 +1550,33 @@
 /** RT_CONCAT4 helper, don't use.  */
 #define RT_CONCAT4_HLP(a,b,c,d)     a##b##c##d
 
+/** @def RT_CONCAT5
+ * Concatenate the expanded arguments without any extra spaces in between.
+ *
+ * @param   a       The 1st part.
+ * @param   b       The 2nd part.
+ * @param   c       The 3rd part.
+ * @param   d       The 4th part.
+ * @param   e       The 5th part.
+ */
+#define RT_CONCAT5(a,b,c,d,e)         RT_CONCAT5_HLP(a,b,c,d,e)
+/** RT_CONCAT5 helper, don't use.  */
+#define RT_CONCAT5_HLP(a,b,c,d,e)     a##b##c##d##e
+
+/** @def RT_CONCAT6
+ * Concatenate the expanded arguments without any extra spaces in between.
+ *
+ * @param   a       The 1st part.
+ * @param   b       The 2nd part.
+ * @param   c       The 3rd part.
+ * @param   d       The 4th part.
+ * @param   e       The 5th part.
+ * @param   f       The 6th part.
+ */
+#define RT_CONCAT6(a,b,c,d,e,f)       RT_CONCAT6_HLP(a,b,c,d,e,f)
+/** RT_CONCAT6 helper, don't use.  */
+#define RT_CONCAT6_HLP(a,b,c,d,e,f)   a##b##c##d##e##f
+
 /**
  * String constant tuple - string constant, strlen(string constant).
  *
