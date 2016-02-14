@@ -163,63 +163,18 @@
             return pfnCallback(RT_CONCAT(a_Api,_GetAsn1Core)(&pThis->a_TnNm.a_Name), #a_TnNm "." #a_Name, uDepth + 1, pvUser); \
         return VINF_SUCCESS; \
     } \
-    /* The delete method shouldn't normally be used. */ \
+    /* The reminder of the methods shouldn't normally be needed, just stub them. */ \
     static DECLCALLBACK(void) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Delete)(PRTASN1CORE pThisCore) \
-    { \
-        RTASN1TMPL_TYPE *pThis = RT_FROM_MEMBER(pThisCore, RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
-        RT_CONCAT(a_Api,_Delete)(&pThis->a_TnNm.a_Name); \
-    } \
-    /* The clone method shouldn't normally be used. */ \
+    { AssertFailed(); } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Clone)(PRTASN1CORE pThisCore, PCRTASN1CORE pSrcCore, \
                                                                                   PCRTASN1ALLOCATORVTABLE pAllocator) \
-    {\
-        RTASN1TMPL_TYPE *pThis = RT_FROM_MEMBER(pThisCore, RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
-        RTASN1TMPL_TYPE *pSrc  = RT_FROM_MEMBER(pSrcCore,  RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
-        int              rc    = VINF_SUCCESS; \
-        if (RTASN1CORE_IS_PRESENT(&pSrc->a_TnNm.a_CtxTagN.Asn1Core)) \
-        { \
-            rc = RT_CONCAT3(RTAsn1ContextTag,a_uTag,_Clone)(&pThis->a_TnNm.a_CtxTagN, &pSrc->a_TnNm.a_CtxTagN); \
-            if (RT_SUCCESS(rc)) \
-                rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_TnNm.a_Name, &pSrc->a_TnNm.a_Name, pAllocator); \
-        } \
-        return rc; \
-    } \
-    /* The compare method shouldn't normally be used. */ \
+    { AssertFailed(); return VERR_INTERNAL_ERROR2; } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Compare)(PCRTASN1CORE pLeftCore, \
                                                                                     PCRTASN1CORE pRightCore) \
-    { \
-        RTASN1TMPL_TYPE *pLeft  = RT_FROM_MEMBER(pLeftCore,  RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
-        RTASN1TMPL_TYPE *pRight = RT_FROM_MEMBER(pRightCore, RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
-        if (RTASN1CORE_IS_PRESENT(&pLeft->a_TnNm.a_CtxTagN.Asn1Core)) \
-        { \
-            if (RTASN1CORE_IS_PRESENT(&pRight->a_TnNm.a_CtxTagN.Asn1Core)) \
-                return RT_CONCAT(a_Api,_Compare)(&pLeft->a_TnNm.a_Name, &pRight->a_TnNm.a_Name); \
-            return -1; \
-        } \
-        return 0 - (int)RTASN1CORE_IS_PRESENT(&pRight->a_TnNm.a_CtxTagN.Asn1Core); \
-    } \
-    /* The sanity check method shouldn't normally be used. */ \
+    { AssertFailed(); return VERR_INTERNAL_ERROR2; } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_CheckSanity)(PCRTASN1CORE pThisCore, uint32_t fFlags, \
                                                                                         PRTERRINFO pErrInfo, const char *pszErrorTag) \
-    { \
-        RTASN1TMPL_TYPE *pThis = RT_FROM_MEMBER(pThisCore, RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
-        bool const fOuterPresent = RTASN1CORE_IS_PRESENT(&pThis->a_TnNm.a_CtxTagN.Asn1Core); \
-        bool const fInnerPresent = RT_CONCAT(a_Api,_IsPresent)(&pThis->a_TnNm.a_Name); \
-        int rc; \
-        if (fOuterPresent && fInnerPresent) \
-        { \
-            rc = RT_CONCAT(a_Api,_CheckSanity)(&pThis->a_TnNm.a_Name, fFlags & RTASN1_CHECK_SANITY_F_COMMON_MASK, \
-                                               pErrInfo, RT_XSTR(RTASN1TMPL_TYPE) "::" #a_Name); \
-            { a_Constraints } \
-        } \
-        else if (RT_LIKELY(RTASN1CORE_IS_PRESENT(&pThis->a_TnNm.a_CtxTagN.Asn1Core) == fInnerPresent)) \
-            rc = VINF_SUCCESS; /* Likely */ \
-        else \
-            rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE, \
-                               "%s::" #a_TnNm "." #a_Name ": Explict tag precense mixup; " #a_CtxTagN "=%d " #a_Name "=%d.", \
-                               pszErrorTag, fOuterPresent, fInnerPresent); \
-        return rc; \
-    } \
+    { AssertFailed(); return VERR_INTERNAL_ERROR2; } \
     DECL_HIDDEN_CONST(RTASN1COREVTABLE const) RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Vtable) = \
     { \
         /* When the Asn1Core is at the start of the structure, we can reuse the _Delete and _Enum APIs here. */ \
