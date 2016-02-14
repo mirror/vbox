@@ -575,12 +575,12 @@ RTDECL(int) RTAsn1SetCore_Clone(PRTASN1SETCORE pThis, PCRTASN1COREVTABLE pVtable
  * ASN.1 Context Tag object.
  */
 
-RTDECL(int) RTAsn1ContextTagN_Init(PRTASN1CONTEXTTAG pThis, uint32_t uTag)
+RTDECL(int) RTAsn1ContextTagN_Init(PRTASN1CONTEXTTAG pThis, uint32_t uTag, PCRTASN1COREVTABLE pVtable)
 {
     return RTAsn1Core_InitEx(&pThis->Asn1Core,
                              uTag,
                              ASN1_TAGCLASS_CONTEXT | ASN1_TAGFLAG_CONSTRUCTED,
-                             NULL,
+                             pVtable,
                              RTASN1CORE_F_PRESENT);
 }
 

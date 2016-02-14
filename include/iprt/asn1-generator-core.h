@@ -27,6 +27,8 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 
+#define RTASN1TMPL_PASS                 RTASN1TMPL_PASS_XTAG
+#include <iprt/asn1-generator-pass.h>
 #define RTASN1TMPL_PASS                 RTASN1TMPL_PASS_VTABLE
 #include <iprt/asn1-generator-pass.h>
 #define RTASN1TMPL_PASS                 RTASN1TMPL_PASS_DELETE

@@ -414,10 +414,13 @@ RTDECL(int) RTAsn1CursorGetSetCursor(PRTASN1CURSOR pCursor, uint32_t fFlags,
 
 
 RTDECL(int) RTAsn1CursorGetContextTagNCursor(PRTASN1CURSOR pCursor, uint32_t fFlags, uint32_t uExpectedTag,
-                                             PRTASN1CONTEXTTAG pCtxTag, PRTASN1CURSOR pCtxTagCursor, const char *pszErrorTag)
+                                             PCRTASN1COREVTABLE pVtable, PRTASN1CONTEXTTAG pCtxTag, PRTASN1CURSOR pCtxTagCursor,
+                                             const char *pszErrorTag)
 {
-    return rtAsn1CursorGetXxxxCursor(pCursor, fFlags, uExpectedTag, ASN1_TAGCLASS_CONTEXT | ASN1_TAGFLAG_CONSTRUCTED,
-                                     &pCtxTag->Asn1Core, pCtxTagCursor, pszErrorTag, "ctx tag");
+    int rc = rtAsn1CursorGetXxxxCursor(pCursor, fFlags, uExpectedTag, ASN1_TAGCLASS_CONTEXT | ASN1_TAGFLAG_CONSTRUCTED,
+                                       &pCtxTag->Asn1Core, pCtxTagCursor, pszErrorTag, "ctx tag");
+    pCtxTag->Asn1Core.pOps = pVtable;
+    return rc;
 }
 
 

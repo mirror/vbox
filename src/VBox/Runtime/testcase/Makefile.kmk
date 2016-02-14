@@ -52,6 +52,7 @@ PROGRAMS += \
 	tstRTCidr \
 	tstRTCritSect \
 	tstRTCritSectRw \
+	tstRTCrX509-1 \
 	tstRTCType \
 	tstRTDigest \
 	tstRTDigest-2 \
@@ -255,6 +256,40 @@ tstRTCritSectRw_SOURCES = tstRTCritSectRw.cpp
 tstRTCritSectW32_TEMPLATE = VBOXR3TSTEXE
 tstRTCritSectW32_SOURCES = tstRTCritSect.cpp
 tstRTCritSectW32_DEFS = TRY_WIN32_CRIT
+
+tstRTCrX509-1_TEMPLATE      = VBOXR3TSTEXE
+tstRTCrX509-1_SOURCES       = tstRTCrX509-1.cpp
+tstRTCrX509-1_INCS          = $(tstRTCrX509-1_0_OUTDIR)
+tstRTCrX509-1_CLEAN         = $(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h
+tstRTCrX509-1_INTERMEDIATES = $(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h
+tstRTCrX509-1_VBOX_FILES := \
+	Pem_md4=$(PATH_SUB_CURRENT)/tstRTCrX509-md4.pem \
+	Pem_md5=$(PATH_SUB_CURRENT)/tstRTCrX509-md5.pem \
+	Pem_sha1=$(PATH_SUB_CURRENT)/tstRTCrX509-sha1.pem \
+	Pem_sha224=$(PATH_SUB_CURRENT)/tstRTCrX509-sha224.pem \
+	Pem_sha256=$(PATH_SUB_CURRENT)/tstRTCrX509-sha256.pem \
+	Pem_sha384=$(PATH_SUB_CURRENT)/tstRTCrX509-sha384.pem \
+	Pem_sha512=$(PATH_SUB_CURRENT)/tstRTCrX509-sha512.pem \
+       \
+	CertDer_md4=$(PATH_SUB_CURRENT)/tstRTCrX509-md4-cert.der \
+	CertDer_md5=$(PATH_SUB_CURRENT)/tstRTCrX509-md5-cert.der \
+	CertDer_sha1=$(PATH_SUB_CURRENT)/tstRTCrX509-sha1-cert.der \
+	CertDer_sha224=$(PATH_SUB_CURRENT)/tstRTCrX509-sha224-cert.der \
+	CertDer_sha256=$(PATH_SUB_CURRENT)/tstRTCrX509-sha256-cert.der \
+	CertDer_sha384=$(PATH_SUB_CURRENT)/tstRTCrX509-sha384-cert.der \
+	CertDer_sha512=$(PATH_SUB_CURRENT)/tstRTCrX509-sha512-cert.der \
+       $(NO_SUCH_VARIABLE)
+$$(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h: \
+		$(foreach file,$(tstRTCrX509-1_VBOX_FILES),$(lastword  $(subst =,$(SP) ,$(file)))) \
+		$(VBOX_BIN2C) \
+		| $$(dir $$@)
+	$(RM) -f -- "$@"
+	$(foreach file,$(tstRTCrX509-1_VBOX_FILES) \
+	, $(NLTAB)$(VBOX_BIN2C) -ascii --append \
+		"$(firstword $(subst =,$(SP) ,$(file)))" \
+		"$(lastword  $(subst =,$(SP) ,$(file)))" \
+		"$@")
+
 
 tstRTCType_TEMPLATE = VBOXR3TSTEXE
 tstRTCType_SOURCES = tstRTCType.cpp

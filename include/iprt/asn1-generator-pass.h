@@ -65,10 +65,11 @@
  * @{  */
 #define RTASN1TMPL_PASS_INTERNAL_HEADER 1
 
-#define RTASN1TMPL_PASS_VTABLE          2
-#define RTASN1TMPL_PASS_ENUM            3
-#define RTASN1TMPL_PASS_DELETE          4
-#define RTASN1TMPL_PASS_COMPARE         5
+#define RTASN1TMPL_PASS_XTAG            2
+#define RTASN1TMPL_PASS_VTABLE          3
+#define RTASN1TMPL_PASS_ENUM            4
+#define RTASN1TMPL_PASS_DELETE          5
+#define RTASN1TMPL_PASS_COMPARE         6
 
 #define RTASN1TMPL_PASS_CHECK_SANITY    8
 
@@ -111,6 +112,9 @@
 # define RTASN1TMPL_BEGIN_SEQCORE()                 RTASN1TMPL_BEGIN_COMMON()
 # define RTASN1TMPL_BEGIN_SETCORE()                 RTASN1TMPL_BEGIN_COMMON()
 # define RTASN1TMPL_MEMBER_EX(a_Name, a_Type, a_Api, a_Constraints)                                 RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_MEMBER_OPT_XTAG_EX(a_TnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_uTag, a_Constraints) \
+    extern "C" DECLHIDDEN(RTASN1COREVTABLE const)   RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Vtable)
+
 # define RTASN1TMPL_MEMBER_DYN_BEGIN(a_enmType, a_enmMembNm, a_Allocation)                          RTASN1TMPL_SEMICOLON_DUMMY()
 # define RTASN1TMPL_MEMBER_DYN_END(a_enmType, a_enmMembNm, a_Allocation)                            RTASN1TMPL_SEMICOLON_DUMMY()
 # define RTASN1TMPL_END_SEQCORE()                   RTASN1TMPL_SEMICOLON_DUMMY()
@@ -121,12 +125,174 @@
 # define RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, a_fClue, a_Constraints) \
                                                                                                     RTASN1TMPL_SEMICOLON_DUMMY()
 # define RTASN1TMPL_PCHOICE_XTAG_EX(a_uTag, a_enmChoice, a_PtrTnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_Constraints) \
-                                                                                                    RTASN1TMPL_SEMICOLON_DUMMY()
+    extern "C" DECLHIDDEN(RTASN1COREVTABLE const)   RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_PCHOICE_XTAG_,a_Name,_Vtable)
+
 # define RTASN1TMPL_END_PCHOICE()                   RTASN1TMPL_SEMICOLON_DUMMY()
 
 
 # define RTASN1TMPL_SEQ_OF(a_ItemType, a_ItemApi)   RTASN1TMPL_BEGIN_COMMON()
 # define RTASN1TMPL_SET_OF(a_ItemType, a_ItemApi)   RTASN1TMPL_BEGIN_COMMON()
+
+
+
+#elif RTASN1TMPL_PASS == RTASN1TMPL_PASS_XTAG
+/*
+ *
+ * Generate a vtable and associated methods for explicitly tagged items (XTAG).
+ *
+ * These turned out to be a little problematic during encoding since there are
+ * two tags, the first encapsulating the second, thus the enumeration has to be
+ * nested or we cannot calculate the size of the first tag.
+ *
+ *
+ */
+# define RTASN1TMPL_BEGIN_COMMON()                                                                  RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_BEGIN_SEQCORE()                                                                 RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_BEGIN_SETCORE()                                                                 RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_MEMBER_EX(a_Name, a_Type, a_Api, a_Constraints)                                 RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_MEMBER_DYN_BEGIN(a_enmType, a_enmMembNm, a_Allocation)                          RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_MEMBER_DYN_END(a_enmType, a_enmMembNm, a_Allocation)                            RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_MEMBER_OPT_XTAG_EX(a_TnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_uTag, a_Constraints) \
+    /* This is the method we need to make it work. */ \
+    static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Enum)(PRTASN1CORE pThisCore, \
+                                                                                 PFNRTASN1ENUMCALLBACK pfnCallback, \
+                                                                                 uint32_t uDepth, void *pvUser) \
+    { \
+        RTASN1TMPL_TYPE *pThis = RT_FROM_MEMBER(pThisCore, RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
+        if (RTASN1CORE_IS_PRESENT(&pThis->a_TnNm.a_CtxTagN.Asn1Core)) \
+            return pfnCallback(RT_CONCAT(a_Api,_GetAsn1Core)(&pThis->a_TnNm.a_Name), #a_TnNm "." #a_Name, uDepth + 1, pvUser); \
+        return VINF_SUCCESS; \
+    } \
+    /* The delete method shouldn't normally be used. */ \
+    static DECLCALLBACK(void) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Delete)(PRTASN1CORE pThisCore) \
+    { \
+        RTASN1TMPL_TYPE *pThis = RT_FROM_MEMBER(pThisCore, RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
+        RT_CONCAT(a_Api,_Delete)(&pThis->a_TnNm.a_Name); \
+    } \
+    /* The clone method shouldn't normally be used. */ \
+    static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Clone)(PRTASN1CORE pThisCore, PCRTASN1CORE pSrcCore, \
+                                                                                  PCRTASN1ALLOCATORVTABLE pAllocator) \
+    {\
+        RTASN1TMPL_TYPE *pThis = RT_FROM_MEMBER(pThisCore, RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
+        RTASN1TMPL_TYPE *pSrc  = RT_FROM_MEMBER(pSrcCore,  RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
+        int              rc    = VINF_SUCCESS; \
+        if (RTASN1CORE_IS_PRESENT(&pSrc->a_TnNm.a_CtxTagN.Asn1Core)) \
+        { \
+            rc = RT_CONCAT3(RTAsn1ContextTag,a_uTag,_Clone)(&pThis->a_TnNm.a_CtxTagN, &pSrc->a_TnNm.a_CtxTagN); \
+            if (RT_SUCCESS(rc)) \
+                rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_TnNm.a_Name, &pSrc->a_TnNm.a_Name, pAllocator); \
+        } \
+        return rc; \
+    } \
+    /* The compare method shouldn't normally be used. */ \
+    static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Compare)(PCRTASN1CORE pLeftCore, \
+                                                                                    PCRTASN1CORE pRightCore) \
+    { \
+        RTASN1TMPL_TYPE *pLeft  = RT_FROM_MEMBER(pLeftCore,  RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
+        RTASN1TMPL_TYPE *pRight = RT_FROM_MEMBER(pRightCore, RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
+        if (RTASN1CORE_IS_PRESENT(&pLeft->a_TnNm.a_CtxTagN.Asn1Core)) \
+        { \
+            if (RTASN1CORE_IS_PRESENT(&pRight->a_TnNm.a_CtxTagN.Asn1Core)) \
+                return RT_CONCAT(a_Api,_Compare)(&pLeft->a_TnNm.a_Name, &pRight->a_TnNm.a_Name); \
+            return -1; \
+        } \
+        return 0 - (int)RTASN1CORE_IS_PRESENT(&pRight->a_TnNm.a_CtxTagN.Asn1Core); \
+    } \
+    /* The sanity check method shouldn't normally be used. */ \
+    static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_CheckSanity)(PCRTASN1CORE pThisCore, uint32_t fFlags, \
+                                                                                        PRTERRINFO pErrInfo, const char *pszErrorTag) \
+    { \
+        RTASN1TMPL_TYPE *pThis = RT_FROM_MEMBER(pThisCore, RTASN1TMPL_TYPE, a_TnNm.a_CtxTagN); \
+        bool const fOuterPresent = RTASN1CORE_IS_PRESENT(&pThis->a_TnNm.a_CtxTagN.Asn1Core); \
+        bool const fInnerPresent = RT_CONCAT(a_Api,_IsPresent)(&pThis->a_TnNm.a_Name); \
+        int rc; \
+        if (fOuterPresent && fInnerPresent) \
+        { \
+            rc = RT_CONCAT(a_Api,_CheckSanity)(&pThis->a_TnNm.a_Name, fFlags & RTASN1_CHECK_SANITY_F_COMMON_MASK, \
+                                               pErrInfo, RT_XSTR(RTASN1TMPL_TYPE) "::" #a_Name); \
+            { a_Constraints } \
+        } \
+        else if (RT_LIKELY(RTASN1CORE_IS_PRESENT(&pThis->a_TnNm.a_CtxTagN.Asn1Core) == fInnerPresent)) \
+            rc = VINF_SUCCESS; /* Likely */ \
+        else \
+            rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE, \
+                               "%s::" #a_TnNm "." #a_Name ": Explict tag precense mixup; " #a_CtxTagN "=%d " #a_Name "=%d.", \
+                               pszErrorTag, fOuterPresent, fInnerPresent); \
+        return rc; \
+    } \
+    DECL_HIDDEN_CONST(RTASN1COREVTABLE const) RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Vtable) = \
+    { \
+        /* When the Asn1Core is at the start of the structure, we can reuse the _Delete and _Enum APIs here. */ \
+        /* .pszName = */        RT_XSTR(RTASN1TMPL_INT_NAME) "_XTAG_" RT_XSTR(a_Name), \
+        /* .cb = */             RT_SIZEOFMEMB(RTASN1TMPL_TYPE, a_TnNm), \
+        /* .uDefaultTag = */    a_uTag, \
+        /* .fDefaultClass = */  ASN1_TAGCLASS_CONTEXT, \
+        /* .uReserved = */      0, \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Delete), \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Enum), \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Clone), \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Compare), \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_CheckSanity), \
+        /*.pfnEncodePrep */ NULL, \
+        /*.pfnEncodeWrite */ NULL \
+    }
+
+
+# define RTASN1TMPL_END_SEQCORE()                                                                   RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_END_SETCORE()                                                                   RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_BEGIN_PCHOICE()                                                                 RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, a_fClue, a_Constraints) \
+                                                                                                    RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_PCHOICE_XTAG_EX(a_uTag, a_enmChoice, a_PtrTnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_Constraints) \
+    /* This is the method we need to make it work. */ \
+    static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Enum)(PRTASN1CORE pThisCore, \
+                                                                                    PFNRTASN1ENUMCALLBACK pfnCallback, \
+                                                                                    uint32_t uDepth, void *pvUser) \
+    { \
+        if (RTASN1CORE_IS_PRESENT(pThisCore)) \
+        { \
+            /** @todo optimize this one day, possibly change the PCHOICE+XTAG representation. */ \
+            RTASN1TMPL_TYPE Tmp; \
+            *(PRTASN1CORE *)&Tmp.a_PtrTnNm = pThisCore; \
+            Assert(&Tmp.a_PtrTnNm->a_CtxTagN.Asn1Core == pThisCore); \
+            return pfnCallback(RT_CONCAT(a_Api,_GetAsn1Core)(&Tmp.a_PtrTnNm->a_Name), "T" #a_uTag "." #a_Name, uDepth + 1, pvUser); \
+        } \
+        return VINF_SUCCESS; \
+    } \
+    /* The reminder of the methods shouldn't normally be needed, just stub them. */ \
+    static DECLCALLBACK(void) RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Delete)(PRTASN1CORE pThisCore) \
+    { AssertFailed(); } \
+    static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Clone)(PRTASN1CORE pThisCore, PCRTASN1CORE pSrcCore, \
+                                                                                     PCRTASN1ALLOCATORVTABLE pAllocator) \
+    { AssertFailed(); return VERR_INTERNAL_ERROR_3; } \
+    static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Compare)(PCRTASN1CORE pLeftCore, \
+                                                                                       PCRTASN1CORE pRightCore) \
+    { AssertFailed(); return VERR_INTERNAL_ERROR_3; } \
+    static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_CheckSanity)(PCRTASN1CORE pThisCore, uint32_t fFlags, \
+                                                                                           PRTERRINFO pErrInfo, const char *pszErrorTag) \
+    { AssertFailed(); return VERR_INTERNAL_ERROR_3; } \
+    DECL_HIDDEN_CONST(RTASN1COREVTABLE const) RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_PCHOICE_XTAG_,a_Name,_Vtable) = \
+    { \
+        /* When the Asn1Core is at the start of the structure, we can reuse the _Delete and _Enum APIs here. */ \
+        /* .pszName = */        RT_XSTR(RTASN1TMPL_INT_NAME) "_PCHOICE_XTAG_" RT_XSTR(a_Name), \
+        /* .cb = */             sizeof(*((RTASN1TMPL_TYPE *)(void *)0)->a_PtrTnNm), \
+        /* .uDefaultTag = */    a_uTag, \
+        /* .fDefaultClass = */  ASN1_TAGCLASS_CONTEXT, \
+        /* .uReserved = */      0, \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Delete), \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Enum), \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Clone), \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Compare), \
+        RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_CheckSanity), \
+        /*.pfnEncodePrep */ NULL, \
+        /*.pfnEncodeWrite */ NULL \
+    }
+
+
+
+# define RTASN1TMPL_END_PCHOICE()                                                                   RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_SEQ_OF(a_ItemType, a_ItemApi)                                                   RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_SET_OF(a_ItemType, a_ItemApi)                                                   RTASN1TMPL_SEMICOLON_DUMMY()
 
 
 
@@ -348,7 +514,9 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_DecodeAsn1)(PRTASN1CURSOR pC
     if (RT_SUCCESS(rc) && RTAsn1CursorIsNextEx(pCursor, a_uTag, ASN1_TAGCLASS_CONTEXT | ASN1_TAGFLAG_CONSTRUCTED)) \
     { \
         RTASN1CURSOR CtxCursor; \
-        rc = RT_CONCAT3(RTAsn1CursorGetContextTag,a_uTag,Cursor)(pCursor, 0, &pThis->a_TnNm.a_CtxTagN, &CtxCursor, #a_TnNm); \
+        rc = RT_CONCAT3(RTAsn1CursorGetContextTag,a_uTag,Cursor)(pCursor, 0, \
+                                                                 &RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Vtable), \
+                                                                 &pThis->a_TnNm.a_CtxTagN, &CtxCursor, #a_TnNm); \
         if (RT_SUCCESS(rc)) \
         { \
             rc = RT_CONCAT(a_Api,_DecodeAsn1)(&CtxCursor, 0, &pThis->a_TnNm.a_Name, #a_Name); \
@@ -398,8 +566,9 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_DecodeAsn1)(PRTASN1CURSOR pC
             if (RT_SUCCESS(rc)) \
             { \
                 RTASN1CURSOR CtxCursor; \
-                rc = RT_CONCAT3(RTAsn1CursorGetContextTag,a_uTag,Cursor)(pCursor, 0, &pThis->a_PtrTnNm->a_CtxTagN, \
-                                                                         &CtxCursor, "T" #a_uTag); \
+                rc = RT_CONCAT3(RTAsn1CursorGetContextTag,a_uTag,Cursor)(pCursor, 0, \
+                                                                         &RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_PCHOICE_XTAG_,a_Name,_Vtable), \
+                                                                         &pThis->a_PtrTnNm->a_CtxTagN, &CtxCursor, "T" #a_uTag); \
                 if (RT_SUCCESS(rc)) \
                     rc = RT_CONCAT(a_Api,_DecodeAsn1)(&CtxCursor, RTASN1CURSOR_GET_F_IMPLICIT, \
                                                       &pThis->a_PtrTnNm->a_Name, #a_Name); \
@@ -513,8 +682,6 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Enum)(RT_CONCAT(P,RTASN1TMPL
         if (rc == VINF_SUCCESS && RTASN1CORE_IS_PRESENT(&pThis->a_TnNm.a_CtxTagN.Asn1Core)) \
         { \
             rc = pfnCallback(&pThis->a_TnNm.a_CtxTagN.Asn1Core, #a_Name, uDepth, pvUser); \
-            if (rc == VINF_SUCCESS) \
-                rc = pfnCallback(RT_CONCAT(a_Api,_GetAsn1Core)(&pThis->a_TnNm.a_Name), #a_TnNm "." #a_Name, uDepth, pvUser); \
         } do {} while (0)
 # define RTASN1TMPL_END_SEQCORE()   RTASN1TMPL_END_COMMON()
 # define RTASN1TMPL_END_SETCORE()   RTASN1TMPL_END_COMMON()
@@ -528,12 +695,7 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Enum)(RT_CONCAT(P,RTASN1TMPL
 # define RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, a_fClue, a_Constraints) \
         case a_enmChoice: rc = pfnCallback(RT_CONCAT(a_Api,_GetAsn1Core)(pThis->a_PtrName), #a_PtrName, uDepth, pvUser); break
 # define RTASN1TMPL_PCHOICE_XTAG_EX(a_uTag, a_enmChoice, a_PtrTnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_Constraints) \
-        case a_enmChoice: \
-            rc = pfnCallback(&pThis->a_PtrTnNm->a_CtxTagN.Asn1Core, "T" #a_uTag "." #a_CtxTagN, uDepth, pvUser); \
-            if (rc == VINF_SUCCESS) \
-                rc = pfnCallback(RT_CONCAT(a_Api, _GetAsn1Core)(&pThis->a_PtrTnNm->a_Name), \
-                                 "T" #a_uTag "." #a_Name, uDepth + 1, pvUser); \
-            break
+        case a_enmChoice: rc = pfnCallback(&pThis->a_PtrTnNm->a_CtxTagN.Asn1Core, "T" #a_uTag "." #a_CtxTagN, uDepth, pvUser); break
 #define RTASN1TMPL_END_PCHOICE() \
     } \
     RTASN1TMPL_END_COMMON()
@@ -774,7 +936,9 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
     int rc = RTAsn1MemAllocZ(&pThis->Allocation, (void **)&pThis->a_PtrTnNm, sizeof(*pThis->a_PtrTnNm)); \
     if (RT_SUCCESS(rc)) \
     { \
-        rc = RT_CONCAT3(RTAsn1ContextTag,a_uTag,_Init)(&pThis->a_PtrTnNm->a_CtxTagN, pAllocator); \
+        rc = RT_CONCAT3(RTAsn1ContextTag,a_uTag,_Init)(&pThis->a_PtrTnNm->a_CtxTagN, \
+                                                       &RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_PCHOICE_XTAG_,a_Name,_Vtable), \
+                                                       pAllocator); \
         if (RT_SUCCESS(rc)) \
         { \
             rc = RT_CONCAT(a_Api,_Clone)(&pThis->a_PtrTnNm->a_Name, pSrc, pAllocator); \

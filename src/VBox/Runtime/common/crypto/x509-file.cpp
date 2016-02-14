@@ -69,7 +69,7 @@ RTDECL(int) RTCrX509Certificate_ReadFromFile(PRTCRX509CERTIFICATE pCertificate, 
             rc = RTCrX509Certificate_CheckSanity(&TmpCert, 0, pErrInfo, "Cert");
             if (RT_SUCCESS(rc))
             {
-                rc = RTCrX509Certificate_Clone(pCertificate, &TmpCert, &g_RTAsn1DefaultAllocator);
+                rc = RTCrX509Certificate_Clone(pCertificate, &TmpCert, pAllocator);
                 if (RT_SUCCESS(rc))
                 {
                     if (pSectionHead->pNext || PrimaryCursor.Cursor.cbLeft)
@@ -104,7 +104,7 @@ RTDECL(int) RTCrX509Certificate_ReadFromBuffer(PRTCRX509CERTIFICATE pCertificate
             rc = RTCrX509Certificate_CheckSanity(&TmpCert, 0, pErrInfo, "Cert");
             if (RT_SUCCESS(rc))
             {
-                rc = RTCrX509Certificate_Clone(pCertificate, &TmpCert, &g_RTAsn1DefaultAllocator);
+                rc = RTCrX509Certificate_Clone(pCertificate, &TmpCert, pAllocator);
                 if (RT_SUCCESS(rc))
                 {
                     if (pSectionHead->pNext || PrimaryCursor.Cursor.cbLeft)

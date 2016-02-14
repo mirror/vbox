@@ -1191,8 +1191,7 @@ RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTASN1SETOFSTRINGS, RTASN1STRING, RTD
  * For the purpose of documenting the format with typedefs as well as possibly
  * making it a little more type safe, there's a set of typedefs for the most
  * commonly used tag values defined.  These typedefs have are identical to
- * RTASN1CONTEXTTAG, except from the C++ type system of view.
- * tag values.  These
+ * RTASN1CONTEXTTAG, except from the C++ type system point of view.
  */
 typedef struct RTASN1CONTEXTTAG
 {
@@ -1204,7 +1203,7 @@ typedef RTASN1CONTEXTTAG *PRTASN1CONTEXTTAG;
 /** Pointer to a const ASN.1 context tag (IPRT thing). */
 typedef RTASN1CONTEXTTAG const *PCRTASN1CONTEXTTAG;
 
-RTDECL(int) RTAsn1ContextTagN_Init(PRTASN1CONTEXTTAG pThis, uint32_t uTag);
+RTDECL(int) RTAsn1ContextTagN_Init(PRTASN1CONTEXTTAG pThis, uint32_t uTag, PCRTASN1COREVTABLE pVtable);
 RTDECL(int) RTAsn1ContextTagN_Clone(PRTASN1CONTEXTTAG pThis, PCRTASN1CONTEXTTAG pSrc, uint32_t uTag);
 
 
@@ -1213,10 +1212,10 @@ RTDECL(int) RTAsn1ContextTagN_Clone(PRTASN1CONTEXTTAG pThis, PCRTASN1CONTEXTTAG 
     typedef struct RT_CONCAT(RTASN1CONTEXTTAG,a_uTag) { RTASN1CORE Asn1Core; } RT_CONCAT(RTASN1CONTEXTTAG,a_uTag); \
     typedef RT_CONCAT(RTASN1CONTEXTTAG,a_uTag) *RT_CONCAT(PRTASN1CONTEXTTAG,a_uTag); \
     DECLINLINE(int) RT_CONCAT3(RTAsn1ContextTag,a_uTag,_Init)(RT_CONCAT(PRTASN1CONTEXTTAG,a_uTag) pThis, \
-                                                              PCRTASN1ALLOCATORVTABLE pAllocator) \
+                                                              PCRTASN1COREVTABLE pVtable, PCRTASN1ALLOCATORVTABLE pAllocator) \
     { \
         NOREF(pAllocator); \
-        return RTAsn1ContextTagN_Init((PRTASN1CONTEXTTAG)pThis, a_uTag); \
+        return RTAsn1ContextTagN_Init((PRTASN1CONTEXTTAG)pThis, a_uTag, pVtable); \
     } \
     DECLINLINE(int) RT_CONCAT3(RTAsn1ContextTag,a_uTag,_Clone)(RT_CONCAT(PRTASN1CONTEXTTAG,a_uTag) pThis, \
                                                                RT_CONCAT(RTASN1CONTEXTTAG,a_uTag) const *pSrc) \
@@ -1936,6 +1935,8 @@ RTDECL(int) RTAsn1CursorGetSetCursor(PRTASN1CURSOR pCursor, uint32_t fFlags,
  * @param   pCursor             The cursor we're decoding from.
  * @param   fFlags              RTASN1CURSOR_GET_F_XXX.
  * @param   uExpectedTag        The expected tag.
+ * @param   pVtable             The vtable for the context tag node (see
+ *                              RTASN1TMPL_PASS_XTAG).
  * @param   pCtxTag             The output context tag object.
  * @param   pCtxTagCursor       The output cursor for the context tag content.
  * @param   pszErrorTag         Error tag, this will be associated with the
@@ -1946,7 +1947,8 @@ RTDECL(int) RTAsn1CursorGetSetCursor(PRTASN1CURSOR pCursor, uint32_t fFlags,
  *          RTAsn1CursorGetContextTag0Cursor.
  */
 RTDECL(int) RTAsn1CursorGetContextTagNCursor(PRTASN1CURSOR pCursor, uint32_t fFlags, uint32_t uExpectedTag,
-                                             PRTASN1CONTEXTTAG pCtxTag, PRTASN1CURSOR pCtxTagCursor, const char *pszErrorTag);
+                                             PCRTASN1COREVTABLE pVtable, PRTASN1CONTEXTTAG pCtxTag, PRTASN1CURSOR pCtxTagCursor,
+                                             const char *pszErrorTag);
 
 /**
  * Read a dynamic ASN.1 type.
@@ -1983,10 +1985,11 @@ RTDECL(bool) RTAsn1CursorIsNextEx(PRTASN1CURSOR pCursor, uint32_t uTag, uint8_t 
 /** @internal  */
 #define RTASN1CONTEXTTAG_IMPL_CURSOR_INLINES(a_uTag) \
     DECLINLINE(int) RT_CONCAT3(RTAsn1CursorGetContextTag,a_uTag,Cursor)(PRTASN1CURSOR pCursor, uint32_t fFlags, \
+                                                                        PCRTASN1COREVTABLE pVtable, \
                                                                         RT_CONCAT(PRTASN1CONTEXTTAG,a_uTag) pCtxTag, \
                                                                         PRTASN1CURSOR pCtxTagCursor, const char *pszErrorTag) \
     { /* Constructed is automatically implied if you need a cursor to it. */ \
-        return RTAsn1CursorGetContextTagNCursor(pCursor, fFlags, a_uTag, (PRTASN1CONTEXTTAG)pCtxTag, pCtxTagCursor, pszErrorTag); \
+        return RTAsn1CursorGetContextTagNCursor(pCursor, fFlags, a_uTag, pVtable, (PRTASN1CONTEXTTAG)pCtxTag, pCtxTagCursor, pszErrorTag); \
     } \
     DECLINLINE(int) RT_CONCAT3(RTAsn1ContextTag,a_uTag,InitDefault)(RT_CONCAT(PRTASN1CONTEXTTAG,a_uTag) pCtxTag) \
     { /* Constructed is automatically implied if you need to init it with a default value. */ \
