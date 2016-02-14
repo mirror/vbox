@@ -168,13 +168,13 @@
     { AssertFailed(); } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Clone)(PRTASN1CORE pThisCore, PCRTASN1CORE pSrcCore, \
                                                                                   PCRTASN1ALLOCATORVTABLE pAllocator) \
-    { AssertFailed(); return VERR_INTERNAL_ERROR2; } \
+    { AssertFailed(); return VERR_INTERNAL_ERROR_2; } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Compare)(PCRTASN1CORE pLeftCore, \
                                                                                     PCRTASN1CORE pRightCore) \
-    { AssertFailed(); return VERR_INTERNAL_ERROR2; } \
+    { AssertFailed(); return VERR_INTERNAL_ERROR_2; } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_CheckSanity)(PCRTASN1CORE pThisCore, uint32_t fFlags, \
                                                                                         PRTERRINFO pErrInfo, const char *pszErrorTag) \
-    { AssertFailed(); return VERR_INTERNAL_ERROR2; } \
+    { AssertFailed(); return VERR_INTERNAL_ERROR_2; } \
     DECL_HIDDEN_CONST(RTASN1COREVTABLE const) RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Vtable) = \
     { \
         /* When the Asn1Core is at the start of the structure, we can reuse the _Delete and _Enum APIs here. */ \
