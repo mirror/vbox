@@ -332,7 +332,6 @@ RuntimeR3_SOURCES       = \
 	common/checksum/sha512str.cpp \
 	common/checksum/sha512t224str.cpp \
 	common/checksum/sha512t256str.cpp \
-	common/checksum/x509.cpp \
 	common/crypto/digest-core.cpp \
 	common/crypto/digest-builtin.cpp \
 	common/crypto/digest-vfs.cpp \
@@ -1317,7 +1316,6 @@ RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
-	common/checksum/x509.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	r3/xml.cpp \
 	common/zip/xarvfs.cpp \
