@@ -1883,6 +1883,14 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
                         {
                             m->fCertificateValid = true;
                             i_addWarning(tr("No trusted certificate paths"));
+
+                            /* Add another warning if the pathless certificate is not valid at present. */
+                            RTTIMESPEC Now;
+                            if (RTCrX509Validity_IsValidAtTimeSpec(&m->SignerCert.TbsCertificate.Validity, RTTimeNow(&Now)))
+                                m->fCertificateValidTime = true;
+                            else
+                                i_addWarning(tr("The certificate used to sign '%s' is not currently valid"),
+                                             pTask->locInfo.strPath.c_str());
                         }
                         else
                             hrc2 = setError(E_FAIL, tr("Certificate path validation failed (%Rrc, %s)"),
