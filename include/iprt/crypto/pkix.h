@@ -55,6 +55,25 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNT
 
 
 /**
+ * Verifies the signed digest (@a pvSignedDigest) against our digest (@a
+ * hDigest) using the specfied public key (@a pPublicKey) and algorithm.
+ *
+ * @returns IPRT status code.
+ * @param   pAlgorithm      The signature algorithm (digest w/ cipher).
+ * @param   pParameters     Parameter to the public key algorithm. Optional.
+ * @param   pPublicKey      The public key.
+ * @param   pvSignedDigest  The signed digest.
+ * @param   cbSignedDigest  The signed digest size.
+ * @param   hDigest         The digest of the data to compare @a pvSignedDigest
+ *                          with.
+ * @param   pErrInfo        Where to return extended error info. Optional.
+ */
+RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNTYPE pParameters,
+                                             PCRTASN1BITSTRING pPublicKey, void const *pvSignedDigest, size_t cbSignedDigest,
+                                             RTCRDIGEST hDigest, PRTERRINFO pErrInfo);
+
+
+/**
  * Gets the cipher OID matching the given signature algorithm.
  *
  * @returns Cipher OID string on success, NULL on failure.

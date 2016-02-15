@@ -92,6 +92,47 @@ RTDECL(int) RTCrX509AlgorithmIdentifier_CompareWithString(PCRTCRX509ALGORITHMIDE
  */
 RTDECL(int) RTCrX509AlgorithmIdentifier_CompareDigestAndEncryptedDigest(PCRTCRX509ALGORITHMIDENTIFIER pDigest,
                                                                         PCRTCRX509ALGORITHMIDENTIFIER pEncryptedDigest);
+/**
+ * Compares a digest OID with an encrypted digest algorithm OID, checking if
+ * they specify the same digest.
+ *
+ * @returns 0 if same digest, -1 if the digest is unknown, 1 if the encrypted
+ *          digest does not match.
+ * @param   pszDigestOid            The digest algorithm OID.
+ * @param   pszEncryptedDigestOid   The encrypted digest algorithm OID.
+ */
+RTDECL(int) RTCrX509AlgorithmIdentifier_CompareDigestOidAndEncryptedDigestOid(const char *pszDigestOid,
+                                                                              const char *pszEncryptedDigestOid);
+
+
+/**
+ * Combine the encryption algorithm with the digest algorithm.
+ *
+ * @returns OID of encrypted digest algorithm.
+ * @param   pEncryption         The encryption algorithm.  Will work if this is
+ *                              the OID of an encrypted digest algorithm too, as
+ *                              long as it matches @a pDigest.
+ * @param   pDigest             The digest algorithm.  Will work if this is the
+ *                              OID of an encrypted digest algorithm too, as
+ *                              long as it matches @a pEncryption.
+ */
+RTDECL(const char *) RTCrX509AlgorithmIdentifier_CombineEncryptionAndDigest(PCRTCRX509ALGORITHMIDENTIFIER pEncryption,
+                                                                            PCRTCRX509ALGORITHMIDENTIFIER pDigest);
+
+/**
+ * Combine the encryption algorithm OID with the digest algorithm OID.
+ *
+ * @returns OID of encrypted digest algorithm.
+ * @param   pszEncryptionOid    The encryption algorithm.  Will work if this is
+ *                              the OID of an encrypted digest algorithm too, as
+ *                              long as it matches @a pszDigestOid.
+ * @param   pszDigestOid        The digest algorithm.  Will work if this is the
+ *                              OID of an encrypted digest algorithm too, as
+ *                              long as it matches @a pszEncryptionOid.
+ */
+RTDECL(const char *) RTCrX509AlgorithmIdentifier_CombineEncryptionOidAndDigestOid(const char *pszEncryptionOid,
+                                                                                  const char *pszDigestOid);
+
 
 /** @name Typical Digest Algorithm OIDs.
  * @{ */

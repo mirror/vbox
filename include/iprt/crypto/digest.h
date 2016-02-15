@@ -181,6 +181,16 @@ RTDECL(uint32_t) RTCrDigestGetHashSize(RTCRDIGEST hDigest);
 RTDECL(uint64_t) RTCrDigestGetConsumedSize(RTCRDIGEST hDigest);
 RTDECL(bool) RTCrDigestIsFinalized(RTCRDIGEST hDigest);
 RTDECL(RTDIGESTTYPE) RTCrDigestGetType(RTCRDIGEST hDigest);
+RTDECL(const char *) RTCrDigestGetAlgorithmOid(RTCRDIGEST hDigest);
+
+
+/**
+ * Translates an IPRT digest type value to an OID.
+ *
+ * @returns Dotted OID string on success, NULL if not translatable.
+ * @param       enmDigestType       The IPRT digest type value to convert.
+ */
+RTDECL(const char *) RTCrDigestTypeToAlgorithmOid(RTDIGESTTYPE enmDigestType);
 
 /** @} */
 

@@ -35,6 +35,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/crypto/x509.h>
 
 
 /*********************************************************************************************************************************
@@ -334,5 +335,28 @@ RTDECL(RTDIGESTTYPE) RTCrDigestGetType(RTCRDIGEST hDigest)
     if (pThis->pDesc->pfnGetDigestType)
         enmType = pThis->pDesc->pfnGetDigestType(pThis->abState);
     return enmType;
+}
+
+
+RTDECL(const char *) RTCrDigestGetAlgorithmOid(RTCRDIGEST hDigest)
+{
+    return RTCrDigestTypeToAlgorithmOid(RTCrDigestGetType(hDigest));
+}
+
+
+RTDECL(const char *) RTCrDigestTypeToAlgorithmOid(RTDIGESTTYPE enmDigestType)
+{
+    switch (enmDigestType)
+    {
+        case RTDIGESTTYPE_MD2:          return RTCRX509ALGORITHMIDENTIFIERID_MD2;
+        case RTDIGESTTYPE_MD4:          return RTCRX509ALGORITHMIDENTIFIERID_MD4;
+        case RTDIGESTTYPE_MD5:          return RTCRX509ALGORITHMIDENTIFIERID_MD5;
+        case RTDIGESTTYPE_SHA1:         return RTCRX509ALGORITHMIDENTIFIERID_SHA1;
+        case RTDIGESTTYPE_SHA224:       return RTCRX509ALGORITHMIDENTIFIERID_SHA224;
+        case RTDIGESTTYPE_SHA256:       return RTCRX509ALGORITHMIDENTIFIERID_SHA256;
+        case RTDIGESTTYPE_SHA384:       return RTCRX509ALGORITHMIDENTIFIERID_SHA384;
+        case RTDIGESTTYPE_SHA512:       return RTCRX509ALGORITHMIDENTIFIERID_SHA512;
+        default:                        return NULL;
+    }
 }
 
