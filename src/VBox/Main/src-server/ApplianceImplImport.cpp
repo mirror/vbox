@@ -1703,9 +1703,10 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
          * Validate the signed digest.
          *
          * It's possible we should allow the user to ignore signature
-         * mismatches, but for now it's a show stopper.
+         * mismatches, but for now it is a solid show stopper.
          */
         HRESULT hrc;
+        RTERRINFOSTATIC StaticErrInfo;
 
         /* Calc the digest of the manifest using the algorithm found above. */
         RTCRDIGEST hDigest;
@@ -1715,30 +1716,24 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
             vrc = RTCrDigestUpdateFromVfsFile(hDigest, m->hMemFileTheirManifest, true /*fRewindFile*/);
             if (RT_SUCCESS(vrc))
             {
-                /** @todo convert to something like RTCrPkixPubKeyVerifySignature!  */
-                /* Verify the signature using the certificate. */
-                RTCRPKIXSIGNATURE hSignature;
-                vrc = RTCrPkixSignatureCreateByObjId(&hSignature,
-                                                     &m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm,
-                                                     false /*fSigning*/,
-                                                     &m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey,
-                                                     NULL);
+                /* Compare the signed digest with the one we just calculated.  (This
+                   API will do the verification twice, once using IPRT's own crypto
+                   and once using OpenSSL.  Both must OK it for success.) */
+                vrc = RTCrPkixPubKeyVerifySignedDigest(&m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm,
+                                                       &m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.Algorithm.Parameters,
+                                                       &m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey,
+                                                       m->pbSignedDigest, m->cbSignedDigest, hDigest,
+                                                       RTErrInfoInitStatic(&StaticErrInfo));
                 if (RT_SUCCESS(vrc))
                 {
-                    vrc = RTCrPkixSignatureVerify(hSignature, hDigest, m->pbSignedDigest, m->cbSignedDigest);
-                    if (RT_SUCCESS(vrc))
-                    {
-                        m->fSignatureValid = true;
-                        hrc = S_OK;
-                    }
-                    else if (vrc == VERR_CR_PKIX_SIGNATURE_MISMATCH)
-                        hrc = setErrorVrc(vrc, tr("The manifest signature does not match"));
-                    else
-                        hrc = setErrorVrc(vrc, tr("Error validating the manifest signature (%Rrc)"), vrc);
-                    RTCrPkixSignatureRelease(hSignature);
+                    m->fSignatureValid = true;
+                    hrc = S_OK;
                 }
+                else if (vrc == VERR_CR_PKIX_SIGNATURE_MISMATCH)
+                    hrc = setErrorVrc(vrc, tr("The manifest signature does not match"));
                 else
-                    hrc = setErrorVrc(vrc, tr("RTCrPkixSignatureCreateByObjId failed: %Rrc"), vrc);
+                    hrc = setErrorVrc(vrc,
+                                      tr("Error validating the manifest signature (%Rrc, %s)"), vrc, StaticErrInfo.Core.pszMsg);
             }
             else
                 hrc = setErrorVrc(vrc, tr("RTCrDigestUpdateFromVfsFile failed: %Rrc"), vrc);
@@ -1753,12 +1748,27 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
          * We don't fail here on if we cannot validate the certificate, we postpone
          * that till the import stage, so that we can allow the user to ignore it.
          *
-         * The certificate validity time is deliberately ignored as the OVF
-         * specification does not include a way of timestamping the signature
-         * and it would be seriously annoying for users if OVAs expired with
-         * their certificates.  This is of course a security concern, but the
-         * whole signing of OVFs is currently weirdly trusting (self signed
-         * certs), so this is the least of our current problems.
+         * The certificate validity time is deliberately left as warnings as the
+         * OVF specification does not provision for any timestamping of the
+         * signature. This is course a security concern, but the whole signing
+         * of OVFs is currently weirdly trusting (self signed * certs), so this
+         * is the least of our current problems.
+         *
+         * While we try build and verify certificate paths properly, the
+         * "neighbours" quietly ignores this and seems only to check the signature
+         * and not whether the certificate is trusted.  Also, we don't currently
+         * complain about self-signed certificates either (ditto "neighbours").
+         * The OVF creator is also a bit restricted wrt to helping us build the
+         * path as he cannot supply intermediate certificates.  Anyway, we issue
+         * warnings (goes to /dev/null, am I right?) for self-signed certificates
+         * and certificates we cannot build and verify a root path for.
+         *
+         * (The OVF sillibuggers should've used PKCS#7, CMS or something else
+         * that's already been standardized instead of combining manifests with
+         * certificate PEM files in some very restrictive manner!  I wonder if
+         * we could add a PKCS#7 section to the .cert file in addition to the CERT
+         * and manifest stuff dictated by the standard.  Would depend on how others
+         * deal with it.)
          */
         Assert(!m->fCertificateValid);
         Assert(m->fCertificateMissingPath);
@@ -1767,7 +1777,6 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
         Assert(m->fCertificateIsSelfSigned == RTCrX509Certificate_IsSelfSigned(&m->SignerCert));
 
         HRESULT hrc2 = S_OK;
-        RTERRINFOSTATIC StaticErrInfo;
         if (m->fCertificateIsSelfSigned)
         {
             /*
@@ -1784,7 +1793,10 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
                 /* Check whether the certificate is currently valid, just warn if not. */
                 RTTIMESPEC Now;
                 if (RTCrX509Validity_IsValidAtTimeSpec(&m->SignerCert.TbsCertificate.Validity, RTTimeNow(&Now)))
+                {
                     m->fCertificateValidTime = true;
+                    i_addWarning(tr("A self signed certificate was used to sign '%s'"), pTask->locInfo.strPath.c_str());
+                }
                 else
                     i_addWarning(tr("Self signed certificate used to sign '%s' is not currently valid"),
                                  pTask->locInfo.strPath.c_str());
