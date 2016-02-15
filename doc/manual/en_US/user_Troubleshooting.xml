@@ -659,6 +659,25 @@
     <title>Windows guests</title>
 
     <sect2>
+      <title>No USB 3.0 support in Windows 7 guests</title>
+
+      <para>If a Windows 7 or Windows Server 2008 R2 guest is configured for USB 3.0 (xHCI) support,
+      the guest OS will not have any USB support at all. This happens because Windows 7 predates
+      USB 3.0 and therefore does not ship with any xHCI drivers; Microsoft also does not offer any
+      vendor-provided xHCI drivers via Windows Update.
+      </para>
+
+      <para>To solve this problem, it is necessary to download and install the Intel xHCI driver
+      in the guest. Intel offers the driver as the USB 3.0 eXtensible Host Controller (xHCI) driver
+      for Intel 7 Series/C216 chipsets.
+      </para>
+
+      <para>Note that the driver only supports Windows 7 and Windows Server 2008 R2. The driver
+      package includes support for both 32-bit and 64-bit OS variants.
+      </para>
+    </sect2>
+
+    <sect2>
       <title>Windows bluescreens after changing VM configuration</title>
 
       <para>Changing certain virtual machine settings can cause Windows guests
