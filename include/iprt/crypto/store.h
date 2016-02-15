@@ -152,6 +152,8 @@ typedef enum RTCRSTOREID
  */
 RTDECL(int) RTCrStoreCreateSnapshotById(PRTCRSTORE phStore, RTCRSTOREID enmStoreId, PRTERRINFO pErrInfo);
 
+RTDECL(int) RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts(PRTCRSTORE phStore, PRTERRINFO pErrInfo);
+
 RTDECL(int) RTCrStoreCreateInMem(PRTCRSTORE phStore, uint32_t cSizeHint);
 
 RTDECL(uint32_t) RTCrStoreRetain(RTCRSTORE hStore);

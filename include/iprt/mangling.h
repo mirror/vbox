@@ -3217,6 +3217,7 @@
 # define RTCrStoreRetain                                RT_MANGLER(RTCrStoreRetain)
 # define RTCrStoreCreateInMem                           RT_MANGLER(RTCrStoreCreateInMem)
 # define RTCrStoreCreateSnapshotById                    RT_MANGLER(RTCrStoreCreateSnapshotById)
+# define RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts RT_MANGLER(RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts)
 # define RTCrStoreCertAddFromDir                        RT_MANGLER(RTCrStoreCertAddFromDir)
 # define RTCrStoreCertAddFromFile                       RT_MANGLER(RTCrStoreCertAddFromFile)
 # define RTCrStoreCertAddFromJavaKeyStore               RT_MANGLER(RTCrStoreCertAddFromJavaKeyStore)
