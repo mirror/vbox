@@ -366,7 +366,8 @@ static DECLCALLBACK(void) vusbRhFreeUrb(PVUSBURB pUrb)
 /**
  * Worker routine for vusbRhConnNewUrb() and vusbDevNewIsocUrb().
  */
-PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, uint32_t cbData, uint32_t cTds)
+PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, VUSBXFERTYPE enmType,
+                      VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
 {
     /*
      * Reuse or allocate a new URB.
@@ -446,20 +447,50 @@ PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, uint32_t cbData, uin
     pUrb->pUsbIns = pUrb->VUsb.pDev ? pUrb->VUsb.pDev->pUsbIns : NULL;
     pUrb->DstAddress = DstAddress;
     pUrb->EndPt = ~0;
-    pUrb->enmType = VUSBXFERTYPE_INVALID;
-    pUrb->enmDir = VUSBDIRECTION_INVALID;
+    pUrb->enmType = enmType;
+    pUrb->enmDir = enmDir;
     pUrb->fShortNotOk = false;
     pUrb->enmStatus = VUSBSTATUS_INVALID;
     pUrb->cbData = cbData;
+
+#ifdef LOG_ENABLED
+    const char *pszType = NULL;
+
+    switch(pUrb->enmType)
+    {
+        case VUSBXFERTYPE_CTRL:
+            pszType = "ctrl";
+            break;
+        case VUSBXFERTYPE_INTR:
+            pszType = "intr";
+            break;
+        case VUSBXFERTYPE_BULK:
+            pszType = "bulk";
+            break;
+        case VUSBXFERTYPE_ISOC:
+            pszType = "isoc";
+            break;
+        default:
+            pszType = "invld";
+            break;
+    }
+
+    pRh->iSerial = (pRh->iSerial + 1) % 10000;
+    RTStrAPrintf(&pUrb->pszDesc, "URB %p %s%c%04d (%s)", pUrb, pszType,
+                 (pUrb->enmDir == VUSBDIRECTION_IN) ? '<' : ((pUrb->enmDir == VUSBDIRECTION_SETUP) ? 's' : '>'),
+                 pRh->iSerial, pszTag ? pszTag : "<none>");
+#endif
+
     return pUrb;
 }
 
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnNewUrb */
-static DECLCALLBACK(PVUSBURB) vusbRhConnNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, uint32_t cbData, uint32_t cTds)
+static DECLCALLBACK(PVUSBURB) vusbRhConnNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, VUSBXFERTYPE enmType,
+                                               VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
 {
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
-    return vusbRhNewUrb(pRh, DstAddress, cbData, cTds);
+    return vusbRhNewUrb(pRh, DstAddress, enmType, enmDir, cbData, cTds, pszTag);
 }
 
 
@@ -1029,6 +1060,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->IRhConnector.pfnAttachDevice = vusbRhAttachDevice;
     pThis->IRhConnector.pfnDetachDevice = vusbRhDetachDevice;
     pThis->hSniffer                     = VUSBSNIFFER_NIL;
+    pThis->iSerial                      = 0;
     /*
      * Resolve interface(s).
      */

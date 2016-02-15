@@ -2730,14 +2730,13 @@ static bool ohciServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint3
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, Buf.cbTotal, 1);
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, enmType,
+                                  enmDir, Buf.cbTotal, 1, NULL);
     if (!pUrb)
         return false;                   /* retry later... */
     Assert(pUrb->Hci.cTds == 1);
 
-    pUrb->enmType = enmType;
     pUrb->EndPt = (pEd->hwinfo & ED_HWINFO_ENDPOINT) >> ED_HWINFO_ENDPOINT_SHIFT;
-    pUrb->enmDir = enmDir;
     pUrb->fShortNotOk = !(Td.hwinfo & TD_HWINFO_ROUNDING);
     pUrb->enmStatus = VUSBSTATUS_OK;
     pUrb->Hci.EdAddr = EdAddr;
@@ -2746,12 +2745,6 @@ static bool ohciServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint3
     pUrb->Hci.u32FrameNo = pThis->HcFmNumber;
     AssertCompile(sizeof(pUrb->Hci.paTds[0].TdCopy) >= sizeof(Td));
     memcpy(pUrb->Hci.paTds[0].TdCopy, &Td, sizeof(Td));
-#ifdef LOG_ENABLED
-    static unsigned s_iSerial = 0;
-    s_iSerial = (s_iSerial + 1) % 10000;
-    RTStrAPrintf(&pUrb->pszDesc, "URB %p %10s/s%c%04d", pUrb, pszListName,
-                 enmDir == VUSBDIRECTION_IN ? '<' : enmDir == VUSBDIRECTION_OUT ? '>' : '-', s_iSerial);
-#endif
 
     /* copy data if out bound transfer. */
     pUrb->cbData = Buf.cbTotal;
@@ -2889,7 +2882,8 @@ static bool ohciServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pE
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, cbTotal, cTds);
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, enmType,
+                                  enmDir, cbTotal, cTds, "ohciServiceTdMultiple");
     if (!pUrb)
         /* retry later... */
         return false;
@@ -2904,12 +2898,6 @@ static bool ohciServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pE
     pUrb->Hci.EdAddr = EdAddr;
     pUrb->Hci.fUnlinked = false;
     pUrb->Hci.u32FrameNo = pThis->HcFmNumber;
-#ifdef LOG_ENABLED
-    static unsigned s_iSerial = 0;
-    s_iSerial = (s_iSerial + 1) % 10000;
-    RTStrAPrintf(&pUrb->pszDesc, "URB %p %10s/m%c%04d", pUrb, pszListName,
-                 enmDir == VUSBDIRECTION_IN ? '<' : enmDir == VUSBDIRECTION_OUT ? '>' : '-', s_iSerial);
-#endif
 
     /* Copy data and TD information. */
     unsigned iTd = 0;
@@ -3102,14 +3090,13 @@ static bool ohciServiceIsochronousTd(POHCI pThis, POHCIITD pITd, uint32_t ITdAdd
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, cbTotal, 1);
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, VUSBXFERTYPE_ISOC,
+                                  enmDir, cbTotal, 1, NULL);
     if (!pUrb)
         /* retry later... */
         return false;
 
-    pUrb->enmType = VUSBXFERTYPE_ISOC;
     pUrb->EndPt = (pEd->hwinfo & ED_HWINFO_ENDPOINT) >> ED_HWINFO_ENDPOINT_SHIFT;
-    pUrb->enmDir = enmDir;
     pUrb->fShortNotOk = false;
     pUrb->enmStatus = VUSBSTATUS_OK;
     pUrb->Hci.EdAddr = EdAddr;
@@ -3120,11 +3107,6 @@ static bool ohciServiceIsochronousTd(POHCI pThis, POHCIITD pITd, uint32_t ITdAdd
     memcpy(pUrb->Hci.paTds[0].TdCopy, pITd, sizeof(*pITd));
 #if 0 /* color the data */
     memset(pUrb->abData, 0xfe, cbTotal);
-#endif
-#ifdef LOG_ENABLED
-    static unsigned s_iSerial = 0;
-    s_iSerial = (s_iSerial + 1) % 10000;
-    RTStrAPrintf(&pUrb->pszDesc, "URB %p isoc%c%04d", pUrb, enmDir == VUSBDIRECTION_IN ? '<' : '>', s_iSerial);
 #endif
 
     /* copy the data */

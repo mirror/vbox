@@ -109,14 +109,12 @@ static PVUSBURB vusbDevNewIsocUrb(PVUSBDEV pDev, unsigned uEndPt, unsigned uInte
         /* can happen during disconnect */
         return NULL;
 
-    pUrb = vusbRhNewUrb(pRh, pDev->u8Address, cbTotal, 1);
+    pUrb = vusbRhNewUrb(pRh, pDev->u8Address, VUSBXFERTYPE_ISOC, VUSBDIRECTION_IN, cbTotal, 1, NULL);
     if (!pUrb)
         /* not much we can do here... */
         return NULL;
 
-    pUrb->enmType               = VUSBXFERTYPE_ISOC;
     pUrb->EndPt                 = uEndPt;
-    pUrb->enmDir                = VUSBDIRECTION_IN;
     pUrb->fShortNotOk           = false;
     pUrb->enmStatus             = VUSBSTATUS_OK;
     pUrb->Hci.EdAddr            = 0;

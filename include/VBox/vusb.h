@@ -523,6 +523,24 @@ typedef enum VUSBDIRECTION
     VUSBDIRECTION_INVALID = 0x7f
 } VUSBDIRECTION;
 
+/**
+ * VUSB Transfer types.
+ */
+typedef enum VUSBXFERTYPE
+{
+    /** Control message. Used to represent a single control transfer. */
+    VUSBXFERTYPE_CTRL = 0,
+    /* Isochronous transfer. */
+    VUSBXFERTYPE_ISOC,
+    /** Bulk transfer. */
+    VUSBXFERTYPE_BULK,
+    /** Interrupt transfer. */
+    VUSBXFERTYPE_INTR,
+    /** Complete control message. Used to represent an entire control message. */
+    VUSBXFERTYPE_MSG,
+    /** Invalid transfer type. */
+    VUSBXFERTYPE_INVALID = 0x7f
+} VUSBXFERTYPE;
 
 /** Pointer to a VBox USB device interface. */
 typedef struct VUSBIDEVICE      *PVUSBIDEVICE;
@@ -650,10 +668,15 @@ typedef struct VUSBIROOTHUBCONNECTOR
      *          at submit time, since that makes the usage of this api simpler.
      * @param   pInterface  Pointer to this struct.
      * @param   DstAddress  The destination address of the URB.
+     * @param   enmType     Type of the URB.
+     * @param   enmDir      Data transfer direction.
      * @param   cbData      The amount of data space required.
      * @param   cTds        The amount of TD space.
+     * @param   pszTag      Custom URB tag assigned by the caller, only for
+     *                      logged builds and optional.
      */
-    DECLR3CALLBACKMEMBER(PVUSBURB, pfnNewUrb,(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, uint32_t cbData, uint32_t cTds));
+    DECLR3CALLBACKMEMBER(PVUSBURB, pfnNewUrb,(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, VUSBXFERTYPE enmType,
+                                              VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag));
 
     /**
      * Submits a URB for transfer.
@@ -739,14 +762,15 @@ typedef struct VUSBIROOTHUBCONNECTOR
 
 } VUSBIROOTHUBCONNECTOR;
 /** VUSBIROOTHUBCONNECTOR interface ID. */
-#define VUSBIROOTHUBCONNECTOR_IID               "d9a90c59-e3ff-4dff-9754-844557c3f7a1"
+#define VUSBIROOTHUBCONNECTOR_IID               "dba1a54e-9708-4702-8d7f-b9ac94dc17e6"
 
 
 #ifdef IN_RING3
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnNewUrb */
-DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t DstAddress, uint32_t cbData, uint32_t cTds)
+DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t DstAddress, VUSBXFERTYPE enmType,
+                                   VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
 {
-    return pInterface->pfnNewUrb(pInterface, DstAddress, cbData, cTds);
+    return pInterface->pfnNewUrb(pInterface, DstAddress, enmType, enmDir, cbData, cTds, pszTag);
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnSubmitUrb */
@@ -1012,26 +1036,6 @@ typedef enum VUSBSTATUS
     /** Invalid status. */
     VUSBSTATUS_INVALID = 0x7f
 } VUSBSTATUS;
-
-
-/**
- * VUSB Transfer types.
- */
-typedef enum VUSBXFERTYPE
-{
-    /** Control message. Used to represent a single control transfer. */
-    VUSBXFERTYPE_CTRL = 0,
-    /* Isochronous transfer. */
-    VUSBXFERTYPE_ISOC,
-    /** Bulk transfer. */
-    VUSBXFERTYPE_BULK,
-    /** Interrupt transfer. */
-    VUSBXFERTYPE_INTR,
-    /** Complete control message. Used to represent an entire control message. */
-    VUSBXFERTYPE_MSG,
-    /** Invalid transfer type. */
-    VUSBXFERTYPE_INVALID = 0x7f
-} VUSBXFERTYPE;
 
 
 /**
