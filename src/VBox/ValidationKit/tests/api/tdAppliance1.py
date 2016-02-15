@@ -87,9 +87,12 @@ class tdAppliance1(vbox.TestDriver):
             # t3 is a VM with one gzipped disk and selecting SHA256 on the ovftool cmdline (--compress=9 --shaAlgorithm=sha256).
             'tdAppliance1-t3.ova',
             'tdAppliance1-t3-ovftool-4.1.0.ova',
-            # t4 is a VM with with two gzipped disk, SHA256 and a signed manifest (--privateKey=./tdAppliance1-t4.pem).
+            # t4 is a VM with with two gzipped disk, SHA256 and a (self) signed manifest (--privateKey=./tdAppliance1-t4.pem).
             'tdAppliance1-t4.ova',
             'tdAppliance1-t4-ovftool-4.1.0.ova',
+            # t5 is a VM with with one gzipped disk, SHA1 and a manifest signed by a valid (2016) DigiCert code signing certificate.
+            'tdAppliance1-t5.ova',
+            'tdAppliance1-t5-ovftool-4.1.0.ova',
             ):
             reporter.testStart(sOva);
             try:
