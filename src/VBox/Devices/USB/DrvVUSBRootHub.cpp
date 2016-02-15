@@ -1060,7 +1060,9 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->IRhConnector.pfnAttachDevice = vusbRhAttachDevice;
     pThis->IRhConnector.pfnDetachDevice = vusbRhDetachDevice;
     pThis->hSniffer                     = VUSBSNIFFER_NIL;
+#ifdef LOG_ENABLED
     pThis->iSerial                      = 0;
+#endif
     /*
      * Resolve interface(s).
      */
