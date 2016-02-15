@@ -63,7 +63,7 @@ static const struct
     MY_CERT_ENTRY(true,   true, md4),
     MY_CERT_ENTRY(false,  true, md5),
     MY_CERT_ENTRY(false,  true, sha1),
-/// @todo fix this:    MY_CERT_ENTRY(false,  true, sha224),
+    MY_CERT_ENTRY(false,  true, sha224),
     MY_CERT_ENTRY(false,  true, sha256),
     MY_CERT_ENTRY(false,  true, sha384),
     MY_CERT_ENTRY(false,  true, sha512),
