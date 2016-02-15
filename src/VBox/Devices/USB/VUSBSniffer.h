@@ -51,12 +51,20 @@ typedef enum VUSBSNIFFEREVENT
     VUSBSNIFFEREVENT_32BIT_HACK = 0x7fffffff
 } VUSBSNIFFEREVENT;
 
+/** VUSB Sniffer creation flags.
+ * @{ */
+/** Default flags. */
+#define VUSBSNIFFER_F_DEFAULT    0
+/** Don't overwrite any existing capture file. */
+#define VUSBSNIFFER_F_NO_REPLACE RT_BIT_32(0)
+/** @} */
+
 /**
  * Create a new VUSB sniffer instance dumping to the given capture file.
  *
  * @returns VBox status code.
  * @param   phSniffer             Where to store the handle to the sniffer instance on success.
- * @param   fFlags                Flags, reserved, must be 0.
+ * @param   fFlags                Flags, combination of VUSBSNIFFER_F_*
  * @param   pszCaptureFilename    The filename to use for capturing the sniffed data.
  * @param   pszFmt                The format of the dump, NULL to select one based on the filename
  *                                extension.

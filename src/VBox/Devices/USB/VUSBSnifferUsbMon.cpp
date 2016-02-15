@@ -87,9 +87,9 @@ static DECLCALLBACK(void) vusbSnifferFmtUsbMonDestroy(PVUSBSNIFFERFMTINT pThis)
 static DECLCALLBACK(int) vusbSnifferFmtUsbMonRecordEvent(PVUSBSNIFFERFMTINT pThis, PVUSBURB pUrb, VUSBSNIFFEREVENT enmEvent)
 {
     char aszLineBuf[512];
-    char chEvtType;
-    char chDir;
-    char chEptType;
+    char chEvtType = 'X';
+    char chDir = 'X';
+    char chEptType = 'X';
 
     switch (enmEvent)
     {
