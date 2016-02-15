@@ -463,7 +463,8 @@ RTDECL(int) RTCrX509CertPathsSetValidTime(RTCRX509CERTPATHS hCertPaths, PCRTTIME
     PRTCRX509CERTPATHSINT pThis = hCertPaths;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTCRX509CERTPATHSINT_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->pRoot == NULL, VERR_WRONG_ORDER);
+
+    /* Allow this after building paths, as it's only used during verification. */
 
     if (pTime)
     {
@@ -482,7 +483,8 @@ RTDECL(int) RTCrX509CertPathsSetValidTimeSpec(RTCRX509CERTPATHS hCertPaths, PCRT
     PRTCRX509CERTPATHSINT pThis = hCertPaths;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTCRX509CERTPATHSINT_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->pRoot == NULL, VERR_WRONG_ORDER);
+
+    /* Allow this after building paths, as it's only used during verification. */
 
     if (pTimeSpec)
     {
