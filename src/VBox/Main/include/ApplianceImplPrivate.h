@@ -68,6 +68,7 @@ struct Appliance::Data
       , hTheirManifest(NIL_RTMANIFEST)
       , hMemFileTheirManifest(NIL_RTVFSFILE)
       , fSignerCertLoaded(false)
+      , fCertificateValid(false)
       , fSignatureValid(false)
       , pbSignedDigest(NULL)
       , cbSignedDigest(0)
@@ -126,8 +127,9 @@ struct Appliance::Data
         }
         enmSignedDigestType    = RTDIGESTTYPE_INVALID;
         fSignatureValid        = false;
+        fCertificateValid      = false;
         fDeterminedDigestTypes = false;
-        fDigestTypes           = RTMANIFEST_ATTR_SHA1 | RTMANIFEST_ATTR_SHA256;
+        fDigestTypes           = RTMANIFEST_ATTR_SHA1 | RTMANIFEST_ATTR_SHA256 | RTMANIFEST_ATTR_SHA512;
     }
 
     ApplianceState      state;
@@ -164,7 +166,9 @@ struct Appliance::Data
     RTCRX509CERTIFICATE SignerCert;
     /** Set if the SignerCert member contains usable data. */
     bool                fSignerCertLoaded;
-    /** Set by read() if it found a certificate and the signature is fine. */
+    /** Set by read() when the SignerCert checked out fine. */
+    bool                fCertificateValid;
+    /** Set by read() if pbSignedDigest verified correctly against SignerCert. */
     bool                fSignatureValid;
     /** The signed digest of the manifest. */
     uint8_t            *pbSignedDigest;

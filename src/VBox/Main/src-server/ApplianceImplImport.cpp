@@ -1666,7 +1666,7 @@ HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert
     }
     else
         hrc = setErrorVrc(vrc, tr("Error reading the signer's certificate from '%s' for '%s' (%Rrc): %s"),
-                          pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, StaticErrInfo.szMsg);
+                          pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, StaticErrInfo.Core.pszMsg);
 
     RTVfsIoStrmReadAllFree(pvSignature, cbSignature);
     LogFlowFunc(("returns %Rhrc (%Rrc)\n", hrc, vrc));
@@ -1722,7 +1722,10 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
                 {
                     vrc = RTCrPkixSignatureVerify(hSignature, hDigest, m->pbSignedDigest, m->cbSignedDigest);
                     if (RT_SUCCESS(vrc))
+                    {
+                        m->fSignatureValid = true;
                         hrc = S_OK;
+                    }
                     else if (vrc == VERR_CR_PKIX_SIGNATURE_MISMATCH)
                         hrc = setErrorVrc(vrc, tr("The manifest signature does not match"));
                     else
@@ -1740,9 +1743,33 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
          */
         if (SUCCEEDED(hrc))
         {
+            if (RTCrX509Certificate_IsSelfSigned(&m->SignerCert))
+            {
+                /* Not entirely sure if we care whether a self issued certificate is
+                   marked as CA. But let's be a little bit picky about it for now. */
+                if (   m->SignerCert.TbsCertificate.T3.pBasicConstraints
+                    && m->SignerCert.TbsCertificate.T3.pBasicConstraints->CA.fValue)
+                {
+                    RTERRINFOSTATIC StaticErrInfo;
+                    vrc = RTCrX509Certificate_VerifySignatureSelfSigned(&m->SignerCert, RTErrInfoInitStatic(&StaticErrInfo));
+                    if (RT_SUCCESS(vrc))
+                        hrc = S_OK;
+                    else
+                        hrc = setErrorVrc(vrc, tr("Verification of the self signed certificate used to sign '%s' failed (%Rrc): %s"),
+                                          pTask->locInfo.strPath.c_str(), vrc, StaticErrInfo.Core.pszMsg);
+                }
+                else
+                    hrc = setError(E_FAIL,
+                                   tr("Self signed certificate used to sign '%s' is not marked as certificate authority (CA)"),
+                                   pTask->locInfo.strPath.c_str());
+            }
+            else
+            {
+
+            }
+
             /** @todo certificate validation. */
         }
-
     }
 
     /** @todo provide details about the signatory, signature, etc.  */
