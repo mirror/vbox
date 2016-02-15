@@ -266,7 +266,7 @@ static DECLCALLBACK(int) RTAsn1BitString_EncodeWrite(PRTASN1CORE pThisCore, uint
 {
     PRTASN1BITSTRING pThis = (PRTASN1BITSTRING)pThisCore;
 
-    AssertReturn(RT_ALIGN(pThis->cBits, 7) / 8 + 1 == pThis->Asn1Core.cb, VERR_INTERNAL_ERROR_3);
+    AssertReturn(RT_ALIGN(pThis->cBits, 8) / 8 + 1 == pThis->Asn1Core.cb, VERR_INTERNAL_ERROR_3);
 
     /*
      * First the header.

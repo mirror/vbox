@@ -47,6 +47,7 @@ static const struct
 {
     const char     *pszFile;
     bool            fMaybeNotInOpenSSL;
+    bool            fSelfSigned;
 
     char const     *pchPem;
     size_t          cbPem;
@@ -55,17 +56,18 @@ static const struct
     size_t          cbDer;
 } g_aFiles[] =
 {
-#define MY_CERT_ENTRY(a_fMaybeNotInOpenSSL, a_Name) \
-    { #a_Name, a_fMaybeNotInOpenSSL, \
+#define MY_CERT_ENTRY(a_fMaybeNotInOpenSSL, a_fSelfSigned, a_Name) \
+    { #a_Name, a_fMaybeNotInOpenSSL, a_fSelfSigned, \
       (const char *)RT_CONCAT(g_abPem_, a_Name), RT_CONCAT(g_cbPem_, a_Name), \
-      RT_CONCAT(g_abCertDer_, a_Name), RT_CONCAT(g_cbCertDer_, a_Name) }
-    MY_CERT_ENTRY(true,  md4),
-    MY_CERT_ENTRY(false, md5),
-    MY_CERT_ENTRY(false, sha1),
-/// @todo fix this:    MY_CERT_ENTRY(false, sha224),
-    MY_CERT_ENTRY(false, sha256),
-    MY_CERT_ENTRY(false, sha384),
-    MY_CERT_ENTRY(false, sha512),
+                    RT_CONCAT(g_abDer_, a_Name), RT_CONCAT(g_cbDer_, a_Name) }
+    MY_CERT_ENTRY(true,   true, md4),
+    MY_CERT_ENTRY(false,  true, md5),
+    MY_CERT_ENTRY(false,  true, sha1),
+/// @todo fix this:    MY_CERT_ENTRY(false,  true, sha224),
+    MY_CERT_ENTRY(false,  true, sha256),
+    MY_CERT_ENTRY(false,  true, sha384),
+    MY_CERT_ENTRY(false,  true, sha512),
+    MY_CERT_ENTRY(false, false, cert1),
 };
 
 
@@ -139,25 +141,27 @@ static void test1()
                             }
 
                             /*
-                             * Check that our self signed check works, since all of them are self signed.
+                             * Check that our self signed check works.
                              */
-                            RTTESTI_CHECK(RTCrX509Certificate_IsSelfSigned(&Cert0));
-                            RTTESTI_CHECK(RTCrX509Certificate_IsSelfSigned(&Cert1));
-                            RTTESTI_CHECK(RTCrX509Certificate_IsSelfSigned(&Cert2));
+                            RTTESTI_CHECK(RTCrX509Certificate_IsSelfSigned(&Cert0) == g_aFiles[i].fSelfSigned);
+                            RTTESTI_CHECK(RTCrX509Certificate_IsSelfSigned(&Cert1) == g_aFiles[i].fSelfSigned);
+                            RTTESTI_CHECK(RTCrX509Certificate_IsSelfSigned(&Cert2) == g_aFiles[i].fSelfSigned);
 
-                            /*
-                             * Verify the certificate signature (self signed).
-                             */
-                            for (j = 0; j < RT_ELEMENTS(paCerts); j++)
+                            if (g_aFiles[i].fSelfSigned)
                             {
-                                rc = RTCrX509Certificate_VerifySignatureSelfSigned(paCerts[j], NULL /*pErrInfo*/);
-                                if (   RT_FAILURE(rc)
-                                    && (   rc != VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP
-                                        || !g_aFiles[i].fMaybeNotInOpenSSL) )
-                                    RTTestIFailed("RTCrX509Certificate_VerifySignatureSelfSigned failed for %s (#%u), variation %u: %Rrc",
-                                                  g_aFiles[i].pszFile, i, j, rc);
+                                /*
+                                 * Verify the certificate signature (self signed).
+                                 */
+                                for (j = 0; j < RT_ELEMENTS(paCerts); j++)
+                                {
+                                    rc = RTCrX509Certificate_VerifySignatureSelfSigned(paCerts[j], NULL /*pErrInfo*/);
+                                    if (   RT_FAILURE(rc)
+                                        && (   rc != VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP
+                                            || !g_aFiles[i].fMaybeNotInOpenSSL) )
+                                        RTTestIFailed("RTCrX509Certificate_VerifySignatureSelfSigned failed for %s (#%u), variation %u: %Rrc",
+                                                      g_aFiles[i].pszFile, i, j, rc);
+                                }
                             }
-
                         }
 
                         RTCrX509Certificate_Delete(&Cert2);
