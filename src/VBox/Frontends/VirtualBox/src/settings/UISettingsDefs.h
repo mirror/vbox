@@ -19,6 +19,7 @@
 #define ___UISettingsDefs_h___
 
 /* Qt includes: */
+#include <QString>
 #include <QPair>
 #include <QMap>
 
