@@ -68,8 +68,11 @@ struct Appliance::Data
       , hTheirManifest(NIL_RTMANIFEST)
       , hMemFileTheirManifest(NIL_RTVFSFILE)
       , fSignerCertLoaded(false)
-      , fCertificateValid(false)
+      , fCertificateIsSelfSigned(false)
       , fSignatureValid(false)
+      , fCertificateValid(false)
+      , fCertificateMissingPath(true)
+      , fCertificateValidTime(false)
       , pbSignedDigest(NULL)
       , cbSignedDigest(0)
       , enmSignedDigestType(RTDIGESTTYPE_INVALID)
@@ -125,11 +128,15 @@ struct Appliance::Data
             RTCrX509Certificate_Delete(&SignerCert);
             fSignerCertLoaded = false;
         }
-        enmSignedDigestType    = RTDIGESTTYPE_INVALID;
-        fSignatureValid        = false;
-        fCertificateValid      = false;
-        fDeterminedDigestTypes = false;
-        fDigestTypes           = RTMANIFEST_ATTR_SHA1 | RTMANIFEST_ATTR_SHA256 | RTMANIFEST_ATTR_SHA512;
+        enmSignedDigestType      = RTDIGESTTYPE_INVALID;
+        fCertificateIsSelfSigned = false;
+        fSignatureValid          = false;
+        fCertificateValid        = false;
+        fCertificateMissingPath  = true;
+        fCertificateValidTime    = false;
+        fDeterminedDigestTypes   = false;
+        fDigestTypes             = RTMANIFEST_ATTR_SHA1 | RTMANIFEST_ATTR_SHA256 | RTMANIFEST_ATTR_SHA512;
+        strCertError.setNull();
     }
 
     ApplianceState      state;
@@ -166,10 +173,18 @@ struct Appliance::Data
     RTCRX509CERTIFICATE SignerCert;
     /** Set if the SignerCert member contains usable data. */
     bool                fSignerCertLoaded;
-    /** Set by read() when the SignerCert checked out fine. */
-    bool                fCertificateValid;
+    /** Cached RTCrX509Validity_IsValidAtTimeSpec result set by read(). */
+    bool                fCertificateIsSelfSigned;
     /** Set by read() if pbSignedDigest verified correctly against SignerCert. */
     bool                fSignatureValid;
+    /** Set by read() when the SignerCert checked out fine. */
+    bool                fCertificateValid;
+    /** Set by read() when the SignerCert certificate path couldn't be built. */
+    bool                fCertificateMissingPath;
+    /** Set by read() when the SignerCert (+path) is valid in the temporal sense. */
+    bool                fCertificateValidTime;
+    /** For keeping certificate error messages we delay from read() to import(). */
+    Utf8Str             strCertError;
     /** The signed digest of the manifest. */
     uint8_t            *pbSignedDigest;
     /** The size of the signed digest. */

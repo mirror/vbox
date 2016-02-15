@@ -1118,11 +1118,18 @@ void Appliance::i_waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
 
 void Appliance::i_addWarning(const char* aWarning, ...)
 {
-    va_list args;
-    va_start(args, aWarning);
-    Utf8Str str(aWarning, args);
-    va_end(args);
-    m->llWarnings.push_back(str);
+    try
+    {
+        va_list args;
+        va_start(args, aWarning);
+        Utf8Str str(aWarning, args);
+        va_end(args);
+        m->llWarnings.push_back(str);
+    }
+    catch (...)
+    {
+        AssertFailed();
+    }
 }
 
 /**
@@ -1215,10 +1222,29 @@ DECLCALLBACK(int) Appliance::i_taskThreadImportOrExport(RTTHREAD /* aThread */, 
             break;
 
         case TaskOVF::Import:
-            if (pTask->locInfo.storageType == VFSType_File)
-                pTask->rc = pAppliance->i_importFS(pTask);
+            /** @todo allow overriding these? */
+            if (!pAppliance->m->fSignatureValid && pAppliance->m->pbSignedDigest)
+                pTask->rc = pAppliance->setError(E_FAIL, tr("The manifest signature for '%s' is not valid"),
+                                                 pTask->locInfo.strPath.c_str());
+            else if (!pAppliance->m->fCertificateValid && pAppliance->m->pbSignedDigest)
+            {
+                if (pAppliance->m->strCertError.isNotEmpty())
+                    pTask->rc = pAppliance->setError(E_FAIL, tr("The certificate used to signed '%s' is not valid: %s"),
+                                                     pTask->locInfo.strPath.c_str(), pAppliance->m->strCertError.c_str());
+                else
+                    pTask->rc = pAppliance->setError(E_FAIL, tr("The certificate used to signed '%s' is not valid"),
+                                                     pTask->locInfo.strPath.c_str());
+            }
+            else if (pAppliance->m->fCertificateMissingPath && pAppliance->m->pbSignedDigest)
+                pTask->rc = pAppliance->setError(E_FAIL, tr("The certificate used to signed '%s' is does not have a valid CA path"),
+                                                 pTask->locInfo.strPath.c_str());
             else
-                pTask->rc = E_NOTIMPL;
+            {
+                if (pTask->locInfo.storageType == VFSType_File)
+                    pTask->rc = pAppliance->i_importFS(pTask);
+                else
+                    pTask->rc = E_NOTIMPL;
+            }
             break;
 
         case TaskOVF::Write:

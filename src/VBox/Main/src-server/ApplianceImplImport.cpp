@@ -1569,6 +1569,7 @@ HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert
     if (RT_SUCCESS(vrc))
     {
         m->fSignerCertLoaded = true;
+        m->fCertificateIsSelfSigned = RTCrX509Certificate_IsSelfSigned(&m->SignerCert);
 
         /*
          * Find the start of the certificate part of the file, so we can avoid
@@ -1700,6 +1701,9 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
 
         /*
          * Validate the signed digest.
+         *
+         * It's possible we should allow the user to ignore signature
+         * mismatches, but for now it's a show stopper.
          */
         HRESULT hrc;
 
@@ -1733,124 +1737,172 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
                         hrc = setErrorVrc(vrc, tr("Error validating the manifest signature (%Rrc)"), vrc);
                     RTCrPkixSignatureRelease(hSignature);
                 }
+                else
+                    hrc = setErrorVrc(vrc, tr("RTCrPkixSignatureCreateByObjId failed: %Rrc"), vrc);
             }
+            else
+                hrc = setErrorVrc(vrc, tr("RTCrDigestUpdateFromVfsFile failed: %Rrc"), vrc);
             RTCrDigestRelease(hDigest);
         }
         else
             hrc = setErrorVrc(vrc, tr("RTCrDigestCreateByType failed: %Rrc"), vrc);
 
         /*
-         * If the signed digest checked out, validate the certificate.
+         * Validate the certificate.
+         *
+         * We don't fail here on if we cannot validate the certificate, we postpone
+         * that till the import stage, so that we can allow the user to ignore it.
+         *
+         * The certificate validity time is deliberately ignored as the OVF
+         * specification does not include a way of timestamping the signature
+         * and it would be seriously annoying for users if OVAs expired with
+         * their certificates.  This is of course a security concern, but the
+         * whole signing of OVFs is currently weirdly trusting (self signed
+         * certs), so this is the least of our current problems.
          */
-        if (SUCCEEDED(hrc))
+        Assert(!m->fCertificateValid);
+        Assert(m->fCertificateMissingPath);
+        Assert(!m->fCertificateValidTime);
+        Assert(m->strCertError.isEmpty());
+        Assert(m->fCertificateIsSelfSigned == RTCrX509Certificate_IsSelfSigned(&m->SignerCert));
+
+        HRESULT hrc2 = S_OK;
+        RTERRINFOSTATIC StaticErrInfo;
+        if (m->fCertificateIsSelfSigned)
         {
-            RTERRINFOSTATIC StaticErrInfo;
-            if (RTCrX509Certificate_IsSelfSigned(&m->SignerCert))
+            /*
+             * It's a self signed certificate.  We assume the frontend will
+             * present this fact to the user and give a choice whether this
+             * is acceptible.  But, first make sure it makes internal sense.
+             */
+            m->fCertificateMissingPath = false;
+            vrc = RTCrX509Certificate_VerifySignatureSelfSigned(&m->SignerCert, RTErrInfoInitStatic(&StaticErrInfo));
+            if (RT_SUCCESS(vrc))
             {
-                /*
-                 * It's a self signed certificate.  We assume the frontend will
-                 * present this fact to the user and give a choice whether this
-                 * is acceptible.  But, first make sure it makes internal sense.
-                 */
-                /** @todo Not entirely sure if we care whether a self issued certificate is
-                   marked as CA. But let's be a little bit picky about it for now. */
-                if (   m->SignerCert.TbsCertificate.T3.pBasicConstraints
-                    && m->SignerCert.TbsCertificate.T3.pBasicConstraints->CA.fValue)
-                {
-                    vrc = RTCrX509Certificate_VerifySignatureSelfSigned(&m->SignerCert, RTErrInfoInitStatic(&StaticErrInfo));
-                    if (RT_SUCCESS(vrc))
-                    {
-                        /** @todo Consider the certificate expiration date!! Though see timestamp
-                         *        concern below in the non-self-issued case */
-                        hrc = S_OK;
-                        m->fCertificateValid = true;
-                    }
-                    else
-                        hrc = setErrorVrc(vrc, tr("Verification of the self signed certificate used to sign '%s' failed (%Rrc): %s"),
-                                          pTask->locInfo.strPath.c_str(), vrc, StaticErrInfo.Core.pszMsg);
-                }
+                m->fCertificateValid = true;
+
+                /* Check whether the certificate is currently valid, just warn if not. */
+                RTTIMESPEC Now;
+                if (RTCrX509Validity_IsValidAtTimeSpec(&m->SignerCert.TbsCertificate.Validity, RTTimeNow(&Now)))
+                    m->fCertificateValidTime = true;
                 else
-                    hrc = setError(E_FAIL,
-                                   tr("Self signed certificate used to sign '%s' is not marked as certificate authority (CA)"),
-                                   pTask->locInfo.strPath.c_str());
+                    i_addWarning(tr("Self signed certificate used to sign '%s' is not currently valid"),
+                                 pTask->locInfo.strPath.c_str());
+
+                /* Just warn if it's not a CA. Self-signed certificates are
+                   hardly trustworthy to start with without the user's consent. */
+                if (   !m->SignerCert.TbsCertificate.T3.pBasicConstraints
+                    || !m->SignerCert.TbsCertificate.T3.pBasicConstraints->CA.fValue)
+                    i_addWarning(tr("Self signed certificate used to sign '%s' is not marked as certificate authority (CA)"),
+                                 pTask->locInfo.strPath.c_str());
             }
             else
             {
-                /*
-                 * The certificate is not self-signed.  Use the system certificate
-                 * stores to try validate it.
-                 */
-                RTCRX509CERTPATHS hCertPaths;
-                vrc = RTCrX509CertPathsCreate(&hCertPaths, &m->SignerCert);
-                if (RT_SUCCESS(vrc))
-                {
-                    /* Get trusted certificates from the system and add them to the path finding mission. */
-                    RTCRSTORE hTrustedCerts;
-                    vrc = RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts(&hTrustedCerts,
-                                                                                   RTErrInfoInitStatic(&StaticErrInfo));
-                    if (RT_SUCCESS(vrc))
-                    {
-                        vrc = RTCrX509CertPathsSetTrustedStore(hCertPaths, hTrustedCerts);
-                        if (RT_FAILURE(vrc))
-                            hrc = setError(E_FAIL, tr("RTCrX509CertPathsSetTrustedStore failed (%Rrc)"), vrc);
-                        RTCrStoreRelease(hTrustedCerts);
-                    }
-                    else
-                        hrc = setError(E_FAIL,
-                                       tr("Failed to query trusted CAs and Certificates from the system and for the current user (%Rrc, %s)"),
-                                       vrc, StaticErrInfo.Core.pszMsg);
-
-                    /* Add untrusted intermediate certificates. */
-                    if (RT_SUCCESS(vrc))
-                    {
-                        /// @todo RTCrX509CertPathsSetUntrustedStore(hCertPaths, hAdditionalCerts);
-                        /// By scanning for additional certificates in the .cert file?  It would be
-                        /// convenient to be able to supply intermediate certificates for the user,
-                        /// right?  Or would that be unacceptable as it may weaken security?
-                        ///
-                        /// Anyway, we should look for intermediate certificates on the system, at
-                        /// least.
-                    }
-
-                    /* Set the validation timestamp? */
-                    if (RT_SUCCESS(vrc))
-                    {
-                        /// @todo RTCrX509CertPathsSetValidTimeSpec(hCertPaths, pValidationTime);
-                        /// Not having a timestamp signature is a bit crippling to deployment using
-                        /// certificates with a short expiration date...  Need to allow the user to
-                    }
-
-                    if (RT_SUCCESS(vrc))
-                    {
-                        /*
-                         * Do the building and verification.
-                         */
-                        vrc = RTCrX509CertPathsBuild(hCertPaths, RTErrInfoInitStatic(&StaticErrInfo));
-                        if (RT_SUCCESS(vrc))
-                        {
-                            vrc = RTCrX509CertPathsValidateAll(hCertPaths, NULL, RTErrInfoInitStatic(&StaticErrInfo));
-                            if (RT_SUCCESS(vrc))
-                            {
-                                /*
-                                 * The certificate is good.
-                                 */
-                                /** @todo check the certificate purpose? */
-                                m->fCertificateValid = true;
-                                hrc = S_OK;
-                            }
-                            else
-                                hrc = setError(E_FAIL, tr("Certificate path validation failed (%Rrc, %s)"),
-                                               vrc, StaticErrInfo.Core.pszMsg);
-                        }
-                        else
-                            hrc = setError(E_FAIL, tr("Certificate path building failed (%Rrc, %s)"),
-                                           vrc, StaticErrInfo.Core.pszMsg);
-
-                    }
-                    RTCrX509CertPathsRelease(hCertPaths);
-                }
+                try { m->strCertError = Utf8StrFmt(tr("Verification of the self signed certificate failed (%Rrc, %s)"),
+                                                   vrc, StaticErrInfo.Core.pszMsg); }
+                catch (...) { AssertFailed(); }
+                i_addWarning(tr("Verification of the self signed certificate used to sign '%s' failed (%Rrc): %s"),
+                             pTask->locInfo.strPath.c_str(), vrc, StaticErrInfo.Core.pszMsg);
             }
         }
+        else
+        {
+            /*
+             * The certificate is not self-signed.  Use the system certificate
+             * stores to try build a path that validates successfully.
+             */
+            RTCRX509CERTPATHS hCertPaths;
+            vrc = RTCrX509CertPathsCreate(&hCertPaths, &m->SignerCert);
+            if (RT_SUCCESS(vrc))
+            {
+                /* Get trusted certificates from the system and add them to the path finding mission. */
+                RTCRSTORE hTrustedCerts;
+                vrc = RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts(&hTrustedCerts,
+                                                                               RTErrInfoInitStatic(&StaticErrInfo));
+                if (RT_SUCCESS(vrc))
+                {
+                    vrc = RTCrX509CertPathsSetTrustedStore(hCertPaths, hTrustedCerts);
+                    if (RT_FAILURE(vrc))
+                        hrc2 = setError(E_FAIL, tr("RTCrX509CertPathsSetTrustedStore failed (%Rrc)"), vrc);
+                    RTCrStoreRelease(hTrustedCerts);
+                }
+                else
+                    hrc2 = setError(E_FAIL,
+                                    tr("Failed to query trusted CAs and Certificates from the system and for the current user (%Rrc, %s)"),
+                                    vrc, StaticErrInfo.Core.pszMsg);
+
+                /* Add untrusted intermediate certificates. */
+                if (RT_SUCCESS(vrc))
+                {
+                    /// @todo RTCrX509CertPathsSetUntrustedStore(hCertPaths, hAdditionalCerts);
+                    /// By scanning for additional certificates in the .cert file?  It would be
+                    /// convenient to be able to supply intermediate certificates for the user,
+                    /// right?  Or would that be unacceptable as it may weaken security?
+                    ///
+                    /// Anyway, we should look for intermediate certificates on the system, at
+                    /// least.
+                }
+                if (RT_SUCCESS(vrc))
+                {
+                    /*
+                     * Do the building and verification of certificate paths.
+                     */
+                    vrc = RTCrX509CertPathsBuild(hCertPaths, RTErrInfoInitStatic(&StaticErrInfo));
+                    if (RT_SUCCESS(vrc))
+                    {
+                        vrc = RTCrX509CertPathsValidateAll(hCertPaths, NULL, RTErrInfoInitStatic(&StaticErrInfo));
+                        if (RT_SUCCESS(vrc))
+                        {
+                            /*
+                             * Mark the certificate as good.
+                             */
+                            /** @todo check the certificate purpose? If so, share with self-signed. */
+                            m->fCertificateValid = true;
+                            m->fCertificateMissingPath = false;
+
+                            /*
+                             * We add a warning if the certificate path isn't valid at the current
+                             * time.  Since the time is only considered during path validation and we
+                             * can repeat the validation process (but not building), it's easy to check.
+                             */
+                            RTTIMESPEC Now;
+                            vrc = RTCrX509CertPathsSetValidTimeSpec(hCertPaths, RTTimeNow(&Now));
+                            if (RT_SUCCESS(vrc))
+                            {
+                                vrc = RTCrX509CertPathsValidateAll(hCertPaths, NULL, RTErrInfoInitStatic(&StaticErrInfo));
+                                if (RT_SUCCESS(vrc))
+                                    m->fCertificateValidTime = true;
+                                else
+                                    i_addWarning(tr("The certificate used to sign '%s' (or a certificate in the path) is not currently valid (%Rrc)"),
+                                                 pTask->locInfo.strPath.c_str(), vrc);
+                            }
+                            else
+                                hrc2 = setErrorVrc(vrc, "RTCrX509CertPathsSetValidTimeSpec failed: %Rrc", vrc);
+                        }
+                        else if (vrc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS)
+                        {
+                            m->fCertificateValid = true;
+                            i_addWarning(tr("No trusted certificate paths"));
+                        }
+                        else
+                            hrc2 = setError(E_FAIL, tr("Certificate path validation failed (%Rrc, %s)"),
+                                            vrc, StaticErrInfo.Core.pszMsg);
+                    }
+                    else
+                        hrc2 = setError(E_FAIL, tr("Certificate path building failed (%Rrc, %s)"),
+                                        vrc, StaticErrInfo.Core.pszMsg);
+                }
+                RTCrX509CertPathsRelease(hCertPaths);
+            }
+            else
+                hrc2 = setErrorVrc(vrc, tr("RTCrX509CertPathsCreate failed: %Rrc"), vrc);
+        }
+
+        /* Merge statuses from signature and certificate validation, prefering the signature one. */
+        if (SUCCEEDED(hrc) && FAILED(hrc2))
+            hrc = hrc2;
+        if (FAILED(hrc))
+            return hrc;
     }
 
     /** @todo provide details about the signatory, signature, etc.  */
