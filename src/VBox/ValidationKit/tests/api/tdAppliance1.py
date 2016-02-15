@@ -93,6 +93,10 @@ class tdAppliance1(vbox.TestDriver):
             # t5 is a VM with with one gzipped disk, SHA1 and a manifest signed by a valid (2016) DigiCert code signing certificate.
             'tdAppliance1-t5.ova',
             'tdAppliance1-t5-ovftool-4.1.0.ova',
+            # t6 is a VM with with one gzipped disk, SHA1 and a manifest signed by a certificate issued by the t4 certificate,
+            # thus it should be impossible to establish a trusted path to a root CA.
+            'tdAppliance1-t6.ova',
+            'tdAppliance1-t6-ovftool-4.1.0.ova',
             ):
             reporter.testStart(sOva);
             try:
