@@ -33,8 +33,12 @@ public:
     UIInformationView(QWidget *pParent = 0);
 
 public slots:
-    void updateData(const QModelIndex & topLeft, const QModelIndex & bottomRight);
+    /** Handles updating data for the index-range @a topLeft to @a bottomRight. */
+    void updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight);
 
+protected slots:
+    /** Handles Qt key-press @a pEvent. */
+    void keyPressEvent(QKeyEvent *pEvent);
 };
 
 #endif /* !___UIInformationView_h___ */
