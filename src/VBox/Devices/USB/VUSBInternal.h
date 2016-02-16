@@ -67,6 +67,35 @@ typedef struct VUSBROOTHUB *PVUSBROOTHUB;
 #define VUSB_PIPE_MAX           16
 
 /**
+ * The VUSB URB data.
+ */
+typedef struct VUSBURBVUSBINT
+{
+    /** URB chain pointer. */
+    PVUSBURB        pNext;
+    /** URB chain pointer. */
+    PVUSBURB       *ppPrev;
+    /** Pointer to the original for control messages. */
+    PVUSBURB        pCtrlUrb;
+    /** Pointer to the VUSB device.
+     * This may be NULL if the destination address is invalid. */
+    PVUSBDEV        pDev;
+    /** Specific to the pfnFree function. */
+    void           *pvFreeCtx;
+    /**
+     * Callback which will free the URB once it's reaped and completed.
+     * @param   pUrb    The URB.
+     */
+    DECLCALLBACKMEMBER(void, pfnFree)(PVUSBURB pUrb);
+    /** Submit timestamp. (logging only) */
+    uint64_t        u64SubmitTS;
+    /** The allocated data length. */
+    uint32_t        cbDataAllocated;
+    /** Opaque data holder when this is a read-ahead URB. */
+    void            *pvReadAhead;
+} VUSBURBVUSBINT;
+
+/**
  * Control-pipe stages.
  */
 typedef enum CTLSTAGE
@@ -448,20 +477,20 @@ VUSBREADAHEAD vusbReadAheadStart(PVUSBDEV pDev, PVUSBPIPE pPipe);
 void vusbReadAheadStop(VUSBREADAHEAD hReadAhead);
 int  vusbUrbQueueAsyncRh(PVUSBURB pUrb);
 int  vusbUrbSubmitBufferedRead(PVUSBURB pUrb, VUSBREADAHEAD hReadAhead);
-PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, VUSBXFERTYPE enmType, VUSBDIRECTION enmDir,
-                      uint32_t cbData, uint32_t cTds, const char *pszTag);
+PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, PVUSBDEV pDev, VUSBXFERTYPE enmType,
+                      VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag);
 
 
 DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
 {
-    PVUSBDEV pDev = pUrb->VUsb.pDev;
+    PVUSBDEV pDev = pUrb->pVUsb->pDev;
 
     RTCritSectEnter(&pDev->CritSectAsyncUrbs);
-    *pUrb->VUsb.ppPrev = pUrb->VUsb.pNext;
-    if (pUrb->VUsb.pNext)
-        pUrb->VUsb.pNext->VUsb.ppPrev = pUrb->VUsb.ppPrev;
-    pUrb->VUsb.pNext = NULL;
-    pUrb->VUsb.ppPrev = NULL;
+    *pUrb->pVUsb->ppPrev = pUrb->pVUsb->pNext;
+    if (pUrb->pVUsb->pNext)
+        pUrb->pVUsb->pNext->pVUsb->ppPrev = pUrb->pVUsb->ppPrev;
+    pUrb->pVUsb->pNext = NULL;
+    pUrb->pVUsb->ppPrev = NULL;
     RTCritSectLeave(&pDev->CritSectAsyncUrbs);
 }
 

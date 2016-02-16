@@ -109,7 +109,7 @@ static PVUSBURB vusbDevNewIsocUrb(PVUSBDEV pDev, unsigned uEndPt, unsigned uInte
         /* can happen during disconnect */
         return NULL;
 
-    pUrb = vusbRhNewUrb(pRh, pDev->u8Address, VUSBXFERTYPE_ISOC, VUSBDIRECTION_IN, cbTotal, 1, "prab");
+    pUrb = vusbRhNewUrb(pRh, pDev->u8Address, NULL, VUSBXFERTYPE_ISOC, VUSBDIRECTION_IN, cbTotal, 1, "prab");
     if (!pUrb)
         /* not much we can do here... */
         return NULL;
@@ -215,7 +215,7 @@ static DECLCALLBACK(int) vusbDevReadAheadThread(RTTHREAD Thread, void *pvUser)
 
             Assert(pUrb->enmState == VUSBURBSTATE_ALLOCATED);
 
-            pUrb->VUsb.pvReadAhead = pvUser;
+            pUrb->pVUsb->pvReadAhead = pvUser;
             pUrb->enmState = VUSBURBSTATE_IN_FLIGHT;
             rc = vusbUrbQueueAsyncRh(pUrb);
             if (RT_FAILURE(rc))
@@ -223,7 +223,7 @@ static DECLCALLBACK(int) vusbDevReadAheadThread(RTTHREAD Thread, void *pvUser)
                 /* Happens if device was unplugged. */
                 Log(("vusb: read-ahead thread failed to queue URB with %Rrc; exiting\n", rc));
                 pThis->cUrbsMax = pThis->cSubmitted;
-                pUrb->VUsb.pfnFree(pUrb);
+                pUrb->pVUsb->pfnFree(pUrb);
                 break;
             }
             else
@@ -249,8 +249,8 @@ static DECLCALLBACK(int) vusbDevReadAheadThread(RTTHREAD Thread, void *pvUser)
     {
         PVUSBURB pBufferedUrb = pThis->pBuffUrbHead;
 
-        pThis->pBuffUrbHead = (PVUSBURB)pBufferedUrb->VUsb.pvReadAhead;
-        pBufferedUrb->VUsb.pfnFree(pBufferedUrb);
+        pThis->pBuffUrbHead = (PVUSBURB)pBufferedUrb->pVUsb->pvReadAhead;
+        pBufferedUrb->pVUsb->pfnFree(pBufferedUrb);
     }
 
     RTCritSectLeave(&pThis->CritSectBuffUrbList);
@@ -268,13 +268,13 @@ static DECLCALLBACK(int) vusbDevReadAheadThread(RTTHREAD Thread, void *pvUser)
 void vusbUrbCompletionReadAhead(PVUSBURB pUrb)
 {
     Assert(pUrb);
-    Assert(pUrb->VUsb.pvReadAhead);
-    PVUSBREADAHEADINT pThis = (PVUSBREADAHEADINT)pUrb->VUsb.pvReadAhead;
+    Assert(pUrb->pVUsb->pvReadAhead);
+    PVUSBREADAHEADINT pThis = (PVUSBREADAHEADINT)pUrb->pVUsb->pvReadAhead;
     PVUSBPIPE         pPipe = pThis->pPipe;
     Assert(pPipe);
 
     RTCritSectEnter(&pThis->CritSectBuffUrbList);
-    pUrb->VUsb.pvReadAhead = NULL;
+    pUrb->pVUsb->pvReadAhead = NULL;
     if (pThis->pBuffUrbHead == NULL)
     {
         // The queue is empty, this is easy
@@ -285,8 +285,8 @@ void vusbUrbCompletionReadAhead(PVUSBURB pUrb)
     {
         // Some URBs are queued already
         Assert(pThis->pBuffUrbTail);
-        Assert(!pThis->pBuffUrbTail->VUsb.pvReadAhead);
-        pThis->pBuffUrbTail->VUsb.pvReadAhead = pUrb;
+        Assert(!pThis->pBuffUrbTail->pVUsb->pvReadAhead);
+        pThis->pBuffUrbTail->pVUsb->pvReadAhead = pUrb;
         pThis->pBuffUrbTail = pUrb;
     }
     ASMAtomicDecU32(&pThis->cSubmitted);
@@ -317,7 +317,7 @@ int vusbUrbSubmitBufferedRead(PVUSBURB pUrb, VUSBREADAHEAD hReadAhead)
         unsigned    cbTotal;
 
         // There's a URB available in the read-ahead buffer; use it
-        pThis->pBuffUrbHead = (PVUSBURB)pBufferedUrb->VUsb.pvReadAhead;
+        pThis->pBuffUrbHead = (PVUSBURB)pBufferedUrb->pVUsb->pvReadAhead;
         if (pThis->pBuffUrbHead == NULL)
             pThis->pBuffUrbTail = NULL;
 
@@ -343,7 +343,7 @@ int vusbUrbSubmitBufferedRead(PVUSBURB pUrb, VUSBREADAHEAD hReadAhead)
             pUrb->aIsocPkts[i].off = off;
             pUrb->aIsocPkts[i].enmStatus = pBufferedUrb->aIsocPkts[i].enmStatus;
             cbTotal += len;
-            Assert(pUrb->VUsb.cbDataAllocated >= cbTotal);
+            Assert(pUrb->pVUsb->cbDataAllocated >= cbTotal);
             memcpy(&pUrb->abData[off], &pBufferedUrb->abData[off], len);
         }
         // Give back the data to the HC right away and then free the buffered URB
@@ -352,7 +352,7 @@ int vusbUrbSubmitBufferedRead(PVUSBURB pUrb, VUSBREADAHEAD hReadAhead)
         // Assert(pUrb->enmState == VUSBURBSTATE_FREE);
         Assert(pBufferedUrb->enmState == VUSBURBSTATE_REAPED);
         LogFlow(("%s: vusbUrbSubmitBufferedRead: Freeing buffered URB\n", pBufferedUrb->pszDesc));
-        pBufferedUrb->VUsb.pfnFree(pBufferedUrb);
+        pBufferedUrb->pVUsb->pfnFree(pBufferedUrb);
         // This assertion is wrong as the URB could be re-allocated in the meantime by the EMT (race)
         // Assert(pBufferedUrb->enmState == VUSBURBSTATE_FREE);
     }

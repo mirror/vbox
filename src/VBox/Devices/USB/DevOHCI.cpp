@@ -2760,8 +2760,8 @@ static bool ohciServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint3
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, enmType,
-                                  enmDir, Buf.cbTotal, 1, NULL);
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
+                                  enmType, enmDir, Buf.cbTotal, 1, NULL);
     if (!pUrb)
         return false;                   /* retry later... */
 
@@ -2912,8 +2912,8 @@ static bool ohciServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pE
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, enmType,
-                                  enmDir, cbTotal, cTds, "ohciServiceTdMultiple");
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
+                                  enmType, enmDir, cbTotal, cTds, "ohciServiceTdMultiple");
     if (!pUrb)
         /* retry later... */
         return false;
@@ -3120,8 +3120,8 @@ static bool ohciServiceIsochronousTd(POHCI pThis, POHCIITD pITd, uint32_t ITdAdd
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, VUSBXFERTYPE_ISOC,
-                                  enmDir, cbTotal, 1, NULL);
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
+                                  VUSBXFERTYPE_ISOC, enmDir, cbTotal, 1, NULL);
     if (!pUrb)
         /* retry later... */
         return false;

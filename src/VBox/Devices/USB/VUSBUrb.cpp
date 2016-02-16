@@ -161,11 +161,11 @@ DECLINLINE(const char *) GetScsiKCQ(uint8_t Key, uint8_t ASC, uint8_t ASCQ)
 /**
  * Logs an URB.
  *
- * Note that pUrb->VUsb.pDev and pUrb->VUsb.pDev->pUsbIns can all be NULL.
+ * Note that pUrb->pVUsb->pDev and pUrb->pVUsb->pDev->pUsbIns can all be NULL.
  */
 void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
 {
-    PVUSBDEV        pDev   = pUrb->VUsb.pDev; /* Can be NULL when called from usbProxyConstruct and friends. */
+    PVUSBDEV        pDev   = pUrb->pVUsb ? pUrb->pVUsb->pDev : NULL; /* Can be NULL when called from usbProxyConstruct and friends. */
     PVUSBPIPE       pPipe  = &pDev->aPipes[pUrb->EndPt];
     const uint8_t  *pbData = pUrb->abData;
     uint32_t        cbData = pUrb->cbData;
@@ -179,7 +179,7 @@ void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
     Log(("%s: %*s: pDev=%p[%s] rc=%s a=%i e=%u d=%s t=%s cb=%#x(%d) ts=%RU64 (%RU64 ns ago) %s\n",
          pUrb->pszDesc, s_cchMaxMsg, pszMsg,
          pDev,
-         pUrb->VUsb.pDev ? pUrb->VUsb.pDev->pUsbIns->pszName : "",
+         pUrb->pVUsb && pUrb->pVUsb->pDev ? pUrb->pVUsb->pDev->pUsbIns->pszName : "",
          vusbUrbStatusName(pUrb->enmStatus),
          pDev ? pDev->u8Address : -1,
          pUrb->EndPt,
@@ -187,8 +187,8 @@ void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
          vusbUrbTypeName(pUrb->enmType),
          pUrb->cbData,
          pUrb->cbData,
-         pUrb->VUsb.u64SubmitTS,
-         RTTimeNanoTS() - pUrb->VUsb.u64SubmitTS,
+         pUrb->pVUsb ? pUrb->pVUsb->u64SubmitTS : 0,
+         pUrb->pVUsb ? RTTimeNanoTS() - pUrb->pVUsb->u64SubmitTS : 0,
          pUrb->fShortNotOk ? "ShortNotOk" : "ShortOk"));
 
 #ifndef DEBUG_bird
@@ -822,8 +822,8 @@ void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
             : pUrb->enmDir == VUSBDIRECTION_OUT))
         Log3(("%16.*Rhxd\n", cbData, pbData));
 #endif
-    if (pUrb->enmType == VUSBXFERTYPE_MSG && pUrb->VUsb.pCtrlUrb)
-        vusbUrbTrace(pUrb->VUsb.pCtrlUrb, "NESTED MSG", fComplete);
+    if (pUrb->enmType == VUSBXFERTYPE_MSG && pUrb->pVUsb && pUrb->pVUsb->pCtrlUrb)
+        vusbUrbTrace(pUrb->pVUsb->pCtrlUrb, "NESTED MSG", fComplete);
 }
 #endif /* LOG_ENABLED */
 
@@ -836,7 +836,7 @@ void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
  */
 static void vusbMsgSetupCompletion(PVUSBURB pUrb)
 {
-    PVUSBDEV        pDev   = pUrb->VUsb.pDev;
+    PVUSBDEV        pDev   = pUrb->pVUsb->pDev;
     PVUSBPIPE       pPipe  = &pDev->aPipes[pUrb->EndPt];
     PVUSBCTRLEXTRA  pExtra = pPipe->pCtrl;
     PVUSBSETUP      pSetup = pExtra->pMsg;
@@ -855,7 +855,7 @@ static void vusbMsgSetupCompletion(PVUSBURB pUrb)
  */
 static void vusbMsgDataCompletion(PVUSBURB pUrb)
 {
-    PVUSBDEV        pDev   = pUrb->VUsb.pDev;
+    PVUSBDEV        pDev   = pUrb->pVUsb->pDev;
     PVUSBPIPE       pPipe  = &pDev->aPipes[pUrb->EndPt];
     PVUSBCTRLEXTRA  pExtra = pPipe->pCtrl;
     PVUSBSETUP      pSetup = pExtra->pMsg;
@@ -874,7 +874,7 @@ static void vusbMsgDataCompletion(PVUSBURB pUrb)
  */
 static void vusbMsgStatusCompletion(PVUSBURB pUrb)
 {
-    PVUSBDEV        pDev = pUrb->VUsb.pDev;
+    PVUSBDEV        pDev = pUrb->pVUsb->pDev;
     PVUSBPIPE       pPipe = &pDev->aPipes[pUrb->EndPt];
     PVUSBCTRLEXTRA  pExtra = pPipe->pCtrl;
 
@@ -915,7 +915,7 @@ static void vusbMsgStatusCompletion(PVUSBURB pUrb)
  */
 static void vusbCtrlCompletion(PVUSBURB pUrb)
 {
-    PVUSBDEV        pDev = pUrb->VUsb.pDev;
+    PVUSBDEV        pDev = pUrb->pVUsb->pDev;
     PVUSBPIPE       pPipe = &pDev->aPipes[pUrb->EndPt];
     PVUSBCTRLEXTRA  pExtra = pPipe->pCtrl;
     LogFlow(("%s: vusbCtrlCompletion: pDev=%p[%s]\n", pUrb->pszDesc, pDev, pDev->pUsbIns->pszName));
@@ -942,7 +942,7 @@ static void vusbCtrlCompletion(PVUSBURB pUrb)
  */
 static void vusbMsgCompletion(PVUSBURB pUrb)
 {
-    PVUSBDEV        pDev   = pUrb->VUsb.pDev;
+    PVUSBDEV        pDev   = pUrb->pVUsb->pDev;
     PVUSBPIPE       pPipe  = &pDev->aPipes[pUrb->EndPt];
 
     RTCritSectEnter(&pPipe->CritSectCtrl);
@@ -964,7 +964,7 @@ static void vusbMsgCompletion(PVUSBURB pUrb)
     /*
      * Complete the original URB.
      */
-    PVUSBURB pCtrlUrb = pUrb->VUsb.pCtrlUrb;
+    PVUSBURB pCtrlUrb = pUrb->pVUsb->pCtrlUrb;
     pCtrlUrb->enmState = VUSBURBSTATE_REAPED;
     vusbCtrlCompletion(pCtrlUrb);
 
@@ -993,7 +993,7 @@ static void vusbMsgCompletion(PVUSBURB pUrb)
  */
 int vusbUrbErrorRh(PVUSBURB pUrb)
 {
-    PVUSBDEV pDev = pUrb->VUsb.pDev;
+    PVUSBDEV pDev = pUrb->pVUsb->pDev;
     PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
     AssertPtrReturn(pRh, VERR_VUSB_DEVICE_NOT_ATTACHED);
     LogFlow(("%s: vusbUrbErrorRh: pDev=%p[%s] rh=%p\n", pUrb->pszDesc, pDev, pDev->pUsbIns ? pDev->pUsbIns->pszName : "", pRh));
@@ -1012,10 +1012,10 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
     AssertMsg(   pUrb->enmState == VUSBURBSTATE_REAPED
               || pUrb->enmState == VUSBURBSTATE_CANCELLED, ("%d\n", pUrb->enmState));
 
-    if (   pUrb->VUsb.pDev
-        && pUrb->VUsb.pDev->hSniffer)
+    if (   pUrb->pVUsb->pDev
+        && pUrb->pVUsb->pDev->hSniffer)
     {
-        int rc = VUSBSnifferRecordEvent(pUrb->VUsb.pDev->hSniffer, pUrb,
+        int rc = VUSBSnifferRecordEvent(pUrb->pVUsb->pDev->hSniffer, pUrb,
                                           pUrb->enmStatus == VUSBSTATUS_OK
                                         ? VUSBSNIFFEREVENT_COMPLETE
                                         : VUSBSNIFFEREVENT_ERROR_COMPLETE);
@@ -1023,7 +1023,7 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
             LogRel(("VUSB: Capturing URB completion event failed with %Rrc\n", rc));
     }
 
-    PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->VUsb.pDev);
+    PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->pVUsb->pDev);
     AssertPtrReturnVoid(pRh);
 
     /* If there is a sniffer on the roothub record the completed URB there too. */
@@ -1147,7 +1147,7 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
     if (pUrb->enmState == VUSBURBSTATE_REAPED)
     {
         LogFlow(("%s: vusbUrbCompletionRh: Freeing URB\n", pUrb->pszDesc));
-        pUrb->VUsb.pfnFree(pUrb);
+        pUrb->pVUsb->pfnFree(pUrb);
     }
 }
 
@@ -1167,7 +1167,7 @@ DECLINLINE(bool) vusbUrbIsRequestSafe(PCVUSBSETUP pSetup, PVUSBURB pUrb)
         case VUSB_REQ_CLEAR_FEATURE:
             return  pUrb->EndPt != 0                   /* not default control pipe */
                 ||  pSetup->wValue != 0                /* not ENDPOINT_HALT */
-                ||  !pUrb->VUsb.pDev->pUsbIns->pReg->pfnUsbClearHaltedEndpoint; /* not special need for backend */
+                ||  !pUrb->pVUsb->pDev->pUsbIns->pReg->pfnUsbClearHaltedEndpoint; /* not special need for backend */
         case VUSB_REQ_SET_ADDRESS:
         case VUSB_REQ_SET_CONFIGURATION:
         case VUSB_REQ_GET_CONFIGURATION:
@@ -1181,7 +1181,7 @@ DECLINLINE(bool) vusbUrbIsRequestSafe(PCVUSBSETUP pSetup, PVUSBURB pUrb)
          * cache. Yeah, it's a bit weird to read.)
          */
         case VUSB_REQ_GET_DESCRIPTOR:
-            if (    !pUrb->VUsb.pDev->pDescCache->fUseCachedDescriptors
+            if (    !pUrb->pVUsb->pDev->pDescCache->fUseCachedDescriptors
                 ||  (pSetup->bmRequestType & VUSB_RECIP_MASK) != VUSB_TO_DEVICE)
                 return true;
             switch (pSetup->wValue >> 8)
@@ -1190,7 +1190,7 @@ DECLINLINE(bool) vusbUrbIsRequestSafe(PCVUSBSETUP pSetup, PVUSBURB pUrb)
                 case VUSB_DT_CONFIG:
                     return false;
                 case VUSB_DT_STRING:
-                    return !pUrb->VUsb.pDev->pDescCache->fUseCachedStringsDescriptors;
+                    return !pUrb->pVUsb->pDev->pDescCache->fUseCachedStringsDescriptors;
                 default:
                     return true;
             }
@@ -1216,7 +1216,7 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
 
     /* Immediately return in case of error.
      * XXX There is still a race: The Rh might vanish after this point! */
-    PVUSBDEV pDev = pUrb->VUsb.pDev;
+    PVUSBDEV pDev = pUrb->pVUsb->pDev;
     PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
     if (!pRh)
     {
@@ -1236,11 +1236,11 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
     ASMAtomicIncU32(&pDev->aPipes[pUrb->EndPt].async);
 
     /* Queue the pUrb on the roothub */
-    pUrb->VUsb.pNext = pDev->pAsyncUrbHead;
+    pUrb->pVUsb->pNext = pDev->pAsyncUrbHead;
     if (pDev->pAsyncUrbHead)
-        pDev->pAsyncUrbHead->VUsb.ppPrev = &pUrb->VUsb.pNext;
+        pDev->pAsyncUrbHead->pVUsb->ppPrev = &pUrb->pVUsb->pNext;
     pDev->pAsyncUrbHead = pUrb;
-    pUrb->VUsb.ppPrev = &pDev->pAsyncUrbHead;
+    pUrb->pVUsb->ppPrev = &pDev->pAsyncUrbHead;
     RTCritSectLeave(&pDev->CritSectAsyncUrbs);
 
     return VINF_SUCCESS;
@@ -1253,7 +1253,7 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
  */
 static void vusbMsgSubmitSynchronously(PVUSBURB pUrb, bool fSafeRequest)
 {
-    PVUSBDEV        pDev   = pUrb->VUsb.pDev;
+    PVUSBDEV        pDev   = pUrb->pVUsb->pDev;
     Assert(pDev);
     PVUSBPIPE       pPipe  = &pDev->aPipes[pUrb->EndPt];
     PVUSBCTRLEXTRA  pExtra = pPipe->pCtrl;
@@ -1328,11 +1328,11 @@ void vusbMsgResetExtraData(PVUSBCTRLEXTRA pExtra)
  *
  * If a new message urb comes up while it's in the CANCELLED state, we will
  * orphan it and it will be freed here in vusbMsgFreeUrb. We indicate this
- * by setting VUsb.pvFreeCtx to NULL.
+ * by setting pVUsb->pvFreeCtx to NULL.
  *
  * If we have to free the message state structure because of device destruction,
  * configuration changes, or similar, we will orphan the message pipe state in
- * the same way by setting VUsb.pvFreeCtx to NULL and let this function free it.
+ * the same way by setting pVUsb->pvFreeCtx to NULL and let this function free it.
  *
  * @param   pUrb
  */
@@ -1341,14 +1341,14 @@ static DECLCALLBACK(void) vusbMsgFreeUrb(PVUSBURB pUrb)
     vusbUrbAssert(pUrb);
     PVUSBCTRLEXTRA pExtra = (PVUSBCTRLEXTRA)((uint8_t *)pUrb - RT_OFFSETOF(VUSBCTRLEXTRA, Urb));
     if (    pUrb->enmState == VUSBURBSTATE_CANCELLED
-        &&  !pUrb->VUsb.pvFreeCtx)
+        &&  !pUrb->pVUsb->pvFreeCtx)
     {
         LogFlow(("vusbMsgFreeUrb: Freeing orphan: %p (pUrb=%p)\n", pExtra, pUrb));
         RTMemFree(pExtra);
     }
     else
     {
-        Assert(pUrb->VUsb.pvFreeCtx == &pExtra->Urb);
+        Assert(pUrb->pVUsb->pvFreeCtx == &pExtra->Urb);
         pUrb->enmState = VUSBURBSTATE_ALLOCATED;
         pUrb->fCompleting = false;
     }
@@ -1372,7 +1372,7 @@ void vusbMsgFreeExtraData(PVUSBCTRLEXTRA pExtra)
         RTMemFree(pExtra);
     }
     else
-        pExtra->Urb.VUsb.pvFreeCtx = NULL; /* see vusbMsgFreeUrb */
+        pExtra->Urb.pVUsb->pvFreeCtx = NULL; /* see vusbMsgFreeUrb */
 }
 
 /**
@@ -1386,7 +1386,7 @@ static PVUSBCTRLEXTRA vusbMsgAllocExtraData(PVUSBURB pUrb)
 {
 /** @todo reuse these? */
     PVUSBCTRLEXTRA pExtra;
-    const size_t cbMax = sizeof(pExtra->Urb.abData) + sizeof(VUSBSETUP);
+    const size_t cbMax = sizeof(VUSBURBVUSBINT) + sizeof(pExtra->Urb.abData) + sizeof(VUSBSETUP);
     pExtra = (PVUSBCTRLEXTRA)RTMemAllocZ(RT_OFFSETOF(VUSBCTRLEXTRA, Urb.abData[cbMax]));
     if (pExtra)
     {
@@ -1404,12 +1404,13 @@ static PVUSBCTRLEXTRA vusbMsgAllocExtraData(PVUSBURB pUrb)
 #ifdef LOG_ENABLED
         RTStrAPrintf(&pExtra->Urb.pszDesc, "URB %p msg->%p", &pExtra->Urb, pUrb);
 #endif
-        //pExtra->Urb.VUsb.pCtrlUrb = NULL;
-        //pExtra->Urb.VUsb.pNext = NULL;
-        //pExtra->Urb.VUsb.ppPrev = NULL;
-        pExtra->Urb.VUsb.pDev = pUrb->VUsb.pDev;
-        pExtra->Urb.VUsb.pfnFree = vusbMsgFreeUrb;
-        pExtra->Urb.VUsb.pvFreeCtx = &pExtra->Urb;
+        pExtra->Urb.pVUsb = (PVUSBURBVUSB)&pExtra->Urb.abData[sizeof(pExtra->Urb.abData) + sizeof(VUSBSETUP)];
+        //pExtra->Urb.pVUsb->pCtrlUrb = NULL;
+        //pExtra->Urb.pVUsb->pNext = NULL;
+        //pExtra->Urb.pVUsb->ppPrev = NULL;
+        pExtra->Urb.pVUsb->pDev = pUrb->pVUsb->pDev;
+        pExtra->Urb.pVUsb->pfnFree = vusbMsgFreeUrb;
+        pExtra->Urb.pVUsb->pvFreeCtx = &pExtra->Urb;
         //pExtra->Urb.Hci = {0};
         //pExtra->Urb.Dev.pvProxyUrb = NULL;
         pExtra->Urb.DstAddress = pUrb->DstAddress;
@@ -1461,7 +1462,7 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
             Log(("vusbMsgSetup: out of memory!!! cbReq=%u\n", RT_OFFSETOF(VUSBCTRLEXTRA, Urb.abData[pExtra->cbMax])));
             return false;
         }
-        pExtra->Urb.VUsb.pvFreeCtx = NULL;
+        pExtra->Urb.pVUsb->pvFreeCtx = NULL;
         LogFlow(("vusbMsgSetup: Replacing canceled pExtra=%p with %p.\n", pExtra, pvNew));
         pPipe->pCtrl = pExtra = (PVUSBCTRLEXTRA)pvNew;
         pExtra->pMsg = (PVUSBSETUP)pExtra->Urb.abData;
@@ -1542,7 +1543,7 @@ static void vusbMsgDoTransfer(PVUSBURB pUrb, PVUSBSETUP pSetup, PVUSBCTRLEXTRA p
     Assert(pExtra->Urb.EndPt == pUrb->EndPt);
     pExtra->Urb.enmDir  = (pSetup->bmRequestType & VUSB_DIR_TO_HOST) ? VUSBDIRECTION_IN : VUSBDIRECTION_OUT;
     pExtra->Urb.cbData  = pSetup->wLength + sizeof(*pSetup);
-    pExtra->Urb.VUsb.pCtrlUrb = pUrb;
+    pExtra->Urb.pVUsb->pCtrlUrb = pUrb;
     int rc = vusbUrbQueueAsyncRh(&pExtra->Urb);
     if (RT_FAILURE(rc))
     {
@@ -1569,7 +1570,7 @@ static void vusbMsgDoTransfer(PVUSBURB pUrb, PVUSBSETUP pSetup, PVUSBCTRLEXTRA p
  */
 static int vusbMsgStall(PVUSBURB pUrb)
 {
-    PVUSBPIPE       pPipe = &pUrb->VUsb.pDev->aPipes[pUrb->EndPt];
+    PVUSBPIPE       pPipe = &pUrb->pVUsb->pDev->aPipes[pUrb->EndPt];
     PVUSBCTRLEXTRA  pExtra = pPipe->pCtrl;
     LogFlow(("%s: vusbMsgStall: pPipe=%p err=STALL stage %s->SETUP\n",
              pUrb->pszDesc, pPipe, g_apszCtlStates[pExtra->enmStage]));
@@ -1600,7 +1601,7 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
 #ifdef LOG_ENABLED
     vusbUrbTrace(pUrb, "vusbUrbSubmitCtrl", false);
 #endif
-    PVUSBDEV        pDev = pUrb->VUsb.pDev;
+    PVUSBDEV        pDev = pUrb->pVUsb->pDev;
     PVUSBPIPE       pPipe = &pDev->aPipes[pUrb->EndPt];
 
     RTCritSectEnter(&pPipe->CritSectCtrl);
@@ -1856,7 +1857,7 @@ int vusbUrbSubmit(PVUSBURB pUrb)
 {
     vusbUrbAssert(pUrb);
     Assert(pUrb->enmState == VUSBURBSTATE_ALLOCATED);
-    PVUSBDEV pDev = pUrb->VUsb.pDev;
+    PVUSBDEV pDev = pUrb->pVUsb->pDev;
     PVUSBPIPE pPipe = NULL;
     Assert(pDev);
 
@@ -1874,7 +1875,7 @@ int vusbUrbSubmit(PVUSBURB pUrb)
 
 #ifdef LOG_ENABLED
     /* stamp it */
-    pUrb->VUsb.u64SubmitTS = RTTimeNanoTS();
+    pUrb->pVUsb->u64SubmitTS = RTTimeNanoTS();
 #endif
 
     /** @todo Check max packet size here too? */
@@ -2002,8 +2003,8 @@ void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies)
     while (pUrb)
     {
         vusbUrbAssert(pUrb);
-        PVUSBURB pUrbNext = pUrb->VUsb.pNext;
-        PVUSBDEV pDev = pUrb->VUsb.pDev;
+        PVUSBURB pUrbNext = pUrb->pVUsb->pNext;
+        PVUSBDEV pDev = pUrb->pVUsb->pDev;
 
         /* Don't touch resetting devices - paranoid safety precaution. */
         if (vusbDevGetState(pDev) != VUSB_DEVICE_STATE_RESET)
@@ -2023,7 +2024,7 @@ void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies)
             {
                 vusbUrbAssert(pRipe);
                 if (pRipe == pUrbNext)
-                    pUrbNext = pUrbNext->VUsb.pNext;
+                    pUrbNext = pUrbNext->pVUsb->pNext;
                 vusbUrbRipe(pRipe);
             }
         }
@@ -2074,14 +2075,14 @@ void vusbUrbDoReapAsyncDev(PVUSBDEV pDev, RTMSINTERVAL cMillies)
  */
 static void vusbUrbCompletion(PVUSBURB pUrb)
 {
-    Assert(pUrb->VUsb.pDev->aPipes);
-    ASMAtomicDecU32(&pUrb->VUsb.pDev->aPipes[pUrb->EndPt].async);
+    Assert(pUrb->pVUsb->pDev->aPipes);
+    ASMAtomicDecU32(&pUrb->pVUsb->pDev->aPipes[pUrb->EndPt].async);
 
     if (pUrb->enmState == VUSBURBSTATE_REAPED)
         vusbUrbUnlink(pUrb);
 #ifdef VBOX_WITH_USB
     // Read-ahead URBs are handled differently
-    if (pUrb->VUsb.pvReadAhead)
+    if (pUrb->pVUsb->pvReadAhead)
         vusbUrbCompletionReadAhead(pUrb);
     else
 #endif
@@ -2099,7 +2100,7 @@ DECLHIDDEN(int) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
 {
     vusbUrbAssert(pUrb);
 #ifdef VBOX_WITH_STATISTICS
-    PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->VUsb.pDev);
+    PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->pVUsb->pDev);
 #endif
     if (pUrb->enmState == VUSBURBSTATE_IN_FLIGHT)
     {
@@ -2112,7 +2113,7 @@ DECLHIDDEN(int) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
         }
 
         pUrb->enmState = VUSBURBSTATE_CANCELLED;
-        PPDMUSBINS pUsbIns = pUrb->VUsb.pDev->pUsbIns;
+        PPDMUSBINS pUsbIns = pUrb->pVUsb->pDev->pUsbIns;
         pUsbIns->pReg->pfnUrbCancel(pUsbIns, pUrb);
         Assert(pUrb->enmState == VUSBURBSTATE_CANCELLED || pUrb->enmState == VUSBURBSTATE_REAPED);
 
@@ -2177,7 +2178,7 @@ DECLHIDDEN(int) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
  */
 void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode)
 {
-    int rc = vusbDevIoThreadExecSync(pUrb->VUsb.pDev, (PFNRT)vusbUrbCancelWorker, 2, pUrb, mode);
+    int rc = vusbDevIoThreadExecSync(pUrb->pVUsb->pDev, (PFNRT)vusbUrbCancelWorker, 2, pUrb, mode);
     AssertRC(rc);
 }
 
@@ -2190,7 +2191,7 @@ void vusbUrbCancelAsync(PVUSBURB pUrb, CANCELMODE mode)
     /* Don't try to cancel the URB when completion is in progress at the moment. */
     if (!ASMAtomicXchgBool(&pUrb->fCompleting, true))
     {
-        int rc = vusbDevIoThreadExec(pUrb->VUsb.pDev, 0 /* fFlags */, (PFNRT)vusbUrbCancelWorker, 2, pUrb, mode);
+        int rc = vusbDevIoThreadExec(pUrb->pVUsb->pDev, 0 /* fFlags */, (PFNRT)vusbUrbCancelWorker, 2, pUrb, mode);
         AssertRC(rc);
     }
 }
@@ -2218,7 +2219,7 @@ void vusbUrbRipe(PVUSBURB pUrb)
     {
         vusbUrbUnlink(pUrb);
         LogFlow(("%s: vusbUrbRipe: Freeing cancelled URB\n", pUrb->pszDesc));
-        pUrb->VUsb.pfnFree(pUrb);
+        pUrb->pVUsb->pfnFree(pUrb);
     }
     else
         AssertMsgFailed(("Invalid URB state %d; %s\n", pUrb->enmState, pUrb->pszDesc));

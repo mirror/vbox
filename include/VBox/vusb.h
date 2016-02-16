@@ -683,15 +683,28 @@ typedef struct VUSBIROOTHUBCONNECTOR
      *          at submit time, since that makes the usage of this api simpler.
      * @param   pInterface  Pointer to this struct.
      * @param   DstAddress  The destination address of the URB.
+     * @param   pDev        Optional device pointer the URB is for.
      * @param   enmType     Type of the URB.
      * @param   enmDir      Data transfer direction.
      * @param   cbData      The amount of data space required.
      * @param   cTds        The amount of TD space.
      * @param   pszTag      Custom URB tag assigned by the caller, only for
      *                      logged builds and optional.
+     *
+     * @note pDev should be NULL in most cases. The only useful case is for USB3 where
+     *       it is required for the SET_ADDRESS request because USB3 uses unicast traffic.
      */
-    DECLR3CALLBACKMEMBER(PVUSBURB, pfnNewUrb,(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, VUSBXFERTYPE enmType,
-                                              VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag));
+    DECLR3CALLBACKMEMBER(PVUSBURB, pfnNewUrb,(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, PVUSBIDEVICE pDev,
+                                              VUSBXFERTYPE enmType, VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag));
+
+    /**
+     * Free an URB not submitted yet.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this struct.
+     * @param   pUrb        Pointer to the URB to free returned by VUSBIROOTHUBCONNECTOR::pfnNewUrb.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFreeUrb, (PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb));
 
     /**
      * Submits a URB for transfer.
@@ -777,7 +790,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
 
 } VUSBIROOTHUBCONNECTOR;
 /** VUSBIROOTHUBCONNECTOR interface ID. */
-#define VUSBIROOTHUBCONNECTOR_IID               "481d7f23-f180-4fde-b636-094253eaf537"
+#define VUSBIROOTHUBCONNECTOR_IID               "a593cc64-a821-4e57-af2d-f86b2a052ea4"
 
 
 #ifdef IN_RING3
@@ -788,10 +801,16 @@ DECLINLINE(int) VUSBIRhSetUrbParams(PVUSBIROOTHUBCONNECTOR pInterface, size_t cb
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnNewUrb */
-DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t DstAddress, VUSBXFERTYPE enmType,
-                                   VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
+DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t DstAddress, PVUSBIDEVICE pDev,
+                                   VUSBXFERTYPE enmType, VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
 {
-    return pInterface->pfnNewUrb(pInterface, DstAddress, enmType, enmDir, cbData, cTds, pszTag);
+    return pInterface->pfnNewUrb(pInterface, DstAddress, pDev, enmType, enmDir, cbData, cTds, pszTag);
+}
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnSubmitUrb */
+DECLINLINE(int) VUSBIRhFreeUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb)
+{
+    return pInterface->pfnFreeUrb(pInterface, pUrb);
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnSubmitUrb */
@@ -947,7 +966,7 @@ typedef struct VUSBIDEVICE
 
 } VUSBIDEVICE;
 /** VUSBIDEVICE interface ID. */
-#define VUSBIDEVICE_IID                         "79a31188-043d-432c-82ac-9485c9ab9a49"
+#define VUSBIDEVICE_IID                         "af576b38-e8ca-4db7-810a-2596d8d57ca0"
 
 
 #ifdef IN_RING3
@@ -1114,6 +1133,8 @@ typedef const VUSBURBISOCPKT *PCVUSBURBISOCPKT;
 typedef struct VUSBURBHCIINT *PVUSBURBHCI;
 /** Private controller emulation specific TD data. */
 typedef struct VUSBURBHCITDINT *PVUSBURBHCITD;
+/** Private VUSB/roothub related state for the associated URB. */
+typedef struct VUSBURBVUSBINT *PVUSBURBVUSB;
 
 /**
  * Asynchronous USB request descriptor
@@ -1142,33 +1163,8 @@ typedef struct VUSBURB
     struct VUSBDEV *pDev;
 #endif
 
-    /** The VUSB data. */
-    struct VUSBURBVUSB
-    {
-        /** URB chain pointer. */
-        PVUSBURB        pNext;
-        /** URB chain pointer. */
-        PVUSBURB       *ppPrev;
-        /** Pointer to the original for control messages. */
-        PVUSBURB        pCtrlUrb;
-        /** Pointer to the VUSB device.
-         * This may be NULL if the destination address is invalid. */
-        struct VUSBDEV *pDev;
-        /** Specific to the pfnFree function. */
-        void           *pvFreeCtx;
-        /**
-         * Callback which will free the URB once it's reaped and completed.
-         * @param   pUrb    The URB.
-         */
-        DECLCALLBACKMEMBER(void, pfnFree)(PVUSBURB pUrb);
-        /** Submit timestamp. (logging only) */
-        uint64_t        u64SubmitTS;
-        /** The allocated data length. */
-        uint32_t        cbDataAllocated;
-        /** Opaque data holder when this is a read-ahead URB. */
-        void            *pvReadAhead;
-    } VUsb;
-
+    /** The VUSB stack private data. */
+    PVUSBURBVUSB        pVUsb;
     /** Private host controller data associated with this URB. */
     PVUSBURBHCI         pHci;
     /** Pointer to the host controller transfer descriptor array. */

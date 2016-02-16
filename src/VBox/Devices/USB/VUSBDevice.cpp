@@ -1051,9 +1051,9 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
     PVUSBURB pUrb = pDev->pAsyncUrbHead;
     while (pUrb)
     {
-        PVUSBURB pNext = pUrb->VUsb.pNext;
+        PVUSBURB pNext = pUrb->pVUsb->pNext;
 
-        Assert(pUrb->VUsb.pDev == pDev);
+        Assert(pUrb->pVUsb->pDev == pDev);
 
         LogFlow(("%s: vusbDevCancelAllUrbs: CANCELING URB\n", pUrb->pszDesc));
         int rc = vusbUrbCancelWorker(pUrb, CANCELMODE_FAIL);
@@ -1072,8 +1072,8 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
         pUrb = pDev->pAsyncUrbHead;
         while (pUrb)
         {
-            PVUSBURB pNext = pUrb->VUsb.pNext;
-            Assert(pUrb->VUsb.pDev == pDev);
+            PVUSBURB pNext = pUrb->pVUsb->pNext;
+            Assert(pUrb->pVUsb->pDev == pDev);
 
             PVUSBURB pRipe = NULL;
             if (pUrb->enmState == VUSBURBSTATE_REAPED)
@@ -1090,7 +1090,7 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
             if (pRipe)
             {
                 if (pRipe == pNext)
-                    pNext = pNext->VUsb.pNext;
+                    pNext = pNext->pVUsb->pNext;
                 vusbUrbRipe(pRipe);
                 cReaped++;
             }
@@ -1107,8 +1107,8 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
         pUrb = pDev->pAsyncUrbHead;
         while (pUrb)
         {
-            PVUSBURB pNext = pUrb->VUsb.pNext;
-            Assert(pUrb->VUsb.pDev == pDev);
+            PVUSBURB pNext = pUrb->pVUsb->pNext;
+            Assert(pUrb->pVUsb->pDev == pDev);
 
             AssertMsgFailed(("%s: Leaking left over URB! state=%d pDev=%p[%s]\n",
                              pUrb->pszDesc, pUrb->enmState, pDev, pDev->pUsbIns->pszName));
@@ -1117,7 +1117,7 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
              * It was tested with MSD & iphone attachment to vSMP guest, if
              * it breaks anything, please add comment here, why we should unlink only.
              */
-            pUrb->VUsb.pfnFree(pUrb);
+            pUrb->pVUsb->pfnFree(pUrb);
             pUrb = pNext;
         }
     }
