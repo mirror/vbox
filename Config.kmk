@@ -2834,6 +2834,7 @@ ifdef VBOX_SIGNING_MODE
   # @param 2  File description. Optional.
   # @param 3  Additional parameters. Optional.
   # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
+  # @param 5  Disables dual signing if non-empty.
   ifndef VBOX_SIGN_FILE_FN
    ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
@@ -2846,6 +2847,7 @@ ifdef VBOX_SIGNING_MODE
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
 	$(1) \
+    	$(if-expr "$5" == "",\
 	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_SIGNTOOL) \
     	sign /as /fd sha256 \
 	$(VBOX_CROSS_CERTIFICATE_SHA2_FILE_ARGS) \
@@ -2855,7 +2857,7 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_TSA_SHA2_URL_ARGS) \
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
-	$(1)
+	$(1),)
    else
     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) sign \
 	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
