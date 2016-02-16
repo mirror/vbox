@@ -48,7 +48,7 @@ public:
 private:
 
     /** Prepares main-layout. */
-    void prepareLayout();
+    void prepareMainLayout();
 
     /** Prepares model. */
     void prepareModel();

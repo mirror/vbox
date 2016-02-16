@@ -84,7 +84,7 @@ protected:
     /** Holds the machine console reference. */
     CConsole m_console;
 
-    /** Holds the model. */
+    /** Holds the instance of model. */
     UIInformationModel *m_pModel;
 };
 
@@ -233,7 +233,7 @@ public:
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
 
-/** UIInformationDataRuntimeAttributes extension for the details-element type 'runtime attributes'. */
+/** UIInformationDataItem extension for the details-element type 'runtime attributes'. */
 class UIInformationDataRuntimeAttributes : public UIInformationDataItem
 {
     Q_OBJECT;
@@ -247,19 +247,12 @@ public:
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
 
-/** UIInformationDataNetworkStatistics extension for the details-element type 'network statistics'. */
+/** UIInformationDataItem extension for the details-element type 'network statistics'. */
 class UIInformationDataNetworkStatistics : public UIInformationDataItem
 {
     Q_OBJECT;
 
 public:
-
-    /** VM statistics counter data map. */
-    typedef QMap <QString, QString> DataMapType;
-    /** VM statistics counter links map. */
-    typedef QMap <QString, QStringList> LinksMapType;
-    /** VM statistics counter struct. */
-    struct CounterElementType { QString type; DataMapType list; };
 
     /** Constructs details-element object for passed @a pParent set. */
     UIInformationDataNetworkStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
@@ -267,12 +260,21 @@ public:
     /** Returns data for item specified by @a idx for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
-    QString parseStatistics(const QString &strText);
-
-public slots:
+private slots:
+    /** Handles processing of statistics. */
     void sltProcessStatistics();
 
 private:
+
+    /** Returns parsed-data of statistics. */
+    QString parseStatistics(const QString &strText);
+
+    /** VM statistics counter data map. */
+    typedef QMap <QString, QString> DataMapType;
+    /** VM statistics counter links map. */
+    typedef QMap <QString, QStringList> LinksMapType;
+    /** VM statistics counter struct. */
+    struct CounterElementType { QString type; DataMapType list; };
 
     /** VM statistics counter names. */
     DataMapType        m_names;
@@ -286,19 +288,12 @@ private:
     QTimer            *m_pTimer;
 };
 
-/** UIInformationDataStorageStatistics extension for the details-element type 'storage statistics'. */
+/** UIInformationDataItem extension for the details-element type 'storage statistics'. */
 class UIInformationDataStorageStatistics : public UIInformationDataItem
 {
     Q_OBJECT;
 
 public:
-
-    /** VM statistics counter data map. */
-    typedef QMap <QString, QString> DataMapType;
-    /** VM statistics counter links map. */
-    typedef QMap <QString, QStringList> LinksMapType;
-    /** VM statistics counter struct. */
-    struct CounterElementType { QString type; DataMapType list; };
 
     /** Constructs details-element object for passed @a pParent set. */
     UIInformationDataStorageStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
@@ -306,12 +301,21 @@ public:
     /** Returns data for item specified by @a idx for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
-    QString parseStatistics(const QString &strText);
-
-public slots:
+private slots:
+    /** Handles processing of statistics. */
     void sltProcessStatistics();
 
 private:
+
+    /** Returns parsed-data of statistics. */
+    QString parseStatistics(const QString &strText);
+
+    /** VM statistics counter data map. */
+    typedef QMap <QString, QString> DataMapType;
+    /** VM statistics counter links map. */
+    typedef QMap <QString, QStringList> LinksMapType;
+    /** VM statistics counter struct. */
+    struct CounterElementType { QString type; DataMapType list; };
 
     /** VM statistics counter names. */
     DataMapType        m_names;

@@ -71,23 +71,9 @@ UIInformationDataItem::~UIInformationDataItem()
 
 QVariant UIInformationDataItem::data(const QModelIndex &index, int role) const
 {
-    switch (role)
-    {
-        case Qt::DisplayRole:
-        {
-            return tr("General", "details report");
-        }
-        break;
-
-        case Qt::DecorationRole:
-        {
-            return QIcon(":/machine_16px.png");
-        }
-        break;
-
-        default:
-        break;
-    }
+    Q_UNUSED(index);
+    Q_UNUSED(role);
+    /* Return null QVariant by default: */
     return QVariant();
 }
 
@@ -112,7 +98,7 @@ QVariant UIInformationDataGeneral::data(const QModelIndex &index, int role) cons
         }
         break;
 
-        case Qt::UserRole+1:
+        case Qt::UserRole + 1:
         {
             UITextTable p_text;
             p_text << UITextTableLine(tr("Name", "details report"), m_machine.GetName());
@@ -121,7 +107,7 @@ QVariant UIInformationDataGeneral::data(const QModelIndex &index, int role) cons
         }
         break;
 
-        case Qt::UserRole+2:
+        case Qt::UserRole + 2:
         {
             return m_type;
         }
@@ -154,23 +140,20 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
         }
         break;
 
-        case Qt::UserRole+1:
+        case Qt::UserRole + 1:
         {
 #ifdef VBOX_WITH_FULL_DETAILS_REPORT
             /* BIOS Settings holder: */
             CBIOSSettings biosSettings = aMachine.GetBIOSSettings();
             /* ACPI: */
-            QString acpi = biosSettings.GetACPIEnabled()
-                           ? tr("Enabled", "details report (ACPI)")
-                           : tr("Disabled", "details report (ACPI)");
+            QString acpi = biosSettings.GetACPIEnabled() ? tr("Enabled", "details report (ACPI)") :
+                                                           tr("Disabled", "details report (ACPI)");
             /* I/O APIC: */
-            QString ioapic = biosSettings.GetIOAPICEnabled()
-                             ? tr("Enabled", "details report (I/O APIC)")
-                             : tr("Disabled", "details report (I/O APIC)");
+            QString ioapic = biosSettings.GetIOAPICEnabled() ? tr("Enabled", "details report (I/O APIC)") :
+                                                               tr("Disabled", "details report (I/O APIC)");
             /* PAE/NX: */
-            QString pae = aMachine.GetCpuProperty(KCpuPropertyType_PAE)
-                          ? tr("Enabled", "details report (PAE/NX)")
-                          : tr("Disabled", "details report (PAE/NX)");
+            QString pae = aMachine.GetCpuProperty(KCpuPropertyType_PAE) ? tr("Enabled", "details report (PAE/NX)") :
+                                                                          tr("Disabled", "details report (PAE/NX)");
 
             iRowCount += 3; /* Full report rows: */
 #endif /* VBOX_WITH_FULL_DETAILS_REPORT */
@@ -178,15 +161,15 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
             QString bootOrder;
             for (ulong i = 1; i <= vboxGlobal().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
             {
-                KDeviceType device = m_machine.GetBootOrder (i);
+                KDeviceType device = m_machine.GetBootOrder(i);
                 if (device == KDeviceType_Null)
                     continue;
                 if (!bootOrder.isEmpty())
                     bootOrder += ", ";
-                bootOrder += gpConverter->toString (device);
+                bootOrder += gpConverter->toString(device);
             }
             if (bootOrder.isEmpty())
-                bootOrder = gpConverter->toString (KDeviceType_Null);
+                bootOrder = gpConverter->toString(KDeviceType_Null);
 
             /* Prepare data: */
             UITextTable p_text;
@@ -205,14 +188,14 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
             if (fVTxAMDVSupported)
             {
                 /* VT-x/AMD-V: */
-                QString virt = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled)
-                    ? tr ("Enabled", "details report (VT-x/AMD-V)")
-                    : tr ("Disabled", "details report (VT-x/AMD-V)");
+                QString virt = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled) ?
+                               tr("Enabled", "details report (VT-x/AMD-V)") :
+                               tr("Disabled", "details report (VT-x/AMD-V)");
                 p_text << UITextTableLine(tr("VT-x/AMD-V", "details report"), virt);
                 /* Nested Paging: */
-                QString nested = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging)
-                    ? tr ("Enabled", "details report (Nested Paging)")
-                    : tr ("Disabled", "details report (Nested Paging)");
+                QString nested = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging) ?
+                                 tr("Enabled", "details report (Nested Paging)") :
+                                 tr("Disabled", "details report (Nested Paging)");
                 p_text << UITextTableLine(tr("Nested Paging", "details report"), nested);
             }
             /* Paravirtualization Interface: */
@@ -223,7 +206,7 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
         }
         break;
 
-        case Qt::UserRole+2:
+        case Qt::UserRole + 2:
         {
             return m_type;
         }
@@ -266,15 +249,15 @@ QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) cons
             if (cGuestScreens > 1)
                 p_text << UITextTableLine(tr("Screens", "details report"), QString::number(cGuestScreens));
 
-            QString acc3d = m_machine.GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable()
-                            ? tr("Enabled", "details report (3D Acceleration)")
-                            : tr("Disabled", "details report (3D Acceleration)");
+            QString acc3d = m_machine.GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable() ?
+                            tr("Enabled", "details report (3D Acceleration)") :
+                            tr("Disabled", "details report (3D Acceleration)");
             p_text << UITextTableLine(tr("3D Acceleration", "details report"), acc3d);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-            QString acc2dVideo = m_machine.GetAccelerate2DVideoEnabled()
-                                ? tr("Enabled", "details report (2D Video Acceleration)")
-                                : tr("Disabled", "details report (2D Video Acceleration)");
+            QString acc2dVideo = m_machine.GetAccelerate2DVideoEnabled() ?
+                                 tr("Enabled", "details report (2D Video Acceleration)") :
+                                 tr("Disabled", "details report (2D Video Acceleration)");
             p_text << UITextTableLine(tr("2D Video Acceleration", "details report"), acc2dVideo);
 #endif
 
@@ -292,7 +275,7 @@ QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) cons
         }
         break;
 
-        case Qt::UserRole+2:
+        case Qt::UserRole + 2:
         {
             return m_type;
         }

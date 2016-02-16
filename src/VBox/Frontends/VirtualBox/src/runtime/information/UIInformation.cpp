@@ -41,7 +41,7 @@ UIInformation::UIInformation(QWidget *pParent, const CMachine &machine, const CC
     , m_pView(0)
 {
     /* Prepare main-layout: */
-    prepareLayout();
+    prepareMainLayout();
 
     /* Prepare model: */
     prepareModel();
@@ -50,7 +50,7 @@ UIInformation::UIInformation(QWidget *pParent, const CMachine &machine, const CC
     prepareView();
 }
 
-void UIInformation::prepareLayout()
+void UIInformation::prepareMainLayout()
 {
     /* Create main-layout: */
     m_pMainLayout = new QVBoxLayout(this);
@@ -68,69 +68,79 @@ void UIInformation::prepareModel()
     /* Create model: */
     m_pModel = new UIInformationModel(this, m_machine, m_console);
     AssertPtrReturnVoid(m_pModel);
+    {
+        /* Prepare data for information-model: */
+        /* General data-item: */
+        UIInformationDataItem *pGeneral = new UIInformationDataGeneral(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pGeneral);
+        {
+            m_pModel->addItem(pGeneral);
+        }
 
-    /* Prepare data for information-model: */
-    /* General data-item: */
-    UIInformationDataItem *pGeneral = new UIInformationDataGeneral(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pGeneral);
-    {
-        m_pModel->addItem(pGeneral);
-    }
-    /* System data-item: */
-    UIInformationDataItem *pSystem = new UIInformationDataSystem(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pSystem);
-    {
-        m_pModel->addItem(pSystem);
-    }
-    /* Display data-item: */
-    UIInformationDataItem *pDisplay = new UIInformationDataDisplay(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pDisplay);
-    {
-        m_pModel->addItem(pDisplay);
-    }
-    /* Storage data-item: */
-    UIInformationDataItem *pStorage = new UIInformationDataStorage(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pStorage);
-    {
-        m_pModel->addItem(pStorage);
-    }
-    /* Audio data-item: */
-    UIInformationDataItem *pAudio = new UIInformationDataAudio(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pAudio);
-    {
-        m_pModel->addItem(pAudio);
-    }
-    /* Network data-item: */
-    UIInformationDataItem *pNetwork = new UIInformationDataNetwork(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pNetwork);
-    {
-        m_pModel->addItem(pNetwork);
-    }
-    /* Serial ports data-item: */
-    UIInformationDataItem *pSerialPorts = new UIInformationDataSerialPorts(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pSerialPorts);
-    {
-        m_pModel->addItem(pSerialPorts);
-    }
+        /* System data-item: */
+        UIInformationDataItem *pSystem = new UIInformationDataSystem(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pSystem);
+        {
+            m_pModel->addItem(pSystem);
+        }
+
+        /* Display data-item: */
+        UIInformationDataItem *pDisplay = new UIInformationDataDisplay(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pDisplay);
+        {
+            m_pModel->addItem(pDisplay);
+        }
+
+        /* Storage data-item: */
+        UIInformationDataItem *pStorage = new UIInformationDataStorage(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pStorage);
+        {
+            m_pModel->addItem(pStorage);
+        }
+
+        /* Audio data-item: */
+        UIInformationDataItem *pAudio = new UIInformationDataAudio(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pAudio);
+        {
+            m_pModel->addItem(pAudio);
+        }
+
+        /* Network data-item: */
+        UIInformationDataItem *pNetwork = new UIInformationDataNetwork(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pNetwork);
+        {
+            m_pModel->addItem(pNetwork);
+        }
+
+        /* Serial ports data-item: */
+        UIInformationDataItem *pSerialPorts = new UIInformationDataSerialPorts(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pSerialPorts);
+        {
+            m_pModel->addItem(pSerialPorts);
+        }
+
 #ifdef VBOX_WITH_PARALLEL_PORTS
-    /* Parallel ports data-item: */
-    UIInformationDataItem *pParallelPorts = new UIInformationDataParallelPorts(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pParallelPorts);
-    {
-        m_list.append(pParallelPorts);
-    }
+        /* Parallel ports data-item: */
+        UIInformationDataItem *pParallelPorts = new UIInformationDataParallelPorts(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pParallelPorts);
+        {
+            m_list.append(pParallelPorts);
+        }
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-    /* USB data-item: */
-    UIInformationDataItem *pUSB = new UIInformationDataUSB(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pUSB);
-    {
-        m_pModel->addItem(pUSB);
-    }
-    /* Shared folders data-item: */
-    UIInformationDataItem *pSharedFolders = new UIInformationDataSharedFolders(m_machine, m_console, m_pModel);
-    AssertPtrReturnVoid(pSharedFolders);
-    {
-        m_pModel->addItem(pSharedFolders);
+
+        /* USB data-item: */
+        UIInformationDataItem *pUSB = new UIInformationDataUSB(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pUSB);
+        {
+            m_pModel->addItem(pUSB);
+        }
+
+        /* Shared folders data-item: */
+        UIInformationDataItem *pSharedFolders = new UIInformationDataSharedFolders(m_machine, m_console, m_pModel);
+        AssertPtrReturnVoid(pSharedFolders);
+        {
+            m_pModel->addItem(pSharedFolders);
+        }
     }
 }
 
@@ -149,7 +159,7 @@ void UIInformation::prepareView()
             m_pView->setItemDelegate(pItem);
         }
         /* Connect datachanged signal: */
-        connect(m_pModel, SIGNAL(dataChanged(const QModelIndex, const QModelIndex)), m_pView, SLOT(updateData(const QModelIndex, const QModelIndex)));
+        connect(m_pModel, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)), m_pView, SLOT(updateData(const QModelIndex&, const QModelIndex&)));
 
         /* Set model: */
         m_pView->setModel(m_pModel);
