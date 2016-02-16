@@ -113,6 +113,7 @@ struct vbox_private {
         struct drm_global_reference mem_global_ref;
         struct ttm_bo_global_ref bo_global_ref;
         struct ttm_bo_device bdev;
+        bool mm_initialised;
     } ttm;
 
     spinlock_t dev_lock;
@@ -195,8 +196,10 @@ extern void vbox_refresh_modes(struct drm_device *dev);
 # define CRTC_FB(crtc) (crtc)->primary->fb
 #endif
 
-void vbox_enable_accel(struct vbox_private *vbox, unsigned crtc_id);
+void vbox_enable_accel(struct vbox_private *vbox);
+void vbox_disable_accel(struct vbox_private *vbox);
 void vbox_enable_caps(struct vbox_private *vbox);
+void vbox_disable_caps(struct vbox_private *vbox);
 
 void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                                        struct drm_clip_rect *rects,

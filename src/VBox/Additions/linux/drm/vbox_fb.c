@@ -81,15 +81,11 @@ static int vbox_set_par(struct fb_info *info)
     struct vbox_fbdev *fbdev = info->par;
     struct drm_device *dev;
     struct vbox_private *vbox;
-    unsigned i;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
     dev = fbdev->helper.dev;
     vbox = dev->dev_private;
     vbox_refresh_modes(dev);
-    for (i = 0; i < vbox->num_crtcs; ++i)
-        VBoxVBVADisable(&vbox->vbva_info[i], &vbox->submit_info, i);
-    VBoxHGSMISendCapsInfo(&vbox->submit_info, 0);
     return drm_fb_helper_set_par(info);
 }
 
@@ -447,6 +443,7 @@ fini:
     drm_fb_helper_fini(&fbdev->helper);
 free:
     kfree(fbdev);
+    vbox->fbdev = NULL;
     LogFunc(("vboxvideo: %d, ret=%d\n", __LINE__, ret));
     return ret;
 }

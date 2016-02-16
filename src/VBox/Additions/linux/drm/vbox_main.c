@@ -65,23 +65,40 @@ static void vbox_user_framebuffer_destroy(struct drm_framebuffer *fb)
     kfree(fb);
 }
 
-void vbox_enable_accel(struct vbox_private *vbox, unsigned crtc_id)
+void vbox_enable_accel(struct vbox_private *vbox)
 {
-    struct VBVABUFFER *vbva = vbox->vbva_info[crtc_id].pVBVA;
+    unsigned i;
+    struct VBVABUFFER *vbva;
 
-    if (vbva == NULL) {
-        LogFunc(("vboxvideo: enabling VBVA.\n"));
-        vbva = (struct VBVABUFFER *) (  ((uint8_t *)vbox->vram)
-                                       + vbox->vram_size
-                                       + crtc_id * VBVA_MIN_BUFFER_SIZE);
-        if (!VBoxVBVAEnable(&vbox->vbva_info[crtc_id], &vbox->submit_info, vbva, crtc_id))
-            AssertReleaseMsgFailed(("VBoxVBVAEnable failed - heap allocation error, very old host or driver error.\n"));
+    AssertLogRelReturnVoid(vbox->vbva_info != NULL);
+    for (i = 0; i < vbox->num_crtcs; ++i) {
+        if (vbox->vbva_info[i].pVBVA == NULL) {
+            LogFunc(("vboxvideo: enabling VBVA.\n"));
+            vbva = (struct VBVABUFFER *) (  ((uint8_t *)vbox->vram)
+                                           + vbox->vram_size
+                                           + i * VBVA_MIN_BUFFER_SIZE);
+            if (!VBoxVBVAEnable(&vbox->vbva_info[i], &vbox->submit_info, vbva, i))
+                AssertReleaseMsgFailed(("VBoxVBVAEnable failed - heap allocation error, very old host or driver error.\n"));
+        }
     }
+}
+
+void vbox_disable_accel(struct vbox_private *vbox)
+{
+    unsigned i;
+
+    for (i = 0; i < vbox->num_crtcs; ++i)
+        VBoxVBVADisable(&vbox->vbva_info[i], &vbox->submit_info, i);
 }
 
 void vbox_enable_caps(struct vbox_private *vbox)
 {
     VBoxHGSMISendCapsInfo(&vbox->submit_info, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION | VBVACAPS_IRQ);
+}
+
+void vbox_disable_caps(struct vbox_private *vbox)
+{
+    VBoxHGSMISendCapsInfo(&vbox->submit_info, 0);
 }
 
 /** Send information about dirty rectangles to VBVA.  If necessary we enable
@@ -98,13 +115,7 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
 
     LogFunc(("vboxvideo: %d: fb=%p, num_rects=%u, vbox=%p\n", __LINE__, fb,
              num_rects, vbox));
-    if (vbox->vbva_info[0].pVBVA == NULL) {
-        for (i = 0; i < vbox->num_crtcs; ++i)
-            vbox_enable_accel(vbox, i);
-        /* Assume that if the user knows to send dirty rectangle information
-         * they can also handle hot-plug events. */
-        vbox_enable_caps(vbox);
-    }
+    vbox_enable_accel(vbox);
     spin_lock_irqsave(&vbox->dev_lock, flags);
     for (i = 0; i < num_rects; ++i)
     {
@@ -213,12 +224,9 @@ static const struct drm_mode_config_funcs vbox_mode_funcs = {
 
 static void vbox_accel_fini(struct vbox_private *vbox)
 {
-    unsigned i;
-
     if (vbox->vbva_info)
     {
-        for (i = 0; i < vbox->num_crtcs; ++i)
-            VBoxVBVADisable(&vbox->vbva_info[i], &vbox->submit_info, i);
+        vbox_disable_accel(vbox);
         kfree(vbox->vbva_info);
         vbox->vbva_info = NULL;
     }
@@ -292,6 +300,9 @@ static int vbox_hw_init(struct vbox_private *vbox)
     uint32_t base_offset, guest_heap_offset, guest_heap_size, host_flags_offset;
     void *guest_heap;
 
+    vbox->full_vram_size = VBoxVideoGetVRAMSize();
+    vbox->any_pitch = VBoxVideoAnyWidthAllowed();
+    DRM_INFO("VRAM %08x\n", vbox->full_vram_size);
     VBoxHGSMIGetBaseMappingInfo(vbox->full_vram_size, &base_offset, NULL,
                                 &guest_heap_offset, &guest_heap_size, &host_flags_offset);
     guest_heap =   ((uint8_t *)vbox->vram) + base_offset + guest_heap_offset;
@@ -313,6 +324,13 @@ static int vbox_hw_init(struct vbox_private *vbox)
     return vbox_accel_init(vbox);
 }
 
+static void vbox_hw_fini(struct vbox_private *vbox)
+{
+    vbox_accel_fini(vbox);
+    if (vbox->last_mode_hints)
+        kfree(vbox->last_mode_hints);
+    vbox->last_mode_hints = NULL;
+}
 
 int vbox_driver_load(struct drm_device *dev, unsigned long flags)
 {
@@ -336,9 +354,6 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
         ret = -EIO;
         goto out_free;
     }
-    vbox->full_vram_size = VBoxVideoGetVRAMSize();
-    vbox->any_pitch = VBoxVideoAnyWidthAllowed();
-    DRM_INFO("VRAM %08x\n", vbox->full_vram_size);
 
     ret = vbox_hw_init(vbox);
     if (ret)
@@ -372,11 +387,7 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
              __LINE__, vbox, vbox->vram, (unsigned)vbox->full_vram_size));
     return 0;
 out_free:
-    vbox_irq_fini(vbox);
-    if (vbox->vram)
-        pci_iounmap(dev->pdev, vbox->vram);
-    kfree(vbox);
-    dev->dev_private = NULL;
+    vbox_driver_unload(dev);
     LogFunc(("vboxvideo: %d: ret=%d\n", __LINE__, ret));
     return ret;
 }
@@ -389,12 +400,15 @@ int vbox_driver_unload(struct drm_device *dev)
     vbox_fbdev_fini(dev);
     vbox_irq_fini(vbox);
     vbox_mode_fini(dev);
-    drm_mode_config_cleanup(dev);
+    if (dev->mode_config.funcs)
+        drm_mode_config_cleanup(dev);
 
-    vbox_accel_fini(vbox);
+    vbox_hw_fini(vbox);
     vbox_mm_fini(vbox);
-    pci_iounmap(dev->pdev, vbox->vram);
+    if (vbox->vram)
+        pci_iounmap(dev->pdev, vbox->vram);
     kfree(vbox);
+    dev->dev_private = NULL;
     LogFunc(("vboxvideo: %d\n", __LINE__));
     return 0;
 }
