@@ -679,6 +679,7 @@ enum InformationElementType
     InformationElementType_SF,
     InformationElementType_UI,
     InformationElementType_Description,
+    InformationElementType_SharedFolders,
     InformationElementType_RuntimeAttributes,
     InformationElementType_StorageStatistics,
     InformationElementType_NetworkStatistics
