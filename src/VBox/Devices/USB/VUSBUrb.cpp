@@ -161,7 +161,7 @@ DECLINLINE(const char *) GetScsiKCQ(uint8_t Key, uint8_t ASC, uint8_t ASCQ)
 /**
  * Logs an URB.
  *
- * Note that pUrb->pUsbIns, pUrb->VUsb.pDev and pUrb->VUsb.pDev->pUsbIns can all be NULL.
+ * Note that pUrb->VUsb.pDev and pUrb->VUsb.pDev->pUsbIns can all be NULL.
  */
 void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
 {
@@ -176,10 +176,10 @@ void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
     if (cchMsg > s_cchMaxMsg)
         s_cchMaxMsg = cchMsg;
 
-    Log(("%s: %*s: pDev=%p[%s] rc=%s a=%i e=%u d=%s t=%s cb=%#x(%d) Ed=%08x cTds=%d Td0=%08x ts=%RU64 (%RU64 ns ago) %s\n",
+    Log(("%s: %*s: pDev=%p[%s] rc=%s a=%i e=%u d=%s t=%s cb=%#x(%d) ts=%RU64 (%RU64 ns ago) %s\n",
          pUrb->pszDesc, s_cchMaxMsg, pszMsg,
          pDev,
-         pUrb->pUsbIns ? pUrb->pUsbIns->pszName : "",
+         pUrb->VUsb.pDev ? pUrb->VUsb.pDev->pUsbIns->pszName : "",
          vusbUrbStatusName(pUrb->enmStatus),
          pDev ? pDev->u8Address : -1,
          pUrb->EndPt,
@@ -187,9 +187,6 @@ void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
          vusbUrbTypeName(pUrb->enmType),
          pUrb->cbData,
          pUrb->cbData,
-         pUrb->Hci.EdAddr,
-         pUrb->Hci.cTds,
-         pUrb->Hci.cTds ? pUrb->Hci.paTds[0].TdAddr : ~(uint32_t)0,
          pUrb->VUsb.u64SubmitTS,
          RTTimeNanoTS() - pUrb->VUsb.u64SubmitTS,
          pUrb->fShortNotOk ? "ShortNotOk" : "ShortOk"));
@@ -1170,7 +1167,7 @@ DECLINLINE(bool) vusbUrbIsRequestSafe(PCVUSBSETUP pSetup, PVUSBURB pUrb)
         case VUSB_REQ_CLEAR_FEATURE:
             return  pUrb->EndPt != 0                   /* not default control pipe */
                 ||  pSetup->wValue != 0                /* not ENDPOINT_HALT */
-                ||  !pUrb->pUsbIns->pReg->pfnUsbClearHaltedEndpoint; /* not special need for backend */
+                ||  !pUrb->VUsb.pDev->pUsbIns->pReg->pfnUsbClearHaltedEndpoint; /* not special need for backend */
         case VUSB_REQ_SET_ADDRESS:
         case VUSB_REQ_SET_CONFIGURATION:
         case VUSB_REQ_GET_CONFIGURATION:
@@ -1228,7 +1225,7 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
     }
 
     RTCritSectEnter(&pDev->CritSectAsyncUrbs);
-    int rc = pUrb->pUsbIns->pReg->pfnUrbQueue(pUrb->pUsbIns, pUrb);
+    int rc = pDev->pUsbIns->pReg->pfnUrbQueue(pDev->pUsbIns, pUrb);
     if (RT_FAILURE(rc))
     {
         LogFlow(("%s: vusbUrbQueueAsyncRh: returns %Rrc (queue_urb)\n", pUrb->pszDesc, rc));
@@ -1415,7 +1412,6 @@ static PVUSBCTRLEXTRA vusbMsgAllocExtraData(PVUSBURB pUrb)
         pExtra->Urb.VUsb.pvFreeCtx = &pExtra->Urb;
         //pExtra->Urb.Hci = {0};
         //pExtra->Urb.Dev.pvProxyUrb = NULL;
-        pExtra->Urb.pUsbIns = pUrb->pUsbIns;
         pExtra->Urb.DstAddress = pUrb->DstAddress;
         pExtra->Urb.EndPt = pUrb->EndPt;
         pExtra->Urb.enmType = VUSBXFERTYPE_MSG;
@@ -2085,7 +2081,7 @@ static void vusbUrbCompletion(PVUSBURB pUrb)
         vusbUrbUnlink(pUrb);
 #ifdef VBOX_WITH_USB
     // Read-ahead URBs are handled differently
-    if (pUrb->Hci.pNext != NULL)
+    if (pUrb->VUsb.pvReadAhead)
         vusbUrbCompletionReadAhead(pUrb);
     else
 #endif
@@ -2116,7 +2112,7 @@ DECLHIDDEN(int) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
         }
 
         pUrb->enmState = VUSBURBSTATE_CANCELLED;
-        PPDMUSBINS pUsbIns = pUrb->pUsbIns;
+        PPDMUSBINS pUsbIns = pUrb->VUsb.pDev->pUsbIns;
         pUsbIns->pReg->pfnUrbCancel(pUsbIns, pUrb);
         Assert(pUrb->enmState == VUSBURBSTATE_CANCELLED || pUrb->enmState == VUSBURBSTATE_REAPED);
 

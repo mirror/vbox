@@ -646,7 +646,7 @@ typedef struct VUSBIROOTHUBPORT
 
 } VUSBIROOTHUBPORT;
 /** VUSBIROOTHUBPORT interface ID. */
-#define VUSBIROOTHUBPORT_IID                    "e38e2978-7aa2-4860-94b6-9ef4a066d8a0"
+#define VUSBIROOTHUBPORT_IID                    "79a31188-043d-432c-82ac-9485c9ab9a49"
 
 /** Pointer to a VUSB RootHub connector interface. */
 typedef struct VUSBIROOTHUBCONNECTOR *PVUSBIROOTHUBCONNECTOR;
@@ -657,6 +657,21 @@ typedef struct VUSBIROOTHUBCONNECTOR *PVUSBIROOTHUBCONNECTOR;
  */
 typedef struct VUSBIROOTHUBCONNECTOR
 {
+    /**
+     * Sets the URB parameters for the caller.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this struct.
+     * @param   cbHci       Size of the data private to the HCI for each URB when allocated.
+     * @param   cbHciTd     Size of one transfer descriptor. The number of transfer descriptors
+     *                      is given VUSBIROOTHUBCONNECTOR::pfnNewUrb for each URB to calculate the
+     *                      final amount of memory required for the TDs.
+     *
+     * @note This must be called before starting to allocate any URB or otherwise there will be no
+     *       data available for the HCI.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetUrbParams, (PVUSBIROOTHUBCONNECTOR pInterface, size_t cbHci, size_t cbHciTd));
+
     /**
      * Allocates a new URB for a transfer.
      *
@@ -762,10 +777,16 @@ typedef struct VUSBIROOTHUBCONNECTOR
 
 } VUSBIROOTHUBCONNECTOR;
 /** VUSBIROOTHUBCONNECTOR interface ID. */
-#define VUSBIROOTHUBCONNECTOR_IID               "dba1a54e-9708-4702-8d7f-b9ac94dc17e6"
+#define VUSBIROOTHUBCONNECTOR_IID               "481d7f23-f180-4fde-b636-094253eaf537"
 
 
 #ifdef IN_RING3
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnSetUrbParams */
+DECLINLINE(int) VUSBIRhSetUrbParams(PVUSBIROOTHUBCONNECTOR pInterface, size_t cbHci, size_t cbHciTd)
+{
+    return pInterface->pfnSetUrbParams(pInterface, cbHci, cbHciTd);
+}
+
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnNewUrb */
 DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t DstAddress, VUSBXFERTYPE enmType,
                                    VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
@@ -926,7 +947,7 @@ typedef struct VUSBIDEVICE
 
 } VUSBIDEVICE;
 /** VUSBIDEVICE interface ID. */
-#define VUSBIDEVICE_IID                         "f3facb2b-edd3-4b5b-b07e-2cc4d52a471e"
+#define VUSBIDEVICE_IID                         "79a31188-043d-432c-82ac-9485c9ab9a49"
 
 
 #ifdef IN_RING3
@@ -1089,6 +1110,11 @@ typedef VUSBURBISOCPKT *PVUSBURBISOCPTK;
 /** Pointer to a const isochronous packet. */
 typedef const VUSBURBISOCPKT *PCVUSBURBISOCPKT;
 
+/** Private controller emulation specific data for the associated USB request descriptor. */
+typedef struct VUSBURBHCIINT *PVUSBURBHCI;
+/** Private controller emulation specific TD data. */
+typedef struct VUSBURBHCITDINT *PVUSBURBHCITD;
+
 /**
  * Asynchronous USB request descriptor
  */
@@ -1128,7 +1154,7 @@ typedef struct VUSBURB
         /** Pointer to the VUSB device.
          * This may be NULL if the destination address is invalid. */
         struct VUSBDEV *pDev;
-        /** Sepcific to the pfnFree function. */
+        /** Specific to the pfnFree function. */
         void           *pvFreeCtx;
         /**
          * Callback which will free the URB once it's reaped and completed.
@@ -1139,35 +1165,14 @@ typedef struct VUSBURB
         uint64_t        u64SubmitTS;
         /** The allocated data length. */
         uint32_t        cbDataAllocated;
-        /** The allocated TD length. */
-        uint32_t        cTdsAllocated;
+        /** Opaque data holder when this is a read-ahead URB. */
+        void            *pvReadAhead;
     } VUsb;
 
-    /** The host controller data. */
-    struct VUSBURBHCI
-    {
-        /** The endpoint descriptor address. */
-        RTGCPHYS32      EdAddr;
-        /** Number of Tds in the array. */
-        uint32_t        cTds;
-        /** Pointer to an array of TD info items.*/
-        struct VUSBURBHCITD
-        {
-            /** Type of TD (private) */
-            uint32_t        TdType;
-            /** The address of the */
-            RTGCPHYS32      TdAddr;
-            /** A copy of the TD. */
-            uint32_t        TdCopy[16];
-        }              *paTds;
-        /** URB chain pointer. */
-        PVUSBURB        pNext;
-        /** When this URB was created.
-         * (Used for isochronous frames and for logging.) */
-        uint32_t        u32FrameNo;
-        /** Flag indicating that the TDs have been unlinked. */
-        bool            fUnlinked;
-    } Hci;
+    /** Private host controller data associated with this URB. */
+    PVUSBURBHCI         pHci;
+    /** Pointer to the host controller transfer descriptor array. */
+    PVUSBURBHCITD       paTds;
 
     /** The device data. */
     struct VUSBURBDEV
@@ -1178,11 +1183,6 @@ typedef struct VUSBURB
         PVUSBURB          pNext;
     } Dev;
 
-#ifndef RDESKTOP
-    /** The USB device instance this belongs to.
-     * This is NULL if the device address is invalid, in which case this belongs to the hub. */
-    PPDMUSBINS      pUsbIns;
-#endif
     /** The device address.
      * This is set at allocation time. */
     uint8_t         DstAddress;
@@ -1192,10 +1192,10 @@ typedef struct VUSBURB
      * @remark This does not have the high bit (direction) set! */
     uint8_t         EndPt;
     /** The transfer type.
-     * IN: Must be set before submitting the URB. */
+     * IN: Set at allocation time. */
     VUSBXFERTYPE    enmType;
     /** The transfer direction.
-     * IN: Must be set before submitting the URB. */
+     * IN: Set at allocation time. */
     VUSBDIRECTION   enmDir;
     /** Indicates whether it is OK to receive/send less data than requested.
      * IN: Must be initialized before submitting the URB. */

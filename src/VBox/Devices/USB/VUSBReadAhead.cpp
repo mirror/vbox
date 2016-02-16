@@ -109,7 +109,7 @@ static PVUSBURB vusbDevNewIsocUrb(PVUSBDEV pDev, unsigned uEndPt, unsigned uInte
         /* can happen during disconnect */
         return NULL;
 
-    pUrb = vusbRhNewUrb(pRh, pDev->u8Address, VUSBXFERTYPE_ISOC, VUSBDIRECTION_IN, cbTotal, 1, NULL);
+    pUrb = vusbRhNewUrb(pRh, pDev->u8Address, VUSBXFERTYPE_ISOC, VUSBDIRECTION_IN, cbTotal, 1, "prab");
     if (!pUrb)
         /* not much we can do here... */
         return NULL;
@@ -117,14 +117,6 @@ static PVUSBURB vusbDevNewIsocUrb(PVUSBDEV pDev, unsigned uEndPt, unsigned uInte
     pUrb->EndPt                 = uEndPt;
     pUrb->fShortNotOk           = false;
     pUrb->enmStatus             = VUSBSTATUS_OK;
-    pUrb->Hci.EdAddr            = 0;
-    pUrb->Hci.fUnlinked         = false;
-// @todo: fill in the rest? The Hci member is not relevant
-#ifdef LOG_ENABLED
-    static unsigned s_iSerial = 0;
-    s_iSerial = (s_iSerial + 1) % 10000;
-    RTStrAPrintf(&pUrb->pszDesc, "URB %p prab<%04d", pUrb, s_iSerial);  // prab = Periodic Read-Ahead Buffer
-#endif
 
     /* Set up the individual packets, again with bInterval in mind */
     pUrb->cIsocPkts = 8;
@@ -223,9 +215,7 @@ static DECLCALLBACK(int) vusbDevReadAheadThread(RTTHREAD Thread, void *pvUser)
 
             Assert(pUrb->enmState == VUSBURBSTATE_ALLOCATED);
 
-            // @todo: at the moment we abuse the Hci.pNext member (which is otherwise entirely unused!)
-            pUrb->Hci.pNext = (PVUSBURB)pvUser;
-
+            pUrb->VUsb.pvReadAhead = pvUser;
             pUrb->enmState = VUSBURBSTATE_IN_FLIGHT;
             rc = vusbUrbQueueAsyncRh(pUrb);
             if (RT_FAILURE(rc))
@@ -259,7 +249,7 @@ static DECLCALLBACK(int) vusbDevReadAheadThread(RTTHREAD Thread, void *pvUser)
     {
         PVUSBURB pBufferedUrb = pThis->pBuffUrbHead;
 
-        pThis->pBuffUrbHead = pBufferedUrb->Hci.pNext;
+        pThis->pBuffUrbHead = (PVUSBURB)pBufferedUrb->VUsb.pvReadAhead;
         pBufferedUrb->VUsb.pfnFree(pBufferedUrb);
     }
 
@@ -278,13 +268,13 @@ static DECLCALLBACK(int) vusbDevReadAheadThread(RTTHREAD Thread, void *pvUser)
 void vusbUrbCompletionReadAhead(PVUSBURB pUrb)
 {
     Assert(pUrb);
-    Assert(pUrb->Hci.pNext);
-    PVUSBREADAHEADINT pThis = (PVUSBREADAHEADINT)pUrb->Hci.pNext;
+    Assert(pUrb->VUsb.pvReadAhead);
+    PVUSBREADAHEADINT pThis = (PVUSBREADAHEADINT)pUrb->VUsb.pvReadAhead;
     PVUSBPIPE         pPipe = pThis->pPipe;
     Assert(pPipe);
 
     RTCritSectEnter(&pThis->CritSectBuffUrbList);
-    pUrb->Hci.pNext = NULL; // @todo: use a more suitable field
+    pUrb->VUsb.pvReadAhead = NULL;
     if (pThis->pBuffUrbHead == NULL)
     {
         // The queue is empty, this is easy
@@ -295,8 +285,9 @@ void vusbUrbCompletionReadAhead(PVUSBURB pUrb)
     {
         // Some URBs are queued already
         Assert(pThis->pBuffUrbTail);
-        Assert(!pThis->pBuffUrbTail->Hci.pNext);
-        pThis->pBuffUrbTail = pThis->pBuffUrbTail->Hci.pNext = pUrb;
+        Assert(!pThis->pBuffUrbTail->VUsb.pvReadAhead);
+        pThis->pBuffUrbTail->VUsb.pvReadAhead = pUrb;
+        pThis->pBuffUrbTail = pUrb;
     }
     ASMAtomicDecU32(&pThis->cSubmitted);
     ++pThis->cBuffered;
@@ -326,7 +317,7 @@ int vusbUrbSubmitBufferedRead(PVUSBURB pUrb, VUSBREADAHEAD hReadAhead)
         unsigned    cbTotal;
 
         // There's a URB available in the read-ahead buffer; use it
-        pThis->pBuffUrbHead = pBufferedUrb->Hci.pNext;
+        pThis->pBuffUrbHead = (PVUSBURB)pBufferedUrb->VUsb.pvReadAhead;
         if (pThis->pBuffUrbHead == NULL)
             pThis->pBuffUrbTail = NULL;
 

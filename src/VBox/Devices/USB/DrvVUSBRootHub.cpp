@@ -372,6 +372,9 @@ PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, VUSBXFERTYPE enmType
     /*
      * Reuse or allocate a new URB.
      */
+    /* Get the required amount of additional memory to allocate the whole state. */
+    size_t cbMem = RT_ALIGN_32(cbData, 16) + pRh->cbHci + cTds * pRh->cbHciTd;
+
     /** @todo try find a best fit, MSD which submits rather big URBs intermixed with small control
      * messages ends up with a 2+ of these big URBs when a single one is sufficient.  */
     /** @todo The allocations should be done by the device, at least as an option, since the devices
@@ -382,34 +385,32 @@ PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, VUSBXFERTYPE enmType
     PVUSBURB pUrb = pRh->pFreeUrbs;
     while (pUrb)
     {
-        if (    pUrb->VUsb.cbDataAllocated >= cbData
-            &&  pUrb->VUsb.cTdsAllocated >= cTds)
+        if (pUrb->VUsb.cbDataAllocated >= cbData)
+        {
+            /* Unlink and verify part of the state. */
+            if (pUrbPrev)
+                pUrbPrev->VUsb.pNext = pUrb->VUsb.pNext;
+            else
+                pRh->pFreeUrbs = pUrb->VUsb.pNext;
+            Assert(pUrb->u32Magic == VUSBURB_MAGIC);
+            Assert(pUrb->VUsb.pvFreeCtx == pRh);
+            Assert(pUrb->VUsb.pfnFree == vusbRhFreeUrb);
+            Assert(pUrb->enmState == VUSBURBSTATE_FREE);
+            Assert(!pUrb->VUsb.pNext || pUrb->VUsb.pNext->enmState == VUSBURBSTATE_FREE);
             break;
+        }
         pUrbPrev = pUrb;
         pUrb = pUrb->VUsb.pNext;
     }
-    if (pUrb)
-    {
-        if (pUrbPrev)
-            pUrbPrev->VUsb.pNext = pUrb->VUsb.pNext;
-        else
-            pRh->pFreeUrbs = pUrb->VUsb.pNext;
-        Assert(pUrb->u32Magic == VUSBURB_MAGIC);
-        Assert(pUrb->VUsb.pvFreeCtx == pRh);
-        Assert(pUrb->VUsb.pfnFree == vusbRhFreeUrb);
-        Assert(pUrb->enmState == VUSBURBSTATE_FREE);
-        Assert(!pUrb->VUsb.pNext || pUrb->VUsb.pNext->enmState == VUSBURBSTATE_FREE);
-    }
-    else
+
+    if (!pUrb)
     {
         /* allocate a new one. */
-        uint32_t cbDataAllocated = cbData <= _4K  ? RT_ALIGN_32(cbData, _1K)
-                                 : cbData <= _32K ? RT_ALIGN_32(cbData, _4K)
-                                                  : RT_ALIGN_32(cbData, 16*_1K);
-        uint32_t cTdsAllocated = RT_ALIGN_32(cTds, 16);
+        uint32_t cbDataAllocated = cbMem <= _4K  ? RT_ALIGN_32(cbMem, _1K)
+                                 : cbMem <= _32K ? RT_ALIGN_32(cbMem, _4K)
+                                                 : RT_ALIGN_32(cbMem, 16*_1K);
 
-        pUrb = (PVUSBURB)RTMemAlloc(    RT_OFFSETOF(VUSBURB, abData[cbDataAllocated + 16])
-                                    +   sizeof(pUrb->Hci.paTds[0]) * cTdsAllocated);
+        pUrb = (PVUSBURB)RTMemAlloc(RT_OFFSETOF(VUSBURB, abData[cbDataAllocated]));
         if (RT_UNLIKELY(!pUrb))
         {
             RTCritSectLeave(&pRh->CritSectFreeUrbs);
@@ -421,37 +422,32 @@ PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, VUSBXFERTYPE enmType
         pUrb->VUsb.pvFreeCtx = pRh;
         pUrb->VUsb.pfnFree = vusbRhFreeUrb;
         pUrb->VUsb.cbDataAllocated = cbDataAllocated;
-        pUrb->VUsb.cTdsAllocated = cTdsAllocated;
-        pUrb->Hci.paTds = (VUSBURB::VUSBURBHCI::VUSBURBHCITD *)(&pUrb->abData[cbDataAllocated + 16]);
     }
     RTCritSectLeave(&pRh->CritSectFreeUrbs);
 
     /*
      * (Re)init the URB
      */
-    pUrb->enmState = VUSBURBSTATE_ALLOCATED;
-    pUrb->fCompleting = false;
-    pUrb->pszDesc = NULL;
-    pUrb->VUsb.pNext = NULL;
-    pUrb->VUsb.ppPrev = NULL;
-    pUrb->VUsb.pCtrlUrb = NULL;
+    pUrb->enmState         = VUSBURBSTATE_ALLOCATED;
+    pUrb->fCompleting      = false;
+    pUrb->pszDesc          = NULL;
+    pUrb->VUsb.pNext       = NULL;
+    pUrb->VUsb.ppPrev      = NULL;
+    pUrb->VUsb.pCtrlUrb    = NULL;
     pUrb->VUsb.u64SubmitTS = 0;
-    pUrb->VUsb.pDev = vusbRhFindDevByAddress(pRh, DstAddress);
-    pUrb->Hci.EdAddr = ~0;
-    pUrb->Hci.cTds = cTds;
-    pUrb->Hci.pNext = NULL;
-    pUrb->Hci.u32FrameNo = 0;
-    pUrb->Hci.fUnlinked = false;
-    pUrb->Dev.pvPrivate = NULL;
-    pUrb->Dev.pNext = NULL;
-    pUrb->pUsbIns = pUrb->VUsb.pDev ? pUrb->VUsb.pDev->pUsbIns : NULL;
-    pUrb->DstAddress = DstAddress;
-    pUrb->EndPt = ~0;
-    pUrb->enmType = enmType;
-    pUrb->enmDir = enmDir;
-    pUrb->fShortNotOk = false;
-    pUrb->enmStatus = VUSBSTATUS_INVALID;
-    pUrb->cbData = cbData;
+    pUrb->VUsb.pvReadAhead = NULL;
+    pUrb->VUsb.pDev        = vusbRhFindDevByAddress(pRh, DstAddress);
+    pUrb->Dev.pvPrivate    = NULL;
+    pUrb->Dev.pNext        = NULL;
+    pUrb->DstAddress       = DstAddress;
+    pUrb->EndPt            = ~0;
+    pUrb->enmType          = enmType;
+    pUrb->enmDir           = enmDir;
+    pUrb->fShortNotOk      = false;
+    pUrb->enmStatus        = VUSBSTATUS_INVALID;
+    pUrb->cbData           = cbData;
+    pUrb->pHci             = pRh->cbHci ? (PVUSBURBHCI)&pUrb->abData[cbData] : NULL;
+    pUrb->paTds            = (pRh->cbHciTd && cTds) ? (PVUSBURBHCITD)&pUrb->abData[cbData + pRh->cbHci] : NULL;
 
 #ifdef LOG_ENABLED
     const char *pszType = NULL;
@@ -482,6 +478,18 @@ PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, VUSBXFERTYPE enmType
 #endif
 
     return pUrb;
+}
+
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnSetUrbParams */
+static DECLCALLBACK(int) vusbRhSetUrbParams(PVUSBIROOTHUBCONNECTOR pInterface, size_t cbHci, size_t cbHciTd)
+{
+    PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+
+    pRh->cbHci   = cbHci;
+    pRh->cbHciTd = cbHciTd;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -544,8 +552,8 @@ static DECLCALLBACK(int) vusbRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUS
      * Submit it to the device if we found it, if not fail with device-not-ready.
      */
     int rc;
-    if (    pUrb->VUsb.pDev
-        &&  pUrb->pUsbIns)
+    if (   pUrb->VUsb.pDev
+        && pUrb->VUsb.pDev->pUsbIns)
     {
         switch (pUrb->enmDir)
         {
@@ -1051,6 +1059,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /* misc */
     pThis->pDrvIns                      = pDrvIns;
     /* the connector */
+    pThis->IRhConnector.pfnSetUrbParams = vusbRhSetUrbParams;
     pThis->IRhConnector.pfnNewUrb       = vusbRhConnNewUrb;
     pThis->IRhConnector.pfnSubmitUrb    = vusbRhSubmitUrb;
     pThis->IRhConnector.pfnReapAsyncUrbs= vusbRhReapAsyncUrbs;
@@ -1060,6 +1069,8 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->IRhConnector.pfnAttachDevice = vusbRhAttachDevice;
     pThis->IRhConnector.pfnDetachDevice = vusbRhDetachDevice;
     pThis->hSniffer                     = VUSBSNIFFER_NIL;
+    pThis->cbHci                        = 0;
+    pThis->cbHciTd                      = 0;
 #ifdef LOG_ENABLED
     pThis->iSerial                      = 0;
 #endif

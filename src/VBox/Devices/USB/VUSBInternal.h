@@ -363,6 +363,10 @@ typedef struct VUSBROOTHUB
     uint32_t                cUrbsInPool;
     /** Version of the attached Host Controller. */
     uint32_t                fHcVersions;
+    /** Size of the HCI specific data for each URB. */
+    size_t                  cbHci;
+    /** Size of the HCI specific TD. */
+    size_t                  cbHciTd;
 #ifdef LOG_ENABLED
     /** A serial number for URBs submitted on the roothub instance.
      * Only logging builds. */

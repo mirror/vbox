@@ -174,11 +174,11 @@ static DECLCALLBACK(int) vusbSnifferFmtUsbMonRecordEvent(PVUSBSNIFFERFMTINT pThi
                             u32ErrorCount++;
 
                     cch += RTStrPrintf(&aszLineBuf[cch], sizeof(aszLineBuf) - cch, ":%u:%u:%u ",
-                                       1 /* Interval */, pUrb->Hci.u32FrameNo, u32ErrorCount);
+                                       1 /* Interval */, 0 /* Frame number */, u32ErrorCount);
                 }
                 else
                     cch += RTStrPrintf(&aszLineBuf[cch], sizeof(aszLineBuf) - cch, ":%u:%u ",
-                                       1 /* Interval */, pUrb->Hci.u32FrameNo);
+                                       1 /* Interval */, 0 /* Frame number */);
             }
             else if (pUrb->enmType == VUSBXFERTYPE_INTR)
                 cch += RTStrPrintf(&aszLineBuf[cch], sizeof(aszLineBuf) - cch, ":%u ",
