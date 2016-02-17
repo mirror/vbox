@@ -27,7 +27,7 @@
 #include "CMachine.h"
 #include "CConsole.h"
 
-/* Forward declartions: */
+/* Forward declarations: */
 class QVBoxLayout;
 class UIInformationView;
 class UIInformationModel;

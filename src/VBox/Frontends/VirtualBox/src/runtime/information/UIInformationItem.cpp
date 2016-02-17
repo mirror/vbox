@@ -109,8 +109,8 @@ void UIInformationItem::updateData(const QModelIndex &index) const
 {
     setName(index.data().toString());
     setIcon(index.data(Qt::DecorationRole).toString());
-    setText(index.data(Qt::UserRole+1).value<UITextTable>());
-    m_type = index.data(Qt::UserRole+2).value<InformationElementType>();
+    setText(index.data(Qt::UserRole + 1).value<UITextTable>());
+    m_type = index.data(Qt::UserRole + 2).value<InformationElementType>();
 }
 
 QString UIInformationItem::htmlData()

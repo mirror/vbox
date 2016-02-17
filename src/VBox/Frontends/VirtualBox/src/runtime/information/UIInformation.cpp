@@ -124,7 +124,7 @@ void UIInformation::prepareModel()
         UIInformationDataItem *pParallelPorts = new UIInformationDataParallelPorts(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pParallelPorts);
         {
-            m_list.append(pParallelPorts);
+            m_pModel->addItem(pParallelPorts);
         }
 #endif /* VBOX_WITH_PARALLEL_PORTS */
 
@@ -153,13 +153,14 @@ void UIInformation::prepareView()
         /* Prepare view: */
         m_pView->setResizeMode(QListView::Adjust);
         /* Create information-delegate item: */
-        UIInformationItem* pItem = new UIInformationItem(m_pView);
+        UIInformationItem *pItem = new UIInformationItem(m_pView);
         AssertPtrReturnVoid(pItem);
         {
             m_pView->setItemDelegate(pItem);
         }
         /* Connect datachanged signal: */
-        connect(m_pModel, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)), m_pView, SLOT(updateData(const QModelIndex&, const QModelIndex&)));
+        connect(m_pModel, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)),
+                m_pView, SLOT(updateData(const QModelIndex&, const QModelIndex&)));
 
         /* Set model: */
         m_pView->setModel(m_pModel);
