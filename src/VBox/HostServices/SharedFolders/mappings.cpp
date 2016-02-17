@@ -272,7 +272,7 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName,
         return VERR_TOO_MUCH_DATA;
     }
 
-    Log(("vbsfMappingsAdd: added mapping %ls to %ls\n", pFolderName->String.ucs2, pMapName->String.ucs2));
+    Log(("vbsfMappingsAdd: added mapping %s to %ls\n", pszFolderName, pMapName->String.ucs2));
     return VINF_SUCCESS;
 }
 
