@@ -71,7 +71,7 @@ UIAbstractDockIconPreviewHelper::UIAbstractDockIconPreviewHelper(UISession *pSes
     , m_updateRect(CGRectMake(0, 0, 0, 0))
     , m_monitorRect(CGRectMake(0, 0, 0, 0))
 {
-    m_overlayImage   = ::darwinToCGImageRef(&overlayImage);
+    m_overlayImage = ::darwinToCGImageRef(&overlayImage);
     Assert(m_overlayImage);
 }
 
