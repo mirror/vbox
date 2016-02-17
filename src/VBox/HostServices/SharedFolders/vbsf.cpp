@@ -959,6 +959,13 @@ int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
 
     Log(("vbsfRead %RX64 offset %RX64 bytes %x\n", Handle, offset, *pcbBuffer));
 
+    /* Is the guest allowed to access this share?
+     * Checked here because the shared folder can be removed from the VM settings. */
+    bool fWritable;
+    rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
+    if (RT_FAILURE(rc))
+        return VERR_ACCESS_DENIED;
+
     if (*pcbBuffer == 0)
         return VINF_SUCCESS; /* @todo correct? */
 
@@ -1003,7 +1010,7 @@ int vbsfWrite(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_
     Log(("vbsfWrite %RX64 offset %RX64 bytes %x\n", Handle, offset, *pcbBuffer));
 
     /* Is the guest allowed to write to this share?
-     * XXX Actually this check was still done in vbsfCreate() -- RTFILE_O_WRITE cannot be set if vbsfMappingsQueryWritable() failed. */
+     * Checked here because the shared folder can be removed from the VM settings. */
     bool fWritable;
     rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
     if (RT_FAILURE(rc) || !fWritable)
@@ -1086,6 +1093,14 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         AssertFailed();
         return VERR_INVALID_PARAMETER;
     }
+
+    /* Is the guest allowed to access this share?
+     * Checked here because the shared folder can be removed from the VM settings. */
+    bool fWritable;
+    rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
+    if (RT_FAILURE(rc))
+        return VERR_ACCESS_DENIED;
+
     Assert(pIndex && *pIndex == 0);
     DirHandle = pHandle->dir.Handle;
 

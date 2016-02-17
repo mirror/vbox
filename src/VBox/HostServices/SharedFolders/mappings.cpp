@@ -78,7 +78,14 @@ int vbsfMappingLoaded(const PMAPPING pLoadedMapping, SHFLROOT root)
         }
     }
 
-    return VERR_INVALID_PARAMETER;
+    /* No corresponding mapping on the host but the guest still uses it.
+     * Add a 'placeholder' mapping.
+     */
+    LogRel2(("SharedFolders: mapping a placeholder for '%ls' -> '%s'\n",
+              pLoadedMapping->pMapName->String.ucs2, pLoadedMapping->pszFolderName));
+    return vbsfMappingsAdd(pLoadedMapping->pszFolderName, pLoadedMapping->pMapName,
+                           pLoadedMapping->fWritable, pLoadedMapping->fAutoMount,
+                           pLoadedMapping->fSymlinksCreate, /* fMissing = */ true, /* fPlaceholder = */ true);
 }
 
 MAPPING *vbsfMappingGetByRoot(SHFLROOT root)
@@ -190,12 +197,12 @@ void testMappingsAdd(RTTEST hTest)
 /*
  * We are always executed from one specific HGCM thread. So thread safe.
  */
-int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
-                    bool fWritable, bool fAutoMount, bool fSymlinksCreate, bool fMissing)
+int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName,
+                    bool fWritable, bool fAutoMount, bool fSymlinksCreate, bool fMissing, bool fPlaceholder)
 {
     unsigned i;
 
-    Assert(pFolderName && pMapName);
+    Assert(pszFolderName && pMapName);
 
     Log(("vbsfMappingsAdd %ls\n", pMapName->String.ucs2));
 
@@ -216,8 +223,11 @@ int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
     {
         if (FolderMapping[i].fValid == false)
         {
-            int rc = RTUtf16ToUtf8(pFolderName->String.ucs2, &FolderMapping[i].pszFolderName);
-            AssertRCReturn(rc, rc);
+            FolderMapping[i].pszFolderName = RTStrDup(pszFolderName);
+            if (!FolderMapping[i].pszFolderName)
+            {
+                return VERR_NO_MEMORY;
+            }
 
             FolderMapping[i].pMapName = (PSHFLSTRING)RTMemAlloc(ShflStringSizeOfBuffer(pMapName));
             if (!FolderMapping[i].pMapName)
@@ -237,12 +247,13 @@ int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
             FolderMapping[i].fAutoMount      = fAutoMount;
             FolderMapping[i].fSymlinksCreate = fSymlinksCreate;
             FolderMapping[i].fMissing        = fMissing;
+            FolderMapping[i].fPlaceholder    = fPlaceholder;
 
             /* Check if the host file system is case sensitive */
             RTFSPROPERTIES prop;
             char *pszAsciiRoot;
 
-            rc = RTStrUtf8ToCurrentCP(&pszAsciiRoot, FolderMapping[i].pszFolderName);
+            int rc = RTStrUtf8ToCurrentCP(&pszAsciiRoot, FolderMapping[i].pszFolderName);
             if (RT_SUCCESS(rc))
             {
                 rc = RTFsQueryProperties(pszAsciiRoot, &prop);
@@ -257,7 +268,7 @@ int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
     }
     if (i == SHFL_MAX_MAPPINGS)
     {
-        AssertMsgFailed(("vbsfMappingsAdd: no more room to add mapping %ls to %ls!!\n", pFolderName->String.ucs2, pMapName->String.ucs2));
+        AssertLogRelMsgFailed(("vbsfMappingsAdd: no more room to add mapping %s to %ls!!\n", pszFolderName, pMapName->String.ucs2));
         return VERR_TOO_MUCH_DATA;
     }
 
@@ -290,9 +301,17 @@ int vbsfMappingsRemove(PSHFLSTRING pMapName)
             {
                 if (FolderMapping[i].cMappings != 0)
                 {
-                    Log(("vbsfMappingsRemove: trying to remove active share %ls\n", pMapName->String.ucs2));
-                    return VERR_PERMISSION_DENIED;
+                    LogRel2(("SharedFolders: removing '%ls' -> '%s', which is still used by the guest\n",
+                             pMapName->String.ucs2, FolderMapping[i].pszFolderName));
+                    FolderMapping[i].fMissing = true;
+                    FolderMapping[i].fPlaceholder = true;
+                    return VINF_PERMISSION_DENIED;
                 }
+
+                /* pMapName can be the same as FolderMapping[i].pMapName,
+                 * log it before deallocating the memory.
+                 */
+                Log(("vbsfMappingsRemove: mapping %ls removed\n", pMapName->String.ucs2));
 
                 RTStrFree(FolderMapping[i].pszFolderName);
                 RTMemFree(FolderMapping[i].pMapName);
@@ -300,18 +319,13 @@ int vbsfMappingsRemove(PSHFLSTRING pMapName)
                 FolderMapping[i].pMapName      = NULL;
                 FolderMapping[i].fValid        = false;
                 vbsfRootHandleRemove(i);
-                break;
+                return VINF_SUCCESS;
             }
         }
     }
 
-    if (i == SHFL_MAX_MAPPINGS)
-    {
-        AssertMsgFailed(("vbsfMappingsRemove: mapping %ls not found!!!!\n", pMapName->String.ucs2));
-        return VERR_FILE_NOT_FOUND;
-    }
-    Log(("vbsfMappingsRemove: mapping %ls removed\n", pMapName->String.ucs2));
-    return VINF_SUCCESS;
+    AssertMsgFailed(("vbsfMappingsRemove: mapping %ls not found!!!!\n", pMapName->String.ucs2));
+    return VERR_FILE_NOT_FOUND;
 }
 
 const char* vbsfMappingsQueryHostRoot(SHFLROOT root)
@@ -333,7 +347,7 @@ int vbsfMappingsQueryHostRootEx(SHFLROOT hRoot, const char **ppszRoot, uint32_t 
         || pFolderMapping->pszFolderName[0] == 0)
         return VERR_NOT_FOUND;
     *ppszRoot = pFolderMapping->pszFolderName;
-    *pcbRootLen = strlen(pFolderMapping->pszFolderName);
+    *pcbRootLen = (uint32_t)strlen(pFolderMapping->pszFolderName);
     return VINF_SUCCESS;
 }
 
@@ -467,6 +481,8 @@ int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pS
     return rc;
 }
 
+/** Queries fWritable flag for the given root. Returns error if the root is not accessible.
+ */
 int vbsfMappingsQueryWritable(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fWritable)
 {
     int rc = VINF_SUCCESS;
@@ -631,6 +647,16 @@ int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root)
     Assert(pFolderMapping->fValid == true && pFolderMapping->cMappings > 0);
     if (pFolderMapping->cMappings > 0)
         pFolderMapping->cMappings--;
+
+    if (   pFolderMapping->cMappings == 0
+        && pFolderMapping->fPlaceholder)
+    {
+        /* Automatically remove, it is not used by the guest anymore. */
+        Assert(pFolderMapping->fMissing);
+        LogRel2(("SharedFolders: unmapping placeholder '%ls' -> '%s'\n",
+                pFolderMapping->pMapName->String.ucs2, pFolderMapping->pszFolderName));
+        vbsfMappingsRemove(pFolderMapping->pMapName);
+    }
 
     Log(("vbsfUnmapFolder\n"));
     return rc;

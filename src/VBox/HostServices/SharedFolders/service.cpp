@@ -1339,16 +1339,24 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_CREATE_SYMLINKS) ? "true" : "false",
                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_MISSING) ? "true" : "false"));
 
-                /* Execute the function. */
-                rc = vbsfMappingsAdd(pFolderName, pMapName,
-                                     RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_WRITABLE),
-                                     RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_AUTOMOUNT),
-                                     RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_CREATE_SYMLINKS),
-                                     RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_MISSING));
+                char *pszFolderName;
+                rc = RTUtf16ToUtf8(pFolderName->String.ucs2, &pszFolderName);
+
                 if (RT_SUCCESS(rc))
                 {
-                    /* Update parameters.*/
-                    ; /* none */
+                    /* Execute the function. */
+                    rc = vbsfMappingsAdd(pszFolderName, pMapName,
+                                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_WRITABLE),
+                                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_AUTOMOUNT),
+                                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_CREATE_SYMLINKS),
+                                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_MISSING),
+                                         /* fPlaceholder = */ false);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Update parameters.*/
+                        ; /* none */
+                    }
+                    RTStrFree(pszFolderName);
                 }
             }
         }

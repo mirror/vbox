@@ -33,6 +33,8 @@ typedef struct
     bool        fSymlinksCreate;      /**< guest is able to create symlinks */
     bool        fMissing;             /**< mapping not invalid but host path does not exist.
                                            Any guest operation on such a folder fails! */
+    bool        fPlaceholder;         /**< mapping does not exist in the VM settings but the guest
+                                           still has. fMissing is always true for this mapping. */
 } MAPPING;
 /** Pointer to a MAPPING structure. */
 typedef MAPPING *PMAPPING;
@@ -41,8 +43,8 @@ void vbsfMappingInit(void);
 
 bool vbsfMappingQuery(uint32_t iMapping, PMAPPING *pMapping);
 
-int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
-                    bool fWritable, bool fAutoMount, bool fCreateSymlinks, bool fMissing);
+int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName,
+                    bool fWritable, bool fAutoMount, bool fCreateSymlinks, bool fMissing, bool fPlaceholder);
 int vbsfMappingsRemove(PSHFLSTRING pMapName);
 
 int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, PSHFLMAPPING pMappings, uint32_t *pcMappings);
