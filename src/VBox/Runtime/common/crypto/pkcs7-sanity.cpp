@@ -183,8 +183,6 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
                                              "Expected exactly one value for message-digest attrib, found: %u",
                                              pAttrib->uValues.pOctetStrings->cItems);
                 }
-                else
-                    AssertReturn(pAttrib->enmType == RTCRPKCS7ATTRIBUTETYPE_UNKNOWN, VERR_INTERNAL_ERROR_3);
             }
 
             if (!fFoundContentInfo)
