@@ -386,7 +386,7 @@ PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, PVUSBDEV pDev, VUSBX
     PVUSBURB pUrb = pRh->pFreeUrbs;
     while (pUrb)
     {
-        if (pUrb->pVUsb->cbDataAllocated >= cbData)
+        if (pUrb->pVUsb->cbDataAllocated >= cbMem)
         {
             /* Unlink and verify part of the state. */
             if (pUrbPrev)
