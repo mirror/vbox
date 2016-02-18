@@ -1292,6 +1292,8 @@ void vusbDevDestroy(PVUSBDEV pDev)
     if (pDev->hSniffer != VUSBSNIFFER_NIL)
         VUSBSnifferDestroy(pDev->hSniffer);
 
+    vusbUrbPoolDestroy(&pDev->UrbPool);
+
     RTCritSectDelete(&pDev->CritSectAsyncUrbs);
     /* Not using vusbDevSetState() deliberately here because it would assert on the state. */
     pDev->enmState = VUSB_DEVICE_STATE_DESTROYED;
@@ -1771,6 +1773,10 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
     pDev->hSniffer = VUSBSNIFFER_NIL;
 
     int rc = RTCritSectInit(&pDev->CritSectAsyncUrbs);
+    AssertRCReturn(rc, rc);
+
+    /* Create the URB pool. */
+    rc = vusbUrbPoolInit(&pDev->UrbPool);
     AssertRCReturn(rc, rc);
 
     /* Setup request queue executing synchronous tasks on the I/O thread. */

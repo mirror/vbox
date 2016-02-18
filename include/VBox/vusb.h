@@ -542,6 +542,9 @@ typedef enum VUSBXFERTYPE
     VUSBXFERTYPE_INVALID = 0x7f
 } VUSBXFERTYPE;
 
+/** Number of valid USB transfer types - KEEP in sync with VUSBXFERTYPE!. */
+#define VUSBXFERTYPE_ELEMENTS (5)
+
 /** Pointer to a VBox USB device interface. */
 typedef struct VUSBIDEVICE      *PVUSBIDEVICE;
 

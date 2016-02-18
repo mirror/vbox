@@ -27,6 +27,8 @@
 #include <VBox/types.h>
 #include <VBox/vusb.h>
 #include <VBox/vmm/stam.h>
+#include <VBox/vmm/pdmusb.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/req.h>
 
@@ -183,6 +185,27 @@ typedef const VUSBINTERFACESTATE *PCVUSBINTERFACESTATE;
 
 
 /**
+ * VUSB URB pool.
+ */
+typedef struct VUSBURBPOOL
+{
+    /** Critical section protecting the pool. */
+    RTCRITSECT              CritSectPool;
+    /** Chain of free URBs by type. (Singly linked) */
+    PVUSBURB                apFreeUrbs[VUSBXFERTYPE_ELEMENTS];
+    /** The number of URBs in the pool. */
+    uint32_t                cUrbsInPool;
+#if HC_ARCH_BITS == 64
+    /** Align the size to a 8 byte boundary. */
+    uint32_t                Alignment0;
+#endif
+} VUSBURBPOOL;
+/** Pointer to a VUSB URB pool. */
+typedef VUSBURBPOOL *PVUSBURBPOOL;
+
+AssertCompileSizeAlignment(VUSBURBPOOL, 8);
+
+/**
  * A Virtual USB device (core).
  *
  * @implements  VUSBIDEVICE
@@ -251,6 +274,8 @@ typedef struct VUSBDEV
     bool volatile       fTerminate;
     /** Flag whether the I/O thread was woken up. */
     bool volatile       fWokenUp;
+    /** The pool of free URBs for faster allocation. */
+    VUSBURBPOOL         UrbPool;
 #if HC_ARCH_BITS == 32
     /** Align the size to a 8 byte boundary. */
     bool                afAlignment0[2];
@@ -383,14 +408,8 @@ typedef struct VUSBROOTHUB
     /** Availability Bitmap. */
     VUSBPORTBITMAP          Bitmap;
 
-    /** Critical section protecting the free list. */
-    RTCRITSECT              CritSectFreeUrbs;
-    /** Chain of free URBs. (Singly linked) */
-    PVUSBURB                pFreeUrbs;
     /** Sniffer instance for the root hub. */
     VUSBSNIFFER             hSniffer;
-    /** The number of URBs in the pool. */
-    uint32_t                cUrbsInPool;
     /** Version of the attached Host Controller. */
     uint32_t                fHcVersions;
     /** Size of the HCI specific data for each URB. */
@@ -433,7 +452,6 @@ typedef struct VUSBROOTHUB
 AssertCompileMemberAlignment(VUSBROOTHUB, IRhConnector, 8);
 AssertCompileMemberAlignment(VUSBROOTHUB, Bitmap, 8);
 AssertCompileMemberAlignment(VUSBROOTHUB, CritSectDevices, 8);
-AssertCompileMemberAlignment(VUSBROOTHUB, CritSectFreeUrbs, 8);
 #ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(VUSBROOTHUB, Total, 8);
 #endif
@@ -483,6 +501,48 @@ int  vusbUrbQueueAsyncRh(PVUSBURB pUrb);
 int  vusbUrbSubmitBufferedRead(PVUSBURB pUrb, VUSBREADAHEAD hReadAhead);
 PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, PVUSBDEV pDev, VUSBXFERTYPE enmType,
                       VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag);
+
+/**
+ * Initializes the given URB pool.
+ *
+ * @returns VBox status code.
+ * @param   pUrbPool    The URB pool to initialize.
+
+ */
+DECLHIDDEN(int) vusbUrbPoolInit(PVUSBURBPOOL pUrbPool);
+
+/**
+ * Destroy a given URB pool freeing all ressources.
+ *
+ * @returns nothing.
+ * @param   pUrbPool    The URB pool to destroy.
+ */
+DECLHIDDEN(void) vusbUrbPoolDestroy(PVUSBURBPOOL pUrbPool);
+
+/**
+ * Allocate a new URB from the given URB pool.
+ *
+ * @returns Pointer to the new URB or NULL if out of memory.
+ * @param   pUrbPool    The URB pool to allocate from.
+ * @param   enmType     Type of the URB.
+ * @param   enmDir      The direction of the URB.
+ * @param   cbData      The number of bytes to allocate for the data buffer.
+ * @param   cbHci       Size of the data private to the HCI for each URB when allocated.
+ * @param   cbHciTd     Size of one transfer descriptor.
+ * @param   cTds        Number of transfer descriptors.
+ */
+DECLHIDDEN(PVUSBURB) vusbUrbPoolAlloc(PVUSBURBPOOL pUrbPool, VUSBXFERTYPE enmType,
+                                      VUSBDIRECTION enmDir, size_t cbData,
+                                      size_t cbHci, size_t cbHciTd, unsigned cTds);
+
+/**
+ * Frees a given URB.
+ *
+ * @returns nothing.
+ * @param   pUrbPool    The URB pool the URB was allocated from.
+ * @param   pUrb        The URB to free.
+ */
+DECLHIDDEN(void) vusbUrbPoolFree(PVUSBURBPOOL pUrbPool, PVUSBURB pUrb);
 
 
 DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
