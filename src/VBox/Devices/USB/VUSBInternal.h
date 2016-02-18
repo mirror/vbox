@@ -274,12 +274,12 @@ typedef struct VUSBDEV
     bool volatile       fTerminate;
     /** Flag whether the I/O thread was woken up. */
     bool volatile       fWokenUp;
-    /** The pool of free URBs for faster allocation. */
-    VUSBURBPOOL         UrbPool;
 #if HC_ARCH_BITS == 32
     /** Align the size to a 8 byte boundary. */
     bool                afAlignment0[2];
 #endif
+    /** The pool of free URBs for faster allocation. */
+    VUSBURBPOOL         UrbPool;
 } VUSBDEV;
 AssertCompileSizeAlignment(VUSBDEV, 8);
 
