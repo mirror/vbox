@@ -184,6 +184,7 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 {
     int index = m_pages[cId];
 #ifdef Q_WS_MAC
+# if QT_VERSION < 0x050000
     QSize cs = size();
     if (index < m_sizeList.count())
     {
@@ -198,6 +199,36 @@ void UISettingsDialog::sltCategoryChanged(int cId)
             m_pStack->setCurrentIndex(index);
     }
     ::darwinSetShowsResizeIndicator(this, false);
+# else /* QT_VERSION >= 0x050000 */
+    /* If index is within the stored size list bounds: */
+    if (index < m_sizeList.count())
+    {
+        /* Get current/stored size: */
+        const QSize cs = size();
+        const QSize ss = m_sizeList.at(index);
+
+        /* Switch to the new page first if we are shrinking: */
+        if (cs.height() > ss.height())
+            m_pStack->setCurrentIndex(index);
+
+        /* Do the animation: */
+        ::darwinWindowAnimateResize(this, QRect (x(), y(), ss.width(), ss.height()));
+
+        /* Switch to the new page last if we are zooming: */
+        if (cs.height() <= ss.height())
+            m_pStack->setCurrentIndex(index);
+
+        /* Unlock all page policies but lock the current one: */
+        for (int i = 0; i < m_pStack->count(); ++i)
+            m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, i == index ? QSizePolicy::Minimum : QSizePolicy::Ignored);
+        /* And make sure layouts are freshly calculated: */
+        foreach (QLayout *pLayout, findChildren<QLayout*>())
+        {
+            pLayout->update();
+            pLayout->activate();
+        }
+    }
+# endif /* QT_VERSION >= 0x050000 */
 #else
     m_pLbTitle->setText(m_pSelector->itemText(cId));
     m_pStack->setCurrentIndex(index);
@@ -591,6 +622,7 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
     /* Remove all title bar buttons (Buggy Qt): */
     ::darwinSetHidesAllTitleButtons(this);
 
+# if QT_VERSION < 0x050000
     /* Set all size policies to ignored: */
     for (int i = 0; i < m_pStack->count(); ++i)
         m_pStack->widget(i)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
@@ -617,6 +649,43 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
         m_sizeList.insert(0, s);
         m_pStack->widget(i)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
     }
+# else /* QT_VERSION >= 0x050000 */
+    /* Unlock all page policies initially: */
+    for (int i = 0; i < m_pStack->count(); ++i)
+        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
+
+    /* Activate every single page to get the optimal size: */
+    for (int i = m_pStack->count() - 1; i >= 0; --i)
+    {
+        /* Activate current page: */
+        m_pStack->setCurrentIndex(i);
+
+        /* Lock current page policy temporary: */
+        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        /* And make sure layouts are freshly calculated: */
+        foreach (QLayout *pLayout, findChildren<QLayout*>())
+        {
+            pLayout->update();
+            pLayout->activate();
+        }
+
+        /* Acquire minimum size-hint: */
+        QSize s = minimumSizeHint();
+        /* HACK ALERT!
+         * Take into account the height of native tool-bar title.
+         * It will be applied only after widget is really shown.
+         * The height is 11pix * 2 (possible HiDPI support). */
+        s.setHeight(s.height() + 11 * 2);
+        /* Also make sure that width is no less than tool-bar: */
+        if (iMinWidth > s.width())
+            s.setWidth(iMinWidth);
+        /* And remember the size finally: */
+        m_sizeList.insert(0, s);
+
+        /* Unlock the policy for current page again: */
+        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
+    }
+# endif /* QT_VERSION >= 0x050000 */
 
     sltCategoryChanged(m_pSelector->currentId());
 #else /* Q_WS_MAC */
