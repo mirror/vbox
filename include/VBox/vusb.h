@@ -810,7 +810,7 @@ DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t D
     return pInterface->pfnNewUrb(pInterface, DstAddress, pDev, enmType, enmDir, cbData, cTds, pszTag);
 }
 
-/** @copydoc VUSBIROOTHUBCONNECTOR::pfnSubmitUrb */
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnFreeUrb */
 DECLINLINE(int) VUSBIRhFreeUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb)
 {
     return pInterface->pfnFreeUrb(pInterface, pUrb);
