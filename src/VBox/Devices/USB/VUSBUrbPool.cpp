@@ -31,9 +31,40 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
+/** Maximum age for one URB. */
+#define VUSBURB_AGE_MAX 10
+
+/** Convert from an URB to the URB header. */
+#define VUSBURBPOOL_URB_2_URBHDR(a_pUrb) RT_FROM_MEMBER(a_pUrb, VUSBURBHDR, Urb);
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+
+/**
+ * URB header not visible to the caller allocating an URB
+ * and only for internal tracking.
+ */
+typedef struct VUSBURBHDR
+{
+    /** List node for keeping the URB in the free list. */
+    RTLISTNODE  NdFree;
+    /** Size of the data allocated for the URB (Only the variable part including the
+     * HCI and TDs). */
+    size_t      cbAllocated;
+    /** Age of the URB waiting on the list, if it is waiting for too long without being used
+     * again it will be freed. */
+    uint32_t    cAge;
+#if HC_ARCH_BITS == 64
+    uint32_t    u32Alignment0;
+#endif
+    /** The embedded URB. */
+    VUSBURB     Urb;
+} VUSBURBHDR;
+/** Pointer to a URB header. */
+typedef VUSBURBHDR *PVUSBURBHDR;
+
+AssertCompileSizeAlignment(VUSBURBHDR, 8);
 
 /*********************************************************************************************************************************
 *   Static Variables                                                                                                             *
@@ -49,8 +80,8 @@ DECLHIDDEN(int) vusbUrbPoolInit(PVUSBURBPOOL pUrbPool)
     if (RT_SUCCESS(rc))
     {
         pUrbPool->cUrbsInPool = 0;
-        for (unsigned i = 0; i < RT_ELEMENTS(pUrbPool->apFreeUrbs); i++)
-            pUrbPool->apFreeUrbs[i] = NULL;
+        for (unsigned i = 0; i < RT_ELEMENTS(pUrbPool->aLstFreeUrbs); i++)
+            RTListInit(&pUrbPool->aLstFreeUrbs[i]);
     }
 
     return rc;
@@ -60,17 +91,17 @@ DECLHIDDEN(int) vusbUrbPoolInit(PVUSBURBPOOL pUrbPool)
 DECLHIDDEN(void) vusbUrbPoolDestroy(PVUSBURBPOOL pUrbPool)
 {
     RTCritSectEnter(&pUrbPool->CritSectPool);
-    for (unsigned i = 0; i < RT_ELEMENTS(pUrbPool->apFreeUrbs); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pUrbPool->aLstFreeUrbs); i++)
     {
-        while (pUrbPool->apFreeUrbs[i])
+        PVUSBURBHDR pHdr, pHdrNext;
+        RTListForEachSafe(&pUrbPool->aLstFreeUrbs[i], pHdr, pHdrNext, VUSBURBHDR, NdFree)
         {
-            PVUSBURB pUrb = pUrbPool->apFreeUrbs[i];
-            pUrbPool->apFreeUrbs[i] = pUrb->pVUsb->pNext;
+            RTListNodeRemove(&pHdr->NdFree);
 
-            pUrb->u32Magic = 0;
-            pUrb->enmState = VUSBURBSTATE_INVALID;
-            pUrb->pVUsb->pNext = NULL;
-            RTMemFree(pUrb);
+            pHdr->cbAllocated  = 0;
+            pHdr->Urb.u32Magic = 0;
+            pHdr->Urb.enmState = VUSBURBSTATE_INVALID;
+            RTMemFree(pHdr);
         }
     }
     RTCritSectLeave(&pUrbPool->CritSectPool);
@@ -85,65 +116,76 @@ DECLHIDDEN(PVUSBURB) vusbUrbPoolAlloc(PVUSBURBPOOL pUrbPool, VUSBXFERTYPE enmTyp
     /*
      * Reuse or allocate a new URB.
      */
-    /** @todo try find a best fit, MSD which submits rather big URBs intermixed with small control
-     * messages ends up with a 2+ of these big URBs when a single one is sufficient.  */
     /** @todo The allocations should be done by the device, at least as an option, since the devices
      * frequently wish to associate their own stuff with the in-flight URB or need special buffering
      * (isochronous on Darwin for instance). */
     /* Get the required amount of additional memory to allocate the whole state. */
     size_t cbMem = cbData + sizeof(VUSBURBVUSBINT) + cbHci + cTds * cbHciTd;
-    uint32_t cbDataAllocated = 0;
 
-    AssertReturn(enmType < RT_ELEMENTS(pUrbPool->apFreeUrbs), NULL);
+    AssertReturn(enmType < RT_ELEMENTS(pUrbPool->aLstFreeUrbs), NULL);
 
     RTCritSectEnter(&pUrbPool->CritSectPool);
-    PVUSBURB pUrbPrev = NULL;
-    PVUSBURB pUrb = pUrbPool->apFreeUrbs[enmType];
-    while (pUrb)
+    PVUSBURBHDR pHdr = NULL;
+    PVUSBURBHDR pIt, pItNext;
+    RTListForEachSafe(&pUrbPool->aLstFreeUrbs[enmType], pIt, pItNext, VUSBURBHDR, NdFree)
     {
-        if (pUrb->pVUsb->cbDataAllocated >= cbMem)
+        if (pIt->cbAllocated >= cbMem)
         {
-            /* Unlink and verify part of the state. */
-            if (pUrbPrev)
-                pUrbPrev->pVUsb->pNext = pUrb->pVUsb->pNext;
+            RTListNodeRemove(&pIt->NdFree);
+            Assert(pIt->Urb.u32Magic == VUSBURB_MAGIC);
+            Assert(pIt->Urb.enmState == VUSBURBSTATE_FREE);
+            /*
+             * If the allocation is far too big we increase the age counter too
+             * so we don't waste memory for a lot of small transfers
+             */
+            if (pIt->cbAllocated >= 2 * cbMem)
+                pIt->cAge++;
             else
-                pUrbPool->apFreeUrbs[enmType] = pUrb->pVUsb->pNext;
-            Assert(pUrb->u32Magic == VUSBURB_MAGIC);
-            Assert(pUrb->enmState == VUSBURBSTATE_FREE);
-            Assert(!pUrb->pVUsb->pNext || pUrb->pVUsb->pNext->enmState == VUSBURBSTATE_FREE);
-            cbDataAllocated = pUrb->pVUsb->cbDataAllocated;
+                pIt->cAge = 0;
+            pHdr = pIt;
             break;
         }
-        pUrbPrev = pUrb;
-        pUrb = pUrb->pVUsb->pNext;
+        else
+        {
+            /* Increase age and free if it reached a threshold. */
+            pIt->cAge++;
+            if (pIt->cAge == VUSBURB_AGE_MAX)
+            {
+                RTListNodeRemove(&pIt->NdFree);
+                ASMAtomicDecU32(&pUrbPool->cUrbsInPool);
+                RTMemFree(pIt);
+            }
+        }
     }
 
-    if (!pUrb)
+    if (!pHdr)
     {
         /* allocate a new one. */
-        cbDataAllocated = cbMem <= _4K  ? RT_ALIGN_32(cbMem, _1K)
-                        : cbMem <= _32K ? RT_ALIGN_32(cbMem, _4K)
-                                        : RT_ALIGN_32(cbMem, 16*_1K);
+        size_t cbDataAllocated = cbMem <= _4K  ? RT_ALIGN_32(cbMem, _1K)
+                               : cbMem <= _32K ? RT_ALIGN_32(cbMem, _4K)
+                                               : RT_ALIGN_32(cbMem, 16*_1K);
 
-        pUrb = (PVUSBURB)RTMemAllocZ(RT_OFFSETOF(VUSBURB, abData[cbDataAllocated]));
-        if (RT_UNLIKELY(!pUrb))
+        pHdr = (PVUSBURBHDR)RTMemAllocZ(RT_OFFSETOF(VUSBURBHDR, Urb.abData[cbDataAllocated]));
+        if (RT_UNLIKELY(!pHdr))
         {
             RTCritSectLeave(&pUrbPool->CritSectPool);
             AssertLogRelFailedReturn(NULL);
         }
 
-        pUrbPool->cUrbsInPool++;
-        pUrb->u32Magic               = VUSBURB_MAGIC;
-
+        pHdr->cbAllocated = cbDataAllocated;
+        pHdr->cAge        = 0;
+        ASMAtomicIncU32(&pUrbPool->cUrbsInPool);
     }
     RTCritSectLeave(&pUrbPool->CritSectPool);
 
-    Assert(cbDataAllocated >= cbMem);
+    Assert(pHdr->cbAllocated >= cbMem);
 
     /*
      * (Re)init the URB
      */
     uint32_t offAlloc = cbData;
+    PVUSBURB pUrb = &pHdr->Urb;
+    pUrb->u32Magic               = VUSBURB_MAGIC;
     pUrb->enmState               = VUSBURBSTATE_ALLOCATED;
     pUrb->fCompleting            = false;
     pUrb->pszDesc                = NULL;
@@ -151,7 +193,6 @@ DECLHIDDEN(PVUSBURB) vusbUrbPoolAlloc(PVUSBURBPOOL pUrbPool, VUSBXFERTYPE enmTyp
     offAlloc += sizeof(VUSBURBVUSBINT);
     pUrb->pVUsb->pvFreeCtx       = NULL;
     pUrb->pVUsb->pfnFree         = NULL;
-    pUrb->pVUsb->cbDataAllocated = cbDataAllocated;
     pUrb->pVUsb->pNext           = NULL;
     pUrb->pVUsb->ppPrev          = NULL;
     pUrb->pVUsb->pCtrlUrb        = NULL;
@@ -175,18 +216,23 @@ DECLHIDDEN(PVUSBURB) vusbUrbPoolAlloc(PVUSBURBPOOL pUrbPool, VUSBXFERTYPE enmTyp
 
 DECLHIDDEN(void) vusbUrbPoolFree(PVUSBURBPOOL pUrbPool, PVUSBURB pUrb)
 {
-    /*
-     * Put it into the LIFO of free URBs.
-     * (No ppPrev is needed here.)
-     */
-    VUSBXFERTYPE enmType = pUrb->enmType;
-    AssertReturnVoid(enmType < RT_ELEMENTS(pUrbPool->apFreeUrbs));
-    RTCritSectEnter(&pUrbPool->CritSectPool);
-    pUrb->enmState = VUSBURBSTATE_FREE;
-    pUrb->pVUsb->ppPrev = NULL;
-    pUrb->pVUsb->pNext = pUrbPool->apFreeUrbs[enmType];
-    pUrbPool->apFreeUrbs[enmType] = pUrb;
-    Assert(pUrbPool->apFreeUrbs[enmType]->enmState == VUSBURBSTATE_FREE);
-    RTCritSectLeave(&pUrbPool->CritSectPool);
+    PVUSBURBHDR pHdr = VUSBURBPOOL_URB_2_URBHDR(pUrb);
+
+    /* URBs which aged too much because they are too big are freed. */
+    if (pHdr->cAge == VUSBURB_AGE_MAX)
+    {
+        ASMAtomicDecU32(&pUrbPool->cUrbsInPool);
+        RTMemFree(pHdr);
+    }
+    else
+    {
+        /* Put it into the list of free URBs. */
+        VUSBXFERTYPE enmType = pUrb->enmType;
+        AssertReturnVoid(enmType < RT_ELEMENTS(pUrbPool->aLstFreeUrbs));
+        RTCritSectEnter(&pUrbPool->CritSectPool);
+        pUrb->enmState = VUSBURBSTATE_FREE;
+        RTListAppend(&pUrbPool->aLstFreeUrbs[enmType], &pHdr->NdFree);
+        RTCritSectLeave(&pUrbPool->CritSectPool);
+    }
 }
 
