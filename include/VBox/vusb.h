@@ -1076,6 +1076,8 @@ typedef enum VUSBSTATUS
     VUSBSTATUS_NOT_ACCESSED,
     /** Canceled/undone URB (VUSB internal). */
     VUSBSTATUS_UNDO,
+    /** Canceled URB. */
+    VUSBSTATUS_CANCELED,
     /** Invalid status. */
     VUSBSTATUS_INVALID = 0x7f
 } VUSBSTATUS;
