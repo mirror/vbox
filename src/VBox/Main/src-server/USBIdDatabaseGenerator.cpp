@@ -57,11 +57,6 @@
 *********************************************************************************************************************************/
 /** For verbose output.   */
 static bool g_fVerbose = false;
-/** Output prefix for informational output. */
-#define INFO_PREF "USBIdDatabaseGenerator: Info: "
-
-
-using namespace std;
 
 static const char * const header =
     "/** @file\n"
@@ -150,20 +145,8 @@ struct ProductRecord
     BLDPROGSTRING StrRef;
 };
 
-
-namespace State
-{
-    typedef int Value;
-    enum
-    {
-        lookForStartBlock,
-        lookForEndBlock,
-        finished
-    };
-}
-
-typedef vector<ProductRecord> ProductsSet;
-typedef vector<VendorRecord> VendorsSet;
+typedef std::vector<ProductRecord> ProductsSet;
+typedef std::vector<VendorRecord> VendorsSet;
 
 
 /*********************************************************************************************************************************
@@ -201,100 +184,85 @@ bool operator == (const VendorRecord& lh, const VendorRecord& rh)
 /*
  * Input file parsing.
  */
-int ParseAlias(const string& src, size_t& id, string& desc)
+int ParseAlias(char *pszLine, size_t& id, std::string& desc)
 {
-    unsigned int i = 0;
-    if (sscanf(src.c_str(), "%x", &i) != 1)
-        return ERROR_IN_PARSE_LINE;
-
-    /* skip the number and following whitespace. */
-    size_t offNext = src.find_first_of(" \t", 1);
-    offNext = src.find_first_not_of(" \t", offNext);
-    if (offNext != string::npos)
+    /* First there's a hexadeciman number. */
+    uint32_t uVal;
+    char *pszNext;
+    int rc = RTStrToUInt32Ex(pszLine, &pszNext, 16, &uVal);
+    if (   rc == VWRN_TRAILING_CHARS
+        || rc == VWRN_TRAILING_SPACES
+        || rc == VINF_SUCCESS)
     {
-        size_t cchLength = src.length() - offNext;
-        if (cchLength <= USB_ID_DATABASE_MAX_STRING)
+        /* Skip the whipespace following it and at the end of the line. */
+        pszNext = RTStrStripL(pszNext);
+        if (*pszNext != '\0')
         {
-            id = i;
-            desc = src.substr(offNext);
-
-            /* Check the string encoding. */
-            int rc = RTStrValidateEncoding(desc.c_str());
+            rc = RTStrValidateEncoding(pszNext);
             if (RT_SUCCESS(rc))
             {
-                g_cbRawStrings += desc.length() + 1;
-                return RTEXITCODE_SUCCESS;
+                size_t cchDesc = strlen(pszNext);
+                if (cchDesc <= USB_ID_DATABASE_MAX_STRING)
+                {
+                    id   = uVal;
+                    desc = pszNext;
+                    g_cbRawStrings += cchDesc + 1;
+                    return RTEXITCODE_SUCCESS;
+                }
+                RTMsgError("String to long: %zu", cchDesc);
             }
-
-            RTMsgError("Invalid encoding: '%s' (rc=%Rrc)", desc.c_str(), rc);
+            else
+                RTMsgError("Invalid encoding: '%s' (rc=%Rrc)", pszNext, rc);
         }
         else
-            RTMsgError("String to long: %zu", cchLength);
+            RTMsgError("Error parsing '%s'", pszLine);
     }
     else
-        RTMsgError("Error parsing '%s'", src.c_str());
+        RTMsgError("Error converting number at the start of '%s': %Rrc", pszLine, rc);
     return ERROR_IN_PARSE_LINE;
 }
 
-bool IsCommentOrEmptyLine(const string& str)
+bool IsCommentOrEmptyLine(const char *pszLine)
 {
-    size_t index = str.find_first_not_of(" \t");// skip left spaces
-    return index == string::npos || str[index] == '#';
-}
-
-bool getline(PRTSTREAM instream, string& resString)
-{
-    const size_t szBuf = 4096;
-    char buf[szBuf] = { 0 };
-
-    int rc = RTStrmGetLine(instream, buf, szBuf);
-    if (RT_SUCCESS(rc))
-    {
-        resString = buf;
-        return true;
-    }
-
-    if (rc != VERR_EOF)
-        RTMsgWarning("RTStrmGetLine failed: %Rrc", rc);
-    return false;
+    pszLine = RTStrStripL(pszLine);
+    return *pszLine == '#' || *pszLine == '\0';
 }
 
 int ParseUsbIds(PRTSTREAM instream)
 {
-    State::Value state = State::lookForStartBlock;
-    string line;
-    int res = 0;
+    /*
+     * State data.
+     * We check for a certain comment string before processing data.
+     */
+    bool fLookingForData = false;
     VendorRecord vendor = { 0, 0, 0, "" };
 
-    while (state != State::finished && getline(instream, line))
+    /*
+     * Process the file line-by-line.
+     */
+    for (;;)
     {
-        switch (state)
+        char szLine[_4K];
+        int rc = RTStrmGetLine(instream, szLine, sizeof(szLine));
+        if (RT_SUCCESS(rc))
         {
-            case State::lookForStartBlock:
+            if (!fLookingForData)
             {
-                if (line.find(start_block) != string::npos)
-                    state = State::lookForEndBlock;
-                break;
-            }
-            case State::lookForEndBlock:
-            {
-                if (line.find(end_block) != string::npos)
-                    state = State::finished;
-                else
+                if (!strstr(szLine, end_block))
                 {
-                    if (!IsCommentOrEmptyLine(line))
+                    if (!IsCommentOrEmptyLine(szLine))
                     {
-                        if (line[0] == '\t')
+                        if (szLine[0] == '\t')
                         {
                             // Parse Product line
                             // first line should be vendor
                             if (vendor.vendorID == 0)
                                 return RTMsgErrorExit((RTEXITCODE)ERROR_WRONG_FILE_FORMAT,
-                                                      "Wrong file format. Product before vendor: '%s'", line.c_str());
+                                                      "Wrong file format. Product before vendor: '%s'", szLine);
                             ProductRecord product = { 0, vendor.vendorID, 0, "" };
-                            if (ParseAlias(line.substr(1), product.productID, product.str) != 0)
+                            if (ParseAlias(&szLine[1], product.productID, product.str) != 0)
                                 return RTMsgErrorExit((RTEXITCODE)ERROR_IN_PARSE_LINE,
-                                                      "Error in parsing product line: '", line.c_str());
+                                                      "Error in parsing product line: '%s'", szLine);
                             product.key = RT_MAKE_U32(product.productID, product.vendorID);
                             Assert(product.vendorID == vendor.vendorID);
                             g_products.push_back(product);
@@ -302,21 +270,24 @@ int ParseUsbIds(PRTSTREAM instream)
                         else
                         {
                             // Parse vendor line
-                            if (ParseAlias(line, vendor.vendorID, vendor.str) != 0)
+                            if (ParseAlias(szLine, vendor.vendorID, vendor.str) != 0)
                                 return RTMsgErrorExit((RTEXITCODE)ERROR_IN_PARSE_LINE,
-                                                      "Error in parsing vendor line: '", line.c_str());
+                                                      "Error in parsing vendor line: '%s'", szLine);
                             g_vendors.push_back(vendor);
                         }
                     }
                 }
-                break;
+                else
+                    return RTEXITCODE_SUCCESS;
             }
+            else if (strstr(szLine, start_block))
+                fLookingForData = false;
         }
+        else if (rc == VERR_EOF)
+            return RTEXITCODE_SUCCESS;
+        else
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTStrmGetLine failed: %Rrc", rc);
     }
-    if (state == State::lookForStartBlock)
-        return RTMsgErrorExit((RTEXITCODE)ERROR_WRONG_FILE_FORMAT,
-                              "wrong format of input file. Start line is not found.");
-    return 0;
 }
 
 
@@ -441,7 +412,7 @@ int main(int argc, char *argv[])
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "BldProgStrTab_CompileIt failed!\n");
 
     /*
-     * Print stats.
+     * Print stats.  Making a little extra effort to get it all on one line.
      */
     size_t const cbVendorEntry  = sizeof(USBIdDatabase::s_aVendors[0]) + sizeof(USBIdDatabase::s_aVendorNames[0]);
     size_t const cbProductEntry = sizeof(USBIdDatabase::s_aProducts[0]) + sizeof(USBIdDatabase::s_aProductNames[0]);
@@ -452,14 +423,16 @@ int main(int argc, char *argv[])
 #ifdef USB_ID_DATABASE_WITH_COMPRESSION
     cbActual += sizeof(StrTab.aCompDict);
 #endif
-    cout << INFO_PREF "Total " << dec << cbActual << " bytes";
-    if (cbActual < cbRaw)
-        cout << " saving " << dec << ((cbRaw - cbActual) * 100 / cbRaw) << "% (" << (cbRaw - cbActual) << " bytes)";
-    else
-        cout << " wasting " << dec << (cbActual - cbRaw) << " bytes";
-    cout << "; old version " << cbOldRaw << " bytes + relocs ("
-         << ((cbOldRaw - cbActual) * 100 / cbOldRaw) << "% save)." << endl;
 
+    char szMsg1[32];
+    RTStrPrintf(szMsg1, sizeof(szMsg1),"Total %zu bytes", cbActual);
+    char szMsg2[64];
+    RTStrPrintf(szMsg2, sizeof(szMsg2)," old version %zu bytes + relocs (%zu%% save)",
+                cbOldRaw, (cbOldRaw - cbActual) * 100 / cbOldRaw);
+    if (cbActual < cbRaw)
+        RTMsgInfo("%s - saving %zu%% (%zu bytes);%s", szMsg1, (cbRaw - cbActual) * 100 / cbRaw, cbRaw - cbActual, szMsg2);
+    else
+        RTMsgInfo("%s - wasting %zu bytes;%s", szMsg1, cbActual - cbRaw, szMsg2);
 
     /*
      * Produce the source file.
