@@ -122,6 +122,8 @@ OTHER_CLEAN += \
 	$(IPRT_OUT_DIR)/errmsgcomdata.h \
 	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h \
 	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts \
+	$(IPRT_OUT_DIR)/odi2name.h \
+	$(IPRT_OUT_DIR)/odi2name.h.ts \
 	$(IPRT_OUT_DIR)/Doxyfile.iprt \
 	$(IPRT_OUT_DIR)/Doxyfile.iprt.dep \
 	$(IPRT_OUT_DIR)/docs.iprt
@@ -145,6 +147,25 @@ common/misc/buildconfig.cpp_DEFS = \
 	IPRT_BLDCFG_TARGET=\"$(KBUILD_TARGET)\" \
 	IPRT_BLDCFG_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\" \
 	IPRT_BLDCFG_TYPE=\"$(KBUILD_TYPE)\"
+
+#
+# OID to C table conversion program.
+#
+BLDPROGS += oiddb2c
+oiddb2c_TEMPLATE = VBoxBldProg
+oiddb2c_SOURCES = common/asn1/oiddb2c.cpp
+common/asn1/asn1-dump.cpp_DEPS = $(IPRT_OUT_DIR)/oiddb.h
+common/asn1/asn1-dump.cpp_INCS = $(IPRT_OUT_DIR)
+
+$(IPRT_OUT_DIR)/oiddb.h.ts +| $(IPRT_OUT_DIR)/oiddb.h: \
+		$(VBOX_PATH_RUNTIME_SRC)/common/asn1/oiddb.cfg \
+               $(VBOX_EXTRA_OID_CFG_FILES) \
+               $$(oiddb2c_1_TARGET) \
+		| $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$(filter %.xidl,$^))
+	$(QUIET)$(oiddb2c_1_TARGET) "$@" $(filter %.cfg,$^)
+	$(QUIET)$(CP) --changed -fv "$@" "$(IPRT_OUT_DIR)/oiddb.h"
+
 
 #
 # Unicode Specification reader used to regenerate unidata-*.cpp.
@@ -579,6 +600,7 @@ RuntimeR3_SOURCES       = \
 	common/vfs/vfsmisc.cpp \
 	common/vfs/vfsstdfile.cpp \
 	common/vfs/vfsstdpipe.cpp \
+	common/vfs/vfsreadahead.cpp \
 	common/zip/tar.cpp \
 	common/zip/tarcmd.cpp \
 	common/zip/unzipcmd.cpp \
@@ -2971,6 +2993,7 @@ ntBldSymDb_TEMPLATE = VBoxAdvBldProg
 ntBldSymDb_INCS = .
 ntBldSymDb_SOURCES = r0drv/nt/ntBldSymDb.cpp
 endif
+
 
 #
 # Generate the rules (we're the to sub-makefile).

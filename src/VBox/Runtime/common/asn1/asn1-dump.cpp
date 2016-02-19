@@ -60,6 +60,167 @@ typedef struct RTASN1DUMPDATA
 typedef RTASN1DUMPDATA *PRTASN1DUMPDATA;
 
 
+
+/*
+ * Since we're the only user of OIDs, this stuff lives here.
+ * Should that ever change, this code needs to move elsewhere and get it's own public API.
+ */
+#include "oiddb.h"
+
+
+/**
+ * Searches a range in the big table for a key.
+ *
+ * @returns Pointer to the matching entry. NULL if not found.
+ * @param   iEntry              The start of the range.
+ * @param   cEntries            The number of entries in the range.
+ * @param   uKey                The key to find.
+ */
+DECLINLINE(PCRTOIDENTRYBIG) rtOidDbLookupBig(uint32_t iEntry, uint32_t cEntries, uint32_t uKey)
+{
+    /* Not worth doing binary search here, too few entries. */
+    while (cEntries-- > 0)
+    {
+        uint32_t const uThisKey = g_aBigOidTable[iEntry].uKey;
+        if (uThisKey >= uKey)
+        {
+            if (uThisKey == uKey)
+                return &g_aBigOidTable[iEntry];
+            break;
+        }
+        iEntry++;
+    }
+    return NULL;
+}
+
+
+/**
+ * Searches a range in the small table for a key.
+ *
+ * @returns Pointer to the matching entry. NULL if not found.
+ * @param   iEntry              The start of the range.
+ * @param   cEntries            The number of entries in the range.
+ * @param   uKey                The key to find.
+ */
+DECLINLINE(PCRTOIDENTRYSMALL) rtOidDbLookupSmall(uint32_t iEntry, uint32_t cEntries, uint32_t uKey)
+{
+    if (cEntries < 6)
+    {
+        /* Linear search for small ranges. */
+        while (cEntries-- > 0)
+        {
+            uint32_t const uThisKey = g_aSmallOidTable[iEntry].uKey;
+            if (uThisKey >= uKey)
+            {
+                if (uThisKey == uKey)
+                    return &g_aSmallOidTable[iEntry];
+                break;
+            }
+            iEntry++;
+        }
+    }
+    else
+    {
+        /* Binary search. */
+        uint32_t iEnd = iEntry + cEntries;
+        for (;;)
+        {
+            uint32_t const i        = iEntry + (iEnd - iEntry) / 2;
+            uint32_t const uThisKey = g_aSmallOidTable[i].uKey;
+            if (uThisKey < uKey)
+            {
+                iEntry = i + 1;
+                if (iEntry >= iEnd)
+                    break;
+            }
+            else if (uThisKey > uKey)
+            {
+                iEnd = i;
+                if (iEnd <= iEntry)
+                    break;
+            }
+            else
+                return &g_aSmallOidTable[iEntry];
+        }
+    }
+    return NULL;
+}
+
+
+
+/**
+ * Queries the name for an object identifier.
+ *
+ * @returns true if found, false if not.
+ * @param   pauComponents   The components making up the object ID.
+ * @param   cComponents     The number of components.
+ * @param   pszDst          Where to store the name if found.
+ * @param   cbDst           The size of the destination buffer.
+ */
+static bool rtOidDbQueryObjIdName(uint32_t const *pauComponents, uint8_t cComponents, char *pszDst, size_t cbDst)
+{
+    if (cComponents > 0)
+    {
+        /*
+         * The top level is always in the small table as the range is restricted to 0,1,2.
+         */
+        bool     fBigTable = false;
+        uint32_t cEntries  = RT_MIN(RT_ELEMENTS(g_aSmallOidTable), 3);
+        uint32_t iEntry    = 0;
+        for (;;)
+        {
+            uint32_t const uKey = *pauComponents++;
+            if (!fBigTable)
+            {
+                PCRTOIDENTRYSMALL pSmallHit = rtOidDbLookupSmall(iEntry, cEntries, uKey);
+                if (pSmallHit)
+                {
+                    if (--cComponents == 0)
+                    {
+                        if (RTBldProgStrTabQueryString(&g_OidDbStrTab, pSmallHit->offString,
+                                                       pSmallHit->cchString, pszDst, cbDst) >= 0)
+                            return true;
+                        break;
+                    }
+                    cEntries = pSmallHit->cChildren;
+                    if (cEntries)
+                    {
+                        iEntry = pSmallHit->idxChildren;
+                        fBigTable = pSmallHit->fBigTable;
+                        continue;
+                    }
+                }
+            }
+            else
+            {
+                PCRTOIDENTRYBIG pBigHit = rtOidDbLookupBig(iEntry, cEntries, uKey);
+                if (pBigHit)
+                {
+                    if (--cComponents == 0)
+                    {
+                        if (RTBldProgStrTabQueryString(&g_OidDbStrTab, pBigHit->offString,
+                                                       pBigHit->cchString, pszDst, cbDst) >= 0)
+                            return true;
+                        break;
+                    }
+                    cEntries = pBigHit->cChildren;
+                    if (cEntries)
+                    {
+                        iEntry = pBigHit->idxChildren;
+                        fBigTable = pBigHit->fBigTable;
+                        continue;
+                    }
+                }
+            }
+            break;
+        }
+    }
+
+    return false;
+}
+
+
+
 /**
  * Wrapper around FNRTASN1DUMPPRINTFV.
  *
@@ -185,389 +346,6 @@ static void rtAsn1DumpString(PRTASN1DUMPDATA pData, PCRTASN1CORE pAsn1Core, cons
 
 
 /**
- * Returns a name for the given object ID.
- *
- * This is just to make some of the dumps a little easier to read.  It's no our
- * intention to have the whole ODI repository encoded here.
- *
- * @returns Name if available, NULL if not.
- * @param   pszObjId            The dotted object identifier string.
- */
-static const char *rtAsn1DumpLookupObjIdName(const char *pszObjId)
-{
-#define STARTS_WITH_1(a_off, a_uValue) \
-    ( pszObjId[a_off] == (a_uValue) + '0' && pszObjId[a_off + 1] == '.' )
-#define STARTS_WITH_2(a_off, a_uValue) \
-    ( pszObjId[a_off] == (a_uValue) / 10 + '0' && pszObjId[a_off + 1] == (a_uValue) % 10 + '0' && pszObjId[a_off + 2] == '.' )
-#define STARTS_WITH_3(a_off, a_uValue) \
-    (   pszObjId[a_off]     == (a_uValue) / 100 + '0' \
-     && pszObjId[a_off + 1] == ((a_uValue) % 100) / 10 + '0' \
-     && pszObjId[a_off + 2] == (a_uValue) % 10 + '0' \
-     && pszObjId[a_off + 3] == '.' )
-#define STARTS_WITH_6(a_off, a_uValue) \
-    (   pszObjId[a_off]     == (a_uValue) / 100000 + '0' \
-     && pszObjId[a_off + 1] == ((a_uValue) % 100000) / 10000 + '0' \
-     && pszObjId[a_off + 2] == ((a_uValue) % 10000) / 1000 + '0' \
-     && pszObjId[a_off + 3] == ((a_uValue) % 1000) / 100 + '0' \
-     && pszObjId[a_off + 4] == ((a_uValue) % 100) / 10 + '0' \
-     && pszObjId[a_off + 5] == (a_uValue) % 10 + '0' \
-     && pszObjId[a_off + 6] == '.' )
-
-#define ENDS_WITH_1(a_off, a_uValue) \
-    ( pszObjId[a_off] == (a_uValue) + '0' && !pszObjId[a_off + 1] )
-#define ENDS_WITH_2(a_off, a_uValue) \
-    ( pszObjId[a_off] == (a_uValue) / 10 + '0' && pszObjId[a_off + 1] == (a_uValue) % 10 + '0' && !pszObjId[a_off + 2] )
-
-    if (STARTS_WITH_1(0, 0))        /* ITU-T assigned - top level 0. */
-    {
-
-    }
-    else if (STARTS_WITH_1(0, 1))   /* ISO assigned - top level 1. */
-    {
-        if (STARTS_WITH_1(2, 0))        /* ISO standard - 1.0. */
-        {
-            /* */
-        }
-        else if (STARTS_WITH_1(2, 2))   /* ISO member body - 1.2. */
-        {
-            if (STARTS_WITH_3(4, 840))      /* USA - 1.2.840. */
-            {
-                if (STARTS_WITH_6(8, 113549))   /* RSADSI / RSA Data Security inc - 1.2.840.113549. */
-                {
-                    if (STARTS_WITH_1(15, 1))       /* PKCS - 1.2.840.113549.1. */
-                    {
-                        if (STARTS_WITH_1(17, 1))       /* PKCS-1 - 1.2.840.113549.1.1. */
-                        {
-                                  if (ENDS_WITH_1(19, 1))    return "pkcs1-RsaEncryption";
-                             else if (ENDS_WITH_1(19, 2))    return "pkcs1-Md2WithRsaEncryption";
-                             else if (ENDS_WITH_1(19, 3))    return "pkcs1-Md4WithRsaEncryption";
-                             else if (ENDS_WITH_1(19, 4))    return "pkcs1-Md5WithRsaEncryption";
-                             else if (ENDS_WITH_1(19, 5))    return "pkcs1-Sha1WithRsaEncryption";
-                             else if (ENDS_WITH_2(19, 10))   return "pkcs1-RsaPss";
-                             else if (ENDS_WITH_2(19, 11))   return "pkcs1-Sha256WithRsaEncryption";
-                             else if (ENDS_WITH_2(19, 12))   return "pkcs1-Sha384WithRsaEncryption";
-                             else if (ENDS_WITH_2(19, 13))   return "pkcs1-Sha512WithRsaEncryption";
-                             else if (ENDS_WITH_2(19, 14))   return "pkcs1-Sha224WithRsaEncryption";
-                        }
-                        else if (STARTS_WITH_1(17, 9))  /* PKCS-9 signatures - 1.2.840.113549.1.9. */
-                        {
-                                 if (ENDS_WITH_1(19, 1))    return "pkcs9-EMailAddress";
-                            else if (ENDS_WITH_1(19, 2))    return "pkcs9-UntrustedName";
-                            else if (ENDS_WITH_1(19, 3))    return "pkcs9-ContentType";
-                            else if (ENDS_WITH_1(19, 4))    return "pkcs9-MessageDigest";
-                            else if (ENDS_WITH_1(19, 5))    return "pkcs9-SigningTime";
-                            else if (ENDS_WITH_1(19, 6))    return "pkcs9-CounterSignature";
-                            else if (ENDS_WITH_1(19, 7))    return "pkcs9-challengePassword";
-                            else if (ENDS_WITH_1(19, 8))    return "pkcs9-UnstructuredAddress";
-                            else if (ENDS_WITH_1(19, 9))    return "pkcs9-ExtendedCertificateAttributes";
-                            else if (ENDS_WITH_2(19, 13))   return "pkcs9-SigningDescription";
-                            else if (ENDS_WITH_2(19, 14))   return "pkcs9-ExtensionRequest";
-                            else if (ENDS_WITH_2(19, 15))   return "pkcs9-SMimeCapabilities";
-                        }
-                    }
-                    else if (STARTS_WITH_1(15, 2))  /* PKCS #2 - 1.2.840.113549.2. */
-                    {
-                    }
-                }
-            }
-        }
-        else if (STARTS_WITH_1(2, 3))   /* ISO identified organiziation - 1.3. */
-        {
-            if (STARTS_WITH_1(4, 6))        /* DOD - 1.3.6. */
-            {
-                if (STARTS_WITH_1(6, 1))        /* Internet - 1.3.6.1. */
-                {
-                    if (STARTS_WITH_1(8, 4))        /* Private - 1.3.6.1.4. */
-                    {
-                        if (STARTS_WITH_1(10, 1))       /* IANA-registered Private Enterprises. */
-                        {
-                            if (STARTS_WITH_3(12, 311))     /* Microsoft - 1.3.6.1.4.1.311 */
-                            {
-                                if (STARTS_WITH_1(16, 1))       /* 1.3.6.1.4.1.311.1. */
-                                {
-                                }
-                                else if (STARTS_WITH_1(16, 2))  /* 1.3.6.1.4.1.311.2 */
-                                {
-                                    if (STARTS_WITH_1(18, 1))       /* 1.3.6.1.4.1.311.2.1. */
-                                    {
-                                             if (ENDS_WITH_1(20, 1))     return "Ms-??-2.1";
-                                        else if (ENDS_WITH_1(20, 4))     return "Ms-SpcIndirectDataContext";
-                                        else if (ENDS_WITH_2(20, 10))    return "Ms-SpcAgencyInfo";
-                                        else if (ENDS_WITH_2(20, 11))    return "Ms-SpcStatemntType";
-                                        else if (ENDS_WITH_2(20, 12))    return "Ms-SpcOpusInfo";
-                                        else if (ENDS_WITH_2(20, 14))    return "Ms-CertReqExtensions";
-                                        else if (ENDS_WITH_2(20, 15))    return "Ms-SpcPeImageData";
-                                        else if (ENDS_WITH_2(20, 18))    return "Ms-SpcRawFileData";
-                                        else if (ENDS_WITH_2(20, 19))    return "Ms-SpcStructuredStorageData";
-                                        else if (ENDS_WITH_2(20, 20))    return "Ms-SpcJavaClassDataType1";
-                                        else if (ENDS_WITH_2(20, 21))    return "Ms-SpcIndividualCodeSigning";
-                                        else if (ENDS_WITH_2(20, 22))    return "Ms-SpcCommericalSigning";
-                                        else if (ENDS_WITH_2(20, 25))    return "Ms-SpcLinkType2-Aka-CabData";
-                                        else if (ENDS_WITH_2(20, 26))    return "Ms-SpcMinimalCriterialInfo";
-                                        else if (ENDS_WITH_2(20, 27))    return "Ms-SpcFinacialCriterialInfo";
-                                        else if (ENDS_WITH_2(20, 28))    return "Ms-SpcLinkType3";
-                                    }
-                                    else if (STARTS_WITH_1(18, 3))  /* 1.3.6.1.4.1.311.2.3. */
-                                    {
-                                             if (ENDS_WITH_1(20, 1))     return "Ms-SpcPeImagePageHashesV1";
-                                        else if (ENDS_WITH_1(20, 2))     return "Ms-SpcPeImagePageHashesV2";
-                                    }
-                                }
-                                else if (STARTS_WITH_1(16, 3))  /* 1.3.6.1.4.1.311.3 */
-                                {
-                                    if (STARTS_WITH_1(18, 3))       /* 1.3.6.1.4.1.311.3.3. */
-                                    {
-                                             if (ENDS_WITH_1(20, 1))     return "Ms-CounterSign";
-                                        else if (ENDS_WITH_1(20, 2))     return "Ms-??-3.2";
-                                    }
-                                }
-                                else if (STARTS_WITH_2(16, 10)) /* 1.3.6.1.4.1.311.10 */
-                                {
-                                    if (STARTS_WITH_1(19, 3))       /* . */
-                                    {
-                                             if (ENDS_WITH_1(21, 1))     return "Ms-CertTrustListSigning";
-                                        else if (ENDS_WITH_1(21, 2))     return "Ms-TimeStampSigning";
-                                        else if (ENDS_WITH_1(21, 4))     return "Ms-EncryptedFileSystem";
-                                        else if (ENDS_WITH_1(21, 5))     return "Ms-WhqlCrypto";
-                                        else if (ENDS_WITH_1(21, 6))     return "Ms-Nt5Crypto";
-                                        else if (ENDS_WITH_1(21, 7))     return "Ms-OemWhqlCrypto";
-                                        else if (ENDS_WITH_1(21, 8))     return "Ms-EmbeddedNtCrypto";
-                                        else if (ENDS_WITH_1(21, 9))     return "Ms-RootListSigner";
-                                        else if (ENDS_WITH_2(21, 10))    return "Ms-QualifiedSubordination";
-                                        else if (ENDS_WITH_2(21, 11))    return "Ms-KeyRecovery";
-                                        else if (ENDS_WITH_2(21, 12))    return "Ms-DocumentSigning";
-                                        else if (ENDS_WITH_2(21, 13))    return "Ms-LifetimeSigning";
-                                    }
-                                    else if (STARTS_WITH_1(19, 5))  /* . */
-                                    {
-                                             if (ENDS_WITH_1(21, 1))     return "Ms-Drm";
-                                        else if (ENDS_WITH_1(21, 2))     return "Ms-DrmIndividualization";
-                                    }
-                                    else if (STARTS_WITH_1(19, 9))  /* . */
-                                    {
-                                        if (ENDS_WITH_1(21, 1))     return "Ms-CrossCertDistPoints";
-                                    }
-                                }
-                                else if (STARTS_WITH_2(16, 20)) /* 1.3.6.1.4.1.311.20 */
-                                {
-                                         if (ENDS_WITH_1(19, 1))     return "Ms-AutoEnrollCtlUsage";
-                                    else if (ENDS_WITH_1(19, 2))     return "Ms-EnrollCerttypeExtension";
-                                }
-                                else if (STARTS_WITH_2(16, 21)) /* CertSrv Infrastructure - 1.3.6.1.4.1.311.21 */
-                                {
-                                         if (ENDS_WITH_1(19, 1))     return "Ms-CaKeyCertIndexPair";
-                                    else if (ENDS_WITH_1(19, 2))     return "Ms-CertSrvPreviousCertHash";
-                                    else if (ENDS_WITH_1(19, 3))     return "Ms-CrlVirtualBase";
-                                    else if (ENDS_WITH_1(19, 4))     return "Ms-CrlNextPublish";
-                                    else if (ENDS_WITH_1(19, 6))     return "Ms-KeyRecovery";
-                                    else if (ENDS_WITH_1(19, 7))     return "Ms-CertificateTemplate";
-                                    else if (ENDS_WITH_1(19, 9))     return "Ms-DummySigner";
-                                }
-                            }
-                        }
-                    }
-                    else if (STARTS_WITH_1(8, 5))   /* Security - 1.3.6.1.5. */
-                    {
-                        if (STARTS_WITH_1(10, 5))       /* Mechanisms - 1.3.6.1.5.5. */
-                        {
-                            if (STARTS_WITH_1(12, 7))       /* Public-Key Infrastructure (X.509) - 1.3.6.1.5.5.7. */
-                            {
-                                if (STARTS_WITH_1(14, 1))        /* Private Extension - 1.3.6.1.5.5.7.1. */
-                                {
-                                         if (ENDS_WITH_1(16, 1))    return "pkix-AuthorityInfoAccess";
-                                    else if (ENDS_WITH_2(16, 12))   return "pkix-LogoType";
-                                }
-                                else if (STARTS_WITH_1(14, 2))   /* Private Extension - 1.3.6.1.5.5.7.2. */
-                                {
-                                         if (ENDS_WITH_1(16, 1))    return "id-qt-CPS";
-                                    else if (ENDS_WITH_1(16, 2))    return "id-qt-UNotice";
-                                    else if (ENDS_WITH_1(16, 3))    return "id-qt-TextNotice";
-                                    else if (ENDS_WITH_1(16, 4))    return "id-qt-ACPS";
-                                    else if (ENDS_WITH_1(16, 5))    return "id-qt-ACUNotice";
-                                }
-                                else if (STARTS_WITH_1(14, 3))   /* Private Extension - 1.3.6.1.5.5.7.3. */
-                                {
-                                         if (ENDS_WITH_1(16,  1))   return "id-kp-ServerAuth";
-                                    else if (ENDS_WITH_1(16,  2))   return "id-kp-ClientAuth";
-                                    else if (ENDS_WITH_1(16,  3))   return "id-kp-CodeSigning";
-                                    else if (ENDS_WITH_1(16,  4))   return "id-kp-EmailProtection";
-                                    else if (ENDS_WITH_1(16,  5))   return "id-kp-IPSecEndSystem";
-                                    else if (ENDS_WITH_1(16,  6))   return "id-kp-IPSecTunnel";
-                                    else if (ENDS_WITH_1(16,  7))   return "id-kp-IPSecUser";
-                                    else if (ENDS_WITH_1(16,  8))   return "id-kp-Timestamping";
-                                    else if (ENDS_WITH_1(16,  9))   return "id-kp-OCSPSigning";
-                                    else if (ENDS_WITH_2(16, 10))   return "id-kp-DVCS";
-                                    else if (ENDS_WITH_2(16, 11))   return "id-kp-SBGPCertAAServiceAuth";
-                                    else if (ENDS_WITH_2(16, 13))   return "id-kp-EAPOverPPP";
-                                    else if (ENDS_WITH_2(16, 14))   return "id-kp-EAPOverLAN";
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else if (STARTS_WITH_2(4, 14))  /* 1.3.14. */
-            {
-                if (STARTS_WITH_1(7, 3))        /* OIW Security Special Interest Group - 1.3.14.3. */
-                {
-                    if (STARTS_WITH_1(9, 2))        /* OIW SSIG algorithms - 1.3.14.3.2. */
-                    {
-                             if (ENDS_WITH_1(11, 2))     return "oiw-ssig-Md4WithRsa";
-                        else if (ENDS_WITH_1(11, 3))     return "oiw-ssig-Md5WithRsa";
-                        else if (ENDS_WITH_1(11, 4))     return "oiw-ssig-Md4WithRsaEncryption";
-                        else if (ENDS_WITH_2(11, 15))    return "oiw-ssig-ShaWithRsaEncryption";
-                        else if (ENDS_WITH_2(11, 24))    return "oiw-ssig-Md2WithRsaEncryption";
-                        else if (ENDS_WITH_2(11, 25))    return "oiw-ssig-Md5WithRsaEncryption";
-                        else if (ENDS_WITH_2(11, 26))    return "oiw-ssig-Sha1";
-                        else if (ENDS_WITH_2(11, 29))    return "oiw-ssig-Sha1WithRsaEncryption";
-                    }
-                }
-            }
-        }
-    }
-    else if (STARTS_WITH_1(0, 2))  /* Joint ISO/ITU-T assigned - top level 2.*/
-    {
-        if (STARTS_WITH_1(2, 1))        /* ASN.1 - 2.1. */
-        {
-        }
-        else if (STARTS_WITH_1(2, 5))   /* Directory (X.500) - 2.5. */
-        {
-            if (STARTS_WITH_1(4, 4))        /* X.500 Attribute types - 2.5.4. */
-            {
-                     if (ENDS_WITH_1(6, 3))     return "x500-CommonName";
-                else if (ENDS_WITH_1(6, 6))     return "x500-CountryName";
-                else if (ENDS_WITH_1(6, 7))     return "x500-LocalityName";
-                else if (ENDS_WITH_1(6, 8))     return "x500-StatOrProvinceName";
-                else if (ENDS_WITH_2(6, 10))    return "x500-OrganizationName";
-                else if (ENDS_WITH_2(6, 11))    return "x500-OrganizationUnitName";
-            }
-            else if (STARTS_WITH_2(4, 29))  /* certificateExtension (id-ce) - 2.5.29. */
-            {
-                     if (ENDS_WITH_1(7, 1))     return "id-ce-AuthorityKeyIdentifier-Deprecated";
-                else if (ENDS_WITH_1(7, 2))     return "id-ce-KeyAttributes-Deprecated";
-                else if (ENDS_WITH_1(7, 3))     return "id-ce-CertificatePolicies-Deprecated";
-                else if (ENDS_WITH_1(7, 4))     return "id-ce-KeyUsageRestriction-Deprecated";
-                else if (ENDS_WITH_1(7, 7))     return "id-ce-SubjectAltName-Deprecated";
-                else if (ENDS_WITH_1(7, 8))     return "id-ce-IssuerAltName-Deprecated";
-                else if (ENDS_WITH_2(7, 14))    return "id-ce-SubjectKeyIdentifier";
-                else if (ENDS_WITH_2(7, 15))    return "id-ce-KeyUsage";
-                else if (ENDS_WITH_2(7, 16))    return "id-ce-PrivateKeyUsagePeriod";
-                else if (ENDS_WITH_2(7, 17))    return "id-ce-SubjectAltName";
-                else if (ENDS_WITH_2(7, 18))    return "id-ce-issuerAltName";
-                else if (ENDS_WITH_2(7, 19))    return "id-ce-BasicConstraints";
-                else if (ENDS_WITH_2(7, 25))    return "id-ce-CrlDistributionPoints";
-                else if (ENDS_WITH_2(7, 29))    return "id-ce-CertificateIssuer";
-                else if (ENDS_WITH_2(7, 30))    return "id-ce-NameConstraints";
-                else if (ENDS_WITH_2(7, 31))    return "id-ce-CrlDistributionPoints";
-                else if (ENDS_WITH_2(7, 32))    return "id-ce-CertificatePolicies";
-                else if (STARTS_WITH_2(7, 32))
-                {
-                    if (ENDS_WITH_1(10, 0))         return "id-ce-cp-anyPolicy";
-                }
-                else if (ENDS_WITH_2(7, 35))    return "id-ce-AuthorityKeyIdentifier";
-                else if (ENDS_WITH_2(7, 36))    return "id-ce-PolicyConstraints";
-                else if (ENDS_WITH_2(7, 37))    return "id-ce-ExtKeyUsage";
-            }
-        }
-        else if (STARTS_WITH_2(2, 16))  /* Join assignments by country - 2.16. */
-        {
-            if (0)
-            {
-            }
-            else if (STARTS_WITH_3(5, 840)) /* USA - 2.16.840. */
-            {
-                if (STARTS_WITH_1(9, 1))        /* US company arc. */
-                {
-                    if (STARTS_WITH_3(11, 101))     /* US Government */
-                    {
-                        if (STARTS_WITH_1(15, 3))       /* Computer Security Objects Register */
-                        {
-                            if (STARTS_WITH_1(17, 4))       /* NIST Algorithms - 2.16.840.1.101.3.4. */
-                            {
-                                if (STARTS_WITH_1(19, 1))       /* AES - 2.16.840.1.101.3.4.1. */
-                                {
-                                }
-                                else if (STARTS_WITH_1(19, 2))  /* Hash algorithms - 2.16.840.1.101.3.4.2. */
-                                {
-                                         if (ENDS_WITH_1(21, 1))    return "nist-Sha256";
-                                    else if (ENDS_WITH_1(21, 2))    return "nist-Sha384";
-                                    else if (ENDS_WITH_1(21, 3))    return "nist-Sha512";
-                                    else if (ENDS_WITH_1(21, 4))    return "nist-Sha224";
-                                }
-                            }
-                        }
-                    }
-                    else if (STARTS_WITH_6(11, 113730)) /* Netscape - 2.16.840.1.113730. */
-                    {
-                        if (STARTS_WITH_1(18, 1))           /* Netscape - 2.16.840.1.113730.1. */
-                        {
-                                 if (ENDS_WITH_1(20, 1))    return "netscape-cert-type";
-                            else if (ENDS_WITH_1(20, 2))    return "netscape-base-url";
-                            else if (ENDS_WITH_1(20, 3))    return "netscape-revocation-url";
-                            else if (ENDS_WITH_1(20, 4))    return "netscape-ca-revocation-url";
-                            else if (ENDS_WITH_1(20, 7))    return "netscape-cert-renewal-url";
-                            else if (ENDS_WITH_1(20, 8))    return "netscape-ca-policy-url";
-                            else if (ENDS_WITH_1(20, 9))    return "netscape-HomePage-url";
-                            else if (ENDS_WITH_2(20, 10))   return "netscape-EntityLogo";
-                            else if (ENDS_WITH_2(20, 11))   return "netscape-UserPicture";
-                            else if (ENDS_WITH_2(20, 12))   return "netscape-ssl-server-name";
-                            else if (ENDS_WITH_2(20, 13))   return "netscape-comment";
-                        }
-                        else if (STARTS_WITH_1(18, 4))      /* Netscape - 2.16.840.1.113730.4. */
-                        {
-                            if (ENDS_WITH_1(20, 1))    return "netscape-eku-serverGatedCrypto";
-                        }
-                    }
-                    else if (STARTS_WITH_6(11, 113733)) /* Verisign, Inc. - 2.16.840.1.113733. */
-                    {
-                        if (STARTS_WITH_1(18, 1))           /* Verisign PKI Sub Tree - 2.16.840.1.113733.1. */
-                        {
-                                 if (ENDS_WITH_1(20, 6))    return "verisign-pki-extensions-subtree";
-                            else if (STARTS_WITH_1(20, 6))      /* 2.16.840.1.113733.1.6. */
-                            {
-                                if (ENDS_WITH_1(22, 7))         return "verisign-pki-ext-RolloverID";
-                            }
-                            else if (ENDS_WITH_1(20, 7))    return "verisign-pki-policies";
-                            else if (STARTS_WITH_1(20, 7))      /* 2.16.840.1.113733.1.7. */
-                            {
-                                     if (ENDS_WITH_1(22, 9))    return "verisign-pki-policy-9";
-                                else if (ENDS_WITH_2(22, 21))   return "verisign-pki-policy-21";
-                                else if (ENDS_WITH_2(22, 23))   return "verisign-pki-policy-vtn-cp";
-                                else if (STARTS_WITH_2(22, 23))
-                                {
-                                         if (ENDS_WITH_1(25, 1))    return "verisign-pki-policy-vtn-cp-class1";
-                                    else if (ENDS_WITH_1(25, 2))    return "verisign-pki-policy-vtn-cp-class2";
-                                    else if (ENDS_WITH_1(25, 3))    return "verisign-pki-policy-vtn-cp-class3";
-                                    else if (ENDS_WITH_1(25, 4))    return "verisign-pki-policy-vtn-cp-class4";
-                                    else if (ENDS_WITH_1(25, 6))    return "verisign-pki-policy-vtn-cp-6";
-                                }
-                            }
-                            else if (STARTS_WITH_1(20, 8))      /* 2.16.840.1.113733.1.8. */
-                            {
-                                if (ENDS_WITH_1(22, 1))     return "verisign-pki-eku-IssStrongCrypto";
-                            }
-                            else if (ENDS_WITH_2(22, 46))   return "verisign-pki-policy-cis";
-                            else if (STARTS_WITH_2(22, 46))
-                            {
-                                     if (ENDS_WITH_1(25, 1))    return "verisign-pki-policy-cis-type1";
-                                else if (ENDS_WITH_1(25, 2))    return "verisign-pki-policy-cis-type2";
-                            }
-                            else if (ENDS_WITH_2(22, 48))   return "verisign-pki-policy-thawte";
-                            else if (STARTS_WITH_2(22, 48))
-                            {
-                                if (ENDS_WITH_1(25, 1))         return "verisign-pki-policy-thawte-cps-1";
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return NULL;
-}
-
-
-/**
  * Dumps the type and value of an universal ASN.1 type.
  *
  * @returns True if it opens a child, false if not.
@@ -637,10 +415,11 @@ static bool rtAsn1DumpUniversalTypeAndValue(PRTASN1DUMPDATA pData, PCRTASN1CORE 
         case ASN1_TAG_OID:
             if ((pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT))
             {
-                const char *pszObjIdName = rtAsn1DumpLookupObjIdName(((PCRTASN1OBJID)pAsn1Core)->szObjId);
-                if (pszObjIdName)
+                PCRTASN1OBJID pObjId = (PCRTASN1OBJID)pAsn1Core;
+                char szName[64];
+                if (rtOidDbQueryObjIdName(pObjId->pauComponents, pObjId->cComponents, szName, sizeof(szName)))
                     rtAsn1DumpPrintf(pData, "OBJECT IDENTIFIER %s%s ('%s')\n",
-                                     pszDefault, pszObjIdName, ((PCRTASN1OBJID)pAsn1Core)->szObjId);
+                                     pszDefault, szName, ((PCRTASN1OBJID)pAsn1Core)->szObjId);
                 else
                     rtAsn1DumpPrintf(pData, "OBJECT IDENTIFIER %s'%s'\n", pszDefault, ((PCRTASN1OBJID)pAsn1Core)->szObjId);
             }
