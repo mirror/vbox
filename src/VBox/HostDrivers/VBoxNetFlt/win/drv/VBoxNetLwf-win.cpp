@@ -226,6 +226,69 @@ static VOID vboxNetLwfWinUnloadDriver(IN PDRIVER_OBJECT pDriver);
 static int vboxNetLwfWinInitBase();
 static int vboxNetLwfWinFini();
 
+/**
+ * Logs an error to the system event log.
+ *
+ * @param   ErrCode        Error to report to event log.
+ * @param   ReturnedStatus Error that was reported by the driver to the caller.
+ * @param   uErrId         Unique error id representing the location in the driver.
+ * @param   cbDumpData     Number of bytes at pDumpData.
+ * @param   pDumpData      Pointer to data that will be added to the message (see 'details' tab).
+ */
+static void vboxNetLwfLogErrorEvent(NTSTATUS uErrCode, NTSTATUS uReturnedStatus, ULONG uErrId)
+{
+    /* Figure out how many modules are attached and if they are going to fit into the dump data. */
+    unsigned cMaxModules = (ERROR_LOG_MAXIMUM_SIZE - FIELD_OFFSET(IO_ERROR_LOG_PACKET, DumpData)) / sizeof(RTMAC);
+    unsigned cModules = 0;
+    PVBOXNETLWF_MODULE pModuleCtx = NULL;
+    NdisAcquireSpinLock(&g_VBoxNetLwfGlobals.Lock);
+    RTListForEach(&g_VBoxNetLwfGlobals.listModules, pModuleCtx, VBOXNETLWF_MODULE, node)
+        ++cModules;
+    NdisReleaseSpinLock(&g_VBoxNetLwfGlobals.Lock);
+    /* Prevent overflow */
+    if (cModules > cMaxModules)
+        cModules = cMaxModules;
+
+    /* DumpDataSize must be a multiple of sizeof(ULONG). */
+    unsigned cbDumpData = (cModules * sizeof(RTMAC) + 3) & ~3;
+    /* Prevent underflow */
+    unsigned cbTotal = RT_MAX(FIELD_OFFSET(IO_ERROR_LOG_PACKET, DumpData) + cbDumpData,
+                              sizeof(IO_ERROR_LOG_PACKET));
+
+    PIO_ERROR_LOG_PACKET pErrEntry;
+    pErrEntry = (PIO_ERROR_LOG_PACKET)IoAllocateErrorLogEntry(g_VBoxNetLwfGlobals.pDevObj,
+                                                              (UCHAR)cbTotal);
+    if (pErrEntry)
+    {
+        PRTMAC pDump = (PRTMAC)pErrEntry->DumpData;
+        /*
+         * Initialize the whole structure with zeros in case we are suddenly short
+         * of data because the list is empty or has become smaller.
+         */
+        memset(pErrEntry, 0, cbTotal);
+
+        NdisAcquireSpinLock(&g_VBoxNetLwfGlobals.Lock);
+        RTListForEach(&g_VBoxNetLwfGlobals.listModules, pModuleCtx, VBOXNETLWF_MODULE, node)
+        {
+            /* The list could have been modified while we were allocating the entry, rely on cModules instead! */
+            if (cModules-- == 0)
+                break;
+            *pDump++ = pModuleCtx->MacAddr;
+        }
+        NdisReleaseSpinLock(&g_VBoxNetLwfGlobals.Lock);
+
+        pErrEntry->DumpDataSize     = cbDumpData;
+        pErrEntry->ErrorCode        = uErrCode;
+        pErrEntry->UniqueErrorValue = uErrId;
+        pErrEntry->FinalStatus      = uReturnedStatus;
+        IoWriteErrorLogEntry(pErrEntry);
+    }
+    else
+    {
+        DbgPrint("Failed to allocate error log entry (cb=%u)\n", cbTotal);
+    }
+}
+
 #ifdef DEBUG
 static const char *vboxNetLwfWinStatusToText(NDIS_STATUS code)
 {
@@ -778,7 +841,11 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     LogFlow(("==>vboxNetLwfWinAttach: filter=%p\n", hFilter));
 
     PVBOXNETLWFGLOBALS pGlobals = (PVBOXNETLWFGLOBALS)hDriverCtx;
-    AssertReturn(pGlobals, NDIS_STATUS_FAILURE);
+    if (!pGlobals)
+    {
+        vboxNetLwfLogErrorEvent(IO_ERR_INTERNAL_ERROR, NDIS_STATUS_FAILURE, 1);
+        return NDIS_STATUS_FAILURE;
+    }
 
     ANSI_STRING strMiniportName;
     /* We use the miniport name to associate this filter module with the netflt instance */
@@ -789,6 +856,7 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     {
         LogError(("vboxNetLwfWinAttach: RtlUnicodeStringToAnsiString(%ls) failed with 0x%x\n",
              pParameters->BaseMiniportName, rc));
+        vboxNetLwfLogErrorEvent(IO_ERR_INTERNAL_ERROR, NDIS_STATUS_FAILURE, 2);
         return NDIS_STATUS_FAILURE;
     }
     DbgPrint("vboxNetLwfWinAttach: friendly name=%wZ\n", pParameters->BaseMiniportInstanceName);
@@ -803,6 +871,7 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     {
         LogError(("vboxNetLwfWinAttach: Failed to allocate module context for %ls\n", pParameters->BaseMiniportName));
         RtlFreeAnsiString(&strMiniportName);
+        vboxNetLwfLogErrorEvent(IO_ERR_INSUFFICIENT_RESOURCES, NDIS_STATUS_RESOURCES, 3);
         return NDIS_STATUS_RESOURCES;
     }
     Log4(("vboxNetLwfWinAttach: allocated module context 0x%p\n", pModuleCtx));
@@ -817,6 +886,7 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         LogError(("vboxNetLwfWinAttach: Failed to allocate work item for %ls\n",
                 pParameters->BaseMiniportName));
         NdisFreeMemory(pModuleCtx, 0, 0);
+        vboxNetLwfLogErrorEvent(IO_ERR_INSUFFICIENT_RESOURCES, NDIS_STATUS_RESOURCES, 4);
         return NDIS_STATUS_RESOURCES;
     }
 
@@ -852,6 +922,7 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         Log4(("vboxNetLwfWinAttach: freed NBL+NB pool 0x%p\n", pModuleCtx->hPool));
         NdisFreeIoWorkItem(pModuleCtx->hWorkItem);
         NdisFreeMemory(pModuleCtx, 0, 0);
+        vboxNetLwfLogErrorEvent(IO_ERR_INTERNAL_ERROR, NDIS_STATUS_RESOURCES, 5);
         return NDIS_STATUS_RESOURCES;
     }
     /* Insert into module chain */
@@ -2390,6 +2461,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
         }
     }
     NdisReleaseSpinLock(&g_VBoxNetLwfGlobals.Lock);
+    vboxNetLwfLogErrorEvent(IO_ERR_INTERNAL_ERROR, STATUS_SUCCESS, 6);
     LogFlow(("<==vboxNetFltOsInitInstance: return VERR_INTNET_FLT_IF_NOT_FOUND\n"));
     return VERR_INTNET_FLT_IF_NOT_FOUND;
 }

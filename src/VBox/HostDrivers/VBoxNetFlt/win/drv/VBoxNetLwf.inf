@@ -47,7 +47,7 @@ NetCfgInstanceId = "{7af6b074-048d-4444-bfce-1ecc8bc5cb76}"
 DelService       = VBoxNetLwf,0x200 ; Stop the service before uninstalling
 
 [VBoxNetLwf.ndi.Services]
-AddService = VBoxNetLwf,, VBoxNetLwf.AddService
+AddService = VBoxNetLwf,, VBoxNetLwf.AddService, VBoxNetLwf.AddEventLog
 
 [VBoxNetLwf.AddService]
 DisplayName    = %VBoxNetLwfService_Desc%
@@ -59,6 +59,14 @@ LoadOrderGroup = NDIS
 AddReg         = VBoxNetLwf.AddService.AddReg
 
 [VBoxNetLwf.AddService.AddReg]
+
+[VBoxNetLwf.AddEventLog]
+AddReg         = VBoxNetLwf.AddEventLog.AddReg
+
+[VBoxNetLwf.AddEventLog.AddReg]
+HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll"
+HKR,,TypesSupported,0x00010001,7
+
 
 [SourceDisksNames]
 1=%DiskDescription%,"",,
