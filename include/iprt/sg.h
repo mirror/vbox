@@ -154,8 +154,7 @@ RTDECL(int) RTSgBufCmp(PCRTSGBUF pSgBuf1, PCRTSGBUF pSgBuf2, size_t cbCmp);
  * @param   fAdvance     Flag whether the internal buffer position should be advanced.
  *
  */
-RTDECL(int) RTSgBufCmpEx(PRTSGBUF pSgBuf1, PRTSGBUF pSgBuf2, size_t cbCmp,
-                         size_t *pcbOff, bool fAdvance);
+RTDECL(int) RTSgBufCmpEx(PRTSGBUF pSgBuf1, PRTSGBUF pSgBuf2, size_t cbCmp, size_t *poffDiff, bool fAdvance);
 
 /**
  * Fills an S/G buf with a constant byte.
