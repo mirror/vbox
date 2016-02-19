@@ -1235,12 +1235,8 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
 
     ASMAtomicIncU32(&pDev->aPipes[pUrb->EndPt].async);
 
-    /* Queue the pUrb on the roothub */
-    pUrb->pVUsb->pNext = pDev->pAsyncUrbHead;
-    if (pDev->pAsyncUrbHead)
-        pDev->pAsyncUrbHead->pVUsb->ppPrev = &pUrb->pVUsb->pNext;
-    pDev->pAsyncUrbHead = pUrb;
-    pUrb->pVUsb->ppPrev = &pDev->pAsyncUrbHead;
+    /* Queue the Urb on the roothub */
+    RTListAppend(&pDev->LstAsyncUrbs, &pUrb->pVUsb->NdLst);
     RTCritSectLeave(&pDev->CritSectAsyncUrbs);
 
     return VINF_SUCCESS;
@@ -1993,18 +1989,20 @@ int vusbUrbSubmit(PVUSBURB pUrb)
 /**
  * Reap in-flight URBs.
  *
- * @param   pHead       Pointer to the head of the URB list.
+ * @param   pUrbLst     Pointer to the head of the URB list.
  * @param   cMillies    Number of milliseconds to block in each reap operation.
  *                      Use 0 to not block at all.
  */
-void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies)
+void vusbUrbDoReapAsync(PRTLISTANCHOR pUrbLst, RTMSINTERVAL cMillies)
 {
-    PVUSBURB pUrb = pHead;
-    while (pUrb)
+    PVUSBURBVUSB pVUsbUrb = RTListGetFirst(pUrbLst, VUSBURBVUSBINT, NdLst);
+    while (pVUsbUrb)
     {
+        PVUSBURB pUrb = pVUsbUrb->pUrb;
+
         vusbUrbAssert(pUrb);
-        PVUSBURB pUrbNext = pUrb->pVUsb->pNext;
-        PVUSBDEV pDev = pUrb->pVUsb->pDev;
+        PVUSBURBVUSB pVUsbUrbNext = RTListGetNext(pUrbLst, pVUsbUrb, VUSBURBVUSBINT, NdLst);
+        PVUSBDEV pDev = pVUsbUrb->pDev;
 
         /* Don't touch resetting devices - paranoid safety precaution. */
         if (vusbDevGetState(pDev) != VUSB_DEVICE_STATE_RESET)
@@ -2023,14 +2021,14 @@ void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies)
                    && ((pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, cMillies)) != NULL))
             {
                 vusbUrbAssert(pRipe);
-                if (pRipe == pUrbNext)
-                    pUrbNext = pUrbNext->pVUsb->pNext;
+                if (pRipe == pVUsbUrbNext->pUrb)
+                    pVUsbUrbNext = RTListGetNext(pUrbLst, pVUsbUrb, VUSBURBVUSBINT, NdLst);
                 vusbUrbRipe(pRipe);
             }
         }
 
         /* next */
-        pUrb = pUrbNext;
+        pVUsbUrb = pVUsbUrbNext;
     }
 }
 

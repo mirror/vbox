@@ -540,14 +540,14 @@ static DECLCALLBACK(int) vusbRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUS
 static DECLCALLBACK(int) vusbRhReapAsyncUrbsWorker(PVUSBDEV pDev, RTMSINTERVAL cMillies)
 {
     if (!cMillies)
-        vusbUrbDoReapAsync(pDev->pAsyncUrbHead, 0);
+        vusbUrbDoReapAsync(&pDev->LstAsyncUrbs, 0);
     else
     {
         uint64_t u64Start = RTTimeMilliTS();
         do
         {
-            vusbUrbDoReapAsync(pDev->pAsyncUrbHead, RT_MIN(cMillies >> 8, 10));
-        } while (   pDev->pAsyncUrbHead
+            vusbUrbDoReapAsync(&pDev->LstAsyncUrbs, RT_MIN(cMillies >> 8, 10));
+        } while (   !RTListIsEmpty(&pDev->LstAsyncUrbs)
                  && RTTimeMilliTS() - u64Start < cMillies);
     }
 
@@ -560,7 +560,7 @@ static DECLCALLBACK(void) vusbRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface,
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV pDev = (PVUSBDEV)pDevice;
 
-    if (!pDev->pAsyncUrbHead)
+    if (RTListIsEmpty(&pDev->LstAsyncUrbs))
         return;
 
     STAM_PROFILE_START(&pRh->StatReapAsyncUrbs, a);
@@ -605,14 +605,13 @@ static DECLCALLBACK(int) vusbRhCancelAllUrbsWorker(PVUSBDEV pDev)
      * as the I/O thread is the only thread accessing this struture at the
      * moment.
      */
-    PVUSBURB pUrb = pDev->pAsyncUrbHead;
+    PVUSBURBVUSB pVUsbUrb, pVUsbUrbNext;
 
-    while (pUrb)
+    RTListForEachSafe(&pDev->LstAsyncUrbs, pVUsbUrb, pVUsbUrbNext, VUSBURBVUSBINT, NdLst)
     {
-        PVUSBURB pNext = pUrb->pVUsb->pNext;
+        PVUSBURB pUrb = pVUsbUrb->pUrb;
         /* Call the worker directly. */
         vusbUrbCancelWorker(pUrb, CANCELMODE_FAIL);
-        pUrb = pNext;
     }
 
     return VINF_SUCCESS;
@@ -647,10 +646,11 @@ static DECLCALLBACK(int) vusbRhAbortEpWorker(PVUSBDEV pDev, int EndPt, VUSBDIREC
     /*
      * Iterate the URBs, find ones corresponding to given EP, and cancel them.
      */
-    PVUSBURB pUrb = pDev->pAsyncUrbHead;
-    while (pUrb)
+    PVUSBURBVUSB pVUsbUrb, pVUsbUrbNext;
+
+    RTListForEachSafe(&pDev->LstAsyncUrbs, pVUsbUrb, pVUsbUrbNext, VUSBURBVUSBINT, NdLst)
     {
-        PVUSBURB pNext = pUrb->pVUsb->pNext;
+        PVUSBURB pUrb = pVUsbUrb->pUrb;
 
         Assert(pUrb->pVUsb->pDev == pDev);
 
@@ -660,7 +660,6 @@ static DECLCALLBACK(int) vusbRhAbortEpWorker(PVUSBDEV pDev, int EndPt, VUSBDIREC
             int rc = vusbUrbCancelWorker(pUrb, CANCELMODE_UNDO);
             AssertRC(rc);
         }
-        pUrb = pNext;
     }
 
     return VINF_SUCCESS;

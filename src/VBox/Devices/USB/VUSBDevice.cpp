@@ -1048,17 +1048,16 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
     /*
      * Iterate the URBs and cancel them.
      */
-    PVUSBURB pUrb = pDev->pAsyncUrbHead;
-    while (pUrb)
+    PVUSBURBVUSB pVUsbUrb, pVUsbUrbNext;
+    RTListForEachSafe(&pDev->LstAsyncUrbs, pVUsbUrb, pVUsbUrbNext, VUSBURBVUSBINT, NdLst)
     {
-        PVUSBURB pNext = pUrb->pVUsb->pNext;
+        PVUSBURB pUrb = pVUsbUrb->pUrb;
 
         Assert(pUrb->pVUsb->pDev == pDev);
 
         LogFlow(("%s: vusbDevCancelAllUrbs: CANCELING URB\n", pUrb->pszDesc));
         int rc = vusbUrbCancelWorker(pUrb, CANCELMODE_FAIL);
         AssertRC(rc);
-        pUrb = pNext;
     }
 
     /*
@@ -1069,10 +1068,11 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
     do
     {
         cReaped = 0;
-        pUrb = pDev->pAsyncUrbHead;
-        while (pUrb)
+        pVUsbUrb = RTListGetFirst(&pDev->LstAsyncUrbs, VUSBURBVUSBINT, NdLst);
+        while (pVUsbUrb)
         {
-            PVUSBURB pNext = pUrb->pVUsb->pNext;
+            PVUSBURBVUSB pNext = RTListGetNext(&pDev->LstAsyncUrbs, pVUsbUrb, VUSBURBVUSBINT, NdLst);
+            PVUSBURB pUrb = pVUsbUrb->pUrb;
             Assert(pUrb->pVUsb->pDev == pDev);
 
             PVUSBURB pRipe = NULL;
@@ -1089,13 +1089,13 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
                 AssertMsgFailed(("pUrb=%p enmState=%d\n", pUrb, pUrb->enmState));
             if (pRipe)
             {
-                if (pRipe == pNext)
-                    pNext = pNext->pVUsb->pNext;
+                if (pRipe == pNext->pUrb)
+                    pNext = RTListGetNext(&pDev->LstAsyncUrbs, pNext, VUSBURBVUSBINT, NdLst);
                 vusbUrbRipe(pRipe);
                 cReaped++;
             }
 
-            pUrb = pNext;
+            pVUsbUrb = pNext;
         }
     } while (cReaped > 0);
 
@@ -1104,10 +1104,9 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
      */
     if (fDetaching)
     {
-        pUrb = pDev->pAsyncUrbHead;
-        while (pUrb)
+        RTListForEachSafe(&pDev->LstAsyncUrbs, pVUsbUrb, pVUsbUrbNext, VUSBURBVUSBINT, NdLst)
         {
-            PVUSBURB pNext = pUrb->pVUsb->pNext;
+            PVUSBURB pUrb = pVUsbUrb->pUrb;
             Assert(pUrb->pVUsb->pDev == pDev);
 
             AssertMsgFailed(("%s: Leaking left over URB! state=%d pDev=%p[%s]\n",
@@ -1118,7 +1117,6 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
              * it breaks anything, please add comment here, why we should unlink only.
              */
             pUrb->pVUsb->pfnFree(pUrb);
-            pUrb = pNext;
         }
     }
     RTCritSectLeave(&pDev->CritSectAsyncUrbs);
@@ -1763,6 +1761,7 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
     pDev->pDescCache = NULL;
     pDev->pCurCfgDesc = NULL;
     pDev->paIfStates = NULL;
+    RTListInit(&pDev->LstAsyncUrbs);
     memset(&pDev->aPipes[0], 0, sizeof(pDev->aPipes));
     for (unsigned i = 0; i < RT_ELEMENTS(pDev->aPipes); i++)
     {

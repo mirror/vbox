@@ -74,10 +74,10 @@ typedef struct VUSBROOTHUB *PVUSBROOTHUB;
  */
 typedef struct VUSBURBVUSBINT
 {
-    /** URB chain pointer. */
-    PVUSBURB        pNext;
-    /** URB chain pointer. */
-    PVUSBURB       *ppPrev;
+    /** Node for one of the lists the URB can be in. */
+    RTLISTNODE      NdLst;
+    /** Pointer to the URB this structure is part of. */
+    PVUSBURB        pUrb;
     /** Pointer to the original for control messages. */
     PVUSBURB        pCtrlUrb;
     /** Pointer to the VUSB device.
@@ -247,7 +247,11 @@ typedef struct VUSBDEV
     /** Critical section protecting the active URB list. */
     RTCRITSECT          CritSectAsyncUrbs;
     /** List of active async URBs. */
-    PVUSBURB            pAsyncUrbHead;
+    RTLISTANCHOR        LstAsyncUrbs;
+#if HC_ARCH_BITS == 32
+    /** Align the size to a 8 byte boundary. */
+    uint32_t            u32Alignment0;
+#endif
 
     /** Dumper state. */
     union VUSBDEVURBDUMPERSTATE
@@ -475,7 +479,7 @@ typedef enum CANCELMODE
  * @{ */
 int  vusbUrbSubmit(PVUSBURB pUrb);
 void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete);
-void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies);
+void vusbUrbDoReapAsync(PRTLISTANCHOR pUrbLst, RTMSINTERVAL cMillies);
 void vusbUrbDoReapAsyncDev(PVUSBDEV pDev, RTMSINTERVAL cMillies);
 void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode);
 void vusbUrbCancelAsync(PVUSBURB pUrb, CANCELMODE mode);
@@ -547,11 +551,7 @@ DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
     PVUSBDEV pDev = pUrb->pVUsb->pDev;
 
     RTCritSectEnter(&pDev->CritSectAsyncUrbs);
-    *pUrb->pVUsb->ppPrev = pUrb->pVUsb->pNext;
-    if (pUrb->pVUsb->pNext)
-        pUrb->pVUsb->pNext->pVUsb->ppPrev = pUrb->pVUsb->ppPrev;
-    pUrb->pVUsb->pNext = NULL;
-    pUrb->pVUsb->ppPrev = NULL;
+    RTListNodeRemove(&pUrb->pVUsb->NdLst);
     RTCritSectLeave(&pDev->CritSectAsyncUrbs);
 }
 
