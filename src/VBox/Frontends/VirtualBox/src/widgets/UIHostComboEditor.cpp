@@ -92,12 +92,12 @@ using namespace UIExtraDataDefs;
   * those events on at least Windows host (MSG::hwnd) is indeed window itself,
   * not the sub-widget we expect, so that's probably the reason Qt devs
   * haven't fixed that bug so far for Windows and Mac OS X hosts. */
-class PrivateEventFilter : public QAbstractNativeEventFilter
+class ComboEditorEventFilter : public QAbstractNativeEventFilter
 {
 public:
 
     /** Constructor which takes the passed @a pParent to redirect events to. */
-    PrivateEventFilter(UIHostComboEditorPrivate *pParent)
+    ComboEditorEventFilter(UIHostComboEditorPrivate *pParent)
         : m_pParent(pParent)
     {}
 
@@ -492,7 +492,7 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
 #if defined(Q_WS_MAC) || defined(Q_WS_WIN)
 # if QT_VERSION >= 0x050000
     /* Prepare private event filter: */
-    m_pPrivateEventFilter = new PrivateEventFilter(this);
+    m_pPrivateEventFilter = new ComboEditorEventFilter(this);
     qApp->installNativeEventFilter(m_pPrivateEventFilter);
 # endif /* QT_VERSION >= 0x050000 */
 #endif /* Q_WS_MAC || Q_WS_WIN */

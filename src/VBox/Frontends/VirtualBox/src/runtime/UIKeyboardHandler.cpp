@@ -104,12 +104,12 @@ enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
 #if QT_VERSION >= 0x050000
 /** QAbstractNativeEventFilter extension
   * allowing to pre-process native platform events. */
-class PrivateEventFilter : public QAbstractNativeEventFilter
+class KeyboardHandlerEventFilter : public QAbstractNativeEventFilter
 {
 public:
 
     /** Constructor which takes the passed @a pParent to redirect events to. */
-    PrivateEventFilter(UIKeyboardHandler *pParent)
+    KeyboardHandlerEventFilter(UIKeyboardHandler *pParent)
         : m_pParent(pParent)
     {}
 
@@ -1652,7 +1652,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                         m_pPrivateEventFilter = 0;
                     }
                     /* Install new private event-filter: */
-                    m_pPrivateEventFilter = new PrivateEventFilter(this);
+                    m_pPrivateEventFilter = new KeyboardHandlerEventFilter(this);
                     qApp->installNativeEventFilter(m_pPrivateEventFilter);
                 }
 # endif /* Q_WS_WIN || Q_WS_X11 */

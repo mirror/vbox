@@ -32,7 +32,7 @@ class QIToolButton;
 class UIHostComboEditorPrivate;
 #if defined(Q_WS_MAC) || defined(Q_WS_WIN)
 # if QT_VERSION >= 0x050000
-class PrivateEventFilter;
+class ComboEditorEventFilter;
 # endif /* QT_VERSION >= 0x050000 */
 #endif /* Q_WS_MAC || Q_WS_WIN */
 #ifdef Q_WS_WIN
@@ -189,10 +189,10 @@ private:
 #if defined(Q_WS_MAC) || defined(Q_WS_WIN)
 # if QT_VERSION >= 0x050000
     /** Mac, Win: Holds the native event filter instance. */
-    PrivateEventFilter *m_pPrivateEventFilter;
+    ComboEditorEventFilter *m_pPrivateEventFilter;
     /** Mac, Win: Allows the native event filter to
       * redirect events directly to nativeEvent handler. */
-    friend class PrivateEventFilter;
+    friend class ComboEditorEventFilter;
 # endif /* QT_VERSION >= 0x050000 */
 #endif /* Q_WS_MAC || Q_WS_WIN */
 
