@@ -3661,7 +3661,7 @@ int vmsvga3dSetTransform(PVGASTATE pThis, uint32_t cid, SVGA3dTransformType type
 
     case SVGA3D_TRANSFORM_PROJECTION:
     {
-        int rc = ShaderTransformProjection(pContext->state.RectViewPort.w, pContext->state.RectViewPort.h, matrix);
+        int rc = ShaderTransformProjection(pContext->state.RectViewPort.w, pContext->state.RectViewPort.h, matrix, false /* fPretransformed */);
         AssertRCReturn(rc, rc);
         break;
     }
@@ -5861,8 +5861,52 @@ int vmsvga3dPrimitiveType2OGL(SVGA3dPrimitiveType PrimitiveType, GLenum *pMode, 
     return VINF_SUCCESS;
 }
 
-int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t iVertexDeclBase, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl)
+int vmsvga3dResetTransformMatrices(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
 {
+    int rc;
+
+    /* Reset the view matrix (also takes the world matrix into account). */
+    if (pContext->state.aTransformState[SVGA3D_TRANSFORM_VIEW].fValid == true)
+    {
+        rc = vmsvga3dSetTransform(pThis, pContext->id, SVGA3D_TRANSFORM_VIEW, pContext->state.aTransformState[SVGA3D_TRANSFORM_VIEW].matrix);
+    }
+    else
+    {
+        float matrix[16];
+
+        /* identity matrix if no matrix set. */
+        memset(matrix, 0, sizeof(matrix));
+        matrix[0]  = 1.0;
+        matrix[5]  = 1.0;
+        matrix[10] = 1.0;
+        matrix[15] = 1.0;
+        rc = vmsvga3dSetTransform(pThis, pContext->id, SVGA3D_TRANSFORM_VIEW, matrix);
+    }
+
+    /* Reset the projection matrix. */
+    if (pContext->state.aTransformState[SVGA3D_TRANSFORM_PROJECTION].fValid == true)
+    {
+        rc = vmsvga3dSetTransform(pThis, pContext->id, SVGA3D_TRANSFORM_PROJECTION, pContext->state.aTransformState[SVGA3D_TRANSFORM_PROJECTION].matrix);
+    }
+    else
+    {
+        float matrix[16];
+
+        /* identity matrix if no matrix set. */
+        memset(matrix, 0, sizeof(matrix));
+        matrix[0]  = 1.0;
+        matrix[5]  = 1.0;
+        matrix[10] = 1.0;
+        matrix[15] = 1.0;
+        rc = vmsvga3dSetTransform(pThis, pContext->id, SVGA3D_TRANSFORM_PROJECTION, matrix);
+    }
+    AssertRC(rc);
+    return rc;
+}
+
+int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, uint32_t iVertexDeclBase, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl)
+{
+    PVMSVGA3DSTATE      pState = pThis->svga.p3dState;
     unsigned            sidVertex = pVertexDecl[0].array.surfaceId;
     PVMSVGA3DSURFACE    pVertexSurface;
 
@@ -5935,13 +5979,16 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
             /* Use the predefined selection of vertex streams for the fixed pipeline. */
             switch (pVertexDecl[iVertex].identity.usage)
             {
+            case SVGA3D_DECLUSAGE_POSITIONT:
             case SVGA3D_DECLUSAGE_POSITION:
+            {
                 glEnableClientState(GL_VERTEX_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 glVertexPointer(size, type, pVertexDecl[iVertex].array.stride,
                                 (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 break;
+            }
             case SVGA3D_DECLUSAGE_BLENDWEIGHT:
                 AssertFailed();
                 break;
@@ -5980,9 +6027,6 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
             case SVGA3D_DECLUSAGE_TESSFACTOR:
                 AssertFailed();
                 break;
-            case SVGA3D_DECLUSAGE_POSITIONT:
-                AssertFailed(); /* see position_transformed in Wine */
-                break;
             case SVGA3D_DECLUSAGE_COLOR:    /** @todo color component order not identical!! test GL_BGRA!! */
                 glEnableClientState(GL_COLOR_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -6016,11 +6060,20 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
     return VINF_SUCCESS;
 }
 
-int vmsvga3dDrawPrimitivesCleanupVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t iVertexDeclBase, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl)
+int vmsvga3dDrawPrimitivesCleanupVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, uint32_t iVertexDeclBase, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl)
 {
-    /* Setup the vertex declarations. */
+    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+
+    /* Clean up the vertex declarations. */
     for (unsigned iVertex = 0; iVertex < numVertexDecls; iVertex++)
     {
+        if (pVertexDecl[iVertex].identity.usage == SVGA3D_DECLUSAGE_POSITIONT)
+        {
+            /* Reset the transformation matrices in case of a switch back from pretransformed mode. */
+            Log(("vmsvga3dDrawPrimitivesCleanupVertexDecls: reset world and projection matrices after transformation reset (pre-transformed -> transformed)\n"));
+            vmsvga3dResetTransformMatrices(pThis, pContext);
+        }
+
         if (pContext->state.shidVertex != SVGA_ID_INVALID)
         {
             /* Use numbered vertex arrays when shaders are active. */
@@ -6033,6 +6086,7 @@ int vmsvga3dDrawPrimitivesCleanupVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
             switch (pVertexDecl[iVertex].identity.usage)
             {
             case SVGA3D_DECLUSAGE_POSITION:
+            case SVGA3D_DECLUSAGE_POSITIONT:
                 glDisableClientState(GL_VERTEX_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 break;
@@ -6062,8 +6116,6 @@ int vmsvga3dDrawPrimitivesCleanupVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
                 break;
             case SVGA3D_DECLUSAGE_TESSFACTOR:
                 break;
-            case SVGA3D_DECLUSAGE_POSITIONT:
-                break;
             case SVGA3D_DECLUSAGE_COLOR:    /** @todo color component order not identical!! */
                 glDisableClientState(GL_COLOR_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -6088,8 +6140,8 @@ int vmsvga3dDrawPrimitivesCleanupVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
 
 int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl, uint32_t numRanges, SVGA3dPrimitiveRange *pRange, uint32_t cVertexDivisor, SVGA3dVertexDivisor *pVertexDivisor)
 {
-    PVMSVGA3DCONTEXT             pContext;
     PVMSVGA3DSTATE               pState = pThis->svga.p3dState;
+    PVMSVGA3DCONTEXT             pContext;
     AssertReturn(pState, VERR_INTERNAL_ERROR);
     int                          rc = VERR_NOT_IMPLEMENTED;
     uint32_t                     iCurrentVertex;
@@ -6111,7 +6163,21 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
     pContext = pState->papContexts[cid];
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 
-    /* Flush any shader changes. */
+    /* Check for pretransformed vertex declarations. */
+    for (unsigned iVertex = 0; iVertex < numVertexDecls; iVertex++)
+    {
+        switch (pVertexDecl[iVertex].identity.usage)
+        {
+        case SVGA3D_DECLUSAGE_POSITIONT:
+            Log(("ShaderSetPositionTransformed: (%d,%d)\n", pContext->state.RectViewPort.w, pContext->state.RectViewPort.h));
+        case SVGA3D_DECLUSAGE_POSITION:
+            ShaderSetPositionTransformed(pContext->pShaderContext, pContext->state.RectViewPort.w, pContext->state.RectViewPort.h, 
+                                         pVertexDecl[iVertex].identity.usage == SVGA3D_DECLUSAGE_POSITIONT);
+            break;
+        }
+    }
+
+    /* Flush any shader changes; after (!) checking the vertex declarations to deal with pre-transformed vertices. */
     if (pContext->pShaderContext)
     {
         uint32_t rtHeight = 0;
@@ -6141,7 +6207,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
             sidVertex = pVertexDecl[iVertex].array.surfaceId;
         }
 
-        rc = vmsvga3dDrawPrimitivesProcessVertexDecls(pState, pContext, iCurrentVertex, iVertex - iCurrentVertex, &pVertexDecl[iCurrentVertex]);
+        rc = vmsvga3dDrawPrimitivesProcessVertexDecls(pThis, pContext, iCurrentVertex, iVertex - iCurrentVertex, &pVertexDecl[iCurrentVertex]);
         AssertRCReturn(rc, rc);
 
         iCurrentVertex = iVertex;
@@ -6222,20 +6288,37 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         }
         else
         {
+            GLenum indexType;
+
             Assert(pRange[iPrimitive].indexBias >= 0);  /** @todo  indexBias */
             Assert(pRange[iPrimitive].indexWidth == pRange[iPrimitive].indexArray.stride);
+
+            if (pRange[iPrimitive].indexWidth == sizeof(uint8_t))
+            {
+                indexType = GL_UNSIGNED_BYTE;
+            }
+            else
+            if (pRange[iPrimitive].indexWidth == sizeof(uint16_t))
+            {
+                indexType = GL_UNSIGNED_SHORT;
+            }
+            else
+            {
+                Assert(pRange[iPrimitive].indexWidth == sizeof(uint32_t));
+                indexType = GL_UNSIGNED_INT;
+            }
 
             /* Render with an index buffer */
             Log(("DrawIndexedPrimitive %x cPrimitives=%d cVertices=%d hint.first=%d hint.last=%d index offset=%d primitivecount=%d index width=%d index bias=%d\n", modeDraw, pRange[iPrimitive].primitiveCount, cVertices, pVertexDecl[0].rangeHint.first,  pVertexDecl[0].rangeHint.last,  pRange[iPrimitive].indexArray.offset, pRange[iPrimitive].primitiveCount,  pRange[iPrimitive].indexWidth, pRange[iPrimitive].indexBias));
             if (pRange[iPrimitive].indexBias == 0)
                 glDrawElements(modeDraw,
                                cVertices,
-                               (pRange[iPrimitive].indexWidth == sizeof(uint16_t)) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
+                               indexType,
                                (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset);   /* byte offset in indices buffer */
             else
                 pState->ext.glDrawElementsBaseVertex(modeDraw,
                                                      cVertices,
-                                                     (pRange[iPrimitive].indexWidth == sizeof(uint16_t)) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
+                                                     indexType,
                                                      (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset, /* byte offset in indices buffer */
                                                      pRange[iPrimitive].indexBias);  /* basevertex */
 
@@ -6264,7 +6347,7 @@ internal_error:
             sidVertex = pVertexDecl[iVertex].array.surfaceId;
         }
 
-        rc = vmsvga3dDrawPrimitivesCleanupVertexDecls(pState, pContext, iCurrentVertex, iVertex - iCurrentVertex, &pVertexDecl[iCurrentVertex]);
+        rc = vmsvga3dDrawPrimitivesCleanupVertexDecls(pThis, pContext, iCurrentVertex, iVertex - iCurrentVertex, &pVertexDecl[iCurrentVertex]);
         AssertRCReturn(rc, rc);
 
         iCurrentVertex = iVertex;
@@ -6307,16 +6390,17 @@ internal_error:
 #endif
 
 #ifdef DEBUG_GFX_WINDOW
-    if (pContext->aSidActiveTexture[0])
+    if (pContext->sidRenderTarget)
     {
         SVGA3dCopyRect rect;
 
         rect.srcx = rect.srcy = rect.x = rect.y = 0;
-        rect.w = 800;
-        rect.h = 600;
+        rect.w = pContext->state.RectViewPort.w;
+        rect.h = pContext->state.RectViewPort.h;
         vmsvga3dCommandPresent(pThis, pContext->sidRenderTarget, 0, NULL);
     }
 #endif
+
     return rc;
 }
 

@@ -4261,6 +4261,36 @@ static GLhandleARB generate_param_reorder_function(struct wined3d_shader_buffer 
     return ret;
 }
 
+#ifdef VBOX_WITH_VMSVGA
+static GLhandleARB generate_passthrough_vshader(const struct wined3d_gl_info *gl_info)
+{
+    GLhandleARB ret = 0;
+    static const char *passthrough_vshader[] =
+    {
+        "#version 120\n"
+        "vec4 R0;\n"
+        "void main(void)\n"
+        "{\n"
+        "    R0   = gl_Vertex;\n"
+        "    R0.w = 1.0;\n"
+        "    R0.z = 0.0;\n"
+        "    gl_Position   = gl_ModelViewProjectionMatrix * R0;\n"
+        "}\n"
+    };
+
+    ret = GL_EXTCALL(glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB));
+    checkGLcall("glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB)");
+    GL_EXTCALL(glShaderSourceARB(ret, 1, passthrough_vshader, NULL));
+    checkGLcall("glShaderSourceARB(ret, 1, passthrough_vshader, NULL)");
+    GL_EXTCALL(glCompileShaderARB(ret));
+    checkGLcall("glCompileShaderARB(ret)");
+    shader_glsl_validate_compile_link(gl_info, ret, FALSE);
+
+    return ret;
+}
+
+#endif
+
 /* GL locking is done by the caller */
 static void hardcode_local_constants(IWineD3DBaseShaderImpl *shader, const struct wined3d_gl_info *gl_info,
         GLhandleARB programId, char prefix)
@@ -4709,6 +4739,23 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
 
         list_add_head(&((IWineD3DBaseShaderImpl *)vshader)->baseShader.linked_programs, &entry->vshader_entry);
     }
+#ifdef VBOX_WITH_VMSVGA
+    else
+    if (device->strided_streams.position_transformed)
+    {
+        GLhandleARB passthrough_vshader_id;
+
+        passthrough_vshader_id = generate_passthrough_vshader(gl_info);
+        TRACE("Attaching GLSL shader object %p to program %p\n", (void *)(uintptr_t)passthrough_vshader_id, (void *)(uintptr_t)programId);
+        GL_EXTCALL(glAttachObjectARB(programId, passthrough_vshader_id));
+        checkGLcall("glAttachObjectARB");
+        /* Flag the reorder function for deletion, then it will be freed automatically when the program
+         * is destroyed
+         */
+        GL_EXTCALL(glDeleteObjectARB(passthrough_vshader_id));
+    }
+#endif
+
 
     /* Attach GLSL pshader */
     if (pshader)

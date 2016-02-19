@@ -14,7 +14,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
@@ -625,6 +624,35 @@ SHADERDECL(int) ShaderSetPixelShaderConstantF(void *pShaderContext, uint32_t sta
     return VINF_SUCCESS;
 }
 
+SHADERDECL(int) ShaderSetPositionTransformed(void *pShaderContext, unsigned cxViewPort, unsigned cyViewPort, bool fPreTransformed)
+{
+    IWineD3DDeviceImpl *This;
+    int rc;
+
+    SHADER_SET_CURRENT_CONTEXT(pShaderContext);
+    This = g_pCurrentContext->pDeviceContext;
+
+    if (This->strided_streams.position_transformed == fPreTransformed)
+        return VINF_SUCCESS;    /* no changes; nothing to do. */
+
+    Log(("ShaderSetPositionTransformed viewport (%d,%d) fPreTransformed=%d\n", cxViewPort, cyViewPort, fPreTransformed));
+    
+    if (fPreTransformed)
+    {   /* In the pre-transformed vertex coordinate case we need to disable all transformations as we're already using screen coordinates. */
+        /* Load the identity matrix for the model view */
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        /* Reset the projection matrix too */
+        rc = ShaderTransformProjection(cxViewPort, cyViewPort, NULL, fPreTransformed);
+        AssertRCReturn(rc, rc);
+    }
+
+    This->strided_streams.position_transformed = fPreTransformed;
+    ((IWineD3DVertexDeclarationImpl *)(This->stateBlock->vertexDecl))->position_transformed = fPreTransformed;
+    return VINF_SUCCESS;
+}
+
 SHADERDECL(int) ShaderUpdateState(void *pShaderContext, uint32_t rtHeight)
 {
     IWineD3DDeviceImpl *pThis;
@@ -667,7 +695,7 @@ SHADERDECL(int) ShaderUpdateState(void *pShaderContext, uint32_t rtHeight)
     return VINF_SUCCESS;
 }
 
-SHADERDECL(int) ShaderTransformProjection(unsigned cxViewPort, unsigned cyViewPort, float matrix[16])
+SHADERDECL(int) ShaderTransformProjection(unsigned cxViewPort, unsigned cyViewPort, float matrix[16], bool fPretransformed)
 {
 #ifdef DEBUG
     GLenum lastError;
@@ -722,11 +750,20 @@ SHADERDECL(int) ShaderTransformProjection(unsigned cxViewPort, unsigned cyViewPo
     yoffset = -(63.0f / 64.0f) / cyViewPort;
 
     glTranslatef(xoffset, -yoffset, -1.0f);
-    /* flip y coordinate origin too */
-    glScalef(1.0f, -1.0f, 2.0f);
 
-    glMultMatrixf(matrix);
+    if (fPretransformed) 
+    {
+        /* One world coordinate equals one screen pixel; y-inversion no longer an issue */
+        glOrtho(0, cxViewPort, 0, cyViewPort, -1, 1);
+    }
+    else
+    {
+        /* flip y coordinate origin too */
+        glScalef(1.0f, -1.0f, 2.0f);
 
+        /* Apply the supplied projection matrix */
+        glMultMatrixf(matrix);
+    }
 #ifdef DEBUG
     lastError = glGetError();                                     \
     AssertMsgReturn(lastError == GL_NO_ERROR, ("%s (%d): last error 0x%x\n", __FUNCTION__, __LINE__, lastError), VERR_INTERNAL_ERROR);

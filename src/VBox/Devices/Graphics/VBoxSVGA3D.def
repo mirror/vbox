@@ -35,4 +35,6 @@ EXPORTS
     ShaderSetPixelShaderConstantF
     ShaderUpdateState
     ShaderTransformProjection
+    ShaderSetPositionTransformed
+
 
