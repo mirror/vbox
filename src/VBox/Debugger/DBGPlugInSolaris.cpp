@@ -474,7 +474,7 @@ static void dbgDiggerSolarisProcessModCtl32(PUVM pUVM, PDBGDIGGERSOLARIS pThis, 
         ||  Module.hdr.e_ident[EI_CLASS] != ELFCLASS32
         ||  Module.hdr.e_ident[EI_DATA] != ELFDATA2LSB
         ||  Module.hdr.e_ident[EI_VERSION] != EV_CURRENT
-        ||  ASMMemIsAll8(&Module.hdr.e_ident[EI_PAD], EI_NIDENT - EI_PAD, 0) != NULL
+        ||  !ASMMemIsZero(&Module.hdr.e_ident[EI_PAD], EI_NIDENT - EI_PAD)
         )
         return;
     if (Module.hdr.e_version != EV_CURRENT)
@@ -621,7 +621,7 @@ static void dbgDiggerSolarisProcessModCtl64(PUVM pUVM, PDBGDIGGERSOLARIS pThis, 
         ||  Module.hdr.e_ident[EI_CLASS] != ELFCLASS64
         ||  Module.hdr.e_ident[EI_DATA] != ELFDATA2LSB
         ||  Module.hdr.e_ident[EI_VERSION] != EV_CURRENT
-        ||  ASMMemIsAll8(&Module.hdr.e_ident[EI_PAD], EI_NIDENT - EI_PAD, 0) != NULL
+        ||  !ASMMemIsZero(&Module.hdr.e_ident[EI_PAD], EI_NIDENT - EI_PAD)
         )
         return;
     if (Module.hdr.e_version != EV_CURRENT)

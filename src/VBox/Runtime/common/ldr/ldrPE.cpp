@@ -2632,7 +2632,7 @@ static int rtldrPE_VerifyAllPageHashes(PRTLDRMODPE pModPe, PCRTCRSPCSERIALIZEDOB
     /*
      * Check that the last table entry has a hash value of zero.
      */
-    if (ASMMemIsAll8(pbHashTab + 4, cbHash, 0) != NULL)
+    if (!ASMMemIsZero(pbHashTab + 4, cbHash))
         return RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_TAB_TOO_LONG,
                              "Maltform final page hash table entry: #%u %#010x %.*Rhxs",
                              cPages - 1, RT_MAKE_U32_FROM_U8(pbHashTab[0], pbHashTab[1], pbHashTab[2], pbHashTab[3]),

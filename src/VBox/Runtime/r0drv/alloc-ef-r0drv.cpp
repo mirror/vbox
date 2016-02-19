@@ -671,19 +671,19 @@ static void rtR0MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pv
          * Check whether the no man's land is untouched.
          */
 # ifdef RTR0MEM_EF_IN_FRONT
-        void *pvWrong = ASMMemIsAll8((char *)pv + pBlock->cbUnaligned,
-                                     RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) - pBlock->cbUnaligned,
-                                     RTR0MEM_EF_NOMAN_FILLER);
+        void *pvWrong = ASMMemFirstMismatchingU8((char *)pv + pBlock->cbUnaligned,
+                                                 RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) - pBlock->cbUnaligned,
+                                                 RTR0MEM_EF_NOMAN_FILLER);
 # else
         /* Alignment must match allocation alignment in rtMemAlloc(). */
-        void *pvWrong = ASMMemIsAll8((char *)pv + pBlock->cbUnaligned,
-                                     pBlock->cbAligned - pBlock->cbUnaligned,
-                                     RTR0MEM_EF_NOMAN_FILLER);
+        void *pvWrong = ASMMemFirstMismatchingU8((char *)pv + pBlock->cbUnaligned,
+                                                 pBlock->cbAligned - pBlock->cbUnaligned,
+                                                 RTR0MEM_EF_NOMAN_FILLER);
         if (pvWrong)
             RTAssertDoPanic();
-        pvWrong = ASMMemIsAll8((void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK),
-                               RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) - pBlock->cbAligned,
-                               RTR0MEM_EF_NOMAN_FILLER);
+        pvWrong = ASMMemFirstMismatchingU8((void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK),
+                                           RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) - pBlock->cbAligned,
+                                           RTR0MEM_EF_NOMAN_FILLER);
 # endif
         if (pvWrong)
             RTAssertDoPanic();

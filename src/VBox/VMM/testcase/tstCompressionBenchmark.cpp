@@ -609,7 +609,7 @@ int main(int argc, char **argv)
     size_t cZeroPages = 0;
     for (size_t iPage = 0; iPage < g_cPages; iPage++)
     {
-        if (!ASMMemIsAllU32(&g_pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, 0))
+        if (ASMMemIsZeroPage(&g_pabSrc[iPage * PAGE_SIZE]))
             cZeroPages++;
     }
     RTPrintf("       %'10zu zero pages (%u %%)\n", cZeroPages, cZeroPages * 100 / g_cPages);

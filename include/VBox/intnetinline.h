@@ -793,7 +793,7 @@ DECLINLINE(void) IntNetBufInit(PINTNETBUF pIntBuf, uint32_t cbBuf, uint32_t cbRe
     Assert(cbBuf >= sizeof(INTNETBUF) + cbRecv + cbSend);
     Assert(RT_ALIGN_32(cbRecv, INTNETRINGBUF_ALIGNMENT) == cbRecv);
     Assert(RT_ALIGN_32(cbSend, INTNETRINGBUF_ALIGNMENT) == cbSend);
-    Assert(ASMMemIsAll8(pIntBuf, cbBuf, '\0') == NULL);
+    Assert(ASMMemIsZero(pIntBuf, cbBuf));
 
     pIntBuf->u32Magic  = INTNETBUF_MAGIC;
     pIntBuf->cbBuf     = cbBuf;

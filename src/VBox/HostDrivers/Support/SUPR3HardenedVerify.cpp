@@ -1822,8 +1822,8 @@ DECLHIDDEN(int) supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData)
      * Check that we're not called out of order.
      * If dynamic linking it screwed up, we may end up here.
      */
-    if (    ASMMemIsAll8(&g_aSupVerifiedFiles[0], sizeof(g_aSupVerifiedFiles), 0) != NULL
-        ||  ASMMemIsAll8(&g_aSupVerifiedDirs[0], sizeof(g_aSupVerifiedDirs), 0) != NULL)
+    if (   !ASMMemIsZero(&g_aSupVerifiedFiles[0], sizeof(g_aSupVerifiedFiles))
+        || !ASMMemIsZero(&g_aSupVerifiedDirs[0], sizeof(g_aSupVerifiedDirs)))
         return VERR_WRONG_ORDER;
 
     /*

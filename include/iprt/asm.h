@@ -3832,6 +3832,49 @@ DECLINLINE(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32)
 
 
 /**
+ * Checks if a memory block is all zeros.
+ *
+ * @returns Pointer to the first non-zero byte.
+ * @returns NULL if all zero.
+ *
+ * @param   pv      Pointer to the memory block.
+ * @param   cb      Number of bytes in the block.
+ *
+ * @todo Fix name, it is a predicate function but it's not returning boolean!
+ */
+#if !defined(RT_OS_LINUX) || !defined(__KERNEL__)
+DECLASM(void *) ASMMemFirstNonZero(void const *pv, size_t cb);
+#else
+DECLINLINE(void *) ASMMemFirstNonZero(void const *pv, size_t cb)
+{
+    uint8_t const *pb = (uint8_t const *)pv;
+    for (; cb; cb--, pb++)
+        if (RT_LIKELY(*pb == u8))
+        { /* likely */ }
+        else
+            return (void *)pb;
+    return NULL;
+}
+#endif
+
+
+/**
+ * Checks if a memory block is all zeros.
+ *
+ * @returns true if zero, false if not.
+ *
+ * @param   pv      Pointer to the memory block.
+ * @param   cb      Number of bytes in the block.
+ *
+ * @sa      ASMMemFirstNonZero
+ */
+DECLINLINE(bool) ASMMemIsZero(void const *pv, size_t cb)
+{
+    return ASMMemFirstNonZero(pv, cb) == NULL;
+}
+
+
+/**
  * Checks if a memory page is all zeros.
  *
  * @returns true / false.
@@ -3892,22 +3935,25 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
 
 
 /**
- * Checks if a memory block is filled with the specified byte.
+ * Checks if a memory block is filled with the specified byte, returning the
+ * first mismatch.
  *
- * This is a sort of inverted memchr.
+ * This is sort of an inverted memchr.
  *
  * @returns Pointer to the byte which doesn't equal u8.
  * @returns NULL if all equal to u8.
  *
  * @param   pv      Pointer to the memory block.
- * @param   cb      Number of bytes in the block. This MUST be aligned on 32-bit!
+ * @param   cb      Number of bytes in the block.
  * @param   u8      The value it's supposed to be filled with.
  *
- * @todo Fix name, it is a predicate function but it's not returning boolean!
+ * @remarks No alignment requirements.
  */
-DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
+#if !defined(RT_OS_LINUX) || !defined(__KERNEL__)
+DECLASM(void *) ASMMemFirstMismatchingU8(void const *pv, size_t cb, uint8_t u8);
+#else
+DECLINLINE(void *) ASMMemFirstMismatchingU8(void const *pv, size_t cb, uint8_t u8)
 {
-/** @todo rewrite this in inline assembly? */
     uint8_t const *pb = (uint8_t const *)pv;
     for (; cb; cb--, pb++)
         if (RT_LIKELY(*pb == u8))
@@ -3915,6 +3961,24 @@ DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
         else
             return (void *)pb;
     return NULL;
+}
+#endif
+
+
+/**
+ * Checks if a memory block is filled with the specified byte.
+ *
+ * @returns true if all matching, false if not.
+ *
+ * @param   pv      Pointer to the memory block.
+ * @param   cb      Number of bytes in the block.
+ * @param   u8      The value it's supposed to be filled with.
+ *
+ * @remarks No alignment requirements.
+ */
+DECLINLINE(bool) ASMMemIsAllU8(void const *pv, size_t cb, uint8_t u8)
+{
+    return ASMMemFirstMismatchingU8(pv, cb, u8) == NULL;
 }
 
 
@@ -3929,10 +3993,8 @@ DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
  * @param   pv      Pointer to the memory block.
  * @param   cb      Number of bytes in the block. This MUST be aligned on 32-bit!
  * @param   u32     The value it's supposed to be filled with.
- *
- * @todo Fix name, it is a predicate function but it's not returning boolean!
  */
-DECLINLINE(uint32_t *) ASMMemIsAllU32(void const *pv, size_t cb, uint32_t u32)
+DECLINLINE(uint32_t *) ASMMemFirstMismatchingU32(void const *pv, size_t cb, uint32_t u32)
 {
 /** @todo rewrite this in inline assembly? */
     uint32_t const *pu32 = (uint32_t const *)pv;

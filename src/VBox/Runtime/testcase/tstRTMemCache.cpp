@@ -132,7 +132,7 @@ static void tst1(void)
 static DECLCALLBACK(int) tst2Ctor(RTMEMCACHE hMemCache, void *pvObj, void *pvUser)
 {
     RTTESTI_CHECK(hMemCache == g_hMemCache);
-    RTTESTI_CHECK(ASMMemIsAll8(pvObj, 256, 0) == NULL);
+    RTTESTI_CHECK(ASMMemIsZero(pvObj, 256));
 
     if (*(bool *)pvUser)
         return VERR_RESOURCE_BUSY;

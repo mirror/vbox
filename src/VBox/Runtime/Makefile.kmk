@@ -690,6 +690,7 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
 	common/asm/ASMGetXcr0.asm \
@@ -708,6 +709,7 @@ RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
 	common/asm/ASMGetXcr0.asm \

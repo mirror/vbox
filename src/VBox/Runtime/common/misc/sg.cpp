@@ -406,6 +406,7 @@ RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *
     return cb;
 }
 
+
 RTDECL(bool) RTSgBufIsZero(PRTSGBUF pSgBuf, size_t cbCheck)
 {
     RTSGBUF SgBufTmp;
@@ -419,35 +420,9 @@ RTDECL(bool) RTSgBufIsZero(PRTSGBUF pSgBuf, size_t cbCheck)
         void *pvBuf = rtSgBufGet(&SgBufTmp, &cbThisCheck);
         if (!cbThisCheck)
             break;
-
-/** @todo fix this after asm.h gets updated.    */
-        /* Use optimized inline assembler if possible. */
-        if (   !(cbThisCheck % 4)
-            && cbThisCheck * 8 <= UINT32_MAX)
-        {
-            if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbThisCheck * 8) != -1)
-            {
-                fIsZero = false;
-                break;
-            }
-        }
-        else
-        {
-            for (size_t i = 0; i < cbThisCheck; i++)
-            {
-                char *pbBuf = (char *)pvBuf;
-                if (*pbBuf)
-                {
-                    fIsZero = false;
-                    break;
-                }
-                pvBuf = pbBuf + 1;
-            }
-
-            if (!fIsZero)
-                break;
-        }
-
+        fIsZero = ASMMemIsZero(pvBuf, cbThisCheck);
+        if (!fIsZero)
+            break;
         cbLeft -= cbThisCheck;
     }
 

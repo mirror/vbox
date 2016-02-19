@@ -128,7 +128,7 @@ static void doMemRealloc(RTTEST hTest)
         uint32_t cbNew = RTRandS32Ex(1, _16K + (i / 4) * _16K);
         RTTESTI_CHECK_RC_OK_RETV(RTMemSaferReallocZEx(cbAlloc, pvBuf, cbNew, &pvBuf, 0));
 
-        RTTESTI_CHECK(ASMMemIsAll8(pvBuf, RT_MIN(cbAlloc, cbNew), chFiller) == NULL);
+        RTTESTI_CHECK(ASMMemIsAllU8(pvBuf, RT_MIN(cbAlloc, cbNew), chFiller));
 
         chFiller += 0x31;
         memset(pvBuf, chFiller, cbNew);

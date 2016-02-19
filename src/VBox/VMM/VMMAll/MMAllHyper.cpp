@@ -1189,7 +1189,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
                 Assert(cbFence >= MMHYPER_HEAP_STRICT_FENCE_SIZE);
             }
 
-            uint32_t *pu32Bad = ASMMemIsAllU32((uint8_t *)pu32End - cbFence, cbFence - sizeof(uint32_t), MMHYPER_HEAP_STRICT_FENCE_U32);
+            uint32_t *pu32Bad = ASMMemFirstMismatchingU32((uint8_t *)pu32End - cbFence, cbFence - sizeof(uint32_t), MMHYPER_HEAP_STRICT_FENCE_U32);
             if (RT_UNLIKELY(pu32Bad))
             {
                 mmHyperHeapDumpOne(pHeap, pCur);

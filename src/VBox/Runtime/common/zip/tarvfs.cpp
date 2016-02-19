@@ -621,7 +621,7 @@ static int rtZipTarReaderParseHeader(PRTZIPTARREADER pThis, PCRTZIPTARHDR pHdr)
          * reading them forever in case someone points us to /dev/zero.
          */
         case RTZIPTARREADERSTATE_ZERO:
-            if (ASMMemIsAllU32(pHdr, sizeof(*pHdr), 0) != NULL)
+            if (!ASMMemIsZero(pHdr, sizeof(*pHdr)))
                 return VERR_TAR_ZERO_HEADER;
             pThis->cZeroHdrs++;
             if (pThis->cZeroHdrs <= _64K / 512 + 2)
