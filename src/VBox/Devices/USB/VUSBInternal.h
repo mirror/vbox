@@ -478,7 +478,6 @@ typedef enum CANCELMODE
 /** @name Internal URB Operations, Structures and Constants.
  * @{ */
 int  vusbUrbSubmit(PVUSBURB pUrb);
-void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete);
 void vusbUrbDoReapAsync(PRTLISTANCHOR pUrbLst, RTMSINTERVAL cMillies);
 void vusbUrbDoReapAsyncDev(PVUSBDEV pDev, RTMSINTERVAL cMillies);
 void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode);
@@ -545,6 +544,32 @@ DECLHIDDEN(PVUSBURB) vusbUrbPoolAlloc(PVUSBURBPOOL pUrbPool, VUSBXFERTYPE enmTyp
  */
 DECLHIDDEN(void) vusbUrbPoolFree(PVUSBURBPOOL pUrbPool, PVUSBURB pUrb);
 
+#ifdef LOG_ENABLED
+/**
+ * Logs an URB in the debug log.
+ *
+ * @returns nothing.
+ * @param   pUrb        The URB to log.
+ * @param   pszMsg      Additional message to log.
+ * @param   fComplete   Flag whther the URB is completing.
+ */
+DECLHIDDEN(void) vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete);
+
+/**
+ * Return the USB direction as a string from the given enum.
+ */
+DECLHIDDEN(const char *) vusbUrbDirName(VUSBDIRECTION enmDir);
+
+/**
+ * Return the URB type as string from the given enum.
+ */
+DECLHIDDEN(const char *) vusbUrbTypeName(VUSBXFERTYPE enmType);
+
+/**
+ * Return the URB status as string from the given enum.
+ */
+DECLHIDDEN(const char *) vusbUrbStatusName(VUSBSTATUS enmStatus);
+#endif
 
 DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
 {

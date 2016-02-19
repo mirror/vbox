@@ -399,7 +399,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	USB/VUSBSnifferUsbMon.cpp \
  	USB/VUSBSnifferVmx.cpp \
  	USB/VUSBUrb.cpp \
- 	USB/VUSBUrbPool.cpp
+ 	USB/VUSBUrbPool.cpp \
+ 	USB/VUSBUrbTrace.cpp
  endif
 
  # --- Networking bits. ---
