@@ -418,7 +418,7 @@ static bool rtAsn1DumpUniversalTypeAndValue(PRTASN1DUMPDATA pData, PCRTASN1CORE 
         case ASN1_TAG_OID:
             if ((pAsn1Core->fFlags & RTASN1CORE_F_PRIMITE_TAG_STRUCT))
             {
-#ifdef IN_SUP_HARDENED_R3
+#ifndef IN_SUP_HARDENED_R3
                 PCRTASN1OBJID pObjId = (PCRTASN1OBJID)pAsn1Core;
                 char szName[64];
                 if (rtOidDbQueryObjIdName(pObjId->pauComponents, pObjId->cComponents, szName, sizeof(szName)))
