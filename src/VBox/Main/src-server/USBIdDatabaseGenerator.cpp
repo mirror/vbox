@@ -55,9 +55,6 @@
 /** For verbose output.   */
 static bool g_fVerbose = false;
 
-const char * const g_pszStartBlock = "# Vendors, devices and interfaces. Please keep sorted.";
-const char * const g_pszEndBlock   = "# List of known device classes, subclasses and protocols";
-
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -168,66 +165,71 @@ static int ParseAlias(char *pszLine, size_t& id, std::string& desc)
     return ERROR_IN_PARSE_LINE;
 }
 
-static bool IsCommentOrEmptyLine(const char *pszLine)
-{
-    pszLine = RTStrStripL(pszLine);
-    return *pszLine == '#' || *pszLine == '\0';
-}
-
-static int ParseUsbIds(PRTSTREAM instream)
+static int ParseUsbIds(PRTSTREAM pInStrm, const char *pszFile)
 {
     /*
      * State data.
-     * We check for a certain comment string before processing data.
      */
-    bool fLookingForData = false;
     VendorRecord vendor = { 0, 0, 0, "" };
 
     /*
      * Process the file line-by-line.
+     *
+     * The generic format is that we have top level entries (vendors) starting
+     * in position 0 with sub entries starting after one or more, depending on
+     * the level, tab characters.
+     *
+     * Specifically, the list of vendors and their products will always start
+     * with a vendor line followed by indented products.  The first character
+     * on the vendor line is a hex digit (four in total) that makes up the
+     * vendor ID.  The product lines equally starts with a 4 digit hex ID value.
+     *
+     * Other lists are assumed to have first lines that doesn't start with any
+     * lower case hex digit.
      */
+    uint32_t iLine = 0;;
     for (;;)
     {
         char szLine[_4K];
-        int rc = RTStrmGetLine(instream, szLine, sizeof(szLine));
+        int rc = RTStrmGetLine(pInStrm, szLine, sizeof(szLine));
         if (RT_SUCCESS(rc))
         {
-            if (!fLookingForData)
+            iLine++;
+
+            /* Check for vendor line. */
+            char chType = szLine[0];
+            if (   RT_C_IS_XDIGIT(chType)
+                && RT_C_IS_SPACE(szLine[4])
+                && RT_C_IS_XDIGIT(szLine[1])
+                && RT_C_IS_XDIGIT(szLine[2])
+                && RT_C_IS_XDIGIT(szLine[3]) )
             {
-                if (!strstr(szLine, g_pszEndBlock))
+                if (ParseAlias(szLine, vendor.vendorID, vendor.str) == 0)
+                    g_vendors.push_back(vendor);
+                else
+                    return RTMsgErrorExit((RTEXITCODE)ERROR_IN_PARSE_LINE,
+                                          "%s(%d): Error in parsing vendor line: '%s'", pszFile, iLine, szLine);
+            }
+            /* Check for product line. */
+            else if (szLine[0] == '\t' && vendor.vendorID != 0)
+            {
+                ProductRecord product = { 0, vendor.vendorID, 0, "" };
+                if (ParseAlias(&szLine[1], product.productID, product.str) == 0)
                 {
-                    if (!IsCommentOrEmptyLine(szLine))
-                    {
-                        if (szLine[0] == '\t')
-                        {
-                            // Parse Product line
-                            // first line should be vendor
-                            if (vendor.vendorID == 0)
-                                return RTMsgErrorExit((RTEXITCODE)ERROR_WRONG_FILE_FORMAT,
-                                                      "Wrong file format. Product before vendor: '%s'", szLine);
-                            ProductRecord product = { 0, vendor.vendorID, 0, "" };
-                            if (ParseAlias(&szLine[1], product.productID, product.str) != 0)
-                                return RTMsgErrorExit((RTEXITCODE)ERROR_IN_PARSE_LINE,
-                                                      "Error in parsing product line: '%s'", szLine);
-                            product.key = RT_MAKE_U32(product.productID, product.vendorID);
-                            Assert(product.vendorID == vendor.vendorID);
-                            g_products.push_back(product);
-                        }
-                        else
-                        {
-                            // Parse vendor line
-                            if (ParseAlias(szLine, vendor.vendorID, vendor.str) != 0)
-                                return RTMsgErrorExit((RTEXITCODE)ERROR_IN_PARSE_LINE,
-                                                      "Error in parsing vendor line: '%s'", szLine);
-                            g_vendors.push_back(vendor);
-                        }
-                    }
+                    product.key = RT_MAKE_U32(product.productID, product.vendorID);
+                    Assert(product.vendorID == vendor.vendorID);
+                    g_products.push_back(product);
                 }
                 else
-                    return RTEXITCODE_SUCCESS;
+                    return RTMsgErrorExit((RTEXITCODE)ERROR_IN_PARSE_LINE, "Error in parsing product line: '%s'", szLine);
             }
-            else if (strstr(szLine, g_pszStartBlock))
-                fLookingForData = false;
+            /* If not a blank or comment line, it is some other kind of data.
+               So, make sure the vendor ID is cleared so we don't try process
+               the sub-items of in some other list as products. */
+            else if (   chType != '#'
+                     && chType != '\0'
+                     && *RTStrStripL(szLine) != '\0')
+                vendor.vendorID = 0;
         }
         else if (rc == VERR_EOF)
             return RTEXITCODE_SUCCESS;
@@ -349,7 +351,7 @@ int main(int argc, char *argv[])
             return RTMsgErrorExit((RTEXITCODE)ERROR_OPEN_FILE,
                                   "Failed to open file '%s' for reading: %Rrc", argv[i], rc);
 
-        rc = ParseUsbIds(pInStrm);
+        rc = ParseUsbIds(pInStrm, argv[i]);
         RTStrmClose(pInStrm);
         if (rc != 0)
         {
