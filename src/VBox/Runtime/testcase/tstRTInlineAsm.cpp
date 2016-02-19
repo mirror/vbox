@@ -1428,8 +1428,6 @@ void tstASMMemFirstMismatchingU8(RTTEST hTest)
                 RTTESTI_CHECK(offNonZero - offStart < cb ? pbRet == &pbBuf1[offNonZero] : pbRet == NULL);
 
                 pbRet = (uint8_t *)ASMMemFirstMismatchingU8(pbBuf2 + offStart, cb, bFiller2);
-                if (!(offNonZero - offStart < cb ? pbRet == &pbBuf2[offNonZero] : pbRet == NULL))
-                    __debugbreak();
                 RTTESTI_CHECK(offNonZero - offStart < cb ? pbRet == &pbBuf2[offNonZero] : pbRet == NULL);
 
                 if (offEnd < PAGE_SIZE)

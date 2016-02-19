@@ -84,6 +84,7 @@ PFNRT g_VBoxRTDeps[] =
     (PFNRT)RTAssertShouldPanic,
     (PFNRT)ASMAtomicReadU64,
     (PFNRT)ASMAtomicCmpXchgU64,
+    (PFNRT)ASMBitFirstSet,
     (PFNRT)RTBldCfgRevision,
     (PFNRT)SSL_free,
     (PFNRT)SSL_library_init,
