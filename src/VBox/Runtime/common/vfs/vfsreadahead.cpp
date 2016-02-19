@@ -51,13 +51,7 @@
 #include <iprt/critsect.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
-#include <iprt/sempahore.h>
 #include <iprt/thread.h>
-
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
 
 
 /*********************************************************************************************************************************
@@ -78,7 +72,7 @@ typedef struct RTVFSREADAHEADBUFDESC
     /** */
     uint32_t volatile   fReserved;
     /** Pointer to the buffer. */
-    uint8_t            *pbBuffer
+    uint8_t            *pbBuffer;
 } RTVFSREADAHEADBUFDESC;
 /** Pointer to a memory file extent. */
 typedef RTVFSREADAHEADBUFDESC *PRTVFSREADAHEADBUFDESC;
@@ -162,7 +156,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_Close(void *pvThis)
 
     RTVfsIoStrmRelease(pThis->hIos);
     pThis->hIos  = NIL_RTVFSIOSTREAM;
-    RTVfsFileRelase(pThis->hFile);
+    RTVfsFileRelease(pThis->hFile);
     pThis->hFile = NIL_RTVFSFILE;
 
     RTCritSectLeave(&pThis->IoCritSect);
@@ -194,7 +188,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_Close(void *pvThis)
 static DECLCALLBACK(int) rtVfsReadAhead_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
     PRTVFSREADAHEAD pThis = (PRTVFSREADAHEAD)pvThis;
-    return RTVfsIoStrmQueryInfo(pThis->hVfs, pObjInfo, enmAddAttr);
+    return RTVfsIoStrmQueryInfo(pThis->hIos, pObjInfo, enmAddAttr);
 }
 
 
@@ -214,7 +208,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
      * We loop here to repeat the buffer search after entering the I/O critical
      * section, just in case a buffer got inserted while we were waiting for it.
      */
-    int    rc;
+    int    rc = VINF_SUCCESS;
     size_t cbTotalRead     = 0;
     bool   fPokeReader     = false;
     bool   fOwnsIoCritSect = false;
@@ -231,7 +225,8 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
             pThis->offConsumer = offCur;
         }
 
-        RTListForEach(&pThis->ConsumerList, pCurBufDesc, Type, ListEntry)
+        PRTVFSREADAHEADBUFDESC pCurBufDesc;
+        RTListForEach(&pThis->ConsumerList, pCurBufDesc, RTVFSREADAHEADBUFDESC, ListEntry)
         {
             if (pThis->offConsumer)
             {
@@ -257,7 +252,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
         /*
          * Do a direct read of the remaining data.
          */
-        size_t cbDirectRead;
+        //size_t cbDirectRead;
 
 
     }
@@ -306,7 +301,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_PollOne(void *pvThis, uint32_t fEvents, 
         /** @todo poll one with read-ahead thread. */
         return VERR_NOT_IMPLEMENTED;
     }
-    return RTVfsIoStrmPoll(pThis->hVfs, fEvents, cMillies, fIntr, pfRetEvents);
+    return RTVfsIoStrmPoll(pThis->hIos, fEvents, cMillies, fIntr, pfRetEvents);
 }
 
 
@@ -533,7 +528,7 @@ static DECLCALLBACK(int) rtVfsReadAheadThreadProc(RTTHREAD hThreadSelf, void *pv
                     else
                     {
                         do
-                            pAfter = RTListGetPrev(&pThis->ConsumerList, &pAfter->ListEntry, RTVFSREADAHEADBUFDESC, ListEntry);
+                            pAfter = RTListGetPrev(&pThis->ConsumerList, pAfter, RTVFSREADAHEADBUFDESC, ListEntry);
                         while (pAfter && pAfter->off > pBufDesc->off);
                         if (!pAfter)
                             RTListPrepend(&pThis->ConsumerList, &pBufDesc->ListEntry);
@@ -579,10 +574,10 @@ static int rtVfsCreateReadAheadInstance(RTVFSIOSTREAM hVfsIosSrc, RTVFSFILE hVfs
      * Validate input a little.
      */
     int rc = VINF_SUCCESS;
-    AssertStmt(cBuffers < _8K, rc = VERR_OUT_OF_RANGE);
+    AssertStmt(cBuffers < _4K, rc = VERR_OUT_OF_RANGE);
     if (cBuffers == 0)
         cBuffers = 4;
-    AssertStmt(cbBuffer < , rc = VERR_OUT_OF_RANGE);
+    AssertStmt(cbBuffer <= _512K, rc = VERR_OUT_OF_RANGE);
     if (cbBuffer == 0)
         cbBuffer = _256K / cBuffers;
     AssertStmt(!fFlags, rc = VERR_INVALID_FLAGS);
@@ -596,7 +591,7 @@ static int rtVfsCreateReadAheadInstance(RTVFSIOSTREAM hVfsIosSrc, RTVFSFILE hVfs
         RTVFSIOSTREAM   hVfsIosReadAhead  = NIL_RTVFSIOSTREAM;
         PRTVFSREADAHEAD pThis;
         size_t          cbThis = RT_OFFSETOF(RTVFSREADAHEAD, aBufDescs[cBuffers]);
-        if (hVfsFile != NIL_RTVFSFILE)
+        if (hVfsFileSrc != NIL_RTVFSFILE)
             rc = RTVfsNewFile(&g_VfsReadAheadFileOps, cbThis, RTFILE_O_READ, NIL_RTVFS, NIL_RTVFSLOCK,
                               &hVfsFileReadAhead, (void **)&pThis);
         else
@@ -614,15 +609,14 @@ static int rtVfsCreateReadAheadInstance(RTVFSIOSTREAM hVfsIosSrc, RTVFSFILE hVfs
             pThis->cBuffers         = cBuffers;
             pThis->cbBuffer         = cbBuffer;
             pThis->offConsumer      = RTVfsIoStrmTell(hVfsIosSrc);
-            pThis->offActual        = pThis->offConsumer;
             if ((RTFOFF)pThis->offConsumer >= 0)
             {
-                rc = RTCritSectInit(&pThis->BufferCritSect);
+                rc = RTCritSectInit(&pThis->IoCritSect);
                 if (RT_SUCCESS(rc))
-                    rc = RTCritSectInit(&pThis->ConsumerList);
+                    rc = RTCritSectInit(&pThis->BufferCritSect);
                 if (RT_SUCCESS(rc))
                 {
-                    pThis->pbAllBuffers = RTMemPageAlloc(pThis->cbBuffer * pThis->cBuffers);
+                    pThis->pbAllBuffers = (uint8_t *)RTMemPageAlloc(pThis->cbBuffer * pThis->cBuffers);
                     if (pThis->pbAllBuffers)
                     {
                         for (uint32_t i = 0; i < cBuffers; i++)
@@ -645,7 +639,7 @@ static int rtVfsCreateReadAheadInstance(RTVFSIOSTREAM hVfsIosSrc, RTVFSFILE hVfs
                              */
                             if (phVfsFile)
                                 *phVfsFile = hVfsFileReadAhead;
-                            else if (hVfsFileReadAhead == NIL_RTFILE)
+                            else if (hVfsFileReadAhead == NIL_RTVFSFILE)
                                 *phVfsIos = hVfsIosReadAhead;
                             else
                             {
@@ -673,7 +667,7 @@ RTDECL(int) RTVfsCreateReadAheadForIoStream(RTVFSIOSTREAM hVfsIos, uint32_t fFla
                                             PRTVFSIOSTREAM phVfsIos)
 {
     AssertPtrReturn(phVfsIos, VERR_INVALID_POINTER);
-    phVfsIos = NIL_RTVFSIOSTREAM;
+    *phVfsIos = NIL_RTVFSIOSTREAM;
 
     /*
      * Retain the input stream, trying to obtain a file handle too so we can
@@ -683,14 +677,17 @@ RTDECL(int) RTVfsCreateReadAheadForIoStream(RTVFSIOSTREAM hVfsIos, uint32_t fFla
     AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
     RTVFSFILE hVfsFile = RTVfsIoStrmToFile(hVfsIos);
 
-    return rtVfsCreateReadAheadInstance(hVfsIos, hVfsFile, fFlags, cBuffers, cbBuffer, phVfsIos);
+    /*
+     * Do the job. (This always consumes the above retained references.)
+     */
+    return rtVfsCreateReadAheadInstance(hVfsIos, hVfsFile, fFlags, cBuffers, cbBuffer, phVfsIos, NULL);
 }
 
 
 RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uint32_t cBuffers, uint32_t cbBuffer,
                                         PRTVFSFILE phVfsFile)
 {
-    AssertPtrReturn(phVfsIos, VERR_INVALID_POINTER);
+    AssertPtrReturn(phVfsFile, VERR_INVALID_POINTER);
     *phVfsFile = NIL_RTVFSFILE;
 
     /*
@@ -698,21 +695,12 @@ RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uin
      */
     RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(hVfsFile);
     AssertReturn(hVfsIos != NIL_RTVFSIOSTREAM, VERR_INVALID_HANDLE);
-    uint32_t cRefs = RTVfsFileRetain(hVfsIos);
+    uint32_t cRefs = RTVfsFileRetain(hVfsFile);
     AssertReturnStmt(cRefs != UINT32_MAX, RTVfsIoStrmRelease(hVfsIos), VERR_INVALID_HANDLE);
 
     /*
-     * Create a read ahead instance and cast it to a file before returning.
+     * Do the job. (This always consumes the above retained references.)
      */
-    RTVFSIOSTREAM hVfsIosReadAhead;
-    int rc = rtVfsCreateReadAheadInstance(hVfsIos, hVfsFile, fFlags, cBuffers, cbBuffer, &hVfsIosReadAhead);
-    if (RT_SUCCESS(rc))
-    {
-        *phVfsFile = RTVfsIoStrmToFile(hVfsIosReadAhead);
-        RTVfsIoStrmRelease(hVfsIosReadAhead);
-        AssertReturn(*phVfsFile != NIL_RTVFSFILE, VERR_INTERNAL_ERROR_5);
-    }
-
-    return rc;
+    return rtVfsCreateReadAheadInstance(hVfsIos, hVfsFile, fFlags, cBuffers, cbBuffer, NULL, phVfsFile);
 }
 
