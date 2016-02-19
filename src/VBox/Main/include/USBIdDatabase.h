@@ -21,6 +21,7 @@
 #include <iprt/assert.h>
 #include <iprt/stdint.h>
 #include <iprt/cpp/ministring.h>
+#include <iprt/bldprog-strtab.h>
 
 
 /** Saves a few bytes (~25%) on strings.  */
@@ -30,17 +31,7 @@
 #define USB_ID_DATABASE_MAX_STRING      _1K
 
 
-/**
- * USB ID database string table reference.
- */
-typedef struct USBIDDBSTR
-{
-    /** Offset of the string in the string table. */
-    uint32_t off : 22;
-    /** The length of the string. */
-    uint32_t cch : 10;
-} USBIDDBSTR;
-AssertCompileSize(USBIDDBSTR, sizeof(uint32_t));
+AssertCompileSize(RTBLDPROGSTRREF, sizeof(uint32_t));
 
 
 /**
@@ -75,77 +66,29 @@ AssertCompileSize(USBIDDBVENDOR, sizeof(uint16_t) * 3);
 class USBIdDatabase
 {
 public: // For assertions and statis in the generator.
-    /** String table. */
-    static const char           s_achStrTab[];
-    /** The size of the string table (for bounds checking). */
-    static const size_t         s_cchStrTab;
-#ifdef USB_ID_DATABASE_WITH_COMPRESSION
-    /** Dictionary containing the 127 most used substrings (that we managed
-     * to detect without lousy word based searching). */
-    static const USBIDDBSTR     s_aCompDict[127];
-#endif
+    /** The compressed string table.   */
+    static RTBLDPROGSTRTAB const s_StrTab;
 
     /** Number of vendors in the two parallel arrays.   */
-    static const size_t         s_cVendors;
+    static const size_t          s_cVendors;
     /** Vendor IDs lookup table. */
-    static const USBIDDBVENDOR  s_aVendors[];
+    static const USBIDDBVENDOR   s_aVendors[];
     /** Vendor names table running parallel to s_aVendors. */
-    static const USBIDDBSTR     s_aVendorNames[];
+    static const RTBLDPROGSTRREF s_aVendorNames[];
 
     /** Number of products in the two parallel arrays. */
-    static const size_t         s_cProducts;
+    static const size_t          s_cProducts;
     /** Vendor+Product keys for lookup purposes. */
-    static const USBIDDBPROD    s_aProducts[];
+    static const USBIDDBPROD     s_aProducts[];
     /** Product names table running parallel to s_aProducts. */
-    static const USBIDDBSTR     s_aProductNames[];
+    static const RTBLDPROGSTRREF s_aProductNames[];
 
 public:
-    static RTCString returnString(USBIDDBSTR const *pStr)
+    static RTCString returnString(PCRTBLDPROGSTRREF pStr)
     {
-        Assert(pStr->cch < s_cchStrTab);
-        Assert(pStr->off < s_cchStrTab);
-        Assert(pStr->off + (size_t)pStr->cch < s_cchStrTab);
-
-#ifdef USB_ID_DATABASE_WITH_COMPRESSION
-        char        szTmp[USB_ID_DATABASE_MAX_STRING * 2];
-        char       *pchDst = &szTmp[0];
-        size_t      cchSrc = pStr->cch;
-        const char *pchSrc = &s_achStrTab[pStr->off];
-        Assert(cchSrc <= USB_ID_DATABASE_MAX_STRING);
-        while (cchSrc-- > 0)
-        {
-            unsigned char uch = *pchSrc++;
-            if (!(uch & 0x80))
-            {
-                *pchDst++ = (char)uch;
-                Assert(uch != 0);
-                Assert((uintptr_t)(pchDst - &szTmp[0]) < USB_ID_DATABASE_MAX_STRING);
-            }
-            else if (uch == 0xff)
-            {
-                RTUNICP uc = ' ';
-                int rc = RTStrGetCpNEx(&pchSrc, &cchSrc, &uc);
-                AssertStmt(RT_SUCCESS(rc), (uc = '?', pchSrc++, cchSrc--));
-                pchDst = RTStrPutCp(pchDst, uc);
-                Assert((uintptr_t)(pchDst - &szTmp[0]) < USB_ID_DATABASE_MAX_STRING);
-            }
-            else
-            {
-                /* Dictionary reference. No unescaping necessary here. */
-                const USBIDDBSTR *pStr2 = &s_aCompDict[uch & 0x7f];
-                Assert(pStr2->cch < s_cchStrTab);
-                Assert(pStr2->off < s_cchStrTab);
-                Assert(pStr2->off + (size_t)pStr->cch < s_cchStrTab);
-                Assert((uintptr_t)(&pchDst[pStr2->cch] - &szTmp[0]) < USB_ID_DATABASE_MAX_STRING);
-                memcpy(pchDst, &s_achStrTab[pStr2->off], pStr2->cch);
-                pchDst += pStr2->cch;
-            }
-        }
-        *pchDst = '\0';
-        return RTCString(szTmp, pchDst - &szTmp[0]);
-#else  /* !USB_ID_DATABASE_WITH_COMPRESSION */
-        return RTCString(&s_achStrTab[pStr->off], pStr->cch);
-#endif /* !USB_ID_DATABASE_WITH_COMPRESSION */
+        char szTmp[USB_ID_DATABASE_MAX_STRING * 2];
+        ssize_t cchTmp = RTBldProgStrTabQueryString(&s_StrTab, pStr->off, pStr->cch, szTmp, sizeof(szTmp));
+        return RTCString(szTmp, RT_MAX(cchTmp, 0));
     }
 
 private:
