@@ -3849,7 +3849,7 @@ DECLINLINE(void *) ASMMemFirstNonZero(void const *pv, size_t cb)
 {
     uint8_t const *pb = (uint8_t const *)pv;
     for (; cb; cb--, pb++)
-        if (RT_LIKELY(*pb == u8))
+        if (RT_LIKELY(*pb == 0))
         { /* likely */ }
         else
             return (void *)pb;
