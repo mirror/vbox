@@ -218,6 +218,18 @@ static RTEXITCODE gzipSetupDecompressor(PRTVFSIOSTREAM phVfsSrc)
     Assert(cRefs > 0);
     *phVfsSrc = hVfsGunzip;
 
+#if 0
+    /* This is a good place for testing stuff. */
+    rc = RTVfsCreateReadAheadForIoStream(*phVfsSrc, 0, 16, _4K+1, &hVfsGunzip);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cRefs = RTVfsIoStrmRelease(*phVfsSrc);
+        Assert(cRefs > 0);
+        *phVfsSrc = hVfsGunzip;
+    }
+#endif
+
     return RTEXITCODE_SUCCESS;
 }
 
