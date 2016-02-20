@@ -851,7 +851,7 @@ static void BldProgStrTab_PrintCStringLitteral(PBLDPROGSTRTAB pThis, PBLDPROGSTR
     {
         if (!(uch & 0x80))
         {
-            if (uch != '\'' || uch != '\\')
+            if (uch != '\'' && uch != '\\')
                 fputc((char)uch, pOut);
             else
             {
@@ -976,10 +976,10 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
     fprintf(pOut,
             "static const RTBLDPROGSTRREF g_aCompDict%s[%u] = \n"
             "{\n",
-            pszBaseName, RT_ELEMENTS(pThis->aCompDict));
+            pszBaseName, (unsigned)RT_ELEMENTS(pThis->aCompDict));
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aCompDict); i++)
         fprintf(pOut, "    { %#08x, %#04x }, // %s\n",
-                pThis->aCompDict[i].offStrTab, pThis->aCompDict[i].cchString, pThis->aCompDict[i].pszString);
+                pThis->aCompDict[i].offStrTab, (unsigned)pThis->aCompDict[i].cchString, pThis->aCompDict[i].pszString);
     fprintf(pOut, "};\n\n");
 #endif
 
@@ -999,7 +999,7 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
             "    /*.cCompDict  = */ %u,\n"
             "    /*.paCompDict = */ &g_aCompDict%s[0]\n"
             "};\n"
-            , RT_ELEMENTS(pThis->aCompDict), pszBaseName);
+            , (unsigned)RT_ELEMENTS(pThis->aCompDict), pszBaseName);
 #else
     fprintf(pOut,
             "    /*.cCompDict  = */ 0,\n"
