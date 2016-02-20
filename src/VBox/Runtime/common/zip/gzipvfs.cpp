@@ -709,19 +709,16 @@ RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags
 
         memset(&pThis->Zlib, 0, sizeof(pThis->Zlib));
         pThis->Zlib.opaque  = pThis;
-        rc = inflateInit2(&pThis->Zlib,
-                          fFlags & RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR
-                          ? MAX_WBITS
-                          : MAX_WBITS + 16 /* autodetect gzip header */);
+        rc = inflateInit2(&pThis->Zlib, MAX_WBITS | RT_BIT(5) /* autodetect gzip header */);
         if (rc >= 0)
         {
             /*
              * Read the gzip header from the input stream to check that it's
              * a gzip stream as specified by the user.
              *
-             * Note!. Since we've told zlib to check for the gzip header, we
-             *        prebuffer what we read in the input buffer so it can
-             *        be handed on to zlib later on.
+             * Note! Since we've told zlib to check for the gzip header, we
+             *       prebuffer what we read in the input buffer so it can
+             *       be handed on to zlib later on.
              */
             rc = RTVfsIoStrmRead(pThis->hVfsIos, pThis->abBuffer, sizeof(RTZIPGZIPHDR), true /*fBlocking*/, NULL /*pcbRead*/);
             if (RT_SUCCESS(rc))
