@@ -573,6 +573,7 @@ static DECLCALLBACK(int) rtVfsReadAheadThreadProc(RTTHREAD hThreadSelf, void *pv
             /*
              * Got a buffer, take the I/O lock and read into it.
              */
+            rc = VERR_CALLBACK_RETURN;
             RTCritSectEnter(&pThis->IoCritSect);
             if (!pThis->fTerminateThread)
             {
