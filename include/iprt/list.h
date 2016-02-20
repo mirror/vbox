@@ -160,6 +160,28 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
     pNode->pPrev = NULL;
 }
 
+
+/**
+ * Remove a node from a list, returns value.
+ *
+ * @returns pNode
+ * @param   pNode               The node to remove.
+ */
+DECLINLINE(PRTLISTNODE) RTListNodeRemoveRet(PRTLISTNODE pNode)
+{
+    PRTLISTNODE pPrev = pNode->pPrev;
+    PRTLISTNODE pNext = pNode->pNext;
+
+    pPrev->pNext = pNext;
+    pNext->pPrev = pPrev;
+
+    /* poison */
+    pNode->pNext = NULL;
+    pNode->pPrev = NULL;
+
+    return pNode;
+}
+
 /**
  * Checks if a node is the last element in the list.
  *
@@ -245,8 +267,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 /**
  * Returns the first element in the list (checks for empty list).
  *
- * @retval  Pointer to the first list element.
- * @retval  NULL if the list is empty.
+ * @returns Pointer to the first list element, or NULL if empty list.
  *
  * @param   pList               List to get the first element from.
  * @param   Type                Structure the list node is a member of.
@@ -261,8 +282,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 /**
  * Returns the last element in the list (checks for empty list).
  *
- * @retval  Pointer to the last list element.
- * @retval  NULL if the list is empty.
+ * @returns Pointer to the last list element, or NULL if empty list.
  *
  * @param   pList               List to get the last element from.
  * @param   Type                Structure the list node is a member of.
@@ -277,7 +297,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 /**
  * Returns the next node in the list or NULL if the end has been reached.
  *
- * @returns The next node or NULL.
+ * @returns The next node, or NULL if end of list.
  *
  * @param   pList               The list @a pCurNode is linked on.
  * @param   pCurNode            The current node, of type @a Type.
@@ -293,7 +313,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 /**
  * Returns the previous node in the list or NULL if the start has been reached.
  *
- * @returns The previous node or NULL.
+ * @returns The previous node, or NULL if end of list.
  *
  * @param   pList               The list @a pCurNode is linked on.
  * @param   pCurNode            The current node, of type @a Type.
@@ -305,6 +325,72 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 /** @copydoc RTListGetPrev */
 #define RTListGetPrevCpp(pList, pCurNode, Type, Member) \
     ( (pCurNode)->Member.pPrev != (pList) ? RT_FROM_CPP_MEMBER((pCurNode)->Member.pPrev, Type, Member) : NULL )
+
+
+/**
+ * Removes and returns the first element in the list (checks for empty list).
+ *
+ * @returns Pointer to the first list element, or NULL if empty list.
+ *
+ * @param   pList               List to get the first element from.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
+ */
+#define RTListRemoveFirst(pList, Type, Member) \
+    (!RTListIsEmpty(pList) ? RT_FROM_MEMBER(RTListNodeRemoveRet((pList)->pNext), Type, Member) : NULL)
+/** @copydoc RTListRemoveFirst */
+#define RTListRemoveFirstCpp(pList, Type, Member) \
+    (!RTListIsEmpty(pList) ? RT_FROM_CPP_MEMBER(RTListNodeRemoveRet((pList)->pNext), Type, Member) : NULL)
+
+/**
+ * Removes and returns the last element in the list (checks for empty list).
+ *
+ * @returns Pointer to the last list element, or NULL if empty list.
+ *
+ * @param   pList               List to get the last element from.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
+ */
+#define RTListRemoveLast(pList, Type, Member) \
+    (!RTListIsEmpty(pList) ? RT_FROM_MEMBER(RTListNodeRemoveRet((pList)->pPrev), Type, Member) : NULL)
+/** @copydoc RTListRemoveLast */
+#define RTListRemoveLastCpp(pList, Type, Member) \
+    (!RTListIsEmpty(pList) ? RT_FROM_CPP_MEMBER(RTListNodeRemoveRet((pList)->pPrev), Type, Member) : NULL)
+
+/**
+ * Removes and returns the next node in the list or NULL if the end has been
+ * reached.
+ *
+ * @returns The next node, or NULL if end of list.
+ *
+ * @param   pList               The list @a pCurNode is linked on.
+ * @param   pCurNode            The current node, of type @a Type.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
+ */
+#define RTListRemoveNext(pList, pCurNode, Type, Member) \
+    ( (pCurNode)->Member.pNext != (pList) ? RT_FROM_MEMBER(RTListNodeRemoveRet((pCurNode)->Member.pNext), Type, Member) : NULL )
+/** @copydoc RTListRemoveNext */
+#define RTListRemoveNextCpp(pList, pCurNode, Type, Member) \
+    ( (pCurNode)->Member.pNext != (pList) ? RT_FROM_CPP_MEMBER(RTListNodeRemoveRet((pCurNode)->Member.pNext), Type, Member) : NULL )
+
+/**
+ * Removes and returns the previous node in the list or NULL if the start has
+ * been reached.
+ *
+ * @returns The previous node, or NULL if end of list.
+ *
+ * @param   pList               The list @a pCurNode is linked on.
+ * @param   pCurNode            The current node, of type @a Type.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
+ */
+#define RTListRemovePrev(pList, pCurNode, Type, Member) \
+    ( (pCurNode)->Member.pNext != (pList) ? RT_FROM_MEMBER(RTListNodeRemoveRet((pCurNode)->Member.pPrev), Type, Member) : NULL )
+/** @copydoc RTListRemovePrev */
+#define RTListRemovePrevCpp(pList, pCurNode, Type, Member) \
+    ( (pCurNode)->Member.pNext != (pList) ? RT_FROM_CPP_MEMBER(RTListNodeRemoveRet((pCurNode)->Member.pPrev), Type, Member) : NULL )
+
 
 /**
  * Enumerate the list in head to tail order.

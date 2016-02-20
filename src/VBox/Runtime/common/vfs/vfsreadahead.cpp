@@ -103,6 +103,10 @@ typedef struct RTVFSREADAHEAD
     /** The current file position from the consumer point of view. */
     uint64_t                offConsumer;
 
+    /** The end-of-file(/stream) offset.  This is initially UINT64_MAX and later
+     *  set when reading past EOF.  */
+    uint64_t                offEof;
+
     /** The read ahead thread. */
     RTTHREAD                hThread;
     /** Set when we want the thread to terminate. */
@@ -199,7 +203,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
 {
     PRTVFSREADAHEAD pThis = (PRTVFSREADAHEAD)pvThis;
 
-    Assert(pSgBuf->cSegs == 1);
+    Assert(pSgBuf->cSegs == 1); /* Caller deals with multiple SGs. */
     Assert(off < 0);
     NOREF(fBlocking);
 
@@ -208,33 +212,76 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
      * We loop here to repeat the buffer search after entering the I/O critical
      * section, just in case a buffer got inserted while we were waiting for it.
      */
-    int    rc = VINF_SUCCESS;
-    size_t cbTotalRead     = 0;
-    bool   fPokeReader     = false;
-    bool   fOwnsIoCritSect = false;
+    int      rc = VINF_SUCCESS;
+    uint8_t *pbDst           = (uint8_t *)pSgBuf->paSegs[0].pvSeg;
+    size_t   cbDst           =            pSgBuf->paSegs[0].cbSeg;
+    size_t   cbTotalRead     = 0;
+    bool     fPokeReader     = false;
+    bool     fOwnsIoCritSect = false;
     RTCritSectEnter(&pThis->BufferCritSect);
     for (;;)
     {
         /*
-         * Try satisfy the read from the buffer.
+         * Try satisfy the read from the buffers.
          */
         uint64_t offCur = pThis->offConsumer;
         if (off != -1)
         {
             offCur = (uint64_t)off;
+            if (pThis->offConsumer != offCur)
+                fPokeReader = true; /* If the current position changed, poke it in case it stopped at EOF. */
             pThis->offConsumer = offCur;
         }
 
-        PRTVFSREADAHEADBUFDESC pCurBufDesc;
-        RTListForEach(&pThis->ConsumerList, pCurBufDesc, RTVFSREADAHEADBUFDESC, ListEntry)
+        PRTVFSREADAHEADBUFDESC pBufDesc, pNextBufDesc;
+        RTListForEachSafe(&pThis->ConsumerList, pBufDesc, pNextBufDesc, RTVFSREADAHEADBUFDESC, ListEntry)
         {
-            if (pThis->offConsumer)
+            /* The buffers are sorted and reads must start in a buffer if
+               anything should be taken from the buffer (at least for now). */
+            if (offCur < pBufDesc->off)
+                break;
+
+            /* Anything we can read from this buffer? */
+            uint64_t offCurBuf = offCur - pBufDesc->off;
+            if (offCurBuf < pBufDesc->cbFilled)
             {
+                size_t const cbFromCurBuf = RT_MIN(pBufDesc->cbFilled - offCurBuf, cbDst);
+                memcpy(pbDst, pBufDesc->pbBuffer + offCurBuf, cbFromCurBuf);
+                pbDst              += cbFromCurBuf;
+                cbDst              -= cbFromCurBuf;
+                cbTotalRead        += cbFromCurBuf;
+                offCur             += cbFromCurBuf;
             }
+
+            /* Discard buffers we've read past. */
+            if (pBufDesc->off + pBufDesc->cbFilled <= offCur)
+            {
+                RTListNodeRemove(&pBufDesc->ListEntry);
+                RTListAppend(&pThis->FreeList, &pBufDesc->ListEntry);
+                fPokeReader = true; /* Poke it as there are now more buffers available. */
+            }
+
+            /* Stop if we're done. */
+            if (!cbDst)
+                break;
         }
-/** @todo EOF handling! */
-        if (pSgBuf->cbSegLeft == 0)
+
+        pThis->offConsumer = offCur;
+        if (off != -1)
+            off = offCur;
+
+        if (!cbDst)
             break;
+
+        /*
+         * Check if we've reached the end of the file/stream.
+         */
+        if (offCur >= pThis->offEof)
+        {
+            rc = pcbRead ? VINF_EOF : VERR_EOF;
+            break;
+        }
+
 
         /*
          * First time around we don't own the I/O critsect and need to take it
@@ -249,17 +296,39 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
             continue;
         }
 
+
         /*
          * Do a direct read of the remaining data.
          */
-        //size_t cbDirectRead;
-
-
+        if (off == -1)
+        {
+            RTFOFF offActual = RTVfsIoStrmTell(pThis->hIos);
+            if (offActual >= 0 && (uint64_t)offActual != offCur)
+                off = offCur;
+        }
+        RTSGSEG TmpSeg = { pbDst, cbDst };
+        RTSGBUF TmpSgBuf;
+        RTSgBufInit(&TmpSgBuf, &TmpSeg, 1);
+        size_t cbThisRead = cbDst;
+        rc = RTVfsIoStrmSgRead(pThis->hIos, off, pSgBuf, fBlocking, pcbRead ? &cbThisRead : NULL);
+        if (RT_SUCCESS(rc))
+        {
+            cbTotalRead = cbThisRead;
+            offCur     += cbThisRead;
+            pThis->offConsumer = offCur;
+            if (rc != VINF_EOF)
+                fPokeReader = true;
+            else
+                pThis->offEof = offCur;
+        }
+        /* else if (rc == VERR_EOF): hard to say where exactly the current position
+           is here as cannot have had a non-NULL pcbRead.  Set offEof later. */
+        break;
     }
     RTCritSectLeave(&pThis->BufferCritSect);
     if (fOwnsIoCritSect)
         RTCritSectLeave(&pThis->IoCritSect);
-    if (fPokeReader)
+    if (fPokeReader && rc != VINF_EOF && rc != VERR_EOF)
         RTThreadUserSignal(pThis->hThread);
 
     if (pcbRead)
@@ -486,18 +555,17 @@ static DECLCALLBACK(int) rtVfsReadAheadThreadProc(RTTHREAD hThreadSelf, void *pv
     PRTVFSREADAHEAD pThis = (PRTVFSREADAHEAD)pvUser;
     Assert(pThis);
 
-    while (pThis->fTerminateThread)
+    while (!pThis->fTerminateThread)
     {
         int rc;
 
-/** @todo EOF handling.   */
         /*
          * Is there a buffer handy for reading ahead.
          */
         PRTVFSREADAHEADBUFDESC pBufDesc = NULL;
         RTCritSectEnter(&pThis->BufferCritSect);
         if (!pThis->fTerminateThread)
-            pBufDesc = RTListGetFirst(&pThis->FreeList, RTVFSREADAHEADBUFDESC, ListEntry);
+            pBufDesc = RTListRemoveFirst(&pThis->FreeList, RTVFSREADAHEADBUFDESC, ListEntry);
         RTCritSectLeave(&pThis->BufferCritSect);
 
         if (pBufDesc)
@@ -515,6 +583,8 @@ static DECLCALLBACK(int) rtVfsReadAheadThreadProc(RTTHREAD hThreadSelf, void *pv
                 rc = RTVfsIoStrmRead(pThis->hIos, pBufDesc->pbBuffer, pThis->cbBuffer, true /*fBlocking*/, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
+                    if (rc == VINF_EOF)
+                        pThis->offEof = pBufDesc->off + cbRead;
                     pBufDesc->cbFilled = (uint32_t)cbRead;
 
                     /*
@@ -533,24 +603,47 @@ static DECLCALLBACK(int) rtVfsReadAheadThreadProc(RTTHREAD hThreadSelf, void *pv
                         if (!pAfter)
                             RTListPrepend(&pThis->ConsumerList, &pBufDesc->ListEntry);
                         else
+                        {
+                            Assert(pAfter->off <= pBufDesc->off);
                             RTListNodeInsertAfter(&pAfter->ListEntry, &pBufDesc->ListEntry);
+                        }
                     }
                     RTCritSectLeave(&pThis->BufferCritSect);
                     pBufDesc = NULL;
+
+#ifdef RT_STRICT
+                    /* Verify the list ordering.  */
+                    unsigned                cAsserted = 0;
+                    uint64_t                offAssert = 0;
+                    PRTVFSREADAHEADBUFDESC  pAssertCur;
+                    RTListForEach(&pThis->ConsumerList, pAssertCur, RTVFSREADAHEADBUFDESC, ListEntry)
+                    {
+                        Assert(offAssert <= pAssertCur->off);
+                        offAssert = pAssertCur->off;
+                        Assert(cAsserted < pThis->cBuffers);
+                        cAsserted++;
+                    }
+#endif
                 }
+                else
+                    Assert(rc != VERR_EOF);
             }
             RTCritSectLeave(&pThis->IoCritSect);
 
             /*
-             * If we succeeded, loop without delay to start processing the next buffer.
+             * If we succeeded and we didn't yet reach the end of the stream,
+             * loop without delay to start processing the next buffer.
              */
-            if (RT_LIKELY(!pBufDesc))
+            if (RT_LIKELY(!pBufDesc && rc != VINF_EOF))
                 continue;
 
-            /* On failure or termination, put the buffer back in the free list and wait. */
-            RTCritSectEnter(&pThis->BufferCritSect);
-            RTListPrepend(&pThis->FreeList, &pBufDesc->ListEntry);
-            RTCritSectLeave(&pThis->BufferCritSect);
+            /* Put any unused buffer back in the free list (termination/failure, not EOF). */
+            if (pBufDesc)
+            {
+                RTCritSectEnter(&pThis->BufferCritSect);
+                RTListPrepend(&pThis->FreeList, &pBufDesc->ListEntry);
+                RTCritSectLeave(&pThis->BufferCritSect);
+            }
             if (pThis->fTerminateThread)
                 break;
         }
@@ -608,6 +701,7 @@ static int rtVfsCreateReadAheadInstance(RTVFSIOSTREAM hVfsIosSrc, RTVFSFILE hVfs
             pThis->hIos             = hVfsIosSrc;
             pThis->cBuffers         = cBuffers;
             pThis->cbBuffer         = cbBuffer;
+            pThis->offEof           = UINT64_MAX;
             pThis->offConsumer      = RTVfsIoStrmTell(hVfsIosSrc);
             if ((RTFOFF)pThis->offConsumer >= 0)
             {

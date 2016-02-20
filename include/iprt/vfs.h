@@ -1009,6 +1009,46 @@ RTDECL(int) RTVfsMemFileCreate(RTVFSIOSTREAM hVfsIos, size_t cbEstimate, PRTVFSF
  */
 RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsIosDst, size_t cbBufHint);
 
+/**
+ * Create an I/O stream instance performing simple sequential read-ahead.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos     The input stream to perform read ahead on.  If this is
+ *                      actually for a file object, the returned I/O stream
+ *                      handle can also be cast to a file handle.
+ * @param   fFlags      Flags reserved for future use, MBZ.
+ * @param   cBuffers    How many read ahead buffers to use. Specify 0 for
+ *                      default value.
+ * @param   cbBuffers   The size of each read ahead buffer. Specify 0 for
+ *                      default value.
+ * @param   phVfsIos    Where to return the read ahead I/O stream handle.
+ *
+ * @remarks Careful using this on a message pipe or socket.  The reads are
+ *          performed in blocked mode and it may be host and/or implementation
+ *          dependent whether they will return ready data immediate or wait
+ *          until there's a whole @a cbBuffer (or default) worth ready.
+ *
+ * @sa      RTVfsCreateReadAheadForFile
+ */
+RTDECL(int) RTVfsCreateReadAheadForIoStream(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, uint32_t cBuffers, uint32_t cbBuffer,
+                                            PRTVFSIOSTREAM phVfsIos);
+
+/**
+ * Create an I/O stream instance performing simple sequential read-ahead.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFile    The input file to perform read ahead on.
+ * @param   fFlags      Flags reserved for future use, MBZ.
+ * @param   cBuffers    How many read ahead buffers to use. Specify 0 for
+ *                      default value.
+ * @param   cbBuffers   The size of each read ahead buffer. Specify 0 for
+ *                      default value.
+ * @param   phVfsIos    Where to return the read ahead I/O stream handle.
+ * @sa      RTVfsCreateReadAheadForIoStream
+ */
+RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uint32_t cBuffers, uint32_t cbBuffer,
+                                        PRTVFSFILE phVfsFile);
+
 /** @}  */
 
 

@@ -598,6 +598,7 @@ RuntimeR3_SOURCES       = \
 	common/vfs/vfsiosmisc.cpp \
 	common/vfs/vfsmemory.cpp \
 	common/vfs/vfsmisc.cpp \
+	common/vfs/vfsreadahead.cpp \
 	common/vfs/vfsstdfile.cpp \
 	common/vfs/vfsstdpipe.cpp \
 	common/zip/tar.cpp \
