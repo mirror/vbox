@@ -207,6 +207,11 @@ SUPR3HardenedStatic_SOURCES.win = \
        win/SUPHardenedVerifyProcess-win.cpp \
        win/SUPHardenedVerifyImage-win.cpp \
 	$(VBOX_SUP_WIN_CERTS_FILE)
+SUPR3HardenedStatic_SOURCES.x86 += \
+	$(VBOX_PATH_RUNTIME_SRC)/common/asm/ASMMemFirstMismatchingU8.asm
+SUPR3HardenedStatic_SOURCES.amd64 += \
+	$(VBOX_PATH_RUNTIME_SRC)/common/asm/ASMMemFirstMismatchingU8.asm
+
 
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of this move up.
  SUPR3HardenedStatic_DEFS += \
