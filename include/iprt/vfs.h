@@ -1019,7 +1019,7 @@ RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsI
  * @param   fFlags      Flags reserved for future use, MBZ.
  * @param   cBuffers    How many read ahead buffers to use. Specify 0 for
  *                      default value.
- * @param   cbBuffers   The size of each read ahead buffer. Specify 0 for
+ * @param   cbBuffer    The size of each read ahead buffer. Specify 0 for
  *                      default value.
  * @param   phVfsIos    Where to return the read ahead I/O stream handle.
  *
@@ -1041,9 +1041,9 @@ RTDECL(int) RTVfsCreateReadAheadForIoStream(RTVFSIOSTREAM hVfsIos, uint32_t fFla
  * @param   fFlags      Flags reserved for future use, MBZ.
  * @param   cBuffers    How many read ahead buffers to use. Specify 0 for
  *                      default value.
- * @param   cbBuffers   The size of each read ahead buffer. Specify 0 for
+ * @param   cbBuffer    The size of each read ahead buffer. Specify 0 for
  *                      default value.
- * @param   phVfsIos    Where to return the read ahead I/O stream handle.
+ * @param   phVfsFile   Where to return the read ahead file handle.
  * @sa      RTVfsCreateReadAheadForIoStream
  */
 RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uint32_t cBuffers, uint32_t cbBuffer,
