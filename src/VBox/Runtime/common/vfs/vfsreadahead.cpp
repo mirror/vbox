@@ -204,9 +204,6 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
     PRTVFSREADAHEAD pThis = (PRTVFSREADAHEAD)pvThis;
 
     Assert(pSgBuf->cSegs == 1); /* Caller deals with multiple SGs. */
-    Assert(off < 0);
-    NOREF(fBlocking);
-
 
     /*
      * We loop here to repeat the buffer search after entering the I/O critical
