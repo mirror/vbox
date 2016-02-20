@@ -21,6 +21,9 @@
 #include <iprt/stream.h>
 #include <iprt/initterm.h>
 #include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/buildconfig.h>
+
 #include <VBox/log.h>
 
 #ifdef RT_OS_WINDOWS
@@ -33,6 +36,21 @@
 
 #include <signal.h>
 #include <stdlib.h>
+
+
+/*
+ * Stuff that needs to be dragged into the link because other DLLs needs it.
+ * See also VBoxDeps.cpp in iprt and xpcom.
+ */
+PFNRT g_VBoxRTDeps[] =
+{
+    (PFNRT)RTAssertShouldPanic,
+    (PFNRT)ASMAtomicReadU64,
+    (PFNRT)ASMAtomicCmpXchgU64,
+    (PFNRT)ASMBitFirstSet,
+    (PFNRT)RTBldCfgRevision,
+};
+
 
 static void logMessageV(const char *pszPrefix, const char *pszFormat, va_list va)
 {
@@ -187,3 +205,4 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     return TRUE;
 }
 #endif
+
