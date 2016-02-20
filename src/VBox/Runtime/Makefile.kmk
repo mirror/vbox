@@ -1849,6 +1849,7 @@ RuntimeR0_SOURCES.x86 += \
 	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMGetXcr0.asm \
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
@@ -1863,6 +1864,7 @@ RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMGetXcr0.asm \
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
@@ -2016,11 +2018,13 @@ RuntimeR0Drv_SOURCES    = \
 	VBox/log-vbox.cpp \
 
 RuntimeR0Drv_SOURCES.amd64 = \
+	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
 	common/math/bignum-amd64-x86.asm \
 	common/math/RTUInt128MulByU64.asm
 RuntimeR0Drv_SOURCES.x86   = \
+	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
 	common/math/bignum-amd64-x86.asm
@@ -2434,6 +2438,7 @@ ifdef VBOX_WITH_RAW_MODE
  RuntimeRC_DEFS          = IN_RT_RC RT_WITH_VBOX IN_SUP_RC IN_VMM_RC
  RuntimeRC_INCS          = include
  RuntimeRC_SOURCES      := \
+	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMGetXcr0.asm \
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
