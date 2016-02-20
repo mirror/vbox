@@ -150,7 +150,7 @@ static void writeOidTree(PRAWOIDNODE pCurNode, FILE *pOut, bool fBigTable, PBLDP
                     : "    { %2u, %2u, %u, %2u, %4u, %5u }, /* "
                     ,
                     pChild->uKey,
-                    pChild->StrTabEntry.cchString,
+                    (unsigned)pChild->StrTabEntry.cchString,
                     pChild->fChildrenInBigTable,
                     pChild->cChildren,
                     pChild->idxChildren,
@@ -488,7 +488,7 @@ static RTEXITCODE loadOidFile(FILE *pIn, const char *pszFile)
 
 static RTEXITCODE usage(FILE *pOut, const char *argv0, RTEXITCODE rcExit)
 {
-    fprintf(pOut, "usage: %s <out-file.c> <oid-file> [oid-file2 [...]]\n");
+    fprintf(pOut, "usage: %s <out-file.c> <oid-file> [oid-file2 [...]]\n", argv0);
     return rcExit;
 }
 
