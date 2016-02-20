@@ -1000,10 +1000,24 @@ void Appliance::i_importCopyFile(ImportStack &stack, Utf8Str const &rstrSrcPath,
                                  const char *pszManifestEntry)
 {
     /*
-     * Just open the file (throws error) and write the destination (nothrow).
+     * Open the file (throws error) and add a read ahead thread so we can do
+     * concurrent reads (+digest) and writes.
      */
     RTVFSIOSTREAM hVfsIosSrc = i_importOpenSourceFile(stack, rstrSrcPath, pszManifestEntry);
-    HRESULT hrc = i_importCreateAndWriteDestinationFile(rstrDstPath, hVfsIosSrc, rstrSrcPath);
+    RTVFSIOSTREAM hVfsIosReadAhead;
+    int vrc = RTVfsCreateReadAheadForIoStream(hVfsIosSrc, 0 /*fFlags*/, 0 /*cBuffers=default*/, 0 /*cbBuffers=default*/,
+                                              &hVfsIosReadAhead);
+    if (RT_FAILURE(vrc))
+    {
+        RTVfsIoStrmRelease(hVfsIosSrc);
+        throw setErrorVrc(vrc, tr("Error initializing read ahead thread for '%s' (%Rrc)"), rstrSrcPath.c_str(), vrc);
+    }
+
+    /*
+     * Write the destination file (nothrow).
+     */
+    HRESULT hrc = i_importCreateAndWriteDestinationFile(rstrDstPath, hVfsIosReadAhead, rstrSrcPath);
+    RTVfsIoStrmRelease(hVfsIosReadAhead);
 
     /*
      * Before releasing the source stream, make sure we've successfully added
@@ -1039,13 +1053,21 @@ void Appliance::i_importDecompressFile(ImportStack &stack, Utf8Str const &rstrSr
      * Add a read ahead thread here.  This means reading and digest calculation
      * is done on one thread, while unpacking and writing is one on this thread.
      */
-    /** @todo read thread */
+    RTVFSIOSTREAM hVfsIosReadAhead;
+    int vrc = RTVfsCreateReadAheadForIoStream(hVfsIosSrcCompressed, 0 /*fFlags*/, 0 /*cBuffers=default*/,
+                                              0 /*cbBuffers=default*/, &hVfsIosReadAhead);
+    if (RT_FAILURE(vrc))
+    {
+        RTVfsIoStrmRelease(hVfsIosSrcCompressed);
+        throw setErrorVrc(vrc, tr("Error initializing read ahead thread for '%s' (%Rrc)"), rstrSrcPath.c_str(), vrc);
+    }
 
     /*
      * Add decompression step.
      */
     RTVFSIOSTREAM hVfsIosSrc;
-    int vrc = RTZipGzipDecompressIoStream(hVfsIosSrcCompressed, 0, &hVfsIosSrc);
+    vrc = RTZipGzipDecompressIoStream(hVfsIosReadAhead, 0, &hVfsIosSrc);
+    RTVfsIoStrmRelease(hVfsIosReadAhead);
     if (RT_FAILURE(vrc))
     {
         RTVfsIoStrmRelease(hVfsIosSrcCompressed);
@@ -2580,15 +2602,25 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     else
                         hVfsIosSrc = i_importOpenSourceFile(stack, strSrcFilePath, strSourceOVF.c_str());
 
+                    /* Add a read ahead thread to try speed things up with concurrent reads and
+                       writes going on in different threads. */
+                    RTVFSIOSTREAM hVfsIosReadAhead;
+                    vrc = RTVfsCreateReadAheadForIoStream(hVfsIosSrc, 0 /*fFlags*/, 0 /*cBuffers=default*/,
+                                                          0 /*cbBuffers=default*/, &hVfsIosReadAhead);
+                    RTVfsIoStrmRelease(hVfsIosSrc);
+                    if (RT_FAILURE(vrc))
+                        throw setErrorVrc(vrc, tr("Error initializing read ahead thread for '%s' (%Rrc)"),
+                                          strSrcFilePath.c_str(), vrc);
+
                     /* Start the source image cloning operation. */
                     ComObjPtr<Medium> nullParent;
                     rc = pTargetHD->i_importFile(strSrcFilePath.c_str(),
                                                  srcFormat,
                                                  MediumVariant_Standard,
-                                                 hVfsIosSrc,
+                                                 hVfsIosReadAhead,
                                                  nullParent,
                                                  pProgress);
-                    RTVfsIoStrmRelease(hVfsIosSrc);
+                    RTVfsIoStrmRelease(hVfsIosReadAhead);
                     hVfsIosSrc = NIL_RTVFSIOSTREAM;
                     if (FAILED(rc))
                         throw rc;
