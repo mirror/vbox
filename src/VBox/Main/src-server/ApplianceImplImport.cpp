@@ -1025,7 +1025,7 @@ void Appliance::i_importCopyFile(ImportStack &stack, Utf8Str const &rstrSrcPath,
      */
     if (SUCCEEDED(hrc) && m->fDigestTypes)
     {
-        int vrc = RTManifestPtIosAddEntryNow(hVfsIosSrc);
+        vrc = RTManifestPtIosAddEntryNow(hVfsIosSrc);
         if (RT_FAILURE(vrc))
             hrc = setErrorVrc(vrc, tr("RTManifestPtIosAddEntryNow failed with %Rrc"), vrc);
     }
