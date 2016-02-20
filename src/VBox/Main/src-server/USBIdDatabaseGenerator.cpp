@@ -272,14 +272,14 @@ static void WriteSourceFile(FILE *pOut, const char *argv0, PBLDPROGSTRTAB pStrTa
           "USBIDDBPROD const USBIdDatabase::s_aProducts[] =\n"
           "{\n", pOut);
     for (ProductsSet::iterator itp = g_products.begin(); itp != g_products.end(); ++itp)
-        fprintf(pOut, "    { 0x%04x },\n", itp->productID);
+        fprintf(pOut, "    { 0x%04x },\n", (unsigned)itp->productID);
     fputs("};\n"
           "\n"
           "\n"
           "const RTBLDPROGSTRREF USBIdDatabase::s_aProductNames[] =\n"
           "{\n", pOut);
     for (ProductsSet::iterator itp = g_products.begin(); itp != g_products.end(); ++itp)
-        fprintf(pOut, "{ 0x%06x, 0x%02x },\n", itp->StrRef.offStrTab, itp->StrRef.cchString);
+        fprintf(pOut, "{ 0x%06x, 0x%02x },\n", itp->StrRef.offStrTab, (unsigned)itp->StrRef.cchString);
     fputs("};\n"
           "\n"
           "const size_t USBIdDatabase::s_cProducts = RT_ELEMENTS(USBIdDatabase::s_aProducts);\n"
@@ -288,14 +288,14 @@ static void WriteSourceFile(FILE *pOut, const char *argv0, PBLDPROGSTRTAB pStrTa
     fputs("USBIDDBVENDOR const USBIdDatabase::s_aVendors[] =\n"
           "{\n", pOut);
     for (VendorsSet::iterator itv = g_vendors.begin(); itv != g_vendors.end(); ++itv)
-        fprintf(pOut, "    { 0x%04x, 0x%04x, 0x%04x },\n", itv->vendorID, itv->iProduct, itv->cProducts);
+        fprintf(pOut, "    { 0x%04x, 0x%04x, 0x%04x },\n", (unsigned)itv->vendorID, (unsigned)itv->iProduct, (unsigned)itv->cProducts);
     fputs("};\n"
           "\n"
           "\n"
           "const RTBLDPROGSTRREF USBIdDatabase::s_aVendorNames[] =\n"
           "{\n", pOut);
     for (VendorsSet::iterator itv = g_vendors.begin(); itv != g_vendors.end(); ++itv)
-        fprintf(pOut, "{ 0x%06x, 0x%02x },\n", itv->StrRef.offStrTab, itv->StrRef.cchString);
+        fprintf(pOut, "{ 0x%06x, 0x%02x },\n", itv->StrRef.offStrTab, (unsigned)itv->StrRef.cchString);
     fputs("};\n"
           "\n"
           "const size_t USBIdDatabase::s_cVendors = RT_ELEMENTS(USBIdDatabase::s_aVendors);\n"
