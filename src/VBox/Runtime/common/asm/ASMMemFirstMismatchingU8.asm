@@ -166,10 +166,11 @@ SEH64_END_PROLOGUE
         ; Do the dword/qword scan.
         mov     edx, xCB - 1
         and     edx, ecx                ; Remaining bytes for tail scan
-        shr     xCX, 3
  %if ARCH_BITS == 64
+        shr     xCX, 3
         repe scasq
  %else
+        shr     xCX, 2
         repe scasd
  %endif
         jne     .multibyte_mismatch
