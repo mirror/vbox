@@ -13,6 +13,7 @@ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 """
 
 import os,sys
+from distutils.version import StrictVersion
 
 versions = ["2.6", "2.7", "3.1", "3.2", "3.3", "3.4", "3.5"]
 prefixes = ["/usr", "/usr/local", "/opt", "/opt/local"]
@@ -90,6 +91,8 @@ def main(argv):
         bitness_magic = 2
 
     for v in versions:
+        if StrictVersion(v) < StrictVersion('2.6'):
+            continue
         for p in prefixes:
             c = checkPair(p, v, dllpre, dllsuff, bitness_magic)
             if c is not None:
