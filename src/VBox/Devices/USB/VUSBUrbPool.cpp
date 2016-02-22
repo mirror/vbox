@@ -196,7 +196,7 @@ DECLHIDDEN(PVUSBURB) vusbUrbPoolAlloc(PVUSBURBPOOL pUrbPool, VUSBXFERTYPE enmTyp
     pUrb->pVUsb->pfnFree         = NULL;
     pUrb->pVUsb->pCtrlUrb        = NULL;
     pUrb->pVUsb->u64SubmitTS     = 0;
-    pUrb->pVUsb->pvReadAhead     = NULL;
+    pUrb->pVUsb->pvBuffered      = NULL;
     pUrb->Dev.pvPrivate          = NULL;
     pUrb->Dev.pNext              = NULL;
     pUrb->EndPt                  = ~0;

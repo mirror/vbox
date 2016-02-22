@@ -1121,6 +1121,7 @@ int vusbUrbSubmit(PVUSBURB pUrb)
         case VUSBDIRECTION_OUT:
         default:
             pEndPtDesc = pDev->aPipes[pUrb->EndPt].out;
+            pPipe = &pDev->aPipes[pUrb->EndPt];
             break;
     }
     if (!pEndPtDesc)
@@ -1155,9 +1156,9 @@ int vusbUrbSubmit(PVUSBURB pUrb)
     }
 
 #ifdef VBOX_WITH_USB
-    if (pPipe && pPipe->hReadAhead)
+    if (pPipe && pPipe->hBuffer)
     {
-        rc = vusbUrbSubmitBufferedRead(pUrb, pPipe->hReadAhead);
+        rc = vusbBufferedPipeSubmitUrb(pPipe->hBuffer, pUrb);
         return rc;
     }
 #endif
@@ -1306,8 +1307,8 @@ static void vusbUrbCompletion(PVUSBURB pUrb)
         vusbUrbUnlink(pUrb);
 #ifdef VBOX_WITH_USB
     // Read-ahead URBs are handled differently
-    if (pUrb->pVUsb->pvReadAhead)
-        vusbUrbCompletionReadAhead(pUrb);
+    if (pUrb->pVUsb->pvBuffered)
+        vusbBufferedPipeCompleteUrb(pUrb);
     else
 #endif
         vusbUrbCompletionRh(pUrb);

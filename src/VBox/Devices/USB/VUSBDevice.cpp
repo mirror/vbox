@@ -136,20 +136,23 @@ void vusbDevMapEndpoint(PVUSBDEV pDev, PCVUSBDESCENDPOINTEX pEndPtDesc)
     {
         Log(("vusb: map input pipe on address %u\n", i8Addr));
         pPipe->in = pEndPtDesc;
-
-        ///@todo: This is currently utterly broken and causes untold damage.
-#if 0 //defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
-        /*
-         * For high-speed isochronous input endpoints, spin off a read-ahead buffering thread.
-         */
-        if ((pEndPtDesc->Core.bmAttributes & 0x03) == 1)
-            pPipe->hReadAhead = vusbReadAheadStart(pDev, pPipe);
-#endif
     }
     else
     {
         Log(("vusb: map output pipe on address %u\n", i8Addr));
         pPipe->out = pEndPtDesc;
+
+#if 0
+        if ((pEndPtDesc->Core.bmAttributes & 0x03) == 1)
+        {
+            int rc = vusbBufferedPipeCreate(pDev, pPipe, VUSBDIRECTION_OUT, pDev->pUsbIns->enmSpeed,
+                                            32 /* cLatencyMs*/, &pPipe->hBuffer);
+            if (RT_SUCCESS(rc))
+                LogRel(("VUSB: Created a buffered pipe for isochronous output endpoint\n"));
+            else
+                LogRel(("VUSB: Failed to create a buffered pipe for isochronous output endpoint with rc=%Rrc\n", rc));
+        }
+#endif
     }
 
     if (pPipe->pCtrl)
@@ -178,18 +181,24 @@ static void unmap_endpoint(PVUSBDEV pDev, PCVUSBDESCENDPOINTEX pEndPtDesc)
         Log(("vusb: unmap IN pipe from address %u (%#x)\n", EndPt, pEndPtDesc->Core.bEndpointAddress));
         pPipe->in = NULL;
 
-        /* If there was a read-ahead thread associated with this endpoint, tell it to go away. */
-        if (pPipe->hReadAhead)
+        /* Terminate the pipe buffer if created. */
+        if (pPipe->hBuffer)
         {
-            Log(("vusb: and tell read-ahead thread for the endpoint to terminate\n"));
-            vusbReadAheadStop(pPipe->hReadAhead);
-            pPipe->hReadAhead = NULL;
+            vusbBufferedPipeDestroy(pPipe->hBuffer);
+            pPipe->hBuffer = NULL;
         }
     }
     else
     {
         Log(("vusb: unmap OUT pipe from address %u (%#x)\n", EndPt, pEndPtDesc->Core.bEndpointAddress));
         pPipe->out = NULL;
+
+        /* Terminate the pipe buffer if created. */
+        if (pPipe->hBuffer)
+        {
+            vusbBufferedPipeDestroy(pPipe->hBuffer);
+            pPipe->hBuffer = NULL;
+        }
     }
 
     if (pPipe->pCtrl)
@@ -227,10 +236,10 @@ static void vusbDevResetPipeData(PVUSBPIPE pPipe)
     vusbMsgFreeExtraData(pPipe->pCtrl);
     pPipe->pCtrl = NULL;
 
-    if (pPipe->hReadAhead)
+    if (pPipe->hBuffer)
     {
-        vusbReadAheadStop(pPipe->hReadAhead);
-        pPipe->hReadAhead = NULL;
+        vusbBufferedPipeDestroy(pPipe->hBuffer);
+        pPipe->hBuffer = NULL;
     }
 
     RT_ZERO(pPipe->in);
@@ -1132,7 +1141,7 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
  * @param   fDetaching  If set, we will unconditionally unlink (and leak)
  *                      any URBs which isn't reaped.
  */
-static void vusbDevCancelAllUrbs(PVUSBDEV pDev, bool fDetaching)
+DECLHIDDEN(void) vusbDevCancelAllUrbs(PVUSBDEV pDev, bool fDetaching)
 {
     int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)vusbDevCancelAllUrbsWorker, 2, pDev, fDetaching);
     AssertRC(rc);

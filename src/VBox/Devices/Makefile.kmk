@@ -392,8 +392,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_SOURCES        += \
  	USB/DevOHCI.cpp \
  	USB/DrvVUSBRootHub.cpp \
+ 	USB/VUSBBufferedPipe.cpp \
  	USB/VUSBDevice.cpp \
- 	USB/VUSBReadAhead.cpp \
  	USB/VUSBSniffer.cpp \
  	USB/VUSBSnifferPcapNg.cpp \
  	USB/VUSBSnifferUsbMon.cpp \
