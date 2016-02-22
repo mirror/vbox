@@ -45,7 +45,7 @@ VBOX_C_YEAR=`date +%Y`
 
 . $PATH_VBOXGUEST/linux/files_vboxguest
 . $PATH_VBOXSF/files_vboxsf
-. $PATH_VBOXVIDEO/files_vboxvideo_drm
+. $PATH_VBOXVIDEO/files_vboxvideo_drv
 
 # Temporary path for creating the modules, will be removed later
 mkdir $PATH_TMP || exit 1

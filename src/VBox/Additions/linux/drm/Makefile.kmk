@@ -18,17 +18,11 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-VBOX_WITH_GUEST_KMS_DRIVER = 1
-
 #
 # Populate FILES_VBOXVIDEO_DRM_NOBIN
 #
 INSTALLS += vboxvideo_drm-mod
-if !defined(VBOX_WITH_GUEST_KMS_DRIVER)
- include $(PATH_SUB_CURRENT)/files_vboxvideo_drm
-else
- include $(PATH_SUB_CURRENT)/files_vboxvideo_drv
-endif
+include $(PATH_SUB_CURRENT)/files_vboxvideo_drv
 vboxvideo_drm-mod_INST         = $(INST_ADDITIONS)src/vboxvideo/
 vboxvideo_drm-mod_SOURCES      = \
 	$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_NOBIN))
@@ -44,14 +38,8 @@ vboxvideo_drm-mod_EXEC_SOURCES = \
 # Note! The DEBUG_HASH* stuff is for CONFIG_DYNAMIC_DEBUG-enabled kernels.
 #
 if defined(VBOX_WITH_ADDITION_DRIVERS)
- if !defined(VBOX_WITH_GUEST_KMS_DRIVER)
-  if "$(strip $(foreach inc,$(VBOX_LINUX_INCS),$(wildcard $(inc)/drm/drmP.h)))" != ""
-   SYSMODS += vboxvideo_drm
-  endif
- else
-  if "$(shell grep -s 'DRM_IOCTL_MODE_CURSOR2' $(foreach inc,$(VBOX_LINUX_INCS),$(inc)/uapi/drm/drm.h))" != ""
-   SYSMODS += vboxvideo_drm
-  endif
+ if "$(shell grep -s 'DRM_IOCTL_MODE_CURSOR2' $(foreach inc,$(VBOX_LINUX_INCS),$(inc)/uapi/drm/drm.h))" != ""
+  SYSMODS += vboxvideo_drm
  endif
 endif
 
@@ -62,26 +50,22 @@ vboxvideo_drm_DEFS            = \
 	KBUILD_MODNAME=KBUILD_STR\(vboxvideo\) \
 	KBUILD_BASENAME=KBUILD_STR\(vboxvideo\) \
 	DEBUG_HASH=2 DEBUG_HASH2=3
-if !defined(VBOX_WITH_GUEST_KMS_DRIVER)
- vboxvideo_drm_SOURCES         = vboxvideo_drm.c
-else
- vboxvideo_drm_INCS           += \
-   ../../../Runtime/include \
-   ../../../Runtime/r0drv/linux
- vboxvideo_drm_SOURCES         = \
-   ../../common/VBoxVideo/HGSMIBase.cpp \
-   ../../common/VBoxVideo/Modesetting.cpp \
-   ../../common/VBoxVideo/VBVABase.cpp \
-   ../../../GuestHost/HGSMI/HGSMICommon.cpp \
-   ../../../GuestHost/HGSMI/HGSMIMemAlloc.cpp \
-   ../../../Runtime/common/alloc/heapoffset.cpp \
- 	vbox_drv.c \
- 	vbox_fb.c \
- 	vbox_irq.c \
- 	vbox_main.c \
- 	vbox_mode.c \
- 	vbox_ttm.c
-endif
+vboxvideo_drm_INCS           += \
+  ../../../Runtime/include \
+  ../../../Runtime/r0drv/linux
+vboxvideo_drm_SOURCES         = \
+  ../../common/VBoxVideo/HGSMIBase.cpp \
+  ../../common/VBoxVideo/Modesetting.cpp \
+  ../../common/VBoxVideo/VBVABase.cpp \
+  ../../../GuestHost/HGSMI/HGSMICommon.cpp \
+  ../../../GuestHost/HGSMI/HGSMIMemAlloc.cpp \
+  ../../../Runtime/common/alloc/heapoffset.cpp \
+	vbox_drv.c \
+	vbox_fb.c \
+	vbox_irq.c \
+	vbox_main.c \
+	vbox_mode.c \
+	vbox_ttm.c
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
