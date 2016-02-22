@@ -1089,7 +1089,8 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
                 AssertMsgFailed(("pUrb=%p enmState=%d\n", pUrb, pUrb->enmState));
             if (pRipe)
             {
-                if (pRipe == pNext->pUrb)
+                if (   pNext
+                    && pRipe == pNext->pUrb)
                     pNext = RTListGetNext(&pDev->LstAsyncUrbs, pNext, VUSBURBVUSBINT, NdLst);
                 vusbUrbRipe(pRipe);
                 cReaped++;
