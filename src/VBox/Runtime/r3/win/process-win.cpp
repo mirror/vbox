@@ -37,12 +37,12 @@
 #include <process.h>
 #include <errno.h>
 #include <Strsafe.h>
-#ifndef TARGET_NT4
+#ifndef IPRT_TARGET_NT4
 # include <LsaLookup.h>
 #endif
 #include <Lmcons.h>
 
-#ifndef TARGET_NT4
+#ifndef IPRT_TARGET_NT4
 # define _NTDEF_ /* Prevents redefining (P)UNICODE_STRING. */
 # include <Ntsecapi.h>
 #endif
@@ -1433,7 +1433,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
             {
                 dwErr = GetLastError();
 
-#ifndef TARGET_NT4
+#ifndef IPRT_TARGET_NT4
                 /*
                  * The errors ERROR_TRUSTED_DOMAIN_FAILURE and ERROR_TRUSTED_RELATIONSHIP_FAILURE
                  * can happen if an ADC (Active Domain Controller) is offline or not reachable.
@@ -1527,7 +1527,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                     /* Note: pSid will be free'd down below. */
                 }
                 else
-#endif /* !TARGET_NT4 */
+#endif /* !IPRT_TARGET_NT4 */
                 if (dwErr == ERROR_INSUFFICIENT_BUFFER)
                 {
                     /* Allocate memory for the LookupAccountNameW output buffers and do it for real. */
