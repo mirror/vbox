@@ -20,6 +20,8 @@
 #include "biosint.h"
 #include "inlines.h"
 
+//#define EMU_386_LOADALL
+
 /* The layout of 286 LOADALL descriptors. */
 typedef struct tag_ldall_desc {
     uint16_t    base_lo;        /* Bits 0-15 of segment base. */
@@ -61,6 +63,54 @@ typedef struct tag_ldall_286 {
     ldall_desc  tss_desc;       /* 860h */
 } ldall_286_s;
 ct_assert(sizeof(ldall_286_s) == 0x66);
+
+#ifdef EMU_386_LOADALL
+
+/* The layout of 386 LOADALL descriptors. */
+typedef struct tag_ldal3_desc {
+    uint32_t    attr;           /* Segment attributes. */
+    uint32_t    base;           /* Expanded segment base. */
+    uint32_t    limit;          /* Expanded segment limit. */
+} ldal3_desc;
+
+/* The 386 LOADALL memory buffer pointed to by ES:EDI.
+ */
+typedef struct tag_ldall_386 {
+    uint32_t    cr0;            /* 00h */
+    uint32_t    eflags;         /* 04h */
+    uint32_t    eip;            /* 08h */
+    uint32_t    edi;            /* 0Ch */
+    uint32_t    esi;            /* 10h */
+    uint32_t    ebp;            /* 14h */
+    uint32_t    esp;            /* 18h */
+    uint32_t    ebx;            /* 1Ch */
+    uint32_t    edx;            /* 20h */
+    uint32_t    ecx;            /* 24h */
+    uint32_t    eax;            /* 28h */
+    uint32_t    dr6;            /* 2Ch */
+    uint32_t    dr7;            /* 30h */
+    uint32_t    tr;             /* 34h */
+    uint32_t    ldt;            /* 38h */
+    uint32_t    gs;             /* 3Ch */
+    uint32_t    fs;             /* 40h */
+    uint32_t    ds;             /* 44h */
+    uint32_t    ss;             /* 4Ch */
+    uint32_t    cs;             /* 48h */
+    uint32_t    es;             /* 50h */
+    ldal3_desc  tss_desc;       /* 54h */
+    ldal3_desc  idt_desc;       /* 60h */
+    ldal3_desc  gdt_desc;       /* 6Ch */
+    ldal3_desc  ldt_desc;       /* 78h */
+    ldal3_desc  gs_desc;        /* 84h */
+    ldal3_desc  fs_desc;        /* 90h */
+    ldal3_desc  ds_desc;        /* 9Ch */
+    ldal3_desc  ss_desc;        /* A8h */
+    ldal3_desc  cs_desc;        /* B4h */
+    ldal3_desc  es_desc;        /* C0h */
+} ldall_386_s;
+ct_assert(sizeof(ldall_386_s) == 0xCC);
+
+#endif
 
 /*
  * LOADALL emulation assumptions:
@@ -145,6 +195,33 @@ void ldall_finish(void);
     "iret"                  \
     parm nomemory modify nomemory aborts;
 
+#ifdef EMU_386_LOADALL
+
+/* 386 version of the above. */
+void ldal3_finish(void);
+#pragma aux ldal3_finish =  \
+    ".386"                  \
+    "mov sp, 28h"           \
+    "popad"                 \
+    "mov sp, ss:[18h]"      \
+    "sub sp, 6"             \
+    "mov ss, ss:[48h]"      \
+    "iret"                  \
+    parm nomemory modify nomemory aborts;
+
+/* 386 version of load_rm_segs.
+ * NB: Must not touch CX!
+ */
+void load_rm_seg3(int seg_flags, uint16_t ss_base);
+#pragma aux load_rm_seg3 =  \
+    "mov ss, ax"            \
+    "mov ax, ss:[44h]"      \
+    "mov ds, ax"            \
+    "mov ax, ss:[50h]"      \
+    "mov es, ax"            \
+    parm [ax] [cx] nomemory modify nomemory;
+
+#endif
 
 #define LOAD_ES     0x01    /* ES needs to be loaded in protected mode. */
 #define LOAD_DS     0x02    /* DS needs to be loaded in protected mode. */
@@ -212,6 +289,57 @@ void BIOSCALL inv_op_handler(uint16_t ds, uint16_t es, pusha_regs_t gr, volatile
         load_rm_segs(seg_flags);
         load_pm_segs();
         ldall_finish();
+#ifdef EMU_386_LOADALL
+    } else if (*(uint16_t __far *)ins == 0x070F) {
+        /* 386 LOADALL. NB: Same opcode as SYSRET. */
+        ldall_386_s __far   *ldbuf = (void __far *)es :> gr.u.r16.di;   /* Assume 16-bit value in EDI. */
+        ldall_286_s __far   *ldbuf2 = 0 :> 0x800;
+        iret_addr_t __far   *ret_addr;
+        uint32_t            seg_base;
+        int                 seg_flags = 0;
+
+        /* NB: BIG FAT ASSUMPTION! Users of 386 LOADALL are assumed to also
+         * have a 286 LOADALL buffer at physical address 800h. We use unused fields
+         * in that buffer for temporary storage.
+         */
+
+        /* Set up return stack. */
+        ret_addr = ldbuf->ss :> (ldbuf->esp - sizeof(iret_addr_t));
+        ret_addr->ip = ldbuf->eip;
+        ret_addr->cs = ldbuf->cs;
+        ret_addr->flags.u.r16.flags = ldbuf->eflags;
+
+        /* Examine ES/DS. */
+        seg_base = ldbuf->es_desc.base;
+        if (seg_base != (uint32_t)ldbuf->es << 4)
+            seg_flags |= LOAD_ES;
+        seg_base = ldbuf->ds_desc.base;
+        if (seg_base != (uint32_t)ldbuf->ds << 4)
+            seg_flags |= LOAD_DS;
+
+        /* The LOADALL buffer doubles as a tiny GDT. */
+        load_gdtr(0x800, 4 * 8 - 1);
+
+        /* Store the ES base/limit/attributes in the unused words (GDT selector 8). */
+        ldbuf2->unused2[0] = ldbuf->es_desc.limit;
+        ldbuf2->unused2[1] = (uint16_t)ldbuf->es_desc.base;
+        ldbuf2->unused2[2] = (ldbuf->es_desc.attr & 0xFF00) | (ldbuf->es_desc.base >> 16);
+        ldbuf2->unused2[3] = 0;
+
+        /* Store the DS base/limit/attributes in other unused words. */
+        ldbuf2->unused1[0] = ldbuf->ds_desc.limit;
+        ldbuf2->unused1[1] = (uint16_t)ldbuf->ds_desc.base;
+        ldbuf2->unused1[2] = (ldbuf->ds_desc.attr & 0xFF00) | (ldbuf->ds_desc.base >> 16);
+
+        /* Load the IDTR as specified. */
+        seg_base = ldbuf->idt_desc.base;
+        load_idtr(seg_base, ldbuf->idt_desc.limit);
+
+        /* Do the tricky bits now. */
+        load_rm_seg3(es, seg_flags);
+        load_pm_segs();
+        ldal3_finish();
+#endif
     } else {
         /* There isn't much point in executing the invalid opcode handler
          * in an endless loop, so halt right here.
