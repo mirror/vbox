@@ -3567,7 +3567,7 @@ def main(argv):
                     sPath = sCurLoc
                     break
         if sPath:
-            sTmp = os.path.join(sCurLoc, 'bindings', 'xpcom', 'python', 'xpcom')
+            sTmp = os.path.join(sCurLoc, 'bindings', 'xpcom', 'python')
             if os.path.isdir(sTmp):
                 sys.path.append(sTmp)
             del sTmp

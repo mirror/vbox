@@ -37,7 +37,7 @@
 
 # The xpcom.server package.
 
-from server.policy import DefaultPolicy
+from xpcom.server.policy import DefaultPolicy
 from xpcom import _xpcom
 
 # We define the concept of a single "tracer" object - similar to the single
