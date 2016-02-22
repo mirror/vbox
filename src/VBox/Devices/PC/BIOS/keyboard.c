@@ -507,6 +507,20 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
         }
         break;
 
+    case 0x54: /* SysRq press */
+        if (!(mf2_flags & 0x04)) {  /* If not already down */
+            mf2_flags |= 0x04;
+            write_byte(0x0040, 0x18, mf2_flags);
+            //@todo: EOI/enable kbd/enable interrupts/call INT 15h/8500h
+        }
+        break;
+
+    case 0xd4: /* SysRq release */
+        mf2_flags &= ~0x04;
+        write_byte(0x0040, 0x18, mf2_flags);
+        //@todo: EOI/enable kbd/enable interrupts/call INT 15h/8501h
+        break;
+
     case 0x53: /* Del press */
         if ((shift_flags & 0x0c) == 0x0c) {
             /* Indicate a warm boot. */
