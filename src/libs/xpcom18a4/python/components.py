@@ -36,13 +36,13 @@
 # ***** END LICENSE BLOCK *****
 
 # This module provides the JavaScript "components" interface
-import xpt
-import xpcom, _xpcom
+from . import xpt
+import xpcom
+import xpcom._xpcom as _xpcom
 import xpcom.client
 import xpcom.server
-import types
 
-StringTypes = [types.StringType, types.UnicodeType]
+StringTypes = [bytes, str]
 
 def _get_good_iid(iid):
     if iid is None:
@@ -78,19 +78,19 @@ class _ComponentCollection:
     def keys(self):
         if self._dict_data is None:
             self._dict_data = self._build_dict()
-        return self._dict_data.keys()
+        return list(self._dict_data.keys())
     def items(self):
         if self._dict_data is None:
             self._dict_data = self._build_dict()
-        return self._dict_data.items()
+        return list(self._dict_data.items())
     def values(self):
         if self._dict_data is None:
             self._dict_data = self._build_dict()
-        return self._dict_data.values()
-    def has_key(self, key):
-        if self._dict_data is None:
-            self._dict_data = self._build_dict()
-        return self._dict_data.has_key(key)
+        return list(self._dict_data.values())
+#    def has_key(self, key):
+#        if self._dict_data is None:
+#            self._dict_data = self._build_dict()
+#        return self._dict_data.has_key(key)
 
     def __len__(self):
         if self._dict_data is None:
@@ -98,11 +98,11 @@ class _ComponentCollection:
         return len(self._dict_data)
 
     def __getattr__(self, attr):
-        if self._dict_data is not None and self._dict_data.has_key(attr):
+        if self._dict_data is not None and attr in self._dict_data:
             return self._dict_data[attr]
         return self._get_one(attr)
     def __getitem__(self, item):
-        if self._dict_data is not None and self._dict_data.has_key(item):
+        if self._dict_data is not None and item in self._dict_data:
             return self._dict_data[item]
         return self._get_one(item)
 
@@ -119,16 +119,20 @@ class _Interface:
         this_iid = self._iidobj_
         other_iid = getattr(other, "_iidobj_", other)
         return cmp(this_iid, other_iid)
+    def __eq__(self, other):
+        this_iid = self._iidobj_
+        other_iid = getattr(other, "_iidobj_", other)
+        return this_iid == other_iid
     def __hash__(self):
         return hash(self._iidobj_)
     def __str__(self):
         return str(self._iidobj_)
     def __getitem__(self, item):
-        raise TypeError, "components.interface objects are not subscriptable"
+        raise TypeError("components.interface objects are not subscriptable")
     def __setitem__(self, item, value):
-        raise TypeError, "components.interface objects are not subscriptable"
+        raise TypeError("components.interface objects are not subscriptable")
     def __setattr__(self, attr, value):
-        raise AttributeError, "Can not set attributes on components.Interface objects"
+        raise AttributeError("Can not set attributes on components.Interface objects")
     def __getattr__(self, attr):
         # Support constants as attributes.
         c = _constants_by_iid_map.get(self._iidobj_)
@@ -138,18 +142,18 @@ class _Interface:
             for c_ob in i.constants:
                 c[c_ob.name] = c_ob.value
             _constants_by_iid_map[self._iidobj_] = c
-        if c.has_key(attr):
+        if attr in c:
             return c[attr]
-        raise AttributeError, "'%s' interfaces do not define a constant '%s'" % (self.name, attr)
+        raise AttributeError("'%s' interfaces do not define a constant '%s'" % (self.name, attr))
 
 
 class _Interfaces(_ComponentCollection):
     def _get_one(self, name):
         try:
             item = interfaceInfoManager.GetInfoForName(name)
-        except xpcom.COMException, why:
+        except xpcom.COMException as why:
             # Present a better exception message, and give a more useful error code.
-            import nsError
+            from . import nsError
             raise xpcom.COMException(nsError.NS_ERROR_NO_INTERFACE, "The interface '%s' does not exist" % (name,))
         return _Interface(item.GetName(), item.GetIID())
 
@@ -179,13 +183,13 @@ class _Class:
             # stash it away - it can never change!
             self.clsid = rc
             return rc
-        raise AttributeError, "%s class has no attribute '%s'" % (self.contractid, attr)
+        raise AttributeError("%s class has no attribute '%s'" % (self.contractid, attr))
     def createInstance(self, iid = None):
         import xpcom.client
         try:
             return xpcom.client.Component(self.contractid, _get_good_iid(iid))
-        except xpcom.COMException, details:
-            import nsError
+        except xpcom.COMException as details:
+            from . import nsError
             # Handle "no such component" in a cleaner way for the user.
             if details.errno == nsError.NS_ERROR_FACTORY_NOT_REGISTERED:
                 raise xpcom.COMException(details.errno, "No such component '%s'" % (self.contractid,))
@@ -218,7 +222,7 @@ del _Classes
 del _ComponentCollection
 
 # The ID function
-ID = _xpcom.IID
+ID = _xpcom.ID
 
 # A helper to cleanup our namespace as xpcom shuts down.
 class _ShutdownObserver:

@@ -195,7 +195,7 @@ void PyXPCOM_DLLAddRef(void)
 	// Must be thread-safe, although cant have the Python lock!
 	CEnterLeaveXPCOMFramework _celf;
 	PRInt32 cnt = PR_AtomicIncrement(&g_cLockCount);
-	if (cnt==1) { // First call 
+	if (cnt==1) { // First call
 		if (!Py_IsInitialized()) {
 			Py_Initialize();
 			// Make sure our Windows framework is all setup.
@@ -203,7 +203,11 @@ void PyXPCOM_DLLAddRef(void)
 			// Make sure we have _something_ as sys.argv.
 			if (PySys_GetObject((char*)"argv")==NULL) {
 				PyObject *path = PyList_New(0);
+#if PY_MAJOR_VERSION <= 2
 				PyObject *str = PyString_FromString("");
+#else
+				PyObject *str = PyUnicode_FromString("");
+#endif
 				PyList_Append(path, str);
 				PySys_SetObject((char*)"argv", path);
 				Py_XDECREF(path);
@@ -245,7 +249,7 @@ void pyxpcom_destruct(void)
 {
 	PR_DestroyLock(g_lockMain);
 #ifndef PYXPCOM_USE_PYGILSTATE
-	// I can't locate a way to kill this - 
+	// I can't locate a way to kill this -
 	// should I pass a dtor to PR_NewThreadPrivateIndex??
 	// TlsFree(tlsIndex);
 #endif // PYXPCOM_USE_PYGILSTATE
@@ -329,7 +333,7 @@ PRBool PyXPCOM_Globals_Ensure()
 		// Even if xpcom was already init, we want to flag it as init!
 		bHaveInitXPCOM = PR_TRUE;
 		// Register our custom interfaces.
-	
+
 		Py_nsISupports::InitType();
 		Py_nsIComponentManager::InitType();
 		Py_nsIInterfaceInfoManager::InitType();
@@ -341,7 +345,7 @@ PRBool PyXPCOM_Globals_Ensure()
 		Py_nsIVariant::InitType();
 		// for backward compatibility:
 		Py_nsIComponentManagerObsolete::InitType();
-		
+
 	}
 	return rc;
 }

@@ -74,7 +74,11 @@ static PyObject *PyGetName(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS;
 	if ( NS_FAILED(r) )
 		return PyXPCOM_BuildPyException(r);
+#if PY_MAJOR_VERSION <= 2
 	PyObject *ret = PyString_FromString(name);
+#else
+	PyObject *ret = PyUnicode_FromString(name);
+#endif
 	nsMemory::Free(name);
 	return ret;
 }
@@ -392,7 +396,7 @@ static PyObject *PyGetInterfaceIsArgNumberForParam(PyObject *self, PyObject *arg
 	return PyInt_FromLong(ret);
 }
 
-struct PyMethodDef 
+struct PyMethodDef
 PyMethods_IInterfaceInfo[] =
 {
 	{ "GetName", PyGetName, 1},

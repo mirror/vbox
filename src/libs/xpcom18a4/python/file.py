@@ -155,7 +155,7 @@ class URIFile(_File):
     def init(self, url, mode="r"):
         self.close()
         if mode != "r":
-            raise ValueError, "only 'r' mode supported'"
+            raise ValueError("only 'r' mode supported")
         io_service = components.classes["@mozilla.org/network/io-service;1"] \
                         .getService(components.interfaces.nsIIOService)
         if hasattr(url, "queryInterface"):
@@ -164,7 +164,7 @@ class URIFile(_File):
             url_ob = io_service.newURI(url, None, None)
         # Mozilla asserts and starts saying "NULL POINTER" if this is wrong!
         if not url_ob.scheme:
-            raise ValueError, ("The URI '%s' is invalid (no scheme)" 
+            raise ValueError("The URI '%s' is invalid (no scheme)" 
                                   % (url_ob.spec,))
         self.channel = io_service.newChannelFromURI(url_ob)
         self.inputStream = self.channel.open()
@@ -201,7 +201,7 @@ class LocalFile(_File):
             self.inputStream = components.classes["@mozilla.org/scriptableinputstream;1"].createInstance("nsIScriptableInputStream")
             self.inputStream.init(self.fileIO)
         else:
-            raise ValueError, "Unknown mode"
+            raise ValueError("Unknown mode")
 
     def close(self):
         if self.fileIO is not None:
@@ -225,7 +225,7 @@ def _DoTestRead(file, expected):
     got = got + file.read(0)
     got = got + file.read()
     if got != expected:
-        raise RuntimeError, "Reading '%s' failed - got %d bytes, but expected %d bytes" % (file, len(got), len(expected))
+        raise RuntimeError("Reading '%s' failed - got %d bytes, but expected %d bytes" % (file, len(got), len(expected)))
 
 def _DoTestBufferRead(file, expected):
     # read in a couple of chunks, just to test that our various arg combinations work.
@@ -239,7 +239,7 @@ def _DoTestBufferRead(file, expected):
             break
         got = got + str(buffer[:num])
     if got != expected:
-        raise RuntimeError, "Reading '%s' failed - got %d bytes, but expected %d bytes" % (file, len(got), len(expected))
+        raise RuntimeError("Reading '%s' failed - got %d bytes, but expected %d bytes" % (file, len(got), len(expected)))
 
 def _TestLocalFile():
     import tempfile, os
@@ -265,7 +265,7 @@ def _TestLocalFile():
         test_file.close()
         # Open the same file again for writing - this should delete the old one.
         if not os.path.isfile(fname):
-            raise RuntimeError, "The file '%s' does not exist, but we are explicitly testing create semantics when it does" % (fname,)
+            raise RuntimeError("The file '%s' does not exist, but we are explicitly testing create semantics when it does" % (fname,))
         test_file = LocalFile(fname, "w")
         test_file.write(data)
         test_file.close()
@@ -304,15 +304,15 @@ def _TestAll():
 
 def _TestURI(url):
     test_file = URIFile(url)
-    print "Opened file is", test_file
+    print("Opened file is", test_file)
     got = test_file.read()
-    print "Read %d bytes of data from %r" % (len(got), url)
+    print("Read %d bytes of data from %r" % (len(got), url))
     test_file.close()
 
 if __name__=='__main__':
     import sys
     if len(sys.argv) < 2:
-        print "No URL specified on command line - performing self-test"
+        print("No URL specified on command line - performing self-test")
         _TestAll()
     else:
         _TestURI(sys.argv[1])

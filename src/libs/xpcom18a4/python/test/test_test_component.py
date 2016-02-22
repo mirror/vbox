@@ -252,7 +252,7 @@ def test_base_interface(c):
 
     test_attribute(c, "iid_value", component_iid, new_iid)
     test_attribute(c, "iid_value", component_iid, str(new_iid), new_iid)
-    test_attribute(c, "iid_value", component_iid, xpcom._xpcom.IID(new_iid))
+    test_attribute(c, "iid_value", component_iid, xpcom._xpcom.ID(new_iid))
 
     test_attribute_failure(c, "no_attribute", "boo", AttributeError)
 

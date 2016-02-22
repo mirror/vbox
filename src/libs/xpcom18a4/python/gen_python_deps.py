@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-Copyright (C) 2009-2013 Oracle Corporation
+Copyright (C) 2009-2016 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -14,7 +14,7 @@ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 
 import os,sys
 
-versions = ["2.3", "2.4", "2.5", "2.6", "2.7",]
+versions = ["2.6", "2.7", "3.1", "3.2", "3.3", "3.4", "3.5"]
 prefixes = ["/usr", "/usr/local", "/opt", "/opt/local"]
 known = {}
 
@@ -40,12 +40,12 @@ def checkPair(p, v,dllpre,dllsuff, bitness_magic):
     return [os.path.join(p, "include", "python"+v), lib, lib64]
 
 def print_vars(vers, known, sep, bitness_magic):
-    print "VBOX_PYTHON%s_INC=%s%s" %(vers, known[0], sep)
+    print("VBOX_PYTHON%s_INC=%s%s" %(vers, known[0], sep))
     if bitness_magic > 0:
-        print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[2], sep)
-        print "VBOX_PYTHON%s_LIB_X86=%s%s" %(vers, known[1], sep)
+        print("VBOX_PYTHON%s_LIB=%s%s" %(vers, known[2], sep))
+        print("VBOX_PYTHON%s_LIB_X86=%s%s" %(vers, known[1], sep))
     else:
-        print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[1], sep)
+        print("VBOX_PYTHON%s_LIB=%s%s" %(vers, known[1], sep))
 
 
 def main(argv):
@@ -95,7 +95,7 @@ def main(argv):
             if c is not None:
                 known[v] = c
                 break
-    keys = known.keys()
+    keys = list(known.keys())
     # we want default to be the lowest versioned Python
     keys.sort()
     d = None

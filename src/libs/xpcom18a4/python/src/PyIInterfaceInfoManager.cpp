@@ -134,7 +134,11 @@ static PyObject *PyGetNameForIID(PyObject *self, PyObject *args)
 	if ( NS_FAILED(r) )
 		return PyXPCOM_BuildPyException(r);
 
+#if PY_MAJOR_VERSION <= 2
 	PyObject *ret = PyString_FromString(ret_name);
+#else
+	PyObject *ret = PyUnicode_FromString(ret_name);
+#endif
 	nsMemory::Free(ret_name);
 	return ret;
 }
@@ -185,7 +189,7 @@ static PyObject *PyEnumerateInterfaces(PyObject *self, PyObject *args)
 // TODO:
 // void autoRegisterInterfaces();
 
-PyMethodDef 
+PyMethodDef
 PyMethods_IInterfaceInfoManager[] =
 {
 	{ "GetInfoForIID", PyGetInfoForIID, 1},

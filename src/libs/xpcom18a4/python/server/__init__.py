@@ -37,7 +37,7 @@
 
 # The xpcom.server package.
 
-from policy import DefaultPolicy
+from server.policy import DefaultPolicy
 from xpcom import _xpcom
 
 # We define the concept of a single "tracer" object - similar to the single
@@ -79,10 +79,10 @@ def UnwrapObject(ob):
 # This means that we keep all factories, modules etc implemented in
 # Python!
 def NS_GetModule( serviceManager, nsIFile ):
-    import loader
+    from . import loader
     iid = _xpcom.IID_nsIModule
     return WrapObject(loader.MakePythonComponentLoaderModule(serviceManager, nsIFile), iid, bWrapClient = 0)
 
 def _shutdown():
-    from policy import _shutdown
+    from server.policy import _shutdown
     _shutdown()

@@ -66,7 +66,7 @@ PyG_Base *GetDefaultGateway(PyObject *instance);
 void AddDefaultGateway(PyObject *instance, nsISupports *gateway);
 PRBool CheckDefaultGateway(PyObject *real_inst, REFNSIID iid, nsISupports **ret_gateway);
 
-/*static*/ nsresult 
+/*static*/ nsresult
 PyG_Base::CreateNew(PyObject *pPyInstance, const nsIID &iid, void **ppResult)
 {
 	NS_PRECONDITION(ppResult && *ppResult==NULL, "NULL or uninitialized pointer");
@@ -114,7 +114,11 @@ PyG_Base::PyG_Base(PyObject *instance, const nsIID &iid)
 		szRepr = "(repr failed!)";
 	}
 	else
+#if PY_MAJOR_VERSION <= 2
 		szRepr = PyString_AsString(r);
+#else
+		szRepr = PyUnicode_AsUTF8(r);
+#endif
 	if (szRepr==NULL) szRepr = "";
 	int reprOffset = *szRepr=='<' ? 1 : 0;
 	static const char *reprPrefix = "component:";
@@ -184,14 +188,14 @@ void *PyG_Base::ThisAsIID( const nsIID &iid )
 		return (nsISupports *)(nsIInternalPython *)this;
 	if (iid.Equals(NS_GET_IID(nsISupportsWeakReference)))
 		return (nsISupportsWeakReference *)this;
-	if (iid.Equals(NS_GET_IID(nsIInternalPython))) 
+	if (iid.Equals(NS_GET_IID(nsIInternalPython)))
 		return (nsISupports *)(nsIInternalPython *)this;
 	return NULL;
 }
 
 // Call back into Python, passing a Python instance, and get back
 // an interface object that wraps the instance.
-/*static*/ PRBool 
+/*static*/ PRBool
 PyG_Base::AutoWrapPythonInstance(PyObject *ob, const nsIID &iid, nsISupports **ppret)
 {
 	NS_PRECONDITION(ppret!=NULL, "null pointer when wrapping a Python instance!");
@@ -244,7 +248,7 @@ done:
 // Call back into Python, passing a raw nsIInterface object, getting back
 // the object to actually use as the gateway parameter for this interface.
 // For example, it is expected that the policy will wrap the interface
-// object in one of the xpcom.client.Interface objects, allowing 
+// object in one of the xpcom.client.Interface objects, allowing
 // natural usage of the interface from Python clients.
 // Note that piid will usually be NULL - this is because the runtime
 // reflection interfaces dont provide this information to me.
@@ -255,10 +259,10 @@ done:
 // Worst case, the code should provide a wrapper for the nsiSupports interface,
 // so at least the user can simply QI the object.
 PyObject *
-PyG_Base::MakeInterfaceParam(nsISupports *pis, 
-			     const nsIID *piid, 
+PyG_Base::MakeInterfaceParam(nsISupports *pis,
+			     const nsIID *piid,
 			     int methodIndex /* = -1 */,
-			     const XPTParamDescriptor *d /* = NULL */, 
+			     const XPTParamDescriptor *d /* = NULL */,
 			     int paramIndex /* = -1 */)
 {
 	if (pis==NULL) {
@@ -301,7 +305,7 @@ PyG_Base::MakeInterfaceParam(nsISupports *pis,
 	if (obParamDesc==NULL)
 		goto done;
 
-	result = PyObject_CallMethod(m_pPyObject, 
+	result = PyObject_CallMethod(m_pPyObject,
 	                               (char*)"_MakeInterfaceParam_",
 				       (char*)"OOiOi",
 				       obISupports,
@@ -350,7 +354,7 @@ PyG_Base::QueryInterface(REFNSIID iid, void** ppv)
 		AddRef();
 		return NS_OK;
 	}
-	// If we have a "base object", then we need to delegate _every_ remaining 
+	// If we have a "base object", then we need to delegate _every_ remaining
 	// QI to it.
 	if (m_pBaseObject != NULL)
 		return m_pBaseObject->QueryInterface(iid, ppv);
@@ -373,7 +377,7 @@ PyG_Base::QueryInterface(REFNSIID iid, void** ppv)
 		}
 
 		PyObject *result = PyObject_CallMethod(m_pPyObject, (char*)"_QueryInterface_",
-		                                                    (char*)"OO", 
+		                                                    (char*)"OO",
 		                                                    this_interface_ob, ob);
 		Py_DECREF(ob);
 		Py_DECREF(this_interface_ob);
@@ -461,11 +465,11 @@ nsresult PyG_Base::HandleNativeGatewayError(const char *szMethodName)
 	nsresult rc = NS_OK;
 	if (PyErr_Occurred()) {
 		// The error handling - fairly involved, but worth it as
-		// good error reporting is critical for users to know WTF 
+		// good error reporting is critical for users to know WTF
 		// is going on - especially with TypeErrors etc in their
 		// return values (ie, after the Python code has successfully
 		// exited, but we encountered errors unpacking their
-		// result values for the COM caller - there is literally no 
+		// result values for the COM caller - there is literally no
 		// way to catch these exceptions from Python code, as their
 		// is no Python function directly on the call-stack)
 
@@ -480,7 +484,7 @@ nsresult PyG_Base::HandleNativeGatewayError(const char *szMethodName)
 		PyObject *exc_typ, *exc_val, *exc_tb;
 		PyErr_Fetch(&exc_typ, &exc_val, &exc_tb);
 
-		PyObject *err_result = PyObject_CallMethod(m_pPyObject, 
+		PyObject *err_result = PyObject_CallMethod(m_pPyObject,
 	                                       (char*)"_GatewayException_",
 					       (char*)"z(OOO)",
 					       szMethodName,
@@ -640,8 +644,8 @@ nsresult PyG_Base::InvokeNativeGetViaPolicy(
 		}
 		ob_ret = PyObject_GetAttrString(real_ob, (char *)szPropertyName);
 		if (ob_ret==NULL) {
-			PyErr_Format(PyExc_AttributeError, 
-				     "The object does not have a 'get_%s' function, or a '%s attribute.", 
+			PyErr_Format(PyExc_AttributeError,
+				     "The object does not have a 'get_%s' function, or a '%s attribute.",
 				     szPropertyName, szPropertyName);
 		} else {
 			ret = NS_OK;
@@ -694,8 +698,8 @@ nsresult PyG_Base::InvokeNativeSetViaPolicy(
 		if (PyObject_SetAttrString(real_ob, (char *)szPropertyName, arg) == 0)
 			ret = NS_OK;
 		else {
-			PyErr_Format(PyExc_AttributeError, 
-				     "The object does not have a 'set_%s' function, or a '%s attribute.", 
+			PyErr_Format(PyExc_AttributeError,
+				     "The object does not have a 'set_%s' function, or a '%s attribute.",
 				     szPropertyName, szPropertyName);
 		}
 	}
@@ -736,7 +740,7 @@ PyObject *PyG_Base::UnwrapPythonObject(void)
   Whenever we are asked to "AutoWrap" a Python object, the
   first thing we do is see if it has been auto-wrapped before.
 
-  If not, we create a new wrapper, then make a COM weak reference 
+  If not, we create a new wrapper, then make a COM weak reference
   to that wrapper, and store it directly back into the instance
   we are auto-wrapping!  The use of a weak-reference prevents
   cycles.
@@ -760,8 +764,8 @@ PyG_Base *GetDefaultGateway(PyObject *policy)
 	if (ob_existing_weak != NULL) {
 		PRBool ok = PR_TRUE;
 		nsCOMPtr<nsIWeakReference> pWeakRef;
-		ok = NS_SUCCEEDED(Py_nsISupports::InterfaceFromPyObject(ob_existing_weak, 
-		                                       NS_GET_IID(nsIWeakReference), 
+		ok = NS_SUCCEEDED(Py_nsISupports::InterfaceFromPyObject(ob_existing_weak,
+		                                       NS_GET_IID(nsIWeakReference),
 		                                       getter_AddRefs(pWeakRef),
 		                                       PR_FALSE));
 		Py_DECREF(ob_existing_weak);
@@ -790,9 +794,9 @@ PRBool CheckDefaultGateway(PyObject *real_inst, REFNSIID iid, nsISupports **ret_
 		// may no longer be valid.  Check it.
 		PRBool ok = PR_TRUE;
 		nsCOMPtr<nsIWeakReference> pWeakRef;
-		ok = NS_SUCCEEDED(Py_nsISupports::InterfaceFromPyObject(ob_existing_weak, 
-		                                       NS_GET_IID(nsIWeakReference), 
-		                                       getter_AddRefs(pWeakRef), 
+		ok = NS_SUCCEEDED(Py_nsISupports::InterfaceFromPyObject(ob_existing_weak,
+		                                       NS_GET_IID(nsIWeakReference),
+		                                       getter_AddRefs(pWeakRef),
 		                                       PR_FALSE));
 		Py_DECREF(ob_existing_weak);
 		if (ok) {
@@ -826,7 +830,7 @@ void AddDefaultGateway(PyObject *instance, nsISupports *gateway)
 			nsCOMPtr<nsIWeakReference> pWeakReference;
 			swr->GetWeakReference( getter_AddRefs(pWeakReference) );
 			if (pWeakReference) {
-				PyObject *ob_new_weak = Py_nsISupports::PyObjectFromInterface(pWeakReference, 
+				PyObject *ob_new_weak = Py_nsISupports::PyObjectFromInterface(pWeakReference,
 										   NS_GET_IID(nsIWeakReference),
 										   PR_FALSE ); /* bMakeNicePyObject */
 				// pWeakReference reference consumed.

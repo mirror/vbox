@@ -37,11 +37,9 @@
 
 import xpcom
 from xpcom import components, logger
-
-import module
-
-import glob, os, types
-
+from . import module
+import glob
+import os
 from xpcom.client import Component
 
 # Until we get interface constants.
@@ -56,9 +54,9 @@ def _has_good_attr(object, attr):
 def FindCOMComponents(py_module):
     # For now, just run over all classes looking for likely candidates.
     comps = []
-    for name, object in py_module.__dict__.items():
+    for name, object in list(py_module.__dict__.items()):
         try:
-            if (type(object) == types.ClassType or issubclass(object, object)) and \
+            if (type(object) == type or issubclass(object, object)) and \
                _has_good_attr(object, "_com_interfaces_") and \
                _has_good_attr(object, "_reg_clsid_") and \
                _has_good_attr(object, "_reg_contractid_"):
@@ -147,7 +145,7 @@ class PythonComponentLoader:
                 try:
                     self.autoRegisterComponent(when, entry)
                 # Handle some common user errors
-                except xpcom.COMException, details:
+                except xpcom.COMException as details:
                     from xpcom import nsError
                     # If the interface name does not exist, suppress the traceback
                     if details.errno==nsError.NS_ERROR_NO_INTERFACE:
@@ -155,7 +153,7 @@ class PythonComponentLoader:
                                      entry.leafName, details.message)
                     else:
                         logger.exception("Registration of '%s' failed!", entry.leafName)
-                except SyntaxError, details:
+                except SyntaxError as details:
                     # Syntax error in source file - no useful traceback here either.
                     logger.error("Registration of '%s' failed\n %s",
                                  entry.leafName, details)
@@ -225,5 +223,5 @@ class PythonComponentLoader:
         self.com_modules = {}
 
 def MakePythonComponentLoaderModule(serviceManager, nsIFile):
-    import module
+    from . import module
     return module.Module( [PythonComponentLoader] )

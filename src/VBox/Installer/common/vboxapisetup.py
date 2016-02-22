@@ -1,5 +1,5 @@
 """
-Copyright (C) 2009-2015 Oracle Corporation
+Copyright (C) 2009-2016 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -18,7 +18,7 @@ def cleanupComCache():
     from distutils.sysconfig import get_python_lib
     comCache1 = os.path.join(get_python_lib(), 'win32com', 'gen_py')
     comCache2 = os.path.join(os.environ.get("TEMP", "c:\\tmp"), 'gen_py')
-    print "Cleaning COM cache at",comCache1,"and",comCache2
+    print("Cleaning COM cache at",comCache1,"and",comCache2)
     shutil.rmtree(comCache1, True)
     shutil.rmtree(comCache2, True)
 

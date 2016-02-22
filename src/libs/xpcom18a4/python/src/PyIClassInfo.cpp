@@ -106,7 +106,11 @@ static PyObject *PyGetHelperForLanguage(PyObject *self, PyObject *args)
 static PyObject *MakeStringOrNone(char *v)
 {
 	if (v)
+#if PY_MAJOR_VERSION <= 2
 		return PyString_FromString(v);
+#else
+		return PyUnicode_FromString(v);
+#endif
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -166,7 +170,7 @@ Py_nsIClassInfo::setattr(const char *name, PyObject *v)
 
 }
 
-struct PyMethodDef 
+struct PyMethodDef
 PyMethods_IClassInfo[] =
 {
 	{ "getInterfaces", PyGetInterfaces, 1},

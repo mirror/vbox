@@ -34,6 +34,6 @@ def GetPrimitive(ob):
     try:
         better = _primitives_map[prin.type]
     except KeyError:
-        raise ValueError, "This primitive type (%d) is not supported" % (prin.type,)
+        raise ValueError("This primitive type (%d) is not supported" % (prin.type,))
     prin = prin.QueryInterface(better)
     return prin.data
