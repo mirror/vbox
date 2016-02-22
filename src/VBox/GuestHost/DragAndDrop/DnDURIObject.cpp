@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2014-2015 Oracle Corporation
+ * Copyright (C) 2014-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,7 +58,7 @@ DnDURIObject::DnDURIObject(Type type,
     switch (m_Type)
     {
         case File:
-            u.m_hFile = NULL;
+            u.m_hFile = NIL_RTFILE;
             break;
 
         case Directory:
@@ -76,16 +76,17 @@ DnDURIObject::~DnDURIObject(void)
 
 void DnDURIObject::closeInternal(void)
 {
+    LogFlowThisFuncEnter();
     switch (m_Type)
     {
         case File:
         {
-            if (u.m_hFile)
+            if (u.m_hFile != NIL_RTFILE)
             {
                 int rc2 = RTFileClose(u.m_hFile);
                 AssertRC(rc2);
 
-                u.m_hFile = NULL;
+                u.m_hFile = NIL_RTFILE;
             }
             break;
         }
@@ -96,8 +97,6 @@ void DnDURIObject::closeInternal(void)
         default:
             break;
     }
-
-    LogFlowThisFuncLeave();
 }
 
 void DnDURIObject::Close(void)
@@ -135,7 +134,7 @@ bool DnDURIObject::IsOpen(void) const
     switch (m_Type)
     {
         case File:
-            fIsOpen = u.m_hFile != NULL;
+            fIsOpen = u.m_hFile != NIL_RTFILE;
             break;
 
         case Directory:
@@ -180,20 +179,21 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
     if (   RT_SUCCESS(rc)
         && fOpen) /* Opening mode specified? */
     {
+        LogFlowThisFunc(("strPath=%s, fOpen=0x%x, enmType=%RU32, enmDest=%RU32\n",
+                         strPath.c_str(), fOpen, enmType, enmDest));
         switch (enmType)
         {
             case File:
             {
-                if (!u.m_hFile)
+                if (u.m_hFile == NIL_RTFILE)
                 {
                     /*
                      * Open files on the source with RTFILE_O_DENY_WRITE to prevent races
                      * where the OS writes to the file while the destination side transfers
                      * it over.
                      */
+                    LogFlowThisFunc(("Opening ...\n"));
                     rc = RTFileOpen(&u.m_hFile, strPath.c_str(), fOpen);
-                    LogFlowThisFunc(("strPath=%s, fOpen=0x%x, enmType=%RU32, enmDest=%RU32, rc=%Rrc\n",
-                                     strPath.c_str(), fOpen, enmType, enmDest, rc));
                     if (RT_SUCCESS(rc))
                         rc = RTFileGetSize(u.m_hFile, &m_cbSize);
 
@@ -363,6 +363,8 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
 
 void DnDURIObject::Reset(void)
 {
+    LogFlowThisFuncEnter();
+
     Close();
 
     m_Type        = Unknown;
@@ -395,7 +397,6 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
                 if (RT_SUCCESS(rc))
                     m_cbProcessed += cbWritten;
             }
-
             break;
         }
 
@@ -416,7 +417,7 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
             *pcbWritten = (uint32_t)cbWritten;
     }
 
-    LogFlowFunc(("Returning strSourcePath=%s, cbWritten=%zu, rc=%Rrc\n", m_strSrcPath.c_str(), cbWritten, rc));
+    LogFlowThisFunc(("Returning strSourcePath=%s, cbWritten=%zu, rc=%Rrc\n", m_strSrcPath.c_str(), cbWritten, rc));
     return rc;
 }
 
