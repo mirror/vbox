@@ -780,7 +780,7 @@
         layer exists, abstracting out concrete platform access details, see
         <xref linkend="glue-python"/>.</para>
 
-        </para>The minimum supported Python version is 2.6.</para>
+        <para>The minimum supported Python version is 2.6.</para>
 
         <para>As indicated in <xref linkend="webservice-or-com"/>, the
         COM/XPCOM API gives better performance without the SOAP overhead, and
@@ -1496,7 +1496,7 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>
         the glue layer if you want to use a different Python
         installation.</para>
 
-        </para>The minimum supported Python version is 2.6.</para>
+        <para>The minimum supported Python version is 2.6.</para>
 
         <para>In this layer, the class
         <computeroutput>VirtualBoxManager</computeroutput> hides most
