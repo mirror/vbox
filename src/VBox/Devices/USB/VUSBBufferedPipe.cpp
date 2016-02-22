@@ -574,7 +574,9 @@ DECLHIDDEN(void) vusbBufferedPipeDestroy(VUSBBUFFEREDPIPE hBuffer)
     RTCircBufDestroy(pThis->pRingBufData);
     vusbUrbPoolDestroy(&pThis->UrbPool);
     RTCritSectLeave(&pThis->CritSectBuffer);
-    LogRel(("VUSB: Destroyed buffered pipe with lock contention counter %u\n", pThis->cLockContention));
+#ifdef DEBUG
+    Log(("VUSB: Destroyed buffered pipe with lock contention counter %u\n", pThis->cLockContention));
+#endif
     RTMemFree(pThis->paIsocDesc);
     RTMemFree(pThis);
 }
