@@ -2101,8 +2101,8 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
                                                     fMount, false /* retry? */);
             }
         }
-        /* Mounting successful: */
-        else
+        /* If mounting was successful: */
+        if (fWasMounted)
         {
             /* Disable First RUN Wizard: */
             if (gEDataManager->machineFirstTimeStarted(machine.GetId()))
