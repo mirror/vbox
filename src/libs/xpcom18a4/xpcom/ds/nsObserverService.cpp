@@ -112,7 +112,7 @@ nsresult nsObserverService::GetObserverList(const char* aTopic, nsObserverList**
     if (anObserverList == nsnull)
         return NS_ERROR_NULL_POINTER;
 	
-	if(mObserverTopicTable == nsnull) 
+    if(mObserverTopicTable == nsnull) 
     {
         mObserverTopicTable = new nsObjectHashtable(nsnull, 
                                                     nsnull,   // should never be cloned
@@ -154,8 +154,8 @@ NS_IMETHODIMP nsObserverService::AddObserver(nsIObserver* anObserver, const char
     if (anObserver == nsnull || aTopic == nsnull)
         return NS_ERROR_NULL_POINTER;
 
-	rv = GetObserverList(aTopic, &anObserverList);
-	if (NS_FAILED(rv)) return rv;
+    rv = GetObserverList(aTopic, &anObserverList);
+    if (NS_FAILED(rv)) return rv;
 
     return anObserverList->AddObserver(anObserver, ownsWeak);
 }
@@ -168,8 +168,8 @@ NS_IMETHODIMP nsObserverService::RemoveObserver(nsIObserver* anObserver, const c
     if (anObserver == nsnull || aTopic == nsnull)
         return NS_ERROR_NULL_POINTER;
 
-	rv = GetObserverList(aTopic, &anObserverList);
-	if (NS_FAILED(rv)) return rv;
+    rv = GetObserverList(aTopic, &anObserverList);
+    if (NS_FAILED(rv)) return rv;
 
     return anObserverList->RemoveObserver(anObserver);
 }
@@ -182,8 +182,8 @@ NS_IMETHODIMP nsObserverService::EnumerateObservers(const char* aTopic, nsISimpl
     if (anEnumerator == nsnull || aTopic == nsnull)
         return NS_ERROR_NULL_POINTER;
 
-	rv = GetObserverList(aTopic, &anObserverList);
-	if (NS_FAILED(rv)) return rv;
+    rv = GetObserverList(aTopic, &anObserverList);
+    if (NS_FAILED(rv)) return rv;
 
     return anObserverList->GetObserverList(anEnumerator);
 }
