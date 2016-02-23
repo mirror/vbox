@@ -62,9 +62,10 @@
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
-#if 1
+#if 0
 # ifdef DEBUG
 #  include <QTextStream>
+#  include <QFile>
 /** Enable this to log debug output of a Qt debug build to a file defined by DEBUG_DND_QT_LOGFILE. */
 #  define DEBUG_DND_QT
 #  ifdef RT_OS_WINDOWS
