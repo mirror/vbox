@@ -85,9 +85,10 @@ define TOOL_VBoxNasm_COMPILE_AS_CMDS
 		$(abspath $(source)) \
 		-M -MP
 endef
-if "$(KBUILD_HOST)" == "darwin" \
- || "$(VBOX_NASM_allow_64_bit)" != ""
+if "$(VBOX_NASM_allow_64_bit)" != "" || "$(KBUILD_TARGET)" != "win"
  BS3KIT_NASM_allow_64_bit = --allow-64-bit
+else
+ BS3KIT_NASM_allow_64_bit = --allow-64bit-code-anywhere
 endif
 
 #
