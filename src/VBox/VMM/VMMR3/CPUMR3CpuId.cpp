@@ -6176,7 +6176,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                             (uEAX >> 16) & 0xff);
             pHlp->pfnPrintf(pHlp,
                             "Physical Core Count:             %d\n",
-                            (uECX >> 0) & 0xff);
+                            ((uECX >> 0) & 0xff) + 1);
         }
 
         pCurLeaf = pNextLeaf;
