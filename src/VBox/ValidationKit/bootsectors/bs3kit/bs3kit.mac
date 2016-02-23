@@ -943,17 +943,19 @@ endstruc
 
 ;; @name BS3CPU_XXX - Bs3CpuDetect_mmm return value and g_bBs3CpuDetected.
 ;; @{
-%define BS3CPU_8086             0x0001
-%define BS3CPU_V20              0x0002
-%define BS3CPU_80186            0x0003
-%define BS3CPU_80286            0x0004
-%define BS3CPU_80386            0x0005
-%define BS3CPU_80486            0x0006
-%define BS3CPU_Pentium          0x0007
-%define BS3CPU_PPro             0x0008
-%define BS3CPU_PProOrNewer      0x0009
-%define BS3CPU_TYPE_MASK        0x00ff
-%define BS3CPU_F_CPUID          0x0100
+%define BS3CPU_8086                 0x0001
+%define BS3CPU_V20                  0x0002
+%define BS3CPU_80186                0x0003
+%define BS3CPU_80286                0x0004
+%define BS3CPU_80386                0x0005
+%define BS3CPU_80486                0x0006
+%define BS3CPU_Pentium              0x0007
+%define BS3CPU_PPro                 0x0008
+%define BS3CPU_PProOrNewer          0x0009
+%define BS3CPU_TYPE_MASK            0x00ff
+%define BS3CPU_F_CPUID              0x0100
+%define BS3CPU_F_CPUID_EXT_LEAVES   0x0200
+%define BS3CPU_F_LONG_MODE          0x0400
 ;; @}
 
 

@@ -202,6 +202,23 @@ CPU 586
         mov     xAX, BS3CPU_80386 | BS3CPU_F_CPUID
         je      .return
 .NewerThanPPro:
+        ; Check for extended leaves and long mode.
+        mov     eax, 0x80000000
+        cpuid
+        sub     eax, 0x80000001         ; Minimum leaf 0x80000001
+        cmp     eax, 0x00010000         ; At most 0x10000 leaves.
+        ja      .no_ext_leaves
+
+        mov     eax, 0x80000001
+        cpuid
+        test    edx, X86_CPUID_EXT_FEATURE_EDX_LONG_MODE
+        jz      .no_long_mode
+        mov     xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID | BS3CPU_F_CPUID_EXT_LEAVES | BS3CPU_F_LONG_MODE
+        jmp     .return
+.no_long_mode:
+        mov     xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID | BS3CPU_F_CPUID_EXT_LEAVES
+        jmp     .return
+.no_ext_leaves:
         mov     xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID
 
 CPU 8086

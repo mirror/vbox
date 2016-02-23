@@ -43,10 +43,10 @@
 %define TMPL_RM
 %include "bs3kit-template-header.mac"
 
+BS3_EXTERN_DATA16 g_uBs3CpuDetected
 BS3_BEGIN_TEXT16
-BS3_EXTERN_TMPL Bs3InitMemory
-BS3_EXTERN_CMN  Bs3Trap32Init
 BS3_EXTERN_CMN  Bs3Shutdown
+extern          _Bs3InitAll_rm
 
 
 BS3_BEGIN_TEXT16
@@ -56,11 +56,7 @@ BS3_PROC_BEGIN Bs3CpuBasic2_Main
         mov     bp, sp
         sub     sp, 20h                 ; reserve 20h for 64-bit calls (we're doing them MSC style, remember).
 
-        ;
-        ; Do bs3kit init.
-        ;
-        call    Bs3InitMemory           ; Initialize the memory (must be done from real mode).
-        call    Bs3Trap32Init
+        call    _Bs3InitAll_rm
 
         ;
         ; Start testing.

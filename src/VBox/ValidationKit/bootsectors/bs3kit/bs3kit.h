@@ -1857,11 +1857,17 @@ BS3_DECL(void) Bs3TrapPrintFrame_c64(PCBS3TRAPFRAME pTrapFrame); /**< @copydoc B
 
 
 /**
+ * Initializes all of boot sector kit \#3.
+ */
+BS3_DECL(void) Bs3InitAll_rm(void);
+
+/**
  * Initializes the REAL and TILED memory pools.
  *
  * For proper operation on OLDer CPUs, call #Bs3CpuDetect_mmm first.
  */
 BS3_DECL(void) Bs3InitMemory_rm(void);
+
 
 
 /** @defgroup grp_bs3kit_mode   Mode Specific Functions and Data
@@ -1906,20 +1912,24 @@ BS3_MODE_EXPAND_PROTOTYPES(uint8_t, Bs3CpuDetect,(void));
 
 /** @name BS3CPU_XXX - CPU detected by BS3CpuDetect_c16() and friends.
  * @{ */
-#define BS3CPU_8086             UINT16_C(0x0001)    /**< Both 8086 and 8088. */
-#define BS3CPU_V20              UINT16_C(0x0002)    /**< Both NEC V20, V30 and relatives. */
-#define BS3CPU_80186            UINT16_C(0x0003)    /**< Both 80186 and 80188. */
-#define BS3CPU_80286            UINT16_C(0x0004)
-#define BS3CPU_80386            UINT16_C(0x0005)
-#define BS3CPU_80486            UINT16_C(0x0006)
-#define BS3CPU_Pentium          UINT16_C(0x0007)
-#define BS3CPU_PPro             UINT16_C(0x0008)
-#define BS3CPU_PProOrNewer      UINT16_C(0x0009)
+#define BS3CPU_8086                 UINT16_C(0x0001)    /**< Both 8086 and 8088. */
+#define BS3CPU_V20                  UINT16_C(0x0002)    /**< Both NEC V20, V30 and relatives. */
+#define BS3CPU_80186                UINT16_C(0x0003)    /**< Both 80186 and 80188. */
+#define BS3CPU_80286                UINT16_C(0x0004)
+#define BS3CPU_80386                UINT16_C(0x0005)
+#define BS3CPU_80486                UINT16_C(0x0006)
+#define BS3CPU_Pentium              UINT16_C(0x0007)
+#define BS3CPU_PPro                 UINT16_C(0x0008)
+#define BS3CPU_PProOrNewer          UINT16_C(0x0009)
 /** CPU type mask.  This is a full byte so it's possible to use byte access
  * without and AND'ing to get the type value. */
-#define BS3CPU_TYPE_MASK        UINT16_C(0x00ff)
+#define BS3CPU_TYPE_MASK            UINT16_C(0x00ff)
 /** Flag indicating that the CPUID instruction is supported by the CPU. */
-#define BS3CPU_F_CPUID          UINT16_C(0x0100)
+#define BS3CPU_F_CPUID              UINT16_C(0x0100)
+/** Flag indicating that extend CPUID leaves are available (at least two).   */
+#define BS3CPU_F_CPUID_EXT_LEAVES   UINT16_C(0x0200)
+/** Flag indicating that the CPU supports long mode. */
+#define BS3CPU_F_LONG_MODE          UINT16_C(0x0400)
 /** @} */
 
 /** The return value of #Bs3CpuDetect_mmm. (Initial value is BS3CPU_TYPE_MASK.) */

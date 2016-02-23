@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Detected CPU data.
+ * BS3Kit - Initialize all components, real mode.
  */
 
 /*
@@ -32,12 +32,15 @@
 #include "bs3-cmn-test.h"
 
 
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-#if ARCH_BITS == 16
-
-uint16_t BS3_DATA_NM(g_uBs3CpuDetected) = BS3CPU_TYPE_MASK | BS3CPU_F_CPUID | BS3CPU_F_CPUID_EXT_LEAVES | BS3CPU_F_LONG_MODE;
-
-#endif /* ARCH_BITS == 16 */
+BS3_DECL(void) Bs3InitAll_rm(void)
+{
+    Bs3CpuDetect_rm();
+    Bs3InitMemory_rm();
+//    if (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_F_LONG_MODE)
+//        Bs3Trap64Init();
+    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+        Bs3Trap32Init();
+//    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
+//        Bs3Trap16Init();
+}
 
