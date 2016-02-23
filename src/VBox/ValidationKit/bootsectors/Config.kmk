@@ -85,7 +85,10 @@ define TOOL_VBoxNasm_COMPILE_AS_CMDS
 		$(abspath $(source)) \
 		-M -MP
 endef
-
+if "$(KBUILD_HOST)" == "darwin" \
+ || "$(VBOX_NASM_allow_64_bit)" != ""
+ BS3KIT_NASM_allow_64_bit = --allow-64-bit
+endif
 
 #
 # ELF 64-bit compiler tool with object conversion.
@@ -327,7 +330,7 @@ TEMPLATE_VBoxBS3KitImg_INST         = $(INST_VALIDATIONKIT)bootsectors/
 TEMPLATE_VBoxBS3KitImg_BINSUFF      = .img
 TEMPLATE_VBoxBS3KitImg_MODE         = 0644
 TEMPLATE_VBoxBS3KitImg_ASTOOL       = VBoxNasm
-TEMPLATE_VBoxBS3KitImg_ASFLAGS      = -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
+TEMPLATE_VBoxBS3KitImg_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg_DEFS         = ARCH_BITS=16 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg_DEFS.debug   = BS3_STRICT
@@ -435,7 +438,7 @@ TEMPLATE_VBoxBS3KitImg32_BLD_TRG      = os-agnostic
 TEMPLATE_VBoxBS3KitImg32_BLD_TRG_ARCH = x86
 TEMPLATE_VBoxBS3KitImg32_INSTTYPE     = none
 TEMPLATE_VBoxBS3KitImg32_ASTOOL       = VBoxNasm
-TEMPLATE_VBoxBS3KitImg32_ASFLAGS      = -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
+TEMPLATE_VBoxBS3KitImg32_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg32_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg32_DEFS         = ARCH_BITS=32 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg32_DEFS.debug   = BS3_STRICT
@@ -455,7 +458,7 @@ TEMPLATE_VBoxBS3KitImg64_BLD_TRG      = os-agnostic
 TEMPLATE_VBoxBS3KitImg64_BLD_TRG_ARCH = amd64
 TEMPLATE_VBoxBS3KitImg64_INSTTYPE     = none
 TEMPLATE_VBoxBS3KitImg64_ASTOOL       = VBoxNasm
-TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g --allow-64bit-code-anywhere -w+orphan-labels
+TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg64_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg64_DEFS         = IN_BS3KIT ARCH_BITS=64
 TEMPLATE_VBoxBS3KitImg64_DEFS.debug   = BS3_STRICT
