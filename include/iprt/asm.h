@@ -1420,7 +1420,7 @@ DECLINLINE(void) ASMSerializeInstructionCpuId(void)
 /**
  * Virtualization friendly serializing instruction, though more expensive.
  */
-#if RT_INLINE_ASM_EXTERNAL || defined(_MSC_VER) /** @todo fix 32-bit inline MSC asm */
+#if RT_INLINE_ASM_EXTERNAL
 DECLASM(void) ASMSerializeInstructionIRet(void);
 #else
 DECLINLINE(void) ASMSerializeInstructionIRet(void)
@@ -1455,7 +1455,7 @@ DECLINLINE(void) ASMSerializeInstructionIRet(void)
         pushfd
         push    cs
         push    la_ret
-        retd
+        iretd
     la_ret:
     }
 # endif
