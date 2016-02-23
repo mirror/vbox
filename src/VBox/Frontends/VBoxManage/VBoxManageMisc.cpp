@@ -603,7 +603,7 @@ RTEXITCODE handleStartVM(HandlerArg *a)
                         CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
                         if (SUCCEEDED(rc))
                         {
-                            if (SUCCEEDED(rc))
+                            if (SUCCEEDED(iRc))
                                 RTPrintf("VM \"%s\" has been successfully started.\n", pszVM);
                             else
                             {
