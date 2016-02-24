@@ -38,7 +38,7 @@ from xpcom import components
 from xpcom import ServerException, Exception
 from xpcom import nsError
 
-import factory
+from . import factory
 
 import types
 import os
@@ -65,9 +65,9 @@ class Module:
     def registerSelf(self, compMgr, location, loaderStr, componentType):
         # void function.
         fname = os.path.basename(location.path)
-        for klass in self.components.values():
+        for klass in list(self.components.values()):
             reg_contractid = klass._reg_contractid_
-            print "Registering '%s' (%s)" % (reg_contractid, fname)
+            print("Registering '%s' (%s)" % (reg_contractid, fname))
             reg_desc = getattr(klass, "_reg_desc_", reg_contractid)
             compMgr = compMgr.queryInterface(components.interfaces.nsIComponentRegistrar)
             compMgr.registerFactoryLocation(klass._reg_clsid_,
@@ -84,7 +84,7 @@ class Module:
 
     def unregisterSelf(self, compMgr, location, loaderStr):
         # void function.
-        for klass in self.components.values():
+        for klass in list(self.components.values()):
             ok = 1
             try:
                 compMgr.unregisterComponentSpec(klass._reg_clsid_, location)
@@ -98,9 +98,9 @@ class Module:
                 except Exception:
                     ok = 0
             if ok:
-                print "Successfully unregistered", klass.__name__
+                print("Successfully unregistered", klass.__name__)
             else:
-                print "Unregistration of", klass.__name__, "failed. (probably just not already registered)"
+                print("Unregistration of", klass.__name__, "failed. (probably just not already registered)")
         
     def canUnload(self, compMgr):
         # single bool result

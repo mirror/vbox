@@ -71,7 +71,7 @@ import string, sys
 import xpcom
 import xpcom._xpcom
 
-from xpcom_consts import *
+from .xpcom_consts import *
 
 class Interface:
     def __init__(self, iid):
@@ -99,12 +99,12 @@ class Interface:
             # Parent interface is probably not scriptable - assume nsISupports.
             if xpcom.verbose:
                 # The user may be confused as to why this is happening!
-                print "The parent interface of IID '%s' can not be located - assuming nsISupports"
+                print("The parent interface of IID '%s' can not be located - assuming nsISupports")
             return Interface(xpcom._xpcom.IID_nsISupports)
 
     def Describe_Python(self):
         method_reprs = []
-        methods = filter(lambda m: not m.IsNotXPCOM(), self.methods)
+        methods = [m for m in self.methods if not m.IsNotXPCOM()]
         for m in methods:
             method_reprs.append(m.Describe_Python())
         method_joiner = "\n"
@@ -129,7 +129,7 @@ class Interface:
         else: word = 'FALSE'
         s = s + '         Scriptable: ' + word + '\n'
         s = s + '      Methods:\n'
-        methods = filter(lambda m: not m.IsNotXPCOM(), self.methods)
+        methods = [m for m in self.methods if not m.IsNotXPCOM()]
         if len(methods):
             for m in methods:
                 s = s + '   ' + m.Describe() + '\n'
@@ -152,7 +152,7 @@ class Methods:
             self.items = [None] * interface_info.GetMethodCount()
         except xpcom.Exception:
             if xpcom.verbose:
-                print "** GetMethodCount failed?? - assuming no methods"
+                print("** GetMethodCount failed?? - assuming no methods")
             self.items = []
     def __len__(self):
         return len(self.items)
@@ -251,7 +251,7 @@ class Method:
             C = ' '
 
         def desc(a): return a.Describe()
-        method_desc = string.join(map(desc, self.params), ', ')
+        method_desc = string.join(list(map(desc, self.params)), ', ')
         result_type = TypeDescriber(self.result_desc[0], None)
         return_desc = result_type.Describe()
         i = string.find(return_desc, 'retval ')
@@ -328,7 +328,7 @@ class Constants:
             self.items = [None] * interface_info.GetConstantCount()
         except xpcom.Exception:
             if xpcom.verbose:
-                print "** GetConstantCount failed?? - assuming no constants"
+                print("** GetConstantCount failed?? - assuming no constants")
             self.items = []
     def __len__(self):
         return len(self.items)
@@ -451,13 +451,13 @@ def dump_interface(iid, mode):
     if mode is not None:
         describer_name = describer_name + "_" + mode.capitalize()
     describer = getattr(interface, describer_name)
-    print describer()
+    print(describer())
 
 if __name__=='__main__':
     if len(sys.argv) == 1:
-        print "Usage: xpt.py [-xptinfo] interface_name, ..."
-        print "  -info: Dump in a style similar to the xptdump tool"
-        print "Dumping nsISupports and nsIInterfaceInfo"
+        print("Usage: xpt.py [-xptinfo] interface_name, ...")
+        print("  -info: Dump in a style similar to the xptdump tool")
+        print("Dumping nsISupports and nsIInterfaceInfo")
         sys.argv.append('nsIInterfaceInfo')
         sys.argv.append('-xptinfo')
         sys.argv.append('nsISupports')

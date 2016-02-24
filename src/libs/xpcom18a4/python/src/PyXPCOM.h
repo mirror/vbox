@@ -132,6 +132,24 @@ inline PyObject *PyBool_FromLong(long ok)
 }
 # endif
 
+# if PY_MAJOR_VERSION >= 3
+#  define PyInt_FromLong(l) PyLong_FromLong(l)
+#  define PyInt_Check(o) PyLong_Check(o)
+#  define PyInt_AsLong(o) PyLong_AsLong(o)
+#  define PyNumber_Int(o) PyNumber_Long(o)
+#  ifndef PyUnicode_AsUTF8
+#   define PyUnicode_AsUTF8(o) _PyUnicode_AsString(o)
+#  endif
+#  ifndef PyUnicode_AsUTF8AndSize
+#   define PyUnicode_AsUTF8AndSize(o,s) _PyUnicode_AsStringAndSize(o,s)
+#  endif
+typedef struct PyMethodChain
+{
+    PyMethodDef *methods;
+    struct PyMethodChain *link;
+} PyMethodChain;
+# endif
+
 #endif /* VBOX_PYXPCOM */
 
 #ifdef BUILD_PYXPCOM
@@ -267,6 +285,7 @@ public:
 	static PyObject *Py_getattr(PyObject *self, char *name);
 	static int Py_setattr(PyObject *op, char *name, PyObject *v);
 	static int Py_cmp(PyObject *ob1, PyObject *ob2);
+	static PyObject *Py_richcmp(PyObject *ob1, PyObject *ob2, int op);
 	static long Py_hash(PyObject *self);
 };
 
@@ -418,7 +437,10 @@ public:
 	static PRBool IIDFromPyObject(PyObject *ob, nsIID *pRet);
 	/* Python support */
 	static PyObject *PyTypeMethod_getattr(PyObject *self, char *name);
+#if PY_MAJOR_VERSION <= 2
 	static int PyTypeMethod_compare(PyObject *self, PyObject *ob);
+#endif
+	static PyObject *PyTypeMethod_richcompare(PyObject *self, PyObject *ob, int op);
 	static PyObject *PyTypeMethod_repr(PyObject *self);
 	static long PyTypeMethod_hash(PyObject *self);
 	static PyObject *PyTypeMethod_str(PyObject *self);

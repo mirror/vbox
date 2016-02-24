@@ -37,7 +37,13 @@
 #
 
 # The XPCOM (Cross Platform COM) package.
-import exceptions
+from __future__ import print_function
+import sys
+if sys.version_info[0] <= 2:
+    import exceptions
+    XPCOMBaseException = exceptions.Exception
+else:
+    XPCOMBaseException = Exception
 
 # A global "verbose" flag - currently used by the
 # server package to print trace messages
@@ -47,16 +53,16 @@ hr_map = {}
 
 # The standard XPCOM exception object.
 # Instances of this class are raised by the XPCOM extension module.
-class Exception(exceptions.Exception):
+class Exception(XPCOMBaseException):
     def __init__(self, errno, message = None):
         assert int(errno) == errno, "The errno param must be an integer"
         self.errno = errno
         self.msg = message
-        exceptions.Exception.__init__(self, errno)
+        XPCOMBaseException.__init__(self, errno)
     def __str__(self):
         if not hr_map:
-            import nsError
-            for name, val in nsError.__dict__.items():
+            from . import nsError
+            for name, val in list(nsError.__dict__.items()):
                 if type(val)==type(0):
                     hr_map[val] = name
         message = self.msg
@@ -79,7 +85,7 @@ COMException = Exception
 class ServerException(Exception):
     def __init__(self, errno=None, *args, **kw):
         if errno is None:
-            import nsError
+            from . import nsError
             errno = nsError.NS_ERROR_FAILURE
         Exception.__init__(self, errno, *args, **kw)
 
@@ -97,13 +103,15 @@ class ConsoleServiceStream:
     def flush(self):
         pass
     def write(self, msg):
-        import _xpcom
+        import xpcom._xpcom as _xpcom
         _xpcom.LogConsoleMessage(msg)
     def close(self):
         pass
 
 def setupLogging():
-    import sys, os, threading, thread
+    import os
+    if sys.version_info[0] <= 2:
+        import threading, thread
     hdlr = logging.StreamHandler(ConsoleServiceStream())
     fmt = logging.Formatter(logging.BASIC_FORMAT)
     hdlr.setFormatter(fmt)
@@ -112,8 +120,9 @@ def setupLogging():
     # logger.warning("ob is %r", ob), and where repr(ob) itself tries to log)
     # Later versions of logging use an RLock, so we detect an "old" style
     # handler and update its lock
-    if type(hdlr.lock) == thread.LockType:
-        hdlr.lock = threading.RLock()
+    if sys.version_info[0] <= 2:
+        if type(hdlr.lock) == thread.LockType:
+            hdlr.lock = threading.RLock()
 
     logger.addHandler(hdlr)
     # The console handler in mozilla does not go to the console!?
@@ -125,15 +134,15 @@ def setupLogging():
         try:
             # open without buffering so never pending output
             stream = open(filename, "wU", 0)
-        except IOError, why:
-            print >> sys.stderr, "pyxpcom failed to open log file '%s': %s" \
-                                 % (filename, why)
+        except IOError as why:
+            print("pyxpcom failed to open log file '%s': %s"  % (filename, why), file=sys.stderr)
             # stream remains default
 
     hdlr = logging.StreamHandler(stream)
     # see above - fix a deadlock problem on this handler too.
-    if type(hdlr.lock) == thread.LockType:
-        hdlr.lock = threading.RLock()
+    if sys.version_info[0] <= 2:
+        if type(hdlr.lock) == thread.LockType:
+            hdlr.lock = threading.RLock()
 
     fmt = logging.Formatter(logging.BASIC_FORMAT)
     hdlr.setFormatter(fmt)
