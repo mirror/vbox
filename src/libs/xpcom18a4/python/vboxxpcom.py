@@ -1,5 +1,5 @@
 """
-Copyright (C) 2008-2016 Oracle Corporation
+Copyright (C) 2008-2012 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -46,8 +46,8 @@ for m in _asVBoxPythons:
     try:
         _oVBoxPythonMod =  __import__(m)
         break
-    except Exception as x:
-        print('m=%s x=%s' % (m, x))
+    except Exception, x:
+        print 'm=%s x=%s' % (m, x);
     #except:
     #    pass
 

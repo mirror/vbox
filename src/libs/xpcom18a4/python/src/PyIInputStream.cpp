@@ -108,11 +108,7 @@ static PyObject *DoPyRead_Size(nsIInputStream *pI, PRUint32 n)
 			return PyXPCOM_BuildPyException(r);
 	}
 	if (n==0) { // mozilla will assert if we alloc zero bytes.
-#if PY_MAJOR_VERSION <= 2
 		return PyBuffer_New(0);
-#else
-		return PyBytes_FromString("");
-#endif
 	}
 	char *buf = (char *)nsMemory::Alloc(n);
 	if (buf==NULL) {
@@ -126,7 +122,6 @@ static PyObject *DoPyRead_Size(nsIInputStream *pI, PRUint32 n)
 	Py_END_ALLOW_THREADS;
 	PyObject *rc = NULL;
 	if ( NS_SUCCEEDED(r) ) {
-#if PY_MAJOR_VERSION <= 2
 		rc = PyBuffer_New(nread);
 		if (rc != NULL) {
 			void *ob_buf;
@@ -150,9 +145,6 @@ static PyObject *DoPyRead_Size(nsIInputStream *pI, PRUint32 n)
 			}
 			memcpy(ob_buf, buf, nread);
 		}
-#else
-        rc = PyBytes_FromStringAndSize(buf, nread);
-#endif
 	} else
 		PyXPCOM_BuildPyException(r);
 	nsMemory::Free(buf);

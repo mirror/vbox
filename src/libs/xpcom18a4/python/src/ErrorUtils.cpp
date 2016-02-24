@@ -110,19 +110,11 @@ void DoLogMessage(const char *methodName, const char *pszMessageText)
 	c += methodName;
 	c += "('%s', ";
 	// Pull a trick to ensure a valid string - use Python repr!
-#if PY_MAJOR_VERSION <= 2
 	PyObject *obMessage = PyString_FromString(pszMessageText);
-#else
-	PyObject *obMessage = PyUnicode_FromString(pszMessageText);
-#endif
 	if (obMessage) {
 		PyObject *repr = PyObject_Repr(obMessage);
 		if (repr) {
-#if PY_MAJOR_VERSION <= 2
 			c += PyString_AsString(repr);
-#else
-			c += PyUnicode_AsUTF8(repr);
-#endif
 			Py_DECREF(repr);
 		}
 		Py_DECREF(obMessage);
@@ -200,11 +192,7 @@ PRBool PyXPCOM_FormatGivenException(nsCString &streamout,
 	}
 	PyObject *temp = PyObject_Str(exc_typ);
 	if (temp) {
-#if PY_MAJOR_VERSION <= 2
 		streamout += PyString_AsString(temp);
-#else
-		streamout += PyUnicode_AsUTF8(temp);
-#endif
 		Py_DECREF(temp);
 	} else
 		streamout += "Can't convert exception to a string!";
@@ -212,11 +200,7 @@ PRBool PyXPCOM_FormatGivenException(nsCString &streamout,
 	if (exc_val != NULL) {
 		temp = PyObject_Str(exc_val);
 		if (temp) {
-#if PY_MAJOR_VERSION <= 2
 			streamout += PyString_AsString(temp);
-#else
-			streamout += PyUnicode_AsUTF8(temp);
-#endif
 			Py_DECREF(temp);
 		} else
 			streamout += "Can't convert exception value to a string!";
@@ -370,7 +354,6 @@ char *PyTraceback_AsString(PyObject *exc_tb)
 	PyObject *argsTB = NULL;
 	PyObject *obResult = NULL;
 
-#if PY_MAJOR_VERSION <= 2
 	/* Import the modules we need - cStringIO and traceback */
 	modStringIO = PyImport_ImportModule("cStringIO");
 	if (modStringIO==NULL)
@@ -386,23 +369,6 @@ char *PyTraceback_AsString(PyObject *exc_tb)
 	obStringIO = PyObject_CallObject(obFuncStringIO, NULL);
 	if (obStringIO==NULL)
 		TRACEBACK_FETCH_ERROR("cStringIO.StringIO() failed\n");
-#else
-	/* Import the modules we need - io and traceback */
-	modStringIO = PyImport_ImportModule("io");
-	if (modStringIO==NULL)
-		TRACEBACK_FETCH_ERROR("cant import io\n");
-
-	modTB = PyImport_ImportModule("traceback");
-	if (modTB==NULL)
-		TRACEBACK_FETCH_ERROR("cant import traceback\n");
-	/* Construct a StringIO object */
-	obFuncStringIO = PyObject_GetAttrString(modStringIO, "StringIO");
-	if (obFuncStringIO==NULL)
-		TRACEBACK_FETCH_ERROR("cant find io.StringIO\n");
-	obStringIO = PyObject_CallObject(obFuncStringIO, NULL);
-	if (obStringIO==NULL)
-		TRACEBACK_FETCH_ERROR("io.StringIO() failed\n");
-#endif
 	/* Get the traceback.print_exception function, and call it. */
 	obFuncTB = PyObject_GetAttrString(modTB, "print_tb");
 	if (obFuncTB==NULL)
@@ -429,19 +395,11 @@ char *PyTraceback_AsString(PyObject *exc_tb)
 		TRACEBACK_FETCH_ERROR("getvalue() failed.\n");
 
 	/* And it should be a string all ready to go - duplicate it. */
-#if PY_MAJOR_VERSION <= 2
 	if (!PyString_Check(obResult))
-#else
-	if (!PyUnicode_Check(obResult))
-#endif
 			TRACEBACK_FETCH_ERROR("getvalue() did not return a string\n");
 
 	{ // a temp scope so I can use temp locals.
-#if PY_MAJOR_VERSION <= 2
 	char *tempResult = PyString_AsString(obResult);
-#else
-	char *tempResult = PyUnicode_AsUTF8(obResult);
-#endif
 	result = (char *)PyMem_Malloc(strlen(tempResult)+1);
 	if (result==NULL)
 		TRACEBACK_FETCH_ERROR("memory error duplicating the traceback string\n");

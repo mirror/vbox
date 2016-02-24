@@ -83,34 +83,22 @@ PyUnicode_AsPRUnichar(PyObject *obj, PRUnichar **dest_out, PRUint32 *size_out)
 {
 	PRUint32 size;
 	PyObject *s;
-	void *src;
 	PRUnichar *dest;
 
 	s = PyUnicode_AsUTF16String(obj);
 	if (!s)
 		return -1;
-	// Drop the UTF-16 byte order mark at the beginning of
-	// the string.  (See the docs on PyUnicode_AsUTF16String.)
-	// Some Mozilla libraries don't like the mark.
-#if PY_MAJOR_VERSION <= 2
 	size = (PyString_GET_SIZE(s) - 2) / sizeof(PRUnichar);
-	src = PyString_AS_STRING(s) + 2;
-#else
-    if (!PyBytes_Check(obj))
-    {
-        PyErr_SetString(PyExc_TypeError, "internal error in PyXPCOM, parameter must be a bytes object");
-        return -1;
-    }
-    size = (PyBytes_GET_SIZE(obj) - 2) / sizeof(PRUnichar);
-    src = PyBytes_AS_STRING(obj) + 2;
-#endif
 	dest = (PRUnichar *)nsMemory::Alloc(sizeof(PRUnichar) * (size + 1));
 	if (!dest) {
 		PyErr_NoMemory();
 		Py_DECREF(s);
 		return -1;
 	}
-	memcpy(dest, src, sizeof(PRUnichar) * size);
+	// Drop the UTF-16 byte order mark at the beginning of
+	// the string.  (See the docs on PyUnicode_AsUTF16String.)
+	// Some Mozilla libraries don't like the mark.
+	memcpy(dest, PyString_AS_STRING(s) + 2, sizeof(PRUnichar) * size);
 	Py_DECREF(s);
 	dest[size] = 0;
 	*dest_out = dest;
@@ -127,23 +115,15 @@ PyObject *PyObject_FromNSString( const nsACString &s, PRBool bAssumeUTF8 /*= PR_
 		Py_INCREF(Py_None);
 	} else {
 		if (bAssumeUTF8) {
-			const nsPromiseFlatCString& temp = PromiseFlatCString(s);
-			ret = PyUnicode_DecodeUTF8(temp.get(), temp.Length(), NULL);
+                        const nsPromiseFlatCString& temp = PromiseFlatCString(s);
+                        ret = PyUnicode_DecodeUTF8(temp.get(), temp.Length(), NULL);
 		} else {
-#if PY_MAJOR_VERSION <= 2
 			ret = PyString_FromStringAndSize(NULL, s.Length());
-#else
-			ret = PyUnicode_FromStringAndSize(NULL, s.Length());
-#endif
 			if (!ret)
 				return NULL;
 			// Need "CopyAsciiTo"!?
 			nsACString::const_iterator fromBegin, fromEnd;
-#if PY_MAJOR_VERSION <= 2
-			char* dest = (char *)PyString_AS_STRING(ret);
-#else
-			char* dest = (char *)PyUnicode_AsUTF8(ret);
-#endif
+			char* dest = PyString_AS_STRING(ret);
 			copy_string(s.BeginReading(fromBegin), s.EndReading(fromEnd), dest);
 		}
 	}
@@ -178,21 +158,12 @@ PRBool PyObject_AsNSString( PyObject *val, nsAString &aStr)
 	}
 	PyObject *val_use = NULL;
 	PRBool ok = PR_TRUE;
-#if PY_MAJOR_VERSION <= 2
 	if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 		PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 		ok = PR_FALSE;
 	}
 	if (ok && (val_use = PyUnicode_FromObject(val))==NULL)
 		ok = PR_FALSE;
-#else
-    if (!PyUnicode_Check(val)) {
-        PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-        ok = PR_FALSE;
-    }
-    val_use = val;
-    Py_INCREF(val_use);
-#endif
 	if (ok) {
 		if (PyUnicode_GET_SIZE(val_use) == 0) {
 			aStr.Truncate();
@@ -381,30 +352,18 @@ PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence
 	// We handle T_U8 specially as a string/Unicode.
 	// If it is NOT a string, we just fall through and allow the standard
 	// sequence unpack code process it (just slower!)
-#if PY_MAJOR_VERSION <= 2
 	if ( array_type == nsXPTType::T_U8 &&
 		(PyString_Check(sequence_ob) || PyUnicode_Check(sequence_ob))) {
-#else
-	if ( array_type == nsXPTType::T_U8 && PyUnicode_Check(sequence_ob)) {
-#endif
 
 		PRBool release_seq;
 		if (PyUnicode_Check(sequence_ob)) {
 			release_seq = PR_TRUE;
-#if PY_MAJOR_VERSION <= 2
 			sequence_ob = PyObject_Str(sequence_ob);
-#else
-			sequence_ob = PyUnicode_AsUTF8String(sequence_ob);
-#endif
 		} else
 			release_seq = PR_FALSE;
 		if (!sequence_ob) // presumably a memory error, or Unicode encoding error.
 			return PR_FALSE;
-#if PY_MAJOR_VERSION <= 2
 		memcpy(pthis, PyString_AS_STRING(sequence_ob), sequence_size);
-#else
-		memcpy(pthis, PyUnicode_AsUTF8(sequence_ob), sequence_size);
-#endif
 		if (release_seq)
                 {
 			Py_DECREF(sequence_ob);
@@ -463,7 +422,6 @@ PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence
 				FILL_SIMPLE_POINTER( PRBool, PyInt_AsLong(val_use) );
 				break;
 			  case nsXPTType::T_CHAR:
-#if PY_MAJOR_VERSION <= 2
 				if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 					PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 					BREAK_FALSE;
@@ -473,27 +431,13 @@ PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence
 				// Sanity check should PyObject_Str() ever loosen its semantics wrt Unicode!
 				NS_ABORT_IF_FALSE(PyString_Check(val_use), "PyObject_Str didnt return a string object!");
 				FILL_SIMPLE_POINTER( char, *PyString_AS_STRING(val_use) );
-#else
-				if (!PyUnicode_Check(val)) {
-					PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-					BREAK_FALSE;
-				}
-				FILL_SIMPLE_POINTER( char, *PyUnicode_AsUTF8(val) );
-#endif
 				break;
 
 			  case nsXPTType::T_WCHAR:
-#if PY_MAJOR_VERSION <= 2
 				if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 					PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 					BREAK_FALSE;
 				}
-#else
-				if (!PyUnicode_Check(val)) {
-					PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-					BREAK_FALSE;
-				}
-#endif
 				if ((val_use = PyUnicode_FromObject(val)) == NULL)
 					BREAK_FALSE;
 				NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyUnicode_FromObject didnt return a Unicode object!");
@@ -529,7 +473,6 @@ PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence
 
 				if (val == Py_None)
 					break; // Remains NULL.
-#if PY_MAJOR_VERSION <= 2
 				if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 					PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 					BREAK_FALSE;
@@ -541,17 +484,6 @@ PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence
 
 				const char *sz = PyString_AS_STRING(val_use);
 				int nch = PyString_GET_SIZE(val_use);
-#else
-				if (!PyUnicode_Check(val)) {
-					PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-					BREAK_FALSE;
-				}
-				if ((val_use = PyUnicode_AsUTF8String(val))==NULL)
-					BREAK_FALSE;
-
-				const char *sz = PyBytes_AS_STRING(val_use);
-				int nch = PyBytes_GET_SIZE(val_use);
-#endif
 
 				*pp = (char *)nsMemory::Alloc(nch+1);
 				if (*pp==NULL) {
@@ -569,7 +501,6 @@ PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence
 				*pp = nsnull;
 				if (val == Py_None)
 					break; // Remains NULL.
-#if PY_MAJOR_VERSION <= 2
 				if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 					PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 					BREAK_FALSE;
@@ -577,14 +508,6 @@ PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence
 				if ((val_use = PyUnicode_FromObject(val))==NULL)
 					BREAK_FALSE;
 				NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyUnicode_FromObject didnt return a Unicode object!");
-#else
-				if (!PyUnicode_Check(val)) {
-					PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-					BREAK_FALSE;
-				}
-				val_use = val;
-                Py_INCREF(val_use);
-#endif
 				if (PyUnicode_AsPRUnichar(val_use, pp, NULL) < 0)
 					BREAK_FALSE;
 				break;
@@ -625,11 +548,7 @@ static PyObject *UnpackSingleArray(Py_nsISupports *parent, void *array_ptr,
 		return Py_None;
 	}
 	if (array_type == nsXPTType::T_U8)
-#if PY_MAJOR_VERSION <= 2
 		return PyString_FromStringAndSize( (char *)array_ptr, sequence_size );
-#else
-		return PyUnicode_FromStringAndSize( (char *)array_ptr, sequence_size );
-#endif
 
 	PRUint32 array_element_size = GetArrayElementSize(array_type);
 	PyObject *list_ret = PyList_New(sequence_size);
@@ -679,11 +598,7 @@ static PyObject *UnpackSingleArray(Py_nsISupports *parent, void *array_ptr,
 					Py_INCREF(Py_None);
 					val = Py_None;
 				} else
-#if PY_MAJOR_VERSION <= 2
 					val = PyString_FromString(*pp);
-#else
-					val = PyUnicode_FromString(*pp);
-#endif
 				break;
 				}
 			  case nsXPTType::T_WCHAR_STR: {
@@ -716,11 +631,7 @@ static PyObject *UnpackSingleArray(Py_nsISupports *parent, void *array_ptr,
 				char buf[128];
 				sprintf(buf, "Unknown XPCOM array type flags (0x%x)", array_type);
 				PyXPCOM_LogWarning("%s - returning a string object with this message!\n", buf);
-#if PY_MAJOR_VERSION <= 2
 				val = PyString_FromString(buf);
-#else
-				val = PyUnicode_FromString(buf);
-#endif
 				break;
 				}
 		}
@@ -758,10 +669,8 @@ static PRUint16 BestVariantTypeForPyObject( PyObject *ob, BVFTResult *pdata = NU
 		return nsIDataType::VTYPE_INT64;
 	if (PyFloat_Check(ob))
 		return nsIDataType::VTYPE_DOUBLE;
-#if PY_MAJOR_VERSION <= 2
 	if (PyString_Check(ob))
 		return nsIDataType::VTYPE_STRING_SIZE_IS;
-#endif
 	if (PyUnicode_Check(ob))
 		return nsIDataType::VTYPE_WSTRING_SIZE_IS;
 	if (PyTuple_Check(ob) || PyList_Check(ob)) {
@@ -816,14 +725,7 @@ nsresult PyObject_AsVariant( PyObject *ob, nsIVariant **aRet)
 			nr = v->SetAsDouble(PyFloat_AsDouble(ob));
 			break;
 		case nsIDataType::VTYPE_STRING_SIZE_IS:
-#if PY_MAJOR_VERSION <= 2
 			nr = v->SetAsStringWithSize(PyString_Size(ob), PyString_AsString(ob));
-#else
-            Py_ssize_t cb;
-            const char *psz;
-            psz = PyUnicode_AsUTF8AndSize(ob, &cb);
-			nr = v->SetAsStringWithSize(cb, psz);
-#endif
 			break;
 		case nsIDataType::VTYPE_WSTRING_SIZE_IS:
 			if (PyUnicode_GetSize(ob) == 0) {
@@ -1393,7 +1295,6 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 			ns_v.val.b = (PRBool)PyInt_AsLong(val_use);
 			break;
 		  case nsXPTType::T_CHAR:{
-#if PY_MAJOR_VERSION <= 2
 			if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 				PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 				BREAK_FALSE;
@@ -1408,38 +1309,19 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 			}
 
 			ns_v.val.c = *PyString_AS_STRING(val_use);
-#else
-			if (!PyUnicode_Check(val)) {
-				PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-				BREAK_FALSE;
-			}
-			if (PyUnicode_GET_SIZE(val) != 1) {
-				PyErr_SetString(PyExc_ValueError, "Must specify a one character string for a character");
-				BREAK_FALSE;
-			}
-
-			ns_v.val.c = *PyUnicode_AS_UNICODE(val_use);
-#endif
 			break;
 			}
 
 		  case nsXPTType::T_WCHAR: {
-#if PY_MAJOR_VERSION <= 2
 			if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 				PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 				BREAK_FALSE;
 			}
-#else
-			if (!PyUnicode_Check(val)) {
-				PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-				BREAK_FALSE;
-			}
-#endif
 			if ((val_use = PyUnicode_FromObject(val))==NULL)
 				BREAK_FALSE;
-			// Sanity check should PyUnicode_FromObject() ever loosen its semantics wrt Unicode!
+			// Sanity check should PyObject_Str() ever loosen its semantics wrt Unicode!
 			NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyUnicode_FromObject didnt return a unicode object!");
-			if (PyUnicode_GET_SIZE(val_use) != 1) {
+			if (PyUnicode_GetSize(val_use) != 1) {
 				PyErr_SetString(PyExc_ValueError, "Must specify a one character string for a character");
 				BREAK_FALSE;
 			}
@@ -1477,41 +1359,24 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 			if (val==Py_None) {
 				ns_v.val.p = new nsCString();
 			} else {
-#if PY_MAJOR_VERSION <= 2
+				// strings are assumed to already be UTF8 encoded.
 				if (PyString_Check(val)) {
-                    // strings are assumed to already be UTF8 encoded.
 					val_use = val;
 					Py_INCREF(val);
-				}
-                else
-#endif
-                if (PyUnicode_Check(val)) {
-                    // Unicode objects are encoded by us.
+				// Unicode objects are encoded by us.
+				} else if (PyUnicode_Check(val)) {
 					if (bIsUTF8)
 						val_use = PyUnicode_AsUTF8String(val);
 					else
-#if PY_MAJOR_VERSION <= 2
 						val_use = PyObject_Str(val);
-#else
-						val_use = PyUnicode_AsUTF8String(val);
-#endif
 				} else {
-#if PY_MAJOR_VERSION <= 2
 					PyErr_SetString(PyExc_TypeError, "UTF8 parameters must be string or Unicode objects");
-#else
-					PyErr_SetString(PyExc_TypeError, "UTF8 parameters must be unicode objects");
-#endif
 					BREAK_FALSE;
 				}
 				if (!val_use)
 					BREAK_FALSE;
-#if PY_MAJOR_VERSION <= 2
 				ns_v.val.p = new nsCString(PyString_AS_STRING(val_use),
 				                           PyString_GET_SIZE(val_use));
-#else
-				ns_v.val.p = new nsCString(PyBytes_AS_STRING(val_use),
-				                           PyBytes_GET_SIZE(val_use));
-#endif
 			}
 
 			if (!ns_v.val.p) {
@@ -1527,11 +1392,10 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 				ns_v.val.p = nsnull;
 				break;
 			}
-#if PY_MAJOR_VERSION <= 2
 			// If an "in" char *, and we have a PyString, then pass the
 			// pointer (hoping everyone else plays by the rules too.
 			if (!XPT_PD_IS_OUT(td.param_flags) && PyString_Check(val)) {
-				ns_v.val.p = (void *)PyString_AS_STRING(val);
+				ns_v.val.p = PyString_AS_STRING(val);
 				break;
 			}
 
@@ -1547,19 +1411,6 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 			cb_this_buffer_pointer = PyString_GET_SIZE(val_use)+1;
 			MAKE_VALUE_BUFFER(cb_this_buffer_pointer);
 			memcpy(this_buffer_pointer, PyString_AS_STRING(val_use), cb_this_buffer_pointer);
-#else
-
-			if (!PyUnicode_Check(val)) {
-				PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-				BREAK_FALSE;
-			}
-			if ((val_use = PyUnicode_AsUTF8String(val))==NULL)
-				BREAK_FALSE;
-
-			cb_this_buffer_pointer = PyBytes_GET_SIZE(val_use)+1;
-			MAKE_VALUE_BUFFER(cb_this_buffer_pointer);
-			memcpy(this_buffer_pointer, PyBytes_AS_STRING(val_use), cb_this_buffer_pointer);
-#endif
 			ns_v.val.p = this_buffer_pointer;
 			break;
 			}
@@ -1569,7 +1420,6 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 				ns_v.val.p = nsnull;
 				break;
 			}
-#if PY_MAJOR_VERSION <= 2
 			if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 				PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 				BREAK_FALSE;
@@ -1577,14 +1427,6 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 			if ((val_use = PyUnicode_FromObject(val))==NULL)
 				BREAK_FALSE;
 			NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyUnicode_FromObject didnt return a Unicode object!");
-#else
-			if (!PyUnicode_Check(val)) {
-				PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-				BREAK_FALSE;
-			}
-            val_use = val;
-            Py_INCREF(val_use);
-#endif
 			PRUnichar *sv;
 			PRUint32 nch;
 			if (PyUnicode_AsPRUnichar(val_use, &sv, &nch) < 0)
@@ -1641,7 +1483,6 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 				ns_v.val.p = nsnull;
 				break;
 			}
-#if PY_MAJOR_VERSION <= 2
 			if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 				PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 				BREAK_FALSE;
@@ -1654,18 +1495,6 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 			cb_this_buffer_pointer = PyString_GET_SIZE(val_use);
 			MAKE_VALUE_BUFFER(cb_this_buffer_pointer);
 			memcpy(this_buffer_pointer, PyString_AS_STRING(val_use), cb_this_buffer_pointer);
-#else
-			if (!PyUnicode_Check(val)) {
-				PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-				BREAK_FALSE;
-			}
-			if ((val_use = PyUnicode_AsUTF8String(val))==NULL)
-				BREAK_FALSE;
-
-			cb_this_buffer_pointer = PyBytes_GET_SIZE(val_use);
-			MAKE_VALUE_BUFFER(cb_this_buffer_pointer);
-			memcpy(this_buffer_pointer, PyBytes_AS_STRING(val_use), cb_this_buffer_pointer);
-#endif
 			ns_v.val.p = this_buffer_pointer;
 			rc = SetSizeIs(value_index, PR_TRUE, cb_this_buffer_pointer);
 			break;
@@ -1676,7 +1505,6 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 				ns_v.val.p = nsnull;
 				break;
 			}
-#if PY_MAJOR_VERSION <= 2
 			if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 				PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 				BREAK_FALSE;
@@ -1685,14 +1513,6 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 				BREAK_FALSE;
 			// Sanity check should PyObject_Str() ever loosen its semantics wrt Unicode!
 			NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyObject_Unicode didnt return a unicode object!");
-#else
-			if (!PyUnicode_Check(val)) {
-				PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-				BREAK_FALSE;
-			}
-            val_use = val;
-            Py_INCREF(val_use);
-#endif
 			PRUnichar *sv;
 			PRUint32 nch;
 			if (PyUnicode_AsPRUnichar(val_use, &sv, &nch) < 0)
@@ -1898,11 +1718,7 @@ PyObject *PyXPCOM_InterfaceVariantHelper::MakeSinglePythonResult(int index)
 		Py_INCREF(ret);
 		break;
 	  case nsXPTType::T_CHAR:
-#if PY_MAJOR_VERSION <= 2
 		ret = PyString_FromStringAndSize( ((char *)ns_v.ptr), 1 );
-#else
-		ret = PyUnicode_FromStringAndSize( ((char *)ns_v.ptr), 1 );
-#endif
 		break;
 
 	  case nsXPTType::T_WCHAR:
@@ -1930,11 +1746,7 @@ PyObject *PyXPCOM_InterfaceVariantHelper::MakeSinglePythonResult(int index)
 			ret = Py_None;
 			Py_INCREF(Py_None);
 		} else
-#if PY_MAJOR_VERSION <= 2
 			ret = PyString_FromString( *((char **)ns_v.ptr) );
-#else
-			ret = PyUnicode_FromString( *((char **)ns_v.ptr) );
-#endif
 		break;
 
 	  case nsXPTType::T_WCHAR_STR: {
@@ -2015,11 +1827,7 @@ PyObject *PyXPCOM_InterfaceVariantHelper::MakeSinglePythonResult(int index)
 			Py_INCREF(Py_None);
 		} else {
 			PRUint32 string_size = GetSizeIs(index, PR_TRUE);
-#if PY_MAJOR_VERSION <= 2
 			ret = PyString_FromStringAndSize( *((char **)ns_v.ptr), string_size );
-#else
-			ret = PyUnicode_FromStringAndSize( *((char **)ns_v.ptr), string_size );
-#endif
 		}
 		break;
 
@@ -2274,11 +2082,7 @@ PyObject *PyXPCOM_GatewayVariantHelper::MakeSingleParam(int index, PythonTypeDes
 		}
 	  case nsXPTType::T_CHAR: {
 		char temp = DEREF_IN_OR_OUT(ns_v.val.c, char);
-#if PY_MAJOR_VERSION <= 2
 		ret = PyString_FromStringAndSize(&temp, 1);
-#else
-		ret = PyUnicode_FromStringAndSize(&temp, 1);
-#endif
 		break;
 		}
 	  case nsXPTType::T_WCHAR: {
@@ -2311,11 +2115,7 @@ PyObject *PyXPCOM_GatewayVariantHelper::MakeSingleParam(int index, PythonTypeDes
 			ret = Py_None;
 			Py_INCREF(Py_None);
 		} else
-#if PY_MAJOR_VERSION <= 2
 			ret = PyString_FromString(t);
-#else
-			ret = PyUnicode_FromString(t);
-#endif
 		break;
 		}
 
@@ -2377,11 +2177,7 @@ PyObject *PyXPCOM_GatewayVariantHelper::MakeSingleParam(int index, PythonTypeDes
 			ret = Py_None;
 			Py_INCREF(Py_None);
 		} else
-#if PY_MAJOR_VERSION <= 2
 			ret = PyString_FromStringAndSize(t, string_size);
-#else
-			ret = PyUnicode_FromStringAndSize(t, string_size);
-#endif
 		break;
 		}
 	  case nsXPTType::T_PWSTRING_SIZE_IS: {
@@ -2402,11 +2198,7 @@ PyObject *PyXPCOM_GatewayVariantHelper::MakeSingleParam(int index, PythonTypeDes
 		char buf[128];
 		sprintf(buf, "Unknown XPCOM type flags (0x%x)", td.type_flags);
 		PyXPCOM_LogWarning("%s - returning a string object with this message!\n", buf);
-#if PY_MAJOR_VERSION <= 2
 		ret = PyString_FromString(buf);
-#else
-		ret = PyUnicode_FromString(buf);
-#endif
 		break;
 		}
 	}
@@ -2547,7 +2339,6 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 		FILL_SIMPLE_POINTER( PRBool, PyInt_AsLong(val_use) );
 		break;
 	  case nsXPTType::T_CHAR:
-#if PY_MAJOR_VERSION <= 2
 		if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 			PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 			BREAK_FALSE;
@@ -2557,27 +2348,13 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 		// Sanity check should PyObject_Str() ever loosen its semantics wrt Unicode!
 		NS_ABORT_IF_FALSE(PyString_Check(val_use), "PyObject_Str didnt return a string object!");
 		FILL_SIMPLE_POINTER( char, *PyString_AS_STRING(val_use) );
-#else
-		if (!PyUnicode_Check(val)) {
-			PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-			BREAK_FALSE;
-		}
-		FILL_SIMPLE_POINTER( char, *PyUnicode_AS_UNICODE(val) );
-#endif
 		break;
 
 	  case nsXPTType::T_WCHAR:
-#if PY_MAJOR_VERSION <= 2
 		if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 			PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 			BREAK_FALSE;
 		}
-#else
-		if (!PyUnicode_Check(val)) {
-			PyErr_SetString(PyExc_TypeError, "This parameter must be a Unicode object");
-			BREAK_FALSE;
-		}
-#endif
 		if ((val_use = PyUnicode_FromObject(val))==NULL)
 			BREAK_FALSE;
 		NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyUnicode_FromObject didnt return a Unicode object!");
@@ -2617,7 +2394,6 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 		if (val == Py_None) {
 			NS_ABORT_IF_FALSE(0, "dont handle None here yet");
 		} else {
-#if PY_MAJOR_VERSION <= 2
 			if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 				PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 				BREAK_FALSE;
@@ -2625,16 +2401,7 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 			val_use = PyObject_Str(val);
 			NS_ABORT_IF_FALSE(PyString_Check(val_use), "PyObject_Str didnt return a string object!");
 			const char *sz = PyString_AS_STRING(val_use);
-			ws->Assign(sz, PyString_GET_SIZE(val_use));
-#else
-			if (!PyUnicode_Check(val)) {
-				PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-				BREAK_FALSE;
-			}
-			val_use = PyUnicode_AsUTF8String(val);
-			const char *sz = PyBytes_AS_STRING(val_use);
-			ws->Assign(sz, PyBytes_GET_SIZE(val_use));
-#endif
+			ws->Assign(sz, PyString_Size(val_use));
 		}
 		break;
 		}
@@ -2644,32 +2411,18 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 		if (val == Py_None) {
 			NS_ABORT_IF_FALSE(0, "dont handle None here yet");
 		} else {
-#if PY_MAJOR_VERSION <= 2
 			if (PyString_Check(val)) {
 				val_use = val;
 				Py_INCREF(val);
-			}
-            else
-#endif
-            if (PyUnicode_Check(val)) {
+			} else if (PyUnicode_Check(val)) {
 				val_use = PyUnicode_AsUTF8String(val);
 			} else {
-#if PY_MAJOR_VERSION <= 2
 				PyErr_SetString(PyExc_TypeError, "UTF8 parameters must be string or Unicode objects");
-#else
-				PyErr_SetString(PyExc_TypeError, "UTF8 parameters must be unicode objects");
-#endif
 				BREAK_FALSE;
 			}
-#if PY_MAJOR_VERSION <= 2
 			NS_ABORT_IF_FALSE(PyString_Check(val_use), "must have a string object!");
 			const char *sz = PyString_AS_STRING(val_use);
-			ws->Assign(sz, PyString_GET_SIZE(val_use));
-#else
-			NS_ABORT_IF_FALSE(PyBytes_Check(val_use), "must have a bytes object!");
-			const char *sz = PyBytes_AS_STRING(val_use);
-			ws->Assign(sz, PyBytes_GET_SIZE(val_use));
-#endif
+			ws->Assign(sz, PyString_Size(val_use));
 		}
 		break;
 		}
@@ -2683,7 +2436,6 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 
 		if (val == Py_None)
 			break; // Remains NULL.
-#if PY_MAJOR_VERSION <= 2
 		if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 			PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 			BREAK_FALSE;
@@ -2695,17 +2447,6 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 
 		const char *sz = PyString_AS_STRING(val_use);
 		int nch = PyString_GET_SIZE(val_use);
-#else
-		if (!PyUnicode_Check(val)) {
-			PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-			BREAK_FALSE;
-		}
-		if ((val_use = PyUnicode_AsUTF8String(val))==NULL)
-			BREAK_FALSE;
-
-		const char *sz = PyBytes_AS_STRING(val_use);
-		int nch = PyBytes_GET_SIZE(val_use);
-#endif
 
 		*pp = (char *)nsMemory::Alloc(nch+1);
 		if (*pp==NULL) {
@@ -2723,21 +2464,12 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 		*pp = nsnull;
 		if (val == Py_None)
 			break; // Remains NULL.
-#if PY_MAJOR_VERSION <= 2
 		if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 			PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 			BREAK_FALSE;
 		}
 		val_use = PyUnicode_FromObject(val);
 		NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyUnicode_FromObject didnt return a Unicode object!");
-#else
-		if (!PyUnicode_Check(val)) {
-			PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-			BREAK_FALSE;
-		}
-        val_use = val;
-        Py_INCREF(val_use);
-#endif
 		if (PyUnicode_AsPRUnichar(val_use, pp, NULL) < 0)
 			BREAK_FALSE;
 		break;
@@ -2792,7 +2524,6 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 		const char *sz = nsnull;
 		PRUint32 nch = 0;
 		if (val != Py_None) {
-#if PY_MAJOR_VERSION <= 2
 			if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 				PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 				BREAK_FALSE;
@@ -2804,17 +2535,6 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 
 			sz = PyString_AS_STRING(val_use);
 			nch = PyString_GET_SIZE(val_use);
-#else
-			if (!PyUnicode_Check(val)) {
-				PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-				BREAK_FALSE;
-			}
-			if ((val_use = PyUnicode_AsUTF8String(val))==NULL)
-				BREAK_FALSE;
-
-			sz = PyBytes_AS_STRING(val_use);
-			nch = PyBytes_GET_SIZE(val_use);
-#endif
 		}
 		PRBool bBackFill = PR_FALSE;
 		PRBool bCanSetSizeIs = CanSetSizeIs(index, PR_TRUE);
@@ -2861,21 +2581,12 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 		PRUint32 nbytes = 0;
 
 		if (val != Py_None) {
-#if PY_MAJOR_VERSION <= 2
 			if (!PyString_Check(val) && !PyUnicode_Check(val)) {
 				PyErr_SetString(PyExc_TypeError, "This parameter must be a string or Unicode object");
 				BREAK_FALSE;
 			}
 			val_use = PyUnicode_FromObject(val);
 			NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyUnicode_FromObject didnt return a Unicode object!");
-#else
-			if (!PyUnicode_Check(val)) {
-				PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-				BREAK_FALSE;
-			}
-            val_use = val;
-            Py_INCREF(val_use);
-#endif
 			if (PyUnicode_AsPRUnichar(val_use, &sz, &nch) < 0)
 				BREAK_FALSE;
 			nbytes = sizeof(PRUnichar) * nch;
@@ -3038,11 +2749,7 @@ nsresult PyXPCOM_GatewayVariantHelper::ProcessPythonResult(PyObject *ret_ob)
 		// return retval [, byref1 [, byref2 ...] ]
 		// But the retval is often the last param described in the info.
 		if (!PySequence_Check(user_result) ||
-#if PY_MAJOR_VERSION <= 2
 		     PyString_Check(user_result) ||
-#else
-		     PyBytes_Check(user_result) ||
-#endif
 		     PyUnicode_Check(user_result)) {
 			PyErr_SetString(PyExc_TypeError, "This function has multiple results, but a sequence was not given to fill them");
 			return NS_ERROR_FAILURE;

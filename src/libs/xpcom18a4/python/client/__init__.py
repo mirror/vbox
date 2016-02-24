@@ -36,7 +36,7 @@
 # ***** END LICENSE BLOCK *****
 
 import os
-from types import MethodType
+import new
 import logging
 from xpcom import xpt, COMException, nsError, logger
 
@@ -125,9 +125,9 @@ def BuildMethod(method_info, iid):
     codeObject = compile(method_code, "<XPCOMObject method '%s'>" % (name,), "exec")
     # Exec the code object
     tempNameSpace = {}
-    exec(codeObject, globals(), tempNameSpace)
+    exec codeObject in globals(), tempNameSpace
     ret = tempNameSpace[name]
-    if iid not in interface_method_cache:
+    if not interface_method_cache.has_key(iid):
         interface_method_cache[iid] = {}
     interface_method_cache[iid][name] = ret
     return ret
@@ -152,10 +152,10 @@ def BuildInterfaceInfo(iid):
             flags = m.flags
             if flags & FLAGS_TO_IGNORE == 0:
                 if flags & XPT_MD_SETTER:
-                    param_flags = list([(x.param_flags,) + xpt.MakeReprForInvoke(x) for x in m.params])
+                    param_flags = map(lambda x: (x.param_flags,) + xpt.MakeReprForInvoke(x), m.params)
                     setters[m.name] = m.method_index, param_flags
                 elif flags & XPT_MD_GETTER:
-                    param_flags = list([(x.param_flags,) + xpt.MakeReprForInvoke(x) for x in m.params])
+                    param_flags = map(lambda x: (x.param_flags,) + xpt.MakeReprForInvoke(x), m.params)
                     getters[m.name] = m.method_index, param_flags
                 else:
                     method_infos[m.name] = m
@@ -219,7 +219,7 @@ class _XPCOMBase:
                 return cvt(prim.data)
             except COMException:
                 pass
-        raise ValueError("This object does not support automatic numeric conversion to this type")
+        raise ValueError, "This object does not support automatic numeric conversion to this type"
 
     def __int__(self):
         return self._do_conversion(_int_interfaces, int)
@@ -280,7 +280,7 @@ class Component(_XPCOMBase):
                     interface_infos = []
                 for nominated_iid in interface_infos:
                     # Interface may appear twice in the class info list, so check this here.
-                    if nominated_iid not in self.__dict__['_interface_infos_']:
+                    if not self.__dict__['_interface_infos_'].has_key(nominated_iid):
                         # Just invoke our QI on the object
                         self.queryInterface(nominated_iid)
                 if real_cid is not None:
@@ -289,7 +289,7 @@ class Component(_XPCOMBase):
                     contractid_info['_interface_infos_'] = self.__dict__['_interface_infos_']
                     contractid_info_cache[real_cid] = contractid_info
             else:
-                for key, val in list(contractid_info.items()):
+                for key, val in contractid_info.items():
                     self.__dict__[key].update(val)
 
         self.__dict__['_com_classinfo_'] = classinfo
@@ -299,10 +299,10 @@ class Component(_XPCOMBase):
         # It should be cached at the module level, so we don't need to
         # rebuild the world for each new object.
         iis = self.__dict__['_interface_infos_']
-        assert iid not in iis, "Already remembered this interface!"
+        assert not iis.has_key(iid), "Already remembered this interface!"
         try:
             method_infos, getters, setters, constants = BuildInterfaceInfo(iid)
-        except COMException as why:
+        except COMException, why:
             # Failing to build an interface info generally isn't a real
             # problem - its probably just that the interface is non-scriptable.
             logger.info("Failed to build interface info for %s: %s", iid, why)
@@ -313,17 +313,17 @@ class Component(_XPCOMBase):
         # Remember all the names so we can delegate
         iis[iid] = method_infos, getters, setters, constants
         names = self.__dict__['_name_to_interface_iid_']
-        for name in list(method_infos.keys()): names[name] = iid
-        for name in list(getters.keys()): names[name] = iid
-        for name in list(setters.keys()): names[name] = iid
-        for name in list(constants.keys()):  names[name] = iid
+        for name in method_infos.keys(): names[name] = iid
+        for name in getters.keys(): names[name] = iid
+        for name in setters.keys(): names[name] = iid
+        for name in constants.keys():  names[name] = iid
 
     def QueryInterface(self, iid):
-        if iid in self._interfaces_:
-            assert iid_name in self._interface_names_, "_interfaces_ has the key, but _interface_names_ does not!"
+        if self._interfaces_.has_key(iid):
+            assert self._interface_names_.has_key(iid.name), "_interfaces_ has the key, but _interface_names_ does not!"
             return self
         # Haven't seen this before - do a real QI.
-        if iid not in self._interface_infos_:
+        if not self._interface_infos_.has_key(iid):
             self._remember_interface_info(iid)
         iface_info = self._interface_infos_[iid]
         if iface_info is None:
@@ -349,7 +349,7 @@ class Component(_XPCOMBase):
 
     def __getattr__(self, attr):
         if attr in _special_getattr_names:
-            raise AttributeError(attr)
+            raise AttributeError, attr
         # First allow the interface name to return the "raw" interface
         interface = self.__dict__['_interface_names_'].get(attr, None)
         if interface is not None:
@@ -374,14 +374,14 @@ class Component(_XPCOMBase):
             return getattr(interface, attr)
         # Some interfaces may provide this name via "native" support.
         # Loop over all interfaces, and if found, cache it for next time.
-        for interface in list(self.__dict__['_interfaces_'].values()):
+        for interface in self.__dict__['_interfaces_'].values():
             try:
                 ret = getattr(interface, attr)
                 self.__dict__['_name_to_interface_iid_'][attr] = interface._iid_
                 return ret
             except AttributeError:
                 pass
-        raise AttributeError("XPCOM component '%s' has no attribute '%s'" % (self._object_name_, attr))
+        raise AttributeError, "XPCOM component '%s' has no attribute '%s'" % (self._object_name_, attr)
         
     def __setattr__(self, attr, val):
         iid = self._name_to_interface_iid_.get(attr, None)
@@ -396,7 +396,7 @@ class Component(_XPCOMBase):
                 interface = self.__dict__['_interfaces_'][iid]
             setattr(interface, attr, val)
             return
-        raise AttributeError("XPCOM component '%s' has no attribute '%s'" % (self._object_name_, attr))
+        raise AttributeError, "XPCOM component '%s' has no attribute '%s'" % (self._object_name_, attr)
 
     def _get_classinfo_repr_(self):
         try:
@@ -409,7 +409,7 @@ class Component(_XPCOMBase):
             # by the first caller who actually *needs* this to work.
             self.__dict__['_tried_classinfo_'] = 0
 
-        iface_names = list(self.__dict__['_interface_names_'].keys())
+        iface_names = self.__dict__['_interface_names_'].keys()
         try:
             iface_names.remove("nsISupports")
         except ValueError:
@@ -435,12 +435,12 @@ class _Interface(_XPCOMBase):
         self.__dict__['_object_name_'] = iid.name
         self.__dict__.update(constants)
         # We remember the constant names to prevent the user trying to assign to them!
-        self.__dict__['_constant_names_'] = list(constants.keys())
+        self.__dict__['_constant_names_'] = constants.keys()
 
     def __getattr__(self, attr):
         # Allow the underlying interface to provide a better implementation if desired.
         if attr in _special_getattr_names:
-            raise AttributeError(attr)
+            raise AttributeError, attr
 
         ret = getattr(self.__dict__['_comobj_'], attr, None)
         if ret is not None:
@@ -448,14 +448,14 @@ class _Interface(_XPCOMBase):
         # Do the function thing first.
         unbound_method = self.__dict__['_methods_'].get(attr, None)
         if unbound_method is not None:
-            return MethodType(unbound_method, self)
+            return new.instancemethod(unbound_method, self, self.__class__)
 
         getters = self.__dict__['_property_getters_']
         info = getters.get(attr)
         if info is not None:
             method_index, param_infos = info
             if len(param_infos)!=1: # Only expecting a retval
-                raise RuntimeError("Can't get properties with this many args!")
+                raise RuntimeError, "Can't get properties with this many args!"
             args = ( param_infos, () )
             return XPTC_InvokeByIndex(self._comobj_, method_index, args)
 
@@ -466,24 +466,24 @@ class _Interface(_XPCOMBase):
             unbound_method = BuildMethod(method_info, self._iid_)
             # Cache it locally
             self.__dict__['_methods_'][attr] = unbound_method
-            return MethodType(unbound_method, self)
+            return new.instancemethod(unbound_method, self, self.__class__)
 
-        raise AttributeError("XPCOM component '%s' has no attribute '%s'" % (self._object_name_, attr))
+        raise AttributeError, "XPCOM component '%s' has no attribute '%s'" % (self._object_name_, attr)
 
     def __setattr__(self, attr, val):
         # If we already have a __dict__ item of that name, and its not one of
         # our constants, we just directly set it, and leave.
-        if attr in self.__dict__ and attr not in self.__dict__['_constant_names_']:
+        if self.__dict__.has_key(attr) and attr not in self.__dict__['_constant_names_']:
             self.__dict__[attr] = val
             return
         # Start sniffing for what sort of attribute this might be?
         setters = self.__dict__['_property_setters_']
         info = setters.get(attr)
         if info is None:
-            raise AttributeError("XPCOM component '%s' can not set attribute '%s'" % (self._object_name_, attr))
+            raise AttributeError, "XPCOM component '%s' can not set attribute '%s'" % (self._object_name_, attr)
         method_index, param_infos = info
         if len(param_infos)!=1: # Only expecting a single input val
-            raise RuntimeError("Can't set properties with this many args!")
+            raise RuntimeError, "Can't set properties with this many args!"
         real_param_infos = ( param_infos, (val,) )
         return XPTC_InvokeByIndex(self._comobj_, method_index, real_param_infos)
 
@@ -526,7 +526,7 @@ class WeakReference:
         if iid is None: iid = self._iid_
         try:
             return Component(self._comobj_.QueryReferent(iid)._comobj_, iid)
-        except COMException as details:
+        except COMException, details:
             if details.errno != nsError.NS_ERROR_NULL_POINTER:
                 raise
             return None
