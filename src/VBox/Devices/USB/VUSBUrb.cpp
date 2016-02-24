@@ -630,6 +630,7 @@ static PVUSBCTRLEXTRA vusbMsgAllocExtraData(PVUSBURB pUrb)
         //pExtra->Urb.pVUsb->pCtrlUrb = NULL;
         //pExtra->Urb.pVUsb->pNext = NULL;
         //pExtra->Urb.pVUsb->ppPrev = NULL;
+        pExtra->Urb.pVUsb->pUrb = &pExtra->Urb;
         pExtra->Urb.pVUsb->pDev = pUrb->pVUsb->pDev;
         pExtra->Urb.pVUsb->pfnFree = vusbMsgFreeUrb;
         pExtra->Urb.pVUsb->pvFreeCtx = &pExtra->Urb;
@@ -687,6 +688,8 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
         pExtra->Urb.pVUsb->pvFreeCtx = NULL;
         LogFlow(("vusbMsgSetup: Replacing canceled pExtra=%p with %p.\n", pExtra, pvNew));
         pPipe->pCtrl = pExtra = (PVUSBCTRLEXTRA)pvNew;
+        pExtra->Urb.pVUsb = (PVUSBURBVUSB)&pExtra->Urb.abData[sizeof(pExtra->Urb.abData) + sizeof(VUSBSETUP)];
+        pExtra->Urb.pVUsb->pUrb = &pExtra->Urb;
         pExtra->pMsg = (PVUSBSETUP)pExtra->Urb.abData;
         pExtra->Urb.enmState = VUSBURBSTATE_ALLOCATED;
         pExtra->Urb.fCompleting = false;
@@ -695,9 +698,9 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
     /*
      * Check that we've got sufficient space in the message URB.
      */
-    if (pExtra->cbMax < cbBuf + pSetupIn->wLength)
+    if (pExtra->cbMax < cbBuf + pSetupIn->wLength + sizeof(VUSBURBVUSBINT))
     {
-        uint32_t cbReq = RT_ALIGN_32(cbBuf + pSetupIn->wLength, 1024);
+        uint32_t cbReq = RT_ALIGN_32(cbBuf + pSetupIn->wLength + sizeof(VUSBURBVUSBINT), 1024);
         PVUSBCTRLEXTRA pNew = (PVUSBCTRLEXTRA)RTMemRealloc(pExtra, RT_OFFSETOF(VUSBCTRLEXTRA, Urb.abData[cbReq]));
         if (!pNew)
         {
@@ -710,6 +713,8 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
             pNew->pMsg = (PVUSBSETUP)pNew->Urb.abData;
             pExtra = pNew;
         }
+        pExtra->Urb.pVUsb = (PVUSBURBVUSB)&pExtra->Urb.abData[cbBuf + pSetupIn->wLength];
+        pExtra->Urb.pVUsb->pUrb = &pExtra->Urb;
         pExtra->cbMax = cbReq;
     }
     Assert(pExtra->Urb.enmState == VUSBURBSTATE_ALLOCATED);
