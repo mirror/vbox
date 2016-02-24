@@ -61,12 +61,12 @@ static uint32_t vbox_get_flags(struct vbox_private *vbox)
 
 irqreturn_t vbox_irq_handler(int irq, void *arg)
 {
-	struct drm_device *dev = (struct drm_device *) arg;
-	struct vbox_private *vbox = (struct vbox_private *)dev->dev_private;
-	uint32_t host_flags = vbox_get_flags(vbox);
+    struct drm_device *dev = (struct drm_device *) arg;
+    struct vbox_private *vbox = (struct vbox_private *)dev->dev_private;
+    uint32_t host_flags = vbox_get_flags(vbox);
 
-	if (!(host_flags & HGSMIHOSTFLAGS_IRQ))
-		return IRQ_NONE;
+    if (!(host_flags & HGSMIHOSTFLAGS_IRQ))
+        return IRQ_NONE;
 
     /* Due to a bug in the initial host implementation of hot-plug interrupts,
      * the hot-plug and cursor capability flags were never cleared.  Fortunately
@@ -75,8 +75,8 @@ irqreturn_t vbox_irq_handler(int irq, void *arg)
     if (   host_flags & (HGSMIHOSTFLAGS_HOTPLUG | HGSMIHOSTFLAGS_CURSOR_CAPABILITIES)
         && !(host_flags & HGSMIHOSTFLAGS_VSYNC))
         schedule_work(&vbox->hotplug_work);
-	vbox_clear_irq();
-	return IRQ_HANDLED;
+    vbox_clear_irq();
+    return IRQ_HANDLED;
 }
 
 /**
@@ -120,7 +120,7 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
 
 static void vbox_hotplug_worker(struct work_struct *work)
 {
-	struct vbox_private *vbox = container_of(work, struct vbox_private,
+    struct vbox_private *vbox = container_of(work, struct vbox_private,
                                              hotplug_work);
 
     LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
@@ -132,20 +132,20 @@ static void vbox_hotplug_worker(struct work_struct *work)
 
 int vbox_irq_init(struct vbox_private *vbox)
 {
-	int ret;
+    int ret;
 
     LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     vbox_update_mode_hints(vbox);
-	ret = drm_irq_install(vbox->dev, vbox->dev->pdev->irq);
-	if (unlikely(ret != 0)) {
-	    vbox_irq_fini(vbox);
-		DRM_ERROR("Failed installing irq: %d\n", ret);
-		return 1;
-	}
-	INIT_WORK(&vbox->hotplug_work, vbox_hotplug_worker);
-	vbox->isr_installed = true;
+    ret = drm_irq_install(vbox->dev, vbox->dev->pdev->irq);
+    if (unlikely(ret != 0)) {
+        vbox_irq_fini(vbox);
+        DRM_ERROR("Failed installing irq: %d\n", ret);
+        return 1;
+    }
+    INIT_WORK(&vbox->hotplug_work, vbox_hotplug_worker);
+    vbox->isr_installed = true;
     LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
-	return 0;
+    return 0;
 }
 
 void vbox_irq_fini(struct vbox_private *vbox)
