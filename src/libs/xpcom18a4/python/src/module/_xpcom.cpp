@@ -83,35 +83,59 @@ extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
 #  define MANGLE_MODULE_INIT(a_Name)    RT_CONCAT(a_Name, MODULE_NAME_SUFFIX)
 # endif
 # ifdef VBOX_PYXPCOM_VERSIONED
-#  if   PY_VERSION_HEX >= 0x02080000
+#  if   PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_8")
+#   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_8)
+
+#  elif PY_VERSION_HEX >= 0x03070000 && PY_VERSION_HEX < 0x03080000
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_7")
+#   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_7)
+
+#  elif PY_VERSION_HEX >= 0x03060000 && PY_VERSION_HEX < 0x03070000
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_6")
+#   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_6)
+
+#  elif PY_VERSION_HEX >= 0x03050000 && PY_VERSION_HEX < 0x03060000
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_5")
+#   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_5)
+
+#  elif PY_VERSION_HEX >= 0x03040000 && PY_VERSION_HEX < 0x03050000
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_4")
+#   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_4)
+
+#  elif PY_VERSION_HEX >= 0x03030000 && PY_VERSION_HEX < 0x03040000
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_3")
+#   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_3)
+
+#  elif PY_VERSION_HEX >= 0x03020000 && PY_VERSION_HEX < 0x03030000
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_2")
+#   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_2)
+
+#  elif PY_VERSION_HEX >= 0x03010000 && PY_VERSION_HEX < 0x03020000
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_1")
+#   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_1)
+
+#  elif PY_VERSION_HEX >= 0x02080000 && PY_VERSION_HEX < 0x02090000
 #   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_8")
 #   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_8)
 
-#  elif PY_VERSION_HEX >= 0x02070000
+#  elif PY_VERSION_HEX >= 0x02070000 && PY_VERSION_HEX < 0x02080000
 #   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_7")
 #   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_7)
 
-#  elif PY_VERSION_HEX >= 0x02060000
+#  elif PY_VERSION_HEX >= 0x02060000 && PY_VERSION_HEX < 0x02070000
 #   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_6")
 #   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_6)
-
-#  elif PY_VERSION_HEX >= 0x02050000
-#   define MODULE_NAME 	  MANGLE_MODULE_NAME("VBoxPython2_5")
-#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_5)
-
-#  elif PY_VERSION_HEX >= 0x02040000
-#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_4")
-#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_4)
-
-#  elif PY_VERSION_HEX >= 0x02030000
-#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_3")
-#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_3)
 #  else
-#   error "Fix module versioning."
+#   error "Fix module versioning. This Python version is not recognized."
 #  endif
 # else
 #  define MODULE_NAME 	  MANGLE_MODULE_NAME("VBoxPython")
-#  define initVBoxPython  MANGLE_MODULE_INIT(initVBoxPython)
+#  if PY_MAJOR_VERSION <= 2
+#   define initVBoxPython  MANGLE_MODULE_INIT(initVBoxPython)
+#  else
+#   define initVBoxPython  MANGLE_MODULE_INIT(PyInit_VBoxPython)
+#  endif
 # endif
 #else
 #define MODULE_NAME "_xpcom"
@@ -120,6 +144,7 @@ extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
 // "boot-strap" methods - interfaces we need to get the base
 // interface support!
 
+#ifndef VBOX
 /* deprecated, included for backward compatibility */
 static PyObject *
 PyXPCOMMethod_NS_GetGlobalComponentManager(PyObject *self, PyObject *args)
@@ -142,6 +167,7 @@ PyXPCOMMethod_NS_GetGlobalComponentManager(PyObject *self, PyObject *args)
 
 	return Py_nsISupports::PyObjectFromInterface(ocm, NS_GET_IID(nsIComponentManagerObsolete), PR_FALSE);
 }
+#endif
 
 static PyObject *
 PyXPCOMMethod_GetComponentManager(PyObject *self, PyObject *args)
@@ -194,6 +220,7 @@ PyXPCOMMethod_GetServiceManager(PyObject *self, PyObject *args)
 	return Py_nsISupports::PyObjectFromInterface(sm, NS_GET_IID(nsIServiceManager));
 }
 
+#ifndef VBOX
 /* deprecated, included for backward compatibility */
 static PyObject *
 PyXPCOMMethod_GetGlobalServiceManager(PyObject *self, PyObject *args)
@@ -203,6 +230,7 @@ PyXPCOMMethod_GetGlobalServiceManager(PyObject *self, PyObject *args)
 
 	return PyXPCOMMethod_GetComponentManager(self, args);
 }
+#endif
 
 static PyObject *
 PyXPCOMMethod_XPTI_GetInterfaceInfoManager(PyObject *self, PyObject *args)
@@ -499,7 +527,11 @@ PyObject *AllocateBuffer(PyObject *self, PyObject *args)
 	int bufSize;
 	if (!PyArg_ParseTuple(args, "i", &bufSize))
 		return NULL;
+#if PY_MAJOR_VERSION <= 2
 	return PyBuffer_New(bufSize);
+#else
+    return PyBytes_FromStringAndSize(NULL, bufSize);
+#endif
 }
 
 // Writes a message to the console service.  This could be done via pure
@@ -670,12 +702,16 @@ static struct PyMethodDef xpcom_methods[]=
 {
 	{"GetComponentManager", PyXPCOMMethod_GetComponentManager, 1},
 	{"GetComponentRegistrar", PyXPCOMMethod_GetComponentRegistrar, 1},
+#ifndef VBOX
 	{"NS_GetGlobalComponentManager", PyXPCOMMethod_NS_GetGlobalComponentManager, 1}, // deprecated
+#endif
 	{"XPTI_GetInterfaceInfoManager", PyXPCOMMethod_XPTI_GetInterfaceInfoManager, 1},
 	{"XPTC_InvokeByIndex", PyXPCOMMethod_XPTC_InvokeByIndex, 1},
 	{"GetServiceManager", PyXPCOMMethod_GetServiceManager, 1},
+#ifndef VBOX
 	{"GetGlobalServiceManager", PyXPCOMMethod_GetGlobalServiceManager, 1}, // deprecated
 	{"IID", PyXPCOMMethod_IID, 1}, // IID is wrong - deprecated - not just IID, but CID, etc.
+#endif
 	{"ID", PyXPCOMMethod_IID, 1}, // This is the official name.
 	{"NS_ShutdownXPCOM", PyXPCOMMethod_NS_ShutdownXPCOM, 1},
 	{"WrapObject", PyXPCOMMethod_WrapObject, 1},
@@ -690,11 +726,11 @@ static struct PyMethodDef xpcom_methods[]=
 	{"MakeVariant", PyXPCOMMethod_MakeVariant, 1},
 	{"GetVariantValue", PyXPCOMMethod_GetVariantValue, 1},
 #ifdef VBOX
-        {"WaitForEvents", PyXPCOMMethod_WaitForEvents, 1},
-        {"InterruptWait", PyXPCOMMethod_InterruptWait, 1},
-        {"DeinitCOM",     PyXPCOMMethod_DeinitCOM, 1},
-        {"AttachThread",  PyXPCOMMethod_AttachThread, 1},
-        {"DetachThread",  PyXPCOMMethod_DetachThread, 1},
+    {"WaitForEvents", PyXPCOMMethod_WaitForEvents, 1},
+    {"InterruptWait", PyXPCOMMethod_InterruptWait, 1},
+    {"DeinitCOM",     PyXPCOMMethod_DeinitCOM, 1},
+    {"AttachThread",  PyXPCOMMethod_AttachThread, 1},
+    {"DetachThread",  PyXPCOMMethod_DetachThread, 1},
 #endif
 #ifdef VBOX_DEBUG_LIFETIMES
 	{"_DumpInterfaces", PyXPCOMMethod_DumpInterfaces, 1},
@@ -703,6 +739,18 @@ static struct PyMethodDef xpcom_methods[]=
 	/* bird: The above comment refers to LogWarning and LogError. Both now removed. */
 	{ NULL }
 };
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef xpcom_module =
+{
+    PyModuleDef_HEAD_INIT,
+    MODULE_NAME,    /* name of module */
+    NULL,           /* module documentation */
+    -1,             /* size of per-interpreter state or -1 if using globals */
+    xpcom_methods
+};
+#endif
+
 
 #define REGISTER_IID(t) { \
 	PyObject *iid_ob = Py_nsIID::PyObjectFromIID(NS_GET_IID(t)); \
@@ -720,27 +768,43 @@ static struct PyMethodDef xpcom_methods[]=
 ////////////////////////////////////////////////////////////
 // The module init code.
 //
+#if PY_MAJOR_VERSION <= 2
 extern "C" NS_EXPORT
 void
+#else
+PyObject *
+#endif
 init_xpcom() {
 	PyObject *oModule;
 
 	// ensure the framework has valid state to work with.
 	if (!PyXPCOM_Globals_Ensure())
+#if PY_MAJOR_VERSION <= 2
 		return;
+#else
+		return NULL;
+#endif
 
 	// Must force Python to start using thread locks
 	PyEval_InitThreads();
 
 	// Create the module and add the functions
+#if PY_MAJOR_VERSION <= 2
 	oModule = Py_InitModule(MODULE_NAME, xpcom_methods);
+#else
+	oModule = PyModule_Create(&xpcom_module);
+#endif
 
 	PyObject *dict = PyModule_GetDict(oModule);
 	PyObject *pycom_Error = PyXPCOM_Error;
 	if (pycom_Error == NULL || PyDict_SetItemString(dict, "error", pycom_Error) != 0)
 	{
 		PyErr_SetString(PyExc_MemoryError, "can't define error");
+#if PY_MAJOR_VERSION <= 2
 		return;
+#else
+		return NULL;
+#endif
 	}
 	PyDict_SetItemString(dict, "IIDType", (PyObject *)&Py_nsIID::type);
 
@@ -783,6 +847,9 @@ init_xpcom() {
                                    );
     PyDict_SetItemString(dict, "NS_DEBUG", ob);
     Py_DECREF(ob);
+#if PY_MAJOR_VERSION >= 3
+    return oModule;
+#endif
 }
 
 #ifdef VBOX_PYXPCOM
@@ -794,8 +861,17 @@ using namespace com;
 #include <iprt/alloca.h>
 #include <iprt/stream.h>
 
+#if PY_MAJOR_VERSION <= 2
 extern "C" NS_EXPORT
 void
+#else
+/** @todo r=klaus this is hacky, but as Python3 doesn't deal with ELF
+ * visibility, assuming that all globals are visible (which is ugly and not
+ * true in our case). */
+#undef PyMODINIT_FUNC
+#define PyMODINIT_FUNC extern "C" NS_EXPORT PyObject*
+PyMODINIT_FUNC
+#endif
 initVBoxPython() { /* NOTE! This name is redefined at the top of the file! */
   static bool s_vboxInited = false;
   if (!s_vboxInited) {
@@ -818,8 +894,15 @@ initVBoxPython() { /* NOTE! This name is redefined at the top of the file! */
 
     rc = com::Initialize();
 
+#if PY_MAJOR_VERSION <= 2
     init_xpcom();
+#else
+    return init_xpcom();
+#endif
   }
+#if PY_MAJOR_VERSION >= 3
+  return NULL;
+#endif
 }
 
 static

@@ -61,7 +61,11 @@ static PyObject *MyBool( PRBool v) {
 	return ret;
 }
 static PyObject *MyChar( char c) {
+#if PY_MAJOR_VERSION <= 2
 	return PyString_FromStringAndSize(&c, 1);
+#else
+	return PyUnicode_FromStringAndSize(&c, 1);
+#endif
 }
 static PyObject *MyUChar( PRUnichar c) {
 	return PyObject_FromNSString( &c, 1);
@@ -122,9 +126,17 @@ GET_SIMPLE(char, GetAsChar, MyChar)
 GET_SIMPLE(PRUnichar, GetAsWChar, MyUChar)
 GET_SIMPLE(nsIID, GetAsID, Py_nsIID::PyObjectFromIID)
 
+#if PY_MAJOR_VERSION <= 2
 GET_ALLOCATED(char *, GetAsString, PyString_FromString, nsMemory::Free)
+#else
+GET_ALLOCATED(char *, GetAsString, PyUnicode_FromString, nsMemory::Free)
+#endif
 GET_ALLOCATED(PRUnichar *, GetAsWString, MyUnicode, nsMemory::Free)
+#if PY_MAJOR_VERSION <= 2
 GET_ALLOCATED_SIZE(char *, GetAsStringWithSize, PyString_FromStringAndSize, nsMemory::Free)
+#else
+GET_ALLOCATED_SIZE(char *, GetAsStringWithSize, PyUnicode_FromStringAndSize, nsMemory::Free)
+#endif
 GET_ALLOCATED_SIZE(PRUnichar *, GetAsWStringWithSize, PyObject_FromNSString, nsMemory::Free)
 
 static PyObject *GetAsInterface(PyObject *self, PyObject *args) {
@@ -165,7 +177,7 @@ static PyObject *Get(PyObject *self, PyObject *args) {
 	return PyObject_FromVariant((Py_nsISupports *)self, pI);
 }
 
-struct PyMethodDef 
+struct PyMethodDef
 PyMethods_IVariant[] =
 {
 	{ "getAsInt8", GetAsInt8, 1},

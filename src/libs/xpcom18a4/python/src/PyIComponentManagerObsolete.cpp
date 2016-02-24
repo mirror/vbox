@@ -132,8 +132,13 @@ static PyObject *PyCLSIDToContractID(PyObject *self, PyObject *args)
 	if ( NS_FAILED(r) )
 		return PyXPCOM_BuildPyException(r);
 
+#if PY_MAJOR_VERSION <= 2
 	PyObject *ob_pid = PyString_FromString(ret_pid);
 	PyObject *ob_class = PyString_FromString(ret_class);
+#else
+	PyObject *ob_pid = PyUnicode_FromString(ret_pid);
+	PyObject *ob_class = PyUnicode_FromString(ret_class);
+#endif
 	PyObject *ret = Py_BuildValue("OO", ob_pid, ob_class);
 	nsMemory::Free(ret_pid);
 	nsMemory::Free(ret_class);
@@ -182,7 +187,7 @@ static PyObject *PyEnumerateContractIDs(PyObject *self, PyObject *args)
 	return Py_nsISupports::PyObjectFromInterface(pRet, NS_GET_IID(nsIEnumerator), PR_FALSE);
 }
 
-struct PyMethodDef 
+struct PyMethodDef
 PyMethods_IComponentManagerObsolete[] =
 {
 	{ "CreateInstanceByContractID", PyCreateInstanceByContractID, 1},

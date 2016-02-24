@@ -52,8 +52,7 @@
 
 
 static PyTypeObject PyInterfaceType_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,			/* Number of items for varobject */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"interface-type",			/* Name of this type */
 	sizeof(PyTypeObject),	/* Basic object size */
 	0,			/* Item size for varobject */
@@ -79,7 +78,11 @@ static PyTypeObject PyInterfaceType_Type = {
 /*static*/ PRBool
 PyXPCOM_TypeObject::IsType(PyTypeObject *t)
 {
+#if PY_MAJOR_VERSION <= 2
 	return t->ob_type == &PyInterfaceType_Type;
+#else
+	return Py_TYPE(t) == &PyInterfaceType_Type;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -121,6 +124,36 @@ PyXPCOM_TypeObject::Py_cmp(PyObject *self, PyObject *other)
 	return rc;
 }
 
+/*static*/PyObject *
+PyXPCOM_TypeObject::Py_richcmp(PyObject *self, PyObject *other, int op)
+{
+    PyObject *result = NULL;
+    int rc = Py_cmp(self, other);
+    switch (op)
+    {
+        case Py_LT:
+            result = rc < 0 ? Py_True : Py_False;
+            break;
+        case Py_LE:
+            result = rc <= 0 ? Py_True : Py_False;
+            break;
+        case Py_EQ:
+            result = rc == 0 ? Py_True : Py_False;
+            break;
+        case Py_NE:
+            result = rc != 0 ? Py_True : Py_False;
+            break;
+        case Py_GT:
+            result = rc > 0 ? Py_True : Py_False;
+            break;
+        case Py_GE:
+            result = rc >= 0 ? Py_True : Py_False;
+            break;
+    }
+    Py_XINCREF(result);
+    return result;
+}
+
 // @pymethod int|Py_nsISupports|__hash__|Implement a hash-code for the XPCOM object using XPCOM identity rules.
 /*static*/long PyXPCOM_TypeObject::Py_hash(PyObject *self)
 {
@@ -151,14 +184,18 @@ PyXPCOM_TypeObject::Py_repr(PyObject *self)
 	// XXX - need some sort of buffer overflow.
 	char buf[512];
 #ifdef VBOX
-	snprintf(buf, sizeof(buf), "<XPCOM object (%s) at 0x%p/0x%p>",
+	snprintf(buf, sizeof(buf), "<XPCOM object (%s) at %p/%p>",
 	        iid_repr, (void *)self, (void *)pis->m_obj.get());
 #else
 	sprintf(buf, "<XPCOM object (%s) at 0x%p/0x%p>",
 	        iid_repr, (void *)self, (void *)pis->m_obj.get());
 #endif
 	nsMemory::Free(iid_repr);
+#if PY_MAJOR_VERSION <= 2
 	return PyString_FromString(buf);
+#else
+	return PyUnicode_FromString(buf);
+#endif
 }
 
 /*static */PyObject *
@@ -172,13 +209,17 @@ PyXPCOM_TypeObject::Py_str(PyObject *self)
 	nsCOMPtr<nsISupportsCString> ss( do_QueryInterface(pis->m_obj, &rv ));
 	if (NS_SUCCEEDED(rv))
 		rv = ss->ToString(&val);
-	} // end-scope 
+	} // end-scope
 	Py_END_ALLOW_THREADS;
 	PyObject *ret;
 	if (NS_FAILED(rv))
 		ret = Py_repr(self);
 	else
+#if PY_MAJOR_VERSION <= 2
 		ret = PyString_FromString(val);
+#else
+		ret = PyUnicode_FromString(val);
+#endif
 	if (val) nsMemory::Free(val);
 	return ret;
 }
@@ -192,31 +233,34 @@ PyXPCOM_TypeObject::Py_dealloc(PyObject *self)
 PyXPCOM_TypeObject::PyXPCOM_TypeObject( const char *name, PyXPCOM_TypeObject *pBase, int typeSize, struct PyMethodDef* methodList, PyXPCOM_I_CTOR thector)
 {
 	static const PyTypeObject type_template = {
-		PyObject_HEAD_INIT(&PyInterfaceType_Type)
-		0,                                           /*ob_size*/
+		PyVarObject_HEAD_INIT(&PyInterfaceType_Type, 0)
 		"XPCOMTypeTemplate",                         /*tp_name*/
-		sizeof(Py_nsISupports),                 /*tp_basicsize*/
+		sizeof(Py_nsISupports),                      /*tp_basicsize*/
 		0,                                           /*tp_itemsize*/
 		Py_dealloc,                                  /* tp_dealloc */
 		0,                                           /* tp_print */
 		Py_getattr,                                  /* tp_getattr */
 		Py_setattr,                                  /* tp_setattr */
+#if PY_MAJOR_VERSION <= 2
 		Py_cmp,                                      /* tp_compare */
+#else
+		0,                                           /* reserved */
+#endif
 		Py_repr,                                     /* tp_repr */
-    		0,                                           /* tp_as_number*/
+		0,                                           /* tp_as_number*/
 		0,                                           /* tp_as_sequence */
 		0,                                           /* tp_as_mapping */
 		Py_hash,                                     /* tp_hash */
 		0,                                           /* tp_call */
 		Py_str,                                      /* tp_str */
 		0,                                           /* tp_getattro */
-		0,                                           /*tp_setattro */
+		0,                                           /* tp_setattro */
 		0,                                           /* tp_as_buffer */
 		0,                                           /* tp_flags */
 		0,                                           /* tp_doc */
 		0,                                           /* tp_traverse */
 		0,                                           /* tp_clear */
-		0,                                           /* tp_richcompare */
+		Py_richcmp,                                  /* tp_richcompare */
 		0,                                           /* tp_weaklistoffset */
 		0,                                           /* tp_iter */
 		0,                                           /* tp_iternext */

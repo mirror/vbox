@@ -54,7 +54,7 @@ PyObject *PyObject_FromXPTType( const nsXPTType *d)
 		return Py_None;
 	}
     // build an object using the same format as a TypeDescriptor.
-	return Py_BuildValue("bzzz", 
+	return Py_BuildValue("bzzz",
 		d->flags,
 		NULL, NULL, NULL);
 }
@@ -65,7 +65,7 @@ PyObject *PyObject_FromXPTTypeDescriptor( const XPTTypeDescriptor *d)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return Py_BuildValue("bbbh", 
+	return Py_BuildValue("bbbh",
 		d->prefix.flags,
 		d->argnum,
 		d->argnum2,
@@ -149,18 +149,26 @@ PyObject *PyObject_FromXPTConstant( const XPTConstDescriptor *c)
 			Py_INCREF(v);
 			break;
 		case TD_CHAR:
+#if PY_MAJOR_VERSION <= 2
 			v = PyString_FromStringAndSize(&c->value.ch, 1);
+#else
+			v = PyUnicode_FromStringAndSize(&c->value.ch, 1);
+#endif
 			break;
 		case TD_WCHAR:
 			v = PyObject_FromNSString((PRUnichar *)&c->value.wch, 1);
 			break;
-	//    TD_VOID              = 13,  
+	//    TD_VOID              = 13,
 		case TD_PNSIID:
 			v = Py_nsIID::PyObjectFromIID(*c->value.iid);
 			break;
 	//    TD_DOMSTRING         = 15,
 		case TD_PSTRING:
+#if PY_MAJOR_VERSION <= 2
 			v = PyString_FromString(c->value.str);
+#else
+			v = PyUnicode_FromString(c->value.str);
+#endif
 			break;
 		case TD_PWSTRING:
 			v = PyObject_FromNSString((PRUnichar *)c->value.wstr, nsCRT::strlen((PRUnichar *)c->value.wstr));
@@ -174,7 +182,11 @@ PyObject *PyObject_FromXPTConstant( const XPTConstDescriptor *c)
 	//    TD_CSTRING           = 24,
 	//    TD_ASTRING           = 25
 		default:
+#if PY_MAJOR_VERSION <= 2
 			v = PyString_FromString("Unknown type code!!");
+#else
+			v = PyUnicode_FromString("Unknown type code!!");
+#endif
 			break;
 
 	}

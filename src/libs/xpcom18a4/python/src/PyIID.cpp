@@ -59,14 +59,30 @@ PYXPCOM_EXPORT PyObject *PyXPCOMMethod_IID(PyObject *self, PyObject *args)
 	PyObject *obIID;
 	PyObject *obBuf;
 	if ( PyArg_ParseTuple(args, "O", &obBuf)) {
+#if PY_MAJOR_VERSION <= 2
 		if (PyBuffer_Check(obBuf)) {
 			PyBufferProcs *pb = NULL;
 			pb = obBuf->ob_type->tp_as_buffer;
 			void *buf = NULL;
 			int size = (*pb->bf_getreadbuffer)(obBuf, 0, &buf);
+#else
+		if (PyObject_CheckBuffer(obBuf)) {
+			void *buf = NULL;
+            Py_buffer view;
+            if (PyObject_GetBuffer(obBuf, &view, PyBUF_CONTIG_RO) != 0)
+            {
+                PyErr_Format(PyExc_ValueError, "Could not get contiguous buffer from object");
+                return NULL;
+            }
+            Py_ssize_t size = view.len;
+            buf = view.buf;
+#endif
 			if (size != sizeof(nsIID) || buf==NULL) {
+#if PY_MAJOR_VERSION >= 3
+                PyBuffer_Release(&view);
+#endif
 #ifdef VBOX
-                                PyErr_Format(PyExc_ValueError, "A buffer object to be converted to an IID must be exactly %d bytes long", (int)sizeof(nsIID));
+                PyErr_Format(PyExc_ValueError, "A buffer object to be converted to an IID must be exactly %d bytes long", (int)sizeof(nsIID));
 #else
 				PyErr_Format(PyExc_ValueError, "A buffer object to be converted to an IID must be exactly %d bytes long", sizeof(nsIID));
 #endif
@@ -84,6 +100,9 @@ PYXPCOM_EXPORT PyObject *PyXPCOMMethod_IID(PyObject *self, PyObject *args)
 				iid.m3[i] = *((PRUint8 *)ptr);
 				ptr += sizeof(PRUint8);
 			}
+#if PY_MAJOR_VERSION >= 3
+            PyBuffer_Release(&view);
+#endif
 			return new Py_nsIID(iid);
 		}
 	}
@@ -106,8 +125,13 @@ Py_nsIID::IIDFromPyObject(PyObject *ob, nsIID *pRet) {
 		PyErr_SetString(PyExc_RuntimeError, "The IID object is invalid!");
 		return PR_FALSE;
 	}
+#if PY_MAJOR_VERSION <= 2
 	if (PyString_Check(ob)) {
 		ok = iid.Parse(PyString_AsString(ob));
+#else
+	if (PyUnicode_Check(ob)) {
+		ok = iid.Parse(PyUnicode_AsUTF8(ob));
+#endif
 		if (!ok) {
 			PyXPCOM_BuildPyException(NS_ERROR_ILLEGAL_VALUE);
 			return PR_FALSE;
@@ -143,8 +167,7 @@ Py_nsIID::IIDFromPyObject(PyObject *ob, nsIID *pRet) {
 // as a param will accept either a string object, or a native Py_nsIID object.
 PyTypeObject Py_nsIID::type =
 {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"IID",
 	sizeof(Py_nsIID),
 	0,
@@ -152,7 +175,11 @@ PyTypeObject Py_nsIID::type =
 	0,                                              /* tp_print */
 	PyTypeMethod_getattr,                           /* tp_getattr */
 	0,                                              /* tp_setattr */
+#if PY_MAJOR_VERSION <= 2
 	PyTypeMethod_compare,                           /* tp_compare */
+#else
+	0,                                              /* reserved */
+#endif
 	PyTypeMethod_repr,                              /* tp_repr */
 	0,                                              /* tp_as_number */
 	0,                                              /* tp_as_sequence */
@@ -160,6 +187,21 @@ PyTypeObject Py_nsIID::type =
 	PyTypeMethod_hash,                              /* tp_hash */
 	0,                                              /* tp_call */
 	PyTypeMethod_str,                               /* tp_str */
+	0,                                              /* tp_getattro */
+	0,                                              /* tp_setattro */
+	0,                                              /* tp_as_buffer */
+	0,                                              /* tp_flags */
+	0,                                              /* tp_doc */
+	0,                                              /* tp_traverse */
+	0,                                              /* tp_clear */
+	PyTypeMethod_richcompare,                       /* tp_richcompare */
+	0,                                              /* tp_weaklistoffset */
+	0,                                              /* tp_iter */
+	0,                                              /* tp_iternext */
+	0,                                              /* tp_methods */
+	0,                                              /* tp_members */
+	0,                                              /* tp_getset */
+	0,                                              /* tp_base */
 };
 
 Py_nsIID::Py_nsIID(const nsIID &riid)
@@ -183,15 +225,24 @@ Py_nsIID::PyTypeMethod_getattr(PyObject *self, char *name)
 			iid_repr = me->m_iid.ToString();
 		PyObject *ret;
 		if (iid_repr != nsnull) {
+#if PY_MAJOR_VERSION <= 2
 			ret = PyString_FromString(iid_repr);
+#else
+			ret = PyUnicode_FromString(iid_repr);
+#endif
 			nsMemory::Free(iid_repr);
 		} else
+#if PY_MAJOR_VERSION <= 2
 			ret = PyString_FromString("<cant get IID info!>");
+#else
+			ret = PyUnicode_FromString("<cant get IID info!>");
+#endif
 		return ret;
 	}
 	return PyErr_Format(PyExc_AttributeError, "IID objects have no attribute '%s'", name);
 }
 
+#if PY_MAJOR_VERSION <= 2
 /* static */ int
 Py_nsIID::PyTypeMethod_compare(PyObject *self, PyObject *other)
 {
@@ -199,6 +250,39 @@ Py_nsIID::PyTypeMethod_compare(PyObject *self, PyObject *other)
 	Py_nsIID *o_iid = (Py_nsIID *)other;
 	int rc = memcmp(&s_iid->m_iid, &o_iid->m_iid, sizeof(s_iid->m_iid));
 	return rc == 0 ? 0 : (rc < 0 ? -1 : 1);
+}
+#endif
+
+/* static */ PyObject *
+Py_nsIID::PyTypeMethod_richcompare(PyObject *self, PyObject *other, int op)
+{
+    PyObject *result = NULL;
+	Py_nsIID *s_iid = (Py_nsIID *)self;
+	Py_nsIID *o_iid = (Py_nsIID *)other;
+	int rc = memcmp(&s_iid->m_iid, &o_iid->m_iid, sizeof(s_iid->m_iid));
+    switch (op)
+    {
+        case Py_LT:
+            result = rc < 0 ? Py_True : Py_False;
+            break;
+        case Py_LE:
+            result = rc <= 0 ? Py_True : Py_False;
+            break;
+        case Py_EQ:
+            result = rc == 0 ? Py_True : Py_False;
+            break;
+        case Py_NE:
+            result = rc != 0 ? Py_True : Py_False;
+            break;
+        case Py_GT:
+            result = rc > 0 ? Py_True : Py_False;
+            break;
+        case Py_GE:
+            result = rc >= 0 ? Py_True : Py_False;
+            break;
+    }
+    Py_XINCREF(result);
+    return result;
 }
 
 /* static */ PyObject *
@@ -208,12 +292,16 @@ Py_nsIID::PyTypeMethod_repr(PyObject *self)
 	char buf[256];
 	char *sziid = s_iid->m_iid.ToString();
 #ifdef VBOX
-	snprintf(buf, sizeof(buf), "_xpcom.IID('%s')", sziid);
+	snprintf(buf, sizeof(buf), "_xpcom.ID('%s')", sziid);
 #else
 	sprintf(buf, "_xpcom.IID('%s')", sziid);
 #endif
 	nsMemory::Free(sziid);
+#if PY_MAJOR_VERSION <= 2
 	return PyString_FromString(buf);
+#else
+	return PyUnicode_FromString(buf);
+#endif
 }
 
 /* static */ PyObject *
@@ -221,7 +309,11 @@ Py_nsIID::PyTypeMethod_str(PyObject *self)
 {
 	Py_nsIID *s_iid = (Py_nsIID *)self;
 	char *sziid = s_iid->m_iid.ToString();
+#if PY_MAJOR_VERSION <= 2
 	PyObject *ret = PyString_FromString(sziid);
+#else
+	PyObject *ret = PyUnicode_FromString(sziid);
+#endif
 	nsMemory::Free(sziid);
 	return ret;
 }
