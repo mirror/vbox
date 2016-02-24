@@ -24,8 +24,11 @@
 #include "VBoxBugReport.h"
 
 #include <netcfgx.h>
+#include <setupapi.h>
+#include <initguid.h>
 #include <devguid.h>
-
+#include <usbiodef.h>
+#include <usbioctl.h>
 
 #define ReleaseAndReset(obj) \
     if (obj) \
@@ -216,6 +219,345 @@ void BugReportNetworkAdaptersWin::collect(void)
             
 }
 
+
+class ErrorHandler
+{
+public:
+    ErrorHandler(const char *pszFunction, int iLine)
+        : m_function(pszFunction), m_line(iLine) {};
+    void handleWinError(DWORD uError, const char *pszMsgFmt, ...)
+        {
+            if (uError != ERROR_SUCCESS)
+            {
+                va_list va;
+                va_start(va, pszMsgFmt);
+                RTCString msgArgs(pszMsgFmt, va);
+                va_end(va);
+                LPSTR pBuf = NULL;
+                DWORD cb = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                          NULL, uError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&pBuf, 0, NULL);
+                RTCStringFmt msg("%s at %s(%d): err=%u %s", msgArgs.c_str(), m_function, m_line, uError, pBuf);
+                LocalFree(pBuf);
+                throw RTCError(msg.c_str());
+            }
+        };
+private:
+    const char *m_function;
+    int m_line;
+};
+#define handleWinError ErrorHandler(__FUNCTION__, __LINE__).handleWinError
+
+
+class BugReportUsbTreeWin : public BugReportStream
+{
+public:
+    BugReportUsbTreeWin();
+    virtual ~BugReportUsbTreeWin();
+    virtual PRTSTREAM getStream(void) { enumerate(); return BugReportStream::getStream(); };
+private:
+    class AutoHandle {
+    public:
+        AutoHandle(HANDLE h) { m_h = h; };
+        ~AutoHandle() { close(); };
+        bool isValid() { return m_h != INVALID_HANDLE_VALUE; };
+        operator HANDLE() { return m_h; };
+        void close(void) { if (isValid()) { CloseHandle(m_h); m_h = INVALID_HANDLE_VALUE; } };
+    private:
+        HANDLE m_h;
+    };
+    void enumerate();
+
+    void enumerateController(PSP_DEVINFO_DATA pInfoData, PSP_DEVICE_INTERFACE_DATA pInterfaceData);
+    void enumerateHub(RTCString strFullName, RTCString strPrefix);
+    void enumeratePorts(HANDLE hHub, unsigned cPorts, RTCString strPrefix);
+    PBYTE getDeviceRegistryProperty(HDEVINFO hDev, PSP_DEVINFO_DATA pInfoData, DWORD uProperty,
+                                    DWORD uExpectedType, PDWORD puSize);
+    RTCString getDeviceRegistryPropertyString(HDEVINFO hDev, PSP_DEVINFO_DATA pInfoData, DWORD uProperty);
+
+    RTCString getDeviceDescByDriverName(RTCString strDrvName);
+    RTCString getDriverKeyName(HANDLE hHub, int iPort);
+    RTCString getExternalHubName(HANDLE hHub, int iPort);
+
+    HDEVINFO m_hDevInfo;
+    PSP_DEVICE_INTERFACE_DETAIL_DATA m_pDetailData;
+    HANDLE m_hHostCtrlDev;
+};
+
+BugReportUsbTreeWin::BugReportUsbTreeWin() : BugReportStream("HostUsbTree")
+{
+    m_hDevInfo = INVALID_HANDLE_VALUE;
+    m_pDetailData = NULL;
+    m_hHostCtrlDev = INVALID_HANDLE_VALUE;
+}
+
+BugReportUsbTreeWin::~BugReportUsbTreeWin()
+{
+    if (m_hHostCtrlDev != INVALID_HANDLE_VALUE)
+        CloseHandle(m_hHostCtrlDev);
+    if (m_pDetailData)
+        RTMemFree(m_pDetailData);
+    if (m_hDevInfo != INVALID_HANDLE_VALUE)
+        SetupDiDestroyDeviceInfoList(m_hDevInfo);
+}
+
+
+PBYTE BugReportUsbTreeWin::getDeviceRegistryProperty(HDEVINFO hDev,
+                                                     PSP_DEVINFO_DATA pInfoData,
+                                                     DWORD uProperty,
+                                                     DWORD uExpectedType,
+                                                     PDWORD puSize)
+{
+    DWORD uActualType, cbNeeded = 0;
+    if (!SetupDiGetDeviceRegistryProperty(hDev, pInfoData, uProperty, &uActualType,
+                                          NULL, 0, &cbNeeded)
+        && GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+    {
+        if (GetLastError() == ERROR_INVALID_DATA)
+            return NULL;
+        handleWinError(GetLastError(), "SetupDiGetDeviceRegistryProperty(0x%x) failed", uProperty);
+    }
+    if (uExpectedType != REG_NONE && uActualType != uExpectedType)
+        throw RTCError(RTCStringFmt("SetupDiGetDeviceRegistryProperty(0x%x) returned type %d instead of %d",
+                                    uActualType, uExpectedType).c_str());    
+    PBYTE pBuffer = (PBYTE)RTMemAlloc(cbNeeded);
+    if (!pBuffer)
+        throw RTCError(RTCStringFmt("Failed to allocate %u bytes", cbNeeded).c_str());
+    if (!SetupDiGetDeviceRegistryProperty(hDev, pInfoData, uProperty, NULL,
+                                          pBuffer, cbNeeded, &cbNeeded))
+    {
+        DWORD dwErr = GetLastError();
+        RTMemFree(pBuffer);
+        pBuffer = NULL;
+        handleWinError(dwErr, "SetupDiGetDeviceRegistryProperty(0x%x) failed", uProperty);
+    }
+    if (puSize)
+        *puSize = cbNeeded;
+
+    return pBuffer;
+}
+
+RTCString BugReportUsbTreeWin::getDeviceRegistryPropertyString(HDEVINFO hDev, PSP_DEVINFO_DATA pInfoData, DWORD uProperty)
+{
+    DWORD cbString = 0;
+    PWSTR pUnicodeString = (PWSTR)getDeviceRegistryProperty(hDev, pInfoData, uProperty, REG_SZ, NULL);
+
+    if (!pUnicodeString)
+        return RTCString();
+
+    RTCStringFmt utf8string("%ls", pUnicodeString);
+    RTMemFree(pUnicodeString);
+    return utf8string;
+}
+
+
+RTCString BugReportUsbTreeWin::getDeviceDescByDriverName(RTCString strDrvName)
+{
+    DWORD dwErr;
+    SP_DEVINFO_DATA devInfoData;
+    HDEVINFO hDevInfo = SetupDiGetClassDevs(NULL, NULL, NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
+
+    if (hDevInfo == INVALID_HANDLE_VALUE)
+        handleWinError(GetLastError(), "SetupDiGetClassDevs failed");
+
+    bool fFound = false;
+    devInfoData.cbSize = sizeof(devInfoData);
+    for (int i = 0; SetupDiEnumDeviceInfo(hDevInfo, i, &devInfoData); ++i)
+    {
+        if (getDeviceRegistryPropertyString(hDevInfo, &devInfoData, SPDRP_DRIVER).equals(strDrvName))
+        {
+            fFound = true;
+            break;
+        }
+    }
+    if (!fFound)
+    {
+        dwErr = GetLastError();
+        SetupDiDestroyDeviceInfoList(hDevInfo);
+        handleWinError(dwErr, "SetupDiEnumDeviceInfo failed");
+    }
+
+    RTCString strDesc = getDeviceRegistryPropertyString(hDevInfo, &devInfoData, SPDRP_DEVICEDESC);
+    SetupDiDestroyDeviceInfoList(hDevInfo);
+    return strDesc;
+}
+
+
+RTCString BugReportUsbTreeWin::getDriverKeyName(HANDLE hHub, int iPort)
+{
+    USB_NODE_CONNECTION_DRIVERKEY_NAME name;
+    ULONG cbNeeded = 0;
+
+    name.ConnectionIndex = iPort;
+    if (!DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_DRIVERKEY_NAME,
+                         &name, sizeof(name), &name, sizeof(name), &cbNeeded, NULL))
+        handleWinError(GetLastError(), "DeviceIoControl(IOCTL_USB_GET_NODE_CONNECTION_DRIVERKEY_NAME) failed");
+    cbNeeded = name.ActualLength;
+    PUSB_NODE_CONNECTION_DRIVERKEY_NAME pName = (PUSB_NODE_CONNECTION_DRIVERKEY_NAME)RTMemAlloc(cbNeeded);
+    if (!pName)
+        throw RTCError(RTCStringFmt("Failed to allocate %u bytes", cbNeeded).c_str());
+    pName->ConnectionIndex = iPort;
+    if (!DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_DRIVERKEY_NAME,
+                         pName, cbNeeded, pName, cbNeeded, &cbNeeded, NULL))
+    {
+        DWORD dwErr = GetLastError();
+        RTMemFree(pName);
+        handleWinError(dwErr, "DeviceIoControl(IOCTL_USB_GET_NODE_CONNECTION_DRIVERKEY_NAME) failed");
+    }
+    RTCStringFmt strName("%ls", pName->DriverKeyName);
+    RTMemFree(pName);
+    return strName;
+}
+    
+
+RTCString BugReportUsbTreeWin::getExternalHubName(HANDLE hHub, int iPort)
+{
+    USB_NODE_CONNECTION_NAME name;
+    ULONG cbNeeded = 0;
+
+    name.ConnectionIndex = iPort;
+    if (!DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_NAME,
+                         &name, sizeof(name), &name, sizeof(name), &cbNeeded, NULL))
+        handleWinError(GetLastError(), "DeviceIoControl(IOCTL_USB_GET_NODE_CONNECTION_NAME) failed");
+    cbNeeded = name.ActualLength;
+    PUSB_NODE_CONNECTION_NAME pName = (PUSB_NODE_CONNECTION_NAME)RTMemAlloc(cbNeeded);
+    if (!pName)
+        throw RTCError(RTCStringFmt("Failed to allocate %u bytes", cbNeeded).c_str());
+    pName->ConnectionIndex = iPort;
+    if (!DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_NAME,
+                         pName, cbNeeded, pName, cbNeeded, &cbNeeded, NULL))
+    {
+        DWORD dwErr = GetLastError();
+        RTMemFree(pName);
+        handleWinError(dwErr, "DeviceIoControl(IOCTL_USB_GET_NODE_CONNECTION_NAME) failed");
+    }
+    RTCStringFmt strName("%ls", pName->NodeName);
+    RTMemFree(pName);
+    return strName;
+}
+
+
+void BugReportUsbTreeWin::enumeratePorts(HANDLE hHub, unsigned cPorts, RTCString strPrefix)
+{
+    DWORD cbInfo = sizeof(USB_NODE_CONNECTION_INFORMATION_EX) + 30 * sizeof(USB_PIPE_INFO);
+    PUSB_NODE_CONNECTION_INFORMATION_EX pInfo = (PUSB_NODE_CONNECTION_INFORMATION_EX)RTMemAlloc(cbInfo);
+    if (!pInfo)
+        throw RTCError(RTCStringFmt("Failed to allocate %u bytes", cbInfo).c_str());
+    for (unsigned i = 1; i <= cPorts; ++i)
+    {
+        pInfo->ConnectionIndex = i;
+        if (!DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX,
+                             pInfo, cbInfo, pInfo, cbInfo, &cbInfo, NULL))
+        {
+            DWORD dwErr = GetLastError();
+            RTMemFree(pInfo);
+            handleWinError(dwErr, "DeviceIoControl(IOCTL_USB_GET_NODE_CONNECTION_INFORMATION) failed");
+        }
+        if (pInfo->ConnectionStatus == NoDeviceConnected)
+            printf("%s[Port %d]\n", strPrefix.c_str(), i);
+        else
+        {
+            RTCString strName = getDeviceDescByDriverName(getDriverKeyName(hHub, i));
+            printf("%s[Port %d] %s\n", strPrefix.c_str(), i, strName.c_str());
+            if (pInfo->DeviceIsHub)
+                enumerateHub(getExternalHubName(hHub, i), strPrefix + "   ");
+        }
+    }
+    RTMemFree(pInfo);
+}
+
+void BugReportUsbTreeWin::enumerateHub(RTCString strFullName, RTCString strPrefix)
+{
+    AutoHandle hHubDev(CreateFileA(RTCString("\\\\.\\").append(strFullName).c_str(),
+                                   GENERIC_WRITE, FILE_SHARE_WRITE,
+                                   NULL, OPEN_EXISTING, 0, NULL));
+    if (!hHubDev.isValid())
+        handleWinError(GetLastError(), "CreateFile(%s) failed", strFullName.c_str());
+    ULONG cb;
+    USB_NODE_INFORMATION hubInfo;
+    if (!DeviceIoControl(hHubDev,
+                         IOCTL_USB_GET_NODE_INFORMATION,
+                         &hubInfo,
+                         sizeof(USB_NODE_INFORMATION),
+                         &hubInfo,
+                         sizeof(USB_NODE_INFORMATION),
+                         &cb,
+                         NULL))
+        handleWinError(GetLastError(), "DeviceIoControl(IOCTL_USB_GET_NODE_INFORMATION) failed");
+    enumeratePorts(hHubDev, hubInfo.u.HubInformation.HubDescriptor.bNumberOfPorts, strPrefix);
+}
+
+void BugReportUsbTreeWin::enumerateController(PSP_DEVINFO_DATA pInfoData, PSP_DEVICE_INTERFACE_DATA pInterfaceData)
+{
+    RTCString strCtrlDesc = getDeviceRegistryPropertyString(m_hDevInfo, pInfoData, SPDRP_DEVICEDESC);
+    printf("%s\n", strCtrlDesc.c_str());
+
+    ULONG cbNeeded;
+    USB_ROOT_HUB_NAME rootHub;
+    /* Find out the name length first */
+    if (!DeviceIoControl(m_hHostCtrlDev, IOCTL_USB_GET_ROOT_HUB_NAME, NULL, 0,
+                         &rootHub, sizeof(rootHub),
+                         &cbNeeded, NULL))
+        handleWinError(GetLastError(), "DeviceIoControl(IOCTL_USB_GET_ROOT_HUB_NAME) failed");
+    cbNeeded = rootHub.ActualLength;
+    PUSB_ROOT_HUB_NAME pUnicodeName = (PUSB_ROOT_HUB_NAME)RTMemAlloc(cbNeeded);
+    if (!pUnicodeName)
+        throw RTCError(RTCStringFmt("Failed to allocate %u bytes", cbNeeded).c_str());
+
+    if (!DeviceIoControl(m_hHostCtrlDev, IOCTL_USB_GET_ROOT_HUB_NAME, NULL, 0,
+                         pUnicodeName, cbNeeded,
+                         &cbNeeded, NULL))
+    {
+        DWORD dwErr = GetLastError();
+        RTMemFree(pUnicodeName);
+        handleWinError(dwErr, "DeviceIoControl(IOCTL_USB_GET_ROOT_HUB_NAME) failed");
+    }
+
+    RTCStringFmt strRootHubName("%ls", pUnicodeName->RootHubName);
+    RTMemFree(pUnicodeName);
+    printf("   Root Hub\n");
+    enumerateHub(strRootHubName, "      ");
+}
+
+void BugReportUsbTreeWin::enumerate()
+{
+    m_hDevInfo = SetupDiGetClassDevs((LPGUID)&GUID_DEVINTERFACE_USB_HOST_CONTROLLER, NULL, NULL,
+                                     DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
+    if (m_hDevInfo == INVALID_HANDLE_VALUE)
+        handleWinError(GetLastError(), "SetupDiGetClassDevs(GUID_DEVINTERFACE_USB_HOST_CONTROLLER) failed");
+
+    SP_DEVINFO_DATA deviceInfoData;
+    deviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+    for (int i = 0; SetupDiEnumDeviceInfo(m_hDevInfo, i, &deviceInfoData); ++i)
+    {
+        SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
+        deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
+        if (!SetupDiEnumDeviceInterfaces(m_hDevInfo, 0, (LPGUID)&GUID_DEVINTERFACE_USB_HOST_CONTROLLER,
+                                         i, &deviceInterfaceData))
+            handleWinError(GetLastError(), "SetupDiEnumDeviceInterfaces(GUID_DEVINTERFACE_USB_HOST_CONTROLLER) failed");
+
+        ULONG cbNeeded = 0;
+        if (!SetupDiGetDeviceInterfaceDetail(m_hDevInfo, &deviceInterfaceData, NULL, 0, &cbNeeded, NULL)
+            && GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+            handleWinError(GetLastError(), "SetupDiGetDeviceInterfaceDetail failed");
+
+        m_pDetailData = (PSP_DEVICE_INTERFACE_DETAIL_DATA)RTMemAlloc(cbNeeded);
+        if (!m_pDetailData)
+            throw RTCError(RTCStringFmt("Failed to allocate %u bytes", cbNeeded).c_str());
+
+        m_pDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+        if (!SetupDiGetDeviceInterfaceDetail(m_hDevInfo, &deviceInterfaceData, m_pDetailData, cbNeeded, &cbNeeded, NULL))
+            handleWinError(GetLastError(), "SetupDiGetDeviceInterfaceDetail failed");
+
+        m_hHostCtrlDev = CreateFile(m_pDetailData->DevicePath, GENERIC_WRITE, FILE_SHARE_WRITE,
+                                    NULL, OPEN_EXISTING, 0, NULL);
+        if (m_hHostCtrlDev == INVALID_HANDLE_VALUE)
+            handleWinError(GetLastError(), "CreateFile(%ls) failed", m_pDetailData);
+
+        enumerateController(&deviceInfoData, &deviceInterfaceData);
+    }
+}
+
+
 void createBugReportOsSpecific(BugReport* report, const char *pszHome)
 {
     WCHAR szWinDir[MAX_PATH];
@@ -231,10 +573,11 @@ void createBugReportOsSpecific(BugReport* report, const char *pszHome)
     report->addItem(new BugReportNetworkAdaptersWin);
     RTCStringFmt WinSysDir("%ls/System32", szWinDir);
     report->addItem(new BugReportCommand("SystemEvents", PathJoin(WinSysDir.c_str(), "wevtutil.exe"),
-                                         "qe", "System", "/f:text",
-                                         "/q:*[System[Provider[@Name='VBoxUSBMon']]]", NULL));
+                                         "qe", "System",
+                                         "/q:*[System[Provider[@Name='VBoxUSBMon' or @Name='VBoxNetLwf']]]", NULL));
     report->addItem(new BugReportCommand("UpdateHistory", PathJoin(WinSysDir.c_str(), "wbem/wmic.exe"),
                                          "qfe", "list", "brief", NULL));
     report->addItem(new BugReportCommand("DriverServices", PathJoin(WinSysDir.c_str(), "sc.exe"),
                                          "query", "type=", "driver", "state=", "all", NULL));
+    report->addItem(new BugReportUsbTreeWin);
 }

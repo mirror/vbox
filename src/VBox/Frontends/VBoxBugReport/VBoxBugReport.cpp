@@ -141,7 +141,33 @@ BugReport::BugReport(const char *pszFileName)
 
 BugReport::~BugReport()
 {
+    for (int i = 0; i < m_Items.size(); ++i)
+    {
+        delete m_Items[i];
+    }
     RTStrFree(m_pszFileName);
+}
+
+int BugReport::getItemCount(void)
+{
+    return (int)m_Items.size();
+}
+
+void BugReport::addItem(BugReportItem* item)
+{
+    if (item)
+        m_Items.append(item);
+}
+
+void BugReport::process(void)
+{
+    for (int i = 0; i < m_Items.size(); ++i)
+    {
+        BugReportItem *pItem = m_Items[i];
+        RTPrintf("%3u%% - collecting %s...\n", i * 100 / m_Items.size(), pItem->getTitle());
+        processItem(pItem);
+    }
+    RTPrintf("100%% - compressing...\n\n");
 }
 
 
@@ -283,11 +309,8 @@ BugReportText::~BugReportText()
         RTStrmClose(m_StrmTxt);
 }
 
-int BugReportText::addItem(BugReportItem* item)
+void BugReportText::processItem(BugReportItem* item)
 {
-    if (!item)
-        return VERR_INVALID_PARAMETER;
-
     int cb = RTStrmPrintf(m_StrmTxt, "[ %s ] -------------------------------------------\n", item->getTitle());
     if (!cb)
         throw RTCError(com::Utf8StrFmt("Write failure (cb=%d)\n", cb));
@@ -320,10 +343,6 @@ int BugReportText::addItem(BugReportItem* item)
     }
 
     handleRtError(RTStrmPutCh(m_StrmTxt, '\n'), "Write failure");
-
-    delete item;
-
-    return rc;
 }
 
 
@@ -358,11 +377,8 @@ BugReportTarGzip::~BugReportTarGzip()
         RTTarClose(m_hTar);
 }
 
-int BugReportTarGzip::addItem(BugReportItem* item)
+void BugReportTarGzip::processItem(BugReportItem* item)
 {
-    if (!item)
-        return VERR_INVALID_PARAMETER;
-
     handleRtError(RTTarFileOpen(m_hTar, &m_hTarFile, item->getTitle(),
                                 RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE),
                   "Failed to open '%s' in TAR", item->getTitle());
@@ -399,10 +415,6 @@ int BugReportTarGzip::addItem(BugReportItem* item)
         RTTarFileClose(m_hTarFile);
         m_hTarFile = NIL_RTTARFILE;
     }
-
-    delete item;
-
-    return rc;
 }
 
 void BugReportTarGzip::complete(void)
@@ -442,6 +454,8 @@ void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& ma
     report->addItem(new BugReportFile(PathJoin(pszHome, "VBoxSVC.log"), "VBoxSVC.log"));
     report->addItem(new BugReportFile(PathJoin(pszHome, "VBoxSVC.log.1"), "VBoxSVC.log.1"));
     report->addItem(new BugReportFile(PathJoin(pszHome, "VirtualBox.xml"), "VirtualBox.xml"));
+    report->addItem(new BugReportCommand("HostUsbDevices", g_pszVBoxManage, "list", "usbhost", NULL));
+    report->addItem(new BugReportCommand("HostUsbFilters", g_pszVBoxManage, "list", "usbfilters", NULL));
     for (MachineInfoList::iterator it = machines.begin(); it != machines.end(); ++it)
     {
         report->addItem(new BugReportFile(PathJoin((*it)->getLogPath(), "VBox.log"),
@@ -625,6 +639,7 @@ int main(int argc, char *argv[])
         else
             pReport = new BugReportTarGzip(pszOutputFile);
         createBugReport(pReport, homeDir, list);
+        pReport->process();
         pReport->complete();
         RTPrintf("Report was written to '%s'\n", pszOutputFile);
         delete pReport;
