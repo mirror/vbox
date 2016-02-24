@@ -85,10 +85,9 @@ define TOOL_VBoxNasm_COMPILE_AS_CMDS
 		$(abspath $(source)) \
 		-M -MP
 endef
+
 # Dropped by the time 2.12 rc7 got out. Just struggling rebuilding nasm.
-if "$(KBUILD_TARGET)" == "win"
- BS3KIT_NASM_allow_64_bit = --allow-64bit-code-anywhere
-else if "$(KBUILD_TARGET)" == "darwin"
+if "$(KBUILD_TARGET)" == "darwin"
  BS3KIT_NASM_allow_64_bit = --allow-64-bit
 endif
 
