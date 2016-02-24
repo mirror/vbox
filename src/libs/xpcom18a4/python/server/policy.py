@@ -44,6 +44,10 @@ import types
 import logging
 import sys
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    long = int      # pylint: disable=W0622,C0103
+
 
 IID_nsISupports = _xpcom.IID_nsISupports
 IID_nsIVariant = _xpcom.IID_nsIVariant
@@ -332,20 +336,36 @@ class DefaultPolicy:
     def _GatewayException_(self, name, exc_info):
         return self._doHandleException(name, exc_info)
 
-_supports_primitives_data_ = [
-    ("nsISupportsCString", "__str__", str),
-    ("nsISupportsString", "__unicode__", str),
-    ("nsISupportsPRUint64", "__long__", int),
-    ("nsISupportsPRInt64", "__long__", int),
-    ("nsISupportsPRUint32", "__int__", int),
-    ("nsISupportsPRInt32", "__int__", int),
-    ("nsISupportsPRUint16", "__int__", int),
-    ("nsISupportsPRInt16", "__int__", int),
-    ("nsISupportsPRUint8", "__int__", int),
-    ("nsISupportsPRBool", "__nonzero__", operator.truth),
-    ("nsISupportsDouble", "__float__", float),
-    ("nsISupportsFloat", "__float__", float),
-]
+if sys.version_info[0] <= 2:
+    _supports_primitives_data_ = [
+        ("nsISupportsCString", "__str__", str),
+        ("nsISupportsString", "__unicode__", unicode),
+        ("nsISupportsPRUint64", "__long__", long),
+        ("nsISupportsPRInt64", "__long__", long),
+        ("nsISupportsPRUint32", "__int__", int),
+        ("nsISupportsPRInt32", "__int__", int),
+        ("nsISupportsPRUint16", "__int__", int),
+        ("nsISupportsPRInt16", "__int__", int),
+        ("nsISupportsPRUint8", "__int__", int),
+        ("nsISupportsPRBool", "__nonzero__", operator.truth),
+        ("nsISupportsDouble", "__float__", float),
+        ("nsISupportsFloat", "__float__", float),
+    ]
+else:
+    _supports_primitives_data_ = [
+        ("nsISupportsCString", "__str__", str),
+        ("nsISupportsString", "__unicode__", str),
+        ("nsISupportsPRUint64", "__long__", int),
+        ("nsISupportsPRInt64", "__long__", int),
+        ("nsISupportsPRUint32", "__int__", int),
+        ("nsISupportsPRInt32", "__int__", int),
+        ("nsISupportsPRUint16", "__int__", int),
+        ("nsISupportsPRInt16", "__int__", int),
+        ("nsISupportsPRUint8", "__int__", int),
+        ("nsISupportsPRBool", "__nonzero__", operator.truth),
+        ("nsISupportsDouble", "__float__", float),
+        ("nsISupportsFloat", "__float__", float),
+    ]
 
 # Support for the nsISupports primitives:
 class SupportsPrimitive:
