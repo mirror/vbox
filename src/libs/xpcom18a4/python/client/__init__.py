@@ -327,7 +327,7 @@ class Component(_XPCOMBase):
 
     def QueryInterface(self, iid):
         if iid in self._interfaces_:
-            assert iid_name in self._interface_names_, "_interfaces_ has the key, but _interface_names_ does not!"
+            assert iid.name in self._interface_names_, "_interfaces_ has the key, but _interface_names_ does not!"
             return self
         # Haven't seen this before - do a real QI.
         if iid not in self._interface_infos_:
