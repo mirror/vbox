@@ -46,6 +46,11 @@ from xpcom._xpcom import IID_nsISupports, IID_nsIClassInfo, \
     IID_nsISupportsWeakReference, IID_nsIWeakReference, \
     XPTI_GetInterfaceInfoManager, GetComponentManager, XPTC_InvokeByIndex
 
+# Python 3 hacks:
+import sys
+if sys.version_info[0] >= 3:
+    long = int      # pylint: disable=W0622,C0103
+
 # Attribute names we may be __getattr__'d for, but know we don't want to delegate
 # Could maybe just look for startswith("__") but this may screw things for some objects.
 _special_getattr_names = ["__del__", "__len__", "__nonzero__", "__eq__", "__neq__"]
@@ -222,6 +227,8 @@ class _XPCOMBase:
         raise ValueError("This object does not support automatic numeric conversion to this type")
 
     def __int__(self):
+        if sys.version_info[0] >= 3:
+            return self._do_conversion(_int_interfaces + _long_interfaces, int)
         return self._do_conversion(_int_interfaces, int)
 
     def __long__(self):
