@@ -1574,7 +1574,7 @@ class TestDriverBase(object): # pylint: disable=R0902
         return iRc;
 
 
-    def innerMain(self, asArgs = None):
+    def innerMain(self, asArgs = None): # pylint: disable=R0915
         """
         Exception wrapped main() worker.
         """

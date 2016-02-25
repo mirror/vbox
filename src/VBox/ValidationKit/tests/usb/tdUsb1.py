@@ -190,9 +190,11 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--usb-reattach-cycles" takes cycle count');
             try:    self.cUsbReattachCycles = int(asArgs[iArg]);
-            except: raise base.InvalidOption('The "--usb-reattach-cycles" value "%s" is not an integer' % (asArgs[iArg],));
+            except: raise base.InvalidOption('The "--usb-reattach-cycles" value "%s" is not an integer' \
+                    % (asArgs[iArg],));
             if self.cUsbReattachCycles <= 0:
-                raise base.InvalidOption('The "--usb-reattach-cycles" value "%s" is zero or negative.' % (self.cUsbReattachCycles,));
+                raise base.InvalidOption('The "--usb-reattach-cycles" value "%s" is zero or negative.' \
+                    % (self.cUsbReattachCycles,));
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -322,7 +324,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
         return fRc;
 
-    def testUsbReattach(self, oSession, oTxsSession, sUsbCtrl, sSpeed):
+    def testUsbReattach(self, oSession, oTxsSession, sUsbCtrl, sSpeed): # pylint: disable=W0613
         """
         Tests that rapid connect/disconnect cycles work.
         """
