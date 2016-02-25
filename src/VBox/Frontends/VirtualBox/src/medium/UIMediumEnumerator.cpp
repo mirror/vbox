@@ -279,7 +279,11 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     m_tasks.remove(pTask);
 
     /* Make sure such UIMedium still exists: */
-    AssertReturnVoid(m_mediums.contains(strUIMediumKey));
+    if (!m_mediums.contains(strUIMediumKey))
+    {
+        LogRel2(("GUI: UIMediumEnumerator: Medium with key={%s} already deleted by a third party\n", strUIMediumKey.toUtf8().constData()));
+        return;
+    }
 
     /* Check if UIMedium ID was changed: */
     const QString strUIMediumID = uimedium.id();
