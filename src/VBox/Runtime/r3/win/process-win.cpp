@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +37,15 @@
 #include <process.h>
 #include <errno.h>
 #include <Strsafe.h>
+#ifndef IPRT_TARGET_NT4
+# include <LsaLookup.h>
+#endif
 #include <Lmcons.h>
+
+#ifndef IPRT_TARGET_NT4
+# define _NTDEF_ /* Prevents redefining (P)UNICODE_STRING. */
+# include <Ntsecapi.h>
+#endif
 
 #include <iprt/process.h>
 #include "internal-r3-win.h"
@@ -78,6 +86,8 @@ typedef DWORD   (WINAPI *PFNGETMODULEBASENAME)(HANDLE, HMODULE, LPTSTR, DWORD);
 /* advapi32.dll: */
 typedef BOOL    (WINAPI *PFNCREATEPROCESSWITHLOGON)(LPCWSTR, LPCWSTR, LPCWSTR, DWORD, LPCWSTR, LPWSTR, DWORD,
                                                     LPVOID, LPCWSTR, LPSTARTUPINFOW, LPPROCESS_INFORMATION);
+typedef NTSTATUS (NTAPI *PFNLSALOOKUPNAMES2)(LSA_HANDLE, ULONG, ULONG, PLSA_UNICODE_STRING,
+                                             PLSA_REFERENCED_DOMAIN_LIST*, PLSA_TRANSLATED_SID2*);
 
 /* userenv.dll: */
 typedef BOOL    (WINAPI *PFNCREATEENVIRONMENTBLOCK)(LPVOID *, HANDLE, BOOL);
@@ -106,6 +116,16 @@ static struct RTPROCWINENTRY
     HANDLE          hProcess;
 }                  *g_paProcesses;
 
+/** Structure for storing a user's account info.
+ *  Must be free'd with rtProcWinFreeAccountInfo(). */
+typedef struct RTPROCWINACCOUNTINFO
+{
+    /** User name. */
+    PRTUTF16        pwszUserName;
+    /** Domain this account is tied to. Can be NULL if no domain is being used. */
+    PRTUTF16        pwszDomain;
+} RTPROCWINACCOUNTINFO, *PRTPROCWINACCOUNTINFO;
+
 /** @name userenv.dll imports (we don't unload it).
  * They're all optional. So in addition to using g_rtProcWinResolveOnce, the
  * caller must also check if any of the necessary APIs are NULL pointers.
@@ -123,6 +143,7 @@ static PFNGETMODULEBASENAME             g_pfnGetModuleBaseName          = NULL;
 static PFNENUMPROCESSES                 g_pfnEnumProcesses              = NULL;
 /* advapi32.dll: */
 static PFNCREATEPROCESSWITHLOGON        g_pfnCreateProcessWithLogonW    = NULL;
+static PFNLSALOOKUPNAMES2               g_pfnLsaLookupNames2            = NULL;
 /* userenv.dll: */
 static PFNCREATEENVIRONMENTBLOCK        g_pfnCreateEnvironmentBlock     = NULL;
 static PFNPFNDESTROYENVIRONMENTBLOCK    g_pfnDestroyEnvironmentBlock    = NULL;
@@ -322,7 +343,17 @@ static DECLCALLBACK(int) rtProcWinResolveOnce(void *pvUser)
     /*
      * advapi32.dll APIs.
      */
-    g_pfnCreateProcessWithLogonW    = (PFNCREATEPROCESSWITHLOGON)RTLdrGetSystemSymbol("advapi32.dll", "CreateProcessWithLogonW");
+    rc = RTLdrLoadSystem("advapi32.dll", true /*fNoUnload*/, &hMod);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hMod, "CreateProcessWithLogonW", (void **)&g_pfnCreateProcessWithLogonW);
+        AssertStmt(RT_SUCCESS(rc), g_pfnCreateProcessWithLogonW = NULL);
+
+        rc = RTLdrGetSymbol(hMod, "LsaLookupNames2", (void **)&g_pfnLsaLookupNames2);
+        AssertStmt(RT_SUCCESS(rc), g_pfnLsaLookupNames2 = NULL);
+
+        RTLdrClose(hMod);
+    }
 
     /*
      * userenv.dll APIs.
@@ -1269,6 +1300,91 @@ static void rtProcWinStationPrep(HANDLE hTokenToUse, STARTUPINFOW *pStartupInfo,
 
 
 /**
+ * Extracts the user name + domain from a given UPN (User Principal Name, "joedoe@example.com") or
+ * Down-Level Logon Name format ("example.com\\joedoe") string.
+ *
+ * @return  IPRT status code.
+ * @param   pwszString      Pointer to string to extract the account info from.
+ * @param   pAccountInfo    Where to store the parsed account info.
+ *                          Must be free'd with rtProcWinFreeAccountInfo().
+ */
+static int rtProcWinParseAccountInfo(PRTUTF16 pwszString, PRTPROCWINACCOUNTINFO pAccountInfo)
+{
+    AssertPtrReturn(pwszString,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pAccountInfo, VERR_INVALID_POINTER);
+
+    /*
+     * Note: UPN handling is defined in RFC 822. We only implement very rudimentary parsing for the user
+     *       name and domain fields though.
+     */
+    char *pszString;
+    int rc = RTUtf16ToUtf8(pwszString, &pszString);
+    if (RT_SUCCESS(rc))
+    {
+        do
+        {
+            /* UPN or FQDN handling needed? */
+            /** @todo Add more validation here as needed. Regular expressions would be nice. */
+            char *pszDelim = strchr(pszString, '@');
+            if (pszDelim) /* UPN name? */
+            {
+                rc = RTStrToUtf16Ex(pszString, pszDelim - pszString, &pAccountInfo->pwszUserName, 0, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+
+                rc = RTStrToUtf16Ex(pszDelim + 1, RTSTR_MAX, &pAccountInfo->pwszDomain, 0, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            else if (pszDelim = strchr(pszString, '\\')) /* FQDN name? */
+            {
+                rc = RTStrToUtf16Ex(pszString, pszDelim - pszString, &pAccountInfo->pwszDomain, 0, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+
+                rc = RTStrToUtf16Ex(pszDelim + 1, RTSTR_MAX, &pAccountInfo->pwszUserName, 0, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            else
+                rc = VERR_NOT_SUPPORTED;
+
+        } while (0);
+
+        RTStrFree(pszString);
+    }
+
+#ifdef DEBUG
+    LogRelFunc(("Name  : %ls\n", pAccountInfo->pwszUserName));
+    LogRelFunc(("Domain: %ls\n", pAccountInfo->pwszDomain));
+#endif
+
+    if (RT_FAILURE(rc))
+        LogRelFunc(("Parsing \"%ls\" failed with rc=%Rrc\n", pwszString, rc));
+    return rc;
+}
+
+
+static void rtProcWinFreeAccountInfo(PRTPROCWINACCOUNTINFO pAccountInfo)
+{
+    if (!pAccountInfo)
+        return;
+
+    if (pAccountInfo->pwszUserName)
+    {
+        RTUtf16Free(pAccountInfo->pwszUserName);
+        pAccountInfo->pwszUserName = NULL;
+    }
+
+    if (pAccountInfo->pwszDomain)
+    {
+        RTUtf16Free(pAccountInfo->pwszDomain);
+        pAccountInfo->pwszDomain = NULL;
+    }
+}
+
+
+/**
  * Method \#2.
  */
 static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 *ppwszExec, PRTUTF16 pwszCmdLine,
@@ -1319,57 +1435,176 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
          */
         if (fFlags & RTPROC_FLAGS_SERVICE)
         {
-            /* Try query the SID and domain sizes first. */
-            DWORD           cbSid      = 0; /* Must be zero to query size! */
-            DWORD           cwcDomain  = 0;
-            SID_NAME_USE    SidNameUse = SidTypeUser;
-            fRc = LookupAccountNameW(NULL, pwszUser, NULL, &cbSid, NULL, &cwcDomain, &SidNameUse);
+            PSID pSid = NULL;
 
-            /* Allocate memory for the LookupAccountNameW output buffers and do it for real. */
-            cbSid = fRc && cbSid != 0 ? cbSid + 16 : _1K;
-            PSID pSid = (PSID)RTMemAllocZ(cbSid);
-            if (pSid)
+            /* Try query the SID and domain sizes first. */
+            DWORD        cbSid      = 0; /* Must be zero to query size! */
+            DWORD        cwcDomain  = 0;
+            SID_NAME_USE SidNameUse = SidTypeUser;
+            fRc = LookupAccountNameW(NULL, pwszUser, NULL, &cbSid, NULL, &cwcDomain, &SidNameUse);
+            if (!fRc)
             {
-                cwcDomain = fRc ? cwcDomain + 2 : _4K;
-                PRTUTF16 pwszDomain = (PRTUTF16)RTMemAllocZ(cwcDomain * sizeof(RTUTF16));
-                if (pwszDomain)
+                dwErr = GetLastError();
+
+#ifndef IPRT_TARGET_NT4
+                /*
+                 * The errors ERROR_TRUSTED_DOMAIN_FAILURE and ERROR_TRUSTED_RELATIONSHIP_FAILURE
+                 * can happen if an ADC (Active Domain Controller) is offline or not reachable.
+                 *
+                 * Try to handle these errors gracefully by asking the local LSA cache of the
+                 * client OS instead then. For this to work, the desired user must have at
+                 * least logged in once at that client -- otherwise there will be no cached
+                 * authentication available and this fallback will fail.
+                 */
+                if (   g_pfnLsaLookupNames2 /* >= Windows XP */
+                    && (   dwErr == ERROR_TRUSTED_DOMAIN_FAILURE
+                        || dwErr == ERROR_TRUSTED_RELATIONSHIP_FAILURE))
                 {
-                    /* Note: Just pass in the UPN (User Principal Name), e.g. someone@example.com */
-                    if (LookupAccountNameW(NULL /*lpSystemName*/, pwszUser, pSid, &cbSid, pwszDomain, &cwcDomain, &SidNameUse))
+                    LSA_OBJECT_ATTRIBUTES objAttr;
+                    RT_ZERO(objAttr);
+                    objAttr.Length = sizeof(LSA_OBJECT_ATTRIBUTES);
+
+                    LSA_HANDLE lsahPolicy;
+                    NTSTATUS ntSts = LsaOpenPolicy(NULL, &objAttr, POLICY_LOOKUP_NAMES, &lsahPolicy);
+                    if (ntSts == STATUS_SUCCESS)
                     {
-                        if (IsValidSid(pSid))
+                        RTPROCWINACCOUNTINFO accountInfo;
+                        RT_ZERO(accountInfo);
+                        rc = rtProcWinParseAccountInfo(pwszUser, &accountInfo);
+                        AssertRC(rc);
+                        AssertPtr(accountInfo.pwszUserName);
+
+                        LSA_UNICODE_STRING lsaUser;
+                        lsaUser.Buffer        = accountInfo.pwszUserName;
+                        lsaUser.Length        = (USHORT)(RTUtf16Len(accountInfo.pwszUserName) * sizeof(WCHAR));
+                        lsaUser.MaximumLength = lsaUser.Length;
+
+                        PLSA_REFERENCED_DOMAIN_LIST pDomainList     = NULL;
+                        PLSA_TRANSLATED_SID2        pTranslatedSids = NULL;
+                        ntSts = g_pfnLsaLookupNames2(lsahPolicy, 0 /* Flags */,
+                                                     1 /* Number of users to lookup */,
+                                                     &lsaUser, &pDomainList, &pTranslatedSids);
+                        if (ntSts == STATUS_SUCCESS)
                         {
-                            /* Array of process names we want to look for. */
-                            static const char * const s_papszProcNames[] =
+                            AssertPtr(pDomainList);
+                            AssertPtr(pTranslatedSids);
+# ifdef DEBUG
+                            LogRelFunc(("LsaLookupNames2: cDomains=%u, DomainIndex=%ld, SidUse=%ld\n",
+                                        pDomainList->Entries, pTranslatedSids[0].DomainIndex, pTranslatedSids[0].Use));
+# endif
+                            Assert(pTranslatedSids[0].Use == SidTypeUser);
+
+                            if (pDomainList->Entries)
                             {
-#ifdef VBOX                     /* The explorer entry is a fallback in case GA aren't installed. */
-                                { "VBoxTray.exe" },
-#endif
-                                { "explorer.exe" },
-                                NULL
-                            };
-                            fFound = rtProcWinFindTokenByProcess(s_papszProcNames, pSid, &hTokenUserDesktop);
+                                AssertPtr(pDomainList->Domains);
+                                LogRelFunc(("LsaLookupNames2: Domain=%ls\n",
+                                            pDomainList->Domains[pTranslatedSids[0].DomainIndex].Name.Buffer));
+                            }
+
+                            cbSid = GetLengthSid(pTranslatedSids->Sid) + 16;
+                            Assert(cbSid);
+                            pSid = (PSID)RTMemAllocZ(cbSid);
+                            if (!CopySid(cbSid, pSid, pTranslatedSids->Sid))
+                            {
+                                dwErr = GetLastError();
+                                LogRelFunc(("CopySid failed with: %ld\n", dwErr));
+                                rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_2;
+                            }
                         }
                         else
                         {
-                            dwErr = GetLastError();
-                            rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_4;
+                            dwErr = LsaNtStatusToWinError(ntSts);
+                            LogRelFunc(("LsaLookupNames2 failed with: %ld\n", dwErr));
+                            rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_2;
                         }
+
+                        if (pDomainList)
+                        {
+                            LsaFreeMemory(pDomainList);
+                            pDomainList = NULL;
+                        }
+                        if (pTranslatedSids)
+                        {
+                            LsaFreeMemory(pTranslatedSids);
+                            pTranslatedSids = NULL;
+                        }
+
+                        rtProcWinFreeAccountInfo(&accountInfo);
+                        LsaClose(lsahPolicy);
                     }
                     else
                     {
-                        dwErr = GetLastError();
+                        dwErr = LsaNtStatusToWinError(ntSts);
+                        LogRelFunc(("LsaOpenPolicy failed with: %ld\n", dwErr));
                         rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_3;
                     }
-                    RTMemFree(pwszDomain);
+
+                    /* Note: pSid will be free'd down below. */
                 }
                 else
-                    rc = VERR_NO_MEMORY;
+#endif /* !IPRT_TARGET_NT4 */
+                if (dwErr == ERROR_INSUFFICIENT_BUFFER)
+                {
+                    /* Allocate memory for the LookupAccountNameW output buffers and do it for real. */
+                    cbSid = fRc && cbSid != 0 ? cbSid + 16 : _1K;
+                    pSid = (PSID)RTMemAllocZ(cbSid);
+                    if (pSid)
+                    {
+                        cwcDomain = fRc ? cwcDomain + 2 : _4K;
+                        PRTUTF16 pwszDomain = (PRTUTF16)RTMemAllocZ(cwcDomain * sizeof(RTUTF16));
+                        if (pwszDomain)
+                        {
+                            /* Note: Just pass in the UPN (User Principal Name), e.g. someone@example.com */
+                            if (!LookupAccountNameW(NULL /*lpSystemName*/, pwszUser, pSid, &cbSid, pwszDomain, &cwcDomain,
+                                                    &SidNameUse))
+                            {
+                                dwErr = GetLastError();
+                                LogRelFunc(("LookupAccountNameW(2) failed with: %ld\n", dwErr));
+                                rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_4;
+                            }
+
+                            RTMemFree(pwszDomain);
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+
+                        /* Note: pSid will be free'd down below. */
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+                else
+                {
+                    LogRelFunc(("LookupAccountNameW(1) failed with: %ld\n", dwErr));
+                    rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_2;
+                }
+            }
+
+            if (pSid)
+            {
+                if (IsValidSid(pSid))
+                {
+                    /* Array of process names we want to look for. */
+                    static const char * const s_papszProcNames[] =
+                    {
+#ifdef VBOX             /* The explorer entry is a fallback in case GA aren't installed. */
+                        { "VBoxTray.exe" },
+#endif
+                        { "explorer.exe" },
+                        NULL
+                    };
+                    fFound = rtProcWinFindTokenByProcess(s_papszProcNames, pSid, &hTokenUserDesktop);
+                    dwErr  = 0;
+                }
+                else
+                {
+                    dwErr = GetLastError();
+                    LogRelFunc(("SID is invalid: %ld\n", dwErr));
+                    rc = dwErr != NO_ERROR ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_3;
+                }
 
                 RTMemFree(pSid);
             }
-            else
-                rc = VERR_NO_MEMORY;
         }
         /* else: !RTPROC_FLAGS_SERVICE: Nothing to do here right now. */
 
@@ -1504,6 +1739,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
         if (rc == VERR_UNRESOLVED_ERROR)
             LogRelFunc(("dwErr=%u (%#x), rc=%Rrc\n", dwErr, dwErr, rc));
     }
+
     return rc;
 }
 
@@ -1723,7 +1959,7 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
             DWORD dwErr = GetLastError();
             rc = RTErrConvertFromWin32(dwErr);
             if (rc == VERR_UNRESOLVED_ERROR)
-                LogRelFunc(("g_pfnCreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
+                LogRelFunc(("CreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
                             g_pfnCreateProcessWithLogonW, dwErr, dwErr, rc));
         }
         if (pwszzBlock)
