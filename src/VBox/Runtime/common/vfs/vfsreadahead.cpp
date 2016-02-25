@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_VFS
 #include "internal/iprt.h"
 #include <iprt/vfs.h>
 
@@ -36,6 +37,7 @@
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/list.h>
+#include <iprt/log.h>
 #include <iprt/poll.h>
 #include <iprt/string.h>
 #include <iprt/vfslowlevel.h>
@@ -276,6 +278,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
         if (offCur >= pThis->offEof)
         {
             rc = pcbRead ? VINF_EOF : VERR_EOF;
+            Log(("rtVfsReadAhead_Read: ret %Rrc; offCur=%#llx offEof=%#llx\n", rc, offCur, pThis->offEof));
             break;
         }
 
@@ -307,16 +310,19 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
         RTSGBUF TmpSgBuf;
         RTSgBufInit(&TmpSgBuf, &TmpSeg, 1);
         size_t cbThisRead = cbDst;
-        rc = RTVfsIoStrmSgRead(pThis->hIos, off, pSgBuf, fBlocking, pcbRead ? &cbThisRead : NULL);
+        rc = RTVfsIoStrmSgRead(pThis->hIos, off, &TmpSgBuf, fBlocking, pcbRead ? &cbThisRead : NULL);
         if (RT_SUCCESS(rc))
         {
-            cbTotalRead = cbThisRead;
-            offCur     += cbThisRead;
+            cbTotalRead += cbThisRead;
+            offCur      += cbThisRead;
             pThis->offConsumer = offCur;
             if (rc != VINF_EOF)
                 fPokeReader = true;
             else
+            {
                 pThis->offEof = offCur;
+                Log(("rtVfsReadAhead_Read: EOF %llu (%#llx)\n", pThis->offEof, pThis->offEof));
+            }
         }
         /* else if (rc == VERR_EOF): hard to say where exactly the current position
            is here as cannot have had a non-NULL pcbRead.  Set offEof later. */
@@ -330,6 +336,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
 
     if (pcbRead)
         *pcbRead = cbTotalRead;
+    Assert(cbTotalRead <= pSgBuf->paSegs[0].cbSeg);
 
     return rc;
 }
@@ -582,7 +589,10 @@ static DECLCALLBACK(int) rtVfsReadAheadThreadProc(RTTHREAD hThreadSelf, void *pv
                 if (RT_SUCCESS(rc))
                 {
                     if (rc == VINF_EOF)
+                    {
                         pThis->offEof = pBufDesc->off + cbRead;
+                        Log(("rtVfsReadAheadThreadProc: EOF %llu (%#llx)\n", pThis->offEof, pThis->offEof));
+                    }
                     pBufDesc->cbFilled = (uint32_t)cbRead;
 
                     /*
@@ -668,9 +678,10 @@ static int rtVfsCreateReadAheadInstance(RTVFSIOSTREAM hVfsIosSrc, RTVFSFILE hVfs
     AssertStmt(cBuffers < _4K, rc = VERR_OUT_OF_RANGE);
     if (cBuffers == 0)
         cBuffers = 4;
-    AssertStmt(cbBuffer <= _512K, rc = VERR_OUT_OF_RANGE);
+    AssertStmt(cbBuffer <= _4M, rc = VERR_OUT_OF_RANGE);
     if (cbBuffer == 0)
         cbBuffer = _256K / cBuffers;
+    AssertStmt(cbBuffer * cBuffers < (ARCH_BITS < 64 ? _64M : _256M), rc = VERR_OUT_OF_RANGE);
     AssertStmt(!fFlags, rc = VERR_INVALID_FLAGS);
 
     if (RT_SUCCESS(rc))
