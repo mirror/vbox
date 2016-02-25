@@ -84,5 +84,5 @@ def NS_GetModule( serviceManager, nsIFile ):
     return WrapObject(loader.MakePythonComponentLoaderModule(serviceManager, nsIFile), iid, bWrapClient = 0)
 
 def _shutdown():
-    from server.policy import _shutdown
+    from xpcom.server.policy import _shutdown
     _shutdown()
