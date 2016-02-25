@@ -158,7 +158,8 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 endif
 
 if    defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
-   && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
+   && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD) \
+   && defined(VBOX_WITH_VDKEYSTOREMGR)
  PROGRAMS += vdkeystoremgr
 
  #
