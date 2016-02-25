@@ -4214,7 +4214,7 @@ DECLHIDDEN(char *) supR3HardenedWinReadErrorInfoDevice(char *pszErrorInfo, size_
             if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status) && Ios.Information > 0)
             {
                 memcpy(pszErrorInfo, pszPrefix, cchPrefix);
-                pszErrorInfo[RT_MIN(cbErrorInfo - 1, Ios.Information)] = '\0';
+                pszErrorInfo[RT_MIN(cbErrorInfo - 1, cchPrefix + Ios.Information)] = '\0';
                 SUP_DPRINTF(("supR3HardenedWinReadErrorInfoDevice: '%s'", &pszErrorInfo[cchPrefix]));
             }
             else
