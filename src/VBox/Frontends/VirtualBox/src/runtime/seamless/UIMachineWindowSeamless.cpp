@@ -86,19 +86,19 @@ void UIMachineWindowSeamless::prepareVisualState()
     setAttribute(Qt::WA_NoSystemBackground);
 
 #ifdef VBOX_WITH_TRANSLUCENT_SEAMLESS
-# ifdef Q_WS_MAC
+# if defined(Q_WS_MAC) && QT_VERSION < 0x050000
     /* Using native API to enable translucent background for the Mac host.
      * - We also want to disable window-shadows which is possible
      *   using Qt::WA_MacNoShadow only since Qt 4.8,
      *   while minimum supported version is 4.7.1 for now: */
     ::darwinSetShowsWindowTransparent(this, true);
-# else /* Q_WS_MAC */
+# else /* !Q_WS_MAC || QT_VERSION >= 0x050000 */
     /* Using Qt API to enable translucent background:
      * - Under Win host Qt conflicts with 3D stuff (black seamless regions).
      * - Under Mac host Qt doesn't allows to disable window-shadows
      *   until version 4.8, but minimum supported version is 4.7.1 for now. */
     setAttribute(Qt::WA_TranslucentBackground);
-# endif /* !Q_WS_MAC */
+# endif /* !Q_WS_MAC || QT_VERSION >= 0x050000 */
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS

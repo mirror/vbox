@@ -1458,15 +1458,17 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     painter.setClipRegion(paintRegion);
     /* Set composition-mode to paint: */
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS)
-# if defined(Q_WS_WIN) || defined(Q_WS_X11)
+# if defined(Q_WS_WIN) || defined(Q_WS_X11) || QT_VERSION >= 0x050000
     /* Replace translucent background with black one: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
     painter.fillRect(paintRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
-# endif /* Q_WS_WIN || Q_WS_X11 */
+# endif /* Q_WS_WIN || Q_WS_X11 || QT_VERSION >= 0x050000 */
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
-    /* Paint rectangle: */
+
+    /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
                   useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());

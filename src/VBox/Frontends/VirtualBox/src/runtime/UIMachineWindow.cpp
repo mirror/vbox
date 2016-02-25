@@ -114,11 +114,11 @@ void UIMachineWindow::prepare()
     /* Prepare status-bar: */
     prepareStatusBar();
 
-    /* Prepare machine-view: */
-    prepareMachineView();
-
     /* Prepare visual-state: */
     prepareVisualState();
+
+    /* Prepare machine-view: */
+    prepareMachineView();
 
     /* Prepare handlers: */
     prepareHandlers();
