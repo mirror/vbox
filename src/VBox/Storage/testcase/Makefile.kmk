@@ -157,5 +157,44 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 
 endif
 
+if defined(VBOX_WITH_TESTCASES) || !defined(VBOX_OSE)
+ PROGRAMS += vdkeystoremgr
+
+ #
+ # vbox-img - static because it migth be used as at standalone tool.
+ #
+ vdkeystoremgr_TEMPLATE = VBoxR3Static
+ vdkeystoremgr_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
+ vdkeystoremgr_SOURCES = \
+	vdkeystoremgr.cpp \
+	../VDKeyStore.cpp
+ vdkeystoremgr_SOURCES.win = \
+	vdkeystoremgr_SOURCES.rc
+ vdkeystoremgr_LIBS = \
+	$(VBOX_LIB_RUNTIME_STATIC) \
+	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
+ if1of ($(KBUILD_TARGET),os2 win)
+  vdkeystoremgr_LIBS += \
+	$(PATH_STAGE_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB)
+ else
+  vdkeystoremgr_LIBS += \
+	$(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
+	$(SDK_VBOX_ZLIB_LIBS)
+ endif
+ ifeq ($(KBUILD_TARGET),linux)
+   vdkeystoremgr_LIBS += crypt
+  ifdef SDK_VBOX_LIBXML2_LIBS
+   vdkeystoremgr_LIBS += xml2
+  endif
+ else if1of ($(KBUILD_TARGET),darwin freebsd)
+  vdkeystoremgr_LIBS += iconv
+ else ifeq ($(KBUILD_TARGET),win)
+  vdkeystoremgr_SDKS.win = VBOX_NTDLL
+ else ifeq ($(KBUILD_TARGET),solaris)
+  vdkeystoremgr_LIBS += kstat
+ endif
+endif
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
