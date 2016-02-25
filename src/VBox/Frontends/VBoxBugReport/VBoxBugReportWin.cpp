@@ -572,6 +572,8 @@ void createBugReportOsSpecific(BugReport* report, const char *pszHome)
     report->addItem(new BugReportFile(PathJoin(WinInfDir.c_str(), "setupapi.dev.log"), "setupapi.dev.log"));
     report->addItem(new BugReportNetworkAdaptersWin);
     RTCStringFmt WinSysDir("%ls/System32", szWinDir);
+    report->addItem(new BugReportCommand("IpConfig", PathJoin(WinSysDir.c_str(), "ipconfig.exe"), "/all", NULL));
+    report->addItem(new BugReportCommand("RouteTable", PathJoin(WinSysDir.c_str(), "netstat.exe"), "-rn", NULL));
     report->addItem(new BugReportCommand("SystemEvents", PathJoin(WinSysDir.c_str(), "wevtutil.exe"),
                                          "qe", "System",
                                          "/q:*[System[Provider[@Name='VBoxUSBMon' or @Name='VBoxNetLwf']]]", NULL));
