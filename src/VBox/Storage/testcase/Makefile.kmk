@@ -157,11 +157,12 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 
 endif
 
-if defined(VBOX_WITH_TESTCASES) || !defined(VBOX_OSE)
+if    defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
+   && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
  PROGRAMS += vdkeystoremgr
 
  #
- # vbox-img - static because it migth be used as at standalone tool.
+ # vdkeystoremgr - static because it migth be used as at standalone tool.
  #
  vdkeystoremgr_TEMPLATE = VBoxR3Static
  vdkeystoremgr_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
