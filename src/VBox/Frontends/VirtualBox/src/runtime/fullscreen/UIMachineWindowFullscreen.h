@@ -101,6 +101,13 @@ private:
     void updateAppearanceOf(int iElement);
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
+#ifdef Q_WS_WIN
+# if QT_VERSION >= 0x050000
+    /** Win: Handles show @a pEvent. */
+    void showEvent(QShowEvent *pEvent);
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_WIN */
+
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
     /** Holds the mini-toolbar instance. */
     UIMiniToolBar *m_pMiniToolBar;

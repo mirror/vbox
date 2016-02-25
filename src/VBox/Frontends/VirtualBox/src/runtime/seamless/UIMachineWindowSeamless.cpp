@@ -266,20 +266,21 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
 }
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
-#if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
-void UIMachineWindowSeamless::showEvent(QShowEvent *pShowEvent)
+#ifdef Q_WS_WIN
+# if QT_VERSION >= 0x050000
+void UIMachineWindowSeamless::showEvent(QShowEvent *pEvent)
 {
-    /* Call to base class: */
-    UIMachineWindow::showEvent(pShowEvent);
+    /* Expose workaround again,
+     * Qt devs will never fix that it seems.
+     * This time they forget to set 'Mapped'
+     * attribute for initially frame-less window. */
+    setAttribute(Qt::WA_Mapped);
 
-    /* Following workaround allows to fix the next Qt BUG:
-     * https://bugreports.qt-project.org/browse/QTBUG-17548
-     * https://bugreports.qt-project.org/browse/QTBUG-30974
-     * Widgets with Qt::WA_TranslucentBackground attribute
-     * stops repainting after minimizing/restoring, we have to call for single update. */
-    QApplication::postEvent(this, new QEvent(QEvent::UpdateRequest), Qt::LowEventPriority);
+    /* Call to base-class: */
+    UIMachineWindow::showEvent(pEvent);
 }
-#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_WIN */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
 void UIMachineWindowSeamless::setMask(const QRegion &maskGuest)

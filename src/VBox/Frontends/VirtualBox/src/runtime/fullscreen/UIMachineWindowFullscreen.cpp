@@ -231,7 +231,7 @@ void UIMachineWindowFullscreen::prepareVisualState()
                                                                        UIMachineWindow::handleNativeNotification);
         UICocoaApplication::instance()->registerToNotificationOfWindow("NSWindowDidFailToEnterFullScreenNotification", this,
                                                                        UIMachineWindow::handleNativeNotification);
-    }
+}
 #endif /* Q_WS_MAC */
 }
 
@@ -481,4 +481,20 @@ void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
     }
 }
 #endif /* Q_WS_WIN || Q_WS_X11 */
+
+#ifdef Q_WS_WIN
+# if QT_VERSION >= 0x050000
+void UIMachineWindowFullscreen::showEvent(QShowEvent *pEvent)
+{
+    /* Expose workaround again,
+     * Qt devs will never fix that it seems.
+     * This time they forget to set 'Mapped'
+     * attribute for initially frame-less window. */
+    setAttribute(Qt::WA_Mapped);
+
+    /* Call to base-class: */
+    UIMachineWindow::showEvent(pEvent);
+}
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_WIN */
 

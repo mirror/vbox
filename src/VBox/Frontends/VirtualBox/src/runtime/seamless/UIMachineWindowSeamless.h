@@ -73,10 +73,12 @@ private:
     void updateAppearanceOf(int iElement);
 #endif /* Q_WS_WIN || Q_WS_X11 */
 
-#if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
-    /** Windows: Translucency stuff workaround. */
+#ifdef Q_WS_WIN
+# if QT_VERSION >= 0x050000
+    /** Win: Handles show @a pEvent. */
     void showEvent(QShowEvent *pEvent);
-#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* Q_WS_WIN */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
     /** Assigns guest seamless mask. */
