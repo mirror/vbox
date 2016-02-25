@@ -141,7 +141,7 @@ BugReport::BugReport(const char *pszFileName)
 
 BugReport::~BugReport()
 {
-    for (int i = 0; i < m_Items.size(); ++i)
+    for (unsigned i = 0; i < m_Items.size(); ++i)
     {
         delete m_Items[i];
     }
@@ -161,7 +161,7 @@ void BugReport::addItem(BugReportItem* item)
 
 void BugReport::process(void)
 {
-    for (int i = 0; i < m_Items.size(); ++i)
+    for (unsigned i = 0; i < m_Items.size(); ++i)
     {
         BugReportItem *pItem = m_Items[i];
         RTPrintf("%3u%% - collecting %s...\n", i * 100 / m_Items.size(), pItem->getTitle());
