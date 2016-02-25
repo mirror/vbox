@@ -312,7 +312,8 @@ void UIMachineWindowSeamless::setMask(const QRegion &maskGuest)
         /* Assign new full mask: */
         UIMachineWindow::setMask(m_maskFull);
         /* Update viewport region finally: */
-        m_pMachineView->viewport()->update(toUpdate);
+        if (m_pMachineView)
+            m_pMachineView->viewport()->update(toUpdate);
     }
 }
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
