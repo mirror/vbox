@@ -293,7 +293,10 @@ class DefaultPolicy:
             # Trick things!
             if logger.isEnabledFor(logging.DEBUG):
                 try:
-                    raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
+                    if sys.version_info[0] <= 2:
+                        exec('raise exc_info[0], exc_info[1], exc_info[2]')
+                    else:
+                        raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
                 except:
                     logger.debug("'%s' raised COM Exception %s",
                              func_name, exc_val, exc_info = 1)
@@ -301,7 +304,10 @@ class DefaultPolicy:
         # Unhandled exception - always print a warning and the traceback.
         # As above, trick the logging module to handle Python 2.3
         try:
-            raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
+            if sys.version_info[0] <= 2:
+                exec('raise exc_info[0], exc_info[1], exc_info[2]')
+            else:
+                raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
         except:
             logger.exception("Unhandled exception calling '%s'", func_name)
         return nsError.NS_ERROR_FAILURE
