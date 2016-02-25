@@ -1253,7 +1253,7 @@ void UISession::loadSessionSettings()
         /* Load/prepare user's machine-window icon: */
         QIcon icon;
         foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(strMachineID))
-            if (!strIconName.isEmpty())
+            if (!strIconName.isEmpty() && QFile::exists(strIconName))
                 icon.addFile(strIconName);
         if (!icon.isNull())
             m_pMachineWindowIcon = new QIcon(icon);
