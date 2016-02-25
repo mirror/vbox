@@ -60,6 +60,7 @@
 #define RTZIPTARCMD_OPT_DIR_MODE_AND_MASK   1007
 #define RTZIPTARCMD_OPT_DIR_MODE_OR_MASK    1008
 #define RTZIPTARCMD_OPT_FORMAT              1009
+#define RTZIPTARCMD_OPT_READ_AHEAD          1010
 
 /** File format. */
 typedef enum RTZIPTARFORMAT
@@ -103,6 +104,8 @@ typedef struct RTZIPTARCMDOPS
     /** Whether to skip restoring the modification time (only time stored by the
      * traditional TAR format). */
     bool            fNoModTime;
+    /** Whether to add a read ahead thread. */
+    bool            fReadAhead;
     /** The compressor/decompressor method to employ (0, z or j). */
     char            chZipper;
 
@@ -493,9 +496,25 @@ static RTEXITCODE rtZipTarCmdExtractFile(PRTZIPTARCMDOPS pOpts, RTVFSOBJ hVfsObj
     if (RT_SUCCESS(rc))
     {
         /*
-         * Pump the data thru.
+         * Convert source to a stream and optionally add a read ahead stage.
          */
         RTVFSIOSTREAM hVfsIosSrc = RTVfsObjToIoStream(hVfsObj);
+        if (pOpts->fReadAhead)
+        {
+            RTVFSIOSTREAM hVfsReadAhead;
+            rc = RTVfsCreateReadAheadForIoStream(hVfsIosSrc, 0 /*fFlag*/, 16 /*cBuffers*/, _256K /*cbBuffer*/, &hVfsReadAhead);
+            if (RT_SUCCESS(rc))
+            {
+                RTVfsIoStrmRelease(hVfsIosSrc);
+                hVfsIosSrc = hVfsReadAhead;
+            }
+            else
+                AssertRC(rc); /* can be ignored in release builds. */
+        }
+
+        /*
+         * Pump the data thru.
+         */
         rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, (uint32_t)RT_MIN(pUnixInfo->cbObject, _1M));
         if (RT_SUCCESS(rc))
         {
@@ -640,8 +659,8 @@ static RTEXITCODE rtZipTarCmdExtractCallback(PRTZIPTARCMDOPS pOpts, RTVFSOBJ hVf
     }
 
     /*
-     * Set other attributes as requested  .
-     *                                    .
+     * Set other attributes as requested.
+     *
      * Note! File extraction does get here.
      */
     if (!pOpts->fNoModTime)
@@ -930,6 +949,8 @@ static void rtZipTarUsage(const char *pszProgName)
              "        Restrict the access mode of directories.\n"
              "    --dir-mode-and-mask <octal-mode>      (-A, -C, -d, -r, -u, -x)\n"
              "        Include the given access mode for directories.\n"
+             "    --read-ahead                          (-x)\n"
+             "        Enabled read ahead thread when extracting files.\n"
              "\n");
     RTPrintf("Standard Options:\n"
              "    -h, -?, --help\n"
@@ -985,6 +1006,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
         { "--dir-mode-and-mask",    RTZIPTARCMD_OPT_DIR_MODE_AND_MASK,  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
         { "--dir-mode-or-mask",     RTZIPTARCMD_OPT_DIR_MODE_OR_MASK,   RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
         { "--format",               RTZIPTARCMD_OPT_FORMAT,             RTGETOPT_REQ_STRING },
+        { "--read-ahead",           RTZIPTARCMD_OPT_READ_AHEAD,         RTGETOPT_REQ_NOTHING },
     };
 
     RTGETOPTSTATE GetState;
@@ -1131,6 +1153,10 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
                     Opts.enmFormat = RTZIPTARFORMAT_XAR;
                 else
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown archive format: '%s'", ValueUnion.psz);
+                break;
+
+            case RTZIPTARCMD_OPT_READ_AHEAD:
+                Opts.fReadAhead = true;
                 break;
 
             /* Standard bits. */
