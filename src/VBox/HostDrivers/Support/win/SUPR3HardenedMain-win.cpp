@@ -5479,7 +5479,7 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
      * Init g_uNtVerCombined. (The code is shared with SUPR3.lib and lives in
      * SUPHardenedVerfiyImage-win.cpp.)
      */
-    supR3HardenedWinInitVersion();
+    supR3HardenedWinInitVersion(false /*fEarly*/);
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_VERSION_INITIALIZED;
 
     /*
@@ -5703,7 +5703,7 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
     /*
      * Init g_uNtVerCombined as well as we can at this point.
      */
-    supR3HardenedWinInitVersion();
+    supR3HardenedWinInitVersion(true /*fEarly*/);
 
     /*
      * Convert the arguments to UTF-8 so we can open the log file if specified.
@@ -5718,7 +5718,7 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
     int    cArgs;
     char **papszArgs = suplibCommandLineToArgvWStub(CmdLineStr.Buffer, CmdLineStr.Length / sizeof(WCHAR), &cArgs);
     supR3HardenedOpenLog(&cArgs, papszArgs);
-    SUP_DPRINTF(("supR3HardenedVmProcessInit: uNtDllAddr=%p\n", uNtDllAddr));
+    SUP_DPRINTF(("supR3HardenedVmProcessInit: uNtDllAddr=%p g_uNtVerCombined=%#x\n", uNtDllAddr, g_uNtVerCombined));
 
     /*
      * Set up the direct system calls so we can more easily hook NtCreateSection.

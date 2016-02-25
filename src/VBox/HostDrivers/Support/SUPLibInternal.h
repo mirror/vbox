@@ -451,7 +451,7 @@ DECLHIDDEN(int)     supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData);
 #ifdef RT_OS_WINDOWS
 DECLHIDDEN(void)    supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge);
 DECLHIDDEN(void)    supR3HardenedWinInitAppBin(uint32_t fFlags);
-DECLHIDDEN(void)    supR3HardenedWinInitVersion(void);
+DECLHIDDEN(void)    supR3HardenedWinInitVersion(bool fEarlyInit);
 DECLHIDDEN(void)    supR3HardenedWinInitImports(void);
 DECLHIDDEN(void)    supR3HardenedWinModifyDllSearchPath(uint32_t fFlags, const char *pszAppBinPath);
 # ifdef ___iprt_nt_nt_h___

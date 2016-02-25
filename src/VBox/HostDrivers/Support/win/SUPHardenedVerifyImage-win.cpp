@@ -2771,24 +2771,28 @@ DECLHIDDEN(bool) supHardenedWinIsWinVerifyTrustCallable(void)
  * Initializes g_uNtVerCombined and g_NtVerInfo.
  * Called from suplibHardenedWindowsMain and suplibOsInit.
  */
-DECLHIDDEN(void) supR3HardenedWinInitVersion(void)
+DECLHIDDEN(void) supR3HardenedWinInitVersion(bool fEarly)
 {
     /*
      * Get the windows version.  Use RtlGetVersion as GetVersionExW and
      * GetVersion might not be telling the whole truth (8.0 on 8.1 depending on
      * the application manifest).
+     *
+     * Note! Windows 10 build 14267+ touches BSS when calling RtlGetVersion, so we
+     *       have to use the fallback for the call from the early init code.
      */
     OSVERSIONINFOEXW NtVerInfo;
 
     RT_ZERO(NtVerInfo);
     NtVerInfo.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
-    if (!NT_SUCCESS(RtlGetVersion((PRTL_OSVERSIONINFOW)&NtVerInfo)))
+    if (   fEarly
+        || !NT_SUCCESS(RtlGetVersion((PRTL_OSVERSIONINFOW)&NtVerInfo)))
     {
         RT_ZERO(NtVerInfo);
         PPEB pPeb = NtCurrentPeb();
         NtVerInfo.dwMajorVersion = pPeb->OSMajorVersion;
         NtVerInfo.dwMinorVersion = pPeb->OSMinorVersion;
-        NtVerInfo.dwBuildNumber  = pPeb->OSPlatformId;
+        NtVerInfo.dwBuildNumber  = pPeb->OSBuildNumber;
     }
 
     g_uNtVerCombined = SUP_MAKE_NT_VER_COMBINED(NtVerInfo.dwMajorVersion, NtVerInfo.dwMinorVersion, NtVerInfo.dwBuildNumber,

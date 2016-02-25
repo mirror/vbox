@@ -92,7 +92,7 @@ int suplibOsHardenedVerifyInit(void)
     if (!g_fHardenedVerifyInited)
     {
 #if defined(VBOX_WITH_HARDENING) && !defined(IN_SUP_HARDENED_R3) && !defined(IN_SUP_R3_STATIC)
-        supR3HardenedWinInitVersion();
+        supR3HardenedWinInitVersion(false /*fEarly*/);
         int rc = supHardenedWinInitImageVerifier(NULL);
         if (RT_FAILURE(rc))
             return rc;
