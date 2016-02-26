@@ -379,9 +379,14 @@ BugReportTarGzip::~BugReportTarGzip()
 
 void BugReportTarGzip::processItem(BugReportItem* item)
 {
-    handleRtError(RTTarFileOpen(m_hTar, &m_hTarFile, item->getTitle(),
+    /*
+     * @todo Our TAR implementation does not support names larger than 100 characters.
+     * We truncate the title to make sure it will fit into 100-character field of TAR header.
+     */
+    RTCString strTarFile = RTCString(item->getTitle()).substr(0, RTStrNLen(item->getTitle(), 99));
+    handleRtError(RTTarFileOpen(m_hTar, &m_hTarFile, strTarFile.c_str(),
                                 RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE),
-                  "Failed to open '%s' in TAR", item->getTitle());
+                  "Failed to open '%s' in TAR", strTarFile.c_str());
 
     PRTSTREAM strmIn = NULL;
     try
@@ -412,7 +417,7 @@ void BugReportTarGzip::processItem(BugReportItem* item)
 
     if (m_hTarFile)
     {
-        RTTarFileClose(m_hTarFile);
+        handleRtError(RTTarFileClose(m_hTarFile), "Failed to close '%s' in TAR", strTarFile.c_str());
         m_hTarFile = NIL_RTTARFILE;
     }
 }
