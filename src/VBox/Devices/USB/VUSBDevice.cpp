@@ -662,7 +662,8 @@ static PCPDMUSBDESCCACHESTRING FindCachedString(PCPDMUSBDESCCACHELANG paLanguage
     do { \
         uint32_t cbSrc_ = cbSrc; \
         uint32_t cbCopy = RT_MIN(cbLeft, cbSrc_); \
-        memcpy(pbBuf, pvSrc, cbCopy); \
+        if (cbCopy) \
+            memcpy(pbBuf, pvSrc, cbCopy); \
         cbLeft -= cbCopy; \
         if (!cbLeft) \
             return; \
