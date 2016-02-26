@@ -2472,9 +2472,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 # endif
 
         /*
-         * Wait for at most 250 ms to start polling.
+         * Wait for at most 50 ms to start polling.
          */
-        rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, 250);
+        rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, 50);
         AssertBreak(RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED);
         if (pThread->enmState != PDMTHREADSTATE_RUNNING)
         {
