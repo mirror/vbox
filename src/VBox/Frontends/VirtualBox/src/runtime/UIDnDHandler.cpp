@@ -655,9 +655,9 @@ int UIDnDHandler::retrieveData(Qt::DropAction          dropAction,
          * Retrieve the actual data from the guest.
          */
         rc = retrieveDataInternal(dropAction, strMIMEType, m_vecData);
-        LogRel3(("DnD: Received data, rc=%Rrc\n", rc));
-
-        if (RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
+            LogRel3(("DnD: Receiving data failed: %Rrc\n", rc));
+        else
             m_fDataRetrieved = true;
     }
     else /* Data already received, supply cached version. */
@@ -694,7 +694,7 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction    dropAction,
                                        const QString          &strMIMEType,
                                              QVector<uint8_t> &vecData)
 {
-    LogFlowFunc(("Retrieving data as '%s', dropAction=%d\n", qPrintable(strMIMEType), dropAction));
+    LogRel3(("DnD: Retrieving data from guest as '%s' (%s)\n", qPrintable(strMIMEType), qPrintable(dropAction)));
 
     int rc = VINF_SUCCESS;
 
