@@ -228,7 +228,9 @@ ifdef VBOX_WITH_BS3KIT
 MISCBINS += bs3-cpu-basic-2
 bs3-cpu-basic-2_TEMPLATE = VBoxBS3KitImg
 bs3-cpu-basic-2_SOURCES = \
-	bs3-cpu-basic-2.asm
+	bs3kit/bs3-first-rm.asm \
+	bs3-cpu-basic-2-c.c
+#	bs3-cpu-basic-2.asm
 endif
 
 

@@ -53,30 +53,51 @@
  * kBuild target defines this.
  *
  * @{ */
-# define TMPL_RM     /**< real mode. */
-# define TMPL_PE16   /**< 16-bit protected mode, unpaged. */
-# define TMPL_PE32   /**< 32-bit protected mode, unpaged. */
-# define TMPL_PEV86  /**< virtual 8086 mode under protected mode, unpaged. */
-# define TMPL_PP16   /**< 16-bit protected mode, paged. */
-# define TMPL_PP32   /**< 32-bit protected mode, paged. */
-# define TMPL_PPV86  /**< virtual 8086 mode under protected mode, paged. */
-# define TMPL_PAE16  /**< 16-bit protected mode with PAE (paged). */
-# define TMPL_PAE32  /**< 16-bit protected mode with PAE (paged). */
-# define TMPL_PAEV86 /**< virtual 8086 mode under protected mode with PAE (paged). */
-# define TMPL_LM16   /**< 16-bit long mode (paged). */
-# define TMPL_LM32   /**< 32-bit long mode (paged). */
-# define TMPL_LM64   /**< 64-bit long mode (paged). */
+# define TMPL_RM            /**< real mode. */
+
+# define TMPL_PE16          /**< 16-bit protected mode kernel+tss, running 16-bit code, unpaged. */
+# define TMPL_PE16_32       /**< 16-bit protected mode kernel+tss, running 32-bit code, unpaged. */
+# define TMPL_PE16_V86      /**< 16-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged. */
+# define TMPL_PE32          /**< 32-bit protected mode kernel+tss, running 32-bit code, unpaged. */
+# define TMPL_PE32_16       /**< 32-bit protected mode kernel+tss, running 16-bit code, unpaged. */
+# define TMPL_PEV86         /**< 32-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged. */
+
+# define TMPL_PP16          /**< 16-bit protected mode kernel+tss, running 16-bit code, paged. */
+# define TMPL_PP16_32       /**< 16-bit protected mode kernel+tss, running 32-bit code, paged. */
+# define TMPL_PP16_V86      /**< 16-bit protected mode kernel+tss, running virtual 8086 mode code, paged. */
+# define TMPL_PP32          /**< 32-bit protected mode kernel+tss, running 32-bit code, paged. */
+# define TMPL_PP32_16       /**< 32-bit protected mode kernel+tss, running 16-bit code, paged. */
+# define TMPL_PPV86         /**< 32-bit protected mode kernel+tss, running virtual 8086 mode code, paged. */
+
+# define TMPL_PAE16         /**< 16-bit protected mode kernel+tss, running 16-bit code, PAE paging. */
+# define TMPL_PAE16_32      /**< 16-bit protected mode kernel+tss, running 32-bit code, PAE paging. */
+# define TMPL_PAE16_V86     /**< 16-bit protected mode kernel+tss, running virtual 8086 mode code, PAE paging. */
+# define TMPL_PAE32         /**< 32-bit protected mode kernel+tss, running 32-bit code, PAE paging. */
+# define TMPL_PAE32_16      /**< 32-bit protected mode kernel+tss, running 16-bit code, PAE paging. */
+# define TMPL_PAEV86        /**< 32-bit protected mode kernel+tss, running virtual 8086 mode code, PAE paging. */
+
+# define TMPL_LM16          /**< 16-bit long mode (paged), kernel+tss always 64-bit. */
+# define TMPL_LM32          /**< 32-bit long mode (paged), kernel+tss always 64-bit. */
+# define TMPL_LM64          /**< 64-bit long mode (paged), kernel+tss always 64-bit. */
 /** @} */
 
 /** @name Derived Indicators
  * @{ */
-# define TMPL_CMN_PE    /**< TMPL_PE16  | TMPL_PE32  | TMPL_PEV86  */
-# define TMPL_CMN_PP    /**< TMPL_PP16  | TMPL_PP32  | TMPL_PPV86  */
-# define TMPL_CMN_PAE   /**< TMPL_PAE16 | TMPL_PAE32 | TMPL_PAEV86 */
-# define TMPL_CMN_LM    /**< TMPL_LM16  | TMPL_LM32  | TMPL_LM64   */
-# define TMPL_CMN_V86   /**< TMPL_PEV86 | TMPL_PPV86 | TMPL_PAEV86 */
-# define TMPL_CMN_R86   /**< TMPL_CMN_V86 | TMPL_RM                */
-# define TMPL_CMN_PAGING /**< TMPL_CMN_PP | TMPL_CMN_PAE | TMPL_CMN_LM */
+# define TMPL_CMN_PE        /**< TMPL_PE16  | TMPL_PE16_32  | TMPL_PE16_V86  | TMPL_PE32  | TMPL_PE32_16  | TMPL_PEV86 */
+# define TMPL_SYS_PE16      /**< TMPL_PE16  | TMPL_PE16_32  | TMPL_PE16_V86 */
+# define TMPL_SYS_PE32      /**< TMPL_PE32  | TMPL_PE32_16  | TMPL_PEV86 */
+# define TMPL_CMN_PP        /**< TMPL_PP16  | TMPL_PP16_32  | TMPL_PP16_V86  | TMPL_PP32  | TMPL_PP32_16  | TMPL_PPV86 */
+# define TMPL_SYS_PP16      /**< TMPL_PP16  | TMPL_PP16_32  | TMPL_PP16_V86 */
+# define TMPL_SYS_PP32      /**< TMPL_PP32  | TMPL_PP32_16  | TMPL_PPV86 */
+# define TMPL_CMN_PAE       /**< TMPL_PAE16 | TMPL_PAE16_32 | TMPL_PAE16_V86 | TMPL_PAE32 | TMPL_PAE32_16 | TMPL_PAEV86 */
+# define TMPL_SYS_PAE16     /**< TMPL_PAE16 | TMPL_PAE16_32 | TMPL_PAE16_V86 */
+# define TMPL_SYS_PAE32     /**< TMPL_PAE32 | TMPL_PAE32_16 | TMPL_PAEV86 */
+# define TMPL_CMN_LM        /**< TMPL_LM16  | TMPL_LM32  | TMPL_LM64 */
+# define TMPL_CMN_V86       /**< TMPL_PEV86 | TMPL_PE16_V86 | TMPL_PPV86 | TMPL_PP16_V86 | TMPL_PAEV86 | TMPL_PAE16_V86 */
+# define TMPL_CMN_R86       /**< TMPL_CMN_V86 | TMPL_RM */
+# define TMPL_CMN_PAGING    /**< TMPL_CMN_PP | TMPL_CMN_PAE | TMPL_CMN_LM */
+# define TMPL_CMN_WEIRD     /**< TMPL_PE16_32 | TMPL_PE32_16 | TMPL_PP16_32 | TMPL_PP32_16 | TMPL_PAE16_32 | TMPL_PAE32_16 | TMPL_CMN_WEIRD_V86 */
+# define TMPL_CMN_WEIRD_V86 /**< TMPL_PE16_V86 | TMPL_PP16_V86 | TMPL_PAE16_V86 */
 /** @} */
 
 /** @def TMPL_NM
@@ -118,654 +139,332 @@
 
 #undef BS3_CMN_NM
 
-#ifdef TMPL_RM
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_RM' and 'TMPL_PE16' are defined."
+
+/*
+ * Convert TMPL_XXX to TMPL_MODE.
+ */
+#ifndef TMPL_MODE
+# ifdef TMPL_RM
+#  define TMPL_MODE         BS3_MODE_RM
+# elif defined(TMPL_PE16)
+#  define TMPL_MODE         BS3_MODE_PE16
+# elif defined(TMPL_PE16_32)
+#  define TMPL_MODE         BS3_MODE_PE16_32
+# elif defined(TMPL_PE16_V86)
+#  define TMPL_MODE         BS3_MODE_PE16_V86
+# elif defined(TMPL_PE32)
+#  define TMPL_MODE         BS3_MODE_PE32
+# elif defined(TMPL_PE32_16)
+#  define TMPL_MODE         BS3_MODE_PE32_16
+# elif defined(TMPL_PEV86)
+#  define TMPL_MODE         BS3_MODE_PEV86
+# elif defined(TMPL_PP16)
+#  define TMPL_MODE         BS3_MODE_PP16
+# elif defined(TMPL_PP16_32)
+#  define TMPL_MODE         BS3_MODE_PP16_32
+# elif defined(TMPL_PP16_V86)
+#  define TMPL_MODE         BS3_MODE_PP16_V86
+# elif defined(TMPL_PP32)
+#  define TMPL_MODE         BS3_MODE_PP32
+# elif defined(TMPL_PP32_16)
+#  define TMPL_MODE         BS3_MODE_PP32_16
+# elif defined(TMPL_PPV86)
+#  define TMPL_MODE         BS3_MODE_PPV86
+# elif defined(TMPL_PAE16)
+#  define TMPL_MODE         BS3_MODE_PAE16
+# elif defined(TMPL_PAE16_32)
+#  define TMPL_MODE         BS3_MODE_PAE16_32
+# elif defined(TMPL_PAE16_V86)
+#  define TMPL_MODE         BS3_MODE_PAE16_V86
+# elif defined(TMPL_PAE32)
+#  define TMPL_MODE         BS3_MODE_PAE32
+# elif defined(TMPL_PAE32_16)
+#  define TMPL_MODE         BS3_MODE_PAE32_16
+# elif defined(TMPL_PAEV86)
+#  define TMPL_MODE         BS3_MODE_PAEV86
+# elif defined(TMPL_LM16)
+#  define TMPL_MODE         BS3_MODE_LM16
+# elif defined(TMPL_LM32)
+#  define TMPL_MODE         BS3_MODE_LM32
+# elif defined(TMPL_LM64)
+#  define TMPL_MODE         BS3_MODE_LM64
+# else
+#  error "Unable to to figure out the template mode."
 # endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_RM' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_RM' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_RM' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_RM' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_RM' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_RM' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_RM' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_RM' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_RM' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_RM' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_RM' and 'TMPL_LM64' are defined."
-# endif
+#endif
+
+
+/*
+ * Check the code bitness and set derived defines.
+ */
+#if (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_16
 # if ARCH_BITS != 16
-#  error "TMPL_RM requires ARCH_BITS to be 16."
+#  error "BS3_MODE_CODE_16 requires ARCH_BITS to be 16."
 # endif
 # define TMPL_16BIT
 # define TMPL_BITS              16
-# define TMPL_NM(Name)          RT_CONCAT(Name,_rm)
+# define TMPL_UNDERSCORE        _
 # define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
-# define TMPL_MODE_STR          "real mode"
-# define TMPL_HAVE_BIOS
-# define TMPL_CMN_R86
-#endif
 
-#ifdef TMPL_PE16
-# ifdef TMPL_RM
-#  error "Both 'TMPL_PE16' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_PE16' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_RM' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_PE16' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_PE16' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_PE16' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_PE16' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_PE16' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_PE32' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_PE16' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_PE16' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_PE16' and 'TMPL_LM64' are defined."
-# endif
-# if ARCH_BITS != 16
-#  error "TMPL_PE16 requires ARCH_BITS to be 16."
-# endif
-# define TMPL_CMN_PE
-# define TMPL_CMN_P16
-# define TMPL_16BIT
-# define TMPL_BITS              16
-# define TMPL_NM(Name)          RT_CONCAT(Name,_pe16)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
-# define TMPL_MODE_STR          "16-bit unpaged protected mode"
-#endif
-
-#ifdef TMPL_PE32
-# ifdef TMPL_RM
-#  error "Both 'TMPL_PE32' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_PE32' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_PE32' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_PE32' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_PE32' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_PE32' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_PE32' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_PE32' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAE86
-#  error "Both 'TMPL_PE32' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_PE32' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_PE32' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_PE32' and 'TMPL_LM64' are defined."
-# endif
+#elif (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_32
 # if ARCH_BITS != 32
-#  error "TMPL_PE32 requires ARCH_BITS to be 32."
+#  error "BS3_MODE_CODE_32 requires ARCH_BITS to be 32."
 # endif
-# define TMPL_CMN_PE
-# define TMPL_CMN_P32
 # define TMPL_32BIT
 # define TMPL_BITS              32
-# define TMPL_NM(Name)          RT_CONCAT(Name,_pe32)
+# define TMPL_UNDERSCORE        _
 # define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c32)
-# define TMPL_MODE_STR          "32-bit unpaged protected mode"
-#endif
 
-#ifdef TMPL_PEV86
-# ifdef TMPL_RM
-#  error "Both 'TMPL_PEV86' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_PEV86' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_PEV86' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_PEV86' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_PEV86' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_PEV86' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_PEV86' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_PEV86' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAE86
-#  error "Both 'TMPL_PEV86' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_PEV86' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_PEV86' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_PEV86' and 'TMPL_LM64' are defined."
-# endif
+#elif (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_V86
 # if ARCH_BITS != 16
-#  error "TMPL_PEV86 requires ARCH_BITS to be 16."
+#  error "BS3_MODE_CODE_V86 requires ARCH_BITS to be 16."
 # endif
-# define TMPL_CMN_PE
+# define TMPL_16BIT
+# define TMPL_BITS              16
+# define TMPL_UNDERSCORE        _
+# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
+# define TMPL_CMN_R86
 # define TMPL_CMN_V86
-# define TMPL_CMN_R86
-# define TMPL_16BIT
-# define TMPL_BITS              16
-# define TMPL_NM(Name)          RT_CONCAT(Name,_pev86)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
-# define TMPL_MODE_STR          "v8086 unpaged protected mode"
-#endif
 
-#ifdef TMPL_PP16
-# ifdef TMPL_RM
-#  error "Both 'TMPL_PP16' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_PP16' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_PP16' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_PP16' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_PP16' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_PP32' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_PP16' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_PP16' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_PP16' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_PP16' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_PP16' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_PP16' and 'TMPL_LM64' are defined."
-# endif
-# if ARCH_BITS != 16
-#  error "TMPL_PP16 requires ARCH_BITS to be 16."
-# endif
-# define TMPL_CMN_PP
-# define TMPL_CMN_PAGING
-# define TMPL_CMN_P16
-# define TMPL_16BIT
-# define TMPL_BITS              16
-# define TMPL_NM(Name)          RT_CONCAT(Name,_pp16)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
-# define TMPL_MODE_STR          "16-bit paged protected mode"
-#endif
-
-#ifdef TMPL_PP32
-# ifdef TMPL_RM
-#  error "Both 'TMPL_PP32' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_PP32' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_PP32' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_PP32' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_PP32' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_PP32' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_PP32' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_PP32' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_PP32' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_PP32' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_PP32' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_PP32' and 'TMPL_LM64' are defined."
-# endif
-# if ARCH_BITS != 32
-#  error "TMPL_PP32 requires ARCH_BITS to be 32."
-# endif
-# define TMPL_CMN_PP
-# define TMPL_CMN_PAGING
-# define TMPL_CMN_P32
-# define TMPL_32BIT
-# define TMPL_BITS              32
-# define TMPL_NM(Name)          RT_CONCAT(Name,_pp32)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c32)
-# define TMPL_MODE_STR          "32-bit paged protected mode"
-#endif
-
-#ifdef TMPL_PPV86
-# ifdef TMPL_RM
-#  error "Both 'TMPL_PPV86' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_PPV86' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_PPV86' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_PPV86' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_PPV86' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_PPV86' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_PPV86' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_PPV86' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_PPV86' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_PPV86' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_PPV86' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_PPV86' and 'TMPL_LM64' are defined."
-# endif
-# if ARCH_BITS != 16
-#  error "TMPL_PPV86 requires ARCH_BITS to be 16."
-# endif
-# define TMPL_CMN_PP
-# define TMPL_CMN_PAGING
-# define TMPL_CMN_V86
-# define TMPL_CMN_R86
-# define TMPL_16BIT
-# define TMPL_BITS              16
-# define TMPL_NM(Name)          RT_CONCAT(Name,_ppv86)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c86)
-# define TMPL_MODE_STR          "v8086 paged protected mode"
-#endif
-
-#ifdef TMPL_PAE16
-# ifdef TMPL_RM
-#  error "Both 'TMPL_PAE16' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_PAE16' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_PAE16' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_PAE16' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_PAE16' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_PAE16' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_PAE16' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_PAE16' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_PAE16' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_PAE16' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_PAE16' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_PAE16' and 'TMPL_LM64' are defined."
-# endif
-# if ARCH_BITS != 16
-#  error "TMPL_PAE16 requires ARCH_BITS to be 16."
-# endif
-# define TMPL_CMN_PAE
-# define TMPL_CMN_PAGING
-# define TMPL_16BIT
-# define TMPL_CMN_P16
-# define TMPL_BITS              16
-# define TMPL_NM(Name)          RT_CONCAT(Name,_pae16)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
-# define TMPL_MODE_STR          "16-bit pae protected mode"
-#endif
-
-#ifdef TMPL_PAE32
-# ifdef TMPL_RM
-#  error "Both 'TMPL_PAE32' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_PAE32' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_PAE32' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_PAE32' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_PAE32' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_PAE32' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_PAE32' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_PAE32' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_PAE32' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_PAE32' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_PAE32' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_PAE32' and 'TMPL_LM64' are defined."
-# endif
-# if ARCH_BITS != 32
-#  error "TMPL_PAE32 requires ARCH_BITS to be 32."
-# endif
-# define TMPL_CMN_PAE
-# define TMPL_CMN_PAGING
-# define TMPL_CMN_P32
-# define TMPL_32BIT
-# define TMPL_BITS              32
-# define TMPL_NM(Name)          RT_CONCAT(Name,_pae32)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c32)
-# define TMPL_MODE_STR          "32-bit pae protected mode"
-#endif
-
-#ifdef TMPL_PAEV86
-# ifdef TMPL_RM
-#  error "Both 'TMPL_PAEV86' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_PAEV86' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_PAEV86' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_PAEV86' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_PAEV86' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_PAEV86' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_PAEV86' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_PAEV86' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_PAEV86' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_PAEV86' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_PAEV86' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_PAEV86' and 'TMPL_LM64' are defined."
-# endif
-# if ARCH_BITS != 16
-#  error "TMPL_PAEV86 requires ARCH_BITS to be 16."
-# endif
-# define TMPL_CMN_PAE
-# define TMPL_CMN_PAGING
-# define TMPL_CMN_V86
-# define TMPL_CMN_R86
-# define TMPL_16BIT
-# define TMPL_BITS              16
-# define TMPL_NM(Name)          RT_CONCAT(Name,_paev86)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c86)
-# define TMPL_MODE_STR          "v8086 pae protected mode"
-#endif
-
-#ifdef TMPL_LM16
-# ifdef TMPL_RM
-#  error "Both 'TMPL_LM16' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_LM16' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_LM16' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_LM16' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_LM16' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_LM16' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_LM16' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_LM16' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_LM16' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_LM16' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_LM16' and 'TMPL_LM32' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_LM16' and 'TMPL_LM64' are defined."
-# endif
-# if ARCH_BITS != 16
-#  error "TMPL_LM16 requires ARCH_BITS to be 16."
-# endif
-# define TMPL_CMN_LM
-# define TMPL_CMN_PAGING
-# define TMPL_CMN_P16
-# define TMPL_16BIT
-# define TMPL_BITS              16
-# define TMPL_NM(Name)          RT_CONCAT(Name,_lm16)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
-# define TMPL_MODE_STR          "16-bit long mode"
-#endif
-
-#ifdef TMPL_LM32
-# ifdef TMPL_RM
-#  error "Both 'TMPL_LM32' and 'TMPL_RM' are defined."
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_LM32' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_LM32' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_LM32' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_LM32' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_LM32' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_LM32' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_LM32' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_LM32' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_LM32' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_LM32' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM64
-#  error "Both 'TMPL_LM32' and 'TMPL_LM64' are defined."
-# endif
-# if ARCH_BITS != 32
-#  error "TMPL_LM32 requires ARCH_BITS to be 32."
-# endif
-# define TMPL_CMN_LM
-# define TMPL_CMN_PAGING
-# define TMPL_CMN_P32
-# define TMPL_32BIT
-# define TMPL_BITS              32
-# define TMPL_NM(Name)          RT_CONCAT(Name,_lm32)
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c32)
-# define TMPL_MODE_STR          "32-bit long mode"
-#endif
-
-#ifdef TMPL_LM64
-# ifdef TMPL_RM
-#  error ""Both 'TMPL_LM64' and 'TMPL_RM' are defined.""
-# endif
-# ifdef TMPL_PE16
-#  error "Both 'TMPL_LM64' and 'TMPL_PE16' are defined."
-# endif
-# ifdef TMPL_PE32
-#  error "Both 'TMPL_LM64' and 'TMPL_PE32' are defined."
-# endif
-# ifdef TMPL_PEV86
-#  error "Both 'TMPL_LM64' and 'TMPL_PEV86' are defined."
-# endif
-# ifdef TMPL_PP16
-#  error "Both 'TMPL_LM64' and 'TMPL_PP16' are defined."
-# endif
-# ifdef TMPL_PP32
-#  error "Both 'TMPL_LM64' and 'TMPL_PP32' are defined."
-# endif
-# ifdef TMPL_PPV86
-#  error "Both 'TMPL_LM64' and 'TMPL_PPV86' are defined."
-# endif
-# ifdef TMPL_PAE16
-#  error "Both 'TMPL_LM64' and 'TMPL_PAE16' are defined."
-# endif
-# ifdef TMPL_PAE32
-#  error "Both 'TMPL_LM64' and 'TMPL_PAE32' are defined."
-# endif
-# ifdef TMPL_PAEV86
-#  error "Both 'TMPL_LM64' and 'TMPL_PAEV86' are defined."
-# endif
-# ifdef TMPL_LM16
-#  error "Both 'TMPL_LM64' and 'TMPL_LM16' are defined."
-# endif
-# ifdef TMPL_LM32
-#  error "Both 'TMPL_LM64' and 'TMPL_LM32' are defined."
-# endif
+#elif (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_64
 # if ARCH_BITS != 64
-#  error "TMPL_LM64 requires ARCH_BITS to be 64."
+#  error "BS3_MODE_CODE_64 requires ARCH_BITS to be 64."
 # endif
-# define TMPL_CMN_LM
-# define TMPL_CMN_PAGING
-# define TMPL_CMN_P64
 # define TMPL_64BIT
 # define TMPL_BITS              64
-# define TMPL_NM(Name)          RT_CONCAT(Name,_lm64)
+# define TMPL_UNDERSCORE
 # define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c64)
-# define TMPL_MODE_STR          "64-bit long mode"
+
+#else
+# error "Invalid TMPL_MODE value!"
 #endif
+
+
+/*
+ * Check the system specific mask and set derived values.
+ */
+#if (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_RM
+# define TMPL_HAVE_BIOS
+# define TMPL_CMN_R86
+
+#elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PE16
+# define TMPL_SYS_PE16
+# define TMPL_CMN_PE
+
+#elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PE32
+# define TMPL_SYS_PE32
+# define TMPL_CMN_PE
+
+#elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PP16
+# define TMPL_SYS_PP16
+# define TMPL_CMN_PP
+# define TMPL_CMN_PAGING
+
+#elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PP32
+# define TMPL_SYS_PP32
+# define TMPL_CMN_PP
+# define TMPL_CMN_PAGING
+
+#elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PAE16
+# define TMPL_SYS_PAE16
+# define TMPL_CMN_PAE
+# define TMPL_CMN_PAGING
+
+#elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PAE32
+# define TMPL_SYS_PAE32
+# define TMPL_CMN_PAE
+# define TMPL_CMN_PAGING
+
+#elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_LM
+# define TMPL_SYS_LM
+# define TMPL_CMN_LM
+# define TMPL_CMN_PAGING
+
+#else
+# error "Invalid TMPL_MODE value!"
+#endif
+
+
+/*
+ * Mode specific stuff.
+ */
+#if   TMPL_MODE == BS3_MODE_RM
+# define TMPL_RM                1
+# define TMPL_MODE_STR          "real mode"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_rm)
+# define TMPL_MODE_LNAME        rm
+# define TMPL_MODE_UNAME        RM
+
+
+#elif TMPL_MODE == BS3_MODE_PE16
+# define TMPL_PE16              1
+# define TMPL_MODE_STR          "16-bit prot, 16-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pe16)
+# define TMPL_MODE_LNAME        pe16
+# define TMPL_MODE_UNAME        PE16
+
+#elif TMPL_MODE == BS3_MODE_PE16_32
+# define TMPL_PE16_32           1
+# define TMPL_MODE_STR          "16-bit prot, 32-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pe16_32)
+# define TMPL_MODE_LNAME        pe16_32
+# define TMPL_MODE_UNAME        PE16_32
+# define TMPL_CMN_WEIRD
+
+#elif TMPL_MODE == BS3_MODE_PE16_V86
+# define TMPL_PE16_V86          1
+# define TMPL_MODE_STR          "16-bit prot, v8086"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pe16_v86)
+# define TMPL_MODE_LNAME        pe16_v86
+# define TMPL_MODE_UNAME        PE16_v86
+# define TMPL_CMN_WEIRD
+# define TMPL_CMN_WEIRD_V86
+
+
+#elif TMPL_MODE == BS3_MODE_PE32
+# define TMPL_PE32              1
+# define TMPL_MODE_STR          "32-bit prot, 32-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pe32)
+# define TMPL_MODE_LNAME        pe32
+# define TMPL_MODE_UNAME        PE32
+
+#elif TMPL_MODE == BS3_MODE_PE32_16
+# define TMPL_PE32_16           1
+# define TMPL_MODE_STR          "32-bit prot, 16-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pe32_16)
+# define TMPL_MODE_LNAME        pe32_16
+# define TMPL_MODE_UNAME        PE32_16
+# define TMPL_CMN_WEIRD
+
+#elif TMPL_MODE == BS3_MODE_PEV86
+# define TMPL_PEV86             1
+# define TMPL_MODE_STR          "32-bit prot, v8086"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pev86)
+# define TMPL_MODE_LNAME        pev86
+# define TMPL_MODE_UNAME        PEV86
+
+
+#elif TMPL_MODE == BS3_MODE_PP16
+# define TMPL_PP16              1
+# define TMPL_MODE_STR          "16-bit paged, 16-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pp16)
+# define TMPL_MODE_LNAME        pp16
+# define TMPL_MODE_UNAME        PP16
+
+#elif TMPL_MODE == BS3_MODE_PP16_32
+# define TMPL_PP16_32           1
+# define TMPL_MODE_STR          "16-bit paged, 32-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pp16_32)
+# define TMPL_MODE_LNAME        pp16_32
+# define TMPL_MODE_UNAME        PP16_32
+# define TMPL_CMN_WEIRD
+
+#elif TMPL_MODE == BS3_MODE_PP16_V86
+# define TMPL_PP16_V86          1
+# define TMPL_MODE_STR          "16-bit paged, v8086"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pp16_v86)
+# define TMPL_MODE_LNAME        pp16_v86
+# define TMPL_MODE_UNAME        PP16_v86
+# define TMPL_CMN_WEIRD
+# define TMPL_CMN_WEIRD_V86
+
+
+#elif TMPL_MODE == BS3_MODE_PP32
+# define TMPL_PP32              1
+# define TMPL_MODE_STR          "32-bit paged, 32-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pp32)
+# define TMPL_MODE_LNAME        pp32
+# define TMPL_MODE_UNAME        PP32
+
+#elif TMPL_MODE == BS3_MODE_PP32_16
+# define TMPL_PP32_16           1
+# define TMPL_MODE_STR          "32-bit paged, 16-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pp32_16)
+# define TMPL_MODE_LNAME        pp32_16
+# define TMPL_MODE_UNAME        PP32_16
+# define TMPL_CMN_WEIRD
+
+#elif TMPL_MODE == BS3_MODE_PPV86
+# define TMPL_PPV86             1
+# define TMPL_MODE_STR          "32-bit paged, v8086"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_ppv86)
+# define TMPL_MODE_LNAME        ppv86
+# define TMPL_MODE_UNAME        PPV86
+
+
+#elif TMPL_MODE == BS3_MODE_PAE16
+# define TMPL_PAE16             1
+# define TMPL_MODE_STR          "16-bit pae, 16-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pae16)
+# define TMPL_MODE_LNAME        pae16
+# define TMPL_MODE_UNAME        PAE16
+
+#elif TMPL_MODE == BS3_MODE_PAE16_32
+# define TMPL_PAE16_32          1
+# define TMPL_MODE_STR          "16-bit pae, 32-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pae16_32)
+# define TMPL_MODE_LNAME        pae16_32
+# define TMPL_MODE_UNAME        PAE16_32
+# define TMPL_CMN_WEIRD
+
+#elif TMPL_MODE == BS3_MODE_PAE16_V86
+# define TMPL_PAE16_V86         1
+# define TMPL_MODE_STR          "16-bit pae, v8086"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pae16_v86)
+# define TMPL_MODE_LNAME        pae16_v86
+# define TMPL_MODE_UNAME        PAE16_v86
+# define TMPL_CMN_WEIRD
+# define TMPL_CMN_WEIRD_V86
+
+
+#elif TMPL_MODE == BS3_MODE_PAE32
+# define TMPL_PAE32             1
+# define TMPL_MODE_STR          "32-bit pae, 32-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pae32)
+# define TMPL_MODE_LNAME        pae32
+# define TMPL_MODE_UNAME        PAE32
+
+#elif TMPL_MODE == BS3_MODE_PAE32_16
+# define TMPL_PAE32_16          1
+# define TMPL_MODE_STR          "32-bit pae, 32-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_pae32_16)
+# define TMPL_MODE_LNAME        pae32_16
+# define TMPL_MODE_UNAME        PAE32_16
+# define TMPL_CMN_WEIRD
+
+#elif TMPL_MODE == BS3_MODE_PAEV86
+# define TMPL_PAEV86            1
+# define TMPL_MODE_STR          "32-bit pae, v8086 pae"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_paev86)
+# define TMPL_MODE_LNAME        paev86
+# define TMPL_MODE_UNAME        PAEV86
+
+
+#elif TMPL_MODE == BS3_MODE_LM16
+# define TMPL_LM16              1
+# define TMPL_MODE_STR          "long, 16-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_lm16)
+# define TMPL_MODE_LNAME        lm16
+# define TMPL_MODE_UNAME        LM16
+
+#elif TMPL_MODE == BS3_MODE_LM32
+# define TMPL_LM32              1
+# define TMPL_MODE_STR          "long, 32-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_lm32)
+# define TMPL_MODE_LNAME        lm32
+# define TMPL_MODE_UNAME        LM32
+
+#elif TMPL_MODE == BS3_MODE_LM64
+# define TMPL_LM64              1
+# define TMPL_MODE_STR          "long, 64-bit"
+# define TMPL_NM(Name)          RT_CONCAT(Name,_lm64)
+# define TMPL_MODE_LNAME        lm64
+# define TMPL_MODE_UNAME        LM64
+
+#else
+# error "Invalid TMPL_MODE value!!"
+#endif
+
 
 #ifndef TMPL_MODE_STR
 # error "internal error"

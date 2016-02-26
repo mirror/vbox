@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TestInit
+ * BS3Kit - bs3-cpu-basic-2, 16-bit C code.
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,39 +25,19 @@
  */
 
 
-#include "bs3kit-template-header.h"
-#include "bs3-cmn-test.h"
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include <bs3kit.h>
 
 
-/**
- * Equivalent to RTTestCreate + RTTestBanner.
- *
- * @param   pszTest         The test name.
- */
-#undef Bs3TestInit
-BS3_DECL(void) BS3_CMN_NM(Bs3TestInit)(const char BS3_FAR *pszTest)
+
+BS3_DECL(void) Main_rm()
 {
-    /*
-     * Initialize the globals.
-     */
-    BS3_CMN_NM(g_pszBs3Test)    = pszTest;
-    BS3_CMN_NM(g_pszBs3SubTest) = NULL;
-    g_cusBs3TestErrors          = 0;
-    g_cusBs3SubTestAtErrors     = 0;
-    g_fbBs3SubTestReported      = true;
-    g_cusBs3SubTests            = 0;
-    g_cusBs3SubTestsFailed      = 0;
-    g_fbBs3VMMDevTesting        = bs3TestIsVmmDevTestingPresent();
+    Bs3InitAll_rm();
+    Bs3TestInit("bs3-cpu-basic-2");
 
-    /*
-     * Print the name - RTTestBanner.
-     */
-    Bs3PrintStr(pszTest);
-    Bs3PrintStr(": TESTING...\r\n");
+    Bs3TestTerm();
 
-    /*
-     * Report it to the VMMDev.
-     */
-    bs3TestSendCmdWithStr(VMMDEV_TESTING_CMD_INIT, pszTest);
 }
 

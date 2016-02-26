@@ -26,7 +26,11 @@
 
 %include "bs3kit-template-header.mac"
 
-%ifndef TMPL_CMN_LM
+%if TMPL_BITS != 64
+BS3_EXTERN_DATA16 g_bBs3CurrentMode
+TMPL_BEGIN_TEXT
+%endif
+
 
 ;;
 ; @cproto   BS3_DECL(void) Bs3SwitchTo64Bit(void);
@@ -34,15 +38,15 @@
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
 BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
- %if TMPL_BITS == 64
+%if TMPL_BITS == 64
         ret
- %else
-  %if TMPL_BITS == 16
+%else
+ %if TMPL_BITS == 16
         sub     sp, 6                   ; Space for extended return value (corrected in 64-bit mode).
-  %else
+ %else
         push    xPRE [xSP]              ; Duplicate the return address.
         and     dword [xSP + xCB], 0    ; Clear the high dword or it.
-  %endif
+ %endif
         push    dword 0
         push    sAX
         push    dword 0
@@ -57,13 +61,13 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
 
         ; setup far return.
         push    sAX
- %if TMPL_BITS == 16
+%if TMPL_BITS == 16
         push    dword .sixty_four_bit
         o32 retf
- %else
+%else
         push    .sixty_four_bit
         retf
- %endif
+%endif
 
 BS3_SET_BITS 64
 .sixty_four_bit:
@@ -74,17 +78,19 @@ BS3_SET_BITS 64
         mov     ds, ax
         mov     es, ax
 
-  %if TMPL_BITS == 16
+        ; Update globals.
+        and     byte [BS3_WRT_RIP(g_bBs3CurrentMode)], ~BS3_MODE_CODE_MASK
+        or      byte [BS3_WRT_RIP(g_bBs3CurrentMode)], BS3_MODE_CODE_64
+
+ %if TMPL_BITS == 16
         movzx   eax, word [rsp + 8*2+6]
         add     eax, BS3_ADDR_BS3TEXT16
         mov     [rsp + 8*2], rax
-  %endif
+ %endif
 
         popfq
         pop     rax
         ret
- %endif
-BS3_PROC_END_CMN   Bs3SwitchTo64Bit
-
 %endif
+BS3_PROC_END_CMN   Bs3SwitchTo64Bit
 

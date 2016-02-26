@@ -62,6 +62,8 @@ BS3_PROC_BEGIN Bs3CpuBasic2_Main
         ; Start testing.
         ;
 
+
+
         ;
         ; Done.
         ;
@@ -71,4 +73,11 @@ BS3_PROC_BEGIN Bs3CpuBasic2_Main
 BS3_PROC_END   Bs3CpuBasic2_Main
 
 
+;
+; Instantiate the test template code.
+;
+%include "bs3kit-template-footer.mac"  ; reset the initial environemnt.
+
+
+BS3_INSTANTIATE_TEMPLATE_WITH_WEIRD_ONES "bs3-cpu-basic-2-template.mac"
 

@@ -54,6 +54,82 @@ RT_C_DECLS_BEGIN
 /** @defgroup grp_bs3kit     BS3Kit
  * @{ */
 
+/** @name Execution modes.
+ * @{ */
+#define BS3_MODE_INVALID    UINT8_C(0x00)
+#define BS3_MODE_RM         UINT8_C(0x01)  /**< real mode. */
+#define BS3_MODE_PE16       UINT8_C(0x11)  /**< 16-bit protected mode kernel+tss, running 16-bit code, unpaged. */
+#define BS3_MODE_PE16_32    UINT8_C(0x12)  /**< 16-bit protected mode kernel+tss, running 32-bit code, unpaged. */
+#define BS3_MODE_PE16_V86   UINT8_C(0x13)  /**< 16-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged. */
+#define BS3_MODE_PE32       UINT8_C(0x22)  /**< 32-bit protected mode kernel+tss, running 32-bit code, unpaged. */
+#define BS3_MODE_PE32_16    UINT8_C(0x21)  /**< 32-bit protected mode kernel+tss, running 16-bit code, unpaged. */
+#define BS3_MODE_PEV86      UINT8_C(0x23)  /**< 32-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged. */
+#define BS3_MODE_PP16       UINT8_C(0x31)  /**< 16-bit protected mode kernel+tss, running 16-bit code, paged. */
+#define BS3_MODE_PP16_32    UINT8_C(0x32)  /**< 16-bit protected mode kernel+tss, running 32-bit code, paged. */
+#define BS3_MODE_PP16_V86   UINT8_C(0x33)  /**< 16-bit protected mode kernel+tss, running virtual 8086 mode code, paged. */
+#define BS3_MODE_PP32       UINT8_C(0x42)  /**< 32-bit protected mode kernel+tss, running 32-bit code, paged. */
+#define BS3_MODE_PP32_16    UINT8_C(0x41)  /**< 32-bit protected mode kernel+tss, running 16-bit code, paged. */
+#define BS3_MODE_PPV86      UINT8_C(0x43)  /**< 32-bit protected mode kernel+tss, running virtual 8086 mode code, paged. */
+#define BS3_MODE_PAE16      UINT8_C(0x51)  /**< 16-bit protected mode kernel+tss, running 16-bit code, PAE paging. */
+#define BS3_MODE_PAE16_32   UINT8_C(0x52)  /**< 16-bit protected mode kernel+tss, running 32-bit code, PAE paging. */
+#define BS3_MODE_PAE16_V86  UINT8_C(0x53)  /**< 16-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging. */
+#define BS3_MODE_PAE32      UINT8_C(0x62)  /**< 32-bit protected mode kernel+tss, running 32-bit code, PAE paging. */
+#define BS3_MODE_PAE32_16   UINT8_C(0x61)  /**< 32-bit protected mode kernel+tss, running 16-bit code, PAE paging. */
+#define BS3_MODE_PAEV86     UINT8_C(0x63)  /**< 32-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging. */
+#define BS3_MODE_LM16       UINT8_C(0x71)  /**< 16-bit long mode (paged), kernel+tss always 64-bit. */
+#define BS3_MODE_LM32       UINT8_C(0x72)  /**< 32-bit long mode (paged), kernel+tss always 64-bit. */
+#define BS3_MODE_LM64       UINT8_C(0x74)  /**< 64-bit long mode (paged), kernel+tss always 64-bit. */
+
+#define BS3_MODE_CODE_MASK  UINT8_C(0x0f)  /**< Running code mask. */
+#define BS3_MODE_CODE_16    UINT8_C(0x01)  /**< Running 16-bit code. */
+#define BS3_MODE_CODE_32    UINT8_C(0x02)  /**< Running 32-bit code. */
+#define BS3_MODE_CODE_V86   UINT8_C(0x03)  /**< Running 16-bit virtual 8086 code. */
+#define BS3_MODE_CODE_64    UINT8_C(0x04)  /**< Running 64-bit code. */
+
+#define BS3_MODE_SYS_MASK   UINT8_C(0xf0)  /**< kernel+tss mask. */
+#define BS3_MODE_SYS_RM     UINT8_C(0x00)  /**< Real mode kernel+tss. */
+#define BS3_MODE_SYS_PE16   UINT8_C(0x10)  /**< 16-bit protected mode kernel+tss. */
+#define BS3_MODE_SYS_PE32   UINT8_C(0x20)  /**< 32-bit protected mode kernel+tss. */
+#define BS3_MODE_SYS_PP16   UINT8_C(0x30)  /**< 16-bit paged protected mode kernel+tss. */
+#define BS3_MODE_SYS_PP32   UINT8_C(0x40)  /**< 32-bit paged protected mode kernel+tss. */
+#define BS3_MODE_SYS_PAE16  UINT8_C(0x50)  /**< 16-bit PAE paged protected mode kernel+tss. */
+#define BS3_MODE_SYS_PAE32  UINT8_C(0x60)  /**< 32-bit PAE paged protected mode kernel+tss. */
+#define BS3_MODE_SYS_LM     UINT8_C(0x70)  /**< 64-bit (paged) long mode protected mode kernel+tss. */
+
+/** Whether the mode has paging enabled. */
+#define BS3_MODE_IS_PAGED(a_fMode)              ((a_fMode) >= BS3_MODE_PP16)
+
+/** Whether the mode is running v8086 code. */
+#define BS3_MODE_IS_V86(a_fMode)                (((a_fMode) & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_V86)
+/** Whether the we're executing in real mode or v8086 mode. */
+#define BS3_MODE_IS_RM_OR_V86(a_fMode)          ((a_fMode) == BS3_MODE_RM || BS3_MODE_IS_V86(a_fMode))
+/** Whether the mode is running 16-bit code, except v8086. */
+#define BS3_MODE_IS_16BIT_CODE_NO_V86(a_fMode)  (((a_fMode) & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_16)
+/** Whether the mode is running 16-bit code (includes v8086). */
+#define BS3_MODE_IS_16BIT_CODE(a_fMode)         (BS3_MODE_IS_16BIT_CODE_NO_V86(a_fMode) || BS3_MODE_IS_V86(a_fMode))
+/** Whether the mode is running 32-bit code. */
+#define BS3_MODE_IS_32BIT_CODE(a_fMode)         (((a_fMode) & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_32)
+/** Whether the mode is running 64-bit code. */
+#define BS3_MODE_IS_64BIT_CODE(a_fMode)         (((a_fMode) & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_64)
+
+/** Whether the system is in real mode. */
+#define BS3_MODE_IS_RM_SYS(a_fMode)             (((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_RM)
+/** Whether the system is some 16-bit mode that isn't real mode. */
+#define BS3_MODE_IS_16BIT_SYS_NO_RM(a_fMode)    (   ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PE16 \
+                                                 || ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PP16 \
+                                                 || ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PAE16)
+/** Whether the system is some 16-bit mode (includes real mode). */
+#define BS3_MODE_IS_16BIT_SYS(a_fMode)          (BS3_MODE_IS_16BIT_SYS_NO_RM(a_fMode) || BS3_MODE_IS_RM_SYS(a_fMode))
+/** Whether the system is some 32-bit mode. */
+#define BS3_MODE_IS_32BIT_SYS(a_fMode)          (   ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PE32 \
+                                                 || ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PP32 \
+                                                 || ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PAE32)
+/** Whether the system is long mode. */
+#define BS3_MODE_IS_64BIT_SYS(a_fMode)          (((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_LM)
+
+/** @todo testcase: How would long-mode handle a 16-bit TSS loaded prior to the switch? (mainly stack switching wise) Hopefully, it will tripple fault, right? */
+/** @} */
+
 
 /** @name BS3_ADDR_XXX - Static Memory Allocation
  * @{ */
@@ -721,6 +797,10 @@ extern char const BS3_DATA_NM(g_achBs3HexDigits)[16+1];
 extern char const BS3_DATA_NM(g_achBs3HexDigitsUpper)[16+1];
 
 
+/** The current mode (BS3_MODE_XXX) of CPU \#0. */
+extern uint8_t BS3_FAR_DATA BS3_DATA_NM(g_bBs3CurrentMode);
+
+
 #ifdef __WATCOMC__
 /**
  * Executes the SMSW instruction and returns the value.
@@ -740,7 +820,11 @@ uint16_t Bs3AsmSmsw(void);
 #if ARCH_BITS != 16
 # define BS3_IS_PROTECTED_MODE() (true)
 #else
-# define BS3_IS_PROTECTED_MODE() (Bs3AsmSmsw() & 1 /*PE*/)
+# if 1
+#  define BS3_IS_PROTECTED_MODE() (!BS3_MODE_IS_RM_SYS(BS3_DATA_NM(g_bBs3CurrentMode)))
+# else
+#  define BS3_IS_PROTECTED_MODE() (Bs3AsmSmsw() & 1 /*PE*/)
+# endif
 #endif
 
 
@@ -1234,6 +1318,15 @@ BS3_DECL(void) Bs3TestInit_c16(const char BS3_FAR *pszTest);
 BS3_DECL(void) Bs3TestInit_c32(const char BS3_FAR *pszTest); /**< @copydoc Bs3TestInit_c16 */
 BS3_DECL(void) Bs3TestInit_c64(const char BS3_FAR *pszTest); /**< @copydoc Bs3TestInit_c16 */
 #define Bs3TestInit BS3_CMN_NM(Bs3TestInit) /**< Selects #Bs3TestInit_c16, #Bs3TestInit_c32 or #Bs3TestInit_c64. */
+
+
+/**
+ * Equivalent to RTTestSummaryAndDestroy.
+ */
+BS3_DECL(void) Bs3TestTerm_c16(void);
+BS3_DECL(void) Bs3TestTerm_c32(void); /**< @copydoc Bs3TestTerm_c16 */
+BS3_DECL(void) Bs3TestTerm_c64(void); /**< @copydoc Bs3TestTerm_c16 */
+#define Bs3TestTerm BS3_CMN_NM(Bs3TestTerm) /**< Selects #Bs3TestTerm_c16, #Bs3TestTerm_c32 or #Bs3TestTerm_c64. */
 
 
 /**

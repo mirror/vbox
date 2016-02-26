@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TestInit
+ * BS3Kit - Bs3TestTerm
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,34 +30,37 @@
 
 
 /**
- * Equivalent to RTTestCreate + RTTestBanner.
- *
- * @param   pszTest         The test name.
+ * Equivalent to RTTestSummaryAndDestroy.
  */
-#undef Bs3TestInit
-BS3_DECL(void) BS3_CMN_NM(Bs3TestInit)(const char BS3_FAR *pszTest)
+BS3_DECL(void) Bs3TestTerm(void)
 {
     /*
-     * Initialize the globals.
+     * Close current sub-test.
      */
-    BS3_CMN_NM(g_pszBs3Test)    = pszTest;
-    BS3_CMN_NM(g_pszBs3SubTest) = NULL;
-    g_cusBs3TestErrors          = 0;
-    g_cusBs3SubTestAtErrors     = 0;
-    g_fbBs3SubTestReported      = true;
-    g_cusBs3SubTests            = 0;
-    g_cusBs3SubTestsFailed      = 0;
-    g_fbBs3VMMDevTesting        = bs3TestIsVmmDevTestingPresent();
+    if (BS3_CMN_NM(g_pszBs3SubTest))
+    {
+
+    }
+
 
     /*
-     * Print the name - RTTestBanner.
+     * Report summary.
      */
-    Bs3PrintStr(pszTest);
-    Bs3PrintStr(": TESTING...\r\n");
+    if (BS3_CMN_NM(g_pszBs3Test))
+    {
+        Bs3PrintStr(BS3_CMN_NM(g_pszBs3Test));
+        if (g_cusBs3TestErrors == 0)
+            Bs3Printf(": SUCCESS (%u tests)\n", g_cusBs3SubTests);
+        else
+            Bs3Printf(": FAILURE - %u (%u of %u tests)\n", g_cusBs3TestErrors, g_cusBs3SubTestsFailed, g_cusBs3SubTests);
+    }
 
     /*
-     * Report it to the VMMDev.
+     * Tell VMMDev.
      */
-    bs3TestSendCmdWithStr(VMMDEV_TESTING_CMD_INIT, pszTest);
+    bs3TestSendCmdWithU32(VMMDEV_TESTING_CMD_TERM, g_cusBs3TestErrors);
+    for (;;) { }
+
+    BS3_CMN_NM(g_pszBs3Test) = NULL;
 }
 

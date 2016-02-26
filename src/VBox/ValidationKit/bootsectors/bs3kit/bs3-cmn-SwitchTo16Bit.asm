@@ -26,6 +26,12 @@
 
 %include "bs3kit-template-header.mac"
 
+%if TMPL_BITS != 16
+BS3_EXTERN_DATA16 g_bBs3CurrentMode
+TMPL_BEGIN_TEXT
+%endif
+
+
 ;;
 ; @cproto   BS3_DECL(void) Bs3SwitchTo16Bit(void);
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
@@ -60,6 +66,10 @@ BS3_BEGIN_TEXT16
         add     ax, BS3_SEL_R0_DS16 - BS3_SEL_R0_SS16
         mov     ds, ax
         mov     es, ax
+
+        ; Update globals.
+        and     byte [g_bBs3CurrentMode], ~BS3_MODE_CODE_MASK
+        or      byte [g_bBs3CurrentMode], BS3_MODE_CODE_16
 
         popfd
  %if TMPL_BITS == 64

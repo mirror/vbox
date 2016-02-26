@@ -52,670 +52,320 @@
 ;       - TMPL_CMN_R86 = TMPL_CMN_V86 | TMPL_RM
 ;       - TMPL_CMN_PAGING = TMPL_CMN_PP | TMPL_CMN_PAE | TMPL_CMN_LM
 ;
-%ifdef TMPL_RM
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_RM' and 'TMPL_PE16' are defined."
+
+
+;
+; Convert TMPL_XXX to TMPL_MODE.
+;
+%ifndef TMPL_MODE
+ %ifdef TMPL_RM
+  %define TMPL_MODE         BS3_MODE_RM
+ %elifdef TMPL_PE16
+  %define TMPL_MODE         BS3_MODE_PE16
+ %elifdef TMPL_PE16_32
+  %define TMPL_MODE         BS3_MODE_PE16_32
+ %elifdef TMPL_PE16_V86
+  %define TMPL_MODE         BS3_MODE_PE16_V86
+ %elifdef TMPL_PE32
+  %define TMPL_MODE         BS3_MODE_PE32
+ %elifdef TMPL_PE32_16
+  %define TMPL_MODE         BS3_MODE_PE32_16
+ %elifdef TMPL_PEV86
+  %define TMPL_MODE         BS3_MODE_PEV86
+ %elifdef TMPL_PP16
+  %define TMPL_MODE         BS3_MODE_PP16
+ %elifdef TMPL_PP16_32
+  %define TMPL_MODE         BS3_MODE_PP16_32
+ %elifdef TMPL_PP16_V86
+  %define TMPL_MODE         BS3_MODE_PP16_V86
+ %elifdef TMPL_PP32
+  %define TMPL_MODE         BS3_MODE_PP32
+ %elifdef TMPL_PP32_16
+  %define TMPL_MODE         BS3_MODE_PP32_16
+ %elifdef TMPL_PPV86
+  %define TMPL_MODE         BS3_MODE_PPV86
+ %elifdef TMPL_PAE16
+  %define TMPL_MODE         BS3_MODE_PAE16
+ %elifdef TMPL_PAE16_32
+  %define TMPL_MODE         BS3_MODE_PAE16_32
+ %elifdef TMPL_PAE16_V86
+  %define TMPL_MODE         BS3_MODE_PAE16_V86
+ %elifdef TMPL_PAE32
+  %define TMPL_MODE         BS3_MODE_PAE32
+ %elifdef TMPL_PAE32_16
+  %define TMPL_MODE         BS3_MODE_PAE32_16
+ %elifdef TMPL_PAEV86
+  %define TMPL_MODE         BS3_MODE_PAEV86
+ %elifdef TMPL_LM16
+  %define TMPL_MODE         BS3_MODE_LM16
+ %elifdef TMPL_LM32
+  %define TMPL_MODE         BS3_MODE_LM32
+ %elifdef TMPL_LM64
+  %define TMPL_MODE         BS3_MODE_LM64
+ %else
+  %error "Unable to to figure out the template mode."
  %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_RM' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_RM' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_RM' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_RM' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_RM' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_RM' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_RM' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_RM' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_RM' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_RM' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_RM' and 'TMPL_LM64' are defined."
- %endif
+%endif
+
+;
+; Check the code bitness and set TMPL_XXBITS, TMPL_BITS, BS3_CMN_NM
+;
+%if (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_16
  %define TMPL_16BIT
  %define TMPL_BITS              16
  %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          _ %+ Name %+ _rm
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
  %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        rm
- %define TMPL_MODE_UNAME        RM
- %define TMPL_MODE_STR          'real mode'
- %define TMPL_HAVE_BIOS
- %define TMPL_CMN_R86
-%endif
-
-%ifdef TMPL_PE16
- %ifdef TMPL_RM
-  %error "Both 'TMPL_PE16' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_PE16' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_RM' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_PE16' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_PE16' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_PE16' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_PE16' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_PE16' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_PE32' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_PE16' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_PE16' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_PE16' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_PE
- %define TMPL_CMN_P16
- %define TMPL_16BIT
- %define TMPL_BITS              16
- %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          _ %+ Name %+ _pe16
  %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        pe16
- %define TMPL_MODE_UNAME        PE16
- %define TMPL_MODE_STR          '16-bit unpaged protected mode'
-%endif
 
-%ifdef TMPL_PE32
- %ifdef TMPL_RM
-  %error "Both 'TMPL_PE32' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_PE32' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_PE32' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_PE32' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_PE32' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_PE32' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_PE32' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_PE32' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAE86
-  %error "Both 'TMPL_PE32' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_PE32' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_PE32' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_PE32' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_PE
- %define TMPL_CMN_P32
+%elif (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_32
  %define TMPL_32BIT
  %define TMPL_BITS              32
  %define TMPL_PTR_DEF           dd
- %define TMPL_NM(Name)          _ %+ Name %+ _pe32
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
  %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        pe32
- %define TMPL_MODE_UNAME        PE32
- %define TMPL_MODE_STR          '32-bit unpaged protected mode'
-%endif
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
 
-%ifdef TMPL_PEV86
- %ifdef TMPL_RM
-  %error "Both 'TMPL_PEV86' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_PEV86' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_PEV86' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_PEV86' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_PEV86' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_PEV86' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_PEV86' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_PEV86' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAE86
-  %error "Both 'TMPL_PEV86' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_PEV86' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_PEV86' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_PEV86' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_PE
+%elif (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_V86
+ %define TMPL_16BIT
+ %define TMPL_BITS              16
+ %define TMPL_UNDERSCORE        _
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
+ %define TMPL_CMN_R86
  %define TMPL_CMN_V86
- %define TMPL_CMN_R86
- %define TMPL_16BIT
- %define TMPL_BITS              16
- %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          _ %+ Name %+ _pev86
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        pev86
- %define TMPL_MODE_UNAME        PEV86
- %define TMPL_MODE_STR          'v8086 unpaged protected mode'
-%endif
 
-%ifdef TMPL_PP16
- %ifdef TMPL_RM
-  %error "Both 'TMPL_PP16' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_PP16' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_PP16' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_PP16' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_PP16' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_PP32' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_PP16' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_PP16' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_PP16' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_PP16' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_PP16' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_PP16' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_PP
- %define TMPL_CMN_PAGING
- %define TMPL_CMN_P16
- %define TMPL_16BIT
- %define TMPL_BITS              16
- %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          _ %+ Name %+ _pp16
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        pp16
- %define TMPL_MODE_UNAME        PP16
- %define TMPL_MODE_STR          '16-bit paged protected mode'
-%endif
-
-%ifdef TMPL_PP32
- %ifdef TMPL_RM
-  %error "Both 'TMPL_PP32' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_PP32' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_PP32' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_PP32' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_PP32' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_PP32' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_PP32' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_PP32' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_PP32' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_PP32' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_PP32' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_PP32' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_PP
- %define TMPL_CMN_PAGING
- %define TMPL_CMN_P32
- %define TMPL_32BIT
- %define TMPL_BITS              32
- %define TMPL_PTR_DEF           dd
- %define TMPL_NM(Name)          _ %+ Name %+ _pp32
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        pp32
- %define TMPL_MODE_UNAME        PP32
- %define TMPL_MODE_STR          '32-bit paged protected mode'
-%endif
-
-%ifdef TMPL_PPV86
- %ifdef TMPL_RM
-  %error "Both 'TMPL_PPV86' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_PPV86' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_PPV86' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_PPV86' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_PPV86' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_PPV86' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_PPV86' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_PPV86' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_PPV86' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_PPV86' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_PPV86' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_PPV86' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_PP
- %define TMPL_CMN_PAGING
- %define TMPL_CMN_V86
- %define TMPL_CMN_R86
- %define TMPL_16BIT
- %define TMPL_BITS              16
- %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          _ %+ Name %+ _ppv86
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c86
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        ppv86
- %define TMPL_MODE_UNAME        PPV86
- %define TMPL_MODE_STR          'v8086 paged protected mode'
-%endif
-
-%ifdef TMPL_PAE16
- %ifdef TMPL_RM
-  %error "Both 'TMPL_PAE16' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_PAE16' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_PAE16' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_PAE16' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_PAE16' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_PAE16' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_PAE16' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_PAE16' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_PAE16' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_PAE16' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_PAE16' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_PAE16' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_PAE
- %define TMPL_CMN_PAGING
- %define TMPL_16BIT
- %define TMPL_CMN_P16
- %define TMPL_BITS              16
- %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          _ %+ Name %+ _pae16
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        pae16
- %define TMPL_MODE_UNAME        PAE16
- %define TMPL_MODE_STR          '16-bit pae protected mode'
-%endif
-
-%ifdef TMPL_PAE32
- %ifdef TMPL_RM
-  %error "Both 'TMPL_PAE32' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_PAE32' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_PAE32' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_PAE32' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_PAE32' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_PAE32' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_PAE32' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_PAE32' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_PAE32' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_PAE32' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_PAE32' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_PAE32' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_PAE
- %define TMPL_CMN_PAGING
- %define TMPL_CMN_P32
- %define TMPL_32BIT
- %define TMPL_BITS              32
- %define TMPL_PTR_DEF           dd
- %define TMPL_NM(Name)          _ %+ Name %+ _pae32
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        pae32
- %define TMPL_MODE_UNAME        PAE32
- %define TMPL_MODE_STR          '32-bit pae protected mode'
-%endif
-
-%ifdef TMPL_PAEV86
- %ifdef TMPL_RM
-  %error "Both 'TMPL_PAEV86' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_PAEV86' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_PAEV86' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_PAEV86' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_PAEV86' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_PAEV86' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_PAEV86' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_PAEV86' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_PAEV86' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_PAEV86' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_PAEV86' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_PAEV86' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_PAE
- %define TMPL_CMN_PAGING
- %define TMPL_CMN_V86
- %define TMPL_CMN_R86
- %define TMPL_16BIT
- %define TMPL_BITS              16
- %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          _ %+ Name %+ _paev86
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c86
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        paev86
- %define TMPL_MODE_UNAME        PAEV86
- %define TMPL_MODE_STR          'v8086 pae protected mode'
-%endif
-
-%ifdef TMPL_LM16
- %ifdef TMPL_RM
-  %error "Both 'TMPL_LM16' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_LM16' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_LM16' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_LM16' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_LM16' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_LM16' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_LM16' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_LM16' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_LM16' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_LM16' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_LM16' and 'TMPL_LM32' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_LM16' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_LM
- %define TMPL_CMN_PAGING
- %define TMPL_CMN_P16
- %define TMPL_16BIT
- %define TMPL_BITS              16
- %define TMPL_PTR_DEF           dw
- %define TMPL_NM(Name)          _ %+ Name %+ _lm16
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c16
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        lm16
- %define TMPL_MODE_UNAME        LM16
- %define TMPL_MODE_STR          '16-bit long mode'
-%endif
-
-%ifdef TMPL_LM32
- %ifdef TMPL_RM
-  %error "Both 'TMPL_LM32' and 'TMPL_RM' are defined."
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_LM32' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_LM32' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_LM32' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_LM32' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_LM32' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_LM32' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_LM32' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_LM32' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_LM32' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_LM32' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM64
-  %error "Both 'TMPL_LM32' and 'TMPL_LM64' are defined."
- %endif
- %define TMPL_CMN_LM
- %define TMPL_CMN_PAGING
- %define TMPL_CMN_P32
- %define TMPL_32BIT
- %define TMPL_BITS              32
- %define TMPL_PTR_DEF           dd
- %define TMPL_NM(Name)          _ %+ Name %+ _lm32
- %define BS3_CMN_NM(Name)       _ %+ Name %+ _c32
- %define TMPL_UNDERSCORE        _
- %define TMPL_MODE_LNAME        lm32
- %define TMPL_MODE_UNAME        LM32
- %define TMPL_MODE_STR          '32-bit long mode'
-%endif
-
-%ifdef TMPL_LM64
- %ifdef TMPL_RM
-  %error ""Both 'TMPL_LM64' and 'TMPL_RM' are defined.""
- %endif
- %ifdef TMPL_PE16
-  %error "Both 'TMPL_LM64' and 'TMPL_PE16' are defined."
- %endif
- %ifdef TMPL_PE32
-  %error "Both 'TMPL_LM64' and 'TMPL_PE32' are defined."
- %endif
- %ifdef TMPL_PEV86
-  %error "Both 'TMPL_LM64' and 'TMPL_PEV86' are defined."
- %endif
- %ifdef TMPL_PP16
-  %error "Both 'TMPL_LM64' and 'TMPL_PP16' are defined."
- %endif
- %ifdef TMPL_PP32
-  %error "Both 'TMPL_LM64' and 'TMPL_PP32' are defined."
- %endif
- %ifdef TMPL_PPV86
-  %error "Both 'TMPL_LM64' and 'TMPL_PPV86' are defined."
- %endif
- %ifdef TMPL_PAE16
-  %error "Both 'TMPL_LM64' and 'TMPL_PAE16' are defined."
- %endif
- %ifdef TMPL_PAE32
-  %error "Both 'TMPL_LM64' and 'TMPL_PAE32' are defined."
- %endif
- %ifdef TMPL_PAEV86
-  %error "Both 'TMPL_LM64' and 'TMPL_PAEV86' are defined."
- %endif
- %ifdef TMPL_LM16
-  %error "Both 'TMPL_LM64' and 'TMPL_LM16' are defined."
- %endif
- %ifdef TMPL_LM32
-  %error "Both 'TMPL_LM64' and 'TMPL_LM32' are defined."
- %endif
- %define TMPL_CMN_LM
- %define TMPL_CMN_PAGING
- %define TMPL_CMN_P64
+%elif (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_64
  %define TMPL_64BIT
  %define TMPL_BITS              64
  %define TMPL_PTR_DEF           dq
- %define TMPL_NM(Name)          Name %+ _lm64   ; No underscore (C/C++ compatibility).
- %define BS3_CMN_NM(Name)       Name %+ _c64    ; No underscore (C/C++ compatibility).
  %define TMPL_UNDERSCORE
- %define TMPL_MODE_LNAME        lm64
- %define TMPL_MODE_UNAME        LM64
- %define TMPL_MODE_STR          '64-bit long mode'
+ %define BS3_CMN_NM(Name)       Name %+ _c64
+
+%else
+ %error "Invalid TMPL_MODE value!"
 %endif
 
-%ifndef TMPL_MODE_STR
- %error "internal error"
+;
+; Check the system specific mask and set derived values.
+;
+%if (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_RM
+ %define TMPL_HAVE_BIOS
+ %define TMPL_CMN_R86
+
+%elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PE16
+ %define TMPL_SYS_PE16
+ %define TMPL_CMN_PE
+
+%elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PE32
+ %define TMPL_SYS_PE32
+ %define TMPL_CMN_PE
+
+%elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PP16
+ %define TMPL_SYS_PP16
+ %define TMPL_CMN_PP
+ %define TMPL_CMN_PAGING
+
+%elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PP32
+ %define TMPL_SYS_PP32
+ %define TMPL_CMN_PP
+ %define TMPL_CMN_PAGING
+
+%elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PAE16
+ %define TMPL_SYS_PAE16
+ %define TMPL_CMN_PAE
+ %define TMPL_CMN_PAGING
+
+%elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PAE32
+ %define TMPL_SYS_PAE32
+ %define TMPL_CMN_PAE
+ %define TMPL_CMN_PAGING
+
+%elif (TMPL_MODE & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_LM
+ %define TMPL_SYS_LM
+ %define TMPL_CMN_LM
+ %define TMPL_CMN_PAGING
+
+%else
+ %error "Invalid TMPL_MODE value!"
+%endif
+
+
+;
+; Mode specific stuff.
+;
+%if   TMPL_MODE == BS3_MODE_RM
+ %define TMPL_RM
+ %define TMPL_MODE_STR          "real mode"
+ %define TMPL_NM(Name)          _ %+ Name %+ _rm
+ %define TMPL_MODE_LNAME        rm
+ %define TMPL_MODE_UNAME        RM
+
+
+%elif TMPL_MODE == BS3_MODE_PE16
+ %define TMPL_PE16
+ %define TMPL_MODE_STR          "16-bit prot, 16-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pe16
+ %define TMPL_MODE_LNAME        pe16
+ %define TMPL_MODE_UNAME        PE16
+
+%elif TMPL_MODE == BS3_MODE_PE16_32
+ %define TMPL_PE16_32
+ %define TMPL_MODE_STR          "16-bit prot, 32-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pe16_32
+ %define TMPL_MODE_LNAME        pe16_32
+ %define TMPL_MODE_UNAME        PE16_32
+ %define TMPL_CMN_WEIRD
+
+%elif TMPL_MODE == BS3_MODE_PE16_V86
+ %define TMPL_PE16_V86
+ %define TMPL_MODE_STR          "16-bit prot, v8086"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pe16_v86
+ %define TMPL_MODE_LNAME        pe16_v86
+ %define TMPL_MODE_UNAME        PE16_v86
+ %define TMPL_CMN_WEIRD
+ %define TMPL_CMN_WEIRD_V86
+
+
+%elif TMPL_MODE == BS3_MODE_PE32
+ %define TMPL_PE32
+ %define TMPL_MODE_STR          "32-bit prot, 32-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pe32
+ %define TMPL_MODE_LNAME        pe32
+ %define TMPL_MODE_UNAME        PE32
+
+%elif TMPL_MODE == BS3_MODE_PE32_16
+ %define TMPL_PE32_16
+ %define TMPL_MODE_STR          "32-bit prot, 16-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pe32_16
+ %define TMPL_MODE_LNAME        pe32_16
+ %define TMPL_MODE_UNAME        PE32_16
+ %define TMPL_CMN_WEIRD
+
+%elif TMPL_MODE == BS3_MODE_PEV86
+ %define TMPL_PEV86
+ %define TMPL_MODE_STR          "32-bit prot, v8086"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pev86
+ %define TMPL_MODE_LNAME        pev86
+ %define TMPL_MODE_UNAME        PEV86
+
+
+%elif TMPL_MODE == BS3_MODE_PP16
+ %define TMPL_PP16
+ %define TMPL_MODE_STR          "16-bit paged, 16-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pp16
+ %define TMPL_MODE_LNAME        pp16
+ %define TMPL_MODE_UNAME        PP16
+
+%elif TMPL_MODE == BS3_MODE_PP16_32
+ %define TMPL_PP16_32
+ %define TMPL_MODE_STR          "16-bit paged, 32-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pp16_32
+ %define TMPL_MODE_LNAME        pp16_32
+ %define TMPL_MODE_UNAME        PP16_32
+ %define TMPL_CMN_WEIRD
+
+%elif TMPL_MODE == BS3_MODE_PP16_V86
+ %define TMPL_PP16_V86
+ %define TMPL_MODE_STR          "16-bit paged, v8086"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pp16_v86
+ %define TMPL_MODE_LNAME        pp16_v86
+ %define TMPL_MODE_UNAME        PP16_v86
+ %define TMPL_CMN_WEIRD
+ %define TMPL_CMN_WEIRD_V86
+
+
+%elif TMPL_MODE == BS3_MODE_PP32
+ %define TMPL_PP32
+ %define TMPL_MODE_STR          "32-bit paged, 32-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pp32
+ %define TMPL_MODE_LNAME        pp32
+ %define TMPL_MODE_UNAME        PP32
+
+%elif TMPL_MODE == BS3_MODE_PP32_16
+ %define TMPL_PP32_16
+ %define TMPL_MODE_STR          "32-bit paged, 16-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pp32_16
+ %define TMPL_MODE_LNAME        pp32_16
+ %define TMPL_MODE_UNAME        PP32_16
+ %define TMPL_CMN_WEIRD
+
+%elif TMPL_MODE == BS3_MODE_PPV86
+ %define TMPL_PPV86
+ %define TMPL_MODE_STR          "32-bit paged, v8086"
+ %define TMPL_NM(Name)          _ %+ Name %+ _ppv86
+ %define TMPL_MODE_LNAME        ppv86
+ %define TMPL_MODE_UNAME        PPV86
+
+
+%elif TMPL_MODE == BS3_MODE_PAE16
+ %define TMPL_PAE16
+ %define TMPL_MODE_STR          "16-bit pae, 16-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pae16
+ %define TMPL_MODE_LNAME        pae16
+ %define TMPL_MODE_UNAME        PAE16
+
+%elif TMPL_MODE == BS3_MODE_PAE16_32
+ %define TMPL_PAE16_32
+ %define TMPL_MODE_STR          "16-bit pae, 32-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pae16_32
+ %define TMPL_MODE_LNAME        pae16_32
+ %define TMPL_MODE_UNAME        PAE16_32
+ %define TMPL_CMN_WEIRD
+
+%elif TMPL_MODE == BS3_MODE_PAE16_V86
+ %define TMPL_PAE16_V86
+ %define TMPL_MODE_STR          "16-bit pae, v8086"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pae16_v86
+ %define TMPL_MODE_LNAME        pae16_v86
+ %define TMPL_MODE_UNAME        PAE16_v86
+ %define TMPL_CMN_WEIRD
+ %define TMPL_CMN_WEIRD_V86
+
+
+%elif TMPL_MODE == BS3_MODE_PAE32
+ %define TMPL_PAE32
+ %define TMPL_MODE_STR          "32-bit pae, 32-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pae32
+ %define TMPL_MODE_LNAME        pae32
+ %define TMPL_MODE_UNAME        PAE32
+
+%elif TMPL_MODE == BS3_MODE_PAE32_16
+ %define TMPL_PAE32_16
+ %define TMPL_MODE_STR          "32-bit pae, 32-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _pae32_16
+ %define TMPL_MODE_LNAME        pae32_16
+ %define TMPL_MODE_UNAME        PAE32_16
+ %define TMPL_CMN_WEIRD
+
+%elif TMPL_MODE == BS3_MODE_PAEV86
+ %define TMPL_PAEV86
+ %define TMPL_MODE_STR          "32-bit pae, v8086 pae"
+ %define TMPL_NM(Name)          _ %+ Name %+ _paev86
+ %define TMPL_MODE_LNAME        paev86
+ %define TMPL_MODE_UNAME        PAEV86
+
+
+%elif TMPL_MODE == BS3_MODE_LM16
+ %define TMPL_LM16
+ %define TMPL_MODE_STR          "long, 16-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _lm16
+ %define TMPL_MODE_LNAME        lm16
+ %define TMPL_MODE_UNAME        LM16
+
+%elif TMPL_MODE == BS3_MODE_LM32
+ %define TMPL_LM32
+ %define TMPL_MODE_STR          "long, 32-bit"
+ %define TMPL_NM(Name)          _ %+ Name %+ _lm32
+ %define TMPL_MODE_LNAME        lm32
+ %define TMPL_MODE_UNAME        LM32
+
+%elif TMPL_MODE == BS3_MODE_LM64
+ %define TMPL_LM64
+ %define TMPL_MODE_STR          "long, 64-bit"
+ %define TMPL_NM(Name)          Name %+ _lm64
+ %define TMPL_MODE_LNAME        lm64
+ %define TMPL_MODE_UNAME        LM64
+
+%else
+ %error "Invalid TMPL_MODE value!!"
 %endif
 
 %ifnidn TMPL_UNDERSCORE,_; RT_CONCAT3 doesn't work with TMPL_UNDERSCORE being empty. duh.
@@ -737,106 +387,6 @@
  %define TMPL_NM_U(Name)        TMPL_UNDERSCORE %+ Name %+ TMPL_MODE_UNAME
 %endif
 
-
-;
-; Register aliases.
-;
-%ifdef TMPL_64BIT
- %define xCB  8
- %define xDEF dq
- %define xRES resq
- %define xPRE qword
- %define xSP  rsp
- %define xBP  rbp
- %define xAX  rax
- %define xBX  rbx
- %define xCX  rcx
- %define xDX  rdx
- %define xDI  rdi
- %define xSI  rsi
- %define xWrtRIP wrt rip
- %define xPUSHF pushfq
- %define xPOPF  popfq
- %define xRETF  o64 retf
-%else
- %ifdef TMPL_32BIT
-  %define xCB  4
-  %define xDEF dd
-  %define xRES resd
-  %define xPRE dword
-  %define xSP  esp
-  %define xBP  ebp
-  %define xAX  eax
-  %define xBX  ebx
-  %define xCX  ecx
-  %define xDX  edx
-  %define xDI  edi
-  %define xSI  esi
-  %define xWrtRIP
-  %define xPUSHF pushfd
-  %define xPOPF  popfd
-  %define xRETF  retf
- %else
-  %ifndef TMPL_16BIT
-   %error "TMPL_XXBIT is not defined."
-  %endif
-  %define xCB  2
-  %define xDEF dw
-  %define xRES resw
-  %define xPRE word
-  %define xSP  sp
-  %define xBP  bp
-  %define xAX  ax
-  %define xBX  bx
-  %define xCX  cx
-  %define xDX  dx
-  %define xDI  di
-  %define xSI  si
-  %define xWrtRIP
-  %define xPUSHF pushf
-  %define xPOPF  popf
-  %define xRETF  retf
- %endif
-%endif
-
-
-;
-; Register names corresponding to the max size for pop/push <reg>.
-;
-; 16-bit can push both 32-bit and 16-bit registers.  This 's' prefixed variant
-; is used when 16-bit should use the 32-bit register.
-;
-%ifdef TMPL_64BIT
- %define sCB  8
- %define sDEF dq
- %define sRES resq
- %define sPRE qword
- %define sSP  rsp
- %define sBP  rbp
- %define sAX  rax
- %define sBX  rbx
- %define sCX  rcx
- %define sDX  rdx
- %define sDI  rdi
- %define sSI  rsi
- %define sPUSHF pushfq
- %define sPOPF  popfq
-%else
- %define sCB  4
- %define sDEF dd
- %define sRES resd
- %define sPRE dword
- %define sSP  esp
- %define sBP  ebp
- %define sAX  eax
- %define sBX  ebx
- %define sCX  ecx
- %define sDX  edx
- %define sDI  edi
- %define sSI  esi
- %define sPUSHF pushfd
- %define sPOPF  popfd
-%endif
 
 ;; @def TMPL_WRT_FLAT
 ; WRT flat when not in 16-bit modes.
@@ -865,16 +415,6 @@
 %else
  %define TMPL_WRT_SYSTEM16_OR_FLAT  wrt FLAT
 %endif
-
-;; @def BS3_EXTERN_TMPL
-; Mangles the given name into a template specific one.  For ease of use, the
-; name is redefined to the mangled one, just like BS3_EXTERN_CMN does.
-; @note Segment does not change.
-%macro BS3_EXTERN_TMPL 1
- extern TMPL_NM(%1)
- %undef  %1
- %define %1 TMPL_NM(%1)
-%endmacro
 
 ;
 ; Default code segment (changes BITS too).

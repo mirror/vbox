@@ -1,10 +1,13 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Test Data.
+ * BS3Kit - Per CPU Data.
+ *
+ * @remarks Not quite sure how to do per-cpu data yet, but this is stuff
+ *          that eventually needs to be per CPU.
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,65 +40,7 @@
 *********************************************************************************************************************************/
 #if ARCH_BITS == 16
 
-/** Indicates whether the VMMDev is operational. */
-bool        g_fbBs3VMMDevTesting = true;
-
-/** The number of tests that have failed. */
-uint16_t    g_cusBs3TestErrors = 0;
-
-/** The start error count of the current subtest. */
-uint16_t    g_cusBs3SubTestAtErrors = 0;
-
-/** Whether we've reported the sub-test result or not. */
-bool        g_fbBs3SubTestReported = true;
-
-/** The number of sub tests. */
-uint16_t    g_cusBs3SubTests = 0;
-
-/** The number of sub tests that failed. */
-uint16_t    g_cusBs3SubTestsFailed = 0;
-
-/** VMMDEV_TESTING_UNIT_XXX -> string */
-char const  g_aszBs3TestUnitNames[][16] =
-{
-    "inv",
-    "%",
-    "bytes",
-    "bytes/s",
-    "KB",
-    "KB/s",
-    "MB",
-    "MB/s",
-    "packets",
-    "packets/s",
-    "frames",
-    "frames/",
-    "occ",
-    "occ/s",
-    "rndtrp",
-    "calls",
-    "calls/s",
-    "s",
-    "ms",
-    "ns",
-    "ns/call",
-    "ns/frame",
-    "ns/occ",
-    "ns/packet",
-    "ns/rndtrp",
-    "ins",
-    "ins/s",
-    "", /* none */
-    "pp1k",
-    "pp10k",
-    "ppm",
-    "ppb",
-};
+uint8_t BS3_DATA_NM(g_bBs3CurrentMode) = BS3_MODE_INVALID;
 
 #endif /* ARCH_BITS == 16 */
-
-/** The test name. */
-const char BS3_FAR *BS3_CMN_NM(g_pszBs3Test) = NULL;
-/** The subtest name. */
-const char BS3_FAR *BS3_CMN_NM(g_pszBs3SubTest) = NULL;
 

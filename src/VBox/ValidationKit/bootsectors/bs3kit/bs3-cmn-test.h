@@ -35,19 +35,19 @@
 extern bool                 g_fbBs3VMMDevTesting;
 
 /** The number of tests that have failed. */
-extern uint16_t             g_uscBs3TestErrors;
+extern uint16_t             g_cusBs3TestErrors;
 
 /** The start error count of the current subtest. */
-extern uint16_t             g_uscBs3SubTestAtErrors;
+extern uint16_t             g_cusBs3SubTestAtErrors;
 
 /**  Whether we've reported the sub-test result or not. */
 extern bool                 g_fbBs3SubTestReported;
 
 /** The number of sub tests. */
-extern uint16_t             g_uscBs3SubTests;
+extern uint16_t             g_cusBs3SubTests;
 
 /** The number of sub tests that failed. */
-extern uint16_t             g_uscBs3SubTestsFailed;
+extern uint16_t             g_cusBs3SubTestsFailed;
 
 /** VMMDEV_TESTING_UNIT_XXX -> string */
 extern char const           g_aszBs3TestUnitNames[][16];
@@ -68,13 +68,27 @@ extern const char          *g_pszBs3SubTest_c64;
  * If the VMMDev is not present or is not being used, this function will
  * do nothing.
  *
- * @param   uCmd       The command.
- * @param   pszString  The string.
+ * @param   uCmd        The command.
+ * @param   pszString   The string.
  */
-BS3_DECL(void) bs3TestSendStrCmd_c16(uint32_t uCmd, const char BS3_FAR *pszString);
-BS3_DECL(void) bs3TestSendStrCmd_c32(uint32_t uCmd, const char BS3_FAR *pszString); /**< @copydoc bs3TestSendStrCmd_c16 */
-BS3_DECL(void) bs3TestSendStrCmd_c64(uint32_t uCmd, const char BS3_FAR *pszString); /**< @copydoc bs3TestSendStrCmd_c16 */
-#define bs3TestSendStrCmd BS3_CMN_NM(bs3TestSendStrCmd) /**< Selects #bs3TestSendStrCmd_c16, #bs3TestSendStrCmd_c32 or #bs3TestSendStrCmd_c64. */
+BS3_DECL(void) bs3TestSendCmdWithStr_c16(uint32_t uCmd, const char BS3_FAR *pszString);
+BS3_DECL(void) bs3TestSendCmdWithStr_c32(uint32_t uCmd, const char BS3_FAR *pszString); /**< @copydoc bs3TestSendCmdWithStr_c16 */
+BS3_DECL(void) bs3TestSendCmdWithStr_c64(uint32_t uCmd, const char BS3_FAR *pszString); /**< @copydoc bs3TestSendCmdWithStr_c16 */
+#define bs3TestSendCmdWithStr BS3_CMN_NM(bs3TestSendCmdWithStr) /**< Selects #bs3TestSendCmdWithStr_c16, #bs3TestSendCmdWithStr_c32 or #bs3TestSendCmdWithStr_c64. */
+
+/**
+ * Sends a command to VMMDev followed by a 32-bit unsigned integer value.
+ *
+ * If the VMMDev is not present or is not being used, this function will
+ * do nothing.
+ *
+ * @param   uCmd        The command.
+ * @param   uValue      The value.
+ */
+BS3_DECL(void) bs3TestSendCmdWithU32_c16(uint32_t uCmd, uint32_t uValue);
+BS3_DECL(void) bs3TestSendCmdWithU32_c32(uint32_t uCmd, uint32_t uValue); /**< @copydoc bs3TestSendCmdWithU32_c16 */
+BS3_DECL(void) bs3TestSendCmdWithU32_c64(uint32_t uCmd, uint32_t uValue); /**< @copydoc bs3TestSendCmdWithU32_c16 */
+#define bs3TestSendCmdWithU32 BS3_CMN_NM(bs3TestSendCmdWithU32) /**< Selects #bs3TestSendCmdWithU32_c16, #bs3TestSendCmdWithU32_c32 or #bs3TestSendCmdWithU32_c64. */
 
 
 /**

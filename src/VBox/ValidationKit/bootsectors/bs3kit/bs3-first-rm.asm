@@ -37,13 +37,16 @@
 
 EXTERN Main_rm
 BS3_EXTERN_CMN Bs3Shutdown
+        push    word 0                  ; zero return address.
+        push    word 0                  ; zero caller BP
+        mov     bp, sp
 
-    ;
-    ; Nothing to init here, just call main and shutdown if it returns.
-    ;
-    mov     ax, BS3DATA16
-    mov     es, ax
-    mov     ds, ax
-    call    NAME(Main_rm)
-    call    Bs3Shutdown
+        ;
+        ; Nothing to init here, just call main and shutdown if it returns.
+        ;
+        mov     ax, BS3DATA16
+        mov     es, ax
+        mov     ds, ax
+        call    NAME(Main_rm)
+        call    Bs3Shutdown
 

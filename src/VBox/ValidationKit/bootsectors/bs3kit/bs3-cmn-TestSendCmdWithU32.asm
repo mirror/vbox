@@ -1,10 +1,10 @@
 ; $Id$
 ;; @file
-; BS3Kit - bs3TestSendStrCmd.
+; BS3Kit - bs3TestSendCmdWithU32.
 ;
 
 ;
-; Copyright (C) 2007-2015 Oracle Corporation
+; Copyright (C) 2007-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -31,45 +31,35 @@ BS3_EXTERN_DATA16 g_fbBs3VMMDevTesting
 TMPL_BEGIN_TEXT
 
 ;;
-; @cproto   BS3_DECL(void) bs3TestSendStrCmd_c16(uint32_t uCmd, const char BS3_FAR *pszString);
+; @cproto   BS3_DECL(void) bs3TestSendCmdWithU32_c16(uint32_t uCmd, uint32_t uValue);
 ;
-BS3_PROC_BEGIN_CMN bs3TestSendStrCmd
+BS3_PROC_BEGIN_CMN bs3TestSendCmdWithU32
         BS3_CALL_CONV_PROLOG 2
         push    xBP
         mov     xBP, xSP
         push    xAX
         push    xDX
         push    xSI
-        BS3_ONLY_16BIT_STMT push ds
 
         cmp     byte [g_fbBs3VMMDevTesting], 0
         je      .no_vmmdev
 
         ; The command (uCmd).
         mov     dx, VMMDEV_TESTING_IOPORT_CMD
-        mov     eax, [xBP + xCB]
+        mov     eax, [xBP + xCB*2]
         out     dx, eax
 
-        ; The string.
+        ; The value (uValue).
         mov     dx, VMMDEV_TESTING_IOPORT_DATA
-%ifdef TMPL_16BIT
-        lds     si, [xBP + xCB + sCB]
-%else
-        mov     xSI, [xBP + xCB + sCB]
-%endif
-.next_char:
-        lodsb
-        out     dx, al
-        test    al, al
-        jnz     .next_char
+        mov     eax, [xBP + xCB*2 + sCB]
+        out     dx, eax
 
 .no_vmmdev:
-        BS3_ONLY_16BIT_STMT pop ds
         pop     xSI
         pop     xDX
         pop     xAX
         leave
         BS3_CALL_CONV_EPILOG 2
         ret
-BS3_PROC_END_CMN   bs3TestSendStrCmd
+BS3_PROC_END_CMN   bs3TestSendCmdWithU32
 

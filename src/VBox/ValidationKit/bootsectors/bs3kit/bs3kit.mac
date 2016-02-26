@@ -35,8 +35,116 @@
 ; Drop the asmdefs-first.mac header for native bs3kit files.
 %undef RT_ASMDEFS_INC_FIRST_FILE
 
+;;
+; Macro for setting register aliases according to the bit count given by %1.
+;
+%macro BS3_SET_REG_ALIASES 1
+ ;
+ ; Register aliases.
+ ;
+ %if %1 == 64
+  %define xCB  8
+  %define xDEF dq
+  %define xRES resq
+  %define xPRE qword
+  %define xSP  rsp
+  %define xBP  rbp
+  %define xAX  rax
+  %define xBX  rbx
+  %define xCX  rcx
+  %define xDX  rdx
+  %define xDI  rdi
+  %define xSI  rsi
+  %define xWrtRIP wrt rip
+  %define xPUSHF pushfq
+  %define xPOPF  popfq
+  %define xRETF  o64 retf
+ %elif %1 == 32
+  %define xCB  4
+  %define xDEF dd
+  %define xRES resd
+  %define xPRE dword
+  %define xSP  esp
+  %define xBP  ebp
+  %define xAX  eax
+  %define xBX  ebx
+  %define xCX  ecx
+  %define xDX  edx
+  %define xDI  edi
+  %define xSI  esi
+  %define xWrtRIP
+  %define xPUSHF pushfd
+  %define xPOPF  popfd
+  %define xRETF  retf
+ %elif %1 == 16
+  %define xCB  2
+  %define xDEF dw
+  %define xRES resw
+  %define xPRE word
+  %define xSP  sp
+  %define xBP  bp
+  %define xAX  ax
+  %define xBX  bx
+  %define xCX  cx
+  %define xDX  dx
+  %define xDI  di
+  %define xSI  si
+  %define xWrtRIP
+  %define xPUSHF pushf
+  %define xPOPF  popf
+  %define xRETF  retf
+ %else
+  %error "Invalid BS3_SET_REG_ALIASES argument:" %1
+ %endif
+
+
+ ;
+ ; Register names corresponding to the max size for pop/push <reg>.
+ ;
+ ; 16-bit can push both 32-bit and 16-bit registers.  This 's' prefixed variant
+ ; is used when 16-bit should use the 32-bit register.
+ ;
+ %if %1 == 64
+  %define sCB  8
+  %define sDEF dq
+  %define sRES resq
+  %define sPRE qword
+  %define sSP  rsp
+  %define sBP  rbp
+  %define sAX  rax
+  %define sBX  rbx
+  %define sCX  rcx
+  %define sDX  rdx
+  %define sDI  rdi
+  %define sSI  rsi
+  %define sPUSHF pushfq
+  %define sPOPF  popfq
+ %else
+  %define sCB  4
+  %define sDEF dd
+  %define sRES resd
+  %define sPRE dword
+  %define sSP  esp
+  %define sBP  ebp
+  %define sAX  eax
+  %define sBX  ebx
+  %define sCX  ecx
+  %define sDX  edx
+  %define sDI  edi
+  %define sSI  esi
+  %define sPUSHF pushfd
+  %define sPOPF  popfd
+ %endif
+%endmacro
+
+; Default to register aliases for ARCH_BITS.
+BS3_SET_REG_ALIASES ARCH_BITS
+
+
 ;; Wrapper around BITS.
-; Updates __BITS__ (built-in variable in nasm, we work it for yasm).
+; Updates __BITS__ (built-in variable in nasm, we work it for yasm) as well
+; a number of convenient macros and register aliases.
+;
 ; @param    %1      The CPU bit count: 16, 32 or 64
 ; @remarks ARCH_BITS is not modified and will remain what it was on the
 ;          assembler command line.
@@ -80,9 +188,13 @@
 
  %undef   BS3_WRT_RIP
  %if %1 == 64
-  %define BS3_WRT_RIP               wrt rip
+  %ifdef __YASM__
+   %define BS3_WRT_RIP(a_Sym)       a_Sym wrt rip
+  %else
+   %define BS3_WRT_RIP(a_Sym)       rel a_Sym       ; Baka! Why couldn't they do 'wrt rip' like yasm?
+  %endif
  %else
-  %define BS3_WRT_RIP
+  %define BS3_WRT_RIP(a_Sym)        a_Sym
  %endif
 
  %undef   BS3_IF_16BIT_OTHERWISE
@@ -105,7 +217,10 @@
  %else
   %define BS3_IF_64BIT_OTHERWISE(a_64BitExpr, a_OtherwiseExpr) a_OtherwiseExpr
  %endif
+
+ BS3_SET_REG_ALIASES %1
 %endmacro
+
 
 ;; Emulate the __BITS__ macro in NASM 2.0+. Follows BS3_SET_BITS.
 %ifdef __YASM__
@@ -122,9 +237,13 @@
 ;; For RIP relative addressing in 64-bit mode and absolute addressing in
 ; other modes. Follows BS3_SET_BITS.
 %if ARCH_BITS == 64
- %define BS3_WRT_RIP                wrt rip
+ %ifdef __YASM__
+  %define BS3_WRT_RIP(a_Sym)        a_Sym wrt rip
+ %else
+  %define BS3_WRT_RIP(a_Sym)        rel a_Sym       ; Baka! Why couldn't they do 'wrt rip' like yasm?
+ %endif
 %else
- %define BS3_WRT_RIP
+ %define BS3_WRT_RIP(a_Sym)         a_Sym
 %endif
 
 ;; For segment overrides and stuff. Follows BS3_SET_BITS.
@@ -362,6 +481,17 @@ GROUP FLAT BS3FLAT
  %define %1 BS3_CMN_NM(%1)
 %endmacro
 
+;; @def BS3_EXTERN_TMPL
+; Mangles the given name into a template specific one.  For ease of use, the
+; name is redefined to the mangled one, just like BS3_EXTERN_CMN does.
+; @note Segment does not change.
+%macro BS3_EXTERN_TMPL 1
+ extern TMPL_NM(%1)
+ %undef  %1
+ %define %1 TMPL_NM(%1)
+%endmacro
+
+
 ;;
 ; Mangles a 16-bit and 32-bit accessible data name.
 ; @remarks Requires the use of the BS3_SET_BITS macro instead of the BITS directive.
@@ -584,6 +714,191 @@ size %1 %+ _EndProc     0
   %endif
  %endif
         call        %1
+%endmacro
+
+
+;; @name Execution Modes
+; @{
+%define BS3_MODE_INVALID    000h
+%define BS3_MODE_RM         001h    ;;< real mode.
+%define BS3_MODE_PE16       011h    ;;< 16-bit protected mode kernel+tss, running 16-bit code, unpaged.
+%define BS3_MODE_PE16_32    012h    ;;< 16-bit protected mode kernel+tss, running 32-bit code, unpaged.
+%define BS3_MODE_PE16_V86   013h    ;;< 16-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged.
+%define BS3_MODE_PE32       022h    ;;< 32-bit protected mode kernel+tss, running 32-bit code, unpaged.
+%define BS3_MODE_PE32_16    021h    ;;< 32-bit protected mode kernel+tss, running 16-bit code, unpaged.
+%define BS3_MODE_PEV86      023h    ;;< 32-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged.
+%define BS3_MODE_PP16       031h    ;;< 16-bit protected mode kernel+tss, running 16-bit code, paged.
+%define BS3_MODE_PP16_32    032h    ;;< 16-bit protected mode kernel+tss, running 32-bit code, paged.
+%define BS3_MODE_PP16_V86   033h    ;;< 16-bit protected mode kernel+tss, running virtual 8086 mode code, paged.
+%define BS3_MODE_PP32       042h    ;;< 32-bit protected mode kernel+tss, running 32-bit code, paged.
+%define BS3_MODE_PP32_16    041h    ;;< 32-bit protected mode kernel+tss, running 16-bit code, paged.
+%define BS3_MODE_PPV86      043h    ;;< 32-bit protected mode kernel+tss, running virtual 8086 mode code, paged.
+%define BS3_MODE_PAE16      051h    ;;< 16-bit protected mode kernel+tss, running 16-bit code, PAE paging.
+%define BS3_MODE_PAE16_32   052h    ;;< 16-bit protected mode kernel+tss, running 32-bit code, PAE paging.
+%define BS3_MODE_PAE16_V86  053h    ;;< 16-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging.
+%define BS3_MODE_PAE32      062h    ;;< 32-bit protected mode kernel+tss, running 32-bit code, PAE paging.
+%define BS3_MODE_PAE32_16   061h    ;;< 32-bit protected mode kernel+tss, running 16-bit code, PAE paging.
+%define BS3_MODE_PAEV86     063h    ;;< 32-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging.
+%define BS3_MODE_LM16       071h    ;;< 16-bit long mode (paged), kernel+tss always 64-bit.
+%define BS3_MODE_LM32       072h    ;;< 32-bit long mode (paged), kernel+tss always 64-bit.
+%define BS3_MODE_LM64       074h    ;;< 64-bit long mode (paged), kernel+tss always 64-bit.
+
+%define BS3_MODE_CODE_MASK  00fh    ;;< Running code mask.
+%define BS3_MODE_CODE_16    001h    ;;< Running 16-bit code.
+%define BS3_MODE_CODE_32    002h    ;;< Running 32-bit code.
+%define BS3_MODE_CODE_V86   003h    ;;< Running 16-bit virtual 8086 code.
+%define BS3_MODE_CODE_64    004h    ;;< Running 64-bit code.
+
+%define BS3_MODE_SYS_MASK   0f0h    ;;< kernel+tss mask.
+%define BS3_MODE_SYS_RM     000h    ;;< Real mode kernel+tss.
+%define BS3_MODE_SYS_PE16   010h    ;;< 16-bit protected mode kernel+tss.
+%define BS3_MODE_SYS_PE32   020h    ;;< 32-bit protected mode kernel+tss.
+%define BS3_MODE_SYS_PP16   030h    ;;< 16-bit paged protected mode kernel+tss.
+%define BS3_MODE_SYS_PP32   040h    ;;< 32-bit paged protected mode kernel+tss.
+%define BS3_MODE_SYS_PAE16  050h    ;;< 16-bit PAE paged protected mode kernel+tss.
+%define BS3_MODE_SYS_PAE32  060h    ;;< 32-bit PAE paged protected mode kernel+tss.
+%define BS3_MODE_SYS_LM     070h    ;;< 64-bit (paged) long mode protected mode kernel+tss.
+
+;; Whether the mode has paging enabled.
+%define BS3_MODE_IS_PAGED(a_fMode)              ((a_fMode) >= BS3_MODE_PP16)
+
+;; Whether the mode is running v8086 code.
+%define BS3_MODE_IS_V86(a_fMode)                (((a_fMode) & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_V86)
+;; Whether the we're executing in real mode or v8086 mode.
+%define BS3_MODE_IS_RM_OR_V86(a_fMode)          ((a_fMode) == BS3_MODE_RM || BS3_MODE_IS_V86(a_fMode))
+;; Whether the mode is running 16-bit code, except v8086.
+%define BS3_MODE_IS_16BIT_CODE_NO_V86(a_fMode)  (((a_fMode) & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_16)
+;; Whether the mode is running 16-bit code (includes v8086).
+%define BS3_MODE_IS_16BIT_CODE(a_fMode)         (BS3_MODE_IS_16BIT_CODE_NO_V86(a_fMode) || BS3_MODE_IS_V86(a_fMode))
+;; Whether the mode is running 32-bit code.
+%define BS3_MODE_IS_32BIT_CODE(a_fMode)         (((a_fMode) & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_32)
+;; Whether the mode is running 64-bit code.
+%define BS3_MODE_IS_64BIT_CODE(a_fMode)         (((a_fMode) & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_64)
+
+;; Whether the system is in real mode.
+%define BS3_MODE_IS_RM_SYS(a_fMode)             (((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_RM)
+;; Whether the system is some 16-bit mode that isn't real mode.
+%define BS3_MODE_IS_16BIT_SYS_NO_RM(a_fMode)    (   ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PE16 \
+                                                 || ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PP16 \
+                                                 || ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PAE16)
+;; Whether the system is some 16-bit mode (includes real mode).
+%define BS3_MODE_IS_16BIT_SYS(a_fMode)          (BS3_MODE_IS_16BIT_SYS_NO_RM(a_fMode) || BS3_MODE_IS_RM_SYS(a_fMode))
+;; Whether the system is some 32-bit mode.
+%define BS3_MODE_IS_32BIT_SYS(a_fMode)          (   ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PE32 \
+                                                 || ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PP32 \
+                                                 || ((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_PAE32)
+;; Whether the system is long mode.
+%define BS3_MODE_IS_64BIT_SYS(a_fMode)          (((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_LM)
+
+;; @}
+
+;;
+; Includes the file %1 with TMPL_MODE set to all possible value.
+; @param 1      Double quoted include file name.
+%macro BS3_INSTANTIATE_TEMPLATE_WITH_WEIRD_ONES 1
+ %define TMPL_MODE BS3_MODE_RM
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PE16
+ %include %1
+ %define TMPL_MODE BS3_MODE_PE16_32
+ %include %1
+ %define TMPL_MODE BS3_MODE_PE16_V86
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PE32
+ %include %1
+ %define TMPL_MODE BS3_MODE_PE32_16
+ %include %1
+ %define TMPL_MODE BS3_MODE_PEV86
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PP16
+ %include %1
+ %define TMPL_MODE BS3_MODE_PP16_32
+ %include %1
+ %define TMPL_MODE BS3_MODE_PP16_V86
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PP32
+ %include %1
+ %define TMPL_MODE BS3_MODE_PP32_16
+ %include %1
+ %define TMPL_MODE BS3_MODE_PPV86
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PAE16
+ %include %1
+ %define TMPL_MODE BS3_MODE_PAE16_32
+ %include %1
+ %define TMPL_MODE BS3_MODE_PAE16_V86
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PAE32
+ %include %1
+ %define TMPL_MODE BS3_MODE_PAE32_16
+ %include %1
+ %define TMPL_MODE BS3_MODE_PAEV86
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_LM16
+ %include %1
+ %define TMPL_MODE BS3_MODE_LM32
+ %include %1
+ %define TMPL_MODE BS3_MODE_LM64
+ %include %1
+%endmacro
+
+
+;;
+; Includes the file %1 with TMPL_MODE set to all but the "weird" value.
+; @param 1      Double quoted include file name.
+%macro BS3_INSTANTIATE_TEMPLATE_ESSENTIALS 1
+ %define TMPL_MODE BS3_MODE_RM
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PE16
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PE32
+ %include %1
+ %define TMPL_MODE BS3_MODE_PEV86
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PP16
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PP32
+ %include %1
+ %define TMPL_MODE BS3_MODE_PPV86
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PAE16
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_PAE32
+ %include %1
+ %define TMPL_MODE BS3_MODE_PAEV86
+ %include %1
+
+ %define TMPL_MODE BS3_MODE_LM16
+ %include %1
+ %define TMPL_MODE BS3_MODE_LM32
+ %include %1
+ %define TMPL_MODE BS3_MODE_LM64
+ %include %1
+%endmacro
+
+;;
+; Includes the file %1 with TMPL_MODE set to a 16-bit, a 32-bit and a 64-bit value.
+; @param 1      Double quoted include file name.
+%macro BS3_INSTANTIATE_COMMON_TEMPLATE 1
+ %define TMPL_MODE BS3_MODE_RM
+ %include %1
+ %define TMPL_MODE BS3_MODE_PE32
+ %include %1
+ %define TMPL_MODE BS3_MODE_LM64
+ %include %1
 %endmacro
 
 
@@ -849,18 +1164,18 @@ endstruc
 %define BS3_SEL_TILED_LAST          0df8h  ;;< 16-bit data tiling: Last  - base=0x00ff0000, limit=64KB.
 %define BS3_SEL_TILED_AREA_SIZE     001000000h ;;< 16-bit data tiling: Size of addressable area, in bytes. (16 MB)
 
-%define BS3_SEL_FREE_PART1          0e00h ;;< Free selector space - part \#1.
-%define BS3_SEL_FREE_PART1_LAST     0ff8h ;;< Free selector space - part \#1, last entry.
+%define BS3_SEL_FREE_PART1          0e00h ;;< Free selector space - part \%1.
+%define BS3_SEL_FREE_PART1_LAST     0ff8h ;;< Free selector space - part \%1, last entry.
 
 %define BS3_SEL_TEXT16              1000h ;;< The BS3TEXT16 selector.
 
-%define BS3_SEL_FREE_PART2          1008h ;;< Free selector space - part \#2.
-%define BS3_SEL_FREE_PART2_LAST     1ff8h ;;< Free selector space - part \#2, last entry.
+%define BS3_SEL_FREE_PART2          1008h ;;< Free selector space - part \%2.
+%define BS3_SEL_FREE_PART2_LAST     1ff8h ;;< Free selector space - part \%2, last entry.
 
 %define BS3_SEL_SYSTEM16            2000h ;;< The BS3SYSTEM16 selector.
 
-%define BS3_SEL_FREE_PART3          2008h ;;< Free selector space - part \#3.
-%define BS3_SEL_FREE_PART3_LAST     26f8h ;;< Free selector space - part \#3, last entry.
+%define BS3_SEL_FREE_PART3          2008h ;;< Free selector space - part \%3.
+%define BS3_SEL_FREE_PART3_LAST     26f8h ;;< Free selector space - part \%3, last entry.
 
 %define BS3_SEL_DATA16              2700h ;;< The BS3DATA16 selector.
 

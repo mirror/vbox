@@ -342,7 +342,7 @@ TEMPLATE_VBoxBS3KitImg_CFLAGS       = \
 	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = \
 	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
-TEMPLATE_VBoxBS3KitImg_INCS         = $(VBOX_PATH_BS3KIT_SRC)
+TEMPLATE_VBoxBS3KitImg_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 # 	option quiet, nofarcalls\
 #	disable 1014, 1023, 2120, 1080
@@ -450,7 +450,7 @@ TEMPLATE_VBoxBS3KitImg32_CFLAGS       = \
 	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = \
 	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
-TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC)
+TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg32_LDTOOL       = VBoxBsUnusedLd
 
 # BS3Kit template for 64-bit code.
@@ -464,7 +464,7 @@ TEMPLATE_VBoxBS3KitImg64_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM_
 TEMPLATE_VBoxBS3KitImg64_DEFS         = IN_BS3KIT ARCH_BITS=64
 TEMPLATE_VBoxBS3KitImg64_DEFS.debug   = BS3_STRICT
 TEMPLATE_VBoxBS3KitImg64_ARTOOL       = OPENWATCOM
-TEMPLATE_VBoxBS3KitImg64_INCS         = $(VBOX_PATH_BS3KIT_SRC)
+TEMPLATE_VBoxBS3KitImg64_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 if1of ($(KBUILD_HOST), win)
  ifndef TOOL_VCC100AMD64 # For win.x86 builds.
   include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)AMD64.kmk
@@ -493,6 +493,6 @@ TEMPLATE_VBoxBS3KitBS_MODE            = 0644
 TEMPLATE_VBoxBS3KitBS_ASTOOL          = YASM
 TEMPLATE_VBoxBS3KitBS_ASFLAGS         = -f bin --mapfile
 TEMPLATE_VBoxBS3KitBS_ASDEFS          = ASM_FORMAT_BIN RT_NOINC_SEGMENTS ARCH_BITS=16 __YASM__
-TEMPLATE_VBoxBS3KitBS_INCS            = $(VBOX_PATH_BS3KIT_SRC)
+TEMPLATE_VBoxBS3KitBS_INCS            = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitBS_LDTOOL          = VBoxBsCpLd
 

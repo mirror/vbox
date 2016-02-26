@@ -33,7 +33,7 @@ TMPL_BEGIN_TEXT
 ;;
 ; Switch to real mode from any other mode.
 ;
-; @cproto   BS3_DECL(void) Bs3SwitchToRealMode(void);
+; @cproto   BS3_DECL(void) Bs3SwitchToRM(void);
 ;
 ; @uses     Nothing (except high 32-bit register parts).
 ;
