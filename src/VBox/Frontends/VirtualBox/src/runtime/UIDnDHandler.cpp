@@ -694,7 +694,7 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction    dropAction,
                                        const QString          &strMIMEType,
                                              QVector<uint8_t> &vecData)
 {
-    LogRel3(("DnD: Retrieving data from guest as '%s' (%s)\n", qPrintable(strMIMEType), qPrintable(dropAction)));
+    LogRel3(("DnD: Retrieving data from guest as '%s' (%d)\n", qPrintable(strMIMEType), dropAction));
 
     int rc = VINF_SUCCESS;
 
