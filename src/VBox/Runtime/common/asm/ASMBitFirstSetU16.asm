@@ -65,7 +65,7 @@ BEGINPROC_EXPORTED ASMBitFirstSetU16
 .return_zero:
         xor     ax, ax
 .return:
-        mov     bp, [bp]
+        pop     bp
         ret
 
 %else

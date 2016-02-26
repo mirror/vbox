@@ -80,7 +80,7 @@ BEGINPROC_EXPORTED ASMBitLastSetU64
 .return_zero:
         xor     ax, ax
 .return:
-        mov     bp, [bp]
+        pop     bp
         ret
 
 %else

@@ -70,7 +70,7 @@ BEGINPROC_EXPORTED ASMBitFirstSetU32
 .return_zero:
         xor     ax, ax
 .return:
-        mov     bp, [bp]
+        pop     bp
         ret
 
 %else
