@@ -254,8 +254,9 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                          || pFormatEtc->cfFormat == CF_UNICODETEXT)
                    )
                 {
-                    strMIMEType = "text/plain"; /** @todo Indicate UTF8 encoding? */
-                    vaType = QVariant::String;
+                    /* Use UTF-8, always. */
+                    strMIMEType = "text/plain;charset=utf-8";
+                    vaType      = QVariant::String;
                 }
                 else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
                          && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
@@ -434,7 +435,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                                 LogFlowThisFunc(("Failed with %Rrc\n", rc));
                         }
                     }
-                    else if (   strMIMEType.startsWith("text/plain")
+                    else if (   strMIMEType.startsWith("text/plain;charset=utf-8") /* Use UTF-8, always. */
                              && m_vaData.canConvert(QVariant::String))
                     {
                         const bool fUnicode = pFormatEtc->cfFormat == CF_UNICODETEXT;
@@ -442,11 +443,12 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                                             ? sizeof(WCHAR) : sizeof(char);
 
                         QString strText = m_vaData.toString();
-                        size_t cbSrc = strText.length() * cbCh;
-                        Assert(cbSrc);
-                        LPCVOID pvSrc = fUnicode
-                                      ? (void *)strText.unicode()
-                                      : (void *)strText.toUtf8().constData();
+                        size_t cbSrc    = strText.length() * cbCh;
+                        LPCVOID pvSrc   = fUnicode
+                                        ? (void *)strText.unicode()
+                                        : (void *)strText.toUtf8().constData();
+
+                        AssertMsg(cbSrc, ("pvSrc=0x%p, cbSrc=%zu, cbCh=%zu\n", pvSrc, cbSrc, cbCh));
                         AssertPtr(pvSrc);
 
                         LogFlowFunc(("pvSrc=0x%p, cbSrc=%zu, cbCh=%zu, fUnicode=%RTbool\n",
