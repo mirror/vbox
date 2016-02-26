@@ -36,6 +36,9 @@ def checkPair(p, v,dllpre,dllsuff, bitness_magic):
             lib64 = os.path.join(p, "lib64", dllpre+"python"+v+dllsuff)
             if not os.path.isfile(lib64):
                 lib64 = lib
+                if not os.path.isfile(lib64):
+                    return None
+
     else:
         lib64 = None
     return [os.path.join(p, "include", "python"+v), lib, lib64]
