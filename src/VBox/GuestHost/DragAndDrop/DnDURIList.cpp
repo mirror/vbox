@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2015 Oracle Corporation
+ * Copyright (C) 2014-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,52 +58,56 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
     int rc = RTPathQueryInfo(pcszSource, &objInfo, RTFSOBJATTRADD_NOTHING);
     if (RT_SUCCESS(rc))
     {
-        if (RTFS_IS_FILE(objInfo.Attr.fMode))
+        try
         {
-            LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
-                         pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
+            DnDURIObject *pObj = NULL;
 
-            DnDURIObject *pObjFile = new DnDURIObject(DnDURIObject::File, pcszSource, pcszTarget);
-            if (pObjFile)
+            if (RTFS_IS_FILE(objInfo.Attr.fMode))
             {
+                LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
+                             pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
+
+                pObj = new DnDURIObject(DnDURIObject::File, pcszSource, pcszTarget);
+
                 if (fFlags & DNDURILIST_FLAGS_KEEP_OPEN) /* Shall we keep the file open while being added to this list? */
                 {
                     /** @todo Add a standard fOpen mode for this list. */
-                    rc = pObjFile->Open(DnDURIObject::Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, objInfo.Attr.fMode);
+                    rc = pObj->Open(DnDURIObject::Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE,
+                                    objInfo.Attr.fMode);
                 }
 
                 if (RT_SUCCESS(rc))
                 {
-                    m_lstTree.append(pObjFile);
+                    m_lstTree.append(pObj);
 
                     m_cTotal++;
-                    m_cbTotal += pObjFile->GetSize();
+                    m_cbTotal += pObj->GetSize();
                 }
-                else
-                    delete pObjFile;
             }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-        else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
-        {
-            LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
-
-            DnDURIObject *pObjDir = new DnDURIObject(DnDURIObject::Directory, pcszSource, pcszTarget,
-                                                     objInfo.Attr.fMode, 0 /* Size */);
-            if (pObjDir)
+            else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
             {
-                m_lstTree.append(pObjDir);
+                LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
+
+                pObj = new DnDURIObject(DnDURIObject::Directory, pcszSource, pcszTarget, objInfo.Attr.fMode, 0 /* Size */);
+                m_lstTree.append(pObj);
 
                 /** @todo Add DNDURILIST_FLAGS_KEEP_OPEN handling? */
                 m_cTotal++;
             }
+            /* Note: Symlinks already should have been resolved at this point. */
             else
-                rc = VERR_NO_MEMORY;
+                rc = VERR_NOT_SUPPORTED;
+
+            if (RT_FAILURE(rc))
+            {
+                if (pObj)
+                    delete pObj;
+            }
         }
-        /* Note: Symlinks already should have been resolved at this point. */
-        else
-            rc = VERR_NOT_SUPPORTED;
+        catch (std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
