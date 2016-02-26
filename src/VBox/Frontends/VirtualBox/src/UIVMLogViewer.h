@@ -72,7 +72,7 @@ private slots:
 
     /** Handles search action triggering. */
     void search();
-    /** Handles search action triggering. */
+    /** Handles refresh action triggering. */
     void refresh();
     /** Handles close action triggering. */
     bool close();
@@ -83,26 +83,33 @@ private slots:
 
 private:
 
-    /** Prepares VM Log-Viewer. */
-    void prepare();
+    /** @name Prepare/Cleanup
+      * @{ */
+        /** Prepares VM Log-Viewer. */
+        void prepare();
+        /** Prepares widgets. */
+        void prepareWidgets();
+        /** Prepares connections. */
+        void prepareConnections();
+        /** Load settings helper. */
+        void loadSettings();
 
-    /** Prepares widgets. */
-    void prepareWidgets();
+        /** Save settings helper. */
+        void saveSettings();
+        /** Cleanups VM Log-Viewer. */
+        void cleanup();
+    /** @} */
 
-    /** Prepares connections. */
-    void prepareConnections();
+    /** @name Event handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void retranslateUi();
 
-    /** Cleanups VM Log-Viewer. */
-    void cleanup();
-
-    /** Handles translation event. */
-    void retranslateUi();
-
-    /** Handles Qt show @a pEvent. */
-    void showEvent(QShowEvent *pEvent);
-
-    /** Handles Qt key-press @a pEvent. */
-    void keyPressEvent(QKeyEvent *pEvent);
+        /** Handles Qt show @a pEvent. */
+        void showEvent(QShowEvent *pEvent);
+        /** Handles Qt key-press @a pEvent. */
+        void keyPressEvent(QKeyEvent *pEvent);
+    /** @} */
 
     /** Returns the current log-page. */
     QTextEdit* currentLogPage();
@@ -110,12 +117,6 @@ private:
     QTextEdit* createLogPage(const QString &strPage);
     /** Returns the content of current log-page. */
     const QString& currentLog();
-
-    /** Load settings helper. */
-    void loadSettings();
-
-    /** Save settings helper. */
-    void saveSettings();
 
     /** Holds the list of all VM Log Viewers. */
     static VMLogViewerMap m_viewers;
@@ -141,7 +142,7 @@ private:
     /** Holds the list of log-content. */
     VMLogMap m_logMap;
 
-    /** Current dialog geometry. */
+    /** Holds the current dialog geometry. */
     QRect m_geometry;
 
     /** Holds the help button instance. */

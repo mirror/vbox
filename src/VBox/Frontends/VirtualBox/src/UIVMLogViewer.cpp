@@ -47,6 +47,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
 /** QWidget extension
   * providing GUI for search-panel in VM Log-Viewer. */
 class UIVMLogViewerSearchPanel : public QIWithRetranslateUI<QWidget>
@@ -77,26 +78,35 @@ private slots:
       * @param  iButton  Specifies id of next/back button. */
     void find(int iButton)
     {
+        /* If button-id is 1, findNext: */
         if (iButton)
             findNext();
+        /* If button-id is 0, findBack: */
         else
             findBack();
     }
 
-    /** Handles textchanged event from search-editor.
+    /** Handles textchanged signal from search-editor.
       * @param  strSearchString  Specifies search-string. */
     void findCurrent(const QString &strSearchString)
     {
+        /* Enable/disable Next-Previous buttons as per search-string validity: */
         m_pNextPrevButtons->setEnabled(0, strSearchString.length());
         m_pNextPrevButtons->setEnabled(1, strSearchString.length());
+        /* Show/hide the warning as per search-string validity: */
         toggleWarning(!strSearchString.length());
+        /* If search-string is valid: */
         if (strSearchString.length())
             search(true, true);
+        /* If search-string is not valid, reset cursor position: */
         else
         {
+            /* Get current log-page: */
             QTextEdit *pBrowser = m_pViewer->currentLogPage();
+            /* If current log-page is valid and cursor has selection: */
             if (pBrowser && pBrowser->textCursor().hasSelection())
             {
+                /* Get cursor and reset position: */
                 QTextCursor cursor = pBrowser->textCursor();
                 cursor.setPosition(cursor.anchor());
                 pBrowser->setTextCursor(cursor);
@@ -109,9 +119,6 @@ private:
     /** Prepares search-panel. */
     void prepare()
     {
-        /* Prepare main-layout: */
-        prepareMainLayout();
-
         /* Prepare widgets: */
         prepareWidgets();
 
@@ -122,132 +129,128 @@ private:
         retranslateUi();
     }
 
-    /** Prepares main-layout. */
-    void prepareMainLayout()
+    /** Prepares widgets. */
+    void prepareWidgets()
     {
         /* Create main-layout: */
         m_pMainLayout = new QHBoxLayout(this);
         AssertPtrReturnVoid(m_pMainLayout);
         {
-            /* Prepare main-layout: */
+            /* Configure main-layout: */
             m_pMainLayout->setSpacing(5);
             /* Not sure 0 margins are default, but just to be safe: */
             m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-        }
-    }
 
-    /** Prepares widgets. */
-    void prepareWidgets()
-    {
-        /* Create close-button: */
-        m_pCloseButton = new UIMiniCancelButton(this);
-        AssertPtrReturnVoid(m_pCloseButton);
-        {
-            /* Add close-button to main-layout: */
-            m_pMainLayout->addWidget(m_pCloseButton);
-        }
+            /* Create close-button: */
+            m_pCloseButton = new UIMiniCancelButton;
+            AssertPtrReturnVoid(m_pCloseButton);
+            {
+                /* Add close-button to main-layout: */
+                m_pMainLayout->addWidget(m_pCloseButton);
+            }
 
-        /* Create search-editor: */
-        m_pSearchEditor = new UISearchField(this);
-        AssertPtrReturnVoid(m_pSearchEditor);
-        {
-            /* Configure search-editor: */
-            m_pSearchEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-            /* Add search-editor to main-layout: */
-            m_pMainLayout->addWidget(m_pSearchEditor);
-        }
+            /* Create search-editor: */
+            m_pSearchEditor = new UISearchField(this);
+            AssertPtrReturnVoid(m_pSearchEditor);
+            {
+                /* Configure search-editor: */
+                m_pSearchEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+                /* Add search-editor to main-layout: */
+                m_pMainLayout->addWidget(m_pSearchEditor);
+            }
 
-        /* Create search-label: */
-        m_pSearchLabel = new QLabel(this);
-        AssertPtrReturnVoid(m_pSearchLabel);
-        {
-            /* Configure search-label: */
-            m_pSearchLabel->setBuddy(m_pSearchEditor);
-            /* Prepare font: */
+            /* Create search-label: */
+            m_pSearchLabel = new QLabel;
+            AssertPtrReturnVoid(m_pSearchLabel);
+            {
+                /* Configure search-label: */
+                m_pSearchLabel->setBuddy(m_pSearchEditor);
+                /* Prepare font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pSearchLabel->font();
-            font.setPointSize(::darwinSmallFontSize());
-            m_pSearchLabel->setFont(font);
+                QFont font = m_pSearchLabel->font();
+                font.setPointSize(::darwinSmallFontSize());
+                m_pSearchLabel->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-            /* Add search-label to main-layout: */
-            m_pMainLayout->addWidget(m_pSearchLabel);
-        }
+                /* Add search-label to main-layout: */
+                m_pMainLayout->addWidget(m_pSearchLabel);
+            }
 
-        /* Create Next/Prev button-box: */
-        m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
-        AssertPtrReturnVoid(m_pNextPrevButtons);
-        {
-            /* Prepare Next/Prev button-box: */
-            m_pNextPrevButtons->setEnabled(0, false);
-            m_pNextPrevButtons->setEnabled(1, false);
+            /* Create Next/Prev button-box: */
+            m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
+            AssertPtrReturnVoid(m_pNextPrevButtons);
+            {
+                /* Configure Next/Prev button-box: */
+                m_pNextPrevButtons->setEnabled(0, false);
+                m_pNextPrevButtons->setEnabled(1, false);
 #ifndef Q_WS_MAC
-            /* No icons on the Mac: */
-            m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
-            m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+                /* No icons on the Mac: */
+                m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+                m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
 #endif /* !Q_WS_MAC */
-            /* Add Next/Prev button-box to main-layout: */
-            m_pMainLayout->addWidget(m_pNextPrevButtons);
-        }
+                /* Add Next/Prev button-box to main-layout: */
+                m_pMainLayout->addWidget(m_pNextPrevButtons);
+            }
 
-        /* Create case-sensitive checkbox: */
-        m_pCaseSensitiveCheckBox = new QCheckBox(this);
-        AssertPtrReturnVoid(m_pCaseSensitiveCheckBox);
-        {
-            /* Configure focus for case-sensitive checkbox: */
-            setFocusProxy(m_pCaseSensitiveCheckBox);
-            /* Prepare font: */
+            /* Create case-sensitive checkbox: */
+            m_pCaseSensitiveCheckBox = new QCheckBox;
+            AssertPtrReturnVoid(m_pCaseSensitiveCheckBox);
+            {
+                /* Configure focus for case-sensitive checkbox: */
+                setFocusProxy(m_pCaseSensitiveCheckBox);
+                /* Configure font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pCaseSensitiveCheckBox->font();
-            font.setPointSize(::darwinSmallFontSize());
-            m_pCaseSensitiveCheckBox->setFont(font);
+                QFont font = m_pCaseSensitiveCheckBox->font();
+                font.setPointSize(::darwinSmallFontSize());
+                m_pCaseSensitiveCheckBox->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-            /* Add case-sensitive checkbox to main-layout: */
-            m_pMainLayout->addWidget(m_pCaseSensitiveCheckBox);
-        }
+                /* Add case-sensitive checkbox to main-layout: */
+                m_pMainLayout->addWidget(m_pCaseSensitiveCheckBox);
+            }
 
-        /* Create warning-spacer: */
-        m_pWarningSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-        AssertPtrReturnVoid(m_pWarningSpacer);
-        {
-            /* Add warning-spacer to main-layout: */
-            m_pMainLayout->addItem(m_pWarningSpacer);
-        }
+            /* Create warning-spacer: */
+            m_pWarningSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+            AssertPtrReturnVoid(m_pWarningSpacer);
+            {
+                /* Add warning-spacer to main-layout: */
+                m_pMainLayout->addItem(m_pWarningSpacer);
+            }
 
-        /* Create warning-icon: */
-        m_pWarningIcon = new QLabel(this);
-        AssertPtrReturnVoid(m_pWarningIcon);
-        {
-            /* Confifure warning-icon: */
-            m_pWarningIcon->hide();
-            QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, this);
-            if (!icon.isNull())
-                m_pWarningIcon->setPixmap(icon.pixmap(16, 16));
-            /* Add warning-icon to main-layout: */
-            m_pMainLayout->addWidget(m_pWarningIcon);
-        }
+            /* Create warning-icon: */
+            m_pWarningIcon = new QLabel;
+            AssertPtrReturnVoid(m_pWarningIcon);
+            {
+                /* Confifure warning-icon: */
+                m_pWarningIcon->hide();
+                QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, this);
+                if (!icon.isNull())
+                    m_pWarningIcon->setPixmap(icon.pixmap(16, 16));
+                /* Add warning-icon to main-layout: */
+                m_pMainLayout->addWidget(m_pWarningIcon);
+            }
 
-        /* Create warning-label: */
-        m_pWarningLabel = new QLabel(this);
-        AssertPtrReturnVoid(m_pWarningLabel);
-        {
-            /* Configure warning-label: */
-            m_pWarningLabel->hide();
-            /* Prepare font: */
+            /* Create warning-label: */
+            m_pWarningLabel = new QLabel;
+            AssertPtrReturnVoid(m_pWarningLabel);
+            {
+                /* Configure warning-label: */
+                m_pWarningLabel->hide();
+                /* Prepare font: */
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pWarningLabel->font();
-            font.setPointSize(::darwinSmallFontSize());
-            m_pWarningLabel->setFont(font);
+                QFont font = m_pWarningLabel->font();
+                font.setPointSize(::darwinSmallFontSize());
+                m_pWarningLabel->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-            /* Add warning-label to main-layout: */
-            m_pMainLayout->addWidget(m_pWarningLabel);
-        }
+                /* Add warning-label to main-layout: */
+                m_pMainLayout->addWidget(m_pWarningLabel);
+            }
 
-        /* Create spacer-item: */
-        m_pSpacerItem = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-        AssertPtrReturnVoid(m_pSpacerItem);
-        {
-            /* Add spacer-item to main-layout: */
-            m_pMainLayout->addItem(m_pSpacerItem);
+            /* Create spacer-item: */
+            m_pSpacerItem = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+            AssertPtrReturnVoid(m_pSpacerItem);
+            {
+                /* Add spacer-item to main-layout: */
+                m_pMainLayout->addItem(m_pSpacerItem);
+            }
         }
     }
 
@@ -285,7 +288,7 @@ private:
     {
         switch (pEvent->key())
         {
-            /* Process Enter press as 'search next',
+            /* Process Enter press as 'search-next',
              * performed for any search panel widget: */
             case Qt::Key_Enter:
             case Qt::Key_Return:
@@ -293,6 +296,7 @@ private:
                 if (pEvent->modifiers() == 0 ||
                     pEvent->modifiers() & Qt::KeypadModifier)
                 {
+                    /* Animate click on 'Next' button: */
                     m_pNextPrevButtons->animateClick(1);
                     return;
                 }
@@ -301,6 +305,7 @@ private:
             default:
                 break;
         }
+        /* Call to base-class: */
         QWidget::keyPressEvent(pEvent);
     }
 
@@ -319,13 +324,17 @@ private:
                 /* Handle F3/Shift+F3 as search next/previous shortcuts: */
                 if (pKeyEvent->key() == Qt::Key_F3)
                 {
+                    /* If there is no modifier 'Key-F3' is pressed: */
                     if (pKeyEvent->QInputEvent::modifiers() == 0)
                     {
+                        /* Animate click on 'Next' button: */
                         m_pNextPrevButtons->animateClick(1);
                         return true;
                     }
+                    /* If there is 'ShiftModifier' 'Shift + Key-F3' is pressed: */
                     else if (pKeyEvent->QInputEvent::modifiers() == Qt::ShiftModifier)
                     {
+                        /* Animate click on 'Prev' button: */
                         m_pNextPrevButtons->animateClick(0);
                         return true;
                     }
@@ -336,8 +345,10 @@ private:
                 {
                     if (m_pViewer->currentLogPage())
                     {
+                        /* Make sure current log-page is visible: */
                         if (isHidden())
                             show();
+                        /* Set focus on search-editor: */
                         m_pSearchEditor->setFocus();
                         return true;
                     }
@@ -346,11 +357,14 @@ private:
                 else if ((pKeyEvent->QInputEvent::modifiers() & ~Qt::ShiftModifier) == 0 &&
                          pKeyEvent->key() >= Qt::Key_Exclam && pKeyEvent->key() <= Qt::Key_AsciiTilde)
                 {
+                    /* Make sure current log-page is visible: */
                     if (m_pViewer->currentLogPage())
                     {
                         if (isHidden())
                             show();
+                        /* Set focus on search-editor: */
                         m_pSearchEditor->setFocus();
+                        /* Insert the text to search-editor, which triggers the search-operation for new text: */
                         m_pSearchEditor->insert(pKeyEvent->text());
                         return true;
                     }
@@ -367,17 +381,24 @@ private:
     /** Handles Qt show @a pEvent. */
     void showEvent(QShowEvent *pEvent)
     {
+        /* Call to base-class: */
         QWidget::showEvent(pEvent);
+        /* Set focus on search-editor: */
         m_pSearchEditor->setFocus();
+        /* Select all the text: */
         m_pSearchEditor->selectAll();
     }
 
     /** Handles Qt hide @a pEvent. */
     void hideEvent(QHideEvent *pEvent)
     {
+        /* Get focus-widget: */
         QWidget *pFocus = QApplication::focusWidget();
+        /* If focus-widget is valid and child-widget of search-panel,
+         * focus next child-widget in line: */
         if (pFocus && pFocus->parent() == this)
             focusNextPrevChild(true);
+        /* Call to base-class: */
         QWidget::hideEvent(pEvent);
     }
 
@@ -386,19 +407,24 @@ private:
       * @param  fStartCurrent  Specifies whether search should start from beginning of the log. */
     void search(bool fForward, bool fStartCurrent = false)
     {
+        /* Get current log-page: */
         QTextEdit *pBrowser = m_pViewer->currentLogPage();
         if (!pBrowser) return;
 
+        /* Get text-cursor and its attributes: */
         QTextCursor cursor = pBrowser->textCursor();
         int iPos = cursor.position();
         int iAnc = cursor.anchor();
 
+        /* Get the text to be searched: */
         QString strText = pBrowser->toPlainText();
         int iDiff = fStartCurrent ? 0 : 1;
 
         int iResult = -1;
+        /* If search-direction is forward and cursor position is valid: */
         if (fForward && (fStartCurrent || iPos < strText.size() - 1))
         {
+            /* Search and get the index of first match: */
             iResult = strText.indexOf(m_pSearchEditor->text(), iAnc + iDiff,
                                       m_pCaseSensitiveCheckBox->isChecked() ?
                                       Qt::CaseSensitive : Qt::CaseInsensitive);
@@ -409,11 +435,13 @@ private:
                                           m_pCaseSensitiveCheckBox->isChecked() ?
                                           Qt::CaseSensitive : Qt::CaseInsensitive);
         }
+        /* If search-direction is backward: */
         else if (!fForward && iAnc > 0)
             iResult = strText.lastIndexOf(m_pSearchEditor->text(), iAnc - 1,
                                           m_pCaseSensitiveCheckBox->isChecked() ?
                                           Qt::CaseSensitive : Qt::CaseInsensitive);
 
+        /* If the result is valid, move cursor-position: */
         if (iResult != -1)
         {
             cursor.movePosition(QTextCursor::Start,
@@ -426,6 +454,7 @@ private:
             pBrowser->setTextCursor(cursor);
         }
 
+        /* Show/hide the warning as per search-result: */
         toggleWarning(iResult != -1);
     }
 
@@ -438,12 +467,17 @@ private:
     /** Shows/hides the search border warning using @a fHide as hint. */
     void toggleWarning(bool fHide)
     {
+        /* Adjust size of warning-spacer accordingly: */
         m_pWarningSpacer->changeSize(fHide ? 0 : 16, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        /* If visible mark the error for search-editor (changes text-color): */
         if (!fHide)
             m_pSearchEditor->markError();
+        /* If hidden unmark the error for search-editor (changes text-color): */
         else
             m_pSearchEditor->unmarkError();
+        /* Show/hide the warning-icon: */
         m_pWarningIcon->setHidden(fHide);
+        /* Show/hide the warning-label: */
         m_pWarningLabel->setHidden(fHide);
     }
 
@@ -470,6 +504,7 @@ private:
     /** Holds the instance of spacer item we create. */
     QSpacerItem *m_pSpacerItem;
 };
+
 
 /** QWidget extension
   * providing GUI for filter panel in VM Log Viewer. */
@@ -550,9 +585,6 @@ private:
     /** Prepares filter-panel. */
     void prepare()
     {
-        /* Prepare main-layout: */
-        prepareMainLayout();
-
         /* Prepare widgets: */
         prepareWidgets();
 
@@ -563,8 +595,8 @@ private:
         retranslateUi();
     }
 
-    /** Prepares main-layout. */
-    void prepareMainLayout()
+    /** Prepares widgets. */
+    void prepareWidgets()
     {
         /* Create main-layout: */
         m_pMainLayout = new QHBoxLayout(this);
@@ -574,49 +606,45 @@ private:
             m_pMainLayout->setSpacing(5);
             /* Not sure 0 margins are default, but just to be safe: */
             m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-        }
-    }
 
-    /** Prepares widgets. */
-    void prepareWidgets()
-    {
-        /* Create close-button: */
-        m_pCloseButton = new UIMiniCancelButton(this);
-        AssertPtrReturnVoid(m_pCloseButton);
-        {
-            /* Add close-button to main-layout: */
-            m_pMainLayout->addWidget(m_pCloseButton);
-        }
+            /* Create close-button: */
+            m_pCloseButton = new UIMiniCancelButton;
+            AssertPtrReturnVoid(m_pCloseButton);
+            {
+                /* Add close-button to main-layout: */
+                m_pMainLayout->addWidget(m_pCloseButton);
+            }
 
-        /* Create filter-combobox: */
-        m_pFilterComboBox = new QComboBox(this);
-        AssertPtrReturnVoid(m_pFilterComboBox);
-        {
-            /* Configure filter-combobox: */
-            m_pFilterComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-            m_pFilterComboBox->setEditable(true);
-            QStringList strFilterPresets;
-            strFilterPresets << "" << "GUI" << "NAT" << "AHCI" << "VD" << "Audio" << "VUSB" << "SUP" << "PGM" << "HDA"
-                             << "HM" << "VMM" << "GIM" << "CPUM";
-            strFilterPresets.sort();
-            m_pFilterComboBox->addItems(strFilterPresets);
-            /* Add filter-combobox to main-layout: */
-            m_pMainLayout->addWidget(m_pFilterComboBox);
-        }
+            /* Create filter-combobox: */
+            m_pFilterComboBox = new QComboBox;
+            AssertPtrReturnVoid(m_pFilterComboBox);
+            {
+                /* Configure filter-combobox: */
+                m_pFilterComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                m_pFilterComboBox->setEditable(true);
+                QStringList strFilterPresets;
+                strFilterPresets << "" << "GUI" << "NAT" << "AHCI" << "VD" << "Audio" << "VUSB" << "SUP" << "PGM" << "HDA"
+                                 << "HM" << "VMM" << "GIM" << "CPUM";
+                strFilterPresets.sort();
+                m_pFilterComboBox->addItems(strFilterPresets);
+                /* Add filter-combobox to main-layout: */
+                m_pMainLayout->addWidget(m_pFilterComboBox);
+            }
 
-        /* Create filter-label: */
-        m_pFilterLabel = new QLabel(this);
-        AssertPtrReturnVoid(m_pFilterLabel);
-        {
-            /* Configure filter-label: */
-            m_pFilterLabel->setBuddy(m_pFilterComboBox);
+            /* Create filter-label: */
+            m_pFilterLabel = new QLabel;
+            AssertPtrReturnVoid(m_pFilterLabel);
+            {
+                /* Configure filter-label: */
+                m_pFilterLabel->setBuddy(m_pFilterComboBox);
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-            QFont font = m_pFilterLabel->font();
-            font.setPointSize(::darwinSmallFontSize());
-            m_pFilterLabel->setFont(font);
+                QFont font = m_pFilterLabel->font();
+                font.setPointSize(::darwinSmallFontSize());
+                m_pFilterLabel->setFont(font);
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-            /* Add filter-label to main-layout: */
-            m_pMainLayout->addWidget(m_pFilterLabel);
+                /* Add filter-label to main-layout: */
+                m_pMainLayout->addWidget(m_pFilterLabel);
+            }
         }
     }
 
@@ -673,16 +701,22 @@ private:
     /** Handles the Qt show @a pEvent. */
     void showEvent(QShowEvent *pEvent)
     {
+        /* Call to base-class: */
         QWidget::showEvent(pEvent);
+        /* Set focus to combo-box: */
         m_pFilterComboBox->setFocus();
     }
 
     /** Handles the Qt hide @a pEvent. */
     void hideEvent(QHideEvent *pEvent)
     {
+        /* Get focused widget: */
         QWidget *pFocus = QApplication::focusWidget();
+        /* If focus-widget is valid and child-widget of search-panel,
+         * focus next child-widget in line: */
         if (pFocus && pFocus->parent() == this)
             focusNextPrevChild(true);
+        /* Call to base-class: */
         QWidget::hideEvent(pEvent);
     }
 
@@ -699,6 +733,11 @@ private:
     /** Holds the filter text. */
     QString m_strFilterText;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIVMLogViewer implementation.                                                                                          *
+*********************************************************************************************************************************/
 
 /** Holds the VM Log-Viewer array. */
 VMLogViewerMap UIVMLogViewer::m_viewers = VMLogViewerMap();
@@ -898,7 +937,7 @@ void UIVMLogViewer::prepare()
     /* Load settings: */
     loadSettings();
 
-    /* Loading language constants */
+    /* Loading language constants: */
     retranslateUi();
 }
 
@@ -908,7 +947,7 @@ void UIVMLogViewer::prepareWidgets()
     m_pViewerContainer = new QITabWidget(centralWidget());
     AssertPtrReturnVoid(m_pViewerContainer);
     {
-        /* Layout VM Log-Viewer container: */
+        /* Add VM Log-Viewer container to main-layout: */
         m_pMainLayout->insertWidget(0, m_pViewerContainer);
     }
 
@@ -919,7 +958,7 @@ void UIVMLogViewer::prepareWidgets()
         /* Configure VM Log-Viewer search-panel: */
         centralWidget()->installEventFilter(m_pSearchPanel);
         m_pSearchPanel->hide();
-        /* Layout VM Log-Viewer search-panel: */
+        /* Add VM Log-Viewer search-panel to main-layout: */
         m_pMainLayout->insertWidget(1, m_pSearchPanel);
     }
 
@@ -930,7 +969,7 @@ void UIVMLogViewer::prepareWidgets()
         /* Configure VM Log-Viewer filter-panel: */
         centralWidget()->installEventFilter(m_pFilterPanel);
         m_pFilterPanel->hide();
-        /* Layout VM Log-Viewer filter-panel: */
+        /* Add VM Log-Viewer filter-panel to main-layout: */
         m_pMainLayout->insertWidget(2, m_pFilterPanel);
     }
 
@@ -963,6 +1002,61 @@ void UIVMLogViewer::prepareConnections()
     connect(m_pButtonClose, SIGNAL(clicked()), this, SLOT(close()));
     connect(m_pButtonSave, SIGNAL(clicked()), this, SLOT(save()));
     connect(m_pButtonFilter, SIGNAL(clicked()), this, SLOT(filter()));
+}
+
+void UIVMLogViewer::loadSettings()
+{
+    /* Restore window geometry: */
+    {
+        /* Getting available geometry to calculate default geometry: */
+        const QRect desktopRect = vboxGlobal().availableGeometry(this);
+        int iDefaultWidth = desktopRect.width() / 2;
+        int iDefaultHeight = desktopRect.height() * 3 / 4;
+
+        /* Calculate default width to fit 132 characters: */
+        QTextEdit *pCurrentLogPage = currentLogPage();
+        if (pCurrentLogPage)
+        {
+            iDefaultWidth = pCurrentLogPage->fontMetrics().width(QChar('x')) * 132 +
+                            pCurrentLogPage->verticalScrollBar()->width() +
+                            pCurrentLogPage->frameWidth() * 2 +
+                            10 * 2 /* m_pViewerContainer margin */ +
+                            10 * 2 /* CentralWidget margin */;
+        }
+        QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
+        defaultGeometry.moveCenter(parentWidget()->geometry().center());
+
+        /* Load geometry: */
+        m_geometry = gEDataManager->logWindowGeometry(this, defaultGeometry);
+#ifdef Q_WS_MAC
+        move(m_geometry.topLeft());
+        resize(m_geometry.size());
+#else /* !Q_WS_MAC */
+        setGeometry(m_geometry);
+#endif /* !Q_WS_MAC */
+        LogRel2(("GUI: UIVMLogViewer: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+
+        /* Maximize (if necessary): */
+        if (gEDataManager->logWindowShouldBeMaximized())
+            showMaximized();
+    }
+}
+
+void UIVMLogViewer::saveSettings()
+{
+    /* Save window geometry: */
+    {
+        /* Save geometry: */
+        const QRect saveGeometry = geometry();
+#ifdef Q_WS_MAC
+        gEDataManager->setLogWindowGeometry(saveGeometry, ::darwinIsWindowMaximized(this));
+#else /* !Q_WS_MAC */
+        gEDataManager->setLogWindowGeometry(saveGeometry, isMaximized());
+#endif /* !Q_WS_MAC */
+        LogRel2(("GUI: UIVMLogViewer: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
+                 saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
+    }
 }
 
 void UIVMLogViewer::cleanup()
@@ -1005,7 +1099,7 @@ void UIVMLogViewer::showEvent(QShowEvent *pEvent)
     if (m_fIsPolished)
         return;
 
-    m_fIsPolished = true;   
+    m_fIsPolished = true;
 
     /* Make sure the log view widget has the focus: */
     QWidget *pCurrentLogPage = currentLogPage();
@@ -1052,15 +1146,17 @@ void UIVMLogViewer::keyPressEvent(QKeyEvent *pEvent)
 
 QTextEdit* UIVMLogViewer::currentLogPage()
 {
+    /* If viewer-container is enabled: */
     if (m_pViewerContainer->isEnabled())
     {
+        /* Get and return current log-page: */
         QWidget *pContainer = m_pViewerContainer->currentWidget();
         QTextEdit *pBrowser = pContainer->findChild<QTextEdit*>();
         Assert(pBrowser);
         return pBrowser ? pBrowser : 0;
     }
-    else
-        return 0;
+    /* Return NULL by default: */
+    return 0;
 }
 
 QTextEdit* UIVMLogViewer::createLogPage(const QString &strName)
@@ -1098,61 +1194,6 @@ QTextEdit* UIVMLogViewer::createLogPage(const QString &strName)
 const QString& UIVMLogViewer::currentLog()
 {
     return m_logMap[currentLogPage()];
-}
-
-void UIVMLogViewer::loadSettings()
-{
-    /* Restore window geometry: */
-    {
-        /* Getting available geometry to calculate default geometry: */
-        const QRect desktopRect = vboxGlobal().availableGeometry(this);
-        int iDefaultWidth = desktopRect.width() / 2;
-        int iDefaultHeight = desktopRect.height() * 3 / 4;
-
-        /* Calculate default width to fit 132 characters: */
-        QTextEdit *pCurrentLogPage = currentLogPage();
-        if (pCurrentLogPage)
-        {
-            iDefaultWidth = pCurrentLogPage->fontMetrics().width(QChar('x')) * 132 +
-                pCurrentLogPage->verticalScrollBar()->width() +
-                pCurrentLogPage->frameWidth() * 2 +
-                /* m_pViewerContainer margin */ 10 * 2 +
-                /* CentralWidget margin */ 10 * 2;
-        }
-        QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
-        defaultGeometry.moveCenter(parentWidget()->geometry().center());
-
-        /* Load geometry: */
-        m_geometry = gEDataManager->logWindowGeometry(this, defaultGeometry);
-#ifdef Q_WS_MAC
-        move(m_geometry.topLeft());
-        resize(m_geometry.size());
-#else /* Q_WS_MAC */
-        setGeometry(m_geometry);
-#endif /* !Q_WS_MAC */
-        LogRel2(("GUI: UIVMLogViewer: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
-                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
-
-        /* Maximize (if necessary): */
-        if (gEDataManager->logWindowShouldBeMaximized())
-            showMaximized();
-    }
-}
-
-void UIVMLogViewer::saveSettings()
-{
-    /* Save window geometry: */
-    {
-        /* Save geometry: */
-        const QRect saveGeometry = geometry();
-#ifdef Q_WS_MAC
-        gEDataManager->setLogWindowGeometry(saveGeometry, ::darwinIsWindowMaximized(this));
-#else /* Q_WS_MAC */
-        gEDataManager->setLogWindowGeometry(saveGeometry, isMaximized());
-#endif /* !Q_WS_MAC */
-        LogRel2(("GUI: UIVMLogViewer: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
-                 saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
-    }
 }
 
 #include "UIVMLogViewer.moc"
