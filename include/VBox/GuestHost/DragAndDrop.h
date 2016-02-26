@@ -204,9 +204,9 @@ public:
     void RemoveFirst(void);
     int RootFromURIData(const void *pvData, size_t cbData, uint32_t fFlags);
     RTCString RootToString(const RTCString &strPathBase = "", const RTCString &strSeparator = "\r\n") const;
-    size_t RootCount(void) const { return m_lstRoot.size(); }
-    uint32_t TotalCount(void) const { return m_cTotal; }
-    size_t TotalBytes(void) const { return m_cbTotal; }
+    uint64_t RootCount(void) const { return m_lstRoot.size(); }
+    uint64_t TotalCount(void) const { return m_cTotal; }
+    uint64_t TotalBytes(void) const { return m_cbTotal; }
 
 protected:
 
@@ -224,10 +224,12 @@ protected:
      *  added (lazy or not). */
     RTCList<DnDURIObject *> m_lstTree;
     /** Total number of all URI objects. */
-    uint32_t                m_cTotal; /** @todo Really needed? m_lstTree.size()? */
+    uint64_t                m_cTotal;
     /** Total size of all URI objects, that is, the file
-     *  size of all objects (in bytes). */
-    size_t                  m_cbTotal;
+     *  size of all objects (in bytes).
+     *  Note: Do *not* size_t here, as we also want to support large files
+     *        on 32-bit guests. */
+    uint64_t                m_cbTotal;
 };
 #endif /* ___VBox_GuestHost_DragAndDrop_h */
 
