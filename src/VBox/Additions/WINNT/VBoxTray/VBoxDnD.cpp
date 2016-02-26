@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2015 Oracle Corporation
+ * Copyright (C) 2013-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -798,7 +798,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
          * Check if reported formats from host are compatible with this client.
          */
         size_t cFormatsSup    = this->lstFmtSup.size();
-        size_t cFormatsActive = 0;
+        ULONG  cFormatsActive = 0;
 
         LPFORMATETC pFormatEtc = new FORMATETC[cFormatsSup];
         RT_BZERO(pFormatEtc, sizeof(FORMATETC) * cFormatsSup);
@@ -1219,10 +1219,10 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
         /** @todo Support more than one action at a time. */
         uAllActions = uDefAction;
 
-        rc = VbglR3DnDGHSendAckPending(&mDnDCtx,
-                                       uDefAction, uAllActions,
-                                       strFormats.c_str(), strFormats.length() + 1 /* Include termination */);
-        if (RT_FAILURE(rc))
+        int rc2 = VbglR3DnDGHSendAckPending(&mDnDCtx,
+                                            uDefAction, uAllActions,
+                                            strFormats.c_str(), strFormats.length() + 1 /* Include termination */);
+        if (RT_FAILURE(rc2))
         {
             char szMsg[256]; /* Sizes according to MSDN. */
             char szTitle[64];
@@ -1232,18 +1232,23 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
             RTStrPrintf(szMsg, sizeof(szMsg), "Drag and drop to the host either is not supported or disabled. "
                                               "Please enable Guest to Host or Bidirectional drag and drop mode "
                                               "or re-install the VirtualBox Guest Additions.");
-            switch (rc)
+            switch (rc2)
             {
                 case VERR_ACCESS_DENIED:
+                {
                     rc = hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
                                            szMsg, szTitle,
                                            15 * 1000 /* Time to display in msec */, NIIF_INFO);
                     AssertRC(rc);
                     break;
+                }
 
                 default:
                     break;
             }
+
+            LogRel2(("DnD: Host refuses drag and drop operation from guest: %Rrc\n", rc2));
+            reset();
         }
     }
 
@@ -1268,7 +1273,7 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormat,
                             uint32_t uDefAction)
 {
     AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
-    AssertReturn(cbFormat, VERR_INVALID_PARAMETER);
+    AssertReturn(cbFormat,     VERR_INVALID_PARAMETER);
 
     LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, pszFormat=%s, uDefAction=0x%x\n",
                      mMode, mState, pDropTarget, pszFormat, uDefAction));
@@ -1278,7 +1283,7 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormat,
         if (mState == Dragging)
         {
             AssertPtr(pDropTarget);
-            rc = pDropTarget->WaitForDrop(30 * 1000 /* Timeout in ms */);
+            rc = pDropTarget->WaitForDrop(5 * 1000 /* 5s timeout */);
 
             reset();
         }
@@ -1292,17 +1297,32 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormat,
         if (RT_SUCCESS(rc))
         {
             /** @todo Respect uDefAction. */
-            void *pvData = pDropTarget->DataMutableRaw();
-            AssertPtr(pvData);
+            void *pvData    = pDropTarget->DataMutableRaw();
             uint32_t cbData = pDropTarget->DataSize();
-            Assert(cbData);
 
-            rc = VbglR3DnDGHSendData(&mDnDCtx, pszFormat, pvData, cbData);
-            LogFlowFunc(("Sent pvData=0x%p, cbData=%RU32, rc=%Rrc\n", pvData, cbData, rc));
+            if (   pvData
+                && cbData)
+            {
+                rc = VbglR3DnDGHSendData(&mDnDCtx, pszFormat, pvData, cbData);
+                LogFlowFunc(("Sent pvData=0x%p, cbData=%RU32, rc=%Rrc\n", pvData, cbData, rc));
+            }
+            else
+                rc = VERR_NO_DATA;
         }
     }
     else
         rc = VERR_WRONG_ORDER;
+
+    if (RT_FAILURE(rc))
+    {
+        /*
+         * If an error occurred or the guest is in a wrong DnD mode,
+         * send an error to the host in any case so that the host does
+         * not wait for the data it expects from the guest.
+         */
+        int rc2 = VbglR3DnDGHSendError(&mDnDCtx, rc);
+        AssertRC(rc2);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1498,9 +1518,8 @@ int VBoxDnDWnd::mouseMove(int x, int y, DWORD dwMouseInputFlags)
  */
 int VBoxDnDWnd::mouseRelease(void)
 {
-#ifdef DEBUG_andy
-    LogFlowFunc(("\n"));
-#endif
+    LogFlowFuncEnter();
+
     int rc;
 
     /* Release mouse button in the guest to start the "drop"
@@ -1785,15 +1804,17 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
                 pEvent = NULL;
             }
             else
-                LogFlowFunc(("Processing event failed with rc=%Rrc\n", rc));
+                LogRel(("DnD: Processing proxy window event %RU32 on screen %RU32 failed with %Rrc\n",
+                        pEvent->Event.uType, pEvent->Event.uScreenId, rc));
         }
         else if (rc == VERR_INTERRUPTED) /* Disconnected from service. */
         {
-            LogFlowFunc(("Posting quit message ...\n"));
+            LogRel(("DnD: Received quit message, shutting down ...\n"));
             pWnd->PostMessage(WM_QUIT, 0 /* wParm */, 0 /* lParm */);
             rc = VINF_SUCCESS;
         }
-        else
+
+        if (RT_FAILURE(rc))
         {
             LogFlowFunc(("Processing next message failed with rc=%Rrc\n", rc));
 
@@ -1808,8 +1829,20 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
                 break;
             }
 
+            /* Make sure our proxy window is hidden when an error occured to
+             * not block the guest's UI. */
+            pWnd->hide();
+
             int rc2 = VbglR3DnDGHSendError(&pCtx->cmdCtx, rc);
-            AssertRC(rc2);
+            if (RT_FAILURE(rc2))
+            {
+                /* Ignore the following errors reported back from the host. */
+                if (   rc2 != VERR_NOT_SUPPORTED
+                    && rc2 != VERR_NOT_IMPLEMENTED)
+                {
+                    LogRel(("DnD: Could not report error %Rrc back to host: %Rrc\n", rc, rc2));
+                }
+            }
         }
 
         if (ASMAtomicReadBool(&pCtx->fShutdown))
@@ -1825,9 +1858,9 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
         pEvent = NULL;
     }
 
-    LogFlowFunc(("Shutting down ...\n"));
-
     VbglR3DnDDisconnect(&pCtx->cmdCtx);
+
+    LogRel(("DnD: Ended\n"));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
