@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2015 Oracle Corporation
+ * Copyright (C) 2013-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -111,9 +111,13 @@ public: /* IDropSource methods. */
 
 protected:
 
+    /** Reference count of this object. */
     LONG                  mRefCount;
+    /** Pointer to parent proxy window. */
     VBoxDnDWnd           *mpWndParent;
+    /** Current drag effect. */
     DWORD                 mdwCurEffect;
+    /** Current action to perform on the host. */
     uint32_t              muCurAction;
 };
 
@@ -139,28 +143,37 @@ public: /* IDropTarget methods. */
 
 protected:
 
+    static void DumpFormats(IDataObject *pDataObject);
     static DWORD GetDropEffect(DWORD grfKeyState, DWORD dwAllowedEffects);
     void reset(void);
 
 public:
 
-    void *DataMutableRaw(void) { return mpvData; }
-    uint32_t DataSize(void) { return mcbData; }
-    RTCString Formats(void);
+    void *DataMutableRaw(void) const { return mpvData; }
+    size_t DataSize(void) const { return mcbData; }
+    RTCString Formats(void) const;
     int WaitForDrop(RTMSINTERVAL msTimeout);
 
 protected:
 
+    /** Reference count of this object. */
     LONG                  mRefCount;
+    /** Pointer to parent proxy window. */
     VBoxDnDWnd           *mpWndParent;
+    /** Current drop effect. */
     DWORD                 mdwCurEffect;
-    /** Copy of the data object's FORMATETC struct.
+    /** Copy of the data object's current FORMATETC struct.
      *  Note: We don't keep the pointer of the DVTARGETDEVICE here! */
     FORMATETC             mFormatEtc;
-    RTCString             mFormats;
+    /** Stringified data object's formats string.  */
+    RTCString             mstrFormats;
+    /** Pointer to actual format data. */
     void                 *mpvData;
-    uint32_t              mcbData;
+    /** Size (in bytes) of format data. */
+    size_t                mcbData;
+    /** Event for waiting on the "drop" event. */
     RTSEMEVENT            hEventDrop;
+    /** Result of the drop event. */
     int                   mDroppedRc;
 };
 
