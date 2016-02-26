@@ -173,7 +173,8 @@ HRESULT MousePointerShape::getHeight(ULONG *aHeight)
 HRESULT MousePointerShape::getShape(std::vector<BYTE> &aShape)
 {
     aShape.resize(m.shape.size());
-    memcpy(&aShape.front(), &m.shape.front(), aShape.size());
+    if (m.shape.size())
+        memcpy(&aShape.front(), &m.shape.front(), aShape.size());
     return S_OK;
 }
 
