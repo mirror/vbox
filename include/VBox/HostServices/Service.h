@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -63,22 +63,16 @@ public:
     {
         if (m_uMsg != uMsg)
         {
-            LogFlowFunc(("Message type does not match (%u (buffer), %u (guest))\n",
-                         m_uMsg, uMsg));
+            LogFlowFunc(("Message type does not match (%RU32 (buffer), %RU32 (guest))\n", m_uMsg, uMsg));
             return VERR_INVALID_PARAMETER;
         }
-        if (m_cParms != cParms)
+        if (m_cParms > cParms)
         {
-            LogFlowFunc(("Parameter count does not match (%u (buffer), %u (guest))\n",
-                         m_cParms, cParms));
+            LogFlowFunc(("Parameter count does not match (%RU32 (buffer), %RU32 (guest))\n", m_cParms, cParms));
             return VERR_INVALID_PARAMETER;
         }
 
-        int rc = copyParmsInternal(cParms, m_paParms, &aParms[0], false /* fCreatePtrs */);
-
-//        if (RT_FAILURE(rc))
-//            cleanup(aParms);
-        return rc;
+        return copyParmsInternal(&aParms[0], cParms, m_paParms, m_cParms, false /* fDeepCopy */);
     }
 
     int getParmU32Info(uint32_t iParm, uint32_t *pu32Info) const
@@ -116,15 +110,18 @@ public:
         return VINF_SUCCESS;
     }
 
-    static int copyParms(uint32_t cParms, PVBOXHGCMSVCPARM paParmsSrc, PVBOXHGCMSVCPARM paParmsDst)
+    static int copyParms(PVBOXHGCMSVCPARM paParmsDst, uint32_t cParmsDst, PVBOXHGCMSVCPARM paParmsSrc, uint32_t cParmsSrc)
     {
-        return copyParmsInternal(cParms, paParmsSrc, paParmsDst, false /* fCreatePtrs */);
+        return copyParmsInternal(paParmsDst, cParmsDst, paParmsSrc, cParmsSrc, false /* fDeepCopy */);
     }
 
 private:
 
-    uint32_t m_uMsg;
-    uint32_t m_cParms;
+    /** Stored message type. */
+    uint32_t         m_uMsg;
+    /** Number of stored HGCM parameters. */
+    uint32_t         m_cParms;
+    /** Stored HGCM parameters. */
     PVBOXHGCMSVCPARM m_paParms;
 
     int initData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[])
@@ -145,18 +142,25 @@ private:
                 return VERR_NO_MEMORY;
         }
 
-        int rc = copyParmsInternal(cParms, &aParms[0], m_paParms, true /* fCreatePtrs */);
-
+        int rc = copyParmsInternal(m_paParms, m_cParms, &aParms[0], cParms, true /* fDeepCopy */);
         if (RT_FAILURE(rc))
             cleanup();
 
         return rc;
     }
 
-    static int copyParmsInternal(uint32_t cParms, PVBOXHGCMSVCPARM paParmsSrc, PVBOXHGCMSVCPARM paParmsDst, bool fCreatePtrs)
+    static int copyParmsInternal(PVBOXHGCMSVCPARM paParmsDst, uint32_t cParmsDst,
+                                 PVBOXHGCMSVCPARM paParmsSrc, uint32_t cParmsSrc,
+                                 bool fDeepCopy)
     {
+        AssertPtrReturn(paParmsSrc, VERR_INVALID_POINTER);
+        AssertPtrReturn(paParmsDst, VERR_INVALID_POINTER);
+
+        if (cParmsSrc > cParmsDst)
+            return VERR_BUFFER_OVERFLOW;
+
         int rc = VINF_SUCCESS;
-        for (uint32_t i = 0; i < cParms; ++i)
+        for (uint32_t i = 0; i < cParmsSrc; i++)
         {
             paParmsDst[i].type = paParmsSrc[i].type;
             switch (paParmsSrc[i].type)
@@ -173,8 +177,8 @@ private:
                 }
                 case VBOX_HGCM_SVC_PARM_PTR:
                 {
-                    /* Do we have to recreate the memory? */
-                    if (fCreatePtrs)
+                    /* Do we have to perform a deep copy? */
+                    if (fDeepCopy)
                     {
                         /* Yes, do so. */
                         paParmsDst[i].u.pointer.size = paParmsSrc[i].u.pointer.size;
