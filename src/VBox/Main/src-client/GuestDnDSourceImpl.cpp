@@ -525,6 +525,10 @@ Utf8Str GuestDnDSource::i_hostErrorToString(int hostRc)
                                       "elements can be accessed and that your host user has the appropriate rights."));
             break;
 
+        case VERR_DISK_FULL:
+            strError += Utf8StrFmt(tr("Host disk ran out of space (disk is full)."));
+            break;
+
         case VERR_NOT_FOUND:
             /* Should not happen due to file locking on the host, but anyway ... */
             strError += Utf8StrFmt(tr("One or more host files or directories selected for transferring to the host were not"
@@ -718,6 +722,11 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
         if (RT_SUCCESS(rc))
         {
             pCtx->mURI.processObject(*pObj);
+
+            /* Add for having a proper rollback. */
+            int rc2 = pCtx->mURI.getDroppedFiles().AddDir(pszDir);
+            AssertRC(rc2);
+
             objCtx.reset();
             LogRel2(("DnD: Created guest directory on host: %s\n", pszDir));
         }
@@ -829,6 +838,12 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
             rc = pObj->OpenEx(pszPathAbs, DnDURIObject::File, DnDURIObject::Target,
                               RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
                               (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
+            if (RT_SUCCESS(rc))
+            {
+                /* Add for having a proper rollback. */
+                int rc2 = pCtx->mURI.getDroppedFiles().AddFile(pszPathAbs);
+                AssertRC(rc2);
+            }
         }
 
         if (RT_SUCCESS(rc))
@@ -916,6 +931,8 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
             if (RT_SUCCESS(rc))
                 rc = updateProgress(&pCtx->mData, pCtx->mpResp, cbWritten);
         }
+        else /* Something went wrong; close the object. */
+            pObj->Close();
 
         if (RT_SUCCESS(rc))
         {
@@ -1153,8 +1170,9 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         }
         else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
         {
-            rc = pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR,
-                                           rc, GuestDnDSource::i_hostErrorToString(rc));
+            int rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR,
+                                                rc, GuestDnDSource::i_hostErrorToString(rc));
+            AssertRC(rc2);
         }
     }
 
@@ -1256,13 +1274,11 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
 
-    int rc2;
-
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_CANCELLED)
         {
-            rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED);
+            int rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED);
             AssertRC(rc2);
 
             rc2 = sendCancel();
@@ -1270,16 +1286,18 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         }
         else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
         {
-            rc = pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR,
-                                           rc, GuestDnDSource::i_hostErrorToString(rc));
+            int rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR,
+                                                rc, GuestDnDSource::i_hostErrorToString(rc));
+            AssertRC(rc2);
         }
     }
 
     if (RT_FAILURE(rc))
     {
-        rc2 = droppedFiles.Rollback();
+        int rc2 = droppedFiles.Rollback();
         if (RT_FAILURE(rc2))
-            LogRel2(("DnD: Rollback failed with %Rrc\n", rc2));
+            LogRel(("DnD: Deleting left over temporary files failed (%Rrc). Please remove directory manually: %s\n",
+                    rc2, droppedFiles.GetDirAbs()));
     }
 
     droppedFiles.Close();
