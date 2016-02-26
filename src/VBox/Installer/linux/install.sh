@@ -370,7 +370,7 @@ if [ "$ACTION" = "install" ]; then
     "${INSTALLATION_DIR}/postinst-common.sh" ${START_SERVICES} >> "${LOG}"
 
     info ""
-    if [ ! "$MODULE_FAILED" = "true" ]
+    if test -n "${START_SERVICES}" || lsmod | grep -q vboxdrv
     then
         info "VirtualBox has been installed successfully."
     else
