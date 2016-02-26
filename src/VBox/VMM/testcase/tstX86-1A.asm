@@ -240,6 +240,7 @@ GLOBALNAME g_aTrapInfo
         mov     eax, __LINE__
         jmp     .return
 BEGINDATA
+        align   8
 %%trapinfo: istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
         at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
@@ -289,6 +290,7 @@ BEGINCODE
         mov     eax, __LINE__
         jmp     .return
 BEGINDATA
+        align   8
 %%trapinfo: istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
         at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
@@ -2621,6 +2623,7 @@ CheckOpcodeCsIp:
         mov     eax, __LINE__
         jmp     .return
 BEGINDATA
+        align   8
 %%trapinfo: istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
         at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
@@ -2746,6 +2749,7 @@ CheckOpcodeCsIpDsDp:
         mov     eax, __LINE__
         jmp     .return
 BEGINDATA
+        align   8
 %%trapinfo: istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
         at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
