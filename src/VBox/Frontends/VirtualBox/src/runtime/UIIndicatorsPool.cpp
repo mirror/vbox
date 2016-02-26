@@ -828,7 +828,6 @@ private:
     {
         /* Get objects: */
         const CMachine machine = m_pSession->machine();
-        const CMachineDebugger debugger = m_pSession->debugger();
 
         /* VT-x/AMD-V feature: */
         const QString strVirtualization = m_pSession->isHWVirtExEnabled() ?
