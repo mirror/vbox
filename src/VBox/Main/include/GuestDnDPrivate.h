@@ -396,8 +396,6 @@ public:
 
     int createIntermediate(DnDURIObject::Type enmType = DnDURIObject::Unknown)
     {
-        LogFlowThisFuncEnter();
-
         reset();
 
         int rc;
@@ -414,6 +412,7 @@ public:
             rc = VERR_NO_MEMORY;
         }
 
+        LogThisFunc(("Returning %Rrc\n", rc));
         return rc;
     }
 
@@ -431,7 +430,7 @@ public:
         fIntermediate = false;
     }
 
-    DnDURIObject *getObj(void) { return pObjURI; }
+    DnDURIObject *getObj(void) const { return pObjURI; }
 
     bool isIntermediate(void) { return fIntermediate; }
 
