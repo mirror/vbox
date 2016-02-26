@@ -632,7 +632,7 @@ static int createFakeVM(PVM *ppVM)
     /*
      * Allocate and init the UVM structure.
      */
-    PUVM pUVM = (PUVM)RTMemAllocZ(sizeof(*pUVM));
+    PUVM pUVM = (PUVM)RTMemPageAllocZ(sizeof(*pUVM));
     AssertReturn(pUVM, 1);
     pUVM->u32Magic = UVM_MAGIC;
     pUVM->vm.s.idxTLS = RTTlsAlloc();
@@ -680,6 +680,20 @@ static int createFakeVM(PVM *ppVM)
 
     *ppVM = NULL;
     return 1;
+}
+
+
+/**
+ * Destroy the VM structure.
+ *
+ * @param   pVM     Pointer to the VM.
+ *
+ * @todo    Move this to VMM/VM since it's stuff done by several testcases.
+ */
+static void destroyFakeVM(PVM pVM)
+{
+    STAMR3TermUVM(pVM->pUVM);
+    MMR3TermUVM(pVM->pUVM);
 }
 
 
@@ -911,6 +925,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         RTPrintf("SSMR3Close #1 -> %Rrc\n", rc);
         return 1;
     }
+
+    destroyFakeVM(pVM);
 
     /* delete */
     RTFileDelete(pszFilename);
