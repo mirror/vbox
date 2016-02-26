@@ -37,6 +37,7 @@
 
 DnDURIObject::DnDURIObject(void)
     : m_Type(Unknown)
+    , m_fOpen(false)
     , m_fMode(0)
     , m_cbSize(0)
     , m_cbProcessed(0)
