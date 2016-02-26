@@ -51,8 +51,8 @@ DnDURIObject::DnDURIObject(Type type,
     : m_Type(type)
     , m_strSrcPath(strSrcPath)
     , m_strTgtPath(strDstPath)
-    , m_fMode(fMode)
     , m_fOpen(false)
+    , m_fMode(fMode)
     , m_cbSize(cbSize)
     , m_cbProcessed(0)
 {
