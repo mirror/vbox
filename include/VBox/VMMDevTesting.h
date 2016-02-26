@@ -73,7 +73,7 @@
  * @{ */
 /** Initialize test, sending name (zero terminated string). (RTTestCreate) */
 #define VMMDEV_TESTING_CMD_INIT         UINT32_C(0xcab1e000)
-/** Test done, no data. (RTTestSummaryAndDestroy) */
+/** Test done, sending 32-bit total error count with it. (RTTestSummaryAndDestroy) */
 #define VMMDEV_TESTING_CMD_TERM         UINT32_C(0xcab1e001)
 /** Start a new sub-test, sending name (zero terminated string). (RTTestSub) */
 #define VMMDEV_TESTING_CMD_SUB_NEW      UINT32_C(0xcab1e002)
