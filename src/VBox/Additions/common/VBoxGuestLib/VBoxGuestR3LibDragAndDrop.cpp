@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -639,7 +639,10 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
                                 }
                             }
                             else
+                            {
+                                AssertMsgFailed(("ObjType=%RU32, Proto=%RU32\n", objFile.GetType(), pCtx->uProtocol));
                                 rc = VERR_WRONG_ORDER;
+                            }
 
                             RTStrFree(pszPathAbs);
                         }
@@ -650,8 +653,6 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
                     if (   RT_SUCCESS(rc)
                         && uNextMsg == HOST_DND_HG_SND_FILE_DATA)
                     {
-                        bool fClose = false;
-
                         uint32_t cbChunkWritten;
                         rc = objFile.Write(pvChunk, cbChunkRead, &cbChunkWritten);
                         if (RT_SUCCESS(rc))
@@ -660,38 +661,40 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
                                          "cbChunkRead=%RU32, cbChunkWritten=%RU32, cbFileWritten=%RU64 cbFileSize=%RU64\n",
                                          cbChunkRead, cbChunkWritten, cbFileWritten + cbChunkWritten, cbFileSize));
 
-                            if (pCtx->uProtocol >= 2)
-                            {
-                                /* Data transfer complete? Close the file. */
-                                fClose = objFile.IsComplete();
-                                if (   fClose
-                                    && fDoAccounting)
-                                {
-                                    Assert(cToRecvObjs);
-                                    cToRecvObjs--;
-                                }
-
-                                /* Only since protocol v2 we know the file size upfront. */
-                                Assert(cbFileWritten <= cbFileSize);
-                            }
-                            else
-                                fClose = true; /* Always close the file after each chunk. */
-
                             cbFileWritten += cbChunkWritten;
 
-                            if (pCtx->uProtocol >= 3)
+                            if (fDoAccounting)
                             {
-                                Assert(cbToRecvBytes >= cbChunkRead);
+                                Assert(cbChunkRead <= cbToRecvBytes);
                                 cbToRecvBytes -= cbChunkRead;
                             }
                         }
-
-                        if (fClose)
-                        {
-                            LogFlowFunc(("Closing file\n"));
-                            objFile.Close();
-                        }
                     }
+
+                    bool fClose = false;
+                    if (pCtx->uProtocol >= 2)
+                    {
+                        /* Data transfer complete? Close the file. */
+                        fClose = objFile.IsComplete();
+                        if (   fClose
+                            && fDoAccounting)
+                        {
+                            Assert(cToRecvObjs);
+                            cToRecvObjs--;
+                        }
+
+                        /* Only since protocol v2 we know the file size upfront. */
+                        Assert(cbFileWritten <= cbFileSize);
+                    }
+                    else
+                        fClose = true; /* Always close the file after each chunk. */
+
+                    if (fClose)
+                    {
+                        LogFlowFunc(("Closing file\n"));
+                        objFile.Close();
+                    }
+
                     break;
                 }
                 case HOST_DND_HG_EVT_CANCEL:
@@ -740,9 +743,7 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     if (RT_FAILURE(rc))
     {
         objFile.Close();
-
-        int rc2 = pDroppedFiles->Rollback();
-        AssertRC(rc2); /* Not fatal, don't report back to host. */
+        pDroppedFiles->Rollback();
     }
     else
     {
@@ -1200,7 +1201,8 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
             RTMemFree(pvData);
 
         int rc2 = VbglR3DnDHGSendProgress(pCtx, DND_PROGRESS_ERROR, 100 /* Percent */, rc);
-        AssertRC(rc2);
+        if (RT_FAILURE(rc2))
+            LogFlowFunc(("Unable to send progress error %Rrc to host: %Rrc\n", rc, rc2));
     }
     else if (RT_SUCCESS(rc))
     {
@@ -1418,7 +1420,7 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
         {
             Msg.hdr.cParms = 3;
 
-             /** @todo Context ID not used yet. */
+            /** @todo Context ID not used yet. */
             Msg.u.v3.uContext.SetUInt32(0);
             Msg.u.v3.uProtocol.SetUInt32(pCtx->uProtocol);
             Msg.u.v3.uFlags.SetUInt32(0); /* Unused at the moment. */
@@ -1710,7 +1712,7 @@ VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
     AssertReturn(cbFormats,      VERR_INVALID_PARAMETER);
 
     if (!RTStrIsValidEncoding(pcszFormats))
-        return VERR_INVALID_PARAMETER;
+        return VERR_INVALID_UTF8_ENCODING;
 
     VBOXDNDGHACKPENDINGMSG Msg;
     RT_ZERO(Msg);
@@ -1785,7 +1787,7 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
         if (RT_SUCCESS(rc))
             rc = Msg.hdr.result;
 
-        LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU64, cObjects=%RU64, rc=%Rrc\n",
+        LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32, cObjects=%RU64, rc=%Rrc\n",
                      pDataHdr->cbTotal, pDataHdr->cbMeta, pDataHdr->cObjects, rc));
     }
 
@@ -1838,11 +1840,14 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
             cbSent += cbCurChunk;
         }
 
+        LogFlowFunc(("cbMaxChunk=%RU32, cbData=%RU64, cbSent=%RU32, rc=%Rrc\n",
+                     cbMaxChunk, cbData, cbSent, rc));
+
         if (RT_SUCCESS(rc))
             Assert(cbSent == cbData);
     }
 
-    LogFlowFunc(("Returning rc=%Rrc, cbData=%RU64\n", rc, cbData));
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -2072,8 +2077,22 @@ static int vbglR3DnDGHSendURIObject(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pO
     return rc;
 }
 
-static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx,
-                                  const void *pvData, uint32_t cbData)
+static int vbglR3DnDGHSendRawData(PVBGLR3GUESTDNDCMDCTX pCtx, void *pvData, size_t cbData)
+{
+    AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    /* cbData can be 0. */
+
+    VBOXDNDDATAHDR dataHdr;
+    RT_ZERO(dataHdr);
+
+    /* For raw data only the total size is required to be specified. */
+    dataHdr.cbTotal = cbData;
+
+    return vbglR3DnDGHSendDataInternal(pCtx, pvData, cbData, &dataHdr);
+}
+
+static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx, const void *pvData, size_t cbData)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
@@ -2108,16 +2127,16 @@ static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx,
             const char     szMetaFmt[] = "text/uri-list";
             const uint32_t cbMetaFmt   = (uint32_t)strlen(szMetaFmt) + 1; /* Include termination. */
 
-            VBOXDNDDATAHDR dataHeader;
-            dataHeader.uFlags    = 0; /* Flags not used yet. */
-            dataHeader.cbTotal   = cbTotal;
-            dataHeader.cbMeta    = cbURLIist;
-            dataHeader.pvMetaFmt = (void *)szMetaFmt;
-            dataHeader.cbMetaFmt = cbMetaFmt;
-            dataHeader.cObjects  = lstURI.TotalCount();
+            VBOXDNDDATAHDR dataHdr;
+            dataHdr.uFlags    = 0; /* Flags not used yet. */
+            dataHdr.cbTotal   = cbTotal;
+            dataHdr.cbMeta    = cbURLIist;
+            dataHdr.pvMetaFmt = (void *)szMetaFmt;
+            dataHdr.cbMetaFmt = cbMetaFmt;
+            dataHdr.cObjects  = lstURI.TotalCount();
 
             rc = vbglR3DnDGHSendDataInternal(pCtx,
-                                             pvURIList, cbURLIist, &dataHeader);
+                                             pvURIList, cbURLIist, &dataHdr);
         }
         else
             rc = VERR_INVALID_PARAMETER;
@@ -2152,12 +2171,11 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszF
     int rc;
     if (DnDMIMEHasFileURLs(pszFormat, strlen(pszFormat)))
     {
+        /* Send file data. */
         rc = vbglR3DnDGHSendURIData(pCtx, pvData, cbData);
     }
-    else /* Send raw data. */
-    {
-        rc = vbglR3DnDGHSendDataInternal(pCtx, pvData, cbData, NULL /* pDataHdr */);
-    }
+    else
+        rc = vbglR3DnDGHSendRawData(pCtx, pvData, cbData);
 
     if (RT_FAILURE(rc))
     {
@@ -2196,10 +2214,18 @@ VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
-        rc = Msg.hdr.result;
+    {
+        if (RT_FAILURE(Msg.hdr.result))
+        {
+            LogFlowFunc(("Sending error %Rrc failed with rc=%Rrc\n", rcErr, Msg.hdr.result));
 
-    if (RT_FAILURE(rc))
-        LogFlowFunc(("Sending error %Rrc failed with rc=%Rrc\n", rcErr, rc));
+            /* Never return an error if the host did not accept the error at
+             * the current time. This can be due to the host not having any appropriate
+             * callbacks set which would handle that error. */
+            rc = VINF_SUCCESS;
+        }
+    }
+
     return rc;
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
