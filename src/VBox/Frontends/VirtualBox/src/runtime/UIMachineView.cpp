@@ -308,12 +308,12 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     LogRel(("GUI: UIMachineView::sltHandleNotifyChange: Screen=%d, Size=%dx%d\n",
             (unsigned long)m_uScreenId, iWidth, iHeight));
 
-    // TODO: Move to appropriate place!
     /* Some situations require frame-buffer resize-events to be ignored at all,
      * leaving machine-window, machine-view and frame-buffer sizes preserved: */
     if (uisession()->isGuestResizeIgnored())
         return;
 
+    /* In some situations especially in some VM states, guest-screen is not drawable: */
     if (uisession()->isGuestScreenUnDrawable())
         return;
 
