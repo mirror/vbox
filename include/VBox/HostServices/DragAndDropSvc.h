@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -135,7 +135,13 @@ enum eHostFn
     /** The host issued a "drop" event, meaning that the host is
      *  ready to transfer data over to the guest. */
     HOST_DND_HG_EVT_DROPPED            = 203,
-    /** The host requested to cancel the current DnD operation. */
+    /** The host requested to cancel the current DnD operation on
+     *  the guest side. This can happen on user request on the host's
+     *  UI side or due to some host error which has happened.
+     *
+     *  Note: This is a fire-and-forget message, as the host should
+     *        not rely on an answer from the guest side in order to
+     *        properly cancel the operation. */
     HOST_DND_HG_EVT_CANCEL             = 204,
     /** Sends the data header at the beginning of a (new)
      *  data transfer. */
