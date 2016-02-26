@@ -1241,8 +1241,6 @@ int DragAndDropService::hostCall(uint32_t u32Function,
 
                     /* Note: Report the current rc back to the guest. */
                     pClient->completeDeferred(rc);
-
-                    m_clientQueue.pop_front();
                 }
                 /*
                  * Does the message the client is waiting for match the message
@@ -1255,9 +1253,15 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                     /* Note: Report the current rc back to the guest. */
                     pClient->completeDeferred(rc);
                 }
-                else /* Should not happen. */
-                    AssertMsgFailed(("Client ID=%RU32 in wrong state with uMsg=%RU32 (next message in queue: %RU32)\n",
-                                     pClient->clientId(), uMsgClient, uMsgNext));
+                else /* Should not happen; cancel the operation on the guest. */
+                {
+                    LogFunc(("Client ID=%RU32 in wrong state with uMsg=%RU32 (next message in queue: %RU32), cancelling\n",
+                             pClient->clientId(), uMsgClient, uMsgNext));
+
+                    pClient->completeDeferred(VERR_CANCELLED);
+                }
+
+                m_clientQueue.pop_front();
             }
 
         } /* fSendToGuest */
