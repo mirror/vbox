@@ -147,6 +147,7 @@ g_u32Two:       dw 2
 
 ;;
 ; The last global data item. We build this as we write the code.
+        align   8
 GLOBALNAME g_aTrapInfo
 
 
@@ -240,7 +241,6 @@ GLOBALNAME g_aTrapInfo
         mov     eax, __LINE__
         jmp     .return
 BEGINDATA
-        align   8
 %%trapinfo: istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
         at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
@@ -290,7 +290,6 @@ BEGINCODE
         mov     eax, __LINE__
         jmp     .return
 BEGINDATA
-        align   8
 %%trapinfo: istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
         at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
@@ -2623,7 +2622,6 @@ CheckOpcodeCsIp:
         mov     eax, __LINE__
         jmp     .return
 BEGINDATA
-        align   8
 %%trapinfo: istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
         at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
@@ -2749,7 +2747,6 @@ CheckOpcodeCsIpDsDp:
         mov     eax, __LINE__
         jmp     .return
 BEGINDATA
-        align   8
 %%trapinfo: istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
         at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
