@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -183,6 +183,7 @@ void DragAndDropClient::disconnect(void)
     VBOXDNDCBDISCONNECTMSGDATA data;
     RT_ZERO(data);
     /** @todo Magic needed? */
+    /** @todo Add context ID. */
 
     if (m_SvcCtx.pfnHostCallback)
     {
@@ -986,6 +987,47 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 break;
             }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
+
+            /*
+             * Note: This is a fire-and-forget message, as the host should
+             *       not rely on an answer from the guest side in order to
+             *       properly cancel the operation.
+             */
+            case HOST_DND_HG_EVT_CANCEL:
+            {
+                LogFlowFunc(("HOST_DND_HG_EVT_CANCEL\n"));
+
+                VBOXDNDCBEVTERRORDATA data;
+                RT_ZERO(data);
+                data.hdr.uMagic = CB_MAGIC_DND_GH_EVT_ERROR;
+
+                switch (pClient->protocol())
+                {
+                    case 3:
+                    {
+                        /* Protocol v3+ at least requires the context ID. */
+                        if (cParms == 1)
+                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+
+                        break;
+                    }
+
+                    default:
+                        break;
+                }
+
+                /* Tell the host that the guest has cancelled the operation. */
+                data.rc = VERR_CANCELLED;
+
+                DO_HOST_CALLBACK();
+
+                /* Note: If the host is not prepared for handling the cancelling reply
+                 *       from the guest, don't report this back to the guest. */
+                if (RT_FAILURE(rc))
+                    rc = VINF_SUCCESS;
+                break;
+            }
+
             default:
             {
                 /* All other messages are handled by the DnD manager. */
@@ -996,7 +1038,9 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         VBOXDNDCBHGGETNEXTHOSTMSGDATA data;
                         RT_ZERO(data);
+
                         data.hdr.uMagic = VBOX_DND_CB_MAGIC_MAKE(0 /* uFn */, 0 /* uVer */);
+
                         data.uMsg    = u32Function;
                         data.cParms  = cParms;
                         data.paParms = paParms;
@@ -1007,6 +1051,16 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                         {
                             cParms  = data.cParms;
                             paParms = data.paParms;
+                        }
+                        else
+                        {
+                            /*
+                             * In case the guest is too fast asking for the next message
+                             * and the host did not supply it yet, just defer the client's
+                             * return until a response from the host available.
+                             */
+                            LogFlowFunc(("No new messages from the host (yet), deferring request: %Rrc\n", rc));
+                            rc = VINF_HGCM_ASYNC_EXECUTE;
                         }
                     }
                     else /* No host callback in place, so drag and drop is not supported by the host. */
@@ -1039,7 +1093,10 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
     else if (pClient)
         pClient->complete(callHandle, rc);
     else
+    {
+        AssertMsgFailed(("Guest call failed with %Rrc\n", rc));
         rc = VERR_NOT_IMPLEMENTED;
+    }
 
     LogFlowFunc(("Returning rc=%Rrc\n", rc));
 }
@@ -1051,80 +1108,161 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                  u32Function, cParms, m_clientMap.size(), m_clientQueue.size()));
 
     int rc;
-    if (u32Function == HOST_DND_SET_MODE)
-    {
-        if (cParms != 1)
-            rc = VERR_INVALID_PARAMETER;
-        else if (paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT)
-            rc = VERR_INVALID_PARAMETER;
-        else
-            rc = modeSet(paParms[0].u.uint32);
-    }
-    else if (modeGet() != VBOX_DRAG_AND_DROP_MODE_OFF)
-    {
-        if (m_clientMap.size()) /* At least one client on the guest connected? */
-        {
-            rc = m_pManager->addMessage(u32Function, cParms, paParms, true /* fAppend */);
-            if (RT_SUCCESS(rc))
-            {
-                if (m_clientQueue.size()) /* Any clients in our queue ready for processing the next command? */
-                {
-                    uint32_t uClientNext = m_clientQueue.front();
-                    DnDClientMap::iterator itClientNext = m_clientMap.find(uClientNext);
-                    Assert(itClientNext != m_clientMap.end());
 
-                    DragAndDropClient *pClient = itClientNext->second;
+    do
+    {
+        bool fSendToGuest = false; /* Whether to send the message down to the guest side or not. */
+
+        switch (u32Function)
+        {
+            case HOST_DND_SET_MODE:
+            {
+                if (cParms != 1)
+                    rc = VERR_INVALID_PARAMETER;
+                else if (paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT)
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                    rc = modeSet(paParms[0].u.uint32);
+                break;
+            }
+
+            case HOST_DND_HG_EVT_ENTER:
+            {
+                /* Clear the message queue as a new DnD operation just began. */
+                m_pManager->clear();
+
+                fSendToGuest = true;
+                break;
+            }
+
+            case HOST_DND_HG_EVT_CANCEL:
+            {
+                LogFlowFunc(("Cancelling all waiting clients ...\n"));
+
+                /* Clear the message queue as the host cancelled the whole operation. */
+                m_pManager->clear();
+
+                /*
+                 * Wake up all deferred clients and tell them to process
+                 * the cancelling message next.
+                 */
+                DnDClientQueue::iterator itQueue = m_clientQueue.begin();
+                while (itQueue != m_clientQueue.end())
+                {
+                    DnDClientMap::iterator itClient = m_clientMap.find(*itQueue);
+                    Assert(itClient != m_clientMap.end());
+
+                    DragAndDropClient *pClient = itClient->second;
                     AssertPtr(pClient);
 
-                    /*
-                     * Check if this was a request for getting the next host
-                     * message. If so, return the message ID and the parameter
-                     * count. The message itself has to be queued.
-                     */
-                    uint32_t uMsg = pClient->message();
-                    if (uMsg == GUEST_DND_GET_NEXT_HOST_MSG)
-                    {
-                        LogFlowFunc(("Client %RU32 is waiting for next host msg\n", pClient->clientId()));
+                    int rc2 = pClient->addMessageInfo(HOST_DND_HG_EVT_CANCEL,
+                                                      /* Protocol v3+ also contains the context ID. */
+                                                      pClient->protocol() >= 3 ? 1 : 0);
+                    pClient->completeDeferred(rc2);
 
-                        uint32_t uMsg1;
-                        uint32_t cParms1;
-                        rc = m_pManager->nextMessageInfo(&uMsg1, &cParms1);
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = pClient->addMessageInfo(uMsg1, cParms1);
-
-                            /* Note: Report the current rc back to the guest. */
-                            pClient->completeDeferred(rc);
-
-                            m_clientQueue.pop_front();
-                        }
-                    }
-                    else
-                        AssertMsgFailed(("Client ID=%RU32 in wrong state with uMsg=%RU32\n",
-                                         pClient->clientId(), uMsg));
+                    m_clientQueue.erase(itQueue);
+                    itQueue = m_clientQueue.begin();
                 }
-                else
-                    LogFlowFunc(("All clients busy; delaying execution\n"));
+
+                Assert(m_clientQueue.size() == 0);
+
+                /* Tell the host that everything went well. */
+                rc = VINF_SUCCESS;
+                break;
             }
-            else
-                AssertMsgFailed(("Adding new message of type=%RU32 failed with rc=%Rrc\n",
-                                 u32Function, rc));
+
+            default:
+            {
+                fSendToGuest = true;
+                break;
+            }
         }
-        else
+
+        if (fSendToGuest)
         {
+            if (modeGet() == VBOX_DRAG_AND_DROP_MODE_OFF)
+            {
+                /* Tell the host that a wrong drag'n drop mode is set. */
+                rc = VERR_ACCESS_DENIED;
+                break;
+            }
+
+            if (m_clientMap.size() == 0) /* At least one client on the guest connected? */
+            {
+                /*
+                 * Tell the host that the guest does not support drag'n drop.
+                 * This might happen due to not installed Guest Additions or
+                 * not running VBoxTray/VBoxClient.
+                 */
+                rc = VERR_NOT_SUPPORTED;
+                break;
+            }
+
+            rc = m_pManager->addMessage(u32Function, cParms, paParms, true /* fAppend */);
+            if (RT_FAILURE(rc))
+            {
+                AssertMsgFailed(("Adding new message of type=%RU32 failed with rc=%Rrc\n", u32Function, rc));
+                break;
+            }
+
+            /* Any clients in our queue ready for processing the next command? */
+            if (m_clientQueue.size() == 0)
+            {
+                LogFlowFunc(("All clients (%zu) busy -- delaying execution\n", m_clientMap.size()));
+                break;
+            }
+
+            uint32_t uClientNext = m_clientQueue.front();
+            DnDClientMap::iterator itClientNext = m_clientMap.find(uClientNext);
+            Assert(itClientNext != m_clientMap.end());
+
+            DragAndDropClient *pClient = itClientNext->second;
+            AssertPtr(pClient);
+
             /*
-             * Tell the host that the guest does not support drag'n drop.
-             * This might happen due to not installed Guest Additions or
-             * not running VBoxTray/VBoxClient.
+             * Check if this was a request for getting the next host
+             * message. If so, return the message ID and the parameter
+             * count. The message itself has to be queued.
              */
-            rc = VERR_NOT_SUPPORTED;
-        }
-    }
-    else
-    {
-        /* Tell the host that a wrong drag'n drop mode is set. */
-        rc = VERR_ACCESS_DENIED;
-    }
+            uint32_t uMsgClient = pClient->message();
+
+            uint32_t uMsgNext   = 0;
+            uint32_t cParmsNext = 0;
+            int rcNext = m_pManager->nextMessageInfo(&uMsgNext, &cParmsNext);
+
+            LogFlowFunc(("uMsgClient=%RU32, uMsgNext=%RU32, cParmsNext=%RU32, rcNext=%Rrc\n",
+                         uMsgClient, uMsgNext, cParmsNext, rcNext));
+
+            if (RT_SUCCESS(rcNext))
+            {
+                if (uMsgClient == GUEST_DND_GET_NEXT_HOST_MSG)
+                {
+                    rc = pClient->addMessageInfo(uMsgNext, cParmsNext);
+
+                    /* Note: Report the current rc back to the guest. */
+                    pClient->completeDeferred(rc);
+
+                    m_clientQueue.pop_front();
+                }
+                /*
+                 * Does the message the client is waiting for match the message
+                 * next in the queue? Process it right away then.
+                 */
+                else if (uMsgClient == uMsgNext)
+                {
+                    rc = m_pManager->nextMessage(u32Function, cParms, paParms);
+
+                    /* Note: Report the current rc back to the guest. */
+                    pClient->completeDeferred(rc);
+                }
+                else /* Should not happen. */
+                    AssertMsgFailed(("Client ID=%RU32 in wrong state with uMsg=%RU32 (next message in queue: %RU32)\n",
+                                     pClient->clientId(), uMsgClient, uMsgNext));
+            }
+
+        } /* fSendToGuest */
+
+    } while (0); /* To use breaks. */
 
     LogFlowFuncLeaveRC(rc);
     return rc;

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,118 +40,26 @@
 
 int DnDManager::addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fAppend /* = true */)
 {
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc(("uMsg=%RU32, cParms=%RU32, fAppend=%RTbool\n", uMsg, cParms, fAppend));
+    int rc;
 
     try
     {
-        DnDMessage *pMessage = NULL;
+        LogFlowFunc(("uMsg=%RU32, cParms=%RU32, fAppend=%RTbool\n", uMsg, cParms, fAppend));
 
-        switch (uMsg)
-        {
-            case DragAndDropSvc::HOST_DND_HG_EVT_ENTER:
-            {
-                clear();
-                LogFlowFunc(("HOST_DND_HG_EVT_ENTER\n"));
-                break;
-            }
+        DnDMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
+        if (fAppend)
+            m_dndMessageQueue.append(pMessage);
+        else
+            m_dndMessageQueue.prepend(pMessage);
 
-            case DragAndDropSvc::HOST_DND_HG_EVT_MOVE:
-            {
-                LogFlowFunc(("HOST_DND_HG_EVT_MOVE\n"));
-                break;
-            }
-
-            case DragAndDropSvc::HOST_DND_HG_EVT_LEAVE:
-            {
-                LogFlowFunc(("HOST_DND_HG_EVT_LEAVE\n"));
-                break;
-            }
-
-            case DragAndDropSvc::HOST_DND_HG_EVT_DROPPED:
-            {
-                LogFlowFunc(("HOST_DND_HG_EVT_DROPPED\n"));
-                break;
-            }
-
-            case DragAndDropSvc::HOST_DND_HG_EVT_CANCEL:
-            {
-                LogFlowFunc(("HOST_DND_HG_EVT_CANCEL\n"));
-
-                pMessage = new DnDHGCancelMessage();
-                break;
-            }
-
-            case DragAndDropSvc::HOST_DND_HG_SND_DATA_HDR:
-            {
-                LogFlowFunc(("HOST_DND_HG_SND_DATA_HDR\n"));
-                break;
-            }
-
-            case DragAndDropSvc::HOST_DND_HG_SND_DATA:
-            {
-                LogFlowFunc(("HOST_DND_HG_SND_DATA\n"));
-                break;
-            }
-
-            case DragAndDropSvc::HOST_DND_HG_SND_DIR:
-            {
-                LogFlowFunc(("HOST_DND_HG_SND_DIR\n"));
-                break;
-            }
-
-            /* New since protocol version 2 (VBox 5.0). */
-            case DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR:
-            {
-                LogFlowFunc(("HOST_DND_HG_SND_FILE_HDR\n"));
-                break;
-            }
-
-            case DragAndDropSvc::HOST_DND_HG_SND_FILE_DATA:
-            {
-                LogFlowFunc(("HOST_DND_HG_SND_FILE\n"));
-
-                /* No parameter verification here as, depending on the protocol version
-                 * being used, the parameter count + types might change. */
-                break;
-            }
-
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
-            case DragAndDropSvc::HOST_DND_GH_REQ_PENDING:
-            {
-                LogFlowFunc(("HOST_DND_GH_REQ_PENDING\n"));
-                break;
-            }
-
-            case DragAndDropSvc::HOST_DND_GH_EVT_DROPPED:
-            {
-                LogFlowFunc(("HOST_DND_GH_EVT_DROPPED\n"));
-                break;
-            }
-#endif /* VBOX_WITH_DRAG_AND_DROP_GH */
-
-            default:
-                rc = VERR_NOT_IMPLEMENTED;
-                break;
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            if (!pMessage) /* Generic message needed? */
-                pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
-
-            if (fAppend)
-                m_dndMessageQueue.append(pMessage);
-            else
-                m_dndMessageQueue.prepend(pMessage);
-        }
+        rc = VINF_SUCCESS;
     }
     catch(std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -253,6 +161,8 @@ int DnDManager::nextMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPa
 
 void DnDManager::clear(void)
 {
+    LogFlowFuncEnter();
+
     if (m_pCurMsg)
     {
         delete m_pCurMsg;
