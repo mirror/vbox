@@ -52,21 +52,10 @@ DnDURIObject::DnDURIObject(Type type,
     , m_strSrcPath(strSrcPath)
     , m_strTgtPath(strDstPath)
     , m_fMode(fMode)
+    , m_fOpen(false)
     , m_cbSize(cbSize)
     , m_cbProcessed(0)
 {
-    switch (m_Type)
-    {
-        case File:
-            u.m_hFile = NIL_RTFILE;
-            break;
-
-        case Directory:
-            break;
-
-        default:
-            break;
-    }
 }
 
 DnDURIObject::~DnDURIObject(void)
@@ -77,17 +66,16 @@ DnDURIObject::~DnDURIObject(void)
 void DnDURIObject::closeInternal(void)
 {
     LogFlowThisFuncEnter();
+
+    if (!m_fOpen)
+        return;
+
     switch (m_Type)
     {
         case File:
         {
-            if (u.m_hFile != NIL_RTFILE)
-            {
-                int rc2 = RTFileClose(u.m_hFile);
-                AssertRC(rc2);
-
-                u.m_hFile = NIL_RTFILE;
-            }
+            RTFileClose(u.m_hFile);
+            u.m_hFile = NIL_RTFILE;
             break;
         }
 
@@ -97,6 +85,8 @@ void DnDURIObject::closeInternal(void)
         default:
             break;
     }
+
+    m_fOpen = false;
 }
 
 void DnDURIObject::Close(void)
@@ -129,24 +119,7 @@ bool DnDURIObject::IsComplete(void) const
 
 bool DnDURIObject::IsOpen(void) const
 {
-    bool fIsOpen;
-
-    switch (m_Type)
-    {
-        case File:
-            fIsOpen = u.m_hFile != NIL_RTFILE;
-            break;
-
-        case Directory:
-            fIsOpen = true;
-            break;
-
-        default:
-            fIsOpen = false;
-            break;
-    }
-
-    return fIsOpen;
+    return m_fOpen;
 }
 
 int DnDURIObject::Open(Dest enmDest, uint64_t fOpen /* = 0 */, uint32_t fMode /* = 0 */)
@@ -179,13 +152,13 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
     if (   RT_SUCCESS(rc)
         && fOpen) /* Opening mode specified? */
     {
-        LogFlowThisFunc(("strPath=%s, fOpen=0x%x, enmType=%RU32, enmDest=%RU32\n",
-                         strPath.c_str(), fOpen, enmType, enmDest));
+        LogFlowThisFunc(("enmType=%RU32, strPath=%s, fOpen=0x%x, enmType=%RU32, enmDest=%RU32\n",
+                         enmType, strPath.c_str(), fOpen, enmType, enmDest));
         switch (enmType)
         {
             case File:
             {
-                if (u.m_hFile == NIL_RTFILE)
+                if (!m_fOpen)
                 {
                     /*
                      * Open files on the source with RTFILE_O_DENY_WRITE to prevent races
@@ -242,7 +215,10 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
     }
 
     if (RT_SUCCESS(rc))
-        m_Type = enmType;
+    {
+        m_Type  = enmType;
+        m_fOpen = true;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

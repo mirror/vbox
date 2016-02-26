@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2015 Oracle Corporation
+ * Copyright (C) 2014-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -167,6 +167,8 @@ protected:
     Type      m_Type;
     RTCString m_strSrcPath;
     RTCString m_strTgtPath;
+    /** Whether the object is in "opened" state. */
+    bool      m_fOpen;
     /** Object (file/directory) mode. */
     uint32_t  m_fMode;
     /** Size (in bytes) to read/write. */
