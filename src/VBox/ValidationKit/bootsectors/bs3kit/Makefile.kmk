@@ -99,6 +99,11 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-SwitchTo64Bit.asm \
        bs3-cmn-TestData.c \
        bs3-cmn-TestInit.c \
+       bs3-cmn-TestFailed.c \
+       bs3-cmn-TestSkipped.c \
+       bs3-cmn-TestSub.c \
+       bs3-cmn-TestSubDone.c \
+       bs3-cmn-TestSubErrorCount.c \
        bs3-cmn-TestTerm.c \
 	bs3-cmn-TestSendCmdWithStr.asm \
 	bs3-cmn-TestSendCmdWithU32.asm \

@@ -32,34 +32,35 @@
 
 
 /** Indicates whether the VMMDev is operational. */
-extern bool                 g_fbBs3VMMDevTesting;
+extern bool                 BS3_DATA_NM(g_fbBs3VMMDevTesting);
 
 /** The number of tests that have failed. */
-extern uint16_t             g_cusBs3TestErrors;
+extern uint16_t             BS3_DATA_NM(g_cusBs3TestErrors);
 
 /** The start error count of the current subtest. */
-extern uint16_t             g_cusBs3SubTestAtErrors;
+extern uint16_t             BS3_DATA_NM(g_cusBs3SubTestAtErrors);
 
 /**  Whether we've reported the sub-test result or not. */
-extern bool                 g_fbBs3SubTestReported;
+extern bool                 BS3_DATA_NM(g_fbBs3SubTestReported);
+/** Whether the sub-test has been skipped or not. */
+extern bool                 BS3_DATA_NM(g_fbBs3SubTestSkipped);
 
 /** The number of sub tests. */
-extern uint16_t             g_cusBs3SubTests;
+extern uint16_t             BS3_DATA_NM(g_cusBs3SubTests);
 
 /** The number of sub tests that failed. */
-extern uint16_t             g_cusBs3SubTestsFailed;
+extern uint16_t             BS3_DATA_NM(g_cusBs3SubTestsFailed);
 
 /** VMMDEV_TESTING_UNIT_XXX -> string */
-extern char const           g_aszBs3TestUnitNames[][16];
+extern char const           BS3_DATA_NM(g_aszBs3TestUnitNames)[][16];
 
 /** The test name. */
 extern const char BS3_FAR  *g_pszBs3Test_c16;
 extern const char          *g_pszBs3Test_c32;
 extern const char          *g_pszBs3Test_c64;
+
 /** The subtest name. */
-extern const char BS3_FAR  *g_pszBs3SubTest_c16;
-extern const char          *g_pszBs3SubTest_c32;
-extern const char          *g_pszBs3SubTest_c64;
+extern char                 BS3_DATA_NM(g_szBs3SubTest)[64];
 
 
 /**
@@ -90,7 +91,6 @@ BS3_DECL(void) bs3TestSendCmdWithU32_c32(uint32_t uCmd, uint32_t uValue); /**< @
 BS3_DECL(void) bs3TestSendCmdWithU32_c64(uint32_t uCmd, uint32_t uValue); /**< @copydoc bs3TestSendCmdWithU32_c16 */
 #define bs3TestSendCmdWithU32 BS3_CMN_NM(bs3TestSendCmdWithU32) /**< Selects #bs3TestSendCmdWithU32_c16, #bs3TestSendCmdWithU32_c32 or #bs3TestSendCmdWithU32_c64. */
 
-
 /**
  * Checks if the VMMDev is configured for testing.
  *
@@ -101,6 +101,24 @@ BS3_DECL(bool) bs3TestIsVmmDevTestingPresent_c32(void); /**< @copydoc bs3TestIsV
 BS3_DECL(bool) bs3TestIsVmmDevTestingPresent_c64(void); /**< @copydoc bs3TestIsVmmDevTestingPresent_c16 */
 #define bs3TestIsVmmDevTestingPresent BS3_CMN_NM(bs3TestIsVmmDevTestingPresent) /**< Selects #bs3TestIsVmmDevTestingPresent_c16, #bs3TestIsVmmDevTestingPresent_c32 or #bs3TestIsVmmDevTestingPresent_c64. */
 
+/**
+ * Similar to rtTestSubCleanup.
+ */
+BS3_DECL(void) bs3TestSubCleanup_c16(void);
+BS3_DECL(void) bs3TestSubCleanup_c32(void); /**< @copydoc bs3TestSubCleanup_c16 */
+BS3_DECL(void) bs3TestSubCleanup_c64(void); /**< @copydoc bs3TestSubCleanup_c16 */
+#define bs3TestSubCleanup BS3_CMN_NM(bs3TestSubCleanup) /**< Selects #bs3TestSubCleanup_c16, #bs3TestSubCleanup_c32 or #bs3TestSubCleanup_c64. */
+
+/**
+ * @impl_callback_method{FNBS3STRFORMATOUTPUT,
+ *      Used by Bs3TestFailedV and Bs3TestSkippedV.
+ *
+ *      The @a pvUser parameter must point to a boolean that was initialized to false. }
+ */
+BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput_c16(char ch, void BS3_FAR *pvUser);
+BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput_c32(char ch, void BS3_FAR *pvUser);
+BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput_c64(char ch, void BS3_FAR *pvUser);
+#define bs3TestFailedStrOutput BS3_CMN_NM(bs3TestFailedStrOutput) /**< Selects #bs3TestFailedStrOutput_c16, #bs3TestFailedStrOutput_c32 or #bs3TestFailedStrOutput_c64. */
 
 #endif
 

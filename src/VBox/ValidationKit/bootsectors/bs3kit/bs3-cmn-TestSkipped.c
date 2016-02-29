@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TestInit
+ * BS3Kit - Bs3TestSkipped
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,34 +33,39 @@
 
 
 /**
- * Equivalent to RTTestCreate + RTTestBanner.
- *
- * @param   pszTest         The test name.
+ * Equivalent to RTTestSkippedV.
  */
-BS3_DECL(void) Bs3TestInit(const char BS3_FAR *pszTest)
+BS3_DECL(void) Bs3TestSkippedV(const char *pszFormat, va_list va)
 {
-    /*
-     * Initialize the globals.
-     */
-    BS3_CMN_NM(g_pszBs3Test)                 = pszTest;
-    BS3_DATA_NM(g_szBs3SubTest)[0]           = '\0';
-    BS3_DATA_NM(g_cusBs3TestErrors)          = 0;
-    BS3_DATA_NM(g_cusBs3SubTestAtErrors)     = 0;
-    BS3_DATA_NM(g_fbBs3SubTestReported)      = true;
-    BS3_DATA_NM(g_fbBs3SubTestSkipped)       = true;
-    BS3_DATA_NM(g_cusBs3SubTests)            = 0;
-    BS3_DATA_NM(g_cusBs3SubTestsFailed)      = 0;
-    BS3_DATA_NM(g_fbBs3VMMDevTesting)        = bs3TestIsVmmDevTestingPresent();
+    /* Just mark it as skipped and deal with it when the sub-test is done. */
+    BS3_DATA_NM(g_fbBs3SubTestSkipped) = true;
 
-    /*
-     * Print the name - RTTestBanner.
-     */
-    Bs3PrintStr(pszTest);
-    Bs3PrintStr(": TESTING...\r\n");
+    /* The reason why it was skipp is optional. */
+    if (pszFormat)
+    {
+        bool fNewLine = false;
+        Bs3StrFormatV(pszFormat, va, bs3TestFailedStrOutput, &fNewLine);
+    }
+}
 
-    /*
-     * Report it to the VMMDev.
-     */
-    bs3TestSendCmdWithStr(VMMDEV_TESTING_CMD_INIT, pszTest);
+
+/**
+ * Equivalent to RTTestSkipped.
+ */
+BS3_DECL(void) Bs3TestSkippedF(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    Bs3TestSkippedV(pszFormat, va);
+    va_end(va);
+}
+
+
+/**
+ * Equivalent to RTTestSkipped.
+ */
+BS3_DECL(void) Bs3TestSkipped(const char *pszWhy)
+{
+    Bs3TestSkippedF(pszWhy ? "%s" : NULL, pszWhy);
 }
 

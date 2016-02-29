@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TestInit
+ * BS3Kit - Bs3TestSub, Bs3TestSubF, Bs3TestSubV.
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,35 +32,57 @@
 #include "bs3-cmn-test.h"
 
 
+
 /**
- * Equivalent to RTTestCreate + RTTestBanner.
- *
- * @param   pszTest         The test name.
+ * Equivalent to RTTestISubV.
  */
-BS3_DECL(void) Bs3TestInit(const char BS3_FAR *pszTest)
+BS3_DECL(void) Bs3TestSubV(const char *pszFormat, va_list va)
 {
-    /*
-     * Initialize the globals.
-     */
-    BS3_CMN_NM(g_pszBs3Test)                 = pszTest;
-    BS3_DATA_NM(g_szBs3SubTest)[0]           = '\0';
-    BS3_DATA_NM(g_cusBs3TestErrors)          = 0;
-    BS3_DATA_NM(g_cusBs3SubTestAtErrors)     = 0;
-    BS3_DATA_NM(g_fbBs3SubTestReported)      = true;
-    BS3_DATA_NM(g_fbBs3SubTestSkipped)       = true;
-    BS3_DATA_NM(g_cusBs3SubTests)            = 0;
-    BS3_DATA_NM(g_cusBs3SubTestsFailed)      = 0;
-    BS3_DATA_NM(g_fbBs3VMMDevTesting)        = bs3TestIsVmmDevTestingPresent();
+    size_t cch;
 
     /*
-     * Print the name - RTTestBanner.
+     * Cleanup any previous sub-test.
      */
-    Bs3PrintStr(pszTest);
-    Bs3PrintStr(": TESTING...\r\n");
+    bs3TestSubCleanup();
 
     /*
-     * Report it to the VMMDev.
+     * Format the sub-test name and update globals.
      */
-    bs3TestSendCmdWithStr(VMMDEV_TESTING_CMD_INIT, pszTest);
+    cch = Bs3StrPrintfV(BS3_DATA_NM(g_szBs3SubTest), sizeof(BS3_DATA_NM(g_szBs3SubTest)), pszFormat, va);
+    BS3_DATA_NM(g_cusBs3SubTestAtErrors) = BS3_DATA_NM(g_cusBs3TestErrors);
+    BS3_ASSERT(!BS3_DATA_NM(g_fbBs3SubTestSkipped));
+
+    /*
+     * Tell VMMDev and output to the console.
+     */
+    bs3TestSendCmdWithStr(VMMDEV_TESTING_CMD_SUB_NEW, pszFormat);
+
+    Bs3PrintStr(BS3_DATA_NM(g_szBs3SubTest));
+    Bs3PrintChr(':');
+    do
+       Bs3PrintChr(' ');
+    while (cch++ < 49);
+    Bs3PrintStr(" TESTING\n");
+}
+
+
+/**
+ * Equivalent to RTTestIFailedF.
+ */
+BS3_DECL(void) Bs3TestSubF(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    Bs3TestSubV(pszFormat, va);
+    va_end(va);
+}
+
+
+/**
+ * Equivalent to RTTestISub.
+ */
+BS3_DECL(void) Bs3TestSub(const char *pszMessage)
+{
+    Bs3TestSubF("%s", pszMessage);
 }
 

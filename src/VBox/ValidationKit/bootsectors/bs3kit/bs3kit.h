@@ -1147,9 +1147,9 @@ BS3_DECL(void) Bs3PrintChr_c64(char ch); /**< @copydoc Bs3PrintChr_c16 */
  * @param   ch      The character to write. Zero in the final call.
  * @param   pvUser  User argument supplied to #Bs3StrFormatV.
  */
-typedef size_t BS3_CALL FNBS3STRFORMATOUTPUT(char ch, void BS3_FAR *pvUser);
+typedef BS3_DECL_CALLBACK(size_t) FNBS3STRFORMATOUTPUT(char ch, void BS3_FAR *pvUser);
 /** Pointer to an output function for #Bs3StrFormatV. */
-typedef FNBS3STRFORMATOUTPUT BS3_NEAR_CODE *PFNBS3STRFORMATOUTPUT;
+typedef FNBS3STRFORMATOUTPUT *PFNBS3STRFORMATOUTPUT;
 
 /**
  * Formats a string, sending the output to @a pfnOutput.
@@ -1327,6 +1327,163 @@ BS3_DECL(void) Bs3TestTerm_c16(void);
 BS3_DECL(void) Bs3TestTerm_c32(void); /**< @copydoc Bs3TestTerm_c16 */
 BS3_DECL(void) Bs3TestTerm_c64(void); /**< @copydoc Bs3TestTerm_c16 */
 #define Bs3TestTerm BS3_CMN_NM(Bs3TestTerm) /**< Selects #Bs3TestTerm_c16, #Bs3TestTerm_c32 or #Bs3TestTerm_c64. */
+
+/**
+ * Equivalent to RTTestISub.
+ */
+BS3_DECL(void) Bs3TestSub_c16(const char BS3_FAR *pszSubTest);
+BS3_DECL(void) Bs3TestSub_c32(const char BS3_FAR *pszSubTest); /**< @copydoc Bs3TestSub_c16 */
+BS3_DECL(void) Bs3TestSub_c64(const char BS3_FAR *pszSubTest); /**< @copydoc Bs3TestSub_c16 */
+#define Bs3TestSub BS3_CMN_NM(Bs3TestSub) /**< Selects #Bs3TestSub_c16, #Bs3TestSub_c32 or #Bs3TestSub_c64. */
+
+/**
+ * Equivalent to RTTestIFailedF.
+ */
+BS3_DECL(void) Bs3TestSubF_c16(const char BS3_FAR *pszFormat, ...);
+BS3_DECL(void) Bs3TestSubF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSubF_c16 */
+BS3_DECL(void) Bs3TestSubF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSubF_c16 */
+#define Bs3TestSubF BS3_CMN_NM(Bs3TestSubF) /**< Selects #Bs3TestSubF_c16, #Bs3TestSubF_c32 or #Bs3TestSubF_c64. */
+
+/**
+ * Equivalent to RTTestISubV.
+ */
+BS3_DECL(void) Bs3TestSubV_c16(const char BS3_FAR *pszFormat, va_list va);
+BS3_DECL(void) Bs3TestSubV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSubV_c16 */
+BS3_DECL(void) Bs3TestSubV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSubV_c16 */
+#define Bs3TestSubV BS3_CMN_NM(Bs3TestSubV) /**< Selects #Bs3TestSubV_c16, #Bs3TestSubV_c32 or #Bs3TestSubV_c64. */
+
+/**
+ * Equivalent to RTTestISubDone.
+ */
+BS3_DECL(void) Bs3TestSubDone_c16(void);
+BS3_DECL(void) Bs3TestSubDone_c32(void); /**< @copydoc Bs3TestSubDone_c16 */
+BS3_DECL(void) Bs3TestSubDone_c64(void); /**< @copydoc Bs3TestSubDone_c16 */
+#define Bs3TestSubDone BS3_CMN_NM(Bs3TestSubDone) /**< Selects #Bs3TestSubDone_c16, #Bs3TestSubDone_c32 or #Bs3TestSubDone_c64. */
+
+/**
+ * Equivalent to RTTestSubErrorCount.
+ */
+BS3_DECL(uint16_t) Bs3TestSubErrorCount_c16(void);
+BS3_DECL(uint16_t) Bs3TestSubErrorCount_c32(void); /**< @copydoc Bs3TestSubErrorCount_c16 */
+BS3_DECL(uint16_t) Bs3TestSubErrorCount_c64(void); /**< @copydoc Bs3TestSubErrorCount_c16 */
+#define Bs3TestSubErrorCount BS3_CMN_NM(Bs3TestSubErrorCount) /**< Selects #Bs3TestSubErrorCount_c16, #Bs3TestSubErrorCount_c32 or #Bs3TestSubErrorCount_c64. */
+
+/**
+ * Equivalent to RTTestIFailed.
+ */
+BS3_DECL(void) Bs3TestFailed_c16(const char BS3_FAR *pszMessage);
+BS3_DECL(void) Bs3TestFailed_c32(const char BS3_FAR *pszMessage); /**< @copydoc Bs3TestFailed_c16 */
+BS3_DECL(void) Bs3TestFailed_c64(const char BS3_FAR *pszMessage); /**< @copydoc Bs3TestFailed_c16 */
+#define Bs3TestFailed BS3_CMN_NM(Bs3TestFailed) /**< Selects #Bs3TestFailed_c16, #Bs3TestFailed_c32 or #Bs3TestFailed_c64. */
+
+/**
+ * Equivalent to RTTestIFailedF.
+ */
+BS3_DECL(void) Bs3TestFailedF_c16(const char BS3_FAR *pszFormat, ...);
+BS3_DECL(void) Bs3TestFailedF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestFailedF_c16 */
+BS3_DECL(void) Bs3TestFailedF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestFailedF_c16 */
+#define Bs3TestFailedF BS3_CMN_NM(Bs3TestFailedF) /**< Selects #Bs3TestFailedF_c16, #Bs3TestFailedF_c32 or #Bs3TestFailedF_c64. */
+
+/**
+ * Equivalent to RTTestIFailedV.
+ */
+BS3_DECL(void) Bs3TestFailedV_c16(const char BS3_FAR *pszFormat, va_list va);
+BS3_DECL(void) Bs3TestFailedV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestFailedV_c16 */
+BS3_DECL(void) Bs3TestFailedV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestFailedV_c16 */
+#define Bs3TestFailedV BS3_CMN_NM(Bs3TestFailedV) /**< Selects #Bs3TestFailedV_c16, #Bs3TestFailedV_c32 or #Bs3TestFailedV_c64. */
+
+/**
+ * Equivalent to RTTestISkipped.
+ *
+ * @param   pszWhy          Optional reason why it's being skipped.
+ */
+BS3_DECL(void) Bs3TestSkipped_c16(const char BS3_FAR *pszWhy);
+BS3_DECL(void) Bs3TestSkipped_c32(const char BS3_FAR *pszWhy); /**< @copydoc Bs3TestSkipped_c16 */
+BS3_DECL(void) Bs3TestSkipped_c64(const char BS3_FAR *pszWhy); /**< @copydoc Bs3TestSkipped_c16 */
+#define Bs3TestSkipped BS3_CMN_NM(Bs3TestSkipped) /**< Selects #Bs3TestSkipped_c16, #Bs3TestSkipped_c32 or #Bs3TestSkipped_c64. */
+
+/**
+ * Equivalent to RTTestISkippedF.
+ *
+ * @param   pszFormat       Optional reason why it's being skipped.
+ * @param   ...             Format arguments.
+ */
+BS3_DECL(void) Bs3TestSkippedF_c16(const char BS3_FAR *pszFormat, ...);
+BS3_DECL(void) Bs3TestSkippedF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSkippedF_c16 */
+BS3_DECL(void) Bs3TestSkippedF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSkippedF_c16 */
+#define Bs3TestSkippedF BS3_CMN_NM(Bs3TestSkippedF) /**< Selects #Bs3TestSkippedF_c16, #Bs3TestSkippedF_c32 or #Bs3TestSkippedF_c64. */
+
+/**
+ * Equivalent to RTTestISkippedV.
+ *
+ * @param   pszFormat       Optional reason why it's being skipped.
+ * @param   va              Format arguments.
+ */
+BS3_DECL(void) Bs3TestSkippedV_c16(const char BS3_FAR *pszFormat, va_list va);
+BS3_DECL(void) Bs3TestSkippedV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSkippedV_c16 */
+BS3_DECL(void) Bs3TestSkippedV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSkippedV_c16 */
+#define Bs3TestSkippedV BS3_CMN_NM(Bs3TestSkippedV) /**< Selects #Bs3TestSkippedV_c16, #Bs3TestSkippedV_c32 or #Bs3TestSkippedV_c64. */
+
+
+/**
+ * Performs the testing for the given mode.
+ *
+ * This is called with the CPU already switch to that mode.
+ *
+ * @returns 0 on success or directly Bs3TestFailed calls, non-zero to indicate
+ *          where the test when wrong.
+ * @param   bMode       The current CPU mode.
+ */
+typedef BS3_DECL_CALLBACK(uint8_t) FNBS3TESTDOMODE(uint8_t bMode);
+/** Near pointer to a test (for 16-bit code). */
+typedef FNBS3TESTDOMODE               *PFNBS3TESTDOMODE;
+/** Far pointer to a test (for 32-bit and 64-bit code, will be flatten). */
+typedef FNBS3TESTDOMODE BS3_FAR_CODE  *FPFNBS3TESTDOMODE;
+
+/**
+ * Mode sub-test entry.
+ *
+ * This can only be passed around to functions with the same bit count, as it
+ * contains function pointers.  In 16-bit mode, the 16-bit pointers are near and
+ * implies BS3TEXT16, whereas the 32-bit and 64-bit pointers are far real mode
+ * addresses that will be converted to flat address prior to calling them.
+ * Similarly, in 32-bit and 64-bit the addresses are all flat and the 16-bit
+ * ones will be converted to BS3TEXT16 based addresses prior to calling.
+ */
+typedef struct BS3TESTMODEENTRY
+{
+    const char * BS3_FAR    pszSubTest;
+
+    PFNBS3TESTDOMODE        pfnDoRM;
+
+    PFNBS3TESTDOMODE        pfnDoPE16;
+    FPFNBS3TESTDOMODE       pfnDoPE16_32;
+    PFNBS3TESTDOMODE        pfnDoPE16_V86;
+    FPFNBS3TESTDOMODE       pfnDoPE32;
+    PFNBS3TESTDOMODE        pfnDoPE32_16;
+    PFNBS3TESTDOMODE        pfnDoPEV86;
+
+    PFNBS3TESTDOMODE        pfnDoPP16;
+    FPFNBS3TESTDOMODE       pfnDoPP16_32;
+    PFNBS3TESTDOMODE        pfnDoPP16_V86;
+    FPFNBS3TESTDOMODE       pfnDoPP32;
+    PFNBS3TESTDOMODE        pfnDoPP32_16;
+    PFNBS3TESTDOMODE        pfnDoPPV86;
+
+    PFNBS3TESTDOMODE        pfnDoPAE16;
+    FPFNBS3TESTDOMODE       pfnDoPAE16_32;
+    PFNBS3TESTDOMODE        pfnDoPAE16_V86;
+    FPFNBS3TESTDOMODE       pfnDoPAE32;
+    PFNBS3TESTDOMODE        pfnDoPAE32_16;
+    PFNBS3TESTDOMODE        pfnDoPAEV86;
+
+    PFNBS3TESTDOMODE        pfnDoLM16;
+    FPFNBS3TESTDOMODE       pfnDoLM32;
+    FPFNBS3TESTDOMODE       pfnDoLM64;
+
+} BS3TESTMODEENTRY;
+/** Pointer to a mode sub-test entry. */
+typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
 
 
 /**
@@ -2028,6 +2185,14 @@ BS3_MODE_EXPAND_PROTOTYPES(uint8_t, Bs3CpuDetect,(void));
 /** The return value of #Bs3CpuDetect_mmm. (Initial value is BS3CPU_TYPE_MASK.) */
 extern uint16_t BS3_DATA_NM(g_uBs3CpuDetected);
 
+
+/**
+ * Executes the array of tests in every possibly mode.
+ *
+ * @param   paEntries       The mode sub-test entries.
+ * @param   cEntries        The number of sub-test entries.
+ */
+BS3_MODE_EXPAND_PROTOTYPES(void, Bs3TestDoModes, (BS3TESTMODEENTRY paEntries, unsigned cEntries));
 
 /** @} */
 

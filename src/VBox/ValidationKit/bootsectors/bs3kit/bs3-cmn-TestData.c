@@ -48,6 +48,8 @@ uint16_t    g_cusBs3SubTestAtErrors = 0;
 
 /** Whether we've reported the sub-test result or not. */
 bool        g_fbBs3SubTestReported = true;
+/** Whether the sub-test has been skipped or not. */
+bool        g_fbBs3SubTestSkipped = false;
 
 /** The number of sub tests. */
 uint16_t    g_cusBs3SubTests = 0;
@@ -92,10 +94,12 @@ char const  g_aszBs3TestUnitNames[][16] =
     "ppb",
 };
 
+
+/** The subtest name. */
+char        g_szBs3SubTest[64];
+
 #endif /* ARCH_BITS == 16 */
 
 /** The test name. */
 const char BS3_FAR *BS3_CMN_NM(g_pszBs3Test) = NULL;
-/** The subtest name. */
-const char BS3_FAR *BS3_CMN_NM(g_pszBs3SubTest) = NULL;
 
