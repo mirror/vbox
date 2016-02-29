@@ -890,7 +890,7 @@ DECLINLINE(int) VUSBIRhSetPeriodicFrameProcessing(PVUSBIROOTHUBCONNECTOR pInterf
     return pInterface->pfnSetPeriodicFrameProcessing(pInterface, uFrameRate);
 }
 
-/** @copydoc VUSBIROOTHUBCONNECTOR::pfnSetPeriodicFrameProcessing */
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnGetPeriodicFrameRate */
 DECLINLINE(uint32_t) VUSBIRhGetPeriodicFrameRate(PVUSBIROOTHUBCONNECTOR pInterface)
 {
     return pInterface->pfnGetPeriodicFrameRate(pInterface);
