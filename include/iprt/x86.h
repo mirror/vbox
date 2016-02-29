@@ -476,6 +476,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_EDX_MSR       RT_BIT(5)
 /** Bit 6 - PAE - Physical Address Extension. */
 #define X86_CPUID_FEATURE_EDX_PAE       RT_BIT(6)
+#define X86_CPUID_FEATURE_EDX_PAE_BIT   6
 /** Bit 7 - MCE - Machine Check Exception. */
 #define X86_CPUID_FEATURE_EDX_MCE       RT_BIT(7)
 /** Bit 8 - CX8 - CMPXCHG8B instruction. */
