@@ -574,48 +574,59 @@
         </layout>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="m_pLabelVirtualization">
-         <property name="text">
-          <string>Hardware Virtualization:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
+        <layout class="QVBoxLayout" name="m_pVerticalLayout1">
+         <item>
+          <widget class="QLabel" name="m_pLabelVirtualization">
+           <property name="text">
+            <string>Hardware Virtualization:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="m_pWidgetPlaceholder"/>
+         </item>
+        </layout>
        </item>
        <item row="1" column="1">
-        <widget class="QCheckBox" name="m_pCheckBoxVirtualization">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>1</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="whatsThis">
-          <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V.</string>
-         </property>
-         <property name="text">
-          <string>Enable &amp;VT-x/AMD-V</string>
-         </property>
-        </widget>
+        <layout class="QVBoxLayout" name="m_pVerticalLayout2">
+         <item>
+          <widget class="QCheckBox" name="m_pCheckBoxVirtualization">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+             <horstretch>1</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="whatsThis">
+            <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V.</string>
+           </property>
+           <property name="text">
+            <string>Enable &amp;VT-x/AMD-V</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="m_pCheckBoxNestedPaging">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="whatsThis">
+            <string>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</string>
+           </property>
+           <property name="text">
+            <string>Enable Nested Pa&amp;ging</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
-       <item row="2" column="1">
-        <widget class="QCheckBox" name="m_pCheckBoxNestedPaging">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="whatsThis">
-          <string>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</string>
-         </property>
-         <property name="text">
-          <string>Enable Nested Pa&amp;ging</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
+       <item row="2" column="0" colspan="2">
         <spacer name="m_pSpacerVertical4">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
