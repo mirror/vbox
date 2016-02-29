@@ -1190,6 +1190,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         fGimHvVsIf = RT_BOOL(strVal.toUInt32());
                     else if (strKey == "hypercallinterface")
                         fGimHvHypercallIf = RT_BOOL(strVal.toUInt32());
+                    else
+                    {
+                        AssertMsgFailed(("Unrecognized Hyper-V debug option '%s'\n", strKey.c_str()));
+                        return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                            N_("Unrecognized Hyper-V debug option '%s' in '%s'"), strKey.c_str(),
+                                            strDebugOptions.c_str());
+                    }
                 } while (uPos != com::Utf8Str::npos);
 
                 /* Update HyperV CFGM node with active debug options. */
