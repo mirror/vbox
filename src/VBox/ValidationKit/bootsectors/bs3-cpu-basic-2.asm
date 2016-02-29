@@ -30,54 +30,6 @@
 ;*********************************************************************************************************************************
 %include "bs3kit.mac"
 
-;
-; Segment defs, grouping and related variables.
-; Defines the entry point 'start' as well, leaving us in BS3TEXT16.
-;
-%include "bs3-first-common.mac"
 
-
-;
-; We start in real mode.
-;
-%define TMPL_RM
-%include "bs3kit-template-header.mac"
-
-BS3_EXTERN_DATA16 g_uBs3CpuDetected
-BS3_BEGIN_TEXT16
-BS3_EXTERN_CMN  Bs3Shutdown
-extern          _Bs3InitAll_rm
-
-
-BS3_BEGIN_TEXT16
-BS3_PROC_BEGIN Bs3CpuBasic2_Main
-        push    word 0                  ; zero return address.
-        push    word 0                  ; zero caller BP
-        mov     bp, sp
-        sub     sp, 20h                 ; reserve 20h for 64-bit calls (we're doing them MSC style, remember).
-
-        call    _Bs3InitAll_rm
-
-        ;
-        ; Start testing.
-        ;
-
-
-
-        ;
-        ; Done.
-        ;
-.shutdown:
-        call    Bs3Shutdown
-        jmp     .shutdown
-BS3_PROC_END   Bs3CpuBasic2_Main
-
-
-;
-; Instantiate the test template code.
-;
-%include "bs3kit-template-footer.mac"  ; reset the initial environemnt.
-
-
-BS3_INSTANTIATE_TEMPLATE_WITH_WEIRD_ONES "bs3-cpu-basic-2-template.mac"
+BS3_INSTANTIATE_COMMON_TEMPLATE "bs3-cpu-basic-2-template.mac"
 

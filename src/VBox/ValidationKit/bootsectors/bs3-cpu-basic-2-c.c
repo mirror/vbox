@@ -31,13 +31,26 @@
 #include <bs3kit.h>
 
 
+FNBS3TESTDOMODE               bs3CpuBasic2_iret_c16;
+FNBS3TESTDOMODE BS3_FAR_CODE  bs3CpuBasic2_iret_c32;
+FNBS3TESTDOMODE BS3_FAR_CODE  bs3CpuBasic2_iret_c64;
+
+
+static const BS3TESTMODEENTRY g_aModeTest[] =
+{
+    { "iret", bs3CpuBasic2_iret_c16,
+        bs3CpuBasic2_iret_c16, bs3CpuBasic2_iret_c32, bs3CpuBasic2_iret_c16,
+        bs3CpuBasic2_iret_c32, bs3CpuBasic2_iret_c16, bs3CpuBasic2_iret_c16 }
+};
+
 
 BS3_DECL(void) Main_rm()
 {
     Bs3InitAll_rm();
     Bs3TestInit("bs3-cpu-basic-2");
 
-    Bs3TestTerm();
+    //Bs3TestDoModes(g_aModeTest, RT_ELEMENTS(g_aModeTest));
 
+    Bs3TestTerm();
 }
 
