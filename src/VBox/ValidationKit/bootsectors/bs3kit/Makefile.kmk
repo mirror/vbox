@@ -189,6 +189,7 @@ bs3kit-common-64-c_SOURCES  = $(filter-out %.asm,$(VBOX_BS3KIT_COMMON_SOURCES))
 # Common sources to be compiled for each CPU mode.
 #
 VBOX_BS3KIT_MODE_SOURCES = \
+	bs3-mode-Name.asm \
 	bs3-mode-SwitchToRM.asm \
 	bs3-mode-SwitchToPE16.asm \
 	bs3-mode-SwitchToPE32.asm \
@@ -206,6 +207,8 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-PagingGetRootForPAE32.asm \
 	bs3-mode-PagingGetRootForLM64.asm \
 	bs3-mode-TrapSystemCallHandler.asm \
+	bs3-mode-TestDoModes.c \
+	bs3-mode-TestDoModesHlp.asm \
 
 # The 16-bit real mode BS3Kit library.
 LIBRARIES += bs3kit-rm

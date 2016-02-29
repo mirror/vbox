@@ -2130,25 +2130,69 @@ BS3_DECL(void) Bs3InitMemory_rm(void);
  * @{
  */
 
+
 /**
  * Macro for reducing typing.
  *
  * Doxygen knows how to expand this, well, kind of.
  */
 #define BS3_MODE_EXPAND_PROTOTYPES(a_RetType, a_BaseFnNm, a_Parameters) \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_rm)     a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16)   a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32)   a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pev86)  a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16)   a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32)   a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_ppv86)  a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16)  a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32)  a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_paev86) a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm16)   a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm32)   a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm64)   a_Parameters
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_rm)       a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16)     a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16_32)  a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16_v86) a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32)     a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32_16)  a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pev86)    a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16)     a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16_32)  a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16_v86) a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32)     a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32_16)  a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_ppv86)    a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16)    a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_16) a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_v86)a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32)    a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32_16) a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_paev86)   a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm16)     a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm32)     a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm64)     a_Parameters
+
+/**
+ * Macro for reducing typing.
+ *
+ * Doxygen knows how to expand this, well, kind of.
+ */
+#define BS3_MODE_EXPAND_EXTERN_DATA16(a_VarType, a_VarName, a_Suffix) \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_rm))       a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16))     a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16_32))  a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16_v86)) a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe32))     a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe32_16))  a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pev86))    a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16))     a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16_32))  a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16_v86)) a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp32))     a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp32_16))  a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_ppv86))    a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16))    a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16_32)) a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16_v86))a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae32))    a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae32_16)) a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_paev86))   a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm16))     a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm32))     a_Suffix; \
+    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm64))     a_Suffix
+
+
+/** The TMPL_MODE_STR value for each mode.
+ * These are all in DATA16 so they can be accessed from any code.  */
+BS3_MODE_EXPAND_EXTERN_DATA16(const char *, g_szBs3ModeName, []);
 
 /**
  * Basic CPU detection.
@@ -2178,8 +2222,10 @@ BS3_MODE_EXPAND_PROTOTYPES(uint8_t, Bs3CpuDetect,(void));
 #define BS3CPU_F_CPUID              UINT16_C(0x0100)
 /** Flag indicating that extend CPUID leaves are available (at least two).   */
 #define BS3CPU_F_CPUID_EXT_LEAVES   UINT16_C(0x0200)
+/** Flag indicating that the CPU supports PAE. */
+#define BS3CPU_F_PAE                UINT16_C(0x0400)
 /** Flag indicating that the CPU supports long mode. */
-#define BS3CPU_F_LONG_MODE          UINT16_C(0x0400)
+#define BS3CPU_F_LONG_MODE          UINT16_C(0x0800)
 /** @} */
 
 /** The return value of #Bs3CpuDetect_mmm. (Initial value is BS3CPU_TYPE_MASK.) */

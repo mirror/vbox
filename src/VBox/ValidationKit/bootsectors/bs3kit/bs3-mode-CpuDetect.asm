@@ -183,25 +183,37 @@ CPU 586
 .have_cpuid:
         ;
         ; Do a very simple minded check here using the (standard) family field.
+        ; While here, we also check for PAE.
         ;
         mov     eax, 1
         cpuid
+
+        ; Calc the basic family value before we mess up EAX.
         mov     cl, ah
-        and     cl, 0fh                 ; Family.
+        and     cl, 0fh
+
+        ; Start assembling return flags, checking for PAE.
+        mov     xAX, BS3CPU_F_CPUID
+        and     dx, X86_CPUID_FEATURE_EDX_PAE
+        shl     dx, BS3CPU_F_PAE_BIT - X86_CPUID_FEATURE_EDX_PAE_BIT
+        or      ax, dx
+
+        ; Add the CPU type based on the family value.
         cmp     cl, 6
-        mov     xAX, BS3CPU_PPro | BS3CPU_F_CPUID
+        or      al, BS3CPU_PPro
         jz      .return
         ja      .NewerThanPPro
         cmp     cl, 5
-        mov     xAX, BS3CPU_Pentium | BS3CPU_F_CPUID
+        or      al, BS3CPU_Pentium
         je      .return
         cmp     cl, 4
-        mov     xAX, BS3CPU_80486 | BS3CPU_F_CPUID
+        or      al, BS3CPU_80486
         je      .return
         cmp     cl, 3
-        mov     xAX, BS3CPU_80386 | BS3CPU_F_CPUID
+        or      al, BS3CPU_80386
         je      .return
 .NewerThanPPro:
+
         ; Check for extended leaves and long mode.
         mov     eax, 0x80000000
         cpuid
