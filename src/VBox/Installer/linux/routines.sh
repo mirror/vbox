@@ -365,7 +365,10 @@ maybe_run_python_bindings_installer() {
     echo  1>&2 "Python found: $PYTHON, installing bindings..."
     # Pass install path via environment
     export VBOX_INSTALL_PATH
-    $SHELL -c "cd $VBOX_INSTALL_PATH/sdk/installer && $PYTHON vboxapisetup.py install"
+    $SHELL -c "cd $VBOX_INSTALL_PATH/sdk/installer && $PYTHON vboxapisetup.py install \
+        --record $CONFIG_DIR/python-$CONFIG_FILES"
+    cat $CONFIG_DIR/python-$CONFIG_FILES >> $CONFIG_DIR/$CONFIG_FILES
+    rm $CONFIG_DIR/python-$CONFIG_FILES
     # remove files created during build
     rm -rf $VBOX_INSTALL_PATH/sdk/installer/build
 

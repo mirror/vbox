@@ -356,7 +356,7 @@ if [ "$ACTION" = "install" ]; then
 
     # If Python is available, install Python bindings
     if [ -n "$PYTHON" ]; then
-      maybe_run_python_bindings_installer $INSTALLATION_DIR
+      maybe_run_python_bindings_installer $INSTALLATION_DIR $CONFIG_DIR $CONFIG_FILES
     fi
 
     # Do post-installation common to all installer types, currently service
