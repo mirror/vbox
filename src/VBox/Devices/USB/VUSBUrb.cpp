@@ -375,6 +375,8 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
         LogFlow(("%s: vusbUrbCompletionRh: Freeing URB\n", pUrb->pszDesc));
         pUrb->pVUsb->pfnFree(pUrb);
     }
+
+    vusbRhR3ProcessFrame(pRh, true /* fCallback */);
 }
 
 

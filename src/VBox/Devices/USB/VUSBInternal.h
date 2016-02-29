@@ -385,49 +385,70 @@ typedef struct VUSBROOTHUB
 {
     /** The HUB.
      * @todo remove this? */
-    VUSBHUB                 Hub;
+    VUSBHUB                    Hub;
     /** Address hash table. */
-    PVUSBDEV                apAddrHash[VUSB_ADDR_HASHSZ];
+    PVUSBDEV                   apAddrHash[VUSB_ADDR_HASHSZ];
     /** The default address. */
-    PVUSBDEV                pDefaultAddress;
+    PVUSBDEV                   pDefaultAddress;
 
     /** Pointer to the driver instance. */
-    PPDMDRVINS              pDrvIns;
+    PPDMDRVINS                 pDrvIns;
     /** Pointer to the root hub port interface we're attached to. */
-    PVUSBIROOTHUBPORT       pIRhPort;
+    PVUSBIROOTHUBPORT          pIRhPort;
     /** Connector interface exposed upwards. */
-    VUSBIROOTHUBCONNECTOR   IRhConnector;
-
-#if HC_ARCH_BITS == 32
-    uint32_t                Alignment0;
-#endif
+    VUSBIROOTHUBCONNECTOR      IRhConnector;
 
     /** Critical section protecting the device list. */
-    RTCRITSECT              CritSectDevices;
+    RTCRITSECT                 CritSectDevices;
     /** Chain of devices attached to this hub. */
-    PVUSBDEV                pDevices;
+    PVUSBDEV                   pDevices;
 
 #if HC_ARCH_BITS == 32
-    uint32_t                Alignment1;
+    uint32_t                   Alignment0;
 #endif
 
     /** Availability Bitmap. */
-    VUSBPORTBITMAP          Bitmap;
+    VUSBPORTBITMAP             Bitmap;
 
     /** Sniffer instance for the root hub. */
-    VUSBSNIFFER             hSniffer;
+    VUSBSNIFFER                hSniffer;
     /** Version of the attached Host Controller. */
-    uint32_t                fHcVersions;
+    uint32_t                   fHcVersions;
     /** Size of the HCI specific data for each URB. */
-    size_t                  cbHci;
+    size_t                     cbHci;
     /** Size of the HCI specific TD. */
-    size_t                  cbHciTd;
+    size_t                     cbHciTd;
+
+    /** The periodic frame processing thread. */
+    R3PTRTYPE(PPDMTHREAD)      hThreadPeriodFrame;
+    /** Event semaphore to interact with the periodic frame processing thread. */
+    R3PTRTYPE(RTSEMEVENTMULTI) hSemEventPeriodFrame;
+    /** Event semaphore to release the thread waiting for the periodic frame processing thread to stop. */
+    R3PTRTYPE(RTSEMEVENTMULTI) hSemEventPeriodFrameStopped;
+    /** Current default frame rate for periodic frame processing thread. */
+    volatile uint32_t          uFrameRateDefault;
+    /** Current frame rate (can be lower than the default frame rate if there is no activity). */
+    uint32_t                   uFrameRate;
+    /** How long to wait until the next frame. */
+    uint64_t                   nsWait;
+    /** Timestamp when the last frame was processed. */
+    uint64_t                   tsFrameProcessed;
+    /** Number of USB work cycles with no transfers. */
+    uint32_t                   cIdleCycles;
+
+    /** Flag whether a frame is currently being processed. */
+    volatile bool              fFrameProcessing;
+
+#if HC_ARCH_BITS == 32
+    uint32_t                   Alignment1;
+#endif
+
 #ifdef LOG_ENABLED
     /** A serial number for URBs submitted on the roothub instance.
      * Only logging builds. */
-    uint32_t                iSerial;
+    uint32_t                   iSerial;
     /** Alignment */
-    uint32_t                Alignment2;
+    uint32_t                   Alignment2;
 #endif
 #ifdef VBOX_WITH_STATISTICS
     VUSBROOTHUBTYPESTATS    Total;
@@ -453,6 +474,8 @@ typedef struct VUSBROOTHUB
 
     STAMPROFILE             StatReapAsyncUrbs;
     STAMPROFILE             StatSubmitUrb;
+    STAMCOUNTER             StatFramesProcessedClbk;
+    STAMCOUNTER             StatFramesProcessedThread;
 #endif
 } VUSBROOTHUB;
 AssertCompileMemberAlignment(VUSBROOTHUB, IRhConnector, 8);
@@ -499,6 +522,8 @@ DECLHIDDEN(int) vusbDevIoThreadExecV(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFu
 DECLHIDDEN(int) vusbDevIoThreadExec(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
 DECLHIDDEN(int) vusbDevIoThreadExecSync(PVUSBDEV pDev, PFNRT pfnFunction, unsigned cArgs, ...);
 DECLHIDDEN(int) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode);
+
+DECLHIDDEN(uint64_t) vusbRhR3ProcessFrame(PVUSBROOTHUB pThis, bool fCallback);
 
 int  vusbUrbQueueAsyncRh(PVUSBURB pUrb);
 

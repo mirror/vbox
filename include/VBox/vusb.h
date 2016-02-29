@@ -28,6 +28,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <iprt/assert.h>
 
 struct PDMLED;
 
@@ -644,12 +645,31 @@ typedef struct VUSBIROOTHUBPORT
      */
     DECLR3CALLBACKMEMBER(bool, pfnXferError,(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb));
 
+    /**
+     * Processes a new frame if periodic frame processing is enabled.
+     *
+     * @returns Flag whether there was activity which influences the frame rate.
+     * @param   pInterface      Pointer to this structure.
+     * @param   u32FrameNo      The frame number.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnStartFrame, (PVUSBIROOTHUBPORT pInterface, uint32_t u32FrameNo));
+
+    /**
+     * Informs the callee about a change in the frame rate due to too many idle cycles or
+     * when seeing activity after some idle time.
+     *
+     * @returns nothing.
+     * @param   pInterface      Pointer to this structure.
+     * @param   u32Framerate    The new frame rate.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnFrameRateChanged, (PVUSBIROOTHUBPORT pInterface, uint32_t u32FrameRate));
+
     /** Alignment dummy. */
     RTR3PTR Alignment;
 
 } VUSBIROOTHUBPORT;
 /** VUSBIROOTHUBPORT interface ID. */
-#define VUSBIROOTHUBPORT_IID                    "79a31188-043d-432c-82ac-9485c9ab9a49"
+#define VUSBIROOTHUBPORT_IID                    "6571aece-6c33-4714-a8ac-9508a3b8b429"
 
 /** Pointer to a VUSB RootHub connector interface. */
 typedef struct VUSBIROOTHUBCONNECTOR *PVUSBIROOTHUBCONNECTOR;
@@ -788,12 +808,30 @@ typedef struct VUSBIROOTHUBCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnDetachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice));
 
-    /** Alignment dummy. */
-    RTR3PTR Alignment;
+    /**
+     * Sets periodic frame processing.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this struct.
+     * @param   uFrameRate  The target frame rate in Hertz, 0 disables periodic frame processing.
+     *                      The real frame rate might be lower if there is no activity for a certain period or
+     *                      higher if there is a need for catching up with where the guest expects the device to be.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetPeriodicFrameProcessing, (PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uFrameRate));
+
+    /**
+     * Returns the current frame rate for the periodic frame processing.
+     *
+     * @returns Frame rate for periodic frame processing.
+     * @retval  0 if disabled.
+     * @param   pInterface  Pointer to this struct.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetPeriodicFrameRate, (PVUSBIROOTHUBCONNECTOR pInterface));
 
 } VUSBIROOTHUBCONNECTOR;
+AssertCompileSizeAlignment(VUSBIROOTHUBCONNECTOR, 8);
 /** VUSBIROOTHUBCONNECTOR interface ID. */
-#define VUSBIROOTHUBCONNECTOR_IID               "a593cc64-a821-4e57-af2d-f86b2a052ea4"
+#define VUSBIROOTHUBCONNECTOR_IID               "662d7822-b9c6-43b5-88b6-5d59f0106e46"
 
 
 #ifdef IN_RING3
@@ -844,6 +882,18 @@ DECLINLINE(int) VUSBIRhAttachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEV
 DECLINLINE(int) VUSBIRhDetachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice)
 {
     return pInterface->pfnDetachDevice(pInterface, pDevice);
+}
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnSetPeriodicFrameProcessing */
+DECLINLINE(int) VUSBIRhSetPeriodicFrameProcessing(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uFrameRate)
+{
+    return pInterface->pfnSetPeriodicFrameProcessing(pInterface, uFrameRate);
+}
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnSetPeriodicFrameProcessing */
+DECLINLINE(uint32_t) VUSBIRhGetPeriodicFrameRate(PVUSBIROOTHUBCONNECTOR pInterface)
+{
+    return pInterface->pfnGetPeriodicFrameRate(pInterface);
 }
 #endif /* IN_RING3 */
 

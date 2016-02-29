@@ -1050,11 +1050,7 @@ int main()
     GEN_CHECK_OFF(OHCI, StatDroppedUrbs);
     GEN_CHECK_OFF(OHCI, StatTimer);
 # endif
-    GEN_CHECK_OFF(OHCI, hThreadFrame);
-    GEN_CHECK_OFF(OHCI, hSemEventFrame);
-    GEN_CHECK_OFF(OHCI, fBusStarted);
     GEN_CHECK_OFF(OHCI, CsIrq);
-    GEN_CHECK_OFF(OHCI, nsWait);
     GEN_CHECK_OFF(OHCI, CritSect);
 
 # ifdef VBOX_WITH_EHCI_IMPL

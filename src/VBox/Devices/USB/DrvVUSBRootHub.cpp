@@ -414,6 +414,177 @@ static PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, PVUSBDEV pDev
 }
 
 
+/**
+ * Calculate frame timer variables given a frame rate.
+ */
+static void vusbRhR3CalcTimerIntervals(PVUSBROOTHUB pThis, uint32_t u32FrameRate)
+{
+    pThis->nsWait     = RT_NS_1SEC / u32FrameRate;
+    pThis->uFrameRate = u32FrameRate;
+    /* Inform the HCD about the new frame rate. */
+    pThis->pIRhPort->pfnFrameRateChanged(pThis->pIRhPort, u32FrameRate);
+}
+
+
+/**
+ * Calculates the new frame rate based on the idle detection and number of idle
+ * cycles.
+ *
+ * @returns nothing.
+ * @param   pThis    The roothub instance data.
+ * @param   fIdle    Flag whether the last frame didn't produce any activity.
+ */
+static void vusbRhR3FrameRateCalcNew(PVUSBROOTHUB pThis, bool fIdle)
+{
+    uint32_t uNewFrameRate = pThis->uFrameRate;
+
+    /*
+     * Adjust the frame timer interval based on idle detection.
+     */
+    if (fIdle)
+    {
+        pThis->cIdleCycles++;
+        /* Set the new frame rate based on how long we've been idle. Tunable. */
+        switch (pThis->cIdleCycles)
+        {
+            case 4: uNewFrameRate = 500;    break;  /*  2ms interval */
+            case 16:uNewFrameRate = 125;    break;  /*  8ms interval */
+            case 24:uNewFrameRate = 50;     break;  /* 20ms interval */
+            default:    break;
+        }
+        /* Avoid overflow. */
+        if (pThis->cIdleCycles > 60000)
+            pThis->cIdleCycles = 20000;
+    }
+    else
+    {
+        if (pThis->cIdleCycles)
+        {
+            pThis->cIdleCycles = 0;
+            uNewFrameRate      = pThis->uFrameRateDefault;
+        }
+    }
+
+    if (uNewFrameRate != pThis->uFrameRate)
+    {
+        LogFlow(("Frame rate changed from %u to %u\n", pThis->uFrameRate, uNewFrameRate));
+        vusbRhR3CalcTimerIntervals(pThis, uNewFrameRate);
+    }
+}
+
+
+/**
+ * The core frame processing routine keeping track of the elapsed time and calling into
+ * the device emulation above us to do the work.
+ *
+ * @returns Relative timespan when to process the next frame.
+ * @param   pThis     The roothub instance data.
+ * @param   fCallback Flag whether this method is called from the URB completion callback or
+ *                    from the worker thread (only used for statistics).
+ */
+DECLHIDDEN(uint64_t) vusbRhR3ProcessFrame(PVUSBROOTHUB pThis, bool fCallback)
+{
+    uint64_t tsNext = 0;
+    uint64_t tsNanoStart = RTTimeNanoTS();
+
+    /* Don't do anything if we are not supposed to process anything (EHCI and XHCI). */
+    if (!pThis->uFrameRateDefault)
+        return 0;
+
+    if (ASMAtomicXchgBool(&pThis->fFrameProcessing, true))
+        return pThis->nsWait;
+
+    if (   tsNanoStart > pThis->tsFrameProcessed
+        && tsNanoStart - pThis->tsFrameProcessed >= 750 * RT_NS_1US)
+    {
+        LogFlowFunc(("Starting new frame at ts %llu\n", tsNanoStart));
+
+        bool fIdle = pThis->pIRhPort->pfnStartFrame(pThis->pIRhPort, 0 /* u32FrameNo */);
+        vusbRhR3FrameRateCalcNew(pThis, fIdle);
+
+        uint64_t tsNow = RTTimeNanoTS();
+        tsNext = (tsNanoStart + pThis->nsWait) > tsNow ? (tsNanoStart + pThis->nsWait) - tsNow : 0;
+        pThis->tsFrameProcessed = tsNanoStart;
+        LogFlowFunc(("Current frame took %llu nano seconds to process, next frame in %llu ns\n", tsNow - tsNanoStart, tsNext));
+        if (fCallback)
+            STAM_COUNTER_INC(&pThis->StatFramesProcessedClbk);
+        else
+            STAM_COUNTER_INC(&pThis->StatFramesProcessedThread);
+    }
+    else
+    {
+        tsNext = (pThis->tsFrameProcessed + pThis->nsWait) > tsNanoStart ? (pThis->tsFrameProcessed + pThis->nsWait) - tsNanoStart : 0;
+        LogFlowFunc(("Next frame is too far away in the future, waiting... (tsNanoStart=%llu tsFrameProcessed=%llu)\n",
+                     tsNanoStart, pThis->tsFrameProcessed));
+    }
+
+    ASMAtomicXchgBool(&pThis->fFrameProcessing, false);
+    LogFlowFunc(("returns %llu\n", tsNext));
+    return tsNext;
+}
+
+
+/**
+ * Worker for processing frames periodically.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns     The driver instance.
+ * @param   pThread     The PDM thread structure for the thread this worker runs on.
+ */
+static DECLCALLBACK(int) vusbRhR3PeriodFrameWorker(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    int rc = VINF_SUCCESS;
+    PVUSBROOTHUB pThis = (PVUSBROOTHUB)pThread->pvUser;
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        while (   !ASMAtomicReadU32(&pThis->uFrameRateDefault)
+               && pThread->enmState == PDMTHREADSTATE_RUNNING)
+        {
+            /* Signal the waiter that we are stopped now. */
+            rc = RTSemEventMultiSignal(pThis->hSemEventPeriodFrameStopped);
+            AssertRC(rc);
+
+            rc = RTSemEventMultiWait(pThis->hSemEventPeriodFrame, RT_INDEFINITE_WAIT);
+            RTSemEventMultiReset(pThis->hSemEventPeriodFrame);
+        }
+
+        AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%Rrc\n", rc), rc);
+        if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
+            break;
+
+        uint64_t tsNext = vusbRhR3ProcessFrame(pThis, false /* fCallback */);
+
+        if (tsNext >= 250 * RT_NS_1US)
+        {
+            rc = RTSemEventMultiWaitEx(pThis->hSemEventPeriodFrame, RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_UNINTERRUPTIBLE,
+                                       tsNext);
+            AssertLogRelMsg(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%Rrc\n", rc));
+            RTSemEventMultiReset(pThis->hSemEventPeriodFrame);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Unblock the periodic frame thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns     The driver instance.
+ * @param   pThread     The send thread.
+ */
+static DECLCALLBACK(int) vusbRhR3PeriodFrameWorkerWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+    return RTSemEventMultiSignal(pThis->hSemEventPeriodFrame);
+}
+
+
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnSetUrbParams */
 static DECLCALLBACK(int) vusbRhSetUrbParams(PVUSBIROOTHUBCONNECTOR pInterface, size_t cbHci, size_t cbHciTd)
 {
@@ -702,6 +873,62 @@ static DECLCALLBACK(int) vusbRhDetachDevice(PVUSBIROOTHUBCONNECTOR pInterface, P
 }
 
 
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnSetFrameProcessing */
+static DECLCALLBACK(int) vusbRhSetFrameProcessing(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uFrameRate)
+{
+    int rc = VINF_SUCCESS;
+    PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+
+    /* Create the frame thread lazily. */
+    if (   !pThis->hThreadPeriodFrame
+        && uFrameRate)
+    {
+        ASMAtomicXchgU32(&pThis->uFrameRateDefault, uFrameRate);
+        pThis->uFrameRate = uFrameRate;
+        vusbRhR3CalcTimerIntervals(pThis, uFrameRate);
+
+        rc = RTSemEventMultiCreate(&pThis->hSemEventPeriodFrame);
+        AssertRCReturn(rc, rc);
+
+        rc = RTSemEventMultiCreate(&pThis->hSemEventPeriodFrameStopped);
+        AssertRCReturn(rc, rc);
+
+        rc = PDMDrvHlpThreadCreate(pThis->pDrvIns, &pThis->hThreadPeriodFrame, pThis, vusbRhR3PeriodFrameWorker,
+                                   vusbRhR3PeriodFrameWorkerWakeup, 0, RTTHREADTYPE_IO, "VUsbPeriodFrm");
+        AssertRCReturn(rc, rc);
+
+        rc = PDMR3ThreadResume(pThis->hThreadPeriodFrame);
+        AssertRCReturn(rc, rc);
+    }
+    else if (   pThis->hThreadPeriodFrame
+             && !uFrameRate)
+    {
+        /* Stop processing. */
+        uint32_t uFrameRateOld = ASMAtomicXchgU32(&pThis->uFrameRateDefault, uFrameRate);
+        if (uFrameRateOld)
+        {
+            rc = RTSemEventMultiReset(pThis->hSemEventPeriodFrameStopped);
+            AssertRC(rc);
+
+            /* Signal the frame thread to stop. */
+            RTSemEventMultiSignal(pThis->hSemEventPeriodFrame);
+
+            /* Wait for signal from the thread that it stopped. */
+            rc = RTSemEventMultiWait(pThis->hSemEventPeriodFrameStopped, RT_INDEFINITE_WAIT);
+            AssertRC(rc);
+        }
+    }
+    else if (   pThis->hThreadPeriodFrame
+             && uFrameRate)
+    {
+        /* Just switch to the new frame rate and let the periodic frame thread pick it up. */
+        ASMAtomicXchgU32(&pThis->uFrameRateDefault, uFrameRate);
+    }
+
+    return rc;
+}
+
+
 /* -=-=-=-=-=- VUSB Device methods (for the root hub) -=-=-=-=-=- */
 
 
@@ -919,6 +1146,13 @@ static DECLCALLBACK(void) vusbRhDestruct(PPDMDRVINS pDrvIns)
     }
     if (pRh->hSniffer != VUSBSNIFFER_NIL)
         VUSBSnifferDestroy(pRh->hSniffer);
+
+    if (pRh->hSemEventPeriodFrame)
+        RTSemEventMultiDestroy(pRh->hSemEventPeriodFrame);
+
+    if (pRh->hSemEventPeriodFrameStopped)
+        RTSemEventMultiDestroy(pRh->hSemEventPeriodFrameStopped);
+
     RTCritSectDelete(&pRh->CritSectDevices);
 }
 
@@ -984,21 +1218,23 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /* misc */
     pThis->pDrvIns                      = pDrvIns;
     /* the connector */
-    pThis->IRhConnector.pfnSetUrbParams = vusbRhSetUrbParams;
-    pThis->IRhConnector.pfnNewUrb       = vusbRhConnNewUrb;
-    pThis->IRhConnector.pfnFreeUrb      = vusbRhConnFreeUrb;
-    pThis->IRhConnector.pfnSubmitUrb    = vusbRhSubmitUrb;
-    pThis->IRhConnector.pfnReapAsyncUrbs= vusbRhReapAsyncUrbs;
-    pThis->IRhConnector.pfnCancelUrbsEp = vusbRhCancelUrbsEp;
-    pThis->IRhConnector.pfnCancelAllUrbs= vusbRhCancelAllUrbs;
-    pThis->IRhConnector.pfnAbortEp      = vusbRhAbortEp;
-    pThis->IRhConnector.pfnAttachDevice = vusbRhAttachDevice;
-    pThis->IRhConnector.pfnDetachDevice = vusbRhDetachDevice;
-    pThis->hSniffer                     = VUSBSNIFFER_NIL;
-    pThis->cbHci                        = 0;
-    pThis->cbHciTd                      = 0;
+    pThis->IRhConnector.pfnSetUrbParams               = vusbRhSetUrbParams;
+    pThis->IRhConnector.pfnNewUrb                     = vusbRhConnNewUrb;
+    pThis->IRhConnector.pfnFreeUrb                    = vusbRhConnFreeUrb;
+    pThis->IRhConnector.pfnSubmitUrb                  = vusbRhSubmitUrb;
+    pThis->IRhConnector.pfnReapAsyncUrbs              = vusbRhReapAsyncUrbs;
+    pThis->IRhConnector.pfnCancelUrbsEp               = vusbRhCancelUrbsEp;
+    pThis->IRhConnector.pfnCancelAllUrbs              = vusbRhCancelAllUrbs;
+    pThis->IRhConnector.pfnAbortEp                    = vusbRhAbortEp;
+    pThis->IRhConnector.pfnAttachDevice               = vusbRhAttachDevice;
+    pThis->IRhConnector.pfnDetachDevice               = vusbRhDetachDevice;
+    pThis->IRhConnector.pfnSetPeriodicFrameProcessing = vusbRhSetFrameProcessing;
+    pThis->hSniffer                                   = VUSBSNIFFER_NIL;
+    pThis->cbHci                                      = 0;
+    pThis->cbHciTd                                    = 0;
+    pThis->fFrameProcessing                           = false;
 #ifdef LOG_ENABLED
-    pThis->iSerial                      = 0;
+    pThis->iSerial                                    = 0;
 #endif
     /*
      * Resolve interface(s).
@@ -1167,6 +1403,8 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReapAsyncUrbs, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Profiling the vusbRhReapAsyncUrbs body (omitting calls when nothing is in-flight).",  "/VUSB/%d/ReapAsyncUrbs", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatSubmitUrb,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Profiling the vusbRhSubmitUrb body.",                                 "/VUSB/%d/SubmitUrb",                 pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatFramesProcessedThread, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Processed frames in the dedicated thread", "/VUSB/%d/FramesProcessedThread",       pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatFramesProcessedClbk,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Processed frames in the URB completion callback", "/VUSB/%d/FramesProcessedClbk",  pDrvIns->iInstance);
 #endif
     PDMDrvHlpSTAMRegisterF(pDrvIns, (void *)&pThis->Hub.Dev.UrbPool.cUrbsInPool, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "The number of URBs in the pool.",                                 "/VUSB/%d/cUrbsInPool",               pDrvIns->iInstance);
 
