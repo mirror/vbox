@@ -174,7 +174,7 @@ NDIS_OID g_SupportedOids[] =
     OID_PNP_SET_POWER
 };
 
-DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinAllocAdapter(NDIS_HANDLE hAdapter, PVBOXNETADP_ADAPTER *ppAdapter, ULONG64 NetLuid)
+DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinAllocAdapter(NDIS_HANDLE hAdapter, PVBOXNETADP_ADAPTER *ppAdapter, ULONG uIfIndex)
 {
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
     PVBOXNETADP_ADAPTER pAdapter = NULL;
@@ -203,9 +203,9 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinAllocAdapter(NDIS_HANDLE hAdapter, PVBOXNET
     pAdapter->MacAddr.au8[1] = 0x00;
     pAdapter->MacAddr.au8[2] = 0x27;
 
-    pAdapter->MacAddr.au8[3] = (NetLuid >> 16) & 0xFF;
-    pAdapter->MacAddr.au8[4] = (NetLuid >> 8) & 0xFF;
-    pAdapter->MacAddr.au8[5] = NetLuid & 0xFF;
+    pAdapter->MacAddr.au8[3] = (uIfIndex >> 16) & 0xFF;
+    pAdapter->MacAddr.au8[4] = (uIfIndex >> 8) & 0xFF;
+    pAdapter->MacAddr.au8[5] = uIfIndex & 0xFF;
 
         //TODO: Statistics?
 
@@ -240,7 +240,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
         NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES RAttrs = {0};
         NDIS_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES GAttrs = {0};
 
-        Status = vboxNetAdpWinAllocAdapter(NdisMiniportHandle, &pAdapter, MiniportInitParameters->NetLuid.Value);
+        Status = vboxNetAdpWinAllocAdapter(NdisMiniportHandle, &pAdapter, MiniportInitParameters->IfIndex);
         if (Status != NDIS_STATUS_SUCCESS)
         {
             Log(("vboxNetAdpWinInitializeEx: Failed to allocate the adapter context with 0x%x\n", Status));
