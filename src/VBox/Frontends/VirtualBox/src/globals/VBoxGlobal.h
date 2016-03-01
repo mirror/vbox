@@ -349,7 +349,7 @@ public:
     QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
 
     /* API: Medium-enumeration stuff: */
-    void startMediumEnumeration(bool fForceStart = true);
+    void startMediumEnumeration();
     bool agressiveCaching() const { return mAgressiveCaching; }
     bool isMediumEnumerationInProgress() const;
     UIMedium medium(const QString &strMediumID) const;

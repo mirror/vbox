@@ -1142,6 +1142,10 @@ void UISelectorWindow::prepare()
     ::darwinSetFrontMostProcess();
 #endif /* Q_WS_MAC */
 
+    /* Cache medium data early if necessary: */
+    if (vboxGlobal().agressiveCaching())
+        vboxGlobal().startMediumEnumeration();
+
     /* Prepare: */
     prepareIcon();
     prepareMenuBar();

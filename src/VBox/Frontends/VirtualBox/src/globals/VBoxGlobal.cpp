@@ -1745,7 +1745,7 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
     return QString();
 }
 
-void VBoxGlobal::startMediumEnumeration(bool fForceStart /* = true*/)
+void VBoxGlobal::startMediumEnumeration()
 {
     /* Make sure VBoxGlobal is already valid: */
     AssertReturnVoid(mValid);
@@ -1765,10 +1765,6 @@ void VBoxGlobal::startMediumEnumeration(bool fForceStart /* = true*/)
     /* If asked to restore snapshot, don't do this till *after* we're done
      * restoring or the code with have a heart attack. */
     if (shouldRestoreCurrentSnapshot())
-        return;
-
-    /* Developer doesn't want any unnecessary media caching! */
-    if (!fForceStart && !agressiveCaching())
         return;
 
     if (m_mediumEnumeratorDtorRwLock.tryLockForRead())
@@ -4353,10 +4349,7 @@ void VBoxGlobal::prepare()
 
     UIConverter::prepare();
 
-    /* Cache IMedium data.
-     * There could be no used mediums at all,
-     * but this method should be run anyway just to enumerate null UIMedium object,
-     * used by some VBox smart widgets, like VBoxMediaComboBox: */
+    /* Create medium enumerator but don't do any immediate caching. */
     m_pMediumEnumerator = new UIMediumEnumerator;
     {
         /* Prepare medium-enumerator: */
@@ -4371,8 +4364,6 @@ void VBoxGlobal::prepare()
         connect(m_pMediumEnumerator, SIGNAL(sigMediumEnumerationFinished()),
                 this, SIGNAL(sigMediumEnumerationFinished()));
     }
-    if (agressiveCaching())
-        startMediumEnumeration();
 
     /* Create shortcut pool: */
     UIShortcutPool::create();
