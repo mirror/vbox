@@ -2166,28 +2166,28 @@ BS3_DECL(void) Bs3InitMemory_rm(void);
  * Doxygen knows how to expand this, well, kind of.
  */
 #define BS3_MODE_EXPAND_EXTERN_DATA16(a_VarType, a_VarName, a_Suffix) \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_rm))       a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16))     a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16_32))  a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16_v86)) a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe32))     a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe32_16))  a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pev86))    a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16))     a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16_32))  a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16_v86)) a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp32))     a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp32_16))  a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_ppv86))    a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16))    a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16_32)) a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16_v86))a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae32))    a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae32_16)) a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_paev86))   a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm16))     a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm32))     a_Suffix; \
-    extern BS3_DECL(a_VarType) BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm64))     a_Suffix
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_rm))       a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16_32))  a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16_v86)) a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe32))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe32_16))  a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pev86))    a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16_32))  a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16_v86)) a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp32))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp32_16))  a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_ppv86))    a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16))    a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16_32)) a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16_v86))a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae32))    a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae32_16)) a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_paev86))   a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm16))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm32))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm64))     a_Suffix
 
 
 /** The TMPL_MODE_STR value for each mode.
