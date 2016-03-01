@@ -212,9 +212,22 @@ bool UISession::initialize()
         if (!powerUp())
             return false;
 
-    /* Check if we missed a really quick termination after successful startup: */
-    if (isTurnedOff())
-        return false;
+    /* Check if we missed a really quick termination after successful powerUp().
+     * We should take into account the fact of async machine-state arrival.
+     * And we don't even want to loop at this point to handle posted
+     * machine-state events, so we are relying onto CMachine getter
+     * to return the fresh state of the thing we want. */
+    const KMachineState ms = machine().GetState();
+    switch (ms)
+    {
+        case KMachineState_PoweredOff:
+        case KMachineState_Saved:
+        case KMachineState_Teleported:
+        case KMachineState_Aborted:
+            return false;
+        default:
+            break;
+    }
 
     /* Postprocess initialization: */
     if (!postprocessInitialization())
