@@ -364,11 +364,6 @@ int DrvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps)
         pProps->fSwapEndian = pCfg->enmEndianness != PDMAUDIOHOSTENDIANNESS;
     }
 
-#ifdef DEBUG
-    drvAudioStreamCfgPrint(pCfg);
-#endif
-
-    LogFlowFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 

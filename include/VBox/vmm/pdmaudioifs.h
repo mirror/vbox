@@ -67,10 +67,10 @@ typedef enum PDMAUDIOFMT
  */
 typedef struct PDMAUDIOBACKENDCFG
 {
-    uint32_t    cbStreamOut;
-    uint32_t    cbStreamIn;
-    uint32_t    cMaxHstStrmsOut;
-    uint32_t    cMaxHstStrmsIn;
+    size_t   cbStreamOut;
+    size_t   cbStreamIn;
+    uint32_t cMaxHstStrmsOut;
+    uint32_t cMaxHstStrmsIn;
 } PDMAUDIOBACKENDCFG, *PPDMAUDIOBACKENDCFG;
 
 /**

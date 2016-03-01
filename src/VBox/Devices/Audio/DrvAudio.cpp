@@ -1398,6 +1398,9 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
     if (RT_SUCCESS(rc))
         rc = rc2;
 
+    if (RT_FAILURE(rc))
+        LogFlowFuncLeaveRC(rc);
+
     return rc;
 }
 
@@ -1411,6 +1414,21 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface, uint32_
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_FAILURE(rc))
         return rc;
+
+    /* Backend output (temporarily) disabled / unavailable? */
+    if (!pThis->pHostDrvAudio->pfnIsEnabled(pThis->pHostDrvAudio, PDMAUDIODIR_OUT))
+    {
+        rc = pThis->pHostDrvAudio->pfnGetConf(pThis->pHostDrvAudio, &pThis->BackendCfg);
+        AssertRC(rc);
+
+        if (!pThis->BackendCfg.cMaxHstStrmsOut)
+        {
+            int rc2 = RTCritSectLeave(&pThis->CritSect);
+            AssertRC(rc2);
+
+            return VERR_NOT_AVAILABLE;
+        }
+    }
 
     /*
      * Process all enabled host output streams.
@@ -1449,9 +1467,13 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface, uint32_
 #endif
 
         uint32_t cSamplesPlayed = 0;
-        int rc2 = pThis->pHostDrvAudio->pfnPlayOut(pThis->pHostDrvAudio, pHstStrmOut,
-                                                   &cSamplesPlayed);
-        if (RT_SUCCESS(rc2))
+        int rc2 = pThis->pHostDrvAudio->pfnPlayOut(pThis->pHostDrvAudio, pHstStrmOut, &cSamplesPlayed);
+        if (RT_FAILURE(rc2))
+        {
+            rc2 = pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
+            AssertRC(rc2);
+        }
+        else
             cSamplesPlayedMax = RT_MAX(cSamplesPlayed, cSamplesPlayedMax);
 
         LogFlowFunc(("\t[%s] cSamplesPlayed=%RU32, cSamplesPlayedMax=%RU32, rc=%Rrc\n",
@@ -1492,6 +1514,9 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface, uint32_
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
         rc = rc2;
+
+    if (RT_FAILURE(rc))
+        LogFlowFuncLeaveRC(rc);
 
     return rc;
 }
@@ -1627,6 +1652,7 @@ static int drvAudioHostInit(PCFGMNODE pCfgHandle, PDRVAUDIO pThis)
 
     LogFlowFuncEnter();
 
+    AssertPtr(pThis->pHostDrvAudio);
     int rc = pThis->pHostDrvAudio->pfnInit(pThis->pHostDrvAudio);
     if (RT_FAILURE(rc))
     {
@@ -1634,8 +1660,16 @@ static int drvAudioHostInit(PCFGMNODE pCfgHandle, PDRVAUDIO pThis)
         return rc;
     }
 
+    /* Get the configuration data from backend. */
+    rc = pThis->pHostDrvAudio->pfnGetConf(pThis->pHostDrvAudio, &pThis->BackendCfg);
+    if (RT_FAILURE(rc))
+    {
+        LogFlowFunc(("Getting backend configuration failed with rc=%Rrc\n", rc));
+        return rc;
+    }
+
     uint32_t cMaxHstStrmsOut = pThis->BackendCfg.cMaxHstStrmsOut;
-    uint32_t cbHstStrmsOut   = pThis->BackendCfg.cbStreamOut;
+    size_t cbHstStrmsOut     = pThis->BackendCfg.cbStreamOut;
 
     if (cbHstStrmsOut)
     {
@@ -1645,7 +1679,7 @@ static int drvAudioHostInit(PCFGMNODE pCfgHandle, PDRVAUDIO pThis)
         pThis->cFreeOutputStreams = 0;
 
     uint32_t cMaxHstStrmsIn = pThis->BackendCfg.cMaxHstStrmsIn;
-    uint32_t cbHstStrmIn    = pThis->BackendCfg.cbStreamIn;
+    size_t cbHstStrmIn      = pThis->BackendCfg.cbStreamIn;
 
     if (cbHstStrmIn)
     {
@@ -1659,7 +1693,7 @@ static int drvAudioHostInit(PCFGMNODE pCfgHandle, PDRVAUDIO pThis)
     else
         pThis->cFreeInputStreams = 0;
 
-    LogFlowFunc(("cMaxHstStrmsOut=%RU32 (cb=%RU32), cMaxHstStrmsIn=%RU32 (cb=%RU32)\n",
+    LogFlowFunc(("cMaxHstStrmsOut=%RU32 (cb=%zu), cMaxHstStrmsIn=%RU32 (cb=%zu)\n",
                  cMaxHstStrmsOut, cbHstStrmsOut, cMaxHstStrmsIn, cbHstStrmIn));
 
     LogFlowFunc(("cFreeInputStreams=%RU8, cFreeOutputStreams=%RU8\n",
@@ -1752,13 +1786,6 @@ static DECLCALLBACK(int) drvAudioInit(PCFGMNODE pCfgHandle, PPDMDRVINS pDrvIns)
 #endif
 
     int rc = RTCritSectInit(&pThis->CritSect);
-
-    /* Get the configuration data from the selected backend (if available). */
-    AssertPtr(pThis->pHostDrvAudio);
-    if (   RT_SUCCESS(rc)
-        && RT_LIKELY(pThis->pHostDrvAudio->pfnGetConf))
-        rc = pThis->pHostDrvAudio->pfnGetConf(pThis->pHostDrvAudio, &pThis->BackendCfg);
-
     if (RT_SUCCESS(rc))
     {
         rc = drvAudioProcessOptions(pCfgHandle, "AUDIO", audio_options);
@@ -2185,7 +2212,7 @@ static DECLCALLBACK(int) drvAudioGetConfiguration(PPDMIAUDIOCONNECTOR pInterface
     if (RT_FAILURE(rc))
         return rc;
 
-    memcpy(pCfg, &pThis->BackendCfg, sizeof(PDMAUDIOBACKENDCFG));
+    rc = pThis->pHostDrvAudio->pfnGetConf(pThis->pHostDrvAudio, pCfg);
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
