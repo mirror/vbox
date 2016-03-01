@@ -192,6 +192,8 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-Name.asm \
 	bs3-mode-SwitchToRM.asm \
 	bs3-mode-SwitchToPE16.asm \
+	bs3-mode-SwitchToPE16_32.asm \
+	bs3-mode-SwitchToPE16_V86.asm \
 	bs3-mode-SwitchToPE32.asm \
 	bs3-mode-SwitchToPP16.asm \
 	bs3-mode-SwitchToPP32.asm \

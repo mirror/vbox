@@ -40,6 +40,11 @@ TMPL_BEGIN_TEXT
 BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
 %if TMPL_BITS == 64
         ret
+
+%elif BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
+.again: int3                            ; Makes no sense to go to 64-bit mode from real or v8086 mode.
+        jmp     .again
+
 %else
  %if TMPL_BITS == 16
         sub     sp, 6                   ; Space for extended return value (corrected in 64-bit mode).

@@ -52,6 +52,23 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
  %endif
         cli
 
+%if TMPL_BITS == 16
+        ; Check for v8086 mode, we need to exit it to enter 32-bit mode.
+        mov     ax, seg g_bBs3CurrentMode
+        mov     ds, ax
+        mov     al, [g_bBs3CurrentMode]
+        and     al, BS3_MODE_CODE_MASK
+        cmp     al, BS3_MODE_CODE_V86
+        jne     .not_v8086
+
+        mov     ax, BS3_SYSCALL_TO_RING0
+        int     BS3_TRAP_SYSCALL
+
+        mov     xAX, BS3_SEL_R0_CS32
+        jmp     .do_far_jump
+%endif
+
+.not_v8086:
         ; Calc ring addend.
         mov     ax, cs
         and     xAX, 3
@@ -59,6 +76,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
         add     xAX, BS3_SEL_R0_CS32
 
         ; Create far return for switching to 32-bit mode.
+.do_far_jump:
         push    sAX
  %if TMPL_BITS == 16
         push    dword .thirty_two_bit wrt FLAT

@@ -26,8 +26,10 @@
 
 %include "bs3kit-template-header.mac"
 
+%if TMPL_BITS != 16
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 TMPL_BEGIN_TEXT
+%endif
 
 
 ;;
@@ -35,37 +37,28 @@ TMPL_BEGIN_TEXT
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
 BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
-%if TMPL_BITS == 16
-        push    ax
-        push    ds
-
-        ; Check g_bBs3CurrentMode whether we're in v8086 mode or not.
-        mov     ax, seg g_bBs3CurrentMode
-        mov     ds, ax
-        mov     al, [g_bBs3CurrentMode]
-        and     al, BS3_MODE_CODE_MASK
-        cmp     al, BS3_MODE_CODE_V86
-        jne     .ret_16bit
-
-        ; Switch to ring-0 if v8086 mode.
-        mov     ax, BS3_SYSCALL_TO_RING0
-        int     BS3_TRAP_SYSCALL
-
-.ret_16bit:
-        pop     ds
-        pop     ax
+%if BS3_MODE_IS_16BIT_CODE_NO_V86(TMPL_MODE)
         ret
-
 %else
         push    xAX
         xPUSHF
         cli
 
+%if BS3_MODE_IS_V86(TMPL_MODE)
+        ; Switch to ring-0 if v8086 mode.
+        mov     ax, BS3_SYSCALL_TO_RING0
+        int     BS3_TRAP_SYSCALL
+%endif
+
         ; Calc new CS.
+%if BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
+        mov     xAX, BS3_SEL_R0_CS16
+%else
         mov     ax, cs
         and     xAX, 3
         shl     xAX, BS3_SEL_RING_SHIFT  ; ring addend.
         add     xAX, BS3_SEL_R0_CS16
+%endif
 
         ; Construct a far return for switching to 16-bit code.
         push    xAX
