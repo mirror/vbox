@@ -215,7 +215,8 @@ static NTSTATUS vboxNewProtDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
     KIRQL Irql;
     KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
     InsertHeadList(&g_ctx.DevExtList, &pDevExt->ListEntry);
-    if (!g_ctx.pCurrentDevExt)
+    /* g_ctx.pCurrentDevExt must be associated with the i8042prt device. */
+    if (pDevExt->bHostMouse && !g_ctx.pCurrentDevExt)
     {
         ASMAtomicWritePtr(&g_ctx.pCurrentDevExt, pDevExt);
         /* ensure the object is not deleted while it is being used by a poller thread */
@@ -242,16 +243,9 @@ static NTSTATUS vboxNewProtDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
     RemoveEntryList(&pDevExt->ListEntry);
     if (g_ctx.pCurrentDevExt == pDevExt)
     {
+        /* The PS/2 mouse is being removed. Usually never happens. */
         ObDereferenceObject(pDevExt->pdoSelf);
         g_ctx.pCurrentDevExt = NULL;
-        for (PLIST_ENTRY pCur = g_ctx.DevExtList.Flink; pCur != &g_ctx.DevExtList; pCur = pCur->Flink)
-        {
-            PVBOXMOUSE_DEVEXT pNewCurDevExt = PVBOXMOUSE_DEVEXT_FROM_LE(pCur);
-            ASMAtomicWritePtr(&g_ctx.pCurrentDevExt, pNewCurDevExt);
-            /* ensure the object is not deleted while it is being used by a poller thread */
-            ObReferenceObject(pNewCurDevExt->pdoSelf);
-            break;
-        }
     }
 
     KeReleaseSpinLock(&g_ctx.SyncLock, Irql);
@@ -347,8 +341,6 @@ VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
         }
     }
 
-    vboxNewProtDeviceAdded(pDevExt);
-
     if (!vboxIsHostMouseFound())
     {
         NTSTATUS rc;
@@ -423,6 +415,10 @@ VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
             LOG(("Host mouse found"));
         }
     }
+
+    /* Finally call the handler, which needs a correct pDevExt->bHostMouse value. */
+    vboxNewProtDeviceAdded(pDevExt);
+
     LOGF_LEAVE();
 }
 
