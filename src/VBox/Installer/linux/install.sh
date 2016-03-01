@@ -370,15 +370,7 @@ if [ "$ACTION" = "install" ]; then
     "${INSTALLATION_DIR}/postinst-common.sh" ${START_SERVICES} >> "${LOG}"
 
     info ""
-    if test -n "${START_SERVICES}" || lsmod | grep -q vboxdrv
-    then
-        info "VirtualBox has been installed successfully."
-    else
-        info "VirtualBox has been installed successfully, but the kernel module could not"
-        info "be built.  When you have fixed the problems preventing this, execute"
-        info "  /sbin/vboxconfig"
-        info "as administrator to build it."
-    fi
+    info "VirtualBox has been installed successfully."
     info ""
     info "You will find useful information about using VirtualBox in the user manual"
     info "  $INSTALLATION_DIR/UserManual.pdf"

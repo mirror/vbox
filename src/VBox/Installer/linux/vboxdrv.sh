@@ -107,7 +107,7 @@ fail_msg()
 failure()
 {
     fail_msg "$1"
-    exit 0
+    exit 1
 }
 
 running()

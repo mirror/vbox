@@ -97,6 +97,13 @@ fi
 
 test -n "${START}" &&
 {
+    if ! "${MY_PATH}/vboxdrv.sh" setup; then
+        "${MY_PATH}/check_module_dependencies.sh" >&2
+        echo >&2
+        echo "There were problems setting up VirtualBox.  To re-start the set-up process, run" >&2
+        echo "  /sbin/vboxconfig" >&2
+        echo "as root." >&2
+    fi
     start_init_script vboxdrv
     start_init_script vboxballoonctrl-service
     start_init_script vboxautostart-service
