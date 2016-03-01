@@ -318,7 +318,7 @@ setup_modules()
         echo "Not building the VirtualBox advanced graphics driver as this Linux version is"
         echo "too old to use it."
     else
-        begin "Building the OpenGL support module"
+        begin "Building the graphics driver module"
         if ! $BUILDINTMP \
             --use-module-symvers /tmp/vboxguest-Module.symvers \
             --module-source $MODULE_SRC/vboxvideo \
