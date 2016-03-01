@@ -3975,8 +3975,8 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       and should only be used by expert users for debugging and diagnostics.</para>
     </note>
 
-    <para>These debug options are specified as a string of key-value pairs. An empty
-    string disables paravirtualized debugging.</para>
+    <para>These debug options are specified as a string of key-value pairs separated by
+    commas. An empty string disables paravirtualized debugging.</para>
 
     <sect2 id="gimdebughyperv">
       <title>Hyper-V debug options</title>
