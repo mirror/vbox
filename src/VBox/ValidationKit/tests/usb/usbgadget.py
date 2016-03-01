@@ -8,7 +8,7 @@ VirtualBox USB gadget control class
 
 __copyright__ = \
 """
-Copyright (C) 2014-2015 Oracle Corporation
+Copyright (C) 2014-2016 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -33,12 +33,23 @@ __version__ = "$Revision$"
 # Validation Kit imports.
 import testdriver.txsclient as txsclient;
 import testdriver.reporter as reporter;
+from common import utils;
 
 ## @name USB gadget type string constants.
 ## @{
 g_ksGadgetTypeInvalid     = 'Invalid';
 g_ksGadgetTypeBeaglebone  = 'BeagleBone';
 g_ksGadgetTypeODroidXu3   = 'ODroidXu3';
+g_ksGadgetTypeDummyHcd    = 'DummyHcd';
+## @}
+
+## @name USB gadget configurations.
+## @{
+g_kdGadgetCfgs = {
+    g_ksGadgetTypeBeaglebone: ('musb-hdrc.0.auto'),
+    g_ksGadgetTypeODroidXu3:  ('12400000.dwc3'),
+    g_ksGadgetTypeDummyHcd:   ('dummy_udc.0')
+};
 ## @}
 
 ## @name USB gadget imeprsonation string constants.
@@ -58,9 +69,39 @@ class UsbGadget(object):
     """
 
     def __init__(self):
-        self.oTxsSession = None;
+        self.oTxsSession    = None;
         self.sImpersonation = g_ksGadgetImpersonationInvalid;
         self.sGadgetType    = g_ksGadgetTypeInvalid;
+
+    def _sudoExecuteSync(self, asArgs):
+        """
+        Executes a sudo child process synchronously.
+        Returns a tuple [True, 0] if the process executed successfully
+        and returned 0, otherwise [False, rc] is returned.
+        """
+        reporter.log('Executing [sudo]: %s' % (asArgs, ));
+        reporter.flushall();
+        iRc = 0;
+        try:
+            iRc = utils.sudoProcessCall(asArgs, shell = False, close_fds = False);
+        except:
+            reporter.errorXcpt();
+            return (False, 0);
+        reporter.log('Exit code [sudo]: %s (%s)' % (iRc, asArgs));
+        return (iRc is 0, iRc);
+
+    def _execLocallyOrThroughTxs(self, sExec, asArgs):
+        """
+        Executes the given program locally or through TXS based on the
+        current config.
+        """
+        fRc = False;
+
+        if self.oTxsSession is not None:
+            fRc = self.oTxsSession.syncExecEx(sExec, (sExec,) + asArgs);
+        else:
+            fRc, _ = self._sudoExecuteSync([sExec, ] + list(asArgs));
+        return fRc;
 
     def _loadModule(self, sModule):
         """
@@ -68,11 +109,7 @@ class UsbGadget(object):
         Returns True on success.
         Returns False otherwise.
         """
-        fRc = False;
-        if self.oTxsSession is not None:
-            fRc = self.oTxsSession.syncExecEx('/usr/bin/modprobe', ('/usr/bin/modprobe', sModule));
-            fRc = fRc and self.connectUsb();
-        return fRc;
+        return self._execLocallyOrThroughTxs('/usr/bin/modprobe', (sModule, ));
 
     def _unloadModule(self, sModule):
         """
@@ -80,12 +117,7 @@ class UsbGadget(object):
         Returns True on success.
         Returns False otherwise.
         """
-        fRc = False;
-        if self.oTxsSession is not None:
-            self.disconnectUsb();
-            fRc = self.oTxsSession.syncExecEx('/usr/bin/rmmod', ('/usr/bin/rmmod', sModule));
-
-        return fRc;
+        return self._execLocallyOrThroughTxs('/usr/bin/rmmod', (sModule, ));
 
     def _clearImpersonation(self):
         """
@@ -110,30 +142,45 @@ class UsbGadget(object):
 
         return False;
 
+    def _doSoftConnect(self, sAction):
+        """
+        Does a softconnect/-disconnect based on the given action.
+        """
+        sUdcFile = g_kdGadgetCfgs.get(self.sGadgetType);
+        sPath = '/sys/class/udc/' + sUdcFile + '/soft_connect';
+
+        return self._execLocallyOrThroughTxs('/usr/bin/sh', ('-c', 'echo' + sAction + ' > ' + sPath));
+
+    def _prepareGadget(self):
+        """
+        Prepares the gadget for use in testing.
+        """
+        fRc = True;
+        if self.sGadgetType is g_ksGadgetTypeDummyHcd:
+            fRc = self._loadModule('dummy_hcd');
+        return fRc;
+
+    def _cleanupGadget(self):
+        """
+        Cleans up the gadget to the default state.
+        """
+        fRc = True;
+        if self.sGadgetType is g_ksGadgetTypeDummyHcd:
+            fRc = self._unloadModule('dummy_hcd');
+        return fRc;
+
     def disconnectUsb(self):
         """
         Disconnects the USB gadget from the host. (USB connection not network
         connection used for control)
         """
-        if self.sGadgetType == g_ksGadgetTypeODroidXu3:
-            fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
-                    ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/12400000.dwc3/soft_connect'));
-        elif self.sGadgetType == g_ksGadgetTypeBeaglebone:
-            fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
-                    ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
-        return fRc;
+        return self._doSoftConnect('disconnect');
 
     def connectUsb(self):
         """
         Connect the USB gadget to the host.
         """
-        if self.sGadgetType == g_ksGadgetTypeODroidXu3:
-            fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
-                    ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/12400000.dwc3/soft_connect'));
-        elif self.sGadgetType == g_ksGadgetTypeBeaglebone:
-            fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
-                    ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/musb-hdrc.0.auto/soft_connect'));
-        return fRc;
+        return self._doSoftConnect('connect');
 
     def impersonate(self, sImpersonation):
         """
@@ -161,28 +208,36 @@ class UsbGadget(object):
 
         return False;
 
-    def connectTo(self, cMsTimeout, sGadgetType, sHostname, uPort = None):
+    def connectTo(self, cMsTimeout, sGadgetType, fUseTxs, sHostname, uPort = None):
         """
         Connects to the specified target device.
         Returns True on Success.
         Returns False otherwise.
         """
-        if uPort is None:
-            self.oTxsSession = txsclient.openTcpSession(cMsTimeout, sHostname);
-        else:
-            self.oTxsSession = txsclient.openTcpSession(cMsTimeout, sHostname, uPort = uPort);
-        if self.oTxsSession is None:
-            return False;
+        fRc = True;
 
-        fDone = self.oTxsSession.waitForTask(30*1000);
-        print 'connect: waitForTask -> %s, result %s' % (fDone, self.oTxsSession.getResult());
-        if fDone is True and self.oTxsSession.isSuccess():
-            fRc = True;
-        else:
-            fRc = False;
+        if fUseTxs:
+            if uPort is None:
+                self.oTxsSession = txsclient.openTcpSession(cMsTimeout, sHostname);
+            else:
+                self.oTxsSession = txsclient.openTcpSession(cMsTimeout, sHostname, uPort = uPort);
+            if self.oTxsSession is None:
+                return False;
 
-        if fRc is True:
-            self.sGadgetType = sGadgetType;
+            fDone = self.oTxsSession.waitForTask(30*1000);
+            print 'connect: waitForTask -> %s, result %s' % (fDone, self.oTxsSession.getResult());
+            if fDone is True and self.oTxsSession.isSuccess():
+                fRc = True;
+            else:
+                fRc = False;
+
+            if fRc is True:
+                self.sGadgetType = sGadgetType;
+            else:
+                self.sGadgetType = g_ksGadgetTypeInvalid;
+
+        if fRc:
+            fRc = self._prepareGadget();
 
         return fRc;
 
@@ -192,8 +247,10 @@ class UsbGadget(object):
         """
         fRc = True;
 
-        if self.oTxsSession is not None:
+        if self.sGadgetType is not g_ksGadgetTypeInvalid:
             self._clearImpersonation();
-            fRc = self.oTxsSession.syncDisconnect();
+            self._cleanupGadget();
+            if self.oTxsSession is not None:
+                fRc = self.oTxsSession.syncDisconnect();
 
         return fRc;

@@ -8,7 +8,7 @@ VirtualBox Validation Kit - USB testcase and benchmark.
 
 __copyright__ = \
 """
-Copyright (C) 2014-2015 Oracle Corporation
+Copyright (C) 2014-2016 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -104,6 +104,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         self.cUsbReattachCyclesDef = 100;
         self.cUsbReattachCycles    = self.cUsbReattachCyclesDef;
         self.sHostname             = socket.gethostname().lower();
+        self.fUseTxs               = True;
 
     #
     # Overridden methods.
@@ -111,7 +112,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
     def showUsage(self):
         rc = vbox.TestDriver.showUsage(self);
         reporter.log('');
-        reporter.log('tdStorageBenchmark1 Options:');
+        reporter.log('tdUsb1 Options:');
         reporter.log('  --virt-modes    <m1[:m2[:]]');
         reporter.log('      Default: %s' % (':'.join(self.asVirtModesDef)));
         reporter.log('  --cpu-counts    <c1[:c2[:]]');
@@ -130,6 +131,9 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         reporter.log('      Default: %s' % (':'.join(str(c) for c in self.asUsbTestsDef)));
         reporter.log('  --usb-reattach-cycles <cycles>');
         reporter.log('      Default: %s' % (self.cUsbReattachCyclesDef));
+        reporter.log('  --local');
+        reporter.log('      Don\'t use TXS for communication with the gadget but do everything');
+        reporter.log('      on this host');
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -195,6 +199,8 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             if self.cUsbReattachCycles <= 0:
                 raise base.InvalidOption('The "--usb-reattach-cycles" value "%s" is zero or negative.' \
                     % (self.cUsbReattachCycles,));
+        elif asArgs[iArg] == '--local':
+            self.fUseTxs = False;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -287,14 +293,18 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         Test VirtualBoxs USB stack in a VM.
         """
         # Get configured USB test devices from hostname we are running on
-        sGadgetHost, sGadgetType = self.getGadgetParams(self.sHostname, sSpeed);
+        if self.fUseTxs is True:
+            sGadgetHost, sGadgetType = self.getGadgetParams(self.sHostname, sSpeed);
+        else:
+            sGadgetHost = 'dummy';
+            sGadgetType = usbgadget.g_ksGadgetTypeDummyHcd;
 
         # Create device filter
         fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
         if fRc is True:
             oUsbGadget = usbgadget.UsbGadget();
             reporter.log('Connecting to gadget: ' + sGadgetType);
-            fRc = oUsbGadget.connectTo(30 * 1000, sGadgetType, sGadgetHost);
+            fRc = oUsbGadget.connectTo(30 * 1000, sGadgetType, self.fUseTxs, sGadgetHost);
             if fRc is True:
                 reporter.log('Connect succeeded');
                 fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
@@ -329,14 +339,18 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         Tests that rapid connect/disconnect cycles work.
         """
         # Get configured USB test devices from hostname we are running on
-        sGadgetHost, sGadgetType = self.getGadgetParams(self.sHostname, sSpeed);
+        if self.fUseTxs is True:
+            sGadgetHost, sGadgetType = self.getGadgetParams(self.sHostname, sSpeed);
+        else:
+            sGadgetHost = 'dummy';
+            sGadgetType = usbgadget.g_ksGadgetTypeDummyHcd;
 
         # Create device filter
         fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
         if fRc is True:
             oUsbGadget = usbgadget.UsbGadget();
             reporter.log('Connecting to gadget: ' + sGadgetType);
-            fRc = oUsbGadget.connectTo(30 * 1000, sGadgetType, sGadgetHost);
+            fRc = oUsbGadget.connectTo(30 * 1000, sGadgetType, self.fUseTxs, sGadgetHost);
             if fRc is True:
                 reporter.log('Connect succeeded');
                 fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
