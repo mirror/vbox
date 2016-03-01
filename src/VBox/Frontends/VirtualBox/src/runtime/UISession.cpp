@@ -224,7 +224,10 @@ bool UISession::initialize()
         case KMachineState_Saved:
         case KMachineState_Teleported:
         case KMachineState_Aborted:
+        {
+            LogRel(("GUI: Aborting startup due to invalid machine state detected: %d\n", ms));
             return false;
+        }
         default:
             break;
     }
@@ -284,6 +287,7 @@ bool UISession::powerUp()
     {
         if (vboxGlobal().showStartVMErrors())
             msgCenter().cannotStartMachine(console(), machineName());
+        LogRel(("GUI: Aborting startup due to power up issue detected...\n"));
         return false;
     }
 
@@ -312,6 +316,7 @@ bool UISession::powerUp()
     {
         if (vboxGlobal().showStartVMErrors())
             msgCenter().cannotStartMachine(progress, machineName());
+        LogRel(("GUI: Aborting startup due to power up progress issue detected...\n"));
         return false;
     }
 
@@ -1820,7 +1825,10 @@ bool UISession::preprocessInitialization()
         if (msgCenter().cannotStartWithoutNetworkIf(machineName(), failedInterfaceNames.join(", ")))
             machineLogic()->openNetworkSettingsDialog();
         else
+        {
+            LogRel(("GUI: Aborting startup due to preprocess initialization issue detected...\n"));
             return false;
+        }
     }
 #endif /* VBOX_WITH_NETFLT */
 
@@ -1910,6 +1918,7 @@ bool UISession::postprocessInitialization()
             /* Power off VM: */
             bool fServerCrashed = false;
             powerOff(false, fServerCrashed);
+            LogRel(("GUI: Aborting startup due to postprocess initialization issue detected...\n"));
             return false;
         }
 
