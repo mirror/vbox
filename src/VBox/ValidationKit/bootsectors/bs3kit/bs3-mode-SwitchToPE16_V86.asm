@@ -48,7 +48,7 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPE16_V86
         ; Convert the return address and jump to the 16-bit code segment.
         ;
  %if TMPL_BITS != 16
-        shl     dword [xSP], TMPL_BITS - 16
+        shl     xPRE [xSP], TMPL_BITS - 16
         add     xSP, (TMPL_BITS - 16) / 8
         jmp     .sixteen_bit_segment
 BS3_BEGIN_TEXT16
