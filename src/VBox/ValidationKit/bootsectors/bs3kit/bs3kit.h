@@ -1308,6 +1308,18 @@ BS3_DECL(void) Bs3MemZero_c64(void BS3_FAR *pvDst, size_t cbDst); /** @copydoc B
 #define Bs3MemZero BS3_CMN_NM(Bs3MemZero) /**< Selects #Bs3MemZero_c16, #Bs3MemZero_c32 or #Bs3MemZero_c64. */
 
 
+/**
+ * Converts a protected mode 32-bit far pointer to a 32-bit flat address.
+ *
+ * @returns 32-bit flat address.
+ * @param   off             The segment offset.
+ * @param   uSel            The protected mode segment selector.
+ */
+BS3_DECL(uint32_t) Bs3SelProtFar32ToFlat32_c16(uint32_t off, uint16_t uSel);
+BS3_DECL(uint32_t) Bs3SelProtFar32ToFlat32_c32(uint32_t off, uint16_t uSel); /**< @copydoc Bs3SelProtFar32ToFlat32_c16 */
+BS3_DECL(uint32_t) Bs3SelProtFar32ToFlat32_c64(uint32_t off, uint16_t uSel); /**< @copydoc Bs3SelProtFar32ToFlat32_c16 */
+#define Bs3SelProtFar32ToFlat32 BS3_CMN_NM(Bs3SelProtFar32ToFlat32) /**< Selects #Bs3SelProtFar32ToFlat32_c16, #Bs3SelProtFar32ToFlat32_c32 or #Bs3SelProtFar32ToFlat32_c64. */
+
 
 /**
  * Equivalent to RTTestCreate + RTTestBanner.

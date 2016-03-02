@@ -81,6 +81,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-PagingInitRootForPP.c \
        bs3-cmn-PagingInitRootForPAE.c \
        bs3-cmn-PagingInitRootForLM.c \
+       bs3-cmn-SelProtFar32ToFlat32.c \
        bs3-cmn-SlabInit.c \
        bs3-cmn-SlabAlloc.c \
        bs3-cmn-SlabAllocEx.c \

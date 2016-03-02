@@ -30,20 +30,23 @@
 
 BS3_EXTERN_DATA16   g_bBs3CurrentMode
 BS3_EXTERN_CMN      Bs3SwitchToRing0
+BS3_EXTERN_CMN      Bs3SelProtFar32ToFlat32
 TMPL_BEGIN_TEXT
 
 
 ;;
 ; @cproto   BS3_DECL(void) Bs3SwitchTo16BitV86(void);
+; @uses No general registers modified. Regment registers loaded with specific
+;       values and the stack register converted to real mode (not ebp).
 ;
 BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         ; Construct basic v8086 return frame.
-        BS3_ONLY_16BIT_STMT push gs
-        BS3_ONLY_16BIT_STMT movzx esp, sp
-        push    dword fs
+        BS3_ONLY_16BIT_STMT movzx   esp, sp
+        push    dword 0                 ; GS
+        push    dword 0                 ; FS
         push    dword BS3_SEL_DATA16    ; ES
         push    dword BS3_SEL_DATA16    ; DS
-        push    dword ss
+        push    dword 0                 ; SS - later
         push    dword 0                 ; return ESP, later.
         pushfd
         or      dword [esp], X86_EFL_VM ; Set the VM flag in EFLAGS.
@@ -56,7 +59,10 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
  %endif
         ; Save registers and stuff.
         push    eax
- %if TMPL_BITS == 16
+        push    edx
+        push    ecx
+        push    ebx
+%if TMPL_BITS == 16
         push    ds
 
         ; Check g_bBs3CurrentMode whether we're in v8086 mode or not.
@@ -68,6 +74,9 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         jne     .not_v8086
 
         pop     ds
+        pop     ebx
+        pop     ecx
+        pop     edx
         pop     eax
         add     xSP, (9-1)*4
         ret
@@ -90,24 +99,29 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
  %if TMPL_BITS != 16
         ; Set GS.
         mov     ax, gs
-        mov     [xSP + 4 + 20h], ax
+        mov     [xSP + 4*4 + 20h], ax
  %endif
 
-        ; Thunk SS:ESP, first step: calc flat address.
-        lea     eax, [esp + 4 + 24h]
-        push    eax
+        ; Thunk SS:ESP to real-mode address via 32-bit flat.
+        lea     eax, [esp + 4*4 + 24h]
         push    ss
-;        call    Bs3SelFar32ToFlat32
-
-        ; Second step: Calc realmode segment and offset.
-
+        push    eax
+        BS3_CALL Bs3SelProtFar32ToFlat32, 2
+        mov     [esp + 4*4 + 0ch], ax   ; high word is already zero
+ %if TMPL_BITS == 16
+        mov     [esp + 4*4 + 10h], dx
+ %else
+        shr     eax, 16
+        mov     [esp + 4*4 + 10h], ax
+ %endif
 
         ; Return to v8086 mode.
+        pop     ebx
+        pop     ecx
+        pop     edx
         pop     eax
         iretd
-BS3_PROC_END_CMN   Bs3SwitchTo16Bit
-
-
+BS3_PROC_END_CMN   Bs3SwitchTo16BitV86
 
 %endif ; ! 64-bit
 
