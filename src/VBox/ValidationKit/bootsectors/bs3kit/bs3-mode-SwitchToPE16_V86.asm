@@ -45,14 +45,20 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPE16_V86
 
 %else
         ;
-        ; Make sure we're the 16-bit segment and then call Bs3SwitchToPE16.
+        ; Convert the return address and jump to the 16-bit code segment.
         ;
  %if TMPL_BITS != 16
+        shl     [xSP], TMPL_BITS - 16
+        add     xSP, (TMPL_BITS - 16) / 8
         jmp     .sixteen_bit_segment
 BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
 .sixteen_bit_segment:
  %endif
+
+        ;
+        ; Switch to 16-bit PE16 and from there to V8086.
+        ;
         extern  TMPL_NM(Bs3SwitchToPE16)
         call    TMPL_NM(Bs3SwitchToPE16)
         BS3_SET_BITS 16
