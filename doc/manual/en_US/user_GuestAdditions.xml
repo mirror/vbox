@@ -1758,6 +1758,13 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
         it is not supported on Mac OS X hosts.</para>
       </note>
 
+      <note>
+        <para>Memory ballooning does not work with large pages enabled. To
+        turn off large pages support for a VM, run
+        <computeroutput>VBoxManage modifyvm &lt;VM name&gt; --largepages off</computeroutput>
+        </para>
+      </note>
+
       <para>Normally, to change the amount of memory allocated to a virtual
       machine, one has to shut down the virtual machine entirely and modify
       its settings. With memory ballooning, memory that was allocated for a
