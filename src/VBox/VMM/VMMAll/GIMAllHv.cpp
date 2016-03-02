@@ -439,8 +439,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
             return PDMApicReadMSR(pVM, pVCpu->idCpu, MSR_IA32_X2APIC_EOI, puValue);
 
         case MSR_GIM_HV_ICR:
-            PDMApicReadMSR(pVM, pVCpu->idCpu, MSR_IA32_X2APIC_ICR, puValue);
-            return VINF_SUCCESS;
+            return PDMApicReadMSR(pVM, pVCpu->idCpu, MSR_IA32_X2APIC_ICR, puValue);
 
         case MSR_GIM_HV_GUEST_OS_ID:
             *puValue = pHv->u64GuestOsIdMsr;
