@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,7 +28,7 @@
 
 using namespace com;
 
-#define VBOX_MOD_BALLOONING_NAME "balloonctrl"
+#define VBOX_MOD_BALLOONING_NAME "balloon"
 
 /**
  * The module's RTGetOpt-IDs for the command line.
