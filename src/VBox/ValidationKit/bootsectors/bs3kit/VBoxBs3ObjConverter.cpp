@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <iprt/types.h>
 #include <iprt/assert.h>
+#include <iprt/x86.h>
 
 #include <iprt/formats/elf64.h>
 #include <iprt/formats/elf-amd64.h>
@@ -318,6 +319,18 @@ static const char * const g_apszCoffAmd64RelTypes[] =
     "SSPAN32"
 };
 
+
+static const char *coffGetSymbolName(PCIMAGE_SYMBOL pSym, const char *pchStrTab, char pszShortName[16])
+{
+    if (pSym->N.Name.Short != 0)
+    {
+        memcpy(pszShortName, pSym->N.ShortName, 8);
+        pszShortName[8] = '\0';
+        return pszShortName;
+    }
+    return pchStrTab + pSym->N.Name.Long;
+}
+
 static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
 {
     /*
@@ -341,6 +354,19 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                          pHdr->NumberOfSymbols, pHdr->PointerToSymbolTable);
     }
 
+    /* Dump the symbol table if verbose mode. */
+    PIMAGE_SYMBOL paSymTab  = (PIMAGE_SYMBOL)&pbFile[pHdr->PointerToSymbolTable];
+    const char   *pchStrTab = (const char *)&paSymTab[pHdr->NumberOfSymbols];
+    char          szShortName[16];
+    if (g_cVerbose > 2)
+        for (uint32_t i = 0; i < pHdr->NumberOfSymbols; i++)
+        {
+            printf("sym[0x%02x]: sect=0x%04x value=0x%08x storageclass=0x%x name=%s\n",
+                   i, paSymTab[i].SectionNumber, paSymTab[i].Value, paSymTab[i].StorageClass,
+                   coffGetSymbolName(&paSymTab[i], pchStrTab, szShortName));
+            i += paSymTab[i].NumberOfAuxSymbols;
+        }
+
     /* Switch it to a x86 machine. */
     pHdr->Machine = IMAGE_FILE_MACHINE_I386;
 
@@ -348,7 +374,7 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
      * Work the section table.
      */
     bool fRet = true;
-    PCIMAGE_SECTION_HEADER paShdrs   = (PCIMAGE_SECTION_HEADER)(pHdr + 1);
+    PIMAGE_SECTION_HEADER paShdrs = (PIMAGE_SECTION_HEADER)(pHdr + 1);
     for (uint32_t i = 0; i < pHdr->NumberOfSections; i++)
     {
         if (g_cVerbose)
@@ -360,7 +386,7 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                    paShdrs[i].PointerToRawData, paShdrs[i].SizeOfRawData,
                    paShdrs[i].PointerToRelocations, paShdrs[i].NumberOfRelocations,
                    paShdrs[i].PointerToLinenumbers, paShdrs[i].NumberOfLinenumbers, paShdrs[i].Characteristics);
-        uint32_t const cRelocs = paShdrs[i].NumberOfRelocations;
+        uint32_t cRelocs = paShdrs[i].NumberOfRelocations;
         if (cRelocs > 0)
         {
             if (   paShdrs[i].PointerToRelocations < cbHeaders
@@ -379,6 +405,12 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
             bool const fInBinary = !(paShdrs[i].Characteristics & (IMAGE_SCN_LNK_REMOVE | IMAGE_SCN_LNK_INFO));
             bool const fIsPData  = fInBinary
                                 && memcmp(paShdrs[i].Name, RT_STR_TUPLE(".pdata\0")) == 0;
+            bool const fIsText   = fInBinary
+                                && (paShdrs[i].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE));
+
+            /* Whether we've seen any __ImageBase REL32 relocation that may later
+               be used with array access using the SIB encoding and ADDR32NB. */
+            bool fSeenImageBase = false;
 
             /*
              * Convert from AMD64 fixups to I386 ones, assuming 64-bit addresses
@@ -424,9 +456,10 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                     }
                     while (off < 36)
                         off += printf(" ");
-                    printf(" %s\n",
+                    printf(" %s %s\n",
                            paRelocs[j].Type < RT_ELEMENTS(g_apszCoffAmd64RelTypes)
-                           ? g_apszCoffAmd64RelTypes[paRelocs[j].Type] : "unknown");
+                           ? g_apszCoffAmd64RelTypes[paRelocs[j].Type] : "unknown",
+                           coffGetSymbolName(&paSymTab[paRelocs[j].SymbolTableIndex], pchStrTab, szShortName));
                 }
 
                 /* Convert it. */
@@ -468,15 +501,71 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
 
                     /* These are 1:1 conversions: */
                     case IMAGE_REL_AMD64_ADDR32:
+#if 1   /* Turns out this is special when wlink is doing DOS/BIOS binaries. */
+/** @todo this still doesn't work for bs3-cmn-SelProtFar32ToFlat32.obj!! */
+                        paRelocs[j].Type = IMAGE_REL_I386_ABSOLUTE; /* Note! Don't believe MS pecoff.doc, this works with wlink. */
+#else
                         paRelocs[j].Type = IMAGE_REL_I386_DIR32;
                         uDir = IMAGE_REL_AMD64_ADDR32;
+#endif
                         break;
                     case IMAGE_REL_AMD64_ADDR32NB:
-                        paRelocs[j].Type = IMAGE_REL_I386_DIR32NB;
-                        uDir = IMAGE_REL_AMD64_ADDR32NB;
+                        if (fSeenImageBase && fIsText) /* This is voodoo. */
+                            paRelocs[j].Type = IMAGE_REL_I386_ABSOLUTE; /* Note! Don't believe MS pecoff.doc, this works with wlink. */
+                        else
+                        {
+                            paRelocs[j].Type = IMAGE_REL_I386_DIR32NB;
+                            uDir = IMAGE_REL_AMD64_ADDR32NB;
+                        }
                         break;
                     case IMAGE_REL_AMD64_REL32:
                         paRelocs[j].Type = IMAGE_REL_I386_REL32;
+
+                        /* This is voodoo! */
+                        if (   fIsText
+                            && strcmp(coffGetSymbolName(&paSymTab[paRelocs[j].SymbolTableIndex], pchStrTab, szShortName),
+                                      "__ImageBase") == 0)
+                        {
+                            if (   (uLoc.pu8[-1] & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5 /* disp32 + wrt */
+                                && uLoc.pu8[-2] == 0x8d /* LEA */
+                                && (uLoc.pu8[-3] & (0xf8 | X86_OP_REX_W)) == X86_OP_REX_W /* 64-bit reg */ )
+                            {
+                                if (*uLoc.pu32)
+                                {
+                                    error(pszFile, "__ImageBase fixup with disp %#x at rva=%#x in section #%u '%-8.8'!\n",
+                                          *uLoc.pu32, paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
+                                    fRet = false;
+                                }
+
+                                if (fSeenImageBase)
+                                    return error(pszFile, "More than one __ImageBase fixup! 2nd at rva=%#x in section #%u '%-8.8'\n",
+                                                 paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
+                                if (g_cVerbose)
+                                    printf("Applying __ImageBase hack at rva=%#x in section #%u '%-8.8'\n",
+                                           paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
+
+                                /* Convert it into a mov reg, dword 0. Leave the extra rex prefix, as it will be ignored. */
+                                uint8_t iReg = (uLoc.pu8[-1] >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK;
+                                uLoc.pu8[-1] = 0xb8 | iReg;
+                                uLoc.pu8[-2] = X86_OP_REX_R & uLoc.pu8[-3];
+                                fSeenImageBase = true;
+
+                                /* Neutralize the fixup.
+                                   Note! wlink takes the IMAGE_REL_I386_ABSOLUTE fixups seriously, so we cannot use that
+                                         to disable it, so instead we have to actually remove it from the fixup table. */
+                                cRelocs--;
+                                if (j != cRelocs)
+                                    memmove(&paRelocs[j], &paRelocs[j + 1], (cRelocs - j) * sizeof(paRelocs[j]));
+                                paShdrs[i].NumberOfRelocations = (uint16_t)cRelocs;
+                                j--;
+                            }
+                            else
+                            {
+                                error(pszFile, "__ImageBase fixup that isn't a recognized LEA at rva=%#x in section #%u '%-8.8'!\n",
+                                      paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
+                                fRet = false;
+                            }
+                        }
                         break;
                     case IMAGE_REL_AMD64_SECTION:
                         paRelocs[j].Type = IMAGE_REL_I386_SECTION;
@@ -487,8 +576,12 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                     case IMAGE_REL_AMD64_SECREL7:
                         paRelocs[j].Type = IMAGE_REL_I386_SECREL7;
                         break;
-                    case IMAGE_REL_AMD64_ABSOLUTE: /* no-op for alignment. */
+                    case IMAGE_REL_AMD64_ABSOLUTE:
                         paRelocs[j].Type = IMAGE_REL_I386_ABSOLUTE;
+                        /* Turns out wlink takes this seriously, so it usage must be checked out. */
+                        error(pszFile, "ABSOLUTE fixup at rva=%#x in section #%u '%-8.8'\n",
+                              paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
+                        fRet = false;
                         break;
 
                     default:
