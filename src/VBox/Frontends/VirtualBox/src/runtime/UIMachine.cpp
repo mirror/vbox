@@ -200,9 +200,6 @@ bool UIMachine::prepare()
     if (!prepareSession())
         return false;
 
-    /* Prevent application from closing when all window(s) closed: */
-    qApp->setQuitOnLastWindowClosed(false);
-
     /* Cache medium data early if necessary: */
     if (vboxGlobal().agressiveCaching())
         vboxGlobal().startMediumEnumeration();
