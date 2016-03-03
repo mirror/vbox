@@ -112,8 +112,6 @@ static long balloonGetDelta(PVBOXWATCHDOG_MACHINE pMachine,
         ulBalloonNew = ulBalloonMax;
     }
 
-RT_BREAKPOINT();
-
     long lBalloonDelta = 0;
     if (ulGuestMemFree < g_ulMemoryBalloonLowerLimitMB)
     {
