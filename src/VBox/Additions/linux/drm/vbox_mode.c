@@ -616,16 +616,16 @@ void vbox_refresh_modes(struct drm_device *dev)
  *  does not support ARGB cursors.  The mask is a 1BPP bitmap with the bit set
  *  if the corresponding alpha value in the ARGB image is greater than 0xF0. */
 static void copy_cursor_image(u8 *src, u8 *dst, int width, int height,
-                              size_t cbMask)
+                              size_t mask_size)
 {
     unsigned i, j;
-    size_t cbLine = (width + 7) / 8;
+    size_t line_size = (width + 7) / 8;
 
-    memcpy(dst + cbMask, src, width * height * 4);
+    memcpy(dst + mask_size, src, width * height * 4);
     for (i = 0; i < height; ++i)
         for (j = 0; j < width; ++j)
             if (((uint32_t *)src)[i * width + j] > 0xf0000000)
-                dst[i * cbLine + j / 8] |= (0x80 >> (j % 8));
+                dst[i * line_size + j / 8] |= (0x80 >> (j % 8));
 }
 
 static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
@@ -640,7 +640,8 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
     struct ttm_bo_kmap_obj uobj_map;
     u8 *src;
     u8 *dst = NULL;
-    size_t cbData, cbMask;
+    u32 caps = 0;
+    size_t data_size, mask_size;
     bool src_isiomem;
 
     if (!handle) {
@@ -650,6 +651,14 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
     }
     if (   width > VBOX_MAX_CURSOR_WIDTH || height > VBOX_MAX_CURSOR_HEIGHT
         || width == 0 || hot_x > width || height == 0 || hot_y > height)
+        return -EINVAL;
+    rc = VBoxQueryConfHGSMI(&vbox->submit_info,
+                            VBOX_VBVA_CONF32_CURSOR_CAPABILITIES, &caps);
+    ret = -RTErrConvertToErrno(rc);
+    if (ret)
+        return ret;
+    if (   caps & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER
+        || !(caps & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
         return -EINVAL;
 
     obj = drm_gem_object_lookup(crtc->dev, file_priv, handle);
@@ -661,9 +670,9 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
         {
             /* The mask must be calculated based on the alpha channel, one bit
              * per ARGB word, and must be 32-bit padded. */
-            cbMask  = ((width + 7) / 8 * height + 3) & ~3;
-            cbData = width * height * 4 + cbMask;
-            dst = kmalloc(cbData, GFP_KERNEL);
+            mask_size  = ((width + 7) / 8 * height + 3) & ~3;
+            data_size = width * height * 4 + mask_size;
+            dst = kmalloc(data_size, GFP_KERNEL);
             if (dst)
             {
                 ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &uobj_map);
@@ -675,11 +684,11 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
                         uint32_t flags =   VBOX_MOUSE_POINTER_VISIBLE
                                           | VBOX_MOUSE_POINTER_SHAPE
                                           | VBOX_MOUSE_POINTER_ALPHA;
-                        copy_cursor_image(src, dst, width, height, cbMask);
+                        copy_cursor_image(src, dst, width, height, mask_size);
                         rc = VBoxHGSMIUpdatePointerShape(&vbox->submit_info, flags,
                                                          hot_x, hot_y, width,
-                                                         height, dst, cbData);
-                        ret = RTErrConvertToErrno(rc);
+                                                         height, dst, data_size);
+                        ret = -RTErrConvertToErrno(rc);
                     }
                     else
                         DRM_ERROR("src cursor bo should be in main memory\n");
