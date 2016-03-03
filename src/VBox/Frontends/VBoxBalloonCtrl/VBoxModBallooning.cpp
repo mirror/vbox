@@ -64,9 +64,8 @@ static const RTGETOPTDEF g_aBalloonOpts[] = {
 /** The ballooning module's payload. */
 typedef struct VBOXWATCHDOG_BALLOONCTRL_PAYLOAD
 {
-    /** The maximum ballooning size for the VM set last.
-     *  Specify 0 for ballooning disabled. */
-    unsigned long ulBalloonMaxLast;
+    /** Last (most recent) ballooning request received. */
+    unsigned long ulBalloonReqLast;
 } VBOXWATCHDOG_BALLOONCTRL_PAYLOAD, *PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD;
 
 /*********************************************************************************************************************************
@@ -410,8 +409,9 @@ static int balloonMachineUpdate(PVBOXWATCHDOG_MACHINE pMachine)
         if (   ulBalloonMax
             && (ulBalloonReq > ulBalloonMax))
         {
-            serviceLog("[%ls] Warning: Requested ballooning size (%RU32MB) exceeds set maximum ballooning size (%RU32MB), limiting ...\n",
-                       pMachine->strName.raw(), ulBalloonReq, ulBalloonMax);
+            if (pData->ulBalloonReqLast != ulBalloonReq)
+                serviceLog("[%ls] Warning: Requested ballooning size (%RU32MB) exceeds set maximum ballooning size (%RU32MB), limiting ...\n",
+                           pMachine->strName.raw(), ulBalloonReq, ulBalloonMax);
         }
 
         /* Calculate current balloon delta. */
@@ -428,9 +428,9 @@ static int balloonMachineUpdate(PVBOXWATCHDOG_MACHINE pMachine)
                        pMachine->strName.raw(), lBalloonDelta > 0 ? "Inflating" : "Deflating", RT_ABS(lBalloonDelta), ulBalloonCur);
 
             vrc = balloonSetSize(pMachine, ulBalloonCur);
-            if (RT_SUCCESS(vrc))
-                pData->ulBalloonMaxLast = ulBalloonMax;
         }
+
+        pData->ulBalloonReqLast = ulBalloonReq;
     }
     else
         serviceLog("Error: Unable to retrieve metrics for machine '%ls', rc=%Rrc\n",
