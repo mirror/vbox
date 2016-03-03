@@ -212,24 +212,18 @@ bool UISession::initialize()
         if (!powerUp())
             return false;
 
-    /* Check if we missed a really quick termination after successful powerUp().
-     * We should take into account the fact of async machine-state arrival.
-     * And we don't even want to loop at this point to handle posted
-     * machine-state events, so we are relying onto CMachine getter
-     * to return the fresh state of the thing we want. */
-    const KMachineState ms = machine().GetState();
-    switch (ms)
+    /* Make sure all the pending Console events converted to signals
+     * during the powerUp() progress above reached their destinations.
+     * That is necessary to make sure all the pending machine state change events processed.
+     * We can't just use the machine state directly acquired from IMachine because there
+     * will be few places which are using stale machine state, not just this one. */
+    QApplication::sendPostedEvents(0, QEvent::MetaCall);
+
+    /* Check if we missed a really quick termination after successful startup: */
+    if (isTurnedOff())
     {
-        case KMachineState_PoweredOff:
-        case KMachineState_Saved:
-        case KMachineState_Teleported:
-        case KMachineState_Aborted:
-        {
-            LogRel(("GUI: Aborting startup due to invalid machine state detected: %d\n", ms));
-            return false;
-        }
-        default:
-            break;
+        LogRel(("GUI: Aborting startup due to invalid machine state detected: %d\n", machineState()));
+        return false;
     }
 
     /* Postprocess initialization: */
