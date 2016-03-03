@@ -85,8 +85,9 @@ bool EEPROM93C46::readWord(uint32_t u32Addr, uint16_t *pu16Value)
  */
 EEPROM93C46::State EEPROM93C46::opRead()
 {
-    m_u16Word = m_au16Data[m_u16Addr++];
-    E1kLog(("EEPROM: Reading word %04x at %08x\n", m_u16Word, m_u16Addr-1));
+    m_u16Word = m_au16Data[m_u16Addr];
+    E1kLog(("EEPROM: Reading word %04x at %08x\n", m_u16Word, m_u16Addr));
+    m_u16Addr = (m_u16Addr + 1) & ADDR_MASK;
     m_u16Mask = DATA_MSB;
     return WRITING_DO;
 }
