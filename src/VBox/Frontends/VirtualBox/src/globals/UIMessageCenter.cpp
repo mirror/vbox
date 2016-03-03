@@ -1758,6 +1758,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     if (fFatal)
     {
         /* Power down after a fFatal error: */
+        LogRel(("GUI: Powering VM down after a fatal runtime error...\n"));
         console1.PowerDown();
     }
 }

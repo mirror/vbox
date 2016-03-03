@@ -370,6 +370,7 @@ bool UISession::shutdown()
 bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
 {
     /* Prepare the power-off progress: */
+    LogRel(("GUI: Powering VM down on UI session power off request...\n"));
     CProgress progress = console().PowerDown();
     if (console().isOk())
     {
@@ -1917,8 +1918,8 @@ bool UISession::postprocessInitialization()
                 machineLogic()->setManualOverrideMode(true);
             /* Power off VM: */
             bool fServerCrashed = false;
-            powerOff(false, fServerCrashed);
             LogRel(("GUI: Aborting startup due to postprocess initialization issue detected...\n"));
+            powerOff(false, fServerCrashed);
             return false;
         }
 

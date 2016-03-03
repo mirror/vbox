@@ -399,7 +399,10 @@ void UIMachineLogic::saveState()
         fSuccess = uisession()->pause();
     /* Save-state: */
     if (fSuccess)
+    {
+        LogRel(("GUI: Passing request to save VM state from machine-logic to UI session.\n"));
         fSuccess = uisession()->saveState();
+    }
 
     /* Disable 'manual-override' finally: */
     setManualOverrideMode(false);
@@ -429,6 +432,7 @@ void UIMachineLogic::powerOff(bool fDiscardingState)
     bool fSuccess = true;
     /* Power-off: */
     bool fServerCrashed = false;
+    LogRel(("GUI: Passing request to power VM off from machine-logic to UI session.\n"));
     fSuccess = uisession()->powerOff(fDiscardingState, fServerCrashed) || fServerCrashed;
 
     /* Disable 'manual-override' finally: */
@@ -463,6 +467,7 @@ void UIMachineLogic::closeRuntimeUI()
     }
 
     /* Asynchronously ask UISession to close Runtime UI: */
+    LogRel(("GUI: Passing request to close Runtime UI from machine-logic to UI session.\n"));
     QMetaObject::invokeMethod(uisession(), "sltCloseRuntimeUI", Qt::QueuedConnection);
 }
 
@@ -491,6 +496,7 @@ void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
     msgCenter().warnAboutVBoxSVCUnavailable();
 
     /* Power VM off: */
+    LogRel(("GUI: Request to power VM off due to VBoxSVC is unavailable.\n"));
     powerOff(false);
 }
 
@@ -545,12 +551,16 @@ void UIMachineLogic::sltMachineStateChanged()
                 case GuruMeditationHandlerType_Default:
                 {
                     if (msgCenter().remindAboutGuruMeditation(QDir::toNativeSeparators(strLogFolder)))
+                    {
+                        LogRel(("GUI: User request to power VM off on Guru Meditation.\n"));
                         powerOff(false /* do NOT restore current snapshot */);
+                    }
                     break;
                 }
                 /* Power off VM silently: */
                 case GuruMeditationHandlerType_PowerOff:
                 {
+                    LogRel(("GUI: Automatic request to power VM off on Guru Meditation.\n"));
                     powerOff(false /* do NOT restore current snapshot */);
                     break;
                 }
@@ -617,6 +627,7 @@ void UIMachineLogic::sltMachineStateChanged()
                     }
                 }
 
+                LogRel(("GUI: Request to close Runtime UI because VM is powered off already.\n"));
                 closeRuntimeUI();
                 return;
             }
@@ -1585,6 +1596,7 @@ void UIMachineLogic::sltPowerOff()
         return;
     }
 
+    LogRel(("GUI: User request to power VM off.\n"));
     powerOff(machine().GetSnapshotCount() > 0);
 }
 
@@ -1615,6 +1627,7 @@ void UIMachineLogic::sltClose()
     }
 
     /* Try to close active machine-window: */
+    LogRel(("GUI: Request to close active machine-window.\n"));
     activeMachineWindow()->close();
 }
 
@@ -2618,6 +2631,7 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
                 delete pDlg;
 
                 /* Propose the user to close VM: */
+                LogRel(("GUI: Request to close Runtime UI due to DEK was not provided.\n"));
                 QMetaObject::invokeMethod(this, "sltClose", Qt::QueuedConnection);
             }
         }
