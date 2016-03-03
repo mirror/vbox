@@ -368,6 +368,8 @@ static int machineAdd(const Bstr &strUuid)
          */
         VBOXWATCHDOG_MACHINE m;
         m.machine = machine;
+        CHECK_ERROR_BREAK(machine, COMGETTER(Name)(m.strName.asOutParam()));
+
         int rc2 = groupAdd(m.groups, strGroups.c_str(), 0 /* Flags */);
         AssertRC(rc2);
 

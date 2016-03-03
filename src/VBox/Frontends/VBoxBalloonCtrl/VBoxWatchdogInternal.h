@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -87,6 +87,8 @@ typedef std::map<Utf8Str, uint32_t>::const_iterator mapGroupsIterConst;
 typedef struct VBOXWATCHDOG_MACHINE
 {
     ComPtr<IMachine> machine;
+    /** The machine's name. For logging. */
+    Bstr strName;
 #ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
     ComPtr<IPerformanceCollector> collector;
 #endif
