@@ -53,10 +53,10 @@ UIInformation::UIInformation(QWidget *pParent, const CMachine &machine, const CC
 void UIInformation::prepareMainLayout()
 {
     /* Create main-layout: */
-    m_pMainLayout = new QVBoxLayout(this);
+    m_pMainLayout = new QVBoxLayout;
     AssertPtrReturnVoid(m_pMainLayout);
     {
-        /* Prepare main-layout: */
+        /* Configure main-layout: */
         m_pMainLayout->setContentsMargins(2, 0, 0, 0);
         m_pMainLayout->setSpacing(0);
         setLayout(m_pMainLayout);
@@ -65,54 +65,54 @@ void UIInformation::prepareMainLayout()
 
 void UIInformation::prepareModel()
 {
-    /* Create model: */
+    /* Create information-model: */
     m_pModel = new UIInformationModel(this, m_machine, m_console);
     AssertPtrReturnVoid(m_pModel);
     {
-        /* Prepare data for information-model: */
-        /* General data-item: */
+        /* Add data to information-model: */
+        /* Create General data-item: */
         UIInformationDataItem *pGeneral = new UIInformationDataGeneral(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pGeneral);
         {
             m_pModel->addItem(pGeneral);
         }
 
-        /* System data-item: */
+        /* Create System data-item: */
         UIInformationDataItem *pSystem = new UIInformationDataSystem(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pSystem);
         {
             m_pModel->addItem(pSystem);
         }
 
-        /* Display data-item: */
+        /* Create Display data-item: */
         UIInformationDataItem *pDisplay = new UIInformationDataDisplay(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pDisplay);
         {
             m_pModel->addItem(pDisplay);
         }
 
-        /* Storage data-item: */
+        /* Create Storage data-item: */
         UIInformationDataItem *pStorage = new UIInformationDataStorage(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pStorage);
         {
             m_pModel->addItem(pStorage);
         }
 
-        /* Audio data-item: */
+        /* Create Audio data-item: */
         UIInformationDataItem *pAudio = new UIInformationDataAudio(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pAudio);
         {
             m_pModel->addItem(pAudio);
         }
 
-        /* Network data-item: */
+        /* Create Network data-item: */
         UIInformationDataItem *pNetwork = new UIInformationDataNetwork(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pNetwork);
         {
             m_pModel->addItem(pNetwork);
         }
 
-        /* Serial ports data-item: */
+        /* Create Serial-ports data-item: */
         UIInformationDataItem *pSerialPorts = new UIInformationDataSerialPorts(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pSerialPorts);
         {
@@ -120,7 +120,7 @@ void UIInformation::prepareModel()
         }
 
 #ifdef VBOX_WITH_PARALLEL_PORTS
-        /* Parallel ports data-item: */
+        /* Create Parallel-ports data-item: */
         UIInformationDataItem *pParallelPorts = new UIInformationDataParallelPorts(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pParallelPorts);
         {
@@ -128,14 +128,14 @@ void UIInformation::prepareModel()
         }
 #endif /* VBOX_WITH_PARALLEL_PORTS */
 
-        /* USB data-item: */
+        /* Create USB data-item: */
         UIInformationDataItem *pUSB = new UIInformationDataUSB(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pUSB);
         {
             m_pModel->addItem(pUSB);
         }
 
-        /* Shared folders data-item: */
+        /* Create Shared-folders data-item: */
         UIInformationDataItem *pSharedFolders = new UIInformationDataSharedFolders(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pSharedFolders);
         {
@@ -146,11 +146,11 @@ void UIInformation::prepareModel()
 
 void UIInformation::prepareView()
 {
-    /* Create view: */
+    /* Create information-view: */
     m_pView = new UIInformationView;
     AssertPtrReturnVoid(m_pView);
     {
-        /* Prepare view: */
+        /* Configure information-view: */
         m_pView->setResizeMode(QListView::Adjust);
         /* Create information-delegate item: */
         UIInformationItem *pItem = new UIInformationItem(m_pView);
@@ -162,9 +162,9 @@ void UIInformation::prepareView()
         connect(m_pModel, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)),
                 m_pView, SLOT(updateData(const QModelIndex&, const QModelIndex&)));
 
-        /* Set model: */
+        /* Set model for view: */
         m_pView->setModel(m_pModel);
-        /* Layout view: */
+        /* Add information-view to the main-layout: */
         m_pMainLayout->addWidget(m_pView);
     }
 }

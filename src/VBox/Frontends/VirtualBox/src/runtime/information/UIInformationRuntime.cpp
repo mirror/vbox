@@ -56,7 +56,7 @@ void UIInformationRuntime::prepareLayout()
     m_pMainLayout = new QVBoxLayout(this);
     AssertPtrReturnVoid(m_pMainLayout);
     {
-        /* Prepare main-layout: */
+        /* Configure main-layout: */
         m_pMainLayout->setContentsMargins(2, 0, 0, 0);
         m_pMainLayout->setSpacing(0);
         setLayout(m_pMainLayout);
@@ -69,21 +69,21 @@ void UIInformationRuntime::prepareModel()
     m_pModel = new UIInformationModel(this, m_machine, m_console);
     AssertPtrReturnVoid(m_pModel);
 
-    /* Prepare data for information-model: */
+    /* Add data to information-model: */
     UIInformationDataRuntimeAttributes *pGeneral = new UIInformationDataRuntimeAttributes(m_machine, m_console, m_pModel);
     AssertPtrReturnVoid(pGeneral);
     {
         m_pModel->addItem(pGeneral);
     }
 
-    /* Prepare data for information-model: */
+    /* Create data for information-model: */
     UIInformationDataNetworkStatistics *pNetwork = new UIInformationDataNetworkStatistics(m_machine, m_console, m_pModel);
     AssertPtrReturnVoid(pNetwork);
     {
         m_pModel->addItem(pNetwork);
     }
 
-    /* Prepare data for information-model: */
+    /* Create data for information-model: */
     UIInformationDataStorageStatistics *pStorage = new UIInformationDataStorageStatistics(m_machine, m_console, m_pModel);
     AssertPtrReturnVoid(pStorage);
     {

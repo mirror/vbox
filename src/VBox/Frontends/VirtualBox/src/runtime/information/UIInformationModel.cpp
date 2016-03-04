@@ -49,16 +49,19 @@ UIInformationModel::~UIInformationModel()
 {
 }
 
-int UIInformationModel::rowCount(const QModelIndex & /*parent */) const
+int UIInformationModel::rowCount(const QModelIndex& /*parent */) const
 {
+    /* Return row-count: */
     return m_list.count();
 }
 
 QVariant UIInformationModel::data(const QModelIndex &index, int role) const
 {
+    /* Get row: */
     int row = index.row();
-    int col = index.column();
+    /* Get item at the row: */
     UIInformationDataItem *pItem = m_list.at(row);
+    /* Return the data for the corresponding role: */
     return pItem->data(index, role);
 }
 
@@ -80,6 +83,7 @@ void UIInformationModel::prepare()
 
 QHash<int, QByteArray> UIInformationModel::roleNames() const
 {
+    /* Add supported roles and return: */
     QHash<int, QByteArray> roleNames;
     roleNames[Qt::DisplayRole] = "";
     roleNames[Qt::DecorationRole] = "";
@@ -90,12 +94,15 @@ QHash<int, QByteArray> UIInformationModel::roleNames() const
 
 void UIInformationModel::addItem(UIInformationDataItem *pItem)
 {
+    /* Make sure item is valid: */
     AssertPtrReturnVoid(pItem);
+    /* Add item: */
     m_list.append(pItem);
 }
 
 void UIInformationModel::updateData(const QModelIndex &idx)
 {
+    /* Emit data-changed signal: */
     emit dataChanged(idx, idx);
 }
 

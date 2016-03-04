@@ -19,7 +19,9 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+# include <QTextEdit>
 # include <QClipboard>
+# include <QDebug>
 
 /* GUI includes: */
 # include "UIInformationView.h"
@@ -30,31 +32,53 @@
 UIInformationView::UIInformationView(QWidget *pParent)
     : QListView(pParent)
 {
+    /* Create a dummy textEdit for copying rich-text as,
+     * manual copying to clipboard is not working: */
+    m_pTextEdit = new QTextEdit(this);
+    /* Hide textedit: */
+    m_pTextEdit->setVisible(false);
+    /* Set selection mode: */
+    setSelectionMode(QAbstractItemView::ExtendedSelection);
 }
 
 void UIInformationView::updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
+    /* Update: */
     update(topLeft);
 }
 
 void UIInformationView::keyPressEvent(QKeyEvent *pEvent)
 {
+    /* Copy the text: */
     if (pEvent == QKeySequence::Copy)
     {
-        if (selectionModel())
+        QString strText;
+        /* Get Selection model: */
+        QItemSelectionModel *pSelectionModel = selectionModel();
+        if (pSelectionModel)
         {
-            QString strText;
-            foreach (const QModelIndex &index, selectionModel()->selectedIndexes())
+            /* Check all the selected-indexes and copy the text: */
+            foreach (const QModelIndex &index, pSelectionModel->selectedIndexes())
             {
                 UIInformationItem *pItem = dynamic_cast<UIInformationItem*>(itemDelegate(index));
                 if (pItem)
                 {
+                    /* Update the data corresponding data: */
+                    pItem->updateData(index);
+                    /* Get and add the html-data of item: */
                     strText.append(pItem->htmlData());
                 }
             }
-            QApplication::clipboard()->setText(strText);
-            pEvent->accept();
         }
+        /* Set the text to text-edit and copy from it: */
+        m_pTextEdit->setText(strText);
+        m_pTextEdit->selectAll();
+        m_pTextEdit->copy();
+        /* Accept/acknowledge event: */
+        pEvent->accept();
     }
+    /* Call to base-class: */
+    else
+        QListView::keyPressEvent(pEvent);
 }
 

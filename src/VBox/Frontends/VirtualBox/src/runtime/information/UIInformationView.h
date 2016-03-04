@@ -22,6 +22,10 @@
 #include <QListView>
 #include <QModelIndex>
 
+/* Forward declarations: */
+class QTextEdit;
+class UIInformationItem;
+
 /** QListView extension
   * providing GUI with information-view in session-information window. */
 class UIInformationView : public QListView
@@ -39,6 +43,10 @@ public slots:
 protected slots:
     /** Handles Qt key-press @a pEvent. */
     void keyPressEvent(QKeyEvent *pEvent);
+
+private:
+    /** Holds the instance of textedit we create: */
+    QTextEdit *m_pTextEdit;
 };
 
 #endif /* !___UIInformationView_h___ */
