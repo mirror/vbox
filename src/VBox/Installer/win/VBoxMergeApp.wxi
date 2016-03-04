@@ -304,10 +304,23 @@
               Source="$(env.PATH_OUT)\bin\VirtualBox.dll">
         </File>
     <?endif ?>
+    <?if $(env.VBOX_WITH_QTGUI_V5) = "no" ?>
         <File Id="file_QtCoreVBox4.dll" Name="QtCoreVBox4.dll"
               Source="$(env.PATH_OUT)\bin\QtCoreVBox4.dll" />
         <File Id="file_QtGuiVBox4.dll" Name="QtGuiVBox4.dll"
               Source="$(env.PATH_OUT)\bin\QtGuiVBox4.dll" />
+    <?else ?>
+        <File Id="file_Qt5CoreVBox.dll" Name="Qt5CoreVBox.dll"
+              Source="$(env.PATH_OUT)\bin\Qt5CoreVBox.dll" />
+        <File Id="file_Qt5GuiVBox.dll" Name="Qt5GuiVBox.dll"
+              Source="$(env.PATH_OUT)\bin\Qt5GuiVBox.dll" />
+        <File Id="file_Qt5WidgetsVBox.dll" Name="Qt5WidgetsVBox.dll"
+              Source="$(env.PATH_OUT)\bin\Qt5WidgetsVBox.dll" />
+        <File Id="file_Qt5PrintSupportVBox.dll" Name="Qt5PrintSupportVBox.dll"
+              Source="$(env.PATH_OUT)\bin\Qt5PrintSupportVBox.dll" />
+        <File Id="file_Qt5WinExtrasVBox.dll" Name="Qt5WinExtrasVBox.dll"
+              Source="$(env.PATH_OUT)\bin\Qt5WinExtrasVBox.dll" />
+    <?endif ?>
 <?endif ?>
 <?if $(env.VBOX_WITH_DEBUGGER_GUI) = "yes" ?>
         <File Id="file_VBoxDbg.dll" Name="VBoxDbg.dll"
@@ -316,8 +329,13 @@
               Source="$(env.PATH_OUT)\bin\DbgPlugInDiggers.dll" />
 <?endif ?>
 <?if $(env.VBOX_GUI_USE_QGL) = "yes" ?>
+    <?if $(env.VBOX_WITH_QTGUI_V5) = "no" ?>
         <File Id="file_QtOpenGLVBox4.dll" Name="QtOpenGLVBox4.dll"
               Source="$(env.PATH_OUT)\bin\QtOpenGLVBox4.dll" />
+    <?else ?>
+        <File Id="file_Qt5OpenGLVBox.dll" Name="Qt5OpenGLVBox.dll"
+              Source="$(env.PATH_OUT)\bin\Qt5OpenGLVBox.dll" />
+    <?endif ?>
 <?endif?>
 
 <?if $(env.VBOX_VCC_TOOL_STEM) = "VCC100" ?>
@@ -359,14 +377,28 @@
     </Component> <!-- MainBinaries -->
 
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-    <!-- Qt accessible plugins -->
-    <Directory Id="dir_VBoxAppAccessible" Name="accessible">
-        <Component Id="cp_QtAccessible" Guid="12040EF9-D4A8-4FB2-A69C-CA2F5C354A45" Win64="$(var.Property_Win64)">
-            <File Id="file_qtaccessiblewidgets4.dll" Name="qtaccessiblewidgets4.dll"
-                  Source="$(env.PATH_OUT)\bin\accessible\qtaccessiblewidgets4.dll" />
-        </Component>
-    </Directory>
-<?endif?>
+    <?if $(env.VBOX_WITH_QTGUI_V5) = "no" ?>
+        <!-- Qt accessible plugins -->
+        <Directory Id="dir_VBoxAppAccessible" Name="accessible">
+            <Component Id="cp_QtAccessible" Guid="12040EF9-D4A8-4FB2-A69C-CA2F5C354A45" Win64="$(var.Property_Win64)">
+                <File Id="file_qtaccessiblewidgets4.dll" Name="qtaccessiblewidgets4.dll"
+                      Source="$(env.PATH_OUT)\bin\accessible\qtaccessiblewidgets4.dll" />
+            </Component>
+        </Directory>
+    <?else ?>
+        <!-- Qt platforms plugins -->
+        <Directory Id="dir_VBoxAppPlatforms" Name="platforms">
+            <Component Id="cp_QtPlatforms" Guid="842367ec-6094-4ddc-93d8-6ca70fc1ca24" Win64="$(var.Property_Win64)">
+                <File Id="file_qminimal.dll" Name="qminimal.dll"
+                      Source="$(env.PATH_OUT)\bin\platforms\qminimal.dll" />
+                <File Id="file_qoffscreen.dll" Name="qoffscreen.dll"
+                      Source="$(env.PATH_OUT)\bin\platforms\qoffscreen.dll" />
+                <File Id="file_qwindows.dll" Name="qwindows.dll"
+                      Source="$(env.PATH_OUT)\bin\platforms\qwindows.dll" />
+            </Component>
+        </Directory>
+    <?endif?>
+ <?endif ?>
 
 <?if $(env.VBOX_WITH_CROGL) = "yes" ?>
     <Component Id="cp_VBoxCROpenGL" Guid="874A1297-835A-491D-8A9D-7E723BC29EE7" Win64="$(var.Property_Win64)">
