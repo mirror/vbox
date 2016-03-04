@@ -196,8 +196,8 @@ static RTEXITCODE handleMetricsList(int argc, char *argv[],
     ULONG period, count;
     LONG minimum, maximum;
     RTPrintf(
-"Object     Metric               Unit Minimum    Maximum    Period     Count      Description\n"
-"---------- -------------------- ---- ---------- ---------- ---------- ---------- -----------\n");
+"Object          Metric                                   Unit    Minimum    Maximum     Period      Count Description\n"
+"--------------- ---------------------------------------- ---- ---------- ---------- ---------- ---------- -----------\n");
     for (size_t i = 0; i < metricInfo.size(); i++)
     {
         CHECK_ERROR(metricInfo[i], COMGETTER(Object)(object.asOutParam()));
@@ -208,7 +208,7 @@ static RTEXITCODE handleMetricsList(int argc, char *argv[],
         CHECK_ERROR(metricInfo[i], COMGETTER(MaximumValue)(&maximum));
         CHECK_ERROR(metricInfo[i], COMGETTER(Unit)(unit.asOutParam()));
         CHECK_ERROR(metricInfo[i], COMGETTER(Description)(description.asOutParam()));
-        RTPrintf("%-10ls %-20ls %-4ls %10d %10d %10u %10u %ls\n",
+        RTPrintf("%-15ls %-40ls %-4ls %10d %10d %10u %10u %ls\n",
             getObjectName(aVirtualBox, object).raw(), metricName.raw(), unit.raw(),
             minimum, maximum, period, count, description.raw());
     }
@@ -314,13 +314,13 @@ static RTEXITCODE handleMetricsQuery(int argc, char *argv[],
                                                        ComSafeArrayAsOutParam(retLengths),
                                                        ComSafeArrayAsOutParam(retData)) );
 
-    RTPrintf("Object     Metric               Values\n"
-             "---------- -------------------- --------------------------------------------\n");
+    RTPrintf("Object          Metric                                   Values\n"
+             "--------------- ---------------------------------------- --------------------------------------------\n");
     for (unsigned i = 0; i < retNames.size(); i++)
     {
         Bstr metricUnit(retUnits[i]);
         Bstr metricName(retNames[i]);
-        RTPrintf("%-10ls %-20ls ", getObjectName(aVirtualBox, retObjects[i]).raw(), metricName.raw());
+        RTPrintf("%-15ls %-40ls ", getObjectName(aVirtualBox, retObjects[i]).raw(), metricName.raw());
         const char *separator = "";
         for (unsigned j = 0; j < retLengths[i]; j++)
         {
