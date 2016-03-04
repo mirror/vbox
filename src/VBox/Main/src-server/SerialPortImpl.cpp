@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,7 @@
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
 
+#include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
 
@@ -30,10 +31,29 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
+//////////////////////////////////////////////////////////////////////////////////
+//
+// SerialPort private data definition
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+struct SerialPort::Data
+{
+    Data()
+        : fModified(false),
+          pMachine(NULL)
+    { }
+
+    bool                                fModified;
+    Machine * const                     pMachine;
+    const ComObjPtr<SerialPort>         pPeer;
+    Backupable<settings::SerialPort>    bd;
+};
+
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (SerialPort)
+DEFINE_EMPTY_CTOR_DTOR(SerialPort)
 
 HRESULT SerialPort::FinalConstruct()
 {
@@ -105,11 +125,11 @@ HRESULT SerialPort::init(Machine *aParent, SerialPort *aThat)
     unconst(m->pMachine) = aParent;
     unconst(m->pPeer) = aThat;
 
-    AutoCaller thatCaller (aThat);
+    AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
-    m->bd.share (aThat->m->bd);
+    m->bd.share(aThat->m->bd);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -139,11 +159,11 @@ HRESULT SerialPort::initCopy(Machine *aParent, SerialPort *aThat)
     unconst(m->pMachine) = aParent;
     /* pPeer is left null */
 
-    AutoCaller thatCaller (aThat);
+    AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
-    m->bd.attachCopy (aThat->m->bd);
+    m->bd.attachCopy(aThat->m->bd);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -544,7 +564,7 @@ void SerialPort::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
     AutoCaller peerCaller(m->pPeer);
@@ -569,17 +589,17 @@ void SerialPort::i_commit()
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */
-void SerialPort::i_copyFrom (SerialPort *aThat)
+void SerialPort::i_copyFrom(SerialPort *aThat)
 {
-    AssertReturnVoid (aThat != NULL);
+    AssertReturnVoid(aThat != NULL);
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (aThat);
-    AssertComRCReturnVoid (thatCaller.rc());
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnVoid(thatCaller.rc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -587,16 +607,16 @@ void SerialPort::i_copyFrom (SerialPort *aThat)
     AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
 
     /* this will back up current data */
-    m->bd.assignCopy (aThat->m->bd);
+    m->bd.assignCopy(aThat->m->bd);
 }
 
-void SerialPort::i_applyDefaults (GuestOSType *aOsType)
+void SerialPort::i_applyDefaults(GuestOSType *aOsType)
 {
-    AssertReturnVoid (aOsType != NULL);
+    AssertReturnVoid(aOsType != NULL);
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -607,7 +627,7 @@ void SerialPort::i_applyDefaults (GuestOSType *aOsType)
     {
         case 1:
         {
-            m->bd->ulIOBase = 0x2F8;
+            m->bd->ulIOBase = 0x2f8;
             m->bd->ulIRQ = 3;
             break;
         }
@@ -623,7 +643,9 @@ void SerialPort::i_applyDefaults (GuestOSType *aOsType)
             m->bd->ulIRQ = 3;
             break;
         }
-        default: break;
+        default:
+            AssertMsgFailed(("Serial port slot %u exceeds limit\n", m->bd->ulSlot));
+            break;
     }
 
     uint32_t numSerialEnabled = aOsType->i_numSerialEnabled();
@@ -633,6 +655,51 @@ void SerialPort::i_applyDefaults (GuestOSType *aOsType)
     {
         m->bd->fEnabled = true;
     }
+}
+
+bool SerialPort::i_hasDefaults()
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), true);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (   !m->bd->fEnabled
+        && m->bd->portMode == PortMode_Disconnected
+        && !m->bd->fServer)
+    {
+        /* Could be default, check the IO base and IRQ. */
+        switch (m->bd->ulSlot)
+        {
+            case 0:
+                if (m->bd->ulIOBase == 0x3f8 && m->bd->ulIRQ == 4)
+                    return true;
+                break;
+            case 1:
+                if (m->bd->ulIOBase == 0x2f8 && m->bd->ulIRQ == 3)
+                    return true;
+                break;
+            case 2:
+                if (m->bd->ulIOBase == 0x3e8 && m->bd->ulIRQ == 4)
+                    return true;
+                break;
+            case 3:
+                if (m->bd->ulIOBase == 0x2e8 && m->bd->ulIRQ == 3)
+                    return true;
+                break;
+            default:
+                AssertMsgFailed(("Serial port slot %u exceeds limit\n", m->bd->ulSlot));
+                break;
+        }
+
+        /* Detect old-style defaults (0x3f8, irq 4) in any slot, they are still
+         * in place for many VMs created by old VirtualBox versions. */
+        if (m->bd->ulIOBase == 0x3f8 && m->bd->ulIRQ == 4)
+            return true;
+    }
+
+    return false;
 }
 
 /**

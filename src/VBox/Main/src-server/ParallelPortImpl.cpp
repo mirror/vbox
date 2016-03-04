@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -123,7 +123,7 @@ HRESULT ParallelPort::init(Machine *aParent, ParallelPort *aThat)
     unconst(m->pMachine) = aParent;
     unconst(m->pPeer) = aThat;
 
-    AutoCaller thatCaller (aThat);
+    AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
@@ -441,11 +441,11 @@ void ParallelPort::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller peerCaller (m->pPeer);
-    AssertComRCReturnVoid (peerCaller.rc());
+    AutoCaller peerCaller(m->pPeer);
+    AssertComRCReturnVoid(peerCaller.rc());
 
     /* lock both for writing since we modify both (m->pPeer is "master" so locked
      * first) */
@@ -468,15 +468,15 @@ void ParallelPort::i_commit()
  */
 void ParallelPort::i_copyFrom(ParallelPort *aThat)
 {
-    AssertReturnVoid (aThat != NULL);
+    AssertReturnVoid(aThat != NULL);
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (aThat);
-    AssertComRCReturnVoid (thatCaller.rc());
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnVoid(thatCaller.rc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -494,7 +494,7 @@ void ParallelPort::i_applyDefaults()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -513,8 +513,45 @@ void ParallelPort::i_applyDefaults()
             m->bd->ulIRQ = 5;
             break;
         }
-        default: break;
+        default:
+            AssertMsgFailed(("Parallel port slot %u exceeds limit\n", m->bd->ulSlot));
+            break;
     }
+}
+
+bool ParallelPort::i_hasDefaults()
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), true);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!m->bd->fEnabled)
+    {
+        /* Could be default, check the IO base and IRQ. */
+        switch (m->bd->ulSlot)
+        {
+            case 0:
+                if (m->bd->ulIOBase == 0x378 && m->bd->ulIRQ == 7)
+                    return true;
+                break;
+            case 1:
+                if (m->bd->ulIOBase == 0x278 && m->bd->ulIRQ == 5)
+                    return true;
+                break;
+            default:
+                AssertMsgFailed(("Parallel port slot %u exceeds limit\n", m->bd->ulSlot));
+                break;
+        }
+
+        /* Detect old-style defaults (0x378, irq 4) in any slot, they are still
+         * in place for many VMs created by old VirtualBox versions. */
+        if (m->bd->ulIOBase == 0x378 && m->bd->ulIRQ == 4)
+            return true;
+    }
+
+    return false;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

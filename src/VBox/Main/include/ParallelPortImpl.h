@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,9 +37,9 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *aParent, ULONG aSlot);
-    HRESULT init (Machine *aParent, ParallelPort *aThat);
-    HRESULT initCopy (Machine *parent, ParallelPort *aThat);
+    HRESULT init(Machine *aParent, ULONG aSlot);
+    HRESULT init(Machine *aParent, ParallelPort *aThat);
+    HRESULT initCopy(Machine *parent, ParallelPort *aThat);
     void uninit();
 
     HRESULT i_loadSettings(const settings::ParallelPort &data);
@@ -51,6 +51,7 @@ public:
     void i_commit();
     void i_copyFrom(ParallelPort *aThat);
     void i_applyDefaults();
+    bool i_hasDefaults();
 
 private:
 

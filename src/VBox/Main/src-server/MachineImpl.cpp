@@ -10304,6 +10304,9 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         data.llSerialPorts.clear();
         for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
         {
+            if (mSerialPorts[slot]->i_hasDefaults())
+                continue;
+
             settings::SerialPort s;
             s.ulSlot = slot;
             rc = mSerialPorts[slot]->i_saveSettings(s);
@@ -10316,6 +10319,9 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         data.llParallelPorts.clear();
         for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); ++slot)
         {
+            if (mParallelPorts[slot]->i_hasDefaults())
+                continue;
+
             settings::ParallelPort p;
             p.ulSlot = slot;
             rc = mParallelPorts[slot]->i_saveSettings(p);

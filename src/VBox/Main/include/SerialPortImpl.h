@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,9 +40,9 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *aParent, ULONG aSlot);
-    HRESULT init (Machine *aParent, SerialPort *aThat);
-    HRESULT initCopy (Machine *parent, SerialPort *aThat);
+    HRESULT init(Machine *aParent, ULONG aSlot);
+    HRESULT init(Machine *aParent, SerialPort *aThat);
+    HRESULT initCopy(Machine *parent, SerialPort *aThat);
     void uninit();
 
     // public methods only for internal purposes
@@ -54,7 +54,8 @@ public:
     void i_commit();
     void i_copyFrom(SerialPort *aThat);
 
-    void i_applyDefaults (GuestOSType *aOsType);
+    void i_applyDefaults(GuestOSType *aOsType);
+    bool i_hasDefaults();
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
@@ -78,25 +79,7 @@ private:
     HRESULT getPath(com::Utf8Str &aPath);
     HRESULT setPath(const com::Utf8Str &aPath);
 
-    ////////////////////////////////////////////////////////////////////////////////
-    ////
-    //// SerialPort private data definition
-    ////
-    //////////////////////////////////////////////////////////////////////////////////
-    //
-    struct Data
-    {
-      Data()
-           : fModified(false),
-             pMachine(NULL)
-        { }
-
-       bool                                fModified;
-       Machine * const                     pMachine;
-       const ComObjPtr<SerialPort>         pPeer;
-       Backupable<settings::SerialPort>    bd;
-    };
-
+    struct Data;
     Data *m;
 };
 
