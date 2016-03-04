@@ -64,6 +64,8 @@ static const RTGETOPTDEF g_aBalloonOpts[] = {
 /** The ballooning module's payload. */
 typedef struct VBOXWATCHDOG_BALLOONCTRL_PAYLOAD
 {
+    /** Last (most recent) ballooning size reported by the guest. */
+    unsigned long ulBalloonCurLast;
     /** Last (most recent) ballooning request received. */
     unsigned long ulBalloonReqLast;
 } VBOXWATCHDOG_BALLOONCTRL_PAYLOAD, *PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD;
@@ -287,6 +289,50 @@ static unsigned long balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
 }
 
 /**
+ * Determines whether ballooning for the specified machine is enabled or not.
+ * This can be specified on a per-VM basis or as a globally set value for all VMs.
+ *
+ * @return  bool                    Whether ballooning is enabled or not.
+ * @param   pMachine                Machine to determine enable status for.
+ */
+static bool balloonIsEnabled(PVBOXWATCHDOG_MACHINE pMachine)
+{
+    const ComPtr<IMachine> &rptrMachine = pMachine->machine;
+
+    bool fEnabled = true; /* By default ballooning is enabled. */
+    char szSource[64];
+
+    Bstr strValue;
+    HRESULT hr = g_pVirtualBox->GetExtraData(Bstr("VBoxInternal/Guest/BalloonEnabled").raw(),
+                                             strValue.asOutParam());
+    if (   SUCCEEDED(hr)
+        && strValue.isNotEmpty())
+    {
+       if (g_fVerbose)
+            RTStrPrintf(szSource, sizeof(szSource), "global extra-data");
+    }
+    else
+    {
+        hr = rptrMachine->GetExtraData(Bstr("VBoxInternal2/Watchdog/BalloonCtrl/BalloonEnabled").raw(),
+                                       strValue.asOutParam());
+        if (SUCCEEDED(hr))
+        {
+            if (g_fVerbose)
+                RTStrPrintf(szSource, sizeof(szSource), "per-VM extra-data");
+        }
+    }
+
+    if (strValue.isNotEmpty())
+    {
+        fEnabled = RT_BOOL(Utf8Str(strValue).toUInt32());
+        serviceLogVerbose(("[%ls] Ballooning is forced to %s (%s)\n",
+                           pMachine->strName.raw(), fEnabled ? "enabled" : "disabled", szSource));
+    }
+
+    return fEnabled;
+}
+
+/**
  * Indicates whether ballooning on the specified machine state is
  * possible -- this only is true if the machine is up and running.
  *
@@ -397,6 +443,9 @@ static int balloonMachineUpdate(PVBOXWATCHDOG_MACHINE pMachine)
                                                   payloadFrom(pMachine, VBOX_MOD_BALLOONING_NAME);
         AssertPtr(pData);
 
+        /* Determine if ballooning is enabled or disabled. */
+        bool fEnabled = balloonIsEnabled(pMachine);
+
         /* Determine the current set maximum balloon size. */
         unsigned long ulBalloonMax = balloonGetMaxSize(pMachine);
 
@@ -424,17 +473,36 @@ static int balloonMachineUpdate(PVBOXWATCHDOG_MACHINE pMachine)
         {
             ulBalloonCur = ulBalloonCur + lBalloonDelta;
 
-            serviceLog("[%ls] %s balloon by %RU32MB to %RU32MB ...\n",
-                       pMachine->strName.raw(), lBalloonDelta > 0 ? "Inflating" : "Deflating", RT_ABS(lBalloonDelta), ulBalloonCur);
-
-            vrc = balloonSetSize(pMachine, ulBalloonCur);
+            if (fEnabled)
+            {
+                serviceLog("[%ls] %s balloon by %RU32MB to %RU32MB ...\n",
+                           pMachine->strName.raw(), lBalloonDelta > 0 ? "Inflating" : "Deflating", RT_ABS(lBalloonDelta), ulBalloonCur);
+                vrc = balloonSetSize(pMachine, ulBalloonCur);
+            }
+            else
+                serviceLogVerbose(("[%ls] Requested %s balloon by %RU32MB to %RU32MB, but ballooning is disabled\n",
+                                   pMachine->strName.raw(), lBalloonDelta > 0 ? "inflating" : "deflating",
+                                   RT_ABS(lBalloonDelta), ulBalloonCur));
         }
 
+        if (ulBalloonCur != pData->ulBalloonCurLast)
+        {
+            /* If ballooning is disabled, always bolt down the ballooning size to 0. */
+            if (!fEnabled)
+            {
+                serviceLogVerbose(("[%ls] Ballooning is disabled, forcing to 0\n", pMachine->strName.raw()));
+                int vrc2 = balloonSetSize(pMachine, 0);
+                if (RT_FAILURE(vrc2))
+                    serviceLog("[%ls] Error disabling ballooning, rc=%Rrc\n", pMachine->strName.raw(), vrc2);
+            }
+        }
+
+        pData->ulBalloonCurLast = ulBalloonCur;
         pData->ulBalloonReqLast = ulBalloonReq;
     }
     else
-        serviceLog("Error: Unable to retrieve metrics for machine '%ls', rc=%Rrc\n",
-                   pMachine->strName.raw(), vrc);
+        serviceLog("[%ls] Error retrieving metrics, rc=%Rrc\n", pMachine->strName.raw(), vrc);
+
     return vrc;
 }
 
