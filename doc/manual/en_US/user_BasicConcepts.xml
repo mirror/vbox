@@ -1074,7 +1074,7 @@
     <computeroutput>--uart</computeroutput> and
     <computeroutput>--uartmode</computeroutput> options.</para>
 
-    <para>In either case, you can configure up to two virtual serial ports per
+    <para>In either case, you can configure up to four virtual serial ports per
     virtual machine. For each such device, you will need to
     determine<orderedlist>
         <listitem>
@@ -1211,7 +1211,7 @@
 
             </itemizedlist></para>
         </listitem>
-      </orderedlist>Up to two serial ports can be configured per virtual
+      </orderedlist>Up to four serial ports can be configured per virtual
       machine, but you can pick any port numbers out of the above. However,
       serial ports cannot reliably share interrupts; if both ports are to be
       used at the same time, they must use different interrupt levels, for
