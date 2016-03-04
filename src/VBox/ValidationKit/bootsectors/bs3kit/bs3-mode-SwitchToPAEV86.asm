@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3SwitchToPE16_V86
+; BS3Kit - Bs3SwitchToPAEV86
 ;
 
 ;
@@ -28,19 +28,19 @@
 
 
 ;;
-; Switch to 16-bit unpaged protected mode with 16-bit sys+tss from any other mode.
+; Switch to 16-bit v8086 PAE paged protected mode with 32-bit sys+tss from any other mode.
 ;
-; @cproto   BS3_DECL(void) Bs3SwitchToPE16(void);
+; @cproto   BS3_DECL(void) Bs3SwitchToPAEV86(void);
 ;
 ; @uses     Nothing (except high 32-bit register parts).
 ;
 ; @remarks  Obviously returns to 16-bit v8086 mode, even if the caller was
-;           in 16-bit, 32-bit or 64-bit mode.
+;           in 32-bit or 64-bit mode.
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
-BS3_PROC_BEGIN_MODE Bs3SwitchToPE16_V86
-%ifdef TMPL_PE16_V86
+BS3_PROC_BEGIN_MODE Bs3SwitchToPAEV86
+%if TMPL_MODE == BS3_MODE_PAEV86
         ret
 
 %else
@@ -57,17 +57,17 @@ BS3_BEGIN_TEXT16
  %endif
 
         ;
-        ; Switch to 16-bit PE16 and from there to V8086.
+        ; Switch to 32-bit PAE32 and from there to V8086.
         ;
-        extern  TMPL_NM(Bs3SwitchToPE16)
-        call    TMPL_NM(Bs3SwitchToPE16)
-        BS3_SET_BITS 16
+        extern  TMPL_NM(Bs3SwitchToPAE32)
+        call    TMPL_NM(Bs3SwitchToPAE32)
+        BS3_SET_BITS 32
 
         ;
         ; Switch to v8086 mode (return address is already 16-bit).
         ;
-        extern  _Bs3SwitchToV86_pe16
-        jmp     _Bs3SwitchToV86_pe16
+        extern  _Bs3SwitchToV86_pae32
+        jmp     _Bs3SwitchToV86_pae32
 %endif
-BS3_PROC_END_MODE   Bs3SwitchToPE16_V86
+BS3_PROC_END_MODE   Bs3SwitchToPAEV86
 

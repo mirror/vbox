@@ -197,10 +197,20 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-SwitchToPE16_32.asm \
 	bs3-mode-SwitchToPE16_V86.asm \
 	bs3-mode-SwitchToPE32.asm \
+	bs3-mode-SwitchToPE32_16.asm \
+	bs3-mode-SwitchToPEV86.asm \
 	bs3-mode-SwitchToPP16.asm \
+	bs3-mode-SwitchToPP16_32.asm \
+	bs3-mode-SwitchToPP16_V86.asm \
 	bs3-mode-SwitchToPP32.asm \
+	bs3-mode-SwitchToPP32_16.asm \
+	bs3-mode-SwitchToPPV86.asm \
 	bs3-mode-SwitchToPAE16.asm \
+	bs3-mode-SwitchToPAE16_32.asm \
+	bs3-mode-SwitchToPAE16_V86.asm \
 	bs3-mode-SwitchToPAE32.asm \
+	bs3-mode-SwitchToPAE32_16.asm \
+	bs3-mode-SwitchToPAEV86.asm \
 	bs3-mode-SwitchToLM64.asm \
 	bs3-mode-SwitchToLM32.asm \
 	bs3-mode-SwitchToLM16.asm \

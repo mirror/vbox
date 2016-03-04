@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2007-2015 Oracle Corporation
+; Copyright (C) 2007-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -41,10 +41,6 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
 %if TMPL_BITS == 64
         ret
 
-%elif BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
-.again: int3                            ; Makes no sense to go to 64-bit mode from real or v8086 mode.
-        jmp     .again
-
 %else
  %if TMPL_BITS == 16
         sub     sp, 6                   ; Space for extended return value (corrected in 64-bit mode).
@@ -58,6 +54,15 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
         pushfd
         cli
 
+ %if TMPL_BITS == 16
+        ; Check that this is LM16
+        mov     ax, seg g_bBs3CurrentMode
+        cmp     byte [g_bBs3CurrentMode], BS3_MODE_LM16
+        je      .ok_lm16
+        int3
+ .ok_lm16:
+ %endif
+
         ; Calc ring addend.
         mov     ax, cs
         and     xAX, 3
@@ -66,13 +71,13 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
 
         ; setup far return.
         push    sAX
-%if TMPL_BITS == 16
+ %if TMPL_BITS == 16
         push    dword .sixty_four_bit
         o32 retf
-%else
+ %else
         push    .sixty_four_bit
         retf
-%endif
+ %endif
 
 BS3_SET_BITS 64
 .sixty_four_bit:

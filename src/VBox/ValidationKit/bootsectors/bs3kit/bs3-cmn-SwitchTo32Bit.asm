@@ -27,6 +27,9 @@
 %include "bs3kit-template-header.mac"
 
 
+%if TMPL_BITS == 16
+BS3_EXTERN_CMN Bs3SelProtFar32ToFlat32
+%endif
 %if TMPL_BITS != 32
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 TMPL_BEGIN_TEXT
@@ -46,13 +49,14 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
         push    ax                      ; Reserve space for larger return value (adjusted in 32-bit code).
         push    eax
         pushfd
+        push    edx
  %else
         pushfq
         mov     [rsp + 4], eax
  %endif
         cli
 
-%if TMPL_BITS == 16
+ %if TMPL_BITS == 16
         ; Check for v8086 mode, we need to exit it to enter 32-bit mode.
         mov     ax, seg g_bBs3CurrentMode
         mov     ds, ax
@@ -61,14 +65,37 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
         cmp     al, BS3_MODE_CODE_V86
         jne     .not_v8086
 
+        ; Calc flat stack into edx.
+        mov     dx, ss
+        movzx   edx, dx
+        shl     edx, 4
+        add     dx, sp
+        adc     edx, 0                  ; edx = flat stack address corresponding to ss:sp
+
+        ; Switch to 16-bit ring0 and go on to do the far jump to 32-bit code.
         mov     ax, BS3_SYSCALL_TO_RING0
         int     BS3_TRAP_SYSCALL
 
         mov     xAX, BS3_SEL_R0_CS32
         jmp     .do_far_jump
-%endif
+ %endif
 
 .not_v8086:
+ %if TMPL_BITS == 16
+        ; Calc flat stack into edx.
+        push    ecx
+        push    ebx
+        push    ss
+        push    word 0
+        push    sp
+        call    Bs3SelProtFar32ToFlat32
+        add     sp, 6
+        shl     edx, 16
+        mov     dx, ax                  ; edx = flat stack address corresponding to ss:sp
+        pop     ebx
+        pop     ecx
+ %endif
+
         ; Calc ring addend.
         mov     ax, cs
         and     xAX, 3
@@ -91,6 +118,9 @@ BS3_SET_BITS 32
         ; Load 32-bit segment registers.
         add     eax, BS3_SEL_R0_SS32 - BS3_SEL_R0_CS32
         mov     ss, ax
+ %if TMPL_BITS == 16
+        mov     esp, edx                ; Load flat stack address.
+ %endif
 
         add     eax, BS3_SEL_R0_DS32 - BS3_SEL_R0_SS32
         mov     ds, ax
@@ -102,12 +132,13 @@ BS3_SET_BITS 32
 
  %if TMPL_BITS == 16
         ; Adjust the return address.
-        movsx   eax, word [esp + 4*2 + 2]
+        movsx   eax, word [esp + 4*3 + 2]
         add     eax, BS3_ADDR_BS3TEXT16
-        mov     [esp + 4*2], eax
+        mov     [esp + 4*3], eax
  %endif
 
         ; Restore and return.
+        BS3_ONLY_16BIT_STMT pop     edx
         popfd
         pop     eax
         ret

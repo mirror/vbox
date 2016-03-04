@@ -58,6 +58,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
 
 %else
         push    xAX
+        push    xBX
         xPUSHF
         cli
 
@@ -76,13 +77,25 @@ BS3_BEGIN_TEXT16
 .sixteen_bit:
 
         ; Load 16-bit segment registers.
-        ;; @todo support non-standard stacks?
         add     ax, BS3_SEL_R0_SS16 - BS3_SEL_R0_CS16
         mov     ss, ax
 
         add     ax, BS3_SEL_R0_DS16 - BS3_SEL_R0_SS16
         mov     ds, ax
         mov     es, ax
+
+        ; Thunk the stack if necessary.
+        mov     ebx, esp
+        shr     ebx, 16
+        jz      .stack_ok
+int3 ; This is for later, just remove this int3 once needed.
+        test    ax, X86_SEL_RPL
+        jnz     .stack_rpl_must_be_0_for_custom_stacks
+        shl     bx, X86_SEL_SHIFT
+        add     bx, BS3_SEL_TILED
+        mov     ss, bx
+        movzx   esp, sp
+.stack_ok:
 
         ; Update globals.
         and     byte [g_bBs3CurrentMode], ~BS3_MODE_CODE_MASK
@@ -92,11 +105,19 @@ BS3_BEGIN_TEXT16
  %if TMPL_BITS == 64
         add     sp, 4
  %endif
+        pop     ebx
+ %if TMPL_BITS == 64
+        add     sp, 4
+ %endif
         pop     eax
  %if TMPL_BITS == 64
         add     sp, 4
  %endif
-        ret     sCB - 2                 ; Return and pop 2 or 6 bytes of "parameters" (unused return value)
+        ret     (TMPL_BITS - 16) / 8    ; Return and pop 2 or 6 bytes of "parameters" (unused return value)
+
+.stack_rpl_must_be_0_for_custom_stacks:
+        int3
+        jmp     .stack_rpl_must_be_0_for_custom_stacks
 TMPL_BEGIN_TEXT
 %endif
 BS3_PROC_END_CMN   Bs3SwitchTo16Bit

@@ -45,7 +45,7 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPE16_32
 
 %else
         ;
-        ; Make sure we're the 16-bit segment and then call Bs3SwitchToPE16.
+        ; Make sure we're in the 16-bit segment and then call Bs3SwitchToPE16.
         ;
  %if TMPL_BITS != 16
         jmp     .sixteen_bit_segment
@@ -60,19 +60,18 @@ BS3_BEGIN_TEXT16
         ;
         ; Switch to 32-bit mode.
         ;
-        extern  TMPL_NM(Bs3SwitchTo32Bit)
-        call    TMPL_NM(Bs3SwitchTo32Bit)
-        BS3_SET_BITS 32
-
-        ;
-        ; Fix the return address and return.
-        ;
+        extern  _Bs3SwitchTo32Bit_c16
  %if TMPL_BITS == 16
-        push    word [esp]
- %elif TMPL_BITS == 64
-        pop     dword [esp + 4]
- %endif
+        jmp     _Bs3SwitchTo32Bit_c16
+ %else
+        call    _Bs3SwitchTo32Bit_c16
+        BS3_SET_BITS 32
+  %if TMPL_BITS == 32
         ret
+  %else
+        ret     4                       ; Return and pop 4 bytes of "parameters" (unused return address).
+  %endif
+ %endif
 %endif
 BS3_PROC_END_MODE   Bs3SwitchToPE16_32
 

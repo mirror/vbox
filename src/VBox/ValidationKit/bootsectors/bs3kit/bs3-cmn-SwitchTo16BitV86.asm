@@ -62,7 +62,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         push    edx
         push    ecx
         push    ebx
-%if TMPL_BITS == 16
+ %if TMPL_BITS == 16
         push    ds
 
         ; Check g_bBs3CurrentMode whether we're in v8086 mode or not.

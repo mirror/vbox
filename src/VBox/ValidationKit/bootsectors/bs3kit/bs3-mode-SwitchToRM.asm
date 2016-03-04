@@ -27,6 +27,9 @@
 %include "bs3kit-template-header.mac"
 
 BS3_EXTERN_SYSTEM16 Bs3Gdt
+%if TMPL_MODE == BS3_MODE_PE16
+BS3_EXTERN_DATA16 g_uBs3CpuDetected
+%endif
 TMPL_BEGIN_TEXT
 
 
@@ -59,8 +62,24 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
 
         cli
 
- %if TMPL_BITS != 16
+ %if TMPL_MODE == BS3_MODE_PE16
+        ;
+        ; On 80286 we must reset the CPU to get back to real mode.
+        ;
+        mov     ax, seg g_uBs3CpuDetected
+        mov     ds, ax
+        cmp     byte [g_uBs3CpuDetected], BS3CPU_80286
+        jne     .is_386_or_better
+.implement_this_later:
+        int3
+        jmp     .implement_this_later
+
+        jmp     .reload_cs
+
+ %elif TMPL_BITS != 16
+        ;
         ; Must be in 16-bit segment when calling Bs3SwitchTo16Bit.
+        ;
         jmp     .sixteen_bit_segment wrt FLAT
 BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
@@ -74,6 +93,7 @@ BS3_BEGIN_TEXT16
         ;
         ; Exit to real mode.
         ;
+.is_386_or_better:
         mov     eax, cr0
         and     eax, X86_CR0_NO_PE_NO_PG
         mov     cr0, eax
