@@ -6,7 +6,7 @@
  *  Oracle VM VirtualBox Settings Schema
  *  Common definitions
 
-    Copyright (C) 2004-2015 Oracle Corporation
+    Copyright (C) 2004-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -950,7 +950,7 @@
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
         <xsd:minInclusive value="0"/>
-        <xsd:maxExclusive value="2"/>
+        <xsd:maxExclusive value="4"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
@@ -974,7 +974,7 @@
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
         <xsd:minInclusive value="0"/>
-        <xsd:maxExclusive value="2"/>
+        <xsd:maxExclusive value="4"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
