@@ -31,7 +31,7 @@
 #include <iprt/assert.h>
 
 
-/** @defgroup grp_rt_formats_pecoff     PE & Microsoft COFF structurs and definitions
+/** @defgroup grp_rt_formats_pecoff     PE & Microsoft COFF structures and definitions
  * @ingroup grp_rt_formats
  * @{
  */
