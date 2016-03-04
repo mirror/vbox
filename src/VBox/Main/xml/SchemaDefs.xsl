@@ -8,7 +8,7 @@
  *  This template depends on XML Schema structure (type names and constraints)
  *  and should be reviewed on every Schema change.
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -120,10 +120,7 @@ namespace SchemaDefs
 
   <!-- process include statements -->
   <xsl:for-each select="xsd:include">
-    <!-- skip VirtualBox-settings-root.xsd inclusion as it is computed at runtime -->
-    <xsl:if test="not(@schemaLocation='VirtualBox-settings-root.xsd')">
-      <xsl:apply-templates select="document(@schemaLocation)/xsd:schema" mode="declare.enum"/>
-    </xsl:if>
+    <xsl:apply-templates select="document(@schemaLocation)/xsd:schema" mode="declare.enum"/>
   </xsl:for-each>
 
   <xsl:call-template name="defineEnumMember">
