@@ -519,7 +519,7 @@ ifdef VBOX_WITH_MAIN_USB_ID_DATABASE  # Generate a database of USB vendor IDs an
 
  $$(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp:  $$(USBIdDatabaseGenerator_1_TARGET) \
  		$(PATH_SUB_CURRENT)/src-server/usb.ids $(PATH_SUB_CURRENT)/src-server/custom.ids | $$(dir $$@)
-	$(call MSG_GENERATE,SchemaDefs,$@,$<)
+	$(call MSG_GENERATE,USBIdDatabase,$@,$<)
 	$(QUIET)$(USBIdDatabaseGenerator_1_TARGET) -o "$@" $(filter %.ids,$^)
 
  BLDPROGS += USBIdDatabaseGenerator
