@@ -122,7 +122,7 @@ BS3_GLOBAL_DATA Bs3Text64_StartOfSegment, 0
     db      10,13,'eye-catcher: BS3TEXT64',10,13
 
 %ifdef ASM_FORMAT_OMF
-section TEXT64 align=4 CLASS=CODE PUBLIC USE32
+;section TEXT64 align=4 CLASS=CODE PUBLIC USE32
 ;section .text  align=4 CLASS=CODE PUBLIC USE32 - nasm doesn't do '.' at the start of segments in OMF mode. Not that this helps anyways...
 ;section .rdata align=4 CLASS=CODE PUBLIC USE32
 ;GROUP CODE64 TEXT64 _text _rdata
@@ -131,7 +131,7 @@ section TEXT64 align=4 CLASS=CODE PUBLIC USE32
 %ifdef ASM_FORMAT_ELF
 section BS3TEXT64_END   align=1 progbits alloc exec nowrite
 %else
-section BS3TEXT64_END   align=1 CLASS=CODE PUBLIC USE32 FLAT
+section BS3TEXT64_END   align=1 CLASS=BS3CODE64 PUBLIC USE32 FLAT
 %endif
 BS3_GLOBAL_DATA Bs3Text64_EndOfSegment, 0
 
@@ -170,13 +170,13 @@ section BS3DATA64_END   align=16   progbits alloc noexec write
 ;section .xdata          align=8    CLASS=DATA PUBLIC USE32
 ;section .pdata          align=8    CLASS=DATA PUBLIC USE32
 ;section .bss            align=8    CLASS=DATA PUBLIC USE32
-section BS3DATA64_END   align=16   CLASS=DATA PUBLIC USE32
+section BS3DATA64_END   align=16   CLASS=FAR_DATA PUBLIC USE32
 %endif
 BS3_GLOBAL_DATA Bs3Data64_EndOfSegment, 0
 
 %ifndef ASM_FORMAT_ELF
 ;GROUP BS3DATA64_GROUP BS3DATA64 .data .rdata .xdata .pdata .bss BS3DATA64_END
-GROUP DGROUP BS3DATA64 BS3DATA64_END
+GROUP BS3DATA64_GROUP BS3DATA64 BS3DATA64_END
 %endif
 
 

@@ -43,7 +43,17 @@
 BS3_EXTERN_SYSTEM16 Bs3Lgdt_Gdt
 BS3_EXTERN_SYSTEM16 Bs3Lidt_Idt16
 
+extern Bs3SelProtFar32ToFlat32_c64
+extern Bs3PrintChr_c64
+extern Bs3Printf_c64
+extern Bs3TestTerm_c64
+extern Bs3TestSub_c64
+extern Bs3TestInit_c64
+
 BS3_BEGIN_TEXT16
+EXTERN Bs3InitMemory_rm
+
+%if 0
 EXTERN Main_pe16
 EXTERN Bs3SwitchToPE16_rm
 EXTERN Bs3SwitchToRM_pe16
@@ -63,13 +73,14 @@ EXTERN Bs3SwitchToRM_pp32
 EXTERN Bs3SwitchToRM_pae16
 EXTERN Bs3SwitchToRM_pae32
 extern Bs3SwitchToRM_lm64
-EXTERN Bs3InitMemory_rm
-BS3_EXTERN_CMN Bs3Shutdown
-BS3_EXTERN_CMN Bs3Trap32Init
-
 extern _Bs3PrintChr_c16
 extern _Bs3PrintChr_c32
 extern Bs3PrintChr_c64
+%endif
+
+BS3_EXTERN_CMN Bs3Shutdown
+BS3_EXTERN_CMN Bs3Trap32Init
+
 
 BS3_BEGIN_TEXT16
     ;
@@ -78,6 +89,7 @@ BS3_BEGIN_TEXT16
     call    NAME(Bs3InitMemory_rm)      ; Initialize the memory (must be done from real mode).
     call    Bs3Trap32Init
     sub     xSP, 20h                    ; for 64-bit calls.
+%if 0
     call    NAME(Bs3SwitchToPE16_rm)
     push    '1'
     call    NAME(Bs3PrintChr_c16)
@@ -153,6 +165,7 @@ BS3_BEGIN_TEXT16
     BS3_SET_BITS 16
     push    'g'
     call    NAME(Bs3PrintChr_c16)
+%endif
 
     ;
     ; Call main, if it returns shutdown the system.
@@ -160,6 +173,6 @@ BS3_BEGIN_TEXT16
 .halt:
 hlt
 jmp .halt
-    call    NAME(Main_pe16)
+;    call    NAME(Main_pe16)
     call    Bs3Shutdown
 

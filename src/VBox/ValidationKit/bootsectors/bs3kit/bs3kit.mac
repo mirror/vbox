@@ -378,7 +378,7 @@ GROUP FLAT BS3FLAT
   %ifdef ASM_FORMAT_ELF
         section BS3TEXT64 align=1 progbits alloc exec nowrite
   %else
-        section BS3TEXT64 align=1 CLASS=CODE PUBLIC USE32 FLAT  ; class=CODE here because of 64-bit cl and/or wlink.exe
+        section BS3TEXT64 align=1 CLASS=BS3CODE64 PUBLIC USE32 FLAT
   %endif
  %else
         section BS3TEXT64
@@ -392,7 +392,7 @@ GROUP FLAT BS3FLAT
   %ifdef ASM_FORMAT_ELF
         section BS3DATA64 align=16 progbits alloc noexec write
   %else
-        section BS3DATA64 align=16 CLASS=DATA PUBLIC USE32 ;FLAT (see DATA32) ; class=DATA here because of 64-bit cl and/or wlink.exe
+        section BS3DATA64 align=16 CLASS=FAR_DATA PUBLIC USE32 ;FLAT (see DATA32)
   %endif
  %else
         section BS3DATA64

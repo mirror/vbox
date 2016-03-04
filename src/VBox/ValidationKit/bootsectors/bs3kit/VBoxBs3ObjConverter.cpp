@@ -33,12 +33,14 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <iprt/types.h>
+#include <iprt/ctype.h>
 #include <iprt/assert.h>
 #include <iprt/x86.h>
 
 #include <iprt/formats/elf64.h>
 #include <iprt/formats/elf-amd64.h>
 #include <iprt/formats/pecoff.h>
+#include <iprt/formats/omf.h>
 
 
 /*********************************************************************************************************************************
@@ -175,6 +177,7 @@ static bool writefile(const char *pszFile, void const *pvFile, size_t cbFile)
  */
 static bool error(const char *pszFile, const char *pszFormat, ...)
 {
+    fflush(stdout);
     fprintf(stderr, "error: %s: ", pszFile);
     va_list va;
     va_start(va, pszFormat);
@@ -183,6 +186,588 @@ static bool error(const char *pszFile, const char *pszFormat, ...)
     return false;
 }
 
+
+
+/*********************************************************************************************************************************
+*   Common OMF Writer                                                                                                            *
+*********************************************************************************************************************************/
+
+/** Entry for each segment/section in the source format for mapping it to a
+ *  segment defintion. */
+typedef struct OMFTOSEGDEF
+{
+    /** The segment defintion index of the section, UINT16_MAX if not translated. */
+    uint16_t    iSegDef;
+    /** The group index for this segment, UINT16_MAX if not applicable. */
+    uint16_t    iGrpDef;
+    /** The class name table entry, UINT16_MAX if not applicable. */
+    uint16_t    iClassNm;
+    /** The group name for this segment, UINT16_MAX if not applicable. */
+    uint16_t    iGrpNm;
+    /** The group name for this segment, UINT16_MAX if not applicable. */
+    uint16_t    iSegNm;
+    /** The number of public definitions for this segment. */
+    uint32_t    cPubDefs;
+    /** The segment name (OMF). */
+    char       *pszName;
+} OMFTOSEGDEF;
+/** Pointer to a segment/section to segdef mapping. */
+typedef OMFTOSEGDEF *POMFTOSEGDEF;
+
+/** Symbol table translation type. */
+typedef enum OMFSYMTYPE
+{
+    /** Invalid symbol table entry (aux sym). */
+    OMFSYMTYPE_INVALID = 0,
+    /** Ignored. */
+    OMFSYMTYPE_IGNORED,
+    /** A public defintion.  */
+    OMFSYMTYPE_PUBDEF,
+    /** An external definition. */
+    OMFSYMTYPE_EXTDEF,
+    /** A segment reference for fixups. */
+    OMFSYMTYPE_SEGDEF,
+    /** Internal symbol that may be used for fixups. */
+    OMFSYMTYPE_INTERNAL
+} OMFSYMTYPE;
+
+/** Symbol table translation. */
+typedef struct OMFSYMBOL
+{
+    /** What this source symbol table entry should be translated into. */
+    OMFSYMTYPE      enmType;
+    /** The OMF table index. UINT16_MAX if not applicable. */
+    uint16_t        idx;
+    /** The OMF segment definition index. */
+    uint16_t        idxSegDef;
+    /** The OMF group definition index. */
+    uint16_t        idxGrpDef;
+} OMFSYMBOL;
+/** Pointer to an source symbol table translation entry. */
+typedef OMFSYMBOL *POMFSYMBOL;
+
+/**
+ * OMF converter & writer instance.
+ */
+typedef struct OMFWRITER
+{
+    /** The source file name (for bitching). */
+    const char     *pszSrc;
+    /** The destination output file. */
+    FILE           *pDst;
+
+    /** Number of source segments/sections. */
+    uint32_t        cSegments;
+    /** Pointer to the table mapping from source segments/section to segdefs. */
+    POMFTOSEGDEF    paSegments;
+
+    /** Number of entries in the source symbol table. */
+    uint32_t        cSymbols;
+    /** Pointer to the table mapping from source symbols to OMF stuff. */
+    POMFSYMBOL      paSymbols;
+
+    /** The index of the next list of names entry. */
+    uint16_t        idxNextName;
+
+    /** The current record size.  */
+    uint16_t        cbRec;
+    /** The current record type */
+    uint8_t         bType;
+    /** The record data buffer (too large, but whatever).  */
+    uint8_t         abData[_1K + 64];
+    /** Alignment padding. */
+    uint8_t         abAlign[2];
+
+    /** Current FIXUPP entry. */
+    uint8_t         iFixupp;
+    /** FIXUPP records being prepared for LEDATA currently stashed in abData.
+     * We may have to adjust addend values in the LEDATA when converting to OMF
+     * fixups. */
+    struct
+    {
+        uint16_t    cbRec;
+        uint8_t     abData[_1K + 64];
+        uint8_t     abAlign[2]; /**< Alignment padding. */
+    } aFixupps[3];
+
+    /** The index of the FLAT group. */
+    uint16_t        idxGrpFlat;
+    /** The EXTDEF index of the __ImageBase symbol. */
+    uint16_t        idxExtImageBase;
+} OMFWRITE;
+/** Pointer to an OMF writer. */
+typedef OMFWRITE *POMFWRITER;
+
+
+/**
+ * Creates an OMF writer instance.
+ */
+static POMFWRITER omfWriter_Create(const char *pszSrc, uint32_t cSegments, uint32_t cSymbols, FILE *pDst)
+{
+    POMFWRITER pThis = (POMFWRITER)calloc(sizeof(OMFWRITER), 1);
+    if (pThis)
+    {
+        pThis->pszSrc        = pszSrc;
+        pThis->idxNextName   = 1;       /* We start counting at 1. */
+        pThis->cSegments     = cSegments;
+        pThis->paSegments    = (POMFTOSEGDEF)calloc(sizeof(OMFTOSEGDEF), cSegments);
+        if (pThis->paSegments)
+        {
+            pThis->cSymbols  = cSymbols;
+            pThis->paSymbols = (POMFSYMBOL)calloc(sizeof(OMFSYMBOL), cSymbols);
+            if (pThis->paSymbols)
+            {
+                pThis->pDst  = pDst;
+                return pThis;
+            }
+            free(pThis->paSegments);
+        }
+        free(pThis);
+    }
+    error(pszSrc, "Out of memory!\n");
+    return NULL;
+}
+
+/**
+ * Destroys the given OMF writer instance.
+ * @param   pThis           OMF writer instance.
+ */
+static void omfWriter_Destroy(POMFWRITER pThis)
+{
+    free(pThis->paSymbols);
+    for (uint32_t i = 0; i < pThis->cSegments; i++)
+        if (pThis->paSegments[i].pszName)
+            free(pThis->paSegments[i].pszName);
+    free(pThis->paSegments);
+    free(pThis);
+}
+
+static bool omfWriter_RecBegin(POMFWRITER pThis, uint8_t bType)
+{
+    pThis->bType = bType;
+    pThis->cbRec = 0;
+    return true;
+}
+
+static bool omfWriter_RecAddU8(POMFWRITER pThis, uint8_t b)
+{
+    if (pThis->cbRec < OMF_MAX_RECORD_PAYLOAD)
+    {
+        pThis->abData[pThis->cbRec++] = b;
+        return true;
+    }
+    return error(pThis->pszSrc, "Exceeded max OMF record length (bType=%#x)!\n", pThis->bType);
+}
+
+static bool omfWriter_RecAddU16(POMFWRITER pThis, uint16_t u16)
+{
+    if (pThis->cbRec + 2 <= OMF_MAX_RECORD_PAYLOAD)
+    {
+        pThis->abData[pThis->cbRec++] = (uint8_t)u16;
+        pThis->abData[pThis->cbRec++] = (uint8_t)(u16 >> 8);
+        return true;
+    }
+    return error(pThis->pszSrc, "Exceeded max OMF record length (bType=%#x)!\n", pThis->bType);
+}
+
+static bool omfWriter_RecAddU32(POMFWRITER pThis, uint32_t u32)
+{
+    if (pThis->cbRec + 4 <= OMF_MAX_RECORD_PAYLOAD)
+    {
+        pThis->abData[pThis->cbRec++] = (uint8_t)u32;
+        pThis->abData[pThis->cbRec++] = (uint8_t)(u32 >> 8);
+        pThis->abData[pThis->cbRec++] = (uint8_t)(u32 >> 16);
+        pThis->abData[pThis->cbRec++] = (uint8_t)(u32 >> 24);
+        return true;
+    }
+    return error(pThis->pszSrc, "Exceeded max OMF record length (bType=%#x)!\n", pThis->bType);
+}
+
+static bool omfWriter_RecAddIdx(POMFWRITER pThis, uint16_t idx)
+{
+    if (idx < 128)
+        return omfWriter_RecAddU8(pThis, (uint8_t)idx);
+    if (idx < _32K)
+        return omfWriter_RecAddU8(pThis, (uint8_t)(idx >> 7) | 0x80)
+            && omfWriter_RecAddU8(pThis, (uint8_t)idx);
+    return error(pThis->pszSrc, "Index out of range %#x\n", idx);
+}
+
+static bool omfWriter_RecAddBytes(POMFWRITER pThis, const void *pvData, size_t cbData)
+{
+    if (cbData + pThis->cbRec <= OMF_MAX_RECORD_PAYLOAD)
+    {
+        memcpy(&pThis->abData[pThis->cbRec], pvData, cbData);
+        pThis->cbRec += (uint16_t)cbData;
+        return true;
+    }
+    return error(pThis->pszSrc, "Exceeded max OMF record length (bType=%#x, cbData=%#x)!\n", pThis->bType, (unsigned)cbData);
+}
+
+static bool omfWriter_RecAddStringN(POMFWRITER pThis, const char *pchString, size_t cchString)
+{
+    if (cchString < 256)
+    {
+        return omfWriter_RecAddU8(pThis, (uint8_t)cchString)
+            && omfWriter_RecAddBytes(pThis, pchString, cchString);
+    }
+    return error(pThis->pszSrc, "String too long (%u bytes): '%*.*s'\n",
+                 (unsigned)cchString, (int)cchString, (int)cchString, pchString);
+}
+
+static bool omfWriter_RecAddString(POMFWRITER pThis, const char *pszString)
+{
+    return omfWriter_RecAddStringN(pThis, pszString, strlen(pszString));
+}
+
+static bool omfWriter_RecEnd(POMFWRITER pThis, bool fAddCrc)
+{
+    if (   !fAddCrc
+        || omfWriter_RecAddU8(pThis, 0))
+    {
+        OMFRECHDR RecHdr = { pThis->bType, RT_H2LE_U16(pThis->cbRec) };
+        if (   fwrite(&RecHdr, sizeof(RecHdr), 1, pThis->pDst) == 1
+            && fwrite(pThis->abData, pThis->cbRec, 1, pThis->pDst) == 1)
+        {
+            pThis->bType = 0;
+            pThis->cbRec = 0;
+            return true;
+        }
+        return error(pThis->pszSrc, "Write error\n");
+    }
+    return false;
+}
+
+static bool omfWriter_RecEndWithCrc(POMFWRITER pThis)
+{
+    return omfWriter_RecEnd(pThis, true /*fAddCrc*/);
+}
+
+
+static bool omfWriter_BeginModule(POMFWRITER pThis, const char *pszFile)
+{
+    return omfWriter_RecBegin(pThis, OMF_THEADR)
+        && omfWriter_RecAddString(pThis, pszFile)
+        && omfWriter_RecEndWithCrc(pThis);
+}
+
+static bool omfWriter_LNamesAddN(POMFWRITER pThis, const char *pchName, size_t cchName, uint16_t *pidxName)
+{
+    /* split? */
+    if (pThis->cbRec + 1 /*len*/ + cchName + 1 /*crc*/ > OMF_MAX_RECORD_PAYLOAD)
+    {
+        if (pThis->cbRec == 0)
+            return error(pThis->pszSrc, "Too long LNAME '%*.*s'\n", (int)cchName, (int)cchName, pchName);
+        if (   !omfWriter_RecEndWithCrc(pThis)
+            || !omfWriter_RecBegin(pThis, OMF_LNAMES))
+            return false;
+    }
+
+    if (pidxName)
+        *pidxName = pThis->idxNextName;
+    pThis->idxNextName++;
+    return omfWriter_RecAddStringN(pThis, pchName, cchName);
+}
+
+static bool omfWriter_LNamesAdd(POMFWRITER pThis, const char *pszName, uint16_t *pidxName)
+{
+    return omfWriter_LNamesAddN(pThis, pszName, strlen(pszName), pidxName);
+}
+
+static bool omfWriter_LNamesBegin(POMFWRITER pThis)
+{
+    /* First entry is an empty string. */
+    return omfWriter_RecBegin(pThis, OMF_LNAMES)
+        && (   pThis->idxNextName > 1
+            || omfWriter_LNamesAddN(pThis, "", 0, NULL));
+}
+
+static bool omfWriter_LNamesEnd(POMFWRITER pThis)
+{
+    return omfWriter_RecEndWithCrc(pThis);
+}
+
+
+static bool omfWriter_SegDef(POMFWRITER pThis, uint8_t bSegAttr, uint32_t cbSeg, uint16_t idxSegName, uint16_t idxSegClass)
+{
+    return omfWriter_RecBegin(pThis, OMF_SEGDEF32)
+        && omfWriter_RecAddU8(pThis, bSegAttr)
+        && omfWriter_RecAddU32(pThis, cbSeg)
+        && omfWriter_RecAddIdx(pThis, idxSegName)
+        && omfWriter_RecAddIdx(pThis, idxSegClass)
+        && omfWriter_RecAddIdx(pThis, 1) /* overlay name index = NULL entry */
+        && omfWriter_RecEndWithCrc(pThis);
+}
+
+static bool omfWriter_GrpDefBegin(POMFWRITER pThis, uint16_t idxGrpName)
+{
+    return omfWriter_RecBegin(pThis, OMF_GRPDEF)
+        && omfWriter_RecAddIdx(pThis, idxGrpName);
+}
+
+static bool omfWriter_GrpDefAddSegDef(POMFWRITER pThis, uint16_t idxSegDef)
+{
+    return omfWriter_RecAddU8(pThis, 0xff)
+        && omfWriter_RecAddIdx(pThis, idxSegDef);
+}
+
+static bool omfWriter_GrpDefEnd(POMFWRITER pThis)
+{
+    return omfWriter_RecEndWithCrc(pThis);
+}
+
+
+static bool omfWriter_PubDefBegin(POMFWRITER pThis, uint16_t idxGrpDef, uint16_t idxSegDef)
+{
+    return omfWriter_RecBegin(pThis, OMF_PUBDEF32)
+        && omfWriter_RecAddIdx(pThis, idxGrpDef)
+        && omfWriter_RecAddIdx(pThis, idxSegDef)
+        && (   idxSegDef != 0
+            || omfWriter_RecAddU16(pThis, 0));
+
+}
+
+static bool omfWriter_PubDefAddN(POMFWRITER pThis, uint32_t uValue, const char *pchString, size_t cchString)
+{
+    /* Split? */
+    if (pThis->cbRec + 1 + cchString + 4 + 1 + 1 > OMF_MAX_RECORD_PAYLOAD)
+    {
+        if (cchString >= 256)
+            return error(pThis->pszSrc, "PUBDEF string too long %u ('%s')\n",
+                         (unsigned)cchString, (int)cchString, (int)cchString, pchString);
+        if (!omfWriter_RecEndWithCrc(pThis))
+            return false;
+
+        /* Figure out the initial data length. */
+        pThis->cbRec      = 1 + ((pThis->abData[0] & 0x80) != 0);
+        if (pThis->abData[pThis->cbRec] != 0)
+            pThis->cbRec += 1 + ((pThis->abData[pThis->cbRec] & 0x80) != 0);
+        else
+            pThis->cbRec += 3;
+        pThis->bType = OMF_PUBDEF32;
+    }
+
+    return omfWriter_RecAddStringN(pThis, pchString, cchString)
+        && omfWriter_RecAddU32(pThis, uValue)
+        && omfWriter_RecAddIdx(pThis, 0); /* type */
+}
+
+static bool omfWriter_PubDefAdd(POMFWRITER pThis, uint32_t uValue, const char *pszString)
+{
+    return omfWriter_PubDefAddN(pThis, uValue, pszString, strlen(pszString));
+}
+
+static bool omfWriter_PubDefEnd(POMFWRITER pThis)
+{
+    return omfWriter_RecEndWithCrc(pThis);
+}
+
+/**
+ * EXTDEF - Begin record.
+ */
+static bool omfWriter_ExtDefBegin(POMFWRITER pThis)
+{
+    return omfWriter_RecBegin(pThis, OMF_EXTDEF);
+
+}
+
+/**
+ * EXTDEF - Add an entry, split record if necessary.
+ */
+static bool omfWriter_ExtDefAddN(POMFWRITER pThis, const char *pchString, size_t cchString)
+{
+    /* Split? */
+    if (pThis->cbRec + 1 + cchString + 1 + 1 > OMF_MAX_RECORD_PAYLOAD)
+    {
+        if (cchString >= 256)
+            return error(pThis->pszSrc, "EXTDEF string too long %u ('%s')\n",
+                         (unsigned)cchString, (int)cchString, (int)cchString, pchString);
+        if (   !omfWriter_RecEndWithCrc(pThis)
+            || !omfWriter_RecBegin(pThis, OMF_EXTDEF))
+            return false;
+    }
+
+    return omfWriter_RecAddStringN(pThis, pchString, cchString)
+        && omfWriter_RecAddIdx(pThis, 0); /* type */
+}
+
+/**
+ * EXTDEF - Add an entry, split record if necessary.
+ */
+static bool omfWriter_ExtDefAdd(POMFWRITER pThis, const char *pszString)
+{
+    return omfWriter_ExtDefAddN(pThis, pszString, strlen(pszString));
+}
+
+/**
+ * EXTDEF - End of record.
+ */
+static bool omfWriter_ExtDefEnd(POMFWRITER pThis)
+{
+    return omfWriter_RecEndWithCrc(pThis);
+}
+
+/**
+ * COMENT/LINK_PASS_SEP - Add a link pass separator comment.
+ */
+static bool omfWriter_LinkPassSeparator(POMFWRITER pThis)
+{
+    return omfWriter_RecBegin(pThis, OMF_COMENT)
+        && omfWriter_RecAddU8(pThis, OMF_CTYP_NO_LIST)
+        && omfWriter_RecAddU8(pThis, OMF_CCLS_LINK_PASS_SEP)
+        && omfWriter_RecAddU8(pThis, 1)
+        && omfWriter_RecEndWithCrc(pThis);
+}
+
+/**
+ * LEDATA + FIXUPP - Begin records.
+ */
+static bool omfWriter_LEDataBegin(POMFWRITER pThis, uint16_t idxSeg, uint32_t offSeg,
+                                  uint32_t cbData, uint32_t cbRawData, void const *pbRawData, uint8_t **ppbData)
+{
+    if (   omfWriter_RecBegin(pThis, OMF_LEDATA32)
+        && omfWriter_RecAddIdx(pThis, idxSeg)
+        && omfWriter_RecAddU32(pThis, offSeg))
+    {
+        if (   cbData <= _1K
+            && pThis->cbRec + cbData + 1 <= OMF_MAX_RECORD_PAYLOAD)
+        {
+            uint8_t *pbDst = &pThis->abData[pThis->cbRec];
+            if (ppbData)
+                *ppbData = pbDst;
+
+            if (cbRawData)
+                memcpy(pbDst, pbRawData, RT_MIN(cbData, cbRawData));
+            if (cbData > cbRawData)
+                memset(&pbDst[cbRawData], 0, cbData - cbRawData);
+
+            pThis->cbRec += cbData;
+
+            /* Reset the associated FIXUPP records. */
+            pThis->iFixupp = 0;
+            for (unsigned i = 0; i < RT_ELEMENTS(pThis->aFixupps); i++)
+                pThis->aFixupps[i].cbRec = 0;
+            return true;
+        }
+        error(pThis->pszSrc, "Too much data for LEDATA record! (%#x)\n", (unsigned)cbData);
+    }
+    return false;
+}
+
+/**
+ * LEDATA + FIXUPP - Add FIXUPP subrecord bytes, split if necessary.
+ */
+static bool omfWriter_LEDataAddFixuppBytes(POMFWRITER pThis, void *pvSubRec, size_t cbSubRec)
+{
+    /* Split? */
+    unsigned iFixupp = pThis->iFixupp;
+    if (pThis->aFixupps[iFixupp].cbRec + cbSubRec >= OMF_MAX_RECORD_PAYLOAD)
+    {
+        iFixupp++;
+        if (iFixupp >= RT_ELEMENTS(pThis->aFixupps))
+            return error(pThis->pszSrc, "Out of FIXUPP records\n");
+        pThis->iFixupp = iFixupp;
+        pThis->aFixupps[iFixupp].cbRec = 0; /* paranoia */
+    }
+
+    /* Append the sub-record data. */
+    memcpy(&pThis->aFixupps[iFixupp].abData[pThis->aFixupps[iFixupp].cbRec], pvSubRec, cbSubRec);
+    pThis->aFixupps[iFixupp].cbRec += (uint16_t)cbSubRec;
+    return true;
+}
+
+/**
+ * LEDATA + FIXUPP - Add fixup, split if necessary.
+ */
+static bool omfWriter_LEDataAddFixup(POMFWRITER pThis, uint16_t offDataRec, bool fSelfRel, uint8_t bLocation,
+                                     uint8_t bFrame, uint16_t idxFrame,
+                                     uint8_t bTarget, uint16_t idxTarget, bool fTargetDisp, uint32_t offTargetDisp)
+{
+    if (g_cVerbose >= 2)
+        printf("debug: FIXUP[%#x]: off=%#x frame=%u:%#x target=%u:%#x disp=%d:%#x\n", pThis->aFixupps[pThis->iFixupp].cbRec,
+               offDataRec, bFrame, idxFrame, bTarget, idxTarget, fTargetDisp, offTargetDisp);
+
+    if (   offDataRec >= _1K
+        || bFrame >= 6
+        || bTarget > 6
+        || idxFrame >= _32K
+        || idxTarget >= _32K
+        || fTargetDisp != (bTarget <= 4) )
+        /*return*/ error(pThis->pszSrc,  "Internal error: off=%#x frame=%u:%#x target=%u:%#x disp=%d:%#x\n",
+                     offDataRec, bFrame, idxFrame, bTarget, idxTarget, fTargetDisp, offTargetDisp);
+
+    /*
+     * Encode the FIXUP subrecord.
+     */
+    uint8_t abFixup[16];
+    uint8_t off = 0;
+    /* Location */
+    abFixup[off++] = (offDataRec >> 8) | (bLocation << 2) | ((uint8_t)!fSelfRel << 6) | 0x80;
+    abFixup[off++] = (uint8_t)offDataRec;
+    /* Fix Data */
+    abFixup[off++] = 0x00 /*F=0*/ | (bFrame << 4) | 0x00 /*T=0*/ | bTarget;
+    /* Frame Datum */
+    if (bFrame <= OMF_FIX_F_FRAME_NO)
+    {
+        if (idxFrame >= 128)
+            abFixup[off++] = (uint8_t)(idxFrame >> 8);
+        abFixup[off++] = (uint8_t)idxFrame;
+    }
+    /* Target Datum */
+    if (idxTarget >= 128)
+        abFixup[off++] = (uint8_t)(idxTarget >> 8);
+    abFixup[off++] = (uint8_t)idxTarget;
+    /* Target Displacement */
+    if (fTargetDisp)
+    {
+        abFixup[off++] = RT_BYTE1(offTargetDisp);
+        abFixup[off++] = RT_BYTE2(offTargetDisp);
+        abFixup[off++] = RT_BYTE3(offTargetDisp);
+        abFixup[off++] = RT_BYTE4(offTargetDisp);
+    }
+
+    return omfWriter_LEDataAddFixuppBytes(pThis, abFixup, off);
+}
+
+/**
+ * LEDATA + FIXUPP - End of records.
+ */
+static bool omfWriter_LEDataEnd(POMFWRITER pThis)
+{
+    if (omfWriter_RecEndWithCrc(pThis))
+    {
+        for (unsigned iFixupp = 0; iFixupp <= pThis->iFixupp; iFixupp++)
+        {
+            uint8_t const cbRec = pThis->aFixupps[iFixupp].cbRec;
+            if (!cbRec)
+                break;
+            if (   !omfWriter_RecBegin(pThis, OMF_FIXUPP32)
+                || !omfWriter_RecAddBytes(pThis, pThis->aFixupps[iFixupp].abData, cbRec)
+                || !omfWriter_RecEndWithCrc(pThis))
+                return false;
+        }
+        pThis->iFixupp = 0;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * MODEND - End of module, simple variant.
+ */
+static bool omfWriter_EndModule(POMFWRITER pThis)
+{
+    return omfWriter_RecBegin(pThis, OMF_MODEND32)
+        && omfWriter_RecAddU8(pThis, 0)
+        && omfWriter_RecEndWithCrc(pThis);
+}
+
+
+
+
+/*********************************************************************************************************************************
+*   ELF64/AMD64 -> ELF64/i386 Converter                                                                                          *
+*********************************************************************************************************************************/
 
 /** AMD64 relocation type names for ELF. */
 static const char * const g_apszElfAmd64RelTypes[] =
@@ -297,6 +882,13 @@ static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
 }
 
 
+
+
+
+/*********************************************************************************************************************************
+*   COFF -> OMF Converter                                                                                                        *
+*********************************************************************************************************************************/
+
 /** AMD64 relocation type names for (Microsoft) COFF. */
 static const char * const g_apszCoffAmd64RelTypes[] =
 {
@@ -319,8 +911,33 @@ static const char * const g_apszCoffAmd64RelTypes[] =
     "SSPAN32"
 };
 
+/** AMD64 relocation type sizes for (Microsoft) COFF. */
+static uint8_t const g_acbCoffAmd64RelTypes[] =
+{
+    8, /* ABSOLUTE */
+    8, /* ADDR64   */
+    4, /* ADDR32   */
+    4, /* ADDR32NB */
+    4, /* REL32    */
+    4, /* REL32_1  */
+    4, /* REL32_2  */
+    4, /* REL32_3  */
+    4, /* REL32_4  */
+    4, /* REL32_5  */
+    2, /* SECTION  */
+    4, /* SECREL   */
+    1, /* SECREL7  */
+    0, /* TOKEN    */
+    4, /* SREL32   */
+    0, /* PAIR     */
+    4, /* SSPAN32  */
+};
 
-static const char *coffGetSymbolName(PCIMAGE_SYMBOL pSym, const char *pchStrTab, char pszShortName[16])
+/** Macro for getting the size of a AMD64 COFF relocation. */
+#define COFF_AMD64_RELOC_SIZE(a_Type) ( (a_Type) < RT_ELEMENTS(g_acbCoffAmd64RelTypes) ? g_acbCoffAmd64RelTypes[(a_Type)] : 1)
+
+
+static const char *coffGetSymbolName(PCIMAGE_SYMBOL pSym, const char *pchStrTab, uint32_t cbStrTab, char pszShortName[16])
 {
     if (pSym->N.Name.Short != 0)
     {
@@ -328,10 +945,18 @@ static const char *coffGetSymbolName(PCIMAGE_SYMBOL pSym, const char *pchStrTab,
         pszShortName[8] = '\0';
         return pszShortName;
     }
-    return pchStrTab + pSym->N.Name.Long;
+    if (pSym->N.Name.Long < cbStrTab)
+    {
+        uint32_t const cbLeft = cbStrTab - pSym->N.Name.Long;
+        const char    *pszRet = pchStrTab + pSym->N.Name.Long;
+        if (memchr(pszRet, '\0', cbLeft) != NULL)
+            return pszRet;
+    }
+    error("<null>",  "Invalid string table index %#x!\n", pSym->N.Name.Long);
+    return "Invalid Symbol Table Entry";
 }
 
-static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
+static bool validateCoff(const char *pszFile, uint8_t const *pbFile, size_t cbFile)
 {
     /*
      * Validate the header and our other expectations.
@@ -354,133 +979,601 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                          pHdr->NumberOfSymbols, pHdr->PointerToSymbolTable);
     }
 
-    /* Dump the symbol table if verbose mode. */
-    PIMAGE_SYMBOL paSymTab  = (PIMAGE_SYMBOL)&pbFile[pHdr->PointerToSymbolTable];
-    const char   *pchStrTab = (const char *)&paSymTab[pHdr->NumberOfSymbols];
-    char          szShortName[16];
-    if (g_cVerbose > 2)
-        for (uint32_t i = 0; i < pHdr->NumberOfSymbols; i++)
-        {
-            printf("sym[0x%02x]: sect=0x%04x value=0x%08x storageclass=0x%x name=%s\n",
-                   i, paSymTab[i].SectionNumber, paSymTab[i].Value, paSymTab[i].StorageClass,
-                   coffGetSymbolName(&paSymTab[i], pchStrTab, szShortName));
-            i += paSymTab[i].NumberOfAuxSymbols;
-        }
+    return true;
+}
 
-    /* Switch it to a x86 machine. */
-    pHdr->Machine = IMAGE_FILE_MACHINE_I386;
+
+static bool convertCoffSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCIMAGE_SECTION_HEADER paShdrs, uint16_t cSections)
+{
+    /*
+     * Do the list of names pass.
+     */
+    uint16_t idxGrpFlat, idxGrpData;
+    uint16_t idxClassCode, idxClassData, idxClassDebugSymbols, idxClassDebugTypes;
+    if (   !omfWriter_LNamesBegin(pThis)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("FLAT"), &idxGrpFlat)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3DATA64_GROUP"), &idxGrpData)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3CODE64"), &idxClassCode)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("FAR_DATA"), &idxClassData)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("DEBSYM"), &idxClassDebugSymbols)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("DEBTYP"), &idxClassDebugTypes)
+       )
+        return false;
+
+    bool fHaveData = false;
+    for (uint16_t i = 0; i < cSections; i++)
+    {
+        /* Copy the name and terminate it. */
+        char szName[32];
+        memcpy(szName, paShdrs[i].Name, sizeof(paShdrs[i].Name));
+        unsigned cchName = sizeof(paShdrs[i].Name);
+        while (cchName > 0 && RT_C_IS_SPACE(szName[cchName - 1]))
+            cchName--;
+        if (cchName == 0)
+            return error(pThis->pszSrc, "Section #%u has an empty name!\n", i);
+        szName[cchName] = '\0';
+
+        if (   (paShdrs[i].Characteristics & (IMAGE_SCN_LNK_REMOVE | IMAGE_SCN_LNK_INFO))
+            || strcmp(szName, ".pdata") == 0 /* Exception stuff, I think, so discard it. */
+            || strcmp(szName, ".xdata") == 0 /* Ditto. */ )
+        {
+            pThis->paSegments[i].iSegDef  = UINT16_MAX;
+            pThis->paSegments[i].iGrpDef  = UINT16_MAX;
+            pThis->paSegments[i].iSegNm   = UINT16_MAX;
+            pThis->paSegments[i].iGrpNm   = UINT16_MAX;
+            pThis->paSegments[i].iClassNm = UINT16_MAX;
+            pThis->paSegments[i].pszName  = NULL;
+        }
+        else
+        {
+            /* Translate the name, group and class. */
+            if (strcmp(szName, ".text") == 0)
+            {
+                strcpy(szName, "BS3TEXT64");
+                pThis->paSegments[i].iGrpNm   = idxGrpFlat;
+                pThis->paSegments[i].iClassNm = idxClassCode;
+            }
+            else if (strcmp(szName, ".data") == 0)
+            {
+                strcpy(szName, "BS3DATA64");
+                pThis->paSegments[i].iGrpNm   = idxGrpData;
+                pThis->paSegments[i].iClassNm = idxClassData;
+            }
+            else if (strcmp(szName, ".bss") == 0)
+            {
+                strcpy(szName, "BS3BSS64");
+                pThis->paSegments[i].iGrpNm   = idxGrpData;
+                pThis->paSegments[i].iClassNm = idxClassData;
+            }
+            else if (strcmp(szName, ".rdata") == 0)
+            {
+                strcpy(szName, "BS3DATA64CONST");
+                pThis->paSegments[i].iGrpNm   = idxGrpData;
+                pThis->paSegments[i].iClassNm = idxClassData;
+            }
+            else if (strcmp(szName, ".debug$S") == 0)
+            {
+                strcpy(szName, "$$SYMBOLS");
+                pThis->paSegments[i].iGrpNm   = UINT16_MAX;
+                pThis->paSegments[i].iClassNm = idxClassDebugSymbols;
+            }
+            else if (strcmp(szName, ".debug$T") == 0)
+            {
+                strcpy(szName, "$$TYPES");
+                pThis->paSegments[i].iGrpNm   = UINT16_MAX;
+                pThis->paSegments[i].iClassNm = idxClassDebugTypes;
+            }
+            else if (paShdrs[i].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
+            {
+                pThis->paSegments[i].iGrpNm   = idxGrpFlat;
+                pThis->paSegments[i].iClassNm = idxClassCode;
+                error(pThis->pszSrc, "Unknown code segment: '%s'\n", szName);
+            }
+            else
+            {
+                pThis->paSegments[i].iGrpNm = idxGrpData;
+                pThis->paSegments[i].iClassNm = idxClassData;
+                error(pThis->pszSrc, "Unknown data (?) segment: '%s'\n", szName);
+            }
+
+            /* Save the name. */
+            pThis->paSegments[i].pszName = strdup(szName);
+            if (!pThis->paSegments[i].pszName)
+                return error(pThis->pszSrc, "Out of memory!\n");
+
+            /* Add the section name. */
+            if (!omfWriter_LNamesAdd(pThis, pThis->paSegments[i].pszName, &pThis->paSegments[i].iSegNm))
+                return false;
+
+            fHaveData |= pThis->paSegments[i].iGrpDef == idxGrpData;
+        }
+    }
+
+    if (!omfWriter_LNamesEnd(pThis))
+        return false;
 
     /*
-     * Work the section table.
+     * Emit segment definitions.
      */
-    bool fRet = true;
-    PIMAGE_SECTION_HEADER paShdrs = (PIMAGE_SECTION_HEADER)(pHdr + 1);
-    for (uint32_t i = 0; i < pHdr->NumberOfSections; i++)
+    uint16_t iSegDef = 1; /* Start counting at 1. */
+    for (uint16_t i = 0; i < cSections; i++)
     {
-        if (g_cVerbose)
-            printf("shdr[%2u]:       rva=%#010x  cbVirt=%#010x '%-8.8s'\n"
-                   "            offFile=%#010x  cbFile=%#010x\n"
-                   "          offRelocs=%#010x cRelocs=%#010x\n"
-                   "           offLines=%#010x  cLines=%#010x Characteristics=%#010x\n",
-                   i, paShdrs[i].VirtualAddress, paShdrs[i].Misc.VirtualSize, paShdrs[i].Name,
-                   paShdrs[i].PointerToRawData, paShdrs[i].SizeOfRawData,
-                   paShdrs[i].PointerToRelocations, paShdrs[i].NumberOfRelocations,
-                   paShdrs[i].PointerToLinenumbers, paShdrs[i].NumberOfLinenumbers, paShdrs[i].Characteristics);
-        uint32_t cRelocs = paShdrs[i].NumberOfRelocations;
-        if (cRelocs > 0)
+        if (pThis->paSegments[i].iSegDef == UINT16_MAX)
+            continue;
+
+        uint8_t bSegAttr = 0;
+
+        /* The A field. */
+        switch (paShdrs[i].Characteristics & IMAGE_SCN_ALIGN_MASK)
         {
-            if (   paShdrs[i].PointerToRelocations < cbHeaders
-                || paShdrs[i].PointerToRelocations >= cbFile
-                || paShdrs[i].PointerToRelocations + cRelocs * sizeof(IMAGE_RELOCATION) > cbFile)
-                return error(pszFile, "Relocation beyond the end of the file or overlapping the headers (section #%u)\n", i);
+            default:
+            case IMAGE_SCN_ALIGN_1BYTES:
+                bSegAttr |= 1 << 5;
+                break;
+            case IMAGE_SCN_ALIGN_2BYTES:
+                bSegAttr |= 2 << 5;
+                break;
+            case IMAGE_SCN_ALIGN_4BYTES:
+                bSegAttr |= 5 << 5;
+                break;
+            case IMAGE_SCN_ALIGN_8BYTES:
+            case IMAGE_SCN_ALIGN_16BYTES:
+                bSegAttr |= 3 << 5;
+                break;
+            case IMAGE_SCN_ALIGN_32BYTES:
+            case IMAGE_SCN_ALIGN_64BYTES:
+            case IMAGE_SCN_ALIGN_128BYTES:
+            case IMAGE_SCN_ALIGN_256BYTES:
+                bSegAttr |= 4 << 5;
+                break;
+            case IMAGE_SCN_ALIGN_512BYTES:
+            case IMAGE_SCN_ALIGN_1024BYTES:
+            case IMAGE_SCN_ALIGN_2048BYTES:
+            case IMAGE_SCN_ALIGN_4096BYTES:
+            case IMAGE_SCN_ALIGN_8192BYTES:
+                bSegAttr |= 6 << 5; /* page aligned, pharlabs extension. */
+                break;
+        }
 
-            uint32_t const cbRawData = paShdrs[i].SizeOfRawData;
-            if (   paShdrs[i].PointerToRawData < cbHeaders
-                || paShdrs[i].PointerToRawData >= cbFile
-                || paShdrs[i].PointerToRawData + cbRawData > cbFile)
-                return error(pszFile, "Raw data beyond the end of the file or overlapping the headers (section #%u)\n", i);
-            uint8_t *pbRawData = &pbFile[paShdrs[i].PointerToRawData];
+        /* The C field. */
+        bSegAttr |= 2 << 2; /* public */
 
-            /* Is this a section which ends up in the binary? */
-            bool const fInBinary = !(paShdrs[i].Characteristics & (IMAGE_SCN_LNK_REMOVE | IMAGE_SCN_LNK_INFO));
-            bool const fIsPData  = fInBinary
-                                && memcmp(paShdrs[i].Name, RT_STR_TUPLE(".pdata\0")) == 0;
-            bool const fIsText   = fInBinary
-                                && (paShdrs[i].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE));
+        /* The B field. We don't have 4GB segments, so leave it as zero. */
 
-            /* Whether we've seen any __ImageBase REL32 relocation that may later
-               be used with array access using the SIB encoding and ADDR32NB. */
-            bool fSeenImageBase = false;
+        /* The D field shall be set as we're doing USE32.  */
+        bSegAttr |= 1;
 
-            /*
-             * Convert from AMD64 fixups to I386 ones, assuming 64-bit addresses
-             * being fixed up doesn't need the high dword and that it's
-             * appropriately initialized already.
-             */
-            PIMAGE_RELOCATION paRelocs = (PIMAGE_RELOCATION)&pbFile[paShdrs[i].PointerToRelocations];
-            for (uint32_t j = 0; j < cRelocs; j++)
+
+        /* Done. */
+        if (!omfWriter_SegDef(pThis, bSegAttr, paShdrs[i].SizeOfRawData,
+                              pThis->paSegments[i].iSegNm,
+                              pThis->paSegments[i].iClassNm))
+            return false;
+        pThis->paSegments[i].iSegDef = iSegDef++;
+    }
+
+    /*
+     * Flat group definition (#1) - special, no members.
+     */
+    uint16_t iGrpDef = 1;
+    if (   !omfWriter_GrpDefBegin(pThis, idxGrpFlat)
+        || !omfWriter_GrpDefEnd(pThis))
+        return false;
+    for (uint16_t i = 0; i < cSections; i++)
+        if (pThis->paSegments[i].iGrpNm == idxGrpFlat)
+            pThis->paSegments[i].iGrpDef = iGrpDef;
+    pThis->idxGrpFlat = iGrpDef++;
+
+    /*
+     * Data group definition (#2).
+     */
+    /** @todo do we need to consider missing segments and ordering? */
+    uint16_t cGrpNms = 0;
+    uint16_t aiGrpNms[2];
+    if (fHaveData)
+        aiGrpNms[cGrpNms++] = idxGrpData;
+    for (uint32_t iGrpNm = 0; iGrpNm < cGrpNms; iGrpNm++)
+    {
+        if (!omfWriter_GrpDefBegin(pThis, aiGrpNms[iGrpNm]))
+            return false;
+        for (uint16_t i = 0; i < cSections; i++)
+            if (pThis->paSegments[i].iGrpNm == aiGrpNms[iGrpNm])
             {
-                RTPTRUNION uLoc;
-                uLoc.pu8 = paRelocs[j].u.VirtualAddress < cbRawData ? &pbRawData[paRelocs[j].u.VirtualAddress] : NULL;
+                pThis->paSegments[i].iGrpDef = iGrpDef;
+                if (!omfWriter_GrpDefAddSegDef(pThis, pThis->paSegments[i].iSegDef))
+                    return false;
+            }
+        if (!omfWriter_GrpDefEnd(pThis))
+            return false;
+        iGrpDef++;
+    }
 
-                /* Print it. */
-                if (g_cVerbose > 1)
-                {
-                    size_t off = printf("%#010x  %#010x", paRelocs[j].u.VirtualAddress, paRelocs[j].SymbolTableIndex);
-                    switch (paRelocs[j].Type)
+    return true;
+}
+
+/**
+ * This is for matching STATIC symbols with value 0 against the section name,
+ * to see if it's a section reference or symbol at offset 0 reference.
+ *
+ * @returns true / false.
+ * @param   pszSymbol       The symbol name.
+ * @param   pachSectName8   The section name (8-bytes).
+ */
+static bool isCoffSymbolMatchingSectionName(const char *pszSymbol, uint8_t const pachSectName8[8])
+{
+    uint32_t off = 0;
+    char ch;
+    while (off < 8 && (ch = pszSymbol[off]) != '\0')
+    {
+        if (ch != pachSectName8[off])
+            return false;
+        off++;
+    }
+    while (off < 8)
+    {
+        if (!RT_C_IS_SPACE((ch = pachSectName8[off])))
+            return ch == '\0';
+        off++;
+    }
+    return true;
+}
+
+static bool convertCoffSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCIMAGE_SYMBOL paSymbols, uint16_t cSymbols,
+                                                  const char *pchStrTab, PCIMAGE_SECTION_HEADER paShdrs)
+{
+
+    if (!cSymbols)
+        return true;
+    uint32_t const  cbStrTab = *(uint32_t const *)pchStrTab;
+    char            szShort[16];
+
+    /*
+     * Process the symbols the first.
+     */
+    uint32_t iSymImageBase = UINT32_MAX;
+    uint32_t cAbsSyms = 0;
+    uint32_t cExtSyms = 0;
+    uint32_t cPubSyms = 0;
+    for (uint32_t iSeg = 0; iSeg < pThis->cSegments; iSeg++)
+        pThis->paSegments[iSeg].cPubDefs = 0;
+
+    for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
+    {
+        const char *pszSymName = coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort);
+
+        pThis->paSymbols[iSym].enmType   = OMFSYMTYPE_IGNORED;
+        pThis->paSymbols[iSym].idx       = UINT16_MAX;
+        pThis->paSymbols[iSym].idxSegDef = UINT16_MAX;
+        pThis->paSymbols[iSym].idxGrpDef = UINT16_MAX;
+
+        int16_t const idxSection = paSymbols[iSym].SectionNumber;
+        if (   (idxSection >= 1 && idxSection <= (int32_t)pThis->cSegments)
+            || idxSection == IMAGE_SYM_ABSOLUTE)
+        {
+            switch (paSymbols[iSym].StorageClass)
+            {
+                case IMAGE_SYM_CLASS_EXTERNAL:
+                    if (idxSection != IMAGE_SYM_ABSOLUTE)
                     {
-                        case IMAGE_REL_AMD64_ADDR64:
-                            if (uLoc.pu64)
-                                off += printf("  %#018" ELF_FMT_X64 "", *uLoc.pu64);
-                            break;
-                        case IMAGE_REL_AMD64_ADDR32:
-                        case IMAGE_REL_AMD64_ADDR32NB:
-                        case IMAGE_REL_AMD64_REL32:
-                        case IMAGE_REL_AMD64_REL32_1:
-                        case IMAGE_REL_AMD64_REL32_2:
-                        case IMAGE_REL_AMD64_REL32_3:
-                        case IMAGE_REL_AMD64_REL32_4:
-                        case IMAGE_REL_AMD64_REL32_5:
-                        case IMAGE_REL_AMD64_SECREL:
-                            if (uLoc.pu32)
-                                off += printf("  %#010x", *uLoc.pu32);
-                            break;
-                        case IMAGE_REL_AMD64_SECTION:
-                            if (uLoc.pu16)
-                                off += printf("  %#06x", *uLoc.pu16);
-                            break;
-                        case IMAGE_REL_AMD64_SECREL7:
-                            if (uLoc.pu8)
-                                off += printf("  %#04x", *uLoc.pu8);
-                            break;
+                        if (pThis->paSegments[idxSection - 1].iSegDef != UINT16_MAX)
+                        {
+                            pThis->paSymbols[iSym].enmType   = OMFSYMTYPE_PUBDEF;
+                            pThis->paSymbols[iSym].idxSegDef = pThis->paSegments[idxSection - 1].iSegDef;
+                            pThis->paSymbols[iSym].idxGrpDef = pThis->paSegments[idxSection - 1].iGrpDef;
+                            pThis->paSegments[idxSection - 1].cPubDefs++;
+                            cPubSyms++;
+                        }
                     }
-                    while (off < 36)
-                        off += printf(" ");
-                    printf(" %s %s\n",
-                           paRelocs[j].Type < RT_ELEMENTS(g_apszCoffAmd64RelTypes)
-                           ? g_apszCoffAmd64RelTypes[paRelocs[j].Type] : "unknown",
-                           coffGetSymbolName(&paSymTab[paRelocs[j].SymbolTableIndex], pchStrTab, szShortName));
+                    else
+                    {
+                        pThis->paSymbols[iSym].enmType   = OMFSYMTYPE_PUBDEF;
+                        pThis->paSymbols[iSym].idxSegDef = 0;
+                        pThis->paSymbols[iSym].idxGrpDef = 0;
+                        cAbsSyms++;
+                    }
+                    break;
+
+                case IMAGE_SYM_CLASS_STATIC:
+                    if (   paSymbols[iSym].Value == 0
+                        && idxSection != IMAGE_SYM_ABSOLUTE
+                        && isCoffSymbolMatchingSectionName(pszSymName, paShdrs[idxSection - 1].Name) )
+                    {
+                        pThis->paSymbols[iSym].enmType   = OMFSYMTYPE_SEGDEF;
+                        pThis->paSymbols[iSym].idxSegDef = pThis->paSegments[idxSection - 1].iSegDef;
+                        pThis->paSymbols[iSym].idxGrpDef = pThis->paSegments[idxSection - 1].iGrpDef;
+                        break;
+                    }
+                    /* fall thru */
+
+                case IMAGE_SYM_CLASS_END_OF_FUNCTION:
+                case IMAGE_SYM_CLASS_AUTOMATIC:
+                case IMAGE_SYM_CLASS_REGISTER:
+                case IMAGE_SYM_CLASS_LABEL:
+                case IMAGE_SYM_CLASS_MEMBER_OF_STRUCT:
+                case IMAGE_SYM_CLASS_ARGUMENT:
+                case IMAGE_SYM_CLASS_STRUCT_TAG:
+                case IMAGE_SYM_CLASS_MEMBER_OF_UNION:
+                case IMAGE_SYM_CLASS_UNION_TAG:
+                case IMAGE_SYM_CLASS_TYPE_DEFINITION:
+                case IMAGE_SYM_CLASS_ENUM_TAG:
+                case IMAGE_SYM_CLASS_MEMBER_OF_ENUM:
+                case IMAGE_SYM_CLASS_REGISTER_PARAM:
+                case IMAGE_SYM_CLASS_BIT_FIELD:
+                case IMAGE_SYM_CLASS_BLOCK:
+                case IMAGE_SYM_CLASS_FUNCTION:
+                case IMAGE_SYM_CLASS_END_OF_STRUCT:
+                case IMAGE_SYM_CLASS_FILE:
+                    pThis->paSymbols[iSym].enmType = OMFSYMTYPE_INTERNAL;
+                    if (idxSection != IMAGE_SYM_ABSOLUTE)
+                    {
+                        pThis->paSymbols[iSym].idxSegDef = pThis->paSegments[idxSection - 1].iSegDef;
+                        pThis->paSymbols[iSym].idxGrpDef = pThis->paSegments[idxSection - 1].iGrpDef;
+                    }
+                    else
+                    {
+                        pThis->paSymbols[iSym].idxSegDef = 0;
+                        pThis->paSymbols[iSym].idxGrpDef = 0;
+                    }
+                    break;
+
+                case IMAGE_SYM_CLASS_SECTION:
+                case IMAGE_SYM_CLASS_EXTERNAL_DEF:
+                case IMAGE_SYM_CLASS_NULL:
+                case IMAGE_SYM_CLASS_UNDEFINED_LABEL:
+                case IMAGE_SYM_CLASS_UNDEFINED_STATIC:
+                case IMAGE_SYM_CLASS_CLR_TOKEN:
+                case IMAGE_SYM_CLASS_FAR_EXTERNAL:
+                case IMAGE_SYM_CLASS_WEAK_EXTERNAL:
+                    return error(pThis->pszSrc, "Unsupported storage class value %#x for symbol #%u (%s)\n",
+                                 paSymbols[iSym].StorageClass, iSym, pszSymName);
+
+                default:
+                    return error(pThis->pszSrc, "Unknown storage class value %#x for symbol #%u (%s)\n",
+                                 paSymbols[iSym].StorageClass, iSym, pszSymName);
+            }
+        }
+        else if (idxSection == IMAGE_SYM_UNDEFINED)
+        {
+            if (   paSymbols[iSym].StorageClass == IMAGE_SYM_CLASS_EXTERNAL
+                || paSymbols[iSym].StorageClass == IMAGE_SYM_CLASS_EXTERNAL_DEF)
+            {
+                pThis->paSymbols[iSym].enmType = OMFSYMTYPE_EXTDEF;
+                cExtSyms++;
+                if (iSymImageBase == UINT32_MAX && strcmp(pszSymName, "__ImageBase") == 0)
+                    iSymImageBase = iSym;
+            }
+            else
+                return error(pThis->pszSrc, "Unknown/unknown storage class value %#x for undefined symbol #%u (%s)\n",
+                             paSymbols[iSym].StorageClass, iSym, pszSymName);
+        }
+        else if (idxSection != IMAGE_SYM_DEBUG)
+            return error(pThis->pszSrc, "Invalid section number %#x for symbol #%u (%s)\n", idxSection, iSym, pszSymName);
+
+        /* Skip AUX symbols. */
+        uint8_t cAuxSyms = paSymbols[iSym].NumberOfAuxSymbols;
+        while (cAuxSyms-- > 0)
+        {
+            iSym++;
+            pThis->paSymbols[iSym].enmType = OMFSYMTYPE_INVALID;
+            pThis->paSymbols[iSym].idx     = UINT16_MAX;
+        }
+    }
+
+    /*
+     * Emit the PUBDEFs the first time around (see order of records in TIS spec).
+     */
+    uint16_t idxPubDef = 1;
+    if (cPubSyms)
+    {
+        for (uint32_t iSeg = 0; iSeg < pThis->cSegments; iSeg++)
+            if (pThis->paSegments[iSeg].cPubDefs > 0)
+            {
+                uint16_t const idxSegDef = pThis->paSegments[iSeg].iSegDef;
+                if (!omfWriter_PubDefBegin(pThis, pThis->paSegments[iSeg].iGrpDef, idxSegDef))
+                    return false;
+                for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
+                    if (   pThis->paSymbols[iSym].idxSegDef == idxSegDef
+                        && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
+                    {
+                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value,
+                                                 coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort)) )
+                            return false;
+                        pThis->paSymbols[iSym].idx = idxPubDef++;
+                    }
+                if (!omfWriter_PubDefEnd(pThis))
+                    return false;
+            }
+    }
+
+    if (cAbsSyms > 0)
+    {
+        if (!omfWriter_PubDefBegin(pThis, 0, 0))
+            return false;
+        for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
+            if (   pThis->paSymbols[iSym].idxSegDef == 0
+                && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
+            {
+                if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value,
+                                         coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort)) )
+                    return false;
+                pThis->paSymbols[iSym].idx = idxPubDef++;
+            }
+        if (!omfWriter_PubDefEnd(pThis))
+            return false;
+    }
+
+    /*
+     * Go over the symbol table and emit external definition records.
+     */
+    if (!omfWriter_ExtDefBegin(pThis))
+        return false;
+    uint16_t idxExtDef = 1;
+    for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
+        if (pThis->paSymbols[iSym].enmType == OMFSYMTYPE_EXTDEF)
+        {
+            if (!omfWriter_ExtDefAdd(pThis, coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort)))
+                return false;
+            pThis->paSymbols[iSym].idx = idxExtDef++;
+        }
+
+    /* Always add an __ImageBase reference, in case we need it to deal with ADDR32NB fixups. */
+    /** @todo maybe we don't actually need this and could use FLAT instead? */
+    if (iSymImageBase != UINT32_MAX)
+        pThis->idxExtImageBase = pThis->paSymbols[iSymImageBase].idx;
+    else if (omfWriter_ExtDefAdd(pThis, "__ImageBase"))
+        pThis->idxExtImageBase = idxExtDef;
+    else
+        return false;
+
+    if (!omfWriter_ExtDefEnd(pThis))
+        return false;
+
+    return true;
+}
+
+
+static bool convertCoffSectionsToLeDataAndFixupps(POMFWRITER pThis, uint8_t const *pbFile, size_t cbFile,
+                                                  PCIMAGE_SECTION_HEADER paShdrs, uint16_t cSections,
+                                                  PCIMAGE_SYMBOL paSymbols, uint16_t cSymbols, const char *pchStrTab)
+{
+    uint32_t const  cbStrTab = *(uint32_t const *)pchStrTab;
+    bool            fRet     = true;
+    for (uint32_t i = 0; i < pThis->cSegments; i++)
+    {
+        if (pThis->paSegments[i].iSegDef == UINT16_MAX)
+            continue;
+
+        char                szShortName[16];
+        const char         *pszSegNm   = pThis->paSegments[i].pszName;
+        uint16_t            cRelocs    = paShdrs[i].NumberOfRelocations;
+        PCIMAGE_RELOCATION  paRelocs   = (PCIMAGE_RELOCATION)&pbFile[paShdrs[i].PointerToRelocations];
+        uint32_t            cbVirtData = paShdrs[i].SizeOfRawData;
+        uint32_t            cbData     = paShdrs[i].Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA ? 0 : cbVirtData;
+        uint8_t const      *pbData     = &pbFile[paShdrs[i].PointerToRawData];
+        uint32_t            off        = 0;
+
+        /* Check that the relocations are sorted and within the section. */
+        for (uint32_t iReloc = 1; iReloc < cRelocs; iReloc++)
+            if (paRelocs[iReloc - 1].u.VirtualAddress >= paRelocs[iReloc].u.VirtualAddress)
+                return error(pThis->pszSrc, "Section #%u (%s) relocations aren't sorted\n", i, pszSegNm);
+        if (   cRelocs > 0
+            &&    paRelocs[cRelocs - 1].u.VirtualAddress - paShdrs[i].VirtualAddress
+               +  COFF_AMD64_RELOC_SIZE(paRelocs[cRelocs - 1].Type) > cbVirtData)
+            return error(pThis->pszSrc,
+                         "Section #%u (%s) relocations beyond section data! cbVirtData=%#x RvaFix=%#x RVASeg=%#x type=%#x\n",
+                         i, pszSegNm, cbVirtData, paRelocs[cRelocs - 1].u.VirtualAddress, paShdrs[i].VirtualAddress,
+                         paRelocs[cRelocs - 1].Type);
+
+        /* The OMF record size requires us to split larger sections up.  To make
+           life simple, we fill zeros for unitialized (BSS) stuff. */
+        const uint32_t cbMaxData = RT_MIN(OMF_MAX_RECORD_PAYLOAD - 1 - (pThis->paSegments[i].iSegDef >= 128) - 4 - 1, _1K);
+        while (cbVirtData > 0)
+        {
+            /* Figure out how many bytes to put out in this chunk.  Must make sure
+               fixups doesn't cross chunk boundraries.  ASSUMES sorted relocs. */
+            uint32_t       cChunkRelocs = cRelocs;
+            uint32_t       cbChunk      = cbVirtData;
+            uint32_t       uRvaEnd      = paShdrs[i].VirtualAddress + off + cbChunk;
+            if (cbChunk > cbMaxData)
+            {
+                cbChunk      = cbMaxData;
+                uRvaEnd      = paShdrs[i].VirtualAddress + off + cbChunk;
+                cChunkRelocs = 0;
+
+                /* Quickly determin the reloc range. */
+                while (   cChunkRelocs < cRelocs
+                       && paRelocs[cChunkRelocs].u.VirtualAddress < uRvaEnd)
+                    cChunkRelocs++;
+
+                /* Ensure final reloc doesn't go beyond chunk. */
+                while (   cChunkRelocs > 0
+                       &&   paRelocs[cChunkRelocs - 1].u.VirtualAddress + COFF_AMD64_RELOC_SIZE(paRelocs[cChunkRelocs - 1].Type)
+                          > uRvaEnd)
+                {
+                    uint32_t cbDrop = uRvaEnd - paRelocs[cChunkRelocs - 1].u.VirtualAddress;
+                    cbChunk -= cbDrop;
+                    uRvaEnd -= cbDrop;
+                    cChunkRelocs--;
                 }
 
-                /* Convert it. */
-                uint8_t uDir = IMAGE_REL_AMD64_ABSOLUTE;
-                switch (paRelocs[j].Type)
+                if (!cbVirtData)
+                    return error(pThis->pszSrc, "Wtf? cbVirtData is zero!\n");
+            }
+
+            /*
+             * We stash the bytes into the OMF writer record buffer, receiving a
+             * pointer to the start of it so we can make adjustments if necessary.
+             */
+            uint8_t *pbCopy;
+            if (!omfWriter_LEDataBegin(pThis, pThis->paSegments[i].iSegDef, off, cbChunk, cbData, pbData, &pbCopy))
+                return false;
+
+            /*
+             * Convert fiuxps.
+             */
+            uint32_t const uRvaChunk = paShdrs[i].VirtualAddress + off;
+            for (uint32_t iReloc = 0; iReloc < cChunkRelocs; iReloc++)
+            {
+                /* Get the OMF and COFF data for the symbol the reloc references. */
+                if (paRelocs[iReloc].SymbolTableIndex >= pThis->cSymbols)
+                    return error(pThis->pszSrc, "Relocation symtab index (%#x) is out of range in segment #%u '%s'\n",
+                                 paRelocs[iReloc].SymbolTableIndex, i, pszSegNm);
+                PCIMAGE_SYMBOL pCoffSym =        &paSymbols[paRelocs[iReloc].SymbolTableIndex];
+                POMFSYMBOL     pOmfSym  = &pThis->paSymbols[paRelocs[iReloc].SymbolTableIndex];
+
+                /* Calc fixup location in the pending chunk and setup a flexible pointer to it. */
+                uint16_t  offDataRec = (uint16_t)paRelocs[iReloc].u.VirtualAddress - uRvaChunk;
+                RTPTRUNION uLoc;
+                uLoc.pu8 = &pbCopy[offDataRec];
+
+                /* OMF fixup data initialized with typical defaults. */
+                bool        fSelfRel  = true;
+                uint8_t     bLocation = OMF_FIX_LOC_32BIT_OFFSET;
+                uint8_t     bFrame    = OMF_FIX_F_GRPDEF;
+                uint16_t    idxFrame  = pThis->idxGrpFlat;
+                uint8_t     bTarget;
+                uint16_t    idxTarget;
+                bool        fTargetDisp;
+                uint32_t    offTargetDisp;
+                switch (pOmfSym->enmType)
+                {
+                    case OMFSYMTYPE_INTERNAL:
+                    case OMFSYMTYPE_PUBDEF:
+                        bTarget       = OMF_FIX_T_SEGDEF;
+                        idxTarget     = pOmfSym->idxSegDef;
+                        fTargetDisp   = true;
+                        offTargetDisp = pCoffSym->Value;
+                        break;
+
+                    case OMFSYMTYPE_SEGDEF:
+                        bTarget       = OMF_FIX_T_SEGDEF_NO_DISP;
+                        idxTarget     = pOmfSym->idxSegDef;
+                        fTargetDisp   = false;
+                        offTargetDisp = 0;
+                        break;
+
+                    case OMFSYMTYPE_EXTDEF:
+                        bTarget       = OMF_FIX_T_EXTDEF_NO_DISP;
+                        idxTarget     = pOmfSym->idx;
+                        fTargetDisp   = false;
+                        offTargetDisp = 0;
+                        break;
+
+                    default:
+                        return error(pThis->pszSrc, "Relocation in segment #%u '%s' references ignored or invalid symbol (%s)\n",
+                                     i, pszSegNm, coffGetSymbolName(pCoffSym, pchStrTab, cbStrTab, szShortName));
+                }
+
+                /* Do COFF relocation type conversion. */
+                switch (paRelocs[iReloc].Type)
                 {
                     case IMAGE_REL_AMD64_ADDR64:
                     {
-                        uint64_t uAddend = 0;
-                        if (uLoc.pu64)
-                        {
-                            if (paRelocs[j].u.VirtualAddress + 8 > cbRawData)
-                                return error(pszFile, "ADDR64 at %#x in section %u '%-8.8s' not fully in raw data\n",
-                                             paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
-                            uAddend = *uLoc.pu64;
-                        }
+                        uint64_t uAddend = *uLoc.pu64;
                         if (uAddend > _1G)
-                            return error(pszFile, "ADDR64 with large addend (%#llx) at %#x in section %u '%-8.8s'\n",
-                                         uAddend, paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
-                        paRelocs[j].Type = IMAGE_REL_I386_DIR32;
-                        uDir = IMAGE_REL_AMD64_ADDR64;
+                            fRet = error(pThis->pszSrc, "ADDR64 with large addend (%#llx) at %#x in segment #%u '%s'\n",
+                                         uAddend, paRelocs[iReloc].u.VirtualAddress, i, pszSegNm);
+                        fSelfRel = false;
                         break;
                     }
 
@@ -489,139 +1582,139 @@ static bool convertcoff(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                     case IMAGE_REL_AMD64_REL32_3:
                     case IMAGE_REL_AMD64_REL32_4:
                     case IMAGE_REL_AMD64_REL32_5:
-                    {
-                        if (paRelocs[j].u.VirtualAddress + 4 > cbRawData)
-                            return error(pszFile, "%s at %#x in section %u '%-8.8s' is not (fully) in raw data\n",
-                                         g_apszCoffAmd64RelTypes[paRelocs[j].Type], paRelocs[j].u.VirtualAddress, i,
-                                         paShdrs[i].Name);
-                        *uLoc.pu32 += paRelocs[j].Type - IMAGE_REL_AMD64_REL32;
-                        paRelocs[j].Type = IMAGE_REL_I386_REL32;
+                        /** @todo Check whether OMF read addends from the data or relies on the
+                         *        displacement. Also, check what it's relative to. */
+                        *uLoc.pu32 += paRelocs[iReloc].Type - IMAGE_REL_AMD64_REL32;
                         break;
-                    }
 
-                    /* These are 1:1 conversions: */
                     case IMAGE_REL_AMD64_ADDR32:
-#if 1   /* Turns out this is special when wlink is doing DOS/BIOS binaries. */
-/** @todo this still doesn't work for bs3-cmn-SelProtFar32ToFlat32.obj!! */
-                        paRelocs[j].Type = IMAGE_REL_I386_ABSOLUTE; /* Note! Don't believe MS pecoff.doc, this works with wlink. */
-#else
-                        paRelocs[j].Type = IMAGE_REL_I386_DIR32;
-                        uDir = IMAGE_REL_AMD64_ADDR32;
-#endif
+                        fSelfRel = false;
                         break;
+
                     case IMAGE_REL_AMD64_ADDR32NB:
-                        if (fSeenImageBase && fIsText) /* This is voodoo. */
-                            paRelocs[j].Type = IMAGE_REL_I386_ABSOLUTE; /* Note! Don't believe MS pecoff.doc, this works with wlink. */
+                        fSelfRel = false;
+                        bFrame   = OMF_FIX_F_EXTDEF;
+                        idxFrame = pThis->idxExtImageBase;
+                        break;
+
+                    case IMAGE_REL_AMD64_REL32:
+                        /* defaults are ok. */
+                        break;
+
+                    case IMAGE_REL_AMD64_SECTION:
+                        bLocation = OMF_FIX_LOC_16BIT_SEGMENT;
+                        /* fall thru */
+
+                    case IMAGE_REL_AMD64_SECREL:
+                        fSelfRel = false;
+                        if (pOmfSym->enmType == OMFSYMTYPE_EXTDEF)
+                        {
+                            bFrame   = OMF_FIX_F_EXTDEF;
+                            idxFrame = pOmfSym->idx;
+                        }
                         else
                         {
-                            paRelocs[j].Type = IMAGE_REL_I386_DIR32NB;
-                            uDir = IMAGE_REL_AMD64_ADDR32NB;
+                            bFrame   = OMF_FIX_F_SEGDEF;
+                            idxFrame = pOmfSym->idxSegDef;
                         }
                         break;
-                    case IMAGE_REL_AMD64_REL32:
-                        paRelocs[j].Type = IMAGE_REL_I386_REL32;
 
-                        /* This is voodoo! */
-                        if (   fIsText
-                            && strcmp(coffGetSymbolName(&paSymTab[paRelocs[j].SymbolTableIndex], pchStrTab, szShortName),
-                                      "__ImageBase") == 0)
-                        {
-                            if (   (uLoc.pu8[-1] & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5 /* disp32 + wrt */
-                                && uLoc.pu8[-2] == 0x8d /* LEA */
-                                && (uLoc.pu8[-3] & (0xf8 | X86_OP_REX_W)) == X86_OP_REX_W /* 64-bit reg */ )
-                            {
-                                if (*uLoc.pu32)
-                                {
-                                    error(pszFile, "__ImageBase fixup with disp %#x at rva=%#x in section #%u '%-8.8s'!\n",
-                                          *uLoc.pu32, paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
-                                    fRet = false;
-                                }
-
-                                if (fSeenImageBase)
-                                    return error(pszFile, "More than one __ImageBase fixup! 2nd at rva=%#x in section #%u '%-8.8s'\n",
-                                                 paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
-                                if (g_cVerbose)
-                                    printf("Applying __ImageBase hack at rva=%#x in section #%u '%-8.8s'\n",
-                                           paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
-
-                                /* Convert it into a mov reg, dword 0. Leave the extra rex prefix, as it will be ignored. */
-                                uint8_t iReg = (uLoc.pu8[-1] >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK;
-                                uLoc.pu8[-1] = 0xb8 | iReg;
-                                uLoc.pu8[-2] = X86_OP_REX_R & uLoc.pu8[-3];
-                                fSeenImageBase = true;
-
-                                /* Neutralize the fixup.
-                                   Note! wlink takes the IMAGE_REL_I386_ABSOLUTE fixups seriously, so we cannot use that
-                                         to disable it, so instead we have to actually remove it from the fixup table. */
-                                cRelocs--;
-                                if (j != cRelocs)
-                                    memmove(&paRelocs[j], &paRelocs[j + 1], (cRelocs - j) * sizeof(paRelocs[j]));
-                                paShdrs[i].NumberOfRelocations = (uint16_t)cRelocs;
-                                j--;
-                            }
-                            else
-                            {
-                                error(pszFile, "__ImageBase fixup that isn't a recognized LEA at rva=%#x in section #%u '%-8.8s'!\n",
-                                      paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
-                                fRet = false;
-                            }
-                        }
-                        break;
-                    case IMAGE_REL_AMD64_SECTION:
-                        paRelocs[j].Type = IMAGE_REL_I386_SECTION;
-                        break;
-                    case IMAGE_REL_AMD64_SECREL:
-                        paRelocs[j].Type = IMAGE_REL_I386_SECREL;
-                        break;
-                    case IMAGE_REL_AMD64_SECREL7:
-                        paRelocs[j].Type = IMAGE_REL_I386_SECREL7;
-                        break;
                     case IMAGE_REL_AMD64_ABSOLUTE:
-                        paRelocs[j].Type = IMAGE_REL_I386_ABSOLUTE;
-                        /* Turns out wlink takes this seriously, so it usage must be checked out. */
-                        error(pszFile, "ABSOLUTE fixup at rva=%#x in section #%u '%-8.8s'\n",
-                              paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
-                        fRet = false;
-                        break;
+                        continue; /* Ignore it like the PECOFF.DOC says we should. */
 
+                    case IMAGE_REL_AMD64_SECREL7:
                     default:
-                        return error(pszFile, "Unsupported fixup type %#x (%s) at rva=%#x in section #%u '%-8.8s'\n",
-                                     paRelocs[j].Type,
-                                     paRelocs[j].Type < RT_ELEMENTS(g_apszCoffAmd64RelTypes)
-                                     ? g_apszCoffAmd64RelTypes[paRelocs[j].Type] : "unknown",
-                                     paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
+                        return error(pThis->pszSrc, "Unsupported fixup type %#x (%s) at rva=%#x in section #%u '%-8.8s'\n",
+                                     paRelocs[iReloc].Type,
+                                     paRelocs[iReloc].Type < RT_ELEMENTS(g_apszCoffAmd64RelTypes)
+                                     ? g_apszCoffAmd64RelTypes[paRelocs[iReloc].Type] : "unknown",
+                                     paRelocs[iReloc].u.VirtualAddress, i, paShdrs[i].Name);
                 }
 
-                /*
-                 * Error no absolute fixup that we care about. We continue so
-                 * the developer can get the full story before failing.
-                 */
-                if (   fInBinary
-                    && !fIsPData
-                    && uDir != IMAGE_REL_AMD64_ABSOLUTE)
-                {
-                    error(pszFile, "%s at %#x in section %u '%-8.8s': wlink won't get this right\n",
-                          g_apszCoffAmd64RelTypes[uDir], paRelocs[j].u.VirtualAddress, i, paShdrs[i].Name);
-                    fRet = false;
-                }
+                /* Add the fixup. */
+                if (idxFrame == UINT16_MAX)
+                    error(pThis->pszSrc, "idxFrame=UINT16_MAX for %s type=%s\n",
+                          coffGetSymbolName(pCoffSym, pchStrTab, cbStrTab, szShortName),
+                          g_apszCoffAmd64RelTypes[paRelocs[iReloc].Type]);
+                fRet = omfWriter_LEDataAddFixup(pThis, offDataRec, fSelfRel, bLocation, bFrame, idxFrame,
+                                                bTarget, idxTarget, fTargetDisp, offTargetDisp) && fRet;
             }
+
+            /*
+             * Write the LEDATA and associated FIXUPPs.
+             */
+            if (!omfWriter_LEDataEnd(pThis))
+                return false;
+
+            /*
+             * Advance.
+             */
+            paRelocs   += cChunkRelocs;
+            cRelocs    -= cChunkRelocs;
+            if (cbData > cbChunk)
+            {
+                cbData -= cbChunk;
+                pbData += cbChunk;
+            }
+            else
+                cbData  = 0;
+            off        += cbChunk;
+            cbVirtData -= cbChunk;
         }
     }
+
     return fRet;
 }
 
 
-/** @name Selected OMF record types.
- * @{ */
-#define PUBDEF  UINT8_C(0x90)
-#define LPUBDEF UINT8_C(0xb6)
-#define THEADR  UINT8_C(0x80)
-#define EXTDEF  UINT8_C(0x8c)
-#define SEGDEF  UINT8_C(0x98)
-#define LNAMES  UINT8_C(0x96)
-#define GRPDEF  UINT8_C(0x9a)
-#define REC32   UINT8_C(0x01) /**< Flag indicating 32-bit record. */
-/** @} */
+static bool convertCoffToOmf(const char *pszFile, uint8_t const *pbFile, size_t cbFile, FILE *pDst)
+{
+    /*
+     * Validate the source file a little.
+     */
+    if (!validateCoff(pszFile, pbFile, cbFile))
+        return false;
+
+    /*
+     * Instantiate the OMF writer.
+     */
+    PIMAGE_FILE_HEADER pHdr = (PIMAGE_FILE_HEADER)pbFile;
+    POMFWRITER pThis = omfWriter_Create(pszFile, pHdr->NumberOfSections, pHdr->NumberOfSymbols, pDst);
+    if (!pThis)
+        return false;
+
+    /*
+     * Write the OMF object file.
+     */
+    if (omfWriter_BeginModule(pThis, pszFile))
+    {
+        PCIMAGE_SECTION_HEADER paShdrs   = (PCIMAGE_SECTION_HEADER)(pHdr + 1);
+        PCIMAGE_SYMBOL         paSymTab  = (PCIMAGE_SYMBOL)&pbFile[pHdr->PointerToSymbolTable];
+        const char            *pchStrTab = (const char *)&paSymTab[pHdr->NumberOfSymbols];
+        if (   convertCoffSectionsToSegDefsAndGrpDefs(pThis, paShdrs, pHdr->NumberOfSections)
+            && convertCoffSymbolsToPubDefsAndExtDefs(pThis, paSymTab, pHdr->NumberOfSymbols, pchStrTab, paShdrs)
+            && omfWriter_LinkPassSeparator(pThis)
+            && convertCoffSectionsToLeDataAndFixupps(pThis, pbFile, cbFile, paShdrs, pHdr->NumberOfSections,
+                                                     paSymTab, pHdr->NumberOfSymbols, pchStrTab)
+
+            && omfWriter_EndModule(pThis) )
+        {
+
+            omfWriter_Destroy(pThis);
+            return true;
+        }
+    }
+
+    omfWriter_Destroy(pThis);
+    return false;
+
+}
+
+
+
+/*********************************************************************************************************************************
+*   OMF Converter/Tweaker                                                                                                        *
+*********************************************************************************************************************************/
 
 /** Watcom intrinsics we need to modify so we can mix 32-bit and 16-bit
  * code, since the 16 and 32 bit compilers share several names.
@@ -683,7 +1776,7 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
         if (off + cbRec > cbFile)
             return error(pszFile, "Invalid record length at %#x: %#x (cbFile=%#lx)\n", off, cbRec, (unsigned long)cbFile);
 
-        if (bRecType & REC32)
+        if (bRecType & OMF_REC32)
             fProbably32bit = true;
 
         uint32_t offRec = 0;
@@ -697,7 +1790,7 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
             /*
              * Scan external definitions for intrinsics needing mangling.
              */
-            case EXTDEF:
+            case OMF_EXTDEF:
             {
                 while (offRec + 1 < cbRec)
                 {
@@ -748,7 +1841,7 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
             /*
              * Record LNAME records, scanning for FLAT.
              */
-            case LNAMES:
+            case OMF_LNAMES:
             {
                 while (offRec + 1 < cbRec)
                 {
@@ -774,14 +1867,14 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
             /*
              * Display public names if -v is specified.
              */
-            case PUBDEF:
-            case PUBDEF | REC32:
-            case LPUBDEF:
-            case LPUBDEF | REC32:
+            case OMF_PUBDEF16:
+            case OMF_PUBDEF32:
+            case OMF_LPUBDEF16:
+            case OMF_LPUBDEF32:
             {
                 if (g_cVerbose > 0)
                 {
-                    char const  chType  = bRecType == PUBDEF || bRecType == (PUBDEF | REC32) ? 'T' : 't';
+                    char const  chType  = bRecType == OMF_PUBDEF16 || bRecType == OMF_PUBDEF32 ? 'T' : 't';
                     const char *pszRec = "LPUBDEF";
                     if (chType == 'T')
                         pszRec++;
@@ -815,7 +1908,7 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
                         offRec += cch;
 
                         uint32_t offSeg;
-                        if (bRecType & REC32)
+                        if (bRecType & OMF_REC32)
                         {
                             OMF_CHECK_RET(4, [L]PUBDEF);
                             offSeg = RT_MAKE_U32_FROM_U8(pbRec[offRec], pbRec[offRec + 1], pbRec[offRec + 2], pbRec[offRec + 3]);
@@ -860,10 +1953,25 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
  */
 static int convertit(const char *pszFile)
 {
+    /* Construct the filename for saving the unmodified file. */
+    char szOrgFile[_4K];
+    size_t cchFile = strlen(pszFile);
+    if (cchFile + sizeof(".original") > sizeof(szOrgFile))
+    {
+        error(pszFile, "Filename too long!\n");
+        return RTEXITCODE_FAILURE;
+    }
+    memcpy(szOrgFile, pszFile, cchFile);
+    memcpy(&szOrgFile[cchFile], ".original", sizeof(".original"));
+
+    /* Read the whole file. */
     void  *pvFile;
     size_t cbFile;
     if (readfile(pszFile, &pvFile, &cbFile))
     {
+        /*
+         * Do format conversions / adjustments.
+         */
         bool fRc = false;
         uint8_t *pbFile = (uint8_t *)pvFile;
         if (   cbFile > sizeof(Elf64_Ehdr)
@@ -871,26 +1979,39 @@ static int convertit(const char *pszFile)
             && pbFile[1] == ELFMAG1
             && pbFile[2] == ELFMAG2
             && pbFile[3] == ELFMAG3)
-            fRc = convertelf(pszFile, pbFile, cbFile);
+            /** @todo convertElfToOmf(). */
+            fRc = writefile(szOrgFile, pvFile, cbFile)
+               && convertelf(pszFile, pbFile, cbFile)
+               && writefile(pszFile, pvFile, cbFile);
         else if (   cbFile > sizeof(IMAGE_FILE_HEADER)
                  && RT_MAKE_U16(pbFile[0], pbFile[1]) == IMAGE_FILE_MACHINE_AMD64
                  &&   RT_MAKE_U16(pbFile[2], pbFile[3]) * sizeof(IMAGE_SECTION_HEADER) + sizeof(IMAGE_FILE_HEADER)
                     < cbFile
                  && RT_MAKE_U16(pbFile[2], pbFile[3]) > 0)
-            fRc = convertcoff(pszFile, pbFile, cbFile);
+        {
+            if (writefile(szOrgFile, pvFile, cbFile))
+            {
+                FILE *pDst = openfile(pszFile, true /*fWrite*/);
+                if (pDst)
+                {
+                    fRc = convertCoffToOmf(pszFile, pbFile, cbFile, pDst);
+                    fRc = fclose(pDst) == 0 && fRc;
+                }
+            }
+        }
         else if (   cbFile >= 8
-                 && pbFile[0] == THEADR
+                 && pbFile[0] == OMF_THEADR
                  && RT_MAKE_U16(pbFile[1], pbFile[2]) < cbFile)
         {
             const char **papchLNames = (const char **)calloc(sizeof(*papchLNames), _32K);
-            fRc = convertomf(pszFile, pbFile, cbFile, papchLNames, _32K);
+            fRc = writefile(szOrgFile, pvFile, cbFile)
+               && convertomf(pszFile, pbFile, cbFile, papchLNames, _32K)
+               && writefile(pszFile, pvFile, cbFile);
             free(papchLNames);
         }
         else
             fprintf(stderr, "error: Don't recognize format of '%s' (%#x %#x %#x %#x, cbFile=%lu)\n",
                     pszFile, pbFile[0], pbFile[1], pbFile[2], pbFile[3], (unsigned long)cbFile);
-        if (fRc)
-            fRc = writefile(pszFile, pvFile, cbFile);
         free(pvFile);
         if (fRc)
             return 0;
