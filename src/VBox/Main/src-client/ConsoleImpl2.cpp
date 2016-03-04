@@ -3042,6 +3042,18 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCfg,  "Serial1IoPortBase", auSerialIoPortBase[1]);
             InsertConfigInteger(pCfg,  "Serial1Irq", auSerialIrq[1]);
 
+            if (auSerialIoPortBase[2])
+            {
+                InsertConfigInteger(pCfg,  "Serial2IoPortBase", auSerialIoPortBase[2]);
+                InsertConfigInteger(pCfg,  "Serial2Irq", auSerialIrq[2]);
+            }
+
+            if (auSerialIoPortBase[3])
+            {
+                InsertConfigInteger(pCfg,  "Serial3IoPortBase", auSerialIoPortBase[3]);
+                InsertConfigInteger(pCfg,  "Serial3Irq", auSerialIrq[3]);
+            }
+
             InsertConfigInteger(pCfg,  "Parallel0IoPortBase", auParallelIoPortBase[0]);
             InsertConfigInteger(pCfg,  "Parallel0Irq", auParallelIrq[0]);
 

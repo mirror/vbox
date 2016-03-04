@@ -131,11 +131,10 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         UHPT,  32, // if HPET enabled
         USMC,  32, // if SMC enabled
         UFDC,  32, // if floppy controller enabled
-        // UCP0-UCP3 no longer used and only kept here for saved state compatibility
-        UCP0,  32,
-        UCP1,  32,
-        UCP2,  32,
-        UCP3,  32,
+        SL2B,  32, // Serial2 base IO address  
+        SL2I,  32, // Serial2 IRQ
+        SL3B,  32, // Serial3 base IO address  
+        SL3I,  32, // Serial3 IRQ
         MEMH,  32,
         URTC,  32, // if RTC shown in tables
         CPUL,  32, // flag of CPU lock state
@@ -799,6 +798,72 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                         Store (SL1B, MIN1)
                         Store (SL1B, MAX1)
                         ShiftLeft (0x01, SL1I, IRQ1)
+                        Return (CRS)
+                    }
+                }
+
+                // Serial port 2
+                Device (^SRL2)
+                {
+                    Name (_HID, EisaId ("PNP0501"))
+                    Name (_UID, 0x03)
+                    Method (_STA, 0, NotSerialized)
+                    {
+                        If (LEqual (SL2B, Zero))
+                        {
+                            Return (0x00)
+                        }
+                        Else
+                        {
+                            Return (0x0F)
+                        }
+                    }
+                    Name (CRS, ResourceTemplate ()
+                    {
+                        IO (Decode16, 0x03E8, 0x03E8, 0x01, 0x08, _Y22) 
+                        IRQNoFlags (_Y23) {3}
+                    })
+                    Method (_CRS, 0, NotSerialized)
+                    {
+                        CreateWordField (CRS, \_SB.PCI0.SRL2._Y22._MIN, MIN1)
+                        CreateWordField (CRS, \_SB.PCI0.SRL2._Y22._MAX, MAX1)
+                        CreateWordField (CRS, \_SB.PCI0.SRL2._Y23._INT, IRQ1)
+                        Store (SL2B, MIN1)
+                        Store (SL2B, MAX1)
+                        ShiftLeft (0x01, SL2I, IRQ1)
+                        Return (CRS)
+                    }
+                }
+
+                // Serial port 3
+                Device (^SRL3)
+                {
+                    Name (_HID, EisaId ("PNP0501"))
+                    Name (_UID, 0x04)
+                    Method (_STA, 0, NotSerialized)
+                    {
+                        If (LEqual (SL3B, Zero))
+                        {
+                            Return (0x00)
+                        }
+                        Else
+                        {
+                            Return (0x0F)
+                        }
+                    }
+                    Name (CRS, ResourceTemplate ()
+                    {
+                        IO (Decode16, 0x02E8, 0x02E8, 0x01, 0x08, _Y24)
+                        IRQNoFlags (_Y25) {3}
+                    })
+                    Method (_CRS, 0, NotSerialized)
+                    {
+                        CreateWordField (CRS, \_SB.PCI0.SRL3._Y24._MIN, MIN1)
+                        CreateWordField (CRS, \_SB.PCI0.SRL3._Y24._MAX, MAX1)
+                        CreateWordField (CRS, \_SB.PCI0.SRL3._Y25._INT, IRQ1)
+                        Store (SL3B, MIN1)
+                        Store (SL3B, MAX1)
+                        ShiftLeft (0x01, SL3I, IRQ1)
                         Return (CRS)
                     }
                 }

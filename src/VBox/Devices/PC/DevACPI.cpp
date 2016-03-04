@@ -161,10 +161,10 @@ enum
     SYSTEM_INFO_INDEX_HPET_STATUS       = 2,
     SYSTEM_INFO_INDEX_SMC_STATUS        = 3,
     SYSTEM_INFO_INDEX_FDC_STATUS        = 4,
-    SYSTEM_INFO_INDEX_CPU0_STATUS       = 5,  /**< For compatibility with older saved states. */
-    SYSTEM_INFO_INDEX_CPU1_STATUS       = 6,  /**< For compatibility with older saved states. */
-    SYSTEM_INFO_INDEX_CPU2_STATUS       = 7,  /**< For compatibility with older saved states. */
-    SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,  /**< For compatibility with older saved states. */
+    SYSTEM_INFO_INDEX_SERIAL2_IOBASE    = 5,
+    SYSTEM_INFO_INDEX_SERIAL2_IRQ       = 6,
+    SYSTEM_INFO_INDEX_SERIAL3_IOBASE    = 7,
+    SYSTEM_INFO_INDEX_SERIAL3_IRQ       = 8,
     SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
     SYSTEM_INFO_INDEX_CPU_LOCKED        = 11, /**< Contains a flag indicating whether the CPU is locked or not */
@@ -186,7 +186,7 @@ enum
     SYSTEM_INFO_INDEX_PARALLEL0_IRQ     = 27,
     SYSTEM_INFO_INDEX_PARALLEL1_IOBASE  = 28,
     SYSTEM_INFO_INDEX_PARALLEL1_IRQ     = 29,
-    SYSTEM_INFO_INDEX_END               = 30,
+    SYSTEM_INFO_INDEX_END               = 34,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -312,10 +312,18 @@ typedef struct ACPIState
     uint8_t             uSerial0Irq;
     /** Serial 1 IRQ number */
     uint8_t             uSerial1Irq;
+    /** Serial 2 IRQ number */
+    uint8_t             uSerial2Irq;
+    /** Serial 3 IRQ number */
+    uint8_t             uSerial3Irq;
     /** Serial 0 IO port base */
     RTIOPORT            uSerial0IoPortBase;
     /** Serial 1 IO port base */
     RTIOPORT            uSerial1IoPortBase;
+    /** Serial 2 IO port base */
+    RTIOPORT            uSerial2IoPortBase;
+    /** Serial 3 IO port base */
+    RTIOPORT            uSerial3IoPortBase;
 
     /** @name Parallel port config bits
      * @{ */
@@ -1271,24 +1279,6 @@ PDMBOTHCBDECL(int) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
             *pu32 = (uint32_t)pThis->u64PciConfigMMioLength;
             break;
 
-        /* This is only for compatibility with older saved states that
-           may include ACPI code that read these values.  Legacy is
-           a wonderful thing, isn't it? :-) */
-        case SYSTEM_INFO_INDEX_CPU0_STATUS:
-        case SYSTEM_INFO_INDEX_CPU1_STATUS:
-        case SYSTEM_INFO_INDEX_CPU2_STATUS:
-        case SYSTEM_INFO_INDEX_CPU3_STATUS:
-            *pu32 = (   pThis->fShowCpu
-                     && pThis->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < pThis->cCpus
-                     && VMCPUSET_IS_PRESENT(&pThis->CpuSetAttached,
-                                            pThis->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS) )
-                  ? (  STA_DEVICE_PRESENT_MASK
-                     | STA_DEVICE_ENABLED_MASK
-                     | STA_DEVICE_SHOW_IN_UI_MASK
-                     | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                  : 0;
-            break;
-
         case SYSTEM_INFO_INDEX_RTC_STATUS:
             *pu32 = pThis->fShowRtc
                   ? (  STA_DEVICE_PRESENT_MASK
@@ -1335,6 +1325,22 @@ PDMBOTHCBDECL(int) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
         case SYSTEM_INFO_INDEX_SERIAL1_IRQ:
             *pu32 = pThis->uSerial1Irq;
+            break;
+
+        case SYSTEM_INFO_INDEX_SERIAL2_IOBASE:
+            *pu32 = pThis->uSerial2IoPortBase;
+            break;
+
+        case SYSTEM_INFO_INDEX_SERIAL2_IRQ:
+            *pu32 = pThis->uSerial2Irq;
+            break;
+
+        case SYSTEM_INFO_INDEX_SERIAL3_IOBASE:
+            *pu32 = pThis->uSerial3IoPortBase;
+            break;
+
+        case SYSTEM_INFO_INDEX_SERIAL3_IRQ:
+            *pu32 = pThis->uSerial3Irq;
             break;
 
         case SYSTEM_INFO_INDEX_PARALLEL0_IOBASE:
@@ -3084,8 +3090,12 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               "AmlFilePath\0"
                               "Serial0IoPortBase\0"
                               "Serial1IoPortBase\0"
+                              "Serial2IoPortBase\0"
+                              "Serial3IoPortBase\0"
                               "Serial0Irq\0"
                               "Serial1Irq\0"
+                              "Serial2Irq\0"
+                              "Serial3Irq\0"
                               "AcpiOemId\0"
                               "AcpiCreatorId\0"
                               "AcpiCreatorRev\0"
@@ -3233,6 +3243,27 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"Serial1IoPortBase\""));
 
+    /* Read serial port 2 settings; disabled if CFGM keys do not exist. */
+    rc = CFGMR3QueryU8Def(pCfg, "Serial2Irq", &pThis->uSerial2Irq, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Serial2Irq\""));
+
+    rc = CFGMR3QueryU16Def(pCfg, "Serial2IoPortBase", &pThis->uSerial2IoPortBase, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Serial2IoPortBase\""));
+
+    /* Read serial port 3 settings; disabled if CFGM keys do not exist. */
+    rc = CFGMR3QueryU8Def(pCfg, "Serial3Irq", &pThis->uSerial3Irq, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Serial3Irq\""));
+
+    rc = CFGMR3QueryU16Def(pCfg, "Serial3IoPortBase", &pThis->uSerial3IoPortBase, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Serial3IoPortBase\""));
     /*
      * Query settings for both parallel ports, if the CFGM keys don't exist pretend that
      * the corresponding parallel port is not enabled.
