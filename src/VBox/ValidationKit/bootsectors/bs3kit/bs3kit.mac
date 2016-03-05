@@ -197,6 +197,13 @@ BS3_SET_REG_ALIASES ARCH_BITS
   %define BS3_WRT_RIP(a_Sym)        a_Sym
  %endif
 
+ %undef   BS3_LEA_MOV_WRT_RIP
+ %if %1 == 64
+  %define BS3_LEA_MOV_WRT_RIP(a_DstReg, a_Sym)  lea a_DstReg, [BS3_WRT_RIP(a_Sym)]
+ %else
+  %define BS3_LEA_MOV_WRT_RIP(a_DstReg, a_Sym)  mov a_DstReg, a_Sym
+ %endif
+
  %undef   BS3_IF_16BIT_OTHERWISE
  %if %1 == 16
   %define BS3_IF_16BIT_OTHERWISE(a_16BitExpr, a_OtherwiseExpr) a_16BitExpr

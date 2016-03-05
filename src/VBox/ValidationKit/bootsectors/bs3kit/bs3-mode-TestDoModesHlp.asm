@@ -27,47 +27,60 @@
 %include "bs3kit-template-header.mac"
 
 
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInRM)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16_32)(uint32_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16_V86)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE32)(uint32_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE32_16)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPEV86)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16_32)(uint32_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16_V86)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP32)(uint32_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP32_16)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPPV86)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16_32)(uint32_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16_V86)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE32)(uint32_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE32_16)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAEV86)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM16)(uint16_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM32)(uint32_t offCallback);
-;BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM64)(uint32_t offCallback);
-
 ;*********************************************************************************************************************************
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
 extern TMPL_NM(Bs3SwitchToRM)
 extern TMPL_NM(Bs3SwitchToPE16)
 extern TMPL_NM(Bs3SwitchToPE16_32)
+extern TMPL_NM(Bs3SwitchToPE16_V86)
+extern TMPL_NM(Bs3SwitchToPE32)
+extern TMPL_NM(Bs3SwitchToPE32_16)
+extern TMPL_NM(Bs3SwitchToPEV86)
+extern TMPL_NM(Bs3SwitchToPP16)
+extern TMPL_NM(Bs3SwitchToPP16_32)
+extern TMPL_NM(Bs3SwitchToPP16_V86)
+extern TMPL_NM(Bs3SwitchToPP32)
+extern TMPL_NM(Bs3SwitchToPP32_16)
+extern TMPL_NM(Bs3SwitchToPPV86)
+extern TMPL_NM(Bs3SwitchToPAE16)
+extern TMPL_NM(Bs3SwitchToPAE16_32)
+extern TMPL_NM(Bs3SwitchToPAE16_V86)
+extern TMPL_NM(Bs3SwitchToPAE32)
+extern TMPL_NM(Bs3SwitchToPAE32_16)
+extern TMPL_NM(Bs3SwitchToPAEV86)
+extern TMPL_NM(Bs3SwitchToLM16)
+extern TMPL_NM(Bs3SwitchToLM32)
+extern TMPL_NM(Bs3SwitchToLM64)
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16)
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_32)
-;extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_v86)
-;extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_v86)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe32)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe32_16)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pev86)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16_32)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16_v86)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp32)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp32_16)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_ppv86)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16_32)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16_v86)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae32)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae32_16)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_paev86)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm16)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm32)
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm64)
 
 
 ;;
+; Shared prologue code.
+; @param    xAX     Where to jump to for the main event.
 ;
-; @param %1     Non-zero if 16-bit target.
-;
-%macro MyProlog 1
+TMPL_NM(bs3TestCallDoerPrologue):
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
@@ -98,37 +111,14 @@ extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_32)
         push    r15
 %endif
 
-%if TMPL_BITS != 16 && %1 != 0
-        ; Change to 16-bit segment
-        jmp     .sixteen_bit_segment
-BS3_BEGIN_TEXT16
-        BS3_SET_BITS TMPL_BITS
-.sixteen_bit_segment:
-%endif
-
-        ; Load the call address into ax or eax.
-%if %1 != 0
-        mov     ax, [xBP + xCB*2]
-%else
-        mov     eax, [xBP + xCB*2]
-%endif
-
-%endmacro
-
+        ; Jump to the main code.
+        jmp     xAX
 
 ;;
+; Shared epilogue code.
+; @param    xAX     Return code.
 ;
-; @param %1     Non-zero if 16-bit target.
-;
-%macro MyEpilog 1
-%if TMPL_BITS != 16
-        ; Change back to the default template segment.
-        jmp     .template_segment
-TMPL_BEGIN_TEXT
-        BS3_SET_BITS TMPL_BITS
-.template_segment:
-%endif
-
+TMPL_NM(bs3TestCallDoerEpilogue):
         ; Restore registers.
 %if TMPL_BITS == 16
         sub     bp, 0ah
@@ -161,14 +151,19 @@ TMPL_BEGIN_TEXT
         pop     xCX
         pop     xBX
         pop     xBP
-%endmacro
+        ret
 
 
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInRM(uint16_t offBs3Text16);
 ; @uses     rax
 BS3_PROC_BEGIN_MODE Bs3TestCallDoerInRM
-        MyProlog 16
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToRM)
@@ -176,17 +171,25 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInRM
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
         BS3_SET_BITS TMPL_BITS
-
-        MyEpilog 16
-        ret
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
 BS3_PROC_END_MODE   Bs3TestCallDoerInRM
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Unpage protection mode.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE16(uint16_t offBs3Text16);
 ; @uses     rax
 BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16
-        MyProlog 16
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPE16)
@@ -194,16 +197,18 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16)
         BS3_SET_BITS TMPL_BITS
-
-        MyEpilog 16
-        ret
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
 BS3_PROC_END_MODE   Bs3TestCallDoerInPE16
 
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE16_32(uint16_t offBs3Text16);
 ; @uses     rax
 BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_32
-        MyProlog 0
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPE16_32)
@@ -211,8 +216,393 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_32
         call    eax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_32)
         BS3_SET_BITS TMPL_BITS
-
-        MyEpilog 0
-        ret
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
 BS3_PROC_END_MODE   Bs3TestCallDoerInPE16_32
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE16_V86(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_V86
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPE16_V86)
+        BS3_SET_BITS 32
+        call    eax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_v86)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInPE16_V86
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE32(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE32
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPE32)
+        BS3_SET_BITS 32
+        call    eax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe32)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInPE32
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE32_16(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE32_16
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPE32_16)
+        BS3_SET_BITS 16
+        call    ax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe32_16)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
+BS3_PROC_END_MODE   Bs3TestCallDoerInPE32_16
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPEV86(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPEV86
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPEV86)
+        BS3_SET_BITS 16
+        call    ax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pev86)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
+BS3_PROC_END_MODE   Bs3TestCallDoerInPEV86
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Page protection mode.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP16(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPP16)
+        BS3_SET_BITS 16
+        call    ax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
+BS3_PROC_END_MODE   Bs3TestCallDoerInPP16
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP16_32(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_32
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPP16_32)
+        BS3_SET_BITS 32
+        call    eax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16_32)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInPP16_32
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP16_V86(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_V86
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPP16_V86)
+        BS3_SET_BITS 32
+        call    eax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16_v86)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInPP16_V86
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP32(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP32
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPP32)
+        BS3_SET_BITS 32
+        call    eax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp32)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInPP32
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP32_16(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP32_16
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPP32_16)
+        BS3_SET_BITS 16
+        call    ax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp32_16)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
+BS3_PROC_END_MODE   Bs3TestCallDoerInPP32_16
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPPV86(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPPV86
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPPV86)
+        BS3_SET_BITS 16
+        call    ax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_ppv86)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
+BS3_PROC_END_MODE   Bs3TestCallDoerInPPV86
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PAE paged protection mode.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE16(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPAE16)
+        BS3_SET_BITS 16
+        call    ax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
+BS3_PROC_END_MODE   Bs3TestCallDoerInPAE16
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE16_32(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_32
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPAE16_32)
+        BS3_SET_BITS 32
+        call    eax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16_32)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInPAE16_32
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE16_V86(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_V86
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPAE16_V86)
+        BS3_SET_BITS 32
+        call    eax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16_v86)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInPAE16_V86
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE32(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE32
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPAE32)
+        BS3_SET_BITS 32
+        call    eax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae32)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInPAE32
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE32_16(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE32_16
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPAE32_16)
+        BS3_SET_BITS 16
+        call    ax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae32_16)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
+BS3_PROC_END_MODE   Bs3TestCallDoerInPAE32_16
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAEV86(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAEV86
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToPAEV86)
+        BS3_SET_BITS 16
+        call    ax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_paev86)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
+BS3_PROC_END_MODE   Bs3TestCallDoerInPAEV86
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Long mode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInLM16(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM16
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+.doit:
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToLM16)
+        BS3_SET_BITS 16
+        call    ax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm16)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+TMPL_BEGIN_TEXT
+BS3_PROC_END_MODE   Bs3TestCallDoerInLM16
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInLM32(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM32
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToLM32)
+        BS3_SET_BITS 32
+        call    eax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm32)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInLM32
+
+;;
+; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInLM64(uint16_t offBs3Text16);
+; @uses     rax
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM64
+        BS3_LEA_MOV_WRT_RIP(xAX, .doit)
+        jmp     TMPL_NM(bs3TestCallDoerPrologue)
+.doit:
+        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+
+        ; Mode switch, make the call, switch back.
+        call    TMPL_NM(Bs3SwitchToLM64)
+        BS3_SET_BITS 64
+        call    rax
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm64)
+        BS3_SET_BITS TMPL_BITS
+        jmp     TMPL_NM(bs3TestCallDoerEpilogue)
+BS3_PROC_END_MODE   Bs3TestCallDoerInLM64
 
