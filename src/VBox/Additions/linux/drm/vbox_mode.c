@@ -446,7 +446,6 @@ static void vbox_connector_destroy(struct drm_connector *connector)
 
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
-    device_remove_file(connector->dev->dev, &vbox_connector->sysfs_node);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     drm_sysfs_connector_remove(connector);
 #else
@@ -498,24 +497,6 @@ static const struct drm_connector_funcs vbox_connector_funcs = {
     .destroy = vbox_connector_destroy,
 };
 
-ssize_t vbox_connector_write_sysfs(struct device *dev,
-                                   struct device_attribute *pAttr,
-                                   const char *psz, size_t cch)
-{
-    struct vbox_connector *vbox_connector;
-    struct vbox_private *vbox;
-
-    LogFunc(("vboxvideo: %d: dev=%p, pAttr=%p, psz=%s, cch=%llu\n", __LINE__,
-             dev, pAttr, psz, (unsigned long long)cch));
-    vbox_connector = container_of(pAttr, struct vbox_connector,
-                                  sysfs_node);
-    vbox = vbox_connector->base.dev->dev_private;
-    drm_kms_helper_hotplug_event(vbox_connector->base.dev);
-    if (vbox->fbdev)
-        drm_fb_helper_hotplug_event(&vbox->fbdev->helper);
-    return cch;
-}
-
 static int vbox_connector_init(struct drm_device *dev, unsigned cScreen,
                                struct drm_encoder *encoder)
 {
@@ -532,22 +513,6 @@ static int vbox_connector_init(struct drm_device *dev, unsigned cScreen,
     connector = &vbox_connector->base;
     vbox_connector->crtc_id = cScreen;
 
-    /*
-     * Set up the sysfs file we use for getting video mode hints from user
-     * space.
-     */
-    snprintf(vbox_connector->name, sizeof(vbox_connector->name),
-             "vbox_screen_%u", cScreen);
-    vbox_connector->sysfs_node.attr.name = vbox_connector->name;
-    vbox_connector->sysfs_node.attr.mode = S_IWUSR;
-    vbox_connector->sysfs_node.show      = NULL;
-    vbox_connector->sysfs_node.store     = vbox_connector_write_sysfs;
-    rc = device_create_file(dev->dev, &vbox_connector->sysfs_node);
-    if (rc < 0)
-    {
-        kfree(vbox_connector);
-        return rc;
-    }
     drm_connector_init(dev, connector, &vbox_connector_funcs,
                        DRM_MODE_CONNECTOR_VGA);
     drm_connector_helper_add(connector, &vbox_connector_helper_funcs);
