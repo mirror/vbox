@@ -197,8 +197,8 @@ BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _CS16, 8     ; Entry 100h
         dw  09b01h | (%1 << 0dh), 00000h
 
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _DS16, 8     ; Entry 108h
-        dw  0ffffh, 03000h                      ; 16-bit data segment with base 023000h.
-        dw  09302h | (%1 << 0dh), 00000h
+        dw  0ffffh, (0xffff & BS3_ADDR_BS3DATA16) ; 16-bit data segment with base 027000h.
+        dw  09300h | (%1 << 0dh) | (0xff & (BS3_ADDR_BS3DATA16 >> 16)), 00000h | (0xff00 & (BS3_ADDR_BS3DATA16 >> 16))
 
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _SS16, 8     ; Entry 110h
         dw  0ffffh, 00000h                      ; 16-bit stack segment with base 0.

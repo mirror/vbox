@@ -42,20 +42,20 @@ TMPL_BEGIN_TEXT
 BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         ; Construct basic v8086 return frame.
         BS3_ONLY_16BIT_STMT movzx   esp, sp
-        push    dword 0                 ; GS
-        push    dword 0                 ; FS
-        push    dword BS3_SEL_DATA16    ; ES
-        push    dword BS3_SEL_DATA16    ; DS
-        push    dword 0                 ; SS - later
-        push    dword 0                 ; return ESP, later.
+        push    dword 0                         ; +0x20: GS
+        push    dword 0                         ; +0x1c: FS
+        push    dword BS3_SEL_DATA16            ; +0x18: ES
+        push    dword BS3_SEL_DATA16            ; +0x14: DS
+        push    dword 0                         ; +0x10: SS - later
+        push    dword 0                         ; +0x0c: return ESP, later.
         pushfd
-        or      dword [esp], X86_EFL_VM ; Set the VM flag in EFLAGS.
-        push    dword BS3_SEL_TEXT16
+        or      dword [esp], X86_EFL_VM         ; +0x08: Set the VM flag in EFLAGS.
+        push    dword BS3_SEL_TEXT16            ; +0x04
         push    word 0
  %if TMPL_BITS == 16
-        push    word [esp + 2 + 7 * 4 + 2]
+        push    word [esp + 2 + 8 * 4 + 2]      ; +0x00
  %else
-        push    word [esp + 2 + 7 * 4]
+        push    word [esp + 2 + 8 * 4]          ; +0x00
  %endif
         ; Save registers and stuff.
         push    eax
@@ -102,11 +102,12 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         mov     [xSP + 4*4 + 20h], ax
  %endif
 
-        ; Thunk SS:ESP to real-mode address via 32-bit flat.
+        ; Thunk return SS:ESP to real-mode address via 32-bit flat.
         lea     eax, [esp + 4*4 + 24h]
         push    ss
         push    eax
         BS3_CALL Bs3SelProtFar32ToFlat32, 2
+        add     esp, sCB + xCB
         mov     [esp + 4*4 + 0ch], ax   ; high word is already zero
  %if TMPL_BITS == 16
         mov     [esp + 4*4 + 10h], dx

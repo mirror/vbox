@@ -83,11 +83,11 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
 .not_v8086:
  %if TMPL_BITS == 16
         ; Calc flat stack into edx.
+        movzx   eax, sp
         push    ecx
         push    ebx
         push    ss
-        push    word 0
-        push    sp
+        push    eax
         call    Bs3SelProtFar32ToFlat32
         add     sp, 6
         shl     edx, 16
@@ -132,13 +132,15 @@ BS3_SET_BITS 32
 
  %if TMPL_BITS == 16
         ; Adjust the return address.
-        movsx   eax, word [esp + 4*3 + 2]
+        movzx   eax, word [esp + 4*3 + 2]
         add     eax, BS3_ADDR_BS3TEXT16
         mov     [esp + 4*3], eax
  %endif
 
         ; Restore and return.
-        BS3_ONLY_16BIT_STMT pop     edx
+ %if TMPL_BITS == 16
+        pop     edx
+ %endif
         popfd
         pop     eax
         ret

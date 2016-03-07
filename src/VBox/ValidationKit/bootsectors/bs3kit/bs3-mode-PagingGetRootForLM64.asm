@@ -85,13 +85,18 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForLM64
         ;
         ; Not a problematic addressing mode.
         ;
-        BS3_ONLY_64BIT_STMT add     rsp, 20h
+        BS3_ONLY_64BIT_STMT sub     rsp, 20h
         BS3_CALL Bs3PagingInitRootForLM, 0
+        BS3_ONLY_64BIT_STMT add     rsp, 20h
 %endif
 
+        ;
+        ; Load the value and return.
+        ;
         BS3_ONLY_16BIT_STMT push    BS3DATA16
         BS3_ONLY_16BIT_STMT pop     ds
         mov     eax, [g_PhysPagingRootLM TMPL_WRT_DATA16_OR_FLAT]
+
         BS3_ONLY_16BIT_STMT pop     ds
         leave
         ret

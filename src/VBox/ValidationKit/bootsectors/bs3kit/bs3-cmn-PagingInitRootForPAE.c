@@ -76,8 +76,10 @@ BS3_DECL(int) Bs3PagingInitRootForPAE(void)
             BS3_DATA_NM(g_PhysPagingRootPAE) = BS3_XPTR_GET_FLAT(X86PDPT, XPtrPdPtr);
             return VINF_SUCCESS;
         }
+        BS3_ASSERT(false);
         Bs3MemFree(pPdPtr, _4K);
     }
+    BS3_ASSERT(false);
     return VERR_NO_MEMORY;
 }
 

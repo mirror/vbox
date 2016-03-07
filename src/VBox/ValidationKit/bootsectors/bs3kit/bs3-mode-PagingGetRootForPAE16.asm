@@ -27,8 +27,6 @@
 %include "bs3kit-template-header.mac"
 
 
-BS3_EXTERN_DATA16 g_PhysPagingRootPAE
-TMPL_BEGIN_TEXT
 extern TMPL_NM(Bs3PagingGetRootForPAE32)
 
 

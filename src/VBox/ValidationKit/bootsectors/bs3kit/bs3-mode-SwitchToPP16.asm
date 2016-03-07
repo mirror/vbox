@@ -88,6 +88,16 @@ BS3_BEGIN_TEXT16
         pushfd
 
         ;
+        ; Get the page directory (returned in eax).
+        ; Will lazy init page tables (in 16-bit prot mode).
+        ;
+        extern NAME(Bs3PagingGetRootForPP16_rm)
+        call   NAME(Bs3PagingGetRootForPP16_rm)
+
+        cli
+        mov     cr3, eax
+
+        ;
         ; Make sure PAE is really off and that PSE is enabled.
         ; ASSUMES PSE supported (pentium+).
         ;
@@ -99,16 +109,6 @@ BS3_BEGIN_TEXT16
         je      .cr4_is_fine
         mov     cr4, eax
 .cr4_is_fine:
-
-        ;
-        ; Get the page directory (returned in eax).
-        ; Will lazy init page tables (in 16-bit prot mode).
-        ;
-        extern NAME(Bs3PagingGetRootForPP16_rm)
-        call   NAME(Bs3PagingGetRootForPP16_rm)
-
-        cli
-        mov     cr3, eax
 
         ;
         ; Load the GDT and enable PP16.

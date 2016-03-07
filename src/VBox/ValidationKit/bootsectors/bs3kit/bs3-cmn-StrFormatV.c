@@ -62,7 +62,7 @@ typedef struct BS3FMTSTATE
     /** The output function. */
     PFNBS3STRFORMATOUTPUT pfnOutput;
     /** User argument for pfnOutput. */
-    void BS3_FAR  *pvUser;
+    void BS3_FAR   *pvUser;
 
     /** STR_F_XXX flags.   */
     unsigned        fFlags;
@@ -149,7 +149,7 @@ static size_t bs3StrFormatNumberString(PBS3FMTSTATE pState, char const *pszNumbe
      */
     if (pState->fFlags & STR_F_SPECIAL)
     {
-        cchActual += pState->pfnOutput(0, pState->pvUser);
+        cchActual += pState->pfnOutput('0', pState->pvUser);
         cchActual += pState->pfnOutput(!(pState->fFlags & STR_F_CAPITAL) ? 'x' : 'X', pState->pvUser);
     }
 

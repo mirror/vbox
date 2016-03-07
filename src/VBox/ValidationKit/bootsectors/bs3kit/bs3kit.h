@@ -1476,6 +1476,62 @@ typedef struct BS3TESTMODEENTRY
 /** Pointer to a mode sub-test entry. */
 typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
 
+/** Produces a BS3TESTMODEENTRY initializer for common (c16,c32,c64) test
+ *  functions. */
+#define BS3TESTMODEENTRY_CMN(a_szTest, a_BaseNm) \
+    {   /*pszSubTest =*/ a_szTest, \
+        /*RM*/        RT_CONCAT(a_BaseNm, _c16), \
+        /*PE16*/      RT_CONCAT(a_BaseNm, _c16), \
+        /*PE16_32*/   RT_CONCAT(a_BaseNm, _c32), \
+        /*PE16_V86*/  RT_CONCAT(a_BaseNm, _c16), \
+        /*PE32*/      RT_CONCAT(a_BaseNm, _c32), \
+        /*PE32_16*/   RT_CONCAT(a_BaseNm, _c16), \
+        /*PEV86*/     RT_CONCAT(a_BaseNm, _c16), \
+        /*PP16*/      RT_CONCAT(a_BaseNm, _c16), \
+        /*PP16_32*/   RT_CONCAT(a_BaseNm, _c32), \
+        /*PP16_V86*/  RT_CONCAT(a_BaseNm, _c16), \
+        /*PP32*/      RT_CONCAT(a_BaseNm, _c32), \
+        /*PP32_16*/   RT_CONCAT(a_BaseNm, _c16), \
+        /*PPV86*/     RT_CONCAT(a_BaseNm, _c16), \
+        /*PAE16*/     RT_CONCAT(a_BaseNm, _c16), \
+        /*PAE16_32*/  RT_CONCAT(a_BaseNm, _c32), \
+        /*PAE16_V86*/ RT_CONCAT(a_BaseNm, _c16), \
+        /*PAE32*/     RT_CONCAT(a_BaseNm, _c32), \
+        /*PAE32_16*/  RT_CONCAT(a_BaseNm, _c16), \
+        /*PAEV86*/    RT_CONCAT(a_BaseNm, _c16), \
+        /*LM16*/      RT_CONCAT(a_BaseNm, _c16), \
+        /*LM32*/      RT_CONCAT(a_BaseNm, _c32), \
+        /*LM64*/      RT_CONCAT(a_BaseNm, _c64), \
+    }
+
+/** Produces a BS3TESTMODEENTRY initializer for a full set of mode test
+ *  functions. */
+#define BS3TESTMODEENTRY_MODE(a_szTest, a_BaseNm) \
+    {   /*pszSubTest =*/ a_szTest, \
+        /*RM*/        RT_CONCAT(a_BaseNm, _rm), \
+        /*PE16*/      RT_CONCAT(a_BaseNm, _pe16), \
+        /*PE16_32*/   RT_CONCAT(a_BaseNm, _pe16_32), \
+        /*PE16_V86*/  RT_CONCAT(a_BaseNm, _pe16_v86), \
+        /*PE32*/      RT_CONCAT(a_BaseNm, _pe32), \
+        /*PE32_16*/   RT_CONCAT(a_BaseNm, _pe32_16), \
+        /*PEV86*/     RT_CONCAT(a_BaseNm, _pev86), \
+        /*PP16*/      RT_CONCAT(a_BaseNm, _pp16), \
+        /*PP16_32*/   RT_CONCAT(a_BaseNm, _pp16_32), \
+        /*PP16_V86*/  RT_CONCAT(a_BaseNm, _pp16_v86), \
+        /*PP32*/      RT_CONCAT(a_BaseNm, _pp32), \
+        /*PP32_16*/   RT_CONCAT(a_BaseNm, _pp32_16), \
+        /*PPV86*/     RT_CONCAT(a_BaseNm, _ppev86), \
+        /*PAE16*/     RT_CONCAT(a_BaseNm, _pae16), \
+        /*PAE16_32*/  RT_CONCAT(a_BaseNm, _pae16_32), \
+        /*PAE16_V86*/ RT_CONCAT(a_BaseNm, _pae16_v86), \
+        /*PAE32*/     RT_CONCAT(a_BaseNm, _pae32), \
+        /*PAE32_16*/  RT_CONCAT(a_BaseNm, _pae32_16), \
+        /*PAEV86*/    RT_CONCAT(a_BaseNm, _paev86), \
+        /*LM16*/      RT_CONCAT(a_BaseNm, _lm16), \
+        /*LM32*/      RT_CONCAT(a_BaseNm, _lm32), \
+        /*LM64*/      RT_CONCAT(a_BaseNm, _lm64), \
+    }
+
 
 /**
  * Slab control structure list head.

@@ -59,10 +59,15 @@ BS3_DECL(void BS3_FAR *) Bs3SlabAllocEx(PBS3SLABCTL pSlabCtl, uint16_t cChunks, 
                            == ((BS3_XPTR_GET_FLAT(void, pvRet) + ((uint32_t)cChunks << pSlabCtl->cChunkShift) - 1) >> 16) )
                     {
                         /* Complete the allocation. */
+                        void *fpRet;
                         for (i = 0; i < cChunks; i++)
                             ASMBitSet(&pSlabCtl->bmAllocated, iBit + i);
                         pSlabCtl->cFreeChunks  -= cChunks;
-                        return BS3_XPTR_GET(void, pvRet);
+                        fpRet = BS3_XPTR_GET(void, pvRet);
+#if ARCH_BITS == 16
+                        BS3_ASSERT(fpRet != NULL);
+#endif
+                        return fpRet;
                     }
 
                     /*

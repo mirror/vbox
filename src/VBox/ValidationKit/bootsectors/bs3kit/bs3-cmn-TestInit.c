@@ -47,7 +47,7 @@ BS3_DECL(void) Bs3TestInit(const char BS3_FAR *pszTest)
     BS3_DATA_NM(g_cusBs3TestErrors)          = 0;
     BS3_DATA_NM(g_cusBs3SubTestAtErrors)     = 0;
     BS3_DATA_NM(g_fbBs3SubTestReported)      = true;
-    BS3_DATA_NM(g_fbBs3SubTestSkipped)       = true;
+    BS3_DATA_NM(g_fbBs3SubTestSkipped)       = false;
     BS3_DATA_NM(g_cusBs3SubTests)            = 0;
     BS3_DATA_NM(g_cusBs3SubTestsFailed)      = 0;
     BS3_DATA_NM(g_fbBs3VMMDevTesting)        = bs3TestIsVmmDevTestingPresent();

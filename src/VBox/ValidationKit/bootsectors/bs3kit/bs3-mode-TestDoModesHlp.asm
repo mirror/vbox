@@ -84,6 +84,7 @@ TMPL_NM(bs3TestCallDoerPrologue):
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
+        xPUSHF
 
         ; Save non-volatile registers so the DO function doesn't have to.
         push    xBX
@@ -121,12 +122,12 @@ TMPL_NM(bs3TestCallDoerPrologue):
 TMPL_NM(bs3TestCallDoerEpilogue):
         ; Restore registers.
 %if TMPL_BITS == 16
-        sub     bp, 0ah
+        sub     bp, (1+5+3)*2
         mov     sp, bp
 %elif TMPL_BITS == 32
-        lea     xSP, [xBP - 14h]
+        lea     xSP, [xBP - (1+5+5)*4]
 %else
-        lea     xSP, [xBP - 68h]
+        lea     xSP, [xBP - (1+5+8)*8]
         pop     r15
         pop     r14
         pop     r13
@@ -150,6 +151,7 @@ TMPL_NM(bs3TestCallDoerEpilogue):
         pop     xDX
         pop     xCX
         pop     xBX
+        xPOPF
         pop     xBP
         ret
 

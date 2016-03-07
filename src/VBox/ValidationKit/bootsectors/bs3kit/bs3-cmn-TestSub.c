@@ -55,7 +55,7 @@ BS3_DECL(void) Bs3TestSubV(const char *pszFormat, va_list va)
     /*
      * Tell VMMDev and output to the console.
      */
-    bs3TestSendCmdWithStr(VMMDEV_TESTING_CMD_SUB_NEW, pszFormat);
+    bs3TestSendCmdWithStr(VMMDEV_TESTING_CMD_SUB_NEW, BS3_DATA_NM(g_szBs3SubTest));
 
     Bs3PrintStr(BS3_DATA_NM(g_szBs3SubTest));
     Bs3PrintChr(':');

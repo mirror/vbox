@@ -294,5 +294,18 @@ BS3_DECL(void) Bs3InitMemory_rm(void)
         Bs3SlabListInit(&g_aBs3UpperTiledSlabLists[i], g_acbBs3SlabLists[i]);
     }
 
+#if 0
+    /*
+     * For debugging.
+     */
+    Bs3Printf("Memory-low: %u/%u chunks bmAllocated[]=", g_Bs3Mem4KLow.Core.cFreeChunks, g_Bs3Mem4KLow.Core.cChunks);
+    for (i = 0; i < 20; i++)
+        Bs3Printf("%02x ", g_Bs3Mem4KLow.Core.bmAllocated[i]);
+    Bs3Printf("\n");
+    Bs3Printf("Memory-upt: %u/%u chunks bmAllocated[]=", g_Bs3Mem4KUpperTiled.Core.cFreeChunks, g_Bs3Mem4KUpperTiled.Core.cChunks);
+    for (i = 0; i < 32; i++)
+        Bs3Printf("%02x ", g_Bs3Mem4KUpperTiled.Core.bmAllocated[i]);
+    Bs3Printf("...\n");
+#endif
 }
 

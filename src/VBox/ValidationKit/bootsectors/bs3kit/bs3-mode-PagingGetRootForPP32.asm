@@ -73,6 +73,7 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPP32
         call    TMPL_NM(Bs3SwitchToPE16)
         call    Bs3PagingInitRootForPP
         call    NAME(Bs3SwitchToRM_pe16)
+
 %elifdef TMPL_CMN_V86
         ;
         ; V8086 mode uses real mode addressing too.  Unlikly that we'll
@@ -85,13 +86,18 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPP32
         ;
         ; Not a problematic addressing mode.
         ;
-        BS3_ONLY_64BIT_STMT add     rsp, 20h
+        BS3_ONLY_64BIT_STMT sub     rsp, 20h
         BS3_CALL Bs3PagingInitRootForPP, 0
+        BS3_ONLY_64BIT_STMT add     rsp, 20h
 %endif
 
+        ;
+        ; Load the value and return.
+        ;
         BS3_ONLY_16BIT_STMT push    BS3DATA16
         BS3_ONLY_16BIT_STMT pop     ds
         mov     eax, [g_PhysPagingRootPP TMPL_WRT_DATA16_OR_FLAT]
+
         BS3_ONLY_16BIT_STMT pop     ds
         leave
         ret
