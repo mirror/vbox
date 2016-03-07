@@ -131,10 +131,6 @@ static int initDisplay(struct DISPLAYSTATE *pState)
 {
     char szCommand[256];
     int status;
-    Atom atomDummy;
-    int iDummy;
-    unsigned long ulDummy;
-    unsigned char *pcDummy;
 
     /* Initialise the guest library. */
     int rc = VbglR3InitUser();
@@ -142,13 +138,7 @@ static int initDisplay(struct DISPLAYSTATE *pState)
         VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
     pState->pDisplay = XOpenDisplay(NULL);
     if (!pState->pDisplay)
-        exit(0);
-    XGetWindowProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay),
-                       XInternAtom(pState->pDisplay, "VBOXVIDEO_DRIVER", 0), 0, 1, False,
-                       AnyPropertyType, &atomDummy, &iDummy, &ulDummy, &ulDummy, &pcDummy);
-    if (pcDummy == NULL)
-        exit(0);
-    XFree(pcDummy);
+        return VERR_NOT_FOUND;
     pState->fHaveRandR12 = false;
     pState->pcszXrandr = "xrandr";
     if (RTFileExists("/usr/X11/bin/xrandr"))
