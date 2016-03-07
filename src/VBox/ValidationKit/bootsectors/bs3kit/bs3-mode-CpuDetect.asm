@@ -215,6 +215,7 @@ CPU 586
 .NewerThanPPro:
 
         ; Check for extended leaves and long mode.
+        push    xAX                     ; save PAE flag
         mov     eax, 0x80000000
         cpuid
         sub     eax, 0x80000001         ; Minimum leaf 0x80000001
@@ -223,15 +224,17 @@ CPU 586
 
         mov     eax, 0x80000001
         cpuid
+        pop     xAX                     ; restore PAE flag
         test    edx, X86_CPUID_EXT_FEATURE_EDX_LONG_MODE
         jz      .no_long_mode
-        mov     xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID | BS3CPU_F_CPUID_EXT_LEAVES | BS3CPU_F_LONG_MODE
+        or      xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID_EXT_LEAVES | BS3CPU_F_LONG_MODE
         jmp     .return
 .no_long_mode:
-        mov     xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID | BS3CPU_F_CPUID_EXT_LEAVES
+        or      xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID_EXT_LEAVES
         jmp     .return
 .no_ext_leaves:
-        mov     xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID
+        pop     xAX                     ; restore PAE flag
+        or      al, BS3CPU_PProOrNewer
 
 CPU 8086
 .return:
