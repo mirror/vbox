@@ -144,4 +144,4 @@ REG_DWORD = 0x00010001
 
 ORACLE = "Oracle Corporation"
 VBoxVideo.Disk = "VirtualBox Video Driver Disk"
-VBoxVideo.SvcDesc = "VirtualBox Graphics Adapter for Windows 8"
+VBoxVideo.SvcDesc = "VirtualBox Graphics Adapter for Windows 8+"
