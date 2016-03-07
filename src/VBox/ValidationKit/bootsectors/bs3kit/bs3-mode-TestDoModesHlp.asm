@@ -80,7 +80,7 @@ extern RT_CONCAT3(Bs3SwitchTo,TMPL_MODE_UNAME,_lm64)
 ; Shared prologue code.
 ; @param    xAX     Where to jump to for the main event.
 ;
-TMPL_NM(bs3TestCallDoerPrologue):
+BS3_GLOBAL_NAME_EX TMPL_NM(bs3TestCallDoerPrologue), , 0
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
@@ -119,7 +119,7 @@ TMPL_NM(bs3TestCallDoerPrologue):
 ; Shared epilogue code.
 ; @param    xAX     Return code.
 ;
-TMPL_NM(bs3TestCallDoerEpilogue):
+BS3_GLOBAL_NAME_EX TMPL_NM(bs3TestCallDoerEpilogue), , 0
         ; Restore registers.
 %if TMPL_BITS == 16
         sub     bp, (1+5+3)*2

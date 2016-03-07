@@ -171,11 +171,15 @@ static void bs3TestWarnAboutSkippedModes(PCBS3TESTMODEENTRY paEntries, unsigned 
 BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEntries)
 {
     bool const      fDoV86Mode    = false;
-    uint8_t const   bCpuType      = BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK;
-    bool const      fHavePae      = RT_BOOL(BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_F_PAE);
-    bool const      fHaveLongMode = RT_BOOL(BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_F_LONG_MODE);
+    uint16_t const  uCpuDetected  = BS3_DATA_NM(g_uBs3CpuDetected);
+    uint8_t const   bCpuType      = uCpuDetected & BS3CPU_TYPE_MASK;
+    bool const      fHavePae      = RT_BOOL(uCpuDetected & BS3CPU_F_PAE);
+    bool const      fHaveLongMode = RT_BOOL(uCpuDetected & BS3CPU_F_LONG_MODE);
     unsigned        i;
 
+#if 1 /* debug. */
+    Bs3Printf("Bs3TestDoModes: uCpuDetected=%#x fHavePae=%d fHaveLongMode=%d\n", uCpuDetected, fHavePae, fHaveLongMode);
+#endif
     bs3TestWarnAboutSkippedModes(paEntries, cEntries, bCpuType, fHavePae, fHaveLongMode);
 
     /*

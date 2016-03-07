@@ -329,7 +329,7 @@
 
 %elif TMPL_MODE == BS3_MODE_PAE32_16
  %define TMPL_PAE32_16
- %define TMPL_MODE_STR          "32-bit pae, 32-bit"
+ %define TMPL_MODE_STR          "32-bit pae, 16-bit"
  %define TMPL_NM(Name)          _ %+ Name %+ _pae32_16
  %define TMPL_MODE_LNAME        pae32_16
  %define TMPL_MODE_UNAME        PAE32_16
