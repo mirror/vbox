@@ -387,10 +387,11 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
  	  segment BS3DATA16_DATA \
  	  segment BS3DATA16_END \
 	  segment BS3DATA32 \
-	  segment BS3DATA32_CONST \
-	  segment BS3DATA32_CONST2 \
+	  segment BS3DATA32CONST \
+	  segment BS3DATA32CONST2 \
 	  segment BS3DATA32_DATA \
  	  segment DATA32 \
+	  segment BS3DATA32_END \
  	  segment BS3DATA64 \
  	  segment DATA64 \
  	  segment .data \
