@@ -366,9 +366,8 @@
 #if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
 # pragma aux ASMMemZero32 = \
     "xor ax, ax" \
-    "mov dx, cx" \
-    "rep stosw" \
-    "mov cx, dx" \
+    "shr cx, 1" \
+    "shr cx, 1" \
     "rep stosw" \
     parm [es di] [cx] \
     modify exact [ax dx cx di];
@@ -385,7 +384,8 @@
 #undef      ASMMemFill32
 #if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
 # pragma aux ASMMemFill32 = \
-    "   test    cx, cx" \
+    "   shr     cx, 1" \
+    "   shr     cx, 1" \
     "   jz      done" \
     "again:" \
     "   stosw" \
