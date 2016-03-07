@@ -30,6 +30,7 @@ BS3_EXTERN_SYSTEM16 Bs3Gdt
 %if TMPL_MODE == BS3_MODE_PE16
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
 %endif
+
 TMPL_BEGIN_TEXT
 
 
@@ -49,7 +50,39 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
 %ifdef TMPL_RM
         ret
 
+%elif BS3_MODE_IS_V86(TMPL_MODE)
+        ;
+        ; V8086 - Switch to 16-bit ring-0 and call worker for that mode.
+        ;
+        extern  BS3_CMN_NM(Bs3SwitchToRing0)
+        call    BS3_CMN_NM(Bs3SwitchToRing0)
+
+ %if   TMPL_MODE == BS3_MODE_PE16_V86
+        extern  _Bs3SwitchToRM_pe16
+        jmp     _Bs3SwitchToRM_pe16
+ %elif TMPL_MODE == BS3_MODE_PEV86
+        extern  _Bs3SwitchToRM_pe32_16
+        jmp     _Bs3SwitchToRM_pe32_16
+ %elif TMPL_MODE == BS3_MODE_PP16_V86
+        extern  _Bs3SwitchToRM_pp16
+        jmp     _Bs3SwitchToRM_pp16
+ %elif TMPL_MODE == BS3_MODE_PPV86
+        extern  _Bs3SwitchToRM_pp32_16
+        jmp     _Bs3SwitchToRM_pp32_16
+ %elif TMPL_MODE == BS3_MODE_PAE16_V86
+        extern  _Bs3SwitchToRM_pae16
+        jmp     _Bs3SwitchToRM_pae16
+ %elif TMPL_MODE == BS3_MODE_PAEV86
+        extern  _Bs3SwitchToRM_pae32_16
+        jmp     _Bs3SwitchToRM_pae32_16
+ %else
+  %error "Unexpected TMPL_MODE=" TMPL_MODE
+ %endif
+
 %else
+        ;
+        ; Protected mode.
+        ;
         push    sAX
         push    sBX
         sPUSHF
@@ -66,9 +99,9 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
         ;
         ; On 80286 we must reset the CPU to get back to real mode.
         ;
-        mov     ax, seg g_uBs3CpuDetected
+        mov     ax, BS3_SEL_DATA16
         mov     ds, ax
-        cmp     byte [g_uBs3CpuDetected], BS3CPU_80286
+        cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
         jne     .is_386_or_better
 .implement_this_later:
         int3

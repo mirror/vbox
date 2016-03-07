@@ -54,7 +54,7 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForLM64
         BS3_ONLY_16BIT_STMT push    ds
         BS3_ONLY_16BIT_STMT push    BS3DATA16
         BS3_ONLY_16BIT_STMT pop     ds
-        mov     eax, [g_PhysPagingRootLM TMPL_WRT_DATA16_OR_FLAT]
+        mov     eax, [BS3_DATA16_WRT(g_PhysPagingRootLM)]
         BS3_ONLY_16BIT_STMT pop     ds
         cmp     eax, 0ffffffffh
         je      .init_root
@@ -95,7 +95,7 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForLM64
         ;
         BS3_ONLY_16BIT_STMT push    BS3DATA16
         BS3_ONLY_16BIT_STMT pop     ds
-        mov     eax, [g_PhysPagingRootLM TMPL_WRT_DATA16_OR_FLAT]
+        mov     eax, [BS3_DATA16_WRT(g_PhysPagingRootLM)]
 
         BS3_ONLY_16BIT_STMT pop     ds
         leave

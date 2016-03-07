@@ -60,7 +60,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
         ; Check for v8086 mode, we need to exit it to enter 32-bit mode.
         mov     ax, seg g_bBs3CurrentMode
         mov     ds, ax
-        mov     al, [g_bBs3CurrentMode]
+        mov     al, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         and     al, BS3_MODE_CODE_MASK
         cmp     al, BS3_MODE_CODE_V86
         jne     .not_v8086
@@ -127,8 +127,8 @@ BS3_SET_BITS 32
         mov     es, ax
 
         ; Update globals.
-        and     byte [g_bBs3CurrentMode], ~BS3_MODE_CODE_MASK
-        or      byte [g_bBs3CurrentMode], BS3_MODE_CODE_32
+        and     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], ~BS3_MODE_CODE_MASK
+        or      byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_32
 
  %if TMPL_BITS == 16
         ; Adjust the return address.

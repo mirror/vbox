@@ -171,7 +171,7 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode
         ;
         ; Set global indicating CPU mode.
         ;
-        mov     byte [BS3_WRT_RIP(g_bBs3CurrentMode)], TMPL_MODE
+        mov     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], TMPL_MODE
 
         ;
         ; Install system call handler.

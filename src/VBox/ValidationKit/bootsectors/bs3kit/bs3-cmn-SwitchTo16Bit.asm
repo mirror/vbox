@@ -42,7 +42,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
         ; Check g_bBs3CurrentMode whether we're in v8086 mode or not.
         mov     ax, seg g_bBs3CurrentMode
         mov     ds, ax
-        mov     al, [g_bBs3CurrentMode]
+        mov     al, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         and     al, BS3_MODE_CODE_MASK
         cmp     al, BS3_MODE_CODE_V86
         jne     .ret_16bit
@@ -98,8 +98,8 @@ int3 ; This is for later, just remove this int3 once needed.
 .stack_ok:
 
         ; Update globals.
-        and     byte [g_bBs3CurrentMode], ~BS3_MODE_CODE_MASK
-        or      byte [g_bBs3CurrentMode], BS3_MODE_CODE_16
+        and     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], ~BS3_MODE_CODE_MASK
+        or      byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_16
 
         popfd
  %if TMPL_BITS == 64

@@ -244,7 +244,7 @@ CPU 8086
         BS3_ONLY_16BIT_STMT push    ds
         BS3_ONLY_16BIT_STMT mov     bx, seg g_uBs3CpuDetected
         BS3_ONLY_16BIT_STMT mov     ds, bx
-        mov     [g_uBs3CpuDetected], ax
+        mov     [BS3_DATA16_WRT(g_uBs3CpuDetected)], ax
         BS3_ONLY_16BIT_STMT pop     ds
 
         ;

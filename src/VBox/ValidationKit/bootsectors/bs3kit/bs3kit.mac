@@ -188,11 +188,7 @@ BS3_SET_REG_ALIASES ARCH_BITS
 
  %undef   BS3_WRT_RIP
  %if %1 == 64
-  %ifdef __YASM__
-   %define BS3_WRT_RIP(a_Sym)       a_Sym wrt rip
-  %else
-   %define BS3_WRT_RIP(a_Sym)       rel a_Sym       ; Baka! Why couldn't they do 'wrt rip' like yasm?
-  %endif
+  %define BS3_WRT_RIP(a_Sym)        rel a_Sym
  %else
   %define BS3_WRT_RIP(a_Sym)        a_Sym
  %endif
@@ -202,6 +198,18 @@ BS3_SET_REG_ALIASES ARCH_BITS
   %define BS3_LEA_MOV_WRT_RIP(a_DstReg, a_Sym)  lea a_DstReg, [BS3_WRT_RIP(a_Sym)]
  %else
   %define BS3_LEA_MOV_WRT_RIP(a_DstReg, a_Sym)  mov a_DstReg, a_Sym
+ %endif
+
+ ;; @def BS3_DATA16_WRT
+ ; For accessing BS3DATA16 correctly.
+ ; @param a_Var The BS3DATA16 variable.
+ %undef BS3_DATA16_WRT
+ %if %1 == 16
+  %define BS3_DATA16_WRT(a_Var)     a_Var wrt BS3DATA16
+ %elif %1 == 32
+  %define BS3_DATA16_WRT(a_Var)     a_Var wrt FLAT
+ %else
+  %define BS3_DATA16_WRT(a_Var)     BS3_WRT_RIP(a_Var) wrt FLAT
  %endif
 
  %undef   BS3_IF_16BIT_OTHERWISE

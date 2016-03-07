@@ -42,20 +42,20 @@ TMPL_BEGIN_TEXT
 BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         ; Construct basic v8086 return frame.
         BS3_ONLY_16BIT_STMT movzx   esp, sp
-        push    dword 0                         ; +0x20: GS
-        push    dword 0                         ; +0x1c: FS
-        push    dword BS3_SEL_DATA16            ; +0x18: ES
-        push    dword BS3_SEL_DATA16            ; +0x14: DS
-        push    dword 0                         ; +0x10: SS - later
-        push    dword 0                         ; +0x0c: return ESP, later.
+        push    dword 0                                 ; +0x20: GS
+        push    dword 0                                 ; +0x1c: FS
+        push    dword BS3_SEL_DATA16                    ; +0x18: ES
+        push    dword BS3_SEL_DATA16                    ; +0x14: DS
+        push    dword 0                                 ; +0x10: SS - later
+        push    dword 0                                 ; +0x0c: return ESP, later.
         pushfd
-        or      dword [esp], X86_EFL_VM         ; +0x08: Set the VM flag in EFLAGS.
-        push    dword BS3_SEL_TEXT16            ; +0x04
+        or      dword [esp], X86_EFL_VM | X86_EFL_IOPL  ; +0x08: Set IOPL=3 and the VM flag (EFLAGS).
+        push    dword BS3_SEL_TEXT16                    ; +0x04
         push    word 0
  %if TMPL_BITS == 16
-        push    word [esp + 2 + 8 * 4 + 2]      ; +0x00
+        push    word [esp + 2 + 8 * 4 + 2]              ; +0x00
  %else
-        push    word [esp + 2 + 8 * 4]          ; +0x00
+        push    word [esp + 2 + 8 * 4]                  ; +0x00
  %endif
         ; Save registers and stuff.
         push    eax
@@ -68,7 +68,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         ; Check g_bBs3CurrentMode whether we're in v8086 mode or not.
         mov     ax, seg g_bBs3CurrentMode
         mov     ds, ax
-        mov     al, [g_bBs3CurrentMode]
+        mov     al, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         and     al, BS3_MODE_CODE_MASK
         cmp     al, BS3_MODE_CODE_V86
         jne     .not_v8086
@@ -90,11 +90,15 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         test    ax, 3
         jz      .is_ring0
         call    Bs3SwitchToRing0
+ %if TMPL_BITS == 16
+        mov     ax, seg g_bBs3CurrentMode
+        mov     ds, ax                  ; parnoia
+ %endif
 .is_ring0:
 
         ; Update globals.
-        and     byte [g_bBs3CurrentMode], ~BS3_MODE_CODE_MASK
-        or      byte [g_bBs3CurrentMode], BS3_MODE_CODE_16
+        and     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], ~BS3_MODE_CODE_MASK
+        or      byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_V86
 
  %if TMPL_BITS != 16
         ; Set GS.

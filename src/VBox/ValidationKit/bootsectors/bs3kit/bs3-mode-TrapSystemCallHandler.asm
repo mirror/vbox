@@ -148,8 +148,13 @@ TMPL_BEGIN_TEXT
         int3
         jmp     .return
 
+
+        ;
+        ; Switch the caller to ring-0.
+        ;
 .to_ring0:
         int3
+
         jmp     .return
 
 .to_ring1:

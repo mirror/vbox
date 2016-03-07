@@ -75,17 +75,6 @@ BS3_BEGIN_TEXT16
         pushfd
 
         ;
-        ; Make sure both PAE and PSE are enabled (requires pentium pro).
-        ;
-        mov     eax, cr4
-        mov     ecx, eax
-        or      eax, X86_CR4_PAE | X86_CR4_PSE
-        cmp     eax, ecx
-        je      .cr4_is_fine
-        mov     cr4, eax
-.cr4_is_fine:
-
-        ;
         ; Get the page directory (returned in eax).
         ; Will lazy init page tables (in 16-bit prot mode).
         ;
@@ -94,6 +83,17 @@ BS3_BEGIN_TEXT16
 
         cli
         mov     cr3, eax
+
+        ;
+        ; Make sure PAE, PSE, and VME are enabled (former two require pentium pro, latter 486).
+        ;
+        mov     eax, cr4
+        mov     ecx, eax
+        or      eax, X86_CR4_PAE | X86_CR4_PSE | X86_CR4_VME
+        cmp     eax, ecx
+        je      .cr4_is_fine
+        mov     cr4, eax
+.cr4_is_fine:
 
         ;
         ; Load the GDT and enable PE32.

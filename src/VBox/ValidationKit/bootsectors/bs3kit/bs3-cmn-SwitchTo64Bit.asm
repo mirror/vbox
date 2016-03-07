@@ -57,7 +57,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
  %if TMPL_BITS == 16
         ; Check that this is LM16
         mov     ax, seg g_bBs3CurrentMode
-        cmp     byte [g_bBs3CurrentMode], BS3_MODE_LM16
+        cmp     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_LM16
         je      .ok_lm16
         int3
  .ok_lm16:
@@ -89,8 +89,8 @@ BS3_SET_BITS 64
         mov     es, ax
 
         ; Update globals.
-        and     byte [BS3_WRT_RIP(g_bBs3CurrentMode)], ~BS3_MODE_CODE_MASK
-        or      byte [BS3_WRT_RIP(g_bBs3CurrentMode)], BS3_MODE_CODE_64
+        and     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], ~BS3_MODE_CODE_MASK
+        or      byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_64
 
  %if TMPL_BITS == 16
         movzx   eax, word [rsp + 8*2+6]

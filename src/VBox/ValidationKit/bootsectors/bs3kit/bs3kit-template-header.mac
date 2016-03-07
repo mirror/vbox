@@ -407,6 +407,20 @@
  %define TMPL_WRT_DATA16_OR_FLAT    wrt FLAT
 %endif
 
+;; @def TMPL_DATA16_WRT
+; WRT DATA16 in 16-bit mode, WRT FLAT in 32- and 64-bit modes.
+; This is important when accessing global variables.
+;
+%if TMPL_BITS == 16
+ %define TMPL_DATA16_WRT(a_Var)     a_Var wrt BS3DATA16
+%elif TMPL_BITS == 32
+ %define TMPL_DATA16_WRT(a_Var)     a_Var wrt FLAT
+%elif TMPL_BITS == 64
+ %define TMPL_DATA16_WRT(a_Var)     rel a_Var wrt FLAT
+%else
+ %error TMPL_BITS
+%endif
+
 ;; @def TMPL_WRT_SYSTEM16_OR_FLAT
 ; WRT BS3SYSTEM16 in 16-bit mode, WRT FLAT in 32- and 64-bit modes.
 ; This is important when accessing global variables in the BS3SYSTEM16 segment.
