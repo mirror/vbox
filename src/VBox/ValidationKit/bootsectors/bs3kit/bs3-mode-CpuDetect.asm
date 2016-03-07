@@ -253,5 +253,5 @@ CPU 8086
         pop     xCX
         pop     xBP
         ret
-BS3_PROC_END_MODE   Bs3EnteredMode
+BS3_PROC_END_MODE   Bs3CpuDetect
 

@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2007-2015 Oracle Corporation
+; Copyright (C) 2007-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -32,7 +32,7 @@ extern TMPL_NM(Bs3SwitchToPE16)
 extern NAME(Bs3SwitchToRM_pe16)
 %elifdef TMPL_CMN_V86
 extern TMPL_NM(Bs3SwitchToRing0)
-extern TMPL_NM(Bs3SwitchToV86)
+extern TMPL_NM(Bs3SwitchTo16BitV86)
 %endif
 
 BS3_EXTERN_CMN Bs3PagingInitRootForLM
@@ -80,7 +80,7 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForLM64
         ;
         call    TMPL_NM(Bs3SwitchToRing0)
         call    Bs3PagingInitRootForLM
-        call    TMPL_NM(Bs3SwitchToV86)
+        call    TMPL_NM(Bs3SwitchTo16BitV86)
 %else
         ;
         ; Not a problematic addressing mode.

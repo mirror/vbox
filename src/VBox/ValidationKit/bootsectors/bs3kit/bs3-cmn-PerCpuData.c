@@ -40,7 +40,7 @@
 *********************************************************************************************************************************/
 #if ARCH_BITS == 16
 
-uint8_t BS3_DATA_NM(g_bBs3CurrentMode) = BS3_MODE_INVALID;
+uint8_t BS3_DATA_NM(g_bBs3CurrentMode) = BS3_MODE_RM;
 
 #endif /* ARCH_BITS == 16 */
 

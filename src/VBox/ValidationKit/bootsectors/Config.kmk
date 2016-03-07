@@ -420,13 +420,22 @@ TEMPLATE_VBoxBS3KitImg_LIBS = \
        \
 	$(PATH_OBJ)/bs3kit-rm/bs3kit-rm.lib \
 	$(PATH_OBJ)/bs3kit-pe16/bs3kit-pe16.lib \
+	$(PATH_OBJ)/bs3kit-pe16_32/bs3kit-pe16_32.lib \
+	$(PATH_OBJ)/bs3kit-pe16_v86/bs3kit-pe16_v86.lib \
 	$(PATH_OBJ)/bs3kit-pe32/bs3kit-pe32.lib \
+	$(PATH_OBJ)/bs3kit-pe32_16/bs3kit-pe32_16.lib \
 	$(PATH_OBJ)/bs3kit-pev86/bs3kit-pev86.lib \
 	$(PATH_OBJ)/bs3kit-pp16/bs3kit-pp16.lib \
+	$(PATH_OBJ)/bs3kit-pp16_32/bs3kit-pp16_32.lib \
+	$(PATH_OBJ)/bs3kit-pp16_v86/bs3kit-pp16_v86.lib \
 	$(PATH_OBJ)/bs3kit-pp32/bs3kit-pp32.lib \
+	$(PATH_OBJ)/bs3kit-pp32_16/bs3kit-pp32_16.lib \
 	$(PATH_OBJ)/bs3kit-ppv86/bs3kit-ppv86.lib \
 	$(PATH_OBJ)/bs3kit-pae16/bs3kit-pae16.lib \
+	$(PATH_OBJ)/bs3kit-pae16_32/bs3kit-pae16_32.lib \
+	$(PATH_OBJ)/bs3kit-pae16_v86/bs3kit-pae16_v86.lib \
 	$(PATH_OBJ)/bs3kit-pae32/bs3kit-pae32.lib \
+	$(PATH_OBJ)/bs3kit-pae32_16/bs3kit-pae32_16.lib \
 	$(PATH_OBJ)/bs3kit-paev86/bs3kit-paev86.lib \
 	$(PATH_OBJ)/bs3kit-lm16/bs3kit-lm16.lib \
 	$(PATH_OBJ)/bs3kit-lm32/bs3kit-lm32.lib \

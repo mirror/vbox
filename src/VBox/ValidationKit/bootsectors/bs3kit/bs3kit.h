@@ -777,7 +777,7 @@ extern char const BS3_DATA_NM(g_achBs3HexDigitsUpper)[16+1];
 
 
 /** The current mode (BS3_MODE_XXX) of CPU \#0. */
-extern uint8_t BS3_FAR_DATA BS3_DATA_NM(g_bBs3CurrentMode);
+extern uint8_t BS3_DATA_NM(g_bBs3CurrentMode);
 
 
 #ifdef __WATCOMC__
@@ -2229,7 +2229,7 @@ extern uint16_t BS3_DATA_NM(g_uBs3CpuDetected);
  * @param   paEntries       The mode sub-test entries.
  * @param   cEntries        The number of sub-test entries.
  */
-BS3_MODE_EXPAND_PROTOTYPES(void, Bs3TestDoModes, (BS3TESTMODEENTRY paEntries, unsigned cEntries));
+BS3_MODE_EXPAND_PROTOTYPES(void, Bs3TestDoModes, (PCBS3TESTMODEENTRY paEntries, size_t cEntries));
 
 /** @} */
 

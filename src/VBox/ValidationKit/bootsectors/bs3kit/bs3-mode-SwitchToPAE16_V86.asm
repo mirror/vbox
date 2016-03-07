@@ -66,8 +66,8 @@ BS3_BEGIN_TEXT16
         ;
         ; Switch to v8086 mode (return address is already 16-bit).
         ;
-        extern  _Bs3SwitchToV86_pae16
-        jmp     _Bs3SwitchToV86_pae16
+        extern  _Bs3SwitchTo16BitV86_c16
+        jmp     _Bs3SwitchTo16BitV86_c16
 %endif
 BS3_PROC_END_MODE   Bs3SwitchToPAE16_V86
 

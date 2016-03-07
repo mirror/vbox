@@ -73,7 +73,7 @@ extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae32_16)
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_paev86)
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm16)
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm32)
-extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm64)
+extern RT_CONCAT3(Bs3SwitchTo,TMPL_MODE_UNAME,_lm64)
 
 
 ;;
@@ -601,7 +601,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM64
         call    TMPL_NM(Bs3SwitchToLM64)
         BS3_SET_BITS 64
         call    rax
-        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm64)
+        call    RT_CONCAT3(Bs3SwitchTo,TMPL_MODE_UNAME,_lm64)
         BS3_SET_BITS TMPL_BITS
         jmp     TMPL_NM(bs3TestCallDoerEpilogue)
 BS3_PROC_END_MODE   Bs3TestCallDoerInLM64

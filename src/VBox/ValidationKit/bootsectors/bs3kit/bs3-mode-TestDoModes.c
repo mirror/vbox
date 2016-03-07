@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -57,26 +57,26 @@
 *********************************************************************************************************************************/
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInRM)(uint16_t offCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16_32)(uint32_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16_32)(uint32_t uFlatAddrCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16_V86)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE32)(uint32_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE32)(uint32_t uFlatAddrCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE32_16)(uint16_t offCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPEV86)(uint16_t offCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16_32)(uint32_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16_32)(uint32_t uFlatAddrCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16_V86)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP32)(uint32_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP32)(uint32_t uFlatAddrCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP32_16)(uint16_t offCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPPV86)(uint16_t offCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16_32)(uint32_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16_32)(uint32_t uFlatAddrCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16_V86)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE32)(uint32_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE32)(uint32_t uFlatAddrCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE32_16)(uint16_t offCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAEV86)(uint16_t offCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM16)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM32)(uint32_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM64)(uint32_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM32)(uint32_t uFlatAddrCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM64)(uint32_t uFlatAddrCallback);
 
 
 
@@ -168,8 +168,7 @@ static void bs3TestWarnAboutSkippedModes(PCBS3TESTMODEENTRY paEntries, unsigned 
     }
 }
 
-
-BS3_DECL(void) TMPL_NM(Bs3TestDoModeTests)(PCBS3TESTMODEENTRY paEntries, unsigned cEntries)
+BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEntries)
 {
     uint8_t const   bCpuType      = BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK;
     bool const      fHavePae      = RT_BOOL(BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_F_PAE);
