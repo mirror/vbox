@@ -116,7 +116,7 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
     LogFunc(("vboxvideo: %d: fb=%p, num_rects=%u, vbox=%p\n", __LINE__, fb,
              num_rects, vbox));
     vbox_enable_accel(vbox);
-    spin_lock_irqsave(&vbox->dev_lock, flags);
+    mutex_lock(&vbox->hw_mutex);
     for (i = 0; i < num_rects; ++i)
     {
         struct drm_crtc *crtc;
@@ -146,7 +146,7 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
             }
         }
     }
-    spin_unlock_irqrestore(&vbox->dev_lock, flags);
+    mutex_unlock(&vbox->hw_mutex);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
@@ -347,7 +347,7 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
     dev->dev_private = vbox;
     vbox->dev = dev;
 
-    spin_lock_init(&vbox->dev_lock);
+    mutex_init(&vbox->hw_mutex);
     /* I hope this won't interfere with the memory manager. */
     vbox->vram = pci_iomap(dev->pdev, 0, 0);
     if (!vbox->vram) {

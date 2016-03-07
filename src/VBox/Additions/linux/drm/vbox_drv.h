@@ -116,7 +116,7 @@ struct vbox_private {
         bool mm_initialised;
     } ttm;
 
-    spinlock_t dev_lock;
+    struct mutex hw_mutex;
     bool isr_installed;
     struct work_struct hotplug_work;
 };
@@ -170,6 +170,7 @@ struct vbox_fbdev {
     int size;
     struct ttm_bo_kmap_obj mapping;
     int x1, y1, x2, y2; /* dirty rect */
+    spinlock_t dirty_lock;
 };
 
 #define to_vbox_crtc(x) container_of(x, struct vbox_crtc, base)

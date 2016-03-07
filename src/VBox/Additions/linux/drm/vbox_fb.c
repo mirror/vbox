@@ -130,7 +130,7 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
 
     x2 = x + width - 1;
     y2 = y + height - 1;
-    spin_lock_irqsave(&vbox->dev_lock, flags);
+    spin_lock_irqsave(&fbdev->dirty_lock, flags);
 
     if (fbdev->y1 < y)
         y = fbdev->y1;
@@ -146,14 +146,14 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
         fbdev->x2 = x2;
         fbdev->y1 = y;
         fbdev->y2 = y2;
-        spin_unlock_irqrestore(&vbox->dev_lock, flags);
+        spin_unlock_irqrestore(&fbdev->dirty_lock, flags);
         LogFunc(("vboxvideo: %d\n", __LINE__));
         return;
     }
 
     fbdev->x1 = fbdev->y1 = INT_MAX;
     fbdev->x2 = fbdev->y2 = 0;
-    spin_unlock_irqrestore(&vbox->dev_lock, flags);
+    spin_unlock_irqrestore(&fbdev->dirty_lock, flags);
 
     if (!bo->kmap.virtual) {
         ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &bo->kmap);
@@ -417,6 +417,8 @@ int vbox_fbdev_init(struct drm_device *dev)
         return -ENOMEM;
 
     vbox->fbdev = fbdev;
+    spin_lock_init(&fbdev->dirty_lock);
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     fbdev->helper.funcs = &vbox_fb_helper_funcs;
 #else

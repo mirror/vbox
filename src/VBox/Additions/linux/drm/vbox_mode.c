@@ -145,7 +145,6 @@ static void vbox_crtc_dpms(struct drm_crtc *crtc, int mode)
 {
     struct vbox_crtc *vbox_crtc = to_vbox_crtc(crtc);
     struct vbox_private *vbox = crtc->dev->dev_private;
-    unsigned long flags;
 
     LogFunc(("vboxvideo: %d: vbox_crtc=%p, mode=%d\n", __LINE__, vbox_crtc,
              mode));
@@ -159,9 +158,9 @@ static void vbox_crtc_dpms(struct drm_crtc *crtc, int mode)
         vbox_crtc->blanked = true;
         break;
     }
-    spin_lock_irqsave(&vbox->dev_lock, flags);
+    mutex_lock(&vbox->hw_mutex);
     vbox_do_modeset(crtc, &crtc->hwmode);
-    spin_unlock_irqrestore(&vbox->dev_lock, flags);
+    mutex_unlock(&vbox->hw_mutex);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
@@ -248,16 +247,15 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
                  struct drm_framebuffer *old_fb)
 {
     struct vbox_private *vbox = crtc->dev->dev_private;
-    unsigned long flags;
     int rc = 0;
 
     LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     vbox_crtc_mode_set_base(crtc, x, y, old_fb);
-    spin_lock_irqsave(&vbox->dev_lock, flags);
+    mutex_lock(&vbox->hw_mutex);
     rc = vbox_set_view(crtc);
     if (!rc)
         vbox_do_modeset(crtc, mode);
-    spin_unlock_irqrestore(&vbox->dev_lock, flags);
+    mutex_unlock(&vbox->hw_mutex);
     LogFunc(("vboxvideo: %d\n", __LINE__));
     return rc;
 }
@@ -566,13 +564,12 @@ void vbox_refresh_modes(struct drm_device *dev)
 {
     struct vbox_private *vbox = dev->dev_private;
     struct drm_crtc *crtci;
-    unsigned long flags;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
-    spin_lock_irqsave(&vbox->dev_lock, flags);
+    mutex_lock(&vbox->hw_mutex);
     list_for_each_entry(crtci, &dev->mode_config.crtc_list, head)
         vbox_do_modeset(crtci, &crtci->hwmode);
-    spin_unlock_irqrestore(&vbox->dev_lock, flags);
+    mutex_unlock(&vbox->hw_mutex);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
