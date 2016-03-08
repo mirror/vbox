@@ -798,8 +798,7 @@ static const char * const g_apszElfAmd64RelTypes[] =
     "R_X86_64_TPOFF32",
 };
 
-
-static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
+static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFile)
 {
     /*
      * Validate the header and our other expectations.
@@ -836,6 +835,7 @@ static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
     /*
      * Work the section table.
      */
+    bool fRet = true;
     for (uint32_t i = 1; i < pEhdr->e_shnum; i++)
     {
         if (g_cVerbose)
@@ -858,20 +858,69 @@ static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
                 || paShdrs[i].sh_offset + paShdrs[i].sh_size > cbFile)
                 return error(pszFile, "The content of section #%u '%s' is outside the file (%#" ELF_FMT_X64 " LB %#" ELF_FMT_X64 ", cbFile=%#lx)\n",
                              i, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_offset, paShdrs[i].sh_size, (unsigned long)cbFile);
-            Elf64_Rela *paRels = (Elf64_Rela *)&pbFile[paShdrs[i].sh_offset];
+
+            Elf64_Rela const  *paRelocs = (Elf64_Rela *)&pbFile[paShdrs[i].sh_offset];
             for (uint32_t j = 0; j < cRelocs; j++)
             {
-                uint8_t const bType = ELF64_R_TYPE(paRels[j].r_info);
+                uint8_t const bType = ELF64_R_TYPE(paRelocs[j].r_info);
+                if (RT_UNLIKELY(bType >= R_X86_64_COUNT))
+                    fRet = error(pszFile,
+                                 "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 " unknown fix up %#x  (%+" ELF_FMT_D64 ")\n",
+                                 paRelocs[j].r_offset, paRelocs[j].r_info, bType, paRelocs[j].r_addend);
+            }
+        }
+        else if (paShdrs[i].sh_type == SHT_REL)
+            fRet = error(pszFile, "Did not expect SHT_REL sections (#%u '%s')\n", i, &pszStrTab[paShdrs[i].sh_name]);
+    }
+    return fRet;
+}
+
+
+
+static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
+{
+    /*
+     * Validate the header and our other expectations.
+     */
+    if (!validateElf(pszFile, pbFile, cbFile))
+        return false;
+
+    /*
+     * Locate the section name string table.
+     * We assume it's okay as we only reference it in verbose mode.
+     */
+    Elf64_Ehdr const *pEhdr = (Elf64_Ehdr const *)pbFile;
+    Elf64_Shdr const *paShdrs = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
+    const char * pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
+
+    /*
+     * Work the section table.
+     */
+    for (uint32_t i = 1; i < pEhdr->e_shnum; i++)
+    {
+        if (g_cVerbose)
+            printf("shdr[%u]: name=%#x '%s' type=%#x flags=%#" ELF_FMT_X64 " addr=%#" ELF_FMT_X64 " off=%#" ELF_FMT_X64 " size=%#" ELF_FMT_X64 "\n"
+                   "          link=%u info=%#x align=%#" ELF_FMT_X64 " entsize=%#" ELF_FMT_X64 "\n",
+                   i, paShdrs[i].sh_name, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_type, paShdrs[i].sh_flags,
+                   paShdrs[i].sh_addr, paShdrs[i].sh_offset, paShdrs[i].sh_size,
+                   paShdrs[i].sh_link, paShdrs[i].sh_info, paShdrs[i].sh_addralign, paShdrs[i].sh_entsize);
+        if (paShdrs[i].sh_type == SHT_RELA)
+        {
+            Elf64_Rela    *paRelocs = (Elf64_Rela *)&pbFile[paShdrs[i].sh_offset];
+            uint32_t const cRelocs  = paShdrs[i].sh_size / sizeof(Elf64_Rela);
+            for (uint32_t j = 0; j < cRelocs; j++)
+            {
+                uint8_t const bType = ELF64_R_TYPE(paRelocs[j].r_info);
                 if (g_cVerbose > 1)
-                    printf("%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 " %s  %+" ELF_FMT_D64 "\n", paRels[j].r_offset, paRels[j].r_info,
-                           bType < RT_ELEMENTS(g_apszElfAmd64RelTypes) ? g_apszElfAmd64RelTypes[bType] : "unknown", paRels[j].r_addend);
+                    printf("%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 " %s  %+" ELF_FMT_D64 "\n", paRelocs[j].r_offset, paRelocs[j].r_info,
+                           bType < RT_ELEMENTS(g_apszElfAmd64RelTypes) ? g_apszElfAmd64RelTypes[bType] : "unknown", paRelocs[j].r_addend);
 
                 /* Truncate 64-bit wide absolute relocations, ASSUMING that the high bits
                    are already zero and won't be non-zero after calculating the fixup value. */
                 if (bType == R_X86_64_64)
                 {
-                    paRels[j].r_info &= ~(uint64_t)0xff;
-                    paRels[j].r_info |= R_X86_64_32;
+                    paRelocs[j].r_info &= ~(uint64_t)0xff;
+                    paRelocs[j].r_info |= R_X86_64_32;
                 }
             }
         }
