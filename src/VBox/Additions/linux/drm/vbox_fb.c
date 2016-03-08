@@ -400,7 +400,9 @@ static void vbox_fbdev_destroy(struct drm_device *dev,
     drm_fb_helper_fini(&fbdev->helper);
 
     vfree(fbdev->sysram);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
     drm_framebuffer_unregister_private(&afb->base);
+#endif
     drm_framebuffer_cleanup(&afb->base);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }
