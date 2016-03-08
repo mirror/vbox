@@ -1947,8 +1947,9 @@ typedef struct BS3REGCTX
     uint16_t    ss;
     uint16_t    tr;
     uint16_t    ldtr;
-    uint8_t     cBits;
-    uint8_t     abPadding[7];
+    uint8_t     bMode;                  /**< BS3_MODE_XXX. */
+    uint8_t     bCpl;                   /**< 0-3, 0 is used for real mode. */
+    uint8_t     abPadding[6];
     BS3REG      cr0;
     BS3REG      cr2;
     BS3REG      cr3;

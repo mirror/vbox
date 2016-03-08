@@ -177,6 +177,13 @@ BS3_SET_REG_ALIASES ARCH_BITS
   %define BS3_ONLY_64BIT(a_Expr)
  %endif
 
+ %undef   BS3_NOT_64BIT
+ %if %1 == 64
+  %define BS3_NOT_64BIT(a_Expr)
+ %else
+  %define BS3_NOT_64BIT(a_Expr)     a_Expr
+ %endif
+
  %undef   BS3_IF_16_32_64BIT
  %if %1 == 16
   %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_16BitExpr
@@ -273,6 +280,13 @@ BS3_SET_REG_ALIASES ARCH_BITS
  %define BS3_ONLY_64BIT(a_Expr)     a_Expr
 %else
  %define BS3_ONLY_64BIT(a_Expr)
+%endif
+
+;; For segment overrides and stuff. Follows BS3_SET_BITS.
+%if ARCH_BITS == 64
+ %define BS3_NOT_64BIT(a_Expr)
+%else
+ %define BS3_NOT_64BIT(a_Expr)     a_Expr
 %endif
 
 ;; For stack cleanups and similar where each bit mode is different. Follows BS3_SET_BITS.
@@ -1111,37 +1125,40 @@ size %1 %+ _EndProc     0
 ; Registers.  Used by traps and such.
 ;
 struc BS3REGS
-        .rax    resq 1
-        .rbx    resq 1
-        .rcx    resq 1
-        .rdx    resq 1
-        .rdi    resq 1
-        .rsi    resq 1
-        .rbp    resq 1
-        .rsp    resq 1
-        .rip    resq 1
-        .r8     resq 1
-        .r9     resq 1
-        .r10    resq 1
-        .r11    resq 1
-        .r12    resq 1
-        .r13    resq 1
-        .r14    resq 1
-        .r15    resq 1
-        .rflags resq 1
-        .cs     resw 1
-        .ds     resw 1
-        .es     resw 1
-        .fs     resw 1
-        .gs     resw 1
-        .ss     resw 1
-        .cBits  resb 1
-        .pad    resb 3
-        .cr0    resq 1
-        .cr2    resq 1
-        .cr3    resq 1
-        .cr4    resq 1
-        .cr8    resq 1
+        .rax        resq 1
+        .rcx        resq 1
+        .rdx        resq 1
+        .rbx        resq 1
+        .rsp        resq 1
+        .rbp        resq 1
+        .rsi        resq 1
+        .rdi        resq 1
+        .r8         resq 1
+        .r9         resq 1
+        .r10        resq 1
+        .r11        resq 1
+        .r12        resq 1
+        .r13        resq 1
+        .r14        resq 1
+        .r15        resq 1
+        .rflags     resq 1
+        .rip        resq 1
+        .cs         resw 1
+        .ds         resw 1
+        .es         resw 1
+        .fs         resw 1
+        .gs         resw 1
+        .ss         resw 1
+        .tr         resw 1
+        .ldtr       resw 1
+        .bMode      resb 1
+        .bCpl       resb 1
+        .abPadding  resb 6
+        .cr0        resq 1
+        .cr2        resq 1
+        .cr3        resq 1
+        .cr4        resq 1
+
         ;; @todo Add floating point registers when they are active.
 endstruc
 

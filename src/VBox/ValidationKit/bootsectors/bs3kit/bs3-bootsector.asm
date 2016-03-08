@@ -145,7 +145,7 @@ bs3InitCode:
         mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr3], eax
         mov     eax, cr4
         mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr4], eax
-        mov     byte [BS3_ADDR_REG_SAVE + BS3REGS.cBits], 16
+        mov     byte [BS3_ADDR_REG_SAVE + BS3REGS.bMode], BS3_MODE_RM
         xor     eax, eax
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.cs], ax
         mov     ax, start
