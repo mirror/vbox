@@ -93,7 +93,11 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
     rc = VBoxHGSMIGetModeHints(&vbox->submit_info, vbox->num_crtcs,
                                vbox->last_mode_hints);
     AssertMsgRCReturnVoid(rc, ("VBoxHGSMIGetModeHints failed, rc=%Rrc.\n", rc));
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
     drm_modeset_lock_all(dev);
+#else
+    mutex_lock(&dev->mode_config.mutex);
+#endif
     list_for_each_entry(connector, &dev->mode_config.connector_list, head) {
         vbox_connector = to_vbox_connector(connector);
         hints = &vbox->last_mode_hints[vbox_connector->crtc_id];
@@ -115,7 +119,11 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
 #endif
         }
     }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
     drm_modeset_unlock_all(dev);
+#else
+    mutex_unlock(&dev->mode_config.mutex);
+#endif
 }
 
 static void vbox_hotplug_worker(struct work_struct *work)
@@ -136,7 +144,11 @@ int vbox_irq_init(struct vbox_private *vbox)
 
     LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     vbox_update_mode_hints(vbox);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
     ret = drm_irq_install(vbox->dev, vbox->dev->pdev->irq);
+#else
+    ret = drm_irq_install(vbox->dev);
+#endif
     if (unlikely(ret != 0)) {
         vbox_irq_fini(vbox);
         DRM_ERROR("Failed installing irq: %d\n", ret);
