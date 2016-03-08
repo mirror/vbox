@@ -45,6 +45,15 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPAE32
 %ifdef TMPL_PAE32
         ret
 
+%elif BS3_MODE_IS_V86(TMPL_MODE)
+        ;
+        ; V8086 - Switch to 16-bit ring-0 and call worker for that mode.
+        ;
+        extern  BS3_CMN_NM(Bs3SwitchToRing0)
+        call    BS3_CMN_NM(Bs3SwitchToRing0)
+        extern %[BS3_MODE_R0_NM_ %+ TMPL_MODE](Bs3SwitchToPAE32)
+        jmp    %[BS3_MODE_R0_NM_ %+ TMPL_MODE](Bs3SwitchToPAE32)
+
 %else
         ;
         ; Switch to real mode.

@@ -56,28 +56,8 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
         ;
         extern  BS3_CMN_NM(Bs3SwitchToRing0)
         call    BS3_CMN_NM(Bs3SwitchToRing0)
-
- %if   TMPL_MODE == BS3_MODE_PE16_V86
-        extern  _Bs3SwitchToRM_pe16
-        jmp     _Bs3SwitchToRM_pe16
- %elif TMPL_MODE == BS3_MODE_PEV86
-        extern  _Bs3SwitchToRM_pe32_16
-        jmp     _Bs3SwitchToRM_pe32_16
- %elif TMPL_MODE == BS3_MODE_PP16_V86
-        extern  _Bs3SwitchToRM_pp16
-        jmp     _Bs3SwitchToRM_pp16
- %elif TMPL_MODE == BS3_MODE_PPV86
-        extern  _Bs3SwitchToRM_pp32_16
-        jmp     _Bs3SwitchToRM_pp32_16
- %elif TMPL_MODE == BS3_MODE_PAE16_V86
-        extern  _Bs3SwitchToRM_pae16
-        jmp     _Bs3SwitchToRM_pae16
- %elif TMPL_MODE == BS3_MODE_PAEV86
-        extern  _Bs3SwitchToRM_pae32_16
-        jmp     _Bs3SwitchToRM_pae32_16
- %else
-  %error "Unexpected TMPL_MODE=" TMPL_MODE
- %endif
+        extern %[BS3_MODE_R0_NM_ %+ TMPL_MODE](Bs3SwitchToRM)
+        jmp    %[BS3_MODE_R0_NM_ %+ TMPL_MODE](Bs3SwitchToRM)
 
 %else
         ;
