@@ -798,12 +798,32 @@ static const char * const g_apszElfAmd64RelTypes[] =
     "R_X86_64_TPOFF32",
 };
 
-static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFile)
+
+typedef struct ELFDETAILS
 {
+    Elf64_Ehdr const   *pEhdr;
+    Elf64_Shdr const   *paShdrs;
+    const char         *pchShStrTab;
+    uint16_t            iSymSh;
+    uint16_t            iStrSh;
+} ELFDETAILS;
+typedef ELFDETAILS *PELFDETAILS;
+
+
+static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFile, PELFDETAILS pElfStuff)
+{
+    /*
+     * Initialize the ELF details structure.
+     */
+    memset(pElfStuff, 0,  sizeof(*pElfStuff));
+    pElfStuff->iSymSh = UINT16_MAX;
+    pElfStuff->iStrSh = UINT16_MAX;
+
     /*
      * Validate the header and our other expectations.
      */
     Elf64_Ehdr const *pEhdr = (Elf64_Ehdr const *)pbFile;
+    pElfStuff->pEhdr = pEhdr;
     if (   pEhdr->e_ident[EI_CLASS] != ELFCLASS64
         || pEhdr->e_ident[EI_DATA]  != ELFDATA2LSB
         || pEhdr->e_ehsize          != sizeof(Elf64_Ehdr)
@@ -830,7 +850,17 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
      * We assume it's okay as we only reference it in verbose mode.
      */
     Elf64_Shdr const *paShdrs = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
-    const char * pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
+    pElfStuff->paShdrs = paShdrs;
+
+    Elf64_Xword const cbShStrTab = paShdrs[pEhdr->e_shstrndx].sh_size;
+    if (   paShdrs[pEhdr->e_shstrndx].sh_offset > cbFile
+        || cbShStrTab > cbFile
+        || paShdrs[pEhdr->e_shstrndx].sh_offset + cbShStrTab > cbFile)
+        return error(pszFile,
+                     "Section string table is outside the file (sh_offset=%#" ELF_FMT_X64 " sh_size=%#" ELF_FMT_X64 " cbFile=%#" ELF_FMT_X64 ")\n",
+                     paShdrs[pEhdr->e_shstrndx].sh_offset, paShdrs[pEhdr->e_shstrndx].sh_size, (Elf64_Xword)cbFile);
+    const char *pchShStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
+    pElfStuff->pchShStrTab = pchShStrTab;
 
     /*
      * Work the section table.
@@ -838,26 +868,46 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
     bool fRet = true;
     for (uint32_t i = 1; i < pEhdr->e_shnum; i++)
     {
+        if (paShdrs[i].sh_name >= cbShStrTab)
+            return error(pszFile, "Invalid sh_name value (%#x) for section #%u\n", paShdrs[i].sh_name, i);
+        const char *pszShNm = &pchShStrTab[paShdrs[i].sh_name];
+
+        if (   paShdrs[i].sh_offset > cbFile
+            || paShdrs[i].sh_size > cbFile
+            || paShdrs[i].sh_offset + paShdrs[i].sh_size > cbFile)
+            return error(pszFile, "Section #%u '%s' has data outside the file: %#" ELF_FMT_X64 " LB %#" ELF_FMT_X64 " (cbFile=%#" ELF_FMT_X64 ")\n",
+                         i, pszShNm, paShdrs[i].sh_offset, paShdrs[i].sh_size, (Elf64_Xword)cbFile);
         if (g_cVerbose)
             printf("shdr[%u]: name=%#x '%s' type=%#x flags=%#" ELF_FMT_X64 " addr=%#" ELF_FMT_X64 " off=%#" ELF_FMT_X64 " size=%#" ELF_FMT_X64 "\n"
                    "          link=%u info=%#x align=%#" ELF_FMT_X64 " entsize=%#" ELF_FMT_X64 "\n",
-                   i, paShdrs[i].sh_name, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_type, paShdrs[i].sh_flags,
+                   i, paShdrs[i].sh_name, pszShNm, paShdrs[i].sh_type, paShdrs[i].sh_flags,
                    paShdrs[i].sh_addr, paShdrs[i].sh_offset, paShdrs[i].sh_size,
                    paShdrs[i].sh_link, paShdrs[i].sh_info, paShdrs[i].sh_addralign, paShdrs[i].sh_entsize);
+
+        if (paShdrs[i].sh_link >= pEhdr->e_shnum)
+            return error(pszFile, "Section #%u '%s' links to a section outside the section table: %#x, max %#x\n",
+                         i, pszShNm, paShdrs[i].sh_link, pEhdr->e_shnum);
+        if (!RT_IS_POWER_OF_TWO(paShdrs[i].sh_addralign))
+            return error(pszFile, "Section #%u '%s' alignment value is not a power of two: %#" ELF_FMT_X64 "\n",
+                         i, pszShNm, paShdrs[i].sh_addralign);
+        if (!RT_IS_POWER_OF_TWO(paShdrs[i].sh_addralign))
+            return error(pszFile, "Section #%u '%s' alignment value is not a power of two: %#" ELF_FMT_X64 "\n",
+                         i, pszShNm, paShdrs[i].sh_addralign);
+
         if (paShdrs[i].sh_type == SHT_RELA)
         {
             if (paShdrs[i].sh_entsize != sizeof(Elf64_Rela))
                 return error(pszFile, "Expected sh_entsize to be %u not %u for section #%u (%s)\n", (unsigned)sizeof(Elf64_Rela),
-                             paShdrs[i].sh_entsize, i, &pszStrTab[paShdrs[i].sh_name]);
+                             paShdrs[i].sh_entsize, i, pszShNm);
             uint32_t const cRelocs = paShdrs[i].sh_size / sizeof(Elf64_Rela);
             if (cRelocs * sizeof(Elf64_Rela) != paShdrs[i].sh_size)
                 return error(pszFile, "Uneven relocation entry count in #%u (%s): sh_size=%#" ELF_FMT_X64 "\n", (unsigned)sizeof(Elf64_Rela),
-                             paShdrs[i].sh_entsize, i, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_size);
+                             paShdrs[i].sh_entsize, i, pszShNm, paShdrs[i].sh_size);
             if (   paShdrs[i].sh_offset > cbFile
                 || paShdrs[i].sh_size  >= cbFile
                 || paShdrs[i].sh_offset + paShdrs[i].sh_size > cbFile)
                 return error(pszFile, "The content of section #%u '%s' is outside the file (%#" ELF_FMT_X64 " LB %#" ELF_FMT_X64 ", cbFile=%#lx)\n",
-                             i, &pszStrTab[paShdrs[i].sh_name], paShdrs[i].sh_offset, paShdrs[i].sh_size, (unsigned long)cbFile);
+                             i, pszShNm, paShdrs[i].sh_offset, paShdrs[i].sh_size, (unsigned long)cbFile);
 
             Elf64_Rela const  *paRelocs = (Elf64_Rela *)&pbFile[paShdrs[i].sh_offset];
             for (uint32_t j = 0; j < cRelocs; j++)
@@ -869,29 +919,92 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
                                  paRelocs[j].r_offset, paRelocs[j].r_info, bType, paRelocs[j].r_addend);
             }
         }
+        else if (paShdrs[i].sh_type == SHT_SYMTAB)
+        {
+            if (pElfStuff->iSymSh == UINT16_MAX)
+            {
+                pElfStuff->iSymSh = (uint16_t)i;
+                if (paShdrs[i].sh_entsize == sizeof(Elf64_Sym))
+                {
+
+                }
+                else
+                    fRet = error(pszFile, "Unsupported symbol table entry size: #%u (expected #%u)\n",
+                                 i, pszShNm, paShdrs[i].sh_entsize, sizeof(Elf64_Sym));
+            }
+            else
+                fRet = error(pszFile, "2nd symbol table found #%u '%s' (previous #u)\n", i, pszShNm, pElfStuff->iSymSh);
+        }
         else if (paShdrs[i].sh_type == SHT_REL)
-            fRet = error(pszFile, "Did not expect SHT_REL sections (#%u '%s')\n", i, &pszStrTab[paShdrs[i].sh_name]);
+            fRet = error(pszFile, "Did not expect SHT_REL sections (#%u '%s')\n", i, pszShNm);
     }
     return fRet;
 }
 
 
+#ifdef ELF_TO_OMF_CONVERSION
+
+static bool convertElfToOmf(const char *pszFile, uint8_t const *pbFile, size_t cbFile, FILE *pDst)
+{
+    /*
+     * Validate the source file a little.
+     */
+    ELFDETAILS ElfStuff;
+    if (!validateElf(pszFile, pbFile, cbFile, &ElfStuff))
+        return false;
+
+    /*
+     * Instantiate the OMF writer.
+     */
+    PIMAGE_FILE_HEADER pHdr = (PIMAGE_FILE_HEADER)pbFile;
+    POMFWRITER pThis = omfWriter_Create(pszFile, pHdr->NumberOfSections, pHdr->NumberOfSymbols, pDst);
+    if (!pThis)
+        return false;
+
+    /*
+     * Write the OMF object file.
+     */
+    if (omfWriter_BeginModule(pThis, pszFile))
+    {
+        Elf64_Ehdr const *pEhdr     = (Elf64_Ehdr const *)pbFile;
+        Elf64_Shdr const *paShdrs   = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
+        const char       *pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
+
+        if (   convertElfSectionsToSegDefsAndGrpDefs(pThis, paShdrs, pHdr->NumberOfSections)
+            //&& convertElfSymbolsToPubDefsAndExtDefs(pThis, paSymTab, pHdr->NumberOfSymbols, pchStrTab, paShdrs)
+            && omfWriter_LinkPassSeparator(pThis)
+            //&& convertElfSectionsToLeDataAndFixupps(pThis, pbFile, cbFile, paShdrs, pHdr->NumberOfSections,
+            //                                        paSymTab, pHdr->NumberOfSymbols, pchStrTab)
+            && omfWriter_EndModule(pThis) )
+        {
+
+            omfWriter_Destroy(pThis);
+            return true;
+        }
+    }
+
+    omfWriter_Destroy(pThis);
+    return false;
+}
+
+#else /* !ELF_TO_OMF_CONVERSION */
 
 static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
 {
     /*
      * Validate the header and our other expectations.
      */
-    if (!validateElf(pszFile, pbFile, cbFile))
+    ELFDETAILS ElfStuff;
+    if (!validateElf(pszFile, pbFile, cbFile, &ElfStuff))
         return false;
 
     /*
      * Locate the section name string table.
      * We assume it's okay as we only reference it in verbose mode.
      */
-    Elf64_Ehdr const *pEhdr = (Elf64_Ehdr const *)pbFile;
-    Elf64_Shdr const *paShdrs = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
-    const char * pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
+    Elf64_Ehdr const   *pEhdr     = (Elf64_Ehdr const *)pbFile;
+    Elf64_Shdr const   *paShdrs   = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
+    const char         *pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
 
     /*
      * Work the section table.
@@ -930,6 +1043,7 @@ static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
     return true;
 }
 
+#endif /* !ELF_TO_OMF_CONVERSION */
 
 
 
@@ -1745,7 +1859,6 @@ static bool convertCoffToOmf(const char *pszFile, uint8_t const *pbFile, size_t 
             && omfWriter_LinkPassSeparator(pThis)
             && convertCoffSectionsToLeDataAndFixupps(pThis, pbFile, cbFile, paShdrs, pHdr->NumberOfSections,
                                                      paSymTab, pHdr->NumberOfSymbols, pchStrTab)
-
             && omfWriter_EndModule(pThis) )
         {
 
@@ -1756,7 +1869,6 @@ static bool convertCoffToOmf(const char *pszFile, uint8_t const *pbFile, size_t 
 
     omfWriter_Destroy(pThis);
     return false;
-
 }
 
 
@@ -2028,10 +2140,23 @@ static int convertit(const char *pszFile)
             && pbFile[1] == ELFMAG1
             && pbFile[2] == ELFMAG2
             && pbFile[3] == ELFMAG3)
-            /** @todo convertElfToOmf(). */
+        {
+#ifdef ELF_TO_OMF_CONVERSION
+            if (writefile(szOrgFile, pvFile, cbFile))
+            {
+                FILE *pDst = openfile(pszFile, true /*fWrite*/);
+                if (pDst)
+                {
+                    fRc = convertElfToOmf(pszFile, pbFile, cbFile, pDst);
+                    fRc = fclose(pDst) == 0 && fRc;
+                }
+            }
+#else
             fRc = writefile(szOrgFile, pvFile, cbFile)
                && convertelf(pszFile, pbFile, cbFile)
                && writefile(pszFile, pvFile, cbFile);
+#endif
+        }
         else if (   cbFile > sizeof(IMAGE_FILE_HEADER)
                  && RT_MAKE_U16(pbFile[0], pbFile[1]) == IMAGE_FILE_MACHINE_AMD64
                  &&   RT_MAKE_U16(pbFile[2], pbFile[3]) * sizeof(IMAGE_SECTION_HEADER) + sizeof(IMAGE_FILE_HEADER)
