@@ -801,11 +801,28 @@ static const char * const g_apszElfAmd64RelTypes[] =
 
 typedef struct ELFDETAILS
 {
+    /** The ELF header. */
     Elf64_Ehdr const   *pEhdr;
+    /** The section header table.   */
     Elf64_Shdr const   *paShdrs;
+    /** The string table for the section names. */
     const char         *pchShStrTab;
+
+    /** The symbol table section number. UINT16_MAX if not found.   */
     uint16_t            iSymSh;
+    /** The string table section number. UINT16_MAX if not found. */
     uint16_t            iStrSh;
+
+    /** The symbol table.   */
+    Elf64_Sym const    *paSymbols;
+    /** The number of symbols in the symbol table. */
+    uint32_t            cSymbols;
+
+    /** Pointer to the (symbol) string table if found. */
+    const char         *pchStrTab;
+    /** The string table size. */
+    size_t              cbStrTab;
+
 } ELFDETAILS;
 typedef ELFDETAILS *PELFDETAILS;
 
@@ -919,24 +936,39 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
                                  paRelocs[j].r_offset, paRelocs[j].r_info, bType, paRelocs[j].r_addend);
             }
         }
+        else if (paShdrs[i].sh_type == SHT_REL)
+            fRet = error(pszFile, "Section #%u '%s': Unexpected SHT_REL section\n", i, pszShNm);
         else if (paShdrs[i].sh_type == SHT_SYMTAB)
         {
+            if (paShdrs[i].sh_entsize != sizeof(Elf64_Sym))
+                fRet = error(pszFile, "Section #%u '%s': Unsupported symbol table entry size in : #%u (expected #%u)\n",
+                             i, pszShNm, paShdrs[i].sh_entsize, sizeof(Elf64_Sym));
+            uint32_t cSymbols = paShdrs[i].sh_size / paShdrs[i].sh_entsize;
+            if ((Elf64_Xword)cSymbols * paShdrs[i].sh_entsize != paShdrs[i].sh_size)
+                fRet = error(pszFile, "Section #%u '%s': Size not a multiple of entry size: %#" ELF_FMT_X64 " %% %#" ELF_FMT_X64 " = %#" ELF_FMT_X64 "\n",
+                             i, pszShNm, paShdrs[i].sh_size, paShdrs[i].sh_entsize, paShdrs[i].sh_size % paShdrs[i].sh_entsize);
             if (pElfStuff->iSymSh == UINT16_MAX)
             {
-                pElfStuff->iSymSh = (uint16_t)i;
-                if (paShdrs[i].sh_entsize == sizeof(Elf64_Sym))
-                {
+                pElfStuff->iSymSh    = (uint16_t)i;
+                pElfStuff->paSymbols = (Elf64_Sym const *)&pbFile[paShdrs[i].sh_offset];
+                pElfStuff->cSymbols  = cSymbols;
 
+                if (paShdrs[i].sh_link != 0)
+                {
+                    /* Note! The symbol string table section header may not have been validated yet! */
+                    Elf64_Shdr const *pStrTabShdr = &paShdrs[paShdrs[i].sh_link];
+                    pElfStuff->iStrSh    = paShdrs[i].sh_link;
+                    pElfStuff->pchStrTab = (const char *)&pbFile[pStrTabShdr->sh_offset];
+                    pElfStuff->cbStrTab  = (size_t)pStrTabShdr->sh_size;
                 }
                 else
-                    fRet = error(pszFile, "Unsupported symbol table entry size: #%u (expected #%u)\n",
-                                 i, pszShNm, paShdrs[i].sh_entsize, sizeof(Elf64_Sym));
+                    fRet = error(pszFile, "Section #%u '%s': String table link is out of bounds (%#x)\n",
+                                 i, pszShNm, paShdrs[i].sh_link);
             }
             else
-                fRet = error(pszFile, "2nd symbol table found #%u '%s' (previous #u)\n", i, pszShNm, pElfStuff->iSymSh);
+                fRet = error(pszFile, "Section #%u '%s': Found additonal symbol table, previous in #%u\n",
+                             i, pszShNm, pElfStuff->iSymSh);
         }
-        else if (paShdrs[i].sh_type == SHT_REL)
-            fRet = error(pszFile, "Did not expect SHT_REL sections (#%u '%s')\n", i, pszShNm);
     }
     return fRet;
 }
