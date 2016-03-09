@@ -15,8 +15,8 @@
  */
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 
-#define VBOXNETLWF_TEST_NO_FRAMES_OVER_2K
-//#define VBOXNETLWF_TEST_NO_REALLOCATE
+//#define VBOXNETLWF_TEST_NO_FRAMES_OVER_2K
+#define VBOXNETLWF_TEST_NO_REALLOCATE
 
 //#define VBOXNETLWF_SYNC_SEND
 /* Payload + Ethernet header + VLAN tag = Max Ethernet frame size */
