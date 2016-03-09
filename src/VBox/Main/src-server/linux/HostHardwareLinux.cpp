@@ -1146,7 +1146,12 @@ int hotplugInotifyImpl::drainInotify()
     } while (cchRead > 0);
     if (cchRead == 0)
         return VINF_SUCCESS;
-    if (cchRead < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+    if (   cchRead < 0
+        && (   errno == EAGAIN
+#if EAGAIN != EWOULDBLOCK
+            || errno == EWOULDBLOCK
+#endif
+            ))
         return VINF_SUCCESS;
     Assert(errno > 0);
     return RTErrConvertFromErrno(errno);
