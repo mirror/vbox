@@ -217,7 +217,7 @@ static struct drm_driver driver =
     .load = vbox_driver_load,
     .unload = vbox_driver_unload,
     .lastclose = vbox_driver_lastclose,
-#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 17, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
     .set_busid = drm_pci_set_busid,
 #endif
 

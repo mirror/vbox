@@ -96,7 +96,6 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
                  int x, int y, int width, int height)
 {
     struct drm_device *dev = fbdev->helper.dev;
-    struct vbox_private *vbox = dev->dev_private;
     int i;
 
     struct drm_gem_object *obj;
@@ -266,7 +265,6 @@ static int vboxfb_create(struct drm_fb_helper *helper,
     struct drm_framebuffer *fb;
     struct fb_info *info;
     __u32 pitch;
-    unsigned int fb_pitch;
     int size, ret;
     struct device *device = &dev->pdev->dev;
     void *sysram;

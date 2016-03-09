@@ -336,6 +336,14 @@ static void vbox_encoder_destroy(struct drm_encoder *encoder)
     kfree(encoder);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
+static struct drm_encoder *drm_encoder_find(struct drm_device *dev, uint32_t id)
+{
+     struct drm_mode_object *mo;
+     mo = drm_mode_object_find(dev, id, DRM_MODE_OBJECT_ENCODER);
+     return mo ? obj_to_encoder(mo) : NULL;
+}
+#endif
 
 static struct drm_encoder *vbox_best_single_encoder(struct drm_connector *connector)
 {
@@ -500,7 +508,6 @@ static int vbox_connector_init(struct drm_device *dev, unsigned cScreen,
 {
     struct vbox_connector *vbox_connector;
     struct drm_connector *connector;
-    int rc;
 
     LogFunc(("vboxvideo: %d: dev=%p, encoder=%p\n", __LINE__, dev,
              encoder));
