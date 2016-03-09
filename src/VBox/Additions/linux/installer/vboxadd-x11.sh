@@ -190,7 +190,6 @@ restart()
     return 0
 }
 
-# setup_script
 setup()
 {
     echo "VirtualBox Guest Additions installation, Window System and desktop setup" > $LOG
@@ -477,7 +476,6 @@ EOF
     succ_msg "Window system drivers installed"
 }
 
-# cleanup_script
 cleanup()
 {
     # Restore xorg.conf files as far as possible
