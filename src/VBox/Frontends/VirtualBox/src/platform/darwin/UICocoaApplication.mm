@@ -88,6 +88,10 @@
     if (self)
         m_pCallbacks = [[NSMutableArray alloc] init];
 
+    /* Gently disable El Capitan tries to break everything with the Enter Full Screen action.
+     * S.a. https://developer.apple.com/library/mac/releasenotes/AppKit/RN-AppKit/ for reference. */
+    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"NSFullScreenMenuItemEverywhere"];
+
     return self;
 }
 
