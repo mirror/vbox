@@ -1270,7 +1270,7 @@ void VBoxDtMutexDelete(struct VBoxDtMutex *pMtx)
 {
     AssertReturnVoid(pMtx != &g_DummyMtx);
     AssertPtr(pMtx);
-    if (pMtx->hMtx == NIL_RTSEMMUTEX || pMtx->hMtx == NULL)
+    if (pMtx->hMtx == NIL_RTSEMMUTEX)
         return;
 
     Assert(pMtx->hOwner == NIL_RTNATIVETHREAD);
