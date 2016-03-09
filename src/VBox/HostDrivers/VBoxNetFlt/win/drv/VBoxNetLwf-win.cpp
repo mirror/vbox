@@ -15,6 +15,9 @@
  */
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 
+#define VBOXNETLWF_TEST_NO_FRAMES_OVER_2K
+//#define VBOXNETLWF_TEST_NO_REALLOCATE
+
 //#define VBOXNETLWF_SYNC_SEND
 /* Payload + Ethernet header + VLAN tag = Max Ethernet frame size */
 #define VBOXNETLWF_MAX_FRAME_SIZE(mtu) (mtu +  sizeof(RTNETETHERHDR) + 4)
@@ -908,6 +911,32 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     pModuleCtx->cPendingBuffers = 0;
 #endif /* !VBOXNETLWF_SYNC_SEND */
 
+#ifdef VBOXNETLWF_TEST_NO_REALLOCATE
+    /* Allocate buffer pools */
+    NET_BUFFER_LIST_POOL_PARAMETERS PoolParams;
+    NdisZeroMemory(&PoolParams, sizeof(PoolParams));
+    PoolParams.Header.Type = NDIS_OBJECT_TYPE_DEFAULT;
+    PoolParams.Header.Revision = NET_BUFFER_LIST_POOL_PARAMETERS_REVISION_1;
+    PoolParams.Header.Size = sizeof(PoolParams);
+    PoolParams.ProtocolId = NDIS_PROTOCOL_ID_DEFAULT;
+    PoolParams.fAllocateNetBuffer = TRUE;
+    PoolParams.ContextSize = 0; /** @todo Do we need to consider underlying drivers? I think not. */
+    PoolParams.PoolTag = VBOXNETLWF_MEM_TAG;
+#ifndef VBOXNETLWF_SYNC_SEND
+    PoolParams.DataSize = 9088;
+#endif /* !VBOXNETLWF_SYNC_SEND */
+	 	
+    pModuleCtx->hPool = NdisAllocateNetBufferListPool(hFilter, &PoolParams);
+    if (!pModuleCtx->hPool)
+    {
+        LogError(("vboxNetLwfWinAttach: NdisAllocateNetBufferListPool failed\n"));
+        NdisFreeIoWorkItem(pModuleCtx->hWorkItem);
+        NdisFreeMemory(pModuleCtx, 0, 0);
+        return NDIS_STATUS_RESOURCES;
+    }
+    Log4(("vboxNetLwfWinAttach: allocated NBL+NB pool 0x%p\n", pModuleCtx->hPool));
+#endif /* VBOXNETLWF_TEST_NO_REALLOCATE */
+
     NDIS_FILTER_ATTRIBUTES Attributes;
     NdisZeroMemory(&Attributes, sizeof(Attributes));
     Attributes.Header.Revision = NDIS_FILTER_ATTRIBUTES_REVISION_1;
@@ -1022,6 +1051,7 @@ static NDIS_STATUS vboxNetLwfWinRestart(IN NDIS_HANDLE hModuleCtx, IN PNDIS_FILT
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Restarting, LwfState_Paused);
 
     NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
+#ifndef VBOXNETLWF_TEST_NO_REALLOCATE
     ULONG uNewMtuSize = 1500; /* If we fail to find out MTU, we can always assume 1500. */
     PNDIS_RESTART_ATTRIBUTES pAttributes = pParameters->RestartAttributes;
     while (pAttributes && pAttributes->Oid != OID_GEN_MINIPORT_RESTART_ATTRIBUTES)
@@ -1076,6 +1106,9 @@ static NDIS_STATUS vboxNetLwfWinRestart(IN NDIS_HANDLE hModuleCtx, IN PNDIS_FILT
     }
 
     vboxNetLwfWinChangeState(pModuleCtx, Status == NDIS_STATUS_SUCCESS ? LwfState_Running : LwfState_Paused, LwfState_Restarting);
+#else /* !VBOXNETLWF_TEST_NO_REALLOCATE */
+    vboxNetLwfWinChangeState(pModuleCtx, LwfState_Running, LwfState_Restarting);
+#endif /* !VBOXNETLWF_TEST_NO_REALLOCATE */
     LogFlow(("<==vboxNetLwfWinRestart: Status = 0x%x\n", Status));
     return Status;
 }
@@ -1320,7 +1353,11 @@ static PNET_BUFFER_LIST vboxNetLwfWinSGtoNB(PVBOXNETLWF_MODULE pModule, PINTNETS
         vboxNetLwfWinFreeMdlChain(pMdl);
     }
 #else /* !VBOXNETLWF_SYNC_SEND */
+#ifdef VBOXNETLWF_TEST_NO_FRAMES_OVER_2K
+    AssertReturn(pSG->cbTotal < 2048, NULL); 
+#else /* !VBOXNETLWF_TEST_NO_FRAMES_OVER_2K */
     AssertReturn(pSG->cbTotal <= VBOXNETLWF_MAX_FRAME_SIZE(pModule->uMtuSize), NULL); 
+#endif /* !VBOXNETLWF_TEST_NO_FRAMES_OVER_2K */
     PNET_BUFFER_LIST pBufList = NdisAllocateNetBufferList(pModule->hPool,
                                                           0 /** @todo ContextSize */,
                                                           0 /** @todo ContextBackFill */);
