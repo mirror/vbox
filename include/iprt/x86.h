@@ -3133,6 +3133,21 @@ typedef const X86DESCGENERIC *PCX86DESCGENERIC;
 #define X86DESCGENERIC_BIT_OFF_BASE_HIGH2       (56)  /**< Bit offset of X86DESCGENERIC::u8BaseHigh2. */
 /** @}  */
 
+
+/** @name LAR mask
+ * @{ */
+#define X86LAR_F_TYPE            UINT16_C(    0x0f00)
+#define X86LAR_F_DT              UINT16_C(    0x1000)
+#define X86LAR_F_DPL             UINT16_C(    0x6000)
+#define X86LAR_F_DPL_SHIFT       13 /**< Shift count for the DPL value. */
+#define X86LAR_F_P               UINT16_C(    0x8000)
+#define X86LAR_F_AVL             UINT32_C(0x10000000)
+#define X86LAR_F_L               UINT32_C(0x20000000)
+#define X86LAR_F_D               UINT32_C(0x40000000)
+#define X86LAR_F_G               UINT32_C(0x80000000)
+/** @}  */
+
+
 /**
  * Call-, Interrupt-, Trap- or Task-gate descriptor (legacy).
  */
