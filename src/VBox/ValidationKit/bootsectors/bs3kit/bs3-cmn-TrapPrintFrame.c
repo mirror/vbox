@@ -37,6 +37,6 @@ BS3_DECL(void) Bs3TrapPrintFrame(PCBS3TRAPFRAME pTrapFrame)
               pTrapFrame->bXcpt,
               pTrapFrame->uErrCd,
               pTrapFrame->Ctx.cs,
-              pTrapFrame->Ctx.rip);
+              pTrapFrame->Ctx.rip.u64);
 }
 

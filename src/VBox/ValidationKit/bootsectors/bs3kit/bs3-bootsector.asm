@@ -103,17 +103,17 @@ bs3InitCode:
         cli
 
         ; save the registers.
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.rax], eax
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.rsp], esp
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.rbp], ebp
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rax], eax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rsp], esp
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rbp], ebp
         mov     ax, ss
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.ss], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ss], ax
         mov     ax, ds
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.ds], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ds], ax
         mov     ax, es
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.es], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.es], ax
         mov     ax, fs
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.fs], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.fs], ax
         mov     ax, gs
 
         ; set up the segment reisters and stack.
@@ -133,27 +133,27 @@ bs3InitCode:
         ; Save more registers now that ds is known and the stack is usable.
         pushfd
         pop     eax
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rflags], eax
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rbx], ebx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rcx], ecx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rdx], edx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rsi], esi
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.rdi], edi
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rflags], eax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbx], ebx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rcx], ecx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdx], edx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rsi], esi
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi], edi
         mov     eax, cr2
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr2], eax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr2], eax
         mov     eax, cr3
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr3], eax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr3], eax
         mov     eax, cr4
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr4], eax
-        mov     byte [BS3_ADDR_REG_SAVE + BS3REGS.bMode], BS3_MODE_RM
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr4], eax
+        mov     byte [BS3_ADDR_REG_SAVE + BS3REGCTX.bMode], BS3_MODE_RM
         xor     eax, eax
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.cs], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.cs], ax
         mov     ax, start
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGS.rip], eax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rip], eax
 
         ; Make sure caching is enabled and alignment is off.
         mov     eax, cr0
-        mov     [BS3_ADDR_REG_SAVE + BS3REGS.cr0], eax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr0], eax
         and     eax, ~(X86_CR0_NW | X86_CR0_CD | X86_CR0_AM)
         mov     cr0, eax
 

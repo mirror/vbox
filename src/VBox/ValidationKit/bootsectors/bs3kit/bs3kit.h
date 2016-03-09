@@ -137,7 +137,7 @@ RT_C_DECLS_BEGIN
 #define BS3_ADDR_LOAD           0x10000
 /** Where we save the boot registers during init.
  * Located right before the code. */
-#define BS3_ADDR_REG_SAVE       (BS3_ADDR_LOAD - sizeof(BS3REGS) - 8)
+#define BS3_ADDR_REG_SAVE       (BS3_ADDR_LOAD - sizeof(BS3REGCTX) - 8)
 /** Where the stack starts (initial RSP value).
  * Located 16 bytes (assumed by boot sector) before the saved registers.
  * SS.BASE=0. The size is a little short of 32KB  */
@@ -209,6 +209,7 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_VMMDEV_MMIO16       0x00f8 /**< Selector for accessing the VMMDev MMIO segment at 0100000h from 16-bit code. */
 
 #define BS3_SEL_RING_SHIFT          8      /**< For the formula: BS3_SEL_R0_XXX + ((cs & 3) << BS3_SEL_RING_SHIFT) */
+#define BS3_SEL_RING_SUB_MASK       0x00f8 /**< Mask for getting the sub-selector. For use with BS3_SEL_R*_FIRST. */
 
 #define BS3_SEL_R0_FIRST            0x0100 /**< The first selector in the ring-0 block. */
 #define BS3_SEL_R0_CS16             0x0100 /**< ring-0: 16-bit code selector,  base 0x10000. */
@@ -375,23 +376,62 @@ RT_C_DECLS_BEGIN
 #if ARCH_BITS == 16 || defined(DOXYGEN_RUNNING)
 /** @def BS3_FP_SEG
  * Get the selector (segment) part of a far pointer.
+ *
  * @returns selector.
  * @param   a_pv        Far pointer.
  */
 # define BS3_FP_SEG(a_pv)            ((uint16_t)(__segment)(void BS3_FAR *)(a_pv))
 /** @def BS3_FP_OFF
  * Get the segment offset part of a far pointer.
+ *
  * @returns offset.
  * @param   a_pv        Far pointer.
  */
 # define BS3_FP_OFF(a_pv)            ((uint16_t)(void __near *)(a_pv))
 /** @def BS3_FP_MAKE
  * Create a far pointer.
- * @returns selector.
- * @param   a_pv        Far pointer.
+ *
+ * @returns Far pointer.
+ * @param   a_uSeg      The selector/segment.
+ * @param   a_off       The offset into the segment.
  */
 # define BS3_FP_MAKE(a_uSeg, a_off)  (((__segment)(a_uSeg)) :> ((void __near *)(a_off)))
+
 #endif
+
+/** @def BS3_MAKE_PROT_PTR_FROM_FLAT
+ * Creates a protected mode pointer from a flat address.
+ *
+ * For sake of convenience, this macro also works in 32-bit and 64-bit mode,
+ * only there it doesn't return a far pointer but a flat point.
+ *
+ * @returns far void pointer if 16-bit code, near/flat void pointer in 32-bit
+ *          and 64-bit.
+ * @param   a_uFlat     Flat address in the first 16MB. */
+#if ARCH_BITS == 16
+# define BS3_MAKE_PROT_R0PTR_FROM_FLAT(a_uFlat)  \
+    BS3_FP_MAKE(((uint16_t)(a_uFlat >> 16) << 3) + BS3_SEL_TILED, (uint16_t)(a_uFlat))
+#else
+# define BS3_MAKE_PROT_R0PTR_FROM_FLAT(a_uFlat)  ((void *)(uintptr_t)(a_uFlat))
+#endif
+
+/** @def BS3_MAKE_PROT_R0PTR_FROM_REAL
+ * Creates a protected mode pointer from a far real mode address.
+ *
+ * For sake of convenience, this macro also works in 32-bit and 64-bit mode,
+ * only there it doesn't return a far pointer but a flat point.
+ *
+ * @returns far void pointer if 16-bit code, near/flat void pointer in 32-bit
+ *          and 64-bit.
+ * @param   a_uSeg      The selector/segment.
+ * @param   a_off       The offset into the segment.
+ */
+#if ARCH_BITS == 16
+# define BS3_MAKE_PROT_R0PTR_FROM_REAL(a_uSeg, a_off) BS3_FP_MAKE(((a_uSeg) << 3) + BS3_SEL_TILED, a_off)
+#else
+# define BS3_MAKE_PROT_R0PTR_FROM_REAL(a_uSeg, a_off) ( (void *)(uintptr_t)(((uint32_t)(a_uSeg) << 16) | (uint16_t)(a_off)) )
+#endif
+
 
 /** @def BS3_CALL
  * The calling convension used by BS3 functions.  */
@@ -1921,44 +1961,73 @@ typedef BS3REG const BS3_FAR *PCBS3REG;
  */
 typedef struct BS3REGCTX
 {
-    BS3REG      rax;
-    BS3REG      rcx;
-    BS3REG      rdx;
-    BS3REG      rbx;
-    BS3REG      rsp;
-    BS3REG      rbp;
-    BS3REG      rsi;
-    BS3REG      rdi;
-    BS3REG      r8;
-    BS3REG      r9;
-    BS3REG      r10;
-    BS3REG      r11;
-    BS3REG      r12;
-    BS3REG      r13;
-    BS3REG      r14;
-    BS3REG      r15;
-    BS3REG      rflags;
-    BS3REG      rip;
-    uint16_t    cs;
-    uint16_t    ds;
-    uint16_t    es;
-    uint16_t    fs;
-    uint16_t    gs;
-    uint16_t    ss;
-    uint16_t    tr;
-    uint16_t    ldtr;
-    uint8_t     bMode;                  /**< BS3_MODE_XXX. */
-    uint8_t     bCpl;                   /**< 0-3, 0 is used for real mode. */
-    uint8_t     abPadding[6];
-    BS3REG      cr0;
-    BS3REG      cr2;
-    BS3REG      cr3;
-    BS3REG      cr4;
+    BS3REG      rax;                    /**< 0x00  */
+    BS3REG      rcx;                    /**< 0x08  */
+    BS3REG      rdx;                    /**< 0x10  */
+    BS3REG      rbx;                    /**< 0x18  */
+    BS3REG      rsp;                    /**< 0x20  */
+    BS3REG      rbp;                    /**< 0x28  */
+    BS3REG      rsi;                    /**< 0x30  */
+    BS3REG      rdi;                    /**< 0x38  */
+    BS3REG      r8;                     /**< 0x40  */
+    BS3REG      r9;                     /**< 0x48  */
+    BS3REG      r10;                    /**< 0x50  */
+    BS3REG      r11;                    /**< 0x58  */
+    BS3REG      r12;                    /**< 0x60  */
+    BS3REG      r13;                    /**< 0x68  */
+    BS3REG      r14;                    /**< 0x70  */
+    BS3REG      r15;                    /**< 0x78  */
+    BS3REG      rflags;                 /**< 0x80  */
+    BS3REG      rip;                    /**< 0x88  */
+    uint16_t    cs;                     /**< 0x90  */
+    uint16_t    ds;                     /**< 0x92  */
+    uint16_t    es;                     /**< 0x94  */
+    uint16_t    fs;                     /**< 0x96  */
+    uint16_t    gs;                     /**< 0x98  */
+    uint16_t    ss;                     /**< 0x9a  */
+    uint16_t    tr;                     /**< 0x9c  */
+    uint16_t    ldtr;                   /**< 0x9e  */
+    uint8_t     bMode;                  /**< 0xa0:  BS3_MODE_XXX. */
+    uint8_t     bCpl;                   /**< 0xa1: 0-3, 0 is used for real mode. */
+    uint8_t     abPadding[6];           /**< 0xa2  */
+    BS3REG      cr0;                    /**< 0xa8  */
+    BS3REG      cr2;                    /**< 0xb0  */
+    BS3REG      cr3;                    /**< 0xb8  */
+    BS3REG      cr4;                    /**< 0xc0  */
 } BS3REGCTX;
 /** Pointer to a register context. */
 typedef BS3REGCTX BS3_FAR *PBS3REGCTX;
 /** Pointer to a const register context. */
 typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
+
+
+/**
+ * Transforms a register context to a different ring.
+ *
+ * @param   pRegCtx     The register context.
+ * @param   bRing       The target ring (0..3).
+ */
+BS3_DECL(void) Bs3RegCtxConvertToRingX_c16(PBS3REGCTX pRegCtx, uint8_t bRing);
+BS3_DECL(void) Bs3RegCtxConvertToRingX_c32(PBS3REGCTX pRegCtx, uint8_t bRing); /**< @copydoc Bs3RegCtxConvertToRingX_c16 */
+BS3_DECL(void) Bs3RegCtxConvertToRingX_c64(PBS3REGCTX pRegCtx, uint8_t bRing); /**< @copydoc Bs3RegCtxConvertToRingX_c16 */
+#define Bs3RegCtxConvertToRingX BS3_CMN_NM(Bs3RegCtxConvertToRingX) /**< Selects #Bs3RegCtxConvertToRingX_c16, #Bs3RegCtxConvertToRingX_c32 or #Bs3RegCtxConvertToRingX_c64. */
+
+/**
+ * Restores a register context.
+ *
+ * @param   pRegCtx     The register context to be restored and resumed.
+ * @param   fFlags      BS3REGCTXRESTORE_F_XXX.
+ *
+ * @remarks Caller must be in ring-0!
+ * @remarks Does not return.
+ */
+BS3_DECL(void) Bs3RegCtxRestore_c16(PCBS3REGCTX pRegCtx, uint16_t fFlags);
+BS3_DECL(void) Bs3RegCtxRestore_c32(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
+BS3_DECL(void) Bs3RegCtxRestore_c64(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
+#define Bs3RegCtxRestore BS3_CMN_NM(Bs3RegCtxRestore) /**< Selects #Bs3RegCtxRestore_c16, #Bs3RegCtxRestore_c32 or #Bs3RegCtxRestore_c64. */
+
+/** Skip restoring the CRx registers. */
+#define BS3REGCTXRESTORE_F_SKIP_CRX     UINT16_C(0x0001)
 
 
 /**
@@ -1974,6 +2043,8 @@ typedef struct BS3TRAPFRAME
     uint16_t    uHandlerCc;
     /** The handler SS. */
     uint16_t    uHandlerSs;
+    /** Explicit alignment. */
+    uint16_t    usAlignment;
     /** The handler RSP (top of iret frame). */
     uint64_t    uHandlerRsp;
     /** The handler RFLAGS value. */
@@ -1988,17 +2059,7 @@ typedef BS3TRAPFRAME BS3_FAR *PBS3TRAPFRAME;
 /** Pointer to a const trap frame.   */
 typedef BS3TRAPFRAME const BS3_FAR *PCBS3TRAPFRAME;
 
-/**
- * Resumes execution of a 32-bit trap frame.
- *
- * @param   pTrapFrame      Trap frame to resume.
- * @param   fFlags          Flags, BS3TRAPRESUME_F_XXX.
- */
-BS3_DECL(void) Bs3Trap32ResumeFrame_c32(BS3TRAPFRAME BS3_FAR *pTrapFrame, uint16_t fFlags);
-#define Bs3Trap32ResumeFrame BS3_CMN_NM(Bs3Trap32ResumeFrame) /**< Selects Bs3Trap32ResumeFrame_c16 (not implemented), #Bs3Trap32ResumeFrame_c32 or Bs3Trap32ResumeFrame_c64 (not implemented). */
 
-/** Skip restoring the CRx registers. */
-#define BS3TRAPRESUME_F_SKIP_CRX    UINT16_C(0x0001)
 
 /**
  * Initializes 16-bit (protected mode) trap handling.

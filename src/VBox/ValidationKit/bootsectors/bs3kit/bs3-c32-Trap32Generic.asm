@@ -24,12 +24,29 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+;*********************************************************************************************************************************
+;*  Header Files                                                                                                                 *
+;*********************************************************************************************************************************
 %include "bs3kit-template-header.mac"
 
 %ifndef TMPL_32BIT
  %error "32-bit only template"
 %endif
 
+
+;*********************************************************************************************************************************
+;*  External Symbols                                                                                                             *
+;*********************************************************************************************************************************
+BS3_EXTERN_DATA16 g_bBs3CurrentMode
+TMPL_BEGIN_TEXT
+BS3_EXTERN_CMN Bs3TrapDefaultHandler
+BS3_EXTERN_CMN Bs3RegCtxRestore
+TMPL_BEGIN_TEXT
+
+
+;*********************************************************************************************************************************
+;*  Global Variables                                                                                                             *
+;*********************************************************************************************************************************
 BS3_BEGIN_DATA16
 ;; Easy to access flat address of Bs3Trap32GenericEntries.
 BS3_GLOBAL_DATA g_Bs3Trap32GenericEntriesFlatAddr, 4
@@ -43,10 +60,6 @@ BS3_BEGIN_DATA32
 BS3_GLOBAL_DATA g_apfnBs3TrapHandlers_c32, 1024
         resd 256
 
-
-TMPL_BEGIN_TEXT
-BS3_EXTERN_CMN Bs3TrapDefaultHandler
-BS3_EXTERN_CMN Bs3Trap32ResumeFrame
 
 
 ;;
@@ -209,20 +222,30 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         mov     es, ax
 
         ;
+        ; Copy and update the mode now that we've got a flat DS.
+        ;
+        mov     al, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], al
+        and     al, ~BS3_MODE_CODE_MASK
+        or      al, BS3_MODE_CODE_32
+        mov     [BS3_DATA16_WRT(g_bBs3CurrentMode)], al
+
+        ;
         ; Copy iret info.
         ;
         mov     ecx, [ebp + 4]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], ecx
         mov     ecx, [ebp + 12]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], ecx
-        mov     cx, [ebp + 8]
+        mov     cl, [ebp + 8]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
         test    dword [ebp + 12], X86_EFL_VM
         jnz     .iret_frame_v8086
         mov     ax, ss
-        and     ax, 3
-        and     cx, 3
-        cmp     ax, ax
+        and     al, 3
+        and     cl, 3
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], cl
+        cmp     cl, al
         je      .iret_frame_same_cpl
 
         mov     ecx, [ebp + 16]
@@ -243,6 +266,8 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         jmp     .iret_frame_done
 
 .iret_frame_v8086:
+        mov     byte [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], 3
+        or      byte [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], BS3_MODE_CODE_V86 ; paranoia ^ 2
         lea     ecx, [ebp + 12]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
         mov     cx, [ebp + 20]
@@ -281,8 +306,8 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         ;
 .clear_and_dispatch_to_handler:         ; The double fault code joins us here.
         xor     edx, edx
-        mov     dword [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cBits], 32
-        mov     dword [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.abPadding + 3], edx
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.abPadding], dx
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.abPadding + 2], edx
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rax    + 4], edx
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx    + 4], edx
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx    + 4], edx
@@ -310,7 +335,7 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         ; Dispatch it to C code.
         ;
         movzx   ebx, byte [esp + BS3TRAPFRAME.bXcpt]
-        mov     eax, [BS3_DATA_NM(g_apfnBs3TrapHandlers_c32) + ebx * 4]
+        mov     eax, [ebx * 4 + BS3_DATA16_WRT(_g_apfnBs3TrapHandlers_c32)]
         or      eax, eax
         jnz     .call_handler
         mov     eax, Bs3TrapDefaultHandler
@@ -323,10 +348,10 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         ; Resume execution using trap frame.
         ;
         push    0
+        add     edi, BS3TRAPFRAME.Ctx
         push    edi
-        call    Bs3Trap32ResumeFrame
+        call    Bs3RegCtxRestore
 .panic:
-        int3
         hlt
         jmp     .panic
 BS3_PROC_END   bs3Trap32GenericCommon
@@ -442,7 +467,18 @@ BS3_PROC_BEGIN Bs3Trap32DoubleFaultHandler
         mov     cx, [eax + X86TSS32.cr3]                ; Note! This isn't necessarily the cr3 at the time of the fault.
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], ecx
 
-        mov     dword [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cBits], 32
+        ;
+        ; Set CPL; copy and update mode.
+        ;
+        mov     cl, [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ss]
+        and     cl, 3
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], cl
+
+        mov     cl, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
+        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], cl
+        and     cl, ~BS3_MODE_CODE_MASK
+        or      cl, BS3_MODE_CODE_32
+        mov     [BS3_DATA16_WRT(g_bBs3CurrentMode)], cl
 
         ;
         ; Control registers.

@@ -31,6 +31,14 @@ BS3_EXTERN_DATA16 g_bBs3CurrentMode
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
 TMPL_BEGIN_TEXT
 
+%if TMPL_BITS == 32
+BS3_EXTERN_CMN Bs3SelProtFar32ToFlat32
+%endif
+BS3_EXTERN_CMN Bs3RegCtxConvertToRingX
+BS3_EXTERN_CMN Bs3RegCtxRestore
+BS3_EXTERN_CMN Bs3Panic
+TMPL_BEGIN_TEXT
+
 
 ;;
 ; System call handler.
@@ -41,6 +49,9 @@ TMPL_BEGIN_TEXT
 ; basis, ditto for which registers are preserved and which are used to return
 ; stuff.  Generally, though, we preserve all registers not used as return
 ; values or otherwise implicitly transformed by the call.
+;
+; Note! The 16-bit versions of this code must be careful with using extended
+;       registers as we wish this code to work on real 8086 CPUs too!
 ;
 BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
         push    xBP
@@ -98,18 +109,18 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
         dw      .invalid_syscall wrt BS3TEXT16
         dw      .print_chr       wrt BS3TEXT16
         dw      .print_str       wrt BS3TEXT16
-        dw      .to_ring0        wrt BS3TEXT16
-        dw      .to_ring1        wrt BS3TEXT16
-        dw      .to_ring2        wrt BS3TEXT16
-        dw      .to_ring3        wrt BS3TEXT16
+        dw      .to_ringX        wrt BS3TEXT16
+        dw      .to_ringX        wrt BS3TEXT16
+        dw      .to_ringX        wrt BS3TEXT16
+        dw      .to_ringX        wrt BS3TEXT16
 %else
         dd      .invalid_syscall wrt FLAT
         dd      .print_chr       wrt FLAT
         dd      .print_str       wrt FLAT
-        dd      .to_ring0        wrt FLAT
-        dd      .to_ring1        wrt FLAT
-        dd      .to_ring2        wrt FLAT
-        dd      .to_ring3        wrt FLAT
+        dd      .to_ringX        wrt FLAT
+        dd      .to_ringX        wrt FLAT
+        dd      .to_ringX        wrt FLAT
+        dd      .to_ringX        wrt FLAT
 %endif
 
         ;
@@ -118,6 +129,7 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
 .invalid_syscall:
         int3
         jmp     .return
+
 
         ;
         ; Print char in the CL register.
@@ -131,6 +143,8 @@ BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
 %endif
 .print_chr:
+        push    xDI
+        push    xSI
 %ifndef TMPL_CMN_R86
         ; Switch to real mode (20h param scratch area not required).
         extern  TMPL_NM(Bs3SwitchToRM)
@@ -150,10 +164,13 @@ BS3_BEGIN_TEXT16
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
         BS3_SET_BITS TMPL_BITS
 %endif
+        pop     xSI
+        pop     xDI
         jmp     .return
 %ifndef TMPL_16BIT
 TMPL_BEGIN_TEXT
 %endif
+
 
         ;
         ; Print CX chars from string pointed to by DX:SI in 16-bit and v8086 mode,
@@ -178,28 +195,44 @@ TMPL_BEGIN_TEXT
 
 
         ;
-        ; Switch the caller to ring-0.
+        ; Switch the caller to ring-0, ring-1, ring-2 or ring-3.
         ;
-.to_ring0:
-        sub     xSP, BS3REGS_size
-        mov     xBX, xSP                ; xBP = BS3REGS pointer.
+        ; This implement this by saving the entire register context, calling
+        ; a transformation function (C) and restoring the modified register
+        ; context using a generic worker.
+        ;
+.to_ringX:
+        sub     xSP, BS3REGCTX_size
+        mov     xBX, xSP                ; xBP = BS3REGCTX pointer.
         call    .save_context
 
+%if TMPL_BITS == 32
+        ; Convert xBP to flat pointer in 32-bit
+        push    ss
+        push    xBX
+        call    Bs3SelProtFar32ToFlat32
+        add     sSP, 8
+        mov     xBX, xAX
+%endif
+        ; Prepare the last call frame.
+        BS3_ONLY_16BIT_STMT push    ss
+        push    xBX
 
-        jmp     .return
+        ; Convert the register context from whatever it is to ring-0.
+        BS3_ONLY_16BIT_STMT push    ss
+        push    xBX
+        mov     ax, VAR_CALLER_AX
+        sub     ax, BS3_SYSCALL_TO_RING0
+        push    xAX
+        BS3_CALL Bs3RegCtxConvertToRingX, 2
+        add     xSP, sCB
 
-;; @todo the remainder could be implemented in client code using SwitchToRing0
-.to_ring1:
-        int3
-        jmp     .return
-
-.to_ring2:
-        int3
-        jmp     .return
-
-.to_ring3:
-        int3
-        jmp     .return
+        ; Restore the register context (does not return).
+        pop     xBX                     ; restore saved pointer.
+        BS3_ONLY_16BIT_STMT push    ss
+        push    xBX
+        BS3_CALL Bs3RegCtxRestore, 1
+        jmp     Bs3Panic
 
 
         ;
@@ -235,7 +268,7 @@ TMPL_BEGIN_TEXT
 
 
         ;
-        ; Internal function. ss:xBX = Pointer to register frame (BS3REGS).
+        ; Internal function. ss:xBX = Pointer to register frame (BS3REGCTX).
         ; @uses xAX
         ;
 .save_context:
@@ -256,53 +289,53 @@ TMPL_BEGIN_TEXT
         mov     word [ss:bx + di + 4], 0
         mov     word [ss:bx + di + 6], 0
         add     di, 8
-        cmp     di, BS3REGS_size
+        cmp     di, BS3REGCTX_size
         jb      .save_context_16_clear_loop
         pop     di
 
         ; Do the 8086/80186/80286 state saving.
         mov     ax, VAR_CALLER_AX
-        mov     [ss:bx + BS3REGS.rax], ax
+        mov     [ss:bx + BS3REGCTX.rax], ax
         mov     cx, VAR_CALLER_CX
-        mov     [ss:bx + BS3REGS.rcx], ax
+        mov     [ss:bx + BS3REGCTX.rcx], ax
         mov     ax, VAR_CALLER_DX
-        mov     [ss:bx + BS3REGS.rdx], ax
+        mov     [ss:bx + BS3REGCTX.rdx], ax
         mov     ax, VAR_CALLER_BX
-        mov     [ss:bx + BS3REGS.rbx], ax
-        mov     [ss:bx + BS3REGS.rsi], si
-        mov     [ss:bx + BS3REGS.rdi], di
+        mov     [ss:bx + BS3REGCTX.rbx], ax
+        mov     [ss:bx + BS3REGCTX.rsi], si
+        mov     [ss:bx + BS3REGCTX.rdi], di
         mov     ax, VAR_CALLER_BP
-        mov     [ss:bx + BS3REGS.rbp], ax
-        mov     [ss:bx + BS3REGS.es], es
+        mov     [ss:bx + BS3REGCTX.rbp], ax
+        mov     [ss:bx + BS3REGCTX.es], es
         mov     ax, [xBP + xCB]
-        mov     [ss:bx + BS3REGS.rip], ax
+        mov     [ss:bx + BS3REGCTX.rip], ax
         mov     ax, [xBP + xCB*2]
-        mov     [ss:bx + BS3REGS.cs], ax
+        mov     [ss:bx + BS3REGCTX.cs], ax
         and     al, X86_SEL_RPL
-        mov     [ss:bx + BS3REGS.bCpl], al
+        mov     [ss:bx + BS3REGCTX.bCpl], al
         cmp     al, 0
         je      .save_context_16_same
         mov     ax, [xBP + xCB*4]
-        mov     [ss:bx + BS3REGS.rsp], ax
+        mov     [ss:bx + BS3REGCTX.rsp], ax
         mov     ax, [xBP + xCB*5]
-        mov     [ss:bx + BS3REGS.ss], ax
+        mov     [ss:bx + BS3REGCTX.ss], ax
         jmp     .save_context_16_done_stack
 .save_context_16_same:
         mov     ax, bp
         add     ax, xCB * (1 + 3)
-        mov     [ss:bx + BS3REGS.rsp], ax
+        mov     [ss:bx + BS3REGCTX.rsp], ax
         mov     ax, ss
-        mov     [ss:bx + BS3REGS.ss], ax
+        mov     [ss:bx + BS3REGCTX.ss], ax
 .save_context_16_done_stack:
         mov     ax, [xBP + xCB*3]
-        mov     [ss:bx + BS3REGS.rflags], ax
+        mov     [ss:bx + BS3REGCTX.rflags], ax
         mov     al, VAR_CALLER_MODE
-        mov     [ss:bx + BS3REGS.bMode], al
+        mov     [ss:bx + BS3REGCTX.bMode], al
         cmp     byte [g_uBs3CpuDetected], BS3CPU_80286
         jne     .save_context_16_return
-        smsw    [ss:bx + BS3REGS.cr0]
-        str     [ss:bx + BS3REGS.tr]
-        sldt    [ss:bx + BS3REGS.ldtr]
+        smsw    [ss:bx + BS3REGCTX.cr0]
+        str     [ss:bx + BS3REGCTX.tr]
+        sldt    [ss:bx + BS3REGCTX.ldtr]
 .save_context_16_return:
         ret
 %endif ; TMPL_BITS == 16
@@ -320,89 +353,113 @@ TMPL_BEGIN_TEXT
         mov     dword [ss:xBX + xDI], 0
         mov     dword [ss:xBX + xDI + 4], 0
         add     xDI, 8
-        cmp     xDI, BS3REGS_size
+        cmp     xDI, BS3REGCTX_size
         jb      .save_context_32_clear_loop
         pop     xDI
 %endif
 
         ; Do the 386+ state saving.
 %if TMPL_BITS == 16                     ; save the high word of registered pushed on the stack.
-        mov     [ss:bx + BS3REGS.rax], eax
-        mov     [ss:bx + BS3REGS.rcx], ecx
-        mov     [ss:bx + BS3REGS.rdx], edx
-        mov     [ss:bx + BS3REGS.rbx], ebx
-        mov     [ss:bx + BS3REGS.rbp], ebp
-        mov     [ss:bx + BS3REGS.rsp], esp
+        mov     [ss:bx + BS3REGCTX.rax], eax
+        mov     [ss:bx + BS3REGCTX.rcx], ecx
+        mov     [ss:bx + BS3REGCTX.rdx], edx
+        mov     [ss:bx + BS3REGCTX.rbx], ebx
+        mov     [ss:bx + BS3REGCTX.rbp], ebp
+        mov     [ss:bx + BS3REGCTX.rsp], esp
+        pushfd
+        pop     dword [ss:bx + BS3REGCTX.rflags]
 %endif
         mov     xAX, VAR_CALLER_AX
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rax], xAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rax], xAX
         mov     xCX, VAR_CALLER_CX
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rcx], xCX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rcx], xCX
         mov     xAX, VAR_CALLER_DX
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rdx], xAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rdx], xAX
         mov     xAX, VAR_CALLER_BX
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rbx], xAX
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rsi], sSI
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rdi], sDI
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rbx], xAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rsi], sSI
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rdi], sDI
         mov     xAX, VAR_CALLER_BP
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rbp], xAX
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.es], es
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rbp], xAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.es], es
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.fs], fs
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.gs], gs
         mov     xAX, [xBP + xCB]
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rip], xAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rip], xAX
         mov     ax, [xBP + xCB*2]
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.cs], ax
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.cs], ax
 %if TMPL_MODE != BS3_MODE_RM
         and     al, X86_SEL_RPL
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.bCpl], al
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.bCpl], al
         cmp     al, 0
         je      .save_context_full_same
         mov     xAX, [xBP + xCB*4]
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rsp], xAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rsp], xAX
         mov     ax, [xBP + xCB*5]
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.ss], ax
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.ss], ax
         jmp     .save_context_full_done_stack
 %else
-        mov     byte [BS3_NOT_64BIT(ss:) xBX + BS3REGS.bCpl], 0
+        mov     byte [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.bCpl], 0
 %endif
 .save_context_full_same:
         mov     xAX, xBP
         add     xAX, xCB * (1 + 3)
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rsp], xAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rsp], xAX
         mov     ax, ss
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.ss], ax
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.ss], ax
 .save_context_full_done_stack:
         mov     xAX, [xBP + xCB*3]
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.rflags], xAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rflags], sAX
+
         mov     al, VAR_CALLER_MODE
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.bMode], al
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.bMode], al
 %if TMPL_BITS == 64
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.r8], r8
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.r9], r9
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.r10], r10
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.r11], r11
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.r12], r12
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.r13], r13
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.r14], r14
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.r15], r15
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.r8], r8
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.r9], r9
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.r10], r10
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.r11], r11
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.r12], r12
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.r13], r13
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.r14], r14
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.r15], r15
 %endif
-        ; Save state according to detected CPU.
-        str     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.tr]
-        sldt    [BS3_NOT_64BIT(ss:) xBX + BS3REGS.ldtr]
-        cmp     byte [g_uBs3CpuDetected], BS3CPU_80286
-        ja      .save_context_full_return
-        smsw    [BS3_NOT_64BIT(ss:) xBX + BS3REGS.cr0]
-        jmp     .save_context_full_return
-
-.save_context_full_386_plus:
+        str     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.tr]
+        sldt    [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.ldtr]
         mov     sAX, cr0
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.cr0], sAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.cr0], sAX
         mov     sAX, cr2
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.cr2], sAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.cr2], sAX
         mov     sAX, cr3
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.cr3], sAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.cr3], sAX
         mov     sAX, cr4
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGS.cr4], sAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.cr4], sAX
 
+%if TMPL_BITS != 64
+        ; Deal with extended v8086 frame.
+ %if TMPL_BITS == 32
+        test    dword [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rflags], X86_EFL_VM
+        jz      .save_context_full_return
+ %else
+        mov     al, VAR_CALLER_MODE
+        and     al, BS3_MODE_CODE_MASK
+        cmp     al, BS3_MODE_CODE_V86
+        jne     .save_context_full_return
+        mov     dword [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rflags], X86_EFL_VM
+ %endif
+        mov     xAX, [xBP + xCB*4]
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rsp], xAX
+        mov     ax, [xBP + xCB*5]
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.ss], ax
+        mov     ax, [xBP + xCB*6]
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.es], ax
+        mov     ax, [xBP + xCB*7]
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.ds], ax
+        mov     ax, [xBP + xCB*8]
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.fs], ax
+        mov     ax, [xBP + xCB*9]
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.gs], ax
+        mov     byte [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.bCpl], 3
+%endif
 .save_context_full_return:
         ret
 

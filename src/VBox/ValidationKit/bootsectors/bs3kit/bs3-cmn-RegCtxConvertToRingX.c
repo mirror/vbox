@@ -1,0 +1,130 @@
+/* $Id$ */
+/** @file
+ * BS3Kit - Bs3RegCtxConvertToRingX
+ */
+
+/*
+ * Copyright (C) 2007-2016 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ */
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include "bs3kit-template-header.h"
+
+
+/**
+ * Transforms a real mode segment into a protected mode selector.
+ *
+ * @returns Protected mode selector.
+ * @param   uSeg            The real mode segment.
+ * @param   bRing           The target ring.
+ */
+static uint16_t bs3RegCtxConvertRealSegToRingX(uint16_t uSeg, uint8_t bRing)
+{
+    uint16_t uSel;
+    if (uSeg == 0)
+        uSel = BS3_SEL_R0_SS16 + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
+    else if (uSeg == (BS3_ADDR_BS3TEXT16 >> 4))
+        uSel = BS3_SEL_R0_CS16 + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
+    else if (uSeg == (BS3_ADDR_BS3DATA16 >> 4))
+        uSel = BS3_SEL_R0_DS16 + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
+    else if (uSeg == (BS3_ADDR_BS3SYSTEM16 >> 4))
+        uSel = BS3_SEL_SYSTEM16;
+    else if (!(uSeg & 0xfff))
+        uSel = (uSeg >> (12 - X86_SEL_SHIFT)) + BS3_SEL_TILED;
+    else
+    {
+        BS3_ASSERT(0);
+        return 0;
+    }
+    uSel |= bRing;
+    return uSel;
+}
+
+
+/**
+ * Transforms a protected mode selector to a different ring.
+ *
+ * @returns Adjusted protected mode selector.
+ * @param   uSeg            The current selector value.
+ * @param   bRing           The target ring.
+ */
+static uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing)
+{
+    if (   uSel > X86_SEL_RPL
+        && !(uSel & X86_SEL_LDT) )
+    {
+        if (uSel >= BS3_SEL_R0_FIRST)
+        {
+            /* Convert BS3_SEL_R*_XXX to the target ring. */
+            uSel &= BS3_SEL_RING_SUB_MASK;
+            uSel |= bRing;
+            uSel += BS3_SEL_R0_FIRST;
+            uSel |= (uint16_t)bRing << BS3_SEL_RING_SHIFT;
+        }
+        else
+        {
+            /* Convert TEXT16 and DATA16 to BS3_SEL_R*_XXX. */
+            uint16_t const uSelRaw = uSel & X86_SEL_MASK_OFF_RPL;
+            if (uSelRaw  == BS3_SEL_TEXT16)
+                uSel = (BS3_SEL_R0_CS16 | bRing) + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
+            else if (uSelRaw == BS3_SEL_DATA16)
+                uSel = (BS3_SEL_R0_DS16 | bRing) + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
+            /* Adjust the RPL on tiled and MMIO selectors. */
+            else if (   uSelRaw == BS3_SEL_VMMDEV_MMIO16
+                     || uSelRaw >= BS3_SEL_TILED)
+                uSel = uSelRaw | bRing;
+        }
+    }
+    return uSel;
+}
+
+
+/**
+ * Transforms a register context to a different ring.
+ *
+ * @param   pRegCtx     The register context.
+ * @param   bRing       The target ring (0..3).
+ */
+BS3_DECL(void) Bs3RegCtxConvertToRingX(PBS3REGCTX pRegCtx, uint8_t bRing)
+{
+    if (   (pRegCtx->rflags.u32 & X86_EFL_VM)
+        || pRegCtx->bMode == BS3_MODE_RM)
+    {
+        pRegCtx->cs = bs3RegCtxConvertRealSegToRingX(pRegCtx->cs, bRing);
+        pRegCtx->ss = bs3RegCtxConvertRealSegToRingX(pRegCtx->ss, bRing);
+        pRegCtx->ds = bs3RegCtxConvertRealSegToRingX(pRegCtx->ds, bRing);
+        pRegCtx->es = bs3RegCtxConvertRealSegToRingX(pRegCtx->es, bRing);
+        pRegCtx->fs = bs3RegCtxConvertRealSegToRingX(pRegCtx->fs, bRing);
+        pRegCtx->gs = bs3RegCtxConvertRealSegToRingX(pRegCtx->gs, bRing);
+    }
+    else
+    {
+        pRegCtx->cs = bs3RegCtxConvertProtSelToRingX(pRegCtx->cs, bRing);
+        pRegCtx->ss = bs3RegCtxConvertProtSelToRingX(pRegCtx->ss, bRing);
+        pRegCtx->ds = bs3RegCtxConvertProtSelToRingX(pRegCtx->ds, bRing);
+        pRegCtx->es = bs3RegCtxConvertProtSelToRingX(pRegCtx->es, bRing);
+        pRegCtx->fs = bs3RegCtxConvertProtSelToRingX(pRegCtx->fs, bRing);
+        pRegCtx->gs = bs3RegCtxConvertProtSelToRingX(pRegCtx->gs, bRing);
+    }
+    pRegCtx->bCpl = bRing;
+}
+

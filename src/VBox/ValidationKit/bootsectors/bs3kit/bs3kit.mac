@@ -1084,7 +1084,7 @@ size %1 %+ _EndProc     0
 %define BS3_ADDR_LOAD           010000h
 ;; Where we save the boot registers during init.
 ; Located right before the code.
-%define BS3_ADDR_REG_SAVE       (BS3_ADDR_LOAD - BS3REGS_size - 8)
+%define BS3_ADDR_REG_SAVE       (BS3_ADDR_LOAD - BS3REGCTX_size - 8)
 ;; Where the stack starts (initial RSP value).
 ; Located 16 bytes (assumed by boot sector) before the saved registers. SS.BASE=0.
 %define BS3_ADDR_STACK          (BS3_ADDR_REG_SAVE - 16)
@@ -1122,46 +1122,61 @@ size %1 %+ _EndProc     0
 
 
 ;;
-; Registers.  Used by traps and such.
+; BS3 register context.  Used by traps and such.
 ;
-struc BS3REGS
-        .rax        resq 1
-        .rcx        resq 1
-        .rdx        resq 1
-        .rbx        resq 1
-        .rsp        resq 1
-        .rbp        resq 1
-        .rsi        resq 1
-        .rdi        resq 1
-        .r8         resq 1
-        .r9         resq 1
-        .r10        resq 1
-        .r11        resq 1
-        .r12        resq 1
-        .r13        resq 1
-        .r14        resq 1
-        .r15        resq 1
-        .rflags     resq 1
-        .rip        resq 1
-        .cs         resw 1
-        .ds         resw 1
-        .es         resw 1
-        .fs         resw 1
-        .gs         resw 1
-        .ss         resw 1
-        .tr         resw 1
-        .ldtr       resw 1
-        .bMode      resb 1
-        .bCpl       resb 1
-        .abPadding  resb 6
-        .cr0        resq 1
-        .cr2        resq 1
-        .cr3        resq 1
-        .cr4        resq 1
-
-        ;; @todo Add floating point registers when they are active.
+struc BS3REGCTX
+        .rax        resq 1              ; BS3REG      rax;                    /**< 0x00  */
+        .rcx        resq 1              ; BS3REG      rcx;                    /**< 0x08  */
+        .rdx        resq 1              ; BS3REG      rdx;                    /**< 0x10  */
+        .rbx        resq 1              ; BS3REG      rbx;                    /**< 0x18  */
+        .rsp        resq 1              ; BS3REG      rsp;                    /**< 0x20  */
+        .rbp        resq 1              ; BS3REG      rbp;                    /**< 0x28  */
+        .rsi        resq 1              ; BS3REG      rsi;                    /**< 0x30  */
+        .rdi        resq 1              ; BS3REG      rdi;                    /**< 0x38  */
+        .r8         resq 1              ; BS3REG      r8;                     /**< 0x40  */
+        .r9         resq 1              ; BS3REG      r9;                     /**< 0x48  */
+        .r10        resq 1              ; BS3REG      r10;                    /**< 0x50  */
+        .r11        resq 1              ; BS3REG      r11;                    /**< 0x58  */
+        .r12        resq 1              ; BS3REG      r12;                    /**< 0x60  */
+        .r13        resq 1              ; BS3REG      r13;                    /**< 0x68  */
+        .r14        resq 1              ; BS3REG      r14;                    /**< 0x70  */
+        .r15        resq 1              ; BS3REG      r15;                    /**< 0x78  */
+        .rflags     resq 1              ; BS3REG      rflags;                 /**< 0x80  */
+        .rip        resq 1              ; BS3REG      rip;                    /**< 0x88  */
+        .cs         resw 1              ; uint16_t    cs;                     /**< 0x90  */
+        .ds         resw 1              ; uint16_t    ds;                     /**< 0x92  */
+        .es         resw 1              ; uint16_t    es;                     /**< 0x94  */
+        .fs         resw 1              ; uint16_t    fs;                     /**< 0x96  */
+        .gs         resw 1              ; uint16_t    gs;                     /**< 0x98  */
+        .ss         resw 1              ; uint16_t    ss;                     /**< 0x9a  */
+        .tr         resw 1              ; uint16_t    tr;                     /**< 0x9c  */
+        .ldtr       resw 1              ; uint16_t    ldtr;                   /**< 0x9e  */
+        .bMode      resb 1              ; uint8_t     bMode;                  /**< 0xa0:  BS3_MODE_XXX. */
+        .bCpl       resb 1              ; uint8_t     bCpl;                   /**< 0xa1: 0-3, 0 is used for real mode. */
+        .abPadding  resb 6              ; uint8_t     abPadding[6];           /**< 0xa2  */
+        .cr0        resq 1              ; BS3REG      cr0;                    /**< 0xa8  */
+        .cr2        resq 1              ; BS3REG      cr2;                    /**< 0xb0  */
+        .cr3        resq 1              ; BS3REG      cr3;                    /**< 0xb8  */
+        .cr4        resq 1              ; BS3REG      cr4;                    /**< 0xc0  */
 endstruc
 
+;;
+; BS3 Trap Frame.
+;
+struc BS3TRAPFRAME
+        .bXcpt          resb 1
+        .bAlignment     resb 1
+        .uHandlerCs     resw 1
+        .uHandlerSs     resw 1
+        .usAlignment    resw 1
+        .uHandlerRsp    resq 1
+        .fHandlerRfl    resq 1
+        .uErrCd         resq 1
+        .Ctx            resb BS3REGCTX_size
+endstruc
+
+;; Flag for Bs3TrapXxResumeFrame methods.
+%define BS3TRAPRESUME_F_SKIP_CRX 1
 
 
 ;;
@@ -1378,61 +1393,6 @@ endstruc
 %if (BS3_ADDR_BS3SYSTEM16 / 16) != BS3_SEL_SYSTEM16
  %error "BS3_ADDR_BS3SYSTEM16 and BS3_SEL_SYSTEM16 are out of sync"
 %endif
-
-;
-; BS3 register context (without FPU).
-;
-struc BS3REGCTX
-        .rax            resq 1
-        .rcx            resq 1
-        .rdx            resq 1
-        .rbx            resq 1
-        .rsp            resq 1
-        .rbp            resq 1
-        .rsi            resq 1
-        .rdi            resq 1
-        .r8             resq 1
-        .r9             resq 1
-        .r10            resq 1
-        .r11            resq 1
-        .r12            resq 1
-        .r13            resq 1
-        .r14            resq 1
-        .r15            resq 1
-        .rflags         resq 1
-        .rip            resq 1
-        .cs             resw 1
-        .ds             resw 1
-        .es             resw 1
-        .fs             resw 1
-        .gs             resw 1
-        .ss             resw 1
-        .tr             resw 1
-        .ldtr           resw 1
-        .cBits          resb 1
-        .abPadding      resb 7
-        .cr0            resq 1
-        .cr2            resq 1
-        .cr3            resq 1
-        .cr4            resq 1
-endstruc
-
-;;
-; BS3 Trap Frame.
-;
-struc BS3TRAPFRAME
-        .bXcpt          resb 1
-        .bAlignment     resb 1
-        .uHandlerCs     resw 1
-        .uHandlerSs     resw 1
-        .uHandlerRsp    resq 1
-        .fHandlerRfl    resq 1
-        .uErrCd         resq 1
-        .Ctx            resb BS3REGCTX_size
-endstruc
-
-;; Flag for Bs3TrapXxResumeFrame methods.
-%define BS3TRAPRESUME_F_SKIP_CRX 1
 
 
 ;; @name BS3CPU_XXX - Bs3CpuDetect_mmm return value and g_bBs3CpuDetected.

@@ -110,19 +110,18 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode
         ; Load the appropriate task selector.
         ; Always 64-bit in long mode, otherwise according to TMPL_BITS.
         ;
-        mov     ax, X86DESCGENERIC_BIT_OFF_TYPE + 1 ; For clearing the busy bit in the TSS descriptor type.
  %if BS3_MODE_IS_64BIT_SYS(TMPL_MODE)
         BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss64
         TMPL_BEGIN_TEXT
-        btr     [Bs3Gdte_Tss64 TMPL_WRT_SYSTEM16_OR_FLAT], ax
+        and     byte [5 + Bs3Gdte_Tss64 TMPL_WRT_SYSTEM16_OR_FLAT], ~X86_SEL_TYPE_SYS_TSS_BUSY_MASK
         mov     ax, BS3_SEL_TSS64
 
  %elif BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
         BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss16
         BS3_EXTERN_SYSTEM16 Bs3Gdte_Tss16DoubleFault
         TMPL_BEGIN_TEXT
-        btr     [Bs3Gdte_Tss16            TMPL_WRT_SYSTEM16_OR_FLAT], ax
-        btr     [Bs3Gdte_Tss16DoubleFault TMPL_WRT_SYSTEM16_OR_FLAT], ax
+        and     byte [5 + Bs3Gdte_Tss16            TMPL_WRT_SYSTEM16_OR_FLAT], ~X86_SEL_TYPE_SYS_TSS_BUSY_MASK
+        and     byte [5 + Bs3Gdte_Tss16DoubleFault TMPL_WRT_SYSTEM16_OR_FLAT], ~X86_SEL_TYPE_SYS_TSS_BUSY_MASK
         mov     ax, BS3_SEL_TSS16
 
  %elif BS3_MODE_IS_32BIT_SYS(TMPL_MODE)
@@ -131,8 +130,8 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode
         BS3_EXTERN_SYSTEM16 Bs3Tss32
         BS3_EXTERN_SYSTEM16 Bs3Tss32DoubleFault
         TMPL_BEGIN_TEXT
-        btr     [Bs3Gdte_Tss32            TMPL_WRT_SYSTEM16_OR_FLAT], ax
-        btr     [Bs3Gdte_Tss32DoubleFault TMPL_WRT_SYSTEM16_OR_FLAT], ax
+        and     byte [5 + Bs3Gdte_Tss32            TMPL_WRT_SYSTEM16_OR_FLAT], ~X86_SEL_TYPE_SYS_TSS_BUSY_MASK
+        and     byte [5 + Bs3Gdte_Tss32DoubleFault TMPL_WRT_SYSTEM16_OR_FLAT], ~X86_SEL_TYPE_SYS_TSS_BUSY_MASK
         mov     eax, cr3
         mov     [X86TSS32.cr3 + Bs3Tss32            TMPL_WRT_SYSTEM16_OR_FLAT], eax
         mov     [X86TSS32.cr3 + Bs3Tss32DoubleFault TMPL_WRT_SYSTEM16_OR_FLAT], eax

@@ -62,10 +62,29 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
 %else
         ;
         ; Protected mode.
+        ; 80286 requirements for PE16 clutters the code a little.
         ;
+ %if TMPL_MODE == BS3_MODE_PE16
+        mov     ax, BS3_SEL_DATA16
+        mov     ds, ax                  ; Bs3EnterMode_rm will set ds, so no need to preserve it
+        cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
+        ja      .do_386_prologue
+        push    bp
+        push    ax
+        push    bx
+        pushf
+        push    word 1
+        jmp     .done_prologue
+ %endif
+.do_386_prologue:
+        push    sBP
         push    sAX
         push    sBX
         sPUSHF
+ %if TMPL_MODE == BS3_MODE_PE16
+        push    word 0
+ %endif
+.done_prologue:
 
         ;
         ; Get to 16-bit ring-0 and disable interrupts.
@@ -79,10 +98,10 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
         ;
         ; On 80286 we must reset the CPU to get back to real mode.
         ;
-        mov     ax, BS3_SEL_DATA16
-        mov     ds, ax
-        cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
-        jne     .is_386_or_better
+        pop     ax
+        push    ax
+        test    ax, ax
+        jz      .is_386_or_better
 .implement_this_later:
         int3
         jmp     .implement_this_later
@@ -142,19 +161,36 @@ BS3_BEGIN_TEXT16
         extern  NAME(Bs3EnteredMode_rm)
         call    NAME(Bs3EnteredMode_rm)
 
- %if TMPL_BITS == 64
-        pop     eax
-        popfd
-        pop     ebx
-        pop     ebx
-        pop     eax
-        pop     eax
- %else
-        popfd
-        pop     ebx
-        pop     eax
+ %if TMPL_MODE == BS3_MODE_PE16
+        pop     ax
+        test    ax, ax
+        jz      .do_386_epilogue
+        popf
+        pop     bx
+        pop     ax
+        pop     bp
  %endif
-        retn    BS3_IF_16_32_64BIT(0, 2, 6)
+ %if TMPL_BITS != 64
+.do_386_epilogue:
+        popfd
+        pop     ebx
+        pop     eax
+%if 0
+        pop     ebp
+%else
+add     esp, 4
+%endif
+ %else
+        pop     eax
+        popfd
+        pop     ebx
+        pop     ebx
+        pop     eax
+        pop     eax
+        pop     ebp
+        pop     ebp
+ %endif
+        retn    (TMPL_BITS - 16) / 8
 
  %if TMPL_BITS != 16
 TMPL_BEGIN_TEXT

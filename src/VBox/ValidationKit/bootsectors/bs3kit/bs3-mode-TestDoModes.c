@@ -334,7 +334,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_pae32_16));
         }
 
-        if (paEntries[i].pfnDoPAEV86 && fDoV86Mode)
+        if (paEntries[i].pfnDoPAEV86 /*&& fDoV86Mode*/)
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInPAEV86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPAEV86));
             if (bErrNo != 0)
