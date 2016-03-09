@@ -36,6 +36,14 @@ else
 endif
 VBOX_PATH_DIST_OTHER = $(error VBOX_PATH_DIST_OTHER used in a non-combined package deal)
 
+ifeq ($(VBOX_WITH_QTGUI_V5),)
+ VBOX_QT_VERSION_MAJOR = 4
+ PATH_SDK_QT = $(PATH_SDK_QT4)
+else # VBOX_WITH_QTGUI_V5
+ VBOX_QT_VERSION_MAJOR = 5
+ PATH_SDK_QT = $(PATH_SDK_QT5)
+endif # VBOX_WITH_QTGUI_V5
+
 # Unset this to speed up things during makefile hacking.
 VBOX_DARWIN_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
 
@@ -338,7 +346,7 @@ VBOX_INSTALL_LANG_LPROJ := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
 #
 
 VBOX_DI_VBAPP_DYLIBS = \
-	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/4/$(qtmod)) \
+	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod)) \
 	MacOS/VBoxDD.dylib \
 	MacOS/VBoxDD2.dylib \
 	MacOS/VBoxDDU.dylib \
@@ -508,21 +516,29 @@ VBOX_DI_VBAPP_MISC_FILES += \
 	MacOS/VBoxEFI32.fd \
 	MacOS/VBoxEFI64.fd
 endif
+ifeq ($(VBOX_WITH_QTGUI_V5),)
+ VBOX_DI_VBAPP_MISC_FILES += \
+	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/classes.nib \
+	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/info.nib \
+	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/keyedobjects.nib
+else # VBOX_WITH_QTGUI_V5
+ VBOX_DI_VBAPP_MISC_FILES += \
+	PlugIns/platforms/libqcocoa$(SUFF_DLL) \
+	PlugIns/platforms/libqminimal$(SUFF_DLL) \
+	PlugIns/platforms/libqoffscreen$(SUFF_DLL)
+endif # VBOX_WITH_QTGUI_V5
 VBOX_DI_VBAPP_MISC_FILES += \
-	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
-	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
-	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib \
-	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/4/Resources/Info.plist)
+	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/Info.plist)
 
 VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/VirtualBoxVM.app/Contents/MacOS=>../../../MacOS/ \
 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
-	,Frameworks/$(qtmod).framework/Versions/Current=>4 )
+	,Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_VERSION_MAJOR) )
 ifndef VBOX_NOT_OSX_105
 VBOX_DI_VBAPP_SYMLINKS += $(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
-	,Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod) \
-	 Frameworks/$(qtmod).framework/Resources=>Versions/4/Resources/ )
+	,Frameworks/$(qtmod).framework/$(qtmod)=>Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
+	 Frameworks/$(qtmod).framework/Resources=>Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/ )
 endif
 
 ifdef VBOX_WITH_PYTHON
@@ -678,25 +694,31 @@ endif
 if 1
 	@# We cannot use @executable_path together with setuid binaries, dyld gets upset about it. So, fix Qt libs and users.
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
-		,install_name_tool -id /Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
-			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod)$(NLTAB) )
+		,install_name_tool -id /Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod)$(NLTAB) )
 	$(foreach f, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
 		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
 		$(VBOX_DI_VBAPP_PROGS) \
 		,install_name_tool \
 			$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
-				-change           @executable_path/../Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
-				-change               $(VBOX_PATH_QT)/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
-				-change                          $(PATH_SDK_QT4)/$(qtmod).framework/Versions/4/$(qtmod) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
-				-change                                          $(qtmod).framework/Versions/4/$(qtmod) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+				-change           @executable_path/../Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
+				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
+				-change               $(VBOX_PATH_QT)/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
+				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
+				-change                           $(PATH_SDK_QT)/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
+				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
+				-change                                          $(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
+				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
 				) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(f)$(NLTAB) )
 endif
+ifneq ($(VBOX_WITH_QTGUI_V5),)
+	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/qt.conf "[Paths]"
+	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/qt.conf "Prefix =" /Applications/VirtualBox.app/Contents
+	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents/Resources/qt.conf "[Paths]"
+	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents/Resources/qt.conf "Prefix =" /Applications/VirtualBox.app/Contents
+endif # VBOX_WITH_QTGUI_V5
 ifdef VBOX_WITH_DTRACE
 	@# DTrace library, testcases and scripts.
 	$(MKDIR) -p -m 0755 -- \
@@ -713,9 +735,9 @@ endif
 	@# Signed the binaries and the application bundle.
 ifdef VBOX_SIGNING_MODE
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
-		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
+		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
-		,$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/4,org.virtualbox.app.frameworks.$(qtmod)) )
+		,$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR),org.virtualbox.app.frameworks.$(qtmod)) )
 	$(foreach dylib, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
 		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
