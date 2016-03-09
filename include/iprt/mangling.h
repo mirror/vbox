@@ -1729,6 +1729,7 @@
 # define RTSortApvIsSorted                              RT_MANGLER(RTSortApvIsSorted)
 # define RTSortApvShell                                 RT_MANGLER(RTSortApvShell)
 # define RTSortIsSorted                                 RT_MANGLER(RTSortIsSorted)
+# define RTSortShell                                    RT_MANGLER(RTSortShell)
 # define RTSpinlockAcquire                              RT_MANGLER(RTSpinlockAcquire)
 # define RTSpinlockAcquireNoInts                        RT_MANGLER(RTSpinlockAcquireNoInts)
 # define RTSpinlockCreate                               RT_MANGLER(RTSpinlockCreate)

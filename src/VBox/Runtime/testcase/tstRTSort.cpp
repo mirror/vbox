@@ -34,6 +34,7 @@
 #include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
 
 
 /*********************************************************************************************************************************
@@ -93,6 +94,46 @@ static void testApvSorter(FNRTSORTAPV pfnSorter, const char *pszName)
 }
 
 
+static DECLCALLBACK(int) testCompare(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    return memcmp(pvElement1, pvElement2, (size_t)pvUser);
+}
+
+static void testSorter(RTTEST hTest, FNRTSORT pfnSorter, const char *pszName)
+{
+    RTTestISub(pszName);
+
+    /* Use pseudo random config and data. */
+    RTRAND hRand;
+    RTTESTI_CHECK_RC_OK_RETV(RTRandAdvCreateParkMiller(&hRand));
+    RTTIMESPEC Now;
+    uint64_t uSeed = RTTimeSpecGetSeconds(RTTimeNow(&Now));
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Seed %#RX64\n", uSeed);
+    RTRandAdvSeed(hRand, uSeed);
+
+    for (uint32_t cArrays = 0; cArrays < 512; cArrays++)
+    {
+        /* Create a random array with random data bytes. */
+        uint32_t const cElements = RTRandAdvU32Ex(hRand, 2, 8192);
+        uint32_t const cbElement = RTRandAdvU32Ex(hRand, 1, 32);
+        uint8_t       *pbArray;
+        RTTESTI_CHECK_RC_OK_RETV(RTTestGuardedAlloc(hTest, cElements * cbElement, 1 /*cbAlign*/,
+                                                    RT_BOOL(RTRandAdvU32Ex(hRand, 0, 1)) /*fHead*/, (void **)&pbArray));
+        RTTESTI_CHECK_RETV(pbArray);
+        RTRandAdvBytes(hRand, pbArray, cElements * cbElement);
+
+        /* sort it */
+        pfnSorter(pbArray, cElements, cbElement, testCompare, (void *)cbElement);
+
+        /* verify it */
+        if (!RTSortIsSorted(pbArray, cElements, cbElement, testCompare, (void *)cbElement))
+            RTTestIFailed("failed sorting %u elements of %u size", cElements, cbElement);
+
+        RTTestGuardedFree(hTest, pbArray);
+    }
+}
+
+
 int main()
 {
     RTTEST hTest;
@@ -104,6 +145,7 @@ int main()
     /*
      * Test the different algorithms.
      */
+    testSorter(hTest, RTSortShell, "RTSortShell - shell sort, variable sized element array");
     testApvSorter(RTSortApvShell, "RTSortApvShell - shell sort, pointer array");
 
     /*
