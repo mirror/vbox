@@ -620,11 +620,15 @@ void SerialPort::i_applyDefaults(GuestOSType *aOsType)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Set some more defaults.
-     * Note that the default value for COM1 (slot 0) is set in the constructor
-     * of bd. So slot 0 is correct already. */
+    /* Set some more defaults. */
     switch (m->bd->ulSlot)
     {
+        case 0:
+        {
+            m->bd->ulIOBase = 0x3f8;
+            m->bd->ulIRQ = 4;
+            break;
+        }
         case 1:
         {
             m->bd->ulIOBase = 0x2f8;
