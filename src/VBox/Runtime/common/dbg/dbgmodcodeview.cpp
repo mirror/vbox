@@ -56,6 +56,7 @@
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/sort.h>
 #include <iprt/string.h>
 #include <iprt/strcache.h>
 #include "internal/dbgmod.h"
@@ -68,21 +69,6 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/**
- * Directory sorting order.
- */
-typedef enum RTCVDIRORDER
-{
-    RTCVDIRORDER_INVALID = 0,
-    /** Ordered by module. */
-    RTCVDIRORDER_BY_MOD,
-    /** Ordered by module, but 0 modules at the end. */
-    RTCVDIRORDER_BY_MOD_0,
-    /** Ordered by section, with global modules at the end. */
-    RTCVDIRORDER_BY_SST_MOD
-} RTCVDIRORDER;
-
-
 /**
  * File type.
  */
@@ -122,8 +108,6 @@ typedef struct RTDBGMODCV
     uint32_t        cbDbgInfo;
     /** The offset of the subsection directory (relative to offBase). */
     uint32_t        offDir;
-    /** The directory order. */
-    RTCVDIRORDER    enmDirOrder;
     /** @}  */
 
     /** @name COFF details.
@@ -1374,6 +1358,26 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
 
 
 /**
+ * @callback_method_impl{PFNRTSORTCMP,
+ *      Used by rtDbgModCvLoadDirectory to sort the directory.}
+ */
+static DECLCALLBACK(int) rtDbgModCvDirEntCmp(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    PRTCVDIRENT32 pEntry1 = (PRTCVDIRENT32)pvElement1;
+    PRTCVDIRENT32 pEntry2 = (PRTCVDIRENT32)pvElement2;
+    if (pEntry1->iMod < pEntry2->iMod)
+        return -1;
+    if (pEntry1->iMod > pEntry2->iMod)
+        return 1;
+    if (pEntry1->uSubSectType < pEntry2->uSubSectType)
+        return -1;
+    if (pEntry1->uSubSectType > pEntry2->uSubSectType)
+        return 1;
+    return 0;
+}
+
+
+/**
  * Loads the directory into memory (RTDBGMODCV::paDirEnts and
  * RTDBGMODCV::cDirEnts).
  *
@@ -1484,15 +1488,21 @@ static int rtDbgModCvLoadDirectory(PRTDBGMODCV pThis)
 
     if (RT_SUCCESS(rc))
     {
+        uint32_t const cbDbgInfo    = pThis->cbDbgInfo;
+        uint32_t const cDirEnts     = pThis->cDirEnts;
+
         /*
-         * Basic info validation and determining the directory ordering.
+         * Just sort the directory in a way we like, no need to make
+         * complicated demands on the linker output.
          */
-        bool           fWatcom      = 0;
+        RTSortShell(pThis->paDirEnts, cDirEnts, sizeof(pThis->paDirEnts[0]), rtDbgModCvDirEntCmp, NULL);
+
+        /*
+         * Basic info validation.
+         */
         uint16_t       cGlobalMods  = 0;
         uint16_t       cNormalMods  = 0;
         uint16_t       iModLast     = 0;
-        uint32_t const cbDbgInfo    = pThis->cbDbgInfo;
-        uint32_t const cDirEnts     = pThis->cDirEnts;
         Log2(("RTDbgModCv: %u (%#x) directory entries:\n", cDirEnts, cDirEnts));
         for (uint32_t i = 0; i < cDirEnts; i++)
         {
@@ -1536,8 +1546,6 @@ static int rtDbgModCvLoadDirectory(PRTDBGMODCV pThis)
                     }
                     iModLast = pDirEnt->iMod;
                 }
-                else if (pDirEnt->iMod < iModLast)
-                    fWatcom = true;
                 cNormalMods++;
             }
         }
@@ -1548,32 +1556,14 @@ static int rtDbgModCvLoadDirectory(PRTDBGMODCV pThis)
         }
         if (RT_SUCCESS(rc))
         {
-            if (fWatcom)
-                pThis->enmDirOrder = RTCVDIRORDER_BY_SST_MOD;
-            else if (pThis->paDirEnts[0].iMod == 0)
-                pThis->enmDirOrder = RTCVDIRORDER_BY_MOD_0;
-            else
-                pThis->enmDirOrder = RTCVDIRORDER_BY_MOD;
-            Log(("CV dir stats: %u total, %u normal, %u special, iModLast=%#x (%u), enmDirOrder=%d\n",
-                 cDirEnts, cNormalMods, cGlobalMods, iModLast, iModLast, pThis->enmDirOrder));
+            Log(("CV dir stats: %u total, %u normal, %u special, iModLast=%#x (%u)\n",
+                 cDirEnts, cNormalMods, cGlobalMods, iModLast, iModLast));
 
-
+#if 0 /* skip this stuff */
             /*
              * Validate the directory ordering.
              */
             uint16_t i = 0;
-
-            /* Old style with special modules up front. */
-            if (pThis->enmDirOrder == RTCVDIRORDER_BY_MOD_0)
-                while (i < cGlobalMods)
-                {
-                    if (pThis->paDirEnts[i].iMod != 0)
-                    {
-                        Log(("CV directory entry #%u: Expected iMod=%x instead of %x\n", i, 0, pThis->paDirEnts[i].iMod));
-                        rc = VERR_CV_BAD_FORMAT;
-                    }
-                    i++;
-                }
 
             /* Normal modules. */
             if (pThis->enmDirOrder != RTCVDIRORDER_BY_SST_MOD)
@@ -1647,8 +1637,8 @@ static int rtDbgModCvLoadDirectory(PRTDBGMODCV pThis)
                     }
                     i++;
                 }
+#endif
         }
-
     }
 
     return rc;
