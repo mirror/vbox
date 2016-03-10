@@ -49,7 +49,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
 
         ; Switch to ring-0 if v8086 mode.
         mov     ax, BS3_SYSCALL_TO_RING0
-        int     BS3_TRAP_SYSCALL
+        lock int BS3_TRAP_SYSCALL
 
 .ret_16bit:
         pop     ds
@@ -102,17 +102,11 @@ int3 ; This is for later, just remove this int3 once needed.
         or      byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_16
 
         popfd
- %if TMPL_BITS == 64
-        add     sp, 4
- %endif
+        TMPL_ONLY_64BIT_STMT pop     ebx
         pop     ebx
- %if TMPL_BITS == 64
-        add     sp, 4
- %endif
+        TMPL_ONLY_64BIT_STMT pop     eax
         pop     eax
- %if TMPL_BITS == 64
-        add     sp, 4
- %endif
+        TMPL_ONLY_64BIT_STMT add     sp, 4
         ret     (TMPL_BITS - 16) / 8    ; Return and pop 2 or 6 bytes of "parameters" (unused return value)
 
 .stack_rpl_must_be_0_for_custom_stacks:

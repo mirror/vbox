@@ -69,7 +69,6 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
         mov     ds, ax                  ; Bs3EnterMode_rm will set ds, so no need to preserve it
         cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
         ja      .do_386_prologue
-        push    bp
         push    ax
         push    bx
         pushf
@@ -77,7 +76,6 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
         jmp     .done_prologue
  %endif
 .do_386_prologue:
-        push    sBP
         push    sAX
         push    sBX
         sPUSHF
@@ -170,26 +168,13 @@ BS3_BEGIN_TEXT16
         pop     ax
         pop     bp
  %endif
- %if TMPL_BITS != 64
 .do_386_epilogue:
         popfd
+        TMPL_ONLY_64BIT_STMT pop ebx
         pop     ebx
+        TMPL_ONLY_64BIT_STMT pop eax
         pop     eax
-%if 0
-        pop     ebp
-%else
-add     esp, 4
-%endif
- %else
-        pop     eax
-        popfd
-        pop     ebx
-        pop     ebx
-        pop     eax
-        pop     eax
-        pop     ebp
-        pop     ebp
- %endif
+        TMPL_ONLY_64BIT_STMT add sp, 4
         retn    (TMPL_BITS - 16) / 8
 
  %if TMPL_BITS != 16

@@ -430,6 +430,39 @@
  %define TMPL_WRT_SYSTEM16_OR_FLAT  wrt FLAT
 %endif
 
+;; @def TMPL_ONLY_16BIT_STMT
+; Version of BS3_ONLY_16BIT_STMT that follows the code template.
+%if TMPL_BITS == 16
+ %macro TMPL_ONLY_16BIT_STMT 1+
+        %1
+ %endmacro
+%else
+ %macro TMPL_ONLY_16BIT_STMT 1+
+ %endmacro
+%endif
+
+;; @def TMPL_ONLY_32BIT_STMT
+; Version of BS3_ONLY_32BIT_STMT that follows the code template.
+%if TMPL_BITS == 32
+ %macro TMPL_ONLY_32BIT_STMT 1+
+        %1
+ %endmacro
+%else
+ %macro TMPL_ONLY_32BIT_STMT 1+
+ %endmacro
+%endif
+
+;; @def TMPL_ONLY_64BIT_STMT
+; Version of BS3_ONLY_64BIT_STMT that follows the code template.
+%if TMPL_BITS == 64
+ %macro TMPL_ONLY_64BIT_STMT 1+
+        %1
+ %endmacro
+%else
+ %macro TMPL_ONLY_64BIT_STMT 1+
+ %endmacro
+%endif
+
 ;
 ; Default code segment (changes BITS too).
 ;
