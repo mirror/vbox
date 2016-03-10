@@ -314,20 +314,14 @@ setup_modules()
         return 1
     fi
     succ_msg
-    if expr `uname -r` '<' '3.11' > /dev/null; then
-        echo "Not building the VirtualBox kernel graphics driver as this Linux version is"
-        echo "too old to use it."
-    else
-        begin "Building the graphics driver module"
-        if ! $BUILDINTMP \
-            --use-module-symvers /tmp/vboxguest-Module.symvers \
-            --module-source $MODULE_SRC/vboxvideo \
-            --no-print-directory install >> $LOG 2>&1; then
-            show_error "Building the graphics driver module failed.  Look at $LOG to find out what went wrong.  All other modules were built successfully."
-        else
-            succ_msg
-        fi
+    begin "Building the graphics driver module"
+    if ! $BUILDINTMP \
+        --use-module-symvers /tmp/vboxguest-Module.symvers \
+        --module-source $MODULE_SRC/vboxvideo \
+        --no-print-directory install >> $LOG 2>&1; then
+        show_error "Look at $LOG to find out what went wrong"
     fi
+    succ_msg
     depmod
     return 0
 }
