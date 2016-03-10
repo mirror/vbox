@@ -88,15 +88,15 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         ;
         ; Check what the CPU can do.
         ;
-        cmp     byte [es:g_uBs3CpuDetected], BS3CPU_80386
+        cmp     byte [es:BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80386
         jae     .restore_full
 
         ; Do the 80286 specifics first.
-        cmp     byte [es:g_uBs3CpuDetected], BS3CPU_80286
+        cmp     byte [es:BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
         jb      .restore_16_bit_ancient
 
         lmsw    [bx + BS3REGCTX.cr0]
-        cmp     byte [es:g_bBs3CurrentMode], BS3_MODE_RM
+        cmp     byte [es:BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
         je      .restore_16_bit_ancient
         lldt    [bx + BS3REGCTX.ldtr]
         ltr     [bx + BS3REGCTX.tr]
@@ -109,7 +109,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
 
         ; Do the return frame and final registers (keep short as we're not quite
         ; NMI safe here if pRegCtx is on the stack).
-        cmp     byte [es:g_bBs3CurrentMode], BS3_MODE_RM
+        cmp     byte [es:BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
         mov     di, [bx + BS3REGCTX.rsp]
         je      .restore_16_bit_same_privilege
         cmp     byte [bx + BS3REGCTX.bCpl], 0
@@ -131,19 +131,21 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         mov     di, [bx + BS3REGCTX.rdi]
         mov     es, [bx + BS3REGCTX.es]
         mov     ax, [bx + BS3REGCTX.rbx]
-        mov     bp, [bx + BS3REGCTX.rbp]  ; restore late for better stacks.
+        mov     bp, [bx + BS3REGCTX.rbp]    ; restore late for better stacks.
         mov     bx, [bx + BS3REGCTX.rbx]
 
         pop     ds
         iret
 
 .restore_16_bit_same_privilege:
-        sub     di, 2*4                 ; iret frame + pop ds
+        sub     di, 2*5                     ; iret frame + pop ds
         mov     [bx + BS3REGCTX.rsp], di
-        mov     es, [bx + BS3REGCTX.ss]   ; ES is target stack segment.
+        mov     es, [bx + BS3REGCTX.ss]     ; ES is target stack segment.
         cld
 
         mov     ax, [bx + BS3REGCTX.ds]
+        stosw
+        mov     ax, [bx + BS3REGCTX.rbp]
         stosw
         mov     ax, [bx + BS3REGCTX.rip]
         stosw
@@ -155,12 +157,12 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         mov     di, [bx + BS3REGCTX.rdi]
         mov     es, [bx + BS3REGCTX.es]
         mov     ax, [bx + BS3REGCTX.rbx]
-        mov     bp, [bx + BS3REGCTX.rbp]  ; restore late for better stacks.
         mov     ss, [bx + BS3REGCTX.ss]
-        mov     sp, [bx + BS3REGCTX.rsp]  ; adjusted, see above.
+        mov     sp, [bx + BS3REGCTX.rsp]    ; adjusted, see above.
         mov     bx, [bx + BS3REGCTX.rbx]
 
         pop     ds
+        pop     bp
         iret
 %endif
 
@@ -209,7 +211,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         ;
 %if TMPL_BITS != 64
         ; We cannot restore ldtr and tr if we're in real-mode.
-        cmp     byte [es:g_bBs3CurrentMode], BS3_MODE_RM
+        cmp     byte [BS3_ONLY_16BIT(es:) BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
         je      .skip_control_regs
 %endif
 
@@ -286,7 +288,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         ;
         ; 32-bit/16-bit is more complicated as we have three different iret frames.
         ;
-        cmp     byte [es:g_bBs3CurrentMode], BS3_MODE_RM
+        cmp     byte [BS3_ONLY_16BIT(es:) BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
         je      .iretd_same_cpl_rm
 
         test    dword [xBX + BS3REGCTX.rflags], X86_EFL_VM
@@ -353,9 +355,9 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         mov     [xBX + BS3REGCTX.rsp], edi
 .es_edi_is_pointing_to_return_frame_location:
         cld
-        mov     eax, [xBX + BS3REGCTX.rbp] ; Restore esp as late as possible for better stacks.
-        o32 stosd
         mov     ax,  [xBX + BS3REGCTX.ds]
+        o32 stosd
+        mov     eax, [xBX + BS3REGCTX.rbp] ; Restore esp as late as possible for better stacks.
         o32 stosd
         mov     eax, [xBX + BS3REGCTX.rip]
         o32 stosd

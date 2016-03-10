@@ -170,7 +170,8 @@ static void bs3TestWarnAboutSkippedModes(PCBS3TESTMODEENTRY paEntries, unsigned 
 
 BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEntries)
 {
-    bool const      fDoV86Mode    = false;
+    bool const      fDoV86Modes      = true;
+    bool const      fDoWeirdV86Modes = false;
     uint16_t const  uCpuDetected  = BS3_DATA_NM(g_uBs3CpuDetected);
     uint8_t const   bCpuType      = uCpuDetected & BS3CPU_TYPE_MASK;
     bool const      fHavePae      = RT_BOOL(uCpuDetected & BS3CPU_F_PAE);
@@ -220,7 +221,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_pe16_32));
         }
 
-        if (paEntries[i].pfnDoPE16_V86 && fDoV86Mode)
+        if (paEntries[i].pfnDoPE16_V86 && fDoWeirdV86Modes)
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInPE16_V86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPE16_V86));
             if (bErrNo != 0)
@@ -241,7 +242,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_pe32_16));
         }
 
-        if (paEntries[i].pfnDoPEV86 && fDoV86Mode)
+        if (paEntries[i].pfnDoPEV86 && fDoV86Modes)
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInPEV86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPEV86));
             if (bErrNo != 0)
@@ -265,7 +266,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_pp16_32));
         }
 
-        if (paEntries[i].pfnDoPP16_V86 && fDoV86Mode)
+        if (paEntries[i].pfnDoPP16_V86 && fDoWeirdV86Modes)
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInPP16_V86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPP16_V86));
             if (bErrNo != 0)
@@ -286,7 +287,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_pp32_16));
         }
 
-        if (paEntries[i].pfnDoPPV86 && fDoV86Mode)
+        if (paEntries[i].pfnDoPPV86 && fDoV86Modes)
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInPPV86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPPV86));
             if (bErrNo != 0)
@@ -313,7 +314,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_pae16_32));
         }
 
-        if (paEntries[i].pfnDoPAE16_V86 && fDoV86Mode)
+        if (paEntries[i].pfnDoPAE16_V86 && fDoWeirdV86Modes)
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInPAE16_V86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPAE16_V86));
             if (bErrNo != 0)
@@ -334,7 +335,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_pae32_16));
         }
 
-        if (paEntries[i].pfnDoPAEV86 /*&& fDoV86Mode*/)
+        if (paEntries[i].pfnDoPAEV86 && fDoV86Modes)
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInPAEV86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPAEV86));
             if (bErrNo != 0)

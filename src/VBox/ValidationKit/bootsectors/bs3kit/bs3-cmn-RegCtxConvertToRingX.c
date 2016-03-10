@@ -37,21 +37,27 @@
  * @param   uSeg            The real mode segment.
  * @param   bRing           The target ring.
  */
-static uint16_t bs3RegCtxConvertRealSegToRingX(uint16_t uSeg, uint8_t bRing)
+uint16_t bs3RegCtxConvertRealSegToRingX(uint16_t uSeg, uint8_t bRing)
 {
     uint16_t uSel;
-    if (uSeg == 0)
+    if (   uSeg == 0
+        || uSeg == BS3_SEL_R0_SS16)
         uSel = BS3_SEL_R0_SS16 + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
-    else if (uSeg == (BS3_ADDR_BS3TEXT16 >> 4))
+    else if (   uSeg == (BS3_ADDR_BS3TEXT16 >> 4)
+             || uSeg == BS3_SEL_R0_CS16)
         uSel = BS3_SEL_R0_CS16 + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
-    else if (uSeg == (BS3_ADDR_BS3DATA16 >> 4))
+    else if (   uSeg == (BS3_ADDR_BS3DATA16 >> 4)
+             || uSeg == BS3_SEL_R0_DS16)
         uSel = BS3_SEL_R0_DS16 + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
     else if (uSeg == (BS3_ADDR_BS3SYSTEM16 >> 4))
         uSel = BS3_SEL_SYSTEM16;
     else if (!(uSeg & 0xfff))
         uSel = (uSeg >> (12 - X86_SEL_SHIFT)) + BS3_SEL_TILED;
+    else if (uSeg == BS3_SEL_R0_DS16)
+        uSel = (uSeg >> (12 - X86_SEL_SHIFT)) + BS3_SEL_TILED;
     else
     {
+        Bs3Printf("uSeg=%#x\n", uSeg);
         BS3_ASSERT(0);
         return 0;
     }
@@ -67,7 +73,7 @@ static uint16_t bs3RegCtxConvertRealSegToRingX(uint16_t uSeg, uint8_t bRing)
  * @param   uSeg            The current selector value.
  * @param   bRing           The target ring.
  */
-static uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing)
+uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing)
 {
     if (   uSel > X86_SEL_RPL
         && !(uSel & X86_SEL_LDT) )
@@ -109,6 +115,9 @@ BS3_DECL(void) Bs3RegCtxConvertToRingX(PBS3REGCTX pRegCtx, uint8_t bRing)
     if (   (pRegCtx->rflags.u32 & X86_EFL_VM)
         || pRegCtx->bMode == BS3_MODE_RM)
     {
+        pRegCtx->rflags.u32 &= ~X86_EFL_VM;
+        pRegCtx->bMode &= ~BS3_MODE_CODE_MASK;
+        pRegCtx->bMode |= BS3_MODE_CODE_16;
         pRegCtx->cs = bs3RegCtxConvertRealSegToRingX(pRegCtx->cs, bRing);
         pRegCtx->ss = bs3RegCtxConvertRealSegToRingX(pRegCtx->ss, bRing);
         pRegCtx->ds = bs3RegCtxConvertRealSegToRingX(pRegCtx->ds, bRing);

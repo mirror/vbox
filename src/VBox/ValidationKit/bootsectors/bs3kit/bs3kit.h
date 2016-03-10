@@ -429,7 +429,7 @@ RT_C_DECLS_BEGIN
 #if ARCH_BITS == 16
 # define BS3_MAKE_PROT_R0PTR_FROM_REAL(a_uSeg, a_off) BS3_FP_MAKE(((a_uSeg) << 3) + BS3_SEL_TILED, a_off)
 #else
-# define BS3_MAKE_PROT_R0PTR_FROM_REAL(a_uSeg, a_off) ( (void *)(uintptr_t)(((uint32_t)(a_uSeg) << 16) | (uint16_t)(a_off)) )
+# define BS3_MAKE_PROT_R0PTR_FROM_REAL(a_uSeg, a_off) ( (void *)(uintptr_t)(((uint32_t)(a_uSeg) << 4) + (uint16_t)(a_off)) )
 #endif
 
 
@@ -2029,29 +2029,39 @@ BS3_DECL(void) Bs3RegCtxRestore_c64(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< 
 /** Skip restoring the CRx registers. */
 #define BS3REGCTXRESTORE_F_SKIP_CRX     UINT16_C(0x0001)
 
+/**
+ * Prints the register context.
+ *
+ * @param   pRegCtx     The register context to be printed.
+ */
+BS3_DECL(void) Bs3RegCtxPrint_c16(PCBS3REGCTX pRegCtx);
+BS3_DECL(void) Bs3RegCtxPrint_c32(PCBS3REGCTX pRegCtx); /**< @copydoc Bs3RegCtxPrint_c16 */
+BS3_DECL(void) Bs3RegCtxPrint_c64(PCBS3REGCTX pRegCtx); /**< @copydoc Bs3RegCtxPrint_c16 */
+#define Bs3RegCtxPrint BS3_CMN_NM(Bs3RegCtxPrint) /**< Selects #Bs3RegCtxPrint_c16, #Bs3RegCtxPrint_c32 or #Bs3RegCtxPrint_c64. */
+
 
 /**
  * Trap frame.
  */
 typedef struct BS3TRAPFRAME
 {
-    /** Exception/interrupt number. */
+    /** 0x00: Exception/interrupt number. */
     uint8_t     bXcpt;
-    /** Explicit alignment. */
+    /** 0x01: Explicit alignment. */
     uint8_t     bAlignment;
-    /** The handler CS. */
+    /** 0x02: The handler CS. */
     uint16_t    uHandlerCc;
-    /** The handler SS. */
+    /** 0x04: The handler SS. */
     uint16_t    uHandlerSs;
-    /** Explicit alignment. */
+    /** 0x06: Explicit alignment. */
     uint16_t    usAlignment;
-    /** The handler RSP (top of iret frame). */
+    /** 0x08: The handler RSP (top of iret frame). */
     uint64_t    uHandlerRsp;
-    /** The handler RFLAGS value. */
+    /** 0x10: The handler RFLAGS value. */
     uint64_t    fHandlerRfl;
-    /** The error code (if applicable). */
+    /** 0x18: The error code (if applicable). */
     uint64_t    uErrCd;
-    /** The register context. */
+    /** 0x20: The register context. */
     BS3REGCTX   Ctx;
 } BS3TRAPFRAME;
 /** Pointer to a trap frame. */

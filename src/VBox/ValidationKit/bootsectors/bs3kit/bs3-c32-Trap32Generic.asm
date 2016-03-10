@@ -237,7 +237,7 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], ecx
         mov     ecx, [ebp + 12]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], ecx
-        mov     cl, [ebp + 8]
+        mov     cx, [ebp + 8]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
         test    dword [ebp + 12], X86_EFL_VM
         jnz     .iret_frame_v8086
@@ -268,7 +268,7 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
 .iret_frame_v8086:
         mov     byte [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], 3
         or      byte [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], BS3_MODE_CODE_V86 ; paranoia ^ 2
-        lea     ecx, [ebp + 12]
+        movzx   ecx, word [ebp + 16]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
         mov     cx, [ebp + 20]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
