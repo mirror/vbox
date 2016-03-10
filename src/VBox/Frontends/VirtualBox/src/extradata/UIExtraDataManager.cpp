@@ -2321,7 +2321,7 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
     /* In Windows Qt fails to reposition out of screen window properly, so moving to centre: */
 #ifdef Q_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
-    if (fOk && geometry.intersects(availableGeometry))
+    if (fOk && !availableGeometry.contains(geometry, true))
         geometry.moveCenter(availableGeometry.center());
 #endif /* Q_WS_WIN */
 
@@ -3533,7 +3533,7 @@ QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *p
     /* In Windows Qt fails to reposition out of screen window properly, so moving to centre: */
 #ifdef Q_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
-    if (fOk && geometry.intersects(availableGeometry))
+    if (fOk && !availableGeometry.contains(geometry, true))
         geometry.moveCenter(availableGeometry.center());
 #endif /* Q_WS_WIN */
 
@@ -3692,7 +3692,7 @@ QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget)
     /* In Windows Qt fails to reposition out of screen window properly, so moving to centre: */
 #ifdef Q_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
-    if (fOk && geometry.intersects(availableGeometry))
+    if (fOk && !availableGeometry.contains(geometry, true))
         geometry.moveCenter(availableGeometry.center());
 #endif /* Q_WS_WIN */
 
