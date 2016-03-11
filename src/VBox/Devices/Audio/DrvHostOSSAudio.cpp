@@ -39,7 +39,7 @@
 
 #if ((SOUND_VERSION > 360) && (defined(OSS_SYSINFO)))
 /* OSS > 3.6 has a new syscall available for querying a bit more detailed information
- * about OSS' audio capabilities. */
+ * about OSS' audio capabilities. This is handy for e.g. Solaris. */
 # define VBOX_WITH_OSS_SYSINFO 1
 #endif
 
@@ -608,9 +608,18 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDMA
             err = ioctl(hFile, OSS_SYSINFO, &ossInfo);
             if (err == 0)
             {
-                LogRel2(("OSS: Number of DSPs: %d\n", ossVer.numaudios));
-                LogRel2(("OSS: Number of mixers: %d\n", ossVer.nummixers));
-                /** @todo Determine number of input devices + output devices. */
+                LogRel2(("OSS: Number of DSPs: %d\n", ossInfo.numaudios));
+                LogRel2(("OSS: Number of mixers: %d\n", ossInfo.nummixers));
+
+                int cDev = ossInfo.nummixers;
+                if (!cDev)
+                    cDev = ossInfo.numaudios;
+
+                pCfg->cSources        = cDev;
+                pCfg->cSinks          = cDev;
+
+                pCfg->cMaxStreamsIn   = UINT32_MAX;
+                pCfg->cMaxStreamsOut  = UINT32_MAX;
             }
             else
             {
@@ -620,7 +629,7 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDMA
                 pCfg->cSources        = 1;
                 pCfg->cSinks          = 1;
 
-                pCfg->cMaxStreamsIn   = UINT32_MAX; /* Line in + microphone in. */
+                pCfg->cMaxStreamsIn   = UINT32_MAX;
                 pCfg->cMaxStreamsOut  = UINT32_MAX;
 #ifdef VBOX_WITH_OSS_SYSINFO
             }
