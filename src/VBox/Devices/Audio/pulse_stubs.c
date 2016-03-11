@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -110,12 +110,20 @@ PROXY_STUB     (pa_stream_writable_size, size_t,
                 (pa_stream *p),
                 (p))
 PROXY_STUB     (pa_context_connect, int,
-                (pa_context *c, const char *server, pa_context_flags_t flags,
-                 const pa_spawn_api *api),
+                (pa_context *c, const char *server, pa_context_flags_t flags, const pa_spawn_api *api),
                 (c, server, flags, api))
 PROXY_STUB_VOID(pa_context_disconnect,
                 (pa_context *c),
                 (c))
+PROXY_STUB     (pa_context_get_server_info, pa_operation*,
+                (pa_context *c, const char *name, pa_server_info_cb_t cb, void *userdata),
+                (c, name, cb, userdata))
+PROXY_STUB     (pa_context_get_sink_info_by_name, pa_operation*,
+                (pa_context *c, const char *name, pa_sink_info_cb_t cb, void *userdata),
+                (c, name, cb, userdata))
+PROXY_STUB     (pa_context_get_source_info_by_name, pa_operation*,
+                (pa_context *c, const char *name, pa_source_info_cb_t cb, void *userdata),
+                (c, name, cb, userdata))
 PROXY_STUB     (pa_context_get_state, pa_context_state_t,
                 (pa_context *c),
                 (c))
@@ -219,6 +227,9 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(pa_stream_writable_size),
     ELEMENT(pa_context_connect),
     ELEMENT(pa_context_disconnect),
+    ELEMENT(pa_context_get_server_info),
+    ELEMENT(pa_context_get_sink_info_by_name),
+    ELEMENT(pa_context_get_source_info_by_name),
     ELEMENT(pa_context_get_state),
     ELEMENT(pa_context_unref),
     ELEMENT(pa_context_errno),
@@ -284,4 +295,3 @@ int audioLoadPulseLib(void)
     isLibLoaded = YES;
     return rc;
 }
-

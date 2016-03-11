@@ -4806,17 +4806,17 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                 int rc2 = pCon->pfnGetConfiguration(pCon, &backendCfg);
                 if (RT_SUCCESS(rc2))
                 {
-                    if (backendCfg.cMaxHstStrmsIn)
+                    if (backendCfg.cSources)
                     {
 #ifdef VBOX_WITH_HDA_MIC_IN
                         /* If the audio backend supports two or more input streams at once,
                          * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
-                        if (backendCfg.cMaxHstStrmsIn >= 2)
+                        if (backendCfg.cMaxStreamsIn >= 2)
                             fWarn = !fValidLineIn || !fValidMicIn;
                         /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
                          * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
                          * One of the two simply is not in use then. */
-                        else if (backendCfg.cMaxHstStrmsIn == 1)
+                        else if (backendCfg.cMaxStreamsIn == 1)
                             fWarn = !fValidLineIn && !fValidMicIn;
                         /* Don't warn if our backend is not able of supporting any input streams at all. */
 #else
@@ -4826,7 +4826,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                     }
 
                     if (   !fWarn
-                        && backendCfg.cMaxHstStrmsOut)
+                        && backendCfg.cSinks)
                     {
                         fWarn = !fValidOut;
                     }

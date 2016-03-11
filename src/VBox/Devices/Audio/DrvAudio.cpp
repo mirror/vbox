@@ -614,7 +614,7 @@ int drvAudioDestroyHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOut)
             }
 
             RTMemFree(pHstStrmOut);
-            pThis->cFreeOutputStreams++;
+            pThis->cStreamsFreeOut++;
             return VINF_SUCCESS;
         }
     }
@@ -748,7 +748,7 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
-    if (!pThis->cFreeOutputStreams)
+    if (!pThis->cStreamsFreeOut)
     {
         LogFlowFunc(("Maximum number of host output streams reached\n"));
         return VERR_NO_MORE_HANDLES;
@@ -800,7 +800,7 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG
         if (RT_SUCCESS(rc))
         {
             RTListPrepend(&pThis->lstHstStrmOut, &pHstStrmOut->Node);
-            pThis->cFreeOutputStreams--;
+            pThis->cStreamsFreeOut--;
         }
 
         RTStrFree(pszTemp);
@@ -1004,7 +1004,7 @@ int drvAudioGstInInit(PPDMAUDIOGSTSTRMIN pGstStrmIn, PPDMAUDIOHSTSTRMIN pHstStrm
 static int drvAudioAllocHstIn(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg,
                               PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOHSTSTRMIN *ppHstStrmIn)
 {
-    if (!pThis->cFreeInputStreams)
+    if (!pThis->cStreamsFreeIn)
     {
         LogFlowFunc(("No more input streams free to use, bailing out\n"));
         return VERR_NO_MORE_HANDLES;
@@ -1056,7 +1056,7 @@ static int drvAudioAllocHstIn(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTR
         if (RT_SUCCESS(rc))
         {
             RTListPrepend(&pThis->lstHstStrmIn, &pHstStrmIn->Node);
-            pThis->cFreeInputStreams--;
+            pThis->cStreamsFreeIn--;
         }
 
         RTStrFree(pszTemp);
@@ -1236,7 +1236,7 @@ int drvAudioDestroyHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN pHstStrmIn)
             RTListNodeRemove(&pHstStrmIn->Node);
 
             RTMemFree(pHstStrmIn);
-            pThis->cFreeInputStreams++;
+            pThis->cStreamsFreeIn++;
         }
     }
     else
@@ -1421,7 +1421,7 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface, uint32_
         rc = pThis->pHostDrvAudio->pfnGetConf(pThis->pHostDrvAudio, &pThis->BackendCfg);
         AssertRC(rc);
 
-        if (!pThis->BackendCfg.cMaxHstStrmsOut)
+        if (!pThis->BackendCfg.cMaxStreamsOut)
         {
             int rc2 = RTCritSectLeave(&pThis->CritSect);
             AssertRC(rc2);
@@ -1668,40 +1668,30 @@ static int drvAudioHostInit(PCFGMNODE pCfgHandle, PDRVAUDIO pThis)
         return rc;
     }
 
-    uint32_t cMaxHstStrmsOut = pThis->BackendCfg.cMaxHstStrmsOut;
-    size_t cbHstStrmsOut     = pThis->BackendCfg.cbStreamOut;
-
-    if (cbHstStrmsOut)
+    if (pThis->BackendCfg.cbStreamOut)
     {
-        pThis->cFreeOutputStreams = cMaxHstStrmsOut;
+        pThis->cStreamsFreeOut = pThis->BackendCfg.cMaxStreamsOut;
     }
     else
-        pThis->cFreeOutputStreams = 0;
+        pThis->cStreamsFreeOut = 0;
 
-    uint32_t cMaxHstStrmsIn = pThis->BackendCfg.cMaxHstStrmsIn;
-    size_t cbHstStrmIn      = pThis->BackendCfg.cbStreamIn;
-
-    if (cbHstStrmIn)
+    if (pThis->BackendCfg.cbStreamIn)
     {
         /*
          * Note:
          *  - Our AC'97 emulation has two inputs, line (ac97.pi) and microphone (ac97.mc).
          *  - Our HDA emulation currently has only line input (hda.pi).
          */
-        pThis->cFreeInputStreams = cMaxHstStrmsIn;
+        pThis->cStreamsFreeIn = pThis->BackendCfg.cMaxStreamsIn;
     }
     else
-        pThis->cFreeInputStreams = 0;
+        pThis->cStreamsFreeIn = 0;
 
-    LogFlowFunc(("cMaxHstStrmsOut=%RU32 (cb=%zu), cMaxHstStrmsIn=%RU32 (cb=%zu)\n",
-                 cMaxHstStrmsOut, cbHstStrmsOut, cMaxHstStrmsIn, cbHstStrmIn));
+    LogFlowFunc(("cStreamsFreeIn=%RU8, cStreamsFreeOut=%RU8\n", pThis->cStreamsFreeIn, pThis->cStreamsFreeOut));
 
-    LogFlowFunc(("cFreeInputStreams=%RU8, cFreeOutputStreams=%RU8\n",
-                 pThis->cFreeInputStreams, pThis->cFreeOutputStreams));
-
-    LogRel(("Audio: Host audio backend supports %RU32 output streams and %RU32 input streams at once\n",
-            /* Clamp for logging. Unlimited streams are defined by UINT32_MAX. */
-            RT_MIN(64, cMaxHstStrmsOut), RT_MIN(64, cMaxHstStrmsIn)));
+    LogRel2(("Audio: Host audio backend supports %RU32 input streams and %RU32 output streams at once\n",
+             /* Clamp for logging. Unlimited streams are defined by UINT32_MAX. */
+             RT_MIN(64, pThis->cStreamsFreeIn), RT_MIN(64, pThis->cStreamsFreeOut)));
 
     LogFlowFuncLeave();
     return VINF_SUCCESS;
@@ -1791,14 +1781,14 @@ static DECLCALLBACK(int) drvAudioInit(PCFGMNODE pCfgHandle, PPDMDRVINS pDrvIns)
         rc = drvAudioProcessOptions(pCfgHandle, "AUDIO", audio_options);
         /** @todo Check for invalid options? */
 
-        pThis->cFreeOutputStreams = conf.fixed_out.cStreams;
-        pThis->cFreeInputStreams  = conf.fixed_in.cStreams;
+        pThis->cStreamsFreeOut = conf.fixed_out.cStreams;
+        pThis->cStreamsFreeIn  = conf.fixed_in.cStreams;
 
-        if (!pThis->cFreeOutputStreams)
-            pThis->cFreeOutputStreams = 1;
+        if (!pThis->cStreamsFreeOut)
+            pThis->cStreamsFreeOut = 1;
 
-        if (!pThis->cFreeInputStreams)
-            pThis->cFreeInputStreams = 1;
+        if (!pThis->cStreamsFreeIn)
+            pThis->cStreamsFreeIn = 1;
     }
 
     /*
@@ -2054,19 +2044,6 @@ static DECLCALLBACK(int) drvAudioCreateIn(PPDMIAUDIOCONNECTOR pInterface, const 
         if (pGstStrmIn)
             *ppGstStrmIn = pGstStrmIn;
     }
-    else
-    {
-        switch (rc)
-        {
-            case VERR_NO_MORE_HANDLES: /** @todo Find a better rc. */
-                LogRel(("Audio: Skipping to create input stream \"%s\", " \
-                        "as the host audio backend reached its maximum of concurrent audio input streams\n", pszName));
-                break;
-
-            default:
-                break;
-        }
-    }
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -2178,19 +2155,6 @@ static DECLCALLBACK(int) drvAudioCreateOut(PPDMIAUDIOCONNECTOR pInterface, const
             pGstStrmOut->cTotalSamplesWritten += cSamplesMixed;
         }
 #endif
-    }
-    else
-    {
-        switch (rc)
-        {
-            case VERR_NO_MORE_HANDLES: /** @todo Find a better rc. */
-                LogRel(("Audio: Skipping to create output stream \"%s\", " \
-                        "as the host audio backend reached its maximum of concurrent audio output streams\n", pszName));
-                break;
-
-            default:
-                break;
-        }
     }
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);

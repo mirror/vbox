@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2013-2015 Oracle Corporation
+ * Copyright (C) 2013-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,10 @@
 #define AUDIO_ALSA_MANGLING_H
 
 #define ALSA_MANGLER(symbol) VBox_##symbol
+
+#define snd_device_name_hint                    ALSA_MANGLER(snd_device_name_hint)
+#define snd_device_name_get_hint                ALSA_MANGLER(snd_device_name_get_hint)
+#define snd_device_name_free_hint               ALSA_MANGLER(snd_device_name_free_hint)
 
 #define snd_pcm_hw_params_any                   ALSA_MANGLER(snd_pcm_hw_params_any)
 #define snd_pcm_close                           ALSA_MANGLER(snd_pcm_close)

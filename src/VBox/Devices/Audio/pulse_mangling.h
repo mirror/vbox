@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2013-2015 Oracle Corporation
+ * Copyright (C) 2013-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,6 +41,9 @@
 #define pa_stream_writable_size                 PULSE_MANGLER(pa_stream_writable_size)
 #define pa_context_connect                      PULSE_MANGLER(pa_context_connect)
 #define pa_context_disconnect                   PULSE_MANGLER(pa_context_disconnect)
+#define pa_context_get_server_info              PULSE_MANGLER(pa_context_get_server_info)
+#define pa_context_get_sink_info_by_name        PULSE_MANGLER(pa_context_get_sink_info_by_name)
+#define pa_context_get_source_info_by_name      PULSE_MANGLER(pa_context_get_source_info_by_name)
 #define pa_context_get_state                    PULSE_MANGLER(pa_context_get_state)
 #define pa_context_unref                        PULSE_MANGLER(pa_context_unref)
 #define pa_context_errno                        PULSE_MANGLER(pa_context_errno)

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -86,11 +86,15 @@ static DECLCALLBACK(int) drvHostNullAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDM
     NOREF(pInterface);
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
-    pCfg->cbStreamOut = sizeof(NULLAUDIOSTREAMOUT);
-    pCfg->cbStreamIn  = sizeof(NULLAUDIOSTREAMIN);
+    pCfg->cbStreamOut    = sizeof(NULLAUDIOSTREAMOUT);
+    pCfg->cbStreamIn     = sizeof(NULLAUDIOSTREAMIN);
 
-    pCfg->cMaxHstStrmsOut = 1; /* Output */
-    pCfg->cMaxHstStrmsIn  = 2; /* Line input + microphone input. */
+    /* The NULL backend has exactly one input source and one output sink. */
+    pCfg->cSources       = 1;
+    pCfg->cSinks         = 1;
+
+    pCfg->cMaxStreamsOut = 1; /* Output */
+    pCfg->cMaxStreamsIn  = 2; /* Line input + microphone input. */
 
     return VINF_SUCCESS;
 }

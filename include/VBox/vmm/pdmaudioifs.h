@@ -63,20 +63,28 @@ typedef enum PDMAUDIOFMT
 } PDMAUDIOFMT;
 
 /**
- * Audio configuration of a certain backend.
+ * Audio configuration of a certain host backend.
  */
 typedef struct PDMAUDIOBACKENDCFG
 {
+    /** Size (in bytes) of the host backend's audio output stream structure. */
     size_t   cbStreamOut;
+    /** Size (in bytes) of the host backend's audio input stream structure. */
     size_t   cbStreamIn;
-    uint32_t cMaxHstStrmsOut;
-    uint32_t cMaxHstStrmsIn;
+    /** Number of valid output sinks found on the host. */
+    uint8_t  cSinks;
+    /** Number of valid input sources found on the host. */
+    uint8_t  cSources;
+    /** Number of concurrent output streams supported on the host.
+     *  UINT32_MAX for unlimited concurrent streams. */
+    uint32_t cMaxStreamsOut;
+    /** Number of concurrent input streams supported on the host.
+     *  UINT32_MAX for unlimited concurrent streams. */
+    uint32_t cMaxStreamsIn;
 } PDMAUDIOBACKENDCFG, *PPDMAUDIOBACKENDCFG;
 
 /**
- * An audio sample. At the moment stereo (left + right channels) only.
- * @todo Replace this with a more generic union
- *       which then also could handle 2.1 or 5.1 sound.
+ * A single audio sample, representing left and right channels (stereo).
  */
 typedef struct PDMAUDIOSAMPLE
 {

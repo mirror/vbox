@@ -641,15 +641,15 @@ static int ichac97OpenIn(PAC97STATE pThis,
         else
             pStrmIn = &pDrv->LineIn;
 
-        rc = pDrv->pConnector->pfnCreateIn(pDrv->pConnector, pszDesc, enmRecSource, pCfg, &pStrmIn->pStrmIn);
+        int rc2 = pDrv->pConnector->pfnCreateIn(pDrv->pConnector, pszDesc, enmRecSource, pCfg, &pStrmIn->pStrmIn);
 
         LogFlowFunc(("LUN#%RU8: Created input \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
-        if (rc == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
+        if (rc2 == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
         {
             AudioMixerRemoveStream(pSink, pStrmIn->phStrmIn);
-            rc = AudioMixerAddStreamIn(pSink,
-                                       pDrv->pConnector, pStrmIn->pStrmIn,
-                                       0 /* uFlags */, &pStrmIn->phStrmIn);
+            rc2 = AudioMixerAddStreamIn(pSink,
+                                        pDrv->pConnector, pStrmIn->pStrmIn,
+                                        0 /* uFlags */, &pStrmIn->phStrmIn);
         }
 
         RTStrFree(pszDesc);
@@ -2533,7 +2533,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
             AssertPtr(pCon);
 
-            bool fValidLineIn = pCon->pfnIsValidIn(pCon, pDrv->LineIn.pStrmIn);
+            bool fValidLineIn = pCon->pfnIsValidIn (pCon, pDrv->LineIn.pStrmIn);
             bool fValidMicIn  = pCon->pfnIsValidIn (pCon, pDrv->MicIn.pStrmIn);
             bool fValidOut    = pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut);
 
@@ -2558,22 +2558,22 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                 int rc2 = pCon->pfnGetConfiguration(pCon, &backendCfg);
                 if (RT_SUCCESS(rc2))
                 {
-                    if (backendCfg.cMaxHstStrmsIn)
+                    if (backendCfg.cSources)
                     {
                         /* If the audio backend supports two or more input streams at once,
                          * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
-                        if (backendCfg.cMaxHstStrmsIn >= 2)
+                        if (backendCfg.cMaxStreamsIn >= 2)
                             fWarn = !fValidLineIn || !fValidMicIn;
                         /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
                          * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
                          * One of the two simply is not in use then. */
-                        else if (backendCfg.cMaxHstStrmsIn == 1)
+                        else if (backendCfg.cMaxStreamsIn == 1)
                             fWarn = !fValidLineIn && !fValidMicIn;
                         /* Don't warn if our backend is not able of supporting any input streams at all. */
                     }
 
                     if (   !fWarn
-                        && backendCfg.cMaxHstStrmsOut)
+                        && backendCfg.cSinks)
                     {
                         fWarn = !fValidOut;
                     }

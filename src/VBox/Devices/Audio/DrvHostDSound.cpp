@@ -90,7 +90,7 @@ typedef struct DSOUNDHOSTCFG
 typedef struct DSOUNDSTREAMOUT
 {
     PDMAUDIOHSTSTRMOUT   strmOut; /* Always must come first! */
-    LPDIRECTSOUND8       pDS;
+    LPDIRECTSOUND8       pDS;     /** @todo Move this out of this structure! Not required per-stream (e.g. for multi-channel). */
     LPDIRECTSOUNDBUFFER8 pDSB;
     DWORD                cbPlayWritePos;
     DWORD                csPlaybackBufferSize;
@@ -159,10 +159,14 @@ typedef struct DRVHOSTDSOUND
  */
 typedef struct DSOUNDENUMCBCTX
 {
+    /** Pointer to host backend driver. */
     PDRVHOSTDSOUND      pDrv;
-    PPDMAUDIOBACKENDCFG pCfg;
     /** Enumeration flags. */
     uint32_t            fFlags;
+    /** Number of found input devices. */
+    uint8_t             cDevIn;
+    /** Number of found output devices. */
+    uint8_t             cDevOut;
 } DSOUNDENUMCBCTX, *PDSOUNDENUMCBCTX;
 
 typedef struct DSOUNDDEV
@@ -172,12 +176,20 @@ typedef struct DSOUNDDEV
     GUID        Guid;
 } DSOUNDDEV, *PDSOUNDDEV;
 
+/*********************************************************************************************************************************
+*   Defines                                                                                                                      *
+*********************************************************************************************************************************/
+
 /** Maximum number of attempts to restore the sound buffer before giving up. */
 #define DRV_DSOUND_RESTORE_ATTEMPTS_MAX         3
 
 /** Makes DRVHOSTDSOUND out of PDMIHOSTAUDIO. */
 #define PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface) \
     ( (PDRVHOSTDSOUND)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTDSOUND, IHostAudio)) )
+
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
 
 static HRESULT directSoundPlayRestore(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 pDSB);
 
@@ -1242,7 +1254,6 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID lpGUID, LPCWSTR lpwstrDe
     PDSOUNDENUMCBCTX pCtx = (PDSOUNDENUMCBCTX)lpContext;
     AssertPtrReturn(pCtx, FALSE);
     AssertPtrReturn(pCtx->pDrv, FALSE);
-    AssertPtrReturn(pCtx->pCfg, FALSE);
 
     if (!lpGUID)
         return TRUE;
@@ -1258,7 +1269,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID lpGUID, LPCWSTR lpwstrDe
     if (RT_FAILURE(rc))
         return FALSE; /* Abort enumeration. */
 
-    pCtx->pCfg->cMaxHstStrmsOut++;
+    pCtx->cDevOut++;
 
     return TRUE;
 }
@@ -1269,7 +1280,6 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID lpGUID, LPCWSTR lpwstrDes
     PDSOUNDENUMCBCTX pCtx = (PDSOUNDENUMCBCTX)lpContext;
     AssertPtrReturn(pCtx, FALSE);
     AssertPtrReturn(pCtx->pDrv, FALSE);
-    AssertPtrReturn(pCtx->pCfg, FALSE);
 
     if (!lpGUID)
         return TRUE;
@@ -1282,7 +1292,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID lpGUID, LPCWSTR lpwstrDes
     if (RT_FAILURE(rc))
         return FALSE; /* Abort enumeration. */
 
-    pCtx->pCfg->cMaxHstStrmsIn++;
+    pCtx->cDevIn++;
 
     return TRUE;
 }
@@ -1292,18 +1302,15 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID lpGUID, LPCWSTR lpwstrDes
  *
  * @return  IPRT status code.
  * @param   pThis               Host audio driver instance.
- * @param   pCfg                Where to store the enumeration results.
+ * @param   pEnmCtx             Enumeration context to use.
  * @param   fEnum               Enumeration flags.
  */
-static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg, uint32_t fEnum)
+static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PDSOUNDENUMCBCTX pEnmCtx, uint32_t fEnum)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pEnmCtx, VERR_INVALID_POINTER);
 
     dsoundDevicesClear(pThis);
-
-    pCfg->cMaxHstStrmsOut = 0;
-    pCfg->cMaxHstStrmsIn  = 0;
 
     RTLDRMOD hDSound = NULL;
     int rc = RTLdrLoadSystem("dsound.dll", true /*fNoUnload*/, &hDSound);
@@ -1318,15 +1325,19 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg
 
         if (RT_SUCCESS(rc))
         {
-            DSOUNDENUMCBCTX ctx = { pThis, pCfg, fEnum };
-
-            HRESULT hr = pfnDirectSoundEnumerateW(&dsoundDevicesEnumCbPlayback, &ctx);
+            HRESULT hr = pfnDirectSoundEnumerateW(&dsoundDevicesEnumCbPlayback, pEnmCtx);
             if (FAILED(hr))
                 LogRel2(("DSound: Error enumerating host playback devices: %Rhrc\n", hr));
 
-            hr = pfnDirectSoundCaptureEnumerateW(&dsoundDevicesEnumCbCapture, &ctx);
+            hr = pfnDirectSoundCaptureEnumerateW(&dsoundDevicesEnumCbCapture, pEnmCtx);
             if (FAILED(hr))
                 LogRel2(("DSound: Error enumerating host capturing devices: %Rhrc\n", hr));
+
+            if (fEnum & DSOUNDENUMCBFLAGS_LOG)
+            {
+                LogRel2(("DSound: Found %RU8 host playback devices\n",  pEnmCtx->cDevOut));
+                LogRel2(("DSound: Found %RU8 host capturing devices\n", pEnmCtx->cDevIn));
+            }
         }
 
         RTLdrClose(hDSound);
@@ -1356,26 +1367,34 @@ void dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg
     PDMAUDIOBACKENDCFG Cfg;
     RT_ZERO(Cfg);
 
-    Cfg.cbStreamOut = sizeof(DSOUNDSTREAMOUT);
-    Cfg.cbStreamIn  = sizeof(DSOUNDSTREAMIN);
+    Cfg.cbStreamOut     = sizeof(DSOUNDSTREAMOUT);
+    Cfg.cbStreamIn      = sizeof(DSOUNDSTREAMIN);
 
-    int rc = dsoundDevicesEnumerate(pThis, &Cfg, fEnum);
-    AssertRC(rc);
+    DSOUNDENUMCBCTX cbCtx = { pThis, fEnum, 0, 0 };
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    if (   pThis->fEnabledOut != RT_BOOL(Cfg.cMaxHstStrmsOut)
-        || pThis->fEnabledIn  != RT_BOOL(Cfg.cMaxHstStrmsIn))
+    int rc = dsoundDevicesEnumerate(pThis, &cbCtx, fEnum);
+    if (RT_SUCCESS(rc))
     {
-        /** @todo Use a registered callback to the audio connector (e.g "OnConfigurationChanged") to
-         *        let the connector know that something has changed within the host backend. */
-    }
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+        if (   pThis->fEnabledOut != RT_BOOL(cbCtx.cDevOut)
+            || pThis->fEnabledIn  != RT_BOOL(cbCtx.cDevIn))
+        {
+            /** @todo Use a registered callback to the audio connector (e.g "OnConfigurationChanged") to
+             *        let the connector know that something has changed within the host backend. */
+        }
 #else
-    pThis->fEnabledOut = RT_BOOL(Cfg.cMaxHstStrmsOut);
-    pThis->fEnabledIn  = RT_BOOL(Cfg.cMaxHstStrmsIn);
+        pThis->fEnabledOut = RT_BOOL(cbCtx.cDevOut);
+        pThis->fEnabledIn  = RT_BOOL(cbCtx.cDevIn);
 #endif
 
-    if (pCfg)
-        memcpy(pCfg, &Cfg, sizeof(PDMAUDIOBACKENDCFG));
+        Cfg.cSources       = cbCtx.cDevIn;
+        Cfg.cSinks         = cbCtx.cDevOut;
+        Cfg.cMaxStreamsIn  = UINT32_MAX;
+        Cfg.cMaxStreamsOut = UINT32_MAX;
+
+        if (pCfg)
+            memcpy(pCfg, &Cfg, sizeof(PDMAUDIOBACKENDCFG));
+    }
 
     LogFlowFuncLeaveRC(rc);
 }
@@ -2095,11 +2114,7 @@ static DECLCALLBACK(int) drvHostDSoundInit(PPDMIHOSTAUDIO pInterface)
         rc = VINF_SUCCESS;
 #endif
 
-        PDMAUDIOBACKENDCFG Cfg;
-        dsoundUpdateStatusInternalEx(pThis, &Cfg, DSOUNDENUMCBFLAGS_LOG /* fEnum */);
-
-        DSLOGREL(("DSound: Found %RU32 host playback devices\n",  Cfg.cMaxHstStrmsOut));
-        DSLOGREL(("DSound: Found %RU32 host capturing devices\n", Cfg.cMaxHstStrmsIn));
+        dsoundUpdateStatusInternalEx(pThis, NULL /* pCfg */, DSOUNDENUMCBFLAGS_LOG /* fEnum */);
     }
     else
     {

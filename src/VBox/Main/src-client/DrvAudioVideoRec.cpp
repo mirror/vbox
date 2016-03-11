@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2015 Oracle Corporation
+ * Copyright (C) 2014-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -616,14 +616,17 @@ static DECLCALLBACK(int) drvAudioVideoRecControlIn(PPDMIHOSTAUDIO pInterface, PP
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvAudioVideoRecGetConf(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pAudioConf)
+static DECLCALLBACK(int) drvAudioVideoRecGetConf(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pCfg)
 {
-    LogFlowFunc(("pAudioConf=%p\n", pAudioConf));
+    NOREF(pInterface);
+    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
-    pAudioConf->cbStreamOut = sizeof(VIDEORECAUDIOOUT);
-    pAudioConf->cbStreamIn = sizeof(VIDEORECAUDIOIN);
-    pAudioConf->cMaxHstStrmsOut = 1;
-    pAudioConf->cMaxHstStrmsIn = 1;
+    pCfg->cbStreamIn     = sizeof(VIDEORECAUDIOIN);
+    pCfg->cbStreamOut    = sizeof(VIDEORECAUDIOOUT);
+    pCfg->cMaxStreamsIn  = UINT32_MAx;
+    pCfg->cMaxStreamsOut = UINT32_MAX;
+    pCfg->cSources       = 1;
+    pCfg->cSinks         = 1;
 
     return VINF_SUCCESS;
 }

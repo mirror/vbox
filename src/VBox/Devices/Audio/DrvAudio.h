@@ -95,10 +95,10 @@ typedef struct DRVAUDIO
     RTLISTANCHOR            lstHstStrmOut;
     /** Max. number of free input streams.
      *  UINT32_MAX for unlimited streams. */
-    uint32_t                cFreeInputStreams;
+    uint32_t                cStreamsFreeIn;
     /** Max. number of free output streams.
      *  UINT32_MAX for unlimited streams. */
-    uint32_t                cFreeOutputStreams;
+    uint32_t                cStreamsFreeOut;
     /** Audio configuration settings retrieved from the backend. */
     PDMAUDIOBACKENDCFG      BackendCfg;
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
