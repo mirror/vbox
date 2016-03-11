@@ -985,7 +985,7 @@ static int paError(PDRVHOSTPULSEAUDIO pThis, const char *szMsg)
     return VERR_GENERAL_FAILURE;
 }
 
-static DECLCALLBACK(void) paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, void *pvUserData)
+static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, void *pvUserData)
 {
     if (eol != 0)
         return;
@@ -1005,7 +1005,7 @@ static DECLCALLBACK(void) paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pIn
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
-static DECLCALLBACK(void) paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eol, void *pvUserData)
+static void paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eol, void *pvUserData)
 {
     if (eol != 0)
         return;
@@ -1025,7 +1025,7 @@ static DECLCALLBACK(void) paEnumSourceCb(pa_context *pCtx, const pa_source_info 
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
-static DECLCALLBACK(void) paEnumServerCb(pa_context *pCtx, const pa_server_info *pInfo, void *pvUserData)
+static void paEnumServerCb(pa_context *pCtx, const pa_server_info *pInfo, void *pvUserData)
 {
     AssertPtrReturnVoid(pCtx);
     AssertPtrReturnVoid(pInfo);
@@ -1456,8 +1456,6 @@ static struct audio_option pulse_options[] =
     {"DAC_MS", AUD_OPT_INT, &s_pulseCfg.buffer_msecs_out,
      "DAC period size in milliseconds", NULL, 0},
     {"ADC_MS", AUD_OPT_INT, &s_pulseCfg.buffer_msecs_in,
-     "ADC period size in milliseconds", NULL, 0},
-
-    NULL
+     "ADC period size in milliseconds", NULL, 0}
 };
 

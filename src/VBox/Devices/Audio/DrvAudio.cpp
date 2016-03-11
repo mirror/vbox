@@ -1755,9 +1755,7 @@ static struct audio_option audio_options[] =
      "Timer frequency in Hz (0 - use lowest possible)", NULL, 0},
 
     {"PLIVE", AUD_OPT_BOOL, &conf.plive,
-     "(undocumented)", NULL, 0}, /** @todo What is this? */
-
-    NULL
+     "(undocumented)", NULL, 0} /** @todo What is this? */
 };
 
 static DECLCALLBACK(int) drvAudioInit(PCFGMNODE pCfgHandle, PPDMDRVINS pDrvIns)

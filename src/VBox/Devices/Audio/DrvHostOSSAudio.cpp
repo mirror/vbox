@@ -1066,3 +1066,4 @@ const PDMDRVREG g_DrvHostOSSAudio =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+

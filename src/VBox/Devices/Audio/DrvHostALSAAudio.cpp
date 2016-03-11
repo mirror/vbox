@@ -1486,8 +1486,6 @@ static struct audio_option alsa_options[] =
      "DAC device name (for instance dmix)", NULL, 0},
 
     {"ADCDev", AUD_OPT_STR, &s_ALSAConf.pcm_name_in,
-     "ADC device name", NULL, 0},
-
-    NULL
+     "ADC device name", NULL, 0}
 };
 
