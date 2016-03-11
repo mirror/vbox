@@ -31,5 +31,6 @@
 %include "bs3kit.mac"
 
 
-BS3_INSTANTIATE_COMMON_TEMPLATE "bs3-cpu-basic-2-template.mac"
+;BS3_INSTANTIATE_COMMON_TEMPLATE "bs3-cpu-basic-2-template.mac"
+BS3_INSTANTIATE_TEMPLATE_WITH_WEIRD_ONES "bs3-cpu-basic-2-template.mac"
 

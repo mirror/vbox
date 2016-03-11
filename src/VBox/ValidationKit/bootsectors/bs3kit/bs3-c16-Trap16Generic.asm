@@ -55,6 +55,7 @@ BS3_GLOBAL_DATA g_apfnBs3TrapHandlers_c16, 512
         resw 256
 
 
+TMPL_BEGIN_TEXT
 
 ;;
 ; Generic entry points for IDT handlers, 8 byte spacing.
@@ -63,7 +64,6 @@ BS3_PROC_BEGIN _Bs3Trap16GenericEntries
 BS3_PROC_BEGIN Bs3Trap16GenericEntries
 %macro Bs3Trap16GenericEntry 1
         db      06ah, i                 ; push imm8 - note that this is a signextended value.
-        hlt
         jmp     %1
         ALIGNCODE(8)
 %assign i i+1
@@ -132,7 +132,7 @@ CPU 386
         push    0
         push    0
         dec     bx
-        jz      .more_zeroed_space
+        jnz     .more_zeroed_space
         movzx   ebx, sp
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
@@ -174,7 +174,7 @@ CPU 286
         push    0
         push    0
         dec     bx
-        jz      .more_zeroed_space
+        jnz     .more_zeroed_space
         mov     bx, sp
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ax
@@ -218,7 +218,7 @@ CPU 386
         push    0
         push    0
         dec     bx
-        jz      .more_zeroed_space
+        jnz     .more_zeroed_space
         movzx   ebx, sp
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
@@ -263,7 +263,7 @@ CPU 286
         push    0
         push    0
         dec     bx
-        jz      .more_zeroed_space
+        jnz     .more_zeroed_space
         mov     bx, sp
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ax
@@ -292,8 +292,8 @@ BS3_PROC_END   bs3Trap16GenericTrapErrCode80286
 ;;
 ; Common context saving code and dispatching.
 ;
-; @param    bx      Pointer to the trap frame.  The following members have been
-;                   filled in by the previous code:
+; @param    bx      Pointer to the trap frame, zero filled.  The following members
+;                   have been filled in by the previous code:
 ;                       - bXcpt
 ;                       - uErrCd
 ;                       - fHandlerRFL
@@ -305,7 +305,7 @@ BS3_PROC_END   bs3Trap16GenericTrapErrCode80286
 ;
 ; @param    bp      Pointer to the word before the iret frame, i.e. where bp
 ;                   would be saved if this was a normal near call.
-; @param    dx      zero (0) if 286, set (1) if 386
+; @param    dx      One (1) if 286, zero (0) if 386+.
 ;
 BS3_PROC_BEGIN bs3Trap16GenericCommon
 CPU 286
@@ -319,12 +319,14 @@ CPU 286
         ; Save the remaining GPRs and segment registers.
         ;
         test    dx, dx
-        jz      .save_word_grps
+        jnz     .save_word_grps
 CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx], ecx
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], edi
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], esi
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], esp ; high word
+        mov     ecx, [ss:bx + BS3TRAPFRAME.fHandlerRfl]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], ecx
         jmp     .save_segment_registers
 .save_word_grps:
 CPU 286
@@ -358,9 +360,10 @@ CPU 286
         ;
         mov     al, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], al
-        and     al, ~BS3_MODE_CODE_MASK
-        or      al, BS3_MODE_CODE_32
-        mov     [BS3_DATA16_WRT(g_bBs3CurrentMode)], al
+        mov     cl, al
+        and     cl, ~BS3_MODE_CODE_MASK
+        or      cl, BS3_MODE_CODE_16
+        mov     [BS3_DATA16_WRT(g_bBs3CurrentMode)], cl
 
         ;
         ; Copy iret info.
@@ -372,7 +375,6 @@ CPU 286
         mov     cx, [bp + 4]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
 
-        mov     al, [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode]
         and     al, BS3_MODE_CODE_MASK
         cmp     al, BS3_MODE_CODE_V86
         je      .iret_frame_v8086
@@ -388,13 +390,13 @@ CPU 286
         mov     cx, [bp + 10]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
         test    dx, dx
-        jz      .ret_frame_different_cpl_286
+        jnz     .ret_frame_different_cpl_286
 .ret_frame_different_cpl_386:
 CPU 386
         mov     ecx, esp
         mov     cx, [bp + 8]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
-        lea     eax, [ebp + 12]
+        lea     eax, [bp + 12]
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], eax
         jmp     .iret_frame_seed_high_eip_word
 .ret_frame_different_cpl_286:
@@ -409,7 +411,7 @@ CPU 286
         mov     cx, ss
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
         test    dx, dx
-        jz      .iret_frame_same_cpl_286
+        jnz     .iret_frame_same_cpl_286
 .iret_frame_same_cpl_386:
 CPU 386
         mov     ecx, esp
@@ -426,21 +428,22 @@ CPU 286
 
 .iret_frame_v8086:
 CPU 386
+        or      dword [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], X86_EFL_VM
         mov     byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], 3
         or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], BS3_MODE_CODE_V86 ; paranoia ^ 2
-        movzx   ecx, word [ebp + 16]
+        movzx   ecx, word [bp + 8]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
-        mov     cx, [ebp + 20]
+        mov     cx, [bp + 10]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
-        mov     cx, [ebp + 24]
+        mov     cx, [bp + 12]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.es], cx
-        mov     cx, [ebp + 28]
+        mov     cx, [bp + 14]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], cx
-        mov     cx, [ebp + 32]
+        mov     cx, [bp + 16]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], cx
-        mov     cx, [ebp + 36]
+        mov     cx, [bp + 18]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], cx
-        lea     eax, [ebp + 40]
+        lea     eax, [bp + 20]
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], eax
         jmp     .iret_frame_done
 
@@ -463,7 +466,7 @@ CPU 386
         str     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.tr]
         sldt    [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr]
         test    dx, dx
-        jz      .save_286_control_registers
+        jnz     .save_286_control_registers
 .save_386_control_registers:
 CPU 386
         mov     eax, cr0
@@ -555,7 +558,7 @@ CPU 286
 ; We don't have to load any selectors or clear anything in EFLAGS because the
 ; TSS specified sane values which got loaded during the task switch.
 ;
-; @param    dx      Zero (1) (for 386+).
+; @param    dx      Zero (0) for indicating 386+ to the common code.
 ;
 BS3_PROC_BEGIN _Bs3Trap16DoubleFaultHandler80386
 BS3_PROC_BEGIN Bs3Trap16DoubleFaultHandler80386
@@ -659,7 +662,7 @@ CPU 286
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], cx
         mov     cx, [es:di + X86TSS16.ip]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], cx
-        mov     [ebp + 2], cx           ; For better call stacks.
+        mov     [bp + 2], cx            ; For better call stacks.
         mov     cx, [eax + X86TSS16.cs]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
         mov     cx, [eax + X86TSS16.ds]
@@ -697,7 +700,7 @@ BS3_PROC_END   Bs3Trap16DoubleFaultHandler
 ; We don't have to load any selectors or clear anything in EFLAGS because the
 ; TSS specified sane values which got loaded during the task switch.
 ;
-; @param    dx      Zero (0) (for 286).
+; @param    dx      One (1) for indicating 386+ to the common code.
 ;
 BS3_PROC_BEGIN _Bs3Trap16DoubleFaultHandler80286
 BS3_PROC_BEGIN Bs3Trap16DoubleFaultHandler80286

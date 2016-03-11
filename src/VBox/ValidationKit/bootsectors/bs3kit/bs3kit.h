@@ -427,7 +427,7 @@ RT_C_DECLS_BEGIN
  * @param   a_off       The offset into the segment.
  */
 #if ARCH_BITS == 16
-# define BS3_MAKE_PROT_R0PTR_FROM_REAL(a_uSeg, a_off) BS3_FP_MAKE(((a_uSeg) << 3) + BS3_SEL_TILED, a_off)
+# define BS3_MAKE_PROT_R0PTR_FROM_REAL(a_uSeg, a_off) BS3_MAKE_PROT_R0PTR_FROM_FLAT(((uint32_t)(a_uSeg) << 4) + (uint16_t)(a_off))
 #else
 # define BS3_MAKE_PROT_R0PTR_FROM_REAL(a_uSeg, a_off) ( (void *)(uintptr_t)(((uint32_t)(a_uSeg) << 4) + (uint16_t)(a_off)) )
 #endif
@@ -1548,6 +1548,13 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
         /*LM64*/      RT_CONCAT(a_BaseNm, _c64), \
     }
 
+/** A set of standard protypes to go with #BS3TESTMODEENTRY_CMN.
+ * @remark May need to \#pragma alias the c64 variant.  */
+#define BS3TESTMODE_PROTOTYPES_CMN(a_BaseNm) \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _c16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c64)
+
 /** Produces a BS3TESTMODEENTRY initializer for a full set of mode test
  *  functions. */
 #define BS3TESTMODEENTRY_MODE(a_szTest, a_BaseNm) \
@@ -1564,7 +1571,7 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
         /*PP16_V86*/  RT_CONCAT(a_BaseNm, _pp16_v86), \
         /*PP32*/      RT_CONCAT(a_BaseNm, _pp32), \
         /*PP32_16*/   RT_CONCAT(a_BaseNm, _pp32_16), \
-        /*PPV86*/     RT_CONCAT(a_BaseNm, _ppev86), \
+        /*PPV86*/     RT_CONCAT(a_BaseNm, _ppv86), \
         /*PAE16*/     RT_CONCAT(a_BaseNm, _pae16), \
         /*PAE16_32*/  RT_CONCAT(a_BaseNm, _pae16_32), \
         /*PAE16_V86*/ RT_CONCAT(a_BaseNm, _pae16_v86), \
@@ -1575,6 +1582,32 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
         /*LM32*/      RT_CONCAT(a_BaseNm, _lm32), \
         /*LM64*/      RT_CONCAT(a_BaseNm, _lm64), \
     }
+
+/** A set of standard protypes to go with #BS3TESTMODEENTRY_MODE.
+ * @remark May need to \#pragma alias the lm64 variant.  */
+#define BS3TESTMODE_PROTOTYPES_MODE(a_BaseNm) \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _rm); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pe16_32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe16_v86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pe32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe32_16); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pev86); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pp16_32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp16_v86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pp32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp32_16); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _ppv86); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pae16_32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae16_v86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pae32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae32_16); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _paev86); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _lm16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _lm32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _lm64)
 
 
 /**

@@ -56,7 +56,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         mov     xBP, xSP
 %if TMPL_BITS == 16
         mov     ax, BS3DATA16
-        mov     ax, es
+        mov     es, ax
         lds     bx, [bp + 4]
         mov     cx, [bp + 8]
 %elif TMPL_BITS == 32
@@ -102,6 +102,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         ltr     [bx + BS3REGCTX.tr]
 
 .restore_16_bit_ancient:
+int3
         ; Some general registers.
         mov     si, [bx + BS3REGCTX.rsi]
         mov     cx, [bx + BS3REGCTX.rcx]
@@ -145,7 +146,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
 
         mov     ax, [bx + BS3REGCTX.ds]
         stosw
-        mov     ax, [bx + BS3REGCTX.rbp]
+        mov     ax, [bx + BS3REGCTX.rbp]    ; Restore esp as late as possible for better stacks.
         stosw
         mov     ax, [bx + BS3REGCTX.rip]
         stosw
@@ -168,7 +169,6 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
 
 
 .restore_full:
-
         ;
         ; 80386 or later.
         ; For 32-bit and 16-bit versions, we always use 32-bit iret.
@@ -223,7 +223,6 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
 .skip_ldtr:
 
         ; TR - complicated because we need to clear the busy bit. ASSUMES GDT.
-BS3_ONLY_64BIT_STMT hlt
         str     ax
         cmp     ax, [xBX + BS3REGCTX.tr]
         je      .skip_tr
@@ -381,7 +380,7 @@ BS3_ONLY_64BIT_STMT hlt
         mov     esp, [xBX + BS3REGCTX.rsp] ; adjusted, see above.
         mov     ebx, [xBX + BS3REGCTX.rbx]
 
-        pop     ds
+        o32 pop ds
         pop     ebp
         iretd
 
