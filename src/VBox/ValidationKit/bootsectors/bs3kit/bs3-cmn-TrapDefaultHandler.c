@@ -35,7 +35,7 @@ static void bs3TrapDefaultHandlerV8086Syscall(PBS3TRAPFRAME pTrapFrame)
 {
     /* Minimal syscall. */
     if (pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_PRINT_CHR)
-        Bs3PrintChr(pTrapFrame->Ctx.rax.u8);
+        Bs3PrintChr(pTrapFrame->Ctx.rcx.u8);
     else if (   pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_TO_RING0
              || pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_TO_RING1
              || pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_TO_RING2

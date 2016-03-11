@@ -41,12 +41,22 @@ TMPL_BEGIN_TEXT
 ; @cproto   BS3_DECL(void) Bs3SwitchToRing3(void);
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
+; @uses     No GPRs.
 ;
 BS3_PROC_BEGIN_CMN Bs3SwitchToRing3
-        BS3_ONLY_64BIT_STMT sub rsp, 18h
+%if TMPL_BITS == 64
+        push    rcx
+        sub     rsp, 20h
+        mov     ecx, 3
+        mov     [rsp], rcx
+        call    Bs3SwitchToRingX
+        add     rsp, 20h
+        pop     rcx
+%else
         push    3
-        BS3_CALL Bs3SwitchToRingX, 1
-        add     xSP, xCB BS3_ONLY_64BIT(+ 18h)
+        call    Bs3SwitchToRingX
+        add     xSP, xCB
+%endif
         ret
 BS3_PROC_END_CMN   Bs3SwitchToRing3
 

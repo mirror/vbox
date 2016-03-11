@@ -40,6 +40,8 @@ TMPL_BEGIN_TEXT
 ; @param    bRing       The target ring (0..3).
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
+; @uses     No GPRs.
+;
 BS3_PROC_BEGIN_CMN Bs3SwitchToRingX
         BS3_CALL_CONV_PROLOG 1
         push    xBP
