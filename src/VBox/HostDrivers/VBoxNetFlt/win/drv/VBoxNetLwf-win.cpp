@@ -15,12 +15,13 @@
  */
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 
-//#define VBOXNETLWF_TEST_NO_FRAMES_OVER_2K
-//#define VBOXNETLWF_TEST_NO_REALLOCATE
-
 //#define VBOXNETLWF_SYNC_SEND
-/* Payload + Ethernet header + VLAN tag = Max Ethernet frame size */
-#define VBOXNETLWF_MAX_FRAME_SIZE(mtu) (mtu +  sizeof(RTNETETHERHDR) + 4)
+
+/*
+ * Don't ask me why it is 42. Empirically this is what goes down the stack.
+ * OTOH, as we know from trustworthy sources, 42 is the answer, so be it.
+ */
+#define VBOXNETLWF_MAX_FRAME_SIZE(mtu) (mtu + 42)
 
 #include <VBox/version.h>
 #include <VBox/err.h>
@@ -197,8 +198,6 @@ typedef struct _VBOXNETLWF_MODULE {
 #endif /* !VBOXNETLWF_SYNC_SEND */
     /** MAC address of underlying adapter */
     RTMAC MacAddr;
-    /** Saved MTU size */
-    ULONG uMtuSize;
     /** Saved offload configuration */
     NDIS_OFFLOAD SavedOffloadConfig;
     /** the cloned request we have passed down */
@@ -911,7 +910,6 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     pModuleCtx->cPendingBuffers = 0;
 #endif /* !VBOXNETLWF_SYNC_SEND */
 
-#ifdef VBOXNETLWF_TEST_NO_REALLOCATE
     /* Allocate buffer pools */
     NET_BUFFER_LIST_POOL_PARAMETERS PoolParams;
     NdisZeroMemory(&PoolParams, sizeof(PoolParams));
@@ -922,9 +920,6 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     PoolParams.fAllocateNetBuffer = TRUE;
     PoolParams.ContextSize = 0; /** @todo Do we need to consider underlying drivers? I think not. */
     PoolParams.PoolTag = VBOXNETLWF_MEM_TAG;
-#ifndef VBOXNETLWF_SYNC_SEND
-    PoolParams.DataSize = 9088;
-#endif /* !VBOXNETLWF_SYNC_SEND */
 	 	
     pModuleCtx->hPool = NdisAllocateNetBufferListPool(hFilter, &PoolParams);
     if (!pModuleCtx->hPool)
@@ -935,7 +930,6 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         return NDIS_STATUS_RESOURCES;
     }
     Log4(("vboxNetLwfWinAttach: allocated NBL+NB pool 0x%p\n", pModuleCtx->hPool));
-#endif /* VBOXNETLWF_TEST_NO_REALLOCATE */
 
     NDIS_FILTER_ATTRIBUTES Attributes;
     NdisZeroMemory(&Attributes, sizeof(Attributes));
@@ -1049,66 +1043,8 @@ static NDIS_STATUS vboxNetLwfWinRestart(IN NDIS_HANDLE hModuleCtx, IN PNDIS_FILT
     LogFlow(("==>vboxNetLwfWinRestart: module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModuleCtx = (PVBOXNETLWF_MODULE)hModuleCtx;
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Restarting, LwfState_Paused);
-
-    NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
-#ifndef VBOXNETLWF_TEST_NO_REALLOCATE
-    ULONG uNewMtuSize = 1500; /* If we fail to find out MTU, we can always assume 1500. */
-    PNDIS_RESTART_ATTRIBUTES pAttributes = pParameters->RestartAttributes;
-    while (pAttributes && pAttributes->Oid != OID_GEN_MINIPORT_RESTART_ATTRIBUTES)
-        pAttributes = pAttributes->Next;
-    if (pAttributes)
-    {
-        PNDIS_RESTART_GENERAL_ATTRIBUTES pGenAttrs = (PNDIS_RESTART_GENERAL_ATTRIBUTES)pAttributes->Data;
-        uNewMtuSize = pGenAttrs->MtuSize;
-    }
-
-    /* Let's see if MTU has changed. Re-allocate the pool if it has. */
-    if (pModuleCtx->uMtuSize != uNewMtuSize)
-    {
-        pModuleCtx->uMtuSize = uNewMtuSize;
-        if (pModuleCtx->hPool)
-        {
-            /*
-             * Don't need to wait for pending sends to complete since we are already
-             * in paused state. Just free the old pool.
-             */
-            NdisFreeNetBufferListPool(pModuleCtx->hPool);
-            pModuleCtx->hPool = NULL;
-        }
-    }
-    if (!pModuleCtx->hPool)
-    {
-        /* Allocate a new pool. */
-        NET_BUFFER_LIST_POOL_PARAMETERS PoolParams;
-        NdisZeroMemory(&PoolParams, sizeof(PoolParams));
-        PoolParams.Header.Type = NDIS_OBJECT_TYPE_DEFAULT;
-        PoolParams.Header.Revision = NET_BUFFER_LIST_POOL_PARAMETERS_REVISION_1;
-        PoolParams.Header.Size = sizeof(PoolParams);
-        PoolParams.ProtocolId = NDIS_PROTOCOL_ID_DEFAULT;
-        PoolParams.fAllocateNetBuffer = TRUE;
-        PoolParams.ContextSize = 0; /** @todo Do we need to consider underlying drivers? I think not. */
-        PoolParams.PoolTag = VBOXNETLWF_MEM_TAG;
-#ifndef VBOXNETLWF_SYNC_SEND
-        PoolParams.DataSize = VBOXNETLWF_MAX_FRAME_SIZE(pModuleCtx->uMtuSize);
-#endif /* !VBOXNETLWF_SYNC_SEND */
-
-        pModuleCtx->hPool = NdisAllocateNetBufferListPool(pModuleCtx->hFilter, &PoolParams);
-        if (!pModuleCtx->hPool)
-        {
-            LogError(("vboxNetLwfWinRestart: NdisAllocateNetBufferListPool failed\n"));
-            Status = NDIS_STATUS_RESOURCES;
-        }
-        else
-        {
-            Log4(("vboxNetLwfWinRestart: allocated NBL+NB pool 0x%p with MTU=%u\n",
-                  pModuleCtx->hPool, pModuleCtx->uMtuSize));
-        }
-    }
-
-    vboxNetLwfWinChangeState(pModuleCtx, Status == NDIS_STATUS_SUCCESS ? LwfState_Running : LwfState_Paused, LwfState_Restarting);
-#else /* !VBOXNETLWF_TEST_NO_REALLOCATE */
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Running, LwfState_Restarting);
-#endif /* !VBOXNETLWF_TEST_NO_REALLOCATE */
+    NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
     LogFlow(("<==vboxNetLwfWinRestart: Status = 0x%x\n", Status));
     return Status;
 }
@@ -1120,7 +1056,14 @@ static void vboxNetLwfWinDumpPackets(const char *pszMsg, PNET_BUFFER_LIST pBufLi
     {
         for (PNET_BUFFER pBuf = NET_BUFFER_LIST_FIRST_NB(pList); pBuf; pBuf = NET_BUFFER_NEXT_NB(pBuf))
         {
-            Log(("%s packet: cb=%d\n", pszMsg, NET_BUFFER_DATA_LENGTH(pBuf)));
+            Log6(("%s packet: cb=%d offset=%d", pszMsg, NET_BUFFER_DATA_LENGTH(pBuf), NET_BUFFER_DATA_OFFSET(pBuf)));
+            for (PMDL pMdl = NET_BUFFER_FIRST_MDL(pBuf);
+                 pMdl != NULL;
+                 pMdl = NDIS_MDL_LINKAGE(pMdl))
+            {
+                Log6((" MDL: cb=%d", MmGetMdlByteCount(pMdl)));
+            }
+            Log6(("\n"));
         }
     }
 }
@@ -1286,16 +1229,23 @@ DECLINLINE(ULONG) vboxNetLwfWinCalcSegments(PNET_BUFFER pNetBuf)
 
 DECLINLINE(void) vboxNetLwfWinFreeMdlChain(PMDL pMdl)
 {
-#ifdef VBOXNETLWF_SYNC_SEND
     PMDL pMdlNext;
     while (pMdl)
     {
         pMdlNext = pMdl->Next;
+#ifndef VBOXNETLWF_SYNC_SEND
+        PUCHAR pDataBuf;
+        ULONG cb = 0;
+        NdisQueryMdl(pMdl, &pDataBuf, &cb, NormalPagePriority);
+#endif /* !VBOXNETLWF_SYNC_SEND */
         NdisFreeMdl(pMdl);
         Log4(("vboxNetLwfWinFreeMdlChain: freed MDL 0x%p\n", pMdl));
+#ifndef VBOXNETLWF_SYNC_SEND
+        NdisFreeMemory(pDataBuf, 0, 0);
+        Log4(("vboxNetLwfWinFreeMdlChain: freed data buffer 0x%p\n", pDataBuf));
+#endif /* !VBOXNETLWF_SYNC_SEND */
         pMdl = pMdlNext;
     }
-#endif /* VBOXNETLWF_SYNC_SEND */
 }
 
 /** @todo
@@ -1353,44 +1303,50 @@ static PNET_BUFFER_LIST vboxNetLwfWinSGtoNB(PVBOXNETLWF_MODULE pModule, PINTNETS
         vboxNetLwfWinFreeMdlChain(pMdl);
     }
 #else /* !VBOXNETLWF_SYNC_SEND */
-#ifdef VBOXNETLWF_TEST_NO_FRAMES_OVER_2K
-    AssertReturn(pSG->cbTotal < 2048, NULL); 
-#else /* !VBOXNETLWF_TEST_NO_FRAMES_OVER_2K */
-    AssertReturn(pSG->cbTotal <= VBOXNETLWF_MAX_FRAME_SIZE(pModule->uMtuSize), NULL); 
-#endif /* !VBOXNETLWF_TEST_NO_FRAMES_OVER_2K */
-    PNET_BUFFER_LIST pBufList = NdisAllocateNetBufferList(pModule->hPool,
-                                                          0 /** @todo ContextSize */,
-                                                          0 /** @todo ContextBackFill */);
-    NET_BUFFER_LIST_NEXT_NBL(pBufList) = NULL; /** @todo Is it even needed? */
-    NET_BUFFER *pBuffer = NET_BUFFER_LIST_FIRST_NB(pBufList);
-    NDIS_STATUS Status = NdisRetreatNetBufferDataStart(pBuffer, pSG->cbTotal, 0 /** @todo DataBackfill */, NULL);
-    if (Status == NDIS_STATUS_SUCCESS)
+    PNET_BUFFER_LIST pBufList = NULL;
+    ULONG cbMdl = VBOXNETLWF_MAX_FRAME_SIZE(pSG->cbTotal);
+    ULONG uDataOffset = cbMdl - pSG->cbTotal;
+    PUCHAR pDataBuf = (PUCHAR)NdisAllocateMemoryWithTagPriority(pModule->hFilter, cbMdl,
+                                                                VBOXNETLWF_MEM_TAG, NormalPoolPriority);
+    if (pDataBuf)
     {
-        uint8_t *pDst = (uint8_t*)NdisGetDataBuffer(pBuffer, pSG->cbTotal, NULL, 1, 0);
-        if (pDst)
+        Log4(("vboxNetLwfWinSGtoNB: allocated data buffer (cb=%u) 0x%p\n", cbMdl, pDataBuf));
+        PMDL pMdl = NdisAllocateMdl(pModule->hFilter, pDataBuf, cbMdl);
+        if (!pMdl)
         {
-            for (int i = 0; i < pSG->cSegsUsed; i++)
-            {
-                NdisMoveMemory(pDst, pSG->aSegs[i].pv, pSG->aSegs[i].cb);
-                pDst += pSG->aSegs[i].cb;
-            }
-            Log4(("vboxNetLwfWinSGtoNB: allocated NBL+NB+MDL+Data 0x%p\n", pBufList));
+            NdisFreeMemory(pDataBuf, 0, 0);
+            Log4(("vboxNetLwfWinSGtoNB: freed data buffer 0x%p\n", pDataBuf));
+            LogError(("vboxNetLwfWinSGtoNB: failed to allocate an MDL (cb=%u)\n", cbMdl));
+            LogFlow(("<==vboxNetLwfWinSGtoNB: return NULL\n"));
+            return NULL;
+        }
+        PUCHAR pDst = pDataBuf + uDataOffset;
+        for (int i = 0; i < pSG->cSegsUsed; i++)
+        {
+            NdisMoveMemory(pDst, pSG->aSegs[i].pv, pSG->aSegs[i].cb);
+            pDst += pSG->aSegs[i].cb;
+        }
+        pBufList = NdisAllocateNetBufferAndNetBufferList(pModule->hPool,
+                                                         0 /* ContextSize */,
+                                                         0 /* ContextBackFill */,
+                                                         pMdl,
+                                                         uDataOffset,
+                                                         pSG->cbTotal);
+        if (pBufList)
+        {
+            Log4(("vboxNetLwfWinSGtoNB: allocated NBL+NB 0x%p\n", pBufList));
             pBufList->SourceHandle = pModule->hFilter;
             /** @todo Do we need to initialize anything else? */
         }
         else
         {
-            LogError(("vboxNetLwfWinSGtoNB: failed to obtain the buffer pointer (size=%u)\n", pSG->cbTotal));
-            NdisAdvanceNetBufferDataStart(pBuffer, pSG->cbTotal, false, NULL); /** @todo why bother? */
-            NdisFreeNetBufferList(pBufList);
-            pBufList = NULL;
+            LogError(("vboxNetLwfWinSGtoNB: failed to allocate an NBL+NB\n"));
+            vboxNetLwfWinFreeMdlChain(pMdl);
         }
     }
     else
     {
-        LogError(("vboxNetLwfWinSGtoNB: NdisRetreatNetBufferDataStart failed with 0x%x (size=%u)\n", Status, pSG->cbTotal));
-        NdisFreeNetBufferList(pBufList);
-        pBufList = NULL;
+        LogError(("vboxNetLwfWinSGtoNB: failed to allocate data buffer (size=%u)\n", cbMdl));
     }
 #endif /* !VBOXNETLWF_SYNC_SEND */
     LogFlow(("<==vboxNetLwfWinSGtoNB: return %p\n", pBufList));
@@ -1568,6 +1524,7 @@ VOID vboxNetLwfWinSendNetBufferLists(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER_L
     size_t cb = 0;
     LogFlow(("==>vboxNetLwfWinSendNetBufferLists: module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)hModuleCtx;
+    vboxNetLwfWinDumpPackets("vboxNetLwfWinSendNetBufferLists: got", pBufLists);
 
     if (!ASMAtomicReadBool(&pModule->fActive))
     {
@@ -1703,6 +1660,7 @@ VOID vboxNetLwfWinReceiveNetBufferLists(IN NDIS_HANDLE hModuleCtx,
     /// @todo Do we need loopback handling?
     LogFlow(("==>vboxNetLwfWinReceiveNetBufferLists: module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)hModuleCtx;
+    vboxNetLwfWinDumpPackets("vboxNetLwfWinReceiveNetBufferLists: got", pBufLists);
 
     if (!ASMAtomicReadBool(&pModule->fActive))
     {
@@ -2212,6 +2170,7 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
         PNET_BUFFER_LIST pBufList = vboxNetLwfWinSGtoNB(pModule, pSG);
         if (pBufList)
         {
+            vboxNetLwfWinDumpPackets("vboxNetFltPortOsXmit: sending down", pBufList);
 #ifdef VBOXNETLWF_SYNC_SEND
             aEvents[nEvents++] = &pModule->EventWire;
 #else /* !VBOXNETLWF_SYNC_SEND */
@@ -2226,6 +2185,7 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
         PNET_BUFFER_LIST pBufList = vboxNetLwfWinSGtoNB(pModule, pSG);
         if (pBufList)
         {
+            vboxNetLwfWinDumpPackets("vboxNetFltPortOsXmit: sending up", pBufList);
 #ifdef VBOXNETLWF_SYNC_SEND
             aEvents[nEvents++] = &pModule->EventHost;
 #else /* !VBOXNETLWF_SYNC_SEND */
