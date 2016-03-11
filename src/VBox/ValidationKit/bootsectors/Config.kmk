@@ -313,6 +313,7 @@ endif
 #       -3                     Use 386 instruction set (16-bit only).
 #       -wx                    Maxium warning level.
 #       -zl                    Don't emit default library information.
+#       -zdp                   DS pegged to BS3DATA16_GROUP.
 #       -zu                    Assume SS != DS.
 #       -mc                    Compact memory model, far data, small code.
 #       -mf                    Flat memory model (32-bit).
@@ -341,9 +342,9 @@ TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CFLAGS       = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
 TEMPLATE_VBoxBS3KitImg_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 # 	option quiet, nofarcalls\

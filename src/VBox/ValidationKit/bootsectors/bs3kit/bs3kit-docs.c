@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,7 +77,7 @@
  * | R15          | volatile    | volatile   | preserved       | preserved(*) |
  * | RFLAGS.DF    | =0          | =0         | =0              | =0           |
  * | CS           | preserved   | preserved  | preserved       | preserved    |
- * | DS           | volatile?   | preserved? | preserved       | both         |
+ * | DS           | preserved!  | preserved? | preserved       | both         |
  * | ES           | volatile    | volatile   | preserved       | volatile     |
  * | FS           | preserved   | preserved  | preserved       | preserved    |
  * | GS           | preserved   | volatile   | preserved       | both         |
@@ -102,9 +102,57 @@
  *          - 64-bit values are returned in EAX:EDX, where eax holds the least
  *            significant bits.
  *
+ * The DS segment register is pegged to BS3DATA16_GROUP in 16-bit code so that
+ * we don't need to reload it all the time.  This allows us to modify it in
+ * ring-0 and mode switching code without ending up in any serious RPL or DPL
+ * trouble.  In 32-bit and 64-bit mode the DS register is a flat, unlimited,
+ * writable selector.
+ *
+ * In 16-bit and 32-bit code we do not assume anything about ES, FS, and GS.
+ *
+ *
  * For an in depth coverage of x86 and AMD64 calling convensions, see
  * http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/function-calling-conventions.html
  *
+ *
+ *
+ * @section sec_modes               Execution Modes
+ *
+ * BS3Kit defines a number of execution modes in order to be able to test the
+ * full CPU capabilities (that VirtualBox care about anyways).  It currently
+ * omits system management mode, hardware virtualization modes, and security
+ * modes as those aren't supported by VirtualBox or are difficult to handle.
+ *
+ * The modes are categorized into normal and weird ones.
+ *
+ * The normal ones are:
+ *    + RM     - Real mode.
+ *    + PE16   - Protected  mode running 16-bit code, 16-bit TSS and 16-bit handlers.
+ *    + PE32   - Protected  mode running 32-bit code, 32-bit TSS and 32-bit handlers.
+ *    + PEV86  - Protected  mode running  v8086 code, 32-bit TSS and 32-bit handlers.
+ *    + PP16   - 386  paged mode running 16-bit code, 16-bit TSS and 16-bit handlers.
+ *    + PP32   - 386  paged mode running 32-bit code, 32-bit TSS and 32-bit handlers.
+ *    + PPV86  - 386  paged mode running  v8086 code, 32-bit TSS and 32-bit handlers.
+ *    + PAE16  - PAE  paged mode running 16-bit code, 16-bit TSS and 16-bit handlers.
+ *    + PAE32  - PAE  paged mode running 32-bit code, 32-bit TSS and 32-bit handlers.
+ *    + PAEV86 - PAE  paged mode running  v8086 code, 32-bit TSS and 32-bit handlers.
+ *    + LM16   - AMD64 long mode running 16-bit code, 64-bit TSS and 64-bit handlers.
+ *    + LM32   - AMD64 long mode running 32-bit code, 64-bit TSS and 64-bit handlers.
+ *    + LM64   - AMD64 long mode running 64-bit code, 64-bit TSS and 64-bit handlers.
+ *
+ * The weird ones:
+ *    + PE16_32   - Protected  mode running 16-bit code, 16-bit TSS and 16-bit handlers.
+ *    + PE16_V86  - Protected  mode running 16-bit code, 16-bit TSS and 16-bit handlers.
+ *    + PE32_16   - Protected  mode running 32-bit code, 32-bit TSS and 32-bit handlers.
+ *    + PP16_32   - 386  paged mode running 16-bit code, 16-bit TSS and 16-bit handlers.
+ *    + PP16_V86  - 386  paged mode running 16-bit code, 16-bit TSS and 16-bit handlers.
+ *    + PP32_16   - 386  paged mode running 32-bit code, 32-bit TSS and 32-bit handlers.
+ *    + PAE16_32  - PAE  paged mode running 16-bit code, 16-bit TSS and 16-bit handlers.
+ *    + PAE16_V86 - PAE  paged mode running 16-bit code, 16-bit TSS and 16-bit handlers.
+ *    + PAE32_16  - PAE  paged mode running 32-bit code, 32-bit TSS and 32-bit handlers.
+ *
+ * Actually, the PE32_16, PP32_16 and PAE32_16 modes aren't all that weird and fits in
+ * right next to LM16 and LM32, but this is the way it ended up. :-)
  *
  */
 

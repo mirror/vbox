@@ -54,14 +54,14 @@ BS3_DECL(void) Bs3Trap32Init(void)
     /*
      * Initialize the normal TSS so we can do ring transitions via the IDT.
      */
-    //pTss = &BS3_DATA_NM(Bs3Tss32);
-    Bs3MemZero(&BS3_DATA_NM(Bs3Tss32), sizeof(*pTss));
-    BS3_DATA_NM(Bs3Tss32).esp0      = BS3_ADDR_STACK_R0;
-    BS3_DATA_NM(Bs3Tss32).ss0       = BS3_SEL_R0_SS32;
-    BS3_DATA_NM(Bs3Tss32).esp1      = BS3_ADDR_STACK_R1;
-    BS3_DATA_NM(Bs3Tss32).ss1       = BS3_SEL_R1_SS32;
-    BS3_DATA_NM(Bs3Tss32).esp2      = BS3_ADDR_STACK_R2;
-    BS3_DATA_NM(Bs3Tss32).ss2       = BS3_SEL_R2_SS32;
+    pTss = &BS3_DATA_NM(Bs3Tss32);
+    Bs3MemZero(pTss, sizeof(*pTss));
+    pTss->esp0      = BS3_ADDR_STACK_R0;
+    pTss->ss0       = BS3_SEL_R0_SS32;
+    pTss->esp1      = BS3_ADDR_STACK_R1;
+    pTss->ss1       = BS3_SEL_R1_SS32 | 1;
+    pTss->esp2      = BS3_ADDR_STACK_R2;
+    pTss->ss2       = BS3_SEL_R2_SS32 | 2;
 
     /*
      * Initialize the double fault TSS.
@@ -72,9 +72,9 @@ BS3_DECL(void) Bs3Trap32Init(void)
     pTss->esp0      = BS3_ADDR_STACK_R0;
     pTss->ss0       = BS3_SEL_R0_SS32;
     pTss->esp1      = BS3_ADDR_STACK_R1;
-    pTss->ss1       = BS3_SEL_R1_SS32;
+    pTss->ss1       = BS3_SEL_R1_SS32 | 1;
     pTss->esp2      = BS3_ADDR_STACK_R2;
-    pTss->ss2       = BS3_SEL_R2_SS32;
+    pTss->ss2       = BS3_SEL_R2_SS32 | 2;
     pTss->eip       = BS3_DATA_NM(g_Bs3Trap32DoubleFaultHandlerFlatAddr);
     pTss->eflags    = X86_EFL_1;
     pTss->esp       = BS3_ADDR_STACK_R0_IST1;

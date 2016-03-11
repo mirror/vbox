@@ -2074,12 +2074,17 @@ typedef BS3TRAPFRAME const BS3_FAR *PCBS3TRAPFRAME;
 /**
  * Initializes 16-bit (protected mode) trap handling.
  *
+ * @param   f386Plus    Set if the CPU is 80386 or later and
+ *                      extended registers should be saved.  Once initialized
+ *                      with this parameter set to @a true, the effect cannot be
+ *                      reversed.
+ *
  * @remarks Does not install 16-bit trap handling, just initializes the
  *          structures.
  */
-BS3_DECL(void) Bs3Trap16Init_c16(void);
-BS3_DECL(void) Bs3Trap16Init_c32(void); /**< @copydoc Bs3Trap16Init_c16 */
-BS3_DECL(void) Bs3Trap16Init_c64(void); /**< @copydoc Bs3Trap16Init_c16 */
+BS3_DECL(void) Bs3Trap16Init_c16(bool f386Plus);
+BS3_DECL(void) Bs3Trap16Init_c32(bool f386Plus); /**< @copydoc Bs3Trap16Init_c16 */
+BS3_DECL(void) Bs3Trap16Init_c64(bool f386Plus); /**< @copydoc Bs3Trap16Init_c16 */
 #define Bs3Trap16Init BS3_CMN_NM(Bs3Trap16Init) /**< Selects #Bs3Trap16Init_c16, #Bs3Trap16Init_c32 or #Bs3Trap16Init_c64. */
 
 /**

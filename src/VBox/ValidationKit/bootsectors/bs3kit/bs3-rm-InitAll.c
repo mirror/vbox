@@ -40,7 +40,7 @@ BS3_DECL(void) Bs3InitAll_rm(void)
 //        Bs3Trap64Init();
     if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
         Bs3Trap32Init();
-//    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
-//        Bs3Trap16Init();
+    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
+        Bs3Trap16Init((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386);
 }
 

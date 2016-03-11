@@ -151,6 +151,11 @@ BS3_BEGIN_TEXT16
         call    TMPL_NM(Bs3SwitchToRM)
         BS3_SET_BITS 16
 %endif
+push sBX
+push sAX
+push sCX
+push sDX
+push sBP
 
         ; Print the character.
         mov     bx, 0ff00h
@@ -158,6 +163,11 @@ BS3_BEGIN_TEXT16
         mov     ah, 0eh
         int     10h
 
+pop sBP
+pop sDX
+pop sCX
+pop sAX
+pop sBX
 %ifndef TMPL_CMN_R86
         ; Switch back (20h param scratch area not required).
         extern  RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)

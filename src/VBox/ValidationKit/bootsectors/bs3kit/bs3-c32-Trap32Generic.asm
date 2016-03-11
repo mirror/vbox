@@ -248,6 +248,7 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         cmp     cl, al
         je      .iret_frame_same_cpl
 
+.iret_frame_different_cpl:
         mov     ecx, [ebp + 16]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
         mov     cx, [ebp + 20]
@@ -259,10 +260,9 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
 .iret_frame_same_cpl:
         lea     ecx, [ebp + 12]
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
+        mov     [esp + BS3TRAPFRAME.uHandlerRsp], ecx
         mov     cx, ss
         mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
-        lea     eax, [ebp + 16]
-        mov     [esp + BS3TRAPFRAME.uHandlerRsp], eax
         jmp     .iret_frame_done
 
 .iret_frame_v8086:
@@ -366,20 +366,17 @@ BS3_PROC_END   bs3Trap32GenericCommon
 ;
 bs3Trap32TssInAxToFlatInEax:
         ; Get the GDT base address and find the descriptor address (EAX)
-        sub     esp, 16h
-        sgdt    [esp + 2]               ; +2 for correct alignment.
+        sub     esp, 8+2
+        sgdt    [esp]
         and     eax, 0fff8h
-        add     eax, [esp + 4]          ; GDT base address.
-        add     esp, 16h
+        add     eax, [esp + 2]          ; GDT base address.
+        add     esp, 8+2
 
         ; Get the flat TSS address from the descriptor.
-        push    ecx
-        mov     ecx, [eax + 4]
-        and     eax, 0ffff0000h
-        movzx   eax, word [eax]
-        or      eax, ecx
-        pop     ecx
-
+        mov     al, [eax + (X86DESCGENERIC_BIT_OFF_BASE_HIGH1 / 8)]
+        mov     ah, [eax + (X86DESCGENERIC_BIT_OFF_BASE_HIGH2 / 8)]
+        shl     eax, 16
+        mov     ax, [eax + (X86DESCGENERIC_BIT_OFF_BASE_LOW / 8)]
         ret
 
 ;;

@@ -234,6 +234,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_V86
         call    TMPL_NM(Bs3SwitchToPE16_V86)
         BS3_SET_BITS 32
         call    eax
+.repeat: jmp .repeat
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_v86)
         BS3_SET_BITS TMPL_BITS
         jmp     TMPL_NM(bs3TestCallDoerEpilogue)
