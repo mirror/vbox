@@ -1339,11 +1339,15 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** X2APIC MSR -  Timer Current Count Register. */
 #define MSR_IA32_X2APIC_TIMER_CCR           0x839
 /** X2APIC MSR -  Timer Divide Configuration Register. */
-#define MSR_IA32_X2APIC_TIMER_DFR           0x83E
+#define MSR_IA32_X2APIC_TIMER_DCR           0x83E
 /** X2APIC MSR - Self IPI. */
 #define MSR_IA32_X2APIC_SELF_IPI            0x83F
 /** X2APIC MSR range end. */
 #define MSR_IA32_X2APIC_END                 0xBFF
+/** X2APIC MSR - LVT start range. */
+#define MSR_IA32_X2APIC_LVT_START           MSR_IA32_X2APIC_LVT_TIMER
+/** X2APIC MSR - LVT end range (inclusive). */
+#define MSR_IA32_X2APIC_LVT_END             MSR_IA32_X2APIC_LVT_ERROR
 
 /** K6 EFER - Extended Feature Enable Register. */
 #define MSR_K6_EFER                         UINT32_C(0xc0000080)
