@@ -2070,7 +2070,7 @@ static DECLCALLBACK(int) drvHostCoreAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDM
     pCfg->cMaxStreamsOut  = UINT32_MAX;
 
     /** @todo Implement a proper device detection. */
-    pCfg->cSource         = 1;
+    pCfg->cSources        = 1;
     pCfg->cSinks          = 1;
 
     return VINF_SUCCESS;
