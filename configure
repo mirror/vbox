@@ -1207,11 +1207,11 @@ extern "C" int main(void)
 {
   printf("found version %d.%d.%d",
          SND_LIB_MAJOR, SND_LIB_MINOR, SND_LIB_SUBMINOR);
-#if 10000*SND_LIB_MAJOR + 100*SND_LIB_MINOR + SND_LIB_SUBMINOR >= 10006
+#if 10000*SND_LIB_MAJOR + 100*SND_LIB_MINOR + SND_LIB_SUBMINOR >= 10014
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 1.0.6 or higher\n");
+  printf(", expected version 1.0.14 or higher\n");
   return 1;
 #endif
 }
