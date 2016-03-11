@@ -180,11 +180,11 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
     return pszValue;
 }
 
-static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, struct audio_option *opt)
+static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, audio_option *paOpts, size_t cOpts)
 {
     AssertPtrReturn(pCfgHandle, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszPrefix, VERR_INVALID_POINTER);
-    AssertPtrReturn(opt, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPrefix,  VERR_INVALID_POINTER);
+    /* oaOpts and cOpts are optional. */
 
     PCFGMNODE pCfgChildHandle = NULL;
     PCFGMNODE pCfgChildChildHandle = NULL;
@@ -219,55 +219,54 @@ static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, s
         }
     }
 
-    for (; opt->name; opt++)
+    for (size_t i = 0; i < cOpts; i++)
     {
-        LogFlowFunc(("Option value pointer for `%s' is not set\n",
-                     opt->name));
-        if (!opt->valp) {
-            LogFlowFunc(("Option value pointer for `%s' is not set\n",
-                   opt->name));
+        audio_option *pOpt = &paOpts[i];
+        if (!pOpt->valp)
+        {
+            LogFlowFunc(("Option value pointer for `%s' is not set\n", pOpt->name));
             continue;
         }
 
         bool fUseDefault;
 
-        switch (opt->tag)
+        switch (pOpt->tag)
         {
             case AUD_OPT_BOOL:
             case AUD_OPT_INT:
             {
-                int *intp = (int *)opt->valp;
-                *intp = drvAudioGetConfInt(pCfgHandle, opt->name, *intp, &fUseDefault);
+                int *intp = (int *)pOpt->valp;
+                *intp = drvAudioGetConfInt(pCfgHandle, pOpt->name, *intp, &fUseDefault);
 
                 break;
             }
 
             case AUD_OPT_FMT:
             {
-                PDMAUDIOFMT *fmtp = (PDMAUDIOFMT *)opt->valp;
-                *fmtp = drvAudioGetConfFormat(pCfgHandle, opt->name, *fmtp, &fUseDefault);
+                PDMAUDIOFMT *fmtp = (PDMAUDIOFMT *)pOpt->valp;
+                *fmtp = drvAudioGetConfFormat(pCfgHandle, pOpt->name, *fmtp, &fUseDefault);
 
                 break;
             }
 
             case AUD_OPT_STR:
             {
-                const char **strp = (const char **)opt->valp;
-                *strp = drvAudioGetConfStr(pCfgHandle, opt->name, *strp, &fUseDefault);
+                const char **strp = (const char **)pOpt->valp;
+                *strp = drvAudioGetConfStr(pCfgHandle, pOpt->name, *strp, &fUseDefault);
 
                 break;
             }
 
             default:
-                LogFlowFunc(("Bad value tag for option `%s' - %d\n", opt->name, opt->tag));
+                LogFlowFunc(("Bad value tag for option `%s' - %d\n", pOpt->name, pOpt->tag));
                 fUseDefault = false;
                 break;
         }
 
-        if (!opt->overridenp)
-            opt->overridenp = &opt->overriden;
+        if (!pOpt->overridenp)
+            pOpt->overridenp = &pOpt->overriden;
 
-        *opt->overridenp = !fUseDefault;
+        *pOpt->overridenp = !fUseDefault;
     }
 
     return VINF_SUCCESS;
@@ -1776,7 +1775,7 @@ static DECLCALLBACK(int) drvAudioInit(PCFGMNODE pCfgHandle, PPDMDRVINS pDrvIns)
     int rc = RTCritSectInit(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        rc = drvAudioProcessOptions(pCfgHandle, "AUDIO", audio_options);
+        rc = drvAudioProcessOptions(pCfgHandle, "AUDIO", audio_options, RT_ELEMENTS(audio_options));
         /** @todo Check for invalid options? */
 
         pThis->cStreamsFreeOut = conf.fixed_out.cStreams;
