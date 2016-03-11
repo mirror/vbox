@@ -15,7 +15,23 @@
  */
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 
+/*
+ * If VBOXNETLWF_SYNC_SEND is defined we won't allocate data buffers, but use
+ * the original buffers coming from IntNet to build MDLs around them. This
+ * also means that we need to wait for send operation to complete before
+ * returning the buffers, which hinders performance way too much.
+ */
 //#define VBOXNETLWF_SYNC_SEND
+
+/*
+ * If VBOXNETLWF_FIXED_SIZE_POOLS is defined we pre-allocate data buffers of
+ * fixed size in five pools. Each pool uses different size to accomodate packets
+ * of various sizes. We allocate these buffers once and re-use them when send
+ * operation is complete.
+ * If VBOXNETLWF_FIXED_SIZE_POOLS is not defined we allocate data buffers before
+ * each send operation and free then upon completion.
+ */
+#define VBOXNETLWF_FIXED_SIZE_POOLS
 
 /*
  * Don't ask me why it is 42. Empirically this is what goes down the stack.
@@ -171,11 +187,19 @@ static VBOXNETFLTGLOBALS g_VBoxNetFltGlobals;
 /* win-specific global data */
 VBOXNETLWFGLOBALS g_VBoxNetLwfGlobals;
 
+#ifdef VBOXNETLWF_FIXED_SIZE_POOLS
+static ULONG g_cbPool[] = { 576+56, 1556, 4096+56, 6192+56, 9056 };
+#endif /* VBOXNETLWF_FIXED_SIZE_POOLS */
+
 typedef struct _VBOXNETLWF_MODULE {
     RTLISTNODE node;
 
     NDIS_HANDLE hFilter;
+#ifndef VBOXNETLWF_FIXED_SIZE_POOLS
     NDIS_HANDLE hPool;
+#else /* VBOXNETLWF_FIXED_SIZE_POOLS */
+    NDIS_HANDLE hPool[RT_ELEMENTS(g_cbPool)];
+#endif /* VBOXNETLWF_FIXED_SIZE_POOLS */
     PVBOXNETLWFGLOBALS pGlobals;
     /** Associated instance of NetFlt, one-to-one relationship */
     PVBOXNETFLTINS pNetFlt; /// @todo Consider automic access!
@@ -837,6 +861,20 @@ static void vboxNetLwfWinUpdateSavedOffloadConfig(PVBOXNETLWF_MODULE pModuleCtx,
     pModuleCtx->fOffloadConfigValid = true;
 }
 
+#ifdef VBOXNETLWF_FIXED_SIZE_POOLS
+static void vboxNetLwfWinFreePools(PVBOXNETLWF_MODULE pModuleCtx, int cPools)
+{
+    for (int i = 0; i < cPools; ++i)
+    {
+        if (pModuleCtx->hPool[i])
+        {
+            NdisFreeNetBufferListPool(pModuleCtx->hPool[i]);
+            Log4(("vboxNetLwfWinAttach: freeed NBL+NB pool 0x%p\n", pModuleCtx->hPool[i]));
+        }
+    }
+}
+#endif /* VBOXNETLWF_FIXED_SIZE_POOLS */
+
 static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hDriverCtx,
                                        IN PNDIS_FILTER_ATTACH_PARAMETERS pParameters)
 {
@@ -910,6 +948,33 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     pModuleCtx->cPendingBuffers = 0;
 #endif /* !VBOXNETLWF_SYNC_SEND */
 
+#ifdef VBOXNETLWF_FIXED_SIZE_POOLS
+    for (int i = 0; i < RT_ELEMENTS(g_cbPool); ++i)
+    {
+        /* Allocate buffer pools */
+        NET_BUFFER_LIST_POOL_PARAMETERS PoolParams;
+        NdisZeroMemory(&PoolParams, sizeof(PoolParams));
+        PoolParams.Header.Type = NDIS_OBJECT_TYPE_DEFAULT;
+        PoolParams.Header.Revision = NET_BUFFER_LIST_POOL_PARAMETERS_REVISION_1;
+        PoolParams.Header.Size = sizeof(PoolParams);
+        PoolParams.ProtocolId = NDIS_PROTOCOL_ID_DEFAULT;
+        PoolParams.fAllocateNetBuffer = TRUE;
+        PoolParams.ContextSize = 0; /** @todo Do we need to consider underlying drivers? I think not. */
+        PoolParams.PoolTag = VBOXNETLWF_MEM_TAG;
+        PoolParams.DataSize = g_cbPool[i];
+        pModuleCtx->hPool[i] = NdisAllocateNetBufferListPool(hFilter, &PoolParams);
+        if (!pModuleCtx->hPool[i])
+        {
+            LogError(("vboxNetLwfWinAttach: NdisAllocateNetBufferListPool failed\n"));
+            vboxNetLwfWinFreePools(pModuleCtx, i);
+            NdisFreeIoWorkItem(pModuleCtx->hWorkItem);
+            NdisFreeMemory(pModuleCtx, 0, 0);
+            return NDIS_STATUS_RESOURCES;
+        }
+        Log4(("vboxNetLwfWinAttach: allocated NBL+NB pool (data size=%u) 0x%p\n",
+              PoolParams.DataSize, pModuleCtx->hPool[i]));
+    }
+#else /* !VBOXNETLWF_FIXED_SIZE_POOLS */
     /* Allocate buffer pools */
     NET_BUFFER_LIST_POOL_PARAMETERS PoolParams;
     NdisZeroMemory(&PoolParams, sizeof(PoolParams));
@@ -920,7 +985,6 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     PoolParams.fAllocateNetBuffer = TRUE;
     PoolParams.ContextSize = 0; /** @todo Do we need to consider underlying drivers? I think not. */
     PoolParams.PoolTag = VBOXNETLWF_MEM_TAG;
-	 	
     pModuleCtx->hPool = NdisAllocateNetBufferListPool(hFilter, &PoolParams);
     if (!pModuleCtx->hPool)
     {
@@ -930,6 +994,7 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         return NDIS_STATUS_RESOURCES;
     }
     Log4(("vboxNetLwfWinAttach: allocated NBL+NB pool 0x%p\n", pModuleCtx->hPool));
+#endif /* !VBOXNETLWF_FIXED_SIZE_POOLS */
 
     NDIS_FILTER_ATTRIBUTES Attributes;
     NdisZeroMemory(&Attributes, sizeof(Attributes));
@@ -941,8 +1006,12 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     if (Status != NDIS_STATUS_SUCCESS)
     {
         LogError(("vboxNetLwfWinAttach: NdisFSetAttributes failed with 0x%x\n", Status));
+#ifdef VBOXNETLWF_FIXED_SIZE_POOLS
+        vboxNetLwfWinFreePools(pModuleCtx, RT_ELEMENTS(g_cbPool));
+#else /* !VBOXNETLWF_FIXED_SIZE_POOLS */
         NdisFreeNetBufferListPool(pModuleCtx->hPool);
         Log4(("vboxNetLwfWinAttach: freed NBL+NB pool 0x%p\n", pModuleCtx->hPool));
+#endif /* !VBOXNETLWF_FIXED_SIZE_POOLS */
         NdisFreeIoWorkItem(pModuleCtx->hWorkItem);
         NdisFreeMemory(pModuleCtx, 0, 0);
         vboxNetLwfLogErrorEvent(IO_ERR_INTERNAL_ERROR, NDIS_STATUS_RESOURCES, 5);
@@ -992,11 +1061,15 @@ static VOID vboxNetLwfWinDetach(IN NDIS_HANDLE hModuleCtx)
      * it does not require us to do anything here since it has already been taken care of
      * by vboxNetLwfWinPause().
      */
+#ifdef VBOXNETLWF_FIXED_SIZE_POOLS
+    vboxNetLwfWinFreePools(pModuleCtx, RT_ELEMENTS(g_cbPool));
+#else /* !VBOXNETLWF_FIXED_SIZE_POOLS */
     if (pModuleCtx->hPool)
     {
         NdisFreeNetBufferListPool(pModuleCtx->hPool);
         Log4(("vboxNetLwfWinDetach: freed NBL+NB pool 0x%p\n", pModuleCtx->hPool));
     }
+#endif /* !VBOXNETLWF_FIXED_SIZE_POOLS */
     NdisFreeIoWorkItem(pModuleCtx->hWorkItem);
     NdisFreeMemory(hModuleCtx, 0, 0);
     Log4(("vboxNetLwfWinDetach: freed module context 0x%p\n", pModuleCtx));
@@ -1229,6 +1302,7 @@ DECLINLINE(ULONG) vboxNetLwfWinCalcSegments(PNET_BUFFER pNetBuf)
 
 DECLINLINE(void) vboxNetLwfWinFreeMdlChain(PMDL pMdl)
 {
+#ifndef VBOXNETLWF_FIXED_SIZE_POOLS
     PMDL pMdlNext;
     while (pMdl)
     {
@@ -1246,6 +1320,7 @@ DECLINLINE(void) vboxNetLwfWinFreeMdlChain(PMDL pMdl)
 #endif /* !VBOXNETLWF_SYNC_SEND */
         pMdl = pMdlNext;
     }
+#endif /* VBOXNETLWF_FIXED_SIZE_POOLS */
 }
 
 /** @todo
@@ -1303,6 +1378,59 @@ static PNET_BUFFER_LIST vboxNetLwfWinSGtoNB(PVBOXNETLWF_MODULE pModule, PINTNETS
         vboxNetLwfWinFreeMdlChain(pMdl);
     }
 #else /* !VBOXNETLWF_SYNC_SEND */
+
+# ifdef VBOXNETLWF_FIXED_SIZE_POOLS
+    int iPool = 0;
+    ULONG cbFrame = VBOXNETLWF_MAX_FRAME_SIZE(pSG->cbTotal);
+    /* Let's find the appropriate pool first */
+    for (iPool = 0; iPool < RT_ELEMENTS(g_cbPool); ++iPool)
+        if (cbFrame <= g_cbPool[iPool])
+            break;
+    if (iPool >= RT_ELEMENTS(g_cbPool))
+    {
+        LogError(("vboxNetLwfWinSGtoNB: frame is too big (%u > %u), drop it.\n", cbFrame, g_cbPool[RT_ELEMENTS(g_cbPool)-1]));
+        LogFlow(("<==vboxNetLwfWinSGtoNB: return NULL\n"));
+        return NULL;
+    }
+    PNET_BUFFER_LIST pBufList = NdisAllocateNetBufferList(pModule->hPool[iPool],
+                                                          0 /** @todo ContextSize */,
+                                                          0 /** @todo ContextBackFill */);
+    if (!pBufList)
+    {
+        LogError(("vboxNetLwfWinSGtoNB: failed to allocate netbuffer (cb=%u) from pool %d\n", cbFrame, iPool));
+        LogFlow(("<==vboxNetLwfWinSGtoNB: return NULL\n"));
+        return NULL;
+    }
+    NET_BUFFER *pBuffer = NET_BUFFER_LIST_FIRST_NB(pBufList);
+    NDIS_STATUS Status = NdisRetreatNetBufferDataStart(pBuffer, pSG->cbTotal, 0 /** @todo DataBackfill */, NULL);
+    if (Status == NDIS_STATUS_SUCCESS)
+    {
+        uint8_t *pDst = (uint8_t*)NdisGetDataBuffer(pBuffer, pSG->cbTotal, NULL, 1, 0);
+        if (pDst)
+        {
+            for (int i = 0; i < pSG->cSegsUsed; i++)
+            {
+                NdisMoveMemory(pDst, pSG->aSegs[i].pv, pSG->aSegs[i].cb);
+                pDst += pSG->aSegs[i].cb;
+            }
+            Log4(("vboxNetLwfWinSGtoNB: allocated NBL+NB 0x%p\n", pBufList));
+            pBufList->SourceHandle = pModule->hFilter;
+        }
+        else
+        {
+            LogError(("vboxNetLwfWinSGtoNB: failed to obtain the buffer pointer (size=%u)\n", pSG->cbTotal));
+            NdisAdvanceNetBufferDataStart(pBuffer, pSG->cbTotal, false, NULL); /** @todo why bother? */
+            NdisFreeNetBufferList(pBufList);
+            pBufList = NULL;
+        }
+    }
+    else
+    {
+        LogError(("vboxNetLwfWinSGtoNB: NdisRetreatNetBufferDataStart failed with 0x%x (size=%u)\n", Status, pSG->cbTotal));
+        NdisFreeNetBufferList(pBufList);
+        pBufList = NULL;
+    }
+# else /* !VBOXNETLWF_FIXED_SIZE_POOLS */
     PNET_BUFFER_LIST pBufList = NULL;
     ULONG cbMdl = VBOXNETLWF_MAX_FRAME_SIZE(pSG->cbTotal);
     ULONG uDataOffset = cbMdl - pSG->cbTotal;
@@ -1348,6 +1476,8 @@ static PNET_BUFFER_LIST vboxNetLwfWinSGtoNB(PVBOXNETLWF_MODULE pModule, PINTNETS
     {
         LogError(("vboxNetLwfWinSGtoNB: failed to allocate data buffer (size=%u)\n", cbMdl));
     }
+# endif /* !VBOXNETLWF_FIXED_SIZE_POOLS */
+
 #endif /* !VBOXNETLWF_SYNC_SEND */
     LogFlow(("<==vboxNetLwfWinSGtoNB: return %p\n", pBufList));
     return pBufList;
