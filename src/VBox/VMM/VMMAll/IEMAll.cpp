@@ -3559,7 +3559,13 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
         pCtx->ss.u32Limit       = cbLimitSS;
         pCtx->ss.u64Base        = X86DESC_BASE(&DescSS.Legacy);
         pCtx->ss.Attr.u         = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
-        pCtx->rsp               = uNewEsp - cbStackFrame; /** @todo Is the high word cleared for 16-bit stacks and/or interrupt handlers? */
+        /** @todo When coming from 32-bit code and operating with a 16-bit TSS and
+         *        16-bit handler, the high word of ESP remains unchanged (i.e. only
+         *        SP is loaded).
+         *  Need to check the other combinations too:
+         *      - 16-bit TSS, 32-bit handler
+         *      - 32-bit TSS, 16-bit handler */
+        pCtx->rsp               = uNewEsp - cbStackFrame;
         pIemCpu->uCpl           = uNewCpl;
 
         if (fEfl & X86_EFL_VM)
@@ -3626,7 +3632,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
     pCtx->cs.u64Base        = X86DESC_BASE(&DescCS.Legacy);
     pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
 
-    pCtx->rip               = uNewEip;
+    pCtx->rip               = uNewEip;  /* (The entire register is modified, see pe16_32 bs3kit tests.) */
     fEfl &= ~fEflToClear;
     IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
 
