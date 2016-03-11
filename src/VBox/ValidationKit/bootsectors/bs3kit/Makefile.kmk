@@ -98,10 +98,12 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-SwitchToRing1.asm \
        bs3-cmn-SwitchToRing2.asm \
        bs3-cmn-SwitchToRing3.asm \
+       bs3-cmn-SwitchToRingX.asm \
        bs3-cmn-SwitchTo16Bit.asm \
        bs3-cmn-SwitchTo16BitV86.asm \
        bs3-cmn-SwitchTo32Bit.asm \
        bs3-cmn-SwitchTo64Bit.asm \
+       bs3-cmn-Syscall.asm \
        bs3-cmn-TestData.c \
        bs3-cmn-TestInit.c \
        bs3-cmn-TestFailed.c \

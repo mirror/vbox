@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2007-2015 Oracle Corporation
+; Copyright (C) 2007-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -29,6 +29,7 @@
 
 %if TMPL_BITS == 16
 BS3_EXTERN_CMN Bs3SelProtFar32ToFlat32
+BS3_EXTERN_CMN Bs3Syscall
 %endif
 %if TMPL_BITS != 32
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
@@ -74,7 +75,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
 
         ; Switch to 16-bit ring0 and go on to do the far jump to 32-bit code.
         mov     ax, BS3_SYSCALL_TO_RING0
-        int     BS3_TRAP_SYSCALL
+        call    Bs3Syscall
 
         mov     xAX, BS3_SEL_R0_CS32
         jmp     .do_far_jump

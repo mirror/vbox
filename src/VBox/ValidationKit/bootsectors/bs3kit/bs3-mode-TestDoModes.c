@@ -191,6 +191,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         uint8_t bErrNo;
         Bs3TestSub(paEntries[i].pszSubTest);
 
+#if 1
         if (paEntries[i].pfnDoRM)
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInRM)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoRM));
@@ -204,12 +205,9 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         /*
          * Unpaged prot mode.
          */
-#if 0
         if (paEntries[i].pfnDoPE16)
         {
-Bs3Printf("Calling pfnDoPE16\n");
             bErrNo = TMPL_NM(Bs3TestCallDoerInPE16)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPE16));
-Bs3Printf("pfnDoPE16 returns %d\n", bErrNo);
             if (bErrNo != 0)
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_pe16));
         }
@@ -218,15 +216,12 @@ Bs3Printf("pfnDoPE16 returns %d\n", bErrNo);
 
         if (paEntries[i].pfnDoPE16_32)
         {
-Bs3Printf("Calling pfnDoPE16_32\n");
             bErrNo = TMPL_NM(Bs3TestCallDoerInPE16_32)(CONV_TO_FLAT(paEntries[i].pfnDoPE16_32));
-Bs3Printf("pfnDoPE16_32 returns %d\n", bErrNo);
             if (bErrNo != 0)
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_pe16_32));
         }
 
         if (paEntries[i].pfnDoPE16_V86 && fDoWeirdV86Modes)
-#endif
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInPE16_V86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPE16_V86));
             if (bErrNo != 0)
@@ -366,7 +361,7 @@ Bs3Printf("pfnDoPE16_32 returns %d\n", bErrNo);
             if (bErrNo != 0)
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_lm32));
         }
-
+#endif
         if (paEntries[i].pfnDoLM64)
         {
             bErrNo = TMPL_NM(Bs3TestCallDoerInLM64)(CONV_TO_FLAT(paEntries[i].pfnDoLM64));
@@ -374,5 +369,6 @@ Bs3Printf("pfnDoPE16_32 returns %d\n", bErrNo);
                 Bs3TestFailedF("Error #%u (%#x) in %s!\n", bErrNo, bErrNo, BS3_DATA_NM(g_szBs3ModeName_lm64));
         }
     }
+for (;;) { }
 }
 

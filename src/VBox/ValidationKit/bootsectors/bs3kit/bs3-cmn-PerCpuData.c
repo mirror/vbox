@@ -40,7 +40,12 @@
 *********************************************************************************************************************************/
 #if ARCH_BITS == 16
 
-uint8_t BS3_DATA_NM(g_bBs3CurrentMode) = BS3_MODE_RM;
+/** The current CPU mode. */
+uint8_t  BS3_DATA_NM(g_bBs3CurrentMode) = BS3_MODE_RM;
+
+/** Hint for 16-bit trap handlers regarding the high word of EIP. */
+uint32_t BS3_DATA_NM(g_uBs3TrapEipHint) = 0;
+
 
 #endif /* ARCH_BITS == 16 */
 

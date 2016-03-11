@@ -156,6 +156,11 @@ BS3_GLOBAL_NAME_EX TMPL_NM(bs3TestCallDoerEpilogue), , 0
         ret
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Real mode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInRM(uint16_t offBs3Text16);
 ; @uses     rax
@@ -170,7 +175,10 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToRM)
         BS3_SET_BITS 16
+        mov     cx, BS3_MODE_RM
+        push    cx
         call    ax
+        add     sp, 2
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
         BS3_SET_BITS TMPL_BITS
         jmp     TMPL_NM(bs3TestCallDoerEpilogue)
@@ -196,6 +204,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPE16)
         BS3_SET_BITS 16
+        push    BS3_MODE_PE16
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16)
         BS3_SET_BITS TMPL_BITS
@@ -215,6 +224,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_32
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPE16_32)
         BS3_SET_BITS 32
+        push    BS3_MODE_RM
         call    eax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_32)
         BS3_SET_BITS TMPL_BITS
@@ -228,13 +238,13 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_V86
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPE16_V86)
-        BS3_SET_BITS 32
-        call    eax
-.repeat: jmp .repeat
+        BS3_SET_BITS 16
+        push    BS3_MODE_PE16_V86
+        call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_v86)
         BS3_SET_BITS TMPL_BITS
         jmp     TMPL_NM(bs3TestCallDoerEpilogue)
@@ -252,6 +262,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE32
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPE32)
         BS3_SET_BITS 32
+        push    BS3_MODE_PE32
         call    eax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe32)
         BS3_SET_BITS TMPL_BITS
@@ -272,6 +283,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPE32_16)
         BS3_SET_BITS 16
+        push    BS3_MODE_PE32_16
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe32_16)
         BS3_SET_BITS TMPL_BITS
@@ -293,6 +305,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPEV86)
         BS3_SET_BITS 16
+        push    BS3_MODE_PEV86
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pev86)
         BS3_SET_BITS TMPL_BITS
@@ -320,6 +333,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPP16)
         BS3_SET_BITS 16
+        push    BS3_MODE_PP16
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16)
         BS3_SET_BITS TMPL_BITS
@@ -339,6 +353,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_32
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPP16_32)
         BS3_SET_BITS 32
+        push    BS3_MODE_PP16_32
         call    eax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16_32)
         BS3_SET_BITS TMPL_BITS
@@ -352,12 +367,13 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_V86
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPP16_V86)
-        BS3_SET_BITS 32
-        call    eax
+        BS3_SET_BITS 16
+        push    BS3_MODE_PP16_V86
+        call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16_v86)
         BS3_SET_BITS TMPL_BITS
         jmp     TMPL_NM(bs3TestCallDoerEpilogue)
@@ -375,6 +391,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP32
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPP32)
         BS3_SET_BITS 32
+        push    BS3_MODE_PP32
         call    eax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp32)
         BS3_SET_BITS TMPL_BITS
@@ -395,6 +412,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPP32_16)
         BS3_SET_BITS 16
+        push    BS3_MODE_PP32_16
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp32_16)
         BS3_SET_BITS TMPL_BITS
@@ -416,6 +434,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPPV86)
         BS3_SET_BITS 16
+        push    BS3_MODE_PPV86
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_ppv86)
         BS3_SET_BITS TMPL_BITS
@@ -443,6 +462,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPAE16)
         BS3_SET_BITS 16
+        push    BS3_MODE_PAE16
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16)
         BS3_SET_BITS TMPL_BITS
@@ -462,6 +482,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_32
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPAE16_32)
         BS3_SET_BITS 32
+        push    BS3_MODE_PAE16_32
         call    eax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16_32)
         BS3_SET_BITS TMPL_BITS
@@ -475,12 +496,13 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_V86
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPAE16_V86)
-        BS3_SET_BITS 32
-        call    eax
+        BS3_SET_BITS 16
+        push    BS3_MODE_PAE16_V86
+        call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16_v86)
         BS3_SET_BITS TMPL_BITS
         jmp     TMPL_NM(bs3TestCallDoerEpilogue)
@@ -498,6 +520,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE32
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPAE32)
         BS3_SET_BITS 32
+        push    BS3_MODE_PAE16_32
         call    eax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae32)
         BS3_SET_BITS TMPL_BITS
@@ -518,6 +541,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPAE32_16)
         BS3_SET_BITS 16
+        push    BS3_MODE_PAE32_16
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae32_16)
         BS3_SET_BITS TMPL_BITS
@@ -539,6 +563,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToPAEV86)
         BS3_SET_BITS 16
+        push    BS3_MODE_PAEV86
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_paev86)
         BS3_SET_BITS TMPL_BITS
@@ -566,6 +591,7 @@ BS3_SET_BITS TMPL_BITS
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToLM16)
         BS3_SET_BITS 16
+        push    BS3_MODE_LM16
         call    ax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm16)
         BS3_SET_BITS TMPL_BITS
@@ -585,6 +611,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM32
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToLM32)
         BS3_SET_BITS 32
+        and     esp, ~03h
+        push    BS3_MODE_LM32
         call    eax
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm32)
         BS3_SET_BITS TMPL_BITS
@@ -603,7 +631,10 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM64
         ; Mode switch, make the call, switch back.
         call    TMPL_NM(Bs3SwitchToLM64)
         BS3_SET_BITS 64
-        call    rax
+        and     rsp, ~0fh
+        sub     rsp, 18h
+        push    BS3_MODE_LM64
+        BS3_CALL rax, 1
         call    RT_CONCAT3(Bs3SwitchTo,TMPL_MODE_UNAME,_lm64)
         BS3_SET_BITS TMPL_BITS
         jmp     TMPL_NM(bs3TestCallDoerEpilogue)

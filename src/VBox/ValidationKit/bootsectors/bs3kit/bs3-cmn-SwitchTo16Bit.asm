@@ -27,6 +27,9 @@
 %include "bs3kit-template-header.mac"
 
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
+%if TMPL_BITS == 16
+BS3_EXTERN_CMN Bs3Syscall
+%endif
 TMPL_BEGIN_TEXT
 
 
@@ -40,8 +43,6 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
         push    ds
 
         ; Check g_bBs3CurrentMode whether we're in v8086 mode or not.
-        mov     ax, seg g_bBs3CurrentMode
-        mov     ds, ax
         mov     al, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         and     al, BS3_MODE_CODE_MASK
         cmp     al, BS3_MODE_CODE_V86
@@ -49,7 +50,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
 
         ; Switch to ring-0 if v8086 mode.
         mov     ax, BS3_SYSCALL_TO_RING0
-        lock int BS3_TRAP_SYSCALL
+        call    Bs3Syscall
 
 .ret_16bit:
         pop     ds

@@ -24,11 +24,20 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+;*********************************************************************************************************************************
+;*  Header Files                                                                                                                 *
+;*********************************************************************************************************************************
 %include "bs3kit-template-header.mac"
 
 
+;*********************************************************************************************************************************
+;*  External Symbols                                                                                                             *
+;*********************************************************************************************************************************
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
+%if TMPL_BITS == 16
+BS3_EXTERN_DATA16 g_uBs3TrapEipHint
+%endif
 TMPL_BEGIN_TEXT
 
 %if TMPL_BITS == 32
@@ -51,43 +60,85 @@ TMPL_BEGIN_TEXT
 ; values or otherwise implicitly transformed by the call.
 ;
 ; Note! The 16-bit versions of this code must be careful with using extended
-;       registers as we wish this code to work on real 8086 CPUs too!
+;       registers as we wish this code to work on real 80286 (maybe even 8086)
+;       CPUs too!
 ;
 BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
+        ;
+        ; This prologue is kind of complicated because of 80286 and older CPUs
+        ; as well as different requirements for 64-bit and the other modes.
+        ;
+%define VAR_CALLER_BP      [xBP]
+%if TMPL_BITS != 64
+ %define VAR_CALLER_DS     [xBP         - xCB]
+%endif
+%define VAR_CALLER_BX      [xBP - sCB*1 - xCB]
+%define VAR_CALLER_AX      [xBP - sCB*2 - xCB]
+%define VAR_CALLER_CX      [xBP - sCB*3 - xCB]
+%define VAR_CALLER_DX      [xBP - sCB*4 - xCB]
+%define VAR_CALLER_SI      [xBP - sCB*5 - xCB]
+%define VAR_CALLER_DI      [xBP - sCB*6 - xCB]
+%if TMPL_BITS == 16
+ %define VAR_CALLER_ESP    [xBP - sCB*7 - xCB]
+ %define VAR_CALLER_EBP    [xBP - sCB*8 - xCB]
+ %define VAR_CALLER_EFLAGS [xBP - sCB*9 - xCB]
+ %define VAR_CALLER_MODE   [xBP - sCB*9 - xCB*2]
+%else
+ %define VAR_CALLER_MODE   [xBP - sCB*6 - xCB*2]
+%endif
         push    xBP
         mov     xBP, xSP
-%ifndef TMPL_64BIT
- %define VAR_CALLER_DS      [xBP - xCB]
+%if TMPL_BITS == 64
+        push    0                       ; dummy DS entry
+%else
         push    ds
  %ifdef TMPL_CMN_R86
         push    BS3DATA16
  %else
         push    RT_CONCAT(BS3_SEL_R0_DS,TMPL_BITS)
  %endif
-        pop     ds
- %define VAR_CALLER_BP      [xBP]
- %define VAR_CALLER_DS      [xBP -       - xCB]
- %define VAR_CALLER_BX      [xBP - xCB*1 - xCB]
- %define VAR_CALLER_AX      [xBP - xCB*2 - xCB]
- %define VAR_CALLER_CX      [xBP - xCB*3 - xCB]
- %define VAR_CALLER_DX      [xBP - xCB*4 - xCB]
- %define VAR_CALLER_MODE    [xBP - xCB*5 - xCB]
-%else
- %define VAR_CALLER_BP      [xBP]
- %define VAR_CALLER_BX      [xBP - xCB*1]
- %define VAR_CALLER_AX      [xBP - xCB*2]
- %define VAR_CALLER_CX      [xBP - xCB*3]
- %define VAR_CALLER_DX      [xBP - xCB*4]
- %define VAR_CALLER_MODE    [xBP - xCB*5]
+        pop     ds                      ; DS = BS3DATA16_GROUP or FLAT and we can safely access data
+ %if TMPL_BITS == 16 && (TMPL_MODE == BS3_MODE_SYS_RM || TMPL_MODE == BS3_MODE_SYS_PE16)
+        cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
+        jbe     .prologue_pre_80386
+ %endif
 %endif
-        push    xBX
-        push    xAX
-        push    xCX
-        push    xDX
+        push    sBX
+        push    sAX
+        push    sCX
+        push    sDX
+        push    sSI
+        push    sDI
+%if TMPL_BITS == 16
+        push    ebp
+        push    esp
+        pushfd
+ %if TMPL_MODE == BS3_MODE_SYS_RM || TMPL_MODE == BS3_MODE_SYS_PE16
+        jmp     .prologue_end
 
+.prologue_pre_80386:
+        push    bx                      ; dummy
+        push    bx
+        push    ax                      ; dummy
+        push    ax
+        push    cx                      ; dummy
+        push    cx
+        push    dx                      ; dummy
+        push    dx
+        push    si                      ; dummy
+        push    si
+        push    di                      ; dummy
+        push    di
+        sub     sp, 0ch                 ; dummy
+ %endif
+%endif
+.prologue_end:
+
+        ;
         ; VAR_CALLER_MODE: Save the current mode (important for v8086 with 16-bit kernel).
+        ;
         xor     xBX, xBX
-        mov     bl, [g_bBs3CurrentMode]
+        mov     bl, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         push    xBX
 
         ;
@@ -130,7 +181,6 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
         int3
         jmp     .return
 
-
         ;
         ; Print char in the CL register.
         ;
@@ -138,24 +188,19 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
         ; be in some kind of real mode for this to work.  16-bit code segment
         ; requried for the mode switching code.
         ;
-%ifndef TMPL_16BIT
 BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
-%endif
 .print_chr:
-        push    xDI
-        push    xSI
+%if TMPL_BITS != 64
+        push    es
+        mov     di, ss                  ; Must save and restore SS for supporting 16/32 and 32/16 caller/kernel ring-0 combinations.
+%endif
 %ifndef TMPL_CMN_R86
         ; Switch to real mode (20h param scratch area not required).
         extern  TMPL_NM(Bs3SwitchToRM)
         call    TMPL_NM(Bs3SwitchToRM)
         BS3_SET_BITS 16
 %endif
-push sBX
-push sAX
-push sCX
-push sDX
-push sBP
 
         ; Print the character.
         mov     bx, 0ff00h
@@ -163,23 +208,18 @@ push sBP
         mov     ah, 0eh
         int     10h
 
-pop sBP
-pop sDX
-pop sCX
-pop sAX
-pop sBX
 %ifndef TMPL_CMN_R86
         ; Switch back (20h param scratch area not required).
         extern  RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
         BS3_SET_BITS TMPL_BITS
 %endif
-        pop     xSI
-        pop     xDI
-        jmp     .return
-%ifndef TMPL_16BIT
-TMPL_BEGIN_TEXT
+%if TMPL_BITS != 64
+        mov     ss, di
+        pop     es
 %endif
+        jmp     .return
+TMPL_BEGIN_TEXT
 
 
         ;
@@ -191,15 +231,14 @@ TMPL_BEGIN_TEXT
         ; requried for the mode switching code.
         ;
 .print_str:
-        push    xSI                     ; we setup ds:xSI to point to the thing.
-%if TMPL_BITS != 64
-        mov     bl, byte VAR_CALLER_MODE
-        and     bl, BS3_MODE_CODE_MASK
-        cmp     bl, BS3_MODE_CODE_V86
-        jne     .print_str_not_v8086
-        ;; @todo this gets complicated _fast_. Later.
-.print_str_not_v8086:
-%endif
+;;%if TMPL_BITS != 64
+;;        mov     bl, byte VAR_CALLER_MODE
+;;        and     bl, BS3_MODE_CODE_MASK
+;;        cmp     bl, BS3_MODE_CODE_V86
+;;        jne     .print_str_not_v8086
+;;        ;; @todo this gets complicated _fast_. Later.
+;;.print_str_not_v8086:
+;;%endif
         int3
         jmp     .return
 
@@ -216,6 +255,7 @@ TMPL_BEGIN_TEXT
         mov     xBX, xSP                ; xBP = BS3REGCTX pointer.
         call    .save_context
 
+
 %if TMPL_BITS == 32
         ; Convert xBP to flat pointer in 32-bit
         push    ss
@@ -224,21 +264,21 @@ TMPL_BEGIN_TEXT
         add     sSP, 8
         mov     xBX, xAX
 %endif
-        ; Prepare the last call frame.
-        BS3_ONLY_16BIT_STMT push    ss
-        push    xBX
+        push    xBX                     ; Save pointer for the final restore call.
 
         ; Convert the register context from whatever it is to ring-0.
+        BS3_ONLY_64BIT_STMT sub     rsp, 10h
         BS3_ONLY_16BIT_STMT push    ss
         push    xBX
         mov     ax, VAR_CALLER_AX
         sub     ax, BS3_SYSCALL_TO_RING0
         push    xAX
         BS3_CALL Bs3RegCtxConvertToRingX, 2
-        add     xSP, sCB
+        add     xSP, sCB BS3_ONLY_64BIT(+ 10h)
 
         ; Restore the register context (does not return).
         pop     xBX                     ; restore saved pointer.
+        BS3_ONLY_64BIT_STMT sub     rsp, 18h
         BS3_ONLY_16BIT_STMT push    ss
         push    xBX
         BS3_CALL Bs3RegCtxRestore, 1
@@ -250,31 +290,164 @@ TMPL_BEGIN_TEXT
         ;
 .return:
         pop     xBX                     ; saved mode
+        mov     [BS3_DATA16_WRT(g_bBs3CurrentMode)], bl
 %if TMPL_BITS == 16
         and     bl, BS3_MODE_CODE_MASK
         cmp     bl, BS3_MODE_CODE_V86
         je      .return_to_v8086_from_16bit_krnl
+        cmp     bl, BS3_MODE_CODE_32
+        je      .return_to_32bit_from_16bit_krnl
+ %if TMPL_MODE == BS3_MODE_SYS_RM || TMPL_MODE == BS3_MODE_SYS_PE16
+        cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
+        jbe     .return_pre_80386
+ %endif
+
+        popfd
+        pop     esp
+        pop     ebp
 %endif
-        pop     xDX
-        pop     xCX
-        pop     xAX
-        pop     xBX
-%ifndef TMPL_64BIT
+        pop     sDI
+        pop     sSI
+        pop     sDX
+        pop     sCX
+        pop     sAX
+        pop     sBX
+%if TMPL_BITS != 64
         pop     ds
-%endif
         leave
-%ifdef TMPL_64BIT
-        iretq
-%else
         iret
+%else
+        leave                           ; skips fake ds
+        iretq
 %endif
 
 %if TMPL_BITS == 16
+ %if TMPL_MODE == BS3_MODE_SYS_RM || TMPL_MODE == BS3_MODE_SYS_PE16
+        ; Variant of the above for 80286 and older.
+.return_pre_80386:
+        add     sp, 0ch
+        pop     di
+        pop     di
+        pop     si
+        pop     si
+        pop     dx
+        pop     dx
+        pop     cx
+        pop     cx
+        pop     ax
+        pop     ax
+        pop     bx
+        pop     bx
+        pop     ds
+        pop     bp
+        iret
+ %endif
+
 .return_to_v8086_from_16bit_krnl:
         int3
         jmp     .return_to_v8086_from_16bit_krnl
-%endif
 
+        ;
+        ; Returning to 32-bit code may require us to expand and seed the eip
+        ; and esp addresses in the iret frame since these are truncated when
+        ; using a 16-bit interrupt handler.
+        ;
+        ; Incoming stack:        New stack diff cpl:
+        ;   bp + 0ah: [ss]
+        ;   bp + 08h: [sp]         bx + 38h: [ss]       New stack same cpl:
+        ;   bp + 06h: flags
+        ;   bp + 04h: cs           bx + 34h: [esp]        bx + 30h: eflags
+        ;   bp + 02h: ip
+        ;   --------------         bx + 30h: eflags       bx + 2ch: cs
+        ;   bp + 00h: bp
+        ;   bp - 02h: ds           bx + 2ch: cs           bx + 28h: eip
+        ;                                                 -------------
+        ;   bp - 06h: ebx          bx + 28h: eip          bx + 26h: bp
+        ;                         --------------          bx + 24h: ds
+        ;   bp - 0ah: eax          bx + 26h: bp
+        ;                          bx + 24h: ds           bx + 20h: ebx
+        ;   bp - 0eh: ecx
+        ;                          bx + 20h: ebx          bx + 1ch: eax
+        ;   bp - 12h: edx
+        ;                          bx + 1ch: eax          bx + 18h: ecx
+        ;   bp - 16h: esi
+        ;                          bx + 18h: ecx          bx + 14h: edx
+        ;   bp - 1ah: edi
+        ;                          bx + 14h: edx          bx + 10h: esi
+        ;   bp - 1eh: esp
+        ;                          bx + 10h: esi          bx + 0ch: edi
+        ;   bp - 22h: ebp
+        ;                          bx + 0ch: edi          bx + 08h: esp
+        ;   bp - 26h: eflags
+        ;                          bx + 08h: esp          bx + 04h: ebp
+        ;
+        ;                          bx + 04h: ebp          bx + 00h: eflags
+        ;
+        ;                          bx + 00h: eflags
+        ;
+        ;
+        ; If we're returning to the same CPL, we're still using the stack of
+        ; the 32-bit caller.  The high ESP word does not need restoring.
+        ;
+        ; If we're returning to a lower CPL, there on a 16-bit ring-0 stack,
+        ; however, the high ESP word is still that of the caller.
+        ;
+.return_to_32bit_from_16bit_krnl:
+        mov     ax, cs
+        and     al, 3
+        mov     ah, 3
+        and     ah, [xBP + xCB*2]
+        ; The iret frame doubles in size, so allocate more stack.
+        cmp     al, ah
+        je      .return_to_32bit_from_16bit_krnl_same_cpl_sub_sp
+        sub     sp, 2*2
+.return_to_32bit_from_16bit_krnl_same_cpl_sub_sp:
+        sub     sp, 3*2
+        mov     bx, sp
+        ; Copy the saved registers.
+        xor     di, di
+.return_to_32bit_from_16bit_krnl_copy_loop:
+        mov     ecx, [bp + di - 26h]
+        mov     [ss:bx + di], ecx
+        add     di, 4
+        cmp     di, 28h
+        jb      .return_to_32bit_from_16bit_krnl_copy_loop
+        ; Convert the 16-bit iret frame to a 32-bit iret frame.
+        mov     ecx, [BS3_DATA16_WRT(g_uBs3TrapEipHint)]
+        mov     cx,  [bp + 02h]         ; ip
+        mov     [ss:bx + 28h], ecx
+        mov     ecx, 0f00d0000h
+        mov     cx,  [bp + 04h]         ; cs
+        mov     [ss:bx + 2ch], ecx
+        mov     ecx, [ss:bx]            ; caller eflags
+        mov     cx,  [bp + 06h]         ; flags
+        mov     [ss:bx + 30h], ecx
+        cmp     al, ah
+        jz      .return_to_32bit_from_16bit_krnl_do_return
+        mov     ecx, [ss:bx + 08h]      ; caller esp
+        mov     cx,  [bp + 08h]         ; sp
+        mov     [ss:bx + 34h], ecx
+        mov     ecx, 0f00d0000h
+        mov     cx,  [bp + 0ah]         ; ss
+        mov     [ss:bx + 38h], ecx
+.return_to_32bit_from_16bit_krnl_do_return:
+        popfd
+        pop     ecx                     ; esp - only the high bits!
+        mov     cx, sp
+        mov     esp, ecx
+        pop     ebp
+        lea     bp, [bx + 26h]
+        pop     edi
+        pop     esi
+        pop     edx
+        pop     ecx
+        pop     eax
+        pop     ebx
+        pop     ds
+        leave
+        iretd
+
+%endif ; 16-bit
 
 
         ;
@@ -283,7 +456,7 @@ TMPL_BEGIN_TEXT
         ;
 .save_context:
 %if TMPL_BITS == 16
-        cmp     byte [g_uBs3CpuDetected], BS3CPU_80386
+        cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80386
         jae     .save_context_full
 
         ;
@@ -341,7 +514,7 @@ TMPL_BEGIN_TEXT
         mov     [ss:bx + BS3REGCTX.rflags], ax
         mov     al, VAR_CALLER_MODE
         mov     [ss:bx + BS3REGCTX.bMode], al
-        cmp     byte [g_uBs3CpuDetected], BS3CPU_80286
+        cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
         jne     .save_context_16_return
         smsw    [ss:bx + BS3REGCTX.cr0]
         str     [ss:bx + BS3REGCTX.tr]
@@ -370,14 +543,34 @@ TMPL_BEGIN_TEXT
 
         ; Do the 386+ state saving.
 %if TMPL_BITS == 16                     ; save the high word of registered pushed on the stack.
-        mov     [ss:bx + BS3REGCTX.rax], eax
+        mov     ecx, VAR_CALLER_AX
+        mov     [ss:bx + BS3REGCTX.rax], ecx
+        mov     ecx, VAR_CALLER_CX
         mov     [ss:bx + BS3REGCTX.rcx], ecx
-        mov     [ss:bx + BS3REGCTX.rdx], edx
-        mov     [ss:bx + BS3REGCTX.rbx], ebx
-        mov     [ss:bx + BS3REGCTX.rbp], ebp
-        mov     [ss:bx + BS3REGCTX.rsp], esp
-        pushfd
-        pop     dword [ss:bx + BS3REGCTX.rflags]
+        mov     ecx, VAR_CALLER_DX
+        mov     [ss:bx + BS3REGCTX.rdx], ecx
+        mov     ecx, VAR_CALLER_BX
+        mov     [ss:bx + BS3REGCTX.rbx], ecx
+        mov     ecx, VAR_CALLER_EBP
+        mov     [ss:bx + BS3REGCTX.rbp], ecx
+        mov     ecx, VAR_CALLER_ESP
+        mov     [ss:bx + BS3REGCTX.rsp], ecx
+        mov     ecx, VAR_CALLER_SI
+        mov     [ss:bx + BS3REGCTX.rsi], ecx
+        mov     ecx, VAR_CALLER_DI
+        mov     [ss:bx + BS3REGCTX.rdi], ecx
+        mov     ecx, VAR_CALLER_EFLAGS
+        mov     [ss:bx + BS3REGCTX.rflags], ecx
+ %if TMPL_BITS == 16
+        ; Seed high EIP word if 32-bit CS.
+        lar     ecx, [bp + 4]
+        jnz     .save_context_full_done_16bit_high_word
+        test    ecx, X86LAR_F_D
+        jz      .save_context_full_done_16bit_high_word
+        mov     ecx, [BS3_DATA16_WRT(g_uBs3TrapEipHint)]
+        mov     [ss:bx + BS3REGCTX.rip], ecx
+ %endif ; 16-bit
+.save_context_full_done_16bit_high_word:
 %endif
         mov     xAX, VAR_CALLER_AX
         mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rax], xAX
@@ -469,7 +662,10 @@ TMPL_BEGIN_TEXT
         mov     ax, [xBP + xCB*9]
         mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.gs], ax
         mov     byte [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.bCpl], 3
-%endif
+        jmp     .save_context_full_return
+
+%endif  ; !64-bit
+
 .save_context_full_return:
         ret
 

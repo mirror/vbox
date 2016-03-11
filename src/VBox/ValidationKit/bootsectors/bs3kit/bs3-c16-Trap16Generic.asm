@@ -38,6 +38,7 @@
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
+BS3_EXTERN_DATA16 g_uBs3TrapEipHint
 BS3_EXTERN_SYSTEM16 Bs3Gdt
 TMPL_BEGIN_TEXT
 BS3_EXTERN_CMN Bs3TrapDefaultHandler
@@ -148,6 +149,7 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.bXcpt], dl
 
         add     bp, 4                   ; adjust so it points to the word before the iret frame.
+        xor     dx, dx
         jmp     bs3Trap16GenericCommon
 BS3_PROC_END   bs3Trap16GenericTrapOrInt
 
@@ -189,6 +191,7 @@ CPU 286
         mov     [ss:bx + BS3TRAPFRAME.bXcpt], al
 
         add     bp, 4                   ; adjust so it points to the word before the iret frame.
+        mov     dx, 1
         jmp     bs3Trap16GenericCommon
 BS3_PROC_END   bs3Trap16GenericTrapOrInt80286
 
@@ -236,6 +239,7 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.uErrCd], dx
 
         add     bp, 6                   ; adjust so it points to the word before the iret frame.
+        xor     dx, dx
         jmp     bs3Trap16GenericCommon
 BS3_PROC_END   bs3Trap16GenericTrapErrCode
 
@@ -280,6 +284,7 @@ CPU 286
         mov     [ss:bx + BS3TRAPFRAME.uErrCd], dx
 
         add     bp, 4                   ; adjust so it points to the word before the iret frame.
+        mov     dl, 1
         jmp     bs3Trap16GenericCommon
 BS3_PROC_END   bs3Trap16GenericTrapErrCode80286
 
@@ -319,6 +324,7 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx], ecx
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], edi
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], esi
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], esp ; high word
         jmp     .save_segment_registers
 .save_word_grps:
 CPU 286
@@ -343,7 +349,7 @@ CPU 286
         mov     cx, ax
         shl     ax, BS3_SEL_RING_SHIFT
         or      ax, cx
-        add     ax, BS3_SEL_R0_DS32
+        add     ax, BS3_SEL_R0_DS16
         mov     ds, ax
         mov     es, ax
 
@@ -390,7 +396,7 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
         lea     eax, [ebp + 12]
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], eax
-        jmp     .iret_frame_done
+        jmp     .iret_frame_seed_high_eip_word
 .ret_frame_different_cpl_286:
 CPU 286
         mov     cx, [bp + 8]
@@ -410,7 +416,7 @@ CPU 386
         lea     cx, [bp + 8]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], ecx
-        jmp     .iret_frame_done
+        jmp     .iret_frame_seed_high_eip_word
 .iret_frame_same_cpl_286:
 CPU 286
         lea     cx, [bp + 8]
@@ -437,6 +443,18 @@ CPU 386
         lea     eax, [ebp + 40]
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], eax
         jmp     .iret_frame_done
+
+        ;
+        ; For 386 we do special tricks to supply the high word of EIP when
+        ; arriving here from 32-bit code. (ESP was seeded earlier.)
+        ;
+.iret_frame_seed_high_eip_word:
+        lar     eax, [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cs]
+        jnz     .iret_frame_done
+        test    eax, X86LAR_F_D
+        jz      .iret_frame_done
+        mov     ax, [g_uBs3TrapEipHint+2]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rip + 2], ax
 
 .iret_frame_done:
         ;

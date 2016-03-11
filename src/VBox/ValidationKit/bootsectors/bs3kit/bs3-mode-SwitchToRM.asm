@@ -39,7 +39,11 @@ TMPL_BEGIN_TEXT
 ;
 ; @cproto   BS3_DECL(void) Bs3SwitchToRM(void);
 ;
-; @uses     Nothing (except high 32-bit register parts).
+; @uses     GPRs and EFLAGS are unchanged (except high 32-bit register (AMD64) parts).
+;           CS is loaded with BS3TEXT16.
+;           SS:[RE]SP is converted to real mode address.
+;           DS and ES are loaded with BS3DATA16_GROUP.
+;           FS and GS are loaded with zero if present.
 ;
 ; @remarks  Obviously returns to 16-bit mode, even if the caller was
 ;           in 32-bit or 64-bit mode.
@@ -119,11 +123,22 @@ BS3_BEGIN_TEXT16
         call    BS3_CMN_NM(Bs3SwitchTo16Bit)
         BS3_SET_BITS 16
  %endif
+        ;
+        ; Before exiting to real mode we must load sensible selectors into the
+        ; segment registers so the hidden parts (which doesn't get reloaded in
+        ; real mode) are real mode compatible.
+        ;
+.is_386_or_better:
+;; @todo Testcase: Experiment leaving weird stuff in the hidden segment registers.
+        mov     ax, BS3_SEL_R0_DS16
+        mov     ds, ax
+        mov     es, ax
+        mov     fs, ax
+        mov     gs, ax
 
         ;
         ; Exit to real mode.
         ;
-.is_386_or_better:
         mov     eax, cr0
         and     eax, X86_CR0_NO_PE_NO_PG
         mov     cr0, eax

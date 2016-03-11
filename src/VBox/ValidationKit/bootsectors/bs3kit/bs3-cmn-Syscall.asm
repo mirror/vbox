@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3PrintChr.
+; BS3Kit - Bs3Syscall.
 ;
 
 ;
@@ -37,50 +37,42 @@
 %if TMPL_BITS == 16
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 %endif
-BS3_EXTERN_CMN Bs3Syscall
-
-
+BS3_EXTERN_DATA16 g_uBs3TrapEipHint
 TMPL_BEGIN_TEXT
 
+
 ;;
-; @cproto   BS3_DECL(void) Bs3PrintChr_c16(char ch);
+; Worker for doing a syscall - Assembly only.
 ;
-BS3_PROC_BEGIN_CMN Bs3PrintChr
-        BS3_CALL_CONV_PROLOG 1
+; This worker deals with the needing to use a different opcode
+; sequence in v8086 mode as well as the high EIP word hint for
+; the weird PE16_32, PP16_32 and PAE16_32 modes.
+;
+; @uses     Whatever the syscall modified (xBX and XBP are always saved).
+;
+BS3_PROC_BEGIN_CMN Bs3Syscall
         push    xBP
         mov     xBP, xSP
-        push    xAX
-        push    xCX
         push    xBX
 
 %if TMPL_BITS == 16
-        ; If we're in real mode or v8086 mode, call the VGA BIOS directly.
-        mov     bl, [g_bBs3CurrentMode]
-        cmp     bl, BS3_MODE_RM
-        je      .do_vga_bios_call
-;later ;        and     bl, BS3_MODE_CODE_MASK
-;later ;        cmp     bl, BS3_MODE_CODE_V86
-        jne     .do_system_call
-
-.do_vga_bios_call:
-        mov     al, [xBP + xCB*2]       ; Load the char
-        mov     bx, 0ff00h
-        mov     ah, 0eh
-        int     10h
-        jmp     .return
+        mov     bl, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
+        and     bl, BS3_MODE_CODE_MASK
+        cmp     bl, BS3_MODE_CODE_V86
+        mov     bx, 0
+        mov     [2 + BS3_DATA16_WRT(g_uBs3TrapEipHint)], bx
+        jne     .normal
+        db 0xf0                         ; lock prefix
+%else
+        BS3_LEA_MOV_WRT_RIP(xBX, .return)
+        mov     [BS3_DATA16_WRT(g_uBs3TrapEipHint)], ebx
 %endif
-
-.do_system_call:
-        mov     cl, [xBP + xCB*2]       ; Load the char
-        mov     ax, BS3_SYSCALL_PRINT_CHR
-        call    Bs3Syscall              ; (no BS3_CALL!)
+.normal:
+        int     BS3_TRAP_SYSCALL
 
 .return:
         pop     xBX
-        pop     xCX
-        pop     xAX
-        leave
-        BS3_CALL_CONV_EPILOG 1
+        pop     xBP
         ret
-BS3_PROC_END_CMN   Bs3PrintChr
+BS3_PROC_END_CMN   Bs3Syscall
 

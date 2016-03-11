@@ -151,8 +151,10 @@ BS3_DECL(void) Bs3TrapDefaultHandler(PBS3TRAPFRAME pTrapFrame)
         if (fHandled)
         {
             pTrapFrame->Ctx.rip.u16 += (uint16_t)(pbCode - pbCodeStart);
+# if 0
             Bs3Printf("Calling Bs3RegCtxRestore\n");
             Bs3RegCtxPrint(&pTrapFrame->Ctx);
+# endif
             Bs3RegCtxRestore(&pTrapFrame->Ctx, 0 /*fFlags*/); /* does not return. */
             return;
         }

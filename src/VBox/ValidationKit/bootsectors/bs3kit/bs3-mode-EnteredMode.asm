@@ -26,6 +26,9 @@
 
 %include "bs3kit-template-header.mac"
 
+%if TMPL_BITS == 16
+BS3_EXTERN_DATA16 g_uBs3CpuDetected
+%endif
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 TMPL_BEGIN_TEXT
 
@@ -151,9 +154,9 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode
 %endif
 
         ;
-        ; Load ds and es.
+        ; Load ds and es; clear fs and gs.
         ;
-%ifdef TMPL_CMN_V86
+%if BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
         mov     ax, BS3_SEL_DATA16
 %else
         mov     ax, RT_CONCAT(BS3_SEL_R0_DS,TMPL_BITS)
@@ -165,7 +168,14 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode
         ; For restoring after Bs3Trap* calls below.
         push    ax
         push    ax
+
+        cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
+        jbe     .skip_fs_gs
 %endif
+        xor     ax, ax
+        mov     fs, ax
+        mov     gs, ax
+.skip_fs_gs:
 
         ;
         ; Set global indicating CPU mode.
@@ -245,6 +255,12 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode
         pop     rcx
 %endif
         pop     xAX
+%ifdef BS3_STRICT
+        cmp     xBP, xSP
+        je      .return_stack_ok
+        int3
+.return_stack_ok:
+%endif
         leave
         ret
 .dbg_str:

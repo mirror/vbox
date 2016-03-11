@@ -817,7 +817,10 @@ extern char const BS3_DATA_NM(g_achBs3HexDigitsUpper)[16+1];
 
 
 /** The current mode (BS3_MODE_XXX) of CPU \#0. */
-extern uint8_t BS3_DATA_NM(g_bBs3CurrentMode);
+extern uint8_t    BS3_DATA_NM(g_bBs3CurrentMode);
+
+/** Hint for 16-bit trap handlers regarding the high word of EIP. */
+extern uint32_t   BS3_DATA_NM(g_uBs3TrapEipHint);
 
 
 #ifdef __WATCOMC__
@@ -845,6 +848,7 @@ uint16_t Bs3AsmSmsw(void);
 #  define BS3_IS_PROTECTED_MODE() (Bs3AsmSmsw() & 1 /*PE*/)
 # endif
 #endif
+
 
 
 /** @defgroup bs3kit_cross_ptr  Cross context pointer type

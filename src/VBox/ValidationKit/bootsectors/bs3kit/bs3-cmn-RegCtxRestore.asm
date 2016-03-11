@@ -223,6 +223,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
 .skip_ldtr:
 
         ; TR - complicated because we need to clear the busy bit. ASSUMES GDT.
+BS3_ONLY_64BIT_STMT hlt
         str     ax
         cmp     ax, [xBX + BS3REGCTX.tr]
         je      .skip_tr

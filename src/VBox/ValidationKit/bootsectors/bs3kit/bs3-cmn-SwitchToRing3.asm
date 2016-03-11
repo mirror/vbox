@@ -24,12 +24,16 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+;*********************************************************************************************************************************
+;*  Header Files                                                                                                                 *
+;*********************************************************************************************************************************
 %include "bs3kit-template-header.mac"
 
 
-%if TMPL_BITS == 16
-BS3_EXTERN_DATA16 g_bBs3CurrentMode
-%endif
+;*********************************************************************************************************************************
+;*  External Symbols                                                                                                             *
+;*********************************************************************************************************************************
+BS3_EXTERN_CMN Bs3SwitchToRingX
 TMPL_BEGIN_TEXT
 
 
@@ -39,41 +43,10 @@ TMPL_BEGIN_TEXT
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
 BS3_PROC_BEGIN_CMN Bs3SwitchToRing3
-        push    xAX
-
-%if TMPL_BITS == 16
-        ; Check the current mode.
-        push    ds
-        mov     ax, seg g_bBs3CurrentMode
-        mov     ds, ax
-        mov     al, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
-        pop     ds
-
-        ; If real mode: assert, shouldn't call this function in real mode!
-        cmp     al, BS3_MODE_RM
-        jne     .not_real_mode
-        int3
-        jmp     .return
-.not_real_mode:
-
-        ; If V8086 mode: Have to make the system call (we don't consider v8086 ring-3 here).
-        and     al, BS3_MODE_CODE_MASK
-        cmp     al, BS3_MODE_CODE_V86
-        je      .just_do_it
-%endif
-
-        ; In protected mode: Check the CPL we're currently at skip syscall if ring-3 already.
-        mov     ax, cs
-        and     ax, 3
-        cmp     ax, 3
-        je      .return
-
-.just_do_it:
-        mov     xAX, BS3_SYSCALL_TO_RING3
-        int     BS3_TRAP_SYSCALL
-
-.return:
-        pop     xAX
+        BS3_ONLY_64BIT_STMT sub rsp, 18h
+        push    3
+        BS3_CALL Bs3SwitchToRingX, 1
+        add     xSP, xCB BS3_ONLY_64BIT(+ 18h)
         ret
 BS3_PROC_END_CMN   Bs3SwitchToRing3
 
