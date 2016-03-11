@@ -830,9 +830,9 @@ void Machine::uninit()
          * terminated while there were clients running that owned open direct
          * sessions. Since in this case we are definitely called by
          * VirtualBox::uninit(), we may be sure that SessionMachine::uninit()
-         * won't happen on the client watcher thread (because it does
-         * VirtualBox::addCaller() for the duration of the
-         * SessionMachine::checkForDeath() call, so that VirtualBox::uninit()
+         * won't happen on the client watcher thread (because it has a
+         * VirtualBox caller for the duration of the
+         * SessionMachine::i_checkForDeath() call, so that VirtualBox::uninit()
          * cannot happen until the VirtualBox caller is released). This is
          * important, because SessionMachine::uninit() cannot correctly operate
          * after we return from this method (it expects the Machine instance is
@@ -12473,7 +12473,7 @@ HRESULT SessionMachine::init(Machine *aMachine)
 
 /**
  *  Uninitializes this session object. If the reason is other than
- *  Uninit::Unexpected, then this method MUST be called from #checkForDeath()
+ *  Uninit::Unexpected, then this method MUST be called from #i_checkForDeath()
  *  or the client watcher code.
  *
  *  @param aReason          uninitialization reason
@@ -12595,7 +12595,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 
     if (aReason == Uninit::Unexpected)
     {
-        /* Uninitialization didn't come from #checkForDeath(), so tell the
+        /* Uninitialization didn't come from #i_checkForDeath(), so tell the
          * client watcher thread to update the set of machines that have open
          * sessions. */
         mParent->i_updateClientWatcher();
@@ -12653,7 +12653,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     }
 
     /*
-     *  An expected uninitialization can come only from #checkForDeath().
+     *  An expected uninitialization can come only from #i_checkForDeath().
      *  Otherwise it means that something's gone really wrong (for example,
      *  the Session implementation has released the VirtualBox reference
      *  before it triggered #OnSessionEnd(), or before releasing IPC semaphore,
@@ -13332,7 +13332,7 @@ HRESULT SessionMachine::onSessionEnd(const ComPtr<ISession> &aSession,
          * ----------------------------------------------------------------- */
 
         /* go to the closing state (essential for all open*Session() calls and
-         * for #checkForDeath()) */
+         * for #i_checkForDeath()) */
         Assert(mData->mSession.mState == SessionState_Locked);
         mData->mSession.mState = SessionState_Unlocking;
 
@@ -13351,8 +13351,8 @@ HRESULT SessionMachine::onSessionEnd(const ComPtr<ISession> &aSession,
             mData->mSession.mProgress.setNull();
         }
 
-        /*  Create the progress object the client will use to wait until
-         * #checkForDeath() is called to uninitialize this session object after
+        /* Create the progress object the client will use to wait until
+         * #i_checkForDeath() is called to uninitialize this session object after
          * it releases the IPC semaphore.
          * Note! Because we're "reusing" mProgress here, this must be a proxy
          *       object just like for LaunchVMProcess. */
@@ -14719,7 +14719,7 @@ HRESULT SessionMachine::i_updateMachineStateOnClient()
          * some operation (like deleting the snapshot) in progress. The client
          * process in this case is waiting inside Session::close() for the
          * "end session" process object to complete, while #uninit() called by
-         * #checkForDeath() on the Watcher thread is waiting for the pending
+         * #i_checkForDeath() on the Watcher thread is waiting for the pending
          * operation to complete. For now, we accept this inconsistent behavior
          * and simply do nothing here. */
 

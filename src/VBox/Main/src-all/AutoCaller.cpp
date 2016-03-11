@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,6 +43,8 @@ ObjectState::ObjectState(VirtualBoxBase *aObj) :
     mState = NotReady;
     mStateChangeThread = NIL_RTTHREAD;
     mCallers = 0;
+    mFailedRC = S_OK;
+    mpFailedEI = NULL;
     mZeroCallersSem = NIL_RTSEMEVENT;
     mInitUninitSem = NIL_RTSEMEVENTMULTI;
     mInitUninitWaiters = 0;
@@ -57,6 +59,12 @@ ObjectState::~ObjectState()
     mCallers = 0;
     mStateChangeThread = NIL_RTTHREAD;
     mState = NotReady;
+    mFailedRC = S_OK;
+    if (mpFailedEI)
+    {
+        delete mpFailedEI;
+        mpFailedEI = NULL;
+    }
     mObj = NULL;
 }
 
@@ -194,6 +202,13 @@ HRESULT ObjectState::addCaller(bool aLimited /* = false */)
     {
         if (mState == Limited)
             rc = mObj->setError(rc, "The object functionality is limited");
+        else if (FAILED(mFailedRC) && mFailedRC != E_ACCESSDENIED)
+        {
+            /* replay recorded error information */
+            if (mpFailedEI)
+                ErrorInfoKeeper eik(*mpFailedEI);
+            rc = mFailedRC;
+        }
         else
             rc = mObj->setError(rc, "The object is not ready");
     }
@@ -250,6 +265,13 @@ bool ObjectState::autoInitSpanConstructor(ObjectState::State aExpectedState)
 {
     AutoWriteLock stateLock(mStateLock COMMA_LOCKVAL_SRC_POS);
 
+    mFailedRC = S_OK;
+    if (mpFailedEI)
+    {
+        delete mpFailedEI;
+        mpFailedEI = NULL;
+    }
+
     if (mState == aExpectedState)
     {
         setState(InInit);
@@ -259,7 +281,7 @@ bool ObjectState::autoInitSpanConstructor(ObjectState::State aExpectedState)
         return false;
 }
 
-void ObjectState::autoInitSpanDestructor(State aNewState)
+void ObjectState::autoInitSpanDestructor(State aNewState, HRESULT aFailedRC, com::ErrorInfo *apFailedEI)
 {
     AutoWriteLock stateLock(mStateLock COMMA_LOCKVAL_SRC_POS);
 
@@ -270,6 +292,21 @@ void ObjectState::autoInitSpanDestructor(State aNewState)
         /* We have some pending addCaller() calls on other threads (created
          * during InInit), signal that InInit is finished and they may go on. */
         RTSemEventMultiSignal(mInitUninitSem);
+    }
+
+    if (aNewState == InitFailed)
+    {
+        mFailedRC = aFailedRC;
+        /* apFailedEI may be NULL, when there is no explicit setFailed() call,
+         * which also implies that aFailedRC is S_OK. This case is used by
+         * objects (the majority) which don't want delayed error signalling. */
+        mpFailedEI = apFailedEI;
+    }
+    else
+    {
+        Assert(SUCCEEDED(aFailedRC));
+        Assert(apFailedEI == NULL);
+        Assert(mpFailedEI == NULL);
     }
 
     setState(aNewState);
@@ -375,7 +412,9 @@ AutoInitSpan::AutoInitSpan(VirtualBoxBase *aObj,
                            Result aResult /* = Failed */)
     : mObj(aObj),
       mResult(aResult),
-      mOk(false)
+      mOk(false),
+      mFailedRC(S_OK),
+      mpFailedEI(NULL)
 {
     Assert(mObj);
     mOk = mObj->getObjectState().autoInitSpanConstructor(ObjectState::NotReady);
@@ -393,7 +432,11 @@ AutoInitSpan::~AutoInitSpan()
 {
     /* if the state was other than NotReady, do nothing */
     if (!mOk)
+    {
+        Assert(SUCCEEDED(mFailedRC));
+        Assert(mpFailedEI == NULL);
         return;
+    }
 
     ObjectState::State newState;
     if (mResult == Succeeded)
@@ -402,13 +445,13 @@ AutoInitSpan::~AutoInitSpan()
         newState = ObjectState::Limited;
     else
         newState = ObjectState::InitFailed;
-    mObj->getObjectState().autoInitSpanDestructor(newState);
+    mObj->getObjectState().autoInitSpanDestructor(newState, mFailedRC, mpFailedEI);
+    mFailedRC = S_OK;
+    mpFailedEI = NULL; /* now owned by ObjectState instance */
     if (newState == ObjectState::InitFailed)
     {
         /* call uninit() to let the object uninit itself after failed init() */
         mObj->uninit();
-        /* Note: the object may no longer exist here (for example, it can call
-         * the destructor in uninit()) */
     }
 }
 
@@ -452,9 +495,12 @@ AutoReinitSpan::~AutoReinitSpan()
         newState = ObjectState::Ready;
     else
         newState = ObjectState::Limited;
-    mObj->getObjectState().autoInitSpanDestructor(newState);
-    /** @todo r=klaus: this is like the initial init() failure, but in this
-     * place uninit() is NOT called. Makes only limited sense. */
+    mObj->getObjectState().autoInitSpanDestructor(newState, S_OK, NULL);
+    /* If later AutoReinitSpan can truly fail (today there is no way) then
+     * in this place there needs to be an mObj->uninit() call just like in
+     * the AutoInitSpan destructor. In that case it might make sense to
+     * let AutoReinitSpan inherit from AutoInitSpan, as the code can be
+     * made (almost) identical. */
 }
 
 // AutoUninitSpan methods

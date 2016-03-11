@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -372,31 +372,39 @@ HRESULT VirtualBox::init()
 
     LogFlowThisFunc(("Version: %s, Package: %s, API Version: %s\n", sVersion.c_str(), sPackageType.c_str(), sAPIVersion.c_str()));
 
-    /* Get the VirtualBox home directory. */
-    {
-        char szHomeDir[RTPATH_MAX];
-        int vrc = com::GetVBoxUserHomeDirectory(szHomeDir, sizeof(szHomeDir));
-        if (RT_FAILURE(vrc))
-            return setError(E_FAIL,
-                            tr("Could not create the VirtualBox home directory '%s' (%Rrc)"),
-                            szHomeDir, vrc);
+    /* Important: DO NOT USE any kind of "early return" (except the single
+     * one above, checking the init span success) in this method. It is vital
+     * for correct error handling that it has only one point of return, which
+     * does all the magic on COM to signal object creation success and
+     * reporting the error later for every API method. COM translates any
+     * unsuccessful object creation to REGDB_E_CLASSNOTREG errors or similar
+     * unhelpful ones which cause us a lot of grief with troubleshooting. */
 
-        unconst(m->strHomeDir) = szHomeDir;
-    }
-
-    LogRel(("Home directory: '%s'\n", m->strHomeDir.c_str()));
-
-    i_reportDriverVersions();
-
-    /* compose the VirtualBox.xml file name */
-    unconst(m->strSettingsFilePath) = Utf8StrFmt("%s%c%s",
-                                                 m->strHomeDir.c_str(),
-                                                 RTPATH_DELIMITER,
-                                                 VBOX_GLOBAL_SETTINGS_FILE);
     HRESULT rc = S_OK;
     bool fCreate = false;
     try
     {
+        /* Get the VirtualBox home directory. */
+        {
+            char szHomeDir[RTPATH_MAX];
+            int vrc = com::GetVBoxUserHomeDirectory(szHomeDir, sizeof(szHomeDir));
+            if (RT_FAILURE(vrc))
+                throw setError(E_FAIL,
+                               tr("Could not create the VirtualBox home directory '%s' (%Rrc)"),
+                               szHomeDir, vrc);
+
+            unconst(m->strHomeDir) = szHomeDir;
+        }
+
+        LogRel(("Home directory: '%s'\n", m->strHomeDir.c_str()));
+
+        i_reportDriverVersions();
+
+        /* compose the VirtualBox.xml file name */
+        unconst(m->strSettingsFilePath) = Utf8StrFmt("%s%c%s",
+                                                     m->strHomeDir.c_str(),
+                                                     RTPATH_DELIMITER,
+                                                     VBOX_GLOBAL_SETTINGS_FILE);
         // load and parse VirtualBox.xml; this will throw on XML or logic errors
         try
         {
@@ -510,14 +518,12 @@ HRESULT VirtualBox::init()
             const settings::NATNetwork &net = *it;
 
             ComObjPtr<NATNetwork> pNATNetwork;
-            if (SUCCEEDED(rc = pNATNetwork.createObject()))
-            {
-                rc = pNATNetwork->init(this, net);
-                AssertComRCReturnRC(rc);
-            }
-
+            rc = pNATNetwork.createObject();
+            AssertComRCThrowRC(rc);
+            rc = pNATNetwork->init(this, net);
+            AssertComRCThrowRC(rc);
             rc = i_registerNATNetwork(pNATNetwork, false /* aSaveRegistry */);
-            AssertComRCReturnRC(rc);
+            AssertComRCThrowRC(rc);
         }
 
         /* events */
@@ -578,10 +584,6 @@ HRESULT VirtualBox::init()
         }
     }
 
-    /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
-        autoInitSpan.setSucceeded();
-
 #ifdef VBOX_WITH_EXTPACK
     /* Let the extension packs have a go at things. */
     if (SUCCEEDED(rc))
@@ -591,10 +593,19 @@ HRESULT VirtualBox::init()
     }
 #endif
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    /* Confirm a successful initialization when it's the case. Must be last,
+     * as on failure it will uninitialize the object. */
+    if (SUCCEEDED(rc))
+        autoInitSpan.setSucceeded();
+    else
+        autoInitSpan.setFailed(rc);
+
+    LogFlowThisFunc(("rc=%hrc\n", rc));
     LogFlowThisFuncLeave();
     LogFlow(("===========================================================\n"));
-    return rc;
+    /* Unconditionally return success, because the error return is delayed to
+     * the attribute/method calls through the Zombie object state. */
+    return S_OK;
 }
 
 HRESULT VirtualBox::initMachines()
@@ -734,9 +745,15 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
 void VirtualBox::uninit()
 {
-    Assert(!m->uRegistryNeedsSaving);
-    if (m->uRegistryNeedsSaving)
-        i_saveSettings();
+    /* Must be done outside the AutoUninitSpan, as it expects AutoCaller to
+     * be successful. This needs additional checks to protect against double
+     * uninit, as then the pointer is NULL. */
+    if (RT_VALID_PTR(m))
+    {
+        Assert(!m->uRegistryNeedsSaving);
+        if (m->uRegistryNeedsSaving)
+            i_saveSettings();
+    }
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -839,6 +856,7 @@ void VirtualBox::uninit()
 
     // clean up our instance data
     delete m;
+    m = NULL;
 
     /* Unload hard disk plugin backends. */
     VDShutdown();
@@ -1258,7 +1276,7 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
                                RTPATH_DELIMITER,
                                firmwareDesc[i].fileName);
         int rc = i_calculateFullPath(shortName, fullName);
-        AssertRCReturn(rc, rc);
+        AssertRCReturn(rc, VBOX_E_IPRT_ERROR);
         if (RTFileExists(fullName.c_str()))
         {
             *aResult = TRUE;
@@ -1268,7 +1286,7 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
 
         char pszVBoxPath[RTPATH_MAX];
         rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX);
-        AssertRCReturn(rc, rc);
+        AssertRCReturn(rc, VBOX_E_IPRT_ERROR);
         fullName = Utf8StrFmt("%s%c%s",
                               pszVBoxPath,
                               RTPATH_DELIMITER,
@@ -2811,7 +2829,7 @@ BOOL VirtualBox::i_onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR a
                       aId.toString().c_str(), aKey, aValue));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), FALSE);
 
     BOOL allowChange = TRUE;
     Bstr id = aId.toUtf16();
@@ -3179,7 +3197,7 @@ HRESULT VirtualBox::i_findMachine(const Guid &aId,
     HRESULT rc = VBOX_E_OBJECT_NOT_FOUND;
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.rc());
 
     {
         AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -4140,10 +4158,12 @@ void VirtualBox::i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
 HRESULT VirtualBox::i_saveSettings()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.rc());
 
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
     AssertReturn(!m->strSettingsFilePath.isEmpty(), E_FAIL);
+
+    i_unmarkRegistryModified(i_getGlobalRegistryId());
 
     HRESULT rc = S_OK;
 
@@ -4314,10 +4334,10 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
     Assert(i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.rc());
 
     AutoCaller mediumCaller(pMedium);
-    AssertComRCReturn(mediumCaller.rc(), mediumCaller.rc());
+    AssertComRCReturnRC(mediumCaller.rc());
 
     const char *pszDevType = NULL;
     ObjectsList<Medium> *pall = NULL;
@@ -4420,10 +4440,10 @@ HRESULT VirtualBox::i_unregisterMedium(Medium *pMedium)
     AssertReturn(pMedium != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.rc());
 
     AutoCaller mediumCaller(pMedium);
-    AssertComRCReturn(mediumCaller.rc(), mediumCaller.rc());
+    AssertComRCReturnRC(mediumCaller.rc());
 
     // caller must hold the media tree write lock
     Assert(i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
@@ -4510,7 +4530,7 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.rc());
 
     MediaList llMedia2Close;
 
@@ -5006,7 +5026,7 @@ HRESULT VirtualBox::i_registerDHCPServer(DHCPServer *aDHCPServer,
     AssertReturn(aDHCPServer != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.rc());
 
     // Acquire a lock on the VirtualBox object early to avoid lock order issues
     // when we call i_saveSettings() later on.
@@ -5017,7 +5037,7 @@ HRESULT VirtualBox::i_registerDHCPServer(DHCPServer *aDHCPServer,
     AutoWriteLock alock(m->allDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     AutoCaller dhcpServerCaller(aDHCPServer);
-    AssertComRCReturn(dhcpServerCaller.rc(), dhcpServerCaller.rc());
+    AssertComRCReturnRC(dhcpServerCaller.rc());
 
     Bstr name;
     com::Utf8Str uname;
@@ -5068,10 +5088,10 @@ HRESULT VirtualBox::i_unregisterDHCPServer(DHCPServer *aDHCPServer)
     AssertReturn(aDHCPServer != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.rc());
 
     AutoCaller dhcpServerCaller(aDHCPServer);
-    AssertComRCReturn(dhcpServerCaller.rc(), dhcpServerCaller.rc());
+    AssertComRCReturnRC(dhcpServerCaller.rc());
 
     AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock alock(m->allDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -5250,10 +5270,10 @@ HRESULT VirtualBox::i_unregisterNATNetwork(NATNetwork *aNATNetwork,
     AssertReturn(aNATNetwork != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.rc());
 
     AutoCaller natNetworkCaller(aNATNetwork);
-    AssertComRCReturn(natNetworkCaller.rc(), natNetworkCaller.rc());
+    AssertComRCReturnRC(natNetworkCaller.rc());
 
     Bstr name;
     HRESULT rc = aNATNetwork->COMGETTER(NetworkName)(name.asOutParam());

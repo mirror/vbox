@@ -139,8 +139,7 @@
  *
  * 1. The user must check for #rc() before using the created structure
  *    (e.g. passing it as a thread function argument). If #rc() returns a
- *    failure, the Console object may not be used by the task (see
- *    Console::addCaller() for more details).
+ *    failure, the Console object may not be used by the task.
  * 2. On successful initialization, the structure keeps the Console caller
  *    until destruction (to ensure Console remains in the Ready state and won't
  *    be accidentally uninitialized). Forgetting to delete the created task
@@ -9461,7 +9460,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
 
     ComObjPtr<Console> pConsole = task->mConsole;
 
-    /* Note: no need to use addCaller() because VMPowerUpTask does that */
+    /* Note: no need to use AutoCaller because VMPowerUpTask does that */
 
     /* The lock is also used as a signal from the task initiator (which
      * releases it only after RTThreadCreate()) that we can start the job */
@@ -9986,7 +9985,7 @@ DECLCALLBACK(int) Console::i_powerDownThread(RTTHREAD Thread, void *pvUser)
 
         const ComObjPtr<Console> &that = task->mConsole;
 
-        /* Note: no need to use addCaller() to protect Console because VMTask does
+        /* Note: no need to use AutoCaller to protect Console because VMTask does
          * that */
 
         /* wait until the method tat started us returns */
