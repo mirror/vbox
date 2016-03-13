@@ -31,6 +31,22 @@ ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
  include $(PATH_ROOT)/src/VBox/ValidationKit/Config.kmk
 endif
 
+# Add our 32-bit and 64-bit C properties.
+KBUILD_COMPILE_CATEGTORIES += C32 C64
+PROPS_TOOLS        += C32TOOL C64TOOL
+PROPS_SINGLE       += C32TOOL C64TOOL C32OBJSUFF C64OBJSUFF
+PROPS_ACCUMULATE_R += C32FLAGS C64FLAGS C32DEFS C64DEFS
+PROPS_ACCUMULATE_L += C32INCS C64INCS
+
+if 0 # Adding as few as possible new properties.
+KBUILD_COMPILE_CATEGTORIES += C16
+PROPS_TOOLS        += C16TOOL
+PROPS_SINGLE       += C16TOOL C16OBJSUFF
+PROPS_ACCUMULATE_R += C16FLAGS C16DEFS
+PROPS_ACCUMULATE_L += C16INCS
+endif
+
+
 # The bs3kit source directory.
 VBOX_PATH_BS3KIT_SRC = $(VBOX_PATH_VALIDATIONKIT_SRC)/bootsectors/bs3kit
 
@@ -108,13 +124,13 @@ ifdef SLKRUNS
  TOOL_Bs3Gcc64Elf64_CC  += -fmessage-length=0
  TOOL_Bs3Gcc64Elf64_CXX += -fmessage-length=0
 endif
-TOOL_Bs3Gcc64Elf64_COBJSUFF         ?= .o
-TOOL_Bs3Gcc64Elf64_CFLAGS           ?=
-TOOL_Bs3Gcc64Elf64_CFLAGS.debug     ?= -g
-TOOL_Bs3Gcc64Elf64_CFLAGS.profile   ?= -O2 #-g -pg
-TOOL_Bs3Gcc64Elf64_CFLAGS.release   ?= -O2
-TOOL_Bs3Gcc64Elf64_CINCS            ?=
-TOOL_Bs3Gcc64Elf64_CDEFS            ?=
+TOOL_Bs3Gcc64Elf64_COBJSUFF         = .o64
+TOOL_Bs3Gcc64Elf64_CFLAGS           =
+TOOL_Bs3Gcc64Elf64_CFLAGS.debug     = -g
+TOOL_Bs3Gcc64Elf64_CFLAGS.profile   = -O2 #-g -pg
+TOOL_Bs3Gcc64Elf64_CFLAGS.release   = -O2
+TOOL_Bs3Gcc64Elf64_CINCS            =
+TOOL_Bs3Gcc64Elf64_CDEFS            =
 TOOL_Bs3Gcc64Elf64_COMPILE_C_DEPEND = $(VBoxBs3ObjConverter_1_TARGET)
 TOOL_Bs3Gcc64Elf64_COMPILE_C_DEPORD =
 TOOL_Bs3Gcc64Elf64_COMPILE_C_OUTPUT =
@@ -129,7 +145,21 @@ define TOOL_Bs3Gcc64Elf64_COMPILE_C_CMDS
 	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 
-TOOL_Bs3Gcc64Elf64_CXXOBJSUFF       ?= .o
+TOOL_Bs3Gcc64Elf64_C64OBJSUFF         = $(TOOL_Bs3Gcc64Elf64_COBJSUFF)
+TOOL_Bs3Gcc64Elf64_C64FLAGS           = $(TOOL_Bs3Gcc64Elf64_CFLAGS)
+TOOL_Bs3Gcc64Elf64_C64FLAGS.debug     = $(TOOL_Bs3Gcc64Elf64_CFLAGS.debug)
+TOOL_Bs3Gcc64Elf64_C64FLAGS.profile   = $(TOOL_Bs3Gcc64Elf64_CFLAGS.profile)
+TOOL_Bs3Gcc64Elf64_C64FLAGS.release   = $(TOOL_Bs3Gcc64Elf64_CFLAGS.release)
+TOOL_Bs3Gcc64Elf64_C64INCS            = $(TOOL_Bs3Gcc64Elf64_CINCS)
+TOOL_Bs3Gcc64Elf64_C64DEFS            = $(TOOL_Bs3Gcc64Elf64_CDEFS)
+TOOL_Bs3Gcc64Elf64_COMPILE_C64_DEPEND = $(TOOL_Bs3Gcc64Elf64_COMPILE_C_DEPEND)
+TOOL_Bs3Gcc64Elf64_COMPILE_C64_DEPORD = $(TOOL_Bs3Gcc64Elf64_COMPILE_C_DEPORD)
+TOOL_Bs3Gcc64Elf64_COMPILE_C64_OUTPUT = $(TOOL_Bs3Gcc64Elf64_COMPILE_C_OUTPUT)
+TOOL_Bs3Gcc64Elf64_COMPILE_C64_OUTPUT_MAYBE = $(TOOL_Bs3Gcc64Elf64_COMPILE_C_OUTPUT_MAYBE)
+define TOOL_Bs3Gcc64Elf64_COMPILE_C64_CMDS
+$(TOOL_Bs3Gcc64Elf64_COMPILE_C_CMDS)
+endef
+
 TOOL_Bs3Gcc64Elf64_CXXOBJSUFF       ?= .o
 TOOL_Bs3Gcc64Elf64_CXXFLAGS         ?=
 TOOL_Bs3Gcc64Elf64_CXXFLAGS.debug   ?= -g0 # no debug info, thank you
@@ -157,8 +187,8 @@ endef
 TOOL_Bs3Vcc64 := Visual C++ 64-bit
 TOOL_Bs3Vcc64_CC  = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CC)
 TOOL_Bs3Vcc64_CXX = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXX)
-TOOL_Bs3Vcc64_COBJSUFF                 = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COBJSUFF)
-TOOL_Bs3Vcc64_CFLAGS                   = $(filter-out -TC,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CFLAGS))
+TOOL_Bs3Vcc64_COBJSUFF                 = .o64
+TOOL_Bs3Vcc64_CFLAGS                   = $(filter-out -TC,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CFLAGS)) -TC
 TOOL_Bs3Vcc64_CFLAGS.debug             =
 TOOL_Bs3Vcc64_CFLAGS.dbgopt            = -O1
 TOOL_Bs3Vcc64_CFLAGS.profile           = -O1
@@ -174,8 +204,24 @@ $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_CMDS)
 	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 endef
 
+TOOL_Bs3Vcc64_C64OBJSUFF               = $(TOOL_Bs3Vcc64_COBJSUFF)
+TOOL_Bs3Vcc64_C64FLAGS                 = $(TOOL_Bs3Vcc64_CFLAGS)
+TOOL_Bs3Vcc64_C64FLAGS.debug           = $(TOOL_Bs3Vcc64_CFLAGS.debug)
+TOOL_Bs3Vcc64_C64FLAGS.dbgopt          = $(TOOL_Bs3Vcc64_CFLAGS.dbgopt)
+TOOL_Bs3Vcc64_C64FLAGS.profile         = $(TOOL_Bs3Vcc64_CFLAGS.profile)
+TOOL_Bs3Vcc64_C64FLAGS.release         = $(TOOL_Bs3Vcc64_CFLAGS.release)
+TOOL_Bs3Vcc64_C64INCS                  = $(TOOL_Bs3Vcc64_CINCS)
+TOOL_Bs3Vcc64_C64DEFS                  = $(TOOL_Bs3Vcc64_CDEFS)
+TOOL_Bs3Vcc64_COMPILE_C64_DEPEND       = $(TOOL_Bs3Vcc64_COMPILE_C_DEPEND)
+TOOL_Bs3Vcc64_COMPILE_C64_DEPORD       = $(TOOL_Bs3Vcc64_COMPILE_C_DEPORD)
+TOOL_Bs3Vcc64_COMPILE_C64_OUTPUT       = $(TOOL_Bs3Vcc64_COMPILE_C_OUTPUT)
+TOOL_Bs3Vcc64_COMPILE_C64_OUTPUT_MAYBE = $(TOOL_Bs3Vcc64_COMPILE_C_OUTPUT_MAYBE)
+define TOOL_Bs3Vcc64_COMPILE_C64_CMDS
+$(TOOL_Bs3Vcc64_COMPILE_C_CMDS)
+endef
+
 TOOL_Bs3Vcc64_CXXOBJSUFF               = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXOBJSUFF)
-TOOL_Bs3Vcc64_CXXFLAGS                 = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXFLAGS)
+TOOL_Bs3Vcc64_CXXFLAGS                 = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXXFLAGS) -TP
 TOOL_Bs3Vcc64_CXXFLAGS.debug           =
 TOOL_Bs3Vcc64_CXXFLAGS.dbgopt          = -O1
 TOOL_Bs3Vcc64_CXXFLAGS.profile         = -O1
@@ -198,7 +244,7 @@ endef
 TOOL_Bs3Ow32 := OpenWatcom C/C++ 32-bit with object convertsion
 TOOL_Bs3Ow32_CC  = $(TOOL_OPENWATCOM_CC)
 TOOL_Bs3Ow32_CXX = $(TOOL_OPENWATCOM_CXX)
-TOOL_Bs3Ow32_COBJSUFF                 = $(TOOL_OPENWATCOM_COBJSUFF)
+TOOL_Bs3Ow32_COBJSUFF                 = .o32
 TOOL_Bs3Ow32_CFLAGS                   = $(TOOL_OPENWATCOM_CFLAGS)
 #	-adfs \ - This is too complicated and it doesn't support stubbing files (svn rename fun.h pain.h). Use kDepObj instead.
 #	-ad=$(call TOOL_OPENWATCOM_FIX_SLASHES,$(dep)) \
@@ -219,6 +265,22 @@ define TOOL_Bs3Ow32_COMPILE_C_CMDS
 $(TOOL_OPENWATCOM_COMPILE_C_CMDS)
 	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
+endef
+
+TOOL_Bs3Ow32_C32OBJSUFF                 = $(TOOL_Bs3Ow32_COBJSUFF)
+TOOL_Bs3Ow32_C32FLAGS                   = $(TOOL_Bs3Ow32_CFLAGS)
+TOOL_Bs3Ow32_C32FLAGS.debug             = $(TOOL_Bs3Ow32_CFLAGS.debug)
+TOOL_Bs3Ow32_C32FLAGS.dbgopt            = $(TOOL_Bs3Ow32_CFLAGS.dbgopt)
+TOOL_Bs3Ow32_C32FLAGS.profile           = $(TOOL_Bs3Ow32_CFLAGS.profile)
+TOOL_Bs3Ow32_C32FLAGS.release           = $(TOOL_Bs3Ow32_CFLAGS.release)
+TOOL_Bs3Ow32_C32INCS                    = $(TOOL_Bs3Ow32_CINCS)
+TOOL_Bs3Ow32_C32DEFS                    =
+TOOL_Bs3Ow32_COMPILE_C32_DEPEND         = $(TOOL_Bs3Ow32_COMPILE_C_DEPEND)
+TOOL_Bs3Ow32_COMPILE_C32_DEPORD         = $(TOOL_Bs3Ow32_COMPILE_C_DEPORD)
+TOOL_Bs3Ow32_COMPILE_C32_OUTPUT         = $(TOOL_Bs3Ow32_COMPILE_C_OUTPUT)
+TOOL_Bs3Ow32_COMPILE_C32_OUTPUT_MAYBE   = $(TOOL_Bs3Ow32_COMPILE_C_OUTPUT_MAYBE)
+define TOOL_Bs3Ow32_COMPILE_C32_CMDS
+$(TOOL_Bs3Ow32_COMPILE_C_CMDS)
 endef
 
 TOOL_Bs3Ow32_CXXOBJSUFF               = $(TOOL_OPENWATCOM_CXXOBJSUFF)
@@ -247,7 +309,7 @@ endef
 TOOL_Bs3Ow16 := OpenWatcom C/C++ 16-bit with object convertsion
 TOOL_Bs3Ow16_CC  = $(TOOL_OPENWATCOM-16_CC)
 TOOL_Bs3Ow16_CXX = $(TOOL_OPENWATCOM-16_CXX)
-TOOL_Bs3Ow16_COBJSUFF                 = $(TOOL_OPENWATCOM-16_COBJSUFF)
+TOOL_Bs3Ow16_COBJSUFF                 = .o16
 TOOL_Bs3Ow16_CFLAGS                   = $(TOOL_OPENWATCOM-16_CFLAGS)
 TOOL_Bs3Ow16_CFLAGS.debug             = $(TOOL_OPENWATCOM-16_CFLAGS.debug)
 TOOL_Bs3Ow16_CFLAGS.dbgopt            = $(TOOL_OPENWATCOM-16_CFLAGS.dbgopt)
@@ -263,6 +325,22 @@ define TOOL_Bs3Ow16_COMPILE_C_CMDS
 $(TOOL_OPENWATCOM-16_COMPILE_C_CMDS)
 	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
+endef
+
+TOOL_Bs3Ow16_C16OBJSUFF                 = $(TOOL_Bs3Ow16_C16OBJSUFF)
+TOOL_Bs3Ow16_C16FLAGS                   = $(TOOL_Bs3Ow16_C16FLAGS)
+TOOL_Bs3Ow16_C16FLAGS.debug             = $(TOOL_Bs3Ow16_C16FLAGS.debug)
+TOOL_Bs3Ow16_C16FLAGS.dbgopt            = $(TOOL_Bs3Ow16_C16FLAGS.dbgopt)
+TOOL_Bs3Ow16_C16FLAGS.profile           = $(TOOL_Bs3Ow16_C16FLAGS.profile)
+TOOL_Bs3Ow16_C16FLAGS.release           = $(TOOL_Bs3Ow16_C16FLAGS.release)
+TOOL_Bs3Ow16_C16INCS                    = $(TOOL_Bs3Ow16_C16INCS)
+TOOL_Bs3Ow16_C16DEFS                    = $(TOOL_Bs3Ow16_C16DEFS)
+TOOL_Bs3Ow16_COMPILE_C16_DEPEND         = $(TOOL_Bs3Ow16_COMPILE_C16_DEPEND)
+TOOL_Bs3Ow16_COMPILE_C16_DEPORD         = $(TOOL_Bs3Ow16_COMPILE_C16_DEPORD)
+TOOL_Bs3Ow16_COMPILE_C16_OUTPUT         = $(TOOL_Bs3Ow16_COMPILE_C16_OUTPUT)
+TOOL_Bs3Ow16_COMPILE_C16_OUTPUT_MAYBE   = $(TOOL_Bs3Ow16_COMPILE_C16_OUTPUT_MAYBE)
+define TOOL_Bs3Ow16_COMPILE_C16_CMDS
+$(TOOL_Bs3Ow16_COMPILE_C_CMDS)
 endef
 
 TOOL_Bs3Ow16_CXXOBJSUFF               = $(TOOL_OPENWATCOM-16_CXXOBJSUFF)
@@ -293,6 +371,26 @@ else
 endif
 
 #
+# Source handlers for .c16, .c32 and .c64
+#
+define VBoxBs3KitImgSrcHandler_16bit_c
+local type := C
+ $(kb-src-one 2)
+endef
+
+C32TOOL = Bs3Ow32
+define VBoxBs3KitImgSrcHandler_32bit_c
+local type := C32
+ $(kb-src-one 2)
+endef
+
+define VBoxBs3KitImgSrcHandler_64bit_c
+local type := C64
+ $(kb-src-one 2)
+endef
+
+
+#
 # BS3Kit template for assembly and 16-bit code.
 #
 # Note! Using -d1 as -d1+ and -d2 causes suboptimal code to be generated (strlen
@@ -317,6 +415,7 @@ endif
 #       -zu                    Assume SS != DS.
 #       -mc                    Compact memory model, far data, small code.
 #       -mf                    Flat memory model (32-bit).
+#       -d+                    Enabled better /dVAR=XXX parsing, using space as delimiter instead of alpha-numerical/whatever.
 #       -d1                    Debug info: Globals and line numbers.
 #       -s                     No stack overflow checks.
 #       -oa                    Relaxed aliasing constraints.
@@ -333,18 +432,38 @@ TEMPLATE_VBoxBS3KitImg_BLD_TRG_ARCH = x86
 TEMPLATE_VBoxBS3KitImg_INST         = $(INST_VALIDATIONKIT)bootsectors/
 TEMPLATE_VBoxBS3KitImg_BINSUFF      = .img
 TEMPLATE_VBoxBS3KitImg_MODE         = 0644
+TEMPLATE_VBoxBS3KitImg_SRC_HANDLERS = \
+	.c16:VBoxBs3KitImgSrcHandler_16bit_c \
+	.c32:VBoxBs3KitImgSrcHandler_32bit_c \
+	.c64:VBoxBs3KitImgSrcHandler_64bit_c
+TEMPLATE_VBoxBS3KitImg_ASOBJSUFF    = .o16
 TEMPLATE_VBoxBS3KitImg_ASTOOL       = VBoxNasm
 TEMPLATE_VBoxBS3KitImg_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
-TEMPLATE_VBoxBS3KitImg_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
-TEMPLATE_VBoxBS3KitImg_DEFS         = ARCH_BITS=16 IN_BS3KIT
+TEMPLATE_VBoxBS3KitImg_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__ ARCH_BITS=16
+TEMPLATE_VBoxBS3KitImg_DEFS         = IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg_DEFS.debug   = BS3_STRICT
+
 TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
+
 TEMPLATE_VBoxBS3KitImg_CTOOL        = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CFLAGS       = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+TEMPLATE_VBoxBS3KitImg_CDEFS        = ARCH_BITS=16
+
+TEMPLATE_VBoxBS3KitImg_TOOL         = $(NO_SUCH_VARIABLE)
+TEMPLATE_VBoxBS3KitImg_C16TOOL      = $(TEMPLATE_VBoxBS3KitImg_CTOOL)
+TEMPLATE_VBoxBS3KitImg_C16FLAGS     = $(TEMPLATE_VBoxBS3KitImg_CFLAGS)
+TEMPLATE_VBoxBS3KitImg_C16DEFS      = ARCH_BITS=16
+TEMPLATE_VBoxBS3KitImg_C32TOOL     := Bs3Ow32
+TEMPLATE_VBoxBS3KitImg_C32FLAGS     = $(TEMPLATE_VBoxBS3KitImg32_CFLAGS)
+TEMPLATE_VBoxBS3KitImg_C32DEFS      = ARCH_BITS=32
+TEMPLATE_VBoxBS3KitImg_C64TOOL      = $(TEMPLATE_VBoxBS3KitImg64_CTOOL)
+TEMPLATE_VBoxBS3KitImg_C64FLAGS     = $(TEMPLATE_VBoxBS3KitImg64_CFLAGS)
+TEMPLATE_VBoxBS3KitImg_C64DEFS      = ARCH_BITS=64
+
 TEMPLATE_VBoxBS3KitImg_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 # 	option quiet, nofarcalls\
@@ -450,6 +569,7 @@ TEMPLATE_VBoxBS3KitImg32_BLD_TRG      = os-agnostic
 TEMPLATE_VBoxBS3KitImg32_BLD_TRG_ARCH = x86
 TEMPLATE_VBoxBS3KitImg32_INSTTYPE     = none
 TEMPLATE_VBoxBS3KitImg32_ASTOOL       = VBoxNasm
+TEMPLATE_VBoxBS3KitImg32_ASOBJSUFF    = .o32
 TEMPLATE_VBoxBS3KitImg32_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg32_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg32_DEFS         = ARCH_BITS=32 IN_BS3KIT
@@ -458,9 +578,9 @@ TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL        = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CFLAGS       = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg32_LDTOOL       = VBoxBsUnusedLd
 
@@ -470,6 +590,7 @@ TEMPLATE_VBoxBS3KitImg64_BLD_TRG      = os-agnostic
 TEMPLATE_VBoxBS3KitImg64_BLD_TRG_ARCH = amd64
 TEMPLATE_VBoxBS3KitImg64_INSTTYPE     = none
 TEMPLATE_VBoxBS3KitImg64_ASTOOL       = VBoxNasm
+TEMPLATE_VBoxBS3KitImg64_ASOBJSUFF    = .o64
 TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
 TEMPLATE_VBoxBS3KitImg64_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
 TEMPLATE_VBoxBS3KitImg64_DEFS         = IN_BS3KIT ARCH_BITS=64
