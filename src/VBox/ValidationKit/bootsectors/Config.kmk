@@ -46,6 +46,9 @@ PROPS_ACCUMULATE_R += C16FLAGS C16DEFS
 PROPS_ACCUMULATE_L += C16INCS
 endif
 
+# Add noarch to the architectures list (will be there by default in a new kBuild).
+KBUILD_ARCHES += noarch
+
 
 # The bs3kit source directory.
 VBOX_PATH_BS3KIT_SRC = $(VBOX_PATH_VALIDATIONKIT_SRC)/bootsectors/bs3kit
