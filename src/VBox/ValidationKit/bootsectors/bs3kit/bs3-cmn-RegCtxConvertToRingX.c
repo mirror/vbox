@@ -37,7 +37,7 @@
  * @param   uSeg            The real mode segment.
  * @param   bRing           The target ring.
  */
-uint16_t bs3RegCtxConvertRealSegToRingX(uint16_t uSeg, uint8_t bRing)
+static uint16_t bs3RegCtxConvertRealSegToRingX(uint16_t uSeg, uint8_t bRing)
 {
     uint16_t uSel;
     if (   uSeg == 0
@@ -73,7 +73,7 @@ uint16_t bs3RegCtxConvertRealSegToRingX(uint16_t uSeg, uint8_t bRing)
  * @param   uSeg            The current selector value.
  * @param   bRing           The target ring.
  */
-uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing)
+static uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing)
 {
     if (   uSel > X86_SEL_RPL
         && !(uSel & X86_SEL_LDT) )

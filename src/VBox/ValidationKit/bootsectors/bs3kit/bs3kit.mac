@@ -599,6 +599,9 @@ BS3_GLOBAL_NAME_EX BS3_DATA_NM(%1), , %2
 ; @param    %1      The mangled name.
 ;
 %macro BS3_PROC_BEGIN 1
+%if __BITS__ == 64
+ BS3_GLOBAL_NAME_EX _ %+ %1, function, (_ %+ %1 %+ _EndProc - %1)
+%endif
 BS3_GLOBAL_NAME_EX %1, function, (%1 %+ _EndProc - %1)
 %endmacro
 

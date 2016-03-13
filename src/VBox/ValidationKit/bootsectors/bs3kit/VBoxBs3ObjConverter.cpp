@@ -1570,9 +1570,25 @@ static bool convertCoffSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCIMAGE_SYMB
                     if (   pThis->paSymbols[iSym].idxSegDef == idxSegDef
                         && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
                     {
-                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value,
-                                                 coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort)) )
+                        const char *pszName = coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort);
+                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value, pszName))
                             return false;
+
+                        /* If the symbol doesn't start with an underscore, add an underscore
+                           prefixed alias to ease access from 16-bit and 32-bit code. */
+                        if (*pszName != '_')
+                        {
+                            char   szCdeclName[512];
+                            size_t cchName = strlen(pszName);
+                            if (cchName > sizeof(szCdeclName) - 2)
+                                cchName = sizeof(szCdeclName) - 2;
+                            szCdeclName[0] = '_';
+                            memcpy(&szCdeclName[1], pszName, cchName);
+                            szCdeclName[cchName + 1] = '\0';
+                            if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value, szCdeclName))
+                                return false;
+                        }
+
                         pThis->paSymbols[iSym].idx = idxPubDef++;
                     }
                 if (!omfWriter_PubDefEnd(pThis))

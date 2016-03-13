@@ -39,13 +39,16 @@ endif
 #
 # Include sub-makefile.
 #
+# The VBOX_WITH_BS3KIT feature requires NASM 2.12 and either MSVC or gcc
+# with ms_abi function attribute (gcc v4.4+, MSVC default).
+#
 if defined(VBOX_WITH_OPEN_WATCOM)
  if1of ($(KBUILD_TARGET), win)
   VBOX_WITH_BS3KIT = 1
  else if $(VBOX_GCC_VERSION_CC) >= 40400 # ms_abi was added in 4.4
-  if1of ($(KBUILD_TARGET), linux) # Requires patched NASM in tools.
-   VBOX_WITH_BS3KIT = 1
-  endif
+# Awaiting elf -> omf converter #  if1of ($(KBUILD_TARGET), linux)
+# Awaiting elf -> omf converter #   VBOX_WITH_BS3KIT = 1
+# Awaiting elf -> omf converter #  endif
  endif
  ifdef VBOX_WITH_BS3KIT
   include $(PATH_SUB_CURRENT)/bs3kit/Makefile.kmk
