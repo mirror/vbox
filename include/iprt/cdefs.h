@@ -143,6 +143,16 @@
 # error "Both RT_ARCH_ARM and RT_ARCH_SPARC cannot be defined at the same time!"
 #endif
 
+/* Final check (PORTME). */
+#if    (defined(RT_ARCH_X86) != 0) \
+     + (defined(RT_ARCH_AMD64) != 0) \
+     + (defined(RT_ARCH_SPARC) != 0) \
+     + (defined(RT_ARCH_SPARC64) != 0) \
+     + (defined(RT_ARCH_ARM) != 0) \
+  != 1
+# error "Exactly one RT_ARCH_XXX macro shall be defined"
+#endif
+
 
 /** @def __X86__
  * Indicates that we're compiling for the X86 architecture.
@@ -220,6 +230,35 @@
 # else
 #  define ARCH_BITS 16
 # endif
+#endif
+
+/* ARCH_BITS validation (PORTME). */
+#if ARCH_BITS == 64
+ #if defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_ARM)
+ # error "ARCH_BITS=64 but non-64-bit RT_ARCH_XXX defined."
+ #endif
+ #if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_SPARC64)
+ # error "ARCH_BITS=64 but no 64-bit RT_ARCH_XXX defined."
+ #endif
+
+#elif ARCH_BITS == 32
+ #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64)
+ # error "ARCH_BITS=32 but non-32-bit RT_ARCH_XXX defined."
+ #endif
+ #if !defined(RT_ARCH_X86) && !defined(RT_ARCH_SPARC) && !defined(RT_ARCH_ARM)
+ # error "ARCH_BITS=32 but no 32-bit RT_ARCH_XXX defined."
+ #endif
+
+#elif ARCH_BITS == 16
+ #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64) || defined(RT_ARCH_ARM)
+ # error "ARCH_BITS=16 but non-16-bit RT_ARCH_XX defined."
+ #endif
+ #if !defined(RT_ARCH_X86)
+ # error "ARCH_BITS=16 but RT_ARCH_X86 isn't defined."
+ #endif
+
+#else
+# error "Unsupported ARCH_BITS value!"
 #endif
 
 /** @def HC_ARCH_BITS
