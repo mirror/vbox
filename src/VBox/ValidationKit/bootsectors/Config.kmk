@@ -125,7 +125,7 @@ ifdef SLKRUNS
  TOOL_Bs3Gcc64Elf64_CXX += -fmessage-length=0
 endif
 TOOL_Bs3Gcc64Elf64_COBJSUFF         = .o64
-TOOL_Bs3Gcc64Elf64_CFLAGS           =
+TOOL_Bs3Gcc64Elf64_CFLAGS           = -x c
 TOOL_Bs3Gcc64Elf64_CFLAGS.debug     = -g
 TOOL_Bs3Gcc64Elf64_CFLAGS.profile   = -O2 #-g -pg
 TOOL_Bs3Gcc64Elf64_CFLAGS.release   = -O2
