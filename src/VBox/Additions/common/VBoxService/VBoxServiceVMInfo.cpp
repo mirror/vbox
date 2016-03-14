@@ -1083,8 +1083,7 @@ static int vgsvcVMInfoWriteNetwork(void)
     }
     if (pAdpInfo)
         RTMemFree(pAdpInfo);
-    if (sd >= 0)
-        closesocket(sd);
+    closesocket(sd);
 
 #elif defined(RT_OS_HAIKU)
     /** @todo Haiku: implement network info. retreival */
