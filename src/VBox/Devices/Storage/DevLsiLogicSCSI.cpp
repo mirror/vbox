@@ -340,8 +340,13 @@ typedef struct LSILOGICSCSI
     bool volatile                    fRedo;
     /** Flag whether the worker thread is sleeping. */
     volatile bool                    fWrkThreadSleeping;
+    /** Flag whether a request from the BIOS is pending which the
+     * worker thread needs to process. */
+    volatile bool                    fBiosReqPending;
+#if HC_ARCH_BITS == 64
     /** Alignment padding. */
-    bool                             afPadding2[HC_ARCH_BITS == 32 ? 1 : 5];
+    bool                             afPadding2[4];
+#endif
     /** List of tasks which can be redone. */
     R3PTRTYPE(volatile PLSILOGICREQ) pTasksRedoHead;
 
@@ -2142,7 +2147,7 @@ static void lsilogicR3RedoSetWarning(PLSILOGICSCSI pThis, int rc)
          * connection (second error). Pause VM. On resume we'll retry. */
         lsilogicR3WarningISCSI(pThis->CTX_SUFF(pDevIns));
     }
-    else
+    else if (rc != VERR_VD_DEK_MISSING)
         lsilogicR3WarningUnknown(pThis->CTX_SUFF(pDevIns), rc);
 }
 
@@ -3835,14 +3840,24 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWrite(PPDMDEVINS pDevIns, void *pvUs
 
     Assert(cb == 1);
 
+    /*
+     * If there is already a request form the BIOS pending ignore this write
+     * because it should not happen.
+     */
+    if (ASMAtomicReadBool(&pThis->fBiosReqPending))
+        return VINF_SUCCESS;
+
     uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
                       ? Port - LSILOGIC_BIOS_IO_PORT
                       : Port - LSILOGIC_SAS_BIOS_IO_PORT;
     int rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, iRegister, (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
-        rc = lsilogicR3PrepareBiosScsiRequest(pThis);
-        AssertRC(rc);
+        ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
+        /* Send a notifier to the PDM queue that there are pending requests. */
+        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
+        AssertMsg(pItem, ("Allocating item for queue failed\n"));
+        PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), (PPDMQUEUEITEMCORE)pItem);
     }
     else if (RT_FAILURE(rc))
         AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
@@ -4183,6 +4198,14 @@ static DECLCALLBACK(int) lsilogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
         ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, false);
 
+        /* Check whether there is a BIOS request pending and process it first. */
+        if (ASMAtomicReadBool(&pThis->fBiosReqPending))
+        {
+            rc = lsilogicR3PrepareBiosScsiRequest(pThis);
+            AssertRC(rc);
+            ASMAtomicXchgBool(&pThis->fBiosReqPending, false);
+        }
+
         /* Only process request which arrived before we received the notification. */
         uint32_t uRequestQueueNextEntryWrite = ASMAtomicReadU32(&pThis->uRequestQueueNextEntryFreeWrite);
 
@@ -4301,6 +4324,10 @@ static DECLCALLBACK(int) lsilogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD p
  */
 static void lsilogicR3Kick(PLSILOGICSCSI pThis)
 {
+    if (   pThis->VBoxSCSI.fBusy
+        && !pThis->fBiosReqPending)
+        pThis->fBiosReqPending = true;
+
     if (pThis->fNotificationSent)
     {
         /* Send a notifier to the PDM queue that there are pending requests. */
@@ -4308,13 +4335,6 @@ static void lsilogicR3Kick(PLSILOGICSCSI pThis)
         AssertMsg(pItem, ("Allocating item for queue failed\n"));
         PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), (PPDMQUEUEITEMCORE)pItem);
     }
-    else if (pThis->VBoxSCSI.fBusy)
-    {
-        /* The BIOS had a request active when we got suspended. Resume it. */
-        int rc = lsilogicR3PrepareBiosScsiRequest(pThis);
-        AssertRC(rc);
-    }
-
 }
 
 
@@ -4996,14 +5016,14 @@ static void lsilogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
 
                     pThis->uRequestQueueNextEntryFreeWrite++;
                     pThis->uRequestQueueNextEntryFreeWrite %= pThis->cRequestQueueEntries;
-
-                    pThis->fNotificationSent = true;
                 }
                 else
                 {
                     AssertMsg(!pLsiReq->pRedoNext, ("Only one BIOS task can be active!\n"));
                     vboxscsiSetRequestRedo(&pThis->VBoxSCSI, &pLsiReq->PDMScsiRequest);
                 }
+
+                pThis->fNotificationSent = true;
 
                 pFree = pLsiReq;
                 pLsiReq = pLsiReq->pRedoNext;
@@ -5226,6 +5246,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      */
     pThis->hTaskCache  = NIL_RTMEMCACHE;
     pThis->hEvtProcess = NIL_SUPSEMEVENT;
+    pThis->fBiosReqPending = false;
     RTListInit(&pThis->ListMemRegns);
 
     /*
