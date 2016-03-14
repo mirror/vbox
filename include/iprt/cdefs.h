@@ -1122,25 +1122,44 @@
  */
 #define DECLASMTYPE(type)       type RTCALL
 
-/** @def DECLNORETURN
+/** @def DECL_NO_RETURN
  * How to declare a function which does not return.
- * @note: This macro can be combined with other macros, for example
+ * @note This macro can be combined with other macros, for example
  * @code
- *   EMR3DECL(DECLNORETURN(void)) foo(void);
+ *   EMR3DECL(DECL_NO_RETURN(void)) foo(void);
  * @endcode
  */
 #ifdef _MSC_VER
-# define DECLNORETURN(type)     __declspec(noreturn) type
+# define DECL_NO_RETURN(type)   __declspec(noreturn) type
 #elif defined(__GNUC__)
-# define DECLNORETURN(type)     __attribute__((noreturn)) type
+# define DECL_NO_RETURN(type)   __attribute__((noreturn)) type
 #else
-# define DECLNORETURN(type)     type
+# define DECL_NO_RETURN(type)   type
+#endif
+/** @deprecated Use DECL_NO_RETURN instead. */
+#define DECLNORETURN(type) DECL_NO_RETURN(type)
+
+/** @def DECL_RETURNS_TWICE
+ * How to declare a function which may return more than once.
+ * @note This macro can be combined with other macros, for example
+ * @code
+ *   EMR3DECL(DECL_RETURNS_TWICE(void)) MySetJmp(void);
+ * @endcode
+ */
+#ifdef __GNUC__
+# if (__GNUC__ >= 5) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
+#  define DECL_RETURNS_TWICE(type)  __attribute__((returns_twice)) type
+# else
+#  define DECL_RETURNS_TWICE(type)  type
+# endif
+#else
+# define DECL_RETURNS_TWICE(type)   type
 #endif
 
 /** @def DECLWEAK
  * How to declare a variable which is not necessarily resolved at
  * runtime.
- * @note: This macro can be combined with other macros, for example
+ * @note This macro can be combined with other macros, for example
  * @code
  *   EMR3DECL(DECLWEAK(int)) foo;
  * @endcode

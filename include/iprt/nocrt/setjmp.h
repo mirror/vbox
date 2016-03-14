@@ -40,8 +40,8 @@ typedef uint64_t RT_NOCRT(jmp_buf)[8];
 typedef uint32_t RT_NOCRT(jmp_buf)[6+2];
 #endif
 
-extern int RT_NOCRT(setjmp)(RT_NOCRT(jmp_buf));
-extern int RT_NOCRT(longjmp)(RT_NOCRT(jmp_buf), int);
+extern DECL_RETURNS_TWICE(int) RT_NOCRT(setjmp)(RT_NOCRT(jmp_buf));
+extern DECL_NO_RETURN(int)     RT_NOCRT(longjmp)(RT_NOCRT(jmp_buf), int);
 
 #if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
 # define jmp_buf RT_NOCRT(jmp_buf)
