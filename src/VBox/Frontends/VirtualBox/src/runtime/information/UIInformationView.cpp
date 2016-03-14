@@ -21,7 +21,6 @@
 
 # include <QTextEdit>
 # include <QClipboard>
-# include <QDebug>
 
 /* GUI includes: */
 # include "UIInformationView.h"
@@ -43,8 +42,21 @@ UIInformationView::UIInformationView(QWidget *pParent)
 
 void UIInformationView::updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
-    /* Update: */
-    update(topLeft);
+    /* Iterate through all indexes: */
+    for (int iRowIndex = topLeft.row(); iRowIndex <= bottomRight.row(); iRowIndex++)
+    {
+        /* Get the index for current row: */
+        QModelIndex index = topLeft.sibling(iRowIndex, topLeft.column());
+        /* If index is valid: */
+        if (index.isValid())
+        {
+            /* Get the row-count of data-table: */
+            int iCount = index.data(Qt::UserRole + 1).value<UITextTable>().count();
+            /* If there is no data hide the item: */
+            if (iCount == 0)
+                setRowHidden(index.row(), true);
+        }
+    }
 }
 
 void UIInformationView::keyPressEvent(QKeyEvent *pEvent)
@@ -63,7 +75,7 @@ void UIInformationView::keyPressEvent(QKeyEvent *pEvent)
                 UIInformationItem *pItem = dynamic_cast<UIInformationItem*>(itemDelegate(index));
                 if (pItem)
                 {
-                    /* Update the data corresponding data: */
+                    /* Update the corresponding data: */
                     pItem->updateData(index);
                     /* Get and add the html-data of item: */
                     strText.append(pItem->htmlData());

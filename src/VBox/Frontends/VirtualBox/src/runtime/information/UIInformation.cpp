@@ -59,6 +59,7 @@ void UIInformation::prepareMainLayout()
         /* Configure main-layout: */
         m_pMainLayout->setContentsMargins(2, 0, 0, 0);
         m_pMainLayout->setSpacing(0);
+        /* Set main-layout: */
         setLayout(m_pMainLayout);
     }
 }
@@ -69,76 +70,85 @@ void UIInformation::prepareModel()
     m_pModel = new UIInformationModel(this, m_machine, m_console);
     AssertPtrReturnVoid(m_pModel);
     {
-        /* Add data to information-model: */
-        /* Create General data-item: */
+        /* Create general data-item: */
         UIInformationDataItem *pGeneral = new UIInformationDataGeneral(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pGeneral);
         {
+            /* Add general data-item to model: */
             m_pModel->addItem(pGeneral);
         }
 
-        /* Create System data-item: */
+        /* Create system data-item: */
         UIInformationDataItem *pSystem = new UIInformationDataSystem(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pSystem);
         {
+            /* Add system data-item to model: */
             m_pModel->addItem(pSystem);
         }
 
-        /* Create Display data-item: */
+        /* Create display data-item: */
         UIInformationDataItem *pDisplay = new UIInformationDataDisplay(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pDisplay);
         {
+            /* Add display data-item to model: */
             m_pModel->addItem(pDisplay);
         }
 
-        /* Create Storage data-item: */
+        /* Create storage data-item: */
         UIInformationDataItem *pStorage = new UIInformationDataStorage(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pStorage);
         {
+            /* Add storage data-item to model: */
             m_pModel->addItem(pStorage);
         }
 
-        /* Create Audio data-item: */
+        /* Create audio data-item: */
         UIInformationDataItem *pAudio = new UIInformationDataAudio(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pAudio);
         {
+            /* Add audio data-item to model: */
             m_pModel->addItem(pAudio);
         }
 
-        /* Create Network data-item: */
+        /* Create network data-item: */
         UIInformationDataItem *pNetwork = new UIInformationDataNetwork(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pNetwork);
         {
+            /* Add network data-item to model: */
             m_pModel->addItem(pNetwork);
         }
 
-        /* Create Serial-ports data-item: */
+        /* Create serial-ports data-item: */
         UIInformationDataItem *pSerialPorts = new UIInformationDataSerialPorts(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pSerialPorts);
         {
+            /* Add serial-ports data-item to model: */
             m_pModel->addItem(pSerialPorts);
         }
 
 #ifdef VBOX_WITH_PARALLEL_PORTS
-        /* Create Parallel-ports data-item: */
+        /* Create parallel-ports data-item: */
         UIInformationDataItem *pParallelPorts = new UIInformationDataParallelPorts(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pParallelPorts);
         {
+            /* Add parallel-ports data-item to model: */
             m_pModel->addItem(pParallelPorts);
         }
 #endif /* VBOX_WITH_PARALLEL_PORTS */
 
-        /* Create USB data-item: */
+        /* Create usb data-item: */
         UIInformationDataItem *pUSB = new UIInformationDataUSB(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pUSB);
         {
+            /* Add usb data-item to model: */
             m_pModel->addItem(pUSB);
         }
 
-        /* Create Shared-folders data-item: */
+        /* Create shared-folders data-item: */
         UIInformationDataItem *pSharedFolders = new UIInformationDataSharedFolders(m_machine, m_console, m_pModel);
         AssertPtrReturnVoid(pSharedFolders);
         {
+            /* Add shared-folders data-item to model: */
             m_pModel->addItem(pSharedFolders);
         }
     }
@@ -156,6 +166,7 @@ void UIInformation::prepareView()
         UIInformationItem *pItem = new UIInformationItem(m_pView);
         AssertPtrReturnVoid(pItem);
         {
+            /* Set item-delegate for information-view: */
             m_pView->setItemDelegate(pItem);
         }
         /* Connect datachanged signal: */

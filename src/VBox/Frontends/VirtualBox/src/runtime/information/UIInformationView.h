@@ -45,7 +45,7 @@ protected slots:
     void keyPressEvent(QKeyEvent *pEvent);
 
 private:
-    /** Holds the instance of textedit we create: */
+    /** Holds the instance of textedit we create. */
     QTextEdit *m_pTextEdit;
 };
 

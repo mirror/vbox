@@ -101,13 +101,16 @@ void UIInformationItem::paint(QPainter *pPainter, const QStyleOptionViewItem &op
     /* Update data: */
     updateData(index);
 
-    /* Draw item as per application style: */
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &option, pPainter);
-    pPainter->resetTransform();
-    pPainter->translate(option.rect.topLeft());
+    if (m_text.count() != 0)
+    {
+        /* Draw item as per application style: */
+        QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &option, pPainter);
+        pPainter->resetTransform();
+        pPainter->translate(option.rect.topLeft());
 
-    /* Draw the content of text-document: */
-    m_pTextDocument->drawContents(pPainter);
+        /* Draw the content of text-document: */
+        m_pTextDocument->drawContents(pPainter);
+    }
     /* Restore the painter: */
     pPainter->restore();
 }
@@ -116,6 +119,10 @@ QSize UIInformationItem::sizeHint(const QStyleOptionViewItem &option, const QMod
 {
     /* Update data: */
     updateData(index);
+    if (m_text.count() == 0)
+    {
+        return QSize(0, 0);
+    }
     /* Return size: */
     return m_pTextDocument->size().toSize();
 }
@@ -147,7 +154,6 @@ void UIInformationItem::updateTextLayout() const
             "%4";
     static const char *sSectionItemTpl2 =
         "<tr><td width=200><nobr>%1</nobr></td><td/><td>%2</td></tr>";
-
     const QString &sectionTpl = sSectionBoldTpl;
 
     /* Compose details report: */
@@ -165,7 +171,7 @@ void UIInformationItem::updateTextLayout() const
                                 item); /* items */
     }
 
-    /* Set html data: */
+    /* Set html-data: */
     m_pTextDocument->setHtml(report);
 }
 

@@ -59,6 +59,7 @@ void UIInformationRuntime::prepareLayout()
         /* Configure main-layout: */
         m_pMainLayout->setContentsMargins(2, 0, 0, 0);
         m_pMainLayout->setSpacing(0);
+        /* Set main-layout: */
         setLayout(m_pMainLayout);
     }
 }
@@ -69,24 +70,27 @@ void UIInformationRuntime::prepareModel()
     m_pModel = new UIInformationModel(this, m_machine, m_console);
     AssertPtrReturnVoid(m_pModel);
 
-    /* Add data to information-model: */
+    /* Create runtime-attributes item: */
     UIInformationDataRuntimeAttributes *pGeneral = new UIInformationDataRuntimeAttributes(m_machine, m_console, m_pModel);
     AssertPtrReturnVoid(pGeneral);
     {
+        /* Add runtime-attributes item to model: */
         m_pModel->addItem(pGeneral);
     }
 
-    /* Create data for information-model: */
+    /* Create network-statistics item: */
     UIInformationDataNetworkStatistics *pNetwork = new UIInformationDataNetworkStatistics(m_machine, m_console, m_pModel);
     AssertPtrReturnVoid(pNetwork);
     {
+        /* Add network-statistics item to model: */
         m_pModel->addItem(pNetwork);
     }
 
-    /* Create data for information-model: */
+    /* Create storage-statistics item: */
     UIInformationDataStorageStatistics *pStorage = new UIInformationDataStorageStatistics(m_machine, m_console, m_pModel);
     AssertPtrReturnVoid(pStorage);
     {
+        /* Add storage-statistics item to model: */
         m_pModel->addItem(pStorage);
     }
 }
@@ -97,17 +101,19 @@ void UIInformationRuntime::prepareView()
     m_pView = new UIInformationView;
     AssertPtrReturnVoid(m_pView);
     {
-        /* Prepare view: */
+        /* Configure view: */
         m_pView->setResizeMode(QListView::Adjust);
 
         /* Create information-delegate item: */
         UIInformationItem* pItem = new UIInformationItem(m_pView);
         AssertPtrReturnVoid(pItem);
         {
+            /* Set item-delegate: */
             m_pView->setItemDelegate(pItem);
         }
-
-        connect(m_pModel, SIGNAL(dataChanged(const QModelIndex, const QModelIndex)), m_pView, SLOT(updateData(const QModelIndex,const QModelIndex)));
+        /* Connect datachanged signal: */
+        connect(m_pModel, SIGNAL(dataChanged(const QModelIndex, const QModelIndex)),
+                m_pView, SLOT(updateData(const QModelIndex,const QModelIndex)));
 
         /* Set model: */
         m_pView->setModel(m_pModel);

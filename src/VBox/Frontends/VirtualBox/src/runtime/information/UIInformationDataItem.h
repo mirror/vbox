@@ -231,6 +231,9 @@ public:
 
     /** Returns data for item specified by @a idx for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+
+protected slots:
+    void updateData();
 };
 
 /** UIInformationDataItem extension for the details-element type 'runtime attributes'. */

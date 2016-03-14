@@ -106,3 +106,12 @@ void UIInformationModel::updateData(const QModelIndex &idx)
     emit dataChanged(idx, idx);
 }
 
+void UIInformationModel::updateData(UIInformationDataItem *pItem)
+{
+    /* Updates data: */
+    AssertPtrReturnVoid(pItem);
+    int iRow = m_list.indexOf(pItem);
+    QModelIndex index = createIndex(iRow, 0);
+    emit dataChanged(index, index);
+}
+

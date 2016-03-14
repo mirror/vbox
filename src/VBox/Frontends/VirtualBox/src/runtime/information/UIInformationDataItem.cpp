@@ -24,6 +24,7 @@
 # include <QTimer>
 
 /* GUI includes: */
+# include "UIMachine.h"
 # include "UISession.h"
 # include "UIIconPool.h"
 # include "VBoxGlobal.h"
@@ -391,8 +392,6 @@ QVariant UIInformationDataAudio::data(const QModelIndex &index, int role) const
                 p_text << UITextTableLine(tr("Host Driver", "details report (audio)"), gpConverter->toString(audio.GetAudioDriver()));
                 p_text << UITextTableLine(tr("Controller", "details report (audio)"), gpConverter->toString(audio.GetAudioController()));
             }
-            else
-                p_text << UITextTableLine(tr("Disabled", "details report (audio)"), QString());
 
             return QVariant::fromValue(p_text);
         }
@@ -468,8 +467,6 @@ QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) cons
                     p_text << UITextTableLine(tr("Adapter %1", "details report (network)").arg(adapter.GetSlot() + 1), attType);
                 }
             }
-            if (p_text.count() == 0)
-                p_text << UITextTableLine(tr("Disabled", "details report (network)"), QString());
 
             return QVariant::fromValue(p_text);
         }
@@ -533,8 +530,6 @@ QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) 
                     p_text << UITextTableLine(tr("Port %1", "details report (serial ports)").arg(port.GetSlot() + 1), data);
                 }
             }
-            if (p_text.count() == 0)
-                p_text << UITextTableLine(tr("Disabled", "details report (network)"), QString());
 
             return QVariant::fromValue(p_text);
         }
@@ -668,6 +663,7 @@ QVariant UIInformationDataUSB::data(const QModelIndex &index, int role) const
 UIInformationDataSharedFolders::UIInformationDataSharedFolders(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_SharedFolders, machine, console, pModel)
 {
+    connect(gpMachine->uisession(), SIGNAL(sigSharedFolderChange()), this, SLOT(updateData()));
 }
 
 QVariant UIInformationDataSharedFolders::data(const QModelIndex &index, int role) const
@@ -693,8 +689,6 @@ QVariant UIInformationDataSharedFolders::data(const QModelIndex &index, int role
             ulong count = m_machine.GetSharedFolders().size();
             if (count > 0)
                 p_text << UITextTableLine(tr("Shared Folders", "details report (shared folders)"), QString::number(count));
-            else
-                p_text << UITextTableLine(tr("None", "details report (shared folders)"), QString());
 
             return QVariant::fromValue(p_text);
         }
@@ -710,6 +704,11 @@ QVariant UIInformationDataSharedFolders::data(const QModelIndex &index, int role
         break;
     }
     return QVariant();
+}
+
+void UIInformationDataSharedFolders::updateData()
+{
+    m_pModel->updateData(this);
 }
 
 UIInformationDataRuntimeAttributes::UIInformationDataRuntimeAttributes(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)

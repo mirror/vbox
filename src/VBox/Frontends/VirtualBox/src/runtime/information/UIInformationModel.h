@@ -72,6 +72,9 @@ public:
     /** Updates Data. */
     void updateData(const QModelIndex &idx);
 
+public slots:
+    void updateData(UIInformationDataItem *pItem);
+
 private:
 
     /** Prepares information-model. */
