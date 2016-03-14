@@ -4647,7 +4647,7 @@ int vmsvga3dSetClipPlane(PVGASTATE pThis, uint32_t cid,  uint32_t index, float p
 
     /* Store for vm state save/restore. */
     pContext->state.aClipPlane[index].fValid = true;
-    memcpy(pContext->state.aClipPlane[index].plane, plane, sizeof(plane));
+    memcpy(pContext->state.aClipPlane[index].plane, plane, sizeof(pContext->state.aClipPlane[index].plane));
 
     hr = pContext->pDevice->SetClipPlane(index, plane);
     AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSetClipPlane: SetClipPlane failed with %x\n", hr), VERR_INTERNAL_ERROR);
