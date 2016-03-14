@@ -42,31 +42,29 @@ BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput(char ch, void BS3_FAR *pvUser)
     bool *pfNewLine = (bool *)pvUser;
 
     /*
-     * VMMDev first.
+     * VMMDev first.  We postpone newline processing here so we can strip one
+     * trailing newline.
      */
     if (BS3_DATA_NM(g_fbBs3VMMDevTesting))
-        ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, ch);
+    {
+        if (*pfNewLine && ch != '\0')
+            ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, '\n');
+        if (ch != '\n')
+            ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, ch);
+    }
 
     /*
      * Console next.
      */
     if (ch != 0)
     {
-        if (ch != '\n')
-        {
-            Bs3PrintChr(ch);
-            *pfNewLine = false;
-        }
-        else
-        {
-            Bs3PrintStr("\r\n");
-            *pfNewLine = true;
-        }
+        Bs3PrintChr(ch);
+        *pfNewLine = ch == '\n';
     }
     /* We're called with '\0' to indicate end-of-string. Supply trailing
        newline if necessary. */
     else if (!*pfNewLine)
-        Bs3PrintStr("\r\n");
+        Bs3PrintChr('\n');
 
     return 1;
 }

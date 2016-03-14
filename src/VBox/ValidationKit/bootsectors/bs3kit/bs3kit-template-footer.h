@@ -74,6 +74,8 @@
 #undef TMPL_NM_CMN
 #undef TMPL_MODE
 #undef TMPL_MODE_STR
+#undef TMPL_MODE_LNAME
+#undef TMPL_MODE_UNAME
 #undef TMPL_16BIT
 #undef TMPL_32BIT
 #undef TMPL_64BIT

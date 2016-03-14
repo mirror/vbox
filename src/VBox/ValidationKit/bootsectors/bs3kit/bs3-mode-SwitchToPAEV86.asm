@@ -45,18 +45,6 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPAEV86
 
 %else
         ;
-        ; Convert the return address and jump to the 16-bit code segment.
-        ;
- %if TMPL_BITS != 16
-        shl     xPRE [xSP], TMPL_BITS - 16
-        add     xSP, (TMPL_BITS - 16) / 8
-        jmp     .sixteen_bit_segment
-BS3_BEGIN_TEXT16
-        BS3_SET_BITS TMPL_BITS
-.sixteen_bit_segment:
- %endif
-
-        ;
         ; Switch to 32-bit PAE32 and from there to V8086.
         ;
         extern  TMPL_NM(Bs3SwitchToPAE32)
@@ -64,8 +52,14 @@ BS3_BEGIN_TEXT16
         BS3_SET_BITS 32
 
         ;
-        ; Switch to v8086 mode (return address is already 16-bit).
+        ; Switch to v8086 mode after adjusting the return address.
         ;
+ %if TMPL_BITS == 16
+        push    word [esp]
+        mov     word [esp + 2], 0
+ %elif TMPL_BITS == 64
+        pop     dword [esp + 4]
+ %endif
         extern  _Bs3SwitchTo16BitV86_c32
         jmp     _Bs3SwitchTo16BitV86_c32
 %endif

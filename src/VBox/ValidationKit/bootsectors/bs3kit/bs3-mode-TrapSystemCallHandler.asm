@@ -202,12 +202,24 @@ BS3_BEGIN_TEXT16
         BS3_SET_BITS 16
 %endif
 
-        ; Print the character.
-        mov     bx, 0ff00h
-        mov     al, cl
+        ; Print the character, turning '\n' into '\r\n'.
+        cmp     cl, 0ah                 ; \n
+        je      .print_chr_newline
         mov     ah, 0eh
+        mov     al, cl
+        mov     bx, 0ff00h
+        int     10h
+        jmp     .print_chr_done
+
+.print_chr_newline:
+        mov     ax, 0e0dh               ; cmd + \r
+        mov     bx, 0ff00h
+        int     10h
+        mov     ax, 0e0ah               ; cmd + \n
+        mov     bx, 0ff00h
         int     10h
 
+.print_chr_done:
 %ifndef TMPL_CMN_R86
         ; Switch back (20h param scratch area not required).
         extern  RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)

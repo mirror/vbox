@@ -1466,7 +1466,8 @@ BS3_DECL(void) Bs3TestSkippedV_c64(const char BS3_FAR *pszFormat, va_list va); /
  * This is called with the CPU already switch to that mode.
  *
  * @returns 0 on success or directly Bs3TestFailed calls, non-zero to indicate
- *          where the test when wrong.
+ *          where the test when wrong. Special value BS3TESTDOMODE_SKIPPED
+ *          should be returned to indicate that the test has been skipped.
  * @param   bMode       The current CPU mode.
  */
 typedef BS3_DECL_CALLBACK(uint8_t) FNBS3TESTDOMODE(uint8_t bMode);
@@ -1474,6 +1475,9 @@ typedef BS3_DECL_CALLBACK(uint8_t) FNBS3TESTDOMODE(uint8_t bMode);
 typedef FNBS3TESTDOMODE               *PFNBS3TESTDOMODE;
 /** Far pointer to a test (for 32-bit and 64-bit code, will be flatten). */
 typedef FNBS3TESTDOMODE BS3_FAR_CODE  *FPFNBS3TESTDOMODE;
+
+/** Special FNBS3TESTDOMODE return code for indicating a skipped mode test.  */
+#define BS3TESTDOMODE_SKIPPED       UINT8_MAX
 
 /**
  * Mode sub-test entry.
@@ -1548,8 +1552,7 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
         /*LM64*/      RT_CONCAT(a_BaseNm, _c64), \
     }
 
-/** A set of standard protypes to go with #BS3TESTMODEENTRY_CMN.
- * @remark May need to \#pragma alias the c64 variant.  */
+/** A set of standard protypes to go with #BS3TESTMODEENTRY_CMN. */
 #define BS3TESTMODE_PROTOTYPES_CMN(a_BaseNm) \
     FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _c16); \
     FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c32); \
@@ -1583,8 +1586,7 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
         /*LM64*/      RT_CONCAT(a_BaseNm, _lm64), \
     }
 
-/** A set of standard protypes to go with #BS3TESTMODEENTRY_MODE.
- * @remark May need to \#pragma alias the lm64 variant.  */
+/** A set of standard protypes to go with #BS3TESTMODEENTRY_MODE. */
 #define BS3TESTMODE_PROTOTYPES_MODE(a_BaseNm) \
     FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _rm); \
     FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe16); \

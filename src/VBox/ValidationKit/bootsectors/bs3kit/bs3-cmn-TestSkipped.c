@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
 #include "bs3-cmn-test.h"
+#include <iprt/asm-amd64-x86.h>
 
 
 /**
@@ -37,14 +38,23 @@
  */
 BS3_DECL(void) Bs3TestSkippedV(const char *pszFormat, va_list va)
 {
-    /* Just mark it as skipped and deal with it when the sub-test is done. */
-    BS3_DATA_NM(g_fbBs3SubTestSkipped) = true;
-
-    /* The reason why it was skipp is optional. */
-    if (pszFormat)
+    if (BS3_DATA_NM(g_cusBs3TestErrors) == BS3_DATA_NM(g_cusBs3SubTestAtErrors))
     {
-        bool fNewLine = false;
-        Bs3StrFormatV(pszFormat, va, bs3TestFailedStrOutput, &fNewLine);
+        /* Just mark it as skipped and deal with it when the sub-test is done. */
+        BS3_DATA_NM(g_fbBs3SubTestSkipped) = true;
+
+        /* Tell VMMDev */
+        if (BS3_DATA_NM(g_fbBs3VMMDevTesting))
+            ASMOutU32(VMMDEV_TESTING_IOPORT_CMD, VMMDEV_TESTING_CMD_SKIPPED);
+
+        /* The reason why it was skipped is optional. */
+        if (pszFormat)
+        {
+            bool fNewLine = false;
+            Bs3StrFormatV(pszFormat, va, bs3TestFailedStrOutput, &fNewLine);
+        }
+        else if (BS3_DATA_NM(g_fbBs3VMMDevTesting))
+            ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, 0);
     }
 }
 

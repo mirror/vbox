@@ -56,7 +56,7 @@ BS3_DECL(void) Bs3TestInit(const char BS3_FAR *pszTest)
      * Print the name - RTTestBanner.
      */
     Bs3PrintStr(pszTest);
-    Bs3PrintStr(": TESTING...\r\n");
+    Bs3PrintStr(": TESTING...\n");
 
     /*
      * Report it to the VMMDev.
