@@ -1228,7 +1228,6 @@ static void pcnetSoftReset(PPCNETSTATE pThis)
     pThis->aCSR[94]  = 0x0000;
     pThis->aCSR[100] = 0x0200;
     pThis->aCSR[103] = 0x0105;
-    pThis->aCSR[103] = 0x0105;
     CSR_MISSC(pThis) = 0;
     pThis->aCSR[114] = 0x0000;
     pThis->aCSR[122] = 0x0000;
