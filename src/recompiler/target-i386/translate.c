@@ -2705,7 +2705,7 @@ static void gen_push_T1(DisasContext *s)
         if (s->ss32 && !s->addseg)
             gen_op_mov_reg_A0(1, R_ESP);
         else
-            gen_stack_update(s, (-2) << s->dflag);
+            gen_stack_update(s, -(2 << s->dflag));
     }
 }
 
@@ -2758,7 +2758,7 @@ static void gen_pusha(DisasContext *s)
 {
     int i;
     gen_op_movl_A0_reg(R_ESP);
-    gen_op_addl_A0_im(-16 <<  s->dflag);
+    gen_op_addl_A0_im(-(16 <<  s->dflag));
     if (!s->ss32)
         gen_op_andl_A0_ffff();
     tcg_gen_mov_tl(cpu_T[1], cpu_A0);
