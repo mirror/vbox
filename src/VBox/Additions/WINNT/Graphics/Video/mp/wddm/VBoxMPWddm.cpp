@@ -1083,7 +1083,7 @@ NTSTATUS DxgkDdiStartDevice(
     if ( ARGUMENT_PRESENT(MiniportDeviceContext) &&
         ARGUMENT_PRESENT(DxgkInterface) &&
         ARGUMENT_PRESENT(DxgkStartInfo) &&
-        ARGUMENT_PRESENT(NumberOfVideoPresentSources),
+        ARGUMENT_PRESENT(NumberOfVideoPresentSources) &&
         ARGUMENT_PRESENT(NumberOfChildren)
         )
     {
