@@ -58,7 +58,7 @@ void tstFileAioTestReadWriteBasic(RTFILE File, bool fWrite, void *pvTestBuf,
     RTFILEAIOREQ *paReqs;
     paReqs = (PRTFILEAIOREQ)RTTestGuardedAllocHead(g_hTest, cMaxReqsInFlight * sizeof(RTFILEAIOREQ));
     RTTESTI_CHECK_RETV(paReqs);
-    RT_BZERO(paReqs, sizeof(cMaxReqsInFlight) * sizeof(RTFILEAIOREQ));
+    RT_BZERO(paReqs, cMaxReqsInFlight * sizeof(RTFILEAIOREQ));
 
     /* Allocate array holding pointer to data buffers. */
     void **papvBuf = (void **)RTTestGuardedAllocHead(g_hTest, cMaxReqsInFlight * sizeof(void *));
