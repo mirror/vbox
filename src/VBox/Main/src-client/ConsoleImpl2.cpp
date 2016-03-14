@@ -492,20 +492,7 @@ static int SetBiosDiskInfo(ComPtr<IMachine> pMachine, PCFGMNODE pCfg, PCFGMNODE 
                 lPortUsed[u32HDCount++] = lPortNum;
                 LogFlowFunc(("HD port Count=%d\n", u32HDCount));
             }
-
-            /* Configure the hotpluggable flag for the port. */
-            BOOL fHotPluggable = FALSE;
-            hrc = pMediumAtt->COMGETTER(HotPluggable)(&fHotPluggable); H();
-            if (SUCCEEDED(hrc))
-            {
-                PCFGMNODE pPortCfg;
-                char szName[24];
-                RTStrPrintf(szName, sizeof(szName), "Port%d", lPortNum);
-
-                InsertConfigNode(pCfg, szName, &pPortCfg);
-                InsertConfigInteger(pPortCfg, "Hotpluggable", fHotPluggable ? 1 : 0);
-            }
-         }
+        }
     }
 
 
@@ -2117,6 +2104,31 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
                     InsertConfigInteger(pCfg, "PortCount", cPorts);
                     InsertConfigInteger(pCfg, "Bootable",  fBootable);
+
+                    com::SafeIfaceArray<IMediumAttachment> atts;
+                    hrc = pMachine->GetMediumAttachmentsOfController(controllerName.raw(),
+                                                                     ComSafeArrayAsOutParam(atts));  H();
+
+                    /* Configure the hotpluggable flag for the port. */
+                    for (unsigned idxAtt = 0; idxAtt < atts.size(); ++idxAtt)
+                    {
+                        IMediumAttachment *pMediumAtt = atts[idxAtt];
+
+                        LONG lPortNum = 0;
+                        hrc = pMediumAtt->COMGETTER(Port)(&lPortNum);                       H();
+
+                        BOOL fHotPluggable = FALSE;
+                        hrc = pMediumAtt->COMGETTER(HotPluggable)(&fHotPluggable);          H();
+                        if (SUCCEEDED(hrc))
+                        {
+                            PCFGMNODE pPortCfg;
+                            char szName[24];
+                            RTStrPrintf(szName, sizeof(szName), "Port%d", lPortNum);
+
+                            InsertConfigNode(pCfg, szName, &pPortCfg);
+                            InsertConfigInteger(pPortCfg, "Hotpluggable", fHotPluggable ? 1 : 0);
+                        }
+                    }
 
                     /* BIOS configuration values, first AHCI controller only. */
                     if (   !pBusMgr->hasPCIDevice("ahci", 1)
