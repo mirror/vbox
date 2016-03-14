@@ -383,7 +383,6 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
                  || mstrFormat.equalsIgnoreCase("text/html")
                  || mstrFormat.equalsIgnoreCase("text/plain;charset=utf-8")
                  || mstrFormat.equalsIgnoreCase("text/plain;charset=utf-16")
-                 || mstrFormat.equalsIgnoreCase("text/plain")
                  || mstrFormat.equalsIgnoreCase("text/richtext")
                  || mstrFormat.equalsIgnoreCase("UTF8_STRING")
                  || mstrFormat.equalsIgnoreCase("TEXT")
