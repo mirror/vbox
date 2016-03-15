@@ -828,7 +828,7 @@ void UINetworkReplyPrivateThread::downloadMissingCertificates(RTCRSTORE hNewStor
         if (!pafNewFoundCerts[i])
         {
             CERTINFO const *pInfo = (CERTINFO const *)s_aCerts[i].pvUser;
-            for (uint32_t iUrl = 0; iUrl < RT_ELEMENTS(pInfo->apszUrls); i++)
+            for (uint32_t iUrl = 0; iUrl < RT_ELEMENTS(pInfo->apszUrls); iUrl++)
                 if (pInfo->apszUrls[iUrl])
                 {
                     void  *pvResponse;
