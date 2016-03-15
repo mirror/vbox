@@ -174,7 +174,7 @@ static void testParserAndSplitter(RTTEST hTest)
                 RTTESTI_CHECK(pSplit->cbNeeded == u.Split.cbNeeded);
                 RTTESTI_CHECK(!strcmp(pSplit->pszSuffix, u.Split.pszSuffix));
                 for (uint32_t idxComp = 0; idxComp < u.Split.cComps; idxComp++)
-                    RTTESTI_CHECK(!strcmp(pSplit->apszComps[idxComp], pSplit->apszComps[idxComp]));
+                    RTTESTI_CHECK(!strcmp(pSplit->apszComps[idxComp], u.Split.apszComps[idxComp]));
                 RTPathSplitFree(pSplit);
             }
 
