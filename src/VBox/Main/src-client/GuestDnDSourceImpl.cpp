@@ -1100,15 +1100,17 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         return VERR_INVALID_POINTER;
 
 #define REGISTER_CALLBACK(x) \
-    rc = pResp->setCallback(x, i_receiveRawDataCallback, pCtx); \
-    if (RT_FAILURE(rc)) \
-        return rc;
+    do {                                                            \
+        rc = pResp->setCallback(x, i_receiveRawDataCallback, pCtx); \
+        if (RT_FAILURE(rc))                                         \
+            return rc;                                              \
+    } while (0)
 
-#define UNREGISTER_CALLBACK(x)                                  \
-    {                                                           \
-        int rc2 = pResp->setCallback(x, NULL);                  \
-        AssertRC(rc2);                                          \
-    }
+#define UNREGISTER_CALLBACK(x)                                      \
+    do {                                                            \
+        int rc2 = pResp->setCallback(x, NULL);                      \
+        AssertRC(rc2);                                              \
+    } while (0)
 
     /*
      * Register callbacks.
@@ -1195,16 +1197,18 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
     if (!pInst)
         return VERR_INVALID_POINTER;
 
-#define REGISTER_CALLBACK(x)                                    \
-    rc = pResp->setCallback(x, i_receiveURIDataCallback, pCtx); \
-    if (RT_FAILURE(rc))                                         \
-        return rc;
+#define REGISTER_CALLBACK(x)                                        \
+    do {                                                            \
+        rc = pResp->setCallback(x, i_receiveURIDataCallback, pCtx); \
+        if (RT_FAILURE(rc))                                         \
+            return rc;                                              \
+    } while (0)
 
-#define UNREGISTER_CALLBACK(x)                                  \
-    {                                                           \
-        int rc2 = pResp->setCallback(x, NULL);                  \
-        AssertRC(rc2);                                          \
-    }
+#define UNREGISTER_CALLBACK(x)                                      \
+    do {                                                            \
+        int rc2 = pResp->setCallback(x, NULL);                      \
+        AssertRC(rc2);                                              \
+    } while (0)
 
     /*
      * Register callbacks.
