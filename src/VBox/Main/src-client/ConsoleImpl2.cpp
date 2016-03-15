@@ -2531,7 +2531,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             hrc = pMachine->GetSerialPort(ulInstance, serialPort.asOutParam());             H();
             BOOL fEnabledSerPort = FALSE;
             if (serialPort)
+            {
                 hrc = serialPort->COMGETTER(Enabled)(&fEnabledSerPort);                     H();
+            }
             if (!fEnabledSerPort)
                 continue;
 
@@ -2668,7 +2670,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         ComPtr<IAudioAdapter> audioAdapter;
         hrc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());                 H();
         if (audioAdapter)
+        {
             hrc = audioAdapter->COMGETTER(Enabled)(&fAudioEnabled);                         H();
+        }
 
         if (fAudioEnabled)
         {
@@ -4705,7 +4709,7 @@ int Console::i_configNetwork(const char *pszDevice,
                     size_t pos, ppos;
                     pos = ppos = 0;
 #define ITERATE_TO_NEXT_TERM(res, str, pos, ppos) \
-    do { \
+    { \
         pos = str.find(",", ppos); \
         if (pos == Utf8Str::npos) \
         { \
@@ -4715,7 +4719,7 @@ int Console::i_configNetwork(const char *pszDevice,
         res = str.substr(ppos, pos - ppos); \
         Log2((#res " %s pos:%d, ppos:%d\n", res.c_str(), pos, ppos)); \
         ppos = pos + 1; \
-    } while (0)
+    } /* no do { ... } while because of 'continue' */
                     ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
                     ITERATE_TO_NEXT_TERM(strProto, utf, pos, ppos);
                     ITERATE_TO_NEXT_TERM(strHostIP, utf, pos, ppos);
