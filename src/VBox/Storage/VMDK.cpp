@@ -3515,7 +3515,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
                 RTPathStripFilename(pszDirname);
                 char *pszFullname = RTPathJoinA(pszDirname, pExtent->pszBasename);
                 RTStrFree(pszDirname);
-                if (!pszDirname)
+                if (!pszFullname)
                     return VERR_NO_STR_MEMORY;
                 pExtent->pszFullname = pszFullname;
                 pExtent->enmType = VMDKETYPE_FLAT;
