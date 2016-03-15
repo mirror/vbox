@@ -412,7 +412,7 @@ ULONGLONG WINAPI VerSetConditionMask(ULONGLONG fConditionMask, DWORD fTypeMask, 
     for (unsigned i = 0; i < 8; i++)
         if (fTypeMask & RT_BIT_32(i))
         {
-            uint64_t fMask  = 0xff << (i*8);
+            uint64_t fMask  = UINT64_C(0xff) << (i*8);
             fConditionMask &= ~fMask;
             fConditionMask |= (uint64_t)bOperator << (i*8);
 
