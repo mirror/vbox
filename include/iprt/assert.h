@@ -710,14 +710,14 @@ RT_C_DECLS_END
     { \
         RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         RTAssertPanic(); \
-        break; \
+        continue; \
     } else do {} while (0)
 #else
 # define AssertContinue(expr) \
     if (RT_LIKELY(!!(expr))) \
     { /* likely */ } \
     else \
-        break
+        continue
 #endif
 
 /** @def AssertBreakStmt
