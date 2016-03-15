@@ -290,7 +290,7 @@ static bool ParseAndCheckImports(MYIMAGE *pThis,  const char **papszAllowed, uns
 
 static int usage(const char *argv0)
 {
-    printf("usage: %s --image <image> [allowed-dll [..]]\n");
+    printf("usage: %s --image <image> [allowed-dll [..]]\n", argv0);
     return RTEXITCODE_SUCCESS;
 }
 
