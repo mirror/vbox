@@ -404,8 +404,8 @@ typedef struct BUSLOGIC
     uint32_t                        uMailboxOutgoingPositionCurrent;
     /** Number of mailboxes ready. */
     volatile uint32_t               cMailboxesReady;
-    /** Whether a notification to R3 was send. */
-    volatile bool                   fNotificationSend;
+    /** Whether a notification to R3 was sent. */
+    volatile bool                   fNotificationSent;
 
 #if HC_ARCH_BITS == 64
     uint32_t                        Alignment1;
@@ -459,8 +459,20 @@ typedef struct BUSLOGIC
     bool volatile                   fSignalIdle;
     /** Flag whether we have tasks which need to be processed again. */
     bool volatile                   fRedo;
+    /** Flag whether the worker thread is sleeping. */
+    volatile bool                   fWrkThreadSleeping;
+    /** Flag whether a request from the BIOS is pending which the
+     * worker thread needs to process. */
+    volatile bool                   fBiosReqPending;
     /** List of tasks which can be redone. */
     R3PTRTYPE(volatile PBUSLOGICTASKSTATE) pTasksRedoHead;
+
+    /** The support driver session handle. */
+    R3R0PTRTYPE(PSUPDRVSESSION)     pSupDrvSession;
+    /** Worker thread. */
+    R3PTRTYPE(PPDMTHREAD)           pThreadWrk;
+    /** The event semaphore the processing thread waits on. */
+    SUPSEMEVENT                     hEvtProcess;
 
 #ifdef LOG_ENABLED
 # if HC_ARCH_BITS == 64
@@ -875,7 +887,7 @@ typedef struct CCBC
     /** The SCSI CDB (up to 12 bytes). */
     uint8_t         abCDB[12];
 } CCBC, *PCCBC;
-AssertCompileSize(CCB24, 30);
+AssertCompileSize(CCBC, 30);
 
 /* Make sure that the 24-bit/32-bit/common CCB offsets match. */
 AssertCompileMemberOffset(CCBC,  cbCDB, 2);
@@ -2241,7 +2253,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                 if (pBusLogic->cMailbox)
                 {
                     ASMAtomicIncU32(&pBusLogic->cMailboxesReady);
-                    if (!ASMAtomicXchgBool(&pBusLogic->fNotificationSend, true))
+                    if (!ASMAtomicXchgBool(&pBusLogic->fNotificationSent, true))
                     {
                         /* Send new notification to the queue. */
                         PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pBusLogic->CTX_SUFF(pNotifierQueue));
@@ -2552,18 +2564,29 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUs
 static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     int rc;
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
 
     Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x\n",
           pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port));
 
+    /*
+     * If there is already a request form the BIOS pending ignore this write
+     * because it should not happen.
+     */
+    if (ASMAtomicReadBool(&pThis->fBiosReqPending))
+        return VINF_SUCCESS;
+
     Assert(cb == 1);
 
-    rc = vboxscsiWriteRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
+    rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
-        rc = buslogicR3PrepareBIOSSCSIRequest(pBusLogic);
-        AssertRC(rc);
+        ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
+        /* Send a notifier to the PDM queue that there are pending requests. */
+        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotifierQueue));
+        AssertMsg(pItem, ("Allocating item for queue failed\n"));
+        PDMQueueInsert(pThis->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+        rc = VINF_SUCCESS;
     }
     else if (RT_FAILURE(rc))
         AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
@@ -2578,19 +2601,29 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvU
 static DECLCALLBACK(int) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
                                                       uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
-    int rc = vboxscsiWriteString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), pbSrc, pcTransfers, cb);
+    /*
+     * If there is already a request form the BIOS pending ignore this write
+     * because it should not happen.
+     */
+    if (ASMAtomicReadBool(&pThis->fBiosReqPending))
+        return VINF_SUCCESS;
+
+    int rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), pbSrc, pcTransfers, cb);
     if (rc == VERR_MORE_DATA)
     {
-        rc = buslogicR3PrepareBIOSSCSIRequest(pBusLogic);
-        AssertRC(rc);
+        ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
+        /* Send a notifier to the PDM queue that there are pending requests. */
+        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotifierQueue));
+        AssertMsg(pItem, ("Allocating item for queue failed\n"));
+        PDMQueueInsert(pThis->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
     }
     else if (RT_FAILURE(rc))
         AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2714,7 +2747,7 @@ static void buslogicR3RedoSetWarning(PBUSLOGIC pThis, int rc)
          * connection (second error). Pause VM. On resume we'll retry. */
         buslogicR3WarningISCSI(pThis->CTX_SUFF(pDevIns));
     }
-    else
+    else if (rc != VERR_VD_DEK_MISSING)
         buslogicR3WarningUnknown(pThis->CTX_SUFF(pDevIns), rc);
 }
 
@@ -2891,73 +2924,85 @@ static int buslogicR3DeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKST
                         &pTaskState->CommandControlBlockGuest, sizeof(CCB32));
 
     uTargetIdCCB = pTaskState->fIs24Bit ? pTaskState->CommandControlBlockGuest.o.uTargetId : pTaskState->CommandControlBlockGuest.n.uTargetId;
-    pTargetDevice = &pBusLogic->aDeviceStates[uTargetIdCCB];
-    pTaskState->CTX_SUFF(pTargetDevice) = pTargetDevice;
+    if (RT_LIKELY(uTargetIdCCB < RT_ELEMENTS(pBusLogic->aDeviceStates)))
+    {
+        pTargetDevice = &pBusLogic->aDeviceStates[uTargetIdCCB];
+        pTaskState->CTX_SUFF(pTargetDevice) = pTargetDevice;
 
 #ifdef LOG_ENABLED
-    buslogicR3DumpCCBInfo(&pTaskState->CommandControlBlockGuest, pTaskState->fIs24Bit);
+        buslogicR3DumpCCBInfo(&pTaskState->CommandControlBlockGuest, pTaskState->fIs24Bit);
 #endif
 
-    /* Alloc required buffers. */
-    rc = buslogicR3DataBufferAlloc(pTaskState);
-    AssertMsgRC(rc, ("Alloc failed rc=%Rrc\n", rc));
+        /* Alloc required buffers. */
+        rc = buslogicR3DataBufferAlloc(pTaskState);
+        AssertMsgRC(rc, ("Alloc failed rc=%Rrc\n", rc));
 
-    rc = buslogicR3SenseBufferAlloc(pTaskState);
-    AssertMsgRC(rc, ("Mapping sense buffer failed rc=%Rrc\n", rc));
+        rc = buslogicR3SenseBufferAlloc(pTaskState);
+        AssertMsgRC(rc, ("Mapping sense buffer failed rc=%Rrc\n", rc));
 
-    /* Check if device is present on bus. If not return error immediately and don't process this further. */
-    if (!pBusLogic->aDeviceStates[uTargetIdCCB].fPresent)
-    {
-        buslogicR3DataBufferFree(pTaskState);
+        /* Check if device is present on bus. If not return error immediately and don't process this further. */
+        if (!pBusLogic->aDeviceStates[uTargetIdCCB].fPresent)
+        {
+            buslogicR3DataBufferFree(pTaskState);
 
-        if (pTaskState->pbSenseBuffer)
-            buslogicR3SenseBufferFree(pTaskState, true);
+            if (pTaskState->pbSenseBuffer)
+                buslogicR3SenseBufferFree(pTaskState, true);
 
-        buslogicR3SendIncomingMailbox(pBusLogic, pTaskState,
-                                    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_SCSI_SELECTION_TIMEOUT,
-                                    BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
-                                    BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
+            buslogicR3SendIncomingMailbox(pBusLogic, pTaskState,
+                                          BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_SCSI_SELECTION_TIMEOUT,
+                                          BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
+                                          BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
 
-        RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
+            RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
+        }
+        else
+        {
+            /* Setup SCSI request. */
+            pTaskState->PDMScsiRequest.uLogicalUnit = pTaskState->fIs24Bit ? pTaskState->CommandControlBlockGuest.o.uLogicalUnit
+                                                                           : pTaskState->CommandControlBlockGuest.n.uLogicalUnit;
+
+            if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_UNKNOWN)
+                pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_UNKNOWN;
+            else if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_IN)
+                pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_FROM_DEVICE;
+            else if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
+                pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_TO_DEVICE;
+            else if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_NO_DATA)
+                pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_NONE;
+            else
+                AssertMsgFailed(("Invalid data direction type %d\n", pTaskState->CommandControlBlockGuest.c.uDataDirection));
+
+            pTaskState->PDMScsiRequest.cbCDB                 = pTaskState->CommandControlBlockGuest.c.cbCDB;
+            pTaskState->PDMScsiRequest.pbCDB                 = pTaskState->CommandControlBlockGuest.c.abCDB;
+            if (pTaskState->DataSeg.cbSeg)
+            {
+                pTaskState->PDMScsiRequest.cbScatterGather       = pTaskState->DataSeg.cbSeg;
+                pTaskState->PDMScsiRequest.cScatterGatherEntries = 1;
+                pTaskState->PDMScsiRequest.paScatterGatherHead   = &pTaskState->DataSeg;
+            }
+            else
+            {
+                pTaskState->PDMScsiRequest.cbScatterGather       = 0;
+                pTaskState->PDMScsiRequest.cScatterGatherEntries = 0;
+                pTaskState->PDMScsiRequest.paScatterGatherHead   = NULL;
+            }
+            pTaskState->PDMScsiRequest.cbSenseBuffer         = buslogicR3ConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.c.cbSenseData);
+            pTaskState->PDMScsiRequest.pbSenseBuffer         = pTaskState->pbSenseBuffer;
+            pTaskState->PDMScsiRequest.pvUser                = pTaskState;
+
+            ASMAtomicIncU32(&pTargetDevice->cOutstandingRequests);
+            rc = pTargetDevice->pDrvSCSIConnector->pfnSCSIRequestSend(pTargetDevice->pDrvSCSIConnector, &pTaskState->PDMScsiRequest);
+            AssertMsgRC(rc, ("Sending request to SCSI layer failed rc=%Rrc\n", rc));
+        }
     }
     else
     {
-        /* Setup SCSI request. */
-        pTaskState->PDMScsiRequest.uLogicalUnit = pTaskState->fIs24Bit ? pTaskState->CommandControlBlockGuest.o.uLogicalUnit
-                                                                       : pTaskState->CommandControlBlockGuest.n.uLogicalUnit;
+        RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
 
-        if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_UNKNOWN)
-            pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_UNKNOWN;
-        else if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_IN)
-            pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_FROM_DEVICE;
-        else if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
-            pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_TO_DEVICE;
-        else if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_NO_DATA)
-            pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_NONE;
-        else
-            AssertMsgFailed(("Invalid data direction type %d\n", pTaskState->CommandControlBlockGuest.c.uDataDirection));
-
-        pTaskState->PDMScsiRequest.cbCDB                 = pTaskState->CommandControlBlockGuest.c.cbCDB;
-        pTaskState->PDMScsiRequest.pbCDB                 = pTaskState->CommandControlBlockGuest.c.abCDB;
-        if (pTaskState->DataSeg.cbSeg)
-        {
-            pTaskState->PDMScsiRequest.cbScatterGather       = pTaskState->DataSeg.cbSeg;
-            pTaskState->PDMScsiRequest.cScatterGatherEntries = 1;
-            pTaskState->PDMScsiRequest.paScatterGatherHead   = &pTaskState->DataSeg;
-        }
-        else
-        {
-            pTaskState->PDMScsiRequest.cbScatterGather       = 0;
-            pTaskState->PDMScsiRequest.cScatterGatherEntries = 0;
-            pTaskState->PDMScsiRequest.paScatterGatherHead   = NULL;
-        }
-        pTaskState->PDMScsiRequest.cbSenseBuffer         = buslogicR3ConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.c.cbSenseData);
-        pTaskState->PDMScsiRequest.pbSenseBuffer         = pTaskState->pbSenseBuffer;
-        pTaskState->PDMScsiRequest.pvUser                = pTaskState;
-
-        ASMAtomicIncU32(&pTargetDevice->cOutstandingRequests);
-        rc = pTargetDevice->pDrvSCSIConnector->pfnSCSIRequestSend(pTargetDevice->pDrvSCSIConnector, &pTaskState->PDMScsiRequest);
-        AssertMsgRC(rc, ("Sending request to SCSI layer failed rc=%Rrc\n", rc));
+        buslogicR3SendIncomingMailbox(pBusLogic, pTaskState,
+                                      BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_INVALID_COMMAND_PARAMETER,
+                                      BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
+                                      BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
     }
 
     return rc;
@@ -2974,15 +3019,27 @@ static int buslogicR3DeviceSCSIRequestAbort(PBUSLOGIC pBusLogic, PBUSLOGICTASKST
                       &pTaskState->CommandControlBlockGuest, sizeof(CCB32));
 
     uTargetIdCCB = pTaskState->fIs24Bit ? pTaskState->CommandControlBlockGuest.o.uTargetId : pTaskState->CommandControlBlockGuest.n.uTargetId;
-    pTargetDevice = &pBusLogic->aDeviceStates[uTargetIdCCB];
-    pTaskState->CTX_SUFF(pTargetDevice) = pTargetDevice;
+    if (RT_LIKELY(uTargetIdCCB < RT_ELEMENTS(pBusLogic->aDeviceStates)))
+    {
+        pTargetDevice = &pBusLogic->aDeviceStates[uTargetIdCCB];
+        pTaskState->CTX_SUFF(pTargetDevice) = pTargetDevice;
 
-    buslogicR3SendIncomingMailbox(pBusLogic, pTaskState,
-                                  BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_ABORT_QUEUE_GENERATED,
-                                  BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
-                                  BUSLOGIC_MAILBOX_INCOMING_COMPLETION_ABORTED_NOT_FOUND);
+        buslogicR3SendIncomingMailbox(pBusLogic, pTaskState,
+                                      BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_ABORT_QUEUE_GENERATED,
+                                      BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
+                                      BUSLOGIC_MAILBOX_INCOMING_COMPLETION_ABORTED_NOT_FOUND);
 
-    RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
+        RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
+    }
+    else
+    {
+        RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
+
+        buslogicR3SendIncomingMailbox(pBusLogic, pTaskState,
+                                      BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_INVALID_COMMAND_PARAMETER,
+                                      BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
+                                      BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
+    }
 
     return rc;
 }
@@ -3110,20 +3167,10 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
  */
 static DECLCALLBACK(bool) buslogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
-    PBUSLOGIC  pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
 
-    /* Reset notification send flag now. */
-    Assert(pBusLogic->fNotificationSend);
-    ASMAtomicXchgBool(&pBusLogic->fNotificationSend, false);
-    ASMAtomicXchgU32(&pBusLogic->cMailboxesReady, 0); /** @todo Actually not required anymore but to stay compatible with older saved states. */
-
-    /* Process mailboxes. */
-    int rc;
-    do
-    {
-        rc = buslogicR3ProcessMailboxNext(pBusLogic);
-        AssertMsg(RT_SUCCESS(rc) || rc == VERR_NO_DATA, ("Processing mailbox failed rc=%Rrc\n", rc));
-    } while (RT_SUCCESS(rc));
+    int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+    AssertRC(rc);
 
     return true;
 }
@@ -3214,7 +3261,7 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutGCPhys(pSSM, pBusLogic->GCPhysAddrMailboxOutgoingBase);
     SSMR3PutU32   (pSSM, pBusLogic->uMailboxOutgoingPositionCurrent);
     SSMR3PutU32   (pSSM, pBusLogic->cMailboxesReady);
-    SSMR3PutBool  (pSSM, pBusLogic->fNotificationSend);
+    SSMR3PutBool  (pSSM, pBusLogic->fNotificationSent);
     SSMR3PutGCPhys(pSSM, pBusLogic->GCPhysAddrMailboxIncomingBase);
     SSMR3PutU32   (pSSM, pBusLogic->uMailboxIncomingPositionCurrent);
     SSMR3PutBool  (pSSM, pBusLogic->fStrictRoundRobinMode);
@@ -3316,7 +3363,7 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     SSMR3GetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxOutgoingBase);
     SSMR3GetU32   (pSSM, &pBusLogic->uMailboxOutgoingPositionCurrent);
     SSMR3GetU32   (pSSM, (uint32_t *)&pBusLogic->cMailboxesReady);
-    SSMR3GetBool  (pSSM, (bool *)&pBusLogic->fNotificationSend);
+    SSMR3GetBool  (pSSM, (bool *)&pBusLogic->fNotificationSent);
     SSMR3GetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxIncomingBase);
     SSMR3GetU32   (pSSM, &pBusLogic->uMailboxIncomingPositionCurrent);
     SSMR3GetBool  (pSSM, &pBusLogic->fStrictRoundRobinMode);
@@ -3438,6 +3485,75 @@ static DECLCALLBACK(void *) buslogicR3StatusQueryInterface(PPDMIBASE pInterface,
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
+}
+
+/**
+ * The worker thread processing requests from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   pThread         The thread structure.
+ */
+static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    PBUSLOGIC pThis = (PBUSLOGIC)pThread->pvUser;
+    int rc = VINF_SUCCESS;
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, true);
+        bool fNotificationSent = ASMAtomicXchgBool(&pThis->fNotificationSent, false);
+        if (!fNotificationSent)
+        {
+            Assert(ASMAtomicReadBool(&pThis->fWrkThreadSleeping));
+            rc = SUPSemEventWaitNoResume(pThis->pSupDrvSession, pThis->hEvtProcess, RT_INDEFINITE_WAIT);
+            AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
+            if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
+                break;
+            LogFlowFunc(("Woken up with rc=%Rrc\n", rc));
+            ASMAtomicWriteBool(&pThis->fNotificationSent, false);
+        }
+
+        ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, false);
+
+        /* Check whether there is a BIOS request pending and process it first. */
+        if (ASMAtomicReadBool(&pThis->fBiosReqPending))
+        {
+            rc = buslogicR3PrepareBIOSSCSIRequest(pThis);
+            AssertRC(rc);
+            ASMAtomicXchgBool(&pThis->fBiosReqPending, false);
+        }
+        else
+        {
+            ASMAtomicXchgU32(&pThis->cMailboxesReady, 0); /** @todo Actually not required anymore but to stay compatible with older saved states. */
+
+            /* Process mailboxes. */
+            do
+            {
+                rc = buslogicR3ProcessMailboxNext(pThis);
+                AssertMsg(RT_SUCCESS(rc) || rc == VERR_NO_DATA, ("Processing mailbox failed rc=%Rrc\n", rc));
+            } while (RT_SUCCESS(rc));
+        }
+    } /* While running */
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Unblock the worker thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pThread     The send thread.
+ */
+static DECLCALLBACK(int) buslogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    return SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
 }
 
 /**
@@ -3607,7 +3723,7 @@ static void buslogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns, bool fPowerOff)
     {
         ASMAtomicWriteBool(&pThis->fSignalIdle, false);
 
-        AssertMsg(!pThis->fNotificationSend, ("The PDM Queue should be empty at this point\n"));
+        AssertMsg(!pThis->fNotificationSent, ("The PDM Queue should be empty at this point\n"));
 
         if (pThis->fRedo)
         {
@@ -3842,6 +3958,12 @@ static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
         pThis->fRedo = false;
     }
 
+    if (pThis->hEvtProcess != NIL_SUPSEMEVENT)
+    {
+        SUPSemEventClose(pThis->pSupDrvSession, pThis->hEvtProcess);
+        pThis->hEvtProcess = NIL_SUPSEMEVENT;
+    }
+
     int rc = RTMemCacheDestroy(pThis->hTaskCache);
     AssertMsgRC(rc, ("Destroying task cache failed rc=%Rrc\n", rc));
 
@@ -3981,6 +4103,23 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSectIntr, RT_SRC_POS, "BusLogic-Intr#%u", pDevIns->iInstance);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic: cannot create critical section"));
+
+    /*
+     * Create event semaphore and worker thread.
+     */
+    rc = SUPSemEventCreate(pThis->pSupDrvSession, &pThis->hEvtProcess);
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("BusLogic: Failed to create SUP event semaphore"));
+
+    char szDevTag[20];
+    RTStrPrintf(szDevTag, sizeof(szDevTag), "BUSLOGIC-%u", iInstance);
+
+    rc = PDMDevHlpThreadCreate(pDevIns, &pThis->pThreadWrk, pThis, buslogicR3Worker,
+                               buslogicR3WorkerWakeUp, 0, RTTHREADTYPE_IO, szDevTag);
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("BusLogic: Failed to create worker thread %s"), szDevTag);
 
     /* Initialize per device state. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)

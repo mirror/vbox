@@ -1714,7 +1714,7 @@ int main()
     GEN_CHECK_OFF(BUSLOGIC, GCPhysAddrMailboxOutgoingBase);
     GEN_CHECK_OFF(BUSLOGIC, uMailboxOutgoingPositionCurrent);
     GEN_CHECK_OFF(BUSLOGIC, cMailboxesReady);
-    GEN_CHECK_OFF(BUSLOGIC, fNotificationSend);
+    GEN_CHECK_OFF(BUSLOGIC, fNotificationSent);
     GEN_CHECK_OFF(BUSLOGIC, GCPhysAddrMailboxIncomingBase);
     GEN_CHECK_OFF(BUSLOGIC, uMailboxIncomingPositionCurrent);
     GEN_CHECK_OFF(BUSLOGIC, fStrictRoundRobinMode);
@@ -1732,7 +1732,14 @@ int main()
     GEN_CHECK_OFF(BUSLOGIC, pLedsConnector);
     GEN_CHECK_OFF(BUSLOGIC, fSignalIdle);
     GEN_CHECK_OFF(BUSLOGIC, fRedo);
+    GEN_CHECK_OFF(BUSLOGIC, fWrkThreadSleeping);
+    GEN_CHECK_OFF(BUSLOGIC, fBiosReqPending);
     GEN_CHECK_OFF(BUSLOGIC, pTasksRedoHead);
+    GEN_CHECK_OFF(BUSLOGIC, pSupDrvSession);
+    GEN_CHECK_OFF(BUSLOGIC, hEvtProcess);
+# ifdef LOG_ENABLED
+    GEN_CHECK_OFF(BUSLOGIC, cInMailboxesReady);
+# endif
 #endif /* VBOX_WITH_BUSLOGIC */
 
 #ifdef VBOX_WITH_LSILOGIC
