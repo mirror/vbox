@@ -45,7 +45,7 @@ extern uint8_t  BS3_FAR_DATA bs3Trap16GenericTrapOrInt[];
 extern uint8_t  BS3_FAR_DATA bs3Trap16GenericTrapErrCode[];
 
 
-BS3_DECL(void) Bs3Trap16Init(bool f386Plus)
+BS3_DECL(void) Bs3Trap16InitEx(bool f386Plus)
 {
     X86TSS16 BS3_FAR *pTss;
     unsigned iIdt;
@@ -106,5 +106,11 @@ BS3_DECL(void) Bs3Trap16Init(bool f386Plus)
     pTss->dx        = f386Plus;
 
     Bs3Trap16SetGate(X86_XCPT_DF, X86_SEL_TYPE_SYS_TASK_GATE, 0 /*bDpl*/, BS3_SEL_TSS16_DF, 0, 0 /*cParams*/);
+}
+
+
+BS3_DECL(void) Bs3Trap16Init(void)
+{
+    Bs3Trap16InitEx((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386);
 }
 

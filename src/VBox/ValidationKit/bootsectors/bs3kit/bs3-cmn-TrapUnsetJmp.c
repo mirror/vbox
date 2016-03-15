@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - bs3-cpu-basic-2, C code template.
+ * BS3Kit - Bs3TrapUnsetJmp
  */
 
 /*
@@ -24,53 +24,20 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include "bs3kit-template-header.h"
 
-#ifdef BS3_INSTANTIATING_MODE
 
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_TssGateEsp_IntXx)(void);
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+extern uint32_t BS3_DATA_NM(g_pBs3TrapSetJmpFrame);
 
-BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
+
+BS3_DECL(void) Bs3TrapUnsetJmp(void)
 {
-    uint8_t         bRet = 0;
-# if TMPL_MODE == BS3_MODE_PE16 \
- || TMPL_MODE == BS3_MODE_PE16_32
-    BS3TRAPFRAME    TrapCtx;
-    BS3REGCTX       Ctx;
-
-    Bs3RegCtxSave(&Ctx);
-    Ctx.rip.u = (uintptr_t)&TMPL_NM(bs3CpuBasic2_TssGateEsp_IntXx);
-
-    /*
-     * Check that the stuff works first.
-     */
-     if (Bs3TrapSetJmp(&TrapCtx))
-     {
-
-         Bs3TrapUnsetJmp();
-     }
-     else
-     {
-         /* trapped. */
-     }
-
-
-# else
-    bRet = BS3TESTDOMODE_SKIPPED;
-# endif
-
-    /*
-     * Re-initialize the IDT.
-     */
-#  if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
-    Bs3Trap16Init();
-#  elif BS3_MODE_IS_32BIT_SYS(TMPL_MODE)
-    Bs3Trap32Init();
-#  elif BS3_MODE_IS_32BIT_SYS(TMPL_MODE)
-    Bs3Trap64Init();
-#  endif
-
-    return bRet;
+    BS3_DATA_NM(g_pBs3TrapSetJmpFrame) = 0;
 }
 
-
-#endif /* BS3_INSTANTIATING_MODE */

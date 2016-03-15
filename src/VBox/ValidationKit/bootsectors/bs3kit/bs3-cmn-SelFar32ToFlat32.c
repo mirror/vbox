@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - bs3-cpu-basic-2, C code template.
+ * BS3Kit - Bs3SelFar32ToFlat32
  */
 
 /*
@@ -24,53 +24,13 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#include "bs3kit-template-header.h"
 
-#ifdef BS3_INSTANTIATING_MODE
 
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_TssGateEsp_IntXx)(void);
-
-BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
+BS3_DECL(uint32_t) Bs3SelFar32ToFlat32(uint32_t off, uint16_t uSel)
 {
-    uint8_t         bRet = 0;
-# if TMPL_MODE == BS3_MODE_PE16 \
- || TMPL_MODE == BS3_MODE_PE16_32
-    BS3TRAPFRAME    TrapCtx;
-    BS3REGCTX       Ctx;
-
-    Bs3RegCtxSave(&Ctx);
-    Ctx.rip.u = (uintptr_t)&TMPL_NM(bs3CpuBasic2_TssGateEsp_IntXx);
-
-    /*
-     * Check that the stuff works first.
-     */
-     if (Bs3TrapSetJmp(&TrapCtx))
-     {
-
-         Bs3TrapUnsetJmp();
-     }
-     else
-     {
-         /* trapped. */
-     }
-
-
-# else
-    bRet = BS3TESTDOMODE_SKIPPED;
-# endif
-
-    /*
-     * Re-initialize the IDT.
-     */
-#  if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
-    Bs3Trap16Init();
-#  elif BS3_MODE_IS_32BIT_SYS(TMPL_MODE)
-    Bs3Trap32Init();
-#  elif BS3_MODE_IS_32BIT_SYS(TMPL_MODE)
-    Bs3Trap64Init();
-#  endif
-
-    return bRet;
+    if (BS3_DATA_NM(g_bBs3CurrentMode) == BS3_MODE_RM)
+        return ((uint32_t)uSel << 4) + off;
+    return Bs3SelProtFar32ToFlat32(off, uSel);
 }
 
-
-#endif /* BS3_INSTANTIATING_MODE */

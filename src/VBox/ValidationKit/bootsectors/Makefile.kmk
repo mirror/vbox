@@ -44,7 +44,7 @@ endif
 #
 if defined(VBOX_WITH_OPEN_WATCOM)
  if1of ($(KBUILD_TARGET), win)
-  VBOX_WITH_BS3KIT = 1
+# temp disabled #  VBOX_WITH_BS3KIT = 1
  else if $(VBOX_GCC_VERSION_CC) >= 40400 # ms_abi was added in 4.4
 # Awaiting elf -> omf converter #  if1of ($(KBUILD_TARGET), linux)
 # Awaiting elf -> omf converter #   VBOX_WITH_BS3KIT = 1
@@ -230,8 +230,9 @@ ifdef VBOX_WITH_BS3KIT
 # shutdown example.
 MISCBINS += bs3-cpu-basic-2
 bs3-cpu-basic-2_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-basic-2_INCS = .
-bs3-cpu-basic-2_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-basic-2-template.c
+bs3-cpu-basic-2_INCS  = .
+bs3-cpu-basic-2_DEFS  = BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-basic-2-template.c
+bs3-cpu-basic-2_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-basic-2-template.c
  ifeq ($(KBUILD_HOST),win)
 bs3-cpu-basic-2_DEFS += HAVE_OMF_CONVERTER
  endif

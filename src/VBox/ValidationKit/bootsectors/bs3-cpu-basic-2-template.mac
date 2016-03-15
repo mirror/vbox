@@ -38,6 +38,7 @@ BS3_PROC_BEGIN_MODE bs3CpuBasic2_iret
         mov     xBP, xSP
         sub     xSP, 20h
 
+%if TMPL_BITS == 64
 %if TMPL_BITS == 16
         xor     ax, ax
         mov     al, [xBP + xCB*2]
@@ -53,10 +54,11 @@ BS3_PROC_BEGIN_MODE bs3CpuBasic2_iret
         BS3_CALL Bs3Printf, 2
         add     xSP, xCB * 2
 %endif
+%endif
 
         ; Return
         xor     al, al
-mov al, TMPL_MODE                       ; remove me
+;mov al, TMPL_MODE                       ; remove me
 
 
         mov     xSP, xBP

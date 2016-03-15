@@ -1345,6 +1345,19 @@ BS3_DECL(uint32_t) Bs3SelProtFar32ToFlat32_c64(uint32_t off, uint16_t uSel); /**
 
 
 /**
+ * Converts a current mode 32-bit far pointer to a 32-bit flat address.
+ *
+ * @returns 32-bit flat address.
+ * @param   off             The segment offset.
+ * @param   uSel            The current mode segment selector.
+ */
+BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c16(uint32_t off, uint16_t uSel);
+BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c32(uint32_t off, uint16_t uSel); /**< @copydoc Bs3SelFar32ToFlat32_c16 */
+BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c64(uint32_t off, uint16_t uSel); /**< @copydoc Bs3SelFar32ToFlat32_c16 */
+#define Bs3SelFar32ToFlat32 BS3_CMN_NM(Bs3SelFar32ToFlat32) /**< Selects #Bs3SelFar32ToFlat32_c16, #Bs3SelFar32ToFlat32_c32 or #Bs3SelFar32ToFlat32_c64. */
+
+
+/**
  * Equivalent to RTTestCreate + RTTestBanner.
  *
  * @param   pszTest         The test name.
@@ -2039,6 +2052,15 @@ typedef BS3REGCTX BS3_FAR *PBS3REGCTX;
 /** Pointer to a const register context. */
 typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
 
+/**
+ * Saves the current register context.
+ *
+ * @param   pRegCtx     Where to store the register context.
+ */
+BS3_DECL(void) Bs3RegCtxSave_c16(PCBS3REGCTX pRegCtx);
+BS3_DECL(void) Bs3RegCtxSave_c32(PCBS3REGCTX pRegCtx); /**< @copydoc Bs3RegCtxSave_c16 */
+BS3_DECL(void) Bs3RegCtxSave_c64(PCBS3REGCTX pRegCtx); /**< @copydoc Bs3RegCtxSave_c16 */
+#define Bs3RegCtxSave BS3_CMN_NM(Bs3RegCtxSave) /**< Selects #Bs3RegCtxSave_c16, #Bs3RegCtxSave_c32 or #Bs3RegCtxSave_c64. */
 
 /**
  * Transforms a register context to a different ring.
@@ -2060,10 +2082,14 @@ BS3_DECL(void) Bs3RegCtxConvertToRingX_c64(PBS3REGCTX pRegCtx, uint8_t bRing); /
  * @remarks Caller must be in ring-0!
  * @remarks Does not return.
  */
-BS3_DECL(void) Bs3RegCtxRestore_c16(PCBS3REGCTX pRegCtx, uint16_t fFlags);
-BS3_DECL(void) Bs3RegCtxRestore_c32(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
-BS3_DECL(void) Bs3RegCtxRestore_c64(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
+BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c16(PCBS3REGCTX pRegCtx, uint16_t fFlags);
+BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c32(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
+BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c64(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
 #define Bs3RegCtxRestore BS3_CMN_NM(Bs3RegCtxRestore) /**< Selects #Bs3RegCtxRestore_c16, #Bs3RegCtxRestore_c32 or #Bs3RegCtxRestore_c64. */
+#ifdef __WATCOMC__
+# pragma aux Bs3RegCtxRestore_c16 __aborts;
+# pragma aux Bs3RegCtxRestore_c32 __aborts;
+#endif
 
 /** Skip restoring the CRx registers. */
 #define BS3REGCTXRESTORE_F_SKIP_CRX     UINT16_C(0x0001)
@@ -2113,6 +2139,17 @@ typedef BS3TRAPFRAME const BS3_FAR *PCBS3TRAPFRAME;
 /**
  * Initializes 16-bit (protected mode) trap handling.
  *
+ * @remarks Does not install 16-bit trap handling, just initializes the
+ *          structures.
+ */
+BS3_DECL(void) Bs3Trap16Init_c16(void);
+BS3_DECL(void) Bs3Trap16Init_c32(void); /**< @copydoc Bs3Trap16Init_c16 */
+BS3_DECL(void) Bs3Trap16Init_c64(void); /**< @copydoc Bs3Trap16Init_c16 */
+#define Bs3Trap16Init BS3_CMN_NM(Bs3Trap16Init) /**< Selects #Bs3Trap16Init_c16, #Bs3Trap16Init_c32 or #Bs3Trap16Init_c64. */
+
+/**
+ * Initializes 16-bit (protected mode) trap handling, extended version.
+ *
  * @param   f386Plus    Set if the CPU is 80386 or later and
  *                      extended registers should be saved.  Once initialized
  *                      with this parameter set to @a true, the effect cannot be
@@ -2121,10 +2158,10 @@ typedef BS3TRAPFRAME const BS3_FAR *PCBS3TRAPFRAME;
  * @remarks Does not install 16-bit trap handling, just initializes the
  *          structures.
  */
-BS3_DECL(void) Bs3Trap16Init_c16(bool f386Plus);
-BS3_DECL(void) Bs3Trap16Init_c32(bool f386Plus); /**< @copydoc Bs3Trap16Init_c16 */
-BS3_DECL(void) Bs3Trap16Init_c64(bool f386Plus); /**< @copydoc Bs3Trap16Init_c16 */
-#define Bs3Trap16Init BS3_CMN_NM(Bs3Trap16Init) /**< Selects #Bs3Trap16Init_c16, #Bs3Trap16Init_c32 or #Bs3Trap16Init_c64. */
+BS3_DECL(void) Bs3Trap16InitEx_c16(bool f386Plus);
+BS3_DECL(void) Bs3Trap16InitEx_c32(bool f386Plus); /**< @copydoc Bs3Trap16InitEx_c16 */
+BS3_DECL(void) Bs3Trap16InitEx_c64(bool f386Plus); /**< @copydoc Bs3Trap16InitEx_c16 */
+#define Bs3Trap16InitEx BS3_CMN_NM(Bs3Trap16InitEx) /**< Selects #Bs3Trap16InitEx_c16, #Bs3Trap16InitEx_c32 or #Bs3Trap16InitEx_c64. */
 
 /**
  * Initializes 32-bit trap handling.
@@ -2265,6 +2302,35 @@ BS3_DECL(void) Bs3TrapPrintFrame_c16(PCBS3TRAPFRAME pTrapFrame);
 BS3_DECL(void) Bs3TrapPrintFrame_c32(PCBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapPrintFrame_c16 */
 BS3_DECL(void) Bs3TrapPrintFrame_c64(PCBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapPrintFrame_c16 */
 #define Bs3TrapPrintFrame BS3_CMN_NM(Bs3TrapPrintFrame) /**< Selects #Bs3TrapPrintFrame_c16, #Bs3TrapPrintFrame_c32 or #Bs3TrapPrintFrame_c64. */
+
+/**
+ * Sets up a long jump from a trap handler.
+ *
+ * The long jump will only be performed onced, but will catch any kind of trap,
+ * fault, interrupt or irq.
+ *
+ * @retval true on the initial call.
+ * @retval false on trap return.
+ * @param   pTrapFrame      Where to store the trap information when
+ *                          returning @c false.
+ * @sa      #Bs3TrapUnsetJmp
+ */
+BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c16(PBS3TRAPFRAME pTrapFrame);
+BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c32(PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmp_c16 */
+BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c64(PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmp_c16 */
+#define Bs3TrapSetJmp BS3_CMN_NM(Bs3TrapSetJmp) /**< Selects #Bs3TrapSetJmp_c16, #Bs3TrapSetJmp_c32 or #Bs3TrapSetJmp_c64. */
+
+/**
+ * Disables a previous #Bs3TrapSetJmp call.
+ */
+BS3_DECL(void) Bs3TrapUnsetJmp_c16(void);
+BS3_DECL(void) Bs3TrapUnsetJmp_c32(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
+BS3_DECL(void) Bs3TrapUnsetJmp_c64(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
+#define Bs3TrapUnsetJmp BS3_CMN_NM(Bs3TrapUnsetJmp) /**< Selects #Bs3TrapUnsetJmp_c16, #Bs3TrapUnsetJmp_c32 or #Bs3TrapUnsetJmp_c64. */
+#ifdef __WATCOMC__
+# pragma aux Bs3TrapUnsetJmp_c16 aborts;
+# pragma aux Bs3TrapUnsetJmp_c32 aborts;
+#endif
 
 /** @} */
 
