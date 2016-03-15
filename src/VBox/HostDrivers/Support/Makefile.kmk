@@ -330,6 +330,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memmove.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/mempcpy.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memset.asm \
+	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTStrPrintHexBytes.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTStrCat.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTStrCmp.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTStrCopy.cpp \
