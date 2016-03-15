@@ -1376,7 +1376,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
                 &&  desc.numPages == 0)
             {
                 /* Pointer to the next physical page of descriptors. */
-                GCPhys = GCPhysBase = desc.ppn << PAGE_SHIFT;
+                GCPhys = GCPhysBase = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
             }
             else
             {
@@ -1387,7 +1387,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
                     AssertReturn(pSVGAState->aGMR[idGMR].paDesc, VERR_NO_MEMORY);
                 }
 
-                pSVGAState->aGMR[idGMR].paDesc[iDescriptor].GCPhys     = desc.ppn << PAGE_SHIFT;
+                pSVGAState->aGMR[idGMR].paDesc[iDescriptor].GCPhys     = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
                 pSVGAState->aGMR[idGMR].paDesc[iDescriptor++].numPages = desc.numPages;
                 pSVGAState->aGMR[idGMR].cbTotal += desc.numPages * PAGE_SIZE;
 
@@ -2920,7 +2920,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     if (fGCPhys64)
                         GCPhys = (pPage64[0] << PAGE_SHIFT) & 0x00000FFFFFFFFFFFULL;    /* seeing rubbish in the top bits with certain linux guests*/
                     else
-                        GCPhys = pPage32[0] << PAGE_SHIFT;
+                        GCPhys = (RTGCPHYS)pPage32[0] << PAGE_SHIFT;
 
                     pGMR->paDesc[0].GCPhys    = GCPhys;
                     pGMR->paDesc[0].numPages  = 1;
@@ -2931,7 +2931,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         if (pCmd->flags & SVGA_REMAP_GMR2_PPN64)
                             GCPhys = (pPage64[i] << PAGE_SHIFT) & 0x00000FFFFFFFFFFFULL;    /* seeing rubbish in the top bits with certain linux guests*/
                         else
-                            GCPhys = pPage32[i] << PAGE_SHIFT;
+                            GCPhys = (RTGCPHYS)pPage32[i] << PAGE_SHIFT;
 
                         /* Continuous physical memory? */
                         if (GCPhys == pGMR->paDesc[iDescriptor].GCPhys + pGMR->paDesc[iDescriptor].numPages * PAGE_SIZE)
