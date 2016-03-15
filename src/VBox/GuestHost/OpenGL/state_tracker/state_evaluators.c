@@ -897,13 +897,13 @@ crStateEvaluatorSwitch(CREvaluatorBits *e, CRbitvalue * bitID,
 			int size = from->eval1D[i].order * gleval_sizes[i] *
 				sizeof(*from->eval1D[i].coeff);
 			if (from->eval1D[i].order != to->eval1D[i].order ||
-					from->eval1D[i].u1 != from->eval1D[i].u1 ||
-					from->eval1D[i].u2 != from->eval1D[i].u2 ||
-					crMemcmp((const void *) from->eval1D[i].coeff,
-									 (const void *) to->eval1D[i].coeff, size)) {
+				from->eval1D[i].u1    != to->eval1D[i].u1 ||
+				from->eval1D[i].u2    != to->eval1D[i].u2 ||
+				crMemcmp((const void *) from->eval1D[i].coeff,
+						 (const void *) to->eval1D[i].coeff, size)) {
 				diff_api.Map1f(i + GL_MAP1_COLOR_4, to->eval1D[i].u1,
-											 to->eval1D[i].u2, gleval_sizes[i], to->eval1D[i].order,
-											 to->eval1D[i].coeff);
+							   to->eval1D[i].u2, gleval_sizes[i], to->eval1D[i].order,
+							   to->eval1D[i].coeff);
 				FILLDIRTY(e->dirty);
 				FILLDIRTY(e->eval1D[i]);
 			}
@@ -913,22 +913,22 @@ crStateEvaluatorSwitch(CREvaluatorBits *e, CRbitvalue * bitID,
 
 	for (i = 0; i < GLEVAL_TOT; i++) {
 		if (CHECKDIRTY(e->eval2D[i], bitID)) {
-			int size = from->eval2D[i].uorder * from->eval2D[i].vorder *
-				gleval_sizes[i] * sizeof(*from->eval2D[i].coeff);
+			int size = from->eval2D[i].uorder * from->eval2D[i].vorder
+                     * gleval_sizes[i] * sizeof(*from->eval2D[i].coeff);
 			if (from->eval2D[i].uorder != to->eval2D[i].uorder ||
-					from->eval2D[i].vorder != to->eval2D[i].vorder ||
-					from->eval2D[i].u1 != from->eval2D[i].u1 ||
-					from->eval2D[i].u2 != from->eval2D[i].u2 ||
-					from->eval2D[i].v1 != from->eval2D[i].v1 ||
-					from->eval2D[i].v2 != from->eval2D[i].v2 ||
-					crMemcmp((const void *) from->eval2D[i].coeff,
-									 (const void *) to->eval2D[i].coeff, size)) {
+				from->eval2D[i].vorder != to->eval2D[i].vorder ||
+				from->eval2D[i].u1     != to->eval2D[i].u1 ||
+				from->eval2D[i].u2     != to->eval2D[i].u2 ||
+				from->eval2D[i].v1     != to->eval2D[i].v1 ||
+				from->eval2D[i].v2     != to->eval2D[i].v2 ||
+				crMemcmp((const void *) from->eval2D[i].coeff,
+						 (const void *) to->eval2D[i].coeff, size)) {
 				diff_api.Map2f(i + GL_MAP2_COLOR_4,
-											 to->eval2D[i].u1, to->eval2D[i].u2,
-											 gleval_sizes[i], to->eval2D[i].uorder,
-											 to->eval2D[i].v1, to->eval2D[i].v2,
-											 gleval_sizes[i], to->eval2D[i].vorder,
-											 to->eval2D[i].coeff);
+							   to->eval2D[i].u1, to->eval2D[i].u2,
+							   gleval_sizes[i], to->eval2D[i].uorder,
+                               to->eval2D[i].v1, to->eval2D[i].v2,
+                               gleval_sizes[i], to->eval2D[i].vorder,
+                               to->eval2D[i].coeff);
 				FILLDIRTY(e->dirty);
 				FILLDIRTY(e->eval2D[i]);
 			}
@@ -937,7 +937,8 @@ crStateEvaluatorSwitch(CREvaluatorBits *e, CRbitvalue * bitID,
 	}
 	if (CHECKDIRTY(e->grid1D, bitID)) {
 		if (from->u11D != to->u11D ||
-				from->u21D != to->u21D || from->un1D != to->un1D) {
+				from->u21D != to->u21D ||
+                from->un1D != to->un1D) {
 			diff_api.MapGrid1d(to->un1D, to->u11D, to->u21D);
 			FILLDIRTY(e->dirty);
 			FILLDIRTY(e->grid1D);
@@ -946,12 +947,13 @@ crStateEvaluatorSwitch(CREvaluatorBits *e, CRbitvalue * bitID,
 	}
 	if (CHECKDIRTY(e->grid2D, bitID)) {
 		if (from->u12D != to->u12D ||
-				from->u22D != to->u22D ||
-				from->un2D != to->un2D ||
-				from->v12D != to->v12D ||
-				from->v22D != to->v22D || from->vn2D != to->vn2D) {
+			from->u22D != to->u22D ||
+			from->un2D != to->un2D ||
+			from->v12D != to->v12D ||
+			from->v22D != to->v22D ||
+            from->vn2D != to->vn2D) {
 			diff_api.MapGrid2d(to->un2D, to->u12D, to->u22D,
-												 to->vn2D, to->v12D, to->v22D);
+							   to->vn2D, to->v12D, to->v22D);
 			FILLDIRTY(e->dirty);
 			FILLDIRTY(e->grid1D);
 		}
@@ -995,18 +997,18 @@ crStateEvaluatorDiff(CREvaluatorBits *e, CRbitvalue *bitID,
 			int size = from->eval1D[i].order * gleval_sizes[i] *
 				sizeof(*from->eval1D[i].coeff);
 			if (from->eval1D[i].order != to->eval1D[i].order ||
-					from->eval1D[i].u1 != from->eval1D[i].u1 ||
-					from->eval1D[i].u2 != from->eval1D[i].u2 ||
-					crMemcmp((const void *) from->eval1D[i].coeff,
-									 (const void *) to->eval1D[i].coeff, size)) {
+				from->eval1D[i].u1    != to->eval1D[i].u1 ||
+				from->eval1D[i].u2    != to->eval1D[i].u2 ||
+				crMemcmp((const void *) from->eval1D[i].coeff,
+						 (const void *) to->eval1D[i].coeff, size)) {
 				diff_api.Map1f(i + GL_MAP1_COLOR_4, to->eval1D[i].u1,
-											 to->eval1D[i].u2, gleval_sizes[i], to->eval1D[i].order,
-											 to->eval1D[i].coeff);
+							   to->eval1D[i].u2, gleval_sizes[i], to->eval1D[i].order,
+							   to->eval1D[i].coeff);
 				from->eval1D[i].order = to->eval1D[i].order;
-				from->eval1D[i].u1 = from->eval1D[i].u1;
-				from->eval1D[i].u2 = from->eval1D[i].u2;
+				from->eval1D[i].u1    = to->eval1D[i].u1;
+				from->eval1D[i].u2    = to->eval1D[i].u2;
 				crMemcpy((void *) from->eval1D[i].coeff,
-								 (const void *) to->eval1D[i].coeff, size);
+						 (const void *) to->eval1D[i].coeff, size);
 			}
 			CLEARDIRTY(e->eval1D[i], nbitID);
 		}
@@ -1021,37 +1023,38 @@ crStateEvaluatorDiff(CREvaluatorBits *e, CRbitvalue *bitID,
 			CLEARDIRTY(e->enable2D[i], nbitID);
 		}
 		if (to->enable2D[i] && CHECKDIRTY(e->eval2D[i], bitID)) {
-			int size = from->eval2D[i].uorder * from->eval2D[i].vorder *
-				gleval_sizes[i] * sizeof(*from->eval2D[i].coeff);
+			int size = from->eval2D[i].uorder * from->eval2D[i].vorder
+                     * gleval_sizes[i] * sizeof(*from->eval2D[i].coeff);
 			if (from->eval2D[i].uorder != to->eval2D[i].uorder ||
-					from->eval2D[i].vorder != to->eval2D[i].vorder ||
-					from->eval2D[i].u1 != from->eval2D[i].u1 ||
-					from->eval2D[i].u2 != from->eval2D[i].u2 ||
-					from->eval2D[i].v1 != from->eval2D[i].v1 ||
-					from->eval2D[i].v2 != from->eval2D[i].v2 ||
-					crMemcmp((const void *) from->eval2D[i].coeff,
-									 (const void *) to->eval2D[i].coeff, size)) {
+				from->eval2D[i].vorder != to->eval2D[i].vorder ||
+				from->eval2D[i].u1     != to->eval2D[i].u1 ||
+				from->eval2D[i].u2     != to->eval2D[i].u2 ||
+				from->eval2D[i].v1     != to->eval2D[i].v1 ||
+				from->eval2D[i].v2     != to->eval2D[i].v2 ||
+				crMemcmp((const void *) from->eval2D[i].coeff,
+						 (const void *) to->eval2D[i].coeff, size)) {
 				diff_api.Map2f(i + GL_MAP2_COLOR_4,
-											 to->eval2D[i].u1, to->eval2D[i].u2,
-											 gleval_sizes[i], to->eval2D[i].uorder,
-											 to->eval2D[i].v1, to->eval2D[i].v2,
-											 gleval_sizes[i], to->eval2D[i].vorder,
-											 to->eval2D[i].coeff);
+							   to->eval2D[i].u1, to->eval2D[i].u2,
+                               gleval_sizes[i], to->eval2D[i].uorder,
+                               to->eval2D[i].v1, to->eval2D[i].v2,
+                               gleval_sizes[i], to->eval2D[i].vorder,
+                               to->eval2D[i].coeff);
 				from->eval2D[i].uorder = to->eval2D[i].uorder;
 				from->eval2D[i].vorder = to->eval2D[i].vorder;
-				from->eval2D[i].u1 = from->eval2D[i].u1;
-				from->eval2D[i].u2 = from->eval2D[i].u2;
-				from->eval2D[i].v1 = from->eval2D[i].v1;
-				from->eval2D[i].v2 = from->eval2D[i].v2;
+				from->eval2D[i].u1     = to->eval2D[i].u1;
+				from->eval2D[i].u2     = to->eval2D[i].u2;
+				from->eval2D[i].v1     = to->eval2D[i].v1;
+				from->eval2D[i].v2     = to->eval2D[i].v2;
 				crMemcpy((void *) from->eval2D[i].coeff,
-								 (const void *) to->eval2D[i].coeff, size);
+						 (const void *) to->eval2D[i].coeff, size);
 			}
 			CLEARDIRTY(e->eval2D[i], nbitID);
 		}
 	}
 	if (CHECKDIRTY(e->grid1D, bitID)) {
 		if (from->u11D != to->u11D ||
-				from->u21D != to->u21D || from->un1D != to->un1D) {
+			from->u21D != to->u21D ||
+            from->un1D != to->un1D) {
 			diff_api.MapGrid1d(to->un1D, to->u11D, to->u21D);
 			from->u11D = to->u11D;
 			from->u21D = to->u21D;
@@ -1064,9 +1067,10 @@ crStateEvaluatorDiff(CREvaluatorBits *e, CRbitvalue *bitID,
 				from->u22D != to->u22D ||
 				from->un2D != to->un2D ||
 				from->v12D != to->v12D ||
-				from->v22D != to->v22D || from->vn2D != to->vn2D) {
+				from->v22D != to->v22D ||
+                from->vn2D != to->vn2D) {
 			diff_api.MapGrid2d(to->un2D, to->u12D, to->u22D,
-												 to->vn2D, to->v12D, to->v22D);
+							   to->vn2D, to->v12D, to->v22D);
 			from->u12D = to->u12D;
 			from->u22D = to->u22D;
 			from->un2D = to->un2D;
