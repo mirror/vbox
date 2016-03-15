@@ -4099,7 +4099,7 @@ static void generate_texcoord_assignment(struct wined3d_shader_buffer *buffer, I
 
     for (i = 0, map = ps->baseShader.reg_maps.texcoord; map && i < min(8, MAX_REG_TEXCRD); map >>= 1, ++i)
     {
-        if (!map & 1)
+        if (!(map & 1))
             continue;
 
         /* so far we assume that if texcoord_mask has any write flags, they are assigned appropriately with pixel shader */
