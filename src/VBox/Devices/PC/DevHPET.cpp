@@ -1002,7 +1002,7 @@ static void hpetR3TimerUpdateIrq(HPET *pThis, struct HPETTIMER *pHpetTimer)
 
         /* ISR bits are only set in level-triggered mode. */
         if ((pHpetTimer->u64Config & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_LEVEL)
-            pThis->u64Isr |= (uint64_t)(1 << pHpetTimer->idxTimer);
+            pThis->u64Isr |= UINT64_C(1) << pHpetTimer->idxTimer;
 
         /* We trigger flip/flop in edge-triggered mode and do nothing in
            level-triggered mode yet. */
