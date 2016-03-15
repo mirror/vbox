@@ -1100,7 +1100,7 @@ static bool rtZipLZFValidHeader(PCRTZIPLZFHDR pHdr)
         ||  pHdr->cbUncompressed > RTZIPLZF_MAX_UNCOMPRESSED_DATA_SIZE
        )
     {
-        AssertMsgFailed(("Invalid LZF header! %.*Rhxs\n", sizeof(pHdr), pHdr));
+        AssertMsgFailed(("Invalid LZF header! %.*Rhxs\n", sizeof(*pHdr), pHdr));
         return false;
     }
     return true;
