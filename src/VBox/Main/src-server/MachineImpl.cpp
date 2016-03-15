@@ -9613,7 +9613,7 @@ HRESULT Machine::i_getMediumAttachmentsOfController(const Utf8Str &aName,
     {
         const ComObjPtr<MediumAttachment> &pAtt = *it;
         // should never happen, but deal with NULL pointers in the list.
-        AssertStmt(!pAtt.isNull(), continue);
+        AssertContinue(!pAtt.isNull());
 
         // getControllerName() needs caller+read lock
         AutoCaller autoAttCaller(pAtt);
@@ -12134,7 +12134,7 @@ void Machine::i_getDiskList(MediaList &list)
     {
         MediumAttachment* pAttach = *it;
         /* just in case */
-        AssertStmt(pAttach, continue);
+        AssertContinue(pAttach);
 
         AutoCaller localAutoCallerA(pAttach);
         if (FAILED(localAutoCallerA.rc())) continue;

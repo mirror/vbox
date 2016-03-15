@@ -61,12 +61,12 @@ static bool rtCrStoreIsDarwinCertTrustworthy(SecCertificateRef hCert, SecTrustSe
         for (CFIndex i = 0; i < cTrustSettings; i++)
         {
             CFDictionaryRef hDict = (CFDictionaryRef)CFArrayGetValueAtIndex(hTrustSettings, i);
-            AssertStmt(CFGetTypeID(hDict) == CFDictionaryGetTypeID(), continue);
+            AssertContinue(CFGetTypeID(hDict) == CFDictionaryGetTypeID());
 
             CFNumberRef hNum = (CFNumberRef)CFDictionaryGetValue(hDict, kSecTrustSettingsResult);
             if (hNum)
             {
-                AssertStmt(CFGetTypeID(hNum) == CFNumberGetTypeID(), continue);
+                AssertContinue(CFGetTypeID(hNum) == CFNumberGetTypeID());
                 SInt32 iNum;
                 if (CFNumberGetValue(hNum, kCFNumberSInt32Type, &iNum))
                 {

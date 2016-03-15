@@ -776,7 +776,7 @@ static int rtProcWinFigureWhichPrivilegeNotHeld2(void)
             } uNew, uOld;
             uNew.TokPriv.PrivilegeCount = 1;
             uNew.TokPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-            AssertStmt(LookupPrivilegeValue(NULL, s_aPrivileges[i].pszName, &uNew.TokPriv.Privileges[0].Luid), continue);
+            AssertContinue(LookupPrivilegeValue(NULL, s_aPrivileges[i].pszName, &uNew.TokPriv.Privileges[0].Luid));
             uOld = uNew;
             SetLastError(NO_ERROR);
             DWORD cbActual = RT_OFFSETOF(TOKEN_PRIVILEGES, Privileges[1]);
@@ -1085,7 +1085,7 @@ static bool rtProcWinAddAccessAllowedAce(PACL pDstAcl, uint32_t fAceFlags, uint3
     while (i-- > 0)
     {
         PACE_HEADER pAceHdr;
-        AssertStmt(GetAce(pDstAcl, i, (PVOID *)&pAceHdr), continue);
+        AssertContinue(GetAce(pDstAcl, i, (PVOID *)&pAceHdr));
         if (   pAceHdr->AceSize == cbAllowedAce
             && memcmp(pAceHdr, &AceBuf.Core, cbAllowedAce) == 0)
             return true;

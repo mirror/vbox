@@ -1074,7 +1074,7 @@ void MachineDiskUsage::collect()
         ComObjPtr<Medium> pMedium = *it;
 
         /* just in case */
-        AssertStmt(!pMedium.isNull(), continue);
+        AssertContinue(!pMedium.isNull());
 
         AutoCaller localAutoCaller(pMedium);
         if (FAILED(localAutoCaller.rc())) continue;
