@@ -304,7 +304,7 @@ static void page_init(void)
     /* NOTE: we can always suppose that qemu_host_page_size >=
        TARGET_PAGE_SIZE */
 #ifdef VBOX
-    RTMemProtect(code_gen_buffer, sizeof(code_gen_buffer),
+    RTMemProtect(code_gen_buffer, code_gen_buffer_size,
                  RTMEM_PROT_EXEC | RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     qemu_real_host_page_size = PAGE_SIZE;
 #else /* !VBOX */
