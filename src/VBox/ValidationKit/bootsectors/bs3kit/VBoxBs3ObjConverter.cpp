@@ -825,6 +825,7 @@ typedef struct ELFDETAILS
 
 } ELFDETAILS;
 typedef ELFDETAILS *PELFDETAILS;
+typedef ELFDETAILS const *PCELFDETAILS;
 
 
 static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFile, PELFDETAILS pElfStuff)
@@ -910,6 +911,8 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
         if (!RT_IS_POWER_OF_TWO(paShdrs[i].sh_addralign))
             return error(pszFile, "Section #%u '%s' alignment value is not a power of two: %#" ELF_FMT_X64 "\n",
                          i, pszShNm, paShdrs[i].sh_addralign);
+        if (paShdrs[i].sh_addr != 0)
+            return error(pszFile, "Section #%u '%s' has non-zero address: %#" ELF_FMT_X64 "\n", i, pszShNm, paShdrs[i].sh_addr);
 
         if (paShdrs[i].sh_type == SHT_RELA)
         {
@@ -918,13 +921,16 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
                              paShdrs[i].sh_entsize, i, pszShNm);
             uint32_t const cRelocs = paShdrs[i].sh_size / sizeof(Elf64_Rela);
             if (cRelocs * sizeof(Elf64_Rela) != paShdrs[i].sh_size)
-                return error(pszFile, "Uneven relocation entry count in #%u (%s): sh_size=%#" ELF_FMT_X64 "\n", (unsigned)sizeof(Elf64_Rela),
-                             paShdrs[i].sh_entsize, i, pszShNm, paShdrs[i].sh_size);
+                return error(pszFile, "Uneven relocation entry count in #%u (%s): sh_size=%#" ELF_FMT_X64 "\n",
+                             i, pszShNm, paShdrs[i].sh_size);
             if (   paShdrs[i].sh_offset > cbFile
                 || paShdrs[i].sh_size  >= cbFile
                 || paShdrs[i].sh_offset + paShdrs[i].sh_size > cbFile)
                 return error(pszFile, "The content of section #%u '%s' is outside the file (%#" ELF_FMT_X64 " LB %#" ELF_FMT_X64 ", cbFile=%#lx)\n",
                              i, pszShNm, paShdrs[i].sh_offset, paShdrs[i].sh_size, (unsigned long)cbFile);
+            if (paShdrs[i].sh_link != i - 1)
+                return error(pszFile, "Expected relocation section #%u (%s) to link to previous section: sh_link=%#u\n",
+                             i, pszShNm, (unsigned)paShdrs[i].sh_link);
 
             Elf64_Rela const  *paRelocs = (Elf64_Rela *)&pbFile[paShdrs[i].sh_offset];
             for (uint32_t j = 0; j < cRelocs; j++)
@@ -976,6 +982,381 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
 
 #ifdef ELF_TO_OMF_CONVERSION
 
+
+static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS pElfStuff)
+{
+    /*
+     * Do the list of names pass.
+     */
+    uint16_t idxGrpFlat, idxGrpData;
+    uint16_t idxClassCode, idxClassData, idxClassDwarf;
+    if (   !omfWriter_LNamesBegin(pThis)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("FLAT"), &idxGrpFlat)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3DATA64_GROUP"), &idxGrpData)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3CODE64"), &idxClassCode)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("FAR_DATA"), &idxClassData)
+        || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("DWARF"), &idxClassDwarf)
+       )
+        return false;
+
+    bool              fHaveData = false;
+    Elf64_Shdr const *pShdr     = &pElfStuff->paShdrs[1];
+    Elf64_Half const  cSections = pElfStuff->pEhdr->e_shnum;
+    for (Elf64_Half i = 1; i < cSections; i++, pShdr++)
+    {
+        const char *pszName = &pElfStuff->pchShStrTab[pShdr->sh_name];
+        if (*pszName == '\0')
+            return error(pThis->pszSrc, "Section #%u has an empty name!\n", i);
+
+        switch (pShdr->sh_type)
+        {
+            case SHT_PROGBITS:
+            case SHT_NOBITS:
+                /* We drop a few sections we don't want:. */
+                if (   strcmp(pszName, ".comment") != 0         /* compiler info  */
+                    && strcmp(pszName, ".note.GNU-stack") != 0  /* some empty section for hinting the linker/whatever */
+                    && strcmp(pszName, ".eh_frame") != 0        /* unwind / exception info */
+                    )
+                {
+                    pThis->paSegments[i].iSegDef  = UINT16_MAX;
+                    pThis->paSegments[i].iGrpDef  = UINT16_MAX;
+
+                    /* Translate the name and determine group and class.
+                       Note! We currently strip sub-sections. */
+                    if (   strcmp(pszName, ".text") == 0
+                        || strncmp(pszName, RT_STR_TUPLE(".text.")) == 0)
+                    {
+                        pszName = "BS3TEXT64";
+                        pThis->paSegments[i].iGrpNm   = idxGrpFlat;
+                        pThis->paSegments[i].iClassNm = idxClassCode;
+                    }
+                    else if (   strcmp(pszName, ".data") == 0
+                             || strncmp(pszName, RT_STR_TUPLE(".data.")) == 0)
+                    {
+                        pszName = "BS3DATA64";
+                        pThis->paSegments[i].iGrpNm   = idxGrpData;
+                        pThis->paSegments[i].iClassNm = idxClassData;
+                    }
+                    else if (strcmp(pszName, ".bss") == 0)
+                    {
+                        pszName = "BS3BSS64";
+                        pThis->paSegments[i].iGrpNm   = idxGrpData;
+                        pThis->paSegments[i].iClassNm = idxClassData;
+                    }
+                    else if (   strcmp(pszName, ".rodata") == 0
+                             || strncmp(pszName, RT_STR_TUPLE(".rodata.")) == 0)
+                    {
+                        pszName = "BS3DATA64CONST";
+                        pThis->paSegments[i].iGrpNm   = idxGrpData;
+                        pThis->paSegments[i].iClassNm = idxClassData;
+                    }
+                    else if (strncmp(pszName, RT_STR_TUPLE(".debug_")) == 0)
+                    {
+                        pThis->paSegments[i].iGrpNm   = UINT16_MAX;
+                        pThis->paSegments[i].iClassNm = idxClassDwarf;
+                    }
+                    else
+                    {
+                        pThis->paSegments[i].iGrpNm   = idxGrpData;
+                        pThis->paSegments[i].iClassNm = idxClassData;
+                        error(pThis->pszSrc, "Unknown data (?) segment: '%s'\n", pszName);
+                    }
+
+                    /* Save the name. */
+                    pThis->paSegments[i].pszName  = strdup(pszName);
+                    if (!pThis->paSegments[i].pszName)
+                        return error(pThis->pszSrc, "Out of memory!\n");
+
+                    /* Add the section name. */
+                    if (!omfWriter_LNamesAdd(pThis, pThis->paSegments[i].pszName, &pThis->paSegments[i].iSegNm))
+                        return false;
+
+                    fHaveData |= pThis->paSegments[i].iGrpDef == idxGrpData;
+                    break;
+                }
+                /* fall thru */
+
+            default:
+                pThis->paSegments[i].iSegDef  = UINT16_MAX;
+                pThis->paSegments[i].iGrpDef  = UINT16_MAX;
+                pThis->paSegments[i].iSegNm   = UINT16_MAX;
+                pThis->paSegments[i].iGrpNm   = UINT16_MAX;
+                pThis->paSegments[i].iClassNm = UINT16_MAX;
+                pThis->paSegments[i].pszName  = NULL;
+                break;
+        }
+    }
+
+    if (!omfWriter_LNamesEnd(pThis))
+        return false;
+
+    /*
+     * Emit segment definitions.
+     */
+    uint16_t iSegDef = 1; /* Start counting at 1. */
+    pShdr = &pElfStuff->paShdrs[1];
+    for (Elf64_Half i = 1; i < cSections; i++, pShdr++)
+    {
+        if (pThis->paSegments[i].iSegDef == UINT16_MAX)
+            continue;
+
+        uint8_t bSegAttr = 0;
+
+        /* The A field. */
+        switch (pShdr->sh_addralign)
+        {
+            case 0:
+            case 1:
+                bSegAttr |= 1 << 5;
+                break;
+            case 2:
+                bSegAttr |= 2 << 5;
+                break;
+            case 4:
+                bSegAttr |= 5 << 5;
+                break;
+            case 8:
+            case 16:
+                bSegAttr |= 3 << 5;
+                break;
+            case 32:
+            case 64:
+            case 128:
+            case 256:
+                bSegAttr |= 4 << 5;
+                break;
+            default:
+                bSegAttr |= 6 << 5; /* page aligned, pharlabs extension. */
+                break;
+        }
+
+        /* The C field. */
+        bSegAttr |= 2 << 2; /* public */
+
+        /* The B field. We don't have 4GB segments, so leave it as zero. */
+
+        /* The D field shall be set as we're doing USE32.  */
+        bSegAttr |= 1;
+
+
+        /* Done. */
+        if (!omfWriter_SegDef(pThis, bSegAttr, (uint32_t)pShdr->sh_size,
+                              pThis->paSegments[i].iSegNm,
+                              pThis->paSegments[i].iClassNm))
+            return false;
+        pThis->paSegments[i].iSegDef = iSegDef++;
+    }
+
+    /*
+     * Flat group definition (#1) - special, no members.
+     */
+    uint16_t iGrpDef = 1;
+    if (   !omfWriter_GrpDefBegin(pThis, idxGrpFlat)
+        || !omfWriter_GrpDefEnd(pThis))
+        return false;
+    for (uint16_t i = 0; i < cSections; i++)
+        if (pThis->paSegments[i].iGrpNm == idxGrpFlat)
+            pThis->paSegments[i].iGrpDef = iGrpDef;
+    pThis->idxGrpFlat = iGrpDef++;
+
+    /*
+     * Data group definition (#2).
+     */
+    /** @todo do we need to consider missing segments and ordering? */
+    uint16_t cGrpNms = 0;
+    uint16_t aiGrpNms[2];
+    if (fHaveData)
+        aiGrpNms[cGrpNms++] = idxGrpData;
+    for (uint32_t iGrpNm = 0; iGrpNm < cGrpNms; iGrpNm++)
+    {
+        if (!omfWriter_GrpDefBegin(pThis, aiGrpNms[iGrpNm]))
+            return false;
+        for (uint16_t i = 0; i < cSections; i++)
+            if (pThis->paSegments[i].iGrpNm == aiGrpNms[iGrpNm])
+            {
+                pThis->paSegments[i].iGrpDef = iGrpDef;
+                if (!omfWriter_GrpDefAddSegDef(pThis, pThis->paSegments[i].iSegDef))
+                    return false;
+            }
+        if (!omfWriter_GrpDefEnd(pThis))
+            return false;
+        iGrpDef++;
+    }
+
+    return true;
+}
+
+static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS pElfStuff)
+{
+    if (!pElfStuff->cSymbols)
+        return true;
+
+    /*
+     * Process the symbols the first.
+     */
+    uint32_t cAbsSyms = 0;
+    uint32_t cExtSyms = 0;
+    uint32_t cPubSyms = 0;
+    for (uint32_t iSeg = 0; iSeg < pThis->cSegments; iSeg++)
+        pThis->paSegments[iSeg].cPubDefs = 0;
+
+    uint32_t const          cSections = pElfStuff->pEhdr->e_shnum;
+    uint32_t const          cSymbols  = pElfStuff->cSymbols;
+    Elf64_Sym const * const paSymbols = pElfStuff->paSymbols;
+    for (uint32_t iSym = 0; iSym < cSymbols; iSym++)
+    {
+        const uint8_t bBind      = ELF64_ST_BIND(paSymbols[iSym].st_info);
+        const uint8_t bType      = ELF64_ST_TYPE(paSymbols[iSym].st_info);
+        const char   *pszSymName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
+        if (   *pszSymName == '\0'
+            && bType == STT_SECTION
+            && paSymbols[iSym].st_shndx < cSections)
+            pszSymName = &pElfStuff->pchShStrTab[pElfStuff->paShdrs[paSymbols[iSym].st_shndx].sh_name];
+
+        pThis->paSymbols[iSym].enmType   = OMFSYMTYPE_IGNORED;
+        pThis->paSymbols[iSym].idx       = UINT16_MAX;
+        pThis->paSymbols[iSym].idxSegDef = UINT16_MAX;
+        pThis->paSymbols[iSym].idxGrpDef = UINT16_MAX;
+
+        uint32_t const idxSection = paSymbols[iSym].st_shndx;
+        if (idxSection == SHN_UNDEF)
+        {
+            if (bBind == STB_GLOBAL)
+            {
+                pThis->paSymbols[iSym].enmType = OMFSYMTYPE_EXTDEF;
+                cExtSyms++;
+                if (*pszSymName == '\0')
+                    return error(pThis->pszSrc, "External symbol #%u (%s) has an empty name.\n", iSym, pszSymName);
+            }
+            else
+                return error(pThis->pszSrc, "Unsupported or invalid bind type %#x for undefined symbol #%u (%s)\n",
+                             bBind, iSym, pszSymName);
+        }
+        else if (idxSection < cSections)
+        {
+            pThis->paSymbols[iSym].idxSegDef = pThis->paSegments[idxSection - 1].iSegDef;
+            pThis->paSymbols[iSym].idxGrpDef = pThis->paSegments[idxSection - 1].iGrpDef;
+            if (bBind == STB_GLOBAL)
+            {
+                pThis->paSymbols[iSym].enmType = OMFSYMTYPE_PUBDEF;
+                pThis->paSegments[idxSection].cPubDefs++;
+                cPubSyms++;
+                if (bType == STT_SECTION)
+                    return error(pThis->pszSrc, "Don't know how to export STT_SECTION symbol #%u (%s)\n", iSym, pszSymName);
+                if (*pszSymName == '\0')
+                    return error(pThis->pszSrc, "Public symbol #%u (%s) has an empty name.\n", iSym, pszSymName);
+            }
+            else if (bType == STT_SECTION)
+                pThis->paSymbols[iSym].enmType = OMFSYMTYPE_SEGDEF;
+            else
+                pThis->paSymbols[iSym].enmType = OMFSYMTYPE_INTERNAL;
+        }
+        else if (idxSection == SHN_ABS)
+        {
+            if (bType != STT_FILE)
+            {
+                if (bBind == STB_GLOBAL)
+                {
+                    pThis->paSymbols[iSym].enmType   = OMFSYMTYPE_PUBDEF;
+                    pThis->paSymbols[iSym].idxSegDef = 0;
+                    pThis->paSymbols[iSym].idxGrpDef = 0;
+                    cAbsSyms++;
+                    if (*pszSymName == '\0')
+                        return error(pThis->pszSrc, "Public absolute symbol #%u (%s) has an empty name.\n", iSym, pszSymName);
+                }
+                else
+                    return error(pThis->pszSrc, "Unsupported or invalid bind type %#x for absolute symbol #%u (%s)\n",
+                                 bBind, iSym, pszSymName);
+            }
+        }
+        else
+            return error(pThis->pszSrc, "Unsupported or invalid section number %#x for symbol #%u (%s)\n",
+                         idxSection, iSym, pszSymName);
+    }
+
+    /*
+     * Emit the PUBDEFs the first time around (see order of records in TIS spec).
+     */
+    uint16_t idxPubDef = 1;
+    if (cPubSyms)
+    {
+        for (uint32_t iSeg = 0; iSeg < pThis->cSegments; iSeg++)
+            if (pThis->paSegments[iSeg].cPubDefs > 0)
+            {
+                uint16_t const idxSegDef = pThis->paSegments[iSeg].iSegDef;
+                if (!omfWriter_PubDefBegin(pThis, pThis->paSegments[iSeg].iGrpDef, idxSegDef))
+                    return false;
+                for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
+                    if (   pThis->paSymbols[iSym].idxSegDef == idxSegDef
+                        && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
+                    {
+                        const char *pszName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
+                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName))
+                            return false;
+
+                        /* If the symbol doesn't start with an underscore and is a _c64 or _lm64 symbol,
+                           add an underscore prefixed alias to ease access from 16-bit and 32-bit code. */
+                        size_t cchName = strlen(pszName);
+                        if (   *pszName != '_'
+                            && (   (cchName > 4 && strcmp(&pszName[cchName - 4], "_c64")  == 0)
+                                || (cchName > 5 && strcmp(&pszName[cchName - 5], "_lm64") == 0) ) )
+                        {
+                            char   szCdeclName[512];
+                            if (cchName > sizeof(szCdeclName) - 2)
+                                cchName = sizeof(szCdeclName) - 2;
+                            szCdeclName[0] = '_';
+                            memcpy(&szCdeclName[1], pszName, cchName);
+                            szCdeclName[cchName + 1] = '\0';
+                            if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, szCdeclName))
+                                return false;
+                        }
+
+                        pThis->paSymbols[iSym].idx = idxPubDef++;
+                    }
+                if (!omfWriter_PubDefEnd(pThis))
+                    return false;
+            }
+    }
+
+    if (cAbsSyms > 0)
+    {
+        if (!omfWriter_PubDefBegin(pThis, 0, 0))
+            return false;
+        for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
+            if (   pThis->paSymbols[iSym].idxSegDef == 0
+                && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
+            {
+                const char *pszName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
+                if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName))
+                    return false;
+                pThis->paSymbols[iSym].idx = idxPubDef++;
+            }
+        if (!omfWriter_PubDefEnd(pThis))
+            return false;
+    }
+
+    /*
+     * Go over the symbol table and emit external definition records.
+     */
+    if (!omfWriter_ExtDefBegin(pThis))
+        return false;
+    uint16_t idxExtDef = 1;
+    for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
+        if (pThis->paSymbols[iSym].enmType == OMFSYMTYPE_EXTDEF)
+        {
+            const char *pszName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
+            if (!omfWriter_ExtDefAdd(pThis, pszName))
+                return false;
+            pThis->paSymbols[iSym].idx = idxExtDef++;
+        }
+
+    if (!omfWriter_ExtDefEnd(pThis))
+        return false;
+
+    return true;
+}
+
+
 static bool convertElfToOmf(const char *pszFile, uint8_t const *pbFile, size_t cbFile, FILE *pDst)
 {
     /*
@@ -1002,8 +1383,8 @@ static bool convertElfToOmf(const char *pszFile, uint8_t const *pbFile, size_t c
         Elf64_Shdr const *paShdrs   = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
         const char       *pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
 
-        if (   convertElfSectionsToSegDefsAndGrpDefs(pThis, paShdrs, pHdr->NumberOfSections)
-            //&& convertElfSymbolsToPubDefsAndExtDefs(pThis, paSymTab, pHdr->NumberOfSymbols, pchStrTab, paShdrs)
+        if (   convertElfSectionsToSegDefsAndGrpDefs(pThis, &ElfStuff)
+            && convertElfSymbolsToPubDefsAndExtDefs(pThis, &ElfStuff)
             && omfWriter_LinkPassSeparator(pThis)
             //&& convertElfSectionsToLeDataAndFixupps(pThis, pbFile, cbFile, paShdrs, pHdr->NumberOfSections,
             //                                        paSymTab, pHdr->NumberOfSymbols, pchStrTab)
