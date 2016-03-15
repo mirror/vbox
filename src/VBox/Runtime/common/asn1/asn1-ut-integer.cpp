@@ -356,6 +356,7 @@ RTDECL(int) RTAsn1Integer_ToString(PRTASN1INTEGER pThis, char *pszBuf, size_t cb
         {
             ssize_t cchFormat = RTStrFormatU64(pszBuf, cbBuf, pThis->uValue.u, 16, (int)cbActual - 1 /*cchWidth*/, 0,
                                                RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD);
+            rc = VINF_SUCCESS;
             AssertStmt(cchFormat == (ssize_t)cbActual - 1, rc = VERR_INTERNAL_ERROR_3);
         }
         else
