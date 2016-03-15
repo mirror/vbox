@@ -343,6 +343,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strformat.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strformatrt.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strformattype.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/string/strformatnum.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/stringalloc.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strlen.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strncmp.asm \
