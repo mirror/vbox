@@ -1280,16 +1280,18 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtr(pCtx->mpResp);
 
-#define REGISTER_CALLBACK(x)                                        \
-    rc = pCtx->mpResp->setCallback(x, i_sendURIDataCallback, pCtx); \
-    if (RT_FAILURE(rc))                                             \
-        return rc;
+#define REGISTER_CALLBACK(x)                                            \
+    do {                                                                \
+        rc = pCtx->mpResp->setCallback(x, i_sendURIDataCallback, pCtx); \
+        if (RT_FAILURE(rc))                                             \
+            return rc;                                                  \
+    } while (0)
 
 #define UNREGISTER_CALLBACK(x)                        \
-    {                                                 \
+    do {                                              \
         int rc2 = pCtx->mpResp->setCallback(x, NULL); \
         AssertRC(rc2);                                \
-    }
+    } while (0)
 
     int rc = pCtx->mURI.init(mData.mcbBlockSize);
     if (RT_FAILURE(rc))
