@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2015 Oracle Corporation
+ * Copyright (C) 2009-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,12 +35,17 @@
 #include <iprt/err.h>
 
 
-RTDECL(int) RTStrPrintHexBytes(char *pszBuf, size_t cchBuf, void const *pv, size_t cb, uint32_t fFlags)
+RTDECL(int) RTStrPrintHexBytes(char *pszBuf, size_t cbBuf, void const *pv, size_t cb, uint32_t fFlags)
 {
-    AssertReturn(!(fFlags & ~RTSTRPRINTHEXBYTES_F_UPPER), VERR_INVALID_PARAMETER);
+    AssertReturn(   !(fFlags & ~(RTSTRPRINTHEXBYTES_F_UPPER | RTSTRPRINTHEXBYTES_F_SEP_SPACE | RTSTRPRINTHEXBYTES_F_SEP_COLON))
+                 &&    (fFlags & (RTSTRPRINTHEXBYTES_F_SEP_SPACE | RTSTRPRINTHEXBYTES_F_SEP_COLON))
+                    != (RTSTRPRINTHEXBYTES_F_SEP_SPACE | RTSTRPRINTHEXBYTES_F_SEP_COLON),
+                 VERR_INVALID_FLAGS);
     AssertPtrReturn(pszBuf, VERR_INVALID_POINTER);
     AssertReturn(cb * 2 >= cb, VERR_BUFFER_OVERFLOW);
-    AssertReturn(cchBuf >= cb * 2 + 1, VERR_BUFFER_OVERFLOW);
+    char const chSep = fFlags & RTSTRPRINTHEXBYTES_F_SEP_SPACE ? ' '
+                     : fFlags & RTSTRPRINTHEXBYTES_F_SEP_COLON ? ':' : '\0';
+    AssertReturn(cbBuf >= cb * (2 + (chSep != '\0')) - (chSep != '\0') + 1, VERR_BUFFER_OVERFLOW);
     if (cb)
         AssertPtrReturn(pv, VERR_INVALID_POINTER);
 
@@ -49,12 +54,31 @@ RTDECL(int) RTStrPrintHexBytes(char *pszBuf, size_t cchBuf, void const *pv, size
     const char *pszHexDigits = !(fFlags & RTSTRPRINTHEXBYTES_F_UPPER) ? s_szHexDigitsLower : s_szHexDigitsUpper;
 
     uint8_t const *pb = (uint8_t const *)pv;
-    while (cb-- > 0)
+
+    if (!chSep)
+    {
+        while (cb-- > 0)
+        {
+            uint8_t b = *pb++;
+            *pszBuf++ = pszHexDigits[b >> 4];
+            *pszBuf++ = pszHexDigits[b & 0xf];
+        }
+    }
+    else if (cb-- > 0)
     {
         uint8_t b = *pb++;
         *pszBuf++ = pszHexDigits[b >> 4];
         *pszBuf++ = pszHexDigits[b & 0xf];
+
+        while (cb-- > 0)
+        {
+            b = *pb++;
+            *pszBuf++ = chSep;
+            *pszBuf++ = pszHexDigits[b >> 4];
+            *pszBuf++ = pszHexDigits[b & 0xf];
+        }
     }
+
     *pszBuf = '\0';
     return VINF_SUCCESS;
 }

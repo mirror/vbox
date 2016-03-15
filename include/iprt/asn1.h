@@ -830,6 +830,25 @@ RTDECL(int) RTAsn1Integer_UnsignedCompareWithU32(PCRTASN1INTEGER pInteger, uint3
 RTDECL(int) RTAsn1Integer_ToBigNum(PCRTASN1INTEGER pInteger, PRTBIGNUM pBigNum, uint32_t fBigNumInit);
 RTDECL(int) RTAsn1Integer_FromBigNum(PRTASN1INTEGER pThis, PCRTBIGNUM pBigNum, PCRTASN1ALLOCATORVTABLE pAllocator);
 
+/**
+ * Converts the integer to a string.
+ *
+ * This will produce a hex represenation of the number.  If it fits in 64-bit, a
+ * C style hex number will be produced.  If larger than 64-bit, it will be
+ * printed as a space separated string of hex bytes.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ASN.1 integer.
+ * @param   pszBuf              The output buffer.
+ * @param   cbBuf               The buffer size.
+ * @param   fFlags              Flags reserved for future exploits. MBZ.
+ * @param   pcbActual           Where to return the amount of buffer space used
+ *                              (i.e. including terminator). Optional.
+ *
+ * @remarks Currently assume unsigned number.
+ */
+RTDECL(int) RTAsn1Integer_ToString(PRTASN1INTEGER pThis, char *pszBuf, size_t cbBuf, uint32_t fFlags, size_t *pcbActual);
+
 RTASN1_IMPL_GEN_SEQ_OF_TYPEDEFS_AND_PROTOS(RTASN1SEQOFINTEGERS, RTASN1INTEGER, RTDECL, RTAsn1SeqOfIntegers);
 RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTASN1SETOFINTEGERS, RTASN1INTEGER, RTDECL, RTAsn1SetOfIntegers);
 

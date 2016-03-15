@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -336,6 +336,46 @@ RTDECL(int) RTAsn1Integer_FromBigNum(PRTASN1INTEGER pThis, PCRTBIGNUM pBigNum, P
     return rc;
 }
 
+
+RTDECL(int) RTAsn1Integer_ToString(PRTASN1INTEGER pThis, char *pszBuf, size_t cbBuf, uint32_t fFlags, size_t *pcbActual)
+{
+    AssertReturn(RTAsn1Integer_IsPresent(pThis), VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags == 0, VERR_INVALID_FLAGS);
+
+    /*
+     * We only do hex conversions via this API.
+     * Currently we consider all numbers to be unsigned.
+     */
+    /** @todo Signed ASN.1 INTEGER. */
+    int rc;
+    size_t cbActual;
+    if (pThis->Asn1Core.cb <= 8)
+    {
+        cbActual = 2 + pThis->Asn1Core.cb*2 + 1;
+        if (cbActual <= cbBuf)
+        {
+            ssize_t cchFormat = RTStrFormatU64(pszBuf, cbBuf, pThis->uValue.u, 16, cbActual - 1 /*cchWidth*/, 0,
+                                               RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD);
+            AssertStmt(cchFormat == (ssize_t)cbActual - 1, rc = VERR_INTERNAL_ERROR_3);
+        }
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+    else
+    {
+        cbActual = pThis->Asn1Core.cb * 3 - 1 /* save one separator */ + 1 /* terminator */;
+        if (cbActual <= cbBuf)
+        {
+            rc = RTStrPrintHexBytes(pszBuf, cbBuf, pThis->Asn1Core.uData.pv, pThis->Asn1Core.cb, RTSTRPRINTHEXBYTES_F_SEP_SPACE);
+            Assert(rc == VINF_SUCCESS);
+        }
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+    if (pcbActual)
+        *pcbActual = cbActual;
+    return rc;
+}
 
 
 /*

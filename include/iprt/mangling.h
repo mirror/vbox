@@ -2483,6 +2483,7 @@
 # define RTAsn1Integer_InitDefault                      RT_MANGLER(RTAsn1Integer_InitDefault)
 # define RTAsn1Integer_InitU64                          RT_MANGLER(RTAsn1Integer_InitU64)
 # define RTAsn1Integer_ToBigNum                         RT_MANGLER(RTAsn1Integer_ToBigNum)
+# define RTAsn1Integer_ToString                         RT_MANGLER(RTAsn1Integer_ToString)
 # define RTAsn1Integer_UnsignedCompare                  RT_MANGLER(RTAsn1Integer_UnsignedCompare)
 # define RTAsn1Integer_UnsignedCompareWithU32           RT_MANGLER(RTAsn1Integer_UnsignedCompareWithU32)
 # define RTAsn1Integer_UnsignedCompareWithU64           RT_MANGLER(RTAsn1Integer_UnsignedCompareWithU64)

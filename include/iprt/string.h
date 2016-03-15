@@ -2827,17 +2827,21 @@ RTDECL(int8_t) RTStrToInt8(const char *pszValue);
  * @retval  VERR_BUFFER_OVERFLOW if the buffer is insufficent to hold the bytes.
  *
  * @param   pszBuf      Output string buffer.
- * @param   cchBuf      The size of the output buffer.
+ * @param   cbBuf       The size of the output buffer.
  * @param   pv          Pointer to the bytes to stringify.
  * @param   cb          The number of bytes to stringify.
  * @param   fFlags      Combination of RTSTRPRINTHEXBYTES_F_XXX values.
  * @sa      RTUtf16PrintHexBytes.
  */
-RTDECL(int) RTStrPrintHexBytes(char *pszBuf, size_t cchBuf, void const *pv, size_t cb, uint32_t fFlags);
+RTDECL(int) RTStrPrintHexBytes(char *pszBuf, size_t cbBuf, void const *pv, size_t cb, uint32_t fFlags);
 /** @name RTSTRPRINTHEXBYTES_F_XXX - flags for RTStrPrintHexBytes and RTUtf16PritnHexBytes.
  * @{ */
 /** Upper case hex digits, the default is lower case. */
 #define RTSTRPRINTHEXBYTES_F_UPPER      RT_BIT(0)
+/** Add a space between each group. */
+#define RTSTRPRINTHEXBYTES_F_SEP_SPACE  RT_BIT(1)
+/** Add a colon between each group. */
+#define RTSTRPRINTHEXBYTES_F_SEP_COLON  RT_BIT(2)
 /** @} */
 
 /**
