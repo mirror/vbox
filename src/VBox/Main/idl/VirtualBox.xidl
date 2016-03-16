@@ -8599,7 +8599,7 @@ and "VAR" for unsetting. -->
     name="IHost" extends="$unknown"
     uuid="afca788c-4477-787d-60b2-3fa70e56fbbc"
     wsmap="managed"
-    reservedMethods="0" reservedAttributes="12"
+    reservedMethods="2" reservedAttributes="12"
     >
     <desc>
       The IHost interface represents the physical machine that this VirtualBox
@@ -9061,39 +9061,6 @@ and "VAR" for unsetting. -->
     <attribute name="videoInputDevices" type="IHostVideoInputDevice" safearray="yes" readonly="yes">
       <desc>List of currently available host video capture devices.</desc>
     </attribute>
-
-    <method name="addUSBDeviceSource">
-      <desc>
-        Adds a new USB device source.
-      </desc>
-      <param name="backend" type="wstring" dir="in">
-        <desc>The backend to use as the new device source.</desc>
-      </param>
-      <param name="id" type="wstring" dir="in">
-        <desc>Unique ID to identify the source.</desc>
-      </param>
-      <param name="address" type="wstring" dir="in">
-        <desc>
-          Address to use, the format is dependent on the backend.
-          For USB/IP backends for example the notation is host[:port].
-        </desc>
-      </param>
-      <param name="propertyNames" type="wstring" safearray="yes" dir="in">
-        <desc>Array of property names for more detailed configuration. Not used at the moment.</desc>
-      </param>
-      <param name="propertyValues" type="wstring" safearray="yes" dir="in">
-        <desc>Array of property values for more detailed configuration. Not used at the moment.</desc>
-      </param>
-    </method>
-
-    <method name="removeUSBDeviceSource">
-      <desc>
-        Removes a previously added USB device source.
-      </desc>
-      <param name="id" type="wstring" dir="in">
-        <desc>The identifier used when the source was added.</desc>
-      </param>
-    </method>
 
   </interface>
 
@@ -18492,37 +18459,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Action performed by the host when an attached USB device
         matches this filter.
-      </desc>
-    </attribute>
-
-  </interface>
-
-
-  <!--
-  // IUSBProxyBackend
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <interface
-    name="IUSBProxyBackend" extends="$unknown"
-    uuid="dfe56449-6989-4002-80cf-3607f377d40c"
-    wsmap="managed"
-    reservedAttributes="8"
-    >
-    <desc>
-      The USBProxyBackend interface represents a source for USB devices available
-      to the host for attaching to the VM.
-    </desc>
-
-    <attribute name="name" type="wstring" readonly="yes">
-      <desc>
-        The unique name of the proxy backend.
-      </desc>
-    </attribute>
-
-    <attribute name="type" type="wstring" readonly="yes">
-      <desc>
-        The type of the backend.
       </desc>
     </attribute>
 

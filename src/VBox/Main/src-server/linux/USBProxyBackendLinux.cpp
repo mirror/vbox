@@ -59,8 +59,8 @@
 /**
  * Initialize data members.
  */
-USBProxyBackendLinux::USBProxyBackendLinux(USBProxyService *aUsbProxyService, const com::Utf8Str &strId)
-    : USBProxyBackend(aUsbProxyService, strId), mhFile(NIL_RTFILE), mhWakeupPipeR(NIL_RTPIPE),
+USBProxyBackendLinux::USBProxyBackendLinux(USBProxyService *aUsbProxyService)
+    : USBProxyBackend(aUsbProxyService), mhFile(NIL_RTFILE), mhWakeupPipeR(NIL_RTPIPE),
       mhWakeupPipeW(NIL_RTPIPE), mUsingUsbfsDevices(true /* see init */),
       mUdevPolls(0), mpWaiter(NULL)
 {
@@ -72,10 +72,8 @@ USBProxyBackendLinux::USBProxyBackendLinux(USBProxyService *aUsbProxyService, co
  *
  * @returns VBox status code.
  */
-int USBProxyBackendLinux::init(const com::Utf8Str &strAddress)
+int USBProxyBackendLinux::init(void)
 {
-    NOREF(strAddress);
-
     const char *pcszDevicesRoot;
     int rc = USBProxyLinuxChooseMethod(&mUsingUsbfsDevices, &pcszDevicesRoot);
     if (RT_SUCCESS(rc))

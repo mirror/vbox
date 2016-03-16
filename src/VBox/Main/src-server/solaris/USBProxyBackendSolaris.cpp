@@ -54,8 +54,8 @@ typedef USBDEVICELIST *PUSBDEVICELIST;
 /**
  * Initialize data members.
  */
-USBProxyBackendSolaris::USBProxyBackendSolaris(USBProxyService *aUsbProxyService, const com::Utf8Str &strId)
-    : USBProxyBackend(aUsbProxyService, strId), mUSBLibInitialized(false)
+USBProxyBackendSolaris::USBProxyBackendSolaris(USBProxyService *aUsbProxyService)
+    : USBProxyBackend(aUsbProxyService), mUSBLibInitialized(false)
 {
     LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
 }
@@ -66,10 +66,8 @@ USBProxyBackendSolaris::USBProxyBackendSolaris(USBProxyService *aUsbProxyService
  *
  * @returns VBox status code.
  */
-int USBProxyBackendSolaris::init(const com::Utf8Str &strAddress)
+int USBProxyBackendSolaris::init(void)
 {
-    NOREF(strAddress);
-
     /*
      * Create semaphore.
      */
@@ -385,7 +383,6 @@ void USBProxyBackendSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool
     if (!aSuccess && aDevice->i_getBackendUserData())
         USBLibRemoveFilter(aDevice->i_getBackendUserData());
     aDevice->i_setBackendUserData(NULL);
-    USBProxyBackend::captureDeviceCompleted(aDevice, aSuccess);
 }
 
 
@@ -441,7 +438,6 @@ void USBProxyBackendSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool
     if (!aSuccess && aDevice->i_getBackendUserData())
         USBLibRemoveFilter(aDevice->i_getBackendUserData());
     aDevice->i_setBackendUserData(NULL);
-    USBProxyBackend::releaseDeviceCompleted(aDevice, aSuccess);
 }
 
 
