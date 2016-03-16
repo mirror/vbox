@@ -1048,7 +1048,7 @@ static CFArrayRef rtHttpDarwinExecuteProxyAutoConfigurationUrl(PRTHTTPINTERNAL p
 static int rtHttpDarwinTryConfigProxy(PRTHTTPINTERNAL pThis, CFDictionaryRef hDictProxy, CFURLRef hUrlTarget, bool fIgnorePacType)
 {
     CFStringRef hStrProxyType = (CFStringRef)CFDictionaryGetValue(hDictProxy, kCFProxyTypeKey);
-    AssertContinue(hStrProxyType);
+    AssertReturn(hStrProxyType, VINF_NOT_SUPPORTED);
 
     /*
      * No proxy is fairly simple and common.
