@@ -264,8 +264,8 @@ DECLINLINE(void) usbProxyBackendUsbIpExportedDeviceN2H(PUsbIpExportedDevice pDev
 /**
  * Initialize data members.
  */
-USBProxyBackendUsbIp::USBProxyBackendUsbIp(USBProxyService *aUsbProxyService)
-    : USBProxyBackend(aUsbProxyService)
+USBProxyBackendUsbIp::USBProxyBackendUsbIp(USBProxyService *aUsbProxyService, const com::Utf8Str &strId)
+    : USBProxyBackend(aUsbProxyService, strId)
 {
     LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
 }
@@ -275,13 +275,25 @@ USBProxyBackendUsbIp::USBProxyBackendUsbIp(USBProxyService *aUsbProxyService)
  *
  * @returns S_OK on success and non-fatal failures, some COM error otherwise.
  */
-int USBProxyBackendUsbIp::init(void)
+int USBProxyBackendUsbIp::init(const com::Utf8Str &strAddress)
 {
     int rc = VINF_SUCCESS;
 
     m = new Data;
 
-    /** @todo: Pass in some config like host and port to connect to. */
+    /* Split address into hostname and port. */
+    RTCList<RTCString> lstAddress = strAddress.split(":");
+    if (lstAddress.size() < 1)
+        return VERR_INVALID_PARAMETER;
+    m->pszHost = RTStrDup(lstAddress[0].c_str());
+    if (!m->pszHost)
+        return VERR_NO_STR_MEMORY;
+    if (lstAddress.size() == 2)
+    {
+        m->uPort = lstAddress[1].toUInt32();
+        if (!m->uPort)
+            return VERR_INVALID_PARAMETER;
+    }
 
     /* Setup wakeup pipe and poll set first. */
     rc = RTSemFastMutexCreate(&m->hMtxDevices);

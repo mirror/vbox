@@ -1379,6 +1379,16 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "\n", SEP, SEP);
     }
 
+    if (fCategory & USAGE_USBDEVSOURCE)
+    {
+        RTStrmPrintf(pStrm,
+                           "%s usbdevsource %s    add <source name>\n"
+                     "                            --backend <backend>\n"
+                     "                            --address <address>\n"
+                           "%s usbdevsource %s    remove <source name>\n"
+                     "\n", SEP, SEP);
+    }
+
 #ifndef VBOX_ONLY_DOCS /* Converted to man page, not needed. */
     if (fCategory == USAGE_ALL)
     {

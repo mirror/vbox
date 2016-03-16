@@ -37,18 +37,20 @@
 /**
  * Initialize data members.
  */
-USBProxyBackend::USBProxyBackend(USBProxyService *pUsbProxyService)
-    : m_pUsbProxyService(pUsbProxyService), mThread(NIL_RTTHREAD), mTerminate(false)
+USBProxyBackend::USBProxyBackend(USBProxyService *pUsbProxyService, const com::Utf8Str &strId)
+    : m_pUsbProxyService(pUsbProxyService), mThread(NIL_RTTHREAD), mTerminate(false), m_strId(strId),
+      m_cRefs(0)
 {
-    LogFlowThisFunc(("pUsbProxyService=%p\n", pUsbProxyService));
+    LogFlowThisFunc(("pUsbProxyService=%p strId=%s\n", pUsbProxyService, strId.c_str()));
 }
 
 
 /**
  * Stub needed as long as the class isn't virtual
  */
-int USBProxyBackend::init(void)
+int USBProxyBackend::init(const com::Utf8Str &strAddress)
 {
+    NOREF(strAddress);
     return VINF_SUCCESS;
 }
 
@@ -78,17 +80,23 @@ bool USBProxyBackend::isActive(void)
 
 
 /**
- * We're using the Host object lock.
+ * Returns the ID of the instance.
  *
- * This is just a temporary measure until all the USB refactoring is
- * done, probably... For now it help avoiding deadlocks we don't have
- * time to fix.
- *
- * @returns Lock handle.
+ * @returns ID string for the instance.
  */
-RWLockHandle *USBProxyBackend::lockHandle() const
+const com::Utf8Str &USBProxyBackend::i_getId()
 {
-    return m_pUsbProxyService->lockHandle();
+    return m_strId;
+}
+
+
+/**
+ * Returns the current reference counter for the backend.
+ */
+uint32_t USBProxyBackend::i_getRefCount()
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    return m_cRefs;
 }
 
 
@@ -124,17 +132,17 @@ HRESULT USBProxyBackend::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
      */
     AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), E_FAIL);
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    AutoWriteLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
-    AssertMsgReturn(aDevice->i_isCapturableOrHeld(), ("{%s} %s\n", aDevice->i_getName().c_str(),
-                                                      aDevice->i_getStateName()), E_FAIL);
 
     /*
      * Get the lists we'll iterate.
      */
     Host::USBDeviceFilterList globalFilters;
-
     m_pUsbProxyService->i_getUSBFilters(&globalFilters);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
+    AssertMsgReturn(aDevice->i_isCapturableOrHeld(), ("{%s} %s\n", aDevice->i_getName().c_str(),
+                                                      aDevice->i_getStateName()), E_FAIL);
 
     /*
      * Run global filters filters first.
@@ -307,6 +315,9 @@ void USBProxyBackend::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSucce
 {
     NOREF(aDevice);
     NOREF(aSuccess);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    incRef();
 }
 
 
@@ -349,6 +360,9 @@ void USBProxyBackend::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSucce
 {
     NOREF(aDevice);
     NOREF(aSuccess);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    decRef();
 }
 
 
@@ -428,6 +442,9 @@ int USBProxyBackend::stop(void)
     }
     else
         LogFlowThisFunc(("not active\n"));
+
+    /* Make sure there is no device from us in the list anymore. */
+    m_pUsbProxyService->i_updateDeviceList(this, NULL);
 
     return rc;
 }
@@ -620,6 +637,29 @@ bool USBProxyBackend::updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE a
     return aDevice->i_updateStateFake(aUSBDevice, aRunFilters, aIgnoreMachine);
 }
 
+/**
+ * Increments the reference counter.
+ *
+ * @returns New reference count value.
+ */
+uint32_t USBProxyBackend::incRef()
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    return ++m_cRefs;
+}
+
+/**
+ * Decrements the reference counter.
+ *
+ * @returns New reference count value.
+ */
+uint32_t USBProxyBackend::decRef()
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    return --m_cRefs;
+}
 
 /**
  * Updates the device state.
@@ -763,20 +803,17 @@ USBProxyBackend::initFilterFromDevice(PUSBFILTER aFilter, HostUSBDevice *aDevice
     }
 }
 
-
-/*static*/
-HRESULT USBProxyBackend::setError(HRESULT aResultCode, const char *aText, ...)
+HRESULT USBProxyBackend::getName(com::Utf8Str &aName)
 {
-    va_list va;
-    va_start(va, aText);
-    HRESULT rc = VirtualBoxBase::setErrorInternal(aResultCode,
-                                                    COM_IIDOF(IHost),
-                                                    "USBProxyBackend",
-                                                    Utf8StrFmt(aText, va),
-                                                    false /* aWarning*/,
-                                                    true /* aLogIt*/);
-    va_end(va);
-    return rc;
+    /* strId is constant during life time, no need to lock */
+    aName = m_strId;
+    return S_OK;
+}
+
+HRESULT USBProxyBackend::getType(com::Utf8Str &aType)
+{
+    aType = Utf8Str("");
+    return S_OK;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
