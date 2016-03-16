@@ -84,7 +84,6 @@ VirtualBox::ClientWatcher::ClientWatcher(const ComObjPtr<VirtualBox> &pVirtualBo
     mLock(LOCKCLASS_OBJECTSTATE)
 {
 #if defined(RT_OS_WINDOWS)
-# ifdef CW_WITH_BIRD_WATCHING
     /* Misc state. */
     mfTerminate         = false;
     mcMsWait            = INFINITE;
@@ -102,9 +101,6 @@ VirtualBox::ClientWatcher::ClientWatcher(const ComObjPtr<VirtualBox> &pVirtualBo
         mahWaitHandles[i] = mUpdateReq;
     mcWaitHandles = 1;
 
-# else
-    mUpdateReq = ::CreateEvent(NULL, FALSE, FALSE, NULL);
-# endif
 #elif defined(RT_OS_OS2)
     RTSemEventCreate(&mUpdateReq);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER) || defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
@@ -140,18 +136,20 @@ void VirtualBox::ClientWatcher::update()
 
     /* sent an update request */
 #if defined(RT_OS_WINDOWS)
-#ifdef CW_WITH_BIRD_WATCHING
     ASMAtomicWriteBool(&mfUpdateReq, true);
-#endif
     ::SetEvent(mUpdateReq);
+
 #elif defined(RT_OS_OS2)
     RTSemEventSignal(mUpdateReq);
+
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     /* use short timeouts, as we expect changes */
     ASMAtomicUoWriteU8(&mUpdateAdaptCtr, RT_ELEMENTS(s_aUpdateTimeoutSteps) - 1);
     RTSemEventSignal(mUpdateReq);
+
 #elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
     RTSemEventSignal(mUpdateReq);
+
 #else
 # error "Port me!"
 #endif
@@ -172,7 +170,7 @@ void VirtualBox::ClientWatcher::addProcess(RTPROCESS pid)
 #endif
 }
 
-#ifdef CW_WITH_BIRD_WATCHING
+#ifdef RT_OS_WINDOWS
 
 /**
  * Closes all the client process handles in mahWaitHandles.
@@ -298,7 +296,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::subworkerThread(RTTHREAD hThreadSel
 }
 
 
-#endif /* CW_WITH_BIRD_WATCHING */
+#endif /* RT_OS_WINDOWS */
 
 /**
  * Thread worker function that watches the termination of all client processes
@@ -328,7 +326,6 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
 
     /// @todo (dmik) processes reaping!
 
-#ifdef CW_WITH_BIRD_WATCHING
     int vrc;
 
     /* Initialize all the subworker data. */
@@ -340,10 +337,6 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
         that->maSubworkers[iSubworker].pSelf      = that;
         that->maSubworkers[iSubworker].iSubworker = iSubworker;
     }
-#else
-    HANDLE handles[MAXIMUM_WAIT_OBJECTS];
-    handles[0] = that->mUpdateReq;
-#endif
 
     do
     {
@@ -358,7 +351,6 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
             /* release the caller to let uninit() ever proceed */
             autoCaller.release();
 
-#ifdef CW_WITH_BIRD_WATCHING
             /* Kick of the waiting. */
             uint32_t const cSubworkers = (that->mcWaitHandles + CW_MAX_HANDLES_PER_THREAD - 1) / CW_MAX_HANDLES_PER_THREAD;
             uint32_t const cMsWait     = !fPidRace ? INFINITE : 500;
@@ -448,61 +440,12 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                     Assert(dwWait == WAIT_OBJECT_0 || dwWait == WAIT_TIMEOUT);
             }
 
-#else
-            DWORD rc = ::WaitForMultipleObjects((DWORD)(1 + cnt + cntSpawned),
-                                                handles,
-                                                FALSE,
-                                                !fPidRace ? INFINITE : 500);
-            LogFlowFunc(("UPDATE: dwWait=%#x\n", rc));
-
-            /* Restore the caller before using VirtualBox. If it fails, this
-             * means VirtualBox is being uninitialized and we must terminate. */
-            autoCaller.add();
-            if (!autoCaller.isOk())
-                break;
-
-            bool update = fPidRace;
-
-            if (rc == WAIT_OBJECT_0)
-            {
-                /* update event is signaled */
-                update = true;
-            }
-            else if (rc > WAIT_OBJECT_0 && rc <= (WAIT_OBJECT_0 + cnt))
-            {
-                /* machine mutex is released */
-                LogFlowFunc(("UPDATE: Calling i_checkForDeath on #%u dwWait=%#x\n", rc - WAIT_OBJECT_0 - 1, rc));
-                (machines[rc - WAIT_OBJECT_0 - 1])->i_checkForDeath();
-                update = true;
-            }
-            else if (rc > WAIT_ABANDONED_0 && rc <= (WAIT_ABANDONED_0 + cnt))
-            {
-                /* machine mutex is abandoned due to client process termination */
-                LogFlowFunc(("UPDATE: Calling i_checkForDeath on #%u dwWait=%#x\n", rc - WAIT_OBJECT_0 - 1, rc));
-                (machines[rc - WAIT_ABANDONED_0 - 1])->i_checkForDeath();
-                update = true;
-            }
-            else if (rc > WAIT_OBJECT_0 + cnt && rc <= (WAIT_OBJECT_0 + cntSpawned))
-            {
-                /* spawned VM process has terminated (normally or abnormally) */
-                LogFlowFunc(("UPDATE: Calling i_checkForSpawnFailure on #%u dwWait=%#x\n", rc - WAIT_OBJECT_0 - cnt - 1, rc));
-                (spawnedMachines[rc - WAIT_OBJECT_0 - cnt - 1])->
-                    i_checkForSpawnFailure();
-                update = true;
-            }
-#endif
-
             if (update)
             {
                 LogFlowFunc(("UPDATE: Update pending (cnt=%u cntSpawned=%u)...\n", cnt, cntSpawned));
 
                 /* close old process handles */
-#ifdef CW_WITH_BIRD_WATCHING
                 that->winResetHandleArray((uint32_t)cntSpawned);
-#else
-                for (size_t i = 1 + cnt; i < 1 + cnt + cntSpawned; ++i)
-                    CloseHandle(handles[i]);
-#endif
 
                 // get reference to the machines list in VirtualBox
                 VirtualBox::MachinesOList &allMachines = that->mVirtualBox->i_getMachinesList();
@@ -513,21 +456,13 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                 /* obtain a new set of opened machines */
                 cnt = 0;
                 machines.clear();
-#ifdef CW_WITH_BIRD_WATCHING
                 uint32_t idxHandle = 0;
-#endif
 
                 for (MachinesOList::iterator it = allMachines.begin();
                      it != allMachines.end();
                      ++it)
                 {
-#ifdef CW_WITH_BIRD_WATCHING
                     AssertMsgBreak(idxHandle < CW_MAX_CLIENTS, ("CW_MAX_CLIENTS reached"));
-#else
-                    /// @todo handle situations with more than 64 objects
-                    AssertMsgBreak((1 + cnt) <= MAXIMUM_WAIT_OBJECTS,
-                                   ("MAXIMUM_WAIT_OBJECTS reached"));
-#endif
 
                     ComObjPtr<SessionMachine> sm;
                     if ((*it)->i_isSessionOpenOrClosing(sm))
@@ -541,13 +476,9 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                             {
                                 HANDLE ipcSem = ct->getToken();
                                 machines.push_back(sm);
-#ifdef CW_WITH_BIRD_WATCHING
                                 if (!(idxHandle % CW_MAX_HANDLES_PER_THREAD))
                                     idxHandle++;
                                 that->mahWaitHandles[idxHandle++] = ipcSem;
-#else
-                                handles[1 + cnt] = ipcSem;
-#endif
                                 ++cnt;
                             }
                         }
@@ -565,13 +496,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                      it != allMachines.end();
                      ++it)
                 {
-#ifdef CW_WITH_BIRD_WATCHING
                     AssertMsgBreak(idxHandle < CW_MAX_CLIENTS, ("CW_MAX_CLIENTS reached"));
-#else
-                    /// @todo handle situations with more than 64 objects
-                    AssertMsgBreak((1 + cnt + cntSpawned) <= MAXIMUM_WAIT_OBJECTS,
-                                   ("MAXIMUM_WAIT_OBJECTS reached"));
-#endif
 
                     if ((*it)->i_isSessionSpawning())
                     {
@@ -586,13 +511,9 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
                                 if (hProc != NULL)
                                 {
                                     spawnedMachines.push_back(*it);
-#ifdef CW_WITH_BIRD_WATCHING
                                     if (!(idxHandle % CW_MAX_HANDLES_PER_THREAD))
                                         idxHandle++;
                                     that->mahWaitHandles[idxHandle++] = hProc;
-#else
-                                    handles[1 + cnt + cntSpawned] = hProc;
-#endif
                                     ++cntSpawned;
                                 }
                             }
@@ -604,10 +525,8 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
 
                 LogFlowFunc(("UPDATE: spawned session count = %d\n", cntSpawned));
 
-#ifdef CW_WITH_BIRD_WATCHING
                 /* Update mcWaitHandles and make sure there is at least one handle to wait on. */
                 that->mcWaitHandles = RT_MAX(idxHandle, 1);
-#endif
 
                 // machines lock unwinds here
             }
@@ -618,7 +537,6 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
     }
     while (0);
 
-#ifdef CW_WITH_BIRD_WATCHING
     /* Terminate subworker threads. */
     ASMAtomicWriteBool(&that->mfTerminate, true);
     for (uint32_t iSubworker = 1; iSubworker < RT_ELEMENTS(that->maSubworkers); iSubworker++)
@@ -633,15 +551,9 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD hThreadSelf, void *
             else
                 AssertLogRelMsgFailed(("RTThreadWait -> %Rrc\n", vrc));
         }
-#endif
 
     /* close old process handles */
-#ifdef CW_WITH_BIRD_WATCHING
     that->winResetHandleArray((uint32_t)cntSpawned);
-#else
-    for (size_t i = 1 + cnt; i < 1 + cnt + cntSpawned; ++i)
-        CloseHandle(handles[i]);
-#endif
 
     /* release sets of machines if any */
     machines.clear();

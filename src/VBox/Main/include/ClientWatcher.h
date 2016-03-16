@@ -28,21 +28,22 @@
 #if defined(RT_OS_WINDOWS)
 # define CWUPDATEREQARG NULL
 # define CWUPDATEREQTYPE HANDLE
-# ifdef CW_WITH_BIRD_WATCHING
 # define CW_MAX_CLIENTS  _16K            /**< Max number of clients we can watch (windows). */
 # ifndef DEBUG /* The debug version triggers worker thread code much much earlier. */
 #  define CW_MAX_CLIENTS_PER_THREAD 63   /**< Max clients per watcher thread (windows). */
 # else
 #  define CW_MAX_CLIENTS_PER_THREAD 3    /**< Max clients per watcher thread (windows). */
 # endif
-#  define CW_MAX_HANDLES_PER_THREAD (CW_MAX_CLIENTS_PER_THREAD + 1) /**< Max handles per thread. */
-# endif /* CW_WITH_BIRD_WATCHING */
+# define CW_MAX_HANDLES_PER_THREAD (CW_MAX_CLIENTS_PER_THREAD + 1) /**< Max handles per thread. */
+
 #elif defined(RT_OS_OS2)
 # define CWUPDATEREQARG NIL_RTSEMEVENT
 # define CWUPDATEREQTYPE RTSEMEVENT
+
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER) || defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
 # define CWUPDATEREQARG NIL_RTSEMEVENT
 # define CWUPDATEREQTYPE RTSEMEVENT
+
 #else
 # error "Port me!"
 #endif
@@ -90,7 +91,6 @@ private:
 #if defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER) || defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
     uint8_t mUpdateAdaptCtr;
 #endif
-#ifdef CW_WITH_BIRD_WATCHING
 #ifdef RT_OS_WINDOWS
     /** Indicate a real update request is pending.
      * To avoid race conditions this must be set before mUpdateReq is signalled and
@@ -126,7 +126,6 @@ private:
     static DECLCALLBACK(int) subworkerThread(RTTHREAD hThreadSelf, void *pvUser);
     void winResetHandleArray(uint32_t cProcHandles);
 #endif
-#endif /* CW_WITH_BIRD_WATCHING */
 };
 
 #endif /* !____H_CLIENTWATCHER */
