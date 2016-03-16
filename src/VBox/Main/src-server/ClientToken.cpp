@@ -16,9 +16,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/log.h>
+#include <VBox/log.h>
 #include <iprt/semaphore.h>
 #include <iprt/process.h>
 
@@ -48,7 +49,10 @@ Machine::ClientToken::~ClientToken()
 {
 #if defined(RT_OS_WINDOWS)
     if (mClientToken)
+    {
+        LogFlowFunc(("Closing mClientToken=%p\n", mClientToken));
         ::CloseHandle(mClientToken);
+    }
 #elif defined(RT_OS_OS2)
     if (mClientToken != NULLHANDLE)
         ::DosCloseMutexSem(mClientToken);
