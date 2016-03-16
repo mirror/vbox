@@ -604,7 +604,7 @@ HRESULT VirtualBox::init()
     LogFlowThisFuncLeave();
     LogFlow(("===========================================================\n"));
     /* Unconditionally return success, because the error return is delayed to
-     * the attribute/method calls through the Zombie object state. */
+     * the attribute/method calls through the InitFailed object state. */
     return S_OK;
 }
 

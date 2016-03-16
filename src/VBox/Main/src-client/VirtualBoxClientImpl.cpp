@@ -63,56 +63,92 @@ void VirtualBoxClient::FinalRelease()
  */
 HRESULT VirtualBoxClient::init()
 {
-    LogFlowThisFunc(("\n"));
+    LogFlowThisFuncEnter();
 
-    HRESULT rc;
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    mData.m_ThreadWatcher = NIL_RTTHREAD;
-    mData.m_SemEvWatcher = NIL_RTSEMEVENT;
+    /* Important: DO NOT USE any kind of "early return" (except the single
+     * one above, checking the init span success) in this method. It is vital
+     * for correct error handling that it has only one point of return, which
+     * does all the magic on COM to signal object creation success and
+     * reporting the error later for every API method. COM translates any
+     * unsuccessful object creation to REGDB_E_CLASSNOTREG errors or similar
+     * unhelpful ones which cause us a lot of grief with troubleshooting. */
 
-    if (ASMAtomicIncU32(&g_cInstances) != 1)
-        AssertFailedReturn(E_FAIL);
-
-    rc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
-    if (FAILED(rc))
-        return rc;
-
-    /* Error return is postponed to method calls, fetch info now. */
-    ULONG rev;
-    rc = mData.m_pVirtualBox->COMGETTER(Revision)(&rev);
-    if (FAILED(rc))
-        return rc;
-
-    rc = unconst(mData.m_pEventSource).createObject();
-    AssertComRCReturnRC(rc);
-    rc = mData.m_pEventSource->init();
-    AssertComRCReturnRC(rc);
-
-    /* Setting up the VBoxSVC watcher thread. If anything goes wrong here it
-     * is not considered important enough to cause any sort of visible
-     * failure. The monitoring will not be done, but that's all. */
-    int vrc = RTSemEventCreate(&mData.m_SemEvWatcher);
-    AssertRC(vrc);
-    if (RT_SUCCESS(vrc))
+    HRESULT rc = S_OK;
+    try
     {
-        vrc = RTThreadCreate(&mData.m_ThreadWatcher, SVCWatcherThread,
-                             this, 0, RTTHREADTYPE_INFREQUENT_POLLER,
-                             RTTHREADFLAGS_WAITABLE, "VBoxSVCWatcher");
-        AssertRC(vrc);
-    }
-    else
-    {
-        RTSemEventDestroy(mData.m_SemEvWatcher);
+        if (ASMAtomicIncU32(&g_cInstances) != 1)
+            AssertFailedStmt(throw setError(E_FAIL,
+                                            tr("Attempted to create more than one VirtualBoxClient instance")));
+
+        mData.m_ThreadWatcher = NIL_RTTHREAD;
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
+
+        rc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
+        if (FAILED(rc))
+            throw rc;
+
+        /* VirtualBox error return is postponed to method calls, fetch it. */
+        ULONG rev;
+        rc = mData.m_pVirtualBox->COMGETTER(Revision)(&rev);
+        if (FAILED(rc))
+            throw rc;
+
+        rc = unconst(mData.m_pEventSource).createObject();
+        AssertComRCThrow(rc, setError(rc,
+                                      tr("Could not create EventSource for VirtualBoxClient")));
+        rc = mData.m_pEventSource->init();
+        AssertComRCThrow(rc, setError(rc,
+                                      tr("Could not initialize EventSource for VirtualBoxClient")));
+
+        /* Setting up the VBoxSVC watcher thread. If anything goes wrong here it
+         * is not considered important enough to cause any sort of visible
+         * failure. The monitoring will not be done, but that's all. */
+        int vrc = RTSemEventCreate(&mData.m_SemEvWatcher);
+        if (RT_FAILURE(vrc))
+        {
+            mData.m_SemEvWatcher = NIL_RTSEMEVENT;
+            AssertRCStmt(vrc, throw setError(VBOX_E_IPRT_ERROR,
+                                             tr("Failed to create semaphore (rc=%Rrc)"),
+                                             vrc));
+        }
+
+        vrc = RTThreadCreate(&mData.m_ThreadWatcher, SVCWatcherThread, this, 0,
+                             RTTHREADTYPE_INFREQUENT_POLLER, RTTHREADFLAGS_WAITABLE, "VBoxSVCWatcher");
+        if (RT_FAILURE(vrc))
+        {
+            RTSemEventDestroy(mData.m_SemEvWatcher);
+            mData.m_SemEvWatcher = NIL_RTSEMEVENT;
+            AssertRCStmt(vrc, throw setError(VBOX_E_IPRT_ERROR,
+                                             tr("Failed to create watcher thread (rc=%Rrc)"),
+                                             vrc));
+        }
+    }
+    catch (HRESULT err)
+    {
+        /* we assume that error info is set by the thrower */
+        rc = err;
+    }
+    catch (...)
+    {
+        rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
-    /* Confirm a successful initialization */
-    autoInitSpan.setSucceeded();
+    /* Confirm a successful initialization iwhen it's the case. Must be last,
+     * as on failure it will uninitialize the object. */
+    if (SUCCEEDED(rc))
+        autoInitSpan.setSucceeded();
+    else
+        autoInitSpan.setFailed(rc);
 
-    return rc;
+    LogFlowThisFunc(("rc=%hrc\n", rc));
+    LogFlowThisFuncLeave();
+    /* Unconditionally return success, because the error return is delayed to
+     * the attribute/method calls through the InitFailed object state. */
+    return S_OK;
 }
 
 /**

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1012,6 +1012,20 @@ RT_C_DECLS_END
     } while (0)
 #else
 # define AssertFailed()         do { } while (0)
+#endif
+
+/** @def AssertFailedStmt
+ * An assertion failed hit breakpoint and execute statement.
+ */
+#ifdef RT_STRICT
+# define AssertFailedStmt(stmt) \
+    do { \
+        RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
+        stmt; \
+    } while (0)
+#else
+# define AssertFailedStmt(stmt)     do { stmt; } while (0)
 #endif
 
 /** @def AssertFailedReturn
@@ -2110,6 +2124,17 @@ RT_C_DECLS_END
  */
 #define AssertRC(rc)                AssertMsgRC(rc, ("%Rra\n", (rc)))
 
+/** @def AssertRCStmt
+ * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and execute
+ * @a stmt if it isn't.
+ *
+ * @param   rc      iprt status code.
+ * @param   stmt    Statement to execute before returning in case of a failed
+ *                  assertion.
+ * @remark  rc is referenced multiple times. In release mode is NOREF()'ed.
+ */
+#define AssertRCStmt(rc, stmt)   AssertMsgRCStmt(rc, ("%Rra\n", (rc)), stmt)
+
 /** @def AssertRCReturn
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and return if it isn't.
  *
@@ -2177,6 +2202,20 @@ RT_C_DECLS_END
  */
 #define AssertMsgRC(rc, msg) \
     do { AssertMsg(RT_SUCCESS_NP(rc), msg); NOREF(rc); } while (0)
+
+/** @def AssertMsgRCStmt
+ * Asserts a iprt status code successful and if it's not execute @a stmt.
+ *
+ * If RT_STRICT is defined the message will be printed and a breakpoint hit before it is executed
+ *
+ * @param   rc      iprt status code.
+ * @param   msg     printf argument list (in parenthesis).
+ * @param   stmt    Statement to execute before returning in case of a failed
+ *                  assertion.
+ * @remark  rc is referenced multiple times. In release mode is NOREF()'ed.
+ */
+#define AssertMsgRCStmt(rc, msg, stmt) \
+    do { AssertMsgStmt(RT_SUCCESS_NP(rc), msg, stmt); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCReturn
  * Asserts a iprt status code successful and if it's not return the specified status code.

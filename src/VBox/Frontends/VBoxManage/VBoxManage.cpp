@@ -678,6 +678,7 @@ int main(int argc, char *argv[])
          * Terminate COM, make sure the virtualBox object has been released.
          */
         virtualBox.setNull();
+        virtualBoxClient.setNull();
         NativeEventQueue::getMainEventQueue()->processEventQueue(0);
         com::Shutdown();
     }
