@@ -2372,7 +2372,11 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     }
 
     /* Try to load the corresponding Qt translation */
+#if QT_VERSION < 0x050000
     if (sLoadedLangId != gVBoxBuiltInLangName)
+#else /* QT_VERSION >= 0x050000 */
+    if (sLoadedLangId != gVBoxBuiltInLangName && sLoadedLangId != "en")
+#endif /* QT_VERSION >= 0x050000 */
     {
 #ifdef Q_OS_UNIX
         /* We use system installations of Qt on Linux systems, so first, try
