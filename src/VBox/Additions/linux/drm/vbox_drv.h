@@ -205,6 +205,9 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
 
 int vbox_framebuffer_init(struct drm_device *dev,
              struct vbox_framebuffer *vbox_fb,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+             const
+#endif
              struct DRM_MODE_FB_CMD *mode_cmd,
              struct drm_gem_object *obj);
 

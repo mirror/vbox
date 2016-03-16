@@ -409,7 +409,11 @@ static struct drm_encoder *vbox_encoder_init(struct drm_device *dev, unsigned i)
         return NULL;
 
     drm_encoder_init(dev, &vbox_encoder->base, &vbox_enc_funcs,
-             DRM_MODE_ENCODER_DAC);
+                     DRM_MODE_ENCODER_DAC
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+                     , NULL
+#endif
+                     );
     drm_encoder_helper_add(&vbox_encoder->base, &vbox_enc_helper_funcs);
 
     vbox_encoder->base.possible_crtcs = 1 << i;

@@ -168,6 +168,9 @@ static const struct drm_framebuffer_funcs vbox_fb_funcs = {
 
 int vbox_framebuffer_init(struct drm_device *dev,
              struct vbox_framebuffer *vbox_fb,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+             const
+#endif
              struct DRM_MODE_FB_CMD *mode_cmd,
              struct drm_gem_object *obj)
 {
@@ -190,6 +193,9 @@ int vbox_framebuffer_init(struct drm_device *dev,
 static struct drm_framebuffer *
 vbox_user_framebuffer_create(struct drm_device *dev,
            struct drm_file *filp,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+           const
+#endif
            struct drm_mode_fb_cmd2 *mode_cmd)
 {
     struct drm_gem_object *obj;
