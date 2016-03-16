@@ -79,6 +79,7 @@ private:
     ClientWatcher();
 
     static DECLCALLBACK(int) worker(RTTHREAD hThreadSelf, void *pvUser);
+    uint32_t reapProcesses(void);
 
     VirtualBox *mVirtualBox;
     RTTHREAD mThread;
