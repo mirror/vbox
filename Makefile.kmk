@@ -235,8 +235,7 @@ else # VBOX_WITH_QTGUI_V5
     qt5-bin_MODE = 755
     qt5-bin_INST = $(INST_BIN)
     qt5-bin_SOURCES = \
-     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).5) \
-     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).5.5.1) \
+     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).*.*.*)=>lib$(qtmod)$(SUFF_DLL).5) \
      $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL)
    endif # x11
   endif # VBOX_WITH_ORACLE_QT || VBOX_WITH_QT_PAYLOAD
