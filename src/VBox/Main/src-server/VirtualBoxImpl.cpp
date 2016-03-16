@@ -600,7 +600,7 @@ HRESULT VirtualBox::init()
     else
         autoInitSpan.setFailed(rc);
 
-    LogFlowThisFunc(("rc=%hrc\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
     LogFlow(("===========================================================\n"));
     /* Unconditionally return success, because the error return is delayed to
