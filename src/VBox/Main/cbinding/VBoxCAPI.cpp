@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2015 Oracle Corporation
+ * Copyright (C) 2009-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -418,7 +418,19 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
                                               virtualBoxIID,
                                               (void **)&g_VirtualBox);
 #else /* !VBOX_WITH_XPCOM */
-    rc = CoCreateInstance(CLSID_VirtualBox, NULL, CLSCTX_LOCAL_SERVER, virtualBoxIID, (void **)&g_VirtualBox);
+    IVirtualBoxClient *pVirtualBoxClient;
+    rc = CoCreateInstance(CLSID_VirtualBoxClient, NULL, CLSCTX_INPROC_SERVER, IID_IVirtualBoxClient, (void **)&pVirtualBoxClient);
+    if (SUCCEEDED(rc))
+    {
+        IVirtualBox *pVirtualBox;
+        rc = pVirtualBoxClient->get_VirtualBox(&pVirtualBox);
+        if (SUCCEEDED(rc))
+        {
+            rc = pVirtualBox->QueryInterface(virtualBoxIID, (void **)&g_VirtualBox);
+            pVirtualBox->Release();
+        }
+        pVirtualBoxClient->Release();
+    }
 #endif /* !VBOX_WITH_XPCOM */
     if (FAILED(rc))
     {

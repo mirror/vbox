@@ -615,8 +615,11 @@ int main(int argc, char *argv[])
          * Get the remote VirtualBox object and create a local session object.
          */
         rcExit = RTEXITCODE_FAILURE;
+        ComPtr<IVirtualBoxClient> virtualBoxClient;
         ComPtr<IVirtualBox> virtualBox;
-        hrc = virtualBox.createLocalObject(CLSID_VirtualBox);
+        hrc = virtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
+        if (SUCCEEDED(hrc))
+            hrc = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
         if (SUCCEEDED(hrc))
         {
             ComPtr<ISession> session;

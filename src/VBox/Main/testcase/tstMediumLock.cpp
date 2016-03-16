@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2015 Oracle Corporation
+ * Copyright (C) 2013-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
     RTTestBanner(hTest);
 
     bool fComInit = false;
+    ComPtr<IVirtualBoxClient> pVirtualBoxClient;
     ComPtr<IVirtualBox> pVirtualBox;
     char szPathTemp[RTPATH_MAX] = "";
     ComPtr<IMedium> pMedium;
@@ -98,7 +99,8 @@ int main(int argc, char *argv[])
         fComInit = true;
 
         RTTestSub(hTest, "Getting VirtualBox reference");
-        TEST_COM_SUCCESS(hTest, pVirtualBox.createLocalObject(CLSID_VirtualBox), "vbox reference");
+        TEST_COM_SUCCESS(hTest, pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient), "vboxclient reference");
+        TEST_COM_SUCCESS(hTest, pVirtualBoxClient->COMGETTER(VirtualBox)(pVirtualBox.asOutParam()), "vbox reference");
     }
 
     if (!RTTestSubErrorCount(hTest))
@@ -278,6 +280,7 @@ int main(int argc, char *argv[])
     }
 
     pVirtualBox.setNull();
+    pVirtualBoxClient.setNull();
 
     /* Make sure that there are no object references alive here, XPCOM does
      * a very bad job at cleaning up such leftovers, spitting out warning

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -78,11 +78,14 @@ int main(int argc, char **argv)
 
     do
     {
+        ComPtr <IVirtualBoxClient> virtualBoxClient;
         ComPtr <IVirtualBox> virtualBox;
         ComPtr <ISession> session;
 
         RTPrintf("Creating VirtualBox object...\n");
-        rc = virtualBox.createLocalObject(CLSID_VirtualBox);
+        rc = virtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
+        if (SUCCEEDED(rc))
+            rc = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
         if (FAILED(rc))
             RTPrintf("ERROR: failed to create the VirtualBox object!\n");
         else

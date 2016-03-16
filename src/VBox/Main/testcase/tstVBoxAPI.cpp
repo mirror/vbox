@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -368,8 +368,11 @@ int main(int argc, char **argv)
     HRESULT hrc = com::Initialize();
     if (SUCCEEDED(hrc))
     {
+        ComPtr<IVirtualBoxClient> ptrVBoxClient;
         ComPtr<IVirtualBox> ptrVBox;
-        hrc = TST_COM_EXPR(ptrVBox.createLocalObject(CLSID_VirtualBox));
+        hrc = TST_COM_EXPR(ptrVBoxClient.createInprocObject(CLSID_VirtualBoxClient));
+        if (SUCCEEDED(hrc))
+            hrc = TST_COM_EXPR(ptrVBoxClient->COMGETTER(VirtualBox)(ptrVBox.asOutParam()));
         if (SUCCEEDED(hrc))
         {
             ComPtr<ISession> ptrSession;
