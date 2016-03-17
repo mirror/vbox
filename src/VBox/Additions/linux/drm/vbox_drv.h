@@ -135,7 +135,7 @@ struct vbox_gem_object;
 struct vbox_connector {
     struct drm_connector base;
     char name[32];
-    unsigned crtc_id;
+    struct vbox_crtc *vbox_crtc;
     struct {
         uint16_t width;
         uint16_t height;
@@ -146,6 +146,7 @@ struct vbox_connector {
 struct vbox_crtc {
     struct drm_crtc base;
     bool blanked;
+    bool disconnected;
     unsigned crtc_id;
     uint32_t fb_offset;
     struct drm_gem_object *cursor_bo;

@@ -91,7 +91,8 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
                                   CRTC_FB(crtc)->bits_per_pixel, 0,
                                   crtc->x, crtc->y); */
     flags = VBVA_SCREEN_F_ACTIVE;
-    flags |= (crtc->enabled ? 0 : VBVA_SCREEN_F_DISABLED);
+    flags |= (crtc->enabled && !vbox_crtc->blanked ? 0 : VBVA_SCREEN_F_BLANK);
+    flags |= (vbox_crtc->disconnected ? VBVA_SCREEN_F_DISABLED : 0);
     VBoxHGSMIProcessDisplayInfo(&vbox->submit_info, vbox_crtc->crtc_id,
                                 crtc->x, crtc->y,
                                 crtc->x * bpp / 8 + crtc->y * pitch,
@@ -311,22 +312,22 @@ static const struct drm_crtc_funcs vbox_crtc_funcs = {
     .destroy = vbox_crtc_destroy,
 };
 
-static int vbox_crtc_init(struct drm_device *dev, unsigned i)
+static struct vbox_crtc *vbox_crtc_init(struct drm_device *dev, unsigned i)
 {
-    struct vbox_crtc *crtc;
+    struct vbox_crtc *vbox_crtc;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
-    crtc = kzalloc(sizeof(struct vbox_crtc), GFP_KERNEL);
-    if (!crtc)
-        return -ENOMEM;
-    crtc->crtc_id = i;
+    vbox_crtc = kzalloc(sizeof(struct vbox_crtc), GFP_KERNEL);
+    if (!vbox_crtc)
+        return NULL;
+    vbox_crtc->crtc_id = i;
 
-    drm_crtc_init(dev, &crtc->base, &vbox_crtc_funcs);
-    drm_mode_crtc_set_gamma_size(&crtc->base, 256);
-    drm_crtc_helper_add(&crtc->base, &vbox_crtc_helper_funcs);
-    LogFunc(("vboxvideo: %d: crtc=%p\n", __LINE__, crtc));
+    drm_crtc_init(dev, &vbox_crtc->base, &vbox_crtc_funcs);
+    drm_mode_crtc_set_gamma_size(&vbox_crtc->base, 256);
+    drm_crtc_helper_add(&vbox_crtc->base, &vbox_crtc_helper_funcs);
+    LogFunc(("vboxvideo: %d: crtc=%p\n", __LINE__, vbox_crtc));
 
-    return 0;
+    return vbox_crtc;
 }
 
 static void vbox_encoder_destroy(struct drm_encoder *encoder)
@@ -473,7 +474,8 @@ vbox_connector_detect(struct drm_connector *connector, bool force)
     (void) force;
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
-    return !vbox_connector->mode_hint.disconnected;
+    return vbox_connector->mode_hint.disconnected ?
+                connector_status_disconnected : connector_status_connected;
 }
 
 static int vbox_fill_modes(struct drm_connector *connector, uint32_t max_x, uint32_t max_y)
@@ -507,7 +509,8 @@ static const struct drm_connector_funcs vbox_connector_funcs = {
     .destroy = vbox_connector_destroy,
 };
 
-static int vbox_connector_init(struct drm_device *dev, unsigned cScreen,
+static int vbox_connector_init(struct drm_device *dev,
+                               struct vbox_crtc *vbox_crtc,
                                struct drm_encoder *encoder)
 {
     struct vbox_connector *vbox_connector;
@@ -520,7 +523,7 @@ static int vbox_connector_init(struct drm_device *dev, unsigned cScreen,
         return -ENOMEM;
 
     connector = &vbox_connector->base;
-    vbox_connector->crtc_id = cScreen;
+    vbox_connector->vbox_crtc = vbox_crtc;
 
     drm_connector_init(dev, connector, &vbox_connector_funcs,
                        DRM_MODE_CONNECTOR_VGA);
@@ -552,15 +555,19 @@ int vbox_mode_init(struct drm_device *dev)
 {
     struct vbox_private *vbox = dev->dev_private;
     struct drm_encoder *encoder;
+    struct vbox_crtc *vbox_crtc;
     unsigned i;
     /* vbox_cursor_init(dev); */
     LogFunc(("vboxvideo: %d: dev=%p\n", __LINE__, dev));
     for (i = 0; i < vbox->num_crtcs; ++i)
     {
-        vbox_crtc_init(dev, i);
+        vbox_crtc = vbox_crtc_init(dev, i);
+        if (!vbox_crtc)
+            return -ENOMEM;
         encoder = vbox_encoder_init(dev, i);
-        if (encoder)
-            vbox_connector_init(dev, i, encoder);
+        if (!encoder)
+            return -ENOMEM;
+        vbox_connector_init(dev, vbox_crtc, encoder);
     }
     return 0;
 }

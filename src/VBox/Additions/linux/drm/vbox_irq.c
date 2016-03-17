@@ -88,6 +88,9 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
     struct drm_connector *connector;
     struct vbox_connector *vbox_connector;
     struct VBVAMODEHINT *hints;
+    uint16_t flags;
+    bool disconnected;
+    unsigned crtc_id;
     int rc;
 
     rc = VBoxHGSMIGetModeHints(&vbox->submit_info, vbox->num_crtcs,
@@ -100,15 +103,25 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
 #endif
     list_for_each_entry(connector, &dev->mode_config.connector_list, head) {
         vbox_connector = to_vbox_connector(connector);
-        hints = &vbox->last_mode_hints[vbox_connector->crtc_id];
+        hints = &vbox->last_mode_hints[vbox_connector->vbox_crtc->crtc_id];
         if (hints->magic == VBVAMODEHINT_MAGIC) {
             LogFunc(("vboxvideo: %d: crtc_id=%u, mode %hdx%hd(enabled:%d),%hdx%hd\n",
-                     __LINE__, (unsigned)vbox_connector->crtc_id,
+                     __LINE__, (unsigned)vbox_connector->vbox_crtc->crtc_id,
                      (short)hints->cx, (short)hints->cy, (int)hints->fEnabled,
                      (short)hints->dx, (short)hints->dy));
+            disconnected = !(hints->fEnabled);
+            crtc_id = vbox_connector->vbox_crtc->crtc_id;
+            flags =   VBVA_SCREEN_F_ACTIVE
+                    | (disconnected ? VBVA_SCREEN_F_DISABLED : VBVA_SCREEN_F_BLANK);
             vbox_connector->mode_hint.width = hints->cx & 0x8fff;
             vbox_connector->mode_hint.height = hints->cy & 0x8fff;
-            vbox_connector->mode_hint.disconnected = !(hints->fEnabled);
+            vbox_connector->mode_hint.disconnected = disconnected;
+            if (vbox_connector->vbox_crtc->disconnected != disconnected) {
+                VBoxHGSMIProcessDisplayInfo(&vbox->submit_info, crtc_id,
+                                            0, 0, 0, hints->cx * 4, hints->cx,
+                                            hints->cy, 0, flags);
+                vbox_connector->vbox_crtc->disconnected = disconnected;
+            }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
             if ((hints->dx < 0xffff) && (hints->dy < 0xffff)) {
                 drm_object_property_set_value(&connector->base,
