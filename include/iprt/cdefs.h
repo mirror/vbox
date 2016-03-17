@@ -153,6 +153,15 @@
 # error "Exactly one RT_ARCH_XXX macro shall be defined"
 #endif
 
+/** @def RT_GNUC_PREREQ
+ * Shorter than fiddling with __GNUC__ and __GNUC_MINOR__.
+ */
+#if defined(__GNUC__) && defined(__GNUC_MINOR__)
+# define RT_GNUC_PREREQ(major, minor) \
+    ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((major) << 16) + (minor))
+#else
+# define RT_GNUC_PREREQ(major, minor) 0
+#endif
 
 /** @def __X86__
  * Indicates that we're compiling for the X86 architecture.
@@ -1146,13 +1155,9 @@
  *   EMR3DECL(DECL_RETURNS_TWICE(void)) MySetJmp(void);
  * @endcode
  */
-#ifdef __GNUC__
-# if (__GNUC__ >= 5) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
-#  define DECL_RETURNS_TWICE(type)  __attribute__((returns_twice)) type
+#if RT_GNUC_PREREQ(4, 1)
+# define DECL_RETURNS_TWICE(type)  __attribute__((returns_twice)) type
 # else
-#  define DECL_RETURNS_TWICE(type)  type
-# endif
-#else
 # define DECL_RETURNS_TWICE(type)   type
 #endif
 
@@ -2014,7 +2019,7 @@
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#if defined(__GNUC__) && defined(__cplusplus) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4))
+#if defined(__cplusplus) && RT_GNUC_PREREQ(4, 4)
 # define RT_OFFSETOF(type, member)              ( (int)(uintptr_t)&( ((type *)(void *)0x1000)->member) - 0x1000 )
 #else
 # define RT_OFFSETOF(type, member)              ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
@@ -2032,7 +2037,7 @@
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#if defined(__GNUC__) && defined(__cplusplus) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4))
+#if defined(__cplusplus) && RT_GNUC_PREREQ(4, 4)
 # define RT_UOFFSETOF(type, member)             ( (uintptr_t)&( ((type *)(void *)0x1000)->member) - 0x1000 )
 #else
 # define RT_UOFFSETOF(type, member)             ( (uintptr_t)&( ((type *)(void *)0)->member) )

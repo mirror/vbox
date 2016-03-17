@@ -830,7 +830,7 @@ bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
 }
 
 # elif defined(Q_WS_X11)
-#  if (__GNUC__ * 100 + __GNUC_MINOR__) >= 406
+#  if RT_GNUC_PREREQ(4, 6)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #  endif
@@ -858,7 +858,7 @@ bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
     return false;
 }
 
-#  if (__GNUC__ * 100 + __GNUC_MINOR__) >= 406
+#  if RT_GNUC_PREREQ(4, 6)
 #   pragma GCC diagnostic pop
 #  endif
 # endif /* Q_WS_X11 */

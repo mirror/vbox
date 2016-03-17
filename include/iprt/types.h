@@ -136,7 +136,7 @@ RT_C_DECLS_END
 #  undef NULL
 #  undef uintptr_t
 #  ifdef __GNUC__
-#   if (__GNUC__ * 100 + __GNUC_MINOR__) <= 400
+#   if !RT_GNUC_PREREQ(4, 1)
      /*
       * <linux/compiler-gcc{3,4}.h> does
       *   #define __inline__  __inline__ __attribute__((always_inline))

@@ -166,12 +166,10 @@
 # include <nsMemory.h>
 #endif
 
-        /* Type traits are a C++ 11 feature, so not available everywhere (yet). */
-        /* Only GCC 4.6 or newer. */
-#if    (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 406) \
-       /* Only MSVC++ 16.0 (Visual Studio 2010) or newer. */           \
-    || (defined(_MSC_VER) && (_MSC_VER >= 1600))
-    #define VBOX_WITH_TYPE_TRAITS
+ /* Type traits are a C++ 11 feature, so not available everywhere (yet).
+  * Only GCC 4.6 or newer and MSVC++ 16.0 (Visual Studio 2010) or newer. */
+#if RT_GNUC_PREREQ(4, 6) || (defined(_MSC_VER) && (_MSC_VER >= 1600))
+# define VBOX_WITH_TYPE_TRAITS
 #endif
 
 #ifdef VBOX_WITH_TYPE_TRAITS

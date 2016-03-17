@@ -134,10 +134,9 @@
 
 /** @def RT_INLINE_ASM_GCC_4_3_X_X86
  * Used to work around some 4.3.x register allocation issues in this version of
- * the compiler. So far this workaround is still required for 4.4 and 4.5. */
-#ifdef __GNUC__
-# define RT_INLINE_ASM_GCC_4_3_X_X86 (__GNUC__ == 4 && __GNUC_MINOR__ >= 3 && defined(__i386__))
-#endif
+ * the compiler. So far this workaround is still required for 4.4 and 4.5 but
+ * definitely not for 5.x */
+#define RT_INLINE_ASM_GCC_4_3_X_X86 (RT_GNUC_PREREQ(4, 3) && !RT_GNUC_PREREQ(5, 0) && defined(__i386__))
 #ifndef RT_INLINE_ASM_GCC_4_3_X_X86
 # define RT_INLINE_ASM_GCC_4_3_X_X86 0
 #endif
@@ -881,7 +880,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, uint64_t u64New, u
                          "movzbl %%al, %%eax\n\t"
                          : "=a" (u32Ret),
                            "=d" (u32Spill),
-#    if (__GNUC__ * 100 + __GNUC_MINOR__) >= 403
+#    if RT_GNUC_PREREQ(4, 3)
                            "+m" (*pu64)
 #    else
                            "=m" (*pu64)
@@ -1739,7 +1738,7 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
                          "lock; cmpxchg8b (%5)\n\t"
                          "movl %3, %%ebx\n\t"
                          : "=A" (u64),
-#    if (__GNUC__ * 100 + __GNUC_MINOR__) >= 403
+#    if RT_GNUC_PREREQ(4, 3)
                            "+m" (*pu64)
 #    else
                            "=m" (*pu64)
@@ -1823,7 +1822,7 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
                          "lock; cmpxchg8b (%4)\n\t"
                          "movl %3, %%ebx\n\t"
                          : "=A" (u64),
-#    if (__GNUC__ * 100 + __GNUC_MINOR__) >= 403
+#    if RT_GNUC_PREREQ(4, 3)
                            "+m" (*pu64),
 #    else
                            "=m" (*pu64),
