@@ -5236,7 +5236,7 @@ ifdef VBOX_WITH_QTGUI
  #
  ifeq ($(VBOX_PATH_QT),)
   ifeq ($(KBUILD_TARGET),darwin)
-   ifeq ($(VBOX_WITH_QTGUI_V5),)
+   ifndef VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
    else # VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
@@ -5249,13 +5249,13 @@ ifdef VBOX_WITH_QTGUI
     endif
    endif
   else if1of ($(KBUILD_TARGET), win)
-   ifeq ($(VBOX_WITH_QTGUI_V5),)
+   ifndef VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*))))
    else # VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*))))
    endif # VBOX_WITH_QTGUI_V5
   else if1of ($(KBUILD_TARGET), linux solaris)
-   ifeq ($(VBOX_WITH_QTGUI_V5),)
+   ifndef VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
    else # VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
@@ -5269,7 +5269,7 @@ ifdef VBOX_WITH_QTGUI
   if1of ($(USERNAME), bird)
    # gentoo (64-bit)
    VBOX_PATH_QT          ?= /usr
-   ifeq ($(VBOX_WITH_QTGUI_V5),)
+   ifndef VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT_LIB      ?= /usr/lib/qt4
    else # VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT_LIB      ?= /usr/lib/qt5
@@ -5283,7 +5283,7 @@ ifdef VBOX_WITH_QTGUI
   VBOX_QT_INFIX=VBox
  endif
 
- ifeq ($(VBOX_WITH_QTGUI_V5),)
+ ifndef VBOX_WITH_QTGUI_V5
   VBOX_QT_MOD = QtCore QtGui $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
  else # VBOX_WITH_QTGUI_V5
   ifeq ($(KBUILD_TARGET), darwin)
@@ -5327,7 +5327,7 @@ ifdef VBOX_WITH_QTGUI
  # Template for building Qt GUI executables.
  #
  TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
- ifeq ($(VBOX_WITH_QTGUI_V5),)
+ ifndef VBOX_WITH_QTGUI_V5
   TEMPLATE_VBOXQTGUIEXE_USES = qt4
   TEMPLATE_VBOXQTGUIEXE_QTTOOL = QT4
   TEMPLATE_VBOXQTGUIEXE_MOCTOOL = QT4
@@ -5486,7 +5486,7 @@ ifdef VBOX_WITH_QTGUI
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
  endif # COM
 
- ifneq ($(VBOX_WITH_QTGUI_V5),)
+ ifdef VBOX_WITH_QTGUI_V5
   ifn1of ($(KBUILD_TARGET), darwin os2 win)
     TEMPLATE_VBOXQTGUIEXE_DEFS     += PIC
     TEMPLATE_VBOXQTGUIEXE_CFLAGS   += -fPIC

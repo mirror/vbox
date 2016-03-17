@@ -248,22 +248,28 @@ ifdef VBOX_WITH_EXTPACK
 	VBoxExtPackHelperApp
 endif
 
-# Qt4 GUI
+# Qt GUI
 ifdef VBOX_WITH_QTGUI
  include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.kmk
  VBOX_LNX_STRIP_BIN += \
  	VBoxKeyboard.so \
  	VirtualBox \
  	$(if $(VBOX_WITH_HARDENING),VirtualBox.so) \
-	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so)
+ 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so)
  VBOX_LNX_NO_STRIP += \
-	virtualbox.desktop \
-	virtualbox.xml \
-	$(VBOX_LICENSE_FILES) \
+ 	virtualbox.desktop \
+ 	virtualbox.xml \
+ 	$(VBOX_LICENSE_FILES) \
  	$(if $(VBOX_WITH_ORACLE_QT),$(notdir $(wildcard $(PATH_STAGE_BIN)/lib*VBox*)),) \
-	$(if $(VBOX_WITH_ORACLE_QT),accessible/libqtaccessiblewidgets.so,) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm) \
-	icons
+ 	icons
+ ifndef VBOX_WITH_QTGUI_V5
+  VBOX_LNX_NO_STRIP += \
+  	$(if $(VBOX_WITH_ORACLE_QT),accessible/libqtaccessiblewidgets.so,)
+ else # VBOX_WITH_QTGUI_V5
+  VBOX_LNX_NO_STRIP += \
+  	platforms/libqxcb.so
+ endif # VBOX_WITH_QTGUI_v5
 endif
 
 # Guest Additions
@@ -507,7 +513,10 @@ BLDDIRS += $(foreach d,\
 	archive \
 	archive/components \
 	archive/nls \
-	$(if $(VBOX_WITH_ORACLE_QT),archive/accessible,) \
+	$(if $(VBOX_WITH_ORACLE_QT),\
+	  archive/accessible,) \
+	$(if $(VBOX_WITH_QTGUI_V5),\
+	  archive/platforms,) \
 	$(if $(VBOX_WITH_PYTHON),\
 	  archive/sdk/installer \
 	  archive/sdk/installer/vboxapi \

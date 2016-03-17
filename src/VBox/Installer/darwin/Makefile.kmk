@@ -36,7 +36,7 @@ else
 endif
 VBOX_PATH_DIST_OTHER = $(error VBOX_PATH_DIST_OTHER used in a non-combined package deal)
 
-ifeq ($(VBOX_WITH_QTGUI_V5),)
+ifndef VBOX_WITH_QTGUI_V5
  VBOX_QT_VERSION_MAJOR = 4
  PATH_SDK_QT = $(PATH_SDK_QT4)
 else # VBOX_WITH_QTGUI_V5
@@ -516,7 +516,7 @@ VBOX_DI_VBAPP_MISC_FILES += \
 	MacOS/VBoxEFI32.fd \
 	MacOS/VBoxEFI64.fd
 endif
-ifeq ($(VBOX_WITH_QTGUI_V5),)
+ifndef VBOX_WITH_QTGUI_V5
  VBOX_DI_VBAPP_MISC_FILES += \
 	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/classes.nib \
 	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/info.nib \
@@ -713,7 +713,7 @@ if 1
 				) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(f)$(NLTAB) )
 endif
-ifneq ($(VBOX_WITH_QTGUI_V5),)
+ifdef VBOX_WITH_QTGUI_V5
 	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/qt.conf "[Paths]"
 	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/qt.conf "Prefix =" /Applications/VirtualBox.app/Contents
 	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents/Resources/qt.conf "[Paths]"
