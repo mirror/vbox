@@ -1754,7 +1754,40 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
 #else
     if (revents & POLLHUP) {
         DPRINTF(("sock %d: HUP\n", fd));
+
 #if HAVE_TCP_POLLHUP == POLLIN
+        /*
+         * XXX: OSX reports POLLHUP once more when inbound is already
+         * half-closed (which has already been reported as a "normal"
+         * POLLHUP, handled below), the socket is polled for POLLOUT
+         * (guest sends a lot of data that we can't push out fast
+         * enough), and remote sends a reset - e.g. an http client
+         * that half-closes after request and then aborts the transfer.
+         *
+         * It really should have been reported as POLLERR, but it
+         * seems OSX never reports POLLERR for sockets.
+         */
+#if defined(RT_OS_DARWIN)
+        {
+            socklen_t optlen = (socklen_t)sizeof(sockerr);
+
+            status = getsockopt(pxtcp->sock, SOL_SOCKET, SO_ERROR,
+                                (char *)&sockerr, &optlen);
+            if (status == SOCKET_ERROR) { /* should not happen */
+                DPRINTF(("sock %d: POLLHUP: SO_ERROR failed: %R[sockerr]\n",
+                         fd, SOCKERRNO()));
+                sockerr = ECONNRESET;
+            }
+            else if (sockerr != 0) {
+                DPRINTF0(("sock %d: POLLHUP: %R[sockerr]\n", fd, sockerr));
+            }
+
+            if (sockerr != 0) { /* XXX: should have been POLLERR */
+                return pxtcp_schedule_reset(pxtcp);
+            }
+        }
+#endif  /* RT_OS_DARWIN */
+
         /*
          * Remote closed inbound.
          */
