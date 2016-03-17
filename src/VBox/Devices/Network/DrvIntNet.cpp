@@ -1223,12 +1223,16 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->StatSend2);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->StatRecv1);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->StatRecv2);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->StatReserved);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceivedGso);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatSentGso);
 #ifdef VBOX_WITH_STATISTICS
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
 #endif
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatXmitWakeupR0);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatXmitWakeupR3);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatXmitProcessRing);
     }
 
     /*
