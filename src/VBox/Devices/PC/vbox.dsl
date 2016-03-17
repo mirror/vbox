@@ -74,6 +74,10 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         Return(Sizeof(Local0))
     }
 
+
+    //
+    // S2BF(Str) - Convert a string object into a buffer object.
+    //
     Method(S2BF, 1)
     {
         //
@@ -91,6 +95,101 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         Return(BUFF)
     }
 
+    //
+    // MIN(Int1, Int2) - Returns the minimum of Int1 or Int2.
+    //
+    //
+    Method(MIN, 2)
+    {
+        //
+        // Note: The caller must make sure that both arguments are integer objects.
+        //
+        If (LLess(Arg0, Arg1))
+        {
+            Return(Arg0)
+        }
+        Else
+        {
+            Return(Arg1)
+        }
+    }
+
+    //
+    // SCMP(Str1, Str2) - Compare Str1 and Str2.
+    //                    Returns One if Str1 > Str2
+    //                    Returns Zero if Str1 == Str2
+    //                    Returns Ones if Str1 < Str2
+    //
+    Method(SCMP, 2)
+    {
+        //
+        // Note: The caller must make sure that both arguments are string objects.
+        //
+        // Local0 is a buffer of Str1.
+        // Local1 is a buffer of Str2.
+        // Local2 is the indexed byte of Str1.
+        // Local3 is the indexed byte of Str2.
+        // Local4 is the index to both Str1 and Str2.
+        // Local5 is the length of Str1.
+        // Local6 is the length of Str2.
+        // Local7 is the minimum of Str1 or Str2 length.
+        //
+    
+        Store(Arg0, Local0)
+        Store(S2BF(Local0), Local0)
+    
+        Store(S2BF(Arg1), Local1)
+        Store(Zero, Local4)
+    
+        Store(SLEN(Arg0), Local5)
+        Store(SLEN(Arg1), Local6)
+        Store(MIN(Local5, Local6), Local7)
+    
+        While (LLess(Local4, Local7))
+        {
+            Store(Derefof(Index(Local0, Local4)), Local2)
+            Store(Derefof(Index(Local1, Local4)), Local3)
+            If (LGreater(Local2, Local3))
+            {
+                Return(One)
+            }
+            Else
+            {
+                If (LLess(Local2, Local3))
+                {
+                    Return(Ones)
+                }
+            }
+    
+            Increment(Local4)
+        }
+    
+        If (LLess(Local4, Local5))
+        {
+            Return(One)
+        }
+        Else
+        {
+            If (LLess(Local4, Local6))
+            {
+                Return(Ones)
+            }
+            Else
+            {
+                Return(Zero)
+            }
+        }
+    }
+
+    // Return one if strings match, zero otherwise. Wrapper around SCMP
+    Method (MTCH, 2)
+    {
+        Store(Arg0, Local0)
+        Store(Arg1, Local1)
+        Store(SCMP(Local0, Local1), Local2)
+        Return(LNot(Local2))
+    }
+
     // Convert ASCII string to buffer and store it's contents (char by
     // char) into DCHR (thus possibly writing the string to console)
     Method (\DBG, 1, NotSerialized)
@@ -106,6 +205,118 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             Store (DerefOf (Index (Local1, Local2)), DCHR)
             Increment (Local2)
         }
+    }
+
+    // Microsoft Windows version indicator
+    Name(MSWV, Ones)
+
+    //
+    // Return Windows version. Detect non-Microsoft OSes.
+    //
+    //  0 : Not Windows OS
+    //  2 : Windows Me
+    //  3 : Windows 2000 (NT pre-XP)
+    //  4 : Windows XP
+    //  5 : Windows Server 2003
+    //  6 : Windows Vista
+    //  7 : Windows 7
+    //  8 : Windows 8
+    //  9 : Windows 8.1
+    // 10 : Windows 10
+    Method(MSWN, 0, NotSerialized)
+    {
+        If (LNotEqual(MSWV, Ones))
+        {
+            Return(MSWV)
+        }
+
+        Store(0x00, MSWV)
+        DBG("_OS: ")
+        DBG(_OS)
+        DBG("\n")
+
+        // Does OS provide the _OSI method?
+        If (CondRefOf(_OSI, Local1))
+        {
+            DBG("_OSI exists\n")
+            // OS returns non-zero value in response to _OSI query if it
+            // supports the interface. Newer Windows releases support older
+            // versions of the ACPI interface. 
+            If (_OSI("Windows 2001"))
+            {
+                Store(4, MSWV)  // XP
+            }
+            If (_OSI("Windows 2001.1"))
+            {
+                Store(5, MSWV)  // Server 2003
+            }
+            If (_OSI("Windows 2006"))
+            {
+                Store(6, MSWV)  // Vista
+            }
+            If (_OSI("Windows 2009"))
+            {
+                Store(7, MSWV)  // Windows 7
+            }
+            If (_OSI("Windows 2012"))
+            {
+                Store(8, MSWV)  // Windows 8
+            }
+            If (_OSI("Windows 2013"))
+            {
+                Store(9, MSWV)  // Windows 8.1
+            }
+            If (_OSI("Windows 2015"))
+            {
+                Store(10, MSWV) // Windows 10
+            }
+
+            // This must come last and is a trap. No version of Windows
+            // reports this!
+            If (_OSI("Windows 2006 SP2"))
+            {
+                DBG("Windows 2006 SP2 supported\n")
+                // Not a Microsoft OS
+                Store(0, MSWV)
+            }
+        }
+        Else
+        {
+            // No _OSI, could be older NT or Windows 9x
+            If (MTCH(_OS, "Microsoft Windows NT"))
+            {
+                Store(3, MSWV)
+            }
+            If (MTCH(_OS, "Microsoft WindowsME: Millennium Edition"))
+            {
+                Store(2, MSWV)
+            }
+        }
+
+        // Does OS provide the _REV method?
+        If (CondRefOf(_REV, Local2))
+        {
+            DBG("_REV: ")
+            HEX4(_REV)
+
+            // Defeat most Linuxes and other non-Microsoft OSes. Microsoft Windows
+            // up to Server 2003 reports ACPI 1.0 support, Vista up to Windows 10
+            // reports ACPI 2.0 support. Anything pretending to be a Windows OS
+            // with higher ACPI revision support is a fake.
+            If (LAnd(LGreater(MSWV, 0),LGreater(_REV, 2)))
+            {
+                If (LLess(MSWV,8))
+                {
+                    DBG("ACPI rev mismatch, not a Microsoft OS\n")
+                    Store(0, MSWV)
+                }
+            }
+        }
+
+        DBG("Determined MSWV: ")
+        HEX4(MSWV)
+
+        Return(MSWV)
     }
 
     Name(PICM, 0)
@@ -1033,6 +1244,23 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             Device (GFX0)
             {
                 Name (_ADR, 0x00020000)
+
+                // Windows releases older than Windows 8 (starting with Windows 2000)
+                // get confused by this and lose the monitor device node. One of
+                // the consequences is that color management is not available.
+                // For Windows 2000 - Windows 7, disable this device (while keeping
+                // it enabled for non-Microsoft OSes).
+                Method (_STA, 0, NotSerialized)
+                {
+                    If (LAnd (LGreater (MSWN(), 0x00), LLess (MSWN(), 0x08)))
+                    {
+                        Return(0x00)
+                    }
+                    Else
+                    {
+                        Return(0x0F)
+                    }
+                }
 
                 Scope (\_GPE)
                 {
