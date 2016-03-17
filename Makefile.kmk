@@ -239,18 +239,16 @@ else # VBOX_WITH_QTGUI_V5
      $(qt5-bin_0_OUTDIR)/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL)
 
 $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod)$(SUFF_DLL).5.5.1): \
-	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)
+	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(CP) $^ $@
 	$(if $(VBOX_WITH_HARDENING),,chrpath --replace "\$$ORIGIN" $@)
     
-$$(qt5-bin_0_OUTDIR)/libqxcb$(SUFF_DLL): $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL)
+$$(qt5-bin_0_OUTDIR)/libqxcb$(SUFF_DLL): $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL) \
+		| $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(CP) $^ $@
 	$(if $(VBOX_WITH_HARDENING),,chrpath --replace "\$$ORIGIN" $@)
-
-$$(qt5-bin_0_OUTDIR):
-	$(MKDIR) -p $@
 
    endif # x11
   endif # VBOX_WITH_ORACLE_QT || VBOX_WITH_QT_PAYLOAD
