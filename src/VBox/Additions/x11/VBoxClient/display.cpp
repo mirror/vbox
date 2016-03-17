@@ -15,47 +15,32 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include "VBoxClient.h"
+
+#include <iprt/err.h>
+#include <iprt/file.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <X11/extensions/Xrandr.h>
+
 /** @todo this should probably be replaced by something IPRT */
 /* For system() and WEXITSTATUS() */
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
-
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-
-#include <iprt/asm.h>
-#include <iprt/assert.h>
-#include <iprt/err.h>
-#include <iprt/file.h>
-#include <iprt/mem.h>
-#include <iprt/string.h>
-#include <iprt/thread.h>
-#include <VBox/log.h>
-#include <VBox/VMMDev.h>
-#include <VBox/VBoxGuestLib.h>
-
-#include "VBoxClient.h"
+#include <limits.h>
+#include <poll.h>
+#include <time.h>
 
 /* TESTING: Dynamic resizing and mouse integration toggling should work
  * correctly with a range of X servers (pre-1.3, 1.3 and later under Linux, 1.3
  * and later under Solaris) with Guest Additions installed.  Switching to a
  * virtual terminal while a user session is in place should disable dynamic
  * resizing and cursor integration, switching back should re-enable them. */
-
-/** Most recent information received for a particular screen. */
-struct screenInformation
-{
-    unsigned cx;
-    unsigned cy;
-    unsigned cBPP;
-    unsigned x;
-    unsigned y;
-    bool fEnabled;
-    bool fUpdateSize;
-    volatile bool fUpdatePosition;
-};
 
 /** Display magic number, start of a UUID. */
 #define DISPLAYSTATE_MAGIC UINT32_C(0xf0029993)
@@ -72,59 +57,144 @@ struct DISPLAYSTATE
     bool mfInit;
     /** The connection to the server. */
     Display *pDisplay;
+    /** The RandR extension base event number. */
+    int cRREventBase;
     /** Can we use version 1.2 or later of the RandR protocol here? */
     bool fHaveRandR12;
     /** The command argument to use for the xrandr binary.  Currently only
      * used to support the non-standard location on some Solaris systems -
      * would it make sense to use absolute paths on all systems? */
     const char *pcszXrandr;
-    /** The number of screens we are currently aware of. */
-    unsigned cScreensTracked;
-    /** Array of information about different screens. */
-    struct screenInformation *paScreenInformation;
+    /** Was there a recent mode hint with no following root window resize, and
+     *  if so, have we waited for a reasonable time? */
+    time_t timeLastModeHint;
 };
 
-/** Thread to monitor and react to X server VT switches and exits. */
-static DECLCALLBACK(int) vboxClientMonitorThread(RTTHREAD self, void *pvUser)
+static unsigned char *getRootProperty(struct DISPLAYSTATE *pState, const char *pszName,
+                                      long cItems, Atom type)
 {
-    struct DISPLAYSTATE *pState = (struct DISPLAYSTATE *)pvUser;
-    Display *pDisplay;
-    bool fHasVT = true;
+    Atom actualType = None;
+    int iFormat = 0;
+    ulong cReturned = 0;
+    ulong cAfter = 0;
+    unsigned char *pData = 0;
+    
+    if (XGetWindowProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay),
+                           XInternAtom(pState->pDisplay, pszName, 0), 0, cItems,
+                           False /* delete */, type, &actualType, &iFormat,
+                           &cReturned, &cAfter, &pData))
+        return NULL;
+    return pData;
+}
 
-    pDisplay = XOpenDisplay(NULL);
-    if (!pDisplay)
-        VBClFatalError(("Failed to open the X11 display\n"));
-    XSelectInput(pDisplay, DefaultRootWindow(pDisplay), PropertyChangeMask);
+static void doResize(struct DISPLAYSTATE *pState)
+{
+    /** @note The xrandr command can fail if something else accesses RandR at
+     *  the same time.  We just ignore failure for now as we do not know what
+     *  someone else is doing. */
+    if (!pState->fHaveRandR12)
+    {
+        char szCommand[256];
+        unsigned char *pData;
+
+        pData = getRootProperty(pState, "VBOXVIDEO_PREFERRED_MODE", 1, XA_INTEGER);
+        if (pData != NULL)
+        {
+            RTStrPrintf(szCommand, sizeof(szCommand), "%s -s %ux%u",
+                        pState->pcszXrandr, ((unsigned long *)pData)[0] >> 16, ((unsigned long *)pData)[0] & 0xFFFF);
+            system(szCommand);
+            XFree(pData);
+        }
+    }
+    else
+    {
+        const char szCommandBase[] =
+            "%s --output VGA-0 --auto --output VGA-1 --auto --right-of VGA-0 "
+               "--output VGA-2 --auto --right-of VGA-1 --output VGA-3 --auto --right-of VGA-2 "
+               "--output VGA-4 --auto --right-of VGA-3 --output VGA-5 --auto --right-of VGA-4 "
+               "--output VGA-6 --auto --right-of VGA-5 --output VGA-7 --auto --right-of VGA-6 "
+               "--output VGA-8 --auto --right-of VGA-7 --output VGA-9 --auto --right-of VGA-8 "
+               "--output VGA-10 --auto --right-of VGA-9 --output VGA-11 --auto --right-of VGA-10 "
+               "--output VGA-12 --auto --right-of VGA-11 --output VGA-13 --auto --right-of VGA-12 "
+               "--output VGA-14 --auto --right-of VGA-13 --output VGA-15 --auto --right-of VGA-14 "
+               "--output VGA-16 --auto --right-of VGA-15 --output VGA-17 --auto --right-of VGA-16 "
+               "--output VGA-18 --auto --right-of VGA-17 --output VGA-19 --auto --right-of VGA-18 "
+               "--output VGA-20 --auto --right-of VGA-19 --output VGA-21 --auto --right-of VGA-20 "
+               "--output VGA-22 --auto --right-of VGA-21 --output VGA-23 --auto --right-of VGA-22 "
+               "--output VGA-24 --auto --right-of VGA-23 --output VGA-25 --auto --right-of VGA-24 "
+               "--output VGA-26 --auto --right-of VGA-25 --output VGA-27 --auto --right-of VGA-26 "
+               "--output VGA-28 --auto --right-of VGA-27 --output VGA-29 --auto --right-of VGA-28 "
+               "--output VGA-30 --auto --right-of VGA-29 --output VGA-31 --auto --right-of VGA-30";
+        char szCommand[sizeof(szCommandBase) + 256];
+        RTStrPrintf(szCommand, sizeof(szCommand), szCommandBase, pState->pcszXrandr);
+        system(szCommand);
+    }
+}
+
+/** Main loop: handle display hot-plug events, property updates (which can
+ *  signal VT switches hot-plug in old X servers). */
+static void runDisplay(struct DISPLAYSTATE *pState)
+{
+    Display *pDisplay = pState->pDisplay;
+    long cValue = 1;
+
+    /* One way or another we want the preferred mode at server start-up. */
+    doResize(pState);
+    XSelectInput(pDisplay, DefaultRootWindow(pDisplay), PropertyChangeMask | StructureNotifyMask);
+    if (pState->fHaveRandR12)
+        XRRSelectInput(pDisplay, DefaultRootWindow(pDisplay), RRScreenChangeNotifyMask);
+    /* Semantics: when VBOXCLIENT_STARTED is set, pre-1.3 X.Org Server driver
+     * assumes that a client capable of handling mode hints will be present for the
+     * rest of the X session.  If we crash things will not work as they should.
+     * I thought that preferable to implementing complex crash-handling logic.
+     */
+    XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay), XInternAtom(pState->pDisplay, "VBOXCLIENT_STARTED", 0),
+                    XA_INTEGER, 32, PropModeReplace, (unsigned char *)&cValue, 1);
+    /* Interrupting this cleanly will be more work than making it robust
+     * against spontaneous termination, especially as it will never get
+     * properly tested, so I will go for the second. */
     while (true)
     {
         XEvent event;
+        struct pollfd PollFd;
+        int pollTimeOut = -1;
+        int cFds;
 
-        XNextEvent(pDisplay, &event);
-        /* This property is deleted when the server regains the virtual
-         * terminal.  Force the main thread to call xrandr again, as old X
-         * servers could not handle it while switched out. */
-        if (pState->fHaveRandR12)
-            continue;
-        if (   event.type != PropertyNotify
-            || event.xproperty.state != PropertyDelete
-            || event.xproperty.window != DefaultRootWindow(pDisplay)
-            || event.xproperty.atom != XInternAtom(pDisplay, "VBOXVIDEO_NO_VT", False))
-            continue;
-        LogRel(("VBoxClient/Display: entered virtual terminal.\n"));
-        ASMAtomicWriteBool(&pState->paScreenInformation[0].fUpdateSize, true);
-        VbglR3InterruptEventWaits();
+        /* Do not handle overflow. */
+        if (pState->timeLastModeHint > 0 && pState->timeLastModeHint < INT_MAX - 2)
+            pollTimeOut = 2 - (time(0) - pState->timeLastModeHint);
+        PollFd.fd = ConnectionNumber(pDisplay);
+        PollFd.events = POLLIN;  /* Hang-up is always reported. */
+        XFlush(pDisplay);
+        cFds = poll(&PollFd, 1, pollTimeOut >= 0 ? pollTimeOut * 1000 : -1);
+        while (XPending(pDisplay))
+        {
+            XNextEvent(pDisplay, &event);
+            /* This property is deleted when the server regains the virtual
+             * terminal.  Force the main thread to call xrandr again, as old X
+             * servers could not handle it while switched out. */
+            if (   !pState->fHaveRandR12
+                && event.type == PropertyNotify
+                && event.xproperty.state == PropertyDelete
+                && event.xproperty.window == DefaultRootWindow(pDisplay)
+                && event.xproperty.atom == XInternAtom(pDisplay, "VBOXVIDEO_NO_VT", False))
+                doResize(pState);
+            if (   !pState->fHaveRandR12
+                && event.type == PropertyNotify
+                && event.xproperty.state == PropertyNewValue
+                && event.xproperty.window == DefaultRootWindow(pDisplay)
+                && event.xproperty.atom == XInternAtom(pDisplay, "VBOXVIDEO_PREFERRED_MODE", False))
+                doResize(pState);
+            if (   pState->fHaveRandR12
+                && event.type == pState->cRREventBase + RRScreenChangeNotify)
+                pState->timeLastModeHint = time(0);
+            if (   event.type == ConfigureNotify
+                && event.xproperty.window == DefaultRootWindow(pDisplay))
+                pState->timeLastModeHint = 0;
+        }
+        if (cFds == 0 && pState->timeLastModeHint > 0)
+            doResize(pState);
     }
-    return VINF_SUCCESS;  /* Should never be reached. */
-}
-
-static int startMonitorThread(struct DISPLAYSTATE *pState)
-{
-    int rc;
-
-    rc = RTThreadCreate(NULL, vboxClientMonitorThread, (void *)pState, 0, RTTHREADTYPE_INFREQUENT_POLLER, 0, "VT_MONITOR");
-    if (rc != VINF_SUCCESS)
-        VBClFatalError(("Failed to start the VT monitor thread, rc=%Rrc\n", rc));
-    return VINF_SUCCESS;
 }
 
 static int initDisplay(struct DISPLAYSTATE *pState)
@@ -132,12 +202,10 @@ static int initDisplay(struct DISPLAYSTATE *pState)
     char szCommand[256];
     int status;
 
-    /* Initialise the guest library. */
-    int rc = VbglR3InitUser();
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
     pState->pDisplay = XOpenDisplay(NULL);
     if (!pState->pDisplay)
+        return VERR_NOT_FOUND;
+    if (!XRRQueryExtension(pState->pDisplay, &pState->cRREventBase, &status))
         return VERR_NOT_FOUND;
     pState->fHaveRandR12 = false;
     pState->pcszXrandr = "xrandr";
@@ -150,184 +218,7 @@ static int initDisplay(struct DISPLAYSTATE *pState)
     status = system(szCommand);
     if (WEXITSTATUS(status) == 0)
         pState->fHaveRandR12 = true;
-    pState->cScreensTracked = 0;
-    pState->paScreenInformation = NULL;
     return VINF_SUCCESS;
-}
-
-static void updateScreenInformation(struct DISPLAYSTATE *pState, unsigned cx, unsigned cy, unsigned cBPP, unsigned iDisplay,
-                                    unsigned x, unsigned y, bool fEnabled, bool fUpdatePosition)
-{
-    uint32_t i;
-
-    if (iDisplay >= pState->cScreensTracked)
-    {
-        pState->paScreenInformation =
-                (struct screenInformation *)RTMemRealloc(pState->paScreenInformation,
-                                                         (iDisplay + 1) * sizeof(*pState->paScreenInformation));
-        if (!pState->paScreenInformation)
-            VBClFatalError(("Failed to re-allocate screen information.\n"));
-        for (i = pState->cScreensTracked; i < iDisplay + 1; ++i)
-            RT_ZERO(pState->paScreenInformation[i]);
-        pState->cScreensTracked = iDisplay + 1;
-    }
-    pState->paScreenInformation[iDisplay].cx = cx;
-    pState->paScreenInformation[iDisplay].cy = cy;
-    pState->paScreenInformation[iDisplay].cBPP = cBPP;
-    pState->paScreenInformation[iDisplay].x = x;
-    pState->paScreenInformation[iDisplay].y = y;
-    pState->paScreenInformation[iDisplay].fEnabled = fEnabled;
-    pState->paScreenInformation[iDisplay].fUpdateSize = true;
-    pState->paScreenInformation[iDisplay].fUpdatePosition = fUpdatePosition;
-}
-
-static void updateSizeHintsProperty(struct DISPLAYSTATE *pState)
-{
-    long *paSizeHints = (long *)RTMemTmpAllocZ(pState->cScreensTracked * sizeof(long) * 2);
-    unsigned i;
-
-    if (paSizeHints == NULL)
-        VBClFatalError(("Failed to allocate size hint property memory.\n"));
-    for (i = 0; i < pState->cScreensTracked; ++i)
-    {
-        if (pState->paScreenInformation[i].fEnabled)
-            paSizeHints[2 * i] =   (pState->paScreenInformation[i].cx & 0x8fff) << 16
-                                 | (pState->paScreenInformation[i].cy & 0x8fff);
-        else if (pState->paScreenInformation[i].cx != 0 && pState->paScreenInformation[i].cy != 0)
-            paSizeHints[2 * i] = -1;
-        if (   pState->paScreenInformation[i].fEnabled
-            && pState->paScreenInformation[i].fUpdatePosition)
-            paSizeHints[2 * i + 1] =   (pState->paScreenInformation[i].x & 0x8fff) << 16
-                                     | (pState->paScreenInformation[i].y & 0x8fff);
-        else
-            paSizeHints[2 * i + 1] = -1;
-    }
-    XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay), XInternAtom(pState->pDisplay, "VBOX_SIZE_HINTS", 0),
-                    XA_INTEGER, 32, PropModeReplace, (unsigned char *)paSizeHints, pState->cScreensTracked * 2);
-    XFlush(pState->pDisplay);
-    RTMemTmpFree(paSizeHints);
-}
-
-static void notifyXServerRandR11(struct DISPLAYSTATE *pState)
-{
-    char szCommand[256];
-
-    /** @note The xrandr command can fail if something else accesses RandR at
-     *  the same time.  We just ignore failure for now and let the user try
-     *  again as we do not know what someone else is doing. */
-    if (   pState->paScreenInformation[0].fUpdateSize
-        && pState->paScreenInformation[0].cx > 0 && pState->paScreenInformation[0].cy > 0)
-    {
-        int ret;
-
-        RTStrPrintf(szCommand, sizeof(szCommand), "%s -s %ux%u",
-                    pState->pcszXrandr, pState->paScreenInformation[0].cx, pState->paScreenInformation[0].cy);
-        ret = system(szCommand);
-        LogRel(("VBoxClient/Display: executed \"%s\", returned %d.\n", szCommand, ret));
-        pState->paScreenInformation[0].fUpdateSize = false;
-    }
-}
-
-static void updateMouseCapabilities(struct DISPLAYSTATE *pState)
-{
-    uint32_t fFeatures = 0;
-    int rc;
-
-    rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-
-    if (rc != VINF_SUCCESS)
-        VBClFatalError(("Failed to get mouse status, rc=%Rrc\n", rc));
-    XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay),
-                    XInternAtom(pState->pDisplay, "VBOX_MOUSE_CAPABILITIES", 0), XA_INTEGER, 32, PropModeReplace,
-                    (unsigned char *)&fFeatures, 1);
-    XFlush(pState->pDisplay);
-}
-
-/**
- * Display change request monitor thread function.
- */
-static void runDisplay(struct DISPLAYSTATE *pState)
-{
-    int rc;
-    unsigned i, cScreensTracked;
-    uint32_t fModeSet = false;
-
-    LogRelFlowFunc(("\n"));
-    rc = VbglR3VideoModeGetHighestSavedScreen(&cScreensTracked);
-    if (rc != VINF_SUCCESS && rc != VERR_NOT_SUPPORTED)
-        VBClFatalError(("Failed to get the number of saved screen modes, rc=%Rrc\n", rc));
-    /* Make sure that we have an entry for screen 1 at least. */
-    updateScreenInformation(pState, 1024, 768, 0, 1, 0, 0, true, false);
-    if (rc == VINF_SUCCESS)
-    {
-        /* The "8" is for the sanity test below. */
-        for (i = 0; i < RT_MAX(cScreensTracked + 1, 8); ++i)
-        {
-            unsigned cx = 0, cy = 0, cBPP = 0, x = 0, y = 0;
-            bool fEnabled = true;
-
-            rc = VbglR3RetrieveVideoMode(i, &cx, &cy, &cBPP, &x, &y,
-                                         &fEnabled);
-            /* Sanity test for VbglR3VideoModeGetHighestSavedScreen(). */
-            if (i > cScreensTracked && rc != VERR_NOT_FOUND)
-                VBClFatalError(("Internal error retrieving the number of saved screen modes.\n"));
-            if (rc == VINF_SUCCESS)
-                updateScreenInformation(pState, cx, cy, cBPP, i, x, y, fEnabled, true);
-        }
-    }
-    /* Semantics: when VBOX_HAS_GRAPHICS is set, the X server driver assumes
-     * that a client capable of forwarding mode hints will be present for the
-     * rest of the X session.  If we crash things will not work as they should.
-     * I thought that preferable to implementing complex crash-handling logic.
-     */
-    XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay), XInternAtom(pState->pDisplay, "VBOX_HAS_GRAPHICS", 0),
-                    XA_INTEGER, 32, PropModeReplace, (unsigned char *)&fModeSet, 1);
-    while (true)
-    {
-        uint32_t fEvents;
-        updateMouseCapabilities(pState);
-        updateSizeHintsProperty(pState);
-        if (!pState->fHaveRandR12)
-            notifyXServerRandR11(pState);
-        rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED, RT_INDEFINITE_WAIT,
-                             &fEvents);
-        /* Interrupted is used to re-set the mode without changing it. */
-        if (rc == VERR_INTERRUPTED)
-            rc = VINF_SUCCESS;
-        if (RT_FAILURE(rc))  /* VERR_NO_MEMORY? */
-            VBClFatalError(("event wait failed, rc=%Rrc\n", rc));
-        /* If it is a size hint, set the new size. */
-        if (fEvents & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
-        {
-            uint32_t cx = 0, cy = 0, cBPP = 0, iDisplay = 0, x = 0, y = 0;
-            bool fEnabled = true, fUpdatePosition = true;
-            VMMDevSeamlessMode Mode;
-
-            rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBPP, &iDisplay,
-                                               &x, &y, &fEnabled,
-                                               &fUpdatePosition, true);
-            if (rc != VINF_SUCCESS)
-                VBClFatalError(("Failed to get display change request, rc=%Rrc\n",
-                                rc));
-            else
-                LogRelFlowFunc(("Got size hint from host cx=%d, cy=%d, bpp=%d, iDisplay=%d, x=%d, y=%d fEnabled=%d\n",
-                                cx, cy, cBPP, iDisplay, x, y, fEnabled));
-            if (iDisplay > INT32_MAX)
-                VBClFatalError(("Received a size hint for too high display number %u\n",
-                            (unsigned) iDisplay));
-            updateScreenInformation(pState, cx, cy, cBPP, iDisplay, x, y, fEnabled, fUpdatePosition);
-            rc = VbglR3SeamlessGetLastEvent(&Mode);
-            if (RT_FAILURE(rc))
-                VBClFatalError(("Failed to check seamless mode, rc=%Rrc\n", rc));
-            if (Mode == VMMDev_Seamless_Disabled)
-            {
-                rc = VbglR3SaveVideoMode(iDisplay, cx, cy, cBPP, x, y,
-                                         fEnabled);
-                if (RT_FAILURE(rc) && rc != VERR_NOT_SUPPORTED)
-                    VBClFatalError(("Failed to save size hint, rc=%Rrc\n", rc));
-            }
-        }
-    }
 }
 
 static const char *getPidFilePath()
@@ -353,9 +244,6 @@ static int init(struct VBCLSERVICE **ppInterface)
     rc = initDisplay(pSelf);
     if (RT_FAILURE(rc))
         return rc;
-    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to set filter mask, rc=%Rrc.\n", rc));
     if (RT_SUCCESS(rc))
         pSelf->mfInit = true;
     return rc;
@@ -368,18 +256,8 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
     if (!pSelf->mfInit)
         return VERR_WRONG_ORDER;
-    rc = startMonitorThread(pSelf);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to start the VT monitor thread: %Rrc\n", rc));
     runDisplay(pSelf);
     return VERR_INTERNAL_ERROR;  /* "Should never reach here." */
-}
-
-static void cleanup(struct VBCLSERVICE **ppInterface)
-{
-    NOREF(ppInterface);
-    VbglR3CtlFilterMask(0, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
-    VbglR3Term();
 }
 
 struct VBCLSERVICE vbclDisplayInterface =
@@ -387,7 +265,7 @@ struct VBCLSERVICE vbclDisplayInterface =
     getPidFilePath,
     init,
     run,
-    cleanup
+    VBClServiceDefaultCleanup
 };
 
 struct VBCLSERVICE **VBClGetDisplayService()

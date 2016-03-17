@@ -180,10 +180,6 @@ static void compareAndMaybeSetUseHardwareCursor(VBOXPtr pVBox, uint32_t fCursorC
         pVBox->fUseHardwareCursor = useHardwareCursor(fCursorCapabilities);
 }
 
-#define SIZE_HINTS_PROPERTY          "VBOX_SIZE_HINTS"
-#define SIZE_HINTS_MISMATCH_PROPERTY "VBOX_SIZE_HINTS_MISMATCH"
-#define MOUSE_CAPABILITIES_PROPERTY  "VBOX_MOUSE_CAPABILITIES"
-
 #define COMPARE_AND_MAYBE_SET(pDest, src, pfChanged, fSet) \
 do { \
     if (*(pDest) != (src)) \
@@ -193,68 +189,6 @@ do { \
         *(pfChanged) = true; \
     } \
 } while(0)
-
-/** Read in information about the most recent size hints and cursor
- * capabilities requested for the guest screens from a root window property set
- * by an X11 client.  Information obtained via HGSMI takes priority. */
-void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, bool *pfNeedUpdate)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    size_t cPropertyElements, cDummy;
-    int32_t *paModeHints,  *pfCursorCapabilities;
-    unsigned i;
-    bool fChanged;
-    bool fNeedUpdate = false;
-    int32_t fSizeMismatch = false;
-
-    if (vbvxGetIntegerPropery(pScrn, SIZE_HINTS_PROPERTY, &cPropertyElements, &paModeHints) != VINF_SUCCESS)
-        paModeHints = NULL;
-    if (paModeHints != NULL)
-        for (i = 0; i < cPropertyElements / 2 && i < pVBox->cScreens; ++i)
-        {
-            VBVAMODEHINT *pVBVAModeHint = &pVBox->paVBVAModeHints[i];
-            int32_t iSizeHint = paModeHints[i * 2];
-            int32_t iLocation = paModeHints[i * 2 + 1];
-            bool fNoHGSMI = !pVBox->fHaveHGSMIModeHints || pVBVAModeHint->magic != VBVAMODEHINT_MAGIC;
-
-            fChanged = false;
-            if (iSizeHint != 0)
-            {
-                if (iSizeHint == -1)
-                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afConnected, false, &fChanged, fNoHGSMI);
-                else
-                {
-                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredSize.cx, (iSizeHint >> 16) & 0x8fff, &fChanged, fNoHGSMI);
-                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredSize.cy, iSizeHint & 0x8fff, &fChanged, fNoHGSMI);
-                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afConnected, true, &fChanged, fNoHGSMI);
-                }
-                if (iLocation == -1)
-                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afHaveLocation, false, &fChanged, fNoHGSMI);
-                else
-                {
-                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredLocation.x, (iLocation >> 16) & 0x8fff, &fChanged,
-                                          fNoHGSMI);
-                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredLocation.y, iLocation & 0x8fff, &fChanged, fNoHGSMI);
-                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afHaveLocation, true, &fChanged, fNoHGSMI);
-                }
-                if (fChanged && fNoHGSMI)
-                    fNeedUpdate = true;
-                if (fChanged && !fNoHGSMI)
-                    fSizeMismatch = true;
-            }
-        }
-    fChanged = false;
-    if (   vbvxGetIntegerPropery(pScrn, MOUSE_CAPABILITIES_PROPERTY, &cDummy, &pfCursorCapabilities) == VINF_SUCCESS
-        && cDummy == 1)
-        compareAndMaybeSetUseHardwareCursor(pVBox, *pfCursorCapabilities, &fChanged, !pVBox->fHaveHGSMIModeHints);
-    if (fChanged && !pVBox->fHaveHGSMIModeHints)
-        fNeedUpdate = true;
-    if (fChanged && pVBox->fHaveHGSMIModeHints)
-        fSizeMismatch = true;
-    vbvxSetIntegerPropery(pScrn, SIZE_HINTS_MISMATCH_PROPERTY, 1, &fSizeMismatch, false);
-    if (pfNeedUpdate != NULL && fNeedUpdate)
-        *pfNeedUpdate = true;
-}
 
 /** Read in information about the most recent size hints and cursor
  * capabilities requested for the guest screens from HGSMI. */

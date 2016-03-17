@@ -200,6 +200,9 @@ typedef struct VBOXRec
     /** Input handler handle for ACPI hot-plug listener. */
     void *hACPIEventHandler;
 # endif
+#else
+    /** Has VBoxClient registered with us for setting video modes? */
+    bool fHaveVBoxClient;
 #endif
     /** HGSMI guest heap context */
     HGSMIGUESTCOMMANDCONTEXT guestCtx;

@@ -221,9 +221,11 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
     VBVXASSERT(rc, ("Failed to enable screen update reporting for at least one virtual monitor.\n"));
 #ifdef VBOXVIDEO_13
     VBoxHGSMISendCapsInfo(&pVBox->guestCtx, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
+#else
+    VBoxHGSMISendCapsInfo(&pVBox->guestCtx, VBVACAPS_DISABLE_CURSOR_INTEGRATION);
+#endif
     pVBox->fHaveHGSMIModeHints = haveHGSMIModeHintAndCursorReportingInterface(pVBox);
     pVBox->fHostHasScreenBlankingFlag = hostHasScreenBlankingFlag(pVBox);
-#endif
     return rc;
 }
 

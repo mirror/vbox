@@ -988,6 +988,7 @@ vboxLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
     (void)pVisual;
 }
 
+#ifndef VBOXVIDEO_13
 /** Set the graphics and guest cursor support capabilities to the host if
  *  the user-space helper is running. */
 static void updateGraphicsCapability(ScrnInfoPtr pScrn, Bool hasVT)
@@ -997,22 +998,17 @@ static void updateGraphicsCapability(ScrnInfoPtr pScrn, Bool hasVT)
     int32_t *paData;
     int rc;
 
-    if (pVBox->fHaveHGSMIModeHints)
+    if (!pVBox->fHaveHGSMIModeHints)
         return;
-    rc = vbvxGetIntegerPropery(pScrn, "VBOX_HAS_GRAPHICS", &cData, &paData);
+    rc = vbvxGetIntegerPropery(pScrn, "VBOXCLIENT_STARTED", &cData, &paData);
     if (rc != VINF_SUCCESS || cData != 1)
         return;
-    if (RT_BOOL(*paData) != hasVT)
-    {
-        uint32_t fFeatures;
-        VbglR3SetGuestCaps(hasVT ? VMMDEV_GUEST_SUPPORTS_GRAPHICS : 0, hasVT ? 0 : VMMDEV_GUEST_SUPPORTS_GRAPHICS);
-        rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-        fFeatures &= VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE | VMMDEV_MOUSE_NEW_PROTOCOL;
-        if (RT_SUCCESS(rc))
-            VbglR3SetMouseStatus(hasVT ? fFeatures : fFeatures | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
-    }
-    *paData = hasVT;
+    pVBox->fHaveVBoxClient = TRUE;
+    VBoxHGSMISendCapsInfo(&pVBox->guestCtx,   hasVT
+                                            ? VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION
+                                            : VBVACAPS_DISABLE_CURSOR_INTEGRATION);
 }
+#endif
 
 #ifdef VBOXVIDEO_13
 
@@ -1110,14 +1106,21 @@ static void setSizesRandR12(ScrnInfoPtr pScrn, bool fScreenInitTime)
 
 #else
 
+#define PREFERRED_MODE_ATOM_NAME "VBOXVIDEO_PREFERRED_MODE"
+
 static void setSizesRandR11(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     DisplayModePtr pNewMode;
+    int32_t propertyValue;
 
     pNewMode = pScrn->modes != pScrn->currentMode ? pScrn->modes : pScrn->modes->next;
     pNewMode->HDisplay = RT_CLAMP(pVBox->pScreens[0].aPreferredSize.cx, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MAX_VIRTUAL);
     pNewMode->VDisplay = RT_CLAMP(pVBox->pScreens[0].aPreferredSize.cy, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MAX_VIRTUAL);
+    propertyValue = (pNewMode->HDisplay << 16) + pNewMode->VDisplay;
+    ChangeWindowProperty(ROOT_WINDOW(pScrn), MakeAtom(PREFERRED_MODE_ATOM_NAME,
+                         sizeof(PREFERRED_MODE_ATOM_NAME) - 1, TRUE), XA_INTEGER, 32,
+                         PropModeReplace, 1, &propertyValue, TRUE);
 }
 
 #endif
@@ -1149,14 +1152,12 @@ static void vboxBlockHandler(pointer pData, OSTimePtr pTimeout, pointer pReadmas
 
     (void)pTimeout;
     (void)pReadmask;
-    updateGraphicsCapability(pScrn, pScrn->vtSema);
+#ifndef VBOXVIDEO_13
+    if (!pVBox->fHaveVBoxClient)
+        updateGraphicsCapability(pScrn, pScrn->vtSema);
+#endif
     if (pScrn->vtSema)
         vbvxReadSizesAndCursorIntegrationFromHGSMI(pScrn, &fNeedUpdate);
-    /* This has to be done even when we are switched out so that VBoxClient can
-     * set a mode using RandR without having to know the virtual terminal state.
-     */
-    if (ROOT_WINDOW(pScrn) != NULL)
-        vbvxReadSizesAndCursorIntegrationFromProperties(pScrn, &fNeedUpdate);
     if (fNeedUpdate)
         setSizesAndCursorIntegration(pScrn, false);
 }
@@ -1245,9 +1246,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     if (ShadowFBInit2(pScreen, NULL, vbvxHandleDirtyRect) != TRUE)
         return FALSE;
     VBoxInitialiseSizeHints(pScrn);
-    /* Get any screen size hints from HGSMI.  Do not yet try to access X11
-     * properties, as they are not yet set up, and nor are the clients that
-     * might have set them. */
+    /* Get any screen size hints from HGSMI. */
     vbvxReadSizesAndCursorIntegrationFromHGSMI(pScrn, NULL);
 
 #ifdef VBOXVIDEO_13
@@ -1365,7 +1364,6 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
 #endif
 
     TRACE_ENTRY();
-    updateGraphicsCapability(pScrn, TRUE);
     vbvxSetUpHGSMIHeapInGuest(pVBox, pScrn->videoRam * 1024);
     vboxEnableVbva(pScrn);
     /* Re-set video mode */
@@ -1373,6 +1371,7 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
     vbvxReadSizesAndCursorIntegrationFromHGSMI(pScrn, NULL);
     setSizesAndCursorIntegration(pScrn, false);
 #else
+    updateGraphicsCapability(pScrn, TRUE);
     setModeRandR11(pScrn, pScrn->currentMode, false, true, cXOverRide, cYOverRide);
     DeleteProperty(ROOT_WINDOW(pScrn), MakeAtom(NO_VT_ATOM_NAME, sizeof(NO_VT_ATOM_NAME) - 1, TRUE));
 #endif
@@ -1389,11 +1388,11 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
 #endif
 
     TRACE_ENTRY();
-    updateGraphicsCapability(pScrn, FALSE);
 #ifdef VBOXVIDEO_13
     for (i = 0; i < pVBox->cScreens; ++i)
         vbox_crtc_dpms(pVBox->pScreens[i].paCrtcs, DPMSModeOff);
 #else
+    updateGraphicsCapability(pScrn, FALSE);
     ChangeWindowProperty(ROOT_WINDOW(pScrn), MakeAtom(NO_VT_ATOM_NAME, sizeof(NO_VT_ATOM_NAME) - 1, FALSE), XA_INTEGER, 32,
                          PropModeReplace, 1, &propertyValue, TRUE);
 #endif
