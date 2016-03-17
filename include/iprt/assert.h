@@ -1002,7 +1002,7 @@ RT_C_DECLS_END
 #endif
 
 /** @def AssertFailed
- * An assertion failed hit breakpoint.
+ * An assertion failed, hit breakpoint.
  */
 #ifdef RT_STRICT
 # define AssertFailed()  \
@@ -1015,7 +1015,7 @@ RT_C_DECLS_END
 #endif
 
 /** @def AssertFailedStmt
- * An assertion failed hit breakpoint and execute statement.
+ * An assertion failed, hit breakpoint and execute statement.
  */
 #ifdef RT_STRICT
 # define AssertFailedStmt(stmt) \
@@ -2204,9 +2204,8 @@ RT_C_DECLS_END
     do { AssertMsg(RT_SUCCESS_NP(rc), msg); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCStmt
- * Asserts a iprt status code successful and if it's not execute @a stmt.
- *
- * If RT_STRICT is defined the message will be printed and a breakpoint hit before it is executed
+ * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and
+ * execute @a stmt if it isn't.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
@@ -2218,9 +2217,8 @@ RT_C_DECLS_END
     do { AssertMsgStmt(RT_SUCCESS_NP(rc), msg, stmt); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCReturn
- * Asserts a iprt status code successful and if it's not return the specified status code.
- *
- * If RT_STRICT is defined the message will be printed and a breakpoint hit before it returns
+ * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and return
+ * @a rcRet if it isn't.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
@@ -2231,10 +2229,8 @@ RT_C_DECLS_END
     do { AssertMsgReturn(RT_SUCCESS_NP(rc), msg, rcRet); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCReturnStmt
- * Asserts a iprt status code successful and if it's not execute @a stmt and
- * return the specified status code (@a rcRet).
- *
- * If RT_STRICT is defined the message will be printed and a breakpoint hit before it returns
+ * Asserts a iprt status code successful, bitch (RT_STRICT mode only), execute
+ * @a stmt and return @a rcRet if it isn't.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
@@ -2247,9 +2243,8 @@ RT_C_DECLS_END
     do { AssertMsgReturnStmt(RT_SUCCESS_NP(rc), msg, stmt, rcRet); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCReturnVoid
- * Asserts a iprt status code successful and if it's not return.
- *
- * If RT_STRICT is defined the message will be printed and a breakpoint hit before it returns
+ * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and return
+ * void if it isn't.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
@@ -2259,9 +2254,8 @@ RT_C_DECLS_END
     do { AssertMsgReturnVoid(RT_SUCCESS_NP(rc), msg); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCReturnVoidStmt
- * Asserts a iprt status code successful and execute statement/break if it's not.
- *
- * If RT_STRICT is defined the message will be printed and a breakpoint hit before it returns
+ * Asserts a iprt status code successful, bitch (RT_STRICT mode only), execute
+ * @a stmt and return void if it isn't.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
@@ -2272,9 +2266,8 @@ RT_C_DECLS_END
     do { AssertMsgReturnVoidStmt(RT_SUCCESS_NP(rc), msg, stmt); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCBreak
- * Asserts a iprt status code successful and if it's not break.
- *
- * If RT_STRICT is defined the message will be printed and a breakpoint hit before it breaks
+ * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break
+ * if it isn't.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
@@ -2284,9 +2277,8 @@ RT_C_DECLS_END
     if (1) { AssertMsgBreak(RT_SUCCESS(rc), msg); NOREF(rc); } else do {} while (0)
 
 /** @def AssertMsgRCBreakStmt
- * Asserts a iprt status code successful and execute statement/break if it's not.
- *
- * If RT_STRICT is defined the message will be printed and a breakpoint hit before it returns
+ * Asserts a iprt status code successful, bitch (RT_STRICT mode only), execute
+ * @a stmt and break if it isn't.
  *
  * @param   rc      iprt status code.
  * @param   msg     printf argument list (in parenthesis).
