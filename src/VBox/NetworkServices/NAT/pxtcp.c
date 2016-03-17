@@ -1705,11 +1705,11 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         status = getsockopt(pxtcp->sock, SOL_SOCKET, SO_ERROR,
                             (char *)&sockerr, &optlen);
         if (status == SOCKET_ERROR) { /* should not happen */
-            DPRINTF(("sock %d: SO_ERROR failed: %R[sockerr]\n",
+            DPRINTF(("sock %d: POLLERR: SO_ERROR failed: %R[sockerr]\n",
                      fd, SOCKERRNO()));
         }
         else {
-            DPRINTF0(("sock %d: %R[sockerr]\n", fd, sockerr));
+            DPRINTF0(("sock %d: POLLERR: %R[sockerr]\n", fd, sockerr));
         }
         return pxtcp_schedule_reset(pxtcp);
     }
@@ -1726,7 +1726,7 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         nread = pxtcp_sock_read(pxtcp, &stop_pollin);
         if (nread < 0) {
             sockerr = -(int)nread;
-            DPRINTF0(("sock %d: %R[sockerr]\n", fd, sockerr));
+            DPRINTF0(("sock %d: POLLIN: %R[sockerr]\n", fd, sockerr));
             return pxtcp_schedule_reset(pxtcp);
         }
 
