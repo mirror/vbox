@@ -411,8 +411,10 @@ void UIGDetailsElement::prepareElement()
     m_pHighlightMachine = new QStateMachine(this);
     /* Create 'default' state: */
     QState *pStateDefault = new QState(m_pHighlightMachine);
+    pStateDefault->assignProperty(this, "animationDarkness", m_iDefaultDarkness);
     /* Create 'highlighted' state: */
     QState *pStateHighlighted = new QState(m_pHighlightMachine);
+    pStateHighlighted->assignProperty(this, "animationDarkness", m_iHighlightDarkness);
 
     /* Forward animation: */
     m_pForwardAnimation = new QPropertyAnimation(this, "animationDarkness", this);
