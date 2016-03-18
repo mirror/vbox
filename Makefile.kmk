@@ -238,9 +238,9 @@ else # VBOX_WITH_QTGUI_V5
      qt5-bin_SOURCES = \
       $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).*.*.*)=>lib$(qtmod)$(SUFF_DLL).5) \
       $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL) \
-      $(VBOX_PATH_QT)/libxcb$(SUFF_DLL).1=>legacy/libxcb$(SUFF_DLL).1 \
-      $(VBOX_PATH_QT)/libX11$(SUFF_DLL).6=>legacy/libX11$(SUFF_DLL).6 \
-      $(VBOX_PATH_QT)/libX11-xcb$(SUFF_DLL).1=>legacy/libX11-xcb$(SUFF_DLL).1
+      $(VBOX_PATH_QT)/lib/legacy/libxcb$(SUFF_DLL).1=>legacy/libxcb$(SUFF_DLL).1 \
+      $(VBOX_PATH_QT)/lib/legacy/libX11$(SUFF_DLL).6=>legacy/libX11$(SUFF_DLL).6 \
+      $(VBOX_PATH_QT)/lib/legacy/libX11-xcb$(SUFF_DLL).1=>legacy/libX11-xcb$(SUFF_DLL).1
     else # !VBOX_WITH_HARDENING
      # For non-hardened builds we need to remove the RUNPATH. This stuff is
      # ugly but we need to prevent kBuild from hard-linking otherwise we
