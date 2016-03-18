@@ -89,6 +89,8 @@
 /** Report a value found in a VMM register, sending a string on the form
  * "value-name:register-name". */
 #define VMMDEV_TESTING_CMD_VALUE_REG    UINT32_C(0xcab1e007)
+/** Print string, sending a string including newline. (RTTestPrintf) */
+#define VMMDEV_TESTING_CMD_PRINT        UINT32_C(0xcab1e008)
 /** @} */
 
 /** @name Value units

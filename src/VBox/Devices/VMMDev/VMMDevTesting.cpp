@@ -264,6 +264,7 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 case VMMDEV_TESTING_CMD_SUB_NEW:
                 case VMMDEV_TESTING_CMD_FAILED:
                 case VMMDEV_TESTING_CMD_SKIPPED:
+                case VMMDEV_TESTING_CMD_PRINT:
                     if (   off < sizeof(pThis->TestingData.String.sz) - 1
                         && cb == 1)
                     {
@@ -305,6 +306,11 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                                             RTTestSkipped(pThis->hTestingTest, NULL);
                                     }
                                     VMMDEV_TESTING_OUTPUT(("testing: SKIPPED '%s'\n", pThis->TestingData.String.sz));
+                                    break;
+                                case VMMDEV_TESTING_CMD_PRINT:
+                                    if (pThis->hTestingTest != NIL_RTTEST && off)
+                                        RTTestPrintf(pThis->hTestingTest, RTTESTLVL_ALWAYS, "%s", pThis->TestingData.String.sz);
+                                    VMMDEV_TESTING_OUTPUT(("testing: '%s'\n", pThis->TestingData.String.sz));
                                     break;
                             }
 #else
@@ -404,7 +410,7 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 
 
                 /*
-                 * RTTestValue with the return from DBGFR3RegNmQuery.
+                 * RTTestValue with the output from DBGFR3RegNmQuery.
                  */
                 case VMMDEV_TESTING_CMD_VALUE_REG:
                 {
@@ -423,7 +429,6 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                         return VINF_SUCCESS;
                     }
                     break;
-
                 }
 
                 default:
