@@ -356,7 +356,7 @@ setup()
                     ;;
             esac
             ;;
-        1.12.* | 1.13.* | 1.14.* | 1.15.* | 1.16.* )
+        1.12.* | 1.13.* | 1.14.* | 1.15.* | 1.16.* | 1.17.* | 1.18.* )
             xserver_version="X.Org Server ${x_version_short}"
             vboxvideo_src=vboxvideo_drv_`echo ${x_version_short} | sed 's/\.//'`.so
             setupxorgconf=""
@@ -367,6 +367,11 @@ setup()
                 dox11config=""
                 vboxvideo_src=""
             }
+            # Do not install if we can use the kernel driver.
+            case `uname -r` in
+                1.* | 2.* | 3.[0-9].* | 3.11 ) ;;
+                * ) vboxvideo_src="" ;;
+            esac
             ;;
         * )
             # For anything else, assume kernel drivers.
