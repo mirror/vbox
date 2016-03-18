@@ -446,6 +446,9 @@ cleanup()
       rm -rf /usr/src/$i-*
     done
 
+    # Clean-up X11-related bits
+    /sbin/rcvboxadd-x11 cleanup
+
     # Remove other files
     rm /sbin/mount.vboxsf 2>/dev/null
     rm /sbin/rcvboxadd 2>/dev/null
