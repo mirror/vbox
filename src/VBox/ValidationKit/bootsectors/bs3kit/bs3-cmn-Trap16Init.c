@@ -33,7 +33,7 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/* We ASSUME that BS3CODE16 is 64KB aligned, so the low 16-bit of the
+/* We ASSUME that BS3CLASS16CODE is 64KB aligned, so the low 16-bit of the
    flat address matches.   Also, these symbols are defined both with
    and without underscore prefixes. */
 extern BS3_DECL(void) BS3_FAR_CODE Bs3Trap16DoubleFaultHandler80386(void);
@@ -56,10 +56,21 @@ BS3_DECL(void) Bs3Trap16InitEx(bool f386Plus)
      */
     if (f386Plus)
     {
-        bs3Trap16GenericTrapErrCode[1] = 0;
-        bs3Trap16GenericTrapErrCode[2] = 0;
-        bs3Trap16GenericTrapOrInt[1]   = 0;
-        bs3Trap16GenericTrapOrInt[2]   = 0;
+        uint8_t BS3_FAR_DATA *pbFunction = &bs3Trap16GenericTrapErrCode[0];
+#if ARCH_BITS == 16
+        if (g_bBs3CurrentMode != BS3_MODE_RM)
+            pbFunction = (uint8_t BS3_FAR_DATA *)BS3_FP_MAKE(BS3_SEL_TILED + 1, BS3_FP_OFF(pbFunction));
+#endif
+        pbFunction[1] = 0;
+        pbFunction[2] = 0;
+
+        pbFunction = &bs3Trap16GenericTrapOrInt[0];
+#if ARCH_BITS == 16
+        if (g_bBs3CurrentMode != BS3_MODE_RM)
+            pbFunction = (uint8_t BS3_FAR_DATA *)BS3_FP_MAKE(BS3_SEL_TILED + 1, BS3_FP_OFF(pbFunction));
+#endif
+        pbFunction[1] = 0;
+        pbFunction[2] = 0;
     }
 
     /*

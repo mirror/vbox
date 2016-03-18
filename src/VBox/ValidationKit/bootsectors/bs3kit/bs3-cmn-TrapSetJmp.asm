@@ -84,8 +84,8 @@ BS3_PROC_BEGIN_CMN Bs3TrapSetJmp
         ;
 %if TMPL_BITS == 16
         xor     ax, ax
-        push    ax
         push    word [xBP + xCB*2 + 2]
+        push    ax
         push    word [xBP + xCB*2]
         call    Bs3SelFar32ToFlat32
         add     sp, 6h

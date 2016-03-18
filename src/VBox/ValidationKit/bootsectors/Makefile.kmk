@@ -44,7 +44,7 @@ endif
 #
 if defined(VBOX_WITH_OPEN_WATCOM)
  if1of ($(KBUILD_TARGET), win)
-# temp disabled #  VBOX_WITH_BS3KIT = 1
+  VBOX_WITH_BS3KIT = 1
  else if $(VBOX_GCC_VERSION_CC) >= 40400 # ms_abi was added in 4.4
 # Awaiting elf -> omf converter #  if1of ($(KBUILD_TARGET), linux)
 # Awaiting elf -> omf converter #   VBOX_WITH_BS3KIT = 1

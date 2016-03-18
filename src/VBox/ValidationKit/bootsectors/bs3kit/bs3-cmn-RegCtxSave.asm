@@ -35,8 +35,6 @@ BS3_EXTERN_DATA16 g_uBs3CpuDetected
 TMPL_BEGIN_TEXT
 
 
-%if BS3REGCTX_size %
-
 
 ;;
 ; Restores the given register context.
@@ -48,12 +46,12 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
-        xPUSHF                          ; save the incoming flags exactly.
-        push    xAX                     ; save incoming xAX
-        push    xCX                     ; save incoming xCX
-        push    xDI
-        BS3_ONLY_16BIT_STMT push    es
-        BS3_ONLY_16BIT_STMT push    ds
+        xPUSHF                          ; xBP - xCB*1: save the incoming flags exactly.
+        push    xAX                     ; xBP - xCB*2: save incoming xAX
+        push    xCX                     ; xBP - xCB*3: save incoming xCX
+        push    xDI                     ; xBP - xCB*4: save incoming xDI
+        BS3_ONLY_16BIT_STMT push    es  ; xBP - xCB*5
+        BS3_ONLY_16BIT_STMT push    ds  ; xBP - xCB*6
 
         ;
         ; Prologue. Load ES:xDI with pRegCtx.
@@ -69,57 +67,53 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         ;
         ; Clear the whole structure first, unless 64-bit
         ;
-        push    es
-        les
-        push    ds
-        pop     ds
         xor     xAX, xAX
         cld
  %if TMPL_BITS == 16
+        les     xDI, [xBP + xCB*2]
         mov     xCX, BS3REGCTX_size / 2
         rep stosw
-        mov     di, [bp + 4]
  %else
+        mov     xDI, [xBP + xCB*2]
         mov     xCX, BS3REGCTX_size / 4
         rep stosd
-        mov     xDI, [xBP + xCB*2]
  %endif
+        mov     xDI, [xBP + xCB*2]
 %endif
 
         ;
         ; Save the current mode.
         ;
-        mov     cl, BS3_DATA16_WRT(g_bBs3CurrentMode)
+        mov     cl, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         mov     [BS3_ONLY_16BIT(es:) xDI + BS3REGCTX.bMode], cl
-
 %if TMPL_BITS == 16
+
         ;
-        ; Check what the CPU can do.
+        ; In 16-bit mode we could be running on really ancient CPUs, so check
+        ; mode and detected CPU and proceed with care.
         ;
-        cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80386
+        cmp     cl, BS3_MODE_PP16
         jae     .save_full
 
-        ; Do the 80286 specifics first and load ES into DS so we can save some segment prefix bytes.
-        cmp     byte [es:BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
+        mov     cl, [BS3_DATA16_WRT(g_uBs3CpuDetected)]
+        cmp     cl, BS3CPU_80386
+        jae     .save_full
+
+        ; load ES into DS so we can save some segment prefix bytes.
         push    es
         pop     ds
-        jb      .save_16_bit_ancient
 
-        smsw    [xDI + BS3REGCTX.cr0]
-        sldt    [xDI + BS3REGCTX.ldtr]
-        str     [xDI + BS3REGCTX.tr]
-
-.save_16_bit_ancient:
         ; 16-bit GPRs not on the stack.
         mov     [xDI + BS3REGCTX.rdx], dx
         mov     [xDI + BS3REGCTX.rbx], bx
         mov     [xDI + BS3REGCTX.rsi], si
 
-        ; flags
-        mov     xAX, [xBP + xCB - xCB]
-        mov     [xDI + BS3REGCTX.rflags], xAX
+        ; Join the common code.
+        cmp     cl, BS3CPU_80286
+        jb      .common_ancient
 
-        jmp     .common
+        smsw    [xDI + BS3REGCTX.cr0]
+        jmp     .common_80286
 %endif
 
 
@@ -148,14 +142,18 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     [xDI + BS3REGCTX.r15], r15
 %endif
 %if TMPL_BITS == 16 ; Save high bits.
-        mov     [xDI + BS3REGCTX.eax], eax
-        mov     [xDI + BS3REGCTX.ecx], ecx
-        mov     [xDI + BS3REGCTX.edi], edi
-        mov     [xDI + BS3REGCTX.ebp], ebp
-        mov     [xDI + BS3REGCTX.esp], esp
+        mov     [xDI + BS3REGCTX.rax], eax
+        mov     [xDI + BS3REGCTX.rcx], ecx
+        mov     [xDI + BS3REGCTX.rdi], edi
+        mov     [xDI + BS3REGCTX.rbp], ebp
+        mov     [xDI + BS3REGCTX.rsp], esp
         pushfd
-        pop     [xDI + BS3REGCTX.rflags]
+        pop     dword [xDI + BS3REGCTX.rflags]
 %endif
+
+        ; 386 segment registers.
+        mov     [xDI + BS3REGCTX.fs], fs
+        mov     [xDI + BS3REGCTX.gs], gs
 
         ; Control registers.
         mov     sAX, cr0
@@ -166,29 +164,28 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     [xDI + BS3REGCTX.cr3], sAX
         mov     sAX, cr4
         mov     [xDI + BS3REGCTX.cr4], sAX
+
+        ; 80286 control registers.
+.common_80286:
         str     [xDI + BS3REGCTX.tr]
         sldt    [xDI + BS3REGCTX.ldtr]
 
-        ; Segment registers.
-        mov     [xDI + BS3REGCTX.fs], fs
-        mov     [xDI + BS3REGCTX.gs], gs
-
         ; Common stuff - stuff on the stack, 286 segment registers.
-.common:
-        mov     xAX, [xBP - xCB]
+.common_ancient:
+        mov     xAX, [xBP - xCB*1]
         mov     [xDI + BS3REGCTX.rflags], xAX
         mov     xAX, [xBP - xCB*2]
-        mov     [xDI + BS3REGCTX.eax], xAX
+        mov     [xDI + BS3REGCTX.rax], xAX
         mov     xAX, [xBP - xCB*3]
-        mov     [xDI + BS3REGCTX.ecx], xAX
+        mov     [xDI + BS3REGCTX.rcx], xAX
         mov     xAX, [xBP - xCB*4]
-        mov     [xDI + BS3REGCTX.edi], xAX
+        mov     [xDI + BS3REGCTX.rdi], xAX
         mov     xAX, [xBP]
-        mov     [xDI + BS3REGCTX.ebp], xAX
+        mov     [xDI + BS3REGCTX.rbp], xAX
         mov     xAX, [xBP + xCB]
         mov     [xDI + BS3REGCTX.rip], xAX
         lea     xAX, [xBP + xCB*2]
-        mov     [xDI + BS3REGCTX.esp], xAX
+        mov     [xDI + BS3REGCTX.rsp], xAX
 
         mov     [xDI + BS3REGCTX.cs], cs
 %if TMPL_BITS == 16
@@ -200,6 +197,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     [xDI + BS3REGCTX.ds], ds
         mov     [xDI + BS3REGCTX.es], es
 %endif
+        mov     [xDI + BS3REGCTX.ss], ss
 
         ;
         ; Return.

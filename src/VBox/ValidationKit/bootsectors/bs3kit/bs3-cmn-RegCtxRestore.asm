@@ -45,6 +45,15 @@ TMPL_BEGIN_TEXT
 ; @note         ASSUMES ring-0.
 ; @note         Only respects the BS3_MODE_CODE_MASK part of pRegCtx->bMode.
 ;
+%if TMPL_BITS == 16 || TMPL_BITS == 32
+BS3_PROC_BEGIN_CMN Bs3RegCtxRestore_aborts ; special entry point for when watcom applies __aborts
+ %if TMPL_BITS == 16
+        xor     xAX, xAX
+        push    xAX                     ; fake return address.
+ %else
+        push    0feedfaceh              ; fake return address.
+ %endif
+%endif
 BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         BS3_CALL_CONV_PROLOG 2
 
@@ -102,9 +111,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         ltr     [bx + BS3REGCTX.tr]
 
 .restore_16_bit_ancient:
-int3
         ; Some general registers.
-        mov     si, [bx + BS3REGCTX.rsi]
         mov     cx, [bx + BS3REGCTX.rcx]
         mov     dx, [bx + BS3REGCTX.rdx]
 
@@ -129,9 +136,10 @@ int3
         mov     ax, [bx + BS3REGCTX.ds]
         push    ax
 
+        mov     si, [bx + BS3REGCTX.rsi]
         mov     di, [bx + BS3REGCTX.rdi]
         mov     es, [bx + BS3REGCTX.es]
-        mov     ax, [bx + BS3REGCTX.rbx]
+        mov     ax, [bx + BS3REGCTX.rax]
         mov     bp, [bx + BS3REGCTX.rbp]    ; restore late for better stacks.
         mov     bx, [bx + BS3REGCTX.rbx]
 
@@ -140,7 +148,7 @@ int3
 
 .restore_16_bit_same_privilege:
         sub     di, 2*5                     ; iret frame + pop ds
-        mov     [bx + BS3REGCTX.rsp], di
+        mov     si, di
         mov     es, [bx + BS3REGCTX.ss]     ; ES is target stack segment.
         cld
 
@@ -157,9 +165,10 @@ int3
 
         mov     di, [bx + BS3REGCTX.rdi]
         mov     es, [bx + BS3REGCTX.es]
-        mov     ax, [bx + BS3REGCTX.rbx]
+        mov     ax, [bx + BS3REGCTX.rax]
         mov     ss, [bx + BS3REGCTX.ss]
-        mov     sp, [bx + BS3REGCTX.rsp]    ; adjusted, see above.
+        mov     sp, si
+        mov     si, [bx + BS3REGCTX.rsi]
         mov     bx, [bx + BS3REGCTX.rbx]
 
         pop     ds
@@ -349,10 +358,11 @@ int3
         jnz     .using_32_bit_stack_pointer
 .using_16_bit_stack_pointer:
         movzx   edi, di
-        mov     [xBX + BS3REGCTX.rsp], di
+        mov     esi, [xBX + BS3REGCTX.rsp]
+        mov     si, di                  ; save rsp for later.
         jmp     .es_edi_is_pointing_to_return_frame_location
 .using_32_bit_stack_pointer:
-        mov     [xBX + BS3REGCTX.rsp], edi
+        mov     esi, edi
 .es_edi_is_pointing_to_return_frame_location:
         cld
         mov     ax,  [xBX + BS3REGCTX.ds]
@@ -372,12 +382,12 @@ int3
         mov     eax, [xBX + BS3REGCTX.rax]
         mov     edx, [xBX + BS3REGCTX.rdx]
         mov     ecx, [xBX + BS3REGCTX.rcx]
-        mov     esi, [xBX + BS3REGCTX.rsi]
         mov     edi, [xBX + BS3REGCTX.rdi]
         mov     ebp, [xBX + BS3REGCTX.rbp] ; restore late for better stacks.
 
         mov     ss,  [xBX + BS3REGCTX.ss]
-        mov     esp, [xBX + BS3REGCTX.rsp] ; adjusted, see above.
+        mov     esp, esi
+        mov     esi, [xBX + BS3REGCTX.rsi]
         mov     ebx, [xBX + BS3REGCTX.rbx]
 
         o32 pop ds

@@ -400,6 +400,10 @@ endef
 #       reloading string pointer argument all the time).
 # Note! Optimization options should come after debug stuff as -d2 for instance
 #       disables all optimziations.
+# Note! We use BS3CLASS16CODE because of wdis code detection heuristics requires the class
+#       of a code segment to be exactly 'CODE', or ending with 'CODE' or 'TEXT' (more
+#       recent wdis have a -c=<clsnm> option, but not the one we currently use ).
+#
 #
 # Compiler options explained:
 #       -nt=xxxx               Sets the text segment name.
@@ -451,9 +455,9 @@ TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CFLAGS       = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CODE16 -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CDEFS        = ARCH_BITS=16 RT_ARCH_X86
 
 TEMPLATE_VBoxBS3KitImg_TOOL         = $(NO_SUCH_VARIABLE)
@@ -498,7 +502,7 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
  	order \
  	 clname BS3FLAT segaddr=0x0000 \
  	   segment BS3FLAT segaddr=0x0000 \
- 	 clname BS3CODE16 segaddr=0x1000 \
+ 	 clname BS3CLASS16CODE segaddr=0x1000 \
  	  segment BS3TEXT16 \
  	  segment BS3TEXT16_END \
         clname BS3SYSTEM16 segaddr=0x2000 \
@@ -519,10 +523,10 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
  	  segment DATA64 \
  	  segment .data \
  	  segment DATA64_END \
-        clname BS3CODE32 \
+        clname BS3CLASS32CODE \
  	  segment BS3TEXT32 \
  	  segment TEXT32 \
-        clname BS3CODE64 \
+        clname BS3CLASS64CODE \
  	  segment BS3TEXT64 \
  	  segment TEXT64 \
  	  segment .text \
@@ -581,9 +585,9 @@ TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL        = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CFLAGS       = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CODE32 -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg32_LDTOOL       = VBoxBsUnusedLd
 

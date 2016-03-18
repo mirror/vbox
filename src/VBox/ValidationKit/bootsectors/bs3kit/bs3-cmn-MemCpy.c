@@ -29,6 +29,31 @@
 #undef Bs3MemCpy
 BS3_DECL(void BS3_FAR *) BS3_CMN_NM(Bs3MemCpy)(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy)
 {
+#if 1
+    const size_t BS3_FAR   *pBigSrc = (const size_t BS3_FAR *)pvSrc;
+    size_t BS3_FAR         *pBigDst = (size_t *)pvDst;
+    size_t                  cBig = cbToCopy / sizeof(size_t);
+    while (cBig-- > 0)
+        *pBigDst++ = *pBigSrc++;
+
+    switch (cbToCopy % sizeof(size_t))
+    {
+#if TMPL_BITS >= 64
+        case 7: ((uint8_t BS3_FAR *)pBigDst)[6] = ((const uint8_t BS3_FAR *)pBigSrc)[6];
+        case 6: ((uint8_t BS3_FAR *)pBigDst)[5] = ((const uint8_t BS3_FAR *)pBigSrc)[5];
+        case 5: ((uint8_t BS3_FAR *)pBigDst)[4] = ((const uint8_t BS3_FAR *)pBigSrc)[4];
+        case 4: ((uint8_t BS3_FAR *)pBigDst)[3] = ((const uint8_t BS3_FAR *)pBigSrc)[3];
+#endif
+#if TMPL_BITS >= 32
+        case 3: ((uint8_t BS3_FAR *)pBigDst)[2] = ((const uint8_t BS3_FAR *)pBigSrc)[2];
+        case 2: ((uint8_t BS3_FAR *)pBigDst)[1] = ((const uint8_t BS3_FAR *)pBigSrc)[1];
+#endif
+        case 1: ((uint8_t BS3_FAR *)pBigDst)[0] = ((const uint8_t BS3_FAR *)pBigSrc)[0];
+        case 0:
+            break;
+    }
+
+#else
     size_t          cLargeRounds;
     BS3CPTRUNION    uSrc;
     BS3PTRUNION     uDst;
@@ -42,6 +67,8 @@ BS3_DECL(void BS3_FAR *) BS3_CMN_NM(Bs3MemCpy)(void BS3_FAR *pvDst, const void B
     cbToCopy %= sizeof(*uSrc.pcb);
     while (cbToCopy-- > 0)
         *uDst.pb++ = *uSrc.pb++;
+
+#endif
 
     return pvDst;
 }

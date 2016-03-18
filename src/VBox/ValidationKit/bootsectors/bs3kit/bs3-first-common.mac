@@ -52,7 +52,7 @@ __ImageBase:
 %ifdef ASM_FORMAT_ELF
 section BS3TEXT16_END   align=2 progbits alloc exec nowrite
 %else
-section BS3TEXT16_END   align=2 CLASS=BS3CODE16 PUBLIC USE16
+section BS3TEXT16_END   align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
 %endif
 
 BS3_GLOBAL_DATA Bs3Text16_EndOfSegment, 0
@@ -108,7 +108,7 @@ BS3_GLOBAL_DATA Bs3Text32_StartOfSegment, 0
 %ifdef ASM_FORMAT_ELF
 section BS3TEXT32_END   align=1 progbits alloc exec nowrite
 %else
-section BS3TEXT32_END   align=1 CLASS=BS3CODE32 PUBLIC USE32 FLAT
+section BS3TEXT32_END   align=1 CLASS=BS3CLASS32CODE PUBLIC USE32 FLAT
 %endif
 
 BS3_GLOBAL_DATA Bs3Text32_EndOfSegment, 0
@@ -131,7 +131,7 @@ BS3_GLOBAL_DATA Bs3Text64_StartOfSegment, 0
 %ifdef ASM_FORMAT_ELF
 section BS3TEXT64_END   align=1 progbits alloc exec nowrite
 %else
-section BS3TEXT64_END   align=1 CLASS=BS3CODE64 PUBLIC USE32 FLAT
+section BS3TEXT64_END   align=1 CLASS=BS3CLASS64CODE PUBLIC USE32 FLAT
 %endif
 BS3_GLOBAL_DATA Bs3Text64_EndOfSegment, 0
 

@@ -663,15 +663,15 @@ CPU 286
         mov     cx, [es:di + X86TSS16.ip]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], cx
         mov     [bp + 2], cx            ; For better call stacks.
-        mov     cx, [eax + X86TSS16.cs]
+        mov     cx, [es:di + X86TSS16.cs]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
-        mov     cx, [eax + X86TSS16.ds]
+        mov     cx, [es:di + X86TSS16.ds]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], cx
-        mov     cx, [eax + X86TSS16.es]
+        mov     cx, [es:di + X86TSS16.es]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.es], cx
-        mov     cx, [eax + X86TSS16.ss]
+        mov     cx, [es:di + X86TSS16.ss]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
-        mov     cx, [eax + X86TSS16.selLdt]             ; Note! This isn't necessarily the ldtr at the time of the fault.
+        mov     cx, [es:di + X86TSS16.selLdt]             ; Note! This isn't necessarily the ldtr at the time of the fault.
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], cx
 
         ;

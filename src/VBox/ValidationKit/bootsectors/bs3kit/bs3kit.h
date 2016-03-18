@@ -37,6 +37,17 @@
 #endif
 
 /*
+ * We normally don't want the noreturn / aborts attributes as they mess up stack traces.
+ *
+ * Note! pragma aux <fnname> aborts can only be used with functions
+ *       implemented in C and functions that does not have parameters.
+ */
+#ifndef BS3_KIT_WITH_NO_RETURN
+# undef  DECL_NO_RETURN
+# define DECL_NO_RETURN(type) type
+#endif
+
+/*
  * We may want to reuse some IPRT code in the common name space, so we
  * redefine the RT_MANGLER to work like BS3_CMN_NM.  (We cannot use
  * BS3_CMN_NM yet, as we need to include IPRT headers with function
@@ -384,6 +395,9 @@ RT_C_DECLS_BEGIN
 /** @def BS3_FP_OFF
  * Get the segment offset part of a far pointer.
  *
+ * For sake of convenience, this works like a uintptr_t cast in 32-bit and
+ * 64-bit code.
+ *
  * @returns offset.
  * @param   a_pv        Far pointer.
  */
@@ -396,7 +410,8 @@ RT_C_DECLS_BEGIN
  * @param   a_off       The offset into the segment.
  */
 # define BS3_FP_MAKE(a_uSeg, a_off)  (((__segment)(a_uSeg)) :> ((void __near *)(a_off)))
-
+#else
+# define BS3_FP_OFF(a_pv)            ((uintptr_t)(a_pv))
 #endif
 
 /** @def BS3_MAKE_PROT_PTR_FROM_FLAT
@@ -704,7 +719,7 @@ extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare1f); /**< GDT entry for play
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTiled)[256];
 /** Free GDTes, part \#1. */
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart1)[64];
-/** The BS3CODE16 GDT entry. @see BS3_SEL_TEXT16   */
+/** The BS3TEXT16/BS3CLASS16CODE GDT entry. @see BS3_SEL_TEXT16   */
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_CODE16);
 /** Free GDTes, part \#2. */
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart2)[511];
@@ -712,7 +727,7 @@ extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart2)[511];
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_SYSTEM16);
 /** Free GDTes, part \#3. */
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart3)[223];
-/** The BS3DATA16 GDT entry. */
+/** The BS3DATA16/BS3_FAR_DATA GDT entry. */
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_DATA16);
 /** The end of the GDT (exclusive). */
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtEnd);
@@ -1056,6 +1071,20 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
  * @param   a_Name      The member or variable name.
  */
 #define BS3_XPTR_IS_NULL(a_Type, a_Name)    ((a_Name).XPtr.uFlat == 0)
+
+/**
+ * Gets a working pointer from a 32-bit flat address.
+ *
+ * @returns Current context pointer.
+ * @param   uFlatPtr    The flat address to convert.
+ */
+DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(uint32_t uFlatPtr)
+{
+    BS3_XPTR_AUTO(void, pTmp);
+    BS3_XPTR_SET_FLAT(void, pTmp, uFlatPtr);
+    return BS3_XPTR_GET(void, pTmp);
+}
+
 /** @} */
 
 
@@ -1080,10 +1109,14 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
  *
  * The current implementation will only halt the CPU.
  */
-BS3_DECL(void) Bs3Panic_c16(void);
-BS3_DECL(void) Bs3Panic_c32(void); /**< @copydoc Bs3Panic_c16  */
-BS3_DECL(void) Bs3Panic_c64(void); /**< @copydoc Bs3Panic_c16  */
+BS3_DECL(DECL_NO_RETURN(void)) Bs3Panic_c16(void);
+BS3_DECL(DECL_NO_RETURN(void)) Bs3Panic_c32(void); /**< @copydoc Bs3Panic_c16  */
+BS3_DECL(DECL_NO_RETURN(void)) Bs3Panic_c64(void); /**< @copydoc Bs3Panic_c16  */
 #define Bs3Panic BS3_CMN_NM(Bs3Panic) /**< Selects #Bs3Panic_c16, #Bs3Panic_c32 or #Bs3Panic_c64. */
+#if !defined(BS3_KIT_WITH_NO_RETURN) && defined(__WATCOMC__)
+# pragma aux Bs3Panic_c16 __aborts
+# pragma aux Bs3Panic_c32 __aborts
+#endif
 
 /**
  * Shutdown the system, never returns.
@@ -2086,9 +2119,9 @@ BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c16(PCBS3REGCTX pRegCtx, uint16_
 BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c32(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
 BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c64(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
 #define Bs3RegCtxRestore BS3_CMN_NM(Bs3RegCtxRestore) /**< Selects #Bs3RegCtxRestore_c16, #Bs3RegCtxRestore_c32 or #Bs3RegCtxRestore_c64. */
-#ifdef __WATCOMC__
-# pragma aux Bs3RegCtxRestore_c16 __aborts;
-# pragma aux Bs3RegCtxRestore_c32 __aborts;
+#if /*!defined(BS3_KIT_WITH_NO_RETURN) &&*/ defined(__WATCOMC__)
+# pragma aux Bs3RegCtxRestore_c16 "_Bs3RegCtxRestore_aborts_c16" __aborts
+# pragma aux Bs3RegCtxRestore_c32 "_Bs3RegCtxRestore_aborts_c32" __aborts
 #endif
 
 /** Skip restoring the CRx registers. */
@@ -2327,10 +2360,6 @@ BS3_DECL(void) Bs3TrapUnsetJmp_c16(void);
 BS3_DECL(void) Bs3TrapUnsetJmp_c32(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
 BS3_DECL(void) Bs3TrapUnsetJmp_c64(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
 #define Bs3TrapUnsetJmp BS3_CMN_NM(Bs3TrapUnsetJmp) /**< Selects #Bs3TrapUnsetJmp_c16, #Bs3TrapUnsetJmp_c32 or #Bs3TrapUnsetJmp_c64. */
-#ifdef __WATCOMC__
-# pragma aux Bs3TrapUnsetJmp_c16 aborts;
-# pragma aux Bs3TrapUnsetJmp_c32 aborts;
-#endif
 
 /** @} */
 
@@ -2421,7 +2450,7 @@ BS3_DECL(void) Bs3InitMemory_rm(void);
 
 /** The TMPL_MODE_STR value for each mode.
  * These are all in DATA16 so they can be accessed from any code.  */
-BS3_MODE_EXPAND_EXTERN_DATA16(const char *, g_szBs3ModeName, []);
+BS3_MODE_EXPAND_EXTERN_DATA16(const char, g_szBs3ModeName, []);
 
 /**
  * Basic CPU detection.

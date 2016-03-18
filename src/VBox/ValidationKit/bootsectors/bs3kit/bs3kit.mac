@@ -351,7 +351,7 @@ GROUP FLAT BS3FLAT
   %ifdef ASM_FORMAT_ELF
         section BS3TEXT16 align=2 progbits alloc exec nowrite
   %else
-        section BS3TEXT16 align=2 CLASS=BS3CODE16 PUBLIC USE16
+        section BS3TEXT16 align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
   %endif
  %else
         section BS3TEXT16
@@ -379,7 +379,7 @@ GROUP FLAT BS3FLAT
   %ifdef ASM_FORMAT_ELF
         section BS3TEXT32 align=1 progbits alloc exec nowrite
   %else
-        section BS3TEXT32 align=1 CLASS=BS3CODE32 PUBLIC USE32 FLAT
+        section BS3TEXT32 align=1 CLASS=BS3CLASS32CODE PUBLIC USE32 FLAT
   %endif
  %else
         section BS3TEXT32
@@ -407,7 +407,7 @@ GROUP FLAT BS3FLAT
   %ifdef ASM_FORMAT_ELF
         section BS3TEXT64 align=1 progbits alloc exec nowrite
   %else
-        section BS3TEXT64 align=1 CLASS=BS3CODE64 PUBLIC USE32 FLAT
+        section BS3TEXT64 align=1 CLASS=BS3CLASS64CODE PUBLIC USE32 FLAT
   %endif
  %else
         section BS3TEXT64

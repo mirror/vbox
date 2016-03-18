@@ -30,6 +30,16 @@
 #include "bs3kit-template-header.h"
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+#define g_pBs3TrapSetJmpFrame BS3_DATA_NM(g_pBs3TrapSetJmpFrame)
+extern uint32_t  g_pBs3TrapSetJmpFrame;
+
+#define g_Bs3TrapSetJmpCtx    BS3_DATA_NM(g_Bs3TrapSetJmpCtx)
+extern BS3REGCTX g_Bs3TrapSetJmpCtx;
+
+
 #if TMPL_BITS != 64
 static void bs3TrapDefaultHandlerV8086Syscall(PBS3TRAPFRAME pTrapFrame)
 {
@@ -160,6 +170,20 @@ BS3_DECL(void) Bs3TrapDefaultHandler(PBS3TRAPFRAME pTrapFrame)
         }
     }
 #endif
+
+    /*
+     * Any pending setjmp?
+     */
+    if (g_pBs3TrapSetJmpFrame != 0)
+    {
+        PBS3TRAPFRAME pSetJmpFrame = (PBS3TRAPFRAME)Bs3XptrFlatToCurrent(g_pBs3TrapSetJmpFrame);
+        //Bs3Printf("Calling longjmp: pSetJmpFrame=%p (%#lx)\n", pSetJmpFrame, g_pBs3TrapSetJmpFrame);
+        g_pBs3TrapSetJmpFrame = 0;
+
+        Bs3MemCpy(pSetJmpFrame, pTrapFrame, sizeof(*pSetJmpFrame));
+        //Bs3RegCtxPrint(&g_Bs3TrapSetJmpCtx);
+        Bs3RegCtxRestore(&g_Bs3TrapSetJmpCtx, 0 /*fFlags*/);
+    }
 
     /*
      * Fatal.
