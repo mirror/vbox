@@ -476,6 +476,7 @@ EOF
     succ_msg "Window system drivers installed"
 }
 
+# cleanup_script
 cleanup()
 {
     # Restore xorg.conf files as far as possible
