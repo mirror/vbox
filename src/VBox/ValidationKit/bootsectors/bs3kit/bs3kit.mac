@@ -1357,8 +1357,8 @@ endstruc
 %define BS3_SEL_SPARE_1e            05f0h ;;< Spare selector number 1eh.
 %define BS3_SEL_SPARE_1f            05f8h ;;< Spare selector number 1fh.
 
-%define BS3_SEL_TILED               0600h  ;;< 16-bit data tiling: First - base=0x00000000, limit=64KB.
-%define BS3_SEL_TILED_LAST          0df8h  ;;< 16-bit data tiling: Last  - base=0x00ff0000, limit=64KB.
+%define BS3_SEL_TILED               0600h  ;;< 16-bit data tiling: First - base=0x00000000, limit=64KB, DPL=3.
+%define BS3_SEL_TILED_LAST          0df8h  ;;< 16-bit data tiling: Last  - base=0x00ff0000, limit=64KB, DPL=3.
 %define BS3_SEL_TILED_AREA_SIZE     001000000h ;;< 16-bit data tiling: Size of addressable area, in bytes. (16 MB)
 
 %define BS3_SEL_FREE_PART1          0e00h ;;< Free selector space - part \%1.
@@ -1366,8 +1366,11 @@ endstruc
 
 %define BS3_SEL_TEXT16              1000h ;;< The BS3TEXT16 selector.
 
-%define BS3_SEL_FREE_PART2          1008h ;;< Free selector space - part \%2.
-%define BS3_SEL_FREE_PART2_LAST     1ff8h ;;< Free selector space - part \%2, last entry.
+%define BS3_SEL_FREE_PART2          1008h ;;< Free selector space - part \#2.
+%define BS3_SEL_FREE_PART2_LAST     17f8h ;;< Free selector space - part \#2, last entry.
+
+%define BS3_SEL_TILED_R0            1800h ;;< 16-bit data/stack tiling: First - base=0x00000000, limit=64KB, DPL=0.
+%define BS3_SEL_TILED_R0_LAST       1ff8h ;;< 16-bit data/stack tiling: Last  - base=0x00ff0000, limit=64KB, DPL=0.
 
 %define BS3_SEL_SYSTEM16            2000h ;;< The BS3SYSTEM16 selector.
 

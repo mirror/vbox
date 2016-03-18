@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TrapPrintFrame
+ * BS3Kit - BS3TestPrintf, BS3TestPrintfV
  */
 
 /*
@@ -24,19 +24,69 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
+#include "bs3-cmn-test.h"
+
+#include <iprt/asm-amd64-x86.h>
 
 
-BS3_DECL(void) Bs3TrapPrintFrame(PCBS3TRAPFRAME pTrapFrame)
+/**
+ * @impl_callback_method{FNBS3STRFORMATOUTPUT, Prints to screen and VMMDev}
+ */
+static BS3_DECL_CALLBACK(size_t) bs3TestPrintfStrOutput(char ch, void BS3_FAR *pvUser)
 {
-    Bs3TestPrintf("Trap %#04x errcd=%#06RX64 at %04x:%016RX64\n",
-                  pTrapFrame->bXcpt,
-                  pTrapFrame->uErrCd,
-                  pTrapFrame->Ctx.cs,
-                  pTrapFrame->Ctx.rip.u64);
-    Bs3RegCtxPrint(&pTrapFrame->Ctx);
+    /*
+     * VMMDev first.  We do line by line processing to avoid running out of
+     * string buffer on the host side.
+     */
+    if (BS3_DATA_NM(g_fbBs3VMMDevTesting))
+    {
+        bool *pfNewCmd = (bool *)pvUser;
+        if (ch != '\n' && !*pfNewCmd)
+            ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, ch);
+        else if (ch != '\0')
+        {
+            if (*pfNewCmd)
+            {
+                ASMOutU32(VMMDEV_TESTING_IOPORT_CMD, VMMDEV_TESTING_CMD_PRINT);
+                *pfNewCmd = false;
+            }
+            ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, ch);
+            if (ch == '\n')
+            {
+                ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, '\0');
+                *pfNewCmd = true;
+            }
+        }
+    }
+
+    /*
+     * Console next.
+     */
+    if (ch != '\0')
+        Bs3PrintChr(ch);
+    return 1;
+}
+
+
+
+BS3_DECL(void) Bs3TestPrintfV(const char BS3_FAR *pszFormat, va_list va)
+{
+    bool fNewCmd = true;
+    Bs3StrFormatV(pszFormat, va, bs3TestPrintfStrOutput, &fNewCmd);
+}
+
+
+
+BS3_DECL(void) Bs3TestPrintf(const char BS3_FAR *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    Bs3TestPrintfV(pszFormat, va);
+    va_end(va);
 }
 

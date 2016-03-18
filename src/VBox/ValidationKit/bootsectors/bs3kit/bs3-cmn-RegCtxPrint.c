@@ -34,14 +34,16 @@ BS3_DECL(void) Bs3RegCtxPrint(PCBS3REGCTX pRegCtx)
 {
     //if (BS3_MODE_IS_64BIT_CODE(pRegCtx->bMode))
     //{
-        Bs3Printf("eax=%08RX32 ebx=%08RX32 ecx=%08RX32 edx=%08RX32 esi=%08RX32 edi=%08RX32\n",
-                  pRegCtx->rax.u32, pRegCtx->rbx.u32, pRegCtx->rcx.u32, pRegCtx->rdx.u32, pRegCtx->rsi.u32, pRegCtx->rdi.u32);
-        Bs3Printf("eip=%08RX32 esp=%08RX32 ebp=%08RX32 efl=%08RX32 cr0=%08RX32 cr2=%08RX32\n",
-                  pRegCtx->rip.u32, pRegCtx->rsp.u32, pRegCtx->rbp.u32, pRegCtx->rflags.u32, pRegCtx->cr0.u32, pRegCtx->cr2.u32);
-        Bs3Printf("cs=%04RX16   ds=%04RX16 es=%04RX16 fs=%04RX16 gs=%04RX16   ss=%04RX16 cr3=%08RX32 cr4=%08RX32\n",
-                  pRegCtx->cs, pRegCtx->ds, pRegCtx->es, pRegCtx->fs, pRegCtx->gs, pRegCtx->ss, pRegCtx->cr3.u32, pRegCtx->cr4.u32);
-        Bs3Printf("tr=%04RX16 ldtr=%04RX16 cpl=%d   mode=%#x\n",
-                  pRegCtx->tr, pRegCtx->ldtr, pRegCtx->bCpl, pRegCtx->bMode);
+        Bs3TestPrintf("eax=%08RX32 ebx=%08RX32 ecx=%08RX32 edx=%08RX32 esi=%08RX32 edi=%08RX32\n",
+                      pRegCtx->rax.u32, pRegCtx->rbx.u32, pRegCtx->rcx.u32, pRegCtx->rdx.u32, pRegCtx->rsi.u32, pRegCtx->rdi.u32);
+        Bs3TestPrintf("eip=%08RX32 esp=%08RX32 ebp=%08RX32 efl=%08RX32 cr0=%08RX32 cr2=%08RX32\n",
+                      pRegCtx->rip.u32, pRegCtx->rsp.u32, pRegCtx->rbp.u32, pRegCtx->rflags.u32,
+                      pRegCtx->cr0.u32, pRegCtx->cr2.u32);
+        Bs3TestPrintf("cs=%04RX16   ds=%04RX16 es=%04RX16 fs=%04RX16 gs=%04RX16   ss=%04RX16 cr3=%08RX32 cr4=%08RX32\n",
+                      pRegCtx->cs, pRegCtx->ds, pRegCtx->es, pRegCtx->fs, pRegCtx->gs, pRegCtx->ss,
+                      pRegCtx->cr3.u32, pRegCtx->cr4.u32);
+        Bs3TestPrintf("tr=%04RX16 ldtr=%04RX16 cpl=%d   mode=%#x\n",
+                      pRegCtx->tr, pRegCtx->ldtr, pRegCtx->bCpl, pRegCtx->bMode);
     //}
     //else
     //{

@@ -391,10 +391,22 @@ BS3_GLOBAL_DATA Bs3Gdte_CODE16, 8h
         dw  0ffffh, 00000h, 09b01h, 00000h
 
         ;
-        ; 1008..1ff8h - Free GDTEs.
+        ; 1008..17f8h - Free GDTEs.
         ;
-BS3_GLOBAL_DATA Bs3GdteFreePart2, 0ff8h
-        times 0ff8h db 0
+BS3GdtAssertOffset 01008h
+BS3_GLOBAL_DATA Bs3GdteFreePart2, 07f8h
+        times 07f8h db 0
+
+        ;
+        ; 1800..1ff8h - 16-bit DPL=0 data/stack segments covering the first 16MB of memory.
+        ;
+BS3GdtAssertOffset 01800h
+BS3_GLOBAL_DATA Bs3GdteTiledR0, 8                 ; Entry 1800h
+%assign u8HighBase 0
+%rep 256
+        dw  0ffffh, 00000h, 09300h | u8HighBase, 00000h
+%assign u8HighBase u8HighBase + 1
+%endrep
 
         ;
         ; 2000h - the real mode segment number for BS3SYSTEM. DPL=3. BASE=0x20000h

@@ -197,7 +197,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
             do { \
                 if (bErrNo != BS3TESTDOMODE_SKIPPED) \
                 { \
-                    Bs3Printf("bErrNo=%#x %s\n", bErrNo, a_szModeName); \
+                    /*Bs3Printf("bErrNo=%#x %s\n", bErrNo, a_szModeName);*/ \
                     fSkipped = false; \
                     if (bErrNo != 0) \
                         Bs3TestFailedF(pszFmtStr, bErrNo, bErrNo, a_szModeName); \

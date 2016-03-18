@@ -80,6 +80,25 @@ BS3_PROC_BEGIN_CMN Bs3TrapSetJmp
         mov     [xBX + BS3REGCTX.rax], xAX ; the return value.
 
         ;
+        ; Fill the trap frame return structure.
+        ;
+        push    xDI
+%if TMPL_BITS == 16
+        push    es
+        les     di, [xBP + xCB*2]
+        mov     cx, BS3TRAPFRAME_size / 2
+        mov     ax, 0faceh
+        rep stosw
+        pop     es
+%else
+        mov     xDI, [xBP + xCB*2]
+        mov     cx, BS3TRAPFRAME_size / 4
+        mov     xAX, 0feedfaceh
+        rep stosd
+%endif
+        pop     xDI
+
+        ;
         ; Save the (flat) pointer to the trap frame return structure.
         ;
 %if TMPL_BITS == 16

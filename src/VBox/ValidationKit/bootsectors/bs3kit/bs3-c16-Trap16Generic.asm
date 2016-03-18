@@ -118,11 +118,42 @@ BS3_PROC_BEGIN bs3Trap16GenericTrapOrInt
 CPU 386
         jmp     near bs3Trap16GenericTrapOrInt80286 ; Bs3Trap16Init adjusts this on 80386+
         push    ebp
-        mov     bp, sp
-        push    ebx
-        pushfd
+        movzx   ebp, sp
+        push    ebx                     ; BP - 04h
+        pushfd                          ; BP - 08h
         cli
         cld
+        push    edx                     ; BP - 0ch
+        push    ss                      ; BP - 10h
+        push    esp                     ; BP - 12h
+
+        ;
+        ; We may be comming from 32-bit code where SS is flat and ESP has a non-
+        ; zero high word. We need to thunk it for C code to work correctly with
+        ; [BP+xx] and [SS:BX+xx] style addressing that leaves out the high word.
+        ;
+        ; ASSUMES handler is executing in ring-0 (SS.DPL must equal CPL).
+        ;
+        mov     bx, ss
+        lar     ebx, bx
+        test    ebx, X86LAR_F_D
+        jz      .stack_fine
+        test    esp, 0ffff0000h
+        jnz     .stack_thunk
+.stack_load_r0_ss16:
+        mov     bx, BS3_SEL_R0_SS16
+        jmp     .stack_load_bx_into_ss
+.stack_thunk:
+        mov     ebx, esp
+        shr     ebx, 16
+        shl     ebx, X86_SEL_SHIFT
+        add     ebx, BS3_SEL_TILED_R0
+        cmp     ebx, BS3_SEL_TILED_R0_LAST
+        ja      .stack_esp_out_of_bounds
+.stack_load_bx_into_ss:
+        mov     ss, bx
+.stack_fine:
+        movzx   esp, sp
 
         ; Reserve space for the the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 7) / 8
@@ -136,14 +167,21 @@ CPU 386
         movzx   ebx, sp
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
+        mov     edx, [bp - 12h]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], edx
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], edx
+        mov     dx, [bp - 10h]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], dx
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], dx
+        mov     edx, [bp - 0ch]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], edx
-        mov     edx, [bp]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], edx
+        mov     edx, [bp - 8]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], edx ; high bits
+        mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], edx
         mov     edx, [bp - 4]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], edx
-
-        mov     edx, [bp - 8]
-        mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], edx
+        mov     edx, [bp]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], edx
 
         mov     dl, [bp + 4]
         mov     [ss:bx + BS3TRAPFRAME.bXcpt], dl
@@ -151,6 +189,12 @@ CPU 386
         add     bp, 4                   ; adjust so it points to the word before the iret frame.
         xor     dx, dx
         jmp     bs3Trap16GenericCommon
+
+.stack_esp_out_of_bounds:
+%ifdef BS3_STRICT
+        int3
+%endif
+        jmp     .stack_load_bx_into_ss
 BS3_PROC_END   bs3Trap16GenericTrapOrInt
 
 
@@ -178,17 +222,17 @@ CPU 286
         mov     bx, sp
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ax
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ss
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], dx
-        mov     dx, [bp]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], dx
+        mov     dx, [bp - 4]
+        mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], dx
         mov     dx, [bp - 2]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], dx
+        mov     dx, [bp]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], dx
 
-        mov     dl, [bp - 4]
-        mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], dl
-
-        mov     al, byte [bp + 4]
-        mov     [ss:bx + BS3TRAPFRAME.bXcpt], al
+        mov     dl, [bp + 4]
+        mov     [ss:bx + BS3TRAPFRAME.bXcpt], dl
 
         add     bp, 4                   ; adjust so it points to the word before the iret frame.
         mov     dx, 1
@@ -199,16 +243,49 @@ BS3_PROC_END   bs3Trap16GenericTrapOrInt80286
 ;;
 ; Trap with error code.
 ;
+; Note! This code is going to "misbehave" if the high word of ESP is not cleared.
+;
 BS3_PROC_BEGIN _bs3Trap16GenericTrapErrCode
 BS3_PROC_BEGIN bs3Trap16GenericTrapErrCode
 CPU 386
         jmp     near bs3Trap16GenericTrapOrInt80286 ; Bs3Trap16Init adjusts this on 80386+
         push    ebp
-        mov     bp, sp
-        push    ebx
-        pushfd
+        movzx   ebp, sp
+        push    ebx                     ; BP - 04h
+        pushfd                          ; BP - 08h
         cli
         cld
+        push    edx                     ; BP - 0ch
+        push    ss                      ; BP - 10h
+        push    esp                     ; BP - 12h
+
+        ;
+        ; We may be comming from 32-bit code where SS is flat and ESP has a non-
+        ; zero high word. We need to thunk it for C code to work correctly with
+        ; [BP+xx] and [SS:BX+xx] style addressing that leaves out the high word.
+        ;
+        ; ASSUMES handler is executing in ring-0.
+        ;
+        mov     bx, ss
+        lar     ebx, bx
+        test    ebx, X86LAR_F_D
+        jz      .stack_fine
+        test    esp, 0ffff0000h
+        jnz     .stack_thunk
+.stack_load_r0_ss16:
+        mov     bx, BS3_SEL_R0_SS16
+        jmp     .stack_load_bx_into_ss
+.stack_thunk:
+        mov     ebx, esp
+        shr     ebx, 16
+        shl     ebx, X86_SEL_SHIFT
+        add     ebx, BS3_SEL_TILED_R0
+        cmp     ebx, BS3_SEL_TILED_R0_LAST
+        ja      .stack_esp_out_of_bounds
+.stack_load_bx_into_ss:
+        mov     ss, bx
+.stack_fine:
+        movzx   esp, sp
 
         ; Reserve space for the the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 7) / 8
@@ -222,14 +299,21 @@ CPU 386
         movzx   ebx, sp
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
+        mov     edx, [bp - 12h]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], edx
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], edx
+        mov     dx, [bp - 10h]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], dx
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], dx
+        mov     edx, [bp - 0ch]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], edx
+        mov     edx, [bp - 8]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], edx ; high bits
+        mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], edx
+        mov     edx, [bp - 4]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], edx
         mov     edx, [bp]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], edx
-        mov     edx, [bp - 4]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], ebx
-
-        mov     edx, [bp - 8]
-        mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], edx
 
         mov     dl, [bp + 4]
         mov     [ss:bx + BS3TRAPFRAME.bXcpt], dl
@@ -241,6 +325,12 @@ CPU 386
         add     bp, 6                   ; adjust so it points to the word before the iret frame.
         xor     dx, dx
         jmp     bs3Trap16GenericCommon
+
+.stack_esp_out_of_bounds:
+%ifdef BS3_STRICT
+        int3
+%endif
+        jmp     .stack_load_bx_into_ss
 BS3_PROC_END   bs3Trap16GenericTrapErrCode
 
 ;;
@@ -267,17 +357,17 @@ CPU 286
         mov     bx, sp
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ax
-        mov     [bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], dx
-        mov     dx, [bp]
-        mov     [bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], dx
-        mov     dx, [bp - 2]
-        mov     [bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], bx
-
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ss
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], dx
         mov     dx, [bp - 4]
-        mov     [bx + BS3TRAPFRAME.fHandlerRfl], dx
+        mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], dx
+        mov     dx, [bp - 2]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], dx
+        mov     dx, [bp]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], dx
 
-        mov     dl, [bp + 2]
-        mov     [bx + BS3TRAPFRAME.bXcpt], dl
+        mov     dl, [bp + 4]
+        mov     [ss:bx + BS3TRAPFRAME.bXcpt], dl
 
         mov     dx, [bp + 4]
 ;; @todo Do voodoo checks for 'int xx' or misguided hardware interrupts.
@@ -297,10 +387,13 @@ BS3_PROC_END   bs3Trap16GenericTrapErrCode80286
 ;                       - bXcpt
 ;                       - uErrCd
 ;                       - fHandlerRFL
-;                       - Ctx.eax (except upper stuff)
-;                       - Ctx.edx (except upper stuff)
-;                       - Ctx.ebx (except upper stuff)
-;                       - Ctx.ebp (except upper stuff)
+;                       - Ctx.eax
+;                       - Ctx.edx
+;                       - Ctx.ebx
+;                       - Ctx.ebp
+;                       - Ctx.rflags - high bits only.
+;                       - Ctx.esp    - high bits only.
+;                       - Ctx.ss     - for same cpl frames
 ;                       - All other bytes are zeroed.
 ;
 ; @param    bp      Pointer to the word before the iret frame, i.e. where bp
@@ -324,9 +417,6 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx], ecx
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], edi
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], esi
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], esp ; high word
-        mov     ecx, [ss:bx + BS3TRAPFRAME.fHandlerRfl]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], ecx
         jmp     .save_segment_registers
 .save_word_grps:
 CPU 286
@@ -389,50 +479,36 @@ CPU 286
 .ret_frame_different_cpl:
         mov     cx, [bp + 10]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
-        test    dx, dx
-        jnz     .ret_frame_different_cpl_286
-.ret_frame_different_cpl_386:
-CPU 386
-        mov     ecx, esp
-        mov     cx, [bp + 8]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
-        lea     eax, [bp + 12]
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], eax
-        jmp     .iret_frame_seed_high_eip_word
-.ret_frame_different_cpl_286:
-CPU 286
         mov     cx, [bp + 8]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], cx
         lea     ax, [bp + 12]
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], ax
-        jmp     .iret_frame_done
+        test    dx, dx
+        jnz     .iret_frame_done
+        jmp     .iret_frame_seed_high_eip_word
 
 .iret_frame_same_cpl:
         mov     cx, ss
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
-        test    dx, dx
-        jnz     .iret_frame_same_cpl_286
-.iret_frame_same_cpl_386:
-CPU 386
-        mov     ecx, esp
-        lea     cx, [bp + 8]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], ecx
-        jmp     .iret_frame_seed_high_eip_word
-.iret_frame_same_cpl_286:
-CPU 286
         lea     cx, [bp + 8]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], cx
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], cx
-        jmp     .iret_frame_done
+        test    dx, dx
+        jnz     .iret_frame_done
+        jmp     .iret_frame_seed_high_eip_word
 
 .iret_frame_v8086:
 CPU 386
         or      dword [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], X86_EFL_VM
         mov     byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], 3
         or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], BS3_MODE_CODE_V86 ; paranoia ^ 2
+%if 0 ;; @todo testcase: high ESP word from V86 mode, 16-bit TSS.
         movzx   ecx, word [bp + 8]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
+%else
+        mov     cx, word [bp + 8]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], cx
+%endif
         mov     cx, [bp + 10]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
         mov     cx, [bp + 12]
@@ -443,8 +519,8 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], cx
         mov     cx, [bp + 18]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], cx
-        lea     eax, [bp + 20]
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], eax
+        lea     ax, [bp + 20]
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], ax
         jmp     .iret_frame_done
 
         ;

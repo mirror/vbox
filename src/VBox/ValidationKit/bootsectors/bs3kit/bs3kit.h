@@ -332,8 +332,8 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_SPARE_1e            0x05f0 /**< Spare selector number 1eh. */
 #define BS3_SEL_SPARE_1f            0x05f8 /**< Spare selector number 1fh. */
 
-#define BS3_SEL_TILED               0x0600 /**< 16-bit data tiling: First - base=0x00000000, limit=64KB. */
-#define BS3_SEL_TILED_LAST          0x0df8 /**< 16-bit data tiling: Last  - base=0x00ff0000, limit=64KB. */
+#define BS3_SEL_TILED               0x0600 /**< 16-bit data tiling: First - base=0x00000000, limit=64KB, DPL=3. */
+#define BS3_SEL_TILED_LAST          0x0df8 /**< 16-bit data tiling: Last  - base=0x00ff0000, limit=64KB, DPL=3. */
 #define BS3_SEL_TILED_AREA_SIZE     0x001000000 /**< 16-bit data tiling: Size of addressable area, in bytes. (16 MB) */
 
 #define BS3_SEL_FREE_PART1          0x0e00 /**< Free selector space - part \#1. */
@@ -342,7 +342,10 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_TEXT16              0x1000 /**< The BS3TEXT16 selector. */
 
 #define BS3_SEL_FREE_PART2          0x1008 /**< Free selector space - part \#2. */
-#define BS3_SEL_FREE_PART2_LAST     0x1ff8 /**< Free selector space - part \#2, last entry. */
+#define BS3_SEL_FREE_PART2_LAST     0x17f8 /**< Free selector space - part \#2, last entry. */
+
+#define BS3_SEL_TILED_R0            0x1800 /**< 16-bit data/stack tiling: First - base=0x00000000, limit=64KB, DPL=0. */
+#define BS3_SEL_TILED_R0_LAST       0x1ff8 /**< 16-bit data/stack tiling: Last  - base=0x00ff0000, limit=64KB, DPL=0. */
 
 #define BS3_SEL_SYSTEM16            0x2000 /**< The BS3SYSTEM16 selector. */
 
@@ -1389,273 +1392,20 @@ BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c32(uint32_t off, uint16_t uSel); /**< @c
 BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c64(uint32_t off, uint16_t uSel); /**< @copydoc Bs3SelFar32ToFlat32_c16 */
 #define Bs3SelFar32ToFlat32 BS3_CMN_NM(Bs3SelFar32ToFlat32) /**< Selects #Bs3SelFar32ToFlat32_c16, #Bs3SelFar32ToFlat32_c32 or #Bs3SelFar32ToFlat32_c64. */
 
-
 /**
- * Equivalent to RTTestCreate + RTTestBanner.
+ * Gets a 32-bit flat address from a working poitner.
  *
- * @param   pszTest         The test name.
+ * @returns 32-bit flat address.
+ * @param   pv          Current context pointer.
  */
-BS3_DECL(void) Bs3TestInit_c16(const char BS3_FAR *pszTest);
-BS3_DECL(void) Bs3TestInit_c32(const char BS3_FAR *pszTest); /**< @copydoc Bs3TestInit_c16 */
-BS3_DECL(void) Bs3TestInit_c64(const char BS3_FAR *pszTest); /**< @copydoc Bs3TestInit_c16 */
-#define Bs3TestInit BS3_CMN_NM(Bs3TestInit) /**< Selects #Bs3TestInit_c16, #Bs3TestInit_c32 or #Bs3TestInit_c64. */
-
-
-/**
- * Equivalent to RTTestSummaryAndDestroy.
- */
-BS3_DECL(void) Bs3TestTerm_c16(void);
-BS3_DECL(void) Bs3TestTerm_c32(void); /**< @copydoc Bs3TestTerm_c16 */
-BS3_DECL(void) Bs3TestTerm_c64(void); /**< @copydoc Bs3TestTerm_c16 */
-#define Bs3TestTerm BS3_CMN_NM(Bs3TestTerm) /**< Selects #Bs3TestTerm_c16, #Bs3TestTerm_c32 or #Bs3TestTerm_c64. */
-
-/**
- * Equivalent to RTTestISub.
- */
-BS3_DECL(void) Bs3TestSub_c16(const char BS3_FAR *pszSubTest);
-BS3_DECL(void) Bs3TestSub_c32(const char BS3_FAR *pszSubTest); /**< @copydoc Bs3TestSub_c16 */
-BS3_DECL(void) Bs3TestSub_c64(const char BS3_FAR *pszSubTest); /**< @copydoc Bs3TestSub_c16 */
-#define Bs3TestSub BS3_CMN_NM(Bs3TestSub) /**< Selects #Bs3TestSub_c16, #Bs3TestSub_c32 or #Bs3TestSub_c64. */
-
-/**
- * Equivalent to RTTestIFailedF.
- */
-BS3_DECL(void) Bs3TestSubF_c16(const char BS3_FAR *pszFormat, ...);
-BS3_DECL(void) Bs3TestSubF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSubF_c16 */
-BS3_DECL(void) Bs3TestSubF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSubF_c16 */
-#define Bs3TestSubF BS3_CMN_NM(Bs3TestSubF) /**< Selects #Bs3TestSubF_c16, #Bs3TestSubF_c32 or #Bs3TestSubF_c64. */
-
-/**
- * Equivalent to RTTestISubV.
- */
-BS3_DECL(void) Bs3TestSubV_c16(const char BS3_FAR *pszFormat, va_list va);
-BS3_DECL(void) Bs3TestSubV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSubV_c16 */
-BS3_DECL(void) Bs3TestSubV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSubV_c16 */
-#define Bs3TestSubV BS3_CMN_NM(Bs3TestSubV) /**< Selects #Bs3TestSubV_c16, #Bs3TestSubV_c32 or #Bs3TestSubV_c64. */
-
-/**
- * Equivalent to RTTestISubDone.
- */
-BS3_DECL(void) Bs3TestSubDone_c16(void);
-BS3_DECL(void) Bs3TestSubDone_c32(void); /**< @copydoc Bs3TestSubDone_c16 */
-BS3_DECL(void) Bs3TestSubDone_c64(void); /**< @copydoc Bs3TestSubDone_c16 */
-#define Bs3TestSubDone BS3_CMN_NM(Bs3TestSubDone) /**< Selects #Bs3TestSubDone_c16, #Bs3TestSubDone_c32 or #Bs3TestSubDone_c64. */
-
-/**
- * Equivalent to RTTestSubErrorCount.
- */
-BS3_DECL(uint16_t) Bs3TestSubErrorCount_c16(void);
-BS3_DECL(uint16_t) Bs3TestSubErrorCount_c32(void); /**< @copydoc Bs3TestSubErrorCount_c16 */
-BS3_DECL(uint16_t) Bs3TestSubErrorCount_c64(void); /**< @copydoc Bs3TestSubErrorCount_c16 */
-#define Bs3TestSubErrorCount BS3_CMN_NM(Bs3TestSubErrorCount) /**< Selects #Bs3TestSubErrorCount_c16, #Bs3TestSubErrorCount_c32 or #Bs3TestSubErrorCount_c64. */
-
-/**
- * Equivalent to RTTestIFailed.
- */
-BS3_DECL(void) Bs3TestFailed_c16(const char BS3_FAR *pszMessage);
-BS3_DECL(void) Bs3TestFailed_c32(const char BS3_FAR *pszMessage); /**< @copydoc Bs3TestFailed_c16 */
-BS3_DECL(void) Bs3TestFailed_c64(const char BS3_FAR *pszMessage); /**< @copydoc Bs3TestFailed_c16 */
-#define Bs3TestFailed BS3_CMN_NM(Bs3TestFailed) /**< Selects #Bs3TestFailed_c16, #Bs3TestFailed_c32 or #Bs3TestFailed_c64. */
-
-/**
- * Equivalent to RTTestIFailedF.
- */
-BS3_DECL(void) Bs3TestFailedF_c16(const char BS3_FAR *pszFormat, ...);
-BS3_DECL(void) Bs3TestFailedF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestFailedF_c16 */
-BS3_DECL(void) Bs3TestFailedF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestFailedF_c16 */
-#define Bs3TestFailedF BS3_CMN_NM(Bs3TestFailedF) /**< Selects #Bs3TestFailedF_c16, #Bs3TestFailedF_c32 or #Bs3TestFailedF_c64. */
-
-/**
- * Equivalent to RTTestIFailedV.
- */
-BS3_DECL(void) Bs3TestFailedV_c16(const char BS3_FAR *pszFormat, va_list va);
-BS3_DECL(void) Bs3TestFailedV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestFailedV_c16 */
-BS3_DECL(void) Bs3TestFailedV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestFailedV_c16 */
-#define Bs3TestFailedV BS3_CMN_NM(Bs3TestFailedV) /**< Selects #Bs3TestFailedV_c16, #Bs3TestFailedV_c32 or #Bs3TestFailedV_c64. */
-
-/**
- * Equivalent to RTTestISkipped.
- *
- * @param   pszWhy          Optional reason why it's being skipped.
- */
-BS3_DECL(void) Bs3TestSkipped_c16(const char BS3_FAR *pszWhy);
-BS3_DECL(void) Bs3TestSkipped_c32(const char BS3_FAR *pszWhy); /**< @copydoc Bs3TestSkipped_c16 */
-BS3_DECL(void) Bs3TestSkipped_c64(const char BS3_FAR *pszWhy); /**< @copydoc Bs3TestSkipped_c16 */
-#define Bs3TestSkipped BS3_CMN_NM(Bs3TestSkipped) /**< Selects #Bs3TestSkipped_c16, #Bs3TestSkipped_c32 or #Bs3TestSkipped_c64. */
-
-/**
- * Equivalent to RTTestISkippedF.
- *
- * @param   pszFormat       Optional reason why it's being skipped.
- * @param   ...             Format arguments.
- */
-BS3_DECL(void) Bs3TestSkippedF_c16(const char BS3_FAR *pszFormat, ...);
-BS3_DECL(void) Bs3TestSkippedF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSkippedF_c16 */
-BS3_DECL(void) Bs3TestSkippedF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSkippedF_c16 */
-#define Bs3TestSkippedF BS3_CMN_NM(Bs3TestSkippedF) /**< Selects #Bs3TestSkippedF_c16, #Bs3TestSkippedF_c32 or #Bs3TestSkippedF_c64. */
-
-/**
- * Equivalent to RTTestISkippedV.
- *
- * @param   pszFormat       Optional reason why it's being skipped.
- * @param   va              Format arguments.
- */
-BS3_DECL(void) Bs3TestSkippedV_c16(const char BS3_FAR *pszFormat, va_list va);
-BS3_DECL(void) Bs3TestSkippedV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSkippedV_c16 */
-BS3_DECL(void) Bs3TestSkippedV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSkippedV_c16 */
-#define Bs3TestSkippedV BS3_CMN_NM(Bs3TestSkippedV) /**< Selects #Bs3TestSkippedV_c16, #Bs3TestSkippedV_c32 or #Bs3TestSkippedV_c64. */
-
-
-/**
- * Performs the testing for the given mode.
- *
- * This is called with the CPU already switch to that mode.
- *
- * @returns 0 on success or directly Bs3TestFailed calls, non-zero to indicate
- *          where the test when wrong. Special value BS3TESTDOMODE_SKIPPED
- *          should be returned to indicate that the test has been skipped.
- * @param   bMode       The current CPU mode.
- */
-typedef BS3_DECL_CALLBACK(uint8_t) FNBS3TESTDOMODE(uint8_t bMode);
-/** Near pointer to a test (for 16-bit code). */
-typedef FNBS3TESTDOMODE               *PFNBS3TESTDOMODE;
-/** Far pointer to a test (for 32-bit and 64-bit code, will be flatten). */
-typedef FNBS3TESTDOMODE BS3_FAR_CODE  *FPFNBS3TESTDOMODE;
-
-/** Special FNBS3TESTDOMODE return code for indicating a skipped mode test.  */
-#define BS3TESTDOMODE_SKIPPED       UINT8_MAX
-
-/**
- * Mode sub-test entry.
- *
- * This can only be passed around to functions with the same bit count, as it
- * contains function pointers.  In 16-bit mode, the 16-bit pointers are near and
- * implies BS3TEXT16, whereas the 32-bit and 64-bit pointers are far real mode
- * addresses that will be converted to flat address prior to calling them.
- * Similarly, in 32-bit and 64-bit the addresses are all flat and the 16-bit
- * ones will be converted to BS3TEXT16 based addresses prior to calling.
- */
-typedef struct BS3TESTMODEENTRY
+DECLINLINE(uint32_t) Bs3SelPtrToFlat(void BS3_FAR *pv)
 {
-    const char * BS3_FAR    pszSubTest;
-
-    PFNBS3TESTDOMODE        pfnDoRM;
-
-    PFNBS3TESTDOMODE        pfnDoPE16;
-    FPFNBS3TESTDOMODE       pfnDoPE16_32;
-    PFNBS3TESTDOMODE        pfnDoPE16_V86;
-    FPFNBS3TESTDOMODE       pfnDoPE32;
-    PFNBS3TESTDOMODE        pfnDoPE32_16;
-    PFNBS3TESTDOMODE        pfnDoPEV86;
-
-    PFNBS3TESTDOMODE        pfnDoPP16;
-    FPFNBS3TESTDOMODE       pfnDoPP16_32;
-    PFNBS3TESTDOMODE        pfnDoPP16_V86;
-    FPFNBS3TESTDOMODE       pfnDoPP32;
-    PFNBS3TESTDOMODE        pfnDoPP32_16;
-    PFNBS3TESTDOMODE        pfnDoPPV86;
-
-    PFNBS3TESTDOMODE        pfnDoPAE16;
-    FPFNBS3TESTDOMODE       pfnDoPAE16_32;
-    PFNBS3TESTDOMODE        pfnDoPAE16_V86;
-    FPFNBS3TESTDOMODE       pfnDoPAE32;
-    PFNBS3TESTDOMODE        pfnDoPAE32_16;
-    PFNBS3TESTDOMODE        pfnDoPAEV86;
-
-    PFNBS3TESTDOMODE        pfnDoLM16;
-    FPFNBS3TESTDOMODE       pfnDoLM32;
-    FPFNBS3TESTDOMODE       pfnDoLM64;
-
-} BS3TESTMODEENTRY;
-/** Pointer to a mode sub-test entry. */
-typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
-
-/** Produces a BS3TESTMODEENTRY initializer for common (c16,c32,c64) test
- *  functions. */
-#define BS3TESTMODEENTRY_CMN(a_szTest, a_BaseNm) \
-    {   /*pszSubTest =*/ a_szTest, \
-        /*RM*/        RT_CONCAT(a_BaseNm, _c16), \
-        /*PE16*/      RT_CONCAT(a_BaseNm, _c16), \
-        /*PE16_32*/   RT_CONCAT(a_BaseNm, _c32), \
-        /*PE16_V86*/  RT_CONCAT(a_BaseNm, _c16), \
-        /*PE32*/      RT_CONCAT(a_BaseNm, _c32), \
-        /*PE32_16*/   RT_CONCAT(a_BaseNm, _c16), \
-        /*PEV86*/     RT_CONCAT(a_BaseNm, _c16), \
-        /*PP16*/      RT_CONCAT(a_BaseNm, _c16), \
-        /*PP16_32*/   RT_CONCAT(a_BaseNm, _c32), \
-        /*PP16_V86*/  RT_CONCAT(a_BaseNm, _c16), \
-        /*PP32*/      RT_CONCAT(a_BaseNm, _c32), \
-        /*PP32_16*/   RT_CONCAT(a_BaseNm, _c16), \
-        /*PPV86*/     RT_CONCAT(a_BaseNm, _c16), \
-        /*PAE16*/     RT_CONCAT(a_BaseNm, _c16), \
-        /*PAE16_32*/  RT_CONCAT(a_BaseNm, _c32), \
-        /*PAE16_V86*/ RT_CONCAT(a_BaseNm, _c16), \
-        /*PAE32*/     RT_CONCAT(a_BaseNm, _c32), \
-        /*PAE32_16*/  RT_CONCAT(a_BaseNm, _c16), \
-        /*PAEV86*/    RT_CONCAT(a_BaseNm, _c16), \
-        /*LM16*/      RT_CONCAT(a_BaseNm, _c16), \
-        /*LM32*/      RT_CONCAT(a_BaseNm, _c32), \
-        /*LM64*/      RT_CONCAT(a_BaseNm, _c64), \
-    }
-
-/** A set of standard protypes to go with #BS3TESTMODEENTRY_CMN. */
-#define BS3TESTMODE_PROTOTYPES_CMN(a_BaseNm) \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _c16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c64)
-
-/** Produces a BS3TESTMODEENTRY initializer for a full set of mode test
- *  functions. */
-#define BS3TESTMODEENTRY_MODE(a_szTest, a_BaseNm) \
-    {   /*pszSubTest =*/ a_szTest, \
-        /*RM*/        RT_CONCAT(a_BaseNm, _rm), \
-        /*PE16*/      RT_CONCAT(a_BaseNm, _pe16), \
-        /*PE16_32*/   RT_CONCAT(a_BaseNm, _pe16_32), \
-        /*PE16_V86*/  RT_CONCAT(a_BaseNm, _pe16_v86), \
-        /*PE32*/      RT_CONCAT(a_BaseNm, _pe32), \
-        /*PE32_16*/   RT_CONCAT(a_BaseNm, _pe32_16), \
-        /*PEV86*/     RT_CONCAT(a_BaseNm, _pev86), \
-        /*PP16*/      RT_CONCAT(a_BaseNm, _pp16), \
-        /*PP16_32*/   RT_CONCAT(a_BaseNm, _pp16_32), \
-        /*PP16_V86*/  RT_CONCAT(a_BaseNm, _pp16_v86), \
-        /*PP32*/      RT_CONCAT(a_BaseNm, _pp32), \
-        /*PP32_16*/   RT_CONCAT(a_BaseNm, _pp32_16), \
-        /*PPV86*/     RT_CONCAT(a_BaseNm, _ppv86), \
-        /*PAE16*/     RT_CONCAT(a_BaseNm, _pae16), \
-        /*PAE16_32*/  RT_CONCAT(a_BaseNm, _pae16_32), \
-        /*PAE16_V86*/ RT_CONCAT(a_BaseNm, _pae16_v86), \
-        /*PAE32*/     RT_CONCAT(a_BaseNm, _pae32), \
-        /*PAE32_16*/  RT_CONCAT(a_BaseNm, _pae32_16), \
-        /*PAEV86*/    RT_CONCAT(a_BaseNm, _paev86), \
-        /*LM16*/      RT_CONCAT(a_BaseNm, _lm16), \
-        /*LM32*/      RT_CONCAT(a_BaseNm, _lm32), \
-        /*LM64*/      RT_CONCAT(a_BaseNm, _lm64), \
-    }
-
-/** A set of standard protypes to go with #BS3TESTMODEENTRY_MODE. */
-#define BS3TESTMODE_PROTOTYPES_MODE(a_BaseNm) \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _rm); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pe16_32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe16_v86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pe32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe32_16); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pev86); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pp16_32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp16_v86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pp32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp32_16); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _ppv86); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pae16_32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae16_v86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pae32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae32_16); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _paev86); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _lm16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _lm32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _lm64)
+#if ARCH_BITS == 16
+    return Bs3SelFar32ToFlat32(BS3_FP_OFF(pv), BS3_FP_SEG(pv));
+#else
+    return (uint32_t)(uintptr_t)pv;
+#endif
+}
 
 
 /**
@@ -2360,6 +2110,316 @@ BS3_DECL(void) Bs3TrapUnsetJmp_c16(void);
 BS3_DECL(void) Bs3TrapUnsetJmp_c32(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
 BS3_DECL(void) Bs3TrapUnsetJmp_c64(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
 #define Bs3TrapUnsetJmp BS3_CMN_NM(Bs3TrapUnsetJmp) /**< Selects #Bs3TrapUnsetJmp_c16, #Bs3TrapUnsetJmp_c32 or #Bs3TrapUnsetJmp_c64. */
+
+
+/**
+ * Equivalent to RTTestCreate + RTTestBanner.
+ *
+ * @param   pszTest         The test name.
+ */
+BS3_DECL(void) Bs3TestInit_c16(const char BS3_FAR *pszTest);
+BS3_DECL(void) Bs3TestInit_c32(const char BS3_FAR *pszTest); /**< @copydoc Bs3TestInit_c16 */
+BS3_DECL(void) Bs3TestInit_c64(const char BS3_FAR *pszTest); /**< @copydoc Bs3TestInit_c16 */
+#define Bs3TestInit BS3_CMN_NM(Bs3TestInit) /**< Selects #Bs3TestInit_c16, #Bs3TestInit_c32 or #Bs3TestInit_c64. */
+
+
+/**
+ * Equivalent to RTTestSummaryAndDestroy.
+ */
+BS3_DECL(void) Bs3TestTerm_c16(void);
+BS3_DECL(void) Bs3TestTerm_c32(void); /**< @copydoc Bs3TestTerm_c16 */
+BS3_DECL(void) Bs3TestTerm_c64(void); /**< @copydoc Bs3TestTerm_c16 */
+#define Bs3TestTerm BS3_CMN_NM(Bs3TestTerm) /**< Selects #Bs3TestTerm_c16, #Bs3TestTerm_c32 or #Bs3TestTerm_c64. */
+
+/**
+ * Equivalent to RTTestISub.
+ */
+BS3_DECL(void) Bs3TestSub_c16(const char BS3_FAR *pszSubTest);
+BS3_DECL(void) Bs3TestSub_c32(const char BS3_FAR *pszSubTest); /**< @copydoc Bs3TestSub_c16 */
+BS3_DECL(void) Bs3TestSub_c64(const char BS3_FAR *pszSubTest); /**< @copydoc Bs3TestSub_c16 */
+#define Bs3TestSub BS3_CMN_NM(Bs3TestSub) /**< Selects #Bs3TestSub_c16, #Bs3TestSub_c32 or #Bs3TestSub_c64. */
+
+/**
+ * Equivalent to RTTestIFailedF.
+ */
+BS3_DECL(void) Bs3TestSubF_c16(const char BS3_FAR *pszFormat, ...);
+BS3_DECL(void) Bs3TestSubF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSubF_c16 */
+BS3_DECL(void) Bs3TestSubF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSubF_c16 */
+#define Bs3TestSubF BS3_CMN_NM(Bs3TestSubF) /**< Selects #Bs3TestSubF_c16, #Bs3TestSubF_c32 or #Bs3TestSubF_c64. */
+
+/**
+ * Equivalent to RTTestISubV.
+ */
+BS3_DECL(void) Bs3TestSubV_c16(const char BS3_FAR *pszFormat, va_list va);
+BS3_DECL(void) Bs3TestSubV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSubV_c16 */
+BS3_DECL(void) Bs3TestSubV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSubV_c16 */
+#define Bs3TestSubV BS3_CMN_NM(Bs3TestSubV) /**< Selects #Bs3TestSubV_c16, #Bs3TestSubV_c32 or #Bs3TestSubV_c64. */
+
+/**
+ * Equivalent to RTTestISubDone.
+ */
+BS3_DECL(void) Bs3TestSubDone_c16(void);
+BS3_DECL(void) Bs3TestSubDone_c32(void); /**< @copydoc Bs3TestSubDone_c16 */
+BS3_DECL(void) Bs3TestSubDone_c64(void); /**< @copydoc Bs3TestSubDone_c16 */
+#define Bs3TestSubDone BS3_CMN_NM(Bs3TestSubDone) /**< Selects #Bs3TestSubDone_c16, #Bs3TestSubDone_c32 or #Bs3TestSubDone_c64. */
+
+/**
+ * Equivalent to RTTestSubErrorCount.
+ */
+BS3_DECL(uint16_t) Bs3TestSubErrorCount_c16(void);
+BS3_DECL(uint16_t) Bs3TestSubErrorCount_c32(void); /**< @copydoc Bs3TestSubErrorCount_c16 */
+BS3_DECL(uint16_t) Bs3TestSubErrorCount_c64(void); /**< @copydoc Bs3TestSubErrorCount_c16 */
+#define Bs3TestSubErrorCount BS3_CMN_NM(Bs3TestSubErrorCount) /**< Selects #Bs3TestSubErrorCount_c16, #Bs3TestSubErrorCount_c32 or #Bs3TestSubErrorCount_c64. */
+
+/**
+ * Equivalent to RTTestIPrintf with RTTESTLVL_ALWAYS.
+ *
+ * @param   pszFormat   What to print, format string.  Explicit newline char.
+ * @param   ...         String format arguments.
+ */
+BS3_DECL(void) Bs3TestPrintf_c16(const char BS3_FAR *pszFormat, ...);
+BS3_DECL(void) Bs3TestPrintf_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestPrintf_c16 */
+BS3_DECL(void) Bs3TestPrintf_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestPrintf_c16 */
+#define Bs3TestPrintf BS3_CMN_NM(Bs3TestPrintf) /**< Selects #Bs3TestPrintf_c16, #Bs3TestPrintf_c32 or #Bs3TestPrintf_c64. */
+
+/**
+ * Equivalent to RTTestIPrintfV with RTTESTLVL_ALWAYS.
+ *
+ * @param   pszFormat   What to print, format string.  Explicit newline char.
+ * @param   va          String format arguments.
+ */
+BS3_DECL(void) Bs3TestPrintfV_c16(const char BS3_FAR *pszFormat, va_list va);
+BS3_DECL(void) Bs3TestPrintfV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestPrintfV_c16 */
+BS3_DECL(void) Bs3TestPrintfV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestPrintfV_c16 */
+#define Bs3TestPrintfV BS3_CMN_NM(Bs3TestPrintfV) /**< Selects #Bs3TestPrintfV_c16, #Bs3TestPrintfV_c32 or #Bs3TestPrintfV_c64. */
+
+/**
+ * Equivalent to RTTestIFailed.
+ */
+BS3_DECL(void) Bs3TestFailed_c16(const char BS3_FAR *pszMessage);
+BS3_DECL(void) Bs3TestFailed_c32(const char BS3_FAR *pszMessage); /**< @copydoc Bs3TestFailed_c16 */
+BS3_DECL(void) Bs3TestFailed_c64(const char BS3_FAR *pszMessage); /**< @copydoc Bs3TestFailed_c16 */
+#define Bs3TestFailed BS3_CMN_NM(Bs3TestFailed) /**< Selects #Bs3TestFailed_c16, #Bs3TestFailed_c32 or #Bs3TestFailed_c64. */
+
+/**
+ * Equivalent to RTTestIFailedF.
+ */
+BS3_DECL(void) Bs3TestFailedF_c16(const char BS3_FAR *pszFormat, ...);
+BS3_DECL(void) Bs3TestFailedF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestFailedF_c16 */
+BS3_DECL(void) Bs3TestFailedF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestFailedF_c16 */
+#define Bs3TestFailedF BS3_CMN_NM(Bs3TestFailedF) /**< Selects #Bs3TestFailedF_c16, #Bs3TestFailedF_c32 or #Bs3TestFailedF_c64. */
+
+/**
+ * Equivalent to RTTestIFailedV.
+ */
+BS3_DECL(void) Bs3TestFailedV_c16(const char BS3_FAR *pszFormat, va_list va);
+BS3_DECL(void) Bs3TestFailedV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestFailedV_c16 */
+BS3_DECL(void) Bs3TestFailedV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestFailedV_c16 */
+#define Bs3TestFailedV BS3_CMN_NM(Bs3TestFailedV) /**< Selects #Bs3TestFailedV_c16, #Bs3TestFailedV_c32 or #Bs3TestFailedV_c64. */
+
+/**
+ * Equivalent to RTTestISkipped.
+ *
+ * @param   pszWhy          Optional reason why it's being skipped.
+ */
+BS3_DECL(void) Bs3TestSkipped_c16(const char BS3_FAR *pszWhy);
+BS3_DECL(void) Bs3TestSkipped_c32(const char BS3_FAR *pszWhy); /**< @copydoc Bs3TestSkipped_c16 */
+BS3_DECL(void) Bs3TestSkipped_c64(const char BS3_FAR *pszWhy); /**< @copydoc Bs3TestSkipped_c16 */
+#define Bs3TestSkipped BS3_CMN_NM(Bs3TestSkipped) /**< Selects #Bs3TestSkipped_c16, #Bs3TestSkipped_c32 or #Bs3TestSkipped_c64. */
+
+/**
+ * Equivalent to RTTestISkippedF.
+ *
+ * @param   pszFormat       Optional reason why it's being skipped.
+ * @param   ...             Format arguments.
+ */
+BS3_DECL(void) Bs3TestSkippedF_c16(const char BS3_FAR *pszFormat, ...);
+BS3_DECL(void) Bs3TestSkippedF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSkippedF_c16 */
+BS3_DECL(void) Bs3TestSkippedF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSkippedF_c16 */
+#define Bs3TestSkippedF BS3_CMN_NM(Bs3TestSkippedF) /**< Selects #Bs3TestSkippedF_c16, #Bs3TestSkippedF_c32 or #Bs3TestSkippedF_c64. */
+
+/**
+ * Equivalent to RTTestISkippedV.
+ *
+ * @param   pszFormat       Optional reason why it's being skipped.
+ * @param   va              Format arguments.
+ */
+BS3_DECL(void) Bs3TestSkippedV_c16(const char BS3_FAR *pszFormat, va_list va);
+BS3_DECL(void) Bs3TestSkippedV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSkippedV_c16 */
+BS3_DECL(void) Bs3TestSkippedV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSkippedV_c16 */
+#define Bs3TestSkippedV BS3_CMN_NM(Bs3TestSkippedV) /**< Selects #Bs3TestSkippedV_c16, #Bs3TestSkippedV_c32 or #Bs3TestSkippedV_c64. */
+
+/**
+ * Compares two register contexts, with PC and SP adjustments.
+ *
+ * Differences will be reported as test failures.
+ *
+ * @returns true if equal, false if not.
+ * @param   pActualCtx      The actual register context.
+ * @param   pExpectedCtx    Expected register context.
+ * @param   cbPcAdjust      Program counter adjustment (applied to pExpectedCtx).
+ * @param   cbSpAdjust      Stack pointer adjustment (applied to pExpectedCtx).
+ * @param   pszMode         CPU mode or some other helpful text.
+ * @param   idTestStep      Test step identifier.
+ */
+BS3_DECL(bool) Bs3TestCheckRegCtxEx_c16(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
+                                        int16_t cbSpAdjust, const char *pszMode, uint16_t idTestStep);
+BS3_DECL(bool) Bs3TestCheckRegCtxEx_c32(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
+                                        int16_t cbSpAdjust, const char *pszMode, uint16_t idTestStep); /** @copydoc Bs3TestCheckRegCtxEx_c16 */
+BS3_DECL(bool) Bs3TestCheckRegCtxEx_c64(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
+                                        int16_t cbSpAdjust, const char *pszMode, uint16_t idTestStep); /** @copydoc Bs3TestCheckRegCtxEx_c16 */
+#define Bs3TestCheckRegCtxEx BS3_CMN_NM(Bs3TestCheckRegCtxEx) /**< Selects #Bs3TestCheckRegCtxEx_c16, #Bs3TestCheckRegCtxEx_c32 or #Bs3TestCheckRegCtxEx_c64. */
+
+/**
+ * Performs the testing for the given mode.
+ *
+ * This is called with the CPU already switch to that mode.
+ *
+ * @returns 0 on success or directly Bs3TestFailed calls, non-zero to indicate
+ *          where the test when wrong. Special value BS3TESTDOMODE_SKIPPED
+ *          should be returned to indicate that the test has been skipped.
+ * @param   bMode       The current CPU mode.
+ */
+typedef BS3_DECL_CALLBACK(uint8_t) FNBS3TESTDOMODE(uint8_t bMode);
+/** Near pointer to a test (for 16-bit code). */
+typedef FNBS3TESTDOMODE               *PFNBS3TESTDOMODE;
+/** Far pointer to a test (for 32-bit and 64-bit code, will be flatten). */
+typedef FNBS3TESTDOMODE BS3_FAR_CODE  *FPFNBS3TESTDOMODE;
+
+/** Special FNBS3TESTDOMODE return code for indicating a skipped mode test.  */
+#define BS3TESTDOMODE_SKIPPED       UINT8_MAX
+
+/**
+ * Mode sub-test entry.
+ *
+ * This can only be passed around to functions with the same bit count, as it
+ * contains function pointers.  In 16-bit mode, the 16-bit pointers are near and
+ * implies BS3TEXT16, whereas the 32-bit and 64-bit pointers are far real mode
+ * addresses that will be converted to flat address prior to calling them.
+ * Similarly, in 32-bit and 64-bit the addresses are all flat and the 16-bit
+ * ones will be converted to BS3TEXT16 based addresses prior to calling.
+ */
+typedef struct BS3TESTMODEENTRY
+{
+    const char * BS3_FAR    pszSubTest;
+
+    PFNBS3TESTDOMODE        pfnDoRM;
+
+    PFNBS3TESTDOMODE        pfnDoPE16;
+    FPFNBS3TESTDOMODE       pfnDoPE16_32;
+    PFNBS3TESTDOMODE        pfnDoPE16_V86;
+    FPFNBS3TESTDOMODE       pfnDoPE32;
+    PFNBS3TESTDOMODE        pfnDoPE32_16;
+    PFNBS3TESTDOMODE        pfnDoPEV86;
+
+    PFNBS3TESTDOMODE        pfnDoPP16;
+    FPFNBS3TESTDOMODE       pfnDoPP16_32;
+    PFNBS3TESTDOMODE        pfnDoPP16_V86;
+    FPFNBS3TESTDOMODE       pfnDoPP32;
+    PFNBS3TESTDOMODE        pfnDoPP32_16;
+    PFNBS3TESTDOMODE        pfnDoPPV86;
+
+    PFNBS3TESTDOMODE        pfnDoPAE16;
+    FPFNBS3TESTDOMODE       pfnDoPAE16_32;
+    PFNBS3TESTDOMODE        pfnDoPAE16_V86;
+    FPFNBS3TESTDOMODE       pfnDoPAE32;
+    PFNBS3TESTDOMODE        pfnDoPAE32_16;
+    PFNBS3TESTDOMODE        pfnDoPAEV86;
+
+    PFNBS3TESTDOMODE        pfnDoLM16;
+    FPFNBS3TESTDOMODE       pfnDoLM32;
+    FPFNBS3TESTDOMODE       pfnDoLM64;
+
+} BS3TESTMODEENTRY;
+/** Pointer to a mode sub-test entry. */
+typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
+
+/** Produces a BS3TESTMODEENTRY initializer for common (c16,c32,c64) test
+ *  functions. */
+#define BS3TESTMODEENTRY_CMN(a_szTest, a_BaseNm) \
+    {   /*pszSubTest =*/ a_szTest, \
+        /*RM*/        RT_CONCAT(a_BaseNm, _c16), \
+        /*PE16*/      RT_CONCAT(a_BaseNm, _c16), \
+        /*PE16_32*/   RT_CONCAT(a_BaseNm, _c32), \
+        /*PE16_V86*/  RT_CONCAT(a_BaseNm, _c16), \
+        /*PE32*/      RT_CONCAT(a_BaseNm, _c32), \
+        /*PE32_16*/   RT_CONCAT(a_BaseNm, _c16), \
+        /*PEV86*/     RT_CONCAT(a_BaseNm, _c16), \
+        /*PP16*/      RT_CONCAT(a_BaseNm, _c16), \
+        /*PP16_32*/   RT_CONCAT(a_BaseNm, _c32), \
+        /*PP16_V86*/  RT_CONCAT(a_BaseNm, _c16), \
+        /*PP32*/      RT_CONCAT(a_BaseNm, _c32), \
+        /*PP32_16*/   RT_CONCAT(a_BaseNm, _c16), \
+        /*PPV86*/     RT_CONCAT(a_BaseNm, _c16), \
+        /*PAE16*/     RT_CONCAT(a_BaseNm, _c16), \
+        /*PAE16_32*/  RT_CONCAT(a_BaseNm, _c32), \
+        /*PAE16_V86*/ RT_CONCAT(a_BaseNm, _c16), \
+        /*PAE32*/     RT_CONCAT(a_BaseNm, _c32), \
+        /*PAE32_16*/  RT_CONCAT(a_BaseNm, _c16), \
+        /*PAEV86*/    RT_CONCAT(a_BaseNm, _c16), \
+        /*LM16*/      RT_CONCAT(a_BaseNm, _c16), \
+        /*LM32*/      RT_CONCAT(a_BaseNm, _c32), \
+        /*LM64*/      RT_CONCAT(a_BaseNm, _c64), \
+    }
+
+/** A set of standard protypes to go with #BS3TESTMODEENTRY_CMN. */
+#define BS3TESTMODE_PROTOTYPES_CMN(a_BaseNm) \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _c16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c64)
+
+/** Produces a BS3TESTMODEENTRY initializer for a full set of mode test
+ *  functions. */
+#define BS3TESTMODEENTRY_MODE(a_szTest, a_BaseNm) \
+    {   /*pszSubTest =*/ a_szTest, \
+        /*RM*/        RT_CONCAT(a_BaseNm, _rm), \
+        /*PE16*/      RT_CONCAT(a_BaseNm, _pe16), \
+        /*PE16_32*/   RT_CONCAT(a_BaseNm, _pe16_32), \
+        /*PE16_V86*/  RT_CONCAT(a_BaseNm, _pe16_v86), \
+        /*PE32*/      RT_CONCAT(a_BaseNm, _pe32), \
+        /*PE32_16*/   RT_CONCAT(a_BaseNm, _pe32_16), \
+        /*PEV86*/     RT_CONCAT(a_BaseNm, _pev86), \
+        /*PP16*/      RT_CONCAT(a_BaseNm, _pp16), \
+        /*PP16_32*/   RT_CONCAT(a_BaseNm, _pp16_32), \
+        /*PP16_V86*/  RT_CONCAT(a_BaseNm, _pp16_v86), \
+        /*PP32*/      RT_CONCAT(a_BaseNm, _pp32), \
+        /*PP32_16*/   RT_CONCAT(a_BaseNm, _pp32_16), \
+        /*PPV86*/     RT_CONCAT(a_BaseNm, _ppv86), \
+        /*PAE16*/     RT_CONCAT(a_BaseNm, _pae16), \
+        /*PAE16_32*/  RT_CONCAT(a_BaseNm, _pae16_32), \
+        /*PAE16_V86*/ RT_CONCAT(a_BaseNm, _pae16_v86), \
+        /*PAE32*/     RT_CONCAT(a_BaseNm, _pae32), \
+        /*PAE32_16*/  RT_CONCAT(a_BaseNm, _pae32_16), \
+        /*PAEV86*/    RT_CONCAT(a_BaseNm, _paev86), \
+        /*LM16*/      RT_CONCAT(a_BaseNm, _lm16), \
+        /*LM32*/      RT_CONCAT(a_BaseNm, _lm32), \
+        /*LM64*/      RT_CONCAT(a_BaseNm, _lm64), \
+    }
+
+/** A set of standard protypes to go with #BS3TESTMODEENTRY_MODE. */
+#define BS3TESTMODE_PROTOTYPES_MODE(a_BaseNm) \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _rm); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pe16_32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe16_v86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pe32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe32_16); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pev86); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pp16_32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp16_v86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pp32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp32_16); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _ppv86); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pae16_32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae16_v86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pae32); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae32_16); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _paev86); \
+    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _lm16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _lm32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _lm64)
 
 /** @} */
 
