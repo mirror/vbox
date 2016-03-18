@@ -234,22 +234,31 @@ else # VBOX_WITH_QTGUI_V5
     INSTALLS += qt5-bin
     qt5-bin_MODE = 755
     qt5-bin_INST = $(INST_BIN)
-    qt5-bin_SOURCES = \
-     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod)$(SUFF_DLL).5.5.1=>lib$(qtmod)$(SUFF_DLL).5) \
-     $(qt5-bin_0_OUTDIR)/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL)
+    ifdef VBOX_WITH_HARDENING
+     qt5-bin_SOURCES = \
+      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).*.*.*)=>lib$(qtmod)$(SUFF_DLL).5) \
+      $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL)
+    else # !VBOX_WITH_HARDENING
+     # For non-hardened builds we need to remove the RUNPATH. This stuff is
+     # ugly but we need to prevent kBuild from hard-linking otherwise we
+     # (indirectly) change the binaries in tools
+     qt5-bin_SOURCES = \
+      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod)$(SUFF_DLL).5.5.1=>lib$(qtmod)$(SUFF_DLL).5) \
+      $(qt5-bin_0_OUTDIR)/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL)
 
 $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod)$(SUFF_DLL).5.5.1): \
 	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(CP) $^ $@
-	$(if $(VBOX_WITH_HARDENING),,chrpath --replace "\$$ORIGIN" $@)
+	$(QUIET)chrpath --delete $@
     
 $$(qt5-bin_0_OUTDIR)/libqxcb$(SUFF_DLL): $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL) \
 		| $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(CP) $^ $@
-	$(if $(VBOX_WITH_HARDENING),,chrpath --replace "\$$ORIGIN" $@)
+	$(QUIET)chrpath --delete $@
 
+    endif # !VBOX_WITH_HARDENING
    endif # x11
   endif # VBOX_WITH_ORACLE_QT || VBOX_WITH_QT_PAYLOAD
  endif # win x11
