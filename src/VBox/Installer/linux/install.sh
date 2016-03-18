@@ -326,6 +326,12 @@ if [ "$ACTION" = "install" ]; then
         ln -sf VBoxDTrace /usr/bin/vboxdtrace > /dev/null 2>&1
     fi
 
+    # Create legacy symlinks if necesary for Qt5/xcb stuff.
+    XCB_PRESENT=`ldconfig -p | grep "\<libxcb\.so\>"`
+    if [ -z "$XCB_PRESENT" ]; then
+        ln -s $INSTALLATION_DIR/legacy/* $INSTALLATION_DIR/
+    fi
+
     # Icons
     cur=`pwd`
     cd $INSTALLATION_DIR/icons
