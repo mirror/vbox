@@ -313,6 +313,7 @@ CPU 8086
 
 .return16_all_same:
         xor     ax, ax
+        xor     dx, dx
 .return16:
         pop     es
         pop     di
@@ -335,6 +336,7 @@ CPU 8086
 .return16_di:
         mov     ax, di
         dec     ax
+        mov     dx, es
         jmp     .return16
 
 %endif  ; ARCH_BITS == 16
