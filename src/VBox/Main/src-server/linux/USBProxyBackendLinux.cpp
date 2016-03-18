@@ -60,7 +60,7 @@
  * Initialize data members.
  */
 USBProxyBackendLinux::USBProxyBackendLinux()
-    : USBProxyBackend(), mhWakeupPipeR(NIL_RTPIPE), mhWakeupPipeW(NIL_RTPIPE)
+    : USBProxyBackend(), mhWakeupPipeR(NIL_RTPIPE), mhWakeupPipeW(NIL_RTPIPE), mpWaiter(NULL)
 {
     LogFlowThisFunc(("\n"));
 }
