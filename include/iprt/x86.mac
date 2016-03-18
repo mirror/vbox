@@ -471,9 +471,11 @@
 %define MSR_IA32_X2APIC_LVT_ERROR           0x837
 %define MSR_IA32_X2APIC_TIMER_ICR           0x838
 %define MSR_IA32_X2APIC_TIMER_CCR           0x839
-%define MSR_IA32_X2APIC_TIMER_DFR           0x83E
+%define MSR_IA32_X2APIC_TIMER_DCR           0x83E
 %define MSR_IA32_X2APIC_SELF_IPI            0x83F
 %define MSR_IA32_X2APIC_END                 0xBFF
+%define MSR_IA32_X2APIC_LVT_START           MSR_IA32_X2APIC_LVT_TIMER
+%define MSR_IA32_X2APIC_LVT_END             MSR_IA32_X2APIC_LVT_ERROR
 %define MSR_K6_EFER                         0xc0000080
 %define  MSR_K6_EFER_SCE                     RT_BIT_32(0)
 %define  MSR_K6_EFER_LME                     RT_BIT_32(8)
@@ -832,10 +834,10 @@
 %define X86LAR_F_DPL             0x6000
 %define X86LAR_F_DPL_SHIFT       13
 %define X86LAR_F_P               0x8000
-%define X86LAR_F_AVL             0x10000000
-%define X86LAR_F_L               0x20000000
-%define X86LAR_F_D               0x40000000
-%define X86LAR_F_G               0x80000000
+%define X86LAR_F_AVL             0x00100000
+%define X86LAR_F_L               0x00200000
+%define X86LAR_F_D               0x00400000
+%define X86LAR_F_G               0x00800000
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif

@@ -3086,7 +3086,7 @@ typedef struct X86DESCGENERIC
 {
     /** 00 - Limit - Low word. */
     unsigned    u16LimitLow : 16;
-    /** 10 - Base address - lowe word.
+    /** 10 - Base address - low word.
      * Don't try set this to 24 because MSC is doing stupid things then. */
     unsigned    u16BaseLow : 16;
     /** 20 - Base address - first 8 bits of high word. */
@@ -3145,10 +3145,10 @@ typedef const X86DESCGENERIC *PCX86DESCGENERIC;
 #define X86LAR_F_DPL             UINT16_C(    0x6000)
 #define X86LAR_F_DPL_SHIFT       13 /**< Shift count for the DPL value. */
 #define X86LAR_F_P               UINT16_C(    0x8000)
-#define X86LAR_F_AVL             UINT32_C(0x10000000)
-#define X86LAR_F_L               UINT32_C(0x20000000)
-#define X86LAR_F_D               UINT32_C(0x40000000)
-#define X86LAR_F_G               UINT32_C(0x80000000)
+#define X86LAR_F_AVL             UINT32_C(0x00100000)
+#define X86LAR_F_L               UINT32_C(0x00200000)
+#define X86LAR_F_D               UINT32_C(0x00400000)
+#define X86LAR_F_G               UINT32_C(0x00800000)
 /** @}  */
 
 
@@ -3312,7 +3312,7 @@ typedef struct X86DESC64SYSTEM
 {
     /** Limit - Low word. */
     uint32_t    u16LimitLow     : 16;
-    /** Base address - lowe word.
+    /** Base address - low word.
      * Don't try set this to 24 because MSC is doing stupid things then. */
     uint32_t    u16BaseLow      : 16;
     /** Base address - first 8 bits of high word. */
