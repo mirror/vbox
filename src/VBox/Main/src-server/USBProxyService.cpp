@@ -33,7 +33,7 @@
 #include <iprt/string.h>
 
 /** Pair of a USB proxy backend and the opaque filter data assigned by the backend. */
-typedef std::pair<USBProxyBackend *, void *> USBFilterPair;
+typedef std::pair<ComObjPtr<USBProxyBackend> , void *> USBFilterPair;
 /** List of USB filter pairs. */
 typedef std::list<USBFilterPair> USBFilterList;
 
@@ -64,40 +64,29 @@ USBProxyService::USBProxyService(Host *aHost)
  */
 HRESULT USBProxyService::init(void)
 {
-    USBProxyBackend *pUsbProxyBackendHost;
 # if defined(RT_OS_DARWIN)
-    pUsbProxyBackendHost = new USBProxyBackendDarwin(this);
+    ComObjPtr<USBProxyBackendDarwin> UsbProxyBackendHost;
 # elif defined(RT_OS_LINUX)
-    pUsbProxyBackendHost = new USBProxyBackendLinux(this);
+    ComObjPtr<USBProxyBackendLinux> UsbProxyBackendHost;
 # elif defined(RT_OS_OS2)
-    pUsbProxyBackendHost = new USBProxyBackendOs2(this);
+    ComObjPtr<USBProxyBackendOs2> UsbProxyBackendHost;
 # elif defined(RT_OS_SOLARIS)
-    pUsbProxyBackendHost = new USBProxyBackendSolaris(this);
+    ComObjPtr<USBProxyBackendSolaris> UsbProxyBackendHost;
 # elif defined(RT_OS_WINDOWS)
-    pUsbProxyBackendHost = new USBProxyBackendWindows(this);
+    ComObjPtr<USBProxyBackendWindows> UsbProxyBackendHost;
 # elif defined(RT_OS_FREEBSD)
-    pUsbProxyBackendHost = new USBProxyBackendFreeBSD(this);
+    ComObjPtr<USBProxyBackendFreeBSD> UsbProxyBackendHost;
 # else
-    pUsbProxyBackendHost = new USBProxyBackend(this);
+    ComObjPtr<USBProxyBackend> UsbProxyBackendHost;
 # endif
-    int vrc = pUsbProxyBackendHost->init();
+    UsbProxyBackendHost.createObject();
+    int vrc = UsbProxyBackendHost->init(this, Utf8Str("host"), Utf8Str(""));
     if (RT_FAILURE(vrc))
     {
-        delete pUsbProxyBackendHost;
         mLastError = vrc;
     }
     else
-        mBackends.push_back(pUsbProxyBackendHost);
-
-#if 0 /** @todo: Pass in the config. */
-    pUsbProxyBackendHost = new USBProxyBackendUsbIp(this);
-    hrc = pUsbProxyBackendHost->init();
-    if (FAILED(hrc))
-    {
-        delete pUsbProxyBackendHost;
-        return hrc;
-    }
-#endif
+        mBackends.push_back(static_cast<ComObjPtr<USBProxyBackend> >(UsbProxyBackendHost));
 
     return S_OK;
 }
@@ -110,11 +99,7 @@ USBProxyService::~USBProxyService()
 {
     LogFlowThisFunc(("\n"));
     while (!mBackends.empty())
-    {
-        USBProxyBackend *pUsbProxyBackend = mBackends.front();
         mBackends.pop_front();
-        delete pUsbProxyBackend;
-    }
 
     mDevices.clear();
     mBackends.clear();
@@ -220,6 +205,64 @@ HRESULT USBProxyService::getDeviceCollection(std::vector<ComPtr<IHostUSBDevice> 
     return S_OK;
 }
 
+
+HRESULT USBProxyService::addUSBDeviceSource(const com::Utf8Str &aBackend, const com::Utf8Str &aId, const com::Utf8Str &aAddress,
+                                            const std::vector<com::Utf8Str> &aPropertyNames, const std::vector<com::Utf8Str> &aPropertyValues)
+{
+    HRESULT hrc = S_OK;
+
+    /* Check whether the ID is used first. */
+    for (USBProxyBackendList::iterator it = mBackends.begin();
+         it != mBackends.end();
+         ++it)
+    {
+        USBProxyBackend *pUsbProxyBackend = *it;
+
+        if (aId.equals(pUsbProxyBackend->i_getId()))
+            return setError(VBOX_E_OBJECT_IN_USE,
+                            tr("The USB device source \"%s\" exists already"), aId.c_str());
+    }
+
+    /* Create appropriate proxy backend. */
+    if (aBackend.equalsIgnoreCase("USBIP"))
+    {
+        ComObjPtr<USBProxyBackendUsbIp> UsbProxyBackend;
+
+        UsbProxyBackend.createObject();
+        int vrc = UsbProxyBackend->init(this, aId, aAddress);
+        if (RT_FAILURE(vrc))
+            hrc = setError(E_FAIL,
+                           tr("Creating the USB device source \"%s\" using backend \"%s\" failed with %Rrc"),
+                           aId.c_str(), aBackend.c_str(), vrc);
+        else
+            mBackends.push_back(static_cast<ComObjPtr<USBProxyBackend> >(UsbProxyBackend));
+    }
+    else
+        hrc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                       tr("The USB backend \"%s\" is not supported"), aBackend.c_str());
+
+    return hrc;
+}
+
+HRESULT USBProxyService::removeUSBDeviceSource(const com::Utf8Str &aId)
+{
+    for (USBProxyBackendList::iterator it = mBackends.begin();
+         it != mBackends.end();
+         ++it)
+    {
+        ComObjPtr<USBProxyBackend> UsbProxyBackend = *it;
+
+        if (aId.equals(UsbProxyBackend->i_getId()))
+        {
+            mBackends.erase(it);
+            UsbProxyBackend->uninit();
+            return S_OK;
+        }
+    }
+
+    return setError(VBOX_E_OBJECT_NOT_FOUND,
+                    tr("The USB device source \"%s\" could not be found"), aId.c_str());
+}
 
 /**
  * Request capture of a specific device.

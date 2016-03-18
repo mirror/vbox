@@ -54,20 +54,25 @@ typedef USBDEVICELIST *PUSBDEVICELIST;
 /**
  * Initialize data members.
  */
-USBProxyBackendSolaris::USBProxyBackendSolaris(USBProxyService *aUsbProxyService)
-    : USBProxyBackend(aUsbProxyService), mUSBLibInitialized(false)
+USBProxyBackendSolaris::USBProxyBackendSolaris()
+    : USBProxyBackend(), mUSBLibInitialized(false)
 {
-    LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
+    LogFlowThisFunc(("\n"));
 }
 
+USBProxyBackendSolaris::~USBProxyBackendSolaris()
+{
+}
 
 /**
  * Initializes the object (called right after construction).
  *
  * @returns VBox status code.
  */
-int USBProxyBackendSolaris::init(void)
+int USBProxyBackendSolaris::init(USBProxyService *aUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress)
 {
+    USBProxyBackend::init(aUsbProxyService, strId, strAddress);
+
     /*
      * Create semaphore.
      */
@@ -98,7 +103,7 @@ int USBProxyBackendSolaris::init(void)
 /**
  * Stop all service threads and free the device chain.
  */
-USBProxyBackendSolaris::~USBProxyBackendSolaris()
+void USBProxyBackendSolaris::uninit()
 {
     LogFlowThisFunc(("destruct\n"));
 
@@ -383,6 +388,7 @@ void USBProxyBackendSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool
     if (!aSuccess && aDevice->i_getBackendUserData())
         USBLibRemoveFilter(aDevice->i_getBackendUserData());
     aDevice->i_setBackendUserData(NULL);
+    USBProxyBackend::captureDeviceCompleted(aDevice, aSuccess);
 }
 
 
@@ -438,6 +444,7 @@ void USBProxyBackendSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool
     if (!aSuccess && aDevice->i_getBackendUserData())
         USBLibRemoveFilter(aDevice->i_getBackendUserData());
     aDevice->i_setBackendUserData(NULL);
+    USBProxyBackend::releaseDeviceCompleted(aDevice, aSuccess);
 }
 
 

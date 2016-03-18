@@ -50,6 +50,8 @@ public:
         return LOCKCLASS_HOSTOBJECT;
     }
 
+    void uninit(void);
+
     bool isActive(void);
     int getLastError(void);
 
@@ -64,6 +66,9 @@ public:
     /** @name Host Interfaces
      * @{ */
     HRESULT getDeviceCollection(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices);
+    HRESULT addUSBDeviceSource(const com::Utf8Str &aBackend, const com::Utf8Str &aId, const com::Utf8Str &aAddress,
+                               const std::vector<com::Utf8Str> &aPropertyNames, const std::vector<com::Utf8Str> &aPropertyValues);
+    HRESULT removeUSBDeviceSource(const com::Utf8Str &aId);
     /** @} */
 
     /** @name SessionMachine Interfaces
@@ -77,12 +82,14 @@ public:
     typedef std::list< ComObjPtr<HostUSBDeviceFilter> > USBDeviceFilterList;
 
     void i_updateDeviceList(USBProxyBackend *pUsbProxyBackend, PUSBDEVICE pDevices);
-    void i_getUSBFilters(USBDeviceFilterList *pGlobalFiltes);
+    void i_getUSBFilters(USBDeviceFilterList *pGlobalFilters);
 
 protected:
     ComObjPtr<HostUSBDevice> findDeviceById(IN_GUID aId);
 
     static HRESULT setError(HRESULT aResultCode, const char *aText, ...);
+
+    USBProxyBackend *findUsbProxyBackendById(const com::Utf8Str &strId);
 
 private:
 
@@ -93,7 +100,7 @@ private:
     /** List of the known USB devices. */
     HostUSBDeviceList mDevices;
     /** List of USBProxyBackend pointers. */
-    typedef std::list<USBProxyBackend *> USBProxyBackendList;
+    typedef std::list<ComObjPtr<USBProxyBackend> > USBProxyBackendList;
     /** List of active USB backends. */
     USBProxyBackendList mBackends;
     int                 mLastError;

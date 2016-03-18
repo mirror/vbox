@@ -207,7 +207,6 @@ tstUSBProxyLinux_TEMPLATE  = VBOXMAINCLIENTTSTEXE
 tstUSBProxyLinux_INTERMEDIATES = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstUSBProxyLinux_SOURCES   = \
 	tstUSBProxyLinux.cpp \
-	../src-server/linux/USBProxyBackendLinux.cpp \
 	../src-server/linux/USBGetDevices.cpp
 tstUSBProxyLinux_INCS      = \
 	. \

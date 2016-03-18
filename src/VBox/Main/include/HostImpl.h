@@ -144,6 +144,11 @@ private:
                                    ComPtr<IHostUSBDevice> &aDevice);
     HRESULT generateMACAddress(com::Utf8Str &aAddress);
 
+    HRESULT addUSBDeviceSource(const com::Utf8Str &aBackend, const com::Utf8Str &aId, const com::Utf8Str &aAddress,
+                               const std::vector<com::Utf8Str> &aPropertyNames, const std::vector<com::Utf8Str> &aPropertyValues);
+
+    HRESULT removeUSBDeviceSource(const com::Utf8Str &aId);
+
     // Internal Methods.
 
     HRESULT i_buildDVDDrivesList(MediaList &list);

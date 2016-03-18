@@ -111,6 +111,7 @@
 #define USAGE_MEDIUMPROPERTY        RT_BIT_64(60)
 #define USAGE_ENCRYPTMEDIUM         RT_BIT_64(61)
 #define USAGE_MEDIUMENCCHKPWD       RT_BIT_64(62)
+#define USAGE_USBDEVSOURCE          RT_BIT_64(63)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
@@ -307,6 +308,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a);
 
 /* VBoxManageUSB.cpp */
 RTEXITCODE handleUSBFilter(HandlerArg *a);
+RTEXITCODE handleUSBDevSource(HandlerArg *a);
 
 /* VBoxManageHostonly.cpp */
 RTEXITCODE handleHostonlyIf(HandlerArg *a);

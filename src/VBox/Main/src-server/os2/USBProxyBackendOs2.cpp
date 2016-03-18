@@ -37,8 +37,8 @@
 /**
  * Initialize data members.
  */
-USBProxyBackendOs2::USBProxyBackendOs2(USBProxyService *aUsbProxyService)
-    : USBProxyBackend(aUsbProxyService), mhev(NULLHANDLE), mhmod(NULLHANDLE),
+USBProxyBackendOs2::USBProxyBackendOs2(USBProxyService *aUsbProxyService, const com::Utf8Str &strId)
+    : USBProxyBackend(aUsbProxyService, strId), mhev(NULLHANDLE), mhmod(NULLHANDLE),
     mpfnUsbRegisterChangeNotification(NULL), mpfnUsbDeregisterNotification(NULL),
     mpfnUsbQueryNumberDevices(NULL), mpfnUsbQueryDeviceReport(NULL)
 {

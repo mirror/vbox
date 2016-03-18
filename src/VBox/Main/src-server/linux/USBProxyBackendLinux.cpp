@@ -59,12 +59,19 @@
 /**
  * Initialize data members.
  */
-USBProxyBackendLinux::USBProxyBackendLinux(USBProxyService *aUsbProxyService)
-    : USBProxyBackend(aUsbProxyService), mhFile(NIL_RTFILE), mhWakeupPipeR(NIL_RTPIPE),
-      mhWakeupPipeW(NIL_RTPIPE), mUsingUsbfsDevices(true /* see init */),
-      mUdevPolls(0), mpWaiter(NULL)
+USBProxyBackendLinux::USBProxyBackendLinux()
+    : USBProxyBackend(), mhWakeupPipeR(NIL_RTPIPE), mhWakeupPipeW(NIL_RTPIPE)
 {
-    LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
+    LogFlowThisFunc(("\n"));
+}
+
+
+/**
+ * Stop all service threads and free the device chain.
+ */
+USBProxyBackendLinux::~USBProxyBackendLinux()
+{
+    LogFlowThisFunc(("\n"));
 }
 
 /**
@@ -72,8 +79,10 @@ USBProxyBackendLinux::USBProxyBackendLinux(USBProxyService *aUsbProxyService)
  *
  * @returns VBox status code.
  */
-int USBProxyBackendLinux::init(void)
+int USBProxyBackendLinux::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress)
 {
+    USBProxyBackend::init(pUsbProxyService, strId, strAddress);
+
     const char *pcszDevicesRoot;
     int rc = USBProxyLinuxChooseMethod(&mUsingUsbfsDevices, &pcszDevicesRoot);
     if (RT_SUCCESS(rc))
@@ -87,6 +96,26 @@ int USBProxyBackendLinux::init(void)
     }
 
     return rc;
+}
+
+void USBProxyBackendLinux::uninit()
+{
+    /*
+     * Stop the service.
+     */
+    if (isActive())
+        stop();
+
+    /*
+     * Free resources.
+     */
+    doUsbfsCleanupAsNeeded();
+#ifdef VBOX_USB_WITH_SYSFS
+    if (mpWaiter)
+        delete mpWaiter;
+#endif
+
+    USBProxyBackend::uninit();
 }
 
 /**
@@ -178,30 +207,6 @@ int USBProxyBackendLinux::initSysfs(void)
 
 
 /**
- * Stop all service threads and free the device chain.
- */
-USBProxyBackendLinux::~USBProxyBackendLinux()
-{
-    LogFlowThisFunc(("\n"));
-
-    /*
-     * Stop the service.
-     */
-    if (isActive())
-        stop();
-
-    /*
-     * Free resources.
-     */
-    doUsbfsCleanupAsNeeded();
-#ifdef VBOX_USB_WITH_SYSFS
-    if (mpWaiter)
-        delete mpWaiter;
-#endif
-}
-
-
-/**
  * If any Usbfs-related resources are currently allocated, then free them
  * and mark them as freed.
  */
@@ -210,11 +215,14 @@ void USBProxyBackendLinux::doUsbfsCleanupAsNeeded()
     /*
      * Free resources.
      */
-    RTFileClose(mhFile);
+    if (mhFile != NIL_RTFILE)
+        RTFileClose(mhFile);
     mhFile = NIL_RTFILE;
 
-    RTPipeClose(mhWakeupPipeR);
-    RTPipeClose(mhWakeupPipeW);
+    if (mhWakeupPipeR != NIL_RTPIPE)
+        RTPipeClose(mhWakeupPipeR);
+    if (mhWakeupPipeW != NIL_RTPIPE)
+        RTPipeClose(mhWakeupPipeW);
     mhWakeupPipeW = mhWakeupPipeR = NIL_RTPIPE;
 }
 

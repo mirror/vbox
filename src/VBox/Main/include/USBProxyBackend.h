@@ -29,33 +29,29 @@
 #include "VirtualBoxBase.h"
 #include "VirtualBoxImpl.h"
 #include "HostUSBDeviceImpl.h"
+#include "USBProxyBackendWrap.h"
 class USBProxyService;
 
 /**
  * Base class for the USB Proxy Backend.
  */
-class USBProxyBackend
-    : public VirtualBoxTranslatable
+class ATL_NO_VTABLE USBProxyBackend
+    : public USBProxyBackendWrap
 {
 public:
-    USBProxyBackend(USBProxyService *pUsbProxyService);
-    virtual int init(void);
-    virtual ~USBProxyBackend();
 
-    /**
-     * Override of the default locking class to be used for validating lock
-     * order with the standard member lock handle.
-     */
-    virtual VBoxLockingClass getLockingClass() const
-    {
-        // the USB proxy service uses the Host object lock, so return the
-        // same locking class as the host
-        return LOCKCLASS_HOSTOBJECT;
-    }
+    DECLARE_EMPTY_CTOR_DTOR (USBProxyBackend)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    // public initializer/uninitializer for internal purposes only
+    virtual int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    virtual void uninit();
 
     bool isActive(void);
-
-    RWLockHandle *lockHandle() const;
+    const com::Utf8Str &i_getId();
+    uint32_t i_getRefCount();
 
     /** @name Interface for the USBController and the Host object.
      * @{ */
@@ -95,6 +91,8 @@ protected:
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
     bool updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
+    uint32_t incRef();
+    uint32_t decRef();
 
     static HRESULT setError(HRESULT aResultCode, const char *aText, ...);
 
@@ -103,15 +101,23 @@ protected:
 
 private:
 
+    // wrapped IUSBProxyBackend properties
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT getType(com::Utf8Str &aType);
+
     static DECLCALLBACK(int) serviceThread(RTTHREAD Thread, void *pvUser);
 
 protected:
     /** Pointer to the owning USB Proxy Service object. */
-    USBProxyService *m_pUsbProxyService;
+    USBProxyService   *m_pUsbProxyService;
     /** Thread handle of the service thread. */
-    RTTHREAD         mThread;
+    RTTHREAD           mThread;
     /** Flag which stop() sets to cause serviceThread to return. */
-    bool volatile    mTerminate;
+    bool volatile      mTerminate;
+    /** Id of the instance. */
+    const com::Utf8Str m_strId;
+    /** Reference counter which prevents the backend instance from being removed. */
+    uint32_t           m_cRefs;
 };
 
 
@@ -129,9 +135,10 @@ protected:
 class USBProxyBackendDarwin : public USBProxyBackend
 {
 public:
-    USBProxyBackendDarwin(USBProxyService *pUsbProxyService);
-    int init(void);
-    ~USBProxyBackendDarwin();
+    DECLARE_EMPTY_CTOR_DTOR (USBProxyBackendDarwin)
+
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    void uninit();
 
     virtual void *insertFilter(PCUSBFILTER aFilter);
     virtual void removeFilter(void *aId);
@@ -178,9 +185,10 @@ private:
 class USBProxyBackendLinux: public USBProxyBackend
 {
 public:
-    USBProxyBackendLinux(USBProxyService *pUsbProxyService);
-    int init(void);
-    ~USBProxyBackendLinux();
+    DECLARE_EMPTY_CTOR_DTOR (USBProxyBackendLinux)
+
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    void uninit();
 
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);
@@ -229,9 +237,7 @@ private:
 class USBProxyBackendOs2 : public USBProxyBackend
 {
 public:
-    USBProxyBackendOs2 (USBProxyService *pUsbProxyService);
-    /// @todo virtual int init(void);
-    ~USBProxyBackendOs2();
+    DECLARE_EMPTY_CTOR_DTOR (USBProxyBackend)
 
     virtual int captureDevice (HostUSBDevice *aDevice);
     virtual int releaseDevice (HostUSBDevice *aDevice);
@@ -271,9 +277,10 @@ private:
 class USBProxyBackendSolaris : public USBProxyBackend
 {
 public:
-    USBProxyBackendSolaris(USBProxyService *pUsbProxyService);
-    int init(void);
-    ~USBProxyBackendSolaris();
+    DECLARE_EMPTY_CTOR_DTOR (USBProxyBackendSolaris)
+
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    void uninit();
 
     virtual void *insertFilter (PCUSBFILTER aFilter);
     virtual void removeFilter (void *aID);
@@ -304,9 +311,10 @@ private:
 class USBProxyBackendWindows : public USBProxyBackend
 {
 public:
-    USBProxyBackendWindows(USBProxyService *pUsbProxyService);
-    int init(void);
-    ~USBProxyBackendWindows();
+    DECLARE_EMPTY_CTOR_DTOR (USBProxyBackendWindows)
+
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    void uninit();
 
     virtual void *insertFilter (PCUSBFILTER aFilter);
     virtual void removeFilter (void *aID);
@@ -333,9 +341,10 @@ private:
 class USBProxyBackendFreeBSD : public USBProxyBackend
 {
 public:
-    USBProxyBackendFreeBSD(USBProxyService *pUsbProxyService);
-    int init(void);
-    ~USBProxyBackendFreeBSD();
+    DECLARE_EMPTY_CTOR_DTOR (USBProxyBackendFreeBSD)
+
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    void uninit();
 
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);
@@ -368,7 +377,7 @@ typedef enum USBIPRECVSTATE
     kUsbIpRecvState_Hdr,
     /** Waiting for the complete reception of a UsbIpExportedDevice structure. */
     kUsbIpRecvState_ExportedDevice,
-    /** Waiting for a complete reception a UsbIpDeviceInterface strucutre to skip. */
+    /** Waiting for a complete reception of a UsbIpDeviceInterface structure to skip. */
     kUsbIpRecvState_DeviceInterface,
     /** 32bit hack. */
     kUsbIpRecvState_32Bit_Hack = 0x7fffffff
@@ -384,9 +393,10 @@ struct UsbIpExportedDevice;
 class USBProxyBackendUsbIp: public USBProxyBackend
 {
 public:
-    USBProxyBackendUsbIp(USBProxyService *pUsbProxyService);
-    int init(void);
-    ~USBProxyBackendUsbIp();
+    DECLARE_EMPTY_CTOR_DTOR (USBProxyBackendUsbIp)
+
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    void uninit();
 
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);

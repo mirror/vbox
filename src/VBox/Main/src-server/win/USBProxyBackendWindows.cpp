@@ -37,20 +37,25 @@
 /**
  * Initialize data members.
  */
-USBProxyBackendWindows::USBProxyBackendWindows(USBProxyService *aUsbProxyService)
-    : USBProxyBackend(aUsbProxyService), mhEventInterrupt(INVALID_HANDLE_VALUE)
+USBProxyBackendWindows::USBProxyBackendWindows()
+    : USBProxyBackend(), mhEventInterrupt(INVALID_HANDLE_VALUE)
 {
-    LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
+    LogFlowThisFunc(("\n"));
 }
 
+USBProxyBackendWindows::~USBProxyBackendWindows()
+{
+}
 
 /**
  * Initializes the object (called right after construction).
  *
  * @returns S_OK on success and non-fatal failures, some COM error otherwise.
  */
-int USBProxyBackendWindows::init(void)
+int USBProxyBackendWindows::init(USBProxyService *aUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress)
 {
+    USBProxyBackend::init(aUsbProxyService, strId, strAddress);
+
     /*
      * Create the semaphore (considered fatal).
      */
@@ -87,7 +92,7 @@ int USBProxyBackendWindows::init(void)
 /**
  * Stop all service threads and free the device chain.
  */
-USBProxyBackendWindows::~USBProxyBackendWindows()
+void USBProxyBackendWindows::uninit()
 {
     LogFlowThisFunc(("\n"));
 
@@ -106,6 +111,7 @@ USBProxyBackendWindows::~USBProxyBackendWindows()
      */
     int rc = USBLibTerm();
     AssertRC(rc);
+    USBProxyBackend::uninit();
 }
 
 
