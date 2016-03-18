@@ -51,6 +51,7 @@
 
 #include <linux/module.h>
 #include <linux/console.h>
+#include <linux/vt_kern.h>
 
 #include <drm/drmP.h>
 #include <drm/drm_crtc_helper.h>
@@ -243,6 +244,8 @@ static struct drm_driver driver =
 
 static int __init vbox_init(void)
 {
+    unsigned i;
+
 #ifdef CONFIG_VGA_CONSOLE
     if (vgacon_text_force() && vbox_modeset == -1)
         return -EINVAL;
@@ -250,6 +253,13 @@ static int __init vbox_init(void)
 
     if (vbox_modeset == 0)
         return -EINVAL;
+
+    /* Do not load if any of the virtual consoles is in graphics mode to be
+     * sure that we do not pick a fight with a user-mode driver or VESA. */
+    for (i = 0; i < MAX_NR_CONSOLES - 1; ++i)
+        if (vc_cons[i].d->vc_mode == KD_GRAPHICS)
+            return -EINVAL;
+
     return drm_pci_init(&driver, &vbox_pci_driver);
 }
 static void __exit vbox_exit(void)
