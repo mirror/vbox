@@ -921,7 +921,7 @@ typedef struct VBVAHOSTCMD
 /** Returns VINF_SUCCESS if the host can report mode hints via VBVA.
  * Set value to VERR_NOT_SUPPORTED before calling. */
 #define VBOX_VBVA_CONF32_MODE_HINT_REPORTING  2
-/** Returns VINF_SUCCESS if the host can receive guest cursor information via
+/** Returns VINF_SUCCESS if the host can report guest cursor enabled status via
  * VBVA.  Set value to VERR_NOT_SUPPORTED before calling. */
 #define VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING  3
 /** Returns the currently available host cursor capabilities.  Available if
