@@ -570,6 +570,7 @@
       <desc>Settings version "1.16", written by VirtualBox 5.1.x.</desc>
       <!--
           Machine changes: NVMe storage controller.
+          VirtualBox.xml: Add support for additional USB device sources (e.g. USB/IP)
       -->
     </const>
 

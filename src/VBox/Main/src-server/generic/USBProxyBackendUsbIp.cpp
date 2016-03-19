@@ -285,6 +285,8 @@ int USBProxyBackendUsbIp::init(USBProxyService *aUsbProxyService, const com::Utf
 
     USBProxyBackend::init(aUsbProxyService, strId, strAddress);
 
+    unconst(m_strBackend) = Utf8Str("USBIP");
+
     m = new Data;
 
     /* Split address into hostname and port. */
@@ -326,6 +328,7 @@ int USBProxyBackendUsbIp::init(USBProxyService *aUsbProxyService, const com::Utf
                     RTPollSetRemove(m->hPollSet, USBIP_POLL_ID_PIPE);
                     int rc2 = RTPollSetDestroy(m->hPollSet);
                     AssertRC(rc2);
+                    m->hPollSet = NIL_RTPOLLSET;
                 }
             }
 
@@ -335,10 +338,14 @@ int USBProxyBackendUsbIp::init(USBProxyService *aUsbProxyService, const com::Utf
                 AssertRC(rc2);
                 rc2 = RTPipeClose(m->hWakeupPipeW);
                 AssertRC(rc2);
+                m->hWakeupPipeR = m->hWakeupPipeW = NIL_RTPIPE;
             }
         }
         if (RT_FAILURE(rc))
+        {
             RTSemFastMutexDestroy(m->hMtxDevices);
+            m->hMtxDevices = NIL_RTSEMFASTMUTEX;
+        }
     }
 
     return rc;
@@ -887,56 +894,71 @@ int USBProxyBackendUsbIp::addDeviceToList(PUsbIpExportedDevice pDev)
 
     /* Make sure the Bus id is 0 terminated. */
     pDev->szBusId[31] = '\0';
-    RTStrAPrintf((char **)&pNew->pszAddress, "usbip://%s:%u:%s", m->pszHost, m->uPort, &pDev->szBusId[0]);
-
-    pNew->idVendor           = pDev->u16VendorId;
-    pNew->idProduct          = pDev->u16ProductId;
-    pNew->bcdDevice          = pDev->u16BcdDevice;
-    pNew->bDeviceClass       = pDev->bDeviceClass;
-    pNew->bDeviceSubClass    = pDev->bDeviceSubClass;
-    pNew->bDeviceProtocol    = pDev->bDeviceProtocol;
-    pNew->bNumConfigurations = pDev->bNumConfigurations;
-    pNew->enmState           = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
-    pNew->u64SerialHash      = 0;
-    pNew->bBus               = (uint8_t)pDev->u32BusNum;
-    pNew->bPort              = (uint8_t)pDev->u32DevNum;
-
-    switch (pDev->u32Speed)
+    int rc = RTStrAPrintf((char **)&pNew->pszAddress, "usbip://%s:%u:%s", m->pszHost, m->uPort, &pDev->szBusId[0]);
+    if (RT_SUCCESS(rc))
     {
-        case USBIP_SPEED_LOW:
-            pNew->enmSpeed = USBDEVICESPEED_LOW;
-            pNew->bcdUSB = 1 << 8;
-            break;
-        case USBIP_SPEED_FULL:
-            pNew->enmSpeed = USBDEVICESPEED_FULL;
-            pNew->bcdUSB = 1 << 8;
-            break;
-        case USBIP_SPEED_HIGH:
-            pNew->enmSpeed = USBDEVICESPEED_HIGH;
-            pNew->bcdUSB = 2 << 8;
-            break;
-        case USBIP_SPEED_WIRELESS:
-            pNew->enmSpeed = USBDEVICESPEED_VARIABLE;
-            pNew->bcdUSB = 1 << 8;
-            break;
-        case USBIP_SPEED_SUPER:
-            pNew->enmSpeed = USBDEVICESPEED_SUPER;
-            pNew->bcdUSB = 3 << 8;
-            break;
-        case USBIP_SPEED_UNKNOWN:
-        default:
-            pNew->bcdUSB = 1 << 8;
-            pNew->enmSpeed = USBDEVICESPEED_UNKNOWN;
+        pNew->idVendor           = pDev->u16VendorId;
+        pNew->idProduct          = pDev->u16ProductId;
+        pNew->bcdDevice          = pDev->u16BcdDevice;
+        pNew->bDeviceClass       = pDev->bDeviceClass;
+        pNew->bDeviceSubClass    = pDev->bDeviceSubClass;
+        pNew->bDeviceProtocol    = pDev->bDeviceProtocol;
+        pNew->bNumConfigurations = pDev->bNumConfigurations;
+        pNew->enmState           = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
+        pNew->u64SerialHash      = 0;
+        pNew->bBus               = (uint8_t)pDev->u32BusNum;
+        pNew->bPort              = (uint8_t)pDev->u32DevNum;
+
+        switch (pDev->u32Speed)
+        {
+            case USBIP_SPEED_LOW:
+                pNew->enmSpeed = USBDEVICESPEED_LOW;
+                pNew->bcdUSB = 1 << 8;
+                break;
+            case USBIP_SPEED_FULL:
+                pNew->enmSpeed = USBDEVICESPEED_FULL;
+                pNew->bcdUSB = 1 << 8;
+                break;
+            case USBIP_SPEED_HIGH:
+                pNew->enmSpeed = USBDEVICESPEED_HIGH;
+                pNew->bcdUSB = 2 << 8;
+                break;
+            case USBIP_SPEED_WIRELESS:
+                pNew->enmSpeed = USBDEVICESPEED_VARIABLE;
+                pNew->bcdUSB = 1 << 8;
+                break;
+            case USBIP_SPEED_SUPER:
+                pNew->enmSpeed = USBDEVICESPEED_SUPER;
+                pNew->bcdUSB = 3 << 8;
+                break;
+            case USBIP_SPEED_UNKNOWN:
+            default:
+                pNew->bcdUSB = 1 << 8;
+                pNew->enmSpeed = USBDEVICESPEED_UNKNOWN;
+        }
+
+        /* link it */
+        pNew->pNext = NULL;
+        pNew->pPrev = *m->ppNext;
+        *m->ppNext = pNew;
+        m->ppNext = &pNew->pNext;
+        m->cDevicesCur++;
     }
 
-    /* link it */
-    pNew->pNext = NULL;
-    pNew->pPrev = *m->ppNext;
-    *m->ppNext = pNew;
-    m->ppNext = &pNew->pNext;
-    m->cDevicesCur++;
+    if (RT_FAILURE(rc))
+    {
+        if (pNew->pszManufacturer)
+            RTStrFree((char *)pNew->pszManufacturer);
+        if (pNew->pszProduct)
+            RTStrFree((char *)pNew->pszProduct);
+        if (pNew->pszBackend)
+            RTStrFree((char *)pNew->pszBackend);
+        if (pNew->pszAddress)
+            RTStrFree((char *)pNew->pszAddress);
+        RTMemFree(pNew);
+    }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**

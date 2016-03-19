@@ -25,6 +25,7 @@
 #include <iprt/socket.h>
 #include <iprt/poll.h>
 #include <iprt/semaphore.h>
+#include <iprt/cpp/utils.h>
 
 #include "VirtualBoxBase.h"
 #include "VirtualBoxImpl.h"
@@ -51,6 +52,8 @@ public:
 
     bool isActive(void);
     const com::Utf8Str &i_getId();
+    const com::Utf8Str &i_getAddress();
+    virtual const com::Utf8Str &i_getBackend();
     uint32_t i_getRefCount();
 
     /** @name Interface for the USBController and the Host object.
@@ -116,6 +119,10 @@ protected:
     bool volatile      mTerminate;
     /** Id of the instance. */
     const com::Utf8Str m_strId;
+    /** Address of the instance. */
+    const com::Utf8Str m_strAddress;
+    /** Backend identifier as used in the settings. */
+    const com::Utf8Str m_strBackend;
     /** Reference counter which prevents the backend instance from being removed. */
     uint32_t           m_cRefs;
 };
@@ -139,6 +146,8 @@ public:
 
     int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
     void uninit();
+
+    const com::Utf8Str &i_getBackend();
 
     virtual void *insertFilter(PCUSBFILTER aFilter);
     virtual void removeFilter(void *aId);

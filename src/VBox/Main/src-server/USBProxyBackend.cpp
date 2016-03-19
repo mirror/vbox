@@ -32,7 +32,6 @@
 #include <iprt/thread.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
-#include <iprt/cpp/utils.h>
 
 
 /**
@@ -68,13 +67,14 @@ void USBProxyBackend::FinalRelease()
  */
 int USBProxyBackend::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress)
 {
-    NOREF(strAddress);
+    m_pUsbProxyService    = pUsbProxyService;
+    mThread               = NIL_RTTHREAD;
+    mTerminate            = false;
+    unconst(m_strId)      = strId;
+    m_cRefs               = 0;
+    unconst(m_strAddress) = strAddress;
 
-    m_pUsbProxyService = pUsbProxyService;
-    mThread            = NIL_RTTHREAD;
-    mTerminate         = false;
-    unconst(m_strId)   = strId;
-    m_cRefs            = 0;
+    unconst(m_strBackend) = Utf8Str::Empty;
 
     return VINF_SUCCESS;
 }
@@ -110,6 +110,27 @@ const com::Utf8Str &USBProxyBackend::i_getId()
     return m_strId;
 }
 
+
+/**
+ * Returns the address of the instance.
+ *
+ * @returns ID string for the instance.
+ */
+const com::Utf8Str &USBProxyBackend::i_getAddress()
+{
+    return m_strAddress;
+}
+
+
+/**
+ * Returns the backend of the instance.
+ *
+ * @returns ID string for the instance.
+ */
+const com::Utf8Str &USBProxyBackend::i_getBackend()
+{
+    return m_strBackend;
+}
 
 /**
  * Returns the current reference counter for the backend.

@@ -56,6 +56,8 @@ int USBProxyBackendDarwin::init(USBProxyService *pUsbProxyService, const com::Ut
 {
     USBProxyBackend::init(pUsbProxyService, strId, strAddress);
 
+    unconst(m_strBackend) = Utf8Str("host");
+
     /*
      * Initialize the USB library.
      */

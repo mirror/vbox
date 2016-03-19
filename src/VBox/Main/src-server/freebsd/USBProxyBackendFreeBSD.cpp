@@ -71,9 +71,11 @@ USBProxyBackendFreeBSD::USBProxyBackendFreeBSD(USBProxyService *aUsbProxyService
  *
  * @returns S_OK on success and non-fatal failures, some COM error otherwise.
  */
-int USBProxyBackendFreeBSD::init(const com::Utf8Str &strAddress)
+int USBProxyBackendFreeBSD::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddresss)
 {
-    NOREF(strAddress);
+    USBProxyBackend::init(pUsbProxyService, strId, strAddress);
+
+    unconst(m_strBackend) = Utf8Str("host");
 
     /*
      * Create semaphore.

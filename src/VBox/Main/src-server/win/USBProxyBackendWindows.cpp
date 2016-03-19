@@ -56,6 +56,8 @@ int USBProxyBackendWindows::init(USBProxyService *aUsbProxyService, const com::U
 {
     USBProxyBackend::init(aUsbProxyService, strId, strAddress);
 
+    unconst(m_strBackend) = Utf8Str("host");
+
     /*
      * Create the semaphore (considered fatal).
      */

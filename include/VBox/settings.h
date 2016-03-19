@@ -288,9 +288,20 @@ protected:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+struct USBDeviceSource
+{
+    com::Utf8Str            strName;
+    com::Utf8Str            strBackend;
+    com::Utf8Str            strAddress;
+    StringsMap              properties;
+};
+
+typedef std::list<USBDeviceSource> USBDeviceSourcesList;
+
 struct Host
 {
     USBDeviceFiltersList    llUSBDeviceFilters;
+    USBDeviceSourcesList    llUSBDeviceSources;
 };
 
 struct SystemProperties
@@ -434,6 +445,8 @@ public:
 
 private:
     void bumpSettingsVersionIfNeeded();
+    void buildUSBDeviceSources(xml::ElementNode &elmParent, const USBDeviceSourcesList &ll);
+    void readUSBDeviceSources(const xml::ElementNode &elmDeviceSources, USBDeviceSourcesList &ll);
 };
 
 ////////////////////////////////////////////////////////////////////////////////

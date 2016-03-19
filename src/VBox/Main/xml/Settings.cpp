@@ -1505,6 +1505,77 @@ void MainConfigFile::readNATNetworks(const xml::ElementNode &elmNATNetworks)
 }
 
 /**
+ * Creates \<USBDeviceSource\> nodes under the given parent element according to
+ * the contents of the given USBDeviceSourcesList.
+ *
+ * @param elmParent
+ * @param ll
+ */
+void MainConfigFile::buildUSBDeviceSources(xml::ElementNode &elmParent,
+                                           const USBDeviceSourcesList &ll)
+{
+    for (USBDeviceSourcesList::const_iterator it = ll.begin();
+         it != ll.end();
+         ++it)
+    {
+        const USBDeviceSource &src = *it;
+        xml::ElementNode *pelmSource = elmParent.createChild("USBDeviceSource");
+        pelmSource->setAttribute("name", src.strName);
+        pelmSource->setAttribute("backend", src.strBackend);
+        pelmSource->setAttribute("address", src.strAddress);
+
+        /* Write the properties. */
+        for (StringsMap::const_iterator itProp = src.properties.begin();
+             itProp != src.properties.end();
+             ++itProp)
+        {
+            xml::ElementNode *pelmProp = pelmSource->createChild("Property");
+            pelmProp->setAttribute("name", itProp->first);
+            pelmProp->setAttribute("value", itProp->second);
+        }
+    }
+}
+
+/**
+ * Reads \<USBDeviceFilter\> entries from under the given elmDeviceFilters node and
+ * stores them in the given linklist. This is in ConfigFileBase because it's used
+ * from both MainConfigFile (for host filters) and MachineConfigFile (for machine
+ * filters).
+ * @param elmDeviceFilters
+ * @param ll
+ */
+void MainConfigFile::readUSBDeviceSources(const xml::ElementNode &elmDeviceSources,
+                                          USBDeviceSourcesList &ll)
+{
+    xml::NodesLoop nl1(elmDeviceSources, "USBDeviceSource");
+    const xml::ElementNode *pelmChild;
+    while ((pelmChild = nl1.forAllNodes()))
+    {
+        USBDeviceSource src;
+
+        if (   pelmChild->getAttributeValue("name", src.strName)
+            && pelmChild->getAttributeValue("backend", src.strBackend)
+            && pelmChild->getAttributeValue("address", src.strAddress))
+        {
+            // handle medium properties
+            xml::NodesLoop nl2(*pelmChild, "Property");
+            const xml::ElementNode *pelmSrcChild;
+            while ((pelmSrcChild = nl2.forAllNodes()))
+            {
+                Utf8Str strPropName, strPropValue;
+                if (   pelmSrcChild->getAttributeValue("name", strPropName)
+                    && pelmSrcChild->getAttributeValue("value", strPropValue) )
+                    src.properties[strPropName] = strPropValue;
+                else
+                    throw ConfigFileError(this, pelmSrcChild, N_("Required USBDeviceSource/Property/@name or @value attribute is missing"));
+            }
+
+            ll.push_back(src);
+        }
+    }
+}
+
+/**
  * Constructor.
  *
  * If pstrFilename is != NULL, this reads the given settings file into the member
@@ -1573,6 +1644,8 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                     }
                     else if (pelmGlobalChild->nameEquals("USBDeviceFilters"))
                         readUSBDeviceFilters(*pelmGlobalChild, host.llUSBDeviceFilters);
+                    else if (pelmGlobalChild->nameEquals("USBDeviceSources"))
+                        readUSBDeviceSources(*pelmGlobalChild, host.llUSBDeviceSources);
                 }
             } // end if (pelmRootChild->nameEquals("Global"))
         }
@@ -1607,6 +1680,13 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
 
 void MainConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_16)
+    {
+        // VirtualBox 5.1 add support for additional USB device sources.
+        if (!host.llUSBDeviceSources.empty())
+            m->sv = SettingsVersion_v1_16;
+    }
+
     if (m->sv < SettingsVersion_v1_14)
     {
         // VirtualBox 4.3 adds NAT networks.
@@ -1779,6 +1859,10 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     buildUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),
                           host.llUSBDeviceFilters,
                           true);               // fHostMode
+
+    if (!host.llUSBDeviceSources.empty())
+        buildUSBDeviceSources(*pelmGlobal->createChild("USBDeviceSources"),
+                              host.llUSBDeviceSources);
 
     // now go write the XML
     xml::XmlFileWriter writer(*m->pDoc);

@@ -1760,6 +1760,8 @@ HRESULT Host::i_loadSettings(const settings::Host &data)
             flt->i_getId() = m->pUSBProxyService->insertFilter(&pFilter->i_getData().mUSBFilter);
         }
     }
+
+    rc = m->pUSBProxyService->i_loadSettings(data.llUSBDeviceSources);
 #else
     NOREF(data);
 #endif /* VBOX_WITH_USB */
@@ -1790,7 +1792,7 @@ HRESULT Host::i_saveSettings(settings::Host &data)
     NOREF(data);
 #endif /* VBOX_WITH_USB */
 
-    return S_OK;
+    return m->pUSBProxyService->i_saveSettings(data.llUSBDeviceSources);
 }
 
 /**

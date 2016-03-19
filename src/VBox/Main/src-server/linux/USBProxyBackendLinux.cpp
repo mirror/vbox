@@ -83,6 +83,8 @@ int USBProxyBackendLinux::init(USBProxyService *pUsbProxyService, const com::Utf
 {
     USBProxyBackend::init(pUsbProxyService, strId, strAddress);
 
+    unconst(m_strBackend) = Utf8Str("host");
+
     const char *pcszDevicesRoot;
     int rc = USBProxyLinuxChooseMethod(&mUsingUsbfsDevices, &pcszDevicesRoot);
     if (RT_SUCCESS(rc))
@@ -117,6 +119,7 @@ void USBProxyBackendLinux::uninit()
 
     USBProxyBackend::uninit();
 }
+
 
 /**
  * Initialization routine for the usbfs based operation.

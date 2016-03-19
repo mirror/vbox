@@ -21,6 +21,7 @@
 
 #include <VBox/usb.h>
 #include <VBox/usbfilter.h>
+#include <VBox/settings.h>
 
 #include "VirtualBoxBase.h"
 #include "VirtualBoxImpl.h"
@@ -84,12 +85,19 @@ public:
     void i_updateDeviceList(USBProxyBackend *pUsbProxyBackend, PUSBDEVICE pDevices);
     void i_getUSBFilters(USBDeviceFilterList *pGlobalFilters);
 
+    HRESULT i_loadSettings(const settings::USBDeviceSourcesList &llUSBDeviceSources);
+    HRESULT i_saveSettings(settings::USBDeviceSourcesList &llUSBDeviceSources);
+
 protected:
     ComObjPtr<HostUSBDevice> findDeviceById(IN_GUID aId);
 
     static HRESULT setError(HRESULT aResultCode, const char *aText, ...);
 
     USBProxyBackend *findUsbProxyBackendById(const com::Utf8Str &strId);
+
+    HRESULT createUSBDeviceSource(const com::Utf8Str &aBackend, const com::Utf8Str &aId,
+                                  const com::Utf8Str &aAddress, const std::vector<com::Utf8Str> &aPropertyNames,
+                                  const std::vector<com::Utf8Str> &aPropertyValues);
 
 private:
 
