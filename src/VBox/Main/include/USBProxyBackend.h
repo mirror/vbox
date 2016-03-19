@@ -147,8 +147,6 @@ public:
     int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
     void uninit();
 
-    const com::Utf8Str &i_getBackend();
-
     virtual void *insertFilter(PCUSBFILTER aFilter);
     virtual void removeFilter(void *aId);
 
