@@ -691,5 +691,8 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 static int vbox_cursor_move(struct drm_crtc *crtc,
                int x, int y)
 {
+    struct vbox_private *vbox = crtc->dev->dev_private;
+
+    VBoxHGSMICursorPosition(&vbox->submit_info, true, x, y, NULL, NULL);
     return 0;
 }
