@@ -1010,101 +1010,7 @@ static void updateGraphicsCapability(ScrnInfoPtr pScrn, Bool hasVT)
 }
 #endif
 
-#ifdef VBOXVIDEO_13
-
-static void setVirtualSizeRandR12(ScrnInfoPtr pScrn, bool fScreenInitTime)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    unsigned i;
-    unsigned cx = 0;
-    unsigned cy = 0;
-
-    for (i = 0; i < pVBox->cScreens; ++i)
-    {
-        if (   pVBox->fHaveHGSMIModeHints && pVBox->pScreens[i].afHaveLocation)
-        {
-            pVBox->pScreens[i].paCrtcs->x = pVBox->pScreens[i].aPreferredLocation.x;
-            pVBox->pScreens[i].paCrtcs->y = pVBox->pScreens[i].aPreferredLocation.y;
-        }
-        if (   pVBox->pScreens[i].paOutputs->status == XF86OutputStatusConnected
-            && pVBox->pScreens[i].paCrtcs->x + pVBox->pScreens[i].aPreferredSize.cx < VBOX_VIDEO_MAX_VIRTUAL
-            && pVBox->pScreens[i].paCrtcs->y + pVBox->pScreens[i].aPreferredSize.cy < VBOX_VIDEO_MAX_VIRTUAL)
-        {
-            cx = max(cx, pVBox->pScreens[i].paCrtcs->x + pVBox->pScreens[i].aPreferredSize.cx);
-            cy = max(cy, pVBox->pScreens[i].paCrtcs->y + pVBox->pScreens[i].aPreferredSize.cy);
-        }
-    }
-    if (cx != 0 && cy != 0)
-    {
-        /* Do not set the virtual resolution in limited context as that can
-         * cause problems setting up RandR 1.2 which needs it set to the
-         * maximum size at this point. */
-        if (!fScreenInitTime)
-        {
-            TRACE_LOG("cx=%u, cy=%u\n", cx, cy);
-            xf86ScrnToScreen(pScrn)->width = cx;
-            xf86ScrnToScreen(pScrn)->height = cy;
-            xf86ScrnToScreen(pScrn)->mmWidth = cx * 254 / 960;
-            xf86ScrnToScreen(pScrn)->mmHeight = cy * 254 / 960;
-            adjustScreenPixmap(pScrn, cx, cy);
-            vbvxSetSolarisMouseRange(cx, cy);
-        }
-    }
-}
-
-static void setScreenSizesRandR12(ScrnInfoPtr pScrn, bool fScreenInitTime)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    unsigned i;
-
-    for (i = 0; i < pVBox->cScreens; ++i)
-    {
-        if (!pVBox->pScreens[i].afConnected)
-            continue;
-        /* The Crtc can get "unset" if the screen was disconnected previously.
-         * I couldn't find an API to re-set it which did not have side-effects.
-         */
-        pVBox->pScreens[i].paOutputs->crtc = pVBox->pScreens[i].paCrtcs;
-        xf86CrtcSetMode(pVBox->pScreens[i].paCrtcs, pVBox->pScreens[i].paOutputs->probed_modes, RR_Rotate_0,
-                        pVBox->pScreens[i].paCrtcs->x, pVBox->pScreens[i].paCrtcs->y);
-        if (!fScreenInitTime)
-            RRCrtcNotify(pVBox->pScreens[i].paCrtcs->randr_crtc, pVBox->pScreens[i].paOutputs->randr_output->modes[0],
-                         pVBox->pScreens[i].paCrtcs->x, pVBox->pScreens[i].paCrtcs->y, RR_Rotate_0,
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
-                         NULL,
-#endif
-                         1, &pVBox->pScreens[i].paOutputs->randr_output);
-    }
-}
-
-static void setSizesRandR12(ScrnInfoPtr pScrn, bool fScreenInitTime)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-
-    if (!fScreenInitTime)
-    {
-# if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
-        RRGetInfo(xf86ScrnToScreen(pScrn), TRUE);
-# else
-        RRGetInfo(xf86ScrnToScreen(pScrn));
-# endif
-    }
-    setVirtualSizeRandR12(pScrn, fScreenInitTime);
-    setScreenSizesRandR12(pScrn, fScreenInitTime);
-    if (!fScreenInitTime)
-    {
-        /* We use RRScreenSizeSet() here and not RRScreenSizeNotify() because
-         * the first also pushes the virtual screen size to the input driver.
-         * We were doing this manually by setting screenInfo.width and height
-         * and calling xf86UpdateDesktopDimensions() where appropriate, but this
-         * failed on Ubuntu 12.04.0 due to a problematic X server back-port. */
-        RRScreenSizeSet(xf86ScrnToScreen(pScrn), xf86ScrnToScreen(pScrn)->width, xf86ScrnToScreen(pScrn)->height,
-                        xf86ScrnToScreen(pScrn)->mmWidth, xf86ScrnToScreen(pScrn)->mmHeight);
-        RRTellChanged(xf86ScrnToScreen(pScrn));
-    }
-}
-
-#else
+#ifndef VBOXVIDEO_13
 
 #define PREFERRED_MODE_ATOM_NAME "VBOXVIDEO_PREFERRED_MODE"
 
@@ -1131,7 +1037,11 @@ static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime
 
     TRACE_LOG("fScreenInitTime=%d\n", (int)fScreenInitTime);
 #ifdef VBOXVIDEO_13
-    setSizesRandR12(pScrn, fScreenInitTime);
+# if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
+    RRGetInfo(xf86ScrnToScreen(pScrn), TRUE);
+# else
+    RRGetInfo(xf86ScrnToScreen(pScrn));
+# endif
 #else
     setSizesRandR11(pScrn);
 #endif
@@ -1246,8 +1156,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     if (ShadowFBInit2(pScreen, NULL, vbvxHandleDirtyRect) != TRUE)
         return FALSE;
     VBoxInitialiseSizeHints(pScrn);
-    /* Get any screen size hints from HGSMI. */
-    vbvxReadSizesAndCursorIntegrationFromHGSMI(pScrn, NULL);
 
 #ifdef VBOXVIDEO_13
     /* Initialise CRTC and output configuration for use with randr1.2. */
@@ -1304,7 +1212,9 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     }
 
     /* set first video mode */
-    setSizesAndCursorIntegration(pScrn, true);
+    if (!xf86SetDesiredModes(pScrn)) {
+        return FALSE;
+    }
 #else
     /* set first video mode */
     setModeRandR11(pScrn, pScrn->currentMode, true, false, 0, 0);
@@ -1368,8 +1278,9 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
     vboxEnableVbva(pScrn);
     /* Re-set video mode */
 #ifdef VBOXVIDEO_13
-    vbvxReadSizesAndCursorIntegrationFromHGSMI(pScrn, NULL);
-    setSizesAndCursorIntegration(pScrn, false);
+    if (!xf86SetDesiredModes(pScrn)) {
+        return FALSE;
+    }
 #else
     updateGraphicsCapability(pScrn, TRUE);
     setModeRandR11(pScrn, pScrn->currentMode, false, true, cXOverRide, cYOverRide);
