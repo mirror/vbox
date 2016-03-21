@@ -438,6 +438,7 @@ int vbox_fbdev_init(struct drm_device *dev)
     ret = drm_fb_helper_initial_config(&fbdev->helper, 32);
     if (ret)
         goto fini;
+    vbox->fbdev_init = true;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
     return 0;

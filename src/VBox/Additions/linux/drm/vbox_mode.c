@@ -426,11 +426,15 @@ static int vbox_get_modes(struct drm_connector *connector)
 {
     struct vbox_connector *vbox_connector = NULL;
     struct drm_display_mode *mode = NULL;
+    struct vbox_private *vbox = NULL;
     unsigned num_modes = 0;
     int preferred_width, preferred_height;
 
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
+    vbox = connector->dev->dev_private;
+    if (!vbox->fbdev_init)
+        return drm_add_modes_noedid(connector, 800, 600);
     num_modes = drm_add_modes_noedid(connector, 2560, 1600);
     preferred_width = vbox_connector->mode_hint.width ? vbox_connector->mode_hint.width : 1024;
     preferred_height = vbox_connector->mode_hint.height ? vbox_connector->mode_hint.height : 768;

@@ -118,6 +118,9 @@ struct vbox_private {
 
     struct mutex hw_mutex;
     bool isr_installed;
+    /** Have we finished fbdev initialisation?  We limit reported display
+     * modes to 800x600 until this point to get a sensible console size. */
+    bool fbdev_init;
     struct work_struct hotplug_work;
 };
 
