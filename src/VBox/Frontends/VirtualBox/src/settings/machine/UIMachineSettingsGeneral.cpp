@@ -291,10 +291,13 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
             if (generalData.m_strName != m_cache.base().m_strName)
                 m_machine.SetName(generalData.m_strName);
 
-            /* Encryption tab data: */
-            if (generalData.m_fEncryptionEnabled != m_cache.base().m_fEncryptionEnabled ||
-                generalData.m_fEncryptionCipherChanged != m_cache.base().m_fEncryptionCipherChanged ||
-                generalData.m_fEncryptionPasswordChanged != m_cache.base().m_fEncryptionPasswordChanged)
+            /* Encryption tab data:
+             * Make sure it either encryption is changed itself,
+             * or the encryption was already enabled and either cipher or password is changed. */
+            if (   generalData.m_fEncryptionEnabled != m_cache.base().m_fEncryptionEnabled
+                || (   m_cache.base().m_fEncryptionEnabled
+                    && (   generalData.m_fEncryptionCipherChanged != m_cache.base().m_fEncryptionCipherChanged
+                        || generalData.m_fEncryptionPasswordChanged != m_cache.base().m_fEncryptionPasswordChanged)))
             {
                 /* Cipher attribute changed? */
                 QString strNewCipher;
