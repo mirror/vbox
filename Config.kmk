@@ -2474,7 +2474,7 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wextra                ?= $(call VBOX_GCC_CHECK_CC,-Wextra,)'
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CC),)'
 	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CC),40500),)'
-	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_Wlogical-op           ?= $(call VBOX_GCC_CHECK_CC,-Wlogical-op,)'
+	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_Wlogical-op         ?= $(call VBOX_GCC_CHECK_CC,-Wlogical-op,)'
 	$(QUIET)$(APPEND) '$@' ' endif'
 	$(QUIET)$(APPEND) '$@' 'endif'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-address           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-address,)'
@@ -2563,6 +2563,9 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_YASM_Wno-segreg-in-64bit  ?= $(call VBOX_YASM_CHECK,-Wno-segreg-in-64bit,)'
 # NASM (--allow-64-bit: 2.12rc2)
 	$(QUIET)$(APPEND) '$@' 'VBOX_NASM_allow_64_bit         ?= $(call VBOX_NASM_CHECK,--allow-64-bit,)'
+ifeq ($(KBUILD_HOST),linux)
+	$(QUIET)$(APPEND) '$@' 'VBOX_LD_HAS_LIBXCB             ?= $(shell /sbin/ldconfig -p|grep -q "\<libxcb\.so\.1\>" && echo "1")'
+endif
 
 ifdef VBOX_PATH_PREFIX_MINGW32
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_VERSION_CC                  ?= $(call VBOX_GCC_VERSION,$(VBOX_PATH_PREFIX_MINGW32)gcc -m32)'
@@ -5298,7 +5301,8 @@ ifdef VBOX_WITH_QTGUI
      VBOX_QT_MOD += \
       Qt5DBus Qt5XcbQpa Qt5X11Extras
      # legacy libraries required to be installed on EL5
-     VBOX_QT_LEGACY_LIBS = libxcb.so.1 libX11.so.6 libX11-xcb.so.1
+     VBOX_QT_LEGACY_LIBS = \
+      $(if $(VBOX_LD_HAS_LIBXCB),,$libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
      VBOX_QT_PLUGINS = plugins/platforms/libqxcb.so
     else ifeq ($(KBUILD_TARGET), win)
      VBOX_QT_MOD += \
