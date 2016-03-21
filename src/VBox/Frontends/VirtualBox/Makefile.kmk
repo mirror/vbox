@@ -815,6 +815,18 @@ VirtualBox_SOURCES.win += \
 	src/platform/win/VBoxUtils-win.cpp \
 	src/platform/win/WinKeyboard.cpp
 
+if defined(VBOX_WITH_QTGUI_V5) && (defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD))
+ INSTALLS.linux += VirtualBox.qt.conf
+ VirtualBox.qt.conf_INST = $(INST_BIN)
+ VirtualBox.qt.conf_MODE = 644
+ VirtualBox.qt.conf_SOURCES = $(VirtualBox_0_OUTDIR)/qt.conf=>qt.conf
+
+$$(VirtualBox_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION_MK) | $$(@D)/
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(APPEND) $@ "[Paths]"
+	$(QUIET)$(APPEND) $@ "Plugins =" $(PATH_OUT)/$(INST_BIN)/plugins
+endif
+
 VirtualBox_DEFS.darwin += VBOX_DARWIN_USE_NATIVE_CONTROLS
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/CocoaEventHelper.mm \
@@ -1077,11 +1089,11 @@ VirtualBox.app_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vhd.icns=>Resources/virtualbox-vhd.icns \
 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-hdd.icns=>Resources/virtualbox-hdd.icns
 
-ifdef VBOX_WITH_QTGUI_V5
+ ifdef VBOX_WITH_QTGUI_V5
  # Qt5 requires qt.conf on Mac OS X:
  VirtualBox.app_SOURCES += \
  	$(VirtualBox.app_0_OUTDIR)/qt.conf=>Resources/qt.conf
-endif # VBOX_WITH_QTGUI_V5
+ endif # VBOX_WITH_QTGUI_V5
 
 $$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
