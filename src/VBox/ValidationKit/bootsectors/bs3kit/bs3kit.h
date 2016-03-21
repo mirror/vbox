@@ -2092,8 +2092,8 @@ BS3_DECL(void) Bs3TrapPrintFrame_c64(PCBS3TRAPFRAME pTrapFrame); /**< @copydoc B
  * The long jump will only be performed onced, but will catch any kind of trap,
  * fault, interrupt or irq.
  *
- * @retval true on the initial call.
- * @retval false on trap return.
+ * @retval  true on the initial call.
+ * @retval  false on trap return.
  * @param   pTrapFrame      Where to store the trap information when
  *                          returning @c false.
  * @sa      #Bs3TrapUnsetJmp
@@ -2102,6 +2102,17 @@ BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c16(PBS3TRAPFRAME pTrapFrame);
 BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c32(PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmp_c16 */
 BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c64(PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmp_c16 */
 #define Bs3TrapSetJmp BS3_CMN_NM(Bs3TrapSetJmp) /**< Selects #Bs3TrapSetJmp_c16, #Bs3TrapSetJmp_c32 or #Bs3TrapSetJmp_c64. */
+
+/**
+ * Combination of #Bs3TrapSetJmp and #Bs3RegCtxRestore.
+ *
+ * @param   pCtxRestore     The context to restore.
+ * @param   pTrapFrame      Where to store the trap information.
+ */
+BS3_DECL(void) Bs3TrapSetJmpAndRestore_c16(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame);
+BS3_DECL(void) Bs3TrapSetJmpAndRestore_c32(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmpAndRestore_c16 */
+BS3_DECL(void) Bs3TrapSetJmpAndRestore_c64(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmpAndRestore_c16 */
+#define Bs3TrapSetJmpAndRestore BS3_CMN_NM(Bs3TrapSetJmpAndRestore) /**< Selects #Bs3TrapSetJmpAndRestore_c16, #Bs3TrapSetJmpAndRestore_c32 or #Bs3TrapSetJmpAndRestore_c64. */
 
 /**
  * Disables a previous #Bs3TrapSetJmp call.

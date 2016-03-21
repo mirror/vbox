@@ -84,7 +84,7 @@ static uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing)
             uSel &= BS3_SEL_RING_SUB_MASK;
             uSel |= bRing;
             uSel += BS3_SEL_R0_FIRST;
-            uSel |= (uint16_t)bRing << BS3_SEL_RING_SHIFT;
+            uSel += (uint16_t)bRing << BS3_SEL_RING_SHIFT;
         }
         else
         {

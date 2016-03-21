@@ -329,6 +329,11 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         mov     edx, [xBX + BS3REGCTX.rdx]
         mov     ecx, [xBX + BS3REGCTX.rcx]
         mov     esi, [xBX + BS3REGCTX.rsi]
+%if TMPL_BITS == 16 ; if SS is 16-bit, we will not be able to restore the high word.
+        mov     edi, [xBX + BS3REGCTX.rsp]
+        mov     di, sp
+        mov     esp, edi
+%endif
         mov     edi, [xBX + BS3REGCTX.rdi]
         mov     ebx, [xBX + BS3REGCTX.rbx]
 

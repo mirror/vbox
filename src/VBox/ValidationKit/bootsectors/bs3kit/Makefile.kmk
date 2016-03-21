@@ -128,6 +128,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TrapPrintFrame.c \
 	bs3-cmn-TrapSetHandler.c \
 	bs3-cmn-TrapSetJmp.asm \
+	bs3-cmn-TrapSetJmpAndRestore.c \
 	bs3-cmn-TrapUnsetJmp.c \
        ../../../Runtime/common/asm/ASMBitFirstClear.asm \
        ../../../Runtime/common/asm/ASMBitFirstSet.asm \
