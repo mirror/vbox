@@ -119,7 +119,7 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies)
         PRTREQ pReqs = ASMAtomicXchgPtrT(&pQueue->pAlreadyPendingReqs, NULL, PRTREQ);
         if (RT_LIKELY(!pReqs))
         {
-            PRTREQ pReqs = ASMAtomicXchgPtrT(&pQueue->pReqs, NULL, PRTREQ);
+            pReqs = ASMAtomicXchgPtrT(&pQueue->pReqs, NULL, PRTREQ);
             if (!pReqs)
             {
                 /* We do not adjust cMillies (documented behavior). */
