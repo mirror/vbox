@@ -910,6 +910,13 @@ DECLEXPORT(EGLBoolean) eglCopyBuffers(EGLDisplay hDisplay, EGLSurface hSurface, 
     return setEGLError(EGL_BAD_MATCH);
 }
 
+DECLEXPORT(EGLBoolean) eglSwapInterval (EGLDisplay dpy, EGLint interval)
+{
+    NOREF(dpy);
+    NOREF(interval);
+    return EGL_TRUE;
+}
+
 typedef void (*VBEGLFuncPtr)(void);
 DECLEXPORT(VBEGLFuncPtr)eglGetProcAddress(const char *pszName)
 {
