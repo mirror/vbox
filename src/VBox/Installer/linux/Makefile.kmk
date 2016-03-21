@@ -268,10 +268,8 @@ ifdef VBOX_WITH_QTGUI
   	$(if $(VBOX_WITH_ORACLE_QT),accessible/libqtaccessiblewidgets.so,)
  else # VBOX_WITH_QTGUI_V5
   VBOX_LNX_NO_STRIP += \
-  	platforms/libqxcb.so \
-  	legacy/libxcb.so.1 \
-  	legacy/libX11.so.6 \
-  	legacy/libX11-xcb.so.1
+  	$(VBOX_QT_PLUGINS) \
+	$(addprefix legacy/,$(VBOX_QT_LEGACY_LIBS))
  endif # VBOX_WITH_QTGUI_V5
 endif
 
@@ -519,7 +517,7 @@ BLDDIRS += $(foreach d,\
 	$(if $(VBOX_WITH_ORACLE_QT),$(if $(VBOX_WITH_QTGUI_V5),,\
 	  archive/accessible),) \
 	$(if $(VBOX_WITH_QTGUI_V5),\
-	  archive/platforms \
+	  archive/plugins/platforms \
 	  archive/legacy,) \
 	$(if $(VBOX_WITH_PYTHON),\
 	  archive/sdk/installer \

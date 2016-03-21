@@ -5238,9 +5238,9 @@ ifdef VBOX_WITH_QTGUI
   ifeq ($(KBUILD_TARGET),darwin)
    ifndef VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
-   else # VBOX_WITH_QTGUI_V5
+   else
     VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
-   endif # VBOX_WITH_QTGUI_V5
+   endif
    ifeq ($(VBOX_PATH_QT),)
     ifneq ($(wildcard /Library/Frameworks/QtCore.framework),)
      # Using the global installation (for OSE).
@@ -5251,15 +5251,15 @@ ifdef VBOX_WITH_QTGUI
   else if1of ($(KBUILD_TARGET), win)
    ifndef VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*))))
-   else # VBOX_WITH_QTGUI_V5
+   else
     VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*))))
-   endif # VBOX_WITH_QTGUI_V5
+   endif
   else if1of ($(KBUILD_TARGET), linux solaris)
    ifndef VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
-   else # VBOX_WITH_QTGUI_V5
+   else
     VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
-   endif # VBOX_WITH_QTGUI_V5
+   endif
    ifneq ($(VBOX_PATH_QT),)
     VBOX_WITH_ORACLE_QT = 1
    endif
@@ -5271,9 +5271,9 @@ ifdef VBOX_WITH_QTGUI
    VBOX_PATH_QT          ?= /usr
    ifndef VBOX_WITH_QTGUI_V5
     VBOX_PATH_QT_LIB      ?= /usr/lib/qt4
-   else # VBOX_WITH_QTGUI_V5
+   else
     VBOX_PATH_QT_LIB      ?= /usr/lib/qt5
-   endif # VBOX_WITH_QTGUI_V5
+   endif
   endif
  endif
  VBOX_PATH_QT            ?= /usr
@@ -5288,24 +5288,18 @@ ifdef VBOX_WITH_QTGUI
  else # VBOX_WITH_QTGUI_V5
   ifeq ($(KBUILD_TARGET), darwin)
    VBOX_QT_MOD = \
-    QtCore \
-    QtGui \
-    QtWidgets \
-    QtPrintSupport \
-    QtMacExtras \
+    QtCore QtGui QtWidgets QtPrintSupport QtMacExtras \
     $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
   else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
    VBOX_QT_MOD += \
-    Qt5Core \
-    Qt5Gui \
-    Qt5Widgets \
-    Qt5PrintSupport \
+    Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport \
     $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
     if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
      VBOX_QT_MOD += \
-      Qt5DBus \
-      Qt5XcbQpa \
-      Qt5X11Extras
+      Qt5DBus Qt5XcbQpa Qt5X11Extras
+     # legacy libraries required to be installed on EL5
+     VBOX_QT_LEGACY_LIBS = libxcb.so.1 libX11.so.6 libX11-xcb.so.1
+     VBOX_QT_PLUGINS = plugins/platforms/libqxcb.so
     else ifeq ($(KBUILD_TARGET), win)
      VBOX_QT_MOD += \
       Qt5WinExtras

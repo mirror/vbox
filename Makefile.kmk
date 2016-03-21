@@ -235,49 +235,35 @@ else # VBOX_WITH_QTGUI_V5
     qt5-bin_MODE = 755
     qt5-bin_INST = $(INST_BIN)
     ifdef VBOX_WITH_HARDENING
+     # The wildcards are necessary to install the libs instead of the symlinks
      qt5-bin_SOURCES = \
-      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod)$(SUFF_DLL).*.*.*)=>lib$(qtmod)$(SUFF_DLL).5) \
-      $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL) \
-      $(wildcard $(VBOX_PATH_QT)/lib/legacy/libxcb$(SUFF_DLL).*.*.*)=>legacy/libxcb$(SUFF_DLL).1 \
-      $(wildcard $(VBOX_PATH_QT)/lib/legacy/libX11$(SUFF_DLL).*.*.*)=>legacy/libX11$(SUFF_DLL).6 \
-      $(wildcard $(VBOX_PATH_QT)/lib/legacy/libX11-xcb$(SUFF_DLL).*.*.*)=>legacy/libX11-xcb$(SUFF_DLL).1
+      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod).so.*.*.*)=>lib$(qtmod).so.5) \
+      $(foreach lib,$(VBOX_QT_PLUGINS),$(VBOX_PATH_QT)/$(lib)=>$(lib)) \
+      $(foreach lib,$(VBOX_QT_LEGACY_LIBS),$(wildcard $(VBOX_PATH_QT_LIB)/legacy/$(lib).*.*)=>legacy/$(lib))
     else # !VBOX_WITH_HARDENING
      # For non-hardened builds we need to remove the RUNPATH. This stuff is
      # ugly but we need to prevent kBuild from hard-linking otherwise we
      # (indirectly) change the binaries in tools
      qt5-bin_SOURCES = \
-      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod)$(SUFF_DLL).5.5.1=>lib$(qtmod)$(SUFF_DLL).5) \
-      $(qt5-bin_0_OUTDIR)/libqxcb$(SUFF_DLL)=>platforms/libqxcb$(SUFF_DLL) \
-      $(qt5-bin_0_OUTDIR)/libxcb$(SUFF_DLL).1=>legacy/libxcb$(SUFF_DLL).1 \
-      $(qt5-bin_0_OUTDIR)/libX11$(SUFF_DLL).6=>legacy/libX11$(SUFF_DLL).6 \
-      $(qt5-bin_0_OUTDIR)/libX11-xcb$(SUFF_DLL).1=>legacy/libX11-xcb$(SUFF_DLL).1
+      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.5.5.1=>lib$(qtmod).so.5) \
+      $(foreach lib,$(VBOX_QT_PLUGINS),$(qt5-bin_0_OUTDIR)/$(lib)=>$(lib)) \
+      $(foreach lib,$(VBOX_QT_LEGACY_LIBS),$(qt5-bin_0_OUTDIR)/$(lib)=>legacy/$(lib))
 
-$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod)$(SUFF_DLL).5.5.1): \
+$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.5.5.1): \
 	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(CP) $^ $@
 	$(QUIET)chrpath --delete $@
 
-$$(qt5-bin_0_OUTDIR)/libqxcb$(SUFF_DLL): $(VBOX_PATH_QT)/plugins/platforms/libqxcb$(SUFF_DLL) \
-		| $$(qt5-bin_0_OUTDIR)/
+$(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
+	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
+	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(CP) $^ $@
 	$(QUIET)chrpath --delete $@
 
-$$(qt5-bin_0_OUTDIR)/libxcb$(SUFF_DLL).1: $(VBOX_PATH_QT)/lib/legacy/libxcb$(SUFF_DLL).1 \
-		| $$(qt5-bin_0_OUTDIR)/
-	$(call MSG_INST_FILE,$^,$@)
-	$(QUIET)$(CP) $^ $@
-	$(QUIET)chrpath --delete $@
-
-$$(qt5-bin_0_OUTDIR)/libX11$(SUFF_DLL).6: $(VBOX_PATH_QT)/lib/legacy/libX11$(SUFF_DLL).6 \
-		| $$(qt5-bin_0_OUTDIR)/
-	$(call MSG_INST_FILE,$^,$@)
-	$(QUIET)$(CP) $^ $@
-	$(QUIET)chrpath --delete $@
-
-$$(qt5-bin_0_OUTDIR)/libX11-xcb$(SUFF_DLL).1: $(VBOX_PATH_QT)/lib/legacy/libX11-xcb$(SUFF_DLL).1 \
-		| $$(qt5-bin_0_OUTDIR)/
+$(foreach lib,$(VBOX_QT_LEGACY_LIBS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
+	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/legacy/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(CP) $^ $@
 	$(QUIET)chrpath --delete $@
