@@ -328,7 +328,7 @@ if [ "$ACTION" = "install" ]; then
 
     # Create legacy symlinks if necesary for Qt5/xcb stuff.
     if [ -d "$INSTALLATION_DIR/legacy" ]; then
-        if ! /sbin/ldconfig -p | grep -q "\<libxcb\.so\>"
+        if ! /sbin/ldconfig -p | grep -q "\<libxcb\.so\>"; then
             ln -s $INSTALLATION_DIR/legacy/* $INSTALLATION_DIR/
         fi
     fi
