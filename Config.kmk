@@ -5302,7 +5302,7 @@ ifdef VBOX_WITH_QTGUI
       Qt5DBus Qt5XcbQpa Qt5X11Extras
      # legacy libraries required to be installed on EL5
      VBOX_QT_LEGACY_LIBS = \
-      $(if $(VBOX_LD_HAS_LIBXCB),,$libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
+      $(if $(VBOX_LD_HAS_LIBXCB),,libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
      VBOX_QT_PLUGINS = plugins/platforms/libqxcb.so
     else ifeq ($(KBUILD_TARGET), win)
      VBOX_QT_MOD += \
@@ -5415,8 +5415,12 @@ ifdef VBOX_WITH_QTGUI
      $(VBOX_XCURSOR_LIBS) \
 	Xext \
 	X11
-   TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
-     $(VBOX_LIBPATH_X11)
+    TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
+	$(VBOX_LIBPATH_X11)
+   if defined(VBOX_WITH_QTGUI_V5) && defined(VBOX_WITH_ORACLE_QT) && !defined(VBOX_LD_HAS_LIBXCB)
+    TEMPLATE_VBOXQTGUIEXE_LIBPATH += $(PATH_SDK_QT5_LIB)/legacy
+    TEMPLATE_VBOXQTGUIEXE_INCS    += $(PATH_SDK_QT5_INC)/legacy
+   endif
   else ifeq ($(KBUILD_TARGET),darwin)
    TEMPLATE_VBOXQTGUIEXE_DEFS.darwin        += $(VBOX_DARWIN_DEF_SDK_DEFS)
    TEMPLATE_VBOXQTGUIEXE_CFLAGS.darwin      += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
