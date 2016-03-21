@@ -108,47 +108,49 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies)
     AssertReturn(pQueue->u32Magic == RTREQQUEUE_MAGIC, VERR_INVALID_HANDLE);
 
     /*
-     * Process loop.
-     *
-     * We do not repeat the outer loop if we've got an informational status code
-     * since that code needs processing by our caller.
+     * Process loop.  Stop (break) after the first non-VINF_SUCCESS status code.
      */
     int rc = VINF_SUCCESS;
-    while (rc <= VINF_SUCCESS)
     {
         /*
          * Get pending requests.
          */
-        PRTREQ pReqs = ASMAtomicXchgPtrT(&pQueue->pReqs, NULL, PRTREQ);
-        if (!pReqs)
+        PRTREQ pReqs = ASMAtomicXchgPtrT(&pQueue->pAlreadyPendingReqs, NULL, PRTREQ);
+        if (RT_LIKELY(!pReqs))
         {
-            ASMAtomicWriteBool(&pQueue->fBusy, false); /* this aint 100% perfect, but it's good enough for now... */
-            /** @todo We currently don't care if the entire time wasted here is larger than
-             *        cMillies */
-            rc = RTSemEventWait(pQueue->EventSem, cMillies);
-            if (rc != VINF_SUCCESS)
-                break;
-            continue;
-        }
-        ASMAtomicWriteBool(&pQueue->fBusy, true);
+            PRTREQ pReqs = ASMAtomicXchgPtrT(&pQueue->pReqs, NULL, PRTREQ);
+            if (!pReqs)
+            {
+                /* We do not adjust cMillies (documented behavior). */
+                ASMAtomicWriteBool(&pQueue->fBusy, false); /* this aint 100% perfect, but it's good enough for now... */
+                rc = RTSemEventWait(pQueue->EventSem, cMillies);
+                if (rc != VINF_SUCCESS)
+                    break;
+                continue;
+            }
 
-        /*
-         * Reverse the list to process it in FIFO order.
-         */
-        PRTREQ pReq = pReqs;
-        if (pReq->pNext)
-            Log2(("RTReqQueueProcess: 2+ requests: %p %p %p\n", pReq, pReq->pNext, pReq->pNext->pNext));
-        pReqs = NULL;
-        while (pReq)
-        {
-            Assert(pReq->enmState == RTREQSTATE_QUEUED);
-            Assert(pReq->uOwner.hQueue == pQueue);
-            PRTREQ pCur = pReq;
-            pReq = pReq->pNext;
-            pCur->pNext = pReqs;
-            pReqs = pCur;
-        }
+            ASMAtomicWriteBool(&pQueue->fBusy, true);
 
+            /*
+             * Reverse the list to process it in FIFO order.
+             */
+            PRTREQ pReq = pReqs;
+            if (pReq->pNext)
+                Log2(("RTReqQueueProcess: 2+ requests: %p %p %p\n", pReq, pReq->pNext, pReq->pNext->pNext));
+            pReqs = NULL;
+            while (pReq)
+            {
+                Assert(pReq->enmState == RTREQSTATE_QUEUED);
+                Assert(pReq->uOwner.hQueue == pQueue);
+                PRTREQ pCur = pReq;
+                pReq = pReq->pNext;
+                pCur->pNext = pReqs;
+                pReqs = pCur;
+            }
+
+        }
+        else
+            ASMAtomicWriteBool(&pQueue->fBusy, true);
 
         /*
          * Process the requests.
@@ -156,16 +158,26 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies)
         while (pReqs)
         {
             /* Unchain the first request and advance the list. */
-            pReq = pReqs;
+            PRTREQ pReq = pReqs;
             pReqs = pReqs->pNext;
             pReq->pNext = NULL;
 
-            /* Process the request */
+            /* Process the request. */
             rc = rtReqProcessOne(pReq);
             AssertRC(rc);
             if (rc != VINF_SUCCESS)
-                break; /** @todo r=bird: we're dropping requests here! Add 2nd queue that can hold them. (will fix when writing a testcase)  */
+            {
+                /* Propagate the return code to caller.  If more requests pending, queue them for later. */
+                if (pReqs)
+                {
+                    pReqs = ASMAtomicXchgPtrT(&pQueue->pAlreadyPendingReqs, pReqs, PRTREQ);
+                    Assert(!pReqs);
+                }
+                break;
+            }
         }
+        if (rc != VINF_SUCCESS)
+            break;
     }
 
     LogFlow(("RTReqQueueProcess: returns %Rrc\n", rc));
