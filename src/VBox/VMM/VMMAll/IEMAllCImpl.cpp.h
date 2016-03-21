@@ -3109,6 +3109,9 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
             rcStrict = iemMemStackPopContinueSpecial(pIemCpu, 8, &uFrame.pv, &uNewRsp);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
+/** @todo We might be popping a 32-bit ESP from the IRET frame, but whether
+ *        16-bit or 32-bit are being loaded into SP depends on the D/B
+ *        bit of the popped SS selector it turns out. */
             uNewESP = uFrame.pu32[0];
             uNewSS  = (uint16_t)uFrame.pu32[1];
         }
