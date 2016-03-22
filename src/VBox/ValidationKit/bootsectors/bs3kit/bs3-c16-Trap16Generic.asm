@@ -124,7 +124,7 @@ CPU 386
         cli
         cld
         push    edx                     ; BP - 0ch
-        push    ss                      ; BP - 10h
+        push    ss                      ; BP - 0eh
         push    esp                     ; BP - 12h
 
         ;
@@ -170,7 +170,7 @@ CPU 386
         mov     edx, [bp - 12h]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], edx
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], edx
-        mov     dx, [bp - 10h]
+        mov     dx, [bp - 0eh]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], dx
         mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], dx
         mov     edx, [bp - 0ch]
@@ -223,6 +223,7 @@ CPU 286
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ax
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ss
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], ss
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], dx
         mov     dx, [bp - 4]
         mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], dx
@@ -256,7 +257,7 @@ CPU 386
         cli
         cld
         push    edx                     ; BP - 0ch
-        push    ss                      ; BP - 10h
+        push    ss                      ; BP - 0eh
         push    esp                     ; BP - 12h
 
         ;
@@ -302,7 +303,7 @@ CPU 386
         mov     edx, [bp - 12h]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], edx
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], edx
-        mov     dx, [bp - 10h]
+        mov     dx, [bp - 0eh]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], dx
         mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], dx
         mov     edx, [bp - 0ch]
@@ -358,6 +359,7 @@ CPU 286
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ax
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ss
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], ss
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], dx
         mov     dx, [bp - 4]
         mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], dx
@@ -436,7 +438,6 @@ CPU 286
         mov     ax, cs
         mov     [ss:bx + BS3TRAPFRAME.uHandlerCs], ax
         mov     ax, ss
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], ax
         and     ax, 3
         mov     cx, ax
         shl     ax, BS3_SEL_RING_SHIFT

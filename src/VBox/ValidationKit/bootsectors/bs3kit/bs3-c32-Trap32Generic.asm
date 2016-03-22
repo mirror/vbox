@@ -38,6 +38,7 @@
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
+BS3_EXTERN_SYSTEM16 Bs3Gdt
 TMPL_BEGIN_TEXT
 BS3_EXTERN_CMN Bs3TrapDefaultHandler
 BS3_EXTERN_CMN Bs3RegCtxRestore
@@ -118,25 +119,77 @@ BS3_PROC_END  Bs3Trap32GenericEntries
 ; Trap or interrupt (no error code).
 ;
 BS3_PROC_BEGIN bs3Trap32GenericTrapOrInt
-        pushfd
+        push    ebp                     ; 0
+        mov     ebp, esp
+        pushfd                          ; -04h
         cli
         cld
+        push    eax                     ; -08h
+        push    edi                     ; -0ch
+        push    ss                      ; -10h
+        push    ds                      ; -14h
 
-        sub     esp, BS3TRAPFRAME_size
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], ebp
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], edx
-        lea     ebp, [esp + BS3TRAPFRAME_size + 4] ; iret - 4 (i.e. ebp frame chain location)
+        ; Make sure we've got a flat DS (ASSUMES ring-0). It makes everything so much simpler.
+        mov     ax, BS3_SEL_R0_DS32
+        mov     ds, ax
 
-        mov     edx, [esp + BS3TRAPFRAME_size]
-        mov     [esp + BS3TRAPFRAME.fHandlerRfl], edx
+        ;
+        ; We may be comming from 16-bit code with a 16-bit SS.  Thunk it as
+        ; the C code may assume flat SS and we'll mess up by using EBP/ESP/EDI
+        ; instead of BP/SP/SS:DI. ASSUMES standard GDT selector.
+        ;
+        mov     ax, ss
+        lar     eax, ax
+        test    eax, X86LAR_F_D
+        jz      .stack_thunk
+        mov     ax, BS3_SEL_R0_SS32
+        mov     ss, ax
+        jmp     .stack_flat
+.stack_thunk:
+hlt
+        mov     di, ss
+        and     edi, X86_SEL_MASK_OFF_RPL
+        mov     al, [X86DESCGENERIC_BIT_OFF_BASE_HIGH1 / 8 + edi + Bs3Gdt wrt FLAT]
+        mov     ah, [X86DESCGENERIC_BIT_OFF_BASE_HIGH2 / 8 + edi + Bs3Gdt wrt FLAT]
+        shl     eax, 16
+        mov     ax, [X86DESCGENERIC_BIT_OFF_BASE_LOW / 8   + edi + Bs3Gdt wrt FLAT] ; eax = SS.base
+        movzx   ebp, bp                 ; SS:BP -> flat EBP.
+        add     ebp, eax
+        movzx   edi, sp                 ; SS:SP -> flat ESP in EAX.
+        add     eax, edi
+        mov     di, BS3_SEL_R0_SS32
+        mov     ss, di
+        mov     esp, eax
+.stack_flat:
 
-        movzx   edx, byte [esp + BS3TRAPFRAME_size + 4]
-        mov     [esp + BS3TRAPFRAME.bXcpt], edx
+        ; Reserve space for the the register and trap frame.
+        mov     eax, (BS3TRAPFRAME_size + 7) / 8
+AssertCompileSizeAlignment(BS3TRAPFRAME, 8)
+.more_zeroed_space:
+        push    dword 0
+        push    dword 0
+        dec     eax
+        jnz     .more_zeroed_space
+        mov     edi, esp                ; edi points to trapframe structure.
 
-        xor     edx, edx
-        mov     [esp + BS3TRAPFRAME.uErrCd], edx
-        mov     [esp + BS3TRAPFRAME.uErrCd + 4], edx
+        ; Copy stuff from the stack over.
+        mov     al, [ebp + 4]
+        mov     [edi + BS3TRAPFRAME.bXcpt], al
+        mov     eax, [ebp]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], eax
+        mov     eax, [ebp - 04h]
+        mov     [edi + BS3TRAPFRAME.fHandlerRfl], eax
+        mov     eax, [ebp - 08h]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
+        mov     eax, [ebp - 0ch]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], eax
+        mov     ax, [ebp - 10h]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ax
+        mov     [edi + BS3TRAPFRAME.uHandlerSs], ax
+        mov     ax, [ebp - 14h]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], ax
+
+        lea     ebp, [ebp + 4]          ; iret - 4 (i.e. ebp frame chain location)
         jmp     bs3Trap32GenericCommon
 BS3_PROC_END   bs3Trap32GenericTrapOrInt
 
@@ -145,27 +198,79 @@ BS3_PROC_END   bs3Trap32GenericTrapOrInt
 ; Trap with error code.
 ;
 BS3_PROC_BEGIN bs3Trap32GenericTrapErrCode
-        pushfd
+        push    ebp                     ; 0
+        mov     ebp, esp
+        pushfd                          ; -04h
         cli
         cld
+        push    eax                     ; -08h
+        push    edi                     ; -0ch
+        push    ss                      ; -10h
+        push    ds                      ; -14h
 
-        sub     esp, BS3TRAPFRAME_size
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], ebp
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], edx
-        lea     ebp, [esp + BS3TRAPFRAME_size + 8] ; iret - 4 (i.e. ebp frame chain location)
+        ; Make sure we've got a flat DS (ASSUMES ring-0). It makes everything so much simpler.
+        mov     ax, BS3_SEL_R0_DS32
+        mov     ds, ax
 
-        mov     edx, [esp + BS3TRAPFRAME_size]
-        mov     [esp + BS3TRAPFRAME.fHandlerRfl], edx
+        ;
+        ; We may be comming from 16-bit code with a 16-bit SS.  Thunk it as
+        ; the C code may assume flat SS and we'll mess up by using EBP/ESP/EDI
+        ; instead of BP/SP/SS:DI. ASSUMES standard GDT selector.
+        ;
+        mov     ax, ss
+        lar     eax, ax
+        test    eax, X86LAR_F_D
+        jz      .stack_thunk
+        mov     ax, BS3_SEL_R0_SS16
+        mov     ss, ax
+        jmp     .stack_flat
+.stack_thunk:
+        mov     di, ss
+        and     edi, X86_SEL_MASK_OFF_RPL
+        mov     al, [X86DESCGENERIC_BIT_OFF_BASE_HIGH1 / 8 + edi + Bs3Gdt wrt FLAT]
+        mov     ah, [X86DESCGENERIC_BIT_OFF_BASE_HIGH2 / 8 + edi + Bs3Gdt wrt FLAT]
+        shl     eax, 16
+        mov     ax, [X86DESCGENERIC_BIT_OFF_BASE_LOW / 8   + edi + Bs3Gdt wrt FLAT] ; eax = SS.base
+        movzx   ebp, bp                 ; SS:BP -> flat EBP.
+        add     ebp, eax
+        movzx   edi, sp                 ; SS:SP -> flat ESP in EAX.
+        add     eax, edi
+        mov     di, BS3_SEL_R0_SS16
+        mov     ss, di
+        mov     esp, eax
+.stack_flat:
 
-        movzx   edx, byte [esp + BS3TRAPFRAME_size + 4]
-        mov     [esp + BS3TRAPFRAME.bXcpt], edx
+        ; Reserve space for the the register and trap frame.
+        mov     eax, (BS3TRAPFRAME_size + 7) / 8
+AssertCompileSizeAlignment(BS3TRAPFRAME, 8)
+.more_zeroed_space:
+        push    dword 0
+        push    dword 0
+        dec     eax
+        jnz     .more_zeroed_space
+        mov     edi, esp                ; edi points to trapframe structure.
 
-        mov     edx, [esp + BS3TRAPFRAME_size + 8]
+        ; Copy stuff from the stack over.
+        mov     eax, [ebp + 8]
 ;; @todo Do voodoo checks for 'int xx' or misguided hardware interrupts.
-        mov     [esp + BS3TRAPFRAME.uErrCd], edx
-        xor     edx, edx
-        mov     [esp + BS3TRAPFRAME.uErrCd + 4], edx
+        mov     [edi + BS3TRAPFRAME.uErrCd], eax
+        mov     al, [ebp + 4]
+        mov     [edi + BS3TRAPFRAME.bXcpt], al
+        mov     eax, [ebp]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], eax
+        mov     eax, [ebp - 04h]
+        mov     [edi + BS3TRAPFRAME.fHandlerRfl], eax
+        mov     eax, [ebp - 08h]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
+        mov     eax, [ebp - 0ch]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], eax
+        mov     ax, [ebp - 10h]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ax
+        mov     [edi + BS3TRAPFRAME.uHandlerSs], ax
+        mov     ax, [ebp - 14h]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], ax
+
+        lea     ebp, [ebp + 8]          ; iret - 4 (i.e. ebp frame chain location)
         jmp     bs3Trap32GenericCommon
 BS3_PROC_END   bs3Trap32GenericTrapErrCode
 
@@ -173,46 +278,45 @@ BS3_PROC_END   bs3Trap32GenericTrapErrCode
 ;;
 ; Common context saving code and dispatching.
 ;
-; @param    esp     Pointer to the trap frame.  The following members have been
+; @param    edi     Pointer to the trap frame.  The following members have been
 ;                   filled in by the previous code:
 ;                       - bXcpt
 ;                       - uErrCd
 ;                       - fHandlerRFL
-;                       - Ctx.eax (except upper dword)
-;                       - Ctx.edx (except upper dword)
-;                       - Ctx.ebp (except upper dword)
+;                       - uHandlerSs
+;                       - Ctx.rax (except upper dword)
+;                       - Ctx.rbp (except upper dword)
+;                       - Ctx.rdi (except upper dword)
+;                       - Ctx.ds
+;                       - Ctx.ss
 ;
 ; @param    ebp     Pointer to the dword before the iret frame, i.e. where ebp
 ;                   would be saved if this was a normal call.
-; @param    edx     Zero (0).
 ;
 BS3_PROC_BEGIN bs3Trap32GenericCommon
         ;
         ; Fake EBP frame.
         ;
-        mov     eax, [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp]
+        mov     eax, [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp]
         mov     [ebp], eax
 
         ;
         ; Save the remaining GPRs and segment registers.
         ;
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx], ecx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], ebx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], edi
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], esi
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], ds
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.es], es
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], fs
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], gs
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], edx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], ebx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], esi
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.es], es
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], fs
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], gs
 
         ;
         ; Load 32-bit data selector for the DPL we're executing at into DS and ES.
-        ; Save the handler SS and CS values first.
+        ; Save the handler CS value first.
         ;
         mov     ax, cs
-        mov     [esp + BS3TRAPFRAME.uHandlerCs], ax
-        mov     ax, ss
-        mov     [esp + BS3TRAPFRAME.uHandlerSs], ax
+        mov     [edi + BS3TRAPFRAME.uHandlerCs], ax
         and     ax, 3
         mov     cx, ax
         shl     ax, BS3_SEL_RING_SHIFT
@@ -225,7 +329,7 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         ; Copy and update the mode now that we've got a flat DS.
         ;
         mov     al, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], al
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], al
         and     al, ~BS3_MODE_CODE_MASK
         or      al, BS3_MODE_CODE_32
         mov     [BS3_DATA16_WRT(g_bBs3CurrentMode)], al
@@ -234,54 +338,52 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         ; Copy iret info.
         ;
         mov     ecx, [ebp + 4]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], ecx
         mov     ecx, [ebp + 12]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], ecx
         mov     cx, [ebp + 8]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
         test    dword [ebp + 12], X86_EFL_VM
         jnz     .iret_frame_v8086
         mov     ax, ss
         and     al, 3
         and     cl, 3
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], cl
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], cl
         cmp     cl, al
         je      .iret_frame_same_cpl
 
 .iret_frame_different_cpl:
         mov     ecx, [ebp + 16]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
         mov     cx, [ebp + 20]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
         lea     eax, [ebp + 24]
-        mov     [esp + BS3TRAPFRAME.uHandlerRsp], eax
+        mov     [edi + BS3TRAPFRAME.uHandlerRsp], eax
         jmp     .iret_frame_done
 
 .iret_frame_same_cpl:
-        lea     ecx, [ebp + 12]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
-        mov     [esp + BS3TRAPFRAME.uHandlerRsp], ecx
-        mov     cx, ss
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
+        lea     ecx, [ebp + 16]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
+        mov     [edi + BS3TRAPFRAME.uHandlerRsp], ecx
         jmp     .iret_frame_done
 
 .iret_frame_v8086:
-        mov     byte [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], 3
-        or      byte [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], BS3_MODE_CODE_V86 ; paranoia ^ 2
+        mov     byte [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], 3
+        or      byte [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], BS3_MODE_CODE_V86 ; paranoia ^ 2
         movzx   ecx, word [ebp + 16]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
         mov     cx, [ebp + 20]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
         mov     cx, [ebp + 24]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.es], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.es], cx
         mov     cx, [ebp + 28]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], cx
         mov     cx, [ebp + 32]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], cx
         mov     cx, [ebp + 36]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], cx
         lea     eax, [ebp + 40]
-        mov     [esp + BS3TRAPFRAME.uHandlerRsp], eax
+        mov     [edi + BS3TRAPFRAME.uHandlerRsp], eax
         jmp     .iret_frame_done
 
 .iret_frame_done:
@@ -289,58 +391,28 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         ; Control registers.
         ;
         mov     eax, cr0
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], eax
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], eax
         mov     eax, cr2
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2], eax
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2], eax
         mov     eax, cr3
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
         mov     eax, cr4
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], eax
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], eax
         str     ax
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
         sldt    ax
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], ax
-
-        ;
-        ; Set context bit width and clear all upper dwords and unused register members.
-        ;
-.clear_and_dispatch_to_handler:         ; The double fault code joins us here.
-        xor     edx, edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.abPadding], dx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.abPadding + 2], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rax    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.r8     + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.r9     + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.r10    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.r11    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.r12    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.r13    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.r14    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.r15    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rip    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3    + 4], edx
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4    + 4], edx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], ax
 
         ;
         ; Dispatch it to C code.
         ;
-        movzx   ebx, byte [esp + BS3TRAPFRAME.bXcpt]
+.dispatch_to_handler:                   ; The double fault code joins us here.
+        movzx   ebx, byte [edi + BS3TRAPFRAME.bXcpt]
         mov     eax, [ebx * 4 + BS3_DATA16_WRT(_g_apfnBs3TrapHandlers_c32)]
         or      eax, eax
         jnz     .call_handler
         mov     eax, Bs3TrapDefaultHandler
 .call_handler:
-        mov     edi, esp
         push    edi
         call    eax
 
@@ -390,24 +462,34 @@ BS3_PROC_BEGIN Bs3Trap32DoubleFaultHandler
         push    ebp
         mov     ebp, esp
 
+        pushfd                          ; Get handler flags.
+        pop     ecx
+
+        xor     edx, edx                ; NULL register.
+
+        ;
+        ; Allocate a zero filled trap frame.
+        ;
+        mov     eax, (BS3TRAPFRAME_size + 7) / 8
+AssertCompileSizeAlignment(BS3TRAPFRAME, 8)
+.more_zeroed_space:
+        push    edx
+        push    edx
+        dec     eax
+        jz      .more_zeroed_space
+        mov     edi, esp
+
         ;
         ; Fill in the non-context trap frame bits.
         ;
-        pushfd                          ; Get handler flags.
-        pop     ecx
-        xor     edx, edx                ; NULL register.
-
-        sub     esp, BS3TRAPFRAME_size  ; Allocate trap frame.
-        mov     [esp + BS3TRAPFRAME.fHandlerRfl], ecx
-        mov     word [esp + BS3TRAPFRAME.bXcpt], X86_XCPT_DF
-        mov     [esp + BS3TRAPFRAME.uHandlerCs], cs
-        mov     [esp + BS3TRAPFRAME.uHandlerSs], ss
+        mov     [edi + BS3TRAPFRAME.fHandlerRfl], ecx
+        mov     word [edi + BS3TRAPFRAME.bXcpt], X86_XCPT_DF
+        mov     [edi + BS3TRAPFRAME.uHandlerCs], cs
+        mov     [edi + BS3TRAPFRAME.uHandlerSs], ss
         lea     ecx, [ebp + 12]
-        mov     [esp + BS3TRAPFRAME.uHandlerRsp], ecx
-        mov     [esp + BS3TRAPFRAME.uHandlerRsp + 4], edx
+        mov     [edi + BS3TRAPFRAME.uHandlerRsp], ecx
         mov     ecx, [ebp + 8]
-        mov     [esp + BS3TRAPFRAME.uErrCd], ecx
-        mov     [esp + BS3TRAPFRAME.uErrCd + 4], edx
+        mov     [edi + BS3TRAPFRAME.uErrCd], ecx
 
         ;
         ; Copy the register state from the previous task segment.
@@ -419,60 +501,60 @@ BS3_PROC_BEGIN Bs3Trap32DoubleFaultHandler
 
         ; Find the previous TSS.
         mov     ax, [eax + X86TSS32.selPrev]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
         call    bs3Trap32TssInAxToFlatInEax
 
         ; Do the copying.
         mov     ecx, [eax + X86TSS32.eax]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ecx
         mov     ecx, [eax + X86TSS32.ecx]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rcx], ecx
         mov     ecx, [eax + X86TSS32.edx]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], ecx
         mov     ecx, [eax + X86TSS32.ebx]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], ecx
         mov     ecx, [eax + X86TSS32.esp]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
         mov     ecx, [eax + X86TSS32.ebp]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], ecx
         mov     [ebp], ecx              ; For better call stacks.
         mov     ecx, [eax + X86TSS32.esi]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], ecx
         mov     ecx, [eax + X86TSS32.edi]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], ecx
         mov     ecx, [eax + X86TSS32.esi]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsi], ecx
         mov     ecx, [eax + X86TSS32.eflags]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], ecx
         mov     ecx, [eax + X86TSS32.eip]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], ecx
         mov     [ebp + 4], ecx          ; For better call stacks.
         mov     cx, [eax + X86TSS32.cs]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
         mov     cx, [eax + X86TSS32.ds]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], cx
         mov     cx, [eax + X86TSS32.es]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.es], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.es], cx
         mov     cx, [eax + X86TSS32.fs]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], cx
         mov     cx, [eax + X86TSS32.gs]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], cx
         mov     cx, [eax + X86TSS32.ss]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
         mov     cx, [eax + X86TSS32.selLdt]             ; Note! This isn't necessarily the ldtr at the time of the fault.
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], cx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], cx
         mov     cx, [eax + X86TSS32.cr3]                ; Note! This isn't necessarily the cr3 at the time of the fault.
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], ecx
 
         ;
         ; Set CPL; copy and update mode.
         ;
-        mov     cl, [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.ss]
+        mov     cl, [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss]
         and     cl, 3
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], cl
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], cl
 
         mov     cl, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], cl
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], cl
         and     cl, ~BS3_MODE_CODE_MASK
         or      cl, BS3_MODE_CODE_32
         mov     [BS3_DATA16_WRT(g_bBs3CurrentMode)], cl
@@ -481,15 +563,15 @@ BS3_PROC_BEGIN Bs3Trap32DoubleFaultHandler
         ; Control registers.
         ;
         mov     ecx, cr0
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], ecx
         mov     ecx, cr2
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2], ecx
         mov     ecx, cr4
-        mov     [esp + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], ecx
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], ecx
 
         ;
         ; Join code paths with the generic handler code.
         ;
-        jmp     bs3Trap32GenericCommon.clear_and_dispatch_to_handler
+        jmp     bs3Trap32GenericCommon.dispatch_to_handler
 BS3_PROC_END   Bs3Trap32DoubleFaultHandler
 

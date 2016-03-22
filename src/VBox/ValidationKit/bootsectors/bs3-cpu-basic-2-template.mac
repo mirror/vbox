@@ -32,6 +32,7 @@
 BS3_EXTERN_CMN Bs3Printf
 
 
+%if 0 ; Will be doing the testing in C, I think.
 BS3_PROC_BEGIN_MODE bs3CpuBasic2_iret
         BS3_CALL_CONV_PROLOG 1
         push    xBP
@@ -68,7 +69,7 @@ BS3_PROC_BEGIN_MODE bs3CpuBasic2_iret
 .szMsg: db 'hello world %#x!', 13, 10, 0
 
 BS3_PROC_END_MODE   bs3CpuBasic2_iret
-
+%endif
 
 
 BS3_PROC_BEGIN_MODE bs3CpuBasic2_TssGateEsp_IntXx
