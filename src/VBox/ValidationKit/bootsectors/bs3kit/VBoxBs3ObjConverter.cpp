@@ -35,6 +35,7 @@
 #include <iprt/types.h>
 #include <iprt/ctype.h>
 #include <iprt/assert.h>
+#include <iprt/sort.h>
 #include <iprt/x86.h>
 
 #include <iprt/formats/elf64.h>
@@ -978,28 +979,19 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
                     fRet = error(pszFile,
                                  "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": unknown fix up %#x  (%+" ELF_FMT_D64 ")\n",
                                  paRelocs[j].r_offset, paRelocs[j].r_info, bType, paRelocs[j].r_addend);
-                if (RT_UNLIKELY(   j > 1
-                                && paRelocs[j].r_offset <= paRelocs[j - 1].r_offset
-                                &&   paRelocs[j].r_offset + ELF_AMD64_RELOC_SIZE(ELF64_R_TYPE(paRelocs[j].r_info))
-                                   < paRelocs[j - 1].r_offset ))
+                if (RT_UNLIKELY(   paRelocs[j].r_offset > paShdrs[i - 1].sh_size
+                                ||   paRelocs[j].r_offset + ELF_AMD64_RELOC_SIZE(ELF64_R_TYPE(paRelocs[j].r_info))
+                                   > paShdrs[i - 1].sh_size))
                     fRet = error(pszFile,
-                                 "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": out of offset order (prev %" ELF_FMT_X64 ")\n",
-                                 paRelocs[j].r_offset, paRelocs[j].r_info, paRelocs[j - 1].r_offset);
+                                 "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": out of bounds (sh_size %" ELF_FMT_X64 ")\n",
+                                 paRelocs[j].r_offset, paRelocs[j].r_info, paShdrs[i - 1].sh_size);
+
                 uint32_t const iSymbol = ELF64_R_SYM(paRelocs[j].r_info);
                 if (RT_UNLIKELY(iSymbol >= cSymbols))
                     fRet = error(pszFile,
                                  "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": symbol index (%#x) out of bounds (%#x)\n",
                                  paRelocs[j].r_offset, paRelocs[j].r_info, iSymbol, cSymbols);
             }
-            if (RT_UNLIKELY(   cRelocs > 0
-                            && fRet
-                            && (   paRelocs[cRelocs - 1].r_offset > paShdrs[i - 1].sh_size
-                                || paRelocs[cRelocs - 1].r_offset + ELF_AMD64_RELOC_SIZE(ELF64_R_TYPE(paRelocs[cRelocs-1].r_info))
-                                   > paShdrs[i - 1].sh_size )))
-                fRet = error(pszFile,
-                             "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": out of bounds (sh_size %" ELF_FMT_X64 ")\n",
-                             paRelocs[cRelocs - 1].r_offset, paRelocs[cRelocs - 1].r_info, paShdrs[i - 1].sh_size);
-
         }
         else if (paShdrs[i].sh_type == SHT_REL)
             fRet = error(pszFile, "Section #%u '%s': Unexpected SHT_REL section\n", i, pszShNm);
@@ -1135,7 +1127,7 @@ static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS
                     if (!omfWriter_LNamesAdd(pThis, pThis->paSegments[i].pszName, &pThis->paSegments[i].iSegNm))
                         return false;
 
-                    fHaveData |= pThis->paSegments[i].iGrpDef == idxGrpData;
+                    fHaveData |= pThis->paSegments[i].iGrpNm == idxGrpData;
                     break;
                 }
                 /* fall thru */
@@ -1420,6 +1412,20 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
     return true;
 }
 
+/**
+ * @callback_method_impl{FNRTSORTCMP, For Elf64_Rela tables.}
+ */
+static DECLCALLBACK(int) convertElfCompareRelA(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    Elf64_Rela const *pReloc1 = (Elf64_Rela const *)pvElement1;
+    Elf64_Rela const *pReloc2 = (Elf64_Rela const *)pvElement2;
+    if (pReloc1->r_offset < pReloc2->r_offset)
+        return -1;
+    if (pReloc1->r_offset > pReloc2->r_offset)
+        return 1;
+    return 0;
+}
+
 static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS pElfStuff, uint8_t const *pbFile, size_t cbFile)
 {
     Elf64_Sym const    *paSymbols = pElfStuff->paSymbols;
@@ -1438,6 +1444,9 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
         Elf64_Xword         cbData     = paShdrs[i].sh_type == SHT_NOBITS ? 0 : cbVirtData;
         uint8_t const      *pbData     = &pbFile[paShdrs[i].sh_offset];
         uint32_t            off        = 0;
+
+        /* We sort fixups by r_offset in order to more easily split them into chunks. */
+        RTSortShell((void *)paRelocs, cRelocs, sizeof(paRelocs[0]), convertElfCompareRelA, NULL);
 
         /* The OMF record size requires us to split larger sections up.  To make
            life simple, we fill zeros for unitialized (BSS) stuff. */
@@ -1931,7 +1940,7 @@ static bool convertCoffSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCIMAGE_SEC
             if (!omfWriter_LNamesAdd(pThis, pThis->paSegments[i].pszName, &pThis->paSegments[i].iSegNm))
                 return false;
 
-            fHaveData |= pThis->paSegments[i].iGrpDef == idxGrpData;
+            fHaveData |= pThis->paSegments[i].iGrpNm == idxGrpData;
         }
     }
 

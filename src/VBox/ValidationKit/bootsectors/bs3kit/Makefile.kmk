@@ -37,7 +37,7 @@ VBoxBs3Linker_SOURCES  = $(VBOX_PATH_BS3KIT_SRC)/VBoxBs3Linker.cpp
 
 # 64-bit relocation conversion tool (used via the parent Config.kmk).
 BLDPROGS += VBoxBs3ObjConverter
-VBoxBs3ObjConverter_TEMPLATE = VBoxBldProg
+VBoxBs3ObjConverter_TEMPLATE = VBoxAdvBldProg
 VBoxBs3ObjConverter_SOURCES  = $(VBOX_PATH_BS3KIT_SRC)/VBoxBs3ObjConverter.cpp
 
 
