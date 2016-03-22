@@ -361,7 +361,7 @@ static bool omfWriter_RecAddU8(POMFWRITER pThis, uint8_t b)
 
 static bool omfWriter_RecAddU16(POMFWRITER pThis, uint16_t u16)
 {
-    if (pThis->cbRec + 2 <= OMF_MAX_RECORD_PAYLOAD)
+    if (pThis->cbRec + 2U <= OMF_MAX_RECORD_PAYLOAD)
     {
         pThis->abData[pThis->cbRec++] = (uint8_t)u16;
         pThis->abData[pThis->cbRec++] = (uint8_t)(u16 >> 8);
@@ -372,7 +372,7 @@ static bool omfWriter_RecAddU16(POMFWRITER pThis, uint16_t u16)
 
 static bool omfWriter_RecAddU32(POMFWRITER pThis, uint32_t u32)
 {
-    if (pThis->cbRec + 4 <= OMF_MAX_RECORD_PAYLOAD)
+    if (pThis->cbRec + 4U <= OMF_MAX_RECORD_PAYLOAD)
     {
         pThis->abData[pThis->cbRec++] = (uint8_t)u32;
         pThis->abData[pThis->cbRec++] = (uint8_t)(u32 >> 8);
@@ -692,9 +692,11 @@ static bool omfWriter_LEDataAddFixup(POMFWRITER pThis, uint16_t offDataRec, bool
         || bTarget > 6
         || idxFrame >= _32K
         || idxTarget >= _32K
-        || fTargetDisp != (bTarget <= 4) )
-        /*return*/ error(pThis->pszSrc,  "Internal error: off=%#x frame=%u:%#x target=%u:%#x disp=%d:%#x\n",
+        || fTargetDisp != (bTarget <= OMF_FIX_T_FRAME_NO) )
+        /*return*/ error(pThis->pszSrc,
+                     "Internal error: offDataRec=%#x bFrame=%u idxFrame=%#x bTarget=%u idxTarget=%#x fTargetDisp=%d offTargetDisp=%#x\n",
                      offDataRec, bFrame, idxFrame, bTarget, idxTarget, fTargetDisp, offTargetDisp);
+
 
     /*
      * Encode the FIXUP subrecord.
@@ -976,7 +978,10 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
                     fRet = error(pszFile,
                                  "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": unknown fix up %#x  (%+" ELF_FMT_D64 ")\n",
                                  paRelocs[j].r_offset, paRelocs[j].r_info, bType, paRelocs[j].r_addend);
-                if (RT_UNLIKELY(j > 1 && paRelocs[j].r_offset >= paRelocs[j - 1].r_offset))
+                if (RT_UNLIKELY(   j > 1
+                                && paRelocs[j].r_offset <= paRelocs[j - 1].r_offset
+                                &&   paRelocs[j].r_offset + ELF_AMD64_RELOC_SIZE(ELF64_R_TYPE(paRelocs[j].r_info))
+                                   < paRelocs[j - 1].r_offset ))
                     fRet = error(pszFile,
                                  "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": out of offset order (prev %" ELF_FMT_X64 ")\n",
                                  paRelocs[j].r_offset, paRelocs[j].r_info, paRelocs[j - 1].r_offset);
@@ -988,12 +993,12 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
             }
             if (RT_UNLIKELY(   cRelocs > 0
                             && fRet
-                            && (   paRelocs[cRelocs - 1].r_offset > paShdrs[i].sh_size
+                            && (   paRelocs[cRelocs - 1].r_offset > paShdrs[i - 1].sh_size
                                 || paRelocs[cRelocs - 1].r_offset + ELF_AMD64_RELOC_SIZE(ELF64_R_TYPE(paRelocs[cRelocs-1].r_info))
-                                   > paShdrs[i].sh_size )))
+                                   > paShdrs[i - 1].sh_size )))
                 fRet = error(pszFile,
                              "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": out of bounds (sh_size %" ELF_FMT_X64 ")\n",
-                             paRelocs[cRelocs - 1].r_offset, paRelocs[cRelocs - 1].r_info, paShdrs[i].sh_size);
+                             paRelocs[cRelocs - 1].r_offset, paRelocs[cRelocs - 1].r_info, paShdrs[i - 1].sh_size);
 
         }
         else if (paShdrs[i].sh_type == SHT_REL)
@@ -1549,6 +1554,7 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
                     }
 
                     case R_X86_64_32:
+                    case R_X86_64_32S:  /* signed, unsigned, whatever. */
                         fSelfRel = false;
                         /* fall thru */
                     case R_X86_64_PC32:
@@ -1572,7 +1578,6 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
                     case R_X86_64_JMP_SLOT:
                     case R_X86_64_RELATIVE:
                     case R_X86_64_GOTPCREL:
-                    case R_X86_64_32S:
                     case R_X86_64_16:
                     case R_X86_64_PC16:
                     case R_X86_64_8:
