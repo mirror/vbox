@@ -152,10 +152,7 @@ struct vbox_crtc {
     bool disconnected;
     unsigned crtc_id;
     uint32_t fb_offset;
-    struct drm_gem_object *cursor_bo;
-    uint64_t cursor_addr;
-    int cursor_width, cursor_height;
-    u8 offset_x, offset_y;
+    bool cursor_enabled;
 };
 
 struct vbox_encoder {

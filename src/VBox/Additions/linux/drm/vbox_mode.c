@@ -633,10 +633,19 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
     bool src_isiomem;
 
     if (!handle) {
+        bool cursor_enabled = false;
+        struct drm_crtc *crtci;
+
         /* Hide cursor. */
-        VBoxHGSMIUpdatePointerShape(&vbox->submit_info, 0, 0, 0, 0, 0, NULL, 0);
+        vbox_crtc->cursor_enabled = false;
+        list_for_each_entry(crtci, &vbox->dev->mode_config.crtc_list, head)
+            if (to_vbox_crtc(crtci)->cursor_enabled)
+                cursor_enabled = true;
+        if (!cursor_enabled)
+            VBoxHGSMIUpdatePointerShape(&vbox->submit_info, 0, 0, 0, 0, 0, NULL, 0);
         return 0;
     }
+    vbox_crtc->cursor_enabled = true;
     if (   width > VBOX_MAX_CURSOR_WIDTH || height > VBOX_MAX_CURSOR_HEIGHT
         || width == 0 || hot_x > width || height == 0 || hot_y > height)
         return -EINVAL;
@@ -701,6 +710,7 @@ static int vbox_cursor_move(struct drm_crtc *crtc,
 {
     struct vbox_private *vbox = crtc->dev->dev_private;
 
-    VBoxHGSMICursorPosition(&vbox->submit_info, true, x, y, NULL, NULL);
+    VBoxHGSMICursorPosition(&vbox->submit_info, true, x + crtc->x,
+                            y + crtc->y, NULL, NULL);
     return 0;
 }
