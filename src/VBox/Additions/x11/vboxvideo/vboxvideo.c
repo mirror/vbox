@@ -140,9 +140,6 @@ static inline void VBOXSetRec(ScrnInfoPtr pScrn)
     {
         VBOXPtr pVBox = (VBOXPtr)xnfcalloc(sizeof(VBOXRec), 1);
         pScrn->driverPrivate = pVBox;
-#if defined(VBOXVIDEO_13) && defined(RT_OS_LINUX)
-        pVBox->fdACPIDevices = -1;
-#endif
     }
 }
 
@@ -1094,8 +1091,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
     TRACE_ENTRY();
 
-    /* Initialise our guest library if possible: ignore failure. */
-    VbglR3Init();
     if (!VBOXMapVidMem(pScrn))
         return (FALSE);
 
@@ -1135,10 +1130,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
     xf86SetBlackWhitePixels(pScreen);
     pScrn->vtSema = TRUE;
-
-#if defined(VBOXVIDEO_13) && defined(RT_OS_LINUX)
-    vbvxSetUpLinuxACPI(pScreen);
-#endif
 
     if (!VBoxHGSMIIsSupported())
     {
@@ -1339,15 +1330,11 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
     vbvxCursorTerm(pVBox);
 
     pScreen->CloseScreen = pVBox->CloseScreen;
-#if defined(VBOXVIDEO_13) && defined(RT_OS_LINUX)
-    vbvxCleanUpLinuxACPI(pScreen);
-#endif
 #ifndef XF86_SCRN_INTERFACE
     ret = pScreen->CloseScreen(pScreen->myNum, pScreen);
 #else
     ret = pScreen->CloseScreen(pScreen);
 #endif
-    VbglR3Term();
     return ret;
 }
 
