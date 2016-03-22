@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -798,6 +798,38 @@ static const char * const g_apszElfAmd64RelTypes[] =
     "R_X86_64_TPOFF32",
 };
 
+/** AMD64 relocation type sizes for ELF. */
+static uint8_t const g_acbElfAmd64RelTypes[] =
+{
+    0, /* R_X86_64_NONE */
+    8, /* R_X86_64_64 */
+    4, /* R_X86_64_PC32 */
+    4, /* R_X86_64_GOT32 */
+    4, /* R_X86_64_PLT32 */
+    0, /* R_X86_64_COPY */
+    0, /* R_X86_64_GLOB_DAT */
+    0, /* R_X86_64_JMP_SLOT */
+    0, /* R_X86_64_RELATIVE */
+    0, /* R_X86_64_GOTPCREL */
+    4, /* R_X86_64_32 */
+    4, /* R_X86_64_32S */
+    2, /* R_X86_64_16 */
+    2, /* R_X86_64_PC16 */
+    1, /* R_X86_64_8 */
+    1, /* R_X86_64_PC8 */
+    0, /* R_X86_64_DTPMOD64 */
+    0, /* R_X86_64_DTPOFF64 */
+    0, /* R_X86_64_TPOFF64 */
+    0, /* R_X86_64_TLSGD */
+    0, /* R_X86_64_TLSLD */
+    0, /* R_X86_64_DTPOFF32 */
+    0, /* R_X86_64_GOTTPOFF */
+    0, /* R_X86_64_TPOFF32 */
+};
+
+/** Macro for getting the size of a AMD64 ELF relocation. */
+#define ELF_AMD64_RELOC_SIZE(a_Type) ( (a_Type) < RT_ELEMENTS(g_acbElfAmd64RelTypes) ? g_acbElfAmd64RelTypes[(a_Type)] : 1)
+
 
 typedef struct ELFDETAILS
 {
@@ -928,9 +960,13 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
                 || paShdrs[i].sh_offset + paShdrs[i].sh_size > cbFile)
                 return error(pszFile, "The content of section #%u '%s' is outside the file (%#" ELF_FMT_X64 " LB %#" ELF_FMT_X64 ", cbFile=%#lx)\n",
                              i, pszShNm, paShdrs[i].sh_offset, paShdrs[i].sh_size, (unsigned long)cbFile);
-            if (paShdrs[i].sh_link != i - 1)
-                return error(pszFile, "Expected relocation section #%u (%s) to link to previous section: sh_link=%#u\n",
+            if (paShdrs[i].sh_info != i - 1)
+                return error(pszFile, "Expected relocation section #%u (%s) to link to previous section: sh_info=%#u\n",
                              i, pszShNm, (unsigned)paShdrs[i].sh_link);
+            if (paShdrs[paShdrs[i].sh_link].sh_type != SHT_SYMTAB)
+                return error(pszFile, "Expected relocation section #%u (%s) to link to symbol table: sh_link=%#u -> sh_type=%#x\n",
+                             i, pszShNm, (unsigned)paShdrs[i].sh_link, (unsigned)paShdrs[paShdrs[i].sh_link].sh_type);
+            uint32_t cSymbols = paShdrs[paShdrs[i].sh_link].sh_size / paShdrs[paShdrs[i].sh_link].sh_entsize;
 
             Elf64_Rela const  *paRelocs = (Elf64_Rela *)&pbFile[paShdrs[i].sh_offset];
             for (uint32_t j = 0; j < cRelocs; j++)
@@ -938,9 +974,27 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
                 uint8_t const bType = ELF64_R_TYPE(paRelocs[j].r_info);
                 if (RT_UNLIKELY(bType >= R_X86_64_COUNT))
                     fRet = error(pszFile,
-                                 "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 " unknown fix up %#x  (%+" ELF_FMT_D64 ")\n",
+                                 "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": unknown fix up %#x  (%+" ELF_FMT_D64 ")\n",
                                  paRelocs[j].r_offset, paRelocs[j].r_info, bType, paRelocs[j].r_addend);
+                if (RT_UNLIKELY(j > 1 && paRelocs[j].r_offset >= paRelocs[j - 1].r_offset))
+                    fRet = error(pszFile,
+                                 "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": out of offset order (prev %" ELF_FMT_X64 ")\n",
+                                 paRelocs[j].r_offset, paRelocs[j].r_info, paRelocs[j - 1].r_offset);
+                uint32_t const iSymbol = ELF64_R_SYM(paRelocs[j].r_info);
+                if (RT_UNLIKELY(iSymbol >= cSymbols))
+                    fRet = error(pszFile,
+                                 "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": symbol index (%#x) out of bounds (%#x)\n",
+                                 paRelocs[j].r_offset, paRelocs[j].r_info, iSymbol, cSymbols);
             }
+            if (RT_UNLIKELY(   cRelocs > 0
+                            && fRet
+                            && (   paRelocs[cRelocs - 1].r_offset > paShdrs[i].sh_size
+                                || paRelocs[cRelocs - 1].r_offset + ELF_AMD64_RELOC_SIZE(ELF64_R_TYPE(paRelocs[cRelocs-1].r_info))
+                                   > paShdrs[i].sh_size )))
+                fRet = error(pszFile,
+                             "%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 ": out of bounds (sh_size %" ELF_FMT_X64 ")\n",
+                             paRelocs[cRelocs - 1].r_offset, paRelocs[cRelocs - 1].r_info, paShdrs[i].sh_size);
+
         }
         else if (paShdrs[i].sh_type == SHT_REL)
             fRet = error(pszFile, "Section #%u '%s': Unexpected SHT_REL section\n", i, pszShNm);
@@ -949,10 +1003,14 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
             if (paShdrs[i].sh_entsize != sizeof(Elf64_Sym))
                 fRet = error(pszFile, "Section #%u '%s': Unsupported symbol table entry size in : #%u (expected #%u)\n",
                              i, pszShNm, paShdrs[i].sh_entsize, sizeof(Elf64_Sym));
-            uint32_t cSymbols = paShdrs[i].sh_size / paShdrs[i].sh_entsize;
-            if ((Elf64_Xword)cSymbols * paShdrs[i].sh_entsize != paShdrs[i].sh_size)
+            Elf64_Xword const cSymbols = paShdrs[i].sh_size / paShdrs[i].sh_entsize;
+            if (cSymbols * paShdrs[i].sh_entsize != paShdrs[i].sh_size)
                 fRet = error(pszFile, "Section #%u '%s': Size not a multiple of entry size: %#" ELF_FMT_X64 " %% %#" ELF_FMT_X64 " = %#" ELF_FMT_X64 "\n",
                              i, pszShNm, paShdrs[i].sh_size, paShdrs[i].sh_entsize, paShdrs[i].sh_size % paShdrs[i].sh_entsize);
+            if (cSymbols > UINT32_MAX)
+                fRet = error(pszFile, "Section #%u '%s': too many symbols: %" ELF_FMT_X64 "\n",
+                             i, pszShNm, paShdrs[i].sh_size, cSymbols);
+
             if (pElfStuff->iSymSh == UINT16_MAX)
             {
                 pElfStuff->iSymSh    = (uint16_t)i;
@@ -979,6 +1037,7 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
     return fRet;
 }
 
+#define ELF_TO_OMF_CONVERSION
 
 #ifdef ELF_TO_OMF_CONVERSION
 
@@ -1097,7 +1156,7 @@ static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS
     pShdr = &pElfStuff->paShdrs[1];
     for (Elf64_Half i = 1; i < cSections; i++, pShdr++)
     {
-        if (pThis->paSegments[i].iSegDef == UINT16_MAX)
+        if (pThis->paSegments[i].iSegNm == UINT16_MAX)
             continue;
 
         uint8_t bSegAttr = 0;
@@ -1228,14 +1287,14 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
                 if (*pszSymName == '\0')
                     return error(pThis->pszSrc, "External symbol #%u (%s) has an empty name.\n", iSym, pszSymName);
             }
-            else
+            else if (bBind != STB_LOCAL || iSym != 0) /* Entry zero is usually a dummy. */
                 return error(pThis->pszSrc, "Unsupported or invalid bind type %#x for undefined symbol #%u (%s)\n",
                              bBind, iSym, pszSymName);
         }
         else if (idxSection < cSections)
         {
-            pThis->paSymbols[iSym].idxSegDef = pThis->paSegments[idxSection - 1].iSegDef;
-            pThis->paSymbols[iSym].idxGrpDef = pThis->paSegments[idxSection - 1].iGrpDef;
+            pThis->paSymbols[iSym].idxSegDef = pThis->paSegments[idxSection].iSegDef;
+            pThis->paSymbols[iSym].idxGrpDef = pThis->paSegments[idxSection].iGrpDef;
             if (bBind == STB_GLOBAL)
             {
                 pThis->paSymbols[iSym].enmType = OMFSYMTYPE_PUBDEF;
@@ -1356,6 +1415,214 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
     return true;
 }
 
+static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS pElfStuff, uint8_t const *pbFile, size_t cbFile)
+{
+    Elf64_Sym const    *paSymbols = pElfStuff->paSymbols;
+    Elf64_Shdr const   *paShdrs   = pElfStuff->paShdrs;
+    bool                fRet      = true;
+    for (uint32_t i = 1; i < pThis->cSegments; i++)
+    {
+        if (pThis->paSegments[i].iSegDef == UINT16_MAX)
+            continue;
+
+        const char         *pszSegNm   = &pElfStuff->pchShStrTab[paShdrs[i].sh_name];
+        bool const          fRelocs    = i + 1 < pThis->cSegments && paShdrs[i + 1].sh_type == SHT_RELA;
+        uint32_t            cRelocs    = fRelocs ? paShdrs[i + 1].sh_size / sizeof(Elf64_Rela) : 0;
+        Elf64_Rela const   *paRelocs   = fRelocs ? (Elf64_Rela *)&pbFile[paShdrs[i + 1].sh_offset] : NULL;
+        Elf64_Xword         cbVirtData = paShdrs[i].sh_size;
+        Elf64_Xword         cbData     = paShdrs[i].sh_type == SHT_NOBITS ? 0 : cbVirtData;
+        uint8_t const      *pbData     = &pbFile[paShdrs[i].sh_offset];
+        uint32_t            off        = 0;
+
+        /* The OMF record size requires us to split larger sections up.  To make
+           life simple, we fill zeros for unitialized (BSS) stuff. */
+        const uint32_t cbMaxData = RT_MIN(OMF_MAX_RECORD_PAYLOAD - 1 - (pThis->paSegments[i].iSegDef >= 128) - 4 - 1, _1K);
+        while (cbVirtData > 0)
+        {
+            /* Figure out how many bytes to put out in this chunk.  Must make sure
+               fixups doesn't cross chunk boundraries.  ASSUMES sorted relocs. */
+            uint32_t       cChunkRelocs = cRelocs;
+            uint32_t       cbChunk      = cbVirtData;
+            uint32_t       offEnd       = off + cbChunk;
+            if (cbChunk > cbMaxData)
+            {
+                cbChunk      = cbMaxData;
+                offEnd       = off + cbChunk;
+                cChunkRelocs = 0;
+
+                /* Quickly determin the reloc range. */
+                while (   cChunkRelocs < cRelocs
+                       && paRelocs[cChunkRelocs].r_offset < offEnd)
+                    cChunkRelocs++;
+
+                /* Ensure final reloc doesn't go beyond chunk. */
+                while (   cChunkRelocs > 0
+                       &&     paRelocs[cChunkRelocs - 1].r_offset
+                            + ELF_AMD64_RELOC_SIZE(ELF64_R_TYPE(paRelocs[cChunkRelocs - 1].r_info))
+                          > offEnd)
+                {
+                    uint32_t cbDrop = offEnd - paRelocs[cChunkRelocs - 1].r_offset;
+                    cbChunk -= cbDrop;
+                    offEnd  -= cbDrop;
+                    cChunkRelocs--;
+                }
+
+                if (!cbVirtData)
+                    return error(pThis->pszSrc, "Wtf? cbVirtData is zero!\n");
+            }
+
+            /*
+             * We stash the bytes into the OMF writer record buffer, receiving a
+             * pointer to the start of it so we can make adjustments if necessary.
+             */
+            uint8_t *pbCopy;
+            if (!omfWriter_LEDataBegin(pThis, pThis->paSegments[i].iSegDef, off, cbChunk, cbData, pbData, &pbCopy))
+                return false;
+
+            /*
+             * Convert fiuxps.
+             */
+            for (uint32_t iReloc = 0; iReloc < cChunkRelocs; iReloc++)
+            {
+                /* Get the OMF and ELF data for the symbol the reloc references. */
+                uint32_t const          uType      = ELF64_R_TYPE(paRelocs[iReloc].r_info);
+                uint32_t const          iSymbol    = ELF64_R_SYM(paRelocs[iReloc].r_info);
+                Elf64_Sym const * const pElfSym    =        &paSymbols[iSymbol];
+                POMFSYMBOL const        pOmfSym    = &pThis->paSymbols[iSymbol];
+                const char * const      pszSymName = &pElfStuff->pchStrTab[pElfSym->st_name];
+
+                /* Calc fixup location in the pending chunk and setup a flexible pointer to it. */
+                uint16_t  offDataRec = (uint16_t)(paRelocs[iReloc].r_offset - off);
+                RTPTRUNION uLoc;
+                uLoc.pu8 = &pbCopy[offDataRec];
+
+                /* OMF fixup data initialized with typical defaults. */
+                bool        fSelfRel  = true;
+                uint8_t     bLocation = OMF_FIX_LOC_32BIT_OFFSET;
+                uint8_t     bFrame    = OMF_FIX_F_GRPDEF;
+                uint16_t    idxFrame  = pThis->idxGrpFlat;
+                uint8_t     bTarget;
+                uint16_t    idxTarget;
+                bool        fTargetDisp;
+                uint32_t    offTargetDisp;
+                switch (pOmfSym->enmType)
+                {
+                    case OMFSYMTYPE_INTERNAL:
+                    case OMFSYMTYPE_PUBDEF:
+                        bTarget       = OMF_FIX_T_SEGDEF;
+                        idxTarget     = pOmfSym->idxSegDef;
+                        fTargetDisp   = true;
+                        offTargetDisp = pElfSym->st_value;
+                        break;
+
+                    case OMFSYMTYPE_SEGDEF:
+                        bTarget       = OMF_FIX_T_SEGDEF_NO_DISP;
+                        idxTarget     = pOmfSym->idxSegDef;
+                        fTargetDisp   = false;
+                        offTargetDisp = 0;
+                        break;
+
+                    case OMFSYMTYPE_EXTDEF:
+                        bTarget       = OMF_FIX_T_EXTDEF_NO_DISP;
+                        idxTarget     = pOmfSym->idx;
+                        fTargetDisp   = false;
+                        offTargetDisp = 0;
+                        break;
+
+                    default:
+                        return error(pThis->pszSrc, "Relocation in segment #%u '%s' references ignored or invalid symbol (%s)\n",
+                                     i, pszSegNm, pszSymName);
+                }
+
+                /* Do COFF relocation type conversion. */
+                switch (uType)
+                {
+                    case R_X86_64_64:
+                    {
+                        int64_t iAddend = paRelocs[iReloc].r_addend;
+                        if (iAddend > _1G || iAddend < -_1G)
+                            fRet = error(pThis->pszSrc, "R_X86_64_64 with large addend (%" ELF_FMT_D64 ") at %#x in segment #%u '%s'\n",
+                                         iAddend, paRelocs[iReloc].r_offset, i, pszSegNm);
+                        *uLoc.pu64 = iAddend;
+                        fSelfRel = false;
+                        break;
+                    }
+
+                    case R_X86_64_32:
+                        fSelfRel = false;
+                        /* fall thru */
+                    case R_X86_64_PC32:
+                    {
+                        /* defaults are ok, just handle the addend. */
+                        int32_t iAddend = paRelocs[iReloc].r_addend;
+                        if (iAddend != paRelocs[iReloc].r_addend)
+                            fRet = error(pThis->pszSrc, "R_X86_64_PC32 with large addend (%d) at %#x in segment #%u '%s'\n",
+                                         iAddend, paRelocs[iReloc].r_offset, i, pszSegNm);
+                        *uLoc.pu32 = iAddend;
+                        break;
+                    }
+
+                    case R_X86_64_NONE:
+                        continue; /* Ignore this one */
+
+                    case R_X86_64_GOT32:
+                    case R_X86_64_PLT32:
+                    case R_X86_64_COPY:
+                    case R_X86_64_GLOB_DAT:
+                    case R_X86_64_JMP_SLOT:
+                    case R_X86_64_RELATIVE:
+                    case R_X86_64_GOTPCREL:
+                    case R_X86_64_32S:
+                    case R_X86_64_16:
+                    case R_X86_64_PC16:
+                    case R_X86_64_8:
+                    case R_X86_64_PC8:
+                    case R_X86_64_DTPMOD64:
+                    case R_X86_64_DTPOFF64:
+                    case R_X86_64_TPOFF64:
+                    case R_X86_64_TLSGD:
+                    case R_X86_64_TLSLD:
+                    case R_X86_64_DTPOFF32:
+                    case R_X86_64_GOTTPOFF:
+                    case R_X86_64_TPOFF32:
+                    default:
+                        return error(pThis->pszSrc, "Unsupported fixup type %#x (%s) at rva=%#x in section #%u '%s' against '%s'\n",
+                                     uType, g_apszElfAmd64RelTypes[uType], paRelocs[iReloc].r_offset, i, pszSegNm, pszSymName);
+                }
+
+                /* Add the fixup. */
+                if (idxFrame == UINT16_MAX)
+                    error(pThis->pszSrc, "idxFrame=UINT16_MAX for %s type=%s\n", pszSymName, g_apszElfAmd64RelTypes[uType]);
+                fRet = omfWriter_LEDataAddFixup(pThis, offDataRec, fSelfRel, bLocation, bFrame, idxFrame,
+                                                bTarget, idxTarget, fTargetDisp, offTargetDisp) && fRet;
+            }
+
+            /*
+             * Write the LEDATA and associated FIXUPPs.
+             */
+            if (!omfWriter_LEDataEnd(pThis))
+                return false;
+
+            /*
+             * Advance.
+             */
+            paRelocs   += cChunkRelocs;
+            cRelocs    -= cChunkRelocs;
+            if (cbData > cbChunk)
+            {
+                cbData -= cbChunk;
+                pbData += cbChunk;
+            }
+            else
+                cbData  = 0;
+            off        += cbChunk;
+            cbVirtData -= cbChunk;
+        }
+    }
+
+    return fRet;
+}
+
 
 static bool convertElfToOmf(const char *pszFile, uint8_t const *pbFile, size_t cbFile, FILE *pDst)
 {
@@ -1369,8 +1636,7 @@ static bool convertElfToOmf(const char *pszFile, uint8_t const *pbFile, size_t c
     /*
      * Instantiate the OMF writer.
      */
-    PIMAGE_FILE_HEADER pHdr = (PIMAGE_FILE_HEADER)pbFile;
-    POMFWRITER pThis = omfWriter_Create(pszFile, pHdr->NumberOfSections, pHdr->NumberOfSymbols, pDst);
+    POMFWRITER pThis = omfWriter_Create(pszFile, ElfStuff.pEhdr->e_shnum, ElfStuff.cSymbols, pDst);
     if (!pThis)
         return false;
 
@@ -1386,8 +1652,7 @@ static bool convertElfToOmf(const char *pszFile, uint8_t const *pbFile, size_t c
         if (   convertElfSectionsToSegDefsAndGrpDefs(pThis, &ElfStuff)
             && convertElfSymbolsToPubDefsAndExtDefs(pThis, &ElfStuff)
             && omfWriter_LinkPassSeparator(pThis)
-            //&& convertElfSectionsToLeDataAndFixupps(pThis, pbFile, cbFile, paShdrs, pHdr->NumberOfSections,
-            //                                        paSymTab, pHdr->NumberOfSymbols, pchStrTab)
+            && convertElfSectionsToLeDataAndFixupps(pThis, &ElfStuff, pbFile, cbFile)
             && omfWriter_EndModule(pThis) )
         {
 
@@ -1436,14 +1701,14 @@ static bool convertelf(const char *pszFile, uint8_t *pbFile, size_t cbFile)
             uint32_t const cRelocs  = paShdrs[i].sh_size / sizeof(Elf64_Rela);
             for (uint32_t j = 0; j < cRelocs; j++)
             {
-                uint8_t const bType = ELF64_R_TYPE(paRelocs[j].r_info);
+                uint32_t const uType = ELF64_R_TYPE(paRelocs[j].r_info);
                 if (g_cVerbose > 1)
                     printf("%#018" ELF_FMT_X64 "  %#018" ELF_FMT_X64 " %s  %+" ELF_FMT_D64 "\n", paRelocs[j].r_offset, paRelocs[j].r_info,
-                           bType < RT_ELEMENTS(g_apszElfAmd64RelTypes) ? g_apszElfAmd64RelTypes[bType] : "unknown", paRelocs[j].r_addend);
+                           uType < RT_ELEMENTS(g_apszElfAmd64RelTypes) ? g_apszElfAmd64RelTypes[uType] : "unknown", paRelocs[j].r_addend);
 
                 /* Truncate 64-bit wide absolute relocations, ASSUMING that the high bits
                    are already zero and won't be non-zero after calculating the fixup value. */
-                if (bType == R_X86_64_64)
+                if (uType == R_X86_64_64)
                 {
                     paRelocs[j].r_info &= ~(uint64_t)0xff;
                     paRelocs[j].r_info |= R_X86_64_32;
@@ -2116,7 +2381,7 @@ static bool convertCoffSectionsToLeDataAndFixupps(POMFWRITER pThis, uint8_t cons
                 POMFSYMBOL     pOmfSym  = &pThis->paSymbols[paRelocs[iReloc].SymbolTableIndex];
 
                 /* Calc fixup location in the pending chunk and setup a flexible pointer to it. */
-                uint16_t  offDataRec = (uint16_t)paRelocs[iReloc].u.VirtualAddress - uRvaChunk;
+                uint16_t  offDataRec = (uint16_t)(paRelocs[iReloc].u.VirtualAddress - uRvaChunk);
                 RTPTRUNION uLoc;
                 uLoc.pu8 = &pbCopy[offDataRec];
 
