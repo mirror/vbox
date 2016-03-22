@@ -297,7 +297,7 @@ RTDECL(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx, int
 {
     int rc = VINF_SUCCESS;
     VBVAREPORTINPUTMAPPING *p;
-    Log(("%s: cOriginX=%u, cOriginY=%u, cWidth=%u, cHeight=%u\n", __PRETTY_FUNCTION__, (unsigned)cOriginX, (unsigned)cOriginX,
+    Log(("%s: cOriginX=%d, cOriginY=%d, cWidth=%u, cHeight=%u\n", __PRETTY_FUNCTION__, (int)cOriginX, (int)cOriginX,
          (unsigned)cWidth, (unsigned)cHeight));
 
     /* Allocate the IO buffer. */
