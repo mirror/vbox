@@ -932,6 +932,20 @@ BEGINPROC RT_NOCRT(%1)
 %endmacro
 
 ;;
+; Structure size alignment assertion macro.
+
+%define AssertCompileSizeAlignment(a_Type, a_Align) AssertCompileSizeAlignmentML a_Type, a_Align
+%macro AssertCompileSizeAlignmentML 2
+ %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
+  %assign AssertVar_cbActual    %1 %+ _size
+  %assign AssertVar_cbAlignment %2
+  %if (AssertVar_cbActual & (AssertVar_cbAlignment - 1)) != 0
+   %error %1 is AssertVar_cbActual bytes, expected size with AssertVar_cbAlignment bytes alignment.
+  %endif
+ %endif
+%endmacro
+
+;;
 ; Structure memember offset assertion macro.
 %define AssertCompileMemberOffset(a_Type, a_Member, a_off) AssertCompileMemberOffsetML a_Type, a_Member, a_off
 %macro AssertCompileMemberOffsetML 3
