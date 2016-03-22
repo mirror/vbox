@@ -198,7 +198,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 
         m_adj(m, sizeof(struct udpiphdr));
 
-        m = hostresolver(pData, m);
+        m = hostresolver(pData, m, ip->ip_src.s_addr, uh->uh_sport);
         if (m == NULL)
             goto done_free_mbuf;
 

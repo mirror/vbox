@@ -351,7 +351,7 @@ int tcp_ctl (PNATState, struct socket *);
 struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 
 /* hostres.c */
-struct mbuf *hostresolver(PNATState, struct mbuf *);
+struct mbuf *hostresolver(PNATState, struct mbuf *, uint32_t src, uint16_t sport);
 
 /*slirp.c*/
 void slirp_arp_who_has(PNATState pData, uint32_t dst);

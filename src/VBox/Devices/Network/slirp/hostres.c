@@ -104,6 +104,11 @@ struct label
  */
 struct response
 {
+    PNATState pData;
+
+    uint32_t src;
+    uint16_t sport;
+
     struct label *labels;       /* already encoded in buf */
     size_t qlen;                /* original question */
     size_t end;                 /* of data in buf */
@@ -114,12 +119,16 @@ struct response
 
 
 static int verify_header(PNATState pData, struct mbuf **pMBuf);
-static struct mbuf *respond(PNATState pData, struct mbuf *m, struct response *res);
-struct mbuf *resolve(PNATState pData, struct mbuf *m, struct response *res,
-                     uint16_t qtype, size_t qname);
-struct mbuf *resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
-                             uint16_t qtype, size_t qname, struct in_addr addr);
-struct mbuf *refuse(PNATState pData, struct mbuf *m, unsigned int rcode);
+static struct mbuf *refuse_mbuf(struct mbuf *m, unsigned int rcode);
+
+static int respond(struct response *res);
+static int resolve(struct response *res, uint16_t qtype, size_t qname);
+static int resolve_reverse(struct response *res, uint16_t qtype, size_t qname,
+                            struct in_addr addr);
+
+static int refuse(struct response *res, unsigned int rcode);
+
+
 static ssize_t append_a(struct response *res, const char *name, struct in_addr addr);
 static ssize_t append_cname(struct response *res, const char *name, const char *cname);
 static ssize_t append_ptr(struct response *res, const char *inaddrname, const char *name);
@@ -154,44 +163,57 @@ static PDNSMAPPINGENTRY getDNSMapByAddr(PNATState pData, const uint32_t *pu32IpA
 #endif
 
 
+static void hostres_async(struct response *res);
+static void hostres_slirp_reply(struct response *res);
+
+
+/*
+ * Host resolver is called on slirp thread from udp.c
+ */
 struct mbuf *
-hostresolver(PNATState pData, struct mbuf *m)
+hostresolver(PNATState pData, struct mbuf *m, uint32_t src, uint16_t sport)
 {
-    int error;
+    struct response *res;
+    size_t mlen;
+    int rc;
 
-    struct response res;
-
-    error = verify_header(pData, &m);
-    if (error != 0)
+    rc = verify_header(pData, &m);
+    if (RT_FAILURE(rc))
         return m;
 
-    RT_ZERO(res);
+    res = RTMemAllocZ(sizeof(*res));
+    if (res == NULL)
+        return refuse_mbuf(m, RCode_ServFail);
 
-    /*
-     * Do the real work
-     */
-    m = respond(pData, m, &res);
+    res->pData = pData;
+    res->src = src;
+    res->sport = sport;
 
-    free_labels(res.labels);
-    return m;
+    mlen = m_length(m, NULL);
+    m_copydata(m, 0, mlen, (char *)res->buf);
+    res->end = res->qlen = mlen;
+
+    rc = slirp_call_hostres(pData->pvUser, NULL, 0,
+                            RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                            (PFNRT)hostres_async, 1, res);
+
+    if (RT_FAILURE(rc))
+    {
+        LogErr(("NAT: hostres: failed to post async request: %Rrc\n", rc));
+        RTMemFree(res);
+        return refuse_mbuf(m, RCode_ServFail);
+    }
+
+    m_freem(pData, m);
+    return NULL;
 }
 
 
-struct mbuf *
-refuse(PNATState pData, struct mbuf *m, unsigned int rcode)
-{
-    struct dnsmsg_header *pHdr;
-
-    pHdr = mtod(m, struct dnsmsg_header *);
-    pHdr->qr = QR_Response;
-    pHdr->rcode = rcode;
-    pHdr->ra = 1;
-    pHdr->aa = 0;
-
-    return m;
-}
-
-
+/*
+ * Do quick sanity-checks on the request before doing async
+ * resolution.  If we don't like it, immediately drop or convert to
+ * response in place and bounce back the mbuf.
+ */
 static int
 verify_header(PNATState pData, struct mbuf **pMBuf)
 {
@@ -200,6 +222,7 @@ verify_header(PNATState pData, struct mbuf **pMBuf)
     size_t mlen;
 
     m = *pMBuf;
+    mlen = m_length(m, NULL);
 
     /*
      * In theory we should have called
@@ -214,63 +237,169 @@ verify_header(PNATState pData, struct mbuf **pMBuf)
      */
     pHdr = mtod(m, struct dnsmsg_header *);
 
+    if (RT_UNLIKELY(mlen < sizeof(*pHdr)))
+    {
+        LogErr(("NAT: hostres: packet too small: %zu bytes\n", mlen));
+        goto drop;              /* can't even refuse it */
+    }
+
+    if (RT_UNLIKELY(mlen > DNS_MAX_UDP_LEN))
+    {
+        LogErr(("NAT: hostres: packet too large: %zu bytes\n", mlen));
+        goto drop;              /* don't echo back huge packets */
+    }
+
     if (RT_UNLIKELY(pHdr->qr != QR_Query))
     {
         LogErr(("NAT: hostres: unexpected response\n"));
-        goto drop;
-    }
-
-    mlen = m_length(m, NULL);
-    if (RT_UNLIKELY(mlen > DNS_MAX_UDP_LEN))
-    {
-        LogErr(("NAT: hostres: packet too large\n"));
-        refuse(pData, m, RCode_FormErr); /* or drop? */
-        return 1;
+        goto drop;              /* ignore */
     }
 
     if (RT_UNLIKELY(pHdr->opcode != OpCode_Query))
     {
-        LogErr(("NAT: hostres: unsupported opcode\n"));
-        refuse(pData, m, RCode_NotImp);
-        return 1;
+        LogErr(("NAT: hostres: unsupported opcode %d\n", pHdr->opcode));
+        refuse_mbuf(m, RCode_NotImp);
+        return VERR_PARSE_ERROR;
     }
 
     if (RT_UNLIKELY(pHdr->qdcount != RT_H2N_U16_C(1)))
     {
         LogErr(("NAT: hostres: multiple questions\n"));
-        refuse(pData, m, RCode_NotImp);
-        return 1;
+        refuse_mbuf(m, RCode_NotImp);
+        return VERR_PARSE_ERROR;
     }
 
     if (RT_UNLIKELY(pHdr->ancount != 0))
     {
         LogErr(("NAT: hostres: answers in query\n"));
-        refuse(pData, m, RCode_NotImp);
-        return 1;
+        refuse_mbuf(m, RCode_NotImp);
+        return VERR_PARSE_ERROR;
     }
 
+    /* XXX: let it fail when we parse it? */
     if (RT_UNLIKELY(mlen < sizeof(*pHdr)
                              + /* qname  */ 1
                              + /* qtype  */ 2
                              + /* qclass */ 2))
     {
-        LogErr(("NAT: hostres: packet too small\n"));
-        refuse(pData, m, RCode_FormErr);
-        return 1;
+        LogErr(("NAT: hostres: packet too small: %zu bytes\n", mlen));
+        refuse_mbuf(m, RCode_FormErr);
+        return VERR_PARSE_ERROR;
     }
 
-    return 0;
+    return VINF_SUCCESS;
 
   drop:
     if (m != NULL)
         m_freem(pData, m);
     *pMBuf = NULL;
-    return 1;
+    return VERR_PARSE_ERROR;
 }
 
 
+/*
+ * Turn the request in mbuf into an error response.  This is used on
+ * slirp thread for pre-checks before we do async resolution.
+ */
 static struct mbuf *
-respond(PNATState pData, struct mbuf *m, struct response *res)
+refuse_mbuf(struct mbuf *m, unsigned int rcode)
+{
+    struct dnsmsg_header *pHdr;
+
+    pHdr = mtod(m, struct dnsmsg_header *);
+    pHdr->qr = QR_Response;
+    pHdr->rcode = rcode;
+    pHdr->ra = 1;
+    pHdr->aa = 0;
+
+    return m;
+}
+
+
+/*
+ * Actuall resolution runs on the dedicated host resolver thread.
+ */
+static void
+hostres_async(struct response *res)
+{
+    int rc;
+
+    /* build reply in res->buf[] */
+    respond(res);
+
+    free_labels(res->labels);
+
+    rc = slirp_call(res->pData->pvUser, NULL, 0,
+                    RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                    (PFNRT)hostres_slirp_reply, 1, res);
+
+    if (RT_FAILURE(rc))
+    {
+        LogErr(("NAT: hostres: failed to post async reply: %Rrc\n", rc));
+        RTMemFree(res);
+    }
+}
+
+
+/*
+ * We are  back to the slirp thread to send the reply.
+ */
+static void
+hostres_slirp_reply(struct response *res)
+{
+    PNATState pData = res->pData;
+    struct sockaddr_in src, dst;
+    struct mbuf *m = NULL;
+    size_t mlen;
+    int ok;
+
+    mlen = if_maxlinkhdr + sizeof(struct ip) + sizeof(struct udphdr);
+    mlen += res->end;
+
+    if (mlen <= MHLEN)
+    {
+        m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
+    }
+    else
+    {
+        void *pvBuf;            /* ignored */
+        size_t cbBuf;
+
+        m = slirp_ext_m_get(pData, mlen, &pvBuf, &cbBuf);
+    }
+
+    if (m == NULL)
+        goto out;
+
+    /* reserve leading space for ethernet header */
+    m->m_data += if_maxlinkhdr;
+
+    /* reserve leading space for protocol headers */
+    m->m_pkthdr.header = mtod(m, void *);
+    m->m_data += sizeof(struct ip) + sizeof(struct udphdr);
+
+    m->m_len = 0;
+    ok = m_append(pData, m, res->end, (c_caddr_t)res->buf);
+    if (!ok)
+    {
+        m_freem(pData, m);
+        goto out;
+    }
+
+    src.sin_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_DNS);
+    src.sin_port = RT_H2N_U16_C(53);
+    dst.sin_addr.s_addr = res->src;
+    dst.sin_port = res->sport;
+
+    udp_output2(pData, NULL, m, &src, &dst, IPTOS_LOWDELAY);
+
+  out:
+    RTMemFree(res);
+}
+
+
+static int
+respond(struct response *res)
 {
     struct dnsmsg_header *pHdr;
     size_t mlen;
@@ -279,15 +408,6 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
     uint16_t qtype, qclass;
     struct in_addr in_addr_arpa;
     struct label *l;
-
-    /**
-     * Copy the request into the contiguous buffer for the response
-     * and parse the question.
-     */
-
-    mlen = m_length(m, NULL);
-    m_copydata(m, 0, mlen, (char *)res->buf);
-    res->end = res->qlen = mlen;
 
     /* convert header to response */
     pHdr = (struct dnsmsg_header *)res->buf;
@@ -304,7 +424,7 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
      * Parse/verify QNAME and collect the suffixes to be used for
      * compression in the answer.
      */
-    while (off < mlen) {
+    while (off < res->qlen) {
         size_t loff, llen;
         uint8_t c;
 
@@ -318,13 +438,13 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
         if ((c & DNS_LABEL_PTR) == DNS_LABEL_PTR)
         {
             LogErr(("NAT: hostres: label pointer in the qname\n"));
-            return refuse(pData, m, RCode_FormErr);
+            return refuse(res, RCode_FormErr);
         }
 
         if ((c & DNS_LABEL_PTR) != 0)
         {
             LogErr(("NAT: hostres: unexpected high bits\n"));
-            return refuse(pData, m, RCode_FormErr);
+            return refuse(res, RCode_FormErr);
         }
 
         /*
@@ -334,10 +454,10 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
         llen = c;
         ++off;
 
-        if (loff + 1 + llen > mlen)
+        if (loff + 1 + llen > res->qlen)
         {
             LogErr(("NAT: hostres: length byte points beyound packet boundary\n"));
-            return refuse(pData, m, RCode_FormErr);
+            return refuse(res, RCode_FormErr);
         }
 
         if (llen == 0)             /* end of the label list */
@@ -354,13 +474,13 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
             if (c == '.')
             {
                 LogErr(("NAT: hostres: dot inside label\n"));
-                return refuse(pData, m, RCode_FormErr);
+                return refuse(res, RCode_FormErr);
             }
 
             if (c == '\0')
             {
                 LogErr(("NAT: hostres: nul byte inside label\n"));
-                return refuse(pData, m, RCode_FormErr);
+                return refuse(res, RCode_FormErr);
             }
         }
 
@@ -374,10 +494,10 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
     /*
      * QTYPE and QCLASS
      */
-    if (RT_UNLIKELY(off + 4 > mlen))
+    if (RT_UNLIKELY(off + 4 > res->qlen))
     {
         LogErr(("NAT: hostres: question too short\n"));
-        return refuse(pData, m, RCode_FormErr);
+        return refuse(res, RCode_FormErr);
     }
 
     memcpy(&qtype, &res->buf[off], sizeof(qtype));
@@ -392,7 +512,7 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
         && qclass != Class_ANY)
     {
         LogErr(("NAT: hostres: unsupported qclass %d\n", qclass));
-        return refuse(pData, m, RCode_NotImp);
+        return refuse(res, RCode_NotImp);
     }
 
     if (   qtype != Type_A
@@ -401,7 +521,7 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
         && qtype != Type_ANY)
     {
         LogErr(("NAT: hostres: unsupported qtype %d\n", qtype));
-        return refuse(pData, m, RCode_NotImp);
+        return refuse(res, RCode_NotImp);
     }
 
 
@@ -414,16 +534,16 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
      * have ensured that qname in the question doesn't contain
      * pointers, so truncating the buffer is safe.
      */
-    if (off < mlen)
+    if (off < res->qlen)
     {
-        int trailer = mlen - off;
+        int trailer = res->qlen - off;
 
-        LogDbg(("NAT: hostres: question %zu < mlen %zu\n", off, mlen));
+        LogDbg(("NAT: hostres: question %zu < mlen %zu\n", off, res->qlen));
 
         if (pHdr->nscount == 0 && pHdr->arcount == 0)
         {
             LogErr(("NAT: hostres: unexpected %d bytes after the question\n", trailer));
-            return refuse(pData, m, RCode_FormErr);
+            return refuse(res, RCode_FormErr);
         }
 
         LogDbg(("NAT: hostres: ignoring %d bytes of %s%s%s records\n",
@@ -432,9 +552,8 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
                 pHdr->nscount != 0 && pHdr->arcount != 0 ? " and " : "",
                 pHdr->arcount != 0 ? "additional" : ""));
 
-        m_adj(m, -trailer);
-        mlen -= trailer;
-        res->end = res->qlen = mlen;
+        res->qlen -= trailer;
+        res->end = res->qlen;
 
         pHdr->nscount = 0;
         pHdr->arcount = 0;
@@ -447,15 +566,14 @@ respond(PNATState pData, struct mbuf *m, struct response *res)
      * to its components.
      */
     if (get_in_addr_arpa(&in_addr_arpa, res->labels))
-        return resolve_reverse(pData, m, res, qtype, qname, in_addr_arpa);
+        return resolve_reverse(res, qtype, qname, in_addr_arpa);
     else
-        return resolve(pData, m, res, qtype, qname);
+        return resolve(res, qtype, qname);
 }
 
 
-struct mbuf *
-resolve(PNATState pData, struct mbuf *m, struct response *res,
-        uint16_t qtype, size_t qname)
+static int
+resolve(struct response *res, uint16_t qtype, size_t qname)
 {
     struct dnsmsg_header *pHdr;
     struct hostent *h;
@@ -484,7 +602,7 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
     h = NULL;
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
     {
-        PDNSMAPPINGENTRY pDNSMapingEntry = getDNSMapByName(pData, name);
+        PDNSMAPPINGENTRY pDNSMapingEntry = getDNSMapByName(res->pData, name);
         if (pDNSMapingEntry != NULL)
         {
             LogDbg(("NAT: hostres: %s resolved from %s%s\n",
@@ -519,7 +637,7 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
     if (h == NULL)
     {
         /* LogErr: h_errno */
-        return refuse(pData, m, RCode_NXDomain);
+        return refuse(res, RCode_NXDomain);
     }
 
     if (h->h_length != sizeof(RTNETADDRIPV4))
@@ -536,7 +654,7 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
     }
 
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
-    alterHostentWithDataFromDNSMap(pData, h);
+    alterHostentWithDataFromDNSMap(res->pData, h);
 #endif
 
     /*
@@ -556,7 +674,7 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
             LogErr(("NAT: hostres: failed to add %s CNAME %s\n",
                     name, h->h_name));
             if (nbytes < 0)
-                return refuse(pData, m, RCode_ServFail);
+                return refuse(res, RCode_ServFail);
             else
             {
                 pHdr->tc = 1;
@@ -597,7 +715,7 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
             LogErr(("NAT: hostres: failed to add %s A %RTnaipv4\n",
                     cname, addr.s_addr));
             if (nbytes < 0)
-                return refuse(pData, m, RCode_ServFail);
+                return refuse(res, RCode_ServFail);
             else
             {
                 pHdr->tc = 1;
@@ -633,24 +751,14 @@ resolve(PNATState pData, struct mbuf *m, struct response *res,
 #endif
 
   out:
-    if (nanswers > 0)
-    {
-        int ok = m_append(pData, m, res->end - oend, (caddr_t)&res->buf[oend]);
-        if (!ok)
-        {
-            /* XXX: this may fail part way: restore old lenght, clear TC? */
-            return refuse(pData, m, RCode_ServFail);
-        }
-        pHdr->ancount = RT_H2N_U16(nanswers);
-    }
-    memcpy(mtod(m, char *), res->buf, sizeof(struct dnsmsg_header));
-    return m;
+    pHdr->ancount = RT_H2N_U16(nanswers);
+    return VINF_SUCCESS;
 }
 
 
-struct mbuf *
-resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
-                uint16_t qtype, size_t qname, struct in_addr in_addr_arpa)
+static int
+resolve_reverse(struct response *res, uint16_t qtype, size_t qname,
+                struct in_addr in_addr_arpa)
 {
     struct dnsmsg_header *pHdr;
     struct hostent *h;
@@ -683,7 +791,7 @@ resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
      * we reply with the answer from the map, the answer will be lost.
      */
     {
-        PDNSMAPPINGENTRY pReverseMapping = getDNSMapByAddr(pData, &in_addr_arpa.s_addr);
+        PDNSMAPPINGENTRY pReverseMapping = getDNSMapByAddr(res->pData, &in_addr_arpa.s_addr);
         if (pReverseMapping != NULL)
         {
             LogDbg(("NAT: hostres: %RTnaipv4 resolved from mapping\n",
@@ -711,7 +819,7 @@ resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
     if (h == NULL)
     {
         /* LogErr: h_errno */
-        return refuse(pData, m, RCode_NXDomain);
+        return refuse(res, RCode_NXDomain);
     }
 
     if (h->h_name != NULL)
@@ -730,7 +838,7 @@ resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
             LogErr(("NAT: hostres: failed to add %s PTR %s\n",
                     name, h->h_name));
             if (nbytes < 0)
-                return refuse(pData, m, RCode_ServFail);
+                return refuse(res, RCode_ServFail);
             else
             {
                 pHdr->tc = 1;
@@ -740,20 +848,19 @@ resolve_reverse(PNATState pData, struct mbuf *m, struct response *res,
     }
 
   out:
-    if (nanswers > 0)
-    {
-        int ok = m_append(pData, m, res->end - oend, (caddr_t)&res->buf[oend]);
-        if (!ok)
-        {
-            /* XXX: this may fail part way: restore old lenght, clear TC? */
-            return refuse(pData, m, RCode_ServFail);
-        }
-        pHdr->ancount = RT_H2N_U16(nanswers);
-    }
-    memcpy(mtod(m, char *), res->buf, sizeof(struct dnsmsg_header));
-    return m;
+    pHdr->ancount = RT_H2N_U16(nanswers);
+    return VINF_SUCCESS;
 }
 
+
+static int
+refuse(struct response *res, unsigned int rcode)
+{
+    struct dnsmsg_header *pHdr = (struct dnsmsg_header *)res->buf;
+    pHdr->rcode = rcode;
+
+    return VINF_SUCCESS;
+}
 
 
 #define APPEND_PROLOGUE()                       \

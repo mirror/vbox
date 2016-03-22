@@ -37,6 +37,7 @@ int inet_aton(const char *cp, struct in_addr *ia);
 #endif
 
 #include <VBox/types.h>
+#include <iprt/req.h>
 
 typedef struct NATState *PNATState;
 struct mbuf;
@@ -70,6 +71,13 @@ void slirp_output(void * pvUser, struct mbuf *m, const uint8_t *pkt, int pkt_len
 void slirp_output_pending(void * pvUser);
 void slirp_urg_output(void *pvUser, struct mbuf *, const uint8_t *pu8Buf, int cb);
 void slirp_post_sent(PNATState pData, void *pvArg);
+
+int slirp_call(void *pvUser, PRTREQ *ppReq, RTMSINTERVAL cMillies,
+               unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+
+int slirp_call_hostres(void *pvUser, PRTREQ *ppReq, RTMSINTERVAL cMillies,
+                       unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+
 
 void slirp_update_guest_addr_guess(PNATState pData, uint32_t guess, const char *msg);
 

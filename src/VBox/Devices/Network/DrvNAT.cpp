@@ -210,6 +210,11 @@ typedef struct DRVNAT
     /** Transmit lock taken by BeginXmit and released by EndXmit. */
     RTCRITSECT              XmitLock;
 
+    /** Request queue for the async host resolver. */
+    RTREQQUEUE               hHostResQueue;
+    /** Async host resolver thread. */
+    PPDMTHREAD               pHostResThread;
+
 #ifdef RT_OS_DARWIN
     /* Handle of the DNS watcher runloop source. */
     CFRunLoopSourceRef      hRunLoopSrcDnsWatcher;
@@ -891,6 +896,46 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return VINF_SUCCESS;
 }
 
+
+static DECLCALLBACK(int) drvNATHostResThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        RTReqQueueProcess(pThis->hHostResQueue, RT_INDEFINITE_WAIT);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) drvNATReqQueueInterrupt()
+{
+    /*
+     * RTReqQueueProcess loops until request returns a warning or info
+     * status code (other than VINF_SUCCESS).
+     */
+    return VINF_INTERRUPTED;
+}
+
+
+static DECLCALLBACK(int) drvNATHostResWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    Assert(pThis != NULL);
+
+    int rc;
+    rc = RTReqQueueCallEx(pThis->hHostResQueue, NULL /*ppReq*/, 0 /*cMillies*/,
+                          RTREQFLAGS_IPRT_STATUS | RTREQFLAGS_NO_WAIT,
+                          (PFNRT)drvNATReqQueueInterrupt, 0);
+    return rc;
+}
+
+
 /**
  * Function called by slirp to check if it's possible to feed incoming data to the network port.
  * @returns 1 if possible.
@@ -962,6 +1007,56 @@ void slirp_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
     drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
     STAM_COUNTER_INC(&pThis->StatQueuePktSent);
     LogFlowFuncLeave();
+}
+
+
+/*
+ * Call a function on the slirp thread.
+ */
+int slirp_call(void *pvUser, PRTREQ *ppReq, RTMSINTERVAL cMillies,
+               unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PDRVNAT pThis = (PDRVNAT)pvUser;
+    Assert(pThis);
+
+    int rc;
+
+    va_list va;
+    va_start(va, cArgs);
+
+    rc = RTReqQueueCallV(pThis->hSlirpReqQueue, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
+
+    va_end(va);
+
+    if (RT_SUCCESS(rc))
+        drvNATNotifyNATThread(pThis, "slirp_vcall");
+
+    return rc;
+}
+
+
+/*
+ * Call a function on the host resolver thread.
+ */
+int slirp_call_hostres(void *pvUser, PRTREQ *ppReq, RTMSINTERVAL cMillies,
+                       unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PDRVNAT pThis = (PDRVNAT)pvUser;
+    Assert(pThis);
+
+    int rc;
+
+    AssertReturn((pThis->hHostResQueue != NIL_RTREQQUEUE), VERR_INVALID_STATE);
+    AssertReturn((pThis->pHostResThread != NULL), VERR_INVALID_STATE);
+
+    va_list va;
+    va_start(va, cArgs);
+
+    rc = RTReqQueueCallV(pThis->hHostResQueue, ppReq, cMillies, fFlags,
+                         pfnFunction, cArgs, va);
+
+    va_end(va);
+    return rc;
 }
 
 
@@ -1344,6 +1439,9 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
         pThis->pNATState = NULL;
     }
 
+    RTReqQueueDestroy(pThis->hHostResQueue);
+    pThis->hHostResQueue = NIL_RTREQQUEUE;
+
     RTReqQueueDestroy(pThis->hSlirpReqQueue);
     pThis->hSlirpReqQueue = NIL_RTREQQUEUE;
 
@@ -1395,6 +1493,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->pszNextServer                = NULL;
     pThis->hSlirpReqQueue               = NIL_RTREQQUEUE;
     pThis->hUrgRecvReqQueue             = NIL_RTREQQUEUE;
+    pThis->hHostResQueue                = NIL_RTREQQUEUE;
     pThis->EventRecv                    = NIL_RTSEMEVENT;
     pThis->EventUrgRecv                 = NIL_RTSEMEVENT;
 #ifdef RT_OS_DARWIN
@@ -1589,6 +1688,14 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             AssertRCReturn(rc, rc);
 
             rc = RTSemEventCreate(&pThis->EventUrgRecv);
+            AssertRCReturn(rc, rc);
+
+            rc = RTReqQueueCreate(&pThis->hHostResQueue);
+            AssertRCReturn(rc, rc);
+
+            rc = PDMDrvHlpThreadCreate(pThis->pDrvIns, &pThis->pHostResThread,
+                                       pThis, drvNATHostResThread, drvNATHostResWakeup,
+                                       64 * _1K, RTTHREADTYPE_IO, "HOSTRES");
             AssertRCReturn(rc, rc);
 
             rc = RTCritSectInit(&pThis->DevAccessLock);
