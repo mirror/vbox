@@ -329,10 +329,10 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
             if (RT_SUCCESS(rc))
             {
                 Assert(*ppszString);
-                USBLibPurgeEncoding(ppszString);
+                USBLibPurgeEncoding(*ppszString);
 
                 if (pDrList->iDr == pConInfo->DeviceDescriptor.iSerialNumber)
-                    pDev->u64SerialHash = USBLibHashSerial(pDev->pszSerialNumber);
+                    pDev->u64SerialHash = USBLibHashSerial(*ppszString);
             }
             else
             {
