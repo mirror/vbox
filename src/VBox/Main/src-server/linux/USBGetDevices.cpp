@@ -61,16 +61,6 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/** Suffix translation. */
-typedef struct USBSUFF
-{
-    char        szSuff[4];
-    unsigned    cchSuff;
-    unsigned    uMul;
-    unsigned    uDiv;
-} USBSUFF, *PUSBSUFF;
-typedef const USBSUFF *PCUSBSUFF;
-
 /** Structure describing a host USB device */
 typedef struct USBDeviceInfo
 {
@@ -83,63 +73,6 @@ typedef struct USBDeviceInfo
     VECTOR_PTR(char *) mvecpszInterfaces;
 } USBDeviceInfo;
 
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-/**
- * Suffixes for the endpoint polling interval.
- */
-static const USBSUFF s_aIntervalSuff[] =
-{
-    { "ms", 2,    1,       0 },
-    { "us", 2,    1,    1000 },
-    { "ns", 2,    1, 1000000 },
-    { "s",  1, 1000,       0 },
-    { "",   0,    0,       0 }  /* term */
-};
-
-
-/**
- * "reads" the number suffix.
- *
- * It's more like validating it and skipping the necessary number of chars.
- */
-static int usbReadSkipSuffix(char **ppszNext)
-{
-    char *pszNext = *ppszNext;
-    if (!RT_C_IS_SPACE(*pszNext) && *pszNext)
-    {
-        /* skip unit */
-        if (pszNext[0] == 'm' && pszNext[1] == 's')
-            pszNext += 2;
-        else if (pszNext[0] == 'm' && pszNext[1] == 'A')
-            pszNext += 2;
-
-        /* skip parenthesis */
-        if (*pszNext == '(')
-        {
-            pszNext = strchr(pszNext, ')');
-            if (!pszNext++)
-            {
-                AssertMsgFailed(("*ppszNext=%s\n", *ppszNext));
-                return VERR_PARSE_ERROR;
-            }
-        }
-
-        /* blank or end of the line. */
-        if (!RT_C_IS_SPACE(*pszNext) && *pszNext)
-        {
-            AssertMsgFailed(("pszNext=%s\n", pszNext));
-            return VERR_PARSE_ERROR;
-        }
-
-        /* it's ok. */
-        *ppszNext = pszNext;
-    }
-
-    return VINF_SUCCESS;
-}
 
 
 /**
@@ -186,9 +119,51 @@ static size_t usbPurgeEncoding(char *psz)
 
 
 /**
+ * "reads" the number suffix.
+ *
+ * It's more like validating it and skipping the necessary number of chars.
+ */
+static int usbfsReadSkipSuffix(char **ppszNext)
+{
+    char *pszNext = *ppszNext;
+    if (!RT_C_IS_SPACE(*pszNext) && *pszNext)
+    {
+        /* skip unit */
+        if (pszNext[0] == 'm' && pszNext[1] == 's')
+            pszNext += 2;
+        else if (pszNext[0] == 'm' && pszNext[1] == 'A')
+            pszNext += 2;
+
+        /* skip parenthesis */
+        if (*pszNext == '(')
+        {
+            pszNext = strchr(pszNext, ')');
+            if (!pszNext++)
+            {
+                AssertMsgFailed(("*ppszNext=%s\n", *ppszNext));
+                return VERR_PARSE_ERROR;
+            }
+        }
+
+        /* blank or end of the line. */
+        if (!RT_C_IS_SPACE(*pszNext) && *pszNext)
+        {
+            AssertMsgFailed(("pszNext=%s\n", pszNext));
+            return VERR_PARSE_ERROR;
+        }
+
+        /* it's ok. */
+        *ppszNext = pszNext;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Reads a USB number returning the number and the position of the next character to parse.
  */
-static int usbfsReadNum(const char *pszValue, unsigned uBase, uint32_t u32Mask, PCUSBSUFF paSuffs, void *pvNum, char **ppszNext)
+static int usbfsReadNum(const char *pszValue, unsigned uBase, uint32_t u32Mask, void *pvNum, char **ppszNext)
 {
     /*
      * Initialize return value to zero and strip leading spaces.
@@ -223,33 +198,9 @@ static int usbfsReadNum(const char *pszValue, unsigned uBase, uint32_t u32Mask, 
             return VERR_OUT_OF_RANGE;
         }
 
-        /*
-         * Validate and skip stuff following the number.
-         */
-        if (paSuffs)
-        {
-            if (!RT_C_IS_SPACE(*pszNext) && *pszNext)
-            {
-                for (PCUSBSUFF pSuff = paSuffs; pSuff->szSuff[0]; pSuff++)
-                {
-                    if (    !strncmp(pSuff->szSuff, pszNext, pSuff->cchSuff)
-                        &&  (!pszNext[pSuff->cchSuff] || RT_C_IS_SPACE(pszNext[pSuff->cchSuff])))
-                    {
-                        if (pSuff->uDiv)
-                            u32 /= pSuff->uDiv;
-                        else
-                            u32 *= pSuff->uMul;
-                        break;
-                    }
-                }
-            }
-        }
-        else
-        {
-            int rc = usbfsReadSkipSuffix(&pszNext);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
+        int rc = usbfsReadSkipSuffix(&pszNext);
+        if (RT_FAILURE(rc))
+            return rc;
 
         *ppszNext = pszNext;
 
@@ -269,22 +220,14 @@ static int usbfsReadNum(const char *pszValue, unsigned uBase, uint32_t u32Mask, 
 
 static int usbfsRead8(const char *pszValue, unsigned uBase, uint8_t *pu8, char **ppszNext)
 {
-    return usbfsReadNum(pszValue, uBase, 0xff, NULL, pu8, ppszNext);
+    return usbfsReadNum(pszValue, uBase, 0xff, pu8, ppszNext);
 }
 
 
 static int usbfsRead16(const char *pszValue, unsigned uBase, uint16_t *pu16, char **ppszNext)
 {
-    return usbfsReadNum(pszValue, uBase, 0xffff, NULL, pu16, ppszNext);
+    return usbfsReadNum(pszValue, uBase, 0xffff, pu16, ppszNext);
 }
-
-
-#if 0
-static int usbRead16Suff(const char *pszValue, unsigned uBase, PCUSBSUFF paSuffs, uint16_t *pu16,  char **ppszNext)
-{
-    return usbReadNum(pszValue, uBase, 0xffff, paSuffs, pu16, ppszNext);
-}
-#endif
 
 
 /**
