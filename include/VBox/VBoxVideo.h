@@ -1105,6 +1105,8 @@ typedef struct VBVAMOUSEPOINTERSHAPE
 #define VBVACAPS_VIDEO_MODE_HINTS       0x00000004
 /** The guest can switch to a software cursor on demand. */
 #define VBVACAPS_DISABLE_CURSOR_INTEGRATION 0x00000008
+/** The guest does not depend on host handling the VBE registers. */
+#define VBVACAPS_USE_VBVA_ONLY 0x00000010
 typedef struct VBVACAPS
 {
     int32_t rc;
