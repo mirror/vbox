@@ -93,7 +93,7 @@ void vbox_disable_accel(struct vbox_private *vbox)
 
 void vbox_enable_caps(struct vbox_private *vbox)
 {
-    VBoxHGSMISendCapsInfo(&vbox->submit_info, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION | VBVACAPS_IRQ);
+    VBoxHGSMISendCapsInfo(&vbox->submit_info, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION | VBVACAPS_IRQ | VBVACAPS_USE_VBVA_ONLY);
 }
 
 void vbox_disable_caps(struct vbox_private *vbox)
