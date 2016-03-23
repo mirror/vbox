@@ -1762,16 +1762,16 @@ bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNodes)
 #endif
 
 /**
- * Get the list of USB devices supported by the system.  Should be freed using
- * @a deviceFree or something equivalent.
+ * Get the list of USB devices supported by the system.
+ *
+ * Result should be freed using #deviceFree or something equivalent.
+ *
  * @param pcszDevicesRoot  the path to the root of the device tree
  * @param fUseSysfs        whether to use sysfs (or usbfs) for enumeration
  */
-PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot,
-                                   bool fUseSysfs)
+PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot, bool fUseSysfs)
 {
     if (!fUseSysfs)
         return getDevicesFromUsbfs(pcszDevicesRoot, false);
-    else
-        return getDevicesFromSysfs(pcszDevicesRoot, false);
+    return getDevicesFromSysfs(pcszDevicesRoot, false);
 }
