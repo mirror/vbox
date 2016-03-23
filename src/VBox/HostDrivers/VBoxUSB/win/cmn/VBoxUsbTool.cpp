@@ -157,27 +157,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetStringDescriptor(PDEVICE_OBJECT pDevObj
     {
         if (pDr->bLength >= sizeof (USB_STRING_DESCRIPTOR))
         {
-#if 0 /* WTF? */
-            UNICODE_STRING Unicode;
-            ANSI_STRING Ansi;
-            /* for some reason the string dr sometimes contains a non-null terminated string
-             * although we zeroed up the complete descriptor buffer
-             * this is why RtlInitUnicodeString won't work*/
-            VBoxUsbToolStringDescriptorToUnicodeString(pDr, &Unicode);
-            Ansi.Buffer = pszResult;
-            Ansi.Length = 0;
-            Ansi.MaximumLength = (USHORT)cbResult - 1;
-            memset(pszResult, 0, cbResult);
-            Status = RtlUnicodeStringToAnsiString(&Ansi, &Unicode, FALSE);
-            Assert(Status == STATUS_SUCCESS);
-            if (NT_SUCCESS(Status))
-            {
-                /* just to make sure the string is null-terminated */
-                Assert(pszResult[cbResult-1] == 0);
-                Status = STATUS_SUCCESS;
-            }
-#else
-            int rc = RTUtf16ToUtf8Ex(pDr->bString, pDr->bLength - RT_OFFSETOF(USB_STRING_DESCRIPTOR, bString),
+            int rc = RTUtf16ToUtf8Ex(pDr->bString, (pDr->bLength - RT_OFFSETOF(USB_STRING_DESCRIPTOR, bString)) / sizeof(RTUTF16),
                                      &pszResult, cbResult, NULL /*pcch*/);
             if (RT_SUCCESS(rc))
             {
@@ -186,12 +166,9 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetStringDescriptor(PDEVICE_OBJECT pDevObj
             }
             else
                 Status = STATUS_UNSUCCESSFUL;
-#endif
         }
         else
-        {
             Status = STATUS_INVALID_PARAMETER;
-        }
     }
     return Status;
 }
