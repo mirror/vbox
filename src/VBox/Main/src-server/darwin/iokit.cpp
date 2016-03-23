@@ -299,6 +299,7 @@ static bool darwinDictDupString(CFDictionaryRef DictRef, CFStringRef KeyStrRef, 
     char szBuf[512];
     if (darwinDictGetString(DictRef, KeyStrRef, szBuf, sizeof(szBuf)))
     {
+        USBLibPurgeEncoding(szBuf);
         *ppsz = RTStrDup(szBuf);
         if (*ppsz)
             return true;

@@ -126,39 +126,43 @@ USBLIB_DECL(uint64_t) USBLibHashSerial(const char *pszSerial);
  */
 DECLINLINE(size_t) USBLibPurgeEncoding(char *psz)
 {
-    size_t offSrc;
-
-    /* Beat it into valid UTF-8 encoding. */
-    RTStrPurgeEncoding(psz);
-
-    /* Look for control characters. */
-    for (offSrc = 0; ; offSrc++)
+    if (psz)
     {
-        char ch = psz[offSrc];
-        if (RT_UNLIKELY(RT_C_IS_CNTRL(ch)))
+        size_t offSrc;
+
+        /* Beat it into valid UTF-8 encoding. */
+        RTStrPurgeEncoding(psz);
+
+        /* Look for control characters. */
+        for (offSrc = 0; ; offSrc++)
         {
-            /* Found a control character! Replace tab by space and remove all others. */
-            size_t offDst = offSrc;
-            for (;; offSrc++)
+            char ch = psz[offSrc];
+            if (RT_UNLIKELY(RT_C_IS_CNTRL(ch)))
             {
-                ch = psz[offSrc];
-                if (RT_C_IS_CNTRL(ch))
+                /* Found a control character! Replace tab by space and remove all others. */
+                size_t offDst = offSrc;
+                for (;; offSrc++)
                 {
-                    if (ch == '\t')
-                        ch = ' ';
-                    else
-                        continue;
+                    ch = psz[offSrc];
+                    if (RT_C_IS_CNTRL(ch))
+                    {
+                        if (ch == '\t')
+                            ch = ' ';
+                        else
+                            continue;
+                    }
+                    psz[offDst++] = ch;
+                    if (ch == '\0')
+                        break;
                 }
-                psz[offDst++] = ch;
-                if (ch == '\0')
-                    break;
+                return offDst - 1;
             }
-            return offDst - 1;
+            if (ch == '\0')
+                break;
         }
-        if (ch == '\0')
-            break;
+        return offSrc - 1;
     }
-    return offSrc - 1;
+    return 0;
 }
 
 

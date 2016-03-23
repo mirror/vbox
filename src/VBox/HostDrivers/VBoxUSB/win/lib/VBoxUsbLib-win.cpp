@@ -313,38 +313,31 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
 
     for (; pDrList; pDrList = pDrList->pNext)
     {
-        char ** lppszString = NULL;
-        if (pConInfo->DeviceDescriptor.iManufacturer && pDrList->iDr == pConInfo->DeviceDescriptor.iManufacturer)
+        char **ppszString = NULL;
+        if (   pConInfo->DeviceDescriptor.iManufacturer
+            && pDrList->iDr == pConInfo->DeviceDescriptor.iManufacturer)
+            ppszString = (char **)&pDev->pszManufacturer;
+        else if (   pConInfo->DeviceDescriptor.iProduct
+                 && pDrList->iDr == pConInfo->DeviceDescriptor.iProduct)
+            ppszString = (char **)&pDev->pszProduct;
+        else if (   pConInfo->DeviceDescriptor.iSerialNumber
+                 && pDrList->iDr == pConInfo->DeviceDescriptor.iSerialNumber)
+            ppszString = (char **)&pDev->pszSerialNumber;
+        if (ppszString)
         {
-            lppszString = (char**)&pDev->pszManufacturer;
-        }
-        else if (pConInfo->DeviceDescriptor.iProduct && pDrList->iDr == pConInfo->DeviceDescriptor.iProduct)
-        {
-            lppszString = (char**)&pDev->pszProduct;
-        }
-        else if (pConInfo->DeviceDescriptor.iSerialNumber && pDrList->iDr == pConInfo->DeviceDescriptor.iSerialNumber)
-        {
-            lppszString = (char**)&pDev->pszSerialNumber;
-        }
+            rc = RTUtf16ToUtf8((PCRTUTF16)pDrList->StrDr.bString, ppszString);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(*ppszString);
+                USBLibPurgeEncoding(ppszString);
 
-        if (lppszString)
-        {
-/** @todo r=bird: This code is making bad asumptions that strings are sane and
- *  that stuff succeeds:
- *  http://vbox.innotek.de/pipermail/vbox-dev/2011-August/004516.html
- *
- *  */
-            rc = RTUtf16ToUtf8((PCRTUTF16)pDrList->StrDr.bString, lppszString);
-            if (RT_FAILURE(rc))
+                if (pDrList->iDr == pConInfo->DeviceDescriptor.iSerialNumber)
+                    pDev->u64SerialHash = USBLibHashSerial(pDev->pszSerialNumber);
+            }
+            else
             {
                 AssertMsgFailed(("RTUtf16ToUtf8 failed, rc (%d), resuming\n", rc));
-                continue;
-            }
-
-            Assert(lppszString);
-            if (pDrList->iDr == pConInfo->DeviceDescriptor.iSerialNumber)
-            {
-                pDev->u64SerialHash = USBLibHashSerial(pDev->pszSerialNumber);
+                *ppszString = NULL;
             }
         }
     }
