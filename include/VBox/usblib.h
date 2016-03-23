@@ -137,7 +137,7 @@ DECLINLINE(size_t) USBLibPurgeEncoding(char *psz)
         for (offSrc = 0; ; offSrc++)
         {
             char ch = psz[offSrc];
-            if (RT_UNLIKELY(RT_C_IS_CNTRL(ch)))
+            if (RT_UNLIKELY(RT_C_IS_CNTRL(ch) && ch != '\0'))
             {
                 /* Found a control character! Replace tab by space and remove all others. */
                 size_t offDst = offSrc;
