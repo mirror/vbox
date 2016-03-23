@@ -45,25 +45,25 @@ using namespace com;
 /*********************************************************************************************************************************
 *   Global Variables & defs                                                                                                         *
 *********************************************************************************************************************************/
-typedef std::vector<Bstr> 	TMachinesList;
-static volatile BOOL 		g_RunTest = TRUE;
-static RTSEMEVENT 			g_PingEevent;
+typedef std::vector<Bstr>       TMachinesList;
+static volatile bool            g_RunTest = true;
+static RTSEMEVENT               g_PingEevent;
 static volatile uint64_t 	g_Counter = 0;
-static RTTEST 				g_hTest;
-static Bstr   				tstMachineName = "tstVBoxMultipleVM test multiple VM start/stop";
+static RTTEST                   g_hTest;
+static Bstr                     tstMachineName = "tstVBoxMultipleVM test multiple VM start/stop";
 
 /* Arguments of test thread */
 struct TestThreadArgs
 {
-    /* number of machines that should be run simultaneousely */
+    /** number of machines that should be run simultaneousely */
     uint32_t machinesPackSize;
-    /* percents of VM Stop operation what should be called */
-    /* without session unlocking */
+    /** percents of VM Stop operation what should be called
+     *  without session unlocking */
     uint32_t percentsUnlok;
-    /* How much time in seconds test will be executed */
-    uint64_t executionTime;
-    /* How much machines create for the test */
-	uint32_t numberMachines;
+    /** How much time in milliseconds test will be executed */
+    uint64_t cMsExecutionTime;
+    /** How much machines create for the test */
+    uint32_t numberMachines;
 };
 
 static TestThreadArgs g_Args;
@@ -210,28 +210,28 @@ static int tstStopVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, BOO
 static int tstGetMachinesList(IVirtualBox *pVBox, uint32_t maxCount, TMachinesList& listToFill)
 {
     HRESULT rc;
-    uint32_t machinesCount = 0;
+    size_t machinesCount = 0;
     com::SafeIfaceArray<IMachine> machines;
     
     TST_COM_EXPR(pVBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines)));
 
     machinesCount = RT_MIN(machines.size(), maxCount);
-    for (uint32_t i = 0; i < machinesCount; ++i)
+    for (size_t i = 0; i < machinesCount; ++i)
     {
         // choose random index of machine
-        uint32_t idx = RTRandU32Ex(0, machines.size() - 1);
+        uint32_t idx = RTRandU32Ex(0, (uint32_t)machines.size() - 1);
         if (machines[idx])
         {
             Bstr strId;
-			Bstr machineName;
+            Bstr machineName;
             CHECK_ERROR(machines[idx], COMGETTER(Id)(strId.asOutParam()));
-			if (SUCCEEDED(rc))
-				CHECK_ERROR(machines[idx], COMGETTER(Name)(machineName.asOutParam()));
-			if(SUCCEEDED(rc))
-			{
-				if(Utf8Str(machineName).startsWith("umtvm"))
-					listToFill.push_back(strId);
-			}
+            if (SUCCEEDED(rc))
+                CHECK_ERROR(machines[idx], COMGETTER(Name)(machineName.asOutParam()));
+            if (SUCCEEDED(rc))
+            {
+                if (Utf8Str(machineName).startsWith("umtvm"))
+                    listToFill.push_back(strId);
+            }
         }
     }
 
@@ -264,7 +264,8 @@ static int tstMachinesPack(IVirtualBox *pVBox, uint32_t maxPackSize, uint32_t pe
 
     // start all machines in pack
     for (TMachinesList::iterator it = machinesList.begin(); 
-					it != machinesList.end() && g_RunTest; ++it)
+         it != machinesList.end() && g_RunTest;
+         ++it)
     {
         ComPtr<ISession> session;
         rc = session.createInprocObject(CLSID_Session);
@@ -277,7 +278,8 @@ static int tstMachinesPack(IVirtualBox *pVBox, uint32_t maxPackSize, uint32_t pe
     }
     // stop all machines in the pack
     for (TMachinesList::iterator it = machinesList.begin(); 
-					it != machinesList.end() && g_RunTest; ++it)
+	 it != machinesList.end() && g_RunTest;
+         ++it)
     {
         ComPtr<ISession> session;
         rc = session.createInprocObject(CLSID_Session);
@@ -295,58 +297,58 @@ static int tstMachinesPack(IVirtualBox *pVBox, uint32_t maxPackSize, uint32_t pe
 
 static Bstr tstMakeMachineName(int i)
 {
-	char szMachineName[32];
-	RTStrPrintf(szMachineName, sizeof(szMachineName), "umtvm%d", i);
-	return Bstr(szMachineName);
+    char szMachineName[32];
+    RTStrPrintf(szMachineName, sizeof(szMachineName), "umtvm%d", i);
+    return Bstr(szMachineName);
 }
 
 
 static int tstCreateMachines(IVirtualBox* pVBox)
 {
-	HRESULT rc;
-	// create machines for the test
-	for(uint32_t i = 0; i < g_Args.numberMachines; i++)
-	{
-		ComPtr<IMachine> ptrMachine;
-		com::SafeArray<BSTR> groups;
-		
-		Bstr machineName(tstMakeMachineName(i));
-		/** Default VM settings */
-		CHECK_ERROR(pVBox, CreateMachine(NULL,                   /** Settings */
-                                     machineName.raw(),          /** Name */
-                                     ComSafeArrayAsInParam(groups), /** Groups */
-                                     NULL,                          /** OS Type */
-                                     NULL,                          /** Create flags */
-                                     ptrMachine.asOutParam())); 
+    HRESULT rc;
+    // create machines for the test
+    for (uint32_t i = 0; i < g_Args.numberMachines; i++)
+    {
+        ComPtr<IMachine> ptrMachine;
+        com::SafeArray<BSTR> groups;
+
+        Bstr machineName(tstMakeMachineName(i));
+        /* Default VM settings */
+        CHECK_ERROR(pVBox, CreateMachine(NULL,                          /* Settings */
+                                         machineName.raw(),             /* Name */
+                                         ComSafeArrayAsInParam(groups), /* Groups */
+                                         NULL,                          /* OS Type */
+                                         NULL,                          /* Create flags */
+                                         ptrMachine.asOutParam()));
         if (SUCCEEDED(rc))
         {
             CHECK_ERROR(pVBox, RegisterMachine(ptrMachine));
             RTPrintf("Machine '%ls' created\n", machineName.raw());
         }
 
-		RTSemEventSignal(g_PingEevent);
+        RTSemEventSignal(g_PingEevent);
         RTThreadSleep(100);
-	}
-	return rc;
+    }
+    return rc;
 }
 
 
 static int tstClean(IVirtualBox* pVBox, IVirtualBoxClient* pClient)
 {
-	HRESULT rc;
+    HRESULT rc;
     MachineState_T machineState;
 
-	// stop all machines created for the test
-	for(uint32_t i = 0; i < g_Args.numberMachines; i++)
-	{
-		ComPtr<IMachine> machine;
-		ComPtr<IProgress> progress;
-		ComPtr<ISession> session;
-		SafeIfaceArray<IMedium> media;
-		
-		Bstr machineName(tstMakeMachineName(i));
-		
-		/** Delete created VM and its files */
+    // stop all machines created for the test
+    for (uint32_t i = 0; i < g_Args.numberMachines; i++)
+    {
+        ComPtr<IMachine> machine;
+        ComPtr<IProgress> progress;
+        ComPtr<ISession> session;
+        SafeIfaceArray<IMedium> media;
+
+        Bstr machineName(tstMakeMachineName(i));
+
+        /* Delete created VM and its files */
         CHECK_ERROR(pVBox, FindMachine(machineName.raw(), machine.asOutParam()));
 
         // try to stop it again if it was not stopped
@@ -368,12 +370,12 @@ static int tstClean(IVirtualBox* pVBox, IVirtualBoxClient* pClient)
             CHECK_ERROR(progress, WaitForCompletion(-1));
         if (SUCCEEDED(rc))
             RTPrintf("Machine '%ls' deleted.\n", machineName.raw());
-	}
-	return rc;
+    }
+    return rc;
 }
 
 
-DECLCALLBACK(int) tstThreadRun(RTTHREAD thread, void *pvUser)
+static DECLCALLBACK(int) tstThreadRun(RTTHREAD thread, void *pvUser)
 {
     TestThreadArgs* args = (TestThreadArgs*)pvUser;
     Assert(args != NULL);
@@ -387,7 +389,7 @@ DECLCALLBACK(int) tstThreadRun(RTTHREAD thread, void *pvUser)
         ComPtr<IVirtualBox> ptrVBox;
 
         rc = TST_COM_EXPR(ptrVBoxClient.createInprocObject(CLSID_VirtualBoxClient));
-        if(SUCCEEDED(rc))
+        if (SUCCEEDED(rc))
             rc = TST_COM_EXPR(ptrVBoxClient->COMGETTER(VirtualBox)(ptrVBox.asOutParam()));
         if (SUCCEEDED(rc))
         {
@@ -403,7 +405,7 @@ DECLCALLBACK(int) tstThreadRun(RTTHREAD thread, void *pvUser)
             tstClean(ptrVBox, ptrVBoxClient);
         }
 
-        g_RunTest = FALSE;
+        g_RunTest = false;
         RTSemEventSignal(g_PingEevent);
         RTThreadSleep(100);
 
@@ -415,167 +417,159 @@ DECLCALLBACK(int) tstThreadRun(RTTHREAD thread, void *pvUser)
 }
 
 
-int ParseArguments(int argc, char **argv, TestThreadArgs* pArgs)
+static int ParseArguments(int argc, char **argv, TestThreadArgs *pArgs)
 {
     RTGETOPTSTATE               GetState;
     RTGETOPTUNION               ValueUnion;
     static const RTGETOPTDEF    s_aOptions[] =
     {
-    { "--packsize", 'p', RTGETOPT_REQ_UINT32 }, // number of machines to start together
-    { "--lock", 's', RTGETOPT_REQ_UINT32 }, // percentage of VM sessions closed without Unlok
-    { "--time", 't', RTGETOPT_REQ_UINT64 }, // required time of load test execution, in seconds
-	{ "--machines" , 'u', RTGETOPT_REQ_UINT64}
+        { "--packsize",  'p', RTGETOPT_REQ_UINT32 }, // number of machines to start together
+        { "--lock",      's', RTGETOPT_REQ_UINT32 }, // percentage of VM sessions closed without Unlok
+        { "--time",      't', RTGETOPT_REQ_UINT64 }, // required time of load test execution, in seconds
+        { "--machines" , 'u', RTGETOPT_REQ_UINT32 }
     };
     int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
-    AssertRC(rc);
-    Assert(pArgs != NULL);
+    AssertRCReturn(rc, rc);
+    AssertPtr(pArgs);
     
     while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (rc)
         {
-        case 'p':
-        {
-            if (ValueUnion.u32 == 0)
-            {
-                RTPrintf("--packsize should be more then zero\n");
-                return VERR_INVALID_PARAMETER;
-            }
-			if(ValueUnion.u32 > 16000)
-			{
-				RTPrintf("maximum --packsize value is 16000.\n"
-                    "That means can use no more then 16000 machines for the test.\n");
-				return VERR_INVALID_PARAMETER;
-			}
-            pArgs->machinesPackSize = ValueUnion.u32;
-            break;
+            case 'p':
+                if (ValueUnion.u32 == 0)
+                {
+                    RTPrintf("--packsize should be more then zero\n");
+                    return VERR_INVALID_PARAMETER;
+                }
+                if (ValueUnion.u32 > 16000)
+                {
+                        RTPrintf("maximum --packsize value is 16000.\n"
+                                 "That means can use no more then 16000 machines for the test.\n");
+                        return VERR_INVALID_PARAMETER;
+                }
+                pArgs->machinesPackSize = ValueUnion.u32;
+                break;
+
+            case 's':
+                if (ValueUnion.u32 > 100)
+                {
+                    RTPrintf("maximum --lock value is 100.\n"
+                             "That means 100 percent of sessions should be closed without unlock.\n");
+                    return VERR_INVALID_PARAMETER;
+                }
+                pArgs->percentsUnlok = ValueUnion.u32;
+                break;
+
+            case 't':
+                pArgs->cMsExecutionTime = ValueUnion.u64 * 1000;
+                break;
+
+            case 'u':
+                if (ValueUnion.u32 > 16000)
+                {
+                    RTPrintf("maximum --machines value is 16000.\n"
+                             "That means can make no more then 16000 machines for the test.\n");
+                    return VERR_INVALID_PARAMETER;
+                }
+                if (ValueUnion.u32 < pArgs->machinesPackSize)
+                {
+                    RTPrintf("--machines value should be larger then --packsize value.\n");
+                    return VERR_INVALID_PARAMETER;
+                }
+                pArgs->numberMachines = ValueUnion.u32;
+                break;
+
+            default:
+                RTGetOptPrintError(rc, &ValueUnion);
+                return rc;
         }
-        case 's':
-        {
-            if (ValueUnion.u32 > 100)
-            {
-                RTPrintf("maximum --lock value is 100.\n"
-                    "That means 100 percent of sessions should be closed without unlock.\n");
-                return VERR_INVALID_PARAMETER;
-            }
-            pArgs->percentsUnlok = ValueUnion.u32;
-            break;
-        }
-        case 't':
-        {
-            pArgs->executionTime = ValueUnion.u64 * 1000;
-            break;
-        }
-		case 'u':
-		{
-			if (ValueUnion.u32 > 16000)
-            {
-                RTPrintf("maximum --machines value is 16000.\n"
-                    "That means can make no more then 16000 machines for the test.\n");
-                return VERR_INVALID_PARAMETER;
-            }
-			if (ValueUnion.u32 < pArgs->machinesPackSize)
-			{
-				RTPrintf("--machines value should be larger then --packsize value.\n");
-				return VERR_INVALID_PARAMETER;
-			}
-			pArgs->numberMachines = ValueUnion.u32;
-			break;
-		}
-        default:
-        {
-            RTPrintf("Invalid arguments.\n");
-            return rc;
-        }
-		}
     }
     return rc;
 }
 
 
 /**
-*   Examples:
-*   - tstVBoxClientWatcherLoad --packsize 500 --lock 10 --time 14400 --machines 4000
-*		It will create 4000 VMs with names "utmvm0"..."utmvm3999"
-*       It will start 500 random VMs together, stop them, 
-*       without closing their session with probability 10%,
-*       will repeat this during 4 hours.
-* 		After test it will delete all "utmvm..." machines.
-*
-*   - tstVBoxClientWatcherLoad --packsize 1 --lock 30 --time 3600 --machines 1000
-* 		It will create 1000 VMs with names "utmvm0"..."utmvm999"
-*       It will start random VM - stop them, 
-*       without closing their session with probability 30%,
-*       will repeat this during 30 minutes.
-* 		After test it will delete all "utmvm..." machines.
-*/
+ *
+ * Examples:
+ *   - tstVBoxClientWatcherLoad --packsize 500 --lock 10 --time 14400 --machines 4000
+ *		It will create 4000 VMs with names "utmvm0"..."utmvm3999"
+ *       It will start 500 random VMs together, stop them,
+ *       without closing their session with probability 10%,
+ *       will repeat this during 4 hours.
+ * 		After test it will delete all "utmvm..." machines.
+ *
+ *   - tstVBoxClientWatcherLoad --packsize 1 --lock 30 --time 3600 --machines 1000
+ * 		It will create 1000 VMs with names "utmvm0"..."utmvm999"
+ *       It will start random VM - stop them,
+ *       without closing their session with probability 30%,
+ *       will repeat this during 30 minutes.
+ * 		After test it will delete all "utmvm..." machines.
+ */
 int main(int argc, char **argv)
 {
     RTEXITCODE rcExit = RTTestInitAndCreate("tstVBoxMultipleVM", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     SUPR3Init(NULL);
-	com::Initialize(); 
+    com::Initialize();
     RTTestBanner(g_hTest);
+
     RTPrintf("Initializing ...\n");
     int rc = RTSemEventCreate(&g_PingEevent);
     AssertRC(rc);
 
     g_Args.machinesPackSize = 100;
     g_Args.percentsUnlok = 10;
-    g_Args.executionTime = 3 * 60 * 1000; // 3 minutes of test execution by default
-	g_Args.numberMachines = 200;
+    g_Args.cMsExecutionTime = 3*RT_MS_1MIN;
+    g_Args.numberMachines = 200;
     rc = ParseArguments(argc, argv, &g_Args);
     if (RT_FAILURE(rc))
-    {
         return RTTestSkipAndDestroy(g_hTest, "Invalid arguments.\n");
-    }
-    RTPrintf("Arguments packSize = %d, percentUnlok = %d, time = %d.\n", 
-        g_Args.machinesPackSize,
-        g_Args.percentsUnlok,
-        g_Args.executionTime);
-		
-    RTTHREAD Thread;
-    rc = RTThreadCreate(&Thread, tstThreadRun, (void *)&g_Args,
-        0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "tstThreadRun");
-    AssertRC(rc);
-    
-    uint64_t start = RTTimeMilliTS();
-    while (RTTimeMilliTS() - start < g_Args.executionTime && g_RunTest)
-    {
-        // check that test thread didn't hang and call us periodically
-        // allowed 30 seconds for operation - start or stop VM
-        rc = RTSemEventWait(g_PingEevent, 3 * 60 * 1000);
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_TIMEOUT)
-            {
-                // seems that test thread hungs - alert
-                RTTestFailed(g_hTest, "Test failed - one of operations hunged. VBoxSvc deadlock detected.\n");
-				com::Shutdown();
-                return RTTestSummaryAndDestroy(g_hTest);
-            }
-            AssertRC(rc);
-        }
-    }
 
-    RTPrintf("Finishing...\n");
-	
-    // finish test thread 
-    g_RunTest = FALSE;
-    // wait it for finish
-    RTThreadWait(Thread, RT_INDEFINITE_WAIT, &rc);
+    RTPrintf("Arguments packSize = %d, percentUnlok = %d, time = %lld.\n",
+             g_Args.machinesPackSize, g_Args.percentsUnlok, g_Args.cMsExecutionTime);
+		
+    RTTHREAD hThread;
+    rc = RTThreadCreate(&hThread, tstThreadRun, (void *)&g_Args,
+                        0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "tstThreadRun");
+    if (RT_SUCCESS(rc))
+    {
+        AssertRC(rc);
+
+        uint64_t msStart = RTTimeMilliTS();
+        while (RTTimeMilliTS() - msStart < g_Args.cMsExecutionTime && g_RunTest)
+        {
+            // check that test thread didn't hang and call us periodically
+            // allowed 30 seconds for operation - msStart or stop VM
+            rc = RTSemEventWait(g_PingEevent, 3 * 60 * 1000);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_TIMEOUT)
+                {
+                    // seems that test thread hungs - alert
+                    RTTestFailed(g_hTest, "Test failed - one of operations hunged. VBoxSvc deadlock detected.\n");
+                    com::Shutdown();
+                    return RTTestSummaryAndDestroy(g_hTest);
+                }
+                AssertRC(rc);
+            }
+        }
+
+        RTPrintf("Finishing...\n");
+
+        // finish test thread
+        g_RunTest = false;
+        // wait it for finish
+        RTThreadWait(hThread, RT_INDEFINITE_WAIT, &rc);
+    }
     RTSemEventDestroy(g_PingEevent);
 		
-	com::Shutdown();
+    com::Shutdown();
     if (RT_FAILURE(rc))
-    {
         RTTestFailed(g_hTest, "Test failed.\n");
-        return RTTestSummaryAndDestroy(g_hTest);
-    }
     else
-    {
         RTTestPassed(g_hTest, "Test finished.\n");
-    }
     return RTTestSummaryAndDestroy(g_hTest);
 }
+
