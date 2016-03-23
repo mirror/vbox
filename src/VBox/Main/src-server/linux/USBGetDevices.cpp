@@ -74,50 +74,6 @@ typedef struct USBDeviceInfo
 } USBDeviceInfo;
 
 
-
-/**
- * Purge string of non-UTF-8 encodings and control characters.
- *
- * @returns String length (excluding terminator).
- * @param   psz                 The string to purge.
- */
-static size_t usbPurgeEncoding(char *psz)
-{
-    /* Beat it into valid UTF-8 encoding. */
-    RTStrPurgeEncoding(psz);
-
-    /* Look for control characters. */
-    size_t offSrc;
-    for (offSrc = 0; ; offSrc++)
-    {
-        char ch = psz[offSrc];
-        if (RT_UNLIKELY(RT_C_IS_CNTRL(ch)))
-        {
-            /* Found a control character! Replace tab by space and remove all others. */
-            size_t offDst = offSrc;
-            for (;; offSrc++)
-            {
-                ch = psz[offSrc];
-                if (RT_C_IS_CNTRL(ch))
-                {
-                    if (ch == '\t')
-                        ch = ' ';
-                    else
-                        continue;
-                }
-                psz[offDst++] = ch;
-                if (ch == '\0')
-                    break;
-            }
-            return offDst - 1;
-        }
-        if (ch == '\0')
-            break;
-    }
-    return offSrc - 1;
-}
-
-
 /**
  * Does some extra checks to improve the detected device state.
  *
@@ -441,7 +397,7 @@ static int usbfsReadStr(const char *pszValue, const char **ppsz)
     psz = RTStrDup(pszValue);
     if (psz)
     {
-        usbPurgeEncoding(psz);
+        USBLibPurgeEncoding(psz);
         *ppsz = psz;
         return VINF_SUCCESS;
     }
@@ -1330,14 +1286,14 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
     cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/product", pszSysfsPath);
     if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
     {
-        usbPurgeEncoding(szBuf);
+        USBLibPurgeEncoding(szBuf);
         pDev->pszProduct = RTStrDup(szBuf);
     }
 
     cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/serial", pszSysfsPath);
     if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
     {
-        usbPurgeEncoding(szBuf);
+        USBLibPurgeEncoding(szBuf);
         pDev->pszSerialNumber = RTStrDup(szBuf);
         pDev->u64SerialHash = USBLibHashSerial(szBuf);
     }
@@ -1345,7 +1301,7 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
     cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/manufacturer", pszSysfsPath);
     if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
     {
-        usbPurgeEncoding(szBuf);
+        USBLibPurgeEncoding(szBuf);
         pDev->pszManufacturer = RTStrDup(szBuf);
     }
 

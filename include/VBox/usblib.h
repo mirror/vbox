@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +30,8 @@
 #include <VBox/types.h>
 #include <VBox/usb.h>
 #include <VBox/usbfilter.h>
+#include <iprt/ctype.h>
+#include <iprt/string.h>
 
 #ifdef RT_OS_WINDOWS
 # include <VBox/usblib-win.h>
@@ -111,6 +113,54 @@ USBLIB_DECL(void) USBLibRemoveFilter(void *pvId);
 USBLIB_DECL(uint64_t) USBLibHashSerial(const char *pszSerial);
 
 #endif /* IN_RING3 */
+
+/**
+ * Purge string of non-UTF-8 encodings and control characters.
+ *
+ * Control characters creates problems when presented to the user and currently
+ * also when used in XML settings.  So, we must purge them in the USB vendor,
+ * product, and serial number strings.
+ *
+ * @returns String length (excluding terminator).
+ * @param   psz                 The string to purge.
+ */
+DECLINLINE(size_t) USBLIB_DECL USBLibPurgeEncoding(char *psz)
+{
+    size_t offSrc;
+
+    /* Beat it into valid UTF-8 encoding. */
+    RTStrPurgeEncoding(psz);
+
+    /* Look for control characters. */
+    for (offSrc = 0; ; offSrc++)
+    {
+        char ch = psz[offSrc];
+        if (RT_UNLIKELY(RT_C_IS_CNTRL(ch)))
+        {
+            /* Found a control character! Replace tab by space and remove all others. */
+            size_t offDst = offSrc;
+            for (;; offSrc++)
+            {
+                ch = psz[offSrc];
+                if (RT_C_IS_CNTRL(ch))
+                {
+                    if (ch == '\t')
+                        ch = ' ';
+                    else
+                        continue;
+                }
+                psz[offDst++] = ch;
+                if (ch == '\0')
+                    break;
+            }
+            return offDst - 1;
+        }
+        if (ch == '\0')
+            break;
+    }
+    return offSrc - 1;
+}
+
 
 /** @} */
 RT_C_DECLS_END
