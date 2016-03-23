@@ -142,6 +142,49 @@ static int usbReadSkipSuffix(char **ppszNext)
 
 
 /**
+ * Purge string of non-UTF-8 encodings and control characters.
+ *
+ * @returns String length (excluding terminator).
+ * @param   psz                 The string to purge.
+ */
+static size_t usbPurgeEncoding(char *psz)
+{
+    /* Beat it into valid UTF-8 encoding. */
+    RTStrPurgeEncoding(psz);
+
+    /* Look for control characters. */
+    size_t offSrc;
+    for (offSrc = 0; ; offSrc++)
+    {
+        char ch = psz[offSrc];
+        if (RT_UNLIKELY(RT_C_IS_CNTRL(ch)))
+        {
+            /* Found a control character! Replace tab by space and remove all others. */
+            size_t offDst = offSrc;
+            for (;; offSrc++)
+            {
+                ch = psz[offSrc];
+                if (RT_C_IS_CNTRL(ch))
+                {
+                    if (ch == '\t')
+                        ch = ' ';
+                    else
+                        continue;
+                }
+                psz[offDst++] = ch;
+                if (ch == '\0')
+                    break;
+            }
+            return offDst - 1;
+        }
+        if (ch == '\0')
+            break;
+    }
+    return offSrc - 1;
+}
+
+
+/**
  * Reads a USB number returning the number and the position of the next character to parse.
  */
 static int usbReadNum(const char *pszValue, unsigned uBase, uint32_t u32Mask, PCUSBSUFF paSuffs, void *pvNum, char **ppszNext)
@@ -327,7 +370,7 @@ static int usbReadStr(const char *pszValue, const char **ppsz)
     psz = RTStrDup(pszValue);
     if (psz)
     {
-        RTStrPurgeEncoding(psz);
+        usbPurgeEncoding(psz);
         *ppsz = psz;
         return VINF_SUCCESS;
     }
@@ -1304,7 +1347,7 @@ static void fillInDeviceFromSysfs(USBDEVICE *Dev, USBDeviceInfo *pInfo)
                                       pszSysfsPath);
     if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
     {
-        RTStrPurgeEncoding(szBuf);
+        usbPurgeEncoding(szBuf);
         Dev->pszProduct = RTStrDup(szBuf);
     }
 
@@ -1312,7 +1355,7 @@ static void fillInDeviceFromSysfs(USBDEVICE *Dev, USBDeviceInfo *pInfo)
                                       pszSysfsPath);
     if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
     {
-        RTStrPurgeEncoding(szBuf);
+        usbPurgeEncoding(szBuf);
         Dev->pszSerialNumber = RTStrDup(szBuf);
         Dev->u64SerialHash = USBLibHashSerial(szBuf);
     }
@@ -1321,7 +1364,7 @@ static void fillInDeviceFromSysfs(USBDEVICE *Dev, USBDeviceInfo *pInfo)
                                       pszSysfsPath);
     if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
     {
-        RTStrPurgeEncoding(szBuf);
+        usbPurgeEncoding(szBuf);
         Dev->pszManufacturer = RTStrDup(szBuf);
     }
 
