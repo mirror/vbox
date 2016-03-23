@@ -140,7 +140,7 @@ const char* USBDeviceFilter::i_describeUSBFilterIdx(USBFILTERIDX aIdx)
                 ||  strchr(pcszValue, '?')
                 /* || strchr (psz, '[') - later */
                 )
-                vrc = USBFilterSetStringPattern(aFilter, aIdx, pcszValue, true /*fMustBePresent*/, false /*fPurge*/);
+                vrc = USBFilterSetStringPattern(aFilter, aIdx, pcszValue, true /*fMustBePresent*/);
             else
                 vrc = USBFilterSetStringExact(aFilter, aIdx, pcszValue, true /*fMustBePresent*/, false /*fPurge*/);
         }
