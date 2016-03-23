@@ -212,7 +212,7 @@ static const struct file_operations vbox_fops =
 
 static struct drm_driver driver =
 {
-    .driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ,
+    .driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ | DRIVER_IRQ_SHARED,
     .dev_priv_size = 0,
 
     .load = vbox_driver_load,
