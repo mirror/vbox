@@ -632,21 +632,62 @@ EOF
 #define RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(a_TypeNm, a_DeclMacro, a_ImplExtNm) int  a_ImplExtNm##_Init(P##a_TypeNm pThis, PCRTASN1ALLOCATORVTABLE pAllocator); int  a_ImplExtNm##_Clone(P##a_TypeNm pThis, PC##a_TypeNm) pSrc, PCRTASN1ALLOCATORVTABLE pAllocator); void a_ImplExtNm##_Delete(P##a_TypeNm pThis); int  a_ImplExtNm##_Enum(P##a_TypeNm pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser); int  a_ImplExtNm##_Compare(PC##a_TypeNm) pLeft, PC##a_TypeNm pRight); int  a_ImplExtNm##_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, P##a_TypeNm pThis, const char *pszErrorTag); int  a_ImplExtNm##_CheckSanity(PC##a_TypeNm pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 #define RTASN1TYPE_STANDARD_PROTOTYPES(a_TypeNm, a_DeclMacro, a_ImplExtNm, a_Asn1CoreNm) inline PRTASN1CORE a_ImplExtNm##_GetAsn1Core(PC##a_TypeNm pThis) { return (PRTASN1CORE)&pThis->a_Asn1CoreNm; } inline bool a_ImplExtNm##_IsPresent(PC##a_TypeNm pThis) { return pThis && RTASN1CORE_IS_PRESENT(&pThis->a_Asn1CoreNm); } RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(a_TypeNm, a_DeclMacro, a_ImplExtNm)
 
+#define BS3_DECL(type)                  type
+#define BS3_DECL_CALLBACK(type)         type
+#define TMPL_NM(name)                   name
+#define BS3_CMN_NM(name)                name
+#define BS3_DATA_NM(name)               name
+#define BS3_FAR
+#define BS3_FAR_CODE
+#define BS3_FAR_DATA
+#define BS3_NEAR
+#define BS3_NEAR_CODE
 #define BS3_MODE_EXPAND_PROTOTYPES(a_RetType, a_BaseFnNm, a_Parameters) \
-    a_RetType a_BaseFnNm##_mmm    a_Parameters; \
-    a_RetType a_BaseFnNm##_rm     a_Parameters; \
-    a_RetType a_BaseFnNm##_pe16   a_Parameters; \
-    a_RetType a_BaseFnNm##_pe32   a_Parameters; \
-    a_RetType a_BaseFnNm##_pev86  a_Parameters; \
-    a_RetType a_BaseFnNm##_pp16   a_Parameters; \
-    a_RetType a_BaseFnNm##_pp32   a_Parameters; \
-    a_RetType a_BaseFnNm##_ppv86  a_Parameters; \
-    a_RetType a_BaseFnNm##_pae16  a_Parameters; \
-    a_RetType a_BaseFnNm##_pae32  a_Parameters; \
-    a_RetType a_BaseFnNm##_paev86 a_Parameters; \
-    a_RetType a_BaseFnNm##_lm16   a_Parameters; \
-    a_RetType a_BaseFnNm##_lm32   a_Parameters; \
-    a_RetType a_BaseFnNm##_lm64   a_Parameters
+    a_RetType  a_BaseFnNm##_rm        a_Parameters; \
+    a_RetType  a_BaseFnNm##_pe16      a_Parameters; \
+    a_RetType  a_BaseFnNm##_pe16_32   a_Parameters; \
+    a_RetType  a_BaseFnNm##_pe16_v86  a_Parameters; \
+    a_RetType  a_BaseFnNm##_pe32      a_Parameters; \
+    a_RetType  a_BaseFnNm##_pe32_16   a_Parameters; \
+    a_RetType  a_BaseFnNm##_pev86     a_Parameters; \
+    a_RetType  a_BaseFnNm##_pp16      a_Parameters; \
+    a_RetType  a_BaseFnNm##_pp16_32   a_Parameters; \
+    a_RetType  a_BaseFnNm##_pp16_v86  a_Parameters; \
+    a_RetType  a_BaseFnNm##_pp32      a_Parameters; \
+    a_RetType  a_BaseFnNm##_pp32_16   a_Parameters; \
+    a_RetType  a_BaseFnNm##_ppv86     a_Parameters; \
+    a_RetType  a_BaseFnNm##_pae16     a_Parameters; \
+    a_RetType  a_BaseFnNm##_pae16_16  a_Parameters; \
+    a_RetType  a_BaseFnNm##_pae16_v86 a_Parameters; \
+    a_RetType  a_BaseFnNm##_pae32     a_Parameters; \
+    a_RetType  a_BaseFnNm##_pae32_16  a_Parameters; \
+    a_RetType  a_BaseFnNm##_paev86    a_Parameters; \
+    a_RetType  a_BaseFnNm##_lm16      a_Parameters; \
+    a_RetType  a_BaseFnNm##_lm32      a_Parameters; \
+    a_RetType  a_BaseFnNm##_lm64      a_Parameters
+#define BS3_MODE_EXPAND_EXTERN_DATA16(a_VarType, a_VarName, a_Suffix) \
+    extern a_VarType a_VarName##_rm        a_Suffix; \
+    extern a_VarType a_VarName##_pe16      a_Suffix; \
+    extern a_VarType a_VarName##_pe16_32   a_Suffix; \
+    extern a_VarType a_VarName##_pe16_v86  a_Suffix; \
+    extern a_VarType a_VarName##_pe32      a_Suffix; \
+    extern a_VarType a_VarName##_pe32_16   a_Suffix; \
+    extern a_VarType a_VarName##_pev86     a_Suffix; \
+    extern a_VarType a_VarName##_pp16      a_Suffix; \
+    extern a_VarType a_VarName##_pp16_32   a_Suffix; \
+    extern a_VarType a_VarName##_pp16_v86  a_Suffix; \
+    extern a_VarType a_VarName##_pp32      a_Suffix; \
+    extern a_VarType a_VarName##_pp32_16   a_Suffix; \
+    extern a_VarType a_VarName##_ppv86     a_Suffix; \
+    extern a_VarType a_VarName##_pae16     a_Suffix; \
+    extern a_VarType a_VarName##_pae16_32  a_Suffix; \
+    extern a_VarType a_VarName##_pae16_v86 a_Suffix; \
+    extern a_VarType a_VarName##_pae32     a_Suffix; \
+    extern a_VarType a_VarName##_pae32_16  a_Suffix; \
+    extern a_VarType a_VarName##_paev86    a_Suffix; \
+    extern a_VarType a_VarName##_lm16      a_Suffix; \
+    extern a_VarType a_VarName##_lm32      a_Suffix; \
+    extern a_VarType a_VarName##_lm64      a_Suffix
 
 EOF
 
