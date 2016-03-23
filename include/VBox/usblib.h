@@ -124,7 +124,7 @@ USBLIB_DECL(uint64_t) USBLibHashSerial(const char *pszSerial);
  * @returns String length (excluding terminator).
  * @param   psz                 The string to purge.
  */
-DECLINLINE(size_t) USBLIB_DECL USBLibPurgeEncoding(char *psz)
+DECLINLINE(size_t) USBLibPurgeEncoding(char *psz)
 {
     size_t offSrc;
 
