@@ -5230,12 +5230,23 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
         return VERR_INVALID_PARAMETER;
     }
 
+    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertRC(rc);
+
+    /* This method only works if the VGA device is in a VBE mode. */
+    if ((pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) == 0)
+    {
+        PDMCritSectLeave(&pThis->CritSect);
+        return VERR_INVALID_STATE;
+    }
+
     /* Choose the rendering function. */
     switch (cSrcBitsPerPixel)
     {
         default:
         case 0:
             /* Nothing to do, just return. */
+            PDMCritSectLeave(&pThis->CritSect);
             return VINF_SUCCESS;
         case 8:
             v = VGA_DRAW_LINE8;
@@ -5252,16 +5263,6 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
         case 32:
             v = VGA_DRAW_LINE32;
             break;
-    }
-
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
-
-    /* This method only works if the VGA device is in a VBE mode. */
-    if ((pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) == 0)
-    {
-        PDMCritSectLeave(&pThis->CritSect);
-        return VERR_INVALID_STATE;
     }
 
     vga_draw_line = vga_draw_line_table[v * 4 + get_depth_index(cDstBitsPerPixel)];
