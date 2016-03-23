@@ -155,12 +155,12 @@ DECLINLINE(size_t) USBLibPurgeEncoding(char *psz)
                     if (ch == '\0')
                         break;
                 }
-                return offDst - 1;
+                return offDst;
             }
             if (ch == '\0')
                 break;
         }
-        return offSrc - 1;
+        return offSrc;
     }
     return 0;
 }
