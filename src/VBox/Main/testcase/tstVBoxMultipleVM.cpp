@@ -48,9 +48,8 @@ using namespace com;
 typedef std::vector<Bstr>       TMachinesList;
 static volatile bool            g_RunTest = true;
 static RTSEMEVENT               g_PingEevent;
-static volatile uint64_t 	g_Counter = 0;
+static volatile uint64_t        g_Counter = 0;
 static RTTEST                   g_hTest;
-static Bstr                     tstMachineName = "tstVBoxMultipleVM test multiple VM start/stop";
 
 /* Arguments of test thread */
 struct TestThreadArgs
@@ -85,7 +84,7 @@ static HRESULT tstComExpr(HRESULT hrc, const char *pszOperation, int iLine)
 #define TST_COM_EXPR(expr) tstComExpr(expr, #expr, __LINE__)
 
 
-static int tstStartVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, BOOL skipUnlok)
+static int tstStartVM(IVirtualBox *pVBox, ISession *pSession, Bstr machineID, bool fSkipUnlock)
 {
     HRESULT rc;
     ComPtr<IProgress> progress;
@@ -97,7 +96,7 @@ static int tstStartVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, BO
         rc = TST_COM_EXPR(machine->COMGETTER(Name)(machineName.asOutParam()));
     if(SUCCEEDED(rc))
         rc = machine->LaunchVMProcess(pSession, Bstr("headless").raw(),
-            Bstr("").raw(), progress.asOutParam());
+                                      Bstr("").raw(), progress.asOutParam());
     if (SUCCEEDED(rc) && !progress.isNull())
     {
         CHECK_ERROR(progress, WaitForCompletion(-1));
@@ -118,26 +117,20 @@ static int tstStartVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, BO
                         RTPrintf("Start VM '%ls' failed.Error: %ls.\n", machineName.raw(), info.getText().raw());
                     }
                     else
-                    {
                         RTPrintf("VM '%ls' started.\n", machineName.raw());
-                    }
                 }
             }
         }
-        if (!skipUnlok)
-        {
+        if (!fSkipUnlock)
             pSession->UnlockMachine();
-        }
         else
-        {
             RTPrintf("Session unlock skipped.\n");
-        }
     }
     return rc;
 }
 
 
-static int tstStopVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, BOOL skipUnlok)
+static int tstStopVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, bool fSkipUnlock)
 {
     HRESULT rc;
     MachineState_T machineState;
@@ -150,7 +143,7 @@ static int tstStopVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, BOO
     if(SUCCEEDED(rc))
         rc = TST_COM_EXPR(machine->COMGETTER(State)(&machineState));
     // check that machine is in running state
-    if (machineState == MachineState_Running
+    if (   machineState == MachineState_Running
         || machineState == MachineState_Paused)
     {
         ComPtr<IConsole> console;
@@ -189,14 +182,10 @@ static int tstStopVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, BOO
                     }
                 }
             }
-            if (!skipUnlok)
-            {
+            if (!fSkipUnlock)
                 pSession->UnlockMachine();
-            }
             else
-            {
                 RTPrintf("Session unlock skipped.\n");
-            }
         }
     }
     return rc;
@@ -204,10 +193,11 @@ static int tstStopVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, BOO
  
 
 /**
-*   Get random maxCount machines from list of existing VMs
-*   Note: can return less then maxCount machines
-*/
-static int tstGetMachinesList(IVirtualBox *pVBox, uint32_t maxCount, TMachinesList& listToFill)
+ * Get random @a maxCount machines from list of existing VMs.
+ *
+ * @note Can return less then maxCount machines.
+ */
+static int tstGetMachinesList(IVirtualBox *pVBox, uint32_t maxCount, TMachinesList &listToFill)
 {
     HRESULT rc;
     size_t machinesCount = 0;
@@ -222,15 +212,15 @@ static int tstGetMachinesList(IVirtualBox *pVBox, uint32_t maxCount, TMachinesLi
         uint32_t idx = RTRandU32Ex(0, (uint32_t)machines.size() - 1);
         if (machines[idx])
         {
-            Bstr strId;
+            Bstr bstrId;
             Bstr machineName;
-            CHECK_ERROR(machines[idx], COMGETTER(Id)(strId.asOutParam()));
+            CHECK_ERROR(machines[idx], COMGETTER(Id)(bstrId.asOutParam()));
             if (SUCCEEDED(rc))
                 CHECK_ERROR(machines[idx], COMGETTER(Name)(machineName.asOutParam()));
             if (SUCCEEDED(rc))
             {
                 if (Utf8Str(machineName).startsWith("umtvm"))
-                    listToFill.push_back(strId);
+                    listToFill.push_back(bstrId);
             }
         }
     }
@@ -278,7 +268,7 @@ static int tstMachinesPack(IVirtualBox *pVBox, uint32_t maxPackSize, uint32_t pe
     }
     // stop all machines in the pack
     for (TMachinesList::iterator it = machinesList.begin(); 
-	 it != machinesList.end() && g_RunTest;
+         it != machinesList.end() && g_RunTest;
          ++it)
     {
         ComPtr<ISession> session;
@@ -303,7 +293,7 @@ static Bstr tstMakeMachineName(int i)
 }
 
 
-static int tstCreateMachines(IVirtualBox* pVBox)
+static int tstCreateMachines(IVirtualBox *pVBox)
 {
     HRESULT rc;
     // create machines for the test
@@ -333,7 +323,7 @@ static int tstCreateMachines(IVirtualBox* pVBox)
 }
 
 
-static int tstClean(IVirtualBox* pVBox, IVirtualBoxClient* pClient)
+static int tstClean(IVirtualBox *pVBox, IVirtualBoxClient *pClient)
 {
     HRESULT rc;
     MachineState_T machineState;
@@ -493,18 +483,16 @@ static int ParseArguments(int argc, char **argv, TestThreadArgs *pArgs)
  *
  * Examples:
  *   - tstVBoxClientWatcherLoad --packsize 500 --lock 10 --time 14400 --machines 4000
- *		It will create 4000 VMs with names "utmvm0"..."utmvm3999"
- *       It will start 500 random VMs together, stop them,
- *       without closing their session with probability 10%,
- *       will repeat this during 4 hours.
- * 		After test it will delete all "utmvm..." machines.
+ *     It will create 4000 VMs with names "utmvm0"..."utmvm3999".  It will start
+ *     500 random VMs together, stop them, without closing their session with
+ *     probability 10%, will repeat this over 4 hours.  After test it will
+ *     delete all "utmvm..." machines.
  *
  *   - tstVBoxClientWatcherLoad --packsize 1 --lock 30 --time 3600 --machines 1000
- * 		It will create 1000 VMs with names "utmvm0"..."utmvm999"
- *       It will start random VM - stop them,
- *       without closing their session with probability 30%,
- *       will repeat this during 30 minutes.
- * 		After test it will delete all "utmvm..." machines.
+ *     It will create 1000 VMs with names "utmvm0"..."utmvm999".  It will start
+ *     random VM - stop them, without closing their session with probability
+ *     30%, will repeat this over 30 minutes.  After test it will delete all
+ *     "utmvm..." machines.
  */
 int main(int argc, char **argv)
 {
@@ -529,7 +517,7 @@ int main(int argc, char **argv)
 
     RTPrintf("Arguments packSize = %d, percentUnlok = %d, time = %lld.\n",
              g_Args.machinesPackSize, g_Args.percentsUnlok, g_Args.cMsExecutionTime);
-		
+
     RTTHREAD hThread;
     rc = RTThreadCreate(&hThread, tstThreadRun, (void *)&g_Args,
                         0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "tstThreadRun");
@@ -564,7 +552,7 @@ int main(int argc, char **argv)
         RTThreadWait(hThread, RT_INDEFINITE_WAIT, &rc);
     }
     RTSemEventDestroy(g_PingEevent);
-		
+
     com::Shutdown();
     if (RT_FAILURE(rc))
         RTTestFailed(g_hTest, "Test failed.\n");
