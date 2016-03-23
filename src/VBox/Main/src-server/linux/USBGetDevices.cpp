@@ -1310,7 +1310,7 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
         if (RT_FAILURE(rc))
         {
             pDev->enmState = USBDEVICESTATE_UNSUPPORTED;
-            pDev->bcdUSB   = UINT16_MAX
+            pDev->bcdUSB   = UINT16_MAX;
         }
     }
 
