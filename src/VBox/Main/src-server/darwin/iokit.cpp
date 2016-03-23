@@ -43,6 +43,7 @@
 
 #include <VBox/log.h>
 #include <VBox/err.h>
+#include <VBox/usblib.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/process.h>
