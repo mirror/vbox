@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
+#define VBOX_USB_WITH_USBFS
 #include "USBGetDevices.h"
 
 #include <VBox/err.h>
@@ -117,6 +117,133 @@ static size_t usbPurgeEncoding(char *psz)
     return offSrc - 1;
 }
 
+
+/**
+ * Does some extra checks to improve the detected device state.
+ *
+ * We cannot distinguish between USED_BY_HOST_CAPTURABLE and
+ * USED_BY_GUEST, HELD_BY_PROXY all that well and it shouldn't be
+ * necessary either.
+ *
+ * We will however, distinguish between the device we have permissions
+ * to open and those we don't. This is necessary for two reasons.
+ *
+ * Firstly, because it's futile to even attempt opening a device which we
+ * don't have access to, it only serves to confuse the user. (That said,
+ * it might also be a bit confusing for the user to see that a USB device
+ * is grayed out with no further explanation, and no way of generating an
+ * error hinting at why this is the case.)
+ *
+ * Secondly and more importantly, we're racing against udevd with respect
+ * to permissions and group settings on newly plugged devices. When we
+ * detect a new device that we cannot access we will poll on it for a few
+ * seconds to give udevd time to fix it. The polling is actually triggered
+ * in the 'new device' case in the compare loop.
+ *
+ * The USBDEVICESTATE_USED_BY_HOST state is only used for this no-access
+ * case, while USBDEVICESTATE_UNSUPPORTED is only used in the 'hub' case.
+ * When it's neither of these, we set USBDEVICESTATE_UNUSED or
+ * USBDEVICESTATE_USED_BY_HOST_CAPTURABLE depending on whether there is
+ * a driver associated with any of the interfaces.
+ *
+ * All except the access check and a special idVendor == 0 precaution
+ * is handled at parse time.
+ *
+ * @returns The adjusted state.
+ * @param   pDevice     The device.
+ */
+static USBDEVICESTATE usbDeterminState(PCUSBDEVICE pDevice)
+{
+    /*
+     * If it's already flagged as unsupported, there is nothing to do.
+     */
+    USBDEVICESTATE enmState = pDevice->enmState;
+    if (enmState == USBDEVICESTATE_UNSUPPORTED)
+        return USBDEVICESTATE_UNSUPPORTED;
+
+    /*
+     * Root hubs and similar doesn't have any vendor id, just
+     * refuse these device.
+     */
+    if (!pDevice->idVendor)
+        return USBDEVICESTATE_UNSUPPORTED;
+
+    /*
+     * Check if we've got access to the device, if we haven't flag
+     * it as used-by-host.
+     */
+#ifndef VBOX_USB_WITH_SYSFS
+    const char *pszAddress = pDevice->pszAddress;
+#else
+    if (pDevice->pszAddress == NULL)
+        /* We can't do much with the device without an address. */
+        return USBDEVICESTATE_UNSUPPORTED;
+    const char *pszAddress = strstr(pDevice->pszAddress, "//device:");
+    pszAddress = pszAddress != NULL
+               ? pszAddress + sizeof("//device:") - 1
+               : pDevice->pszAddress;
+#endif
+    if (    access(pszAddress, R_OK | W_OK) != 0
+        &&  errno == EACCES)
+        return USBDEVICESTATE_USED_BY_HOST;
+
+#ifdef VBOX_USB_WITH_SYSFS
+    /**
+     * @todo Check that any other essential fields are present and mark as
+     * invalid if not.  Particularly to catch the case where the device was
+     * unplugged while we were reading in its properties.
+     */
+#endif
+
+    return enmState;
+}
+
+
+/**
+ * Dumps a USBDEVICE structure to the log using LogLevel 3.
+ * @param   pDev        The structure to log.
+ * @todo    This is really common code.
+ */
+static void usbLogDevice(PUSBDEVICE pDev)
+{
+    NOREF(pDev);
+    if (LogIs3Enabled())
+    {
+        Log3(("USB device:\n"));
+        Log3(("Product: %s (%x)\n", pDev->pszProduct, pDev->idProduct));
+        Log3(("Manufacturer: %s (Vendor ID %x)\n", pDev->pszManufacturer, pDev->idVendor));
+        Log3(("Serial number: %s (%llx)\n", pDev->pszSerialNumber, pDev->u64SerialHash));
+        Log3(("Device revision: %d\n", pDev->bcdDevice));
+        Log3(("Device class: %x\n", pDev->bDeviceClass));
+        Log3(("Device subclass: %x\n", pDev->bDeviceSubClass));
+        Log3(("Device protocol: %x\n", pDev->bDeviceProtocol));
+        Log3(("USB version number: %d\n", pDev->bcdUSB));
+        Log3(("Device speed: %s\n",
+                pDev->enmSpeed == USBDEVICESPEED_UNKNOWN  ? "unknown"
+              : pDev->enmSpeed == USBDEVICESPEED_LOW      ? "1.5 MBit/s"
+              : pDev->enmSpeed == USBDEVICESPEED_FULL     ? "12 MBit/s"
+              : pDev->enmSpeed == USBDEVICESPEED_HIGH     ? "480 MBit/s"
+              : pDev->enmSpeed == USBDEVICESPEED_SUPER    ? "5.0 GBit/s"
+              : pDev->enmSpeed == USBDEVICESPEED_VARIABLE ? "variable"
+              :                                             "invalid"));
+        Log3(("Number of configurations: %d\n", pDev->bNumConfigurations));
+        Log3(("Bus number: %d\n", pDev->bBus));
+        Log3(("Port number: %d\n", pDev->bPort));
+        Log3(("Device number: %d\n", pDev->bDevNum));
+        Log3(("Device state: %s\n",
+                pDev->enmState == USBDEVICESTATE_UNSUPPORTED   ? "unsupported"
+              : pDev->enmState == USBDEVICESTATE_USED_BY_HOST  ? "in use by host"
+              : pDev->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE ? "in use by host, possibly capturable"
+              : pDev->enmState == USBDEVICESTATE_UNUSED        ? "not in use"
+              : pDev->enmState == USBDEVICESTATE_HELD_BY_PROXY ? "held by proxy"
+              : pDev->enmState == USBDEVICESTATE_USED_BY_GUEST ? "used by guest"
+              :                                                  "invalid"));
+        Log3(("OS device address: %s\n", pDev->pszAddress));
+    }
+}
+
+
+#ifdef VBOX_USB_WITH_USBFS
 
 /**
  * "reads" the number suffix.
@@ -371,87 +498,6 @@ static char *usbfsPrefix(char *psz, const char *pszPref, size_t cchPref)
     if (strncmp(psz, pszPref, cchPref))
         return NULL;
     return psz + cchPref;
-}
-
-
-/**
- * Does some extra checks to improve the detected device state.
- *
- * We cannot distinguish between USED_BY_HOST_CAPTURABLE and
- * USED_BY_GUEST, HELD_BY_PROXY all that well and it shouldn't be
- * necessary either.
- *
- * We will however, distinguish between the device we have permissions
- * to open and those we don't. This is necessary for two reasons.
- *
- * Firstly, because it's futile to even attempt opening a device which we
- * don't have access to, it only serves to confuse the user. (That said,
- * it might also be a bit confusing for the user to see that a USB device
- * is grayed out with no further explanation, and no way of generating an
- * error hinting at why this is the case.)
- *
- * Secondly and more importantly, we're racing against udevd with respect
- * to permissions and group settings on newly plugged devices. When we
- * detect a new device that we cannot access we will poll on it for a few
- * seconds to give udevd time to fix it. The polling is actually triggered
- * in the 'new device' case in the compare loop.
- *
- * The USBDEVICESTATE_USED_BY_HOST state is only used for this no-access
- * case, while USBDEVICESTATE_UNSUPPORTED is only used in the 'hub' case.
- * When it's neither of these, we set USBDEVICESTATE_UNUSED or
- * USBDEVICESTATE_USED_BY_HOST_CAPTURABLE depending on whether there is
- * a driver associated with any of the interfaces.
- *
- * All except the access check and a special idVendor == 0 precaution
- * is handled at parse time.
- *
- * @returns The adjusted state.
- * @param   pDevice     The device.
- */
-static USBDEVICESTATE usbDeterminState(PCUSBDEVICE pDevice)
-{
-    /*
-     * If it's already flagged as unsupported, there is nothing to do.
-     */
-    USBDEVICESTATE enmState = pDevice->enmState;
-    if (enmState == USBDEVICESTATE_UNSUPPORTED)
-        return USBDEVICESTATE_UNSUPPORTED;
-
-    /*
-     * Root hubs and similar doesn't have any vendor id, just
-     * refuse these device.
-     */
-    if (!pDevice->idVendor)
-        return USBDEVICESTATE_UNSUPPORTED;
-
-    /*
-     * Check if we've got access to the device, if we haven't flag
-     * it as used-by-host.
-     */
-#ifndef VBOX_USB_WITH_SYSFS
-    const char *pszAddress = pDevice->pszAddress;
-#else
-    if (pDevice->pszAddress == NULL)
-        /* We can't do much with the device without an address. */
-        return USBDEVICESTATE_UNSUPPORTED;
-    const char *pszAddress = strstr(pDevice->pszAddress, "//device:");
-    pszAddress = pszAddress != NULL
-               ? pszAddress + sizeof("//device:") - 1
-               : pDevice->pszAddress;
-#endif
-    if (    access(pszAddress, R_OK | W_OK) != 0
-        &&  errno == EACCES)
-        return USBDEVICESTATE_USED_BY_HOST;
-
-#ifdef VBOX_USB_WITH_SYSFS
-    /**
-     * @todo Check that any other essential fields are present and mark as
-     * invalid if not.  Particularly to catch the case where the device was
-     * unplugged while we were reading in its properties.
-     */
-#endif
-
-    return enmState;
 }
 
 
@@ -794,6 +840,7 @@ static PUSBDEVICE usbfsGetDevices(const char *pcszUsbfsRoot, bool testfs)
     return pFirst;
 }
 
+#endif /* VBOX_USB_WITH_USBFS */
 #ifdef VBOX_USB_WITH_SYSFS
 
 static void usbsysfsCleanupDevInfo(USBDeviceInfo *pSelf)
@@ -818,7 +865,7 @@ static int usbsysfsInitDevInfo(USBDeviceInfo *pSelf, const char *aDevice, const 
     return 1;
 }
 
-#define USBDEVICE_MAJOR 189
+# define USBDEVICE_MAJOR 189
 
 /**
  * Calculate the bus (a.k.a root hub) number of a USB device from it's sysfs
@@ -942,8 +989,8 @@ static bool usbsysfsMuiIsAnInterfaceOf(const char *pcszIface, const char *pcszDe
 }
 
 
-#ifdef DEBUG
-# ifdef __cplusplus
+# ifdef DEBUG
+#  ifdef __cplusplus
 /** Unit test the logic in muiIsAnInterfaceOf in debug builds. */
 class testIsAnInterfaceOf
 {
@@ -959,8 +1006,8 @@ public:
     }
 };
 static testIsAnInterfaceOf testIsAnInterfaceOfInst;
-# endif /* __cplusplus */
-#endif /* DEBUG */
+#  endif /* __cplusplus */
+# endif /* DEBUG */
 
 
 /**
@@ -1181,50 +1228,6 @@ static int usbsysfsGetPortFromStr(const char *pszPath, uint8_t *pu8Port)
 
 
 /**
- * Dumps a USBDEVICE structure to the log using LogLevel 3.
- * @param   pDev        The structure to log.
- * @todo    This is really common code.
- */
-static void usbLogDevice(PUSBDEVICE pDev)
-{
-    NOREF(pDev);
-    if (LogIs3Enabled())
-    {
-        Log3(("USB device:\n"));
-        Log3(("Product: %s (%x)\n", pDev->pszProduct, pDev->idProduct));
-        Log3(("Manufacturer: %s (Vendor ID %x)\n", pDev->pszManufacturer, pDev->idVendor));
-        Log3(("Serial number: %s (%llx)\n", pDev->pszSerialNumber, pDev->u64SerialHash));
-        Log3(("Device revision: %d\n", pDev->bcdDevice));
-        Log3(("Device class: %x\n", pDev->bDeviceClass));
-        Log3(("Device subclass: %x\n", pDev->bDeviceSubClass));
-        Log3(("Device protocol: %x\n", pDev->bDeviceProtocol));
-        Log3(("USB version number: %d\n", pDev->bcdUSB));
-        Log3(("Device speed: %s\n",
-                pDev->enmSpeed == USBDEVICESPEED_UNKNOWN  ? "unknown"
-              : pDev->enmSpeed == USBDEVICESPEED_LOW      ? "1.5 MBit/s"
-              : pDev->enmSpeed == USBDEVICESPEED_FULL     ? "12 MBit/s"
-              : pDev->enmSpeed == USBDEVICESPEED_HIGH     ? "480 MBit/s"
-              : pDev->enmSpeed == USBDEVICESPEED_SUPER    ? "5.0 GBit/s"
-              : pDev->enmSpeed == USBDEVICESPEED_VARIABLE ? "variable"
-              :                                             "invalid"));
-        Log3(("Number of configurations: %d\n", pDev->bNumConfigurations));
-        Log3(("Bus number: %d\n", pDev->bBus));
-        Log3(("Port number: %d\n", pDev->bPort));
-        Log3(("Device number: %d\n", pDev->bDevNum));
-        Log3(("Device state: %s\n",
-                pDev->enmState == USBDEVICESTATE_UNSUPPORTED   ? "unsupported"
-              : pDev->enmState == USBDEVICESTATE_USED_BY_HOST  ? "in use by host"
-              : pDev->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE ? "in use by host, possibly capturable"
-              : pDev->enmState == USBDEVICESTATE_UNUSED        ? "not in use"
-              : pDev->enmState == USBDEVICESTATE_HELD_BY_PROXY ? "held by proxy"
-              : pDev->enmState == USBDEVICESTATE_USED_BY_GUEST ? "used by guest"
-              :                                                  "invalid"));
-        Log3(("OS device address: %s\n", pDev->pszAddress));
-    }
-}
-
-
-/**
  * Converts a sysfs BCD value into a uint16_t.
  *
  * In contrast to usbReadBCD() this function can handle BCD values without
@@ -1266,7 +1269,6 @@ static int usbsysfsConvertStrToBCD(const char *pszBuf, uint16_t *pu16)
     return VINF_SUCCESS;
 }
 
-#endif  /* VBOX_USB_WITH_SYSFS */
 
 static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
 {
@@ -1383,7 +1385,6 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
  */
 static PUSBDEVICE usbsysfsGetDevices(const char *pcszDevicesRoot, bool testfs)
 {
-#ifdef VBOX_USB_WITH_SYSFS
     /* Add each of the devices found to the chain. */
     PUSBDEVICE pFirst = NULL;
     PUSBDEVICE pLast  = NULL;
@@ -1426,11 +1427,9 @@ static PUSBDEVICE usbsysfsGetDevices(const char *pcszDevicesRoot, bool testfs)
 
     VEC_CLEANUP_OBJ(&vecDevInfo);
     return pFirst;
-#else  /* !VBOX_USB_WITH_SYSFS */
-    return NULL;
-#endif  /* !VBOX_USB_WITH_SYSFS */
 }
 
+#endif /* VBOX_USB_WITH_SYSFS */
 #ifdef UNIT_TEST
 
 /* Set up mock functions for USBProxyLinuxCheckDeviceRoot - here dlsym and close
@@ -1552,22 +1551,20 @@ void TestUSBSetAccessibleFiles(const char **papszAccessibleFiles)
 }
 
 
-#  ifdef UNIT_TEST
-    /** The path we pretend the usbfs root is located at, or NULL. */
-    const char *s_pcszTestUsbfsRoot;
-    /** Should usbfs be accessible to the current user? */
-    bool s_fTestUsbfsAccessible;
-    /** The path we pretend the device node tree root is located at, or NULL. */
-    const char *s_pcszTestDevicesRoot;
-    /** Should the device node tree be accessible to the current user? */
-    bool s_fTestDevicesAccessible;
-    /** The result of the usbfs/inotify-specific init */
-    int s_rcTestMethodInitResult;
-    /** The value of the VBOX_USB environment variable. */
-    const char *s_pcszTestEnvUsb;
-    /** The value of the VBOX_USB_ROOT environment variable. */
-    const char *s_pcszTestEnvUsbRoot;
-#  endif
+/** The path we pretend the usbfs root is located at, or NULL. */
+const char *s_pcszTestUsbfsRoot;
+/** Should usbfs be accessible to the current user? */
+bool s_fTestUsbfsAccessible;
+/** The path we pretend the device node tree root is located at, or NULL. */
+const char *s_pcszTestDevicesRoot;
+/** Should the device node tree be accessible to the current user? */
+bool s_fTestDevicesAccessible;
+/** The result of the usbfs/inotify-specific init */
+int s_rcTestMethodInitResult;
+/** The value of the VBOX_USB environment variable. */
+const char *s_pcszTestEnvUsb;
+/** The value of the VBOX_USB_ROOT environment variable. */
+const char *s_pcszTestEnvUsbRoot;
 
 
 /** Select which access methods will be available to the @a init method
@@ -1601,9 +1598,9 @@ void TestUSBSetEnv(const char *pcszEnvUsb, const char *pcszEnvUsbRoot)
      : NULL)
 # define USBProxyLinuxCheckDeviceRoot(pcszPath, fUseNodes) \
     (   ((fUseNodes) && s_fTestDevicesAccessible \
-                     && !RTStrCmp(pcszPath, s_pcszTestDevicesRoot)) \
+         && !RTStrCmp(pcszPath, s_pcszTestDevicesRoot)) \
      || (!(fUseNodes) && s_fTestUsbfsAccessible \
-                      && !RTStrCmp(pcszPath, s_pcszTestUsbfsRoot)))
+         && !RTStrCmp(pcszPath, s_pcszTestUsbfsRoot)))
 # define RTDirExists(pcszDir) \
     (   (pcszDir) \
      && (   !RTStrCmp(pcszDir, s_pcszTestDevicesRoot) \
@@ -1662,8 +1659,7 @@ int USBProxyLinuxChooseMethod(bool *pfUsingUsbfsDevices, const char **ppcszDevic
         }
         else
         {
-            LogRel(("Invalid VBOX_USB environment variable setting \"%s\"\n",
-                    pcszUsbFromEnv));
+            LogRel(("Invalid VBOX_USB environment variable setting \"%s\"\n", pcszUsbFromEnv));
             fValidVBoxUSB = false;
             pcszUsbFromEnv = NULL;
         }
@@ -1708,7 +1704,7 @@ int USBProxyLinuxChooseMethod(bool *pfUsingUsbfsDevices, const char **ppcszDevic
 #endif
 
 /**
- * Check whether a USB device tree root is usable
+ * Check whether a USB device tree root is usable.
  *
  * @param pcszRoot        the path to the root of the device tree
  * @param fIsDeviceNodes  whether this is a device node (or usbfs) tree
@@ -1719,26 +1715,27 @@ bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNodes)
     bool fOK = false;
     if (!fIsDeviceNodes)  /* usbfs */
     {
-        PUSBDEVICE pDevices;
-
+#ifdef VBOX_USB_WITH_USBFS
         if (!access(pcszRoot, R_OK | X_OK))
         {
             fOK = true;
-            pDevices = usbfsGetDevices(pcszRoot, true);
+            PUSBDEVICE pDevices = usbfsGetDevices(pcszRoot, true);
             if (pDevices)
             {
                 PUSBDEVICE pDevice;
-
                 for (pDevice = pDevices; pDevice && fOK; pDevice = pDevice->pNext)
                     if (access(pDevice->pszAddress, R_OK | W_OK))
                         fOK = false;
                 deviceListFree(&pDevices);
             }
         }
+#endif
     }
+#ifdef VBOX_USB_WITH_SYSFS
     /* device nodes */
     else if (usbsysfsInotifyAvailable() && !access(pcszRoot, R_OK | X_OK))
         fOK = true;
+#endif
     return fOK;
 }
 
@@ -1758,6 +1755,18 @@ bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNodes)
 PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot, bool fUseSysfs)
 {
     if (!fUseSysfs)
+    {
+#ifdef VBOX_USB_WITH_USBFS
         return usbfsGetDevices(pcszDevicesRoot, false);
+#else
+        return NULL;
+#endif
+    }
+
+#ifdef VBOX_USB_WITH_SYSFS
     return usbsysfsGetDevices(pcszDevicesRoot, false);
+#else
+    return NULL;
+#endif
 }
+
