@@ -386,9 +386,9 @@ static PVBOXUSBFLTCTX vboxUsbFltDevMatchLocked(PVBOXUSBFLT_DEVICE pDevice, uintp
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_CLASS, pDevice->bClass, true);
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_SUB_CLASS, pDevice->bSubClass, true);
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_PROTOCOL, pDevice->bProtocol, true);
-    USBFilterSetStringExact(&DevFlt, USBFILTERIDX_MANUFACTURER_STR, pDevice->szMfgName, true);
-    USBFilterSetStringExact(&DevFlt, USBFILTERIDX_PRODUCT_STR, pDevice->szProduct, true);
-    USBFilterSetStringExact(&DevFlt, USBFILTERIDX_SERIAL_NUMBER_STR, pDevice->szSerial, true);
+    USBFilterSetStringExact(&DevFlt, USBFILTERIDX_MANUFACTURER_STR, pDevice->szMfgName, true /*fMustBePresent*/, true /*fPurge*/);
+    USBFilterSetStringExact(&DevFlt, USBFILTERIDX_PRODUCT_STR, pDevice->szProduct, true /*fMustBePresent*/, true /*fPurge*/);
+    USBFilterSetStringExact(&DevFlt, USBFILTERIDX_SERIAL_NUMBER_STR, pDevice->szSerial, true /*fMustBePresent*/, true /*fPurge*/);
 
     /* Run filters on the thing. */
     PVBOXUSBFLTCTX pOwner = VBoxUSBFilterMatchEx(&DevFlt, puId, fRemoveFltIfOneShot, pfFilter, pfIsOneShot);
@@ -477,7 +477,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
 
             if (pDevDr->iSerialNumber)
             {
-                Status = VBoxUsbToolGetStringDescriptorA(pDo, pDevice->szSerial, sizeof (pDevice->szSerial), pDevDr->iSerialNumber, langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
+                Status = VBoxUsbToolGetStringDescriptor(pDo, pDevice->szSerial, sizeof (pDevice->szSerial), pDevDr->iSerialNumber, langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
                 if (!NT_SUCCESS(Status))
                 {
                     WARN(("reading serial number failed"));
@@ -496,7 +496,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
 
             if (pDevDr->iManufacturer)
             {
-                Status = VBoxUsbToolGetStringDescriptorA(pDo, pDevice->szMfgName, sizeof (pDevice->szMfgName), pDevDr->iManufacturer, langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
+                Status = VBoxUsbToolGetStringDescriptor(pDo, pDevice->szMfgName, sizeof (pDevice->szMfgName), pDevDr->iManufacturer, langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
                 if (!NT_SUCCESS(Status))
                 {
                     WARN(("reading manufacturer name failed"));
@@ -515,7 +515,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
 
             if (pDevDr->iProduct)
             {
-                Status = VBoxUsbToolGetStringDescriptorA(pDo, pDevice->szProduct, sizeof (pDevice->szProduct), pDevDr->iProduct, langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
+                Status = VBoxUsbToolGetStringDescriptor(pDo, pDevice->szProduct, sizeof (pDevice->szProduct), pDevDr->iProduct, langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
                 if (!NT_SUCCESS(Status))
                 {
                     WARN(("reading product name failed"));

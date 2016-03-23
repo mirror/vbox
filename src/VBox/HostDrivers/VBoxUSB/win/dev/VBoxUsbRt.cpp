@@ -437,7 +437,7 @@ static NTSTATUS vboxUsbRtGetDeviceDescription(PVBOXUSBDEV_EXT pDevExt)
 
             if (pDr->iSerialNumber
 #ifdef DEBUG
-                    || pDr->iProduct || pDr->iManufacturer
+                || pDr->iProduct || pDr->iManufacturer
 #endif
                )
             {
@@ -445,7 +445,8 @@ static NTSTATUS vboxUsbRtGetDeviceDescription(PVBOXUSBDEV_EXT pDevExt)
                 Status = VBoxUsbToolGetLangID(pDevExt->pLowerDO, &langId, RT_INDEFINITE_WAIT);
                 if (NT_SUCCESS(Status))
                 {
-                    Status = VBoxUsbToolGetStringDescriptorA(pDevExt->pLowerDO, pDevExt->Rt.szSerial, sizeof (pDevExt->Rt.szSerial), pDr->iSerialNumber, langId, RT_INDEFINITE_WAIT);
+                    Status = VBoxUsbToolGetStringDescriptor(pDevExt->pLowerDO, pDevExt->Rt.szSerial, sizeof (pDevExt->Rt.szSerial),
+                                                            pDr->iSerialNumber, langId, RT_INDEFINITE_WAIT);
                 }
                 else
                 {

@@ -48,7 +48,7 @@ VBOXUSBTOOL_DECL(PURB) VBoxUsbToolUrbReinit(PURB pUrb, USHORT cbSize, USHORT u16
 VBOXUSBTOOL_DECL(VOID) VBoxUsbToolUrbFree(PURB pUrb);
 VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolUrbPost(PDEVICE_OBJECT pDevObj, PURB pUrb, ULONG dwTimeoutMs);
 VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDescriptor(PDEVICE_OBJECT pDevObj, void *pvBuffer, int cbBuffer, int Type, int iIndex, int LangId, ULONG dwTimeoutMs);
-VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetStringDescriptorA(PDEVICE_OBJECT pDevObj, char *pResult, ULONG cbResult, int iIndex, int LangId, ULONG dwTimeoutMs);
+VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetStringDescriptor(PDEVICE_OBJECT pDevObj, char *pszResult, ULONG cbResult, int iIndex, int LangId, ULONG dwTimeoutMs);
 VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetLangID(PDEVICE_OBJECT pDevObj, int *pLangId, ULONG dwTimeoutMs);
 VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDeviceSpeed(PDEVICE_OBJECT pDevObj, BOOLEAN *pbIsHigh);
 VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolPipeClear(PDEVICE_OBJECT pDevObj, HANDLE hPipe, bool fReset);

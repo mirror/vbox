@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <VBox/usbfilter.h>
+#include <VBox/usblib.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/string.h>
@@ -1073,8 +1074,10 @@ USBLIB_DECL(int) USBFilterSetFilterType(PUSBFILTER pFilter, USBFILTERTYPE enmTyp
  * @param   pFilter         The filter.
  * @param   enmFieldIdx     The field index.
  * @param   pszString       The string to add.
+ * @param   fPurge          Purge invalid UTF-8 encoding and control characters
+ *                          before setting it.
  */
-static int usbfilterSetString(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, const char *pszString)
+static int usbfilterSetString(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, const char *pszString, bool fPurge)
 {
     /*
      * Validate input.
@@ -1123,12 +1126,14 @@ static int usbfilterSetString(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, cons
         pFilter->aFields[enmFieldIdx].u16Value = 0;
     else
     {
-        const size_t cch = strlen(pszString);
+        size_t cch = strlen(pszString);
         if (pFilter->offCurEnd + cch + 2 > sizeof(pFilter->achStrTab))
             return VERR_BUFFER_OVERFLOW;
 
         pFilter->aFields[enmFieldIdx].u16Value = pFilter->offCurEnd + 1;
         memcpy(&pFilter->achStrTab[pFilter->offCurEnd + 1], pszString, cch + 1);
+        if (fPurge)
+            cch = USBLibPurgeEncoding(&pFilter->achStrTab[pFilter->offCurEnd + 1]);
         pFilter->offCurEnd += (uint32_t)cch + 1;
     }
 
@@ -1153,7 +1158,7 @@ static int usbfilterDeleteAnyStringValue(PUSBFILTER pFilter, USBFILTERIDX enmFie
     int rc = VINF_SUCCESS;
     if (    USBFilterIsMethodUsingStringValue((USBFILTERMATCH)pFilter->aFields[enmFieldIdx].enmMatch)
         &&  pFilter->aFields[enmFieldIdx].u16Value != 0)
-        rc = usbfilterSetString(pFilter, enmFieldIdx, "");
+        rc = usbfilterSetString(pFilter, enmFieldIdx, "", false /*fPurge*/);
     else if ((unsigned)enmFieldIdx >= (unsigned)USBFILTERIDX_END)
         rc = VERR_INVALID_PARAMETER;
     return rc;
@@ -1267,7 +1272,7 @@ USBLIB_DECL(int) USBFilterSetNumExpression(PUSBFILTER pFilter, USBFILTERIDX enmF
         {
             /* We could optimize the expression further (stripping spaces, convert numbers),
                but it's more work than what it's worth and it could upset some users. */
-            rc = usbfilterSetString(pFilter, enmFieldIdx, pszExpression);
+            rc = usbfilterSetString(pFilter, enmFieldIdx, pszExpression, false /*fPurge*/);
             if (RT_SUCCESS(rc))
                 pFilter->aFields[enmFieldIdx].enmMatch = fMustBePresent ? USBFILTERMATCH_NUM_EXPRESSION : USBFILTERMATCH_NUM_EXPRESSION_NP;
             else if (rc == VERR_NO_DIGITS)
@@ -1293,13 +1298,16 @@ USBLIB_DECL(int) USBFilterSetNumExpression(PUSBFILTER pFilter, USBFILTERIDX enmF
  * @param   pszValue            The string value.
  * @param   fMustBePresent      If set, a non-present field on the device will result in a mismatch.
  *                              If clear, a non-present field on the device will match.
+ * @param   fPurge              Purge invalid UTF-8 encoding and control
+ *                              characters before setting it.
  */
-USBLIB_DECL(int) USBFilterSetStringExact(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, const char *pszValue, bool fMustBePresent)
+USBLIB_DECL(int) USBFilterSetStringExact(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, const char *pszValue,
+                                         bool fMustBePresent, bool fPurge)
 {
     int rc = USBFilterIsStringField(enmFieldIdx) ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
     {
-        rc = usbfilterSetString(pFilter, enmFieldIdx, pszValue);
+        rc = usbfilterSetString(pFilter, enmFieldIdx, pszValue, fPurge);
         if (RT_SUCCESS(rc))
             pFilter->aFields[enmFieldIdx].enmMatch = fMustBePresent ? USBFILTERMATCH_STR_EXACT : USBFILTERMATCH_STR_EXACT_NP;
     }
@@ -1331,7 +1339,7 @@ USBLIB_DECL(int) USBFilterSetStringPattern(PUSBFILTER pFilter, USBFILTERIDX enmF
         rc = usbfilterValidateStringPattern(pszPattern);
         if (RT_SUCCESS(rc))
         {
-            rc = usbfilterSetString(pFilter, enmFieldIdx, pszPattern);
+            rc = usbfilterSetString(pFilter, enmFieldIdx, pszPattern, false /*fPurge*/);
             if (RT_SUCCESS(rc))
                 pFilter->aFields[enmFieldIdx].enmMatch = fMustBePresent ? USBFILTERMATCH_STR_PATTERN : USBFILTERMATCH_STR_PATTERN_NP;
         }

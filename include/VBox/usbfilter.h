@@ -230,7 +230,8 @@ USBLIB_DECL(int)  USBFilterSetIgnore(PUSBFILTER pFilter, USBFILTERIDX enmFieldId
 USBLIB_DECL(int)  USBFilterSetPresentOnly(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx);
 USBLIB_DECL(int)  USBFilterSetNumExact(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, uint16_t u16Value, bool fMustBePresent);
 USBLIB_DECL(int)  USBFilterSetNumExpression(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, const char *pszExpression, bool fMustBePresent);
-USBLIB_DECL(int)  USBFilterSetStringExact(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, const char *pszValue, bool fMustBePresent);
+USBLIB_DECL(int)  USBFilterSetStringExact(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, const char *pszValue,
+                                          bool fMustBePresent, bool fPurge);
 USBLIB_DECL(int)  USBFilterSetStringPattern(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, const char *pszPattern, bool fMustBePresent);
 USBLIB_DECL(int)  USBFilterSetMustBePresent(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, bool fMustBePresent);
 

@@ -952,19 +952,22 @@ bool USBDeviceFilters::i_hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaske
     rc = aUSBDevice->COMGETTER(Manufacturer)(manufacturer.asOutParam());
     ComAssertComRCRet(rc, false);
     if (!manufacturer.isEmpty())
-        USBFilterSetStringExact(&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer).c_str(), true);
+        USBFilterSetStringExact(&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer).c_str(),
+                                true /*fMustBePresent*/, false /*fPurge*/);
 
     Bstr product;
     rc = aUSBDevice->COMGETTER(Product)(product.asOutParam());
     ComAssertComRCRet(rc, false);
     if (!product.isEmpty())
-        USBFilterSetStringExact(&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product).c_str(), true);
+        USBFilterSetStringExact(&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product).c_str(),
+                                true /*fMustBePresent*/, false /*fPurge*/);
 
     Bstr serialNumber;
     rc = aUSBDevice->COMGETTER(SerialNumber)(serialNumber.asOutParam());
     ComAssertComRCRet(rc, false);
     if (!serialNumber.isEmpty())
-        USBFilterSetStringExact(&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber).c_str(), true);
+        USBFilterSetStringExact(&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber).c_str(),
+                                true /*fMustBePresent*/, false /*fPurge*/);
 
     Bstr address;
     rc = aUSBDevice->COMGETTER(Address)(address.asOutParam());
