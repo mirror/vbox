@@ -2146,20 +2146,22 @@ IEM_STATIC VBOXSTRICTRC iemRaiseLoadStackFromTss32Or16(PIEMCPU pIemCpu, PCCPUMCT
         case X86_SEL_TYPE_SYS_286_TSS_BUSY:
         {
             uint32_t off = uCpl * 4 + 2;
-            if (off + 4 > pCtx->tr.u32Limit)
+            if (off + 4 <= pCtx->tr.u32Limit)
+            {
+                /** @todo check actual access pattern here. */
+                uint32_t u32Tmp = 0; /* gcc maybe... */
+                rcStrict = iemMemFetchSysU32(pIemCpu, &u32Tmp, UINT8_MAX, pCtx->tr.u64Base + off);
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    *puEsp  = RT_LOWORD(u32Tmp);
+                    *pSelSS = RT_HIWORD(u32Tmp);
+                    return VINF_SUCCESS;
+                }
+            }
+            else
             {
                 Log(("LoadStackFromTss32Or16: out of bounds! uCpl=%d, u32Limit=%#x TSS16\n", uCpl, pCtx->tr.u32Limit));
-                return iemRaiseTaskSwitchFaultCurrentTSS(pIemCpu);
-            }
-
-/** @todo check actual access pattern here. */
-            uint32_t u32Tmp = 0; /* gcc maybe... */
-            rcStrict = iemMemFetchSysU32(pIemCpu, &u32Tmp, UINT8_MAX, pCtx->tr.u64Base + off);
-            if (rcStrict == VINF_SUCCESS)
-            {
-                *puEsp  = RT_LOWORD(u32Tmp);
-                *pSelSS = RT_HIWORD(u32Tmp);
-                return VINF_SUCCESS;
+                rcStrict = iemRaiseTaskSwitchFaultCurrentTSS(pIemCpu);
             }
             break;
         }
@@ -2171,20 +2173,22 @@ IEM_STATIC VBOXSTRICTRC iemRaiseLoadStackFromTss32Or16(PIEMCPU pIemCpu, PCCPUMCT
         case X86_SEL_TYPE_SYS_386_TSS_BUSY:
         {
             uint32_t off = uCpl * 8 + 4;
-            if (off + 7 > pCtx->tr.u32Limit)
+            if (off + 7 <= pCtx->tr.u32Limit)
+            {
+/** @todo check actual access pattern here. */
+                uint64_t u64Tmp;
+                rcStrict = iemMemFetchSysU64(pIemCpu, &u64Tmp, UINT8_MAX, pCtx->tr.u64Base + off);
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    *puEsp  = u64Tmp & UINT32_MAX;
+                    *pSelSS = (RTSEL)(u64Tmp >> 32);
+                    return VINF_SUCCESS;
+                }
+            }
+            else
             {
                 Log(("LoadStackFromTss32Or16: out of bounds! uCpl=%d, u32Limit=%#x TSS16\n", uCpl, pCtx->tr.u32Limit));
-                return iemRaiseTaskSwitchFaultCurrentTSS(pIemCpu);
-            }
-
-/** @todo check actual access pattern here. */
-            uint64_t u64Tmp;
-            rcStrict = iemMemFetchSysU64(pIemCpu, &u64Tmp, UINT8_MAX, pCtx->tr.u64Base + off);
-            if (rcStrict == VINF_SUCCESS)
-            {
-                *puEsp  = u64Tmp & UINT32_MAX;
-                *pSelSS = (RTSEL)(u64Tmp >> 32);
-                return VINF_SUCCESS;
+                rcStrict = iemRaiseTaskSwitchFaultCurrentTSS(pIemCpu);
             }
             break;
         }
