@@ -5100,7 +5100,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 
         if (   RTUuidIsNull(&pThis->Uuid)
             && pThis->enmType == PDMMEDIATYPE_HARD_DISK)
-            rc = VDGetUuid(pThis->pDisk, 0, &pThis->Uuid);
+            VDGetUuid(pThis->pDisk, 0, &pThis->Uuid);
 
         /*
          * Automatically upgrade the floppy drive if the specified one is too
