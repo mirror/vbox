@@ -459,6 +459,8 @@ CPU 286
         ;
         ; Copy iret info.
         ;
+        lea     cx, [bp + 2]
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], cx
         mov     cx, [bp + 2]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], cx
         mov     cx, [bp + 6]
@@ -482,8 +484,7 @@ CPU 286
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
         mov     cx, [bp + 8]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], cx
-        lea     ax, [bp + 12]
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], ax
+        mov     byte [ss:bx + BS3TRAPFRAME.cbIretFrame], 5*2
         test    dx, dx
         jnz     .iret_frame_done
         jmp     .iret_frame_seed_high_eip_word
@@ -493,7 +494,7 @@ CPU 286
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
         lea     cx, [bp + 8]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], cx
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], cx
+        mov     byte [ss:bx + BS3TRAPFRAME.cbIretFrame], 3*2
         test    dx, dx
         jnz     .iret_frame_done
         jmp     .iret_frame_seed_high_eip_word
@@ -520,8 +521,7 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], cx
         mov     cx, [bp + 18]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], cx
-        lea     ax, [bp + 20]
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], ax
+        mov     byte [ss:bx + BS3TRAPFRAME.cbIretFrame], 9*2
         jmp     .iret_frame_done
 
         ;

@@ -1895,15 +1895,15 @@ typedef struct BS3TRAPFRAME
 {
     /** 0x00: Exception/interrupt number. */
     uint8_t     bXcpt;
-    /** 0x01: Explicit alignment. */
-    uint8_t     bAlignment;
+    /** 0x01: The size of the IRET frame. */
+    uint8_t     cbIretFrame;
     /** 0x02: The handler CS. */
     uint16_t    uHandlerCc;
     /** 0x04: The handler SS. */
     uint16_t    uHandlerSs;
     /** 0x06: Explicit alignment. */
     uint16_t    usAlignment;
-    /** 0x08: The handler RSP (top of iret frame). */
+    /** 0x08: The handler RSP (pointer to the iret frame, skipping ErrCd). */
     uint64_t    uHandlerRsp;
     /** 0x10: The handler RFLAGS value. */
     uint64_t    fHandlerRfl;

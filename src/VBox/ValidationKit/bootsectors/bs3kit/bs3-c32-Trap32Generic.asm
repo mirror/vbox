@@ -126,8 +126,12 @@ BS3_PROC_BEGIN bs3Trap32GenericTrapOrInt
         cld
         push    eax                     ; -08h
         push    edi                     ; -0ch
-        push    ss                      ; -10h
-        push    ds                      ; -14h
+        lea     eax, [esp + (4 + 1)*4]  ; 4 pushes above, 1 exception number push.
+        push    eax                     ; -10h = handler ESP
+        add     eax, 3*4                ; 3 dword iret frame
+        push    eax                     ; -14h = caller ESP if same CPL
+        push    ss                      ; -18h
+        push    ds                      ; -1ch
 
         ; Make sure we've got a flat DS (ASSUMES ring-0). It makes everything so much simpler.
         mov     ax, BS3_SEL_R0_DS32
@@ -146,7 +150,6 @@ BS3_PROC_BEGIN bs3Trap32GenericTrapOrInt
         mov     ss, ax
         jmp     .stack_flat
 .stack_thunk:
-hlt
         mov     di, ss
         and     edi, X86_SEL_MASK_OFF_RPL
         mov     al, [X86DESCGENERIC_BIT_OFF_BASE_HIGH1 / 8 + edi + Bs3Gdt wrt FLAT]
@@ -160,6 +163,10 @@ hlt
         mov     di, BS3_SEL_R0_SS32
         mov     ss, di
         mov     esp, eax
+        sub     dword [ebp - 10h], (4+1)*4   ; Recalc handler ESP in case of wraparound.
+        add     word [ebp - 10h],  (4+1)*4
+        sub     dword [ebp - 10h], (4+1+3)*4 ; Recalc caller ESP in case of wraparound.
+        add     word [ebp - 10h],  (4+1+3)*4
 .stack_flat:
 
         ; Reserve space for the the register and trap frame.
@@ -183,10 +190,14 @@ AssertCompileSizeAlignment(BS3TRAPFRAME, 8)
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
         mov     eax, [ebp - 0ch]
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], eax
-        mov     ax, [ebp - 10h]
+        mov     eax, [ebp - 10h]
+        mov     [edi + BS3TRAPFRAME.uHandlerRsp], eax
+        mov     eax, [ebp - 14h]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], eax
+        mov     ax, [ebp - 18h]
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ax
         mov     [edi + BS3TRAPFRAME.uHandlerSs], ax
-        mov     ax, [ebp - 14h]
+        mov     ax, [ebp - 1ch]
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], ax
 
         lea     ebp, [ebp + 4]          ; iret - 4 (i.e. ebp frame chain location)
@@ -205,8 +216,12 @@ BS3_PROC_BEGIN bs3Trap32GenericTrapErrCode
         cld
         push    eax                     ; -08h
         push    edi                     ; -0ch
-        push    ss                      ; -10h
-        push    ds                      ; -14h
+        lea     eax, [esp + (4+1+1)*4]  ; 4 pushes above, 1 exception number push, 1 error code.
+        push    eax                     ; -10h = handler ESP
+        add     eax, 3*4                ; 3 dword iret frame
+        push    eax                     ; -14h = caller ESP if same CPL
+        push    ss                      ; -18h
+        push    ds                      ; -1ch
 
         ; Make sure we've got a flat DS (ASSUMES ring-0). It makes everything so much simpler.
         mov     ax, BS3_SEL_R0_DS32
@@ -221,7 +236,7 @@ BS3_PROC_BEGIN bs3Trap32GenericTrapErrCode
         lar     eax, ax
         test    eax, X86LAR_F_D
         jz      .stack_thunk
-        mov     ax, BS3_SEL_R0_SS16
+        mov     ax, BS3_SEL_R0_SS32
         mov     ss, ax
         jmp     .stack_flat
 .stack_thunk:
@@ -235,9 +250,13 @@ BS3_PROC_BEGIN bs3Trap32GenericTrapErrCode
         add     ebp, eax
         movzx   edi, sp                 ; SS:SP -> flat ESP in EAX.
         add     eax, edi
-        mov     di, BS3_SEL_R0_SS16
+        mov     di, BS3_SEL_R0_SS32
         mov     ss, di
         mov     esp, eax
+        sub     dword [ebp - 10h], (4+1+1)*4   ; Recalc handler ESP in case of wraparound.
+        add     word [ebp - 10h],  (4+1+1)*4
+        sub     dword [ebp - 14h], (4+1+1+3)*4 ; Recalc caller ESP in case of wraparound.
+        add     word [ebp - 14h],  (4+1+1+3)*4
 .stack_flat:
 
         ; Reserve space for the the register and trap frame.
@@ -264,10 +283,14 @@ AssertCompileSizeAlignment(BS3TRAPFRAME, 8)
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
         mov     eax, [ebp - 0ch]
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], eax
-        mov     ax, [ebp - 10h]
+        mov     eax, [ebp - 10h]
+        mov     [edi + BS3TRAPFRAME.uHandlerRsp], eax
+        mov     eax, [ebp - 14h]
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], eax
+        mov     ax, [ebp - 18h]
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ax
         mov     [edi + BS3TRAPFRAME.uHandlerSs], ax
-        mov     ax, [ebp - 14h]
+        mov     ax, [ebp - 1ch]
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], ax
 
         lea     ebp, [ebp + 8]          ; iret - 4 (i.e. ebp frame chain location)
@@ -282,11 +305,13 @@ BS3_PROC_END   bs3Trap32GenericTrapErrCode
 ;                   filled in by the previous code:
 ;                       - bXcpt
 ;                       - uErrCd
-;                       - fHandlerRFL
+;                       - fHandlerRfl
+;                       - uHandlerRsp
 ;                       - uHandlerSs
-;                       - Ctx.rax (except upper dword)
-;                       - Ctx.rbp (except upper dword)
-;                       - Ctx.rdi (except upper dword)
+;                       - Ctx.rax
+;                       - Ctx.rbp
+;                       - Ctx.rdi
+;                       - Ctx.rsp - assuming same CPL
 ;                       - Ctx.ds
 ;                       - Ctx.ss
 ;
@@ -357,14 +382,7 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
         mov     cx, [ebp + 20]
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
-        lea     eax, [ebp + 24]
-        mov     [edi + BS3TRAPFRAME.uHandlerRsp], eax
-        jmp     .iret_frame_done
-
-.iret_frame_same_cpl:
-        lea     ecx, [ebp + 16]
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], ecx
-        mov     [edi + BS3TRAPFRAME.uHandlerRsp], ecx
+        mov     byte [edi + BS3TRAPFRAME.cbIretFrame], 5*4
         jmp     .iret_frame_done
 
 .iret_frame_v8086:
@@ -382,9 +400,11 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fs], cx
         mov     cx, [ebp + 36]
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.gs], cx
-        lea     eax, [ebp + 40]
-        mov     [edi + BS3TRAPFRAME.uHandlerRsp], eax
+        mov     byte [edi + BS3TRAPFRAME.cbIretFrame], 9*4
         jmp     .iret_frame_done
+
+.iret_frame_same_cpl:                   ; (caller already set SS:RSP and uHandlerRsp for same CPL iret frames)
+        mov     byte [edi + BS3TRAPFRAME.cbIretFrame], 3*4
 
 .iret_frame_done:
         ;
@@ -486,7 +506,7 @@ AssertCompileSizeAlignment(BS3TRAPFRAME, 8)
         mov     word [edi + BS3TRAPFRAME.bXcpt], X86_XCPT_DF
         mov     [edi + BS3TRAPFRAME.uHandlerCs], cs
         mov     [edi + BS3TRAPFRAME.uHandlerSs], ss
-        lea     ecx, [ebp + 12]
+        lea     ecx, [ebp + 3*4]        ; two pushes, one error code.
         mov     [edi + BS3TRAPFRAME.uHandlerRsp], ecx
         mov     ecx, [ebp + 8]
         mov     [edi + BS3TRAPFRAME.uErrCd], ecx

@@ -1168,7 +1168,7 @@ endstruc
 ;
 struc BS3TRAPFRAME
         .bXcpt          resb 1
-        .bAlignment     resb 1
+        .cbIretFrame    resb 1
         .uHandlerCs     resw 1
         .uHandlerSs     resw 1
         .usAlignment    resw 1

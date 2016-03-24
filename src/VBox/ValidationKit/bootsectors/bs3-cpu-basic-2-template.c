@@ -68,8 +68,10 @@ static void bs3CpuBasic2_CompareTrapCtx1(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pS
  * Worker for bs3CpuBasic2_TssGateEsp that tests the INT 80 from outer rings.
  */
 static void bs3CpuBasic2_TssGateEsp_AltStackOuterRing(PCBS3REGCTX pCtx, uint8_t bRing, uint8_t *pbAltStack, size_t cbAltStack,
-                                                      bool f16BitStack, bool f16BitTss, const char *pszMode, unsigned uLine)
+                                                      bool f16BitStack, bool f16BitTss, bool f16BitHandler,
+                                                      const char *pszMode, unsigned uLine)
 {
+    uint8_t const   cbIretFrame = f16BitHandler ? 5*2 : 5*4;
     BS3REGCTX       Ctx2;
     BS3TRAPFRAME    TrapCtx;
     uint8_t        *pbTmp;
@@ -90,10 +92,11 @@ static void bs3CpuBasic2_TssGateEsp_AltStackOuterRing(PCBS3REGCTX pCtx, uint8_t 
 
     bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx2, 2 /*int 80h*/, 0x80 /*bXcpt*/, pszMode, uLine);
     CHECK_MEMBER("bCpl", "%u", TrapCtx.Ctx.bCpl, bRing);
+    CHECK_MEMBER("cbIretFrame", "%#x", TrapCtx.cbIretFrame, cbIretFrame);
 
     if (pbAltStack)
     {
-        uint64_t uExpectedRsp = f16BitTss ? Bs3Tss16.sp0 : Bs3Tss32.esp0;
+        uint64_t uExpectedRsp = (f16BitTss ? Bs3Tss16.sp0 : Bs3Tss32.esp0) - cbIretFrame;
         if (f16BitStack)
         {
             uExpectedRsp &= UINT16_MAX;
@@ -125,8 +128,9 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
     uint8_t        *pbTmp;
     unsigned        uLine;
     const char     *pszMode = BS3_DATA_NM(TMPL_NM(g_szBs3ModeName));
+    bool const      f16BitSys = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
 
-    pbTmp = NULL; NOREF(pbTmp); uLine = 0; NOREF(uLine); NOREF(pszMode);
+    pbTmp = NULL; NOREF(pbTmp); uLine = 0; NOREF(uLine); NOREF(pszMode); NOREF(f16BitSys);
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx, sizeof(Ctx));
@@ -167,12 +171,9 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
     bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx, 2 /*int 80h*/, 0x80 /*bXcpt*/, pszMode, __LINE__);
 
-    bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, NULL, 0, BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
-                                              BS3_MODE_IS_16BIT_SYS(TMPL_MODE), pszMode, __LINE__);
-    bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 2, NULL, 0, BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
-                                              BS3_MODE_IS_16BIT_SYS(TMPL_MODE), pszMode, __LINE__);
-    bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 3, NULL, 0, BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
-                                              BS3_MODE_IS_16BIT_SYS(TMPL_MODE), pszMode, __LINE__);
+    bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, NULL, 0, f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+    bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 2, NULL, 0, f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+    bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 3, NULL, 0, f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
 
     /*
      * Check that the upper part of ESP is preserved when doing .
@@ -201,21 +202,23 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
 # endif
 
             /* Different rings (load SS0:SP0 from TSS). */
-            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack, BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
-                                                      BS3_MODE_IS_16BIT_SYS(TMPL_MODE), pszMode, __LINE__);
-            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 2, pbAltStack, cbAltStack, BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
-                                                      BS3_MODE_IS_16BIT_SYS(TMPL_MODE), pszMode, __LINE__);
-            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 3, pbAltStack, cbAltStack, BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
-                                                      BS3_MODE_IS_16BIT_SYS(TMPL_MODE), pszMode, __LINE__);
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack,
+                                                      f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 2, pbAltStack, cbAltStack,
+                                                      f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 3, pbAltStack, cbAltStack,
+                                                      f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
 
             /* Different rings but switch the SS bitness in the TSS. */
-# if TMPL_BITS == 16
+# if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
             Bs3Tss16.ss0 = BS3_SEL_R0_SS32;
-            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack, false, true, pszMode, __LINE__);
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack,
+                                                      false, f16BitSys, f16BitSys, pszMode, __LINE__);
             Bs3Tss16.ss0 = BS3_SEL_R0_SS16;
 # else
             Bs3Tss32.ss0 = BS3_SEL_R0_SS16;
-            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack, true, false, pszMode, __LINE__);
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack,
+                                                      true,  f16BitSys, f16BitSys, pszMode, __LINE__);
             Bs3Tss32.ss0 = BS3_SEL_R0_SS32;
 # endif
 
