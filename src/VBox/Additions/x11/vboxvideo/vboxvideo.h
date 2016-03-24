@@ -251,5 +251,10 @@ extern void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn);
 extern void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
 extern void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
 
+/* EDID generation */
+#ifdef VBOXVIDEO_13
+extern Bool VBOXEDIDSet(struct _xf86Output *output, DisplayModePtr pmode);
+#endif
+
 #endif /* _VBOXVIDEO_H_ */
 

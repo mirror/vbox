@@ -162,7 +162,7 @@ vboxvideo_drv_13_INCS = \
 	$(vboxvideo_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.3.0.0
 vboxvideo_drv_13_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
-vboxvideo_drv_13_SOURCES = $(vboxvideo_drv_SOURCES)
+vboxvideo_drv_13_SOURCES = $(vboxvideo_drv_SOURCES) edid.c
 
 
 #
