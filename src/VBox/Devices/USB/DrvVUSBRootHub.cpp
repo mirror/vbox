@@ -897,8 +897,14 @@ static DECLCALLBACK(int) vusbRhSetFrameProcessing(PVUSBIROOTHUBCONNECTOR pInterf
                                    vusbRhR3PeriodFrameWorkerWakeup, 0, RTTHREADTYPE_IO, "VUsbPeriodFrm");
         AssertRCReturn(rc, rc);
 
-        rc = PDMR3ThreadResume(pThis->hThreadPeriodFrame);
-        AssertRCReturn(rc, rc);
+        VMSTATE enmState = PDMDrvHlpVMState(pThis->pDrvIns);
+        if (   enmState == VMSTATE_RUNNING
+            || enmState == VMSTATE_RUNNING_LS
+            || enmState == VMSTATE_RUNNING_FT)
+        {
+            rc = PDMR3ThreadResume(pThis->hThreadPeriodFrame);
+            AssertRCReturn(rc, rc);
+        }
     }
     else if (   pThis->hThreadPeriodFrame
              && !uFrameRate)
@@ -922,7 +928,11 @@ static DECLCALLBACK(int) vusbRhSetFrameProcessing(PVUSBIROOTHUBCONNECTOR pInterf
              && uFrameRate)
     {
         /* Just switch to the new frame rate and let the periodic frame thread pick it up. */
-        ASMAtomicXchgU32(&pThis->uFrameRateDefault, uFrameRate);
+        uint32_t uFrameRateOld = ASMAtomicXchgU32(&pThis->uFrameRateDefault, uFrameRate);
+
+        /* Signal the frame thread to continue if it was stopped. */
+        if (!uFrameRateOld)
+            RTSemEventMultiSignal(pThis->hSemEventPeriodFrame);
     }
 
     return rc;
