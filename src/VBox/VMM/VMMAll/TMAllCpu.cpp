@@ -25,6 +25,7 @@
 #include "TMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/gim.h>
+#include <VBox/vmm/dbgf.h>
 #include <VBox/sup.h>
 
 #include <VBox/param.h>
@@ -237,7 +238,7 @@ DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
  */
 VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, PVMCPU pVCpu, uint64_t *poffRealTsc, bool *pfParavirtTsc)
 {
-    Assert(pVCpu->tm.s.fTSCTicking);
+    Assert(pVCpu->tm.s.fTSCTicking || DBGFIsStepping(pVCpu));
 
     *pfParavirtTsc = pVM->tm.s.fParavirtTscEnabled;
 
@@ -349,7 +350,7 @@ DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(PVMCPU pVCpu, uint64_t cNsToDeadli
 VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVM pVM, PVMCPU pVCpu, uint64_t *poffRealTsc,
                                                         bool *pfOffsettedTsc, bool *pfParavirtTsc)
 {
-    Assert(pVCpu->tm.s.fTSCTicking);
+    Assert(pVCpu->tm.s.fTSCTicking || DBGFIsStepping(pVCpu));
 
     *pfParavirtTsc = pVM->tm.s.fParavirtTscEnabled;
 
