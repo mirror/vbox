@@ -174,8 +174,6 @@ typedef enum IEMVERIFYEVENT
     IEMVERIFYEVENT_INVALID = 0,
     IEMVERIFYEVENT_IOPORT_READ,
     IEMVERIFYEVENT_IOPORT_WRITE,
-    IEMVERIFYEVENT_IOPORT_STR_READ,
-    IEMVERIFYEVENT_IOPORT_STR_WRITE,
     IEMVERIFYEVENT_RAM_WRITE,
     IEMVERIFYEVENT_RAM_READ
 } IEMVERIFYEVENT;
@@ -199,32 +197,16 @@ typedef struct IEMVERIFYEVTREC
         struct
         {
             RTIOPORT    Port;
-            uint8_t     cbValue;
+            uint32_t    cbValue;
         } IOPortRead;
 
         /** IEMVERIFYEVENT_IOPORT_WRITE */
         struct
         {
             RTIOPORT    Port;
-            uint8_t     cbValue;
+            uint32_t    cbValue;
             uint32_t    u32Value;
         } IOPortWrite;
-
-        /** IEMVERIFYEVENT_IOPORT_STR_READ */
-        struct
-        {
-            RTIOPORT    Port;
-            uint8_t     cbValue;
-            RTGCUINTREG cTransfers;
-        } IOPortStrRead;
-
-        /** IEMVERIFYEVENT_IOPORT_STR_WRITE */
-        struct
-        {
-            RTIOPORT    Port;
-            uint8_t     cbValue;
-            RTGCUINTREG cTransfers;
-        } IOPortStrWrite;
 
         /** IEMVERIFYEVENT_RAM_READ */
         struct
@@ -320,8 +302,6 @@ typedef struct IEMCPU
     /** Set if no comparison to REM is currently performed.
      * This is used to skip past really slow bits.  */
     bool                    fNoRem;
-    /** Saved fNoRem flag used by #iemInitExec and #iemUninitExec. */
-    bool                    fNoRemSavedByExec;
     /** Indicates that RAX and RDX differences should be ignored since RDTSC
      *  and RDTSCP are timing sensitive.  */
     bool                    fIgnoreRaxRdx;
@@ -507,8 +487,6 @@ typedef IEMCPU const *PCIEMCPU;
 #define IEM_ACCESS_PARTIAL_WRITE        UINT32_C(0x00000100)
 /** Used in aMemMappings to indicate that the entry is bounce buffered. */
 #define IEM_ACCESS_BOUNCE_BUFFERED      UINT32_C(0x00000200)
-/** Valid bit mask. */
-#define IEM_ACCESS_VALID_MASK           UINT32_C(0x000003ff)
 /** Read+write data alias. */
 #define IEM_ACCESS_DATA_RW              (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_WHAT_DATA)
 /** Write data alias. */

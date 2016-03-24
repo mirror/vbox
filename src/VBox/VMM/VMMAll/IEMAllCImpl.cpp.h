@@ -1175,7 +1175,6 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
         pCtx->cs.Attr.u   = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
         pCtx->cs.u32Limit = cbLimit;
         pCtx->cs.u64Base  = u64Base;
-        pIemCpu->enmCpuMode = iemCalcCpuMode(pCtx);
     }
     else
     {
@@ -1506,7 +1505,6 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             pCtx->cs.Attr.u   = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
             pCtx->cs.u32Limit = cbLimit;
             pCtx->cs.u64Base  = u64Base;
-            pIemCpu->enmCpuMode = iemCalcCpuMode(pCtx);
         }
         else
         {
@@ -1598,7 +1596,6 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             pCtx->cs.Attr.u   = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
             pCtx->cs.u32Limit = cbLimit;
             pCtx->cs.u64Base  = u64Base;
-            pIemCpu->enmCpuMode  = iemCalcCpuMode(pCtx);
         }
     }
     pCtx->eflags.Bits.u1RF = 0;
@@ -1817,7 +1814,6 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     pCtx->cs.Attr.u      = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pCtx->cs.u32Limit    = cbLimit;
     pCtx->cs.u64Base     = u64Base;
-    pIemCpu->enmCpuMode  = iemCalcCpuMode(pCtx);
     pCtx->eflags.Bits.u1RF = 0;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
@@ -2036,7 +2032,6 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     pCtx->cs.Attr.u      = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pCtx->cs.u32Limit    = cbLimit;
     pCtx->cs.u64Base     = u64Base;
-    pIemCpu->enmCpuMode  = iemCalcCpuMode(pCtx);
     pCtx->eflags.Bits.u1RF = 0;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
@@ -2285,9 +2280,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         uint64_t u64Base;
         uint32_t cbLimitCs = X86DESC_LIMIT_G(&DescCs.Legacy);
 
-        /** @todo Testcase: Is this correct? */
-        if (   DescCs.Legacy.Gen.u1Long
-            && IEM_IS_LONG_MODE(pIemCpu) )
+        if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         {
             if (!IEM_IS_CANONICAL(uNewRip))
             {
@@ -2346,7 +2339,6 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(&DescCs.Legacy);
         pCtx->cs.u32Limit       = cbLimitCs;
         pCtx->cs.u64Base        = u64Base;
-        pIemCpu->enmCpuMode     = iemCalcCpuMode(pCtx);
         pCtx->rsp               = uNewOuterRsp;
         pCtx->ss.Sel            = uNewOuterSs;
         pCtx->ss.ValidSel       = uNewOuterSs;
@@ -2382,9 +2374,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         uint64_t u64Base;
         uint32_t cbLimitCs = X86DESC_LIMIT_G(&DescCs.Legacy);
 
-        /** @todo Testcase: Is this correct? */
-        if (   DescCs.Legacy.Gen.u1Long
-            && IEM_IS_LONG_MODE(pIemCpu) )
+        if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         {
             if (!IEM_IS_CANONICAL(uNewRip))
             {
@@ -2435,7 +2425,6 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pCtx->cs.u64Base    = u64Base;
         /** @todo check if the hidden bits are loaded correctly for 64-bit
          *        mode.  */
-        pIemCpu->enmCpuMode = iemCalcCpuMode(pCtx);
         if (cbPop)
             iemRegAddToRsp(pIemCpu, pCtx, cbPop);
         pCtx->eflags.Bits.u1RF = 0;
@@ -3244,7 +3233,6 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
         pCtx->cs.u32Limit   = cbLimitCS;
         pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
-        pIemCpu->enmCpuMode = iemCalcCpuMode(pCtx);
         if (!pCtx->ss.Attr.n.u1DefBig)
             pCtx->sp        = (uint16_t)uNewESP;
         else
@@ -3315,7 +3303,6 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
         pCtx->cs.u32Limit   = cbLimitCS;
         pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
-        pIemCpu->enmCpuMode = iemCalcCpuMode(pCtx);
         pCtx->rsp           = uNewRsp;
         /* Done! */
     }
@@ -3577,7 +3564,6 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
     pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
     pCtx->cs.u32Limit   = cbLimitCS;
     pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
-    pIemCpu->enmCpuMode = iemCalcCpuMode(pCtx);
     if (pCtx->cs.Attr.n.u1Long || pCtx->cs.Attr.n.u1DefBig)
         pCtx->rsp       = uNewRsp;
     else
