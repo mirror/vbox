@@ -12205,6 +12205,7 @@ FNIEMOP_DEF(iemOp_retf)
 /** Opcode 0xcc. */
 FNIEMOP_DEF(iemOp_int_3)
 {
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_BP, true /*fIsBpInstr*/);
 }
 
@@ -12213,6 +12214,7 @@ FNIEMOP_DEF(iemOp_int_3)
 FNIEMOP_DEF(iemOp_int_Ib)
 {
     uint8_t u8Int; IEM_OPCODE_GET_NEXT_U8(&u8Int);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, u8Int, false /*fIsBpInstr*/);
 }
 
