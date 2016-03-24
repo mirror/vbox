@@ -1964,6 +1964,7 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QString
     if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
 
+    // TODO: Check if we can avoid copying here..
     /* Make a read-only copy of the corresponding map: */
     const ExtraDataMap data = m_data.value(strID);
 
@@ -2001,6 +2002,7 @@ QString UIExtraDataManager::extraDataStringUnion(const QString &strKey, const QS
     MapOfExtraDataMaps::const_iterator itMap = m_data.constFind(GlobalID);
     if (itMap != m_data.constEnd())
     {
+        /* Return string if present in the map: */
         ExtraDataMap::const_iterator itValue = itMap->constFind(strKey);
         if (itValue != itMap->constEnd())
             return *itValue;

@@ -37,8 +37,10 @@ class UIExtraDataEventHandler;
 class UIExtraDataManagerWindow;
 #endif /* DEBUG */
 
-/* Type definitions: */
+/** Defines the map of extra data values. The index is an extra-data key. */
 typedef QMap<QString, QString> ExtraDataMap;
+/** Defines the map of extra data maps. The index is a UUID string. */
+typedef QMap<QString, ExtraDataMap> MapOfExtraDataMaps;
 
 /** Singleton QObject extension
   * providing GUI with corresponding extra-data values,
@@ -591,25 +593,23 @@ private:
     void open(QWidget *pCenterWidget);
 #endif /* DEBUG */
 
-    /**
-     * Retrieves an extra-data key from both machine and global sources.
-     *
-     * If @a strID isn't #GlobalID, this will first check the extra-data associated
-     * with the machine given by @a strID then fallback on the global extra-data.
-     *
-     * @returns String value if found, null string if not.
-     * @param   strKey      The extra-data key to get.
-     * @param   strID       Machine UUID or #GlobalID.
-     * @param   strValue    Where to return the value when found.
-     */
+    /** Retrieves an extra-data key from both machine and global sources.
+      *
+      * If @a strID isn't #GlobalID, this will first check the extra-data associated
+      * with the machine given by @a strID then fallback on the global extra-data.
+      *
+      * @returns String value if found, null string if not.
+      * @param   strKey      The extra-data key to get.
+      * @param   strID       Machine UUID or #GlobalID.
+      * @param   strValue    Where to return the value when found. */
     QString extraDataStringUnion(const QString &strKey, const QString &strID);
     /** Determines whether feature corresponding to passed @a strKey is allowed.
-     *  If valid @a strID is set => applies to machine extra-data and global,
-     *  otherwise => only to global one. */
+      * If valid @a strID is set => applies to machine and global extra-data,
+      * otherwise => only to global one. */
     bool isFeatureAllowed(const QString &strKey, const QString &strID = GlobalID);
     /** Determines whether feature corresponding to passed @a strKey is restricted.
-     *  If valid @a strID is set => applies to machine extra-data and global,
-     *  otherwise => only to global one. */
+      * If valid @a strID is set => applies to machine and global extra-data,
+      * otherwise => only to global one. */
     bool isFeatureRestricted(const QString &strKey, const QString &strID = GlobalID);
 
     /** Translates bool flag into 'allowed' value. */
@@ -629,8 +629,6 @@ private:
     /** Holds extra-data event-handler instance. */
     UIExtraDataEventHandler *m_pHandler;
 
-    /** Maps of extra data maps.  The index is a UUID string. */
-    typedef QMap<QString, ExtraDataMap> MapOfExtraDataMaps;
     /** Holds extra-data map instance. */
     MapOfExtraDataMaps m_data;
 
