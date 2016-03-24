@@ -193,7 +193,14 @@ typedef struct VBOXRec
     bool fHostHasScreenBlankingFlag;
     /** Array of structures for receiving mode hints. */
     VBVAMODEHINT *paVBVAModeHints;
-#ifndef VBOXVIDEO_13
+#ifdef VBOXVIDEO_13
+# ifdef RT_OS_LINUX
+    /** Input device file descriptor for getting ACPI hot-plug events. */
+    int fdACPIDevices;
+    /** Input handler handle for ACPI hot-plug listener. */
+    void *hACPIEventHandler;
+# endif
+#else
     /** Has VBoxClient registered with us for setting video modes? */
     bool fHaveVBoxClient;
 #endif
@@ -250,6 +257,8 @@ extern void vboxAddModes(ScrnInfoPtr pScrn);
 extern void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn);
 extern void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
 extern void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
+extern void vbvxSetUpLinuxACPI(ScreenPtr pScreen);
+extern void vbvxCleanUpLinuxACPI(ScreenPtr pScreen);
 
 /* EDID generation */
 #ifdef VBOXVIDEO_13
