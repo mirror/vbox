@@ -1964,7 +1964,7 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QString
     if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
 
-    /* Read-only access corresponding map: */
+    /* Make a read-only copy of the corresponding map: */
     const ExtraDataMap data = m_data.value(strID);
 
     /* QString() if value was not set: */
@@ -1973,6 +1973,41 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QString
 
     /* Returns corresponding value: */
     return data[strKey];
+}
+
+QString UIExtraDataManager::extraDataStringUnion(const QString &strKey, const QString &strID)
+{
+    /* Machine extra-data first: */
+    if (strID != GlobalID)
+    {
+        MapOfExtraDataMaps::const_iterator itMap = m_data.constFind(strID);
+
+        /* Hot-load machine extra-data map if necessary: */
+        if (itMap == m_data.constEnd())
+        {
+            hotloadMachineExtraDataMap(strID);
+            itMap = m_data.constFind(strID);
+        }
+        if (itMap != m_data.constEnd())
+        {
+            /* Return string if present in the map: */
+            ExtraDataMap::const_iterator itValue = itMap->constFind(strKey);
+            if (itValue != itMap->constEnd())
+                return *itValue;
+        }
+    }
+
+    /* Global extra-data: */
+    MapOfExtraDataMaps::const_iterator itMap = m_data.constFind(GlobalID);
+    if (itMap != m_data.constEnd())
+    {
+        ExtraDataMap::const_iterator itValue = itMap->constFind(strKey);
+        if (itValue != itMap->constEnd())
+            return *itValue;
+    }
+
+    /* Not found, return null string: */
+    return QString();
 }
 
 void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID /* = GlobalID */)
@@ -4043,19 +4078,12 @@ void UIExtraDataManager::open(QWidget *pCenterWidget)
 
 bool UIExtraDataManager::isFeatureAllowed(const QString &strKey, const QString &strID /* = GlobalID */)
 {
-    /* Hot-load machine extra-data map if necessary: */
-    if (strID != GlobalID && !m_data.contains(strID))
-        hotloadMachineExtraDataMap(strID);
-
-    /* Read-only access corresponding map: */
-    const ExtraDataMap data = m_data.value(strID);
-
-    /* 'false' if value was not set: */
-    if (!data.contains(strKey))
+    /* Get the value. Return 'false' if not found: */
+    const QString strValue = extraDataStringUnion(strKey, strID);
+    if (strValue.isNull())
         return false;
 
     /* Check corresponding value: */
-    const QString &strValue = data[strKey];
     return    strValue.compare("true", Qt::CaseInsensitive) == 0
            || strValue.compare("yes", Qt::CaseInsensitive) == 0
            || strValue.compare("on", Qt::CaseInsensitive) == 0
@@ -4064,19 +4092,12 @@ bool UIExtraDataManager::isFeatureAllowed(const QString &strKey, const QString &
 
 bool UIExtraDataManager::isFeatureRestricted(const QString &strKey, const QString &strID /* = GlobalID */)
 {
-    /* Hot-load machine extra-data map if necessary: */
-    if (strID != GlobalID && !m_data.contains(strID))
-        hotloadMachineExtraDataMap(strID);
-
-    /* Read-only access corresponding map: */
-    const ExtraDataMap data = m_data.value(strID);
-
-    /* 'false' if value was not set: */
-    if (!data.contains(strKey))
+    /* Get the value. Return 'false' if not found: */
+    const QString strValue = extraDataStringUnion(strKey, strID);
+    if (strValue.isNull())
         return false;
 
     /* Check corresponding value: */
-    const QString &strValue = data[strKey];
     return    strValue.compare("false", Qt::CaseInsensitive) == 0
            || strValue.compare("no", Qt::CaseInsensitive) == 0
            || strValue.compare("off", Qt::CaseInsensitive) == 0
