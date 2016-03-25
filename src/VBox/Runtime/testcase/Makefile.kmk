@@ -542,6 +542,8 @@ tstRTPoll_SOURCES  = tstRTPoll.cpp
 
 tstPrfRT_TEMPLATE = VBOXR3TSTEXE
 tstPrfRT_SOURCES = tstPrfRT.cpp
+tstPrfRT_SOURCES.x86 = tstRTPrfA.asm
+tstPrfRT_SOURCES.amd64 = tstRTPrfA.asm
 
 tstRTPrfIO_TEMPLATE = VBOXR3TSTEXE
 tstRTPrfIO_SOURCES = tstRTPrfIO.cpp
