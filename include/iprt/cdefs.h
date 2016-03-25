@@ -1247,9 +1247,9 @@
 #ifdef __GNUC__
 # define DECLINLINE(type) static __inline__ type
 #elif defined(__cplusplus)
-# define DECLINLINE(type) inline type
+# define DECLINLINE(type) static inline type
 #elif defined(_MSC_VER)
-# define DECLINLINE(type) _inline type
+# define DECLINLINE(type) static _inline type
 #elif defined(__IBMC__)
 # define DECLINLINE(type) _Inline type
 #else
