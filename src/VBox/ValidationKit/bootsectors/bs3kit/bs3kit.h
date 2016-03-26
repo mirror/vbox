@@ -1831,7 +1831,9 @@ typedef struct BS3REGCTX
     BS3REG      cr2;                    /**< 0xb0  */
     BS3REG      cr3;                    /**< 0xb8  */
     BS3REG      cr4;                    /**< 0xc0  */
+    uint64_t    uUnused;                /**< 0xc8  */
 } BS3REGCTX;
+AssertCompileSize(BS3REGCTX, 0xd0);
 /** Pointer to a register context. */
 typedef BS3REGCTX BS3_FAR *PBS3REGCTX;
 /** Pointer to a const register context. */
@@ -2015,7 +2017,7 @@ BS3_DECL(void) Bs3Trap32SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, u
 
 /** The address of Bs3Trap32GenericEntries.
  * Bs3Trap32GenericEntries is an array of interrupt/trap/whatever entry
- * points, 8 bytes each, that will create a register frame and call the generic
+ * points, 10 bytes each, that will create a register frame and call the generic
  * C compatible trap handlers. */
 extern uint32_t BS3_DATA_NM(g_Bs3Trap32GenericEntriesFlatAddr);
 

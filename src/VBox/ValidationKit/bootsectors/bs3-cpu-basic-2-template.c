@@ -31,6 +31,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 
 
 /*********************************************************************************************************************************
@@ -91,13 +92,7 @@ static void bs3CpuBasic2_CompareTrapCtx1(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pS
     if (Bs3TestSubErrorCount() != cErrorsBefore)
     {
         Bs3TrapPrintFrame(pTrapCtx);
-#if 0
-# ifdef __WATCOMC__
-        __asm hlt;
-# else
-        __halt();
-# endif
-#endif
+ASMHalt();
     }
 }
 
@@ -116,13 +111,7 @@ static void bs3CpuBasic2_CompareGpCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStar
     if (Bs3TestSubErrorCount() != cErrorsBefore)
     {
         Bs3TrapPrintFrame(pTrapCtx);
-#if 0
-# ifdef __WATCOMC__
-        __asm hlt;
-# else
-        __halt();
-# endif
-#endif
+ASMHalt();
     }
 }
 
@@ -396,7 +385,7 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
     /*
      * Modify the gate CS value and run the handler at a different CPL.
      */
-# if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
+# if BS3_MODE_IS_32BIT_SYS(TMPL_MODE) || BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
     for (i = 0; i <= 3; i++)
     {
         for (iRing = 0; iRing <= 3; iRing++)
@@ -425,8 +414,6 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
             }
         }
     }
-//__asm hlt;
-//__asm nop;
 #else
 i = 0; NOREF(i);
 #endif

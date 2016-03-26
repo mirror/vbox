@@ -62,196 +62,70 @@ TMPL_BEGIN_TEXT
 ;
 BS3_PROC_BEGIN _Bs3Trap16GenericEntries
 BS3_PROC_BEGIN Bs3Trap16GenericEntries
-%macro Bs3Trap16GenericEntry 1
-        db      06ah, i                 ; push imm8 - note that this is a signextended value.
-        jmp     %1
+%macro Bs3Trap16GenericEntryNoErr 1
+        push    byte 0                  ; 2 byte: fake error code
+        db      06ah, i                 ; 2 byte: push imm8 - note that this is a signextended value.
+        jmp     %1                      ; 3 byte
+        ALIGNCODE(8)
+%assign i i+1
+%endmacro
+
+%macro Bs3Trap16GenericEntryErrCd 1
+        db      06ah, i                 ; 2 byte: push imm8 - note that this is a signextended value.
+        jmp     %1                      ; 3 byte
         ALIGNCODE(8)
 %assign i i+1
 %endmacro
 
 %assign i 0                             ; start counter.
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 0
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 1
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 2
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 3
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 4
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 5
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 6
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 7
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapErrCode ; 8
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 9
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapErrCode ; a
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapErrCode ; b
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapErrCode ; c
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapErrCode ; d
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapErrCode ; e
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; f  (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 10
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapErrCode ; 11
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 12
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 13
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 14
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 15 (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 16 (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 17 (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 18 (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 19 (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 1a (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 1b (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 1c (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 1d (reserved)
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapErrCode ; 1e
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt   ; 1f (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 0
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 1
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 2
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 3
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 4
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 5
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 6
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 7
+        Bs3Trap16GenericEntryErrCd bs3Trap16GenericTrapOrInt   ; 8
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 9
+        Bs3Trap16GenericEntryErrCd bs3Trap16GenericTrapOrInt   ; a
+        Bs3Trap16GenericEntryErrCd bs3Trap16GenericTrapOrInt   ; b
+        Bs3Trap16GenericEntryErrCd bs3Trap16GenericTrapOrInt   ; c
+        Bs3Trap16GenericEntryErrCd bs3Trap16GenericTrapOrInt   ; d
+        Bs3Trap16GenericEntryErrCd bs3Trap16GenericTrapOrInt   ; e
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; f  (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 10
+        Bs3Trap16GenericEntryErrCd bs3Trap16GenericTrapOrInt   ; 11
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 12
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 13
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 14
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 15 (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 16 (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 17 (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 18 (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 19 (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 1a (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 1b (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 1c (reserved)
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 1d (reserved)
+        Bs3Trap16GenericEntryErrCd bs3Trap16GenericTrapOrInt   ; 1e
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt   ; 1f (reserved)
 %rep 224
-        Bs3Trap16GenericEntry bs3Trap16GenericTrapOrInt
+        Bs3Trap16GenericEntryNoErr bs3Trap16GenericTrapOrInt
 %endrep
 BS3_PROC_END  Bs3Trap16GenericEntries
-
-
+AssertCompile(Bs3Trap16GenericEntries_EndProc - Bs3Trap16GenericEntries == 8*256)
 
 
 ;;
-; 80386+: Trap or interrupt (no error code).
+; Trap or interrupt with error code, faked if necessary.
+;
+; Note! This code is going to "misbehave" if the high word of ESP is not cleared.
 ;
 BS3_PROC_BEGIN _bs3Trap16GenericTrapOrInt
 BS3_PROC_BEGIN bs3Trap16GenericTrapOrInt
 CPU 386
-        jmp     near bs3Trap16GenericTrapOrInt80286 ; Bs3Trap16Init adjusts this on 80386+
-        push    ebp
-        movzx   ebp, sp
-        push    ebx                     ; BP - 04h
-        pushfd                          ; BP - 08h
-        cld
-        push    edx                     ; BP - 0ch
-        push    ss                      ; BP - 0eh
-        push    esp                     ; BP - 12h
-
-        ;
-        ; We may be comming from 32-bit code where SS is flat and ESP has a non-
-        ; zero high word. We need to thunk it for C code to work correctly with
-        ; [BP+xx] and [SS:BX+xx] style addressing that leaves out the high word.
-        ;
-        ; Note! Require ring-0 handler for non-standard stacks (SS.DPL must equal CPL).
-        ;
-        mov     bx, ss
-        lar     ebx, bx
-        test    ebx, X86LAR_F_D
-        jz      .stack_fine
-        test    esp, 0ffff0000h
-        jnz     .stack_thunk
-.stack_load_r0_ss16:
-        mov     bx, ss
-        and     bl, 3
-        AssertCompile(BS3_SEL_RING_SHIFT == 8)
-        mov     bh, bl
-        add     bx, BS3_SEL_R0_SS16
-        jmp     .stack_load_bx_into_ss
-.stack_thunk:
-        mov     ebx, esp
-        shr     ebx, 16
-        shl     ebx, X86_SEL_SHIFT
-        add     ebx, BS3_SEL_TILED_R0
-        cmp     ebx, BS3_SEL_TILED_R0_LAST
-        ja      .stack_esp_out_of_bounds
-.stack_load_bx_into_ss:
-        mov     ss, bx
-.stack_fine:
-        movzx   esp, sp
-
-        ; Reserve space for the the register and trap frame.
-        mov     bx, (BS3TRAPFRAME_size + 7) / 8
-.more_zeroed_space:
-        push    0
-        push    0
-        push    0
-        push    0
-        dec     bx
-        jnz     .more_zeroed_space
-        movzx   ebx, sp
-
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
-        mov     edx, [bp - 12h]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], edx
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], edx
-        mov     dx, [bp - 0eh]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], dx
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], dx
-        mov     edx, [bp - 0ch]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], edx
-        mov     edx, [bp - 8]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], edx ; high bits
-        mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], edx
-        mov     edx, [bp - 4]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], edx
-        mov     edx, [bp]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], edx
-
-        mov     dl, [bp + 4]
-        mov     [ss:bx + BS3TRAPFRAME.bXcpt], dl
-
-        add     bp, 4                   ; adjust so it points to the word before the iret frame.
-        xor     dx, dx
-        jmp     bs3Trap16GenericCommon
-
-.stack_esp_out_of_bounds:
-%ifdef BS3_STRICT
-        int3
-%endif
-        jmp     .stack_load_bx_into_ss
-BS3_PROC_END   bs3Trap16GenericTrapOrInt
-
-
-;;
-; 80286: Trap or interrupt (no error code)
-;
-BS3_PROC_BEGIN bs3Trap16GenericTrapOrInt80286
-CPU 286
-        push    bp
-        mov     bp, sp
-        push    bx
-        pushf
-        cld
-
-        ; Reserve space for the the register and trap frame.
-        mov     bx, (BS3TRAPFRAME_size + 7) / 8
-.more_zeroed_space:
-        push    0
-        push    0
-        push    0
-        push    0
-        dec     bx
-        jnz     .more_zeroed_space
-        mov     bx, sp
-
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ax
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ss
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], ss
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], dx
-        mov     dx, [bp - 4]
-        mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], dx
-        mov     dx, [bp - 2]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], dx
-        mov     dx, [bp]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], dx
-
-        mov     dl, [bp + 4]
-        mov     [ss:bx + BS3TRAPFRAME.bXcpt], dl
-
-        add     bp, 4                   ; adjust so it points to the word before the iret frame.
-        mov     dx, 1
-        jmp     bs3Trap16GenericCommon
-BS3_PROC_END   bs3Trap16GenericTrapOrInt80286
-
-
-;;
-; Trap with error code.
-;
-; Note! This code is going to "misbehave" if the high word of ESP is not cleared.
-;
-BS3_PROC_BEGIN _bs3Trap16GenericTrapErrCode
-BS3_PROC_BEGIN bs3Trap16GenericTrapErrCode
-CPU 386
-        jmp     near bs3Trap16GenericTrapOrInt80286 ; Bs3Trap16Init adjusts this on 80386+
+        jmp     near bs3Trap16GenericTrapErrCode80286 ; Bs3Trap16Init adjusts this on 80386+
         push    ebp
         movzx   ebp, sp
         push    ebx                     ; BP - 04h

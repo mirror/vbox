@@ -1162,6 +1162,7 @@ struc BS3REGCTX
         .cr2        resq 1              ; BS3REG      cr2;                    /**< 0xb0  */
         .cr3        resq 1              ; BS3REG      cr3;                    /**< 0xb8  */
         .cr4        resq 1              ; BS3REG      cr4;                    /**< 0xc0  */
+        .uUnused    resq 1              ; BS3REG      uUnused;                /**< 0xc8  */
 endstruc
 
 ;; @name BS3REG_CTX_F_XXX - BS3REGCTX::fbFlags masks.

@@ -67,152 +67,69 @@ BS3_GLOBAL_DATA g_apfnBs3TrapHandlers_c32, 1024
 ; Generic entry points for IDT handlers, 8 byte spacing.
 ;
 BS3_PROC_BEGIN Bs3Trap32GenericEntries
-%macro Bs3Trap32GenericEntry 1
-        db      06ah, i                 ; push imm8 - note that this is a signextended value.
-        jmp     %1
-        ALIGNCODE(8)
+%macro Bs3Trap32GenericEntryNoErr 1
+        push    byte 0                  ; 2 byte: fake error code.
+        db      06ah, i                 ; 2 byte: push imm8 - note that this is a signextended value.
+        jmp     near %1                 ; 5 byte
+        ALIGNCODE(2)
+%assign i i+1
+%endmacro
+
+%macro Bs3Trap32GenericEntryErrCd 1
+        db      06ah, i                 ; 2 byte: push imm8 - note that this is a signextended value.
+        jmp     near %1                 ; 5 byte
+        db      0cch, 0cch              ; 2 byte: padding.
+        ALIGNCODE(2)
 %assign i i+1
 %endmacro
 
 %assign i 0                             ; start counter.
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 0
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 2
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 3
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 4
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 5
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 6
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 7
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; 8
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 9
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; a
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; b
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; c
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; d
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; e
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; f  (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 10
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; 11
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 12
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 13
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 14
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 15 (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 16 (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 17 (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 18 (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 19 (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1a (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1b (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1c (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1d (reserved)
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapErrCode ; 1e
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt   ; 1f (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 0
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 1
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 2
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 3
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 4
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 5
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 6
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 7
+        Bs3Trap32GenericEntryErrCd bs3Trap32GenericTrapOrInt   ; 8
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 9
+        Bs3Trap32GenericEntryErrCd bs3Trap32GenericTrapOrInt   ; a
+        Bs3Trap32GenericEntryErrCd bs3Trap32GenericTrapOrInt   ; b
+        Bs3Trap32GenericEntryErrCd bs3Trap32GenericTrapOrInt   ; c
+        Bs3Trap32GenericEntryErrCd bs3Trap32GenericTrapOrInt   ; d
+        Bs3Trap32GenericEntryErrCd bs3Trap32GenericTrapOrInt   ; e
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; f  (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 10
+        Bs3Trap32GenericEntryErrCd bs3Trap32GenericTrapOrInt   ; 11
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 12
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 13
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 14
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 15 (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 16 (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 17 (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 18 (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 19 (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 1a (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 1b (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 1c (reserved)
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 1d (reserved)
+        Bs3Trap32GenericEntryErrCd bs3Trap32GenericTrapOrInt   ; 1e
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt   ; 1f (reserved)
 %rep 224
-        Bs3Trap32GenericEntry bs3Trap32GenericTrapOrInt
+        Bs3Trap32GenericEntryNoErr bs3Trap32GenericTrapOrInt
 %endrep
 BS3_PROC_END  Bs3Trap32GenericEntries
-
-
+AssertCompile(Bs3Trap32GenericEntries_EndProc - Bs3Trap32GenericEntries == 10*256)
 
 
 ;;
-; Trap or interrupt (no error code).
+; Trap or interrupt with error code, faked if necessary.
 ;
 BS3_PROC_BEGIN bs3Trap32GenericTrapOrInt
         push    ebp                     ; 0
         mov     ebp, esp
         pushfd                          ; -04h
-        cli
-        cld
-        push    eax                     ; -08h
-        push    edi                     ; -0ch
-        lea     eax, [esp + (4 + 1)*4]  ; 4 pushes above, 1 exception number push.
-        push    eax                     ; -10h = handler ESP
-        add     eax, 3*4                ; 3 dword iret frame
-        push    eax                     ; -14h = caller ESP if same CPL
-        push    ss                      ; -18h
-        push    ds                      ; -1ch
-
-        ; Make sure we've got a flat DS (ASSUMES ring-0). It makes everything so much simpler.
-        mov     ax, BS3_SEL_R0_DS32
-        mov     ds, ax
-
-        ;
-        ; We may be comming from 16-bit code with a 16-bit SS.  Thunk it as
-        ; the C code may assume flat SS and we'll mess up by using EBP/ESP/EDI
-        ; instead of BP/SP/SS:DI. ASSUMES standard GDT selector.
-        ;
-        mov     ax, ss
-        lar     eax, ax
-        test    eax, X86LAR_F_D
-        jz      .stack_thunk
-        mov     ax, BS3_SEL_R0_SS32
-        mov     ss, ax
-        jmp     .stack_flat
-.stack_thunk:
-        mov     di, ss
-        and     edi, X86_SEL_MASK_OFF_RPL
-        mov     al, [X86DESCGENERIC_BIT_OFF_BASE_HIGH1 / 8 + edi + Bs3Gdt wrt FLAT]
-        mov     ah, [X86DESCGENERIC_BIT_OFF_BASE_HIGH2 / 8 + edi + Bs3Gdt wrt FLAT]
-        shl     eax, 16
-        mov     ax, [X86DESCGENERIC_BIT_OFF_BASE_LOW / 8   + edi + Bs3Gdt wrt FLAT] ; eax = SS.base
-        movzx   ebp, bp                 ; SS:BP -> flat EBP.
-        add     ebp, eax
-        movzx   edi, sp                 ; SS:SP -> flat ESP in EAX.
-        add     eax, edi
-        mov     di, BS3_SEL_R0_SS32
-        mov     ss, di
-        mov     esp, eax
-        sub     dword [ebp - 10h], (4+1)*4   ; Recalc handler ESP in case of wraparound.
-        add     word [ebp - 10h],  (4+1)*4
-        sub     dword [ebp - 10h], (4+1+3)*4 ; Recalc caller ESP in case of wraparound.
-        add     word [ebp - 10h],  (4+1+3)*4
-.stack_flat:
-
-        ; Reserve space for the the register and trap frame.
-        mov     eax, (BS3TRAPFRAME_size + 7) / 8
-AssertCompileSizeAlignment(BS3TRAPFRAME, 8)
-.more_zeroed_space:
-        push    dword 0
-        push    dword 0
-        dec     eax
-        jnz     .more_zeroed_space
-        mov     edi, esp                ; edi points to trapframe structure.
-
-        ; Copy stuff from the stack over.
-        mov     al, [ebp + 4]
-        mov     [edi + BS3TRAPFRAME.bXcpt], al
-        mov     eax, [ebp]
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], eax
-        mov     eax, [ebp - 04h]
-        mov     [edi + BS3TRAPFRAME.fHandlerRfl], eax
-        mov     eax, [ebp - 08h]
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
-        mov     eax, [ebp - 0ch]
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rdi], eax
-        mov     eax, [ebp - 10h]
-        mov     [edi + BS3TRAPFRAME.uHandlerRsp], eax
-        mov     eax, [ebp - 14h]
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], eax
-        mov     ax, [ebp - 18h]
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ax
-        mov     [edi + BS3TRAPFRAME.uHandlerSs], ax
-        mov     ax, [ebp - 1ch]
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], ax
-
-        lea     ebp, [ebp + 4]          ; iret - 4 (i.e. ebp frame chain location)
-        jmp     bs3Trap32GenericCommon
-BS3_PROC_END   bs3Trap32GenericTrapOrInt
-
-
-;;
-; Trap with error code.
-;
-BS3_PROC_BEGIN bs3Trap32GenericTrapErrCode
-        push    ebp                     ; 0
-        mov     ebp, esp
-        pushfd                          ; -04h
-        cli
         cld
         push    eax                     ; -08h
         push    edi                     ; -0ch
@@ -224,7 +141,11 @@ BS3_PROC_BEGIN bs3Trap32GenericTrapErrCode
         push    ds                      ; -1ch
 
         ; Make sure we've got a flat DS (ASSUMES ring-0). It makes everything so much simpler.
-        mov     ax, BS3_SEL_R0_DS32
+        mov     ax, ss
+        and     al, 3
+        AssertCompile(BS3_SEL_RING_SHIFT == 8)
+        mov     ah, al
+        add     ax, BS3_SEL_R0_DS32
         mov     ds, ax
 
         ;
@@ -236,7 +157,11 @@ BS3_PROC_BEGIN bs3Trap32GenericTrapErrCode
         lar     eax, ax
         test    eax, X86LAR_F_D
         jz      .stack_thunk
-        mov     ax, BS3_SEL_R0_SS32
+        mov     ax, ss
+        and     al, 3
+        AssertCompile(BS3_SEL_RING_SHIFT == 8)
+        mov     ah, al
+        add     ax, BS3_SEL_R0_SS32
         mov     ss, ax
         jmp     .stack_flat
 .stack_thunk:
@@ -249,14 +174,18 @@ BS3_PROC_BEGIN bs3Trap32GenericTrapErrCode
         movzx   ebp, bp                 ; SS:BP -> flat EBP.
         add     ebp, eax
         movzx   edi, sp                 ; SS:SP -> flat ESP in EAX.
-        add     eax, edi
-        mov     di, BS3_SEL_R0_SS32
-        mov     ss, di
-        mov     esp, eax
-        sub     dword [ebp - 10h], (4+1+1)*4   ; Recalc handler ESP in case of wraparound.
-        add     word [ebp - 10h],  (4+1+1)*4
-        sub     dword [ebp - 14h], (4+1+1+3)*4 ; Recalc caller ESP in case of wraparound.
-        add     word [ebp - 14h],  (4+1+1+3)*4
+        add     edi, eax
+        mov     ax, ss
+        and     al, 3
+        AssertCompile(BS3_SEL_RING_SHIFT == 8)
+        mov     ah, al
+        add     ax, BS3_SEL_R0_SS32
+        mov     ss, ax
+        mov     esp, edi
+        sub     dword [ebp - 10h], (4+1)*4   ; Recalc handler ESP in case of wraparound.
+        add     word [ebp - 10h],  (4+1)*4
+        sub     dword [ebp - 10h], (4+1+3)*4 ; Recalc caller ESP in case of wraparound.
+        add     word [ebp - 10h],  (4+1+3)*4
 .stack_flat:
 
         ; Reserve space for the the register and trap frame.
@@ -318,6 +247,8 @@ BS3_PROC_END   bs3Trap32GenericTrapErrCode
 ; @param    ebp     Pointer to the dword before the iret frame, i.e. where ebp
 ;                   would be saved if this was a normal call.
 ;
+; @remarks This is a separate function for hysterical raisins.
+;
 BS3_PROC_BEGIN bs3Trap32GenericCommon
         ;
         ; Fake EBP frame.
@@ -342,10 +273,9 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         ;
         mov     ax, cs
         mov     [edi + BS3TRAPFRAME.uHandlerCs], ax
-        and     ax, 3
-        mov     cx, ax
-        shl     ax, BS3_SEL_RING_SHIFT
-        or      ax, cx
+        and     al, 3
+        AssertCompile(BS3_SEL_RING_SHIFT == 8)
+        mov     ah, al
         add     ax, BS3_SEL_R0_DS32
         mov     ds, ax
         mov     es, ax
@@ -410,6 +340,15 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         ;
         ; Control registers.
         ;
+        str     ax
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
+        sldt    ax
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], ax
+
+        mov     ax, ss
+        test    al, 3
+        jnz     .skip_crX_because_cpl_not_0
+
         mov     eax, cr0
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], eax
         mov     eax, cr2
@@ -418,10 +357,9 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
         mov     eax, cr4
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], eax
-        str     ax
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
-        sldt    ax
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], ax
+        jmp     .dispatch_to_handler
+.skip_crX_because_cpl_not_0:
+        or      byte [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
 
         ;
         ; Dispatch it to C code.

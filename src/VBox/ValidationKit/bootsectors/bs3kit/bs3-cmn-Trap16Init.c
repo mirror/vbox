@@ -42,7 +42,6 @@ extern BS3_DECL(void) BS3_FAR_CODE Bs3Trap16GenericEntries(void);
 
 /* These two are ugly.  Need data access for patching purposes. */
 extern uint8_t  BS3_FAR_DATA bs3Trap16GenericTrapOrInt[];
-extern uint8_t  BS3_FAR_DATA bs3Trap16GenericTrapErrCode[];
 
 
 BS3_DECL(void) Bs3Trap16InitEx(bool f386Plus)
@@ -56,15 +55,7 @@ BS3_DECL(void) Bs3Trap16InitEx(bool f386Plus)
      */
     if (f386Plus)
     {
-        uint8_t BS3_FAR_DATA *pbFunction = &bs3Trap16GenericTrapErrCode[0];
-#if ARCH_BITS == 16
-        if (g_bBs3CurrentMode != BS3_MODE_RM)
-            pbFunction = (uint8_t BS3_FAR_DATA *)BS3_FP_MAKE(BS3_SEL_TILED + 1, BS3_FP_OFF(pbFunction));
-#endif
-        pbFunction[1] = 0;
-        pbFunction[2] = 0;
-
-        pbFunction = &bs3Trap16GenericTrapOrInt[0];
+        uint8_t BS3_FAR_DATA *pbFunction = &bs3Trap16GenericTrapOrInt[0];
 #if ARCH_BITS == 16
         if (g_bBs3CurrentMode != BS3_MODE_RM)
             pbFunction = (uint8_t BS3_FAR_DATA *)BS3_FP_MAKE(BS3_SEL_TILED + 1, BS3_FP_OFF(pbFunction));
