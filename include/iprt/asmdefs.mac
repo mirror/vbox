@@ -946,7 +946,7 @@ BEGINPROC RT_NOCRT(%1)
 %endmacro
 
 ;;
-; Structure memember offset assertion macro.
+; Structure member offset assertion macro.
 %define AssertCompileMemberOffset(a_Type, a_Member, a_off) AssertCompileMemberOffsetML a_Type, a_Member, a_off
 %macro AssertCompileMemberOffsetML 3
  %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
@@ -954,6 +954,31 @@ BEGINPROC RT_NOCRT(%1)
   %assign AssertVar_offExpected %3
   %if AssertVar_offActual != AssertVar_offExpected
    %error %1 %+ . %+ %2 is at AssertVar_offActual instead of AssertVar_offExpected
+  %endif
+ %endif
+%endmacro
+
+;;
+; Structure member alignment assertion macro.
+%define AssertCompileMemberAlignment(a_Type, a_Member, a_cbAlign) AssertCompileMemberAlignmentML a_Type, a_Member, a_cbAlign
+%macro AssertCompileMemberAlignmentML 3
+ %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
+  %assign AssertVar_offActual   %1 %+ . %+ %2
+  %assign AssertVar_cbAlign     %3
+  %if AssertVar_offActual & (AssertVar_cbAlign - 1)
+   %error %1 %+ . %+ %2 is at AssertVar_offActual, expected AssertVar_cbAlign alignment
+  %endif
+ %endif
+%endmacro
+
+;;
+; Generic compile time expression assertion.
+%define AssertCompile(a_Expr) AssertCompileML { a_Expr }
+%macro AssertCompileML 1
+ %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
+  ;%assign AssertVar_uResult %1
+  %if (%1) != 1
+   %error %1 => AssertVar_uResult
   %endif
  %endif
 %endmacro
