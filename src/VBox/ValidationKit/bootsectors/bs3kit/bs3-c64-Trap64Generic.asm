@@ -118,7 +118,6 @@ BS3_PROC_BEGIN Bs3Trap64GenericTrapOrInt
         push    rbp                     ; 0
         mov     rbp, rsp
         pushfq                          ; -08h
-        cli
         cld
         push    rdi
 
@@ -156,7 +155,6 @@ BS3_PROC_BEGIN Bs3Trap64GenericTrapErrCode
         push    rbp                     ; 0
         mov     rbp, rsp
         pushfq                          ; -08h
-        cli
         cld
         push    rdi
 
@@ -240,10 +238,9 @@ BS3_PROC_BEGIN Bs3Trap64GenericCommon
         ;
         mov     ax, cs
         mov     [rdi + BS3TRAPFRAME.uHandlerCs], ax
-        and     ax, 3
-        mov     cx, ax
-        shl     ax, BS3_SEL_RING_SHIFT
-        or      ax, cx
+        AssertCompile(BS3_SEL_RING_SHIFT == 8)
+        and     al, 3
+        mov     ah, al
         add     ax, BS3_SEL_R0_DS64
         mov     ds, ax
         mov     es, ax
@@ -278,6 +275,15 @@ BS3_PROC_BEGIN Bs3Trap64GenericCommon
         ;
         ; Control registers.
         ;
+        str     ax
+        mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
+        sldt    ax
+        mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], ax
+
+        mov     ax, ss
+        test    al, 3
+        jnz     .skip_crX_because_cpl_not_0
+
         mov     rax, cr0
         mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], rax
         mov     rax, cr2
@@ -286,14 +292,15 @@ BS3_PROC_BEGIN Bs3Trap64GenericCommon
         mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], rax
         mov     rax, cr4
         mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], rax
-        str     ax
-        mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.tr], ax
-        sldt    ax
-        mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr], ax
+        jmp     .dispatch_to_handler
+
+.skip_crX_because_cpl_not_0:
+        or      byte [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
 
         ;
         ; Dispatch it to C code.
         ;
+.dispatch_to_handler:                   ; The double fault code joins us here.
         movzx   ebx, byte [rdi + BS3TRAPFRAME.bXcpt]
         lea     rax, [BS3_DATA16_WRT(_g_apfnBs3TrapHandlers_c64)]
         mov     rax, [rax + rbx * 8]
