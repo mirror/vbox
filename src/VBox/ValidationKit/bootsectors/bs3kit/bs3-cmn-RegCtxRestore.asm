@@ -33,6 +33,8 @@ BS3_EXTERN_DATA16 g_bBs3CurrentMode
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
 %endif
 TMPL_BEGIN_TEXT
+BS3_EXTERN_CMN Bs3SwitchToRing0
+TMPL_BEGIN_TEXT
 
 
 ;;
@@ -42,7 +44,6 @@ TMPL_BEGIN_TEXT
 ; @param        fFlags
 ; @uses         All registers and may trash stack immediately before the resume point.
 ;
-; @note         ASSUMES ring-0.
 ; @note         Only respects the BS3_MODE_CODE_MASK part of pRegCtx->bMode.
 ;
 %if TMPL_BITS == 16 || TMPL_BITS == 32
@@ -56,6 +57,15 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore_aborts ; special entry point for when watcom
 %endif
 BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         BS3_CALL_CONV_PROLOG 2
+
+        ;
+        ; Make sure we're in ring-0 when we do this job.
+        ;
+        mov     ax, ss
+        test    al, 3
+        jz      .in_ring0
+        call    Bs3SwitchToRing0
+.in_ring0:
 
         ;
         ; Prologue.  Loads ES with BS3DATA16/FLAT (for g_bBs3CurrentMode and
@@ -185,6 +195,8 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
 
         ; Restore control registers if they've changed.
         test    cl, BS3TRAPRESUME_F_SKIP_CRX
+        jnz     .skip_control_regs
+        test    byte [xBX + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
         jnz     .skip_control_regs
 
         mov     sAX, [xBX + BS3REGCTX.cr4]

@@ -241,9 +241,7 @@ BS3_PROC_BEGIN Bs3Trap64GenericCommon
         mov     ax, cs
         mov     [rdi + BS3TRAPFRAME.uHandlerCs], ax
         and     ax, 3
-        mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], al
-
-        mov     cx, ax                  ; AX is CPL, see above.
+        mov     cx, ax
         shl     ax, BS3_SEL_RING_SHIFT
         or      ax, cx
         add     ax, BS3_SEL_R0_DS64
@@ -267,6 +265,8 @@ BS3_PROC_BEGIN Bs3Trap64GenericCommon
         mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.rip], rcx
         mov     cx,  [rbp + 10h]
         mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
+        and     cl, 3
+        mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], cl
         mov     rcx, [rbp + 18h]
         mov     [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], rcx
         mov     rcx, [rbp + 20h]

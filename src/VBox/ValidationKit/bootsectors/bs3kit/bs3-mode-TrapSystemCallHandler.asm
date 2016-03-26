@@ -79,8 +79,8 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
 %define VAR_CALLER_SI      [xBP - sCB*5 - xCB]
 %define VAR_CALLER_DI      [xBP - sCB*6 - xCB]
 %if TMPL_BITS == 16
- %define VAR_CALLER_ESP    [xBP - sCB*7 - xCB]
- %define VAR_CALLER_EBP    [xBP - sCB*8 - xCB]
+ %define VAR_CALLER_EBP    [xBP - sCB*7 - xCB]
+ %define VAR_CALLER_ESP    [xBP - sCB*8 - xCB]
  %define VAR_CALLER_EFLAGS [xBP - sCB*9 - xCB]
  %define VAR_CALLER_MODE   [xBP - sCB*9 - xCB*2]
 %else
@@ -269,7 +269,6 @@ TMPL_BEGIN_TEXT
         mov     xBX, xSP                ; xBP = BS3REGCTX pointer.
         call    .save_context
 
-
 %if TMPL_BITS == 32
         ; Convert xBP to flat pointer in 32-bit
         push    ss
@@ -282,13 +281,13 @@ TMPL_BEGIN_TEXT
 
         ; Convert the register context from whatever it is to ring-0.
         BS3_ONLY_64BIT_STMT sub     rsp, 10h
-        BS3_ONLY_16BIT_STMT push    ss
-        push    xBX
         mov     ax, VAR_CALLER_AX
         sub     ax, BS3_SYSCALL_TO_RING0
         push    xAX
+        BS3_ONLY_16BIT_STMT push    ss
+        push    xBX
         BS3_CALL Bs3RegCtxConvertToRingX, 2
-        add     xSP, sCB BS3_ONLY_64BIT(+ 10h)
+        add     xSP, sCB + xCB BS3_ONLY_64BIT(+ 10h)
 
         ; Restore the register context (does not return).
         pop     xBX                     ; restore saved pointer.
@@ -577,7 +576,7 @@ TMPL_BEGIN_TEXT
         mov     [ss:bx + BS3REGCTX.rdi], ecx
         mov     ecx, VAR_CALLER_EFLAGS
         mov     [ss:bx + BS3REGCTX.rflags], ecx
- %if TMPL_BITS == 16
+
         ; Seed high EIP word if 32-bit CS.
         lar     ecx, [bp + 4]
         jnz     .save_context_full_done_16bit_high_word
@@ -585,9 +584,8 @@ TMPL_BEGIN_TEXT
         jz      .save_context_full_done_16bit_high_word
         mov     ecx, [BS3_DATA16_WRT(g_uBs3TrapEipHint)]
         mov     [ss:bx + BS3REGCTX.rip], ecx
- %endif ; 16-bit
 .save_context_full_done_16bit_high_word:
-%endif
+%endif ; 16-bit
         mov     xAX, VAR_CALLER_AX
         mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rax], xAX
         mov     xCX, VAR_CALLER_CX
@@ -628,7 +626,7 @@ TMPL_BEGIN_TEXT
         mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.ss], ax
 .save_context_full_done_stack:
         mov     xAX, [xBP + xCB*3]
-        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rflags], sAX
+        mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rflags], xAX
 
         mov     al, VAR_CALLER_MODE
         mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.bMode], al

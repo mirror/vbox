@@ -32,7 +32,7 @@
 
 
 BS3_DECL(bool) Bs3TestCheckRegCtxEx(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAcjust,
-                                    const char *pszMode, uint16_t idTestStep)
+                                    uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep)
 {
     uint16_t cErrorsBefore = Bs3TestSubErrorCount();
 
@@ -58,7 +58,7 @@ BS3_DECL(bool) Bs3TestCheckRegCtxEx(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpecte
     CHECK_MEMBER("r13",     "%08RX64",  pActualCtx->r13.u,    pExpectedCtx->r13.u);
     CHECK_MEMBER("r14",     "%08RX64",  pActualCtx->r14.u,    pExpectedCtx->r14.u);
     CHECK_MEMBER("r15",     "%08RX64",  pActualCtx->r15.u,    pExpectedCtx->r15.u);
-    CHECK_MEMBER("rflags",  "%08RX64",  pActualCtx->rflags.u, pExpectedCtx->rflags.u);
+    CHECK_MEMBER("rflags",  "%08RX64",  pActualCtx->rflags.u, pExpectedCtx->rflags.u | fExtraEfl);
     CHECK_MEMBER("rip",     "%08RX64",  pActualCtx->rip.u,    pExpectedCtx->rip.u + cbPcAdjust);
     CHECK_MEMBER("cs",      "%04RX16",  pActualCtx->cs,       pExpectedCtx->cs);
     CHECK_MEMBER("ds",      "%04RX16",  pActualCtx->ds,       pExpectedCtx->ds);
@@ -69,10 +69,13 @@ BS3_DECL(bool) Bs3TestCheckRegCtxEx(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpecte
     CHECK_MEMBER("ldtr",    "%04RX16",  pActualCtx->ldtr,     pExpectedCtx->ldtr);
     CHECK_MEMBER("bMode",   "%#04x",    pActualCtx->bMode,    pExpectedCtx->bMode);
     CHECK_MEMBER("bCpl",    "%u",       pActualCtx->bCpl,     pExpectedCtx->bCpl);
-    CHECK_MEMBER("cr0",     "%08RX32",  pActualCtx->cr0.u,    pExpectedCtx->cr0.u);
-    CHECK_MEMBER("cr2",     "%08RX32",  pActualCtx->cr2.u,    pExpectedCtx->cr2.u);
-    CHECK_MEMBER("cr3",     "%08RX32",  pActualCtx->cr3.u,    pExpectedCtx->cr3.u);
-    CHECK_MEMBER("cr4",     "%08RX32",  pActualCtx->cr4.u,    pExpectedCtx->cr4.u);
+    if (!(pActualCtx->fbFlags & BS3REG_CTX_F_NO_CR))
+    {
+        CHECK_MEMBER("cr0", "%08RX64",  pActualCtx->cr0.u,    pExpectedCtx->cr0.u);
+        CHECK_MEMBER("cr2", "%08RX64",  pActualCtx->cr2.u,    pExpectedCtx->cr2.u);
+        CHECK_MEMBER("cr3", "%08RX64",  pActualCtx->cr3.u,    pExpectedCtx->cr3.u);
+        CHECK_MEMBER("cr4", "%08RX64",  pActualCtx->cr4.u,    pExpectedCtx->cr4.u);
+    }
 #undef CHECK_MEMBER
 
     return Bs3TestSubErrorCount() == cErrorsBefore;

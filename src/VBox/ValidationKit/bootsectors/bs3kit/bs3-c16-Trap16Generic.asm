@@ -121,7 +121,6 @@ CPU 386
         movzx   ebp, sp
         push    ebx                     ; BP - 04h
         pushfd                          ; BP - 08h
-        cli
         cld
         push    edx                     ; BP - 0ch
         push    ss                      ; BP - 0eh
@@ -132,7 +131,7 @@ CPU 386
         ; zero high word. We need to thunk it for C code to work correctly with
         ; [BP+xx] and [SS:BX+xx] style addressing that leaves out the high word.
         ;
-        ; ASSUMES handler is executing in ring-0 (SS.DPL must equal CPL).
+        ; Note! Require ring-0 handler for non-standard stacks (SS.DPL must equal CPL).
         ;
         mov     bx, ss
         lar     ebx, bx
@@ -141,7 +140,11 @@ CPU 386
         test    esp, 0ffff0000h
         jnz     .stack_thunk
 .stack_load_r0_ss16:
-        mov     bx, BS3_SEL_R0_SS16
+        mov     bx, ss
+        and     bl, 3
+        AssertCompile(BS3_SEL_RING_SHIFT == 8)
+        mov     bh, bl
+        add     bx, BS3_SEL_R0_SS16
         jmp     .stack_load_bx_into_ss
 .stack_thunk:
         mov     ebx, esp
@@ -207,7 +210,6 @@ CPU 286
         mov     bp, sp
         push    bx
         pushf
-        cli
         cld
 
         ; Reserve space for the the register and trap frame.
@@ -254,7 +256,6 @@ CPU 386
         movzx   ebp, sp
         push    ebx                     ; BP - 04h
         pushfd                          ; BP - 08h
-        cli
         cld
         push    edx                     ; BP - 0ch
         push    ss                      ; BP - 0eh
@@ -265,7 +266,7 @@ CPU 386
         ; zero high word. We need to thunk it for C code to work correctly with
         ; [BP+xx] and [SS:BX+xx] style addressing that leaves out the high word.
         ;
-        ; ASSUMES handler is executing in ring-0.
+        ; Note! Require ring-0 handler for non-standard stacks (SS.DPL must equal CPL).
         ;
         mov     bx, ss
         lar     ebx, bx
@@ -274,7 +275,11 @@ CPU 386
         test    esp, 0ffff0000h
         jnz     .stack_thunk
 .stack_load_r0_ss16:
-        mov     bx, BS3_SEL_R0_SS16
+        mov     bx, ss
+        and     bl, 3
+        AssertCompile(BS3_SEL_RING_SHIFT == 8)
+        mov     bh, bl
+        add     bx, BS3_SEL_R0_SS16
         jmp     .stack_load_bx_into_ss
 .stack_thunk:
         mov     ebx, esp
@@ -343,7 +348,6 @@ CPU 286
         mov     bp, sp
         push    bx
         pushf
-        cli
         cld
 
         ; Reserve space for the the register and trap frame.
@@ -546,6 +550,9 @@ CPU 386
         jnz     .save_286_control_registers
 .save_386_control_registers:
 CPU 386
+        mov     ax, ss
+        test    al, 3
+        jnz     .skip_crX_because_cpl_not_0
         mov     eax, cr0
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], eax
         mov     eax, cr2
@@ -554,6 +561,9 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
         mov     eax, cr4
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], eax
+        jmp     .dispatch_to_handler
+.skip_crX_because_cpl_not_0:
+        or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
         jmp     .dispatch_to_handler
 CPU 286
 .save_286_control_registers:

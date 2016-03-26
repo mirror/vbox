@@ -1825,7 +1825,8 @@ typedef struct BS3REGCTX
     uint16_t    ldtr;                   /**< 0x9e  */
     uint8_t     bMode;                  /**< 0xa0:  BS3_MODE_XXX. */
     uint8_t     bCpl;                   /**< 0xa1: 0-3, 0 is used for real mode. */
-    uint8_t     abPadding[6];           /**< 0xa2  */
+    uint8_t     fbFlags;                /**< 0xa2: BS3REG_CTX_F_XXX  */
+    uint8_t     abPadding[5];           /**< 0xa3  */
     BS3REG      cr0;                    /**< 0xa8  */
     BS3REG      cr2;                    /**< 0xb0  */
     BS3REG      cr3;                    /**< 0xb8  */
@@ -1835,6 +1836,13 @@ typedef struct BS3REGCTX
 typedef BS3REGCTX BS3_FAR *PBS3REGCTX;
 /** Pointer to a const register context. */
 typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
+
+/** @name BS3REG_CTX_F_XXX - BS3REGCTX::fbFlags masks.
+ * @{ */
+/** The context doesn't have valid values for the CRx fields.
+ * This is usually because it wasn't created with CPL=0. */
+#define BS3REG_CTX_F_NO_CR              UINT8_C(0x01)
+/** @} */
 
 /**
  * Saves the current register context.
@@ -1863,7 +1871,7 @@ BS3_DECL(void) Bs3RegCtxConvertToRingX_c64(PBS3REGCTX pRegCtx, uint8_t bRing); /
  * @param   pRegCtx     The register context to be restored and resumed.
  * @param   fFlags      BS3REGCTXRESTORE_F_XXX.
  *
- * @remarks Caller must be in ring-0!
+ * @remarks Will switch to ring-0.
  * @remarks Does not return.
  */
 BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c16(PCBS3REGCTX pRegCtx, uint16_t fFlags);
@@ -2269,17 +2277,18 @@ BS3_DECL(void) Bs3TestSkippedV_c64(const char BS3_FAR *pszFormat, va_list va); /
  * @returns true if equal, false if not.
  * @param   pActualCtx      The actual register context.
  * @param   pExpectedCtx    Expected register context.
- * @param   cbPcAdjust      Program counter adjustment (applied to pExpectedCtx).
- * @param   cbSpAdjust      Stack pointer adjustment (applied to pExpectedCtx).
+ * @param   cbPcAdjust      Program counter adjustment (applied to @a pExpectedCtx).
+ * @param   cbSpAdjust      Stack pointer adjustment (applied to @a pExpectedCtx).
+ * @param   fExtraEfl       Extra EFLAGS to OR into @a pExepctedCtx.
  * @param   pszMode         CPU mode or some other helpful text.
  * @param   idTestStep      Test step identifier.
  */
-BS3_DECL(bool) Bs3TestCheckRegCtxEx_c16(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
-                                        int16_t cbSpAdjust, const char *pszMode, uint16_t idTestStep);
-BS3_DECL(bool) Bs3TestCheckRegCtxEx_c32(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
-                                        int16_t cbSpAdjust, const char *pszMode, uint16_t idTestStep); /** @copydoc Bs3TestCheckRegCtxEx_c16 */
-BS3_DECL(bool) Bs3TestCheckRegCtxEx_c64(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
-                                        int16_t cbSpAdjust, const char *pszMode, uint16_t idTestStep); /** @copydoc Bs3TestCheckRegCtxEx_c16 */
+BS3_DECL(bool) Bs3TestCheckRegCtxEx_c16(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAdjust,
+                                        uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep);
+BS3_DECL(bool) Bs3TestCheckRegCtxEx_c32(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAdjust,
+                                        uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep); /** @copydoc Bs3TestCheckRegCtxEx_c16 */
+BS3_DECL(bool) Bs3TestCheckRegCtxEx_c64(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAdjust,
+                                        uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep); /** @copydoc Bs3TestCheckRegCtxEx_c16 */
 #define Bs3TestCheckRegCtxEx BS3_CMN_NM(Bs3TestCheckRegCtxEx) /**< Selects #Bs3TestCheckRegCtxEx_c16, #Bs3TestCheckRegCtxEx_c32 or #Bs3TestCheckRegCtxEx_c64. */
 
 /**

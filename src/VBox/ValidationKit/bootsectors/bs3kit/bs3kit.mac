@@ -1156,12 +1156,20 @@ struc BS3REGCTX
         .ldtr       resw 1              ; uint16_t    ldtr;                   /**< 0x9e  */
         .bMode      resb 1              ; uint8_t     bMode;                  /**< 0xa0:  BS3_MODE_XXX. */
         .bCpl       resb 1              ; uint8_t     bCpl;                   /**< 0xa1: 0-3, 0 is used for real mode. */
-        .abPadding  resb 6              ; uint8_t     abPadding[6];           /**< 0xa2  */
+        .fbFlags    resb 1              ; uint8_t     fbFlags;                /**< 0xa2: BS3REG_CTX_F_XXX  */
+        .abPadding  resb 5              ; uint8_t     abPadding[5];           /**< 0xa4  */
         .cr0        resq 1              ; BS3REG      cr0;                    /**< 0xa8  */
         .cr2        resq 1              ; BS3REG      cr2;                    /**< 0xb0  */
         .cr3        resq 1              ; BS3REG      cr3;                    /**< 0xb8  */
         .cr4        resq 1              ; BS3REG      cr4;                    /**< 0xc0  */
 endstruc
+
+;; @name BS3REG_CTX_F_XXX - BS3REGCTX::fbFlags masks.
+; @{
+;; The context doesn't have valid values for the CRx fields.
+;  This is usually because it wasn't created with CPL=0.
+%define BS3REG_CTX_F_NO_CR              0x01
+;; @}
 
 ;;
 ; BS3 Trap Frame.
