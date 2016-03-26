@@ -140,7 +140,7 @@ BS3_PROC_BEGIN bs3Trap32GenericTrapOrInt
         push    ss                      ; -18h
         push    ds                      ; -1ch
 
-        ; Make sure we've got a flat DS (ASSUMES ring-0). It makes everything so much simpler.
+        ; Make sure we've got a flat DS. It makes everything so much simpler.
         mov     ax, ss
         and     al, 3
         AssertCompile(BS3_SEL_RING_SHIFT == 8)
