@@ -191,7 +191,6 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         mov     sDX, cr4
         cmp     sAX, sDX
         je      .skip_cr4
-hlt
         mov     cr4, sAX
 .skip_cr4:
 
