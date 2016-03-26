@@ -72,11 +72,28 @@ BS3_PROC_END_MODE   bs3CpuBasic2_iret
 %endif
 
 
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_TssGateEsp_IntXx
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int80
         int     80h
-        nop
-BS3_PROC_END_MODE   bs3CpuBasic2_TssGateEsp_IntXx
+        ud2
+BS3_PROC_END_MODE   bs3CpuBasic2_Int80
 
+
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int81
+        int     81h
+        ud2
+BS3_PROC_END_MODE   bs3CpuBasic2_Int81
+
+
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int82
+        int     82h
+        ud2
+BS3_PROC_END_MODE   bs3CpuBasic2_Int82
+
+
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int83
+        int     83h
+        ud2
+BS3_PROC_END_MODE   bs3CpuBasic2_Int83
 
 
 

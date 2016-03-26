@@ -123,6 +123,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-Trap16SetGate.c \
 	bs3-cmn-Trap32Init.c \
 	bs3-cmn-Trap32SetGate.c \
+	bs3-cmn-Trap64Init.c \
 	bs3-cmn-Trap64SetGate.c \
 	bs3-cmn-TrapDefaultHandler.c \
 	bs3-cmn-TrapPrintFrame.c \
@@ -190,7 +191,8 @@ bs3kit-common-64-asm_TEMPLATE = VBoxBS3KitImg64
 bs3kit-common-64_asm_INSTTYPE = none
 bs3kit-common-64-asm_DEFS     = TMPL_LM64 BS3_CMN_ONLY
 bs3kit-common-64-asm_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
-bs3kit-common-64-asm_SOURCES  = $(filter %.asm,$(VBOX_BS3KIT_COMMON_SOURCES))
+bs3kit-common-64-asm_SOURCES  = $(filter %.asm,$(VBOX_BS3KIT_COMMON_SOURCES)) \
+       bs3-c64-Trap64Generic.asm
 
 # The 64-bit BS3Kit library.
 LIBRARIES += bs3kit-common-64-c
@@ -233,6 +235,7 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-PagingGetRootForPAE16.asm \
 	bs3-mode-PagingGetRootForPAE32.asm \
 	bs3-mode-PagingGetRootForLM64.asm \
+	bs3-mode-TrapInit.c \
 	bs3-mode-TrapSystemCallHandler.asm \
 	bs3-mode-TestDoModes.c \
 	bs3-mode-TestDoModesHlp.asm \

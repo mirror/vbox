@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Initialize all components, real mode.
+ * BS3Kit - Bs3Trap64Init
  */
 
 /*
@@ -24,23 +24,42 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
-#include "bs3-cmn-test.h"
 
 
-BS3_DECL(void) Bs3InitAll_rm(void)
+BS3_DECL(void) Bs3Trap64Init(void)
 {
-    Bs3CpuDetect_rm();
-    Bs3InitMemory_rm();
-    if (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_F_LONG_MODE)
-        Bs3Trap64Init();
-    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
-        Bs3Trap32Init();
-    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
-        Bs3Trap16Init();
+     X86TSS64 BS3_FAR *pTss;
+     unsigned iIdt;
+
+    /*
+     * IDT entries, except the system call gate.
+     * The #DF entry get IST=1, all others IST=0.
+     */
+    for (iIdt = 0; iIdt < BS3_TRAP_SYSCALL; iIdt++)
+        Bs3Trap64SetGate(iIdt, AMD64_SEL_TYPE_SYS_INT_GATE, 0 /*bDpl*/,
+                         BS3_SEL_R0_CS64, BS3_DATA_NM(g_Bs3Trap64GenericEntriesFlatAddr) + iIdt * 8, iIdt == X86_XCPT_DF /*bIst*/);
+    for (iIdt = BS3_TRAP_SYSCALL + 1; iIdt < 256; iIdt++)
+        Bs3Trap64SetGate(iIdt, AMD64_SEL_TYPE_SYS_INT_GATE, 0 /*bDpl*/,
+                         BS3_SEL_R0_CS64, BS3_DATA_NM(g_Bs3Trap64GenericEntriesFlatAddr) + iIdt * 8, 0 /*bIst*/);
+
+    /*
+     * Initialize the normal TSS so we can do ring transitions via the IDT.
+     */
+    pTss = &BS3_DATA_NM(Bs3Tss64);
+    Bs3MemZero(pTss, sizeof(*pTss));
+    pTss->rsp0      = BS3_ADDR_STACK_R0;
+    pTss->rsp1      = BS3_ADDR_STACK_R1;
+    pTss->rsp2      = BS3_ADDR_STACK_R2;
+    pTss->ist1      = BS3_ADDR_STACK_R0_IST1;
+    pTss->ist2      = BS3_ADDR_STACK_R0_IST2;
+    pTss->ist3      = BS3_ADDR_STACK_R0_IST3;
+    pTss->ist4      = BS3_ADDR_STACK_R0_IST4;
+    pTss->ist5      = BS3_ADDR_STACK_R0_IST5;
+    pTss->ist6      = BS3_ADDR_STACK_R0_IST6;
+    pTss->ist7      = BS3_ADDR_STACK_R0_IST7;
 }
 

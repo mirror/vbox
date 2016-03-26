@@ -42,6 +42,7 @@
  * Note! pragma aux <fnname> aborts can only be used with functions
  *       implemented in C and functions that does not have parameters.
  */
+#define BS3_KIT_WITH_NO_RETURN
 #ifndef BS3_KIT_WITH_NO_RETURN
 # undef  DECL_NO_RETURN
 # define DECL_NO_RETURN(type) type
@@ -1869,7 +1870,7 @@ BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c16(PCBS3REGCTX pRegCtx, uint16_
 BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c32(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
 BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c64(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
 #define Bs3RegCtxRestore BS3_CMN_NM(Bs3RegCtxRestore) /**< Selects #Bs3RegCtxRestore_c16, #Bs3RegCtxRestore_c32 or #Bs3RegCtxRestore_c64. */
-#if /*!defined(BS3_KIT_WITH_NO_RETURN) &&*/ defined(__WATCOMC__)
+#if !defined(BS3_KIT_WITH_NO_RETURN) && defined(__WATCOMC__)
 # pragma aux Bs3RegCtxRestore_c16 "_Bs3RegCtxRestore_aborts_c16" __aborts
 # pragma aux Bs3RegCtxRestore_c32 "_Bs3RegCtxRestore_aborts_c32" __aborts
 #endif
@@ -1898,7 +1899,7 @@ typedef struct BS3TRAPFRAME
     /** 0x01: The size of the IRET frame. */
     uint8_t     cbIretFrame;
     /** 0x02: The handler CS. */
-    uint16_t    uHandlerCc;
+    uint16_t    uHandlerCs;
     /** 0x04: The handler SS. */
     uint16_t    uHandlerSs;
     /** 0x06: Explicit alignment. */
@@ -2480,7 +2481,7 @@ BS3_DECL(void) Bs3InitMemory_rm(void);
     BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32_16)  a_Parameters; \
     BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_ppv86)    a_Parameters; \
     BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16)    a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_16) a_Parameters; \
+    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_32) a_Parameters; \
     BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_v86)a_Parameters; \
     BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32)    a_Parameters; \
     BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32_16) a_Parameters; \
@@ -2560,6 +2561,12 @@ BS3_MODE_EXPAND_PROTOTYPES(uint8_t, Bs3CpuDetect,(void));
 /** The return value of #Bs3CpuDetect_mmm. (Initial value is BS3CPU_TYPE_MASK.) */
 extern uint16_t BS3_DATA_NM(g_uBs3CpuDetected);
 
+/**
+ * Initializes trap handling for the current system.
+ *
+ * Calls the appropriate Bs3Trap16Init, Bs3Trap32Init or Bs3Trap64Init function.
+ */
+BS3_MODE_EXPAND_PROTOTYPES(void, Bs3TrapInit,(void));
 
 /**
  * Executes the array of tests in every possibly mode.
@@ -2568,6 +2575,7 @@ extern uint16_t BS3_DATA_NM(g_uBs3CpuDetected);
  * @param   cEntries        The number of sub-test entries.
  */
 BS3_MODE_EXPAND_PROTOTYPES(void, Bs3TestDoModes, (PCBS3TESTMODEENTRY paEntries, size_t cEntries));
+
 
 /** @} */
 

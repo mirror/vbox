@@ -34,14 +34,30 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+# undef MyBs3Idt
+# if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
+#  define MyBs3Idt  BS3_DATA_NM(Bs3Idt16)
+# elif BS3_MODE_IS_32BIT_SYS(TMPL_MODE)
+#  define MyBs3Idt  BS3_DATA_NM(Bs3Idt32)
+# elif BS3_MODE_IS_64BIT_SYS(TMPL_MODE)
+#  define MyBs3Idt  BS3_DATA_NM(Bs3Idt64)
+# else
+#  error "TMPL_MODE"
+# endif
+
+
+/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_TssGateEsp_IntXx)(void);
+extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int80)(void);
+extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int81)(void);
+extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int82)(void);
+extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int83)(void);
 
 
-# if TMPL_MODE == BS3_MODE_PE16 \
-  || TMPL_MODE == BS3_MODE_PE16_32
-
+#if TMPL_MODE == BS3_MODE_PE16 || TMPL_MODE == BS3_MODE_PE16_32 || TMPL_MODE == BS3_MODE_LM64
 /**
  * Compares trap stuff.
  */
@@ -62,8 +78,10 @@ static void bs3CpuBasic2_CompareTrapCtx1(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pS
     if (Bs3TestSubErrorCount() != cErrorsBefore)
         Bs3TrapPrintFrame(pTrapCtx);
 }
+#endif
 
 
+#if TMPL_MODE == BS3_MODE_PE16 || TMPL_MODE == BS3_MODE_PE16_32
 /**
  * Worker for bs3CpuBasic2_TssGateEsp that tests the INT 80 from outer rings.
  */
@@ -116,7 +134,6 @@ static void bs3CpuBasic2_TssGateEsp_AltStackOuterRing(PCBS3REGCTX pCtx, uint8_t 
                            pbAltStack, Ctx2.ss, Ctx2.rsp.u32);
     }
 }
-
 #endif
 
 
@@ -147,7 +164,7 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
 
     Bs3RegCtxSave(&Ctx);
     Ctx.rsp.u -= 0x80;
-    Ctx.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_TssGateEsp_IntXx));
+    Ctx.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int80));
 # if TMPL_BITS == 32
     BS3_DATA_NM(g_uBs3TrapEipHint) = Ctx.rip.u32;
 # endif
@@ -157,13 +174,8 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
      * accessible from all DPLs, the latter not. So, start with setting
      * the DPLs.
      */
-# if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
-    BS3_DATA_NM(Bs3Idt16)[0x80].Gate.u2Dpl = 3;
-    BS3_DATA_NM(Bs3Idt16)[0x81].Gate.u2Dpl = 0;
-# else
-    BS3_DATA_NM(Bs3Idt32)[0x80].Gate.u2Dpl = 3;
-    BS3_DATA_NM(Bs3Idt32)[0x81].Gate.u2Dpl = 0;
-# endif
+    MyBs3Idt[0x80].Gate.u2Dpl = 3;
+    MyBs3Idt[0x81].Gate.u2Dpl = 0;
 
     /*
      * Check that the basic stuff works first.
@@ -237,16 +249,149 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
     /*
      * Re-initialize the IDT.
      */
-#if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
-    Bs3Trap16Init();
-#elif BS3_MODE_IS_32BIT_SYS(TMPL_MODE)
-    Bs3Trap32Init();
-#elif BS3_MODE_IS_32BIT_SYS(TMPL_MODE)
-    Bs3Trap64Init();
-#endif
-
+    TMPL_NM(Bs3TrapInit)();
     return bRet;
 }
+
+
+
+BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
+{
+    uint8_t         bRet = 0;
+    BS3TRAPFRAME    TrapCtx;
+    BS3REGCTX       Ctx80;
+    BS3REGCTX       Ctx81;
+    BS3REGCTX       Ctx82;
+    BS3REGCTX       Ctx83;
+    uint8_t        *pbTmp;
+    unsigned        uLine;
+    const char     *pszMode = BS3_DATA_NM(TMPL_NM(g_szBs3ModeName));
+    bool const      f16BitSys = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
+
+    pbTmp = NULL; NOREF(pbTmp); uLine = 0; NOREF(uLine); NOREF(pszMode); NOREF(f16BitSys);
+
+    /* make sure they're allocated  */
+    Bs3MemZero(&Ctx80, sizeof(Ctx80));
+    Bs3MemZero(&Ctx81, sizeof(Ctx81));
+    Bs3MemZero(&Ctx82, sizeof(Ctx82));
+    Bs3MemZero(&Ctx83, sizeof(Ctx83));
+    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
+
+#if !BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
+
+    /*
+     * IDT entry 80 thru 83 are assigned DPLs according to the number.
+     * (We'll be useing more, but this'll do for now.)
+     */
+    MyBs3Idt[0x80].Gate.u2Dpl = 0;
+    MyBs3Idt[0x81].Gate.u2Dpl = 1;
+    MyBs3Idt[0x82].Gate.u2Dpl = 2;
+    MyBs3Idt[0x83].Gate.u2Dpl = 3;
+
+    Bs3RegCtxSave(&Ctx80);
+    Ctx80.rsp.u -= 0x80;
+    Ctx80.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int80));
+# if TMPL_BITS == 32
+    BS3_DATA_NM(g_uBs3TrapEipHint) = Ctx80.rip.u32;
+# endif
+    Bs3MemCpy(&Ctx81, &Ctx80, sizeof(Ctx80));
+    Ctx81.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int81));
+    Bs3MemCpy(&Ctx82, &Ctx80, sizeof(Ctx80));
+    Ctx82.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int82));
+    Bs3MemCpy(&Ctx83, &Ctx80, sizeof(Ctx80));
+    Ctx83.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int83));
+
+    /*
+     * Check that all the above gates work from ring-0.
+     */
+    Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+    bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx80, 2 /*int 80h*/, 0x80 /*bXcpt*/, pszMode, __LINE__);
+    Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
+    bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx81, 2 /*int 81h*/, 0x81 /*bXcpt*/, pszMode, __LINE__);
+    Bs3TrapSetJmpAndRestore(&Ctx82, &TrapCtx);
+    bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx82, 2 /*int 82h*/, 0x82 /*bXcpt*/, pszMode, __LINE__);
+    Bs3TrapSetJmpAndRestore(&Ctx83, &TrapCtx);
+    bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx83, 2 /*int 83h*/, 0x83 /*bXcpt*/, pszMode, __LINE__);
+
+#if 0
+    /*
+     * Check that the basic stuff works first.
+     */
+    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+    bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx, 2 /*int 80h*/, 0x80 /*bXcpt*/, pszMode, __LINE__);
+
+    bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, NULL, 0, f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+    bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 2, NULL, 0, f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+    bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 3, NULL, 0, f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+
+    /*
+     * Check that the upper part of ESP is preserved when doing .
+     */
+    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+    {
+        size_t const cbAltStack = _8K;
+        uint8_t *pbAltStack = Bs3MemAllocZ(BS3MEMKIND_TILED, cbAltStack);
+        if (pbAltStack)
+        {
+            /* same ring */
+            uLine = __LINE__;
+            Bs3MemCpy(&Ctx2, &Ctx, sizeof(Ctx2));
+            Ctx2.rsp.u = Bs3SelPtrToFlat(pbAltStack + 0x1980);
+            if (Bs3TrapSetJmp(&TrapCtx))
+                Bs3RegCtxRestore(&Ctx2, 0); /* (does not return) */
+            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx2, 2 /*int 80h*/, 0x80 /*bXcpt*/, pszMode, uLine);
+# if TMPL_BITS == 16
+            if ((pbTmp = (uint8_t *)ASMMemFirstNonZero(pbAltStack, cbAltStack)) != NULL)
+                Bs3TestFailedF("%u - %s: someone touched the alt stack (%p) with SS:ESP=%04x:%#RX32: %p=%02x\n",
+                               uLine, pszMode, pbAltStack, Ctx2.ss, Ctx2.rsp.u32, pbTmp, *pbTmp);
+# else
+            if (ASMMemIsZero(pbAltStack, cbAltStack))
+                Bs3TestFailedF("%u - %s: alt stack wasn't used despite SS:ESP=%04x:%#RX32\n",
+                               uLine, pszMode, Ctx2.ss, Ctx2.rsp.u32);
+# endif
+
+            /* Different rings (load SS0:SP0 from TSS). */
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack,
+                                                      f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 2, pbAltStack, cbAltStack,
+                                                      f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 3, pbAltStack, cbAltStack,
+                                                      f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
+
+            /* Different rings but switch the SS bitness in the TSS. */
+# if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
+            Bs3Tss16.ss0 = BS3_SEL_R0_SS32;
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack,
+                                                      false, f16BitSys, f16BitSys, pszMode, __LINE__);
+            Bs3Tss16.ss0 = BS3_SEL_R0_SS16;
+# else
+            Bs3Tss32.ss0 = BS3_SEL_R0_SS16;
+            bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack,
+                                                      true,  f16BitSys, f16BitSys, pszMode, __LINE__);
+            Bs3Tss32.ss0 = BS3_SEL_R0_SS32;
+# endif
+
+            Bs3MemFree(pbAltStack, cbAltStack);
+        }
+        else
+            Bs3TestPrintf("%s: Skipping ESP check, alloc failed\n", pszMode);
+    }
+    else
+        Bs3TestPrintf("%s: Skipping ESP check, CPU too old\n", pszMode);
+#endif
+
+#else
+    bRet = BS3TESTDOMODE_SKIPPED;
+#endif
+
+    /*
+     * Re-initialize the IDT.
+     */
+    TMPL_NM(Bs3TrapInit)();
+    return bRet;
+}
+
+
 
 
 BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)

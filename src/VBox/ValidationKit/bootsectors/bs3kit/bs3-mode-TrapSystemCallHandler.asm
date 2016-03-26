@@ -89,7 +89,9 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
         push    xBP
         mov     xBP, xSP
 %if TMPL_BITS == 64
-        push    0                       ; dummy DS entry
+        push    0
+        mov     [rsp+2], es
+        mov     [rsp], ds
 %else
         push    ds
  %ifdef TMPL_CMN_R86
@@ -329,7 +331,9 @@ TMPL_BEGIN_TEXT
         leave
         iret
 %else
-        leave                           ; skips fake ds
+        mov     es, [rsp+2]
+        mov     ds, [rsp]
+        leave                           ; skips ds
         iretq
 %endif
 

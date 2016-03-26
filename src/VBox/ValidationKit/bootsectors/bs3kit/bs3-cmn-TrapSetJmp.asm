@@ -92,7 +92,7 @@ BS3_PROC_BEGIN_CMN Bs3TrapSetJmp
         pop     es
 %else
         mov     xDI, [xBP + xCB*2]
-        mov     cx, BS3TRAPFRAME_size / 4
+        mov     ecx, BS3TRAPFRAME_size / 4
         mov     xAX, 0feedfaceh
         rep stosd
 %endif
