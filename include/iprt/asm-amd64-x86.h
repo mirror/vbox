@@ -69,6 +69,9 @@
 #  pragma intrinsic(__readcr8)
 #  pragma intrinsic(__writecr8)
 # endif
+# if RT_INLINE_ASM_USES_INTRIN >= 14
+#  pragma intrinsic(__halt)
+# endif
 # if RT_INLINE_ASM_USES_INTRIN >= 15
 #  pragma intrinsic(__readeflags)
 #  pragma intrinsic(__writeeflags)
@@ -2041,13 +2044,15 @@ DECLINLINE(bool) ASMIntAreEnabled(void)
 /**
  * Halts the CPU until interrupted.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 14
 DECLASM(void) ASMHalt(void);
 #else
 DECLINLINE(void) ASMHalt(void)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("hlt\n\t");
+# elif RT_INLINE_ASM_USES_INTRIN
+    __halt();
 # else
     __asm {
         hlt
