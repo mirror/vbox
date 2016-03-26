@@ -86,10 +86,18 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
 #else
     pitch = crtc->enabled ? CRTC_FB(crtc)->pitches[0] : width * bpp / 8;
 #endif
-    /* if (vbox_crtc->crtc_id == 0 && crtc->enabled)
+    /* This is the old way of setting graphics modes.  It assumed one screen
+     * and a frame-buffer at the start of video RAM.  On older versions of
+     * VirtualBox, certain parts of the code still assume that the first
+     * screen is programmed this way, so try to fake it. */
+    if (   vbox_crtc->crtc_id == 0
+        && crtc->enabled
+        && vbox_crtc->fb_offset / pitch < 0xffff - crtc->y
+        && vbox_crtc->fb_offset % (bpp / 8) == 0)
         VBoxVideoSetModeRegisters(width, height, pitch * 8 / bpp,
-                                  CRTC_FB(crtc)->bits_per_pixel, 0,
-                                  crtc->x, crtc->y); */
+                          CRTC_FB(crtc)->bits_per_pixel, 0,
+                          vbox_crtc->fb_offset % pitch / bpp * 8 + crtc->x,
+                          vbox_crtc->fb_offset / pitch + crtc->y);
     flags = VBVA_SCREEN_F_ACTIVE;
     flags |= (crtc->enabled && !vbox_crtc->blanked ? 0 : VBVA_SCREEN_F_BLANK);
     flags |= (vbox_crtc->disconnected ? VBVA_SCREEN_F_DISABLED : 0);
