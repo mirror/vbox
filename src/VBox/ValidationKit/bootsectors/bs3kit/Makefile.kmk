@@ -186,20 +186,13 @@ bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
        bs3-c32-Trap32Generic.asm
 
 # The 64-bit BS3Kit library.
-LIBRARIES += bs3kit-common-64-asm
-bs3kit-common-64-asm_TEMPLATE = VBoxBS3KitImg64
-bs3kit-common-64_asm_INSTTYPE = none
-bs3kit-common-64-asm_DEFS     = TMPL_LM64 BS3_CMN_ONLY
-bs3kit-common-64-asm_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
-bs3kit-common-64-asm_SOURCES  = $(filter %.asm,$(VBOX_BS3KIT_COMMON_SOURCES)) \
+LIBRARIES += bs3kit-common-64
+bs3kit-common-64_TEMPLATE = VBoxBS3KitImg64
+bs3kit-common-64_INSTTYPE = none
+bs3kit-common-64_DEFS     = TMPL_LM64 BS3_CMN_ONLY
+bs3kit-common-64_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
+bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
        bs3-c64-Trap64Generic.asm
-
-# The 64-bit BS3Kit library.
-LIBRARIES += bs3kit-common-64-c
-bs3kit-common-64-c_TEMPLATE = VBoxBS3KitImg64
-bs3kit-common-64_c_INSTTYPE = none
-bs3kit-common-64-c_DEFS     = TMPL_LM64 BS3_CMN_ONLY
-bs3kit-common-64-c_SOURCES  = $(filter-out %.asm,$(VBOX_BS3KIT_COMMON_SOURCES))
 
 
 #
@@ -398,18 +391,11 @@ bs3kit-lm32_DEFS     = TMPL_MODE=BS3_MODE_LM32
 bs3kit-lm32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
 
 # The 64-bit long mode BS3Kit library.
-LIBRARIES += bs3kit-lm64-asm
-bs3kit-lm64-asm_TEMPLATE = VBoxBS3KitImg64
-bs3kit-lm64-asm_INSTTYPE = none
-bs3kit-lm64-asm_DEFS     = TMPL_MODE=BS3_MODE_LM64
-bs3kit-lm64-asm_SOURCES  = $(filter %.asm,$(VBOX_BS3KIT_MODE_SOURCES))
-
-# The 64-bit long mode BS3Kit library.
-LIBRARIES += bs3kit-lm64-c
-bs3kit-lm64-c_TEMPLATE = VBoxBS3KitImg64
-bs3kit-lm64-c_INSTTYPE = none
-bs3kit-lm64-c_DEFS     = TMPL_MODE=BS3_MODE_LM64
-bs3kit-lm64-c_SOURCES  = $(filter-out %.asm, $(VBOX_BS3KIT_MODE_SOURCES))
+LIBRARIES += bs3kit-lm64
+bs3kit-lm64_TEMPLATE = VBoxBS3KitImg64
+bs3kit-lm64_INSTTYPE = none
+bs3kit-lm64_DEFS     = TMPL_MODE=BS3_MODE_LM64
+bs3kit-lm64_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
 
 
 #

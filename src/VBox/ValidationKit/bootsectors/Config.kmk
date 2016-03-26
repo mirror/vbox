@@ -543,8 +543,7 @@ TEMPLATE_VBoxBS3KitImg_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY)\
 TEMPLATE_VBoxBS3KitImg_LIBS = \
 	$(PATH_OBJ)/bs3kit-common-16/bs3kit-common-16.lib \
 	$(PATH_OBJ)/bs3kit-common-32/bs3kit-common-32.lib \
-	$(PATH_OBJ)/bs3kit-common-64-asm/bs3kit-common-64-asm.lib \
-	$(PATH_OBJ)/bs3kit-common-64-c/bs3kit-common-64-c.lib \
+	$(PATH_OBJ)/bs3kit-common-64/bs3kit-common-64.lib \
        \
 	$(PATH_OBJ)/bs3kit-rm/bs3kit-rm.lib \
 	$(PATH_OBJ)/bs3kit-pe16/bs3kit-pe16.lib \
@@ -567,8 +566,7 @@ TEMPLATE_VBoxBS3KitImg_LIBS = \
 	$(PATH_OBJ)/bs3kit-paev86/bs3kit-paev86.lib \
 	$(PATH_OBJ)/bs3kit-lm16/bs3kit-lm16.lib \
 	$(PATH_OBJ)/bs3kit-lm32/bs3kit-lm32.lib \
-	$(PATH_OBJ)/bs3kit-lm64-asm/bs3kit-lm64-asm.lib \
-	$(PATH_OBJ)/bs3kit-lm64-c/bs3kit-lm64-c.lib
+	$(PATH_OBJ)/bs3kit-lm64/bs3kit-lm64.lib
 
 # BS3Kit template for 32-bit code.
 TEMPLATE_VBoxBS3KitImg32 = Template for building BS3Kit test images.
