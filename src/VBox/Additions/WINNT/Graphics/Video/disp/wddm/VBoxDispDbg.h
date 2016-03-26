@@ -170,7 +170,7 @@ BOOL vboxVDbgDoCheckExe(const char * pszName);
 #define VBOXVDBG_STRCASE_UNKNOWN() \
         default: Assert(0); return "Unknown";
 
-static DECLINLINE(const char*) vboxDispLogD3DRcType(D3DRESOURCETYPE enmType)
+DECLINLINE(const char*) vboxDispLogD3DRcType(D3DRESOURCETYPE enmType)
 {
     switch (enmType)
     {

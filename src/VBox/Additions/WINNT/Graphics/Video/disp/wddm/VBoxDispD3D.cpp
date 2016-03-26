@@ -528,7 +528,7 @@ static BOOLEAN vboxWddmDalCheckAdd(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_A
     return TRUE;
 }
 
-static DECLINLINE(BOOLEAN) vboxWddmDalCheckAddRc(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_RESOURCE pRc, BOOLEAN fWrite)
+DECLINLINE(BOOLEAN) vboxWddmDalCheckAddRc(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_RESOURCE pRc, BOOLEAN fWrite)
 {
     BOOLEAN fChanged = FALSE;
     for (UINT i = 0; i < pRc->cAllocations; ++i)

@@ -724,7 +724,7 @@ void VBoxExtHashInit(PVBOXEXT_HASHMAP pMap, PFNVBOXEXT_HASHMAP_HASH pfnHash, PFN
     vboxExtHashInitEntries(pMap);
 }
 
-static DECLINLINE(uint32_t) vboxExtHashIdx(uint32_t u32Hash)
+DECLINLINE(uint32_t) vboxExtHashIdx(uint32_t u32Hash)
 {
     return u32Hash % VBOXEXT_HASHMAP_NUM_BUCKETS;
 }
