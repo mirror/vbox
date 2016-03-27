@@ -1923,6 +1923,7 @@ typedef struct BS3TRAPFRAME
     /** 0x20: The register context. */
     BS3REGCTX   Ctx;
 } BS3TRAPFRAME;
+AssertCompileSize(BS3TRAPFRAME, 0x20 + 0xd0);
 /** Pointer to a trap frame. */
 typedef BS3TRAPFRAME BS3_FAR *PBS3TRAPFRAME;
 /** Pointer to a const trap frame.   */

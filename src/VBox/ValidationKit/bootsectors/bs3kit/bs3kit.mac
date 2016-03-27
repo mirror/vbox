@@ -1164,6 +1164,7 @@ struc BS3REGCTX
         .cr4        resq 1              ; BS3REG      cr4;                    /**< 0xc0  */
         .uUnused    resq 1              ; BS3REG      uUnused;                /**< 0xc8  */
 endstruc
+AssertCompileSize(BS3REGCTX, 0xd0)
 
 ;; @name BS3REG_CTX_F_XXX - BS3REGCTX::fbFlags masks.
 ; @{
@@ -1186,6 +1187,7 @@ struc BS3TRAPFRAME
         .uErrCd         resq 1
         .Ctx            resb BS3REGCTX_size
 endstruc
+AssertCompileSize(BS3TRAPFRAME, 0x20 + 0xd0)
 
 ;; Flag for Bs3TrapXxResumeFrame methods.
 %define BS3TRAPRESUME_F_SKIP_CRX 1
