@@ -55,22 +55,30 @@ BS3_PROC_BEGIN_CMN Bs3Syscall
         mov     xBP, xSP
         push    xBX
 
-%if TMPL_BITS == 16
+%if TMPL_BITS == 32
+        mov     ebx, .return
+        xchg    ebx, [BS3_DATA16_WRT(g_uBs3TrapEipHint)]
+%elif TMPL_BITS == 16
         mov     bl, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         and     bl, BS3_MODE_CODE_MASK
         cmp     bl, BS3_MODE_CODE_V86
         mov     bx, 0
-        mov     [2 + BS3_DATA16_WRT(g_uBs3TrapEipHint)], bx
+        xchg    bx, [2 + BS3_DATA16_WRT(g_uBs3TrapEipHint)]
         jne     .normal
-        db 0xf0                         ; lock prefix
-%else
-        BS3_LEA_MOV_WRT_RIP(xBX, .return)
-        mov     [BS3_DATA16_WRT(g_uBs3TrapEipHint)], ebx
+
+        db      0xf0                    ; Lock prefix for causing #UD in V8086 mode.
 %endif
 .normal:
         int     BS3_TRAP_SYSCALL
 
 .return:
+        ; Restore the EIP hint so the testcase code doesn't need to set it all the time.
+%if TMPL_BITS == 32
+        mov     [BS3_DATA16_WRT(g_uBs3TrapEipHint)], ebx
+%elif TMPL_BITS == 16
+        mov     [2 + BS3_DATA16_WRT(g_uBs3TrapEipHint)], bx
+%endif
+
         pop     xBX
         pop     xBP
         ret
