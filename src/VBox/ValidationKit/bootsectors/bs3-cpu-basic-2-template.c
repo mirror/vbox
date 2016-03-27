@@ -319,10 +319,6 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     uLine = 2000;
     for (i = 0; i <= 3; i++) /* cs.dpl */
     {
-# if TMPL_BITS == 16
-static uint16_t s_x;
-s_x = ASMGetBP();
-# endif
         for (iRing = 0; iRing <= 3; iRing++)
         {
             for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
@@ -339,9 +335,6 @@ s_x = ASMGetBP();
                     /*Bs3TestPrintf("uLine=%u iCtx=%u iRing=%u i=%u uCs=%04x\n", uLine,  iCtx,  iRing, i, uCs);*/
                     paIdt[(0x80 + iCtx) << cIdteShift].Gate.u16Sel = uCs;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
-# if TMPL_BITS == 16
-BS3_ASSERT(s_x == ASMGetBP());
-#endif
                     //Bs3TestPrintf("%u/%u/%u/%u: cs=%04x hcs=%04x xcpt=%02x\n", i, iRing, iCtx, j, uCs, TrapCtx.uHandlerCs, TrapCtx.bXcpt);
                     /*Bs3TrapPrintFrame(&TrapCtx);*/
                     uLine++;
@@ -643,20 +636,15 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
     return bRet;
 }
 
-#ifdef __WATCOMC__
-DECLASM(RTCCUINTREG) ASMGetBP(void);
-#pragma aux ASMGetBP = \
-    "mov ax, bp" \
-    value [ax] \
-    modify exact [ax es bx dx cx si di bp sp];
-#endif
-
 
 BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
 {
-    uint8_t         bRet = 0;
+    uint8_t bRet = 0;
+
+    /*
+     * Pass to common worker which is only compiled once per mode.
+     */
 #if !BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
-#if 1
     bs3CpuBasic2_RaiseXcpt1Common(bMode,
                                   BS3_DATA_NM(TMPL_NM(g_szBs3ModeName)),
                                   BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
@@ -664,304 +652,6 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
                                   MY_SYS_SEL_R0_CS_CNF,
                                   (PX86DESC)MyBs3Idt,
                                   BS3_MODE_IS_64BIT_SYS(TMPL_MODE) ? 1 : 0);
-#else
-    BS3TRAPFRAME    TrapCtx;
-    BS3REGCTX       Ctx80;
-    BS3REGCTX       Ctx81;
-    BS3REGCTX       Ctx82;
-    BS3REGCTX       Ctx83;
-    BS3REGCTX       CtxTmp;
-    PBS3REGCTX      apCtx8x[4];
-    unsigned        iCtx;
-    unsigned        iRing;
-    unsigned        i, j, k;
-    unsigned        uLine;
-    const char     *pszMode = BS3_DATA_NM(TMPL_NM(g_szBs3ModeName));
-    bool const      f16BitSys = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
-
-    //uLine = 0; NOREF(uLine); NOREF(pszMode); NOREF(f16BitSys);
-
-    /* make sure they're allocated  */
-    Bs3MemZero(&Ctx80, sizeof(Ctx80));
-    Bs3MemZero(&Ctx81, sizeof(Ctx81));
-    Bs3MemZero(&Ctx82, sizeof(Ctx82));
-    Bs3MemZero(&Ctx83, sizeof(Ctx83));
-    Bs3MemZero(&CtxTmp, sizeof(CtxTmp));
-    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
-
-    /* Context array. */
-    apCtx8x[0] = &Ctx80;
-    apCtx8x[1] = &Ctx81;
-    apCtx8x[2] = &Ctx82;
-    apCtx8x[3] = &Ctx83;
-
-    /*
-     * IDT entry 80 thru 83 are assigned DPLs according to the number.
-     * (We'll be useing more, but this'll do for now.)
-     */
-    MyBs3Idt[0x80].Gate.u2Dpl = 0;
-    MyBs3Idt[0x81].Gate.u2Dpl = 1;
-    MyBs3Idt[0x82].Gate.u2Dpl = 2;
-    MyBs3Idt[0x83].Gate.u2Dpl = 3;
-
-    Bs3RegCtxSave(&Ctx80);
-    Ctx80.rsp.u -= 0x80;
-    Ctx80.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int80));
-# if TMPL_BITS == 32
-    BS3_DATA_NM(g_uBs3TrapEipHint) = Ctx80.rip.u32;
-# endif
-    Bs3MemCpy(&Ctx81, &Ctx80, sizeof(Ctx80));
-    Ctx81.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int81));
-    Bs3MemCpy(&Ctx82, &Ctx80, sizeof(Ctx80));
-    Ctx82.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int82));
-    Bs3MemCpy(&Ctx83, &Ctx80, sizeof(Ctx80));
-    Ctx83.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int83));
-
-    /*
-     * Check that all the above gates work from ring-0.
-     */
-    for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
-    {
-# if TMPL_BITS == 32
-        BS3_DATA_NM(g_uBs3TrapEipHint) = apCtx8x[iCtx]->rip.u32;
-# endif
-        Bs3TrapSetJmpAndRestore(apCtx8x[iCtx], &TrapCtx);
-        bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, apCtx8x[iCtx], 2 /*int 80h*/, 0x80+iCtx /*bXcpt*/, pszMode, iCtx);
-    }
-
-    /*
-     * Check that the gate DPL checks works.
-     */
-    uLine = 100;
-    for (iRing = 0; iRing <= 3; iRing++)
-    {
-        for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
-        {
-            Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
-            Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
-# if TMPL_BITS == 32
-            BS3_DATA_NM(g_uBs3TrapEipHint) = CtxTmp.rip.u32;
-# endif
-            Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
-            uLine++;
-            if (iCtx < iRing)
-                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
-                                          f16BitSys, pszMode, uLine);
-            else
-                bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &CtxTmp, 2 /*int 8xh*/, 0x80 + iCtx /*bXcpt*/, pszMode, uLine);
-        }
-    }
-
-    /*
-     * Modify the gate CS value and run the handler at a different CPL.
-     * Throw RPL variations into the mix (completely ignored) together
-     * with gate presence.
-     *      1. CPL <= GATE.DPL
-     *      2. GATE.P
-     *      3. GATE.CS.DPL <= CPL (non-conforming segments)
-     */
-    uLine = 1000;
-    for (i = 0; i <= 3; i++)
-    {
-        for (iRing = 0; iRing <= 3; iRing++)
-        {
-            for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
-            {
-# if TMPL_BITS == 32
-                BS3_DATA_NM(g_uBs3TrapEipHint) = apCtx8x[iCtx]->rip.u32;
-# endif
-                Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
-                Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
-
-                for (j = 0; j <= 3; j++)
-                {
-                    uint16_t const uCs = (MY_SYS_SEL_R0_CS | j) + (i << BS3_SEL_RING_SHIFT);
-                    for (k = 0; k < 2; k++)
-                    {
-                        uLine++;
-                        /*Bs3TestPrintf("uLine=%u iCtx=%u iRing=%u i=%u uCs=%04x\n", uLine,  iCtx,  iRing, i, uCs);*/
-                        MyBs3Idt[0x80+iCtx].Gate.u16Sel = uCs;
-                        MyBs3Idt[0x80+iCtx].Gate.u1Present = k;
-                        Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
-                        /*Bs3TrapPrintFrame(&TrapCtx);*/
-                        if (iCtx < iRing)
-                            bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
-                                                      f16BitSys, pszMode, uLine);
-                        else if (k == 0)
-                            bs3CpuBasic2_CompareNpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
-                                                      f16BitSys, pszMode, uLine);
-                        else if (i > iRing)
-                            bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, uCs & X86_SEL_MASK_OFF_RPL, f16BitSys, pszMode, uLine);
-                        else
-                        {
-                            uint16_t uExpectedCs = uCs & X86_SEL_MASK_OFF_RPL;
-                            if (i <= iCtx && i <= iRing)
-                                uExpectedCs |= i;
-                            bs3CpuBasic2_CompareTrapCtx2(&TrapCtx, &CtxTmp, 2 /*int 8xh*/, 0x80 + iCtx /*bXcpt*/,
-                                                         uExpectedCs, pszMode, uLine);
-                        }
-                    }
-                }
-
-                MyBs3Idt[0x80+iCtx].Gate.u16Sel = MY_SYS_SEL_R0_CS;
-                MyBs3Idt[0x80+iCtx].Gate.u1Present = 1;
-            }
-        }
-    }
-    BS3_ASSERT(uLine < 2000);
-
-    /*
-     * Modify the gate CS value with a conforming segment.
-     */
-    uLine = 2000;
-    for (i = 0; i <= 3; i++) /* cs.dpl */
-    {
-# if TMPL_BITS == 16
-static uint16_t s_x;
-s_x = ASMGetBP();
-# endif
-        for (iRing = 0; iRing <= 3; iRing++)
-        {
-            for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
-            {
-                Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
-                Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
-# if TMPL_BITS == 32
-                BS3_DATA_NM(g_uBs3TrapEipHint) = CtxTmp.rip.u32;
-# endif
-
-                for (j = 0; j <= 3; j++) /* rpl */
-                {
-                    uint16_t const uCs = (MY_SYS_SEL_R0_CS_CNF | j) + (i << BS3_SEL_RING_SHIFT);
-                    /*Bs3TestPrintf("uLine=%u iCtx=%u iRing=%u i=%u uCs=%04x\n", uLine,  iCtx,  iRing, i, uCs);*/
-                    MyBs3Idt[0x80+iCtx].Gate.u16Sel = uCs;
-                    Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
-# if TMPL_BITS == 16
-BS3_ASSERT(s_x == ASMGetBP());
-#endif
-                    //Bs3TestPrintf("%u/%u/%u/%u: cs=%04x hcs=%04x xcpt=%02x\n", i, iRing, iCtx, j, uCs, TrapCtx.uHandlerCs, TrapCtx.bXcpt);
-                    /*Bs3TrapPrintFrame(&TrapCtx);*/
-                    uLine++;
-                    if (iCtx < iRing)
-                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
-                                                  f16BitSys, pszMode, 1);//uLine);
-                    else if (i > iRing)
-                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, uCs & X86_SEL_MASK_OFF_RPL, f16BitSys, pszMode, 2);//uLine);
-                    else
-                        bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &CtxTmp, 2 /*int 8xh*/, 0x80 + iCtx /*bXcpt*/, pszMode, 3);//uLine);
-                }
-                MyBs3Idt[0x80+iCtx].Gate.u16Sel = MY_SYS_SEL_R0_CS;
-            }
-        }
-    }
-    BS3_ASSERT(uLine < 3000);
-
-# if BS3_MODE_IS_64BIT_SYS(TMPL_MODE)
-    /*
-     * The gates must be 64-bit.
-     */
-    uLine = 3000;
-    for (i = 0; i <= 3; i++)
-    {
-        for (iRing = 0; iRing <= 3; iRing++)
-        {
-            for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
-            {
-                Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
-                Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
-
-                for (j = 0; j < 2; j++)
-                {
-                    static const uint16_t s_auCSes[2] = { BS3_SEL_R0_CS16, BS3_SEL_R0_CS32 };
-                    uint16_t uCs = (s_auCSes[j] | i) + (i << BS3_SEL_RING_SHIFT);
-                    uLine++;
-                    /*Bs3TestPrintf("uLine=%u iCtx=%u iRing=%u i=%u uCs=%04x\n", uLine,  iCtx,  iRing, i, uCs);*/
-                    MyBs3Idt[0x80+iCtx].Gate.u16Sel = uCs;
-                    Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
-                    /*Bs3TrapPrintFrame(&TrapCtx);*/
-                    if (iCtx < iRing)
-                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
-                                                  f16BitSys, pszMode, uLine);
-                    else
-                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, uCs & X86_SEL_MASK_OFF_RPL, f16BitSys, pszMode, uLine);
-                }
-                MyBs3Idt[0x80+iCtx].Gate.u16Sel = MY_SYS_SEL_R0_CS;
-            }
-        }
-    }
-    BS3_ASSERT(uLine < 4000);
-# endif
-
-    /*
-     * Check invalid gate types.
-     */
-    uLine = 32000;
-    for (iRing = 0; iRing <= 3; iRing++)
-    {
-        static const uint16_t s_auCSes[]      = { BS3_SEL_R0_CS16, BS3_SEL_R0_CS32, BS3_SEL_R0_CS64,
-                                                  BS3_SEL_TSS16, BS3_SEL_TSS32, BS3_SEL_TSS64, 0, BS3_SEL_SPARE_1f };
-# if BS3_MODE_IS_64BIT_SYS(TMPL_MODE)
-        static uint16_t const s_auInvlTypes[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13,
-                                                  0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-                                                  0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f };
-        uint16_t        const cInvTypes       = RT_ELEMENTS(s_auInvlTypes);
-# else
-        static uint16_t const s_auInvlTypes[] = { 0, 1, 2, 3, 8, 9, 10, 11, 13,
-                                                  0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-                                                  0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
-                                                  /*286:*/ 12, 14, 15 };
-        uint16_t const        cInvTypes       = (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) < BS3CPU_80386
-                                              ? RT_ELEMENTS(s_auInvlTypes) : RT_ELEMENTS(s_auInvlTypes) - 3;
-# endif
-        for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
-        {
-            unsigned iType;
-
-            Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
-            Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
-# if TMPL_BITS == 32
-            BS3_DATA_NM(g_uBs3TrapEipHint) = CtxTmp.rip.u32;
-# endif
-            for (iType = 0; iType < cInvTypes; iType++)
-            {
-                uint8_t const bSavedType = MyBs3Idt[0x80 + iCtx].Gate.u4Type;
-                MyBs3Idt[0x80 + iCtx].Gate.u1DescType = s_auInvlTypes[iType] >> 4;
-                MyBs3Idt[0x80 + iCtx].Gate.u4Type     = s_auInvlTypes[iType] & 0xf;
-
-                for (i = 0; i < 4; i++)
-                {
-                    for (j = 0; j < RT_ELEMENTS(s_auCSes); j++)
-                    {
-                        uint16_t uCs = (unsigned)(s_auCSes[j] - BS3_SEL_R0_FIRST) < (unsigned)(4 << BS3_SEL_RING_SHIFT)
-                                     ? (s_auCSes[j] | i) + (i << BS3_SEL_RING_SHIFT)
-                                     : s_auCSes[j] | i;
-                        /*Bs3TestPrintf("uLine=%u iCtx=%u iRing=%u i=%u uCs=%04x type=%#x\n", uLine, iCtx, iRing, i, uCs, s_auInvlTypes[iType]);*/
-                        MyBs3Idt[0x80 + iCtx].Gate.u16Sel = uCs;
-                        Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
-                        uLine++;
-                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
-                                                  f16BitSys, pszMode, uLine);
-
-                        /* Mark it not-present to check that invalid type takes precedence. */
-                        MyBs3Idt[0x80 + iCtx].Gate.u1Present = 0;
-                        Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
-                        uLine++;
-                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
-                                                  f16BitSys, pszMode, uLine);
-                        MyBs3Idt[0x80 + iCtx].Gate.u1Present = 1;
-                    }
-                }
-
-                MyBs3Idt[0x80 + iCtx].Gate.u16Sel     = MY_SYS_SEL_R0_CS;
-                MyBs3Idt[0x80 + iCtx].Gate.u4Type     = bSavedType;
-                MyBs3Idt[0x80 + iCtx].Gate.u1DescType = 0;
-                MyBs3Idt[0x80 + iCtx].Gate.u1Present  = 1;
-            }
-        }
-    }
-    BS3_ASSERT(uLine < 62000U && uLine > 32000U);
-# endif
-
 #else
     bRet = BS3TESTDOMODE_SKIPPED;
 #endif
