@@ -193,8 +193,8 @@ BS3GdtAssertOffset 0100h
 %macro BS3_GDT_RING_X_SELECTORS 1
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _First, 80h
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _CS16, 8     ; Entry 100h
-        dw  0ffffh, 00000h                      ; 16-bit code segment with base 010000h.
-        dw  09b01h | (%1 << 0dh), 00000h
+        dw  0ffffh, (0xffff & BS3_ADDR_BS3TEXT16) ; 16-bit code segment with base 010000h.
+        dw  09b01h | (%1 << 0dh) | (0xff & (BS3_ADDR_BS3TEXT16 >> 16)), 00000h | (0xff00 & (BS3_ADDR_BS3TEXT16 >> 16))
 
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _DS16, 8     ; Entry 108h
         dw  0ffffh, (0xffff & BS3_ADDR_BS3DATA16) ; 16-bit data segment with base 027000h.
@@ -225,12 +225,12 @@ BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _DS64, 8     ; Entry 138h (also SS64)
         dw  09300h | (%1 << 0dh), 000afh
 
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _CS16_EO, 8  ; Entry 140h
-        dw  0fffeh, 00000h                      ; 16-bit code segment with base 0, not accessed, execute only, short limit.
-        dw  09800h | (%1 << 0dh), 00000h
+        dw  0ffffh, (0xffff & BS3_ADDR_BS3TEXT16) ; 16-bit code segment with base 01000h, not accessed, execute only, short limit.
+        dw  09800h | (%1 << 0dh) | (0xff & (BS3_ADDR_BS3TEXT16 >> 16)), 00000h | (0xff00 & (BS3_ADDR_BS3TEXT16 >> 16))
 
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _CS16_CNF, 8 ; Entry 148h
-        dw  0fffeh, 00000h                      ; 16-bit conforming code segment with base 0, not accessed, execute only, short limit.
-        dw  09e00h | (%1 << 0dh), 00000h
+        dw  0ffffh, (0xffff & BS3_ADDR_BS3TEXT16) ; 16-bit code segment with base 01000h, not accessed, execute only, short limit.
+        dw  09e00h | (%1 << 0dh) | (0xff & (BS3_ADDR_BS3TEXT16 >> 16)), 00000h | (0xff00 & (BS3_ADDR_BS3TEXT16 >> 16))
 
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _CS16_CND_EO, 8 ; Entry 150h
         dw  0fffeh, 00000h                      ; 16-bit conforming code segment with base 0, not accessed, execute only, short limit.
