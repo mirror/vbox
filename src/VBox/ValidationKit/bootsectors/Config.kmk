@@ -412,6 +412,8 @@ endef
 #       -ecc                   Sets the default calling convension to __cdecl
 #                              Update: We don't use this in 16-bit code as it causes unfavorable reloading of DS before calling
 #                                      inlined functions (e.g. iprt/asm.h). Instead we use -ecw and __cdecl where needed.
+#                              Update: With -zdp the DS reloading is gone. Code is slightly larger, but seems to cure stability
+#                                      issues in bs3CpuBasic2_RaiseXcpt1 (workers ending up with default calling convention).
 #       -ecw                   Sets the default calling convension to __watcall ()
 #       -q                     Quiet, no logos or stuff.
 #       -0                     Use 8086 instruction set (16-bit only).
@@ -455,9 +457,9 @@ TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CFLAGS       = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecw -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CDEFS        = ARCH_BITS=16 RT_ARCH_X86
 
 TEMPLATE_VBoxBS3KitImg_TOOL         = $(NO_SUCH_VARIABLE)
