@@ -3087,7 +3087,7 @@
   -->
   <interface
     name="IAppliance" extends="$unknown"
-    uuid="8398f026-4add-4474-5bc3-2f9f2140b23e"
+    uuid="be0eaf0f-9db2-4303-9a62-efe82a70a21d"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="8"
     >
@@ -3211,6 +3211,11 @@
 
             <li>Compression (optional string equaling "gzip" if the image is gzip-compressed)</li>
         </ol>
+      </desc>
+    </attribute>
+
+    <attribute name="certificate" type="ICertificate" readonly="yes">
+      <desc> X509 certificate information given to user if certificate exists in the OVF package
       </desc>
     </attribute>
 

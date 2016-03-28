@@ -47,6 +47,7 @@
 #include "Logging.h"
 
 #include "ApplianceImplPrivate.h"
+#include "CertificateImpl.h"
 
 #include <VBox/param.h>
 #include <VBox/version.h>
@@ -1948,6 +1949,10 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
     }
 
     /** @todo provide details about the signatory, signature, etc.  */
+    if(m->fSignerCertLoaded)
+    {
+        pCertificateInfo->setData(&m->SignerCert);
+    }
 
     /*
      * If there is a manifest, check that the OVF digest matches up (if present).

@@ -31,6 +31,7 @@
 #include <set>
 
 /* VBox forward declarations */
+class Certificate;
 class Progress;
 class VirtualSystemDescription;
 struct VirtualSystemDescriptionEntry;
@@ -88,6 +89,7 @@ private:
     // wrapped IAppliance properties
     HRESULT getPath(com::Utf8Str &aPath);
     HRESULT getDisks(std::vector<com::Utf8Str> &aDisks);
+    HRESULT getCertificate(ComPtr<ICertificate> &aCertificateInfo);
     HRESULT getVirtualSystemDescriptions(std::vector<ComPtr<IVirtualSystemDescription> > &aVirtualSystemDescriptions);
     HRESULT getMachines(std::vector<com::Utf8Str> &aMachines);
 
@@ -112,6 +114,7 @@ private:
     /** weak VirtualBox parent */
     VirtualBox* const mVirtualBox;
 
+    ComObjPtr<Certificate> pCertificateInfo;
     struct ImportStack;
     class TaskOVF;
     struct Data;            // opaque, defined in ApplianceImpl.cpp
@@ -233,6 +236,7 @@ private:
     /** @} */
 
     friend class Machine;
+    friend class Certificate;
 };
 
 void i_parseURI(Utf8Str strUri, LocationInfo &locInfo);

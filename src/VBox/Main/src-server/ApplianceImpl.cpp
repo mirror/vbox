@@ -30,6 +30,7 @@
 #include "SystemPropertiesImpl.h"
 #include "AutoCaller.h"
 #include "Logging.h"
+#include "CertificateImpl.h"
 
 #include "ApplianceImplPrivate.h"
 
@@ -408,6 +409,9 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox)
     m->m_pSecretKeyStore = new SecretKeyStore(false /* fRequireNonPageable*/);
     AssertReturn(m->m_pSecretKeyStore, E_FAIL);
 
+    pCertificateInfo.createObject();
+    pCertificateInfo->init(this);
+
     i_initApplianceIONameMap();
 
     rc = i_initSetOfSupportedStandardsURI();
@@ -507,6 +511,25 @@ HRESULT Appliance::getDisks(std::vector<com::Utf8Str> &aDisks)
             RTStrFree(psz);
         }
     }
+
+    return S_OK;
+}
+
+/**
+* Public method implementation.
+ * @return
+ */
+HRESULT Appliance::getCertificate(ComPtr<ICertificate> &aCertificateInfo)
+{
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!i_isApplianceIdle())
+        return E_ACCESSDENIED;
+
+
+        pCertificateInfo.queryInterfaceTo(aCertificateInfo.asOutParam());
+
 
     return S_OK;
 }
