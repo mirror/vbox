@@ -165,6 +165,30 @@ ASMHalt();
     }
 }
 
+/**
+ * Compares trap stuff.
+ */
+#define bs3CpuBasic2_ComparePfCtx BS3_CMN_NM(bs3CpuBasic2_ComparePfCtx)
+void bs3CpuBasic2_ComparePfCtx(PCBS3TRAPFRAME pTrapCtx, PBS3REGCTX pStartCtx, uint16_t uErrCd, uint64_t uCr2Expected,
+                               bool f16BitHandler, const char *pszMode, unsigned uLine)
+{
+    uint64_t const uCr2Saved     = pStartCtx->cr2.u;
+    uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
+    CHECK_MEMBER("bXcpt",   "%#04x",    pTrapCtx->bXcpt,        X86_XCPT_PF);
+    CHECK_MEMBER("bErrCd",  "%#06RX64", pTrapCtx->uErrCd,       (uint64_t)uErrCd);
+    pStartCtx->cr2.u = uCr2Expected;
+    Bs3TestCheckRegCtxEx(&pTrapCtx->Ctx, pStartCtx, 0 /*cbIpAdjust*/, 0 /*cbSpAdjust*/,
+                         f16BitHandler ? 0 : X86_EFL_RF,
+                         pszMode, uLine);
+    pStartCtx->cr2.u = uCr2Saved;
+    if (Bs3TestSubErrorCount() != cErrorsBefore)
+    {
+//Bs3TestPrintf("%s\n",  __FUNCTION__);
+        Bs3TrapPrintFrame(pTrapCtx);
+ASMHalt();
+    }
+}
+
 #define bs3CpuBasic2_RaiseXcpt1Common BS3_CMN_NM(bs3CpuBasic2_RaiseXcpt1Common)
 static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * const pszMode, bool const f16BitSys,
                                           uint16_t const uSysR0Cs, uint16_t const uSysR0CsConf,
@@ -181,8 +205,15 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     unsigned        iRing;
     unsigned        i, j, k;
     unsigned        uLine;
+# if TMPL_BITS != 16
+    uint8_t        *pbIdtCopyAlloc;
+    PX86DESC        pIdtCopy;
+    const unsigned  cbIdte = 1 << (3 + cIdteShift);
+# endif
+    RTIDTR          IdtrSaved;
+    RTIDTR          Idtr;
 
-    //uLine = 0; NOREF(uLine); NOREF(pszMode); NOREF(f16BitSys);
+    ASMGetIDTR(&IdtrSaved);
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx80, sizeof(Ctx80));
@@ -198,6 +229,13 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     apCtx8x[2] = &Ctx82;
     apCtx8x[3] = &Ctx83;
 
+# if TMPL_BITS != 16
+    /* Allocate memory for playing around with the IDT. */
+    pbIdtCopyAlloc = NULL;
+    if (BS3_MODE_IS_PAGED(bMode))
+        pbIdtCopyAlloc = Bs3MemAlloc(BS3MEMKIND_FLAT32, 12*_1K);
+# endif
+
     /*
      * IDT entry 80 thru 83 are assigned DPLs according to the number.
      * (We'll be useing more, but this'll do for now.)
@@ -208,7 +246,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     paIdt[0x83 << cIdteShift].Gate.u2Dpl = 3;
 
     Bs3RegCtxSave(&Ctx80);
-    Ctx80.rsp.u -= 0x80;
+    Ctx80.rsp.u -= 0x300;
     Ctx80.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int80));
 # if TMPL_BITS == 32
     BS3_DATA_NM(g_uBs3TrapEipHint) = Ctx80.rip.u32;
@@ -340,11 +378,11 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
                     uLine++;
                     if (iCtx < iRing)
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
-                                                  f16BitSys, pszMode, 1);//uLine);
+                                                  f16BitSys, pszMode, uLine);
                     else if (i > iRing)
-                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, uCs & X86_SEL_MASK_OFF_RPL, f16BitSys, pszMode, 2);//uLine);
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, uCs & X86_SEL_MASK_OFF_RPL, f16BitSys, pszMode, uLine);
                     else
-                        bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &CtxTmp, 2 /*int 8xh*/, 0x80 + iCtx /*bXcpt*/, pszMode, 3);//uLine);
+                        bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &CtxTmp, 2 /*int 8xh*/, 0x80 + iCtx /*bXcpt*/, pszMode, uLine);
                 }
                 paIdt[(0x80 + iCtx) << cIdteShift].Gate.u16Sel = uSysR0Cs;
             }
@@ -353,7 +391,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     BS3_ASSERT(uLine < 3000);
 
     /*
-     * The gates must be 64-bit in long mode..
+     * The gates must be 64-bit in long mode.
      */
     if (cIdteShift != 0)
     {
@@ -386,8 +424,121 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
                 }
             }
         }
-    BS3_ASSERT(uLine < 4000);
+        BS3_ASSERT(uLine < 4000);
     }
+
+    /*
+     * IDT limit check.
+     */
+    uLine = 5000;
+    i = (0x80 << (cIdteShift + 3)) - 1;
+    j = (0x82 << (cIdteShift + 3)) - 1;
+    k = (0x83 << (cIdteShift + 3)) - 1;
+    for (; i <= k; i++, uLine++)
+    {
+        Idtr = IdtrSaved;
+        Idtr.cbIdt  = i;
+        ASMSetIDTR(&Idtr);
+        Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
+        if (i < j)
+            bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx81, (0x81 << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
+                                      f16BitSys, pszMode, uLine);
+        else
+            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx81, 2 /*int 8xh*/, 0x81 /*bXcpt*/, pszMode, uLine);
+    }
+    ASMSetIDTR(&IdtrSaved);
+    BS3_ASSERT(uLine < 5100);
+
+# if TMPL_BITS != 16 /* Only do the paging related stuff in 32-bit and 64-bit modes. */
+
+    /*
+     * IDT page not present. Placing the IDT copy such that 0x80 is on the
+     * first page and 0x81 is on the second page.  We need proceed to move
+     * it down byte by byte to check that any inaccessible byte means #PF.
+     *
+     * Note! We must reload the alternative IDTR for each run as any kind of
+     *       printing to the string (like error reporting) will cause a switch
+     *       to real mode and back, reloading the default IDTR.
+     */
+    uLine = 5200;
+    if (BS3_MODE_IS_PAGED(bMode) && pbIdtCopyAlloc)
+    {
+        uint32_t const uCr2Expected = Bs3SelPtrToFlat(pbIdtCopyAlloc) + _4K;
+        for (j = 0; j < cbIdte; j++)
+        {
+            pIdtCopy = (PX86DESC)&pbIdtCopyAlloc[_4K - cbIdte * 0x81 - j];
+            Bs3MemCpy(pIdtCopy, paIdt, cbIdte * 256);
+
+            Idtr.cbIdt = IdtrSaved.cbIdt;
+            Idtr.pIdt  = Bs3SelPtrToFlat(pIdtCopy);
+
+            ASMSetIDTR(&Idtr);
+            Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
+            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx81, 2 /*int 8xh*/, 0x81 /*bXcpt*/, pszMode, uLine++);
+
+            ASMSetIDTR(&Idtr);
+            Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx80, 2 /*int 8xh*/, 0x80 /*bXcpt*/, pszMode, uLine++);
+
+            i = Bs3PagingProtect(uCr2Expected, _4K, 0 /*fSet*/, X86_PTE_P /*fClear*/);
+            if (RT_SUCCESS(i))
+            {
+                ASMSetIDTR(&Idtr);
+                Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+                bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx80, 2 /*int 8xh*/, 0x80 /*bXcpt*/, pszMode, uLine++);
+
+                ASMSetIDTR(&Idtr);
+                Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
+                bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx81, 0 /*uErrCd*/, uCr2Expected, f16BitSys, pszMode, uLine++);
+
+                Bs3PagingProtect(uCr2Expected, _4K, X86_PTE_P /*fSet*/, 0 /*fClear*/);
+
+                /* Check if that the entry type is checked after the whole IDTE has been cleared for #PF. */
+                pIdtCopy[0x80 << cIdteShift].Gate.u4Type = 0;
+                i = Bs3PagingProtect(uCr2Expected, _4K, 0 /*fSet*/, X86_PTE_P /*fClear*/);
+                if (RT_SUCCESS(i))
+                {
+                    ASMSetIDTR(&Idtr);
+                    Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
+                    bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx81, 0 /*uErrCd*/, uCr2Expected, f16BitSys, pszMode, uLine++);
+
+                    Bs3PagingProtect(uCr2Expected, _4K, X86_PTE_P /*fSet*/, 0 /*fClear*/);
+                }
+            }
+            else
+                Bs3TestPrintf("Bs3PagingProtectPtr: %d\n", i);
+
+            ASMSetIDTR(&IdtrSaved);
+        }
+    }
+
+    /*
+     * The read/write and user/supervisor bits the IDT PTEs are irrelevant.
+     */
+    uLine = 5300;
+    if (BS3_MODE_IS_PAGED(bMode) && pbIdtCopyAlloc)
+    {
+        Bs3MemCpy(pbIdtCopyAlloc, paIdt, cbIdte * 256);
+        Idtr.cbIdt = IdtrSaved.cbIdt;
+        Idtr.pIdt  = Bs3SelPtrToFlat(pbIdtCopyAlloc);
+
+        ASMSetIDTR(&Idtr);
+        Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
+        bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx81, 2 /*int 8xh*/, 0x81 /*bXcpt*/, pszMode, uLine++);
+
+        i = Bs3PagingProtect(Idtr.pIdt, _4K, 0 /*fSet*/, X86_PTE_RW | X86_PTE_US /*fClear*/);
+        if (RT_SUCCESS(i))
+        {
+            ASMSetIDTR(&Idtr);
+            Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
+            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx81, 2 /*int 8xh*/, 0x81 /*bXcpt*/, pszMode, uLine++);
+
+            Bs3PagingProtect(Idtr.pIdt, _4K, X86_PTE_RW | X86_PTE_US /*fSet*/, 0 /*fClear*/);
+        }
+        ASMSetIDTR(&IdtrSaved);
+    }
+
+# endif /* 32 || 64*/
 
     /*
      * Check invalid gate types.
@@ -457,6 +608,23 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
         }
     }
     BS3_ASSERT(uLine < 62000U && uLine > 32000U);
+
+
+    /** @todo
+     *  - Run \#PF and \#GP (and others?) at CPLs other than zero.
+     *  - Quickly generate all faults.
+     *  - Check that CS.u1Accessed is set to 1.
+     *  - Check that setting CS.u1Access to 1 triggers page fault.
+     *  - Check CS.u1Access = 1 \#PF against \#NP(CS), CS.u2DPL, \#NP(SS),
+     *    SS.u2DPL, and SS.u1Access=1 \#PF.
+     *  - Check that IOPL doesn't influence anything for non-v8086.
+     *  - EFLAGS effects (AC seen gonne missing in real-mode).
+     *  - All the peculiarities v8086.
+     */
+
+# if TMPL_BITS != 16
+    Bs3MemFree(pbIdtCopyAlloc, 12*_1K);
+# endif
 }
 
 
