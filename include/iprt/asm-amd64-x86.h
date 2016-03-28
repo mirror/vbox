@@ -3161,7 +3161,7 @@ DECLINLINE(void) ASMInStrU32(RTIOPORT Port, uint32_t *pau32, size_t c)
 /**
  * Invalidate page.
  *
- * @param   pv      Address of the page to invalidate.
+ * @param   uPtr    Address of the page to invalidate.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(void) ASMInvalidatePage(RTCCUINTXREG uPtr);
