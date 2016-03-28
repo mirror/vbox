@@ -60,6 +60,7 @@
 
 /* COM includes: */
 # include "COMEnums.h"
+# include "CEventListener.h"
 # include "CEventSource.h"
 # include "CVirtualBox.h"
 # include "CMachine.h"
@@ -91,17 +92,43 @@ signals:
 
 public:
 
-    /** Constructs private proxy on the basis of passed @a pParent. */
+    /** Constructs event proxy object on the basis of passed @a pParent. */
     UIExtraDataEventHandler(QObject *pParent);
+    /** Destructs event proxy object. */
+    ~UIExtraDataEventHandler();
 
-public slots:
+protected slots:
 
     /** Preprocess 'extra-data can change' event: */
     void sltPreprocessExtraDataCanChange(QString strMachineID, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason);
     /** Preprocess 'extra-data change' event: */
     void sltPreprocessExtraDataChange(QString strMachineID, QString strKey, QString strValue);
 
+protected:
+
+    /** @name Prepare/Cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares listener. */
+        void prepareListener();
+        /** Prepares connections. */
+        void prepareConnections();
+
+        /** Cleanups connections. */
+        void cleanupConnections();
+        /** Cleanups listener. */
+        void cleanupListener();
+        /** Cleanups all. */
+        void cleanup();
+    /** @} */
+
 private:
+
+    /** Holds the Qt event listener instance. */
+    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
+    /** Holds the COM event listener instance. */
+    CEventListener m_comEventListener;
 
     /** Protects sltPreprocessExtraDataChange. */
     QMutex m_mutex;
@@ -110,6 +137,82 @@ private:
 UIExtraDataEventHandler::UIExtraDataEventHandler(QObject *pParent)
     : QObject(pParent)
 {
+    /* Prepare: */
+    prepare();
+}
+
+UIExtraDataEventHandler::~UIExtraDataEventHandler()
+{
+    /* Cleanup: */
+    cleanup();
+}
+
+void UIExtraDataEventHandler::prepare()
+{
+    /* Prepare: */
+    prepareListener();
+    prepareConnections();
+}
+
+void UIExtraDataEventHandler::prepareListener()
+{
+    /* Create event listener instance: */
+    m_pQtListener.createObject();
+    m_pQtListener->init(new UIMainEventListener, this);
+    m_comEventListener = CEventListener(m_pQtListener);
+
+    /* Get VirtualBox: */
+    const CVirtualBox vbox = vboxGlobal().virtualBox();
+    AssertWrapperOk(vbox);
+    /* Get event-source: */
+    CEventSource eventSourceVirtualBox = vbox.GetEventSource();
+    AssertWrapperOk(eventSourceVirtualBox);
+    /* Register listener for expected event-types: */
+    QVector<KVBoxEventType> vboxEvents;
+    vboxEvents
+        << KVBoxEventType_OnExtraDataCanChange
+        << KVBoxEventType_OnExtraDataChanged;
+    eventSourceVirtualBox.RegisterListener(m_comEventListener, vboxEvents, TRUE);
+    AssertWrapperOk(eventSourceVirtualBox);
+}
+
+void UIExtraDataEventHandler::prepareConnections()
+{
+    /* Create direct (sync) connections for signals of main listener: */
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigExtraDataCanChange(QString, QString, QString, bool&, QString&)),
+            this, SLOT(sltPreprocessExtraDataCanChange(QString, QString, QString, bool&, QString&)),
+            Qt::DirectConnection);
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigExtraDataChange(QString, QString, QString)),
+            this, SLOT(sltPreprocessExtraDataChange(QString, QString, QString)),
+            Qt::DirectConnection);
+}
+
+void UIExtraDataEventHandler::cleanupConnections()
+{
+    /* Nothing for now. */
+}
+
+void UIExtraDataEventHandler::cleanupListener()
+{
+    /* Make sure VBoxSVC is available: */
+    if (!vboxGlobal().isVBoxSVCAvailable())
+        return;
+
+    /* Unregister Main event-listener: */
+    const CVirtualBox vbox = vboxGlobal().virtualBox();
+    AssertWrapperOk(vbox);
+    /* Get event-source: */
+    CEventSource eventSourceVirtualBox = vbox.GetEventSource();
+    AssertWrapperOk(eventSourceVirtualBox);
+    /* Unregister listener: */
+    eventSourceVirtualBox.UnregisterListener(m_comEventListener);
+}
+
+void UIExtraDataEventHandler::cleanup()
+{
+    /* Cleanup: */
+    cleanupConnections();
+    cleanupListener();
 }
 
 void UIExtraDataEventHandler::sltPreprocessExtraDataCanChange(QString strMachineID, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason)
@@ -3996,39 +4099,11 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
     /* Configure extra-data event-handler: */
     AssertPtrReturnVoid(m_pHandler);
     {
-        /* Create queued (async) connections to signals of private proxy: */
+        /* Create queued (async) connections for signals of event proxy object: */
         connect(m_pHandler, SIGNAL(sigExtraDataChange(QString, QString, QString)),
                 this, SLOT(sltExtraDataChange(QString, QString, QString)),
                 Qt::QueuedConnection);
-
-        /* Prepare Main event-listener: */
-        prepareMainEventListener();
     }
-}
-
-void UIExtraDataManager::prepareMainEventListener()
-{
-    /* Register Main event-listener:  */
-    const CVirtualBox vbox = vboxGlobal().virtualBox();
-    ComObjPtr<UIMainEventListenerImpl> pListener;
-    pListener.createObject();
-    pListener->init(new UIMainEventListener, this);
-    m_listener = CEventListener(pListener);
-    QVector<KVBoxEventType> events;
-    events
-        << KVBoxEventType_OnExtraDataCanChange
-        << KVBoxEventType_OnExtraDataChanged;
-    vbox.GetEventSource().RegisterListener(m_listener, events, TRUE);
-    AssertWrapperOk(vbox);
-
-    /* This is a vetoable event, so we have to respond to the event and have to use a direct connection therefor: */
-    connect(pListener->getWrapped(), SIGNAL(sigExtraDataCanChange(QString, QString, QString, bool&, QString&)),
-            m_pHandler, SLOT(sltPreprocessExtraDataCanChange(QString, QString, QString, bool&, QString&)),
-            Qt::DirectConnection);
-    /* Use a direct connection to the helper class: */
-    connect(pListener->getWrapped(), SIGNAL(sigExtraDataChange(QString, QString, QString)),
-            m_pHandler, SLOT(sltPreprocessExtraDataChange(QString, QString, QString)),
-            Qt::DirectConnection);
 }
 
 #ifdef DEBUG
@@ -4038,25 +4113,12 @@ void UIExtraDataManager::cleanupWindow()
 }
 #endif /* DEBUG */
 
-void UIExtraDataManager::cleanupMainEventListener()
-{
-    /* Make sure VBoxSVC is available: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
-        return;
-
-    /* Unregister Main event-listener: */
-    const CVirtualBox vbox = vboxGlobal().virtualBox();
-    vbox.GetEventSource().UnregisterListener(m_listener);
-}
-
 void UIExtraDataManager::cleanup()
 {
 #ifdef DEBUG
     /* Cleanup window: */
     cleanupWindow();
 #endif /* DEBUG */
-    /* Cleanup Main event-listener: */
-    cleanupMainEventListener();
 }
 
 #ifdef DEBUG

@@ -28,9 +28,6 @@
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
 
-/* COM includes: */
-#include "CEventListener.h"
-
 /* Forward declarations: */
 class UIExtraDataEventHandler;
 #ifdef DEBUG
@@ -570,8 +567,6 @@ private:
     void prepareGlobalExtraDataMap();
     /** Prepare extra-data event-handler. */
     void prepareExtraDataEventHandler();
-    /** Prepare Main event-listener. */
-    void prepareMainEventListener();
 #ifdef DEBUG
     // /** Prepare window. */
     // void prepareWindow();
@@ -579,8 +574,6 @@ private:
     /** Cleanup window. */
     void cleanupWindow();
 #endif /* DEBUG */
-    /** Cleanup Main event-listener. */
-    void cleanupMainEventListener();
     // /** Cleanup extra-data event-handler. */
     // void cleanupExtraDataEventHandler();
     // /** Cleanup extra-data map. */
@@ -624,8 +617,6 @@ private:
     /** Singleton Extra-data Manager instance. */
     static UIExtraDataManager *m_spInstance;
 
-    /** Holds main event-listener instance. */
-    CEventListener m_listener;
     /** Holds extra-data event-handler instance. */
     UIExtraDataEventHandler *m_pHandler;
 

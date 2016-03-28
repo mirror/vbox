@@ -21,12 +21,11 @@
 /* Qt includes: */
 #include <QObject>
 
-/* GUI includes: */
-#include "UIMainEventListener.h"
-
 /* COM includes: */
 #include "COMEnums.h"
-#include "CEventListener.h"
+
+/* Forward declarations: */
+class UIVirtualBoxEventHandlerProxy;
 
 
 /** Singleton QObject extension
@@ -68,24 +67,13 @@ protected:
 
     /** Constructs VirtualBox event handler. */
     UIVirtualBoxEventHandler();
-    /** Destructs VirtualBox event handler. */
-    ~UIVirtualBoxEventHandler();
 
-    /** @name Prepare/Cleanup cascade.
+    /** @name Prepare cascade.
       * @{ */
         /** Prepares all. */
         void prepare();
-        /** Prepares listener. */
-        void prepareListener();
         /** Prepares connections. */
         void prepareConnections();
-
-        /** Cleanups connections. */
-        void cleanupConnections();
-        /** Cleanups listener. */
-        void cleanupListener();
-        /** Cleanups all. */
-        void cleanup();
     /** @} */
 
 private:
@@ -93,10 +81,8 @@ private:
     /** Holds the singleton static VirtualBox event handler instance. */
     static UIVirtualBoxEventHandler *m_spInstance;
 
-    /** Holds the Qt event listener instance. */
-    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
-    /** Holds the COM event listener instance. */
-    CEventListener m_comEventListener;
+    /** Holds the VirtualBox event proxy instance. */
+    UIVirtualBoxEventHandlerProxy *m_pProxy;
 };
 
 /** Defines the globally known name for the VirtualBox event handler instance. */

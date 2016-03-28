@@ -21,18 +21,15 @@
 /* Qt includes: */
 #include <QObject>
 
-/* GUI includes: */
-#include "UIMainEventListener.h"
-
 /* COM includes: */
 #include "COMEnums.h"
-#include "CEventListener.h"
 #include "CVirtualBoxErrorInfo.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
 #include "CUSBDevice.h"
 
 /* Forward declarations: */
+class UIConsoleEventHandlerProxy;
 class UISession;
 
 
@@ -94,45 +91,22 @@ protected:
 
     /** Constructs console event handler for passed @a pSession. */
     UIConsoleEventHandler(UISession *pSession);
-    /** Destructs console event handler. */
-    ~UIConsoleEventHandler();
 
-    /** @name Prepare/Cleanup cascade.
+    /** @name Prepare cascade.
       * @{ */
         /** Prepares all. */
         void prepare();
-        /** Prepares listener. */
-        void prepareListener();
         /** Prepares connections. */
         void prepareConnections();
-
-        /** Cleanups connections. */
-        void cleanupConnections();
-        /** Cleanups listener. */
-        void cleanupListener();
-        /** Cleanups all. */
-        void cleanup();
     /** @} */
-
-private slots:
-
-    /** Returns whether VM window can be shown. */
-    void sltCanShowWindow(bool &fVeto, QString &strReason);
-    /** Shows VM window if possible. */
-    void sltShowWindow(qint64 &winId);
 
 private:
 
     /** Holds the singleton static console event handler instance. */
     static UIConsoleEventHandler *m_spInstance;
 
-    /** Holds the Qt event listener instance. */
-    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
-    /** Holds the COM event listener instance. */
-    CEventListener m_comEventListener;
-
-    /** Holds the UI session reference. */
-    UISession *m_pSession;
+    /** Holds the console event proxy instance. */
+    UIConsoleEventHandlerProxy *m_pProxy;
 };
 
 /** Defines the globally known name for the console event handler instance. */

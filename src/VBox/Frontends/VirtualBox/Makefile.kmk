@@ -536,10 +536,12 @@ VirtualBox_QT_MOCSRCS = \
 	src/medium/UIMediumManager.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIAddDiskEncryptionPasswordDialog.cpp \
+	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIStatusBarEditorWindow.cpp \
 	src/selector/UIActionPoolSelector.cpp \
+	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
