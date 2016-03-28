@@ -21,7 +21,6 @@
 
 /* GUI includes: */
 # include "UIVirtualBoxEventHandler.h"
-# include "UIMainEventListener.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -65,11 +64,17 @@ UIVirtualBoxEventHandler::~UIVirtualBoxEventHandler()
 
 void UIVirtualBoxEventHandler::prepare()
 {
+    /* Prepare: */
+    prepareListener();
+    prepareConnections();
+}
+
+void UIVirtualBoxEventHandler::prepareListener()
+{
     /* Create Main event listener instance: */
-    ComObjPtr<UIMainEventListenerImpl> pListener;
-    pListener.createObject();
-    pListener->init(new UIMainEventListener, this);
-    m_mainEventListener = CEventListener(pListener);
+    m_pQtListener.createObject();
+    m_pQtListener->init(new UIMainEventListener, this);
+    m_comEventListener = CEventListener(m_pQtListener);
 
     /* Get VirtualBoxClient: */
     const CVirtualBoxClient vboxClient = vboxGlobal().virtualBoxClient();
@@ -81,7 +86,7 @@ void UIVirtualBoxEventHandler::prepare()
     QVector<KVBoxEventType> vboxClientEvents;
     vboxClientEvents
         << KVBoxEventType_OnVBoxSVCAvailabilityChanged;
-    eventSourceVirtualBoxClient.RegisterListener(m_mainEventListener, vboxClientEvents, TRUE);
+    eventSourceVirtualBoxClient.RegisterListener(m_comEventListener, vboxClientEvents, TRUE);
     AssertWrapperOk(eventSourceVirtualBoxClient);
 
     /* Get VirtualBox: */
@@ -101,41 +106,48 @@ void UIVirtualBoxEventHandler::prepare()
         << KVBoxEventType_OnSnapshotDeleted
         << KVBoxEventType_OnSnapshotChanged
         << KVBoxEventType_OnSnapshotRestored;
-    eventSourceVirtualBox.RegisterListener(m_mainEventListener, vboxEvents, TRUE);
+    eventSourceVirtualBox.RegisterListener(m_comEventListener, vboxEvents, TRUE);
     AssertWrapperOk(eventSourceVirtualBox);
+}
 
-
+void UIVirtualBoxEventHandler::prepareConnections()
+{
     /* Create queued (async) connections for non-waitable signals: */
-    connect(pListener->getWrapped(), SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             this, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigMachineStateChange(QString, KMachineState)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineStateChange(QString, KMachineState)),
             this, SIGNAL(sigMachineStateChange(QString, KMachineState)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigMachineDataChange(QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineDataChange(QString)),
             this, SIGNAL(sigMachineDataChange(QString)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigMachineRegistered(QString, bool)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineRegistered(QString, bool)),
             this, SIGNAL(sigMachineRegistered(QString, bool)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigSessionStateChange(QString, KSessionState)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSessionStateChange(QString, KSessionState)),
             this, SIGNAL(sigSessionStateChange(QString, KSessionState)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigSnapshotTake(QString, QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotTake(QString, QString)),
             this, SIGNAL(sigSnapshotTake(QString, QString)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigSnapshotDelete(QString, QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotDelete(QString, QString)),
             this, SIGNAL(sigSnapshotDelete(QString, QString)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigSnapshotChange(QString, QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotChange(QString, QString)),
             this, SIGNAL(sigSnapshotChange(QString, QString)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigSnapshotRestore(QString, QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotRestore(QString, QString)),
             this, SIGNAL(sigSnapshotRestore(QString, QString)),
             Qt::QueuedConnection);
 }
 
-void UIVirtualBoxEventHandler::cleanup()
+void UIVirtualBoxEventHandler::cleanupConnections()
+{
+    /* Nothing for now. */
+}
+
+void UIVirtualBoxEventHandler::cleanupListener()
 {
     /* Get VirtualBox: */
     const CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -144,7 +156,7 @@ void UIVirtualBoxEventHandler::cleanup()
     CEventSource eventSourceVirtualBox = vbox.GetEventSource();
     AssertWrapperOk(eventSourceVirtualBox);
     /* Unregister listener: */
-    eventSourceVirtualBox.UnregisterListener(m_mainEventListener);
+    eventSourceVirtualBox.UnregisterListener(m_comEventListener);
 
     /* Get VirtualBoxClient: */
     const CVirtualBoxClient vboxClient = vboxGlobal().virtualBoxClient();
@@ -153,6 +165,13 @@ void UIVirtualBoxEventHandler::cleanup()
     CEventSource eventSourceVirtualBoxClient = vboxClient.GetEventSource();
     AssertWrapperOk(eventSourceVirtualBoxClient);
     /* Unregister listener: */
-    eventSourceVirtualBoxClient.UnregisterListener(m_mainEventListener);
+    eventSourceVirtualBoxClient.UnregisterListener(m_comEventListener);
+}
+
+void UIVirtualBoxEventHandler::cleanup()
+{
+    /* Cleanup: */
+    cleanupConnections();
+    cleanupListener();
 }
 

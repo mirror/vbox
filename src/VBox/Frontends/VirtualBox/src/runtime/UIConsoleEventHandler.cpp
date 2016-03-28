@@ -21,7 +21,6 @@
 
 /* GUI includes: */
 # include "UIConsoleEventHandler.h"
-# include "UIMainEventListener.h"
 # include "VBoxGlobal.h"
 # include "UISession.h"
 # ifdef Q_WS_MAC
@@ -70,14 +69,20 @@ UIConsoleEventHandler::~UIConsoleEventHandler()
 
 void UIConsoleEventHandler::prepare()
 {
+    /* Prepare: */
+    prepareListener();
+    prepareConnections();
+}
+
+void UIConsoleEventHandler::prepareListener()
+{
     /* Make sure session is passed: */
     AssertPtrReturnVoid(m_pSession);
 
     /* Create Main event listener instance: */
-    ComObjPtr<UIMainEventListenerImpl> pListener;
-    pListener.createObject();
-    pListener->init(new UIMainEventListener, this);
-    m_mainEventListener = CEventListener(pListener);
+    m_pQtListener.createObject();
+    m_pQtListener->init(new UIMainEventListener, this);
+    m_comEventListener = CEventListener(m_pQtListener);
 
     /* Get console: */
     const CConsole console = m_pSession->session().GetConsole();
@@ -107,69 +112,76 @@ void UIConsoleEventHandler::prepare()
         << KVBoxEventType_OnRuntimeError
         << KVBoxEventType_OnCanShowWindow
         << KVBoxEventType_OnShowWindow;
-    eventSource.RegisterListener(m_mainEventListener, events, TRUE);
+    eventSource.RegisterListener(m_comEventListener, events, TRUE);
+}
 
-
+void UIConsoleEventHandler::prepareConnections()
+{
     /* Create queued (async) connections for non-waitable signals: */
-    connect(pListener->getWrapped(), SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
             this, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
             this, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
             this, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigStateChange(KMachineState)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigStateChange(KMachineState)),
             this, SIGNAL(sigStateChange(KMachineState)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigAdditionsChange()),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigAdditionsChange()),
             this, SIGNAL(sigAdditionsChange()),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
             this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigStorageDeviceChange(CMediumAttachment, bool, bool)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigStorageDeviceChange(CMediumAttachment, bool, bool)),
             this, SIGNAL(sigStorageDeviceChange(CMediumAttachment, bool, bool)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigMediumChange(CMediumAttachment)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMediumChange(CMediumAttachment)),
             this, SIGNAL(sigMediumChange(CMediumAttachment)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigVRDEChange()),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigVRDEChange()),
             this, SIGNAL(sigVRDEChange()),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigVideoCaptureChange()),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigVideoCaptureChange()),
             this, SIGNAL(sigVideoCaptureChange()),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigUSBControllerChange()),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigUSBControllerChange()),
             this, SIGNAL(sigUSBControllerChange()),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
             this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigSharedFolderChange()),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSharedFolderChange()),
             this, SIGNAL(sigSharedFolderChange()),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigCPUExecutionCapChange()),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigCPUExecutionCapChange()),
             this, SIGNAL(sigCPUExecutionCapChange()),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
             this, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
             Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigRuntimeError(bool, QString, QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigRuntimeError(bool, QString, QString)),
             this, SIGNAL(sigRuntimeError(bool, QString, QString)),
             Qt::QueuedConnection);
 
     /* Create direct (sync) connections for waitable signals: */
-    connect(pListener->getWrapped(), SIGNAL(sigCanShowWindow(bool &, QString &)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigCanShowWindow(bool &, QString &)),
             this, SLOT(sltCanShowWindow(bool &, QString &)),
             Qt::DirectConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigShowWindow(qint64 &)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigShowWindow(qint64 &)),
             this, SLOT(sltShowWindow(qint64 &)),
             Qt::DirectConnection);
 }
 
-void UIConsoleEventHandler::cleanup()
+void UIConsoleEventHandler::cleanupConnections()
+{
+    /* Nothing for now. */
+}
+
+void UIConsoleEventHandler::cleanupListener()
 {
     /* Make sure session is passed: */
     AssertPtrReturnVoid(m_pSession);
@@ -182,7 +194,14 @@ void UIConsoleEventHandler::cleanup()
     CEventSource eventSource = console.GetEventSource();
     AssertWrapperOk(eventSource);
     /* Unregister listener: */
-    eventSource.UnregisterListener(m_mainEventListener);
+    eventSource.UnregisterListener(m_comEventListener);
+}
+
+void UIConsoleEventHandler::cleanup()
+{
+    /* Cleanup: */
+    cleanupConnections();
+    cleanupListener();
 }
 
 void UIConsoleEventHandler::sltCanShowWindow(bool & /* fVeto */, QString & /* strReason */)
