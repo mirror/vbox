@@ -223,7 +223,7 @@ void UIConsoleEventHandler::sltShowWindow(qint64 &winId)
     }
 #else /* !Q_WS_MAC */
     /* Return the ID of the top-level machine-window. */
-    winId = (ULONG64)m_pSession->winId();
+    winId = (ULONG64)m_pSession->mainMachineWindowId();
 #endif /* !Q_WS_MAC */
 }
 

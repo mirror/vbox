@@ -485,6 +485,11 @@ QWidget* UISession::mainMachineWindow() const
     return machineLogic() ? machineLogic()->mainMachineWindow() : 0;
 }
 
+WId UISession::mainMachineWindowId() const
+{
+    return mainMachineWindow()->winId();
+}
+
 bool UISession::isVisualStateAllowed(UIVisualStateType state) const
 {
     return m_pMachine->isVisualStateAllowed(state);
@@ -1474,11 +1479,6 @@ void UISession::updateMenu()
     }
 }
 #endif /* Q_WS_MAC */
-
-WId UISession::winId() const
-{
-    return mainMachineWindow()->winId();
-}
 
 /** Generate a BGRA bitmap which approximates a XOR/AND mouse pointer.
  *
