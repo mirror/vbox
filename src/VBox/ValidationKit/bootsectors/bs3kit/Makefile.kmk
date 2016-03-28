@@ -81,6 +81,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-PagingInitRootForPP.c \
        bs3-cmn-PagingInitRootForPAE.c \
        bs3-cmn-PagingInitRootForLM.c \
+       bs3-cmn-PagingProtect.c \
        bs3-cmn-RegCtxRestore.asm \
        bs3-cmn-RegCtxConvertToRingX.c \
        bs3-cmn-RegCtxPrint.c \
@@ -192,7 +193,9 @@ bs3kit-common-64_INSTTYPE = none
 bs3kit-common-64_DEFS     = TMPL_LM64 BS3_CMN_ONLY
 bs3kit-common-64_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
-       bs3-c64-Trap64Generic.asm
+       bs3-c64-Trap64Generic.asm \
+       ../../../Runtime/common/asm/ASMGetIdtr.asm \
+       ../../../Runtime/common/asm/ASMSetIdtr.asm \
 
 
 #

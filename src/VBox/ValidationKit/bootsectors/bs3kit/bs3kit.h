@@ -1077,12 +1077,12 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
 #define BS3_XPTR_IS_NULL(a_Type, a_Name)    ((a_Name).XPtr.uFlat == 0)
 
 /**
- * Gets a working pointer from a 32-bit flat address.
+ * Gets a working pointer from a flat address.
  *
  * @returns Current context pointer.
- * @param   uFlatPtr    The flat address to convert.
+ * @param   uFlatPtr    The flat address to convert (32-bit or 64-bit).
  */
-DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(uint32_t uFlatPtr)
+DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(RTCCUINTXREG uFlatPtr)
 {
     BS3_XPTR_AUTO(void, pTmp);
     BS3_XPTR_SET_FLAT(void, pTmp, uFlatPtr);
@@ -1394,17 +1394,17 @@ BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c64(uint32_t off, uint16_t uSel); /**< @c
 #define Bs3SelFar32ToFlat32 BS3_CMN_NM(Bs3SelFar32ToFlat32) /**< Selects #Bs3SelFar32ToFlat32_c16, #Bs3SelFar32ToFlat32_c32 or #Bs3SelFar32ToFlat32_c64. */
 
 /**
- * Gets a 32-bit flat address from a working poitner.
+ * Gets a flat address from a working poitner.
  *
- * @returns 32-bit flat address.
+ * @returns flat address (32-bit or 64-bit).
  * @param   pv          Current context pointer.
  */
-DECLINLINE(uint32_t) Bs3SelPtrToFlat(void BS3_FAR *pv)
+DECLINLINE(RTCCUINTXREG) Bs3SelPtrToFlat(void BS3_FAR *pv)
 {
 #if ARCH_BITS == 16
     return Bs3SelFar32ToFlat32(BS3_FP_OFF(pv), BS3_FP_SEG(pv));
 #else
-    return (uint32_t)(uintptr_t)pv;
+    return (uintptr_t)pv;
 #endif
 }
 
@@ -1721,6 +1721,47 @@ BS3_DECL(int) Bs3PagingInitRootForLM_c32(void); /**< @copydoc Bs3PagingInitRootF
 BS3_DECL(int) Bs3PagingInitRootForLM_c64(void); /**< @copydoc Bs3PagingInitRootForLM_c16 */
 #define Bs3PagingInitRootForLM BS3_CMN_NM(Bs3PagingInitRootForLM) /**< Selects #Bs3PagingInitRootForLM_c16, #Bs3PagingInitRootForLM_c32 or #Bs3PagingInitRootForLM_c64. */
 
+/**
+ * Modifies the page table protection of an address range.
+ *
+ * This only works on the lowest level of the page tables in the current mode.
+ *
+ * Since we generally use the largest pages available when setting up the
+ * initial page tables, this function will usually have to allocate and create
+ * more tables.  This may fail if we're low on memory.
+ *
+ * @returns IPRT status code.
+ * @param   uFlat       The flat address of the first page in the range (rounded
+ *                      down nearest page boundrary).
+ * @param   cb          The range size from @a pv (rounded up to nearest page boundrary).
+ * @param   fSet        Mask of zero or more X86_PTE_XXX values to set for the range.
+ * @param   fClear      Mask of zero or more X86_PTE_XXX values to clear for the range.
+ */
+BS3_DECL(int) Bs3PagingProtect_c16(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear);
+BS3_DECL(int) Bs3PagingProtect_c32(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear); /**< @copydoc Bs3PagingProtect_c16 */
+BS3_DECL(int) Bs3PagingProtect_c64(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear); /**< @copydoc Bs3PagingProtect_c16 */
+#define Bs3PagingProtect BS3_CMN_NM(Bs3PagingProtect) /**< Selects #Bs3PagingProtect_c16, #Bs3PagingProtect_c32 or #Bs3PagingProtect_c64. */
+
+/**
+ * Modifies the page table protection of an address range.
+ *
+ * This only works on the lowest level of the page tables in the current mode.
+ *
+ * Since we generally use the largest pages available when setting up the
+ * initial page tables, this function will usually have to allocate and create
+ * more tables.  This may fail if we're low on memory.
+ *
+ * @returns IPRT status code.
+ * @param   pv          The address of the first page in the range (rounded
+ *                      down nearest page boundrary).
+ * @param   cb          The range size from @a pv (rounded up to nearest page boundrary).
+ * @param   fSet        Mask of zero or more X86_PTE_XXX values to set for the range.
+ * @param   fClear      Mask of zero or more X86_PTE_XXX values to clear for the range.
+ */
+BS3_DECL(int) Bs3PagingProtectPtr_c16(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear);
+BS3_DECL(int) Bs3PagingProtectPtr_c32(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear); /**< @copydoc Bs3PagingProtectPtr_c16 */
+BS3_DECL(int) Bs3PagingProtectPtr_c64(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear); /**< @copydoc Bs3PagingProtectPtr_c16 */
+#define Bs3PagingProtectPtr BS3_CMN_NM(Bs3PagingProtectPtr) /**< Selects #Bs3PagingProtectPtr_c16, #Bs3PagingProtectPtr_c32 or #Bs3PagingProtectPtr_c64. */
 
 /**
  * Waits for the keyboard controller to become ready.

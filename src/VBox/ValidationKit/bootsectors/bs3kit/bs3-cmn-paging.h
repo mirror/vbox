@@ -45,5 +45,12 @@ extern uint32_t BS3_DATA_NM(g_PhysPagingRootLM);
 RT_C_DECLS_END;
 
 
+#define bs3PagingGetLegacyPte BS3_CMN_NM(bs3PagingGetLegacyPte)
+BS3_DECL(X86PTE BS3_FAR *) bs3PagingGetLegacyPte(RTCCUINTXREG cr3, uint32_t uFlat, bool fUseInvlPg, int *prc);
+
+#define bs3PagingGetPte BS3_CMN_NM(bs3PagingGetPte)
+BS3_DECL(X86PTEPAE BS3_FAR *) bs3PagingGetPte(RTCCUINTXREG cr3, uint64_t uFlat, bool fUseInvlPg, int *prc);
+
+
 #endif
 
