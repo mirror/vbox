@@ -21,11 +21,18 @@
 
 /* Global includes: */
 # include <QVBoxLayout>
+# include <QTextBrowser>
+# include <QPushButton>
 
 /* Local includes: */
 # include "UIWizardImportAppPageBasic2.h"
 # include "UIWizardImportApp.h"
 # include "QIRichTextLabel.h"
+# include "QIDialogButtonBox.h"
+
+/* COM includes: */
+# include "CAppliance.h"
+# include "CCertificate.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -71,6 +78,115 @@ void UIWizardImportAppPageBasic2::initializePage()
 {
     /* Translate page: */
     retranslateUi();
+    /* Create dialog: */
+    QDialog *pDialog = new QDialog(this, Qt::Dialog);
+    AssertPtrReturnVoid(pDialog);
+
+    CAppliance* l_appl = m_pApplianceWidget->appliance();
+    CCertificate aCertificateInfo = l_appl->GetCertificate();
+    /* check emptyness of certificate. object exists but hasn't fullfilled */
+    BOOL fExisting = false;
+    BOOL fVerified = false;
+    fExisting = aCertificateInfo.CheckExistence();
+    fVerified = aCertificateInfo.IsVerified();
+    if (fExisting && !fVerified)
+    {
+        /* Create layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(pDialog);
+        AssertPtrReturnVoid(pLayout);
+        {
+            /* Prepare dialog: */
+            pDialog->resize(500, 500);
+            /* Create text-field: */
+            QTextBrowser *pTextBrowser = new QTextBrowser;
+            AssertPtrReturnVoid(pTextBrowser);
+
+            QString fullCertInfo("");
+
+            {
+                /* Configure text-field: */
+                // TODO: Load text to text-browser here:
+                QString data = aCertificateInfo.GetVersionNumber();
+                fullCertInfo.append("Certificate version number: ").append(data).append("\n\n");
+
+                data = aCertificateInfo.GetSerialNumber();
+                fullCertInfo.append("Certificate serial number: 0x").append(data).append("\n\n");
+
+                bool flag = aCertificateInfo.GetCertificateAuthority();
+                data = (flag == true) ? "True":"False";
+                fullCertInfo.append("Certificate Authority (CA): ").append(data).append("\n\n");
+
+                flag = aCertificateInfo.GetSelfSigned();
+                data = (flag == true) ? "True":"False";
+                fullCertInfo.append("Certificate Self-Signed : ").append(data).append("\n\n");
+
+                flag = aCertificateInfo.GetTrusted();
+                data = (flag == true) ? "True":"False";
+                fullCertInfo.append("Certificate Trusted: ").append(data).append("\n\n");
+
+                QVector<QString> name = aCertificateInfo.GetIssuerName();
+                fullCertInfo.append("Certificate Issuer: ").append("\n");
+                if (!name.isEmpty())
+                {
+                    for (int i = 0; i < name.size()-1; ++i)
+                    {
+                        fullCertInfo.append(name.at(i)).append(", ");
+                    }
+
+                    QString field = name.at(name.size()-1);
+                    fullCertInfo.append(field).append("\n\n");
+                }
+                name.clear();
+                name = aCertificateInfo.GetSubjectName();
+                fullCertInfo.append("Certificate Subject: ").append("\n");
+                if (!name.isEmpty())
+                {
+                    for (int i = 0; i < name.size()-1; ++i)
+                    {
+                        fullCertInfo.append(name.at(i)).append(", ");
+                    }
+
+                    QString field = name.at(name.size()-1);
+                    fullCertInfo.append(field).append("\n\n");
+                }
+
+                data = aCertificateInfo.GetPublicKeyAlgorithm();
+                fullCertInfo.append("Certificate Public Algorithm: ").append(data).append("\n\n");
+
+                data = aCertificateInfo.GetSignatureAlgorithmName();
+                fullCertInfo.append("Certificate Signature Algorithm: ").append(data).append("\n\n");
+
+                data = aCertificateInfo.GetSignatureAlgorithmOID();
+                fullCertInfo.append("Certificate Signature Algorithm OID: ").append(data).append("\n\n");
+
+                data = aCertificateInfo.GetValidityPeriodNotBefore();
+                fullCertInfo.append("Certificate Validity Period Not Before: ").append(data).append("\n\n");
+
+                data = aCertificateInfo.GetValidityPeriodNotAfter();
+                fullCertInfo.append("Certificate Validity Period Not After: ").append(data).append("\n\n");
+
+                pTextBrowser->setText(fullCertInfo);
+                /* Add text-browser into layout: */
+                pLayout->addWidget(pTextBrowser);
+            }
+            /* Create button-box: */
+            QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
+            AssertPtrReturnVoid(pButtonBox);
+            {
+                /* Configure button-box: */
+                pButtonBox->setStandardButtons(QDialogButtonBox::Ok);
+                pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(Qt::Key_Enter);
+                connect(pButtonBox, SIGNAL(accepted()), pDialog, SLOT(close()));
+                /* Add button-box into layout: */
+                pLayout->addWidget(pButtonBox);
+            }
+        }
+        /* Show dialog in modal mode: */
+        pDialog->exec();
+        /* Delete dialog finally: */
+        delete pDialog;
+        pDialog = 0;
+    }
 }
 
 void UIWizardImportAppPageBasic2::cleanupPage()
