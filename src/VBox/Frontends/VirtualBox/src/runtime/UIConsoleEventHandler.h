@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,7 +33,8 @@
 class UISession;
 
 
-/** Active event handler singleton for the CConsole event-source. */
+/** Singleton QObject extension
+  * providing GUI with the CConsole event-source. */
 class UIConsoleEventHandler: public QObject
 {
     Q_OBJECT;
@@ -79,11 +80,11 @@ signals:
 
 public:
 
-    /** Static instance wrapper. */
+    /** Returns singleton instance created by the factory. */
     static UIConsoleEventHandler* instance() { return m_spInstance; }
-    /** Static instance constructor. */
+    /** Creates singleton instance created by the factory. */
     static void create(UISession *pSession);
-    /** Static instance destructor. */
+    /** Destroys singleton instance created by the factory. */
     static void destroy();
 
 private slots:
@@ -95,15 +96,15 @@ private slots:
 
 private:
 
-    /** Constructor: */
+    /** Constructs console event handler for passed @a pSession. */
     UIConsoleEventHandler(UISession *pSession);
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
-    /** Cleanup routine. */
+    /** Cleanups all. */
     void cleanup();
 
-    /** Holds the static instance. */
+    /** Holds the singleton static console event handler instance. */
     static UIConsoleEventHandler *m_spInstance;
 
     /** Holds the UI session reference. */
@@ -113,6 +114,8 @@ private:
     CEventListener m_mainEventListener;
 };
 
+/** Defines the globally known name for the console event handler instance. */
 #define gConsoleEvents UIConsoleEventHandler::instance()
 
 #endif /* !___UIConsoleEventHandler_h___ */
+

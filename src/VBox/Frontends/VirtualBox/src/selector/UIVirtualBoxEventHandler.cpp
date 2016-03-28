@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2015 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -53,7 +53,7 @@ void UIVirtualBoxEventHandler::destroy()
 
 UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
 {
-    /* Create Main-event listener instance: */
+    /* Create Main event listener instance: */
     ComObjPtr<UIMainEventListenerImpl> pListener;
     pListener.createObject();
     pListener->init(new UIMainEventListener, this);
@@ -92,7 +92,8 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
     eventSourceVirtualBox.RegisterListener(m_mainEventListener, vboxEvents, TRUE);
     AssertWrapperOk(eventSourceVirtualBox);
 
-    /* Prepare connections: */
+
+    /* Create queued (async) connections for non-waitable signals: */
     connect(pListener->getWrapped(), SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             this, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             Qt::QueuedConnection);

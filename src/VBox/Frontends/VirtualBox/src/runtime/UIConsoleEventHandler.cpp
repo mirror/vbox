@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,28 +61,24 @@ void UIConsoleEventHandler::destroy()
 
 void UIConsoleEventHandler::sltCanShowWindow(bool & /* fVeto */, QString & /* strReason */)
 {
-    /* No veto, so nothing for us to do. */
+    /* Nothing for now. */
 }
 
 void UIConsoleEventHandler::sltShowWindow(qint64 &winId)
 {
 #ifdef Q_WS_MAC
-        /* Let's try the simple approach first - grab the focus.
-         * Getting a window out of the dock (minimized or whatever it's called)
-         * needs to be done on the GUI thread, so post it a note: */
-        winId = 0;
-        if (::darwinSetFrontMostProcess())
-            emit sigShowWindow();
-        else
-        {
-            /* It failed for some reason, send the other process our PSN so it can try.
-             * (This is just a precaution should Mac OS X start imposing the same sensible
-             * focus stealing restrictions that other window managers implement). */
-            winId = ::darwinGetCurrentProcessId();
-        }
-#else /* Q_WS_MAC */
-        /* Return the ID of the top-level console window. */
-        winId = (ULONG64)m_pSession->winId();
+    /* First of all, just ask the GUI thread to show the machine-window: */
+    winId = 0;
+    if (::darwinSetFrontMostProcess())
+        emit sigShowWindow();
+    else
+    {
+        /* If it's failed for some reason, send the other process our PSN so it can try: */
+        winId = ::darwinGetCurrentProcessId();
+    }
+#else /* !Q_WS_MAC */
+    /* Return the ID of the top-level machine-window. */
+    winId = (ULONG64)m_pSession->winId();
 #endif /* !Q_WS_MAC */
 }
 
@@ -96,7 +92,7 @@ void UIConsoleEventHandler::prepare()
     /* Make sure session is passed: */
     AssertPtrReturnVoid(m_pSession);
 
-    /* Create Main-event listener instance: */
+    /* Create Main event listener instance: */
     ComObjPtr<UIMainEventListenerImpl> pListener;
     pListener.createObject();
     pListener->init(new UIMainEventListener, this);
@@ -133,7 +129,7 @@ void UIConsoleEventHandler::prepare()
     eventSource.RegisterListener(m_mainEventListener, events, TRUE);
 
 
-    /* Prepare connections: */
+    /* Create queued (async) connections for non-waitable signals: */
     connect(pListener->getWrapped(), SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
             this, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
             Qt::QueuedConnection);
@@ -184,13 +180,10 @@ void UIConsoleEventHandler::prepare()
             this, SIGNAL(sigRuntimeError(bool, QString, QString)),
             Qt::QueuedConnection);
 
-    /* This is a vetoable event, so we have to respond to the event and have to
-     * use a direct connection therefor. */
+    /* Create direct (sync) connections for waitable signals: */
     connect(pListener->getWrapped(), SIGNAL(sigCanShowWindow(bool&, QString&)),
             this, SLOT(sltCanShowWindow(bool&, QString&)),
             Qt::DirectConnection);
-    /* This returns a winId, so we have to respond to the event and have to use
-     * a direct connection therefor. */
     connect(pListener->getWrapped(), SIGNAL(sigShowWindow(qint64&)),
             this, SLOT(sltShowWindow(qint64&)),
             Qt::DirectConnection);

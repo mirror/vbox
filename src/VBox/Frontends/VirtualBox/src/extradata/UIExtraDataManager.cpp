@@ -78,8 +78,8 @@ using namespace UIExtraDataDefs;
 using namespace UISettingsDefs;
 
 
-/** QObject extension
-  * notifying UIExtraDataManager whenever any of extra-data values changed. */
+/** Private QObject extension
+  * providing UIExtraDataManager with the CVirtualBox event-source. */
 class UIExtraDataEventHandler : public QObject
 {
     Q_OBJECT;
@@ -91,7 +91,7 @@ signals:
 
 public:
 
-    /** Extra-data event-handler constructor. */
+    /** Constructs private proxy on the basis of passed @a pParent. */
     UIExtraDataEventHandler(QObject *pParent);
 
 public slots:
@@ -3996,7 +3996,7 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
     /* Configure extra-data event-handler: */
     AssertPtrReturnVoid(m_pHandler);
     {
-        /* Extra-data change signal: */
+        /* Create queued (async) connections to signals of private proxy: */
         connect(m_pHandler, SIGNAL(sigExtraDataChange(QString, QString, QString)),
                 this, SLOT(sltExtraDataChange(QString, QString, QString)),
                 Qt::QueuedConnection);
