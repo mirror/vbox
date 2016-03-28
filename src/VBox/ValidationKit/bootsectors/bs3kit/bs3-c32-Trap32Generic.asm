@@ -357,14 +357,17 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
         mov     eax, cr4
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], eax
-        jmp     .dispatch_to_handler
+        jmp     .set_flags
 .skip_crX_because_cpl_not_0:
         or      byte [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
+
+.set_flags:                             ; The double fault code joins us here.
+        or      byte [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_AMD64
 
         ;
         ; Dispatch it to C code.
         ;
-.dispatch_to_handler:                   ; The double fault code joins us here.
+.dispatch_to_handler:
         movzx   ebx, byte [edi + BS3TRAPFRAME.bXcpt]
         mov     eax, [ebx * 4 + BS3_DATA16_WRT(_g_apfnBs3TrapHandlers_c32)]
         or      eax, eax
@@ -530,6 +533,6 @@ AssertCompileSizeAlignment(BS3TRAPFRAME, 8)
         ;
         ; Join code paths with the generic handler code.
         ;
-        jmp     bs3Trap32GenericCommon.dispatch_to_handler
+        jmp     bs3Trap32GenericCommon.set_flags
 BS3_PROC_END   Bs3Trap32DoubleFaultHandler
 

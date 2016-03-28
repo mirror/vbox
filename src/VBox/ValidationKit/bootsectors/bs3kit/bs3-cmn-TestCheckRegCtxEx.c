@@ -50,14 +50,18 @@ BS3_DECL(bool) Bs3TestCheckRegCtxEx(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpecte
     CHECK_MEMBER("rbp",     "%08RX64",  pActualCtx->rbp.u,    pExpectedCtx->rbp.u);
     CHECK_MEMBER("rsi",     "%08RX64",  pActualCtx->rsi.u,    pExpectedCtx->rsi.u);
     CHECK_MEMBER("rdi",     "%08RX64",  pActualCtx->rdi.u,    pExpectedCtx->rdi.u);
-    CHECK_MEMBER("r8",      "%08RX64",  pActualCtx->r8.u,     pExpectedCtx->r8.u);
-    CHECK_MEMBER("r9",      "%08RX64",  pActualCtx->r9.u,     pExpectedCtx->r9.u);
-    CHECK_MEMBER("r10",     "%08RX64",  pActualCtx->r10.u,    pExpectedCtx->r10.u);
-    CHECK_MEMBER("r11",     "%08RX64",  pActualCtx->r11.u,    pExpectedCtx->r11.u);
-    CHECK_MEMBER("r12",     "%08RX64",  pActualCtx->r12.u,    pExpectedCtx->r12.u);
-    CHECK_MEMBER("r13",     "%08RX64",  pActualCtx->r13.u,    pExpectedCtx->r13.u);
-    CHECK_MEMBER("r14",     "%08RX64",  pActualCtx->r14.u,    pExpectedCtx->r14.u);
-    CHECK_MEMBER("r15",     "%08RX64",  pActualCtx->r15.u,    pExpectedCtx->r15.u);
+    if (   !(pActualCtx->fbFlags & BS3REG_CTX_F_NO_AMD64)
+        && !(pExpectedCtx->fbFlags & BS3REG_CTX_F_NO_AMD64) )
+    {
+        CHECK_MEMBER("r8",      "%08RX64",  pActualCtx->r8.u,     pExpectedCtx->r8.u);
+        CHECK_MEMBER("r9",      "%08RX64",  pActualCtx->r9.u,     pExpectedCtx->r9.u);
+        CHECK_MEMBER("r10",     "%08RX64",  pActualCtx->r10.u,    pExpectedCtx->r10.u);
+        CHECK_MEMBER("r11",     "%08RX64",  pActualCtx->r11.u,    pExpectedCtx->r11.u);
+        CHECK_MEMBER("r12",     "%08RX64",  pActualCtx->r12.u,    pExpectedCtx->r12.u);
+        CHECK_MEMBER("r13",     "%08RX64",  pActualCtx->r13.u,    pExpectedCtx->r13.u);
+        CHECK_MEMBER("r14",     "%08RX64",  pActualCtx->r14.u,    pExpectedCtx->r14.u);
+        CHECK_MEMBER("r15",     "%08RX64",  pActualCtx->r15.u,    pExpectedCtx->r15.u);
+    }
     CHECK_MEMBER("rflags",  "%08RX64",  pActualCtx->rflags.u, pExpectedCtx->rflags.u | fExtraEfl);
     CHECK_MEMBER("rip",     "%08RX64",  pActualCtx->rip.u,    pExpectedCtx->rip.u + cbPcAdjust);
     CHECK_MEMBER("cs",      "%04RX16",  pActualCtx->cs,       pExpectedCtx->cs);

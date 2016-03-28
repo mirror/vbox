@@ -1171,6 +1171,8 @@ AssertCompileSize(BS3REGCTX, 0xd0)
 ;; The context doesn't have valid values for the CRx fields.
 ;  This is usually because it wasn't created with CPL=0.
 %define BS3REG_CTX_F_NO_CR              0x01
+;; The context doesn't have valid values for AMD64 GPR extensions.
+%define BS3REG_CTX_F_NO_AMD64           0x02
 ;; @}
 
 ;;

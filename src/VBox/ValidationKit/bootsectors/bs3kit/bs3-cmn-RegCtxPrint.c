@@ -42,8 +42,8 @@ BS3_DECL(void) Bs3RegCtxPrint(PCBS3REGCTX pRegCtx)
         Bs3TestPrintf("cs=%04RX16   ds=%04RX16 es=%04RX16 fs=%04RX16 gs=%04RX16   ss=%04RX16 cr3=%08RX32 cr4=%08RX32\n",
                       pRegCtx->cs, pRegCtx->ds, pRegCtx->es, pRegCtx->fs, pRegCtx->gs, pRegCtx->ss,
                       pRegCtx->cr3.u32, pRegCtx->cr4.u32);
-        Bs3TestPrintf("tr=%04RX16 ldtr=%04RX16 cpl=%d   mode=%#x\n",
-                      pRegCtx->tr, pRegCtx->ldtr, pRegCtx->bCpl, pRegCtx->bMode);
+        Bs3TestPrintf("tr=%04RX16 ldtr=%04RX16 cpl=%d   mode=%#x fbFlags=%#x\n",
+                      pRegCtx->tr, pRegCtx->ldtr, pRegCtx->bCpl, pRegCtx->bMode, pRegCtx->fbFlags);
     //}
     //else
     //{

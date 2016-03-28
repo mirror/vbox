@@ -63,23 +63,22 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     xDI, [xBP + xCB*2]
 %endif
 
-%if TMPL_BITS != 64
         ;
-        ; Clear the whole structure first, unless 64-bit
+        ; Clear the whole structure first.
         ;
         xor     xAX, xAX
         cld
- %if TMPL_BITS == 16
+        AssertCompileSizeAlignment(BS3REGCTX, 4)
+%if TMPL_BITS == 16
         les     xDI, [xBP + xCB*2]
         mov     xCX, BS3REGCTX_size / 2
         rep stosw
- %else
+%else
         mov     xDI, [xBP + xCB*2]
         mov     xCX, BS3REGCTX_size / 4
         rep stosd
- %endif
-        mov     xDI, [xBP + xCB*2]
 %endif
+        mov     xDI, [xBP + xCB*2]
 
         ;
         ; Save the current mode.
@@ -140,6 +139,8 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     [xDI + BS3REGCTX.r13], r13
         mov     [xDI + BS3REGCTX.r14], r14
         mov     [xDI + BS3REGCTX.r15], r15
+%else
+        or      byte [xDI + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_AMD64
 %endif
 %if TMPL_BITS == 16 ; Save high bits.
         mov     [xDI + BS3REGCTX.rax], eax
@@ -155,7 +156,20 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     [xDI + BS3REGCTX.fs], fs
         mov     [xDI + BS3REGCTX.gs], gs
 
-        ; Control registers.
+%if TMPL_BITS == 16 ; v8086 and real mode woes.
+        mov     cl, [xDI + BS3REGCTX.bMode]
+        cmp     cl, BS3_MODE_RM
+        je      .common_full_control_regs
+        and     cl, BS3_MODE_CODE_MASK
+        cmp     cl, BS3_MODE_CODE_V86
+        je      .common_full_no_control_regs
+%endif
+        mov     ax, ss
+        test    al, 3
+        jnz     .common_full_no_control_regs
+
+        ; Control registers (ring-0 and real-mode only).
+.common_full_control_regs:
         mov     sAX, cr0
         mov     [xDI + BS3REGCTX.cr0], sAX
         mov     sAX, cr2
@@ -164,6 +178,10 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     [xDI + BS3REGCTX.cr3], sAX
         mov     sAX, cr4
         mov     [xDI + BS3REGCTX.cr4], sAX
+        jmp     .common_80286
+
+.common_full_no_control_regs:
+        or      byte [xDI + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
 
         ; 80286 control registers.
 .common_80286:

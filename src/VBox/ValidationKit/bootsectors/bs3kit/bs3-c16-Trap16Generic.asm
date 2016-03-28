@@ -435,18 +435,21 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
         mov     eax, cr4
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], eax
-        jmp     .dispatch_to_handler
+        jmp     .set_flags
 .skip_crX_because_cpl_not_0:
         or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
-        jmp     .dispatch_to_handler
+        jmp     .set_flags
 CPU 286
 .save_286_control_registers:
         smsw    [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0]
 
+.set_flags:                             ; The double fault code joins us here.
+        or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_AMD64
+
         ;
         ; Dispatch it to C code.
         ;
-.dispatch_to_handler:                   ; The double fault code joins us here.
+.dispatch_to_handler:
         mov     di, bx
         mov     bl, byte [ss:bx + BS3TRAPFRAME.bXcpt]
         mov     bh, 0
@@ -651,7 +654,7 @@ CPU 286
         ;
         ; Join code paths with the generic handler code.
         ;
-        jmp     bs3Trap16GenericCommon.dispatch_to_handler
+        jmp     bs3Trap16GenericCommon.set_flags
 BS3_PROC_END   Bs3Trap16DoubleFaultHandler
 
 
