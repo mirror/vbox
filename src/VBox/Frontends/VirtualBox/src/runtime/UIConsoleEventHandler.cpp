@@ -42,10 +42,7 @@ UIConsoleEventHandler *UIConsoleEventHandler::m_spInstance = 0;
 void UIConsoleEventHandler::create(UISession *pSession)
 {
     if (!m_spInstance)
-    {
         m_spInstance = new UIConsoleEventHandler(pSession);
-        m_spInstance->prepare();
-    }
 }
 
 /* static */
@@ -53,7 +50,6 @@ void UIConsoleEventHandler::destroy()
 {
     if (m_spInstance)
     {
-        m_spInstance->cleanup();
         delete m_spInstance;
         m_spInstance = 0;
     }
@@ -85,6 +81,14 @@ void UIConsoleEventHandler::sltShowWindow(qint64 &winId)
 UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
     : m_pSession(pSession)
 {
+    /* Prepare: */
+    prepare();
+}
+
+UIConsoleEventHandler::~UIConsoleEventHandler()
+{
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIConsoleEventHandler::prepare()
@@ -175,29 +179,31 @@ void UIConsoleEventHandler::prepare()
     connect(pListener->getWrapped(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
             this, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
             Qt::QueuedConnection);
-
     connect(pListener->getWrapped(), SIGNAL(sigRuntimeError(bool, QString, QString)),
             this, SIGNAL(sigRuntimeError(bool, QString, QString)),
             Qt::QueuedConnection);
 
     /* Create direct (sync) connections for waitable signals: */
-    connect(pListener->getWrapped(), SIGNAL(sigCanShowWindow(bool&, QString&)),
-            this, SLOT(sltCanShowWindow(bool&, QString&)),
+    connect(pListener->getWrapped(), SIGNAL(sigCanShowWindow(bool &, QString &)),
+            this, SLOT(sltCanShowWindow(bool &, QString &)),
             Qt::DirectConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigShowWindow(qint64&)),
-            this, SLOT(sltShowWindow(qint64&)),
+    connect(pListener->getWrapped(), SIGNAL(sigShowWindow(qint64 &)),
+            this, SLOT(sltShowWindow(qint64 &)),
             Qt::DirectConnection);
 }
 
 void UIConsoleEventHandler::cleanup()
 {
+    /* Make sure session is passed: */
+    AssertPtrReturnVoid(m_pSession);
+
     /* Get console: */
     const CConsole console = m_pSession->session().GetConsole();
     if (console.isNull() || !console.isOk())
         return;
     /* Get event-source: */
     CEventSource eventSource = console.GetEventSource();
-    AssertReturnVoid(!eventSource.isNull() || eventSource.isOk());
+    AssertWrapperOk(eventSource);
     /* Unregister listener: */
     eventSource.UnregisterListener(m_mainEventListener);
 }

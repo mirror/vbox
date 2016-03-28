@@ -35,7 +35,7 @@ class UISession;
 
 /** Singleton QObject extension
   * providing GUI with the CConsole event-source. */
-class UIConsoleEventHandler: public QObject
+class UIConsoleEventHandler : public QObject
 {
     Q_OBJECT;
 
@@ -98,6 +98,8 @@ private:
 
     /** Constructs console event handler for passed @a pSession. */
     UIConsoleEventHandler(UISession *pSession);
+    /** Destructs console event handler. */
+    ~UIConsoleEventHandler();
 
     /** Prepares all. */
     void prepare();
@@ -107,11 +109,11 @@ private:
     /** Holds the singleton static console event handler instance. */
     static UIConsoleEventHandler *m_spInstance;
 
+    /** Holds the COM event listener instance. */
+    CEventListener m_mainEventListener;
+
     /** Holds the UI session reference. */
     UISession *m_pSession;
-
-    /** Holds the main event listener instance. */
-    CEventListener m_mainEventListener;
 };
 
 /** Defines the globally known name for the console event handler instance. */

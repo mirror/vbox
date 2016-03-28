@@ -68,8 +68,13 @@ private:
     /** Destructs VirtualBox event handler. */
     ~UIVirtualBoxEventHandler();
 
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Holds the singleton static VirtualBox event handler instance. */
-    static UIVirtualBoxEventHandler *m_pInstance;
+    static UIVirtualBoxEventHandler *m_spInstance;
 
     /** Holds the COM event listener instance. */
     CEventListener m_mainEventListener;
