@@ -160,9 +160,8 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     cl, [xDI + BS3REGCTX.bMode]
         cmp     cl, BS3_MODE_RM
         je      .common_full_control_regs
-        and     cl, BS3_MODE_CODE_MASK
-        cmp     cl, BS3_MODE_CODE_V86
-        je      .common_full_no_control_regs
+        test    cl, BS3_MODE_CODE_V86
+        jnz     .common_full_no_control_regs
 %endif
         mov     ax, ss
         test    al, 3

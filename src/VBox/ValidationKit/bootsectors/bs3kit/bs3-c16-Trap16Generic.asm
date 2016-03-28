@@ -346,9 +346,8 @@ CPU 286
         mov     cx, [bp + 4]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cs], cx
 
-        and     al, BS3_MODE_CODE_MASK
-        cmp     al, BS3_MODE_CODE_V86
-        je      .iret_frame_v8086
+        test    al, BS3_MODE_CODE_V86
+        jnz     .iret_frame_v8086
 
         mov     ax, ss
         and     al, 3
@@ -648,7 +647,7 @@ CPU 286
         mov     cl, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.bMode], cl
         and     cl, ~BS3_MODE_CODE_MASK
-        or      cl, BS3_MODE_CODE_32
+        or      cl, BS3_MODE_CODE_16
         mov     [BS3_DATA16_WRT(g_bBs3CurrentMode)], cl
 
         ;

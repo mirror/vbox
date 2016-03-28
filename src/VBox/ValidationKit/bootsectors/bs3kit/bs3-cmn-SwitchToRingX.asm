@@ -57,9 +57,8 @@ BS3_PROC_BEGIN_CMN Bs3SwitchToRingX
         je      .return_real_mode
 
         ; If V8086 mode: Always do syscall and add a lock prefix to make sure it gets to the VMM.
-        and     al, BS3_MODE_CODE_MASK
-        cmp     al, BS3_MODE_CODE_V86
-        je      .just_do_it
+        test    al, BS3_MODE_CODE_V86
+        jnz     .just_do_it
 %endif
 
         ; In protected mode: Check the CPL we're currently at skip syscall if ring-0 already.

@@ -44,9 +44,8 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit
 
         ; Check g_bBs3CurrentMode whether we're in v8086 mode or not.
         mov     al, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
-        and     al, BS3_MODE_CODE_MASK
-        cmp     al, BS3_MODE_CODE_V86
-        jne     .ret_16bit
+        test    al, BS3_MODE_CODE_V86
+        jz      .ret_16bit
 
         ; Switch to ring-0 if v8086 mode.
         mov     ax, BS3_SYSCALL_TO_RING0
