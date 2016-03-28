@@ -363,6 +363,7 @@ VBoxSVC_SOURCES = \
 	src-all/VirtualBoxBase.cpp \
 	src-all/VirtualBoxErrorInfoImpl.cpp \
 	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
+	src-server/CertificateImpl.cpp \
 	src-server/ApplianceImpl.cpp \
 	src-server/ApplianceImplExport.cpp \
 	src-server/ApplianceImplImport.cpp \

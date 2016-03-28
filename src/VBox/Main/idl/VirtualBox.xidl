@@ -2979,12 +2979,112 @@
 
   </enum>
 
+  <!--
+  // ICertificate
+  /////////////////////////////////////////////////////////////////////////
+  -->
+  <interface
+    name="ICertificate" extends="$unknown"
+    uuid="c2b34d6f-7a10-4901-803e-05d5ef946567"
+    wsmap="managed"
+    reservedAttributes="4" reservedMethods="2"
+    >
+    <desc>
+        X509 certificate details.
+    </desc>
+    <attribute name="versionNumber" type="wstring" readonly="yes">
+      <desc>Certificate version.</desc>
+    </attribute>
+    <attribute name="serialNumber" type="wstring" readonly="yes">
+      <desc>Certificate serial number.</desc>
+    </attribute>
+    <attribute name="signatureAlgorithmOID" type="wstring" readonly="yes">
+      <desc>The dotted OID of the signature algorithm.</desc>
+    </attribute>
+    <attribute name="signatureAlgorithmName" type="wstring" readonly="yes">
+      <desc>The signature algorithm name if known (if known).</desc>
+    </attribute>
+    <attribute name="issuerName" type="wstring" readonly="yes" safearray="yes">
+      <desc>Issuer name.  Each member of the array is on the format
+      COMPONENT=NAME, e.g. "C=DE", "ST=Example", "L=For Instance", "O=Beispiel GmbH",
+      "CN=beispiel.example.org".
+      </desc>
+    </attribute>
+    <attribute name="subjectName" type="wstring" readonly="yes" safearray="yes">
+      <desc>Subject name.  Same format as issuerName.</desc>
+    </attribute>
+    <attribute name="validityPeriodNotBefore" type="wstring" readonly="yes">
+      <desc>Time stamp in milliseconds since 1970-01-01 UTC.</desc>
+    </attribute>
+    <attribute name="validityPeriodNotAfter" type="wstring" readonly="yes">
+      <desc>Time stamp in milliseconds since 1970-01-01 UTC.</desc>
+    </attribute>
+    <attribute name="publicKeyAlgorithm" type="wstring" readonly="yes">
+      <desc>The public key algorithm name (if known).</desc>
+    </attribute>
+    <attribute name="subjectPublicKey" type="octet" safearray="yes" readonly="yes">
+      <desc>The raw public key bytes.</desc>
+    </attribute>
+    <attribute name="issuerUniqueIdentifier" type="octet" safearray="yes" readonly="yes">
+      <desc>Unique identifier of the issuer (optional).</desc>
+    </attribute>
+    <attribute name="subjectUniqueIdentifier" type="octet" safearray="yes" readonly="yes">
+      <desc>Unique identifier of this certificate (optional).</desc>
+    </attribute>
+    <attribute name="certificateAuthority" type="boolean" readonly="yes">
+      <desc>Whether this certificate is a certificate authority.  Will return E_FAIL
+      if this attribute is not present.
+      </desc>
+    </attribute>
+    <attribute name="keyUsage" type="unsigned long" safearray="yes" readonly="yes">
+      <desc>Key usage mask.  Will return 0 if not present.</desc>
+    </attribute>
+    <attribute name="extendedKeyUsage" type="wstring" safearray="yes" readonly="yes">
+      <desc>Array of dotted extended key usage OIDs.  Empty array if not present.</desc>
+    </attribute>
+    <attribute name="rawCertData" type="octet" safearray="yes" readonly="yes">
+      <desc>The raw certificate bytes.</desc>
+    </attribute>
+    <attribute name="selfSigned" type="boolean" readonly="yes">
+      <desc>Set if self signed certificate.</desc>
+    </attribute>
+    <attribute name="trusted" type="boolean" readonly="yes">
+      <desc>Set if the certificate is trusted.</desc>
+    </attribute>
+
+    <method name="queryInfo">
+      <desc>Way to extend the interface.</desc>
+      <param name="what" type="long" dir="in"/>
+      <param name="result" type="wstring" dir="return" />
+    </method>
+
+    <method name="checkExistence">
+      <desc>
+        Check whether certificate exists or not in the OVF appliance.
+      </desc>
+
+      <param name="presence" type="boolean" dir="return">
+        <desc>Returns true in case of presence of certificate.</desc>
+      </param>
+    </method>
+
+    <method name="isVerified">
+      <desc>
+        Check whether certificate was verified or not during import.
+      </desc>
+
+      <param name="verified" type="boolean" dir="return">
+        <desc>Returns true if certificate was verified.</desc>
+      </param>
+    </method>
+
+  </interface>
+
 
   <!--
   // IAppliance
   /////////////////////////////////////////////////////////////////////////
   -->
-
   <interface
     name="IAppliance" extends="$unknown"
     uuid="8398f026-4add-4474-5bc3-2f9f2140b23e"

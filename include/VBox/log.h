@@ -349,6 +349,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_BIOSSETTINGS,
     /** Main group, ICanShowWindowEvent. */
     LOG_GROUP_MAIN_CANSHOWWINDOWEVENT,
+    /** Main group, ICertificate. */
+    LOG_GROUP_MAIN_CERTIFICATE,
     /** Main group, IClipboardModeChangedEvent. */
     LOG_GROUP_MAIN_CLIPBOARDMODECHANGEDEVENT,
     /** Main group, IConsole. */
