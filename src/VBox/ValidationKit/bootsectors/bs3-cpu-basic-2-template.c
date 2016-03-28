@@ -86,14 +86,14 @@ extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int83)(void);
 /**
  * Compares trap stuff.
  */
-#define bs3CpuBasic2_CompareTrapCtx1 BS3_CMN_NM(bs3CpuBasic2_CompareTrapCtx1)
-void bs3CpuBasic2_CompareTrapCtx1(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t cbIpAdjust, uint8_t bXcpt,
+#define bs3CpuBasic2_CompareIntCtx1 BS3_CMN_NM(bs3CpuBasic2_CompareIntCtx1)
+void bs3CpuBasic2_CompareIntCtx1(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint8_t bXcpt,
                                   const char *pszMode, unsigned uLine)
 {
     uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
     CHECK_MEMBER("bXcpt",   "%#04x",    pTrapCtx->bXcpt,        bXcpt);
     CHECK_MEMBER("bErrCd",  "%#06RX64", pTrapCtx->uErrCd,       0);
-    Bs3TestCheckRegCtxEx(&pTrapCtx->Ctx, pStartCtx, cbIpAdjust, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/, pszMode, uLine);
+    Bs3TestCheckRegCtxEx(&pTrapCtx->Ctx, pStartCtx, 2 /*int xx*/, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/, pszMode, uLine);
     if (Bs3TestSubErrorCount() != cErrorsBefore)
     {
 //Bs3TestPrintf("%s\n",  __FUNCTION__);
@@ -267,7 +267,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
         BS3_DATA_NM(g_uBs3TrapEipHint) = apCtx8x[iCtx]->rip.u32;
 # endif
         Bs3TrapSetJmpAndRestore(apCtx8x[iCtx], &TrapCtx);
-        bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, apCtx8x[iCtx], 2 /*int 80h*/, 0x80+iCtx /*bXcpt*/, pszMode, iCtx);
+        bs3CpuBasic2_CompareIntCtx1(&TrapCtx, apCtx8x[iCtx], 0x80+iCtx /*bXcpt*/, pszMode, iCtx);
     }
 
     /*
@@ -289,7 +289,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
                 bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
                                           f16BitSys, pszMode, uLine);
             else
-                bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &CtxTmp, 2 /*int 8xh*/, 0x80 + iCtx /*bXcpt*/, pszMode, uLine);
+                bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x80 + iCtx /*bXcpt*/, pszMode, uLine);
         }
     }
 
@@ -382,7 +382,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
                     else if (i > iRing)
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, uCs & X86_SEL_MASK_OFF_RPL, f16BitSys, pszMode, uLine);
                     else
-                        bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &CtxTmp, 2 /*int 8xh*/, 0x80 + iCtx /*bXcpt*/, pszMode, uLine);
+                        bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x80 + iCtx /*bXcpt*/, pszMode, uLine);
                 }
                 paIdt[(0x80 + iCtx) << cIdteShift].Gate.u16Sel = uSysR0Cs;
             }
@@ -444,7 +444,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
             bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx81, (0x81 << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
                                       f16BitSys, pszMode, uLine);
         else
-            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx81, 2 /*int 8xh*/, 0x81 /*bXcpt*/, pszMode, uLine);
+            bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx81, 0x81 /*bXcpt*/, pszMode, uLine);
     }
     ASMSetIDTR(&IdtrSaved);
     BS3_ASSERT(uLine < 5100);
@@ -474,18 +474,18 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
 
             ASMSetIDTR(&Idtr);
             Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
-            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx81, 2 /*int 8xh*/, 0x81 /*bXcpt*/, pszMode, uLine++);
+            bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx81, 0x81 /*bXcpt*/, pszMode, uLine++);
 
             ASMSetIDTR(&Idtr);
             Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
-            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx80, 2 /*int 8xh*/, 0x80 /*bXcpt*/, pszMode, uLine++);
+            bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx80, 0x80 /*bXcpt*/, pszMode, uLine++);
 
             i = Bs3PagingProtect(uCr2Expected, _4K, 0 /*fSet*/, X86_PTE_P /*fClear*/);
             if (RT_SUCCESS(i))
             {
                 ASMSetIDTR(&Idtr);
                 Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
-                bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx80, 2 /*int 8xh*/, 0x80 /*bXcpt*/, pszMode, uLine++);
+                bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx80, 0x80 /*bXcpt*/, pszMode, uLine++);
 
                 ASMSetIDTR(&Idtr);
                 Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
@@ -524,14 +524,14 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
 
         ASMSetIDTR(&Idtr);
         Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
-        bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx81, 2 /*int 8xh*/, 0x81 /*bXcpt*/, pszMode, uLine++);
+        bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx81, 0x81 /*bXcpt*/, pszMode, uLine++);
 
         i = Bs3PagingProtect(Idtr.pIdt, _4K, 0 /*fSet*/, X86_PTE_RW | X86_PTE_US /*fClear*/);
         if (RT_SUCCESS(i))
         {
             ASMSetIDTR(&Idtr);
             Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
-            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx81, 2 /*int 8xh*/, 0x81 /*bXcpt*/, pszMode, uLine++);
+            bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx81, 0x81 /*bXcpt*/, pszMode, uLine++);
 
             Bs3PagingProtect(Idtr.pIdt, _4K, X86_PTE_RW | X86_PTE_US /*fSet*/, 0 /*fClear*/);
         }
@@ -660,7 +660,7 @@ void bs3CpuBasic2_TssGateEsp_AltStackOuterRing(PCBS3REGCTX pCtx, uint8_t bRing, 
     if (!f16BitStack && f16BitTss)
         Ctx2.rsp.u &= UINT16_MAX;
 
-    bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx2, 2 /*int 80h*/, 0x80 /*bXcpt*/, pszMode, uLine);
+    bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx2, 0x80 /*bXcpt*/, pszMode, uLine);
     CHECK_MEMBER("bCpl", "%u", TrapCtx.Ctx.bCpl, bRing);
     CHECK_MEMBER("cbIretFrame", "%#x", TrapCtx.cbIretFrame, cbIretFrame);
 
@@ -723,7 +723,7 @@ void bs3CpuBasic2_TssGateEspCommon(uint8_t const bMode, const char * const pszMo
      * Check that the basic stuff works first.
      */
     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-    bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx, 2 /*int 80h*/, 0x80 /*bXcpt*/, pszMode, __LINE__);
+    bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx, 0x80 /*bXcpt*/, pszMode, __LINE__);
 
     bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, NULL, 0, f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
     bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 2, NULL, 0, f16BitSys, f16BitSys, f16BitSys, pszMode, __LINE__);
@@ -744,7 +744,7 @@ void bs3CpuBasic2_TssGateEspCommon(uint8_t const bMode, const char * const pszMo
             Ctx2.rsp.u = Bs3SelPtrToFlat(pbAltStack + 0x1980);
             if (Bs3TrapSetJmp(&TrapCtx))
                 Bs3RegCtxRestore(&Ctx2, 0); /* (does not return) */
-            bs3CpuBasic2_CompareTrapCtx1(&TrapCtx, &Ctx2, 2 /*int 80h*/, 0x80 /*bXcpt*/, pszMode, uLine);
+            bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx2, 0x80 /*bXcpt*/, pszMode, uLine);
 # if TMPL_BITS == 16
             if ((pbTmp = (uint8_t *)ASMMemFirstNonZero(pbAltStack, cbAltStack)) != NULL)
                 Bs3TestFailedF("%u - %s: someone touched the alt stack (%p) with SS:ESP=%04x:%#RX32: %p=%02x\n",
