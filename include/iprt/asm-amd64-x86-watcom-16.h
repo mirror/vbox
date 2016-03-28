@@ -609,7 +609,14 @@
     parm [dx] [es di] [cx] \
     modify exact [di cx];
 
-/* ASMInvalidatePage: When needed. */
+#undef ASMInvalidatePage
+#pragma aux ASMInvalidatePage = \
+    ".486" \
+    "shl edx, 16" \
+    "mov dx, ax" \
+    "invlpg [edx]"
+    parm [ax dx] \
+    modify exact [dx];
 
 #undef      ASMWriteBackAndInvalidateCaches
 #pragma aux ASMWriteBackAndInvalidateCaches = \

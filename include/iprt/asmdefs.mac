@@ -795,12 +795,12 @@ size NAME(%1 %+ _EndProc)   0
   %endif
  %endif
 %else
- %ifdef ASM_CALL64_GCC
-  %error "ASM_CALL64_GCC is defined without RT_ARCH_AMD64!" ASM_CALL64_GCC
- %endif
- %ifdef ASM_CALL64_MSC
-  %error "ASM_CALL64_MSC is defined without RT_ARCH_AMD64!" ASM_CALL64_MSC
- %endif
+ ;later; %ifdef ASM_CALL64_GCC
+ ;later;  %error "ASM_CALL64_GCC is defined without RT_ARCH_AMD64!" ASM_CALL64_GCC
+ ;later; %endif
+ ;later; %ifdef ASM_CALL64_MSC
+ ;later;  %error "ASM_CALL64_MSC is defined without RT_ARCH_AMD64!" ASM_CALL64_MSC
+ ;later; %endif
 %endif
 
 
