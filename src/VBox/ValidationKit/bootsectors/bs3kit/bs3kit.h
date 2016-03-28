@@ -72,22 +72,22 @@ RT_C_DECLS_BEGIN
 #define BS3_MODE_RM         UINT8_C(0x01)  /**< real mode. */
 #define BS3_MODE_PE16       UINT8_C(0x11)  /**< 16-bit protected mode kernel+tss, running 16-bit code, unpaged. */
 #define BS3_MODE_PE16_32    UINT8_C(0x12)  /**< 16-bit protected mode kernel+tss, running 32-bit code, unpaged. */
-#define BS3_MODE_PE16_V86   UINT8_C(0x13)  /**< 16-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged. */
+#define BS3_MODE_PE16_V86   UINT8_C(0x18)  /**< 16-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged. */
 #define BS3_MODE_PE32       UINT8_C(0x22)  /**< 32-bit protected mode kernel+tss, running 32-bit code, unpaged. */
 #define BS3_MODE_PE32_16    UINT8_C(0x21)  /**< 32-bit protected mode kernel+tss, running 16-bit code, unpaged. */
-#define BS3_MODE_PEV86      UINT8_C(0x23)  /**< 32-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged. */
+#define BS3_MODE_PEV86      UINT8_C(0x28)  /**< 32-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged. */
 #define BS3_MODE_PP16       UINT8_C(0x31)  /**< 16-bit protected mode kernel+tss, running 16-bit code, paged. */
 #define BS3_MODE_PP16_32    UINT8_C(0x32)  /**< 16-bit protected mode kernel+tss, running 32-bit code, paged. */
-#define BS3_MODE_PP16_V86   UINT8_C(0x33)  /**< 16-bit protected mode kernel+tss, running virtual 8086 mode code, paged. */
+#define BS3_MODE_PP16_V86   UINT8_C(0x38)  /**< 16-bit protected mode kernel+tss, running virtual 8086 mode code, paged. */
 #define BS3_MODE_PP32       UINT8_C(0x42)  /**< 32-bit protected mode kernel+tss, running 32-bit code, paged. */
 #define BS3_MODE_PP32_16    UINT8_C(0x41)  /**< 32-bit protected mode kernel+tss, running 16-bit code, paged. */
-#define BS3_MODE_PPV86      UINT8_C(0x43)  /**< 32-bit protected mode kernel+tss, running virtual 8086 mode code, paged. */
+#define BS3_MODE_PPV86      UINT8_C(0x48)  /**< 32-bit protected mode kernel+tss, running virtual 8086 mode code, paged. */
 #define BS3_MODE_PAE16      UINT8_C(0x51)  /**< 16-bit protected mode kernel+tss, running 16-bit code, PAE paging. */
 #define BS3_MODE_PAE16_32   UINT8_C(0x52)  /**< 16-bit protected mode kernel+tss, running 32-bit code, PAE paging. */
-#define BS3_MODE_PAE16_V86  UINT8_C(0x53)  /**< 16-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging. */
+#define BS3_MODE_PAE16_V86  UINT8_C(0x58)  /**< 16-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging. */
 #define BS3_MODE_PAE32      UINT8_C(0x62)  /**< 32-bit protected mode kernel+tss, running 32-bit code, PAE paging. */
 #define BS3_MODE_PAE32_16   UINT8_C(0x61)  /**< 32-bit protected mode kernel+tss, running 16-bit code, PAE paging. */
-#define BS3_MODE_PAEV86     UINT8_C(0x63)  /**< 32-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging. */
+#define BS3_MODE_PAEV86     UINT8_C(0x68)  /**< 32-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging. */
 #define BS3_MODE_LM16       UINT8_C(0x71)  /**< 16-bit long mode (paged), kernel+tss always 64-bit. */
 #define BS3_MODE_LM32       UINT8_C(0x72)  /**< 32-bit long mode (paged), kernel+tss always 64-bit. */
 #define BS3_MODE_LM64       UINT8_C(0x74)  /**< 64-bit long mode (paged), kernel+tss always 64-bit. */
@@ -95,8 +95,8 @@ RT_C_DECLS_BEGIN
 #define BS3_MODE_CODE_MASK  UINT8_C(0x0f)  /**< Running code mask. */
 #define BS3_MODE_CODE_16    UINT8_C(0x01)  /**< Running 16-bit code. */
 #define BS3_MODE_CODE_32    UINT8_C(0x02)  /**< Running 32-bit code. */
-#define BS3_MODE_CODE_V86   UINT8_C(0x03)  /**< Running 16-bit virtual 8086 code. */
 #define BS3_MODE_CODE_64    UINT8_C(0x04)  /**< Running 64-bit code. */
+#define BS3_MODE_CODE_V86   UINT8_C(0x08)  /**< Running 16-bit virtual 8086 code. */
 
 #define BS3_MODE_SYS_MASK   UINT8_C(0xf0)  /**< kernel+tss mask. */
 #define BS3_MODE_SYS_RM     UINT8_C(0x00)  /**< Real mode kernel+tss. */

@@ -755,22 +755,22 @@ size %1 %+ _EndProc     0
 %define BS3_MODE_RM         001h    ;;< real mode.
 %define BS3_MODE_PE16       011h    ;;< 16-bit protected mode kernel+tss, running 16-bit code, unpaged.
 %define BS3_MODE_PE16_32    012h    ;;< 16-bit protected mode kernel+tss, running 32-bit code, unpaged.
-%define BS3_MODE_PE16_V86   013h    ;;< 16-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged.
+%define BS3_MODE_PE16_V86   018h    ;;< 16-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged.
 %define BS3_MODE_PE32       022h    ;;< 32-bit protected mode kernel+tss, running 32-bit code, unpaged.
 %define BS3_MODE_PE32_16    021h    ;;< 32-bit protected mode kernel+tss, running 16-bit code, unpaged.
-%define BS3_MODE_PEV86      023h    ;;< 32-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged.
+%define BS3_MODE_PEV86      028h    ;;< 32-bit protected mode kernel+tss, running virtual 8086 mode code, unpaged.
 %define BS3_MODE_PP16       031h    ;;< 16-bit protected mode kernel+tss, running 16-bit code, paged.
 %define BS3_MODE_PP16_32    032h    ;;< 16-bit protected mode kernel+tss, running 32-bit code, paged.
-%define BS3_MODE_PP16_V86   033h    ;;< 16-bit protected mode kernel+tss, running virtual 8086 mode code, paged.
+%define BS3_MODE_PP16_V86   038h    ;;< 16-bit protected mode kernel+tss, running virtual 8086 mode code, paged.
 %define BS3_MODE_PP32       042h    ;;< 32-bit protected mode kernel+tss, running 32-bit code, paged.
 %define BS3_MODE_PP32_16    041h    ;;< 32-bit protected mode kernel+tss, running 16-bit code, paged.
-%define BS3_MODE_PPV86      043h    ;;< 32-bit protected mode kernel+tss, running virtual 8086 mode code, paged.
+%define BS3_MODE_PPV86      048h    ;;< 32-bit protected mode kernel+tss, running virtual 8086 mode code, paged.
 %define BS3_MODE_PAE16      051h    ;;< 16-bit protected mode kernel+tss, running 16-bit code, PAE paging.
 %define BS3_MODE_PAE16_32   052h    ;;< 16-bit protected mode kernel+tss, running 32-bit code, PAE paging.
-%define BS3_MODE_PAE16_V86  053h    ;;< 16-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging.
+%define BS3_MODE_PAE16_V86  058h    ;;< 16-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging.
 %define BS3_MODE_PAE32      062h    ;;< 32-bit protected mode kernel+tss, running 32-bit code, PAE paging.
 %define BS3_MODE_PAE32_16   061h    ;;< 32-bit protected mode kernel+tss, running 16-bit code, PAE paging.
-%define BS3_MODE_PAEV86     063h    ;;< 32-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging.
+%define BS3_MODE_PAEV86     068h    ;;< 32-bit protected mode kernel+tss, running virtual 8086 mode, PAE paging.
 %define BS3_MODE_LM16       071h    ;;< 16-bit long mode (paged), kernel+tss always 64-bit.
 %define BS3_MODE_LM32       072h    ;;< 32-bit long mode (paged), kernel+tss always 64-bit.
 %define BS3_MODE_LM64       074h    ;;< 64-bit long mode (paged), kernel+tss always 64-bit.
@@ -778,8 +778,8 @@ size %1 %+ _EndProc     0
 %define BS3_MODE_CODE_MASK  00fh    ;;< Running code mask.
 %define BS3_MODE_CODE_16    001h    ;;< Running 16-bit code.
 %define BS3_MODE_CODE_32    002h    ;;< Running 32-bit code.
-%define BS3_MODE_CODE_V86   003h    ;;< Running 16-bit virtual 8086 code.
 %define BS3_MODE_CODE_64    004h    ;;< Running 64-bit code.
+%define BS3_MODE_CODE_V86   008h    ;;< Running 16-bit virtual 8086 code.
 
 %define BS3_MODE_SYS_MASK   0f0h    ;;< kernel+tss mask.
 %define BS3_MODE_SYS_RM     000h    ;;< Real mode kernel+tss.
@@ -831,22 +831,22 @@ size %1 %+ _EndProc     0
 %define BS3_MODE_NM_001h(a_Name)        _ %+ a_Name %+ _rm
 %define BS3_MODE_NM_011h(a_Name)        _ %+ a_Name %+ _pe16
 %define BS3_MODE_NM_012h(a_Name)        _ %+ a_Name %+ _pe16_32
-%define BS3_MODE_NM_013h(a_Name)        _ %+ a_Name %+ _pe16_v86
+%define BS3_MODE_NM_018h(a_Name)        _ %+ a_Name %+ _pe16_v86
 %define BS3_MODE_NM_022h(a_Name)        _ %+ a_Name %+ _pe32
 %define BS3_MODE_NM_021h(a_Name)        _ %+ a_Name %+ _pe32_16
-%define BS3_MODE_NM_023h(a_Name)        _ %+ a_Name %+ _pev86
+%define BS3_MODE_NM_028h(a_Name)        _ %+ a_Name %+ _pev86
 %define BS3_MODE_NM_031h(a_Name)        _ %+ a_Name %+ _pp16
 %define BS3_MODE_NM_032h(a_Name)        _ %+ a_Name %+ _pp16_32
-%define BS3_MODE_NM_033h(a_Name)        _ %+ a_Name %+ _pp16_v86
+%define BS3_MODE_NM_038h(a_Name)        _ %+ a_Name %+ _pp16_v86
 %define BS3_MODE_NM_042h(a_Name)        _ %+ a_Name %+ _pp32
 %define BS3_MODE_NM_041h(a_Name)        _ %+ a_Name %+ _pp32_16
-%define BS3_MODE_NM_043h(a_Name)        _ %+ a_Name %+ _ppv86
+%define BS3_MODE_NM_048h(a_Name)        _ %+ a_Name %+ _ppv86
 %define BS3_MODE_NM_051h(a_Name)        _ %+ a_Name %+ _pae16
 %define BS3_MODE_NM_052h(a_Name)        _ %+ a_Name %+ _pae16_32
-%define BS3_MODE_NM_053h(a_Name)        _ %+ a_Name %+ _pae16_v86
+%define BS3_MODE_NM_058h(a_Name)        _ %+ a_Name %+ _pae16_v86
 %define BS3_MODE_NM_062h(a_Name)        _ %+ a_Name %+ _pae32
 %define BS3_MODE_NM_061h(a_Name)        _ %+ a_Name %+ _pae32_16
-%define BS3_MODE_NM_063h(a_Name)        _ %+ a_Name %+ _paev86
+%define BS3_MODE_NM_068h(a_Name)        _ %+ a_Name %+ _paev86
 %define BS3_MODE_NM_071h(a_Name)        _ %+ a_Name %+ _lm16
 %define BS3_MODE_NM_072h(a_Name)        _ %+ a_Name %+ _lm32
 %define BS3_MODE_NM_074h(a_Name)             a_Name %+ _lm64
@@ -854,22 +854,22 @@ size %1 %+ _EndProc     0
 %define BS3_MODE_LNAME_001h             rm
 %define BS3_MODE_LNAME_011h             pe16
 %define BS3_MODE_LNAME_012h             pe16_32
-%define BS3_MODE_LNAME_013h             pe16_v86
+%define BS3_MODE_LNAME_018h             pe16_v86
 %define BS3_MODE_LNAME_022h             pe32
 %define BS3_MODE_LNAME_021h             pe32_16
-%define BS3_MODE_LNAME_023h             pev86
+%define BS3_MODE_LNAME_028h             pev86
 %define BS3_MODE_LNAME_031h             pp16
 %define BS3_MODE_LNAME_032h             pp16_32
-%define BS3_MODE_LNAME_033h             pp16_v86
+%define BS3_MODE_LNAME_038h             pp16_v86
 %define BS3_MODE_LNAME_042h             pp32
 %define BS3_MODE_LNAME_041h             pp32_16
-%define BS3_MODE_LNAME_043h             ppv86
+%define BS3_MODE_LNAME_048h             ppv86
 %define BS3_MODE_LNAME_051h             pae16
 %define BS3_MODE_LNAME_052h             pae16_32
-%define BS3_MODE_LNAME_053h             pae16_v86
+%define BS3_MODE_LNAME_058h             pae16_v86
 %define BS3_MODE_LNAME_062h             pae32
 %define BS3_MODE_LNAME_061h             pae32_16
-%define BS3_MODE_LNAME_063h             paev86
+%define BS3_MODE_LNAME_068h             paev86
 %define BS3_MODE_LNAME_071h             lm16
 %define BS3_MODE_LNAME_072h             lm32
 %define BS3_MODE_LNAME_074h             lm64
@@ -877,22 +877,22 @@ size %1 %+ _EndProc     0
 %define BS3_MODE_UNAME_001h             RM
 %define BS3_MODE_UNAME_011h             PE16
 %define BS3_MODE_UNAME_012h             PE16_32
-%define BS3_MODE_UNAME_013h             PE16_V86
+%define BS3_MODE_UNAME_018h             PE16_V86
 %define BS3_MODE_UNAME_022h             PE32
 %define BS3_MODE_UNAME_021h             PE32_16
-%define BS3_MODE_UNAME_023h             PEV86
+%define BS3_MODE_UNAME_028h             PEV86
 %define BS3_MODE_UNAME_031h             PP16
 %define BS3_MODE_UNAME_032h             PP16_32
-%define BS3_MODE_UNAME_033h             PP16_V86
+%define BS3_MODE_UNAME_038h             PP16_V86
 %define BS3_MODE_UNAME_042h             PP32
 %define BS3_MODE_UNAME_041h             PP32_16
-%define BS3_MODE_UNAME_043h             PPV86
+%define BS3_MODE_UNAME_048h             PPV86
 %define BS3_MODE_UNAME_051h             PAE16
 %define BS3_MODE_UNAME_052h             PAE16_32
-%define BS3_MODE_UNAME_053h             PAE16_V86
+%define BS3_MODE_UNAME_058h             PAE16_V86
 %define BS3_MODE_UNAME_062h             PAE32
 %define BS3_MODE_UNAME_061h             PAE32_16
-%define BS3_MODE_UNAME_063h             PAEV86
+%define BS3_MODE_UNAME_068h             PAEV86
 %define BS3_MODE_UNAME_071h             LM16
 %define BS3_MODE_UNAME_072h             LM32
 %define BS3_MODE_UNAME_074h             LM64
@@ -900,22 +900,22 @@ size %1 %+ _EndProc     0
 %define BS3_MODE_UNDERSCORE_001h        _
 %define BS3_MODE_UNDERSCORE_011h        _
 %define BS3_MODE_UNDERSCORE_012h        _
-%define BS3_MODE_UNDERSCORE_013h        _
+%define BS3_MODE_UNDERSCORE_018h        _
 %define BS3_MODE_UNDERSCORE_022h        _
 %define BS3_MODE_UNDERSCORE_021h        _
-%define BS3_MODE_UNDERSCORE_023h        _
+%define BS3_MODE_UNDERSCORE_028h        _
 %define BS3_MODE_UNDERSCORE_031h        _
 %define BS3_MODE_UNDERSCORE_032h        _
-%define BS3_MODE_UNDERSCORE_033h        _
+%define BS3_MODE_UNDERSCORE_038h        _
 %define BS3_MODE_UNDERSCORE_042h        _
 %define BS3_MODE_UNDERSCORE_041h        _
-%define BS3_MODE_UNDERSCORE_043h        _
+%define BS3_MODE_UNDERSCORE_048h        _
 %define BS3_MODE_UNDERSCORE_051h        _
 %define BS3_MODE_UNDERSCORE_052h        _
-%define BS3_MODE_UNDERSCORE_053h        _
+%define BS3_MODE_UNDERSCORE_058h        _
 %define BS3_MODE_UNDERSCORE_062h        _
 %define BS3_MODE_UNDERSCORE_061h        _
-%define BS3_MODE_UNDERSCORE_063h        _
+%define BS3_MODE_UNDERSCORE_068h        _
 %define BS3_MODE_UNDERSCORE_071h        _
 %define BS3_MODE_UNDERSCORE_072h        _
 %define BS3_MODE_UNDERSCORE_074h
@@ -923,22 +923,22 @@ size %1 %+ _EndProc     0
 %define BS3_MODE_CNAME_001h             c16
 %define BS3_MODE_CNAME_011h             c16
 %define BS3_MODE_CNAME_012h             c32
-%define BS3_MODE_CNAME_013h             c16
+%define BS3_MODE_CNAME_018h             c16
 %define BS3_MODE_CNAME_022h             c32
 %define BS3_MODE_CNAME_021h             c16
-%define BS3_MODE_CNAME_023h             c16
+%define BS3_MODE_CNAME_028h             c16
 %define BS3_MODE_CNAME_031h             c16
 %define BS3_MODE_CNAME_032h             c32
-%define BS3_MODE_CNAME_033h             c16
+%define BS3_MODE_CNAME_038h             c16
 %define BS3_MODE_CNAME_042h             c32
 %define BS3_MODE_CNAME_041h             c16
-%define BS3_MODE_CNAME_043h             c16
+%define BS3_MODE_CNAME_048h             c16
 %define BS3_MODE_CNAME_051h             c16
 %define BS3_MODE_CNAME_052h             c32
-%define BS3_MODE_CNAME_053h             c16
+%define BS3_MODE_CNAME_058h             c16
 %define BS3_MODE_CNAME_062h             c32
 %define BS3_MODE_CNAME_061h             c16
-%define BS3_MODE_CNAME_063h             c16
+%define BS3_MODE_CNAME_068h             c16
 %define BS3_MODE_CNAME_071h             c16
 %define BS3_MODE_CNAME_072h             c32
 %define BS3_MODE_CNAME_074h             c64
@@ -949,22 +949,22 @@ size %1 %+ _EndProc     0
 %define BS3_MODE_R0_NM_001h(a_Name)     _ %+ a_Name %+ _rm
 %define BS3_MODE_R0_NM_011h(a_Name)     _ %+ a_Name %+ _pe16
 %define BS3_MODE_R0_NM_012h(a_Name)     _ %+ a_Name %+ _pe16_32
-%define BS3_MODE_R0_NM_013h(a_Name)     _ %+ a_Name %+ _pe16
+%define BS3_MODE_R0_NM_018h(a_Name)     _ %+ a_Name %+ _pe16
 %define BS3_MODE_R0_NM_022h(a_Name)     _ %+ a_Name %+ _pe32
 %define BS3_MODE_R0_NM_021h(a_Name)     _ %+ a_Name %+ _pe32_16
-%define BS3_MODE_R0_NM_023h(a_Name)     _ %+ a_Name %+ _pe32_16
+%define BS3_MODE_R0_NM_028h(a_Name)     _ %+ a_Name %+ _pe32_16
 %define BS3_MODE_R0_NM_031h(a_Name)     _ %+ a_Name %+ _pp16
 %define BS3_MODE_R0_NM_032h(a_Name)     _ %+ a_Name %+ _pp16_32
-%define BS3_MODE_R0_NM_033h(a_Name)     _ %+ a_Name %+ _pp16
+%define BS3_MODE_R0_NM_038h(a_Name)     _ %+ a_Name %+ _pp16
 %define BS3_MODE_R0_NM_042h(a_Name)     _ %+ a_Name %+ _pp32
 %define BS3_MODE_R0_NM_041h(a_Name)     _ %+ a_Name %+ _pp32_16
-%define BS3_MODE_R0_NM_043h(a_Name)     _ %+ a_Name %+ _pp32_16
+%define BS3_MODE_R0_NM_048h(a_Name)     _ %+ a_Name %+ _pp32_16
 %define BS3_MODE_R0_NM_051h(a_Name)     _ %+ a_Name %+ _pae16
 %define BS3_MODE_R0_NM_052h(a_Name)     _ %+ a_Name %+ _pae16_32
-%define BS3_MODE_R0_NM_053h(a_Name)     _ %+ a_Name %+ _pae16
+%define BS3_MODE_R0_NM_058h(a_Name)     _ %+ a_Name %+ _pae16
 %define BS3_MODE_R0_NM_062h(a_Name)     _ %+ a_Name %+ _pae32
 %define BS3_MODE_R0_NM_061h(a_Name)     _ %+ a_Name %+ _pae32_16
-%define BS3_MODE_R0_NM_063h(a_Name)     _ %+ a_Name %+ _pae32_16
+%define BS3_MODE_R0_NM_068h(a_Name)     _ %+ a_Name %+ _pae32_16
 %define BS3_MODE_R0_NM_071h(a_Name)     _ %+ a_Name %+ _lm16
 %define BS3_MODE_R0_NM_072h(a_Name)     _ %+ a_Name %+ _lm32
 %define BS3_MODE_R0_NM_074h(a_Name)          a_Name %+ _lm64
