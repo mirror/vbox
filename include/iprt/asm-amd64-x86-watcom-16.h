@@ -614,7 +614,7 @@
     ".486" \
     "shl edx, 16" \
     "mov dx, ax" \
-    "invlpg [edx]"
+    "invlpg [edx]" \
     parm [ax dx] \
     modify exact [dx];
 
