@@ -194,8 +194,8 @@ bs3kit-common-64_DEFS     = TMPL_LM64 BS3_CMN_ONLY
 bs3kit-common-64_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
        bs3-c64-Trap64Generic.asm \
-       ../../../Runtime/common/asm/ASMGetIdtr.asm \
-       ../../../Runtime/common/asm/ASMSetIdtr.asm \
+       ../../../Runtime/common/asm/ASMGetIDTR.asm \
+       ../../../Runtime/common/asm/ASMSetIDTR.asm \
 
 
 #
