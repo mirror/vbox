@@ -55,29 +55,6 @@ void UIConsoleEventHandler::destroy()
     }
 }
 
-void UIConsoleEventHandler::sltCanShowWindow(bool & /* fVeto */, QString & /* strReason */)
-{
-    /* Nothing for now. */
-}
-
-void UIConsoleEventHandler::sltShowWindow(qint64 &winId)
-{
-#ifdef Q_WS_MAC
-    /* First of all, just ask the GUI thread to show the machine-window: */
-    winId = 0;
-    if (::darwinSetFrontMostProcess())
-        emit sigShowWindow();
-    else
-    {
-        /* If it's failed for some reason, send the other process our PSN so it can try: */
-        winId = ::darwinGetCurrentProcessId();
-    }
-#else /* !Q_WS_MAC */
-    /* Return the ID of the top-level machine-window. */
-    winId = (ULONG64)m_pSession->winId();
-#endif /* !Q_WS_MAC */
-}
-
 UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
     : m_pSession(pSession)
 {
@@ -206,5 +183,28 @@ void UIConsoleEventHandler::cleanup()
     AssertWrapperOk(eventSource);
     /* Unregister listener: */
     eventSource.UnregisterListener(m_mainEventListener);
+}
+
+void UIConsoleEventHandler::sltCanShowWindow(bool & /* fVeto */, QString & /* strReason */)
+{
+    /* Nothing for now. */
+}
+
+void UIConsoleEventHandler::sltShowWindow(qint64 &winId)
+{
+#ifdef Q_WS_MAC
+    /* First of all, just ask the GUI thread to show the machine-window: */
+    winId = 0;
+    if (::darwinSetFrontMostProcess())
+        emit sigShowWindow();
+    else
+    {
+        /* If it's failed for some reason, send the other process our PSN so it can try: */
+        winId = ::darwinGetCurrentProcessId();
+    }
+#else /* !Q_WS_MAC */
+    /* Return the ID of the top-level machine-window. */
+    winId = (ULONG64)m_pSession->winId();
+#endif /* !Q_WS_MAC */
 }
 

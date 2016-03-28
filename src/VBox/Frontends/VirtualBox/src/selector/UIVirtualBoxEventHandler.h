@@ -61,7 +61,7 @@ public:
     /** Destroys singleton instance created by the factory. */
     static void destroy();
 
-private:
+protected:
 
     /** Constructs VirtualBox event handler. */
     UIVirtualBoxEventHandler();
@@ -72,6 +72,8 @@ private:
     void prepare();
     /** Cleanups all. */
     void cleanup();
+
+private:
 
     /** Holds the singleton static VirtualBox event handler instance. */
     static UIVirtualBoxEventHandler *m_spInstance;
