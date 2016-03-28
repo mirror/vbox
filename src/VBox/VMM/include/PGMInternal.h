@@ -362,7 +362,7 @@
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
 #ifdef IN_RC
-# define PGM_INVL_PG(pVCpu, GCVirt)             ASMInvalidatePage((void *)(uintptr_t)(GCVirt))
+# define PGM_INVL_PG(pVCpu, GCVirt)             ASMInvalidatePage((uintptr_t)(GCVirt))
 #elif defined(IN_RING0)
 # define PGM_INVL_PG(pVCpu, GCVirt)             HMInvalidatePage(pVCpu, (RTGCPTR)(GCVirt))
 #else
@@ -376,7 +376,7 @@
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
 #ifdef IN_RC
-# define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      ASMInvalidatePage((void *)(uintptr_t)(GCVirt))
+# define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      ASMInvalidatePage((uintptr_t)(GCVirt))
 #elif defined(IN_RING0)
 # define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      HMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
 #else

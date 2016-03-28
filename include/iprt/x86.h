@@ -2214,6 +2214,53 @@ typedef X86PDPEAMD64BITS *PX86PDPEAMD64BITS;
 typedef const X86PDPEAMD64BITS *PCX86PDPEAMD64BITS;
 
 /**
+ * Page directory pointer table entry for 1GB page. (AMD64 only)
+ */
+typedef struct X86PDPE1GB
+{
+    /** 0: Flags whether(=1) or not the page is present. */
+    uint32_t    u1Present : 1;
+    /** 1: Read(=0) / Write(=1) flag. */
+    uint32_t    u1Write : 1;
+    /** 2: User(=1) / Supervisor (=0) flag. */
+    uint32_t    u1User : 1;
+    /** 3: Write Thru flag. If PAT enabled, bit 0 of the index. */
+    uint32_t    u1WriteThru : 1;
+    /** 4: Cache disabled flag. If PAT enabled, bit 1 of the index. */
+    uint32_t    u1CacheDisable : 1;
+    /** 5: Accessed flag.
+     * Indicates that the page have been read or written to. */
+    uint32_t    u1Accessed : 1;
+    /** 6: Dirty flag for 1GB pages.  */
+    uint32_t    u1Dirty : 1;
+    /** 7: Indicates 1GB page if set. */
+    uint32_t    u1Size : 1;
+    /** 8: Global 1GB page. */
+    uint32_t    u1Global: 1;
+    /** 9-11: Available for use to system software. */
+    uint32_t    u3Available : 3;
+    /** 12: PAT bit for 1GB page. */
+    uint32_t    u1PAT : 1;
+    /** 13-29: MBZ bits. */
+    uint32_t    u17Reserved : 17;
+    /** 30-31: Physical page number - Low Part. Don't use! */
+    uint32_t    u2PageNoLow : 2;
+    /** 32-51: Physical Page number of the next level - High Part. Don't use! */
+    uint32_t    u20PageNoHigh : 20;
+    /** 52-62: MBZ bits */
+    uint32_t    u11Reserved : 11;
+    /** 63: No Execute flag. */
+    uint32_t    u1NoExecute : 1;
+} X86PDPE1GB;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86PDPE1GB, 8);
+#endif
+/** Pointer to a page directory pointer table entry for a 1GB page. */
+typedef X86PDPE1GB *PX86PDPE1GB;
+/** Pointer to a const page directory pointer table entry for a 1GB page. */
+typedef const X86PDPE1GB *PCX86PDPE1GB;
+
+/**
  * Page directory pointer table entry.
  */
 typedef union X86PDPE
@@ -2224,6 +2271,8 @@ typedef union X86PDPE
     X86PDPEBITS     n;
     /** AMD64 view. */
     X86PDPEAMD64BITS lm;
+    /** AMD64 big view. */
+    X86PDPE1GB      b;
     /** 8 bit unsigned integer view. */
     uint8_t         au8[8];
     /** 16 bit unsigned integer view. */

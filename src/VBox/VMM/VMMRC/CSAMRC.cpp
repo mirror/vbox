@@ -85,7 +85,7 @@ DECLEXPORT(VBOXSTRICTRC) csamRCCodePageWritePfHandler(PVM pVM, PVMCPU pVCpu, RTG
          */
         int rc = PGMShwMakePageWritable(pVCpu, pvFault, PGM_MK_PG_IS_WRITE_FAULT);
         AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Rrc\n", rc));
-        ASMInvalidatePage((void *)(uintptr_t)pvFault);
+        ASMInvalidatePage((uintptr_t)pvFault);
         return VINF_SUCCESS;
     }
 
@@ -127,7 +127,7 @@ DECLEXPORT(VBOXSTRICTRC) csamRCCodePageWritePfHandler(PVM pVM, PVMCPU pVCpu, RTG
     Log(("csamRCCodePageWriteHandler: enabled r/w for page %RGv\n", pvFault));
     int rc = PGMShwMakePageWritable(pVCpu, pvFault, PGM_MK_PG_IS_WRITE_FAULT);
     AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Rrc\n", rc));
-    ASMInvalidatePage((void *)(uintptr_t)pvFault);
+    ASMInvalidatePage((uintptr_t)pvFault);
 
     STAM_COUNTER_INC(&pVM->csam.s.StatCodePageModified);
     return VINF_SUCCESS;

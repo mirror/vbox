@@ -794,6 +794,13 @@ size NAME(%1 %+ _EndProc)   0
    %error "Only one of the ASM_CALL64_* defines should be defined!"
   %endif
  %endif
+%else
+ %ifdef ASM_CALL64_GCC
+  %error "ASM_CALL64_GCC is defined without RT_ARCH_AMD64!" ASM_CALL64_GCC
+ %endif
+ %ifdef ASM_CALL64_MSC
+  %error "ASM_CALL64_MSC is defined without RT_ARCH_AMD64!" ASM_CALL64_MSC
+ %endif
 %endif
 
 
@@ -976,8 +983,8 @@ BEGINPROC RT_NOCRT(%1)
 %define AssertCompile(a_Expr) AssertCompileML { a_Expr }
 %macro AssertCompileML 1
  %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
-  ;%assign AssertVar_uResult %1
   %if (%1) != 1
+   %assign AssertVar_uResult %1
    %error %1 => AssertVar_uResult
   %endif
  %endif

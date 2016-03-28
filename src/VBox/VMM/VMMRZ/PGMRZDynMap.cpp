@@ -614,7 +614,7 @@ static DECLCALLBACK(void) pgmR0DynMapShootDownTlbs(RTCPUID idCpu, void *pvUser1,
     PPGMRZDYNMAPENTRY   paPages = pThis->paPages;
     uint32_t            iPage   = pThis->cPages;
     while (iPage-- > 0)
-        ASMInvalidatePage(paPages[iPage].pvPage);
+        ASMInvalidatePage((uintptr_t)paPages[iPage].pvPage);
 }
 
 
@@ -632,7 +632,7 @@ static int pgmR0DynMapTlbShootDown(PPGMRZDYNMAP pThis)
     {
         uint32_t iPage = pThis->cPages;
         while (iPage-- > 0)
-            ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+            ASMInvalidatePage((uintptr_t)pThis->paPages[iPage].pvPage);
     }
     return rc;
 }
@@ -1315,7 +1315,7 @@ DECLINLINE(void) pgmRZDynMapReleasePageLocked(PPGMRZDYNMAP pThis, uint32_t iPage
 #ifdef PGMRZDYNMAP_STRICT_RELEASE
         pThis->paPages[iPage].HCPhys = NIL_RTHCPHYS;
         ASMAtomicBitClear(pThis->paPages[iPage].uPte.pv, X86_PTE_BIT_P);
-        ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+        ASMInvalidatePage((uintptr_t)pThis->paPages[iPage].pvPage);
 #endif
     }
 }
@@ -1547,7 +1547,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMRZDYNMAP pThis, RTHCPHYS HCPhys, int32_
 #endif
     {
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapPageInvlPg);
-        ASMInvalidatePage(pvPage);
+        ASMInvalidatePage((uintptr_t)pvPage);
     }
 
     *ppvPage = pvPage;
@@ -2031,7 +2031,7 @@ VMMR0DECL(void) PGMR0DynMapMigrateAutoSet(PVMCPU pVCpu)
                         RTCpuSetDelByIndex(&pThis->paPages[iPage].PendingSet, iRealCpu);
                         PGMRZDYNMAP_SPINLOCK_RELEASE(pThis);
 
-                        ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+                        ASMInvalidatePage((uintptr_t)pThis->paPages[iPage].pvPage);
                         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapMigrateInvlPg);
 
                         PGMRZDYNMAP_SPINLOCK_REACQUIRE(pThis);

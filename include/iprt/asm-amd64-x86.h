@@ -3164,24 +3164,24 @@ DECLINLINE(void) ASMInStrU32(RTIOPORT Port, uint32_t *pau32, size_t c)
  * @param   pv      Address of the page to invalidate.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMInvalidatePage(void *pv);
+DECLASM(void) ASMInvalidatePage(RTCCUINTXREG uPtr);
 #else
-DECLINLINE(void) ASMInvalidatePage(void *pv)
+DECLINLINE(void) ASMInvalidatePage(RTCCUINTXREG uPtr)
 {
 # if RT_INLINE_ASM_USES_INTRIN
-    __invlpg(pv);
+    __invlpg((void *)uPtr);
 
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("invlpg %0\n\t"
-                         : : "m" (*(uint8_t *)pv));
+                         : : "m" (*(uint8_t *)(uintptr_t)uPtr));
 # else
     __asm
     {
 #  ifdef RT_ARCH_AMD64
-        mov     rax, [pv]
+        mov     rax, [uPtr]
         invlpg  [rax]
 #  else
-        mov     eax, [pv]
+        mov     eax, [uPtr]
         invlpg  [eax]
 #  endif
     }

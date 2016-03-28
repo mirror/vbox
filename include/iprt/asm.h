@@ -1511,8 +1511,13 @@ DECLINLINE(void) ASMSerializeInstructionRdTscp(void)
 DECLINLINE(void) ASMMemoryFence(void)
 {
     /** @todo use mfence? check if all cpus we care for support it. */
+#if ARCH_BITS == 16
+    uint16_t volatile u16;
+    ASMAtomicXchgU16(&u16, 0);
+#else
     uint32_t volatile u32;
     ASMAtomicXchgU32(&u32, 0);
+#endif
 }
 
 
