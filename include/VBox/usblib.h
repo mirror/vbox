@@ -131,10 +131,7 @@ DECLINLINE(size_t) USBLibPurgeEncoding(char *psz)
         size_t offSrc;
 
         /* Beat it into valid UTF-8 encoding. */
-#if !defined(IN_RING0) || (!defined(RT_OS_SOLARIS) && !defined(RT_OS_DARWIN))
-        /** @todo fix dependencies! */
         RTStrPurgeEncoding(psz);
-#endif
 
         /* Look for control characters. */
         for (offSrc = 0; ; offSrc++)
