@@ -574,8 +574,8 @@ private:
     /** Cleanup window. */
     void cleanupWindow();
 #endif /* DEBUG */
-    // /** Cleanup extra-data event-handler. */
-    // void cleanupExtraDataEventHandler();
+    /** Cleanup extra-data event-handler. */
+    void cleanupExtraDataEventHandler();
     // /** Cleanup extra-data map. */
     // void cleanupExtraDataMap();
     /** Cleanup Extra-data Manager. */

@@ -4113,8 +4113,17 @@ void UIExtraDataManager::cleanupWindow()
 }
 #endif /* DEBUG */
 
+void UIExtraDataManager::cleanupExtraDataEventHandler()
+{
+    /* Destroy extra-data event-handler: */
+    delete m_pHandler;
+    m_pHandler = 0;
+}
+
 void UIExtraDataManager::cleanup()
 {
+    /* Cleanup extra-data event-handler: */
+    cleanupExtraDataEventHandler();
 #ifdef DEBUG
     /* Cleanup window: */
     cleanupWindow();
