@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2015 Oracle Corporation
+ * Copyright (C) 2012-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1453,6 +1453,10 @@ Utf8Str GuestSession::i_guestErrorToString(int guestRc)
 
         case VERR_HGCM_SERVICE_NOT_FOUND:
             strError += Utf8StrFmt(tr("The guest execution service is not available"));
+            break;
+
+        case VERR_ACCOUNT_RESTRICTED:
+            strError += Utf8StrFmt(tr("The specified user account on the guest is restricted and can't be used to logon"));
             break;
 
         case VERR_AUTHENTICATION_FAILURE:
