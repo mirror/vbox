@@ -2026,6 +2026,9 @@ Virtual system 0:
     <para>With the <computeroutput>edit</computeroutput> operation, you can
     change the name or description of an existing snapshot.</para>
 
+    <para>The <computeroutput>list</computeroutput> operation shows all
+    snapshots of a virtual machine.</para>
+
     <para>With the <computeroutput>showvminfo</computeroutput> operation, you
     can view the virtual machine settings that were stored with an existing
     snapshot.</para>
@@ -2369,7 +2372,7 @@ Virtual system 0:
                             [--add &lt;ide/sata/scsi/floppy&gt;]
                             [--controller &lt;LsiLogic|LSILogicSAS|BusLogic|
                                           IntelAhci|PIIX3|PIIX4|ICH6|I82078|usb&gt;]
-                            [--sataportcount &lt;1-30&gt;]
+                            [--portcount &lt;1-30&gt;]
                             [--hostiocache on|off]
                             [--bootable on|off]
                             [--remove]</screen>
@@ -2410,10 +2413,10 @@ Virtual system 0:
         </glossentry>
 
         <glossentry>
-          <glossterm><computeroutput>--sataportcount</computeroutput></glossterm>
+          <glossterm><computeroutput>--portcount</computeroutput></glossterm>
 
           <glossdef>
-            <para>This determines how many ports the SATA controller should
+            <para>This determines how many ports the storage controller should
             support.</para>
           </glossdef>
         </glossentry>
