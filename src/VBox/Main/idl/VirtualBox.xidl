@@ -2985,7 +2985,7 @@
   -->
   <interface
     name="ICertificate" extends="$unknown"
-    uuid="c2b34d6f-7a10-4901-803e-05d5ef946567"
+    uuid="336064ce-c853-4bd0-ad6c-b42d8ed99e5e"
     wsmap="managed"
     reservedAttributes="4" reservedMethods="2"
     >
@@ -3019,24 +3019,27 @@
     <attribute name="validityPeriodNotAfter" type="wstring" readonly="yes">
       <desc>Time stamp in milliseconds since 1970-01-01 UTC.</desc>
     </attribute>
+    <attribute name="publicKeyAlgorithmOID" type="wstring" readonly="yes">
+      <desc>The dotted OID of the public key algorithm.</desc>
+    </attribute>
     <attribute name="publicKeyAlgorithm" type="wstring" readonly="yes">
       <desc>The public key algorithm name (if known).</desc>
     </attribute>
     <attribute name="subjectPublicKey" type="octet" safearray="yes" readonly="yes">
       <desc>The raw public key bytes.</desc>
     </attribute>
-    <attribute name="issuerUniqueIdentifier" type="octet" safearray="yes" readonly="yes">
-      <desc>Unique identifier of the issuer (optional).</desc>
+    <attribute name="issuerUniqueIdentifier" type="wstring" readonly="yes">
+      <desc>Unique identifier of the issuer (empty string if not present).</desc>
     </attribute>
-    <attribute name="subjectUniqueIdentifier" type="octet" safearray="yes" readonly="yes">
-      <desc>Unique identifier of this certificate (optional).</desc>
+    <attribute name="subjectUniqueIdentifier" type="wstring" readonly="yes">
+      <desc>Unique identifier of this certificate (empty string if not present).</desc>
     </attribute>
     <attribute name="certificateAuthority" type="boolean" readonly="yes">
       <desc>Whether this certificate is a certificate authority.  Will return E_FAIL
       if this attribute is not present.
       </desc>
     </attribute>
-    <attribute name="keyUsage" type="unsigned long" safearray="yes" readonly="yes">
+    <attribute name="keyUsage" type="unsigned long" readonly="yes">
       <desc>Key usage mask.  Will return 0 if not present.</desc>
     </attribute>
     <attribute name="extendedKeyUsage" type="wstring" safearray="yes" readonly="yes">

@@ -1,4 +1,4 @@
-
+/* $Id$ */
 /** @file
  * ICertificate COM class implementations.
  */
@@ -25,12 +25,43 @@
 #include "ApplianceImplPrivate.h"
 #include "CertificateImpl.h"
 #include "AutoCaller.h"
+#include "Global.h"
 #include "Logging.h"
 
 using namespace std;
 
 struct CertificateData
 {
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    CertificateData()
+        : fTrusted(false)
+        , fValidX509(false)
+    {
+        RT_ZERO(X509);
+    }
+
+    ~CertificateData()
+    {
+        if (fValidX509)
+        {
+            RTCrX509Certificate_Delete(&X509);
+            RT_ZERO(X509);
+            fValidX509 = false;
+        }
+    }
+
+    /** Whether the certificate is trusted.  */
+    bool fTrusted;
+    /** Valid data in mX509. */
+    bool fValidX509;
+    /** Clone of the X.509 certificate. */
+    RTCRX509CERTIFICATE X509;
+
+private:
+    CertificateData(const CertificateData &rTodo) { AssertFailed(); NOREF(rTodo); }
+    CertificateData &operator=(const CertificateData &rTodo) { AssertFailed(); NOREF(rTodo); return *this; }
+
+#else
     CertificateData() :
         mVersionNumber(0),
         mSerialNumber(0),
@@ -59,7 +90,7 @@ struct CertificateData
     std::vector<ULONG> mKeyUsage;
     std::vector<Utf8Str> mExtendedKeyUsage;
     std::vector<BYTE> mRawCertData;
-
+#endif
 };
 
 struct Certificate::Data
@@ -97,7 +128,11 @@ void Certificate::FinalRelease()
     BaseFinalRelease();
 }
 
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+HRESULT Certificate::init(PCRTCRX509CERTIFICATE a_pCert)
+#else
 HRESULT Certificate::init(Appliance* appliance)
+#endif
 {
     HRESULT rc = S_OK;
     LogFlowThisFuncEnter();
@@ -106,6 +141,7 @@ HRESULT Certificate::init(Appliance* appliance)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
+#ifndef DONT_DUPLICATE_ALL_THE_DATA
     if(appliance!=NULL)
     {
         LogFlowThisFunc(("m_appliance: %d \n", m_appliance));
@@ -113,9 +149,17 @@ HRESULT Certificate::init(Appliance* appliance)
     }
     else
         rc = E_FAIL;
+#endif
 
     mData = new Data();
     mData->m.allocate();
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    int vrc = RTCrX509Certificate_Clone(&mData->m->X509, a_pCert, &g_RTAsn1DefaultAllocator);
+    if (RT_SUCCESS(vrc))
+        mData->m->fValidX509 = true;
+    else
+        rc = Global::vboxStatusCodeToCOM(vrc);
+#else
     mData->m->mSignatureAlgorithmOID.setNull();
     mData->m->mSignatureAlgorithmName.setNull();
     mData->m->mPublicKeyAlgorithmOID.setNull();
@@ -129,6 +173,7 @@ HRESULT Certificate::init(Appliance* appliance)
     mData->m->mKeyUsage.resize(0);
     mData->m->mExtendedKeyUsage.resize(0);
     mData->m->mRawCertData.resize(0);
+#endif
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -151,12 +196,15 @@ void Certificate::uninit()
     delete mData;
     mData = NULL;
 }
+
+#ifndef DONT_DUPLICATE_ALL_THE_DATA /* We'll query the data from the RTCrX509* API. */
+
 /**
  * Public method implementation.
  * @param aSignatureAlgorithmOID
  * @return
  */
-HRESULT Certificate::setData(RTCRX509CERTIFICATE *inCert)
+HRESULT Certificate::setData(PCRTCRX509CERTIFICATE inCert)
 {
 
     /*set mData.m->mVersionNumber */
@@ -451,6 +499,8 @@ HRESULT Certificate::setValidityPeriodNotAfter(PCRTTIME aValidityPeriodNotAfter)
     return S_OK;
 }
 
+#endif /* !DONT_DUPLICATE_ALL_THE_DATA */
+
 /**
  * Private method implementation.
  * @param aVersionNumber
@@ -459,8 +509,14 @@ HRESULT Certificate::setValidityPeriodNotAfter(PCRTTIME aValidityPeriodNotAfter)
 HRESULT Certificate::getVersionNumber(com::Utf8Str &aVersionNumber)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    /** @todo make this ULONG, or better, an ENUM. */
+    aVersionNumber = Utf8StrFmt("%RU64", mData->m->X509.TbsCertificate.T0.Version.uValue.u + 1); /* version 1 has value 0, so +1. */
+#else
     Utf8StrFmt strVer("%Lu", mData->m->mVersionNumber);
     aVersionNumber = strVer;
+#endif
     return S_OK;
 }
 
@@ -472,8 +528,19 @@ HRESULT Certificate::getVersionNumber(com::Utf8Str &aVersionNumber)
 HRESULT Certificate::getSerialNumber(com::Utf8Str &aSerialNumber)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+
+    char szTmp[_2K];
+    int vrc = RTAsn1Integer_ToString(&mData->m->X509.TbsCertificate.SerialNumber, szTmp, sizeof(szTmp), 0, NULL);
+    if (RT_SUCCESS(vrc))
+        aSerialNumber = szTmp;
+    else
+        return Global::vboxStatusCodeToCOM(vrc);
+#else
     Utf8StrFmt strVer("%llx", mData->m->mSerialNumber);
     aSerialNumber = strVer;
+#endif
     return S_OK;
 }
 
@@ -485,9 +552,12 @@ HRESULT Certificate::getSerialNumber(com::Utf8Str &aSerialNumber)
 HRESULT Certificate::getSignatureAlgorithmOID(com::Utf8Str &aSignatureAlgorithmOID)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    aSignatureAlgorithmOID = mData->m->X509.TbsCertificate.Signature.Algorithm.szObjId;
+#else
     aSignatureAlgorithmOID = mData->m->mSignatureAlgorithmOID;
-
+#endif
     return S_OK;
 }
 
@@ -499,10 +569,14 @@ HRESULT Certificate::getSignatureAlgorithmOID(com::Utf8Str &aSignatureAlgorithmO
 HRESULT Certificate::getSignatureAlgorithmName(com::Utf8Str &aSignatureAlgorithmName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    return i_getAlgorithmName(&mData->m->X509.TbsCertificate.Signature, aSignatureAlgorithmName);
+#else
     aSignatureAlgorithmName = mData->m->mSignatureAlgorithmName;
 
     return S_OK;
+#endif
 }
 
 /**
@@ -513,10 +587,14 @@ HRESULT Certificate::getSignatureAlgorithmName(com::Utf8Str &aSignatureAlgorithm
 HRESULT Certificate::getIssuerName(std::vector<com::Utf8Str> &aIssuerName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    return i_getX509Name(&mData->m->X509.TbsCertificate.Issuer, aIssuerName);
+#else
     aIssuerName = mData->m->mIssuerName;
 
     return S_OK;
+#endif
 }
 
 /**
@@ -527,10 +605,15 @@ HRESULT Certificate::getIssuerName(std::vector<com::Utf8Str> &aIssuerName)
 HRESULT Certificate::getSubjectName(std::vector<com::Utf8Str> &aSubjectName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    return i_getX509Name(&mData->m->X509.TbsCertificate.Subject, aSubjectName);
+#else
 
     aSubjectName = mData->m->mSubjectName;
 
     return S_OK;
+#endif
 }
 
 /**
@@ -541,7 +624,10 @@ HRESULT Certificate::getSubjectName(std::vector<com::Utf8Str> &aSubjectName)
 HRESULT Certificate::getValidityPeriodNotBefore(com::Utf8Str &aValidityPeriodNotBefore)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    return i_getTime(&mData->m->X509.TbsCertificate.Validity.NotBefore, aValidityPeriodNotBefore);
+#else
     HRESULT rc = S_OK;
 
     size_t arrSize = 40;
@@ -557,6 +643,7 @@ HRESULT Certificate::getValidityPeriodNotBefore(com::Utf8Str &aValidityPeriodNot
     delete[] charArr;
 
     return rc;
+#endif
 }
 
 /**
@@ -567,6 +654,10 @@ HRESULT Certificate::getValidityPeriodNotBefore(com::Utf8Str &aValidityPeriodNot
 HRESULT Certificate::getValidityPeriodNotAfter(com::Utf8Str &aValidityPeriodNotAfter)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    return i_getTime(&mData->m->X509.TbsCertificate.Validity.NotAfter, aValidityPeriodNotAfter);
+#else
 
     HRESULT rc = S_OK;
     size_t arrSize = 40;
@@ -581,6 +672,19 @@ HRESULT Certificate::getValidityPeriodNotAfter(com::Utf8Str &aValidityPeriodNotA
     aValidityPeriodNotAfter = charArr;
     delete[] charArr;
     return rc;
+#endif
+}
+
+HRESULT Certificate::getPublicKeyAlgorithmOID(com::Utf8Str &aPublicKeyAlgorithmOID)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    aPublicKeyAlgorithmOID = mData->m->X509.TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm.szObjId;
+    return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 /**
@@ -591,10 +695,14 @@ HRESULT Certificate::getValidityPeriodNotAfter(com::Utf8Str &aValidityPeriodNotA
 HRESULT Certificate::getPublicKeyAlgorithm(com::Utf8Str &aPublicKeyAlgorithm)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    return i_getAlgorithmName(&mData->m->X509.TbsCertificate.SubjectPublicKeyInfo.Algorithm, aPublicKeyAlgorithm);
+#else
     aPublicKeyAlgorithm = mData->m->mPublicKeyAlgorithmName;
 
     return S_OK;
+#endif
 }
 
 /**
@@ -604,9 +712,12 @@ HRESULT Certificate::getPublicKeyAlgorithm(com::Utf8Str &aPublicKeyAlgorithm)
  */
 HRESULT Certificate::getSubjectPublicKey(std::vector<BYTE> &aSubjectPublicKey)
 {
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    return S_OK;
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Getting encoded ASN.1 bytes may make changes to X509. */
+    return i_getEncodedBytes(&mData->m->X509.TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey.Asn1Core, aSubjectPublicKey);
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 /**
@@ -614,11 +725,14 @@ HRESULT Certificate::getSubjectPublicKey(std::vector<BYTE> &aSubjectPublicKey)
  * @param aIssuerUniqueIdentifier
  * @return
  */
-HRESULT Certificate::getIssuerUniqueIdentifier(std::vector<BYTE> &aIssuerUniqueIdentifier)
+HRESULT Certificate::getIssuerUniqueIdentifier(com::Utf8Str &aIssuerUniqueIdentifier)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    return S_OK;
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    return i_getUniqueIdentifier(&mData->m->X509.TbsCertificate.T1.IssuerUniqueId, aIssuerUniqueIdentifier);
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 /**
@@ -626,11 +740,14 @@ HRESULT Certificate::getIssuerUniqueIdentifier(std::vector<BYTE> &aIssuerUniqueI
  * @param aSubjectUniqueIdentifier
  * @return
  */
-HRESULT Certificate::getSubjectUniqueIdentifier(std::vector<BYTE> &aSubjectUniqueIdentifier)
+HRESULT Certificate::getSubjectUniqueIdentifier(com::Utf8Str &aSubjectUniqueIdentifier)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    return S_OK;
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    return i_getUniqueIdentifier(&mData->m->X509.TbsCertificate.T2.SubjectUniqueId, aSubjectUniqueIdentifier);
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 /**
@@ -641,9 +758,12 @@ HRESULT Certificate::getSubjectUniqueIdentifier(std::vector<BYTE> &aSubjectUniqu
 HRESULT Certificate::getCertificateAuthority(BOOL *aCertificateAuthority)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    *aCertificateAuthority = mData->m->X509.TbsCertificate.T3.pBasicConstraints
+                          && mData->m->X509.TbsCertificate.T3.pBasicConstraints->CA.fValue;
+#else
     *aCertificateAuthority = mData->m->mCertificateAuthority;
-
+#endif
     return S_OK;
 }
 
@@ -652,11 +772,15 @@ HRESULT Certificate::getCertificateAuthority(BOOL *aCertificateAuthority)
  * @param aKeyUsage
  * @return
  */
-HRESULT Certificate::getKeyUsage(std::vector<ULONG> &aKeyUsage)
+HRESULT Certificate::getKeyUsage(ULONG *aKeyUsage)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    *aKeyUsage = mData->m->X509.TbsCertificate.T3.fKeyUsage;
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 /**
@@ -667,8 +791,8 @@ HRESULT Certificate::getKeyUsage(std::vector<ULONG> &aKeyUsage)
 HRESULT Certificate::getExtendedKeyUsage(std::vector<com::Utf8Str> &aExtendedKeyUsage)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    return S_OK;
+    NOREF(aExtendedKeyUsage);
+    return E_NOTIMPL;
 }
 
 /**
@@ -678,9 +802,12 @@ HRESULT Certificate::getExtendedKeyUsage(std::vector<com::Utf8Str> &aExtendedKey
  */
 HRESULT Certificate::getRawCertData(std::vector<BYTE> &aRawCertData)
 {
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    return S_OK;
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Getting encoded ASN.1 bytes may make changes to X509. */
+    return i_getEncodedBytes(&mData->m->X509.SeqCore.Asn1Core, aRawCertData);
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 /**
@@ -691,9 +818,12 @@ HRESULT Certificate::getRawCertData(std::vector<BYTE> &aRawCertData)
 HRESULT Certificate::getSelfSigned(BOOL *aSelfSigned)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    Assert(mData->m->fValidX509);
+    *aSelfSigned = RTCrX509Certificate_IsSelfSigned(&mData->m->X509);
+#else
     *aSelfSigned = mData->m->mSelfSigned;
-
+#endif
     return S_OK;
 }
 
@@ -705,9 +835,11 @@ HRESULT Certificate::getSelfSigned(BOOL *aSelfSigned)
 HRESULT Certificate::getTrusted(BOOL *aTrusted)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+#ifdef DONT_DUPLICATE_ALL_THE_DATA
+    *aTrusted = mData->m->fTrusted;
+#else
     *aTrusted = mData->m->mTrusted;
-
+#endif
     return S_OK;
 }
 
@@ -720,9 +852,12 @@ HRESULT Certificate::getTrusted(BOOL *aTrusted)
 HRESULT Certificate::queryInfo(LONG aWhat, com::Utf8Str &aResult)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    return S_OK;
+    /* Insurance. */
+    NOREF(aResult);
+    return setError(E_FAIL, "Unknown item %u", aWhat);
 }
+
+#ifndef DONT_DUPLICATE_ALL_THE_DATA  /* These are out of place. */
 
 /**
  * Private method implementation. 
@@ -753,4 +888,79 @@ HRESULT Certificate::isVerified(BOOL *aVerified)
 
     return S_OK;
 }
+
+#else  /* DONT_DUPLICATE_ALL_THE_DATA */
+
+HRESULT Certificate::i_getAlgorithmName(PCRTCRX509ALGORITHMIDENTIFIER a_pAlgId, com::Utf8Str &a_rReturn)
+{
+    /** @todo  */
+    NOREF(a_pAlgId);
+    NOREF(a_rReturn);
+    return E_NOTIMPL;
+}
+
+HRESULT Certificate::i_getX509Name(PCRTCRX509NAME a_pName, std::vector<com::Utf8Str> &a_rReturn)
+{
+    /** @todo  */
+    NOREF(a_pName);
+    NOREF(a_rReturn);
+    return E_NOTIMPL;
+}
+
+HRESULT Certificate::i_getTime(PCRTASN1TIME a_pTime, com::Utf8Str &a_rReturn)
+{
+    char szTmp[128];
+    if (RTTimeToString(&a_pTime->Time, szTmp, sizeof(szTmp)))
+    {
+        a_rReturn = szTmp;
+        return S_OK;
+    }
+    AssertFailed();
+    return E_FAIL;
+}
+
+HRESULT Certificate::i_getUniqueIdentifier(PCRTCRX509UNIQUEIDENTIFIER a_pUniqueId, com::Utf8Str &a_rReturn)
+{
+    /* The a_pUniqueId may not be present! */
+    if (RTCrX509UniqueIdentifier_IsPresent(a_pUniqueId))
+    {
+        void const   *pvData = RTASN1BITSTRING_GET_BIT0_PTR(a_pUniqueId);
+        size_t const  cbData = RTASN1BITSTRING_GET_BYTE_SIZE(a_pUniqueId);
+        size_t const  cbFormatted = cbData * 3 - 1 + 1;
+        a_rReturn.reserve(cbFormatted); /* throws */
+        int vrc = RTStrPrintHexBytes(a_rReturn.mutableRaw(), cbFormatted, pvData, cbData, RTSTRPRINTHEXBYTES_F_SEP_COLON);
+        a_rReturn.jolt();
+        AssertRCReturn(vrc, Global::vboxStatusCodeToCOM(vrc));
+    }
+    else
+        Assert(a_rReturn.isEmpty());
+    return S_OK;
+}
+
+HRESULT Certificate::i_getEncodedBytes(PRTASN1CORE a_pAsn1Obj, std::vector<BYTE> &a_rReturn)
+{
+    HRESULT hrc = S_OK;
+    Assert(a_rReturn.size() == 0);
+    if (RTAsn1Core_IsPresent(a_pAsn1Obj))
+    {
+        uint32_t cbEncoded;
+        int vrc = RTAsn1EncodePrepare(a_pAsn1Obj, 0, &cbEncoded, NULL);
+        if (RT_SUCCESS(vrc))
+        {
+            a_rReturn.resize(cbEncoded);
+            Assert(a_rReturn.size() == cbEncoded);
+            if (cbEncoded)
+            {
+                vrc = RTAsn1EncodeToBuffer(a_pAsn1Obj, 0, &a_rReturn.front(), a_rReturn.size(), NULL);
+                if (RT_FAILURE(vrc))
+                    hrc = setErrorVrc(vrc, "RTAsn1EncodeToBuffer failed with %Rrc", vrc);
+            }
+        }
+        else
+            hrc = setErrorVrc(vrc, "RTAsn1EncodePrepare failed with %Rrc", vrc);
+    }
+    return hrc;
+}
+
+#endif /* DONT_DUPLICATE_ALL_THE_DATA */
 
