@@ -44,7 +44,7 @@ public:
     DECLARE_EMPTY_CTOR_DTOR(Certificate)
 
 #ifdef DONT_DUPLICATE_ALL_THE_DATA
-    HRESULT init(PCRTCRX509CERTIFICATE a_pCert);
+    HRESULT initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted);
 #else
     HRESULT init(Appliance* appliance);
 #endif

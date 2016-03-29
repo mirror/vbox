@@ -98,6 +98,7 @@ struct Certificate::Data
     Backupable<CertificateData> m;
 };
 
+#ifndef DONT_DUPLICATE_ALL_THE_DATA
 const char* const strUnknownAlgorithm = "Unknown Algorithm";
 const char* const strRsaEncription = "rsaEncryption";
 const char* const strMd2WithRSAEncryption = "md2WithRSAEncryption";
@@ -108,6 +109,7 @@ const char* const strSha256WithRSAEncryption = "sha256WithRSAEncryption";
 const char* const strSha384WithRSAEncryption = "sha384WithRSAEncryption";
 const char* const strSha512WithRSAEncryption = "sha512WithRSAEncryption";
 const char* const strSha224WithRSAEncryption = "sha224WithRSAEncryption";
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////////
 //
@@ -129,7 +131,14 @@ void Certificate::FinalRelease()
 }
 
 #ifdef DONT_DUPLICATE_ALL_THE_DATA
-HRESULT Certificate::init(PCRTCRX509CERTIFICATE a_pCert)
+/**
+ * Initializes a certificate instance.
+ *
+ * @returns COM status code.
+ * @param   a_pCert         The certificate.
+ * @param   a_fTrusted      Whether the caller trusts the certificate or not.
+ */
+HRESULT Certificate::initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted)
 #else
 HRESULT Certificate::init(Appliance* appliance)
 #endif
@@ -156,7 +165,10 @@ HRESULT Certificate::init(Appliance* appliance)
 #ifdef DONT_DUPLICATE_ALL_THE_DATA
     int vrc = RTCrX509Certificate_Clone(&mData->m->X509, a_pCert, &g_RTAsn1DefaultAllocator);
     if (RT_SUCCESS(vrc))
+    {
         mData->m->fValidX509 = true;
+        mData->m->fTrusted  = a_fTrusted;
+    }
     else
         rc = Global::vboxStatusCodeToCOM(vrc);
 #else
@@ -893,18 +905,52 @@ HRESULT Certificate::isVerified(BOOL *aVerified)
 
 HRESULT Certificate::i_getAlgorithmName(PCRTCRX509ALGORITHMIDENTIFIER a_pAlgId, com::Utf8Str &a_rReturn)
 {
-    /** @todo  */
-    NOREF(a_pAlgId);
-    NOREF(a_rReturn);
-    return E_NOTIMPL;
+    const char *pszOid = a_pAlgId->Algorithm.szObjId;
+    const char *pszName;
+    if (!pszOid)    pszName = "";
+    else if (strcmp(pszOid, RTCRX509ALGORITHMIDENTIFIERID_RSA))                 pszName = "rsaEncryption";
+    else if (strcmp(pszOid, RTCRX509ALGORITHMIDENTIFIERID_MD2_WITH_RSA))        pszName = "md2WithRSAEncryption";
+    else if (strcmp(pszOid, RTCRX509ALGORITHMIDENTIFIERID_MD4_WITH_RSA))        pszName = "md4WithRSAEncryption";
+    else if (strcmp(pszOid, RTCRX509ALGORITHMIDENTIFIERID_MD5_WITH_RSA))        pszName = "md5WithRSAEncryption";
+    else if (strcmp(pszOid, RTCRX509ALGORITHMIDENTIFIERID_SHA1_WITH_RSA))       pszName = "sha1WithRSAEncryption";
+    else if (strcmp(pszOid, RTCRX509ALGORITHMIDENTIFIERID_SHA224_WITH_RSA))     pszName = "sha224WithRSAEncryption";
+    else if (strcmp(pszOid, RTCRX509ALGORITHMIDENTIFIERID_SHA256_WITH_RSA))     pszName = "sha256WithRSAEncryption";
+    else if (strcmp(pszOid, RTCRX509ALGORITHMIDENTIFIERID_SHA384_WITH_RSA))     pszName = "sha384WithRSAEncryption";
+    else if (strcmp(pszOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512_WITH_RSA))     pszName = "sha512WithRSAEncryption";
+    else
+        pszName = pszOid;
+    a_rReturn = pszName;
+    return S_OK;
 }
 
 HRESULT Certificate::i_getX509Name(PCRTCRX509NAME a_pName, std::vector<com::Utf8Str> &a_rReturn)
 {
-    /** @todo  */
-    NOREF(a_pName);
-    NOREF(a_rReturn);
-    return E_NOTIMPL;
+    if (RTCrX509Name_IsPresent(a_pName))
+    {
+        for (uint32_t i = 0; i < a_pName->cItems; i++)
+        {
+            PCRTCRX509RELATIVEDISTINGUISHEDNAME pRdn = &a_pName->paItems[i];
+            for (uint32_t j = 0; j < pRdn->cItems; j++)
+            {
+                PCRTCRX509ATTRIBUTETYPEANDVALUE pComponent = &pRdn->paItems[j];
+
+                AssertReturn(pComponent->Value.enmType == RTASN1TYPE_STRING,
+                             setErrorVrc(VERR_CR_X509_NAME_NOT_STRING, "VERR_CR_X509_NAME_NOT_STRING"));
+
+                /* Get the prefix for this name component. */
+                const char *pszPrefix = RTCrX509Name_GetShortRdn(&pComponent->Type);
+                AssertStmt(pszPrefix, pszPrefix = pComponent->Type.szObjId);
+
+                /* Get the string. */
+                const char *pszUtf8;
+                int vrc = RTAsn1String_QueryUtf8(&pComponent->Value.u.String, &pszUtf8, NULL /*pcch*/);
+                AssertRCReturn(vrc, setErrorVrc(vrc, "RTAsn1String_QueryUtf8(%u/%u,,) -> %Rrc", i, j, vrc));
+
+                a_rReturn.push_back(Utf8StrFmt("%s=%s", pszPrefix, pszUtf8));
+            }
+        }
+    }
+    return S_OK;
 }
 
 HRESULT Certificate::i_getTime(PCRTASN1TIME a_pTime, com::Utf8Str &a_rReturn)
