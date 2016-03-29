@@ -1552,7 +1552,7 @@ static const char *rtTestUnitName(RTTESTUNIT enmUnit)
         case RTTESTUNIT_PACKETS:                return "packets";
         case RTTESTUNIT_PACKETS_PER_SEC:        return "packets/s";
         case RTTESTUNIT_FRAMES:                 return "frames";
-        case RTTESTUNIT_FRAMES_PER_SEC:         return "frames/";
+        case RTTESTUNIT_FRAMES_PER_SEC:         return "frames/s";
         case RTTESTUNIT_OCCURRENCES:            return "occurrences";
         case RTTESTUNIT_OCCURRENCES_PER_SEC:    return "occurrences/s";
         case RTTESTUNIT_ROUND_TRIP:             return "roundtrips";
@@ -1563,9 +1563,9 @@ static const char *rtTestUnitName(RTTESTUNIT enmUnit)
         case RTTESTUNIT_NS:                     return "ns";
         case RTTESTUNIT_NS_PER_CALL:            return "ns/call";
         case RTTESTUNIT_NS_PER_FRAME:           return "ns/frame";
-        case RTTESTUNIT_NS_PER_OCCURRENCE:      return "ns/occurrences";
+        case RTTESTUNIT_NS_PER_OCCURRENCE:      return "ns/occurrence";
         case RTTESTUNIT_NS_PER_PACKET:          return "ns/packet";
-        case RTTESTUNIT_NS_PER_ROUND_TRIP:      return "ns/roundtrips";
+        case RTTESTUNIT_NS_PER_ROUND_TRIP:      return "ns/roundtrip";
         case RTTESTUNIT_INSTRS:                 return "ins";
         case RTTESTUNIT_INSTRS_PER_SEC:         return "ins/sec";
         case RTTESTUNIT_NONE:                   return "";
