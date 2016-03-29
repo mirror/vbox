@@ -3087,9 +3087,9 @@
   -->
   <interface
     name="IAppliance" extends="$unknown"
-    uuid="be0eaf0f-9db2-4303-9a62-efe82a70a21d"
+    uuid="8398f026-4add-4474-5bc3-2f9f2140b23e"
     wsmap="managed"
-    reservedMethods="8" reservedAttributes="8"
+    reservedMethods="8" reservedAttributes="7"
     >
     <desc>
         Represents a platform-independent appliance in OVF format. An instance of this is returned
@@ -3214,11 +3214,6 @@
       </desc>
     </attribute>
 
-    <attribute name="certificate" type="ICertificate" readonly="yes">
-      <desc> X509 certificate information given to user if certificate exists in the OVF package
-      </desc>
-    </attribute>
-
     <attribute name="virtualSystemDescriptions" type="IVirtualSystemDescription" readonly="yes" safearray="yes">
       <desc> Array of virtual system descriptions. One such description is created
       for each virtual system (machine) found in the OVF.
@@ -3232,6 +3227,11 @@
         Contains the UUIDs of the machines created from the information in this appliances. This is only
         relevant for the import case, and will only contain data after a call to <link to="#importMachines" />
         succeeded.
+      </desc>
+    </attribute>
+
+    <attribute name="certificate" type="ICertificate" readonly="yes">
+      <desc> X509 certificate information given to user if certificate exists in the OVF package
       </desc>
     </attribute>
 
