@@ -1383,7 +1383,8 @@ HRESULT NetworkAdapter::i_checkAndSwitchFromNatNetworking(com::Utf8Str networkNa
     if (FAILED(hrc))
         return hrc;
 
-    if (state == MachineState_Running)
+    if (   state == MachineState_Running
+        || state == MachineState_Paused)
     {
         Bstr bstrName;
         hrc = mParent->COMGETTER(Name)(bstrName.asOutParam());
@@ -1406,7 +1407,8 @@ HRESULT NetworkAdapter::i_switchToNatNetworking(const com::Utf8Str &aNatNetworkN
     if (FAILED(hrc))
         return hrc;
 
-    if (state == MachineState_Running)
+    if (   state == MachineState_Running
+        || state == MachineState_Paused)
     {
         Bstr bstrName;
         hrc = mParent->COMGETTER(Name)(bstrName.asOutParam());
