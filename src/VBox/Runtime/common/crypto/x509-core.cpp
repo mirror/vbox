@@ -716,6 +716,16 @@ static struct
 };
 
 
+RTDECL(const char *) RTCrX509Name_GetShortRdn(PCRTASN1OBJID pRdnId)
+{
+    uint32_t iName = RT_ELEMENTS(g_aRdnMap);
+    while (iName-- > 0)
+        if (RTAsn1ObjId_CompareWithString(pRdnId, g_aRdnMap[iName].pszOid) == 0)
+            return g_aRdnMap[iName].pszShortNm;
+    return NULL;
+}
+
+
 RTDECL(bool) RTCrX509Name_MatchWithString(PCRTCRX509NAME pThis, const char *pszString)
 {
     /* Keep track of the string length. */

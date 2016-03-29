@@ -239,6 +239,14 @@ RTDECL(int) RTCrX509Name_FormatAsString(PCRTCRX509NAME pThis, char *pszBuf, size
 
 
 /**
+ * Looks up the RDN ID and returns the short name for it, if found.
+ *
+ * @returns Short name (e.g. 'CN') or NULL.
+ * @param   pRdnId          The RDN ID to look up.
+ */
+RTDECL(const char *) RTCrX509Name_GetShortRdn(PCRTASN1OBJID pRdnId);
+
+/**
  * One X.509 OtherName (IPRT representation).
  */
 typedef struct RTCRX509OTHERNAME

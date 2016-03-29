@@ -3045,6 +3045,7 @@
 # define RTCrX509Name_FormatAsString                    RT_MANGLER(RTCrX509Name_FormatAsString)
 # define RTCrX509Name_MatchByRfc5280                    RT_MANGLER(RTCrX509Name_MatchByRfc5280)
 # define RTCrX509Name_MatchWithString                   RT_MANGLER(RTCrX509Name_MatchWithString)
+# define RTCrX509Name_GetShortRdn                       RT_MANGLER(RTCrX509Name_GetShortRdn)
 # define RTCrX509OldAuthorityKeyIdentifier_Compare      RT_MANGLER(RTCrX509OldAuthorityKeyIdentifier_Compare)
 # define RTCrX509OldAuthorityKeyIdentifier_Delete       RT_MANGLER(RTCrX509OldAuthorityKeyIdentifier_Delete)
 # define RTCrX509OldAuthorityKeyIdentifier_Enum         RT_MANGLER(RTCrX509OldAuthorityKeyIdentifier_Enum)
