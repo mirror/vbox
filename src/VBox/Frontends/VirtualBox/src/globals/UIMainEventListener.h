@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2015 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QList>
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -30,6 +31,11 @@
 
 /* Other VBox includes: */
 #include <VBox/com/listeners.h>
+
+/* Forward declarations: */
+class UIMainEventListeningThread;
+class CEventListener;
+class CEventSource;
 
 
 /* Note: On a first look this may seems a little bit complicated.
@@ -115,7 +121,7 @@ signals:
 
 public:
 
-    /** Constructor. */
+    /** Constructs main event listener. */
     UIMainEventListener();
 
     /** Initialization routine. */
@@ -123,11 +129,20 @@ public:
     /** Deinitialization routine. */
     void uninit() {}
 
+    /** Registers event @a source for passive event @a listener. */
+    void registerSource(const CEventSource &source, const CEventListener &listener);
+    /** Unregisters event sources. */
+    void unregisterSources();
+
     /** Main event handler routine. */
     STDMETHOD(HandleEvent)(VBoxEventType_T enmType, IEvent *pEvent);
+
+    /** Holds the list of threads handling passive event listening. */
+    QList<UIMainEventListeningThread*> m_threads;
 };
 
 /* Wrap the IListener interface around our implementation class. */
 typedef ListenerImpl<UIMainEventListener, QObject*> UIMainEventListenerImpl;
 
 #endif /* !___UIMainEventListener_h___ */
+

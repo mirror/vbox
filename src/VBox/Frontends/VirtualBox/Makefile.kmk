@@ -531,6 +531,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
+    src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
@@ -541,7 +542,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIStatusBarEditorWindow.cpp \
 	src/selector/UIActionPoolSelector.cpp \
-	src/selector/UIVirtualBoxEventHandler.cpp \
+    src/selector/UIVirtualBoxEventHandler.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
