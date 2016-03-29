@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QThread>
+# include <QMutex>
 
 /* GUI includes: */
 # include "UIMainEventListener.h"
