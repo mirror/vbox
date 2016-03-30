@@ -132,19 +132,22 @@ private:
         /* Cleanup old messages. */
         cleanup();
 
-        m_uMsg = uMsg;
+        m_uMsg   = uMsg;
         m_cParms = cParms;
 
-        if (cParms > 0)
+        int rc;
+        if (cParms)
         {
             m_paParms = (VBOXHGCMSVCPARM*)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * m_cParms);
-            if (!m_paParms)
-                return VERR_NO_MEMORY;
+            if (m_paParms)
+            {
+                rc = copyParmsInternal(m_paParms, m_cParms, &aParms[0], cParms, true /* fDeepCopy */);
+                if (RT_FAILURE(rc))
+                    cleanup();
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
-
-        int rc = copyParmsInternal(m_paParms, m_cParms, &aParms[0], cParms, true /* fDeepCopy */);
-        if (RT_FAILURE(rc))
-            cleanup();
 
         return rc;
     }
