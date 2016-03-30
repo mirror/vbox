@@ -22,6 +22,7 @@
 /* GUI includes: */
 # include "UIConsoleEventHandler.h"
 # include "UIMainEventListener.h"
+# include "UIExtraDataManager.h"
 # include "VBoxGlobal.h"
 # include "UISession.h"
 # ifdef Q_WS_MAC
@@ -192,7 +193,16 @@ void UIConsoleEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnRuntimeError
         << KVBoxEventType_OnCanShowWindow
         << KVBoxEventType_OnShowWindow;
-    eventSource.RegisterListener(m_comEventListener, events, TRUE);
+    eventSource.RegisterListener(m_comEventListener, events,
+        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+    AssertWrapperOk(eventSource);
+
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Register event sources in their listeners as well: */
+        m_pQtListener->getWrapped()->registerSource(eventSource, m_comEventListener);
+    }
 }
 
 void UIConsoleEventHandlerProxy::prepareConnections()
@@ -263,6 +273,13 @@ void UIConsoleEventHandlerProxy::cleanupListener()
 {
     /* Make sure session is passed: */
     AssertPtrReturnVoid(m_pSession);
+
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Unregister everything: */
+        m_pQtListener->getWrapped()->unregisterSources();
+    }
 
     /* Get console: */
     const CConsole console = m_pSession->session().GetConsole();

@@ -22,6 +22,7 @@
 /* GUI includes: */
 # include "UIVirtualBoxEventHandler.h"
 # include "UIMainEventListener.h"
+# include "UIExtraDataManager.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -137,7 +138,8 @@ void UIVirtualBoxEventHandlerProxy::prepareListener()
     QVector<KVBoxEventType> vboxClientEvents;
     vboxClientEvents
         << KVBoxEventType_OnVBoxSVCAvailabilityChanged;
-    eventSourceVirtualBoxClient.RegisterListener(m_comEventListener, vboxClientEvents, TRUE);
+    eventSourceVirtualBoxClient.RegisterListener(m_comEventListener, vboxClientEvents,
+        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
     AssertWrapperOk(eventSourceVirtualBoxClient);
 
     /* Get VirtualBox: */
@@ -157,8 +159,17 @@ void UIVirtualBoxEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnSnapshotDeleted
         << KVBoxEventType_OnSnapshotChanged
         << KVBoxEventType_OnSnapshotRestored;
-    eventSourceVirtualBox.RegisterListener(m_comEventListener, vboxEvents, TRUE);
+    eventSourceVirtualBox.RegisterListener(m_comEventListener, vboxEvents,
+        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
     AssertWrapperOk(eventSourceVirtualBox);
+
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Register event sources in their listeners as well: */
+        m_pQtListener->getWrapped()->registerSource(eventSourceVirtualBoxClient, m_comEventListener);
+        m_pQtListener->getWrapped()->registerSource(eventSourceVirtualBox, m_comEventListener);
+    }
 }
 
 void UIVirtualBoxEventHandlerProxy::prepareConnections()
@@ -200,6 +211,13 @@ void UIVirtualBoxEventHandlerProxy::cleanupConnections()
 
 void UIVirtualBoxEventHandlerProxy::cleanupListener()
 {
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Unregister everything: */
+        m_pQtListener->getWrapped()->unregisterSources();
+    }
+
     /* Get VirtualBox: */
     const CVirtualBox vbox = vboxGlobal().virtualBox();
     AssertWrapperOk(vbox);

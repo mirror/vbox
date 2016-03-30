@@ -27,6 +27,7 @@
 
 /* General: */
 const char* UIExtraDataDefs::GUI_LanguageId = "GUI/LanguageID";
+const char* UIExtraDataDefs::GUI_EventHandlingType = "GUI/EventHandlingType";
 
 /* Messaging: */
 const char* UIExtraDataDefs::GUI_SuppressMessages = "GUI/SuppressMessages";

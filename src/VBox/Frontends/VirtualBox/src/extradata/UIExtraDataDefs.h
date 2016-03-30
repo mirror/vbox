@@ -33,6 +33,9 @@ namespace UIExtraDataDefs
       * @{ */
         /** VBox language ID. */
         extern const char* GUI_LanguageId;
+
+        /** Holds event handling type. */
+        extern const char* GUI_EventHandlingType;
     /** @} */
 
     /** @name Messaging
@@ -477,6 +480,13 @@ public:
         MenuWindowActionType_All      = 0xFFFF
     };
 #endif /* RT_OS_DARWIN */
+};
+
+/** Common UI: Event handling types. */
+enum EventHandlingType
+{
+    EventHandlingType_Active,
+    EventHandlingType_Passive
 };
 
 /** Common UI: Global settings page types. */

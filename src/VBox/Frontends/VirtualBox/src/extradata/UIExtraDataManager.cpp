@@ -172,8 +172,16 @@ void UIExtraDataEventHandler::prepareListener()
     vboxEvents
         << KVBoxEventType_OnExtraDataCanChange
         << KVBoxEventType_OnExtraDataChanged;
-    eventSourceVirtualBox.RegisterListener(m_comEventListener, vboxEvents, TRUE);
+    eventSourceVirtualBox.RegisterListener(m_comEventListener, vboxEvents,
+        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
     AssertWrapperOk(eventSourceVirtualBox);
+
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Register event sources in their listeners as well: */
+        m_pQtListener->getWrapped()->registerSource(eventSourceVirtualBox, m_comEventListener);
+    }
 }
 
 void UIExtraDataEventHandler::prepareConnections()
@@ -194,6 +202,13 @@ void UIExtraDataEventHandler::cleanupConnections()
 
 void UIExtraDataEventHandler::cleanupListener()
 {
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Unregister everything: */
+        m_pQtListener->getWrapped()->unregisterSources();
+    }
+
     /* Make sure VBoxSVC is available: */
     if (!vboxGlobal().isVBoxSVCAvailable())
         return;
@@ -1923,6 +1938,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
     return QStringList()
            << QString()
            << GUI_LanguageId
+           << GUI_EventHandlingType
            << GUI_SuppressMessages << GUI_InvertMessageOption
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
            << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
@@ -2252,6 +2268,11 @@ UIExtraDataManager::~UIExtraDataManager()
 {
     /* Disconnect from static instance: */
     m_spInstance = 0;
+}
+
+EventHandlingType UIExtraDataManager::eventHandlingType()
+{
+    return gpConverter->fromInternalString<EventHandlingType>(extraDataString(GUI_EventHandlingType));
 }
 
 QStringList UIExtraDataManager::suppressedMessages()

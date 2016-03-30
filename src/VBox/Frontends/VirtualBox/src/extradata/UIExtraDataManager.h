@@ -109,7 +109,7 @@ public:
     static void openWindow(QWidget *pCenterWidget);
 #endif /* DEBUG */
 
-    /** @name General
+    /** @name Base
       * @{ */
         /** Returns whether Extra-data Manager cached the map with passed @a strID. */
         bool contains(const QString &strID) const { return m_data.contains(strID); }
@@ -132,6 +132,12 @@ public:
         /** Defines extra-data value corresponding to passed @a strKey as value.
           * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
         void setExtraDataStringList(const QString &strKey, const QStringList &value, const QString &strID = GlobalID);
+    /** @} */
+
+    /** @name General
+      * @{ */
+        /** Returns event handling type. */
+        EventHandlingType eventHandlingType();
     /** @} */
 
     /** @name Messaging
