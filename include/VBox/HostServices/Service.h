@@ -135,7 +135,8 @@ private:
         m_uMsg   = uMsg;
         m_cParms = cParms;
 
-        int rc;
+        int rc = VINF_SUCCESS;
+
         if (cParms)
         {
             m_paParms = (VBOXHGCMSVCPARM*)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * m_cParms);
