@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,7 +23,7 @@
 #include <initguid.h>
 #include <new> /* For bad_alloc. */
 
-#ifdef VBOX_WITH_SENS
+#ifdef VBOX_WITH_WIN_SENS
 # include <eventsys.h>
 # include <sens.h>
 # include <Sensevts.h>
@@ -31,8 +31,9 @@
 
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
-#ifdef VBOX_WITH_SENS
-# include <iprt/string.h>
+#ifdef VBOX_WITH_WIN_SENS
+# include <VBox/com/string.h>
+using namespace com;
 #endif
 #include <VBox/VBoxGuestLib.h>
 
@@ -46,7 +47,7 @@
 static LONG g_cDllRefs  = 0;                 /**< Global DLL reference count. */
 static HINSTANCE g_hDllInst = NULL;          /**< Global DLL hInstance. */
 
-#ifdef VBOX_WITH_SENS
+#ifdef VBOX_WITH_WIN_SENS
 static bool g_fSENSEnabled = false;
 static IEventSystem *g_pIEventSystem = NULL; /**< Pointer to IEventSystem interface. */
 
@@ -198,25 +199,18 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
     HRESULT hr = CoCreateInstance(CLSID_CEventSystem, 0, CLSCTX_SERVER, IID_IEventSystem, (void**)&g_pIEventSystem);
     if (FAILED(hr))
     {
-        VBoxCredProvVerbose(0, "VBoxCredentialProviderRegisterSENS: Could not connect to CEventSystem, hr=%Rhrc\n",
-                            hr);
+        VBoxCredProvVerbose(0, "VBoxCredentialProviderRegisterSENS: Could not connect to CEventSystem, hr=%Rhrc\n", hr);
         return hr;
     }
 
+    /* Note: Bstr class can also throw -- therefore including the setup procedure in the following try block as well. */
     try
     {
         g_pISensLogon = new VBoxCredProvSensLogon();
-        AssertPtr(g_pISensLogon);
-    }
-    catch (std::bad_alloc &ex)
-    {
-        NOREF(ex);
-        hr = E_OUTOFMEMORY;
-    }
 
-    if (   SUCCEEDED(hr)
-        && g_pIEventSystem)
-    {
+        AssertPtr(g_pIEventSystem);
+        AssertPtr(g_pISensLogon);
+
         IEventSubscription *pIEventSubscription;
         int i;
         for (i = 0; i < RT_ELEMENTS(g_aSENSEvents); i++)
@@ -228,7 +222,7 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
             if (FAILED(hr))
                 continue;
 
-            hr = pIEventSubscription->put_EventClassID(L"{d5978630-5b9f-11d1-8dd2-00aa004abd5e}" /* SENSGUID_EVENTCLASS_LOGON */);
+            hr = pIEventSubscription->put_EventClassID(Bstr("{d5978630-5b9f-11d1-8dd2-00aa004abd5e}" /* SENSGUID_EVENTCLASS_LOGON */).raw());
             if (FAILED(hr))
                 break;
 
@@ -236,37 +230,15 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
             if (FAILED(hr))
                 break;
 
-            PRTUTF16 pwszTemp;
-            int rc = RTStrToUtf16(g_aSENSEvents[i].pszMethod, &pwszTemp);
-            if (RT_SUCCESS(rc))
-            {
-                hr = pIEventSubscription->put_MethodName(pwszTemp);
-                RTUtf16Free(pwszTemp);
-            }
-            else
-                hr = ERROR_OUTOFMEMORY;
+            hr = pIEventSubscription->put_MethodName(Bstr(g_aSENSEvents[i].pszMethod).raw());
             if (FAILED(hr))
                 break;
 
-            rc = RTStrToUtf16(g_aSENSEvents[i].pszSubscriptionName, &pwszTemp);
-            if (RT_SUCCESS(rc))
-            {
-                hr = pIEventSubscription->put_SubscriptionName(pwszTemp);
-                RTUtf16Free(pwszTemp);
-            }
-            else
-                hr = ERROR_OUTOFMEMORY;
+            hr = pIEventSubscription->put_SubscriptionName(Bstr(g_aSENSEvents[i].pszSubscriptionName).raw());
             if (FAILED(hr))
                 break;
 
-            rc = RTStrToUtf16(g_aSENSEvents[i].pszSubscriptionUUID, &pwszTemp);
-            if (RT_SUCCESS(rc))
-            {
-                hr = pIEventSubscription->put_SubscriptionID(pwszTemp);
-                RTUtf16Free(pwszTemp);
-            }
-            else
-                hr = ERROR_OUTOFMEMORY;
+            hr = pIEventSubscription->put_SubscriptionID(Bstr(g_aSENSEvents[i].pszSubscriptionUUID).raw());
             if (FAILED(hr))
                 break;
 
@@ -289,10 +261,22 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
         if (pIEventSubscription != NULL)
             pIEventSubscription->Release();
     }
+    catch (std::bad_alloc &ex)
+    {
+        NOREF(ex);
+        hr = E_OUTOFMEMORY;
+    }
 
     if (FAILED(hr))
     {
         VBoxCredProvVerbose(0, "VBoxCredentialProviderRegisterSENS: Error registering SENS provider, hr=%Rhrc\n", hr);
+
+        if (g_pISensLogon)
+        {
+            delete g_pISensLogon;
+            g_pISensLogon = NULL;
+        }
+
         if (g_pIEventSystem)
         {
             g_pIEventSystem->Release();
@@ -319,8 +303,10 @@ static void VBoxCredentialProviderUnregisterSENS(void)
      * in a different context COM can't handle. */
     HRESULT hr = CoCreateInstance(CLSID_CEventSystem, 0,
                                   CLSCTX_SERVER, IID_IEventSystem, (void**)&g_pIEventSystem);
-    if (   SUCCEEDED(hr)
-        && g_pIEventSystem)
+    if (FAILED(hr))
+        VBoxCredProvVerbose(0, "VBoxCredentialProviderUnregisterSENS: Could not reconnect to CEventSystem, hr=%Rhrc\n", hr);
+
+    try
     {
         VBoxCredProvVerbose(0, "VBoxCredentialProviderUnregisterSENS\n");
 
@@ -328,36 +314,21 @@ static void VBoxCredentialProviderUnregisterSENS(void)
 
         for (int i = 0; i < RT_ELEMENTS(g_aSENSEvents); i++)
         {
-            int iErrorIdX;
-
-            char *pszSubToRemove;
-            if (!RTStrAPrintf(&pszSubToRemove, "SubscriptionID=%s",
-                              g_aSENSEvents[i].pszSubscriptionUUID))
-            {
-                continue; /* Keep going. */
-            }
-
-            PRTUTF16 pwszTemp;
-            int rc2 = RTStrToUtf16(pszSubToRemove, &pwszTemp);
-            if (RT_SUCCESS(rc2))
-            {
-                hr = g_pIEventSystem->Remove(PROGID_EventSubscription, pwszTemp,
-                                             &iErrorIdX);
-                RTUtf16Free(pwszTemp);
-            }
-            else
-                hr = ERROR_OUTOFMEMORY;
-
+            int  iErrorIdX;
+            Bstr strSubToRemove = Utf8StrFmt("SubscriptionID=%s", g_aSENSEvents[i].pszSubscriptionUUID);
+            hr = g_pIEventSystem->Remove(PROGID_EventSubscription, strSubToRemove.raw(), &iErrorIdX);
             if (FAILED(hr))
-                VBoxCredProvVerbose(0, "VBoxCredentialProviderUnregisterSENS: Could not unregister \"%s\" (query: %s), hr=%Rhrc (index: %d)\n",
-                                    g_aSENSEvents[i].pszMethod, pszSubToRemove, hr, iErrorIdX);
+            {
+                VBoxCredProvVerbose(0, "VBoxCredentialProviderUnregisterSENS: Could not unregister \"%s\" (query: %ls), hr=%Rhrc (index: %d)\n",
+                                    g_aSENSEvents[i].pszMethod, strSubToRemove.raw(), hr, iErrorIdX);
                 /* Keep going. */
-
-            RTStrFree(pszSubToRemove);
+            }
         }
-
-        g_pIEventSystem->Release();
-        g_pIEventSystem = NULL;
+    }
+    catch (std::bad_alloc &ex)
+    {
+        NOREF(ex);
+        hr = E_OUTOFMEMORY;
     }
 
     if (g_pISensLogon)
@@ -366,9 +337,15 @@ static void VBoxCredentialProviderUnregisterSENS(void)
         g_pISensLogon = NULL;
     }
 
+    if (g_pIEventSystem)
+    {
+        g_pIEventSystem->Release();
+        g_pIEventSystem = NULL;
+    }
+
     VBoxCredProvVerbose(0, "VBoxCredentialProviderUnregisterSENS: Returning hr=%Rhrc\n", hr);
 }
-#endif /* VBOX_WITH_SENS */
+#endif /* VBOX_WITH_WIN_SENS */
 
 
 BOOL WINAPI DllMain(HINSTANCE hInst, DWORD dwReason, LPVOID pReserved)
@@ -460,7 +437,7 @@ HRESULT __stdcall DllCanUnloadNow(void)
     VBoxCredProvVerbose(0, "DllCanUnloadNow (refs=%ld)\n",
                         g_cDllRefs);
 
-#ifdef VBOX_WITH_SENS
+#ifdef VBOX_WITH_WIN_SENS
     if (!g_cDllRefs)
     {
         if (g_fSENSEnabled)
@@ -498,7 +475,7 @@ HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID,
                                           ppvInterface);
             pFactory->Release();
 
-#ifdef VBOX_WITH_SENS
+#ifdef VBOX_WITH_WIN_SENS
             g_fSENSEnabled = true; /* By default SENS support is enabled. */
 
             HKEY hKey;
@@ -532,7 +509,7 @@ HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID,
             }
 #else
             VBoxCredProvVerbose(0, "VBoxCredentialProviderCreate: SENS support is disabled\n");
-#endif
+#endif /* VBOX_WITH_WIN_SENS */
         }
         catch (std::bad_alloc &ex)
         {

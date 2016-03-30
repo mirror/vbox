@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009-2015 Oracle Corporation
+# Copyright (C) 2009-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -18,9 +18,15 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# Do we want to use Windows SENS (System Event Notification Service)?
+VBOX_WITH_WIN_SENS := 1
+
 DLLS += VBoxCredProv
 VBoxCredProv_TEMPLATE    = VBOXGUESTR3DLL
-VBoxCredProv_DEFS        = VBGL_VBOXGUEST VBOX_WITH_HGCM VBOX_WITH_SENS UNICODE
+VBoxCredProv_DEFS        = VBGL_VBOXGUEST VBOX_WITH_HGCM UNICODE
+ifdef VBOX_WITH_WIN_SENS
+ VBoxService_DEFS       += VBOX_WITH_WIN_SENS
+endif
 VBoxCredProv_SDKS        = ReorderCompilerIncs $(VBOX_WINPSDK_GST_WLH)
 VBoxCredProv_SOURCES  = \
 	VBoxCredentialProvider.cpp \
@@ -31,6 +37,12 @@ VBoxCredProv_SOURCES  = \
 	VBoxCredProvCredential.cpp \
 	VBoxCredProvPoller.cpp \
 	VBoxCredProvUtils.cpp
+
+ifdef VBOX_WITH_WIN_SENS
+ # To use com::Bstr for BSTR handling.
+ VBoxCredProv_SOURCES += \
+	$(PATH_ROOT)/src/VBox/Main/glue/string.cpp
+endif
 
 VBoxCredProv_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
