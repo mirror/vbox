@@ -153,6 +153,20 @@ typedef struct RTDBGMODCV
     /** The size of the segment names. */
     uint32_t        cbSegNames;
 
+    /** Size of the block pchSrcStrings points to. */
+    size_t          cbSrcStrings;
+    /** Buffer space allocated for the source string table.  */
+    size_t          cbSrcStringsAlloc;
+    /** Copy of the last CV8 source string table.  */
+    char           *pchSrcStrings;
+
+    /** The size of the current source information table. */
+    size_t          cbSrcInfo;
+    /** Buffer space allocated for the source information table.  */
+    size_t          cbSrcInfoAlloc;
+    /** Copy of the last CV8 source information table. */
+    uint8_t        *pbSrcInfo;
+
     /** @}  */
 
 } RTDBGMODCV;
@@ -753,6 +767,180 @@ static int rtDbgModCvSsProcessV4PlusSymTab(PRTDBGMODCV pThis, void const *pvSymT
 
 
 /**
+ * Makes a copy of the CV8 source string table.
+ *
+ * It will be references in a subsequent source information table, and again by
+ * line number tables thru that.
+ *
+ * @returns IPRT status code
+ * @param   pThis               The CodeView debug info reader instance.
+ * @param   pvSrcStrings        The source string table.
+ * @param   cbSrcStrings        The size of the source strings.
+ * @param   fFlags              Flags reserved for future exploits, MBZ.
+ */
+static int rtDbgModCvSsProcessV8SrcStrings(PRTDBGMODCV pThis, void const *pvSrcStrings, size_t cbSrcStrings, uint32_t fFlags)
+{
+    if (cbSrcStrings >= pThis->cbSrcStringsAlloc)
+    {
+        void *pvNew = RTMemRealloc(pThis->pchSrcStrings, cbSrcStrings + 1);
+        AssertReturn(pvNew, VERR_NO_MEMORY);
+        pThis->pchSrcStrings     = (char *)pvNew;
+        pThis->cbSrcStrings      = cbSrcStrings;
+        pThis->cbSrcStringsAlloc = cbSrcStrings + 1;
+    }
+    memcpy(pThis->pchSrcStrings, pvSrcStrings, cbSrcStrings);
+    pThis->pchSrcStrings[cbSrcStrings] = '\0';
+
+    if (LogIs3Enabled())
+    {
+        size_t iFile = 0;
+        size_t off   = pThis->pchSrcStrings[0] != '\0' ? 0 : 1;
+        while (off < cbSrcStrings)
+        {
+            size_t cch = strlen(&pThis->pchSrcStrings[off]);
+            Log3(("  %010zx #%03zu: %s\n", off, iFile, &pThis->pchSrcStrings[off]));
+            off += cch + 1;
+            iFile++;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Makes a copy of the CV8 source information table.
+ *
+ * It will be references in subsequent line number tables.
+ *
+ * @returns IPRT status code
+ * @param   pThis       The CodeView debug info reader instance.
+ * @param   pvSrcInfo   The source information table.
+ * @param   cbSrcInfo   The size of the source information table (bytes).
+ * @param   fFlags      Flags reserved for future exploits, MBZ.
+ */
+static int rtDbgModCvSsProcessV8SrcInfo(PRTDBGMODCV pThis, void const *pvSrcInfo, size_t cbSrcInfo, uint32_t fFlags)
+{
+    if (cbSrcInfo + sizeof(RTCV8SRCINFO) > pThis->cbSrcInfoAlloc)
+    {
+        void *pvNew = RTMemRealloc(pThis->pbSrcInfo, cbSrcInfo + sizeof(RTCV8SRCINFO));
+        AssertReturn(pvNew, VERR_NO_MEMORY);
+        pThis->pbSrcInfo      = (uint8_t *)pvNew;
+        pThis->cbSrcInfo      = cbSrcInfo;
+        pThis->cbSrcInfoAlloc = cbSrcInfo + sizeof(RTCV8SRCINFO);
+    }
+    memcpy(pThis->pbSrcInfo, pvSrcInfo, cbSrcInfo);
+    memset(&pThis->pbSrcInfo[cbSrcInfo], 0, sizeof(RTCV8SRCINFO));
+
+    if (LogIs3Enabled())
+    {
+        size_t iFile = 0;
+        size_t off   = 0;
+        while (off + 4 <= cbSrcInfo)
+        {
+            PCRTCV8SRCINFO pSrcInfo = (PCRTCV8SRCINFO)&pThis->pbSrcInfo[off];
+            const char *pszName;
+            if (pSrcInfo->offSourceName < pThis->cbDbgInfo)
+                pszName = &pThis->pchSrcStrings[pSrcInfo->offSourceName];
+            else
+                pszName = "out-of-bounds.c!";
+            if (pSrcInfo->uDigestType == RTCV8SRCINFO_DIGEST_TYPE_MD5)
+            {
+                Log3(("  %010zx #%03zu: %RTuuid %#x=%s\n", off, iFile, &pSrcInfo->Digest.md5, pSrcInfo->offSourceName, pszName));
+                off += sizeof(*pSrcInfo);
+            }
+            else
+            {
+                if (pSrcInfo->uDigestType == RTCV8SRCINFO_DIGEST_TYPE_NONE)
+                    Log3(("  %010zx #%03zu: <none> %#x=%s\n", off, iFile, pSrcInfo->offSourceName, pszName));
+                else
+                    Log3(("  %010zx #%03zu: !%#x! %#x=%s\n", off, iFile, pSrcInfo->uDigestType, pSrcInfo->offSourceName, pszName));
+                off += 8;
+            }
+            iFile++;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Makes a copy of the CV8 source string table.
+ *
+ * It will be references in subsequent line number tables.
+ *
+ * @returns IPRT status code
+ * @param   pThis               The CodeView debug info reader instance.
+ * @param   pvSectLines         The section source line table.
+ * @param   cbSectLines         The size of the section source line table.
+ * @param   fFlags              Flags reserved for future exploits, MBZ.
+ */
+static int rtDbgModCvSsProcessV8SectLines(PRTDBGMODCV pThis, void const *pvSectLines, size_t cbSectLines, uint32_t fFlags)
+{
+    /*
+     * Starts with header.
+     */
+    PCRTCV8LINESHDR pHdr = (PCRTCV8LINESHDR)pvSectLines;
+    RTDBGMODCV_CHECK_NOMSG_RET_BF(cbSectLines >= sizeof(*pHdr));
+    cbSectLines -= sizeof(*pHdr);
+    Log2(("RTDbgModCv:     seg #%u, off %#x LB %#x \n", pHdr->iSection, pHdr->offSection, pHdr->cbSectionCovered));
+
+    RTCPTRUNION uCursor;
+    uCursor.pv = pHdr + 1;
+    while (cbSectLines > 0)
+    {
+        /* Source file header. */
+        PCRTCV8LINESSRCMAP pSrcHdr = (PCRTCV8LINESSRCMAP)uCursor.pv;
+        RTDBGMODCV_CHECK_NOMSG_RET_BF(cbSectLines >= sizeof(*pSrcHdr));
+        RTDBGMODCV_CHECK_NOMSG_RET_BF(pSrcHdr->cb == pSrcHdr->cLines * sizeof(RTCV8LINEPAIR) + sizeof(RTCV8LINESSRCMAP));
+        RTDBGMODCV_CHECK_RET_BF(!(pSrcHdr->offSourceInfo & 3), ("offSourceInfo=%#x\n", pSrcHdr->offSourceInfo));
+        if (pSrcHdr->offSourceInfo + sizeof(uint32_t) <= pThis->cbSrcInfo)
+        {
+            PCRTCV8SRCINFO pSrcInfo = (PCRTCV8SRCINFO)&pThis->pbSrcInfo[pSrcHdr->offSourceInfo];
+            const char    *pszName  = pSrcInfo->offSourceName < pThis->cbSrcStrings
+                                    ? &pThis->pchSrcStrings[pSrcInfo->offSourceName] : "unknown.c";
+            pszName = rtDbgModCvAddSanitizedStringToCache(pszName, RTSTR_MAX);
+            Log2(("RTDbgModCv:     #%u lines, %#x bytes, %#x=%s\n", pSrcHdr->cLines, pSrcHdr->cb, pSrcHdr->offSourceInfo, pszName));
+
+            if (pszName)
+            {
+                /* Process the line/offset pairs. */
+                uint32_t        cLeft = pSrcHdr->cLines;
+                PCRTCV8LINEPAIR pPair = (PCRTCV8LINEPAIR)(pSrcHdr + 1);
+                while (cLeft-- > 0)
+                {
+                    uint32_t idxSeg = pHdr->iSection;
+                    uint64_t off    = pPair->offSection + pHdr->offSection;
+                    int rc = rtDbgModCvAdjustSegAndOffset(pThis, &idxSeg, &off);
+                    if (RT_SUCCESS(rc))
+                        rc = RTDbgModLineAdd(pThis->hCnt, pszName, pPair->uLineNumber, idxSeg, off, NULL);
+                    if (RT_SUCCESS(rc))
+                        Log3(("RTDbgModCv:       %#x:%#010llx  %0u\n", idxSeg, off, pPair->uLineNumber));
+                    else
+                        Log(( "RTDbgModCv:       %#x:%#010llx  %0u - rc=%Rrc!! (org: idxSeg=%#x off=%#x)\n",
+                              idxSeg, off, pPair->uLineNumber, rc, pHdr->iSection, pPair->offSection));
+
+                    /* next */
+                    pPair++;
+                }
+                Assert((uintptr_t)pPair - (uintptr_t)pSrcHdr == pSrcHdr->cb);
+            }
+        }
+        else
+            Log(("RTDbgModCv: offSourceInfo=%#x cbSrcInfo=%#x!\n", pSrcHdr->offSourceInfo, pThis->cbSrcInfo));
+
+        /* next */
+        cbSectLines -= pSrcHdr->cb;
+        uCursor.pu8 += pSrcHdr->cb;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+
+/**
  * Parses a CV8 symbol table, adding symbols to the container.
  *
  * @returns IPRT status code
@@ -782,17 +970,15 @@ static int rtDbgModCvSsProcessV8SymTab(PRTDBGMODCV pThis, void const *pvSymTab, 
                 break;
 
             case RTCV8SYMBLOCK_TYPE_SRC_STR:
-                /** @todo would have to cache the string table as the line numbers using it
-                 *        may be in a different .debug$S section and wlinking will therefore
-                 *        issue two sstSymbols entries for the module. */
+                rc = rtDbgModCvSsProcessV8SrcStrings(pThis, pBlockHdr + 1, pBlockHdr->cb, fFlags);
                 break;
 
             case RTCV8SYMBLOCK_TYPE_SECT_LINES:
+                rc = rtDbgModCvSsProcessV8SectLines(pThis, pBlockHdr + 1, pBlockHdr->cb, fFlags);
                 break;
 
             case RTCV8SYMBLOCK_TYPE_SRC_INFO:
-                /* Not something we currently care about.  Could be useful later
-                   for checking if a source file has changed. */
+                rc = rtDbgModCvSsProcessV8SrcInfo(pThis, pBlockHdr + 1, pBlockHdr->cb, fFlags);
                 break;
             default:
                 Log(("rtDbgModCvSsProcessV8SymTab: Unknown block type %#x (LB %#x)\n", pBlockHdr->uType, pBlockHdr->cb));
@@ -854,6 +1040,8 @@ rtDbgModCvSs_Module(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect, 
     if (pThis->uCurStyle == 0)
         pThis->uCurStyle = RT_MAKE_U16('C', 'V');
     pThis->uCurStyleVer = 0;
+    pThis->cbSrcInfo    = 0;
+    pThis->cbSrcStrings = 0;
     uint8_t cchName   = uCursor.pu8[cSegs * 12];
     RTDBGMODCV_CHECK_NOMSG_RET_BF(cbSubSect >= 2 + 2 + 2 + 2 + cSegs * 12U + 1 + cchName);
 
@@ -1668,7 +1856,7 @@ static int rtDbgModCvLoadCodeViewInfo(PRTDBGMODCV pThis)
     for (uint32_t i = 0; RT_SUCCESS(rc) && i < pThis->cDirEnts; i++)
     {
         PCRTCVDIRENT32              pDirEnt     = &pThis->paDirEnts[i];
-        Log3(("Processing subsection %#u %s\n", i, rtDbgModCvGetSubSectionName(pDirEnt->uSubSectType)));
+        Log3(("Processing module %#06x subsection #%04u %s\n", pDirEnt->iMod, i, rtDbgModCvGetSubSectionName(pDirEnt->uSubSectType)));
         PFNDBGMODCVSUBSECTCALLBACK  pfnCallback = NULL;
         switch (pDirEnt->uSubSectType)
         {
@@ -1737,6 +1925,24 @@ static int rtDbgModCvLoadCodeViewInfo(PRTDBGMODCV pThis)
                 RTMemFree(pvSubSect);
             }
         }
+    }
+
+    /*
+     * Free temporary parsing objects.
+     */
+    if (pThis->pbSrcInfo)
+    {
+        RTMemFree(pThis->pbSrcInfo);
+        pThis->pbSrcInfo      = NULL;
+        pThis->cbSrcInfo      = 0;
+        pThis->cbSrcInfoAlloc = 0;
+    }
+    if (pThis->pchSrcStrings)
+    {
+        RTMemFree(pThis->pchSrcStrings);
+        pThis->pchSrcStrings     = NULL;
+        pThis->cbSrcStrings      = 0;
+        pThis->cbSrcStringsAlloc = 0;
     }
 
     return rc;
