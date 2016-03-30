@@ -25,7 +25,7 @@ DLLS += VBoxCredProv
 VBoxCredProv_TEMPLATE    = VBOXGUESTR3DLL
 VBoxCredProv_DEFS        = VBGL_VBOXGUEST VBOX_WITH_HGCM UNICODE
 ifdef VBOX_WITH_WIN_SENS
- VBoxService_DEFS       += VBOX_WITH_WIN_SENS
+ VBoxCredProv_DEFS      += VBOX_WITH_WIN_SENS
 endif
 VBoxCredProv_SDKS        = ReorderCompilerIncs $(VBOX_WINPSDK_GST_WLH)
 VBoxCredProv_SOURCES  = \
