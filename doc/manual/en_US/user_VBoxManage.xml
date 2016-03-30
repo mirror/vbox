@@ -1994,6 +1994,18 @@ Virtual system 0:
     when a snapshot is restored, the contents of the virtual machine's virtual
     hard disks can be quickly reset by simply dropping the pre-existing
     differencing files.</para>
+  
+   <screen>VBoxManage snapshot         &lt;uuid|vmname&gt;
+                            take &lt;name&gt; [--description &lt;desc&gt;] [--live]
+                                 [--uniquename Number,Timestamp,Space,Force] |
+                            delete &lt;uuid|snapname&gt; |
+                            restore &lt;uuid|snapname&gt; |
+                            restorecurrent |
+                            edit &lt;uuid|snapname&gt;|--current
+                                 [--name &lt;name&gt;]
+                                 [--description &lt;desc&gt;] |
+                            list [--details|--machinereadable]
+                            showvminfo &lt;uuid|snapname&gt;</screen>
 
     <para>The <computeroutput>take</computeroutput> operation takes a snapshot
     of the current state of the virtual machine. You must supply a name for
@@ -2048,6 +2060,9 @@ Virtual system 0:
         a registry.</para>
       </footnote></para>
 
+    <screen>VBoxManage closemedium      [disk|dvd|floppy] &lt;uuid|filename&gt;
+                            [--delete]</screen>
+
     <para>Optionally, you can request that the image be deleted. You will get
     appropriate diagnostics that the deletion failed, however the image will
     become unregistered in any case.</para>
@@ -2066,9 +2081,10 @@ Virtual system 0:
                             [--port &lt;number&gt;]
                             [--device &lt;number&gt;]
                             [--type dvddrive|hdd|fdd]
-                            [--medium none|emptydrive|
+                            [--medium none|emptydrive|additions|
                                       &lt;uuid&gt;|&lt;filename&gt;|host:&lt;drive&gt;|iscsi]
-                            [--mtype normal|writethrough|immutable|shareable]
+                            [--mtype normal|writethrough|immutable|shareable
+                                     readonly|multiattach]
                             [--comment &lt;text&gt;]
                             [--setuuid &lt;uuid&gt;]
                             [--setparentuuid &lt;uuid&gt;]
@@ -2076,6 +2092,7 @@ Virtual system 0:
                             [--tempeject on|off]
                             [--nonrotational on|off]
                             [--discard on|off]
+                            [--hotpluggable on|off]
                             [--bandwidthgroup name|none]
                             [--forceunmount]
                             [--server &lt;name&gt;|&lt;ip&gt;]
@@ -2375,6 +2392,7 @@ Virtual system 0:
                             [--portcount &lt;1-30&gt;]
                             [--hostiocache on|off]
                             [--bootable on|off]
+                            [--rename &lt;name&gt;]
                             [--remove]</screen>
 
     <para>where the parameters mean: <glosslist>
@@ -2436,6 +2454,14 @@ Virtual system 0:
 
           <glossdef>
             <para>Selects whether this controller is bootable.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>--rename</computeroutput></glossterm>
+
+          <glossdef>
+            <para>Sets the name of the storage controller.</para>
           </glossdef>
         </glossentry>
 
@@ -2555,7 +2581,7 @@ Virtual system 0:
     follows:</para>
 
     <screen>VBoxManage createhd         --filename &lt;filename&gt;
-                            --size &lt;megabytes&gt;
+                            --size &lt;megabytes&gt;|--sizebyte &lt;bytes&gt;
                             [--format VDI|VMDK|VHD] (default: VDI)
                             [--variant Standard,Fixed,Split2G,Stream,ESX]</screen>
 
@@ -2612,6 +2638,7 @@ Virtual system 0:
                             [--type normal|writethrough|immutable|shareable|
                                     readonly|multiattach]
                             [--autoreset on|off]
+                            [--property &lt;name=[value]&gt;]
                             [--compact]
                             [--resize &lt;megabytes&gt;|--resizebyte &lt;bytes&gt;]</screen><note>
         <para>Despite the "hd" in the subcommand name, the command works with
