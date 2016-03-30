@@ -36,7 +36,7 @@ const Bstr Bstr::Empty; /* default ctor is OK */
 void Bstr::copyFromN(const char *a_pszSrc, size_t a_cchMax)
 {
     /*
-     * Initialie m_bstr first in case of throws further down in the code, then
+     * Initialize m_bstr first in case of throws further down in the code, then
      * check for empty input (m_bstr == NULL means empty, there are no NULL
      * strings).
      */
