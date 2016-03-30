@@ -744,9 +744,9 @@ typedef RTCV8LINESHDR const *PCRTCV8LINESHDR;
  */
 typedef struct RTCV8LINESSRCMAP
 {
-    /** The source file name, given as an offset into the string table
-     * (RTCV8SYMBLOCK_TYPE_SRC_STR). */
-    uint32_t    offSourceName;
+    /** The source file, given as an offset (byte) into the source file
+     * information table (RTCV8SYMBLOCK_TYPE_SRC_INFO). */
+    uint32_t    offSourceInfo;
     /** Number of line numbers following this structure. */
     uint32_t    cLines;
     /** The size of this source map. */
