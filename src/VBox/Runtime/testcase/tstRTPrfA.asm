@@ -31,6 +31,8 @@
 
 %define NUM_LOOPS 10000h
 
+BEGINCODE
+
 BEGINPROC tstRTPRfARegisterAccess
         push    xBP
         mov     xBP, xSP
