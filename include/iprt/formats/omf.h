@@ -141,7 +141,7 @@ typedef OMFRECHDR *PCOMFRECHDR;
 /** 32-bit object file end record.
  * Identical to #OMF_MODEND16 except that is has a 4 byte target
  * displacement field. */
-#define OMF_MODEND32        UINT8_C(0x8a)
+#define OMF_MODEND32        UINT8_C(0x8b)
 /** @} */
 
 /** @name OMF COMENT Type Flags
@@ -157,11 +157,19 @@ typedef OMFRECHDR *PCOMFRECHDR;
 /** Comment class: Dependency file.
  * Is followed by a dword timestamp (1980 based?) and a length prefix
  * filename string. */
-#define OMF_CCLS_DEP_FILE       UINT8_C(0x88)
+#define OMF_CCLS_DEP_FILE           UINT8_C(0x88)
 /** Comment class: Link pass separator.
  * Contains a byte with the value 01 to indicate the linker can stop pass 1
  * processing now. */
-#define OMF_CCLS_LINK_PASS_SEP  UINT8_C(0xa2)
+#define OMF_CCLS_LINK_PASS_SEP      UINT8_C(0xa2)
+/** Comment class: Borland type information. */
+#define OMF_CCLS_BORLAND_TYPES      UINT8_C(0xe3)
+/** Comment class: Borland symbol information. */
+#define OMF_CCLS_BORLAND_SYMBOLS    UINT8_C(0xe6)
+/** Comment class: Borland source file (applies to subsequent LINNUMs). */
+#define OMF_CCLS_BORLAND_SRC_FILE   UINT8_C(0xe8)
+/** Comment class: Borland dependency files. */
+#define OMF_CCLS_BORLAND_DEP_FILES  UINT8_C(0xe9)
 /** @} */
 
 
