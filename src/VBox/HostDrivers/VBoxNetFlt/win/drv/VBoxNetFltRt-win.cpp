@@ -1664,7 +1664,7 @@ DECLHIDDEN(VOID) vboxNetFltWinUnload(IN PDRIVER_OBJECT DriverObject)
     int rc;
     UNREFERENCED_PARAMETER(DriverObject);
 
-    LogFlow((__FUNCTION__" ==> DO (0x%x)\n", DriverObject));
+    LogFlowFunc(("ENTER: DO (0x%x)\n", DriverObject));
 
     rc = vboxNetFltWinFiniIdc();
     if (RT_FAILURE(rc))
@@ -1672,7 +1672,7 @@ DECLHIDDEN(VOID) vboxNetFltWinUnload(IN PDRIVER_OBJECT DriverObject)
         /* TODO: we can not prevent driver unload here */
         AssertFailed();
 
-        Log((__FUNCTION__": vboxNetFltWinFiniIdc - failed, busy.\n"));
+        LogFlowFunc(("vboxNetFltWinFiniIdc - failed, busy.\n"));
     }
 
     vboxNetFltWinJobFiniQueue(&g_VBoxJobQueue);
@@ -1686,7 +1686,7 @@ DECLHIDDEN(VOID) vboxNetFltWinUnload(IN PDRIVER_OBJECT DriverObject)
     NdisFreeSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
 #endif /* VBOXNETADP */
 
-    LogFlow((__FUNCTION__" <== DO (0x%x)\n", DriverObject));
+    LogFlow(("LEAVE: DO (0x%x)\n", DriverObject));
 
     vboxNetFltWinFiniNetFltBase();
     /* don't use logging or any RT after de-init */
@@ -1925,7 +1925,7 @@ DECLHIDDEN(VOID) vboxNetFltWinPtFiniWinIf(PVBOXNETFLTWIN pWinIf)
     int rc;
 #endif
 
-    LogFlow(("==>"__FUNCTION__" : pWinIf 0x%p\n", pWinIf));
+    LogFlowFunc(("ENTER: pWinIf 0x%p\n", pWinIf));
 
     Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
 #ifndef VBOXNETADP
@@ -1947,7 +1947,7 @@ DECLHIDDEN(VOID) vboxNetFltWinPtFiniWinIf(PVBOXNETFLTWIN pWinIf)
     NdisFreeBufferPool(pWinIf->hRecvBufferPool);
     NdisFreePacketPool(pWinIf->hRecvPacketPool);
 
-    LogFlow(("<=="__FUNCTION__" : pWinIf 0x%p\n", pWinIf));
+    LogFlowFunc(("LEAVE: pWinIf 0x%p\n", pWinIf));
 }
 
 #ifndef VBOXNETADP
@@ -1962,7 +1962,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitWinIf(PVBOXNETFLTWIN pWinIf)
 #endif
     BOOLEAN bCallFiniOnFail = FALSE;
 
-    LogFlow(("==>"__FUNCTION__": pWinIf 0x%p\n", pWinIf));
+    LogFlowFunc(("ENTER: pWinIf 0x%p\n", pWinIf));
 
     Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
 
@@ -2041,7 +2041,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitWinIf(PVBOXNETFLTWIN pWinIf)
         NdisFreePacketPool(pWinIf->hRecvPacketPool);
     }
 
-    LogFlow(("<=="__FUNCTION__": pWinIf 0x%p, Status 0x%x\n", pWinIf, Status));
+    LogFlowFunc(("LEAVE: pWinIf 0x%p, Status 0x%x\n", pWinIf, Status));
 
     return Status;
 }
@@ -2685,7 +2685,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinDetachFromInterface(PVBOXNETFLTINS pNetFlt,
 {
     NDIS_STATUS Status;
     int rc;
-    LogFlow((__FUNCTION__": pThis=%0xp\n", pNetFlt));
+    LogFlowFunc(("ENTER: pThis=%0xp\n", pNetFlt));
 
     Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
     Assert(pNetFlt);
@@ -2745,6 +2745,8 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinDetachFromInterface(PVBOXNETFLTINS pNetFlt,
 
     /* release for the retain we made before waining on the mutex */
     vboxNetFltRelease(pNetFlt, false);
+    
+    LogFlowFunc(("LEAVE: Status 0x%x\n", Status));
 
     return Status;
 }

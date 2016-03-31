@@ -51,11 +51,11 @@ static bool vboxUsbRtCtxSetOwner(PVBOXUSBDEV_EXT pDevExt, PFILE_OBJECT pFObj)
     bool bRc = ASMAtomicCmpXchgPtr(&pDevExt->Rt.pOwner, pFObj, NULL);
     if (bRc)
     {
-        Log((__FUNCTION__": pDevExt (0x%x) Owner(0x%x) acquired\n", pFObj));
+        LogFunc(("pDevExt (0x%x) Owner(0x%x) acquired\n", pFObj));
     }
     else
     {
-        Log((__FUNCTION__": pDevExt (0x%x) Owner(0x%x) FAILED!!\n", pFObj));
+        LogFunc(("pDevExt (0x%x) Owner(0x%x) FAILED!!\n", pFObj));
     }
     return bRc;
 }
@@ -65,11 +65,11 @@ static bool vboxUsbRtCtxReleaseOwner(PVBOXUSBDEV_EXT pDevExt, PFILE_OBJECT pFObj
     bool bRc = ASMAtomicCmpXchgPtr(&pDevExt->Rt.pOwner, NULL, pFObj);
     if (bRc)
     {
-        Log((__FUNCTION__": pDevExt (0x%x) Owner(0x%x) released\n", pFObj));
+        LogFunc(("pDevExt (0x%x) Owner(0x%x) released\n", pFObj));
     }
     else
     {
-        Log((__FUNCTION__": pDevExt (0x%x) Owner(0x%x) release: is NOT an owner\n", pFObj));
+        LogFunc(("pDevExt (0x%x) Owner(0x%x) release: is NOT an owner\n", pFObj));
     }
     return bRc;
 }
@@ -1113,7 +1113,7 @@ static NTSTATUS vboxUsbRtUrbSendCompletion(PDEVICE_OBJECT pDevObj, IRP *pIrp, vo
     {
         pUrbInfo->len = 0;
 
-        Log((__FUNCTION__": URB failed Status (0x%x) urb Status (0x%x)\n", Status, pUrb->UrbHeader.Status));
+        LogFunc(("URB failed Status (0x%x) urb Status (0x%x)\n", Status, pUrb->UrbHeader.Status));
 #ifdef DEBUG
         switch(pContext->ulTransferType)
         {
