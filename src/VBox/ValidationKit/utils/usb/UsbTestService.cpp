@@ -533,7 +533,7 @@ static int utsClientReqProcess(PUTSCLIENT pClient)
     /*
      * Read client command packet and process it.
      */
-    PUTSPKTHDR pPktHdr;
+    PUTSPKTHDR pPktHdr = NULL;
     int rc = utsRecvPkt(pClient, &pPktHdr, true /*fAutoRetryOnFailure*/);
     if (RT_FAILURE(rc))
         return rc;
