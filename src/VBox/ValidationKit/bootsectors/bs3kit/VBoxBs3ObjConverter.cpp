@@ -4073,22 +4073,22 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
                 OMF_READ_IDX(idxSeg, LINNUM);
 
                 uint16_t iLine;
-                uint32_t off;
+                uint32_t offSeg;
                 if (bRecType == OMF_LINNUM16)
                     while (offRec + 4 < cbRec)
                     {
-                        iLine = RT_MAKE_U16(pbRec[offRec + 0], pbRec[offRec + 1]);
-                        off   = RT_MAKE_U16(pbRec[offRec + 2], pbRec[offRec + 3]);
-                        if (!collectOmfAddLine(pOmfStuff, idxSeg, off, iLine, offSrcInfo))
+                        iLine  = RT_MAKE_U16(pbRec[offRec + 0], pbRec[offRec + 1]);
+                        offSeg = RT_MAKE_U16(pbRec[offRec + 2], pbRec[offRec + 3]);
+                        if (!collectOmfAddLine(pOmfStuff, idxSeg, offSeg, iLine, offSrcInfo))
                             return false;
                         offRec += 4;
                     }
                 else
                     while (offRec + 6 < cbRec)
                     {
-                        iLine = RT_MAKE_U16(pbRec[offRec + 0], pbRec[offRec + 1]);
-                        off   = RT_MAKE_U32_FROM_U8(pbRec[offRec + 2], pbRec[offRec + 3], pbRec[offRec + 4], pbRec[offRec + 5]);
-                        if (!collectOmfAddLine(pOmfStuff, idxSeg, off, iLine, offSrcInfo))
+                        iLine  = RT_MAKE_U16(pbRec[offRec + 0], pbRec[offRec + 1]);
+                        offSeg = RT_MAKE_U32_FROM_U8(pbRec[offRec + 2], pbRec[offRec + 3], pbRec[offRec + 4], pbRec[offRec + 5]);
+                        if (!collectOmfAddLine(pOmfStuff, idxSeg, offSeg, iLine, offSrcInfo))
                             return false;
                         offRec += 6;
                     }
@@ -4247,7 +4247,7 @@ static bool convertOmfWriteDebugData(POMFWRITER pThis, POMFDETAILS pOmfStuff)
                 return false;
 
             /* Emit data for each source file. */
-            for (uint32_t j = 0; j < pSegLines->cFiles; j++)
+            for (j = 0; j < pSegLines->cFiles; j++)
             {
                 uint32_t const cbPairs = pSegLines->paFiles[j].cPairs * sizeof(RTCV8LINEPAIR);
                 if (   !omfWriter_LEDataAddU32(pThis, pSegLines->paFiles[j].offSrcInfo)   /*RTCV8LINESSRCMAP::offSourceInfo*/
