@@ -528,7 +528,7 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
     }
 #endif
 
-    if (RT_SUCCESS(rcNt))
+    if (NT_SUCCESS(rcNt))
     {
         ULONG uValue = 0;
         NTSTATUS rcNt2 = vgdrvNtRegistryReadDWORD(RTL_REGISTRY_SERVICES, L"VBoxGuest", L"LoggingEnabled", &uValue);
