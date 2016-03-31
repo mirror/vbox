@@ -225,8 +225,8 @@ static void vgsvcVMStatsReport(void)
     /* Unfortunately GetSystemTimes is XP SP1 and up only, so we need to use the semi-undocumented NtQuerySystemInformation */
     bool  fCpuInfoAvail = false;
     DWORD cbReturned;
-    NTSTATUS rc = g_VMStat.pfnNtQuerySystemInformation(SystemProcessorPerformanceInformation, pProcInfo, cbStruct, &cbReturned);
-    if (    !rc
+    NTSTATUS rcNt = g_VMStat.pfnNtQuerySystemInformation(SystemProcessorPerformanceInformation, pProcInfo, cbStruct, &cbReturned);
+    if (    !rcNt
         &&  cbReturned == cbStruct)
     {
         for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors; i++)
@@ -246,8 +246,8 @@ static void vgsvcVMStatsReport(void)
 
                 Sleep(250);
 
-                rc = g_VMStat.pfnNtQuerySystemInformation(SystemProcessorPerformanceInformation, pProcInfo, cbStruct, &cbReturned);
-                Assert(!rc);
+                rcNt = g_VMStat.pfnNtQuerySystemInformation(SystemProcessorPerformanceInformation, pProcInfo, cbStruct, &cbReturned);
+                Assert(!rcNt);
             }
 
             uint64_t deltaIdle    = (pProcInfo[i].IdleTime.QuadPart   - g_VMStat.au64LastCpuLoad_Idle[i]);
@@ -265,7 +265,7 @@ static void vgsvcVMStatsReport(void)
             req.guestStats.u32StatCaps      |= VBOX_GUEST_STAT_CPU_LOAD_IDLE | VBOX_GUEST_STAT_CPU_LOAD_KERNEL
                                             |  VBOX_GUEST_STAT_CPU_LOAD_USER;
             req.guestStats.u32CpuId          = i;
-            rc = VbglR3StatReport(&req);
+            int rc = VbglR3StatReport(&req);
             if (RT_SUCCESS(rc))
                 VGSvcVerbose(3, "vgsvcVMStatsReport: new statistics (CPU %u) reported successfully!\n", i);
             else
@@ -281,7 +281,7 @@ static void vgsvcVMStatsReport(void)
     if (!fCpuInfoAvail)
     {
         VGSvcVerbose(3, "vgsvcVMStatsReport: CPU info not available!\n");
-        rc = VbglR3StatReport(&req);
+        int rc = VbglR3StatReport(&req);
         if (RT_SUCCESS(rc))
             VGSvcVerbose(3, "vgsvcVMStatsReport: new statistics reported successfully!\n");
         else
