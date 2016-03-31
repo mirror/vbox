@@ -709,7 +709,49 @@ static int rtDbgModCvSsProcessV4PlusSymTab(PRTDBGMODCV pThis, void const *pvSymT
                     break;
                 }
 
-                /** @todo add GProc and LProc so we can gather sizes as well as just symbols. */
+                case kCvSymType_LProc16:
+                case kCvSymType_GProc16:
+                {
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cbRec > 2 + 4+4+4+2+2+2+2+2+2+1+1);
+                    /*uint32_t uParent       =*/ *uCursor.pu32++;
+                    /*uint32_t uEnd          =*/ *uCursor.pu32++;
+                    /*uint32_t uNext         =*/ *uCursor.pu32++;
+                    uint16_t cbProc        = *uCursor.pu16++;
+                    /*uint16_t offDebugStart =*/ *uCursor.pu16++;
+                    /*uint16_t offDebugEnd   =*/ *uCursor.pu16++;
+                    uint16_t off           = *uCursor.pu16++;
+                    uint16_t iSeg          = *uCursor.pu16++;
+                    /*uint16_t iProcType     =*/ *uCursor.pu16++;
+                    /*uint8_t fbType         =*/ *uCursor.pu8++;
+                    uint8_t  cchName       = *uCursor.pu8++;
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cchName > 0);
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cbRec >= 2 + 4+4+4+2+2+2+2+2+2+1+1 + cchName);
+
+                    rc = rtDbgModCvAddSymbol(pThis, iSeg, off, uCursor.pch, cchName, 0, cbProc);
+                    break;
+                }
+
+                case kCvSymType_LProc32:
+                case kCvSymType_GProc32:
+                {
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cbRec > 2 + 4+4+4+4+4+4+4+2+2+1+1);
+                    /*uint32_t uParent       =*/ *uCursor.pu32++;
+                    /*uint32_t uEnd          =*/ *uCursor.pu32++;
+                    /*uint32_t uNext         =*/ *uCursor.pu32++;
+                    uint32_t cbProc        = *uCursor.pu32++;
+                    /*uint32_t offDebugStart =*/ *uCursor.pu32++;
+                    /*uint32_t offDebugEnd   =*/ *uCursor.pu32++;
+                    uint32_t off           = *uCursor.pu32++;
+                    uint16_t iSeg          = *uCursor.pu16++;
+                    /*uint16_t iProcType     =*/ *uCursor.pu16++;
+                    /*uint8_t fbType         =*/ *uCursor.pu8++;
+                    uint8_t  cchName       = *uCursor.pu8++;
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cchName > 0);
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cbRec >= 2 + 4+4+4+4+4+4+4+2+2+1+1 + cchName);
+
+                    rc = rtDbgModCvAddSymbol(pThis, iSeg, off, uCursor.pch, cchName, 0, 0);
+                    break;
+                }
 
                 case kCvSymType_V3_Label:
                 {
