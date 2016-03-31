@@ -822,6 +822,9 @@ static int rtDbgModCvSsProcessV4PlusSymTab(PRTDBGMODCV pThis, void const *pvSymT
  */
 static int rtDbgModCvSsProcessV8SrcStrings(PRTDBGMODCV pThis, void const *pvSrcStrings, size_t cbSrcStrings, uint32_t fFlags)
 {
+    if (pThis->cbSrcStrings)
+        Log(("\n!!More than one source file string table for this module!!\n\n"));
+
     if (cbSrcStrings >= pThis->cbSrcStringsAlloc)
     {
         void *pvNew = RTMemRealloc(pThis->pchSrcStrings, cbSrcStrings + 1);
@@ -864,6 +867,9 @@ static int rtDbgModCvSsProcessV8SrcStrings(PRTDBGMODCV pThis, void const *pvSrcS
  */
 static int rtDbgModCvSsProcessV8SrcInfo(PRTDBGMODCV pThis, void const *pvSrcInfo, size_t cbSrcInfo, uint32_t fFlags)
 {
+    if (pThis->cbSrcInfo)
+        Log(("\n!!More than one source file info table for this module!!\n\n"));
+
     if (cbSrcInfo + sizeof(RTCV8SRCINFO) > pThis->cbSrcInfoAlloc)
     {
         void *pvNew = RTMemRealloc(pThis->pbSrcInfo, cbSrcInfo + sizeof(RTCV8SRCINFO));
@@ -875,36 +881,6 @@ static int rtDbgModCvSsProcessV8SrcInfo(PRTDBGMODCV pThis, void const *pvSrcInfo
     memset(&pThis->pbSrcInfo[cbSrcInfo], 0, sizeof(RTCV8SRCINFO));
     pThis->cbSrcInfo = cbSrcInfo;
     Log2(("    saved %#x bytes of CV8 source file info\n", cbSrcInfo));
-
-    if (LogIs3Enabled())
-    {
-        size_t iFile = 0;
-        size_t off   = 0;
-        while (off + 4 <= cbSrcInfo)
-        {
-            PCRTCV8SRCINFO pSrcInfo = (PCRTCV8SRCINFO)&pThis->pbSrcInfo[off];
-            const char *pszName;
-            if (pSrcInfo->offSourceName < pThis->cbDbgInfo)
-                pszName = &pThis->pchSrcStrings[pSrcInfo->offSourceName];
-            else
-                pszName = "out-of-bounds.c!";
-            if (pSrcInfo->uDigestType == RTCV8SRCINFO_DIGEST_TYPE_MD5)
-            {
-                Log3(("  %010zx #%03zu: %RTuuid %#x=%s\n", off, iFile, &pSrcInfo->Digest.md5, pSrcInfo->offSourceName, pszName));
-                off += sizeof(*pSrcInfo);
-            }
-            else
-            {
-                if (pSrcInfo->uDigestType == RTCV8SRCINFO_DIGEST_TYPE_NONE)
-                    Log3(("  %010zx #%03zu: <none> %#x=%s\n", off, iFile, pSrcInfo->offSourceName, pszName));
-                else
-                    Log3(("  %010zx #%03zu: !%#x! %#x=%s\n", off, iFile, pSrcInfo->uDigestType, pSrcInfo->offSourceName, pszName));
-                off += 8;
-            }
-            iFile++;
-        }
-    }
-
     return VINF_SUCCESS;
 }
 
@@ -995,15 +971,86 @@ static int rtDbgModCvSsProcessV8SectLines(PRTDBGMODCV pThis, void const *pvSectL
  */
 static int rtDbgModCvSsProcessV8SymTab(PRTDBGMODCV pThis, void const *pvSymTab, size_t cbSymTab, uint32_t fFlags)
 {
-    int         rc = VINF_SUCCESS;
+    size_t const    cbSymTabSaved = cbSymTab;
+    int             rc = VINF_SUCCESS;
+
+    /*
+     * First pass looks for source information and source strings tables.
+     * Microsoft puts the 0xf3 and 0xf4 last, usually with 0xf4 first.
+     *
+     * We ASSUME one string and one info table per module!
+     */
     RTCPTRUNION uCursor;
     uCursor.pv = pvSymTab;
-
     for (;;)
     {
         RTDBGMODCV_CHECK_RET_BF(cbSymTab > sizeof(RTCV8SYMBOLSBLOCK), ("cbSymTab=%zu\n", cbSymTab));
         PCRTCV8SYMBOLSBLOCK pBlockHdr = (PCRTCV8SYMBOLSBLOCK)uCursor.pv;
-        Log3(("  %p: uType=%#04x LB %#x\n", (uint8_t *)pBlockHdr - (uint8_t *)pvSymTab, pBlockHdr->uType, pBlockHdr->cb));
+        Log3(("  %p: pass #1 uType=%#04x LB %#x\n", (uint8_t *)pBlockHdr - (uint8_t *)pvSymTab, pBlockHdr->uType, pBlockHdr->cb));
+        RTDBGMODCV_CHECK_RET_BF(pBlockHdr->cb <= cbSymTab - sizeof(RTCV8SYMBOLSBLOCK),
+                                ("cb=%#u cbSymTab=%zu\n", pBlockHdr->cb, cbSymTab));
+
+        switch (pBlockHdr->uType)
+        {
+            case RTCV8SYMBLOCK_TYPE_SRC_STR:
+                rc = rtDbgModCvSsProcessV8SrcStrings(pThis, pBlockHdr + 1, pBlockHdr->cb, fFlags);
+                break;
+
+            case RTCV8SYMBLOCK_TYPE_SRC_INFO:
+                rc = rtDbgModCvSsProcessV8SrcInfo(pThis, pBlockHdr + 1, pBlockHdr->cb, fFlags);
+                break;
+
+            case RTCV8SYMBLOCK_TYPE_SECT_LINES:
+            case RTCV8SYMBLOCK_TYPE_SYMBOLS:
+                break;
+            default:
+                Log(("rtDbgModCvSsProcessV8SymTab: Unknown block type %#x (LB %#x)\n", pBlockHdr->uType, pBlockHdr->cb));
+                break;
+        }
+        uint32_t cbAligned = RT_ALIGN_32(sizeof(*pBlockHdr) + pBlockHdr->cb, 4);
+        if (RT_SUCCESS(rc) && cbSymTab > cbAligned)
+        {
+            uCursor.pu8 += cbAligned;
+            cbSymTab    -= cbAligned;
+        }
+        else
+            break;
+    }
+
+    /*
+     * Log the source info now that we've gathered both it and the strings.
+     */
+    if (LogIs3Enabled() && pThis->cbSrcInfo)
+    {
+        Log3(("    Source file info table:\n"));
+        size_t iFile = 0;
+        size_t off   = 0;
+        while (off + 4 <= pThis->cbSrcInfo)
+        {
+            PCRTCV8SRCINFO pSrcInfo = (PCRTCV8SRCINFO)&pThis->pbSrcInfo[off];
+            const char    *pszName  = pSrcInfo->offSourceName < pThis->cbSrcStrings
+                                    ? &pThis->pchSrcStrings[pSrcInfo->offSourceName] : "out-of-bounds.c!";
+            if (pSrcInfo->uDigestType == RTCV8SRCINFO_DIGEST_TYPE_MD5)
+                Log3(("    %010zx #%03zu: %RTuuid %#x=%s\n", off, iFile, &pSrcInfo->Digest.md5, pSrcInfo->offSourceName, pszName));
+            else if (pSrcInfo->uDigestType == RTCV8SRCINFO_DIGEST_TYPE_NONE)
+                Log3(("    %010zx #%03zu: <none> %#x=%s\n", off, iFile, pSrcInfo->offSourceName, pszName));
+            else
+                Log3(("    %010zx #%03zu: !%#x! %#x=%s\n", off, iFile, pSrcInfo->uDigestType, pSrcInfo->offSourceName, pszName));
+            off += pSrcInfo->uDigestType == RTCV8SRCINFO_DIGEST_TYPE_MD5 ? sizeof(*pSrcInfo) : 8;
+            iFile++;
+        }
+    }
+
+    /*
+     * Second pass, process symbols and line numbers.
+     */
+    uCursor.pv = pvSymTab;
+    cbSymTab = cbSymTabSaved;
+    for (;;)
+    {
+        RTDBGMODCV_CHECK_RET_BF(cbSymTab > sizeof(RTCV8SYMBOLSBLOCK), ("cbSymTab=%zu\n", cbSymTab));
+        PCRTCV8SYMBOLSBLOCK pBlockHdr = (PCRTCV8SYMBOLSBLOCK)uCursor.pv;
+        Log3(("  %p: pass #2 uType=%#04x LB %#x\n", (uint8_t *)pBlockHdr - (uint8_t *)pvSymTab, pBlockHdr->uType, pBlockHdr->cb));
         RTDBGMODCV_CHECK_RET_BF(pBlockHdr->cb <= cbSymTab - sizeof(RTCV8SYMBOLSBLOCK),
                                 ("cb=%#u cbSymTab=%zu\n", pBlockHdr->cb, cbSymTab));
 
@@ -1013,16 +1060,12 @@ static int rtDbgModCvSsProcessV8SymTab(PRTDBGMODCV pThis, void const *pvSymTab, 
                 rc = rtDbgModCvSsProcessV4PlusSymTab(pThis, pBlockHdr + 1, pBlockHdr->cb, fFlags);
                 break;
 
-            case RTCV8SYMBLOCK_TYPE_SRC_STR:
-                rc = rtDbgModCvSsProcessV8SrcStrings(pThis, pBlockHdr + 1, pBlockHdr->cb, fFlags);
-                break;
-
             case RTCV8SYMBLOCK_TYPE_SECT_LINES:
                 rc = rtDbgModCvSsProcessV8SectLines(pThis, pBlockHdr + 1, pBlockHdr->cb, fFlags);
                 break;
 
             case RTCV8SYMBLOCK_TYPE_SRC_INFO:
-                rc = rtDbgModCvSsProcessV8SrcInfo(pThis, pBlockHdr + 1, pBlockHdr->cb, fFlags);
+            case RTCV8SYMBLOCK_TYPE_SRC_STR:
                 break;
             default:
                 Log(("rtDbgModCvSsProcessV8SymTab: Unknown block type %#x (LB %#x)\n", pBlockHdr->uType, pBlockHdr->cb));
