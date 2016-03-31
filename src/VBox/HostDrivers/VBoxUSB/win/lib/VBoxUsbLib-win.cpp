@@ -488,7 +488,7 @@ static int usbLibDevCfgDrGet(HANDLE hHub, ULONG iPort, ULONG iDr, PUSB_CONFIGURA
                                 &cbReturned, NULL))
     {
         DWORD winEr = GetLastError();
-        LogRel((__FUNCTION__": DeviceIoControl 1 fail winEr (%d)\n", winEr));
+        LogRelFunc(("DeviceIoControl 1 fail winEr (%d)\n", winEr));
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         AssertFailed();
 #endif
@@ -525,7 +525,7 @@ static int usbLibDevCfgDrGet(HANDLE hHub, ULONG iPort, ULONG iDr, PUSB_CONFIGURA
                                     &cbReturned, NULL))
         {
             DWORD winEr = GetLastError();
-            LogRel((__FUNCTION__": DeviceIoControl 2 fail winEr (%d)\n", winEr));
+            LogRelFunc(("DeviceIoControl 2 fail winEr (%d)\n", winEr));
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
             AssertFailed();
 #endif
@@ -1361,7 +1361,7 @@ USBLIB_DECL(int) USBLibInit(void)
                     if (g_VBoxUsbGlobal.hMonitor == INVALID_HANDLE_VALUE)
                     {
                         DWORD winEr = GetLastError();
-                        LogRel((__FUNCTION__": CreateFile failed winEr(%d)\n", winEr));
+                        LogRelFunc(("CreateFile failed winEr(%d)\n", winEr));
                         rc = VERR_FILE_NOT_FOUND;
                     }
                 }
@@ -1482,7 +1482,7 @@ USBLIB_DECL(int) USBLibInit(void)
                     }
                     else
                     {
-                        LogRel((__FUNCTION__": USB Monitor driver version mismatch! driver=%u.%u library=%u.%u\n",
+                        LogRelFunc(("USB Monitor driver version mismatch! driver=%u.%u library=%u.%u\n",
                                 Version.u32Major, Version.u32Minor, USBMON_MAJOR_VERSION, USBMON_MINOR_VERSION));
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
                         AssertFailed();
@@ -1502,7 +1502,7 @@ USBLIB_DECL(int) USBLibInit(void)
             }
             else
             {
-                LogRel((__FUNCTION__": USB Service not found\n"));
+                LogRelFunc(("USB Service not found\n"));
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
                 AssertFailed();
 #endif
