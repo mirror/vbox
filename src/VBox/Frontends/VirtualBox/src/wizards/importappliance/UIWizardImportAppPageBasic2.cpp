@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,7 @@
 # include <QVBoxLayout>
 # include <QTextBrowser>
 # include <QPushButton>
+# include <QPointer>
 
 /* Local includes: */
 # include "UIWizardImportAppPageBasic2.h"
@@ -37,9 +38,98 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class UIApplianceCertificateViewer implementation.                                                                           *
+*********************************************************************************************************************************/
+
+UIApplianceCertificateViewer::UIApplianceCertificateViewer(QWidget *pParent, const CCertificate &certificate)
+    : QIWithRetranslateUI<QIDialog>(pParent)
+    , m_certificate(certificate)
+    , m_pTextLabel(0)
+    , m_pTextBrowser(0)
+{
+    /* Prepare: */
+    prepare();
+}
+
+void UIApplianceCertificateViewer::prepare()
+{
+    /* Create layout: */
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    AssertPtrReturnVoid(pLayout);
+    {
+        /* Create text-label: */
+        m_pTextLabel = new QLabel;
+        AssertPtrReturnVoid(m_pTextLabel);
+        {
+            /* Configure text-label: */
+            m_pTextLabel->setWordWrap(true);
+            /* Add text-label into layout: */
+            pLayout->addWidget(m_pTextLabel);
+        }
+        /* Create text-browser: */
+        m_pTextBrowser = new QTextBrowser;
+        AssertPtrReturnVoid(m_pTextBrowser);
+        {
+            /* Configure text-browser: */
+            m_pTextBrowser->setMinimumSize(500, 300);
+            /* Add text-browser into layout: */
+            pLayout->addWidget(m_pTextBrowser);
+        }
+        /* Create button-box: */
+        QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
+        AssertPtrReturnVoid(pButtonBox);
+        {
+            /* Configure button-box: */
+            pButtonBox->setStandardButtons(QDialogButtonBox::Ok);
+            pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(Qt::Key_Enter);
+            connect(pButtonBox, SIGNAL(accepted()), this, SLOT(close()));
+            /* Add button-box into layout: */
+            pLayout->addWidget(pButtonBox);
+        }
+    }
+    /* Translate UI: */
+    retranslateUi();
+}
+
+void UIApplianceCertificateViewer::retranslateUi()
+{
+    /* Translate dialog title: */
+    setWindowTitle(tr("Certificate Information"));
+    /* Translate text-label caption: */
+    m_pTextLabel->setText(tr("<b>The X509 certificate exists but hasn't been verified or trusted. "
+                             "You can proceed with the importing but should understand the risks. "
+                             "If you are not sure - just stop here and interrupt the importing process.</b>"));
+    /* Translate text-browser contents: */
+    QStringList info;
+    info << tr("Certificate Version Number: %1").arg(m_certificate.GetVersionNumber());
+    info << tr("Certificate Serial Number: 0x%1").arg(m_certificate.GetSerialNumber());
+    info << tr("Certificate Authority (CA): %1").arg(m_certificate.GetCertificateAuthority() ? tr("True") : tr("False"));
+    info << tr("Certificate Self-Signed: %1").arg(m_certificate.GetSelfSigned() ? tr("True") : tr("False"));
+    info << tr("Certificate Trusted: %1").arg(m_certificate.GetTrusted() ? tr("True") : tr("False"));
+    info << tr("Certificate Issuer: %1").arg(QStringList(m_certificate.GetIssuerName().toList()).join(", "));
+    info << tr("Certificate Subject: %1").arg(QStringList(m_certificate.GetSubjectName().toList()).join(", "));
+    info << tr("Certificate Public Algorithm: %1").arg(m_certificate.GetPublicKeyAlgorithm());
+    info << tr("Certificate Signature Algorithm: %1").arg(m_certificate.GetSignatureAlgorithmName());
+    info << tr("Certificate Signature Algorithm OID: %1").arg(m_certificate.GetSignatureAlgorithmOID());
+    info << tr("Certificate Validity Period Not Before: %1").arg(m_certificate.GetValidityPeriodNotBefore());
+    info << tr("Certificate Validity Period Not After: %1").arg(m_certificate.GetValidityPeriodNotAfter());
+    m_pTextBrowser->setText(info.join("<br><br>"));
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIWizardImportAppPage2 implementation.                                                                                 *
+*********************************************************************************************************************************/
+
 UIWizardImportAppPage2::UIWizardImportAppPage2()
 {
 }
+
+
+/*********************************************************************************************************************************
+*   Class UIWizardImportAppPageBasic2 implementation.                                                                            *
+*********************************************************************************************************************************/
 
 UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileName)
 {
@@ -78,114 +168,27 @@ void UIWizardImportAppPageBasic2::initializePage()
 {
     /* Translate page: */
     retranslateUi();
-    /* Create dialog: */
-    QDialog *pDialog = new QDialog(this, Qt::Dialog);
-    AssertPtrReturnVoid(pDialog);
 
-    CAppliance* l_appl = m_pApplianceWidget->appliance();
-    CCertificate aCertificateInfo = l_appl->GetCertificate();
-    /* check emptyness of certificate. object exists but hasn't fullfilled */
-    BOOL fExisting = false;
-    BOOL fVerified = false;
-    fExisting = aCertificateInfo.CheckExistence();
-    fVerified = aCertificateInfo.IsVerified();
-    if (fExisting && !fVerified)
+    /* Acquire appliance and certificate: */
+    CAppliance *pAppliance = m_pApplianceWidget->appliance();
+    CCertificate certificate = pAppliance->GetCertificate();
+    /* Check whether certificate exists and verified: */
+    if (certificate.CheckExistence() && !certificate.IsVerified())
     {
-        /* Create layout: */
-        QVBoxLayout *pLayout = new QVBoxLayout(pDialog);
-        AssertPtrReturnVoid(pLayout);
+        /* Create certificate viewer to notify user about it is not verified: */
+        QPointer<UIApplianceCertificateViewer> pDialog =
+            new UIApplianceCertificateViewer(this, certificate);
+        AssertPtrReturnVoid(pDialog.data());
         {
-            /* Prepare dialog: */
-            pDialog->resize(500, 500);
-            /* Create text-field: */
-            QTextBrowser *pTextBrowser = new QTextBrowser;
-            AssertPtrReturnVoid(pTextBrowser);
-
-            QString fullCertInfo("");
-
-            {
-                /* Configure text-field: */
-                // TODO: Load text to text-browser here:
-                QString data = aCertificateInfo.GetVersionNumber();
-                fullCertInfo.append("Certificate version number: ").append(data).append("\n\n");
-
-                data = aCertificateInfo.GetSerialNumber();
-                fullCertInfo.append("Certificate serial number: 0x").append(data).append("\n\n");
-
-                bool flag = aCertificateInfo.GetCertificateAuthority();
-                data = (flag == true) ? "True":"False";
-                fullCertInfo.append("Certificate Authority (CA): ").append(data).append("\n\n");
-
-                flag = aCertificateInfo.GetSelfSigned();
-                data = (flag == true) ? "True":"False";
-                fullCertInfo.append("Certificate Self-Signed : ").append(data).append("\n\n");
-
-                flag = aCertificateInfo.GetTrusted();
-                data = (flag == true) ? "True":"False";
-                fullCertInfo.append("Certificate Trusted: ").append(data).append("\n\n");
-
-                QVector<QString> name = aCertificateInfo.GetIssuerName();
-                fullCertInfo.append("Certificate Issuer: ").append("\n");
-                if (!name.isEmpty())
-                {
-                    for (int i = 0; i < name.size()-1; ++i)
-                    {
-                        fullCertInfo.append(name.at(i)).append(", ");
-                    }
-
-                    QString field = name.at(name.size()-1);
-                    fullCertInfo.append(field).append("\n\n");
-                }
-                name.clear();
-                name = aCertificateInfo.GetSubjectName();
-                fullCertInfo.append("Certificate Subject: ").append("\n");
-                if (!name.isEmpty())
-                {
-                    for (int i = 0; i < name.size()-1; ++i)
-                    {
-                        fullCertInfo.append(name.at(i)).append(", ");
-                    }
-
-                    QString field = name.at(name.size()-1);
-                    fullCertInfo.append(field).append("\n\n");
-                }
-
-                data = aCertificateInfo.GetPublicKeyAlgorithm();
-                fullCertInfo.append("Certificate Public Algorithm: ").append(data).append("\n\n");
-
-                data = aCertificateInfo.GetSignatureAlgorithmName();
-                fullCertInfo.append("Certificate Signature Algorithm: ").append(data).append("\n\n");
-
-                data = aCertificateInfo.GetSignatureAlgorithmOID();
-                fullCertInfo.append("Certificate Signature Algorithm OID: ").append(data).append("\n\n");
-
-                data = aCertificateInfo.GetValidityPeriodNotBefore();
-                fullCertInfo.append("Certificate Validity Period Not Before: ").append(data).append("\n\n");
-
-                data = aCertificateInfo.GetValidityPeriodNotAfter();
-                fullCertInfo.append("Certificate Validity Period Not After: ").append(data).append("\n\n");
-
-                pTextBrowser->setText(fullCertInfo);
-                /* Add text-browser into layout: */
-                pLayout->addWidget(pTextBrowser);
-            }
-            /* Create button-box: */
-            QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
-            AssertPtrReturnVoid(pButtonBox);
-            {
-                /* Configure button-box: */
-                pButtonBox->setStandardButtons(QDialogButtonBox::Ok);
-                pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(Qt::Key_Enter);
-                connect(pButtonBox, SIGNAL(accepted()), pDialog, SLOT(close()));
-                /* Add button-box into layout: */
-                pLayout->addWidget(pButtonBox);
-            }
+            /* Show viewer in modal mode: */
+            pDialog->exec();
+            /* Leave if destroyed prematurely: */
+            if (!pDialog)
+                return;
+            /* Delete viewer finally: */
+            delete pDialog;
+            pDialog = 0;
         }
-        /* Show dialog in modal mode: */
-        pDialog->exec();
-        /* Delete dialog finally: */
-        delete pDialog;
-        pDialog = 0;
     }
 }
 

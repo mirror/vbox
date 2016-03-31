@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,13 +18,50 @@
 #ifndef __UIWizardImportAppPageBasic2_h__
 #define __UIWizardImportAppPageBasic2_h__
 
-/* Local includes: */
+/* GUI includes: */
+#include "QIDialog.h"
+#include "QIWithRetranslateUI.h"
 #include "UIWizardPage.h"
 #include "UIWizardImportAppDefs.h"
 
 /* Forward declarations: */
+class QLabel;
+class QTextBrowser;
 class QDialogButtonBox;
 class QIRichTextLabel;
+class CCertificate;
+
+
+/** QIDialog extension providing user with the information
+  * about the appliance certificate which validation failed. */
+class UIApplianceCertificateViewer : public QIWithRetranslateUI<QIDialog>
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs appliance @a certificate viewer for passed @a pParent. */
+    UIApplianceCertificateViewer(QWidget *pParent, const CCertificate &certificate);
+
+protected:
+
+    /** Prepares all. */
+    void prepare();
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+private:
+
+    /** Holds the certificate reference. */
+    const CCertificate &m_certificate;
+
+    /** Holds the text-label instance. */
+    QLabel *m_pTextLabel;
+    /** Holds the text-browser instance. */
+    QTextBrowser *m_pTextBrowser;
+};
+
 
 /* 2nd page of the Import Appliance wizard (base part): */
 class UIWizardImportAppPage2 : public UIWizardPageBase
