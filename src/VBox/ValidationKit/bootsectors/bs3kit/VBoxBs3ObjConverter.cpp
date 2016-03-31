@@ -42,6 +42,7 @@
 #include <iprt/formats/elf-amd64.h>
 #include <iprt/formats/pecoff.h>
 #include <iprt/formats/omf.h>
+#include <iprt/formats/codeview.h>
 
 
 /*********************************************************************************************************************************
@@ -257,15 +258,24 @@ typedef struct OMFWRITER
     /** The destination output file. */
     FILE           *pDst;
 
-    /** Number of source segments/sections. */
-    uint32_t        cSegments;
     /** Pointer to the table mapping from source segments/section to segdefs. */
     POMFTOSEGDEF    paSegments;
+    /** Number of source segments/sections. */
+    uint32_t        cSegments;
 
     /** Number of entries in the source symbol table. */
     uint32_t        cSymbols;
     /** Pointer to the table mapping from source symbols to OMF stuff. */
     POMFSYMBOL      paSymbols;
+
+    /** LEDATA segment offset. */
+    uint32_t        offSeg;
+    /** Start of the current LEDATA record.   */
+    uint32_t        offSegRec;
+    /** The LEDATA end segment offset. */
+    uint32_t        offSegEnd;
+    /** The current LEDATA segment. */
+    uint16_t        idx;
 
     /** The index of the next list of names entry. */
     uint16_t        idxNextName;
@@ -276,8 +286,6 @@ typedef struct OMFWRITER
     uint8_t         bType;
     /** The record data buffer (too large, but whatever).  */
     uint8_t         abData[_1K + 64];
-    /** Alignment padding. */
-    uint8_t         abAlign[2];
 
     /** Current FIXUPP entry. */
     uint8_t         iFixupp;
@@ -396,13 +404,15 @@ static bool omfWriter_RecAddIdx(POMFWRITER pThis, uint16_t idx)
 
 static bool omfWriter_RecAddBytes(POMFWRITER pThis, const void *pvData, size_t cbData)
 {
-    if (cbData + pThis->cbRec <= OMF_MAX_RECORD_PAYLOAD)
+    const uint16_t cbNasmHack = OMF_MAX_RECORD_PAYLOAD + 1;
+    if (cbData + pThis->cbRec <= cbNasmHack)
     {
         memcpy(&pThis->abData[pThis->cbRec], pvData, cbData);
         pThis->cbRec += (uint16_t)cbData;
         return true;
     }
-    return error(pThis->pszSrc, "Exceeded max OMF record length (bType=%#x, cbData=%#x)!\n", pThis->bType, (unsigned)cbData);
+    return error(pThis->pszSrc, "Exceeded max OMF record length (bType=%#x, cbData=%#x, cbRec=%#x, max=%#x)!\n",
+                 pThis->bType, (unsigned)cbData, pThis->cbRec, OMF_MAX_RECORD_PAYLOAD);
 }
 
 static bool omfWriter_RecAddStringN(POMFWRITER pThis, const char *pchString, size_t cchString)
@@ -475,11 +485,12 @@ static bool omfWriter_LNamesAdd(POMFWRITER pThis, const char *pszName, uint16_t 
     return omfWriter_LNamesAddN(pThis, pszName, strlen(pszName), pidxName);
 }
 
-static bool omfWriter_LNamesBegin(POMFWRITER pThis)
+static bool omfWriter_LNamesBegin(POMFWRITER pThis, bool fAddZeroEntry)
 {
     /* First entry is an empty string. */
     return omfWriter_RecBegin(pThis, OMF_LNAMES)
         && (   pThis->idxNextName > 1
+            || !fAddZeroEntry
             || omfWriter_LNamesAddN(pThis, "", 0, NULL));
 }
 
@@ -575,7 +586,7 @@ static bool omfWriter_ExtDefBegin(POMFWRITER pThis)
 /**
  * EXTDEF - Add an entry, split record if necessary.
  */
-static bool omfWriter_ExtDefAddN(POMFWRITER pThis, const char *pchString, size_t cchString)
+static bool omfWriter_ExtDefAddN(POMFWRITER pThis, const char *pchString, size_t cchString, uint16_t idxType)
 {
     /* Split? */
     if (pThis->cbRec + 1 + cchString + 1 + 1 > OMF_MAX_RECORD_PAYLOAD)
@@ -589,7 +600,7 @@ static bool omfWriter_ExtDefAddN(POMFWRITER pThis, const char *pchString, size_t
     }
 
     return omfWriter_RecAddStringN(pThis, pchString, cchString)
-        && omfWriter_RecAddIdx(pThis, 0); /* type */
+        && omfWriter_RecAddIdx(pThis, idxType); /* type */
 }
 
 /**
@@ -597,7 +608,7 @@ static bool omfWriter_ExtDefAddN(POMFWRITER pThis, const char *pchString, size_t
  */
 static bool omfWriter_ExtDefAdd(POMFWRITER pThis, const char *pszString)
 {
-    return omfWriter_ExtDefAddN(pThis, pszString, strlen(pszString));
+    return omfWriter_ExtDefAddN(pThis, pszString, strlen(pszString), 0);
 }
 
 /**
@@ -620,11 +631,36 @@ static bool omfWriter_LinkPassSeparator(POMFWRITER pThis)
         && omfWriter_RecEndWithCrc(pThis);
 }
 
+
 /**
  * LEDATA + FIXUPP - Begin records.
  */
-static bool omfWriter_LEDataBegin(POMFWRITER pThis, uint16_t idxSeg, uint32_t offSeg,
-                                  uint32_t cbData, uint32_t cbRawData, void const *pbRawData, uint8_t **ppbData)
+static bool omfWriter_LEDataBegin(POMFWRITER pThis, uint16_t idxSeg, uint32_t offSeg)
+{
+    if (   omfWriter_RecBegin(pThis, OMF_LEDATA32)
+        && omfWriter_RecAddIdx(pThis, idxSeg)
+        && omfWriter_RecAddU32(pThis, offSeg))
+    {
+        pThis->idx       = idxSeg;
+        pThis->offSeg    = offSeg;
+        pThis->offSegRec = offSeg;
+        pThis->offSegEnd = offSeg + OMF_MAX_RECORD_PAYLOAD - 1 /*CRC*/ - pThis->cbRec;
+        pThis->offSegEnd &= ~(uint32_t)7; /* qword align. */
+
+        /* Reset the associated FIXUPP records. */
+        pThis->iFixupp = 0;
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->aFixupps); i++)
+            pThis->aFixupps[i].cbRec = 0;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * LEDATA + FIXUPP - Begin records.
+ */
+static bool omfWriter_LEDataBeginEx(POMFWRITER pThis, uint16_t idxSeg, uint32_t offSeg,
+                                    uint32_t cbData, uint32_t cbRawData, void const *pbRawData, uint8_t **ppbData)
 {
     if (   omfWriter_RecBegin(pThis, OMF_LEDATA32)
         && omfWriter_RecAddIdx(pThis, idxSeg)
@@ -642,7 +678,11 @@ static bool omfWriter_LEDataBegin(POMFWRITER pThis, uint16_t idxSeg, uint32_t of
             if (cbData > cbRawData)
                 memset(&pbDst[cbRawData], 0, cbData - cbRawData);
 
-            pThis->cbRec += cbData;
+            pThis->cbRec    += cbData;
+            pThis->idx       = idxSeg;
+            pThis->offSegRec = offSeg;
+            pThis->offSeg    = offSeg + cbData;
+            pThis->offSegEnd = offSeg + cbData;
 
             /* Reset the associated FIXUPP records. */
             pThis->iFixupp = 0;
@@ -735,6 +775,17 @@ static bool omfWriter_LEDataAddFixup(POMFWRITER pThis, uint16_t offDataRec, bool
 }
 
 /**
+ * LEDATA + FIXUPP - Add simple fixup, split if necessary.
+ */
+static bool omfWriter_LEDataAddFixupNoDisp(POMFWRITER pThis, uint16_t offDataRec, uint8_t bLocation,
+                                           uint8_t bFrame, uint16_t idxFrame, uint8_t bTarget, uint16_t idxTarget)
+{
+    return omfWriter_LEDataAddFixup(pThis, offDataRec, false /*fSelfRel*/, bLocation, bFrame, idxFrame, bTarget, idxTarget,
+                                    false /*fTargetDisp*/, 0 /*offTargetDisp*/);
+}
+
+
+/**
  * LEDATA + FIXUPP - End of records.
  */
 static bool omfWriter_LEDataEnd(POMFWRITER pThis)
@@ -754,6 +805,106 @@ static bool omfWriter_LEDataEnd(POMFWRITER pThis)
                 return false;
         }
         pThis->iFixupp = 0;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * LEDATA + FIXUPP - Splits the LEDATA record.
+ */
+static bool omfWriter_LEDataSplit(POMFWRITER pThis)
+{
+    return omfWriter_LEDataEnd(pThis)
+        && omfWriter_LEDataBegin(pThis, pThis->idx, pThis->offSeg);
+}
+
+/**
+ * LEDATA + FIXUPP - Returns available space in current LEDATA record.
+ */
+static uint32_t omfWriter_LEDataAvailable(POMFWRITER pThis)
+{
+    if (pThis->offSeg < pThis->offSegEnd)
+        return pThis->offSegEnd - pThis->offSeg;
+    return 0;
+}
+
+/**
+ * LEDATA + FIXUPP - Splits LEDATA record if less than @a cb bytes available.
+ */
+static bool omfWriter_LEDataEnsureSpace(POMFWRITER pThis, uint32_t cb)
+{
+    if (   omfWriter_LEDataAvailable(pThis) >= cb
+        || omfWriter_LEDataSplit(pThis))
+        return true;
+    return false;
+}
+
+/**
+ * LEDATA + FIXUPP - Adds data to the LEDATA record, splitting it if needed.
+ */
+static bool omfWriter_LEDataAddBytes(POMFWRITER pThis, void const *pvData, size_t cbData)
+{
+    while (cbData > 0)
+    {
+        uint32_t cbAvail = omfWriter_LEDataAvailable(pThis);
+        if (cbAvail >= cbData)
+        {
+            if (omfWriter_RecAddBytes(pThis, pvData, cbData))
+            {
+                pThis->offSeg += (uint32_t)cbData;
+                break;
+            }
+            return false;
+        }
+        if (!omfWriter_RecAddBytes(pThis, pvData, cbAvail))
+            return false;
+        pThis->offSeg += cbAvail;
+        pvData         = (uint8_t const *)pvData + cbAvail;
+        cbData        -= cbAvail;
+        if (!omfWriter_LEDataSplit(pThis))
+            return false;
+    }
+    return true;
+}
+
+/**
+ * LEDATA + FIXUPP - Adds a U32 to the LEDATA record, splitting if needed.
+ */
+static bool omfWriter_LEDataAddU32(POMFWRITER pThis, uint32_t u32)
+{
+    if (   omfWriter_LEDataEnsureSpace(pThis, 4)
+        && omfWriter_RecAddU32(pThis, u32))
+    {
+        pThis->offSeg += 4;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * LEDATA + FIXUPP - Adds a U16 to the LEDATA record, splitting if needed.
+ */
+static bool omfWriter_LEDataAddU16(POMFWRITER pThis, uint16_t u16)
+{
+    if (   omfWriter_LEDataEnsureSpace(pThis, 2)
+        && omfWriter_RecAddU16(pThis, u16))
+    {
+        pThis->offSeg += 2;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * LEDATA + FIXUPP - Adds a byte to the LEDATA record, splitting if needed.
+ */
+static bool omfWriter_LEDataAddU8(POMFWRITER pThis, uint8_t b)
+{
+    if (   omfWriter_LEDataEnsureSpace(pThis, 1)
+        && omfWriter_RecAddU8(pThis, b))
+    {
+        pThis->offSeg += 1;
         return true;
     }
     return false;
@@ -1046,7 +1197,7 @@ static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS
      */
     uint16_t idxGrpFlat, idxGrpData;
     uint16_t idxClassCode, idxClassData, idxClassDwarf;
-    if (   !omfWriter_LNamesBegin(pThis)
+    if (   !omfWriter_LNamesBegin(pThis, true /*fAddZeroEntry*/)
         || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("FLAT"), &idxGrpFlat)
         || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3DATA64_GROUP"), &idxGrpData)
         || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3CLASS64CODE"), &idxClassCode)
@@ -1493,7 +1644,7 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
              * pointer to the start of it so we can make adjustments if necessary.
              */
             uint8_t *pbCopy;
-            if (!omfWriter_LEDataBegin(pThis, pThis->paSegments[i].iSegDef, off, cbChunk, cbData, pbData, &pbCopy))
+            if (!omfWriter_LEDataBeginEx(pThis, pThis->paSegments[i].iSegDef, off, cbChunk, cbData, pbData, &pbCopy))
                 return false;
 
             /*
@@ -1789,7 +1940,7 @@ static bool convertCoffSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCIMAGE_SEC
      */
     uint16_t idxGrpFlat, idxGrpData;
     uint16_t idxClassCode, idxClassData, idxClassDebugSymbols, idxClassDebugTypes;
-    if (   !omfWriter_LNamesBegin(pThis)
+    if (   !omfWriter_LNamesBegin(pThis, true /*fAddZeroEntry*/)
         || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("FLAT"), &idxGrpFlat)
         || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3DATA64_GROUP"), &idxGrpData)
         || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3CLASS64CODE"), &idxClassCode)
@@ -2322,7 +2473,7 @@ static bool convertCoffSectionsToLeDataAndFixupps(POMFWRITER pThis, uint8_t cons
              * pointer to the start of it so we can make adjustments if necessary.
              */
             uint8_t *pbCopy;
-            if (!omfWriter_LEDataBegin(pThis, pThis->paSegments[i].iSegDef, off, cbChunk, cbData, pbData, &pbCopy))
+            if (!omfWriter_LEDataBeginEx(pThis, pThis->paSegments[i].iSegDef, off, cbChunk, cbData, pbData, &pbCopy))
                 return false;
 
             /*
@@ -2781,7 +2932,7 @@ static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS
      */
     uint16_t idxGrpFlat, idxGrpData;
     uint16_t idxClassCode, idxClassData, idxClassDwarf;
-    if (   !omfWriter_LNamesBegin(pThis)
+    if (   !omfWriter_LNamesBegin(pThis, true /*fAddZeroEntry*/)
         || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("FLAT"), &idxGrpFlat)
         || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3DATA64_GROUP"), &idxGrpData)
         || !omfWriter_LNamesAddN(pThis, RT_STR_TUPLE("BS3CLASS64CODE"), &idxClassCode)
@@ -3208,7 +3359,7 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
              * pointer to the start of it so we can make adjustments if necessary.
              */
             uint8_t *pbCopy;
-            if (!omfWriter_LEDataBegin(pThis, pThis->paSegments[i].iSegDef, off, cbChunk, cbData, pbData, &pbCopy))
+            if (!omfWriter_LEDataBeginEx(pThis, pThis->paSegments[i].iSegDef, off, cbChunk, cbData, pbData, &pbCopy))
                 return false;
 
             /*
@@ -3439,21 +3590,276 @@ static const char * const g_apszExtDefRenames[] =
 };
 
 /**
- * Renames references to intrinsic helper functions so they won't clash between
- * 32-bit and 16-bit code.
- *
- * @returns true / false.
- * @param   pszFile     File name for complaining.
- * @param   pbFile      Pointer to the file content.
- * @param   cbFile      Size of the file content.
+ * Records line number information for a file in a segment (for CV8 debug info).
  */
-static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, const char **papchLNames, uint32_t cLNamesMax)
+typedef struct OMFFILELINES
+{
+    /** The source info offset. */
+    uint32_t        offSrcInfo;
+    /** Number of line/offset pairs. */
+    uint32_t        cPairs;
+    /** Number of pairs allocated. */
+    uint32_t        cPairsAlloc;
+    /** Table with line number and offset pairs, ordered by offset. */
+    PRTCV8LINEPAIR  paPairs;
+} OMFFILEINES;
+typedef OMFFILEINES *POMFFILEINES;
+
+/**
+ * Records line number information for a segment (for CV8 debug info).
+ */
+typedef struct OMFSEGLINES
+{
+    /** Number of files.   */
+    uint32_t        cFiles;
+    /** Number of bytes we need. */
+    uint32_t        cb;
+    /** The segment index. */
+    uint16_t        idxSeg;
+    /** File table. */
+    POMFFILEINES    paFiles;
+} OMFSEGLINES;
+typedef OMFSEGLINES *POMFSEGLINES;
+
+/**
+ * OMF conversion details.
+ *
+ * Keeps information relevant to the conversion and CV8 debug info.
+ */
+typedef struct OMFDETAILS
+{
+    /** Set if it has line numbers. */
+    bool            fLineNumbers;
+    /** Set if we think this may be a 32-bit OMF file. */
+    bool            fProbably32bit;
+    /** Set if this module may need mangling. */
+    bool            fMayNeedMangling;
+    /** Number of SEGDEFs records. */
+    uint32_t        cSegDefs;
+    /** The LNAME index of '$$SYMBOLS' or UINT16_MAX it not found. */
+    uint16_t        iSymbolsNm;
+    /** The LNAME index of 'DEBSYM' or UINT16_MAX it not found. */
+    uint16_t        iDebSymNm;
+    /** The '$$SYMBOLS' segment index. */
+    uint16_t        iSymbolsSeg;
+
+    /** CV8: Filename string table size. */
+    uint32_t        cbStrTab;
+    /** CV8: Filename string table allocation size (always multiple of dword,
+     *  zero initialized). */
+    uint32_t        cbStrTabAlloc;
+    /** CV8: Filename String table. */
+    char           *pchStrTab;
+    /** CV8: Elements in the source info table. */
+    uint16_t        cSrcInfo;
+    /** CV8: Source info table. */
+    PRTCV8SRCINFO   paSrcInfo;
+
+    /** Number of entries in the paSegLines table. */
+    uint32_t        cSegLines;
+    /** Segment line numbers, indexed by segment number. */
+    POMFSEGLINES    paSegLines;
+} OMFDETAILS;
+typedef OMFDETAILS *POMFDETAILS;
+typedef OMFDETAILS const *PCOMFDETAILS;
+
+
+/**
+ * Adds a line number to the CV8 debug info.
+ *
+ * @returns success indicator.
+ * @param   pOmfStuff   Where to collect CV8 debug info.
+ * @param   cchSrcFile  The length of the source file name.
+ * @param   pchSrcFile  The source file name, not terminated.
+ * @param   poffFile    Where to return the source file information table
+ *                      offset (for use in the line number tables).
+ */
+static bool collectOmfAddFile(POMFDETAILS pOmfStuff, uint8_t cchSrcFile, const char *pchSrcFile, uint32_t *poffFile)
+{
+    /*
+     * Do lookup first.
+     */
+    uint32_t i = pOmfStuff->cSrcInfo;
+    while (i-- > 0)
+    {
+        const char *pszCur = &pOmfStuff->pchStrTab[pOmfStuff->paSrcInfo[i].offSourceName];
+        if (   strncmp(pszCur, pchSrcFile, cchSrcFile) == 0
+            && pszCur[cchSrcFile] == '\0')
+        {
+            *poffFile = i * sizeof(pOmfStuff->paSrcInfo[0]);
+            return true;
+        }
+    }
+
+    /*
+     * Add it to the string table (dword aligned and zero padded).
+     */
+    uint32_t offSrcTab = pOmfStuff->cbStrTab;
+    if (offSrcTab + cchSrcFile + 1 > pOmfStuff->cbStrTabAlloc)
+    {
+        uint32_t cbNew = (offSrcTab == 0) + offSrcTab + cchSrcFile + 1;
+        cbNew = RT_ALIGN(cbNew, 256);
+        void *pvNew = realloc(pOmfStuff->pchStrTab, cbNew);
+        if (!pvNew)
+            return error("???", "out of memory");
+        pOmfStuff->pchStrTab     = (char *)pvNew;
+        pOmfStuff->cbStrTabAlloc = cbNew;
+        memset(&pOmfStuff->pchStrTab[offSrcTab], 0, cbNew - offSrcTab);
+
+        if (!offSrcTab)
+            offSrcTab++;
+    }
+
+    memcpy(&pOmfStuff->pchStrTab[offSrcTab], pchSrcFile, cchSrcFile);
+    pOmfStuff->pchStrTab[offSrcTab + cchSrcFile] = '\0';
+    pOmfStuff->cbStrTab = offSrcTab + cchSrcFile + 1;
+
+    /*
+     * Add it to the filename info table.
+     */
+    if ((pOmfStuff->cSrcInfo % 8) == 0)
+    {
+        void *pvNew = realloc(pOmfStuff->paSrcInfo, sizeof(pOmfStuff->paSrcInfo[0]) * (pOmfStuff->cSrcInfo + 8));
+        if (!pvNew)
+            return error("???", "out of memory");
+        pOmfStuff->paSrcInfo = (PRTCV8SRCINFO)pvNew;
+    }
+
+    PRTCV8SRCINFO  pSrcInfo = &pOmfStuff->paSrcInfo[pOmfStuff->cSrcInfo++];
+    pSrcInfo->offSourceName = offSrcTab;
+    pSrcInfo->uDigestType   = RTCV8SRCINFO_DIGEST_TYPE_MD5;
+    memset(&pSrcInfo->Digest, 0, sizeof(pSrcInfo->Digest));
+
+    *poffFile = (uint32_t)((uintptr_t)pSrcInfo - (uintptr_t)pOmfStuff->paSrcInfo);
+    return true;
+}
+
+
+/**
+ * Adds a line number to the CV8 debug info.
+ *
+ * @returns success indicator.
+ * @param   pOmfStuff   Where to collect CV8 debug info.
+ * @param   idxSeg      The segment index.
+ * @param   off         The segment offset.
+ * @param   uLine       The line number.
+ * @param   offSrcInfo  The source file info table offset.
+ */
+static bool collectOmfAddLine(POMFDETAILS pOmfStuff, uint16_t idxSeg, uint32_t off, uint16_t uLine, uint32_t offSrcInfo)
+{
+    /*
+     * Get/add the segment line structure.
+     */
+    if (idxSeg >= pOmfStuff->cSegLines)
+    {
+        void *pvNew = realloc(pOmfStuff->paSegLines, (idxSeg + 1) * sizeof(pOmfStuff->paSegLines[0]));
+        if (!pvNew)
+            return error("???", "out of memory");
+        pOmfStuff->paSegLines = (POMFSEGLINES)pvNew;
+
+        memset(&pOmfStuff->paSegLines[pOmfStuff->cSegLines], 0,
+               (idxSeg + 1 - pOmfStuff->cSegLines) * sizeof(pOmfStuff->paSegLines[0]));
+        for (uint32_t i = pOmfStuff->cSegLines; i <= idxSeg; i++)
+        {
+            pOmfStuff->paSegLines[i].idxSeg = i;
+            pOmfStuff->paSegLines[i].cb = sizeof(RTCV8LINESHDR);
+        }
+        pOmfStuff->cSegLines = idxSeg + 1;
+    }
+    POMFSEGLINES pSegLines = &pOmfStuff->paSegLines[idxSeg];
+
+    /*
+     * Get/add the file structure with the segment.
+     */
+    POMFFILEINES pFileLines = NULL;
+    uint32_t i = pSegLines->cFiles;
+    while (i-- > 0)
+        if (pSegLines->paFiles[i].offSrcInfo == offSrcInfo)
+        {
+            pFileLines = &pSegLines->paFiles[i];
+            break;
+        }
+    if (!pFileLines)
+    {
+        i = pSegLines->cFiles;
+        if ((i % 4) == 0)
+        {
+            void *pvNew = realloc(pSegLines->paFiles, (i + 4) * sizeof(pSegLines->paFiles[0]));
+            if (!pvNew)
+                return error("???", "out of memory");
+            pSegLines->paFiles = (POMFFILEINES)pvNew;
+        }
+
+        pSegLines->cFiles = i + 1;
+        pSegLines->cb    += sizeof(RTCV8LINESSRCMAP);
+
+        pFileLines = &pSegLines->paFiles[i];
+        pFileLines->offSrcInfo  = offSrcInfo;
+        pFileLines->cPairs      = 0;
+        pFileLines->cPairsAlloc = 0;
+        pFileLines->paPairs     = NULL;
+    }
+
+    /*
+     * Add the line number (sorted, duplicates removed).
+     */
+    if (pFileLines->cPairs + 1 > pFileLines->cPairsAlloc)
+    {
+        void *pvNew = realloc(pFileLines->paPairs, (pFileLines->cPairsAlloc + 16) * sizeof(pFileLines->paPairs[0]));
+        if (!pvNew)
+            return error("???", "out of memory");
+        pFileLines->paPairs      = (PRTCV8LINEPAIR)pvNew;
+        pFileLines->cPairsAlloc += 16;
+    }
+
+    i = pFileLines->cPairs;
+    while (i > 0 && (   off < pFileLines->paPairs[i - 1].offSection
+                     || (   off == pFileLines->paPairs[i - 1].offSection
+                         && uLine < pFileLines->paPairs[i - 1].uLineNumber)) )
+        i--;
+    if (   i     == pFileLines->cPairs
+        || off   != pFileLines->paPairs[i].offSection
+        || uLine != pFileLines->paPairs[i].uLineNumber)
+    {
+        if (i < pFileLines->cPairs)
+            memmove(&pFileLines->paPairs[i + 1], &pFileLines->paPairs[i],
+                    (pFileLines->cPairs - i) * sizeof(pFileLines->paPairs));
+        pFileLines->paPairs[i].offSection      = off;
+        pFileLines->paPairs[i].uLineNumber     = uLine;
+        pFileLines->paPairs[i].fEndOfStatement = true;
+        pFileLines->cPairs++;
+        pSegLines->cb += sizeof(pFileLines->paPairs[0]);
+    }
+
+    return true;
+}
+
+
+/**
+ * Parses OMF file gathering line numbers (for CV8 debug info) and checking out
+ * external defintions for mangling work (compiler instrinsics).
+ *
+ * @returns success indicator.
+ * @param   pszFile     The name of the OMF file.
+ * @param   pbFile      The file content.
+ * @param   cbFile      The size of the file content.
+ * @param   pOmfStuff   Where to collect CV8 debug info and anything else we
+ *                      find out about the OMF file.
+ */
+static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t cbFile, POMFDETAILS pOmfStuff)
 {
     uint32_t        cLNames = 0;
     uint32_t        cExtDefs = 0;
     uint32_t        cPubDefs = 0;
-    bool            fProbably32bit = false;
     uint32_t        off = 0;
+    uint8_t         cchSrcFile = 0;
+    const char     *pchSrcFile = NULL;
+    uint32_t        offSrcInfo = UINT32_MAX;
+
+    memset(pOmfStuff, 0, sizeof(*pOmfStuff));
+    pOmfStuff->iDebSymNm   = UINT16_MAX;
+    pOmfStuff->iSymbolsNm  = UINT16_MAX;
+    pOmfStuff->iSymbolsSeg = UINT16_MAX;
 
     while (off + 3 < cbFile)
     {
@@ -3464,22 +3870,57 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
         if (off + cbRec > cbFile)
             return error(pszFile, "Invalid record length at %#x: %#x (cbFile=%#lx)\n", off, cbRec, (unsigned long)cbFile);
 
-        if (bRecType & OMF_REC32)
-            fProbably32bit = true;
-
-        uint32_t offRec = 0;
-        uint8_t *pbRec  = &pbFile[off + 3];
+        uint32_t        offRec = 0;
+        uint8_t const  *pbRec  = &pbFile[off + 3];
 #define OMF_CHECK_RET(a_cbReq, a_Name) /* Not taking the checksum into account, so we're good with 1 or 2 byte fields. */ \
             if (offRec + (a_cbReq) <= cbRec) {/*likely*/} \
             else return error(pszFile, "Malformed " #a_Name "! off=%#x offRec=%#x cbRec=%#x cbNeeded=%#x line=%d\n", \
                               off, offRec, cbRec, (a_cbReq), __LINE__)
+#define OMF_READ_IDX(a_idx, a_Name) \
+            do { \
+                OMF_CHECK_RET(2, a_Name); \
+                a_idx = pbRec[offRec++]; \
+                if ((a_idx) & 0x80) \
+                    a_idx = (((a_idx) & 0x7f) << 8) | pbRec[offRec++]; \
+            } while (0)
+
         switch (bRecType)
         {
             /*
-             * Scan external definitions for intrinsics needing mangling.
+             * Record LNAME records, scanning for FLAT.
+             */
+            case OMF_LNAMES:
+                while (offRec + 1 < cbRec)
+                {
+                    uint8_t cch = pbRec[offRec];
+                    if (offRec + 1 + cch >= cbRec)
+                        return error(pszFile, "Invalid LNAME string length at %#x+3+%#x: %#x (cbFile=%#lx)\n",
+                                     off, offRec, cch, (unsigned long)cbFile);
+
+                    cLNames++;
+                    if (g_cVerbose > 2)
+                        printf("  LNAME[%u]: %-*.*s\n", cLNames, cch, cch, &pbRec[offRec + 1]);
+
+                    if (cch == 4 && memcmp(&pbRec[offRec + 1], "FLAT", 4) == 0)
+                        pOmfStuff->fProbably32bit = true;
+
+                    if (   cch == 6
+                        && pOmfStuff->iDebSymNm == UINT16_MAX
+                        && memcmp(&pbRec[offRec + 1], "DEBSYM", 6) == 0)
+                        pOmfStuff->iDebSymNm = cLNames;
+                    if (   cch == 9
+                        && pOmfStuff->iSymbolsNm == UINT16_MAX
+                        && memcmp(&pbRec[offRec + 1], "$$SYMBOLS", 9) == 0)
+                        pOmfStuff->iSymbolsNm = cLNames;
+
+                    offRec += cch + 1;
+                }
+                break;
+
+            /*
+             * Display external defitions if -v is specified, also check if anything needs mangling.
              */
             case OMF_EXTDEF:
-            {
                 while (offRec + 1 < cbRec)
                 {
                     uint8_t cch = pbRec[offRec++];
@@ -3487,10 +3928,8 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
                     char *pchName = (char *)&pbRec[offRec];
                     offRec += cch;
 
-                    OMF_CHECK_RET(2, EXTDEF);
-                    uint16_t idxType = pbRec[offRec++];
-                    if (idxType & 0x80)
-                        idxType = ((idxType & 0x7f) << 8) | pbRec[offRec++];
+                    uint16_t idxType;
+                    OMF_READ_IDX(idxType, EXTDEF);
 
                     if (g_cVerbose > 2)
                         printf("  EXTDEF [%u]: %-*.*s type=%#x\n", cExtDefs, cch, cch, pchName, idxType);
@@ -3498,7 +3937,8 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
                         printf("              U %-*.*s\n", cch, cch, pchName);
 
                     /* Look for g_apszExtDefRenames entries that requires changing. */
-                    if (   cch >= 5
+                    if (   !pOmfStuff->fMayNeedMangling
+                        && cch >= 5
                         && cch <= 7
                         && pchName[0] == '_'
                         && pchName[1] == '_'
@@ -3510,56 +3950,19 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
                             || pchName[3] == 'I'
                             || pchName[3] == 'T') )
                     {
-                        uint32_t i = RT_ELEMENTS(g_apszExtDefRenames);
-                        while (i-- > 0)
-                            if (   cch == (uint8_t)g_apszExtDefRenames[i][0]
-                                && memcmp(&g_apszExtDefRenames[i][1], pchName, cch) == 0)
-                            {
-                                pchName[0] = fProbably32bit ? '?' : '_';
-                                pchName[1] = '?';
-                                break;
-                            }
+                        pOmfStuff->fMayNeedMangling = true;
                     }
-
-                    cExtDefs++;
                 }
                 break;
-            }
-
-            /*
-             * Record LNAME records, scanning for FLAT.
-             */
-            case OMF_LNAMES:
-            {
-                while (offRec + 1 < cbRec)
-                {
-                    uint8_t cch = pbRec[offRec];
-                    if (offRec + 1 + cch >= cbRec)
-                        return error(pszFile, "Invalid LNAME string length at %#x+3+%#x: %#x (cbFile=%#lx)\n",
-                                     off, offRec, cch, (unsigned long)cbFile);
-                    if (cLNames + 1 >= cLNamesMax)
-                        return error(pszFile, "Too many LNAME strings\n");
-
-                    if (g_cVerbose > 2)
-                        printf("  LNAME[%u]: %-*.*s\n", cLNames, cch, cch, &pbRec[offRec + 1]);
-
-                    papchLNames[cLNames++] = (const char *)&pbRec[offRec];
-                    if (cch == 4 && memcmp(&pbRec[offRec + 1], "FLAT", 4) == 0)
-                        fProbably32bit = true;
-
-                    offRec += cch + 1;
-                }
-                break;
-            }
 
             /*
              * Display public names if -v is specified.
              */
-            case OMF_PUBDEF16:
             case OMF_PUBDEF32:
-            case OMF_LPUBDEF16:
             case OMF_LPUBDEF32:
-            {
+                pOmfStuff->fProbably32bit = true;
+            case OMF_PUBDEF16:
+            case OMF_LPUBDEF16:
                 if (g_cVerbose > 0)
                 {
                     char const  chType  = bRecType == OMF_PUBDEF16 || bRecType == OMF_PUBDEF32 ? 'T' : 't';
@@ -3567,15 +3970,11 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
                     if (chType == 'T')
                         pszRec++;
 
-                    OMF_CHECK_RET(2, [L]PUBDEF);
-                    uint16_t idxGrp = pbRec[offRec++];
-                    if (idxGrp & 0x80)
-                        idxGrp = ((idxGrp & 0x7f) << 8) | pbRec[offRec++];
+                    uint16_t idxGrp;
+                    OMF_READ_IDX(idxGrp, [L]PUBDEF);
 
-                    OMF_CHECK_RET(2, [L]PUBDEF);
-                    uint16_t idxSeg = pbRec[offRec++];
-                    if (idxSeg & 0x80)
-                        idxSeg = ((idxSeg & 0x7f) << 8) | pbRec[offRec++];
+                    uint16_t idxSeg;
+                    OMF_READ_IDX(idxSeg, [L]PUBDEF);
 
                     uint16_t uFrameBase = 0;
                     if (idxSeg == 0)
@@ -3609,19 +4008,92 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
                             offRec += 2;
                         }
 
-                        OMF_CHECK_RET(2, [L]PUBDEF);
-                        uint16_t idxType = pbRec[offRec++];
-                        if (idxType & 0x80)
-                            idxType = ((idxType & 0x7f) << 8) | pbRec[offRec++];
+                        uint16_t idxType;
+                        OMF_READ_IDX(idxType, [L]PUBDEF);
 
                         if (g_cVerbose > 2)
                             printf("  %s[%u]: off=%#010x type=%#x %-*.*s\n", pszRec, cPubDefs, offSeg, idxType, cch, cch, pchName);
                         else if (g_cVerbose > 0)
                             printf("%04x:%08x %c %-*.*s\n", uSeg, offSeg, chType, cch, cch, pchName);
-
-                        cPubDefs++;
                     }
                 }
+                break;
+
+            /*
+             * Must count segment defitions to figure the index of our segment.
+             */
+            case OMF_SEGDEF16:
+            case OMF_SEGDEF32:
+                pOmfStuff->cSegDefs++;
+                break;
+
+            /*
+             * Gather file names.
+             */
+            case OMF_THEADR: /* watcom */
+                cchSrcFile = pbRec[offRec++];
+                OMF_CHECK_RET(cchSrcFile, OMF_THEADR);
+                pchSrcFile = (const char *)&pbRec[offRec];
+                if (!collectOmfAddFile(pOmfStuff, cchSrcFile, pchSrcFile, &offSrcInfo))
+                    return false;
+                break;
+
+            case OMF_COMENT:
+            {
+                OMF_CHECK_RET(2, COMENT);
+                offRec++; /* skip the type (flags) */
+                uint8_t bClass = pbRec[offRec++];
+                if (bClass == OMF_CCLS_BORLAND_SRC_FILE) /* nasm */
+                {
+                    OMF_CHECK_RET(1+1+4, BORLAND_SRC_FILE);
+                    offRec++; /* skip unknown byte */
+                    cchSrcFile = pbRec[offRec++];
+                    OMF_CHECK_RET(cchSrcFile + 4, BORLAND_SRC_FILE);
+                    pchSrcFile = (const char *)&pbRec[offRec];
+                    offRec += cchSrcFile;
+                    if (offRec + 4 + 1 != cbRec)
+                        return error(pszFile, "BAD BORLAND_SRC_FILE record at %#x: %d bytes left\n",
+                                     off, cbRec - offRec - 4 - 1);
+                    if (!collectOmfAddFile(pOmfStuff, cchSrcFile, pchSrcFile, &offSrcInfo))
+                        return false;
+                    break;
+                }
+                break;
+            }
+
+            /*
+             * Line number conversion.
+             */
+            case OMF_LINNUM16:
+            case OMF_LINNUM32:
+            {
+                uint16_t idxGrp;
+                OMF_READ_IDX(idxGrp, LINNUM);
+                uint16_t idxSeg;
+                OMF_READ_IDX(idxSeg, LINNUM);
+
+                uint16_t iLine;
+                uint32_t off;
+                if (bRecType == OMF_LINNUM16)
+                    while (offRec + 4 < cbRec)
+                    {
+                        iLine = RT_MAKE_U16(pbRec[offRec + 0], pbRec[offRec + 1]);
+                        off   = RT_MAKE_U16(pbRec[offRec + 2], pbRec[offRec + 3]);
+                        if (!collectOmfAddLine(pOmfStuff, idxSeg, off, iLine, offSrcInfo))
+                            return false;
+                        offRec += 4;
+                    }
+                else
+                    while (offRec + 6 < cbRec)
+                    {
+                        iLine = RT_MAKE_U16(pbRec[offRec + 0], pbRec[offRec + 1]);
+                        off   = RT_MAKE_U32_FROM_U8(pbRec[offRec + 2], pbRec[offRec + 3], pbRec[offRec + 4], pbRec[offRec + 5]);
+                        if (!collectOmfAddLine(pOmfStuff, idxSeg, off, iLine, offSrcInfo))
+                            return false;
+                        offRec += 6;
+                    }
+                if (offRec + 1 != cbRec)
+                    return error(pszFile, "BAD LINNUM record at %#x: %d bytes left\n", off, cbRec - offRec - 1);
                 break;
             }
         }
@@ -3629,7 +4101,405 @@ static bool convertomf(const char *pszFile, uint8_t *pbFile, size_t cbFile, cons
         /* advance */
         off += cbRec + 3;
     }
+
     return true;
+#undef OMF_READ_IDX
+#undef OMF_CHECK_RET
+}
+
+
+/**
+ * Writes the debug segment definitions (names too).
+ *
+ * @returns success indicator.
+ * @param   pThis       The OMF writer.
+ * @param   pOmfStuff   The OMF stuff with CV8 line number info.
+ */
+static bool convertOmfWriteDebugSegDefs(POMFWRITER pThis, POMFDETAILS pOmfStuff)
+{
+    if (   pOmfStuff->cSegLines == 0
+        || pOmfStuff->iSymbolsSeg != UINT16_MAX)
+        return true;
+
+    /*
+     * Emit the LNAMES we need.
+     */
+#if 1
+    if (   pOmfStuff->iSymbolsNm == UINT16_MAX
+        || pOmfStuff->iDebSymNm == UINT16_MAX)
+    {
+        if (   !omfWriter_LNamesBegin(pThis, true /*fAddZeroEntry*/)
+            || (   pOmfStuff->iSymbolsNm == UINT16_MAX
+                && !omfWriter_LNamesAdd(pThis, "$$SYMBOLS", &pOmfStuff->iSymbolsNm))
+            || (   pOmfStuff->iDebSymNm == UINT16_MAX
+                && !omfWriter_LNamesAdd(pThis, "DEBSYM", &pOmfStuff->iDebSymNm))
+            || !omfWriter_LNamesEnd(pThis) )
+            return false;
+    }
+#else
+    if (   !omfWriter_LNamesBegin(pThis, true /*fAddZeroEntry*/)
+        || !omfWriter_LNamesAdd(pThis, "$$SYMBOLS2", &pOmfStuff->iSymbolsNm)
+        || !omfWriter_LNamesAdd(pThis, "DEBSYM2", &pOmfStuff->iDebSymNm)
+        || !omfWriter_LNamesEnd(pThis) )
+        return false;
+#endif
+
+    /*
+     * Emit the segment defitions.
+     */
+    pOmfStuff->iSymbolsSeg = ++pOmfStuff->cSegDefs;
+
+    uint8_t   bSegAttr = 0;
+    bSegAttr |= 5 << 5; /* A: dword alignment */
+    bSegAttr |= 0 << 2; /* C: private */
+    bSegAttr |= 0 << 1; /* B: not big */
+    bSegAttr |= 1;      /* D: use32 */
+
+    /* calc the segment size. */
+    uint32_t  cbSeg = 4; /* dword 4 */
+    cbSeg += 4 + 4 + RT_ALIGN_32(pOmfStuff->cbStrTab, 4);
+    cbSeg += 4 + 4 + pOmfStuff->cSrcInfo * sizeof(pOmfStuff->paSrcInfo[0]);
+    uint32_t i = pOmfStuff->cSegLines;
+    while (i-- > 0)
+        if (pOmfStuff->paSegLines[i].cFiles > 0)
+            cbSeg += 4 + 4 + pOmfStuff->paSegLines[i].cb;
+    return omfWriter_SegDef(pThis, bSegAttr, cbSeg, pOmfStuff->iSymbolsNm, pOmfStuff->iDebSymNm);
+}
+
+
+/**
+ * Writes the debug segment data.
+ *
+ * @returns success indicator.
+ * @param   pThis       The OMF writer.
+ * @param   pOmfStuff   The OMF stuff with CV8 line number info.
+ */
+static bool convertOmfWriteDebugData(POMFWRITER pThis, POMFDETAILS pOmfStuff)
+{
+    if (pOmfStuff->cSegLines == 0)
+        return true;
+
+    /* Begin and write the CV version signature. */
+    uint32_t const  cbMaxChunk = RT_ALIGN(OMF_MAX_RECORD_PAYLOAD - 1 - 16, 4); /* keep the data dword aligned */
+    if (   !omfWriter_LEDataBegin(pThis, pOmfStuff->iSymbolsSeg, 0)
+        || !omfWriter_LEDataAddU32(pThis, RTCVSYMBOLS_SIGNATURE_CV8))
+        return false;
+
+    /*
+     * Emit the string table (no fixups).
+     */
+    uint32_t cbLeft = pOmfStuff->cbStrTab;
+    if (   !omfWriter_LEDataAddU32(pThis, RTCV8SYMBLOCK_TYPE_SRC_STR)
+        || !omfWriter_LEDataAddU32(pThis, cbLeft)
+        || !omfWriter_LEDataAddBytes(pThis, pOmfStuff->pchStrTab, RT_ALIGN_32(cbLeft, 4)) ) /* table is zero padded to nearest dword */
+        return false;
+
+    /*
+     * Emit the source file info table (no fixups).
+     */
+    cbLeft = pOmfStuff->cSrcInfo * sizeof(pOmfStuff->paSrcInfo[0]);
+    if (   !omfWriter_LEDataAddU32(pThis, RTCV8SYMBLOCK_TYPE_SRC_INFO)
+        || !omfWriter_LEDataAddU32(pThis, cbLeft)
+        || !omfWriter_LEDataAddBytes(pThis, pOmfStuff->paSrcInfo, cbLeft) )
+        return false;
+
+    /*
+     * Emit the segment line numbers. There are two fixups here at the start
+     * of each chunk.
+     */
+    POMFSEGLINES pSegLines = pOmfStuff->paSegLines;
+    uint32_t     i         = pOmfStuff->cSegLines;
+    while (i-- > 0)
+    {
+        if (pSegLines->cFiles)
+        {
+            /* Calc covered area. */
+            uint32_t cbSectionCovered = 0;
+            uint32_t j = pSegLines->cFiles;
+            while (j-- > 0)
+            {
+                uint32_t offLast = pSegLines->paFiles[j].paPairs[pSegLines->paFiles[j].cPairs - 1].offSection;
+                if (offLast > cbSectionCovered)
+                    offLast = cbSectionCovered;
+            }
+
+            /* For simplicity and debuggability, just split the LEDATA here. */
+            if (   !omfWriter_LEDataSplit(pThis)
+                || !omfWriter_LEDataAddU32(pThis, RTCV8SYMBLOCK_TYPE_SECT_LINES)
+                || !omfWriter_LEDataAddU32(pThis, pSegLines->cb)
+                || !omfWriter_LEDataAddU32(pThis, 0)                /*RTCV8LINESHDR::offSection*/
+                || !omfWriter_LEDataAddU16(pThis, 0)                /*RTCV8LINESHDR::iSection*/
+                || !omfWriter_LEDataAddU16(pThis, 0)                /*RTCV8LINESHDR::u16Padding*/
+                || !omfWriter_LEDataAddU32(pThis, cbSectionCovered) /*RTCV8LINESHDR::cbSectionCovered*/ )
+                return false;
+
+            /* Fixup #1: segment offset - IMAGE_REL_AMD64_SECREL. */
+            if (!omfWriter_LEDataAddFixupNoDisp(pThis, 4 + 4 + RT_OFFSETOF(RTCV8LINESHDR, offSection), OMF_FIX_LOC_32BIT_OFFSET,
+                                                OMF_FIX_F_SEGDEF, pSegLines->idxSeg,
+                                                OMF_FIX_T_SEGDEF_NO_DISP, pSegLines->idxSeg))
+                return false;
+
+
+            /* Fixup #2: segment number - IMAGE_REL_AMD64_SECTION. */
+            if (!omfWriter_LEDataAddFixupNoDisp(pThis, 4 + 4 + RT_OFFSETOF(RTCV8LINESHDR, iSection), OMF_FIX_LOC_16BIT_SEGMENT,
+                                                OMF_FIX_F_SEGDEF, pSegLines->idxSeg,
+                                                OMF_FIX_T_SEGDEF_NO_DISP, pSegLines->idxSeg))
+                return false;
+
+            /* Emit data for each source file. */
+            for (uint32_t j = 0; j < pSegLines->cFiles; j++)
+            {
+                uint32_t const cbPairs = pSegLines->paFiles[j].cPairs * sizeof(RTCV8LINEPAIR);
+                if (   !omfWriter_LEDataAddU32(pThis, pSegLines->paFiles[j].offSrcInfo)   /*RTCV8LINESSRCMAP::offSourceInfo*/
+                    || !omfWriter_LEDataAddU32(pThis, pSegLines->paFiles[j].cPairs)       /*RTCV8LINESSRCMAP::cLines*/
+                    || !omfWriter_LEDataAddU32(pThis, cbPairs + sizeof(RTCV8LINESSRCMAP)) /*RTCV8LINESSRCMAP::cb*/
+                    || !omfWriter_LEDataAddBytes(pThis, pSegLines->paFiles[j].paPairs, cbPairs))
+                    return false;
+            }
+        }
+        pSegLines++;
+    }
+
+    return omfWriter_LEDataEnd(pThis);
+}
+
+
+/**
+ * This does the actual converting, passthru style.
+ *
+ * It only modifies, removes and inserts stuff it care about, the rest is passed
+ * thru as-is.
+ *
+ * @returns success indicator.
+ * @param   pThis       The OMF writer.
+ * @param   pbFile      The original file content.
+ * @param   cbFile      The size of the original file.
+ * @param   pOmfStuff   The OMF stuff we've gathered during the first pass,
+ *                      contains CV8 line number info if we converted anything.
+ */
+static bool convertOmfPassthru(POMFWRITER pThis, uint8_t const *pbFile, size_t cbFile, POMFDETAILS pOmfStuff)
+{
+    bool const  fConvertLineNumbers = true;
+    bool        fSeenTheAdr         = false;
+    uint32_t    off = 0;
+    while (off + 3 < cbFile)
+    {
+        uint8_t         bRecType = pbFile[off];
+        uint16_t        cbRec    = RT_MAKE_U16(pbFile[off + 1], pbFile[off + 2]);
+        uint32_t        offRec   = 0;
+        uint8_t const  *pbRec    = &pbFile[off + 3];
+
+#define OMF_READ_IDX(a_idx, a_Name) \
+            do { \
+                a_idx = pbRec[offRec++]; \
+                if ((a_idx) & 0x80) \
+                    a_idx = (((a_idx) & 0x7f) << 8) | pbRec[offRec++]; \
+            } while (0)
+
+        /*
+         * Remove/insert switch.  will
+         */
+        bool fSkip = false;
+        switch (bRecType)
+        {
+            /*
+             * Mangle watcom intrinsics if necessary.
+             */
+            case OMF_EXTDEF:
+                if (pOmfStuff->fMayNeedMangling)
+                {
+                    if (!omfWriter_ExtDefBegin(pThis))
+                        return false;
+                    while (offRec + 1 < cbRec)
+                    {
+                        uint8_t cchName = pbRec[offRec++];
+                        char   *pchName = (char *)&pbRec[offRec];
+                        offRec += cchName;
+
+                        uint16_t idxType;
+                        OMF_READ_IDX(idxType, EXTDEF);
+
+                        /* Look for g_apszExtDefRenames entries that requires changing. */
+                        if (   cchName >= 5
+                            && cchName <= 7
+                            && pchName[0] == '_'
+                            && pchName[1] == '_'
+                            && (   pchName[2] == 'U'
+                                || pchName[2] == 'I'
+                                || pchName[2] == 'P')
+                            && (   pchName[3] == '4'
+                                || pchName[3] == '8'
+                                || pchName[3] == 'I'
+                                || pchName[3] == 'T') )
+                        {
+                            char szName[12];
+                            memcpy(szName, pchName, cchName);
+                            szName[cchName] = '\0';
+
+                            uint32_t i = RT_ELEMENTS(g_apszExtDefRenames);
+                            while (i-- > 0)
+                                if (   cchName == (uint8_t)g_apszExtDefRenames[i][0]
+                                    && memcmp(&g_apszExtDefRenames[i][1], szName, cchName) == 0)
+                                {
+                                    szName[0] = pOmfStuff->fProbably32bit ? '?' : '_';
+                                    szName[1] = '?';
+                                    break;
+                                }
+
+                            if (!omfWriter_ExtDefAddN(pThis, szName, cchName, idxType))
+                                return false;
+                        }
+                        else if (!omfWriter_ExtDefAddN(pThis, pchName, cchName, idxType))
+                            return false;
+                    }
+                    if (!omfWriter_ExtDefEnd(pThis))
+                        return false;
+                    fSkip = true;
+                }
+                break;
+
+            /*
+             * Remove line number records.
+             */
+            case OMF_LINNUM16:
+            case OMF_LINNUM32:
+                fSkip = fConvertLineNumbers;
+                break;
+
+            /*
+             * Remove all but the first OMF_THEADR.
+             */
+            case OMF_THEADR:
+                fSkip = fSeenTheAdr && fConvertLineNumbers;
+                fSeenTheAdr = true;
+                break;
+
+            /*
+             * Remove borland source file changes. Also, emit our SEGDEF
+             * before the pass marker.
+             */
+            case OMF_COMENT:
+                if (fConvertLineNumbers)
+                {
+                    fSkip = pbRec[1] == OMF_CCLS_BORLAND_SRC_FILE;
+                    if (pbRec[1] == OMF_CCLS_LINK_PASS_SEP)
+                        if (!convertOmfWriteDebugSegDefs(pThis, pOmfStuff))
+                            return false;
+                }
+                break;
+
+            /*
+             * Redo these to the OMF writer is on top of the index thing.
+             */
+            case OMF_LNAMES:
+                if (!omfWriter_LNamesBegin(pThis, false /*fAddZeroEntry*/))
+                    return false;
+                while (offRec + 1 < cbRec)
+                {
+                    uint8_t     cch = pbRec[offRec];
+                    const char *pch = (const char *)&pbRec[offRec + 1];
+                    if (!omfWriter_LNamesAddN(pThis, pch, cch, NULL))
+                        return false;
+                    offRec += cch + 1;
+                }
+                if (!omfWriter_LNamesEnd(pThis))
+                    return false;
+
+                fSkip = true;
+                break;
+
+            /*
+             * Upon seeing MODEND we write out the debug info.
+             */
+            case OMF_MODEND16:
+            case OMF_MODEND32:
+                if (fConvertLineNumbers)
+                {
+                    if (   convertOmfWriteDebugSegDefs(pThis, pOmfStuff)
+                        && convertOmfWriteDebugData(pThis, pOmfStuff))
+                    { /* likely */ }
+                    else return false;
+                }
+                break;
+        }
+
+        /*
+         * Pass the record thru, if so was decided.
+         */
+        if (!fSkip)
+        {
+            if (   omfWriter_RecBegin(pThis, bRecType)
+                && omfWriter_RecAddBytes(pThis, pbRec, cbRec)
+                && omfWriter_RecEnd(pThis, false))
+            { /* likely */ }
+            else return false;
+        }
+
+        /* advance */
+        off += cbRec + 3;
+    }
+
+    return true;
+}
+
+
+/**
+ * Converts LINNUMs and compiler intrinsics in an OMF object file.
+ *
+ * Wlink does a cheesy (to use their own term) job of generating the
+ * sstSrcModule subsection.  It is limited to one file and cannot deal with line
+ * numbers in different segment.  The latter is very annoying in assembly files
+ * that jumps between segments, these a frequent on crash stacks.
+ *
+ * The solution is to convert to the same line number tables that cl.exe /Z7
+ * generates for our 64-bit C code, we named that format codeview v8, or CV8.
+ * Our code codeview debug info reader can deal with this already because of the
+ * 64-bit code, so Bob's your uncle.
+ *
+ * @returns success indicator.
+ * @param   pszFile     The name of the file being converted.
+ * @param   pbFile      The file content.
+ * @param   cbFile      The size of the file content.
+ * @param   pDst        The destiation (output) file.
+ */
+static bool convertOmfToOmf(const char *pszFile, uint8_t const *pbFile, size_t cbFile, FILE *pDst)
+{
+    /*
+     * Collect line number information.
+     */
+    OMFDETAILS OmfStuff;
+    if (!collectOmfDetails(pszFile, pbFile, cbFile, &OmfStuff))
+        return false;
+
+    /*
+     * Instantiate the OMF writer and do pass-thru modifications.
+     */
+    bool fRc;
+    POMFWRITER pThis = omfWriter_Create(pszFile, 0, 0, pDst);
+    if (pThis)
+    {
+        fRc = convertOmfPassthru(pThis, pbFile, cbFile, &OmfStuff);
+        omfWriter_Destroy(pThis);
+    }
+    else
+        fRc = false;
+
+
+    /*
+     * Cleanup OmfStuff.
+     */
+    uint32_t i = OmfStuff.cSegLines;
+    while (i-- >0)
+    {
+        uint32_t j = OmfStuff.paSegLines[i].cFiles;
+        while (j-- > 0)
+            free(OmfStuff.paSegLines[i].paFiles[j].paPairs);
+        free(OmfStuff.paSegLines[i].paFiles);
+    }
+    free(OmfStuff.paSegLines);
+    free(OmfStuff.paSrcInfo);
+    free(OmfStuff.pchStrTab);
+    return fRc;
 }
 
 
@@ -3698,11 +4568,15 @@ static int convertit(const char *pszFile)
                  && pbFile[0] == OMF_THEADR
                  && RT_MAKE_U16(pbFile[1], pbFile[2]) < cbFile)
         {
-            const char **papchLNames = (const char **)calloc(sizeof(*papchLNames), _32K);
-            fRc = writefile(szOrgFile, pvFile, cbFile)
-               && convertomf(pszFile, pbFile, cbFile, papchLNames, _32K)
-               && writefile(pszFile, pvFile, cbFile);
-            free(papchLNames);
+            if (writefile(szOrgFile, pvFile, cbFile))
+            {
+                FILE *pDst = openfile(pszFile, true /*fWrite*/);
+                if (pDst)
+                {
+                    fRc = convertOmfToOmf(pszFile, pbFile, cbFile, pDst);
+                    fRc = fclose(pDst) == 0 && fRc;
+                }
+            }
         }
         else
             fprintf(stderr, "error: Don't recognize format of '%s' (%#x %#x %#x %#x, cbFile=%lu)\n",

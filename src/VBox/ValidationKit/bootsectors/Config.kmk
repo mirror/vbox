@@ -89,7 +89,7 @@ else
 endif
 TOOL_VBoxNasm_ASFLAGS ?= $(TOOL_NASM_ASFLAGS)
 TOOL_VBoxNasm_COMPILE_AS_OUTPUT = $(outbase).lst
-TOOL_VBoxNasm_COMPILE_AS_DEPEND =
+TOOL_VBoxNasm_COMPILE_AS_DEPEND = $(VBoxBs3ObjConverter_1_TARGET)
 TOOL_VBoxNasm_COMPILE_AS_DEPORD =
 define TOOL_VBoxNasm_COMPILE_AS_CMDS
 	$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasm_AS)\
@@ -97,6 +97,7 @@ define TOOL_VBoxNasm_COMPILE_AS_CMDS
 		-l $(outbase).lst\
 		-o $(obj)\
 		$(abspath $(source))
+	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE) -wo $(dep) -- $(TOOL_VBoxNasm_AS)\
 		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
 		-l $(outbase).lst\
@@ -366,10 +367,11 @@ endef
 
 # Debug info format depends on what we use for 64-bit.
 if1of ($(KBUILD_HOST), win)
- BS3_OW_DBG_OPT   = -hc
+ BS3_OW_DBG_OPT   = -hc -d1+
+ #BS3_OW_DBG_OPT   = -hd -d1+
  BS3_OW_DBG_LDOPT = codeview
 else
- BS3_OW_DBG_OPT   = -hd
+ BS3_OW_DBG_OPT   = -hd -d1+
  BS3_OW_DBG_LDOPT = dwarf
 endif
 
@@ -398,6 +400,8 @@ endef
 #
 # Note! Using -d1 as -d1+ and -d2 causes suboptimal code to be generated (strlen
 #       reloading string pointer argument all the time).
+#       Update! -d1+ is required for line number information in code living in include
+#               files and any DWARF stuff at all.  So, we'll ignore poor code quality.
 # Note! Optimization options should come after debug stuff as -d2 for instance
 #       disables all optimziations.
 # Note! We use BS3CLASS16CODE because of wdis code detection heuristics requires the class
@@ -457,9 +461,9 @@ TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CFLAGS       = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CDEFS        = ARCH_BITS=16 RT_ARCH_X86
 
 TEMPLATE_VBoxBS3KitImg_TOOL         = $(NO_SUCH_VARIABLE)
@@ -585,9 +589,9 @@ TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL        = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CFLAGS       = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -d1 -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg32_LDTOOL       = VBoxBsUnusedLd
 
@@ -610,8 +614,8 @@ if1of ($(KBUILD_HOST), win)
  endif
  TEMPLATE_VBoxBS3KitImg64_CTOOL      := Bs3Vcc64
  TEMPLATE_VBoxBS3KitImg64_CXXTOOL    := Bs3Vcc64
- TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -Zi -O1 -Oi -GF -GS- -Gy -Gs65536
- TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -Zi -O1 -Oi -GF -GS- -Gy -Gs65536
+ TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -Z7 -O1 -Oi -GF -GS- -Gy -Gs65536
+ TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -Z7 -O1 -Oi -GF -GS- -Gy -Gs65536
 else
  TEMPLATE_VBoxBS3KitImg64_CTOOL      := Bs3Gcc64Elf64
  TEMPLATE_VBoxBS3KitImg64_CXXTOOL    := Bs3Gcc64Elf64
