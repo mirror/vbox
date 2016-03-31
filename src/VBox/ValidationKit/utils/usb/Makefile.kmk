@@ -30,9 +30,20 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # USB Linux test frontend.
 #
-PROGRAMS += UsbTest
-UsbTest_TEMPLATE = VBoxValidationKitR3
-UsbTest_SOURCES  = UsbTest.cpp
+ifeq ($(KBUILD_TARGET),linux)
+ PROGRAMS += UsbTest
+ UsbTest_TEMPLATE = VBoxValidationKitR3
+ UsbTest_SOURCES  = UsbTest.cpp
+endif
+
+PROGRAMS += UsbTestService
+UsbTestService_TEMPLATE = VBoxValidationKitR3
+UsbTestService_DEFS = \
+	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
+	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
+UsbTestService_SOURCES = \
+	UsbTestService.cpp \
+	UsbTestServiceTcp.cpp
 
 $(evalcall def_vbox_validationkit_process_python_sources)
 include $(FILE_KBUILD_SUB_FOOTER)
