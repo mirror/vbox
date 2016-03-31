@@ -2430,9 +2430,9 @@ int vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
  * debug purposes only!
  * #define VBOXNETLWFWIN_DEBUGIPADDRNOTIF 1
  */
-static void vboxNetLwfWinIpAddrChangeCallback(IN PVOID pvCtx,
-                                              IN PMIB_UNICASTIPADDRESS_ROW pRow,
-                                              IN MIB_NOTIFICATION_TYPE enmNotifType)
+static void __stdcall vboxNetLwfWinIpAddrChangeCallback(IN PVOID pvCtx,
+                                                        IN PMIB_UNICASTIPADDRESS_ROW pRow,
+                                                        IN MIB_NOTIFICATION_TYPE enmNotifType)
 {
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvCtx;
     PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)pThis->u.s.WinIf.hModuleCtx;

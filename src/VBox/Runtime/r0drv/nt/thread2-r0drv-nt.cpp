@@ -109,7 +109,7 @@ DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
  *
  * @param pvArg         Pointer to the argument package.
  */
-static VOID __stdcall rtThreadNativeMain(PVOID pvArg)
+static VOID rtThreadNativeMain(PVOID pvArg)
 {
     PETHREAD Self = PsGetCurrentThread();
     PRTTHREADINT pThread = (PRTTHREADINT)pvArg;

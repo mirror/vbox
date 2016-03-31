@@ -231,7 +231,7 @@ RTDECL(bool) RTMpIsCpuWorkPending(void)
  *
  * @param   uUserCtx            The user context argument (PRTMPARGS).
  */
-static ULONG_PTR __stdcall rtmpNtOnAllBroadcastIpiWrapper(ULONG_PTR uUserCtx)
+static ULONG_PTR rtmpNtOnAllBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 {
     PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
     /*ASMAtomicIncU32(&pArgs->cHits); - not needed */
@@ -246,7 +246,7 @@ static ULONG_PTR __stdcall rtmpNtOnAllBroadcastIpiWrapper(ULONG_PTR uUserCtx)
  *
  * @param   uUserCtx            The user context argument (PRTMPARGS).
  */
-static ULONG_PTR __stdcall rtmpNtOnOthersBroadcastIpiWrapper(ULONG_PTR uUserCtx)
+static ULONG_PTR rtmpNtOnOthersBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 {
     PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
     RTCPUID idCpu = KeGetCurrentProcessorNumber();
@@ -265,7 +265,7 @@ static ULONG_PTR __stdcall rtmpNtOnOthersBroadcastIpiWrapper(ULONG_PTR uUserCtx)
  *
  * @param   uUserCtx            The user context argument (PRTMPARGS).
  */
-static ULONG_PTR __stdcall rtmpNtOnPairBroadcastIpiWrapper(ULONG_PTR uUserCtx)
+static ULONG_PTR rtmpNtOnPairBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 {
     PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
     RTCPUID idCpu = KeGetCurrentProcessorNumber();
@@ -285,7 +285,7 @@ static ULONG_PTR __stdcall rtmpNtOnPairBroadcastIpiWrapper(ULONG_PTR uUserCtx)
  *
  * @param   uUserCtx            The user context argument (PRTMPARGS).
  */
-static ULONG_PTR __stdcall rtmpNtOnSpecificBroadcastIpiWrapper(ULONG_PTR uUserCtx)
+static ULONG_PTR rtmpNtOnSpecificBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 {
     PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
     RTCPUID idCpu = KeGetCurrentProcessorNumber();
@@ -341,7 +341,7 @@ static int rtMpCallUsingBroadcastIpi(PFNRTMPWORKER pfnWorker, void *pvUser1, voi
  * @param   SystemArgument1     Argument specified by KeInsertQueueDpc
  * @param   SystemArgument2     Argument specified by KeInsertQueueDpc
  */
-static VOID __stdcall rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
+static VOID rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)DeferredContext;
 
@@ -600,8 +600,8 @@ DECLINLINE(void) rtMpNtOnSpecificRelease(PRTMPNTONSPECIFICARGS pArgs)
  * @param   SystemArgument1     Argument specified by KeInsertQueueDpc
  * @param   SystemArgument2     Argument specified by KeInsertQueueDpc
  */
-static VOID __stdcall rtMpNtOnSpecificDpcWrapper(IN PKDPC Dpc, IN PVOID DeferredContext,
-                                                 IN PVOID SystemArgument1, IN PVOID SystemArgument2)
+static VOID rtMpNtOnSpecificDpcWrapper(IN PKDPC Dpc, IN PVOID DeferredContext,
+                                       IN PVOID SystemArgument1, IN PVOID SystemArgument2)
 {
     PRTMPNTONSPECIFICARGS pArgs = (PRTMPNTONSPECIFICARGS)DeferredContext;
     ASMAtomicWriteBool(&pArgs->fExecuting, true);
