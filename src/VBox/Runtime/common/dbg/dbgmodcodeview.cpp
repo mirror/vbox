@@ -785,11 +785,12 @@ static int rtDbgModCvSsProcessV8SrcStrings(PRTDBGMODCV pThis, void const *pvSrcS
         void *pvNew = RTMemRealloc(pThis->pchSrcStrings, cbSrcStrings + 1);
         AssertReturn(pvNew, VERR_NO_MEMORY);
         pThis->pchSrcStrings     = (char *)pvNew;
-        pThis->cbSrcStrings      = cbSrcStrings;
         pThis->cbSrcStringsAlloc = cbSrcStrings + 1;
     }
     memcpy(pThis->pchSrcStrings, pvSrcStrings, cbSrcStrings);
     pThis->pchSrcStrings[cbSrcStrings] = '\0';
+    pThis->cbSrcStrings = cbSrcStrings;
+    Log2(("    saved %#x bytes of CV8 source strings\n", cbSrcStrings));
 
     if (LogIs3Enabled())
     {
@@ -826,11 +827,12 @@ static int rtDbgModCvSsProcessV8SrcInfo(PRTDBGMODCV pThis, void const *pvSrcInfo
         void *pvNew = RTMemRealloc(pThis->pbSrcInfo, cbSrcInfo + sizeof(RTCV8SRCINFO));
         AssertReturn(pvNew, VERR_NO_MEMORY);
         pThis->pbSrcInfo      = (uint8_t *)pvNew;
-        pThis->cbSrcInfo      = cbSrcInfo;
         pThis->cbSrcInfoAlloc = cbSrcInfo + sizeof(RTCV8SRCINFO);
     }
     memcpy(pThis->pbSrcInfo, pvSrcInfo, cbSrcInfo);
     memset(&pThis->pbSrcInfo[cbSrcInfo], 0, sizeof(RTCV8SRCINFO));
+    pThis->cbSrcInfo = cbSrcInfo;
+    Log2(("    saved %#x bytes of CV8 source file info\n", cbSrcInfo));
 
     if (LogIs3Enabled())
     {
@@ -901,7 +903,7 @@ static int rtDbgModCvSsProcessV8SectLines(PRTDBGMODCV pThis, void const *pvSectL
             const char    *pszName  = pSrcInfo->offSourceName < pThis->cbSrcStrings
                                     ? &pThis->pchSrcStrings[pSrcInfo->offSourceName] : "unknown.c";
             pszName = rtDbgModCvAddSanitizedStringToCache(pszName, RTSTR_MAX);
-            Log2(("RTDbgModCv:     #%u lines, %#x bytes, %#x=%s\n", pSrcHdr->cLines, pSrcHdr->cb, pSrcHdr->offSourceInfo, pszName));
+            Log2(("RTDbgModCv:     #%u lines, %#x bytes, %#x=%s\n", pSrcHdr->cLines, pSrcHdr->cb, pSrcInfo->offSourceName, pszName));
 
             if (pszName)
             {
