@@ -28,9 +28,16 @@
             Assert(0); \
             Log(_m); \
         } while (0)
+#define WARN_FUNC(_m) do { \
+            Assert(0); \
+            LogFunc(_m); \
+        } while (0)
 #else
 #define WARN(_m) do { \
             Log(_m); \
+        } while (0)
+#define WARN_FUNC(_m) do { \
+            LogFunc(_m); \
         } while (0)
 #endif
 
@@ -607,30 +614,30 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
 
     if (OSinfo.dwMajorVersion >= 6)
     {
-        Log((__FUNCTION__": this is vista and up\n"));
+        LogFunc(("this is vista and up\n"));
         HMODULE hUser = GetModuleHandle("user32.dll");
         if (hUser)
         {
             *(uintptr_t *)&pIf->modeData.wddm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
-            Log((__FUNCTION__": VBoxDisplayInit: pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.wddm.pfnChangeDisplaySettingsEx));
+            LogFunc(("VBoxDisplayInit: pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.wddm.pfnChangeDisplaySettingsEx));
             bSupported &= !!(pIf->modeData.wddm.pfnChangeDisplaySettingsEx);
 
             *(uintptr_t *)&pIf->modeData.wddm.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA");
-            Log((__FUNCTION__": VBoxDisplayInit: pfnEnumDisplayDevices = %p\n", pIf->modeData.wddm.pfnEnumDisplayDevices));
+            LogFunc(("VBoxDisplayInit: pfnEnumDisplayDevices = %p\n", pIf->modeData.wddm.pfnEnumDisplayDevices));
             bSupported &= !!(pIf->modeData.wddm.pfnEnumDisplayDevices);
             /* for win 7 and above */
              if (OSinfo.dwMinorVersion >= 1)
             {
                 *(uintptr_t *)&gCtx.pfnSetDisplayConfig = (uintptr_t)GetProcAddress(hUser, "SetDisplayConfig");
-                Log((__FUNCTION__": VBoxDisplayInit: pfnSetDisplayConfig = %p\n", gCtx.pfnSetDisplayConfig));
+                LogFunc(("VBoxDisplayInit: pfnSetDisplayConfig = %p\n", gCtx.pfnSetDisplayConfig));
                 bSupported &= !!(gCtx.pfnSetDisplayConfig);
 
                 *(uintptr_t *)&gCtx.pfnQueryDisplayConfig = (uintptr_t)GetProcAddress(hUser, "QueryDisplayConfig");
-                Log((__FUNCTION__": VBoxDisplayInit: pfnQueryDisplayConfig = %p\n", gCtx.pfnQueryDisplayConfig));
+                LogFunc(("VBoxDisplayInit: pfnQueryDisplayConfig = %p\n", gCtx.pfnQueryDisplayConfig));
                 bSupported &= !!(gCtx.pfnQueryDisplayConfig);
 
                 *(uintptr_t *)&gCtx.pfnGetDisplayConfigBufferSizes = (uintptr_t)GetProcAddress(hUser, "GetDisplayConfigBufferSizes");
-                Log((__FUNCTION__": VBoxDisplayInit: pfnGetDisplayConfigBufferSizes = %p\n", gCtx.pfnGetDisplayConfigBufferSizes));
+                LogFunc(("VBoxDisplayInit: pfnGetDisplayConfigBufferSizes = %p\n", gCtx.pfnGetDisplayConfigBufferSizes));
                 bSupported &= !!(gCtx.pfnGetDisplayConfigBufferSizes);
             }
 
@@ -644,13 +651,13 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
         }
         else
         {
-            WARN((__FUNCTION__": GetModuleHandle(USER32) failed, err(%d)\n", GetLastError()));
+            WARN_FUNC(("GetModuleHandle(USER32) failed, err(%d)\n", GetLastError()));
             err = ERROR_NOT_SUPPORTED;
         }
     }
     else
     {
-        WARN((__FUNCTION__": can not switch to VBOXDISPIF_MODE_WDDM, because os is not Vista or upper\n"));
+        WARN_FUNC(("can not switch to VBOXDISPIF_MODE_WDDM, because os is not Vista or upper\n"));
         err = ERROR_NOT_SUPPORTED;
     }
 
@@ -756,7 +763,7 @@ DWORD VBoxDispIfEscape(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
             return vboxDispIfEscapeWDDM(pIf, pEscape, cbData, TRUE /* BOOL fHwAccess */);
 #endif
         default:
-            Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
+            LogFunc(("unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -774,7 +781,7 @@ DWORD VBoxDispIfEscapeInOut(PCVBOXDISPIF const pIf, PVBOXDISPIFESCAPE pEscape, i
             return vboxDispIfEscapeWDDM(pIf, pEscape, cbData, TRUE /* BOOL fHwAccess */);
 #endif
         default:
-            Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
+            LogFunc(("unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -935,13 +942,13 @@ static LRESULT CALLBACK vboxRrWndProc(HWND hwnd,
             break;
         }
         case WM_CLOSE:
-            Log((__FUNCTION__": got WM_CLOSE for hwnd(0x%x)", hwnd));
+            LogFunc(("got WM_CLOSE for hwnd(0x%x)", hwnd));
             return 0;
         case WM_DESTROY:
-            Log((__FUNCTION__": got WM_DESTROY for hwnd(0x%x)", hwnd));
+            LogFunc(("got WM_DESTROY for hwnd(0x%x)", hwnd));
             return 0;
         case WM_NCHITTEST:
-            Log((__FUNCTION__": got WM_NCHITTEST for hwnd(0x%x)\n", hwnd));
+            LogFunc(("got WM_NCHITTEST for hwnd(0x%x)\n", hwnd));
             return HTNOWHERE;
         default:
             break;
@@ -972,7 +979,7 @@ static HRESULT vboxRrWndCreate(HWND *phWnd)
         if (!RegisterClassEx(&wc))
         {
             DWORD winErr = GetLastError();
-            WARN((__FUNCTION__": RegisterClass failed, winErr(%d)\n", winErr));
+            WARN_FUNC(("RegisterClass failed, winErr(%d)\n", winErr));
             hr = E_FAIL;
         }
     }
@@ -996,7 +1003,7 @@ static HRESULT vboxRrWndCreate(HWND *phWnd)
         else
         {
             DWORD winErr = GetLastError();
-            WARN((__FUNCTION__": CreateWindowEx failed, winErr(%d)\n", winErr));
+            WARN_FUNC(("CreateWindowEx failed, winErr(%d)\n", winErr));
             hr = E_FAIL;
         }
     }
@@ -1011,7 +1018,7 @@ static HRESULT vboxRrWndDestroy(HWND hWnd)
         return S_OK;
 
     DWORD winErr = GetLastError();
-    WARN((__FUNCTION__": DestroyWindow failed, winErr(%d) for hWnd(0x%x)\n", winErr, hWnd));
+    WARN_FUNC(("DestroyWindow failed, winErr(%d) for hWnd(0x%x)\n", winErr, hWnd));
 
     return HRESULT_FROM_WIN32(winErr);
 }
@@ -1106,7 +1113,7 @@ static DWORD WINAPI vboxRrRunnerThread(void *pvUser)
     if (!bRc)
     {
         DWORD winErr = GetLastError();
-        WARN((__FUNCTION__": SetEvent failed, winErr = (%d)", winErr));
+        WARN_FUNC(("SetEvent failed, winErr = (%d)", winErr));
         HRESULT tmpHr = HRESULT_FROM_WIN32(winErr);
         Assert(tmpHr != S_OK);
     }
@@ -1159,7 +1166,7 @@ HRESULT VBoxRrInit()
         else
         {
             DWORD winErr = GetLastError();
-            WARN((__FUNCTION__": CreateThread failed, winErr = (%d)", winErr));
+            WARN_FUNC(("CreateThread failed, winErr = (%d)", winErr));
             hr = HRESULT_FROM_WIN32(winErr);
             Assert(hr != S_OK);
         }
@@ -1168,7 +1175,7 @@ HRESULT VBoxRrInit()
     else
     {
         DWORD winErr = GetLastError();
-        WARN((__FUNCTION__": CreateEvent failed, winErr = (%d)", winErr));
+        WARN_FUNC(("CreateEvent failed, winErr = (%d)", winErr));
         hr = HRESULT_FROM_WIN32(winErr);
         Assert(hr != S_OK);
     }
@@ -1728,7 +1735,7 @@ DWORD VBoxDispIfResizeModes(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEna
             return vboxDispIfResizeModesWDDM(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
 #endif
         default:
-            WARN((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
+            WARN_FUNC(("unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -1747,7 +1754,7 @@ DWORD VBoxDispIfCancelPendingResize(PCVBOXDISPIF const pIf)
             return vboxDispIfCancelPendingResizeWDDM(pIf);
 #endif
         default:
-            WARN((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
+            WARN_FUNC(("unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -1925,7 +1932,7 @@ DWORD VBoxDispIfResizeStarted(PCVBOXDISPIF const pIf)
             return vboxDispIfResizeStartedWDDM(pIf);
 #endif
         default:
-            WARN((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
+            WARN_FUNC(("unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -1949,24 +1956,24 @@ static DWORD vboxDispIfSwitchToXPDM(PVBOXDISPIF pIf)
         {
             bool bSupported = true;
             *(uintptr_t *)&pIf->modeData.xpdm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
-            Log((__FUNCTION__": pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.xpdm.pfnChangeDisplaySettingsEx));
+            LogFunc(("pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.xpdm.pfnChangeDisplaySettingsEx));
             bSupported &= !!(pIf->modeData.xpdm.pfnChangeDisplaySettingsEx);
 
             if (!bSupported)
             {
-                WARN((__FUNCTION__": pfnChangeDisplaySettingsEx function pointer failed to initialize\n"));
+                WARN_FUNC(("pfnChangeDisplaySettingsEx function pointer failed to initialize\n"));
                 err = ERROR_NOT_SUPPORTED;
             }
         }
         else
         {
-            WARN((__FUNCTION__": failed to get USER32 handle, err (%d)\n", GetLastError()));
+            WARN_FUNC(("failed to get USER32 handle, err (%d)\n", GetLastError()));
             err = ERROR_NOT_SUPPORTED;
         }
     }
     else
     {
-        WARN((__FUNCTION__": can not switch to VBOXDISPIF_MODE_XPDM, because os is not >= w2k\n"));
+        WARN_FUNC(("can not switch to VBOXDISPIF_MODE_XPDM, because os is not >= w2k\n"));
         err = ERROR_NOT_SUPPORTED;
     }
 
@@ -1996,52 +2003,52 @@ DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_
     switch (enmMode)
     {
         case VBOXDISPIF_MODE_XPDM_NT4:
-            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_XPDM_NT4\n"));
+            LogFunc(("request to switch to VBOXDISPIF_MODE_XPDM_NT4\n"));
             err = vboxDispIfSwitchToXPDM_NT4(pIf);
             if (err == NO_ERROR)
             {
-                Log((__FUNCTION__": successfully switched to XPDM_NT4 mode\n"));
+                LogFunc(("successfully switched to XPDM_NT4 mode\n"));
                 pIf->enmMode = VBOXDISPIF_MODE_XPDM_NT4;
             }
             else
-                WARN((__FUNCTION__": failed to switch to XPDM_NT4 mode, err (%d)\n", err));
+                WARN_FUNC(("failed to switch to XPDM_NT4 mode, err (%d)\n", err));
             break;
         case VBOXDISPIF_MODE_XPDM:
-            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_XPDM\n"));
+            LogFunc(("request to switch to VBOXDISPIF_MODE_XPDM\n"));
             err = vboxDispIfSwitchToXPDM(pIf);
             if (err == NO_ERROR)
             {
-                Log((__FUNCTION__": successfully switched to XPDM mode\n"));
+                LogFunc(("successfully switched to XPDM mode\n"));
                 pIf->enmMode = VBOXDISPIF_MODE_XPDM;
             }
             else
-                WARN((__FUNCTION__": failed to switch to XPDM mode, err (%d)\n", err));
+                WARN_FUNC(("failed to switch to XPDM mode, err (%d)\n", err));
             break;
 #ifdef VBOX_WITH_WDDM
         case VBOXDISPIF_MODE_WDDM:
         {
-            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_WDDM\n"));
+            LogFunc(("request to switch to VBOXDISPIF_MODE_WDDM\n"));
             err = vboxDispIfSwitchToWDDM(pIf);
             if (err == NO_ERROR)
             {
-                Log((__FUNCTION__": successfully switched to WDDM mode\n"));
+                LogFunc(("successfully switched to WDDM mode\n"));
                 pIf->enmMode = VBOXDISPIF_MODE_WDDM;
             }
             else
-                WARN((__FUNCTION__": failed to switch to WDDM mode, err (%d)\n", err));
+                WARN_FUNC(("failed to switch to WDDM mode, err (%d)\n", err));
             break;
         }
         case VBOXDISPIF_MODE_WDDM_W7:
         {
-            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_WDDM_W7\n"));
+            LogFunc(("request to switch to VBOXDISPIF_MODE_WDDM_W7\n"));
             err = vboxDispIfSwitchToWDDM_W7(pIf);
             if (err == NO_ERROR)
             {
-                Log((__FUNCTION__": successfully switched to WDDM mode\n"));
+                LogFunc(("successfully switched to WDDM mode\n"));
                 pIf->enmMode = VBOXDISPIF_MODE_WDDM_W7;
             }
             else
-                WARN((__FUNCTION__": failed to switch to WDDM mode, err (%d)\n", err));
+                WARN_FUNC(("failed to switch to WDDM mode, err (%d)\n", err));
             break;
         }
 #endif
