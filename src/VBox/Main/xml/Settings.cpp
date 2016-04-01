@@ -1780,7 +1780,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
             {
                 xml::ElementNode *pelmCfg = pelmThis->createChild("Config");
                 pelmCfg->setAttribute("vm-name", itVmSlot->first.VmName);
-                pelmCfg->setAttribute("slot", itVmSlot->first.Slot);
+                pelmCfg->setAttribute("slot", (int32_t)itVmSlot->first.Slot);
 
                 for (itOpt1 = itVmSlot->second.begin();
                      itOpt1 != itVmSlot->second.end();
