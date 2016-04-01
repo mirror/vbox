@@ -55,6 +55,7 @@
 #include <iprt/thread.h>
 
 #include "UsbTestServiceInternal.h"
+#include "UsbTestServiceCfg.h"
 
 
 
@@ -63,14 +64,35 @@
 *********************************************************************************************************************************/
 
 /**
+ * UTS client state.
+ */
+typedef enum UTSCLIENTSTATE
+{
+    /** Invalid client state. */
+    UTSCLIENTSTATE_INVALID = 0,
+    /** Client is initialising, only the HOWDY and BYE packets are allowed. */
+    UTSCLIENTSTATE_INITIALISING,
+    /** Client is in fully cuntional state and ready to process all requests. */
+    UTSCLIENTSTATE_READY,
+    /** Client is destroying. */
+    UTSCLIENTSTATE_DESTROYING,
+    /** 32bit hack. */
+    UTSCLIENTSTATE_32BIT_HACK = 0x7fffffff
+} UTSCLIENTSTATE;
+
+/**
  * UTS client instance.
  */
 typedef struct UTSCLIENT
 {
     /** List node for new clients. */
     RTLISTNODE             NdLst;
+    /** The current client state. */
+    UTSCLIENTSTATE         enmState;
     /** Transport backend specific data. */
     PUTSTRANSPORTCLIENT    pTransportClient;
+    /** Client hostname. */
+    char                  *pszHostname;
 } UTSCLIENT;
 /** Pointer to a UTS client instance. */
 typedef UTSCLIENT *PUTSCLIENT;
@@ -92,6 +114,8 @@ static const PCUTSTRANSPORT g_apTransports[] =
 
 /** The select transport layer. */
 static PCUTSTRANSPORT       g_pTransport;
+/** The scratch path. */
+static char                 g_szCfgPath[RTPATH_MAX];
 /** The scratch path. */
 static char                 g_szScratchPath[RTPATH_MAX];
 /** The default scratch path. */
@@ -117,6 +141,8 @@ static bool                 g_fDisplayOutput = true;
 /** Whether to terminate or not.
  * @todo implement signals and stuff.  */
 static bool volatile        g_fTerminate = false;
+/** Configuration AST. */
+static PCFGAST              g_pCfgAst = NULL;
 /** Pipe for communicating with the serving thread about new clients. - read end */
 static RTPIPE               g_hPipeR;
 /** Pipe for communicating with the serving thread about new clients. - write end */
@@ -128,6 +154,31 @@ static RTCRITSECT           g_CritSectClients;
 /** List of new clients waiting to be picked up by the client worker thread. */
 static RTLISTANCHOR         g_LstClientsNew;
 
+
+
+/**
+ * Returns the string represenation of the given state.
+ */
+static const char *utsClientStateStringify(UTSCLIENTSTATE enmState)
+{
+    switch (enmState)
+    {
+        case UTSCLIENTSTATE_INVALID:
+            return "INVALID";
+        case UTSCLIENTSTATE_INITIALISING:
+            return "INITIALISING";
+        case UTSCLIENTSTATE_READY:
+            return "READY";
+        case UTSCLIENTSTATE_DESTROYING:
+            return "DESTROYING";
+        case UTSCLIENTSTATE_32BIT_HACK:
+        default:
+            break;
+    }
+
+    AssertMsgFailed(("Unknown state %#x\n", enmState));
+    return "UNKNOWN";
+}
 
 /**
  * Calculates the checksum value, zero any padding space and send the packet.
@@ -450,38 +501,28 @@ static int utsReplyUnknown(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
 }
 
 /**
- * Checks if the two opcodes match.
+ * Deals with a command which contains an unterminated string.
  *
- * @returns true on match, false on mismatch.
- * @param   pPktHdr             The packet header.
- * @param   pszOpcode2          The opcode we're comparing with.  Does not have
- *                              to be the whole 8 chars long.
+ * @returns IPRT status code of the send.
+ * @param   pClient             The UTS client structure.
+ * @param   pPktHdr             The packet containing the unterminated string.
  */
-DECLINLINE(bool) utsIsSameOpcode(PCUTSPKTHDR pPktHdr, const char *pszOpcode2)
+static int utsReplyBadStrTermination(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
 {
-    if (pPktHdr->achOpcode[0] != pszOpcode2[0])
-        return false;
-    if (pPktHdr->achOpcode[1] != pszOpcode2[1])
-        return false;
+    return utsReplyFailure(pClient, pPktHdr, "BAD TERM", VERR_INVALID_PARAMETER, "Opcode '%.8s' contains an unterminated string", pPktHdr->achOpcode);
+}
 
-    unsigned i = 2;
-    while (   i < RT_SIZEOFMEMB(UTSPKTHDR, achOpcode)
-           && pszOpcode2[i] != '\0')
-    {
-        if (pPktHdr->achOpcode[i] != pszOpcode2[i])
-            break;
-        i++;
-    }
-
-    if (   i < RT_SIZEOFMEMB(UTSPKTHDR, achOpcode)
-        && pszOpcode2[i] == '\0')
-    {
-        while (   i < RT_SIZEOFMEMB(UTSPKTHDR, achOpcode)
-               && pPktHdr->achOpcode[i] == ' ')
-            i++;
-    }
-
-    return i == RT_SIZEOFMEMB(UTSPKTHDR, achOpcode);
+/**
+ * Deals with a command sent in an invalid client state.
+ *
+ * @returns IPRT status code of the send.
+ * @param   pClient             The UTS client structure.
+ * @param   pPktHdr             The packet containing the unterminated string.
+ */
+static int utsReplyInvalidState(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
+{
+    return utsReplyFailure(pClient, pPktHdr, "INVSTATE", VERR_INVALID_STATE, "Opcode '%.8s' is not supported at client state '%s",
+                           pPktHdr->achOpcode, utsClientStateStringify(pClient->enmState));
 }
 
 /**
@@ -511,8 +552,29 @@ static int utsDoBye(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
  */
 static int utsDoHowdy(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
 {
-    if (pPktHdr->cb != sizeof(UTSPKTHDR))
-        return utsReplyBadSize(pClient, pPktHdr, sizeof(UTSPKTHDR));
+    if (pPktHdr->cb != sizeof(UTSPKTREQHOWDY))
+        return utsReplyBadSize(pClient, pPktHdr, sizeof(UTSPKTREQHOWDY));
+
+    if (pClient->enmState != UTSCLIENTSTATE_INITIALISING)
+        return utsReplyInvalidState(pClient, pPktHdr);
+
+    PUTSPKTREQHOWDY pReq = (PUTSPKTREQHOWDY)pPktHdr;
+
+    if (pReq->uVersion != UTS_PROTOCOL_VS)
+        return utsReplyRC(pClient, pPktHdr, VERR_VERSION_MISMATCH, "The given version %#x is not supported", pReq->uVersion);
+
+    /* Verify hostname string. */
+    if (pReq->cchHostname >= sizeof(pReq->achHostname))
+        return utsReplyBadSize(pClient, pPktHdr, sizeof(pReq->achHostname) - 1);
+
+    if (pReq->achHostname[pReq->cchHostname] != '\0')
+        return utsReplyBadStrTermination(pClient, pPktHdr);
+
+    /* Extract string. */
+    pClient->pszHostname = RTStrDup(pClient->pszHostname);
+    if (!pClient->pszHostname)
+        return utsReplyRC(pClient, pPktHdr, VERR_NO_MEMORY, "Failed to alllocate memory for the hostname string");
+
     int rc = utsReplyAck(pClient, pPktHdr);
     if (RT_SUCCESS(rc))
     {
@@ -563,6 +625,8 @@ static int utsClientReqProcess(PUTSCLIENT pClient)
  */
 static void utsClientDestroy(PUTSCLIENT pClient)
 {
+    if (pClient->pszHostname)
+        RTStrFree(pClient->pszHostname);
     RTMemFree(pClient);
 }
 
@@ -701,6 +765,7 @@ static RTEXITCODE utsMainLoop(void)
         PUTSCLIENT pClient = (PUTSCLIENT)RTMemAllocZ(sizeof(PUTSCLIENT));
         if (RT_LIKELY(pClient))
         {
+            pClient->enmState         = UTSCLIENTSTATE_INITIALISING;
             pClient->pTransportClient = pTransportClient;
         }
         else
@@ -723,33 +788,52 @@ static RTEXITCODE utsMainLoop(void)
 static int utsInit(void)
 {
     int rc = VINF_SUCCESS;
+    PRTERRINFO pErrInfo = NULL;
 
     RTListInit(&g_LstClientsNew);
 
-    rc = RTCritSectInit(&g_CritSectClients);
+    rc = utsParseConfig(g_szCfgPath, &g_pCfgAst, &pErrInfo);
     if (RT_SUCCESS(rc))
     {
-        rc = RTPipeCreate(&g_hPipeR, &g_hPipeW, 0);
+        rc = RTCritSectInit(&g_CritSectClients);
         if (RT_SUCCESS(rc))
         {
-            /* Spin off the thread serving connections. */
-            rc = RTThreadCreate(&g_hThreadServing, utsClientWorker, NULL, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
-                                "USBTSTSRV");
+            rc = RTPipeCreate(&g_hPipeR, &g_hPipeW, 0);
             if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-            else
-                RTMsgError("Creating the client worker thread failed with %Rrc\n", rc);
+            {
+                /* Spin off the thread serving connections. */
+                rc = RTThreadCreate(&g_hThreadServing, utsClientWorker, NULL, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
+                                    "USBTSTSRV");
+                if (RT_SUCCESS(rc))
+                    return VINF_SUCCESS;
+                else
+                    RTMsgError("Creating the client worker thread failed with %Rrc\n", rc);
 
-            RTPipeClose(g_hPipeR);
-            RTPipeClose(g_hPipeW);
+                RTPipeClose(g_hPipeR);
+                RTPipeClose(g_hPipeW);
+            }
+            else
+                RTMsgError("Creating communications pipe failed with %Rrc\n", rc);
+
+            RTCritSectDelete(&g_CritSectClients);
         }
         else
-            RTMsgError("Creating communications pipe failed with %Rrc\n", rc);
+            RTMsgError("Creating global critical section failed with %Rrc\n", rc);
 
-        RTCritSectDelete(&g_CritSectClients);
+        utsConfigAstDestroy(g_pCfgAst);
     }
     else
-        RTMsgError("Creating global critical section failed with %Rrc\n", rc);
+    {
+        if (RTErrInfoIsSet(pErrInfo))
+        {
+            RTMsgError("Failed to parse config with detailed error: %s (%Rrc)\n",
+                       pErrInfo->pszMsg, pErrInfo->rc);
+            RTErrInfoFree(pErrInfo);
+        }
+        else
+            RTMsgError("Faield to parse config with unknown error (%Rrc)\n", rc);
+        return rc;
+    }
 
     return rc;
 }
@@ -820,6 +904,16 @@ static void utsSetDefaults(void)
     strcpy(g_szScratchPath, g_szDefScratchPath);
 
     /*
+     * Config file location.
+     */
+    /** @todo: Improve */
+#if !defined(RT_OS_WINDOWS)
+    strcpy(g_szCfgPath, "/etc/uts.conf");
+#else
+    strcpy(g_szCfgPath, "");
+#endif
+
+    /*
      * The default transporter is the first one.
      */
     g_pTransport = g_apTransports[0];
@@ -837,6 +931,8 @@ static void utsUsage(PRTSTREAM pStrm, const char *argv0)
                  "Usage: %Rbn [options]\n"
                  "\n"
                  "Options:\n"
+                 "  --config <path>\n"
+                 "      Where to load the config from\n"
                  "  --cdrom <path>\n"
                  "      Where the CD/DVD-ROM will be mounted.\n"
                  "      Default: %s\n"
@@ -890,14 +986,15 @@ static RTEXITCODE utsParseArgv(int argc, char **argv, bool *pfExit)
     /*
      * Storage for locally handled options.
      */
-    bool        fDaemonize      = true;
-    bool        fDaemonized     = false;
+    bool fDaemonize  = true;
+    bool fDaemonized = false;
 
     /*
      * Combine the base and transport layer option arrays.
      */
     static const RTGETOPTDEF s_aBaseOptions[] =
     {
+        { "--config",           'C', RTGETOPT_REQ_STRING  },
         { "--transport",        't', RTGETOPT_REQ_STRING  },
         { "--cdrom",            'c', RTGETOPT_REQ_STRING  },
         { "--scratch",          's', RTGETOPT_REQ_STRING  },
@@ -936,6 +1033,12 @@ static RTEXITCODE utsParseArgv(int argc, char **argv, bool *pfExit)
     {
         switch (ch)
         {
+            case 'C':
+                rc = RTStrCopy(g_szCfgPath, sizeof(g_szCfgPath), Val.psz);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Config file path is path too long (%Rrc)\n", rc);
+                break;
+
             case 'c':
                 rc = RTStrCopy(g_szCdRomPath, sizeof(g_szCdRomPath), Val.psz);
                 if (RT_FAILURE(rc))

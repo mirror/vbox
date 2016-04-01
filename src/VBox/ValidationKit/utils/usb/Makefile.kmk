@@ -43,6 +43,8 @@ UsbTestService_DEFS = \
 	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
 UsbTestService_SOURCES = \
 	UsbTestService.cpp \
+	UsbTestServiceCfg.cpp \
+	UsbTestServiceProtocol.cpp \
 	UsbTestServiceTcp.cpp
 
 $(evalcall def_vbox_validationkit_process_python_sources)

@@ -78,6 +78,13 @@ typedef UTSPKTSTS *PUTSPKTSTS;
 
 #define UTSPKT_OPCODE_HOWDY             "HOWDY   "
 
+/** 32bit protocol version consisting of a 16bit major and 16bit minor part. */
+#define UTS_PROTOCOL_VS (UTS_PROTOCOL_VS_MAJOR | UTS_PROTOCOL_VS_MINOR)
+/** The major version part of the protocol version. */
+#define UTS_PROTOCOL_VS_MAJOR (1 << 16)
+/** The minor version part of the protocol version. */
+#define UTS_PROTOCOL_VS_MINOR (0)
+
 /**
  * The HOWDY request structure.
  */
@@ -95,6 +102,8 @@ typedef struct UTSPKTREQHOWDY
     uint8_t         achHostname[68];
 } UTSPKTREQHOWDY;
 AssertCompileSizeAlignment(UTSPKTREQHOWDY, UTSPKT_ALIGNMENT);
+/** Pointer to a HOWDY request structure. */
+typedef UTSPKTREQHOWDY *PUTSPKTREQHOWDY;
 
 /**
  * The HOWDY reply structure.
@@ -121,6 +130,8 @@ typedef struct UTSPKTREPHOWDY
     uint8_t         au8Padding[12];
 } UTSPKTREPHOWDY;
 AssertCompileSizeAlignment(UTSPKTREPHOWDY, UTSPKT_ALIGNMENT);
+/** Pointer to a HOWDY reply structure. */
+typedef UTSPKTREPHOWDY *PUTSPKTREPHOWDY;
 
 /** Connections over USB/IP are supported. */
 #define UTSPKT_HOWDY_CONN_F_USBIP    RT_BIT_32(0)
@@ -149,6 +160,8 @@ typedef struct UTSPKTREQGDGTDTOR
     uint8_t         au8Padding[12];
 } UTSPKTREQGDGTDTOR;
 AssertCompileSizeAlignment(UTSPKTREQGDGTDTOR, UTSPKT_ALIGNMENT);
+/** Pointer to a GADGET DESTROY structure. */
+typedef UTSPKTREQGDGTDTOR *PUTSPKTREQGDGTDTOR;
 
 /* No additional structure for the reply (just standard STATUS packet). */
 
@@ -167,13 +180,15 @@ typedef struct UTSPKTREQGDGTCNCT
     uint8_t         au8Padding[12];
 } UTSPKTREQGDGTCNCT;
 AssertCompileSizeAlignment(UTSPKTREQGDGTCNCT, UTSPKT_ALIGNMENT);
+/** Pointer to a GADGET CONNECT request structure. */
+typedef UTSPKTREQGDGTCNCT *PUTSPKTREQGDGTCNCT;
 
 /* No additional structure for the reply (just standard STATUS packet). */
 
 #define UTSPKT_OPCODE_GADGET_DISCONNECT "GDGTDCNT"
 
 /**
- * The GADGET CONNECT request structure.
+ * The GADGET DISCONNECT request structure.
  */
 typedef struct UTSPKTREQGDGTDCNT
 {
@@ -185,8 +200,77 @@ typedef struct UTSPKTREQGDGTDCNT
     uint8_t         au8Padding[12];
 } UTSPKTREQGDGTDCNT;
 AssertCompileSizeAlignment(UTSPKTREQGDGTDCNT, UTSPKT_ALIGNMENT);
+/** Pointer to a GADGET CONNECT request structure. */
+typedef UTSPKTREQGDGTDCNT *PUTSPKTREQGDGTDCNT;
 
 /* No additional structure for the reply (just standard STATUS packet). */
+
+/**
+ * Checks if the two opcodes match.
+ *
+ * @returns true on match, false on mismatch.
+ * @param   pPktHdr             The packet header.
+ * @param   pszOpcode2          The opcode we're comparing with.  Does not have
+ *                              to be the whole 8 chars long.
+ */
+DECLINLINE(bool) utsIsSameOpcode(PCUTSPKTHDR pPktHdr, const char *pszOpcode2)
+{
+    if (pPktHdr->achOpcode[0] != pszOpcode2[0])
+        return false;
+    if (pPktHdr->achOpcode[1] != pszOpcode2[1])
+        return false;
+
+    unsigned i = 2;
+    while (   i < RT_SIZEOFMEMB(UTSPKTHDR, achOpcode)
+           && pszOpcode2[i] != '\0')
+    {
+        if (pPktHdr->achOpcode[i] != pszOpcode2[i])
+            break;
+        i++;
+    }
+
+    if (   i < RT_SIZEOFMEMB(UTSPKTHDR, achOpcode)
+        && pszOpcode2[i] == '\0')
+    {
+        while (   i < RT_SIZEOFMEMB(UTSPKTHDR, achOpcode)
+               && pPktHdr->achOpcode[i] == ' ')
+            i++;
+    }
+
+    return i == RT_SIZEOFMEMB(UTSPKTHDR, achOpcode);
+}
+
+/**
+ * Converts a UTS request packet from host to network byte ordering.
+ *
+ * @returns nothing.
+ * @param   pPktHdr           The packet to convert.
+ */
+DECLHIDDEN(void) utsProtocolReqH2N(PUTSPKTHDR pPktHdr);
+
+/**
+ * Converts a UTS request packet from network to host byte ordering.
+ *
+ * @returns nothing.
+ * @param   pPktHdr           The packet to convert.
+ */
+DECLHIDDEN(void) utsProtocolReqN2H(PUTSPKTHDR pPktHdr);
+
+/**
+ * Converts a UTS reply packet from host to network byte ordering.
+ *
+ * @returns nothing.
+ * @param   pPktHdr           The packet to convert.
+ */
+DECLHIDDEN(void) utsProtocolRepH2N(PUTSPKTHDR pPktHdr);
+
+/**
+ * Converts a UTS reply packet from network to host byte ordering.
+ *
+ * @returns nothing.
+ * @param   pPktHdr           The packet to convert.
+ */
+DECLHIDDEN(void) utsProtocolRepN2H(PUTSPKTHDR pPktHdr);
 
 RT_C_DECLS_END
 
