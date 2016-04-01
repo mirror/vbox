@@ -1969,7 +1969,7 @@ NTSTATUS VBoxWddmSlGetScanLine(PVBOXMP_DEVEXT pDevExt, DXGKARG_GETSCANLINE *pGet
         {
             VSyncTime.QuadPart = VSyncTime.QuadPart - DevVSyncTime.QuadPart;
             /* time is in 100ns, */
-            curScanLine = (uint32_t)((pTarget->Size.cy * VSyncTime.QuadPart) / DevVSyncTime.QuadPart);
+            curScanLine = (uint32_t)((pTarget->Size.cy * VSyncTime.QuadPart) / 166666LL); /* ASSUMES 60Hz*/
             if (pDevExt->bVSyncTimerEnabled)
             {
                 if (curScanLine >= pTarget->Size.cy)
