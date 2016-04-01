@@ -367,19 +367,18 @@ setup()
                 dox11config=""
                 vboxvideo_src=""
             }
-            # Do not install if we can use the kernel driver.
-            case `uname -r` in
-                1.* | 2.* | 3.[0-9].* | 3.10.* ) ;;
-                * ) vboxvideo_src="" ;;
-            esac
             ;;
         * )
             # For anything else, assume kernel drivers.
             dox11config=""
-            $MODPROBE vboxvideo ||
-                echo "Warning: failed to set up the X Window System display integration."
             ;;
     esac
+    if $MODPROBE vboxvideo; then
+        # Do not install if we can use the kernel driver.
+        rm -f "$modules_dir/drivers/vboxvideo_drv.so"
+        vboxvideo_src=""
+        dox11config=""
+    fi
     test -n "${dox11config}" &&
         begin "Installing $xserver_version modules"
     rm "$modules_dir/drivers/vboxvideo_drv$driver_ext" 2>/dev/null
