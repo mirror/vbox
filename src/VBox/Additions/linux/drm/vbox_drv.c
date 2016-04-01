@@ -192,27 +192,13 @@ static struct pci_driver vbox_pci_driver =
     .driver.pm = &vbox_pm_ops,
 };
 
-static long vbox_ioctl(struct file *filp, unsigned int cmd,
-                                unsigned long arg)
-{
-    struct drm_file *file_priv = filp->private_data;
-    struct vbox_private *vbox = file_priv->minor->dev->dev_private;
-
-#ifdef DRM_IOCTL_MODE_CURSOR2
-    if ((cmd == DRM_IOCTL_MODE_CURSOR) && vbox != NULL)
-        vbox->have_cursor_hotspot = false;
-    if ((cmd == DRM_IOCTL_MODE_CURSOR2) && vbox != NULL)
-        vbox->have_cursor_hotspot = true;
-#endif
-    return drm_ioctl(filp, cmd, arg);
-}
 
 static const struct file_operations vbox_fops =
 {
     .owner = THIS_MODULE,
     .open = drm_open,
     .release = drm_release,
-    .unlocked_ioctl = vbox_ioctl,
+    .unlocked_ioctl = drm_ioctl,
     .mmap = vbox_mmap,
     .poll = drm_poll,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)

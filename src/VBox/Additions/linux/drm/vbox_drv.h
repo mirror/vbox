@@ -84,8 +84,6 @@
 
 #define VBOX_MAX_CURSOR_WIDTH  64
 #define VBOX_MAX_CURSOR_HEIGHT 64
-#define CURSOR_PIXEL_COUNT VBOX_MAX_CURSOR_WIDTH * VBOX_MAX_CURSOR_HEIGHT
-#define CURSOR_DATA_SIZE CURSOR_PIXEL_COUNT * 4 + CURSOR_PIXEL_COUNT / 8
 
 struct vbox_fbdev;
 
@@ -124,15 +122,7 @@ struct vbox_private {
      * modes to 800x600 until this point to get a sensible console size. */
     bool fbdev_init;
     struct work_struct hotplug_work;
-    bool have_cursor_hotspot;
-    uint32_t cursor_width;
-    uint32_t cursor_height;
-    size_t cursor_data_size;
-    uint8_t cursor_data[CURSOR_DATA_SIZE];
 };
-
-#undef CURSOR_PIXEL_COUNT
-#undef CURSOR_DATA_SIZE
 
 int vbox_driver_load(struct drm_device *dev, unsigned long flags);
 int vbox_driver_unload(struct drm_device *dev);
