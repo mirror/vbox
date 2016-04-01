@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2015 Oracle Corporation
+ * Copyright (C) 2008-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -5118,7 +5118,7 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                                                  *aMediumLockList);
         else
             rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                        false /* fMediumLockWrite */,
+                                        true /* fMediumLockWrite */,
                                         false /* fMediumLockWriteAll */,
                                         NULL,
                                         *aMediumLockList);
@@ -5536,6 +5536,13 @@ void Medium::i_cancelMergeTo(MediumLockList *aChildrenToReparent,
         if (pMedium->m->state == MediumState_Deleting)
         {
             rc = pMedium->i_unmarkForDeletion();
+            AssertComRC(rc);
+        }
+        else if (   (   pMedium->m->state == MediumState_LockedWrite
+                     || pMedium->m->state == MediumState_LockedRead)
+                 && pMedium->m->preLockState == MediumState_Deleting)
+        {
+            rc = pMedium->i_unmarkLockedForDeletion();
             AssertComRC(rc);
         }
     }

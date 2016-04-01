@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,6 +32,7 @@
 #include "VirtualBoxImpl.h"
 
 #include "AutoCaller.h"
+#include "VBox/com/MultiResult.h"
 
 #include <iprt/path.h>
 #include <iprt/cpp/utils.h>
@@ -2596,16 +2597,16 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
 {
     LogFlowThisFuncEnter();
 
-    HRESULT rc = S_OK;
+    MultiResult mrc(S_OK);
     AutoCaller autoCaller(this);
     LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
     if (FAILED(autoCaller.rc()))
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
-        rc = setError(E_FAIL,
-                      tr("The session has been accidentally closed"));
-        task.m_pProgress->i_notifyComplete(rc);
+        mrc = setError(E_FAIL,
+                       tr("The session has been accidentally closed"));
+        task.m_pProgress->i_notifyComplete(mrc);
         LogFlowThisFuncLeave();
         return;
     }
@@ -2615,6 +2616,8 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
 
     try
     {
+        HRESULT rc = S_OK;
+
         /* Locking order:  */
         AutoMultiWriteLock2 multiLock(this->lockHandle(),                   // machine
                                       task.m_pSnapshot->lockHandle()        // snapshot
@@ -2819,7 +2822,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                 if (FAILED(rc))
                     throw rc;
 
-                if(pTarget_local->i_isMediumFormatFile())
+                if (pTarget_local->i_isMediumFormatFile())
                 {
                     int vrc = RTFsQuerySerial(pTarget_local->i_getLocationFull().c_str(), &pu32Serial);
                     if (RT_FAILURE(vrc))
@@ -2863,8 +2866,8 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                     LogFlowThisFunc((" Path to the storage wasn't found...\n "));
 
                     rc = setError(E_INVALIDARG,
-                                      tr(" Unable to merge storage '%s'. Path to the storage wasn't found. "),
-                                      it_sm->second);
+                                  tr(" Unable to merge storage '%s'. Path to the storage wasn't found. "),
+                                  it_sm->second);
                     throw rc;
                 }
 
@@ -2872,8 +2875,8 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                 if (RT_FAILURE(vrc))
                 {
                     rc = setError(E_FAIL,
-                                      tr(" Unable to merge storage '%s'. Can't get the storage size. "),
-                                      it_sm->second);
+                                  tr(" Unable to merge storage '%s'. Can't get the storage size. "),
+                                  it_sm->second);
                     throw rc;
                 }
 
@@ -2882,8 +2885,8 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                     LogFlowThisFunc((" Not enough free space to merge...\n "));
 
                     rc = setError(E_OUTOFMEMORY,
-                                      tr(" Unable to merge storage '%s' - not enough free storage space. "),
-                                      it_sm->second);
+                                  tr(" Unable to merge storage '%s' - not enough free storage space. "),
+                                  it_sm->second);
                     throw rc;
                 }
 
@@ -3126,10 +3129,10 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
         }
     }
     catch (HRESULT aRC) {
-        rc = aRC;
+        mrc = aRC;
     }
 
-    if (FAILED(rc))
+    if (FAILED(mrc))
     {
         // preserve existing error info so that the result can
         // be properly reported to the progress object below
@@ -3167,12 +3170,12 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
     }
 
     // report the result (this will try to fetch current error info on failure)
-    task.m_pProgress->i_notifyComplete(rc);
+    task.m_pProgress->i_notifyComplete(mrc);
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(mrc))
         mParent->i_onSnapshotDeleted(mData->mUuid, snapshotId);
 
-    LogFlowThisFunc(("Done deleting snapshot (rc=%08X)\n", rc));
+    LogFlowThisFunc(("Done deleting snapshot (rc=%08X)\n", (HRESULT)mrc));
     LogFlowThisFuncLeave();
 }
 
@@ -3339,7 +3342,7 @@ HRESULT SessionMachine::i_prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &a
         rc = aMediumLockList->Lock();
         alock.acquire();
         childLock.acquire();
-        if (FAILED(rc) && fOnlineMergePossible)
+        if (FAILED(rc))
         {
             /* Locking failed, this cannot be done as an offline merge. Try to
              * combine the locking information into the lock list of the medium
@@ -3475,15 +3478,14 @@ HRESULT SessionMachine::i_prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &a
                     pMedium->i_unmarkLockedForDeletion();
                 }
             }
-
         }
-        else
-        {
-            aSource->i_cancelMergeTo(aChildrenToReparent, aMediumLockList);
-            rc = setError(rc,
-                          tr("Cannot lock hard disk '%s' for an offline merge"),
-                          aHD->i_getLocationFull().c_str());
-        }
+    }
+    else if (FAILED(rc))
+    {
+        aSource->i_cancelMergeTo(aChildrenToReparent, aMediumLockList);
+        rc = setError(rc,
+                      tr("Cannot lock hard disk '%s' when deleting a snapshot"),
+                      aHD->i_getLocationFull().c_str());
     }
 
     return rc;
