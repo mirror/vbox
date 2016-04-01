@@ -124,7 +124,7 @@ ASMHalt();
 }
 
 /**
- * Compares trap stuff.
+ * Compares \#GP trap.
  */
 #define bs3CpuBasic2_CompareGpCtx BS3_CMN_NM(bs3CpuBasic2_CompareGpCtx)
 void bs3CpuBasic2_CompareGpCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd, bool f16BitHandler,
@@ -145,7 +145,7 @@ ASMHalt();
 }
 
 /**
- * Compares trap stuff.
+ * Compares \#NP trap.
  */
 #define bs3CpuBasic2_CompareNpCtx BS3_CMN_NM(bs3CpuBasic2_CompareNpCtx)
 void bs3CpuBasic2_CompareNpCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd, bool f16BitHandler,
@@ -166,7 +166,49 @@ ASMHalt();
 }
 
 /**
- * Compares trap stuff.
+ * Compares \#SS trap.
+ */
+#define bs3CpuBasic2_CompareSsCtx BS3_CMN_NM(bs3CpuBasic2_CompareSsCtx)
+void bs3CpuBasic2_CompareSsCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd, bool f16BitHandler,
+                               const char *pszMode, unsigned uLine)
+{
+    uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
+    CHECK_MEMBER("bXcpt",   "%#04x",    pTrapCtx->bXcpt,        X86_XCPT_SS);
+    CHECK_MEMBER("bErrCd",  "%#06RX64", pTrapCtx->uErrCd,       (uint64_t)uErrCd);
+    Bs3TestCheckRegCtxEx(&pTrapCtx->Ctx, pStartCtx, 0 /*cbIpAdjust*/, 0 /*cbSpAdjust*/,
+                         f16BitHandler ? 0 : X86_EFL_RF,
+                         pszMode, uLine);
+    if (Bs3TestSubErrorCount() != cErrorsBefore)
+    {
+//Bs3TestPrintf("%s\n",  __FUNCTION__);
+        Bs3TrapPrintFrame(pTrapCtx);
+ASMHalt();
+    }
+}
+
+/**
+ * Compares \#TS trap.
+ */
+#define bs3CpuBasic2_CompareTsCtx BS3_CMN_NM(bs3CpuBasic2_CompareTsCtx)
+void bs3CpuBasic2_CompareTsCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd, bool f16BitHandler,
+                               const char *pszMode, unsigned uLine)
+{
+    uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
+    CHECK_MEMBER("bXcpt",   "%#04x",    pTrapCtx->bXcpt,        X86_XCPT_TS);
+    CHECK_MEMBER("bErrCd",  "%#06RX64", pTrapCtx->uErrCd,       (uint64_t)uErrCd);
+    Bs3TestCheckRegCtxEx(&pTrapCtx->Ctx, pStartCtx, 0 /*cbIpAdjust*/, 0 /*cbSpAdjust*/,
+                         f16BitHandler ? 0 : X86_EFL_RF,
+                         pszMode, uLine);
+    if (Bs3TestSubErrorCount() != cErrorsBefore)
+    {
+//Bs3TestPrintf("%s\n",  __FUNCTION__);
+        Bs3TrapPrintFrame(pTrapCtx);
+ASMHalt();
+    }
+}
+
+/**
+ * Compares \#PF trap.
  */
 #define bs3CpuBasic2_ComparePfCtx BS3_CMN_NM(bs3CpuBasic2_ComparePfCtx)
 void bs3CpuBasic2_ComparePfCtx(PCBS3TRAPFRAME pTrapCtx, PBS3REGCTX pStartCtx, uint16_t uErrCd, uint64_t uCr2Expected,
@@ -191,7 +233,7 @@ ASMHalt();
 
 #define bs3CpuBasic2_RaiseXcpt1Common BS3_CMN_NM(bs3CpuBasic2_RaiseXcpt1Common)
 static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * const pszMode, bool const f16BitSys,
-                                          uint16_t const uSysR0Cs, uint16_t const uSysR0CsConf,
+                                          uint16_t const uSysR0Cs, uint16_t const uSysR0CsConf, uint16_t const uSysR0Ss,
                                           PX86DESC const paIdt, unsigned const cIdteShift)
 {
     BS3TRAPFRAME    TrapCtx;
@@ -203,9 +245,15 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     PBS3REGCTX      apCtx8x[4];
     unsigned        iCtx;
     unsigned        iRing;
+    unsigned        iDpl;
+    unsigned        iRpl;
     unsigned        i, j, k;
     unsigned        uLine;
-# if TMPL_BITS != 16
+    uint32_t        uExpected;
+# if TMPL_BITS == 16
+    bool const      f386Plus = (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386;
+# else
+    bool const      f386Plus = true;
     int             rc;
     uint8_t        *pbIdtCopyAlloc;
     PX86DESC        pIdtCopy;
@@ -355,7 +403,123 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
             }
         }
     }
-    BS3_ASSERT(uLine < 2000);
+    BS3_ASSERT(uLine < 2800);
+
+
+    /*
+     * Various CS and SS related faults
+     * We temporarily reconfigure gate 80 and 83 with new CS selectors, the
+     * latter have a CS.DPL of 2 for testing ring transisions and SS loading
+     * without making it impossible to handle faults.
+     *
+     * Check #NP(CS). Pit #NP(CS) against #GP(CS) due to DPL.
+     * Ditto for stack.
+     * Pit SS trouble against CS trouble.
+     * Pit both against gate DPL trouble.
+     */
+    uLine = 2800;
+    BS3_DATA_NM(Bs3GdteTestPage00) = BS3_DATA_NM(Bs3Gdt)[uSysR0Cs >> X86_SEL_SHIFT];
+    BS3_DATA_NM(Bs3GdteTestPage00).Gen.u1Present = 0;
+    paIdt[0x80 << cIdteShift].Gate.u16Sel = BS3_SEL_TEST_PAGE_00;
+
+    /* CS.PRESENT = 0 */
+    Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+    bs3CpuBasic2_CompareNpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00, f16BitSys, pszMode, uLine);
+    uLine++;
+
+    /* Check that GATE.DPL is checked before CS.PRESENT. */
+    for (iRing = 1; iRing < 4; iRing++)
+    {
+        Bs3MemCpy(&CtxTmp, &Ctx80, sizeof(CtxTmp));
+        Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
+        Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, (0x80 << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
+                                  f16BitSys, pszMode, uLine);
+        uLine++;
+    }
+
+    /* CS.DPL mismatch takes precedence over CS.PRESENT = 0. */
+    Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+    bs3CpuBasic2_CompareNpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00, f16BitSys, pszMode, uLine);
+    uLine++;
+    for (iDpl = 1; iDpl < 4; iDpl++)
+    {
+        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u2Dpl = iDpl;
+        Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00, f16BitSys, pszMode, uLine);
+        uLine++;
+    }
+
+    /* Test SS. */
+    if (!BS3_MODE_IS_64BIT_SYS(bMode))
+    {
+        uint16_t BS3_FAR *puTssSs2  = BS3_MODE_IS_16BIT_SYS(bMode) ? &BS3_DATA_NM(Bs3Tss16).ss2 : &BS3_DATA_NM(Bs3Tss32).ss2;
+        uint16_t const    uSavedSs2 = *puTssSs2;
+
+        /* Make the handler execute in ring-2. */
+        BS3_DATA_NM(Bs3GdteTestPage02) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        paIdt[0x83 << cIdteShift].Gate.u16Sel = BS3_SEL_TEST_PAGE_02 | 2;
+
+        Bs3MemCpy(&CtxTmp, &Ctx83, sizeof(CtxTmp));
+        Bs3RegCtxConvertToRingX(&CtxTmp, 3); /* yeah, from 3 so SS:xSP is reloaded. */
+        Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+        bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83, pszMode, uLine);
+        uLine++;
+
+        /* Create a SS.DPL=2 stack segment and check that SS2.RPL matters and
+           that we get #SS if the selector isn't present. */
+        BS3_DATA_NM(Bs3GdteTestPage03) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Ss + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        for (iDpl = 0; iDpl < 4; iDpl++)
+        {
+            BS3_DATA_NM(Bs3GdteTestPage03).Gen.u2Dpl = iDpl;
+            for (k = 0; k < 2; k++)
+            {
+                BS3_DATA_NM(Bs3GdteTestPage03).Gen.u1Present = k == 0;
+                for (iRpl = 0; iRpl < 4; iRpl++)
+                {
+                    *puTssSs2 = BS3_SEL_TEST_PAGE_03 | iRpl;
+                    Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+                    if (iRpl != 2 || iRpl != iDpl)
+                        bs3CpuBasic2_CompareTsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03, f16BitSys, pszMode, uLine);
+                    else if (k != 0)
+                        bs3CpuBasic2_CompareSsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03, f16BitSys, pszMode, uLine);
+                    else
+                    {
+                        bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83, pszMode, uLine);
+                        if (TrapCtx.uHandlerSs != (BS3_SEL_TEST_PAGE_03 | 2))
+                            Bs3TestFailedF("%u - %s: uHandlerSs=%#x expected %#x\n", uLine, pszMode,
+                                           TrapCtx.uHandlerSs, BS3_SEL_TEST_PAGE_03 | 2);
+                    }
+                    uLine++;
+
+                    /* Modify the gate DPL to check that this is checked before SS.DPL and SS.PRESENT. */
+                    paIdt[0x83 << cIdteShift].Gate.u2Dpl = 2;
+                    Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, (0x83 << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
+                                              f16BitSys, pszMode, uLine);
+                    paIdt[0x83 << cIdteShift].Gate.u2Dpl = 3;
+                    uLine++;
+
+                    /* Check the the CS.DPL check is done before the SS ones. Restoring the ring-0 INT 83
+                       context triggers the CS.DPL < CPL check. */
+                    Bs3TrapSetJmpAndRestore(&Ctx83, &TrapCtx);
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx83, BS3_SEL_TEST_PAGE_02, f16BitSys, pszMode, uLine);
+                    uLine++;
+
+                    /* Now mark the CS selector not present and check that that also triggers before SS stuff. */
+                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u1Present = 0;
+                    Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+                    bs3CpuBasic2_CompareNpCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_02, f16BitSys, pszMode, uLine);
+                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u1Present = 1;
+                    uLine++;
+                }
+            }
+        }
+
+        *puTssSs2 = uSavedSs2;
+        paIdt[0x83 << cIdteShift].Gate.u16Sel = uSysR0Cs;
+    }
+    paIdt[0x80 << cIdteShift].Gate.u16Sel = uSysR0Cs;
 
     /*
      * Modify the gate CS value with a conforming segment.
@@ -573,6 +737,8 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
         bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83 /*bXcpt*/, pszMode, uLine);
         if (!(BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
             Bs3TestFailedF("%u - %s: u4Type=%#x, not accessed!\n", uLine, pszMode, BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+        if (TrapCtx.uHandlerCs != (BS3_SEL_TEST_PAGE_03 | 3))
+            Bs3TestFailedF("%u - %s: uHandlerCs=%#x, expected %#x\n", uLine, pszMode, TrapCtx.uHandlerCs, (BS3_SEL_TEST_PAGE_03 | 3));
         uLine++;
 
         /*
@@ -659,10 +825,67 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
 
         /* restore */
         paIdt[0x80 << cIdteShift].Gate.u16Sel = uSysR0Cs;
-        paIdt[0x83 << cIdteShift].Gate.u16Sel = uSysR0Cs + (3 << BS3_SEL_RING_SHIFT) + 3;
+        paIdt[0x83 << cIdteShift].Gate.u16Sel = uSysR0Cs;// + (3 << BS3_SEL_RING_SHIFT) + 3;
     }
 
 # endif /* 32 || 64*/
+
+    /*
+     * Check broad EFLAGS effects.
+     */
+    uLine = 5600;
+    for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
+    {
+        for (iRing = 0; iRing < 4; iRing++)
+        {
+            Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
+            Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
+
+            /* all set */
+            CtxTmp.rflags.u32 &= X86_EFL_VM | X86_EFL_1;
+            CtxTmp.rflags.u32 |= X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF /* | X86_EFL_TF */ /*| X86_EFL_IF*/
+                               | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL /* | X86_EFL_NT*/;
+            if (f386Plus)
+                CtxTmp.rflags.u32 |= /*X86_EFL_VM |*/ X86_EFL_AC | X86_EFL_VIF | X86_EFL_VIP;
+            if (f386Plus && !f16BitSys)
+                CtxTmp.rflags.u32 |= X86_EFL_RF;
+            if (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_F_CPUID)
+                CtxTmp.rflags.u32 |= X86_EFL_ID;
+            Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+            CtxTmp.rflags.u32 &= ~X86_EFL_RF;
+
+            if (iCtx >= iRing)
+                bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x80 + iCtx /*bXcpt*/, pszMode, uLine);
+            else
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
+                                          f16BitSys, pszMode, uLine);
+            uExpected = CtxTmp.rflags.u32
+                      & (  X86_EFL_1 |  X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_DF
+                         | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_VM | X86_EFL_AC | X86_EFL_VIF | X86_EFL_VIP
+                         | X86_EFL_ID /*| X86_EFL_TF*/ /*| X86_EFL_IF*/ /*| X86_EFL_RF*/ );
+            if (TrapCtx.fHandlerRfl != uExpected)
+                Bs3TestFailedF("%u - %s: unexpected handler rflags value: %RX64 expected %RX32; CtxTmp.rflags=%RX64 Ctx.rflags=%RX64\n",
+                               uLine, pszMode, TrapCtx.fHandlerRfl, uExpected, CtxTmp.rflags.u, TrapCtx.Ctx.rflags.u);
+            uLine++;
+
+            /* all cleared */
+            if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) < BS3CPU_80286)
+                CtxTmp.rflags.u32 = apCtx8x[iCtx]->rflags.u32 & (X86_EFL_RA1_MASK | UINT16_C(0xf000));
+            else
+                CtxTmp.rflags.u32 = apCtx8x[iCtx]->rflags.u32 & (X86_EFL_VM | X86_EFL_RA1_MASK);
+            Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+            if (iCtx >= iRing)
+                bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x80 + iCtx /*bXcpt*/, pszMode, uLine);
+            else
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, ((0x80 + iCtx) << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT,
+                                          f16BitSys, pszMode, uLine);
+            uExpected = CtxTmp.rflags.u32;
+            if (TrapCtx.fHandlerRfl != uExpected)
+                Bs3TestFailedF("%u - %s: unexpected handler rflags value: %RX64 expected %RX32; CtxTmp.rflags=%RX64 Ctx.rflags=%RX64\n",
+                               uLine, pszMode, TrapCtx.fHandlerRfl, uExpected, CtxTmp.rflags.u, TrapCtx.Ctx.rflags.u);
+            uLine++;
+        }
+    }
 
     /*
      * Check invalid gate types.
@@ -681,8 +904,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
                                                       /*286:*/ 12, 14, 15 };
         uint16_t const * const  pauInvTypes       = cIdteShift != 0 ? s_auInvlTypes64 : s_auInvlTypes32;
         uint16_t const          cInvTypes         = cIdteShift != 0 ? RT_ELEMENTS(s_auInvlTypes64)
-                                                  : (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) < BS3CPU_80386
-                                                  ? RT_ELEMENTS(s_auInvlTypes32) : RT_ELEMENTS(s_auInvlTypes32) - 3;
+                                                  : f386Plus ? RT_ELEMENTS(s_auInvlTypes32) - 3 : RT_ELEMENTS(s_auInvlTypes32);
 
 
         for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
@@ -737,10 +959,6 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     /** @todo
      *  - Run \#PF and \#GP (and others?) at CPLs other than zero.
      *  - Quickly generate all faults.
-     *  - Check CS.u1Access = 1 \#PF against \#NP(CS), CS.u2DPL, \#NP(SS),
-     *    SS.u2DPL, and SS.u1Access=1 \#PF.
-     *  - Check that IOPL doesn't influence anything for non-v8086.
-     *  - EFLAGS effects (AC seen gonne missing in real-mode).
      *  - All the peculiarities v8086.
      */
 
@@ -748,7 +966,6 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     Bs3MemFree(pbIdtCopyAlloc, 12*_1K);
 # endif
 }
-
 
 #endif /* once for each bitcount */
 
@@ -943,28 +1160,37 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
 
 BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
 {
+#if !BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
     uint8_t bRet = 0;
 
     /*
      * Pass to common worker which is only compiled once per mode.
      */
-#if !BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
     bs3CpuBasic2_RaiseXcpt1Common(bMode,
                                   BS3_DATA_NM(TMPL_NM(g_szBs3ModeName)),
                                   BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
                                   MY_SYS_SEL_R0_CS,
                                   MY_SYS_SEL_R0_CS_CNF,
+                                  MY_SYS_SEL_R0_SS,
                                   (PX86DESC)MyBs3Idt,
                                   BS3_MODE_IS_64BIT_SYS(TMPL_MODE) ? 1 : 0);
-#else
-    bRet = BS3TESTDOMODE_SKIPPED;
-#endif
 
     /*
      * Re-initialize the IDT.
      */
     TMPL_NM(Bs3TrapInit)();
     return bRet;
+#elif !BS3_MODE_IS_RM(TMPL_MODE)
+
+    /*
+     * Check
+     */
+    /** @todo check    */
+    return BS3TESTDOMODE_SKIPPED;
+
+#else
+    return BS3TESTDOMODE_SKIPPED;
+#endif
 }
 
 
