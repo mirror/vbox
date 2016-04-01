@@ -106,7 +106,7 @@ static void utsTcpDisconnectClient(PUTSTRANSPORTCLIENT pClient)
 /**
  * @interface_method_impl{UTSTRANSPORT,pfnWaitForConnect}
  */
-static int utsTcpWaitForConnect(PPUTSTRANSPORTCLIENT ppClientNew)
+static DECLCALLBACK(int) utsTcpWaitForConnect(PPUTSTRANSPORTCLIENT ppClientNew)
 {
     int rc;
     RTSOCKET hClientNew;
