@@ -1120,7 +1120,7 @@ size %1 %+ _EndProc     0
 %define BS3_ADDR_BS3SYSTEM16    020000h
 ;; The base address of the BS3DATA16 segment.
 ;; @sa BS3_SEL_DATA16
-%define BS3_ADDR_BS3DATA16      027000h
+%define BS3_ADDR_BS3DATA16      029000h
 ;; @}
 
 
@@ -1218,10 +1218,11 @@ endstruc
 %define BS3_TRAP_SYSCALL            20h
 
 ;; @name System call numbers (ax)
+;; @note Pointers are always passed in cx:xDI.
 ;; @{
 ;; Print char (cl).
 %define BS3_SYSCALL_PRINT_CHR       0001h
-;; Print string (pointer in ds:[e]si, length in cx).
+;; Print string (pointer in cx:xDI, length in xDX).
 %define BS3_SYSCALL_PRINT_STR       0002h
 ;; Switch to ring-0.
 %define BS3_SYSCALL_TO_RING0        0003h
@@ -1231,8 +1232,10 @@ endstruc
 %define BS3_SYSCALL_TO_RING2        0005h
 ;; Switch to ring-3.
 %define BS3_SYSCALL_TO_RING3        0006h
+;; Restore context (pointer in cx:xDI, flags in dx).
+%define BS3_SYSCALL_RESTORE_CTX     0007h
 ;; The last system call value.
-%define BS3_SYSCALL_LAST            BS3_SYSCALL_TO_RING3
+%define BS3_SYSCALL_LAST            BS3_SYSCALL_RESTORE_CTX
 ;; @}
 
 
@@ -1388,11 +1391,33 @@ endstruc
 %define BS3_SEL_SYSTEM16            2000h ;;< The BS3SYSTEM16 selector.
 
 %define BS3_SEL_FREE_PART3          2008h ;;< Free selector space - part \%3.
-%define BS3_SEL_FREE_PART3_LAST     26f8h ;;< Free selector space - part \%3, last entry.
+%define BS3_SEL_FREE_PART3_LAST     28f8h ;;< Free selector space - part \%3, last entry.
 
-%define BS3_SEL_DATA16              2700h ;;< The BS3DATA16 selector.
+%define BS3_SEL_DATA16              2900h ;;< The BS3DATA16 selector.
 
-%define BS3_SEL_GDT_LIMIT           2707h ;;< The GDT limit.
+%define BS3_SEL_FREE_PART4          2908h ;;< Free selector space - part \#4.
+%define BS3_SEL_FREE_PART4_LAST     2f98h ;;< Free selector space - part \#4, last entry.
+
+%define BS3_SEL_PRE_TEST_PAGE_08    2fa0h ;;< Selector located 8 selectors before the test page.
+%define BS3_SEL_PRE_TEST_PAGE_07    2fa8h ;;< Selector located 7 selectors before the test page.
+%define BS3_SEL_PRE_TEST_PAGE_06    2fb0h ;;< Selector located 6 selectors before the test page.
+%define BS3_SEL_PRE_TEST_PAGE_05    2fb8h ;;< Selector located 5 selectors before the test page.
+%define BS3_SEL_PRE_TEST_PAGE_04    2fc0h ;;< Selector located 4 selectors before the test page.
+%define BS3_SEL_PRE_TEST_PAGE_03    2fc8h ;;< Selector located 3 selectors before the test page.
+%define BS3_SEL_PRE_TEST_PAGE_02    2fd0h ;;< Selector located 2 selectors before the test page.
+%define BS3_SEL_PRE_TEST_PAGE_01    2fd8h ;;< Selector located 1 selector  before the test page.
+%define BS3_SEL_TEST_PAGE           2fe0h ;;< Start of the test page intended for playing around with paging and GDT.
+%define BS3_SEL_TEST_PAGE_00        2fe0h ;;< Test page selector number 00h (convenience).
+%define BS3_SEL_TEST_PAGE_01        2fe8h ;;< Test page selector number 01h (convenience).
+%define BS3_SEL_TEST_PAGE_02        2ff0h ;;< Test page selector number 02h (convenience).
+%define BS3_SEL_TEST_PAGE_03        2ff8h ;;< Test page selector number 03h (convenience).
+%define BS3_SEL_TEST_PAGE_04        3000h ;;< Test page selector number 04h (convenience).
+%define BS3_SEL_TEST_PAGE_05        3008h ;;< Test page selector number 05h (convenience).
+%define BS3_SEL_TEST_PAGE_06        3010h ;;< Test page selector number 06h (convenience).
+%define BS3_SEL_TEST_PAGE_07        3018h ;;< Test page selector number 07h (convenience).
+%define BS3_SEL_TEST_PAGE_LAST      3fd0h ;;< The last selector in the spare page.
+
+%define BS3_SEL_GDT_LIMIT           3fd8h ;;< The GDT limit.
 
 ;; @}
 

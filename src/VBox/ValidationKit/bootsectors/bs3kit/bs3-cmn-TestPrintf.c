@@ -34,32 +34,45 @@
 #include <iprt/asm-amd64-x86.h>
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** Output buffering for Bs3TestPrintfV. */
+typedef struct BS3TESTPRINTBUF
+{
+    bool    fNewCmd;
+    uint8_t cchBuf;
+    char    achBuf[78];
+} BS3TESTPRINTBUF;
+
+
 /**
  * @impl_callback_method{FNBS3STRFORMATOUTPUT, Prints to screen and VMMDev}
  */
 static BS3_DECL_CALLBACK(size_t) bs3TestPrintfStrOutput(char ch, void BS3_FAR *pvUser)
 {
+    BS3TESTPRINTBUF BS3_FAR *pBuf = (BS3TESTPRINTBUF BS3_FAR *)pvUser;
+
     /*
      * VMMDev first.  We do line by line processing to avoid running out of
      * string buffer on the host side.
      */
     if (BS3_DATA_NM(g_fbBs3VMMDevTesting))
     {
-        bool *pfNewCmd = (bool *)pvUser;
-        if (ch != '\n' && !*pfNewCmd)
+        if (ch != '\n' && !pBuf->fNewCmd)
             ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, ch);
         else if (ch != '\0')
         {
-            if (*pfNewCmd)
+            if (pBuf->fNewCmd)
             {
                 ASMOutU32(VMMDEV_TESTING_IOPORT_CMD, VMMDEV_TESTING_CMD_PRINT);
-                *pfNewCmd = false;
+                pBuf->fNewCmd = false;
             }
             ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, ch);
             if (ch == '\n')
             {
                 ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, '\0');
-                *pfNewCmd = true;
+                pBuf->fNewCmd = true;
             }
         }
     }
@@ -68,16 +81,30 @@ static BS3_DECL_CALLBACK(size_t) bs3TestPrintfStrOutput(char ch, void BS3_FAR *p
      * Console next.
      */
     if (ch != '\0')
-        Bs3PrintChr(ch);
-    return 1;
+    {
+        BS3_ASSERT(pBuf->cchBuf < RT_ELEMENTS(pBuf->achBuf));
+        pBuf->achBuf[pBuf->cchBuf++] = ch;
+
+        /* Whether to flush the buffer.  We do line flushing here to avoid
+           dropping too much info when the formatter crashes on bad input. */
+        if (   pBuf->cchBuf < RT_ELEMENTS(pBuf->achBuf)
+            && ch != '\n')
+            return 1;
+    }
+    BS3_ASSERT(pBuf->cchBuf <= RT_ELEMENTS(pBuf->achBuf));
+    Bs3PrintStrN(&pBuf->achBuf[0], pBuf->cchBuf);
+    pBuf->cchBuf = 0;
+    return ch != '\0';
 }
 
 
 
 BS3_DECL(void) Bs3TestPrintfV(const char BS3_FAR *pszFormat, va_list va)
 {
-    bool fNewCmd = true;
-    Bs3StrFormatV(pszFormat, va, bs3TestPrintfStrOutput, &fNewCmd);
+    BS3TESTPRINTBUF Buf;
+    Buf.fNewCmd = true;
+    Buf.cchBuf  = 0;
+    Bs3StrFormatV(pszFormat, va, bs3TestPrintfStrOutput, &Buf);
 }
 
 

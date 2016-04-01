@@ -42,6 +42,13 @@
 ;
 BS3_PROC_BEGIN_MODE Bs3SwitchToLM16
 %ifdef TMPL_LM16
+        extern  BS3_CMN_NM(Bs3SwitchToRing0)
+        call    BS3_CMN_NM(Bs3SwitchToRing0)
+        push    ax
+        mov     ax, BS3_SEL_R0_DS16
+        mov     ds, ax
+        mov     es, ax
+        pop     ax
         ret
 
 %elifdef TMPL_CMN_LM

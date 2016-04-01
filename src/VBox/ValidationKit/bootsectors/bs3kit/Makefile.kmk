@@ -63,6 +63,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-PrintU32.asm \
 	bs3-cmn-PrintX32.asm \
 	bs3-cmn-PrintStr.c \
+	bs3-cmn-PrintStrN.asm \
        bs3-cmn-PrintStrColonSpaces.asm \
        bs3-cmn-PrintStrSpacesColonSpace.c \
        bs3-cmn-StrFormatV.c \
@@ -196,6 +197,8 @@ bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
        bs3-c64-Trap64Generic.asm \
        ../../../Runtime/common/asm/ASMGetIDTR.asm \
        ../../../Runtime/common/asm/ASMSetIDTR.asm \
+       ../../../Runtime/common/asm/ASMGetGDTR.asm \
+       ../../../Runtime/common/asm/ASMSetGDTR.asm \
 
 
 #

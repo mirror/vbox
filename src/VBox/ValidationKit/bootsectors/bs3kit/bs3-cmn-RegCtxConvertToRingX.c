@@ -72,13 +72,14 @@ static uint16_t bs3RegCtxConvertRealSegToRingX(uint16_t uSeg, uint8_t bRing)
  * @returns Adjusted protected mode selector.
  * @param   uSeg            The current selector value.
  * @param   bRing           The target ring.
+ * @param   iReg            Register index.
  */
-static uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing)
+static uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing, uint8_t iReg)
 {
     if (   uSel > X86_SEL_RPL
         && !(uSel & X86_SEL_LDT) )
     {
-        if (uSel >= BS3_SEL_R0_FIRST)
+        if (uSel >= BS3_SEL_R0_FIRST && uSel < BS3_SEL_R0_FIRST + (5 << BS3_SEL_RING_SHIFT))
         {
             /* Convert BS3_SEL_R*_XXX to the target ring. */
             uSel &= BS3_SEL_RING_SUB_MASK;
@@ -94,6 +95,33 @@ static uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing)
                 uSel = (BS3_SEL_R0_CS16 | bRing) + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
             else if (uSelRaw == BS3_SEL_DATA16)
                 uSel = (BS3_SEL_R0_DS16 | bRing) + ((uint16_t)bRing << BS3_SEL_RING_SHIFT);
+            /* CS and SS must have CPL == DPL.  So, convert to standard selectors as we're
+               usually here because Bs3SwitchToRing0 was called to get out of a test situation. */
+            else if (iReg == X86_SREG_CS || iReg == X86_SREG_SS)
+            {
+                if (   BS3_DATA_NM(Bs3Gdt)[uSel >> X86_SEL_SHIFT].Gen.u1Long
+                    && BS3_MODE_IS_64BIT_SYS(BS3_DATA_NM(g_bBs3CurrentMode)) )
+                    uSel = iReg == X86_SREG_CS ? BS3_SEL_R0_CS64 : BS3_SEL_R0_DS64;
+                else
+                {
+                    uint32_t uFlat   = Bs3SelFar32ToFlat32(0, uSel);
+                    bool     fDefBig = BS3_DATA_NM(Bs3Gdt)[uSel >> X86_SEL_SHIFT].Gen.u1DefBig;
+                    if (!fDefBig && uFlat == BS3_ADDR_BS3TEXT16 && iReg == X86_SREG_CS)
+                        uSel = BS3_SEL_R0_CS16;
+                    else if (!fDefBig && uFlat == 0 && iReg == X86_SREG_SS)
+                        uSel = BS3_SEL_R0_SS16;
+                    else if (fDefBig && uFlat == 0)
+                        uSel = iReg == X86_SREG_CS ? BS3_SEL_R0_CS32 : BS3_SEL_R0_SS32;
+                    else
+                    {
+                        Bs3Printf("uSel=%#x iReg=%d\n", uSel, iReg);
+                        BS3_ASSERT(0);
+                        return uSel;
+                    }
+                    uSel |= bRing;
+                    uSel += (uint16_t)bRing << BS3_SEL_RING_SHIFT;
+                }
+            }
             /* Adjust the RPL on tiled and MMIO selectors. */
             else if (   uSelRaw == BS3_SEL_VMMDEV_MMIO16
                      || uSelRaw >= BS3_SEL_TILED)
@@ -127,12 +155,12 @@ BS3_DECL(void) Bs3RegCtxConvertToRingX(PBS3REGCTX pRegCtx, uint8_t bRing)
     }
     else
     {
-        pRegCtx->cs = bs3RegCtxConvertProtSelToRingX(pRegCtx->cs, bRing);
-        pRegCtx->ss = bs3RegCtxConvertProtSelToRingX(pRegCtx->ss, bRing);
-        pRegCtx->ds = bs3RegCtxConvertProtSelToRingX(pRegCtx->ds, bRing);
-        pRegCtx->es = bs3RegCtxConvertProtSelToRingX(pRegCtx->es, bRing);
-        pRegCtx->fs = bs3RegCtxConvertProtSelToRingX(pRegCtx->fs, bRing);
-        pRegCtx->gs = bs3RegCtxConvertProtSelToRingX(pRegCtx->gs, bRing);
+        pRegCtx->cs = bs3RegCtxConvertProtSelToRingX(pRegCtx->cs, bRing, X86_SREG_CS);
+        pRegCtx->ss = bs3RegCtxConvertProtSelToRingX(pRegCtx->ss, bRing, X86_SREG_SS);
+        pRegCtx->ds = bs3RegCtxConvertProtSelToRingX(pRegCtx->ds, bRing, X86_SREG_DS);
+        pRegCtx->es = bs3RegCtxConvertProtSelToRingX(pRegCtx->es, bRing, X86_SREG_ES);
+        pRegCtx->fs = bs3RegCtxConvertProtSelToRingX(pRegCtx->fs, bRing, X86_SREG_FS);
+        pRegCtx->gs = bs3RegCtxConvertProtSelToRingX(pRegCtx->gs, bRing, X86_SREG_GS);
     }
     pRegCtx->bCpl = bRing;
 }

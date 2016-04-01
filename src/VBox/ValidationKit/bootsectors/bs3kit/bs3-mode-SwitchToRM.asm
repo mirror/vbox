@@ -52,6 +52,11 @@ TMPL_BEGIN_TEXT
 ;
 BS3_PROC_BEGIN_MODE Bs3SwitchToRM
 %ifdef TMPL_RM
+        push    ax
+        mov     ax, BS3_SEL_DATA16
+        mov     ds, ax
+        mov     es, ax
+        pop     ax
         ret
 
 %elif BS3_MODE_IS_V86(TMPL_MODE)

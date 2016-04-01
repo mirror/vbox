@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,27 +24,50 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
 #include <iprt/ctype.h>
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** Output buffering for Bs3TestPrintfV. */
+typedef struct BS3PRINTBUF
+{
+    uint8_t cchBuf;
+    char    achBuf[79];
+} BS3PRINTBUF;
+
+
 static BS3_DECL_CALLBACK(size_t) bs3PrintFmtOutput(char ch, void BS3_FAR *pvUser)
 {
+    BS3PRINTBUF BS3_FAR *pBuf = (BS3PRINTBUF BS3_FAR *)pvUser;
     if (ch != '\0')
     {
-        if (ch == '\n')
-            Bs3PrintChr('\r');
-        Bs3PrintChr(ch);
-        return 1;
+        BS3_ASSERT(pBuf->cchBuf < RT_ELEMENTS(pBuf->achBuf));
+        pBuf->achBuf[pBuf->cchBuf++] = ch;
+
+        /* Whether to flush the buffer.  We do line flushing here to avoid
+           dropping too much info when the formatter crashes on bad input. */
+        if (   pBuf->cchBuf < RT_ELEMENTS(pBuf->achBuf)
+            && ch != '\n')
+            return 1;
     }
-    NOREF(pvUser);
-    return 0;
+    Bs3PrintStrN(&pBuf->achBuf[0], pBuf->cchBuf);
+    pBuf->cchBuf = 0;
+    return ch != '\0';
 }
 
 
 BS3_DECL(size_t) Bs3PrintfV(const char BS3_FAR *pszFormat, va_list va)
 {
-    return Bs3StrFormatV(pszFormat, va, bs3PrintFmtOutput, NULL);
+    BS3PRINTBUF Buf;
+    Buf.cchBuf = 0;
+    return Bs3StrFormatV(pszFormat, va, bs3PrintFmtOutput, &Buf);
 }
 
 
@@ -53,7 +76,7 @@ BS3_DECL(size_t) Bs3Printf(const char BS3_FAR *pszFormat, ...)
     size_t cchRet;
     va_list va;
     va_start(va, pszFormat);
-    cchRet = Bs3StrFormatV(pszFormat, va, bs3PrintFmtOutput, NULL);
+    cchRet = Bs3PrintfV(pszFormat, va);
     va_end(va);
     return cchRet;
 }

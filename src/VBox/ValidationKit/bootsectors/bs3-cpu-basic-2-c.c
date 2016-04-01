@@ -37,7 +37,7 @@
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_TssGateEsp);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_RaiseXcpt1);
 //BS3TESTMODE_PROTOTYPES_CMN(bs3CpuBasic2_iret);
-//BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_iret);
+BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_iret);
 
 
 /*********************************************************************************************************************************

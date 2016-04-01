@@ -40,12 +40,13 @@ BS3_EXTERN_DATA16 g_uBs3TrapEipHint
 %endif
 TMPL_BEGIN_TEXT
 
-%if TMPL_BITS == 32
 BS3_EXTERN_CMN Bs3SelProtFar32ToFlat32
-%endif
 BS3_EXTERN_CMN Bs3RegCtxConvertToRingX
 BS3_EXTERN_CMN Bs3RegCtxRestore
 BS3_EXTERN_CMN Bs3Panic
+
+BS3_BEGIN_TEXT16
+extern Bs3PrintStrN_c16_CX_Bytes_At_DS_SI
 TMPL_BEGIN_TEXT
 
 
@@ -72,19 +73,23 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
 %if TMPL_BITS != 64
  %define VAR_CALLER_DS     [xBP         - xCB]
 %endif
-%define VAR_CALLER_BX      [xBP - sCB*1 - xCB]
+%define VAR_CALLER_BX      [xBP - sCB*1 - xCB] ; Note! the upper word is not clean on pre-386 (16-bit mode).
 %define VAR_CALLER_AX      [xBP - sCB*2 - xCB]
 %define VAR_CALLER_CX      [xBP - sCB*3 - xCB]
 %define VAR_CALLER_DX      [xBP - sCB*4 - xCB]
 %define VAR_CALLER_SI      [xBP - sCB*5 - xCB]
+%define VAR_CALLER_SI_HI   [xBP - sCB*5 - xCB + 2]
 %define VAR_CALLER_DI      [xBP - sCB*6 - xCB]
+%define VAR_CALLER_DI_HI   [xBP - sCB*6 - xCB + 2]
 %if TMPL_BITS == 16
  %define VAR_CALLER_EBP    [xBP - sCB*7 - xCB]
  %define VAR_CALLER_ESP    [xBP - sCB*8 - xCB]
  %define VAR_CALLER_EFLAGS [xBP - sCB*9 - xCB]
  %define VAR_CALLER_MODE   [xBP - sCB*9 - xCB*2]
+ %define BP_TOP_STACK_EXPR xBP - sCB*9 - xCB*2
 %else
  %define VAR_CALLER_MODE   [xBP - sCB*6 - xCB*2]
+ %define BP_TOP_STACK_EXPR xBP - sCB*6 - xCB*2
 %endif
         push    xBP
         mov     xBP, xSP
@@ -121,15 +126,16 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
 .prologue_pre_80386:
         push    bx                      ; dummy
         push    bx
-        push    ax                      ; dummy
+        xor     bx, bx
+        push    bx                      ; dummy
         push    ax
-        push    cx                      ; dummy
+        push    bx                      ; dummy
         push    cx
-        push    dx                      ; dummy
+        push    bx                      ; dummy
         push    dx
-        push    si                      ; dummy
+        push    bx                      ; dummy
         push    si
-        push    di                      ; dummy
+        push    bx                      ; dummy
         push    di
         sub     sp, 0ch                 ; dummy
  %endif
@@ -166,6 +172,7 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
         dw      .to_ringX        wrt BS3TEXT16
         dw      .to_ringX        wrt BS3TEXT16
         dw      .to_ringX        wrt BS3TEXT16
+        dw      .restore_ctx     wrt BS3TEXT16
 %else
         dd      .invalid_syscall wrt FLAT
         dd      .print_chr       wrt FLAT
@@ -174,6 +181,7 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
         dd      .to_ringX        wrt FLAT
         dd      .to_ringX        wrt FLAT
         dd      .to_ringX        wrt FLAT
+        dd      .restore_ctx     wrt FLAT
 %endif
 
         ;
@@ -237,23 +245,51 @@ TMPL_BEGIN_TEXT
 
 
         ;
-        ; Print CX chars from string pointed to by DX:SI in 16-bit and v8086 mode,
-        ; and ESI/RSI in 64-bit and 32-bit mode (flat).
+        ; Prints DX chars from the string pointed to by CX:xSI to the screen.
         ;
         ; We use the vga bios teletype interrupt to do the writing, so we must
-        ; be in some kind of real mode for this to work.  16-bit code segment
-        ; requried for the mode switching code.
+        ; be in some kind of real mode for this to work.  The string must be
+        ; accessible from real mode too.
         ;
 .print_str:
-;;%if TMPL_BITS != 64
-;;        mov     bl, byte VAR_CALLER_MODE
-;;        and     bl, BS3_MODE_CODE_MASK
-;;        cmp     bl, BS3_MODE_CODE_V86
-;;        jne     .print_str_not_v8086
-;;        ;; @todo this gets complicated _fast_. Later.
-;;.print_str_not_v8086:
-;;%endif
-        int3
+%if TMPL_BITS != 64
+        push    es
+%endif
+        ; Convert the incoming pointer to real mode (assuming caller checked
+        ; that real mode can access it).
+        call    .convert_ptr_arg_to_real_mode_ax_si
+        mov     cx, VAR_CALLER_DX
+
+        ; Switch to real mode (no 20h scratch required)
+%ifndef TMPL_CMN_R86
+ %if TMPL_BITS != 16
+        jmp     .print_str_to_16bit
+BS3_BEGIN_TEXT16
+.print_str_to_16bit:
+        BS3_SET_BITS TMPL_BITS
+ %endif
+        extern  TMPL_NM(Bs3SwitchToRM)
+        call    TMPL_NM(Bs3SwitchToRM)
+        BS3_SET_BITS 16
+%endif
+        ; Call code in Bs3PrintStrN to do the work.
+        mov     ds, ax
+        call    Bs3PrintStrN_c16_CX_Bytes_At_DS_SI
+
+        ; Switch back (20h param scratch area not required).
+%ifndef TMPL_CMN_R86
+        extern  RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
+ %if TMPL_BITS != 16
+        BS3_SET_BITS TMPL_BITS
+        jmp     .print_str_end
+TMPL_BEGIN_TEXT
+ %endif
+.print_str_end:
+%endif
+%if TMPL_BITS != 64
+        pop     es
+%endif
         jmp     .return
 
 
@@ -297,6 +333,19 @@ TMPL_BEGIN_TEXT
         BS3_CALL Bs3RegCtxRestore, 1
         jmp     Bs3Panic
 
+
+        ;
+        ; Restore context pointed to by cx:xSI.
+        ;
+.restore_ctx:
+        call    .convert_ptr_arg_to_cx_xSI
+        BS3_ONLY_64BIT_STMT sub     rsp, 10h
+        mov     xDX, VAR_CALLER_DX
+        push    xDX
+        BS3_ONLY_16BIT_STMT push    cx
+        push    xSI
+        BS3_CALL Bs3RegCtxRestore, 2
+        jmp     Bs3Panic
 
         ;
         ; Return.
@@ -694,6 +743,122 @@ TMPL_BEGIN_TEXT
 .save_context_full_return:
         ret
 
+
+        ;
+        ; Internal function for converting a syscall pointer parameter (cx:xSI)
+        ; to a pointer we can use here in this context.
+        ;
+        ; Returns the result in cx:xSI.
+        ; @uses xAX, xCX, xDX
+        ;
+.convert_ptr_arg_to_cx_xSI:
+        call    .convert_ptr_arg_to_flat
+%if TMPL_BITS == 16
+        ; Convert to tiled address.
+        mov     si, ax                  ; offset.
+        shl     dx, X86_SEL_SHIFT
+        add     dx, BS3_SEL_TILED
+        mov     cx, dx
+%else
+        ; Just supply a flat selector.
+        mov     xSI, xAX
+        mov     cx, ds
+%endif
+        ret
+
+        ;
+        ; Internal function for converting a syscall pointer parameter (caller CX:xSI)
+        ; to a real mode pointer.
+        ;
+        ; Returns the result in AX:SI.
+        ; @uses xAX, xCX, xDX
+        ;
+.convert_ptr_arg_to_real_mode_ax_si:
+        call    .convert_ptr_arg_to_flat
+        mov     si, ax
+%if TMPL_BITS == 16
+        mov     ax, dx
+%else
+        shr     eax, 16
+%endif
+        shl     ax, 12
+        ret
+
+        ;
+        ; Internal function for the above that wraps the Bs3SelProtFar32ToFlat32 call.
+        ;
+        ; @returns  eax (32-bit, 64-bit), dx+ax (16-bit).
+        ; @uses     eax, ecx, edx
+        ;
+.convert_ptr_arg_to_flat:
+%if TMPL_BITS == 16
+        ; Convert to (32-bit) flat address first.
+        test    byte VAR_CALLER_MODE, BS3_MODE_CODE_V86
+        jz      .convert_ptr_arg_to_flat_prot_16
+
+        mov     ax, VAR_CALLER_CX
+        mov     dx, ax
+        shl     ax, 4
+        shr     dx, 12
+        add     ax, VAR_CALLER_SI
+        adc     dx, 0
+        ret
+
+.convert_ptr_arg_to_flat_prot_16:
+        push    es
+        push    bx
+        push    word VAR_CALLER_CX      ; selector
+        xor     ax, ax
+        test    byte VAR_CALLER_MODE, BS3_MODE_CODE_16
+        jnz     .caller_is_16_bit
+        mov     ax, VAR_CALLER_SI_HI
+.caller_is_16_bit:
+        push    ax                      ; offset high
+        push    word VAR_CALLER_SI      ; offset low
+        call    Bs3SelProtFar32ToFlat32
+        add     sp, 2*3
+        pop     bx
+        pop     es
+        ret
+
+%else ; 32 or 64 bit
+        test    byte VAR_CALLER_MODE, BS3_MODE_CODE_V86
+        jz      .convert_ptr_arg_to_cx_xSI_prot
+
+        ; Convert real mode address to flat address and return it.
+        movzx   eax, word VAR_CALLER_CX
+        shl     eax, 4
+        movzx   edx, word VAR_CALLER_SI
+        add     eax, edx
+        ret
+
+        ; Convert to (32-bit) flat address.
+.convert_ptr_arg_to_cx_xSI_prot:
+ %if TMPL_BITS == 64
+        push    r11
+        push    r10
+        push    r9
+        push    r8
+        sub     rsp, 10h
+ %endif
+        movzx   ecx, word VAR_CALLER_CX
+        push    xCX
+        mov     eax, VAR_CALLER_SI
+        test    byte VAR_CALLER_MODE, BS3_MODE_CODE_16
+        jz      .no_masking_offset
+        and     eax, 0ffffh
+.no_masking_offset:
+        push    xAX
+        BS3_CALL Bs3SelProtFar32ToFlat32,2
+        add     xSP, xCB*2 BS3_ONLY_64BIT(+ 10h)
+ %if TMPL_BITS == 64
+        pop     r8
+        pop     r9
+        pop     r10
+        pop     r11
+ %endif
+%endif
+        ret
 
 BS3_PROC_END_MODE   Bs3TrapSystemCallHandler
 

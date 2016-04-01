@@ -169,7 +169,7 @@ BS3_DECL(void) Bs3InitMemory_rm(void)
      *      - 0x01000 to 0x0ffff - Stacks.
      *      - 0x10000 to 0x1yyyy - BS3TEXT16
      *      - 0x20000 to 0x26fff - BS3SYSTEM16
-     *      - 0x27000 to 0xzzzzz - BS3DATA16, BS3TEXT32, BS3TEXT64, BS3DATA32, BS3DATA64 (in that order).
+     *      - 0x29000 to 0xzzzzz - BS3DATA16, BS3TEXT32, BS3TEXT64, BS3DATA32, BS3DATA64 (in that order).
      *      - 0xzzzzZ to 0x9fdff - Free conventional memory.
      *      - 0x9fc00 to 0x9ffff - Extended BIOS data area (exact start may vary).
      *      - 0xa0000 to 0xbffff - VGA MMIO

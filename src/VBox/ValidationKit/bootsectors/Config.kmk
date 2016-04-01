@@ -514,7 +514,7 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
         clname BS3SYSTEM16 segaddr=0x2000 \
          segment BS3SYSTEM16 \
  	 clname FAR_DATA \
- 	  segment BS3DATA16 segaddr=0x2700 \
+ 	  segment BS3DATA16 segaddr=0x2900 \
  	  segment BS3DATA16CONST \
  	  segment BS3DATA16CONST2 \
  	  segment BS3DATA16_DATA \

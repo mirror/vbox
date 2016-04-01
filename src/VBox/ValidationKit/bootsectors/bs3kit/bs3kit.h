@@ -183,7 +183,7 @@ RT_C_DECLS_BEGIN
 #define BS3_ADDR_BS3SYSTEM16    0x20000
 /** The base address of the BS3DATA16 segment.
  * @sa BS3_SEL_DATA16 */
-#define BS3_ADDR_BS3DATA16      0x27000
+#define BS3_ADDR_BS3DATA16      0x29000
 /** @} */
 
 /** @name BS3_SEL_XXX - GDT selector assignments.
@@ -197,7 +197,7 @@ RT_C_DECLS_BEGIN
  * | ----------- | ------------ | ----------------- |
  * | BS3TEXT16   |   0x00010000 |             1000h |
  * | BS3SYSTEM16 |   0x00020000 |             2000h |
- * | BS3DATA16   |   0x00027000 |             2700h |
+ * | BS3DATA16   |   0x00029000 |             2900h |
  *
  * This means that we've got a lot of GDT space to play around with.
  *
@@ -351,11 +351,33 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_SYSTEM16            0x2000 /**< The BS3SYSTEM16 selector. */
 
 #define BS3_SEL_FREE_PART3          0x2008 /**< Free selector space - part \#3. */
-#define BS3_SEL_FREE_PART3_LAST     0x26f8 /**< Free selector space - part \#3, last entry. */
+#define BS3_SEL_FREE_PART3_LAST     0x28f8 /**< Free selector space - part \#3, last entry. */
 
-#define BS3_SEL_DATA16              0x2700 /**< The BS3DATA16 selector. */
+#define BS3_SEL_DATA16              0x2900 /**< The BS3DATA16 selector. */
 
-#define BS3_SEL_GDT_LIMIT           0x2707 /**< The GDT limit. */
+#define BS3_SEL_FREE_PART4          0x2908 /**< Free selector space - part \#4. */
+#define BS3_SEL_FREE_PART4_LAST     0x2f98 /**< Free selector space - part \#4, last entry. */
+
+#define BS3_SEL_PRE_TEST_PAGE_08    0x2fa0 /**< Selector located 8 selectors before the test page. */
+#define BS3_SEL_PRE_TEST_PAGE_07    0x2fa8 /**< Selector located 7 selectors before the test page. */
+#define BS3_SEL_PRE_TEST_PAGE_06    0x2fb0 /**< Selector located 6 selectors before the test page. */
+#define BS3_SEL_PRE_TEST_PAGE_05    0x2fb8 /**< Selector located 5 selectors before the test page. */
+#define BS3_SEL_PRE_TEST_PAGE_04    0x2fc0 /**< Selector located 4 selectors before the test page. */
+#define BS3_SEL_PRE_TEST_PAGE_03    0x2fc8 /**< Selector located 3 selectors before the test page. */
+#define BS3_SEL_PRE_TEST_PAGE_02    0x2fd0 /**< Selector located 2 selectors before the test page. */
+#define BS3_SEL_PRE_TEST_PAGE_01    0x2fd8 /**< Selector located 1 selector  before the test page. */
+#define BS3_SEL_TEST_PAGE           0x2fe0 /**< Start of the test page intended for playing around with paging and GDT. */
+#define BS3_SEL_TEST_PAGE_00        0x2fe0 /**< Test page selector number 00h (convenience). */
+#define BS3_SEL_TEST_PAGE_01        0x2fe8 /**< Test page selector number 01h (convenience). */
+#define BS3_SEL_TEST_PAGE_02        0x2ff0 /**< Test page selector number 02h (convenience). */
+#define BS3_SEL_TEST_PAGE_03        0x2ff8 /**< Test page selector number 03h (convenience). */
+#define BS3_SEL_TEST_PAGE_04        0x3000 /**< Test page selector number 04h (convenience). */
+#define BS3_SEL_TEST_PAGE_05        0x3008 /**< Test page selector number 05h (convenience). */
+#define BS3_SEL_TEST_PAGE_06        0x3010 /**< Test page selector number 06h (convenience). */
+#define BS3_SEL_TEST_PAGE_07        0x3018 /**< Test page selector number 07h (convenience). */
+#define BS3_SEL_TEST_PAGE_LAST      0x3fd0 /**< The last selector in the spare page. */
+
+#define BS3_SEL_GDT_LIMIT           0x3fd8 /**< The GDT limit. */
 /** @} */
 
 
@@ -569,11 +591,12 @@ BS3_PTR_UNION_TEMPLATE(BS3CVPTRUNION, const volatile);
 #define BS3_TRAP_SYSCALL        UINT8_C(0x20)
 
 /** @name System call numbers (ax).
- * Paramenters are generally passed in registers specific to each system call.
+ * Paramenters are generally passed in registers specific to each system call,
+ * however cx:xSI is used for passing a pointer parameter.
  * @{ */
 /** Print char (cl). */
 #define BS3_SYSCALL_PRINT_CHR   UINT16_C(0x0001)
-/** Print string (pointer in ds:[e]si, length in cx). */
+/** Print string (pointer in cx:xSI, length in dx). */
 #define BS3_SYSCALL_PRINT_STR   UINT16_C(0x0002)
 /** Switch to ring-0. */
 #define BS3_SYSCALL_TO_RING0    UINT16_C(0x0003)
@@ -583,6 +606,8 @@ BS3_PTR_UNION_TEMPLATE(BS3CVPTRUNION, const volatile);
 #define BS3_SYSCALL_TO_RING2    UINT16_C(0x0005)
 /** Switch to ring-3. */
 #define BS3_SYSCALL_TO_RING3    UINT16_C(0x0006)
+/** Restore context (pointer in cx:xSI, flags in dx). */
+#define BS3_SYSCALL_RESTORE_CTX UINT16_C(0x0007)
 /** @} */
 
 
@@ -733,7 +758,31 @@ extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_SYSTEM16);
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart3)[223];
 /** The BS3DATA16/BS3_FAR_DATA GDT entry. */
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_DATA16);
-/** The end of the GDT (exclusive). */
+/** Free GDTes, part \#4. */
+
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart4)[211];
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage08); /**< GDT entry 8 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_08 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage07); /**< GDT entry 7 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_07 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage06); /**< GDT entry 6 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_06 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage05); /**< GDT entry 5 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_05 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage04); /**< GDT entry 4 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_04 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage03); /**< GDT entry 3 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_03 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage02); /**< GDT entry 2 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_02 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage01); /**< GDT entry 1 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_01 */
+/** Array of GDT entries starting on a page boundrary and filling (almost) the
+ * whole page.   This is for playing with paging and GDT usage.
+ * @see BS3_SEL_TEST_PAGE */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage)[2043];
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage00); /**< GDT entry 0 on the test page (convenience). @see BS3_SEL_TEST_PAGE_00 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage01); /**< GDT entry 1 on the test page (convenience). @see BS3_SEL_TEST_PAGE_01 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage02); /**< GDT entry 2 on the test page (convenience). @see BS3_SEL_TEST_PAGE_02 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage03); /**< GDT entry 3 on the test page (convenience). @see BS3_SEL_TEST_PAGE_03 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage04); /**< GDT entry 4 on the test page (convenience). @see BS3_SEL_TEST_PAGE_04 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage05); /**< GDT entry 5 on the test page (convenience). @see BS3_SEL_TEST_PAGE_05 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage06); /**< GDT entry 6 on the test page (convenience). @see BS3_SEL_TEST_PAGE_06 */
+extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage07); /**< GDT entry 7 on the test page (convenience). @see BS3_SEL_TEST_PAGE_07 */
+
+/** The end of the GDT (exclusive - contains eye-catcher string). */
 extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtEnd);
 
 /** The default 16-bit TSS. */
@@ -1188,6 +1237,17 @@ BS3_DECL(void) Bs3PrintStr_c16(const char BS3_FAR *pszString);
 BS3_DECL(void) Bs3PrintStr_c32(const char BS3_FAR *pszString); /**< @copydoc Bs3PrintStr_c16 */
 BS3_DECL(void) Bs3PrintStr_c64(const char BS3_FAR *pszString); /**< @copydoc Bs3PrintStr_c16 */
 #define Bs3PrintStr BS3_CMN_NM(Bs3PrintStr) /**< Selects #Bs3PrintStr_c16, #Bs3PrintStr_c32 or #Bs3PrintStr_c64. */
+
+/**
+ * Prints a string to the screen.
+ *
+ * @param   pchString       The string to print.  Any terminator charss will be printed.
+ * @param   cchString       The exact number of characters to print.
+ */
+BS3_DECL(void) Bs3PrintStrN_c16(const char BS3_FAR *pszString, size_t cchString);
+BS3_DECL(void) Bs3PrintStrN_c32(const char BS3_FAR *pszString, size_t cchString); /**< @copydoc Bs3PrintStrN_c16 */
+BS3_DECL(void) Bs3PrintStrN_c64(const char BS3_FAR *pszString, size_t cchString); /**< @copydoc Bs3PrintStrN_c16 */
+#define Bs3PrintStrN BS3_CMN_NM(Bs3PrintStrN) /**< Selects #Bs3PrintStrN_c16, #Bs3PrintStrN_c32 or #Bs3PrintStrN_c64. */
 
 /**
  * Prints a char to the screen.

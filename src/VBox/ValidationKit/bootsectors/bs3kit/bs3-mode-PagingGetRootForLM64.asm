@@ -54,6 +54,17 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForLM64
         mov     eax, [BS3_DATA16_WRT(g_PhysPagingRootLM)]
         cmp     eax, 0ffffffffh
         je      .init_root
+%ifdef BS3_STRICT
+.return:
+        cmp     eax, 1000h
+        jnb     .cr3_ok_low
+        hlt
+.cr3_ok_low:
+        cmp     eax, 16*_1M
+        jb     .cr3_ok_high
+        hlt
+.cr3_ok_high:
+%endif
         ret
 
 .init_root:
@@ -111,6 +122,10 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForLM64
         pop     sDX
         BS3_ONLY_16BIT_STMT pop     es
         leave
+%ifdef BS3_STRICT
+        jmp     .return
+%else
         ret
+%endif
 BS3_PROC_END_MODE   Bs3PagingGetRootForLM64
 

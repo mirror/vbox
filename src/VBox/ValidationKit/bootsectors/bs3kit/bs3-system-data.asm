@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2007-2015 Oracle Corporation
+; Copyright (C) 2007-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -24,7 +24,6 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-
 %include "bs3kit.mac"
 
 %define BS3_SYSTEM16_BASE_16_23             ((BS3_ADDR_BS3SYSTEM16 >> 16) & 0xff)
@@ -36,7 +35,7 @@
 BS3_BEGIN_SYSTEM16
 StartSystem16:
         db  10, 13, 'eye-catcher: SYSTEM16.......', 10, 13 ; 32 bytes long
-BS3_GLOBAL_DATA Bs3Gdt, 3000
+BS3_GLOBAL_DATA Bs3Gdt, 4000h - 20h
 
 ;; Macro for checking GDT offsets as we go along.
 ;; @param       %1      The expected current offset.
@@ -197,7 +196,7 @@ BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _CS16, 8     ; Entry 100h
         dw  09b01h | (%1 << 0dh) | (0xff & (BS3_ADDR_BS3TEXT16 >> 16)), 00000h | (0xff00 & (BS3_ADDR_BS3TEXT16 >> 16))
 
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _DS16, 8     ; Entry 108h
-        dw  0ffffh, (0xffff & BS3_ADDR_BS3DATA16) ; 16-bit data segment with base 027000h.
+        dw  0ffffh, (0xffff & BS3_ADDR_BS3DATA16) ; 16-bit data segment with base 029000h.
         dw  09300h | (%1 << 0dh) | (0xff & (BS3_ADDR_BS3DATA16 >> 16)), 00000h | (0xff00 & (BS3_ADDR_BS3DATA16 >> 16))
 
 BS3_GLOBAL_DATA Bs3Gdte_R %+ %1 %+ _SS16, 8     ; Entry 110h
@@ -416,19 +415,78 @@ BS3_GLOBAL_DATA Bs3Gdte_SYSTEM16, 8h
         dw  0ffffh, 00000h, 0f302h, 00000h
 
         ;
-        ; 2008..26f8h - Free GDTEs.
+        ; 2008..28f8h - Free GDTEs.
         ;
-BS3_GLOBAL_DATA Bs3GdteFreePart3, 06f8h
-        times 06f8h db 0
+BS3_GLOBAL_DATA Bs3GdteFreePart3, 08f8h
+        times 08f8h db 0
 
         ;
-        ; 2700h - the real mode segment number for BS3DATA16. DPL=3. BASE=0x23000h
+        ; 2900h - the real mode segment number for BS3DATA16. DPL=3. BASE=0x29000h
         ;
-BS3GdtAssertOffset 02700h
+BS3GdtAssertOffset 02900h
 BS3_GLOBAL_DATA Bs3Gdte_DATA16, 8h
-        dw  0ffffh, 07000h, 0f302h, 00000h
+        dw  0ffffh, 09000h, 0f302h, 00000h
+
+        ;
+        ; 2908..2f98h - Free GDTEs.
+        ;
+BS3GdtAssertOffset 02908h
+BS3_GLOBAL_DATA Bs3GdteFreePart4, 698h
+        times 698h db 0
+
+        ;
+        ; 2be0..2fe0h - 8 spare entries preceeding the test page which we're free
+        ;               to mess with page table protection.
+        ;
+BS3GdtAssertOffset 02fa0h
+BS3_GLOBAL_DATA Bs3GdtePreTestPage08, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdtePreTestPage07, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdtePreTestPage06, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdtePreTestPage05, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdtePreTestPage04, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdtePreTestPage03, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdtePreTestPage02, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdtePreTestPage01, 8
+        dq 0
+
+        ;
+        ; 2fe0..3fd8h - 16 Test entries at the start of the page where we're free
+        ;               to mess with page table protection.
+        ;
+BS3GdtAssertOffset 02fe0h
+AssertCompile(($ - $$) == 0x3000)
+BS3_GLOBAL_DATA Bs3GdteTestPage, 0
+BS3_GLOBAL_DATA Bs3GdteTestPage00, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdteTestPage01, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdteTestPage02, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdteTestPage03, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdteTestPage04, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdteTestPage05, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdteTestPage06, 8
+        dq 0
+BS3_GLOBAL_DATA Bs3GdteTestPage07, 8
+        dq 0
+BS3GdtAssertOffset 3020h
+        times 0fb8h db 0
+BS3GdtAssertOffset 3fd8h
 BS3_GLOBAL_DATA Bs3GdtEnd, 0
         db  10, 13, 'GDTE', 10, 13      ; alignment padding (next address on 16 byte boundrary).
+BS3GdtAssertOffset 4000h - 20h ; We're at a page boundrary here! Only GDT and eyecatchers on page starting at 3000h!
+AssertCompile(($ - $$) == 0x4000)
+
 
 
 ;;
@@ -953,11 +1011,11 @@ align   16
 ;;
 ; LDT filling up the rest of the segment.
 ;
-; Currently this starts at 0x6c50, which leaves us with 0x3b0 bytes.  We'll use
+; Currently this starts at 0x84d0, which leaves us with 0xb30 bytes.  We'll use
 ; the last 32 of those for an eye catcher.
 ;
-BS3_GLOBAL_DATA Bs3Ldt, 03b0h
-        times (03b0h - 32) db 0
+BS3_GLOBAL_DATA Bs3Ldt, 0b30h - 32
+        times (0b30h - 32) db 0
 BS3_GLOBAL_DATA Bs3LdtEnd, 0
         db  10, 13, 'eye-catcher: SYSTEM16 END', 10, 13, 0, 0, 0 ; 32 bytes long
 
@@ -965,9 +1023,9 @@ BS3_GLOBAL_DATA Bs3LdtEnd, 0
 ; Check the segment size.
 ;
 %ifndef KBUILD_GENERATING_MAKEFILE_DEPENDENCIES
- %if ($ - $$) != 07000h
+ %if ($ - $$) != 09000h
   %assign offActual ($ - $$)
-  %error "Bad BS3SYSTEM16 segment size: " %+ offActual %+ ", expected 0x7000 (28672)"
+  %error "Bad BS3SYSTEM16 segment size: " %+ offActual %+ ", expected 0x9000 (36864)"
  %endif
 %endif
 

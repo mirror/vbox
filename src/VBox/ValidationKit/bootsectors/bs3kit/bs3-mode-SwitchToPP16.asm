@@ -48,6 +48,13 @@ extern  NAME(Bs3EnteredMode_pp16)
 ;
 BS3_PROC_BEGIN_MODE Bs3SwitchToPP16
 %ifdef TMPL_PP16
+        extern  BS3_CMN_NM(Bs3SwitchToRing0)
+        call    BS3_CMN_NM(Bs3SwitchToRing0)
+        push    ax
+        mov     ax, BS3_SEL_R0_DS16
+        mov     ds, ax
+        mov     es, ax
+        pop     ax
         ret
 
 %elif BS3_MODE_IS_V86(TMPL_MODE)
@@ -96,6 +103,13 @@ BS3_BEGIN_TEXT16
         push    eax
         push    ecx
         pushfd
+%ifdef BS3_STRICT
+        mov     ax, ds
+        cmp     ax, BS3_ADDR_BS3DATA16 >> 4
+        je      .real_mode_ds_ok
+        hlt
+.real_mode_ds_ok:
+%endif
 
         ;
         ; Get the page directory (returned in eax).

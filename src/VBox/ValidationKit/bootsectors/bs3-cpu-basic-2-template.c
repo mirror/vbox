@@ -206,14 +206,20 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     unsigned        i, j, k;
     unsigned        uLine;
 # if TMPL_BITS != 16
+    int             rc;
     uint8_t        *pbIdtCopyAlloc;
     PX86DESC        pIdtCopy;
     const unsigned  cbIdte = 1 << (3 + cIdteShift);
+    RTCCUINTXREG    uCr0Saved = ASMGetCR0();
+    RTGDTR          GdtrSaved;
 # endif
     RTIDTR          IdtrSaved;
     RTIDTR          Idtr;
 
     ASMGetIDTR(&IdtrSaved);
+# if TMPL_BITS != 16
+    ASMGetGDTR(&GdtrSaved);
+# endif
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx80, sizeof(Ctx80));
@@ -480,8 +486,8 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
             Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
             bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx80, 0x80 /*bXcpt*/, pszMode, uLine++);
 
-            i = Bs3PagingProtect(uCr2Expected, _4K, 0 /*fSet*/, X86_PTE_P /*fClear*/);
-            if (RT_SUCCESS(i))
+            rc = Bs3PagingProtect(uCr2Expected, _4K, 0 /*fSet*/, X86_PTE_P /*fClear*/);
+            if (RT_SUCCESS(rc))
             {
                 ASMSetIDTR(&Idtr);
                 Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
@@ -495,8 +501,8 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
 
                 /* Check if that the entry type is checked after the whole IDTE has been cleared for #PF. */
                 pIdtCopy[0x80 << cIdteShift].Gate.u4Type = 0;
-                i = Bs3PagingProtect(uCr2Expected, _4K, 0 /*fSet*/, X86_PTE_P /*fClear*/);
-                if (RT_SUCCESS(i))
+                rc = Bs3PagingProtect(uCr2Expected, _4K, 0 /*fSet*/, X86_PTE_P /*fClear*/);
+                if (RT_SUCCESS(rc))
                 {
                     ASMSetIDTR(&Idtr);
                     Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
@@ -526,8 +532,8 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
         Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
         bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx81, 0x81 /*bXcpt*/, pszMode, uLine++);
 
-        i = Bs3PagingProtect(Idtr.pIdt, _4K, 0 /*fSet*/, X86_PTE_RW | X86_PTE_US /*fClear*/);
-        if (RT_SUCCESS(i))
+        rc = Bs3PagingProtect(Idtr.pIdt, _4K, 0 /*fSet*/, X86_PTE_RW | X86_PTE_US /*fClear*/);
+        if (RT_SUCCESS(rc))
         {
             ASMSetIDTR(&Idtr);
             Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
@@ -536,6 +542,124 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
             Bs3PagingProtect(Idtr.pIdt, _4K, X86_PTE_RW | X86_PTE_US /*fSet*/, 0 /*fClear*/);
         }
         ASMSetIDTR(&IdtrSaved);
+    }
+
+    /*
+     * Check that CS.u1Accessed is set to 1. Use the test page selector #0 and #3 together
+     * with interrupt gates 80h and 83h, respectively.
+     */
+    uLine = 5400;
+    if (BS3_MODE_IS_PAGED(bMode) && pbIdtCopyAlloc)
+    {
+        BS3_DATA_NM(Bs3GdteTestPage00) = BS3_DATA_NM(Bs3Gdt)[uSysR0Cs >> X86_SEL_SHIFT];
+        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        paIdt[0x80 << cIdteShift].Gate.u16Sel   = BS3_SEL_TEST_PAGE_00;
+
+        BS3_DATA_NM(Bs3GdteTestPage03) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Cs + (3 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        paIdt[0x83 << cIdteShift].Gate.u16Sel   = BS3_SEL_TEST_PAGE_03; /* rpl is ignored, so leave it as zero. */
+
+        /* Check that the CS.A bit is being set on a general basis and that
+           the special CS values work with out generic handler code. */
+        Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+        bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx80, 0x80 /*bXcpt*/, pszMode, uLine);
+        if (!(BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+            Bs3TestFailedF("%u - %s: u4Type=%#x, not accessed\n", uLine, pszMode, BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+        uLine++;
+
+        Bs3MemCpy(&CtxTmp, &Ctx83, sizeof(CtxTmp));
+        Bs3RegCtxConvertToRingX(&CtxTmp, 3);
+        Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+        bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83 /*bXcpt*/, pszMode, uLine);
+        if (!(BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+            Bs3TestFailedF("%u - %s: u4Type=%#x, not accessed!\n", uLine, pszMode, BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+        uLine++;
+
+        /*
+         * Now check that setting CS.u1Access to 1 does __NOT__ trigger a page
+         * fault due to the RW bit being zero.
+         * (We check both with with and without the WP bit if 80486.)
+         */
+        if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80486)
+            ASMSetCR0(uCr0Saved | X86_CR0_WP);
+
+        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        rc = Bs3PagingProtect(GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_00, 8, 0 /*fSet*/, X86_PTE_RW /*fClear*/);
+        if (RT_SUCCESS(rc))
+        {
+            /* ring-0 handler */
+            Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+            bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx80, 0x80 /*bXcpt*/, pszMode, uLine);
+            if (!(BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                Bs3TestFailedF("%u - %s: u4Type=%#x, not accessed!\n", uLine, pszMode, BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+            uLine++;
+
+            /* ring-3 handler */
+            Bs3MemCpy(&CtxTmp, &Ctx83, sizeof(CtxTmp));
+            Bs3RegCtxConvertToRingX(&CtxTmp, 3);
+            Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+            bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83 /*bXcpt*/, pszMode, uLine);
+            if (!(BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                Bs3TestFailedF("%u - %s: u4Type=%#x, not accessed!\n", uLine, pszMode, BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+            uLine++;
+
+            /* clear WP and repeat the above. */
+            if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80486)
+                ASMSetCR0(uCr0Saved & ~X86_CR0_WP);
+            BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED; /* (No need to RW the page - ring-0, WP=0.) */
+            BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED; /* (No need to RW the page - ring-0, WP=0.) */
+
+            Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+            bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx80, 0x80 /*bXcpt*/, pszMode, uLine);
+            if (!(BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                Bs3TestFailedF("%u - %s: u4Type=%#x, not accessed!\n", uLine, pszMode, BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+            uLine++;
+
+            Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+            bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83 /*bXcpt*/, pszMode, uLine);
+            if (!(BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                Bs3TestFailedF("%u - %s: u4Type=%#x, not accessed!\n", uLine, pszMode, BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type);
+            uLine++;
+
+            Bs3PagingProtect(GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_00, 8, X86_PTE_RW /*fSet*/, 0 /*fClear*/);
+        }
+
+        ASMSetCR0(uCr0Saved);
+
+        /*
+         * While we're here, check that if the CS GDT entry is a non-present
+         * page we do get a #PF with the rigth error code and CR2.
+         */
+        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED; /* Just for fun, really a pointless gesture. */
+        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        rc = Bs3PagingProtect(GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_00, 8, 0 /*fSet*/, X86_PTE_P /*fClear*/);
+        if (RT_SUCCESS(rc))
+        {
+            Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
+            bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx80, 0 /*uErrCd*/, GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_00,
+                                      f16BitSys, pszMode, uLine);
+            uLine++;
+
+            /* Do it from ring-3 to check ErrCd, which doesn't set X86_TRAP_PF_US it turns out. */
+            Bs3MemCpy(&CtxTmp, &Ctx83, sizeof(CtxTmp));
+            Bs3RegCtxConvertToRingX(&CtxTmp, 3);
+            Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
+
+            bs3CpuBasic2_ComparePfCtx(&TrapCtx, &CtxTmp, 0 /*uErrCd*/, GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_03,
+                                      f16BitSys, pszMode, uLine);
+            uLine++;
+
+            Bs3PagingProtect(GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_00, 8, X86_PTE_P /*fSet*/, 0 /*fClear*/);
+            if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+                Bs3TestFailedF("%u - %s: u4Type=%#x, accessed!\n", uLine - 2, pszMode, BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+            if (BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+                Bs3TestFailedF("%u - %s: u4Type=%#x, accessed!\n", uLine - 1, pszMode, BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type);
+        }
+
+        /* restore */
+        paIdt[0x80 << cIdteShift].Gate.u16Sel = uSysR0Cs;
+        paIdt[0x83 << cIdteShift].Gate.u16Sel = uSysR0Cs + (3 << BS3_SEL_RING_SHIFT) + 3;
     }
 
 # endif /* 32 || 64*/
@@ -613,8 +737,6 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint8_t const bMode, const char * cons
     /** @todo
      *  - Run \#PF and \#GP (and others?) at CPLs other than zero.
      *  - Quickly generate all faults.
-     *  - Check that CS.u1Accessed is set to 1.
-     *  - Check that setting CS.u1Access to 1 triggers page fault.
      *  - Check CS.u1Access = 1 \#PF against \#NP(CS), CS.u2DPL, \#NP(SS),
      *    SS.u2DPL, and SS.u1Access=1 \#PF.
      *  - Check that IOPL doesn't influence anything for non-v8086.

@@ -33,7 +33,7 @@ BS3_EXTERN_DATA16 g_bBs3CurrentMode
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
 %endif
 TMPL_BEGIN_TEXT
-BS3_EXTERN_CMN Bs3SwitchToRing0
+BS3_EXTERN_CMN Bs3Syscall
 TMPL_BEGIN_TEXT
 
 
@@ -57,22 +57,35 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore_aborts ; special entry point for when watcom
 %endif
 BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         BS3_CALL_CONV_PROLOG 2
+        push    xBP
+        mov     xBP, xSP
 
         ;
-        ; Make sure we're in ring-0 when we do this job.
+        ; If we're not in ring-0, ask the kernel to restore it for us (quicker
+        ; and less problematic if we're in a funny context right now with weird
+        ; CS or SS values).
         ;
         mov     ax, ss
         test    al, 3
         jz      .in_ring0
-        call    Bs3SwitchToRing0
+%if TMPL_BITS == 16
+        mov     si, [bp + 4]
+        mov     cx, [bp + 4+2]
+        mov     dx, [bp + 8]
+        mov     ax, BS3_SYSCALL_RESTORE_CTX
+%else
+        mov     cx, ds
+        mov     xSI, [xBP + xCB*2]
+        movzx   edx, word [xBP + xCB*3]
+        mov     eax, BS3_SYSCALL_RESTORE_CTX
+%endif
+        call    Bs3Syscall
 .in_ring0:
 
         ;
         ; Prologue.  Loads ES with BS3DATA16/FLAT (for g_bBs3CurrentMode and
         ; g_uBs3CpuDetected), DS:xBX with pRegCtx and fFlags into xCX.
         ;
-        push    xBP
-        mov     xBP, xSP
 %if TMPL_BITS == 16
         mov     ax, BS3DATA16
         mov     es, ax
