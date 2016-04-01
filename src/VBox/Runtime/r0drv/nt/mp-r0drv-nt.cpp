@@ -798,7 +798,7 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
 #ifndef IPRT_TARGET_NT4
 
 /** Callback used by rtMpPokeCpuUsingBroadcastIpi. */
-static ULONG_PTR __stdcall rtMpIpiGenericCall(ULONG_PTR Argument)
+static ULONG_PTR rtMpIpiGenericCall(ULONG_PTR Argument)
 {
     NOREF(Argument);
     return 0;
