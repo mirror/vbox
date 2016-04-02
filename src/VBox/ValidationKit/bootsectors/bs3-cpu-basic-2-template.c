@@ -1175,7 +1175,7 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
      */
     TMPL_NM(Bs3TrapInit)();
     return 0;
-#elif !BS3_MODE_IS_RM(TMPL_MODE)
+#elif TMPL_MODE == BS3_MODE_RM
 
     /*
      * Check
