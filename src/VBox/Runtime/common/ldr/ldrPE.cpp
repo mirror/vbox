@@ -3489,6 +3489,7 @@ static int rtldrPEReadRVA(PRTLDRMODPE pModPe, void *pvBuf, uint32_t cb, uint32_t
  * @param   pModPe      The PE module instance.
  * @param   pOptHdr     Pointer to the optional header (valid).
  * @param   fFlags      Loader flags, RTLDR_O_XXX.
+ * @param   pErrInfo    Where to return extended error information. Optional.
  */
 static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64 *pOptHdr, uint32_t fFlags,
                                                       PRTERRINFO pErrInfo)
