@@ -285,7 +285,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_32
         BS3_SET_BITS 32
         STRICT_CHECK_REGS
 
-        push    BS3_MODE_RM
+        push    BS3_MODE_PE16_32
         call    eax
 
         STRICT_SAVE_REGS

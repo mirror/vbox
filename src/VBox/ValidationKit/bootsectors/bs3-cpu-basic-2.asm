@@ -31,6 +31,24 @@
 %include "bs3kit.mac"
 
 
+;*********************************************************************************************************************************
+;*      Global Variables                                                                                                         *
+;*********************************************************************************************************************************
+BS3_BEGIN_DATA16
+BS3_GLOBAL_DATA g_bs3CpuBasic2_ud2_FlatAddr, 4
+        dd  bs3CpuBasic2_ud2 wrt FLAT
+
+
+BS3_BEGIN_TEXT16
+BS3_PROC_BEGIN  bs3CpuBasic2_ud2
+.again:
+        ud2
+        jmp     .again
+BS3_PROC_END    bs3CpuBasic2_ud2
+
+
+
 ;BS3_INSTANTIATE_COMMON_TEMPLATE "bs3-cpu-basic-2-template.mac"
 BS3_INSTANTIATE_TEMPLATE_WITH_WEIRD_ONES "bs3-cpu-basic-2-template.mac"
+
 
