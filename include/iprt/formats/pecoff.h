@@ -677,7 +677,7 @@ AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V4, 0x68);
 typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V4 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V4;
 typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V4 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V4;
 
-/** @since  Windows 10 build 10286 (or maybe earlier). */
+/** @since  Windows 10 build 14286 (or maybe earlier). */
 typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32_V5
 {
     uint32_t  Size;
@@ -817,7 +817,7 @@ AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY64_V4, 0xa0);
 typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V4 *PIMAGE_LOAD_CONFIG_DIRECTORY64_V4;
 typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V4 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64_V4;
 
-/** @since  Windows 10 build 10286 (or maybe earlier). */
+/** @since  Windows 10 build 14286 (or maybe earlier). */
 typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64_V5
 {
     uint32_t  Size;
