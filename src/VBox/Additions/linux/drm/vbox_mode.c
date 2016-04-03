@@ -318,9 +318,7 @@ static void vbox_crtc_destroy(struct drm_crtc *crtc)
 
 static const struct drm_crtc_funcs vbox_crtc_funcs = {
     .cursor_move = vbox_cursor_move,
-#ifdef DRM_IOCTL_MODE_CURSOR2
     .cursor_set2 = vbox_cursor_set2,
-#endif
     .reset = vbox_crtc_reset,
     .set_config = drm_crtc_helper_set_config,
     /* .gamma_set = vbox_crtc_gamma_set, */
@@ -658,7 +656,7 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
     }
     vbox_crtc->cursor_enabled = true;
     if (   width > VBOX_MAX_CURSOR_WIDTH || height > VBOX_MAX_CURSOR_HEIGHT
-        || width == 0 || hot_x > width || height == 0 || hot_y > height)
+        || width == 0 || height == 0)
         return -EINVAL;
     rc = VBoxQueryConfHGSMI(&vbox->submit_info,
                             VBOX_VBVA_CONF32_CURSOR_CAPABILITIES, &caps);
@@ -680,30 +678,35 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
              * per ARGB word, and must be 32-bit padded. */
             mask_size  = ((width + 7) / 8 * height + 3) & ~3;
             data_size = width * height * 4 + mask_size;
-            dst = kmalloc(data_size, GFP_KERNEL);
-            if (dst)
+            vbox->cursor_hot_x = min((uint32_t)max(hot_x, 0), width);
+            vbox->cursor_hot_y = min((uint32_t)max(hot_y, 0), height);
+            vbox->cursor_width = width;
+            vbox->cursor_height = height;
+            vbox->cursor_data_size = data_size;
+            dst = vbox->cursor_data;
+            ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &uobj_map);
+            if (!ret)
             {
-                ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &uobj_map);
-                if (!ret)
+                src = ttm_kmap_obj_virtual(&uobj_map, &src_isiomem);
+                if (!src_isiomem)
                 {
-                    src = ttm_kmap_obj_virtual(&uobj_map, &src_isiomem);
-                    if (!src_isiomem)
-                    {
-                        uint32_t flags =   VBOX_MOUSE_POINTER_VISIBLE
-                                          | VBOX_MOUSE_POINTER_SHAPE
-                                          | VBOX_MOUSE_POINTER_ALPHA;
-                        copy_cursor_image(src, dst, width, height, mask_size);
-                        rc = VBoxHGSMIUpdatePointerShape(&vbox->submit_info, flags,
-                                                         hot_x, hot_y, width,
-                                                         height, dst, data_size);
-                        ret = -RTErrConvertToErrno(rc);
-                    }
-                    else
-                        DRM_ERROR("src cursor bo should be in main memory\n");
-                    ttm_bo_kunmap(&uobj_map);
+                    uint32_t flags =   VBOX_MOUSE_POINTER_VISIBLE
+                                      | VBOX_MOUSE_POINTER_SHAPE
+                                      | VBOX_MOUSE_POINTER_ALPHA;
+                    copy_cursor_image(src, dst, width, height, mask_size);
+                    rc = VBoxHGSMIUpdatePointerShape(&vbox->submit_info, flags,
+                                                     vbox->cursor_hot_x,
+                                                     vbox->cursor_hot_y,
+                                                     width, height, dst,
+                                                     data_size);
+                    ret = -RTErrConvertToErrno(rc);
                 }
-                kfree(dst);
+                else
+                    DRM_ERROR("src cursor bo should be in main memory\n");
+                ttm_bo_kunmap(&uobj_map);
             }
+            else
+                vbox->cursor_data_size = 0;
             vbox_bo_unreserve(bo);
         }
         drm_gem_object_unreference_unlocked(obj);
@@ -720,8 +723,32 @@ static int vbox_cursor_move(struct drm_crtc *crtc,
                int x, int y)
 {
     struct vbox_private *vbox = crtc->dev->dev_private;
+    uint32_t flags =   VBOX_MOUSE_POINTER_VISIBLE
+                      | VBOX_MOUSE_POINTER_SHAPE
+                      | VBOX_MOUSE_POINTER_ALPHA;
+    uint32_t host_x, host_y;
+    uint32_t hot_x = 0;
+    uint32_t hot_y = 0;
+    int rc;
 
-    VBoxHGSMICursorPosition(&vbox->submit_info, true, x + crtc->x,
-                            y + crtc->y, NULL, NULL);
-    return 0;
+    /* We compare these to unsigned later and don't need to handle negative. */
+    if (x + crtc->x < 0 || y + crtc->y < 0 || vbox->cursor_data_size == 0)
+        return 0;
+    rc = VBoxHGSMICursorPosition(&vbox->submit_info, true, x + crtc->x,
+                                 y + crtc->y, &host_x, &host_y);
+    if (RT_FAILURE(rc))
+        return -RTErrConvertToErrno(rc);
+    if (x + crtc->x < host_x)
+        hot_x = min(host_x - x - crtc->x, vbox->cursor_width);
+    if (y + crtc->y < host_y)
+        hot_y = min(host_y - y - crtc->y, vbox->cursor_height);
+    if (hot_x == vbox->cursor_hot_x && hot_y == vbox->cursor_hot_y)
+        return 0;
+    vbox->cursor_hot_x = hot_x;
+    vbox->cursor_hot_y = hot_y;
+    rc = VBoxHGSMIUpdatePointerShape(&vbox->submit_info, flags, hot_x, hot_y,
+                                     vbox->cursor_width, vbox->cursor_height,
+                                     vbox->cursor_data,
+                                     vbox->cursor_data_size);
+    return -RTErrConvertToErrno(rc);
 }

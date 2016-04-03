@@ -663,7 +663,7 @@ RTDECL(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReport
                 *pxHost = p->x;
             if (pyHost)
                 *pyHost = p->y;
-            Log(("%s: return: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)x, (unsigned)y));
+            Log(("%s: return: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)p->x, (unsigned)p->y));
         }
         /* Free the IO buffer. */
         VBoxHGSMIBufferFree(pCtx, p);
