@@ -488,11 +488,14 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
     g_uLine = 1600;
     BS3_DATA_NM(Bs3GdteTestPage00) = BS3_DATA_NM(Bs3Gdt)[uSysR0Cs >> X86_SEL_SHIFT];
     BS3_DATA_NM(Bs3GdteTestPage00).Gen.u1Present = 0;
+    BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
     paIdt[0x80 << cIdteShift].Gate.u16Sel = BS3_SEL_TEST_PAGE_00;
 
     /* CS.PRESENT = 0 */
     Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
     bs3CpuBasic2_CompareNpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00);
+    if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+        bs3CpuBasic2_FailedF("selector was accessed");
     g_uLine++;
 
     /* Check that GATE.DPL is checked before CS.PRESENT. */
@@ -502,18 +505,25 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
         Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
         Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, (0x80 << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT);
+        if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+            bs3CpuBasic2_FailedF("selector was accessed");
         g_uLine++;
     }
 
     /* CS.DPL mismatch takes precedence over CS.PRESENT = 0. */
+    BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
     Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
     bs3CpuBasic2_CompareNpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00);
+    if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+        bs3CpuBasic2_FailedF("CS selector was accessed");
     g_uLine++;
     for (iDpl = 1; iDpl < 4; iDpl++)
     {
         BS3_DATA_NM(Bs3GdteTestPage00).Gen.u2Dpl = iDpl;
         Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00);
+        if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+            bs3CpuBasic2_FailedF("CS selector was accessed");
         g_uLine++;
     }
 
@@ -539,6 +549,9 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
         g_uLine++;
     }
 
+    /* Fix CS again. */
+    BS3_DATA_NM(Bs3GdteTestPage00) = BS3_DATA_NM(Bs3Gdt)[uSysR0Cs >> X86_SEL_SHIFT];
+
     /* Test SS. */
     if (!BS3_MODE_IS_64BIT_SYS(g_bTestMode))
     {
@@ -546,17 +559,17 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
         uint16_t const    uSavedSs2   = *puTssSs2;
         X86DESC const     SavedGate83 = paIdt[0x83 << cIdteShift];
 
-        /* Fix CS again. */
-        BS3_DATA_NM(Bs3GdteTestPage00) = BS3_DATA_NM(Bs3Gdt)[uSysR0Cs >> X86_SEL_SHIFT];
-
         /* Make the handler execute in ring-2. */
         BS3_DATA_NM(Bs3GdteTestPage02) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
         paIdt[0x83 << cIdteShift].Gate.u16Sel = BS3_SEL_TEST_PAGE_02 | 2;
 
         Bs3MemCpy(&CtxTmp, &Ctx83, sizeof(CtxTmp));
         Bs3RegCtxConvertToRingX(&CtxTmp, 3); /* yeah, from 3 so SS:xSP is reloaded. */
         Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
         bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83);
+        if (!(BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+            bs3CpuBasic2_FailedF("CS selector was not access");
         g_uLine++;
 
         /* Create a SS.DPL=2 stack segment and check that SS2.RPL matters and
@@ -600,6 +613,8 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                 for (iRpl = 0; iRpl < 4; iRpl++)
                 {
                     *puTssSs2 = BS3_SEL_TEST_PAGE_03 | iRpl;
+                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+                    BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
                     if (iRpl != 2 || iRpl != iDpl || k >= 4)
                         bs3CpuBasic2_CompareTsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03);
@@ -611,6 +626,16 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                         if (TrapCtx.uHandlerSs != (BS3_SEL_TEST_PAGE_03 | 2))
                             bs3CpuBasic2_FailedF("uHandlerSs=%#x expected %#x\n", TrapCtx.uHandlerSs, BS3_SEL_TEST_PAGE_03 | 2);
                     }
+                    if (!(BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                        bs3CpuBasic2_FailedF("CS selector was not access");
+                    if (   TrapCtx.bXcpt == 0x83
+                        || (TrapCtx.bXcpt == X86_XCPT_SS && k == 2) )
+                    {
+                        if (!(BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                            bs3CpuBasic2_FailedF("SS selector was not accessed");
+                    }
+                    else if (BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+                        bs3CpuBasic2_FailedF("SS selector was accessed");
                     g_uLine++;
 
                     /* Modify the gate DPL to check that this is checked before SS.DPL and SS.PRESENT. */
