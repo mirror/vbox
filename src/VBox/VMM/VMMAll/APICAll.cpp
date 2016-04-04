@@ -448,11 +448,19 @@ static VBOXSTRICTRC apicSendIntr(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE
     switch (enmDeliveryMode)
     {
         case XAPICDELIVERYMODE_FIXED:
-        case XAPICDELIVERYMODE_LOWEST_PRIO:
         {
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
                 if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
                     APICPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
+            break;
+        }
+
+        case XAPICDELIVERYMODE_LOWEST_PRIO:
+        {
+            VMCPUID idCpu = VMCPUSET_FIND_FIRST_PRESENT(pDestCpuSet);
+            if (   idCpu != NIL_VMCPUID
+                && idCpu < pVM->cCpus)
+                APICPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
             break;
         }
 
