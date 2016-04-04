@@ -18,7 +18,6 @@
 
 #define _WIN32_DCOM
 
-#include <iphlpapi.h>
 
 #include <devguid.h>
 #include <stdio.h>
@@ -34,7 +33,12 @@
 
 #include <Wbemidl.h>
 #include <comdef.h>
+
+#include <winsock2.h>
 #include <Ws2tcpip.h>
+#include <ws2ipdef.h>
+#include <netioapi.h>
+#include <iphlpapi.h>
 
 
 #ifndef Assert   /** @todo r=bird: where would this be defined? */
@@ -56,6 +60,11 @@ static VOID DoLogging(LPCSTR szString, ...);
 
 #define VBOX_NETCFG_LOCK_TIME_OUT     5000  /** @todo r=bird: What does this do? */
 
+/*
+* Forward declaration for using vboxNetCfgWinSetupMetric()
+*/
+HRESULT vboxNetCfgWinSetupMetric(IN HKEY hKey);
+HRESULT vboxNetCfgWinGetInterfaceLUID(IN HKEY hKey, OUT NET_LUID* pLUID);
 
 /*
  * For some weird reason we do not want to use IPRT here, hence the following
@@ -275,15 +284,45 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallComponent(IN INetCfg *pNetCfg, I
     OBO_TOKEN Token;
     ZeroMemory(&Token, sizeof (Token));
     Token.Type = OBO_USER;
+    INetCfgComponent* pTempComponent = NULL;
 
     hr = pSetup->Install(pszwComponentId, &Token,
                          0,    /* IN DWORD dwSetupFlags */
                          0,    /* IN DWORD dwUpgradeFromBuildNo */
                          NULL, /* IN LPCWSTR pszwAnswerFile */
                          NULL, /* IN LPCWSTR pszwAnswerSections */
-                         ppComponent);
+                         &pTempComponent);
     if (SUCCEEDED(hr))
     {
+        if (pTempComponent != NULL)
+        {
+            HKEY hkey;
+            NET_LUID luid;
+            HRESULT res;
+
+            /*
+            *   Set default metric value of interface to fix multicast issue
+            *   See @bugref{6379} for details.
+            */
+            res = pTempComponent->OpenParamKey(&hkey);
+            if(SUCCEEDED(res) && hkey != NULL)
+                res = vboxNetCfgWinSetupMetric(hkey);
+            if (FAILED(res))
+            {
+                /*  
+                 *   The setting of Metric is not very important functionality,
+                 *   So we will not break installation process due to this error.
+                 */
+                NonStandardLogFlow(("VBoxNetCfgWinInstallComponent Warning! "
+                                    "vboxNetCfgWinSetupMetric failed, default metric "
+                                    "for new interface will not be set, hr (0x%x)\n", res));
+            }
+            if (ppComponent != NULL)
+                *ppComponent = pTempComponent;
+            else
+                pTempComponent->Release();
+        }
+
         /* ignore the apply failure */
         HRESULT tmpHr = pNetCfg->Apply();
         Assert(tmpHr == S_OK);
@@ -3099,6 +3138,22 @@ static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, 
         if (ret != ERROR_SUCCESS)
             SetErrBreak(("Querying NetCfgInstanceId failed (0x%08X)", ret));
 
+        /*
+        *   Set default metric value of interface to fix multicast issue 
+        *   See @bugref{6379} for details.
+        */
+        HRESULT hSMRes = vboxNetCfgWinSetupMetric(hkey);
+        if (FAILED(hSMRes))
+        {
+            /*
+            *   The setting of Metric is not very important functionality,
+            *   So we will not break installation process due to this error.
+            */
+            NonStandardLogFlow(("vboxNetCfgWinCreateHostOnlyNetworkInterface Warning! "
+                "vboxNetCfgWinSetupMetric failed, default metric "
+                "for new interface will not be set, hr (0x%x)\n", hSMRes));
+        }
+
 #ifndef VBOXNETCFG_DELAYEDRENAME
         /*
          * We need to query the device name after we have succeeded in querying its
@@ -3299,6 +3354,95 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
     }
     return hrc;
 }
+
+
+HRESULT vboxNetCfgWinGetLoopbackMetric(OUT int* Metric)
+{
+    HRESULT status = S_OK;
+    MIB_IPINTERFACE_ROW row;
+
+    InitializeIpInterfaceEntry(&row);
+    row.Family = AF_INET;
+    row.InterfaceLuid.Info.IfType = IF_TYPE_SOFTWARE_LOOPBACK;
+
+    status = GetIpInterfaceEntry(&row);
+    if (status != 0)
+        return E_FAIL;
+
+    *Metric = row.Metric;
+
+    return status;
+}
+
+
+HRESULT vboxNetCfgWinSetInterfaceMetric(
+    IN NET_LUID* pInterfaceLuid,
+    IN DWORD metric)
+{
+    MIB_IPINTERFACE_ROW newRow;
+    InitializeIpInterfaceEntry(&newRow);
+    // identificate the interface to change
+    newRow.InterfaceLuid = *pInterfaceLuid;
+    newRow.Family = AF_INET;
+    // changed settings
+    newRow.UseAutomaticMetric = false;
+    newRow.Metric = metric;
+
+    // change settings
+    return SetIpInterfaceEntry(&newRow);
+}
+
+
+HRESULT vboxNetCfgWinGetInterfaceLUID(IN HKEY hKey, OUT NET_LUID* pLUID)
+{
+    HRESULT res = S_OK;
+    DWORD luidIndex = 0;
+    DWORD ifType = 0;
+    DWORD cbSize = sizeof(luidIndex);
+    DWORD dwValueType = REG_DWORD;
+
+    if (pLUID == NULL)
+        return E_INVALIDARG;
+    
+    res = RegQueryValueExW(hKey, L"NetLuidIndex", NULL,
+        &dwValueType, (LPBYTE)&luidIndex, &cbSize);
+    if (FAILED(res))
+        return res;
+
+    cbSize = sizeof(ifType);
+    dwValueType = REG_DWORD;
+    res = RegQueryValueExW(hKey, L"*IfType", NULL,
+        &dwValueType, (LPBYTE)&ifType, &cbSize);
+    if (FAILED(res))
+        return res;
+
+    ZeroMemory(pLUID, sizeof(NET_LUID));
+    pLUID->Info.IfType = ifType;
+    pLUID->Info.NetLuidIndex = luidIndex;
+
+    return res;
+}
+
+
+HRESULT vboxNetCfgWinSetupMetric(IN HKEY hKey)
+{
+    HRESULT status = S_OK;
+    NET_LUID luid;
+    int loopbackMetric;
+
+    status = vboxNetCfgWinGetInterfaceLUID(hKey, &luid);
+    if (FAILED(status))
+        return status;
+
+    status = vboxNetCfgWinGetLoopbackMetric(&loopbackMetric);
+    if (FAILED(status))
+        return status;
+
+    status = vboxNetCfgWinSetInterfaceMetric(&luid, loopbackMetric - 1);
+
+    return status;
+}
+
 
 #ifdef VBOXNETCFG_DELAYEDRENAME
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameHostOnlyConnection(IN const GUID *pGuid, IN LPCWSTR pwszId, OUT BSTR *pDevName)
