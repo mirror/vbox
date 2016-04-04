@@ -474,20 +474,14 @@
 
         <para>First, download the appropriate package for your distribution.
         The following examples assume that you are installing to a 32-bit
-        Ubuntu Raring system. Use <computeroutput>dpkg</computeroutput> to
+        Ubuntu Wily system. Use <computeroutput>dpkg</computeroutput> to
         install the Debian package:</para>
 
-        <screen>sudo dpkg -i virtualbox-5.0_@VBOX_VERSION_STRING@_Ubuntu_raring_i386.deb</screen>
+        <screen>sudo dpkg -i virtualbox-5.0_@VBOX_VERSION_STRING@_Ubuntu_wily_i386.deb</screen>
 
-        <para>You will be asked to accept the VirtualBox Personal Use and
-        Evaluation License. Unless you answer "yes" here, the installation
-        will be aborted.</para>
-
-        <para>The installer will also search for a VirtualBox kernel module
-        suitable for your kernel. The package includes pre-compiled modules
-        for the most common kernel configurations. If no suitable kernel
-        module is found, the installation script tries to build a module
-        itself. If the build process is not successful you will be shown a
+        <para>The installer will also try to build kernel modules suitable for
+        the current running kernel. If the build process is not successful you
+        will be shown a
         warning and the package will be left unconfigured. Please have a look
         at <computeroutput>/var/log/vbox-install.log</computeroutput> to find
         out why the compilation failed. You may have to install the
