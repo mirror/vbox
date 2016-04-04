@@ -1270,7 +1270,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
     {
         RTStrmPrintf(pStrm,
                            "%s debugvm %s         <uuid|vmname>\n"
-                     "                            dumpguestcore --filename <name> |\n"
+                     "                            dumpvmcore --filename <name> |\n"
                      "                            info <item> [args] |\n"
                      "                            injectnmi |\n"
                      "                            log [--release|--debug] <settings> ...|\n"
