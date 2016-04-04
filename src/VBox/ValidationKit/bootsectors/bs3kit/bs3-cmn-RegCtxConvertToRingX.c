@@ -99,13 +99,13 @@ static uint16_t bs3RegCtxConvertProtSelToRingX(uint16_t uSel, uint8_t bRing, uin
                usually here because Bs3SwitchToRing0 was called to get out of a test situation. */
             else if (iReg == X86_SREG_CS || iReg == X86_SREG_SS)
             {
-                if (   BS3_DATA_NM(Bs3Gdt)[uSel >> X86_SEL_SHIFT].Gen.u1Long
-                    && BS3_MODE_IS_64BIT_SYS(BS3_DATA_NM(g_bBs3CurrentMode)) )
+                if (   Bs3Gdt[uSel >> X86_SEL_SHIFT].Gen.u1Long
+                    && BS3_MODE_IS_64BIT_SYS(g_bBs3CurrentMode) )
                     uSel = iReg == X86_SREG_CS ? BS3_SEL_R0_CS64 : BS3_SEL_R0_DS64;
                 else
                 {
                     uint32_t uFlat   = Bs3SelFar32ToFlat32(0, uSel);
-                    bool     fDefBig = BS3_DATA_NM(Bs3Gdt)[uSel >> X86_SEL_SHIFT].Gen.u1DefBig;
+                    bool     fDefBig = Bs3Gdt[uSel >> X86_SEL_SHIFT].Gen.u1DefBig;
                     if (!fDefBig && uFlat == BS3_ADDR_BS3TEXT16 && iReg == X86_SREG_CS)
                         uSel = BS3_SEL_R0_CS16;
                     else if (!fDefBig && uFlat == 0 && iReg == X86_SREG_SS)

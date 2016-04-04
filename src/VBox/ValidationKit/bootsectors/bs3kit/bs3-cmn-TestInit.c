@@ -42,15 +42,15 @@ BS3_DECL(void) Bs3TestInit(const char BS3_FAR *pszTest)
     /*
      * Initialize the globals.
      */
-    BS3_CMN_NM(g_pszBs3Test)                 = pszTest;
-    BS3_DATA_NM(g_szBs3SubTest)[0]           = '\0';
-    BS3_DATA_NM(g_cusBs3TestErrors)          = 0;
-    BS3_DATA_NM(g_cusBs3SubTestAtErrors)     = 0;
-    BS3_DATA_NM(g_fbBs3SubTestReported)      = true;
-    BS3_DATA_NM(g_fbBs3SubTestSkipped)       = false;
-    BS3_DATA_NM(g_cusBs3SubTests)            = 0;
-    BS3_DATA_NM(g_cusBs3SubTestsFailed)      = 0;
-    BS3_DATA_NM(g_fbBs3VMMDevTesting)        = bs3TestIsVmmDevTestingPresent();
+    BS3_CMN_NM(g_pszBs3Test)    = pszTest;
+    g_szBs3SubTest[0]           = '\0';
+    g_cusBs3TestErrors          = 0;
+    g_cusBs3SubTestAtErrors     = 0;
+    g_fbBs3SubTestReported      = true;
+    g_fbBs3SubTestSkipped       = false;
+    g_cusBs3SubTests            = 0;
+    g_cusBs3SubTestsFailed      = 0;
+    g_fbBs3VMMDevTesting        = bs3TestIsVmmDevTestingPresent();
 
     /*
      * Print the name - RTTestBanner.

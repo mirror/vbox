@@ -38,13 +38,13 @@
  */
 BS3_DECL(void) Bs3TestSkippedV(const char *pszFormat, va_list va)
 {
-    if (BS3_DATA_NM(g_cusBs3TestErrors) == BS3_DATA_NM(g_cusBs3SubTestAtErrors))
+    if (g_cusBs3TestErrors == g_cusBs3SubTestAtErrors)
     {
         /* Just mark it as skipped and deal with it when the sub-test is done. */
-        BS3_DATA_NM(g_fbBs3SubTestSkipped) = true;
+        g_fbBs3SubTestSkipped = true;
 
         /* Tell VMMDev */
-        if (BS3_DATA_NM(g_fbBs3VMMDevTesting))
+        if (g_fbBs3VMMDevTesting)
             ASMOutU32(VMMDEV_TESTING_IOPORT_CMD, VMMDEV_TESTING_CMD_SKIPPED);
 
         /* The reason why it was skipped is optional. */
@@ -53,7 +53,7 @@ BS3_DECL(void) Bs3TestSkippedV(const char *pszFormat, va_list va)
             bool fNewLine = false;
             Bs3StrFormatV(pszFormat, va, bs3TestFailedStrOutput, &fNewLine);
         }
-        else if (BS3_DATA_NM(g_fbBs3VMMDevTesting))
+        else if (g_fbBs3VMMDevTesting)
             ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, 0);
     }
 }

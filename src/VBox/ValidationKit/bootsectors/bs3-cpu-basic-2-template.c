@@ -43,19 +43,19 @@
 # undef MY_SYS_SEL_R0_DS
 # undef MY_SYS_SEL_R0_SS
 # if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
-#  define MyBs3Idt              BS3_DATA_NM(Bs3Idt16)
+#  define MyBs3Idt              Bs3Idt16
 #  define MY_SYS_SEL_R0_CS      BS3_SEL_R0_CS16
 #  define MY_SYS_SEL_R0_CS_CNF  BS3_SEL_R0_CS16_CNF
 #  define MY_SYS_SEL_R0_DS      BS3_SEL_R0_DS16
 #  define MY_SYS_SEL_R0_SS      BS3_SEL_R0_SS16
 # elif BS3_MODE_IS_32BIT_SYS(TMPL_MODE)
-#  define MyBs3Idt              BS3_DATA_NM(Bs3Idt32)
+#  define MyBs3Idt              Bs3Idt32
 #  define MY_SYS_SEL_R0_CS      BS3_SEL_R0_CS32
 #  define MY_SYS_SEL_R0_CS_CNF  BS3_SEL_R0_CS32_CNF
 #  define MY_SYS_SEL_R0_DS      BS3_SEL_R0_DS32
 #  define MY_SYS_SEL_R0_SS      BS3_SEL_R0_SS32
 # elif BS3_MODE_IS_64BIT_SYS(TMPL_MODE)
-#  define MyBs3Idt              BS3_DATA_NM(Bs3Idt64)
+#  define MyBs3Idt              Bs3Idt64
 #  define MY_SYS_SEL_R0_CS      BS3_SEL_R0_CS64
 #  define MY_SYS_SEL_R0_CS_CNF  BS3_SEL_R0_CS64_CNF
 #  define MY_SYS_SEL_R0_DS      BS3_SEL_R0_DS64
@@ -86,14 +86,17 @@ typedef struct BS3CB2INVLDESCTYPE
 
 
 /*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
+*   External Symbols                                                                                                             *
 *********************************************************************************************************************************/
 extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int80)(void);
 extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int81)(void);
 extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int82)(void);
 extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int83)(void);
 extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_ud2)(void);
-extern uint32_t BS3_DATA_NM(g_bs3CpuBasic2_ud2_FlatAddr);
+#ifndef DOXYGEN_RUNNING
+# define g_bs3CpuBasic2_ud2_FlatAddr BS3_DATA_NM(g_bs3CpuBasic2_ud2_FlatAddr)
+#endif
+extern uint32_t g_bs3CpuBasic2_ud2_FlatAddr;
 
 
 /*********************************************************************************************************************************
@@ -201,7 +204,7 @@ void bs3CpuBasic2_CompareIntCtx1(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx,
     {
         Bs3TrapPrintFrame(pTrapCtx);
 #if 1
-        Bs3TestPrintf("Halting: g_uBs3CpuDetected=%#x\n", BS3_DATA_NM(g_uBs3CpuDetected));
+        Bs3TestPrintf("Halting: g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
         Bs3TestPrintf("Halting in CompareTrapCtx1: bXcpt=%#x\n", bXcpt);
         ASMHalt();
 #endif
@@ -225,7 +228,7 @@ void bs3CpuBasic2_CompareTrapCtx2(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx
     {
         Bs3TrapPrintFrame(pTrapCtx);
 #if 1
-        Bs3TestPrintf("Halting: g_uBs3CpuDetected=%#x\n", BS3_DATA_NM(g_uBs3CpuDetected));
+        Bs3TestPrintf("Halting: g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
         Bs3TestPrintf("Halting in CompareTrapCtx2: bXcpt=%#x\n", bXcpt);
         ASMHalt();
 #endif
@@ -248,7 +251,7 @@ BS3_DECL(void) bs3CpuBasic2_CompareCpuTrapCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGC
     fExtraEfl = X86_EFL_RF;
     if (   g_f16BitSys
         || (   !f486ResumeFlagHint
-            && (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) <= BS3CPU_80486 ) )
+            && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) <= BS3CPU_80486 ) )
         fExtraEfl = 0;
     else
         fExtraEfl = X86_EFL_RF;
@@ -257,7 +260,7 @@ BS3_DECL(void) bs3CpuBasic2_CompareCpuTrapCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGC
     {
         Bs3TrapPrintFrame(pTrapCtx);
 #if 1
-        Bs3TestPrintf("Halting: g_uBs3CpuDetected=%#x\n", BS3_DATA_NM(g_uBs3CpuDetected));
+        Bs3TestPrintf("Halting: g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
         Bs3TestPrintf("Halting: bXcpt=%#x uErrCd=%#x\n", bXcpt, uErrCd);
         ASMHalt();
 #endif
@@ -343,7 +346,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
     unsigned        i, j, k;
     uint32_t        uExpected;
 # if TMPL_BITS == 16
-    bool const      f386Plus = (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386;
+    bool const      f386Plus = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386;
 # else
     bool const      f386Plus = true;
     int             rc;
@@ -396,7 +399,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
     Ctx80.rsp.u -= 0x300;
     Ctx80.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int80));
 # if TMPL_BITS == 32
-    BS3_DATA_NM(g_uBs3TrapEipHint) = Ctx80.rip.u32;
+    g_uBs3TrapEipHint = Ctx80.rip.u32;
 # endif
     Bs3MemCpy(&Ctx81, &Ctx80, sizeof(Ctx80));
     Ctx81.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int81));
@@ -412,7 +415,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
     {
         g_usBs3TestStep = iCtx;
 # if TMPL_BITS == 32
-        BS3_DATA_NM(g_uBs3TrapEipHint) = apCtx8x[iCtx]->rip.u32;
+        g_uBs3TrapEipHint = apCtx8x[iCtx]->rip.u32;
 # endif
         Bs3TrapSetJmpAndRestore(apCtx8x[iCtx], &TrapCtx);
         bs3CpuBasic2_CompareIntCtx1(&TrapCtx, apCtx8x[iCtx], 0x80+iCtx /*bXcpt*/);
@@ -429,7 +432,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
             Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
             Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
 # if TMPL_BITS == 32
-            BS3_DATA_NM(g_uBs3TrapEipHint) = CtxTmp.rip.u32;
+            g_uBs3TrapEipHint = CtxTmp.rip.u32;
 # endif
             Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
             if (iCtx < iRing)
@@ -456,7 +459,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
             for (iCtx = 0; iCtx < RT_ELEMENTS(apCtx8x); iCtx++)
             {
 # if TMPL_BITS == 32
-                BS3_DATA_NM(g_uBs3TrapEipHint) = apCtx8x[iCtx]->rip.u32;
+                g_uBs3TrapEipHint = apCtx8x[iCtx]->rip.u32;
 # endif
                 Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
                 Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
@@ -503,15 +506,15 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
      * without making it impossible to handle faults.
      */
     g_usBs3TestStep = 1600;
-    BS3_DATA_NM(Bs3GdteTestPage00) = BS3_DATA_NM(Bs3Gdt)[uSysR0Cs >> X86_SEL_SHIFT];
-    BS3_DATA_NM(Bs3GdteTestPage00).Gen.u1Present = 0;
-    BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+    Bs3GdteTestPage00 = Bs3Gdt[uSysR0Cs >> X86_SEL_SHIFT];
+    Bs3GdteTestPage00.Gen.u1Present = 0;
+    Bs3GdteTestPage00.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
     paIdt[0x80 << cIdteShift].Gate.u16Sel = BS3_SEL_TEST_PAGE_00;
 
     /* CS.PRESENT = 0 */
     Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
     bs3CpuBasic2_CompareNpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00);
-    if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+    if (Bs3GdteTestPage00.Gen.u4Type & X86_SEL_TYPE_ACCESSED)
         bs3CpuBasic2_FailedF("selector was accessed");
     g_usBs3TestStep++;
 
@@ -522,70 +525,70 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
         Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
         Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, (0x80 << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT);
-        if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+        if (Bs3GdteTestPage00.Gen.u4Type & X86_SEL_TYPE_ACCESSED)
             bs3CpuBasic2_FailedF("selector was accessed");
         g_usBs3TestStep++;
     }
 
     /* CS.DPL mismatch takes precedence over CS.PRESENT = 0. */
-    BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+    Bs3GdteTestPage00.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
     Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
     bs3CpuBasic2_CompareNpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00);
-    if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+    if (Bs3GdteTestPage00.Gen.u4Type & X86_SEL_TYPE_ACCESSED)
         bs3CpuBasic2_FailedF("CS selector was accessed");
     g_usBs3TestStep++;
     for (iDpl = 1; iDpl < 4; iDpl++)
     {
-        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u2Dpl = iDpl;
+        Bs3GdteTestPage00.Gen.u2Dpl = iDpl;
         Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00);
-        if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+        if (Bs3GdteTestPage00.Gen.u4Type & X86_SEL_TYPE_ACCESSED)
             bs3CpuBasic2_FailedF("CS selector was accessed");
         g_usBs3TestStep++;
     }
 
     /* 1608: Check all the invalid CS selector types alone. */
-    BS3_DATA_NM(Bs3GdteTestPage00) = BS3_DATA_NM(Bs3Gdt)[uSysR0Cs >> X86_SEL_SHIFT];
+    Bs3GdteTestPage00 = Bs3Gdt[uSysR0Cs >> X86_SEL_SHIFT];
     for (i = 0; i < RT_ELEMENTS(g_aInvalidCsTypes); i++)
     {
-        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type     = g_aInvalidCsTypes[i].u4Type;
-        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u1DescType = g_aInvalidCsTypes[i].u1DescType;
+        Bs3GdteTestPage00.Gen.u4Type     = g_aInvalidCsTypes[i].u4Type;
+        Bs3GdteTestPage00.Gen.u1DescType = g_aInvalidCsTypes[i].u1DescType;
         Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00);
-        if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type != g_aInvalidCsTypes[i].u4Type)
+        if (Bs3GdteTestPage00.Gen.u4Type != g_aInvalidCsTypes[i].u4Type)
             bs3CpuBasic2_FailedF("Invalid CS type %#x/%u -> %#x/%u\n",
                                  g_aInvalidCsTypes[i].u4Type, g_aInvalidCsTypes[i].u1DescType,
-                                 BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type, BS3_DATA_NM(Bs3GdteTestPage00).Gen.u1DescType);
+                                 Bs3GdteTestPage00.Gen.u4Type, Bs3GdteTestPage00.Gen.u1DescType);
         g_usBs3TestStep++;
 
         /* Incorrect CS.TYPE takes precedence over CS.PRESENT = 0. */
-        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u1Present = 0;
+        Bs3GdteTestPage00.Gen.u1Present = 0;
         Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx80, BS3_SEL_TEST_PAGE_00);
-        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u1Present = 1;
+        Bs3GdteTestPage00.Gen.u1Present = 1;
         g_usBs3TestStep++;
     }
 
     /* Fix CS again. */
-    BS3_DATA_NM(Bs3GdteTestPage00) = BS3_DATA_NM(Bs3Gdt)[uSysR0Cs >> X86_SEL_SHIFT];
+    Bs3GdteTestPage00 = Bs3Gdt[uSysR0Cs >> X86_SEL_SHIFT];
 
     /* 1632: Test SS. */
     if (!BS3_MODE_IS_64BIT_SYS(g_bTestMode))
     {
-        uint16_t BS3_FAR *puTssSs2    = BS3_MODE_IS_16BIT_SYS(g_bTestMode) ? &BS3_DATA_NM(Bs3Tss16).ss2 : &BS3_DATA_NM(Bs3Tss32).ss2;
+        uint16_t BS3_FAR *puTssSs2    = BS3_MODE_IS_16BIT_SYS(g_bTestMode) ? &Bs3Tss16.ss2 : &Bs3Tss32.ss2;
         uint16_t const    uSavedSs2   = *puTssSs2;
         X86DESC const     SavedGate83 = paIdt[0x83 << cIdteShift];
 
         /* Make the handler execute in ring-2. */
-        BS3_DATA_NM(Bs3GdteTestPage02) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
-        BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        Bs3GdteTestPage02 = Bs3Gdt[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        Bs3GdteTestPage02.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
         paIdt[0x83 << cIdteShift].Gate.u16Sel = BS3_SEL_TEST_PAGE_02 | 2;
 
         Bs3MemCpy(&CtxTmp, &Ctx83, sizeof(CtxTmp));
         Bs3RegCtxConvertToRingX(&CtxTmp, 3); /* yeah, from 3 so SS:xSP is reloaded. */
         Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
         bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83);
-        if (!(BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+        if (!(Bs3GdteTestPage02.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
             bs3CpuBasic2_FailedF("CS selector was not access");
         g_usBs3TestStep++;
 
@@ -605,34 +608,34 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                k=8: present, read-write / no access + system (=LDT).
                k=9: not-present, read-write / no access + system (=LDT).
                */
-            BS3_DATA_NM(Bs3GdteTestPage03) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Ss + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
-            BS3_DATA_NM(Bs3GdteTestPage03).Gen.u1Present  = !(k & 1);
+            Bs3GdteTestPage03 = Bs3Gdt[(uSysR0Ss + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+            Bs3GdteTestPage03.Gen.u1Present  = !(k & 1);
             if (k >= 8)
             {
-                BS3_DATA_NM(Bs3GdteTestPage03).Gen.u1DescType = 0; /* system */
-                BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type = X86_SEL_TYPE_RW; /* = LDT */
+                Bs3GdteTestPage03.Gen.u1DescType = 0; /* system */
+                Bs3GdteTestPage03.Gen.u4Type = X86_SEL_TYPE_RW; /* = LDT */
             }
             else if (k >= 6)
-                BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type = X86_SEL_TYPE_ER;
+                Bs3GdteTestPage03.Gen.u4Type = X86_SEL_TYPE_ER;
             else if (k >= 4)
-                BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type = X86_SEL_TYPE_RO;
+                Bs3GdteTestPage03.Gen.u4Type = X86_SEL_TYPE_RO;
             else if (k >= 2)
             {
-                BS3_DATA_NM(Bs3GdteTestPage03).Gen.u16LimitLow   = 0x400;
-                BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4LimitHigh   = 0;
-                BS3_DATA_NM(Bs3GdteTestPage03).Gen.u1Granularity = 0;
+                Bs3GdteTestPage03.Gen.u16LimitLow   = 0x400;
+                Bs3GdteTestPage03.Gen.u4LimitHigh   = 0;
+                Bs3GdteTestPage03.Gen.u1Granularity = 0;
             }
 
             for (iDpl = 0; iDpl < 4; iDpl++)
             {
-                BS3_DATA_NM(Bs3GdteTestPage03).Gen.u2Dpl = iDpl;
+                Bs3GdteTestPage03.Gen.u2Dpl = iDpl;
 
                 for (iRpl = 0; iRpl < 4; iRpl++)
                 {
                     *puTssSs2 = BS3_SEL_TEST_PAGE_03 | iRpl;
                     //Bs3TestPrintf("k=%u iDpl=%u iRpl=%u step=%u\n", k, iDpl, iRpl, g_usBs3TestStep);
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
-                    BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+                    Bs3GdteTestPage02.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+                    Bs3GdteTestPage03.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
                     if (iRpl != 2 || iRpl != iDpl || k >= 4)
                         bs3CpuBasic2_CompareTsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03);
@@ -645,15 +648,15 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                         if (TrapCtx.uHandlerSs != (BS3_SEL_TEST_PAGE_03 | 2))
                             bs3CpuBasic2_FailedF("uHandlerSs=%#x expected %#x\n", TrapCtx.uHandlerSs, BS3_SEL_TEST_PAGE_03 | 2);
                     }
-                    if (!(BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                    if (!(Bs3GdteTestPage02.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
                         bs3CpuBasic2_FailedF("CS selector was not access");
                     if (   TrapCtx.bXcpt == 0x83
                         || (TrapCtx.bXcpt == X86_XCPT_SS && k == 2) )
                     {
-                        if (!(BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                        if (!(Bs3GdteTestPage03.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
                             bs3CpuBasic2_FailedF("SS selector was not accessed");
                     }
-                    else if (BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+                    else if (Bs3GdteTestPage03.Gen.u4Type & X86_SEL_TYPE_ACCESSED)
                         bs3CpuBasic2_FailedF("SS selector was accessed");
                     g_usBs3TestStep++;
 
@@ -671,25 +674,25 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                     g_usBs3TestStep++;
 
                     /* Now mark the CS selector not present and check that that also triggers before SS stuff. */
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u1Present = 0;
+                    Bs3GdteTestPage02.Gen.u1Present = 0;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
                     bs3CpuBasic2_CompareNpCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_02);
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u1Present = 1;
+                    Bs3GdteTestPage02.Gen.u1Present = 1;
                     g_usBs3TestStep++;
 
                     /* Make the CS selector some invalid type and check it triggers before SS stuff. */
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type = g_aInvalidCsTypes[i].u4Type;
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u1DescType = g_aInvalidCsTypes[i].u1DescType;
+                    Bs3GdteTestPage02.Gen.u4Type = g_aInvalidCsTypes[i].u4Type;
+                    Bs3GdteTestPage02.Gen.u1DescType = g_aInvalidCsTypes[i].u1DescType;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
                     bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_02);
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4Type = X86_SEL_TYPE_ER_ACC;
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u1DescType = 1;
+                    Bs3GdteTestPage02.Gen.u4Type = X86_SEL_TYPE_ER_ACC;
+                    Bs3GdteTestPage02.Gen.u1DescType = 1;
                     g_usBs3TestStep++;
 
                     /* Now, make the CS selector limit too small and that it triggers after SS trouble. */
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u16LimitLow = 0;
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u4LimitHigh = 0;
-                    BS3_DATA_NM(Bs3GdteTestPage02).Gen.u1Granularity = 0;
+                    Bs3GdteTestPage02.Gen.u16LimitLow = 0;
+                    Bs3GdteTestPage02.Gen.u4LimitHigh = 0;
+                    Bs3GdteTestPage02.Gen.u1Granularity = 0;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
                     if (iRpl != 2 || iRpl != iDpl || k >= 4)
                         bs3CpuBasic2_CompareTsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03);
@@ -697,29 +700,29 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                         bs3CpuBasic2_CompareSsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03, k == 2 /*f486ResumeFlagHint*/);
                     else
                         bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, 0 /*uErrCd*/);
-                    BS3_DATA_NM(Bs3GdteTestPage02) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+                    Bs3GdteTestPage02 = Bs3Gdt[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
                     g_usBs3TestStep++;
                 }
             }
         }
 
         /* Check all the invalid SS selector types alone. */
-        BS3_DATA_NM(Bs3GdteTestPage02) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
-        BS3_DATA_NM(Bs3GdteTestPage03) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Ss + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        Bs3GdteTestPage02 = Bs3Gdt[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        Bs3GdteTestPage03 = Bs3Gdt[(uSysR0Ss + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
         *puTssSs2 = BS3_SEL_TEST_PAGE_03 | 2;
         Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
         bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83);
         g_usBs3TestStep++;
         for (i = 0; i < RT_ELEMENTS(g_aInvalidSsTypes); i++)
         {
-            BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type     = g_aInvalidSsTypes[i].u4Type;
-            BS3_DATA_NM(Bs3GdteTestPage03).Gen.u1DescType = g_aInvalidSsTypes[i].u1DescType;
+            Bs3GdteTestPage03.Gen.u4Type     = g_aInvalidSsTypes[i].u4Type;
+            Bs3GdteTestPage03.Gen.u1DescType = g_aInvalidSsTypes[i].u1DescType;
             Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
             bs3CpuBasic2_CompareTsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03);
-            if (BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type != g_aInvalidSsTypes[i].u4Type)
+            if (Bs3GdteTestPage03.Gen.u4Type != g_aInvalidSsTypes[i].u4Type)
                 bs3CpuBasic2_FailedF("Invalid SS type %#x/%u -> %#x/%u\n",
                                      g_aInvalidSsTypes[i].u4Type, g_aInvalidSsTypes[i].u1DescType,
-                                     BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type, BS3_DATA_NM(Bs3GdteTestPage03).Gen.u1DescType);
+                                     Bs3GdteTestPage03.Gen.u4Type, Bs3GdteTestPage03.Gen.u1DescType);
             g_usBs3TestStep++;
         }
 
@@ -737,10 +740,10 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
          * with regular "expand up" segments where the whole pushing area is either
          * all fine or not not fine.
          */
-        BS3_DATA_NM(Bs3GdteTestPage02) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
-        BS3_DATA_NM(Bs3GdteTestPage03) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Ss + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
-        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u2Dpl = 2;
-        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type = X86_SEL_TYPE_RW_DOWN;
+        Bs3GdteTestPage02 = Bs3Gdt[(uSysR0Cs + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        Bs3GdteTestPage03 = Bs3Gdt[(uSysR0Ss + (2 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        Bs3GdteTestPage03.Gen.u2Dpl = 2;
+        Bs3GdteTestPage03.Gen.u4Type = X86_SEL_TYPE_RW_DOWN;
         *puTssSs2 = BS3_SEL_TEST_PAGE_03 | 2;
 
         /* First test, limit = max --> no bytes accessible --> #GP */
@@ -748,27 +751,27 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
         bs3CpuBasic2_CompareSsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03, true /*f486ResumeFlagHint*/);
 
         /* Second test, limit = 0 --> all by zero byte accessible --> works */
-        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u16LimitLow = 0;
-        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4LimitHigh = 0;
+        Bs3GdteTestPage03.Gen.u16LimitLow = 0;
+        Bs3GdteTestPage03.Gen.u4LimitHigh = 0;
         Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
         bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83);
 
         /* Modify the gate handler to be a dummy that immediately does UD2
            and triggers #UD, then advance the limit down till we get the #UD. */
-        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u1Granularity = 0;
+        Bs3GdteTestPage03.Gen.u1Granularity = 0;
 
         Bs3MemCpy(&CtxTmp2, &CtxTmp, sizeof(CtxTmp2));  /* #UD result context */
         if (g_f16BitSys)
         {
-            CtxTmp2.rip.u = BS3_DATA_NM(g_bs3CpuBasic2_ud2_FlatAddr) - BS3_ADDR_BS3TEXT16;
+            CtxTmp2.rip.u = g_bs3CpuBasic2_ud2_FlatAddr - BS3_ADDR_BS3TEXT16;
             Bs3Trap16SetGate(0x83, X86_SEL_TYPE_SYS_286_INT_GATE, 3, BS3_SEL_TEST_PAGE_02, CtxTmp2.rip.u16, 0 /*cParams*/);
-            CtxTmp2.rsp.u = BS3_DATA_NM(Bs3Tss16).sp2 - 2*5;
+            CtxTmp2.rsp.u = Bs3Tss16.sp2 - 2*5;
         }
         else
         {
-            CtxTmp2.rip.u = BS3_DATA_NM(g_bs3CpuBasic2_ud2_FlatAddr);
+            CtxTmp2.rip.u = g_bs3CpuBasic2_ud2_FlatAddr;
             Bs3Trap32SetGate(0x83, X86_SEL_TYPE_SYS_386_INT_GATE, 3, BS3_SEL_TEST_PAGE_02, CtxTmp2.rip.u32, 0 /*cParams*/);
-            CtxTmp2.rsp.u = BS3_DATA_NM(Bs3Tss32).esp2 - 4*5;
+            CtxTmp2.rsp.u = Bs3Tss32.esp2 - 4*5;
         }
         CtxTmp2.bMode = g_bTestMode; /* g_bBs3CurrentMode not changed by the UD2 handler. */
         CtxTmp2.cs = BS3_SEL_TEST_PAGE_02 | 2;
@@ -784,7 +787,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
         i = (g_f16BitSys ? 2 : 4) * 6 + 1;
         while (i-- > 0)
         {
-            BS3_DATA_NM(Bs3GdteTestPage03).Gen.u16LimitLow = CtxTmp2.rsp.u16 + i - 1;
+            Bs3GdteTestPage03.Gen.u16LimitLow = CtxTmp2.rsp.u16 + i - 1;
             Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
             if (i > 0)
                 bs3CpuBasic2_CompareSsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03, true /*f486ResumeFlagHint*/);
@@ -812,7 +815,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
         CtxTmp2.gs = CtxTmp.gs;
         while (i-- > 0)
         {
-            BS3_DATA_NM(Bs3GdteTestPage03).Gen.u16LimitLow = CtxTmp2.rsp.u16 + i - 1;
+            Bs3GdteTestPage03.Gen.u16LimitLow = CtxTmp2.rsp.u16 + i - 1;
             Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
             if (i > 0)
                 bs3CpuBasic2_CompareSsCtx(&TrapCtx, &CtxTmp, 0 /*BS3_SEL_TEST_PAGE_03*/, true /*f486ResumeFlagHint*/);
@@ -840,7 +843,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                 Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
                 Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
 # if TMPL_BITS == 32
-                BS3_DATA_NM(g_uBs3TrapEipHint) = CtxTmp.rip.u32;
+                g_uBs3TrapEipHint = CtxTmp.rip.u32;
 # endif
 
                 for (j = 0; j <= 3; j++) /* rpl */
@@ -1026,28 +1029,28 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
     g_usBs3TestStep = 5400;
     if (BS3_MODE_IS_PAGED(g_bTestMode) && pbIdtCopyAlloc)
     {
-        BS3_DATA_NM(Bs3GdteTestPage00) = BS3_DATA_NM(Bs3Gdt)[uSysR0Cs >> X86_SEL_SHIFT];
-        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        Bs3GdteTestPage00 = Bs3Gdt[uSysR0Cs >> X86_SEL_SHIFT];
+        Bs3GdteTestPage00.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
         paIdt[0x80 << cIdteShift].Gate.u16Sel   = BS3_SEL_TEST_PAGE_00;
 
-        BS3_DATA_NM(Bs3GdteTestPage03) = BS3_DATA_NM(Bs3Gdt)[(uSysR0Cs + (3 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
-        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        Bs3GdteTestPage03 = Bs3Gdt[(uSysR0Cs + (3 << BS3_SEL_RING_SHIFT)) >> X86_SEL_SHIFT];
+        Bs3GdteTestPage03.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
         paIdt[0x83 << cIdteShift].Gate.u16Sel   = BS3_SEL_TEST_PAGE_03; /* rpl is ignored, so leave it as zero. */
 
         /* Check that the CS.A bit is being set on a general basis and that
            the special CS values work with out generic handler code. */
         Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
         bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx80, 0x80 /*bXcpt*/);
-        if (!(BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-            bs3CpuBasic2_FailedF("u4Type=%#x, not accessed", BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+        if (!(Bs3GdteTestPage00.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+            bs3CpuBasic2_FailedF("u4Type=%#x, not accessed", Bs3GdteTestPage00.Gen.u4Type);
         g_usBs3TestStep++;
 
         Bs3MemCpy(&CtxTmp, &Ctx83, sizeof(CtxTmp));
         Bs3RegCtxConvertToRingX(&CtxTmp, 3);
         Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
         bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83 /*bXcpt*/);
-        if (!(BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-            bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!", BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+        if (!(Bs3GdteTestPage03.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+            bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!", Bs3GdteTestPage00.Gen.u4Type);
         if (TrapCtx.uHandlerCs != (BS3_SEL_TEST_PAGE_03 | 3))
             bs3CpuBasic2_FailedF("uHandlerCs=%#x, expected %#x", TrapCtx.uHandlerCs, (BS3_SEL_TEST_PAGE_03 | 3));
         g_usBs3TestStep++;
@@ -1057,19 +1060,19 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
          * fault due to the RW bit being zero.
          * (We check both with with and without the WP bit if 80486.)
          */
-        if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80486)
+        if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486)
             ASMSetCR0(uCr0Saved | X86_CR0_WP);
 
-        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
-        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        Bs3GdteTestPage00.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        Bs3GdteTestPage03.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
         rc = Bs3PagingProtect(GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_00, 8, 0 /*fSet*/, X86_PTE_RW /*fClear*/);
         if (RT_SUCCESS(rc))
         {
             /* ring-0 handler */
             Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
             bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx80, 0x80 /*bXcpt*/);
-            if (!(BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-                bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!", BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+            if (!(Bs3GdteTestPage00.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!", Bs3GdteTestPage00.Gen.u4Type);
             g_usBs3TestStep++;
 
             /* ring-3 handler */
@@ -1077,26 +1080,26 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
             Bs3RegCtxConvertToRingX(&CtxTmp, 3);
             Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
             bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83 /*bXcpt*/);
-            if (!(BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-                bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!", BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+            if (!(Bs3GdteTestPage03.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!", Bs3GdteTestPage00.Gen.u4Type);
             g_usBs3TestStep++;
 
             /* clear WP and repeat the above. */
-            if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80486)
+            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486)
                 ASMSetCR0(uCr0Saved & ~X86_CR0_WP);
-            BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED; /* (No need to RW the page - ring-0, WP=0.) */
-            BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED; /* (No need to RW the page - ring-0, WP=0.) */
+            Bs3GdteTestPage00.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED; /* (No need to RW the page - ring-0, WP=0.) */
+            Bs3GdteTestPage03.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED; /* (No need to RW the page - ring-0, WP=0.) */
 
             Bs3TrapSetJmpAndRestore(&Ctx80, &TrapCtx);
             bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx80, 0x80 /*bXcpt*/);
-            if (!(BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-                bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!", BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
+            if (!(Bs3GdteTestPage00.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!", Bs3GdteTestPage00.Gen.u4Type);
             g_usBs3TestStep++;
 
             Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
             bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &CtxTmp, 0x83 /*bXcpt*/);
-            if (!(BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-                bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!n", BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type);
+            if (!(Bs3GdteTestPage03.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                bs3CpuBasic2_FailedF("u4Type=%#x, not accessed!n", Bs3GdteTestPage03.Gen.u4Type);
             g_usBs3TestStep++;
 
             Bs3PagingProtect(GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_00, 8, X86_PTE_RW /*fSet*/, 0 /*fClear*/);
@@ -1108,8 +1111,8 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
          * While we're here, check that if the CS GDT entry is a non-present
          * page we do get a #PF with the rigth error code and CR2.
          */
-        BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED; /* Just for fun, really a pointless gesture. */
-        BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
+        Bs3GdteTestPage00.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED; /* Just for fun, really a pointless gesture. */
+        Bs3GdteTestPage03.Gen.u4Type &= ~X86_SEL_TYPE_ACCESSED;
         rc = Bs3PagingProtect(GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_00, 8, 0 /*fSet*/, X86_PTE_P /*fClear*/);
         if (RT_SUCCESS(rc))
         {
@@ -1126,10 +1129,10 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
             g_usBs3TestStep++;
 
             Bs3PagingProtect(GdtrSaved.pGdt + BS3_SEL_TEST_PAGE_00, 8, X86_PTE_P /*fSet*/, 0 /*fClear*/);
-            if (BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
-                bs3CpuBasic2_FailedF("u4Type=%#x, accessed! #1", BS3_DATA_NM(Bs3GdteTestPage00).Gen.u4Type);
-            if (BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type & X86_SEL_TYPE_ACCESSED)
-                bs3CpuBasic2_FailedF("u4Type=%#x, accessed! #2", BS3_DATA_NM(Bs3GdteTestPage03).Gen.u4Type);
+            if (Bs3GdteTestPage00.Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+                bs3CpuBasic2_FailedF("u4Type=%#x, accessed! #1", Bs3GdteTestPage00.Gen.u4Type);
+            if (Bs3GdteTestPage03.Gen.u4Type & X86_SEL_TYPE_ACCESSED)
+                bs3CpuBasic2_FailedF("u4Type=%#x, accessed! #2", Bs3GdteTestPage03.Gen.u4Type);
         }
 
         /* restore */
@@ -1158,7 +1161,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                 CtxTmp.rflags.u32 |= /*X86_EFL_VM |*/ X86_EFL_AC | X86_EFL_VIF | X86_EFL_VIP;
             if (f386Plus && !g_f16BitSys)
                 CtxTmp.rflags.u32 |= X86_EFL_RF;
-            if (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_F_CPUID)
+            if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
                 CtxTmp.rflags.u32 |= X86_EFL_ID;
             Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
             CtxTmp.rflags.u32 &= ~X86_EFL_RF;
@@ -1177,7 +1180,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
             g_usBs3TestStep++;
 
             /* all cleared */
-            if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) < BS3CPU_80286)
+            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) < BS3CPU_80286)
                 CtxTmp.rflags.u32 = apCtx8x[iCtx]->rflags.u32 & (X86_EFL_RA1_MASK | UINT16_C(0xf000));
             else
                 CtxTmp.rflags.u32 = apCtx8x[iCtx]->rflags.u32 & (X86_EFL_VM | X86_EFL_RA1_MASK);
@@ -1224,7 +1227,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
             Bs3MemCpy(&CtxTmp, apCtx8x[iCtx], sizeof(CtxTmp));
             Bs3RegCtxConvertToRingX(&CtxTmp, iRing);
 # if TMPL_BITS == 32
-            BS3_DATA_NM(g_uBs3TrapEipHint) = CtxTmp.rip.u32;
+            g_uBs3TrapEipHint = CtxTmp.rip.u32;
 # endif
             for (iType = 0; iType < cInvTypes; iType++)
             {
@@ -1352,7 +1355,7 @@ void bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DESC const paIdt,
     Ctx.rsp.u -= 0x80;
     Ctx.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int80));
 # if TMPL_BITS == 32
-    BS3_DATA_NM(g_uBs3TrapEipHint) = Ctx.rip.u32;
+    g_uBs3TrapEipHint = Ctx.rip.u32;
 # endif
 
     /*
@@ -1377,7 +1380,7 @@ void bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DESC const paIdt,
     /*
      * Check that the upper part of ESP is preserved when doing .
      */
-    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+    if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
     {
         size_t const cbAltStack = _8K;
         uint8_t *pbAltStack = Bs3MemAllocZ(BS3MEMKIND_TILED, cbAltStack);
@@ -1439,7 +1442,7 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
 {
     uint8_t bRet = 0;
 
-    g_pszTestMode = BS3_DATA_NM(TMPL_NM(g_szBs3ModeName));
+    g_pszTestMode = TMPL_NM(g_szBs3ModeName);
     g_bTestMode   = bMode;
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
 
@@ -1467,7 +1470,7 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
 
 BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
 {
-    g_pszTestMode = BS3_DATA_NM(TMPL_NM(g_szBs3ModeName));
+    g_pszTestMode = TMPL_NM(g_szBs3ModeName);
     g_bTestMode   = bMode;
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
 
@@ -1506,7 +1509,7 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
 
 BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
 {
-    g_pszTestMode = BS3_DATA_NM(TMPL_NM(g_szBs3ModeName));
+    g_pszTestMode = TMPL_NM(g_szBs3ModeName);
     g_bTestMode   = bMode;
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
 

@@ -32,7 +32,7 @@
 
 BS3_DECL(void) Bs3Trap32SetGate(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams)
 {
-    X86DESC BS3_FAR *pIdte = &BS3_DATA_NM(Bs3Idt32)[iIdt];
+    X86DESC BS3_FAR *pIdte = &Bs3Idt32[iIdt];
 
     BS3_ASSERT(bDpl <= 3);
     BS3_ASSERT(bType <= 15);

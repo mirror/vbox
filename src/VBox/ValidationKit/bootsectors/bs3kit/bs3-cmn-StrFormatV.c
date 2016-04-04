@@ -222,8 +222,7 @@ static size_t bs3StrFormatU64(PBS3FMTSTATE pState, uint64_t uValue)
 #endif
 
     {
-        const char *pachDigits = !(pState->fFlags & STR_F_CAPITAL)
-                               ? BS3_DATA_NM(g_achBs3HexDigits) : BS3_DATA_NM(g_achBs3HexDigitsUpper);
+        const char *pachDigits = !(pState->fFlags & STR_F_CAPITAL) ? g_achBs3HexDigits : g_achBs3HexDigitsUpper;
         char       *psz = &pState->szTmp[BS3FMT_TMP_SIZE];
 
         *--psz = '\0';
@@ -261,8 +260,7 @@ static size_t bs3StrFormatU64(PBS3FMTSTATE pState, uint64_t uValue)
 static size_t bs3StrFormatU32(PBS3FMTSTATE pState, uint32_t uValue)
 {
 #if ARCH_BITS < 64
-    const char *pachDigits = !(pState->fFlags & STR_F_CAPITAL)
-                           ? BS3_DATA_NM(g_achBs3HexDigits) : BS3_DATA_NM(g_achBs3HexDigitsUpper);
+    const char *pachDigits = !(pState->fFlags & STR_F_CAPITAL) ? g_achBs3HexDigits : g_achBs3HexDigitsUpper;
     char       *psz = &pState->szTmp[BS3FMT_TMP_SIZE];
 
     *--psz = '\0';
@@ -305,7 +303,7 @@ static size_t bs3StrFormatU16(PBS3FMTSTATE pState, uint16_t uValue)
     if (pState->uBase == 10)
     {
         const char *pachDigits = !(pState->fFlags & STR_F_CAPITAL)
-                               ? BS3_DATA_NM(g_achBs3HexDigits) : BS3_DATA_NM(g_achBs3HexDigitsUpper);
+                               ? g_achBs3HexDigits : g_achBs3HexDigitsUpper;
         char       *psz = &pState->szTmp[BS3FMT_TMP_SIZE];
 
         *--psz = '\0';

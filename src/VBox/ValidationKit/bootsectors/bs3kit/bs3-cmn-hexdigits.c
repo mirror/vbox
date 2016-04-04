@@ -27,6 +27,6 @@
 #include "bs3kit-template-header.h"
 
 
-char const BS3_DATA_NM(g_achBs3HexDigits)[16+1]      = "0123456789abcdef";
-char const BS3_DATA_NM(g_achBs3HexDigitsUpper)[16+1] = "0123456789ABCDEF";
+char const g_achBs3HexDigits[16+1]      = "0123456789abcdef";
+char const g_achBs3HexDigitsUpper[16+1] = "0123456789ABCDEF";
 

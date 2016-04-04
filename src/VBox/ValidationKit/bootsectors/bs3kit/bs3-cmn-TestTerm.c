@@ -38,37 +38,37 @@
  */
 BS3_DECL(void) bs3TestSubCleanup(void)
 {
-    if (BS3_DATA_NM(g_szBs3SubTest)[0] != '\0')
+    if (g_szBs3SubTest[0] != '\0')
     {
-        if (!BS3_DATA_NM(g_fbBs3SubTestReported))
+        if (!g_fbBs3SubTestReported)
         {
             size_t   cch;
-            uint16_t cErrors = BS3_DATA_NM(g_cusBs3TestErrors) - BS3_DATA_NM(g_cusBs3SubTestAtErrors);
+            uint16_t cErrors = g_cusBs3TestErrors - g_cusBs3SubTestAtErrors;
 
             /* Tell VMMDev. */
             bs3TestSendCmdWithU32(VMMDEV_TESTING_CMD_SUB_DONE, cErrors);
 
             /* Print result to the console. */
-            Bs3PrintStr(BS3_DATA_NM(g_szBs3SubTest));
+            Bs3PrintStr(g_szBs3SubTest);
             Bs3PrintChr(':');
-            cch = Bs3StrLen(BS3_DATA_NM(g_szBs3SubTest));
+            cch = Bs3StrLen(g_szBs3SubTest);
             do
                 Bs3PrintChr(' ');
             while (cch++ < 49);
 
             if (!cErrors)
-                Bs3PrintStr(!BS3_DATA_NM(g_fbBs3SubTestSkipped) ? "PASSED\n" : "SKIPPED\n");
+                Bs3PrintStr(!g_fbBs3SubTestSkipped ? "PASSED\n" : "SKIPPED\n");
             else
             {
-                BS3_DATA_NM(g_cusBs3SubTestsFailed)++;
-                Bs3Printf("FAILED (%u errors)\n", BS3_DATA_NM(g_szBs3SubTest), cErrors);
+                g_cusBs3SubTestsFailed++;
+                Bs3Printf("FAILED (%u errors)\n", g_szBs3SubTest, cErrors);
             }
         }
 
         /* Reset the sub-test. */
-        BS3_DATA_NM(g_fbBs3SubTestReported) = true;
-        BS3_DATA_NM(g_fbBs3SubTestSkipped)  = false;
-        BS3_DATA_NM(g_szBs3SubTest)[0]      = '\0';
+        g_fbBs3SubTestReported = true;
+        g_fbBs3SubTestSkipped  = false;
+        g_szBs3SubTest[0]      = '\0';
     }
 }
 
@@ -89,17 +89,17 @@ BS3_DECL(void) Bs3TestTerm(void)
     if (BS3_CMN_NM(g_pszBs3Test))
     {
         Bs3PrintStr(BS3_CMN_NM(g_pszBs3Test));
-        if (BS3_DATA_NM(g_cusBs3TestErrors) == 0)
-            Bs3Printf(": SUCCESS (%u tests)\n", BS3_DATA_NM(g_cusBs3SubTests));
+        if (g_cusBs3TestErrors == 0)
+            Bs3Printf(": SUCCESS (%u tests)\n", g_cusBs3SubTests);
         else
             Bs3Printf(": FAILURE - %u (%u of %u tests)\n",
-                      BS3_DATA_NM(g_cusBs3TestErrors), BS3_DATA_NM(g_cusBs3SubTestsFailed), BS3_DATA_NM(g_cusBs3SubTests));
+                      g_cusBs3TestErrors, g_cusBs3SubTestsFailed, g_cusBs3SubTests);
     }
 
     /*
      * Tell VMMDev.
      */
-    bs3TestSendCmdWithU32(VMMDEV_TESTING_CMD_TERM, BS3_DATA_NM(g_cusBs3TestErrors));
+    bs3TestSendCmdWithU32(VMMDEV_TESTING_CMD_TERM, g_cusBs3TestErrors);
 
     BS3_CMN_NM(g_pszBs3Test) = NULL;
 }

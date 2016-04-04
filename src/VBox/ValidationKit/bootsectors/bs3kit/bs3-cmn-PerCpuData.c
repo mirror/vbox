@@ -41,20 +41,20 @@
 #if ARCH_BITS == 16
 
 /** Hint for 16-bit trap handlers regarding the high word of EIP. */
-uint32_t BS3_DATA_NM(g_uBs3TrapEipHint) = 0;
+uint32_t g_uBs3TrapEipHint = 0;
 
 /** Flat pointer to a BS3TRAPFRAME registered by Bs3TrapSetJmp.
  * When this is non-zero, the setjmp is considered armed. */
-uint32_t BS3_DATA_NM(g_pBs3TrapSetJmpFrame) = 0;
+uint32_t g_pBs3TrapSetJmpFrame = 0;
 
 /** The current CPU mode. */
-uint8_t  BS3_DATA_NM(g_bBs3CurrentMode) = BS3_MODE_RM;
+uint8_t  g_bBs3CurrentMode = BS3_MODE_RM;
 
-uint8_t  BS3_DATA_NM(g_bStupidUnalignedCompiler1) = 0xfe;
+uint8_t  g_bStupidUnalignedCompiler1 = 0xfe;
 
 /** The context of the last Bs3TrapSetJmp call.
  * This will have eax set to 1 and need only be restored when it triggers. */
-BS3REGCTX BS3_DATA_NM(g_Bs3TrapSetJmpCtx);
+BS3REGCTX g_Bs3TrapSetJmpCtx;
 
 #endif /* ARCH_BITS == 16 */
 

@@ -42,10 +42,10 @@ BS3_DECL(void BS3_FAR *) Bs3MemAlloc(BS3MEMKIND enmKind, size_t cb)
          * Try allocate a chunk from the list.
          */
         PBS3SLABHEAD pHead = enmKind == BS3MEMKIND_REAL
-                           ? &BS3_DATA_NM(g_aBs3LowSlabLists)[idxSlabList]
-                           : &BS3_DATA_NM(g_aBs3UpperTiledSlabLists)[idxSlabList];
+                           ? &g_aBs3LowSlabLists[idxSlabList]
+                           : &g_aBs3UpperTiledSlabLists[idxSlabList];
 
-        BS3_ASSERT(BS3_DATA_NM(g_aBs3LowSlabLists)[idxSlabList].cbChunk >= cb);
+        BS3_ASSERT(g_aBs3LowSlabLists[idxSlabList].cbChunk >= cb);
         pvRet = Bs3SlabListAlloc(pHead);
         if (pvRet)
         { /* likely */ }
@@ -55,12 +55,12 @@ BS3_DECL(void BS3_FAR *) Bs3MemAlloc(BS3MEMKIND enmKind, size_t cb)
              * Grow the list.
              */
             PBS3SLABCTL pNew = (PBS3SLABCTL)Bs3SlabAlloc(  enmKind == BS3MEMKIND_REAL
-                                                         ? &BS3_DATA_NM(g_Bs3Mem4KLow).Core
-                                                         : &BS3_DATA_NM(g_Bs3Mem4KUpperTiled).Core);
+                                                         ? &g_Bs3Mem4KLow.Core
+                                                         : &g_Bs3Mem4KUpperTiled.Core);
             BS3_ASSERT(((uintptr_t)pNew & 0xfff) == 0);
             if (pNew)
             {
-                uint16_t const      cbHdr = BS3_DATA_NM(g_cbBs3SlabCtlSizesforLists)[idxSlabList];
+                uint16_t const      cbHdr = g_cbBs3SlabCtlSizesforLists[idxSlabList];
                 BS3_XPTR_AUTO(void, pvNew);
                 BS3_XPTR_SET(void, pvNew, pNew);
 
@@ -79,7 +79,7 @@ BS3_DECL(void BS3_FAR *) Bs3MemAlloc(BS3MEMKIND enmKind, size_t cb)
         size_t   const cbAligned = RT_ALIGN_Z(cb, _4K);
         uint16_t const cPages    = cbAligned >> 12 /* div _4K */;
         PBS3SLABCTL    pSlabCtl  = enmKind == BS3MEMKIND_REAL
-                                  ? &BS3_DATA_NM(g_Bs3Mem4KLow).Core : &BS3_DATA_NM(g_Bs3Mem4KUpperTiled).Core;
+                                 ? &g_Bs3Mem4KLow.Core : &g_Bs3Mem4KUpperTiled.Core;
 
         pvRet = Bs3SlabAllocEx(pSlabCtl,
                                cPages,

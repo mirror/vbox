@@ -210,12 +210,14 @@ CPU 586
         or      ch, al
 .done_model:                            ; ch = model
 
-        ; Start assembling return flags, checking for PAE.
-        mov     xAX, BS3CPU_F_CPUID
-        and     dx, X86_CPUID_FEATURE_EDX_PAE
-        shl     dx, BS3CPU_F_PAE_BIT - X86_CPUID_FEATURE_EDX_PAE_BIT
-        or      ax, dx
-        ;; @todo check for PSE
+        ; Start assembling return flags, checking for PSE + PAE.
+        mov     eax, X86_CPUID_FEATURE_EDX_PSE | X86_CPUID_FEATURE_EDX_PAE
+        and     eax, edx
+        mov     ah, al
+        AssertCompile(X86_CPUID_FEATURE_EDX_PAE_BIT > BS3CPU_F_PAE_BIT - 8)  ; 6 vs 10-8=2
+        shr     al, X86_CPUID_FEATURE_EDX_PAE_BIT - (BS3CPU_F_PAE_BIT - 8)
+        AssertCompile(X86_CPUID_FEATURE_EDX_PSE_BIT == BS3CPU_F_PSE_BIT - 8) ; 3 vs 11-8=3
+        or      ah, al
 
         ; Add the CPU type based on the family and model values.
         cmp     cl, 6

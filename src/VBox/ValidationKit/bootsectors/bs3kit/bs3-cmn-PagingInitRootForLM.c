@@ -35,7 +35,7 @@ BS3_DECL(int) Bs3PagingInitRootForLM(void)
 {
     X86PML4 BS3_FAR *pPml4;
 
-    BS3_ASSERT(BS3_DATA_NM(g_PhysPagingRootLM) == UINT32_MAX);
+    BS3_ASSERT(g_PhysPagingRootLM == UINT32_MAX);
 
     /*
      * The default is an identity mapping of the first 4GB repeated for the
@@ -87,7 +87,7 @@ BS3_DECL(int) Bs3PagingInitRootForLM(void)
 
                 /* Set the global root pointer and we're done. */
                 BS3_XPTR_SET(X86PML4, XPtrPml4, pPml4);
-                BS3_DATA_NM(g_PhysPagingRootLM) = BS3_XPTR_GET_FLAT(X86PML4, XPtrPml4);
+                g_PhysPagingRootLM = BS3_XPTR_GET_FLAT(X86PML4, XPtrPml4);
                 return VINF_SUCCESS;
             }
 

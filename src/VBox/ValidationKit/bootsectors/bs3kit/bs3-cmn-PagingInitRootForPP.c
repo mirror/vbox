@@ -35,7 +35,7 @@ BS3_DECL(int) Bs3PagingInitRootForPP(void)
 {
     X86PD BS3_FAR *pPgDir;
 
-    BS3_ASSERT(BS3_DATA_NM(g_PhysPagingRootPP) == UINT32_MAX);
+    BS3_ASSERT(g_PhysPagingRootPP == UINT32_MAX);
 
 
     /*
@@ -51,6 +51,9 @@ BS3_DECL(int) Bs3PagingInitRootForPP(void)
         BS3_XPTR_AUTO(X86PD, XptrPgDir);
         unsigned i;
 
+        if (g_uBs3CpuDetected)
+        {
+        }
         for (i = 0; i < RT_ELEMENTS(pPgDir->a); i++)
         {
             pPgDir->a[i].u = (uint32_t)i << X86_PD_SHIFT;
@@ -58,7 +61,7 @@ BS3_DECL(int) Bs3PagingInitRootForPP(void)
         }
 
         BS3_XPTR_SET(X86PD, XptrPgDir, pPgDir);
-        BS3_DATA_NM(g_PhysPagingRootPP) = BS3_XPTR_GET_FLAT(X86PD, XptrPgDir);
+        g_PhysPagingRootPP = BS3_XPTR_GET_FLAT(X86PD, XptrPgDir);
         return VINF_SUCCESS;
     }
 

@@ -52,7 +52,7 @@ BS3_DECL(void) Bs3MemFree(void BS3_FAR *pv, size_t cb)
         }
         else
         {
-            pCtl = BS3_XPTR_GET_FLAT(void, pvFlat) < _1M ? &BS3_DATA_NM(g_Bs3Mem4KLow).Core : &BS3_DATA_NM(g_Bs3Mem4KUpperTiled).Core;
+            pCtl = BS3_XPTR_GET_FLAT(void, pvFlat) < _1M ? &g_Bs3Mem4KLow.Core : &g_Bs3Mem4KUpperTiled.Core;
             cChunks = RT_ALIGN_Z(cb, _4K) >> 12;
         }
         Bs3SlabFree(pCtl, BS3_XPTR_GET_FLAT(void, pvFlat), cChunks);

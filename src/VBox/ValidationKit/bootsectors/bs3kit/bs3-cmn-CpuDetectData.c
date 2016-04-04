@@ -37,8 +37,8 @@
 *********************************************************************************************************************************/
 #if ARCH_BITS == 16
 
-uint16_t BS3_DATA_NM(g_uBs3CpuDetected) = BS3CPU_TYPE_MASK | BS3CPU_F_CPUID | BS3CPU_F_CPUID_EXT_LEAVES
-                                         | BS3CPU_F_PAE | BS3CPU_F_LONG_MODE;
+uint16_t g_uBs3CpuDetected = BS3CPU_TYPE_MASK | BS3CPU_F_CPUID | BS3CPU_F_CPUID_EXT_LEAVES
+                           | BS3CPU_F_PAE | BS3CPU_F_PSE | BS3CPU_F_LONG_MODE;
 
 #endif /* ARCH_BITS == 16 */
 

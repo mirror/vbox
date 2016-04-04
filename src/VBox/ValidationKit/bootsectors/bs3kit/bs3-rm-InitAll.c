@@ -41,11 +41,11 @@ BS3_DECL(void) Bs3InitAll_rm(void)
     ASMIntDisable();
     Bs3PicMaskAll();
 
-    if (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_F_LONG_MODE)
+    if (g_uBs3CpuDetected & BS3CPU_F_LONG_MODE)
         Bs3Trap64Init();
-    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+    if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
         Bs3Trap32Init();
-    if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
+    if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
         Bs3Trap16Init();
 }
 

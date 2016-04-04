@@ -77,7 +77,7 @@ BS3_DECL(void) Bs3Trap16InitEx(bool f386Plus)
     /*
      * Initialize the normal TSS so we can do ring transitions via the IDT.
      */
-    pTss = &BS3_DATA_NM(Bs3Tss16);
+    pTss = &Bs3Tss16;
     Bs3MemZero(pTss, sizeof(*pTss));
     pTss->sp0       = BS3_ADDR_STACK_R0;
     pTss->ss0       = BS3_SEL_R0_SS16;
@@ -90,7 +90,7 @@ BS3_DECL(void) Bs3Trap16InitEx(bool f386Plus)
      * Initialize the double fault TSS.
      * cr3 is filled in by switcher code, when needed.
      */
-    pTss = &BS3_DATA_NM(Bs3Tss16DoubleFault);
+    pTss = &Bs3Tss16DoubleFault;
     Bs3MemZero(pTss, sizeof(*pTss));
     pTss->sp0       = BS3_ADDR_STACK_R0;
     pTss->ss0       = BS3_SEL_R0_SS16;
@@ -113,6 +113,6 @@ BS3_DECL(void) Bs3Trap16InitEx(bool f386Plus)
 
 BS3_DECL(void) Bs3Trap16Init(void)
 {
-    Bs3Trap16InitEx((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386);
+    Bs3Trap16InitEx((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386);
 }
 

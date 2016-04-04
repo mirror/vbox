@@ -48,16 +48,16 @@ BS3_DECL(void) Bs3TestSubV(const char *pszFormat, va_list va)
     /*
      * Format the sub-test name and update globals.
      */
-    cch = Bs3StrPrintfV(BS3_DATA_NM(g_szBs3SubTest), sizeof(BS3_DATA_NM(g_szBs3SubTest)), pszFormat, va);
-    BS3_DATA_NM(g_cusBs3SubTestAtErrors) = BS3_DATA_NM(g_cusBs3TestErrors);
-    BS3_ASSERT(!BS3_DATA_NM(g_fbBs3SubTestSkipped));
+    cch = Bs3StrPrintfV(g_szBs3SubTest, sizeof(g_szBs3SubTest), pszFormat, va);
+    g_cusBs3SubTestAtErrors = g_cusBs3TestErrors;
+    BS3_ASSERT(!g_fbBs3SubTestSkipped);
 
     /*
      * Tell VMMDev and output to the console.
      */
-    bs3TestSendCmdWithStr(VMMDEV_TESTING_CMD_SUB_NEW, BS3_DATA_NM(g_szBs3SubTest));
+    bs3TestSendCmdWithStr(VMMDEV_TESTING_CMD_SUB_NEW, g_szBs3SubTest);
 
-    Bs3PrintStr(BS3_DATA_NM(g_szBs3SubTest));
+    Bs3PrintStr(g_szBs3SubTest);
     Bs3PrintChr(':');
     do
        Bs3PrintChr(' ');

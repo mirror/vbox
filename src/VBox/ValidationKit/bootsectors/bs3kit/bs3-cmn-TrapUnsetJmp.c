@@ -33,11 +33,14 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-extern uint32_t BS3_DATA_NM(g_pBs3TrapSetJmpFrame);
+#ifndef DOXYGEN_RUNNING
+# define g_pBs3TrapSetJmpFrame BS3_DATA_NM(g_pBs3TrapSetJmpFrame)
+#endif
+extern uint32_t g_pBs3TrapSetJmpFrame;
 
 
 BS3_DECL(void) Bs3TrapUnsetJmp(void)
 {
-    BS3_DATA_NM(g_pBs3TrapSetJmpFrame) = 0;
+    g_pBs3TrapSetJmpFrame = 0;
 }
 

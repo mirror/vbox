@@ -33,11 +33,11 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#define g_pBs3TrapSetJmpFrame BS3_DATA_NM(g_pBs3TrapSetJmpFrame)
-extern uint32_t  g_pBs3TrapSetJmpFrame;
+#define g_pBs3TrapSetJmpFrame   BS3_DATA_NM(g_pBs3TrapSetJmpFrame)
+extern uint32_t                 g_pBs3TrapSetJmpFrame;
 
-#define g_Bs3TrapSetJmpCtx    BS3_DATA_NM(g_Bs3TrapSetJmpCtx)
-extern BS3REGCTX g_Bs3TrapSetJmpCtx;
+#define g_Bs3TrapSetJmpCtx      BS3_DATA_NM(g_Bs3TrapSetJmpCtx)
+extern BS3REGCTX                g_Bs3TrapSetJmpCtx;
 
 
 #if TMPL_BITS != 64

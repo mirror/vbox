@@ -38,6 +38,6 @@
  */
 BS3_DECL(uint16_t) Bs3TestSubErrorCount(void)
 {
-    return BS3_DATA_NM(g_cusBs3TestErrors) - BS3_DATA_NM(g_cusBs3SubTestAtErrors);
+    return g_cusBs3TestErrors - g_cusBs3SubTestAtErrors;
 }
 

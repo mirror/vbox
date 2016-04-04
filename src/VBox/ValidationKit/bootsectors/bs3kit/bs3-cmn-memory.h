@@ -38,7 +38,10 @@ typedef union BS3SLABCTLLOW
     BS3SLABCTL  Core;
     uint32_t    au32Alloc[(sizeof(BS3SLABCTL) + (0xA0000 / _4K / 8) ) / 4];
 } BS3SLABCTLLOW;
-extern BS3SLABCTLLOW            BS3_DATA_NM(g_Bs3Mem4KLow);
+#ifndef DOXYGEN_RUNNING
+# define g_Bs3Mem4KLow          BS3_DATA_NM(g_Bs3Mem4KLow)
+#endif
+extern BS3SLABCTLLOW            g_Bs3Mem4KLow;
 
 
 typedef union BS3SLABCTLUPPERTILED
@@ -46,18 +49,28 @@ typedef union BS3SLABCTLUPPERTILED
     BS3SLABCTL  Core;
     uint32_t    au32Alloc[(sizeof(BS3SLABCTL) + ((BS3_SEL_TILED_AREA_SIZE - _1M) / _4K / 8) ) / 4];
 } BS3SLABCTLUPPERTILED;
-extern BS3SLABCTLUPPERTILED     BS3_DATA_NM(g_Bs3Mem4KUpperTiled);
+#ifndef DOXYGEN_RUNNING
+# define g_Bs3Mem4KUpperTiled   BS3_DATA_NM(g_Bs3Mem4KUpperTiled)
+#endif
+extern BS3SLABCTLUPPERTILED     g_Bs3Mem4KUpperTiled;
 
 
 /** The number of chunk sizes used by the slab list arrays
  * (g_aBs3LowSlabLists, g_aBs3UpperTiledSlabLists, more?). */
 #define BS3_MEM_SLAB_LIST_COUNT 6
 
-extern uint8_t const            BS3_DATA_NM(g_aiBs3SlabListsByPowerOfTwo)[12];
-extern uint16_t const           BS3_DATA_NM(g_acbBs3SlabLists)[BS3_MEM_SLAB_LIST_COUNT];
-extern BS3SLABHEAD              BS3_DATA_NM(g_aBs3LowSlabLists)[BS3_MEM_SLAB_LIST_COUNT];
-extern BS3SLABHEAD              BS3_DATA_NM(g_aBs3UpperTiledSlabLists)[BS3_MEM_SLAB_LIST_COUNT];
-extern uint16_t const           BS3_DATA_NM(g_cbBs3SlabCtlSizesforLists)[BS3_MEM_SLAB_LIST_COUNT];
+#ifndef DOXYGEN_RUNNING
+# define g_aiBs3SlabListsByPowerOfTwo   BS3_DATA_NM(g_aiBs3SlabListsByPowerOfTwo)
+# define g_acbBs3SlabLists              BS3_DATA_NM(g_acbBs3SlabLists)
+# define g_aBs3LowSlabLists             BS3_DATA_NM(g_aBs3LowSlabLists)
+# define g_aBs3UpperTiledSlabLists      BS3_DATA_NM(g_aBs3UpperTiledSlabLists)
+# define g_cbBs3SlabCtlSizesforLists    BS3_DATA_NM(g_cbBs3SlabCtlSizesforLists)
+#endif
+extern uint8_t const            g_aiBs3SlabListsByPowerOfTwo[12];
+extern uint16_t const           g_acbBs3SlabLists[BS3_MEM_SLAB_LIST_COUNT];
+extern BS3SLABHEAD              g_aBs3LowSlabLists[BS3_MEM_SLAB_LIST_COUNT];
+extern BS3SLABHEAD              g_aBs3UpperTiledSlabLists[BS3_MEM_SLAB_LIST_COUNT];
+extern uint16_t const           g_cbBs3SlabCtlSizesforLists[BS3_MEM_SLAB_LIST_COUNT];
 
 
 /**
@@ -68,10 +81,10 @@ extern uint16_t const           BS3_DATA_NM(g_cbBs3SlabCtlSizesforLists)[BS3_MEM
  */
 DECLINLINE(uint8_t) bs3MemSizeToSlabListIndex(size_t cbRequest)
 {
-    if (cbRequest <= BS3_DATA_NM(g_acbBs3SlabLists)[BS3_MEM_SLAB_LIST_COUNT - 1])
+    if (cbRequest <= g_acbBs3SlabLists[BS3_MEM_SLAB_LIST_COUNT - 1])
     {
         unsigned idx = cbRequest ? ASMBitLastSetU16((uint16_t)(cbRequest - 1)) : 0;
-        return BS3_DATA_NM(g_aiBs3SlabListsByPowerOfTwo)[idx];
+        return g_aiBs3SlabListsByPowerOfTwo[idx];
     }
     return UINT8_MAX;
 }

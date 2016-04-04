@@ -41,15 +41,15 @@ BS3_DECL(void) Bs3Trap64Init(void)
      */
     for (iIdt = 0; iIdt < BS3_TRAP_SYSCALL; iIdt++)
         Bs3Trap64SetGate(iIdt, AMD64_SEL_TYPE_SYS_INT_GATE, 0 /*bDpl*/,
-                         BS3_SEL_R0_CS64, BS3_DATA_NM(g_Bs3Trap64GenericEntriesFlatAddr) + iIdt * 8, iIdt == X86_XCPT_DF /*bIst*/);
+                         BS3_SEL_R0_CS64, g_Bs3Trap64GenericEntriesFlatAddr + iIdt * 8, iIdt == X86_XCPT_DF /*bIst*/);
     for (iIdt = BS3_TRAP_SYSCALL + 1; iIdt < 256; iIdt++)
         Bs3Trap64SetGate(iIdt, AMD64_SEL_TYPE_SYS_INT_GATE, 0 /*bDpl*/,
-                         BS3_SEL_R0_CS64, BS3_DATA_NM(g_Bs3Trap64GenericEntriesFlatAddr) + iIdt * 8, 0 /*bIst*/);
+                         BS3_SEL_R0_CS64, g_Bs3Trap64GenericEntriesFlatAddr + iIdt * 8, 0 /*bIst*/);
 
     /*
      * Initialize the normal TSS so we can do ring transitions via the IDT.
      */
-    pTss = &BS3_DATA_NM(Bs3Tss64);
+    pTss = &Bs3Tss64;
     Bs3MemZero(pTss, sizeof(*pTss));
     pTss->rsp0      = BS3_ADDR_STACK_R0;
     pTss->rsp1      = BS3_ADDR_STACK_R1;

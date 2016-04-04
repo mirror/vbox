@@ -32,27 +32,51 @@
 
 
 /** Indicates whether the VMMDev is operational. */
-extern bool                 BS3_DATA_NM(g_fbBs3VMMDevTesting);
+#ifndef DOXYGEN_RUNNING
+# define g_fbBs3VMMDevTesting BS3_DATA_NM(g_fbBs3VMMDevTesting)
+#endif
+extern bool                 g_fbBs3VMMDevTesting;
 
 /** The number of tests that have failed. */
-extern uint16_t             BS3_DATA_NM(g_cusBs3TestErrors);
+#ifndef DOXYGEN_RUNNING
+# define g_cusBs3TestErrors BS3_DATA_NM(g_cusBs3TestErrors)
+#endif
+extern uint16_t             g_cusBs3TestErrors;
 
 /** The start error count of the current subtest. */
-extern uint16_t             BS3_DATA_NM(g_cusBs3SubTestAtErrors);
+#ifndef DOXYGEN_RUNNING
+# define g_cusBs3SubTestAtErrors BS3_DATA_NM(g_cusBs3SubTestAtErrors)
+#endif
+extern uint16_t             g_cusBs3SubTestAtErrors;
 
 /**  Whether we've reported the sub-test result or not. */
-extern bool                 BS3_DATA_NM(g_fbBs3SubTestReported);
+#ifndef DOXYGEN_RUNNING
+# define g_fbBs3SubTestReported BS3_DATA_NM(g_fbBs3SubTestReported)
+#endif
+extern bool                 g_fbBs3SubTestReported;
 /** Whether the sub-test has been skipped or not. */
-extern bool                 BS3_DATA_NM(g_fbBs3SubTestSkipped);
+#ifndef DOXYGEN_RUNNING
+# define g_fbBs3SubTestSkipped BS3_DATA_NM(g_fbBs3SubTestSkipped)
+#endif
+extern bool                 g_fbBs3SubTestSkipped;
 
 /** The number of sub tests. */
-extern uint16_t             BS3_DATA_NM(g_cusBs3SubTests);
+#ifndef DOXYGEN_RUNNING
+# define g_cusBs3SubTests   BS3_DATA_NM(g_cusBs3SubTests)
+#endif
+extern uint16_t             g_cusBs3SubTests;
 
 /** The number of sub tests that failed. */
-extern uint16_t             BS3_DATA_NM(g_cusBs3SubTestsFailed);
+#ifndef DOXYGEN_RUNNING
+# define g_cusBs3SubTestsFailed BS3_DATA_NM(g_cusBs3SubTestsFailed)
+#endif
+extern uint16_t             g_cusBs3SubTestsFailed;
 
 /** VMMDEV_TESTING_UNIT_XXX -> string */
-extern char const           BS3_DATA_NM(g_aszBs3TestUnitNames)[][16];
+#ifndef DOXYGEN_RUNNING
+# define g_aszBs3TestUnitNames BS3_DATA_NM(g_aszBs3TestUnitNames)
+#endif
+extern char const           g_aszBs3TestUnitNames[][16];
 
 /** The test name. */
 extern const char BS3_FAR  *g_pszBs3Test_c16;
@@ -60,7 +84,10 @@ extern const char          *g_pszBs3Test_c32;
 extern const char          *g_pszBs3Test_c64;
 
 /** The subtest name. */
-extern char                 BS3_DATA_NM(g_szBs3SubTest)[64];
+#ifndef DOXYGEN_RUNNING
+# define g_szBs3SubTest     BS3_DATA_NM(g_szBs3SubTest)
+#endif
+extern char                 g_szBs3SubTest[64];
 
 
 /**

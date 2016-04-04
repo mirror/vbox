@@ -37,9 +37,9 @@
 *********************************************************************************************************************************/
 #if ARCH_BITS == 16
 
-uint32_t BS3_DATA_NM(g_PhysPagingRootPP)  = UINT32_MAX;
-uint32_t BS3_DATA_NM(g_PhysPagingRootPAE) = UINT32_MAX;
-uint32_t BS3_DATA_NM(g_PhysPagingRootLM)  = UINT32_MAX;
+uint32_t g_PhysPagingRootPP  = UINT32_MAX;
+uint32_t g_PhysPagingRootPAE = UINT32_MAX;
+uint32_t g_PhysPagingRootLM  = UINT32_MAX;
 
 #endif
 

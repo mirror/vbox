@@ -57,7 +57,7 @@ static BS3_DECL_CALLBACK(size_t) bs3TestPrintfStrOutput(char ch, void BS3_FAR *p
      * VMMDev first.  We do line by line processing to avoid running out of
      * string buffer on the host side.
      */
-    if (BS3_DATA_NM(g_fbBs3VMMDevTesting))
+    if (g_fbBs3VMMDevTesting)
     {
         if (ch != '\n' && !pBuf->fNewCmd)
             ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, ch);

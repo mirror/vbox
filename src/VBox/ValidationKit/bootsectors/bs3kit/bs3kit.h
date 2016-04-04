@@ -526,7 +526,10 @@ RT_C_DECLS_BEGIN
 /**
  * Constructs a data name.
  *
- * Example: extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdt)
+ * Example: @code{.c}
+ *  \#define Bs3Gdt BS3_DATA_NM(Bs3Gdt)
+ *  extern X86DESC BS3_FAR_DATA Bs3Gdt
+ * @endcode
  *
  * @param   a_Name      The name of the global variable.
  */
@@ -614,220 +617,405 @@ BS3_PTR_UNION_TEMPLATE(BS3CVPTRUNION, const volatile);
 
 /** @defgroup grp_bs3kit_system System structures
  * @{ */
+#if ARCH_BITS == 64 && !defined(DOXYGEN_RUNNING)
+# define Bs3Gdt                                 BS3_DATA_NM(Bs3Gdt)
+# define Bs3Gdt_Ldt                             BS3_DATA_NM(Bs3Gdt_Ldt)
+# define Bs3Gdte_Tss16                          BS3_DATA_NM(Bs3Gdte_Tss16)
+# define Bs3Gdte_Tss16DoubleFault               BS3_DATA_NM(Bs3Gdte_Tss16DoubleFault)
+# define Bs3Gdte_Tss16Spare0                    BS3_DATA_NM(Bs3Gdte_Tss16Spare0)
+# define Bs3Gdte_Tss16Spare1                    BS3_DATA_NM(Bs3Gdte_Tss16Spare1)
+# define Bs3Gdte_Tss32                          BS3_DATA_NM(Bs3Gdte_Tss32)
+# define Bs3Gdte_Tss32DoubleFault               BS3_DATA_NM(Bs3Gdte_Tss32DoubleFault)
+# define Bs3Gdte_Tss32Spare0                    BS3_DATA_NM(Bs3Gdte_Tss32Spare0)
+# define Bs3Gdte_Tss32Spare1                    BS3_DATA_NM(Bs3Gdte_Tss32Spare1)
+# define Bs3Gdte_Tss32IobpIntRedirBm            BS3_DATA_NM(Bs3Gdte_Tss32IobpIntRedirBm)
+# define Bs3Gdte_Tss32IntRedirBm                BS3_DATA_NM(Bs3Gdte_Tss32IntRedirBm)
+# define Bs3Gdte_Tss64                          BS3_DATA_NM(Bs3Gdte_Tss64)
+# define Bs3Gdte_Tss64Spare0                    BS3_DATA_NM(Bs3Gdte_Tss64Spare0)
+# define Bs3Gdte_Tss64Spare1                    BS3_DATA_NM(Bs3Gdte_Tss64Spare1)
+# define Bs3Gdte_Tss64Iobp                      BS3_DATA_NM(Bs3Gdte_Tss64Iobp)
+# define Bs3Gdte_R0_MMIO16                      BS3_DATA_NM(Bs3Gdte_R0_MMIO16)
+
+# define Bs3Gdte_R0_First                       BS3_DATA_NM(Bs3Gdte_R0_First)
+# define Bs3Gdte_R0_CS16                        BS3_DATA_NM(Bs3Gdte_R0_CS16)
+# define Bs3Gdte_R0_DS16                        BS3_DATA_NM(Bs3Gdte_R0_DS16)
+# define Bs3Gdte_R0_SS16                        BS3_DATA_NM(Bs3Gdte_R0_SS16)
+# define Bs3Gdte_R0_CS32                        BS3_DATA_NM(Bs3Gdte_R0_CS32)
+# define Bs3Gdte_R0_DS32                        BS3_DATA_NM(Bs3Gdte_R0_DS32)
+# define Bs3Gdte_R0_SS32                        BS3_DATA_NM(Bs3Gdte_R0_SS32)
+# define Bs3Gdte_R0_CS64                        BS3_DATA_NM(Bs3Gdte_R0_CS64)
+# define Bs3Gdte_R0_DS64                        BS3_DATA_NM(Bs3Gdte_R0_DS64)
+# define Bs3Gdte_R0_CS16_EO                     BS3_DATA_NM(Bs3Gdte_R0_CS16_EO)
+# define Bs3Gdte_R0_CS16_CNF                    BS3_DATA_NM(Bs3Gdte_R0_CS16_CNF)
+# define Bs3Gdte_R0_CS16_CND_EO                 BS3_DATA_NM(Bs3Gdte_R0_CS16_CND_EO)
+# define Bs3Gdte_R0_CS32_EO                     BS3_DATA_NM(Bs3Gdte_R0_CS32_EO)
+# define Bs3Gdte_R0_CS32_CNF                    BS3_DATA_NM(Bs3Gdte_R0_CS32_CNF)
+# define Bs3Gdte_R0_CS32_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R0_CS32_CNF_EO)
+# define Bs3Gdte_R0_CS64_EO                     BS3_DATA_NM(Bs3Gdte_R0_CS64_EO)
+# define Bs3Gdte_R0_CS64_CNF                    BS3_DATA_NM(Bs3Gdte_R0_CS64_CNF)
+# define Bs3Gdte_R0_CS64_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R0_CS64_CNF_EO)
+
+# define Bs3Gdte_R1_First                       BS3_DATA_NM(Bs3Gdte_R1_First)
+# define Bs3Gdte_R1_CS16                        BS3_DATA_NM(Bs3Gdte_R1_CS16)
+# define Bs3Gdte_R1_DS16                        BS3_DATA_NM(Bs3Gdte_R1_DS16)
+# define Bs3Gdte_R1_SS16                        BS3_DATA_NM(Bs3Gdte_R1_SS16)
+# define Bs3Gdte_R1_CS32                        BS3_DATA_NM(Bs3Gdte_R1_CS32)
+# define Bs3Gdte_R1_DS32                        BS3_DATA_NM(Bs3Gdte_R1_DS32)
+# define Bs3Gdte_R1_SS32                        BS3_DATA_NM(Bs3Gdte_R1_SS32)
+# define Bs3Gdte_R1_CS64                        BS3_DATA_NM(Bs3Gdte_R1_CS64)
+# define Bs3Gdte_R1_DS64                        BS3_DATA_NM(Bs3Gdte_R1_DS64)
+# define Bs3Gdte_R1_CS16_EO                     BS3_DATA_NM(Bs3Gdte_R1_CS16_EO)
+# define Bs3Gdte_R1_CS16_CNF                    BS3_DATA_NM(Bs3Gdte_R1_CS16_CNF)
+# define Bs3Gdte_R1_CS16_CND_EO                 BS3_DATA_NM(Bs3Gdte_R1_CS16_CND_EO)
+# define Bs3Gdte_R1_CS32_EO                     BS3_DATA_NM(Bs3Gdte_R1_CS32_EO)
+# define Bs3Gdte_R1_CS32_CNF                    BS3_DATA_NM(Bs3Gdte_R1_CS32_CNF)
+# define Bs3Gdte_R1_CS32_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R1_CS32_CNF_EO)
+# define Bs3Gdte_R1_CS64_EO                     BS3_DATA_NM(Bs3Gdte_R1_CS64_EO)
+# define Bs3Gdte_R1_CS64_CNF                    BS3_DATA_NM(Bs3Gdte_R1_CS64_CNF)
+# define Bs3Gdte_R1_CS64_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R1_CS64_CNF_EO)
+
+# define Bs3Gdte_R2_First                       BS3_DATA_NM(Bs3Gdte_R2_First)
+# define Bs3Gdte_R2_CS16                        BS3_DATA_NM(Bs3Gdte_R2_CS16)
+# define Bs3Gdte_R2_DS16                        BS3_DATA_NM(Bs3Gdte_R2_DS16)
+# define Bs3Gdte_R2_SS16                        BS3_DATA_NM(Bs3Gdte_R2_SS16)
+# define Bs3Gdte_R2_CS32                        BS3_DATA_NM(Bs3Gdte_R2_CS32)
+# define Bs3Gdte_R2_DS32                        BS3_DATA_NM(Bs3Gdte_R2_DS32)
+# define Bs3Gdte_R2_SS32                        BS3_DATA_NM(Bs3Gdte_R2_SS32)
+# define Bs3Gdte_R2_CS64                        BS3_DATA_NM(Bs3Gdte_R2_CS64)
+# define Bs3Gdte_R2_DS64                        BS3_DATA_NM(Bs3Gdte_R2_DS64)
+# define Bs3Gdte_R2_CS16_EO                     BS3_DATA_NM(Bs3Gdte_R2_CS16_EO)
+# define Bs3Gdte_R2_CS16_CNF                    BS3_DATA_NM(Bs3Gdte_R2_CS16_CNF)
+# define Bs3Gdte_R2_CS16_CND_EO                 BS3_DATA_NM(Bs3Gdte_R2_CS16_CND_EO)
+# define Bs3Gdte_R2_CS32_EO                     BS3_DATA_NM(Bs3Gdte_R2_CS32_EO)
+# define Bs3Gdte_R2_CS32_CNF                    BS3_DATA_NM(Bs3Gdte_R2_CS32_CNF)
+# define Bs3Gdte_R2_CS32_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R2_CS32_CNF_EO)
+# define Bs3Gdte_R2_CS64_EO                     BS3_DATA_NM(Bs3Gdte_R2_CS64_EO)
+# define Bs3Gdte_R2_CS64_CNF                    BS3_DATA_NM(Bs3Gdte_R2_CS64_CNF)
+# define Bs3Gdte_R2_CS64_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R2_CS64_CNF_EO)
+
+# define Bs3Gdte_R3_First                       BS3_DATA_NM(Bs3Gdte_R3_First)
+# define Bs3Gdte_R3_CS16                        BS3_DATA_NM(Bs3Gdte_R3_CS16)
+# define Bs3Gdte_R3_DS16                        BS3_DATA_NM(Bs3Gdte_R3_DS16)
+# define Bs3Gdte_R3_SS16                        BS3_DATA_NM(Bs3Gdte_R3_SS16)
+# define Bs3Gdte_R3_CS32                        BS3_DATA_NM(Bs3Gdte_R3_CS32)
+# define Bs3Gdte_R3_DS32                        BS3_DATA_NM(Bs3Gdte_R3_DS32)
+# define Bs3Gdte_R3_SS32                        BS3_DATA_NM(Bs3Gdte_R3_SS32)
+# define Bs3Gdte_R3_CS64                        BS3_DATA_NM(Bs3Gdte_R3_CS64)
+# define Bs3Gdte_R3_DS64                        BS3_DATA_NM(Bs3Gdte_R3_DS64)
+# define Bs3Gdte_R3_CS16_EO                     BS3_DATA_NM(Bs3Gdte_R3_CS16_EO)
+# define Bs3Gdte_R3_CS16_CNF                    BS3_DATA_NM(Bs3Gdte_R3_CS16_CNF)
+# define Bs3Gdte_R3_CS16_CND_EO                 BS3_DATA_NM(Bs3Gdte_R3_CS16_CND_EO)
+# define Bs3Gdte_R3_CS32_EO                     BS3_DATA_NM(Bs3Gdte_R3_CS32_EO)
+# define Bs3Gdte_R3_CS32_CNF                    BS3_DATA_NM(Bs3Gdte_R3_CS32_CNF)
+# define Bs3Gdte_R3_CS32_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R3_CS32_CNF_EO)
+# define Bs3Gdte_R3_CS64_EO                     BS3_DATA_NM(Bs3Gdte_R3_CS64_EO)
+# define Bs3Gdte_R3_CS64_CNF                    BS3_DATA_NM(Bs3Gdte_R3_CS64_CNF)
+# define Bs3Gdte_R3_CS64_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R3_CS64_CNF_EO)
+
+# define Bs3GdteSpare00                         BS3_DATA_NM(Bs3GdteSpare00)
+# define Bs3GdteSpare01                         BS3_DATA_NM(Bs3GdteSpare01)
+# define Bs3GdteSpare02                         BS3_DATA_NM(Bs3GdteSpare02)
+# define Bs3GdteSpare03                         BS3_DATA_NM(Bs3GdteSpare03)
+# define Bs3GdteSpare04                         BS3_DATA_NM(Bs3GdteSpare04)
+# define Bs3GdteSpare05                         BS3_DATA_NM(Bs3GdteSpare05)
+# define Bs3GdteSpare06                         BS3_DATA_NM(Bs3GdteSpare06)
+# define Bs3GdteSpare07                         BS3_DATA_NM(Bs3GdteSpare07)
+# define Bs3GdteSpare08                         BS3_DATA_NM(Bs3GdteSpare08)
+# define Bs3GdteSpare09                         BS3_DATA_NM(Bs3GdteSpare09)
+# define Bs3GdteSpare0a                         BS3_DATA_NM(Bs3GdteSpare0a)
+# define Bs3GdteSpare0b                         BS3_DATA_NM(Bs3GdteSpare0b)
+# define Bs3GdteSpare0c                         BS3_DATA_NM(Bs3GdteSpare0c)
+# define Bs3GdteSpare0d                         BS3_DATA_NM(Bs3GdteSpare0d)
+# define Bs3GdteSpare0e                         BS3_DATA_NM(Bs3GdteSpare0e)
+# define Bs3GdteSpare0f                         BS3_DATA_NM(Bs3GdteSpare0f)
+# define Bs3GdteSpare10                         BS3_DATA_NM(Bs3GdteSpare10)
+# define Bs3GdteSpare11                         BS3_DATA_NM(Bs3GdteSpare11)
+# define Bs3GdteSpare12                         BS3_DATA_NM(Bs3GdteSpare12)
+# define Bs3GdteSpare13                         BS3_DATA_NM(Bs3GdteSpare13)
+# define Bs3GdteSpare14                         BS3_DATA_NM(Bs3GdteSpare14)
+# define Bs3GdteSpare15                         BS3_DATA_NM(Bs3GdteSpare15)
+# define Bs3GdteSpare16                         BS3_DATA_NM(Bs3GdteSpare16)
+# define Bs3GdteSpare17                         BS3_DATA_NM(Bs3GdteSpare17)
+# define Bs3GdteSpare18                         BS3_DATA_NM(Bs3GdteSpare18)
+# define Bs3GdteSpare19                         BS3_DATA_NM(Bs3GdteSpare19)
+# define Bs3GdteSpare1a                         BS3_DATA_NM(Bs3GdteSpare1a)
+# define Bs3GdteSpare1b                         BS3_DATA_NM(Bs3GdteSpare1b)
+# define Bs3GdteSpare1c                         BS3_DATA_NM(Bs3GdteSpare1c)
+# define Bs3GdteSpare1d                         BS3_DATA_NM(Bs3GdteSpare1d)
+# define Bs3GdteSpare1e                         BS3_DATA_NM(Bs3GdteSpare1e)
+# define Bs3GdteSpare1f                         BS3_DATA_NM(Bs3GdteSpare1f)
+
+# define Bs3GdteTiled                           BS3_DATA_NM(Bs3GdteTiled)
+# define Bs3GdteFreePart1                       BS3_DATA_NM(Bs3GdteFreePart1)
+# define Bs3Gdte_CODE16                         BS3_DATA_NM(Bs3Gdte_CODE16)
+# define Bs3GdteFreePart2                       BS3_DATA_NM(Bs3GdteFreePart2)
+# define Bs3Gdte_SYSTEM16                       BS3_DATA_NM(Bs3Gdte_SYSTEM16)
+# define Bs3GdteFreePart3                       BS3_DATA_NM(Bs3GdteFreePart3)
+# define Bs3Gdte_DATA16                         BS3_DATA_NM(Bs3Gdte_DATA16)
+
+# define Bs3GdteFreePart4                       BS3_DATA_NM(Bs3GdteFreePart4)
+# define Bs3GdtePreTestPage08                   BS3_DATA_NM(Bs3GdtePreTestPage08)
+# define Bs3GdtePreTestPage07                   BS3_DATA_NM(Bs3GdtePreTestPage07)
+# define Bs3GdtePreTestPage06                   BS3_DATA_NM(Bs3GdtePreTestPage06)
+# define Bs3GdtePreTestPage05                   BS3_DATA_NM(Bs3GdtePreTestPage05)
+# define Bs3GdtePreTestPage04                   BS3_DATA_NM(Bs3GdtePreTestPage04)
+# define Bs3GdtePreTestPage03                   BS3_DATA_NM(Bs3GdtePreTestPage03)
+# define Bs3GdtePreTestPage02                   BS3_DATA_NM(Bs3GdtePreTestPage02)
+# define Bs3GdtePreTestPage01                   BS3_DATA_NM(Bs3GdtePreTestPage01)
+# define Bs3GdteTestPage                        BS3_DATA_NM(Bs3GdteTestPage)
+# define Bs3GdteTestPage00                      BS3_DATA_NM(Bs3GdteTestPage00)
+# define Bs3GdteTestPage01                      BS3_DATA_NM(Bs3GdteTestPage01)
+# define Bs3GdteTestPage02                      BS3_DATA_NM(Bs3GdteTestPage02)
+# define Bs3GdteTestPage03                      BS3_DATA_NM(Bs3GdteTestPage03)
+# define Bs3GdteTestPage04                      BS3_DATA_NM(Bs3GdteTestPage04)
+# define Bs3GdteTestPage05                      BS3_DATA_NM(Bs3GdteTestPage05)
+# define Bs3GdteTestPage06                      BS3_DATA_NM(Bs3GdteTestPage06)
+# define Bs3GdteTestPage07                      BS3_DATA_NM(Bs3GdteTestPage07)
+
+# define Bs3GdtEnd                              BS3_DATA_NM(Bs3GdtEnd)
+
+# define Bs3Tss16                               BS3_DATA_NM(Bs3Tss16)
+# define Bs3Tss16DoubleFault                    BS3_DATA_NM(Bs3Tss16DoubleFault)
+# define Bs3Tss16Spare0                         BS3_DATA_NM(Bs3Tss16Spare0)
+# define Bs3Tss16Spare1                         BS3_DATA_NM(Bs3Tss16Spare1)
+# define Bs3Tss32                               BS3_DATA_NM(Bs3Tss32)
+# define Bs3Tss32DoubleFault                    BS3_DATA_NM(Bs3Tss32DoubleFault)
+# define Bs3Tss32Spare0                         BS3_DATA_NM(Bs3Tss32Spare0)
+# define Bs3Tss32Spare1                         BS3_DATA_NM(Bs3Tss32Spare1)
+# define Bs3Tss64                               BS3_DATA_NM(Bs3Tss64)
+# define Bs3Tss64Spare0                         BS3_DATA_NM(Bs3Tss64Spare0)
+# define Bs3Tss64Spare1                         BS3_DATA_NM(Bs3Tss64Spare1)
+# define Bs3Tss64WithIopb                       BS3_DATA_NM(Bs3Tss64WithIopb)
+# define Bs3Tss32WithIopb                       BS3_DATA_NM(Bs3Tss32WithIopb)
+# define Bs3SharedIntRedirBm                    BS3_DATA_NM(Bs3SharedIntRedirBm)
+# define Bs3SharedIobp                          BS3_DATA_NM(Bs3SharedIobp)
+# define Bs3SharedIobpEnd                       BS3_DATA_NM(Bs3SharedIobpEnd)
+# define Bs3Idt16                               BS3_DATA_NM(Bs3Idt16)
+# define Bs3Idt32                               BS3_DATA_NM(Bs3Idt32)
+# define Bs3Idt64                               BS3_DATA_NM(Bs3Idt64)
+# define Bs3Lidt_Idt16                          BS3_DATA_NM(Bs3Lidt_Idt16)
+# define Bs3Lidt_Idt32                          BS3_DATA_NM(Bs3Lidt_Idt32)
+# define Bs3Lidt_Idt64                          BS3_DATA_NM(Bs3Lidt_Idt64)
+# define Bs3Lidt_Ivt                            BS3_DATA_NM(Bs3Lidt_Ivt)
+# define Bs3Lgdt_Gdt                            BS3_DATA_NM(Bs3Lgdt_Gdt)
+# define Bs3Ldt                                 BS3_DATA_NM(Bs3Ldt)
+# define Bs3LdtEnd                              BS3_DATA_NM(Bs3LdtEnd)
+#endif /* ARCH_BITS == 64 && !DOXYGEN_RUNNING*/
+
 /** The GDT, indexed by BS3_SEL_XXX shifted by 3. */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdt)[(BS3_SEL_GDT_LIMIT + 1) / 8];
+extern X86DESC BS3_FAR_DATA Bs3Gdt[(BS3_SEL_GDT_LIMIT + 1) / 8];
 
-extern X86DESC64 BS3_FAR_DATA BS3_DATA_NM(Bs3Gdt_Ldt);                   /**< @see BS3_SEL_LDT */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss16);                  /**< @see BS3_SEL_TSS16  */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss16DoubleFault);       /**< @see BS3_SEL_TSS16_DF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss16Spare0);            /**< @see BS3_SEL_TSS16_SPARE0 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss16Spare1);            /**< @see BS3_SEL_TSS16_SPARE1 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss32);                  /**< @see BS3_SEL_TSS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss32DoubleFault);       /**< @see BS3_SEL_TSS32_DF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss32Spare0);            /**< @see BS3_SEL_TSS32_SPARE0 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss32Spare1);            /**< @see BS3_SEL_TSS32_SPARE1 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss32IobpIntRedirBm);    /**< @see BS3_SEL_TSS32_IOBP_IRB */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss32IntRedirBm);        /**< @see BS3_SEL_TSS32_IRB */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss64);                  /**< @see BS3_SEL_TSS64 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss64Spare0);            /**< @see BS3_SEL_TSS64_SPARE0 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss64Spare1);            /**< @see BS3_SEL_TSS64_SPARE1 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_Tss64Iobp);              /**< @see BS3_SEL_TSS64_IOBP */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_MMIO16);              /**< @see BS3_SEL_VMMDEV_MMIO16 */
+extern X86DESC64 BS3_FAR_DATA Bs3Gdt_Ldt;                   /**< @see BS3_SEL_LDT */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss16;                  /**< @see BS3_SEL_TSS16  */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss16DoubleFault;       /**< @see BS3_SEL_TSS16_DF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss16Spare0;            /**< @see BS3_SEL_TSS16_SPARE0 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss16Spare1;            /**< @see BS3_SEL_TSS16_SPARE1 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss32;                  /**< @see BS3_SEL_TSS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss32DoubleFault;       /**< @see BS3_SEL_TSS32_DF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss32Spare0;            /**< @see BS3_SEL_TSS32_SPARE0 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss32Spare1;            /**< @see BS3_SEL_TSS32_SPARE1 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss32IobpIntRedirBm;    /**< @see BS3_SEL_TSS32_IOBP_IRB */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss32IntRedirBm;        /**< @see BS3_SEL_TSS32_IRB */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64;                  /**< @see BS3_SEL_TSS64 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64Spare0;            /**< @see BS3_SEL_TSS64_SPARE0 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64Spare1;            /**< @see BS3_SEL_TSS64_SPARE1 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64Iobp;              /**< @see BS3_SEL_TSS64_IOBP */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_MMIO16;              /**< @see BS3_SEL_VMMDEV_MMIO16 */
 
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_First);               /**< @see BS3_SEL_R0_FIRST */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS16);                /**< @see BS3_SEL_R0_CS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_DS16);                /**< @see BS3_SEL_R0_DS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_SS16);                /**< @see BS3_SEL_R0_SS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS32);                /**< @see BS3_SEL_R0_CS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_DS32);                /**< @see BS3_SEL_R0_DS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_SS32);                /**< @see BS3_SEL_R0_SS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS64);                /**< @see BS3_SEL_R0_CS64 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_DS64);                /**< @see BS3_SEL_R0_DS64 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS16_EO);             /**< @see BS3_SEL_R0_CS16_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS16_CNF);            /**< @see BS3_SEL_R0_CS16_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS16_CND_EO);         /**< @see BS3_SEL_R0_CS16_CNF_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS32_EO);             /**< @see BS3_SEL_R0_CS32_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS32_CNF);            /**< @see BS3_SEL_R0_CS32_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS32_CNF_EO);         /**< @see BS3_SEL_R0_CS32_CNF_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS64_EO);             /**< @see BS3_SEL_R0_CS64_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS64_CNF);            /**< @see BS3_SEL_R0_CS64_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R0_CS64_CNF_EO);         /**< @see BS3_SEL_R0_CS64_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_First;               /**< @see BS3_SEL_R0_FIRST */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS16;                /**< @see BS3_SEL_R0_CS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_DS16;                /**< @see BS3_SEL_R0_DS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_SS16;                /**< @see BS3_SEL_R0_SS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS32;                /**< @see BS3_SEL_R0_CS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_DS32;                /**< @see BS3_SEL_R0_DS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_SS32;                /**< @see BS3_SEL_R0_SS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS64;                /**< @see BS3_SEL_R0_CS64 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_DS64;                /**< @see BS3_SEL_R0_DS64 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS16_EO;             /**< @see BS3_SEL_R0_CS16_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS16_CNF;            /**< @see BS3_SEL_R0_CS16_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS16_CND_EO;         /**< @see BS3_SEL_R0_CS16_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS32_EO;             /**< @see BS3_SEL_R0_CS32_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS32_CNF;            /**< @see BS3_SEL_R0_CS32_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS32_CNF_EO;         /**< @see BS3_SEL_R0_CS32_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS64_EO;             /**< @see BS3_SEL_R0_CS64_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS64_CNF;            /**< @see BS3_SEL_R0_CS64_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_CS64_CNF_EO;         /**< @see BS3_SEL_R0_CS64_CNF_EO */
 
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_First);               /**< @see BS3_SEL_R1_FIRST */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS16);                /**< @see BS3_SEL_R1_CS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_DS16);                /**< @see BS3_SEL_R1_DS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_SS16);                /**< @see BS3_SEL_R1_SS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS32);                /**< @see BS3_SEL_R1_CS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_DS32);                /**< @see BS3_SEL_R1_DS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_SS32);                /**< @see BS3_SEL_R1_SS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS64);                /**< @see BS3_SEL_R1_CS64 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_DS64);                /**< @see BS3_SEL_R1_DS64 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS16_EO);             /**< @see BS3_SEL_R1_CS16_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS16_CNF);            /**< @see BS3_SEL_R1_CS16_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS16_CND_EO);         /**< @see BS3_SEL_R1_CS16_CNF_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS32_EO);             /**< @see BS3_SEL_R1_CS32_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS32_CNF);            /**< @see BS3_SEL_R1_CS32_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS32_CNF_EO);         /**< @see BS3_SEL_R1_CS32_CNF_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS64_EO);             /**< @see BS3_SEL_R1_CS64_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS64_CNF);            /**< @see BS3_SEL_R1_CS64_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R1_CS64_CNF_EO);         /**< @see BS3_SEL_R1_CS64_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_First;               /**< @see BS3_SEL_R1_FIRST */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS16;                /**< @see BS3_SEL_R1_CS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_DS16;                /**< @see BS3_SEL_R1_DS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_SS16;                /**< @see BS3_SEL_R1_SS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS32;                /**< @see BS3_SEL_R1_CS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_DS32;                /**< @see BS3_SEL_R1_DS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_SS32;                /**< @see BS3_SEL_R1_SS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS64;                /**< @see BS3_SEL_R1_CS64 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_DS64;                /**< @see BS3_SEL_R1_DS64 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS16_EO;             /**< @see BS3_SEL_R1_CS16_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS16_CNF;            /**< @see BS3_SEL_R1_CS16_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS16_CND_EO;         /**< @see BS3_SEL_R1_CS16_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS32_EO;             /**< @see BS3_SEL_R1_CS32_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS32_CNF;            /**< @see BS3_SEL_R1_CS32_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS32_CNF_EO;         /**< @see BS3_SEL_R1_CS32_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS64_EO;             /**< @see BS3_SEL_R1_CS64_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS64_CNF;            /**< @see BS3_SEL_R1_CS64_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R1_CS64_CNF_EO;         /**< @see BS3_SEL_R1_CS64_CNF_EO */
 
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_First);               /**< @see BS3_SEL_R2_FIRST */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS16);                /**< @see BS3_SEL_R2_CS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_DS16);                /**< @see BS3_SEL_R2_DS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_SS16);                /**< @see BS3_SEL_R2_SS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS32);                /**< @see BS3_SEL_R2_CS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_DS32);                /**< @see BS3_SEL_R2_DS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_SS32);                /**< @see BS3_SEL_R2_SS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS64);                /**< @see BS3_SEL_R2_CS64 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_DS64);                /**< @see BS3_SEL_R2_DS64 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS16_EO);             /**< @see BS3_SEL_R2_CS16_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS16_CNF);            /**< @see BS3_SEL_R2_CS16_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS16_CND_EO);         /**< @see BS3_SEL_R2_CS16_CNF_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS32_EO);             /**< @see BS3_SEL_R2_CS32_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS32_CNF);            /**< @see BS3_SEL_R2_CS32_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS32_CNF_EO);         /**< @see BS3_SEL_R2_CS32_CNF_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS64_EO);             /**< @see BS3_SEL_R2_CS64_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS64_CNF);            /**< @see BS3_SEL_R2_CS64_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R2_CS64_CNF_EO);         /**< @see BS3_SEL_R2_CS64_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_First;               /**< @see BS3_SEL_R2_FIRST */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS16;                /**< @see BS3_SEL_R2_CS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_DS16;                /**< @see BS3_SEL_R2_DS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_SS16;                /**< @see BS3_SEL_R2_SS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS32;                /**< @see BS3_SEL_R2_CS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_DS32;                /**< @see BS3_SEL_R2_DS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_SS32;                /**< @see BS3_SEL_R2_SS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS64;                /**< @see BS3_SEL_R2_CS64 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_DS64;                /**< @see BS3_SEL_R2_DS64 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS16_EO;             /**< @see BS3_SEL_R2_CS16_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS16_CNF;            /**< @see BS3_SEL_R2_CS16_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS16_CND_EO;         /**< @see BS3_SEL_R2_CS16_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS32_EO;             /**< @see BS3_SEL_R2_CS32_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS32_CNF;            /**< @see BS3_SEL_R2_CS32_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS32_CNF_EO;         /**< @see BS3_SEL_R2_CS32_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS64_EO;             /**< @see BS3_SEL_R2_CS64_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS64_CNF;            /**< @see BS3_SEL_R2_CS64_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R2_CS64_CNF_EO;         /**< @see BS3_SEL_R2_CS64_CNF_EO */
 
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_First);               /**< @see BS3_SEL_R3_FIRST */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS16);                /**< @see BS3_SEL_R3_CS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_DS16);                /**< @see BS3_SEL_R3_DS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_SS16);                /**< @see BS3_SEL_R3_SS16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS32);                /**< @see BS3_SEL_R3_CS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_DS32);                /**< @see BS3_SEL_R3_DS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_SS32);                /**< @see BS3_SEL_R3_SS32 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS64);                /**< @see BS3_SEL_R3_CS64 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_DS64);                /**< @see BS3_SEL_R3_DS64 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS16_EO);             /**< @see BS3_SEL_R3_CS16_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS16_CNF);            /**< @see BS3_SEL_R3_CS16_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS16_CND_EO);         /**< @see BS3_SEL_R3_CS16_CNF_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS32_EO);             /**< @see BS3_SEL_R3_CS32_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS32_CNF);            /**< @see BS3_SEL_R3_CS32_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS32_CNF_EO);         /**< @see BS3_SEL_R3_CS32_CNF_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS64_EO);             /**< @see BS3_SEL_R3_CS64_EO */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS64_CNF);            /**< @see BS3_SEL_R3_CS64_CNF */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_R3_CS64_CNF_EO);         /**< @see BS3_SEL_R3_CS64_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_First;               /**< @see BS3_SEL_R3_FIRST */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS16;                /**< @see BS3_SEL_R3_CS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_DS16;                /**< @see BS3_SEL_R3_DS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_SS16;                /**< @see BS3_SEL_R3_SS16 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS32;                /**< @see BS3_SEL_R3_CS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_DS32;                /**< @see BS3_SEL_R3_DS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_SS32;                /**< @see BS3_SEL_R3_SS32 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS64;                /**< @see BS3_SEL_R3_CS64 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_DS64;                /**< @see BS3_SEL_R3_DS64 */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS16_EO;             /**< @see BS3_SEL_R3_CS16_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS16_CNF;            /**< @see BS3_SEL_R3_CS16_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS16_CND_EO;         /**< @see BS3_SEL_R3_CS16_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS32_EO;             /**< @see BS3_SEL_R3_CS32_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS32_CNF;            /**< @see BS3_SEL_R3_CS32_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS32_CNF_EO;         /**< @see BS3_SEL_R3_CS32_CNF_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS64_EO;             /**< @see BS3_SEL_R3_CS64_EO */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS64_CNF;            /**< @see BS3_SEL_R3_CS64_CNF */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_R3_CS64_CNF_EO;         /**< @see BS3_SEL_R3_CS64_CNF_EO */
 
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare00); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_00 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare01); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_01 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare02); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_02 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare03); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_03 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare04); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_04 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare05); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_05 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare06); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_06 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare07); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_07 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare08); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_08 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare09); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_09 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare0a); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0a */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare0b); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0b */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare0c); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0c */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare0d); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0d */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare0e); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0e */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare0f); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0f */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare10); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_10 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare11); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_11 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare12); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_12 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare13); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_13 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare14); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_14 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare15); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_15 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare16); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_16 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare17); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_17 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare18); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_18 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare19); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_19 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare1a); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1a */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare1b); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1b */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare1c); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1c */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare1d); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1d */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare1e); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1e */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteSpare1f); /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1f */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare00; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_00 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare01; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_01 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare02; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_02 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare03; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_03 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare04; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_04 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare05; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_05 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare06; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_06 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare07; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_07 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare08; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_08 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare09; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_09 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare0a; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0a */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare0b; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0b */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare0c; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0c */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare0d; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0d */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare0e; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0e */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare0f; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_0f */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare10; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_10 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare11; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_11 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare12; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_12 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare13; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_13 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare14; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_14 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare15; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_15 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare16; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_16 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare17; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_17 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare18; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_18 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare19; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_19 */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare1a; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1a */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare1b; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1b */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare1c; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1c */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare1d; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1d */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare1e; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1e */
+extern X86DESC BS3_FAR_DATA Bs3GdteSpare1f; /**< GDT entry for playing with in testcases. @see BS3_SEL_SPARE_1f */
 
 /** GDTs setting up the tiled 16-bit access to the first 16 MBs of memory.
  * @see BS3_SEL_TILED, BS3_SEL_TILED_LAST, BS3_SEL_TILED_AREA_SIZE */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTiled)[256];
+extern X86DESC BS3_FAR_DATA Bs3GdteTiled[256];
 /** Free GDTes, part \#1. */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart1)[64];
+extern X86DESC BS3_FAR_DATA Bs3GdteFreePart1[64];
 /** The BS3TEXT16/BS3CLASS16CODE GDT entry. @see BS3_SEL_TEXT16   */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_CODE16);
+extern X86DESC BS3_FAR_DATA Bs3Gdte_CODE16;
 /** Free GDTes, part \#2. */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart2)[511];
+extern X86DESC BS3_FAR_DATA Bs3GdteFreePart2[511];
 /** The BS3SYSTEM16 GDT entry. */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_SYSTEM16);
+extern X86DESC BS3_FAR_DATA Bs3Gdte_SYSTEM16;
 /** Free GDTes, part \#3. */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart3)[223];
+extern X86DESC BS3_FAR_DATA Bs3GdteFreePart3[223];
 /** The BS3DATA16/BS3_FAR_DATA GDT entry. */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3Gdte_DATA16);
+extern X86DESC BS3_FAR_DATA Bs3Gdte_DATA16;
 /** Free GDTes, part \#4. */
 
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteFreePart4)[211];
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage08); /**< GDT entry 8 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_08 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage07); /**< GDT entry 7 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_07 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage06); /**< GDT entry 6 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_06 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage05); /**< GDT entry 5 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_05 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage04); /**< GDT entry 4 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_04 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage03); /**< GDT entry 3 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_03 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage02); /**< GDT entry 2 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_02 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtePreTestPage01); /**< GDT entry 1 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_01 */
+extern X86DESC BS3_FAR_DATA Bs3GdteFreePart4[211];
+extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage08; /**< GDT entry 8 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_08 */
+extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage07; /**< GDT entry 7 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_07 */
+extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage06; /**< GDT entry 6 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_06 */
+extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage05; /**< GDT entry 5 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_05 */
+extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage04; /**< GDT entry 4 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_04 */
+extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage03; /**< GDT entry 3 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_03 */
+extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage02; /**< GDT entry 2 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_02 */
+extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage01; /**< GDT entry 1 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_01 */
 /** Array of GDT entries starting on a page boundrary and filling (almost) the
  * whole page.   This is for playing with paging and GDT usage.
  * @see BS3_SEL_TEST_PAGE */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage)[2043];
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage00); /**< GDT entry 0 on the test page (convenience). @see BS3_SEL_TEST_PAGE_00 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage01); /**< GDT entry 1 on the test page (convenience). @see BS3_SEL_TEST_PAGE_01 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage02); /**< GDT entry 2 on the test page (convenience). @see BS3_SEL_TEST_PAGE_02 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage03); /**< GDT entry 3 on the test page (convenience). @see BS3_SEL_TEST_PAGE_03 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage04); /**< GDT entry 4 on the test page (convenience). @see BS3_SEL_TEST_PAGE_04 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage05); /**< GDT entry 5 on the test page (convenience). @see BS3_SEL_TEST_PAGE_05 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage06); /**< GDT entry 6 on the test page (convenience). @see BS3_SEL_TEST_PAGE_06 */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdteTestPage07); /**< GDT entry 7 on the test page (convenience). @see BS3_SEL_TEST_PAGE_07 */
+extern X86DESC BS3_FAR_DATA Bs3GdteTestPage[2043];
+extern X86DESC BS3_FAR_DATA Bs3GdteTestPage00; /**< GDT entry 0 on the test page (convenience). @see BS3_SEL_TEST_PAGE_00 */
+extern X86DESC BS3_FAR_DATA Bs3GdteTestPage01; /**< GDT entry 1 on the test page (convenience). @see BS3_SEL_TEST_PAGE_01 */
+extern X86DESC BS3_FAR_DATA Bs3GdteTestPage02; /**< GDT entry 2 on the test page (convenience). @see BS3_SEL_TEST_PAGE_02 */
+extern X86DESC BS3_FAR_DATA Bs3GdteTestPage03; /**< GDT entry 3 on the test page (convenience). @see BS3_SEL_TEST_PAGE_03 */
+extern X86DESC BS3_FAR_DATA Bs3GdteTestPage04; /**< GDT entry 4 on the test page (convenience). @see BS3_SEL_TEST_PAGE_04 */
+extern X86DESC BS3_FAR_DATA Bs3GdteTestPage05; /**< GDT entry 5 on the test page (convenience). @see BS3_SEL_TEST_PAGE_05 */
+extern X86DESC BS3_FAR_DATA Bs3GdteTestPage06; /**< GDT entry 6 on the test page (convenience). @see BS3_SEL_TEST_PAGE_06 */
+extern X86DESC BS3_FAR_DATA Bs3GdteTestPage07; /**< GDT entry 7 on the test page (convenience). @see BS3_SEL_TEST_PAGE_07 */
 
 /** The end of the GDT (exclusive - contains eye-catcher string). */
-extern X86DESC BS3_FAR_DATA BS3_DATA_NM(Bs3GdtEnd);
+extern X86DESC BS3_FAR_DATA Bs3GdtEnd;
 
 /** The default 16-bit TSS. */
-extern X86TSS16  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss16);
-extern X86TSS16  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss16DoubleFault);
-extern X86TSS16  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss16Spare0);
-extern X86TSS16  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss16Spare1);
+extern X86TSS16  BS3_FAR_DATA Bs3Tss16;
+extern X86TSS16  BS3_FAR_DATA Bs3Tss16DoubleFault;
+extern X86TSS16  BS3_FAR_DATA Bs3Tss16Spare0;
+extern X86TSS16  BS3_FAR_DATA Bs3Tss16Spare1;
 /** The default 32-bit TSS. */
-extern X86TSS32  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss32);
-extern X86TSS32  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss32DoubleFault);
-extern X86TSS32  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss32Spare0);
-extern X86TSS32  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss32Spare1);
+extern X86TSS32  BS3_FAR_DATA Bs3Tss32;
+extern X86TSS32  BS3_FAR_DATA Bs3Tss32DoubleFault;
+extern X86TSS32  BS3_FAR_DATA Bs3Tss32Spare0;
+extern X86TSS32  BS3_FAR_DATA Bs3Tss32Spare1;
 /** The default 64-bit TSS. */
-extern X86TSS64  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss64);
-extern X86TSS64  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss64Spare0);
-extern X86TSS64  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss64Spare1);
-extern X86TSS64  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss64WithIopb);
-extern X86TSS32  BS3_FAR_DATA BS3_DATA_NM(Bs3Tss32WithIopb);
+extern X86TSS64  BS3_FAR_DATA Bs3Tss64;
+extern X86TSS64  BS3_FAR_DATA Bs3Tss64Spare0;
+extern X86TSS64  BS3_FAR_DATA Bs3Tss64Spare1;
+extern X86TSS64  BS3_FAR_DATA Bs3Tss64WithIopb;
+extern X86TSS32  BS3_FAR_DATA Bs3Tss32WithIopb;
 /** Interrupt redirection bitmap used by Bs3Tss32WithIopb. */
-extern uint8_t   BS3_FAR_DATA BS3_DATA_NM(Bs3SharedIntRedirBm)[32];
+extern uint8_t   BS3_FAR_DATA Bs3SharedIntRedirBm[32];
 /** I/O permission bitmap used by Bs3Tss32WithIopb and Bs3Tss64WithIopb. */
-extern uint8_t   BS3_FAR_DATA BS3_DATA_NM(Bs3SharedIobp)[8192+2];
+extern uint8_t   BS3_FAR_DATA Bs3SharedIobp[8192+2];
 /** End of the I/O permission bitmap (exclusive). */
-extern uint8_t   BS3_FAR_DATA BS3_DATA_NM(Bs3SharedIobpEnd);
+extern uint8_t   BS3_FAR_DATA Bs3SharedIobpEnd;
 /** 16-bit IDT. */
-extern X86DESC   BS3_FAR_DATA BS3_DATA_NM(Bs3Idt16)[256];
+extern X86DESC   BS3_FAR_DATA Bs3Idt16[256];
 /** 32-bit IDT. */
-extern X86DESC   BS3_FAR_DATA BS3_DATA_NM(Bs3Idt32)[256];
+extern X86DESC   BS3_FAR_DATA Bs3Idt32[256];
 /** 64-bit IDT. */
-extern X86DESC64 BS3_FAR_DATA BS3_DATA_NM(Bs3Idt64)[256];
+extern X86DESC64 BS3_FAR_DATA Bs3Idt64[256];
 /** Structure for the LIDT instruction for loading the 16-bit IDT. */
-extern X86XDTR64 BS3_FAR_DATA BS3_DATA_NM(Bs3Lidt_Idt16);
+extern X86XDTR64 BS3_FAR_DATA Bs3Lidt_Idt16;
 /** Structure for the LIDT instruction for loading the 32-bit IDT. */
-extern X86XDTR64 BS3_FAR_DATA BS3_DATA_NM(Bs3Lidt_Idt32);
+extern X86XDTR64 BS3_FAR_DATA Bs3Lidt_Idt32;
 /** Structure for the LIDT instruction for loading the 64-bit IDT. */
-extern X86XDTR64 BS3_FAR_DATA BS3_DATA_NM(Bs3Lidt_Idt64);
+extern X86XDTR64 BS3_FAR_DATA Bs3Lidt_Idt64;
 /** Structure for the LIDT instruction for loading the real mode interrupt
  *  vector table.. */
-extern X86XDTR64 BS3_FAR_DATA BS3_DATA_NM(Bs3Lidt_Ivt);
+extern X86XDTR64 BS3_FAR_DATA Bs3Lidt_Ivt;
 /** Structure for the LGDT instruction for loading the GDT. */
-extern X86XDTR64 BS3_FAR_DATA BS3_DATA_NM(Bs3Lgdt_Gdt);
+extern X86XDTR64 BS3_FAR_DATA Bs3Lgdt_Gdt;
 /** The LDT (all entries are empty, fill in for testing). */
-extern X86DESC   BS3_FAR_DATA BS3_DATA_NM(Bs3Ldt)[118];
+extern X86DESC   BS3_FAR_DATA Bs3Ldt[118];
 /** The end of the LDT (exclusive).   */
-extern X86DESC   BS3_FAR_DATA BS3_DATA_NM(Bs3LdtEnd);
+extern X86DESC   BS3_FAR_DATA Bs3LdtEnd;
 
 /** @} */
 
@@ -835,60 +1023,123 @@ extern X86DESC   BS3_FAR_DATA BS3_DATA_NM(Bs3LdtEnd);
 /** @name Segment start and end markers, sizes.
  * @{ */
 /** Start of the BS3TEXT16 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Text16_StartOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Text16_StartOfSegment BS3_DATA_NM(Bs3Text16_StartOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Text16_StartOfSegment;
 /** End of the BS3TEXT16 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Text16_EndOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Text16_EndOfSegment BS3_DATA_NM(Bs3Text16_EndOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Text16_EndOfSegment;
 /** The size of the BS3TEXT16 segment.   */
-extern uint16_t BS3_FAR_DATA BS3_DATA_NM(Bs3Text16_Size);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Text16_Size BS3_DATA_NM(Bs3Text16_Size)
+#endif
+extern uint16_t BS3_FAR_DATA Bs3Text16_Size;
 
 /** Start of the BS3SYSTEM16 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3System16_StartOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3System16_StartOfSegment BS3_DATA_NM(Bs3System16_StartOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3System16_StartOfSegment;
 /** End of the BS3SYSTEM16 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3System16_EndOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3System16_EndOfSegment BS3_DATA_NM(Bs3System16_EndOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3System16_EndOfSegment;
 
 /** Start of the BS3DATA16 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Data16_StartOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Data16_StartOfSegment BS3_DATA_NM(Bs3Data16_StartOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Data16_StartOfSegment;
 /** End of the BS3DATA16 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Data16_EndOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Data16_EndOfSegment BS3_DATA_NM(Bs3Data16_EndOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Data16_EndOfSegment;
 
 /** Start of the BS3TEXT32 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Text32_StartOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Text32_StartOfSegment BS3_DATA_NM(Bs3Text32_StartOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Text32_StartOfSegment;
 /** Start of the BS3TEXT32 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Text32_EndOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Text32_EndOfSegment BS3_DATA_NM(Bs3Text32_EndOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Text32_EndOfSegment;
 
 /** Start of the BS3DATA32 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Data32_StartOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Data32_StartOfSegment BS3_DATA_NM(Bs3Data32_StartOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Data32_StartOfSegment;
 /** Start of the BS3DATA32 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Data32_EndOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Data32_EndOfSegment BS3_DATA_NM(Bs3Data32_EndOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Data32_EndOfSegment;
 
 /** Start of the BS3TEXT64 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Text64_StartOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Text64_StartOfSegment BS3_DATA_NM(Bs3Text64_StartOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Text64_StartOfSegment;
 /** Start of the BS3TEXT64 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Text64_EndOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Text64_EndOfSegment BS3_DATA_NM(Bs3Text64_EndOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Text64_EndOfSegment;
 
 /** Start of the BS3DATA64 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Data64_StartOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Data64_StartOfSegment BS3_DATA_NM(Bs3Data64_StartOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Data64_StartOfSegment;
 /** Start of the BS3DATA64 segment.   */
-extern uint8_t  BS3_FAR_DATA BS3_DATA_NM(Bs3Data64_EndOfSegment);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Data64_EndOfSegment BS3_DATA_NM(Bs3Data64_EndOfSegment)
+#endif
+extern uint8_t  BS3_FAR_DATA Bs3Data64_EndOfSegment;
 
 /** The size of the Data16, Text32, Text64, Data32 and Data64 blob. */
-extern uint32_t BS3_FAR_DATA BS3_DATA_NM(Bs3Data16Thru64Text32And64_TotalSize);
+#ifndef DOXYGEN_RUNNING
+# define Bs3Data16Thru64Text32And64_TotalSize BS3_DATA_NM(Bs3Data16Thru64Text32And64_TotalSize)
+#endif
+extern uint32_t BS3_FAR_DATA Bs3Data16Thru64Text32And64_TotalSize;
 /** The total image size (from Text16 thu Data64). */
-extern uint32_t BS3_FAR_DATA BS3_DATA_NM(Bs3TotalImageSize);
+#ifndef DOXYGEN_RUNNING
+# define Bs3TotalImageSize BS3_DATA_NM(Bs3TotalImageSize)
+#endif
+extern uint32_t BS3_FAR_DATA Bs3TotalImageSize;
 /** @} */
 
 
 /** Lower case hex digits. */
-extern char const BS3_DATA_NM(g_achBs3HexDigits)[16+1];
+#ifndef DOXYGEN_RUNNING
+# define g_achBs3HexDigits BS3_DATA_NM(g_achBs3HexDigits)
+#endif
+extern char const g_achBs3HexDigits[16+1];
 /** Upper case hex digits. */
-extern char const BS3_DATA_NM(g_achBs3HexDigitsUpper)[16+1];
+#ifndef DOXYGEN_RUNNING
+# define g_achBs3HexDigitsUpper BS3_DATA_NM(g_achBs3HexDigitsUpper)
+#endif
+extern char const g_achBs3HexDigitsUpper[16+1];
 
 
 /** The current mode (BS3_MODE_XXX) of CPU \#0. */
-extern uint8_t    BS3_DATA_NM(g_bBs3CurrentMode);
+#ifndef DOXYGEN_RUNNING
+# define g_bBs3CurrentMode BS3_DATA_NM(g_bBs3CurrentMode)
+#endif
+extern uint8_t    g_bBs3CurrentMode;
 
 /** Hint for 16-bit trap handlers regarding the high word of EIP. */
-extern uint32_t   BS3_DATA_NM(g_uBs3TrapEipHint);
+#ifndef DOXYGEN_RUNNING
+# define g_uBs3TrapEipHint BS3_DATA_NM(g_uBs3TrapEipHint)
+#endif
+extern uint32_t   g_uBs3TrapEipHint;
 
 
 #ifdef __WATCOMC__
@@ -911,7 +1162,7 @@ uint16_t Bs3AsmSmsw(void);
 # define BS3_IS_PROTECTED_MODE() (true)
 #else
 # if 1
-#  define BS3_IS_PROTECTED_MODE() (!BS3_MODE_IS_RM_SYS(BS3_DATA_NM(g_bBs3CurrentMode)))
+#  define BS3_IS_PROTECTED_MODE() (!BS3_MODE_IS_RM_SYS(g_bBs3CurrentMode))
 # else
 #  define BS3_IS_PROTECTED_MODE() (Bs3AsmSmsw() & 1 /*PE*/)
 # endif
@@ -2112,7 +2363,10 @@ BS3_DECL(void) Bs3Trap16SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, u
  * Bs3Trap16GenericEntries is an array of interrupt/trap/whatever entry
  * points, 8 bytes each, that will create a register frame and call the generic
  * C compatible trap handlers. */
-extern uint32_t BS3_DATA_NM(g_Bs3Trap16GenericEntriesFlatAddr);
+#ifndef DOXYGEN_RUNNING
+# define g_Bs3Trap16GenericEntriesFlatAddr BS3_DATA_NM(g_Bs3Trap16GenericEntriesFlatAddr)
+#endif
+extern uint32_t g_Bs3Trap16GenericEntriesFlatAddr;
 
 /**
  * Modifies the 32-bit IDT entry specified by @a iIdt.
@@ -2133,7 +2387,10 @@ BS3_DECL(void) Bs3Trap32SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, u
  * Bs3Trap32GenericEntries is an array of interrupt/trap/whatever entry
  * points, 10 bytes each, that will create a register frame and call the generic
  * C compatible trap handlers. */
-extern uint32_t BS3_DATA_NM(g_Bs3Trap32GenericEntriesFlatAddr);
+#ifndef DOXYGEN_RUNNING
+# define g_Bs3Trap32GenericEntriesFlatAddr BS3_DATA_NM(g_Bs3Trap32GenericEntriesFlatAddr)
+#endif
+extern uint32_t g_Bs3Trap32GenericEntriesFlatAddr;
 
 /**
  * Modifies the 64-bit IDT entry specified by @a iIdt.
@@ -2154,7 +2411,10 @@ BS3_DECL(void) Bs3Trap64SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, u
  * Bs3Trap64GenericEntries is an array of interrupt/trap/whatever entry
  * points, 8 bytes each, that will create a register frame and call the generic
  * C compatible trap handlers. */
-extern uint32_t BS3_DATA_NM(g_Bs3Trap64GenericEntriesFlatAddr);
+#ifndef DOXYGEN_RUNNING
+# define g_Bs3Trap64GenericEntriesFlatAddr BS3_DATA_NM(g_Bs3Trap64GenericEntriesFlatAddr)
+#endif
+extern uint32_t g_Bs3Trap64GenericEntriesFlatAddr;
 
 /**
  * C-style trap handler.
@@ -2251,8 +2511,13 @@ BS3_DECL(void) Bs3TrapUnsetJmp_c64(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
 /**
  * The current test step.
  */
-extern uint16_t BS3_DATA_NM(g_usBs3TestStep);
-#define g_usBs3TestStep BS3_DATA_NM(g_usBs3TestStep)
+#ifndef DOXYGEN_RUNNING
+# define g_usBs3TestStep BS3_DATA_NM(g_usBs3TestStep)
+#endif
+extern uint16_t g_usBs3TestStep;
+#ifndef DOXYGEN_RUNNING
+# define g_usBs3TestStep BS3_DATA_NM(g_usBs3TestStep)
+#endif
 
 /**
  * Equivalent to RTTestCreate + RTTestBanner.
@@ -2627,28 +2892,28 @@ BS3_DECL(void) Bs3InitMemory_rm(void);
  * Doxygen knows how to expand this, well, kind of.
  */
 #define BS3_MODE_EXPAND_EXTERN_DATA16(a_VarType, a_VarName, a_Suffix) \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_rm))       a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16))     a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16_32))  a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe16_v86)) a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe32))     a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pe32_16))  a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pev86))    a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16))     a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16_32))  a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp16_v86)) a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp32))     a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pp32_16))  a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_ppv86))    a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16))    a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16_32)) a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae16_v86))a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae32))    a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_pae32_16)) a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_paev86))   a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm16))     a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm32))     a_Suffix; \
-    extern a_VarType BS3_FAR_DATA BS3_DATA_NM(RT_CONCAT(a_VarName,_lm64))     a_Suffix
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_rm))       a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pe16))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pe16_32))  a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pe16_v86)) a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pe32))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pe32_16))  a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pev86))    a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pp16))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pp16_32))  a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pp16_v86)) a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pp32))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pp32_16))  a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_ppv86))    a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pae16))    a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pae16_32)) a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pae16_v86))a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pae32))    a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_pae32_16)) a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_paev86))   a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_lm16))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_lm32))     a_Suffix; \
+    extern a_VarType BS3_FAR_DATA /*BS3_DATA_NM*/(RT_CONCAT(a_VarName,_lm64))     a_Suffix
 
 
 /** The TMPL_MODE_STR value for each mode.
@@ -2685,12 +2950,17 @@ BS3_MODE_EXPAND_PROTOTYPES(uint8_t, Bs3CpuDetect,(void));
 #define BS3CPU_F_CPUID_EXT_LEAVES   UINT16_C(0x0200)
 /** Flag indicating that the CPU supports PAE. */
 #define BS3CPU_F_PAE                UINT16_C(0x0400)
+/** Flag indicating that the CPU supports the page size extension (4MB pages). */
+#define BS3CPU_F_PSE                UINT16_C(0x0800)
 /** Flag indicating that the CPU supports long mode. */
-#define BS3CPU_F_LONG_MODE          UINT16_C(0x0800)
+#define BS3CPU_F_LONG_MODE          UINT16_C(0x1000)
 /** @} */
 
 /** The return value of #Bs3CpuDetect_mmm. (Initial value is BS3CPU_TYPE_MASK.) */
-extern uint16_t BS3_DATA_NM(g_uBs3CpuDetected);
+#ifndef DOXYGEN_RUNNING
+# define g_uBs3CpuDetected BS3_DATA_NM(g_uBs3CpuDetected)
+#endif
+extern uint16_t g_uBs3CpuDetected;
 
 /**
  * Initializes trap handling for the current system.

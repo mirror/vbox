@@ -62,7 +62,7 @@ BS3_DECL(X86PTE BS3_FAR *) bs3PagingGetLegacyPte(RTCCUINTXREG cr3, uint32_t uFla
 {
     X86PTE BS3_FAR *pPTE = NULL;
 #if TMPL_BITS == 16
-    uint32_t const  uMaxAddr = BS3_MODE_IS_RM_OR_V86(BS3_DATA_NM(g_bBs3CurrentMode)) ? _1M - 1 : BS3_SEL_TILED_AREA_SIZE - 1;
+    uint32_t const  uMaxAddr = BS3_MODE_IS_RM_OR_V86(g_bBs3CurrentMode) ? _1M - 1 : BS3_SEL_TILED_AREA_SIZE - 1;
 #else
     uint32_t const  uMaxAddr = UINT32_MAX;
 #endif
@@ -123,7 +123,7 @@ BS3_DECL(X86PTEPAE BS3_FAR *) bs3PagingGetPte(RTCCUINTXREG cr3, uint64_t uFlat, 
 {
     X86PTEPAE BS3_FAR  *pPTE = NULL;
 #if TMPL_BITS == 16
-    uint32_t const      uMaxAddr = BS3_MODE_IS_RM_OR_V86(BS3_DATA_NM(g_bBs3CurrentMode)) ? _1M - 1 : BS3_SEL_TILED_AREA_SIZE - 1;
+    uint32_t const      uMaxAddr = BS3_MODE_IS_RM_OR_V86(g_bBs3CurrentMode) ? _1M - 1 : BS3_SEL_TILED_AREA_SIZE - 1;
 #else
     uintptr_t const     uMaxAddr = ~(uintptr_t)0;
 #endif
@@ -132,7 +132,7 @@ BS3_DECL(X86PTEPAE BS3_FAR *) bs3PagingGetPte(RTCCUINTXREG cr3, uint64_t uFlat, 
     if ((cr3 & X86_CR3_AMD64_PAGE_MASK) <= uMaxAddr)
     {
         X86PDPAE BS3_FAR *pPD;
-        if (BS3_MODE_IS_64BIT_SYS(BS3_DATA_NM(g_bBs3CurrentMode)))
+        if (BS3_MODE_IS_64BIT_SYS(g_bBs3CurrentMode))
         {
             unsigned const   iPml4e = (uFlat >> X86_PML4_SHIFT) & X86_PML4_MASK;
             X86PML4 BS3_FAR *pPml4  = (X86PML4 BS3_FAR *)Bs3XptrFlatToCurrent(cr3 & X86_CR3_AMD64_PAGE_MASK);
@@ -216,7 +216,7 @@ BS3_DECL(int) Bs3PagingProtect(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint6
     RTCCUINTXREG const  cr3        = ASMGetCR3();
     RTCCUINTXREG const  cr4        = ASMGetCR4();
     bool const          fLegacyPTs = !(cr4 & X86_CR4_PAE);
-    bool const          fUseInvlPg = (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80486
+    bool const          fUseInvlPg = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486
                                   && (   cb < UINT64_C(16)*PAGE_SIZE
                                       || (cr4 & X86_CR4_PGE));
     unsigned            cEntries;
