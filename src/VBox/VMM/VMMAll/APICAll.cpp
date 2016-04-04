@@ -215,10 +215,10 @@ static VBOXSTRICTRC apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACC
 
 
 /**
- * Gets the current APIC mode.
+ * Gets the APIC mode given the base MSR value.
  *
- * @returns The mode.
- * @param   pApicCpu        The APIC CPU state.
+ * @returns The APIC mode.
+ * @param   uApicBaseMsr        The APIC Base MSR value.
  */
 static APICMODE apicGetMode(uint64_t uApicBaseMsr)
 {
@@ -336,6 +336,7 @@ DECLINLINE(void) apicWriteRaw32(PXAPICPAGE pXApicPage, uint16_t offReg, uint32_t
  * Sets an error in the internal ESR of the specified APIC.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uError          The error.
  * @thread  Any.
  */
 DECLINLINE(void) apicSetError(PVMCPU pVCpu, uint32_t uError)
@@ -349,7 +350,7 @@ DECLINLINE(void) apicSetError(PVMCPU pVCpu, uint32_t uError)
  * Clears all errors in the internal ESR.
  *
  * @returns The value of the internal ESR before clearing.
- * @param   pApicCpu        The APIC CPU state.
+ * @param   pVCpu           The cross context virtual CPU structure.
  */
 DECLINLINE(uint32_t) apicClearAllErrors(PVMCPU pVCpu)
 {
@@ -847,22 +848,22 @@ static VBOXSTRICTRC apicSetIcrLo(PVMCPU pVCpu, uint32_t uIcrLo, int rcRZ)
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uIcrHi          The ICR value.
+ * @param   u64Icr          The ICR (High and Low combined).
  * @param   rcRZ            The return code if the operation cannot be performed
  *                          in the current context.
  */
-static VBOXSTRICTRC apicSetIcr(PVMCPU pVCpu, uint64_t uIcr, int rcRZ)
+static VBOXSTRICTRC apicSetIcr(PVMCPU pVCpu, uint64_t u64Icr, int rcRZ)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(XAPIC_IN_X2APIC_MODE(pVCpu));
 
     /* Validate. */
-    uint32_t const uLo = RT_LO_U32(uIcr);
+    uint32_t const uLo = RT_LO_U32(u64Icr);
     if (RT_LIKELY(!(uLo & ~XAPIC_ICR_LO_WR)))
     {
         /* Update high dword first, then update the low dword which sends the IPI. */
         PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
-        pX2ApicPage->icr_hi.u32IcrHi = RT_HI_U32(uIcr);
+        pX2ApicPage->icr_hi.u32IcrHi = RT_HI_U32(u64Icr);
         return apicSetIcrLo(pVCpu, uLo,  rcRZ);
     }
     return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_ICR, APICMSRACCESS_WRITE_RSVD_BITS);
@@ -1030,7 +1031,7 @@ static VBOXSTRICTRC apicSetLdr(PVMCPU pVCpu, uint32_t uLdr)
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uLdr            The DFR value.
+ * @param   uDfr            The DFR value.
  *
  * @remarks DFR is not available in x2APIC mode.
  */
@@ -1265,6 +1266,8 @@ static int apicSetLvtExtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt)
  * Hints TM about the APIC timer frequency.
  *
  * @param   pApicCpu        The APIC CPU state.
+ * @param   uInitialCount   The new initial count.
+ * @param   uTimerShift     The new timer shift.
  * @thread  Any.
  */
 static void apicHintTimerFreq(PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimerShift)
@@ -1750,13 +1753,13 @@ VMMDECL(VBOXSTRICTRC) APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u3
 /**
  * @interface_method_impl{PDMAPICREG,pfnSetBaseMsrR3}
  */
-VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t uBase)
+VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64BaseMsr)
 {
     Assert(pVCpu);
     PAPICCPU pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     PAPIC    pApic      = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     APICMODE enmOldMode = apicGetMode(pApicCpu->uApicBaseMsr);
-    APICMODE enmNewMode = apicGetMode(uBase);
+    APICMODE enmNewMode = apicGetMode(u64BaseMsr);
     uint64_t uBaseMsr   = pApicCpu->uApicBaseMsr;
 
     /** @todo probably go back to ring-3 for all cases regardless of
@@ -1914,6 +1917,7 @@ VMMDECL(int) APICBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode
                             uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc)
 {
     NOREF(uPolarity);
+    NOREF(uTagSrc);
     PVM pVM = PDMDevHlpGetVM(pDevIns);
 
     /*

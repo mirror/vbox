@@ -374,7 +374,6 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   iCpu            Target CPU.
  * @param   u32Reg          MSR to write.
  * @param   u64Value        Value to write.
  */
@@ -395,9 +394,8 @@ VMM_INT_DECL(VBOXSTRICTRC) PDMApicWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   iCpu            Target CPU.
  * @param   u32Reg          MSR to read.
- * @param   pu64Value       Value read.
+ * @param   pu64Value       Where to store the value read.
  */
 VMM_INT_DECL(VBOXSTRICTRC) PDMApicReadMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {

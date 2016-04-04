@@ -580,8 +580,8 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnReadMsrR3 */
     DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnReadMsrR3, (PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value));
     /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
-    DECLR3CALLBACKMEMBER(int,       pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                                     uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc));
+    DECLR3CALLBACKMEMBER(int,       pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode,
+                                                     uint8_t uVector, uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc));
     /** @copydoc PDMAPICREG::pfnLocalInterruptR3 */
     DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnLocalInterruptR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level,
                                                             int rcRZ));

@@ -1088,10 +1088,11 @@ typedef struct PDMAPICREG
      *
      * @param   pDevIns         Device instance of the APIC.
      * @param   pVCpu           The cross context virtual CPU structure.
-     * @param   u64Base         The new base.
-     * @remarks Caller enters the PDM critical section.
+     * @param   u64BaseMsr      The base MSR value.
+     * @remarks Caller enters the PDM critical section (might not be the case with
+     *          the new APIC code)
      */
-    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnSetBaseMsrR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64Base));
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnSetBaseMsrR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64BaseMsr));
 
     /**
      * Get the APIC base.
@@ -1108,10 +1109,10 @@ typedef struct PDMAPICREG
      *
      * @param   pDevIns         Device instance of the APIC.
      * @param   pVCpu           The cross context virtual CPU structure.
-     * @param   u8TPR           The new TPR.
+     * @param   u8Tpr           The new TPR.
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetTprR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8TPR));
+    DECLR3CALLBACKMEMBER(void, pfnSetTprR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr));
 
     /**
      * Get the TPR (task priority register).
@@ -1162,17 +1163,17 @@ typedef struct PDMAPICREG
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   u8Dest          The destination mask.
-     * @param   u8DestMode      The destination mode, see XAPICDESTMODE.
-     * @param   u8DeliveryMode  The delivery mode, see XAPICDELIVERYMODE.
+     * @param   uDest           The destination mask.
+     * @param   uDestMode       The destination mode, see XAPICDESTMODE.
+     * @param   uDeliveryMode   The delivery mode, see XAPICDELIVERYMODE.
      * @param   uVector         The interrupt vector.
-     * @param   u8Polarity      The input pin polarity.
-     * @param   u8TriggerMode   The trigger mode, see XAPICTRIGGERMODE.
+     * @param   uPolarity       The input pin polarity.
+     * @param   uTriggerMode    The trigger mode, see XAPICTRIGGERMODE.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                               uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc));
+    DECLR3CALLBACKMEMBER(int, pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode,
+                                               uint8_t uVector, uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc));
 
     /**
      * Deliver a signal to CPU's local interrupt pins (LINT0/LINT1).
@@ -1197,7 +1198,6 @@ typedef struct PDMAPICREG
      *
      * @returns The frequency of the APIC timer.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   pVCpu           The cross context virtual CPU structure.
      */
     DECLR3CALLBACKMEMBER(uint64_t, pfnGetTimerFreqR3,(PPDMDEVINS pDevIns));
 
