@@ -56,6 +56,7 @@ BS3_DECL(void) Main_rm()
 {
     Bs3InitAll_rm();
     Bs3TestInit("bs3-cpu-basic-2");
+Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
 
     Bs3TestDoModes_rm(g_aModeTest, RT_ELEMENTS(g_aModeTest));
 

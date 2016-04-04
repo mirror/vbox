@@ -91,10 +91,10 @@ BS3_DECL(X86PTE BS3_FAR *) bs3PagingGetLegacyPte(RTCCUINTXREG cr3, uint32_t uFla
                 else
                 {
                     X86PT BS3_FAR *pPT;
-                    uint32_t       uPte = (pPD->a[iPde].u & ~(uint32_t)(X86_PDE_PS | X86_PTE_G)) | X86_PTE_D;
-                    if (!pPD->a[iPde].b.u1Global)
+                    uint32_t       uPte = (pPD->a[iPde].u & ~(uint32_t)(X86_PTE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G)) | X86_PTE_D;
+                    if (pPD->a[iPde].b.u1Global)
                         uPte |= X86_PTE_G;
-                    if (!pPD->a[iPde].b.u1PAT)
+                    if (pPD->a[iPde].b.u1PAT)
                         uPte |= X86_PTE_PAT;
 
                     pPT = (X86PT BS3_FAR *)bs3PagingBuildPaeTable(RT_MAKE_U64(uPte, uPte + PAGE_SIZE),
@@ -106,6 +106,7 @@ BS3_DECL(X86PTE BS3_FAR *) bs3PagingGetLegacyPte(RTCCUINTXREG cr3, uint32_t uFla
                     {
                         pPD->a[iPde].u = Bs3SelPtrToFlat(pPT)
                                        | (pPD->a[iPde].u & ~(uint32_t)(X86_PTE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G | X86_PDE4M_D));
+                        BS3PAGING_DPRINTF(("bs3PagingGetLegacyPte: iPde=%#x: %#RX32\n", iPde, pPD->a[iPde].u));
                         if (fUseInvlPg)
                             ASMInvalidatePage(uFlat);
                         pPTE = &pPT->a[iPte];
@@ -221,6 +222,9 @@ BS3_DECL(int) Bs3PagingProtect(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint6
     unsigned            cEntries;
     int                 rc;
 
+    BS3PAGING_DPRINTF(("Bs3PagingProtect: reloading cr3=%RX32\n", (uint32_t)cr3));
+    ASMSetCR3(cr3);
+
     /*
      * Adjust the range parameters.
      */
@@ -287,8 +291,10 @@ BS3_DECL(int) Bs3PagingProtect(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint6
     /*
      * Flush the TLB if we didn't use INVLPG above.
      */
+    BS3PAGING_DPRINTF(("Bs3PagingProtect: reloading cr3=%RX32\n", (uint32_t)cr3));
     //if (!fUseInvlPg)
         ASMSetCR3(cr3);
+    BS3PAGING_DPRINTF(("Bs3PagingProtect: reloaded cr3=%RX32\n", (uint32_t)cr3));
 
     return VINF_SUCCESS;
 }

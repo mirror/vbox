@@ -40,6 +40,9 @@
 /** Indicates whether the VMMDev is operational. */
 bool        g_fbBs3VMMDevTesting = true;
 
+/** Alignment padding.    */
+bool        g_fTestDataPadding0 = true;
+
 /** The number of tests that have failed. */
 uint16_t    g_cusBs3TestErrors = 0;
 
@@ -97,6 +100,9 @@ char const  g_aszBs3TestUnitNames[][16] =
 
 /** The subtest name. */
 char        g_szBs3SubTest[64];
+
+/** The current test step. */
+uint16_t    g_usBs3TestStep;
 
 #endif /* ARCH_BITS == 16 */
 

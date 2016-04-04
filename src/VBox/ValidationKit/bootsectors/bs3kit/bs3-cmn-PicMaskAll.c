@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TrapPrintFrame
+ * BS3Kit - Masks all IRQs on the PIC.
  */
 
 /*
@@ -24,20 +24,17 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
+#include <iprt/asm-amd64-x86.h>
 
 
-BS3_DECL(void) Bs3TrapPrintFrame(PCBS3TRAPFRAME pTrapFrame)
+BS3_DECL(void) Bs3PicMaskAll(void)
 {
-    Bs3TestPrintf("Trap %#04x errcd=%#06RX64 at %04x:%016RX64 - test step %d (%#x)\n",
-                  pTrapFrame->bXcpt,
-                  pTrapFrame->uErrCd,
-                  pTrapFrame->Ctx.cs,
-                  pTrapFrame->Ctx.rip.u64,
-                  g_usBs3TestStep, g_usBs3TestStep);
-    Bs3RegCtxPrint(&pTrapFrame->Ctx);
+    ASMOutU8(0xa1, 0xff);
+    ASMOutU8(0x21, 0xff);
 }
 

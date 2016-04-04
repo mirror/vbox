@@ -30,12 +30,17 @@
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
 #include "bs3-cmn-test.h"
+#include <iprt/asm-amd64-x86.h>
 
 
 BS3_DECL(void) Bs3InitAll_rm(void)
 {
     Bs3CpuDetect_rm();
     Bs3InitMemory_rm();
+
+    ASMIntDisable();
+    Bs3PicMaskAll();
+
     if (BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_F_LONG_MODE)
         Bs3Trap64Init();
     if ((BS3_DATA_NM(g_uBs3CpuDetected) & BS3CPU_TYPE_MASK) >= BS3CPU_80386)

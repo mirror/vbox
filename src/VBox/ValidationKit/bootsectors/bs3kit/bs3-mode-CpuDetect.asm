@@ -188,34 +188,60 @@ CPU 586
         mov     eax, 1
         cpuid
 
-        ; Calc the basic family value before we mess up EAX.
+        ; Calc the extended family and model values before we mess up EAX.
         mov     cl, ah
         and     cl, 0fh
+        cmp     cl, 0fh
+        jnz     .not_extended_family
+        mov     ecx, eax
+        shr     ecx, 20
+        and     cl, 7fh
+        add     cl, 0fh
+.not_extended_family:                   ; cl = family
+        mov     ch, al
+        shr     ch, 4
+        cmp     cl, 0fh
+        jae     .extended_model
+        cmp     cl, 06h                 ; actually only intel, but we'll let this slip for now.
+        jne     .done_model
+.extended_model:
+        shr     eax, 12
+        and     al, 0f0h
+        or      ch, al
+.done_model:                            ; ch = model
 
         ; Start assembling return flags, checking for PAE.
         mov     xAX, BS3CPU_F_CPUID
         and     dx, X86_CPUID_FEATURE_EDX_PAE
         shl     dx, BS3CPU_F_PAE_BIT - X86_CPUID_FEATURE_EDX_PAE_BIT
         or      ax, dx
+        ;; @todo check for PSE
 
-        ; Add the CPU type based on the family value.
+        ; Add the CPU type based on the family and model values.
         cmp     cl, 6
-        or      al, BS3CPU_PPro
-        jz      .return
+        jne     .not_family_06h
+        mov     al, BS3CPU_PPro
+        cmp     ch, 1
+        jbe     .return
+        mov     al, BS3CPU_PProOrNewer
+        jmp     .NewerThanPPro
+
+.not_family_06h:
         ja      .NewerThanPPro
         cmp     cl, 5
-        or      al, BS3CPU_Pentium
+        mov     al, BS3CPU_Pentium
         je      .return
         cmp     cl, 4
-        or      al, BS3CPU_80486
+        mov     al, BS3CPU_80486
         je      .return
         cmp     cl, 3
-        or      al, BS3CPU_80386
+        mov     al, BS3CPU_80386
         je      .return
+
 .NewerThanPPro:
 
         ; Check for extended leaves and long mode.
-        push    xAX                     ; save PAE flag
+        push    xAX                     ; save PAE+PProOrNewer
         mov     eax, 0x80000000
         cpuid
         sub     eax, 0x80000001         ; Minimum leaf 0x80000001
@@ -224,28 +250,23 @@ CPU 586
 
         mov     eax, 0x80000001
         cpuid
-        pop     xAX                     ; restore PAE flag
+        pop     xAX                     ; restore PAE+PProOrNewer
         test    edx, X86_CPUID_EXT_FEATURE_EDX_LONG_MODE
         jz      .no_long_mode
-        or      xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID_EXT_LEAVES | BS3CPU_F_LONG_MODE
+        or      ax, BS3CPU_F_CPUID_EXT_LEAVES | BS3CPU_F_LONG_MODE
         jmp     .return
 .no_long_mode:
-        or      xAX, BS3CPU_PProOrNewer | BS3CPU_F_CPUID_EXT_LEAVES
+        or      ax, BS3CPU_F_CPUID_EXT_LEAVES
         jmp     .return
 .no_ext_leaves:
-        pop     xAX                     ; restore PAE flag
-        or      al, BS3CPU_PProOrNewer
+        pop     xAX                     ; restore PAE+PProOrNewer
 
 CPU 8086
 .return:
         ;
         ; Save the return value.
         ;
-        BS3_ONLY_16BIT_STMT push    ds
-        BS3_ONLY_16BIT_STMT mov     bx, seg g_uBs3CpuDetected
-        BS3_ONLY_16BIT_STMT mov     ds, bx
         mov     [BS3_DATA16_WRT(g_uBs3CpuDetected)], ax
-        BS3_ONLY_16BIT_STMT pop     ds
 
         ;
         ; Epilogue.
@@ -256,5 +277,6 @@ CPU 8086
         pop     xCX
         pop     xBP
         ret
+
 BS3_PROC_END_MODE   Bs3CpuDetect
 

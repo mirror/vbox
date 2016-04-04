@@ -1861,6 +1861,16 @@ BS3_DECL(void) Bs3KbdWrite_c64(uint8_t bCmd, uint8_t bData); /**< @copydoc Bs3Kb
 
 
 /**
+ * Disables all IRQs on the PIC.
+ */
+BS3_DECL(void) Bs3PicMaskAll_c16(void);
+BS3_DECL(void) Bs3PicMaskAll_c32(void); /**< @copydoc Bs3PicMaskAll_c16 */
+BS3_DECL(void) Bs3PicMaskAll_c64(void); /**< @copydoc Bs3PicMaskAll_c16 */
+#define Bs3PicMaskAll BS3_CMN_NM(Bs3PicMaskAll) /**< Selects #Bs3PicMaskAll_c16, #Bs3PicMaskAll_c32 or #Bs3PicMaskAll_c64. */
+
+
+
+/**
  * BS3 integer register.
  */
 typedef union BS3REG
@@ -2237,6 +2247,12 @@ BS3_DECL(void) Bs3TrapUnsetJmp_c32(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
 BS3_DECL(void) Bs3TrapUnsetJmp_c64(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
 #define Bs3TrapUnsetJmp BS3_CMN_NM(Bs3TrapUnsetJmp) /**< Selects #Bs3TrapUnsetJmp_c16, #Bs3TrapUnsetJmp_c32 or #Bs3TrapUnsetJmp_c64. */
 
+
+/**
+ * The current test step.
+ */
+extern uint16_t BS3_DATA_NM(g_usBs3TestStep);
+#define g_usBs3TestStep BS3_DATA_NM(g_usBs3TestStep)
 
 /**
  * Equivalent to RTTestCreate + RTTestBanner.
