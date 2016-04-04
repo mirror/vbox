@@ -373,21 +373,21 @@ setup()
             dox11config=""
             ;;
     esac
-    if $MODPROBE vboxvideo; then
-        # Do not install if we can use the kernel driver.
-        rm -f "$modules_dir/drivers/vboxvideo_drv.so"
-        vboxvideo_src=""
-        dox11config=""
-    fi
     test -n "${dox11config}" &&
         begin "Installing $xserver_version modules"
-    rm "$modules_dir/drivers/vboxvideo_drv$driver_ext" 2>/dev/null
-    rm "$modules_dir/input/vboxmouse_drv$driver_ext" 2>/dev/null
-    case "$vboxvideo_src" in ?*)
-        ln -s "$lib_dir/$vboxvideo_src" "$modules_dir/drivers/vboxvideo_drv$driver_ext";;
+    case "$vboxvideo_src" in
+        ?*)
+        ln -s "$lib_dir/$vboxvideo_src" "$modules_dir/drivers/vboxvideo_drv$driver_ext.new" &&
+            mv "$modules_dir/drivers/vboxvideo_drv$driver_ext.new" "$modules_dir/drivers/vboxvideo_drv$driver_ext";;
+        *)
+        rm "$modules_dir/drivers/vboxvideo_drv$driver_ext" 2>/dev/null
     esac
-    case "$vboxmouse_src" in ?*)
-        ln -s "$lib_dir/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv$driver_ext";;
+    case "$vboxmouse_src" in
+        ?*)
+        ln -s "$lib_dir/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv$driver_ext.new" &&
+            mv "$modules_dir/input/vboxmouse_drv$driver_ext.new" "$modules_dir/input/vboxmouse_drv$driver_ext.new";;
+        *)
+        rm "$modules_dir/input/vboxmouse_drv$driver_ext" 2>/dev/null
     esac
     succ_msg "$xserver_version modules installed"
 

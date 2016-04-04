@@ -16,7 +16,7 @@
 #
 
 
-# chkconfig: 345 30 70
+# chkconfig: 345 10 90
 # description: VirtualBox Linux Additions kernel modules
 #
 ### BEGIN INIT INFO
@@ -209,7 +209,10 @@ start()
             fail "modprobe vboxsf failed"
         }
     }
+    # Load the kernel video driver if we can.
+    $MODPROBE vboxvideo > /dev/null 2>&1
 
+    # Put the X.Org driver in place.  This is harmless if it is not needed.
     /sbin/rcvboxadd-x11 setup
     # Install the guest OpenGL drivers.  For now we don't support
     # multi-architecture installations

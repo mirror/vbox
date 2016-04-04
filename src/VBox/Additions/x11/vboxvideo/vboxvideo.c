@@ -727,8 +727,15 @@ VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
              intptr_t match_data)
 {
     ScrnInfoPtr pScrn;
+    struct xf86stat_s sstat;
 
     TRACE_ENTRY();
+
+    if (xf86stat("/dev/dri/card0", &sstat) == 0)
+    {
+        xf86Msg(X_INFO, "vboxvideo: kernel driver found, not loading.\n");
+        return FALSE;
+    }
     pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, VBOXPCIchipsets,
                                 NULL, NULL, NULL, NULL, NULL);
     if (pScrn != NULL) {
@@ -829,7 +836,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     VBOXPtr pVBox;
     Gamma gzeros = {0.0, 0.0, 0.0};
     rgb rzeros = {0, 0, 0};
-    struct xf86stat_s sstat;
 
     TRACE_ENTRY();
     /* Are we really starting the server, or is this just a dummy run? */
@@ -852,12 +858,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     if (!xf86LoadSubModule(pScrn, "vgahw"))
         return FALSE;
-
-    if (xf86stat("/dev/dri/card0", &sstat) == 0)
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "kernel driver found, not loading.\n");
-        return FALSE;
-    }
 
     /* Get our private data from the ScrnInfoRec structure. */
     VBOXSetRec(pScrn);
