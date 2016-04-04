@@ -39,7 +39,7 @@ endif
 # Globals
 #
 
-## DEFS variable that is picked up by all three VMM targets.
+## DEFS variable that is picked up by all three VMM targets (R0, R3, RC).
 # Can be prepended to by setting it in LocalConfig.kmk
 VMM_COMMON_DEFS ?= VBOX_IN_VMM
 ifdef VBOX_WITH_2ND_IEM_STEP
@@ -86,6 +86,9 @@ ifdef VBOXSTRICTRC_STRICT_ENABLED
 endif
 ifeq ($(KBUILD_TARGET),amd64)
  VMM_COMMON_DEFS += VBOX_WITH_MORE_RING0_MEM_MAPPINGS
+endif
+ifdef VBOX_WITH_NEW_APIC
+ VMM_COMMON_DEFS += VBOX_WITH_NEW_APIC
 endif
 
 # VMM_COMMON_DEFS += VBOX_WITH_NS_ACCOUNTING_STATS
@@ -272,6 +275,11 @@ ifdef VBOX_WITH_NETSHAPER
  VBoxVMM_SOURCES += \
  	VMMR3/PDMNetShaper.cpp \
  	VMMAll/PDMAllNetShaper.cpp
+endif
+ifdef VBOX_WITH_NEW_APIC
+ VBoxVMM_SOURCES += \
+ 	VMMR3/APIC.cpp \
+ 	VMMAll/APICAll.cpp
 endif
 
 ifdef VBOX_WITH_RAW_MODE
@@ -518,6 +526,9 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  ifeq ($(VBOX_LDR_FMT32),lx)
   VMMRC_SOURCES += $(VMMRCImp_0_OUTDIR)/VMMRC.def
  endif
+ ifdef VBOX_WITH_NEW_APIC
+  VMMRC_SOURCES += VMMAll/APICAll.cpp
+ endif 
 
  # the very last one.
  VMMRC_SOURCES += VMMRC/VMMRC99.asm
@@ -634,6 +645,11 @@ ifndef VBOX_ONLY_EXTPACKS
  ifdef VBOX_WITH_NETSHAPER
   VMMR0_SOURCES += \
  	VMMAll/PDMAllNetShaper.cpp
+ endif
+ ifdef VBOX_WITH_NEW_APIC
+  VMMR0_SOURCES += \
+ 	VMMAll/APICAll.cpp \
+ 	VMMR0/APICR0.cpp
  endif
  VMMR0_SOURCES.amd64 = \
  	VMMR0/VMMR0JmpA-amd64.asm

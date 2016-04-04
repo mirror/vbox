@@ -57,8 +57,12 @@
 #include "../PC/DevPit-i8254.cpp"
 #undef LOG_GROUP
 #include "../PC/DevRTC.cpp"
-#undef LOG_GROUP
-#include "../PC/DevAPIC.cpp"
+# undef LOG_GROUP
+#ifdef VBOX_WITH_NEW_APIC
+# include "../../VMM/VMMR3/APIC.cpp"
+#else
+# include "../PC/DevAPIC.cpp"
+#endif
 #undef LOG_GROUP
 #include "../PC/DevIoApic.cpp"
 #undef LOG_GROUP
@@ -280,8 +284,13 @@ int main()
      */
     CHECK_MEMBER_ALIGNMENT(AHCI, lock, 8);
     CHECK_MEMBER_ALIGNMENT(AHCIPort, StatDMA, 8);
-#ifdef VBOX_WITH_STATISTICS
+#ifdef VBOX_WITH_NEW_APIC
+    CHECK_MEMBER_ALIGNMENT(APICDEV, pDevInsR0, 8);
+    CHECK_MEMBER_ALIGNMENT(APICDEV, pDevInsRC, 8);
+#else
+# ifdef VBOX_WITH_STATISTICS
     CHECK_MEMBER_ALIGNMENT(APICDeviceInfo, StatMMIOReadGC, 8);
+# endif
 #endif
     CHECK_MEMBER_ALIGNMENT(ATADevState, cTotalSectors, 8);
     CHECK_MEMBER_ALIGNMENT(ATADevState, StatATADMA, 8);

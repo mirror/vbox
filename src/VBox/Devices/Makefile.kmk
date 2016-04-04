@@ -1017,6 +1017,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_PXE_ROM
   VBoxDD2_DEFS          += VBOX_WITH_PXE_ROM
  endif
+ ifdef VBOX_WITH_NEW_APIC
+  VBoxDD2_DEFS          += VBOX_WITH_NEW_APIC
+ endif
 
  $(call VBOX_SET_VER_INFO_DLL,VBoxDD2,VirtualBox VMM Devices and Drivers 2) # (last!)
 

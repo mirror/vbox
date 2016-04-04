@@ -233,7 +233,7 @@ typedef struct VMXTRANSIENT
         /** INS and OUTS information. */
         struct
         {
-            uint32_t    u6Reserved0 : 7;
+            uint32_t    u7Reserved0 : 7;
             /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
             uint32_t    u3AddrSize  : 3;
             uint32_t    u5Reserved1 : 5;
@@ -2298,6 +2298,18 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
         val |= VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER;
     }
 
+#ifdef VBOX_WITH_NEW_APIC
+#if 0
+    /* Enable posted-interrupt processing. */
+    if (pVM->hm.s.fPostedIntrs)
+    {
+        Assert(pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR);
+        Assert(pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1 & VMX_VMCS_CTRL_EXIT_ACK_EXT_INT);
+        val |= VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR;
+    }
+#endif
+#endif
+
     if ((val & zap) != val)
     {
         LogRel(("hmR0VmxSetupPinCtls: Invalid pin-based VM-execution controls combo! cpu=%#RX64 val=%#RX64 zap=%#RX64\n",
@@ -2463,6 +2475,19 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
 
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST;         /* Enable Unrestricted Execution. */
+
+#ifdef VBOX_WITH_NEW_APIC
+#if 0
+        if (pVM->hm.s.fVirtApicRegs)
+        {
+            Assert(pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT);
+            val |= VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT;              /* Enable APIC-register virtualization. */
+
+            Assert(pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY);
+            val |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY;         /* Enable virtual-interrupt delivery. */
+        }
+#endif
+#endif
 
         /* Enable Virtual-APIC page accesses if supported by the CPU. This is essentially where the TPR shadow resides. */
         /** @todo VIRT_X2APIC support, it's mutually exclusive with this. So must be

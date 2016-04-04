@@ -27,6 +27,9 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/cfgm.h>
+#ifdef VBOX_WITH_NEW_APIC
+# include <VBox/vmm/apic.h>
+#endif
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
@@ -486,8 +489,16 @@ static int pdmR3DevLoadModules(PVM pVM)
     RegCB.pVM              = pVM;
     RegCB.pCfgNode         = NULL;
 
+#ifdef VBOX_WITH_NEW_APIC
     /*
-     * Load the builtin module
+     * Load the internal VMM APIC device.
+     */
+    int rc2 = pdmR3DevReg_Register(&RegCB.Core, &g_DeviceAPIC);
+    AssertRCReturn(rc2, rc2);
+#endif
+
+    /*
+     * Load the builtin module.
      */
     PCFGMNODE pDevicesNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "PDM/Devices");
     bool fLoadBuiltin;

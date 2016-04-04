@@ -433,13 +433,13 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
             return VINF_SUCCESS;
 
         case MSR_GIM_HV_TPR:
-            return PDMApicReadMSR(pVM, pVCpu->idCpu, MSR_IA32_X2APIC_TPR, puValue);
+            return PDMApicReadMsr(pVCpu, MSR_IA32_X2APIC_TPR, puValue);
 
         case MSR_GIM_HV_EOI:
-            return PDMApicReadMSR(pVM, pVCpu->idCpu, MSR_IA32_X2APIC_EOI, puValue);
+            return PDMApicReadMsr(pVCpu, MSR_IA32_X2APIC_EOI, puValue);
 
         case MSR_GIM_HV_ICR:
-            return PDMApicReadMSR(pVM, pVCpu->idCpu, MSR_IA32_X2APIC_ICR, puValue);
+            return PDMApicReadMsr(pVCpu, MSR_IA32_X2APIC_ICR, puValue);
 
         case MSR_GIM_HV_GUEST_OS_ID:
             *puValue = pHv->u64GuestOsIdMsr;
@@ -554,13 +554,13 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
     switch (idMsr)
     {
         case MSR_GIM_HV_TPR:
-            return PDMApicWriteMSR(pVM, pVCpu->idCpu, MSR_IA32_X2APIC_TPR, uRawValue);
+            return PDMApicWriteMsr(pVCpu, MSR_IA32_X2APIC_TPR, uRawValue);
 
         case MSR_GIM_HV_EOI:
-            return PDMApicWriteMSR(pVM, pVCpu->idCpu, MSR_IA32_X2APIC_EOI, uRawValue);
+            return PDMApicWriteMsr(pVCpu, MSR_IA32_X2APIC_EOI, uRawValue);
 
         case MSR_GIM_HV_ICR:
-            return PDMApicWriteMSR(pVM, pVCpu->idCpu, MSR_IA32_X2APIC_ICR, uRawValue);
+            return PDMApicWriteMsr(pVCpu, MSR_IA32_X2APIC_ICR, uRawValue);
 
         case MSR_GIM_HV_GUEST_OS_ID:
         {

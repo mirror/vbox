@@ -51,17 +51,23 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
+    /** @todo r=ramshankar: Should we raise the interrupt to all CPUs in the
+     *        guest, does real hardware do this? */
 
     if (pVM->pdm.s.Apic.pfnLocalInterruptR3)
     {
+        /** @todo r=ramshankar: Wouldn't we have to check here for APIC base MSR
+         *        disabling the APIC? */
         LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: Setting local interrupt on LAPIC\n",
                  pDevIns->pReg->szName, pDevIns->iInstance));
+
         /* Raise the LAPIC's LINT0 line instead of signaling the CPU directly. */
-        pVM->pdm.s.Apic.pfnLocalInterruptR3(pVM->pdm.s.Apic.pDevInsR3, 0, 1);
+        /** @todo 'rcRZ' propagation to pfnLocalInterrupt from caller. */
+        pVM->pdm.s.Apic.pfnLocalInterruptR3(pVM->pdm.s.Apic.pDevInsR3, pVCpu, 0 /* u8Pin */, 1 /* u8Level */,
+                                            VINF_SUCCESS /* rcRZ */);
         return;
     }
-
-    PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
 
     LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: VMCPU_FF_INTERRUPT_PIC %d -> 1\n",
              pDevIns->pReg->szName, pDevIns->iInstance, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
@@ -86,8 +92,11 @@ static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
         /* Raise the LAPIC's LINT0 line instead of signaling the CPU directly. */
         LogFlow(("pdmR3PicHlp_ClearInterruptFF: caller='%s'/%d: Clearing local interrupt on LAPIC\n",
                  pDevIns->pReg->szName, pDevIns->iInstance));
+
         /* Lower the LAPIC's LINT0 line instead of signaling the CPU directly. */
-        pVM->pdm.s.Apic.pfnLocalInterruptR3(pVM->pdm.s.Apic.pDevInsR3, 0, 0);
+        /** @todo 'rcRZ' propagation to pfnLocalInterrupt from caller. */
+        pVM->pdm.s.Apic.pfnLocalInterruptR3(pVM->pdm.s.Apic.pDevInsR3, pVCpu, 0 /* u8Pin */, 0 /* u8Level */,
+                                            VINF_SUCCESS /* rcRZ */);
         return;
     }
 
@@ -270,28 +279,39 @@ static DECLCALLBACK(uint32_t) pdmR3ApicHlp_CalcIrqTag(PPDMDEVINS pDevIns, uint8_
 
 
 /** @interface_method_impl{PDMAPICHLPR3,pfnChangeFeature} */
-static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion)
+static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICMODE enmMode)
 {
+#ifdef VBOX_WITH_NEW_APIC
+    /*
+     * The old code is also most likely incorrect with regards to changing the CPUID bits,
+     * see @bugref{8245#c32}.
+     *
+     * The new code should directly invoke APICUpdateCpuIdForMode() instead of using this
+     * indirect helper.
+     */
+    AssertMsgFailed(("pdmR3ApicHlp_ChangeFeature unsupported in VBOX_WITH_NEW_APIC!"));
+#else
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3ApicHlp_ChangeFeature: caller='%s'/%d: version=%d\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, (int)enmVersion));
-    switch (enmVersion)
+    LogFlow(("pdmR3ApicHlp_ChangeFeature: caller='%s'/%d: mode=%d\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, (int)enmMode));
+    switch (enmMode)
     {
-        case PDMAPICVERSION_NONE:
+        case PDMAPICMODE_NONE:
             CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_APIC);
             CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_X2APIC);
             break;
-        case PDMAPICVERSION_APIC:
+        case PDMAPICMODE_APIC:
             CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_APIC);
             CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_X2APIC);
             break;
-        case PDMAPICVERSION_X2APIC:
+        case PDMAPICMODE_X2APIC:
             CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_X2APIC);
             CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_APIC);
             break;
         default:
-            AssertMsgFailed(("Unknown APIC version: %d\n", (int)enmVersion));
+            AssertMsgFailed(("Unknown APIC mode: %d\n", (int)enmMode));
     }
+#endif
 }
 
 /** @interface_method_impl{PDMAPICHLPR3,pfnGetCpuId} */
@@ -303,12 +323,12 @@ static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMAPICHLPR3,pfnSendSipi} */
-static DECLCALLBACK(void) pdmR3ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector)
+/** @interface_method_impl{PDMAPICHLPR3,pfnSendStartupIpi} */
+static DECLCALLBACK(void) pdmR3ApicHlp_SendStartupIpi(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    VMMR3SendSipi(pDevIns->Internal.s.pVMR3, idCpu, uVector);
+    VMMR3SendStartupIpi(pDevIns->Internal.s.pVMR3, idCpu, uVector);
 }
 
 
@@ -401,7 +421,7 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
     pdmR3ApicHlp_CalcIrqTag,
     pdmR3ApicHlp_ChangeFeature,
     pdmR3ApicHlp_GetCpuId,
-    pdmR3ApicHlp_SendSipi,
+    pdmR3ApicHlp_SendStartupIpi,
     pdmR3ApicHlp_SendInitIpi,
     pdmR3ApicHlp_GetRCHelpers,
     pdmR3ApicHlp_GetR0Helpers,

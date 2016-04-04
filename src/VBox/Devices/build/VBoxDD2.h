@@ -43,7 +43,10 @@ extern DECLIMPORT(const unsigned char)  g_abNetBiosBinary[];
 extern DECLIMPORT(const unsigned)       g_cbNetBiosBinary;
 # endif
 #endif /* !IN_VBOXDD2 */
+
+#ifndef VBOX_WITH_NEW_APIC
 extern const PDMDEVREG g_DeviceAPIC;
+#endif
 extern const PDMDEVREG g_DeviceIOAPIC;
 extern const PDMDEVREG g_DeviceLPC;
 

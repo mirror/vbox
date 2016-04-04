@@ -51,6 +51,7 @@
 #include <VBox/log.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/vmcpuset.h>
+#include <VBox/vmm/vm.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
@@ -377,8 +378,8 @@ typedef struct
     /** The critical section - R3 Ptr. */
     RCPTRTYPE(PPDMCRITSECT) pCritSectRC;
 
-    /** APIC specification version in this virtual hardware configuration. */
-    PDMAPICVERSION          enmVersion;
+    /** APIC specification mode in this virtual hardware configuration. */
+    PDMAPICMODE             enmMode;
 
     /** Number of attempts made to optimize TPR accesses. */
     uint32_t                cTPRPatchAttempts;
@@ -470,9 +471,7 @@ DECLINLINE(void) apicR3CpuSendSipi(APICDeviceInfo *pDev, APICState *pApic, int v
 {
     Log2(("apic: send SIPI vector=%d\n", vector));
 
-    pDev->pApicHlpR3->pfnSendSipi(pDev->pDevInsR3,
-                                  getCpuFromLapic(pDev, pApic),
-                                  vector);
+    pDev->pApicHlpR3->pfnSendStartupIpi(pDev->pDevInsR3, getCpuFromLapic(pDev, pApic), vector);
 }
 
 DECLINLINE(void) apicR3CpuSendInitIpi(APICDeviceInfo *pDev, APICState *pApic)
@@ -487,34 +486,34 @@ DECLINLINE(void) apicR3CpuSendInitIpi(APICDeviceInfo *pDev, APICState *pApic)
 
 DECLINLINE(uint32_t) getApicEnableBits(APICDeviceInfo *pDev)
 {
-    switch (pDev->enmVersion)
+    switch (pDev->enmMode)
     {
-        case PDMAPICVERSION_NONE:
+        case PDMAPICMODE_NONE:
             return 0;
-        case PDMAPICVERSION_APIC:
+        case PDMAPICMODE_APIC:
             return MSR_IA32_APICBASE_ENABLE;
-        case PDMAPICVERSION_X2APIC:
+        case PDMAPICMODE_X2APIC:
             return MSR_IA32_APICBASE_ENABLE | MSR_IA32_APICBASE_X2ENABLE;
         default:
-            AssertMsgFailed(("Unsupported APIC version %d\n", pDev->enmVersion));
+            AssertMsgFailed(("Unsupported APIC mode %d\n", pDev->enmMode));
             return 0;
     }
 }
 
-DECLINLINE(PDMAPICVERSION) getApicMode(APICState *apic)
+DECLINLINE(PDMAPICMODE) getApicMode(APICState *apic)
 {
     switch (((apic->apicbase) >> 10) & 0x3)
     {
         case 0:
-            return PDMAPICVERSION_NONE;
+            return PDMAPICMODE_NONE;
         case 1:
         default:
             /* Invalid */
-            return PDMAPICVERSION_NONE;
+            return PDMAPICMODE_NONE;
         case 2:
-            return PDMAPICVERSION_APIC;
+            return PDMAPICMODE_APIC;
         case 3:
-            return PDMAPICVERSION_X2APIC;
+            return PDMAPICMODE_X2APIC;
     }
 }
 
@@ -582,28 +581,28 @@ static int apic_bus_deliver(APICDeviceInfo *pDev,
 }
 
 
-PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t val)
+PDMBOTHCBDECL(VBOXSTRICTRC) apicSetBase(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t val)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
-    APICState *pApic = apicGetStateById(pDev, idCpu);
+    APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
     Log(("apicSetBase: %016RX64\n", val));
 
     /** @todo do we need to lock here ? */
     /* APIC_LOCK_VOID(pDev, VERR_INTERNAL_ERROR); */
     /** @todo If this change is valid immediately, then we should change the MMIO registration! */
     /* We cannot change if this CPU is BSP or not by writing to MSR - it's hardwired */
-    PDMAPICVERSION oldMode = getApicMode(pApic);
+    PDMAPICMODE oldMode = getApicMode(pApic);
     pApic->apicbase = (val & 0xfffff000)                        /* base */
                     | (val & getApicEnableBits(pDev))           /* mode */
                     | (pApic->apicbase & MSR_IA32_APICBASE_BSP) /* keep BSP bit */;
-    PDMAPICVERSION newMode = getApicMode(pApic);
+    PDMAPICMODE newMode = getApicMode(pApic);
 
     if (oldMode != newMode)
     {
         switch (newMode)
         {
-            case PDMAPICVERSION_NONE:
+            case PDMAPICMODE_NONE:
             {
                 pApic->spurious_vec &= ~APIC_SV_ENABLE;
                 /* Clear any pending APIC interrupt action flag. */
@@ -613,13 +612,13 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t val)
                  * an IA-32 processor without an on-chip APIC. The CPUID feature flag for the
                  * APIC (see Section 10.4.2, 'Presence of the Local APIC') is also set to 0."
                  */
-                pDev->CTX_SUFF(pApicHlp)->pfnChangeFeature(pDevIns, PDMAPICVERSION_NONE);
+                pDev->CTX_SUFF(pApicHlp)->pfnChangeFeature(pDevIns, PDMAPICMODE_NONE);
                 break;
             }
-            case PDMAPICVERSION_APIC:
+            case PDMAPICMODE_APIC:
                 /** @todo map MMIO ranges, if needed */
                 break;
-            case PDMAPICVERSION_X2APIC:
+            case PDMAPICMODE_X2APIC:
                 /** @todo unmap MMIO ranges of this APIC, according to the spec.  This is how
                  *       real hw works! (Remember the problem disabling NMI watchdog timers in
                  *       the world switchers when host used x2apic?)! */
@@ -629,31 +628,32 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t val)
         }
     }
     /* APIC_UNLOCK(pDev); */
+    return VINF_SUCCESS;
 }
 
-PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns, VMCPUID idCpu)
+PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns, PVMCPU pVCpu)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
-    APICState *pApic = apicGetStateById(pDev, idCpu);
+    APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
     LogFlow(("apicGetBase: %016llx\n", (uint64_t)pApic->apicbase));
     return pApic->apicbase;
 }
 
-PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t val)
+PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t val)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
-    APICState *pApic = apicGetStateById(pDev, idCpu);
+    APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
     LogFlow(("apicSetTPR: val=%#x (trp %#x -> %#x)\n", val, pApic->tpr, val));
     apic_update_tpr(pDev, pApic, val);
 }
 
-PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu)
+PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, PVMCPU pVCpu)
 {
     /* We don't perform any locking here as that would cause a lot of contention for VT-x/AMD-V. */
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    APICState *pApic = apicGetStateById(pDev, idCpu);
+    APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
     Log2(("apicGetTPR: returns %#x\n", pApic->tpr));
     return pApic->tpr;
 }
@@ -1050,13 +1050,13 @@ static int apicReadRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iRe
 /**
  * @interface_method_impl{PDMAPICREG,pfnWriteMSRR3}
  */
-PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value)
+PDMBOTHCBDECL(VBOXSTRICTRC) apicWriteMSR(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    if (pDev->enmVersion < PDMAPICVERSION_X2APIC)
+    if (pDev->enmMode < PDMAPICMODE_X2APIC)
         return VERR_EM_INTERPRETER; /** @todo tell the caller to raise hell (\#GP(0)).  */
 
-    APICState      *pApic = apicGetStateById(pDev, idCpu);
+    APICState      *pApic = apicGetStateById(pDev, pVCpu->idCpu);
     uint32_t        iReg = (u32Reg - MSR_IA32_X2APIC_START) & 0xff;
     return apicWriteRegister(pDev, pApic, iReg, u64Value, VINF_SUCCESS /*rcBusy*/, true /*fMsr*/);
 }
@@ -1065,14 +1065,14 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
 /**
  * @interface_method_impl{PDMAPICREG,pfnReadMSRR3}
  */
-PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value)
+PDMBOTHCBDECL(VBOXSTRICTRC) apicReadMSR(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
 
-    if (pDev->enmVersion < PDMAPICVERSION_X2APIC)
+    if (pDev->enmMode < PDMAPICMODE_X2APIC)
         return VERR_EM_INTERPRETER;
 
-    APICState      *pApic = apicGetStateById(pDev, idCpu);
+    APICState      *pApic = apicGetStateById(pDev, pVCpu->idCpu);
     uint32_t        iReg = (u32Reg - MSR_IA32_X2APIC_START) & 0xff;
     return apicReadRegister(pDev, pApic, iReg, pu64Value, VINF_SUCCESS /*rcBusy*/, true /*fMsr*/);
 }
@@ -1098,10 +1098,16 @@ PDMBOTHCBDECL(int) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, ui
  * Local interrupt delivery, for devices attached to the CPU's LINT0/LINT1 pin.
  * Normally used for 8259A PIC and NMI.
  */
-PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t u8Level)
+PDMBOTHCBDECL(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ)
 {
     APICDeviceInfo  *pDev  = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    APICState       *pApic = apicGetStateById(pDev, 0);
+    NOREF(rcRZ);
+
+    /* NB: We currently only deliver local interrupts to the first CPU. In theory they
+     * should be delivered to all CPUs and it is the guest's responsibility to ensure
+     * no more than one CPU has the interrupt unmasked.
+     */
+    APICState       *pApic = apicGetStateById(pDev, pVCpu->idCpu);
 
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
     LogFlow(("apicLocalInterrupt: pDevIns=%p u8Pin=%x u8Level=%x\n", pDevIns, u8Pin, u8Level));
@@ -1123,16 +1129,13 @@ PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t
     /* There are only two local interrupt pins. */
     AssertMsgReturn(u8Pin <= 1, ("Invalid LAPIC pin %d\n", u8Pin), VERR_INVALID_PARAMETER);
 
-    /* NB: We currently only deliver local interrupts to the first CPU. In theory they
-     * should be delivered to all CPUs and it is the guest's responsibility to ensure
-     * no more than one CPU has the interrupt unmasked.
-     */
     uint32_t u32Lvec;
 
     u32Lvec = pApic->lvt[APIC_LVT_LINT0 + u8Pin];   /* Fetch corresponding LVT entry. */
     /* Drop int if entry is masked. May not be correct for level-triggered interrupts. */
     if (!(u32Lvec & APIC_LVT_MASKED))
-    {   uint8_t     u8Delivery;
+    {
+        uint8_t     u8Delivery;
         PDMAPICIRQ  enmType;
 
         u8Delivery = (u32Lvec >> 8) & 7;
@@ -1228,7 +1231,7 @@ static bool apic_update_irq(APICDeviceInfo *pDev, APICState *pApic)
 }
 
 /* Check if the APIC has a pending interrupt/if a TPR change would active one. */
-PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t *pu8PendingIrq)
+PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8PendingIrq)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     if (!pDev)
@@ -1236,7 +1239,7 @@ PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t
 
     /* We don't perform any locking here as that would cause a lot of contention for VT-x/AMD-V. */
 
-    APICState *pApic = apicGetStateById(pDev, idCpu);
+    APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
 
     /*
      * All our callbacks now come from single IOAPIC, thus locking
@@ -1443,7 +1446,7 @@ static int  apic_deliver(APICDeviceInfo *pDev, APICState *pApic,
 }
 
 
-PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t *puTagSrc)
+PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagSrc)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     /* if the APIC is not installed or enabled, we let the 8259 handle the IRQs */
@@ -1455,7 +1458,7 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t 
 
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
 
-    APICState *pApic = apicGetStateById(pDev, idCpu);
+    APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
 
     if (!(pApic->spurious_vec & APIC_SV_ENABLE))
     {
@@ -2073,8 +2076,8 @@ static DECLCALLBACK(int) apicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 
     SSMR3PutU32( pSSM, pDev->cCpus);
     SSMR3PutBool(pSSM, pDev->fIoApic);
-    SSMR3PutU32( pSSM, pDev->enmVersion);
-    AssertCompile(PDMAPICVERSION_APIC == 2);
+    SSMR3PutU32( pSSM, pDev->enmMode);
+    AssertCompile(PDMAPICMODE_APIC == 2);
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -2123,10 +2126,10 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         if (fIoApic != pDev->fIoApic)
             return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fIoApic: saved=%RTbool config=%RTbool"), fIoApic, pDev->fIoApic);
 
-        uint32_t uApicVersion;
-        rc = SSMR3GetU32(pSSM, &uApicVersion); AssertRCReturn(rc, rc);
-        if (uApicVersion != (uint32_t)pDev->enmVersion)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - uApicVersion: saved=%#x config=%#x"), uApicVersion, pDev->enmVersion);
+        uint32_t uApicMode;
+        rc = SSMR3GetU32(pSSM, &uApicMode); AssertRCReturn(rc, rc);
+        if (uApicMode != (uint32_t)pDev->enmMode)
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - uApicMode: saved=%#x config=%#x"), uApicMode, pDev->enmMode);
     }
 
     if (uPass != SSM_PASS_FINAL)
@@ -2178,7 +2181,7 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
     }
 
     LogRel(("APIC: Re-activating Local APIC\n"));
-    pDev->pApicHlpR3->pfnChangeFeature(pDev->pDevInsR3, pDev->enmVersion);
+    pDev->pApicHlpR3->pfnChangeFeature(pDev->pDevInsR3, pDev->enmMode);
 
     APIC_UNLOCK(pDev);
     TMTimerUnlock(pDev->paLapicsR3[0].pTimerR3);
@@ -2274,8 +2277,8 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pDev->cCpus      = cCpus;
     pDev->fIoApic    = fIoApic;
     /** @todo Finish X2APIC implementation.  Must, among other things, set
-     *        PDMAPICVERSION_X2APIC here when X2APIC is configured. */
-    pDev->enmVersion = PDMAPICVERSION_APIC;
+     *        PDMAPICMODE_X2APIC here when X2APIC is configured. */
+    pDev->enmMode    = PDMAPICMODE_APIC;
 
     /* Disable locking in this device. */
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
@@ -2302,12 +2305,12 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     ApicReg.u32Version              = PDM_APICREG_VERSION;
     ApicReg.pfnGetInterruptR3       = apicGetInterrupt;
     ApicReg.pfnHasPendingIrqR3      = apicHasPendingIrq;
-    ApicReg.pfnSetBaseR3            = apicSetBase;
-    ApicReg.pfnGetBaseR3            = apicGetBase;
-    ApicReg.pfnSetTPRR3             = apicSetTPR;
-    ApicReg.pfnGetTPRR3             = apicGetTPR;
-    ApicReg.pfnWriteMSRR3           = apicWriteMSR;
-    ApicReg.pfnReadMSRR3            = apicReadMSR;
+    ApicReg.pfnSetBaseMsrR3         = apicSetBase;
+    ApicReg.pfnGetBaseMsrR3         = apicGetBase;
+    ApicReg.pfnSetTprR3             = apicSetTPR;
+    ApicReg.pfnGetTprR3             = apicGetTPR;
+    ApicReg.pfnWriteMsrR3           = apicWriteMSR;
+    ApicReg.pfnReadMsrR3            = apicReadMSR;
     ApicReg.pfnBusDeliverR3         = apicBusDeliverCallback;
     ApicReg.pfnLocalInterruptR3     = apicLocalInterrupt;
     ApicReg.pfnGetTimerFreqR3       = apicGetTimerFreq;
@@ -2315,24 +2318,24 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     {
         ApicReg.pszGetInterruptRC   = "apicGetInterrupt";
         ApicReg.pszHasPendingIrqRC  = "apicHasPendingIrq";
-        ApicReg.pszSetBaseRC        = "apicSetBase";
-        ApicReg.pszGetBaseRC        = "apicGetBase";
-        ApicReg.pszSetTPRRC         = "apicSetTPR";
-        ApicReg.pszGetTPRRC         = "apicGetTPR";
-        ApicReg.pszWriteMSRRC       = "apicWriteMSR";
-        ApicReg.pszReadMSRRC        = "apicReadMSR";
+        ApicReg.pszSetBaseMsrRC     = "apicSetBase";
+        ApicReg.pszGetBaseMsrRC     = "apicGetBase";
+        ApicReg.pszSetTprRC         = "apicSetTPR";
+        ApicReg.pszGetTprRC         = "apicGetTPR";
+        ApicReg.pszWriteMsrRC       = "apicWriteMSR";
+        ApicReg.pszReadMsrRC        = "apicReadMSR";
         ApicReg.pszBusDeliverRC     = "apicBusDeliverCallback";
         ApicReg.pszLocalInterruptRC = "apicLocalInterrupt";
         ApicReg.pszGetTimerFreqRC   = "apicGetTimerFreq";
 
         ApicReg.pszGetInterruptR0   = "apicGetInterrupt";
         ApicReg.pszHasPendingIrqR0  = "apicHasPendingIrq";
-        ApicReg.pszSetBaseR0        = "apicSetBase";
-        ApicReg.pszGetBaseR0        = "apicGetBase";
-        ApicReg.pszSetTPRR0         = "apicSetTPR";
-        ApicReg.pszGetTPRR0         = "apicGetTPR";
-        ApicReg.pszWriteMSRR0       = "apicWriteMSR";
-        ApicReg.pszReadMSRR0        = "apicReadMSR";
+        ApicReg.pszSetBaseMsrR0     = "apicSetBase";
+        ApicReg.pszGetBaseMsrR0     = "apicGetBase";
+        ApicReg.pszSetTprR0         = "apicSetTPR";
+        ApicReg.pszGetTprR0         = "apicGetTPR";
+        ApicReg.pszWriteMsrR0       = "apicWriteMSR";
+        ApicReg.pszReadMsrR0        = "apicReadMSR";
         ApicReg.pszBusDeliverR0     = "apicBusDeliverCallback";
         ApicReg.pszLocalInterruptR0 = "apicLocalInterrupt";
         ApicReg.pszGetTimerFreqR0   = "apicGetTimerFreq";
@@ -2341,24 +2344,24 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     {
         ApicReg.pszGetInterruptRC   = NULL;
         ApicReg.pszHasPendingIrqRC  = NULL;
-        ApicReg.pszSetBaseRC        = NULL;
-        ApicReg.pszGetBaseRC        = NULL;
-        ApicReg.pszSetTPRRC         = NULL;
-        ApicReg.pszGetTPRRC         = NULL;
-        ApicReg.pszWriteMSRRC       = NULL;
-        ApicReg.pszReadMSRRC        = NULL;
+        ApicReg.pszSetBaseMsrRC     = NULL;
+        ApicReg.pszGetBaseMsrRC     = NULL;
+        ApicReg.pszSetTprRC         = NULL;
+        ApicReg.pszGetTprRC         = NULL;
+        ApicReg.pszWriteMsrRC       = NULL;
+        ApicReg.pszReadMsrRC        = NULL;
         ApicReg.pszBusDeliverRC     = NULL;
         ApicReg.pszLocalInterruptRC = NULL;
         ApicReg.pszGetTimerFreqRC   = NULL;
 
         ApicReg.pszGetInterruptR0   = NULL;
         ApicReg.pszHasPendingIrqR0  = NULL;
-        ApicReg.pszSetBaseR0        = NULL;
-        ApicReg.pszGetBaseR0        = NULL;
-        ApicReg.pszSetTPRR0         = NULL;
-        ApicReg.pszGetTPRR0         = NULL;
-        ApicReg.pszWriteMSRR0       = NULL;
-        ApicReg.pszReadMSRR0        = NULL;
+        ApicReg.pszSetBaseMsrR0     = NULL;
+        ApicReg.pszGetBaseMsrR0     = NULL;
+        ApicReg.pszSetTprR0         = NULL;
+        ApicReg.pszGetTprR0         = NULL;
+        ApicReg.pszWriteMsrR0       = NULL;
+        ApicReg.pszReadMsrR0        = NULL;
         ApicReg.pszBusDeliverR0     = NULL;
         ApicReg.pszLocalInterruptR0 = NULL;
         ApicReg.pszGetTimerFreqR0   = NULL;
@@ -2372,7 +2375,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * The CPUID feature bit.
      */
     LogRel(("APIC: Activating Local APIC\n"));
-    pDev->pApicHlpR3->pfnChangeFeature(pDevIns, pDev->enmVersion);
+    pDev->pApicHlpR3->pfnChangeFeature(pDevIns, pDev->enmMode);
 
     /*
      * Register the MMIO range.

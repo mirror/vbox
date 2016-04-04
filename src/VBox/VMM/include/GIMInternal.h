@@ -37,7 +37,6 @@ RT_C_DECLS_BEGIN
 
 /**
  * GIM VM Instance data.
- * Changes to this must checked against the padding of the gim union in VM!
  */
 typedef struct GIM
 {

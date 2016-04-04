@@ -33,6 +33,9 @@
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
 # include <VBox/vmm/pdmpci.h>
 #endif
+#ifdef VBOX_WITH_NEW_APIC
+# include <VBox/vmm/apic.h>
+#endif
 
 #include <VBox/vmm/gvmm.h>
 #include <VBox/vmm/gmm.h>
@@ -465,12 +468,21 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
                         rc = GIMR0InitVM(pVM);
                         if (RT_SUCCESS(rc))
                         {
-                            VMM_CHECK_SMAP_CHECK2(pVM, rc = VERR_VMM_RING0_ASSERTION);
+#ifdef VBOX_WITH_NEW_APIC
+                            rc = APICR0InitVM(pVM);
+#endif
                             if (RT_SUCCESS(rc))
                             {
-                                GVMMR0DoneInitVM(pVM);
-                                VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-                                return rc;
+                                VMM_CHECK_SMAP_CHECK2(pVM, rc = VERR_VMM_RING0_ASSERTION);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    GVMMR0DoneInitVM(pVM);
+                                    VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+                                    return rc;
+                                }
+#ifdef VBOX_WITH_NEW_APIC
+                            APICR0TermVM(pVM);
+#endif
                             }
 
                             /* bail out*/

@@ -204,30 +204,14 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PlatformId(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ApicBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-#if 0 /** @todo Sort this one out properly.  Evidence from ticks 12240 and 12875 suggest the apic base is still readable even
-       * after the apic has been diabled.  That makes common sense too.  What we need to do here, though, is check whether
-       * there is an APIC device associated with the VM, and GP if there isn't.  But that's for later. */
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (   !pVM->cpum.s.GuestFeatures.fApic
-        && !pVM->cpum.s.GuestFeatures.fX2Apic)
-    {
-        Log(("CPUM: %s, apic not present -> GP\n", pRange->szName));
-        return VERR_CPUM_RAISE_GP_0;
-    }
-#endif
-
-    *puValue = pVCpu->cpum.s.Guest.msrApicBase;
-    return VINF_SUCCESS;
+    return PDMApicGetBaseMsr(pVCpu, puValue);
 }
 
 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ApicBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
-    int rc = PDMApicSetBase(pVCpu, uValue);
-    if (rc != VINF_SUCCESS)
-        rc = VERR_CPUM_RAISE_GP_0;
-    return VINF_SUCCESS;
+    return PDMApicSetBaseMsr(pVCpu, uValue);
 }
 
 
@@ -1124,26 +1108,14 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32TscDeadline(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32X2ApicN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    int rc = PDMApicReadMSR(pVCpu->CTX_SUFF(pVM), pVCpu->idCpu, idMsr, puValue);
-    if (rc != VINF_SUCCESS)
-    {
-        Log(("CPUM: X2APIC %#x read => %Rrc => #GP\n", idMsr, rc));
-        return VERR_CPUM_RAISE_GP_0;
-    }
-    return VINF_SUCCESS;
+    return PDMApicReadMsr(pVCpu, idMsr, puValue);
 }
 
 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32X2ApicN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
-    int rc = PDMApicWriteMSR(pVCpu->CTX_SUFF(pVM), pVCpu->idCpu, idMsr, uValue);
-    if (rc != VINF_SUCCESS)
-    {
-        Log(("CPUM: X2APIC %#x write %#llx => %Rrc => #GP\n", idMsr, rc, uValue));
-        return VERR_CPUM_RAISE_GP_0;
-    }
-    return VINF_SUCCESS;
+    return PDMApicWriteMsr(pVCpu, idMsr, uValue);
 }
 
 

@@ -770,7 +770,7 @@ typedef const EPTPT *PCEPTPT;
 /** @} */
 
 /** VMX VPID flush types.
- * Warning!! Valid enum members are in accordance to the VT-x spec.
+ * @note Valid enum members are in accordance to the VT-x spec.
  */
 typedef enum
 {
@@ -790,7 +790,7 @@ typedef enum
 AssertCompileSize(VMXFLUSHVPID, 4);
 
 /** VMX EPT flush types.
- * @note Warning!! Valid enums values below are in accordance to the VT-x spec.
+ * @note Valid enums values are in accordance to the VT-x spec.
  */
 typedef enum
 {
@@ -805,10 +805,27 @@ typedef enum
 } VMXFLUSHEPT;
 AssertCompileSize(VMXFLUSHEPT, 4);
 
-/** VMX MSR autoload/store element.
- * In accordance to VT-x spec.
+/** VMX Posted Interrupt Descriptor.
+ * In accordance to the VT-x spec.
  */
-typedef struct
+typedef struct VMXPOSTEDINTRDESC
+{
+    uint32_t    aVectorBitmap[8];
+    uint32_t    fOutstandingNotification : 1;
+    uint32_t    uReserved0               : 31;
+    uint8_t     au8Reserved0[28];
+} VMXPOSTEDINTRDESC;
+AssertCompileMemberSize(VMXPOSTEDINTRDESC, aVectorBitmap, 32);
+AssertCompileSize(VMXPOSTEDINTRDESC, 64);
+/** Pointer to a posted interrupt descriptor. */
+typedef VMXPOSTEDINTRDESC *PVMXPOSTEDINTRDESC;
+/** Pointer to a const posted interrupt descriptor. */
+typedef const VMXPOSTEDINTRDESC *PCVMXPOSTEDINTRDESC;
+
+/** VMX MSR autoload/store element.
+ * In accordance to the VT-x spec.
+ */
+typedef struct VMXAUTOMSR
 {
     /** The MSR Id. */
     uint32_t    u32Msr;
@@ -1419,6 +1436,10 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT                    RT_BIT(6)
 /** Unrestricted guest execution. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST             RT_BIT(7)
+/** APIC register virtualization. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT                  RT_BIT(8)
+/** Virtual-interrupt delivery. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY             RT_BIT(9)
 /** A specified number of pause loops cause a VM-exit. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT                RT_BIT(10)
 /** VM-exit when executing RDRAND instructions. */

@@ -1061,94 +1061,95 @@ typedef struct PDMAPICREG
     /**
      * Get a pending interrupt.
      *
-     * @returns Pending interrupt number.
+     * @returns Pending interrupt number, -1 if no interrupt is
+     *          pending.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   idCpu           The VCPU Id.
-     * @param   puTagSrc        Where to return the tag source.
+     * @param   pVCpu           The cross context virtual CPU structure.
+     * @param   puTagSrc        Where to return the tag source (tracing purposes).
      * @remarks Caller enters the PDM critical section
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t *puTagSrc));
+    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagSrc));
 
     /**
-     * Check if the APIC has a pending interrupt/if a TPR change would active one
+     * Check if the APIC has a pending interrupt/if a TPR change would activate one.
      *
-     * @returns Pending interrupt yes/no
+     * @returns true if an interrupt is pending, false otherwise.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   idCpu           The VCPU Id.
+     * @param   pVCpu           The cross context virtual CPU structure.
      * @param   pu8PendingIrq   Where to store the highest priority pending IRQ
      *                          (optional, can be NULL).
      * @remarks Unlike the other callbacks, the PDM lock may not always be entered
      *          prior to calling this method.
      */
-    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t *pu8PendingIrq));
+    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8PendingIrq));
 
     /**
      * Set the APIC base.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   idCpu           The VCPU Id.
+     * @param   pVCpu           The cross context virtual CPU structure.
      * @param   u64Base         The new base.
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetBaseR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t u64Base));
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnSetBaseMsrR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64Base));
 
     /**
      * Get the APIC base.
      *
      * @returns Current base.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   idCpu           The VCPU Id.
+     * @param   pVCpu           The cross context virtual CPU structure.
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(uint64_t, pfnGetBaseR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetBaseMsrR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu));
 
     /**
      * Set the TPR (task priority register).
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   idCpu           The VCPU id.
+     * @param   pVCpu           The cross context virtual CPU structure.
      * @param   u8TPR           The new TPR.
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
+    DECLR3CALLBACKMEMBER(void, pfnSetTprR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8TPR));
 
     /**
      * Get the TPR (task priority register).
      *
      * @returns The current TPR.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   idCpu           VCPU id
+     * @param   pVCpu           The cross context virtual CPU structure.
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTprR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu));
 
     /**
      * Write to a MSR in APIC range.
      *
-     * @returns VBox status code.
+     * @returns Strict VBox status code.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   idCpu           Target CPU.
+     * @param   pVCpu           The cross context virtual CPU structure.
      * @param   u32Reg          The MSR begin written to.
      * @param   u64Value        The value to write.
      *
      * @remarks Unlike the other callbacks, the PDM lock is not taken before
      *          calling this method.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value));
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnWriteMsrR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value));
 
     /**
      * Read from a MSR in APIC range.
      *
-     * @returns VBox status code.
+     * @returns Strict VBox status code.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   idCpu           Target CPU.
+     * @param   pVCpu           The cross context virtual CPU structure.
      * @param   u32Reg          MSR to read.
      * @param   pu64Value       Where to return the read value.
      *
      * @remarks Unlike the other callbacks, the PDM lock is not taken before
      *          calling this method.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value));
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnReadMsrR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value));
 
     /**
      * Private interface between the IOAPIC and APIC.
@@ -1159,19 +1160,19 @@ typedef struct PDMAPICREG
      * would involve some way of querying GC interfaces and relocating them.
      * Perhaps doing some kind of device init in GC...
      *
-     * @returns status code.
+     * @returns VBox status code.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   u8Dest          See APIC implementation.
-     * @param   u8DestMode      See APIC implementation.
-     * @param   u8DeliveryMode  See APIC implementation.
-     * @param   iVector         See APIC implementation.
-     * @param   u8Polarity      See APIC implementation.
-     * @param   u8TriggerMode   See APIC implementation.
+     * @param   u8Dest          The destination mask.
+     * @param   u8DestMode      The destination mode, see XAPICDESTMODE.
+     * @param   u8DeliveryMode  The delivery mode, see XAPICDELIVERYMODE.
+     * @param   uVector         The interrupt vector.
+     * @param   u8Polarity      The input pin polarity.
+     * @param   u8TriggerMode   The trigger mode, see XAPICTRIGGERMODE.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
-     * @remarks Caller enters the PDM critical section
+     * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(int,  pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                                uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc));
+    DECLR3CALLBACKMEMBER(int, pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+                                               uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc));
 
     /**
      * Deliver a signal to CPU's local interrupt pins (LINT0/LINT1).
@@ -1179,39 +1180,43 @@ typedef struct PDMAPICREG
      * Used for virtual wire mode when interrupts from the PIC are passed through
      * LAPIC.
      *
-     * @returns status code.
+     * @returns Strict VBox status code.
      * @param   pDevIns         Device instance of the APIC.
+     * @param   pVCpu           The cross context virtual CPU structure.
      * @param   u8Pin           Local pin number (0 or 1 for current CPUs).
      * @param   u8Level         The level.
-     * @param   uTagSrc         The IRQ tag and source (for tracing).
+     * @param   rcRZ            The return code if the operation cannot be
+     *                          performed in the current context.
      * @remarks Caller enters the PDM critical section
      */
-    DECLR3CALLBACKMEMBER(int,  pfnLocalInterruptR3,(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t u8Level));
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnLocalInterruptR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level,
+                                                             int rcRZ));
 
     /**
      * Get the APIC timer frequency (in Hz).
      *
      * @returns The frequency of the APIC timer.
      * @param   pDevIns         Device instance of the APIC.
+     * @param   pVCpu           The cross context virtual CPU structure.
      */
-    DECLR3CALLBACKMEMBER(uint64_t, pfnGetTimerFreqR3, (PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetTimerFreqR3,(PPDMDEVINS pDevIns));
 
     /** The name of the RC GetInterrupt entry point. */
     const char         *pszGetInterruptRC;
     /** The name of the RC HasPendingIrq entry point. */
     const char         *pszHasPendingIrqRC;
-    /** The name of the RC SetBase entry point. */
-    const char         *pszSetBaseRC;
-    /** The name of the RC GetBase entry point. */
-    const char         *pszGetBaseRC;
-    /** The name of the RC SetTPR entry point. */
-    const char         *pszSetTPRRC;
-    /** The name of the RC GetTPR entry point. */
-    const char         *pszGetTPRRC;
-    /** The name of the RC WriteMSR entry point. */
-    const char         *pszWriteMSRRC;
-    /** The name of the RC ReadMSR entry point. */
-    const char         *pszReadMSRRC;
+    /** The name of the RC SetBaseMsr entry point. */
+    const char         *pszSetBaseMsrRC;
+    /** The name of the RC GetBaseMsr entry point. */
+    const char         *pszGetBaseMsrRC;
+    /** The name of the RC SetTpr entry point. */
+    const char         *pszSetTprRC;
+    /** The name of the RC GetTpr entry point. */
+    const char         *pszGetTprRC;
+    /** The name of the RC WriteMsr entry point. */
+    const char         *pszWriteMsrRC;
+    /** The name of the RC ReadMsr entry point. */
+    const char         *pszReadMsrRC;
     /** The name of the RC BusDeliver entry point. */
     const char         *pszBusDeliverRC;
     /** The name of the RC LocalInterrupt entry point. */
@@ -1223,18 +1228,18 @@ typedef struct PDMAPICREG
     const char         *pszGetInterruptR0;
     /** The name of the R0 HasPendingIrq entry point. */
     const char         *pszHasPendingIrqR0;
-    /** The name of the R0 SetBase entry point. */
-    const char         *pszSetBaseR0;
-    /** The name of the R0 GetBase entry point. */
-    const char         *pszGetBaseR0;
-    /** The name of the R0 SetTPR entry point. */
-    const char         *pszSetTPRR0;
-    /** The name of the R0 GetTPR entry point. */
-    const char         *pszGetTPRR0;
-    /** The name of the R0 WriteMSR entry point. */
-    const char         *pszWriteMSRR0;
-    /** The name of the R0 ReadMSR entry point. */
-    const char         *pszReadMSRR0;
+    /** The name of the R0 SetBaseMsr entry point. */
+    const char         *pszSetBaseMsrR0;
+    /** The name of the R0 GetBaseMsr entry point. */
+    const char         *pszGetBaseMsrR0;
+    /** The name of the R0 SetTpr entry point. */
+    const char         *pszSetTprR0;
+    /** The name of the R0 GetTpr entry point. */
+    const char         *pszGetTprR0;
+    /** The name of the R0 WriteMsr entry point. */
+    const char         *pszWriteMsrR0;
+    /** The name of the R0 ReadMsr entry point. */
+    const char         *pszReadMsrR0;
     /** The name of the R0 BusDeliver entry point. */
     const char         *pszBusDeliverR0;
     /** The name of the R0 LocalInterrupt entry point. */
@@ -1246,28 +1251,30 @@ typedef struct PDMAPICREG
 typedef PDMAPICREG *PPDMAPICREG;
 
 /** Current PDMAPICREG version number. */
-#define PDM_APICREG_VERSION                     PDM_VERSION_MAKE(0xfff6, 2, 0)
+#define PDM_APICREG_VERSION                     PDM_VERSION_MAKE(0xfff6, 3, 0)
 
 
 /**
- * APIC version argument for pfnChangeFeature.
+ * APIC mode argument for pfnChangeFeature.
+ *
+ * Also used in saved-states, don't change existing values.
  */
-typedef enum PDMAPICVERSION
+typedef enum PDMAPICMODE
 {
     /** Invalid 0 entry. */
-    PDMAPICVERSION_INVALID = 0,
+    PDMAPICMODE_INVALID = 0,
     /** No APIC. */
-    PDMAPICVERSION_NONE,
+    PDMAPICMODE_NONE,
     /** Standard APIC (X86_CPUID_FEATURE_EDX_APIC). */
-    PDMAPICVERSION_APIC,
+    PDMAPICMODE_APIC,
     /** Intel X2APIC (X86_CPUID_FEATURE_ECX_X2APIC). */
-    PDMAPICVERSION_X2APIC,
+    PDMAPICMODE_X2APIC,
     /** The usual 32-bit paranoia. */
-    PDMAPICVERSION_32BIT_HACK = 0x7fffffff
-} PDMAPICVERSION;
+    PDMAPICMODE_32BIT_HACK = 0x7fffffff
+} PDMAPICMODE;
 
 /**
- * APIC irq argument for SetInterruptFF.
+ * APIC irq argument for pfnSetInterruptFF and pfnClearInterruptFF.
  */
 typedef enum PDMAPICIRQ
 {
@@ -1325,9 +1332,9 @@ typedef struct PDMAPICHLPRC
      * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   enmVersion      Supported APIC version.
+     * @param   enmMode         Supported APIC mode.
      */
-    DECLRCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
+    DECLRCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICMODE enmMode));
 
     /**
      * Acquires the PDM lock.
@@ -1404,9 +1411,9 @@ typedef struct PDMAPICHLPR0
      * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   enmVersion      Supported APIC version.
+     * @param   enmMode         Supported APIC mode.
      */
-    DECLR0CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
+    DECLR0CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICMODE enmMode));
 
     /**
      * Acquires the PDM lock.
@@ -1482,9 +1489,9 @@ typedef struct PDMAPICHLPR3
      * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   enmVersion      Supported APIC version.
+     * @param   enmMode         Supported APIC mode.
      */
-    DECLR3CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
+    DECLR3CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICMODE enmMode));
 
     /**
      * Get the virtual CPU id corresponding to the current EMT.
@@ -1494,20 +1501,20 @@ typedef struct PDMAPICHLPR3
     DECLR3CALLBACKMEMBER(VMCPUID, pfnGetCpuId,(PPDMDEVINS pDevIns));
 
     /**
-     * Sends SIPI to given virtual CPU.
+     * Sends Startup IPI to given virtual CPU.
      *
      * @param   pDevIns         The APIC device instance.
-     * @param   idCpu           Virtual CPU to perform SIPI on
-     * @param   uVector         SIPI vector
+     * @param   idCpu           Virtual CPU to perform Startup IPI on.
+     * @param   uVector         Startup IPI vector.
      */
-    DECLR3CALLBACKMEMBER(void,    pfnSendSipi,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector));
+    DECLR3CALLBACKMEMBER(void,    pfnSendStartupIpi,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector));
 
     /**
-     * Sends init IPI to given virtual CPU, should result in reset and
-     * halting till SIPI.
+     * Sends INIT IPI to given virtual CPU, should result in reset and
+     * halting till Startup IPI.
      *
      * @param   pDevIns         The APIC device instance.
-     * @param   idCpu           Virtual CPU to perform SIPI on
+     * @param   idCpu           Virtual CPU to perform INIT IPI on.
      */
     DECLR3CALLBACKMEMBER(void,    pfnSendInitIpi,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 

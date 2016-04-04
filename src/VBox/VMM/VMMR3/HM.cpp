@@ -1143,6 +1143,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT);
     HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI);
     HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER);
+    HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR);
 
     LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS     = %#RX64\n", pVM->hm.s.vmx.Msrs.VmxProcCtls.u));
     val = pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1;
@@ -1181,6 +1182,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_VPID);
         HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT);
         HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST);
+        HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT);
+        HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY);
         HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT);
         HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT);
         HMVMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_INVPCID);
@@ -1298,6 +1301,24 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
      */
     if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
         pVM->hm.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid;
+
+#ifdef VBOX_WITH_NEW_APIC
+    /*
+     * Enable APIC register virtualization and virtual-interrupt delivery if supported.
+     */
+    if (   (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT)
+        && (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY))
+        pVM->hm.s.fVirtApicRegs = true;
+
+    /*
+     * Enable posted-interrupt processing if supported.
+     */
+    /** @todo Add and query IPRT API for host OS support for posted-interrupt IPI
+     *        here. */
+    if (   (pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR)
+        && (pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1 & VMX_VMCS_CTRL_EXIT_ACK_EXT_INT))
+        pVM->hm.s.fPostedIntrs = true;
+#endif
 
     /*
      * Disallow RDTSCP in the guest if there is no secondary process-based VM execution controls as otherwise
@@ -1448,6 +1469,12 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     else
         Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
 
+    if (pVM->hm.s.fVirtApicRegs)
+        LogRel(("HM:   Enabled APIC-register virtualization support\n"));
+
+    if (pVM->hm.s.fPostedIntrs)
+        LogRel(("HM:   Enabled posted-interrupt processing support\n"));
+
     if (pVM->hm.s.vmx.fVpid)
     {
         LogRel(("HM: Enabled VPID\n"));
@@ -1538,6 +1565,13 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
                        || (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
                        VERR_HM_IPE_1);
 
+#if 0
+    /** @todo Add and query IPRT API for host OS support for posted-interrupt IPI
+     *        here. */
+    if (RTR0IsPostIpiSupport())
+        pVM->hm.s.fPostedIntrs = true;
+#endif
+
     /*
      * Call ring-0 to set up the VM.
      */
@@ -1567,6 +1601,12 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
         }
 #endif
     }
+
+    if (pVM->hm.s.fVirtApicRegs)
+        LogRel(("HM:   Enabled APIC-register virtualization support\n"));
+
+    if (pVM->hm.s.fPostedIntrs)
+        LogRel(("HM:   Enabled posted-interrupt processing support\n"));
 
     hmR3DisableRawMode(pVM);
 
@@ -2912,6 +2952,45 @@ VMMR3DECL(bool) HMR3IsNestedPagingActive(PUVM pUVM)
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     return pVM->hm.s.fNestedPaging;
+}
+
+
+/**
+ * Checks if virtualized APIC registers is enabled.
+ *
+ * When enabled this feature allows the hardware to access most of the
+ * APIC registers in the virtual-APIC page without causing VM-exits. See
+ * Intel spec. 29.1.1 "Virtualized APIC Registers".
+ *
+ * @returns true if virtualized APIC registers is enabled, otherwise
+ *          false.
+ * @param   pUVM        The user mode VM handle.
+ */
+VMMR3DECL(bool) HMR3IsVirtApicRegsEnabled(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return pVM->hm.s.fVirtApicRegs;
+}
+
+
+/**
+ * Checks if APIC posted-interrupt processing is enabled.
+ *
+ * This returns whether we can deliver interrupts to the guest without
+ * leaving guest-context by updating APIC state from host-context.
+ *
+ * @returns true if APIC posted-interrupt processing is enabled,
+ *          otherwise false.
+ * @param   pUVM        The user mode VM handle.
+ */
+VMMR3DECL(bool) HMR3IsPostedIntrsEnabled(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return pVM->hm.s.fPostedIntrs;
 }
 
 

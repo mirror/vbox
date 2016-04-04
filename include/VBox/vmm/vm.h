@@ -229,8 +229,23 @@ typedef struct VMCPU
         uint8_t             padding[64];        /* multiple of 64 */
     } gim;
 
+#ifdef VBOX_WITH_NEW_APIC
+    /** APIC part. */
+    union
+    {
+# ifdef ___APICInternal_h
+        struct APICCPU      s;
+# endif
+        uint8_t             padding[512];      /* multiple of 64 */
+    } apic;
+#endif
+
     /** Align the following members on page boundary. */
+#ifdef VBOX_WITH_NEW_APIC
+    uint8_t                 abAlignment2[2880];
+#else
     uint8_t                 abAlignment2[3392];
+#endif
 
     /** PGM part. */
     union
@@ -249,7 +264,6 @@ typedef struct VMCPU
 #endif
         uint8_t             padding[4096];      /* multiple of 4096 */
     } cpum;
-
 } VMCPU;
 
 
@@ -730,22 +744,35 @@ typedef struct VMCPU
 
 /** @def VMCPU_ASSERT_EMT_OR_NOT_RUNNING
  * Asserts that the current thread IS the emulation thread (EMT) of the
- * specified virtual CPU when the VM is running.
+ * specified virtual CPU or the VM is not running.
  */
 #if defined(IN_RC) || defined(IN_RING0)
 # define VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu) \
-    Assert(   VMCPU_IS_EMT(pVCpu) \
-           || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RUNNING \
-           || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RUNNING_LS \
-           || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RUNNING_FT )
+    Assert(    VMCPU_IS_EMT(pVCpu) \
+           || !VM_IS_RUNNING((pVCpu)->CTX_SUFF(pVM)) )
 #else
 # define VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu) \
-    AssertMsg(   VMCPU_IS_EMT(pVCpu) \
-              || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RUNNING \
-              || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RUNNING_LS \
-              || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RUNNING_FT, \
+    AssertMsg(    VMCPU_IS_EMT(pVCpu) \
+              || !VM_IS_RUNNING((pVCpu)->CTX_SUFF(pVM)), \
               ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
                RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu))
+#endif
+
+/** @def VM_IS_RUNNING
+ * Checks if the the VM is running.
+ */
+#define VM_IS_RUNNING(pVM)                  (   (pVM)->enmVMState == VMSTATE_RUNNING    \
+                                             || (pVM)->enmVMState == VMSTATE_RUNNING_LS \
+                                             || (pVM)->enmVMState == VMSTATE_RUNNING_FT)
+
+/** @def VM_ASSERT_IS_NOT_RUNNING
+ * Asserts that the VM is not running.
+ */
+#if defined(IN_RC) || defined(IN_RING0)
+#define VM_ASSERT_IS_NOT_RUNNING(pVM)       Assert(!VM_IS_RUNNING(pVM))
+#else
+#define VM_ASSERT_IS_NOT_RUNNING(pVM)       AssertMsg(!VM_IS_RUNNING(pVM), ("VM is running. enmVMState=%d\n", \
+                                                      (pVM)->enmVMState))
 #endif
 
 /** @def VM_ASSERT_EMT0
@@ -767,7 +794,7 @@ typedef struct VMCPU
     AssertMsg(!VM_IS_EMT(pVM), ("Not other thread!!\n"))
 
 
-/** @def VM_ASSERT_STATE_RETURN
+/** @def VM_ASSERT_STATE
  * Asserts a certain VM state.
  */
 #define VM_ASSERT_STATE(pVM, _enmState) \
@@ -1189,9 +1216,22 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
+#ifdef VBOX_WITH_NEW_APIC
+    union
+    {
+# ifdef ___APICInternal_h
+        struct APIC s;
+# endif
+        uint8_t     padding[128];       /* multiple of 8 */
+    } apic;
+#endif
 
     /** Padding for aligning the cpu array on a page boundary. */
+#ifdef VBOX_WITH_NEW_APIC
+    uint8_t         abAlignment2[3870];
+#else
     uint8_t         abAlignment2[3998];
+#endif
 
     /* ---- end small stuff ---- */
 

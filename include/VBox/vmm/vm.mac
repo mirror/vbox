@@ -143,6 +143,9 @@ struc VMCPU
     .iom                    resb 512
     .dbgf                   resb 256
     .gim                    resb 64
+%ifdef VBOX_WITH_NEW_APIC
+    .apic                   resb 512
+%endif
 
     alignb 4096
     .pgm                    resb 4096

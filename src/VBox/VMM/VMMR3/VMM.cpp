@@ -119,6 +119,9 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/patm.h>
+#ifdef VBOX_WITH_NEW_APIC
+# include <VBox/vmm/apic.h>
+#endif
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
@@ -1431,18 +1434,21 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * VCPU worker for VMMSendSipi.
+ * VCPU worker for VMMSendStartupIpi.
  *
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       Virtual CPU to perform SIPI on.
- * @param   uVector     SIPI vector.
+ * @param   uVector     The SIPI vector.
  */
-static DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
+static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 {
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     VMCPU_ASSERT_EMT(pVCpu);
 
-    /** @todo what are we supposed to do if the processor is already running? */
+    /*
+     * Active, halt and shutdown states of the processor all block SIPIs.
+     * So we can safely discard the SIPI. See Intel spec. 26.6.2 "Activity State".
+     */
     if (EMGetState(pVCpu) != EMSTATE_WAIT_SIPI)
         return VERR_ACCESS_DENIED;
 
@@ -1477,7 +1483,10 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     Log(("vmmR3SendInitIpi for VCPU %d\n", idCpu));
 
     PGMR3ResetCpu(pVM, pVCpu);
-    PDMR3ResetCpu(pVCpu);   /* Clear any pending interrupts */
+    PDMR3ResetCpu(pVCpu);   /* Only clears pending interrupts force flags */
+#ifdef VBOX_WITH_NEW_APIC
+    APICR3InitIpi(pVCpu);
+#endif
     TRPMR3ResetCpu(pVCpu);
     CPUMR3ResetCpu(pVM, pVCpu);
     EMR3ResetCpu(pVCpu);
@@ -1489,18 +1498,18 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 
 
 /**
- * Sends SIPI to the virtual CPU by setting CS:EIP into vector-dependent state
- * and unhalting processor.
+ * Sends a Startup IPI to the virtual CPU by setting CS:EIP into
+ * vector-dependent state and unhalting processor.
  *
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       Virtual CPU to perform SIPI on.
  * @param   uVector     SIPI vector.
  */
-VMMR3_INT_DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
+VMMR3_INT_DECL(void) VMMR3SendStartupIpi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
 {
     AssertReturnVoid(idCpu < pVM->cCpus);
 
-    int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3SendSipi, 3, pVM, idCpu, uVector);
+    int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3SendStarupIpi, 3, pVM, idCpu, uVector);
     AssertRC(rc);
 }
 
@@ -1555,15 +1564,15 @@ VMMR3DECL(int) VMMR3DeregisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned c
 }
 
 
-/** 
- * Common recursion handler for the other EMTs. 
- *  
- * @returns Strict VBox status code. 
+/**
+ * Common recursion handler for the other EMTs.
+ *
+ * @returns Strict VBox status code.
  * @param   pVM                 The cross context VM structure.
- * @param   pVCpu               The cross context virtual CPU structure of the calling EMT. 
- * @param   rcStrict            Current status code to be combined with the one 
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
+ * @param   rcStrict            Current status code to be combined with the one
  *                              from this recursion and returned.
- */  
+ */
 static VBOXSTRICTRC vmmR3EmtRendezvousCommonRecursion(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rcStrict)
 {
     int rc2;
@@ -1602,7 +1611,7 @@ static VBOXSTRICTRC vmmR3EmtRendezvousCommonRecursion(PVM pVM, PVMCPU pVCpu, VBO
         AssertLogRelRC(rc2);
     }
 
-    /* 
+    /*
      * Merge status codes and return.
      */
     AssertRC(VBOXSTRICTRC_VAL(rcStrict2));
@@ -1620,7 +1629,7 @@ static VBOXSTRICTRC vmmR3EmtRendezvousCommonRecursion(PVM pVM, PVMCPU pVCpu, VBO
  * @returns VBox strict informational status code for EM scheduling. No failures
  *          will be returned here, those are for the caller only.
  *
- * @param   pVM                 The cross context VM structure. 
+ * @param   pVM                 The cross context VM structure.
  * @param   rcStrict            The current accumulated recursive status code,
  *                              to be merged with i32RendezvousStatus and
  *                              returned.
@@ -1636,7 +1645,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) vmmR3EmtRendezvousNonCallerReturn(PVM pVM, VBOXS
         AssertLogRelRC(rc);
     }
 
-    /* 
+    /*
      * Merge the status codes, ignoring error statuses in this code path.
      */
     AssertLogRelMsgReturn(   rcStrict2 <= VINF_SUCCESS
@@ -1901,9 +1910,9 @@ static int vmmR3HlpResetEvent(RTSEMEVENT hEvt)
 }
 
 
-/** 
+/**
  * Worker for VMMR3EmtRendezvous that handles recursion.
- * 
+ *
  * @returns VBox strict status code.  This will be the first error,
  *          VINF_SUCCESS, or an EM scheduling status code.
  *
@@ -1914,9 +1923,9 @@ static int vmmR3HlpResetEvent(RTSEMEVENT hEvt)
  *                          grp_VMMR3EmtRendezvous_fFlags.
  * @param   pfnRendezvous   The callback.
  * @param   pvUser          User argument for the callback.
- * 
+ *
  * @thread  EMT(pVCpu)
- */  
+ */
 static VBOXSTRICTRC vmmR3EmtRendezvousRecursive(PVM pVM, PVMCPU pVCpu, uint32_t fFlags,
                                                 PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser)
 {
