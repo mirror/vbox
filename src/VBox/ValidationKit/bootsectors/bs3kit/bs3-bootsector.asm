@@ -103,37 +103,71 @@ bs3InitCode:
         cli
 
         ; save the registers.
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rax], eax
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rsp], esp
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rbp], ebp
-        mov     ax, ss
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ss], ax
-        mov     ax, ds
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ds], ax
-        mov     ax, es
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.es], ax
-        mov     ax, fs
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.fs], ax
-        mov     ax, gs
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rax], ax
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rsp], sp
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rbp], bp
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ss], ss
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ds], ds
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.es], es
 
         ; set up the segment reisters and stack.
-        xor     eax, eax
+        mov     ax, 0
         mov     ds, ax
         mov     es, ax
-        mov     fs, ax
-        mov     gs, ax
         mov     ss, ax
-        mov     esp, BS3_ADDR_STACK
-        mov     ebp, esp
-        mov     [ebp], eax               ; clear the first 16 bytes (terminates the ebp chain)
-        mov     [ebp + 04h], eax
-        mov     [ebp + 08h], eax
-        mov     [ebp + 0ch], eax
+        mov     sp, BS3_ADDR_STACK
+        mov     bp, sp
+        mov     [bp], ax                ; clear the first 8 bytes (terminates the ebp chain)
+        mov     [bp + 02h], ax
+        mov     [bp + 04h], ax
+        mov     [bp + 06h], ax
 
-        ; Save more registers now that ds is known and the stack is usable.
-        pushfd
-        pop     eax
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rflags], eax
+        ; Save flags now that we know that there's a valid stack.
+        pushf
+
+        ;
+        ; Clear the register area.
+        ;
+        push    cx
+        push    di
+        mov     di, BS3_ADDR_REG_SAVE
+        mov     cx, BS3REGCTX_size/2
+        cld
+        rep stosw
+        pop     di
+        pop     cx
+
+        ;
+        ; Do basic CPU detection.
+        ;
+
+        ; 1. bit 15-bit was fixed to 1 in pre-286 CPUs, and fixed to 0 in 286+.
+        mov     ax, [bp - 2]
+        test    ah, 080h                ; always set on pre 286, clear on 286 and later
+        jnz     .pre_80286
+
+        ; 2. On a 286 you cannot popf IOPL and NT from real mode.
+        or      ah, (X86_EFL_IOPL | X86_EFL_NT) >> 8
+        push    ax
+        popf
+        pushf
+        pop     ax
+        test    ah, (X86_EFL_IOPL | X86_EFL_NT) >> 8
+        jz      .is_80286
+        ; 386 or later.
+
+
+        ; Save 386 registers. We can now skip the CS prefix as DS is flat.
+        shr     eax, 16
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rax+2], ax
+        mov     eax, esp
+        shr     eax, 16
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rsp+2], ax
+        mov     eax, ebp
+        shr     eax, 16
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbp+2], ax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.fs], fs
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.gs], gs
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbx], ebx
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rcx], ecx
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdx], edx
@@ -143,35 +177,60 @@ bs3InitCode:
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr2], eax
         mov     eax, cr3
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr3], eax
-        mov     eax, cr4
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr4], eax
         mov     byte [BS3_ADDR_REG_SAVE + BS3REGCTX.bMode], BS3_MODE_RM
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.cs], cs
         xor     eax, eax
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.cs], ax
         mov     ax, start
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rip], eax
 
+        ; Pentium/486+: CR4 requires VME/CPUID, so we need to detect that before accessing it.
+        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.cr4], eax
+        popf
+        pushfd
+        pop     eax
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rflags], eax
+        xor     eax, X86_EFL_ID
+        push    eax
+        popfd
+        pushfd
+        pop     ebx
+        cmp     ebx, eax
+        jne     .no_cr4
+        mov     eax, cr4
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr4], eax
+.no_cr4:
         ; Make sure caching is enabled and alignment is off.
         mov     eax, cr0
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr0], eax
         and     eax, ~(X86_CR0_NW | X86_CR0_CD | X86_CR0_AM)
         mov     cr0, eax
+        jmp     .do_load
+
+.is_80286:
+        smsw    [BS3_ADDR_REG_SAVE + BS3REGCTX.cr0]
+.pre_80286:
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbx], bx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rcx], cx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdx], dx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rsi], si
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi], di
 
         ; Load all the code.
+.do_load
         mov     [g_bBootDrv], dl
         call    bs3InitLoadImage
 
         ;
         ; Call the user 'main' procedure (shouldn't return).
         ;
+        cld
         call    BS3_SEL_TEXT16:0000h
 
         ; Panic/hang.
 Bs3Panic:
         cli
-        hlt
+        ;hlt
         jmp     Bs3Panic
-
 
 
 ;;
@@ -211,8 +270,8 @@ BEGINPROC bs3InitLoadImage
         ;
         ; Reload all the sectors one at a time (avoids problems).
         ;
-        mov     esi, [g_cLargeTotalSectors]
-        dec     esi
+        mov     si, [g_cLargeTotalSectors] ; 16-bit sector count ==> max 512 * 65 535 = 33 553 920 bytes.
+        dec     si
         mov     di, BS3_ADDR_LOAD / 16  ; The current load segment.
         mov     cx, 0002h               ; ch/cylinder=0 (0-based); cl/sector=2 (1-based)
         xor     dh, dh                  ; dh/head=0
@@ -255,34 +314,21 @@ BEGINPROC bs3InitLoadImage
 
         ; print message
         mov     si, .s_szErrMsg
-        mov     ah, 0eh
-        xor     bx, bx
 .failure_next_char:
         lodsb
+        mov     ah, 0eh
+        mov     bx, 0ff00h
         int     10h
         cmp     si, .s_szErrMsgEnd
         jb      .failure_next_char
-
-        ; format the error number.
-        movzx   bx, byte [bp - 2 - 1]    ; read the ah of the pusha frame
-        shr     bl, 4
-        mov     al, [bx + .s_achHex]
-        int     10h
-
-        movzx   bx, byte [bp - 2 - 1]    ; read the ah of the pusha frame
-        and     bl, 0fh
-        mov     al, [bx + .s_achHex]
-        int     10h
 
         ; panic
         popa
         call    Bs3Panic
 .s_szErrMsg:
-        db 13, 10, 'read error: '
+        db 13, 10, 'read error!'
 .s_szErrMsgEnd:
-.s_achHex:
-        db '0123456789abcdef'
-ENDPROC bs3InitLoadImage
+;ENDPROC bs3InitLoadImage - don't want the padding.
 
 
 ;

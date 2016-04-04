@@ -2206,8 +2206,10 @@ typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
 /** The context doesn't have valid values for the CRx fields.
  * This is usually because it wasn't created with CPL=0. */
 #define BS3REG_CTX_F_NO_CR              UINT8_C(0x01)
+/** The CPU is too old for CR4, so no CR4 in this context. */
+#define BS3REG_CTX_F_NO_CR4             UINT8_C(0x02)
 /** The context doesn't have valid values for AMD64 GPR extensions. */
-#define BS3REG_CTX_F_NO_AMD64           UINT8_C(0x02)
+#define BS3REG_CTX_F_NO_AMD64           UINT8_C(0x04)
 /** @} */
 
 /**

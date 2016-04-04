@@ -538,7 +538,7 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
  	  segment .text \
  	  segment .rdata \
 
-TEMPLATE_VBoxBS3KitImg_DEPS = \
+TEMPLATE_VBoxBS3KitImg_LNK_DEPS = \
 	$(bs3-bootsector_1_TARGET) \
 	$(VBoxBs3Linker_1_TARGET)
 TEMPLATE_VBoxBS3KitImg_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY)\

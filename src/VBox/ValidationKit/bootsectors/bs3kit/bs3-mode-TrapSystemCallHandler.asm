@@ -34,7 +34,9 @@
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
+%if TMPL_BITS != 64
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
+%endif
 %if TMPL_BITS == 16
 BS3_EXTERN_DATA16 g_uBs3TrapEipHint
 %endif
@@ -586,6 +588,7 @@ TMPL_BEGIN_TEXT
         str     [ss:bx + BS3REGCTX.tr]
         sldt    [ss:bx + BS3REGCTX.ldtr]
 .save_context_16_return:
+        or      byte [ss:bx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_AMD64 | BS3REG_CTX_F_NO_CR4
         ret
 %endif ; TMPL_BITS == 16
 
@@ -710,10 +713,19 @@ TMPL_BEGIN_TEXT
         mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.cr2], sAX
         mov     sAX, cr3
         mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.cr3], sAX
+%if TMPL_BITS != 64
+        test    byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], (BS3CPU_F_CPUID >> 8)
+        jnz     .have_cr4
+        or      byte [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR4
+        jmp     .done_cr4
+.have_cr4:
+%endif
         mov     sAX, cr4
         mov     [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.cr4], sAX
-
 %if TMPL_BITS != 64
+.done_cr4:
+        or      byte [ss:xBX + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_AMD64
+
         ; Deal with extended v8086 frame.
  %if TMPL_BITS == 32
         test    dword [BS3_NOT_64BIT(ss:) xBX + BS3REGCTX.rflags], X86_EFL_VM

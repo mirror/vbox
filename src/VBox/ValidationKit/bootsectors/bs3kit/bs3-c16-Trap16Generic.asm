@@ -39,6 +39,7 @@
 ;*********************************************************************************************************************************
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 BS3_EXTERN_DATA16 g_uBs3TrapEipHint
+BS3_EXTERN_DATA16 g_uBs3CpuDetected
 BS3_EXTERN_SYSTEM16 Bs3Gdt
 TMPL_BEGIN_TEXT
 BS3_EXTERN_CMN Bs3TrapDefaultHandler
@@ -432,12 +433,21 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2], eax
         mov     eax, cr3
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
+
+        test    byte [1 + BS3_DATA16_WRT(g_uBs3CpuDetected)], (BS3CPU_F_CPUID >> 8) ; CR4 first appeared in later 486es.
+        jz      .skip_cr4_because_not_there
         mov     eax, cr4
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], eax
         jmp     .set_flags
+
+.skip_cr4_because_not_there:
+        mov     byte [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR4
+        jmp     .set_flags
+
 .skip_crX_because_cpl_not_0:
         or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
         jmp     .set_flags
+
 CPU 286
 .save_286_control_registers:
         smsw    [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0]
@@ -583,8 +593,15 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2], ecx
         mov     ecx, cr3
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], ecx
+
+        test    byte [1 + BS3_DATA16_WRT(g_uBs3CpuDetected)], (BS3CPU_F_CPUID >> 8) ; CR4 first appeared in later 486es.
+        jz      .skip_cr4_because_not_there
         mov     ecx, cr4
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], ecx
+        jmp     .common
+
+.skip_cr4_because_not_there:
+        mov     byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR4
 
         ;
         ; Copy the register state from the previous task segment.

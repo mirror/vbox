@@ -122,13 +122,19 @@ BS3_BEGIN_TEXT16
         mov     cr3, eax
 
         ;
-        ; Make sure PAE is really off and that PSE is enabled.
-        ; ASSUMES PSE supported (pentium+).
+        ; Make sure PAE is really off and that PSE is enabled when supported.
         ;
+BS3_EXTERN_DATA16 g_uBs3CpuDetected
+BS3_BEGIN_TEXT16
+        test    byte [1 + BS3_DATA16_WRT(g_uBs3CpuDetected)], (BS3CPU_F_CPUID >> 8)
+        jz      .cr4_is_fine
         mov     eax, cr4
         mov     ecx, eax
-        and     eax, ~X86_CR4_PAE
+        and     eax, ~(X86_CR4_PAE | X86_CR4_PSE)
+        test    byte [1 + BS3_DATA16_WRT(g_uBs3CpuDetected)], (BS3CPU_F_PSE >> 8)
+        jz      .no_pse
         or      eax, X86_CR4_PSE
+.no_pse:
         cmp     eax, ecx
         je      .cr4_is_fine
         mov     cr4, eax

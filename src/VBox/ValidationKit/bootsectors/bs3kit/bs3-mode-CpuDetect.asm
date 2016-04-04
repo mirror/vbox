@@ -45,10 +45,10 @@ BS3_PROC_BEGIN_MODE Bs3CpuDetect
 CPU 8086
         push    xBP
         mov     xBP, xSP
-        pushf
         push    xCX
         push    xDX
         push    xBX
+        pushf
 
 %ifndef TMPL_CMN_PAGING
  %ifdef TMPL_RM
@@ -138,19 +138,19 @@ CPU 286
         ; observed a 386SX here.
         ;
         cli                             ; Disable interrupts to be on the safe side.
-        mov     xAX, [xBP - xCB]
-        or      xAX, X86_EFL_IOPL | X86_EFL_NT
-        push    xAX                     ; Load modified flags.
+        mov     ax, [xBP - xCB]
+        or      ax, X86_EFL_IOPL | X86_EFL_NT
+        push    ax                      ; Load modified flags.
         popf
         pushf                           ; Get actual flags.
-        pop     xAX
+        pop     ax
         test    ax, X86_EFL_IOPL | X86_EFL_NT
         jnz     .386plus                ; If any of the flags are set, we're on 386+.
 
         ; While we could in theory be in v8086 mode at this point and be fooled
         ; by a flaky POPF implementation, we assume this isn't the case in our
         ; execution environment.
-        mov     xAX, BS3CPU_80286
+        mov     ax, BS3CPU_80286
         jmp     .return
 %endif
 
@@ -215,9 +215,12 @@ CPU 586
         and     eax, edx
         mov     ah, al
         AssertCompile(X86_CPUID_FEATURE_EDX_PAE_BIT > BS3CPU_F_PAE_BIT - 8)  ; 6 vs 10-8=2
+        and     al, X86_CPUID_FEATURE_EDX_PAE
         shr     al, X86_CPUID_FEATURE_EDX_PAE_BIT - (BS3CPU_F_PAE_BIT - 8)
         AssertCompile(X86_CPUID_FEATURE_EDX_PSE_BIT == BS3CPU_F_PSE_BIT - 8) ; 3 vs 11-8=3
+        and     ah, X86_CPUID_FEATURE_EDX_PSE
         or      ah, al
+        or      ah, (BS3CPU_F_CPUID >> 8)
 
         ; Add the CPU type based on the family and model values.
         cmp     cl, 6

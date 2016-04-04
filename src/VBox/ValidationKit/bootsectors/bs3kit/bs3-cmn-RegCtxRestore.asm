@@ -29,7 +29,7 @@
 
 BS3_EXTERN_SYSTEM16 Bs3Gdt
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
-%if TMPL_BITS == 16
+%if TMPL_BITS != 64
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
 %endif
 TMPL_BEGIN_TEXT
@@ -212,6 +212,12 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         test    byte [xBX + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
         jnz     .skip_control_regs
 
+        test    byte [xBX + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR4 ; (old 486s and 386s didn't have CR4)
+        jnz     .skip_cr4
+%if TMPL_BITS != 64
+        test    word [BS3_ONLY_16BIT(es:) BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_F_CPUID
+        jz      .skip_cr4
+%endif
         mov     sAX, [xBX + BS3REGCTX.cr4]
         mov     sDX, cr4
         cmp     sAX, sDX

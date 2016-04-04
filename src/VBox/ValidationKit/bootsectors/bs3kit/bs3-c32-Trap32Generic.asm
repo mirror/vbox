@@ -38,6 +38,7 @@
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
+BS3_EXTERN_DATA16 g_uBs3CpuDetected
 BS3_EXTERN_SYSTEM16 Bs3Gdt
 TMPL_BEGIN_TEXT
 BS3_EXTERN_CMN Bs3TrapDefaultHandler
@@ -349,19 +350,28 @@ BS3_PROC_BEGIN bs3Trap32GenericCommon
         test    al, 3
         jnz     .skip_crX_because_cpl_not_0
 
+        mov     eax, cr3
+        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
+.save_cr0_cr2_cr4:                      ; The double fault code joins us here.
         mov     eax, cr0
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], eax
         mov     eax, cr2
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2], eax
-        mov     eax, cr3
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr3], eax
+
+        test    byte [1 + BS3_DATA16_WRT(g_uBs3CpuDetected)], (BS3CPU_F_CPUID >> 8) ; CR4 first appeared in later 486es.
+        jz      .skip_cr4_because_not_there
         mov     eax, cr4
         mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], eax
         jmp     .set_flags
+
+.skip_cr4_because_not_there:
+        mov     byte [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR4
+        jmp     .set_flags
+
 .skip_crX_because_cpl_not_0:
         or      byte [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
 
-.set_flags:                             ; The double fault code joins us here.
+.set_flags:
         or      byte [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_AMD64
 
         ;
@@ -521,18 +531,8 @@ AssertCompileSizeAlignment(BS3TRAPFRAME, 8)
         mov     [BS3_DATA16_WRT(g_bBs3CurrentMode)], cl
 
         ;
-        ; Control registers.
-        ;
-        mov     ecx, cr0
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], ecx
-        mov     ecx, cr2
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr2], ecx
-        mov     ecx, cr4
-        mov     [edi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr4], ecx
-
-        ;
         ; Join code paths with the generic handler code.
         ;
-        jmp     bs3Trap32GenericCommon.set_flags
+        jmp     bs3Trap32GenericCommon.save_cr0_cr2_cr4
 BS3_PROC_END   Bs3Trap32DoubleFaultHandler
 

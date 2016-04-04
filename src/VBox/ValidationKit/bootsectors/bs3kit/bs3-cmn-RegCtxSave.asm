@@ -29,7 +29,7 @@
 
 BS3_EXTERN_SYSTEM16 Bs3Gdt
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
-%if TMPL_BITS == 16
+%if TMPL_BITS != 64
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
 %endif
 TMPL_BEGIN_TEXT
@@ -120,6 +120,13 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         ;
         ; 80386 or later.
         ;
+%if TMPL_BITS != 64
+        ; Check for CR4 here while we've got a working DS in all contexts.
+        test    byte [1 + BS3_DATA16_WRT(g_uBs3CpuDetected)], (BS3CPU_F_CPUID >> 8)
+        jnz     .save_full_have_cr4
+        or      byte [BS3_ONLY_16BIT(es:) xDI + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR4
+.save_full_have_cr4:
+%endif
 %if TMPL_BITS == 16
         ; Load es into ds so we can save ourselves some segment prefix bytes.
         push    es
@@ -175,6 +182,10 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     [xDI + BS3REGCTX.cr2], sAX
         mov     sAX, cr3
         mov     [xDI + BS3REGCTX.cr3], sAX
+%if TMPL_BITS != 64
+        test    byte [xDI + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR4
+        jnz     .common_80286
+%endif
         mov     sAX, cr4
         mov     [xDI + BS3REGCTX.cr4], sAX
         jmp     .common_80286
