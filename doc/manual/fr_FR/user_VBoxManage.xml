@@ -3957,7 +3957,7 @@ Value: 2006.01.01</screen>
     <para>Les sous-commandes de "debugvm" fonctionnent sur une machine virtuelle
     en fonction. Celles suivantes sont disponibles&#xA0;:<itemizedlist>
         <listitem>
-          <para>Avec <computeroutput>dumpguestcore --filename
+          <para>Avec <computeroutput>dumpvmcore --filename
           &lt;nom&gt;</computeroutput>, vous pouvez créer un fichier de renvoi
           système de la VM en fonction, qui sera écrit dans le fichier donné.
           Ce fichier aura un format ELF c&#x153;ur standard (avec des sections
