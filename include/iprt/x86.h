@@ -470,13 +470,14 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_EDX_DE        RT_BIT_32(2)
 /** Bit 3 - PSE - Page Size Extension. */
 #define X86_CPUID_FEATURE_EDX_PSE       RT_BIT_32(3)
+#define X86_CPUID_FEATURE_EDX_PSE_BIT             3     /**< Bit number for X86_CPUID_FEATURE_EDX_PSE. */
 /** Bit 4 - TSC - Time Stamp Counter. */
 #define X86_CPUID_FEATURE_EDX_TSC       RT_BIT_32(4)
 /** Bit 5 - MSR - Model Specific Registers RDMSR and WRMSR Instructions. */
 #define X86_CPUID_FEATURE_EDX_MSR       RT_BIT_32(5)
 /** Bit 6 - PAE - Physical Address Extension. */
 #define X86_CPUID_FEATURE_EDX_PAE       RT_BIT_32(6)
-#define X86_CPUID_FEATURE_EDX_PAE_BIT   6
+#define X86_CPUID_FEATURE_EDX_PAE_BIT             6     /**< Bit number for X86_CPUID_FEATURE_EDX_PAE. */
 /** Bit 7 - MCE - Machine Check Exception. */
 #define X86_CPUID_FEATURE_EDX_MCE       RT_BIT_32(7)
 /** Bit 8 - CX8 - CMPXCHG8B instruction. */
