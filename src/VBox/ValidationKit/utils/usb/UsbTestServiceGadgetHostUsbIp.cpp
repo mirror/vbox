@@ -30,7 +30,7 @@
 #include <iprt/string.h>
 #include <iprt/types.h>
 
-#include "UsbtestServiceGadgetHostInternal.h"
+#include "UsbTestServiceGadgetHostInternal.h"
 
 /*********************************************************************************************************************************
 *   Constants And Macros, Structures and Typedefs                                                                                *
