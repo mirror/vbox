@@ -232,6 +232,7 @@ CPU 586
         jmp     .NewerThanPPro
 
 .not_family_06h:
+        mov     al, BS3CPU_PProOrNewer
         ja      .NewerThanPPro
         cmp     cl, 5
         mov     al, BS3CPU_Pentium
