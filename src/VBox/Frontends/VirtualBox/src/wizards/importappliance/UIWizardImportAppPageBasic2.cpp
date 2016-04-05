@@ -173,27 +173,23 @@ void UIWizardImportAppPageBasic2::initializePage()
     /* Acquire appliance and certificate: */
     CAppliance *pAppliance = m_pApplianceWidget->appliance();
     CCertificate certificate = pAppliance->GetCertificate();
-    /* Check whether certificate exists and verified: */
-    if (certificate.GetPresence())
+    if (!certificate.isNull())
     {
-        if(certificate.GetVerified())
+        if(!certificate.GetTrusted() || certificate.GetSelfSigned())
         {
-            if(!certificate.GetTrusted() || certificate.GetSelfSigned())
+            /* Create certificate viewer to notify user about it is not verified: */
+            QPointer<UIApplianceCertificateViewer> pDialog =
+                new UIApplianceCertificateViewer(this, certificate);
+            AssertPtrReturnVoid(pDialog.data());
             {
-                /* Create certificate viewer to notify user about it is not verified: */
-                QPointer<UIApplianceCertificateViewer> pDialog =
-                    new UIApplianceCertificateViewer(this, certificate);
-                AssertPtrReturnVoid(pDialog.data());
-                {
-                    /* Show viewer in modal mode: */
-                    pDialog->exec();
-                    /* Leave if destroyed prematurely: */
-                    if (!pDialog)
-                        return;
-                    /* Delete viewer finally: */
-                    delete pDialog;
-                    pDialog = 0;
-                }
+                /* Show viewer in modal mode: */
+                pDialog->exec();
+                /* Leave if destroyed prematurely: */
+                if (!pDialog)
+                    return;
+                /* Delete viewer finally: */
+                delete pDialog;
+                pDialog = 0;
             }
         }
         else
