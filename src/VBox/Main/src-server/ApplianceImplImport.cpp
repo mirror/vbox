@@ -1715,8 +1715,6 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
      * certificate.  The former contains an entry for the manifest file with a
      * digest that is encrypted with the certificate in the latter part.
      */
-    bool lTrusted = false;
-
     if (m->pbSignedDigest)
     {
         /* Since we're validating the digest of the manifest, there have to be
@@ -1809,7 +1807,7 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
              * present this fact to the user and give a choice whether this
              * is acceptible.  But, first make sure it makes internal sense.
              */
-            m->fCertificateMissingPath = false;
+            m->fCertificateMissingPath = false; /** @todo need to check if the certificate is trusted by the system! */
             vrc = RTCrX509Certificate_VerifySignatureSelfSigned(&m->SignerCert, RTErrInfoInitStatic(&StaticErrInfo));
             if (RT_SUCCESS(vrc))
             {
@@ -1830,12 +1828,8 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
                    hardly trustworthy to start with without the user's consent. */
                 if (   !m->SignerCert.TbsCertificate.T3.pBasicConstraints
                     || !m->SignerCert.TbsCertificate.T3.pBasicConstraints->CA.fValue)
-                {
                     i_addWarning(tr("Self signed certificate used to sign '%s' is not marked as certificate authority (CA)"),
                                  pTask->locInfo.strPath.c_str());
-                }
-                else
-                    lTrusted = true;
             }
             else
             {
@@ -1919,9 +1913,6 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
                             }
                             else
                                 hrc2 = setErrorVrc(vrc, "RTCrX509CertPathsSetValidTimeSpec failed: %Rrc", vrc);
-
-                            if(RT_SUCCESS(vrc))
-                                lTrusted = true;
                         }
                         else if (vrc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS)
                         {
@@ -1958,10 +1949,8 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
     }
 
     /** @todo provide details about the signatory, signature, etc.  */
-    if(m->fSignerCertLoaded)
-    {
-        pCertificateInfo->initCertificate(&m->SignerCert, lTrusted);
-    }
+    if (m->fSignerCertLoaded)
+        mptrCertificateInfo->initCertificate(&m->SignerCert, m->fCertificateValid && !m->fCertificateMissingPath);
 
     /*
      * If there is a manifest, check that the OVF digest matches up (if present).

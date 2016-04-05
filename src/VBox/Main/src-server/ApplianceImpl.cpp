@@ -409,8 +409,8 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox)
     m->m_pSecretKeyStore = new SecretKeyStore(false /* fRequireNonPageable*/);
     AssertReturn(m->m_pSecretKeyStore, E_FAIL);
 
-    pCertificateInfo.createObject();
-    pCertificateInfo->init(this);
+    mptrCertificateInfo.createObject();
+    mptrCertificateInfo->init(this);
 
     i_initApplianceIONameMap();
 
@@ -521,16 +521,13 @@ HRESULT Appliance::getDisks(std::vector<com::Utf8Str> &aDisks)
  */
 HRESULT Appliance::getCertificate(ComPtr<ICertificate> &aCertificateInfo)
 {
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
 
-
-        pCertificateInfo.queryInterfaceTo(aCertificateInfo.asOutParam());
-
-
+/** @todo r=bird: What about when there is no signature and certificate? */
+    mptrCertificateInfo.queryInterfaceTo(aCertificateInfo.asOutParam());
     return S_OK;
 }
 

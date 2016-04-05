@@ -114,7 +114,7 @@ private:
     /** weak VirtualBox parent */
     VirtualBox* const mVirtualBox;
 
-    ComObjPtr<Certificate> pCertificateInfo;
+    ComObjPtr<Certificate> mptrCertificateInfo;
     struct ImportStack;
     class TaskOVF;
     struct Data;            // opaque, defined in ApplianceImpl.cpp
