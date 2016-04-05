@@ -164,7 +164,7 @@ HRESULT Certificate::getVersionNumber(CertificateVersion_T *aVersionNumber)
 
     Assert(mData->m->fValidX509);
     /* version 1 has value 0, so +1.*/
-    *aVersionNumber = (uint32_t)(mData->m->X509.TbsCertificate.T0.Version.uValue.u + 1);
+    *aVersionNumber = (CertificateVersion_T)(mData->m->X509.TbsCertificate.T0.Version.uValue.u + 1);
 
     return S_OK;
 }
