@@ -218,10 +218,59 @@
 /* ASMCpuId_Idx_ECX: Implemented externally, too many parameters. */
 /* ASMCpuIdExSlow: Always implemented externally. */
 /* ASMCpuId_ECX_EDX: Implemented externally, too many parameters. */
-/* ASMCpuId_EAX: Implemented externally, lazy bird. */
-/* ASMCpuId_EBX: Implemented externally, lazy bird. */
-/* ASMCpuId_ECX: Implemented externally, lazy bird. */
-/* ASMCpuId_EDX: Implemented externally, lazy bird. */
+
+#undef      ASMCpuId_EAX
+#pragma aux ASMCpuId_EAX = \
+    ".586" \
+    "xchg ax, dx" \
+    "shl eax, 16" \
+    "mov ax, dx" \
+    "cpuid" \
+    "mov edx, eax" \
+    "shr edx, 16" \
+    parm [ax dx] \
+    value [ax dx] \
+    modify exact [ax bx cx dx];
+
+#undef      ASMCpuId_EBX
+#pragma aux ASMCpuId_EBX = \
+    ".586" \
+    "xchg ax, dx" \
+    "shl eax, 16" \
+    "mov ax, dx" \
+    "cpuid" \
+    "mov ax, bx" \
+    "shr ebx, 16" \
+    parm [ax dx] \
+    value [ax bx] \
+    modify exact [ax bx cx dx];
+
+#undef      ASMCpuId_ECX
+#pragma aux ASMCpuId_ECX = \
+    ".586" \
+    "xchg ax, dx" \
+    "shl eax, 16" \
+    "mov ax, dx" \
+    "cpuid" \
+    "mov ax, cx" \
+    "shr ecx, 16" \
+    parm [ax dx] \
+    value [ax cx] \
+    modify exact [ax bx cx dx];
+
+#undef      ASMCpuId_EDX
+#pragma aux ASMCpuId_EDX = \
+    ".586" \
+    "xchg ax, dx" \
+    "shl eax, 16" \
+    "mov ax, dx" \
+    "cpuid" \
+    "mov ax, dx" \
+    "shr edx, 16" \
+    parm [ax dx] \
+    value [ax dx] \
+    modify exact [ax bx cx dx];
+
 /* ASMHasCpuId: MSC inline in main source file. */
 /* ASMGetApicId: Implemented externally, lazy bird. */
 
