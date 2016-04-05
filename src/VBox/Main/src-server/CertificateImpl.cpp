@@ -138,11 +138,6 @@ void Certificate::uninit()
  * @{
  */
 
-/**
- * Private method implementation.
- * @param aVersionNumber
- * @return
- */
 HRESULT Certificate::getVersionNumber(CertificateVersion_T *aVersionNumber)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -158,11 +153,6 @@ HRESULT Certificate::getVersionNumber(CertificateVersion_T *aVersionNumber)
     return S_OK;
 }
 
-/**
- * Private method implementation.
- * @param aSerialNumber
- * @return
- */
 HRESULT Certificate::getSerialNumber(com::Utf8Str &aSerialNumber)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -179,11 +169,6 @@ HRESULT Certificate::getSerialNumber(com::Utf8Str &aSerialNumber)
     return S_OK;
 }
 
-/**
- * Private method implementation.
- * @param aSignatureAlgorithmOID
- * @return
- */
 HRESULT Certificate::getSignatureAlgorithmOID(com::Utf8Str &aSignatureAlgorithmOID)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -194,11 +179,6 @@ HRESULT Certificate::getSignatureAlgorithmOID(com::Utf8Str &aSignatureAlgorithmO
     return S_OK;
 }
 
-/**
- * Private method implementation.
- * @param aSignatureAlgorithmID
- * @return
- */
 HRESULT Certificate::getSignatureAlgorithmName(com::Utf8Str &aSignatureAlgorithmName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -207,11 +187,6 @@ HRESULT Certificate::getSignatureAlgorithmName(com::Utf8Str &aSignatureAlgorithm
     return i_getAlgorithmName(&mData->m->X509.TbsCertificate.Signature, aSignatureAlgorithmName);
 }
 
-/**
- * Private method implementation.
- * @param aIssuerName
- * @return
- */
 HRESULT Certificate::getIssuerName(std::vector<com::Utf8Str> &aIssuerName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -220,11 +195,6 @@ HRESULT Certificate::getIssuerName(std::vector<com::Utf8Str> &aIssuerName)
     return i_getX509Name(&mData->m->X509.TbsCertificate.Issuer, aIssuerName);
 }
 
-/**
- * Private method implementation.
- * @param aSubjectName
- * @return
- */
 HRESULT Certificate::getSubjectName(std::vector<com::Utf8Str> &aSubjectName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -313,11 +283,6 @@ HRESULT Certificate::getFriendlyName(com::Utf8Str &aFriendlyName)
     return S_OK;
 }
 
-/**
- * Private method implementation.
- * @param aValidityPeriodNotBefore
- * @return
- */
 HRESULT Certificate::getValidityPeriodNotBefore(com::Utf8Str &aValidityPeriodNotBefore)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -326,11 +291,6 @@ HRESULT Certificate::getValidityPeriodNotBefore(com::Utf8Str &aValidityPeriodNot
     return i_getTime(&mData->m->X509.TbsCertificate.Validity.NotBefore, aValidityPeriodNotBefore);
 }
 
-/**
- * Private method implementation.
- * @param aValidityPeriodNotAfter
- * @return
- */
 HRESULT Certificate::getValidityPeriodNotAfter(com::Utf8Str &aValidityPeriodNotAfter)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -348,11 +308,6 @@ HRESULT Certificate::getPublicKeyAlgorithmOID(com::Utf8Str &aPublicKeyAlgorithmO
     return S_OK;
 }
 
-/**
- * Private method implementation.
- * @param aPublicKeyAlgorithm
- * @return
- */
 HRESULT Certificate::getPublicKeyAlgorithm(com::Utf8Str &aPublicKeyAlgorithm)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -361,11 +316,6 @@ HRESULT Certificate::getPublicKeyAlgorithm(com::Utf8Str &aPublicKeyAlgorithm)
     return i_getAlgorithmName(&mData->m->X509.TbsCertificate.SubjectPublicKeyInfo.Algorithm, aPublicKeyAlgorithm);
 }
 
-/**
- * Private method implementation.
- * @param aSubjectPublicKey
- * @return
- */
 HRESULT Certificate::getSubjectPublicKey(std::vector<BYTE> &aSubjectPublicKey)
 {
 
@@ -373,11 +323,6 @@ HRESULT Certificate::getSubjectPublicKey(std::vector<BYTE> &aSubjectPublicKey)
     return i_getEncodedBytes(&mData->m->X509.TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey.Asn1Core, aSubjectPublicKey);
 }
 
-/**
- * Private method implementation.
- * @param aIssuerUniqueIdentifier
- * @return
- */
 HRESULT Certificate::getIssuerUniqueIdentifier(com::Utf8Str &aIssuerUniqueIdentifier)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -385,11 +330,6 @@ HRESULT Certificate::getIssuerUniqueIdentifier(com::Utf8Str &aIssuerUniqueIdenti
     return i_getUniqueIdentifier(&mData->m->X509.TbsCertificate.T1.IssuerUniqueId, aIssuerUniqueIdentifier);
 }
 
-/**
- * Private method implementation.
- * @param aSubjectUniqueIdentifier
- * @return
- */
 HRESULT Certificate::getSubjectUniqueIdentifier(com::Utf8Str &aSubjectUniqueIdentifier)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -397,11 +337,6 @@ HRESULT Certificate::getSubjectUniqueIdentifier(com::Utf8Str &aSubjectUniqueIden
     return i_getUniqueIdentifier(&mData->m->X509.TbsCertificate.T2.SubjectUniqueId, aSubjectUniqueIdentifier);
 }
 
-/**
- * Private method implementation.
- * @param aCertificateAuthority
- * @return
- */
 HRESULT Certificate::getCertificateAuthority(BOOL *aCertificateAuthority)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -412,11 +347,6 @@ HRESULT Certificate::getCertificateAuthority(BOOL *aCertificateAuthority)
     return S_OK;
 }
 
-/**
- * Private method implementation.
- * @param aKeyUsage
- * @return
- */
 HRESULT Certificate::getKeyUsage(ULONG *aKeyUsage)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -425,11 +355,6 @@ HRESULT Certificate::getKeyUsage(ULONG *aKeyUsage)
     return S_OK;
 }
 
-/**
- * Private method implementation.
- * @param aExtendedKeyUsage
- * @return
- */
 HRESULT Certificate::getExtendedKeyUsage(std::vector<com::Utf8Str> &aExtendedKeyUsage)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -437,22 +362,12 @@ HRESULT Certificate::getExtendedKeyUsage(std::vector<com::Utf8Str> &aExtendedKey
     return E_NOTIMPL;
 }
 
-/**
- * Private method implementation.
- * @param aRawCertData
- * @return
- */
 HRESULT Certificate::getRawCertData(std::vector<BYTE> &aRawCertData)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Getting encoded ASN.1 bytes may make changes to X509. */
     return i_getEncodedBytes(&mData->m->X509.SeqCore.Asn1Core, aRawCertData);
 }
 
-/**
- * Private method implementation.
- * @param aSelfSigned
- * @return
- */
 HRESULT Certificate::getSelfSigned(BOOL *aSelfSigned)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -463,11 +378,6 @@ HRESULT Certificate::getSelfSigned(BOOL *aSelfSigned)
     return S_OK;
 }
 
-/**
- * Private method implementation.
- * @param aTrusted
- * @return
- */
 HRESULT Certificate::getTrusted(BOOL *aTrusted)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -515,6 +425,14 @@ HRESULT Certificate::queryInfo(LONG aWhat, com::Utf8Str &aResult)
  * @{
  */
 
+/**
+ * Translates an algorithm OID into a human readable string, if possible.
+ *
+ * @returns S_OK.
+ * @param   a_pAlgId    The algorithm.
+ * @param   a_rReturn   The return string value.
+ * @throws  std::bad_alloc
+ */
 HRESULT Certificate::i_getAlgorithmName(PCRTCRX509ALGORITHMIDENTIFIER a_pAlgId, com::Utf8Str &a_rReturn)
 {
     const char *pszOid = a_pAlgId->Algorithm.szObjId;
@@ -535,6 +453,17 @@ HRESULT Certificate::i_getAlgorithmName(PCRTCRX509ALGORITHMIDENTIFIER a_pAlgId, 
     return S_OK;
 }
 
+/**
+ * Formats a X.509 name into a string array.
+ *
+ * The name is prefix with a short hand of the relative distinguished name
+ * type followed by an equal sign.
+ *
+ * @returns S_OK.
+ * @param   a_pName     The X.509 name.
+ * @param   a_rReturn   The return string array.
+ * @throws  std::bad_alloc
+ */
 HRESULT Certificate::i_getX509Name(PCRTCRX509NAME a_pName, std::vector<com::Utf8Str> &a_rReturn)
 {
     if (RTCrX509Name_IsPresent(a_pName))
@@ -565,6 +494,14 @@ HRESULT Certificate::i_getX509Name(PCRTCRX509NAME a_pName, std::vector<com::Utf8
     return S_OK;
 }
 
+/**
+ * Translates an ASN.1 timestamp into an ISO timestamp string.
+ *
+ * @returns S_OK.
+ * @param   a_pTime     The timestamp
+ * @param   a_rReturn   The return string value.
+ * @throws  std::bad_alloc
+ */
 HRESULT Certificate::i_getTime(PCRTASN1TIME a_pTime, com::Utf8Str &a_rReturn)
 {
     char szTmp[128];
@@ -577,6 +514,14 @@ HRESULT Certificate::i_getTime(PCRTASN1TIME a_pTime, com::Utf8Str &a_rReturn)
     return E_FAIL;
 }
 
+/**
+ * Translates a X.509 unique identifier to a string.
+ *
+ * @returns S_OK.
+ * @param   a_pUniqueId The unique identifier.
+ * @param   a_rReturn   The return string value.
+ * @throws  std::bad_alloc
+ */
 HRESULT Certificate::i_getUniqueIdentifier(PCRTCRX509UNIQUEIDENTIFIER a_pUniqueId, com::Utf8Str &a_rReturn)
 {
     /* The a_pUniqueId may not be present! */
@@ -595,6 +540,14 @@ HRESULT Certificate::i_getUniqueIdentifier(PCRTCRX509UNIQUEIDENTIFIER a_pUniqueI
     return S_OK;
 }
 
+/**
+ * Translates any ASN.1 object into a (DER encoded) byte array.
+ *
+ * @returns S_OK.
+ * @param   a_pAsn1Obj  The ASN.1 object to get the DER encoded bytes for.
+ * @param   a_rReturn   The return byte vector.
+ * @throws  std::bad_alloc
+ */
 HRESULT Certificate::i_getEncodedBytes(PRTASN1CORE a_pAsn1Obj, std::vector<BYTE> &a_rReturn)
 {
     HRESULT hrc = S_OK;
