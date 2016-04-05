@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardImportAppPageBasic2_h__
-#define __UIWizardImportAppPageBasic2_h__
+#ifndef ___UIWizardImportAppPageBasic2_h___
+#define ___UIWizardImportAppPageBasic2_h___
 
 /* GUI includes: */
 #include "QIDialog.h"
@@ -32,38 +32,7 @@ class QIRichTextLabel;
 class CCertificate;
 
 
-/** QIDialog extension providing user with the information
-  * about the appliance certificate which validation failed. */
-class UIApplianceCertificateViewer : public QIWithRetranslateUI<QIDialog>
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs appliance @a certificate viewer for passed @a pParent. */
-    UIApplianceCertificateViewer(QWidget *pParent, const CCertificate &certificate);
-
-protected:
-
-    /** Prepares all. */
-    void prepare();
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-
-private:
-
-    /** Holds the certificate reference. */
-    const CCertificate &m_certificate;
-
-    /** Holds the text-label instance. */
-    QLabel *m_pTextLabel;
-    /** Holds the text-browser instance. */
-    QTextBrowser *m_pTextBrowser;
-};
-
-
-/* 2nd page of the Import Appliance wizard (base part): */
+/** 2nd page of the Import Appliance wizard (base part): */
 class UIWizardImportAppPage2 : public UIWizardPageBase
 {
 protected:
@@ -78,7 +47,7 @@ protected:
     ImportAppliancePointer m_pApplianceWidget;
 };
 
-/* 2nd page of the Import Appliance wizard (basic extension): */
+/** 2nd page of the Import Appliance wizard (basic extension): */
 class UIWizardImportAppPageBasic2 : public UIWizardPage, public UIWizardImportAppPage2
 {
     Q_OBJECT;
@@ -103,7 +72,43 @@ private:
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
+    QLabel *m_pCertLabel;       /**< Signature/certificate info label. */
+    enum {
+        kCertText_Uninitialized = 0, kCertText_Unsigned,
+        kCertText_IssuedTrusted,     kCertText_IssuedExpired,     kCertText_IssuedUnverified,
+        kCertText_SelfSignedTrusted, kCertText_SelfSignedExpired, kCertText_SelfSignedUnverified
+    } m_enmCertText;
+    QString m_strSignedBy;
 };
 
-#endif /* __UIWizardImportAppPageBasic2_h__ */
+/**
+ * Dialog for asking consent to continue with unverifiable certificate.
+ */
+class UIApplianceUnverifiedCertificate : public QIWithRetranslateUI<QIDialog>
+{
+    Q_OBJECT;
+
+public:
+    /** Constructs appliance @a certificate viewer for passed @a pParent. */
+    UIApplianceUnverifiedCertificate(QWidget *pParent, const CCertificate &certificate);
+
+protected:
+    /** Prepares all. */
+    void prepare();
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+private:
+    /** Holds the certificate reference. */
+    const CCertificate &m_certificate;
+
+    /** Holds the text-label instance. */
+    QLabel *m_pTextLabel;
+    /** Holds the text-browser instance. */
+    QTextBrowser *m_pTextBrowser;
+};
+
+
+#endif /* !___UIWizardImportAppPageBasic2_h___ */
 

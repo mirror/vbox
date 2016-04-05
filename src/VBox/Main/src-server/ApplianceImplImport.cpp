@@ -1807,7 +1807,7 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
              * present this fact to the user and give a choice whether this
              * is acceptible.  But, first make sure it makes internal sense.
              */
-            m->fCertificateMissingPath = false; /** @todo need to check if the certificate is trusted by the system! */
+            m->fCertificateMissingPath = true; /** @todo need to check if the certificate is trusted by the system! */
             vrc = RTCrX509Certificate_VerifySignatureSelfSigned(&m->SignerCert, RTErrInfoInitStatic(&StaticErrInfo));
             if (RT_SUCCESS(vrc))
             {
@@ -1952,7 +1952,9 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
     if (m->fSignerCertLoaded)
     {
         m->ptrCertificateInfo.createObject();
-        m->ptrCertificateInfo->initCertificate(&m->SignerCert, m->fCertificateValid && !m->fCertificateMissingPath);
+        m->ptrCertificateInfo->initCertificate(&m->SignerCert,
+                                               m->fCertificateValid && !m->fCertificateMissingPath,
+                                               !m->fCertificateValidTime);
     }
 
     /*

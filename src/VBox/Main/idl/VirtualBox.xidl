@@ -2998,7 +2998,7 @@
   -->
   <interface
     name="ICertificate" extends="$unknown"
-    uuid="c85f71ef-dd7f-4b9c-aa58-5c186a95d7f9"
+    uuid="392f1de4-80e1-4a8a-93a1-67c5f92a838a"
     wsmap="managed"
     reservedAttributes="12" reservedMethods="2"
     >
@@ -3025,6 +3025,9 @@
     </attribute>
     <attribute name="subjectName" type="wstring" readonly="yes" safearray="yes">
       <desc>Subject name.  Same format as issuerName.</desc>
+    </attribute>
+    <attribute name="friendlyName" type="wstring" readonly="yes">
+      <desc>Friendly subject name or similar.</desc>
     </attribute>
     <attribute name="validityPeriodNotBefore" type="wstring" readonly="yes">
       <desc>Certificate not valid before ISO time stamp.</desc>
@@ -3064,9 +3067,21 @@
     <attribute name="selfSigned" type="boolean" readonly="yes">
       <desc>Set if self signed certificate.</desc>
     </attribute>
+
+    <!-- The following is subject to the parent object views. -->
     <attribute name="trusted" type="boolean" readonly="yes">
-      <desc>Set if the certificate is trusted.</desc>
+      <desc>Set if the certificate is trusted (by the parent object).</desc>
     </attribute>
+    <attribute name="expired" type="boolean" readonly="yes"> <!-- isCurrentlyExpired is clearer than isCurrentlyValid. -->
+      <desc>Set if the certificate has expired (relevant to the parent object)/</desc>
+    </attribute>
+
+    <method name="isCurrentlyExpired">
+      <desc>
+        Tests if the certificate has expired at the present time according to
+        the X.509 validity of the certificate.</desc>
+      <param name="result" type="boolean" dir="return" />
+    </method>
 
     <method name="queryInfo">
       <desc>Way to extend the interface.</desc>

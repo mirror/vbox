@@ -32,6 +32,7 @@ struct CertificateData
 {
     CertificateData()
         : fTrusted(false)
+        , fExpired(false)
         , fValidX509(false)
     {
         RT_ZERO(X509);
@@ -49,6 +50,8 @@ struct CertificateData
 
     /** Whether the certificate is trusted.  */
     bool fTrusted;
+    /** Whether the certificate is trusted.  */
+    bool fExpired;
     /** Valid data in mX509. */
     bool fValidX509;
     /** Clone of the X.509 certificate. */
@@ -89,8 +92,10 @@ void Certificate::FinalRelease()
  * @returns COM status code.
  * @param   a_pCert         The certificate.
  * @param   a_fTrusted      Whether the caller trusts the certificate or not.
+ * @param   a_fExpired      Whether the caller consideres the certificate to be
+ *                          expired.
  */
-HRESULT Certificate::initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted)
+HRESULT Certificate::initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted, bool a_fExpired)
 {
     HRESULT rc = S_OK;
     LogFlowThisFuncEnter();
@@ -105,7 +110,8 @@ HRESULT Certificate::initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrus
     if (RT_SUCCESS(vrc))
     {
         mData->m->fValidX509 = true;
-        mData->m->fTrusted  = a_fTrusted;
+        mData->m->fTrusted   = a_fTrusted;
+        mData->m->fExpired   = a_fExpired;
         autoInitSpan.setSucceeded();
     }
     else
@@ -126,6 +132,11 @@ void Certificate::uninit()
     delete mData;
     mData = NULL;
 }
+
+
+/** @name wrapped ICertificate properties
+ * @{
+ */
 
 /**
  * Private method implementation.
@@ -220,6 +231,86 @@ HRESULT Certificate::getSubjectName(std::vector<com::Utf8Str> &aSubjectName)
 
     Assert(mData->m->fValidX509);
     return i_getX509Name(&mData->m->X509.TbsCertificate.Subject, aSubjectName);
+}
+
+HRESULT Certificate::getFriendlyName(com::Utf8Str &aFriendlyName)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Assert(mData->m->fValidX509);
+
+    PCRTCRX509NAME pName = &mData->m->X509.TbsCertificate.Subject;
+
+    /*
+     * Enumerate the subject name and pick interesting attributes we can use to
+     * form a name more friendly than the RTCrX509Name_FormatAsString output.
+     */
+    const char *pszOrg       = NULL;
+    const char *pszOrgUnit   = NULL;
+    const char *pszGivenName = NULL;
+    const char *pszSurname   = NULL;
+    const char *pszEmail     = NULL;
+    for (uint32_t i = 0; i < pName->cItems; i++)
+    {
+        PCRTCRX509RELATIVEDISTINGUISHEDNAME pRdn = &pName->paItems[i];
+        for (uint32_t j = 0; j < pRdn->cItems; j++)
+        {
+            PCRTCRX509ATTRIBUTETYPEANDVALUE pComponent = &pRdn->paItems[j];
+            AssertContinue(pComponent->Value.enmType == RTASN1TYPE_STRING);
+
+            /* Select interesting components based on the short RDN prefix
+               string (easier to read and write than OIDs, for now). */
+            const char *pszPrefix = RTCrX509Name_GetShortRdn(&pComponent->Type);
+            if (pszPrefix)
+            {
+                const char *pszUtf8;
+                int vrc = RTAsn1String_QueryUtf8(&pComponent->Value.u.String, &pszUtf8, NULL);
+                if (RT_SUCCESS(vrc) && *pszUtf8)
+                {
+                    if (!strcmp(pszPrefix, "Email"))
+                        pszEmail = pszUtf8;
+                    else if (!strcmp(pszPrefix, "O"))
+                        pszOrg = pszUtf8;
+                    else if (!strcmp(pszPrefix, "OU"))
+                        pszOrgUnit = pszUtf8;
+                    else if (!strcmp(pszPrefix, "S"))
+                        pszSurname = pszUtf8;
+                    else if (!strcmp(pszPrefix, "G"))
+                        pszGivenName = pszUtf8;
+                }
+            }
+        }
+    }
+
+    if (pszGivenName && pszSurname)
+    {
+        if (pszEmail)
+            aFriendlyName = Utf8StrFmt("%s, %s <%s>", pszSurname, pszGivenName, pszEmail);
+        else if (pszOrg)
+            aFriendlyName = Utf8StrFmt("%s, %s (%s)", pszSurname, pszGivenName, pszOrg);
+        else if (pszOrgUnit)
+            aFriendlyName = Utf8StrFmt("%s, %s (%s)", pszSurname, pszGivenName, pszOrgUnit);
+        else
+            aFriendlyName = Utf8StrFmt("%s, %s", pszSurname, pszGivenName);
+    }
+    else if (pszOrg && pszOrgUnit)
+        aFriendlyName = Utf8StrFmt("%s, %s", pszOrg, pszOrgUnit);
+    else if (pszOrg)
+        aFriendlyName = Utf8StrFmt("%s", pszOrg);
+    else if (pszOrgUnit)
+        aFriendlyName = Utf8StrFmt("%s", pszOrgUnit);
+    else
+    {
+        /*
+         * Fall back on unfriendly but accurate.
+         */
+        char szTmp[_8K];
+        RT_ZERO(szTmp);
+        RTCrX509Name_FormatAsString(pName, szTmp, sizeof(szTmp) - 1, NULL);
+        aFriendlyName = szTmp;
+    }
+
+    return S_OK;
 }
 
 /**
@@ -381,17 +472,34 @@ HRESULT Certificate::getTrusted(BOOL *aTrusted)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    Assert(mData->m->fValidX509);
     *aTrusted = mData->m->fTrusted;
 
     return S_OK;
 }
 
-/**
- * Private method implementation. 
- * @param aWhat 
- * @param aResult
- * @return
+HRESULT Certificate::getExpired(BOOL *aExpired)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Assert(mData->m->fValidX509);
+    *aExpired = mData->m->fExpired;
+    return S_OK;
+}
+
+/** @} */
+
+/** @name Wrapped ICertificate methods
+ * @{
  */
+
+HRESULT Certificate::isCurrentlyExpired(BOOL *aResult)
+{
+    AssertReturnStmt(mData->m->fValidX509, *aResult = TRUE, E_UNEXPECTED);
+    RTTIMESPEC Now;
+    *aResult = RTCrX509Validity_IsValidAtTimeSpec(&mData->m->X509.TbsCertificate.Validity, RTTimeNow(&Now)) ? FALSE : TRUE;
+    return S_OK;
+}
+
 HRESULT Certificate::queryInfo(LONG aWhat, com::Utf8Str &aResult)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -399,6 +507,13 @@ HRESULT Certificate::queryInfo(LONG aWhat, com::Utf8Str &aResult)
     NOREF(aResult);
     return setError(E_FAIL, "Unknown item %u", aWhat);
 }
+
+/** @} */
+
+
+/** @name Methods extracting COM data from the certificate object
+ * @{
+ */
 
 HRESULT Certificate::i_getAlgorithmName(PCRTCRX509ALGORITHMIDENTIFIER a_pAlgId, com::Utf8Str &a_rReturn)
 {
@@ -505,4 +620,5 @@ HRESULT Certificate::i_getEncodedBytes(PRTASN1CORE a_pAsn1Obj, std::vector<BYTE>
     return hrc;
 }
 
+/** @} */
 

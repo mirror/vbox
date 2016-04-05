@@ -35,7 +35,7 @@ public:
 
     DECLARE_EMPTY_CTOR_DTOR(Certificate)
 
-    HRESULT initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted);
+    HRESULT initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted, bool a_fExpired);
     void uninit();
 
     HRESULT FinalConstruct();
@@ -51,6 +51,7 @@ private:
     HRESULT getPublicKeyAlgorithm(com::Utf8Str &aPublicKeyAlgorithm);
     HRESULT getIssuerName(std::vector<com::Utf8Str> &aIssuerName);
     HRESULT getSubjectName(std::vector<com::Utf8Str> &aSubjectName);
+    HRESULT getFriendlyName(com::Utf8Str &aFriendlyName);
     HRESULT getValidityPeriodNotBefore(com::Utf8Str &aValidityPeriodNotBefore);
     HRESULT getValidityPeriodNotAfter(com::Utf8Str &aValidityPeriodNotAfter);
     HRESULT getSubjectPublicKey(std::vector<BYTE> &aSubjectPublicKey);
@@ -62,7 +63,9 @@ private:
     HRESULT getRawCertData(std::vector<BYTE> &aRawCertData);
     HRESULT getSelfSigned(BOOL *aSelfSigned);
     HRESULT getTrusted(BOOL *aTrusted);
+    HRESULT getExpired(BOOL *aExpired);
     // wrapped ICertificate methods
+    HRESULT isCurrentlyExpired(BOOL *aResult);
     HRESULT queryInfo(LONG aWhat, com::Utf8Str &aResult);
 
     /** @name Methods extracting COM data from the certificate object
