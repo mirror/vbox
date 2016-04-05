@@ -489,11 +489,176 @@ static const char *vboxNetLwfWinStateToText(uint32_t enmState)
     return "invalid";
 }
 
+static void vboxNetLwfWinDumpPackets(const char *pszMsg, PNET_BUFFER_LIST pBufLists)
+{
+    for (PNET_BUFFER_LIST pList = pBufLists; pList; pList = NET_BUFFER_LIST_NEXT_NBL(pList))
+    {
+        for (PNET_BUFFER pBuf = NET_BUFFER_LIST_FIRST_NB(pList); pBuf; pBuf = NET_BUFFER_NEXT_NB(pBuf))
+        {
+            Log6(("%s packet: cb=%d offset=%d", pszMsg, NET_BUFFER_DATA_LENGTH(pBuf), NET_BUFFER_DATA_OFFSET(pBuf)));
+            for (PMDL pMdl = NET_BUFFER_FIRST_MDL(pBuf);
+                 pMdl != NULL;
+                 pMdl = NDIS_MDL_LINKAGE(pMdl))
+            {
+                Log6((" MDL: cb=%d", MmGetMdlByteCount(pMdl)));
+            }
+            Log6(("\n"));
+        }
+    }
+}
+
+DECLINLINE(const char *) vboxNetLwfWinEthTypeStr(uint16_t uType)
+{
+    switch (uType)
+    {
+        case RTNET_ETHERTYPE_IPV4: return "IP";
+        case RTNET_ETHERTYPE_IPV6: return "IPv6";
+        case RTNET_ETHERTYPE_ARP:  return "ARP";
+    }
+    return "unknown";
+}
+
+#define VBOXNETLWF_PKTDMPSIZE 0x50
+
+/**
+ * Dump a packet to debug log.
+ *
+ * @param   cpPacket    The packet.
+ * @param   cb          The size of the packet.
+ * @param   cszText     A string denoting direction of packet transfer.
+ */
+DECLINLINE(void) vboxNetLwfWinDumpPacket(PCINTNETSG pSG, const char *cszText)
+{
+    uint8_t bPacket[VBOXNETLWF_PKTDMPSIZE];
+
+    uint32_t cb = pSG->cbTotal < VBOXNETLWF_PKTDMPSIZE ? pSG->cbTotal : VBOXNETLWF_PKTDMPSIZE;
+    IntNetSgReadEx(pSG, 0, cb, bPacket);
+
+    AssertReturnVoid(cb >= 14);
+
+    uint8_t *pHdr = bPacket;
+    uint8_t *pEnd = bPacket + cb;
+    AssertReturnVoid(pEnd - pHdr >= 14);
+    uint16_t uEthType = RT_N2H_U16(*(uint16_t*)(pHdr+12));
+    Log2(("NetLWF: %s (%d bytes), %RTmac => %RTmac, EthType=%s(0x%x)\n",
+          cszText, pSG->cbTotal, pHdr+6, pHdr, vboxNetLwfWinEthTypeStr(uEthType), uEthType));
+    pHdr += sizeof(RTNETETHERHDR);
+    if (uEthType == RTNET_ETHERTYPE_VLAN)
+    {
+        AssertReturnVoid(pEnd - pHdr >= 4);
+        uEthType = RT_N2H_U16(*(uint16_t*)(pHdr+2));
+        Log2((" + VLAN: id=%d EthType=%s(0x%x)\n", RT_N2H_U16(*(uint16_t*)(pHdr)) & 0xFFF,
+              vboxNetLwfWinEthTypeStr(uEthType), uEthType));
+        pHdr += 2 * sizeof(uint16_t);
+    }
+    uint8_t uProto = 0xFF;
+    switch (uEthType)
+    {
+        case RTNET_ETHERTYPE_IPV6:
+            AssertReturnVoid(pEnd - pHdr >= 40);
+            uProto = pHdr[6];
+            Log2((" + IPv6: %RTnaipv6 => %RTnaipv6\n", pHdr+8, pHdr+24));
+            pHdr += 40;
+            break;
+        case RTNET_ETHERTYPE_IPV4:
+            AssertReturnVoid(pEnd - pHdr >= 20);
+            uProto = pHdr[9];
+            Log2((" + IP: %RTnaipv4 => %RTnaipv4\n", *(uint32_t*)(pHdr+12), *(uint32_t*)(pHdr+16)));
+            pHdr += (pHdr[0] & 0xF) * 4;
+            break;
+        case RTNET_ETHERTYPE_ARP:
+            AssertReturnVoid(pEnd - pHdr >= 28);
+            AssertReturnVoid(RT_N2H_U16(*(uint16_t*)(pHdr+2)) == RTNET_ETHERTYPE_IPV4);
+            switch (RT_N2H_U16(*(uint16_t*)(pHdr+6)))
+            {
+                case 1: /* ARP request */
+                    Log2((" + ARP-REQ: who-has %RTnaipv4 tell %RTnaipv4\n",
+                          *(uint32_t*)(pHdr+24), *(uint32_t*)(pHdr+14)));
+                    break;
+                case 2: /* ARP reply */
+                    Log2((" + ARP-RPL: %RTnaipv4 is-at %RTmac\n",
+                          *(uint32_t*)(pHdr+14), pHdr+8));
+                    break;
+                default:
+                    Log2((" + ARP: unknown op %d\n", RT_N2H_U16(*(uint16_t*)(pHdr+6))));
+                    break;
+            }
+            break;
+        /* There is no default case as uProto is initialized with 0xFF */
+    }
+    while (uProto != 0xFF)
+    {
+        switch (uProto)
+        {
+            case 0:  /* IPv6 Hop-by-Hop option*/
+            case 60: /* IPv6 Destination option*/
+            case 43: /* IPv6 Routing option */
+            case 44: /* IPv6 Fragment option */
+                Log2((" + IPv6 option (%d): <not implemented>\n", uProto));
+                uProto = pHdr[0];
+                pHdr += pHdr[1] * 8 + 8; /* Skip to the next extension/protocol */
+                break;
+            case 51: /* IPv6 IPsec AH */
+                Log2((" + IPv6 IPsec AH: <not implemented>\n"));
+                uProto = pHdr[0];
+                pHdr += (pHdr[1] + 2) * 4; /* Skip to the next extension/protocol */
+                break;
+            case 50: /* IPv6 IPsec ESP */
+                /* Cannot decode IPsec, fall through */
+                Log2((" + IPv6 IPsec ESP: <not implemented>\n"));
+                uProto = 0xFF;
+                break;
+            case 59: /* No Next Header */
+                Log2((" + IPv6 No Next Header\n"));
+                uProto = 0xFF;
+                break;
+            case 58: /* IPv6-ICMP */
+                switch (pHdr[0])
+                {
+                    case 1:   Log2((" + IPv6-ICMP: destination unreachable, code %d\n", pHdr[1])); break;
+                    case 128: Log2((" + IPv6-ICMP: echo request\n")); break;
+                    case 129: Log2((" + IPv6-ICMP: echo reply\n")); break;
+                    default:  Log2((" + IPv6-ICMP: unknown type %d, code %d\n", pHdr[0], pHdr[1])); break;
+                }
+                uProto = 0xFF;
+                break;
+            case 1: /* ICMP */
+                switch (pHdr[0])
+                {
+                    case 0:  Log2((" + ICMP: echo reply\n")); break;
+                    case 8:  Log2((" + ICMP: echo request\n")); break;
+                    case 3:  Log2((" + ICMP: destination unreachable, code %d\n", pHdr[1])); break;
+                    default: Log2((" + ICMP: unknown type %d, code %d\n", pHdr[0], pHdr[1])); break;
+                }
+                uProto = 0xFF;
+                break;
+            case 6: /* TCP */
+                Log2((" + TCP: src=%d dst=%d seq=%x ack=%x\n",
+                      RT_N2H_U16(*(uint16_t*)(pHdr)), RT_N2H_U16(*(uint16_t*)(pHdr+2)),
+                      RT_N2H_U32(*(uint32_t*)(pHdr+4)), RT_N2H_U32(*(uint32_t*)(pHdr+8))));
+                uProto = 0xFF;
+                break;
+            case 17: /* UDP */
+                Log2((" + UDP: src=%d dst=%d\n",
+                      RT_N2H_U16(*(uint16_t*)(pHdr)), RT_N2H_U16(*(uint16_t*)(pHdr+2))));
+                uProto = 0xFF;
+                break;
+            default:
+                Log2((" + Unknown: proto=0x%x\n", uProto));
+                uProto = 0xFF;
+                break;
+        }
+    }
+    Log3(("%.*Rhxd\n", cb, bPacket));
+}
+
 #else /* !DEBUG */
 #define vboxNetLwfWinDumpFilterTypes(uFlags)
 #define vboxNetLwfWinDumpOffloadSettings(p)
 #define vboxNetLwfWinDumpSetOffloadSettings(p)
-#endif /* DEBUG */
+#define vboxNetLwfWinDumpPackets(m,l)
+#define vboxNetLwfWinDumpPacket(p,t)
+#endif /* !DEBUG */
 
 DECLINLINE(bool) vboxNetLwfWinChangeState(PVBOXNETLWF_MODULE pModuleCtx, uint32_t enmNew, uint32_t enmOld = LwfState_32BitHack)
 {
@@ -1122,169 +1287,6 @@ static NDIS_STATUS vboxNetLwfWinRestart(IN NDIS_HANDLE hModuleCtx, IN PNDIS_FILT
     return Status;
 }
 
-
-static void vboxNetLwfWinDumpPackets(const char *pszMsg, PNET_BUFFER_LIST pBufLists)
-{
-    for (PNET_BUFFER_LIST pList = pBufLists; pList; pList = NET_BUFFER_LIST_NEXT_NBL(pList))
-    {
-        for (PNET_BUFFER pBuf = NET_BUFFER_LIST_FIRST_NB(pList); pBuf; pBuf = NET_BUFFER_NEXT_NB(pBuf))
-        {
-            Log6(("%s packet: cb=%d offset=%d", pszMsg, NET_BUFFER_DATA_LENGTH(pBuf), NET_BUFFER_DATA_OFFSET(pBuf)));
-            for (PMDL pMdl = NET_BUFFER_FIRST_MDL(pBuf);
-                 pMdl != NULL;
-                 pMdl = NDIS_MDL_LINKAGE(pMdl))
-            {
-                Log6((" MDL: cb=%d", MmGetMdlByteCount(pMdl)));
-            }
-            Log6(("\n"));
-        }
-    }
-}
-
-DECLINLINE(const char *) vboxNetLwfWinEthTypeStr(uint16_t uType)
-{
-    switch (uType)
-    {
-        case RTNET_ETHERTYPE_IPV4: return "IP";
-        case RTNET_ETHERTYPE_IPV6: return "IPv6";
-        case RTNET_ETHERTYPE_ARP:  return "ARP";
-    }
-    return "unknown";
-}
-
-#define VBOXNETLWF_PKTDMPSIZE 0x50
-
-/**
- * Dump a packet to debug log.
- *
- * @param   cpPacket    The packet.
- * @param   cb          The size of the packet.
- * @param   cszText     A string denoting direction of packet transfer.
- */
-DECLINLINE(void) vboxNetLwfWinDumpPacket(PCINTNETSG pSG, const char *cszText)
-{
-    uint8_t bPacket[VBOXNETLWF_PKTDMPSIZE];
-
-    uint32_t cb = pSG->cbTotal < VBOXNETLWF_PKTDMPSIZE ? pSG->cbTotal : VBOXNETLWF_PKTDMPSIZE;
-    IntNetSgReadEx(pSG, 0, cb, bPacket);
-
-    AssertReturnVoid(cb >= 14);
-
-    uint8_t *pHdr = bPacket;
-    uint8_t *pEnd = bPacket + cb;
-    AssertReturnVoid(pEnd - pHdr >= 14);
-    uint16_t uEthType = RT_N2H_U16(*(uint16_t*)(pHdr+12));
-    Log2(("NetLWF: %s (%d bytes), %RTmac => %RTmac, EthType=%s(0x%x)\n",
-          cszText, pSG->cbTotal, pHdr+6, pHdr, vboxNetLwfWinEthTypeStr(uEthType), uEthType));
-    pHdr += sizeof(RTNETETHERHDR);
-    if (uEthType == RTNET_ETHERTYPE_VLAN)
-    {
-        AssertReturnVoid(pEnd - pHdr >= 4);
-        uEthType = RT_N2H_U16(*(uint16_t*)(pHdr+2));
-        Log2((" + VLAN: id=%d EthType=%s(0x%x)\n", RT_N2H_U16(*(uint16_t*)(pHdr)) & 0xFFF,
-              vboxNetLwfWinEthTypeStr(uEthType), uEthType));
-        pHdr += 2 * sizeof(uint16_t);
-    }
-    uint8_t uProto = 0xFF;
-    switch (uEthType)
-    {
-        case RTNET_ETHERTYPE_IPV6:
-            AssertReturnVoid(pEnd - pHdr >= 40);
-            uProto = pHdr[6];
-            Log2((" + IPv6: %RTnaipv6 => %RTnaipv6\n", pHdr+8, pHdr+24));
-            pHdr += 40;
-            break;
-        case RTNET_ETHERTYPE_IPV4:
-            AssertReturnVoid(pEnd - pHdr >= 20);
-            uProto = pHdr[9];
-            Log2((" + IP: %RTnaipv4 => %RTnaipv4\n", *(uint32_t*)(pHdr+12), *(uint32_t*)(pHdr+16)));
-            pHdr += (pHdr[0] & 0xF) * 4;
-            break;
-        case RTNET_ETHERTYPE_ARP:
-            AssertReturnVoid(pEnd - pHdr >= 28);
-            AssertReturnVoid(RT_N2H_U16(*(uint16_t*)(pHdr+2)) == RTNET_ETHERTYPE_IPV4);
-            switch (RT_N2H_U16(*(uint16_t*)(pHdr+6)))
-            {
-                case 1: /* ARP request */
-                    Log2((" + ARP-REQ: who-has %RTnaipv4 tell %RTnaipv4\n",
-                          *(uint32_t*)(pHdr+24), *(uint32_t*)(pHdr+14)));
-                    break;
-                case 2: /* ARP reply */
-                    Log2((" + ARP-RPL: %RTnaipv4 is-at %RTmac\n",
-                          *(uint32_t*)(pHdr+14), pHdr+8));
-                    break;
-                default:
-                    Log2((" + ARP: unknown op %d\n", RT_N2H_U16(*(uint16_t*)(pHdr+6))));
-                    break;
-            }
-            break;
-        /* There is no default case as uProto is initialized with 0xFF */
-    }
-    while (uProto != 0xFF)
-    {
-        switch (uProto)
-        {
-            case 0:  /* IPv6 Hop-by-Hop option*/
-            case 60: /* IPv6 Destination option*/
-            case 43: /* IPv6 Routing option */
-            case 44: /* IPv6 Fragment option */
-                Log2((" + IPv6 option (%d): <not implemented>\n", uProto));
-                uProto = pHdr[0];
-                pHdr += pHdr[1] * 8 + 8; /* Skip to the next extension/protocol */
-                break;
-            case 51: /* IPv6 IPsec AH */
-                Log2((" + IPv6 IPsec AH: <not implemented>\n"));
-                uProto = pHdr[0];
-                pHdr += (pHdr[1] + 2) * 4; /* Skip to the next extension/protocol */
-                break;
-            case 50: /* IPv6 IPsec ESP */
-                /* Cannot decode IPsec, fall through */
-                Log2((" + IPv6 IPsec ESP: <not implemented>\n"));
-                uProto = 0xFF;
-                break;
-            case 59: /* No Next Header */
-                Log2((" + IPv6 No Next Header\n"));
-                uProto = 0xFF;
-                break;
-            case 58: /* IPv6-ICMP */
-                switch (pHdr[0])
-                {
-                    case 1:   Log2((" + IPv6-ICMP: destination unreachable, code %d\n", pHdr[1])); break;
-                    case 128: Log2((" + IPv6-ICMP: echo request\n")); break;
-                    case 129: Log2((" + IPv6-ICMP: echo reply\n")); break;
-                    default:  Log2((" + IPv6-ICMP: unknown type %d, code %d\n", pHdr[0], pHdr[1])); break;
-                }
-                uProto = 0xFF;
-                break;
-            case 1: /* ICMP */
-                switch (pHdr[0])
-                {
-                    case 0:  Log2((" + ICMP: echo reply\n")); break;
-                    case 8:  Log2((" + ICMP: echo request\n")); break;
-                    case 3:  Log2((" + ICMP: destination unreachable, code %d\n", pHdr[1])); break;
-                    default: Log2((" + ICMP: unknown type %d, code %d\n", pHdr[0], pHdr[1])); break;
-                }
-                uProto = 0xFF;
-                break;
-            case 6: /* TCP */
-                Log2((" + TCP: src=%d dst=%d seq=%x ack=%x\n",
-                      RT_N2H_U16(*(uint16_t*)(pHdr)), RT_N2H_U16(*(uint16_t*)(pHdr+2)),
-                      RT_N2H_U32(*(uint32_t*)(pHdr+4)), RT_N2H_U32(*(uint32_t*)(pHdr+8))));
-                uProto = 0xFF;
-                break;
-            case 17: /* UDP */
-                Log2((" + UDP: src=%d dst=%d\n",
-                      RT_N2H_U16(*(uint16_t*)(pHdr)), RT_N2H_U16(*(uint16_t*)(pHdr+2))));
-                uProto = 0xFF;
-                break;
-            default:
-                Log2((" + Unknown: proto=0x%x\n", uProto));
-                uProto = 0xFF;
-                break;
-        }
-    }
-    Log3(("%.*Rhxd\n", cb, bPacket));
-}
 
 static void vboxNetLwfWinDestroySG(PINTNETSG pSG)
 {
