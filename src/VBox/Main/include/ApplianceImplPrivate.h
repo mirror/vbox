@@ -136,6 +136,7 @@ struct Appliance::Data
         fCertificateValidTime    = false;
         fDeterminedDigestTypes   = false;
         fDigestTypes             = RTMANIFEST_ATTR_SHA1 | RTMANIFEST_ATTR_SHA256 | RTMANIFEST_ATTR_SHA512;
+        ptrCertificateInfo.setNull();
         strCertError.setNull();
     }
 
@@ -167,7 +168,7 @@ struct Appliance::Data
     /** Memorized copy of the manifest file for signature checking purposes. */
     RTVFSFILE           hMemFileTheirManifest;
 
-    /** The signer certificate from the signature fiel (.cert).
+    /** The signer certificate from the signature file (.cert).
      * This will be used in the future provide information about the signer via
      * the API. */
     RTCRX509CERTIFICATE SignerCert;
@@ -191,6 +192,9 @@ struct Appliance::Data
     size_t              cbSignedDigest;
     /** The digest type used to sign the manifest. */
     RTDIGESTTYPE        enmSignedDigestType;
+    /** The certificate info object.  This is NULL if no signature and
+     *  successfully loaded certificate. */
+    ComObjPtr<Certificate> ptrCertificateInfo;
     /** @} */
 
     bool                fExportISOImages;// when 1 the ISO images are exported

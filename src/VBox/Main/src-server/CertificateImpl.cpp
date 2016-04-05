@@ -21,8 +21,6 @@
 #include <iprt/crypto/x509.h>
 
 #include "ProgressImpl.h"
-#include "ApplianceImpl.h"
-#include "ApplianceImplPrivate.h"
 #include "CertificateImpl.h"
 #include "AutoCaller.h"
 #include "Global.h"
@@ -85,32 +83,6 @@ void Certificate::FinalRelease()
     BaseFinalRelease();
 }
 
-HRESULT Certificate::init(Appliance* appliance)
-{
-    HRESULT rc = S_OK;
-    LogFlowThisFuncEnter();
-
-    /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
-    if(appliance!=NULL)
-    {
-        LogFlowThisFunc(("m_appliance: %d \n", m_appliance));
-        m_appliance = appliance;
-    }
-    else
-        rc = E_FAIL;
-
-    /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
-        autoInitSpan.setSucceeded();
-
-    LogFlowThisFunc(("rc=%Rhrc\n", rc));
-    LogFlowThisFuncLeave();
-
-    return rc;
-}
-
 /**
  * Initializes a certificate instance.
  *
@@ -123,6 +95,9 @@ HRESULT Certificate::initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrus
     HRESULT rc = S_OK;
     LogFlowThisFuncEnter();
 
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
     mData = new Data();
     mData->m.allocate();
 
@@ -131,13 +106,12 @@ HRESULT Certificate::initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrus
     {
         mData->m->fValidX509 = true;
         mData->m->fTrusted  = a_fTrusted;
+        autoInitSpan.setSucceeded();
     }
     else
         rc = Global::vboxStatusCodeToCOM(vrc);
 
-    LogFlowThisFunc(("rc=%Rhrc\n", rc));
-    LogFlowThisFuncLeave();
-
+    LogFlowThisFunc(("returns rc=%Rhrc\n", rc));
     return rc;
 }
 
@@ -163,9 +137,13 @@ HRESULT Certificate::getVersionNumber(CertificateVersion_T *aVersionNumber)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Assert(mData->m->fValidX509);
-    /* version 1 has value 0, so +1.*/
-    *aVersionNumber = (CertificateVersion_T)(mData->m->X509.TbsCertificate.T0.Version.uValue.u + 1);
-
+    switch (mData->m->X509.TbsCertificate.T0.Version.uValue.u)
+    {
+        case RTCRX509TBSCERTIFICATE_V1: *aVersionNumber = (CertificateVersion_T)CertificateVersion_V1; break;
+        case RTCRX509TBSCERTIFICATE_V2: *aVersionNumber = (CertificateVersion_T)CertificateVersion_V2; break;
+        case RTCRX509TBSCERTIFICATE_V3: *aVersionNumber = (CertificateVersion_T)CertificateVersion_V3; break;
+        default: AssertFailed();        *aVersionNumber = (CertificateVersion_T)CertificateVersion_Unknown; break;
+    }
     return S_OK;
 }
 
@@ -420,36 +398,6 @@ HRESULT Certificate::queryInfo(LONG aWhat, com::Utf8Str &aResult)
     /* Insurance. */
     NOREF(aResult);
     return setError(E_FAIL, "Unknown item %u", aWhat);
-}
-
-/**
- * Private method implementation.
- * @param aPresence
- * @return aPresence
- */
-HRESULT Certificate::getPresence(BOOL *aPresence)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aPresence = m_appliance->m->fSignerCertLoaded;
-
-    return S_OK;
-}
-
-/**
- * Private method implementation.
- * @param aVerified
- * @return aVerified
- */
-HRESULT Certificate::getVerified(BOOL *aVerified)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aVerified = (m_appliance->m->pbSignedDigest &&
-                  m_appliance->m->fCertificateValid && 
-                  m_appliance->m->fCertificateValidTime) ? true:false;
-
-    return S_OK;
 }
 
 HRESULT Certificate::i_getAlgorithmName(PCRTCRX509ALGORITHMIDENTIFIER a_pAlgId, com::Utf8Str &a_rReturn)

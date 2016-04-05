@@ -27,8 +27,6 @@
 
 using namespace std;
 
-class Appliance;
-
 class ATL_NO_VTABLE Certificate :
     public CertificateWrap
 {
@@ -37,7 +35,6 @@ public:
 
     DECLARE_EMPTY_CTOR_DTOR(Certificate)
 
-    HRESULT init(Appliance* appliance);
     HRESULT initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted);
     void uninit();
 
@@ -45,8 +42,6 @@ public:
     void FinalRelease();
 
 private:
-    const Appliance* m_appliance;
-
     // wrapped ICertificate properties
     HRESULT getVersionNumber(CertificateVersion_T *aVersionNumber);
     HRESULT getSerialNumber(com::Utf8Str &aSerialNumber);
@@ -67,8 +62,6 @@ private:
     HRESULT getRawCertData(std::vector<BYTE> &aRawCertData);
     HRESULT getSelfSigned(BOOL *aSelfSigned);
     HRESULT getTrusted(BOOL *aTrusted);
-    HRESULT getVerified(BOOL *aVerified);
-    HRESULT getPresence(BOOL *aPresence);
     // wrapped ICertificate methods
     HRESULT queryInfo(LONG aWhat, com::Utf8Str &aResult);
 

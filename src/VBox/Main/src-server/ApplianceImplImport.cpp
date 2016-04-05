@@ -1950,7 +1950,10 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
 
     /** @todo provide details about the signatory, signature, etc.  */
     if (m->fSignerCertLoaded)
-        mptrCertificateInfo->initCertificate(&m->SignerCert, m->fCertificateValid && !m->fCertificateMissingPath);
+    {
+        m->ptrCertificateInfo.createObject();
+        m->ptrCertificateInfo->initCertificate(&m->SignerCert, m->fCertificateValid && !m->fCertificateMissingPath);
+    }
 
     /*
      * If there is a manifest, check that the OVF digest matches up (if present).

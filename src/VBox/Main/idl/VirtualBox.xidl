@@ -2981,16 +2981,15 @@
 
   <enum
     name="CertificateVersion"
-    uuid="394b00ce-4b60-45ff-abe1-f58221d4f73b"
+    uuid="9e232a99-51d0-4dbd-96a0-ffac4bc3e2a8"
     >
     <desc>
-	Possible version of certificate
+	X.509 certificate version numbers.
     </desc>
-    <const name="Unknown"    value="0"/>
-    <const name="One"    value="1"/>
-    <const name="Two"    value="2"/>
-    <const name="Three"    value="3"/>
-    <const name="Four"    value="4"/>
+    <const name="V1"       value="1"/>
+    <const name="V2"       value="2"/>
+    <const name="V3"       value="3"/>
+    <const name="Unknown"  value="99"/>
   </enum>
 
   <!--
@@ -2999,12 +2998,12 @@
   -->
   <interface
     name="ICertificate" extends="$unknown"
-    uuid="336064ce-c853-4bd0-ad6c-b42d8ed99e5e"
+    uuid="c85f71ef-dd7f-4b9c-aa58-5c186a95d7f9"
     wsmap="managed"
-    reservedAttributes="4" reservedMethods="2"
+    reservedAttributes="12" reservedMethods="2"
     >
     <desc>
-        X509 certificate details.
+        X.509 certificate details.
     </desc>
     <attribute name="versionNumber" type="CertificateVersion" readonly="yes">
       <desc>Certificate version number.</desc>
@@ -3028,10 +3027,10 @@
       <desc>Subject name.  Same format as issuerName.</desc>
     </attribute>
     <attribute name="validityPeriodNotBefore" type="wstring" readonly="yes">
-      <desc>Time stamp in milliseconds since 1970-01-01 UTC.</desc>
+      <desc>Certificate not valid before ISO time stamp.</desc>
     </attribute>
     <attribute name="validityPeriodNotAfter" type="wstring" readonly="yes">
-      <desc>Time stamp in milliseconds since 1970-01-01 UTC.</desc>
+      <desc>Certificate not valid after ISO time stamp.</desc>
     </attribute>
     <attribute name="publicKeyAlgorithmOID" type="wstring" readonly="yes">
       <desc>The dotted OID of the public key algorithm.</desc>
@@ -3067,12 +3066,6 @@
     </attribute>
     <attribute name="trusted" type="boolean" readonly="yes">
       <desc>Set if the certificate is trusted.</desc>
-    </attribute>
-    <attribute name="presence" type="boolean" readonly="yes">
-      <desc>Returns true in case of presence of certificate.</desc>
-    </attribute>
-    <attribute name="verified" type="boolean" readonly="yes">
-      <desc>Check whether certificate was verified or not during import.</desc>
     </attribute>
 
     <method name="queryInfo">
@@ -3234,7 +3227,9 @@
     </attribute>
 
     <attribute name="certificate" type="ICertificate" readonly="yes">
-      <desc> X509 certificate information given to user if certificate exists in the OVF package
+      <desc>
+        The X.509 signing certificate, if the imported OVF was signed, @c null
+        if not signed.  This is available after calling <link to="#read"/>.
       </desc>
     </attribute>
 
