@@ -1727,7 +1727,10 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
                         if (iAddend != paRelocs[iReloc].r_addend)
                             fRet = error(pThis->pszSrc, "R_X86_64_PC32 with large addend (%d) at %#x in segment #%u '%s'\n",
                                          iAddend, paRelocs[iReloc].r_offset, i, pszSegNm);
-                        *uLoc.pu32 = iAddend;
+                        if (fSelfRel)
+                            *uLoc.pu32 = -iAddend - 4; //; u %"bs3CpuBasic2_RaiseXcpt1_lm64"
+                        else
+                            *uLoc.pu32 = iAddend;
                         break;
                     }
 
