@@ -67,6 +67,7 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPP16
         jmp    %[BS3_MODE_R0_NM_ %+ TMPL_MODE](Bs3SwitchToPP16)
 
 %else
+
         ;
         ; Switch to 16-bit text segment and prepare for returning in 16-bit mode.
         ;

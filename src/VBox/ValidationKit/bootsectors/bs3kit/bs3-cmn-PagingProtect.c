@@ -214,16 +214,13 @@ BS3_DECL(X86PTEPAE BS3_FAR *) bs3PagingGetPte(RTCCUINTXREG cr3, uint64_t uFlat, 
 BS3_DECL(int) Bs3PagingProtect(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear)
 {
     RTCCUINTXREG const  cr3        = ASMGetCR3();
-    RTCCUINTXREG const  cr4        = ASMGetCR4();
+    RTCCUINTXREG const  cr4        = g_uBs3CpuDetected & BS3CPU_F_CPUID ? ASMGetCR4() : 0;
     bool const          fLegacyPTs = !(cr4 & X86_CR4_PAE);
     bool const          fUseInvlPg = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486
                                   && (   cb < UINT64_C(16)*PAGE_SIZE
                                       || (cr4 & X86_CR4_PGE));
     unsigned            cEntries;
     int                 rc;
-
-    BS3PAGING_DPRINTF(("Bs3PagingProtect: reloading cr3=%RX32\n", (uint32_t)cr3));
-    ASMSetCR3(cr3);
 
     /*
      * Adjust the range parameters.

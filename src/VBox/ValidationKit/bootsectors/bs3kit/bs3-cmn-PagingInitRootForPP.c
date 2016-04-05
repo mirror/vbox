@@ -44,6 +44,7 @@
 static int Bs3PagingInitPageTablesForPgDir(X86PD BS3_FAR *pPgDir, unsigned iFirst, unsigned cEntries)
 {
     uint32_t uCurPhys = (uint32_t)iFirst << X86_PD_SHIFT;
+
     while (cEntries--)
     {
         X86PT BS3_FAR *pPt = (X86PT BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_TILED, _4K);
@@ -124,9 +125,9 @@ BS3_DECL(int) Bs3PagingInitRootForPP(void)
                     cMax = cFreePages - 16;
                     cTop = RT_MIN(16, cMax / 4);
                 }
-                Bs3Printf("Bs3PagingInitRootForPP: Warning! insufficient memory for mapping all 4GB!\n"
-                          "    Will only map 0x00000000-%#010RX32 and %#010RX32-0xffffffff.\n",
-                          (uint32_t)(cMax - cTop) << PAGE_SHIFT, UINT32_MAX - ((uint32_t)cTop << PAGE_SHIFT) + 1);
+                Bs3TestPrintf("Bs3PagingInitRootForPP: Warning! insufficient memory for mapping all 4GB!\n"
+                              "    Will only map 0x00000000-%#010RX32 and %#010RX32-0xffffffff.\n",
+                              (uint32_t)(cMax - cTop) << PAGE_SHIFT, UINT32_MAX - ((uint32_t)cTop << PAGE_SHIFT) + 1);
                 rc = Bs3PagingInitPageTablesForPgDir(pPgDir, 0, cMax - cTop);
                 if (RT_SUCCESS(rc))
                     rc = Bs3PagingInitPageTablesForPgDir(pPgDir, RT_ELEMENTS(pPgDir->a) - cTop, cTop);
@@ -138,6 +139,7 @@ BS3_DECL(int) Bs3PagingInitRootForPP(void)
         return rc;
     }
 
+    Bs3Printf("Bs3PagingInitRootForPP: No memory!\n");
     BS3_ASSERT(false);
     return VERR_NO_MEMORY;
 }

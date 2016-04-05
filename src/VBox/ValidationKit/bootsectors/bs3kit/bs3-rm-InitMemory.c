@@ -94,6 +94,28 @@ BS3_DECL(uint32_t) Bs3BiosInt15hE820(INT15E820ENTRY BS3_FAR *pEntry, size_t cbEn
     value [ax bx] \
     modify exact [ax bx cx dx di es];
 
+/**
+ * Performs a int 15h function 0x88 call.
+ *
+ * @returns UINT32_MAX on failure, number of KBs above 1MB otherwise.
+ */
+BS3_DECL(uint32_t) Bs3BiosInt15h88(void);
+#pragma aux Bs3BiosInt15h88 = \
+    ".286" \
+    "clc" \
+    "mov    ax, 08800h" \
+    "int    15h" \
+    "jc     failed" \
+    "xor    dx, dx" \
+    "jmp    done" \
+    "failed:" \
+    "xor    ax, ax" \
+    "dec    ax" \
+    "mov    dx, ax" \
+    "done:" \
+    value [ax dx] \
+    modify exact [ax bx cx dx es];
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -151,11 +173,71 @@ uint16_t const          g_cbBs3SlabCtlSizesforLists[BS3_MEM_SLAB_LIST_COUNT] =
 };
 
 
+/**
+ * Adds a range of memory to the tiled slabs.
+ *
+ * @param   uRange      Start of range.
+ * @param   cbRange     Size of range.
+ */
+static void bs3InitMemoryAddRange(uint32_t uRange, uint32_t cbRange)
+{
+    if (uRange < BS3_SEL_TILED_AREA_SIZE)
+    {
+        uint32_t uRangeEnd = uRange + cbRange;
+        if (   uRange >= _1M
+            || uRangeEnd > _1M)
+        {
+            uint16_t cPages;
+
+            /* Adjust the start of the range such that it's at or above 1MB and page aligned.  */
+            if (uRange < _1M)
+            {
+                cbRange -= _1M - uRange;
+                uRange   = _1M;
+            }
+            else if (uRange & (_4K - 1U))
+            {
+                cbRange -= uRange & (_4K - 1U);
+                uRange   = RT_ALIGN_32(uRange, _4K);
+            }
+
+            /* Adjust the end/size of the range such that it's page aligned and not beyond the tiled area. */
+            if (uRangeEnd > BS3_SEL_TILED_AREA_SIZE)
+            {
+                cbRange  -= uRangeEnd - BS3_SEL_TILED_AREA_SIZE;
+                uRangeEnd = BS3_SEL_TILED_AREA_SIZE;
+            }
+            else if (uRangeEnd & (_4K - 1U))
+            {
+                cbRange   -= uRangeEnd & (_4K - 1U);
+                uRangeEnd &= ~(uint32_t)(_4K - 1U);
+            }
+
+            /* If there is still something, enable it.
+               (We're a bit paranoid here don't trust the BIOS to only report a page once.)  */
+            cPages = cbRange >> 12; /*div 4K*/
+            if (cPages)
+            {
+                unsigned i;
+                uRange -= _1M;
+                i = uRange >> 12; /*div _4K*/
+                while (cPages-- > 0)
+                {
+                    uint16_t uLineToLong = ASMBitTestAndClear(g_Bs3Mem4KUpperTiled.Core.bmAllocated, i);
+                    g_Bs3Mem4KUpperTiled.Core.cFreeChunks += uLineToLong;
+                    i++;
+                }
+            }
+        }
+    }
+}
+
 
 BS3_DECL(void) Bs3InitMemory_rm(void)
 {
     uint16_t        i;
     uint16_t        cPages;
+    uint32_t        u32;
     INT15E820ENTRY  Entry;
 
     /*
@@ -225,63 +307,24 @@ BS3_DECL(void) Bs3InitMemory_rm(void)
         while (   (uCont = Bs3BiosInt15hE820(&Entry, sizeof(Entry), uCont)) != 0
                && i++ < 2048)
         {
-            if (Entry.uType == INT15E820_TYPE_USABLE)
+            if (   Entry.uType == INT15E820_TYPE_USABLE
+                && Entry.uBaseAddr < BS3_SEL_TILED_AREA_SIZE)
             {
-                if (Entry.uBaseAddr < BS3_SEL_TILED_AREA_SIZE)
-                {
-                    /* Entry concerning tiled memory. Convert from 64-bit to 32-bit
-                       values and check whether it's concerning anything at or above 1MB  */
-                    uint32_t uRange    = (uint32_t)Entry.uBaseAddr;
-                    uint32_t cbRange   = Entry.cbRange >= BS3_SEL_TILED_AREA_SIZE
-                                       ? BS3_SEL_TILED_AREA_SIZE : (uint32_t)Entry.cbRange;
-                    uint32_t uRangeEnd = uRange + cbRange;
-                    AssertCompile(BS3_SEL_TILED_AREA_SIZE <= _512M /* the range of 16-bit cPages. */ );
-                    if (   uRange >= _1M
-                        || uRangeEnd > _1M)
-                    {
-                        /* Adjust the start of the range such that it's at or above 1MB and page aligned.  */
-                        if (uRange < _1M)
-                        {
-                            cbRange -= _1M - uRange;
-                            uRange   = _1M;
-                        }
-                        else if (uRange & (_4K - 1U))
-                        {
-                            cbRange -= uRange & (_4K - 1U);
-                            uRange   = RT_ALIGN_32(uRange, _4K);
-                        }
-
-                        /* Adjust the end/size of the range such that it's page aligned and not beyond the tiled area. */
-                        if (uRangeEnd > BS3_SEL_TILED_AREA_SIZE)
-                        {
-                            cbRange  -= uRangeEnd - BS3_SEL_TILED_AREA_SIZE;
-                            uRangeEnd = BS3_SEL_TILED_AREA_SIZE;
-                        }
-                        else if (uRangeEnd & (_4K - 1U))
-                        {
-                            cbRange   -= uRangeEnd & (_4K - 1U);
-                            uRangeEnd &= ~(uint32_t)(_4K - 1U);
-                        }
-
-                        /* If there is still something, enable it.
-                           (We're a bit paranoid here don't trust the BIOS to only report a page once.)  */
-                        cPages = cbRange >> 12; /*div 4K*/
-                        if (cPages)
-                        {
-                            uRange -= _1M;
-                            i = uRange >> 12; /*div _4K*/
-                            while (cPages-- > 0)
-                            {
-                                uint16_t uLineToLong = ASMBitTestAndClear(g_Bs3Mem4KUpperTiled.Core.bmAllocated, i);
-                                g_Bs3Mem4KUpperTiled.Core.cFreeChunks += uLineToLong;
-                                i++;
-                            }
-                        }
-                    }
-                }
+                /* Entry concerning tiled memory. Convert from 64-bit to 32-bit
+                   values and check whether it's concerning anything at or above 1MB  */
+                uint32_t uRange    = (uint32_t)Entry.uBaseAddr;
+                uint32_t cbRange   = Entry.cbRange >= BS3_SEL_TILED_AREA_SIZE
+                                   ? BS3_SEL_TILED_AREA_SIZE : (uint32_t)Entry.cbRange;
+                AssertCompile(BS3_SEL_TILED_AREA_SIZE <= _512M /* the range of 16-bit cPages. */ );
+                bs3InitMemoryAddRange(uRange, cbRange);
             }
         }
     }
+    /* Try the 286+ API for getting memory above 1MB and (usually) below 16MB. */
+    else if (   (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386
+             && (u32 = Bs3BiosInt15h88()) != UINT32_MAX
+             && u32 > 0)
+        bs3InitMemoryAddRange(_1M, u32 * _1K);
 
     /*
      * Initialize the slab lists.
