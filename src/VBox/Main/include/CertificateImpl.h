@@ -18,8 +18,6 @@
 #ifndef ____H_CERTIFICATEIMPL
 #define ____H_CERTIFICATEIMPL
 
-//#define DONT_DUPLICATE_ALL_THE_DATA
-
 /* VBox includes */
 #include <VBox/settings.h>
 #include <iprt/crypto/x509.h>
@@ -27,13 +25,9 @@
 
 #include <vector>
 
-
 using namespace std;
 
-#ifndef DONT_DUPLICATE_ALL_THE_DATA
-/* VBox forward declarations */
 class Appliance;
-#endif
 
 class ATL_NO_VTABLE Certificate :
     public CertificateWrap
@@ -43,49 +37,18 @@ public:
 
     DECLARE_EMPTY_CTOR_DTOR(Certificate)
 
-#ifdef DONT_DUPLICATE_ALL_THE_DATA
-    HRESULT initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted);
-#else
     HRESULT init(Appliance* appliance);
-#endif
+    HRESULT initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted);
     void uninit();
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
-#ifndef DONT_DUPLICATE_ALL_THE_DATA
-    HRESULT setData(RTCRX509CERTIFICATE const *inCert);
-#endif
-
 private:
-#ifndef DONT_DUPLICATE_ALL_THE_DATA /* This is a generic information object, not something that is exclusive to Appliance! */
     const Appliance* m_appliance;
-#endif
-
-#ifndef DONT_DUPLICATE_ALL_THE_DATA /* This is a generic information object, not something that is exclusive to Appliance! */
-    HRESULT setVersionNumber(uint64_t inVersionNumber);
-    HRESULT setSerialNumber(uint64_t inSerialNumber);
-    HRESULT setPublicKeyAlgorithmOID(const char *aPublicKeyAlgorithmOID);
-    HRESULT setPublicKeyAlgorithmName(const char *aPublicKeyAlgorithmOID);
-    HRESULT setSignatureAlgorithmOID(const char *aSignatureAlgorithmOID);
-    HRESULT setSignatureAlgorithmName(const char *aSignatureAlgorithmOID);
-    HRESULT setIssuerName(com::Utf8Str &aIssuerName);
-    HRESULT setSubjectName(com::Utf8Str &aSubjectName);
-    HRESULT setValidityPeriodNotBefore(PCRTTIME aValidityPeriodNotBefore);
-    HRESULT setValidityPeriodNotAfter(PCRTTIME aValidityPeriodNotAfter);
-    HRESULT setCertificateAuthority(BOOL aCertificateAuthority);
-    HRESULT setSelfSigned(BOOL aSelfSigned);
-    HRESULT setTrusted(BOOL aTrusted);
-//  HRESULT setSubjectPublicKey(std::vector<BYTE> aSubjectPublicKey);
-//  HRESULT setIssuerUniqueIdentifier(std::vector<BYTE> aIssuerUniqueIdentifier);
-//  HRESULT setSubjectUniqueIdentifier(std::vector<BYTE> aSubjectUniqueIdentifier);
-//  HRESULT setKeyUsage(std::vector<ULONG> aKeyUsage);
-//  HRESULT setExtendedKeyUsage(std::vector<com::Utf8Str> aExtendedKeyUsage);
-//  HRESULT setRawCertData(std::vector<BYTE> aRawCertData);
-#endif
 
     // wrapped ICertificate properties
-    HRESULT getVersionNumber(com::Utf8Str &aVersionNumber);
+    HRESULT getVersionNumber(CertificateVersion_T *aVersionNumber);
     HRESULT getSerialNumber(com::Utf8Str &aSerialNumber);
     HRESULT getSignatureAlgorithmOID(com::Utf8Str &aSignatureAlgorithmOID);
     HRESULT getSignatureAlgorithmName(com::Utf8Str &aSignatureAlgorithmName);
@@ -104,15 +67,11 @@ private:
     HRESULT getRawCertData(std::vector<BYTE> &aRawCertData);
     HRESULT getSelfSigned(BOOL *aSelfSigned);
     HRESULT getTrusted(BOOL *aTrusted);
-
+    HRESULT getVerified(BOOL *aVerified);
+    HRESULT getPresence(BOOL *aPresence);
     // wrapped ICertificate methods
     HRESULT queryInfo(LONG aWhat, com::Utf8Str &aResult);
-#ifndef DONT_DUPLICATE_ALL_THE_DATA
-    HRESULT checkExistence(BOOL *aPresence);
-    HRESULT isVerified(BOOL *aVerified);
-#endif
 
-#ifdef DONT_DUPLICATE_ALL_THE_DATA
     /** @name Methods extracting COM data from the certificate object
      * @{  */
     HRESULT i_getAlgorithmName(PCRTCRX509ALGORITHMIDENTIFIER a_pAlgId, com::Utf8Str &a_rReturn);
@@ -121,7 +80,7 @@ private:
     HRESULT i_getUniqueIdentifier(PCRTCRX509UNIQUEIDENTIFIER a_pUniqueId, com::Utf8Str &a_rReturn);
     HRESULT i_getEncodedBytes(PRTASN1CORE a_pAsn1Obj, std::vector<BYTE> &a_rReturn);
     /** @} */
-#endif
+
     //data
     struct Data;
     Data *mData;
