@@ -163,11 +163,8 @@ HRESULT Certificate::getVersionNumber(CertificateVersion_T *aVersionNumber)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Assert(mData->m->fValidX509);
-    /** @todo make this ULONG, or better, an ENUM. */
-    //aVersionNumber = Utf8StrFmt("%RU64", mData->m->X509.TbsCertificate.T0.Version.uValue.u + 1);                                */
     /* version 1 has value 0, so +1.*/
-
-    *aVersionNumber = mData->m->X509.TbsCertificate.T0.Version.uValue.u + 1;
+    *aVersionNumber = (uint32_t)(mData->m->X509.TbsCertificate.T0.Version.uValue.u + 1);
 
     return S_OK;
 }
