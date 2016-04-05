@@ -102,7 +102,8 @@ void UIApplianceCertificateViewer::retranslateUi()
                              "If you are not sure - just stop here and interrupt the importing process.</b>"));
     /* Translate text-browser contents: */
     QStringList info;
-    info << tr("Certificate Version Number: %1").arg(m_certificate.GetVersionNumber());
+    KCertificateVersion ver = (m_certificate.GetVersionNumber());
+    info << tr("Certificate Version Number: %1").arg(ver);
     info << tr("Certificate Serial Number: 0x%1").arg(m_certificate.GetSerialNumber());
     info << tr("Certificate Authority (CA): %1").arg(m_certificate.GetCertificateAuthority() ? tr("True") : tr("False"));
     info << tr("Certificate Self-Signed: %1").arg(m_certificate.GetSelfSigned() ? tr("True") : tr("False"));
@@ -173,21 +174,75 @@ void UIWizardImportAppPageBasic2::initializePage()
     CAppliance *pAppliance = m_pApplianceWidget->appliance();
     CCertificate certificate = pAppliance->GetCertificate();
     /* Check whether certificate exists and verified: */
-    if (certificate.CheckExistence() && !certificate.IsVerified())
+    if (certificate.GetPresence())
     {
-        /* Create certificate viewer to notify user about it is not verified: */
-        QPointer<UIApplianceCertificateViewer> pDialog =
-            new UIApplianceCertificateViewer(this, certificate);
-        AssertPtrReturnVoid(pDialog.data());
+        if(certificate.GetVerified())
         {
-            /* Show viewer in modal mode: */
-            pDialog->exec();
-            /* Leave if destroyed prematurely: */
-            if (!pDialog)
-                return;
-            /* Delete viewer finally: */
-            delete pDialog;
-            pDialog = 0;
+            if(!certificate.GetTrusted() || certificate.GetSelfSigned())
+            {
+                /* Create certificate viewer to notify user about it is not verified: */
+                QPointer<UIApplianceCertificateViewer> pDialog =
+                    new UIApplianceCertificateViewer(this, certificate);
+                AssertPtrReturnVoid(pDialog.data());
+                {
+                    /* Show viewer in modal mode: */
+                    pDialog->exec();
+                    /* Leave if destroyed prematurely: */
+                    if (!pDialog)
+                        return;
+                    /* Delete viewer finally: */
+                    delete pDialog;
+                    pDialog = 0;
+                }
+            }
+        }
+        else
+        {
+            /* Translate page: */
+            retranslateUi();
+            /* Create dialog: */
+            QDialog *pDialog = new QDialog(this, Qt::Dialog);
+            AssertPtrReturnVoid(pDialog);
+            /* Create layout: */
+            QVBoxLayout *pLayout = new QVBoxLayout(pDialog);
+            AssertPtrReturnVoid(pLayout);
+            {
+                /* Prepare dialog: */
+                pDialog->resize(500, 100);
+                /*todo: show an error message and prohibit OVF import */
+                {
+                    /* Create text-label: */
+                    QLabel *m_pTextLabel = new QLabel;
+                    AssertPtrReturnVoid(m_pTextLabel);
+                    {
+                        /* Configure text-label: */
+                        m_pTextLabel->setWordWrap(true);
+                        m_pTextLabel->setText(tr("<b>The X509 certificate exists but hasn't been verified."
+                                 "You should stop here and interrupt the importing process.</b>"));
+                        /* Add text-label into layout: */
+                        pLayout->addWidget(m_pTextLabel);
+                    }
+
+                    pLayout->addStretch();
+
+                    /* Create button-box: */
+                    QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
+                    AssertPtrReturnVoid(pButtonBox);
+                    {
+                        /* Configure button-box: */
+                        pButtonBox->setStandardButtons(QDialogButtonBox::Ok);
+                        pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(Qt::Key_Enter);
+                        connect(pButtonBox, SIGNAL(accepted()), this, SLOT(close()));
+                        /* Add button-box into layout: */
+                        pLayout->addWidget(pButtonBox);
+                    }
+                }
+                /* Show dialog in modal mode: */
+                pDialog->exec();
+                /* Delete dialog finally: */
+                delete pDialog;
+                pDialog = 0;
+            }
         }
     }
 }
