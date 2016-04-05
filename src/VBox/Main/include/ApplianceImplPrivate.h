@@ -23,6 +23,7 @@ class VirtualSystemDescription;
 #include "ovfreader.h"
 #include "SecretKeyStore.h"
 #include "ThreadTask.h"
+#include "CertificateImpl.h"
 #include <map>
 #include <vector>
 #include <iprt/manifest.h>
