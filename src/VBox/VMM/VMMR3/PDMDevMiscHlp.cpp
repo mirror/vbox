@@ -52,13 +52,9 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
     PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
-    /** @todo r=ramshankar: Should we raise the interrupt to all CPUs in the
-     *        guest, does real hardware do this? */
 
     if (pVM->pdm.s.Apic.pfnLocalInterruptR3)
     {
-        /** @todo r=ramshankar: Wouldn't we have to check here for APIC base MSR
-         *        disabling the APIC? */
         LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: Setting local interrupt on LAPIC\n",
                  pDevIns->pReg->szName, pDevIns->iInstance));
 

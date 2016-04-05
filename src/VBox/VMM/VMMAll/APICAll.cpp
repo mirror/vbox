@@ -645,8 +645,7 @@ static void apicGetDestCpuSet(PVM pVM, uint32_t fDestMask, uint32_t fBroadcastMa
         for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
         {
             PVMCPU pVCpuDest = &pVM->aCpus[idCpu];
-            if (   apicIsEnabled(pVCpuDest)                               /* PAV */
-                && apicIsLogicalDest(pVCpuDest, fDestMask))
+            if (apicIsLogicalDest(pVCpuDest, fDestMask))
             {
                 PCXAPICPAGE   pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpuDest);
                 uint8_t const u8Tpr      = pXApicPage->tpr.u8Tpr;         /* PAV */
@@ -1960,8 +1959,7 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
     VBOXSTRICTRC  rcStrict   = VINF_SUCCESS;
 
     /* If the APIC is enabled, the interrupt is subject to LVT programming. */
-    if (   apicIsEnabled(pVCpu)
-        && pXApicPage->svr.u.fApicSoftwareEnable)
+    if (apicIsEnabled(pVCpu))
     {
         /* Pick the LVT entry corresponding to the interrupt pin. */
         static const uint16_t s_au16LvtOffsets[] =
@@ -1973,7 +1971,7 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
         uint16_t const offLvt = s_au16LvtOffsets[u8Pin];
         uint32_t const uLvt   = apicReadRaw32(pXApicPage, offLvt);
 
-        /* If software hasn't masked the interrupt in the LVT entry, proceed with interrupt processing. */
+        /* If software hasn't masked the interrupt in the LVT entry, proceed interrupt processing. */
         if (!XAPIC_LVT_IS_MASKED(uLvt))
         {
             XAPICDELIVERYMODE const enmDeliveryMode = XAPIC_LVT_GET_DELIVERY_MODE(uLvt);
@@ -2020,7 +2018,7 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
     }
     else
     {
-        /* If the APIC is disabled, pass it through the CPU. */
+        /* The APIC is disabled, pass it through the CPU. */
         if (u8Level)
             APICSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
         else
@@ -2379,7 +2377,7 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
 /**
  * Gets the highest priority pending interrupt.
  *
- * @returns true if any interrupt is pending, false otehrwise.
+ * @returns true if any interrupt is pending, false otherwise.
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pu8PendingIntr      Where to store the interrupt vector if the
  *                              interrupt is pending.
