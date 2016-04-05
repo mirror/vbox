@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2015 Oracle Corporation
+ * Copyright (C) 2013-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2148,13 +2148,6 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     HRESULT             hr;
     IDirect3DSurface9  *pBackBuffer;
     IDirect3DSurface9  *pSurfaceD3D;
-    struct
-    {
-        uint32_t        x;
-        uint32_t        y;
-        uint32_t        cx;
-        uint32_t        cy;
-    } srcViewPort;
 
     AssertReturn(pState, VERR_NO_MEMORY);
     AssertReturn(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
