@@ -343,9 +343,7 @@ VBOXDDU_DECL(int) VSCSIDeviceReqCreate(VSCSIDEVICE hVScsiDevice, PVSCSIREQ phVSc
     pVScsiReq->pbSense        = pbSense;
     pVScsiReq->cbSense        = cbSense;
     pVScsiReq->pvVScsiReqUser = pvVScsiReqUser;
-
-    if (cSGListEntries)
-        RTSgBufInit(&pVScsiReq->SgBuf, paSGList, cSGListEntries);
+    RTSgBufInit(&pVScsiReq->SgBuf, paSGList, cSGListEntries);
 
     *phVScsiReq = pVScsiReq;
 
