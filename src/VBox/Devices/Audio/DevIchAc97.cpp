@@ -773,9 +773,9 @@ static int ichac97StreamInit(PAC97STATE pThis, PAC97STREAM pStrmSt, uint8_t u8St
 
     if (streamCfg.uHz)
     {
-        streamCfg.cChannels         = 2;
-        streamCfg.enmFormat         = AUD_FMT_S16;
-        streamCfg.enmEndianness     = PDMAUDIOHOSTENDIANNESS;
+        streamCfg.cChannels     = 2;
+        streamCfg.enmFormat     = AUD_FMT_S16;
+        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
         return ichac97StreamInitEx(pThis, pStrmSt, u8Strm, &streamCfg);
     }
