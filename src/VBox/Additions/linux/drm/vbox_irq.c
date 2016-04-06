@@ -59,6 +59,11 @@ static uint32_t vbox_get_flags(struct vbox_private *vbox)
     return (uint32_t)readl(vbox->vram + vbox->host_flags_offset);
 }
 
+void vbox_report_hotplug(struct vbox_private *vbox)
+{
+    schedule_work(&vbox->hotplug_work);
+}
+
 irqreturn_t vbox_irq_handler(int irq, void *arg)
 {
     struct drm_device *dev = (struct drm_device *) arg;
@@ -74,7 +79,7 @@ irqreturn_t vbox_irq_handler(int irq, void *arg)
      * is not set. */
     if (   host_flags & (HGSMIHOSTFLAGS_HOTPLUG | HGSMIHOSTFLAGS_CURSOR_CAPABILITIES)
         && !(host_flags & HGSMIHOSTFLAGS_VSYNC))
-        schedule_work(&vbox->hotplug_work);
+        vbox_report_hotplug(vbox);
     vbox_clear_irq();
     return IRQ_HANDLED;
 }
@@ -147,8 +152,6 @@ static void vbox_hotplug_worker(struct work_struct *work)
     LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     vbox_update_mode_hints(vbox);
     drm_kms_helper_hotplug_event(vbox->dev);
-    if (vbox->fbdev)
-        drm_fb_helper_hotplug_event(&vbox->fbdev->helper);
 }
 
 int vbox_irq_init(struct vbox_private *vbox)

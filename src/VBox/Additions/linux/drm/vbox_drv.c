@@ -192,7 +192,6 @@ static struct pci_driver vbox_pci_driver =
     .driver.pm = &vbox_pm_ops,
 };
 
-
 static const struct file_operations vbox_fops =
 {
     .owner = THIS_MODULE,
@@ -210,6 +209,25 @@ static const struct file_operations vbox_fops =
     .read = drm_read,
 };
 
+static int vbox_master_set(struct drm_device *dev,
+                           struct drm_file *file_priv,
+                           bool from_open)
+{
+    struct vbox_private *vbox = dev->dev_private;
+    vbox->initial_mode_queried = false;
+    vbox_disable_accel(vbox);
+    return 0;
+}
+
+static void vbox_master_drop(struct drm_device *dev,
+                             struct drm_file *file_priv,
+                             bool from_release)
+{
+    struct vbox_private *vbox = dev->dev_private;
+    vbox->initial_mode_queried = false;
+    vbox_disable_accel(vbox);
+}
+
 static struct drm_driver driver =
 {
     .driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ | DRIVER_IRQ_SHARED,
@@ -218,6 +236,8 @@ static struct drm_driver driver =
     .load = vbox_driver_load,
     .unload = vbox_driver_unload,
     .lastclose = vbox_driver_lastclose,
+    .master_set = vbox_master_set,
+    .master_drop = vbox_master_drop,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
     .set_busid = drm_pci_set_busid,
 #endif

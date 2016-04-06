@@ -107,7 +107,6 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
                                 pitch, width, height,
                                 vbox_crtc->blanked ? 0 : bpp, flags);
     VBoxHGSMIReportFlagsLocation(&vbox->submit_info, vbox->host_flags_offset);
-    vbox_enable_caps(vbox);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
@@ -225,12 +224,6 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
         ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &bo->kmap);
         if (ret)
             DRM_ERROR("failed to kmap fbcon\n");
-        vbox_disable_accel(vbox);
-        vbox_disable_caps(vbox);
-    }
-    else {
-        vbox_enable_accel(vbox);
-        vbox_enable_caps(vbox);
     }
     vbox_bo_unreserve(bo);
 
@@ -446,8 +439,15 @@ static int vbox_get_modes(struct drm_connector *connector)
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
     vbox = connector->dev->dev_private;
-    if (!vbox->fbdev_init)
+    if (vbox_connector->vbox_crtc->crtc_id == 0)
+        vbox_enable_caps(vbox);
+    if (!vbox->initial_mode_queried) {
+        if (vbox_connector->vbox_crtc->crtc_id == 0) {
+            vbox->initial_mode_queried = true;
+            vbox_report_hotplug(vbox);
+        }
         return drm_add_modes_noedid(connector, 800, 600);
+    }
     num_modes = drm_add_modes_noedid(connector, 2560, 1600);
     preferred_width = vbox_connector->mode_hint.width ? vbox_connector->mode_hint.width : 1024;
     preferred_height = vbox_connector->mode_hint.height ? vbox_connector->mode_hint.height : 768;
@@ -592,20 +592,6 @@ int vbox_mode_init(struct drm_device *dev)
 void vbox_mode_fini(struct drm_device *dev)
 {
     /* vbox_cursor_fini(dev); */
-}
-
-
-void vbox_refresh_modes(struct drm_device *dev)
-{
-    struct vbox_private *vbox = dev->dev_private;
-    struct drm_crtc *crtci;
-
-    LogFunc(("vboxvideo: %d\n", __LINE__));
-    mutex_lock(&vbox->hw_mutex);
-    list_for_each_entry(crtci, &dev->mode_config.crtc_list, head)
-        vbox_do_modeset(crtci, &crtci->hwmode);
-    mutex_unlock(&vbox->hw_mutex);
-    LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
 

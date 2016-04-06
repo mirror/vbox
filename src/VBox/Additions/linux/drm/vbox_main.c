@@ -93,18 +93,18 @@ void vbox_disable_accel(struct vbox_private *vbox)
 
 void vbox_enable_caps(struct vbox_private *vbox)
 {
-    VBoxHGSMISendCapsInfo(&vbox->submit_info, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION | VBVACAPS_IRQ | VBVACAPS_USE_VBVA_ONLY);
-}
-
-void vbox_disable_caps(struct vbox_private *vbox)
-{
-    VBoxHGSMISendCapsInfo(&vbox->submit_info, 0);
+    uint32_t caps =   VBVACAPS_DISABLE_CURSOR_INTEGRATION
+                     | VBVACAPS_IRQ
+                     | VBVACAPS_USE_VBVA_ONLY;
+    if (vbox->initial_mode_queried)
+        caps |= VBVACAPS_VIDEO_MODE_HINTS;
+    VBoxHGSMISendCapsInfo(&vbox->submit_info, caps);
 }
 
 /** Send information about dirty rectangles to VBVA.  If necessary we enable
- * VBVA first, as this is normally disabled after a mode set in case a user
- * takes over the console that is not aware of VBVA (i.e. the VESA BIOS, and
- * particularly the old X.Org VESA driver). */
+ * VBVA first, as this is normally disabled after a change of master in case
+ * the new master does not send dirty rectangle information (is this even
+ * allowed?) */
 void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                                        struct drm_clip_rect *rects,
                                        unsigned num_rects)

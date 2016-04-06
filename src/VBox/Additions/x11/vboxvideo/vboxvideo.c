@@ -990,7 +990,6 @@ vboxLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
     (void)pVisual;
 }
 
-#ifndef VBOXVIDEO_13
 /** Set the graphics and guest cursor support capabilities to the host if
  *  the user-space helper is running. */
 static void updateGraphicsCapability(ScrnInfoPtr pScrn, Bool hasVT)
@@ -1002,15 +1001,10 @@ static void updateGraphicsCapability(ScrnInfoPtr pScrn, Bool hasVT)
 
     if (!pVBox->fHaveHGSMIModeHints)
         return;
-    rc = vbvxGetIntegerPropery(pScrn, "VBOXCLIENT_STARTED", &cData, &paData);
-    if (rc != VINF_SUCCESS || cData != 1)
-        return;
-    pVBox->fHaveVBoxClient = TRUE;
     VBoxHGSMISendCapsInfo(&pVBox->guestCtx,   hasVT
                                             ? VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION
                                             : VBVACAPS_DISABLE_CURSOR_INTEGRATION);
 }
-#endif
 
 #ifndef VBOXVIDEO_13
 
@@ -1064,10 +1058,6 @@ static void vboxBlockHandler(pointer pData, OSTimePtr pTimeout, pointer pReadmas
 
     (void)pTimeout;
     (void)pReadmask;
-#ifndef VBOXVIDEO_13
-    if (!pVBox->fHaveVBoxClient)
-        updateGraphicsCapability(pScrn, pScrn->vtSema);
-#endif
     if (pScrn->vtSema)
         vbvxReadSizesAndCursorIntegrationFromHGSMI(pScrn, &fNeedUpdate);
     if (fNeedUpdate)
@@ -1222,6 +1212,9 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     setModeRandR11(pScrn, pScrn->currentMode, true, false, 0, 0);
 #endif
 
+    /* Say that we support graphics. */
+    updateGraphicsCapability(pScrn, TRUE);
+
     /* Register block and wake-up handlers for getting new screen size hints. */
     RegisterBlockAndWakeupHandlers(vboxBlockHandler, (WakeupHandlerProcPtr)NoopDDA, (pointer)pScrn);
 
@@ -1284,10 +1277,10 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
         return FALSE;
     }
 #else
-    updateGraphicsCapability(pScrn, TRUE);
     setModeRandR11(pScrn, pScrn->currentMode, false, true, cXOverRide, cYOverRide);
     DeleteProperty(ROOT_WINDOW(pScrn), MakeAtom(NO_VT_ATOM_NAME, sizeof(NO_VT_ATOM_NAME) - 1, TRUE));
 #endif
+    updateGraphicsCapability(pScrn, TRUE);
     return TRUE;
 }
 
@@ -1305,10 +1298,10 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
     for (i = 0; i < pVBox->cScreens; ++i)
         vbox_crtc_dpms(pVBox->pScreens[i].paCrtcs, DPMSModeOff);
 #else
-    updateGraphicsCapability(pScrn, FALSE);
     ChangeWindowProperty(ROOT_WINDOW(pScrn), MakeAtom(NO_VT_ATOM_NAME, sizeof(NO_VT_ATOM_NAME) - 1, FALSE), XA_INTEGER, 32,
                          PropModeReplace, 1, &propertyValue, TRUE);
 #endif
+    updateGraphicsCapability(pScrn, FALSE);
     vboxDisableVbva(pScrn);
     vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * (pScrn->bitsPerPixel / 8), 0);
     VBOXRestoreMode(pScrn);

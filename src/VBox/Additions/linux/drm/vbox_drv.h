@@ -120,9 +120,10 @@ struct vbox_private {
 
     struct mutex hw_mutex;
     bool isr_installed;
-    /** Have we finished fbdev initialisation?  We limit reported display
-     * modes to 800x600 until this point to get a sensible console size. */
-    bool fbdev_init;
+    /** We decide whether or not user-space supports display hot-plug
+     * depending on whether they react to a hot-plug event after the initial
+     * mode query. */
+    bool initial_mode_queried;
     struct work_struct hotplug_work;
     uint32_t input_mapping_width;
     uint32_t input_mapping_height;
@@ -194,7 +195,6 @@ struct vbox_fbdev {
 
 extern int vbox_mode_init(struct drm_device *dev);
 extern void vbox_mode_fini(struct drm_device *dev);
-extern void vbox_refresh_modes(struct drm_device *dev);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
 # define DRM_MODE_FB_CMD drm_mode_fb_cmd
@@ -211,7 +211,6 @@ extern void vbox_refresh_modes(struct drm_device *dev);
 void vbox_enable_accel(struct vbox_private *vbox);
 void vbox_disable_accel(struct vbox_private *vbox);
 void vbox_enable_caps(struct vbox_private *vbox);
-void vbox_disable_caps(struct vbox_private *vbox);
 
 void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                                        struct drm_clip_rect *rects,
@@ -308,5 +307,6 @@ int vbox_mmap(struct file *filp, struct vm_area_struct *vma);
 /* vbox_irq.c */
 int vbox_irq_init(struct vbox_private *vbox);
 void vbox_irq_fini(struct vbox_private *vbox);
+void vbox_report_hotplug(struct vbox_private *vbox);
 irqreturn_t vbox_irq_handler(int irq, void *arg);
 #endif
