@@ -78,8 +78,6 @@ add_symlink()
         { echo 1>&2 "$self: no target specified"; return 1; }
     test -d "$link_dir" ||
         { echo 1>&2 "$self: link directory $link_dir does not exist"; return 1; }
-    test ! -e "$link" ||
-        { echo 1>&2 "$self: link file "$link" already exists"; return 1; }
     expr "$link" : "/.*" > /dev/null ||
         { echo 1>&2 "$self: link file name is not absolute"; return 1; }
     rm -f "$link"
