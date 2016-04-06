@@ -746,15 +746,21 @@ static int ichac97StreamInit(PAC97STATE pThis, PAC97STREAM pStrmSt, uint8_t u8St
     switch (u8Strm)
     {
         case PI_INDEX:
-            streamCfg.uHz = ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
+            streamCfg.uHz               = ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
+            streamCfg.enmDir            = PDMAUDIODIR_IN;
+            streamCfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
             break;
 
         case MC_INDEX:
-            streamCfg.uHz = ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
+            streamCfg.uHz               = ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
+            streamCfg.enmDir            = PDMAUDIODIR_IN;
+            streamCfg.DestSource.Source = PDMAUDIORECSOURCE_MIC;
             break;
 
         case PO_INDEX:
-            streamCfg.uHz = ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
+            streamCfg.uHz               = ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
+            streamCfg.enmDir            = PDMAUDIODIR_OUT;
+            streamCfg.DestSource.Dest   = PDMAUDIOPLAYBACKDEST_FRONT;
             break;
 
         default:
@@ -767,9 +773,9 @@ static int ichac97StreamInit(PAC97STATE pThis, PAC97STREAM pStrmSt, uint8_t u8St
 
     if (streamCfg.uHz)
     {
-        streamCfg.cChannels     = 2;
-        streamCfg.enmFormat     = AUD_FMT_S16;
-        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
+        streamCfg.cChannels         = 2;
+        streamCfg.enmFormat         = AUD_FMT_S16;
+        streamCfg.enmEndianness     = PDMAUDIOHOSTENDIANNESS;
 
         return ichac97StreamInitEx(pThis, pStrmSt, u8Strm, &streamCfg);
     }
