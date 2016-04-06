@@ -80,7 +80,7 @@ typedef PRTSGBUF *PPRTSGBUF;
  * @param   paSegs    Pointer to the start of the segment array.
  * @param   cSegs     Number of segments in the array.
  *
- * @note paSegs and cSegs can be NULL and 0 respectively to indicate
+ * @note paSegs and cSegs can be NULL and 0 respectively to indicate
  *       an empty S/G buffer. All operations on the S/G buffer will
  *       not do anything in this case.
  */
