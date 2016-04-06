@@ -20,9 +20,9 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# ifndef Q_WS_MAC
+# ifndef VBOX_WS_MAC
 #  include <QTimer>
-# endif /* !Q_WS_MAC */
+# endif /* !VBOX_WS_MAC */
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -34,20 +34,20 @@
 # include "UIMachineWindowSeamless.h"
 # include "UIMultiScreenLayout.h"
 # include "UIShortcutPool.h"
-# ifndef Q_WS_MAC
+# ifndef VBOX_WS_MAC
 #  include "QIMenu.h"
-# else  /* Q_WS_MAC */
+# else  /* VBOX_WS_MAC */
 #  include "VBoxUtils.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 UIMachineLogicSeamless::UIMachineLogicSeamless(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Seamless)
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     , m_pPopupMenu(0)
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 {
     /* Create multiscreen layout: */
     m_pScreenLayout = new UIMultiScreenLayout(this);
@@ -163,7 +163,7 @@ void UIMachineLogicSeamless::sltMachineStateChanged()
     }
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 void UIMachineLogicSeamless::sltInvokePopupMenu()
 {
     /* Popup main-menu if present: */
@@ -173,7 +173,7 @@ void UIMachineLogicSeamless::sltInvokePopupMenu()
         QTimer::singleShot(0, m_pPopupMenu, SLOT(sltHighlightFirstAction()));
     }
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 void UIMachineLogicSeamless::sltScreenLayoutChanged()
 {
@@ -229,11 +229,11 @@ void UIMachineLogicSeamless::prepareActionGroups()
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize));
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Restrict 'Window' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuBar(UIActionRestrictionLevel_Logic,
                                                         UIExtraDataMetaDefs::MenuType_Window);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Take care of view-action toggle state: */
     UIAction *pActionSeamless = actionPool()->action(UIActionIndexRT_M_View_T_Seamless);
@@ -265,11 +265,11 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     if (isMachineWindowsCreated())
         return;
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* We have to make sure that we are getting the front most process.
      * This is necessary for Qt versions > 4.3.3: */
     darwinSetFrontMostProcess();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Update the multi-screen layout: */
     m_pScreenLayout->update();
@@ -291,7 +291,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     /* Mark machine-window(s) created: */
     setMachineWindowsCreated(true);
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     switch (vboxGlobal().typeOfWindowManager())
     {
         case X11WMType_GNOMEShell:
@@ -307,10 +307,10 @@ void UIMachineLogicSeamless::prepareMachineWindows()
         default:
             break;
     }
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 void UIMachineLogicSeamless::prepareMenu()
 {
     /* Prepare popup-menu: */
@@ -322,16 +322,16 @@ void UIMachineLogicSeamless::prepareMenu()
             m_pPopupMenu->addMenu(pMenu);
     }
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 void UIMachineLogicSeamless::cleanupMenu()
 {
     /* Cleanup popup-menu: */
     delete m_pPopupMenu;
     m_pPopupMenu = 0;
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 void UIMachineLogicSeamless::cleanupMachineWindows()
 {
@@ -375,11 +375,11 @@ void UIMachineLogicSeamless::cleanupActionGroups()
     /* Allow 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid);
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Allow 'Window' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuBar(UIActionRestrictionLevel_Logic,
                                                         UIExtraDataMetaDefs::MenuType_Invalid);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();

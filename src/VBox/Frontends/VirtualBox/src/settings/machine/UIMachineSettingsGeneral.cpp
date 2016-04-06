@@ -552,9 +552,9 @@ void UIMachineSettingsGeneral::prepareTabDescription()
     AssertPtrReturnVoid(mTeDescription);
     {
         /* Configure Description text editor: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         mTeDescription->setMinimumHeight(150);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     }
 }
 

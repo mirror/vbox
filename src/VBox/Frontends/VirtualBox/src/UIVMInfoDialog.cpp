@@ -340,12 +340,12 @@ bool UIVMInfoDialog::event(QEvent *pEvent)
         {
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
             {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
                 QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
                 m_geometry.moveTo(pMoveEvent->pos());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
                 m_geometry.moveTo(geometry().x(), geometry().y());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
             }
             break;
         }
@@ -401,13 +401,13 @@ void UIVMInfoDialog::prepareThis()
     /* Delete dialog on machine-window destruction: */
     connect(m_pMachineWindow, SIGNAL(destroyed(QObject*)), this, SLOT(suicide()));
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* No window-icon on Mac OX X, because it acts as proxy icon which isn't necessary here. */
     setWindowIcon(QIcon());
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
     /* Assign window-icon(s: */
     setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /* Prepare central-widget: */
     prepareCentralWidget();
@@ -520,12 +520,12 @@ void UIVMInfoDialog::loadSettings()
     {
         /* Load geometry: */
         m_geometry = gEDataManager->informationWindowGeometry(this, m_pMachineWindow, vboxGlobal().managedVMUuid());
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         move(m_geometry.topLeft());
         resize(m_geometry.size());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         setGeometry(m_geometry);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         LogRel2(("GUI: UIVMInfoDialog: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
                  m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
@@ -540,11 +540,11 @@ void UIVMInfoDialog::saveSettings()
     /* Save window geometry: */
     {
         /* Save geometry: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         gEDataManager->setInformationWindowGeometry(m_geometry, ::darwinIsWindowMaximized(this), vboxGlobal().managedVMUuid());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         gEDataManager->setInformationWindowGeometry(m_geometry, isMaximized(), vboxGlobal().managedVMUuid());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         LogRel2(("GUI: UIVMInfoDialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
                  m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
     }

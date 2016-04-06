@@ -148,7 +148,7 @@ static const int PushButtonBottomOffset = 4;
 UIHelpButton::UIHelpButton(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QPushButton>(pParent)
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     m_pButtonPressed = false;
     m_pNormalPixmap = new QPixmap(":/help_button_normal_mac_22px.png");
     m_pPressedPixmap = new QPixmap(":/help_button_pressed_mac_22px.png");
@@ -158,7 +158,7 @@ UIHelpButton::UIHelpButton(QWidget *pParent /* = 0 */)
                     PushButtonTopOffset,
                     m_size.width(),
                     m_size.height());
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     /* Applying language settings */
     retranslateUi();
 }
@@ -182,7 +182,7 @@ void UIHelpButton::retranslateUi()
         QPushButton::setShortcut(QKeySequence::HelpContents);
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 UIHelpButton::~UIHelpButton()
 {
     delete m_pNormalPixmap;
@@ -232,7 +232,7 @@ void UIHelpButton::leaveEvent(QEvent * pEvent)
     m_pButtonPressed = false;
     update();
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /********************************************************************************
  *

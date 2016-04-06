@@ -209,20 +209,20 @@ public:
     QSize sizeHint(const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const
     {
         QSize size = QItemDelegate::sizeHint(styleOption, idx);
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         int h = 28;
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         int h = 24;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         size.setHeight(RT_MAX(h, size.height()));
         return size;
     }
 
 protected:
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     bool eventFilter(QObject *pObject, QEvent *pEvent);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 private:
 

@@ -30,14 +30,14 @@
 /* Forward declarations: */
 class QIToolButton;
 class UIHostComboEditorPrivate;
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
 # if QT_VERSION >= 0x050000
 class ComboEditorEventFilter;
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_MAC || Q_WS_WIN */
-#ifdef Q_WS_WIN
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
+#ifdef VBOX_WS_WIN
 class WinAltGrMonitor;
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
 
 /* Native hot-key namespace to unify
@@ -46,11 +46,11 @@ namespace UINativeHotKey
 {
     QString toString(int iKeyCode);
     bool isValidKey(int iKeyCode);
-#if defined(Q_WS_WIN)
+#if defined(VBOX_WS_WIN)
     int distinguishModifierVKey(int wParam, int lParam);
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
     void retranslateKeyNames();
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 }
 
 /* Host-combo namespace to unify
@@ -151,18 +151,18 @@ protected:
     /** Qt5: Handles all native events. */
     bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult);
 #else /* QT_VERSION < 0x050000 */
-# if defined(Q_WS_MAC)
+# if defined(VBOX_WS_MAC)
     /** Mac: Qt4: Handles all native events (static callback). */
     static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
     /** Mac: Qt4: Handles all native events. */
     bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
-# elif defined(Q_WS_WIN)
+# elif defined(VBOX_WS_WIN)
     /** Win: Qt4: Handles all native events. */
     bool winEvent(MSG *pMsg, long *pResult);
-# elif defined(Q_WS_X11)
+# elif defined(VBOX_WS_X11)
     /** X11: Qt4: Handles all native events. */
     bool x11Event(XEvent *pEvent);
-# endif /* Q_WS_X11 */
+# endif /* VBOX_WS_X11 */
 #endif /* QT_VERSION < 0x050000 */
 
     void keyPressEvent(QKeyEvent *pEvent);
@@ -186,7 +186,7 @@ private:
     QTimer* m_pReleaseTimer;
     bool m_fStartNewSequence;
 
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
 # if QT_VERSION >= 0x050000
     /** Mac, Win: Holds the native event filter instance. */
     ComboEditorEventFilter *m_pPrivateEventFilter;
@@ -194,17 +194,17 @@ private:
       * redirect events directly to nativeEvent handler. */
     friend class ComboEditorEventFilter;
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_MAC || Q_WS_WIN */
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
     /** Mac: Holds the current modifier key mask. Used to figure out which modifier
       * key was pressed when we get a kEventRawKeyModifiersChanged event. */
     uint32_t m_uDarwinKeyModifiers;
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
     /** Win: Holds the object monitoring key event
       * stream for problematic AltGr events. */
     WinAltGrMonitor *m_pAltGrMonitor;
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 };
 
 #endif /* !___UIHostComboEditor_h___ */

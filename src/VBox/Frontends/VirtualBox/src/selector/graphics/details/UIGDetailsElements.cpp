@@ -403,7 +403,7 @@ void UIGDetailsUpdateTaskDisplay::run()
                                          QString::number(dValue, 'f', 2));
         }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /* Get 'Unscaled HiDPI Video Output' mode value: */
         const QString strUnscaledHiDPIMode = machine.GetExtraData(UIExtraDataDefs::GUI_HiDPI_UnscaledOutput);
         {
@@ -417,7 +417,7 @@ void UIGDetailsUpdateTaskDisplay::run()
                 table << UITextTableLine(QApplication::translate("UIGDetails", "Unscaled HiDPI Video Output", "details (display)"),
                                          QApplication::translate("UIGDetails", "Enabled", "details (display/Unscaled HiDPI Video Output)"));
         }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
         QStringList acceleration;
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -854,7 +854,7 @@ void UIGDetailsUpdateTaskUI::run()
     /* Gather information: */
     if (machine.GetAccessible())
     {
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* Get menu-bar availability status: */
         const QString strMenubarEnabled = machine.GetExtraData(UIExtraDataDefs::GUI_MenuBar_Enabled);
         {
@@ -868,7 +868,7 @@ void UIGDetailsUpdateTaskUI::run()
                                      fEnabled ? QApplication::translate("UIGDetails", "Enabled", "details (user interface/menu-bar)") :
                                                 QApplication::translate("UIGDetails", "Disabled", "details (user interface/menu-bar)"));
         }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
         /* Get status-bar availability status: */
         const QString strStatusbarEnabled = machine.GetExtraData(UIExtraDataDefs::GUI_StatusBar_Enabled);
@@ -884,7 +884,7 @@ void UIGDetailsUpdateTaskUI::run()
                                                 QApplication::translate("UIGDetails", "Disabled", "details (user interface/status-bar)"));
         }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* Get mini-toolbar availability status: */
         const QString strMiniToolbarEnabled = machine.GetExtraData(UIExtraDataDefs::GUI_ShowMiniToolBar);
         {
@@ -920,7 +920,7 @@ void UIGDetailsUpdateTaskUI::run()
                 table << UITextTableLine(QApplication::translate("UIGDetails", "Mini-toolbar", "details (user interface)"),
                                          QApplication::translate("UIGDetails", "Disabled", "details (user interface/mini-toolbar)"));
         }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     }
     else
         table << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());

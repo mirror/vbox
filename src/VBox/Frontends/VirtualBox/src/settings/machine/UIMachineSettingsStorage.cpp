@@ -2074,11 +2074,11 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mTbStorageBar->addAction (mAddCtrAction);
     mTbStorageBar->addAction (mDelCtrAction);
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* We need a little more space for the focus rect. */
     mLtStorage->setContentsMargins (3, 0, 3, 0);
     mLtStorage->setSpacing (3);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Setup choose-medium button: */
     QMenu *pOpenMediumMenu = new QMenu(mTbOpen);

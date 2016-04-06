@@ -63,14 +63,14 @@ UIInvisibleWindow::UIInvisibleWindow(int iHostScreenIndex)
     resize(1, 1);
     /* Apply visual and mouse-event mask for that 1 pixel: */
     setMask(QRect(0, 0, 1, 1));
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     /* For composite WMs make this 1 pixel transparent: */
     if (vboxGlobal().isCompositingManagerRunning())
         setAttribute(Qt::WA_TranslucentBackground);
-#else /* !Q_WS_X11 */
+#else /* !VBOX_WS_X11 */
     /* Make this 1 pixel transparent: */
     setAttribute(Qt::WA_TranslucentBackground);
-#endif /* !Q_WS_X11 */
+#endif /* !VBOX_WS_X11 */
 }
 
 void UIInvisibleWindow::resizeEvent(QResizeEvent *pEvent)

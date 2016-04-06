@@ -19,26 +19,26 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-# ifndef Q_WS_MAC
+# ifndef VBOX_WS_MAC
 /* Qt includes: */
 #  include <QKeyEvent>
 #  include <QTimer>
-# endif /* !Q_WS_MAC */
+# endif /* !VBOX_WS_MAC */
 
 /* GUI includes: */
 # include "UIKeyboardHandlerSeamless.h"
-# ifndef Q_WS_MAC
+# ifndef VBOX_WS_MAC
 #  include "UIMachineLogic.h"
 #  include "UIShortcutPool.h"
-# endif /* !Q_WS_MAC */
+# endif /* !VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 /* Namespaces: */
 using namespace UIExtraDataDefs;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 UIKeyboardHandlerSeamless::UIKeyboardHandlerSeamless(UIMachineLogic* pMachineLogic)
     : UIKeyboardHandler(pMachineLogic)
@@ -49,7 +49,7 @@ UIKeyboardHandlerSeamless::~UIKeyboardHandlerSeamless()
 {
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 bool UIKeyboardHandlerSeamless::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 {
     /* Check if pWatchedObject object is view: */
@@ -83,5 +83,5 @@ bool UIKeyboardHandlerSeamless::eventFilter(QObject *pWatchedObject, QEvent *pEv
     /* Else just propagate to base-class: */
     return UIKeyboardHandler::eventFilter(pWatchedObject, pEvent);
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 

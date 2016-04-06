@@ -145,9 +145,9 @@ QISplitter::QISplitter(QWidget *pParent /* = 0 */)
     : QSplitter(pParent)
     , m_fPolished(false)
     , m_type(Shade)
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     , m_fHandleGrabbed(false)
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 {
     qApp->installEventFilter(this);
 }
@@ -156,9 +156,9 @@ QISplitter::QISplitter(Qt::Orientation orientation, QWidget *pParent /* = 0 */)
     : QSplitter(orientation, pParent)
     , m_fPolished(false)
     , m_type(Shade)
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     , m_fHandleGrabbed(false)
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 {
     qApp->installEventFilter (this);
 }
@@ -176,7 +176,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
         }
     }
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Special handling on the Mac. Cause there the horizontal handle is only 1
      * pixel wide, its hard to catch. Therefor we make some invisible area
      * around the handle and forwarding the mouse events to the handle, if the
@@ -254,7 +254,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
         }
     }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     return QSplitter::eventFilter(pWatched, pEvent);
 }

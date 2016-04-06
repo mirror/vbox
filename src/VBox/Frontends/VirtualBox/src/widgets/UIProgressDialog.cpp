@@ -35,9 +35,9 @@
 # include "QIDialogButtonBox.h"
 # include "QILabel.h"
 # include "VBoxGlobal.h"
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* COM includes: */
 # include "CProgress.h"
@@ -67,13 +67,13 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     /* Create main layout: */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     ::darwinSetHidesAllTitleButtons(this);
     if (pImage)
         pMainLayout->setContentsMargins(30, 15, 30, 15);
     else
         pMainLayout->setContentsMargins(6, 6, 6, 6);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Create image: */
     if (pImage)
@@ -158,12 +158,12 @@ int UIProgressDialog::run(int cRefreshInterval)
          * We don't do this on the Mac, cause regarding the design rules of
          * Apple there is no busy window behavior. A window should always be
          * responsive and it is in our case (We show the progress dialog bar). */
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         if (m_fCancelEnabled)
             QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
         else
             QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
         /* Create a local event-loop: */
         {
@@ -182,10 +182,10 @@ int UIProgressDialog::run(int cRefreshInterval)
         /* Kill refresh timer */
         killTimer(id);
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* Reset the busy cursor */
         QApplication::restoreOverrideCursor();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
         return result();
     }

@@ -20,25 +20,25 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# ifndef Q_WS_MAC
+# ifndef VBOX_WS_MAC
 #  include <QKeyEvent>
 #  include <QTimer>
-# endif /* !Q_WS_MAC */
+# endif /* !VBOX_WS_MAC */
 
 /* GUI includes: */
 # include "UIKeyboardHandlerScale.h"
-# ifndef Q_WS_MAC
+# ifndef VBOX_WS_MAC
 #  include "UIMachineLogic.h"
 #  include "UIShortcutPool.h"
-# endif /* !Q_WS_MAC */
+# endif /* !VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 /* Namespaces: */
 using namespace UIExtraDataDefs;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 UIKeyboardHandlerScale::UIKeyboardHandlerScale(UIMachineLogic* pMachineLogic)
     : UIKeyboardHandler(pMachineLogic)
@@ -49,7 +49,7 @@ UIKeyboardHandlerScale::~UIKeyboardHandlerScale()
 {
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 bool UIKeyboardHandlerScale::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 {
     /* Check if pWatchedObject object is view: */
@@ -83,5 +83,5 @@ bool UIKeyboardHandlerScale::eventFilter(QObject *pWatchedObject, QEvent *pEvent
     /* Else just propagate to base-class: */
     return UIKeyboardHandler::eventFilter(pWatchedObject, pEvent);
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 

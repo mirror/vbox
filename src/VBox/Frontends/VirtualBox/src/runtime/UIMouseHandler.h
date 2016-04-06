@@ -37,11 +37,11 @@ class UIMachineWindow;
 class UIMachineView;
 class CDisplay;
 class CMouse;
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 # if QT_VERSION < 0x050000
 typedef union _XEvent XEvent;
 # endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 
 /* Delegate to control VM mouse functionality: */
@@ -74,12 +74,12 @@ public:
     /* Current mouse state: */
     int state() const;
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 # if QT_VERSION < 0x050000
     /** X11: Qt4: Handles all native events. */
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
 # endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 protected slots:
 
@@ -122,12 +122,12 @@ protected:
     /* Separate function to handle incoming multi-touch events: */
     bool multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId);
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* This method is actually required only because under win-host
      * we do not really grab the mouse in case of capturing it: */
     void updateMouseCursorClipping();
     QRect m_mouseCursorClippingRect;
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* Machine logic parent: */
     UIMachineLogic *m_pMachineLogic;

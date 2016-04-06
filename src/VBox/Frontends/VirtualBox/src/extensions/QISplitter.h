@@ -50,9 +50,9 @@ private:
 
     bool m_fPolished;
     Type m_type;
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     bool m_fHandleGrabbed;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     QColor m_color1;
     QColor m_color2;

@@ -23,9 +23,9 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* External includes: */
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 # include <sys/wait.h>
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 
 /* static */
@@ -48,11 +48,11 @@ QByteArray QIProcess::singleShot(const QString &strProcessName, int iTimeout)
     if (firstShotReady)
         result = process.readAllStandardOutput();
     process.setProcessState(QProcess::NotRunning);
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     int iStatus;
     if (process.pid() > 0)
         waitpid(process.pid(), &iStatus, 0);
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
     return result;
 }
 

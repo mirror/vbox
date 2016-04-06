@@ -31,12 +31,12 @@
 # include "UIMachineLogicSeamless.h"
 # include "UIMachineWindowSeamless.h"
 # include "UIMachineView.h"
-# if   defined(Q_WS_WIN) || defined(Q_WS_X11)
+# if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 #  include "UIMachineDefs.h"
 #  include "UIMiniToolBar.h"
-# elif defined(Q_WS_MAC)
+# elif defined(VBOX_WS_MAC)
 #  include "VBoxUtils.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* COM includes: */
 # include "CSnapshot.h"
@@ -46,13 +46,13 @@
 
 UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     , m_pMiniToolBar(0)
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 {
 }
 
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 void UIMachineWindowSeamless::sltMachineStateChanged()
 {
     /* Call to base-class: */
@@ -69,12 +69,12 @@ void UIMachineWindowSeamless::sltRevokeWindowActivation()
         return;
 
     /* Revoke stolen activation: */
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     raise();
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
     activateWindow();
 }
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
 void UIMachineWindowSeamless::prepareVisualState()
 {
@@ -86,19 +86,19 @@ void UIMachineWindowSeamless::prepareVisualState()
     setAttribute(Qt::WA_NoSystemBackground);
 
 #ifdef VBOX_WITH_TRANSLUCENT_SEAMLESS
-# if defined(Q_WS_MAC) && QT_VERSION < 0x050000
+# if defined(VBOX_WS_MAC) && QT_VERSION < 0x050000
     /* Using native API to enable translucent background for the Mac host.
      * - We also want to disable window-shadows which is possible
      *   using Qt::WA_MacNoShadow only since Qt 4.8,
      *   while minimum supported version is 4.7.1 for now: */
     ::darwinSetShowsWindowTransparent(this, true);
-# else /* !Q_WS_MAC || QT_VERSION >= 0x050000 */
+# else /* !VBOX_WS_MAC || QT_VERSION >= 0x050000 */
     /* Using Qt API to enable translucent background:
      * - Under Win host Qt conflicts with 3D stuff (black seamless regions).
      * - Under Mac host Qt doesn't allows to disable window-shadows
      *   until version 4.8, but minimum supported version is 4.7.1 for now. */
     setAttribute(Qt::WA_TranslucentBackground);
-# endif /* !Q_WS_MAC || QT_VERSION >= 0x050000 */
+# endif /* !VBOX_WS_MAC || QT_VERSION >= 0x050000 */
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
@@ -107,13 +107,13 @@ void UIMachineWindowSeamless::prepareVisualState()
     setMask(m_maskGuest);
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     /* Prepare mini-toolbar: */
     prepareMiniToolbar();
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 }
 
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 void UIMachineWindowSeamless::prepareMiniToolbar()
 {
     /* Make sure mini-toolbar is not restricted: */
@@ -139,9 +139,9 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
                 this, SLOT(sltRevokeWindowActivation()), Qt::QueuedConnection);
     }
 }
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 void UIMachineWindowSeamless::cleanupMiniToolbar()
 {
     /* Make sure mini-toolbar was created: */
@@ -154,14 +154,14 @@ void UIMachineWindowSeamless::cleanupMiniToolbar()
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;
 }
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
 void UIMachineWindowSeamless::cleanupVisualState()
 {
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     /* Cleanup mini-toolbar: */
     cleanupMiniToolbar();
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
     /* Call to base-class: */
     UIMachineWindow::cleanupVisualState();
@@ -178,7 +178,7 @@ void UIMachineWindowSeamless::placeOnScreen()
     resize(workingArea.size());
     move(workingArea.topLeft());
 
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     /* If there is a mini-toolbar: */
     if (m_pMiniToolBar)
     {
@@ -186,7 +186,7 @@ void UIMachineWindowSeamless::placeOnScreen()
         m_pMiniToolBar->resize(workingArea.size());
         m_pMiniToolBar->move(workingArea.topLeft());
     }
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 }
 
 void UIMachineWindowSeamless::showInNecessaryMode()
@@ -199,14 +199,14 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     if (!uisession()->isScreenVisible(m_uScreenId) ||
         !pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
         /* If there is a mini-toolbar: */
         if (m_pMiniToolBar)
         {
             /* Hide mini-toolbar: */
             m_pMiniToolBar->hide();
         }
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
         /* Hide window: */
         hide();
@@ -223,14 +223,14 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         /* Show window in normal mode: */
         show();
 
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
         /* If there is a mini-toolbar: */
         if (m_pMiniToolBar)
         {
             /* Show mini-toolbar in normal mode: */
             m_pMiniToolBar->show();
         }
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
         /* Adjust machine-view size if necessary: */
         adjustMachineViewSize();
@@ -240,7 +240,7 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     }
 }
 
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
 {
     /* Call to base-class: */
@@ -264,9 +264,9 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
         }
     }
 }
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
 # if QT_VERSION >= 0x050000
 void UIMachineWindowSeamless::showEvent(QShowEvent *pEvent)
 {
@@ -280,7 +280,7 @@ void UIMachineWindowSeamless::showEvent(QShowEvent *pEvent)
     UIMachineWindow::showEvent(pEvent);
 }
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
 void UIMachineWindowSeamless::setMask(const QRegion &maskGuest)

@@ -48,11 +48,11 @@ class UIActionPool;
 class CUSBDevice;
 class CNetworkAdapter;
 class CMediumAttachment;
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 class QMenuBar;
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
 class QIcon;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 /* CConsole callback event types: */
 enum UIConsoleEventType
@@ -126,7 +126,7 @@ public:
     WId mainMachineWindowId() const;
     QCursor cursor() const { return m_cursor; }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /** @name Branding stuff.
      ** @{ */
     /** Returns redefined machine-window icon. */
@@ -134,7 +134,7 @@ public:
     /** Returns redefined machine-window name postfix. */
     QString machineWindowNamePostfix() const { return m_strMachineWindowNamePostfix; }
     /** @} */
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /** @name Host-screen configuration variables.
      ** @{ */
@@ -387,10 +387,10 @@ private:
     void cleanupSession();
     void cleanup();
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Mac OS X: Updates menu-bar content. */
     void updateMenu();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Common helpers: */
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
@@ -433,10 +433,10 @@ private:
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Holds the menu-bar instance. */
     QMenuBar *m_pMenuBar;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Screen visibility vector: */
     QVector<bool> m_monitorVisibilityVector;
@@ -455,7 +455,7 @@ private:
     KMachineState m_machineState;
     QCursor m_cursor;
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /** @name Branding variables.
      ** @{ */
     /** Holds redefined machine-window icon. */
@@ -463,7 +463,7 @@ private:
     /** Holds redefined machine-window name postfix. */
     QString m_strMachineWindowNamePostfix;
     /** @} */
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /** @name Visual-state configuration variables.
      ** @{ */
@@ -471,7 +471,7 @@ private:
     UIVisualStateType m_requestedVisualStateType;
     /** @} */
 
-#if defined(Q_WS_WIN)
+#if defined(VBOX_WS_WIN)
     HCURSOR m_alphaCursor;
 #endif
 
@@ -479,10 +479,10 @@ private:
      * @{ */
     /** Holds the list of host-screen geometries we currently have. */
     QList<QRect> m_hostScreens;
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Mac OS X: Watchdog timer looking for display reconfiguration. */
     QTimer *m_pWatchdogDisplayChange;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     /** @} */
 
     /** @name Application Close configuration variables.

@@ -23,9 +23,9 @@
 # include <QApplication>
 # include <QDesktopWidget>
 # include <QWidget>
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include <QTimer>
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -46,10 +46,10 @@
 # ifdef VBOX_WITH_VIDEOHWACCEL
 #  include "VBoxFBOverlay.h"
 # endif /* VBOX_WITH_VIDEOHWACCEL */
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "UIMenuBar.h"
 #  include "VBoxUtils-darwin.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 # ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 #  include "UIKeyboardHandler.h"
@@ -72,23 +72,23 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
 # if QT_VERSION >= 0x050000
 #  include <QtWin>
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 # include <QX11Info>
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 static void signalHandlerSIGUSR1(int sig, siginfo_t *, void *);
 #endif
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 /**
  * MacOS X: Application Services: Core Graphics: Display reconfiguration callback.
  *
@@ -123,7 +123,7 @@ void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChange
 
     Q_UNUSED(display);
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /* static */
 bool UISession::create(UISession *&pSession, UIMachine *pMachine)
@@ -252,13 +252,13 @@ bool UISession::initialize()
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* Log whether HID LEDs sync is enabled: */
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     LogRel(("GUI: HID LEDs sync is %s\n",
             uimachine()->machineLogic()->isHidLedsSyncEnabled()
             ? "enabled" : "disabled"));
-#else /* !Q_WS_MAC && !Q_WS_WIN */
+#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
     LogRel(("GUI: HID LEDs sync is not supported on this platform\n"));
-#endif /* !Q_WS_MAC && !Q_WS_WIN */
+#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
 
 #ifdef VBOX_GUI_WITH_PIDFILE
     vboxGlobal().createPidfile();
@@ -935,22 +935,22 @@ UISession::UISession(UIMachine *pMachine)
     /* Base variables: */
     , m_pMachine(pMachine)
     , m_pActionPool(0)
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     , m_pMenuBar(0)
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     /* Common variables: */
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(KMachineState_Null)
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     , m_pMachineWindowIcon(0)
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     , m_requestedVisualStateType(UIVisualStateType_Invalid)
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     , m_alphaCursor(0)
-#endif /* Q_WS_WIN */
-#ifdef Q_WS_MAC
+#endif /* VBOX_WS_WIN */
+#ifdef VBOX_WS_MAC
     , m_pWatchdogDisplayChange(0)
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     , m_defaultCloseAction(MachineCloseAction_Invalid)
     , m_restrictedCloseActions(MachineCloseAction_Invalid)
     , m_fAllCloseActionsRestricted(false)
@@ -1093,7 +1093,7 @@ void UISession::prepareActions()
         /* Update action restrictions: */
         updateActionRestrictions();
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /* Create Mac OS X menu-bar: */
         m_pMenuBar = new UIMenuBar;
         AssertPtrReturnVoid(m_pMenuBar);
@@ -1104,7 +1104,7 @@ void UISession::prepareActions()
             /* Update Mac OS X menu-bar: */
             updateMenu();
         }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     }
 }
 
@@ -1112,10 +1112,10 @@ void UISession::prepareConnections()
 {
     connect(this, SIGNAL(sigInitialized()), this, SLOT(sltMarkInitialized()));
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Install native display reconfiguration callback: */
     CGDisplayRegisterReconfigurationCallback(cgDisplayReconfigurationCallback, this);
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
     /* Install Qt display reconfiguration callbacks: */
     connect(QApplication::desktop(), SIGNAL(screenCountChanged(int)),
             this, SLOT(sltHandleHostScreenCountChange()));
@@ -1123,7 +1123,7 @@ void UISession::prepareConnections()
             this, SLOT(sltHandleHostScreenGeometryChange()));
     connect(QApplication::desktop(), SIGNAL(workAreaResized(int)),
             this, SLOT(sltHandleHostScreenAvailableAreaChange()));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
 void UISession::prepareConsoleEventHandlers()
@@ -1174,10 +1174,10 @@ void UISession::prepareConsoleEventHandlers()
     connect(gConsoleEvents, SIGNAL(sigRuntimeError(bool, QString, QString)),
             this, SIGNAL(sigRuntimeError(bool, QString, QString)));
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     connect(gConsoleEvents, SIGNAL(sigShowWindow()),
             this, SIGNAL(sigShowWindows()), Qt::QueuedConnection);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     connect(gConsoleEvents, SIGNAL(sigCPUExecutionCapChange()),
             this, SIGNAL(sigCPUExecutionCapChange()));
@@ -1191,7 +1191,7 @@ void UISession::prepareScreens()
     /* Recache display data: */
     updateHostScreenData();
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Prepare display-change watchdog: */
     m_pWatchdogDisplayChange = new QTimer(this);
     {
@@ -1200,7 +1200,7 @@ void UISession::prepareScreens()
         connect(m_pWatchdogDisplayChange, SIGNAL(timeout()),
                 this, SLOT(sltCheckIfHostDisplayChanged()));
     }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Prepare initial screen visibility status: */
     m_monitorVisibilityVector.resize(machine().GetMonitorCount());
@@ -1267,7 +1267,7 @@ void UISession::loadSessionSettings()
         /* Get machine ID: */
         const QString strMachineID = vboxGlobal().managedVMUuid();
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* Load/prepare user's machine-window icon: */
         QIcon icon;
         foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(strMachineID))
@@ -1278,7 +1278,7 @@ void UISession::loadSessionSettings()
 
         /* Load user's machine-window name postfix: */
         m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(strMachineID);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
         /* Is there should be First RUN Wizard? */
         m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(strMachineID);
@@ -1287,7 +1287,7 @@ void UISession::loadSessionSettings()
         QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(strMachineID));
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* Menu-bar options: */
         {
             const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noMenuBar");
@@ -1300,7 +1300,7 @@ void UISession::loadSessionSettings()
             pActionMenuBarSwitch->setChecked(fEnabled);
             pActionMenuBarSwitch->blockSignals(false);
         }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
         /* Status-bar options: */
         {
@@ -1344,11 +1344,11 @@ void UISession::saveSessionSettings()
             gEDataManager->setGuestScreenAutoResizeEnabled(pGuestAutoresizeSwitch->isChecked(), vboxGlobal().managedVMUuid());
         }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* Cleanup user's machine-window icon: */
         delete m_pMachineWindowIcon;
         m_pMachineWindowIcon = 0;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     }
 }
 
@@ -1380,19 +1380,19 @@ void UISession::cleanupConsoleEventHandlers()
 
 void UISession::cleanupConnections()
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Remove display reconfiguration callback: */
     CGDisplayRemoveReconfigurationCallback(cgDisplayReconfigurationCallback, this);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 void UISession::cleanupActions()
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Destroy Mac OS X menu-bar: */
     delete m_pMenuBar;
     m_pMenuBar = 0;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Destroy action-pool if necessary: */
     if (actionPool())
@@ -1439,11 +1439,11 @@ void UISession::cleanupSession()
 
 void UISession::cleanup()
 {
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Destroy alpha cursor: */
     if (m_alphaCursor)
         DestroyIcon(m_alphaCursor);
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* Save settings: */
     saveSessionSettings();
@@ -1464,7 +1464,7 @@ void UISession::cleanup()
     cleanupSession();
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 void UISession::updateMenu()
 {
     /* Rebuild Mac OS X menu-bar: */
@@ -1478,7 +1478,7 @@ void UISession::updateMenu()
             pMenuUI->setConsumed(true);
     }
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /** Generate a BGRA bitmap which approximates a XOR/AND mouse pointer.
  *
@@ -1588,7 +1588,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     const uchar *srcShapePtr = pShapeData + ((andMaskSize + 3) & ~3);
     uint srcShapePtrScan = uWidth * 4;
 
-#if defined (Q_WS_WIN)
+#if defined (VBOX_WS_WIN)
 
     BITMAPV5HEADER bi;
     HBITMAP hBitmap;
@@ -1718,7 +1718,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     if (hBitmap)
         DeleteObject(hBitmap);
 
-#elif defined(Q_WS_X11) || defined(Q_WS_MAC)
+#elif defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
 
     /* Create a ARGB image out of the shape data: */
     QImage image(uWidth, uHeight, QImage::Format_ARGB32);
@@ -1736,7 +1736,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 
     /* Create cursor-pixmap from the image: */
     QPixmap cursorPixmap = QPixmap::fromImage(image);
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  ifdef VBOX_GUI_WITH_HIDPI
     /* Adjust backing-scale-factor: */
     // TODO: In case of multi-monitor setup check whether backing-scale factor and cursor are screen specific.
@@ -1748,7 +1748,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     if (dBackingScaleFactor > 1.0 && frameBuffer(uScreenID)->useUnscaledHiDPIOutput())
         cursorPixmap.setDevicePixelRatio(dBackingScaleFactor);
 #  endif /* VBOX_GUI_WITH_HIDPI */
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
     /* Set the new cursor: */
     m_cursor = QCursor(cursorPixmap, uXHot, uYHot);
     m_fIsValidPointerShapePresent = true;

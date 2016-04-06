@@ -124,10 +124,10 @@ void QIDialog::polishEvent(QShowEvent*)
 {
     /* Make sure layout is polished: */
     adjustSize();
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* And dialog have fixed size: */
     setFixedSize(size());
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Explicit centering according to our parent: */
     VBoxGlobal::centerWidget(this, parentWidget(), false);

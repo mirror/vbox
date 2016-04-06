@@ -37,14 +37,14 @@
 # include <QDir>
 # include <QLocale>
 # include <QSpinBox>
-# ifdef Q_WS_WIN
+# ifdef VBOX_WS_WIN
 #  include <QEventLoop>
-# endif /* Q_WS_WIN */
-# ifdef Q_WS_X11
+# endif /* VBOX_WS_WIN */
+# ifdef VBOX_WS_X11
 #  include <QTextBrowser>
 #  include <QScrollBar>
 #  include <QX11Info>
-# endif /* Q_WS_X11 */
+# endif /* VBOX_WS_X11 */
 # ifdef VBOX_GUI_WITH_PIDFILE
 #  include <QTextStream>
 # endif /* VBOX_GUI_WITH_PIDFILE */
@@ -73,18 +73,18 @@
 # include "UIModalWindowManager.h"
 # include "UIIconPool.h"
 # include "UIVirtualBoxEventHandler.h"
-# ifdef Q_WS_X11
+# ifdef VBOX_WS_X11
 #  include "UIHostComboEditor.h"
 #  include "UIDesktopWidgetWatchdog.h"
 #  ifndef VBOX_OSE
 #   include "VBoxLicenseViewer.h"
 #  endif /* VBOX_OSE */
-# endif /* Q_WS_X11 */
-# ifdef Q_WS_MAC
+# endif /* VBOX_WS_X11 */
+# ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
 #  include "UIMachineWindowFullscreen.h"
 #  include "UIMachineWindowSeamless.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 # ifdef VBOX_WITH_VIDEOHWACCEL
 #  include "VBoxFBOverlay.h"
 # endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -119,16 +119,16 @@
 # include <iprt/ldr.h>
 # include <iprt/system.h>
 # include <iprt/stream.h>
-# ifdef Q_WS_X11
+# ifdef VBOX_WS_X11
 #  include <iprt/mem.h>
-# endif /* Q_WS_X11 */
+# endif /* VBOX_WS_X11 */
 # include <VBox/sup.h>
 # include <VBox/com/Guid.h>
 
 /* External includes: */
-# ifdef Q_WS_WIN
+# ifdef VBOX_WS_WIN
 #  include "shlobj.h"
-# endif /* Q_WS_WIN */
+# endif /* VBOX_WS_WIN */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -154,10 +154,10 @@
 
 /* External includes: */
 # include <math.h>
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # include <sys/utsname.h>
-#endif /* Q_WS_MAC */
-#ifdef Q_WS_X11
+#endif /* VBOX_WS_MAC */
+#ifdef VBOX_WS_X11
 # undef BOOL /* typedef CARD8 BOOL in Xmd.h conflicts with #define BOOL PRBool
               * in COMDefs.h. A better fix would be to isolate X11-specific
               * stuff by placing XX* helpers below to a separate source file. */
@@ -167,7 +167,7 @@
 # include <X11/Xatom.h>
 # include <X11/extensions/Xinerama.h>
 # define BOOL PRBool
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 
 //#define VBOX_WITH_FULL_DETAILS_REPORT /* hidden for now */
@@ -222,18 +222,18 @@ void VBoxGlobal::destroy()
 
 VBoxGlobal::VBoxGlobal()
     : mValid (false)
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     , m_osRelease(MacOSXRelease_Old)
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     , m_fWrappersValid(false)
     , m_fVBoxSVCAvailable(true)
     , m_fSeparateProcess(false)
     , m_pMediumEnumerator(0)
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     , m_fCompositingManagerRunning(false)
     , m_enmWindowManagerType(X11WMType_Unknown)
     , m_pDesktopWidgetWatchdog(0)
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 #if defined(DEBUG_bird)
     , mAgressiveCaching(false)
 #else
@@ -307,7 +307,7 @@ bool VBoxGlobal::isBeta() const
     return m_vbox.GetVersion().contains("BETA", Qt::CaseInsensitive);
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 /* static */
 MacOSXRelease VBoxGlobal::determineOsRelease()
 {
@@ -333,7 +333,7 @@ MacOSXRelease VBoxGlobal::determineOsRelease()
     /* Return 'Old' by default: */
     return MacOSXRelease_Old;
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 int VBoxGlobal::screenCount() const
 {
@@ -355,12 +355,12 @@ int VBoxGlobal::screenNumber(const QPoint &point) const
 
 const QRect VBoxGlobal::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     /* Make sure desktop-widget watchdog already created: */
     AssertPtrReturn(m_pDesktopWidgetWatchdog, QApplication::desktop()->screenGeometry(iHostScreenIndex));
     /* Redirect call to UIDesktopWidgetWatchdog: */
     return m_pDesktopWidgetWatchdog->screenGeometry(iHostScreenIndex);
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
     /* Redirect call to QDesktopWidget: */
     return QApplication::desktop()->screenGeometry(iHostScreenIndex);
@@ -368,12 +368,12 @@ const QRect VBoxGlobal::screenGeometry(int iHostScreenIndex /* = -1 */) const
 
 const QRect VBoxGlobal::availableGeometry(int iHostScreenIndex /* = -1 */) const
 {
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     /* Make sure desktop-widget watchdog already created: */
     AssertPtrReturn(m_pDesktopWidgetWatchdog, QApplication::desktop()->availableGeometry(iHostScreenIndex));
     /* Redirect call to UIDesktopWidgetWatchdog: */
     return m_pDesktopWidgetWatchdog->availableGeometry(iHostScreenIndex);
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
     /* Redirect call to QDesktopWidget: */
     return QApplication::desktop()->availableGeometry(iHostScreenIndex);
@@ -500,7 +500,7 @@ QString VBoxGlobal::brandingGetKey (QString aKey)
     return s.value(QString("%1").arg(aKey)).toString();
 }
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 QList<QRect> XGetDesktopList()
 {
     /* Prepare empty resulting list: */
@@ -615,7 +615,7 @@ QList<ulong> XGetStrut(Window window)
     /* Return resulting list: */
     return result;
 }
-#endif /* ifdef Q_WS_X11 */
+#endif /* ifdef VBOX_WS_X11 */
 
 /**
  *  Returns the list of few guest OS types, queried from
@@ -2199,11 +2199,11 @@ void VBoxGlobal::retranslateUi()
     if (mValid)
         startMediumEnumeration();
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     /* As X11 do not have functionality for providing human readable key names,
      * we keep a table of them, which must be updated when the language is changed. */
     UINativeHotKey::retranslateKeyNames();
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 }
 
 // public static stuff
@@ -2412,22 +2412,22 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     }
     if (fResetToC)
         sLoadedLangId = "C";
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Qt doesn't translate the items in the Application menu initially.
      * Manually trigger an update. */
     ::darwinRetranslateAppMenu();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 QString VBoxGlobal::helpFile() const
 {
-#if defined (Q_WS_WIN)
+#if defined (VBOX_WS_WIN)
     const QString name = "VirtualBox";
     const QString suffix = "chm";
-#elif defined (Q_WS_MAC)
+#elif defined (VBOX_WS_MAC)
     const QString name = "UserManual";
     const QString suffix = "pdf";
-#elif defined (Q_WS_X11)
+#elif defined (VBOX_WS_X11)
 # if defined VBOX_OSE
     const QString name = "UserManual";
     const QString suffix = "pdf";
@@ -2724,13 +2724,13 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
 
     /* ensure the widget is within the available desktop area */
     QRect newGeo = normalizeGeometry (geo, deskGeo, aCanResize);
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* No idea why, but Qt doesn't respect if there is a unified toolbar on the
      * ::move call. So manually add the height of the toolbar before setting
      * the position. */
     if (w)
         newGeo.translate (0, ::darwinWindowToolBarHeight (aWidget));
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     aWidget->move (newGeo.topLeft());
 
@@ -3150,7 +3150,7 @@ QString VBoxGlobal::emphasize (const QString &aStr)
 /* static */
 QString VBoxGlobal::systemLanguageId()
 {
-#if defined (Q_WS_MAC)
+#if defined (VBOX_WS_MAC)
     /* QLocale return the right id only if the user select the format of the
      * language also. So we use our own implementation */
     return ::darwinSystemLanguage();
@@ -3166,7 +3166,7 @@ QString VBoxGlobal::systemLanguageId()
     return  QLocale::system().name();
 }
 
-#if defined (Q_WS_X11)
+#if defined (VBOX_WS_X11)
 
 static char *XXGetProperty (Display *aDpy, Window aWnd,
                             Atom aPropType, const char *aPropName)
@@ -3241,7 +3241,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 {
     bool result = true;
 
-#if defined (Q_WS_WIN)
+#if defined (VBOX_WS_WIN)
 
     HWND handle = (HWND)aWId;
 
@@ -3252,7 +3252,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 
     result &= !!SetForegroundWindow (handle);
 
-#elif defined (Q_WS_X11)
+#elif defined (VBOX_WS_X11)
 
     Display *dpy = QX11Info::display();
 
@@ -3306,7 +3306,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
     return result;
 }
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 /* This method tests whether the current X11 window manager supports full-screen mode as we need it.
  * Unfortunately the EWMH specification was not fully clear about whether we can expect to find
  * all of these atoms on the _NET_SUPPORTED root window property, so we have to test with all
@@ -3458,7 +3458,7 @@ void VBoxGlobal::setFullScreenFlag(QWidget *pWidget)
                         (unsigned char*)resultNetWmState.data(), resultNetWmState.size());
     }
 }
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 /**
  *  Removes the accelerator mark (the ampersand symbol) from the given string
@@ -3500,7 +3500,7 @@ QString VBoxGlobal::removeAccelMark (const QString &aText)
 /* static */
 QString VBoxGlobal::insertKeyToActionText(const QString &strText, const QString &strKey)
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     QString pattern("%1 (Host+%2)");
 #else
     QString pattern("%1 \tHost+%2");
@@ -3932,11 +3932,11 @@ bool VBoxGlobal::processArgs()
            parameters with arguments (e.g. --comment comment). */
         if (args.at(i).startsWith("-"))
             break;
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         QString strArg = ::darwinResolveAlias(args.at(i));
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         QString strArg = args.at(i);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         if (   !strArg.isEmpty()
             && QFile::exists(strArg))
             list << QUrl::fromLocalFile(strArg);
@@ -3974,10 +3974,10 @@ void VBoxGlobal::prepare()
     /* Make sure QApplication cleanup us on exit: */
     connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(cleanup()));
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Determine OS release early: */
     m_osRelease = determineOsRelease();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Create message-center: */
     UIMessageCenter::create();
@@ -4055,7 +4055,7 @@ void VBoxGlobal::prepare()
 
     UIVisualStateType visualStateType = UIVisualStateType_Invalid;
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     /* Check whether we have compositing manager running: */
     m_fCompositingManagerRunning = X11IsCompositingManagerRunning();
 
@@ -4064,7 +4064,7 @@ void VBoxGlobal::prepare()
 
     /* Create desktop-widget watchdog instance: */
     m_pDesktopWidgetWatchdog = new UIDesktopWidgetWatchdog(this);
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # ifdef VBOX_WITH_DEBUGGER_GUI_MENU
@@ -4705,7 +4705,7 @@ void VBoxGlobal::showUI()
 
 bool VBoxGlobal::switchToMachine(CMachine &machine)
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     ULONG64 id = machine.ShowConsoleWindow();
 #else
     WId id = (WId) machine.ShowConsoleWindow();
@@ -4719,11 +4719,11 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
     if (id == 0)
         return true;
 
-#if defined (Q_WS_WIN) || defined (Q_WS_X11)
+#if defined (VBOX_WS_WIN) || defined (VBOX_WS_X11)
 
     return vboxGlobal().activateWindow(id, true);
 
-#elif defined (Q_WS_MAC)
+#elif defined (VBOX_WS_MAC)
     /*
      * This is just for the case were the other process cannot steal
      * the focus from us. It will send us a PSN so we can try.
@@ -4750,7 +4750,7 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
     if (!canSwitchTo())
         return false;
 
-#if defined (Q_WS_WIN)
+#if defined (VBOX_WS_WIN)
 
     HWND hwnd = mWinId;
 
@@ -4786,11 +4786,11 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
 
     return true;
 
-#elif defined (Q_WS_X11)
+#elif defined (VBOX_WS_X11)
 
     return false;
 
-#elif defined (Q_WS_MAC)
+#elif defined (VBOX_WS_MAC)
 
     ProcessSerialNumber psn;
     OSStatus rc = ::GetProcessForPID(m_pid, &psn);
@@ -4848,7 +4848,7 @@ bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = 
     /* Allow started VM process to be foreground window: */
     AllowSetForegroundWindow(ASFW_ANY);
 #endif /* Q_OS_WIN */
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     /* Make sure VM process will start on the same display as the VM selector: */
     const char *pDisplay = RTEnvGet("DISPLAY");
     if (pDisplay)
@@ -4856,7 +4856,7 @@ bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = 
     const char *pXauth = RTEnvGet("XAUTHORITY");
     if (pXauth)
         strEnv.append(QString("XAUTHORITY=%1\n").arg(pXauth));
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
     QString strType;
     switch (enmLaunchMode)
     {

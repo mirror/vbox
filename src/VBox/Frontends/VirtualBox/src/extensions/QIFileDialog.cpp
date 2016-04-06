@@ -25,7 +25,7 @@
 # include "UIMessageCenter.h"
 # include "QIFileDialog.h"
 
-# ifdef Q_WS_WIN
+# ifdef VBOX_WS_WIN
 /* Qt includes */
 #  include <QEvent>
 #  include <QEventLoop>
@@ -33,12 +33,12 @@
 
 /* WinAPI includes */
 #  include "shlobj.h"
-# endif /* !Q_WS_WIN */
+# endif /* !VBOX_WS_WIN */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
 
 static QString extractFilter (const QString &aRawFilter)
 {
@@ -209,7 +209,7 @@ private:
     QString mResult;
 };
 
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
 QIFileDialog::QIFileDialog (QWidget *aParent, Qt::WindowFlags aFlags)
     : QFileDialog (aParent, aFlags)
@@ -234,7 +234,7 @@ QString QIFileDialog::getExistingDirectory (const QString &aDir,
                                             bool aDirOnly,
                                             bool aResolveSymlinks)
 {
-#if defined(Q_WS_WIN) && (QT_VERSION < 0x050000)
+#if defined(VBOX_WS_WIN) && (QT_VERSION < 0x050000)
 
     /**
      *  QEvent class reimplementation to carry Win32 API
@@ -324,7 +324,7 @@ QString QIFileDialog::getExistingDirectory (const QString &aDir,
 
     return loopObject.result();
 
-#elif defined (Q_WS_X11) && (QT_VERSION < 0x040400)
+#elif defined (VBOX_WS_X11) && (QT_VERSION < 0x040400)
 
     /* Here is workaround for Qt4.3 bug with QFileDialog which crushes when
      * gets initial path as hidden directory if no hidden files are shown.
@@ -342,7 +342,7 @@ QString QIFileDialog::getExistingDirectory (const QString &aDir,
         hidden->setVisible (false);
     }
     return dlg.exec() ? dlg.selectedFiles() [0] : QString::null;
-#elif defined (Q_WS_MAC) && (QT_VERSION >= 0x040600)
+#elif defined (VBOX_WS_MAC) && (QT_VERSION >= 0x040600)
 
     /* After 4.5 exec ignores the Qt::Sheet flag.
      * See "New Ways of Using Dialogs" in http://doc.trolltech.com/qq/QtQuarterly30.pdf why.
@@ -365,7 +365,7 @@ QString QIFileDialog::getExistingDirectory (const QString &aDir,
 #else
 
     QFileDialog::Options o;
-# if defined (Q_WS_X11)
+# if defined (VBOX_WS_X11)
     /** @todo see http://bugs.kde.org/show_bug.cgi?id=210904, make it conditional
      *        when this bug is fixed (xtracker 5167).
      *        Apparently not necessary anymore (xtracker 5748)! */
@@ -402,7 +402,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
                                        bool           aResolveSymlinks /* = true */,
                                        bool           fConfirmOverwrite /* = false */)
 {
-#if defined(Q_WS_WIN) && (QT_VERSION < 0x050000)
+#if defined(VBOX_WS_WIN) && (QT_VERSION < 0x050000)
 
     /* Further code (WinAPI call to GetSaveFileName() in other thread)
      * seems not necessary any more since the MS COM issue has been fixed,
@@ -539,7 +539,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
 
     return loopObject.result();
 
-#elif defined (Q_WS_X11) && (QT_VERSION < 0x040400)
+#elif defined (VBOX_WS_X11) && (QT_VERSION < 0x040400)
 
     /* Here is workaround for Qt4.3 bug with QFileDialog which crushes when
      * gets initial path as hidden directory if no hidden files are shown.
@@ -563,7 +563,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
     }
     return dlg.exec() == QDialog::Accepted ? dlg.selectedFiles().value (0, "") : QString::null;
 
-#elif defined (Q_WS_MAC) && (QT_VERSION >= 0x040600) && (QT_VERSION < 0x050000)
+#elif defined (VBOX_WS_MAC) && (QT_VERSION >= 0x040600) && (QT_VERSION < 0x050000)
 
     /* After 4.5 exec ignores the Qt::Sheet flag.
      * See "New Ways of Using Dialogs" in http://doc.trolltech.com/qq/QtQuarterly30.pdf why.
@@ -601,7 +601,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
 #else
 
     QFileDialog::Options o;
-# if defined (Q_WS_X11)
+# if defined (VBOX_WS_X11)
     /** @todo see http://bugs.kde.org/show_bug.cgi?id=210904, make it conditional
      *        when this bug is fixed (xtracker 5167)
      *        Apparently not necessary anymore (xtracker 5748)! */
@@ -670,7 +670,7 @@ QStringList QIFileDialog::getOpenFileNames (const QString &aStartWith,
                                             bool           aSingleFile /* = false */)
 {
 /* It seems, running QFileDialog in separate thread is NOT needed under windows any more: */
-#if defined (Q_WS_WIN) && (QT_VERSION < 0x040403)
+#if defined (VBOX_WS_WIN) && (QT_VERSION < 0x040403)
 
     /**
      *  QEvent class reimplementation to carry Win32 API native dialog's
@@ -795,7 +795,7 @@ QStringList QIFileDialog::getOpenFileNames (const QString &aStartWith,
 
     return QStringList() << loopObject.result();
 
-#elif defined (Q_WS_X11) && (QT_VERSION < 0x040400)
+#elif defined (VBOX_WS_X11) && (QT_VERSION < 0x040400)
 
     /* Here is workaround for Qt4.3 bug with QFileDialog which crushes when
      * gets initial path as hidden directory if no hidden files are shown.
@@ -820,7 +820,7 @@ QStringList QIFileDialog::getOpenFileNames (const QString &aStartWith,
     }
     return dlg.exec() == QDialog::Accepted ? dlg.selectedFiles() : QStringList() << QString::null;
 
-#elif defined (Q_WS_MAC) && (QT_VERSION >= 0x040600) && (QT_VERSION < 0x050000)
+#elif defined (VBOX_WS_MAC) && (QT_VERSION >= 0x040600) && (QT_VERSION < 0x050000)
 
     /* After 4.5 exec ignores the Qt::Sheet flag.
      * See "New Ways of Using Dialogs" in http://doc.trolltech.com/qq/QtQuarterly30.pdf why.
@@ -861,7 +861,7 @@ QStringList QIFileDialog::getOpenFileNames (const QString &aStartWith,
     QFileDialog::Options o;
     if (!aResolveSymlinks)
         o |= QFileDialog::DontResolveSymlinks;
-# if defined (Q_WS_X11)
+# if defined (VBOX_WS_X11)
     /** @todo see http://bugs.kde.org/show_bug.cgi?id=210904, make it conditional
      *        when this bug is fixed (xtracker 5167)
      *        Apparently not necessary anymore (xtracker 5748)! */
@@ -900,7 +900,7 @@ QString QIFileDialog::getFirstExistingDir (const QString &aStartDir)
     return result;
 }
 
-#if defined Q_WS_WIN
+#if defined VBOX_WS_WIN
 #include "QIFileDialog.moc"
 #endif
 

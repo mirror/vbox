@@ -56,9 +56,9 @@ void VBoxOSTypeSelectorButton::setOSTypeId (const QString& aOSTypeId)
     mOSTypeId = aOSTypeId;
     CGuestOSType type = vboxGlobal().vmGuestOSType (aOSTypeId);
     /* Looks ugly on the Mac */
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     setIcon (vboxGlobal().vmGuestOSTypeIcon (type.GetId()));
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     setText (type.GetDescription());
 }
 

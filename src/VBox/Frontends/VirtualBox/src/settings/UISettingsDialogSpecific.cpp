@@ -60,9 +60,9 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # define VBOX_GUI_WITH_TOOLBAR_SETTINGS
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
                                                const QString &strCategory /* = QString() */,
@@ -70,9 +70,9 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
     : UISettingsDialog(pParent)
 {
     /* Window icon: */
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     setWindowIcon(QIcon(":/global_settings_16px.png"));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /* Creating settings pages: */
     QList<GlobalSettingsPageType> restrictedGlobalSettingsPages = gEDataManager->restrictedGlobalSettingsPages();
@@ -322,9 +322,9 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
     , m_fResetFirstRunFlag(false)
 {
     /* Window icon: */
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     setWindowIcon(QIcon(":/vm_settings_16px.png"));
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Allow to reset first-run flag just when medium enumeration was finished: */
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltAllowResetFirstRunFlag()));

@@ -99,10 +99,10 @@ void UIMachineViewNormal::prepareFilters()
     /* Base class filters: */
     UIMachineView::prepareFilters();
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Install menu-bar event-filter: */
     machineWindow()->menuBar()->installEventFilter(this);
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 }
 
 void UIMachineViewNormal::prepareConsoleConnections()

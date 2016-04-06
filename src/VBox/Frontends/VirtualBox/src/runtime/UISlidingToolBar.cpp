@@ -29,9 +29,9 @@
 # include "UISlidingToolBar.h"
 # include "UIAnimationFramework.h"
 # include "UIMachineWindow.h"
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -70,19 +70,19 @@ void UISlidingToolBar::prepare()
     /* Delete window when closed: */
     setAttribute(Qt::WA_DeleteOnClose);
 
-#if   defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if   defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     /* Make sure we have no background
      * until the first one paint-event: */
     setAttribute(Qt::WA_NoSystemBackground);
     /* Use Qt API to enable translucency: */
     setAttribute(Qt::WA_TranslucentBackground);
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
     if (vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Qt API to enable translucency: */
         setAttribute(Qt::WA_TranslucentBackground);
     }
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
     /* Prepare contents: */
     prepareContents();
@@ -153,18 +153,18 @@ void UISlidingToolBar::prepareGeometry()
         }
     }
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     if (!vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
         setMask(m_pEmbeddedWidget->geometry());
     }
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Raise tool-window for proper z-order. */
     raise();
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* Activate window after it was shown: */
     connect(this, SIGNAL(sigShown()), this,
@@ -210,18 +210,18 @@ void UISlidingToolBar::adjustGeometry()
     /* And move mdi-sub-window to corresponding position: */
     m_pEmbeddedWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     if (!vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
         setMask(m_pEmbeddedWidget->geometry());
     }
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Raise tool-window for proper z-order. */
     raise();
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 }
 
 void UISlidingToolBar::updateAnimation()
@@ -273,7 +273,7 @@ void UISlidingToolBar::closeEvent(QCloseEvent *pEvent)
     }
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 bool UISlidingToolBar::event(QEvent *pEvent)
 {
     /* Depending on event-type: */
@@ -295,20 +295,20 @@ bool UISlidingToolBar::event(QEvent *pEvent)
     /* Call to base-class: */
     return QWidget::event(pEvent);
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
 {
     /* Apply mdi-sub-window geometry: */
     m_pEmbeddedWidget->setGeometry(rect);
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     if (!vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
         setMask(m_pEmbeddedWidget->geometry());
     }
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 }
 
 QRect UISlidingToolBar::widgetGeometry() const

@@ -22,9 +22,9 @@
 #include "UIMachineLogic.h"
 
 /* Other includes: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # include <ApplicationServices/ApplicationServices.h>
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /* Forward declarations: */
 class UIMultiScreenLayout;
@@ -43,12 +43,12 @@ signals:
     void sigNotifyAboutNativeFullscreenShouldBeExited(UIMachineWindow *pMachineWindow = 0);
 #endif /* RT_OS_DARWIN */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 public:
 
     /** Returns whether screens have separate spaces. */
     bool screensHaveSeparateSpaces() const { return m_fScreensHaveSeparateSpaces; }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 protected:
 
@@ -126,7 +126,7 @@ private:
     void cleanupActionConnections();
     void cleanupActionGroups();
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Mac OS X: Revalidates 'fullscreen' mode for @a pMachineWindow. */
     void revalidateNativeFullScreen(UIMachineWindow *pMachineWindow);
     /** Mac OS X: Revalidates 'fullscreen' mode for all windows. */
@@ -141,7 +141,7 @@ private:
     static void nativeHandlerForActiveSpaceChange(QObject *pObject, const QMap<QString, QString> &userInfo);
     /** Mac OS X: Handles native notification about active space change. */
     void nativeHandlerForActiveSpaceChange(const QMap<QString, QString> &userInfo);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /** Holds the popup-menu instance. */
     QMenu *m_pPopupMenu;
@@ -149,7 +149,7 @@ private:
     /* Variables: */
     UIMultiScreenLayout *m_pScreenLayout;
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Mac OS X: Holds whether screens have separate spaces. */
     const bool m_fScreensHaveSeparateSpaces;
 
@@ -157,7 +157,7 @@ private:
     QSet<UIMachineWindow*> m_fullscreenMachineWindows;
     /** Mac OS X: Contains machine-window(s) marked as 'invalid fullscreen'. */
     QSet<UIMachineWindow*> m_invalidFullscreenMachineWindows;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Friend classes: */
     friend class UIMachineLogic;

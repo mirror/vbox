@@ -67,14 +67,14 @@ void UIBar::paintEvent(QPaintEvent *pEvent)
     QPainter painter(this);
     painter.setClipRect(pEvent->rect());
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     paintContentDarwin(&painter);
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     paintContent(&painter);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 
 void UIBar::paintContentDarwin(QPainter *pPainter)
 {
@@ -91,7 +91,7 @@ void UIBar::paintContentDarwin(QPainter *pPainter)
     pPainter->drawRect(0, 1, s.width(), s.height()- 2);
 }
 
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
 
 void UIBar::paintContent(QPainter *pPainter)
 {
@@ -112,7 +112,7 @@ void UIBar::paintContent(QPainter *pPainter)
     pPainter->drawRect(0, 1, s.width(), s.height()-2);
 }
 
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 UIMainBar::UIMainBar(QWidget *pParent /* = 0 */)
   : UIBar(pParent)

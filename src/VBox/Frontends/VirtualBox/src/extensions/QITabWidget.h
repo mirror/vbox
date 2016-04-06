@@ -32,11 +32,11 @@ public:
     QITabWidget(QWidget *pParent = 0)
         :QTabWidget(pParent)
     {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /* I don't know why, but for some languages there is ElideRight the
            default on Mac OS X. Fix this. */
         setElideMode(Qt::ElideNone);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     }
 };
 

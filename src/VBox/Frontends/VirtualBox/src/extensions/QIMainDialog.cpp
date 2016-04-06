@@ -229,7 +229,7 @@ void QIMainDialog::keyPressEvent(QKeyEvent *pEvent)
             }
             break;
         }
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /* Special handling for Period key: */
         case Qt::Key_Period:
         {
@@ -240,7 +240,7 @@ void QIMainDialog::keyPressEvent(QKeyEvent *pEvent)
             }
             break;
         }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         /* Special handling for Return/Enter key: */
         case Qt::Key_Return:
         case Qt::Key_Enter:

@@ -396,13 +396,13 @@ QWidget *HardwareItem::createEditor(QWidget *pParent, const QStyleOptionViewItem
                 /* Fill the background with the highlight color in the case
                  * the button hasn't a rectangle shape. This prevents the
                  * display of parts from the current text on the Mac. */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
                 /* Use the palette from the tree view, not the one from the
                  * editor. */
                 QPalette p = e->palette();
                 p.setBrush(QPalette::Highlight, pParent->palette().brush(QPalette::Highlight));
                 e->setPalette(p);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
                 e->setAutoFillBackground(true);
                 e->setBackgroundRole(QPalette::Highlight);
                 editor = e;
@@ -998,7 +998,7 @@ void VirtualSystemDelegate::updateEditorGeometry(QWidget *pEditor, const QStyleO
         pEditor->setGeometry(styleOption.rect);
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 bool VirtualSystemDelegate::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     if (pEvent->type() == QEvent::FocusOut)
@@ -1017,7 +1017,7 @@ bool VirtualSystemDelegate::eventFilter(QObject *pObject, QEvent *pEvent)
 
     return QItemDelegate::eventFilter(pObject, pEvent);
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 ////////////////////////////////////////////////////////////////////////////////
 // VirtualSystemSortProxyModel

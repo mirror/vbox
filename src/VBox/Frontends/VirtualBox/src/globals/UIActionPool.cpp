@@ -65,10 +65,10 @@ private:
 
 UIMenu::UIMenu()
     : m_fShowToolTip(false)
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     , m_fConsumable(false)
     , m_fConsumed(false)
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 {
 }
 
@@ -925,7 +925,7 @@ void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel lev
     m_invalidations << UIActionIndex_M_Application;
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 bool UIActionPool::isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType type) const
 {
     foreach (const UIExtraDataMetaDefs::MenuWindowActionType &restriction, m_restrictedActionsMenuWindow.values())
@@ -939,7 +939,7 @@ void UIActionPool::setRestrictionForMenuWindow(UIActionRestrictionLevel level, U
     m_restrictedActionsMenuWindow[level] = restriction;
     m_invalidations << UIActionIndex_M_Window;
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 bool UIActionPool::isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const
 {

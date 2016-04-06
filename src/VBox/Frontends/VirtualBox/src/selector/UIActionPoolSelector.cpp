@@ -45,11 +45,11 @@ protected:
 
     void retranslateUi()
     {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         setName(QApplication::translate("UIActionPool", "&File", "Mac OS X version"));
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         setName(QApplication::translate("UIActionPool", "&File", "Non Mac OS X version"));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     }
 };
 
@@ -830,10 +830,10 @@ protected:
 
     void retranslateUi()
     {
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
         setName(QApplication::translate("UIActionPool", "S&how in Finder"));
         setStatusTip(QApplication::translate("UIActionPool", "Show the VirtualBox Machine Definition files in Finder"));
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
         setName(QApplication::translate("UIActionPool", "S&how in Explorer"));
         setStatusTip(QApplication::translate("UIActionPool", "Show the VirtualBox Machine Definition files in Explorer"));
 #else
@@ -861,7 +861,7 @@ protected:
 
     void retranslateUi()
     {
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
         setName(QApplication::translate("UIActionPool", "Cr&eate Alias on Desktop"));
         setStatusTip(QApplication::translate("UIActionPool", "Create alias files to the VirtualBox Machine Definition files on your desktop"));
 #else

@@ -25,9 +25,9 @@
 # include <QLocale>
 # include <QThread>
 # include <QProcess>
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include <QPushButton>
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -48,12 +48,12 @@
 # include "UIMachine.h"
 # include "VBoxAboutDlg.h"
 # include "UIHostComboEditor.h"
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
-# endif /* Q_WS_MAC */
-# ifdef Q_WS_WIN
+# endif /* VBOX_WS_MAC */
+# ifdef VBOX_WS_WIN
 #  include <Htmlhelp.h>
-# endif /* Q_WS_WIN */
+# endif /* VBOX_WS_WIN */
 
 /* COM includes: */
 # include "CConsole.h"
@@ -2503,7 +2503,7 @@ QString UIMessageCenter::formatRC(HRESULT rc)
     if (msg != NULL)
         errMsg = msg->pszDefine;
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     PCRTWINERRMSG winMsg = NULL;
 
     /* If not found, try again using RTErrWinGet with masked off top 16bit: */
@@ -2514,7 +2514,7 @@ QString UIMessageCenter::formatRC(HRESULT rc)
         if (winMsg != NULL)
             errMsg = winMsg->pszDefine;
     }
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     if (errMsg != NULL && *errMsg != '\0')
         str.sprintf("%s", errMsg);
@@ -2539,7 +2539,7 @@ QString UIMessageCenter::formatRCFull(HRESULT rc)
     if (msg != NULL)
         errMsg = msg->pszDefine;
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     PCRTWINERRMSG winMsg = NULL;
 
     /* If not found, try again using RTErrWinGet with masked off top 16bit: */
@@ -2550,7 +2550,7 @@ QString UIMessageCenter::formatRCFull(HRESULT rc)
         if (winMsg != NULL)
             errMsg = winMsg->pszDefine;
     }
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     if (errMsg != NULL && *errMsg != '\0')
         str.sprintf("%s (0x%08X)", errMsg, rc);
@@ -2674,9 +2674,9 @@ void UIMessageCenter::sltResetSuppressedMessages()
 
 void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 {
-#if defined (Q_WS_WIN)
+#if defined (VBOX_WS_WIN)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
-#elif defined (Q_WS_X11)
+#elif defined (VBOX_WS_X11)
 # ifndef VBOX_OSE
     char szViewerPath[RTPATH_MAX];
     int rc;
@@ -2686,7 +2686,7 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 # else /* #ifndef VBOX_OSE */
     vboxGlobal().openURL("file://" + strLocation);
 # endif /* #ifdef VBOX_OSE */
-#elif defined (Q_WS_MAC)
+#elif defined (VBOX_WS_MAC)
     vboxGlobal().openURL("file://" + strLocation);
 #endif
 }
@@ -2783,11 +2783,11 @@ QString UIMessageCenter::errorInfoToString(const COMErrorInfo &info,
 
     if (info.isBasicAvailable())
     {
-#if defined (Q_WS_WIN)
+#if defined (VBOX_WS_WIN)
         haveResultCode = info.isFullAvailable();
         bool haveComponent = true;
         bool haveInterfaceID = true;
-#else /* defined (Q_WS_WIN) */
+#else /* defined (VBOX_WS_WIN) */
         haveResultCode = true;
         bool haveComponent = info.isFullAvailable();
         bool haveInterfaceID = info.isFullAvailable();

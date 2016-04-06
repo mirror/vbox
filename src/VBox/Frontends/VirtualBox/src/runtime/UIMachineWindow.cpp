@@ -55,11 +55,11 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* External includes: */
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 # if QT_VERSION < 0x050000
 #  include <X11/Xlib.h>
 # endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 
 /* static */
@@ -180,7 +180,7 @@ UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
     , m_pLeftSpacer(0)
     , m_pRightSpacer(0)
 {
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /* On Mac OS X window icon referenced in info.plist is used. */
 
     /* Set default window icon (will be changed to VM-specific icon little bit later): */
@@ -193,7 +193,7 @@ UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
     /* Or set default machine-window icon: */
     else
         setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(machine().GetOSTypeId()));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
 UIActionPool* UIMachineWindow::actionPool() const
@@ -260,7 +260,7 @@ void UIMachineWindow::retranslateUi()
     updateAppearanceOf(UIVisualElement_WindowTitle);
 }
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 # if QT_VERSION < 0x050000
 bool UIMachineWindow::x11Event(XEvent *pEvent)
 {
@@ -283,7 +283,7 @@ bool UIMachineWindow::x11Event(XEvent *pEvent)
     return false;
 }
 # endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 void UIMachineWindow::showEvent(QShowEvent *pShowEvent)
 {
@@ -557,10 +557,10 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
         if (state != KMachineState_Null)
             strMachineName += " [" + gpConverter->toString(state) + "]";
         /* Unusual on the Mac. */
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         const QString strUserProductName = uisession()->machineWindowNamePostfix();
         strMachineName += " - " + (strUserProductName.isEmpty() ? defaultWindowTitle() : strUserProductName);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         if (machine().GetMonitorCount() > 1)
             strMachineName += QString(" : %1").arg(m_uScreenId + 1);
         setWindowTitle(strMachineName);
@@ -590,7 +590,7 @@ Qt::Alignment UIMachineWindow::viewAlignment(UIVisualStateType visualStateType)
     return 0;
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 void UIMachineWindow::handleStandardWindowButtonCallback(StandardWindowButtonType enmButtonType, bool fWithOptionKey)
 {
     switch (enmButtonType)
@@ -651,5 +651,5 @@ void UIMachineWindow::handleStandardWindowButtonCallback(StandardWindowButtonTyp
         pMachineWindow->handleStandardWindowButtonCallback(enmButtonType, fWithOptionKey);
     }
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 

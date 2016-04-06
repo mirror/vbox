@@ -112,17 +112,14 @@ VirtualBox_DEFS.darwin    = VBOX_WITH_TRANSLUCENT_SEAMLESS # VBOX_WITH_MASKED_SE
 VirtualBox_DEFS.win       = VBOX_WITH_MASKED_SEAMLESS # VBOX_WITH_TRANSLUCENT_SEAMLESS
 VirtualBox_DEFS.win       += UNICODE QT_DLL
 ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
+ VirtualBox_DEFS.darwin   += VBOX_WITH_ICHAT_THEATER
 endif
-ifdef VBOX_WITH_QTGUI_V5
- # These important for us Qt4 defines missed in Qt5:
- VirtualBox_DEFS.linux     += Q_WS_X11
- VirtualBox_DEFS.solaris   += Q_WS_X11
- VirtualBox_DEFS.freebsd   += Q_WS_X11
- VirtualBox_DEFS.darwin    += Q_WS_MAC
- VirtualBox_DEFS.win       += Q_WS_WIN
-endif # VBOX_WITH_QTGUI_V5
-VirtualBox_DEFS          += \
+VirtualBox_DEFS.linux     += VBOX_WS_X11
+VirtualBox_DEFS.solaris   += VBOX_WS_X11
+VirtualBox_DEFS.freebsd   += VBOX_WS_X11
+VirtualBox_DEFS.darwin    += VBOX_WS_MAC
+VirtualBox_DEFS.win       += VBOX_WS_WIN
+VirtualBox_DEFS           += \
 	$(if $(VBOX_WITH_ADDITIONS_AUTOUPDATE_UI),VBOX_WITH_ADDITIONS_AUTOUPDATE_UI) \
 	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
 	$(if $(VBOX_WITH_ALSA),VBOX_WITH_ALSA) \

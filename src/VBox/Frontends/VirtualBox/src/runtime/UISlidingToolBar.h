@@ -93,10 +93,10 @@ private:
     virtual void showEvent(QShowEvent *pEvent);
     /** Close event handler. */
     virtual void closeEvent(QCloseEvent *pEvent);
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Common event handler. */
     virtual bool event(QEvent *pEvent);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /** Defines mdi-sub-window geometry. */
     void setWidgetGeometry(const QRect &rect);

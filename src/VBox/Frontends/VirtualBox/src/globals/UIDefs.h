@@ -58,13 +58,13 @@ namespace UIDefs
           ResizeEventType = QEvent::User + 101
         , SetRegionEventType
         , ModifierKeyChangeEventType
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
         , ShellExecuteEventType
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
         , ActivateActionEventType
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         , ShowWindowEventType
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         , AddVDMUrlsEventType
 #ifdef VBOX_GUI_USE_QGL
         , VHWACommandProcessType
@@ -89,7 +89,7 @@ namespace UIDefs
 }
 using namespace UIDefs /* if header included */;
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 /** Mac OS X: Known OS releases. */
 enum MacOSXRelease
 {
@@ -102,7 +102,7 @@ enum MacOSXRelease
     MacOSXRelease_ElCapitan,
     MacOSXRelease_New,
 };
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /** Common UI: Size suffixes. */
 enum SizeSuffix

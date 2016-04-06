@@ -174,14 +174,14 @@ QIcon UIIconPool::defaultIcon(UIDefaultIconType defaultIconType, const QWidget *
         }
         case UIDefaultIconType_MessageBoxWarning:
         {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
             /* At least in Qt 4.3.4/4.4 RC1 SP_MessageBoxWarning is the application
              * icon. So change this to the critical icon. (Maybe this would be
              * fixed in a later Qt version) */
             icon = pStyle->standardIcon(QStyle::SP_MessageBoxCritical, 0, pWidget);
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
             icon = pStyle->standardIcon(QStyle::SP_MessageBoxWarning, 0, pWidget);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
             break;
         }
         case UIDefaultIconType_MessageBoxCritical:
@@ -237,7 +237,7 @@ void UIIconPool::addName(QIcon &icon, const QString &strName,
     /* Add pixmap: */
     icon.addPixmap(pixmap, mode, state);
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # ifdef VBOX_GUI_WITH_HIDPI
     /* Test if HiDPI icons are enabled. Works only with a patched version of Qt 4.x
      * with the changes from https://codereview.qt-project.org/#change,54636 applied. */
@@ -247,7 +247,7 @@ void UIIconPool::addName(QIcon &icon, const QString &strName,
     /* Otherwise HiDPI icons are useless: */
     return;
 # endif /* !VBOX_GUI_WITH_HIDPI */
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Parse name to prefix and suffix: */
     QString strPrefix = strName.section('.', 0, -2);

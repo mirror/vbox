@@ -59,14 +59,14 @@
 /* Other includes: */
 #include <math.h>
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 /* X11 includes: */
 # include <QX11Info>
 # include <X11/Xlib.h>
 # if QT_VERSION >= 0x050000
 #  undef Bool // Qt5 vs Xlib gift..
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 
 /** IFramebuffer implementation used to maintain VM display video memory. */
@@ -521,12 +521,12 @@ private:
 
 
 /* COM stuff: */
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
 static CComModule _Module;
-#else /* !Q_WS_WIN */
+#else /* !VBOX_WS_WIN */
 NS_DECL_CLASSINFO(UIFrameBufferPrivate)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBufferPrivate, IFramebuffer)
-#endif /* !Q_WS_WIN */
+#endif /* !VBOX_WS_WIN */
 
 
 UIFrameBufferPrivate::UIFrameBufferPrivate()
@@ -561,7 +561,7 @@ HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
     /* Cache window ID: */
     m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     /* Sync Qt and X11 Server (see xTracker #7547). */
     XSync(QX11Info::display(), false);
 #endif
@@ -610,7 +610,7 @@ void UIFrameBufferPrivate::setView(UIMachineView *pMachineView)
     /* Recache window ID: */
     m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     /* Sync Qt and X11 Server (see xTracker #7547). */
     XSync(QX11Info::display(), false);
 #endif
@@ -1381,14 +1381,14 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Create painter: */
     QPainter painter(m_pMachineView->viewport());
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # if QT_VERSION >= 0x050000
     /* Replace translucent background with black one: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
     painter.fillRect(paintRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
@@ -1460,12 +1460,12 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS)
-# if defined(Q_WS_WIN) || defined(Q_WS_X11) || QT_VERSION >= 0x050000
+# if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11) || QT_VERSION >= 0x050000
     /* Replace translucent background with black one: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
     painter.fillRect(paintRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
-# endif /* Q_WS_WIN || Q_WS_X11 || QT_VERSION >= 0x050000 */
+# endif /* VBOX_WS_WIN || VBOX_WS_X11 || QT_VERSION >= 0x050000 */
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
     /* Draw image rectangle: */
@@ -1508,7 +1508,7 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
                                 (int)(rect.height() * dBackingScaleFactor));
         }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # ifdef VBOX_GUI_WITH_HIDPI
         /* Should we
          * do not perform logical HiDPI scaling or
@@ -1519,7 +1519,7 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
             subPixmap.setDevicePixelRatio(dBackingScaleFactor);
         }
 # endif /* VBOX_GUI_WITH_HIDPI */
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     }
 
     /* Which point we should draw corresponding sub-pixmap? */
@@ -1568,7 +1568,7 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
                                          Qt::IgnoreAspectRatio, Qt::FastTransformation);
         }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # ifdef VBOX_GUI_WITH_HIDPI
         /* Should we
          * do not perform logical HiDPI scaling or
@@ -1579,7 +1579,7 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
             subPixmap.setDevicePixelRatio(dBackingScaleFactor);
         }
 # endif /* VBOX_GUI_WITH_HIDPI */
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     }
 
     /* Which point we should draw corresponding sub-pixmap? */

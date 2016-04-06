@@ -18,7 +18,7 @@
 #ifndef ___VBoxIChatTheaterWrapper_h
 #define ___VBoxIChatTheaterWrapper_h
 
-#if defined (Q_WS_MAC) && defined (VBOX_WITH_ICHAT_THEATER)
+#if defined (VBOX_WS_MAC) && defined (VBOX_WITH_ICHAT_THEATER)
 
 # include <ApplicationServices/ApplicationServices.h>
 

@@ -81,9 +81,9 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Input_M_Keyboard,
     UIActionIndexRT_M_Input_M_Keyboard_S_Settings,
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD,
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS,
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak,
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert,
     UIActionIndexRT_M_Input_M_Mouse,
@@ -115,14 +115,14 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Debug_S_ShowLogDialog,
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* 'Dock' menu actions: */
     UIActionIndexRT_M_Dock,
     UIActionIndexRT_M_Dock_M_DockSettings,
     UIActionIndexRT_M_Dock_M_DockSettings_T_PreviewMonitor,
     UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor,
     UIActionIndexRT_M_Dock_M_DockSettings_T_DisableOverlay,
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Maximum index: */
     UIActionIndexRT_Max

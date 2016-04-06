@@ -25,9 +25,9 @@
 # include "UIExtraDataManager.h"
 # include "VBoxGlobal.h"
 # include "UISession.h"
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "VBoxUtils.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* COM includes: */
 # include "CEventListener.h"
@@ -306,7 +306,7 @@ void UIConsoleEventHandlerProxy::sltCanShowWindow(bool & /* fVeto */, QString & 
 
 void UIConsoleEventHandlerProxy::sltShowWindow(qint64 &winId)
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* First of all, just ask the GUI thread to show the machine-window: */
     winId = 0;
     if (::darwinSetFrontMostProcess())
@@ -316,10 +316,10 @@ void UIConsoleEventHandlerProxy::sltShowWindow(qint64 &winId)
         /* If it's failed for some reason, send the other process our PSN so it can try: */
         winId = ::darwinGetCurrentProcessId();
     }
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
     /* Return the ID of the top-level machine-window. */
     winId = (ULONG64)m_pSession->mainMachineWindowId();
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
 

@@ -297,12 +297,12 @@ public:
         /** Returns whether this machine is fFirstTimeStarted. */
         void setMachineFirstTimeStarted(bool fFirstTimeStarted, const QString &strID);
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /** Except Mac OS X: Returns redefined machine-window icon names. */
         QStringList machineWindowIconNames(const QString &strID);
         /** Except Mac OS X: Returns redefined machine-window name postfix. */
         QString machineWindowNamePostfix(const QString &strID);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
         /** Returns geometry for machine-window with @a uScreenIndex in @a visualStateType. */
         QRect machineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strID);
@@ -311,12 +311,12 @@ public:
         /** Defines @a geometry and @a fMaximized state for machine-window with @a uScreenIndex in @a visualStateType. */
         void setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QString &strID);
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /** Returns whether Runtime UI menu-bar is enabled. */
         bool menuBarEnabled(const QString &strID);
         /** Defines whether Runtime UI menu-bar is @a fEnabled. */
         void setMenuBarEnabled(bool fEnabled, const QString &strID);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
         /** Returns restricted Runtime UI menu types. */
         UIExtraDataMetaDefs::MenuType restrictedRuntimeMenuTypes(const QString &strID);
@@ -355,12 +355,12 @@ public:
         void setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types, const QString &strID);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /** Mac OS X: Returns restricted Runtime UI action types for Window menu. */
         UIExtraDataMetaDefs::MenuWindowActionType restrictedRuntimeMenuWindowActionTypes(const QString &strID);
         /** Mac OS X: Defines restricted Runtime UI action types for Window menu. */
         void setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMetaDefs::MenuWindowActionType types, const QString &strID);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
         /** Returns restricted Runtime UI action types for Help menu. */
         UIExtraDataMetaDefs::MenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID);
@@ -375,10 +375,10 @@ public:
         /** Defines requested Runtime UI visual-state as @a visualState. */
         void setRequestedVisualState(UIVisualStateType visualState, const QString &strID);
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
         /** Returns whether legacy full-screen mode is requested. */
         bool legacyFullscreenModeRequested();
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
         /** Returns whether guest-screen auto-resize according machine-window size is enabled. */
         bool guestScreenAutoResizeEnabled(const QString &strID);
@@ -424,7 +424,7 @@ public:
         /** Returns Runtime UI HiDPI optimization type. */
         HiDPIOptimizationType hiDPIOptimizationType(const QString &strID);
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /** Returns whether mini-toolbar is enabled for full and seamless screens. */
         bool miniToolbarEnabled(const QString &strID);
         /** Defines whether mini-toolbar is @a fEnabled for full and seamless screens. */
@@ -439,7 +439,7 @@ public:
         Qt::AlignmentFlag miniToolbarAlignment(const QString &strID);
         /** Returns mini-toolbar @a alignment. */
         void setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QString &strID);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
         /** Returns whether Runtime UI status-bar is enabled. */
         bool statusBarEnabled(const QString &strID);
@@ -456,7 +456,7 @@ public:
         /** Defines Runtime UI status-bar indicator order @a list. */
         void setStatusBarIndicatorOrder(const QList<IndicatorType> &list, const QString &strID);
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /** Mac OS X: Returns whether Dock icon should be updated at runtime. */
         bool realtimeDockIconUpdateEnabled(const QString &strID);
         /** Mac OS X: Defines whether Dock icon update should be fEnabled at runtime. */
@@ -471,7 +471,7 @@ public:
         bool dockIconDisableOverlay(const QString &strID);
         /** Mac OS X: Defines whether Dock icon overlay is @a fDisabled. */
         void setDockIconDisableOverlay(bool fDisabled, const QString &strID);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
         /** Returns whether machine should pass CAD to guest. */
         bool passCADtoGuest(const QString &strID);

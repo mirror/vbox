@@ -36,9 +36,9 @@ struct UIDataSettingsMachineDisplay
         : m_iCurrentVRAM(0)
         , m_cGuestScreenCount(0)
         , m_dScaleFactor(1.0)
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         , m_fUseUnscaledHiDPIOutput(false)
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         , m_f3dAccelerationEnabled(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
         , m_f2dAccelerationEnabled(false)
@@ -64,9 +64,9 @@ struct UIDataSettingsMachineDisplay
         return (m_iCurrentVRAM == other.m_iCurrentVRAM) &&
                (m_cGuestScreenCount == other.m_cGuestScreenCount) &&
                (m_dScaleFactor == other.m_dScaleFactor) &&
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
                (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput) &&
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
                (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled) &&
 #ifdef VBOX_WITH_VIDEOHWACCEL
                (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled) &&
@@ -94,9 +94,9 @@ struct UIDataSettingsMachineDisplay
     int m_iCurrentVRAM;
     int m_cGuestScreenCount;
     double m_dScaleFactor;
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     bool m_fUseUnscaledHiDPIOutput;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     bool m_f3dAccelerationEnabled;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_f2dAccelerationEnabled;

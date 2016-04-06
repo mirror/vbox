@@ -1339,11 +1339,11 @@ void UIExtraDataManagerWindow::prepare()
 
 void UIExtraDataManagerWindow::prepareThis()
 {
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/edataman_32px.png",
                                           ":/edataman_16px.png"));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /* Apply window title: */
     setWindowTitle("Extra-data Manager");
@@ -1427,15 +1427,15 @@ void UIExtraDataManagerWindow::prepareCentralWidget()
         AssertReturnVoid(m_pMainLayout && centralWidget()->layout() &&
                          m_pMainLayout == centralWidget()->layout());
         {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
             /* No spacing/margins on the Mac: */
             m_pMainLayout->setContentsMargins(0, 0, 0, 0);
             m_pMainLayout->insertSpacing(0, 10);
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
             /* Set spacing/margin like in the selector window: */
             m_pMainLayout->setSpacing(5);
             m_pMainLayout->setContentsMargins(5, 5, 5, 5);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
             /* Prepare tool-bar: */
             prepareToolBar();
             /* Prepare splitter: */
@@ -1465,14 +1465,14 @@ void UIExtraDataManagerWindow::prepareToolBar()
         m_pToolBar->addAction(m_pActionLoad);
         m_pToolBar->addAction(m_pActionSave);
         /* Integrate tool-bar into dialog: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /* Enable unified tool-bars on Mac OS X. Available on Qt >= 4.3: */
         addToolBar(m_pToolBar);
         m_pToolBar->enableMacToolbar();
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
         /* Add tool-bar into main-layout: */
         m_pMainLayout->addWidget(m_pToolBar);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     }
 }
 
@@ -1673,12 +1673,12 @@ void UIExtraDataManagerWindow::loadSettings()
     {
         /* Load geometry: */
         m_geometry = gEDataManager->extraDataManagerGeometry(this);
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         move(m_geometry.topLeft());
         resize(m_geometry.size());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         setGeometry(m_geometry);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         LogRel2(("GUI: UIExtraDataManagerWindow: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
                  m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
@@ -1703,11 +1703,11 @@ void UIExtraDataManagerWindow::saveSettings()
     /* Save window geometry: */
     {
         /* Save geometry: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         gEDataManager->setExtraDataManagerGeometry(m_geometry, ::darwinIsWindowMaximized(this));
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         gEDataManager->setExtraDataManagerGeometry(m_geometry, isMaximized());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         LogRel2(("GUI: UIExtraDataManagerWindow: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
                  m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
     }
@@ -1741,12 +1741,12 @@ bool UIExtraDataManagerWindow::event(QEvent *pEvent)
         {
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
             {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
                 QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
                 m_geometry.moveTo(pMoveEvent->pos());
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
                 m_geometry.moveTo(geometry().x(), geometry().y());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
             }
             break;
         }
@@ -1956,9 +1956,9 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_HideFromManager << GUI_HideDetails
            << GUI_PreventReconfiguration << GUI_PreventSnapshotOperations
            << GUI_FirstRun
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
            << GUI_MachineWindowIcons << GUI_MachineWindowNamePostfix
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
            << GUI_LastNormalWindowPosition << GUI_LastScaleWindowPosition
            << GUI_RestrictedRuntimeMenus
            << GUI_RestrictedRuntimeApplicationMenuActions
@@ -1969,15 +1969,15 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #ifdef VBOX_WITH_DEBUGGER_GUI
            << GUI_RestrictedRuntimeDebuggerMenuActions
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
            << GUI_RestrictedRuntimeWindowMenuActions
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
            << GUI_RestrictedRuntimeHelpMenuActions
            << GUI_RestrictedVisualStates
            << GUI_Fullscreen << GUI_Seamless << GUI_Scale
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
            << GUI_Fullscreen_LegacyMode
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
            << GUI_AutoresizeGuest << GUI_LastVisibilityStatusForGuestScreen << GUI_LastGuestSizeHint
            << GUI_VirtualScreenToHostScreen << GUI_AutomountGuestScreens
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -1987,13 +1987,13 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* VBOX_WITH_VIDEOHWACCEL */
            << GUI_HiDPI_UnscaledOutput
            << GUI_HiDPI_Optimization
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
            << GUI_ShowMiniToolBar << GUI_MiniToolBarAutoHide << GUI_MiniToolBarAlignment
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
            << GUI_StatusBar_Enabled << GUI_RestrictedStatusBarIndicators << GUI_StatusBar_IndicatorOrder
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
            << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor << GUI_DockIconDisableOverlay
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
            << GUI_PassCAD
            << GUI_MouseCapturePolicy
            << GUI_GuruMeditationHandler
@@ -2480,11 +2480,11 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
                                           vboxGlobal().availableGeometry();
 
     /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
     if (fOk && !availableGeometry.contains(geometry))
         geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* As final fallback, move default-geometry to available-geometry' center: */
     if (!fOk)
@@ -2711,7 +2711,7 @@ void UIExtraDataManager::setMachineFirstTimeStarted(bool fFirstTimeStarted, cons
     setExtraDataString(GUI_FirstRun, toFeatureAllowed(fFirstTimeStarted), strID);
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 QStringList UIExtraDataManager::machineWindowIconNames(const QString &strID)
 {
     return extraDataStringList(GUI_MachineWindowIcons, strID);
@@ -2721,7 +2721,7 @@ QString UIExtraDataManager::machineWindowNamePostfix(const QString &strID)
 {
     return extraDataString(GUI_MachineWindowNamePostfix, strID);
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 QRect UIExtraDataManager::machineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strID)
 {
@@ -2799,7 +2799,7 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
     setExtraDataStringList(strKey, data, strID);
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 bool UIExtraDataManager::menuBarEnabled(const QString &strID)
 {
     /* 'True' unless feature restricted: */
@@ -2811,7 +2811,7 @@ void UIExtraDataManager::setMenuBarEnabled(bool fEnabled, const QString &strID)
     /* 'False' if feature restricted, null-string otherwise: */
     setExtraDataString(GUI_MenuBar_Enabled, toFeatureRestricted(!fEnabled), strID);
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 UIExtraDataMetaDefs::MenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QString &strID)
 {
@@ -3175,7 +3175,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraData
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 UIExtraDataMetaDefs::MenuWindowActionType UIExtraDataManager::restrictedRuntimeMenuWindowActionTypes(const QString &strID)
 {
     /* Prepare result: */
@@ -3222,7 +3222,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMe
     /* Save result: */
     setExtraDataStringList(GUI_RestrictedRuntimeWindowMenuActions, result, strID);
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 UIExtraDataMetaDefs::MenuHelpActionType UIExtraDataManager::restrictedRuntimeMenuHelpActionTypes(const QString &strID)
 {
@@ -3301,13 +3301,13 @@ void UIExtraDataManager::setRequestedVisualState(UIVisualStateType visualState, 
     setExtraDataString(GUI_Scale, toFeatureAllowed(visualState == UIVisualStateType_Scale), strID);
 }
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 bool UIExtraDataManager::legacyFullscreenModeRequested()
 {
     /* 'False' unless feature allowed: */
     return isFeatureAllowed(GUI_Fullscreen_LegacyMode);
 }
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 bool UIExtraDataManager::guestScreenAutoResizeEnabled(const QString &strID)
 {
@@ -3461,7 +3461,7 @@ HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &s
     return gpConverter->fromInternalString<HiDPIOptimizationType>(extraDataString(GUI_HiDPI_Optimization, strID));
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 bool UIExtraDataManager::miniToolbarEnabled(const QString &strID)
 {
     /* 'True' unless feature restricted: */
@@ -3507,7 +3507,7 @@ void UIExtraDataManager::setMiniToolbarAlignment(Qt::AlignmentFlag alignment, co
     }
     setExtraDataString(GUI_MiniToolBarAlignment, QString(), strID);
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 bool UIExtraDataManager::statusBarEnabled(const QString &strID)
 {
@@ -3573,7 +3573,7 @@ void UIExtraDataManager::setStatusBarIndicatorOrder(const QList<IndicatorType> &
     setExtraDataStringList(GUI_StatusBar_IndicatorOrder, data, strID);
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 bool UIExtraDataManager::realtimeDockIconUpdateEnabled(const QString &strID)
 {
     /* 'True' unless feature restricted: */
@@ -3607,7 +3607,7 @@ void UIExtraDataManager::setDockIconDisableOverlay(bool fDisabled, const QString
     /* 'True' if feature allowed, null-string otherwise: */
     setExtraDataString(GUI_DockIconDisableOverlay, toFeatureAllowed(fDisabled), strID);
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 bool UIExtraDataManager::passCADtoGuest(const QString &strID)
 {
@@ -3692,11 +3692,11 @@ QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *p
                                           vboxGlobal().availableGeometry();
 
     /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
     if (fOk && !availableGeometry.contains(geometry))
         geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* As a fallback, move default-geometry to pParentWidget' geometry center: */
     if (!fOk && pParentWidget)
@@ -3851,11 +3851,11 @@ QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget)
                                           vboxGlobal().availableGeometry();
 
     /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
     if (fOk && !availableGeometry.contains(geometry))
         geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* As final fallback, move default-geometry to available-geometry' center: */
     if (!fOk)
@@ -3964,7 +3964,7 @@ QRect UIExtraDataManager::logWindowGeometry(QWidget *pWidget, const QRect &defau
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
     /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Get available-geometry [of screen with point (iX, iY) if possible]: */
     const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
                                           vboxGlobal().availableGeometry();
@@ -3972,7 +3972,7 @@ QRect UIExtraDataManager::logWindowGeometry(QWidget *pWidget, const QRect &defau
     /* Make sure resulting geometry is within current bounds: */
     if (!availableGeometry.contains(geometry))
         geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* Return result: */
     return geometry;
@@ -4039,7 +4039,7 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
             /* HID LEDs sync state changed (allowed if not restricted)? */
             if (strKey == GUI_HidLedsSync)
                 emit sigHidLedsSyncStateChange(!isFeatureRestricted(strKey, strMachineID));
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
             /* 'Dock icon' appearance changed (allowed if not restricted)? */
             else if (strKey == GUI_RealtimeDockIconUpdateEnabled ||
                      strKey == GUI_RealtimeDockIconUpdateMonitor)
@@ -4047,14 +4047,14 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
             /* 'Dock icon overlay' appearance changed (restricted if not allowed)? */
             else if (strKey == GUI_DockIconDisableOverlay)
                 emit sigDockIconOverlayAppearanceChange(isFeatureAllowed(strKey, strMachineID));
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         }
 
         /* Menu-bar configuration change: */
         if (
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
             strKey == GUI_MenuBar_Enabled ||
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
             strKey == GUI_RestrictedRuntimeMenus ||
             strKey == GUI_RestrictedRuntimeApplicationMenuActions ||
             strKey == GUI_RestrictedRuntimeMachineMenuActions ||
@@ -4064,9 +4064,9 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
 #ifdef VBOX_WITH_DEBUGGER_GUI
             strKey == GUI_RestrictedRuntimeDebuggerMenuActions ||
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
             strKey == GUI_RestrictedRuntimeWindowMenuActions ||
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
             strKey == GUI_RestrictedRuntimeHelpMenuActions)
             emit sigMenuBarConfigurationChange(strMachineID);
         /* Status-bar configuration change: */

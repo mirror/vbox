@@ -275,9 +275,9 @@ private:
     QString m_strAuthPassword;
 };
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 #endif // !___VBoxUtils_h___
 

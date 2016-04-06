@@ -39,7 +39,7 @@ VBoxLicenseViewer::VBoxLicenseViewer(QWidget *pParent /* = 0 */)
     , mAgreeButton (0)
     , mDisagreeButton (0)
 {
-#ifndef Q_WS_WIN
+#ifndef VBOX_WS_WIN
     /* Application icon. On Win32, it's built-in to the executable. */
     setWindowIcon (QIcon (":/VirtualBox_48px.png"));
 #endif

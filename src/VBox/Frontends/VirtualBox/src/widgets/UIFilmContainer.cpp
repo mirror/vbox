@@ -166,11 +166,11 @@ void UIFilm::prepareLayout()
     m_pMainLayout = new QVBoxLayout(this);
 
     /* Configure layout: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     m_pMainLayout->setContentsMargins(10, 10, 15, 10);
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     m_pMainLayout->setContentsMargins(10, 10, 10, 10);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /* Add strech: */
     m_pMainLayout->addStretch();
@@ -184,11 +184,11 @@ void UIFilm::prepareCheckBox()
 
     /* Configure font: */
     QFont currentFont = m_pCheckBox->font();
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     currentFont.setPointSize(currentFont.pointSize() - 2);
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     currentFont.setPointSize(currentFont.pointSize() - 1);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     m_pCheckBox->setFont(currentFont);
 
     /* Insert check-box into layout: */

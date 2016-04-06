@@ -39,14 +39,14 @@ public:
       * Default value if @a false. */
     void setUseTextLabels(bool fEnable);
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Mac OS X: Defines whether native tool-bar should be used. */
     void enableMacToolbar();
     /** Mac OS X: Defines whether native tool-bar button should be shown. */
     void setShowToolBarButton(bool fShow);
     /** Mac OS X: Updates native tool-bar layout. */
     void updateLayout();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 private:
 

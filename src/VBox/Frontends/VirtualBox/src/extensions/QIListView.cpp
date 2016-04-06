@@ -21,19 +21,19 @@
 
 /* Qt includes: */
 # include <QtGlobal>
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include <QApplication>
 #  include <QPainter>
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # if QT_VERSION < 0x050000
 #  include <qmacstyle_mac.h>
 # endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /* GUI includes: */
 #include "QIListView.h"
@@ -42,7 +42,7 @@
 QIListView::QIListView (QWidget *aParent /* = 0 */)
     :QListView (aParent)
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Track if the application lost the focus */
     connect (QCoreApplication::instance(), SIGNAL (focusChanged (QWidget *, QWidget *)),
              this, SLOT (focusChanged (QWidget *, QWidget *)));
@@ -56,12 +56,12 @@ QIListView::QIListView (QWidget *aParent /* = 0 */)
      * may change at any time! */
     static_cast<QMacStyle *> (style())->setFocusRectPolicy (this, QMacStyle::FocusDisabled);
 # endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 void QIListView::focusChanged (QWidget * /* aOld */, QWidget *aNow)
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     QColor bgColor (212, 221, 229);
     if (aNow == NULL)
         bgColor.setRgb (232, 232, 232);
@@ -69,9 +69,9 @@ void QIListView::focusChanged (QWidget * /* aOld */, QWidget *aNow)
     pal.setColor (QPalette::Base, bgColor);
     viewport()->setPalette (pal);
     viewport()->setAutoFillBackground(true);
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
     Q_UNUSED (aNow);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
 /* QIItemDelegate class */
@@ -79,7 +79,7 @@ void QIListView::focusChanged (QWidget * /* aOld */, QWidget *aNow)
 void QIItemDelegate::drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption,
                                      const QModelIndex &aIndex) const
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     Q_UNUSED (aIndex);
     /* Macify for Leopard */
     if (aOption.state & QStyle::State_Selected)
@@ -121,8 +121,8 @@ void QIItemDelegate::drawBackground (QPainter *aPainter, const QStyleOptionViewI
             bgColor.setRgb (232, 232, 232);
         aPainter->fillRect(aOption.rect, bgColor);
     }
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
     QItemDelegate::drawBackground (aPainter, aOption, aIndex);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 

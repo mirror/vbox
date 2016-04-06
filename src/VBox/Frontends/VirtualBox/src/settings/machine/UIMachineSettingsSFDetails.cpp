@@ -63,10 +63,10 @@ UIMachineSettingsSFDetails::UIMachineSettingsSFDetails(DialogType type,
     /* Adjust dialog size: */
     adjustSize();
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     setFixedSize(minimumSize());
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 void UIMachineSettingsSFDetails::setPath(const QString &strPath)
@@ -155,7 +155,7 @@ void UIMachineSettingsSFDetails::sltSelectPath()
         return;
 
     QString strFolderName(mPsPath->path());
-#if defined (Q_WS_WIN) || defined (Q_OS_OS2)
+#if defined (VBOX_WS_WIN) || defined (Q_OS_OS2)
     if (strFolderName[0].isLetter() && strFolderName[1] == ':' && strFolderName[2] == 0)
     {
         /* VBoxFilePathSelectorWidget returns root path as 'X:', which is invalid path.
@@ -163,7 +163,7 @@ void UIMachineSettingsSFDetails::sltSelectPath()
         strFolderName += "\\";
         mPsPath->setPath(strFolderName);
     }
-#endif /* Q_WS_WIN || Q_OS_OS2 */
+#endif /* VBOX_WS_WIN || Q_OS_OS2 */
     QDir folder(strFolderName);
     if (!folder.isRoot())
     {
@@ -173,9 +173,9 @@ void UIMachineSettingsSFDetails::sltSelectPath()
     else
     {
         /* Processing root folder: */
-#if defined (Q_WS_WIN) || defined (Q_OS_OS2)
+#if defined (VBOX_WS_WIN) || defined (Q_OS_OS2)
         mLeName->setText(strFolderName.toUpper()[0] + "_DRIVE");
-#elif defined (Q_WS_X11)
+#elif defined (VBOX_WS_X11)
         mLeName->setText("ROOT");
 #endif
     }

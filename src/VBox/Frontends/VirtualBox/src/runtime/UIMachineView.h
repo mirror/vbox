@@ -34,16 +34,16 @@
 
 /* Other VBox includes: */
 #include "VBox/com/ptr.h"
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # if QT_VERSION >= 0x050000
 #  include <ApplicationServices/ApplicationServices.h>
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /* External includes: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # include <CoreFoundation/CFBase.h>
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /* Forward declarations: */
 class UIActionPool;
@@ -56,11 +56,11 @@ class CDisplay;
 class CGuest;
 class CMachine;
 class CSession;
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 # if QT_VERSION < 0x050000
 typedef union _XEvent XEvent;
 # endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 #ifdef VBOX_WITH_DRAG_AND_DROP
  class CDnDTarget;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
@@ -261,11 +261,11 @@ protected:
     void scrollBy(int dx, int dy);
     static void dimImage(QImage &img);
     void scrollContentsBy(int dx, int dy);
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     void updateDockIcon();
     CGImageRef vmContentImage();
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     /** What view mode (normal, fullscreen etc.) are we in? */
     UIVisualStateType visualStateType() const;
     /** Is this a fullscreen-type view? */
@@ -345,25 +345,25 @@ protected:
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
 #if QT_VERSION < 0x050000
-# if defined(Q_WS_MAC)
+# if defined(VBOX_WS_MAC)
     /** Qt4: Mac: Performs pre-processing of all the native events.
       * @note     Take into account this function is _not_ called by
       *           the Qt itself because it has another signature,
       *           only by the keyboard-hook of the keyboard-handler. */
     virtual bool macEvent(const void *pvCocoaEvent, EventRef event);
-# elif defined(Q_WS_WIN)
+# elif defined(VBOX_WS_WIN)
     /** Qt4: Win: Performs pre-processing of all the native events.
       * @note     Take into account this function is called by
       *           the Qt as well opposing to other host (Mac)
       *           because it has required signature. */
     virtual bool winEvent(MSG *pMsg, long *piResult);
-# elif defined(Q_WS_X11)
+# elif defined(VBOX_WS_X11)
     /** Qt4: X11: Performs pre-processing of all the native events.
       * @note     Take into account this function is called by
       *           the Qt as well opposing to other host (Mac)
       *           because it has required signature. */
     virtual bool x11Event(XEvent *pEvent);
-# endif /* Q_WS_X11 */
+# endif /* VBOX_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
     /** Qt5: Performs pre-processing of all the native events.
       * @note     Take into account this function is _not_ called by
@@ -387,10 +387,10 @@ protected:
      * Not explicitly initialised (i.e. invalid by default). */
     QSize m_sizeHintOverride;
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Holds current host-screen number. */
     int m_iHostScreenNumber;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /** The policy for calculating the maximum guest resolution which we wish
      * to handle. */

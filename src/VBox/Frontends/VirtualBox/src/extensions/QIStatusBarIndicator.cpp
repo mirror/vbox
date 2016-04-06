@@ -26,9 +26,9 @@
 # include <QApplication>
 # include <QStyle>
 # include <QLabel>
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include <QContextMenuEvent>
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* GUI includes: */
 # include "QIStatusBarIndicator.h"
@@ -44,7 +44,7 @@ QIStatusBarIndicator::QIStatusBarIndicator(QWidget *pParent /* = 0 */)
     setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 void QIStatusBarIndicator::mousePressEvent(QMouseEvent *pEvent)
 {
     /* Do this for the left mouse button event only, cause in the case of the
@@ -63,7 +63,7 @@ void QIStatusBarIndicator::mousePressEvent(QMouseEvent *pEvent)
     else
         QWidget::mousePressEvent(pEvent);
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 void QIStatusBarIndicator::mouseDoubleClickEvent(QMouseEvent *pEvent)
 {

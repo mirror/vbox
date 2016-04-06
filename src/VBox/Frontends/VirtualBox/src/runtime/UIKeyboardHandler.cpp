@@ -21,9 +21,9 @@
 
 /* Qt includes: */
 # include <QKeyEvent>
-# ifdef Q_WS_X11
+# ifdef VBOX_WS_X11
 #  include <QX11Info>
-# endif /* Q_WS_X11 */
+# endif /* VBOX_WS_X11 */
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -41,20 +41,20 @@
 # include "UIKeyboardHandlerSeamless.h"
 # include "UIKeyboardHandlerScale.h"
 # include "UIMouseHandler.h"
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "UICocoaApplication.h"
 #  include "VBoxUtils-darwin.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* COM includes: */
 # include "CKeyboard.h"
 
 /* Other VBox includes: */
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  if QT_VERSION >= 0x050000
 #   include "iprt/cpp/utils.h"
 #  endif /* QT_VERSION >= 0x050000 */
-# endif /* Q_WS_MAC */ 
+# endif /* VBOX_WS_MAC */ 
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -64,21 +64,21 @@
 #endif /* QT_VERSION >= 0x050000 */
 
 /* GUI includes: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # include "DarwinKeyboard.h"
-#endif /* Q_WS_MAC */
-#ifdef Q_WS_WIN
+#endif /* VBOX_WS_MAC */
+#ifdef VBOX_WS_WIN
 # include "WinKeyboard.h"
-#endif /* Q_WS_WIN */
-#ifdef Q_WS_X11
+#endif /* VBOX_WS_WIN */
+#ifdef VBOX_WS_X11
 # include "XKeyboard.h"
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 /* External includes: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # include <Carbon/Carbon.h>
-#endif /* Q_WS_MAC */
-#ifdef Q_WS_X11
+#endif /* VBOX_WS_MAC */
+#ifdef VBOX_WS_X11
 # include <X11/XKBlib.h>
 # include <X11/keysym.h>
 # ifdef KeyPress
@@ -94,7 +94,7 @@ const int XKeyRelease = KeyRelease;
 # if QT_VERSION >= 0x050000
 #  include <xcb/xcb.h>
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 /* Enums representing different keyboard-states: */
 enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 };
@@ -129,9 +129,9 @@ private:
 #endif /* QT_VERSION >= 0x050000 */
 
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
 UIKeyboardHandler* UIKeyboardHandler::m_spKeyboardHandler = 0;
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
 /* Factory function to create keyboard-handler: */
 UIKeyboardHandler* UIKeyboardHandler::create(UIMachineLogic *pMachineLogic,
@@ -159,11 +159,11 @@ UIKeyboardHandler* UIKeyboardHandler::create(UIMachineLogic *pMachineLogic,
             break;
     }
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* It is necessary to have static pointer to created handler
      * because windows keyboard-hook works only with static members: */
     m_spKeyboardHandler = pKeyboardHandler;
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* Return prepared keyboard-handler: */
     return pKeyboardHandler;
@@ -172,11 +172,11 @@ UIKeyboardHandler* UIKeyboardHandler::create(UIMachineLogic *pMachineLogic,
 /* Factory function to destroy keyboard-handler: */
 void UIKeyboardHandler::destroy(UIKeyboardHandler *pKeyboardHandler)
 {
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* It was necessary to have static pointer to created handler
      * because windows keyboard-hook works only with static members: */
     m_spKeyboardHandler = 0;
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* Delete keyboard-handler: */
     delete pKeyboardHandler;
@@ -226,7 +226,7 @@ void UIKeyboardHandler::cleanupListener(ulong uScreenId)
     }
 }
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 # if QT_VERSION < 0x050000
 struct CHECKFORX11FOCUSEVENTSDATA
 {
@@ -260,7 +260,7 @@ bool UIKeyboardHandler::checkForX11FocusEvents(Window hWindow)
     return data.fEventFound;
 }
 # endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 {
@@ -271,7 +271,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
     /* If such view exists: */
     if (m_views.contains(uScreenId))
     {
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
         /* On Mac, keyboard grabbing is ineffective,
          * a low-level keyboard-hook is used instead.
@@ -286,14 +286,14 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         ::DarwinDisableGlobalHotKeys(true);
         m_views[uScreenId]->grabKeyboard();
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
         /* On Win, keyboard grabbing is ineffective,
          * a low-level keyboard-hook is used instead.
          * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
 
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
          * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
@@ -370,7 +370,7 @@ void UIKeyboardHandler::releaseKeyboard()
     /* If such view exists: */
     if (m_views.contains(m_iKeyboardCaptureViewIndex))
     {
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
         /* On Mac, keyboard grabbing is ineffective,
          * a low-level keyboard-hook is used instead.
@@ -385,14 +385,14 @@ void UIKeyboardHandler::releaseKeyboard()
         ::DarwinDisableGlobalHotKeys(false);
         m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
         /* On Win, keyboard grabbing is ineffective,
          * a low-level keyboard-hook is used instead.
          * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
 
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
          * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
@@ -487,7 +487,7 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
         m_pressedHostComboKeys.clear();
     }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     unsigned int hostComboModifierMask = 0;
     QList<int> hostCombo = UIHostCombo::toKeyCodeList(m_globalSettings.hostCombo());
     for (int i = 0; i < hostCombo.size(); ++i)
@@ -496,7 +496,7 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
     m_uDarwinKeyModifiers &=
         alphaLock | kEventKeyModifierNumLockMask |
         (aReleaseHostKey ? 0 : hostComboModifierMask);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Notify all the listeners: */
     emit sigStateChange(state());
@@ -523,15 +523,15 @@ void UIKeyboardHandler::setDebuggerActive(bool aActive /* = true*/)
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
 void UIKeyboardHandler::winSkipKeyboardEvents(bool fSkip)
 {
     m_fSkipKeyboardEvents = fSkip;
 }
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
 #if QT_VERSION < 0x050000
-# if defined(Q_WS_MAC)
+# if defined(VBOX_WS_MAC)
 
 bool UIKeyboardHandler::macEventFilter(const void *pvCocoaEvent, EventRef event, ulong uScreenId)
 {
@@ -674,7 +674,7 @@ bool UIKeyboardHandler::macEventFilter(const void *pvCocoaEvent, EventRef event,
     return fResult;
 }
 
-# elif defined(Q_WS_WIN)
+# elif defined(VBOX_WS_WIN)
 
 bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
 {
@@ -839,7 +839,7 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
     return fResult;
 }
 
-# elif defined(Q_WS_X11)
+# elif defined(VBOX_WS_X11)
 
 static Bool UIKeyboardHandlerCompEvent(Display*, XEvent *pEvent, XPointer pvArg)
 {
@@ -973,7 +973,7 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
     return fResult;
 }
 
-# endif /* Q_WS_X11 */
+# endif /* VBOX_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
 
 bool UIKeyboardHandler::nativeEventPreprocessor(const QByteArray &eventType, void *pMessage)
@@ -989,7 +989,7 @@ bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId
      * Returning @c false means passing event to Qt. */
     bool fResult = false; /* Pass to Qt by default. */
 
-# if defined(Q_WS_MAC)
+# if defined(VBOX_WS_MAC)
 
     /* Acquire carbon event reference from the cocoa one: */
     EventRef event = static_cast<EventRef>(darwinCocoaToCarbonEvent(pMessage));
@@ -1124,7 +1124,7 @@ bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId
             break;
     }
 
-# elif defined(Q_WS_WIN)
+# elif defined(VBOX_WS_WIN)
 
     /* Ignore this event if m_fSkipKeyboardEvents is set by winSkipKeyboardEvents(). */
     if (m_fSkipKeyboardEvents)
@@ -1281,7 +1281,7 @@ bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId
             break;
     }
 
-# elif defined(Q_WS_X11)
+# elif defined(VBOX_WS_X11)
 
     /* Cast to XCB event: */
     xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
@@ -1409,12 +1409,12 @@ void UIKeyboardHandler::sltMachineStateChanged()
                 if (viewHasFocus(theListOfViewIds[i]))
                 {
                     /* Capture keyboard: */
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
                         GetAncestor((HWND)m_views[theListOfViewIds[i]]->winId(), GA_ROOT) == GetForegroundWindow())
-#else /* !Q_WS_WIN */
+#else /* !VBOX_WS_WIN */
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
-#endif /* !Q_WS_WIN */
+#endif /* !VBOX_WS_WIN */
                         captureKeyboard(theListOfViewIds[i]);
                     /* Reset the single-time disable capture flag: */
                     if (isAutoCaptureDisabled())
@@ -1449,14 +1449,14 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_fPassCADtoGuest(false)
     , m_fDebuggerActive(false)
     , m_iKeyboardHookViewIndex(-1)
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
     , m_uDarwinKeyModifiers(0)
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
     , m_fIsHostkeyInCapture(false)
     , m_fSkipKeyboardEvents(false)
     , m_keyboardHook(NULL)
     , m_pAltGrMonitor(0)
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 #if QT_VERSION >= 0x050000
     , m_pPrivateEventFilter(0)
 #endif /* QT_VERSION >= 0x050000 */
@@ -1481,10 +1481,10 @@ UIKeyboardHandler::~UIKeyboardHandler()
 
 void UIKeyboardHandler::prepareCommon()
 {
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Prepare AltGR monitor: */
     m_pAltGrMonitor = new WinAltGrMonitor;
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     /* Machine state-change updater: */
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
@@ -1498,10 +1498,10 @@ void UIKeyboardHandler::prepareCommon()
 void UIKeyboardHandler::loadSettings()
 {
     /* Global settings: */
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     /* Initialize the X keyboard subsystem: */
     initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
     /* Extra data settings: */
     {
@@ -1512,7 +1512,7 @@ void UIKeyboardHandler::loadSettings()
 
 void UIKeyboardHandler::cleanupCommon()
 {
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
     /* Cleanup keyboard-hook: */
     if (m_iKeyboardHookViewIndex != -1)
@@ -1523,7 +1523,7 @@ void UIKeyboardHandler::cleanupCommon()
                                                                   UIKeyboardHandler::macKeyboardProc, this);
     }
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
     /* Cleanup AltGR monitor: */
     delete m_pAltGrMonitor;
@@ -1537,7 +1537,7 @@ void UIKeyboardHandler::cleanupCommon()
         m_keyboardHook = 0;
     }
 
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
 #if QT_VERSION >= 0x050000
     /* If private event-filter is installed: */
@@ -1591,7 +1591,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
         {
             case QEvent::FocusIn:
             {
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
                 /* If keyboard-hook is NOT installed;
                  * Or installed but NOT for that view: */
@@ -1617,7 +1617,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     }
                 }
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
                 /* If keyboard-hook is NOT installed;
                  * Or installed but NOT for that view: */
@@ -1635,10 +1635,10 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     AssertMsg(m_keyboardHook, ("SetWindowsHookEx(): err=%d", GetLastError()));
                 }
 
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
 #if QT_VERSION >= 0x050000
-# if defined(Q_WS_WIN) || defined(Q_WS_X11)
+# if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
                 /* If private event-filter is NOT installed;
                  * Or installed but NOT for that view: */
                 if (!m_pPrivateEventFilter || (int)uScreenId != m_iKeyboardHookViewIndex)
@@ -1655,7 +1655,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     m_pPrivateEventFilter = new KeyboardHandlerEventFilter(this);
                     qApp->installNativeEventFilter(m_pPrivateEventFilter);
                 }
-# endif /* Q_WS_WIN || Q_WS_X11 */
+# endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 #endif /* QT_VERSION >= 0x050000 */
 
                 /* Update keyboard hook view index: */
@@ -1664,12 +1664,12 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                 if (isSessionRunning())
                 {
                     /* Capture keyboard: */
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
                         GetAncestor((HWND)pWatchedView->winId(), GA_ROOT) == GetForegroundWindow())
-#else /* !Q_WS_WIN */
+#else /* !VBOX_WS_WIN */
                     if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
-#endif /* !Q_WS_WIN */
+#endif /* !VBOX_WS_WIN */
                         captureKeyboard(uScreenId);
                     /* Reset the single-time disable capture flag: */
                     if (isAutoCaptureDisabled())
@@ -1680,7 +1680,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
             }
             case QEvent::FocusOut:
             {
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
                 /* If keyboard-hook is installed: */
                 if ((int)uScreenId == m_iKeyboardHookViewIndex)
@@ -1691,7 +1691,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                                                                               UIKeyboardHandler::macKeyboardProc, this);
                 }
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
                 /* If keyboard-hook is installed: */
                 if (m_keyboardHook)
@@ -1701,10 +1701,10 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     m_keyboardHook = 0;
                 }
 
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
 #if QT_VERSION >= 0x050000
-# if defined(Q_WS_WIN) || defined(Q_WS_X11)
+# if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
                 /* If private event-filter is installed: */
                 if (m_pPrivateEventFilter)
                 {
@@ -1713,7 +1713,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     delete m_pPrivateEventFilter;
                     m_pPrivateEventFilter = 0;
                 }
-# endif /* Q_WS_WIN || Q_WS_X11 */
+# endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 #endif /* QT_VERSION >= 0x050000 */
 
                 /* Update keyboard hook view index: */
@@ -1776,7 +1776,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
     return QObject::eventFilter(pWatchedObject, pEvent);
 }
 
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
 /* static */
 bool UIKeyboardHandler::macKeyboardProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
@@ -1817,7 +1817,7 @@ bool UIKeyboardHandler::macKeyboardEvent(const void *pvCocoaEvent, EventRef even
 #endif /* QT_VERSION >= 0x050000 */
 }
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
 /* static */
 LRESULT CALLBACK UIKeyboardHandler::winKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
@@ -1883,7 +1883,7 @@ bool UIKeyboardHandler::winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
 #endif /* QT_VERSION >= 0x050000 */
 }
 
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
 /**
  * If the user has just completed a control-alt-del combination then handle
@@ -2041,12 +2041,12 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                         captureKeyboard(uScreenId);
                     if (!uisession()->isMouseSupportsAbsolute() || !uisession()->isMouseIntegrated())
                     {
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
                         /* Make sure that pending FocusOut events from the
                          * previous message box are handled, otherwise the
                          * mouse is immediately ungrabbed: */
                         qApp->processEvents();
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
                         if (m_fIsKeyboardCaptured)
                         {
                             const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(vboxGlobal().managedVMUuid());
@@ -2115,13 +2115,13 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     const bool isHostComboStateChanged = (!m_bIsHostComboPressed &&  fIsFullHostComboPresent) ||
                                          ( m_bIsHostComboPressed && !fIsFullHostComboPresent);
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     if (m_bIsHostComboPressed || isHostComboStateChanged)
     {
         /* Currently this is used in winKeyboardEvent() only: */
         m_fIsHostkeyInCapture = m_fIsKeyboardCaptured;
     }
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     if (keyEventCADHandled(uScan))
         return true;
@@ -2225,13 +2225,13 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
     /* Prepare processing result: */
     bool fWasProcessed = false;
 
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
     Q_UNUSED(iHotKey);
     if (pHotKey && pHotKey[0] && !pHotKey[1])
         fWasProcessed = actionPool()->processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(pHotKey[0]).toUpper().unicode()));
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
     Q_UNUSED(pHotKey);
     int iKeyboardLayout = GetKeyboardLayoutList(0, NULL);
@@ -2249,7 +2249,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
     }
     delete[] pList;
 
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
 
     Q_UNUSED(pHotKey);
     Display *pDisplay = QX11Info::display();
@@ -2283,7 +2283,7 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
     /* Synchronize the views of the host and the guest to the modifier keys.
      * This function will add up to 6 additional keycodes to codes. */
 
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
     /* if (uisession()->numLockAdaptionCnt()) ... - NumLock isn't implemented by Mac OS X so ignore it. */
     if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
@@ -2301,7 +2301,7 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
         }
     }
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
     if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(GetKeyState(VK_NUMLOCK))))
     {
@@ -2324,7 +2324,7 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
         }
     }
 
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
 
     Window   wDummy1, wDummy2;
     int      iDummy3, iDummy4, iDummy5, iDummy6;

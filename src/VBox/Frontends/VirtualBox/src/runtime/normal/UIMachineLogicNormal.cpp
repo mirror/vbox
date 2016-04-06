@@ -20,9 +20,9 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# ifndef Q_WS_MAC
+# ifndef VBOX_WS_MAC
 #  include <QTimer>
-# endif /* !Q_WS_MAC */
+# endif /* !VBOX_WS_MAC */
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -35,11 +35,11 @@
 # include "UIStatusBarEditorWindow.h"
 # include "UIExtraDataManager.h"
 # include "UIFrameBuffer.h"
-# ifndef Q_WS_MAC
+# ifndef VBOX_WS_MAC
 #  include "QIMenu.h"
-# else  /* Q_WS_MAC */
+# else  /* VBOX_WS_MAC */
 #  include "VBoxUtils.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* COM includes: */
 # include "CConsole.h"
@@ -50,9 +50,9 @@
 
 UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Normal)
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     , m_pPopupMenu(0)
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 {
 }
 
@@ -116,17 +116,17 @@ void UIMachineLogicNormal::sltOpenMenuBarSettings()
     /* Do not process if window(s) missed! */
     AssertReturnVoid(isMachineWindowsCreated());
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /* Make sure menu-bar is enabled: */
     const bool fEnabled = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->isChecked();
     AssertReturnVoid(fEnabled);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /* Prevent user from opening another one editor or toggle menu-bar: */
     actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(false);
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->setEnabled(false);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     /* Create menu-bar editor: */
     UIMenuBarEditorWindow *pMenuBarEditor = new UIMenuBarEditorWindow(activeMachineWindow(), actionPool());
     AssertPtrReturnVoid(pMenuBarEditor);
@@ -134,10 +134,10 @@ void UIMachineLogicNormal::sltOpenMenuBarSettings()
         /* Configure menu-bar editor: */
         connect(pMenuBarEditor, SIGNAL(destroyed(QObject*)),
                 this, SLOT(sltMenuBarSettingsClosed()));
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
                 pMenuBarEditor, SLOT(sltActivateWindow()));
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         /* Show window: */
         pMenuBarEditor->show();
     }
@@ -145,17 +145,17 @@ void UIMachineLogicNormal::sltOpenMenuBarSettings()
 
 void UIMachineLogicNormal::sltMenuBarSettingsClosed()
 {
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /* Make sure menu-bar is enabled: */
     const bool fEnabled = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->isChecked();
     AssertReturnVoid(fEnabled);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /* Allow user to open editor and toggle menu-bar again: */
     actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(true);
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->setEnabled(true);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
 #ifndef RT_OS_DARWIN
@@ -189,10 +189,10 @@ void UIMachineLogicNormal::sltOpenStatusBarSettings()
         /* Configure status-bar editor: */
         connect(pStatusBarEditor, SIGNAL(destroyed(QObject*)),
                 this, SLOT(sltStatusBarSettingsClosed()));
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
                 pStatusBarEditor, SLOT(sltActivateWindow()));
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         /* Show window: */
         pStatusBarEditor->show();
     }
@@ -264,10 +264,10 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, SLOT(sltChangeVisualStateToScale()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings), SIGNAL(triggered(bool)),
             this, SLOT(sltOpenMenuBarSettings()));
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     connect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility), SIGNAL(triggered(bool)),
             this, SLOT(sltToggleMenuBar()));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     connect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
             this, SLOT(sltOpenStatusBarSettings()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),
@@ -284,11 +284,11 @@ void UIMachineLogicNormal::prepareMachineWindows()
     if (isMachineWindowsCreated())
         return;
 
-#ifdef Q_WS_MAC // TODO: Is that really need here?
+#ifdef VBOX_WS_MAC // TODO: Is that really need here?
     /* We have to make sure that we are getting the front most process.
      * This is necessary for Qt versions > 4.3.3: */
     ::darwinSetFrontMostProcess();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Get monitors count: */
     ulong uMonitorCount = machine().GetMonitorCount();
@@ -309,7 +309,7 @@ void UIMachineLogicNormal::prepareMachineWindows()
     setMachineWindowsCreated(true);
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 void UIMachineLogicNormal::prepareMenu()
 {
     /* Prepare popup-menu: */
@@ -321,16 +321,16 @@ void UIMachineLogicNormal::prepareMenu()
             m_pPopupMenu->addMenu(pMenu);
     }
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 void UIMachineLogicNormal::cleanupMenu()
 {
     /* Cleanup popup-menu: */
     delete m_pPopupMenu;
     m_pPopupMenu = 0;
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 void UIMachineLogicNormal::cleanupMachineWindows()
 {
@@ -357,10 +357,10 @@ void UIMachineLogicNormal::cleanupActionConnections()
                this, SLOT(sltChangeVisualStateToScale()));
     disconnect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings), SIGNAL(triggered(bool)),
                this, SLOT(sltOpenMenuBarSettings()));
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     disconnect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility), SIGNAL(triggered(bool)),
                this, SLOT(sltToggleMenuBar()));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     disconnect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
                this, SLOT(sltOpenStatusBarSettings()));
     disconnect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),

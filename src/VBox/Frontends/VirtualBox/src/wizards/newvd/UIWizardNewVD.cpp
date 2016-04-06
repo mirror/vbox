@@ -47,13 +47,13 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
     , m_strDefaultPath(strDefaultPath)
     , m_uDefaultSize(uDefaultSize)
 {
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_new_harddisk.png");
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     /* Assign background image: */
     assignBackground(":/vmw_new_harddisk_bg.png");
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 bool UIWizardNewVD::createVirtualDisk()

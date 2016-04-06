@@ -201,10 +201,10 @@ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QStri
      * do a refresh even on failure.
      */
     QString displayInfo;
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     if (pParent)
         displayInfo.sprintf("hwnd=%#llx", (uint64_t)(uintptr_t)pParent->winId());
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
     /* Prepare installation progress: */
     CProgress progress = extPackFile.Install(fReplaceIt, displayInfo);
     if (extPackFile.isOk())
@@ -419,9 +419,9 @@ void UIGlobalSettingsExtension::sltRemovePackage()
             CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
             /** @todo Refuse this if any VMs are running. */
             QString displayInfo;
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
             displayInfo.sprintf("hwnd=%#llx", (uint64_t)(uintptr_t)this->winId());
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
             /* Prepare uninstallation progress: */
             CProgress progress = manager.Uninstall(strSelectedPackageName, false /* forced removal? */, displayInfo);
             if (manager.isOk())

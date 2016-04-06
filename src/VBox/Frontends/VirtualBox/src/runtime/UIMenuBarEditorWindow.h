@@ -32,9 +32,9 @@ class UIActionPool;
 class UIToolBar;
 class UIAction;
 class QIToolButton;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 class QCheckBox;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 class QHBoxLayout;
 class QAction;
 class QMenu;
@@ -85,12 +85,12 @@ public:
     /** Defines the @a pActionPool reference. */
     void setActionPool(UIActionPool *pActionPool);
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /** Returns whether the menu-bar enabled. */
     bool isMenuBarEnabled() const;
     /** Defines whether the menu-bar @a fEnabled. */
     void setMenuBarEnabled(bool fEnabled);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /** Returns the cached restrictions of menu-bar. */
     UIExtraDataMetaDefs::MenuType restrictionsOfMenuBar() const { return m_restrictionsOfMenuBar; }
@@ -108,10 +108,10 @@ public:
     /** Returns the cached restrictions of menu 'Debug'. */
     UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictionsOfMenuDebug() const { return m_restrictionsOfMenuDebug; }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Mac OS X: Returns the cached restrictions of menu 'Window'. */
     UIExtraDataMetaDefs::MenuWindowActionType restrictionsOfMenuWindow() const { return m_restrictionsOfMenuWindow; }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     /** Returns the cached restrictions of menu 'Help'. */
     UIExtraDataMetaDefs::MenuHelpActionType restrictionsOfMenuHelp() const { return m_restrictionsOfMenuHelp; }
 
@@ -131,10 +131,10 @@ public:
     /** Defines the cached @a restrictions of menu 'Debug'. */
     void setRestrictionsOfMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictions);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Mac OS X: Defines the cached @a restrictions of menu 'Window'. */
     void setRestrictionsOfMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType restrictions);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     /** Defines the cached @a restrictions of menu 'Help'. */
     void setRestrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType restrictions);
 
@@ -151,10 +151,10 @@ private:
     /** Prepare routine. */
     void prepare();
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Prepare named menu routine. */
     QMenu* prepareNamedMenu(const QString &strName);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     /** Prepare copied menu routine. */
     QMenu* prepareCopiedMenu(const UIAction *pAction);
 #if 0
@@ -183,10 +183,10 @@ private:
     /** Prepare 'Debug' menu routine. */
     void prepareMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /** Mac OS X: Prepare 'Window' menu routine. */
     void prepareMenuWindow();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     /** Prepare 'Help' menu routine. */
     void prepareMenuHelp();
 
@@ -216,10 +216,10 @@ private:
         UIToolBar *m_pToolBar;
         /** Holds the close-button instance. */
         QIToolButton *m_pButtonClose;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /** Non Mac OS X: Holds the enable-checkbox instance. */
         QCheckBox *m_pCheckBoxEnable;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         /** Holds tool-bar action references. */
         QMap<QString, QAction*> m_actions;
     /** @} */
@@ -242,10 +242,10 @@ private:
         /** Holds the cached restrictions of menu 'Debug'. */
         UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType m_restrictionsOfMenuDebug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /** Mac OS X: Holds the cached restrictions of menu 'Window'. */
         UIExtraDataMetaDefs::MenuWindowActionType m_restrictionsOfMenuWindow;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         /** Holds the cached restrictions of menu 'Help'. */
         UIExtraDataMetaDefs::MenuHelpActionType m_restrictionsOfMenuHelp;
     /** @} */

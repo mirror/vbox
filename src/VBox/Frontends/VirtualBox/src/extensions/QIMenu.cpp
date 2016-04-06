@@ -30,10 +30,10 @@ QIMenu::QIMenu(QWidget *pParent /* = 0 */)
 
 void QIMenu::sltHighlightFirstAction()
 {
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Windows host requires window-activation: */
     activateWindow();
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
     /* Focus next child: */
     QMenu::focusNextChild();
 }

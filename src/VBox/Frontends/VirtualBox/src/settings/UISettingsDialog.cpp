@@ -40,15 +40,15 @@
 # include "UIToolBar.h"
 # include "UIIconPool.h"
 # include "UIConverter.h"
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "VBoxUtils.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # define VBOX_GUI_WITH_TOOLBAR_SETTINGS
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /* Settings Dialog Constructor: */
 UISettingsDialog::UISettingsDialog(QWidget *pParent)
@@ -183,7 +183,7 @@ void UISettingsDialog::accept()
 void UISettingsDialog::sltCategoryChanged(int cId)
 {
     int index = m_pages[cId];
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # if QT_VERSION < 0x050000
     QSize cs = size();
     if (index < m_sizeList.count())
@@ -618,7 +618,7 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
     m_fPolished = true;
 
     int iMinWidth = m_pSelector->minWidth();
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Remove all title bar buttons (Buggy Qt): */
     ::darwinSetHidesAllTitleButtons(this);
 
@@ -688,13 +688,13 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
 # endif /* QT_VERSION >= 0x050000 */
 
     sltCategoryChanged(m_pSelector->currentId());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     /* Resize to the minimum possible size: */
     QSize s = minimumSize();
     if (iMinWidth > s.width())
         s.setWidth(iMinWidth);
     resize(s);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)

@@ -182,11 +182,11 @@ private:
                 /* Configure Next/Prev button-box: */
                 m_pNextPrevButtons->setEnabled(0, false);
                 m_pNextPrevButtons->setEnabled(1, false);
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
                 /* No icons on the Mac: */
                 m_pNextPrevButtons->setIcon(0, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
                 m_pNextPrevButtons->setIcon(1, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
                 /* Add Next/Prev button-box to main-layout: */
                 m_pMainLayout->addWidget(m_pNextPrevButtons);
             }
@@ -1028,12 +1028,12 @@ void UIVMLogViewer::loadSettings()
 
         /* Load geometry: */
         m_geometry = gEDataManager->logWindowGeometry(this, defaultGeometry);
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         move(m_geometry.topLeft());
         resize(m_geometry.size());
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
         setGeometry(m_geometry);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         LogRel2(("GUI: UIVMLogViewer: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
                  m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
@@ -1049,11 +1049,11 @@ void UIVMLogViewer::saveSettings()
     {
         /* Save geometry: */
         const QRect saveGeometry = geometry();
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         gEDataManager->setLogWindowGeometry(saveGeometry, ::darwinIsWindowMaximized(this));
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
         gEDataManager->setLogWindowGeometry(saveGeometry, isMaximized());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         LogRel2(("GUI: UIVMLogViewer: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
                  saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
     }

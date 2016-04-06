@@ -26,10 +26,10 @@
 # include "VBoxTakeSnapshotDlg.h"
 # include "UIMessageCenter.h"
 # include "VBoxUtils.h"
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "UIMachineWindowNormal.h"
 #  include "VBoxSnapshotsWgt.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* COM includes: */
 # include "COMEnums.h"

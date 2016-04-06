@@ -77,19 +77,19 @@ UIWizard::UIWizard(QWidget *pParent, WizardType type, WizardMode mode /* = Wizar
     , m_type(type)
     , m_mode(mode == WizardMode_Auto ? gEDataManager->modeForWizardType(m_type) : mode)
 {
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     /* Hide window icon: */
     setWindowIcon(QIcon());
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Since wizards are now represented as Mac OS X Sheets
      * we would like to have possibility to cancel them. */
     setOption(QWizard::NoCancelButton, false);
     /* I'm really not sure why there shouldn't be any default button on Mac OS X.
      * This prevents the using of Enter to jump to the next page. */
     setOptions(options() ^ QWizard::NoDefaultButton);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* All our wizards would like to have window-modality,
      * Under Mac OS it will be represented as Mac OS Sheet. */
@@ -169,11 +169,11 @@ void UIWizard::cleanup()
         delete pWizardPage;
     }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /* Cleanup watermark: */
     if (!m_strWatermarkName.isEmpty())
         setPixmap(QWizard::WatermarkPixmap, QPixmap());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
 void UIWizard::resizeToGoldenRatio()
@@ -246,19 +246,19 @@ void UIWizard::resizeToGoldenRatio()
         /* Get current wizard width and height: */
         int iCurrentWizardWidth = width();
         int iCurrentWizardHeight = height();
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* We should take into account watermark like its assigned already: */
         QPixmap watermarkPixmap(m_strWatermarkName);
         int iWatermarkWidth = watermarkPixmap.width();
         iCurrentWizardWidth += iWatermarkWidth;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         /* Calculating nearest to 'golden ratio' label width: */
         int iGoldenRatioWidth = (int)qSqrt(ratio() * iCurrentWizardWidth * iCurrentWizardHeight);
         int iProposedLabelWidth = iGoldenRatioWidth - iMarginsLength;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* We should take into account watermark like its assigned already: */
         iProposedLabelWidth -= iWatermarkWidth;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
         /* Choose maximum between current and proposed label width: */
         int iNewLabelWidth = qMax(iCurrentLabelWidth, iProposedLabelWidth);
@@ -268,23 +268,23 @@ void UIWizard::resizeToGoldenRatio()
         resizeAccordingLabelWidth(iNewLabelWidth);
     }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /* Really assign watermark: */
     if (!m_strWatermarkName.isEmpty())
         assignWatermarkHelper();
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 void UIWizard::assignWatermark(const QString &strWatermark)
 {
     if (wizardStyle() != QWizard::AeroStyle
-# ifdef Q_WS_WIN
+# ifdef VBOX_WS_WIN
         /* There is a Qt bug about Windows7 do NOT match conditions for 'aero' wizard-style,
          * so its silently fallbacks to 'modern' one without any notification,
          * so QWizard::wizardStyle() returns QWizard::ModernStyle, while using aero, at least partially. */
         && QSysInfo::windowsVersion() != QSysInfo::WV_WINDOWS7
-# endif /* Q_WS_WIN */
+# endif /* VBOX_WS_WIN */
         )
         m_strWatermarkName = strWatermark;
 }
@@ -372,7 +372,7 @@ double UIWizard::ratio()
     /* Default value: */
     double dRatio = 1.6;
 
-#ifdef Q_WS_WIN
+#ifdef VBOX_WS_WIN
     switch (wizardStyle())
     {
         case QWizard::ClassicStyle:
@@ -391,7 +391,7 @@ double UIWizard::ratio()
         default:
             break;
     }
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
     switch (m_type)
     {
@@ -416,7 +416,7 @@ double UIWizard::ratio()
     return dRatio;
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 int UIWizard::proposedWatermarkHeight()
 {
     /* We should calculate suitable height for watermark pixmap,
@@ -515,5 +515,5 @@ void UIWizard::assignWatermarkHelper()
     QPixmap pixWatermarkNew = QPixmap::fromImage(imgWatermarkNew);
     setPixmap(QWizard::WatermarkPixmap, pixWatermarkNew);
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 

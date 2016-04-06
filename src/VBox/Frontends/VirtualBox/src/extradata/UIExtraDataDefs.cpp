@@ -81,16 +81,16 @@ const char* UIExtraDataDefs::GUI_HideDetails = "GUI/HideDetails";
 const char* UIExtraDataDefs::GUI_PreventReconfiguration = "GUI/PreventReconfiguration";
 const char* UIExtraDataDefs::GUI_PreventSnapshotOperations = "GUI/PreventSnapshotOperations";
 const char* UIExtraDataDefs::GUI_FirstRun = "GUI/FirstRun";
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 const char* UIExtraDataDefs::GUI_MachineWindowIcons = "GUI/MachineWindowIcons";
 const char* UIExtraDataDefs::GUI_MachineWindowNamePostfix = "GUI/MachineWindowNamePostfix";
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 const char* UIExtraDataDefs::GUI_LastNormalWindowPosition = "GUI/LastNormalWindowPosition";
 const char* UIExtraDataDefs::GUI_LastScaleWindowPosition = "GUI/LastScaleWindowPosition";
 const char* UIExtraDataDefs::GUI_Geometry_State_Max = "max";
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 const char* UIExtraDataDefs::GUI_MenuBar_Enabled = "GUI/MenuBar/Enabled";
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeMenus = "GUI/RestrictedRuntimeMenus";
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeApplicationMenuActions = "GUI/RestrictedRuntimeApplicationMenuActions";
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeMachineMenuActions = "GUI/RestrictedRuntimeMachineMenuActions";
@@ -100,17 +100,17 @@ const char* UIExtraDataDefs::GUI_RestrictedRuntimeDevicesMenuActions = "GUI/Rest
 #ifdef VBOX_WITH_DEBUGGER_GUI
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeDebuggerMenuActions = "GUI/RestrictedRuntimeDebuggerMenuActions";
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeWindowMenuActions = "GUI/RestrictedRuntimeWindowMenuActions";
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeHelpMenuActions = "GUI/RestrictedRuntimeHelpMenuActions";
 const char* UIExtraDataDefs::GUI_RestrictedVisualStates = "GUI/RestrictedVisualStates";
 const char* UIExtraDataDefs::GUI_Fullscreen = "GUI/Fullscreen";
 const char* UIExtraDataDefs::GUI_Seamless = "GUI/Seamless";
 const char* UIExtraDataDefs::GUI_Scale = "GUI/Scale";
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 const char* UIExtraDataDefs::GUI_Fullscreen_LegacyMode = "GUI/Fullscreen/LegacyMode";
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 const char* UIExtraDataDefs::GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
 const char* UIExtraDataDefs::GUI_LastVisibilityStatusForGuestScreen = "GUI/LastVisibilityStatusForGuestScreen";
 const char* UIExtraDataDefs::GUI_LastGuestSizeHint = "GUI/LastGuestSizeHint";
@@ -125,19 +125,19 @@ const char* UIExtraDataDefs::GUI_Accelerate2D_PixformatAYUV = "GUI/Accelerate2D/
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 const char* UIExtraDataDefs::GUI_HiDPI_UnscaledOutput = "GUI/HiDPI/UnscaledOutput";
 const char* UIExtraDataDefs::GUI_HiDPI_Optimization = "GUI/HiDPI/Optimization";
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 const char* UIExtraDataDefs::GUI_ShowMiniToolBar = "GUI/ShowMiniToolBar";
 const char* UIExtraDataDefs::GUI_MiniToolBarAutoHide = "GUI/MiniToolBarAutoHide";
 const char* UIExtraDataDefs::GUI_MiniToolBarAlignment = "GUI/MiniToolBarAlignment";
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 const char* UIExtraDataDefs::GUI_StatusBar_Enabled = "GUI/StatusBar/Enabled";
 const char* UIExtraDataDefs::GUI_RestrictedStatusBarIndicators = "GUI/RestrictedStatusBarIndicators";
 const char* UIExtraDataDefs::GUI_StatusBar_IndicatorOrder = "GUI/StatusBar/IndicatorOrder";
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateEnabled = "GUI/RealtimeDockIconUpdateEnabled";
 const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateMonitor = "GUI/RealtimeDockIconUpdateMonitor";
 const char* UIExtraDataDefs::GUI_DockIconDisableOverlay = "GUI/DockIconDisableOverlay";
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 const char* UIExtraDataDefs::GUI_PassCAD = "GUI/PassCAD";
 const char* UIExtraDataDefs::GUI_MouseCapturePolicy = "GUI/MouseCapturePolicy";
 const char* UIExtraDataDefs::GUI_GuruMeditationHandler = "GUI/GuruMeditationHandler";

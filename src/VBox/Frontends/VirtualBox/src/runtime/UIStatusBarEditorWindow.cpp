@@ -531,9 +531,9 @@ void UIStatusBarEditorWidget::paintEvent(QPaintEvent*)
     QColor color1 = pal.color(QPalette::Window).lighter(110);
     color1.setAlpha(0);
     QColor color2 = pal.color(QPalette::Window).darker(200);
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     QColor color3 = pal.color(QPalette::Window).darker(120);
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
     /* Left corner: */
     QRadialGradient grad1(QPointF(5, 5), 5);
@@ -574,7 +574,7 @@ void UIStatusBarEditorWidget::paintEvent(QPaintEvent*)
     painter.fillRect(QRect(0,           5, 5, height() - 5), grad4); // left line
     painter.fillRect(QRect(width() - 5, 5, 5, height() - 5), grad5); // right line
 
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     /* Paint frames: */
     painter.save();
     painter.setPen(color3);
@@ -583,7 +583,7 @@ void UIStatusBarEditorWidget::paintEvent(QPaintEvent*)
     painter.drawLine(QLine(QPoint(width() - 1 - 5 - 1, height() - 1), QPoint(5 + 1, height() - 1)));
     painter.drawLine(QLine(QPoint(5 + 1, height() - 1),               QPoint(5 + 1, 5 + 1)));
     painter.restore();
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
     /* Paint drop token: */
     if (m_pButtonDropToken)

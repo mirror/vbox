@@ -46,9 +46,9 @@
 
 # include <VBox/VBoxGL2D.h>
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -4443,7 +4443,7 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG uX, ULONG uY,
                            (int)ceil((double)rect.height() * yScaleFactor) + 2));
     }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Take the backing-scale-factor into account: */
     if (mSizeInfo.useUnscaledHiDPIOutput())
     {
@@ -4456,7 +4456,7 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG uX, ULONG uY,
                                (int)ceil((double)rect.height() / dBackingScaleFactor) + 2));
         }
     }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* we do not to miss notify updates, because we have to update bg textures for it,
      * so no not check for m_fUnused here,

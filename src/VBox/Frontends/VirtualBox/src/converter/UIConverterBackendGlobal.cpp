@@ -48,9 +48,9 @@ template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>() 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>() { return true; }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 template<> bool canConvert<UIExtraDataMetaDefs::MenuWindowActionType>() { return true; }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<InformationElementType>() { return true; }
@@ -65,9 +65,9 @@ template<> bool canConvert<MouseCapturePolicy>() { return true; }
 template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
 template<> bool canConvert<ScalingOptimizationType>() { return true; }
 template<> bool canConvert<HiDPIOptimizationType>() { return true; }
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 template<> bool canConvert<MiniToolbarAlignment>() { return true; }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 /* QString <= SizeSuffix: */
 template<> QString toString(const SizeSuffix &sizeSuffix)
@@ -444,9 +444,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuApplicationAc
     QString strResult;
     switch (menuApplicationActionType)
     {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         case UIExtraDataMetaDefs::MenuApplicationActionType_About:                strResult = "About"; break;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         case UIExtraDataMetaDefs::MenuApplicationActionType_Preferences:          strResult = "Preferences"; break;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         case UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager: strResult = "NetworkAccessManager"; break;
@@ -470,9 +470,9 @@ template<> UIExtraDataMetaDefs::MenuApplicationActionType fromInternalString<UIE
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;               QList<UIExtraDataMetaDefs::MenuApplicationActionType> values;
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     keys << "About";                values << UIExtraDataMetaDefs::MenuApplicationActionType_About;
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     keys << "Preferences";          values << UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     keys << "NetworkAccessManager"; values << UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager;
@@ -496,9 +496,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionTyp
     {
         case UIExtraDataMetaDefs::MenuHelpActionType_Contents:             strResult = "Contents"; break;
         case UIExtraDataMetaDefs::MenuHelpActionType_WebSite:              strResult = "WebSite"; break;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         case UIExtraDataMetaDefs::MenuHelpActionType_About:                strResult = "About"; break;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         case UIExtraDataMetaDefs::MenuHelpActionType_All:                  strResult = "All"; break;
         default:
         {
@@ -517,9 +517,9 @@ template<> UIExtraDataMetaDefs::MenuHelpActionType fromInternalString<UIExtraDat
     QStringList keys;               QList<UIExtraDataMetaDefs::MenuHelpActionType> values;
     keys << "Contents";             values << UIExtraDataMetaDefs::MenuHelpActionType_Contents;
     keys << "WebSite";              values << UIExtraDataMetaDefs::MenuHelpActionType_WebSite;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     keys << "About";                values << UIExtraDataMetaDefs::MenuHelpActionType_About;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     keys << "All";                  values << UIExtraDataMetaDefs::MenuHelpActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strMenuHelpActionType, Qt::CaseInsensitive))
@@ -585,9 +585,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen:           strResult = "Fullscreen"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless:             strResult = "Seamless"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale:                strResult = "Scale"; break;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow:       strResult = "MinimizeWindow"; break;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow:         strResult = "AdjustWindow"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize:      strResult = "GuestAutoresize"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot:       strResult = "TakeScreenshot"; break;
@@ -597,9 +597,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer:           strResult = "VRDEServer"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar:              strResult = "MenuBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings:      strResult = "MenuBarSettings"; break;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar:        strResult = "ToggleMenuBar"; break;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar:            strResult = "StatusBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings:    strResult = "StatusBarSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar:      strResult = "ToggleStatusBar"; break;
@@ -625,9 +625,9 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
     keys << "Fullscreen";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen;
     keys << "Seamless";             values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless;
     keys << "Scale";                values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     keys << "MinimizeWindow";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     keys << "AdjustWindow";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
     keys << "GuestAutoresize";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
     keys << "TakeScreenshot";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot;
@@ -637,9 +637,9 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
     keys << "VRDEServer";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer;
     keys << "MenuBar";              values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
     keys << "MenuBarSettings";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     keys << "ToggleMenuBar";        values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     keys << "StatusBar";            values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
     keys << "StatusBarSettings";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
     keys << "ToggleStatusBar";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;
@@ -663,9 +663,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuInputA
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard:          strResult = "Keyboard"; break;
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings:  strResult = "KeyboardSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD:           strResult = "TypeCAD"; break;
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS:          strResult = "TypeCABS"; break;
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak:     strResult = "TypeCtrlBreak"; break;
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert:        strResult = "TypeInsert"; break;
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse:             strResult = "Mouse"; break;
@@ -689,9 +689,9 @@ template<> UIExtraDataMetaDefs::RuntimeMenuInputActionType fromInternalString<UI
     keys << "Keyboard";          values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard;
     keys << "KeyboardSettings";  values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings;
     keys << "TypeCAD";           values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD;
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     keys << "TypeCABS";          values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
     keys << "TypeCtrlBreak";     values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak;
     keys << "TypeInsert";        values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert;
     keys << "Mouse";             values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse;
@@ -804,7 +804,7 @@ template<> UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType fromInternalString
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 /* QString <= UIExtraDataMetaDefs::MenuWindowActionType: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::MenuWindowActionType &menuWindowActionType)
 {
@@ -838,7 +838,7 @@ template<> UIExtraDataMetaDefs::MenuWindowActionType fromInternalString<UIExtraD
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMenuWindowActionType, Qt::CaseInsensitive)));
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 /* QString <= UIVisualStateType: */
 template<> QString toInternalString(const UIVisualStateType &visualStateType)
@@ -1543,7 +1543,7 @@ template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const
     return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 /* QString <= MiniToolbarAlignment: */
 template<> QString toInternalString(const MiniToolbarAlignment &miniToolbarAlignment)
 {
@@ -1572,7 +1572,7 @@ template<> MiniToolbarAlignment fromInternalString<MiniToolbarAlignment>(const Q
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMiniToolbarAlignment, Qt::CaseInsensitive)));
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 /* QString <= InformationElementType: */
 template<> QString toString(const InformationElementType &informationElementType)

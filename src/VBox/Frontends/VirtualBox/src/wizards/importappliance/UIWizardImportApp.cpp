@@ -144,13 +144,13 @@ UIWizardImportApp::UIWizardImportApp(QWidget *pParent, const QString &strFileNam
     : UIWizard(pParent, WizardType_ImportAppliance)
     , m_strFileName(strFileName)
 {
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_ovf_import.png");
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     /* Assign background image: */
     assignBackground(":/vmw_ovf_import_bg.png");
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 bool UIWizardImportApp::isValid() const

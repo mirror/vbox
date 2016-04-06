@@ -48,9 +48,9 @@
 # include "CStorageController.h"
 # include "CMediumAttachment.h"
 
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "UIWindowMenuManager.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -1086,12 +1086,12 @@ void UIMediumManager::prepareMenuBar()
         m_pMenu->addAction(m_pActionRefresh);
     }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
     AssertPtrReturnVoid(gpWindowMenuManager);
     menuBar()->addMenu(gpWindowMenuManager->createMenu(this));
     gpWindowMenuManager->addWindow(this);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 void UIMediumManager::prepareContextMenu()
@@ -1153,20 +1153,20 @@ void UIMediumManager::prepareToolBar()
             m_pToolBar->addAction(m_pActionRefresh);
         /* Integrate tool-bar into dialog: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /* Enable unified tool-bars on Mac OS X. Available on Qt >= 4.3: */
         addToolBar(m_pToolBar);
         m_pToolBar->enableMacToolbar();
         /* No spacing/margin on the Mac: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
         pMainLayout->insertSpacing(0, 10);
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
         /* Add the tool-bar: */
         pMainLayout->insertWidget(0, m_pToolBar);
         /* Set spacing/margin like in the selector window: */
         pMainLayout->setSpacing(5);
         pMainLayout->setContentsMargins(5, 5, 5, 5);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     }
 }
 
@@ -1394,11 +1394,11 @@ void UIMediumManager::refetchCurrentMediumItem(UIMediumType type)
     /* Get corresponding medium-item: */
     UIMediumItem *pMediumItem = mediumItem(type);
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Set the file for the proxy icon: */
     if (pMediumItem == currentMediumItem())
         setWindowFilePath(pMediumItem ? pMediumItem->location() : QString());
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Make sure current medium-item visible: */
     if (pMediumItem)
@@ -1714,12 +1714,12 @@ void UIMediumManager::updateInformationFieldsFD()
 
 void UIMediumManager::cleanupMenuBar()
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Cleanup 'Window' menu: */
     AssertPtrReturnVoid(gpWindowMenuManager);
     gpWindowMenuManager->removeWindow(this);
     gpWindowMenuManager->destroyMenu(this);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 void UIMediumManager::cleanup()
@@ -1774,14 +1774,14 @@ void UIMediumManager::retranslateUi()
     }
 
     /* Translate tool-bar: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
        the necessary size of the toolbar is increased. Also for some languages
        the with doesn't match if the text increase. So manually adjust the size
        after changing the text. */
     if (m_pToolBar)
         m_pToolBar->updateLayout();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Translate tab-widget: */
     if (m_pTabWidget)
@@ -1852,14 +1852,14 @@ void UIMediumManager::retranslateUi()
     if (m_pProgressBar)
     {
         m_pProgressBar->setText(QApplication::translate("VBoxMediaManagerDlg", "Checking accessibility"));
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         /* Make sure that the widgets aren't jumping around
          * while the progress-bar get visible. */
         m_pProgressBar->adjustSize();
         int h = m_pProgressBar->height();
         if (m_pButtonBox)
             m_pButtonBox->setMinimumHeight(h + 12);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     }
 
     /* Full refresh if there is at least one item present: */

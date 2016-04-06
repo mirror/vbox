@@ -64,18 +64,18 @@
 # include "UIVMItem.h"
 # include "UIExtraDataManager.h"
 # include "VBoxGlobal.h"
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "VBoxUtils.h"
 #  include "UIWindowMenuManager.h"
 #  include "UIImageTools.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 /* Other VBox stuff: */
 # include <iprt/buildconfig.h>
 # include <VBox/version.h>
-# ifdef Q_WS_X11
+# ifdef VBOX_WS_X11
 #  include <iprt/env.h>
-# endif /* Q_WS_X11 */
+# endif /* VBOX_WS_X11 */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -114,9 +114,9 @@ UISelectorWindow::UISelectorWindow()
     , m_fWarningAboutInaccessibleMediaShown(false)
     , m_pActionPool(0)
     , m_pSplitter(0)
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     , m_pBar(0)
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     , m_pToolBar(0)
     , m_pContainerDetails(0)
     , m_pPaneChooser(0)
@@ -139,11 +139,11 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
     QList<QAction*> actions;
     QAction *pShowToolBar = new QAction(tr("Show Toolbar"), 0);
     pShowToolBar->setCheckable(true);
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     pShowToolBar->setChecked(m_pToolBar->isVisible());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     pShowToolBar->setChecked(m_pBar->isVisible());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     actions << pShowToolBar;
     QAction *pShowStatusBar = new QAction(tr("Show Statusbar"), 0);
     pShowStatusBar->setCheckable(true);
@@ -159,19 +159,19 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
     {
         if (pResult->isChecked())
         {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
             m_pToolBar->show();
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
             m_pBar->show();
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         }
         else
         {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
             m_pToolBar->hide();
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
             m_pBar->hide();
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         }
     }
     else if (pResult == pShowStatusBar)
@@ -323,11 +323,11 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
     /* Check if we are can handle the dropped urls. */
     for (int i = 0; i < list.size(); ++i)
     {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         QString strFile = ::darwinResolveAlias(list.at(i).toLocalFile());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         QString strFile = list.at(i).toLocalFile();
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         if (!strFile.isEmpty() && QFile::exists(strFile))
         {
             if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
@@ -400,11 +400,11 @@ void UISelectorWindow::sltOpenMediaManagerWindow()
 void UISelectorWindow::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)
 {
     /* Show Import Appliance wizard: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     QString strTmpFile = ::darwinResolveAlias(strFileName);
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     QString strTmpFile = strFileName;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     UISafePointerWizardImportApp pWizard = new UIWizardImportApp(this, strTmpFile);
     pWizard->prepare();
     if (strFileName.isEmpty() || pWizard->isValid())
@@ -466,11 +466,11 @@ void UISelectorWindow::sltPerformExit()
 void UISelectorWindow::sltOpenAddMachineDialog(const QString &strFileName /* = QString() */)
 {
     /* Initialize variables: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     QString strTmpFile = ::darwinResolveAlias(strFileName);
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     QString strTmpFile = strFileName;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     if (strTmpFile.isEmpty())
     {
@@ -1024,10 +1024,10 @@ void UISelectorWindow::retranslateUi()
     /* Ensure the details and screenshot view are updated: */
     sltHandleChooserPaneIndexChange();
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
     m_pToolBar->updateLayout();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 bool UISelectorWindow::event(QEvent *pEvent)
@@ -1049,12 +1049,12 @@ bool UISelectorWindow::event(QEvent *pEvent)
         {
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
             {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
                 QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
                 m_geometry.moveTo(pMoveEvent->pos());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
                 m_geometry.moveTo(geometry().x(), geometry().y());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
             }
             break;
         }
@@ -1064,7 +1064,7 @@ bool UISelectorWindow::event(QEvent *pEvent)
             statusBar()->clearMessage();
             break;
         }
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         case QEvent::ContextMenu:
         {
             /* This is the unified context menu event. Lets show the context menu. */
@@ -1075,7 +1075,7 @@ bool UISelectorWindow::event(QEvent *pEvent)
             return false;
             break;
         }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         default:
             break;
     }
@@ -1105,7 +1105,7 @@ void UISelectorWindow::polishEvent(QShowEvent*)
     QTimer::singleShot(0, this, SLOT(sltHandleMediumEnumerationFinish()));
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Ignore for non-active window: */
@@ -1133,14 +1133,14 @@ bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
     /* Call to base-class: */
     return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 void UISelectorWindow::prepare()
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* We have to make sure that we are getting the front most process: */
     ::darwinSetFrontMostProcess();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Cache medium data early if necessary: */
     if (vboxGlobal().agressiveCaching())
@@ -1159,7 +1159,7 @@ void UISelectorWindow::prepare()
     /* Translate UI: */
     retranslateUi();
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Enable unified toolbar: */
     m_pToolBar->enableMacToolbar();
 
@@ -1172,7 +1172,7 @@ void UISelectorWindow::prepare()
 
     /* General event filter: */
     qApp->installEventFilter(this);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 void UISelectorWindow::prepareIcon()
@@ -1181,12 +1181,12 @@ void UISelectorWindow::prepareIcon()
      * On Win host it's built-in to the executable.
      * On Mac OS X the icon referenced in info.plist is used.
      * On X11 we will provide as much icons as we can. */
-#if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
+#if !(defined (VBOX_WS_WIN) || defined (VBOX_WS_MAC))
     QIcon icon(":/VirtualBox.svg");
     icon.addFile(":/VirtualBox_48px.png");
     icon.addFile(":/VirtualBox_64px.png");
     setWindowIcon(icon);
-#endif /* !Q_WS_WIN && !Q_WS_MAC */
+#endif /* !VBOX_WS_WIN && !VBOX_WS_MAC */
 }
 
 void UISelectorWindow::prepareMenuBar()
@@ -1218,12 +1218,12 @@ void UISelectorWindow::prepareMenuBar()
     prepareMenuMachine(actionPool()->action(UIActionIndexST_M_Machine)->menu());
     m_pMachineMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Machine)->menu());
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
     UIWindowMenuManager::create();
     menuBar()->addMenu(gpWindowMenuManager->createMenu(this));
     gpWindowMenuManager->addWindow(this);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Prepare Help-menu: */
     menuBar()->addMenu(actionPool()->action(UIActionIndex_Menu_Help)->menu());
@@ -1240,7 +1240,7 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 
     /* The Application / 'File' menu contents is very different depending on host type. */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* 'About' action goes to Application menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -1267,7 +1267,7 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     /* 'Show Media Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
 
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
 
     /* 'Preferences' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
@@ -1297,7 +1297,7 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     pMenu->addSeparator();
     /* 'Close' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_Close));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
 void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
@@ -1474,9 +1474,9 @@ void UISelectorWindow::prepareWidgets()
 {
     /* Prepare splitter: */
     m_pSplitter = new QISplitter(this);
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
     m_pSplitter->setHandleType(QISplitter::Native);
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
     /* Prepare tool-bar: */
     m_pToolBar = new UIToolBar(this);
@@ -1510,12 +1510,12 @@ void UISelectorWindow::prepareWidgets()
     m_pContainerDetails->addWidget(m_pPaneDesktop);
 
     /* Layout all the widgets: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     addToolBar(m_pToolBar);
     /* Central widget @ horizontal layout: */
     setCentralWidget(m_pSplitter);
     m_pSplitter->addWidget(m_pPaneChooser);
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
     QWidget *pCentralWidget = new QWidget(this);
     setCentralWidget(pCentralWidget);
     QVBoxLayout *pCentralLayout = new QVBoxLayout(pCentralWidget);
@@ -1526,7 +1526,7 @@ void UISelectorWindow::prepareWidgets()
     pCentralLayout->addWidget(m_pBar);
     pCentralLayout->addWidget(m_pSplitter);
     m_pSplitter->addWidget(m_pPaneChooser);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     m_pSplitter->addWidget(m_pContainerDetails);
 
     /* Set the initial distribution. The right site is bigger. */
@@ -1611,12 +1611,12 @@ void UISelectorWindow::prepareConnections()
     connect(m_pPaneChooser, SIGNAL(sigGroupSavingStateChanged()), this, SLOT(sltHandleGroupSavingProgressChange()));
 
     /* Tool-bar connections: */
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     connect(m_pToolBar, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorWindowContextMenu(const QPoint&)));
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     /* We want to receive right click notifications on the title bar, so register our own handler: */
     ::darwinRegisterForUnifiedToolbarContextMenuEvents(this);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* VM desktop connections: */
     connect(m_pPaneDesktop, SIGNAL(sigCurrentChanged(int)), this, SLOT(sltHandleDetailsContainerIndexChange(int)));
@@ -1638,12 +1638,12 @@ void UISelectorWindow::loadSettings()
     {
         /* Load geometry: */
         m_geometry = gEDataManager->selectorWindowGeometry(this);
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         move(m_geometry.topLeft());
         resize(m_geometry.size());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         setGeometry(m_geometry);
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         LogRel2(("GUI: UISelectorWindow: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
                  m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
@@ -1669,11 +1669,11 @@ void UISelectorWindow::loadSettings()
 
     /* Restore toolbar and statusbar visibility: */
     {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         m_pToolBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         m_pBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         statusBar()->setHidden(!gEDataManager->selectorWindowStatusBarVisible());
     }
 }
@@ -1682,11 +1682,11 @@ void UISelectorWindow::saveSettings()
 {
     /* Save toolbar and statusbar visibility: */
     {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         gEDataManager->setSelectorWindowToolBarVisible(!m_pToolBar->isHidden());
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         gEDataManager->setSelectorWindowToolBarVisible(!m_pBar->isHidden());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         gEDataManager->setSelectorWindowStatusBarVisible(!statusBar()->isHidden());
     }
 
@@ -1697,11 +1697,11 @@ void UISelectorWindow::saveSettings()
 
     /* Save window geometry: */
     {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         gEDataManager->setSelectorWindowGeometry(m_geometry, ::darwinIsWindowMaximized(this));
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
         gEDataManager->setSelectorWindowGeometry(m_geometry, isMaximized());
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         LogRel2(("GUI: UISelectorWindow: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
                  m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
     }
@@ -1709,18 +1709,18 @@ void UISelectorWindow::saveSettings()
 
 void UISelectorWindow::cleanupConnections()
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Tool-bar connections: */
     ::darwinUnregisterForUnifiedToolbarContextMenuEvents(this);
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 void UISelectorWindow::cleanupMenuBar()
 {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Cleanup 'Window' menu: */
     UIWindowMenuManager::destroy();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
     /* Destroy action-pool: */
     UIActionPool::destroy(m_pActionPool);
@@ -1832,10 +1832,10 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
     m_pToolBar->updateLayout();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 }
 
 bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items)
@@ -2012,10 +2012,10 @@ bool UISelectorWindow::isAtLeastOneItemSupportsShortcuts(const QList<UIVMItem*> 
 {
     foreach (UIVMItem *pItem, items)
         if (pItem->accessible()
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
             /* On Mac OS X this are real alias files, which don't work with the old legacy xml files. */
             && pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive)
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
             )
             return true;
     return false;

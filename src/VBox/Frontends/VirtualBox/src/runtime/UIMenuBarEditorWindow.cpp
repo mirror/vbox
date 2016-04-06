@@ -26,9 +26,9 @@
 # include <QMenuBar>
 # include <QPainter>
 # include <QMenu>
-# ifndef Q_WS_MAC
+# ifndef VBOX_WS_MAC
 #  include <QCheckBox>
-# endif /* !Q_WS_MAC */
+# endif /* !VBOX_WS_MAC */
 
 /* GUI includes: */
 # include "UIMenuBarEditorWindow.h"
@@ -56,9 +56,9 @@ UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_pButtonClose(0)
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     , m_pCheckBoxEnable(0)
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 {
     /* Prepare: */
     prepare();
@@ -80,7 +80,7 @@ void UIMenuBarEditorWidget::setActionPool(UIActionPool *pActionPool)
     prepare();
 }
 
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
 bool UIMenuBarEditorWidget::isMenuBarEnabled() const
 {
     /* For VM settings only: */
@@ -100,7 +100,7 @@ void UIMenuBarEditorWidget::setMenuBarEnabled(bool fEnabled)
     AssertPtrReturnVoid(m_pCheckBoxEnable);
     m_pCheckBoxEnable->setChecked(fEnabled);
 }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
 void UIMenuBarEditorWidget::setRestrictionsOfMenuBar(UIExtraDataMetaDefs::MenuType restrictions)
 {
@@ -307,7 +307,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuDebug(UIExtraDataMetaDefs::Runt
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 void UIMenuBarEditorWidget::setRestrictionsOfMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType restrictions)
 {
     /* Cache passed restrictions: */
@@ -336,7 +336,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuWindow(UIExtraDataMetaDefs::Men
         m_actions.value(strKey)->setChecked(!(m_restrictionsOfMenuWindow & enumValue));
     }
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 void UIMenuBarEditorWidget::setRestrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType restrictions)
 {
@@ -383,9 +383,9 @@ void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QString &strMachi
 #ifdef VBOX_WITH_DEBUGGER_GUI
     setRestrictionsOfMenuDebug(gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID()));
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     setRestrictionsOfMenuWindow(gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID()));
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     setRestrictionsOfMenuHelp(gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID()));
 }
 
@@ -533,7 +533,7 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             break;
         }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         case UIExtraDataMetaDefs::MenuType_Window:
         {
             /* Get sender type: */
@@ -553,7 +553,7 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             }
             break;
         }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         case UIExtraDataMetaDefs::MenuType_Help:
         {
             /* Get sender type: */
@@ -601,11 +601,11 @@ void UIMenuBarEditorWidget::prepare()
         /* Top margin should be smaller for the common case: */
         if (iTop >= 5)
             iTop -= 5;
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* Right margin should be bigger for the settings case: */
         if (m_fStartedFromVMSettings)
             iRight += 5;
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
         /* Apply margins/spacing finally: */
         m_pMainLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
         m_pMainLayout->setSpacing(0);
@@ -635,7 +635,7 @@ void UIMenuBarEditorWidget::prepare()
                 m_pMainLayout->addWidget(m_pButtonClose);
             }
         }
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         /* Create enable-checkbox if necessary: */
         else
         {
@@ -648,7 +648,7 @@ void UIMenuBarEditorWidget::prepare()
                 m_pMainLayout->addWidget(m_pCheckBoxEnable);
             }
         }
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     }
 
     /* Mark as prepared: */
@@ -669,9 +669,9 @@ void UIMenuBarEditorWidget::prepareMenus()
 #ifdef VBOX_WITH_DEBUGGER_GUI
     prepareMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     prepareMenuWindow();
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
     prepareMenuHelp();
 
     if (!m_fStartedFromVMSettings)
@@ -686,9 +686,9 @@ void UIMenuBarEditorWidget::prepareMenus()
 #ifdef VBOX_WITH_DEBUGGER_GUI
         setRestrictionsOfMenuDebug(gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID()));
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         setRestrictionsOfMenuWindow(gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID()));
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
         setRestrictionsOfMenuHelp(gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID()));
         /* And listen for the menu-bar configuration changes after that: */
         connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
@@ -696,7 +696,7 @@ void UIMenuBarEditorWidget::prepareMenus()
     }
 }
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 QMenu* UIMenuBarEditorWidget::prepareNamedMenu(const QString &strName)
 {
     /* Create named menu: */
@@ -733,7 +733,7 @@ QMenu* UIMenuBarEditorWidget::prepareNamedMenu(const QString &strName)
     /* Return named menu: */
     return pNamedMenu;
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 QMenu* UIMenuBarEditorWidget::prepareCopiedMenu(const UIAction *pAction)
 {
@@ -842,14 +842,14 @@ QAction* UIMenuBarEditorWidget::prepareCopiedAction(QMenu *pMenu, const UIAction
 void UIMenuBarEditorWidget::prepareMenuApplication()
 {
     /* Copy menu: */
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
     QMenu *pMenu = prepareNamedMenu("Application");
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
     QMenu *pMenu = prepareCopiedMenu(actionPool()->action(UIActionIndex_M_Application));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     AssertPtrReturnVoid(pMenu);
     {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_About));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
@@ -857,14 +857,14 @@ void UIMenuBarEditorWidget::prepareMenuApplication()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_Preferences));
-#else /* !Q_WS_MAC */
+#else /* !VBOX_WS_MAC */
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_Preferences));
         pMenu->addSeparator();
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     }
 }
 
@@ -965,7 +965,7 @@ void UIMenuBarEditorWidget::prepareMenuDebug()
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef Q_WS_MAC
+#ifdef VBOX_WS_MAC
 void UIMenuBarEditorWidget::prepareMenuWindow()
 {
     /* Copy menu: */
@@ -979,7 +979,7 @@ void UIMenuBarEditorWidget::prepareMenuWindow()
                            gpConverter->toInternalString(UIExtraDataMetaDefs::MenuWindowActionType_Switch));
     }
 }
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 
 void UIMenuBarEditorWidget::prepareMenuHelp()
 {
@@ -990,9 +990,9 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_Contents));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_WebSite));
         pMenu->addSeparator();
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_About));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
     }
 }
 
@@ -1001,11 +1001,11 @@ void UIMenuBarEditorWidget::retranslateUi()
     /* Translate close-button if necessary: */
     if (!m_fStartedFromVMSettings && m_pButtonClose)
         m_pButtonClose->setToolTip(tr("Close"));
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     /* Translate enable-checkbox if necessary: */
     if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
         m_pCheckBoxEnable->setToolTip(tr("Enable Menu Bar"));
-#endif /* !Q_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 }
 
 void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
@@ -1019,9 +1019,9 @@ void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
     QColor color1 = pal.color(QPalette::Window).lighter(110);
     color1.setAlpha(0);
     QColor color2 = pal.color(QPalette::Window).darker(200);
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     QColor color3 = pal.color(QPalette::Window).darker(120);
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
     /* Left corner: */
     QRadialGradient grad1(QPointF(5, height() - 5), 5);
@@ -1062,7 +1062,7 @@ void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
     painter.fillRect(QRect(0,           0, 5, height() - 5), grad4); // left line
     painter.fillRect(QRect(width() - 5, 0, 5, height() - 5), grad5); // right line
 
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     /* Paint frames: */
     painter.save();
     painter.setPen(color3);
@@ -1072,16 +1072,16 @@ void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
     if (m_fStartedFromVMSettings)
         painter.drawLine(QLine(QPoint(width() - 1 - 5 - 1, 0), QPoint(5 + 1, 0)));
     painter.restore();
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 }
 
 
 UIMenuBarEditorWindow::UIMenuBarEditorWindow(UIMachineWindow *pParent, UIActionPool *pActionPool)
-#ifndef Q_WS_MAC
+#ifndef VBOX_WS_MAC
     : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
-#else /* Q_WS_MAC */
+#else /* VBOX_WS_MAC */
     : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
-#endif /* Q_WS_MAC */
+#endif /* VBOX_WS_MAC */
 {
 }
 

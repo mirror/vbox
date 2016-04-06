@@ -25,9 +25,9 @@
 # include <QStyleOption>
 # include <QStylePainter>
 # include <QTimer>
-# ifdef Q_WS_X11
+# ifdef VBOX_WS_X11
 #  include <QX11Info>
-# endif /* Q_WS_X11 */
+# endif /* VBOX_WS_X11 */
 
 /* GUI includes: */
 # include "UIHostComboEditor.h"
@@ -35,33 +35,33 @@
 # include "UIIconPool.h"
 # include "VBoxGlobal.h"
 # include "QIToolButton.h"
-# ifdef Q_WS_MAC
+# ifdef VBOX_WS_MAC
 #  include "UICocoaApplication.h"
 #  include "VBoxUtils-darwin.h"
-# endif /* Q_WS_MAC */
+# endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
 # if QT_VERSION >= 0x050000
 #  include <QAbstractNativeEventFilter>
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_MAC || Q_WS_WIN */
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
 /* GUI includes: */
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 # include "DarwinKeyboard.h"
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 # include "WinKeyboard.h"
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
 # include "XKeyboard.h"
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 /* External includes: */
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 # include <Carbon/Carbon.h>
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
 # include <X11/keysym.h>
@@ -75,13 +75,13 @@ const int XKeyRelease = KeyRelease;
 #   undef KeyRelease
 #  endif /* KeyPress */
 # endif /* QT_VERSION < 0x050000 */
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
 
 
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
 # if QT_VERSION >= 0x050000
 /** QAbstractNativeEventFilter extension
   * allowing to handle native platform events.
@@ -114,25 +114,25 @@ private:
     UIHostComboEditorPrivate *m_pParent;
 };
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_MAC || Q_WS_WIN */
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
 
 /*********************************************************************************************************************************
 *   Namespace UINativeHotKey implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-#ifdef Q_WS_X11
+#ifdef VBOX_WS_X11
 namespace UINativeHotKey
 {
     QMap<QString, QString> m_keyNames;
 }
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 QString UINativeHotKey::toString(int iKeyCode)
 {
     QString strKeyName;
 
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
     UInt32 modMask = DarwinKeyCodeToDarwinModifierMask(iKeyCode);
     switch (modMask)
@@ -172,7 +172,7 @@ QString UINativeHotKey::toString(int iKeyCode)
             break;
     }
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
     /* MapVirtualKey doesn't distinguish between right and left vkeys,
      * even under XP, despite that it stated in MSDN. Do it by hands.
@@ -205,7 +205,7 @@ QString UINativeHotKey::toString(int iKeyCode)
     }
     delete[] pKeyName;
 
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
 
     if (char *pNativeKeyName = ::XKeysymToString((KeySym)iKeyCode))
     {
@@ -229,7 +229,7 @@ QString UINativeHotKey::toString(int iKeyCode)
 
 bool UINativeHotKey::isValidKey(int iKeyCode)
 {
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 
     UInt32 modMask = ::DarwinKeyCodeToDarwinModifierMask(iKeyCode);
     switch (modMask)
@@ -247,7 +247,7 @@ bool UINativeHotKey::isValidKey(int iKeyCode)
             return false;
     }
 
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
 
     return ((iKeyCode >= VK_SHIFT && iKeyCode <= VK_CAPITAL) ||
             (iKeyCode >= VK_LSHIFT && iKeyCode <= VK_RMENU) ||
@@ -257,7 +257,7 @@ bool UINativeHotKey::isValidKey(int iKeyCode)
             iKeyCode == VK_APPS ||
             iKeyCode == VK_PRINT);
 
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
 
     return (IsModifierKey(iKeyCode) /* allow modifiers */ ||
             IsFunctionKey(iKeyCode) /* allow function keys */ ||
@@ -275,7 +275,7 @@ bool UINativeHotKey::isValidKey(int iKeyCode)
     return false;
 }
 
-#if defined(Q_WS_WIN)
+#if defined(VBOX_WS_WIN)
 
 int UINativeHotKey::distinguishModifierVKey(int wParam, int lParam)
 {
@@ -316,7 +316,7 @@ int UINativeHotKey::distinguishModifierVKey(int wParam, int lParam)
     return iKeyCode;
 }
 
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
 
 void UINativeHotKey::retranslateKeyNames()
 {
@@ -334,7 +334,7 @@ void UINativeHotKey::retranslateKeyNames()
     m_keyNames["Scroll_Lock"]      = UIHostComboEditor::tr("Scroll Lock");
 }
 
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 
 
 /*********************************************************************************************************************************
@@ -469,14 +469,14 @@ UIHostComboWrapper UIHostComboEditor::combo() const
 UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     : m_pReleaseTimer(0)
     , m_fStartNewSequence(true)
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
 # if QT_VERSION >= 0x050000
     , m_pPrivateEventFilter(0)
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_MAC || Q_WS_WIN */
-#ifdef Q_WS_WIN
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
+#ifdef VBOX_WS_WIN
     , m_pAltGrMonitor(0)
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 {
     /* Configure widget: */
     setAttribute(Qt::WA_NativeWindow);
@@ -489,50 +489,50 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     m_pReleaseTimer->setInterval(200);
     connect(m_pReleaseTimer, SIGNAL(timeout()), this, SLOT(sltReleasePendingKeys()));
 
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
 # if QT_VERSION >= 0x050000
     /* Prepare private event filter: */
     m_pPrivateEventFilter = new ComboEditorEventFilter(this);
     qApp->installNativeEventFilter(m_pPrivateEventFilter);
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_MAC || Q_WS_WIN */
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
     m_uDarwinKeyModifiers = 0;
 # if QT_VERSION < 0x050000
     UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
     ::DarwinGrabKeyboard(false /* just modifiers */);
 # endif /* QT_VERSION < 0x050000 */
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
     /* Prepare AltGR monitor: */
     m_pAltGrMonitor = new WinAltGrMonitor;
-#elif defined(Q_WS_X11)
+#elif defined(VBOX_WS_X11)
     /* Initialize the X keyboard subsystem: */
     initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
-#endif /* Q_WS_X11 */
+#endif /* VBOX_WS_X11 */
 }
 
 UIHostComboEditorPrivate::~UIHostComboEditorPrivate()
 {
-#if defined(Q_WS_MAC)
+#if defined(VBOX_WS_MAC)
 # if QT_VERSION < 0x050000
     ::DarwinReleaseKeyboard();
     UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
 # endif /* QT_VERSION < 0x050000 */
-#elif defined(Q_WS_WIN)
+#elif defined(VBOX_WS_WIN)
     /* Cleanup AltGR monitor: */
     delete m_pAltGrMonitor;
     m_pAltGrMonitor = 0;
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WS_WIN */
 
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
 # if QT_VERSION >= 0x050000
     /* Cleanup private event filter: */
     qApp->removeNativeEventFilter(m_pPrivateEventFilter);
     delete m_pPrivateEventFilter;
     m_pPrivateEventFilter = 0;
 # endif /* QT_VERSION >= 0x050000 */
-#endif /* Q_WS_MAC || Q_WS_WIN */
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 }
 
 void UIHostComboEditorPrivate::setCombo(const UIHostComboWrapper &strCombo)
@@ -580,7 +580,7 @@ void UIHostComboEditorPrivate::sltClear()
 
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
 {
-# if defined(Q_WS_MAC)
+# if defined(VBOX_WS_MAC)
 
     /* Make sure it's generic NSEvent: */
     if (eventType != "mac_generic_NSEvent")
@@ -636,7 +636,7 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
             break;
     }
 
-# elif defined(Q_WS_WIN)
+# elif defined(VBOX_WS_WIN)
 
     /* Make sure it's generic MSG event: */
     if (eventType != "windows_generic_MSG")
@@ -684,7 +684,7 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
             break;
     }
 
-# elif defined(Q_WS_X11)
+# elif defined(VBOX_WS_X11)
 //#  pragma GCC diagnostic push
 //#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -727,7 +727,7 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
 
 #else /* QT_VERSION < 0x050000 */
 
-# if defined(Q_WS_MAC)
+# if defined(VBOX_WS_MAC)
 
 /* static */
 bool UIHostComboEditorPrivate::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
@@ -785,7 +785,7 @@ bool UIHostComboEditorPrivate::darwinKeyboardEvent(const void *pvCocoaEvent, Eve
     return false;
 }
 
-# elif defined(Q_WS_WIN)
+# elif defined(VBOX_WS_WIN)
 
 bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
 {
@@ -829,7 +829,7 @@ bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
     return false;
 }
 
-# elif defined(Q_WS_X11)
+# elif defined(VBOX_WS_X11)
 #  if RT_GNUC_PREREQ(4, 6)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -861,7 +861,7 @@ bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
 #  if RT_GNUC_PREREQ(4, 6)
 #   pragma GCC diagnostic pop
 #  endif
-# endif /* Q_WS_X11 */
+# endif /* VBOX_WS_X11 */
 
 #endif /* QT_VERSION < 0x050000 */
 
