@@ -615,7 +615,7 @@ static int ichac97OpenIn(PAC97STATE pThis,
         case PDMAUDIORECSOURCE_MIC:
             pSink = pThis->pSinkMicIn;
             break;
-        case PDMAUDIORECSOURCE_LINE_IN:
+        case PDMAUDIORECSOURCE_LINE:
             pSink = pThis->pSinkLineIn;
             break;
         default:
@@ -641,16 +641,18 @@ static int ichac97OpenIn(PAC97STATE pThis,
         else
             pStrmIn = &pDrv->LineIn;
 
-        int rc2 = pDrv->pConnector->pfnCreateIn(pDrv->pConnector, pszDesc, enmRecSource, pCfg, &pStrmIn->pStrmIn);
-
-        LogFlowFunc(("LUN#%RU8: Created input \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
-        if (rc2 == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
+        int rc2 = pDrv->pConnector->pfnCreateIn(pDrv->pConnector, pszDesc, pCfg, &pStrmIn->pStrmIn);
+        LogFlowFunc(("LUN#%RU8: Created input \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc2));
+        if (RT_SUCCESS(rc2))
         {
             AudioMixerRemoveStream(pSink, pStrmIn->phStrmIn);
             rc2 = AudioMixerAddStreamIn(pSink,
                                         pDrv->pConnector, pStrmIn->pStrmIn,
                                         0 /* uFlags */, &pStrmIn->phStrmIn);
         }
+
+        if (RT_SUCCESS(rc))
+            rc = rc2;
 
         RTStrFree(pszDesc);
     }
@@ -678,15 +680,18 @@ static int ichac97OpenOut(PAC97STATE pThis, const char *pszName, PPDMAUDIOSTREAM
             break;
         }
 
-        rc = pDrv->pConnector->pfnCreateOut(pDrv->pConnector, pszDesc, pCfg, &pDrv->Out.pStrmOut);
-        LogFlowFunc(("LUN#%RU8: Created output \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
-        if (rc == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
+        int rc2 = pDrv->pConnector->pfnCreateOut(pDrv->pConnector, pszDesc, pCfg, &pDrv->Out.pStrmOut);
+        LogFlowFunc(("LUN#%RU8: Created output \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc2));
+        if (RT_SUCCESS(rc2))
         {
             AudioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
-            rc = AudioMixerAddStreamOut(pThis->pSinkOutput,
-                                        pDrv->pConnector, pDrv->Out.pStrmOut,
-                                        0 /* uFlags */, &pDrv->Out.phStrmOut);
+            rc2 = AudioMixerAddStreamOut(pThis->pSinkOutput,
+                                         pDrv->pConnector, pDrv->Out.pStrmOut,
+                                         0 /* uFlags */, &pDrv->Out.phStrmOut);
         }
+
+        if (RT_SUCCESS(rc))
+            rc = rc2;
 
         RTStrFree(pszDesc);
     }
@@ -711,7 +716,7 @@ static int ichac97StreamInitEx(PAC97STATE pThis, PAC97STREAM pStrmSt, uint8_t u8
     switch (pStrmSt->u8Strm)
     {
         case PI_INDEX:
-            rc = ichac97OpenIn(pThis, "ac97.pi", PDMAUDIORECSOURCE_LINE_IN, pCfg);
+            rc = ichac97OpenIn(pThis, "ac97.pi", PDMAUDIORECSOURCE_LINE, pCfg);
             break;
 
         case MC_INDEX:
@@ -819,7 +824,7 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL m
                 rc = AudioMixerSetMasterVolume(pThis->pMixer, &vol);
                 break;
 
-            case PDMAUDIOMIXERCTL_PCM:
+            case PDMAUDIOMIXERCTL_FRONT:
                 rc = AudioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
                 break;
 
@@ -874,7 +879,7 @@ static PDMAUDIORECSOURCE ichac97IndextoRecSource(uint8_t i)
         case REC_CD:      return PDMAUDIORECSOURCE_CD;
         case REC_VIDEO:   return PDMAUDIORECSOURCE_VIDEO;
         case REC_AUX:     return PDMAUDIORECSOURCE_AUX;
-        case REC_LINE_IN: return PDMAUDIORECSOURCE_LINE_IN;
+        case REC_LINE_IN: return PDMAUDIORECSOURCE_LINE;
         case REC_PHONE:   return PDMAUDIORECSOURCE_PHONE;
         default:
             break;
@@ -892,7 +897,7 @@ static uint8_t ichac97RecSourceToIndex(PDMAUDIORECSOURCE rs)
         case PDMAUDIORECSOURCE_CD:      return REC_CD;
         case PDMAUDIORECSOURCE_VIDEO:   return REC_VIDEO;
         case PDMAUDIORECSOURCE_AUX:     return REC_AUX;
-        case PDMAUDIORECSOURCE_LINE_IN: return REC_LINE_IN;
+        case PDMAUDIORECSOURCE_LINE: return REC_LINE_IN;
         case PDMAUDIORECSOURCE_PHONE:   return REC_PHONE;
         default:
             break;
@@ -968,7 +973,7 @@ static int ichac97MixerReset(PAC97STATE pThis)
     ichac97RecordSelect(pThis, 0);
 
     ichac97MixerSetVolume(pThis, AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME,  0x8000);
-    ichac97MixerSetVolume(pThis, AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_PCM,     0x8808);
+    ichac97MixerSetVolume(pThis, AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT,   0x8808);
     ichac97MixerSetVolume(pThis, AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN, 0x8808);
 
     return VINF_SUCCESS;
@@ -1805,7 +1810,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                             ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME, u32Val);
                     break;
                 case AC97_PCM_Out_Volume_Mute:
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_PCM, u32Val);
+                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_FRONT, u32Val);
                     break;
                 case AC97_Line_In_Volume_Mute:
                     ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
@@ -2044,7 +2049,7 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     ichac97RecordSelect(pThis, ichac97MixerGet(pThis, AC97_Record_Select));
 # define V_(a, b) ichac97MixerSetVolume(pThis, a, b, ichac97MixerGet(pThis, a))
     V_(AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME);
-    V_(AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_PCM);
+    V_(AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT);
     V_(AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN);
 # undef V_
     if (pThis->uCodecModel == Codec_AD1980)

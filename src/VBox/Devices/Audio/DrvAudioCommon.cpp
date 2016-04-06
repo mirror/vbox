@@ -70,7 +70,7 @@ const char *drvAudioRecSourceToString(PDMAUDIORECSOURCE enmRecSource)
         case PDMAUDIORECSOURCE_CD:      return "CD";
         case PDMAUDIORECSOURCE_VIDEO:   return "Video";
         case PDMAUDIORECSOURCE_AUX:     return "AUX";
-        case PDMAUDIORECSOURCE_LINE_IN: return "Line In";
+        case PDMAUDIORECSOURCE_LINE: return "Line In";
         case PDMAUDIORECSOURCE_PHONE:   return "Phone";
         default:
             break;

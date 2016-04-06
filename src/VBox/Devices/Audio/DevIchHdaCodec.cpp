@@ -35,6 +35,8 @@
 
 #include "VBoxDD.h"
 #include "DevIchHdaCodec.h"
+#include "DevIchHdaCommon.h"
+#include "AudioMixer.h"
 
 
 /*********************************************************************************************************************************
@@ -102,9 +104,17 @@
 #define CODEC_MAKE_F00_00(vendorID, deviceID)              (((vendorID) << 16) | (deviceID))
 #define CODEC_F00_00_VENDORID(f00_00)                      (((f00_00) >> 16) & 0xFFFF)
 #define CODEC_F00_00_DEVICEID(f00_00)                      ((f00_00) & 0xFFFF)
-/* RevisionID (7.3.4.2)*/
-#define CODEC_MAKE_F00_02(MajRev, MinRev, RevisionID, SteppingID) (((MajRev) << 20)|((MinRev) << 16)|((RevisionID) << 8)|(SteppingID))
-/* Subordinate node count (7.3.4.3)*/
+
+/** RevisionID (7.3.4.2). */
+#define CODEC_MAKE_F00_02(majRev, minRev, venFix, venProg, stepFix, stepProg) \
+    (  (((majRev)   & 0xF) << 20) \
+     | (((minRev)   & 0xF) << 16) \
+     | (((venFix)   & 0xF) << 12) \
+     | (((venProg)  & 0xF) << 8)  \
+     | (((stepFix)  & 0xF) << 4)  \
+     |  ((stepProg) & 0xF))
+
+/** Subordinate node count (7.3.4.3). */
 #define CODEC_MAKE_F00_04(startNodeNumber, totalNodeNumber) ((((startNodeNumber) & 0xFF) << 16)|((totalNodeNumber) & 0xFF))
 #define CODEC_F00_04_TO_START_NODE_NUMBER(f00_04)          (((f00_04) >> 16) & 0xFF)
 #define CODEC_F00_04_TO_NODE_COUNT(f00_04)                 ((f00_04) & 0xFF)
@@ -119,15 +129,19 @@
 #define CODEC_F00_05_MFG                                   (0x2)
 #define CODEC_F00_05_IS_UNSOL(f00_05)                      RT_BOOL((f00_05) & RT_BIT(8))
 #define CODEC_F00_05_GROUP(f00_05)                         ((f00_05) & 0xff)
-/*  Audio Function Group capabilities (7.3.4.5) */
+/* Audio Function Group capabilities (7.3.4.5). */
 #define CODEC_MAKE_F00_08(BeepGen, InputDelay, OutputDelay) ((((BeepGen) & 0x1) << 16)| (((InputDelay) & 0xF) << 8) | ((OutputDelay) & 0xF))
 #define CODEC_F00_08_BEEP_GEN(f00_08)                      ((f00_08) & RT_BIT(16)
 
-/* Widget Capabilities (7.3.4.6) */
-#define CODEC_MAKE_F00_09(type, delay, chanel_count) \
-    ( (((type) & 0xF) << 20)            \
-    | (((delay) & 0xF) << 16)           \
-    | (((chanel_count) & 0xF) << 13))
+/* Converter Stream, Channel (7.3.3.11). */
+#define CODEC_F00_06_GET_STREAM_ID(cmd)                    (((cmd) >> 4) & 0x0F)
+#define CODEC_F00_06_GET_CHANNEL_ID(cmd)                   (((cmd) & 0x0F))
+
+/* Widget Capabilities (7.3.4.6). */
+#define CODEC_MAKE_F00_09(type, delay, chan_ext) \
+    ( (((type)     & 0xF) << 20)            \
+    | (((delay)    & 0xF) << 16)           \
+    | (((chan_ext) & 0xF) << 13))
 /* note: types 0x8-0xe are reserved */
 #define CODEC_F00_09_TYPE_AUDIO_OUTPUT                     (0x0)
 #define CODEC_F00_09_TYPE_AUDIO_INPUT                      (0x1)
@@ -151,7 +165,7 @@
 #define CODEC_F00_09_CAP_AMP_FMT_OVERRIDE                  RT_BIT(3)
 #define CODEC_F00_09_CAP_OUT_AMP_PRESENT                   RT_BIT(2)
 #define CODEC_F00_09_CAP_IN_AMP_PRESENT                    RT_BIT(1)
-#define CODEC_F00_09_CAP_LSB                               RT_BIT(0)
+#define CODEC_F00_09_CAP_STEREO                            RT_BIT(0)
 
 #define CODEC_F00_09_TYPE(f00_09)                          (((f00_09) >> 20) & 0xF)
 
@@ -207,7 +221,7 @@
 #define CODEC_F00_0C_CAP_BALANCED_IO                       RT_BIT(6)
 #define CODEC_F00_0C_CAP_INPUT                             RT_BIT(5)
 #define CODEC_F00_0C_CAP_OUTPUT                            RT_BIT(4)
-#define CODEC_F00_0C_CAP_HP                                RT_BIT(3)
+#define CODEC_F00_0C_CAP_HEADPHONE_AMP                     RT_BIT(3)
 #define CODEC_F00_0C_CAP_PRESENSE_DETECT                   RT_BIT(2)
 #define CODEC_F00_0C_CAP_TRIGGER_REQUIRED                  RT_BIT(1)
 #define CODEC_F00_0C_CAP_IMPENDANCE_SENSE                  RT_BIT(0)
@@ -224,12 +238,12 @@
 #define CODEC_F00_0C_IS_CAP_TRIGGER_REQUIRED(f00_0c)       ((f00_0c) & RT_BIT(1))
 #define CODEC_F00_0C_IS_CAP_IMPENDANCE_SENSE(f00_0c)       ((f00_0c) & RT_BIT(0))
 
-/* Input Amplifier capabilities (7.3.4.10) */
+/* Input Amplifier capabilities (7.3.4.10). */
 #define CODEC_MAKE_F00_0D(mute_cap, step_size, num_steps, offset) \
-        (  (((mute_cap) & 0x1) << 31)                             \
+        (  (((mute_cap)  & 0x1)  << 31)                           \
          | (((step_size) & 0xFF) << 16)                           \
          | (((num_steps) & 0xFF) << 8)                            \
-         | ((offset) & 0xFF))
+         |  ((offset)    & 0xFF))
 
 #define CODEC_F00_0D_CAP_MUTE                              RT_BIT(7)
 
@@ -237,6 +251,24 @@
 #define CODEC_F00_0D_STEP_SIZE(f00_0d)                     ((( f00_0d) & (0x7F << 16)) >> 16)
 #define CODEC_F00_0D_NUM_STEPS(f00_0d)                     ((((f00_0d) & (0x7F << 8)) >> 8) + 1)
 #define CODEC_F00_0D_OFFSET(f00_0d)                        (  (f00_0d) & 0x7F)
+
+/** Indicates that the amplifier can be muted. */
+#define CODEC_AMP_CAP_MUTE                                 0x1
+/** The amplifier's maximum number of steps. We want
+ *  a ~90dB dynamic range, so 64 steps with 1.25dB each
+ *  should do the trick.
+ *
+ *  As we want to map our range to [0..128] values we can avoid
+ *  multiplication and simply doing a shift later.
+ *
+ *  Produces -96dB to +0dB.
+ *  "0" indicates a step of 0.25dB, "127" indicates a step of 32dB.
+ */
+#define CODEC_AMP_NUM_STEPS                                0x7F
+/** The initial gain offset (and when doing a node reset). */
+#define CODEC_AMP_OFF_INITIAL                              0x40
+/** The amplifier's gain step size. */
+#define CODEC_AMP_STEP_SIZE                                0x2
 
 /* Output Amplifier capabilities (7.3.4.10) */
 #define CODEC_MAKE_F00_12                                  CODEC_MAKE_F00_0D
@@ -246,7 +278,7 @@
 #define CODEC_F00_12_NUM_STEPS(f00_12)                     CODEC_F00_0D_NUM_STEPS(f00_12)
 #define CODEC_F00_12_OFFSET(f00_12)                        CODEC_F00_0D_OFFSET(f00_12)
 
-/* Connection list lenght (7.3.4.11) */
+/* Connection list lenght (7.3.4.11). */
 #define CODEC_MAKE_F00_0E(long_form, length)    \
     (  (((long_form) & 0x1) << 7)               \
      | ((length) & 0x7F))
@@ -271,7 +303,7 @@
 #define CODEC_F00_10_NUM(f00_10)                           (((f00_10) & (0xFF << 8)) >> 8)
 #define CODEC_F00_10_BENING(f00_10)                        ((f00_10) & 0x1)
 
-/* CP/IO Count (7.3.4.14) */
+/* GPIO count (7.3.4.14). */
 #define CODEC_MAKE_F00_11(wake, unsol, numgpi, numgpo, numgpio) \
     (  (((wake) & 0x1) << 31)                                   \
      | (((unsol) & 0x1) << 30)                                  \
@@ -279,17 +311,17 @@
      | (((numgpo) & 0xFF) << 8)                                 \
      | ((numgpio) & 0xFF))
 
-/* Processing States (7.3.3.4) */
+/* Processing States (7.3.3.4). */
 #define CODEC_F03_OFF                                      (0)
 #define CODEC_F03_ON                                       RT_BIT(0)
 #define CODEC_F03_BENING                                   RT_BIT(1)
-/* Power States (7.3.3.10) */
-#define CODEC_MAKE_F05(reset, stopok, error, act, set)          \
-    (   (((reset) & 0x1) << 10)                                 \
-      | (((stopok) & 0x1) << 9)                                 \
-      | (((error) & 0x1) << 8)                                  \
-      | (((act) & 0x7) << 4)                                    \
-      | ((set) & 0x7))
+/* Power States (7.3.3.10). */
+#define CODEC_MAKE_F05(reset, stopok, error, act, set) \
+    (   (((reset)  & 0x1) << 10)                       \
+     | (((stopok) & 0x1) << 9)                         \
+     | (((error)  & 0x1) << 8)                         \
+     | (((act)    & 0xF) << 4)                         \
+     | ((set)     & 0xF))
 #define CODEC_F05_D3COLD                                   (4)
 #define CODEC_F05_D3                                       (3)
 #define CODEC_F05_D2                                       (2)
@@ -299,13 +331,20 @@
 #define CODEC_F05_IS_RESET(value)                          (((value) & RT_BIT(10)) != 0)
 #define CODEC_F05_IS_STOPOK(value)                         (((value) & RT_BIT(9)) != 0)
 #define CODEC_F05_IS_ERROR(value)                          (((value) & RT_BIT(8)) != 0)
-#define CODEC_F05_ACT(value)                               (((value) & 0x7) >> 4)
-#define CODEC_F05_SET(value)                               (((value) & 0x7))
+#define CODEC_F05_ACT(value)                               (((value) & 0xF0) >> 4)
+#define CODEC_F05_SET(value)                               (((value) & 0xF))
 
 #define CODEC_F05_GE(p0, p1)                               ((p0) <= (p1))
 #define CODEC_F05_LE(p0, p1)                               ((p0) >= (p1))
 
-/* Pin Widged Control (7.3.3.13) */
+/* Converter Stream, Channel (7.3.3.11). */
+#define CODEC_MAKE_F06(stream, channel) \
+    (  (((stream)  & 0xF) << 4)         \
+     |  ((channel) & 0xF))
+#define CODEC_F06_STREAM(value)                            ((value) & 0xF0)
+#define CODEC_F06_CHANNEL(value)                           ((value) & 0xF)
+
+/* Pin Widged Control (7.3.3.13). */
 #define CODEC_F07_VREF_HIZ                                 (0)
 #define CODEC_F07_VREF_50                                  (0x1)
 #define CODEC_F07_VREF_GROUND                              (0x2)
@@ -315,50 +354,26 @@
 #define CODEC_F07_OUT_ENABLE                               RT_BIT(6)
 #define CODEC_F07_OUT_H_ENABLE                             RT_BIT(7)
 
-/* Unsolicited enabled (7.3.3.14) */
+/* Volume Knob Control (7.3.3.29). */
+#define CODEC_F0F_IS_DIRECT                                RT_BIT(7)
+#define CODEC_F0F_VOLUME                                   (0x7F)
+
+/* Unsolicited enabled (7.3.3.14). */
 #define CODEC_MAKE_F08(enable, tag) ((((enable) & 1) << 7) | ((tag) & 0x3F))
 
-/* Converter formats (7.3.3.8) and (3.7.1) */
-#define CODEC_MAKE_A(fNonPCM, f44_1BaseRate, mult, div, bits, chan) \
-    (  (((fNonPCM) & 0x1) << 15)                                    \
-     | (((f44_1BaseRate) & 0x1) << 14)                              \
-     | (((mult) & 0x7) << 11)                                       \
-     | (((div) & 0x7) << 8)                                         \
-     | (((bits) & 0x7) << 4)                                        \
-     | ((chan) & 0xF))
+/* Converter formats (7.3.3.8) and (3.7.1). */
+/* This is the same format as SDnFMT. */
+#define CODEC_MAKE_A                                       HDA_SDFMT_MAKE
 
-#define CODEC_A_TYPE                                       RT_BIT(15)
-#define CODEC_A_TYPE_PCM                                   (0)
-#define CODEC_A_TYPE_NON_PCM                               (1)
+#define CODEC_A_TYPE                                       HDA_SDFMT_TYPE
+#define CODEC_A_TYPE_PCM                                   HDA_SDFMT_TYPE_PCM
+#define CODEC_A_TYPE_NON_PCM                               HDA_SDFMT_TYPE_NON_PCM
 
-#define CODEC_A_BASE                                       RT_BIT(14)
-#define CODEC_A_BASE_48KHZ                                 (0)
-#define CODEC_A_BASE_44KHZ                                 (1)
+#define CODEC_A_BASE                                       HDA_SDFMT_BASE
+#define CODEC_A_BASE_48KHZ                                 HDA_SDFMT_BASE_48KHZ
+#define CODEC_A_BASE_44KHZ                                 HDA_SDFMT_BASE_44KHZ
 
-#define CODEC_A_MULT_1X                                    (0)
-#define CODEC_A_MULT_2X                                    (1)
-#define CODEC_A_MULT_3X                                    (2)
-#define CODEC_A_MULT_4X                                    (3)
-
-#define CODEC_A_DIV_1X                                     (0)
-#define CODEC_A_DIV_2X                                     (1)
-#define CODEC_A_DIV_3X                                     (2)
-#define CODEC_A_DIV_4X                                     (3)
-#define CODEC_A_DIV_5X                                     (4)
-#define CODEC_A_DIV_6X                                     (5)
-#define CODEC_A_DIV_7X                                     (6)
-#define CODEC_A_DIV_8X                                     (7)
-
-#define CODEC_A_8_BIT                                      (0)
-#define CODEC_A_16_BIT                                     (1)
-#define CODEC_A_20_BIT                                     (2)
-#define CODEC_A_24_BIT                                     (3)
-#define CODEC_A_32_BIT                                     (4)
-
-#define CODEC_A_CHAN_MONO                                  (0)
-#define CODEC_A_CHAN_STEREO                                (1)
-
-/* Pin Sense (7.3.3.15) */
+/* Pin Sense (7.3.3.15). */
 #define CODEC_MAKE_F09_ANALOG(fPresent, impedance)  \
 (  (((fPresent) & 0x1) << 31)                       \
  | (((impedance) & 0x7FFFFFFF)))
@@ -476,16 +491,17 @@
 /* Configuration's misc */
 #define CODEC_F1C_MISC_MASK                                (0xF)
 #define CODEC_F1C_MISC_SHIFT                               (8)
-#define CODEC_F1C_MISC_JACK_DETECT                         (0)
-#define CODEC_F1C_MISC_RESERVED_0                          (1)
-#define CODEC_F1C_MISC_RESERVED_1                          (2)
-#define CODEC_F1C_MISC_RESERVED_2                          (3)
+#define CODEC_F1C_MISC_NONE                                0
+#define CODEC_F1C_MISC_JACK_NO_PRESENCE_DETECT             RT_BIT(0)
+#define CODEC_F1C_MISC_RESERVED_0                          RT_BIT(1)
+#define CODEC_F1C_MISC_RESERVED_1                          RT_BIT(2)
+#define CODEC_F1C_MISC_RESERVED_2                          RT_BIT(3)
 
 /* Configuration default: Association */
 #define CODEC_F1C_ASSOCIATION_MASK                         (0xF)
 #define CODEC_F1C_ASSOCIATION_SHIFT                        (4)
 
-/* Reserved; don't use. */
+/** Reserved; don't use. */
 #define CODEC_F1C_ASSOCIATION_INVALID                      0x0
 #define CODEC_F1C_ASSOCIATION_GROUP_0                      0x1
 #define CODEC_F1C_ASSOCIATION_GROUP_1                      0x2
@@ -497,27 +513,27 @@
 #define CODEC_F1C_ASSOCIATION_GROUP_7                      0x8
 #define CODEC_F1C_ASSOCIATION_GROUP_15                     0xF
 
-/* Configuration default: Association Sequence */
+/* Configuration default: Association Sequence. */
 #define CODEC_F1C_SEQ_MASK                                 (0xF)
 #define CODEC_F1C_SEQ_SHIFT                                (0)
 
-/* Implementation identification (7.3.3.30) */
+/* Implementation identification (7.3.3.30). */
 #define CODEC_MAKE_F20(bmid, bsku, aid)     \
     (  (((bmid) & 0xFFFF) << 16)            \
      | (((bsku) & 0xFF) << 8)               \
      | (((aid) & 0xFF))                     \
     )
 
-/* macro definition helping in filling the configuration registers. */
+/* Macro definition helping in filling the configuration registers. */
 #define CODEC_MAKE_F1C(port_connectivity, location, device, connection_type, color, misc, association, sequence)    \
-    (  ((port_connectivity) << CODEC_F1C_PORT_SHIFT)          \
-     | ((location) << CODEC_F1C_LOCATION_SHIFT)               \
-     | ((device) << CODEC_F1C_DEVICE_SHIFT)                   \
-     | ((connection_type) << CODEC_F1C_CONNECTION_TYPE_SHIFT) \
-     | ((color) << CODEC_F1C_COLOR_SHIFT)                     \
-     | ((misc) << CODEC_F1C_MISC_SHIFT)                       \
-     | ((association) << CODEC_F1C_ASSOCIATION_SHIFT)         \
-     | ((sequence)))
+    (  (((port_connectivity) & 0xF) << CODEC_F1C_PORT_SHIFT)            \
+     | (((location)          & 0xF) << CODEC_F1C_LOCATION_SHIFT)        \
+     | (((device)            & 0xF) << CODEC_F1C_DEVICE_SHIFT)          \
+     | (((connection_type)   & 0xF) << CODEC_F1C_CONNECTION_TYPE_SHIFT) \
+     | (((color)             & 0xF) << CODEC_F1C_COLOR_SHIFT)           \
+     | (((misc)              & 0xF) << CODEC_F1C_MISC_SHIFT)            \
+     | (((association)       & 0xF) << CODEC_F1C_ASSOCIATION_SHIFT)     \
+     | (((sequence)          & 0xF)))
 
 
 /*********************************************************************************************************************************
@@ -584,13 +600,13 @@ AssertNodeSize(DACNODE, 6 + 60);
 typedef struct ADCNODE
 {
     CODECCOMMONNODE node;
+    uint32_t    u32F01_param;
     uint32_t    u32F03_param;
     uint32_t    u32F05_param;
     uint32_t    u32F06_param;
     uint32_t    u32F09_param;
 
     uint32_t    u32A_param;
-    uint32_t    u32F01_param;
     AMPLIFIER   B_params;
 } ADCNODE, *PADCNODE;
 AssertNodeSize(DACNODE, 6 + 60);
@@ -626,18 +642,18 @@ typedef struct AFGCODECNODE
     CODECCOMMONNODE node;
     uint32_t  u32F05_param;
     uint32_t  u32F08_param;
-    uint32_t  u32F20_param;
     uint32_t  u32F17_param;
+    uint32_t  u32F20_param;
 } AFGCODECNODE, *PAFGCODECNODE;
 AssertNodeSize(AFGCODECNODE, 4);
 
 typedef struct PORTNODE
 {
     CODECCOMMONNODE node;
+    uint32_t u32F01_param;
     uint32_t u32F07_param;
     uint32_t u32F08_param;
     uint32_t u32F09_param;
-    uint32_t u32F01_param;
     uint32_t u32F1c_param;
     AMPLIFIER   B_params;
 } PORTNODE, *PPORTNODE;
@@ -647,12 +663,13 @@ typedef struct DIGOUTNODE
 {
     CODECCOMMONNODE node;
     uint32_t u32F01_param;
-    uint32_t u32F08_param;
+    uint32_t u32F05_param;
     uint32_t u32F07_param;
+    uint32_t u32F08_param;
     uint32_t u32F09_param;
     uint32_t u32F1c_param;
 } DIGOUTNODE, *PDIGOUTNODE;
-AssertNodeSize(DIGOUTNODE, 5);
+AssertNodeSize(DIGOUTNODE, 6);
 
 typedef struct DIGINNODE
 {
@@ -722,8 +739,10 @@ typedef struct RESNODE
     uint32_t    u32F06_param;
     uint32_t    u32F07_param;
     uint32_t    u32F1c_param;
+
+    uint32_t    u32A_param;
 } RESNODE, *PRESNODE;
-AssertNodeSize(RESNODE, 4);
+AssertNodeSize(RESNODE, 5);
 
 /**
  * Used for the saved state.
@@ -772,13 +791,17 @@ AssertNodeSize(CODECNODE, 60 + 6);
 #define STAC9220_NID_ADC1                                  0x7  /* In */
 #define STAC9220_NID_SPDIF_OUT                             0x8  /* Out */
 #define STAC9220_NID_SPDIF_IN                              0x9  /* In */
+/** Also known as PIN_A. */
 #define STAC9220_NID_PIN_HEADPHONE0                        0xA  /* In, Out */
 #define STAC9220_NID_PIN_B                                 0xB  /* In, Out */
 #define STAC9220_NID_PIN_C                                 0xC  /* In, Out */
+/** Also known as PIN D. */
 #define STAC9220_NID_PIN_HEADPHONE1                        0xD  /* In, Out */
 #define STAC9220_NID_PIN_E                                 0xE  /* In */
 #define STAC9220_NID_PIN_F                                 0xF  /* In, Out */
+/** Also known as DIGOUT0. */
 #define STAC9220_NID_PIN_SPDIF_OUT                         0x10 /* Out */
+/** Also known as DIGIN. */
 #define STAC9220_NID_PIN_SPDIF_IN                          0x11 /* In */
 #define STAC9220_NID_ADC0_MUX                              0x12 /* In */
 #define STAC9220_NID_ADC1_MUX                              0x13 /* In */
@@ -787,43 +810,30 @@ AssertNodeSize(CODECNODE, 60 + 6);
 #define STAC9220_NID_VOL_KNOB                              0x16
 #define STAC9220_NID_AMP_ADC0                              0x17 /* In */
 #define STAC9220_NID_AMP_ADC1                              0x18 /* In */
-/* STAC9221. */
+/* Only for STAC9221. */
 #define STAC9221_NID_ADAT_OUT                              0x19 /* Out */
 #define STAC9221_NID_I2S_OUT                               0x1A /* Out */
 #define STAC9221_NID_PIN_I2S_OUT                           0x1B /* Out */
 
-#if 1
-/* STAC9220 - Referenced thru STAC9220WIDGET in the constructor below. */
-static uint8_t const g_abStac9220Ports[]      = { 0x0A, 0xB, 0xC, 0xD, 0xE, 0xF, 0};
-static uint8_t const g_abStac9220Dacs[]       = { 0x02, 0x3, 0x4, 0x5, 0};
-static uint8_t const g_abStac9220Adcs[]       = { 0x06, 0x7, 0};
-static uint8_t const g_abStac9220SpdifOuts[]  = { 0x08, 0 };
-static uint8_t const g_abStac9220SpdifIns[]   = { 0x09, 0 };
-static uint8_t const g_abStac9220DigOutPins[] = { 0x10, 0 };
-static uint8_t const g_abStac9220DigInPins[]  = { 0x11, 0 };
-static uint8_t const g_abStac9220AdcVols[]    = { 0x17, 0x18, 0};
-static uint8_t const g_abStac9220AdcMuxs[]    = { 0x12, 0x13, 0};
-static uint8_t const g_abStac9220Pcbeeps[]    = { 0x14, 0 };
-static uint8_t const g_abStac9220Cds[]        = { 0x15, 0 };
-static uint8_t const g_abStac9220VolKnobs[]   = { 0x16, 0 };
-static uint8_t const g_abStac9220Reserveds[]  = { 0x09, 0x19, 0x1a, 0x1b, 0 };
-#else /** @todo Enable this after 5.0 -- needs more testing first. */
-static uint8_t const g_abStac9220Ports[]      = { STAC9220_NID_PIN_HEADPHONE0, STAC9220_NID_PIN_B, STAC9220_NID_PIN_C, STAC9220_NID_PIN_HEADPHONE1, STAC9220_NID_PIN_E, STAC9220_NID_PIN_F, 0};
-static uint8_t const g_abStac9220Dacs[]       = { STAC9220_NID_DAC0, STAC9220_NID_DAC1, STAC9220_NID_DAC2, STAC9220_NID_DAC3, 0};
-static uint8_t const g_abStac9220Adcs[]       = { STAC9220_NID_ADC0, STAC9220_NID_ADC1, 0};
+/** Number of total nodes emulated. */
+#define STAC9221_NUM_NODES                                 0x1C
+
+/* STAC9220 - Referenced through STAC9220WIDGET in the constructor below. */
+static uint8_t const g_abStac9220Ports[]      = { STAC9220_NID_PIN_HEADPHONE0, STAC9220_NID_PIN_B, STAC9220_NID_PIN_C, STAC9220_NID_PIN_HEADPHONE1, STAC9220_NID_PIN_E, STAC9220_NID_PIN_F, 0 };
+static uint8_t const g_abStac9220Dacs[]       = { STAC9220_NID_DAC0, STAC9220_NID_DAC1, STAC9220_NID_DAC2, STAC9220_NID_DAC3, 0 };
+static uint8_t const g_abStac9220Adcs[]       = { STAC9220_NID_ADC0, STAC9220_NID_ADC1, 0 };
 static uint8_t const g_abStac9220SpdifOuts[]  = { STAC9220_NID_SPDIF_OUT, 0 };
 static uint8_t const g_abStac9220SpdifIns[]   = { STAC9220_NID_SPDIF_IN, 0 };
 static uint8_t const g_abStac9220DigOutPins[] = { STAC9220_NID_PIN_SPDIF_OUT, 0 };
 static uint8_t const g_abStac9220DigInPins[]  = { STAC9220_NID_PIN_SPDIF_IN, 0 };
-static uint8_t const g_abStac9220AdcVols[]    = { STAC9220_NID_AMP_ADC0, STAC9220_NID_AMP_ADC1, 0};
-static uint8_t const g_abStac9220AdcMuxs[]    = { STAC9220_NID_ADC0_MUX, STAC9220_NID_ADC1_MUX, 0};
+static uint8_t const g_abStac9220AdcVols[]    = { STAC9220_NID_AMP_ADC0, STAC9220_NID_AMP_ADC1, 0 };
+static uint8_t const g_abStac9220AdcMuxs[]    = { STAC9220_NID_ADC0_MUX, STAC9220_NID_ADC1_MUX, 0 };
 static uint8_t const g_abStac9220Pcbeeps[]    = { STAC9220_NID_PCBEEP, 0 };
 static uint8_t const g_abStac9220Cds[]        = { STAC9220_NID_PIN_CD, 0 };
 static uint8_t const g_abStac9220VolKnobs[]   = { STAC9220_NID_VOL_KNOB, 0 };
 /* STAC 9221. */
 /** @todo Is STAC9220_NID_SPDIF_IN really correct for reserved nodes? */
 static uint8_t const g_abStac9220Reserveds[]  = { STAC9220_NID_SPDIF_IN, STAC9221_NID_ADAT_OUT, STAC9221_NID_I2S_OUT, STAC9221_NID_PIN_I2S_OUT, 0 };
-#endif
 
 /** SSM description of a CODECNODE. */
 static SSMFIELD const g_aCodecNodeFields[] =
@@ -853,7 +863,7 @@ static SSMFIELD const g_aCodecNodeFieldsV1[] =
 
 static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    for (int i = 1; i < 12; i++)
+    for (int i = 1; i < pThis->cTotalNodes; i++)
     {
         PCODECNODE pNode = &pThis->paNodes[i];
         AMPLIFIER *pAmp = &pNode->dac.B_params;
@@ -866,363 +876,585 @@ static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, 
 }
 
 
-static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t nodenum, PCODECNODE pNode)
+static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODECNODE pNode)
 {
-    pNode->node.id = nodenum;
-    pNode->node.au32F00_param[0xF] = 0; /* Power statest Supported: are the same as AFG reports */
-    switch (nodenum)
+    LogFlowFunc(("NID=0x%x (%RU8)\n", uNID, uNID));
+
+    if (   !pThis->fInReset
+        && (   uNID != STAC9220_NID_ROOT
+            && uNID != STAC9220_NID_AFG)
+       )
     {
-        /* Root Node*/
-        case 0:
-            pNode->node.au32F00_param[0x02] = CODEC_MAKE_F00_02(0x1, 0x0, 0x34, 0x1); /* rev id */
+        RT_ZERO(pNode->node);
+    }
+
+    /* Set common parameters across all nodes. */
+    pNode->node.id = uNID;
+
+    switch (uNID)
+    {
+        /* Root node. */
+        case STAC9220_NID_ROOT:
+        {
+            /* Set the revision ID. */
+            pNode->root.node.au32F00_param[0x02] = CODEC_MAKE_F00_02(0x1, 0x0, 0x3, 0x4, 0x0, 0x1);
             break;
-        case 1:
-            pNode->node.au32F00_param[0x08] = CODEC_MAKE_F00_08(1, 0xd, 0xd);
-            pNode->node.au32F00_param[0x0C] = CODEC_MAKE_F00_0C(0x17)
-                                            | CODEC_F00_0C_CAP_BALANCED_IO
-                                            | CODEC_F00_0C_CAP_INPUT
-                                            | CODEC_F00_0C_CAP_PRESENSE_DETECT
-                                            | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
-                                            | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//(17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
-            pNode->node.au32F00_param[0x0B] = CODEC_F00_0B_PCM;
-            pNode->node.au32F00_param[0x0D] = CODEC_MAKE_F00_0D(1, 0x5, 0xE, 0);//RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
-            pNode->node.au32F00_param[0x12] = RT_BIT(31)|(0x2 << 16)|(0x7f << 8)|0x7f;
-            pNode->node.au32F00_param[0x11] = CODEC_MAKE_F00_11(1, 1, 0, 0, 4);//0xc0000004;
-            pNode->node.au32F00_param[0x0F] = CODEC_F00_0F_D3|CODEC_F00_0F_D2|CODEC_F00_0F_D1|CODEC_F00_0F_D0;
-            pNode->afg.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D2, CODEC_F05_D2);//0x2 << 4| 0x2; /* PS-Act: D3, PS->Set D3  */
+        }
+
+        /*
+         * AFG (Audio Function Group).
+         */
+        case STAC9220_NID_AFG:
+        {
+            pNode->afg.node.au32F00_param[0x08] = CODEC_MAKE_F00_08(1, 0xd, 0xd);
+            /* We set the AFG's PCM capabitilies fixed to 44.1kHz, 16-bit signed. */
+            pNode->afg.node.au32F00_param[0x0A] = CODEC_F00_0A_44_1KHZ | CODEC_F00_0A_16_BIT;
+            pNode->afg.node.au32F00_param[0x0B] = CODEC_F00_0B_PCM;
+            pNode->afg.node.au32F00_param[0x0C] = CODEC_MAKE_F00_0C(0x17)
+                                                | CODEC_F00_0C_CAP_BALANCED_IO
+                                                | CODEC_F00_0C_CAP_INPUT
+                                                | CODEC_F00_0C_CAP_OUTPUT
+                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
+                                                | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;
+
+            /* Default input amplifier capabilities. */
+            pNode->node.au32F00_param[0x0D] = CODEC_MAKE_F00_0D(CODEC_AMP_CAP_MUTE,
+                                                                0 /* Step size */,
+                                                                CODEC_AMP_NUM_STEPS,
+                                                                0 /* Initial offset */);
+            /* Default output amplifier capabilities. */
+            pNode->node.au32F00_param[0x12] = CODEC_MAKE_F00_12(CODEC_AMP_CAP_MUTE,
+                                                                CODEC_AMP_STEP_SIZE,
+                                                                CODEC_AMP_NUM_STEPS,
+                                                                CODEC_AMP_OFF_INITIAL);
+
+            pNode->afg.node.au32F00_param[0x11] = CODEC_MAKE_F00_11(1, 1, 0, 0, 4);
+            pNode->afg.node.au32F00_param[0x0F] = CODEC_F00_0F_D3
+                                                | CODEC_F00_0F_D2
+                                                | CODEC_F00_0F_D1
+                                                | CODEC_F00_0F_D0;
+
+            pNode->afg.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D2, CODEC_F05_D2); /* PS-Act: D2, PS->Set D2. */
             pNode->afg.u32F08_param = 0;
             pNode->afg.u32F17_param = 0;
             break;
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-            memset(pNode->dac.B_params, 0, AMPLIFIER_SIZE);
-            pNode->dac.u32A_param = CODEC_MAKE_A(0, 1, CODEC_A_MULT_1X, CODEC_A_DIV_1X, CODEC_A_16_BIT, 1);//RT_BIT(14)|(0x1 << 4)|0x1; /* 44100Hz/16bit/2ch */
+        }
 
-            AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) = 0x7F | RT_BIT(7);
+        /*
+         * DACs.
+         */
+        case STAC9220_NID_DAC0: /* DAC0: Headphones 0 + 1 */
+        case STAC9220_NID_DAC1: /* DAC1: PIN C */
+        case STAC9220_NID_DAC2: /* DAC2: PIN B */
+        case STAC9220_NID_DAC3: /* DAC3: PIN F */
+        {
+            pNode->dac.u32A_param = CODEC_MAKE_A(HDA_SDFMT_TYPE_PCM, HDA_SDFMT_BASE_44KHZ,
+                                                 HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_1X, HDA_SDFMT_16_BIT,
+                                                 HDA_SDFMT_CHAN_STEREO);
+
+            /* 7.3.4.6: Audio widget capabilities. */
+            pNode->dac.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_OUTPUT, 13, 0)
+                                               | CODEC_F00_09_CAP_L_R_SWAP
+                                               | CODEC_F00_09_CAP_POWER_CTRL
+                                               | CODEC_F00_09_CAP_OUT_AMP_PRESENT
+                                               | CODEC_F00_09_CAP_STEREO;
+
+            /* Connection list; must be 0 if the only connection for the widget is
+             * to the High Definition Audio Link. */
+            pNode->dac.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 0 /* Entries */);
+
+            pNode->dac.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3);
+
+            RT_ZERO(pNode->dac.B_params);
+            AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_LEFT,  0) = 0x7F | RT_BIT(7);
             AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) = 0x7F | RT_BIT(7);
+            break;
+        }
 
-            pNode->dac.node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_OUTPUT, 0xD, 0)
-                                             | CODEC_F00_09_CAP_L_R_SWAP
-                                             | CODEC_F00_09_CAP_POWER_CTRL
-                                             | CODEC_F00_09_CAP_OUT_AMP_PRESENT
-                                             | CODEC_F00_09_CAP_LSB;//(0xD << 16) | RT_BIT(11) |  RT_BIT(10) | RT_BIT(2) | RT_BIT(0);
-            pNode->dac.u32F0c_param = 0;
-            pNode->dac.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3);//0x3 << 4 | 0x3; /* PS-Act: D3, Set: D3  */
-            break;
-        case 6:
-            pNode->node.au32F02_param[0] = 0x17;
+        /*
+         * ADCs.
+         */
+        case STAC9220_NID_ADC0: /* Analog input. */
+        {
+            pNode->node.au32F02_param[0] = STAC9220_NID_AMP_ADC0;
             goto adc_init;
-        case 7:
-            pNode->node.au32F02_param[0] = 0x18;
+        }
+
+        case STAC9220_NID_ADC1: /* Analog input (CD). */
+        {
+            pNode->node.au32F02_param[0] = STAC9220_NID_AMP_ADC1;
+
+            /* Fall through is intentional. */
         adc_init:
-            pNode->adc.u32A_param = CODEC_MAKE_A(0, 1, CODEC_A_MULT_1X, CODEC_A_DIV_1X, CODEC_A_16_BIT, 1);//RT_BIT(14)|(0x1 << 3)|0x1; /* 44100Hz/16bit/2ch */
-            pNode->adc.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 1);//RT_BIT(0);
+
+            pNode->adc.u32A_param   = CODEC_MAKE_A(HDA_SDFMT_TYPE_PCM, HDA_SDFMT_BASE_44KHZ,
+                                                   HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_1X, HDA_SDFMT_16_BIT,
+                                                   HDA_SDFMT_CHAN_STEREO);
+
             pNode->adc.u32F03_param = RT_BIT(0);
-            pNode->adc.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3);//0x3 << 4 | 0x3; /* PS-Act: D3 Set: D3 */
-            pNode->adc.u32F06_param = 0;
-            pNode->adc.node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 0xD, 0)
-                                             | CODEC_F00_09_CAP_POWER_CTRL
-                                             | CODEC_F00_09_CAP_CONNECTION_LIST
-                                             | CODEC_F00_09_CAP_PROC_WIDGET
-                                             | CODEC_F00_09_CAP_LSB;//RT_BIT(20)| (0xd << 16) |  RT_BIT(10) | RT_BIT(8) | RT_BIT(6)| RT_BIT(0);
+            pNode->adc.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3); /* PS-Act: D3 Set: D3 */
+
+            pNode->adc.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 13, 0)
+                                               | CODEC_F00_09_CAP_POWER_CTRL
+                                               | CODEC_F00_09_CAP_CONNECTION_LIST
+                                               | CODEC_F00_09_CAP_PROC_WIDGET
+                                               | CODEC_F00_09_CAP_STEREO;
+            /* Connection list entries. */
+            pNode->adc.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 1 /* Entries */);
             break;
-        case 8:
-            pNode->spdifout.u32A_param = CODEC_MAKE_A(0, 1, CODEC_A_MULT_1X, CODEC_A_DIV_1X, CODEC_A_16_BIT, 1);//(1<<14)|(0x1<<4) | 0x1;
-            pNode->spdifout.node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_OUTPUT, 0x4, 0)
-                                                  | CODEC_F00_09_CAP_DIGITAL
-                                                  | CODEC_F00_09_CAP_FMT_OVERRIDE
-                                                  | CODEC_F00_09_CAP_LSB;//(4 << 16) | RT_BIT(9)|RT_BIT(4)|0x1;
-            pNode->node.au32F00_param[0xa] = pThis->paNodes[1].node.au32F00_param[0xA];
-            pNode->spdifout.node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
+        }
+
+        /*
+         * SP/DIF In/Out.
+         */
+        case STAC9220_NID_SPDIF_OUT:
+        {
+            pNode->spdifout.u32A_param   = CODEC_MAKE_A(HDA_SDFMT_TYPE_PCM, HDA_SDFMT_BASE_44KHZ,
+                                                        HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_1X, HDA_SDFMT_16_BIT,
+                                                        HDA_SDFMT_CHAN_STEREO);
             pNode->spdifout.u32F06_param = 0;
             pNode->spdifout.u32F0d_param = 0;
+
+            pNode->spdifout.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_OUTPUT, 4, 0)
+                                                    | CODEC_F00_09_CAP_DIGITAL
+                                                    | CODEC_F00_09_CAP_FMT_OVERRIDE
+                                                    | CODEC_F00_09_CAP_STEREO;
+
+            /* Use a fixed format from AFG. */
+            pNode->spdifout.node.au32F00_param[0xA] = pThis->paNodes[STAC9220_NID_AFG].node.au32F00_param[0xA];
+            pNode->spdifout.node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
             break;
-        case 9:
-            pNode->spdifin.u32A_param = CODEC_MAKE_A(0, 1, CODEC_A_MULT_1X, CODEC_A_DIV_1X, CODEC_A_16_BIT, 1);//(0x1<<4) | 0x1;
-            pNode->spdifin.node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 0x4, 0)
-                                                 | CODEC_F00_09_CAP_DIGITAL
-                                                 | CODEC_F00_09_CAP_CONNECTION_LIST
-                                                 | CODEC_F00_09_CAP_FMT_OVERRIDE
-                                                 | CODEC_F00_09_CAP_LSB;//(0x1 << 20)|(4 << 16) | RT_BIT(9)| RT_BIT(8)|RT_BIT(4)|0x1;
-            pNode->node.au32F00_param[0xA] = pThis->paNodes[1].node.au32F00_param[0xA];
-            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 1);//RT_BIT(0);
-            pNode->node.au32F02_param[0] = 0x11;
+        }
+
+        case STAC9220_NID_SPDIF_IN:
+        {
+            pNode->spdifin.u32A_param = CODEC_MAKE_A(HDA_SDFMT_TYPE_PCM, HDA_SDFMT_BASE_44KHZ,
+                                                     HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_1X, HDA_SDFMT_16_BIT,
+                                                     HDA_SDFMT_CHAN_STEREO);
+
+            pNode->spdifin.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 4, 0)
+                                                   | CODEC_F00_09_CAP_DIGITAL
+                                                   | CODEC_F00_09_CAP_CONNECTION_LIST
+                                                   | CODEC_F00_09_CAP_FMT_OVERRIDE
+                                                   | CODEC_F00_09_CAP_STEREO;
+
+            /* Use a fixed format from AFG. */
+            pNode->spdifin.node.au32F00_param[0xA] = pThis->paNodes[STAC9220_NID_AFG].node.au32F00_param[0xA];
             pNode->spdifin.node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
-            pNode->spdifin.u32F06_param = 0;
-            pNode->spdifin.u32F0d_param = 0;
+
+            /* Connection list entries. */
+            pNode->spdifin.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 1 /* Entries */);
+            pNode->spdifin.node.au32F02_param[0]   = 0x11;
             break;
-        case 0xA:
-            pNode->node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
-                                           | CODEC_F00_0C_CAP_INPUT
-                                           | CODEC_F00_0C_CAP_OUTPUT
-                                           | CODEC_F00_0C_CAP_HP
-                                           | CODEC_F00_0C_CAP_PRESENSE_DETECT
-                                           | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
-                                           | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x173f;
-            pNode->node.au32F02_param[0] = 0x2;
-            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE
-                                     | CODEC_F07_OUT_ENABLE;
-            pNode->port.u32F08_param = 0;
+        }
+
+        /*
+         * PINs / Ports.
+         */
+        case STAC9220_NID_PIN_HEADPHONE0: /* Port A: Headphone in/out (front). */
+        {
+            pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
+                                                | CODEC_F00_0C_CAP_INPUT
+                                                | CODEC_F00_0C_CAP_OUTPUT
+                                                | CODEC_F00_0C_CAP_HEADPHONE_AMP
+                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_TRIGGER_REQUIRED;
+
+            /* Connection list entry 0: Goes to DAC0. */
+            pNode->port.node.au32F02_param[0]   = STAC9220_NID_DAC0;
+
             if (!pThis->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_FRONT,
                                                           CODEC_F1C_DEVICE_HP,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_GREEN,
-                                                          CODEC_F1C_MISC_JACK_DETECT,
-                                                          0x2, 0);//RT_MAKE_U32_FROM_U8(0x20, 0x40, 0x21, 0x02);
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0, CODEC_F09_ANALOG_NA);//0x7fffffff;
+                                                          CODEC_F1C_MISC_NONE,
+                                                          CODEC_F1C_ASSOCIATION_GROUP_0, 0xF /* Seq */);
             goto port_init;
-        case 0xB:
-            pNode->node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
-                                           | CODEC_F00_0C_CAP_INPUT
-                                           | CODEC_F00_0C_CAP_OUTPUT
-                                           | CODEC_F00_0C_CAP_PRESENSE_DETECT
-                                           | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
-                                           | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
-            pNode->node.au32F02_param[0] = 0x4;
-            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE;
+        }
+
+        case STAC9220_NID_PIN_B: /* Port B: Rear CLFE (Center / Subwoofer). */
+        {
+            pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
+                                                | CODEC_F00_0C_CAP_INPUT
+                                                | CODEC_F00_0C_CAP_OUTPUT
+                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_TRIGGER_REQUIRED;
+
+            /* Connection list entry 0: Goes to DAC2. */
+            pNode->port.node.au32F02_param[0]   = STAC9220_NID_DAC2;
+
             if (!pThis->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
-                                                          CODEC_F1C_LOCATION_INTERNAL|CODEC_F1C_LOCATION_REAR,
+                                                          CODEC_F1C_LOCATION_REAR,
                                                           CODEC_F1C_DEVICE_SPEAKER,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_BLACK,
-                                                          CODEC_F1C_MISC_JACK_DETECT,
-                                                          0x1, 0x1);//RT_MAKE_U32_FROM_U8(0x11, 0x60, 0x11, 0x01);
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);//RT_BIT(31)|0x7fffffff;
+                                                          CODEC_F1C_MISC_NONE,
+                                                          CODEC_F1C_ASSOCIATION_GROUP_1, 0xE /* Seq */);
             goto port_init;
-        case 0xC:
-            pNode->node.au32F02_param[0] = 0x3;
-            pNode->node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
-                                           | CODEC_F00_0C_CAP_INPUT
-                                           | CODEC_F00_0C_CAP_OUTPUT
-                                           | CODEC_F00_0C_CAP_PRESENSE_DETECT
-                                           | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
-                                           | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
-            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE;
+        }
+
+        case STAC9220_NID_PIN_C: /* Rear Speaker. */
+        {
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);
+
+            pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
+                                                | CODEC_F00_0C_CAP_INPUT
+                                                | CODEC_F00_0C_CAP_OUTPUT
+                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_TRIGGER_REQUIRED;
+
+            /* Connection list entry 0: Goes to DAC1. */
+            pNode->port.node.au32F02_param[0x0] = STAC9220_NID_DAC1;
+
             if (!pThis->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_REAR,
                                                           CODEC_F1C_DEVICE_SPEAKER,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_GREEN,
-                                                          0x0, 0x1, 0x0);//RT_MAKE_U32_FROM_U8(0x10, 0x40, 0x11, 0x01);
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);//RT_BIT(31)|0x7fffffff;
+                                                          CODEC_F1C_MISC_NONE,
+                                                          CODEC_F1C_ASSOCIATION_GROUP_0, 0x0 /* Seq */);
             goto port_init;
-        case 0xD:
-            pNode->node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
-                                           | CODEC_F00_0C_CAP_INPUT
-                                           | CODEC_F00_0C_CAP_OUTPUT
-                                           | CODEC_F00_0C_CAP_PRESENSE_DETECT
-                                           | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
-                                           | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
-            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE;
-            pNode->node.au32F02_param[0] = 0x2;
+        }
+
+        case STAC9220_NID_PIN_HEADPHONE1: /* Also known as PIN_D. */
+        {
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);
+
+            pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
+                                                | CODEC_F00_0C_CAP_INPUT
+                                                | CODEC_F00_0C_CAP_OUTPUT
+                                                | CODEC_F00_0C_CAP_HEADPHONE_AMP
+                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_TRIGGER_REQUIRED;
+
+            /* Connection list entry 0: Goes to DAC1. */
+            pNode->port.node.au32F02_param[0x0] = STAC9220_NID_DAC0;
+
             if (!pThis->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_FRONT,
                                                           CODEC_F1C_DEVICE_MIC,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_PINK,
-                                                          0x0, 0x5, 0x0);//RT_MAKE_U32_FROM_U8(0x50, 0x90, 0xA1, 0x02); /* Microphone */
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);//RT_BIT(31)|0x7fffffff;
+                                                          CODEC_F1C_MISC_NONE,
+                                                          CODEC_F1C_ASSOCIATION_GROUP_15, 0xD /* Seq */);
+            /* Fall through is intentional. */
         port_init:
+
+            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE
+                                     | CODEC_F07_OUT_ENABLE;
             pNode->port.u32F08_param = 0;
-            pNode->node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0x0, 0)
-                                         | CODEC_F00_09_CAP_CONNECTION_LIST
-                                         | CODEC_F00_09_CAP_UNSOL
-                                         | CODEC_F00_09_CAP_LSB;//(4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(0);
-            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 1);//0x1;
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(true /* fPresent */, CODEC_F09_ANALOG_NA);
+
+            pNode->port.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
+                                                | CODEC_F00_09_CAP_CONNECTION_LIST
+                                                | CODEC_F00_09_CAP_UNSOL
+                                                | CODEC_F00_09_CAP_STEREO;
+            /* Connection list entries. */
+            pNode->port.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 1 /* Entries */);
             break;
-        case 0xE:
-            pNode->node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0x0, 0)
-                                         | CODEC_F00_09_CAP_UNSOL
-                                         | CODEC_F00_09_CAP_LSB;//(4 << 20)|RT_BIT(7)|RT_BIT(0);
-            pNode->port.u32F08_param = 0;
-            pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_INPUT
-                                           | CODEC_F00_0C_CAP_OUTPUT
-                                           | CODEC_F00_0C_CAP_PRESENSE_DETECT;//0x34;
+        }
+
+        case STAC9220_NID_PIN_E:
+        {
             pNode->port.u32F07_param = CODEC_F07_IN_ENABLE;
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0, CODEC_F09_ANALOG_NA);//0x7fffffff;
+            pNode->port.u32F08_param = 0;
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(true /* fPresent */, CODEC_F09_ANALOG_NA);
+
+            pNode->port.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
+                                                | CODEC_F00_09_CAP_UNSOL
+                                                | CODEC_F00_09_CAP_STEREO;
+            pNode->port.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_INPUT
+                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT;
+
             if (!pThis->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_REAR,
-                                                          CODEC_F1C_DEVICE_LINE_OUT,
+                                                          CODEC_F1C_DEVICE_LINE_IN,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_BLUE,
-                                                          0x0, 0x4, 0x0);//0x01013040;  /* Line Out */
+                                                          CODEC_F1C_MISC_NONE,
+                                                          CODEC_F1C_ASSOCIATION_GROUP_15, 0xE /* Seq */);
             break;
-        case 0xF:
-            pNode->node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0x0, 0x0)
-                                         | CODEC_F00_09_CAP_CONNECTION_LIST
-                                         | CODEC_F00_09_CAP_UNSOL
-                                         | CODEC_F00_09_CAP_OUT_AMP_PRESENT
-                                         | CODEC_F00_09_CAP_LSB;//(4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(2)|RT_BIT(0);
-            pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_INPUT
-                                           | CODEC_F00_0C_CAP_OUTPUT
-                                           | CODEC_F00_0C_CAP_PRESENSE_DETECT
-                                           /* | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
-                                           | CODEC_F00_0C_CAP_IMPENDANCE_SENSE */;//0x37;
-            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 1);//0x1;
+        }
+
+        case STAC9220_NID_PIN_F:
+        {
+            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE | CODEC_F07_OUT_ENABLE;
             pNode->port.u32F08_param = 0;
-            pNode->port.u32F07_param = CODEC_F07_OUT_ENABLE
-                                     | CODEC_F07_IN_ENABLE;
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(true /* fPresent */, CODEC_F09_ANALOG_NA);
+
+            pNode->port.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
+                                                | CODEC_F00_09_CAP_CONNECTION_LIST
+                                                | CODEC_F00_09_CAP_UNSOL
+                                                | CODEC_F00_09_CAP_OUT_AMP_PRESENT
+                                                | CODEC_F00_09_CAP_STEREO;
+            pNode->port.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_INPUT
+                                                | CODEC_F00_0C_CAP_OUTPUT;
+
+            /* Connection list entry 0: Goes to DAC3. */
+            pNode->port.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 1 /* Entries */);
+            pNode->port.node.au32F02_param[0x0] = STAC9220_NID_DAC3;
+
             if (!pThis->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_INTERNAL,
                                                           CODEC_F1C_DEVICE_SPEAKER,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_ORANGE,
-                                                          0x0, 0x1, 0x2);//RT_MAKE_U32_FROM_U8(0x12, 0x60, 0x11, 0x01);
-            pNode->node.au32F02_param[0] = 0x5;
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0, CODEC_F09_ANALOG_NA);//0x7fffffff;
+                                                          CODEC_F1C_MISC_NONE,
+                                                          CODEC_F1C_ASSOCIATION_GROUP_1, 0x0 /* Seq */);
             break;
-        case 0x10:
-            pNode->node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0x0, 0x0)
-                                         | CODEC_F00_09_CAP_DIGITAL
-                                         | CODEC_F00_09_CAP_CONNECTION_LIST
-                                         | CODEC_F00_09_CAP_LSB;//(4<<20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
-            pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;//RT_BIT(4);
-            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 0x3);
-            pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x08, 0x17, 0x19, 0);
+        }
+
+        case STAC9220_NID_PIN_SPDIF_OUT: /* Rear SPDIF Out. */
+        {
+            pNode->digout.u32F07_param = CODEC_F07_OUT_ENABLE;
+            pNode->digout.u32F09_param = 0;
+
+            pNode->digout.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
+                                                  | CODEC_F00_09_CAP_DIGITAL
+                                                  | CODEC_F00_09_CAP_CONNECTION_LIST
+                                                  | CODEC_F00_09_CAP_STEREO;
+            pNode->digout.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT
+                                                  | CODEC_F00_0C_CAP_PRESENSE_DETECT;
+
+            /* Connection list entries. */
+            pNode->digout.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 3 /* Entries */);
+            pNode->digout.node.au32F02_param[0x0] = RT_MAKE_U32_FROM_U8(STAC9220_NID_SPDIF_OUT,
+                                                                        STAC9220_NID_AMP_ADC0, STAC9221_NID_ADAT_OUT, 0);
             if (!pThis->fInReset)
                 pNode->digout.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                             CODEC_F1C_LOCATION_REAR,
                                                             CODEC_F1C_DEVICE_SPDIF_OUT,
                                                             CODEC_F1C_CONNECTION_TYPE_DIN,
                                                             CODEC_F1C_COLOR_BLACK,
-                                                            0x0, 0x3, 0x0);//RT_MAKE_U32_FROM_U8(0x30, 0x10, 0x45, 0x01);
+                                                            CODEC_F1C_MISC_NONE,
+                                                            CODEC_F1C_ASSOCIATION_GROUP_2, 0x0 /* Seq */);
             break;
-        case 0x11:
-            pNode->node.au32F00_param[9] = (4 << 20) | (3 << 16) | RT_BIT(10) | RT_BIT(9) | RT_BIT(7) | RT_BIT(0);
-            pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_EAPD
-                                           | CODEC_F00_0C_CAP_INPUT
-                                           | CODEC_F00_0C_CAP_PRESENSE_DETECT;//RT_BIT(16)| RT_BIT(5)|RT_BIT(2);
-            pNode->digin.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3);//0x3 << 4 | 0x3; /* PS-Act: D3 -> D3 */
-            pNode->digin.u32F07_param = 0;
+        }
+
+        case STAC9220_NID_PIN_SPDIF_IN:
+        {
+            pNode->digin.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3); /* PS-Act: D3 -> D3 */
+            pNode->digin.u32F07_param = CODEC_F07_IN_ENABLE;
             pNode->digin.u32F08_param = 0;
             pNode->digin.u32F09_param = CODEC_MAKE_F09_DIGITAL(0, 0);
             pNode->digin.u32F0c_param = 0;
+
+            pNode->digin.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 3, 0)
+                                                 | CODEC_F00_09_CAP_POWER_CTRL
+                                                 | CODEC_F00_09_CAP_DIGITAL
+                                                 | CODEC_F00_09_CAP_UNSOL
+                                                 | CODEC_F00_09_CAP_STEREO;
+
+            pNode->digin.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_EAPD
+                                                 | CODEC_F00_0C_CAP_INPUT
+                                                 | CODEC_F00_0C_CAP_PRESENSE_DETECT;
             if (!pThis->fInReset)
                 pNode->digin.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                            CODEC_F1C_LOCATION_REAR,
                                                            CODEC_F1C_DEVICE_SPDIF_IN,
                                                            CODEC_F1C_CONNECTION_TYPE_OTHER_DIGITAL,
                                                            CODEC_F1C_COLOR_BLACK,
-                                                           0x0, 0x6, 0x0);//(0x1 << 24) | (0xc5 << 16) | (0x10 << 8) | 0x60;
+                                                           CODEC_F1C_MISC_NONE,
+                                                           CODEC_F1C_ASSOCIATION_GROUP_3, 0x0 /* Seq */);
             break;
-        case 0x12:
-            pNode->adcmux.u32F01_param = 0;
+        }
+
+        case STAC9220_NID_ADC0_MUX:
+        {
+            pNode->adcmux.u32F01_param = 0; /* Connection select control index (STAC9220_NID_PIN_E). */
             goto adcmux_init;
-        case 0x13:
-            pNode->adcmux.u32F01_param = 1;
-            adcmux_init:
-            pNode->node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_SELECTOR, 0x0, 0)
-                                         | CODEC_F00_09_CAP_CONNECTION_LIST
-                                         | CODEC_F00_09_CAP_AMP_FMT_OVERRIDE
-                                         | CODEC_F00_09_CAP_OUT_AMP_PRESENT
-                                         | CODEC_F00_09_CAP_LSB;//(3<<20)|RT_BIT(8)|RT_BIT(3)|RT_BIT(2)|RT_BIT(0);
-            pNode->node.au32F00_param[0xe] = CODEC_MAKE_F00_0E(0, 0x7);
-            pNode->node.au32F00_param[0x12] = (0x27 << 16)|(0x4 << 8);
-            /* STAC 9220 v10 6.21-22.{4,5} both(left and right) out amplefiers inited with 0*/
-            memset(pNode->adcmux.B_params, 0, AMPLIFIER_SIZE);
-            pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0xe, 0x15, 0xf, 0xb);
-            pNode->node.au32F02_param[4] = RT_MAKE_U32_FROM_U8(0xc, 0xd, 0xa, 0x0);
+        }
+
+        case STAC9220_NID_ADC1_MUX:
+        {
+            pNode->adcmux.u32F01_param = 1; /* Connection select control index (STAC9220_NID_PIN_CD). */
+
+            /* Fall through is intentional. */
+        adcmux_init:
+
+            pNode->adcmux.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_SELECTOR, 0, 0)
+                                                  | CODEC_F00_09_CAP_CONNECTION_LIST
+                                                  | CODEC_F00_09_CAP_AMP_FMT_OVERRIDE
+                                                  | CODEC_F00_09_CAP_OUT_AMP_PRESENT
+                                                  | CODEC_F00_09_CAP_STEREO;
+
+            pNode->adcmux.node.au32F00_param[0xD] = CODEC_MAKE_F00_0D(0, 27, 4, 0);
+
+            /* Connection list entries. */
+            pNode->adcmux.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 7 /* Entries */);
+            pNode->adcmux.node.au32F02_param[0x0] = RT_MAKE_U32_FROM_U8(STAC9220_NID_PIN_E,
+                                                                        STAC9220_NID_PIN_CD,
+                                                                        STAC9220_NID_PIN_F,
+                                                                        STAC9220_NID_PIN_B);
+            pNode->adcmux.node.au32F02_param[0x4] = RT_MAKE_U32_FROM_U8(STAC9220_NID_PIN_C,
+                                                                        STAC9220_NID_PIN_HEADPHONE1,
+                                                                        STAC9220_NID_PIN_HEADPHONE0,
+                                                                        0x0 /* Unused */);
+
+            /* STAC 9220 v10 6.21-22.{4,5} both(left and right) out amplifiers initialized with 0. */
+            RT_BZERO(pNode->adcmux.B_params, AMPLIFIER_SIZE);
             break;
-        case 0x14:
-            pNode->node.au32F00_param[9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_BEEP_GEN, 0, 0)
-                                         | CODEC_F00_09_CAP_AMP_FMT_OVERRIDE
-                                         | CODEC_F00_09_CAP_OUT_AMP_PRESENT;//(7 << 20) | RT_BIT(3) | RT_BIT(2);
-            pNode->node.au32F00_param[0x12] = (0x17 << 16)|(0x3 << 8)| 0x3;
+        }
+
+        case STAC9220_NID_PCBEEP:
+        {
             pNode->pcbeep.u32F0a_param = 0;
-            memset(pNode->pcbeep.B_params, 0, AMPLIFIER_SIZE);
+
+            pNode->pcbeep.node.au32F00_param[0x9]  = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_BEEP_GEN, 0, 0)
+                                                   | CODEC_F00_09_CAP_AMP_FMT_OVERRIDE
+                                                   | CODEC_F00_09_CAP_OUT_AMP_PRESENT;
+            pNode->pcbeep.node.au32F00_param[0xD]  = CODEC_MAKE_F00_0D(0, 17, 3, 3);
+
+            RT_BZERO(pNode->pcbeep.B_params, AMPLIFIER_SIZE);
             break;
-        case 0x15:
-            pNode->node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
-                                           | CODEC_F00_09_CAP_LSB;//(4 << 20)|RT_BIT(0);
-            pNode->node.au32F00_param[0xc] = CODEC_F00_0C_CAP_INPUT;//RT_BIT(5);
+        }
+
+        case STAC9220_NID_PIN_CD:
+        {
+            pNode->cdnode.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
+                                                  | CODEC_F00_09_CAP_STEREO;
+            pNode->cdnode.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_INPUT;
+
             if (!pThis->fInReset)
                 pNode->cdnode.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_FIXED,
                                                             CODEC_F1C_LOCATION_INTERNAL,
                                                             CODEC_F1C_DEVICE_CD,
                                                             CODEC_F1C_CONNECTION_TYPE_ATAPI,
                                                             CODEC_F1C_COLOR_UNKNOWN,
-                                                            0x0, 0x7, 0x0);//RT_MAKE_U32_FROM_U8(0x70, 0x0, 0x33, 0x90);
+                                                            CODEC_F1C_MISC_NONE,
+                                                            CODEC_F1C_ASSOCIATION_GROUP_15, 0xF /* Seq */);
             break;
-        case 0x16:
-            pNode->node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_VOLUME_KNOB, 0x0, 0x0);//(0x6 << 20);
-            pNode->node.au32F00_param[0x13] = RT_BIT(7)| 0x7F;
-            pNode->node.au32F00_param[0xe] = CODEC_MAKE_F00_0E(0, 0x4);
-            pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x2, 0x3, 0x4, 0x5);
+        }
+
+        case STAC9220_NID_VOL_KNOB:
+        {
             pNode->volumeKnob.u32F08_param = 0;
             pNode->volumeKnob.u32F0f_param = 0x7f;
-            break;
-        case 0x17:
-            pNode->node.au32F02_param[0] = 0x12;
-            goto adcvol_init;
-        case 0x18:
-            pNode->node.au32F02_param[0] = 0x13;
-        adcvol_init:
-            memset(pNode->adcvol.B_params, 0, AMPLIFIER_SIZE);
 
-            pNode->node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_SELECTOR, 0, 0)
-                                           | CODEC_F00_09_CAP_L_R_SWAP
-                                           | CODEC_F00_09_CAP_CONNECTION_LIST
-                                           | CODEC_F00_09_CAP_IN_AMP_PRESENT
-                                           | CODEC_F00_09_CAP_LSB;//(0x3 << 20)|RT_BIT(11)|RT_BIT(8)|RT_BIT(1)|RT_BIT(0);
-            pNode->node.au32F00_param[0xe] = CODEC_MAKE_F00_0E(0, 0x1);
-            AMPLIFIER_REGISTER(pNode->adcvol.B_params, AMPLIFIER_IN, AMPLIFIER_LEFT, 0) = RT_BIT(7);
-            AMPLIFIER_REGISTER(pNode->adcvol.B_params, AMPLIFIER_IN, AMPLIFIER_RIGHT, 0) = RT_BIT(7);
+            pNode->volumeKnob.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_VOLUME_KNOB, 0, 0);
+            pNode->volumeKnob.node.au32F00_param[0xD] = RT_BIT(7) | 0x7F;
+
+            /* Connection list entries. */
+            pNode->volumeKnob.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 4 /* Entries */);
+            pNode->volumeKnob.node.au32F02_param[0x0] = RT_MAKE_U32_FROM_U8(STAC9220_NID_DAC0,
+                                                                            STAC9220_NID_DAC1,
+                                                                            STAC9220_NID_DAC2,
+                                                                            STAC9220_NID_DAC3);
+            break;
+        }
+
+        case STAC9220_NID_AMP_ADC0:
+        {
+            pNode->adcvol.node.au32F02_param[0] = STAC9220_NID_ADC0_MUX;
+            goto adcvol_init;
+        }
+
+        case STAC9220_NID_AMP_ADC1:
+        {
+            pNode->adcvol.node.au32F02_param[0] = STAC9220_NID_ADC1_MUX;
+
+            /* Fall through is intentional. */
+        adcvol_init:
+
             pNode->adcvol.u32F0c_param = 0;
+
+            pNode->adcvol.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_SELECTOR, 0, 0)
+                                                  | CODEC_F00_09_CAP_L_R_SWAP
+                                                  | CODEC_F00_09_CAP_CONNECTION_LIST
+                                                  | CODEC_F00_09_CAP_IN_AMP_PRESENT
+                                                  | CODEC_F00_09_CAP_STEREO;
+
+
+            pNode->adcvol.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 1 /* Entries */);
+
+            RT_BZERO(pNode->adcvol.B_params, AMPLIFIER_SIZE);
+            AMPLIFIER_REGISTER(pNode->adcvol.B_params, AMPLIFIER_IN, AMPLIFIER_LEFT,  0) = RT_BIT(7);
+            AMPLIFIER_REGISTER(pNode->adcvol.B_params, AMPLIFIER_IN, AMPLIFIER_RIGHT, 0) = RT_BIT(7);
             break;
-        case 0x19:
-            pNode->node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_VENDOR_DEFINED, 0x3, 0)
+        }
+
+        /*
+         * STAC9221 nodes.
+         */
+
+        case STAC9221_NID_ADAT_OUT:
+        {
+            pNode->node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_VENDOR_DEFINED, 3, 0)
                                            | CODEC_F00_09_CAP_DIGITAL
-                                           | CODEC_F00_09_CAP_LSB;//(0xF << 20)|(0x3 << 16)|RT_BIT(9)|RT_BIT(0);
+                                           | CODEC_F00_09_CAP_STEREO;
             break;
-        case 0x1A:
-            pNode->node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_OUTPUT, 0x3, 0)
+        }
+
+        case STAC9221_NID_I2S_OUT:
+        {
+            pNode->node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_OUTPUT, 3, 0)
                                            | CODEC_F00_09_CAP_DIGITAL
-                                           | CODEC_F00_09_CAP_LSB;//(0x3 << 16)|RT_BIT(9)|RT_BIT(0);
+                                           | CODEC_F00_09_CAP_STEREO;
             break;
-        case 0x1B:
+        }
+
+        case STAC9221_NID_PIN_I2S_OUT:
+        {
             pNode->node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
                                            | CODEC_F00_09_CAP_DIGITAL
                                            | CODEC_F00_09_CAP_CONNECTION_LIST
-                                           | CODEC_F00_09_CAP_LSB;//(0x4 << 20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
-            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 0x1);
-            pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;//0x10;
-            pNode->node.au32F02_param[0] = 0x1a;
-            pNode->reserved.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_NO_PHYS,
-                                                          CODEC_F1C_LOCATION_NA,
-                                                          CODEC_F1C_DEVICE_LINE_OUT,
-                                                          CODEC_F1C_CONNECTION_TYPE_UNKNOWN,
-                                                          CODEC_F1C_COLOR_UNKNOWN,
-                                                          0x0, 0x0, 0xf);//0x4000000f;
+                                           | CODEC_F00_09_CAP_STEREO;
+            pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;
+
+            /* Connection list entries. */
+            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 1 /* Entries */);
+            pNode->node.au32F02_param[0]   = STAC9221_NID_I2S_OUT;
+
+            if (!pThis->fInReset)
+                pNode->reserved.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_NO_PHYS,
+                                                              CODEC_F1C_LOCATION_NA,
+                                                              CODEC_F1C_DEVICE_LINE_OUT,
+                                                              CODEC_F1C_CONNECTION_TYPE_UNKNOWN,
+                                                              CODEC_F1C_COLOR_UNKNOWN,
+                                                              CODEC_F1C_MISC_NONE,
+                                                              CODEC_F1C_ASSOCIATION_GROUP_15, 0xB /* Seq */);
             break;
+        }
+
         default:
-        break;
+            AssertMsgFailed(("Node %RU8 not implemented\n", uNID));
+            break;
     }
+
     return VINF_SUCCESS;
 }
 
 
 static int stac9220Construct(PHDACODEC pThis)
 {
-    unconst(pThis->cTotalNodes) = 0x1C;
+    unconst(pThis->cTotalNodes) = STAC9221_NUM_NODES;
+
     pThis->pfnCodecNodeReset = stac9220ResetNode;
-    pThis->pfnDbgListNodes   = stac9220DbgNodes;
-    pThis->u16VendorId = 0x8384;
-    pThis->u16DeviceId = 0x7680;
-    pThis->u8BSKU = 0x76;
+
+    pThis->u16VendorId  = 0x8384; /* SigmaTel */
+    /*
+     * Note: The Linux kernel uses "patch_stac922x" for the fixups,
+     *       which in turn uses "ref922x_pin_configs" for the configuration
+     *       defaults tweaking in sound/pci/hda/patch_sigmatel.c.
+     */
+    pThis->u16DeviceId  = 0x7680; /* STAC9221 A1 */
+    pThis->u8BSKU       = 0x76;
     pThis->u8AssemblyId = 0x80;
+
     pThis->paNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * pThis->cTotalNodes);
     if (!pThis->paNodes)
         return VERR_NO_MEMORY;
+
     pThis->fInReset = false;
+
 #define STAC9220WIDGET(type) pThis->au8##type##s = g_abStac9220##type##s
     STAC9220WIDGET(Port);
     STAC9220WIDGET(Dac);
@@ -1238,8 +1470,9 @@ static int stac9220Construct(PHDACODEC pThis)
     STAC9220WIDGET(VolKnob);
     STAC9220WIDGET(Reserved);
 #undef STAC9220WIDGET
-    unconst(pThis->u8AdcVolsLineIn) = 0x17;
-    unconst(pThis->u8DacLineOut) = 0x3;
+
+    unconst(pThis->u8AdcVolsLineIn) = STAC9220_NID_AMP_ADC0;
+    unconst(pThis->u8DacLineOut)    = STAC9220_NID_DAC1;
 
     return VINF_SUCCESS;
 }
@@ -1289,33 +1522,35 @@ DECLISNODEOFTYPE(Reserved)
 /*
  * Misc helpers.
  */
-static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCTL mt)
+static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCTL enmMixerCtl)
 {
-    uint32_t dir = AMPLIFIER_OUT;
-    ENMSOUNDSOURCE enmSrc;
-    switch (mt)
+    uint8_t iDir;
+    switch (enmMixerCtl)
     {
-        case PDMAUDIOMIXERCTL_PCM:
-            enmSrc = PO_INDEX;
-            dir = AMPLIFIER_OUT;
+        case PDMAUDIOMIXERCTL_VOLUME:
+        case PDMAUDIOMIXERCTL_FRONT:
+            iDir = AMPLIFIER_OUT;
             break;
         case PDMAUDIOMIXERCTL_LINE_IN:
-            enmSrc = PI_INDEX;
-            dir = AMPLIFIER_IN;
+        case PDMAUDIOMIXERCTL_MIC_IN:
+            iDir = AMPLIFIER_IN;
             break;
         default:
-            AssertMsgFailedReturn(("Invalid mixer control %ld\n", mt), VERR_INVALID_PARAMETER);
+            AssertMsgFailedReturn(("Invalid mixer control %ld\n", enmMixerCtl), VERR_INVALID_PARAMETER);
             break;
     }
 
-    int mute = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_LEFT, 0) & RT_BIT(7);
-    mute |= AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_RIGHT, 0) & RT_BIT(7);
-    mute >>=7;
-    mute &= 0x1;
-    uint8_t lVol = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_LEFT, 0) & 0x7f;
-    uint8_t rVol = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_RIGHT, 0) & 0x7f;
+    int iMute;
+    iMute  = AMPLIFIER_REGISTER(*pAmp, iDir, AMPLIFIER_LEFT,  0) & RT_BIT(7);
+    iMute |= AMPLIFIER_REGISTER(*pAmp, iDir, AMPLIFIER_RIGHT, 0) & RT_BIT(7);
+    iMute >>=7;
+    iMute &= 0x1;
 
-    /* The STAC9220 volume controls have 0 to -96dB attenuation range in 128 steps.
+    uint8_t lVol = AMPLIFIER_REGISTER(*pAmp, iDir, AMPLIFIER_LEFT,  0) & 0x7f;
+    uint8_t rVol = AMPLIFIER_REGISTER(*pAmp, iDir, AMPLIFIER_RIGHT, 0) & 0x7f;
+
+    /*
+     * The STAC9220 volume controls have 0 to -96dB attenuation range in 128 steps.
      * We have 0 to -96dB range in 256 steps. HDA volume setting of 127 must map
      * to 255 internally (0dB), while HDA volume setting of 0 (-96dB) should map
      * to 1 (rather than zero) internally.
@@ -1323,7 +1558,8 @@ static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCT
     lVol = (lVol + 1) * (2 * 255) / 256;
     rVol = (rVol + 1) * (2 * 255) / 256;
 
-    return pThis->pfnSetVolume(pThis->pHDAState, enmSrc, RT_BOOL(mute), lVol, rVol);
+    PDMAUDIOVOLUME Vol = { RT_BOOL(iMute), lVol, rVol };
+    return pThis->pfnMixerSetVolume(pThis->pHDAState, enmMixerCtl, &Vol);
 }
 
 DECLINLINE(void) hdaCodecSetRegister(uint32_t *pu32Reg, uint32_t u32Cmd, uint8_t u8Offset, uint32_t mask)
@@ -1425,7 +1661,7 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
                             CODEC_GET_AMP_SIDE(cmd),
                             u8Index);
     else
-        LogRel2(("HDA: Unhandled get amplifier command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get amplifier command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -1453,7 +1689,7 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
         pAmplifier = &pNode->adc.B_params;
     else
-        LogRel2(("HDA: Unhandled set amplifier command: 0x%x (Payload=%RU16, NID=0x%x [%RU8])\n",
+        LogRel2(("HDA: Warning: Unhandled set amplifier command: 0x%x (Payload=%RU16, NID=0x%x [%RU8])\n",
                  cmd, CODEC_VERB_PAYLOAD16(cmd), CODEC_NID(cmd)));
 
     if (!pAmplifier)
@@ -1487,7 +1723,7 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
 
         if (CODEC_NID(cmd) == pThis->u8DacLineOut)
-            hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_PCM);
+            hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
     }
 
     return VINF_SUCCESS;
@@ -1530,7 +1766,7 @@ static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, 
     else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
     else
-        LogRel2(("HDA: Unhandled get pin control command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get connection select control command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
@@ -1555,8 +1791,7 @@ static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, 
     else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
     else
-        LogRel2(("HDA: Unhandled set connection select control command: 0x%x (Payload=0x%x, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set connection select control command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
@@ -1585,7 +1820,7 @@ static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     else
-        LogRel2(("HDA: Unhandled get pin control command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get pin control command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
@@ -1613,8 +1848,7 @@ static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64
              && CODEC_NID(cmd) == 0x1b)
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     else
-        LogRel2(("HDA: Unhandled set pin control command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set pin control command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
@@ -1634,7 +1868,7 @@ static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
         *pResp = pThis->paNodes[CODEC_NID(cmd)].port.u32F08_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F08_param;
-    else if ((cmd) == 1 /* AFG */)
+    else if ((cmd) == STAC9220_NID_AFG)
         *pResp = pThis->paNodes[CODEC_NID(cmd)].afg.u32F08_param;
     else if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
@@ -1643,8 +1877,7 @@ static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F08_param;
     else
-        LogRel2(("HDA: Unhandled get unsolicited enabled command: 0x%x (NID=0x%x [%RU8])\n",
-                 cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get unsolicited enabled command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
@@ -1662,7 +1895,7 @@ static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].port.u32F08_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digin.u32F08_param;
-    else if (CODEC_NID(cmd) == 1 /* AFG */)
+    else if (CODEC_NID(cmd) == STAC9220_NID_AFG)
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].afg.u32F08_param;
     else if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
@@ -1671,8 +1904,7 @@ static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
     else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digout.u32F08_param;
     else
-        LogRel2(("HDA: Unhandled set unsolicited enabled command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set unsolicited enabled command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
@@ -1693,7 +1925,7 @@ static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, uint32_t cmd, uint6
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F09_param;
     else
-        LogRel2(("HDA: Unhandled get pin sense command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get pin sense command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
@@ -1712,8 +1944,7 @@ static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, uint32_t cmd, uint6
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digin.u32F09_param;
     else
-        LogRel2(("HDA: Unhandled set pin sense command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set pin sense command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
@@ -1817,7 +2048,7 @@ static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, uint32_t cmd, uint64_t
         LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
-    if (CODEC_NID(cmd) == 1 /* AFG */)
+    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
         *pResp = pThis->paNodes[CODEC_NID(cmd)].afg.u32F20_param;
     else
         *pResp = 0;
@@ -1834,7 +2065,7 @@ static int codecSetSubIdX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
         return VINF_SUCCESS;
     }
     uint32_t *pu32Reg;
-    if (CODEC_NID(cmd) == 0x1 /* AFG */)
+    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].afg.u32F20_param;
     else
         AssertFailedReturn(VINF_SUCCESS);
@@ -1873,8 +2104,8 @@ static DECLCALLBACK(int) vrbProcSetSubId3(PHDACODEC pThis, uint32_t cmd, uint64_
 static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
     Assert(CODEC_CAD(cmd) == pThis->id);
-    Assert(CODEC_NID(cmd) == 1 /* AFG */);
-    if (   CODEC_NID(cmd) == 1 /* AFG */
+    Assert(CODEC_NID(cmd) == STAC9220_NID_AFG);
+    if (   CODEC_NID(cmd) == STAC9220_NID_AFG
         && pThis->pfnCodecNodeReset)
     {
         uint8_t i;
@@ -1899,12 +2130,14 @@ static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, uint32_t cmd, uin
 
     *pResp = 0;
 
-    if (CODEC_NID(cmd) == 1 /* AFG */)
+    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
         *pResp = pThis->paNodes[CODEC_NID(cmd)].afg.u32F05_param;
     else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].dac.u32F05_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F05_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
+        *pResp = pThis->paNodes[CODEC_NID(cmd)].digout.u32F05_param;
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].adc.u32F05_param;
     else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
@@ -1914,22 +2147,11 @@ static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, uint32_t cmd, uin
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F05_param;
     else
-        LogRel2(("HDA: Unhandled get power state command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get power state command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
+    LogFunc(("NID=0x%x, fReset=%RTbool, fStopOk=%RTbool, Set=%RU8, Act=%RU8\n",
+             CODEC_NID(cmd), CODEC_F05_IS_RESET(*pResp), CODEC_F05_IS_STOPOK(*pResp), CODEC_F05_SET(*pResp), CODEC_F05_ACT(*pResp)));
     return VINF_SUCCESS;
-}
-
-DECLINLINE(void) codecPropogatePowerState(uint32_t *pu32F05_param)
-{
-    AssertPtr(pu32F05_param);
-    if (!pu32F05_param)
-        return;
-
-    bool fReset  = CODEC_F05_IS_RESET(*pu32F05_param);
-    bool fStopOk = CODEC_F05_IS_STOPOK(*pu32F05_param);
-    uint8_t u8SetPowerState = CODEC_F05_SET(*pu32F05_param);
-
-    *pu32F05_param = CODEC_MAKE_F05(fReset, fStopOk, 0, u8SetPowerState, u8SetPowerState);
 }
 
 /* 705 */
@@ -1941,12 +2163,14 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, uint32_t cmd, uin
     *pResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (CODEC_NID(cmd) == 1 /* AFG */)
+    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].afg.u32F05_param;
     else if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].dac.u32F05_param;
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digin.u32F05_param;
+    else if (hdaCodecIsDigOutPinNode(pThis, CODEC_NID(cmd)))
+        pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digout.u32F05_param;
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].adc.u32F05_param;
     else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
@@ -1956,47 +2180,73 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, uint32_t cmd, uin
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F05_param;
     else
-        LogRel2(("HDA: Unhandled set power state command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set power state command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     if (!pu32Reg)
         return VINF_SUCCESS;
 
-    bool fReset = CODEC_F05_IS_RESET(*pu32Reg);
-    bool fStopOk = CODEC_F05_IS_STOPOK(*pu32Reg);
+    bool    fReset  = CODEC_F05_IS_RESET (*pu32Reg);
+    bool    fStopOk = CODEC_F05_IS_STOPOK(*pu32Reg);
+    uint8_t uPwrAct = CODEC_F05_ACT      (*pu32Reg);
+    uint8_t uPwrSet = CODEC_F05_SET      (*pu32Reg);
+    uint8_t uPwrCmd = CODEC_F05_SET      (cmd);
 
-    if (CODEC_NID(cmd) != 1 /* AFG */)
+    LogFunc(("[NID=0x%x] Cmd=D%RU8, Act=D%RU8, Set=D%RU8 (AFG Act=D%RU8, Set=D%RU8)\n",
+            CODEC_NID(cmd), uPwrCmd, uPwrAct, uPwrSet,
+            CODEC_F05_ACT(pThis->paNodes[STAC9220_NID_AFG].afg.u32F05_param),
+            CODEC_F05_SET(pThis->paNodes[STAC9220_NID_AFG].afg.u32F05_param)));
+
+    const uint8_t uAFGPwrSet = CODEC_F05_SET(pThis->paNodes[STAC9220_NID_AFG].afg.u32F05_param);
+
+    /* If this is the AFG node, PS-Act always matches the PS-Set power state.*/
+    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
     {
-        /*
-         * We shouldn't propogate actual power state, which actual for AFG
-         */
-        *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0,
-                                  CODEC_F05_ACT(pThis->paNodes[1].afg.u32F05_param),
-                                  CODEC_F05_SET(cmd));
-    }
+        *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0, uPwrCmd /* PS-Act */, uPwrCmd /* PS-Set */);
 
-    /* Propagate next power state only if AFG is on or verb modifies AFG power state */
-    if (   CODEC_NID(cmd) == 1 /* AFG */
-        || !CODEC_F05_ACT(pThis->paNodes[1].afg.u32F05_param))
-    {
-        *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0, CODEC_F05_SET(cmd), CODEC_F05_SET(cmd));
-        if (   CODEC_NID(cmd) == 1 /* AFG */
-            && (CODEC_F05_SET(cmd)) == CODEC_F05_D0)
-        {
-            /* now we're powered on AFG and may propogate power states on nodes */
-            const uint8_t *pu8NodeIndex = &pThis->au8Dacs[0];
-            while (*(++pu8NodeIndex))
-                codecPropogatePowerState(&pThis->paNodes[*pu8NodeIndex].dac.u32F05_param);
+        /* Propagate to all other nodes under this AFG. */
+        LogFunc(("Propagating Set=D%RU8 to all nodes ...\n", uPwrCmd));
 
-            pu8NodeIndex = &pThis->au8Adcs[0];
-            while (*(++pu8NodeIndex))
-                codecPropogatePowerState(&pThis->paNodes[*pu8NodeIndex].adc.u32F05_param);
-
-            pu8NodeIndex = &pThis->au8DigInPins[0];
-            while (*(++pu8NodeIndex))
-                codecPropogatePowerState(&pThis->paNodes[*pu8NodeIndex].digin.u32F05_param);
+#define PROPAGATE_PWR_STATE(_aList, _aMember) \
+        { \
+            const uint8_t *pu8NodeIndex = &_aList[0]; \
+            while (*(pu8NodeIndex++)) \
+            { \
+                pThis->paNodes[*pu8NodeIndex]._aMember.u32F05_param = \
+                    CODEC_MAKE_F05(fReset, fStopOk, 0, RT_MIN((uAFGPwrSet + 1), CODEC_F05_D3), \
+                                   uPwrCmd /* Always update PS-Set with command power state just received. */); \
+                LogFunc(("\t[NID=0x%x]: Act=D%RU8, Set=D%RU8\n", *pu8NodeIndex, \
+                         CODEC_F05_ACT(pThis->paNodes[*pu8NodeIndex]._aMember.u32F05_param), \
+                         CODEC_F05_SET(pThis->paNodes[*pu8NodeIndex]._aMember.u32F05_param))); \
+            } \
         }
+
+        PROPAGATE_PWR_STATE(pThis->au8Dacs,       dac);
+        PROPAGATE_PWR_STATE(pThis->au8Adcs,       adc);
+        PROPAGATE_PWR_STATE(pThis->au8DigInPins,  digin);
+        PROPAGATE_PWR_STATE(pThis->au8DigOutPins, digout);
+        PROPAGATE_PWR_STATE(pThis->au8SpdifIns,   spdifin);
+        PROPAGATE_PWR_STATE(pThis->au8SpdifOuts,  spdifout);
+        PROPAGATE_PWR_STATE(pThis->au8Reserveds,  reserved);
+
+#undef PROPAGATE_PWR_STATE
     }
+    /*
+     * If this node is a reqular node (not the AFG one), adpopt PS-Set of the AFG node
+     * as PS-Set of this node. PS-Act always is one level under PS-Set here.
+     */
+    else
+    {
+        *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0,
+                                  RT_MIN((uAFGPwrSet + 1), CODEC_F05_D3),
+                                  uPwrCmd /* Always update PS-Set with command power state just received. */);
+    }
+
+    if (pu32Reg)
+        hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+
+    LogFunc(("[NID=0x%x] fReset=%RTbool, fStopOk=%RTbool, Act=D%RU8, Set=D%RU8\n",
+             CODEC_NID(cmd), fReset, fStopOk, CODEC_F05_ACT(*pu32Reg), CODEC_F05_SET(*pu32Reg)));
+
     return VINF_SUCCESS;
 }
 
@@ -2015,10 +2265,13 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
     else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
-    else if (CODEC_NID(cmd) == 0x1A)
+    else if (CODEC_NID(cmd) == STAC9221_NID_I2S_OUT)
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F06_param;
     else
-        LogRel2(("HDA: Unhandled get stream ID command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get stream ID command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
+
+    LogFlowFunc(("[NID0x%x] Stream ID is 0x%x\n",
+                 CODEC_NID(cmd), CODEC_F00_06_GET_STREAM_ID(*pResp)));
 
     return VINF_SUCCESS;
 }
@@ -2043,8 +2296,10 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F06_param;
     else
-        LogRel2(("HDA: Unhandled set stream ID command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set stream ID command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
+
+    LogFlowFunc(("[NID0x%x] Setting new stream ID to 0x%x\n",
+                 CODEC_NID(cmd), CODEC_F00_06_GET_STREAM_ID(cmd)));
 
     if (pu32Addr)
         hdaCodecSetRegisterU8(pu32Addr, cmd, 0);
@@ -2052,7 +2307,7 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     return VINF_SUCCESS;
 }
 
-/* F06 */
+/* A0 */
 static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
     if (!vrbIsValidNode(pThis, cmd, pResp))
@@ -2068,12 +2323,15 @@ static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, uint32_t cmd
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifout.u32A_param;
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].spdifin.u32A_param;
+    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
+        *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32A_param;
     else
-        LogRel2(("HDA: Unhandled get power state command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get converter format command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
 
+/* Also see section 3.7.1. */
 static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
     if (!vrbIsValidNode(pThis, cmd, pResp))
@@ -2090,8 +2348,7 @@ static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, uint32_t cmd
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
         hdaCodecSetRegisterU16(&pThis->paNodes[CODEC_NID(cmd)].spdifin.u32A_param, cmd, 0);
     else
-        LogRel2(("HDA: Unhandled set converter format command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set converter format command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
@@ -2111,7 +2368,7 @@ static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].digin.u32F0c_param;
     else
-        LogRel2(("HDA: Unhandled get EAPD/BTL enable command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get EAPD/BTL enabled command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
@@ -2132,8 +2389,7 @@ static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd
     else if (hdaCodecIsDigInPinNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].digin.u32F0c_param;
     else
-        LogRel2(("HDA: Unhandled set EAPD/BTL enable command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set EAPD/BTL enabled command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
@@ -2152,7 +2408,7 @@ static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, uint32_t cmd,
     if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
     else
-        LogRel2(("HDA: Unhandled get volume knob control command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get volume knob control command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
@@ -2169,11 +2425,54 @@ static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, uint32_t cmd,
     if (hdaCodecIsVolKnobNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
     else
-        LogRel2(("HDA: Unhandled set volume control command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set volume knob control command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
+
+    return VINF_SUCCESS;
+}
+
+/* F15 */
+static DECLCALLBACK(int) vrbProcGetGPIOData(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
+{
+    if (!vrbIsValidNode(pThis, cmd, pResp))
+        return VINF_SUCCESS;
+
+    *pResp = 0;
+
+    return VINF_SUCCESS;
+}
+
+/* 715 */
+static DECLCALLBACK(int) vrbProcSetGPIOData(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
+{
+    if (!vrbIsValidNode(pThis, cmd, pResp))
+        return VINF_SUCCESS;
+
+    *pResp = 0;
+
+    return VINF_SUCCESS;
+}
+
+/* F16 */
+static DECLCALLBACK(int) vrbProcGetGPIOEnableMask(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
+{
+    if (!vrbIsValidNode(pThis, cmd, pResp))
+        return VINF_SUCCESS;
+
+    *pResp = 0;
+
+    return VINF_SUCCESS;
+}
+
+/* 716 */
+static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
+{
+    if (!vrbIsValidNode(pThis, cmd, pResp))
+        return VINF_SUCCESS;
+
+    *pResp = 0;
 
     return VINF_SUCCESS;
 }
@@ -2187,10 +2486,10 @@ static DECLCALLBACK(int) vrbProcGetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd,
     *pResp = 0;
 
     /* Note: this is true for ALC885. */
-    if (CODEC_NID(cmd) == 0x1 /* AFG */)
+    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
         *pResp = pThis->paNodes[1].afg.u32F17_param;
     else
-        LogRel2(("HDA: Unhandled get GPIO unsolisted command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get GPIO unsolisted command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
@@ -2204,11 +2503,10 @@ static DECLCALLBACK(int) vrbProcSetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd,
     *pResp = 0;
 
     uint32_t *pu32Reg = NULL;
-    if (CODEC_NID(cmd) == 1 /* AFG */)
+    if (CODEC_NID(cmd) == STAC9220_NID_AFG)
         pu32Reg = &pThis->paNodes[1].afg.u32F17_param;
     else
-        LogRel2(("HDA: Unhandled set GPIO unsolisted command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set GPIO unsolisted command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
@@ -2237,7 +2535,7 @@ static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, uint32_t cmd, uint64_
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
     else
-        LogRel2(("HDA: Unhandled get config command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get config command for NID0x%x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
@@ -2258,8 +2556,7 @@ static int codecSetConfigX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
     else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
         pu32Reg = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
     else
-        LogRel2(("HDA: Unhandled set config command: 0x%x (Payload=%RU8, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD8(cmd), CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled set config command (%RU8) for NID0x%x: 0x%x\n", u8Offset, CODEC_NID(cmd), cmd));
 
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, u8Offset);
@@ -2345,6 +2642,10 @@ static const CODECVERB g_aCodecVerbs[] =
     { 0x00070C00, CODEC_VERB_8BIT_CMD , vrbProcSetEAPD_BTLEnabled     },
     { 0x000F0F00, CODEC_VERB_8BIT_CMD , vrbProcGetVolumeKnobCtrl      },
     { 0x00070F00, CODEC_VERB_8BIT_CMD , vrbProcSetVolumeKnobCtrl      },
+    { 0x000F1500, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOData            },
+    { 0x00071500, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOData            },
+    { 0x000F1600, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOEnableMask      },
+    { 0x00071600, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOEnableMask      },
     { 0x000F1700, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOUnsolisted      },
     { 0x00071700, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOUnsolisted      },
     { 0x000F1C00, CODEC_VERB_8BIT_CMD , vrbProcGetConfig              },
@@ -2356,6 +2657,7 @@ static const CODECVERB g_aCodecVerbs[] =
     { 0x00020000, CODEC_VERB_16BIT_CMD, vrbProcSetConverterFormat     },
     { 0x000B0000, CODEC_VERB_16BIT_CMD, vrbProcGetAmplifier           },
     { 0x00030000, CODEC_VERB_16BIT_CMD, vrbProcSetAmplifier           },
+    /** @todo Implement 0x7e7: IDT Set GPIO (STAC922x only). */
 };
 
 #ifdef DEBUG
@@ -2580,19 +2882,16 @@ static DECLCALLBACK(void) codecDbgSelector(PHDACODEC pThis, PCDBGFINFOHLP pHlp, 
 static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, uint32_t cmd, PPFNHDACODECVERBPROCESSOR pfn)
 {
     Assert(CODEC_CAD(cmd) == pThis->id);
-    if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        LogFlowFunc(("cmd %x was addressed to reserved node\n", cmd));
 
     if (   CODEC_VERBDATA(cmd) == 0
         || CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
         *pfn = vrbProcUnimplemented;
-        /// @todo r=michaln: There needs to be a counter to avoid log flooding (see e.g. DevRTC.cpp)
-        LogFlowFunc(("cmd %x was ignored\n", cmd));
+        AssertMsgFailed(("Unknown / invalid node 0x%x\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
 
-    for (int i = 0; i < pThis->cVerbs; ++i)
+    for (int i = 0; i < pThis->cVerbs; i++)
     {
         if ((CODEC_VERBDATA(cmd) & pThis->paVerbs[i].mask) == pThis->paVerbs[i].verb)
         {
@@ -2602,7 +2901,8 @@ static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, uint32_t cmd, PPFNHDACODEC
     }
 
     *pfn = vrbProcUnimplemented;
-    LogFlowFunc(("callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
+
+    LogFlowFunc(("[NID0x%x] Callback for %x not found\n", CODEC_NID(cmd), CODEC_VERBDATA(cmd)));
     return VINF_SUCCESS;
 }
 
@@ -2610,45 +2910,52 @@ static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, uint32_t cmd, PPFNHDACODEC
  * APIs exposed to DevHDA.
  */
 
-/**
- *
- * routines open one of the voices (IN, OUT) with corresponding parameters.
- * this routine could be called from HDA on setting/resseting sound format.
- *
- * @todo Probably passed settings should be verified (if AFG's declared proposed
- *       format) before enabling.
- */
-int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, PPDMAUDIOSTREAMCFG pCfg)
+int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
 
-    int rc;
-    switch (enmSoundSource)
+    int rc = VINF_SUCCESS;
+
+    switch (enmMixerCtl)
     {
-        case PI_INDEX:
-            rc = pThis->pfnOpenIn(pThis->pHDAState,  "hda.in", PDMAUDIORECSOURCE_LINE_IN, pCfg);
-            break;
+        case PDMAUDIOMIXERCTL_LINE_IN:
 #ifdef VBOX_WITH_HDA_MIC_IN
-        case MC_INDEX:
-            rc = pThis->pfnOpenIn(pThis->pHDAState,  "hda.mc", PDMAUDIORECSOURCE_MIC, pCfg);
-            break;
+        case PDMAUDIOMIXERCTL_MIC_IN:
 #endif
-        case PO_INDEX:
-            rc = pThis->pfnOpenOut(pThis->pHDAState, "hda.out", pCfg);
+        {
+            pCfg->enmDir = PDMAUDIODIR_IN;
             break;
+        }
+
+        case PDMAUDIOMIXERCTL_VOLUME:
+        case PDMAUDIOMIXERCTL_FRONT:
+        {
+            pCfg->enmDir = PDMAUDIODIR_OUT;
+            break;
+        }
 
         default:
-            AssertMsgFailed(("Index %ld not implemented\n", enmSoundSource));
+            AssertMsgFailed(("Mixer control %ld not implemented\n", enmMixerCtl));
             rc = VERR_NOT_IMPLEMENTED;
+            break;
     }
+
+    if (RT_SUCCESS(rc))
+        rc = pThis->pfnMixerAddStream(pThis->pHDAState, enmMixerCtl, pCfg);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
+int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl)
+{
+    return VINF_SUCCESS;
+}
+
 int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM)
 {
-    AssertLogRelMsgReturn(pThis->cTotalNodes == 0x1c, ("cTotalNodes=%#x, should be 0x1c", pThis->cTotalNodes),
+    AssertLogRelMsgReturn(pThis->cTotalNodes == STAC9221_NUM_NODES, ("cTotalNodes=%#x, should be 0x1c", pThis->cTotalNodes),
                           VERR_INTERNAL_ERROR);
     SSMR3PutU32(pSSM, pThis->cTotalNodes);
     for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
@@ -2714,9 +3021,9 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
      * Update stuff after changing the state.
      */
     if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
-        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_PCM);
+        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_FRONT);
     else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
-        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, PDMAUDIOMIXERCTL_PCM);
+        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, PDMAUDIOMIXERCTL_FRONT);
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 
     return VINF_SUCCESS;
@@ -2739,52 +3046,93 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
                       uint16_t uLUN, PCFGMNODE pCfg)
 {
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
 
-    pThis->id        = uLUN;
-    pThis->paVerbs   = &g_aCodecVerbs[0];
-    pThis->cVerbs    = RT_ELEMENTS(g_aCodecVerbs);
+    pThis->id      = uLUN;
+    pThis->paVerbs = &g_aCodecVerbs[0];
+    pThis->cVerbs  = RT_ELEMENTS(g_aCodecVerbs);
 
-    pThis->pfnLookup       = codecLookup;
 #ifdef DEBUG
     pThis->pfnDbgSelector  = codecDbgSelector;
     pThis->pfnDbgListNodes = codecDbgListNodes;
 #endif
+    pThis->pfnLookup       = codecLookup;
+
     int rc = stac9220Construct(pThis);
     AssertRC(rc);
 
-    /* common root node initializers */
-    pThis->paNodes[0].node.au32F00_param[0] = CODEC_MAKE_F00_00(pThis->u16VendorId, pThis->u16DeviceId);
-    pThis->paNodes[0].node.au32F00_param[4] = CODEC_MAKE_F00_04(0x1, 0x1);
-    /* common AFG node initializers */
-    pThis->paNodes[1].node.au32F00_param[4] = CODEC_MAKE_F00_04(0x2, pThis->cTotalNodes - 2);
-    pThis->paNodes[1].node.au32F00_param[5] = CODEC_MAKE_F00_05(1, CODEC_F00_05_AFG);
-    pThis->paNodes[1].afg.u32F20_param = CODEC_MAKE_F20(pThis->u16VendorId, pThis->u8BSKU, pThis->u8AssemblyId);
+    /* Common root node initializers. */
+    pThis->paNodes[STAC9220_NID_ROOT].root.node.au32F00_param[0] = CODEC_MAKE_F00_00(pThis->u16VendorId, pThis->u16DeviceId);
+    pThis->paNodes[STAC9220_NID_ROOT].root.node.au32F00_param[4] = CODEC_MAKE_F00_04(0x1, 0x1);
 
-    /* This codec uses a fixed setting (44.1 kHz, 16-bit signed, 2 channels). */
-    pThis->strmCfg.uHz           = 44100;
-    pThis->strmCfg.cChannels     = 2;
-    pThis->strmCfg.enmFormat     = AUD_FMT_S16;
-    pThis->strmCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
+    /* Common AFG node initializers. */
+    pThis->paNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0x4] = CODEC_MAKE_F00_04(0x2, pThis->cTotalNodes - 2);
+    pThis->paNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0x5] = CODEC_MAKE_F00_05(1, CODEC_F00_05_AFG);
+    pThis->paNodes[STAC9220_NID_AFG].afg.node.au32F00_param[0xA] = CODEC_F00_0A_44_1KHZ | CODEC_F00_0A_16_BIT;
+    pThis->paNodes[STAC9220_NID_AFG].afg.u32F20_param = CODEC_MAKE_F20(pThis->u16VendorId, pThis->u8BSKU, pThis->u8AssemblyId);
 
-    hdaCodecOpenStream(pThis, PI_INDEX, &pThis->strmCfg);
-#ifdef VBOX_WITH_HDA_MIC_IN
-    hdaCodecOpenStream(pThis, MC_INDEX, &pThis->strmCfg);
+    /* Initialize the streams to some default values (44.1 kHz, 16-bit signed, 2 channels).
+     * The codec's (fixed) delivery rate is 48kHz, so a frame will be delivered every 20.83us. */
+    PDMAUDIOSTREAMCFG strmCfg;
+    strmCfg.uHz           = 44100;
+    strmCfg.cChannels     = 2;
+    strmCfg.enmFormat     = AUD_FMT_S16;
+    strmCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
+
+    /*
+     * Output streams.
+     */
+    strmCfg.enmDir = PDMAUDIODIR_OUT;
+
+    /* Front. */
+    strmCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
+    rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_FRONT, &strmCfg);
+    AssertRC(rc);
+
+#ifdef VBOX_WITH_HDA_51_SURROUND
+    /* Center / LFE. */
+    strmCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_CENTER_LFE;
+    rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, &strmCfg);
+    AssertRC(rc);
+
+    /* Rear. */
+    strmCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_REAR;
+    rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_REAR, &strmCfg);
+    AssertRC(rc);
 #endif
-    hdaCodecOpenStream(pThis, PO_INDEX, &pThis->strmCfg);
 
-    /* Initialize the AFG node with the fixed setting. */
-    pThis->paNodes[1].node.au32F00_param[0xA] = CODEC_F00_0A_44_1KHZ | CODEC_F00_0A_16_BIT;
+    /*
+     * Input streams.
+     */
+    strmCfg.enmDir = PDMAUDIODIR_IN;
 
+#ifdef VBOX_WITH_HDA_MIC_IN
+    strmCfg.DestSource.Source = PDMAUDIORECSOURCE_MIC;
+    rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_MIC_IN, &strmCfg);
+    AssertRC(rc);
+#endif
+    strmCfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
+    rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_LINE_IN, &strmCfg);
+    AssertRC(rc);
+
+    /*
+     * Reset nodes.
+     */
     AssertPtr(pThis->paNodes);
     AssertPtr(pThis->pfnCodecNodeReset);
 
     for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
         pThis->pfnCodecNodeReset(pThis, i, &pThis->paNodes[i]);
 
-    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params,       PDMAUDIOMIXERCTL_PCM);
+    /*
+     * Set initial volume.
+     */
+    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params,       PDMAUDIOMIXERCTL_FRONT);
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
+#ifdef VBOX_WITH_HDA_MIC_IN
+    #error "Implement mic-in support!"
+#endif
 
     return VINF_SUCCESS;
 }

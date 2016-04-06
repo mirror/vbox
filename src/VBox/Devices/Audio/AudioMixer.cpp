@@ -309,7 +309,6 @@ int AudioMixerProcessSinkIn(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint
     PAUDMIXSTREAM pStream;
     RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
     {
-        /** @todo Support output sinks as well! */
         if (!pStream->pConn->pfnIsActiveIn(pStream->pConn, pStream->pIn))
             continue;
 
@@ -325,6 +324,8 @@ int AudioMixerProcessSinkIn(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint
             if (   RT_FAILURE(rc)
                 || !cbRead)
                 break;
+
+            /** @todo Right now we only handle one stream (the last one added in fact). */
 
             AssertBreakStmt(cbRead <= cbToRead, rc = VERR_BUFFER_OVERFLOW);
             cbToRead -= cbRead;

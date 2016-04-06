@@ -153,52 +153,5 @@ int drvAudioHlpPcmCreateVoicePairOut(PDRVAUDIO pDrvAudio, const char *pszName, P
 void DrvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
 int DrvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps);
 
-typedef struct fixed_settings
-{
-    int enabled;
-    int cStreams;
-    int greedy;
-    PDMAUDIOSTREAMCFG settings;
-} fixed_settings;
-
-static struct {
-    struct fixed_settings fixed_out;
-    struct fixed_settings fixed_in;
-    union {
-        int hz;
-        int64_t ticks;
-    } period;
-    int plive;
-} conf = {
-
-    /* Fixed output settings. */
-    {                           /* DAC fixed settings */
-        1,                      /* enabled */
-        1,                      /* cStreams */
-        1,                      /* greedy */
-        {
-            44100,              /* freq */
-            2,                  /* nchannels */
-            AUD_FMT_S16,        /* fmt */
-            PDMAUDIOHOSTENDIANNESS
-        }
-    },
-
-    /* Fixed input settings. */
-    {                           /* ADC fixed settings */
-        1,                      /* enabled */
-        2,                      /* cStreams */
-        1,                      /* greedy */
-        {
-            44100,              /* freq */
-            2,                  /* nchannels */
-            AUD_FMT_S16,        /* fmt */
-            PDMAUDIOHOSTENDIANNESS
-        }
-    },
-
-    { 200 },                    /* frequency (in Hz) */
-    0,                          /* plive */ /** @todo Disable pending live? */
-};
 #endif /* DRV_AUDIO_H */
 

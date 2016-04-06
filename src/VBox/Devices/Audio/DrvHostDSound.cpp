@@ -906,7 +906,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
                 break;
             }
 
-            case PDMAUDIORECSOURCE_LINE_IN:
+            case PDMAUDIORECSOURCE_LINE:
             default:
                 /* Try opening the default device (NULL). */
                 break;

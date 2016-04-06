@@ -71,33 +71,21 @@ static int drvAudioDestroyHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN pHstStrmIn);
 
 int drvAudioAddHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOHSTSTRMOUT *ppHstStrmOut)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
-
-    PPDMAUDIOHSTSTRMOUT pHstStrmOut;
+    AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
 
     int rc;
-    if (   conf.fixed_out.enabled /** @todo Get rid of these settings! */
-        && conf.fixed_out.greedy)
+
+    PPDMAUDIOHSTSTRMOUT pHstStrmOut = drvAudioFindSpecificOut(pThis, NULL, pCfg);
+    if (!pHstStrmOut)
     {
         rc = drvAudioAllocHstOut(pThis, pszName, pCfg, &pHstStrmOut);
+        if (RT_FAILURE(rc))
+            pHstStrmOut = drvAudioFindAnyHstOut(pThis, NULL /* pHstStrmOut */);
     }
-    else
-        rc = VERR_NOT_FOUND;
 
-    if (RT_FAILURE(rc))
-    {
-        pHstStrmOut = drvAudioFindSpecificOut(pThis, NULL, pCfg);
-        if (!pHstStrmOut)
-        {
-            rc = drvAudioAllocHstOut(pThis, pszName, pCfg, &pHstStrmOut);
-            if (RT_FAILURE(rc))
-                pHstStrmOut = drvAudioFindAnyHstOut(pThis, NULL /* pHstStrmOut */);
-        }
-
-        rc = pHstStrmOut ? VINF_SUCCESS : rc;
-    }
+    rc = pHstStrmOut ? VINF_SUCCESS : rc;
 
     if (RT_SUCCESS(rc))
         *ppHstStrmOut = pHstStrmOut;
@@ -105,6 +93,7 @@ int drvAudioAddHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG p
     return rc;
 }
 
+#ifndef VBOX_AUDIO_TESTCASE
 static PDMAUDIOFMT drvAudioGetConfFormat(PCFGMNODE pCfgHandle, const char *pszKey,
                                          PDMAUDIOFMT enmDefault, bool *pfDefault)
 {
@@ -271,6 +260,7 @@ static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, a
 
     return VINF_SUCCESS;
 }
+#endif /* !VBOX_AUDIO_TESTCASE */
 
 static bool drvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
 {
@@ -300,11 +290,6 @@ static bool drvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
     /** @todo Check for defined frequencies supported. */
     fValid |= pCfg->uHz > 0;
 
-#ifdef DEBUG
-    drvAudioStreamCfgPrint(pCfg);
-#endif
-
-    LogFlowFunc(("pCfg=%p, fValid=%RTbool\n", pCfg, fValid));
     return fValid;
 }
 
@@ -827,26 +812,9 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG
 int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
                                 PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMOUT *ppGstStrmOut)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
-
-    /*
-     * Try figuring out which audio stream configuration this backend
-     * should use. If fixed output is enabled the backend will be tied
-     * to a fixed rate (in Hz, among other parameters), regardless of
-     * what the backend could do else.
-     */
-    PPDMAUDIOSTREAMCFG pBackendCfg;
-    if (conf.fixed_out.enabled)
-        pBackendCfg = &conf.fixed_out.settings;
-    else
-        pBackendCfg = pCfg;
-
-    AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("Using fixed audio output settings: %RTbool\n",
-                 RT_BOOL(conf.fixed_out.enabled)));
+    AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
 
     PPDMAUDIOGSTSTRMOUT pGstStrmOut =
         (PPDMAUDIOGSTSTRMOUT)RTMemAllocZ(sizeof(PDMAUDIOGSTSTRMOUT));
@@ -860,7 +828,7 @@ int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
      * The host stream always will get the backend audio stream configuration.
      */
     PPDMAUDIOHSTSTRMOUT pHstStrmOut;
-    int rc = drvAudioAddHstOut(pThis, pszName, pBackendCfg, &pHstStrmOut);
+    int rc = drvAudioAddHstOut(pThis, pszName, pCfg, &pHstStrmOut);
     if (RT_FAILURE(rc))
     {
         LogFlowFunc(("Error adding host output stream \"%s\", rc=%Rrc\n", pszName, rc));
@@ -892,25 +860,9 @@ int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
 static int drvAudioCreateStreamPairIn(PDRVAUDIO pThis, const char *pszName, PDMAUDIORECSOURCE enmRecSource,
                                       PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMIN *ppGstStrmIn)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
-
-/*
-     * Try figuring out which audio stream configuration this backend
-     * should use for the audio input data. If fixed input is enabled
-     * the backend will be tied to a fixed rate (in Hz, among other parameters),
-     * regardless of what the backend initially wanted to use.
-     */
-    PPDMAUDIOSTREAMCFG pBackendCfg;
-    if (conf.fixed_in.enabled)
-        pBackendCfg = &conf.fixed_in.settings;
-    else
-        pBackendCfg = pCfg;
-
-    AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("Using fixed audio input settings: %RTbool\n",
-                 RT_BOOL(conf.fixed_in.enabled)));
+    AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
 
     PPDMAUDIOGSTSTRMIN pGstStrmIn = (PPDMAUDIOGSTSTRMIN)RTMemAllocZ(sizeof(PDMAUDIOGSTSTRMIN));
     if (!pGstStrmIn)
@@ -920,7 +872,7 @@ static int drvAudioCreateStreamPairIn(PDRVAUDIO pThis, const char *pszName, PDMA
      * The host stream always will get the backend audio stream configuration.
      */
     PPDMAUDIOHSTSTRMIN pHstStrmIn;
-    int rc = drvAudioHstInAdd(pThis, pszName, pBackendCfg, enmRecSource, &pHstStrmIn);
+    int rc = drvAudioHstInAdd(pThis, pszName, pCfg, enmRecSource, &pHstStrmIn);
     if (RT_FAILURE(rc))
     {
         LogFunc(("Failed to add host audio input stream \"%s\", rc=%Rrc\n", pszName, rc));
@@ -1715,48 +1667,6 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
         drvAudioControlHstIn(pThis, pHstStrmIn, enmCmd);
 }
 
-static struct audio_option audio_options[] =
-{
-    /* DAC */
-    {"DACFixedSettings", AUD_OPT_BOOL, &conf.fixed_out.enabled,
-     "Use fixed settings for host DAC", NULL, 0},
-
-    {"DACFixedFreq", AUD_OPT_INT, &conf.fixed_out.settings.uHz,
-     "Frequency for fixed host DAC", NULL, 0},
-
-    {"DACFixedFmt", AUD_OPT_FMT, &conf.fixed_out.settings.enmFormat,
-     "Format for fixed host DAC", NULL, 0},
-
-    {"DACFixedChannels", AUD_OPT_INT, &conf.fixed_out.settings.cChannels,
-     "Number of channels for fixed DAC (1 - mono, 2 - stereo)", NULL, 0},
-
-    {"DACVoices", AUD_OPT_INT, &conf.fixed_out.cStreams, /** @todo Rename! */
-     "Number of streams for DAC", NULL, 0},
-
-    /* ADC */
-    {"ADCFixedSettings", AUD_OPT_BOOL, &conf.fixed_in.enabled,
-     "Use fixed settings for host ADC", NULL, 0},
-
-    {"ADCFixedFreq", AUD_OPT_INT, &conf.fixed_in.settings.uHz,
-     "Frequency for fixed host ADC", NULL, 0},
-
-    {"ADCFixedFmt", AUD_OPT_FMT, &conf.fixed_in.settings.enmFormat,
-     "Format for fixed host ADC", NULL, 0},
-
-    {"ADCFixedChannels", AUD_OPT_INT, &conf.fixed_in.settings.cChannels,
-     "Number of channels for fixed ADC (1 - mono, 2 - stereo)", NULL, 0},
-
-    {"ADCVoices", AUD_OPT_INT, &conf.fixed_in.cStreams, /** @todo Rename! */
-     "Number of streams for ADC", NULL, 0},
-
-    /* Misc */
-    {"TimerFreq", AUD_OPT_INT, &conf.period.hz,
-     "Timer frequency in Hz (0 - use lowest possible)", NULL, 0},
-
-    {"PLIVE", AUD_OPT_BOOL, &conf.plive,
-     "(undocumented)", NULL, 0} /** @todo What is this? */
-};
-
 static DECLCALLBACK(int) drvAudioInit(PCFGMNODE pCfgHandle, PPDMDRVINS pDrvIns)
 {
     AssertPtrReturn(pCfgHandle, VERR_INVALID_POINTER);
@@ -1773,20 +1683,8 @@ static DECLCALLBACK(int) drvAudioInit(PCFGMNODE pCfgHandle, PPDMDRVINS pDrvIns)
 #endif
 
     int rc = RTCritSectInit(&pThis->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        rc = drvAudioProcessOptions(pCfgHandle, "AUDIO", audio_options, RT_ELEMENTS(audio_options));
-        /** @todo Check for invalid options? */
 
-        pThis->cStreamsFreeOut = conf.fixed_out.cStreams;
-        pThis->cStreamsFreeIn  = conf.fixed_in.cStreams;
-
-        if (!pThis->cStreamsFreeOut)
-            pThis->cStreamsFreeOut = 1;
-
-        if (!pThis->cStreamsFreeIn)
-            pThis->cStreamsFreeIn = 1;
-    }
+    /** @todo Add audio driver options. */
 
     /*
      * If everything went well, initialize the lower driver.
@@ -1963,14 +1861,15 @@ static DECLCALLBACK(bool) drvAudioIsValidOut(PPDMIAUDIOCONNECTOR pInterface,
 }
 
 static DECLCALLBACK(int) drvAudioCreateIn(PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
-                                          PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg,
-                                          PPDMAUDIOGSTSTRMIN *ppGstStrmIn)
+                                          PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMIN *ppGstStrmIn)
 {
     AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
     AssertPtrReturn(ppGstStrmIn, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName,     VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,        VERR_INVALID_POINTER);
     AssertPtrReturn(ppGstStrmIn, VERR_INVALID_POINTER);
+
+    Assert(pCfg->enmDir == PDMAUDIODIR_IN);
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
@@ -1986,59 +1885,11 @@ static DECLCALLBACK(int) drvAudioCreateIn(PPDMIAUDIOCONNECTOR pInterface, const 
         rc = VERR_INVALID_PARAMETER;
     }
 
-    PPDMAUDIOGSTSTRMIN pGstStrmIn = *ppGstStrmIn;
-    if (   RT_SUCCESS(rc)
-        && pGstStrmIn
-        && drvAudioPCMPropsAreEqual(&pGstStrmIn->Props, pCfg))
-    {
-        LogFunc(("[%s] Exists and matches required configuration, skipping creation\n",
-                 pGstStrmIn->MixBuf.pszName));
-        rc = VWRN_ALREADY_EXISTS;
-    }
-
-    if (rc != VINF_SUCCESS) /* Note: Can be VWRN_ALREADY_EXISTS, so don't use VINF_SUCCESS here. */
-    {
-        int rc2 = RTCritSectLeave(&pThis->CritSect);
-        AssertRC(rc2);
-
-        return rc;
-    }
-
-    if (   !conf.fixed_in.enabled
-        && pGstStrmIn)
-    {
-        drvAudioDestroyGstIn(pThis, pGstStrmIn);
-        pGstStrmIn = NULL;
-    }
-
-    if (pGstStrmIn)
-    {
-        PPDMAUDIOHSTSTRMIN pHstStrmIn = pGstStrmIn->pHstStrmIn;
-        AssertPtr(pHstStrmIn);
-
-        drvAudioGstInFreeRes(pGstStrmIn);
-
-        char *pszTemp;
-        if (RTStrAPrintf(&pszTemp, "%s (Guest)", pszName) <= 0)
-        {
-            RTMemFree(pGstStrmIn);
-
-            int rc2 = RTCritSectLeave(&pThis->CritSect);
-            AssertRC(rc2);
-
-            return VERR_NO_MEMORY;
-        }
-
-        rc = drvAudioGstInInit(pGstStrmIn, pHstStrmIn, pszName, pCfg);
-
-        RTStrFree(pszTemp);
-    }
-    else
-        rc = drvAudioCreateStreamPairIn(pThis, pszName, enmRecSource, pCfg, &pGstStrmIn);
-
     if (RT_SUCCESS(rc))
     {
-        if (pGstStrmIn)
+        PPDMAUDIOGSTSTRMIN pGstStrmIn;
+        rc = drvAudioCreateStreamPairIn(pThis, pszName, pCfg->DestSource.Source, pCfg, &pGstStrmIn);
+        if (RT_SUCCESS(rc))
             *ppGstStrmIn = pGstStrmIn;
     }
 
@@ -2058,6 +1909,8 @@ static DECLCALLBACK(int) drvAudioCreateOut(PPDMIAUDIOCONNECTOR pInterface, const
     AssertPtrReturn(pCfg,         VERR_INVALID_POINTER);
     AssertPtrReturn(ppGstStrmOut, VERR_INVALID_POINTER);
 
+    Assert(pCfg->enmDir == PDMAUDIODIR_OUT);
+
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
@@ -2072,86 +1925,12 @@ static DECLCALLBACK(int) drvAudioCreateOut(PPDMIAUDIOCONNECTOR pInterface, const
         rc = VERR_INVALID_PARAMETER;
     }
 
-    PPDMAUDIOGSTSTRMOUT pGstStrmOut = *ppGstStrmOut;
-    if (   RT_SUCCESS(rc)
-        && pGstStrmOut
-        && drvAudioPCMPropsAreEqual(&pGstStrmOut->Props, pCfg))
-    {
-        LogFunc(("[%s] Exists and matches required configuration, skipping creation\n",
-                 pGstStrmOut->MixBuf.pszName));
-
-        rc = VWRN_ALREADY_EXISTS;
-    }
-
-    if (rc != VINF_SUCCESS) /* Note: Can be VWRN_ALREADY_EXISTS, so don't use VINF_SUCCESS here. */
-    {
-        int rc2 = RTCritSectLeave(&pThis->CritSect);
-        AssertRC(rc2);
-
-        return rc;
-    }
-
-#if 0
-    /* Any live samples that need to be updated after
-     * we set the new parameters? */
-    PPDMAUDIOGSTSTRMOUT pOldGstStrmOut = NULL;
-    uint32_t cLiveSamples = 0;
-
-    if (   conf.plive
-        && pGstStrmOut
-        && (   !pGstStrmOut->State.fActive
-            && !pGstStrmOut->State.fEmpty))
-    {
-        cLiveSamples = pGstStrmOut->cTotalSamplesWritten;
-        if (cLiveSamples)
-        {
-            pOldGstStrmOut = pGstStrmOut;
-            pGstStrmOut = NULL;
-        }
-    }
-#endif
-
-    if (   pGstStrmOut
-        && !conf.fixed_out.enabled)
-    {
-        drvAudioDestroyGstOut(pThis, pGstStrmOut);
-        pGstStrmOut = NULL;
-    }
-
-    if (pGstStrmOut)
-    {
-        PPDMAUDIOHSTSTRMOUT pHstStrmOut = pGstStrmOut->pHstStrmOut;
-        AssertPtr(pHstStrmOut);
-
-        drvAudioGstOutFreeRes(pGstStrmOut);
-
-        rc = drvAudioGstOutInit(pGstStrmOut, pHstStrmOut, pszName, pCfg);
-    }
-    else
-    {
-        rc = drvAudioCreateStreamPairOut(pThis, pszName, pCfg, &pGstStrmOut);
-        if (RT_FAILURE(rc))
-            LogFunc(("Failed to create output stream \"%s\", rc=%Rrc\n", pszName, rc));
-    }
-
     if (RT_SUCCESS(rc))
     {
-        if (pGstStrmOut)
+        PPDMAUDIOGSTSTRMOUT pGstStrmOut;
+        rc = drvAudioCreateStreamPairOut(pThis, pszName, pCfg, &pGstStrmOut);
+        if (RT_SUCCESS(rc))
             *ppGstStrmOut = pGstStrmOut;
-#if 0
-        /* Update remaining live samples with new rate. */
-        if (cLiveSamples)
-        {
-            AssertPtr(pOldGstStrmOut);
-
-            uint32_t cSamplesMixed =
-                (cLiveSamples << pOldGstStrmOut->Props.cShift)
-                * pOldGstStrmOut->Props.cbPerSec
-                / (*ppGstStrmOut)->Props.cbPerSec;
-
-            pGstStrmOut->cTotalSamplesWritten += cSamplesMixed;
-        }
-#endif
     }
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
@@ -2376,7 +2155,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
                                 N_("Host audio backend missing or invalid"));
     }
 
-#ifdef DEBUG_andy
+#ifndef VBOX_AUDIO_TESTCASE
     CFGMR3Dump(pCfgHandle);
 #endif
 

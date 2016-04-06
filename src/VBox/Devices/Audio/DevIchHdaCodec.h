@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef DEV_CODEC_H
-#define DEV_CODEC_H
+#ifndef DEV_HDA_CODEC_H
+#define DEV_HDA_CODEC_H
 
 /** The ICH HDA (Intel) controller. */
 typedef struct HDASTATE *PHDASTATE;
@@ -38,8 +38,6 @@ typedef FNHDACODECVERBPROCESSOR **PPFNHDACODECVERBPROCESSOR;
 /* PRM 5.3.1 */
 #define CODEC_RESPONSE_UNSOLICITED RT_BIT_64(34)
 
-
-#ifndef VBOX_WITH_HDA_CODEC_EMU
 typedef struct CODECVERB
 {
     uint32_t verb;
@@ -47,27 +45,13 @@ typedef struct CODECVERB
     uint32_t mask;
     PFNHDACODECVERBPROCESSOR pfn;
 } CODECVERB;
-#endif
 
-#ifndef VBOX_WITH_HDA_CODEC_EMU
-# define TYPE union
-#else
-# define TYPE struct
-typedef struct CODECEMU CODECEMU;
-typedef CODECEMU *PCODECEMU;
-#endif
-TYPE CODECNODE;
-typedef TYPE CODECNODE CODECNODE;
-typedef TYPE CODECNODE *PCODECNODE;
+union CODECNODE;
+typedef union CODECNODE CODECNODE, *PCODECNODE;
 
-typedef enum
-{
-    PI_INDEX = 0,    /**< PCM in */
-    PO_INDEX,        /**< PCM out */
-    MC_INDEX,        /**< Mic in */
-    LAST_INDEX
-} ENMSOUNDSOURCE;
-
+/**
+ * Structure for keeping a HDA codec state.
+ */
 typedef struct HDACODEC
 {
     uint16_t                id;
@@ -78,21 +62,16 @@ typedef struct HDACODEC
     /** List of assigned HDA drivers to this codec.
      * A driver only can be assigned to one codec at a time. */
     RTLISTANCHOR            lstDrv;
-    /** The codec's current audio stream configuration. */
-    PDMAUDIOSTREAMCFG       strmCfg;
 
-#ifndef VBOX_WITH_HDA_CODEC_EMU
     CODECVERB const        *paVerbs;
     int                     cVerbs;
-#else
-    PCODECEMU               pCodecBackend;
-#endif
+
     PCODECNODE              paNodes;
     /** Pointer to HDA state (controller) this
      *  codec is assigned to. */
     PHDASTATE               pHDAState;
     bool                    fInReset;
-#ifndef VBOX_WITH_HDA_CODEC_EMU
+
     const uint8_t           cTotalNodes;
     const uint8_t          *au8Ports;
     const uint8_t          *au8Dacs;
@@ -109,13 +88,11 @@ typedef struct HDACODEC
     const uint8_t          *au8Reserveds;
     const uint8_t           u8AdcVolsLineIn;
     const uint8_t           u8DacLineOut;
-#endif
+
     /** Callbacks to the HDA controller, mostly used for multiplexing to the various host backends. */
-    DECLR3CALLBACKMEMBER(void, pfnCloseIn, (PHDASTATE pThis, PDMAUDIORECSOURCE enmRecSource));
-    DECLR3CALLBACKMEMBER(void, pfnCloseOut, (PHDASTATE pThis));
-    DECLR3CALLBACKMEMBER(int, pfnOpenIn, (PHDASTATE pThis, const char *pszName, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg));
-    DECLR3CALLBACKMEMBER(int, pfnOpenOut, (PHDASTATE pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg));
-    DECLR3CALLBACKMEMBER(int, pfnSetVolume, (PHDASTATE pThis, ENMSOUNDSOURCE enmSource, bool fMute, uint8_t uVolLeft, uint8_t uVolRight));
+    DECLR3CALLBACKMEMBER(int, pfnMixerAddStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg));
+    DECLR3CALLBACKMEMBER(int, pfnMixerRemoveStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl));
+    DECLR3CALLBACKMEMBER(int, pfnMixerSetVolume, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol));
     /** Callbacks by codec implementation. */
     DECLR3CALLBACKMEMBER(int, pfnLookup, (PHDACODEC pThis, uint32_t verb, PPFNHDACODECVERBPROCESSOR));
     DECLR3CALLBACKMEMBER(int, pfnReset, (PHDACODEC pThis));
@@ -129,7 +106,8 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, uint16_t uLUN, PCFGMN
 int hdaCodecDestruct(PHDACODEC pThis);
 int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM);
 int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion);
-int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, PPDMAUDIOSTREAMCFG pCfg);
+int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg);
+int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl);
 
 #define HDA_SSM_VERSION   6
 /** Introduced dynamic number of streams + stream identifiers for serialization.
@@ -142,14 +120,5 @@ int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, PPDMAUDIO
 #define HDA_SSM_VERSION_2 2
 #define HDA_SSM_VERSION_1 1
 
-# ifdef VBOX_WITH_HDA_CODEC_EMU
-/* */
-struct CODECEMU
-{
-    DECLR3CALLBACKMEMBER(int, pfnCodecEmuConstruct,(PHDACODEC pThis));
-    DECLR3CALLBACKMEMBER(int, pfnCodecEmuDestruct,(PHDACODEC pThis));
-    DECLR3CALLBACKMEMBER(int, pfnCodecEmuReset,(PHDACODEC pThis, bool fInit));
-};
-# endif
-#endif
+#endif /* DEV_HDA_CODEC_H */
 

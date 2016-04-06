@@ -108,26 +108,6 @@ typedef enum PDMAUDIOENDIANNESS
     PDMAUDIOENDIANNESS_32BIT_HACK = 0x7fffffff
 } PDMAUDIOENDIANNESS;
 
-typedef struct PDMAUDIOSTREAMCFG
-{
-    /** Frequency in Hertz (Hz). */
-    uint32_t uHz;
-    /** Number of channels (2 for stereo). */
-    uint8_t cChannels;
-    /** Audio format. */
-    PDMAUDIOFMT enmFormat;
-    /** @todo Use RT_LE2H_*? */
-    PDMAUDIOENDIANNESS enmEndianness;
-} PDMAUDIOSTREAMCFG, *PPDMAUDIOSTREAMCFG;
-
-#if defined(RT_LITTLE_ENDIAN)
-# define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_LITTLE
-#elif defined(RT_BIG_ENDIAN)
-# define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_BIG
-#else
-# error "Port me!"
-#endif
-
 /**
  * Audio direction.
  */
@@ -142,18 +122,17 @@ typedef enum PDMAUDIODIR
 } PDMAUDIODIR;
 
 /**
- * Audio mixer controls.
+ * Audio playback destinations.
  */
-typedef enum PDMAUDIOMIXERCTL
+typedef enum PDMAUDIOPLAYBACKDEST
 {
-    PDMAUDIOMIXERCTL_UNKNOWN = 0,
-    PDMAUDIOMIXERCTL_VOLUME,
-    PDMAUDIOMIXERCTL_PCM,
-    PDMAUDIOMIXERCTL_LINE_IN,
-    PDMAUDIOMIXERCTL_MIC_IN,
+    PDMAUDIOPLAYBACKDEST_UNKNOWN = 0,
+    PDMAUDIOPLAYBACKDEST_FRONT,
+    PDMAUDIOPLAYBACKDEST_CENTER_LFE,
+    PDMAUDIOPLAYBACKDEST_REAR,
     /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOMIXERCTL_32BIT_HACK = 0x7fffffff
-} PDMAUDIOMIXERCTL;
+    PDMAUDIOPLAYBACKDEST_32BIT_HACK = 0x7fffffff
+} PDMAUDIOPLAYBACKDEST;
 
 /**
  * Audio recording sources.
@@ -165,11 +144,61 @@ typedef enum PDMAUDIORECSOURCE
     PDMAUDIORECSOURCE_CD,
     PDMAUDIORECSOURCE_VIDEO,
     PDMAUDIORECSOURCE_AUX,
-    PDMAUDIORECSOURCE_LINE_IN,
+    PDMAUDIORECSOURCE_LINE,
     PDMAUDIORECSOURCE_PHONE,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIORECSOURCE_32BIT_HACK = 0x7fffffff
 } PDMAUDIORECSOURCE;
+
+/**
+ * Structure for keeping an audio stream configuration.
+ */
+typedef struct PDMAUDIOSTREAMCFG
+{
+    /** Friendly name of the stream. */
+    char                    *pszName;
+    /** Direction of the stream. */
+    PDMAUDIODIR              enmDir;
+    union
+    {
+        /** Desired playback destination (for an output stream). */
+        PDMAUDIOPLAYBACKDEST Dest;
+        /** Desired recording source (for an input stream). */
+        PDMAUDIORECSOURCE    Source;
+    } DestSource;
+    /** Frequency in Hertz (Hz). */
+    uint32_t                 uHz;
+    /** Number of channels (2 for stereo, 1 for mono). */
+    uint8_t                  cChannels;
+    /** Audio format. */
+    PDMAUDIOFMT              enmFormat;
+    /** @todo Use RT_LE2H_*? */
+    PDMAUDIOENDIANNESS       enmEndianness;
+} PDMAUDIOSTREAMCFG, *PPDMAUDIOSTREAMCFG;
+
+#if defined(RT_LITTLE_ENDIAN)
+# define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_LITTLE
+#elif defined(RT_BIG_ENDIAN)
+# define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_BIG
+#else
+# error "Port me!"
+#endif
+
+/**
+ * Audio mixer controls.
+ */
+typedef enum PDMAUDIOMIXERCTL
+{
+    PDMAUDIOMIXERCTL_UNKNOWN = 0,
+    PDMAUDIOMIXERCTL_VOLUME,
+    PDMAUDIOMIXERCTL_FRONT,
+    PDMAUDIOMIXERCTL_CENTER_LFE,
+    PDMAUDIOMIXERCTL_REAR,
+    PDMAUDIOMIXERCTL_LINE_IN,
+    PDMAUDIOMIXERCTL_MIC_IN,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIOMIXERCTL_32BIT_HACK = 0x7fffffff
+} PDMAUDIOMIXERCTL;
 
 /**
  * Audio stream commands. Used in the audio connector
@@ -585,20 +614,18 @@ typedef struct PDMIAUDIOCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
-     * @param   pszName              Name of the audio channel.
-     * @param   enmRecSource         Specifies the type of recording source to be opened.
+     * @param   pszName              Friendly name of this input stream.
      * @param   pCfg                 Pointer to PDMAUDIOSTREAMCFG to use.
      * @param   ppGstStrmIn          Pointer where to return the guest guest input stream on success.
      */
     DECLR3CALLBACKMEMBER(int, pfnCreateIn, (PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
-                                            PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg,
-                                            PPDMAUDIOGSTSTRMIN *ppGstStrmIn));
+                                            PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMIN *ppGstStrmIn));
     /**
      * Creates a guest output stream.
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
-     * @param   pszName              Name of the audio channel.
+     * @param   pszName              Friendly name of this output stream.
      * @param   pCfg                 Pointer to PDMAUDIOSTREAMCFG to use.
      * @param   ppGstStrmOut         Pointer where to return the guest guest input stream on success.
      */
@@ -638,7 +665,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "8f8ca10e-9039-423c-9a77-0014aaa98626"
+#define PDMIAUDIOCONNECTOR_IID                  "f0ef4012-ae89-4528-9dad-4ef496894df8"
 
 
 /**
