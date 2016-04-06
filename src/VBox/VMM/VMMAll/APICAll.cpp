@@ -442,24 +442,27 @@ static VBOXSTRICTRC apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
 static VBOXSTRICTRC apicSendIntr(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode,
                                  XAPICDELIVERYMODE enmDeliveryMode, PCVMCPUSET pDestCpuSet, int rcRZ)
 {
-    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    VMCPUID const cCpus = pVM->cCpus;
+    VBOXSTRICTRC  rcStrict = VINF_SUCCESS;
+    PVM           pVM      = pVCpu->CTX_SUFF(pVM);
+    VMCPUID const cCpus    = pVM->cCpus;
     switch (enmDeliveryMode)
     {
         case XAPICDELIVERYMODE_FIXED:
         {
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
-                if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
+            {
+                if (   VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu)
+                    && apicIsEnabled(&pVM->aCpus[idCpu]))
                     APICPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
+            }
             break;
         }
 
         case XAPICDELIVERYMODE_LOWEST_PRIO:
         {
-            VMCPUID idCpu = VMCPUSET_FIND_FIRST_PRESENT(pDestCpuSet);
-            if (   idCpu != NIL_VMCPUID
-                && idCpu < pVM->cCpus)
+            VMCPUID const idCpu = VMCPUSET_FIND_FIRST_PRESENT(pDestCpuSet);
+            if (   idCpu < pVM->cCpus
+                && apicIsEnabled(&pVM->aCpus[idCpu]))
                 APICPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
             break;
         }
@@ -467,16 +470,21 @@ static VBOXSTRICTRC apicSendIntr(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE
         case XAPICDELIVERYMODE_SMI:
         {
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
+            {
                 if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
                     APICSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_SMI);
+            }
             break;
         }
 
         case XAPICDELIVERYMODE_NMI:
         {
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
-                if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
+            {
+                if (   VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu)
+                    && apicIsEnabled(&pVM->aCpus[idCpu]))
                     APICSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_NMI);
+            }
             break;
         }
 
@@ -2170,40 +2178,37 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
 
     PCAPIC   pApic    = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    if (apicIsEnabled(pVCpu))       /* PAV */
+    /* Validate the vector. See Intel spec. 10.5.2 "Valid Interrupt Vectors". */
+    if (RT_LIKELY(uVector > XAPIC_ILLEGAL_VECTOR_END))
     {
-        /* Validate the vector. See Intel spec. 10.5.2 "Valid Interrupt Vectors". */
-        if (RT_LIKELY(uVector > XAPIC_ILLEGAL_VECTOR_END))
+        if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
         {
-            if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
-            {
-                apicSetVectorInPib(CTX_SUFF(pApicCpu->pvApicPib), uVector);
-                bool const fAlreadySet = apicSetNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
-                if (fAlreadySet)
-                    return;
+            apicSetVectorInPib(CTX_SUFF(pApicCpu->pvApicPib), uVector);
+            bool const fAlreadySet = apicSetNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
+            if (fAlreadySet)
+                return;
 
-                if (pApic->fPostedIntrsEnabled)
-                { /** @todo posted-interrupt call to hardware */ }
-                else
-                    APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
-            }
+            if (pApic->fPostedIntrsEnabled)
+            { /** @todo posted-interrupt call to hardware */ }
             else
-            {
-                /*
-                 * Level-triggered interrupts requires updating of the TMR and thus cannot be
-                 * delivered asynchronously.
-                 */
-                apicSetVectorInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0], uVector);
-                bool const fAlreadySet = apicSetNotificationBitInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0]);
-                if (fAlreadySet)
-                    return;
-
                 APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
-            }
         }
         else
-            apicSetError(pVCpu, XAPIC_ESR_RECV_ILLEGAL_VECTOR);
+        {
+            /*
+             * Level-triggered interrupts requires updating of the TMR and thus cannot be
+             * delivered asynchronously.
+             */
+            apicSetVectorInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0], uVector);
+            bool const fAlreadySet = apicSetNotificationBitInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0]);
+            if (fAlreadySet)
+                return;
+
+            APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+        }
     }
+    else
+        apicSetError(pVCpu, XAPIC_ESR_RECV_ILLEGAL_VECTOR);
 }
 
 
