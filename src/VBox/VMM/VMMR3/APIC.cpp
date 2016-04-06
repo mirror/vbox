@@ -433,7 +433,11 @@ VMMR3_INT_DECL(int) APICR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                 int rc = MMR3HyperMapHCPhys(pVM, (void *)pApic->pvApicPibR3, NIL_RTR0PTR, pApic->HCPhysApicPib,
                                             (size_t)pApic->cbApicPib, "APIC PIB", &GCPtrApicPib);
                 if (RT_FAILURE(rc))
+                {
+                    LogRel(("APIC: Failed to map HC APIC PIB of %u bytes at %#RHp to RC, rc=%Rrc\n", pApic->cbApicPib,
+                            pApic->HCPhysApicPib, rc));
                     return rc;
+                }
             }
             else
             {
@@ -467,7 +471,11 @@ VMMR3_INT_DECL(int) APICR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                         pApicCpu->pvApicPibRC   = GCPtrApicPib + offApicPib;
                     }
                     else
+                    {
+                        LogRel(("APIC%u: Failed to map HC virtual-APIC page of %u bytes at %#RHp to RC, rc=%Rrc\n",
+                                pVCpu->idCpu, pApicCpu->cbApicPage, pApicCpu->HCPhysApicPage, rc));
                         return rc;
+                    }
                 }
                 else
                 {
@@ -1039,19 +1047,32 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
     PAPIC    pApic    = VM_TO_APIC(pVM);
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
 
+    LogFlow(("APIC: apicR3Relocate: pDevIns=%p offDelta=%RGp\n", pDevIns, offDelta));
+
     pApicDev->pDevInsRC   = PDMDEVINS_2_RCPTR(pDevIns);
     pApicDev->pApicHlpRC  = pApicDev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
     pApicDev->pCritSectRC = pApicDev->pApicHlpR3->pfnGetRCCritSect(pDevIns);
 
     pApic->pApicDevRC     = PDMINS_2_DATA_RCPTR(pDevIns);
-    pApic->pvApicPibRC    = MMHyperR3ToRC(pVM, (void *)pApic->pvApicPibR3);
+
+    /*
+     * We can get invoked via PGMR3FinalizeMappings() which happens before initializing R0.
+     * This means we may not have allocated and done the RC mappings & need to check for this.
+     */
+    if (pApic->pvApicPibR3)
+        pApic->pvApicPibRC = MMHyperR3ToRC(pVM, (void *)pApic->pvApicPibR3);
+
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU   pVCpu         = &pVM->aCpus[idCpu];
         PAPICCPU pApicCpu      = VMCPU_TO_APICCPU(pVCpu);
         pApicCpu->pTimerRC     = TMTimerRCPtr(pApicCpu->pTimerR3);
-        pApicCpu->pvApicPageRC = MMHyperR3ToRC(pVM, (void *)pApicCpu->pvApicPageR3);
-        pApicCpu->pvApicPibRC  = MMHyperR3ToRC(pVM, (void *)pApicCpu->pvApicPibR3);
+
+        if (pApicCpu->pvApicPageR3)
+            pApicCpu->pvApicPageRC = MMHyperR3ToRC(pVM, (void *)pApicCpu->pvApicPageR3);
+
+        if (pApicCpu->pvApicPibR3)
+            pApicCpu->pvApicPibRC  = MMHyperR3ToRC(pVM, (void *)pApicCpu->pvApicPibR3);
     }
 }
 
@@ -1072,7 +1093,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PAPIC    pApic    = VM_TO_APIC(pVM);
 
     /*
-     * Validate the APIC CFGM settings.
+     * Validate APIC settings.
      */
     int rc = CFGMR3ValidateConfig(pCfg, "/APIC/",
                                   "RZEnabled"
@@ -1180,7 +1201,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Update the CPUID bits.
      */
     APICUpdateCpuIdForMode(pVM, pApic->enmOriginalMode);
-    LogRel(("APIC: Switched to mode '%s'\n", apicGetModeName(pApic->enmOriginalMode)));
+    LogRel(("APIC: Switched mode to %s\n", apicGetModeName(pApic->enmOriginalMode)));
 
     /*
      * Register the MMIO range.

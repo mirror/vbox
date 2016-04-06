@@ -527,6 +527,9 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
      */
     if (GVMMR0DoingTermVM(pVM, pGVM))
     {
+#ifdef VBOX_WITH_NEW_APIC
+        APICR0TermVM(pVM);
+#endif
         GIMR0TermVM(pVM);
 
         /** @todo I wish to call PGMR0PhysFlushHandyPages(pVM, &pVM->aCpus[idCpu])

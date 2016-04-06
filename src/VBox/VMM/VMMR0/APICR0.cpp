@@ -63,10 +63,16 @@ VMMR0_INT_DECL(int) APICR0InitVM(PVM pVM)
         if (RT_SUCCESS(rc))
             pApic->pvApicPibR3 = RTR0MemObjAddressR3(pApic->hMapObjApicPibR0);
         else
+        {
+            LogRel(("APICR0InitVM: Failed to map pending-interrupt bitmap of %u bytes. rc=%Rrc\n", cbApicPib, rc));
             return rc;
+        }
     }
     else
+    {
+        LogRel(("APICR0InitVM: Failed to allocate pending-interrupt bitmap of %u bytes. rc=%Rrc\n", cbApicPib, rc));
         return rc;
+    }
 
     /*
      * Allocate and map the virtual-APIC page.
@@ -107,12 +113,19 @@ VMMR0_INT_DECL(int) APICR0InitVM(PVM pVM)
                 pApicCpu->pvApicPibR3   = (RTR3PTR)((uint8_t *)pApic->pvApicPibR3 + offApicPib);
             }
             else
+            {
+                LogRel(("APICR0InitVM: VCPU[%u]: Failed to map APIC page of %u bytes. rc=%Rrc\n", idCpu, cbApicPib, rc));
                 return rc;
+            }
         }
         else
+        {
+            LogRel(("APICR0InitVM: VCPU[%u]: Failed to allocate APIC page of %u bytes. rc=%Rrc\n", idCpu, cbApicPib, rc));
             return rc;
+        }
     }
 
+    LogFlow(("APICR0InitVM: Completed successfully\n"));
     return VINF_SUCCESS;
 }
 
@@ -160,6 +173,7 @@ VMMR0_INT_DECL(int) APICR0TermVM(PVM pVM)
         }
     }
 
+    LogFlow(("APICR0TermVM: Completed successfully\n"));
     return VINF_SUCCESS;
 }
 
