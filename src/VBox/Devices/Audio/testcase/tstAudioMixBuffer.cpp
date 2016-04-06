@@ -42,9 +42,12 @@ static int tstSingle(RTTEST hTest)
 
     PDMAUDIOSTREAMCFG config =
     {
-        44100,                   /* Hz */
-        2                        /* Channels */,
-        AUD_FMT_S16              /* Format */,
+        "44100Hz, 2 Channels, S16",
+        PDMAUDIODIR_OUT,
+        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
+        44100,                    /* Hz */
+        2                         /* Channels */,
+        AUD_FMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
     PDMPCMPROPS props;
@@ -141,9 +144,12 @@ static int tstParentChild(RTTEST hTest)
 
     PDMAUDIOSTREAMCFG cfg_p =
     {
-        44100,                   /* Hz */
-        2                        /* Channels */,
-        AUD_FMT_S16              /* Format */,
+        "44100Hz, 2 Channels, S16",
+        PDMAUDIODIR_OUT,
+        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
+        44100,                    /* Hz */
+        2                         /* Channels */,
+        AUD_FMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
     PDMPCMPROPS props;
@@ -156,9 +162,12 @@ static int tstParentChild(RTTEST hTest)
 
     PDMAUDIOSTREAMCFG cfg_c1 = /* Upmixing to parent */
     {
-        22100,                   /* Hz */
-        2                        /* Channels */,
-        AUD_FMT_S16              /* Format */,
+        "22050Hz, 2 Channels, S16",
+        PDMAUDIODIR_OUT,
+        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
+        22050,                    /* Hz */
+        2                         /* Channels */,
+        AUD_FMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -171,9 +180,12 @@ static int tstParentChild(RTTEST hTest)
 
     PDMAUDIOSTREAMCFG cfg_c2 = /* Downmixing to parent */
     {
-        48000,                   /* Hz */
-        2                        /* Channels */,
-        AUD_FMT_S16              /* Format */,
+        "48000Hz, 2 Channels, S16",
+        PDMAUDIODIR_OUT,
+        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
+        48000,                    /* Hz */
+        2                         /* Channels */,
+        AUD_FMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -253,9 +265,12 @@ static int tstConversion8(RTTEST hTest)
 
     PDMAUDIOSTREAMCFG cfg_p =
     {
-        44100,                   /* Hz */
-        1                        /* Channels */,
-        AUD_FMT_U8               /* Format */,
+        "44100Hz, 1 Channel, U8",
+        PDMAUDIODIR_OUT,
+        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
+        44100,                    /* Hz */
+        1                         /* Channels */,
+        AUD_FMT_U8                /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -274,9 +289,12 @@ static int tstConversion8(RTTEST hTest)
      */
     PDMAUDIOSTREAMCFG cfg_c =   /* Upmixing to parent */
     {
-        22050,                   /* Hz */
-        1                        /* Channels */,
-        AUD_FMT_U8               /* Format */,
+        "22050Hz, 1 Channel, U8",
+        PDMAUDIODIR_OUT,
+        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
+        22050,                    /* Hz */
+        1                         /* Channels */,
+        AUD_FMT_U8                /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -357,9 +375,12 @@ static int tstConversion16(RTTEST hTest)
 
     PDMAUDIOSTREAMCFG cfg_p =
     {
-        44100,                   /* Hz */
-        1                        /* Channels */,
-        AUD_FMT_S16              /* Format */,
+        "44100Hz, 1 Channel, S16",
+        PDMAUDIODIR_OUT,
+        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
+        44100,                    /* Hz */
+        1                         /* Channels */,
+        AUD_FMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -371,9 +392,12 @@ static int tstConversion16(RTTEST hTest)
 
     PDMAUDIOSTREAMCFG cfg_c =   /* Upmixing to parent */
     {
-        22050,                   /* Hz */
-        1                        /* Channels */,
-        AUD_FMT_S16              /* Format */,
+        "22050Hz, 1 Channel, S16",
+        PDMAUDIODIR_OUT,
+        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
+        22050,                    /* Hz */
+        1                         /* Channels */,
+        AUD_FMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -455,9 +479,12 @@ static int tstVolume(RTTEST hTest)
     /* Same for parent/child. */
     PDMAUDIOSTREAMCFG cfg =
     {
-        44100,                   /* Hz */
-        2                        /* Channels */,
-        AUD_FMT_S16              /* Format */,
+        "44100Hz, 2 Channels, S16",
+        PDMAUDIODIR_OUT,
+        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
+        44100,                    /* Hz */
+        2                         /* Channels */,
+        AUD_FMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
