@@ -28,9 +28,14 @@
 
 using namespace std;
 
-struct CertificateData
+
+/**
+ * Private instance data for the #Certificate class.
+ * @see Certificate::m
+ */
+struct Certificate::Data
 {
-    CertificateData()
+    Data()
         : fTrusted(false)
         , fExpired(false)
         , fValidX509(false)
@@ -38,7 +43,7 @@ struct CertificateData
         RT_ZERO(X509);
     }
 
-    ~CertificateData()
+    ~Data()
     {
         if (fValidX509)
         {
@@ -58,14 +63,10 @@ struct CertificateData
     RTCRX509CERTIFICATE X509;
 
 private:
-    CertificateData(const CertificateData &rTodo) { AssertFailed(); NOREF(rTodo); }
-    CertificateData &operator=(const CertificateData &rTodo) { AssertFailed(); NOREF(rTodo); return *this; }
+    Data(const Certificate::Data &rTodo) { AssertFailed(); NOREF(rTodo); }
+    Data &operator=(const Certificate::Data &rTodo) { AssertFailed(); NOREF(rTodo); return *this; }
 };
 
-struct Certificate::Data
-{
-    Backupable<CertificateData> m;
-};
 
 ///////////////////////////////////////////////////////////////////////////////////
 //
@@ -103,15 +104,14 @@ HRESULT Certificate::initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrus
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    mData = new Data();
-    mData->m.allocate();
+    m = new Data();
 
-    int vrc = RTCrX509Certificate_Clone(&mData->m->X509, a_pCert, &g_RTAsn1DefaultAllocator);
+    int vrc = RTCrX509Certificate_Clone(&m->X509, a_pCert, &g_RTAsn1DefaultAllocator);
     if (RT_SUCCESS(vrc))
     {
-        mData->m->fValidX509 = true;
-        mData->m->fTrusted   = a_fTrusted;
-        mData->m->fExpired   = a_fExpired;
+        m->fValidX509 = true;
+        m->fTrusted   = a_fTrusted;
+        m->fExpired   = a_fExpired;
         autoInitSpan.setSucceeded();
     }
     else
@@ -128,9 +128,8 @@ void Certificate::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    mData->m.free();
-    delete mData;
-    mData = NULL;
+    delete m;
+    m = NULL;
 }
 
 
@@ -142,8 +141,8 @@ HRESULT Certificate::getVersionNumber(CertificateVersion_T *aVersionNumber)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    switch (mData->m->X509.TbsCertificate.T0.Version.uValue.u)
+    Assert(m->fValidX509);
+    switch (m->X509.TbsCertificate.T0.Version.uValue.u)
     {
         case RTCRX509TBSCERTIFICATE_V1: *aVersionNumber = (CertificateVersion_T)CertificateVersion_V1; break;
         case RTCRX509TBSCERTIFICATE_V2: *aVersionNumber = (CertificateVersion_T)CertificateVersion_V2; break;
@@ -157,10 +156,10 @@ HRESULT Certificate::getSerialNumber(com::Utf8Str &aSerialNumber)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
+    Assert(m->fValidX509);
 
     char szTmp[_2K];
-    int vrc = RTAsn1Integer_ToString(&mData->m->X509.TbsCertificate.SerialNumber, szTmp, sizeof(szTmp), 0, NULL);
+    int vrc = RTAsn1Integer_ToString(&m->X509.TbsCertificate.SerialNumber, szTmp, sizeof(szTmp), 0, NULL);
     if (RT_SUCCESS(vrc))
         aSerialNumber = szTmp;
     else
@@ -173,8 +172,8 @@ HRESULT Certificate::getSignatureAlgorithmOID(com::Utf8Str &aSignatureAlgorithmO
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    aSignatureAlgorithmOID = mData->m->X509.TbsCertificate.Signature.Algorithm.szObjId;
+    Assert(m->fValidX509);
+    aSignatureAlgorithmOID = m->X509.TbsCertificate.Signature.Algorithm.szObjId;
 
     return S_OK;
 }
@@ -183,33 +182,33 @@ HRESULT Certificate::getSignatureAlgorithmName(com::Utf8Str &aSignatureAlgorithm
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    return i_getAlgorithmName(&mData->m->X509.TbsCertificate.Signature, aSignatureAlgorithmName);
+    Assert(m->fValidX509);
+    return i_getAlgorithmName(&m->X509.TbsCertificate.Signature, aSignatureAlgorithmName);
 }
 
 HRESULT Certificate::getIssuerName(std::vector<com::Utf8Str> &aIssuerName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    return i_getX509Name(&mData->m->X509.TbsCertificate.Issuer, aIssuerName);
+    Assert(m->fValidX509);
+    return i_getX509Name(&m->X509.TbsCertificate.Issuer, aIssuerName);
 }
 
 HRESULT Certificate::getSubjectName(std::vector<com::Utf8Str> &aSubjectName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    return i_getX509Name(&mData->m->X509.TbsCertificate.Subject, aSubjectName);
+    Assert(m->fValidX509);
+    return i_getX509Name(&m->X509.TbsCertificate.Subject, aSubjectName);
 }
 
 HRESULT Certificate::getFriendlyName(com::Utf8Str &aFriendlyName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
+    Assert(m->fValidX509);
 
-    PCRTCRX509NAME pName = &mData->m->X509.TbsCertificate.Subject;
+    PCRTCRX509NAME pName = &m->X509.TbsCertificate.Subject;
 
     /*
      * Enumerate the subject name and pick interesting attributes we can use to
@@ -287,24 +286,24 @@ HRESULT Certificate::getValidityPeriodNotBefore(com::Utf8Str &aValidityPeriodNot
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    return i_getTime(&mData->m->X509.TbsCertificate.Validity.NotBefore, aValidityPeriodNotBefore);
+    Assert(m->fValidX509);
+    return i_getTime(&m->X509.TbsCertificate.Validity.NotBefore, aValidityPeriodNotBefore);
 }
 
 HRESULT Certificate::getValidityPeriodNotAfter(com::Utf8Str &aValidityPeriodNotAfter)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    return i_getTime(&mData->m->X509.TbsCertificate.Validity.NotAfter, aValidityPeriodNotAfter);
+    Assert(m->fValidX509);
+    return i_getTime(&m->X509.TbsCertificate.Validity.NotAfter, aValidityPeriodNotAfter);
 }
 
 HRESULT Certificate::getPublicKeyAlgorithmOID(com::Utf8Str &aPublicKeyAlgorithmOID)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    aPublicKeyAlgorithmOID = mData->m->X509.TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm.szObjId;
+    Assert(m->fValidX509);
+    aPublicKeyAlgorithmOID = m->X509.TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm.szObjId;
     return S_OK;
 }
 
@@ -312,37 +311,37 @@ HRESULT Certificate::getPublicKeyAlgorithm(com::Utf8Str &aPublicKeyAlgorithm)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    return i_getAlgorithmName(&mData->m->X509.TbsCertificate.SubjectPublicKeyInfo.Algorithm, aPublicKeyAlgorithm);
+    Assert(m->fValidX509);
+    return i_getAlgorithmName(&m->X509.TbsCertificate.SubjectPublicKeyInfo.Algorithm, aPublicKeyAlgorithm);
 }
 
 HRESULT Certificate::getSubjectPublicKey(std::vector<BYTE> &aSubjectPublicKey)
 {
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Getting encoded ASN.1 bytes may make changes to X509. */
-    return i_getEncodedBytes(&mData->m->X509.TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey.Asn1Core, aSubjectPublicKey);
+    return i_getEncodedBytes(&m->X509.TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey.Asn1Core, aSubjectPublicKey);
 }
 
 HRESULT Certificate::getIssuerUniqueIdentifier(com::Utf8Str &aIssuerUniqueIdentifier)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return i_getUniqueIdentifier(&mData->m->X509.TbsCertificate.T1.IssuerUniqueId, aIssuerUniqueIdentifier);
+    return i_getUniqueIdentifier(&m->X509.TbsCertificate.T1.IssuerUniqueId, aIssuerUniqueIdentifier);
 }
 
 HRESULT Certificate::getSubjectUniqueIdentifier(com::Utf8Str &aSubjectUniqueIdentifier)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return i_getUniqueIdentifier(&mData->m->X509.TbsCertificate.T2.SubjectUniqueId, aSubjectUniqueIdentifier);
+    return i_getUniqueIdentifier(&m->X509.TbsCertificate.T2.SubjectUniqueId, aSubjectUniqueIdentifier);
 }
 
 HRESULT Certificate::getCertificateAuthority(BOOL *aCertificateAuthority)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aCertificateAuthority = mData->m->X509.TbsCertificate.T3.pBasicConstraints
-                          && mData->m->X509.TbsCertificate.T3.pBasicConstraints->CA.fValue;
+    *aCertificateAuthority = m->X509.TbsCertificate.T3.pBasicConstraints
+                          && m->X509.TbsCertificate.T3.pBasicConstraints->CA.fValue;
 
     return S_OK;
 }
@@ -351,7 +350,7 @@ HRESULT Certificate::getKeyUsage(ULONG *aKeyUsage)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aKeyUsage = mData->m->X509.TbsCertificate.T3.fKeyUsage;
+    *aKeyUsage = m->X509.TbsCertificate.T3.fKeyUsage;
     return S_OK;
 }
 
@@ -365,15 +364,15 @@ HRESULT Certificate::getExtendedKeyUsage(std::vector<com::Utf8Str> &aExtendedKey
 HRESULT Certificate::getRawCertData(std::vector<BYTE> &aRawCertData)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Getting encoded ASN.1 bytes may make changes to X509. */
-    return i_getEncodedBytes(&mData->m->X509.SeqCore.Asn1Core, aRawCertData);
+    return i_getEncodedBytes(&m->X509.SeqCore.Asn1Core, aRawCertData);
 }
 
 HRESULT Certificate::getSelfSigned(BOOL *aSelfSigned)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    *aSelfSigned = RTCrX509Certificate_IsSelfSigned(&mData->m->X509);
+    Assert(m->fValidX509);
+    *aSelfSigned = RTCrX509Certificate_IsSelfSigned(&m->X509);
 
     return S_OK;
 }
@@ -382,8 +381,8 @@ HRESULT Certificate::getTrusted(BOOL *aTrusted)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(mData->m->fValidX509);
-    *aTrusted = mData->m->fTrusted;
+    Assert(m->fValidX509);
+    *aTrusted = m->fTrusted;
 
     return S_OK;
 }
@@ -391,8 +390,8 @@ HRESULT Certificate::getTrusted(BOOL *aTrusted)
 HRESULT Certificate::getExpired(BOOL *aExpired)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    Assert(mData->m->fValidX509);
-    *aExpired = mData->m->fExpired;
+    Assert(m->fValidX509);
+    *aExpired = m->fExpired;
     return S_OK;
 }
 
@@ -404,9 +403,9 @@ HRESULT Certificate::getExpired(BOOL *aExpired)
 
 HRESULT Certificate::isCurrentlyExpired(BOOL *aResult)
 {
-    AssertReturnStmt(mData->m->fValidX509, *aResult = TRUE, E_UNEXPECTED);
+    AssertReturnStmt(m->fValidX509, *aResult = TRUE, E_UNEXPECTED);
     RTTIMESPEC Now;
-    *aResult = RTCrX509Validity_IsValidAtTimeSpec(&mData->m->X509.TbsCertificate.Validity, RTTimeNow(&Now)) ? FALSE : TRUE;
+    *aResult = RTCrX509Validity_IsValidAtTimeSpec(&m->X509.TbsCertificate.Validity, RTTimeNow(&Now)) ? FALSE : TRUE;
     return S_OK;
 }
 
