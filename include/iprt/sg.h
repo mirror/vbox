@@ -79,6 +79,10 @@ typedef PRTSGBUF *PPRTSGBUF;
  * @param   pSgBuf    Pointer to the S/G buffer to initialize.
  * @param   paSegs    Pointer to the start of the segment array.
  * @param   cSegs     Number of segments in the array.
+ *
+ * @note paSegs and cSegs can be NULL and 0 respectively to indicate
+ *       an empty S/G buffer. All operations on the S/G buffer will
+ *       not do anything in this case.
  */
 RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, size_t cSegs);
 

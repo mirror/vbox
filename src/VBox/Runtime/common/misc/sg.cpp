@@ -83,15 +83,23 @@ static void *rtSgBufGet(PRTSGBUF pSgBuf, size_t *pcbData)
 RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, size_t cSegs)
 {
     AssertPtr(pSgBuf);
-    AssertPtr(paSegs);
-    Assert(cSegs > 0);
+    Assert(   (cSegs > 0 && VALID_PTR(paSegs))
+           || (!cSegs && !paSegs));
     Assert(cSegs < (~(unsigned)0 >> 1));
 
     pSgBuf->paSegs    = paSegs;
     pSgBuf->cSegs     = (unsigned)cSegs;
     pSgBuf->idxSeg    = 0;
-    pSgBuf->pvSegCur  = paSegs[0].pvSeg;
-    pSgBuf->cbSegLeft = paSegs[0].cbSeg;
+    if (cSegs && paSegs)
+    {
+        pSgBuf->pvSegCur  = paSegs[0].pvSeg;
+        pSgBuf->cbSegLeft = paSegs[0].cbSeg;
+    }
+    else
+    {
+        pSgBuf->pvSegCur  = NULL;
+        pSgBuf->cbSegLeft = 0;
+    }
 }
 
 
@@ -99,9 +107,17 @@ RTDECL(void) RTSgBufReset(PRTSGBUF pSgBuf)
 {
     AssertPtrReturnVoid(pSgBuf);
 
-    pSgBuf->idxSeg    = 0;
-    pSgBuf->pvSegCur  = pSgBuf->paSegs[0].pvSeg;
-    pSgBuf->cbSegLeft = pSgBuf->paSegs[0].cbSeg;
+    pSgBuf->idxSeg = 0;
+    if (pSgBuf->cSegs)
+    {
+        pSgBuf->pvSegCur  = pSgBuf->paSegs[0].pvSeg;
+        pSgBuf->cbSegLeft = pSgBuf->paSegs[0].cbSeg;
+    }
+    else
+    {
+        pSgBuf->pvSegCur  = NULL;
+        pSgBuf->cbSegLeft = 0;
+    }
 }
 
 
