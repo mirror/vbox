@@ -1518,7 +1518,7 @@ EOF
           TOOLQT4=`pkg-config QtCore --variable=prefix`
           TOOLQT4MOC="`pkg-config QtCore --variable=moc_location`"
           TOOLQT4BIN="`dirname $TOOLQT4MOC`"
-          if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
+          if test_compile "$LIBQT4 $LIBPTHREAD $FLGQT4" qt4 qt4 nofatal; then
             test_execute_path "`strip_L "$LIBQT4"`" nofatal && foundqt4=3 # pkg-config
           fi
         fi
@@ -1642,7 +1642,7 @@ check_qt5()
 #include <QtGlobal>
 extern "C" int main(void)
 {
-#if QT_VERSION >= 0x050501
+#if QT_VERSION >= 0x050302
   return 0;
 #else
   return 1;
@@ -1691,7 +1691,7 @@ EOF
           LIBQT5="-L$LIBDIR5 $LIBQT5"
           TOOLQT5=`pkg-config Qt5Core --variable=prefix`
           TOOLQT5BIN=`pkg-config Qt5Core --variable=host_bins`
-          if test_compile "$LIBQT5 $LIBPTHREAD $I_INCQT5 $FLGQT5" qt5 qt5 nofatal; then
+          if test_compile "$LIBQT5 $LIBPTHREAD $FLGQT5" qt5 qt5 nofatal; then
             test_execute_path "`strip_L "$LIBQT5"`" nofatal && foundqt5=3 # pkg-config
           fi
         fi
@@ -1730,11 +1730,11 @@ EOF
 extern "C" int main(void)
 {
   printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x050501
+#if QT_VERSION >= 0x050302
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 5.5.1 or higher\n");
+  printf(", expected version 5.3.2 or higher\n");
   return 1;
 #endif
 }
