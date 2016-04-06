@@ -435,9 +435,6 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
         case MSR_GIM_HV_TPR:
             return PDMApicReadMsr(pVCpu, MSR_IA32_X2APIC_TPR, puValue);
 
-        case MSR_GIM_HV_EOI:
-            return PDMApicReadMsr(pVCpu, MSR_IA32_X2APIC_EOI, puValue);
-
         case MSR_GIM_HV_ICR:
             return PDMApicReadMsr(pVCpu, MSR_IA32_X2APIC_ICR, puValue);
 
@@ -513,6 +510,9 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
             return VERR_CPUM_RAISE_GP_0;
         }
 
+        /* Read-only MSRs: */
+        case MSR_GIM_HV_EOI:
+        /* Reserved/unknown MSRs: */
         default:
         {
 #ifdef IN_RING3
