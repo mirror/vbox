@@ -45,10 +45,10 @@ BS3_PROC_BEGIN_MODE Bs3CpuDetect
 CPU 8086
         push    xBP
         mov     xBP, xSP
+        pushf
         push    xCX
         push    xDX
         push    xBX
-        pushf
 
 %ifndef TMPL_CMN_PAGING
  %ifdef TMPL_RM
@@ -113,15 +113,17 @@ CPU 286
         ; The 4th bit of the machine status word / CR0 indicates the precense
         ; of a 80387 or later co-processor (a 80287+80386 => ET=0).  486 and
         ; later should be hardcoding this to 1, according to the documentation
-        ; (need to test on 486SX).  The 286 should never have it set.
+        ; (need to test on 486SX).  The initial idea here then would be to
+        ; assume 386+ if ET=1.
+        ;
+        ; However, it turns out the 286 I've got here has bits 4 thru 15 all
+        ; set.  This is very nice though, because only bits 4 and 5 are defined
+        ; on later CPUs and the remainder MBZ.  So, check whether any of the MBZ
+        ; bits are set, if so, then it's 286.
         ;
         smsw    ax
-        test    ax, X86_CR0_ET
-        jnz     .386plus
- %ifndef TMPL_RM                        ; remove once 286plus_protmode is implemented (relevant in DOS context).
-        test    ax, X86_CR0_PE
-        jnz     .286plus_protmode       ;; @todo The test below doesn't work in prot mode, I think...
- %endif
+        test    ax, ~(X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE)
+        jnz     .is_286
 
         ;
         ; Detect 80286 by checking whether the IOPL and NT bits of EFLAGS can be
@@ -137,22 +139,30 @@ CPU 286
         ; IOPL from what POPF reads off the stack - which is the behavior
         ; observed a 386SX here.
         ;
-        cli                             ; Disable interrupts to be on the safe side.
-        mov     ax, [xBP - xCB]
-        or      ax, X86_EFL_IOPL | X86_EFL_NT
+        test    al, X86_CR0_PE          ; This flag test doesn't work in protected mode, ...
+        jnz     .386plus                ; ... so ASSUME 386plus if in PE for now.
+
+        pushf                           ; Save a copy of the original flags for restoring IF.
+        pushf
+        pop     ax
+        xor     ax, X86_EFL_IOPL | X86_EFL_NT   ; Try modify IOPL and NT.
+        and     ax, ~X86_EFL_IF                 ; Try clear IF.
         push    ax                      ; Load modified flags.
         popf
         pushf                           ; Get actual flags.
-        pop     ax
-        test    ax, X86_EFL_IOPL | X86_EFL_NT
-        jnz     .386plus                ; If any of the flags are set, we're on 386+.
+        pop     dx
+        popf                            ; Restore IF, IOPL and NT.
+        cmp     ax, dx
+        je      .386plus                ; If any of the flags are set, we're on 386+.
 
         ; While we could in theory be in v8086 mode at this point and be fooled
         ; by a flaky POPF implementation, we assume this isn't the case in our
         ; execution environment.
+
+.is_286:
         mov     ax, BS3CPU_80286
         jmp     .return
-%endif
+%endif ; !TMPL_CMN_PAGING
 
 CPU 386
 .386plus:
@@ -277,10 +287,10 @@ CPU 8086
         ;
         ; Epilogue.
         ;
-        popf
         pop     xBX
         pop     xDX
         pop     xCX
+        popf
         pop     xBP
         ret
 

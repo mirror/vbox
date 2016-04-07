@@ -7,7 +7,7 @@
 ;
 
 ;
-; Copyright (C) 2007-2015 Oracle Corporation
+; Copyright (C) 2007-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -48,6 +48,7 @@
         ORG 07c00h
 
 BITS 16
+CPU 8086
 start:
         jmp short bs3InitCode
         db 0ah                          ; Should be nop, but this looks better.
@@ -105,17 +106,23 @@ bs3InitCode:
         ; save the registers.
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rax], ax
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rsp], sp
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rbp], bp
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ss], ss
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ds], ds
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.es], es
 
         ; set up the segment reisters and stack.
         mov     ax, 0
         mov     ds, ax
-        mov     es, ax
         mov     ss, ax
         mov     sp, BS3_ADDR_STACK
+
+        ; Save more registers, without needing cs prefix.
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rcx], cx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi], di
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.es], es
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbp], bp
+
+        ; Load es and setup bp frame.
+        mov     es, ax
         mov     bp, sp
         mov     [bp], ax                ; clear the first 8 bytes (terminates the ebp chain)
         mov     [bp + 02h], ax
@@ -128,14 +135,10 @@ bs3InitCode:
         ;
         ; Clear the register area.
         ;
-        push    cx
-        push    di
         mov     di, BS3_ADDR_REG_SAVE
         mov     cx, BS3REGCTX_size/2
         cld
         rep stosw
-        pop     di
-        pop     cx
 
         ;
         ; Do basic CPU detection.
@@ -147,17 +150,28 @@ bs3InitCode:
         jnz     .pre_80286
 
         ; 2. On a 286 you cannot popf IOPL and NT from real mode.
-        or      ah, (X86_EFL_IOPL | X86_EFL_NT) >> 8
+.detect_286_or_386plus:
+CPU 286
+        mov     ah, (X86_EFL_IOPL | X86_EFL_NT) >> 8
         push    ax
         popf
         pushf
+        cmp     ah, [bp - 3]
         pop     ax
-        test    ah, (X86_EFL_IOPL | X86_EFL_NT) >> 8
-        jz      .is_80286
-        ; 386 or later.
-
+        je      .is_386plus
+.is_80286:
+CPU 286
+        smsw    [BS3_ADDR_REG_SAVE + BS3REGCTX.cr0]
+.pre_80286:
+CPU 8086
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbx], bx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdx], dx
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rsi], si
+        jmp     .do_load
 
         ; Save 386 registers. We can now skip the CS prefix as DS is flat.
+CPU 386
+.is_386plus:
         shr     eax, 16
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rax+2], ax
         mov     eax, esp
@@ -166,13 +180,15 @@ bs3InitCode:
         mov     eax, ebp
         shr     eax, 16
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbp+2], ax
+        shr     edi, 16
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi+2], di
+        shr     ecx, 16
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rcx+2], cx
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.fs], fs
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.gs], gs
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbx], ebx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rcx], ecx
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdx], edx
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rsi], esi
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi], edi
         mov     eax, cr2
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr2], eax
         mov     eax, cr3
@@ -185,7 +201,7 @@ bs3InitCode:
 
         ; Pentium/486+: CR4 requires VME/CPUID, so we need to detect that before accessing it.
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.cr4], eax
-        popf
+        popf                            ; (restores IOPL+NT)
         pushfd
         pop     eax
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rflags], eax
@@ -204,21 +220,15 @@ bs3InitCode:
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr0], eax
         and     eax, ~(X86_CR0_NW | X86_CR0_CD | X86_CR0_AM)
         mov     cr0, eax
-        jmp     .do_load
-
-.is_80286:
-        smsw    [BS3_ADDR_REG_SAVE + BS3REGCTX.cr0]
-.pre_80286:
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbx], bx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rcx], cx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdx], dx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rsi], si
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi], di
 
         ; Load all the code.
 .do_load
         mov     [g_bBootDrv], dl
         call    bs3InitLoadImage
+%if 0
+        mov     al, '='
+        call bs3PrintChrInAl
+%endif
 
         ;
         ; Call the user 'main' procedure (shouldn't return).
@@ -229,8 +239,31 @@ bs3InitCode:
         ; Panic/hang.
 Bs3Panic:
         cli
-        ;hlt
         jmp     Bs3Panic
+
+
+;; For debug and error handling.
+; @uses ax
+bs3PrintHexInAl:
+CPU 286
+        push    ax
+        shr     al, 4
+        call    bs3PrintHexDigitInAl
+        pop     ax
+bs3PrintHexDigitInAl:
+        and     al, 0fh
+        cmp     al, 10
+        jb      .decimal
+        add     al, 'a' - '0' - 10
+.decimal:
+        add     al, '0'
+bs3PrintChrInAl:
+        push    bx
+        mov     ah, 0eh
+        mov     bx, 0ff00h
+        int     10h
+        pop     bx
+        ret
 
 
 ;;
@@ -250,11 +283,12 @@ BEGINPROC bs3InitLoadImage
 %define bSavedDiskNo    byte [bp - 04h]
         push    dx
 %define bMaxSector      byte [bp - 06h]
-        push    0
+        xor     ax, ax
+        push    ax
 %define bMaxHead        byte [bp - 08h]
-        push    0
+        push    ax
 %define bMaxCylinder    byte [bp - 0ah]
-        push    0
+        push    ax
 
         ;
         ; Try figure the geometry.
@@ -276,6 +310,22 @@ BEGINPROC bs3InitLoadImage
         mov     cx, 0002h               ; ch/cylinder=0 (0-based); cl/sector=2 (1-based)
         xor     dh, dh                  ; dh/head=0
 .the_load_loop:
+%if 0
+        mov al, 'c'
+        call bs3PrintChrInAl
+        mov al, ch
+        call bs3PrintHexInAl
+        mov al, 's'
+        call bs3PrintChrInAl
+        mov al, cl
+        call bs3PrintHexInAl
+        mov al, 'h'
+        call bs3PrintChrInAl
+        mov al, dh
+        call bs3PrintHexInAl
+        mov al, ';'
+        call bs3PrintChrInAl
+%endif
         xor     bx, bx
         mov     es, di                  ; es:bx -> buffer
         mov     ax, 0201h               ; al=1 sector; ah=read function
@@ -299,34 +349,40 @@ BEGINPROC bs3InitLoadImage
         add     di, 512 / 16
         dec     si
         jnz     .the_load_loop
+%if 0
+        mov     al, 'D'
+        call bs3PrintChrInAl
+%endif
 
         add     sp, 3*2
         pop     dx
         pop     es
-        leave
+        pop     bp
         ret
 
         ;
         ; Something went wrong, display a message.
         ;
 .failure:
-        pusha
+        push    ax
 
         ; print message
         mov     si, .s_szErrMsg
 .failure_next_char:
         lodsb
-        mov     ah, 0eh
-        mov     bx, 0ff00h
-        int     10h
+        call    bs3PrintChrInAl
         cmp     si, .s_szErrMsgEnd
         jb      .failure_next_char
 
         ; panic
-        popa
+        pop     ax
+%if 1
+        mov     al, ah
+        push    bs3PrintHexInAl
+%endif
         call    Bs3Panic
 .s_szErrMsg:
-        db 13, 10, 'read error!'
+        db 13, 10, 'rd err! '
 .s_szErrMsgEnd:
 ;ENDPROC bs3InitLoadImage - don't want the padding.
 
