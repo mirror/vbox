@@ -106,7 +106,7 @@ static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTS
             if (RT_SUCCESS(rc))
                 rc = utsGadgetCfgQueryU16Def(paCfg, "Gadget/idProduct", &idProduct, UTS_GADGET_TEST_PRODUCT_ID_DEF);
             if (RT_SUCCESS(rc))
-                rc = utsGadgetCfgQueryU16Def(paCfg, "Gadget/bDeviceClass", &bDeviceClass, UTS_GADGET_TEST_DEVICE_CLASS_DEF);
+                rc = utsGadgetCfgQueryU8Def(paCfg, "Gadget/bDeviceClass", &bDeviceClass, UTS_GADGET_TEST_DEVICE_CLASS_DEF);
         }
     }
     else
