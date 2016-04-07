@@ -140,3 +140,4 @@ DECLHIDDEN(uint32_t) utsGadgetHostRelease(UTSGADGETHOST hGadgetHost)
 
     return cRefs;
 }
+

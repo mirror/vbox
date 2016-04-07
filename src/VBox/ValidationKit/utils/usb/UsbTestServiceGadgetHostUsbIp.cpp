@@ -157,7 +157,7 @@ static DECLCALLBACK(int) utsGadgetHostUsbIpGadgetAdd(PUTSGADGETHOSTTYPEINT pIf, 
 static DECLCALLBACK(int) utsGadgetHostUsbIpGadgetRemove(PUTSGADGETHOSTTYPEINT pIf, UTSGADGET hGadget)
 {
     /* Nothing to do so far. */
-    return VINF_SUCCESS;  
+    return VINF_SUCCESS;
 }
 
 
@@ -166,7 +166,7 @@ static DECLCALLBACK(int) utsGadgetHostUsbIpGadgetRemove(PUTSGADGETHOSTTYPEINT pI
  */
 static DECLCALLBACK(int) utsGadgetHostUsbIpGadgetConnect(PUTSGADGETHOSTTYPEINT pIf, UTSGADGET hGadget)
 {
-   return VINF_SUCCESS; 
+   return VINF_SUCCESS;
 }
 
 

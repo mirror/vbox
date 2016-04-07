@@ -45,6 +45,7 @@ UsbTestService_SOURCES = \
 	UsbTestService.cpp \
 	UsbTestServiceCfg.cpp \
 	UsbTestServiceGadgetCfg.cpp \
+	UsbTestServiceGadgetClassTest.cpp \
 	UsbTestServiceGadgetHost.cpp \
 	UsbTestServiceGadgetHostUsbIp.cpp \
 	UsbTestServiceGadget.cpp \
