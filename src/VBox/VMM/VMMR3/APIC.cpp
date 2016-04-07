@@ -349,6 +349,54 @@ static void apicR3InitIpi(PVMCPU pVCpu)
 
 
 /**
+ * Resets the APIC base MSR.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+static void apicR3ResetBaseMsr(PVMCPU pVCpu)
+{
+    /*
+     * Initialize the APIC base MSR. The APIC enable-bit is set upon power-up or reset[1].
+     *
+     * A Reset (in xAPIC and x2APIC mode) brings up the local APIC in xAPIC mode.
+     * An INIT IPI does -not- cause a transition between xAPIC and x2APIC mode[2].
+     *
+     * [1] See AMD spec. 14.1.3 "Processor Initialization State"
+     * [2] See Intel spec. 10.12.5.1 "x2APIC States".
+     */
+    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    pApicCpu->uApicBaseMsr = XAPIC_APICBASE_PHYSADDR
+                           | MSR_APICBASE_XAPIC_ENABLE_BIT;
+    if (pVCpu->idCpu == 0)
+        pApicCpu->uApicBaseMsr |= MSR_APICBASE_BOOTSTRAP_CPU_BIT;
+}
+
+
+/**
+ * Sets the xAPIC enabled bit in the APIC base MSR.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   fEnabled        Whether to enable or disable the APIC.
+ *
+ * @remarks Warning!!! This does -not- touch the x2APIC enable bit and could
+ *          thus lead to invalid states if used incorrectly!
+ */
+static void apicR3SetEnabled(PVMCPU pVCpu, bool fEnabled)
+{
+    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    if (!fEnabled)
+    {
+        pApicCpu->uApicBaseMsr &= ~MSR_APICBASE_XAPIC_ENABLE_BIT;
+        Assert(!(pApicCpu->uApicBaseMsr & MSR_APICBASE_XAPIC_ENABLE_BIT));
+    }
+    else
+        pApicCpu->uApicBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
+}
+
+
+/**
  * Initializes per-VCPU APIC to the state following a power-up or hardware
  * reset.
  *
@@ -383,22 +431,9 @@ VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu)
 # error "Implement Pentium and P6 family APIC architectures"
 #endif
 
-    /*
-     * Initialize the APIC base MSR. The APIC enable-bit is set upon power-up or reset[1].
-     *
-     * A Reset (in xAPIC and x2APIC mode) brings up the local APIC in xAPIC mode.
-     * An INIT IPI does -not- cause a transition between xAPIC and x2APIC mode[2].
-     *
-     * [1] See AMD spec. 14.1.3 "Processor Initialization State"
-     * [2] See Intel spec. 10.12.5.1 "x2APIC States".
-     */
     /** @todo It isn't very clear where the default base address is (re)initialized,
      *        atm we do it here in Reset. */
-    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    pApicCpu->uApicBaseMsr = (XAPIC_APICBASE_PHYSADDR << MSR_APICBASE_PHYSADDR_SHIFT)
-                           | MSR_APICBASE_XAPIC_ENABLE_BIT;
-    if (pVCpu->idCpu == 0)
-        pApicCpu->uApicBaseMsr |= MSR_APICBASE_BOOTSTRAP_CPU_BIT;
+    apicR3ResetBaseMsr(pVCpu);
 
     /*
      * Initialize the APIC ID register to xAPIC format.
@@ -446,8 +481,8 @@ VMMR3_INT_DECL(int) APICR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             }
 
             /*
-             * Map the virtual-APIC page into RC and initialize per-VCPU APIC state.
-             * The virtual-APIC page should've already been mapped into R0 and R3, see APICR0InitVM().
+             * Map the virtual-APIC pages into RC and initialize per-VCPU APIC state.
+             * The virtual-APIC pages should by now have been mapped into R0 and R3 by APICR0InitVM().
              */
             for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
             {
@@ -469,6 +504,11 @@ VMMR3_INT_DECL(int) APICR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                          */
                         size_t const offApicPib = idCpu * sizeof(APICPIB);
                         pApicCpu->pvApicPibRC   = GCPtrApicPib + offApicPib;
+
+                        /*
+                         * Initialize the remaining state now that we have R3 mappings.
+                         */
+                        APICR3Reset(pVCpu);
                     }
                     else
                     {
@@ -578,7 +618,7 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     PCX2APICPAGE pX2ApicPage = VMCPU_TO_CX2APICPAGE(pVCpu);
     bool const   fX2ApicMode = XAPIC_IN_X2APIC_MODE(pVCpu);
 
-    pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC at %#RGp (%s mode):\n", pVCpu->idCpu, MSR_APICBASE_PHYSADDR(pApicCpu->uApicBaseMsr),
+    pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC at %#RGp (%s mode):\n", pVCpu->idCpu, MSR_APICBASE_GET_PHYSADDR(pApicCpu->uApicBaseMsr),
                                                                  fX2ApicMode ? "x2APIC" : "xAPIC");
     if (fX2ApicMode)
     {
@@ -1057,7 +1097,7 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 
     /*
      * We can get invoked via PGMR3FinalizeMappings() which happens before initializing R0.
-     * This means we may not have allocated and done the RC mappings & need to check for this.
+     * This we may not have allocated and mapped the R0, R3 data yet. Hence the NULL checks.
      */
     if (pApic->pvApicPibR3)
         pApic->pvApicPibRC = MMHyperR3ToRC(pVM, (void *)pApic->pvApicPibR3);
@@ -1141,6 +1181,12 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
         PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
         RTStrPrintf(&pApicCpu->szTimerDesc[0], sizeof(pApicCpu->szTimerDesc), "APIC Timer %u", pVCpu->idCpu);
+
+        /* Initialize the APIC base MSR as we require it for registering the MMIO range. */
+        apicR3ResetBaseMsr(pVCpu);
+
+        /* Disable the APIC until we're fully initialized in APICR3InitCompleted(), see @bugref{8245#c46}. */
+        apicR3SetEnabled(pVCpu, false);
     }
 
     /*
@@ -1207,7 +1253,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Register the MMIO range.
      */
     PAPICCPU pApicCpu0 = VMCPU_TO_APICCPU(&pVM->aCpus[0]);
-    RTGCPHYS GCPhysApicBase = MSR_APICBASE_PHYSADDR(pApicCpu0->uApicBaseMsr);
+    RTGCPHYS GCPhysApicBase = MSR_APICBASE_GET_PHYSADDR(pApicCpu0->uApicBaseMsr);
     rc = PDMDevHlpMMIORegister(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), pVM,
                                IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
                                APICWriteMmio, APICReadMmio, "APIC");
