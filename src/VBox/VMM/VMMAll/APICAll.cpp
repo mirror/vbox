@@ -222,7 +222,7 @@ static VBOXSTRICTRC apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACC
  */
 static APICMODE apicGetMode(uint64_t uApicBaseMsr)
 {
-    uint32_t const uMode   = ((uint32_t)uApicBaseMsr >> MSR_APICBASE_MODE_SHIFT) & UINT32_C(0x3);
+    uint32_t const uMode   = MSR_APICBASE_GET_MODE(uApicBaseMsr);
     APICMODE const enmMode = (APICMODE)uMode;
 #ifdef VBOX_STRICT
     /* Paranoia. */
@@ -1011,8 +1011,6 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
                 apicClearVectorInReg(&pXApicPage->tmr, uVector);
             }
 
-            /** @todo Signal next interrupt? Most likely not as
-             *        APICUpdatePendingInterrupts() will be called before next VM-entry. */
             apicSignalNextPendingIntr(pVCpu);
         }
     }
@@ -1792,11 +1790,11 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
      *      region remains mapped but doesn't belong to the called VCPU's APIC).
      */
     /** @todo Handle per-VCPU APIC base relocation. */
-    if (MSR_APICBASE_PHYSADDR(uBaseMsr) != XAPIC_APICBASE_PHYSADDR)
+    if (MSR_APICBASE_GET_PHYSADDR(uBaseMsr) != XAPIC_APICBASE_PHYSADDR)
     {
 #ifdef IN_RING3
         LogRelMax(5, ("APIC%u: Attempt to relocate base to %#RGp, unsupported -> #GP(0)\n", pVCpu->idCpu,
-                      MSR_APICBASE_PHYSADDR(uBaseMsr)));
+                      MSR_APICBASE_GET_PHYSADDR(uBaseMsr)));
         return VERR_CPUM_RAISE_GP_0;
 #else
         return VINF_CPUM_R3_MSR_WRITE;
@@ -1963,8 +1961,8 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
     AssertReturn(u8Pin <= 1, VERR_INVALID_PARAMETER);
     AssertReturn(u8Level <= 1, VERR_INVALID_PARAMETER);
 
-    PCXAPICPAGE   pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
-    VBOXSTRICTRC  rcStrict   = VINF_SUCCESS;
+    PCXAPICPAGE  pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
+    VBOXSTRICTRC rcStrict   = VINF_SUCCESS;
 
     /* If the APIC is enabled, the interrupt is subject to LVT programming. */
     if (apicIsEnabled(pVCpu))
@@ -2057,6 +2055,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
     if (   apicIsEnabled(pVCpu)
         && pXApicPage->svr.u.fApicSoftwareEnable)
     {
+        APICUpdatePendingInterrupts(pVCpu);
         int const irrv = apicGetLastSetBit(&pXApicPage->irr, -1);
         if (irrv >= 0)
         {
@@ -2065,23 +2064,17 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
 
             /** @todo this cannot possibly happen for anything other than ExtINT
              *        interrupts right? */
-            uint8_t uTpr = pXApicPage->tpr.u8Tpr;
+            uint8_t const uTpr = pXApicPage->tpr.u8Tpr;
             if (uTpr > 0 && uVector <= uTpr)
-            {
-                *puTagSrc = 0;
                 return pXApicPage->svr.u.u8SpuriousVector;
-            }
 
             apicClearVectorInReg(&pXApicPage->irr, uVector);
             apicSetVectorInReg(&pXApicPage->isr, uVector);
             apicUpdatePpr(pVCpu);
-
-            /** @todo Signal next interrupt? Most likely not as
-             *        APICUpdatePendingInterrupts() will be called before next VM-entry. */
+            apicSignalNextPendingIntr(pVCpu);
             return uVector;
         }
     }
-    /** @todo */
 
     return -1;
 }
@@ -2092,6 +2085,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
  */
 VMMDECL(int) APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
+    NOREF(pvUser);
     Assert(!(GCPhysAddr & 0xf));
     Assert(cb == 4);
 
@@ -2114,6 +2108,7 @@ VMMDECL(int) APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr,
  */
 VMMDECL(int) APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
+    NOREF(pvUser);
     Assert(!(GCPhysAddr & 0xf));
     Assert(cb == 4);
 
@@ -2302,6 +2297,10 @@ VMM_INT_DECL(void) APICUpdateCpuIdForMode(PVM pVM, APICMODE enmMode)
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   u8PendingIntr       The pending interrupt to queue as
  *                              in-service.
+ *
+ * @remarks This assumes the caller has done the necessary checks and
+ *          is ready to take actually service the interrupt (TPR,
+ *          interrupt shadow etc.)
  */
 VMMDECL(bool) APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr)
 {

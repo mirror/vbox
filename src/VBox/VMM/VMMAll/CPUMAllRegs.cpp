@@ -1390,7 +1390,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_APIC;
 
             pVM->cpum.s.GuestFeatures.fApic = 1;
-            LogRel(("CPUM: SetGuestCpuIdFeature: Enabled APIC\n"));
+            LogRel(("CPUM: SetGuestCpuIdFeature: Enabled xAPIC\n"));
             break;
 
        /*
@@ -1687,7 +1687,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_APIC;
 
             pVM->cpum.s.GuestFeatures.fApic = 0;
-            Log(("CPUM: ClearGuestCpuIdFeature: Disabled APIC\n"));
+            Log(("CPUM: ClearGuestCpuIdFeature: Disabled xAPIC\n"));
             break;
 
         case CPUMCPUIDFEATURE_X2APIC:

@@ -49,7 +49,7 @@ VMM_INT_DECL(int)       PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uVal
 VMM_INT_DECL(bool)      PDMHasApic(PVM pVM);
 VMM_INT_DECL(int)       PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
 VMMDECL(VBOXSTRICTRC)   PDMApicSetBaseMsr(PVMCPU pVCpu, uint64_t u64Base);
-VMMDECL(VBOXSTRICTRC)   PDMApicGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Base);
+VMMDECL(VBOXSTRICTRC)   PDMApicGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Base, bool fIgnoreErrors);
 VMMDECL(int)            PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR);
 VMMDECL(int)            PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8_t *pu8PendingIrq);
 VMM_INT_DECL(VBOXSTRICTRC) PDMApicWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value);

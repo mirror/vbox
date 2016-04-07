@@ -37,12 +37,10 @@
 /** The APIC hardware version we are emulating. */
 #define XAPIC_HARDWARE_VERSION               XAPIC_HARDWARE_VERSION_P4
 
-/** The APIC base physical address. */
-#define MSR_APICBASE_PHYSADDR(a)             ((a) >> 12)
-/** The APIC base physical address shift. */
-#define MSR_APICBASE_PHYSADDR_SHIFT          12
-/** The APIC base MSR mode shift. */
-#define MSR_APICBASE_MODE_SHIFT              10
+/** Gets the APIC base physical address. */
+#define MSR_APICBASE_GET_PHYSADDR(a)         ((a) & PAGE_BASE_GC_MASK)
+/** Gets the APIC mode. */
+#define MSR_APICBASE_GET_MODE(a)             (((a) >> 10) & UINT64_C(3))
 /** The APIC global enable bit. */
 #define MSR_APICBASE_XAPIC_ENABLE_BIT        RT_BIT_64(11)
 /** The x2APIC global enable bit. */
@@ -50,9 +48,9 @@
 /** The APIC bootstrap processor bit. */
 #define MSR_APICBASE_BOOTSTRAP_CPU_BIT       RT_BIT_64(8)
 /** The default APIC base address. */
-#define XAPIC_APICBASE_PHYSADDR              UINT64_C(0xfee00000)
+#define XAPIC_APICBASE_PHYSADDR              (UINT64_C(0xfee00000) << PAGE_SHIFT)
 /** The APIC base MSR - Is the APIC enabled?  */
-#define MSR_APICBASE_IS_ENABLED(a_Msr)      RT_BOOL((a_Msr) & MSR_APICBASE_XAPIC_ENABLE_BIT)
+#define MSR_APICBASE_IS_ENABLED(a_Msr)       RT_BOOL((a_Msr) & MSR_APICBASE_XAPIC_ENABLE_BIT)
 
 /** Offset of APIC ID Register. */
 #define XAPIC_OFF_ID                         0x020

@@ -204,7 +204,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PlatformId(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ApicBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    return PDMApicGetBaseMsr(pVCpu, puValue);
+    return PDMApicGetBaseMsr(pVCpu, puValue, false /* fIgnoreErrors */);
 }
 
 

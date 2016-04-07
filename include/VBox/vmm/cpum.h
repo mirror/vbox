@@ -30,6 +30,7 @@
 #include <VBox/types.h>
 #include <VBox/vmm/cpumctx.h>
 #include <VBox/vmm/stam.h>
+#include <VBox/vmm/vmapi.h>
 
 RT_C_DECLS_BEGIN
 
@@ -1382,7 +1383,7 @@ VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
  */
 
 VMMR3DECL(int)          CPUMR3Init(PVM pVM);
-VMMR3DECL(int)          CPUMR3InitCompleted(PVM pVM);
+VMMR3DECL(int)          CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3DECL(void)         CPUMR3LogCpuIds(PVM pVM);
 VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
 VMMR3DECL(int)          CPUMR3Term(PVM pVM);

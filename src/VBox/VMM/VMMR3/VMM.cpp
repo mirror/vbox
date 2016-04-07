@@ -686,12 +686,6 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
         case VMINITCOMPLETED_RING3:
         {
             /*
-             * CPUM's post-initialization (APIC base MSR caching).
-             */
-            rc = CPUMR3InitCompleted(pVM);
-            AssertRCReturn(rc, rc);
-
-            /*
              * Set page attributes to r/w for stack pages.
              */
             for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)

@@ -46,7 +46,9 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
+#ifndef VBOX_WITH_NEW_APIC
     pdmLock(pVM);
+#endif
 
     /*
      * The local APIC has a higher priority than the PIC.
@@ -61,12 +63,18 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
         AssertMsg(i <= 255 && i >= 0, ("i=%d\n", i));
         if (i >= 0)
         {
+#ifndef VBOX_WITH_NEW_APIC
             pdmUnlock(pVM);
+#endif
             *pu8Interrupt = (uint8_t)i;
             VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), i);
             return VINF_SUCCESS;
         }
     }
+
+#ifdef VBOX_WITH_NEW_APIC
+    pdmLock(pVM);
+#endif
 
     /*
      * Check the PIC.
@@ -235,7 +243,9 @@ VMMDECL(VBOXSTRICTRC) PDMApicSetBaseMsr(PVMCPU pVCpu, uint64_t u64Base)
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetBaseMsr));
+#ifndef VBOX_WITH_NEW_APIC
         pdmLock(pVM);
+#endif
         VBOXSTRICTRC rcStrict = pVM->pdm.s.Apic.CTX_SUFF(pfnSetBaseMsr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, u64Base);
 
         /* Update CPUM's copy of the APIC base. */
@@ -243,7 +253,9 @@ VMMDECL(VBOXSTRICTRC) PDMApicSetBaseMsr(PVMCPU pVCpu, uint64_t u64Base)
         Assert(pCtx);
         pCtx->msrApicBase = pVM->pdm.s.Apic.CTX_SUFF(pfnGetBaseMsr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu);
 
+#ifndef VBOX_WITH_NEW_APIC
         pdmUnlock(pVM);
+#endif
         return rcStrict;
     }
 
@@ -261,16 +273,19 @@ VMMDECL(VBOXSTRICTRC) PDMApicSetBaseMsr(PVMCPU pVCpu, uint64_t u64Base)
  * Get the APIC base MSR from the APIC device.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pu64Base    Where to store the APIC base.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pu64Base        Where to store the APIC base.
+ * @param   fIgnoreErrors   Whether to ignore errors (i.e. not a real guest MSR
+ *                          access).
  */
-VMMDECL(VBOXSTRICTRC) PDMApicGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Base)
+VMMDECL(VBOXSTRICTRC) PDMApicGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Base, bool fIgnoreErrors)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetBaseMsr));
 #ifdef VBOX_WITH_NEW_APIC
+        VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
         *pu64Base = pVM->pdm.s.Apic.CTX_SUFF(pfnGetBaseMsr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu);
 #else
         pdmLock(pVM);
@@ -281,6 +296,9 @@ VMMDECL(VBOXSTRICTRC) PDMApicGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Base)
     }
 
     *pu64Base = 0;
+    if (fIgnoreErrors)
+        return VINF_SUCCESS;
+
 #ifdef IN_RING3
     LogRelMax(5, ("PDM: APIC%u: Reading APIC base MSR (%#x) invalid without an APIC instance -> #GP(0)\n", pVCpu->idCpu,
                   MSR_IA32_APICBASE));

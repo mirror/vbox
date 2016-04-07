@@ -1081,7 +1081,10 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      * Get the APIC base MSR from the APIC device. For historical reasons (saved state), the APIC base
      * continues to reside in the APIC device and we cache it here in the VCPU for all further accesses.
      */
-    PDMApicGetBaseMsr(pVCpu, &pCtx->msrApicBase);
+    PDMApicGetBaseMsr(pVCpu, &pCtx->msrApicBase, true /* fIgnoreErrors */);
+#ifdef VBOX_WITH_NEW_APIC
+    LogRel(("CPUM: VCPU%3d: Cached APIC base MSR = %#RX64\n", pVCpu->idCpu, pVCpu->cpum.s.Guest.msrApicBase));
+#endif
 }
 
 
@@ -1530,7 +1533,10 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
         PGMNotifyNxeChanged(pVCpu, RT_BOOL(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE));
 
         /* Cache the local APIC base from the APIC device. During init. this is done in CPUMR3ResetCpu(). */
-        PDMApicGetBaseMsr(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase);
+        PDMApicGetBaseMsr(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase, true /* fIgnoreErrors */);
+#ifdef VBOX_WITH_NEW_APIC
+        LogRel(("CPUM: VCPU%3d: Cached APIC base MSR = %#RX64\n", idCpu, pVCpu->cpum.s.Guest.msrApicBase));
+#endif
 
         /* During init. this is done in CPUMR3InitCompleted(). */
         if (fSupportsLongMode)
@@ -2409,28 +2415,48 @@ VMMR3DECL(void) CPUMR3RemLeave(PVMCPU pVCpu, bool fNoOutOfSyncSels)
  *
  * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
+ * @param   enmWhat             Which init phase.
  */
-VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM)
+VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
-    /*
-     * Figure out if the guest uses 32-bit or 64-bit FPU state at runtime for 64-bit capable VMs.
-     * Only applicable/used on 64-bit hosts, refer CPUMR0A.asm. See @bugref{7138}.
-     */
-    bool const fSupportsLongMode = VMR3IsLongModeAllowed(pVM);
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    switch (enmWhat)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        case VMINITCOMPLETED_RING3:
+        {
+            /*
+             * Figure out if the guest uses 32-bit or 64-bit FPU state at runtime for 64-bit capable VMs.
+             * Only applicable/used on 64-bit hosts, refer CPUMR0A.asm. See @bugref{7138}.
+             */
+            bool const fSupportsLongMode = VMR3IsLongModeAllowed(pVM);
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            {
+                PVMCPU pVCpu = &pVM->aCpus[i];
+                /* While loading a saved-state we fix it up in, cpumR3LoadDone(). */
+                if (fSupportsLongMode)
+                    pVCpu->cpum.s.fUseFlags |= CPUM_USE_SUPPORTS_LONGMODE;
+            }
 
-        /* Cache the APIC base (from the APIC device) once it has been initialized. */
-        PDMApicGetBaseMsr(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase);
-        Log(("CPUMR3InitCompleted pVM=%p APIC base[%u]=%RX64\n", pVM, (unsigned)i, pVCpu->cpum.s.Guest.msrApicBase));
+            cpumR3MsrRegStats(pVM);
+            break;
+        }
 
-        /* While loading a saved-state we fix it up in, cpumR3LoadDone(). */
-        if (fSupportsLongMode)
-            pVCpu->cpum.s.fUseFlags |= CPUM_USE_SUPPORTS_LONGMODE;
+        case VMINITCOMPLETED_RING0:
+        {
+            /* Cache the APIC base (from the APIC device) once it has been initialized. */
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            {
+                PVMCPU pVCpu = &pVM->aCpus[i];
+                PDMApicGetBaseMsr(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase, true /* fIgnoreErrors */);
+#ifdef VBOX_WITH_NEW_APIC
+                LogRel(("CPUM: VCPU%3d: Cached APIC base MSR = %#RX64\n", i, pVCpu->cpum.s.Guest.msrApicBase));
+#endif
+            }
+            break;
+        }
+
+        default:
+            break;
     }
-
-    cpumR3MsrRegStats(pVM);
     return VINF_SUCCESS;
 }
 
