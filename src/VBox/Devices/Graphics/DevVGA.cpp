@@ -1147,7 +1147,7 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
              */
             pThis->pDrv->pfnLFBModeChange(pThis->pDrv, (val & VBE_DISPI_ENABLED) != 0);
 #ifdef VBOX_WITH_HGSMI
-            VBVAPause(pThis, (val & VBE_DISPI_ENABLED) == 0);
+            VBVAOnVBEChanged(pThis);
 #endif /* VBOX_WITH_HGSMI */
 
             /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
@@ -5233,8 +5233,19 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
-    /* This method only works if the VGA device is in a VBE mode. */
-    if ((pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) == 0)
+    /* This method only works if the VGA device is in a VBE mode or not paused VBVA mode.
+     * VGA modes are reported to the caller by returning VERR_INVALID_STATE.
+     *
+     * If VBE_DISPI_ENABLED is set, then it is a VBE or VBE compatible VBVA mode. Both of them can be handled.
+     *
+     * If VBE_DISPI_ENABLED is clear, then it is either a VGA mode or a VBVA mode set by guest additions
+     * which have VBVACAPS_USE_VBVA_ONLY capability.
+     * When VBE_DISPI_ENABLED is being cleared and VBVACAPS_USE_VBVA_ONLY is not set (i.e. guest wants a VGA mode),
+     * then VBVAOnVBEChanged makes sure that VBVA is paused.
+     * That is a not paused VBVA means that the video mode can be handled even if VBE_DISPI_ENABLED is clear.
+     */
+    if (   (pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) == 0
+        && VBVAIsPaused(pThis))
     {
         PDMCritSectLeave(&pThis->CritSect);
         return VERR_INVALID_STATE;
@@ -5638,13 +5649,14 @@ static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 #ifdef VBOX_WITH_HGSMI
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    VBVAPause(pThis, (pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) == 0);
     rc = vboxVBVALoadStateDone(pDevIns, pSSM);
     AssertRCReturn(rc, rc);
 # ifdef VBOX_WITH_VDMA
     rc = vboxVDMASaveLoadDone(pThis->pVdma);
     AssertRCReturn(rc, rc);
 # endif
+    /* Now update the current VBVA state which depends on VBE registers. vboxVBVALoadStateDone cleared the state. */
+    VBVAOnVBEChanged(pThis);
 #endif
 #ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
