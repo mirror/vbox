@@ -878,27 +878,27 @@ static int usbsysfsAddIfDevice(const char *pcszDevicesRoot, const char *pcszNode
     if (!bus)
         return VINF_SUCCESS;
 
-    int device = RTLinuxSysFsReadIntFile(10, "%s/devnum", pcszNode);
-    if (device < 0)
+    int64_t device;
+    int rc = RTLinuxSysFsReadIntFile(10, &device, "%s/devnum", pcszNode);
+    if (RT_FAILURE(rc))
         return VINF_SUCCESS;
 
-    dev_t devnum = usbsysfsMakeDevNum(bus, device);
+    dev_t devnum = usbsysfsMakeDevNum(bus, (int)device);
     if (!devnum)
         return VINF_SUCCESS;
 
     char szDevPath[RTPATH_MAX];
-    ssize_t cchDevPath;
-    cchDevPath = RTLinuxCheckDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
-                                        szDevPath, sizeof(szDevPath),
-                                        "%s/%.3d/%.3d",
-                                        pcszDevicesRoot, bus, device);
-    if (cchDevPath < 0)
+    rc = RTLinuxCheckDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
+                                szDevPath, sizeof(szDevPath),
+                                "%s/%.3d/%.3d",
+                                pcszDevicesRoot, bus, device);
+    if (RT_FAILURE(rc))
         return VINF_SUCCESS;
 
     USBDeviceInfo info;
     if (usbsysfsInitDevInfo(&info, szDevPath, pcszNode))
     {
-        int rc = VEC_PUSH_BACK_OBJ(pvecDevInfo, USBDeviceInfo, &info);
+        rc = VEC_PUSH_BACK_OBJ(pvecDevInfo, USBDeviceInfo, &info);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
     }
@@ -1226,6 +1226,56 @@ static int usbsysfsConvertStrToBCD(const char *pszBuf, uint16_t *pu16)
 }
 
 
+/**
+ * Returns the byte value for the given device property or sets the given default if an
+ * error occurs while obtaining it.
+ *
+ * @returns uint8_t value of the given property.
+ * @param   uBase       The base of the number in the sysfs property.
+ * @param   bDef        The default to set on error.
+ * @param   pszFormat   The format string for the property.
+ * @param   ...         Arguments for the format string.
+ */
+static uint8_t usbsysfsReadDevicePropertyU8Def(unsigned uBase, uint8_t bDef, const char *pszFormat, ...)
+{
+    int64_t i64Tmp = 0;
+
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTLinuxSysFsReadIntFileV(uBase, &i64Tmp, pszFormat, va);
+    va_end(va);
+    if (RT_SUCCESS(rc))
+        return (uint8_t)i64Tmp;
+    else
+        return bDef;
+}
+
+
+/**
+ * Returns the uint16_t value for the given device property or sets the given default if an
+ * error occurs while obtaining it.
+ *
+ * @returns uint16_t value of the given property.
+ * @param   uBase       The base of the number in the sysfs property.
+ * @param   u16Def      The default to set on error.
+ * @param   pszFormat   The format string for the property.
+ * @param   ...         Arguments for the format string.
+ */
+static uint8_t usbsysfsReadDevicePropertyU16Def(unsigned uBase, uint16_t u16Def, const char *pszFormat, ...)
+{
+    int64_t i64Tmp = 0;
+
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTLinuxSysFsReadIntFileV(uBase, &i64Tmp, pszFormat, va);
+    va_end(va);
+    if (RT_SUCCESS(rc))
+        return (uint16_t)i64Tmp;
+    else
+        return u16Def;
+}
+
+
 static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
 {
     int rc;
@@ -1234,23 +1284,23 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
     /* Fill in the simple fields */
     pDev->enmState           = USBDEVICESTATE_UNUSED;
     pDev->bBus               = usbsysfsGetBusFromPath(pszSysfsPath);
-    pDev->bDeviceClass       = RTLinuxSysFsReadIntFile(16, "%s/bDeviceClass", pszSysfsPath);
-    pDev->bDeviceSubClass    = RTLinuxSysFsReadIntFile(16, "%s/bDeviceSubClass", pszSysfsPath);
-    pDev->bDeviceProtocol    = RTLinuxSysFsReadIntFile(16, "%s/bDeviceProtocol", pszSysfsPath);
-    pDev->bNumConfigurations = RTLinuxSysFsReadIntFile(10, "%s/bNumConfigurations", pszSysfsPath);
-    pDev->idVendor           = RTLinuxSysFsReadIntFile(16, "%s/idVendor", pszSysfsPath);
-    pDev->idProduct          = RTLinuxSysFsReadIntFile(16, "%s/idProduct", pszSysfsPath);
-    pDev->bDevNum            = RTLinuxSysFsReadIntFile(10, "%s/devnum", pszSysfsPath);
+    pDev->bDeviceClass       = usbsysfsReadDevicePropertyU8Def(16, 0, "%s/bDeviceClass", pszSysfsPath);
+    pDev->bDeviceSubClass    = usbsysfsReadDevicePropertyU8Def(16, 0, "%s/bDeviceSubClass", pszSysfsPath);
+    pDev->bDeviceProtocol    = usbsysfsReadDevicePropertyU8Def(16, 0, "%s/bDeviceProtocol", pszSysfsPath);
+    pDev->bNumConfigurations = usbsysfsReadDevicePropertyU8Def(10, 0, "%s/bNumConfigurations", pszSysfsPath);
+    pDev->idVendor           = usbsysfsReadDevicePropertyU16Def(16, 0, "%s/idVendor", pszSysfsPath);
+    pDev->idProduct          = usbsysfsReadDevicePropertyU16Def(16, 0, "%s/idProduct", pszSysfsPath);
+    pDev->bDevNum            = usbsysfsReadDevicePropertyU8Def(10, 0, "%s/devnum", pszSysfsPath);
 
     /* Now deal with the non-numeric bits. */
     char szBuf[1024];  /* Should be larger than anything a sane device
                         * will need, and insane devices can be unsupported
                         * until further notice. */
-    ssize_t cchRead;
+    size_t cchRead;
 
     /* For simplicity, we just do strcmps on the next one. */
-    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/speed", pszSysfsPath);
-    if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
+    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/speed", pszSysfsPath);
+    if (RT_FAILURE(rc) || cchRead == sizeof(szBuf))
         pDev->enmState = USBDEVICESTATE_UNSUPPORTED;
     else
         pDev->enmSpeed = !strcmp(szBuf, "1.5")  ? USBDEVICESPEED_LOW
@@ -1259,8 +1309,8 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
                        : !strcmp(szBuf, "5000") ? USBDEVICESPEED_SUPER
                        : USBDEVICESPEED_UNKNOWN;
 
-    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/version", pszSysfsPath);
-    if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
+    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/version", pszSysfsPath);
+    if (RT_FAILURE(rc) || cchRead == sizeof(szBuf))
         pDev->enmState = USBDEVICESTATE_UNSUPPORTED;
     else
     {
@@ -1272,8 +1322,8 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
         }
     }
 
-    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/bcdDevice", pszSysfsPath);
-    if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
+    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/bcdDevice", pszSysfsPath);
+    if (RT_FAILURE(rc) || cchRead == sizeof(szBuf))
         pDev->bcdDevice = UINT16_MAX;
     else
     {
@@ -1283,23 +1333,23 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
     }
 
     /* Now do things that need string duplication */
-    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/product", pszSysfsPath);
-    if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
+    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/product", pszSysfsPath);
+    if (RT_SUCCESS(rc) && cchRead < sizeof(szBuf))
     {
         USBLibPurgeEncoding(szBuf);
         pDev->pszProduct = RTStrDup(szBuf);
     }
 
-    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/serial", pszSysfsPath);
-    if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
+    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/serial", pszSysfsPath);
+    if (RT_SUCCESS(rc) && cchRead < sizeof(szBuf))
     {
         USBLibPurgeEncoding(szBuf);
         pDev->pszSerialNumber = RTStrDup(szBuf);
         pDev->u64SerialHash = USBLibHashSerial(szBuf);
     }
 
-    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/manufacturer", pszSysfsPath);
-    if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
+    rc = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), &cchRead, "%s/manufacturer", pszSysfsPath);
+    if (RT_SUCCESS(rc) && cchRead < sizeof(szBuf))
     {
         USBLibPurgeEncoding(szBuf);
         pDev->pszManufacturer = RTStrDup(szBuf);
@@ -1313,12 +1363,12 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
     char **ppszIf;
     VEC_FOR_EACH(&pInfo->mvecpszInterfaces, char *, ppszIf)
     {
-        ssize_t cb = RTLinuxSysFsGetLinkDest(szBuf, sizeof(szBuf), "%s/driver", *ppszIf);
-        if (cb > 0 && pDev->enmState != USBDEVICESTATE_UNSUPPORTED)
+        rc = RTLinuxSysFsGetLinkDest(szBuf, sizeof(szBuf), NULL, "%s/driver", *ppszIf);
+        if (RT_SUCCESS(rc) && pDev->enmState != USBDEVICESTATE_UNSUPPORTED)
             pDev->enmState = (strcmp(szBuf, "hub") == 0)
                            ? USBDEVICESTATE_UNSUPPORTED
                            : USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
-        if (RTLinuxSysFsReadIntFile(16, "%s/bInterfaceClass", *ppszIf) == 9 /* hub */)
+        if (usbsysfsReadDevicePropertyU8Def(16, 9 /* bDev */, "%s/bInterfaceClass", *ppszIf) == 9 /* hub */)
             pDev->enmState = USBDEVICESTATE_UNSUPPORTED;
     }
 

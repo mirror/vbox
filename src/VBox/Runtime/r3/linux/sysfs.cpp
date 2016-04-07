@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,14 +29,17 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_SYSTEM
-#include <iprt/linux/sysfs.h>
 #include <iprt/assert.h>
 #include <iprt/dir.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/fs.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/symlink.h>
+
+#include <iprt/linux/sysfs.h>
 
 #include <unistd.h>
 #include <stdio.h>
@@ -45,16 +48,13 @@
 #include <sys/fcntl.h>
 #include <errno.h>
 
-/** @todo r=bird: This whole API should be rewritten to use IPRT status codes.
- *        using errno was a mistake and only results in horrible code. */
 
 
 /**
  * Constructs the path of a sysfs file from the format parameters passed,
  * prepending a prefix if the path is relative.
  *
- * @returns The number of characters returned, or an iprt error code on failure.
- *
+ * @returns IPRT status code.
  * @param   pszPrefix  The prefix to prepend if the path is relative.  Must end
  *                     in '/'.
  * @param   pszBuf     Where to write the path.  Must be at least
@@ -64,7 +64,7 @@
  *                     prefix specified by @a pszPrefix.
  * @param   va         The format args.
  */
-static ssize_t rtLinuxConstructPathV(char *pszBuf, size_t cchBuf,
+static int rtLinuxConstructPathV(char *pszBuf, size_t cchBuf,
                                      const char *pszPrefix,
                                      const char *pszFormat, va_list va)
 {
@@ -84,7 +84,7 @@ static ssize_t rtLinuxConstructPathV(char *pszBuf, size_t cchBuf,
         memcpy(pszBuf, pszPrefix, cchPrefix);
         cch += cchPrefix;
     }
-    return cch;
+    return VINF_SUCCESS;
 }
 
 
@@ -92,9 +92,7 @@ static ssize_t rtLinuxConstructPathV(char *pszBuf, size_t cchBuf,
  * Constructs the path of a sysfs file from the format parameters passed,
  * prepending a prefix if the path is relative.
  *
- * @returns The number of characters returned, or an iprt error code on failure.
- * @note  Unused.
- *
+ * @returns IPRT status code.
  * @param   pszPrefix  The prefix to prepend if the path is relative.  Must end
  *                     in '/'.
  * @param   pszBuf     Where to write the path.  Must be at least
@@ -103,9 +101,9 @@ static ssize_t rtLinuxConstructPathV(char *pszBuf, size_t cchBuf,
  * @param   pszFormat  The name format, either absolute or relative to "/sys/".
  * @param   ...        The format args.
  */
-static ssize_t rtLinuxConstructPath(char *pszBuf, size_t cchBuf,
-                                    const char *pszPrefix,
-                                    const char *pszFormat, ...)
+DECLINLINE(int) rtLinuxConstructPath(char *pszBuf, size_t cchBuf,
+                                     const char *pszPrefix,
+                                     const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -119,43 +117,54 @@ static ssize_t rtLinuxConstructPath(char *pszBuf, size_t cchBuf,
  * Constructs the path of a sysfs file from the format parameters passed,
  * prepending "/sys/" if the path is relative.
  *
- * @returns The number of characters returned, or -1 and errno set to ERANGE on
- *        failure.
- *
+ * @returns IPRT status code.
  * @param   pszBuf     Where to write the path.  Must be at least
  *                     sizeof("/sys/") characters long
  * @param   cchBuf     The size of the buffer pointed to by @a pszBuf.
  * @param   pszFormat  The name format, either absolute or relative to "/sys/".
  * @param   va         The format args.
  */
-static ssize_t rtLinuxSysFsConstructPath(char *pszBuf, size_t cchBuf, const char *pszFormat, va_list va)
+DECLINLINE(int) rtLinuxSysFsConstructPath(char *pszBuf, size_t cchBuf, const char *pszFormat, va_list va)
 {
-    ssize_t rc = rtLinuxConstructPathV(pszBuf, cchBuf, "/sys/", pszFormat, va);
-    if (rc >= 0)
-        return rc;
-    errno = ERANGE;
-    return -1;
+    return rtLinuxConstructPathV(pszBuf, cchBuf, "/sys/", pszFormat, va);
 }
 
 
-RTDECL(bool) RTLinuxSysFsExistsV(const char *pszFormat, va_list va)
+RTDECL(int) RTLinuxSysFsExistsExV(const char *pszFormat, va_list va)
 {
     int iSavedErrno = errno;
 
     /*
      * Construct the filename and call stat.
      */
-    bool fRet = false;
     char szFilename[RTPATH_MAX];
-    ssize_t rc = rtLinuxSysFsConstructPath(szFilename, sizeof(szFilename), pszFormat, va);
-    if (rc != -1)
+    int rc = rtLinuxSysFsConstructPath(szFilename, sizeof(szFilename), pszFormat, va);
+    if (RT_SUCCESS(rc))
     {
         struct stat st;
-        fRet = stat(szFilename, &st) == 0;
+        int rcStat = stat(szFilename, &st);
+        if (rcStat != 0)
+            rc = RTErrConvertFromErrno(errno);
     }
 
     errno = iSavedErrno;
-    return fRet;
+    return rc;
+}
+
+
+RTDECL(bool) RTLinuxSysFsExistsV(const char *pszFormat, va_list va)
+{
+    return RT_SUCCESS(RTLinuxSysFsExistsExV(pszFormat, va));
+}
+
+
+RTDECL(int) RTLinuxSysFsExistsEx(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTLinuxSysFsExistsExV(pszFormat, va);
+    va_end(va);
+    return rc;
 }
 
 
@@ -169,296 +178,303 @@ RTDECL(bool) RTLinuxSysFsExists(const char *pszFormat, ...)
 }
 
 
-RTDECL(int) RTLinuxSysFsOpenV(const char *pszFormat, va_list va)
+RTDECL(int) RTLinuxSysFsOpenV(PRTFILE phFile, const char *pszFormat, va_list va)
 {
     /*
      * Construct the filename and call open.
      */
     char szFilename[RTPATH_MAX];
-    ssize_t rc = rtLinuxSysFsConstructPath(szFilename, sizeof(szFilename), pszFormat, va);
-    if (rc != -1)
-        rc = open(szFilename, O_RDONLY, 0);
+    int rc = rtLinuxSysFsConstructPath(szFilename, sizeof(szFilename), pszFormat, va);
+    if (RT_SUCCESS(rc))
+        rc = RTFileOpen(phFile, szFilename, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     return rc;
 }
 
 
-RTDECL(int) RTLinuxSysFsOpen(const char *pszFormat, ...)
+RTDECL(int) RTLinuxSysFsOpen(PRTFILE phFile, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    int fd = RTLinuxSysFsOpenV(pszFormat, va);
+    int rc = RTLinuxSysFsOpenV(phFile, pszFormat, va);
     va_end(va);
-    return fd;
+    return rc;
 }
 
 
-RTDECL(void) RTLinuxSysFsClose(int fd)
-{
-    int iSavedErrno = errno;
-    close(fd);
-    errno = iSavedErrno;
-}
-
-
-RTDECL(ssize_t) RTLinuxSysFsReadStr(int fd, char *pszBuf, size_t cchBuf)
+RTDECL(int) RTLinuxSysFsReadStr(RTFILE hFile, char *pszBuf, size_t cchBuf, size_t *pcchRead)
 {
     Assert(cchBuf > 1);
-    ssize_t cchRead = read(fd, pszBuf, cchBuf - 1);
-    pszBuf[cchRead >= 0 ? cchRead : 0] = '\0';
-    return cchRead;
+    size_t cchRead = 0;
+    int rc = RTFileRead(hFile, pszBuf, cchBuf - 1, &cchRead);
+    pszBuf[RT_SUCCESS(rc) ? cchRead : 0] = '\0';
+    if (   RT_SUCCESS(rc)
+        && pcchRead)
+        *pcchRead = cchRead;
+
+    return rc;
 }
 
 
-RTDECL(int) RTLinuxSysFsReadFile(int fd, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+RTDECL(int) RTLinuxSysFsReadFile(RTFILE hFile, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
-    int     rc;
-    ssize_t cbRead = read(fd, pvBuf, cbBuf);
-    if (cbRead >= 0)
+    int    rc;
+    size_t cbRead = 0;
+
+    rc = RTFileRead(hFile, pvBuf, cbBuf, &cbRead);
+    if (RT_SUCCESS(rc))
     {
         if (pcbRead)
             *pcbRead = cbRead;
-        if ((size_t)cbRead < cbBuf)
+        if (cbRead < cbBuf)
             rc = VINF_SUCCESS;
         else
         {
             /* Check for EOF */
-            char    ch;
-            off_t   off     = lseek(fd, 0, SEEK_CUR);
-            ssize_t cbRead2 = read(fd, &ch, 1);
-            if (cbRead2 == 0)
-                rc = VINF_SUCCESS;
-            else if (cbRead2 > 0)
-            {
-                lseek(fd, off, SEEK_SET);
+            char     ch;
+            uint64_t offCur = 0;
+            uint64_t offEnd = 0;
+            rc = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offCur);
+            if (RT_SUCCESS(rc))
+                rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, &offEnd);
+            if (   RT_SUCCESS(rc)
+                && offEnd > offCur)
                 rc = VERR_BUFFER_OVERFLOW;
-            }
-            else
-                rc = RTErrConvertFromErrno(errno);
         }
     }
-    else
-        rc = RTErrConvertFromErrno(errno);
+
     return rc;
 }
 
 
-RTDECL(int64_t) RTLinuxSysFsReadIntFileV(unsigned uBase, const char *pszFormat, va_list va)
+RTDECL(int) RTLinuxSysFsReadIntFileV(unsigned uBase, int64_t *pi64, const char *pszFormat, va_list va)
 {
-    int fd = RTLinuxSysFsOpenV(pszFormat, va);
-    if (fd == -1)
-        return -1;
+    RTFILE hFile;
 
-    int64_t i64Ret = -1;
-    char szNum[128];
-    ssize_t cchNum = RTLinuxSysFsReadStr(fd, szNum, sizeof(szNum));
-    if (cchNum > 0)
+    AssertPtrReturn(pi64, VERR_INVALID_POINTER);
+
+    int rc = RTLinuxSysFsOpenV(&hFile, pszFormat, va);
+    if (RT_SUCCESS(rc))
     {
-        int rc = RTStrToInt64Ex(szNum, NULL, uBase, &i64Ret);
-        if (RT_FAILURE(rc))
+        char szNum[128];
+        size_t cchNum;
+        rc = RTLinuxSysFsReadStr(hFile, szNum, sizeof(szNum), &cchNum);
+        if (RT_SUCCESS(rc))
         {
-            i64Ret = -1;
-            errno = -ETXTBSY; /* just something that won't happen at read / open. */
-        }
-    }
-    else if (cchNum == 0)
-        errno = -ETXTBSY; /* just something that won't happen at read / open. */
-
-    RTLinuxSysFsClose(fd);
-    return i64Ret;
-}
-
-
-RTDECL(int64_t) RTLinuxSysFsReadIntFile(unsigned uBase, const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    int64_t i64Ret = RTLinuxSysFsReadIntFileV(uBase, pszFormat, va);
-    va_end(va);
-    return i64Ret;
-}
-
-
-RTDECL(dev_t) RTLinuxSysFsReadDevNumFileV(const char *pszFormat, va_list va)
-{
-    int fd = RTLinuxSysFsOpenV(pszFormat, va);
-    if (fd == -1)
-        return 0;
-
-    dev_t DevNum = 0;
-    char szNum[128];
-    ssize_t cchNum = RTLinuxSysFsReadStr(fd, szNum, sizeof(szNum));
-    if (cchNum > 0)
-    {
-        uint32_t u32Maj = 0;
-        uint32_t u32Min = 0;
-        char *pszNext = NULL;
-        int rc = RTStrToUInt32Ex(szNum, &pszNext, 10, &u32Maj);
-        if (RT_FAILURE(rc) || (rc != VWRN_TRAILING_CHARS) || (*pszNext != ':'))
-            errno = EINVAL;
-        else
-        {
-            rc = RTStrToUInt32Ex(pszNext + 1, NULL, 10, &u32Min);
-            if (   rc != VINF_SUCCESS
-                && rc != VWRN_TRAILING_CHARS
-                && rc != VWRN_TRAILING_SPACES)
-                errno = EINVAL;
-            else
+            if (cchNum > 0)
             {
-                errno = 0;
-                DevNum = makedev(u32Maj, u32Min);
+                int64_t i64Ret = -1;
+                rc = RTStrToInt64Ex(szNum, NULL, uBase, &i64Ret);
+                if (RT_SUCCESS(rc))
+                    *pi64 = i64Ret;
             }
+            else
+                rc = VERR_INVALID_PARAMETER;
         }
-    }
-    else if (cchNum == 0)
-        errno = EINVAL;
 
-    RTLinuxSysFsClose(fd);
-    return DevNum;
+        RTFileClose(hFile);
+    }
+
+    return rc;
 }
 
 
-RTDECL(dev_t) RTLinuxSysFsReadDevNumFile(const char *pszFormat, ...)
+RTDECL(int) RTLinuxSysFsReadIntFile(unsigned uBase, int64_t *pi64, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    dev_t DevNum = RTLinuxSysFsReadDevNumFileV(pszFormat, va);
+    int rc = RTLinuxSysFsReadIntFileV(uBase, pi64, pszFormat, va);
     va_end(va);
-    return DevNum;
+    return rc;
 }
 
 
-RTDECL(ssize_t) RTLinuxSysFsReadStrFileV(char *pszBuf, size_t cchBuf, const char *pszFormat, va_list va)
+RTDECL(int) RTLinuxSysFsReadDevNumFileV(dev_t *pDevNum, const char *pszFormat, va_list va)
 {
-    int fd = RTLinuxSysFsOpenV(pszFormat, va);
-    if (fd == -1)
-        return -1;
+    RTFILE hFile;
 
-    ssize_t cchRet = RTLinuxSysFsReadStr(fd, pszBuf, cchBuf);
-    RTLinuxSysFsClose(fd);
-    if (cchRet > 0)
+    AssertPtrReturn(pDevNum, VERR_INVALID_POINTER);
+
+    int rc = RTLinuxSysFsOpenV(&hFile, pszFormat, va);
+    if (RT_SUCCESS(rc))
     {
-        char *pchNewLine = (char *)memchr(pszBuf, '\n', cchRet);
-        if (pchNewLine)
-            *pchNewLine = '\0';
+        size_t cchNum = 0;
+        char szNum[128];
+        rc = RTLinuxSysFsReadStr(hFile, szNum, sizeof(szNum), &cchNum);
+        if (RT_SUCCESS(rc))
+        {
+            if (cchNum > 0)
+            {
+                uint32_t u32Maj = 0;
+                uint32_t u32Min = 0;
+                char *pszNext = NULL;
+                rc = RTStrToUInt32Ex(szNum, &pszNext, 10, &u32Maj);
+                if (RT_FAILURE(rc) || (rc != VWRN_TRAILING_CHARS) || (*pszNext != ':'))
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                {
+                    rc = RTStrToUInt32Ex(pszNext + 1, NULL, 10, &u32Min);
+                    if (   rc != VINF_SUCCESS
+                        && rc != VWRN_TRAILING_CHARS
+                        && rc != VWRN_TRAILING_SPACES)
+                        rc = VERR_INVALID_PARAMETER;
+                    else
+                        *pDevNum = makedev(u32Maj, u32Min);
+                }
+            }
+            else
+                rc = VERR_INVALID_PARAMETER;
+        }
+
+        RTFileClose(hFile);
     }
-    return cchRet;
+
+    return rc;
 }
 
 
-RTDECL(ssize_t) RTLinuxSysFsReadStrFile(char *pszBuf, size_t cchBuf, const char *pszFormat, ...)
+RTDECL(int) RTLinuxSysFsReadDevNumFile(dev_t *pDevNum, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    ssize_t cchRet = RTLinuxSysFsReadStrFileV(pszBuf, cchBuf, pszFormat, va);
+    int rc = RTLinuxSysFsReadDevNumFileV(pDevNum, pszFormat, va);
     va_end(va);
-    return cchRet;
+    return rc;
 }
 
 
-RTDECL(ssize_t) RTLinuxSysFsGetLinkDestV(char *pszBuf, size_t cchBuf, const char *pszFormat, va_list va)
+RTDECL(int) RTLinuxSysFsReadStrFileV(char *pszBuf, size_t cchBuf, size_t *pcchRead, const char *pszFormat, va_list va)
 {
-    AssertReturnStmt(cchBuf >= 2, errno = EINVAL, -1);
+    RTFILE hFile;
+
+    AssertPtrReturn(pszBuf, VERR_INVALID_POINTER);
+
+    int rc = RTLinuxSysFsOpenV(&hFile, pszFormat, va);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cchRead = 0;
+        rc = RTLinuxSysFsReadStr(hFile, pszBuf, cchBuf, &cchRead);
+        RTFileClose(hFile);
+        if (   RT_SUCCESS(rc)
+            && cchRead > 0)
+        {
+            char *pchNewLine = (char *)memchr(pszBuf, '\n', cchRead);
+            if (pchNewLine)
+                *pchNewLine = '\0';
+        }
+
+        if (pcchRead)
+            *pcchRead = cchRead;
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTLinuxSysFsReadStrFile(char *pszBuf, size_t cchBuf, size_t *pcchRead, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTLinuxSysFsReadStrFileV(pszBuf, cchBuf, pcchRead, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+RTDECL(int) RTLinuxSysFsGetLinkDestV(char *pszBuf, size_t cchBuf, size_t *pchBuf, const char *pszFormat, va_list va)
+{
+    AssertReturn(cchBuf >= 2, VERR_INVALID_PARAMETER);
 
     /*
      * Construct the filename and read the link.
      */
     char szFilename[RTPATH_MAX];
     int rc = rtLinuxSysFsConstructPath(szFilename, sizeof(szFilename), pszFormat, va);
-    if (rc == -1)
-        return -1;
-
-    char szLink[RTPATH_MAX];
-    rc = readlink(szFilename, szLink, sizeof(szLink));
-    if (rc == -1)
-        return -1;
-    if ((size_t)rc > sizeof(szLink) - 1)
+    if (RT_SUCCESS(rc))
     {
-        errno = ERANGE;
-        return -1;
-    }
-    szLink[rc] = '\0'; /* readlink fun. */
-
-    /*
-     * Extract the file name component and copy it into the return buffer.
-     */
-    size_t cchName;
-    const char *pszName = RTPathFilename(szLink);
-    if (pszName)
-    {
-        cchName = strlen(pszName); /* = &szLink[rc] - pszName; */
-        if (cchName >= cchBuf)
+        char szLink[RTPATH_MAX];
+        rc = RTSymlinkRead(szFilename, szLink, sizeof(szLink), 0);
+        if (RT_SUCCESS(rc))
         {
-            errno = ERANGE;
-            return -1;
+            /*
+             * Extract the file name component and copy it into the return buffer.
+             */
+            size_t cchName;
+            const char *pszName = RTPathFilename(szLink);
+            if (pszName)
+            {
+                cchName = strlen(pszName);
+                if (cchName < cchBuf)
+                    memcpy(pszBuf, pszName, cchName + 1);
+                else
+                    rc = VERR_BUFFER_OVERFLOW;
+            }
+            else
+            {
+                *pszBuf = '\0';
+                cchName = 0;
+            }
+
+            if (pchBuf)
+                *pchBuf = cchName;
         }
-        memcpy(pszBuf, pszName, cchName + 1);
     }
-    else
-    {
-        *pszBuf = '\0';
-        cchName = 0;
-    }
-    return cchName;
+
+    return rc;
 }
 
 
-RTDECL(ssize_t) RTLinuxSysFsGetLinkDest(char *pszBuf, size_t cchBuf, const char *pszFormat, ...)
+RTDECL(int) RTLinuxSysFsGetLinkDest(char *pszBuf, size_t cchBuf, size_t *pchBuf, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    int rc = RTLinuxSysFsGetLinkDestV(pszBuf, cchBuf, pszFormat, va);
+    int rc = RTLinuxSysFsGetLinkDestV(pszBuf, cchBuf, pchBuf, pszFormat, va);
     va_end(va);
     return rc;
 }
 
 
-RTDECL(ssize_t) RTLinuxCheckDevicePathV(dev_t DevNum, RTFMODE fMode, char *pszBuf,
-                                        size_t cchBuf, const char *pszPattern,
-                                        va_list va)
+RTDECL(int) RTLinuxCheckDevicePathV(dev_t DevNum, RTFMODE fMode, char *pszBuf,
+                                    size_t cchBuf, const char *pszPattern,
+                                    va_list va)
 {
-    char szFilename[RTPATH_MAX];
-    int rc = VINF_TRY_AGAIN;
-
     AssertReturn(cchBuf >= 2, VERR_INVALID_PARAMETER);
     AssertReturn(   fMode == RTFS_TYPE_DEV_CHAR
                  || fMode == RTFS_TYPE_DEV_BLOCK,
                  VERR_INVALID_PARAMETER);
-    if (pszPattern)
-    {
-        /*
-         * Construct the filename and read the link.
-         */
-        rc = rtLinuxConstructPathV(szFilename, sizeof(szFilename), "/dev/",
+    AssertPtrReturn(pszPattern, VERR_INVALID_PARAMETER);
+
+    /*
+     * Construct the filename and read the link.
+     */
+    char szFilename[RTPATH_MAX];
+    int rc = rtLinuxConstructPathV(szFilename, sizeof(szFilename), "/dev/",
                                    pszPattern, va);
-        if (rc > 0)
+    if (RT_SUCCESS(rc))
+    {
+        RTFSOBJINFO Info;
+        rc = RTPathQueryInfo(szFilename, &Info, RTFSOBJATTRADD_UNIX);
+        if (   rc == VERR_PATH_NOT_FOUND
+            || (   RT_SUCCESS(rc)
+                && (   Info.Attr.u.Unix.Device != DevNum
+                    || (Info.Attr.fMode & RTFS_TYPE_MASK) != fMode)))
+            rc = VERR_FILE_NOT_FOUND;
+
+        if (RT_SUCCESS(rc))
         {
-            RTFSOBJINFO Info;
-            rc = RTPathQueryInfo(szFilename, &Info, RTFSOBJATTRADD_UNIX);
-            if (   rc == VERR_PATH_NOT_FOUND
-                || (   RT_SUCCESS(rc)
-                    && (   Info.Attr.u.Unix.Device != DevNum
-                        || (Info.Attr.fMode & RTFS_TYPE_MASK) != fMode)))
-                rc = VERR_FILE_NOT_FOUND;
+            size_t cchPath = strlen(szFilename);
+            if (cchPath < cchBuf)
+                memcpy(pszBuf, szFilename, cchPath + 1);
+            else
+                rc = VERR_BUFFER_OVERFLOW;
         }
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        size_t cchPath = strlen(szFilename);
-        if (cchPath >= cchBuf)
-            return VERR_BUFFER_OVERFLOW;
-        memcpy(pszBuf, szFilename, cchPath + 1);
-        return cchPath;
-    }
     return rc;
 }
 
 
-/** @todo Do we really need to return the string length?  If the caller is
- * interested (the current ones aren't) they can check themselves. */
-RTDECL(ssize_t) RTLinuxCheckDevicePath(dev_t DevNum, RTFMODE fMode, char *pszBuf,
-                                       size_t cchBuf, const char *pszPattern,
-                                       ...)
+RTDECL(int) RTLinuxCheckDevicePath(dev_t DevNum, RTFMODE fMode, char *pszBuf,
+                                   size_t cchBuf, const char *pszPattern,
+                                   ...)
 {
     va_list va;
     va_start(va, pszPattern);

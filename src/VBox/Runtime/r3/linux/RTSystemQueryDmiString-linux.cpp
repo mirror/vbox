@@ -57,32 +57,12 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
             return VERR_NOT_SUPPORTED;
     }
 
-    int rc;
-    int fd = RTLinuxSysFsOpen("devices/virtual/dmi/%s", pszSysFsName);
-    if (fd < 0)
-        fd = RTLinuxSysFsOpen("class/dmi/%s", pszSysFsName);
-    if (fd >= 0)
+    size_t cbRead = 0;
+    int rc = RTLinuxSysFsReadStrFile(pszBuf, cbBuf, &cbRead, "devices/virtual/dmi/%s", pszSysFsName);
+    if (RT_FAILURE(rc) && rc != VERR_BUFFER_OVERFLOW)
+        rc = RTLinuxSysFsReadStrFile(pszBuf, cbBuf, &cbRead, "class/dmi/%s", pszSysFsName);
+    if (RT_FAILURE(rc) && rc != VERR_BUFFER_OVERFLOW)
     {
-        size_t cbRead;
-        rc = RTLinuxSysFsReadFile(fd, pszBuf, cbBuf, &cbRead);
-        if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW)
-        {
-            /* The file we're reading may end with a newline, remove it. */
-            if (cbRead == cbBuf)
-                pszBuf[cbRead - 1] = '\0';
-            else
-            {
-                AssertRC(rc);
-                pszBuf[cbRead] = '\0';
-                if (cbRead > 0 && pszBuf[cbRead - 1] == '\n')
-                    pszBuf[cbRead - 1] = '\0';
-            }
-        }
-        RTLinuxSysFsClose(fd);
-    }
-    else
-    {
-        rc = RTErrConvertFromErrno(errno);
         switch (rc)
         {
             case VINF_SUCCESS:

@@ -609,14 +609,16 @@ private:
      */
     bool findDeviceNode()
     {
-        dev_t dev = RTLinuxSysFsReadDevNumFile("block/%s/dev", mpcszName);
-        if (dev == 0)
+        dev_t dev = 0;
+        int rc = RTLinuxSysFsReadDevNumFile(&dev, "block/%s/dev", mpcszName);
+        if (RT_FAILURE(rc) || dev == 0)
         {
             misConsistent = false;
             return false;
         }
-        if (RTLinuxCheckDevicePath(dev, RTFS_TYPE_DEV_BLOCK, mszNode,
-                                   sizeof(mszNode), "%s", mpcszName) < 0)
+        rc = RTLinuxCheckDevicePath(dev, RTFS_TYPE_DEV_BLOCK, mszNode,
+                                    sizeof(mszNode), "%s", mpcszName);
+        if (RT_FAILURE(rc))
             return false;
         return true;
     }
@@ -629,22 +631,19 @@ private:
     void validateAndInitForDVD()
     {
         char szVendor[128], szModel[128];
-        ssize_t cchVendor, cchModel;
-        int64_t type = RTLinuxSysFsReadIntFile(10, "block/%s/device/type",
-                                               mpcszName);
-        if (type >= 0 && type != TYPE_ROM)
+        int64_t type = 0;
+        int rc = RTLinuxSysFsReadIntFile(10, &type, "block/%s/device/type", mpcszName);
+        if (RT_SUCCESS(rc) && type != TYPE_ROM)
             return;
         if (type == TYPE_ROM)
         {
-            cchVendor = RTLinuxSysFsReadStrFile(szVendor, sizeof(szVendor),
-                                                "block/%s/device/vendor",
-                                                mpcszName);
-            if (cchVendor >= 0)
+            rc = RTLinuxSysFsReadStrFile(szVendor, sizeof(szVendor), NULL,
+                                         "block/%s/device/vendor", mpcszName);
+            if (RT_SUCCESS(rc))
             {
-                cchModel = RTLinuxSysFsReadStrFile(szModel, sizeof(szModel),
-                                                   "block/%s/device/model",
-                                                   mpcszName);
-                if (cchModel >= 0)
+                rc = RTLinuxSysFsReadStrFile(szModel, sizeof(szModel), NULL, 
+                                             "block/%s/device/model", mpcszName);
+                if (RT_SUCCESS(rc))
                 {
                     misValid = true;
                     dvdCreateDeviceStrings(szVendor, szModel,
@@ -696,8 +695,9 @@ private:
             return;
         if (!noProbe())
             haveName = floppyGetName(mszNode, mpcszName[2] - '0', szName);
-        if (RTLinuxSysFsGetLinkDest(szDriver, sizeof(szDriver), "block/%s/%s",
-                                    mpcszName, "device/driver") >= 0)
+        int rc = RTLinuxSysFsGetLinkDest(szDriver, sizeof(szDriver), NULL, "block/%s/%s",
+                                         mpcszName, "device/driver");
+        if (RT_SUCCESS(rc))
         {
             if (RTStrCmp(szDriver, "floppy"))
                 return;
