@@ -50,24 +50,24 @@ BS3_PROC_BEGIN_CMN Bs3MemZero
 %elif ARCH_BITS == 16
         push    bp
         mov     bp, sp
-        push    edi
+        push    di
         push    es
 
         mov     di, [bp + 4]            ; pvDst.off
         mov     dx, [bp + 4 + 2]        ; pvDst.sel
         mov     es, dx
         mov     cx, [bp + 4 + 4]        ; cbDst
-        shr     cx, 2                   ; calc dword count.
-        xor     eax, eax
-        rep stosd
+        shr     cx, 1                   ; calc dword count.
+        xor     ax, ax
+        rep stosw
 
         mov     cx, [bp + 4 + 4]        ; cbDst
-        and     cx, 3                   ; calc tailing byte count.
+        and     cx, 1                   ; calc tailing byte count.
         rep stosb
 
         pop     es
-        pop     edi
-        leave
+        pop     di
+        pop     bp
         ret
 
 %elif ARCH_BITS == 32
