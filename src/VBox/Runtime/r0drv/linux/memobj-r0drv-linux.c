@@ -372,11 +372,17 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
 #endif /* < 2.4.22 */
     pMemLnx->fContiguous = fContiguous;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
     /*
      * Reserve the pages.
+     * 
+     * Linux >= 4.5 with CONFIG_DEBUG_VM panics when setting PG_reserved on compound
+     * pages. According to Michal Hocko this shouldn't be necessary anyway because
+     * as pages which are not on the LRU list are never evictable.
      */
     for (iPage = 0; iPage < cPages; iPage++)
         SetPageReserved(pMemLnx->apPages[iPage]);
+#endif
 
     /*
      * Note that the physical address of memory allocated with alloc_pages(flags, order)
@@ -423,7 +429,12 @@ static void rtR0MemObjLinuxFreePages(PRTR0MEMOBJLNX pMemLnx)
          */
         while (iPage-- > 0)
         {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+            /*
+             * See SetPageReserved() in rtR0MemObjLinuxAllocPages()
+             */
             ClearPageReserved(pMemLnx->apPages[iPage]);
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 22)
 #else
             MY_SET_PAGES_NOEXEC(pMemLnx->apPages[iPage], 1);
