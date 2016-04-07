@@ -183,7 +183,7 @@ RTDECL(int) RTSymlinkReadA(const char *pszSymlink, char **ppszTarget)
         ssize_t     cbBuf;
         struct stat s;
         if (!lstat(pszNativeSymlink, &s))
-            cbBuf = RT_MIN(RT_ALIGN_Z(s.st_size, 64), 64);
+            cbBuf = RT_MAX(RT_ALIGN_Z(s.st_size, 64), 256);
         else
             cbBuf = 1024;
 
