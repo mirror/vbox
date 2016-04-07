@@ -156,7 +156,7 @@ typedef enum PDMAUDIORECSOURCE
 typedef struct PDMAUDIOSTREAMCFG
 {
     /** Friendly name of the stream. */
-    char                    *pszName;
+    const char               *pszName;
     /** Direction of the stream. */
     PDMAUDIODIR              enmDir;
     union
