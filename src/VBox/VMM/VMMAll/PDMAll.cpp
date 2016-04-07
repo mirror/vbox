@@ -367,7 +367,7 @@ VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
  */
 VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8_t *pu8PendingIrq)
 {
-    PVM     pVM      = pVCpu->CTX_SUFF(pVM);
+    PVM        pVM      = pVCpu->CTX_SUFF(pVM);
     PPDMDEVINS pApicIns = pVM->pdm.s.Apic.CTX_SUFF(pDevIns);
     if (pApicIns)
     {
