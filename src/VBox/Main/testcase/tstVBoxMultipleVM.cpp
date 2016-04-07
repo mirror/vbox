@@ -79,6 +79,14 @@ static HRESULT tstComExpr(HRESULT hrc, const char *pszOperation, int iLine)
 }
 
 
+#define CHECK_ERROR_L(iface, method) \
+    do { \
+        rc = iface->method; \
+        if (FAILED(rc)) \
+            RTPrintf("warning: %s->%s failed on line %u with hrc=%Rhrc\n", #iface, #method, __LINE__, rc);\
+    } while (0)
+
+
 /** Macro that executes the given expression and report any failure.
  *  The expression must return a HRESULT. */
 #define TST_COM_EXPR(expr) tstComExpr(expr, #expr, __LINE__)
@@ -99,22 +107,22 @@ static int tstStartVM(IVirtualBox *pVBox, ISession *pSession, Bstr machineID, bo
                                       Bstr("").raw(), progress.asOutParam());
     if (SUCCEEDED(rc) && !progress.isNull())
     {
-        CHECK_ERROR(progress, WaitForCompletion(-1));
+        CHECK_ERROR_L(progress, WaitForCompletion(-1));
         if (SUCCEEDED(rc))
         {
             BOOL completed = true;
-            CHECK_ERROR(progress, COMGETTER(Completed)(&completed));
+            CHECK_ERROR_L(progress, COMGETTER(Completed)(&completed));
             if (SUCCEEDED(rc))
             {
                 Assert(completed);
                 LONG iRc;
-                CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
+                CHECK_ERROR_L(progress, COMGETTER(ResultCode)(&iRc));
                 if (SUCCEEDED(rc))
                 {
                     if (FAILED(iRc))
                     {
                         ProgressErrorInfo info(progress);
-                        RTPrintf("Start VM '%ls' failed.Error: %ls.\n", machineName.raw(), info.getText().raw());
+                        RTPrintf("Start VM '%ls' failed. Warning: %ls.\n", machineName.raw(), info.getText().raw());
                     }
                     else
                         RTPrintf("VM '%ls' started.\n", machineName.raw());
@@ -157,22 +165,22 @@ static int tstStopVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, boo
         if (SUCCEEDED(rc) && !progress.isNull())
         {
             //RTPrintf("Stopping VM %ls...\n", machineName.raw());
-            CHECK_ERROR(progress, WaitForCompletion(-1));
+            CHECK_ERROR_L(progress, WaitForCompletion(-1));
             if (SUCCEEDED(rc))
             {
                 BOOL completed = true;
-                CHECK_ERROR(progress, COMGETTER(Completed)(&completed));
+                CHECK_ERROR_L(progress, COMGETTER(Completed)(&completed));
                 if (SUCCEEDED(rc))
                 {
                     //ASSERT(completed);
                     LONG iRc;
-                    CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
+                    CHECK_ERROR_L(progress, COMGETTER(ResultCode)(&iRc));
                     if (SUCCEEDED(rc))
                     {
                         if (FAILED(iRc))
                         {
                             ProgressErrorInfo info(progress);
-                            RTPrintf("Stop VM %ls failed. Error: %ls.\n", machineName.raw(), info.getText().raw());
+                            RTPrintf("Stop VM %ls failed. Warning: %ls.\n", machineName.raw(), info.getText().raw());
                             rc = iRc;
                         }
                         else
@@ -214,9 +222,9 @@ static int tstGetMachinesList(IVirtualBox *pVBox, uint32_t maxCount, TMachinesLi
         {
             Bstr bstrId;
             Bstr machineName;
-            CHECK_ERROR(machines[idx], COMGETTER(Id)(bstrId.asOutParam()));
+            CHECK_ERROR_L(machines[idx], COMGETTER(Id)(bstrId.asOutParam()));
             if (SUCCEEDED(rc))
-                CHECK_ERROR(machines[idx], COMGETTER(Name)(machineName.asOutParam()));
+                CHECK_ERROR_L(machines[idx], COMGETTER(Name)(machineName.asOutParam()));
             if (SUCCEEDED(rc))
             {
                 if (Utf8Str(machineName).startsWith("umtvm"))
@@ -304,7 +312,7 @@ static int tstCreateMachines(IVirtualBox *pVBox)
 
         Bstr machineName(tstMakeMachineName(i));
         /* Default VM settings */
-        CHECK_ERROR(pVBox, CreateMachine(NULL,                          /* Settings */
+        CHECK_ERROR_L(pVBox, CreateMachine(NULL,                          /* Settings */
                                          machineName.raw(),             /* Name */
                                          ComSafeArrayAsInParam(groups), /* Groups */
                                          NULL,                          /* OS Type */
@@ -312,7 +320,7 @@ static int tstCreateMachines(IVirtualBox *pVBox)
                                          ptrMachine.asOutParam()));
         if (SUCCEEDED(rc))
         {
-            CHECK_ERROR(pVBox, RegisterMachine(ptrMachine));
+            CHECK_ERROR_L(pVBox, RegisterMachine(ptrMachine));
             RTPrintf("Machine '%ls' created\n", machineName.raw());
         }
 
@@ -339,11 +347,11 @@ static int tstClean(IVirtualBox *pVBox, IVirtualBoxClient *pClient)
         Bstr machineName(tstMakeMachineName(i));
 
         /* Delete created VM and its files */
-        CHECK_ERROR(pVBox, FindMachine(machineName.raw(), machine.asOutParam()));
+        CHECK_ERROR_L(pVBox, FindMachine(machineName.raw(), machine.asOutParam()));
 
         // try to stop it again if it was not stopped
         if (SUCCEEDED(rc))
-            CHECK_ERROR(machine, COMGETTER(State)(&machineState));
+            CHECK_ERROR_L(machine, COMGETTER(State)(&machineState));
         if (machineState == MachineState_Running
             || machineState == MachineState_Paused)
         {
@@ -353,11 +361,11 @@ static int tstClean(IVirtualBox *pVBox, IVirtualBoxClient *pClient)
         }
 
         if (SUCCEEDED(rc))
-            CHECK_ERROR(machine, Unregister(CleanupMode_DetachAllReturnHardDisksOnly, ComSafeArrayAsOutParam(media)));
+            CHECK_ERROR_L(machine, Unregister(CleanupMode_DetachAllReturnHardDisksOnly, ComSafeArrayAsOutParam(media)));
         if (SUCCEEDED(rc))
-            CHECK_ERROR(machine, DeleteConfig(ComSafeArrayAsInParam(media), progress.asOutParam()));
+            CHECK_ERROR_L(machine, DeleteConfig(ComSafeArrayAsInParam(media), progress.asOutParam()));
         if (SUCCEEDED(rc))
-            CHECK_ERROR(progress, WaitForCompletion(-1));
+            CHECK_ERROR_L(progress, WaitForCompletion(-1));
         if (SUCCEEDED(rc))
             RTPrintf("Machine '%ls' deleted.\n", machineName.raw());
     }
@@ -502,6 +510,15 @@ int main(int argc, char **argv)
     SUPR3Init(NULL);
     com::Initialize();
     RTTestBanner(g_hTest);
+
+#ifndef RT_ARCH_AMD64
+    /*
+    * Seems linux x86 machines has 4GB memory limit.
+    * So this test cannot be run here, just to skip the test.
+    */
+    RTTestPassed(g_hTest, "Warning: the test can be processed on x64 machine only.\n");
+    return RTTestSummaryAndDestroy(g_hTest);
+#endif
 
     RTPrintf("Initializing ...\n");
     int rc = RTSemEventCreate(&g_PingEevent);
