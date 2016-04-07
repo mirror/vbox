@@ -2612,12 +2612,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
 /** @interface_method_impl{PDMDEVHLPR3,pfnAPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3)
 {
+#if 0
 #ifdef VBOX_WITH_NEW_APIC
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     NOREF(pApicReg);
     *ppApicHlpR3 = &g_pdmR3DevApicHlp;
     return VINF_SUCCESS;
+#endif
 #endif
 
     PDMDEV_ASSERT_DEVINS(pDevIns);
