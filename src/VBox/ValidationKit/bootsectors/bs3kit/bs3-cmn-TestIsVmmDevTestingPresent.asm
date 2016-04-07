@@ -27,7 +27,12 @@
 %include "bs3kit-template-header.mac"
 %include "VBox/VMMDevTesting.mac"
 
+;*********************************************************************************************************************************
+;*  External Symbols                                                                                                             *
+;*********************************************************************************************************************************
+BS3_EXTERN_DATA16 g_uBs3CpuDetected
 TMPL_BEGIN_TEXT
+
 
 ;;
 ; @cproto   BS3_DECL(bool) bs3TestIsVmmDevTestingPresent_c16(void);
@@ -40,17 +45,24 @@ BS3_PROC_BEGIN_CMN bs3TestIsVmmDevTestingPresent
 
         ; Check the response from the NOP port.
         mov     dx, VMMDEV_TESTING_IOPORT_NOP
+        cmp     byte [g_uBs3CpuDetected], BS3CPU_80386
+        jb      .ancient_cpu
         in      eax, dx
         cmp     eax, VMMDEV_TESTING_NOP_RET
-        mov     eax, 0
+.set_ax_and_return:
+        mov     ax, 0
         jne     .return
-        mov     eax, 1
+        mov     ax, 1
 
 .return:
         pop     xDX
-        leave
+        pop     xBP
         BS3_CALL_CONV_EPILOG 2
         ret
-BS3_PROC_END_CMN   bs3TestIsVmmDevTestingPresent
 
+.ancient_cpu:
+        in      ax, dx
+        cmp     ax, (VMMDEV_TESTING_NOP_RET & 0xffff)
+        jmp     .set_ax_and_return
+BS3_PROC_END_CMN   bs3TestIsVmmDevTestingPresent
 
