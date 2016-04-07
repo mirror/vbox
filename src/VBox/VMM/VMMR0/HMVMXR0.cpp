@@ -3909,7 +3909,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 GCPhysGuestCR3 = GCPhys;
             }
 
-            Log4(("Load[%RU32]: VMX_VMCS_GUEST_CR3=%#RGv (GstN)\n", pVCpu->idCpu, GCPhysGuestCR3));
+            Log4(("Load[%RU32]: VMX_VMCS_GUEST_CR3=%#RGp (GstN)\n", pVCpu->idCpu, GCPhysGuestCR3));
             rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR3, GCPhysGuestCR3);
         }
         else
@@ -8453,7 +8453,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
         AssertRCReturn(rc, rc);
 
         /* Map the HC APIC-access page into the GC space, this also updates the shadow page tables if necessary. */
-        Log4(("Mapped HC APIC-access page into GC: GCPhysApicBase=%#RGv\n", GCPhysApicBase));
+        Log4(("Mapped HC APIC-access page into GC: GCPhysApicBase=%#RGp\n", GCPhysApicBase));
         rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
         AssertRCReturn(rc, rc);
 
@@ -12455,7 +12455,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
             GCPhys &= PAGE_BASE_GC_MASK;
             GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification);
             PVM pVM = pVCpu->CTX_SUFF(pVM);
-            Log4(("ApicAccess uAccessType=%#x GCPhys=%#RGv Off=%#x\n", uAccessType, GCPhys,
+            Log4(("ApicAccess uAccessType=%#x GCPhys=%#RGp Off=%#x\n", uAccessType, GCPhys,
                  VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification)));
 
             rcStrict2 = IOMMMIOPhysHandler(pVM, pVCpu,
@@ -12618,7 +12618,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     VBOXSTRICTRC rcStrict2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pMixedCtx), GCPhys, UINT32_MAX);
-    Log4(("EPT misconfig at %#RGv RIP=%#RX64 rc=%Rrc\n", GCPhys, pMixedCtx->rip, VBOXSTRICTRC_VAL(rcStrict2)));
+    Log4(("EPT misconfig at %#RGp RIP=%#RX64 rc=%Rrc\n", GCPhys, pMixedCtx->rip, VBOXSTRICTRC_VAL(rcStrict2)));
     if (   rcStrict2 == VINF_SUCCESS
         || rcStrict2 == VERR_PAGE_TABLE_NOT_PRESENT
         || rcStrict2 == VERR_PAGE_NOT_PRESENT)
