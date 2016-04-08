@@ -444,108 +444,6 @@ VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu)
 
 
 /**
- * Called when a init phase has completed.
- *
- * @returns VBox status code.
- * @param   pVM                 The cross context VM structure.
- * @param   enmWhat             Which init phase.
- */
-VMMR3_INT_DECL(int) APICR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
-{
-    switch (enmWhat)
-    {
-        case VMINITCOMPLETED_RING0:
-        {
-            /*
-             * Map the virtual-PIB into RC.
-             * The virtual-PIB should've already been mapped into R0 and R3, see APICR0InitVM().
-             */
-            PAPIC   pApic = VM_TO_APIC(pVM);
-            RTGCPTR GCPtrApicPib;
-            if (   RT_VALID_PTR(pApic->pvApicPibR3)
-                && pApic->HCPhysApicPib != NIL_RTHCPHYS)
-            {
-                int rc = MMR3HyperMapHCPhys(pVM, (void *)pApic->pvApicPibR3, NIL_RTR0PTR, pApic->HCPhysApicPib,
-                                            (size_t)pApic->cbApicPib, "APIC PIB", &GCPtrApicPib);
-                if (RT_FAILURE(rc))
-                {
-                    LogRel(("APIC: Failed to map HC APIC PIB of %u bytes at %#RHp to RC, rc=%Rrc\n", pApic->cbApicPib,
-                            pApic->HCPhysApicPib, rc));
-                    return rc;
-                }
-            }
-            else
-            {
-                LogRel(("APIC: Failed to find R3 mapping for virtual-PIB\n"));
-                return VERR_MAP_FAILED;
-            }
-
-            /*
-             * Map the virtual-APIC pages into RC and initialize per-VCPU APIC state.
-             * The virtual-APIC pages should by now have been mapped into R0 and R3 by APICR0InitVM().
-             */
-            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-            {
-                PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
-                PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-
-                if (   RT_VALID_PTR(pApicCpu->pvApicPageR3)
-                    && pApicCpu->HCPhysApicPage != NIL_RTHCPHYS)
-                {
-                    RTGCPTR GCPtrApicPage;
-                    int rc = MMR3HyperMapHCPhys(pVM, (void *)pApicCpu->pvApicPageR3, NIL_RTR0PTR, pApicCpu->HCPhysApicPage,
-                                                (size_t)pApicCpu->cbApicPage, "APIC", &GCPtrApicPage);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pApicCpu->pvApicPageRC = GCPtrApicPage;
-
-                        /*
-                         * Associate the per-VCPU PIB RC pointer to the per-VM PIB RC mapping.
-                         */
-                        size_t const offApicPib = idCpu * sizeof(APICPIB);
-                        pApicCpu->pvApicPibRC   = GCPtrApicPib + offApicPib;
-
-                        /*
-                         * Initialize the remaining state now that we have R3 mappings.
-                         */
-                        APICR3Reset(pVCpu);
-                    }
-                    else
-                    {
-                        LogRel(("APIC%u: Failed to map HC virtual-APIC page of %u bytes at %#RHp to RC, rc=%Rrc\n",
-                                pVCpu->idCpu, pApicCpu->cbApicPage, pApicCpu->HCPhysApicPage, rc));
-                        return rc;
-                    }
-                }
-                else
-                {
-                    LogRel(("APIC%u: Failed to find R3 mapping for virtual-APIC page\n", pVCpu->idCpu));
-                    return VERR_MAP_FAILED;
-                }
-            }
-            return VINF_SUCCESS;
-        }
-
-        case VMINITCOMPLETED_HM:
-        {
-            CPUMCPUIDLEAF CpuLeaf;
-            int rc = CPUMR3CpuIdGetLeaf(pVM, &CpuLeaf, 1, 0);
-            AssertRCReturn(rc, rc);
-
-            PAPIC pApic = VM_TO_APIC(pVM);
-            pApic->fSupportsTscDeadline = RT_BOOL(CpuLeaf.uEcx & X86_CPUID_FEATURE_ECX_TSCDEADL);
-            pApic->fPostedIntrsEnabled  = HMR3IsPostedIntrsEnabled(pVM->pUVM);
-            pApic->fVirtApicRegsEnabled = HMR3IsVirtApicRegsEnabled(pVM->pUVM);
-            return VINF_SUCCESS;
-        }
-
-        default:
-            return VINF_SUCCESS;
-    }
-}
-
-
-/**
  * Receives an INIT IPI.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
@@ -1094,12 +992,7 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
     pApicDev->pCritSectRC = pApicDev->pApicHlpR3->pfnGetRCCritSect(pDevIns);
 
     pApic->pApicDevRC     = PDMINS_2_DATA_RCPTR(pDevIns);
-
-    /*
-     * We can get invoked via PGMR3FinalizeMappings() which happens before initializing R0.
-     * This we may not have allocated and mapped the R0, R3 data yet. Hence the NULL checks.
-     */
-    if (pApic->pvApicPibR3)
+    if (pApic->pvApicPibRC)
         pApic->pvApicPibRC = MMHyperR3ToRC(pVM, (void *)pApic->pvApicPibR3);
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -1108,12 +1001,193 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
         PAPICCPU pApicCpu      = VMCPU_TO_APICCPU(pVCpu);
         pApicCpu->pTimerRC     = TMTimerRCPtr(pApicCpu->pTimerR3);
 
-        if (pApicCpu->pvApicPageR3)
+        if (pApicCpu->pvApicPageRC)
             pApicCpu->pvApicPageRC = MMHyperR3ToRC(pVM, (void *)pApicCpu->pvApicPageR3);
-
-        if (pApicCpu->pvApicPibR3)
+        if (pApicCpu->pvApicPibRC)
             pApicCpu->pvApicPibRC  = MMHyperR3ToRC(pVM, (void *)pApicCpu->pvApicPibR3);
     }
+}
+
+
+/**
+ * Terminates the APIC state.
+ *
+ * @param   pVM     The cross context VM structure.
+ */
+static void apicR3TermState(PVM pVM)
+{
+    PAPIC pApic = VM_TO_APIC(pVM);
+    if (pApic->pvApicPibR3)
+    {
+        size_t const cPages = pApic->cbApicPib >> PAGE_SHIFT;
+        if (cPages == 1)
+            SUPR3PageFreeEx((void *)pApic->pvApicPibR3, cPages);
+        else
+            SUPR3ContFree((void *)pApic->pvApicPibR3, cPages);
+        pApic->pvApicPibR3 = NULL;
+    }
+
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU   pVCpu      = &pVM->aCpus[idCpu];
+        PAPICCPU pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
+        if (pApicCpu->pvApicPageR3)
+        {
+            SUPR3PageFreeEx((void *)pApicCpu->pvApicPageR3, 1 /* cPages */);
+            pApicCpu->pvApicPageR3 = NULL;
+        }
+    }
+}
+
+
+/**
+ * Initializes the APIC state.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The cross context VM structure.
+ */
+static int apicR3InitState(PVM pVM)
+{
+    PAPIC pApic = VM_TO_APIC(pVM);
+    bool const fNeedGCMapping = !HMIsEnabled(pVM);
+
+    /*
+     * Allocate and map the pending-interrupt bitmap (PIB).
+     *
+     * We allocate all the VCPUs' PIBs contiguously in order to save space as
+     * physically contiguous allocations are rounded to a multiple of page size.
+     */
+    pApic->cbApicPib    = RT_ALIGN_Z(pVM->cCpus * sizeof(APICPIB), PAGE_SIZE);
+    size_t const cPages = pApic->cbApicPib >> PAGE_SHIFT;
+    Assert(!pApic->pvApicPibR3);
+    if (cPages == 1)
+    {
+        SUPPAGE SupApicPib;
+        RT_ZERO(SupApicPib);
+        SupApicPib.Phys = NIL_RTHCPHYS;
+        int rc = SUPR3PageAllocEx(cPages, 0 /* fFlags */, (void **)&pApic->pvApicPibR3, &pApic->pvApicPibR0, &SupApicPib);
+        if (RT_SUCCESS(rc))
+        {
+            pApic->HCPhysApicPib = SupApicPib.Phys;
+            Assert(pApic->HCPhysApicPib != NIL_RTHCPHYS);
+            Assert(pApic->pvApicPibR3);
+        }
+        else
+        {
+            LogRel(("APIC: Failed to allocate %u bytes for the pending-interrupt bitmap, rc=%Rrc\n", pApic->cbApicPib, rc));
+            return rc;
+        }
+    }
+    else
+        pApic->pvApicPibR3 = SUPR3ContAlloc(cPages, &pApic->pvApicPibR0, &pApic->HCPhysApicPib);
+
+    if (pApic->pvApicPibR3)
+    {
+        /* Map the pending-interrupt bitmap (PIB) into GC.  */
+        if (fNeedGCMapping)
+        {
+            int rc = MMR3HyperMapHCPhys(pVM, (void *)pApic->pvApicPibR3, NIL_RTR0PTR, pApic->HCPhysApicPib, pApic->cbApicPib,
+                                        "APIC PIB", (PRTGCPTR)&pApic->pvApicPibRC);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("APIC: Failed to map %u bytes for the pending-interrupt bitmap to GC, rc=%Rrc\n", pApic->cbApicPib, rc));
+                apicR3TermState(pVM);
+                return rc;
+            }
+        }
+
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        {
+            PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
+            PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+
+            /* Allocate and map the virtual-APIC page. */
+            SUPPAGE SupApicPage;
+            RT_ZERO(SupApicPage);
+            SupApicPage.Phys = NIL_RTHCPHYS;
+
+            pApicCpu->cbApicPage = sizeof(XAPICPAGE);
+            AssertCompile(sizeof(XAPICPAGE) == PAGE_SIZE);
+
+            Assert(!pApicCpu->pvApicPageR3);
+            int rc = SUPR3PageAllocEx(1 /* cPages */, 0 /* fFlags */, (void **)&pApicCpu->pvApicPageR3, &pApicCpu->pvApicPageR0,
+                                      &SupApicPage);
+            if (RT_SUCCESS(rc))
+            {
+                pApicCpu->HCPhysApicPage = SupApicPage.Phys;
+                Assert(pApicCpu->HCPhysApicPage != NIL_RTHCPHYS);
+
+                /* Map the virtual-APIC page into GC. */
+                if (fNeedGCMapping)
+                {
+                    rc = MMR3HyperMapHCPhys(pVM, (void *)pApicCpu->pvApicPageR3, NIL_RTR0PTR, pApicCpu->HCPhysApicPage,
+                                            pApicCpu->cbApicPage, "APIC", (PRTGCPTR)&pApicCpu->pvApicPageRC);
+                    if (RT_FAILURE(rc))
+                    {
+                        LogRel(("APIC%u: Failed to map %u bytes for the virtual-APIC page to GC, rc=%Rrc", idCpu,
+                                pApicCpu->cbApicPage, rc));
+                        apicR3TermState(pVM);
+                        return rc;
+                    }
+                }
+
+                /* Associate the per-VCPU PIB pointers to the per-VM PIB mapping. */
+                size_t const offApicPib    = idCpu * sizeof(APICPIB);
+                pApicCpu->pvApicPibR0      = (RTR0PTR)((const uint8_t *)pApic->pvApicPibR0 + offApicPib);
+                pApicCpu->pvApicPibR3      = (RTR3PTR)((const uint8_t *)pApic->pvApicPibR3 + offApicPib);
+                if (fNeedGCMapping)
+                    pApicCpu->pvApicPibRC += offApicPib;
+
+                /* Initialize the virtual-APIC state. */
+                memset((void *)pApicCpu->pvApicPageR3, 0, pApicCpu->cbApicPage);
+                APICR3Reset(pVCpu);
+            }
+            else
+            {
+                LogRel(("APIC%u: Failed to allocate %u bytes for the virtual-APIC page\n", pApicCpu->cbApicPage));
+                apicR3TermState(pVM);
+                return VERR_NO_MEMORY;
+            }
+        }
+
+        return VINF_SUCCESS;
+    }
+
+    LogRel(("APIC: Failed to allocate %u bytes of contiguous low-memory for the pending-interrupt bitmap\n", pApic->cbApicPib));
+    return VERR_NO_MEMORY;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) apicR3Destruct(PPDMDEVINS pDevIns)
+{
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
+    apicR3TermState(pVM);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnInitComplete}
+ */
+static DECLCALLBACK(int) apicR3InitComplete(PPDMDEVINS pDevIns)
+{
+    PVM   pVM   = PDMDevHlpGetVM(pDevIns);
+    PAPIC pApic = VM_TO_APIC(pVM);
+
+    CPUMCPUIDLEAF CpuLeaf;
+    int rc = CPUMR3CpuIdGetLeaf(pVM, &CpuLeaf, 1, 0);
+    AssertRCReturn(rc, rc);
+    pApic->fSupportsTscDeadline = RT_BOOL(CpuLeaf.uEcx & X86_CPUID_FEATURE_ECX_TSCDEADL);
+
+    pApic->fPostedIntrsEnabled  = HMR3IsPostedIntrsEnabled(pVM->pUVM);
+    pApic->fVirtApicRegsEnabled = HMR3IsVirtApicRegsEnabled(pVM->pUVM);
+
+    LogRel(("APIC: fPostedIntrsEnabled=%RTbool fVirtApicRegsEnabled=%RTbool fSupportsTscDeadline=%RTbool\n",
+            pApic->fPostedIntrsEnabled, pApic->fVirtApicRegsEnabled, pApic->fSupportsTscDeadline));
+    return VINF_SUCCESS;
 }
 
 
@@ -1166,7 +1240,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     }
 
     /*
-     * Initialize part of APIC state.
+     * Initialize the APIC state.
      */
     pApicDev->pDevInsR3 = pDevIns;
     pApicDev->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
@@ -1176,18 +1250,8 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pApic->pApicDevR3   = (PAPICDEV)PDMINS_2_DATA_R3PTR(pDevIns);
     pApic->pApicDevRC   = PDMINS_2_DATA_RCPTR(pDevIns);
 
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
-        PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-        RTStrPrintf(&pApicCpu->szTimerDesc[0], sizeof(pApicCpu->szTimerDesc), "APIC Timer %u", pVCpu->idCpu);
-
-        /* Initialize the APIC base MSR as we require it for registering the MMIO range. */
-        apicR3ResetBaseMsr(pVCpu);
-
-        /* Disable the APIC until we're fully initialized in APICR3InitCompleted(), see @bugref{8245#c46}. */
-        apicR3SetEnabled(pVCpu, false);
-    }
+    rc = apicR3InitState(pVM);
+    AssertRCReturn(rc, rc);
 
     /*
      * Disable automatic PDM locking for this device.
@@ -1284,6 +1348,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     {
         PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
         PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+        RTStrPrintf(&pApicCpu->szTimerDesc[0], sizeof(pApicCpu->szTimerDesc), "APIC Timer %u", pVCpu->idCpu);
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, apicR3TimerCallback, pVCpu, TMTIMER_FLAGS_NO_CRIT_SECT,
                                     pApicCpu->szTimerDesc, &pApicCpu->pTimerR3);
         if (RT_SUCCESS(rc))
@@ -1370,7 +1435,7 @@ const PDMDEVREG g_DeviceAPIC =
     /* pfnConstruct */
     apicR3Construct,
     /* pfnDestruct */
-    NULL,
+    apicR3Destruct,
     /* pfnRelocate */
     apicR3Relocate,
     /* pfnMemSetup */
@@ -1390,7 +1455,7 @@ const PDMDEVREG g_DeviceAPIC =
     /* pfnQueryInterface. */
     NULL,
     /* pfnInitComplete */
-    NULL,
+    apicR3InitComplete,
     /* pfnPowerOff */
     NULL,
     /* pfnSoftReset */

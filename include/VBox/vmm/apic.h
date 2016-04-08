@@ -926,7 +926,6 @@ RT_C_DECLS_BEGIN
 /** @defgroup grp_apic_r3  The APIC Host Context Ring-3 API
  * @{
  */
-VMMR3_INT_DECL(int)         APICR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3_INT_DECL(void)        APICR3InitIpi(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)        APICR3Reset(PVMCPU pVCpu);
 /** @} */

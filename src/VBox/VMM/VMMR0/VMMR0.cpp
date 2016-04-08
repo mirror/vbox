@@ -468,21 +468,12 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
                         rc = GIMR0InitVM(pVM);
                         if (RT_SUCCESS(rc))
                         {
-#ifdef VBOX_WITH_NEW_APIC
-                            rc = APICR0InitVM(pVM);
-#endif
+                            VMM_CHECK_SMAP_CHECK2(pVM, rc = VERR_VMM_RING0_ASSERTION);
                             if (RT_SUCCESS(rc))
                             {
-                                VMM_CHECK_SMAP_CHECK2(pVM, rc = VERR_VMM_RING0_ASSERTION);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    GVMMR0DoneInitVM(pVM);
-                                    VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-                                    return rc;
-                                }
-#ifdef VBOX_WITH_NEW_APIC
-                            APICR0TermVM(pVM);
-#endif
+                                GVMMR0DoneInitVM(pVM);
+                                VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+                                return rc;
                             }
 
                             /* bail out*/
@@ -527,9 +518,6 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
      */
     if (GVMMR0DoingTermVM(pVM, pGVM))
     {
-#ifdef VBOX_WITH_NEW_APIC
-        APICR0TermVM(pVM);
-#endif
         GIMR0TermVM(pVM);
 
         /** @todo I wish to call PGMR0PhysFlushHandyPages(pVM, &pVM->aCpus[idCpu])
