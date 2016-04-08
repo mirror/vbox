@@ -515,7 +515,7 @@ int main(int argc, char **argv)
     /*
      * Linux OOM killer when running many VMs on a 32-bit host.
      */
-    RTTestPassed(g_hTest, "Warning: the test can be processed on x64 machine only.\n");
+    RTTestSkipped(g_hTest, "Warning: the test can be processed on 64-bit hosts only.\n");
     return RTTestSummaryAndDestroy(g_hTest);
 #endif
 
