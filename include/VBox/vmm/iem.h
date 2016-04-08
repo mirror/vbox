@@ -51,6 +51,42 @@ typedef enum IEMMODE
 AssertCompileSize(IEMMODE, 4);
 
 
+/** @name IEMTARGETCPU_XXX - IEM target CPU specification.
+ *
+ * This is a gross simpliciation of CPUMMICROARCH for dealing with really old
+ * CPUs which didn't have much in the way of hinting at supported instructions
+ * and features.  This slowly changes with the introduction of CPUID with the
+ * Intel Pentium.
+ *
+ * @{
+ */
+/** The dynamic target CPU mode is for getting thru the BIOS and then use
+ * the debugger or modifying instruction behaviour (e.g. HLT) to switch to a
+ * different target CPU. */
+#define IEMTARGETCPU_DYNAMIC    UINT32_C(0)
+/** Intel 8086/8088.  */
+#define IEMTARGETCPU_8086       UINT32_C(1)
+/** NEC V20/V30.  */
+#define IEMTARGETCPU_V20        UINT32_C(2)
+/** Intel 80186/80188.  */
+#define IEMTARGETCPU_186        UINT32_C(3)
+/** Intel 80286.  */
+#define IEMTARGETCPU_286        UINT32_C(4)
+/** Intel 80386.  */
+#define IEMTARGETCPU_386        UINT32_C(5)
+/** Intel 80486.  */
+#define IEMTARGETCPU_486        UINT32_C(6)
+/** Intel Pentium .  */
+#define IEMTARGETCPU_PENTIUM    UINT32_C(7)
+/** Intel PentiumPro.  */
+#define IEMTARGETCPU_PPRO       UINT32_C(8)
+/** A reasonably current CPU, probably newer than the pentium pro when it comes
+ * to the feature set and behaviour.  Generally the CPUID info and CPU vendor
+ * dicates the behaviour here. */
+#define IEMTARGETCPU_CURRENT    UINT32_C(9)
+/** @} */
+
+
 /** @name IEM status codes.
  *
  * Not quite sure how this will play out in the end, just aliasing safe status

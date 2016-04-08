@@ -49,6 +49,19 @@ RT_C_DECLS_BEGIN
 #endif
 
 
+/** @def IEM_CFG_TARGET_CPU
+ * The minimum target CPU for the IEM emulation (IEMTARGETCPU_XXX value). The
+ * default is the a "current" CPU, i.e. something newer than the pentium pro. By
+ * twiddling this value, you can make IEM try behave like older CPUs which is
+ * useful when checking software that needs to run on real old CPUs.
+ */
+#if !defined(IEM_CFG_TARGET_CPU) || defined(DOXYGEN_RUNNING)
+# define IEM_CFG_TARGET_CPU IEMTARGETCPU_CURRENT
+/*# define IEM_CFG_TARGET_CPU IEMTARGETCPU_DYNAMIC*/
+#endif
+
+
+
 /** Finish and move to types.h */
 typedef union
 {
@@ -381,7 +394,7 @@ typedef struct IEMCPU
      * instruction result is committed. */
     uint8_t                 offFpuOpcode;
 
-    /** @}*/
+    /** @} */
 
     /** The number of active guest memory mappings. */
     uint8_t                 cActiveMappings;
@@ -450,6 +463,12 @@ typedef struct IEMCPU
 
     /** @name Target CPU information.
      * @{ */
+#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
+    /** The target CPU. */
+    uint32_t                uTargetCpu;
+#else
+    uint32_t                u32TargetCpuPadding;
+#endif
     /** The CPU vendor. */
     CPUMCPUVENDOR           enmCpuVendor;
     /** @} */
@@ -459,6 +478,8 @@ typedef struct IEMCPU
     /** The CPU vendor. */
     CPUMCPUVENDOR           enmHostCpuVendor;
     /** @} */
+
+    uint32_t                u32Alignment6; /**< Alignment padding. */
 
 #ifdef IEM_VERIFICATION_MODE_FULL
     /** The event verification records for what IEM did (LIFO). */
@@ -489,6 +510,16 @@ typedef IEMCPU const *PCIEMCPU;
  * @param   a_pIemCpu       The IEM per CPU instance data.
  */
 #define IEMCPU_TO_VM(a_pIemCpu)     ((PVM)( (uintptr_t)(a_pIemCpu) + a_pIemCpu->offVM ))
+
+/** Gets the current IEMTARGETCPU value.
+ * @returns IEMTARGETCPU value.
+ * @param   a_pIemCpu       The IEM per CPU instance data.
+ */
+#if IEM_CFG_TARGET_CPU != IEMTARGETCPU_DYNAMIC
+# define IEM_GET_TARGET_CPU(a_pIemCpu)   (IEM_CFG_TARGET_CPU)
+#else
+# define IEM_GET_TARGET_CPU(a_pIemCpu)   ((a_pIemCpu)->uTargetCpu)
+#endif
 
 /** @name IEM_ACCESS_XXX - Access details.
  * @{ */

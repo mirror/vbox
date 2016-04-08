@@ -71,6 +71,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         /*
          * Host and guest CPU information.
          */
+#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
+        pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_CURRENT;
+#endif
         if (idCpu == 0)
         {
             pVCpu->iem.s.enmCpuVendor             = CPUMGetGuestCpuVendor(pVM);
