@@ -1193,6 +1193,8 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             rc = SSMR3RegisterStub(pVM, "PATM", 0);
     }
 #endif
+    if (RT_SUCCESS(rc))
+        rc = PDMR3InitCompleted(pVM, enmWhat);
     return rc;
 }
 

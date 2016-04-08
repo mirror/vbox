@@ -444,6 +444,28 @@ VMMR3_INT_DECL(int) PDMR3Init(PVM pVM)
 
 
 /**
+ * Init phase completed callback.
+ *
+ * We use this for calling PDMDEVREG::pfnInitComplete callback after everything
+ * else has been initialized.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   enmWhat     The phase that was completed.
+ */
+VMMR3_INT_DECL(int) PDMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
+{
+#ifdef VBOX_WITH_RAW_MODE
+    if (enmWhat == VMINITCOMPLETED_RC)
+#else
+    if (enmWhat == VMINITCOMPLETED_RING0)
+#endif
+        return pdmR3DevInitComplete(pVM);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Applies relocations to data and code managed by this
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.

@@ -31,6 +31,9 @@
 #define ___VBox_vmm_pdmapi_h
 
 #include <VBox/vmm/pdmcommon.h>
+#ifdef IN_RING3
+# include <VBox/vmm/vmapi.h>
+#endif
 #include <VBox/sup.h>
 
 
@@ -59,13 +62,14 @@ VMM_INT_DECL(int)       PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *p
 VMM_INT_DECL(bool)      PDMVmmDevHeapIsEnabled(PVM pVM);
 
 
+#if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API
  * @{
  */
-
 VMMR3_INT_DECL(int)     PDMR3InitUVM(PUVM pUVM);
 VMMR3_INT_DECL(int)     PDMR3LdrLoadVMMR0U(PUVM pUVM);
 VMMR3_INT_DECL(int)     PDMR3Init(PVM pVM);
+VMMR3_INT_DECL(int)     PDMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3DECL(void)         PDMR3PowerOn(PVM pVM);
 VMMR3_INT_DECL(void)    PDMR3ResetCpu(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)    PDMR3Reset(PVM pVM);
@@ -160,6 +164,7 @@ VMMR3_INT_DECL(int)     PDMR3TracingConfig(PVM pVM, const char *pszName, size_t 
 VMMR3_INT_DECL(bool)    PDMR3TracingAreAll(PVM pVM, bool fEnabled);
 VMMR3_INT_DECL(int)     PDMR3TracingQueryConfig(PVM pVM, char *pszConfig, size_t cbConfig);
 /** @} */
+#endif /* IN_RING3 */
 
 
 

@@ -1275,6 +1275,7 @@ int         pdmR3CritSectRwInitDriver(      PVM pVM, PPDMDRVINS pDrvIns, PPDMCRI
                                             const char *pszNameFmt, ...);
 
 int         pdmR3DevInit(PVM pVM);
+int         pdmR3DevInitComplete(PVM pVM);
 PPDMDEV     pdmR3DevLookup(PVM pVM, const char *pszName);
 int         pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMLUN *ppLun);
 DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem);

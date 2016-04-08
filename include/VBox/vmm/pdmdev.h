@@ -226,7 +226,8 @@ typedef DECLCALLBACK(int) FNPDMDEVQUERYINTERFACE(PPDMDEVINS pDevIns, unsigned iL
 typedef FNPDMDEVQUERYINTERFACE *PFNPDMDEVQUERYINTERFACE;
 
 /**
- * Init complete notification.
+ * Init complete notification (after ring-0 & RC init since 5.1).
+ *
  * This can be done to do communication with other devices and other
  * initialization which requires everything to be in place.
  *
