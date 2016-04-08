@@ -30,6 +30,7 @@
 #include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
+#include <iprt/symlink.h>
 #include <iprt/types.h>
 
 #include <iprt/linux/sysfs.h>
@@ -45,10 +46,18 @@
 /** Gadget template name */
 #define UTS_GADGET_TEMPLATE_NAME "gadget_test"
 
+/** Default vendor ID which is recognized by the usbtest driver. */
 #define UTS_GADGET_TEST_VENDOR_ID_DEF    UINT16_C(0x0525)
+/** Default product ID which is recognized by the usbtest driver. */
 #define UTS_GADGET_TEST_PRODUCT_ID_DEF   UINT16_C(0xa4a0)
+/** Default device class. */
 #define UTS_GADGET_TEST_DEVICE_CLASS_DEF UINT8_C(0xff)
-
+/** Default serial number string. */
+#define UTS_GADGET_TEST_SERIALNUMBER_DEF "0123456789"
+/** Default manufacturer string. */
+#define UTS_GADGET_TEST_MANUFACTURER_DEF "Oracle Inc."
+/** Default product string. */
+#define UTS_GADGET_TEST_PRODUCT_DEF      "USB test device"
 
 /**
  * Internal UTS gadget host instance data.
@@ -67,9 +76,183 @@ typedef struct UTSGADGETCLASSINT
 
 
 /*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+
+/** Number of already created gadgets, used for the template name. */
+static volatile uint32_t g_cGadgets = 0;
+
+
+/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
+/**
+ * Creates a new directory pointed to by the given format string.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat         The format string.
+ * @param   va                The arguments.
+ */
+static int utsGadgetClassTestDirCreateV(const char *pszFormat, va_list va)
+{
+    int rc = VINF_SUCCESS;
+    char aszPath[RTPATH_MAX + 1];
+
+    size_t cbStr = RTStrPrintfV(&aszPath[0], sizeof(aszPath), pszFormat, va);
+    if (cbStr <= sizeof(aszPath) - 1)
+        rc = RTDirCreateFullPath(aszPath, 0700);
+    else
+        rc = VERR_BUFFER_OVERFLOW;
+
+    return rc;
+}
+
+
+/**
+ * Creates a new directory pointed to by the given format string.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat         The format string.
+ * @param   ...               The arguments.
+ */
+static int utsGadgetClassTestDirCreate(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = utsGadgetClassTestDirCreateV(pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * Removes a directory pointed to by the given format string.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat         The format string.
+ * @param   va                The arguments.
+ */
+static int utsGadgetClassTestDirRemoveV(const char *pszFormat, va_list va)
+{
+    int rc = VINF_SUCCESS;
+    char aszPath[RTPATH_MAX + 1];
+
+    size_t cbStr = RTStrPrintfV(&aszPath[0], sizeof(aszPath), pszFormat, va);
+    if (cbStr <= sizeof(aszPath) - 1)
+        rc = RTDirRemove(aszPath);
+    else
+        rc = VERR_BUFFER_OVERFLOW;
+
+    return rc;
+}
+
+
+/**
+ * Removes a directory pointed to by the given format string.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat         The format string.
+ * @param   ...               The arguments.
+ */
+static int utsGadgetClassTestDirRemove(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = utsGadgetClassTestDirRemoveV(pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * Links the given function to the given config.
+ *
+ * @returns IPRT status code.
+ * @param   pClass            The gadget class instance data.
+ * @param   pszFunc           The function to link.
+ * @param   pszCfg            The configuration which the function will be part of.
+ */
+static int utsGadgetClassTestLinkFuncToCfg(PUTSGADGETCLASSINT pClass, const char *pszFunc, const char *pszCfg)
+{
+    int rc = VINF_SUCCESS;
+    char aszPathFunc[RTPATH_MAX + 1];
+    char aszPathCfg[RTPATH_MAX + 1];
+
+    size_t cbStr = RTStrPrintf(&aszPathFunc[0], sizeof(aszPathFunc), "%s/functions/%s",
+                               pClass->pszGadgetPath, pszFunc);
+    if (cbStr <= sizeof(aszPathFunc) - 1)
+    {
+        cbStr = RTStrPrintf(&aszPathCfg[0], sizeof(aszPathCfg), "%s/configs/%s",
+                            pClass->pszGadgetPath, pszCfg);
+        if (cbStr <= sizeof(aszPathCfg) - 1)
+            rc = RTSymlinkCreate(&aszPathCfg[0], &aszPathFunc[0], RTSYMLINKTYPE_DIR, 0);
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+    else
+        rc = VERR_BUFFER_OVERFLOW;
+
+    return rc;
+}
+
+
+/**
+ * Unlinks the given function from the given configuration.
+ *
+ * @returns IPRT status code.
+ * @param   pClass            The gadget class instance data.
+ * @param   pszFunc           The function to unlink.
+ * @param   pszCfg            The configuration which the function is currently part of.
+ */
+static int utsGadgetClassTestUnlinkFuncFromCfg(PUTSGADGETCLASSINT pClass, const char *pszFunc, const char *pszCfg)
+{
+    int rc = VINF_SUCCESS;
+    char aszPath[RTPATH_MAX + 1];
+    size_t cbStr = RTStrPrintf(&aszPath[0], sizeof(aszPath), "%s/configs/%s/%s",
+                               pClass->pszGadgetPath, pszCfg, pszFunc);
+    if (cbStr <= sizeof(aszPath) - 1)
+        rc = RTSymlinkDelete(&aszPath[0], 0);
+    else
+        rc = VERR_BUFFER_OVERFLOW;
+
+    return rc;
+}
+
+
+/**
+ * Cleans up any leftover configurations from the gadget class.
+ *
+ * @returns nothing.
+ * @param   pClass            The gadget class instance data.
+ */
+static void utsGadgetClassTestCleanup(PUTSGADGETCLASSINT pClass)
+{
+    /* Unbind the gadget from the currently assigned UDC first. */
+    int rc = RTLinuxSysFsWriteStrFile("", 0, NULL, "%s/UDC", pClass->pszGadgetPath);
+    AssertRC(rc);
+
+    /* Delete the symlinks, ignore any errors. */
+    utsGadgetClassTestUnlinkFuncFromCfg(pClass, "Loopback.0", "c.2");
+    utsGadgetClassTestUnlinkFuncFromCfg(pClass, "SourceSink.0", "c.1");
+
+    /* Delete configuration strings and then the configuration directories. */
+    utsGadgetClassTestDirRemove("%s/configs/c.2/strings/0x409", pClass->pszGadgetPath);
+    utsGadgetClassTestDirRemove("%s/configs/c.1/strings/0x409", pClass->pszGadgetPath);
+
+    utsGadgetClassTestDirRemove("%s/configs/c.2", pClass->pszGadgetPath);
+    utsGadgetClassTestDirRemove("%s/configs/c.1", pClass->pszGadgetPath);
+
+    /* Delete the functions. */
+    utsGadgetClassTestDirRemove("%s/functions/Loopback.0", pClass->pszGadgetPath);
+    utsGadgetClassTestDirRemove("%s/functions/SourceSink.0", pClass->pszGadgetPath);
+
+    /* Delete the english strings. */
+    utsGadgetClassTestDirRemove("%s/strings/0x409", pClass->pszGadgetPath);
+
+    /* Finally delete the gadget template. */
+    utsGadgetClassTestDirRemove(pClass->pszGadgetPath);
+}
 
 /**
  * @interface_method_impl{UTSGADGETCLASS,pfnInit}
@@ -81,36 +264,102 @@ static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTS
     if (RTLinuxSysFsExists(UTS_GADGET_CLASS_CONFIGFS_MNT_DEF))
     {
         /* Create the gadget template */
-        unsigned idx = 0;
-        char aszPath[RTPATH_MAX];
+        unsigned idx = ASMAtomicIncU32(&g_cGadgets);
 
-        do
-        {
-            RTStrPrintf(&aszPath[0], RT_ELEMENTS(aszPath), "%s/%s%u",
-                        UTS_GADGET_CLASS_CONFIGFS_MNT_DEF, UTS_GADGET_TEMPLATE_NAME,
-                        idx);
-            rc = RTDirCreateFullPath(aszPath, 0700);
-            if (RT_SUCCESS(rc))
-                break;
-            idx++;
-        } while (idx < 100);
+        int rcStr = RTStrAPrintf(&pClass->pszGadgetPath, "%s/%s%u", UTS_GADGET_CLASS_CONFIGFS_MNT_DEF,
+                                 UTS_GADGET_TEMPLATE_NAME, idx);
+        if (rcStr == -1)
+            return VERR_NO_STR_MEMORY;
 
+        rc = utsGadgetClassTestDirCreate(pClass->pszGadgetPath);
         if (RT_SUCCESS(rc))
         {
-            pClass->pszGadgetPath = RTStrDup(aszPath);
-
             uint16_t idVendor = 0;
             uint16_t idProduct = 0;
             uint8_t  bDeviceClass = 0;
-            rc = utsGadgetCfgQueryU16Def(paCfg, "Gadget/idVendor", &idVendor, UTS_GADGET_TEST_VENDOR_ID_DEF);
+            char *pszSerial = NULL;
+            char *pszManufacturer = NULL;
+            char *pszProduct = NULL;
+
+            /* Get basic device config. */
+            rc = utsGadgetCfgQueryU16Def(paCfg,        "Gadget/idVendor",     &idVendor,        UTS_GADGET_TEST_VENDOR_ID_DEF);
             if (RT_SUCCESS(rc))
-                rc = utsGadgetCfgQueryU16Def(paCfg, "Gadget/idProduct", &idProduct, UTS_GADGET_TEST_PRODUCT_ID_DEF);
+                rc = utsGadgetCfgQueryU16Def(paCfg,    "Gadget/idProduct",    &idProduct,       UTS_GADGET_TEST_PRODUCT_ID_DEF);
             if (RT_SUCCESS(rc))
-                rc = utsGadgetCfgQueryU8Def(paCfg, "Gadget/bDeviceClass", &bDeviceClass, UTS_GADGET_TEST_DEVICE_CLASS_DEF);
+                rc = utsGadgetCfgQueryU8Def(paCfg,     "Gadget/bDeviceClass", &bDeviceClass,    UTS_GADGET_TEST_DEVICE_CLASS_DEF);
+            if (RT_SUCCESS(rc))
+                rc = utsGadgetCfgQueryStringDef(paCfg, "Gadget/SerialNumber", &pszSerial,       UTS_GADGET_TEST_SERIALNUMBER_DEF);
+            if (RT_SUCCESS(rc))
+                rc = utsGadgetCfgQueryStringDef(paCfg, "Gadget/Manufacturer", &pszManufacturer, UTS_GADGET_TEST_MANUFACTURER_DEF);
+            if (RT_SUCCESS(rc))
+                rc = utsGadgetCfgQueryStringDef(paCfg, "Gadget/Product",      &pszProduct,      UTS_GADGET_TEST_PRODUCT_DEF);
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Write basic attributes. */
+                rc = RTLinuxSysFsWriteU16File(16, idVendor, "%s/idVendor", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsWriteU16File(16, idProduct, "%s/idProduct", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsWriteU16File(16, bDeviceClass, "%s/bDeviceClass", pClass->pszGadgetPath);
+
+                /* Create english language strings. */
+                if (RT_SUCCESS(rc))
+                    rc = utsGadgetClassTestDirCreate("%s/strings/0x409", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsWriteStrFile(pszSerial, 0, NULL, "%s/strings/0x409/serialnumber", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsWriteStrFile(pszManufacturer, 0, NULL, "%s/strings/0x409/manufacturer", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsWriteStrFile(pszProduct, 0, NULL, "%s/strings/0x409/product", pClass->pszGadgetPath);
+
+                /* Create the gadget functions. */
+                if (RT_SUCCESS(rc))
+                    rc = utsGadgetClassTestDirCreate("%s/functions/SourceSink.0", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = utsGadgetClassTestDirCreate("%s/functions/Loopback.0", pClass->pszGadgetPath);
+
+                /* Create the device configs. */
+                if (RT_SUCCESS(rc))
+                    rc = utsGadgetClassTestDirCreate("%s/configs/c.1", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = utsGadgetClassTestDirCreate("%s/configs/c.2", pClass->pszGadgetPath);
+
+                /* Write configuration strings. */
+                if (RT_SUCCESS(rc))
+                    rc = utsGadgetClassTestDirCreate("%s/configs/c.1/strings/0x409", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = utsGadgetClassTestDirCreate("%s/configs/c.2/strings/0x409", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsWriteStrFile("source and sink data", 0, NULL, "%s/configs/c.1/strings/0x409/configuration", pClass->pszGadgetPath);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsWriteStrFile("loop input to output", 0, NULL, "%s/configs/c.2/strings/0x409/configuration", pClass->pszGadgetPath);
+
+                /* Link the functions into the configurations. */
+                if (RT_SUCCESS(rc))
+                    rc = utsGadgetClassTestLinkFuncToCfg(pClass, "SourceSink.0", "c.1");
+                if (RT_SUCCESS(rc))
+                    rc = utsGadgetClassTestLinkFuncToCfg(pClass, "Loopback.0", "c.2");
+
+                /* Finally enable the gadget by attaching it to a UDC. */
+                /** @todo: Figure out a free UDC dynamically. */
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsWriteStrFile("dummy_udc.0", 0, NULL, "%s/UDC", pClass->pszGadgetPath);
+            }
+
+            if (pszSerial)
+                RTStrFree(pszSerial);
+            if (pszManufacturer)
+                RTStrFree(pszManufacturer);
+            if (pszProduct)
+                RTStrFree(pszProduct);
         }
     }
     else
         rc = VERR_NOT_FOUND;
+
+    if (RT_FAILURE(rc))
+        utsGadgetClassTestCleanup(pClass);
 
     return rc;
 }
@@ -121,7 +370,10 @@ static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTS
  */
 static DECLCALLBACK(void) utsGadgetClassTestTerm(PUTSGADGETCLASSINT pClass)
 {
+    utsGadgetClassTestCleanup(pClass);
 
+    if (pClass->pszGadgetPath)
+        RTStrFree(pClass->pszGadgetPath);
 }
 
 
