@@ -1610,10 +1610,10 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
         }
         else
         {
-            std::auto_ptr<Service> apService;
+            Service *apService = NULL;
             /* No exceptions may propagate outside. */
             try {
-                apService = std::auto_ptr<Service>(new Service(pTable->pHelpers));
+                apService = new Service(pTable->pHelpers);
             } catch (int rcThrown) {
                 rc = rcThrown;
             } catch (...) {
@@ -1639,7 +1639,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
                 pTable->pfnRegisterExtension  = Service::svcRegisterExtension;
 
                 /* Service specific initialization. */
-                pTable->pvService = apService.release();
+                pTable->pvService = apService;
             }
         }
     }
