@@ -83,7 +83,7 @@ RTDECL(bool) RTLinuxSysFsExists(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(
 RTDECL(int) RTLinuxSysFsExistsEx(const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(1, 2);
 
 /**
- * Opens a sysfs file.
+ * Opens a sysfs file for reading.
  *
  * @returns IPRT status code.
  * @param   phFile      Where to store the file handle on success.
@@ -92,7 +92,18 @@ RTDECL(int) RTLinuxSysFsExistsEx(const char *pszFormat, ...)  RT_IPRT_FORMAT_ATT
  *
  * @note Close the file using RTFileClose().
  */
-RTDECL(int) RTLinuxSysFsOpenV(PRTFILE phFile, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
+RTDECL(int) RTLinuxSysFsOpenV(PRTFILE phFile, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
+
+/**
+ * Opens a sysfs file - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   phFile      Where to store the file handle on success.
+ * @param   fOpen       Open flags, see RTFileOpen().
+ * @param   pszFormat   The name format, either absolute or relative to "/sys/".
+ * @param   va          The format args.
+ */
+RTDECL(int) RTLinuxSysFsOpenExV(PRTFILE phFile, uint64_t fOpen, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
 /**
  * Opens a sysfs file.
@@ -104,7 +115,18 @@ RTDECL(int) RTLinuxSysFsOpenV(PRTFILE phFile, const char *pszFormat, va_list va)
  *
  * @note Close the file using RTFileClose().
  */
-RTDECL(int) RTLinuxSysFsOpen(PRTFILE phFile, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+RTDECL(int) RTLinuxSysFsOpen(PRTFILE phFile, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+
+/**
+ * Opens a sysfs file - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   phFile      Where to store the file handle on success.
+ * @param   fOpen       Open flags, see RTFileOpen().
+ * @param   pszFormat   The name format, either absolute or relative to "/sys/".
+ * @param   ...         The format args.
+ */
+RTDECL(int) RTLinuxSysFsOpenEx(PRTFILE phFile, uint64_t fOpen, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
  * Reads a string from a file opened with RTLinuxSysFsOpen or RTLinuxSysFsOpenV.
@@ -116,6 +138,18 @@ RTDECL(int) RTLinuxSysFsOpen(PRTFILE phFile, const char *pszFormat, ...) RT_IPRT
  * @param   pcchRead    Where to store the amount of characters read on success - optional.
  */
 RTDECL(int) RTLinuxSysFsReadStr(RTFILE hFile, char *pszBuf, size_t cchBuf, size_t *pcchRead);
+
+/**
+ * Writes a string to a file opened with RTLinuxSysFsOpenEx or RTLinuxSysFsOpenExV for writing.
+ *
+ * @returns IPRT status code.
+ * @param   hFile       The file descriptor returned by RTLinuxSysFsOpenEx or RTLinuxSysFsOpenExV.
+ * @param   pszBuf      The string to write.
+ * @param   cchBuf      The string length without zero terminator - if 0 is given
+ *                      the string length is determined before writing.
+ * @param   pcchWritten Where to store the amount of characters written on success - optional.
+ */
+RTDECL(int) RTLinuxSysFsWriteStr(RTFILE hFile, const char *pszBuf, size_t cchBuf, size_t *pcchWritten);
 
 /**
  * Reads the remainder of a file opened with RTLinuxSysFsOpen or
@@ -130,6 +164,18 @@ RTDECL(int) RTLinuxSysFsReadStr(RTFILE hFile, char *pszBuf, size_t cchBuf, size_
 RTDECL(int) RTLinuxSysFsReadFile(RTFILE hFile, void *pvBuf, size_t cbBuf, size_t *pcbRead);
 
 /**
+ * Writes the given buffer to a file opened with RTLinuxSysFsOpenEx or
+ * RTLinuxSysFsOpenExV.
+ *
+ * @returns IPRT status code.
+ * @param   hFile       The file descriptor returned by RTLinuxSysFsOpenEx or RTLinuxSysFsOpenExV.
+ * @param   pvBuf       The data to write.
+ * @param   cbBuf       The size of the buffer.
+ * @param   pcbWritten  Where to return the number of bytes read.  Optional.
+ */
+RTDECL(int) RTLinuxSysFsWriteFile(RTFILE hFile, void *pvBuf, size_t cbBuf, size_t *pcbWritten);
+
+/**
  * Reads a number from a sysfs file.
  *
  * @returns IPRT status code.
@@ -138,7 +184,7 @@ RTDECL(int) RTLinuxSysFsReadFile(RTFILE hFile, void *pvBuf, size_t cbBuf, size_t
  * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
  * @param   va          Format args.
  */
-RTDECL(int) RTLinuxSysFsReadIntFileV(unsigned uBase, int64_t *pi64, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
+RTDECL(int) RTLinuxSysFsReadIntFileV(unsigned uBase, int64_t *pi64, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 
 /**
  * Reads a number from a sysfs file.
@@ -149,7 +195,103 @@ RTDECL(int) RTLinuxSysFsReadIntFileV(unsigned uBase, int64_t *pi64, const char *
  * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
  * @param   ...         Format args.
  */
-RTDECL(int) RTLinuxSysFsReadIntFile(unsigned uBase, int64_t *pi64, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+RTDECL(int) RTLinuxSysFsReadIntFile(unsigned uBase, int64_t *pi64, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+
+/**
+ * Writes an unsigned 8-bit number to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   uBase       The base format to write the number. Passing 16 here for
+ *                      example writes the number as a hexadecimal string with 0x prepended.
+ * @param   u8          The number to write.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   va          Format args.
+ */
+RTDECL(int) RTLinuxSysFsWriteU8FileV(unsigned uBase, uint8_t u8, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/**
+ * Writes an unsigned 8-bit number to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   uBase       The base format to write the number. Passing 16 here for
+ *                      example writes the number as a hexadecimal string with 0x prepended.
+ * @param   u8          The number to write.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   ...         Format args.
+ */
+RTDECL(int) RTLinuxSysFsWriteU8File(unsigned uBase, uint8_t u8, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+
+/**
+ * Writes an unsigned 16-bit number to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   uBase       The base format to write the number. Passing 16 here for
+ *                      example writes the number as a hexadecimal string with 0x prepended.
+ * @param   u16         The number to write.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   va          Format args.
+ */
+RTDECL(int) RTLinuxSysFsWriteU16FileV(unsigned uBase, uint16_t u16, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/**
+ * Writes an unsigned 16-bit number to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   uBase       The base format to write the number. Passing 16 here for
+ *                      example writes the number as a hexadecimal string with 0x prepended.
+ * @param   u16         The number to write.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   ...         Format args.
+ */
+RTDECL(int) RTLinuxSysFsWriteU16File(unsigned uBase, uint16_t u16, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+
+/**
+ * Writes an unsigned 32-bit number to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   uBase       The base format to write the number. Passing 16 here for
+ *                      example writes the number as a hexadecimal string with 0x prepended.
+ * @param   u32         The number to write.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   va          Format args.
+ */
+RTDECL(int) RTLinuxSysFsWriteU32FileV(unsigned uBase, uint32_t u32, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/**
+ * Writes an unsigned 8-bit number to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   uBase       The base format to write the number. Passing 16 here for
+ *                      example writes the number as a hexadecimal string with 0x prepended.
+ * @param   u32         The number to write.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   ...         Format args.
+ */
+RTDECL(int) RTLinuxSysFsWriteU32File(unsigned uBase, uint32_t u32, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+
+/**
+ * Writes an unsigned 64-bit number to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   uBase       The base format to write the number. Passing 16 here for
+ *                      example writes the number as a hexadecimal string with 0x prepended.
+ * @param   u64         The number to write.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   va          Format args.
+ */
+RTDECL(int) RTLinuxSysFsWriteU64FileV(unsigned uBase, uint64_t u64, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/**
+ * Writes an unsigned 8-bit number to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   uBase       The base format to write the number. Passing 16 here for
+ *                      example writes the number as a hexadecimal string with 0x prepended.
+ * @param   u64         The number to write.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   ...         Format args.
+ */
+RTDECL(int) RTLinuxSysFsWriteU64File(unsigned uBase, uint32_t u64, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 
 /**
  * Reads a device number from a sysfs file.
@@ -159,7 +301,7 @@ RTDECL(int) RTLinuxSysFsReadIntFile(unsigned uBase, int64_t *pi64, const char *p
  * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
  * @param   va          Format args.
  */
-RTDECL(int) RTLinuxSysFsReadDevNumFileV(dev_t *pDevNum, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
+RTDECL(int) RTLinuxSysFsReadDevNumFileV(dev_t *pDevNum, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Reads a device number from a sysfs file.
@@ -169,7 +311,7 @@ RTDECL(int) RTLinuxSysFsReadDevNumFileV(dev_t *pDevNum, const char *pszFormat, v
  * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
  * @param   ...         Format args.
  */
-RTDECL(int) RTLinuxSysFsReadDevNumFile(dev_t *pDevNum, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+RTDECL(int) RTLinuxSysFsReadDevNumFile(dev_t *pDevNum, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
  * Reads a string from a sysfs file.  If the file contains a newline, we only
@@ -183,7 +325,7 @@ RTDECL(int) RTLinuxSysFsReadDevNumFile(dev_t *pDevNum, const char *pszFormat, ..
  * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
  * @param   va          Format args.
  */
-RTDECL(int) RTLinuxSysFsReadStrFileV(char *pszBuf, size_t cchBuf, size_t *pcchRead, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+RTDECL(int) RTLinuxSysFsReadStrFileV(char *pszBuf, size_t cchBuf, size_t *pcchRead, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
 
 /**
  * Reads a string from a sysfs file.  If the file contains a newline, we only
@@ -197,7 +339,31 @@ RTDECL(int) RTLinuxSysFsReadStrFileV(char *pszBuf, size_t cchBuf, size_t *pcchRe
  * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
  * @param   ...         Format args.
  */
-RTDECL(int) RTLinuxSysFsReadStrFile(char *pszBuf, size_t cchBuf, size_t *pcchRead, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+RTDECL(int) RTLinuxSysFsReadStrFile(char *pszBuf, size_t cchBuf, size_t *pcchRead, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5);
+
+/**
+ * Writes a string to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   pszBuf      The string to write.
+ * @param   cchBuf      The size of the buffer pointed to by @a pszBuf.
+ * @param   pcchWritten Where to store the amount of characters written on success - optional.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   va          Format args.
+ */
+RTDECL(int) RTLinuxSysFsWriteStrFileV(const char *pszBuf, size_t cchBuf, size_t *pcchWritten, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
+
+/**
+ * Writes a string to a sysfs file.
+ *
+ * @returns IPRT status code.
+ * @param   pszBuf      The string to write.
+ * @param   cchBuf      The size of the buffer pointed to by @a pszBuf.
+ * @param   pcchWritten Where to store the amount of characters written on success - optional.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   ...         Format args.
+ */
+RTDECL(int) RTLinuxSysFsReadStrFile(char *pszBuf, size_t cchBuf, size_t *pcchWritten, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 
 /**
  * Reads the last element of the path of the file pointed to by the symbolic
@@ -215,7 +381,7 @@ RTDECL(int) RTLinuxSysFsReadStrFile(char *pszBuf, size_t cchBuf, size_t *pcchRea
  * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
  * @param   va           Format args.
  */
-RTDECL(int) RTLinuxSysFsGetLinkDestV(char *pszBuf, size_t cchBuf, size_t *pchBuf, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+RTDECL(int) RTLinuxSysFsGetLinkDestV(char *pszBuf, size_t cchBuf, size_t *pchBuf, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
 
 /**
  * Reads the last element of the path of the file pointed to by the symbolic
@@ -233,7 +399,7 @@ RTDECL(int) RTLinuxSysFsGetLinkDestV(char *pszBuf, size_t cchBuf, size_t *pchBuf
  * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
  * @param   ...         Format args.
  */
-RTDECL(int) RTLinuxSysFsGetLinkDest(char *pszBuf, size_t cchBuf, size_t *pchBuf, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+RTDECL(int) RTLinuxSysFsGetLinkDest(char *pszBuf, size_t cchBuf, size_t *pchBuf, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 
 /**
  * Check the path of a device node under /dev, given the device number and a
