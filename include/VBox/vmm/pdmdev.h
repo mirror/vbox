@@ -3551,24 +3551,39 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
 
     /**
-     * Registers the VMM device heap
+     * Registers the VMM device heap or notifies about mapping/unmapping.
+     *
+     * This interface serves three purposes:
+     *
+     *      -# Register the VMM device heap during device construction
+     *         for the HM to use.
+     *      -# Notify PDM/HM that it's mapped into guest address
+     *         space (i.e. usable).
+     *      -# Notify PDM/HM that it is being unmapped from the guest
+     *         address space (i.e. not usable).
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
-     * @param   GCPhys              The physical address.
+     * @param   GCPhys              The physical address if mapped, NIL_RTGCPHYS if
+     *                              not mapped.
      * @param   pvHeap              Ring 3 heap pointer.
-     * @param   cbSize              Size of the heap.
+     * @param   cbHeap              Size of the heap.
      * @thread  EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRegisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize));
+    DECLR3CALLBACKMEMBER(int, pfnRegisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbHeap));
 
     /**
-     * Unregisters the VMM device heap
+     * Unregisters the VMM device heap - OBSOLETE.
+     *
+     * This entry can be reused.
+     * This entry can be reused.
+     * This entry can be reused.
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
      * @param   GCPhys              The physical address.
      * @thread  EMT.
+     * @obsolete
      */
     DECLR3CALLBACKMEMBER(int, pfnUnregisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
 
@@ -5276,17 +5291,9 @@ DECLINLINE(uint64_t) PDMDevHlpTMTimeVirtGetNano(PPDMDEVINS pDevIns)
 /**
  * @copydoc PDMDEVHLPR3::pfnRegisterVMMDevHeap
  */
-DECLINLINE(int) PDMDevHlpRegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
+DECLINLINE(int) PDMDevHlpRegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbHeap)
 {
-    return pDevIns->pHlpR3->pfnRegisterVMMDevHeap(pDevIns, GCPhys, pvHeap, cbSize);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnUnregisterVMMDevHeap
- */
-DECLINLINE(int) PDMDevHlpUnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
-{
-    return pDevIns->pHlpR3->pfnUnregisterVMMDevHeap(pDevIns, GCPhys);
+    return pDevIns->pHlpR3->pfnRegisterVMMDevHeap(pDevIns, GCPhys, pvHeap, cbHeap);
 }
 
 /**

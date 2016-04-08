@@ -61,6 +61,19 @@ VMM_INT_DECL(int)       PDMApicGetTimerFreq(PVM pVM, uint64_t *pu64Value);
 VMM_INT_DECL(int)       PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
 VMM_INT_DECL(bool)      PDMVmmDevHeapIsEnabled(PVM pVM);
 
+/**
+ * Mapping/unmapping callback for an VMMDev heap allocation.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   pvAllocation        The allocation address (ring-3).
+ * @param   GCPhysAllocation    The guest physical address of the mapping if
+ *                              it's being mapped, NIL_RTGCPHYS if it's being
+ *                              unmapped.
+ */
+typedef void FNPDMVMMDEVHEAPNOTIFY(PVM pVM, void *pvAllocation, RTGCPHYS GCPhysAllocation);
+/** Pointer (ring-3) to a FNPDMVMMDEVHEAPNOTIFY function. */
+typedef R3PTRTYPE(FNPDMVMMDEVHEAPNOTIFY *) PFNPDMVMMDEVHEAPNOTIFY;
+
 
 #if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API
@@ -156,9 +169,8 @@ VMMR3DECL(int)          PDMR3DriverReattach(PUVM pVM, const char *pszDevice, uns
                                             PPPDMIBASE ppBase);
 VMMR3DECL(void)         PDMR3DmaRun(PVM pVM);
 VMMR3_INT_DECL(int)     PDMR3LockCall(PVM pVM);
-VMMR3_INT_DECL(int)     PDMR3VmmDevHeapRegister(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
-VMMR3_INT_DECL(int)     PDMR3VmmDevHeapUnregister(PVM pVM, RTGCPHYS GCPhys);
-VMMR3_INT_DECL(int)     PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, RTR3PTR *ppv);
+
+VMMR3_INT_DECL(int)     PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, PFNPDMVMMDEVHEAPNOTIFY pfnNotify, RTR3PTR *ppv);
 VMMR3_INT_DECL(int)     PDMR3VmmDevHeapFree(PVM pVM, RTR3PTR pv);
 VMMR3_INT_DECL(int)     PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchName, bool fEnable, bool fApply);
 VMMR3_INT_DECL(bool)    PDMR3TracingAreAll(PVM pVM, bool fEnabled);

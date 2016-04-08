@@ -500,17 +500,24 @@ void pdmUnlock(PVM pVM)
  */
 VMM_INT_DECL(int) PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys)
 {
-    /* Don't assert here as this is called before we can catch ring-0 assertions. */
-    if (RT_UNLIKELY((RTR3UINTPTR)pv - (RTR3UINTPTR)pVM->pdm.s.pvVMMDevHeap >= pVM->pdm.s.cbVMMDevHeap))
+    if (RT_LIKELY(pVM->pdm.s.GCPhysVMMDevHeap != NIL_RTGCPHYS))
     {
+        RTR3UINTPTR const offHeap = (RTR3UINTPTR)pv - (RTR3UINTPTR)pVM->pdm.s.pvVMMDevHeap;
+        if (RT_LIKELY(offHeap < pVM->pdm.s.cbVMMDevHeap))
+        {
+            *pGCPhys = pVM->pdm.s.GCPhysVMMDevHeap + offHeap;
+            return VINF_SUCCESS;
+        }
+
+        /* Don't assert here as this is called before we can catch ring-0 assertions. */
         Log(("PDMVmmDevHeapR3ToGCPhys: pv=%p pvVMMDevHeap=%p cbVMMDevHeap=%#x\n",
              pv, pVM->pdm.s.pvVMMDevHeap, pVM->pdm.s.cbVMMDevHeap));
-        return VERR_PDM_DEV_HEAP_R3_TO_GCPHYS;
     }
-
-    *pGCPhys = (pVM->pdm.s.GCPhysVMMDevHeap + ((RTR3UINTPTR)pv - (RTR3UINTPTR)pVM->pdm.s.pvVMMDevHeap));
-    return VINF_SUCCESS;
+    else
+        Log(("PDMVmmDevHeapR3ToGCPhys: GCPhysVMMDevHeap=%RGp (pv=%p)\n", pVM->pdm.s.GCPhysVMMDevHeap, pv));
+    return VERR_PDM_DEV_HEAP_R3_TO_GCPHYS;
 }
+
 
 /**
  * Checks if the vmm device heap is enabled (== vmm device's pci region mapped)
@@ -520,5 +527,5 @@ VMM_INT_DECL(int) PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys
  */
 VMM_INT_DECL(bool) PDMVmmDevHeapIsEnabled(PVM pVM)
 {
-    return (pVM->pdm.s.pvVMMDevHeap != NULL);
+    return pVM->pdm.s.GCPhysVMMDevHeap != NIL_RTGCPHYS;
 }

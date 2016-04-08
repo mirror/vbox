@@ -2451,56 +2451,15 @@ VMMR3_INT_DECL(int) PDMR3LockCall(PVM pVM)
 
 
 /**
- * Registers the VMM device heap
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   GCPhys          The physical address.
- * @param   pvHeap          Ring-3 pointer.
- * @param   cbSize          Size of the heap.
- */
-VMMR3_INT_DECL(int) PDMR3VmmDevHeapRegister(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
-{
-    Assert(pVM->pdm.s.pvVMMDevHeap == NULL);
-
-    Log(("PDMR3VmmDevHeapRegister %RGp %RHv %x\n", GCPhys, pvHeap, cbSize));
-    pVM->pdm.s.pvVMMDevHeap     = pvHeap;
-    pVM->pdm.s.GCPhysVMMDevHeap = GCPhys;
-    pVM->pdm.s.cbVMMDevHeap     = cbSize;
-    pVM->pdm.s.cbVMMDevHeapLeft = cbSize;
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Unregisters the VMM device heap
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   GCPhys          The physical address.
- */
-VMMR3_INT_DECL(int) PDMR3VmmDevHeapUnregister(PVM pVM, RTGCPHYS GCPhys)
-{
-    Assert(pVM->pdm.s.GCPhysVMMDevHeap == GCPhys);
-
-    Log(("PDMR3VmmDevHeapUnregister %RGp\n", GCPhys));
-    pVM->pdm.s.pvVMMDevHeap     = NULL;
-    pVM->pdm.s.GCPhysVMMDevHeap = NIL_RTGCPHYS;
-    pVM->pdm.s.cbVMMDevHeap     = 0;
-    pVM->pdm.s.cbVMMDevHeapLeft = 0;
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Allocates memory from the VMM device heap
+ * Allocates memory from the VMM device heap.
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   cbSize          Allocation size.
+ * @param   pfnNotify       Mapping/unmapping notification callback.
  * @param   ppv             Ring-3 pointer. (out)
  */
-VMMR3_INT_DECL(int) PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, RTR3PTR *ppv)
+VMMR3_INT_DECL(int) PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, PFNPDMVMMDEVHEAPNOTIFY pfnNotify, RTR3PTR *ppv)
 {
 #ifdef DEBUG_bird
     if (!cbSize || cbSize > pVM->pdm.s.cbVMMDevHeapLeft)
@@ -2514,6 +2473,7 @@ VMMR3_INT_DECL(int) PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, RTR3PTR *ppv)
     /** @todo Not a real heap as there's currently only one user. */
     *ppv = pVM->pdm.s.pvVMMDevHeap;
     pVM->pdm.s.cbVMMDevHeapLeft = 0;
+    pVM->pdm.s.pfnVMMDevHeapNotify = pfnNotify;
     return VINF_SUCCESS;
 }
 
@@ -2531,6 +2491,7 @@ VMMR3_INT_DECL(int) PDMR3VmmDevHeapFree(PVM pVM, RTR3PTR pv)
 
     /** @todo not a real heap as there's currently only one user. */
     pVM->pdm.s.cbVMMDevHeapLeft = pVM->pdm.s.cbVMMDevHeap;
+    pVM->pdm.s.pfnVMMDevHeapNotify = NULL;
     return VINF_SUCCESS;
 }
 

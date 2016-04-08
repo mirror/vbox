@@ -3271,13 +3271,37 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACRE
 /**
  * @copydoc PDMDEVHLPR3::pfnRegisterVMMDevHeap
  */
-static DECLCALLBACK(int) pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
+static DECLCALLBACK(int) pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbHeap)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    LogFlow(("pdmR3DevHlp_RegisterVMMDevHeap: caller='%s'/%d: GCPhys=%RGp pvHeap=%p cbHeap=%#x\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, pvHeap, cbHeap));
 
-    int rc = PDMR3VmmDevHeapRegister(pDevIns->Internal.s.pVMR3, GCPhys, pvHeap, cbSize);
-    return rc;
+    if (pVM->pdm.s.pvVMMDevHeap == NULL)
+    {
+        pVM->pdm.s.pvVMMDevHeap     = pvHeap;
+        pVM->pdm.s.GCPhysVMMDevHeap = GCPhys;
+        pVM->pdm.s.cbVMMDevHeap     = cbHeap;
+        pVM->pdm.s.cbVMMDevHeapLeft = cbHeap;
+    }
+    else
+    {
+        Assert(pVM->pdm.s.pvVMMDevHeap == pvHeap);
+        Assert(pVM->pdm.s.cbVMMDevHeap == cbHeap);
+        Assert(pVM->pdm.s.GCPhysVMMDevHeap != GCPhys || GCPhys == NIL_RTGCPHYS);
+        if (pVM->pdm.s.GCPhysVMMDevHeap != GCPhys)
+        {
+            pVM->pdm.s.GCPhysVMMDevHeap = GCPhys;
+            if (pVM->pdm.s.pfnVMMDevHeapNotify)
+                pVM->pdm.s.pfnVMMDevHeapNotify(pVM, pvHeap, GCPhys);
+        }
+    }
+
+    LogFlow(("pdmR3DevHlp_RegisterVMMDevHeap: caller='%s'/%d: returns %Rrc\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
 }
 
 
@@ -3286,11 +3310,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGC
  */
 static DECLCALLBACK(int) pdmR3DevHlp_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-
-    int rc = PDMR3VmmDevHeapUnregister(pDevIns->Internal.s.pVMR3, GCPhys);
-    return rc;
+    /* Free to replace this interface. */
+    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
 

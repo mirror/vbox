@@ -1104,6 +1104,17 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
 
 /**
+ * @callback_method_impl{FNPDMVMMDEVHEAPNOTIFY}
+ */
+static DECLCALLBACK(void) hmR3VmmDevHeapNotify(PVM pVM, void *pvAllocation,  RTGCPHYS GCPhysAllocation)
+{
+    NOREF(pVM);
+    NOREF(pvAllocation);
+    NOREF(GCPhysAllocation);
+}
+
+
+/**
  * Finish VT-x initialization (after ring-0 init).
  *
  * @returns VBox status code.
@@ -1335,7 +1346,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     if (!pVM->hm.s.vmx.fUnrestrictedGuest)
     {
         /* Allocate three pages for the TSS we need for real mode emulation. (2 pages for the IO bitmap) */
-        rc = PDMR3VmmDevHeapAlloc(pVM, HM_VTX_TOTAL_DEVHEAP_MEM, (RTR3PTR *)&pVM->hm.s.vmx.pRealModeTSS);
+        rc = PDMR3VmmDevHeapAlloc(pVM, HM_VTX_TOTAL_DEVHEAP_MEM, hmR3VmmDevHeapNotify, (RTR3PTR *)&pVM->hm.s.vmx.pRealModeTSS);
         if (RT_SUCCESS(rc))
         {
             /* The IO bitmap starts right after the virtual interrupt redirection bitmap.
@@ -1370,13 +1381,16 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
             }
 
             /* We convert it here every time as pci regions could be reconfigured. */
-            rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pRealModeTSS, &GCPhys);
-            AssertRCReturn(rc, rc);
-            LogRel(("HM: Real Mode TSS guest physaddr    = %#RGp\n", GCPhys));
+            if (PDMVmmDevHeapIsEnabled(pVM))
+            {
+                rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pRealModeTSS, &GCPhys);
+                AssertRCReturn(rc, rc);
+                LogRel(("HM: Real Mode TSS guest physaddr    = %#RGp\n", GCPhys));
 
-            rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
-            AssertRCReturn(rc, rc);
-            LogRel(("HM: Non-Paging Mode EPT CR3         = %#RGp\n", GCPhys));
+                rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
+                AssertRCReturn(rc, rc);
+                LogRel(("HM: Non-Paging Mode EPT CR3         = %#RGp\n", GCPhys));
+            }
         }
         else
         {

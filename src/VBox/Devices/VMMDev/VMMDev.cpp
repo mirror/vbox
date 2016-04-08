@@ -2925,7 +2925,7 @@ vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, ui
             /*
              * It is about to be unmapped, just clean up.
              */
-            PDMDevHlpUnregisterVMMDevHeap(pPciDev->pDevIns, pThis->GCPhysVMMDevHeap);
+            PDMDevHlpRegisterVMMDevHeap(pPciDev->pDevIns, NIL_RTGCPHYS, pThis->pVMMDevHeapR3, VMMDEV_HEAP_SIZE);
             pThis->GCPhysVMMDevHeap = NIL_RTGCPHYS32;
             rc = VINF_SUCCESS;
         }
@@ -4150,6 +4150,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to allocate %u bytes of memory for the VMM device heap"), PAGE_SIZE);
+
+        /* Register the memory area with PDM so HM can access it before it's mapped. */
+        rc = PDMDevHlpRegisterVMMDevHeap(pDevIns, NIL_RTGCPHYS, pThis->pVMMDevHeapR3, VMMDEV_HEAP_SIZE);
+        AssertLogRelRCReturn(rc, rc);
     }
 
     /*
