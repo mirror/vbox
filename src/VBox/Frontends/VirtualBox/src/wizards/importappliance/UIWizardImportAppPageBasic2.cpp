@@ -86,10 +86,10 @@ void UIApplianceUnverifiedCertificate::prepare()
             pButtonBox->setStandardButtons(QDialogButtonBox::Yes | QDialogButtonBox::No);
 
             pButtonBox->button(QDialogButtonBox::Yes)->setShortcut(Qt::Key_Enter);
-            connect(pButtonBox, SIGNAL(accepted()), this, SLOT(close()));
+            connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
 
             //pButtonBox->button(QDialogButtonBox::No)->setShortcut(Qt::Key_Esc);
-            connect(pButtonBox, SIGNAL(rejected()), this, SLOT(close()));
+            connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
 
             /* Add button-box into layout: */
             pLayout->addWidget(pButtonBox);
@@ -245,25 +245,21 @@ void UIWizardImportAppPageBasic2::initializePage()
             AssertPtrReturnVoid(pDialog.data());
 
             /* Show viewer in modal mode: */
-            pDialog->exec();
-
-/** @todo
- *
- * Must dismiss the wizard if dialog was rejected!
- * Must dismiss the wizard if dialog was rejected!
- * Must dismiss the wizard if dialog was rejected!
- *
- * Someone with clue try figure out how.
- *
- */
+            int iResultCode = pDialog->exec();
 
             /* Leave if destroyed prematurely: */
             if (!pDialog)
-                return; /** @todo r=bird: what happened to this dialog in that case?? */
+                return; /** @todo r=bird: what happened to this dialog in that case??, will check this case later. */
+            /* Delete viewer: */
+            if (pDialog)
+            {
+                delete pDialog;
+                pDialog = NULL;
+            }
 
-            /* Delete viewer finally: */
-            delete pDialog;
-            pDialog = NULL;
+            /* Dismiss the entire import-appliance wizard if user rejects certificate: */
+            if (iResultCode == QDialog::Rejected)
+                wizard()->reject();
         }
     }
 
