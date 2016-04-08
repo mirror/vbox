@@ -1084,6 +1084,9 @@ typedef struct PDM
     R3PTRTYPE(PPDMUSBINS)           pUsbInstances;
     /** List of registered drivers. (FIFO) */
     R3PTRTYPE(PPDMDRV)              pDrvs;
+#if HC_ARCH_BITS == 32
+    RTR3PTR                         uPadding0; /**< Alignment padding. */
+#endif
     /** PCI Buses. */
     PDMPCIBUS                       aPciBuses[PDM_PCI_BUSSES_MAX];
     /** The register PIC device. */
