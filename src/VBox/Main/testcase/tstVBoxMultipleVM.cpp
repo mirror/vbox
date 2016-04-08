@@ -513,9 +513,8 @@ int main(int argc, char **argv)
 
 #ifndef RT_ARCH_AMD64
     /*
-    * Seems linux x86 machines has 4GB memory limit.
-    * So this test cannot be run here, just to skip the test.
-    */
+     * Linux OOM killer when running many VMs on a 32-bit host.
+     */
     RTTestPassed(g_hTest, "Warning: the test can be processed on x64 machine only.\n");
     return RTTestSummaryAndDestroy(g_hTest);
 #endif
