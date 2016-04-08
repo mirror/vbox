@@ -393,7 +393,7 @@ RTDECL(int) RTLinuxSysFsWriteU64FileV(unsigned uBase, uint64_t u64, const char *
             return VERR_INVALID_PARAMETER;
     }
 
-    int rc = RTLinuxSysFsOpenV(&hFile, pszFormat, va);
+    int rc = RTLinuxSysFsOpenExV(&hFile, RTFILE_O_OPEN | RTFILE_O_WRITE | RTFILE_O_DENY_NONE, pszFormat, va);
     if (RT_SUCCESS(rc))
     {
         char szNum[128];
@@ -516,6 +516,31 @@ RTDECL(int) RTLinuxSysFsReadStrFile(char *pszBuf, size_t cchBuf, size_t *pcchRea
     return rc;
 }
 
+
+RTDECL(int) RTLinuxSysFsWriteStrFileV(const char *pszBuf, size_t cchBuf, size_t *pcchWritten, const char *pszFormat, va_list va)
+{
+    RTFILE hFile;
+
+    AssertPtrReturn(pszBuf, VERR_INVALID_POINTER);
+
+    int rc = RTLinuxSysFsOpenExV(&hFile, RTFILE_O_OPEN | RTFILE_O_WRITE | RTFILE_O_DENY_NONE, pszFormat, va);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLinuxSysFsWriteStr(hFile, pszBuf, cchBuf, pcchWritten);
+        RTFileClose(hFile);
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTLinuxSysFsWriteStrFile(const char *pszBuf, size_t cchBuf, size_t *pcchWritten, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTLinuxSysFsWriteStrFileV(pszBuf, cchBuf, pcchWritten, pszFormat, va);
+    va_end(va);
+    return rc;
+}
 
 RTDECL(int) RTLinuxSysFsGetLinkDestV(char *pszBuf, size_t cchBuf, size_t *pchBuf, const char *pszFormat, va_list va)
 {
