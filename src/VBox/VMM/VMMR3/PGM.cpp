@@ -1364,6 +1364,11 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "PageFusionAllowed", &pVM->pgm.s.fPageFusionAllowed, false);
     AssertLogRelRCReturn(rc, rc);
 
+    /** @cfgm{/PGM/ZeroRamPagesOnReset, boolean, true}
+     * Whether to clear RAM pages on (hard) reset. */
+    rc = CFGMR3QueryBoolDef(pCfgPGM, "ZeroRamPagesOnReset", &pVM->pgm.s.fZeroRamPagesOnReset, true);
+    AssertLogRelRCReturn(rc, rc);
+
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Allocate memory for the statistics before someone tries to use them.

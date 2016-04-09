@@ -3300,7 +3300,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
  */
 static DECLCALLBACK(int) pgmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 {
-    pVM->pgm.s.fRestoreRomPagesAtReset = true;
+    pVM->pgm.s.fRestoreRomPagesOnReset = true;
     NOREF(pSSM);
     return VINF_SUCCESS;
 }

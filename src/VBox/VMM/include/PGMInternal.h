@@ -3248,7 +3248,11 @@ typedef struct PGM
      * The flag is set by pgmR3LoadRomRanges and cleared at reset.  This
      * enables the VM to start using an updated ROM without requiring powering
      * down the VM, just rebooting or resetting it. */
-    bool                            fRestoreRomPagesAtReset;
+    bool                            fRestoreRomPagesOnReset;
+    /** Whether to automatically clear all RAM pages on reset. */
+    bool                            fZeroRamPagesOnReset;
+    /** Alignment padding. */
+    bool                            afAlignment3[7];
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
      * PGMR3MapIntermediate calls will be rejected. */

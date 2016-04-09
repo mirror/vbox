@@ -1947,11 +1947,8 @@ int pgmR3PhysRamZeroAll(PVM pVM)
         uint32_t iPage = pRam->cb >> PAGE_SHIFT;
         AssertMsg(((RTGCPHYS)iPage << PAGE_SHIFT) == pRam->cb, ("%RGp %RGp\n", (RTGCPHYS)iPage << PAGE_SHIFT, pRam->cb));
 
-#ifndef NO_RAM_RESET
-        if (!pVM->pgm.s.fRamPreAlloc)
-#else
-        if (0)
-#endif
+        if (   !pVM->pgm.s.fRamPreAlloc
+            && pVM->pgm.s.fZeroRamPagesOnReset)
         {
             /* Replace all RAM pages by ZERO pages. */
             while (iPage-- > 0)
@@ -2024,15 +2021,14 @@ int pgmR3PhysRamZeroAll(PVM pVM)
                                 /* no break */
 
                             case PGM_PAGE_STATE_ALLOCATED:
-                            {
-                                void *pvPage;
-                                rc = pgmPhysPageMap(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pvPage);
-                                AssertLogRelRCReturn(rc, rc);
-#ifndef NO_RAM_RESET
-                                ASMMemZeroPage(pvPage);
-#endif
+                                if (pVM->pgm.s.fZeroRamPagesOnReset)
+                                {
+                                    void *pvPage;
+                                    rc = pgmPhysPageMap(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pvPage);
+                                    AssertLogRelRCReturn(rc, rc);
+                                    ASMMemZeroPage(pvPage);
+                                }
                                 break;
-                            }
                         }
                         break;
 
@@ -3576,7 +3572,7 @@ int pgmR3PhysRomReset(PVM pVM)
          * Also, in strict builds check that ROM pages remain unmodified.
          */
 #ifndef VBOX_STRICT
-        if (pVM->pgm.s.fRestoreRomPagesAtReset)
+        if (pVM->pgm.s.fRestoreRomPagesOnReset)
 #endif
         {
             size_t         cbSrcLeft = pRom->cbOriginal;
@@ -3592,7 +3588,7 @@ int pgmR3PhysRomReset(PVM pVM)
 
                 if (memcmp(pvDstPage, pbSrcPage, RT_MIN(cbSrcLeft, PAGE_SIZE)))
                 {
-                    if (pVM->pgm.s.fRestoreRomPagesAtReset)
+                    if (pVM->pgm.s.fRestoreRomPagesOnReset)
                     {
                         void *pvDstPageW;
                         rc = pgmPhysPageMap(pVM, &pRom->aPages[iPage].Virgin, GCPhys, &pvDstPageW);
@@ -3612,7 +3608,7 @@ int pgmR3PhysRomReset(PVM pVM)
 
     /* Clear the ROM restore flag now as we only need to do this once after
        loading saved state. */
-    pVM->pgm.s.fRestoreRomPagesAtReset = false;
+    pVM->pgm.s.fRestoreRomPagesOnReset = false;
 
     return VINF_SUCCESS;
 }
