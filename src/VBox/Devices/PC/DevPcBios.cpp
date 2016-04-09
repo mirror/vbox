@@ -198,6 +198,18 @@ typedef struct DEVPCBIOS
     uint16_t        cCpus;
     uint32_t        u32McfgBase;
     uint32_t        cbMcfgLength;
+
+    /** Firmware registration structure.   */
+    PDMFWREG        FwReg;
+    /** Dummy. */
+    PCPDMFWHLPR3    pFwHlpR3;
+    /** Whether to consult the shutdown status (CMOS[0xf]) for deciding upon soft
+     * or hard reset. */
+    bool            fCheckShutdownStatusForSoftReset;
+    /** Whether to clear the shutdown status on hard reset. */
+    bool            fClearShutdownStatusOnHardReset;
+    /** Number of soft resets we've logged. */
+    uint32_t        cLoggedSoftResets;
 } DEVPCBIOS;
 /** Pointer to the BIOS device state. */
 typedef DEVPCBIOS *PDEVPCBIOS;
@@ -284,6 +296,85 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
 
 
 /**
+ * Write to CMOS memory.
+ * This is used by the init complete code.
+ */
+static void pcbiosCmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
+{
+    Assert(off < 256);
+    Assert(u32Val < 256);
+
+    int rc = PDMDevHlpCMOSWrite(pDevIns, off, u32Val);
+    AssertRC(rc);
+}
+
+
+/**
+ * Read from CMOS memory.
+ * This is used by the init complete code.
+ */
+static uint8_t pcbiosCmosRead(PPDMDEVINS pDevIns, unsigned off)
+{
+    Assert(off < 256);
+
+    uint8_t u8val;
+    int rc = PDMDevHlpCMOSRead(pDevIns, off, &u8val);
+    AssertRC(rc);
+
+    return u8val;
+}
+
+
+/**
+ * @interface_method_impl{PDMFWREG,pfnIsHardReset}
+ */
+static DECLCALLBACK(bool) pcbiosFw_IsHardReset(PPDMDEVINS pDevIns, uint32_t fFlags)
+{
+    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    if (pThis->fCheckShutdownStatusForSoftReset)
+    {
+        uint8_t bShutdownStatus = pcbiosCmosRead(pDevIns, 0xf);
+        if (   bShutdownStatus == 0x5
+            || bShutdownStatus == 0x9
+            || bShutdownStatus == 0xa)
+        {
+            const uint32_t cMaxLogged = 10;
+            if (pThis->cLoggedSoftResets < cMaxLogged)
+            {
+                RTFAR16 Far16 = { 0xfeed, 0xface };
+                PDMDevHlpPhysRead(pDevIns, 0x467, &Far16, sizeof(Far16));
+                pThis->cLoggedSoftResets++;
+                LogRel(("PcBios: Soft reset #%u - shutdown status %#x, warm reset vector (0040:0067) is %04x:%04x%s\n",
+                        pThis->cLoggedSoftResets, bShutdownStatus, Far16.sel, Far16.sel,
+                        pThis->cLoggedSoftResets < cMaxLogged ? "." : " - won't log any more!"));
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnReset}
+ */
+static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
+{
+    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+
+    if (pThis->fClearShutdownStatusOnHardReset)
+    {
+        uint8_t bShutdownStatus = pcbiosCmosRead(pDevIns, 0xf);
+        if (bShutdownStatus != 0)
+        {
+            LogRel(("PcBios: Clearing shutdown status code %02x.\n", bShutdownStatus));
+            pcbiosCmosWrite(pDevIns, 0xf, 0);
+        }
+    }
+}
+
+
+/**
  * Attempt to guess the LCHS disk geometry from the MS-DOS master boot record
  * (partition table).
  *
@@ -328,37 +419,6 @@ static int biosGuessDiskLCHS(PPDMIMEDIA pMedia, PPDMMEDIAGEOMETRY pLCHSGeometry)
         }
     }
     return VERR_INVALID_PARAMETER;
-}
-
-
-/**
- * Write to CMOS memory.
- * This is used by the init complete code.
- */
-static void pcbiosCmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
-{
-    Assert(off < 256);
-    Assert(u32Val < 256);
-
-    int rc = PDMDevHlpCMOSWrite(pDevIns, off, u32Val);
-    AssertRC(rc);
-}
-
-
-/**
- * Read from CMOS memory.
- * This is used by the init complete code.
- */
-static uint8_t pcbiosCmosRead(PPDMDEVINS pDevIns, int off)
-{
-    uint8_t     u8val;
-
-    Assert(off < 256);
-
-    int rc = PDMDevHlpCMOSRead(pDevIns, off, &u8val);
-    AssertRC(rc);
-
-    return u8val;
 }
 
 
@@ -1074,6 +1134,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "DmiUseHostInfo\0"
                               "DmiExposeMemoryTable\0"
                               "DmiExposeProcInf\0"
+                              "CheckShutdownStatusForSoftReset\0"
+                              "ClearShutdownStatusOnHardReset\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for device pcbios device"));
@@ -1528,6 +1590,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /*
      * Map the Network Boot ROM into memory.
+     *
      * Currently there is a fixed mapping: 0x000e2000 to 0x000effff contains
      * the (up to) 56 kb ROM image.  The mapping size is fixed to trouble with
      * the saved state (in PGM).
@@ -1549,6 +1612,30 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                     N_("Configuration error: Querying \"DelayBoot\" as integer failed"));
     if (pThis->uBootDelay > 15)
         pThis->uBootDelay = 15;
+
+
+    /*
+     * Read shutdown status code config and register ourselves as the firmware device.
+     */
+
+    /** @cfgm{CheckShutdownStatusForSoftReset, boolean, true}
+     * Whether to consult the shutdown status code (CMOS register 0Fh) to
+     * determine whether the guest intended a soft or hard reset.  Currently only
+     * shutdown status codes 05h, 09h and 0Ah are considered soft reset. */
+    rc = CFGMR3QueryBoolDef(pCfg, "CheckShutdownStatusForSoftReset", &pThis->fCheckShutdownStatusForSoftReset, true);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{ClearShutdownStatusOnHardReset, boolean, true}
+     * Whether to clear the shutdown status code (CMOS register 0Fh) on hard reset. */
+    rc = CFGMR3QueryBoolDef(pCfg, "ClearShutdownStatusOnHardReset", &pThis->fClearShutdownStatusOnHardReset, true);
+    AssertLogRelRCReturn(rc, rc);
+
+    LogRel(("PcBios: fCheckShutdownStatusForSoftReset=%RTbool  fClearShutdownStatusOnHardReset=%RTbool\n",
+            pThis->fCheckShutdownStatusForSoftReset, pThis->fClearShutdownStatusOnHardReset));
+
+    static PDMFWREG const s_FwReg = { PDM_FWREG_VERSION, pcbiosFw_IsHardReset, PDM_FWREG_VERSION };
+    rc = PDMDevHlpFirmwareRegister(pDevIns, &s_FwReg, &pThis->pFwHlpR3);
+    AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
@@ -1588,7 +1675,7 @@ const PDMDEVREG g_DevicePcBios =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    pcbiosReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */

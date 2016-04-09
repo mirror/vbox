@@ -3306,23 +3306,86 @@ static DECLCALLBACK(int) pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGC
 
 
 /**
- * @copydoc PDMDEVHLPR3::pfnUnregisterVMMDevHeap
+ * @interface_method_impl{PDMDEVHLPR3,pfnFirmwareRegister}
  */
-static DECLCALLBACK(int) pdmR3DevHlp_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+static DECLCALLBACK(int) pdmR3DevHlp_FirmwareRegister(PPDMDEVINS pDevIns, PCPDMFWREG pFwReg, PCPDMFWHLPR3 *ppFwHlp)
 {
-    /* Free to replace this interface. */
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_FirmwareRegister: caller='%s'/%d: pFWReg=%p:{.u32Version=%#x, .pfnIsHardReset=%p, .u32TheEnd=%#x} ppFwHlp=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pFwReg, pFwReg->u32Version, pFwReg->pfnIsHardReset, pFwReg->u32TheEnd, ppFwHlp));
+
+    /*
+     * Validate input.
+     */
+    if (pFwReg->u32Version != PDM_FWREG_VERSION)
+    {
+        AssertMsgFailed(("u32Version=%#x expected %#x\n", pFwReg->u32Version, PDM_FWREG_VERSION));
+        LogFlow(("pdmR3DevHlp_FirmwareRegister: caller='%s'/%d: returns %Rrc (version)\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+    if (!pFwReg->pfnIsHardReset)
+    {
+        Assert(pFwReg->pfnIsHardReset);
+        LogFlow(("pdmR3DevHlp_FirmwareRegister: caller='%s'/%d: returns %Rrc (callbacks)\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (!ppFwHlp)
+    {
+        Assert(ppFwHlp);
+        LogFlow(("pdmR3DevHlp_FirmwareRegister: caller='%s'/%d: returns %Rrc (ppFwHlp)\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Only one DMA device.
+     */
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    if (pVM->pdm.s.pFirmware)
+    {
+        AssertMsgFailed(("Only one firmware device is supported!\n"));
+        LogFlow(("pdmR3DevHlp_FirmwareRegister: caller='%s'/%d: returns %Rrc\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Allocate and initialize pci bus structure.
+     */
+    int rc = VINF_SUCCESS;
+    PPDMFW pFirmware = (PPDMFW)MMR3HeapAlloc(pDevIns->Internal.s.pVMR3, MM_TAG_PDM_DEVICE, sizeof(*pFirmware));
+    if (pFirmware)
+    {
+        pFirmware->pDevIns   = pDevIns;
+        pFirmware->Reg       = *pFwReg;
+        pVM->pdm.s.pFirmware = pFirmware;
+
+        /* set the helper pointer. */
+        *ppFwHlp = &g_pdmR3DevFirmwareHlp;
+        Log(("PDM: Registered firmware device '%s'/%d pDevIns=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlow(("pdmR3DevHlp_FirmwareRegister: caller='%s'/%d: returns %Rrc\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnVMReset} */
-static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns, uint32_t fFlags)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_VMReset: caller='%s'/%d: VM_FF_RESET %d -> 1\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, VM_FF_IS_SET(pVM, VM_FF_RESET)));
+    LogFlow(("pdmR3DevHlp_VMReset: caller='%s'/%d: fFlags=%#x VM_FF_RESET %d -> 1\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, fFlags, VM_FF_IS_SET(pVM, VM_FF_RESET)));
 
     /*
      * We postpone this operation because we're likely to be inside a I/O instruction
@@ -3338,6 +3401,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns)
     }
     else
     {
+        pVM->pdm.s.fResetFlags = fFlags;
         VM_FF_SET(pVM, VM_FF_RESET);
         rc = VINF_EM_RESET;
     }
@@ -3614,7 +3678,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_GetVMCPU,
     pdmR3DevHlp_GetCurrentCpuId,
     pdmR3DevHlp_RegisterVMMDevHeap,
-    pdmR3DevHlp_UnregisterVMMDevHeap,
+    pdmR3DevHlp_FirmwareRegister,
     pdmR3DevHlp_VMReset,
     pdmR3DevHlp_VMSuspend,
     pdmR3DevHlp_VMSuspendSaveAndPowerOff,
@@ -3678,20 +3742,20 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDe
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnUnregisterVMMDevHeap} */
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+/** @interface_method_impl{PDMDEVHLPR3,pfnFirmwareRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_FirmwareRegister(PPDMDEVINS pDevIns, PCPDMFWREG pFwReg, PCPDMFWHLPR3 *ppFwHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    NOREF(GCPhys);
+    NOREF(pFwReg); NOREF(ppFwHlpR3);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnVMReset} */
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMReset(PPDMDEVINS pDevIns, uint32_t fFlags)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PDMDEV_ASSERT_DEVINS(pDevIns); NOREF(fFlags);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
 }
@@ -3866,7 +3930,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_GetVMCPU,
     pdmR3DevHlp_Untrusted_GetCurrentCpuId,
     pdmR3DevHlp_Untrusted_RegisterVMMDevHeap,
-    pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap,
+    pdmR3DevHlp_Untrusted_FirmwareRegister,
     pdmR3DevHlp_Untrusted_VMReset,
     pdmR3DevHlp_Untrusted_VMSuspend,
     pdmR3DevHlp_Untrusted_VMSuspendSaveAndPowerOff,

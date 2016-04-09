@@ -476,7 +476,7 @@ VMMR3_INT_DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 {
     pVCpu->em.s.fForceRAW = false;
 
-    /* VMR3Reset may return VINF_EM_RESET or VINF_EM_SUSPEND, so transition
+    /* VMR3ResetFF may return VINF_EM_RESET or VINF_EM_SUSPEND, so transition
        out of the HALTED state here so that enmPrevState doesn't end up as
        HALTED when EMR3Execute returns. */
     if (pVCpu->em.s.enmState == EMSTATE_HALTED)
@@ -1700,7 +1700,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VM_FF_TEST_AND_CLEAR(pVM, VM_FF_RESET))
         {
-            rc2 = VMR3Reset(pVM->pUVM);
+            rc2 = VBOXSTRICTRC_TODO(VMR3ResetFF(pVM));
             UPDATE_RC();
         }
 
@@ -2403,18 +2403,9 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     if (!pVM->em.s.fGuruOnTripleFault)
                     {
                         Log(("EMR3ExecuteVM: VINF_EM_TRIPLE_FAULT: CPU reset...\n"));
-                        Assert(pVM->cCpus == 1);
-#ifdef VBOX_WITH_REM
-                        REMR3Reset(pVM);
-#endif
-                        PGMR3ResetCpu(pVM, pVCpu);
-                        TRPMR3ResetCpu(pVCpu);
-                        CPUMR3ResetCpu(pVM, pVCpu);
-                        EMR3ResetCpu(pVCpu);
-                        HMR3ResetCpu(pVCpu);
-                        pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
-                        Log2(("EMR3ExecuteVM: VINF_EM_TRIPLE_FAULT: %d -> %d\n", enmOldState, pVCpu->em.s.enmState));
-                        break;
+                        rc = VBOXSTRICTRC_TODO(VMR3ResetTripleFault(pVM));
+                        Log2(("EMR3ExecuteVM: VINF_EM_TRIPLE_FAULT: %d -> %d (rc=%Rrc)\n", enmOldState, pVCpu->em.s.enmState, rc));
+                        continue;
                     }
                     /* Else fall through and trigger a guru. */
                 case VERR_VMM_RING0_ASSERTION:

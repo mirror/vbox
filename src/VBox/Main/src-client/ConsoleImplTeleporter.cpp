@@ -862,6 +862,8 @@ Console::i_teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                 case VMSTATE_POWERING_OFF_LS:
                 case VMSTATE_RESETTING:
                 case VMSTATE_RESETTING_LS:
+                case VMSTATE_SOFT_RESETTING:
+                case VMSTATE_SOFT_RESETTING_LS:
                     Assert(!pState->mfSuspendedByUs);
                     Assert(!pState->mfUnlockedMedia);
                     pState->mptrConsole->i_setMachineState(MachineState_Running);

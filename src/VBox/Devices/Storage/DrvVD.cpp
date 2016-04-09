@@ -3139,6 +3139,8 @@ DECLINLINE(bool) drvvdMediaExIoReqIsVmRunning(PVBOXDISK pThis)
         || enmVmState == VMSTATE_RUNNING_FT
         || enmVmState == VMSTATE_RESETTING
         || enmVmState == VMSTATE_RESETTING_LS
+        || enmVmState == VMSTATE_SOFT_RESETTING
+        || enmVmState == VMSTATE_SOFT_RESETTING_LS
         || enmVmState == VMSTATE_SUSPENDING
         || enmVmState == VMSTATE_SUSPENDING_LS
         || enmVmState == VMSTATE_SUSPENDING_EXT_LS)

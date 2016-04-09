@@ -170,7 +170,7 @@ pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
         if (u32 & 1)
         {
             LogRel(("Reset initiated by system port A\n"));
-            return PDMDevHlpVMReset(pDevIns);
+            return PDMDevHlpVMReset(pDevIns, PDMVMRESET_F_PORT_A);
         }
 
         /*

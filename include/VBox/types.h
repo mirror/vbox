@@ -162,6 +162,10 @@ typedef enum VMSTATE
     VMSTATE_RESETTING,
     /** Live save: The VM is being reset and immediately suspended. */
     VMSTATE_RESETTING_LS,
+    /** The VM is being soft/warm reset. */
+    VMSTATE_SOFT_RESETTING,
+    /** Live save: The VM is being soft/warm reset (not suspended afterwards). */
+    VMSTATE_SOFT_RESETTING_LS,
     /** The VM is being suspended. */
     VMSTATE_SUSPENDING,
     /** Live save: The VM is being suspended during a live save operation, either as

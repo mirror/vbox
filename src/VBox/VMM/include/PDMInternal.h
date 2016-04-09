@@ -676,6 +676,23 @@ typedef struct PDMIOAPIC
 /** Maximum number of PCI busses for a VM. */
 #define PDM_PCI_BUSSES_MAX 8
 
+
+#ifdef IN_RING3
+/**
+ * PDM registered firmware device.
+ */
+typedef struct PDMFW
+{
+    /** Pointer to the firmware device instance. */
+    PPDMDEVINSR3                    pDevIns;
+    /** Copy of the registration structure. */
+    PDMFWREG                        Reg;
+} PDMFW;
+/** Pointer to a firmware instance. */
+typedef PDMFW *PPDMFW;
+#endif
+
+
 /**
  * PDM PCI Bus instance.
  */
@@ -1084,9 +1101,8 @@ typedef struct PDM
     R3PTRTYPE(PPDMUSBINS)           pUsbInstances;
     /** List of registered drivers. (FIFO) */
     R3PTRTYPE(PPDMDRV)              pDrvs;
-#if HC_ARCH_BITS == 32
-    RTR3PTR                         uPadding0; /**< Alignment padding. */
-#endif
+    /** The registered firmware device (can be NULL). */
+    R3PTRTYPE(PPDMFW)               pFirmware;
     /** PCI Buses. */
     PDMPCIBUS                       aPciBuses[PDM_PCI_BUSSES_MAX];
     /** The register PIC device. */
@@ -1120,6 +1136,11 @@ typedef struct PDM
 
     /** The current IRQ tag (tracing purposes). */
     uint32_t volatile               uIrqTag;
+
+    /** Pending reset flags (PDMVMRESET_F_XXX). */
+    uint32_t volatile               fResetFlags;
+    /** Alignment padding. */
+    uint32_t volatile               u32Padding;
 
     /** The tracing ID of the next device instance.
      *
@@ -1216,6 +1237,7 @@ extern const PDMDEVHLPR3    g_pdmR3DevHlpUnTrusted;
 extern const PDMPICHLPR3    g_pdmR3DevPicHlp;
 extern const PDMAPICHLPR3   g_pdmR3DevApicHlp;
 extern const PDMIOAPICHLPR3 g_pdmR3DevIoApicHlp;
+extern const PDMFWHLPR3     g_pdmR3DevFirmwareHlp;
 extern const PDMPCIHLPR3    g_pdmR3DevPciHlp;
 extern const PDMDMACHLP     g_pdmR3DevDmacHlp;
 extern const PDMRTCHLP      g_pdmR3DevRtcHlp;

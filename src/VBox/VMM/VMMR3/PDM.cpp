@@ -255,6 +255,7 @@
 #define LOG_GROUP LOG_GROUP_PDM
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/ssm.h>
@@ -1619,6 +1620,84 @@ VMMR3_INT_DECL(void) PDMR3MemSetup(PVM pVM, bool fAtReset)
         }
 
     LogFlow(("PDMR3MemSetup: returns void\n"));
+}
+
+
+/**
+ * Retrieves and resets the info left behind by PDMDevHlpVMReset.
+ *
+ * @returns True if hard reset, false if soft reset.
+ * @param   pVM             The cross context VM structure.
+ * @param   fOverride       If non-zero, the override flags will be used instead
+ *                          of the reset flags kept by PDM. (For triple faults.)
+ * @param   pfResetFlags    Where to return the reset flags (PDMVMRESET_F_XXX).
+ * @thread  EMT
+ */
+VMMR3_INT_DECL(bool) PDMR3GetResetInfo(PVM pVM, uint32_t fOverride, uint32_t *pfResetFlags)
+{
+    VM_ASSERT_EMT(pVM);
+
+    /*
+     * Get the reset flags.
+     */
+    uint32_t fResetFlags;
+    fResetFlags = ASMAtomicXchgU32(&pVM->pdm.s.fResetFlags, 0);
+    if (fOverride)
+        fResetFlags = fOverride;
+    *pfResetFlags = fResetFlags;
+
+    /*
+     * To try avoid trouble, we never ever do soft/warm resets on SMP systems
+     * with more than CPU #0 active.  However, if only one CPU is active we
+     * will ask the firmware what it wants us to do (because the firmware may
+     * depend on the VMM doing a lot of what is normally its responsibility,
+     * like clearing memory).
+     */
+    bool     fOtherCpusActive = false;
+    VMCPUID  iCpu             = pVM->cCpus;
+    while (iCpu-- > 1)
+    {
+        EMSTATE enmState = EMGetState(&pVM->aCpus[iCpu]);
+        if (   enmState != EMSTATE_WAIT_SIPI
+            && enmState != EMSTATE_NONE)
+        {
+            fOtherCpusActive = true;
+            break;
+        }
+    }
+
+    bool fHardReset = fOtherCpusActive
+                   || (fResetFlags & PDMVMRESET_F_SRC_MASK) < PDMVMRESET_F_LAST_ALWAYS_HARD
+                   || !pVM->pdm.s.pFirmware
+                   || pVM->pdm.s.pFirmware->Reg.pfnIsHardReset(pVM->pdm.s.pFirmware->pDevIns, fResetFlags);
+
+    Log(("PDMR3GetResetInfo: returns fHardReset=%RTbool fResetFlags=%#x\n", fHardReset, fResetFlags));
+    return fHardReset;
+}
+
+
+/**
+ * Performs a soft reset of devices.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   fResetFlags     PDMVMRESET_F_XXX.
+ */
+VMMR3_INT_DECL(void) PDMR3SoftReset(PVM pVM, uint32_t fResetFlags)
+{
+    LogFlow(("PDMR3SoftReset: fResetFlags=%#x\n", fResetFlags));
+
+    /*
+     * Iterate thru the device instances and work the callback.
+     */
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+        if (pDevIns->pReg->pfnSoftReset)
+        {
+            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+            pDevIns->pReg->pfnSoftReset(pDevIns, fResetFlags);
+            PDMCritSectLeave(pDevIns->pCritSectRoR3);
+        }
+
+    LogFlow(("PDMR3SoftReset: returns void\n"));
 }
 
 

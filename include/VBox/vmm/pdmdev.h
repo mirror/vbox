@@ -133,6 +133,44 @@ typedef DECLCALLBACK(void)  FNPDMDEVRESET(PPDMDEVINS pDevIns);
 typedef FNPDMDEVRESET *PFNPDMDEVRESET;
 
 /**
+ * Soft reset notification.
+ *
+ * This is mainly for emulating the 286 style protected mode exits, in which
+ * most devices should remain in their current state.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ * @param   fFlags      PDMVMRESET_F_XXX (only bits relevant to soft resets).
+ *
+ * @remarks Caller enters the device critical section.
+ */
+typedef DECLCALLBACK(void)  FNPDMDEVSOFTRESET(PPDMDEVINS pDevIns, uint32_t fFlags);
+/** Pointer to a FNPDMDEVSOFTRESET() function. */
+typedef FNPDMDEVSOFTRESET *PFNPDMDEVSOFTRESET;
+
+/** @name PDMVMRESET_F_XXX - VM reset flags.
+ * These flags are used both for FNPDMDEVSOFTRESET and for hardware signalling
+ * reset via PDMDevHlpVMReset.
+ * @{ */
+/** Unknown reason. */
+#define PDMVMRESET_F_UNKNOWN            UINT32_C(0x00000000)
+/** GIM triggered reset. */
+#define PDMVMRESET_F_GIM                UINT32_C(0x00000001)
+/** The last source always causing hard resets. */
+#define PDMVMRESET_F_LAST_ALWAYS_HARD   PDMVMRESET_F_GIM
+/** ACPI triggered reset. */
+#define PDMVMRESET_F_ACPI               UINT32_C(0x0000000c)
+/** PS/2 system port A (92h) reset. */
+#define PDMVMRESET_F_PORT_A             UINT32_C(0x0000000d)
+/** Keyboard reset. */
+#define PDMVMRESET_F_KBD                UINT32_C(0x0000000e)
+/** Tripple fault. */
+#define PDMVMRESET_F_TRIPLE_FAULT       UINT32_C(0x0000000f)
+/** Reset source mask. */
+#define PDMVMRESET_F_SRC_MASK           UINT32_C(0x0000000f)
+/** @} */
+
+/**
  * Suspend notification.
  *
  * @returns VBox status.
@@ -333,8 +371,9 @@ typedef struct PDMDEVREG
     /** Power off notification - optional.
      * Critical section is entered. */
     PFNPDMDEVPOWEROFF   pfnPowerOff;
-    /** @todo */
-    PFNRT               pfnSoftReset;
+    /** Software system reset notification - optional.
+     * Critical section is entered. */
+    PFNPDMDEVSOFTRESET  pfnSoftReset;
     /** Initialization safty marker. */
     uint32_t            u32VersionEnd;
 } PDMDEVREG;
@@ -344,7 +383,7 @@ typedef PDMDEVREG *PPDMDEVREG;
 typedef PDMDEVREG const *PCPDMDEVREG;
 
 /** Current DEVREG version number. */
-#define PDM_DEVREG_VERSION                      PDM_VERSION_MAKE(0xffff, 2, 0)
+#define PDM_DEVREG_VERSION                      PDM_VERSION_MAKE(0xffff, 2, 1)
 
 /** PDM Device Flags.
  * @{ */
@@ -1049,6 +1088,58 @@ typedef R3PTRTYPE(const PDMPICHLPR3 *) PCPDMPICHLPR3;
 /** Current PDMPICHLPR3 version number. */
 #define PDM_PICHLPR3_VERSION                    PDM_VERSION_MAKE(0xfff7, 1, 0)
 
+
+
+/**
+ * Firmware registration structure.
+ */
+typedef struct PDMFWREG
+{
+    /** Struct version+magic number (PDM_FWREG_VERSION). */
+    uint32_t                u32Version;
+
+    /**
+     * Checks whether this is a hard or soft reset.
+     *
+     * The current definition of soft reset is what the PC BIOS does when CMOS[0xF]
+     * is 5, 9 or 0xA.
+     *
+     * @returns true if hard reset, false if soft.
+     * @param   pDevIns         Device instance of the firmware.
+     * @param   fFlags          PDMRESET_F_XXX passed to the PDMDevHlpVMReset API.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsHardReset,(PPDMDEVINS pDevIns, uint32_t fFlags));
+
+    /** Just a safety precaution. */
+    uint32_t                u32TheEnd;
+} PDMFWREG;
+/** Pointer to a FW registration structure. */
+typedef PDMFWREG *PPDMFWREG;
+/** Pointer to a const FW registration structure. */
+typedef PDMFWREG const *PCPDMFWREG;
+
+/** Current PDMFWREG version number. */
+#define PDM_FWREG_VERSION                       PDM_VERSION_MAKE(0xffdd, 1, 0)
+
+/**
+ * Firmware R3 helpers.
+ */
+typedef struct PDMFWHLPR3
+{
+    /** Structure version. PDM_FWHLP_VERSION defines the current version. */
+    uint32_t                u32Version;
+
+    /** Just a safety precaution. */
+    uint32_t                u32TheEnd;
+} PDMFWHLPR3;
+
+/** Pointer to FW R3 helpers. */
+typedef R3PTRTYPE(PDMFWHLPR3 *) PPDMFWHLPR3;
+/** Pointer to const FW R3 helpers. */
+typedef R3PTRTYPE(const PDMFWHLPR3 *) PCPDMFWHLPR3;
+
+/** Current PDMFWHLPR3 version number. */
+#define PDM_FWHLPR3_VERSION                     PDM_VERSION_MAKE(0xffdb, 1, 0)
 
 
 /**
@@ -3573,28 +3664,29 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnRegisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbHeap));
 
     /**
-     * Unregisters the VMM device heap - OBSOLETE.
+     * Registers the firmware (BIOS, EFI) device with PDM.
      *
-     * This entry can be reused.
-     * This entry can be reused.
-     * This entry can be reused.
+     * The firmware provides a callback table and gets a special PDM helper table.
+     * There can only be one firmware device for a VM.
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
-     * @param   GCPhys              The physical address.
-     * @thread  EMT.
-     * @obsolete
+     * @param   pFwReg              Firmware registration structure.
+     * @param   ppFwHlp             Where to return the firmware helper structure.
+     * @remarks Only valid during device construction.
+     * @thread  EMT(0)
      */
-    DECLR3CALLBACKMEMBER(int, pfnUnregisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
+    DECLR3CALLBACKMEMBER(int, pfnFirmwareRegister,(PPDMDEVINS pDevIns, PCPDMFWREG pFwReg, PCPDMFWHLPR3 *ppFwHlpR3));
 
     /**
      * Resets the VM.
      *
      * @returns The appropriate VBox status code to pass around on reset.
      * @param   pDevIns             The device instance.
+     * @param   fFlags              PDMVMRESET_F_XXX flags.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMReset,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(int, pfnVMReset,(PPDMDEVINS pDevIns, uint32_t fFlags));
 
     /**
      * Suspends the VM.
@@ -3704,7 +3796,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 15, 1)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 16, 0)
 
 
 /**
@@ -5297,11 +5389,19 @@ DECLINLINE(int) PDMDevHlpRegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
 }
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnFirmwareRegister
+ */
+DECLINLINE(int) PDMDevHlpFirmwareRegister(PPDMDEVINS pDevIns, PCPDMFWREG pFwReg, PCPDMFWHLPR3 *ppFwHlpR3)
+{
+    return pDevIns->pHlpR3->pfnFirmwareRegister(pDevIns, pFwReg, ppFwHlpR3);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnVMReset
  */
-DECLINLINE(int) PDMDevHlpVMReset(PPDMDEVINS pDevIns)
+DECLINLINE(int) PDMDevHlpVMReset(PPDMDEVINS pDevIns, uint32_t fFlags)
 {
-    return pDevIns->pHlpR3->pfnVMReset(pDevIns);
+    return pDevIns->pHlpR3->pfnVMReset(pDevIns, fFlags);
 }
 
 /**

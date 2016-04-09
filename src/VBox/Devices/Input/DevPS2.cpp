@@ -547,7 +547,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         rc = VINF_IOM_R3_IOPORT_WRITE;
 #else /* IN_RING3 */
         LogRel(("Reset initiated by keyboard controller\n"));
-        rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns));
+        rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns), PDMVMRESET_F_KBD);
 #endif /* !IN_RING3 */
         break;
     case 0xff:
@@ -555,7 +555,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         break;
     /* Make OS/2 happy. */
     /* The 8042 RAM is readable using commands 0x20 thru 0x3f, and writable
-       by 0x60 thru 0x7f. Now days only the firs byte, the mode, is used.
+       by 0x60 thru 0x7f. Now days only the first byte, the mode, is used.
        We'll ignore the writes (0x61..7f) and return 0 for all the reads
        just to make some OS/2 debug stuff a bit happier. */
     case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
@@ -1015,7 +1015,7 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
 # ifndef IN_RING3
             rc = VINF_IOM_R3_IOPORT_WRITE;
 # else
-            rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns));
+            rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns), PDMVMRESET_F_KBD);
 # endif
         }
         break;
