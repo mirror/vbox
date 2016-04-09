@@ -223,6 +223,7 @@ set_int_vects	endp
 
 eoi_jmp_post:
 		call	eoi_both_pics
+no_eoi_jmp_post:
 		xor	ax, ax
 		mov	ds, ax
 		jmp	dword ptr ds:[0467h]
@@ -319,6 +320,9 @@ check_next_std:
 
 		;; 05h = EOI + jump through 40:67
 		cmp	al, 5
+		je	eoi_jmp_post
+		;; 0ah = jump through 40:67 (no EOI) ;ba x 1  %fe05b ; ba x 1 %18b81
+		cmp	al, 0ah
 		je	eoi_jmp_post
 
 		;; any other shutdown status values are ignored
