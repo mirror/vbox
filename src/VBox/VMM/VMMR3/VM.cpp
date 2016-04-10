@@ -3029,10 +3029,10 @@ VMMR3DECL(int) VMR3Reset(PUVM pUVM)
  * This handles both soft and hard resets (see PDMVMRESET_F_XXX).
  *
  * @returns VBox status code.
- * @param   pUVM    The VM to reset.
+ * @param   pVM             The cross context VM structure.
  * @thread  EMT
  *
- * @remarks Caller is expected to clear the reset FF.
+ * @remarks Caller is expected to clear the VM_FF_RESET force flag.
  */
 VMMR3_INT_DECL(VBOXSTRICTRC) VMR3ResetFF(PVM pVM)
 {
@@ -3055,7 +3055,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMR3ResetFF(PVM pVM)
  * RESET signal to the CPU.  So, it should be very similar to a soft/warm reset.
  *
  * @returns VBox status code.
- * @param   pUVM    The VM to reset.
+ * @param   pVM             The cross context VM structure.
  * @thread  EMT
  */
 VMMR3_INT_DECL(VBOXSTRICTRC) VMR3ResetTripleFault(PVM pVM)

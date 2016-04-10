@@ -1106,7 +1106,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
 /**
  * @callback_method_impl{FNPDMVMMDEVHEAPNOTIFY}
  */
-static DECLCALLBACK(void) hmR3VmmDevHeapNotify(PVM pVM, void *pvAllocation,  RTGCPHYS GCPhysAllocation)
+static DECLCALLBACK(void) hmR3VmmDevHeapNotify(PVM pVM, void *pvAllocation, RTGCPHYS GCPhysAllocation)
 {
     NOREF(pVM);
     NOREF(pvAllocation);
