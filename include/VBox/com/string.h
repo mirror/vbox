@@ -229,6 +229,55 @@ public:
     bool operator>=(BSTR that) const        { return compare(that)        >= 0; }
 
     /**
+     * Compares this string to an UTF-8 C style string.
+     *
+     * @retval  0 if equal
+     * @retval -1 if this string is smaller than the UTF-8 one.
+     * @retval  1 if the UTF-8 string is smaller than this.
+     *
+     * @param   a_pszRight  The string to compare with.
+     * @param   a_enmCase   Whether comparison should be case-sensitive.
+     */
+    int compareUtf8(const char *a_pszRight, CaseSensitivity a_enmCase = CaseSensitive) const;
+
+    /** Java style compare method.
+     * @returns true if @a a_pszRight equals this string.
+     * @param   a_pszRight The (UTF-8) string to compare with. */
+    bool equals(const char *a_pszRight) const           { return compareUtf8(a_pszRight, CaseSensitive) == 0; }
+
+    /** Java style case-insensitive compare method.
+     * @returns true if @a a_pszRight equals this string.
+     * @param   a_pszRight The (UTF-8) string to compare with. */
+    bool equalsIgnoreCase(const char *a_pszRight) const { return compareUtf8(a_pszRight, CaseInsensitive) == 0; }
+
+    /** Java style compare method.
+     * @returns true if @a a_rThat equals this string.
+     * @param   a_rThat     The other Bstr instance to compare with. */
+    bool equals(const Bstr &a_rThat) const              { return compare(a_rThat.m_bstr, CaseSensitive) == 0; }
+    /** Java style case-insensitive compare method.
+     * @returns true if @a a_rThat equals this string.
+     * @param   a_rThat     The other Bstr instance to compare with. */
+    bool equalsIgnoreCase(const Bstr &a_rThat) const    { return compare(a_rThat.m_bstr, CaseInsensitive) == 0; }
+
+    /** Java style compare method.
+     * @returns true if @a a_pThat equals this string.
+     * @param   a_pThat    The native const BSTR to compare with. */
+    bool equals(CBSTR a_pThat) const                    { return compare(a_pThat, CaseSensitive) == 0; }
+    /** Java style case-insensitive compare method.
+     * @returns true if @a a_pThat equals this string.
+     * @param   a_pThat    The native const BSTR to compare with. */
+    bool equalsIgnoreCase(CBSTR a_pThat) const          { return compare(a_pThat, CaseInsensitive) == 0; }
+
+    /** Java style compare method.
+     * @returns true if @a a_pThat equals this string.
+     * @param   a_pThat    The native BSTR to compare with. */
+    bool equals(BSTR a_pThat) const                     { return compare(a_pThat, CaseSensitive) == 0; }
+    /** Java style case-insensitive compare method.
+     * @returns true if @a a_pThat equals this string.
+     * @param   a_pThat    The native BSTR to compare with. */
+    bool equalsIgnoreCase(BSTR a_pThat) const           { return compare(a_pThat, CaseInsensitive) == 0; }
+
+    /**
      * Returns true if the member string has no length.
      * This is true for instances created from both NULL and "" input strings.
      *
