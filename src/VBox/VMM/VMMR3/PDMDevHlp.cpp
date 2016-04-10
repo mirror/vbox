@@ -3733,20 +3733,21 @@ static DECLCALLBACK(VMCPUID) pdmR3DevHlp_Untrusted_GetCurrentCpuId(PPDMDEVINS pD
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnRegisterVMMDevHeap} */
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
+                                                                  RTR3PTR pvHeap, unsigned cbHeap)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    NOREF(GCPhys); NOREF(pvHeap); NOREF(cbSize);
+    NOREF(GCPhys); NOREF(pvHeap); NOREF(cbHeap);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnFirmwareRegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_FirmwareRegister(PPDMDEVINS pDevIns, PCPDMFWREG pFwReg, PCPDMFWHLPR3 *ppFwHlpR3)
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_FirmwareRegister(PPDMDEVINS pDevIns, PCPDMFWREG pFwReg, PCPDMFWHLPR3 *ppFwHlp)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    NOREF(pFwReg); NOREF(ppFwHlpR3);
+    NOREF(pFwReg); NOREF(ppFwHlp);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
 }
