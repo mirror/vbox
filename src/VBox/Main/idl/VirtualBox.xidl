@@ -975,8 +975,9 @@
     </const>
     <const name="TripleFaultReset"      value="3">
       <desc>
-        This setting determines whether a triple fault within a guest will trigger an internal
-        error condition and stop the VM (default) or reset the virtual CPU and continue execution.
+        This setting determines whether a triple fault within a guest will
+        trigger an internal error condition and stop the VM (default) or reset
+        the virtual CPU/VM and continue execution.
       </desc>
     </const>
   </enum>
