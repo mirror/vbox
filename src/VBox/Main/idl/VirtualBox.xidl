@@ -4322,12 +4322,17 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="e1aa7812-ec46-4612-d9d5-0a3d4703b3ab"
+    uuid="95565a66-622a-4ad0-4eed-9bb83c91c5be"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
-    reservedMethods="8" reservedAttributes="12"
+    reservedMethods="8" reservedAttributes="10"
     >
+    <!-- Note! This interface is not compatible between 5.0 and 5.1 as it had too many
+               methods/attributes for midl and the reservedAttributes had to be
+               decreased.  Max methods+attributes is 256, so in 6.0 this interface must
+               be refactored a little!  In the mean time, take from reservedMethods and
+               reservedAttributes and update the UUID like always. -->
     <desc>
       The IMachine interface represents a virtual machine, or guest, created
       in VirtualBox.
@@ -5169,6 +5174,16 @@
     <attribute name="paravirtDebug" type="wstring">
       <desc>
         Debug parameters for the paravirtualized guest interface provider.
+      </desc>
+    </attribute>
+
+    <attribute name="CPUProfile" type="wstring">
+      <desc>
+        Experimental feature to select the guest CPU profile.  The default
+        is "host", which indicates the host CPU.  All other names are subject
+        to change.
+
+        The profiles are found in src/VBox/VMM/VMMR3/cpus/.
       </desc>
     </attribute>
 

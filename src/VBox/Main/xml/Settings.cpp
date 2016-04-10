@@ -2060,6 +2060,7 @@ Hardware::Hardware()
           fHPETEnabled(false),
           ulCpuExecutionCap(100),
           uCpuIdPortabilityLevel(0),
+          strCpuProfile("host"),
           ulMemorySizeMB((uint32_t)-1),
           graphicsControllerType(GraphicsControllerType_VBoxVGA),
           ulVRAMSizeMB(8),
@@ -2134,6 +2135,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fCpuHotPlug               == h.fCpuHotPlug)
                   && (ulCpuExecutionCap         == h.ulCpuExecutionCap)
                   && (uCpuIdPortabilityLevel    == h.uCpuIdPortabilityLevel)
+                  && strCpuProfile              == h.strCpuProfile
                   && (fHPETEnabled              == h.fHPETEnabled)
                   && (llCpus                    == h.llCpus)
                   && (llCpuIdLeafs              == h.llCpuIdLeafs)
@@ -2169,7 +2171,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (audioAdapter              == h.audioAdapter)
                   && (llSharedFolders           == h.llSharedFolders)
                   && (clipboardMode             == h.clipboardMode)
-                  && (dndMode           == h.dndMode)
+                  && (dndMode                   == h.dndMode)
                   && (ulMemoryBalloonSize       == h.ulMemoryBalloonSize)
                   && (fPageFusionEnabled        == h.fPageFusionEnabled)
                   && (llGuestProperties         == h.llGuestProperties)
@@ -2937,6 +2939,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 hw.uCpuIdPortabilityLevel = fSyntheticCpu ? 1 : 0;
             }
             pelmHwChild->getAttributeValue("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
+            pelmHwChild->getAttributeValue("CpuProfile", hw.strCpuProfile);
 
             if ((pelmCPUChild = pelmHwChild->findChildElement("TripleFaultReset")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fTripleFaultReset);
@@ -4247,6 +4250,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmCPU->setAttribute("executionCap", hw.ulCpuExecutionCap);
     if (hw.uCpuIdPortabilityLevel != 0)
         pelmCPU->setAttribute("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
+    if (!hw.strCpuProfile.equals("host") && hw.strCpuProfile.isNotEmpty())
+        pelmCPU->setAttribute("CpuProfile", hw.strCpuProfile);
 
     /* Always save this setting as we have changed the default in 4.0 (on for large memory 64-bit systems). */
     pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
@@ -5687,7 +5692,16 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_16)
     {
-        // VirtualBox 5.1 adds a NVMe storage controller, paravirt debug options.
+        // VirtualBox 5.1 adds a NVMe storage controller, paravirt debug options, cpu profile.
+
+        if (   hardwareMachine.strParavirtDebug.isNotEmpty()
+            || (!hardwareMachine.strCpuProfile.equals("host") && hardwareMachine.strCpuProfile.isNotEmpty())
+           )
+        {
+            m->sv = SettingsVersion_v1_16;
+            return;
+        }
+
         for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
              it != storageMachine.llStorageControllers.end();
              ++it)
@@ -5699,12 +5713,6 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 m->sv = SettingsVersion_v1_16;
                 return;
             }
-        }
-
-        if (hardwareMachine.strParavirtDebug.isNotEmpty())
-        {
-            m->sv = SettingsVersion_v1_16;
-            return;
         }
     }
 

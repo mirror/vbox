@@ -71,6 +71,7 @@ enum
     MODIFYVM_VTXUX,
     MODIFYVM_CPUS,
     MODIFYVM_CPUHOTPLUG,
+    MODIFYVM_CPU_PROFILE,
     MODIFYVM_PLUGCPU,
     MODIFYVM_UNPLUGCPU,
     MODIFYVM_SETCPUID,
@@ -216,6 +217,9 @@ enum
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
 {
+/** @todo Convert to dash separated names like --triple-fault-reset! Please
+ *        do that for all new options as we don't need more character soups
+ *        around VirtualBox - typedefs more than covers that demand! */
     { "--name",                     MODIFYVM_NAME,                      RTGETOPT_REQ_STRING },
     { "--groups",                   MODIFYVM_GROUPS,                    RTGETOPT_REQ_STRING },
     { "--description",              MODIFYVM_DESCRIPTION,               RTGETOPT_REQ_STRING },
@@ -243,6 +247,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--cpuidremoveall",           MODIFYVM_DELALLCPUID,               RTGETOPT_REQ_NOTHING},
     { "--cpus",                     MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32 },
     { "--cpuhotplug",               MODIFYVM_CPUHOTPLUG,                RTGETOPT_REQ_BOOL_ONOFF },
+    { "--cpu-profile",              MODIFYVM_CPU_PROFILE,               RTGETOPT_REQ_STRING },
     { "--plugcpu",                  MODIFYVM_PLUGCPU,                   RTGETOPT_REQ_UINT32 },
     { "--unplugcpu",                MODIFYVM_UNPLUGCPU,                 RTGETOPT_REQ_UINT32 },
     { "--cpuexecutioncap",          MODIFYVM_CPU_EXECTUION_CAP,         RTGETOPT_REQ_UINT32 },
@@ -770,6 +775,12 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_CPUHOTPLUG:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(CPUHotPlugEnabled)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_CPU_PROFILE:
+            {
+                CHECK_ERROR(sessionMachine, COMSETTER(CPUProfile)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
 

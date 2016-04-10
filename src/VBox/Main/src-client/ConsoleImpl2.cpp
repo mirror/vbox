@@ -875,6 +875,17 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         InsertConfigInteger(pRoot, "MemBalloonSize",       ulBalloonSize);
 
         /*
+         * EM values (before CPUM as it may need to set IemExecutesAll).
+         */
+        PCFGMNODE pEM;
+        InsertConfigNode(pRoot, "EM", &pEM);
+
+        /* Triple fault behavior. */
+        BOOL fTripleFaultReset = false;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_TripleFaultReset, &fTripleFaultReset); H();
+        InsertConfigInteger(pEM, "TripleFaultReset", fTripleFaultReset);
+
+        /*
          * CPUM values.
          */
         PCFGMNODE pCPUM;
@@ -956,13 +967,31 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
         /* CPU Portability level, */
         ULONG uCpuIdPortabilityLevel = 0;
-        hrc = pMachine->COMGETTER(CPUIDPortabilityLevel)(&uCpuIdPortabilityLevel);            H();
+        hrc = pMachine->COMGETTER(CPUIDPortabilityLevel)(&uCpuIdPortabilityLevel);          H();
         InsertConfigInteger(pCPUM, "PortableCpuIdLevel", uCpuIdPortabilityLevel);
 
         /* Physical Address Extension (PAE) */
         BOOL fEnablePAE = false;
         hrc = pMachine->GetCPUProperty(CPUPropertyType_PAE, &fEnablePAE);                   H();
         InsertConfigInteger(pRoot, "EnablePAE", fEnablePAE);
+
+        /* CPUM profile name. */
+        hrc = pMachine->COMGETTER(CPUProfile)(bstr.asOutParam());                           H();
+        InsertConfigString(pRoot, "GuestCPUName", bstr);
+
+        /*
+         * Temporary(?) hack to make sure we emulate the ancient 16-bit CPUs
+         * correctly.   There are way to many #UDs we'll miss using VT-x,
+         * raw-mode or qemu for the 186 and 286, while we'll get undefined opcodes
+         * dead wrong on 8086 (see http://www.os2museum.com/wp/undocumented-8086-opcodes/).
+         */
+        if (   bstr.equals("80286")
+            || bstr.equals("80186")
+            || bstr.equals("V30")
+            || bstr.equals("V20")
+            || bstr.equals("8086")
+            || bstr.equals("8088") )
+            InsertConfigInteger(pEM, "IemExecutesAll", true);
 
         /*
          * Hardware virtualization extensions.
@@ -1032,15 +1061,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 LogRel(("fHMForced=true - HWVirtExPropertyType_Force\n"));
         }
         InsertConfigInteger(pRoot, "HMEnabled", fHMEnabled);
-
-        /* /EM/xzy */
-        PCFGMNODE pEM;
-        InsertConfigNode(pRoot, "EM", &pEM);
-
-        /* Triple fault behavior. */
-        BOOL fTripleFaultReset = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_TripleFaultReset, &fTripleFaultReset); H();
-        InsertConfigInteger(pEM, "TripleFaultReset", fTripleFaultReset);
 
         /* /HM/xzy */
         PCFGMNODE pHM;

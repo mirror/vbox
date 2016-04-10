@@ -35,6 +35,7 @@
 #endif
 
 #include <VBox/log.h>
+#include <VBox/version.h>
 #include <iprt/stream.h>
 #include <iprt/time.h>
 #include <iprt/string.h>
@@ -444,6 +445,22 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             RTPrintf("%-16s %ls\n", a_szHuman ":", bstr.raw()); \
     } while (0)
 
+    /** @def SHOW_STRING_PROP_MAJ
+     * For not breaking the output in a dot release we don't show default values. */
+#define SHOW_STRING_PROP_MAJ(a_pObj, a_Prop, a_szMachine, a_szHuman, a_szUnless, a_uMajorVer) \
+    do \
+    { \
+        Bstr bstr; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
+        if ((a_uMajorVer) <= VBOX_VERSION_MAJOR || !bstr.equals(a_szUnless)) \
+        { \
+            if (details == VMINFO_MACHINEREADABLE)\
+                outputMachineReadableString(a_szMachine, &bstr); \
+            else \
+                RTPrintf("%-16s %ls\n", a_szHuman ":", bstr.raw()); \
+        } \
+    } while (0)
+
 #define SHOW_STRINGARRAY_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
     do \
     { \
@@ -563,6 +580,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_ULONG_PROP(       machine, VRAMSize,                   "vram",                 "VRAM size",        "MB");
     SHOW_ULONG_PROP(       machine, CPUExecutionCap,            "cpuexecutioncap",      "CPU exec cap",     "%%");
     SHOW_BOOLEAN_PROP(     machine, HPETEnabled,                "hpet",                 "HPET");
+    SHOW_STRING_PROP_MAJ(  machine, CPUProfile,                 "cpu-profile",          "CPUProfile",       "host", 6);
 
     ChipsetType_T chipsetType;
     CHECK_ERROR2I_RET(machine, COMGETTER(ChipsetType)(&chipsetType), hrcCheck);

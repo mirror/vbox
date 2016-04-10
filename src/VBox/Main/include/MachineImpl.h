@@ -289,6 +289,7 @@ public:
         BOOL                mCPUHotPlugEnabled;
         ULONG               mCpuExecutionCap;
         uint32_t            mCpuIdPortabilityLevel;
+        Utf8Str             mCpuProfile;
         BOOL                mAccelerate3DEnabled;
         BOOL                mHPETEnabled;
 
@@ -874,6 +875,8 @@ private:
     HRESULT setCPUExecutionCap(ULONG aCPUExecutionCap);
     HRESULT getCPUIDPortabilityLevel(ULONG *aCPUIDPortabilityLevel);
     HRESULT setCPUIDPortabilityLevel(ULONG aCPUIDPortabilityLevel);
+    HRESULT getCPUProfile(com::Utf8Str &aCPUProfile);
+    HRESULT setCPUProfile(const com::Utf8Str &aCPUProfile);
     HRESULT getMemorySize(ULONG *aMemorySize);
     HRESULT setMemorySize(ULONG aMemorySize);
     HRESULT getMemoryBalloonSize(ULONG *aMemoryBalloonSize);

@@ -196,6 +196,7 @@ Machine::HWData::HWData()
     mHPETEnabled = false;
     mCpuExecutionCap = 100; /* Maximum CPU execution cap by default. */
     mCpuIdPortabilityLevel = 0;
+    mCpuProfile = "host";
 
     /* default boot order: floppy - DVD - HDD */
     mBootOrder[0] = DeviceType_Floppy;
@@ -1628,6 +1629,30 @@ HRESULT Machine::setCPUIDPortabilityLevel(ULONG aCPUIDPortabilityLevel)
         i_setModified(IsModified_MachineData);
         mHWData.backup();
         mHWData->mCpuIdPortabilityLevel = aCPUIDPortabilityLevel;
+    }
+    return hrc;
+}
+
+HRESULT Machine::getCPUProfile(com::Utf8Str &aCPUProfile)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aCPUProfile = mHWData->mCpuProfile;
+    return S_OK;
+}
+
+HRESULT Machine::setCPUProfile(const com::Utf8Str &aCPUProfile)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT hrc = i_checkStateDependency(MutableStateDep);
+    if (SUCCEEDED(hrc))
+    {
+        i_setModified(IsModified_MachineData);
+        mHWData.backup();
+        /* Empty equals 'host'. */
+        if (aCPUProfile.isNotEmpty())
+            mHWData->mCpuProfile = aCPUProfile;
+        else
+            mHWData->mCpuProfile = "host";
     }
     return hrc;
 }
@@ -8846,6 +8871,7 @@ HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::
         mHWData->mCPUHotPlugEnabled           = data.fCpuHotPlug;
         mHWData->mCpuExecutionCap             = data.ulCpuExecutionCap;
         mHWData->mCpuIdPortabilityLevel       = data.uCpuIdPortabilityLevel;
+        mHWData->mCpuProfile                  = data.strCpuProfile;
 
         // cpu
         if (mHWData->mCPUHotPlugEnabled)
@@ -10181,6 +10207,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         data.fCpuHotPlug            = !!mHWData->mCPUHotPlugEnabled;
         data.ulCpuExecutionCap      = mHWData->mCpuExecutionCap;
         data.uCpuIdPortabilityLevel = mHWData->mCpuIdPortabilityLevel;
+        data.strCpuProfile          = mHWData->mCpuProfile;
 
         data.llCpus.clear();
         if (data.fCpuHotPlug)
