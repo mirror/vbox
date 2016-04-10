@@ -52,7 +52,7 @@ typedef struct CPUMDBENTRY
     CPUMMICROARCH   enmMicroarch;
     /** Scalable bus frequency used for reporting other frequencies. */
     uint64_t        uScalableBusFreq;
-    /** Flags (TBD). */
+    /** Flags - CPUDB_F_XXX. */
     uint32_t        fFlags;
     /** The maximum physical address with of the CPU.  This should correspond to
      * the value in CPUID leaf 0x80000008 when present. */
@@ -79,6 +79,13 @@ typedef struct CPUMDBENTRY
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** @name CPUDB_F_XXX - CPUDBENTRY::fFlags
+ * @{ */
+/** Should execute all in IEM.
+ * @todo Implement this - currently done in Main...  */
+#define CPUDB_F_EXECUTE_ALL_IN_IEM          RT_BIT_32(0)
+/** @} */
+
 
 /** @def NULL_ALONE
  * For eliminating an unnecessary data dependency in standalone builds (for
@@ -185,6 +192,9 @@ typedef struct CPUMDBENTRY
 #include "cpus/Intel_Pentium_M_processor_2_00GHz.h"
 #include "cpus/Intel_Pentium_4_3_00GHz.h"
 #include "cpus/Intel_Atom_330_1_60GHz.h"
+#include "cpus/Intel_80286.h"
+#include "cpus/Intel_80186.h"
+#include "cpus/Intel_8086.h"
 
 #include "cpus/AMD_FX_8150_Eight_Core.h"
 #include "cpus/AMD_Phenom_II_X6_1100T.h"
@@ -237,6 +247,21 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 #ifdef VBOX_CPUDB_Intel_Pentium_4_3_00GHz
     &g_Entry_Intel_Pentium_4_3_00GHz,
 #endif
+#ifdef VBOX_CPUDB_Intel_80486
+    &g_Entry_Intel_80486,
+#endif
+#ifdef VBOX_CPUDB_Intel_80386
+    &g_Entry_Intel_80386,
+#endif
+#ifdef VBOX_CPUDB_Intel_80286
+    &g_Entry_Intel_80286,
+#endif
+#ifdef VBOX_CPUDB_Intel_80186
+    &g_Entry_Intel_80186,
+#endif
+#ifdef VBOX_CPUDB_Intel_8086
+    &g_Entry_Intel_8086,
+#endif
 
 #ifdef VBOX_CPUDB_AMD_FX_8150_Eight_Core
     &g_Entry_AMD_FX_8150_Eight_Core,
@@ -256,6 +281,10 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 
 #ifdef VBOX_CPUDB_VIA_QuadCore_L4700_1_2_GHz
     &g_Entry_VIA_QuadCore_L4700_1_2_GHz,
+#endif
+
+#ifdef VBOX_CPUDB_NEC_V20
+    &g_Entry_NEC_V20,
 #endif
 };
 
@@ -850,8 +879,11 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
         pInfo->cCpuIdLeaves = pEntry->cCpuIdLeaves;
         if (pEntry->cCpuIdLeaves)
         {
-            pInfo->paCpuIdLeavesR3 = (PCPUMCPUIDLEAF)RTMemDup(pEntry->paCpuIdLeaves,
-                                                              sizeof(pEntry->paCpuIdLeaves[0]) * pEntry->cCpuIdLeaves);
+            /* Must allocate a multiple of 16 here, matching cpumR3CpuIdEnsureSpace. */
+            size_t cbExtra = sizeof(pEntry->paCpuIdLeaves[0]) * (RT_ALIGN(pEntry->cCpuIdLeaves, 16) - pEntry->cCpuIdLeaves);
+            pInfo->paCpuIdLeavesR3 = (PCPUMCPUIDLEAF)RTMemDupEx(pEntry->paCpuIdLeaves,
+                                                                sizeof(pEntry->paCpuIdLeaves[0]) * pEntry->cCpuIdLeaves,
+                                                                cbExtra);
             if (!pInfo->paCpuIdLeavesR3)
                 return VERR_NO_MEMORY;
         }

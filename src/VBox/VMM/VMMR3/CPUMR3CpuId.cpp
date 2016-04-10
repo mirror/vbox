@@ -2218,7 +2218,7 @@ typedef struct CPUMCPUIDCONFIG
     uint32_t        uMaxExtLeaf;
     uint32_t        uMaxCentaurLeaf;
     uint32_t        uMaxIntelFamilyModelStep;
-    char        szCpuName[128];
+    char            szCpuName[128];
 } CPUMCPUIDCONFIG;
 /** Pointer to CPUID config (from CFGM). */
 typedef CPUMCPUIDCONFIG *PCPUMCPUIDCONFIG;

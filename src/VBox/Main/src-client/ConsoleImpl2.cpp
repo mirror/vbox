@@ -977,7 +977,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
         /* CPUM profile name. */
         hrc = pMachine->COMGETTER(CPUProfile)(bstr.asOutParam());                           H();
-        InsertConfigString(pRoot, "GuestCPUName", bstr);
+        InsertConfigString(pCPUM, "GuestCpuName", bstr);
 
         /*
          * Temporary(?) hack to make sure we emulate the ancient 16-bit CPUs
@@ -985,12 +985,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * raw-mode or qemu for the 186 and 286, while we'll get undefined opcodes
          * dead wrong on 8086 (see http://www.os2museum.com/wp/undocumented-8086-opcodes/).
          */
-        if (   bstr.equals("80286")
-            || bstr.equals("80186")
-            || bstr.equals("V30")
-            || bstr.equals("V20")
-            || bstr.equals("8086")
-            || bstr.equals("8088") )
+        if (   bstr.equals("Intel 80286")
+            || bstr.equals("Intel 80186")
+            || bstr.equals("Nec V20")
+            || bstr.equals("Intel 8086") )
             InsertConfigInteger(pEM, "IemExecutesAll", true);
 
         /*
