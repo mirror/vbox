@@ -70,7 +70,7 @@ VMM_INT_DECL(bool)      PDMVmmDevHeapIsEnabled(PVM pVM);
  *                              it's being mapped, NIL_RTGCPHYS if it's being
  *                              unmapped.
  */
-typedef void FNPDMVMMDEVHEAPNOTIFY(PVM pVM, void *pvAllocation, RTGCPHYS GCPhysAllocation);
+typedef DECLCALLBACK(void) FNPDMVMMDEVHEAPNOTIFY(PVM pVM, void *pvAllocation, RTGCPHYS GCPhysAllocation);
 /** Pointer (ring-3) to a FNPDMVMMDEVHEAPNOTIFY function. */
 typedef R3PTRTYPE(FNPDMVMMDEVHEAPNOTIFY *) PFNPDMVMMDEVHEAPNOTIFY;
 
