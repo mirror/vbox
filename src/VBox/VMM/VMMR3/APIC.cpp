@@ -455,8 +455,8 @@ static void apicR3DbgInfo256BitReg(volatile const XAPIC256BITREG *pApicReg, PCDB
     pHlp->pfnPrintf(pHlp, "\n");
 
     size_t cPending = 0;
-    pHlp->pfnPrintf(pHlp, "  Pending\n");
-    pHlp->pfnPrintf(pHlp, "   ");
+    pHlp->pfnPrintf(pHlp, "    Pending:\n");
+    pHlp->pfnPrintf(pHlp, "     ");
     for (ssize_t i = cFragments - 1; i >= 0; i--)
     {
         uint32_t uFragment = ApicReg.u[i].u32Reg;
@@ -493,8 +493,8 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     PCX2APICPAGE pX2ApicPage = VMCPU_TO_CX2APICPAGE(pVCpu);
     bool const   fX2ApicMode = XAPIC_IN_X2APIC_MODE(pVCpu);
 
-    pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC at %#RGp (%s mode):\n", pVCpu->idCpu, MSR_APICBASE_GET_PHYSADDR(pApicCpu->uApicBaseMsr),
-                                                                 fX2ApicMode ? "x2APIC" : "xAPIC");
+    pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC at %#RGp\n", pVCpu->idCpu, MSR_APICBASE_GET_PHYSADDR(pApicCpu->uApicBaseMsr));
+    pHlp->pfnPrintf(pHlp, "  Mode                          = %s\n", fX2ApicMode ? "x2Apic" : "xApic");
     if (fX2ApicMode)
     {
         pHlp->pfnPrintf(pHlp, "  APIC ID                       = %u (%#x)\n", pX2ApicPage->id.u32ApicId,
@@ -536,7 +536,7 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     apicR3DbgInfo256BitReg(&pXApicPage->tmr, pHlp);
     pHlp->pfnPrintf(pHlp, "  IRR\n");
     apicR3DbgInfo256BitReg(&pXApicPage->irr, pHlp);
-    pHlp->pfnPrintf(pHlp, "ESR Internal                    = %#x\n",      pApicCpu->uEsrInternal);
+    pHlp->pfnPrintf(pHlp, "  ESR Internal                  = %#x\n",      pApicCpu->uEsrInternal);
     pHlp->pfnPrintf(pHlp, "  ESR                           = %#x\n",      pXApicPage->esr.all.u32Errors);
     pHlp->pfnPrintf(pHlp, "    Redirectable IPI            = %RTbool\n",  pXApicPage->esr.u.fRedirectableIpi);
     pHlp->pfnPrintf(pHlp, "    Send Illegal Vector         = %RTbool\n",  pXApicPage->esr.u.fSendIllegalVector);
@@ -573,7 +573,7 @@ static void apicR3DbgInfoLvtTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     uint32_t const uLvtTimer = pXApicPage->lvt_timer.all.u32LvtTimer;
     pHlp->pfnPrintf(pHlp, "LVT Timer          = %#RX32\n",   uLvtTimer);
-    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_timer.u.u8Vector);
+    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_timer.u.u8Vector, pXApicPage->lvt_timer.u.u8Vector);
     pHlp->pfnPrintf(pHlp, "  Delivery status  = %u\n",       pXApicPage->lvt_timer.u.u1DeliveryStatus);
     pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtTimer));
     pHlp->pfnPrintf(pHlp, "  Timer Mode       = %#x (%s)\n", pXApicPage->lvt_timer.u.u2TimerMode,
@@ -625,6 +625,7 @@ static void apicR3DbgInfoLvt(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     pHlp->pfnPrintf(pHlp, "  Trigger Mode     = %u (%s)\n",  pXApicPage->lvt_lint0.u.u1TriggerMode,
                     apicGetTriggerModeName((XAPICTRIGGERMODE)pXApicPage->lvt_lint0.u.u1TriggerMode));
     pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtLint0));
+    pHlp->pfnPrintf(pHlp, "\n");
 
     uint32_t const uLvtLint1 = pXApicPage->lvt_lint1.all.u32LvtLint1;
     pHlp->pfnPrintf(pHlp, "LVT LINT1          = %#RX32\n",   uLvtLint1);
@@ -664,7 +665,7 @@ static void apicR3DbgInfoTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     pHlp->pfnPrintf(pHlp, "  CCR              = %#RX32\n", pXApicPage->timer_ccr.u32CurrentCount);
     pHlp->pfnPrintf(pHlp, "  DCR              = %#RX32\n", pXApicPage->timer_dcr.all.u32DivideValue);
     pHlp->pfnPrintf(pHlp, "    Timer shift    = %#x\n",    apicGetTimerShift(pXApicPage));
-    pHlp->pfnPrintf(pHlp, "  Timer initial TS = %#RU64", pApicCpu->u64TimerInitial);
+    pHlp->pfnPrintf(pHlp, "  Timer initial TS = %#RU64\n", pApicCpu->u64TimerInitial);
     pHlp->pfnPrintf(pHlp, "\n");
 
     apicR3DbgInfoLvtTimer(pVCpu, pHlp);
@@ -1295,7 +1296,8 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     PAPICCPU pApicCpu0 = VMCPU_TO_APICCPU(&pVM->aCpus[0]);
     RTGCPHYS GCPhysApicBase = MSR_APICBASE_GET_PHYSADDR(pApicCpu0->uApicBaseMsr);
-    rc = PDMDevHlpMMIORegister(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), pVM,
+    LogRel(("APIC: PDMDevHlpMMIORegister new = %#RGp\n", GCPhysApicBase));
+    rc = PDMDevHlpMMIORegister(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NULL /* pvUser */,
                                IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
                                APICWriteMmio, APICReadMmio, "APIC");
     if (RT_FAILURE(rc))

@@ -48,7 +48,7 @@
 /** The APIC bootstrap processor bit. */
 #define MSR_APICBASE_BOOTSTRAP_CPU_BIT       RT_BIT_64(8)
 /** The default APIC base address. */
-#define XAPIC_APICBASE_PHYSADDR              (UINT64_C(0xfee00000) << PAGE_SHIFT)
+#define XAPIC_APICBASE_PHYSADDR              UINT64_C(0xfee00000)
 /** The APIC base MSR - Is the APIC enabled?  */
 #define MSR_APICBASE_IS_ENABLED(a_Msr)       RT_BOOL((a_Msr) & MSR_APICBASE_XAPIC_ENABLE_BIT)
 
