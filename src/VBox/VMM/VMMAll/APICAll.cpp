@@ -439,11 +439,10 @@ static VBOXSTRICTRC apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
  * @param   rcRZ                The return code if the operation cannot be
  *                              performed in the current context.
  */
-static VBOXSTRICTRC apicSendIntr(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode,
+static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode,
                                  XAPICDELIVERYMODE enmDeliveryMode, PCVMCPUSET pDestCpuSet, int rcRZ)
 {
     VBOXSTRICTRC  rcStrict = VINF_SUCCESS;
-    PVM           pVM      = pVCpu->CTX_SUFF(pVM);
     VMCPUID const cCpus    = pVM->cCpus;
     switch (enmDeliveryMode)
     {
@@ -815,7 +814,7 @@ static VBOXSTRICTRC apicSendIpi(PVMCPU pVCpu, int rcRZ)
         }
     }
 
-    return apicSendIntr(pVCpu, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet, rcRZ);
+    return apicSendIntr(pVCpu->CTX_SUFF(pVM), pVCpu, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet, rcRZ);
 }
 
 
@@ -1194,7 +1193,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt
               || offLvt == XAPIC_OFF_LVT_LINT0
               || offLvt == XAPIC_OFF_LVT_LINT1
               || offLvt == XAPIC_OFF_LVT_ERROR,
-             ("APIC%u: apicSetLvtEntry: invalid offset, offLvt=%#x, uLvt=%#x\n", pVCpu->idCpu, offLvt, uLvt));
+             ("APIC%u: apicSetLvtEntry: invalid offset, offLvt=%#RX16, uLvt=%#RX32\n", pVCpu->idCpu, offLvt, uLvt));
 
     /*
      * If TSC-deadline mode isn't support, ignore the bit in xAPIC mode
@@ -1247,6 +1246,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt
                     && XAPIC_LVT_GET_DELIVERY_MODE(uLvt) == XAPICDELIVERYMODE_FIXED))
         apicSetError(pVCpu, XAPIC_ESR_SEND_ILLEGAL_VECTOR);
 
+    Log4(("APIC%u: apicSetLvtEntry: offLvt=%#RX16 uLvt=%#RX32\n", pVCpu->idCpu, offLvt, uLvt));
     apicWriteRaw32(pXApicPage, offLvt, uLvt);
     return VINF_SUCCESS;
 #else
@@ -1267,7 +1267,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt
 static int apicSetLvtExtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    AssertMsg(offLvt == XAPIC_OFF_CMCI, ("APIC%u: apicSetLvt1Entry: invalid offset %#x\n", pVCpu->idCpu, offLvt));
+    AssertMsg(offLvt == XAPIC_OFF_CMCI, ("APIC%u: apicSetLvt1Entry: invalid offset %#RX16\n", pVCpu->idCpu, offLvt));
 
     /** @todo support CMCI. */
     return VERR_NOT_IMPLEMENTED;
@@ -1389,7 +1389,7 @@ static int apicReadRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t offReg, ui
         default:
         {
             Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
-            rc = PDMDevHlpDBGFStop(pApicDev->CTX_SUFF(pDevIns), RT_SRC_POS, "offReg=%#x Id=%u\n", offReg, pVCpu->idCpu);
+            rc = PDMDevHlpDBGFStop(pApicDev->CTX_SUFF(pDevIns), RT_SRC_POS, "VCPU[%u]: offReg=%#RX16\n", pVCpu->idCpu, offReg);
             apicSetError(pVCpu, XAPIC_ESR_ILLEGAL_REG_ADDRESS);
             break;
         }
@@ -1502,11 +1502,14 @@ static VBOXSTRICTRC apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t 
             break;
         }
 
+        /* Read-only, write ignored: */
+        case XAPIC_OFF_VERSION:
+        case XAPIC_OFF_ID:
+            break;
+
         /* Unavailable/reserved in xAPIC mode: */
         case X2APIC_OFF_SELF_IPI:
         /* Read-only registers: */
-        case XAPIC_OFF_ID:
-        case XAPIC_OFF_VERSION:
         case XAPIC_OFF_PPR:
         case XAPIC_OFF_ISR0:    case XAPIC_OFF_ISR1:    case XAPIC_OFF_ISR2:    case XAPIC_OFF_ISR3:
         case XAPIC_OFF_ISR4:    case XAPIC_OFF_ISR5:    case XAPIC_OFF_ISR6:    case XAPIC_OFF_ISR7:
@@ -1517,7 +1520,8 @@ static VBOXSTRICTRC apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t 
         case XAPIC_OFF_TIMER_CCR:
         default:
         {
-            rcStrict = PDMDevHlpDBGFStop(pApicDev->CTX_SUFF(pDevIns), RT_SRC_POS, "APIC%u: offReg=%#x\n", pVCpu->idCpu, offReg);
+            rcStrict = PDMDevHlpDBGFStop(pApicDev->CTX_SUFF(pDevIns), RT_SRC_POS, "APIC%u: offReg=%#RX16\n", pVCpu->idCpu,
+                                         offReg);
             apicSetError(pVCpu, XAPIC_ESR_ILLEGAL_REG_ADDRESS);
             break;
         }
@@ -1946,7 +1950,8 @@ VMMDECL(int) APICBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode
 
     VMCPUSET DestCpuSet;
     apicGetDestCpuSet(pVM, fDestMask, fBroadcastMask, enmDestMode, enmDeliveryMode, &DestCpuSet);
-    VBOXSTRICTRC rcStrict = apicSendIntr(NULL /* pVCpu */, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet, VINF_SUCCESS);
+    VBOXSTRICTRC rcStrict = apicSendIntr(pVM, NULL /* pVCpu */, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet,
+                                         VINF_SUCCESS /* rcRZ */);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
@@ -2001,17 +2006,23 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
                 case XAPICDELIVERYMODE_SMI:
                 case XAPICDELIVERYMODE_NMI:
                 case XAPICDELIVERYMODE_INIT:    /** @todo won't work in R0/RC because callers don't care about rcRZ. */
-                case XAPICDELIVERYMODE_EXTINT:
                 {
                     VMCPUSET DestCpuSet;
                     VMCPUSET_EMPTY(&DestCpuSet);
                     VMCPUSET_ADD(&DestCpuSet, pVCpu->idCpu);
                     uint8_t const uVector = XAPIC_LVT_GET_VECTOR(uLvt);
+                    rcStrict = apicSendIntr(pVCpu->CTX_SUFF(pVM), pVCpu, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet,
+                                            rcRZ);
+                    break;
+                }
 
-                    Log4(("APIC%u: APICLocalInterrupt: Sending interrupt. enmDeliveryMode=%u u8Pin=%u uVector=%u\n",
-                          pVCpu->idCpu, enmDeliveryMode, u8Pin, uVector));
-
-                    rcStrict = apicSendIntr(pVCpu, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet, rcRZ);
+                case XAPICDELIVERYMODE_EXTINT:
+                {
+                    Log4(("APIC%u: APICLocalInterrupt: External interrupt. u8Pin=%u u8Level=%u\n", pVCpu->idCpu, u8Pin, u8Level));
+                    if (u8Level)
+                        APICSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
+                    else
+                        APICClearInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
                     break;
                 }
 
@@ -2147,7 +2158,7 @@ VMMDECL(int) APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr
     STAM_COUNTER_INC(&CTXSUFF(pApicCpu->StatMmioWrite));
 #endif
 
-    LogRel(("APIC%u: APICWriteMmio: offReg=%#RX16\n", pVCpu->idCpu, offReg));
+    LogRel(("APIC%u: APICWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
 
     int rc = VBOXSTRICTRC_VAL(apicWriteRegister(pApicDev, pVCpu, offReg, uValue));
     return rc;
