@@ -66,7 +66,8 @@ AssertCompileSize(IEMMODE, 4);
 #define IEMTARGETCPU_DYNAMIC    UINT32_C(0)
 /** Intel 8086/8088.  */
 #define IEMTARGETCPU_8086       UINT32_C(1)
-/** NEC V20/V30.  */
+/** NEC V20/V30.
+ * @remarks must be between 8086 and 80186. */
 #define IEMTARGETCPU_V20        UINT32_C(2)
 /** Intel 80186/80188.  */
 #define IEMTARGETCPU_186        UINT32_C(3)
