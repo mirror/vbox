@@ -324,8 +324,10 @@ VMMR3DECL(CPUMMICROARCH) CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVendor
                 }
                 break;
             /* The following are not kosher but kind of follow intuitively from 6, 5 & 4. */
-            case 1:
+            case 0:
                 return kCpumMicroarch_Intel_8086;
+            case 1:
+                return kCpumMicroarch_Intel_80186;
             case 2:
                 return kCpumMicroarch_Intel_80286;
         }
