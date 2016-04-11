@@ -71,18 +71,33 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         /*
          * Host and guest CPU information.
          */
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
-        pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_CURRENT;
-#endif
         if (idCpu == 0)
         {
             pVCpu->iem.s.enmCpuVendor             = CPUMGetGuestCpuVendor(pVM);
             pVCpu->iem.s.enmHostCpuVendor         = CPUMGetHostCpuVendor(pVM);
+#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
+            switch (pVM->cpum.ro.GuestFeatures.enmMicroarch)
+            {
+                case kCpumMicroarch_Intel_8086:     pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_8086; break;
+                case kCpumMicroarch_Intel_80186:    pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_186; break;
+                case kCpumMicroarch_Intel_80286:    pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_286; break;
+                case kCpumMicroarch_Intel_80386:    pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_386; break;
+                case kCpumMicroarch_Intel_80486:    pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_486; break;
+                case kCpumMicroarch_Intel_P5:       pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_PENTIUM; break;
+                case kCpumMicroarch_Intel_P6:       pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_PPRO; break;
+                case kCpumMicroarch_NEC_V20:        pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_V20; break;
+                case kCpumMicroarch_NEC_V30:        pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_V20; break;
+                default:                            pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_CURRENT; break;
+            }
+#endif
         }
         else
         {
             pVCpu->iem.s.enmCpuVendor             = pVM->aCpus[0].iem.s.enmCpuVendor;
             pVCpu->iem.s.enmHostCpuVendor         = pVM->aCpus[0].iem.s.enmHostCpuVendor;
+#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
+            pVCpu->iem.s.uTargetCpu               = pVM->aCpus[0].iem.s.uTargetCpu;
+#endif
         }
 
         /*

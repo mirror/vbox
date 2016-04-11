@@ -552,7 +552,7 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
     }
 
     /*
-     * Ok, clear RF and VM and push the flags.
+     * Ok, clear RF and VM, adjust for ancient CPUs, and push the flags.
      */
     fEfl &= ~(X86_EFL_RF | X86_EFL_VM);
 
@@ -560,6 +560,11 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
     switch (enmEffOpSize)
     {
         case IEMMODE_16BIT:
+#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
+            AssertCompile(IEMTARGETCPU_8086 <= IEMTARGETCPU_186 && IEMTARGETCPU_V20 <= IEMTARGETCPU_186 && IEMTARGETCPU_286 > IEMTARGETCPU_186);
+            if (pIemCpu->uTargetCpu <= IEMTARGETCPU_186)
+                fEfl |= UINT16_C(0xf000);
+#endif
             rcStrict = iemMemStackPushU16(pIemCpu, (uint16_t)fEfl);
             break;
         case IEMMODE_32BIT:
@@ -668,6 +673,23 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
                 if (rcStrict != VINF_SUCCESS)
                     return rcStrict;
                 fEflNew = u16Value | (fEflOld & UINT32_C(0xffff0000));
+
+#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
+                /*
+                 * Ancient CPU adjustments:
+                 *  - 8086, 80186, V20/30:
+                 *    Fixed bits 15:12 bits are not kept correctly internally, mostly for
+                 *    practical reasons (masking below).  We add them when pushing flags.
+                 *  - 80286:
+                 *    The NT and IOPL flags cannot be popped from real mode and are
+                 *    therefore always zero (since a 286 can never exit from PM and
+                 *    their initial value is zero).  This changed on a 386 and can
+                 *    therefore be used to detect 286 or 386 CPU in real mode.
+                 */
+                if (   pIemCpu->uTargetCpu == IEMTARGETCPU_286
+                    && !(pCtx->cr0 & X86_CR0_PE) )
+                    fEflNew &= ~(X86_EFL_NT | X86_EFL_IOPL);
+#endif
                 break;
             }
             case IEMMODE_32BIT:
@@ -2764,6 +2786,11 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
         uNewFlags |= Efl.u & ((UINT32_C(0xffff0000) | X86_EFL_1) & ~X86_EFL_RF);
         /** @todo The intel pseudo code does not indicate what happens to
          *        reserved flags. We just ignore them. */
+#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
+        /* Ancient CPU adjustments: See iemCImpl_popf. */
+        if (pIemCpu->uTargetCpu == IEMTARGETCPU_286)
+            uNewFlags &= ~(X86_EFL_NT | X86_EFL_IOPL);
+#endif
     }
     /** @todo Check how this is supposed to work if sp=0xfffe. */
     Log7(("iemCImpl_iret_real_v8086: uNewCs=%#06x uNewRip=%#010x uNewFlags=%#x uNewRsp=%#18llx\n",

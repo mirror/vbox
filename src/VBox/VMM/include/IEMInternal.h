@@ -50,14 +50,15 @@ RT_C_DECLS_BEGIN
 
 
 /** @def IEM_CFG_TARGET_CPU
- * The minimum target CPU for the IEM emulation (IEMTARGETCPU_XXX value). The
- * default is the a "current" CPU, i.e. something newer than the pentium pro. By
- * twiddling this value, you can make IEM try behave like older CPUs which is
- * useful when checking software that needs to run on real old CPUs.
+ * The minimum target CPU for the IEM emulation (IEMTARGETCPU_XXX value).
+ *
+ * By default we allow this to be configured by the user via the
+ * CPUM/GuestCpuName config string, but this comes at a slight cost during
+ * decoding.  So, for applications of this code where there is no need to
+ * be dynamic wrt target CPU, just modify this define.
  */
 #if !defined(IEM_CFG_TARGET_CPU) || defined(DOXYGEN_RUNNING)
-# define IEM_CFG_TARGET_CPU IEMTARGETCPU_CURRENT
-/*# define IEM_CFG_TARGET_CPU IEMTARGETCPU_DYNAMIC*/
+# define IEM_CFG_TARGET_CPU     IEMTARGETCPU_DYNAMIC
 #endif
 
 

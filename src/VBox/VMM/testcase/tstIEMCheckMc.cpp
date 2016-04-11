@@ -426,6 +426,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_SUB_GREG_U16(a_iGReg, a_u16Value)        do { CHK_CONST(uint16_t, a_u16Value); } while (0)
 #define IEM_MC_SUB_GREG_U32(a_iGReg, a_u32Value)        do { CHK_CONST(uint32_t, a_u32Value); } while (0)
 #define IEM_MC_SUB_GREG_U64(a_iGReg, a_u64Value)        do { CHK_CONST(uint64_t, a_u64Value); } while (0)
+#define IEM_MC_SUB_LOCAL_U16(a_u16Value, a_u16Const)    do { CHK_CONST(uint16_t, a_u16Const); } while (0)
 
 #define IEM_MC_AND_GREG_U8(a_iGReg, a_u8Value)          do { CHK_CONST(uint8_t,  a_u8Value);  } while (0)
 #define IEM_MC_AND_GREG_U16(a_iGReg, a_u16Value)        do { CHK_CONST(uint16_t, a_u16Value); } while (0)
@@ -458,6 +459,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_AND_ARG_U32(a_u32Arg, a_u32Mask)         do { (a_u32Arg)   &= (a_u32Mask); CHK_TYPE(uint32_t, a_u32Arg);   CHK_CONST(uint32_t, a_u32Mask); } while (0)
 #define IEM_MC_AND_ARG_U64(a_u64Arg, a_u64Mask)         do { (a_u64Arg)   &= (a_u64Mask); CHK_TYPE(uint64_t, a_u64Arg);   CHK_CONST(uint64_t, a_u64Mask); } while (0)
 #define IEM_MC_OR_LOCAL_U8(a_u8Local, a_u8Mask)         do { (a_u8Local)  |= (a_u8Mask);  CHK_TYPE(uint8_t,  a_u8Local);  CHK_CONST(uint8_t,  a_u8Mask);  } while (0)
+#define IEM_MC_OR_LOCAL_U16(a_u16Local, a_u16Mask)      do { (a_u16Local) |= (a_u16Mask); CHK_TYPE(uint16_t, a_u16Local); CHK_CONST(uint16_t, a_u16Mask); } while (0)
 #define IEM_MC_OR_LOCAL_U32(a_u32Local, a_u32Mask)      do { (a_u32Local) |= (a_u32Mask); CHK_TYPE(uint32_t, a_u32Local); CHK_CONST(uint32_t, a_u32Mask); } while (0)
 #define IEM_MC_SAR_LOCAL_S16(a_i16Local, a_cShift)      do { (a_i16Local) >>= (a_cShift); CHK_TYPE(int16_t, a_i16Local);  CHK_CONST(uint8_t,  a_cShift);  } while (0)
 #define IEM_MC_SAR_LOCAL_S32(a_i32Local, a_cShift)      do { (a_i32Local) >>= (a_cShift); CHK_TYPE(int32_t, a_i32Local);  CHK_CONST(uint8_t,  a_cShift);  } while (0)
