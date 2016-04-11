@@ -89,7 +89,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  MISCBINS += VBoxPcBios8086
  VBoxPcBios8086_EXTENDS = VBoxPcBios386
  VBoxPcBios8086_CFLAGS  = -0
- VBoxPcBios8086_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxPcBios386_DEFS)) VBOX_BIOS_CPU=80186 ## @todo get it working as 8086!
+ VBoxPcBios8086_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxPcBios386_DEFS)) VBOX_BIOS_CPU=8086
 
 
  #

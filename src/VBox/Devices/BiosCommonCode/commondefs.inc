@@ -45,9 +45,57 @@ SET_DEFAULT_CPU_286 macro
 endm
 
 
+;;
+; Pretends to do a call by pushing the return address and jumping
+; to the function.
+;
+; This is slightly problematic on 8086 since it doesn't support pushing
+; word immediates. OTOH, it support pushing memory, so we'll do that
+; instead when targeting 8086.
+;
+if 0 ;; this crap crashes wasm, makes it call exit(0), or similar weird stuff.
+     ;; switched to a simpler approach where I define the one return address variable myself.
+DO_JMP_CALL     macro calling, returning
+ if VBOX_BIOS_CPU gt 8086
+        push    returning
+        jmp     calling
+ else
+        push    word ptr cs:[%jmp_call_addr_&returning]
+        jmp     calling
+;public jmp_call_addr_&returning
+%jmp_call_addr_&returning: dw offset retaddr
+ endif
+endm
+
+DO_JMP_CALL_AGAIN macro calling, returning
+ if VBOX_BIOS_CPU gt 8086
+        push    returning
+        jmp     calling
+ else
+        push    word ptr cs:[%jmp_call_addr_&returning]
+        jmp     calling
+ endif
+endm
+
+else  ; Simplified.
+DO_JMP_CALL_EX  macro calling, returning, returning_ptr_var
+ if VBOX_BIOS_CPU gt 8086
+        push    returning
+        jmp     calling
+  else
+        push    word ptr cs:[returning_ptr_var]
+        jmp     calling
+  endif
+endm
+
+endif ; Simplified.
+
+
 ;; For handling the pusha instruction depending on target CPU.
-DO_PUSHA        macro
- if VBOX_BIOS_CPU eq 8086
+DO_pusha        macro
+ if VBOX_BIOS_CPU gt 8086
+        pusha
+ else
         push    ax
         push    cx
         push    dx
@@ -56,15 +104,15 @@ DO_PUSHA        macro
         push    bp
         push    si
         push    di
- else
-        pusha
  endif
 endm
 
 
 ;; For handling the popad/popa instruction depending on target CPU.
-DO_POPA         macro
- if VBOX_BIOS_CPU eq 8086
+DO_popa         macro
+ if VBOX_BIOS_CPU gt 8086
+        popa
+ else
         pop     di
         pop     si
         pop     bp
@@ -73,15 +121,17 @@ DO_POPA         macro
         pop     dx
         pop     cx
         pop     ax
- else
-        popa
  endif
 endm
 
 
 ;; For handling the pushad/pusha instruction depending on target CPU.
 DO_PUSHAD       macro
- if VBOX_BIOS_CPU eq 8086
+ if VBOX_BIOS_CPU ge 80386
+        pushad
+ elseif VBOX_BIOS_CPU gt 8086
+        pusha
+ else
         push    ax
         push    cx
         push    dx
@@ -90,17 +140,17 @@ DO_PUSHAD       macro
         push    bp
         push    si
         push    di
- elseif VBOX_BIOS_CPU lt 80386
-        pusha
- else
-        pushad
  endif
 endm
 
 
 ;; For handling the popad/popa instruction depending on target CPU.
 DO_POPAD        macro
- if VBOX_BIOS_CPU eq 8086
+ if VBOX_BIOS_CPU ge 80386
+        popad
+ elseif VBOX_BIOS_CPU gt 8086
+        popa
+ else
         pop     di
         pop     si
         pop     bp
@@ -109,12 +159,72 @@ DO_POPAD        macro
         pop     dx
         pop     cx
         pop     ax
- elseif VBOX_BIOS_CPU lt 80386
-        popa
- else
-        popad
  endif
 endm
+
+
+;; ASSUMES working stack.
+DO_shr          macro reg, count
+ if VBOX_BIOS_CPU ge 80186
+        shr     reg, count
+ else
+  if count ge 6
+        push    cx
+        mov     cl, count
+        shr     reg, cl
+        pop     cx
+  else
+   if count ge 5
+        shr     reg, 1
+   endif
+   if count ge 4
+        shr     reg, 1
+   endif
+   if count ge 3
+        shr     reg, 1
+   endif
+   if count ge 2
+        shr     reg, 1
+   endif
+   if count ge 1
+        shr     reg, 1
+   endif
+  endif
+ endif
+endm
+
+
+;; ASSUMES working stack.
+DO_shl          macro reg, count
+ if VBOX_BIOS_CPU ge 80186
+        shl     reg, count
+ else
+  if count ge 6
+        push    cx
+        mov     cl, count
+        shl     reg, cl
+        pop     cx
+  else
+   if count ge 5
+        shl     reg, 1
+   endif
+   if count ge 4
+        shl     reg, 1
+   endif
+   if count ge 3
+        shl     reg, 1
+   endif
+   if count ge 2
+        shl     reg, 1
+   endif
+   if count ge 1
+        shl     reg, 1
+   endif
+  endif
+ endif
+endm
+
+
 
 
 ;; Adds a special label that will have its address checked after linking.

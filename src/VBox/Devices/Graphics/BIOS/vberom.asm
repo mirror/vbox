@@ -800,7 +800,7 @@ if 0
       ; this is where we could wait for vertical retrace
 endif
 set_palette_data:
-  DO_PUSHAD
+  DO_pushad
   push  ds
   push  es
   pop   ds
@@ -830,13 +830,13 @@ else
 endif
   loop  set_pal_loop
   pop   ds
-  DO_POPAD
+  DO_popad
 vbe_09_ok:
   mov  ax, 004Fh
   ret
 
 get_palette_data:
-  DO_PUSHAD
+  DO_pushad
   mov   al, dl
   mov   dx, VGAREG_DAC_READ_ADDRESS
   out   dx, al
@@ -863,7 +863,7 @@ get_pal_loop:
   stosw
 endif
   loop  get_pal_loop
-  DO_POPAD
+  DO_popad
   jmp   vbe_09_ok
 
 vbe_09_unsupported:

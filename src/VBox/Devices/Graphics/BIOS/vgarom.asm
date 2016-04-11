@@ -86,11 +86,11 @@ vgabios_int10_handler:
 ifdef VGA_DEBUG
   push es
   push ds
-  DO_PUSHA
+  DO_pusha
   mov   bx, 0C000h
   mov   ds, bx
   call _int10_debugmsg
-  DO_POPA
+  DO_popa
   pop ds
   pop es
 endif
@@ -199,14 +199,14 @@ endif
 int10_normal:
   push es
   push ds
-  DO_PUSHA
+  DO_pusha
 
 ;; We have to set ds to access the right data segment
   mov   bx, 0C000h
   mov   ds, bx
   call _int10_func
 
-  DO_POPA
+  DO_popa
   pop ds
   pop es
 int10_end:

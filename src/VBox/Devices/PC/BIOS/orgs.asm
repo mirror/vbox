@@ -160,6 +160,9 @@ public		int11_handler
 public		int12_handler
 public		int13_handler
 public		int13_relocated
+if VBOX_BIOS_CPU eq 8086
+public 	jmp_call_ret_int13_out
+endif
 public		int15_handler
 public		int17_handler
 public		int19_handler
@@ -170,8 +173,10 @@ public		rom_fdpt
 public		cpu_reset
 public		normal_post
 public		eoi_jmp_post
+public		no_eoi_jmp_post
 public		eoi_master_pic
 public		ebda_post
+public		seg_40_value
 public		hard_drive_post
 public		int13_legacy
 public		int70_handler
@@ -238,6 +243,8 @@ no_eoi_jmp_post:
 		mov	ds, ax
 		jmp	dword ptr ds:[0467h]
 
+seg_40_value:	dw 40h ;; Replaces a push 40; pop ds.
+
 ;; --------------------------------------------------------
 ;; POST entry point
 ;; --------------------------------------------------------
@@ -253,6 +260,8 @@ if VBOX_BIOS_CPU ge 80286
 		test	ax, 1
 		jz	in_real_mode
 		SET_DEFAULT_CPU_286
+else
+		jmp	in_real_mode
 endif
 
 		;; Reset processor to get out of protected mode. Use system
@@ -287,8 +296,7 @@ in_real_mode:
 		;; boot request or an attempt to reset the system via triple
 		;; faulting the CPU or similar. Check reboot flag.
 		;; NB: At this point, registers need not be preserved.
-		push	40h
-		pop	ds
+               mov     ds, cs:[seg_40_value]
 		cmp	word ptr ds:[72h], 1234h
 		jnz	reset_sys	; trigger system reset
 
@@ -499,7 +507,7 @@ endif
 		call	detect_parport
 		mov	dx, 278h	; parallel port 2
 		call	detect_parport
-		shl	bx, 0Eh
+		DO_shl	bx, 0Eh
 		mov	ax, ds:[410h]	; equipment word
 		and	ax, 3FFFh
 		or	ax, bx		; set number of parallel ports
@@ -519,7 +527,7 @@ endif
 		call	detect_serial
 		mov	dx, 2E8h	; fourth serial address
 		call	detect_serial
-		shl	bx, 9
+		DO_shl	bx, 9
 		mov	ax, ds:[410h]	; equipment word
 		and	ax, 0F1FFh	; bits 9-11 determine serial ports
 		or	ax, bx
@@ -759,10 +767,10 @@ endif
 int14_handler:
 		push	ds
 		push	es
-		DO_PUSHA
+		DO_pusha
 		C_SETUP
 		call	_int14_function
-		DO_POPA
+		DO_popa
 		pop	es
 		pop	ds
 		iret
@@ -775,10 +783,10 @@ int14_handler:
 dummy_isr:
 		push	ds
 		push	es
-		DO_PUSHA
+		DO_pusha
 		C_SETUP
 		call	_dummy_isr_function
-		DO_POPA
+		DO_popa
 		pop	es
 		pop	ds
 		iret
@@ -836,7 +844,7 @@ int16_handler:
 		sti
 		push	es
 		push	ds
-		DO_PUSHA
+		DO_pusha
 
 		cmp	ah, 0
 		je	int16_F00
@@ -846,7 +854,7 @@ int16_handler:
 
 		C_SETUP
 		call	_int16_function
-		DO_POPA
+		DO_popa
 		pop	ds
 		pop	es
 		iret
@@ -873,7 +881,7 @@ endif
 int16_key_found:
 		C_SETUP
 		call	_int16_function
-		DO_POPA
+		DO_popa
 		pop	ds
 		pop	es
 ; TODO: review/enable? If so, flags should be restored here?
@@ -918,7 +926,7 @@ int09_handler:
 
 		in	al, KBC_DATA
 		push	ds
-		DO_PUSHA
+		DO_pusha
 		cld			; Before INT 15h (and any C code)
 ifdef BX_CALL_INT15_4F
 		mov	ah, 4Fh
@@ -951,7 +959,7 @@ int09_process_key:
 		pop	es
 
 int09_done:
-		DO_POPA
+		DO_popa
 		pop	ds
 		cli
 		call	eoi_master_pic
@@ -968,14 +976,14 @@ int09_finish:
 ;; --------------------------------------------------------
 
 int06_handler:
-		DO_PUSHA
+		DO_pusha
 		push	es
 		push	ds
 		C_SETUP
 		call	_inv_op_handler
 		pop	ds
 		pop	es
-		DO_POPA
+		DO_popa
 		iret
 
 ;; --------------------------------------------------------
@@ -998,12 +1006,14 @@ int13_relocated:
 		cmp	ah, 4Dh
 		ja	int13_not_eltorito
 
-		DO_PUSHA
+		DO_pusha
 		push	es
 		push	ds
 		C_SETUP			; TODO: setup C envrionment only once?
-		push	int13_out	; simulate a call
-		jmp	_int13_eltorito	; ELDX not used
+		DO_JMP_CALL_EX _int13_eltorito, int13_out, jmp_call_ret_int13_out ; ELDX not used
+if VBOX_BIOS_CPU eq 8086
+jmp_call_ret_int13_out: dw offset int13_out
+endif
 
 int13_not_eltorito:
 		push	es
@@ -1030,13 +1040,12 @@ int13_not_eltorito:
 		pop	ax
 		pop	es
 
-		DO_PUSHA
+		DO_pusha
 		push	es
 		push	ds
 		C_SETUP			; TODO: setup environment only once?
 
-		push	int13_out	; simulate a call
-		jmp	_int13_cdemu	; ELDX not used
+		DO_JMP_CALL_EX _int13_cdemu, int13_out, jmp_call_ret_int13_out ; ELDX not used
 
 int13_nocdemu:
 		and	dl, 0E0h	; mask to get device class
@@ -1079,12 +1088,11 @@ int13_legacy:
 		C_SETUP			; TODO: setup environment only once?
 
 		;; now the registers can be restored with
-		;; pop ds; pop es; DO_POPA; iret
+		;; pop ds; pop es; DO_popa; iret
 		test	dl, 80h		; non-removable?
 		jnz	int13_notfloppy
 
-		push	int13_out	; simulate a near call
-		jmp	_int13_diskette_function
+		DO_JMP_CALL_EX _int13_diskette_function, int13_out, jmp_call_ret_int13_out
 
 int13_notfloppy:
 		cmp	dl, 0E0h
@@ -1115,7 +1123,7 @@ int13x:
 int13_out:
 		pop	ds
 		pop	es
-		DO_POPA
+		DO_popa
 		iret
 
 
@@ -1213,7 +1221,7 @@ floppy_post	proc	near
 
 look_drive0:
 		; TODO: pre-init bl to reduce jumps
-		shr	al, 4		; drive 0 in high nibble
+		DO_shr	al, 4		; drive 0 in high nibble
 		jz	f0_missing	; jump if no drive
 		mov	bl, 7		; drv0 determined, multi-rate, chgline
 		jmp	look_drive1
@@ -1254,8 +1262,16 @@ bcd_to_bin	proc	near
 
 		;; in : AL in packed BCD format
 		;; out: AL in binary, AH always 0
+if VBOX_BIOS_CPU ge 80186
 		shl	ax, 4
 		shr	al, 4
+else
+		push	cx
+               mov	cl, 4
+		shl	ax, cl
+		shr	al, cl
+               pop	cx
+endif
 		aad
 		ret
 
@@ -1436,10 +1452,10 @@ _diskette_param_table:
 int17_handler:
 		push	ds
 		push	es
-		DO_PUSHA
+		DO_pusha
 		C_SETUP
 		call	_int17_function
-		DO_POPA
+		DO_popa
 		pop	es
 		pop	ds
 		iret
@@ -1563,7 +1579,7 @@ bios_initiated_boot:
 
 		; 3rd boot device
 		mov	ax, 3
-		push	3
+		push	ax
 		call	_int19_function
 		inc	sp
 		inc	sp
@@ -1584,7 +1600,7 @@ boot_setup:
 ;;		mov	dl, bl		; tell guest OS what boot drive is
 if VBOX_BIOS_CPU lt 80386
 		mov	[bp], ax
-               shl	ax, 4
+               DO_shl	ax, 4
 		mov	[bp+2], ax	; set ip
 		mov	ax, [bp]
 else
@@ -1657,7 +1673,7 @@ int15_handler:
 		je	int15_handler32
 		cmp	ah, 0d0h
 		je	int15_handler32
-		DO_PUSHA
+		DO_pusha
 		cmp	ah, 53h		; APM function?
 		je	apm_call
 		cmp	ah, 0C2h	; PS/2 mouse function?
@@ -1665,7 +1681,7 @@ int15_handler:
 
 		call	_int15_function
 int15_handler_popa_ret:
-		DO_POPA
+		DO_popa
 int15_handler32_ret:
 		pop	es
 		pop	ds
@@ -1689,9 +1705,9 @@ if VBOX_BIOS_CPU ge 80386
 		popad
 		.286
 else
-		DO_PUSHA
+		DO_pusha
 		call	_int15_function32
-		DO_POPA
+		DO_popa
 endif
 		jmp	int15_handler32_ret
 
@@ -1718,21 +1734,27 @@ carry_set:
 int74_handler	proc
 
 		sti
-		DO_PUSHA
+		DO_pusha
 		push	es
 		push	ds
-		push	0		; placeholder for status
-		push	0		; placeholder for X
-		push	0		; placeholder for Y
-		push	0		; placeholder for Z
-		push	0		; placeholder for make_far_call bool
+               xor	ax, ax
+		push	ax		; placeholder for status
+		push	ax		; placeholder for X
+		push	ax		; placeholder for Y
+		push	ax		; placeholder for Z
+		push	ax		; placeholder for make_far_call bool
 		C_SETUP
 		call	_int74_function
 		pop	cx		; pop make_far_call flag
 		jcxz	int74_done
 
 		;; make far call to EBDA:0022
+if VBOX_BIOS_CPU ge 80186
 		push	0
+else
+               xor	ax, ax
+               push	ax
+endif
 		pop	ds
 		push	ds:[40Eh]
 		pop	ds
@@ -1743,7 +1765,7 @@ int74_done:
 		add	sp, 8		; remove status, X, Y, Z
 		pop	ds
 		pop	es
-		DO_POPA
+		DO_popa
 		iret
 
 int74_handler	endp
@@ -1762,6 +1784,43 @@ int76_handler	proc
 		iret
 
 int76_handler	endp
+
+
+;;
+;; IRQ 8 handler (RTC)
+;;
+int70_handler:
+		push	es
+		push	ds
+		DO_pusha
+		C_SETUP
+		call	_int70_function
+		DO_popa
+		pop	ds
+		pop	es
+		iret
+
+
+
+if VBOX_BIOS_CPU lt 80386
+;
+; We're tight on space down below in the int08_handler, so put
+; the 16-bit rollover code here.
+;
+int08_maybe_rollover:
+               ja	int08_rollover
+		cmp	ax, 00B0h
+               jb	int08_rollover_store
+		;; there has been a midnight rollover
+int08_rollover:
+		xor	dx, dx
+		xor	ax, ax
+
+		inc	byte ptr ds:[70h]	; increment rollover flag
+int08_rollover_store:
+		jmp	int08_store_ticks
+endif
+
 
 ;; --------------------------------------------------------
 ;; 8x8 font (first 128 characters)
@@ -1795,47 +1854,15 @@ endif
 int1a_normal:
 		push	es
 		push	ds
-		DO_PUSHA
+		DO_pusha
 		C_SETUP
 int1a_callfunction:
 		call	_int1a_function
-		DO_POPA
+		DO_popa
 		pop	ds
 		pop	es
 		iret
 
-
-;;
-;; IRQ 8 handler (RTC)
-;;
-int70_handler:
-		push	es
-		push	ds
-		DO_PUSHA
-		C_SETUP
-		call	_int70_function
-		DO_POPA
-		pop	ds
-		pop	es
-		iret
-
-if VBOX_BIOS_CPU lt 80386
-;
-; We're tight on space down below in the int08_handler, so put
-; the 16-bit rollover code here.
-;
-int08_maybe_rollover:
-               ja	int08_rollover
-		cmp	ax, 00B0h
-               jb	int08_store_ticks
-		;; there has been a midnight rollover
-int08_rollover:
-		xor	dx, dx
-		xor	ax, ax
-
-		inc	byte ptr ds:[70h]	; increment rollover flag
-		jmp	int08_store_ticks
-endif
 
 ;; --------------------------------------------------------
 ;; Timer tick - IRQ 0 handler
@@ -1873,7 +1900,8 @@ if VBOX_BIOS_CPU ge 80386
                jb	int08_store_ticks
 else
 		cmp	dx, 18h
-               jae	int08_maybe_rollover
+               jb	int08_store_ticks
+               jmp	int08_maybe_rollover
 endif
 
 if VBOX_BIOS_CPU ge 80386

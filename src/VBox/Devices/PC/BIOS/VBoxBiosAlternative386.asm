@@ -15398,9 +15398,9 @@ section BIOS32_DATA progbits vstart=0xddcc align=1 ; size=0x0 class=FAR_DATA gro
   times 564 db 0
 
 section BIOSSEG progbits vstart=0xe000 align=1 ; size=0x2000 class=CODE group=AUTO
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 058h, 04dh
+biosorg_check_before_or_at_0E02Eh:           ; 0xfe000 LB 0x30
+    times 0x2e db 0
+    db  'XM'
 eoi_both_pics:                               ; 0xfe030 LB 0x4
     mov AL, strict byte 020h                  ; b0 20
     out strict byte 0a0h, AL                  ; e6 a0
@@ -15414,12 +15414,13 @@ set_int_vects:                               ; 0xfe039 LB 0xb
     add bx, strict byte 00004h                ; 83 c3 04
     loop 0e039h                               ; e2 f6
     retn                                      ; c3
-eoi_jmp_post:                                ; 0xfe044 LB 0x17
+eoi_jmp_post:                                ; 0xfe044 LB 0xb
     call 0e030h                               ; e8 e9 ff
     db  033h, 0c0h
     ; xor ax, ax                                ; 33 c0
     mov ds, ax                                ; 8e d8
     jmp far [00467h]                          ; ff 2e 67 04
+biosorg_check_before_or_at_0E059h:           ; 0xfe04f LB 0xc
     times 0xa db 0
     db  'XM'
 post:                                        ; 0xfe05b LB 0x69
@@ -15478,7 +15479,7 @@ post:                                        ; 0xfe05b LB 0x69
     cmp AL, strict byte 00ah                  ; 3c 0a
     je short 0e047h                           ; 74 85
     jmp short 0e0c4h                          ; eb 00
-normal_post:                                 ; 0xfe0c4 LB 0x1ff
+normal_post:                                 ; 0xfe0c4 LB 0x1f6
     mov ax, 07800h                            ; b8 00 78
     db  08bh, 0e0h
     ; mov sp, ax                                ; 8b e0
@@ -15679,6 +15680,7 @@ normal_post:                                 ; 0xfe0c4 LB 0x1ff
     mov word [001c2h], ax                     ; a3 c2 01
     call 0edbfh                               ; e8 07 0b
     jmp short 0e31bh                          ; eb 61
+biosorg_check_before_or_at_0E2C1h:           ; 0xfe2ba LB 0x9
     add byte [bx+si], al                      ; 00 00
     add byte [bx+si], al                      ; 00 00
     add byte [bx+si], al                      ; 00 00
@@ -15694,7 +15696,7 @@ int75_handler:                               ; 0xfe2ca LB 0x8
     call 0e030h                               ; e8 61 fd
     int 002h                                  ; cd 02
     iret                                      ; cf
-hard_drive_post:                             ; 0xfe2d2 LB 0x12c
+hard_drive_post:                             ; 0xfe2d2 LB 0xbd
     db  033h, 0c0h
     ; xor ax, ax                                ; 33 c0
     mov ds, ax                                ; 8e d8
@@ -15774,6 +15776,7 @@ hard_drive_post:                             ; 0xfe2d2 LB 0x12c
     popaw                                     ; 61
     sti                                       ; fb
     retf 00002h                               ; ca 02 00
+biosorg_check_before_or_at_0E3FCh:           ; 0xfe38f LB 0x6f
     times 0x6d db 0
     db  'XM'
 int13_handler:                               ; 0xfe3fe LB 0x3
@@ -15829,17 +15832,19 @@ rom_fdpt:                                    ; 0xfe401 LB 0x2f1
     db  04dh
 int19_handler:                               ; 0xfe6f2 LB 0x3
     jmp near 0f0ach                           ; e9 b7 09
-biosorg_check_0E6F5h:                        ; 0xfe6f5 LB 0x34
+biosorg_check_at_0E6F5h:                     ; 0xfe6f5 LB 0xa
     or word [bx+si], ax                       ; 09 00
     cld                                       ; fc
     add byte [bx+di], al                      ; 00 01
     je short 0e73ch                           ; 74 40
-    times 0x2b db 0
+    times 0x3 db 0
+biosorg_check_before_or_at_0E727h:           ; 0xfe6ff LB 0x2a
+    times 0x28 db 0
     db  'XM'
-biosorg_check_0E729h:                        ; 0xfe729 LB 0x10
+biosorg_check_at_0E729h:                     ; 0xfe729 LB 0x10
     times 0xe db 0
     db  'XM'
-biosorg_check_0E739h:                        ; 0xfe739 LB 0x1a
+biosorg_check_at_0E739h:                     ; 0xfe739 LB 0x1a
     push DS                                   ; 1e
     push ES                                   ; 06
     pushaw                                    ; 60
@@ -15882,7 +15887,7 @@ init_pic:                                    ; 0xfe753 LB 0x25
     mov AL, strict byte 08fh                  ; b0 8f
     out strict byte 0a1h, AL                  ; e6 a1
     retn                                      ; c3
-ebda_post:                                   ; 0xfe778 LB 0xb6
+ebda_post:                                   ; 0xfe778 LB 0x45
     mov ax, 0e746h                            ; b8 46 e7
     mov word [00034h], ax                     ; a3 34 00
     mov ax, 0f000h                            ; b8 00 f0
@@ -15907,9 +15912,10 @@ ebda_post:                                   ; 0xfe778 LB 0xb6
     mov ds, ax                                ; 8e d8
     mov word [0040eh], 09fc0h                 ; c7 06 0e 04 c0 9f
     retn                                      ; c3
+biosorg_check_before_or_at_0E82Ch:           ; 0xfe7bd LB 0x71
     times 0x6f db 0
     db  'XM'
-biosorg_check_0E82Eh:                        ; 0xfe82e LB 0x36
+biosorg_check_at_0E82Eh:                     ; 0xfe82e LB 0x36
     sti                                       ; fb
     push ES                                   ; 06
     push DS                                   ; 1e
@@ -15970,7 +15976,7 @@ pmbios_gdt:                                  ; 0xfe898 LB 0x48
     db  0ffh, 0ffh, 000h, 000h, 00fh, 09bh, 000h, 000h, 0ffh, 0ffh, 000h, 000h, 000h, 093h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  0ffh, 0ffh, 000h, 004h, 000h, 093h, 000h, 000h
-pmode_setup:                                 ; 0xfe8e0 LB 0xa7
+pmode_setup:                                 ; 0xfe8e0 LB 0x5c
     push eax                                  ; 66 50
     push esi                                  ; 66 56
     pushfw                                    ; 9c
@@ -15997,9 +16003,10 @@ pmode_setup:                                 ; 0xfe8e0 LB 0xa7
     pop esi                                   ; 66 5e
     pop eax                                   ; 66 58
     retn                                      ; c3
+biosorg_check_before_or_at_0E985h:           ; 0xfe93c LB 0x4b
     times 0x49 db 0
     db  'XM'
-biosorg_check_0E987h:                        ; 0xfe987 LB 0x2d2
+biosorg_check_at_0E987h:                     ; 0xfe987 LB 0x5c
     cli                                       ; fa
     push ax                                   ; 50
     mov AL, strict byte 0adh                  ; b0 ad
@@ -16057,9 +16064,10 @@ biosorg_check_0E987h:                        ; 0xfe987 LB 0x2d2
     pop ES                                    ; 07
     popaw                                     ; 61
     iret                                      ; cf
+biosorg_check_before_or_at_0EC57h:           ; 0xfe9e3 LB 0x276
     times 0x274 db 0
     db  'XM'
-biosorg_check_0EC59h:                        ; 0xfec59 LB 0x2
+biosorg_check_at_0EC59h:                     ; 0xfec59 LB 0x2
     jmp short 0ecb0h                          ; eb 55
 int13_relocated:                             ; 0xfec5b LB 0x55
     cmp ah, 04ah                              ; 80 fc 4a
@@ -16266,7 +16274,7 @@ bcd_to_bin:                                  ; 0xfedb6 LB 0x9
     shr al, 004h                              ; c0 e8 04
     aad 00ah                                  ; d5 0a
     retn                                      ; c3
-rtc_post:                                    ; 0xfedbf LB 0x198
+rtc_post:                                    ; 0xfedbf LB 0x77
     db  066h, 033h, 0c0h
     ; xor eax, eax                              ; 66 33 c0
     mov AL, strict byte 000h                  ; b0 00
@@ -16314,9 +16322,10 @@ rtc_post:                                    ; 0xfedbf LB 0x198
     ; xor al, al                                ; 32 c0
     mov byte [00470h], AL                     ; a2 70 04
     retn                                      ; c3
+biosorg_check_before_or_at_0EF55h:           ; 0xfee36 LB 0x121
     times 0x11f db 0
     db  'XM'
-int0e_handler:                               ; 0xfef57 LB 0x70
+int0e_handler:                               ; 0xfef57 LB 0x3b
     push ax                                   ; 50
     push dx                                   ; 52
     mov dx, 003f4h                            ; ba f4 03
@@ -16349,6 +16358,7 @@ int0e_handler:                               ; 0xfef57 LB 0x70
     pop dx                                    ; 5a
     pop ax                                    ; 58
     iret                                      ; cf
+biosorg_check_before_or_at_0EFC5h:           ; 0xfef92 LB 0x35
     times 0x33 db 0
     db  'XM'
 _diskette_param_table:                       ; 0xfefc7 LB 0xb
@@ -16360,7 +16370,7 @@ _diskette_param_table:                       ; 0xfefc7 LB 0xb
     insb                                      ; 6c
     db  0f6h
     invd                                      ; 0f 08
-biosorg_check_0EFD2h:                        ; 0xfefd2 LB 0x2
+biosorg_check_at_0EFD2h:                     ; 0xfefd2 LB 0x2
     jmp short 0efd4h                          ; eb 00
 int17_handler:                               ; 0xfefd4 LB 0xd
     push DS                                   ; 1e
@@ -16378,19 +16388,22 @@ _pmode_IDT:                                  ; 0xfefe1 LB 0x6
     db  000h, 000h, 000h, 000h, 00fh, 000h
 _rmode_IDT:                                  ; 0xfefe7 LB 0x6
     db  0ffh, 003h, 000h, 000h, 000h, 000h
-int1c_handler:                               ; 0xfefed LB 0x58
+int1c_handler:                               ; 0xfefed LB 0x1
     iret                                      ; cf
+biosorg_check_before_or_at_0F043h:           ; 0xfefee LB 0x57
     times 0x55 db 0
     db  'XM'
-biosorg_check_0F045h:                        ; 0xff045 LB 0x20
+biosorg_check_at_0F045h:                     ; 0xff045 LB 0x1
     iret                                      ; cf
+biosorg_check_before_or_at_0F063h:           ; 0xff046 LB 0x1f
     times 0x1d db 0
     db  'XM'
-int10_handler:                               ; 0xff065 LB 0x3f
+int10_handler:                               ; 0xff065 LB 0x1
     iret                                      ; cf
+biosorg_check_before_or_at_0F0A2h:           ; 0xff066 LB 0x3e
     times 0x3c db 0
     db  'XM'
-biosorg_check_0F0A4h:                        ; 0xff0a4 LB 0x8
+biosorg_check_at_0F0A4h:                     ; 0xff0a4 LB 0x8
     push CS                                   ; 0e
     pop DS                                    ; 1f
     cld                                       ; fc
@@ -16691,8 +16704,9 @@ _pci_routing_table:                          ; 0xff2c0 LB 0x1e0
     db  000h, 0e0h, 063h, 0f8h, 0deh, 060h, 0f8h, 0deh, 061h, 0f8h, 0deh, 062h, 0f8h, 0deh, 01bh, 000h
     db  000h, 0e8h, 060h, 0f8h, 0deh, 061h, 0f8h, 0deh, 062h, 0f8h, 0deh, 063h, 0f8h, 0deh, 01ch, 000h
     db  000h, 0f0h, 061h, 0f8h, 0deh, 062h, 0f8h, 0deh, 063h, 0f8h, 0deh, 060h, 0f8h, 0deh, 01dh, 000h
-_pci_routing_table_size:                     ; 0xff4a0 LB 0x3a1
+_pci_routing_table_size:                     ; 0xff4a0 LB 0x2
     loopne 0f4a3h                             ; e0 01
+biosorg_check_before_or_at_0F83Fh:           ; 0xff4a2 LB 0x39f
     times 0x39d db 0
     db  'XM'
 int12_handler:                               ; 0xff841 LB 0xc
@@ -16787,7 +16801,7 @@ int74_handler:                               ; 0xff8a9 LB 0x2e
     pop ES                                    ; 07
     popaw                                     ; 61
     iret                                      ; cf
-int76_handler:                               ; 0xff8d7 LB 0x197
+int76_handler:                               ; 0xff8d7 LB 0x12
     push ax                                   ; 50
     push DS                                   ; 1e
     mov ax, strict word 00040h                ; b8 40 00
@@ -16797,6 +16811,7 @@ int76_handler:                               ; 0xff8d7 LB 0x197
     pop DS                                    ; 1f
     pop ax                                    ; 58
     iret                                      ; cf
+biosorg_check_before_or_at_0FA6Ch:           ; 0xff8e9 LB 0x185
     times 0x183 db 0
     db  'XM'
 font8x8:                                     ; 0xffa6e LB 0x400
@@ -16864,7 +16879,7 @@ font8x8:                                     ; 0xffa6e LB 0x400
     db  000h, 000h, 0fch, 098h, 030h, 064h, 0fch, 000h, 01ch, 030h, 030h, 0e0h, 030h, 030h, 01ch, 000h
     db  018h, 018h, 018h, 000h, 018h, 018h, 018h, 000h, 0e0h, 030h, 030h, 01ch, 030h, 030h, 0e0h, 000h
     db  076h, 0dch, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 010h, 038h, 06ch, 0c6h, 0c6h, 0feh, 000h
-biosorg_check_0FE6Eh:                        ; 0xffe6e LB 0x21
+biosorg_check_at_0FE6Eh:                     ; 0xffe6e LB 0x21
     cmp ah, 0b1h                              ; 80 fc b1
     jne short 0fe82h                          ; 75 0f
     push ES                                   ; 06
@@ -16889,7 +16904,7 @@ biosorg_check_0FE6Eh:                        ; 0xffe6e LB 0x21
     pop DS                                    ; 1f
     pop ES                                    ; 07
     iret                                      ; cf
-int70_handler:                               ; 0xffe8f LB 0x16
+int70_handler:                               ; 0xffe8f LB 0xd
     push ES                                   ; 06
     push DS                                   ; 1e
     pushaw                                    ; 60
@@ -16901,11 +16916,12 @@ int70_handler:                               ; 0xffe8f LB 0x16
     pop DS                                    ; 1f
     pop ES                                    ; 07
     iret                                      ; cf
+biosorg_check_before_or_at_0FEA3h:           ; 0xffe9c LB 0x9
     add byte [bx+si], al                      ; 00 00
     add byte [bx+si], al                      ; 00 00
     add byte [bx+si], al                      ; 00 00
     add byte [bx+si+04dh], bl                 ; 00 58 4d
-int08_handler:                               ; 0xffea5 LB 0x4e
+int08_handler:                               ; 0xffea5 LB 0x43
     sti                                       ; fb
     push eax                                  ; 66 50
     push DS                                   ; 1e
@@ -16939,12 +16955,13 @@ int08_handler:                               ; 0xffea5 LB 0x4e
     pop DS                                    ; 1f
     pop eax                                   ; 66 58
     iret                                      ; cf
+biosorg_check_before_or_at_0FEF1h:           ; 0xffee8 LB 0xb
     times 0x9 db 0
     db  'XM'
-biosorg_check_0FEF3h:                        ; 0xffef3 LB 0xd
+biosorg_check_at_0FEF3h:                     ; 0xffef3 LB 0xd
     times 0xb db 0
     db  'XM'
-biosorg_check_0FF00h:                        ; 0xfff00 LB 0x53
+biosorg_check_at_0FF00h:                     ; 0xfff00 LB 0x19
     dec di                                    ; 4f
     jc short 0ff64h                           ; 72 61
     arpl [si+065h], bp                        ; 63 6c 65
@@ -16960,11 +16977,12 @@ biosorg_check_0FF00h:                        ; 0xfff00 LB 0x53
     dec cx                                    ; 49
     dec di                                    ; 4f
     push bx                                   ; 53
+biosorg_check_before_or_at_0FF51h:           ; 0xfff19 LB 0x3a
     times 0x38 db 0
     db  'XM'
 dummy_iret:                                  ; 0xfff53 LB 0x1
     iret                                      ; cf
-biosorg_check_0FF54h:                        ; 0xfff54 LB 0x9c
+biosorg_check_at_0FF54h:                     ; 0xfff54 LB 0x2c
     iret                                      ; cf
     mov ax, ax                                ; 89 c0
     mov ax, ax                                ; 89 c0
@@ -16992,7 +17010,9 @@ biosorg_check_0FF54h:                        ; 0xfff54 LB 0x9c
     push CS                                   ; 0e
     add byte [bx+si], al                      ; 00 00
     add byte [di], ah                         ; 00 25
-    times 0x6f db 0
+    times 0x1 db 0
+biosorg_check_before_or_at_0FFEEh:           ; 0xfff80 LB 0x70
+    times 0x6e db 0
     db  'XM'
 cpu_reset:                                   ; 0xffff0 LB 0x10
     jmp far 0f000h:0e05bh                     ; ea 5b e0 00 f0
