@@ -57,7 +57,7 @@ pmode_setup	proc	near
 		popf
 		pop	esi
 		pop	eax
-		.286
+		SET_DEFAULT_CPU_286
 		ret
 
 pmode_setup	endp

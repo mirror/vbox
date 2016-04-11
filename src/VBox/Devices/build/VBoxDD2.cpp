@@ -37,8 +37,12 @@
 *********************************************************************************************************************************/
 const void *g_apvVBoxDDDependencies2[] =
 {
-    (void *)&g_abPcBiosBinary,
-    (void *)&g_abVgaBiosBinary,
+    (void *)&g_abPcBiosBinary386,
+    (void *)&g_abPcBiosBinary286,
+    (void *)&g_abPcBiosBinary8086,
+    (void *)&g_abVgaBiosBinary386,
+    (void *)&g_abVgaBiosBinary286,
+    (void *)&g_abVgaBiosBinary8086,
 #ifdef VBOX_WITH_PXE_ROM
     (void *)&g_abNetBiosBinary,
 #endif

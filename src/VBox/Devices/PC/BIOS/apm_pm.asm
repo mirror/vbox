@@ -15,6 +15,8 @@
 ;;
 
 
+include commondefs.inc
+
 ;; 16-bit protected mode APM entry point
 
 _TEXT		segment public 'CODE'
@@ -24,7 +26,7 @@ extern		_apm_function:near	; implemented in C code
 
 public		apm_pm16_entry
 
-.286
+SET_DEFAULT_CPU_286
 
 
 ; APM function dispatch table

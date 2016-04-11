@@ -74,8 +74,10 @@ char __far *rep_insb(char __far *buffer, unsigned nbytes, unsigned port);
 char __far *rep_insw(char __far *buffer, unsigned nwords, unsigned port);
 #pragma aux rep_insw = ".286" "rep insw" parm [es di] [cx] [dx] value [es di] modify exact [cx di];
 
+#if VBOX_BIOS_CPU >= 80386
 char __far *rep_insd(char __far *buffer, unsigned ndwords, unsigned port);
-#pragma aux rep_insd = ".386" "rep insd" parm [es di] [cx] [dx] value [es di] modify exact [cx di];
+# pragma aux rep_insd = ".386" "rep insd" parm [es di] [cx] [dx] value [es di] modify exact [cx di];
+#endif
 
 char __far *rep_outsb(char __far *buffer, unsigned nbytes, unsigned port);
 #pragma aux rep_outsb = ".286" "rep outs dx,byte ptr es:[si]" parm [es si] [cx] [dx] value [es si] modify exact [cx si];
@@ -83,8 +85,10 @@ char __far *rep_outsb(char __far *buffer, unsigned nbytes, unsigned port);
 char __far *rep_outsw(char __far *buffer, unsigned nwords, unsigned port);
 #pragma aux rep_outsw = ".286" "rep outs dx,word ptr es:[si]" parm [es si] [cx] [dx] value [es si] modify exact [cx si];
 
+#if VBOX_BIOS_CPU >= 80386
 char __far *rep_outsd(char __far *buffer, unsigned ndwords, unsigned port);
-#pragma aux rep_outsd = ".386" "rep outs dx,dword ptr es:[si]" parm [es si] [cx] [dx] value [es si] modify exact [cx si];
+# pragma aux rep_outsd = ".386" "rep outs dx,dword ptr es:[si]" parm [es si] [cx] [dx] value [es si] modify exact [cx si];
+#endif
 
 uint16_t __far swap_16(uint16_t val);
 #pragma aux swap_16 = "xchg ah,al" parm [ax] value [ax] modify exact [ax] nomemory;

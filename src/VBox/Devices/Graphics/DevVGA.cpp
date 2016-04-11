@@ -6446,8 +6446,29 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     uint32_t        fFlags = 0;
     if (pThis->pbVgaBios == NULL)
     {
-        pbVgaBiosBinary = g_abVgaBiosBinary;
-        cbVgaBiosBinary = g_cbVgaBiosBinary;
+        PVM pVM = PDMDevHlpGetVM(pDevIns);
+        CPUMMICROARCH enmMicroarch = pVM ? pVM->cpum.ro.GuestFeatures.enmMicroarch : kCpumMicroarch_Intel_P6;
+        if (   enmMicroarch == kCpumMicroarch_Intel_8086
+            || enmMicroarch == kCpumMicroarch_Intel_80186
+            || enmMicroarch == kCpumMicroarch_NEC_V20
+            || enmMicroarch == kCpumMicroarch_NEC_V30)
+        {
+            pbVgaBiosBinary = g_abVgaBiosBinary8086;
+            cbVgaBiosBinary = g_cbVgaBiosBinary8086;
+            LogRel(("VGA: Using the 8086 BIOS image!\n"));
+        }
+        else if (enmMicroarch == kCpumMicroarch_Intel_80286)
+        {
+            pbVgaBiosBinary = g_abVgaBiosBinary286;
+            cbVgaBiosBinary = g_cbVgaBiosBinary286;
+            LogRel(("VGA: Using the 286 BIOS image!\n"));
+        }
+        else
+        {
+            pbVgaBiosBinary = g_abVgaBiosBinary386;
+            cbVgaBiosBinary = g_cbVgaBiosBinary386;
+            LogRel(("VGA: Using the 386+ BIOS image.\n"));
+        }
         fFlags          = PGMPHYS_ROM_FLAGS_PERMANENT_BINARY;
     }
     else
@@ -6456,8 +6477,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         cbVgaBiosBinary = pThis->cbVgaBios;
     }
 
-    AssertReleaseMsg(g_cbVgaBiosBinary <= _64K && g_cbVgaBiosBinary >= 32*_1K, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
-    AssertReleaseMsg(RT_ALIGN_Z(g_cbVgaBiosBinary, PAGE_SIZE) == g_cbVgaBiosBinary, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
+    AssertReleaseMsg(cbVgaBiosBinary <= _64K && cbVgaBiosBinary >= 32*_1K, ("cbVgaBiosBinary=%#x\n", cbVgaBiosBinary));
+    AssertReleaseMsg(RT_ALIGN_Z(cbVgaBiosBinary, PAGE_SIZE) == cbVgaBiosBinary, ("cbVgaBiosBinary=%#x\n", cbVgaBiosBinary));
     /* Note! Because of old saved states we'll always register at least 36KB of ROM. */
     rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, RT_MAX(cbVgaBiosBinary, 36*_1K), pbVgaBiosBinary, cbVgaBiosBinary,
                               fFlags, "VGA BIOS");

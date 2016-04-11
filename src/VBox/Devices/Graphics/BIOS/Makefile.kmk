@@ -24,16 +24,17 @@ ifdef VBOX_WITH_OPEN_WATCOM
  #
  # VBoxVgaBios - The VGA BIOS.
  #
- MISCBINS += VBoxVgaBios
- VBoxVgaBios_TEMPLATE = VBoxBios
- VBoxVgaBios_ASFLAGS = -0
- VBoxVgaBios_DEFS = VBE
- VBoxVgaBios_SOURCES = \
+ MISCBINS += VBoxVgaBios386
+ VBoxVgaBios386_TEMPLATE = VBoxBios
+ VBoxVgaBios386_ASFLAGS = -0
+ VBoxVgaBios386_CFLAGS = -3
+ VBoxVgaBios386_DEFS = VBE VBOX_BIOS_CPU=80386
+ VBoxVgaBios386_SOURCES = \
  	vgarom.asm \
  	vberom.asm \
  	vgabios.c \
  	vbe.c
- VBoxVgaBios_LDFLAGS = \
+ VBoxVgaBios386_LDFLAGS = \
  	output raw offset=0xC0000 \
  	order \
  	 clname CODE  \
@@ -43,31 +44,58 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	 clname DATA \
  	  segment _DATA  segaddr=0xC000 offset=0x4600 \
 
+ MISCBINS += VBoxVgaBios286
+ VBoxVgaBios286_EXTENDS = VBoxVgaBios386
+ VBoxVgaBios286_CFLAGS  = -2
+ VBoxVgaBios286_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxVgaBios386_DEFS)) VBOX_BIOS_CPU=80286
+
+ MISCBINS += VBoxVgaBios8086
+ VBoxVgaBios8086_EXTENDS = VBoxVgaBios386
+ VBoxVgaBios8086_CFLAGS  = -0
+ VBoxVgaBios8086_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxVgaBios386_DEFS)) VBOX_BIOS_CPU=8086
+
  #
  # Updates the alternative source file.
  #
- update-vgabios-source +| $(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative.asm $(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative.md5sum: \
- 		$$(VBoxVgaBios_1_TARGET) \
- 		$(VBOX_MAKE_ALTERNATIVE_SOURCE) \
-		$(VBOX_VBOXCMP)
- if1of ($(KBUILD_TYPE), release)
-	$(VBOX_MAKE_ALTERNATIVE_SOURCE) \
-		--bios-image $< \
-		--bios-map $(basename $<).map \
-		--bios-sym $(basename $<).sym \
+ define def_VBoxVgaBiosUpdateAltSource
+  $$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).asm +| $$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).md5sum: \
+  		$$$$(VBoxVgaBios$(1)_1_TARGET) \
+  		$$(VBOX_MAKE_ALTERNATIVE_SOURCE) \
+ 		$$(VBOX_VBOXCMP)
+  if1of ($$(KBUILD_TYPE), release)
+	$$(VBOX_MAKE_ALTERNATIVE_SOURCE) \
+		--bios-image $$< \
+		--bios-map $$(basename $$<).map \
+		--bios-sym $$(basename $$<).sym \
                --bios-type vga \
-		--output $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm
-	$(QUIET)yasm -f bin -o $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.bin $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm
-	$(VBOX_VBOXCMP) $< $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.bin
-	$(CP) --changed -- $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/VBoxVgaBiosAlternative.asm
-	$(REDIRECT) -C $(dir $(VBoxVgaBios_1_TARGET)) -- \
-		$(MD5SUM_EXT) -bo $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum $(notdir $(VBoxVgaBios_1_TARGET))
-	$(CP) --changed -- $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/VBoxVgaBiosAlternative.md5sum
-	$(RM) -f -- $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.bin $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum
- else
-	$(QUIET)$(ECHO) "Fatal error: Can only update VBoxVgaBiosAlternative.asm/md5sum with a release build."
-	$(QUIET)exit 1
- endif
+		--output $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).asm
+	$$(QUIET)yasm -f bin \
+		-o $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).bin \
+		-l $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).lst \
+		$$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).asm
+	$$(VBOX_VBOXCMP) $$< $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).bin
+	$$(CP) --changed -- $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).asm $$(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/VBoxVgaBiosAlternative$(1).asm
+	$$(REDIRECT) -C $$(dir $$(VBoxVgaBios$(1)_1_TARGET)) -- \
+		$$(MD5SUM_EXT) -bo $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).md5sum $$(notdir $$(VBoxVgaBios$(1)_1_TARGET))
+	$$(CP) --changed -- $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).md5sum $$(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/VBoxVgaBiosAlternative$(1).md5sum
+	$$(RM) -f -- $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).asm \
+		$$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).bin \
+		$$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).lst \
+		$$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).md5sum
+  else
+	$$(QUIET)$$(ECHO) "Fatal error: Can only update VBoxVgaBiosAlternative$(1).asm/md5sum with a release build."
+	$$(QUIET)exit 1
+  endif
+ endef
+
+ $(evalcall2 def_VBoxVgaBiosUpdateAltSource,386)
+ $(evalcall2 def_VBoxVgaBiosUpdateAltSource,286)
+ $(evalcall2 def_VBoxVgaBiosUpdateAltSource,8086)
+
+ update-vgabios-source: \
+ 	$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative386.asm \
+ 	$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative286.asm \
+ 	$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative8086.asm
 
 endif # VBOX_WITH_OPEN_WATCOM
 
@@ -78,32 +106,35 @@ endif # VBOX_WITH_OPEN_WATCOM
 LIBRARIES += VgaBiosBin
 VgaBiosBin_TEMPLATE  = VBOXR3
 VgaBiosBin_DEFS      = IN_VBOXDD2
-VgaBiosBin_SOURCES   = \
-	$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c
-VgaBiosBin_DEPS      = \
-	$(VgaBiosBin_0_OUTDIR)/vbetables.h
-VgaBiosBin_CLEAN     = \
-	$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c \
-	$(VgaBiosBin_0_OUTDIR)/vbetables.h
+VgaBiosBin_SOURCES   =
+VgaBiosBin_DEPS      = $(VgaBiosBin_0_OUTDIR)/vbetables.h
+VgaBiosBin_CLEAN     = $(VgaBiosBin_0_OUTDIR)/vbetables.h
 
-ifdef VBOX_WITH_OPEN_WATCOM
- $$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c: $$(VBoxVgaBios_1_TARGET) $(VBOX_BIN2C) | $$(dir $$@)
-	$(call MSG_TOOL,bin2c,VgaBiosBin,$<,$@)
-	$(QUIET)$(VBOX_BIN2C) -min 32 -max 36 -mask 0x0fff -ascii -export VgaBiosBinary $< $@
-else
- VgaBiosBin_CLEAN    += $(VgaBiosBin_0_OUTDIR)/VBoxVgaBios.rom
+define def_VBoxVgaBiosBin
+ VgaBiosBin_SOURCES += $$(VgaBiosBin_0_OUTDIR)/VgaBiosBin$(1).c
+ VgaBiosBin_CLEAN   += $$(VgaBiosBin_0_OUTDIR)/VgaBiosBin$(1).c
+ ifdef VBOX_WITH_OPEN_WATCOM
+  $$$$(VgaBiosBin_0_OUTDIR)/VgaBiosBin$(1).c: $$$$(VBoxVgaBios$(1)_1_TARGET) $$(VBOX_BIN2C) | $$$$(dir $$$$@)
+	$$(call MSG_TOOL,bin2c,VgaBiosBin,$$<,$$@)
+	$$(QUIET)$$(VBOX_BIN2C) -min 32 -max 36 -mask 0x0fff -ascii -export VgaBiosBinary$(1) $$< $$@
+ else
+  VgaBiosBin_CLEAN  += $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom
 
- $$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c + $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios.rom: \
-		$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative.asm \
-		$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative.md5sum \
-		$(VBOX_BIN2C) | $$(dir $$@)
-	$(call MSG_TOOL,bin2c,VgaBiosBin,$<,$@)
-	$(QUIET)yasm -f bin -o $(VgaBiosBin_0_OUTDIR)/VBoxVgaBios.rom $<
-	$(QUIET)$(REDIRECT) -C $(VgaBiosBin_0_OUTDIR) -- \
-		$(MD5SUM_EXT) -c $(basename $<).md5sum
-	$(QUIET)$(VBOX_BIN2C) -min 32 -max 36 -mask 0x0fff -ascii -export VgaBiosBinary $(VgaBiosBin_0_OUTDIR)/VBoxVgaBios.rom $@
-	$(QUIET)$(RM) -f -- $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios.rom
-endif
+  $$$$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c + $$$$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom: \
+ 		$$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).asm \
+ 		$$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).md5sum \
+ 		$$(VBOX_BIN2C) | $$$$(dir $$$$@)
+	$$(call MSG_TOOL,bin2c,VgaBiosBin,$$<,$$@)
+	$$(QUIET)yasm -f bin -o $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom $$<
+	$$(QUIET)$$(REDIRECT) -C $$(VgaBiosBin_0_OUTDIR) -- \
+		$$(MD5SUM_EXT) -c $$(basename $$<).md5sum
+	$$(QUIET)$$(VBOX_BIN2C) -min 32 -max 36 -mask 0x0fff -ascii -export VgaBiosBinary$(1) $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom $$@
+	$$(QUIET)$$(RM) -f -- $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom
+ endif
+endef
+$(evalcall2 def_VBoxVgaBiosBin,386)
+$(evalcall2 def_VBoxVgaBiosBin,286)
+$(evalcall2 def_VBoxVgaBiosBin,8086)
 
 
 # Rule for making the vbetables.h that DevVGA uses.
@@ -141,7 +172,10 @@ ifdef VBOX_WITH_OPEN_WATCOM
  #
  INSTALLS += VBoxVgaBiosSym
  VBoxVgaBiosSym_TEMPLATE = VBoxDbgSyms
- VBoxVgaBiosSym_SOURCES = $(basename $(VBoxVgaBios_1_TARGET)).sym
+ VBoxVgaBiosSym_SOURCES = \
+ 	$(basename $(VBoxVgaBios386_1_TARGET)).sym \
+ 	$(basename $(VBoxVgaBios286_1_TARGET)).sym \
+ 	$(basename $(VBoxVgaBios8086_1_TARGET)).sym
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

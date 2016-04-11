@@ -335,9 +335,9 @@ pci_init_end:
 		pop		ds
 		ret
 
-.286
-
 endif		 ; !BX_ROMBIOS32
 
 endif		 ; BX_PCIBIOS
+
+SET_DEFAULT_CPU_286
 

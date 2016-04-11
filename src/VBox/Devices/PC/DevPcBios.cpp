@@ -24,6 +24,8 @@
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/vm.h>
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -1400,18 +1402,42 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     else
     {
         /*
-         * Use the embedded BIOS ROM image.
+         * Use one of the embedded BIOS ROM images.
          */
-        pThis->pu8PcBios = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, g_cbPcBiosBinary);
+        PVM pVM = PDMDevHlpGetVM(pDevIns);
+        CPUMMICROARCH enmMicroarch = pVM ? pVM->cpum.ro.GuestFeatures.enmMicroarch : kCpumMicroarch_Intel_P6;
+        uint8_t const *pbBios;
+        uint32_t       cbBios;
+        if (   enmMicroarch == kCpumMicroarch_Intel_8086
+            || enmMicroarch == kCpumMicroarch_Intel_80186
+            || enmMicroarch == kCpumMicroarch_NEC_V20
+            || enmMicroarch == kCpumMicroarch_NEC_V30)
+        {
+            pbBios = g_abPcBiosBinary8086;
+            cbBios = g_cbPcBiosBinary8086;
+            LogRel(("PcBios: Using the 8086 BIOS image!\n"));
+        }
+        else if (enmMicroarch == kCpumMicroarch_Intel_80286)
+        {
+            pbBios = g_abPcBiosBinary286;
+            cbBios = g_cbPcBiosBinary286;
+            LogRel(("PcBios: Using the 286 BIOS image!\n"));
+        }
+        else
+        {
+            pbBios = g_abPcBiosBinary386;
+            cbBios = g_cbPcBiosBinary386;
+            LogRel(("PcBios: Using the 386+ BIOS image.\n"));
+        }
+        pThis->pu8PcBios = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, cbBios);
         if (pThis->pu8PcBios)
         {
-            pThis->cbPcBios = g_cbPcBiosBinary;
-            memcpy(pThis->pu8PcBios, g_abPcBiosBinary, pThis->cbPcBios);
+            pThis->cbPcBios = cbBios;
+            memcpy(pThis->pu8PcBios, pbBios, cbBios);
         }
         else
             return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
-                                       N_("Failed to allocate %#x bytes for loading the embedded BIOS image"),
-                                       g_cbPcBiosBinary);
+                                       N_("Failed to allocate %#x bytes for loading the embedded BIOS image"), cbBios);
     }
     const uint8_t *pu8PcBiosBinary = pThis->pu8PcBios;
     uint32_t       cbPcBiosBinary  = pThis->cbPcBios;

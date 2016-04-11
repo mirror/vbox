@@ -38,13 +38,15 @@
 ;;
 ;;
 
-
 ; Oracle LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
 ; other than GPL or LGPL is available it will apply instead, Oracle elects to use only
 ; the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
 ; a choice of LGPL license versions is made available with the language indicating
 ; that LGPLv2 or any later version may be used, or where a choice of which version
 ; of the LGPL is applied is otherwise unspecified.
+
+
+include commondefs.inc
 
 EBDA_SEG	equ	09FC0h		; starts at 639K
 EBDA_SIZE	equ	1		; 1K
@@ -74,6 +76,7 @@ BX_CALL_INT15_4F	equ	1
 BIOSORG		macro	addr
 		org	addr - BIOS_FIX_BASE - 2
 		db	'XM'
+		BIOSORG_CHECK addr
 		endm
 
 ;; Set an interrupt vector (not very efficient if multiple vectors are
@@ -92,6 +95,7 @@ C_SETUP		macro
 		pop	ds
 		cld
 endm
+
 
 ;; External function in separate modules
 extrn		_dummy_isr_function:near
@@ -191,7 +195,7 @@ endif
 ;; going to be wasted, but the gaps should be filled with miscellaneous code
 ;; and data when possible.
 
-.286p
+SET_DEFAULT_CPU_286
 
 BIOSSEG		segment	'CODE'
 		assume	cs:BIOSSEG
@@ -235,11 +239,15 @@ no_eoi_jmp_post:
 post:
 		cli
 
+if VBOX_BIOS_CPU ge 80286
 		;; Check if in protected (V86) mode. If so, the CPU needs
 		;; to be reset.
+               .286p
 		smsw	ax
 		test	ax, 1
 		jz	in_real_mode
+		SET_DEFAULT_CPU_286
+endif
 
 		;; Reset processor to get out of protected mode. Use system
 		;; port instead of KBC.
@@ -323,7 +331,7 @@ check_next_std:
 		je	eoi_jmp_post
 		;; 0ah = jump through 40:67 (no EOI) ;ba x 1  %fe05b ; ba x 1 %18b81
 		cmp	al, 0ah
-		je	eoi_jmp_post
+		je	no_eoi_jmp_post
 
 		;; any other shutdown status values are ignored
 		;; OpenSolaris sets the status to 0Ah in some cases?
@@ -377,7 +385,9 @@ memory_cleared:
 		C_SETUP
 		call	_log_bios_start
 
+if VBOX_BIOS_CPU ge 80386
 		call	pmode_setup
+endif
 
 		;; set all interrupts in 00h-5Fh range to default handler
 		xor	bx, bx
@@ -415,8 +425,10 @@ memory_cleared:
 		call	ebda_post
 
 		;; Initialize PCI devices. This can and should be done early.
+if VBOX_BIOS_CPU ge 80386
 		call	pcibios_init_iomem_bases
 		call	pcibios_init_irqs
+endif
 		SET_INT_VECTOR 1Ah, BIOSSEG, int1a_handler
 
 		;; PIT setup
@@ -615,6 +627,7 @@ wait_forever:
 ;; register and memory state as little as possible.
 ;;
 return_blkmove:
+		.286p
 		mov	ax, 40h
 		mov	ds, ax
 		;; restore user stack
@@ -640,7 +653,8 @@ return_blkmove:
 		popa
 		sti
 		retf	2
-		
+		SET_DEFAULT_CPU_286
+
 
 ;; --------------------------------------------------------
 ;; INT 13h handler - Disk services
@@ -654,7 +668,7 @@ int13_handler:
 ;; --------------------------------------------------------
 ;; Fixed Disk Parameter Table
 ;; --------------------------------------------------------
-;;		BIOSORG	0E401h - fixed wrt preceding
+		BIOSORG_CHECK	0E401h	; fixed wrt preceding
 
 rom_fdpt:
 
@@ -671,7 +685,7 @@ int19_handler:
 ;; --------------------------------------------------------
 ;; System BIOS Configuration Table
 ;; --------------------------------------------------------
-;;		BIOSORG	0E6F5h - fixed wrt preceding
+		BIOSORG_CHECK	0E6F5h	; fixed wrt preceding
 ; must match BIOS_CONFIG_TABLE
 bios_cfg_table:
 		dw	9	; table size in bytes
@@ -739,10 +753,10 @@ endif
 int14_handler:
 		push	ds
 		push	es
-		pusha
+		DO_PUSHA
 		C_SETUP
 		call	_int14_function
-		popa
+		DO_POPA
 		pop	es
 		pop	ds
 		iret
@@ -755,10 +769,10 @@ int14_handler:
 dummy_isr:
 		push	ds
 		push	es
-		pusha
+		DO_PUSHA
 		C_SETUP
 		call	_dummy_isr_function
-		popa
+		DO_POPA
 		pop	es
 		pop	ds
 		iret
@@ -816,7 +830,7 @@ int16_handler:
 		sti
 		push	es
 		push	ds
-		pusha
+		DO_PUSHA
 
 		cmp	ah, 0
 		je	int16_F00
@@ -826,7 +840,7 @@ int16_handler:
 
 		C_SETUP
 		call	_int16_function
-		popa
+		DO_POPA
 		pop	ds
 		pop	es
 		iret
@@ -853,7 +867,7 @@ endif
 int16_key_found:
 		C_SETUP
 		call	_int16_function
-		popa
+		DO_POPA
 		pop	ds
 		pop	es
 ; TODO: review/enable? If so, flags should be restored here?
@@ -866,11 +880,13 @@ endif
 		iret
 
 
+if VBOX_BIOS_CPU ge 80386
 ;; Quick and dirty protected mode entry/exit routines
 include pmode.inc
 
 ;; Initialization code which needs to run in protected mode (LAPIC etc.)
 include pmsetup.inc
+endif
 
 
 KBDC_DISABLE	EQU	0ADh
@@ -896,7 +912,7 @@ int09_handler:
 
 		in	al, KBC_DATA
 		push	ds
-		pusha
+		DO_PUSHA
 		cld			; Before INT 15h (and any C code)
 ifdef BX_CALL_INT15_4F
 		mov	ah, 4Fh
@@ -929,7 +945,7 @@ int09_process_key:
 		pop	es
 
 int09_done:
-		popa
+		DO_POPA
 		pop	ds
 		cli
 		call	eoi_master_pic
@@ -946,14 +962,14 @@ int09_finish:
 ;; --------------------------------------------------------
 
 int06_handler:
-		pusha
+		DO_PUSHA
 		push	es
 		push	ds
 		C_SETUP
 		call	_inv_op_handler
 		pop	ds
 		pop	es
-		popa
+		DO_POPA
 		iret
 
 ;; --------------------------------------------------------
@@ -976,7 +992,7 @@ int13_relocated:
 		cmp	ah, 4Dh
 		ja	int13_not_eltorito
 
-		pusha
+		DO_PUSHA
 		push	es
 		push	ds
 		C_SETUP			; TODO: setup C envrionment only once?
@@ -1008,7 +1024,7 @@ int13_not_eltorito:
 		pop	ax
 		pop	es
 
-		pusha
+		DO_PUSHA
 		push	es
 		push	ds
 		C_SETUP			; TODO: setup environment only once?
@@ -1057,7 +1073,7 @@ int13_legacy:
 		C_SETUP			; TODO: setup environment only once?
 
 		;; now the registers can be restored with
-		;; pop ds; pop es; popa; iret
+		;; pop ds; pop es; DO_POPA; iret
 		test	dl, 80h		; non-removable?
 		jnz	int13_notfloppy
 
@@ -1070,14 +1086,14 @@ int13_notfloppy:
 
 		;; ebx may be modified, save here
 		;; TODO: check/review 32-bit register use
+               ;; @todo figure if 80286/8086 variant is applicable.
 		.386
 		shr	ebx, 16
 		push	bx
 		call	_int13_cdrom
 		pop	bx
 		shl	ebx, 16
-		.286
-
+		SET_DEFAULT_CPU_286
 		jmp	int13_out
 
 int13_notcdrom:
@@ -1093,7 +1109,7 @@ int13x:
 int13_out:
 		pop	ds
 		pop	es
-		popa
+		DO_POPA
 		iret
 
 
@@ -1241,6 +1257,59 @@ bcd_to_bin	endp
 
 rtc_post	proc	near
 
+if VBOX_BIOS_CPU lt 80386 ;; @todo fix loopy code below
+		;; get RTC seconds
+		mov	al, 0
+		out	CMOS_ADDR, al
+		in	al, CMOS_DATA	; RTC seconds, in BCD
+		call	bcd_to_bin	; ax now has seconds in binary
+               test	al, al
+               xor	ah, ah
+               mov	dx, 0x1234      ; 18206507*0x100/1000000 = 0x1234 (4660.865792)
+               mul     dx
+               mov	cx, ax		; tick count in dx:cx
+
+		;; get RTC minutes
+		mov	al, 2
+		out	CMOS_ADDR, al
+		in	al, CMOS_DATA	; RTC minutes, in BCD
+		call	bcd_to_bin	; eax now has minutes in binary
+               test    al, al
+               jz      rtc_post_hours
+rtc_pos_min_loop:			; 18206507*60*0x100/1000000 = 0x44463 (279651.94752)
+		add	cx, 0x4463
+		adc     dx, 0x0004
+               dec	al
+               jnz	rtc_pos_min_loop
+
+		;; get RTC hours
+rtc_post_hours:
+		mov	al, 4
+		out	CMOS_ADDR, al
+		in 	al, CMOS_DATA	; RTC hours, in BCD
+		call	bcd_to_bin	; eax now has hours in binary
+               test	al, al
+               jz	rtc_pos_shift
+rtc_pos_hour_loop:			; 18206507*3600*0x100/1000000 = 0x100076C (16779116.8512)
+		add	cx, 0x076C
+		adc     dx, 0x0100
+               dec	al
+               jnz	rtc_pos_hour_loop
+
+
+		mov	ax, [46Ch]
+		mov	dx, [46Ch+2]
+
+rtc_pos_shift:
+		mov	cl, ch
+               mov	ch, dl
+               mov	dl, dh
+               xor	dh, dh
+		mov	ds:[46Ch], cx	; timer tick count
+		mov	ds:[46Ch+2], dx	; timer tick count
+		mov	ds:[470h], dh	; rollover flag
+
+else
 		.386
 		;; get RTC seconds
 		xor	eax, eax
@@ -1285,6 +1354,7 @@ rtc_post	proc	near
 		xor	al, al		; TODO: redundant?
 		mov	ds:[470h], al	; rollover flag
 		.286
+endif
 		ret
 
 rtc_post	endp
@@ -1357,17 +1427,17 @@ _diskette_param_table:
 ;; --------------------------------------------------------
 ;; INT 17h handler - Printer service
 ;; --------------------------------------------------------
-;;		BIOSORG	0EFD2h - fixed WRT preceding code
+		BIOSORG_CHECK	0EFD2h	; fixed WRT preceding code
 
 		jmp	int17_handler	; NT floppy boot workaround
 					; see @bugref{6481}
 int17_handler:
 		push	ds
 		push	es
-		pusha
+		DO_PUSHA
 		C_SETUP
 		call	_int17_function
-		popa
+		DO_POPA
 		pop	es
 		pop	ds
 		iret
@@ -1510,12 +1580,19 @@ bios_initiated_boot:
 boot_setup:
 ; TODO: the drive should be in dl already??
 ;;		mov	dl, bl		; tell guest OS what boot drive is
+if VBOX_BIOS_CPU lt 80386
+		mov	[bp], ax
+               shl	ax, 4
+		mov	[bp+2], ax	; set ip
+		mov	ax, [bp]
+else
 		.386	; NB: We're getting garbage into high eax bits
 		shl	eax, 4		; convert seg to ip
 		mov	[bp+2], ax	; set ip
 
 		shr	eax, 4		; get cs back
 		.286
+endif
 		and	ax, BIOSSEG	; remove what went in ip
 		mov	[bp+4], ax	; set cs
 		xor	ax, ax
@@ -1551,7 +1628,7 @@ int12_handler:
 ;; --------------------------------------------------------
 ;; INT 11h handler - Equipment list service
 ;; --------------------------------------------------------
-;;		BIOSORG	0F84Dh - fixed wrt preceding code
+		BIOSORG_CHECK	0F84Dh	; fixed wrt preceding code
 int11_handler:
 		;; Don't touch - fixed size!
 		sti
@@ -1566,7 +1643,7 @@ int11_handler:
 ;; --------------------------------------------------------
 ;; INT 15h handler - System services
 ;; --------------------------------------------------------
-;;		BIOSORG	0F859h - fixed wrt preceding code
+		BIOSORG_CHECK	0F859h	; fixed wrt preceding code
 int15_handler:
 		pushf
 		push	ds
@@ -1578,7 +1655,7 @@ int15_handler:
 		je	int15_handler32
 		cmp	ah, 0d0h
 		je	int15_handler32
-		pusha
+		DO_PUSHA
 		cmp	ah, 53h		; APM function?
 		je	apm_call
 		cmp	ah, 0C2h	; PS/2 mouse function?
@@ -1586,7 +1663,7 @@ int15_handler:
 
 		call	_int15_function
 int15_handler_popa_ret:
-		popa
+		DO_POPA
 int15_handler32_ret:
 		pop	es
 		pop	ds
@@ -1602,12 +1679,18 @@ int15_handler_mouse:
 		jmp	int15_handler_popa_ret
 
 int15_handler32:
+if VBOX_BIOS_CPU ge 80386
 		;; need to save/restore 32-bit registers
 		.386
 		pushad
 		call	_int15_function32
 		popad
 		.286
+else
+		DO_PUSHA
+		call	_int15_function32
+		DO_POPA
+endif
 		jmp	int15_handler32_ret
 
 ;;
@@ -1633,7 +1716,7 @@ carry_set:
 int74_handler	proc
 
 		sti
-		pusha
+		DO_PUSHA
 		push	es
 		push	ds
 		push	0		; placeholder for status
@@ -1658,7 +1741,7 @@ int74_done:
 		add	sp, 8		; remove status, X, Y, Z
 		pop	ds
 		pop	es
-		popa
+		DO_POPA
 		iret
 
 int74_handler	endp
@@ -1688,8 +1771,9 @@ include font8x8.inc
 ;; --------------------------------------------------------
 ;; INT 1Ah handler - Time of the day + PCI BIOS
 ;; --------------------------------------------------------
-;;		BIOSORG	0FE6Eh - fixed wrt preceding table
+		BIOSORG_CHECK	0FE6Eh	; fixed wrt preceding table
 int1a_handler:
+if VBOX_BIOS_CPU ge 80386
 		cmp	ah, 0B1h
 		jne	int1a_normal
 
@@ -1704,15 +1788,16 @@ int1a_handler:
 		pop	ds
 		pop	es
 		iret
+endif
 
 int1a_normal:
 		push	es
 		push	ds
-		pusha
+		DO_PUSHA
 		C_SETUP
 int1a_callfunction:
 		call	_int1a_function
-		popa
+		DO_POPA
 		pop	ds
 		pop	es
 		iret
@@ -1724,10 +1809,10 @@ int1a_callfunction:
 int70_handler:
 		push	es
 		push	ds
-		pusha
+		DO_PUSHA
 		C_SETUP
 		call	_int70_function
-		popa
+		DO_POPA
 		pop	ds
 		pop	es
 		iret
@@ -1738,26 +1823,57 @@ int70_handler:
 ;; --------------------------------------------------------
 		BIOSORG	0FEA5h
 int08_handler:
+if VBOX_BIOS_CPU ge 80386
 		.386
 		sti
 		push	eax
+else
+		sti
+		push	ax
+		push	bx
+endif
 		push	ds
 		push	dx
 		mov	ax, 40h
 		mov	ds, ax
 
+if VBOX_BIOS_CPU ge 80386
 		mov	eax, ds:[6Ch]	; get ticks dword
 		inc	eax
+else
+		mov	ax, ds:[6Ch]	; get ticks dword
+               mov     bx, ds:[6Ch+2]
+		add	ax, 1
+               adc	bx, 0
+endif
 
 		;; compare eax to one day's worth of ticks (at 18.2 Hz)
+if VBOX_BIOS_CPU ge 80386
 		cmp	eax, 1800B0h
+else
+		cmp	bx, 18h
+               jb	int08_store_ticks
+               ja	int08_rollover
+               cmp	ax, 00B0h
+endif
 		jb	int08_store_ticks
 		;; there has been a midnight rollover
+int08_rollover:
+if VBOX_BIOS_CPU ge 80386
 		xor	eax, eax
+else
+		xor	ax, ax
+		xor	bx, bx
+endif
 		inc	byte ptr ds:[70h]	; increment rollover flag
 
 int08_store_ticks:
+if VBOX_BIOS_CPU ge 80386
 		mov	ds:[6Ch], eax
+else
+		mov	ds:[6Ch], ax
+		mov	ds:[6Ch+2], bx
+endif
 
 		;; time to turn off floppy drive motor(s)?
 		mov	al, ds:[40h]
@@ -1779,8 +1895,13 @@ int08_floppy_off:
 		call	eoi_master_pic
 		pop	dx
 		pop	ds
+if VBOX_BIOS_CPU ge 80386
 		pop	eax
 		.286
+else
+		pop     bx
+		pop     ax
+endif
 		iret
 
 
@@ -1812,7 +1933,7 @@ dummy_iret:
 ;; --------------------------------------------------------
 ;; INT 05h - Print Screen service
 ;; --------------------------------------------------------
-;;		BIOSORG	0FF54h - fixed wrt preceding
+		BIOSORG_CHECK	0FF54h	; fixed wrt preceding
 int05_handler:
 		;; Not implemented
 		iret

@@ -53,7 +53,7 @@ pmode_exit	proc	near
 		mov	eax, cr0
 		and	al, 0FEh
 		mov	cr0, eax
-		.286
+		SET_DEFAULT_CPU_286
 		jmp	far ptr really_exit_pm
 really_exit_pm:
 		ret
