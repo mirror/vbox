@@ -111,6 +111,5 @@ private:
     QTextBrowser *m_pTextBrowser;
 };
 
-
 #endif /* !___UIWizardImportAppPageBasic2_h___ */
 
