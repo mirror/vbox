@@ -232,6 +232,11 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Cyrix_Unknown,
     kCpumMicroarch_Cyrix_End,
 
+    kCpumMicroarch_NEC_First,
+    kCpumMicroarch_NEC_V20 = kCpumMicroarch_NEC_First,
+    kCpumMicroarch_NEC_V30,
+    kCpumMicroarch_NEC_End,
+
     kCpumMicroarch_Unknown,
 
     kCpumMicroarch_32BitHack = 0x7fffffff
