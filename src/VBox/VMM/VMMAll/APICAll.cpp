@@ -431,6 +431,7 @@ static VBOXSTRICTRC apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
  * Sends an interrupt to one or more APICs.
  *
  * @returns Strict VBox status code.
+ * @param   pVM                 The cross context VM structure.
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   uVector             The interrupt vector.
  * @param   enmTriggerMode      The trigger mode.
