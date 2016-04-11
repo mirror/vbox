@@ -477,6 +477,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
         char szTmpFmt[48];
         const char *pszFmt = pOp->pszOpcode;
         bool fIgnoresOpSize = false;
+        bool fMayNeedAddrSize = false;
         switch (pOp->uOpcode)
         {
             case OP_JECXZ:
@@ -496,52 +497,59 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                 break;
             case OP_INSB:
                 pszFmt = "insb";
-                fIgnoresOpSize = true;
+                fIgnoresOpSize = fMayNeedAddrSize = true;
                 break;
             case OP_INSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "insw"     : pDis->uOpMode == DISCPUMODE_32BIT ? "insd"  : "insq";
+                fMayNeedAddrSize = true;
                 break;
             case OP_OUTSB:
                 pszFmt = "outsb";
-                fIgnoresOpSize = true;
+                fIgnoresOpSize = fMayNeedAddrSize = true;
                 break;
             case OP_OUTSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "outsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "outsd" : "outsq";
+                fMayNeedAddrSize = true;
                 break;
             case OP_MOVSB:
                 pszFmt = "movsb";
-                fIgnoresOpSize = true;
+                fIgnoresOpSize = fMayNeedAddrSize = true;
                 break;
             case OP_MOVSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "movsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "movsd" : "movsq";
+                fMayNeedAddrSize = true;
                 break;
             case OP_CMPSB:
                 pszFmt = "cmpsb";
-                fIgnoresOpSize = true;
+                fIgnoresOpSize = fMayNeedAddrSize = true;
                 break;
             case OP_CMPWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "cmpsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "cmpsd" : "cmpsq";
+                fMayNeedAddrSize = true;
                 break;
             case OP_SCASB:
                 pszFmt = "scasb";
-                fIgnoresOpSize = true;
+                fIgnoresOpSize = fMayNeedAddrSize = true;
                 break;
             case OP_SCASWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "scasw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "scasd" : "scasq";
+                fMayNeedAddrSize = true;
                 break;
             case OP_LODSB:
                 pszFmt = "lodsb";
-                fIgnoresOpSize = true;
+                fIgnoresOpSize = fMayNeedAddrSize = true;
                 break;
             case OP_LODSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "lodsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "lodsd" : "lodsq";
+                fMayNeedAddrSize = true;
                 break;
             case OP_STOSB:
                 pszFmt = "stosb";
-                fIgnoresOpSize = true;
+                fIgnoresOpSize = fMayNeedAddrSize = true;
                 break;
             case OP_STOSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "stosw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "stosd" : "stosq";
+                fMayNeedAddrSize = true;
                 break;
             case OP_CBW:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "cbw"      : pDis->uOpMode == DISCPUMODE_32BIT ? "cwde"  : "cdqe";
@@ -649,14 +657,24 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
         }
 
         /*
-         * Add operand size prefix for outsb, movsb, etc.
+         * Add operand size and address prefixes for outsb, movsb, etc.
          */
-        if (fIgnoresOpSize && (pDis->fPrefix & DISPREFIX_OPSIZE) )
+        if (pDis->fPrefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
         {
-            if (pDis->uCpuMode == DISCPUMODE_16BIT)
-                PUT_SZ("o32 ");
-            else
-                PUT_SZ("o16 ");
+            if (fIgnoresOpSize && (pDis->fPrefix & DISPREFIX_OPSIZE) )
+            {
+                if (pDis->uCpuMode == DISCPUMODE_16BIT)
+                    PUT_SZ("o32 ");
+                else
+                    PUT_SZ("o16 ");
+            }
+            if (fMayNeedAddrSize && (pDis->fPrefix & DISPREFIX_ADDRSIZE) )
+            {
+                if (pDis->uCpuMode == DISCPUMODE_16BIT)
+                    PUT_SZ("a32 ");
+                else
+                    PUT_SZ("a16 ");
+            }
         }
 
         /*
