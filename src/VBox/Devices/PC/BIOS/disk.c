@@ -486,7 +486,9 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
 
             options  = (translation == GEO_TRANSLATION_NONE ? 0 : 1 << 3);  // chs translation
             options |= (1 << 4);    // lba translation
+#if VBOX_BIOS_CPU >= 80386
             options |= (mode == ATA_MODE_PIO32 ? 1 : 0 << 7);
+#endif
             options |= (translation == GEO_TRANSLATION_LBA ? 1 : 0 << 9);
             options |= (translation == GEO_TRANSLATION_RECHS ? 3 : 0 << 9);
 

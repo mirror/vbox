@@ -920,7 +920,9 @@ int13_cdrom_rme_end:
             options  = (1<<4); // lba translation
             options |= (1<<5); // removable device
             options |= (1<<6); // atapi device
+#if VBOX_BIOS_CPU >= 80386
             options |= (mode==ATA_MODE_PIO32?1:0<<7);
+#endif
 
             bios_dsk->dpte.iobase1  = iobase1;
             bios_dsk->dpte.iobase2  = iobase2;

@@ -49,7 +49,9 @@
 
 #define ATA_MODE_NONE    0x00
 #define ATA_MODE_PIO16   0x00
-#define ATA_MODE_PIO32   0x01
+#if VBOX_BIOS_CPU >= 80386
+# define ATA_MODE_PIO32  0x01
+#endif
 #define ATA_MODE_ISADMA  0x02
 #define ATA_MODE_PCIDMA  0x03
 #define ATA_MODE_USEIRQ  0x10

@@ -474,7 +474,11 @@ void BIOSCALL ata_detect(void)
                 BX_PANIC("ata-detect: Failed to detect ATA device\n");
 
             removable = (*(buffer+0) & 0x80) ? 1 : 0;
+#if VBOX_BIOS_CPU >= 80386
             mode      = *(buffer+96) ? ATA_MODE_PIO32 : ATA_MODE_PIO16;
+#else
+            mode      = ATA_MODE_PIO16;
+#endif
             blksize   = 512;  /* There is no sector size field any more. */
 
             cylinders = *(uint16_t *)(buffer+(1*2)); // word 1
@@ -571,7 +575,11 @@ void BIOSCALL ata_detect(void)
 
             type      = *(buffer+1) & 0x1f;
             removable = (*(buffer+0) & 0x80) ? 1 : 0;
+#if VBOX_BIOS_CPU >= 80386
             mode      = *(buffer+96) ? ATA_MODE_PIO32 : ATA_MODE_PIO16;
+#else
+            mode      = ATA_MODE_PIO16;
+#endif
             blksize   = 2048;
 
             bios_dsk->devices[device].device    = type;

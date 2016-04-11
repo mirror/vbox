@@ -1346,6 +1346,12 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         pThis->pszPcBiosFile = NULL;
     }
 
+    /*
+     * Get the CPU arch so we can load the appropriate ROMs.
+     */
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
+    CPUMMICROARCH const enmMicroarch = pVM ? pVM->cpum.ro.GuestFeatures.enmMicroarch : kCpumMicroarch_Intel_P6;
+
     if (pThis->pszPcBiosFile)
     {
         /*
@@ -1404,8 +1410,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Use one of the embedded BIOS ROM images.
          */
-        PVM pVM = PDMDevHlpGetVM(pDevIns);
-        CPUMMICROARCH enmMicroarch = pVM ? pVM->cpum.ro.GuestFeatures.enmMicroarch : kCpumMicroarch_Intel_P6;
         uint8_t const *pbBios;
         uint32_t       cbBios;
         if (   enmMicroarch == kCpumMicroarch_Intel_8086
@@ -1533,105 +1537,111 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         pThis->pszLanBootFile = NULL;
     }
 
-    uint64_t cbFileLanBoot;
-    const uint8_t *pu8LanBootBinary = NULL;
-    uint64_t cbLanBootBinary;
-
     /*
-     * Determine the LAN boot ROM size, open specified ROM file in the process.
+     * Not loading LAN ROM for old CPUs.
      */
-    RTFILE FileLanBoot = NIL_RTFILE;
-    if (pThis->pszLanBootFile)
+    if (   enmMicroarch != kCpumMicroarch_Intel_8086
+        && enmMicroarch != kCpumMicroarch_Intel_80186
+        && enmMicroarch != kCpumMicroarch_NEC_V20
+        && enmMicroarch != kCpumMicroarch_NEC_V30
+        && enmMicroarch != kCpumMicroarch_Intel_80286)
     {
-        rc = RTFileOpen(&FileLanBoot, pThis->pszLanBootFile,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (RT_SUCCESS(rc))
+        const uint8_t  *pu8LanBootBinary = NULL;
+        uint64_t        cbLanBootBinary;
+        uint64_t        cbFileLanBoot;
+
+        /*
+         * Open the LAN boot ROM and figure it size.
+         * Determine the LAN boot ROM size, open specified ROM file in the process.
+         */
+        if (pThis->pszLanBootFile)
         {
-            rc = RTFileGetSize(FileLanBoot, &cbFileLanBoot);
+            RTFILE hFileLanBoot = NIL_RTFILE;
+            rc = RTFileOpen(&hFileLanBoot, pThis->pszLanBootFile,
+                            RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
             if (RT_SUCCESS(rc))
             {
-                if (cbFileLanBoot > _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff))
-                    rc = VERR_TOO_MUCH_DATA;
-            }
-        }
-        if (RT_FAILURE(rc))
-        {
-            /*
-             * Ignore failure and fall back to the built-in LAN boot ROM.
-             */
-            LogRel(("PcBios: Failed to open LAN boot ROM file '%s', rc=%Rrc!\n", pThis->pszLanBootFile, rc));
-            RTFileClose(FileLanBoot);
-            FileLanBoot = NIL_RTFILE;
-            MMR3HeapFree(pThis->pszLanBootFile);
-            pThis->pszLanBootFile = NULL;
-        }
-    }
+                rc = RTFileGetSize(hFileLanBoot, &cbFileLanBoot);
+                if (RT_SUCCESS(rc))
+                {
+                    if (cbFileLanBoot <= _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff))
+                    {
+                        LogRel(("PcBios: Using LAN ROM '%s' with a size of %#x bytes\n", pThis->pszLanBootFile, cbFileLanBoot));
 
-    /*
-     * Get the LAN boot ROM data.
-     */
-    if (pThis->pszLanBootFile)
-    {
-        LogRel(("PcBios: Using LAN ROM '%s' with a size of %#x bytes\n", pThis->pszLanBootFile, cbFileLanBoot));
-        /*
-         * Allocate buffer for the LAN boot ROM data.
-         */
-        pThis->pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAllocZ(pDevIns, cbFileLanBoot);
-        if (pThis->pu8LanBoot)
-        {
-            rc = RTFileRead(FileLanBoot, pThis->pu8LanBoot, cbFileLanBoot, NULL);
+                        /*
+                         * Allocate buffer for the LAN boot ROM data and load it.
+                         */
+                        pThis->pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAllocZ(pDevIns, cbFileLanBoot);
+                        if (pThis->pu8LanBoot)
+                        {
+                            rc = RTFileRead(hFileLanBoot, pThis->pu8LanBoot, cbFileLanBoot, NULL);
+                            AssertLogRelRCReturnStmt(rc, RTFileClose(hFileLanBoot), rc);
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
+                    else
+                        rc = VERR_TOO_MUCH_DATA;
+                }
+                RTFileClose(hFileLanBoot);
+            }
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Rrc\n", cbFileLanBoot, rc));
-                MMR3HeapFree(pThis->pu8LanBoot);
-                pThis->pu8LanBoot = NULL;
+                /*
+                 * Play stupid and ignore failures, falling back to the built-in LAN boot ROM.
+                 */
+                /** @todo r=bird: This should have some kind of rational. We don't usually
+                 *        ignore the VM configuration.  */
+                LogRel(("PcBios: Failed to open LAN boot ROM file '%s', rc=%Rrc!\n", pThis->pszLanBootFile, rc));
+                MMR3HeapFree(pThis->pszLanBootFile);
+                pThis->pszLanBootFile = NULL;
             }
-            rc = VINF_SUCCESS;
+        }
+
+        /* If we were unable to get the data from file for whatever reason, fall
+         * back to the built-in LAN boot ROM image.
+         */
+        if (pThis->pu8LanBoot == NULL)
+        {
+#ifdef VBOX_WITH_PXE_ROM
+            pu8LanBootBinary = g_abNetBiosBinary;
+            cbLanBootBinary  = g_cbNetBiosBinary;
+#endif
         }
         else
-            rc = VERR_NO_MEMORY;
+        {
+            pu8LanBootBinary = pThis->pu8LanBoot;
+            cbLanBootBinary  = cbFileLanBoot;
+        }
+
+        /*
+         * Map the Network Boot ROM into memory.
+         *
+         * Currently there is a fixed mapping: 0x000e2000 to 0x000effff contains
+         * the (up to) 56 kb ROM image.  The mapping size is fixed to trouble with
+         * the saved state (in PGM).
+         */
+        if (pu8LanBootBinary)
+        {
+            pThis->cbLanBoot = cbLanBootBinary;
+
+            rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4,
+                                      RT_MAX(cbLanBootBinary, _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff)),
+                                      pu8LanBootBinary, cbLanBootBinary,
+                                      PGMPHYS_ROM_FLAGS_SHADOWED, "Net Boot ROM");
+            AssertRCReturn(rc, rc);
+        }
     }
-    else
-        pThis->pu8LanBoot = NULL;
-
-    /* cleanup */
-    if (FileLanBoot != NIL_RTFILE)
-        RTFileClose(FileLanBoot);
-
-    /* If we were unable to get the data from file for whatever reason, fall
-     * back to the built-in LAN boot ROM image.
-     */
-    if (pThis->pu8LanBoot == NULL)
-    {
+    else if (pThis->pszLanBootFile)
+        LogRel(("PcBios: Skipping LAN ROM '%s' due to ancient target CPU.\n", pThis->pszLanBootFile));
 #ifdef VBOX_WITH_PXE_ROM
-        pu8LanBootBinary = g_abNetBiosBinary;
-        cbLanBootBinary  = g_cbNetBiosBinary;
-#endif
-    }
     else
-    {
-        pu8LanBootBinary = pThis->pu8LanBoot;
-        cbLanBootBinary  = cbFileLanBoot;
-    }
+        LogRel(("PcBios: Skipping built in ROM due to ancient target CPU.\n"));
+#endif
 
     /*
-     * Map the Network Boot ROM into memory.
-     *
-     * Currently there is a fixed mapping: 0x000e2000 to 0x000effff contains
-     * the (up to) 56 kb ROM image.  The mapping size is fixed to trouble with
-     * the saved state (in PGM).
+     * Configure Boot delay.
      */
-    if (pu8LanBootBinary)
-    {
-        pThis->cbLanBoot = cbLanBootBinary;
-
-        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4,
-                                  RT_MAX(cbLanBootBinary, _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff)),
-                                  pu8LanBootBinary, cbLanBootBinary,
-                                  PGMPHYS_ROM_FLAGS_SHADOWED, "Net Boot ROM");
-        AssertRCReturn(rc, rc);
-    }
-
     rc = CFGMR3QueryU8Def(pCfg, "DelayBoot", &pThis->uBootDelay, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,

@@ -44,9 +44,10 @@
 #define BUFFER_TOO_SMALL                0x89
 
 
+#if VBOX_BIOS_CPU >= 80386
 /* Warning: Destroys high bits of ECX. */
 uint16_t pci_find_class(uint16_t op, uint32_t dev_class, uint16_t start_bdf);
-#pragma aux pci_find_class =    \
+# pragma aux pci_find_class =    \
     ".386"                  \
     "shl    ecx, 16"        \
     "mov    cx, dx"         \
@@ -56,6 +57,7 @@ uint16_t pci_find_class(uint16_t op, uint32_t dev_class, uint16_t start_bdf);
     "mov    bx, 0xffff"     \
     "found:"                \
     parm [ax] [cx dx] [si] value [bx];
+#endif
 
 uint16_t pci_find_dev(uint16_t op, uint16_t dev_id, uint16_t ven_id, uint16_t start_bdf);
 #pragma aux pci_find_dev =  \
@@ -76,14 +78,16 @@ uint16_t pci_read_cfgw(uint16_t op, uint16_t bus_dev_fn, uint16_t reg);
     "int    0x1a"           \
     parm [ax] [bx] [di] value [cx];
 
+#if VBOX_BIOS_CPU >= 80386
 /* Warning: Destroys high bits of ECX. */
 uint32_t pci_read_cfgd(uint16_t op, uint16_t bus_dev_fn, uint16_t reg);
-#pragma aux pci_read_cfgd = \
+# pragma aux pci_read_cfgd = \
     ".386"                  \
     "int    0x1a"           \
     "mov    ax, cx"         \
     "shr    ecx, 16"        \
     parm [ax] [bx] [di] value [cx ax];
+#endif
 
 uint8_t pci_write_cfgb(uint16_t op, uint16_t bus_dev_fn, uint16_t reg, uint8_t val);
 #pragma aux pci_write_cfgb = \
@@ -95,15 +99,17 @@ uint8_t pci_write_cfgw(uint16_t op, uint16_t bus_dev_fn, uint16_t reg, uint16_t 
     "int    0x1a"           \
     parm [ax] [bx] [di] [cx];
 
+#if VBOX_BIOS_CPU >= 80386
 /* Warning: Destroys high bits of ECX. */
 uint8_t pci_write_cfgd(uint16_t op, uint16_t bus_dev_fn, uint16_t reg, uint32_t val);
-#pragma aux pci_write_cfgd = \
+# pragma aux pci_write_cfgd = \
     ".386"                  \
     "xchg   cx, dx"         \
     "shl    ecx, 16"        \
     "mov    cx, dx"         \
     "int    0x1a"           \
     parm [ax] [bx] [di] [dx cx];
+#endif
 
 
 /**
@@ -118,7 +124,11 @@ uint8_t pci_write_cfgd(uint16_t op, uint16_t bus_dev_fn, uint16_t reg, uint32_t 
  */
 uint16_t pci_find_classcode(uint32_t dev_class)
 {
+#if VBOX_BIOS_CPU >= 80386
     return pci_find_class((PCIBIOS_ID << 8) | PCIBIOS_FIND_CLASS_CODE, dev_class, 0);
+#else
+    return UINT16_C(0xffff);
+#endif
 }
 
 uint32_t pci_read_config_byte(uint8_t bus, uint8_t dev_fn, uint8_t reg)
@@ -133,7 +143,12 @@ uint32_t pci_read_config_word(uint8_t bus, uint8_t dev_fn, uint8_t reg)
 
 uint32_t pci_read_config_dword(uint8_t bus, uint8_t dev_fn, uint8_t reg)
 {
+#if VBOX_BIOS_CPU >= 80386
     return pci_read_cfgd((PCIBIOS_ID << 8) | PCIBIOS_READ_CONFIG_DWORD, (bus << 8) | dev_fn, reg);
+#else
+    return pci_read_cfgw((PCIBIOS_ID << 8) | PCIBIOS_READ_CONFIG_WORD, (bus << 8) | dev_fn, reg)
+        || ((uint32_t)pci_read_cfgw((PCIBIOS_ID << 8) | PCIBIOS_READ_CONFIG_WORD, (bus << 8) | dev_fn, reg + 2) << 16);
+#endif
 }
 
 #if 0 /* Disabled to save space because they are not needed. Might become useful in the future. */

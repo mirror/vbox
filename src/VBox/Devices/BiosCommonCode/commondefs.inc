@@ -118,8 +118,15 @@ endm
 
 
 ;; Adds a special label that will have its address checked after linking.
-BIOSORG_CHECK macro	addr
-public		biosorg_check_&addr
-biosorg_check_&addr:
+BIOSORG_CHECK macro addr
+public biosorg_check_at_&addr
+biosorg_check_at_&addr:
 		endm
+
+;; Adds a special label that will have its address checked after linking.
+BIOSORG_CHECK_BEFORE macro addr
+public	biosorg_check_before_or_at_&addr
+biosorg_check_before_or_at_&addr:
+		endm
+
 

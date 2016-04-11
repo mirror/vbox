@@ -73,7 +73,9 @@ BX_ROMBIOS32		equ	0
 BX_CALL_INT15_4F	equ	1
 
 ;; Set a fixed BIOS location, with a marker for verification
-BIOSORG		macro	addr
+BIOSORG		macro	addr, addr_minus_two
+.errnz (addr - 2 - addr_minus_two) ;; Couldn't convince wasm to accept $ here. Would've save us a lot of bother and ugly SED.
+		BIOSORG_CHECK_BEFORE addr_minus_two
 		org	addr - BIOS_FIX_BASE - 2
 		db	'XM'
 		BIOSORG_CHECK addr
@@ -203,7 +205,7 @@ BIOSSEG		segment	'CODE'
 ;;
 ;; Start of fixed code - eoi_jmp_post is kept near here to allow short jumps.
 ;;
-		BIOSORG	0E030h
+		BIOSORG	0E030h, 0E02Eh
 eoi_both_pics:
 		mov	al, PIC_CMD_EOI
 		out	PIC_SLAVE, al
@@ -235,7 +237,7 @@ no_eoi_jmp_post:
 ;; --------------------------------------------------------
 ;; POST entry point
 ;; --------------------------------------------------------
-		BIOSORG	0E05Bh
+		BIOSORG	0E05Bh, 0E059h
 post:
 		cli
 
@@ -425,7 +427,7 @@ endif
 		call	ebda_post
 
 		;; Initialize PCI devices. This can and should be done early.
-if VBOX_BIOS_CPU ge 80386
+if VBOX_BIOS_CPU ge 80386 ; (Impossible to do on 16-bit CPUs.)
 		call	pcibios_init_iomem_bases
 		call	pcibios_init_irqs
 endif
@@ -531,7 +533,7 @@ endif
 ;; --------------------------------------------------------
 ;; NMI handler
 ;; --------------------------------------------------------
-		BIOSORG	0E2C3h
+		BIOSORG	0E2C3h, 0E2C1h
 nmi:
 		C_SETUP
 		call	_nmi_handler_msg
@@ -659,7 +661,7 @@ return_blkmove:
 ;; --------------------------------------------------------
 ;; INT 13h handler - Disk services
 ;; --------------------------------------------------------
-		BIOSORG	0E3FEh
+		BIOSORG	0E3FEh, 0E3FCh
 
 int13_handler:
 		jmp	int13_relocated
@@ -675,7 +677,7 @@ rom_fdpt:
 ;; --------------------------------------------------------
 ;; INT 19h handler - Boot load service
 ;; --------------------------------------------------------
-		BIOSORG	0E6F2h
+		BIOSORG	0E6F2h, 0E6F0h
 
 int19_handler:
 		jmp	int19_relocated
@@ -743,13 +745,13 @@ endif
 ;; --------------------------------------------------------
 ;; Baud Rate Generator Table
 ;; --------------------------------------------------------
-		BIOSORG	0E729h
+		BIOSORG	0E729h, 0E727h
 
 
 ;; --------------------------------------------------------
 ;; INT 14h handler -  Serial Communication Service
 ;; --------------------------------------------------------
-		BIOSORG	0E739h
+		BIOSORG	0E739h, 0E737h
 int14_handler:
 		push	ds
 		push	es
@@ -825,7 +827,7 @@ ebda_post	endp
 ;; --------------------------------------------------------
 ;; INT 16h handler - Keyboard service
 ;; --------------------------------------------------------
-		BIOSORG	0E82Eh
+		BIOSORG	0E82Eh, 0E82Ch
 int16_handler:
 		sti
 		push	es
@@ -897,7 +899,7 @@ KBC_DATA	EQU	60h
 ;; --------------------------------------------------------
 ;; INT 09h handler - Keyboard ISR (IRQ 1)
 ;; --------------------------------------------------------
-		BIOSORG	0E987h
+		BIOSORG	0E987h, 0E985h
 int09_handler:
 		cli			; TODO: why? they're off already!
 		push	ax
@@ -975,7 +977,7 @@ int06_handler:
 ;; --------------------------------------------------------
 ;; INT 13h handler - Diskette service
 ;; --------------------------------------------------------
-		BIOSORG	0EC59h
+		BIOSORG	0EC59h, 0EC57h
 int13_diskette:
 		jmp	int13_noeltorito
 
@@ -1296,10 +1298,6 @@ rtc_pos_hour_loop:			; 18206507*3600*0x100/1000000 = 0x100076C (16779116.8512)
                dec	al
                jnz	rtc_pos_hour_loop
 
-
-		mov	ax, [46Ch]
-		mov	dx, [46Ch+2]
-
 rtc_pos_shift:
 		mov	cl, ch
                mov	ch, dl
@@ -1364,7 +1362,7 @@ rtc_post	endp
 ;; --------------------------------------------------------
 ;; INT 0Eh handler - Diskette IRQ 6 ISR
 ;; --------------------------------------------------------
-		BIOSORG	0EF57h
+		BIOSORG	0EF57h, 0EF55h
 int0e_handler:
 		push	ax
 		push	dx
@@ -1408,7 +1406,7 @@ int0e_normal:
 ;; --------------------------------------------------------
 ;; Diskette Parameter Table
 ;; --------------------------------------------------------
-		BIOSORG	0EFC7h
+		BIOSORG	0EFC7h, 0EFC5h
 _diskette_param_table:
 		db	0AFh
 		db	2		; HLT=1, DMA mode
@@ -1482,7 +1480,7 @@ int1c_handler:	;; user timer tick
 ;; --------------------------------------------------------
 ;; INT 10h functions 0-Fh entry point
 ;; --------------------------------------------------------
-		BIOSORG 0F045h
+		BIOSORG 0F045h, 0F043h
 i10f0f_entry:
 		iret
 
@@ -1490,7 +1488,7 @@ i10f0f_entry:
 ;; --------------------------------------------------------
 ;; INT 10h handler - MDA/CGA video
 ;; --------------------------------------------------------
-		BIOSORG 0F065h
+		BIOSORG 0F065h, 0F063h
 int10_handler:
 		;; do nothing - assumes VGA
 		iret
@@ -1499,7 +1497,7 @@ int10_handler:
 ;; --------------------------------------------------------
 ;; MDA/CGA Video Parameter Table (INT 1Dh)
 ;; --------------------------------------------------------
-		BIOSORG 0F0A4h
+		BIOSORG 0F0A4h, 0F0A2h
 mdacga_vpt:
 
 
@@ -1613,7 +1611,7 @@ include pirq.inc
 ;; --------------------------------------------------------
 ;; INT 12h handler - Memory size
 ;; --------------------------------------------------------
-		BIOSORG	0F841h
+		BIOSORG	0F841h, 0F83Fh
 int12_handler:
 		;; Don't touch - fixed size!
 		sti
@@ -1764,7 +1762,7 @@ int76_handler	endp
 ;; --------------------------------------------------------
 ;; 8x8 font (first 128 characters)
 ;; --------------------------------------------------------
-		BIOSORG	0FA6Eh
+		BIOSORG	0FA6Eh, 0FA6Ch
 include font8x8.inc
 
 
@@ -1817,11 +1815,28 @@ int70_handler:
 		pop	es
 		iret
 
+if VBOX_BIOS_CPU lt 80386
+;
+; We're tight on space down below in the int08_handler, so put
+; the 16-bit rollover code here.
+;
+int08_maybe_rollover:
+               ja	int08_rollover
+		cmp	ax, 00B0h
+               jb	int08_store_ticks
+		;; there has been a midnight rollover
+int08_rollover:
+		xor	dx, dx
+		xor	ax, ax
+
+		inc	byte ptr ds:[70h]	; increment rollover flag
+		jmp	int08_store_ticks
+endif
 
 ;; --------------------------------------------------------
 ;; Timer tick - IRQ 0 handler
 ;; --------------------------------------------------------
-		BIOSORG	0FEA5h
+		BIOSORG	0FEA5h, 0FEA3h
 int08_handler:
 if VBOX_BIOS_CPU ge 80386
 		.386
@@ -1830,7 +1845,6 @@ if VBOX_BIOS_CPU ge 80386
 else
 		sti
 		push	ax
-		push	bx
 endif
 		push	ds
 		push	dx
@@ -1842,37 +1856,33 @@ if VBOX_BIOS_CPU ge 80386
 		inc	eax
 else
 		mov	ax, ds:[6Ch]	; get ticks dword
-               mov     bx, ds:[6Ch+2]
-		add	ax, 1
-               adc	bx, 0
+               mov     dx, ds:[6Ch+2]
+               inc	ax		; inc+jz+inc saves two bytes over add+adc.
+               jnz	int08_compare
+               inc	dx
+int08_compare:
 endif
 
 		;; compare eax to one day's worth of ticks (at 18.2 Hz)
 if VBOX_BIOS_CPU ge 80386
 		cmp	eax, 1800B0h
-else
-		cmp	bx, 18h
                jb	int08_store_ticks
-               ja	int08_rollover
-               cmp	ax, 00B0h
-endif
-		jb	int08_store_ticks
-		;; there has been a midnight rollover
-int08_rollover:
-if VBOX_BIOS_CPU ge 80386
-		xor	eax, eax
 else
-		xor	ax, ax
-		xor	bx, bx
+		cmp	dx, 18h
+               jae	int08_maybe_rollover
 endif
+
+if VBOX_BIOS_CPU ge 80386
+		;; there has been a midnight rollover
+		xor	eax, eax
 		inc	byte ptr ds:[70h]	; increment rollover flag
 
 int08_store_ticks:
-if VBOX_BIOS_CPU ge 80386
 		mov	ds:[6Ch], eax
 else
+int08_store_ticks:
 		mov	ds:[6Ch], ax
-		mov	ds:[6Ch+2], bx
+		mov	ds:[6Ch+2], dx
 endif
 
 		;; time to turn off floppy drive motor(s)?
@@ -1899,7 +1909,6 @@ if VBOX_BIOS_CPU ge 80386
 		pop	eax
 		.286
 else
-		pop     bx
 		pop     ax
 endif
 		iret
@@ -1908,7 +1917,7 @@ endif
 ;; --------------------------------------------------------
 ;; Initial interrupt vector offsets for POST
 ;; --------------------------------------------------------
-		BIOSORG	0FEF3h
+		BIOSORG	0FEF3h, 0FEF1h
 vector_table:
 
 
@@ -1916,7 +1925,7 @@ vector_table:
 ;; --------------------------------------------------------
 ;; BIOS copyright string
 ;; --------------------------------------------------------
-		BIOSORG	0FF00h
+		BIOSORG	0FF00h, 0FEFEh
 bios_string:
 		db	BIOS_COPYRIGHT
 
@@ -1924,7 +1933,7 @@ bios_string:
 ;; --------------------------------------------------------
 ;; IRET - default interrupt handler
 ;; --------------------------------------------------------
-		BIOSORG	0FF53h
+		BIOSORG	0FF53h, 0FF51h
 
 dummy_iret:
 		iret
@@ -1943,7 +1952,7 @@ include smidmi.inc
 ;; --------------------------------------------------------
 ;; Processor reset entry point
 ;; --------------------------------------------------------
-		BIOSORG	0FFF0h
+		BIOSORG	0FFF0h, 0FFEEh
 cpu_reset:
 		;; This is where the CPU starts executing after a reset
 		jmp	far ptr post
