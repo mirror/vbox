@@ -131,7 +131,7 @@ void UIMainEventListeningThread::run()
     while (!isShutdown())
     {
         /* Fetch the event from the queue: */
-        CEvent event = source.GetEvent(listener, 50);
+        CEvent event = source.GetEvent(listener, 500);
         if (!event.isNull())
         {
             /* Process the event and tell the listener: */
