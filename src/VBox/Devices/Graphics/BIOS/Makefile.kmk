@@ -120,7 +120,7 @@ define def_VBoxVgaBiosBin
  else
   VgaBiosBin_CLEAN  += $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom
 
-  $$$$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c + $$$$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom: \
+  $$$$(VgaBiosBin_0_OUTDIR)/VgaBiosBin$(1).c + $$$$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom: \
  		$$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).asm \
  		$$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).md5sum \
  		$$(VBOX_BIN2C) | $$$$(dir $$$$@)
@@ -129,7 +129,7 @@ define def_VBoxVgaBiosBin
 	$$(QUIET)$$(REDIRECT) -C $$(VgaBiosBin_0_OUTDIR) -- \
 		$$(MD5SUM_EXT) -c $$(basename $$<).md5sum
 	$$(QUIET)$$(VBOX_BIN2C) -min 32 -max 36 -mask 0x0fff -ascii -export VgaBiosBinary$(1) $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom $$@
-	$$(QUIET)$$(RM) -f -- $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom
+	$$(QUIET)$$(RM) -f -- $$$$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom
  endif
 endef
 $(evalcall2 def_VBoxVgaBiosBin,386)
