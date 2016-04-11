@@ -32,6 +32,7 @@
 
 BS3_DECL(void) Bs3TrapPrintFrame(PCBS3TRAPFRAME pTrapFrame)
 {
+#if 1
     Bs3TestPrintf("Trap %#04x errcd=%#06RX64 at %04x:%016RX64 - test step %d (%#x)\n",
                   pTrapFrame->bXcpt,
                   pTrapFrame->uErrCd,
@@ -39,5 +40,31 @@ BS3_DECL(void) Bs3TrapPrintFrame(PCBS3TRAPFRAME pTrapFrame)
                   pTrapFrame->Ctx.rip.u64,
                   g_usBs3TestStep, g_usBs3TestStep);
     Bs3RegCtxPrint(&pTrapFrame->Ctx);
+#else
+    /* This is useful if having trouble returning from real mode. */
+    PCBS3REGCTX pRegCtx = &pTrapFrame->Ctx;
+    Bs3TestPrintf("Trap %#04x errcd=%#06RX64 at %04x:%016RX64 - test step %d (%#x)\n"
+                  "eax=%08RX32 ebx=%08RX32 ecx=%08RX32 edx=%08RX32 esi=%08RX32 edi=%08RX32\n"
+                  "eip=%08RX32 esp=%08RX32 ebp=%08RX32 efl=%08RX32 cr0=%08RX32 cr2=%08RX32\n"
+                  "cs=%04RX16   ds=%04RX16 es=%04RX16 fs=%04RX16 gs=%04RX16   ss=%04RX16 cr3=%08RX32 cr4=%08RX32\n"
+                  "tr=%04RX16 ldtr=%04RX16 cpl=%d   mode=%#x fbFlags=%#x\n"
+                  ,
+                  pTrapFrame->bXcpt,
+                  pTrapFrame->uErrCd,
+                  pTrapFrame->Ctx.cs,
+                  pTrapFrame->Ctx.rip.u64,
+                  g_usBs3TestStep, g_usBs3TestStep
+                  ,
+                  pRegCtx->rax.u32, pRegCtx->rbx.u32, pRegCtx->rcx.u32, pRegCtx->rdx.u32, pRegCtx->rsi.u32, pRegCtx->rdi.u32
+                  ,
+                  pRegCtx->rip.u32, pRegCtx->rsp.u32, pRegCtx->rbp.u32, pRegCtx->rflags.u32,
+                  pRegCtx->cr0.u32, pRegCtx->cr2.u32
+                  ,
+                  pRegCtx->cs, pRegCtx->ds, pRegCtx->es, pRegCtx->fs, pRegCtx->gs, pRegCtx->ss,
+                  pRegCtx->cr3.u32, pRegCtx->cr4.u32
+                  ,
+                  pRegCtx->tr, pRegCtx->ldtr, pRegCtx->bCpl, pRegCtx->bMode, pRegCtx->fbFlags);
+
+#endif
 }
 

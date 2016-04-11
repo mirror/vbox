@@ -102,12 +102,12 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
 %else
         push    ds
  %ifdef TMPL_CMN_R86
-        push    BS3DATA16
+        push    BS3_SEL_DATA16
  %else
         push    RT_CONCAT(BS3_SEL_R0_DS,TMPL_BITS)
  %endif
-        pop     ds                      ; DS = BS3DATA16_GROUP or FLAT and we can safely access data
- %if TMPL_BITS == 16 && (TMPL_MODE == BS3_MODE_SYS_RM || TMPL_MODE == BS3_MODE_SYS_PE16)
+        pop     ds                      ; DS = BS3KIT_GRPNM_DATA16 or FLAT and we can safely access data
+ %if TMPL_BITS == 16 && (TMPL_MODE == BS3_MODE_RM || TMPL_MODE == BS3_MODE_PE16)
         cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
         jbe     .prologue_pre_80386
  %endif
@@ -122,7 +122,7 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
         push    ebp
         push    esp
         pushfd
- %if TMPL_MODE == BS3_MODE_SYS_RM || TMPL_MODE == BS3_MODE_SYS_PE16
+ %if TMPL_MODE == BS3_MODE_RM || TMPL_MODE == BS3_MODE_PE16
         jmp     .prologue_end
 
 .prologue_pre_80386:
@@ -156,7 +156,7 @@ BS3_PROC_BEGIN_MODE Bs3TrapSystemCallHandler
         ;
         cmp     ax, BS3_SYSCALL_LAST
         ja      .invalid_syscall
-%ifdef TMPL_16BIT
+%if TMPL_BITS == 16
         mov     bx, ax
         shl     bx, 1
         jmp     word [cs:.aoffSyscallHandlers + bx]
@@ -361,7 +361,7 @@ TMPL_BEGIN_TEXT
         je      .return_to_v8086_from_16bit_krnl
         cmp     bl, BS3_MODE_CODE_32
         je      .return_to_32bit_from_16bit_krnl
- %if TMPL_MODE == BS3_MODE_SYS_RM || TMPL_MODE == BS3_MODE_SYS_PE16
+ %if TMPL_MODE == BS3_MODE_RM || TMPL_MODE == BS3_MODE_PE16
         cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
         jbe     .return_pre_80386
  %endif
@@ -388,21 +388,21 @@ TMPL_BEGIN_TEXT
 %endif
 
 %if TMPL_BITS == 16
- %if TMPL_MODE == BS3_MODE_SYS_RM || TMPL_MODE == BS3_MODE_SYS_PE16
+ %if TMPL_MODE == BS3_MODE_RM || TMPL_MODE == BS3_MODE_PE16
         ; Variant of the above for 80286 and older.
 .return_pre_80386:
         add     sp, 0ch
         pop     di
-        pop     di
+        pop     bx                      ; dummy
         pop     si
-        pop     si
+        pop     bx                      ; dummy
         pop     dx
-        pop     dx
+        pop     bx                      ; dummy
         pop     cx
-        pop     cx
+        pop     bx                      ; dummy
         pop     ax
-        pop     ax
-        pop     bx
+        pop     bx                      ; dummy
+        pop     bx                      ; pushed twice
         pop     bx
         pop     ds
         pop     bp
@@ -755,6 +755,9 @@ TMPL_BEGIN_TEXT
 .save_context_full_return:
         ret
 
+%if TMPL_BITS == 16
+        CPU 286
+%endif
 
         ;
         ; Internal function for converting a syscall pointer parameter (cx:xSI)

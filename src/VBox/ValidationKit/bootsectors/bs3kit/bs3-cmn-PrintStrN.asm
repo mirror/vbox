@@ -151,6 +151,7 @@ BS3_PROC_END_CMN   Bs3PrintStrN
 ; @uses     AX, BX, CX, SI
 ;
 BS3_PROC_BEGIN Bs3PrintStrN_c16_CX_Bytes_At_DS_SI
+        CPU 8086
         ; Check if CX is zero first.
         test    cx, cx
         jz      .bios_loop_done

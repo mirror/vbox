@@ -402,7 +402,7 @@
 ; This is important when accessing global variables.
 ;
 %ifdef TMPL_16BIT
- %define TMPL_WRT_DATA16_OR_FLAT    wrt BS3DATA16
+ %define TMPL_WRT_DATA16_OR_FLAT    wrt BS3KIT_GRPNM_DATA16
 %else
  %define TMPL_WRT_DATA16_OR_FLAT    wrt FLAT
 %endif
@@ -412,7 +412,7 @@
 ; This is important when accessing global variables.
 ;
 %if TMPL_BITS == 16
- %define TMPL_DATA16_WRT(a_Var)     a_Var wrt BS3DATA16
+ %define TMPL_DATA16_WRT(a_Var)     a_Var wrt BS3KIT_GRPNM_DATA16
 %elif TMPL_BITS == 32
  %define TMPL_DATA16_WRT(a_Var)     a_Var wrt FLAT
 %elif TMPL_BITS == 64

@@ -140,12 +140,27 @@ BS3_DECL(void) bs3TestSubCleanup_c64(void); /**< @copydoc bs3TestSubCleanup_c16 
  * @impl_callback_method{FNBS3STRFORMATOUTPUT,
  *      Used by Bs3TestFailedV and Bs3TestSkippedV.
  *
- *      The @a pvUser parameter must point to a boolean that was initialized to false. }
+ *      The @a pvUser parameter must point a BS3TESTFAILEDBUF structure. }
  */
 BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput_c16(char ch, void BS3_FAR *pvUser);
 BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput_c32(char ch, void BS3_FAR *pvUser);
 BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput_c64(char ch, void BS3_FAR *pvUser);
 #define bs3TestFailedStrOutput BS3_CMN_NM(bs3TestFailedStrOutput) /**< Selects #bs3TestFailedStrOutput_c16, #bs3TestFailedStrOutput_c32 or #bs3TestFailedStrOutput_c64. */
+
+/**
+ * Output buffering for bs3TestFailedStrOutput.
+ */
+typedef struct BS3TESTFAILEDBUF
+{
+    /** Initialize to false. */
+    bool    fNewLine;
+    /** Initialize to zero. */
+    uint8_t cchBuf;
+    /** Buffer, uninitialized. */
+    char    achBuf[128];
+} BS3TESTFAILEDBUF;
+/** Pointer to a bs3TestFailedStrOutput buffer.  */
+typedef BS3TESTFAILEDBUF BS3_FAR *PBS3TESTFAILEDBUF;
 
 #endif
 

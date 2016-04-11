@@ -1,10 +1,10 @@
 ; $Id$
 ;; @file
-; BS3Kit - First Object, calling real-mode main().
+; BS3Kit - First Object for DOS executables, defines segments only.
 ;
 
 ;
-; Copyright (C) 2007-2015 Oracle Corporation
+; Copyright (C) 2007-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,6 @@
 ;
 
 
-
 %include "bs3kit.mac"
 
 ;
@@ -34,19 +33,4 @@
 ;
 %include "bs3-first-common.mac"
 
-
-EXTERN Main_rm
-BS3_EXTERN_CMN Bs3Shutdown
-        push    word 0                  ; zero return address.
-        push    word 0                  ; zero caller BP
-        mov     bp, sp
-
-        ;
-        ; Nothing to init here, just call main and shutdown if it returns.
-        ;
-        mov     ax, BS3_SEL_DATA16
-        mov     es, ax
-        mov     ds, ax
-        call    NAME(Main_rm)
-        call    Bs3Shutdown
 

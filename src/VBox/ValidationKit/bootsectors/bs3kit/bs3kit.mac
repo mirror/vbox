@@ -212,7 +212,7 @@ BS3_SET_REG_ALIASES ARCH_BITS
  ; @param a_Var The BS3DATA16 variable.
  %undef BS3_DATA16_WRT
  %if %1 == 16
-  %define BS3_DATA16_WRT(a_Var)     a_Var wrt BS3DATA16
+  %define BS3_DATA16_WRT(a_Var)     a_Var wrt BS3KIT_GRPNM_DATA16
  %elif %1 == 32
   %define BS3_DATA16_WRT(a_Var)     a_Var wrt FLAT
  %else
@@ -345,6 +345,7 @@ segment BS3FLAT use32 class=BS3FLAT
 GROUP FLAT BS3FLAT
 %endif
 
+
 %macro BS3_BEGIN_TEXT16 0
  %ifndef  BS3_BEGIN_TEXT16_NOT_FIRST
   %define BS3_BEGIN_TEXT16_NOT_FIRST
@@ -365,7 +366,10 @@ GROUP FLAT BS3FLAT
   %ifdef ASM_FORMAT_ELF
         section BS3DATA16 align=2 progbits alloc noexec write
   %else
-        section BS3DATA16 align=2 CLASS=FAR_DATA PUBLIC USE16
+        section BS3DATA16 align=2 CLASS=BS3KIT_CLASS_DATA16 PUBLIC USE16
+   %ifndef BS3_BEGIN_DATA16_WITHOUT_GROUP ; bs3-first-common.mac trick.
+    GROUP BS3KIT_GRPNM_DATA16 BS3DATA16
+   %endif
   %endif
  %else
         section BS3DATA16
@@ -1118,7 +1122,7 @@ size %1 %+ _EndProc     0
 ;; The base address of the BS3SYSTEM16 segment.
 ;; @sa BS3_SEL_SYSTEM16
 %define BS3_ADDR_BS3SYSTEM16    020000h
-;; The base address of the BS3DATA16 segment.
+;; The base address of the BS3DATA16/BS3KIT_GRPNM_DATA16 segment.
 ;; @sa BS3_SEL_DATA16
 %define BS3_ADDR_BS3DATA16      029000h
 ;; @}
@@ -1395,7 +1399,7 @@ endstruc
 %define BS3_SEL_FREE_PART3          2008h ;;< Free selector space - part \%3.
 %define BS3_SEL_FREE_PART3_LAST     28f8h ;;< Free selector space - part \%3, last entry.
 
-%define BS3_SEL_DATA16              2900h ;;< The BS3DATA16 selector.
+%define BS3_SEL_DATA16              2900h ;;< The BS3DATA16/BS3KIT_GRPNM_DATA16 selector.
 
 %define BS3_SEL_FREE_PART4          2908h ;;< Free selector space - part \#4.
 %define BS3_SEL_FREE_PART4_LAST     2f98h ;;< Free selector space - part \#4, last entry.

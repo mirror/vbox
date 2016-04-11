@@ -77,7 +77,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         ret
 
 .not_v8086:
-        pop     ax                      ; Drop the push ds so the stacks are identical. Keep DS = BS3DATA16 though.
+        pop     ax                      ; Drop the push ds so the stacks are identical. Keep DS = BS3KIT_GRPNM_DATA16 though.
  %endif
 
         ; Ensure that we're in ring-0.

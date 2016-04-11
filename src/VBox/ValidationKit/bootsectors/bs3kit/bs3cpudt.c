@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TestSkipped
+ * BS3Kit - Tests Bs3CpuDetect_rm.
  */
 
 /*
@@ -28,60 +28,34 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "bs3kit-template-header.h"
-#include "bs3-cmn-test.h"
-#include <iprt/asm-amd64-x86.h>
+
+#include "bs3kit.h"
+#include <stdio.h>
+#include <stdint.h>
 
 
-/**
- * Equivalent to RTTestSkippedV.
- */
-BS3_DECL(void) Bs3TestSkippedV(const char *pszFormat, va_list va)
+unsigned StoreMsw(void);
+#pragma aux StoreMsw = \
+    ".286" \
+    "smsw ax" \
+    value [ax];
+
+void LoadMsw(unsigned);
+#pragma aux LoadMsw = \
+    ".286p" \
+    "lmsw ax" \
+    parm [ax];
+
+int main()
 {
-    if (g_cusBs3TestErrors == g_cusBs3SubTestAtErrors)
+    uint16_t volatile usCpu = Bs3CpuDetect_rm();
+    printf("usCpu=%#x\n", usCpu);
+    if ((usCpu & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
     {
-        /* Just mark it as skipped and deal with it when the sub-test is done. */
-        g_fbBs3SubTestSkipped = true;
-
-        /* Tell VMMDev */
-        if (g_fbBs3VMMDevTesting)
-#if ARCH_BITS == 16
-            ASMOutU16(VMMDEV_TESTING_IOPORT_CMD, (uint16_t)VMMDEV_TESTING_CMD_SKIPPED);
-#else
-            ASMOutU32(VMMDEV_TESTING_IOPORT_CMD, VMMDEV_TESTING_CMD_SKIPPED);
-#endif
-
-        /* The reason why it was skipped is optional. */
-        if (pszFormat)
-        {
-            BS3TESTFAILEDBUF Buf;
-            Buf.fNewLine = false;
-            Buf.cchBuf   = 0;
-            Bs3StrFormatV(pszFormat, va, bs3TestFailedStrOutput, &Buf);
-        }
-        else if (g_fbBs3VMMDevTesting)
-            ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, 0);
+        printf("(42=%d) msw=%#x (42=%d)\n", 42, StoreMsw(), 42);
+        LoadMsw(0);
+        printf("lmsw 0 => msw=%#x (42=%d)\n", StoreMsw(), 42);
     }
-}
-
-
-/**
- * Equivalent to RTTestSkipped.
- */
-BS3_DECL(void) Bs3TestSkippedF(const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    Bs3TestSkippedV(pszFormat, va);
-    va_end(va);
-}
-
-
-/**
- * Equivalent to RTTestSkipped.
- */
-BS3_DECL(void) Bs3TestSkipped(const char *pszWhy)
-{
-    Bs3TestSkippedF(pszWhy ? "%s" : NULL, pszWhy);
+    return 0;
 }
 

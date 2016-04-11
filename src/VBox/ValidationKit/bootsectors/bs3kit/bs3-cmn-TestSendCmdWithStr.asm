@@ -42,19 +42,22 @@ BS3_PROC_BEGIN_CMN bs3TestSendCmdWithStr
         push    xSI
         BS3_ONLY_16BIT_STMT push ds
 
-        mov     ax, seg g_fbBs3VMMDevTesting
-        mov     ds, ax
         cmp     byte [BS3_DATA16_WRT(g_fbBs3VMMDevTesting)], 0
         je      .no_vmmdev
 
         ; The command (uCmd).
         mov     dx, VMMDEV_TESTING_IOPORT_CMD
+%if TMPL_BITS == 16
+        mov     ax, [xBP + xCB*2]       ; We ignore the top bits in 16-bit mode.
+        out     dx, ax
+%else
         mov     eax, [xBP + xCB*2]
         out     dx, eax
+%endif
 
         ; The string.
         mov     dx, VMMDEV_TESTING_IOPORT_DATA
-%ifdef TMPL_16BIT
+%if TMPL_BITS == 16
         lds     si, [xBP + xCB*2 + sCB]
 %else
         mov     xSI, [xBP + xCB*2 + sCB]

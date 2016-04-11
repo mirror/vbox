@@ -421,7 +421,7 @@ BS3_GLOBAL_DATA Bs3GdteFreePart3, 08f8h
         times 08f8h db 0
 
         ;
-        ; 2900h - the real mode segment number for BS3DATA16. DPL=3. BASE=0x29000h
+        ; 2900h - the real mode segment number for BS3KIT_GRPNM_DATA16. DPL=3. BASE=0x29000h
         ;
 BS3GdtAssertOffset 02900h
 BS3_GLOBAL_DATA Bs3Gdte_DATA16, 8h

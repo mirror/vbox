@@ -29,6 +29,20 @@
 BS3_EXTERN_SYSTEM16 Bs3Gdt
 %if TMPL_MODE == BS3_MODE_PE16
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
+BS3_EXTERN_CMN Bs3KbdWrite
+BS3_EXTERN_CMN Bs3KbdWait
+%endif
+
+
+;*********************************************************************************************************************************
+;*  Global Variables                                                                                                             *
+;*********************************************************************************************************************************
+%if TMPL_MODE == BS3_MODE_PE16
+BS3_BEGIN_DATA16
+;; Where to start restoring stack.
+g_ResumeSp: dw 0xfeed
+;; Where to start restoring stack.
+g_ResumeSs: dw 0xface
 %endif
 
 TMPL_BEGIN_TEXT
@@ -106,16 +120,118 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM
         ;
         ; On 80286 we must reset the CPU to get back to real mode.
         ;
+        CPU 286
         pop     ax
         push    ax
         test    ax, ax
         jz      .is_386_or_better
-.implement_this_later:
-        int3
-        jmp     .implement_this_later
 
-        jmp     .reload_cs
+        ; Save registers and flags, storing SS:SP in at a known global address.
+%ifdef BS3_STRICT
+        mov     ax, 0feedh
+        mov     bx, 0faceh
+%endif
+        push    di
+        push    si
+        push    bp
+        push    bx
+        push    dx
+        push    cx
+        push    ax
+        pushf
 
+        ; Convert ss:sp to real mode address.
+        BS3_EXTERN_CMN Bs3SelProtFar32ToFlat32
+        mov     ax, sp
+        push    ss
+        push    0
+        push    ax
+        call    Bs3SelProtFar32ToFlat32
+        add     sp, 6
+
+        mov     [g_ResumeSp], ax
+        shl     dx, 12
+        mov     [g_ResumeSs], dx
+
+        ; Setup resume vector.
+        mov     bx, BS3_SEL_R0_SS16
+        mov     es, bx
+        mov     word [es:467h],   .resume
+        mov     word [es:467h+2], BS3_SEL_TEXT16
+
+        mov     al, 0fh | 80h
+        out     70h, al                 ; set register index
+        in      al, 80h
+        mov     al, 0ah                 ; shutdown action command - no EOI, no 287 reset.
+        out     71h, al                 ; set cmos[f] = al - invoke testResume as early as possible.
+        in      al, 71h                 ; flush
+
+ %if 0 ; for testing in VM
+        CPU 386
+        mov     ax, BS3_SEL_R0_DS16
+        mov     ds, ax
+        mov     es, ax
+        mov     fs, ax
+        mov     gs, ax
+
+        mov     eax, cr0
+        and     ax, ~X86_CR0_PE
+        mov     cr0, eax
+hlt
+        jmp     BS3_SEL_TEXT16:.resume
+ %endif
+
+        ; Port A reset. (FYI: tripple fault does not do the trick)
+        in      al, 92h
+        or      al, 1
+        out     92h, al
+        in      al, 80h                 ; flush
+        mov     cx, 0ffffh
+.reset_delay:
+        loop    .reset_delay
+
+        ; Keyboard controller reset.
+        call    Bs3KbdWait
+        push    0                       ; zero data (whatever.
+        push    0fh                     ; KBD_CCMD_RESET
+        call    Bs3KbdWrite
+.forever:
+        jmp     .forever
+
+        ; This is the resume point. We should be in real mode now, at least in theory.
+.resume:
+        mov     ax, BS3_SEL_DATA16
+        mov     ds, ax
+        mov     es, ax
+        mov     ax, [g_ResumeSp]
+        mov     ss, [g_ResumeSs]
+        mov     sp, ax
+
+        popf
+        pop     ax
+        pop     cx
+        pop     dx
+        pop     bx
+        pop     bp
+        pop     si
+        pop     di
+ %ifdef BS3_STRICT
+        cmp     ax, 0feedh
+        jne     .bad_286_rm_switch
+        cmp     bx, 0faceh
+        jne     .bad_286_rm_switch
+ %endif
+        jmp     .enter_mode
+
+ %ifdef BS3_STRICT
+.bad_286_rm_switch:
+        mov ax, 0e00h + 'Q'
+        mov bx, 0ff00h
+        int 10h
+        jmp     .bad_286_rm_switch
+ %endif
+
+        CPU 386
  %elif TMPL_BITS != 16
         ;
         ; Must be in 16-bit segment when calling Bs3SwitchTo16Bit.
@@ -162,12 +278,12 @@ BS3_BEGIN_TEXT16
         mov     ah, [bx + 7 + Bs3Gdt]
         add     sp, [bx + 2 + Bs3Gdt]   ; ASSUMES not expand down segment.
         adc     ax, 0
-%ifdef BS3_STRICT
+ %ifdef BS3_STRICT
         test    ax, 0fff0h
         jz      .stack_conv_ok
         int3
 .stack_conv_ok:
-%endif
+ %endif
         shl     ax, 12
         mov     ss, ax
  %if TMPL_BITS != 16
@@ -187,6 +303,7 @@ BS3_BEGIN_TEXT16
         ;
         ; Call routine for doing mode specific setups.
         ;
+.enter_mode:
         extern  NAME(Bs3EnteredMode_rm)
         call    NAME(Bs3EnteredMode_rm)
 
@@ -197,7 +314,7 @@ BS3_BEGIN_TEXT16
         popf
         pop     bx
         pop     ax
-        pop     bp
+        ret
  %endif
 .do_386_epilogue:
  %if BS3_MODE_IS_64BIT_SYS(TMPL_MODE)

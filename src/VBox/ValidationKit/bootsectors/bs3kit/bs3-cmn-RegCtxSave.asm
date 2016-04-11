@@ -43,6 +43,7 @@ TMPL_BEGIN_TEXT
 ; @uses         None.
 ;
 BS3_PROC_BEGIN_CMN Bs3RegCtxSave
+        TMPL_ONLY_16BIT_STMT CPU 8086
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
@@ -55,7 +56,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
 
         ;
         ; Prologue. Load ES:xDI with pRegCtx.
-        ; (ASSUMES ds is BS3DATA16/FLAT of course.)
+        ; (ASSUMES ds is BS3KIT_GRPNM_DATA16/FLAT of course.)
         ;
 %if TMPL_BITS == 16
         les     di, [bp + 4]
@@ -110,9 +111,12 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         ; Join the common code.
         cmp     cl, BS3CPU_80286
         jb      .common_ancient
+        CPU 286
 
         smsw    [xDI + BS3REGCTX.cr0]
         jmp     .common_80286
+
+        CPU 386
 %endif
 
 
@@ -195,11 +199,13 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
 
         ; 80286 control registers.
 .common_80286:
+        TMPL_ONLY_16BIT_STMT CPU 286
         str     [xDI + BS3REGCTX.tr]
         sldt    [xDI + BS3REGCTX.ldtr]
 
         ; Common stuff - stuff on the stack, 286 segment registers.
 .common_ancient:
+        TMPL_ONLY_16BIT_STMT CPU 8086
         mov     xAX, [xBP - xCB*1]
         mov     [xDI + BS3REGCTX.rflags], xAX
         mov     xAX, [xBP - xCB*2]

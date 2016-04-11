@@ -181,7 +181,7 @@ RT_C_DECLS_BEGIN
 /** The base address of the BS3SYSTEM16 segment.
  * @sa BS3_SEL_SYSTEM16 */
 #define BS3_ADDR_BS3SYSTEM16    0x20000
-/** The base address of the BS3DATA16 segment.
+/** The base address of the BS3DATA16/BS3KIT_GRPNM_DATA16 segment.
  * @sa BS3_SEL_DATA16 */
 #define BS3_ADDR_BS3DATA16      0x29000
 /** @} */
@@ -353,7 +353,7 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_FREE_PART3          0x2008 /**< Free selector space - part \#3. */
 #define BS3_SEL_FREE_PART3_LAST     0x28f8 /**< Free selector space - part \#3, last entry. */
 
-#define BS3_SEL_DATA16              0x2900 /**< The BS3DATA16 selector. */
+#define BS3_SEL_DATA16              0x2900 /**< The BS3DATA16/BS3KIT_GRPNM_DATA16 selector. */
 
 #define BS3_SEL_FREE_PART4          0x2908 /**< Free selector space - part \#4. */
 #define BS3_SEL_FREE_PART4_LAST     0x2f98 /**< Free selector space - part \#4, last entry. */
@@ -944,7 +944,7 @@ extern X86DESC BS3_FAR_DATA Bs3GdteFreePart2[511];
 extern X86DESC BS3_FAR_DATA Bs3Gdte_SYSTEM16;
 /** Free GDTes, part \#3. */
 extern X86DESC BS3_FAR_DATA Bs3GdteFreePart3[223];
-/** The BS3DATA16/BS3_FAR_DATA GDT entry. */
+/** The BS3DATA16/BS3KIT_GRPNM_DATA16 GDT entry. */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_DATA16;
 /** Free GDTes, part \#4. */
 
@@ -1049,12 +1049,12 @@ extern uint8_t  BS3_FAR_DATA Bs3System16_StartOfSegment;
 #endif
 extern uint8_t  BS3_FAR_DATA Bs3System16_EndOfSegment;
 
-/** Start of the BS3DATA16 segment.   */
+/** Start of the BS3DATA16/BS3KIT_GRPNM_DATA16 segment.   */
 #ifndef DOXYGEN_RUNNING
 # define Bs3Data16_StartOfSegment BS3_DATA_NM(Bs3Data16_StartOfSegment)
 #endif
 extern uint8_t  BS3_FAR_DATA Bs3Data16_StartOfSegment;
-/** End of the BS3DATA16 segment.   */
+/** End of the BS3DATA16/BS3KIT_GRPNM_DATA16 segment.   */
 #ifndef DOXYGEN_RUNNING
 # define Bs3Data16_EndOfSegment BS3_DATA_NM(Bs3Data16_EndOfSegment)
 #endif

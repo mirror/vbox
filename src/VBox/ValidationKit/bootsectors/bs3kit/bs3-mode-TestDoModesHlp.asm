@@ -157,9 +157,9 @@ BS3_GLOBAL_NAME_EX TMPL_NM(bs3TestCallDoerEpilogue), , 0
 
 ;
 ; For checking that the mode switching macros doesn't screw up GPRs.
-; Note! Does not work on pre 286 hardware!
+; Note! Does not work on pre 286 hardware! So, for debugging only.
 ;
-%ifdef BS3_STRICT
+%if 0
  %macro STRICT_SAVE_REGS 0
         movzx   esp, sp
         sub     esp, BS3REGCTX_size

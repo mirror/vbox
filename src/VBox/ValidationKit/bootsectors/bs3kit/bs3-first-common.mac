@@ -38,42 +38,62 @@
 ;
 ; 16-bit text
 ;
+%ifndef BS3_IS_DOS_EXE
 BS3_BEGIN_TEXT16
+%else
+section BEGTEXT align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
+BS3_BEGIN_TEXT16
+section BEGTEXT
+%endif
 BS3_GLOBAL_DATA Bs3Text16_StartOfSegment, 0
 
 ; Entry point with eye-catcher.
 GLOBALNAME start
-global __ImageBase                      ; for MS compiler
+global __ImageBase                      ; for MS compiler - must be first!
 __ImageBase:
+global ___begtext                       ; for DOS EXEs (causes harmless duplicate symbol warning)
+___begtext:
+%ifndef BS3_IS_DOS_EXE
     jmp     .after_eye_catcher
+%else
+    int3
+    jmp     __ImageBase
+%endif
     db      10,13,'eye-catcher: BS3TEXT16',10,13
+BS3_BEGIN_TEXT16
 .after_eye_catcher:
 
 %ifdef ASM_FORMAT_ELF
 section BS3TEXT16_END   align=2 progbits alloc exec nowrite
 %else
+section _TEXT           align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
 section BS3TEXT16_END   align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
 %endif
 
 BS3_GLOBAL_DATA Bs3Text16_EndOfSegment, 0
 
 %ifndef ASM_FORMAT_ELF
+ %ifndef BS3_IS_DOS_EXE
 GROUP CGROUP16 BS3TEXT16 BS3TEXT16_END
+ %else
+GROUP CGROUP16 BEGTEXT BS3TEXT16 _TEXT BS3TEXT16_END
+ %endif
 %endif
 
 
 ;
 ; 16-bit data
 ;
+%define BS3_BEGIN_DATA16_WITHOUT_GROUP
 BS3_BEGIN_DATA16
 BS3_GLOBAL_DATA Bs3Data16_StartOfSegment, 0
     db      10,13,'eye-catcher: BS3DATA16',10,13
 
 ALIGNDATA(16)
 BS3_GLOBAL_DATA Bs3Data16_Size, 4
-    dd  BS3_DATA_NM(Bs3Data16_EndOfSegment) wrt BS3DATA16_GROUP
+    dd  BS3_DATA_NM(Bs3Data16_EndOfSegment) wrt BS3KIT_GRPNM_DATA16
 BS3_GLOBAL_DATA Bs3Data16Thru64Text32And64_TotalSize, 4
-    dd  BS3_DATA_NM(Bs3Data64_EndOfSegment) wrt BS3DATA16_GROUP
+    dd  BS3_DATA_NM(Bs3Data64_EndOfSegment) wrt BS3KIT_GRPNM_DATA16
 BS3_GLOBAL_DATA Bs3TotalImageSize, 4
     dd  BS3_DATA_NM(Bs3Data64_EndOfSegment) wrt CGROUP16
 BS3_GLOBAL_DATA Bs3Text16_Size, 2
@@ -85,16 +105,46 @@ section BS3DATA16CONST2 align=2   progbits alloc noexec write
 section BS3DATA16_DATA  align=2   progbits alloc noexec write
 section BS3DATA16_END   align=2   progbits alloc noexec write
 %else
-section BS3DATA16CONST  align=2   CLASS=FAR_DATA PUBLIC USE16
-section BS3DATA16CONST2 align=2   CLASS=FAR_DATA PUBLIC USE16
-section BS3DATA16_DATA  align=2   CLASS=FAR_DATA PUBLIC USE16
-section BS3DATA16_END   align=2   CLASS=FAR_DATA PUBLIC USE16
+section BS3DATA16CONST  align=2   CLASS=BS3KIT_CLASS_DATA16 PUBLIC USE16
+section BS3DATA16CONST2 align=2   CLASS=BS3KIT_CLASS_DATA16 PUBLIC USE16
+section BS3DATA16_DATA  align=2   CLASS=BS3KIT_CLASS_DATA16 PUBLIC USE16
+ %ifdef BS3_IS_DOS_EXE
+section _NULL           align=16  CLASS=BEGDATA  PUBLIC USE16
+section _AFTERNULL      align=2   CLASS=BEGDATA  PUBLIC USE16
+ %endif
+section CONST           align=2   CLASS=DATA     PUBLIC USE16
+section CONST2          align=2   CLASS=DATA     PUBLIC USE16
+section _DATA           align=2   CLASS=DATA     PUBLIC USE16
+ %ifdef BS3_IS_DOS_EXE
+section XIB             align=1   CLASS=DATA     PUBLIC USE16
+section XI              align=1   CLASS=DATA     PUBLIC USE16
+section XIE             align=1   CLASS=DATA     PUBLIC USE16
+section YIB             align=1   CLASS=DATA     PUBLIC USE16
+section YI              align=1   CLASS=DATA     PUBLIC USE16
+section YIE             align=1   CLASS=DATA     PUBLIC USE16
+ %endif
+section STRINGS         align=2   CLASS=DATA     PUBLIC USE16
+section DATA            align=2   CLASS=DATA     PUBLIC USE16
+section _BSS            align=2   CLASS=BS3KIT_CLASS_BSS16 PUBLIC USE16
+section BSS             align=2   CLASS=BS3KIT_CLASS_BSS16 PUBLIC USE16
+ %ifdef BS3_IS_DOS_EXE
+section STACK           align=16  CLASS=STACK    STACK  USE16
+ %endif
+section BS3DATA16_END   align=2   CLASS=BS3KIT_CLASS_BSS16 PUBLIC USE16
 %endif
 
 BS3_GLOBAL_DATA Bs3Data16_EndOfSegment, 0
 
 %ifndef ASM_FORMAT_ELF
-GROUP BS3DATA16_GROUP BS3DATA16 BS3DATA16_DATA BS3DATA16CONST BS3DATA16CONST2 BS3DATA16_END
+ %ifndef BS3_IS_DOS_EXE
+GROUP BS3KIT_GRPNM_DATA16 BS3DATA16 BS3DATA16_DATA _DATA DATA BS3DATA16CONST CONST BS3DATA16CONST2 CONST2 STRINGS _BSS BSS BS3DATA16_END
+ %else
+GROUP BS3KIT_GRPNM_DATA16 \
+    _NULL _AFTERNULL \
+    CONST BS3DATA16CONST CONST2 BS3DATA16CONST2 _DATA XIB XI XIE YIB YI YIE STRINGS DATA BS3DATA16 BS3DATA16_DATA \
+    _BSS BSS BS3DATA16_END \
+    STACK
+ %endif
 %endif
 
 
@@ -121,13 +171,6 @@ BS3_BEGIN_TEXT64
 BS3_GLOBAL_DATA Bs3Text64_StartOfSegment, 0
     db      10,13,'eye-catcher: BS3TEXT64',10,13
 
-%ifdef ASM_FORMAT_OMF
-;section TEXT64 align=4 CLASS=CODE PUBLIC USE32
-;section .text  align=4 CLASS=CODE PUBLIC USE32 - nasm doesn't do '.' at the start of segments in OMF mode. Not that this helps anyways...
-;section .rdata align=4 CLASS=CODE PUBLIC USE32
-;GROUP CODE64 TEXT64 _text _rdata
-%endif
-
 %ifdef ASM_FORMAT_ELF
 section BS3TEXT64_END   align=1 progbits alloc exec nowrite
 %else
@@ -135,6 +178,13 @@ section BS3TEXT64_END   align=1 CLASS=BS3CLASS64CODE PUBLIC USE32 FLAT
 %endif
 BS3_GLOBAL_DATA Bs3Text64_EndOfSegment, 0
 
+
+;
+; FAR_DATA segment in DOS EXEs should be near the other FAR_DATA class segments.
+;
+%ifdef BS3_IS_DOS_EXE
+section FAR_DATA        align=1 CLASS=FAR_DATA PUBLIC USE16
+%endif
 
 ;
 ; 32-bit data
@@ -148,12 +198,13 @@ section BS3DATA32_END   align=16   progbits alloc noexec write
 section BS3DATA32CONST  align=16   CLASS=FAR_DATA PUBLIC USE32
 section BS3DATA32CONST2 align=16   CLASS=FAR_DATA PUBLIC USE32
 section BS3DATA32_DATA  align=16   CLASS=FAR_DATA PUBLIC USE32
+section BS3DATA32_BSS   align=16   CLASS=FAR_DATA PUBLIC USE32
 section BS3DATA32_END   align=16   CLASS=FAR_DATA PUBLIC USE32
 %endif
 BS3_GLOBAL_DATA Bs3Data32_EndOfSegment, 0
 
 %ifndef ASM_FORMAT_ELF
-GROUP BS3DATA32_GROUP BS3DATA32 BS3DATA32_DATA BS3DATA32CONST BS3DATA32CONST2 BS3DATA32_END
+GROUP BS3DATA32_GROUP BS3DATA32 BS3DATA32_DATA BS3DATA32CONST BS3DATA32CONST2 BS3DATA32_BSS BS3DATA32_END
 %endif
 
 ;
@@ -165,18 +216,14 @@ BS3_GLOBAL_DATA Bs3Data64_StartOfSegment, 0
 %ifdef ASM_FORMAT_ELF
 section BS3DATA64_END   align=16   progbits alloc noexec write
 %else
-;section .data           align=8    CLASS=DATA PUBLIC USE32
-;section .rdata          align=8    CLASS=DATA PUBLIC USE32
-;section .xdata          align=8    CLASS=DATA PUBLIC USE32
-;section .pdata          align=8    CLASS=DATA PUBLIC USE32
-;section .bss            align=8    CLASS=DATA PUBLIC USE32
+section BS3DATA64CONST  align=16   CLASS=FAR_DATA PUBLIC USE32
+section BS3DATA64_BSS   align=16   CLASS=FAR_DATA PUBLIC USE32
 section BS3DATA64_END   align=16   CLASS=FAR_DATA PUBLIC USE32
 %endif
 BS3_GLOBAL_DATA Bs3Data64_EndOfSegment, 0
 
 %ifndef ASM_FORMAT_ELF
-;GROUP BS3DATA64_GROUP BS3DATA64 .data .rdata .xdata .pdata .bss BS3DATA64_END
-GROUP BS3DATA64_GROUP BS3DATA64 BS3DATA64_END
+GROUP BS3DATA64_GROUP BS3DATA64 BS3DATA64CONST BS3DATA64_BSS BS3DATA64_END
 %endif
 
 

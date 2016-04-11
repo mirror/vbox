@@ -35,14 +35,25 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define SMALL_BUFFER 1
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /** Output buffering for Bs3TestPrintfV. */
 typedef struct BS3TESTPRINTBUF
 {
-    bool    fNewCmd;
-    uint8_t cchBuf;
-    char    achBuf[78];
+    bool     fNewCmd;
+#if SMALL_BUFFER
+    uint8_t  cchBuf;
+    char     achBuf[78];
+#else
+    uint16_t cchBuf;
+    char     achBuf[512];
+#endif
 } BS3TESTPRINTBUF;
 
 
@@ -65,7 +76,11 @@ static BS3_DECL_CALLBACK(size_t) bs3TestPrintfStrOutput(char ch, void BS3_FAR *p
         {
             if (pBuf->fNewCmd)
             {
+#if ARCH_BITS == 16
+                ASMOutU16(VMMDEV_TESTING_IOPORT_CMD, (uint16_t)VMMDEV_TESTING_CMD_PRINT);
+#else
                 ASMOutU32(VMMDEV_TESTING_IOPORT_CMD, VMMDEV_TESTING_CMD_PRINT);
+#endif
                 pBuf->fNewCmd = false;
             }
             ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, ch);
@@ -88,7 +103,7 @@ static BS3_DECL_CALLBACK(size_t) bs3TestPrintfStrOutput(char ch, void BS3_FAR *p
         /* Whether to flush the buffer.  We do line flushing here to avoid
            dropping too much info when the formatter crashes on bad input. */
         if (   pBuf->cchBuf < RT_ELEMENTS(pBuf->achBuf)
-            && ch != '\n')
+            && (!SMALL_BUFFER || ch != '\n') )
             return 1;
     }
     BS3_ASSERT(pBuf->cchBuf <= RT_ELEMENTS(pBuf->achBuf));

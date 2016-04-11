@@ -49,6 +49,7 @@ TMPL_BEGIN_TEXT
 %if TMPL_BITS == 16 || TMPL_BITS == 32
 BS3_PROC_BEGIN_CMN Bs3RegCtxRestore_aborts ; special entry point for when watcom applies __aborts
  %if TMPL_BITS == 16
+        CPU 8086
         xor     xAX, xAX
         push    xAX                     ; fake return address.
  %else
@@ -83,11 +84,11 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
 .in_ring0:
 
         ;
-        ; Prologue.  Loads ES with BS3DATA16/FLAT (for g_bBs3CurrentMode and
-        ; g_uBs3CpuDetected), DS:xBX with pRegCtx and fFlags into xCX.
+        ; Prologue.  Loads ES with BS3KIT_GRPNM_DATA16/FLAT (for g_bBs3CurrentMode
+        ; and g_uBs3CpuDetected), DS:xBX with pRegCtx and fFlags into xCX.
         ;
 %if TMPL_BITS == 16
-        mov     ax, BS3DATA16
+        mov     ax, BS3_SEL_DATA16
         mov     es, ax
         lds     bx, [bp + 4]
         mov     cx, [bp + 8]
@@ -126,14 +127,36 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         ; Do the 80286 specifics first.
         cmp     byte [es:BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
         jb      .restore_16_bit_ancient
+        CPU 286
 
         lmsw    [bx + BS3REGCTX.cr0]
         cmp     byte [es:BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
         je      .restore_16_bit_ancient
         lldt    [bx + BS3REGCTX.ldtr]
+
+        ; TR - complicated because we need to clear the busy bit. ASSUMES GDT.
+        str     ax
+        cmp     ax, [bx + BS3REGCTX.tr]
+        je      .skip_tr_286
+
+        mov     di, word [xBX + BS3REGCTX.tr]
+        or      di, di                  ; check for null.
+        jz      .load_tr_286
+
+        push    ds
+        push    BS3_SEL_SYSTEM16
+        pop     ds
+        add     di, Bs3Gdt wrt BS3SYSTEM16
+        add     di, X86DESCGENERIC_BIT_OFF_TYPE / 8
+        and     byte [di], ~(X86_SEL_TYPE_SYS_TSS_BUSY_MASK << (X86DESCGENERIC_BIT_OFF_TYPE % 8))
+        pop     ds
+
+.load_tr_286:
         ltr     [bx + BS3REGCTX.tr]
+.skip_tr_286:
 
 .restore_16_bit_ancient:
+        CPU 8086
         ; Some general registers.
         mov     cx, [bx + BS3REGCTX.rcx]
         mov     dx, [bx + BS3REGCTX.rdx]
@@ -197,8 +220,9 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         pop     ds
         pop     bp
         iret
-%endif
 
+        CPU 386
+%endif
 
 .restore_full:
         ;

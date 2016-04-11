@@ -39,7 +39,7 @@
  */
 BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput(char ch, void BS3_FAR *pvUser)
 {
-    bool *pfNewLine = (bool *)pvUser;
+    PBS3TESTFAILEDBUF pBuf = (PBS3TESTFAILEDBUF)pvUser;
 
     /*
      * VMMDev first.  We postpone newline processing here so we can strip one
@@ -47,8 +47,9 @@ BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput(char ch, void BS3_FAR *pvUser)
      */
     if (g_fbBs3VMMDevTesting)
     {
-        if (*pfNewLine && ch != '\0')
+        if (pBuf->fNewLine && ch != '\0')
             ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, '\n');
+        pBuf->fNewLine = ch == '\n';
         if (ch != '\n')
             ASMOutU8(VMMDEV_TESTING_IOPORT_DATA, ch);
     }
@@ -56,17 +57,37 @@ BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput(char ch, void BS3_FAR *pvUser)
     /*
      * Console next.
      */
-    if (ch != 0)
+    if (ch != '\0')
     {
-        Bs3PrintChr(ch);
-        *pfNewLine = ch == '\n';
+        BS3_ASSERT(pBuf->cchBuf < RT_ELEMENTS(pBuf->achBuf));
+        pBuf->achBuf[pBuf->cchBuf++] = ch;
+
+        /* Whether to flush the buffer.  We do line flushing here to avoid
+           dropping too much info when the formatter crashes on bad input. */
+        if (   pBuf->cchBuf < RT_ELEMENTS(pBuf->achBuf)
+            && ch != '\n')
+        {
+            pBuf->fNewLine = false;
+            return 1;
+        }
+        pBuf->fNewLine = '\n';
     }
-    /* We're called with '\0' to indicate end-of-string. Supply trailing
-       newline if necessary. */
-    else if (!*pfNewLine)
+    /* Try fit missing newline into the buffer. */
+    else if (!pBuf->fNewLine && pBuf->cchBuf < RT_ELEMENTS(pBuf->achBuf))
+    {
+        pBuf->fNewLine = true;
+        pBuf->achBuf[pBuf->cchBuf++] = '\n';
+    }
+
+    BS3_ASSERT(pBuf->cchBuf <= RT_ELEMENTS(pBuf->achBuf));
+    Bs3PrintStrN(&pBuf->achBuf[0], pBuf->cchBuf);
+    pBuf->cchBuf = 0;
+
+    /* In case we failed to add trailing new line, print one separately.  */
+    if (!pBuf->fNewLine)
         Bs3PrintChr('\n');
 
-    return 1;
+    return ch != '\0';
 }
 
 
@@ -75,16 +96,21 @@ BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput(char ch, void BS3_FAR *pvUser)
  */
 BS3_DECL(void) Bs3TestFailedV(const char *pszFormat, va_list va)
 {
-    bool fNewLine;
+    BS3TESTFAILEDBUF Buf;
 
     if (!++g_cusBs3TestErrors)
         g_cusBs3TestErrors++;
 
     if (g_fbBs3VMMDevTesting)
+#if ARCH_BITS == 16
+        ASMOutU16(VMMDEV_TESTING_IOPORT_CMD, (uint16_t)VMMDEV_TESTING_CMD_FAILED);
+#else
         ASMOutU32(VMMDEV_TESTING_IOPORT_CMD, VMMDEV_TESTING_CMD_FAILED);
+#endif
 
-    fNewLine = false;
-    Bs3StrFormatV(pszFormat, va, bs3TestFailedStrOutput, &fNewLine);
+    Buf.fNewLine = false;
+    Buf.cchBuf   = 0;
+    Bs3StrFormatV(pszFormat, va, bs3TestFailedStrOutput, &Buf);
 }
 
 

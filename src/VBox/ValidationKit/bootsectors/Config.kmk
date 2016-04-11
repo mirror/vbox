@@ -53,6 +53,23 @@ KBUILD_ARCHES += noarch
 # The bs3kit source directory.
 VBOX_PATH_BS3KIT_SRC = $(VBOX_PATH_VALIDATIONKIT_SRC)/bootsectors/bs3kit
 
+
+# The 16-bit code & data segment classes.
+if 1
+BS3KIT_CLASS_CODE16 = CODE
+BS3KIT_SEGNM_DATA16 =
+BS3KIT_CLASS_DATA16 = DATA
+BS3KIT_GRPNM_DATA16 = DGROUP
+BS3KIT_CLASS_BSS16  = BSS
+else
+BS3KIT_CLASS_CODE16 = BS3CLASS16CODE
+BS3KIT_SEGNM_DATA16 = BS3DATA16
+BS3KIT_CLASS_DATA16 = FAR_DATA
+BS3KIT_GRPNM_DATA16 = BS3DATA16_GROUP
+BS3KIT_CLASS_BSS16  = ???
+endif
+
+
 # Dummy CP "linker" tool.
 TOOL_VBoxBsCpLd = Dummy copy linker.
 TOOL_VBoxBsCpLd_LINK_MISCBIN_OUTPUT =
@@ -424,7 +441,7 @@ endef
 #       -3                     Use 386 instruction set (16-bit only).
 #       -wx                    Maxium warning level.
 #       -zl                    Don't emit default library information.
-#       -zdp                   DS pegged to BS3DATA16_GROUP.
+#       -zdp                   DS pegged to BS3DATA16_GROUP/DGROUP.
 #       -zu                    Assume SS != DS.
 #       -mc                    Compact memory model, far data, small code.
 #       -mf                    Flat memory model (32-bit).
@@ -452,7 +469,9 @@ TEMPLATE_VBoxBS3KitImg_SRC_HANDLERS = \
 TEMPLATE_VBoxBS3KitImg_ASOBJSUFF    = .o16
 TEMPLATE_VBoxBS3KitImg_ASTOOL       = VBoxNasm
 TEMPLATE_VBoxBS3KitImg_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
-TEMPLATE_VBoxBS3KitImg_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__ ARCH_BITS=16 RT_ARCH_X86
+TEMPLATE_VBoxBS3KitImg_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__ ARCH_BITS=16 RT_ARCH_X86 \
+        BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
+	 BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
 TEMPLATE_VBoxBS3KitImg_DEFS         = IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg_DEFS.debug   = BS3_STRICT
 
@@ -460,10 +479,10 @@ TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 
 TEMPLATE_VBoxBS3KitImg_CTOOL        = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = Bs3Ow16
-TEMPLATE_VBoxBS3KitImg_CFLAGS       = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
-TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = \
-	-nt=BS3TEXT16 -nd=BS3DATA16 -nc=BS3CLASS16CODE -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
+TEMPLATE_VBoxBS3KitImg_CFLAGS       = $(if $(BS3KIT_SEGNM_DATA16),-nd=$(BS3KIT_SEGNM_DATA16),) \
+	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
+TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = $(if $(BS3KIT_SEGNM_DATA16),-nd=$(BS3KIT_SEGNM_DATA16),) \
+	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CDEFS        = ARCH_BITS=16 RT_ARCH_X86
 
 TEMPLATE_VBoxBS3KitImg_TOOL         = $(NO_SUCH_VARIABLE)
@@ -508,35 +527,53 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
  	order \
  	 clname BS3FLAT segaddr=0x0000 \
  	   segment BS3FLAT segaddr=0x0000 \
- 	 clname BS3CLASS16CODE segaddr=0x1000 \
+ 	 clname $(BS3KIT_CLASS_CODE16) segaddr=0x1000 \
  	  segment BS3TEXT16 \
  	  segment BS3TEXT16_END \
         clname BS3SYSTEM16 segaddr=0x2000 \
          segment BS3SYSTEM16 \
+$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
+ 	 clname DATA \
+ 	  segment BS3DATA16 segaddr=0x2900 \
+ 	  segment BS3DATA16_DATA \
+ 	  segment DATA \
+ 	  segment _DATA \
+ 	  segment BS3DATA16CONST \
+ 	  segment CONST \
+ 	  segment BS3DATA16CONST2 \
+ 	  segment CONST2 \
+ 	  segment STRINGS \
+ 	  segment BS3DATA16_END \
+        clname BSS \
+ 	  segment BSS \
+ 	  segment _BSS \
+ 	  segment BS3DATA16_END \
+ 	 clname FAR_DATA \
+         segment FAR_DATA \
+, \
  	 clname FAR_DATA \
  	  segment BS3DATA16 segaddr=0x2900 \
+         segment FAR_DATA \
  	  segment BS3DATA16CONST \
  	  segment BS3DATA16CONST2 \
  	  segment BS3DATA16_DATA \
  	  segment BS3DATA16_END \
+) \
 	  segment BS3DATA32 \
 	  segment BS3DATA32CONST \
 	  segment BS3DATA32CONST2 \
 	  segment BS3DATA32_DATA \
- 	  segment DATA32 \
+	  segment BS3DATA32_BSS \
 	  segment BS3DATA32_END \
+         \
  	  segment BS3DATA64 \
- 	  segment DATA64 \
- 	  segment .data \
- 	  segment DATA64_END \
+ 	  segment BS3DATA64CONST \
+ 	  segment BS3DATA64_BSS \
+ 	  segment BS3DATA64_END \
         clname BS3CLASS32CODE \
  	  segment BS3TEXT32 \
- 	  segment TEXT32 \
         clname BS3CLASS64CODE \
- 	  segment BS3TEXT64 \
- 	  segment TEXT64 \
- 	  segment .text \
- 	  segment .rdata \
+ 	  segment BS3TEXT64
 
 TEMPLATE_VBoxBS3KitImg_LNK_DEPS = \
 	$(bs3-bootsector_1_TARGET) \
@@ -582,7 +619,9 @@ TEMPLATE_VBoxBS3KitImg32_INSTTYPE     = none
 TEMPLATE_VBoxBS3KitImg32_ASTOOL       = VBoxNasm
 TEMPLATE_VBoxBS3KitImg32_ASOBJSUFF    = .o32
 TEMPLATE_VBoxBS3KitImg32_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
-TEMPLATE_VBoxBS3KitImg32_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__
+TEMPLATE_VBoxBS3KitImg32_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__ \
+        BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
+	 BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
 TEMPLATE_VBoxBS3KitImg32_DEFS         = ARCH_BITS=32 IN_BS3KIT
 TEMPLATE_VBoxBS3KitImg32_DEFS.debug   = BS3_STRICT
 TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
@@ -603,7 +642,9 @@ TEMPLATE_VBoxBS3KitImg64_INSTTYPE     = none
 TEMPLATE_VBoxBS3KitImg64_ASTOOL       = VBoxNasm
 TEMPLATE_VBoxBS3KitImg64_ASOBJSUFF    = .o64
 TEMPLATE_VBoxBS3KitImg64_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
-TEMPLATE_VBoxBS3KitImg64_ASDEFS       = ASM_FORMAT_OMF ASM_CALL64_MSC RT_NOINC_SEGMENTS __NASM__
+TEMPLATE_VBoxBS3KitImg64_ASDEFS       = ASM_FORMAT_OMF ASM_CALL64_MSC RT_NOINC_SEGMENTS __NASM__ \
+        BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
+	 BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
 TEMPLATE_VBoxBS3KitImg64_DEFS         = IN_BS3KIT ARCH_BITS=64
 TEMPLATE_VBoxBS3KitImg64_DEFS.debug   = BS3_STRICT
 TEMPLATE_VBoxBS3KitImg64_ARTOOL       = OPENWATCOM
@@ -635,7 +676,100 @@ TEMPLATE_VBoxBS3KitBS_BINSUFF         = .img
 TEMPLATE_VBoxBS3KitBS_MODE            = 0644
 TEMPLATE_VBoxBS3KitBS_ASTOOL          = YASM
 TEMPLATE_VBoxBS3KitBS_ASFLAGS         = -f bin --mapfile
-TEMPLATE_VBoxBS3KitBS_ASDEFS          = ASM_FORMAT_BIN RT_NOINC_SEGMENTS ARCH_BITS=16 __YASM__
+TEMPLATE_VBoxBS3KitBS_ASDEFS          = ASM_FORMAT_BIN RT_NOINC_SEGMENTS ARCH_BITS=16 __YASM__ \
+        BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
+	 BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
 TEMPLATE_VBoxBS3KitBS_INCS            = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitBS_LDTOOL          = VBoxBsCpLd
+
+
+
+#
+# Extends VBoxBS3KitImg
+# User must starts SOURCES with: $(VBOX_PATH_BS3KIT_SRC)/bs3-first-dosexe.asm
+##       disable 1014, 1080, 1150
+#
+TEMPLATE_VBoxBS3KitUtil = Utility using bs3kit code.
+TEMPLATE_VBoxBS3KitUtil_EXTENDS  = VBoxBS3KitImg
+TEMPLATE_VBoxBS3KitUtil_BINSUFF  = .exe
+TEMPLATE_VBoxBS3KitUtil_DEFS     = $(TEMPLATE_VBoxBS3KitImg_DEFS) BS3_IS_DOS_EXE
+TEMPLATE_VBoxBS3KitUtil_CFLAGS   = $(filter-out -zl,$(TEMPLATE_VBoxBS3KitImg_CFLAGS))
+TEMPLATE_VBoxBS3KitUtil_CXXFLAGS = $(filter-out -zl,$(TEMPLATE_VBoxBS3KitImg_CXXFLAGS))
+TEMPLATE_VBoxBS3KitUtil_LDFLAGS  = system dos \
+	debug $(BS3_OW_DBG_LDOPT) all \
+	option quiet, map, statics, verbose, symfile \
+       disable 1080 \
+ 	order \
+ 	 clname $(BS3KIT_CLASS_CODE16) \
+ 	  segment BEGTEXT \
+ 	  segment BS3TEXT16 \
+ 	  segment _TEXT \
+ 	  segment BS3TEXT16_END \
+        clname BS3SYSTEM16  \
+         segment BS3SYSTEM16 \
+         \
+ 	 clname BEGDATA \
+ 	  segment _NULL  \
+ 	  segment _AFTERNULL  \
+ 	 clname DATA \
+$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
+ 	  segment BS3DATA16 \
+ 	  segment BS3DATA16CONST \
+ 	  segment CONST \
+ 	  segment BS3DATA16CONST2 \
+ 	  segment CONST2 \
+,\
+ 	  segment CONST \
+ 	  segment CONST2 \
+) \
+ 	  segment _DATA  \
+ 	  segment XIB  \
+ 	  segment XI  \
+ 	  segment XIE  \
+ 	  segment YIB  \
+ 	  segment YI  \
+ 	  segment YIE  \
+ 	  segment STRINGS  \
+$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
+ 	  segment BS3DATA16_DATA \
+,) \
+ 	  segment DATA  \
+ 	 clname BSS \
+	  segment _BSS \
+	  segment BSS \
+ 	  segment BS3DATA16_END \
+ 	 clname STACK \
+ 	  segment STACK \
+         \
+ 	 clname FAR_DATA \
+$(if-expr "$(BS3KIT_SEGNM_DATA16)" != "", \
+ 	  segment BS3DATA16  \
+ 	  segment BS3DATA16_DATA \
+ 	  segment BS3DATA16CONST \
+ 	  segment BS3DATA16CONST2 \
+ 	  segment FAR_DATA \
+ 	  segment BS3DATA16_END \
+,\
+ 	  segment FAR_DATA \
+)\
+	  segment BS3DATA32 \
+	  segment BS3DATA32CONST \
+	  segment BS3DATA32CONST2 \
+	  segment BS3DATA32_DATA \
+	  segment BS3DATA32_BSS \
+	  segment BS3DATA32_END \
+         \
+ 	  segment BS3DATA64 \
+ 	  segment BS3DATA64CONST \
+ 	  segment BS3DATA64_BSS \
+ 	  segment BS3DATA64_END \
+        clname BS3CLASS32CODE \
+ 	  segment BS3TEXT32 \
+        clname BS3CLASS64CODE \
+ 	  segment BS3TEXT64
+# 	 clname BS3FLAT segaddr=0x0000 \
+# 	   segment BS3FLAT segaddr=0x0000
+
+TEMPLATE_VBoxBS3KitUtil_LNK_DEPS  = $(NO_SUCH_VARIABLE)
+TEMPLATE_VBoxBS3KitUtil_POST_CMDS = $(NO_SUCH_VARIABLE)
 
