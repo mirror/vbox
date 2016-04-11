@@ -39,20 +39,20 @@
 
 
 /*********************************************************************************************************************************
-*   Class UIApplianceCertificateViewer.                                                                                          *
+*   Class UIApplianceUnverifiedCertificateViewer implementation.                                                                 *
 *********************************************************************************************************************************/
 
-UIApplianceUnverifiedCertificate::UIApplianceUnverifiedCertificate(QWidget *pParent, const CCertificate &certificate)
+UIApplianceUnverifiedCertificateViewer::UIApplianceUnverifiedCertificateViewer(QWidget *pParent, const CCertificate &certificate)
     : QIWithRetranslateUI<QIDialog>(pParent)
     , m_certificate(certificate)
-    , m_pTextLabel(NULL)
-    , m_pTextBrowser(NULL)
+    , m_pTextLabel(0)
+    , m_pTextBrowser(0)
 {
     /* Prepare: */
     prepare();
 }
 
-void UIApplianceUnverifiedCertificate::prepare()
+void UIApplianceUnverifiedCertificateViewer::prepare()
 {
     /* Create layout: */
     QVBoxLayout *pLayout = new QVBoxLayout(this);
@@ -84,13 +84,10 @@ void UIApplianceUnverifiedCertificate::prepare()
         {
             /* Configure button-box: */
             pButtonBox->setStandardButtons(QDialogButtonBox::Yes | QDialogButtonBox::No);
-
             pButtonBox->button(QDialogButtonBox::Yes)->setShortcut(Qt::Key_Enter);
-            connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-
             //pButtonBox->button(QDialogButtonBox::No)->setShortcut(Qt::Key_Esc);
+            connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
             connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
-
             /* Add button-box into layout: */
             pLayout->addWidget(pButtonBox);
         }
@@ -99,7 +96,7 @@ void UIApplianceUnverifiedCertificate::prepare()
     retranslateUi();
 }
 
-void UIApplianceUnverifiedCertificate::retranslateUi()
+void UIApplianceUnverifiedCertificateViewer::retranslateUi()
 {
     /* Translate dialog title: */
     setWindowTitle(tr("Unverifiable Certificate! Continue?"));
@@ -222,9 +219,7 @@ void UIWizardImportAppPageBasic2::initializePage()
         /* Pick a 'signed-by' name. */
         m_strSignedBy = certificate.GetFriendlyName();
 
-        /*
-         * If trusted, just select the right message.
-         */
+        /* If trusted, just select the right message: */
         if (certificate.GetTrusted())
         {
             if (certificate.GetSelfSigned())
@@ -234,14 +229,14 @@ void UIWizardImportAppPageBasic2::initializePage()
         }
         else
         {
-            /*
-             * Not trusted!  Must ask the user whether to continue in this case.
-             */
+            /* Not trusted!  Must ask the user whether to continue in this case: */
             m_enmCertText = !certificate.GetExpired() ? kCertText_SelfSignedUnverified : kCertText_SelfSignedUnverified;
+
+            /* Translate page early: */
             retranslateUi();
 
             /* Instantiate the dialog: */
-            QPointer<UIApplianceUnverifiedCertificate> pDialog = new UIApplianceUnverifiedCertificate(this, certificate);
+            QPointer<UIApplianceUnverifiedCertificateViewer> pDialog = new UIApplianceUnverifiedCertificateViewer(this, certificate);
             AssertPtrReturnVoid(pDialog.data());
 
             /* Show viewer in modal mode: */
@@ -249,12 +244,12 @@ void UIWizardImportAppPageBasic2::initializePage()
 
             /* Leave if destroyed prematurely: */
             if (!pDialog)
-                return; /** @todo r=bird: what happened to this dialog in that case??, will check this case later. */
+                return;
             /* Delete viewer: */
             if (pDialog)
             {
                 delete pDialog;
-                pDialog = NULL;
+                pDialog = 0;
             }
 
             /* Dismiss the entire import-appliance wizard if user rejects certificate: */

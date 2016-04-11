@@ -81,18 +81,19 @@ private:
     QString m_strSignedBy;
 };
 
-/**
- * Dialog for asking consent to continue with unverifiable certificate.
- */
-class UIApplianceUnverifiedCertificate : public QIWithRetranslateUI<QIDialog>
+/** QIDialog extension
+  * asking for consent to continue with unverifiable certificate. */
+class UIApplianceUnverifiedCertificateViewer : public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs appliance @a certificate viewer for passed @a pParent. */
-    UIApplianceUnverifiedCertificate(QWidget *pParent, const CCertificate &certificate);
+    UIApplianceUnverifiedCertificateViewer(QWidget *pParent, const CCertificate &certificate);
 
 protected:
+
     /** Prepares all. */
     void prepare();
 
@@ -100,6 +101,7 @@ protected:
     virtual void retranslateUi() /* override */;
 
 private:
+
     /** Holds the certificate reference. */
     const CCertificate &m_certificate;
 
