@@ -1728,9 +1728,6 @@ void UISelectorWindow::cleanupMenuBar()
 
 void UISelectorWindow::cleanup()
 {
-    /* Destroy event handlers: */
-    UIVirtualBoxEventHandler::destroy();
-
     /* Save settings: */
     saveSettings();
 
