@@ -237,13 +237,22 @@ RTDECL(int) RTLinuxSysFsReadStr(RTFILE hFile, char *pszBuf, size_t cchBuf, size_
     {
         /* Check for EOF */
         uint64_t offCur = 0;
-        uint64_t offEnd = 0;
+        uint8_t bRead;
         rc = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offCur);
         if (RT_SUCCESS(rc))
-            rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, &offEnd);
-        if (   RT_SUCCESS(rc)
-            && offEnd > offCur)
-            rc = VERR_BUFFER_OVERFLOW;
+        {
+            int rc2 = RTFileRead(hFile, &bRead, 1, NULL);
+            if (RT_SUCCESS(rc2))
+            {
+                rc = VERR_BUFFER_OVERFLOW;
+
+                rc2 = RTFileSeek(hFile, offCur, RTFILE_SEEK_BEGIN, NULL);
+                if (RT_FAILURE(rc2))
+                    rc = rc2;
+            }
+            else if (rc2 != VERR_EOF)
+                rc = rc2;
+        }
     }
     return rc;
 }
@@ -252,7 +261,7 @@ RTDECL(int) RTLinuxSysFsReadStr(RTFILE hFile, char *pszBuf, size_t cchBuf, size_
 RTDECL(int) RTLinuxSysFsWriteStr(RTFILE hFile, const char *pszBuf, size_t cchBuf, size_t *pcchWritten)
 {
     if (!cchBuf)
-        cchBuf = strlen(pszBuf);
+        cchBuf = strlen(pszBuf) + 1; /* Include the terminator */
     return RTFileWrite(hFile, pszBuf, cchBuf, pcchWritten);
 }
 
@@ -273,13 +282,22 @@ RTDECL(int) RTLinuxSysFsReadFile(RTFILE hFile, void *pvBuf, size_t cbBuf, size_t
         {
             /* Check for EOF */
             uint64_t offCur = 0;
-            uint64_t offEnd = 0;
+            uint8_t bRead;
             rc = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offCur);
             if (RT_SUCCESS(rc))
-                rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, &offEnd);
-            if (   RT_SUCCESS(rc)
-                && offEnd > offCur)
-                rc = VERR_BUFFER_OVERFLOW;
+            {
+                int rc2 = RTFileRead(hFile, &bRead, 1, NULL);
+                if (RT_SUCCESS(rc2))
+                {
+                    rc = VERR_BUFFER_OVERFLOW;
+
+                    rc2 = RTFileSeek(hFile, offCur, RTFILE_SEEK_BEGIN, NULL);
+                    if (RT_FAILURE(rc2))
+                        rc = rc2;
+                }
+                else if (rc2 != VERR_EOF)
+                    rc = rc2;
+            }
         }
     }
 
@@ -501,14 +519,42 @@ RTDECL(int) RTLinuxSysFsReadStrFileV(char *pszBuf, size_t cchBuf, size_t *pcchRe
     {
         size_t cchRead = 0;
         rc = RTLinuxSysFsReadStr(hFile, pszBuf, cchBuf, &cchRead);
-        RTFileClose(hFile);
         if (   RT_SUCCESS(rc)
             && cchRead > 0)
         {
             char *pchNewLine = (char *)memchr(pszBuf, '\n', cchRead);
             if (pchNewLine)
+            {
                 *pchNewLine = '\0';
+                cchRead--;
+            }
         }
+        else if (   rc == VERR_BUFFER_OVERFLOW
+                 && cchRead > 0)
+        {
+            /*
+             * Check if the last character would have been a newline we filter out
+             * anyway and revert the buffer overflow.
+             */
+            char achBuf[2];
+            size_t cchPeek = 0;
+            uint64_t offCur = 0;
+
+            int rc2 = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offCur);
+            if (RT_SUCCESS(rc2))
+            {
+                rc2 = RTLinuxSysFsReadStr(hFile, &achBuf[0], sizeof(achBuf), &cchPeek);
+                if (   RT_SUCCESS(rc2)
+                    && cchPeek > 0)
+                    rc2 = RTFileSeek(hFile, offCur, RTFILE_SEEK_BEGIN, NULL);
+                if (   RT_SUCCESS(rc2)
+                    && cchPeek > 0
+                    && achBuf[0] == '\n')
+                    rc = VINF_SUCCESS;
+            }
+        }
+
+        RTFileClose(hFile);
 
         if (pcchRead)
             *pcchRead = cchRead;
