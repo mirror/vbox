@@ -465,7 +465,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
          */
         if (pDis->fPrefix & DISPREFIX_LOCK)
             PUT_SZ("lock ");
-        if(pDis->fPrefix & DISPREFIX_REP)
+        if (pDis->fPrefix & DISPREFIX_REP)
             PUT_SZ("rep ");
         else if(pDis->fPrefix & DISPREFIX_REPNE)
             PUT_SZ("repne ");
@@ -476,6 +476,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
          */
         char szTmpFmt[48];
         const char *pszFmt = pOp->pszOpcode;
+        bool fIgnoresOpSize = false;
         switch (pOp->uOpcode)
         {
             case OP_JECXZ:
@@ -495,42 +496,49 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                 break;
             case OP_INSB:
                 pszFmt = "insb";
+                fIgnoresOpSize = true;
                 break;
             case OP_INSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "insw"     : pDis->uOpMode == DISCPUMODE_32BIT ? "insd"  : "insq";
                 break;
             case OP_OUTSB:
                 pszFmt = "outsb";
+                fIgnoresOpSize = true;
                 break;
             case OP_OUTSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "outsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "outsd" : "outsq";
                 break;
             case OP_MOVSB:
                 pszFmt = "movsb";
+                fIgnoresOpSize = true;
                 break;
             case OP_MOVSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "movsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "movsd" : "movsq";
                 break;
             case OP_CMPSB:
                 pszFmt = "cmpsb";
+                fIgnoresOpSize = true;
                 break;
             case OP_CMPWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "cmpsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "cmpsd" : "cmpsq";
                 break;
             case OP_SCASB:
                 pszFmt = "scasb";
+                fIgnoresOpSize = true;
                 break;
             case OP_SCASWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "scasw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "scasd" : "scasq";
                 break;
             case OP_LODSB:
                 pszFmt = "lodsb";
+                fIgnoresOpSize = true;
                 break;
             case OP_LODSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "lodsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "lodsd" : "lodsq";
                 break;
             case OP_STOSB:
                 pszFmt = "stosb";
+                fIgnoresOpSize = true;
                 break;
             case OP_STOSWD:
                 pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "stosw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "stosd" : "stosq";
@@ -638,6 +646,17 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                 *(int *)&pDis->Param2.fParam &= ~0x1f;
                 *(int *)&pDis->Param2.fParam |= OP_PARM_v;
                 break;
+        }
+
+        /*
+         * Add operand size prefix for outsb, movsb, etc.
+         */
+        if (fIgnoresOpSize && (pDis->fPrefix & DISPREFIX_OPSIZE) )
+        {
+            if (pDis->uCpuMode == DISCPUMODE_16BIT)
+                PUT_SZ("o32 ");
+            else
+                PUT_SZ("o16 ");
         }
 
         /*
