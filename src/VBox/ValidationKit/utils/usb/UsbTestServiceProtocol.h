@@ -145,6 +145,89 @@ typedef UTSPKTREPHOWDY *PUTSPKTREPHOWDY;
 /* No additional structures for BYE. */
 
 #define UTSPKT_OPCODE_GADGET_CREATE     "GDGTCRT "
+
+/**
+ * The GADGET CREATE request structure.
+ */
+typedef struct UTSPKTREQGDGTCTOR
+{
+    /** Embedded packet header. */
+    UTSPKTHDR       Hdr;
+    /** Gadget type. */
+    uint32_t        u32GdgtType;
+    /** Access methods. */
+    uint32_t        u32GdgtAccess;
+    /** Number of config items - following this structure. */
+    uint32_t        u32CfgItems;
+    /** Reserved. */
+    uint32_t        u32Rsvd0;
+} UTSPKTREQGDGTCTOR;
+AssertCompileSizeAlignment(UTSPKTREQGDGTCTOR, UTSPKT_ALIGNMENT);
+/** Pointer to a GADGET CREATE structure. */
+typedef UTSPKTREQGDGTCTOR *PUTSPKTREQGDGTCTOR;
+
+/** Gadget type - Test device. */
+#define UTSPKT_GDGT_CREATE_TYPE_TEST UINT32_C(0x1)
+
+/** Gadget acess method - USB/IP. */
+#define UTSPKT_GDGT_CREATE_ACCESS_USBIP UINT32_C(0x1)
+
+/**
+ * Configuration item.
+ */
+typedef struct UTSPKTREQGDGTCTORCFGITEM
+{
+    /** Size of the key incuding termination in bytes. */
+    uint32_t        u32KeySize;
+    /** Item type. */
+    uint32_t        u32Type;
+    /** Size of the value string including termination in bytes. */
+    uint32_t        u32ValSize;
+    /** Reserved. */
+    uint32_t        u32Rsvd0;
+} UTSPKTREQGDGTCTORCFGITEM;
+AssertCompileSizeAlignment(UTSPKTREQGDGTCTORCFGITEM, UTSPKT_ALIGNMENT);
+/** Pointer to a configuration item. */
+typedef UTSPKTREQGDGTCTORCFGITEM *PUTSPKTREQGDGTCTORCFGITEM;
+
+/** Boolean configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_BOOLEAN UINT32_C(1)
+/** String configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_STRING  UINT32_C(2)
+/** Unsigned 8-bit integer configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_UINT8   UINT32_C(3)
+/** Unsigned 16-bit integer configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_UINT16  UINT32_C(4)
+/** Unsigned 32-bit integer configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_UINT32  UINT32_C(5)
+/** Unsigned 64-bit integer configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_UINT64  UINT32_C(6)
+/** Signed 8-bit integer configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_INT8    UINT32_C(7)
+/** Signed 16-bit integer configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_INT16   UINT32_C(8)
+/** Signed 32-bit integer configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_INT32   UINT32_C(9)
+/** Signed 64-bit integer configuration item type. */
+#define UTSPKT_GDGT_CFG_ITEM_TYPE_INT64   UINT32_C(10)
+
+/**
+ * The GADGET CREATE reply structure.
+ */
+typedef struct UTSPKTREPGDGTCTOR
+{
+    /** Status packet. */
+    UTSPKTSTS       Sts;
+    /** The gadget ID on success. */
+    uint32_t        idGadget;
+    /** Padding - reserved. */
+    uint8_t         au8Padding[12];
+} UTSPKTREPGDGTCTOR;
+AssertCompileSizeAlignment(UTSPKTREPGDGTCTOR, UTSPKT_ALIGNMENT);
+/** Pointer to a GADGET CREATE structure. */
+typedef UTSPKTREPGDGTCTOR *PUTSPKTREPGDGTCTOR;
+
+
 #define UTSPKT_OPCODE_GADGET_DESTROY    "GDGTDTOR"
 
 /**

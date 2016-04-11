@@ -143,3 +143,21 @@ DECLHIDDEN(uint32_t) utsGadgetRelease(UTSGADGET hGadget)
     return cRefs;
 }
 
+
+DECLHIDDEN(int) utsGadgetConnect(UTSGADGET hGadget)
+{
+    PUTSGADGETINT pThis = hGadget;
+
+    AssertPtrReturn(pThis, 0);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+DECLHIDDEN(int) utsGadgetDisconnect(UTSGADGET hGadget)
+{
+    PUTSGADGETINT pThis = hGadget;
+
+    AssertPtrReturn(pThis, 0);
+    return VERR_NOT_IMPLEMENTED;
+}
+

@@ -54,14 +54,18 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
-#include "UsbTestServiceInternal.h"
 #include "UsbTestServiceCfg.h"
+#include "UsbTestServiceInternal.h"
+#include "UsbTestServiceGadget.h"
 
 
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+
+#define UTS_USBIP_PORT_FIRST 3240
+#define UTS_USBIP_PORT_LAST  3340
 
 /**
  * UTS client state.
@@ -93,6 +97,10 @@ typedef struct UTSCLIENT
     PUTSTRANSPORTCLIENT    pTransportClient;
     /** Client hostname. */
     char                  *pszHostname;
+    /** Gadget host handle. */
+    UTSGADGETHOST          hGadgetHost;
+    /** Handle fo the current configured gadget. */
+    UTSGADGET              hGadget;
 } UTSCLIENT;
 /** Pointer to a UTS client instance. */
 typedef UTSCLIENT *PUTSCLIENT;
@@ -114,7 +122,7 @@ static const PCUTSTRANSPORT g_apTransports[] =
 
 /** The select transport layer. */
 static PCUTSTRANSPORT       g_pTransport;
-/** The scratch path. */
+/** The config path. */
 static char                 g_szCfgPath[RTPATH_MAX];
 /** The scratch path. */
 static char                 g_szScratchPath[RTPATH_MAX];
@@ -153,6 +161,12 @@ static RTTHREAD             g_hThreadServing;
 static RTCRITSECT           g_CritSectClients;
 /** List of new clients waiting to be picked up by the client worker thread. */
 static RTLISTANCHOR         g_LstClientsNew;
+/** First USB/IP port we can use. */
+static uint16_t             g_uUsbIpPortFirst = UTS_USBIP_PORT_FIRST;
+/** Last USB/IP port we can use. */
+static uint16_t             g_uUsbIpPortLast  = UTS_USBIP_PORT_LAST;
+/** Next free port. */
+static uint16_t             g_uUsbIpPortNext  = UTS_USBIP_PORT_FIRST;
 
 
 
@@ -526,6 +540,18 @@ static int utsReplyInvalidState(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
 }
 
 /**
+ * Creates the configuration from the given GADGET CREATE packet.
+ *
+ * @returns IPRT status code.
+ * @param   pReq                The gadget create request.
+ * @param   paCfg               The array of configuration items.
+ */
+static int utsDoGadgetCreateFillCfg(PUTSPKTREQGDGTCTOR pReq, PUTSGADGETCFGITEM paCfg)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
  * Verifies and acknowledges a "BYE" request.
  *
  * @returns IPRT status code.
@@ -552,6 +578,8 @@ static int utsDoBye(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
  */
 static int utsDoHowdy(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
 {
+    int rc = VINF_SUCCESS;
+
     if (pPktHdr->cb != sizeof(UTSPKTREQHOWDY))
         return utsReplyBadSize(pClient, pPktHdr, sizeof(UTSPKTREQHOWDY));
 
@@ -575,12 +603,203 @@ static int utsDoHowdy(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
     if (!pClient->pszHostname)
         return utsReplyRC(pClient, pPktHdr, VERR_NO_MEMORY, "Failed to alllocate memory for the hostname string");
 
-    int rc = utsReplyAck(pClient, pPktHdr);
+    if (pReq->fUsbConn & UTSPKT_HOWDY_CONN_F_PHYSICAL)
+        return utsReplyRC(pClient, pPktHdr, VERR_NOT_SUPPORTED, "Physical connections are not yet supported");
+
+    if (pReq->fUsbConn & UTSPKT_HOWDY_CONN_F_USBIP)
+    {
+        /* Set up the USB/IP server, find an unused port we can start the server on. */
+        UTSGADGETCFGITEM aCfg[2];
+
+        uint16_t uPort = g_uUsbIpPortNext;
+
+        if (g_uUsbIpPortNext == g_uUsbIpPortLast)
+            g_uUsbIpPortNext = g_uUsbIpPortFirst;
+        else
+            g_uUsbIpPortNext++;
+
+        aCfg[0].pszKey      = "UsbIp/Port";
+        aCfg[0].Val.enmType = UTSGADGETCFGTYPE_UINT16;
+        aCfg[0].Val.u.u16   = uPort;
+        aCfg[1].pszKey      = NULL;
+
+        rc = utsGadgetHostCreate(UTSGADGETHOSTTYPE_USBIP, &aCfg[0], &pClient->hGadgetHost);
+        if (RT_SUCCESS(rc))
+        {
+            /* Send the reply with the configured USB/IP port. */
+            UTSPKTREPHOWDY Rep;
+
+            RT_ZERO(Rep);
+
+            Rep.uVersion         = UTS_PROTOCOL_VS;
+            Rep.fUsbConn         = UTSPKT_HOWDY_CONN_F_USBIP;
+            Rep.uUsbIpPort       = uPort;
+            Rep.cUsbIpDevices    = 1;
+            Rep.cPhysicalDevices = 0;
+
+            rc = utsReplyInternal(pClient, &Rep.Sts, "ACK     ", sizeof(Rep) - sizeof(UTSPKTSTS));
+            if (RT_SUCCESS(rc))
+            {
+                g_pTransport->pfnNotifyHowdy(pClient->pTransportClient);
+                pClient->enmState = UTSCLIENTSTATE_READY;
+                RTDirRemoveRecursive(g_szScratchPath, RTDIRRMREC_F_CONTENT_ONLY);
+            }
+        }
+        else
+            return utsReplyRC(pClient, pPktHdr, rc, "Creating the USB/IP gadget host failed");
+    }
+    else
+        return utsReplyRC(pClient, pPktHdr, VERR_INVALID_PARAMETER, "No access method requested");
+
+    return rc;
+}
+
+/**
+ * Verifies and processes a "GADGET CREATE" request.
+ *
+ * @returns IPRT status code.
+ * @param   pClient             The UTS client structure.
+ * @param   pPktHdr             The gadget create packet.
+ */
+static int utsDoGadgetCreate(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pPktHdr->cb < sizeof(UTSPKTREQGDGTCTOR))
+        return utsReplyBadSize(pClient, pPktHdr, sizeof(UTSPKTREQGDGTCTOR));
+
+    if (   pClient->enmState != UTSCLIENTSTATE_READY
+        || pClient->hGadgetHost == NIL_UTSGADGETHOST)
+        return utsReplyInvalidState(pClient, pPktHdr);
+
+    PUTSPKTREQGDGTCTOR pReq = (PUTSPKTREQGDGTCTOR)pPktHdr;
+
+    if (pReq->u32GdgtType != UTSPKT_GDGT_CREATE_TYPE_TEST)
+        return utsReplyRC(pClient, pPktHdr, VERR_INVALID_PARAMETER, "The given gadget type is not supported");
+
+    if (pReq->u32GdgtAccess != UTSPKT_GDGT_CREATE_ACCESS_USBIP)
+        return utsReplyRC(pClient, pPktHdr, VERR_INVALID_PARAMETER, "The given gadget access method is not supported");
+
+    PUTSGADGETCFGITEM paCfg = NULL;
+    if (pReq->u32CfgItems > 0)
+    {
+        paCfg = (PUTSGADGETCFGITEM)RTMemAllocZ((pReq->u32CfgItems + 1) * sizeof(UTSGADGETCFGITEM));
+        if (RT_UNLIKELY(!paCfg))
+            return utsReplyRC(pClient, pPktHdr, VERR_NO_MEMORY, "Failed to allocate memory for configration items");
+
+        rc = utsDoGadgetCreateFillCfg(pReq, paCfg);
+        if (RT_FAILURE(rc))
+        {
+            RTMemFree(paCfg);
+            return utsReplyRC(pClient, pPktHdr, rc, "Failed to parse configuration");
+        }
+    }
+
+    rc = utsGadgetCreate(pClient->hGadgetHost, UTSGADGETCLASS_TEST, paCfg, &pClient->hGadget);
     if (RT_SUCCESS(rc))
     {
-        g_pTransport->pfnNotifyHowdy(pClient->pTransportClient);
-        RTDirRemoveRecursive(g_szScratchPath, RTDIRRMREC_F_CONTENT_ONLY);
+        UTSPKTREPGDGTCTOR Rep;
+        RT_ZERO(Rep);
+
+        Rep.idGadget = 0;
+        rc = utsReplyInternal(pClient, &Rep.Sts, "ACK     ", sizeof(Rep) - sizeof(UTSPKTSTS));
     }
+    else
+        rc = utsReplyRC(pClient, pPktHdr, rc, "Failed to create gadget with %Rrc\n", rc);
+
+    return rc;
+}
+
+/**
+ * Verifies and processes a "GADGET DESTROY" request.
+ *
+ * @returns IPRT status code.
+ * @param   pClient             The UTS client structure.
+ * @param   pPktHdr             The gadget destroy packet.
+ */
+static int utsDoGadgetDestroy(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
+{
+    if (pPktHdr->cb != sizeof(UTSPKTREQGDGTDTOR))
+        return utsReplyBadSize(pClient, pPktHdr, sizeof(UTSPKTREQGDGTDTOR));
+
+    if (   pClient->enmState != UTSCLIENTSTATE_READY
+        || pClient->hGadgetHost == NIL_UTSGADGETHOST)
+        return utsReplyInvalidState(pClient, pPktHdr);
+
+    PUTSPKTREQGDGTDTOR pReq = (PUTSPKTREQGDGTDTOR)pPktHdr;
+
+    if (pReq->idGadget != 0)
+        return utsReplyRC(pClient, pPktHdr, VERR_INVALID_HANDLE, "The given gadget handle is invalid");
+    if (pClient->hGadget == NIL_UTSGADGET)
+        return utsReplyRC(pClient, pPktHdr, VERR_INVALID_STATE, "The gadget is not set up");
+
+    utsGadgetRelease(pClient->hGadget);
+    pClient->hGadget = NIL_UTSGADGET;
+
+    return utsReplyAck(pClient, pPktHdr);
+}
+
+/**
+ * Verifies and processes a "GADGET CONNECT" request.
+ *
+ * @returns IPRT status code.
+ * @param   pClient             The UTS client structure.
+ * @param   pPktHdr             The gadget connect packet.
+ */
+static int utsDoGadgetConnect(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
+{
+    if (pPktHdr->cb != sizeof(UTSPKTREQGDGTCNCT))
+        return utsReplyBadSize(pClient, pPktHdr, sizeof(UTSPKTREQGDGTCNCT));
+
+    if (   pClient->enmState != UTSCLIENTSTATE_READY
+        || pClient->hGadgetHost == NIL_UTSGADGETHOST)
+        return utsReplyInvalidState(pClient, pPktHdr);
+
+    PUTSPKTREQGDGTCNCT pReq = (PUTSPKTREQGDGTCNCT)pPktHdr;
+
+    if (pReq->idGadget != 0)
+        return utsReplyRC(pClient, pPktHdr, VERR_INVALID_HANDLE, "The given gadget handle is invalid");
+    if (pClient->hGadget == NIL_UTSGADGET)
+        return utsReplyRC(pClient, pPktHdr, VERR_INVALID_STATE, "The gadget is not set up");
+
+    int rc = utsGadgetConnect(pClient->hGadget);
+    if (RT_SUCCESS(rc))
+        rc = utsReplyAck(pClient, pPktHdr);
+    else
+        rc = utsReplyRC(pClient, pPktHdr, rc, "Failed to connect the gadget");
+
+    return rc;
+}
+
+/**
+ * Verifies and processes a "GADGET DISCONNECT" request.
+ *
+ * @returns IPRT status code.
+ * @param   pClient             The UTS client structure.
+ * @param   pPktHdr             The gadget disconnect packet.
+ */
+static int utsDoGadgetDisconnect(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
+{
+    if (pPktHdr->cb != sizeof(UTSPKTREQGDGTDCNT))
+        return utsReplyBadSize(pClient, pPktHdr, sizeof(UTSPKTREQGDGTDCNT));
+
+    if (   pClient->enmState != UTSCLIENTSTATE_READY
+        || pClient->hGadgetHost == NIL_UTSGADGETHOST)
+        return utsReplyInvalidState(pClient, pPktHdr);
+
+    PUTSPKTREQGDGTDCNT pReq = (PUTSPKTREQGDGTDCNT)pPktHdr;
+
+    if (pReq->idGadget != 0)
+        return utsReplyRC(pClient, pPktHdr, VERR_INVALID_HANDLE, "The given gadget handle is invalid");
+    if (pClient->hGadget == NIL_UTSGADGET)
+        return utsReplyRC(pClient, pPktHdr, VERR_INVALID_STATE, "The gadget is not set up");
+
+    int rc = utsGadgetDisconnect(pClient->hGadget);
+    if (RT_SUCCESS(rc))
+        rc = utsReplyAck(pClient, pPktHdr);
+    else
+        rc = utsReplyRC(pClient, pPktHdr, rc, "Failed to disconnect the gadget");
+
     return rc;
 }
 
@@ -608,6 +827,15 @@ static int utsClientReqProcess(PUTSCLIENT pClient)
         rc = utsDoHowdy(pClient, pPktHdr);
     else if (utsIsSameOpcode(pPktHdr, UTSPKT_OPCODE_BYE))
         rc = utsDoBye(pClient, pPktHdr);
+    /* Gadget API. */
+    else if (utsIsSameOpcode(pPktHdr, UTSPKT_OPCODE_GADGET_CREATE))
+        rc = utsDoGadgetCreate(pClient, pPktHdr);
+    else if (utsIsSameOpcode(pPktHdr, UTSPKT_OPCODE_GADGET_DESTROY))
+        rc = utsDoGadgetCreate(pClient, pPktHdr);
+    else if (utsIsSameOpcode(pPktHdr, UTSPKT_OPCODE_GADGET_CONNECT))
+        rc = utsDoGadgetConnect(pClient, pPktHdr);
+    else if (utsIsSameOpcode(pPktHdr, UTSPKT_OPCODE_GADGET_DISCONNECT))
+        rc = utsDoGadgetDisconnect(pClient, pPktHdr);
     /* Misc: */
     else
         rc = utsReplyUnknown(pClient, pPktHdr);
@@ -627,6 +855,10 @@ static void utsClientDestroy(PUTSCLIENT pClient)
 {
     if (pClient->pszHostname)
         RTStrFree(pClient->pszHostname);
+    if (pClient->hGadget != NIL_UTSGADGET)
+        utsGadgetRelease(pClient->hGadget);
+    if (pClient->hGadgetHost != NIL_UTSGADGETHOST)
+        utsGadgetHostRelease(pClient->hGadgetHost);
     RTMemFree(pClient);
 }
 
@@ -767,6 +999,9 @@ static RTEXITCODE utsMainLoop(void)
         {
             pClient->enmState         = UTSCLIENTSTATE_INITIALISING;
             pClient->pTransportClient = pTransportClient;
+            pClient->pszHostname      = NULL;
+            pClient->hGadgetHost      = NIL_UTSGADGETHOST;
+            pClient->hGadget          = NIL_UTSGADGET;
         }
         else
         {

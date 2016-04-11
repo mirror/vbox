@@ -75,6 +75,7 @@ typedef enum UTSGADGETCFGTYPE
     UTSGADGETCFGTYPE_INT32,
     /** Signed 64bit integer. */
     UTSGADGETCFGTYPE_INT64,
+    /** 32bit hack. */
     UTSGADGETCFGTYPE_32BIT_HACK = 0x7fffffff
 } UTSGADGETCFGTYPE;
 
