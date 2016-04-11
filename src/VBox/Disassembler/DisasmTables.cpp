@@ -2561,7 +2561,7 @@ const DISOPCODE g_aMapX86_EscF5_Low[8] =
     OP("fstp %Mq",           IDX_ParseModRM,     0,          0,          OP_FSTP,    OP_PARM_Mq,         OP_PARM_NONE,   OP_PARM_NONE, DISOPTYPE_HARMLESS /* fixme: wasn't initialized! */),
     OP("frstor %M",          IDX_ParseModRM,     0,          0,          OP_FRSTOR,  OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE, DISOPTYPE_HARMLESS /* fixme: wasn't initialized! */),
     INVALID_OPCODE,
-    OP("fsave %M",           IDX_ParseModRM,     0,          0,          OP_FSAVE,   OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE, DISOPTYPE_HARMLESS /* fixme: wasn't initialized! */),
+    OP("fnsave %M",          IDX_ParseModRM,     0,          0,          OP_FSAVE,   OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE, DISOPTYPE_HARMLESS /* fixme: wasn't initialized! */),
     OP("fnstsw %Mw",         IDX_ParseModRM,     0,          0,          OP_FNSTSW,  OP_PARM_Mw,         OP_PARM_NONE,   OP_PARM_NONE, DISOPTYPE_HARMLESS /* fixme: wasn't initialized! */),
 };
 
