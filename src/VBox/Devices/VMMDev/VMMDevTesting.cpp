@@ -239,9 +239,15 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             break;
 
         /*
-         * The command port (DWORD write only).
+         * The command port (DWORD and WORD write only).
+         * (We have to allow WORD writes for 286, 186 and 8086 execution modes.)
          */
         case VMMDEV_TESTING_IOPORT_CMD:
+            if (cb == 2)
+            {
+                u32 |= VMMDEV_TESTING_CMD_MAGIC_HI_WORD;
+                cb = 4;
+            }
             if (cb == 4)
             {
                 pThis->u32TestingCmd  = u32;
@@ -323,6 +329,25 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 
                 case VMMDEV_TESTING_CMD_TERM:
                 case VMMDEV_TESTING_CMD_SUB_DONE:
+                    if (cb == 2)
+                    {
+                        if (off == 0)
+                        {
+                            pThis->TestingData.Error.c = u32;
+                            pThis->offTestingData = 2;
+                            break;
+                        }
+                        if (off == 2)
+                        {
+                            u32 <<= 16;
+                            u32  |= pThis->TestingData.Error.c & UINT16_MAX;
+                            cb    = 4;
+                            off   = 0;
+                        }
+                        else
+                            break;
+                    }
+
                     if (   off == 0
                         && cb  == 4)
                     {
@@ -371,6 +396,26 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                         pThis->offTestingData = off + 4;
                         return VINF_SUCCESS;
                     }
+                    if (cb == 2)
+                    {
+                        if (off == 0)
+                            pThis->TestingData.Value.u64Value.Words.w0 = (uint16_t)u32;
+                        else if (off == 2)
+                            pThis->TestingData.Value.u64Value.Words.w1 = (uint16_t)u32;
+                        else if (off == 4)
+                            pThis->TestingData.Value.u64Value.Words.w2 = (uint16_t)u32;
+                        else if (off == 6)
+                            pThis->TestingData.Value.u64Value.Words.w3 = (uint16_t)u32;
+                        else if (off == 8)
+                            pThis->TestingData.Value.u32Unit = (uint16_t)u32;
+                        else if (off == 10)
+                            pThis->TestingData.Value.u32Unit = u32 << 16;
+                        else
+                            break;
+                        pThis->offTestingData = off + 2;
+                        return VINF_SUCCESS;
+                    }
+
                     if (   off >= 12
                         && cb  == 1
                         && off - 12 < sizeof(pThis->TestingData.Value.szName) - 1)

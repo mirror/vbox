@@ -62,7 +62,7 @@
 #define VMMDEV_TESTING_IOPORT_TS_LOW    (VMMDEV_TESTING_IOPORT_BASE + 1)
 /** The high nanosecond timestamp - 4 RO.  Read this after the low one!  */
 #define VMMDEV_TESTING_IOPORT_TS_HIGH   (VMMDEV_TESTING_IOPORT_BASE + 2)
-/** Command register usually used for preparing the data register - 4 WO. */
+/** Command register usually used for preparing the data register - 4/2 WO. */
 #define VMMDEV_TESTING_IOPORT_CMD       (VMMDEV_TESTING_IOPORT_BASE + 3)
 /** Data register which use depends on the current command - 1s, 4 WO. */
 #define VMMDEV_TESTING_IOPORT_DATA      (VMMDEV_TESTING_IOPORT_BASE + 4)
@@ -91,6 +91,13 @@
 #define VMMDEV_TESTING_CMD_VALUE_REG    UINT32_C(0xcab1e007)
 /** Print string, sending a string including newline. (RTTestPrintf) */
 #define VMMDEV_TESTING_CMD_PRINT        UINT32_C(0xcab1e008)
+
+/** The magic part of the command. */
+#define VMMDEV_TESTING_CMD_MAGIC        UINT32_C(0xcab1e000)
+/** The magic part of the command. */
+#define VMMDEV_TESTING_CMD_MAGIC_MASK   UINT32_C(0xffffff00)
+/** The magic high word automatically supplied to 16-bit CMD writes. */
+#define VMMDEV_TESTING_CMD_MAGIC_HI_WORD UINT32_C(0xcab10000)
 /** @} */
 
 /** @name Value units
