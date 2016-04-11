@@ -588,8 +588,8 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h: $(VBOX_VMM_TESTCASE_OUT_DIR)/tst
 	$(QUIET)$(SED) \
 		-e '/STAMPROFILEADV/d' \
 		\
-		-e '/00[0-9a-fA-F]* [aA] [^_.]*\./!d' \
-		-e 's/\(00[0-9a-fA-F]*\) [aA] \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\2, 0x0\1, \3);/' \
+		-e '/^\(0x\)\{0,1\}00[0-9a-fA-F]* [aAnN] [^_.]*\./!d' \
+		-e 's/^\(0x\)\{0,1\}\(00[0-9a-fA-F]*\) [aAnN] \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\3, 0x0\2, \4);/' \
 		--output $@.tmp $@.dump
 	$(QUIET)$(SED) \
 		-e '/VM_size$$/d' \
@@ -598,8 +598,8 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h: $(VBOX_VMM_TESTCASE_OUT_DIR)/tst
 		-e '/SUPDRVTRACERUSRCTX32_size$$/d' \
 		-e '/HMCPU_size$$/d' \
 		\
-		-e '/00[0-9a-fA-F]* [aA] [^_.]*_size$$/!d' \
-		-e 's/\(00[0-9a-fA-F]*\) [aA] \([^_.]*\)_size/    CHECK_SIZE(\2, 0x0\1);/' \
+		-e '/^\(0x\)\{0,1\}00[0-9a-fA-F]* [aAnN] [^_.]*_size$$/!d' \
+		-e 's/^\(0x\)\{0,1\}\(00[0-9a-fA-F]*\) [aAnN] \([^_.]*\)_size/    CHECK_SIZE(\3, 0x0\2);/' \
 		--append $@.tmp $@.dump
 	$(QUIET)$(MV) -f $@.tmp $@
 	$(QUIET)$(RM) -f $@.dump

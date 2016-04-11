@@ -1940,7 +1940,7 @@ endif
 ifeq ($(KBUILD_HOST),win)
  VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
 else
- VBOX_NM ?= nm -p
+ VBOX_NM ?= nm -p -t x
 endif
 
 # Makeself for the linux installers.
@@ -6423,7 +6423,12 @@ else
 
  ifeq ($(KBUILD_TARGET),solaris)
   # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.6.0
-  VBOX_JAVA_HOME ?= /usr/java
+  VBOX_JAVA_HOME ?= $(firstword $(abspath $(wildcard \
+	/usr/jdk/latest/include/.. \
+	/usr/jdk/instances/jdk1.8*/include/.. \
+	/usr/jdk/instances/jdk1.7*/include/.. \
+	/usr/jdk/instances/jdk1.6*/include/.. \
+	)) /usr/java)
  endif
 
  ifeq ($(KBUILD_TARGET),win)
