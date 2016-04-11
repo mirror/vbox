@@ -4351,9 +4351,10 @@ void VBoxGlobal::prepare()
 
     mValid = true;
 
+    /* Prepare converter: */
     UIConverter::prepare();
 
-    /* Create medium enumerator but don't do any immediate caching. */
+    /* Create medium-enumerator but don't do any immediate caching: */
     m_pMediumEnumerator = new UIMediumEnumerator;
     {
         /* Prepare medium-enumerator: */
@@ -4388,8 +4389,9 @@ void VBoxGlobal::prepare()
 
 void VBoxGlobal::cleanup()
 {
-    /* Preventing some unwanted stuff
-     * which could de called from the other threads: */
+    // TODO: Shouldn't that be protected with a mutex or something?
+    /* Remember that the cleanup is in progress preventing any unwanted
+     * stuff which could be called from the other threads: */
     m_sfCleanupInProgress = true;
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -4405,30 +4407,34 @@ void VBoxGlobal::cleanup()
 
 #ifdef VBOX_GUI_WITH_PIDFILE
     deletePidfile();
-#endif
+#endif /* VBOX_GUI_WITH_PIDFILE */
 
-    /* Destroy the GUI root windows _BEFORE_ the media-mess, because there is
-       code in the GUI that's using the media code an will be racing us! */
+    /* Destroy the GUI root windows _BEFORE_
+     * the media related code which could race us: */
     if (gpSelectorWindow)
         UISelectorWindow::destroy();
     if (gpMachine)
         UIMachine::destroy();
-    /* As part of recent change UIVirtualBoxEventHandler also used in runtimeUI.
-     * This needs to be destroyed before COM cleanup. As this is supposed to be only part of selectorUI,
-     * and needs to be reworked later doing this here for now: */
-    if (gpMachine)
-        UIVirtualBoxEventHandler::destroy();
 
-    /* Cleanup medium-enumerator: */
+    /* Starting medium-enumerator cleanup: */
     m_mediumEnumeratorDtorRwLock.lockForWrite();
-    delete m_pMediumEnumerator;
-    m_pMediumEnumerator = 0;
+    {
+        /* Destroy medium-enumerator: */
+        delete m_pMediumEnumerator;
+        m_pMediumEnumerator = 0;
+    }
+    /* Finishing medium-enumerator cleanup: */
     m_mediumEnumeratorDtorRwLock.unlock();
 
-    /* Destroy extra-data manager: */
+    /* Destroy the global (VirtualBox) Main event handler
+     * which is used in both Selector and Runtime UI. */
+    UIVirtualBoxEventHandler::destroy();
+
+    /* Destroy the extra-data manager finally after everything
+     * above which could use it already destroyed: */
     UIExtraDataManager::destroy();
 
-    /* Destroy whatever this converter stuff is: */
+    /* Cleanup converter: */
     UIConverter::cleanup();
 
     /* Cleanup thread-pool: */
@@ -4438,7 +4444,7 @@ void VBoxGlobal::cleanup()
     delete m_pIconPool;
     m_pIconPool = 0;
 
-    /* ensure CGuestOSType objects are no longer used */
+    /* Ensure CGuestOSType objects are no longer used: */
     m_guestOSFamilyIDs.clear();
     m_guestOSTypes.clear();
 
