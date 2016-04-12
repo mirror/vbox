@@ -93,6 +93,8 @@ extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int81)(void);
 extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int82)(void);
 extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int83)(void);
 extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_ud2)(void);
+extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_sidt_bx_ud2)(void);
+extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_lidt_bx_ud2)(void);
 #ifndef DOXYGEN_RUNNING
 # define g_bs3CpuBasic2_ud2_FlatAddr BS3_DATA_NM(g_bs3CpuBasic2_ud2_FlatAddr)
 #endif
@@ -1296,6 +1298,45 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
 # endif
 }
 
+
+#define bs3CpuBasic2_sidt_Common BS3_CMN_NM(bs3CpuBasic2_sidt_Common)
+void bs3CpuBasic2_sidt_Common(void)
+{
+    BS3TRAPFRAME        TrapCtx;
+    BS3REGCTX           Ctx;
+    BS3REGCTX           TmpCtx;
+    uint8_t             abBuf[16];
+    uint8_t BS3_FAR    *pbBuf = abBuf;
+
+    /* make sure they're allocated  */
+    Bs3MemZero(&Ctx, sizeof(Ctx));
+    Bs3MemZero(&TmpCtx, sizeof(TmpCtx));
+    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
+    Bs3MemZero(&abBuf, sizeof(abBuf));
+
+    /* Create a context, give this routine some more stack space, point the context
+       at our SIDT [xBX] + UD2 combo, and point DS:xBX at abBuf. */
+    Bs3RegCtxSave(&Ctx);
+    Ctx.rsp.u -= 0x80;
+    Ctx.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_sidt_bx_ud2));
+# if TMPL_BITS == 32
+    g_uBs3TrapEipHint = Ctx.rip.u32;
+# endif
+    Ctx.rbx.u = BS3_FP_OFF(pbBuf);
+# if TMPL_BITS == 16
+    Ctx.ds    = BS3_FP_SEG(pbBuf);
+# endif
+
+    /*
+     * Check that it works at all.
+     */
+    Bs3MemZero(&abBuf, sizeof(abBuf));
+    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+    g_usBs3TestStep = 0;
+    //bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx, 0x80 /*bXcpt*/);
+
+}
+
 #endif /* once for each bitcount */
 
 
@@ -1453,7 +1494,7 @@ void bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DESC const paIdt,
         Bs3TestPrintf("%s: Skipping ESP check, CPU too old\n", g_pszTestMode);
 }
 
-#endif
+#endif /* PE16 || PE32 */
 
 
 BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
@@ -1523,8 +1564,6 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
 }
 
 
-
-
 BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
 {
     g_pszTestMode = TMPL_NM(g_szBs3ModeName);
@@ -1532,6 +1571,27 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
 
     return BS3TESTDOMODE_SKIPPED;
+}
+
+
+BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
+{
+    g_pszTestMode = TMPL_NM(g_szBs3ModeName);
+    g_bTestMode   = bMode;
+    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
+
+    BS3_ASSERT(bMode == TMPL_MODE);
+
+    /*
+     * Pass to common worker which is only compiled once per mode.
+     */
+    bs3CpuBasic2_sidt_Common();
+
+    /*
+     * Re-initialize the IDT.
+     */
+    TMPL_NM(Bs3TrapInit)();
+    return 0;
 }
 
 
