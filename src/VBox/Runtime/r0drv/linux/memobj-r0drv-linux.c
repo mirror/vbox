@@ -1046,14 +1046,12 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
          */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
         if (R0Process == RTR0ProcHandleSelf())
-#endif
             rc = get_user_pages(R3Ptr,                  /* Where from. */
                                 cPages,                 /* How many pages. */
                                 fWrite,                 /* Write to memory. */
                                 fWrite,                 /* force write access. */
                                 &pMemLnx->apPages[0],   /* Page array. */
                                 papVMAs);               /* vmas */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
         /*
          * Actually this should not happen at the moment as call this function
          * only for our own process.
@@ -1068,7 +1066,16 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
                                 fWrite,                 /* force write access. */
                                 &pMemLnx->apPages[0],   /* Page array. */
                                 papVMAs);               /* vmas */
-#endif
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0) */
+            rc = get_user_pages(pTask,                  /* Task for fault accounting. */
+                                pTask->mm,              /* Whose pages. */
+                                R3Ptr,                  /* Where from. */
+                                cPages,                 /* How many pages. */
+                                fWrite,                 /* Write to memory. */
+                                fWrite,                 /* force write access. */
+                                &pMemLnx->apPages[0],   /* Page array. */
+                                papVMAs);               /* vmas */
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0) */
         if (rc == cPages)
         {
             /*
