@@ -894,6 +894,10 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
         pThis->hVScsiDevice = NULL;
         pThis->hVScsiLun    = NULL;
     }
+
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatBytesRead);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatBytesWritten);
+    PDMDrvHlpSTAMDeregister(pDrvIns, (void *)&pThis->StatIoDepth);
 }
 
 /**
