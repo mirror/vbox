@@ -1054,6 +1054,10 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
                                 &pMemLnx->apPages[0],   /* Page array. */
                                 papVMAs);               /* vmas */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+        /*
+         * Actually this should not happen at the moment as call this function
+         * only for our own process.
+         */
         else
             rc = get_user_pages_remote(
                                 pTask,                  /* Task for fault accounting. */
