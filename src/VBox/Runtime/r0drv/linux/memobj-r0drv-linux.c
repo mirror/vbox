@@ -589,7 +589,11 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 {
                     if (!PageReserved(pMemLnx->apPages[iPage]))
                         SetPageDirty(pMemLnx->apPages[iPage]);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+                    put_page(pMemLnx->apPages[iPage]);
+#else
                     page_cache_release(pMemLnx->apPages[iPage]);
+#endif
                 }
 
                 if (pTask && pTask->mm)
@@ -1092,7 +1096,11 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
         {
             if (!PageReserved(pMemLnx->apPages[rc]))
                 SetPageDirty(pMemLnx->apPages[rc]);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+            put_page(pMemLnx->apPages[rc]);
+#else
             page_cache_release(pMemLnx->apPages[rc]);
+#endif
         }
 
         up_read(&pTask->mm->mmap_sem);
