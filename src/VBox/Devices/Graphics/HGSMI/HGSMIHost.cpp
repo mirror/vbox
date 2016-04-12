@@ -475,6 +475,11 @@ void HGSMISetHostGuestFlags(HGSMIINSTANCE *pIns, uint32_t flags)
     ASMAtomicOrU32(&pIns->pHGFlags->u32HostFlags, flags);
 }
 
+uint32_t HGSMIGetHostGuestFlags(HGSMIINSTANCE *pIns)
+{
+    return pIns->pHGFlags? ASMAtomicReadU32(&pIns->pHGFlags->u32HostFlags) : 0;
+}
+
 void HGSMIClearHostGuestFlags(HGSMIINSTANCE *pIns, uint32_t flags)
 {
     AssertPtrReturnVoid(pIns->pHGFlags);

@@ -2085,7 +2085,16 @@ void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags)
     HGSMISetHostGuestFlags(pVGAState->pHGSMI, HGSMIHOSTFLAGS_IRQ | fFlags);
     PDMCritSectLeave(&pVGAState->CritSect);
 
-    PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
+    /* Set IRQ only for a running VM.
+     * If HGSMIHOSTFLAGS_IRQ is set, then vgaR3Resume/vgaR3PowerOn will
+     * set the postponed IRQ.
+     */
+    VMSTATE enmVMState = PDMDevHlpVMState(pDevIns);
+    if (   enmVMState == VMSTATE_RUNNING
+        || enmVMState == VMSTATE_RUNNING_LS)
+    {
+        PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
+    }
 }
 
 static DECLCALLBACK(int) vbvaRaiseIrqEMT(PVGASTATE pVGAState, uint32_t fFlags)
@@ -2102,6 +2111,18 @@ void VBVARaiseIrqNoWait(PVGASTATE pVGAState, uint32_t fFlags)
      * 2. guest issues an IRQ clean request, that cleans up the flag and the interrupt
      * 3. IRQ is set */
     VMR3ReqCallNoWait(PDMDevHlpGetVM(pVGAState->pDevInsR3), VMCPUID_ANY, (PFNRT)vbvaRaiseIrqEMT, 2, pVGAState, fFlags);
+}
+
+void VBVAOnResume(PVGASTATE pThis)
+{
+    PPDMDEVINS pDevIns = pThis->pDevInsR3;
+
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    bool fIrq = RT_BOOL(HGSMIGetHostGuestFlags(pThis->pHGSMI) & HGSMIHOSTFLAGS_IRQ);
+    PDMCritSectLeave(&pThis->CritSect);
+
+    if (fIrq)
+        PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
 }
 
 static int vbvaHandleQueryConf32(PVGASTATE pVGAState, VBVACONF32 *pConf32)

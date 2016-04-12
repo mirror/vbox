@@ -682,6 +682,7 @@ int      VBVAUpdateDisplay (PVGASTATE pVGAState);
 void     VBVAReset (PVGASTATE pVGAState);
 void     VBVAPause (PVGASTATE pVGAState, bool fPause);
 void     VBVAOnVBEChanged(PVGASTATE pVGAState);
+void     VBVAOnResume(PVGASTATE pThis);
 
 bool VBVAIsPaused(PVGASTATE pVGAState);
 bool VBVAIsEnabled(PVGASTATE pVGAState);

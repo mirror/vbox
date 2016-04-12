@@ -6984,6 +6984,18 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     return rc;
 }
 
+static DECLCALLBACK(void) vgaR3PowerOn(PPDMDEVINS pDevIns)
+{
+    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    vmsvgaR3PowerOn(pDevIns);
+    VBVAOnResume(pThis);
+}
+
+static DECLCALLBACK(void) vgaR3Resume(PPDMDEVINS pDevIns)
+{
+    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    VBVAOnResume(pThis);
+}
 
 /**
  * The device registration structure.
@@ -7018,7 +7030,7 @@ const PDMDEVREG g_DeviceVga =
     NULL,
     /* pfnPowerOn */
 #ifdef VBOX_WITH_VMSVGA
-    vmsvgaR3PowerOn,
+    vgaR3PowerOn,
 #else
     NULL,
 #endif
@@ -7027,7 +7039,7 @@ const PDMDEVREG g_DeviceVga =
     /* pfnSuspend */
     NULL,
     /* pfnResume */
-    NULL,
+    vgaR3Resume,
     /* pfnAttach */
     vgaAttach,
     /* pfnDetach */

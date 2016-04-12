@@ -91,6 +91,7 @@ void HGSMIHostWrite (PHGSMIINSTANCE pIns,
                      HGSMIOFFSET offBuffer);
 
 void HGSMISetHostGuestFlags(PHGSMIINSTANCE pIns, uint32_t flags);
+uint32_t HGSMIGetHostGuestFlags(HGSMIINSTANCE *pIns);
 
 void HGSMIClearHostGuestFlags(PHGSMIINSTANCE pIns, uint32_t flags);
 
