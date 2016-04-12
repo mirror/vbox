@@ -383,6 +383,8 @@ VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
+    LogFlow(("APIC%u: APICR3Reset\n", pVCpu->idCpu));
+
 #ifdef RT_STRICT
     /* Verify that the initial APIC ID reported via CPUID matches our VMCPU ID assumption. */
     CPUMCPUIDLEAF CpuLeaf;
@@ -428,6 +430,7 @@ VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu)
 VMMR3_INT_DECL(void) APICR3InitIpi(PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
+    LogFlow(("APIC%u: APICR3InitIpi\n", pVCpu->idCpu));
     apicR3InitIpi(pVCpu);
 }
 

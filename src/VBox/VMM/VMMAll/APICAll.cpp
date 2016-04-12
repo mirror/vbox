@@ -157,12 +157,28 @@ DECLINLINE(void) apicClearVectorInPib(volatile void *pvPib, uint8_t uVector)
  * @param   pApicReg        The APIC 256-bit spare register.
  * @param   idxFragment     The index of the 32-bit fragment in @a
  *                          pApicReg.
- * @param   u32Fragment     The 32-bit vector fragment.
+ * @param   u32Fragment     The 32-bit vector fragment to OR.
  */
 DECLINLINE(void) apicOrVectorsToReg(volatile XAPIC256BITREG *pApicReg, size_t idxFragment, uint32_t u32Fragment)
 {
     Assert(idxFragment < RT_ELEMENTS(pApicReg->u));
     ASMAtomicOrU32(&pApicReg->u[idxFragment].u32Reg, u32Fragment);
+}
+
+
+/**
+ * Atomically AND's a fragment (32 vectors) into an APIC
+ * 256-bit sparse register.
+ *
+ * @param   pApicReg        The APIC 256-bit spare register.
+ * @param   idxFragment     The index of the 32-bit fragment in @a
+ *                          pApicReg.
+ * @param   u32Fragment     The 32-bit vector fragment to AND.
+ */
+DECLINLINE(void) apicAndVectorsToReg(volatile XAPIC256BITREG *pApicReg, size_t idxFragment, uint32_t u32Fragment)
+{
+    Assert(idxFragment < RT_ELEMENTS(pApicReg->u));
+    ASMAtomicAndU32(&pApicReg->u[idxFragment].u32Reg, u32Fragment);
 }
 
 
@@ -1289,7 +1305,7 @@ static int apicSetLvtExtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt)
 static void apicHintTimerFreq(PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimerShift)
 {
     Assert(pApicCpu);
-    Assert(TMTimerIsLockOwner(CTX_SUFF(pApicCpu->pTimer)));
+    Assert(TMTimerIsLockOwner(pApicCpu->CTX_SUFF(pTimer)));
 
     if (   pApicCpu->uHintedTimerInitialCount != uInitialCount
         || pApicCpu->uHintedTimerShift        != uTimerShift)
@@ -2396,7 +2412,7 @@ VMMDECL(void) APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingInt
 
 
 /**
- * Updates pending interrupts from the pending interrupt bitmap to the IRR.
+ * Updates pending interrupts from the pending-interrupt bitmaps to the IRR.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
  */
@@ -2406,6 +2422,8 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
 
     PAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
+
+    /* Update edge-triggered pending interrupts. */
     for (;;)
     {
         bool const fAlreadySet = apicClearNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
@@ -2417,7 +2435,29 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
         {
             uint32_t const uFragment = ASMAtomicXchgU32(&pPib->aVectorBitmap[i], 0);
             if (uFragment)
+            {
+                apicOrVectorsToReg(&pXApicPage->irr,  i,  uFragment);
+                apicAndVectorsToReg(&pXApicPage->tmr, i, ~uFragment);
+            }
+        }
+    }
+
+    /* Update level-triggered pending interrupts. */
+    for (;;)
+    {
+        bool const fAlreadySet = apicClearNotificationBitInPib(&pApicCpu->ApicPibLevel);
+        if (!fAlreadySet)
+            break;
+
+        PAPICPIB pPib = (PAPICPIB)&pApicCpu->ApicPibLevel;
+        for (size_t i = 0; i < RT_ELEMENTS(pPib->aVectorBitmap); i++)
+        {
+            uint32_t const uFragment = ASMAtomicXchgU32(&pPib->aVectorBitmap[i], 0);
+            if (uFragment)
+            {
                 apicOrVectorsToReg(&pXApicPage->irr, i, uFragment);
+                apicOrVectorsToReg(&pXApicPage->tmr, i, uFragment);
+            }
         }
     }
 }
