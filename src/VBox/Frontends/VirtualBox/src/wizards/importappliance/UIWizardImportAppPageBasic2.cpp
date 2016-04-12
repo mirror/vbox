@@ -149,17 +149,14 @@ void UIWizardImportAppPageBasic2::initializePage()
             AssertPtrReturnVoid(pDialog.data());
 
             /* Show viewer in modal mode: */
-            int iResultCode = pDialog->exec();
+            const int iResultCode = pDialog->exec();
 
-            /* Leave if destroyed prematurely: */
+            /* Leave if viewer destroyed prematurely: */
             if (!pDialog)
                 return;
-            /* Delete viewer: */
-            if (pDialog)
-            {
-                delete pDialog;
-                pDialog = 0;
-            }
+            /* Delete viewer finally: */
+            delete pDialog;
+            pDialog = 0;
 
             /* Dismiss the entire import-appliance wizard if user rejects certificate: */
             if (iResultCode == QDialog::Rejected)
