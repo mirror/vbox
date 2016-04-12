@@ -32,6 +32,7 @@
 
 #include "AutoCaller.h"
 #include "Logging.h"
+#include "ThreadTask.h"
 
 #include <memory>
 
@@ -148,8 +149,9 @@ HRESULT VFSExplorer::getType(VFSType_T *aType)
     return S_OK;
 }
 
-struct VFSExplorer::TaskVFSExplorer
+class VFSExplorer::TaskVFSExplorer : public ThreadTask
 {
+public:
     enum TaskType
     {
         Update,
@@ -161,53 +163,51 @@ struct VFSExplorer::TaskVFSExplorer
           pVFSExplorer(aThat),
           progress(aProgress),
           rc(S_OK)
-    {}
+    {
+        m_strTaskName = "Explorer::Task";
+    }
     ~TaskVFSExplorer() {}
 
-    int startThread();
+private:
+    void handler()
+    {
+        int vrc = taskThread(NULL, this);
+    }
+
     static DECLCALLBACK(int) taskThread(RTTHREAD aThread, void *pvUser);
     static DECLCALLBACK(int) uploadProgress(unsigned uPercent, void *pvUser);
 
     TaskType taskType;
     VFSExplorer *pVFSExplorer;
+
     ComObjPtr<Progress> progress;
     HRESULT rc;
 
     /* task data */
     std::list<Utf8Str> filenames;
+
+    friend class VFSExplorer;
 };
-
-int VFSExplorer::TaskVFSExplorer::startThread()
-{
-    int vrc = RTThreadCreate(NULL, VFSExplorer::TaskVFSExplorer::taskThread, this,
-                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Explorer::Task");
-
-    if (RT_FAILURE(vrc))
-        return VFSExplorer::setErrorStatic(E_FAIL, Utf8StrFmt("Could not create taskThreadVFS (%Rrc)\n", vrc));
-
-    return vrc;
-}
 
 /* static */
 DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::taskThread(RTTHREAD /* aThread */, void *pvUser)
 {
-    std::auto_ptr<TaskVFSExplorer> task(static_cast<TaskVFSExplorer*>(pvUser));
-    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
+    TaskVFSExplorer* pTask = static_cast<TaskVFSExplorer*>(pvUser);
+    AssertReturn(pTask, VERR_GENERAL_FAILURE);
 
-    VFSExplorer *pVFSExplorer = task->pVFSExplorer;
+    VFSExplorer *pVFSExplorer = pTask->pVFSExplorer;
 
     LogFlowFuncEnter();
     LogFlowFunc(("VFSExplorer %p\n", pVFSExplorer));
 
     HRESULT rc = S_OK;
 
-    switch(task->taskType)
+    switch(pTask->taskType)
     {
         case TaskVFSExplorer::Update:
         {
             if (pVFSExplorer->m->storageType == VFSType_File)
-                rc = pVFSExplorer->i_updateFS(task.get());
+                rc = pVFSExplorer->i_updateFS(pTask);
             else if (pVFSExplorer->m->storageType == VFSType_S3)
                 rc = VERR_NOT_IMPLEMENTED;
             break;
@@ -215,13 +215,13 @@ DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::taskThread(RTTHREAD /* aThread *
         case TaskVFSExplorer::Delete:
         {
             if (pVFSExplorer->m->storageType == VFSType_File)
-                rc = pVFSExplorer->i_deleteFS(task.get());
+                rc = pVFSExplorer->i_deleteFS(pTask);
             else if (pVFSExplorer->m->storageType == VFSType_S3)
                 rc = VERR_NOT_IMPLEMENTED;
             break;
         }
         default:
-            AssertMsgFailed(("Invalid task type %u specified!\n", task->taskType));
+            AssertMsgFailed(("Invalid task type %u specified!\n", pTask->taskType));
             break;
     }
 
@@ -408,13 +408,10 @@ HRESULT VFSExplorer::update(ComPtr<IProgress> &aProgress)
         if (FAILED(rc)) throw rc;
 
         /* Initialize our worker task */
-        std::auto_ptr<TaskVFSExplorer> task(new TaskVFSExplorer(TaskVFSExplorer::Update, this, progress));
+        TaskVFSExplorer* pTask = new TaskVFSExplorer(TaskVFSExplorer::Update, this, progress);
 
-        rc = task->startThread();
-        if (FAILED(rc)) throw rc;
-
-        /* Don't destruct on success */
-        task.release();
+        //this function delete task in case of exceptions, so there is no need in the call of delete operator
+        rc = pTask->createThread(NULL, RTTHREADTYPE_MAIN_HEAVY_WORKER);
     }
     catch (HRESULT aRC)
     {
@@ -525,17 +522,14 @@ HRESULT VFSExplorer::remove(const std::vector<com::Utf8Str> &aNames,
         if (FAILED(rc)) throw rc;
 
         /* Initialize our worker task */
-        std::auto_ptr<TaskVFSExplorer> task(new TaskVFSExplorer(TaskVFSExplorer::Delete, this, progress));
+        TaskVFSExplorer* pTask = new TaskVFSExplorer(TaskVFSExplorer::Delete, this, progress);
 
         /* Add all filenames to delete as task data */
         for (size_t i = 0; i < aNames.size(); ++i)
-            task->filenames.push_back(aNames[i]);
+            pTask->filenames.push_back(aNames[i]);
 
-        rc = task->startThread();
-        if (FAILED(rc)) throw rc;
-
-        /* Don't destruct on success */
-        task.release();
+        //this function delete task in case of exceptions, so there is no need in the call of delete operator
+        rc = pTask->createThread(NULL, RTTHREADTYPE_MAIN_HEAVY_WORKER);
     }
     catch (HRESULT aRC)
     {

@@ -69,7 +69,7 @@ private:
     ////
     //////////////////////////////////////////////////////////////////////////////////
     //
-    struct TaskVFSExplorer;  /* Worker thread helper */
+    class TaskVFSExplorer;  /* Worker thread helper */
     struct Data;
     Data *m;
 
