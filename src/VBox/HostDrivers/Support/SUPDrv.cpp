@@ -3027,7 +3027,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
      * Let IPRT do the job.
      */
     Mem.eType = MEMREF_TYPE_LOCKED;
-    rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf());
+    rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
         uint32_t iPage = cPages;
