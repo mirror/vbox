@@ -851,6 +851,8 @@ static VBOXSTRICTRC apicSetIcrHi(PVMCPU pVCpu, uint32_t uIcrHi)
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     pXApicPage->icr_hi.all.u32IcrHi = uIcrHi & XAPIC_ICR_HI_DEST;
+    Log4(("APIC%u: apicSetIcrHi: uIcrHi=%#RX32\n", pVCpu->idCpu, pXApicPage->icr_hi.all.u32IcrHi));
+
     return VINF_SUCCESS;
 }
 
@@ -870,6 +872,7 @@ static VBOXSTRICTRC apicSetIcrLo(PVMCPU pVCpu, uint32_t uIcrLo, int rcRZ)
 
     PXAPICPAGE pXApicPage  = VMCPU_TO_XAPICPAGE(pVCpu);
     pXApicPage->icr_lo.all.u32IcrLo = uIcrLo & XAPIC_ICR_LO_WR;
+    Log4(("APIC%u: apicSetIcrLo: uIcrLo=%#RX32\n", pVCpu->idCpu, pXApicPage->icr_lo.all.u32IcrLo));
 
     apicSendIpi(pVCpu, rcRZ);
     return VINF_SUCCESS;
@@ -908,13 +911,16 @@ static VBOXSTRICTRC apicSetIcr(PVMCPU pVCpu, uint64_t u64Icr, int rcRZ)
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uValue          The ESR value.
+ * @param   uEsr            The ESR value.
  */
-static VBOXSTRICTRC apicSetEsr(PVMCPU pVCpu, uint32_t uValue)
+static VBOXSTRICTRC apicSetEsr(PVMCPU pVCpu, uint32_t uEsr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
+
+    Log4(("APIC%u: apicSetEr: uEsr=%#RX32\n", pVCpu->idCpu, uEsr));
+
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
-        && (uValue & ~XAPIC_ESR_WO))
+        && (uEsr & ~XAPIC_ESR_WO))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_ESR, APICMSRACCESS_WRITE_RSVD_BITS);
 
     /*
@@ -1005,6 +1011,8 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
+    Log4(("APIC%u: apicSetEoi: uEoi=%#RX32\n", pVCpu->idCpu, uEoi));
+
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
         && (uEoi & ~XAPIC_EOI_WO))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_EOI, APICMSRACCESS_WRITE_RSVD_BITS);
@@ -1051,6 +1059,8 @@ static VBOXSTRICTRC apicSetLdr(PVMCPU pVCpu, uint32_t uLdr)
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
 
+    Log4(("APIC%u: apicSetLdr: uLdr=%#RX32\n", pVCpu->idCpu, uLdr));
+
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     apicWriteRaw32(pXApicPage, XAPIC_OFF_LDR, uLdr & XAPIC_LDR);
     return VINF_SUCCESS;
@@ -1071,6 +1081,8 @@ static VBOXSTRICTRC apicSetDfr(PVMCPU pVCpu, uint32_t uDfr)
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
 
+    Log4(("APIC%u: apicSetDfr: uDfr=%#RX32\n", pVCpu->idCpu, uDfr));
+
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     apicWriteRaw32(pXApicPage, XAPIC_OFF_DFR, uDfr & XAPIC_DFR);
     return VINF_SUCCESS;
@@ -1090,6 +1102,8 @@ static VBOXSTRICTRC apicSetTimerDcr(PVMCPU pVCpu, uint32_t uTimerDcr)
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
         && (uTimerDcr & ~XAPIC_TIMER_DCR))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_TIMER_DCR, APICMSRACCESS_WRITE_RSVD_BITS);
+
+    Log4(("APIC%u: apicSetTimerDcr: uTimerDcr=%#RX32\n", pVCpu->idCpu, uTimerDcr));
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     apicWriteRaw32(pXApicPage, XAPIC_OFF_TIMER_DCR, uTimerDcr);
@@ -1173,6 +1187,8 @@ static VBOXSTRICTRC apicSetTimerIcr(PVMCPU pVCpu, int rcBusy, uint32_t uInitialC
     if (   pApic->fSupportsTscDeadline
         && pXApicPage->lvt_timer.u.u2TimerMode == XAPIC_TIMER_MODE_TSC_DEADLINE)
         return VINF_SUCCESS;
+
+    Log4(("APIC%u: apicSetTimerIcr: uInitialCount=%#RX32\n", pVCpu->idCpu, uInitialCount));
 
     /*
      * The timer CCR may be modified by apicR3TimerCallback() in parallel,
@@ -1266,6 +1282,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt
         apicSetError(pVCpu, XAPIC_ESR_SEND_ILLEGAL_VECTOR);
 
     Log4(("APIC%u: apicSetLvtEntry: offLvt=%#RX16 uLvt=%#RX32\n", pVCpu->idCpu, offLvt, uLvt));
+
     apicWriteRaw32(pXApicPage, offLvt, uLvt);
     return VINF_SUCCESS;
 #else
@@ -1568,7 +1585,7 @@ VMMDECL(VBOXSTRICTRC) APICReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32
     else
         return VINF_CPUM_R3_MSR_READ;
 
-    STAM_COUNTER_INC(&VMCPU_TO_APICCPU(pVCpu)->StatMsrRead);
+    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMsrRead));
 
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (RT_LIKELY(XAPIC_IN_X2APIC_MODE(pVCpu)))
@@ -1670,7 +1687,7 @@ VMMDECL(VBOXSTRICTRC) APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u3
     else
         return VINF_CPUM_R3_MSR_WRITE;
 
-    STAM_COUNTER_INC(&VMCPU_TO_APICCPU(pVCpu)->StatMsrWrite);
+    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMsrWrite));
 
     /*
      * In x2APIC mode, we need to raise #GP(0) for writes to reserved bits, unlike MMIO
@@ -1845,6 +1862,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                  */
                 APICR3Reset(pVCpu);
                 uBaseMsr &= ~(MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT);
+                Log4(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
 #else
                 return VINF_CPUM_R3_MSR_WRITE;
 #endif
@@ -1859,6 +1877,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
                 uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
+                Log4(("APIC%u: Switched mode to xApic\n", pVCpu->idCpu));
                 break;
             }
 
@@ -1883,6 +1902,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                  */
                 pX2ApicPage->ldr.u32LogicalApicId = ((pX2ApicPage->id.u32ApicId & UINT32_C(0xffff0)) << 16)
                                                   | (UINT32_C(1) << pX2ApicPage->id.u32ApicId & UINT32_C(0xf));
+                Log4(("APIC%u: Switched mode to x2Apic\n", pVCpu->idCpu));
                 break;
             }
 
@@ -2107,7 +2127,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
             uint8_t const uTpr = pXApicPage->tpr.u8Tpr;
             if (uTpr > 0 && uVector <= uTpr)
             {
-                Log4(("APIC%u: APICGetInterrupt: Returns spurious vector %#x\n", pVCpu->idCpu,
+                Log4(("APIC%u: APICGetInterrupt: Spurious interrupt. uVector=%#x\n", pVCpu->idCpu,
                       pXApicPage->svr.u.u8SpuriousVector));
                 return pXApicPage->svr.u.u8SpuriousVector;
             }
@@ -2121,7 +2141,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
                 apicUpdatePpr(pVCpu);
                 apicSignalNextPendingIntr(pVCpu);
 
-                Log4(("APIC%u: APICGetInterrupt: Returns vector %#x\n", pVCpu->idCpu, uVector));
+                Log4(("APIC%u: APICGetInterrupt: Valid Interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
                 return uVector;
             }
         }
@@ -2145,10 +2165,7 @@ VMMDECL(int) APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr,
     uint16_t offReg   = (GCPhysAddr & 0xff0);
     uint32_t uValue   = 0;
 
-#ifdef VBOX_WITH_STATISTICS
-    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    STAM_COUNTER_INC(&CTXSUFF(pApicCpu->StatMmioRead));
-#endif
+    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioRead));
 
     Log4(("APIC%u: ApicReadMmio: offReg=%#RX16\n", pVCpu->idCpu, offReg));
 
@@ -2172,10 +2189,7 @@ VMMDECL(int) APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr
     uint16_t offReg   = (GCPhysAddr & 0xff0);
     uint32_t uValue   = *(uint32_t *)pv;
 
-#ifdef VBOX_WITH_STATISTICS
-    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    STAM_COUNTER_INC(&CTXSUFF(pApicCpu->StatMmioWrite));
-#endif
+    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioWrite));
 
     LogRel(("APIC%u: APICWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
 
@@ -2333,6 +2347,9 @@ VMM_INT_DECL(void) APICUpdateCpuIdForMode(PVM pVM, APICMODE enmMode)
             break;
 
         case APICMODE_XAPIC:
+            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
+            break;
+
         case APICMODE_X2APIC:
             CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
             CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
