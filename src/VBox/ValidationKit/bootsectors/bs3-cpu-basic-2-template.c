@@ -348,7 +348,9 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
     bool const      f486Plus = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486;
 # if TMPL_BITS == 16
     bool const      f386Plus = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386;
+    bool const      f286     = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80286;
 # else
+    bool const      f286     = false;
     bool const      f386Plus = true;
     int             rc;
     uint8_t        *pbIdtCopyAlloc;
@@ -661,27 +663,27 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                         bs3CpuBasic2_FailedF("SS selector was accessed");
                     g_usBs3TestStep++;
 
-                    /* Modify the gate DPL to check that this is checked before SS.DPL and SS.PRESENT. */
+                    /* +1: Modify the gate DPL to check that this is checked before SS.DPL and SS.PRESENT. */
                     paIdt[0x83 << cIdteShift].Gate.u2Dpl = 2;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
                     bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, (0x83 << X86_TRAP_ERR_SEL_SHIFT) | X86_TRAP_ERR_IDT);
                     paIdt[0x83 << cIdteShift].Gate.u2Dpl = 3;
                     g_usBs3TestStep++;
 
-                    /* Check the the CS.DPL check is done before the SS ones. Restoring the ring-0 INT 83
-                       context triggers the CS.DPL < CPL check. */
+                    /* +2: Check the the CS.DPL check is done before the SS ones. Restoring the
+                           ring-0 INT 83 context triggers the CS.DPL < CPL check. */
                     Bs3TrapSetJmpAndRestore(&Ctx83, &TrapCtx);
                     bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx83, BS3_SEL_TEST_PAGE_02);
                     g_usBs3TestStep++;
 
-                    /* Now mark the CS selector not present and check that that also triggers before SS stuff. */
+                    /* +3: Now mark the CS selector not present and check that that also triggers before SS stuff. */
                     Bs3GdteTestPage02.Gen.u1Present = 0;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
                     bs3CpuBasic2_CompareNpCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_02);
                     Bs3GdteTestPage02.Gen.u1Present = 1;
                     g_usBs3TestStep++;
 
-                    /* Make the CS selector some invalid type and check it triggers before SS stuff. */
+                    /* +4: Make the CS selector some invalid type and check it triggers before SS stuff. */
                     Bs3GdteTestPage02.Gen.u4Type = g_aInvalidCsTypes[i].u4Type;
                     Bs3GdteTestPage02.Gen.u1DescType = g_aInvalidCsTypes[i].u1DescType;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
@@ -690,12 +692,15 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                     Bs3GdteTestPage02.Gen.u1DescType = 1;
                     g_usBs3TestStep++;
 
-                    /* Now, make the CS selector limit too small and that it triggers after SS trouble. */
+                    /* +5: Now, make the CS selector limit too small and that it triggers after SS trouble.
+                           The 286 had a simpler approach to these GP(0). */
                     Bs3GdteTestPage02.Gen.u16LimitLow = 0;
                     Bs3GdteTestPage02.Gen.u4LimitHigh = 0;
                     Bs3GdteTestPage02.Gen.u1Granularity = 0;
                     Bs3TrapSetJmpAndRestore(&CtxTmp, &TrapCtx);
-                    if (iRpl != 2 || iRpl != iDpl || k >= 4)
+                    if (f286)
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxTmp, 0 /*uErrCd*/);
+                    else if (iRpl != 2 || iRpl != iDpl || k >= 4)
                         bs3CpuBasic2_CompareTsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03);
                     else if (k != 0)
                         bs3CpuBasic2_CompareSsCtx(&TrapCtx, &CtxTmp, BS3_SEL_TEST_PAGE_03, k == 2 /*f486ResumeFlagHint*/);
@@ -906,11 +911,11 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
     }
 
     /*
-     * IDT limit check.
+     * IDT limit check.  The 286 does not access X86DESCGATE::u16OffsetHigh.
      */
     g_usBs3TestStep = 5000;
     i = (0x80 << (cIdteShift + 3)) - 1;
-    j = (0x82 << (cIdteShift + 3)) - 1;
+    j = (0x82 << (cIdteShift + 3)) - (!f286 ? 1 : 3);
     k = (0x83 << (cIdteShift + 3)) - 1;
     for (; i <= k; i++, g_usBs3TestStep++)
     {
