@@ -1044,14 +1044,27 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
         /*
          * Get user pages.
          */
-        rc = get_user_pages(pTask,                  /* Task for fault accounting. */
-                            pTask->mm,              /* Whose pages. */
-                            R3Ptr,                  /* Where from. */
-                            cPages,                 /* How many pages. */
-                            fWrite,                 /* Write to memory. */
-                            fWrite,                 /* force write access. */
-                            &pMemLnx->apPages[0],   /* Page array. */
-                            papVMAs);               /* vmas */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+        if (R0Process == RTR0ProcHandleSelf())
+#endif
+            rc = get_user_pages(R3Ptr,                  /* Where from. */
+                                cPages,                 /* How many pages. */
+                                fWrite,                 /* Write to memory. */
+                                fWrite,                 /* force write access. */
+                                &pMemLnx->apPages[0],   /* Page array. */
+                                papVMAs);               /* vmas */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+        else
+            rc = get_user_pages_remote(
+                                pTask,                  /* Task for fault accounting. */
+                                pTask->mm,              /* Whose pages. */
+                                R3Ptr,                  /* Where from. */
+                                cPages,                 /* How many pages. */
+                                fWrite,                 /* Write to memory. */
+                                fWrite,                 /* force write access. */
+                                &pMemLnx->apPages[0],   /* Page array. */
+                                papVMAs);               /* vmas */
+#endif
         if (rc == cPages)
         {
             /*
