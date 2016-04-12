@@ -298,53 +298,53 @@ static void apicR3InitIpi(PVMCPU pVCpu)
      * See Intel spec. 10.4.7.3 "Local APIC State After an INIT Reset (Wait-for-SIPI State)"
      * and AMD spec 16.3.2 "APIC Registers".
      */
-    ASMMemZero32(&pXApicPage->irr,       sizeof(pXApicPage->irr));
-    ASMMemZero32(&pXApicPage->isr,       sizeof(pXApicPage->isr));
-    ASMMemZero32(&pXApicPage->tmr,       sizeof(pXApicPage->tmr));
-    ASMMemZero32(&pXApicPage->icr_hi,    sizeof(pXApicPage->icr_hi));
-    ASMMemZero32(&pXApicPage->icr_lo,    sizeof(pXApicPage->icr_lo));
-    ASMMemZero32(&pXApicPage->ldr,       sizeof(pXApicPage->ldr));
-    ASMMemZero32(&pXApicPage->tpr,       sizeof(pXApicPage->tpr));
-    ASMMemZero32(&pXApicPage->timer_icr, sizeof(pXApicPage->timer_icr));
-    ASMMemZero32(&pXApicPage->timer_ccr, sizeof(pXApicPage->timer_ccr));
-    ASMMemZero32(&pXApicPage->timer_dcr, sizeof(pXApicPage->timer_dcr));
+    memset((void *)&pXApicPage->irr,       0, sizeof(pXApicPage->irr));
+    memset((void *)&pXApicPage->isr,       0, sizeof(pXApicPage->isr));
+    memset((void *)&pXApicPage->tmr,       0, sizeof(pXApicPage->tmr));
+    memset((void *)&pXApicPage->icr_hi,    0, sizeof(pXApicPage->icr_hi));
+    memset((void *)&pXApicPage->icr_lo,    0, sizeof(pXApicPage->icr_lo));
+    memset((void *)&pXApicPage->ldr,       0, sizeof(pXApicPage->ldr));
+    memset((void *)&pXApicPage->tpr,       0, sizeof(pXApicPage->tpr));
+    memset((void *)&pXApicPage->timer_icr, 0, sizeof(pXApicPage->timer_icr));
+    memset((void *)&pXApicPage->timer_ccr, 0, sizeof(pXApicPage->timer_ccr));
+    memset((void *)&pXApicPage->timer_dcr, 0, sizeof(pXApicPage->timer_dcr));
 
     pXApicPage->dfr.u.u4Model        = XAPICDESTFORMAT_FLAT;
     pXApicPage->dfr.u.u28ReservedMb1 = UINT32_C(0xfffffff);
 
     /** @todo CMCI. */
 
-    ASMMemZero32(&pXApicPage->lvt_timer, sizeof(pXApicPage->lvt_timer));
+    memset((void *)&pXApicPage->lvt_timer, 0, sizeof(pXApicPage->lvt_timer));
     pXApicPage->lvt_timer.u.u1Mask = 1;
 
 #if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
-    ASMMemZero32(&pXApicPage->lvt_thermal, sizeof(pXApicPage->lvt_thermal));
+    memset((void *)&pXApicPage->lvt_thermal, 0, sizeof(pXApicPage->lvt_thermal));
     pXApicPage->lvt_thermal.u.u1Mask = 1;
 #endif
 
-    ASMMemZero32(&pXApicPage->lvt_perf, sizeof(pXApicPage->lvt_perf));
+    memset((void *)&pXApicPage->lvt_perf, 0, sizeof(pXApicPage->lvt_perf));
     pXApicPage->lvt_perf.u.u1Mask = 1;
 
-    ASMMemZero32(&pXApicPage->lvt_lint0, sizeof(pXApicPage->lvt_lint0));
+    memset((void *)&pXApicPage->lvt_lint0, 0, sizeof(pXApicPage->lvt_lint0));
     pXApicPage->lvt_lint0.u.u1Mask = 1;
 
-    ASMMemZero32(&pXApicPage->lvt_lint1, sizeof(pXApicPage->lvt_lint1));
+    memset((void *)&pXApicPage->lvt_lint1, 0, sizeof(pXApicPage->lvt_lint1));
     pXApicPage->lvt_lint1.u.u1Mask = 1;
 
-    ASMMemZero32(&pXApicPage->lvt_error, sizeof(pXApicPage->lvt_error));
+    memset((void *)&pXApicPage->lvt_error, 0, sizeof(pXApicPage->lvt_error));
     pXApicPage->lvt_error.u.u1Mask = 1;
 
-    ASMMemZero32(&pXApicPage->svr, sizeof(pXApicPage->svr));
+    memset((void *)&pXApicPage->svr, 0, sizeof(pXApicPage->svr));
     pXApicPage->svr.u.u8SpuriousVector = 0xff;
 
-    /* The self-IPI register is 0. See Intel spec. 10.12.5.1 "x2APIC States" */
+    /* The self-IPI register is reset to 0. See Intel spec. 10.12.5.1 "x2APIC States" */
     PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
-    ASMMemZero32(&pX2ApicPage->self_ipi, sizeof(pX2ApicPage->self_ipi));
+    memset((void *)&pX2ApicPage->self_ipi, 0, sizeof(pX2ApicPage->self_ipi));
 
     /* Clear the posted interrupt bitmaps. */
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    ASMMemZero32(&pApicCpu->ApicPibLevel, sizeof(APICPIB));
-    ASMMemZero32(&pApicCpu->pvApicPibR3, sizeof(APICPIB));
+    memset((void *)&pApicCpu->ApicPibLevel, 0, sizeof(APICPIB));
+    memset((void *)pApicCpu->pvApicPibR3,   0, sizeof(APICPIB));
 }
 
 
@@ -962,8 +962,7 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
     PVM      pVM      = PDMDevHlpGetVM(pDevIns);
     PAPIC    pApic    = VM_TO_APIC(pVM);
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
-
-    LogFlow(("APIC: apicR3Relocate: pDevIns=%p offDelta=%RGi\n", pDevIns, offDelta));
+    LogFlow(("APIC: apicR3Relocate: pVM=%p pDevIns=%p offDelta=%RGi\n", pVM, pDevIns, offDelta));
 
     pApicDev->pDevInsRC   = PDMDEVINS_2_RCPTR(pDevIns);
     pApicDev->pApicHlpRC  = pApicDev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
@@ -971,7 +970,7 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 
     pApic->pApicDevRC     = PDMINS_2_DATA_RCPTR(pDevIns);
     if (pApic->pvApicPibRC)
-        pApic->pvApicPibRC = MMHyperR3ToRC(pVM, (void *)pApic->pvApicPibR3);
+        pApic->pvApicPibRC = MMHyperR3ToRC(pVM, (RTR3PTR)pApic->pvApicPibR3);
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -980,9 +979,9 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
         pApicCpu->pTimerRC     = TMTimerRCPtr(pApicCpu->pTimerR3);
 
         if (pApicCpu->pvApicPageRC)
-            pApicCpu->pvApicPageRC = MMHyperR3ToRC(pVM, (void *)pApicCpu->pvApicPageR3);
+            pApicCpu->pvApicPageRC = MMHyperR3ToRC(pVM, (RTR3PTR)pApicCpu->pvApicPageR3);
         if (pApicCpu->pvApicPibRC)
-            pApicCpu->pvApicPibRC  = MMHyperR3ToRC(pVM, (void *)pApicCpu->pvApicPibR3);
+            pApicCpu->pvApicPibRC  = MMHyperR3ToRC(pVM, (RTR3PTR)pApicCpu->pvApicPibR3);
     }
 }
 
@@ -995,6 +994,8 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 static void apicR3TermState(PVM pVM)
 {
     PAPIC pApic = VM_TO_APIC(pVM);
+    LogFlow(("APIC: apicR3TermState: pVM=%p\n", pVM));
+
     if (pApic->pvApicPibR3)
     {
         size_t const cPages = pApic->cbApicPib >> PAGE_SHIFT;
@@ -1013,6 +1014,7 @@ static void apicR3TermState(PVM pVM)
         {
             SUPR3PageFreeEx((void *)pApicCpu->pvApicPageR3, 1 /* cPages */);
             pApicCpu->pvApicPageR3 = NULL;
+            pApicCpu->pvApicPibR3  = NULL;
         }
     }
 }
@@ -1028,6 +1030,7 @@ static int apicR3InitState(PVM pVM)
 {
     PAPIC pApic = VM_TO_APIC(pVM);
     bool const fNeedGCMapping = !HMIsEnabled(pVM);
+    LogFlow(("APIC: apicR3InitState: pVM=%p\n", pVM));
 
     /*
      * Allocate and map the pending-interrupt bitmap (PIB).
@@ -1115,14 +1118,23 @@ static int apicR3InitState(PVM pVM)
 
                 /* Associate the per-VCPU PIB pointers to the per-VM PIB mapping. */
                 size_t const offApicPib    = idCpu * sizeof(APICPIB);
-                pApicCpu->pvApicPibR0      = (RTR0PTR)((const uint8_t *)pApic->pvApicPibR0 + offApicPib);
-                pApicCpu->pvApicPibR3      = (RTR3PTR)((const uint8_t *)pApic->pvApicPibR3 + offApicPib);
+                pApicCpu->pvApicPibR0      = (RTR0PTR)((RTR0UINTPTR)pApic->pvApicPibR0 + offApicPib);
+                pApicCpu->pvApicPibR3      = (RTR3PTR)((RTR3UINTPTR)pApic->pvApicPibR3 + offApicPib);
                 if (fNeedGCMapping)
                     pApicCpu->pvApicPibRC += offApicPib;
 
                 /* Initialize the virtual-APIC state. */
                 memset((void *)pApicCpu->pvApicPageR3, 0, pApicCpu->cbApicPage);
                 APICR3Reset(pVCpu);
+
+#ifdef VBOX_STRICT
+                Assert(pApicCpu->pvApicPageR3);
+                Assert(pApicCpu->pvApicPageR0);
+                Assert(!fNeedGCMapping || pApicCpu->pvApicPageRC);
+                Assert(pApicCpu->pvApicPibR3);
+                Assert(pApicCpu->pvApicPibR0);
+                Assert(!fNeedGCMapping || pApicCpu->pvApicPibRC);
+#endif
             }
             else
             {
@@ -1132,6 +1144,11 @@ static int apicR3InitState(PVM pVM)
             }
         }
 
+#ifdef VBOX_STRICT
+        Assert(pApic->pvApicPibR0);
+        Assert(pApic->pvApicPibR3);
+        Assert(!fNeedGCMapping || pApic->pvApicPibRC);
+#endif
         return VINF_SUCCESS;
     }
 

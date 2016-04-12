@@ -2222,6 +2222,7 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
         Log4(("APIC%u: APICPostInterrupt: uVector=%#x\n", pVCpu->idCpu, uVector));
         if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
         {
+            Assert(CTX_SUFF(pApicCpu->pvApicPib));
             apicSetVectorInPib(CTX_SUFF(pApicCpu->pvApicPib), uVector);
             bool const fAlreadySet = apicSetNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
             if (fAlreadySet)
