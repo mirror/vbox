@@ -64,44 +64,10 @@ struct HostDnsServiceWin::Data
 
 
 HostDnsServiceWin::HostDnsServiceWin()
- : HostDnsMonitor(true),
-   m(NULL)
+ : HostDnsMonitor(true)
 {
-    std::auto_ptr<Data> data(new Data());
-    LONG lrc;
-
-    lrc = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
-                        L"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
-                        0,
-                        KEY_READ|KEY_NOTIFY,
-                        &data->hKeyTcpipParameters);
-    if (lrc != ERROR_SUCCESS)
-    {
-        LogRel(("HostDnsServiceWin: failed to open key Tcpip\\Parameters (error %d)\n", lrc));
-        return;
-    }
-
-    for (size_t i = 0; i < DATA_MAX_EVENT; ++i)
-    {
-        HANDLE h;
-
-        if (i ==  DATA_TIMER)
-            h = CreateWaitableTimer(NULL, FALSE, NULL);
-        else
-            h = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-        if (h == NULL)
-        {
-            LogRel(("HostDnsServiceWin: failed to create event (error %d)\n", GetLastError()));
-            return;
-        }
-
-        data->haDataEvent[i] = h;
-    }
-
-    m = data.release();
+    m = new Data();
 }
-
 
 HostDnsServiceWin::~HostDnsServiceWin()
 {
@@ -114,6 +80,43 @@ HRESULT HostDnsServiceWin::init(VirtualBox *virtualbox)
 {
     if (m == NULL)
         return E_FAIL;
+
+    {
+        bool res = true;
+        LONG lrc = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                            L"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
+                            0,
+                            KEY_READ|KEY_NOTIFY,
+                            &m->hKeyTcpipParameters);
+        if (lrc != ERROR_SUCCESS)
+        {
+            LogRel(("HostDnsServiceWin: failed to open key Tcpip\\Parameters (error %d)\n", lrc));
+            res = false;
+        }
+        else
+        {
+            for (size_t i = 0; i < DATA_MAX_EVENT; ++i)
+            {
+                HANDLE h;
+
+                if (i ==  DATA_TIMER)
+                    h = CreateWaitableTimer(NULL, FALSE, NULL);
+                else
+                    h = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+                if (h == NULL)
+                {
+                    LogRel(("HostDnsServiceWin: failed to create event (error %d)\n", GetLastError()));
+                    res = false;
+                    break;
+                }
+
+                m->haDataEvent[i] = h;
+            }
+        }
+        if(!res)
+            return E_FAIL;
+    }
 
     HRESULT hrc = HostDnsMonitor::init(virtualbox);
     if (FAILED(hrc))
