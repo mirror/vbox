@@ -249,7 +249,7 @@ static int RTLDRELF_NAME(RelocateSectionExecDyn)(PRTLDRMODELF pModElf, Elf_Addr 
         }
         else
         {
-            AssertMsgReturn(pSym->st_shndx < pModElf->cSyms || pSym->st_shndx == SHN_ABS, ("%#x\n", pSym->st_shndx),
+            AssertMsgReturn(pSym->st_shndx < pModElf->Ehdr.e_shnum || pSym->st_shndx == SHN_ABS, ("%#x\n", pSym->st_shndx),
                             VERR_LDRELF_INVALID_RELOCATION_OFFSET);
 #if   ELF_MODE == 64
             SymValue = pSym->st_value;
@@ -257,11 +257,11 @@ static int RTLDRELF_NAME(RelocateSectionExecDyn)(PRTLDRMODELF pModElf, Elf_Addr 
         }
 
 #if   ELF_MODE == 64
-        /* Calc the value. */
+        /* Calc the value (indexes checked above; assumes SHN_UNDEF == 0). */
         Elf_Addr Value;
-        if (pSym->st_shndx < pModElf->cSyms)
+        if (pSym->st_shndx < pModElf->Ehdr.e_shnum)
             Value = SymValue + offDelta;
-        else
+        else /* SHN_ABS: */
             Value = SymValue + paRels[iRel].r_addend;
 #endif
 
