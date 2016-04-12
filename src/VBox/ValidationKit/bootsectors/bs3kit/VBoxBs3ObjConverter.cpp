@@ -1728,7 +1728,38 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
                             fRet = error(pThis->pszSrc, "R_X86_64_PC32 with large addend (%d) at %#x in segment #%u '%s'\n",
                                          iAddend, paRelocs[iReloc].r_offset, i, pszSegNm);
                         if (fSelfRel)
-                            *uLoc.pu32 = -iAddend - 4; //; u %"bs3CpuBasic2_RaiseXcpt1_lm64"
+                        {
+                            if (iAddend == -4)
+                                *uLoc.pu32 = 0; /* Normal self relative jump/calls. */
+                            else
+                            {
+                                /* Examples:
+                                        - AND [datasymbol wrt RIP], 0fh
+                                          The self relative fixup is followed by a 1 byte immediate.
+                                          GCC/GAS emits a -5 addend here.
+                                        - MOV [datasymbol wrt RIP], 1234h
+                                          The self relative fixup is followed by a 2 byte immediate.
+                                          GCC/GAS emits a -6 addend here.
+
+                                   These are tricky as both wlink and link386 seems to apply addends
+                                   stored in the LEDATA in the same was as the optional target
+                                   displacements in the FIXUPP records.  This means for self relative
+                                   fixups we have to make assumption about the relative placement of
+                                   the fixup location and the target when dealing with relative ones.
+
+                                   GCC/GAS is obviuosly already doing this, but our segment ordering
+                                   is abit different.  The 16-bit DATA and SYSTEM segments are located
+                                   before the 64-bit text segments.  This then means we have to move
+                                   the 32-bit and 64-bit DATA up in front of the 64-bit text too.
+
+                                   In order to figure it out correctly, we need to disassemble the
+                                   instruction as there is no way we can move the two 16-bit data
+                                   segments. Sigh.
+                                   */
+//printf("%#x PC32: addend=%d\n",  paRelocs[iReloc].r_offset, iAddend);
+                                *uLoc.pu32 = -iAddend - 4; //; u %"bs3CpuBasic2_RaiseXcpt1_lm64"
+                            }
+                        }
                         else
                             *uLoc.pu32 = iAddend;
                         break;
