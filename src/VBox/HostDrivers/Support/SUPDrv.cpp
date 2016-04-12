@@ -3114,7 +3114,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
     {
         int rc2;
         rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
-                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
+                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, NIL_RTR0PROCESS);
         if (RT_SUCCESS(rc))
         {
             Mem.eType = MEMREF_TYPE_CONT;
@@ -3197,7 +3197,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
     {
         int rc2;
         rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
-                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
+                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, NIL_RTR0PROCESS);
         if (RT_SUCCESS(rc))
         {
             Mem.eType = MEMREF_TYPE_LOW;
@@ -3278,7 +3278,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
     {
         int rc2;
         rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
-                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
+                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, NIL_RTR0PROCESS);
         if (RT_SUCCESS(rc))
         {
             Mem.eType = MEMREF_TYPE_MEM;
@@ -3423,7 +3423,7 @@ SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32
         int rc2;
         if (ppvR3)
             rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
-                                   RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
+                                   RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, NIL_RTR0PROCESS);
         else
             Mem.MapObjR3 = NIL_RTR0MEMOBJ;
         if (RT_SUCCESS(rc))

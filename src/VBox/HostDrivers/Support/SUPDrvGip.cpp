@@ -452,7 +452,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
         {
             if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
                 rc = RTR0MemObjMapUser(&pSession->GipMapObjR3, pDevExt->GipMemObj, (RTR3PTR)-1, 0,
-                                       RTMEM_PROT_READ, RTR0ProcHandleSelf());
+                                       RTMEM_PROT_READ, NIL_RTR0PROCESS);
             if (RT_SUCCESS(rc))
                 pGipR3 = RTR0MemObjAddressR3(pSession->GipMapObjR3);
         }
