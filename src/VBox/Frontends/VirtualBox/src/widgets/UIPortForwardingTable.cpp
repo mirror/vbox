@@ -47,6 +47,7 @@
 #include <math.h>
 
 
+#if 0 /* Decided to not use it for now. */
 /* IPv4 validator: */
 class IPv4Validator : public QValidator
 {
@@ -100,6 +101,7 @@ public:
             return QValidator::Invalid;
     }
 };
+#endif /* Decided to not use it for now. */
 
 /* Name editor: */
 class NameEditor : public QLineEdit
@@ -182,7 +184,8 @@ public:
     {
         setFrame(false);
         setAlignment(Qt::AlignCenter);
-        setValidator(new IPv4Validator(this));
+        // Decided to not use it for now:
+        // setValidator(new IPv4Validator(this));
     }
 
 private:
@@ -213,7 +216,8 @@ public:
     {
         setFrame(false);
         setAlignment(Qt::AlignCenter);
-        setValidator(new IPv6Validator(this));
+        // Decided to not use it for now:
+        // setValidator(new IPv6Validator(this));
     }
 
 private:
