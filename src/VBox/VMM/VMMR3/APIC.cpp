@@ -949,10 +949,8 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
         PVMCPU   pVCpuDest = &pVM->aCpus[idCpu];
         PAPICCPU pApicCpu  = VMCPU_TO_APICCPU(pVCpuDest);
 
-        int rc = TMTimerLock(pApicCpu->pTimerR3, VERR_IGNORED);
-        Assert(rc == VINF_SUCCESS); NOREF(rc);
-        TMTimerStop(pApicCpu->pTimerR3);
-        TMTimerUnlock(pApicCpu->pTimerR3);
+        if (TMTimerIsActive(pApicCpu->pTimerR3))
+            TMTimerStop(pApicCpu->pTimerR3);
 
         APICR3Reset(pVCpuDest);
 
@@ -970,14 +968,15 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
     PVM      pVM      = PDMDevHlpGetVM(pDevIns);
     PAPIC    pApic    = VM_TO_APIC(pVM);
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
+
     LogFlow(("APIC: apicR3Relocate: pVM=%p pDevIns=%p offDelta=%RGi\n", pVM, pDevIns, offDelta));
 
     pApicDev->pDevInsRC   = PDMDEVINS_2_RCPTR(pDevIns);
     pApicDev->pApicHlpRC  = pApicDev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
     pApicDev->pCritSectRC = pApicDev->pApicHlpR3->pfnGetRCCritSect(pDevIns);
 
-    pApic->pApicDevRC     = PDMINS_2_DATA_RCPTR(pDevIns);
-    if (pApic->pvApicPibRC)
+    pApic->pApicDevRC = PDMINS_2_DATA_RCPTR(pDevIns);
+    if (pApic->pvApicPibRC != NIL_RTRCPTR)
         pApic->pvApicPibRC = MMHyperR3ToRC(pVM, (RTR3PTR)pApic->pvApicPibR3);
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -986,9 +985,9 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
         PAPICCPU pApicCpu      = VMCPU_TO_APICCPU(pVCpu);
         pApicCpu->pTimerRC     = TMTimerRCPtr(pApicCpu->pTimerR3);
 
-        if (pApicCpu->pvApicPageRC)
+        if (pApicCpu->pvApicPageRC != NIL_RTRCPTR)
             pApicCpu->pvApicPageRC = MMHyperR3ToRC(pVM, (RTR3PTR)pApicCpu->pvApicPageR3);
-        if (pApicCpu->pvApicPibRC)
+        if (pApicCpu->pvApicPibRC != NIL_RTRCPTR)
             pApicCpu->pvApicPibRC  = MMHyperR3ToRC(pVM, (RTR3PTR)pApicCpu->pvApicPibR3);
     }
 }
@@ -1226,44 +1225,6 @@ static DECLCALLBACK(int) apicR3InitComplete(PPDMDEVINS pDevIns)
     LogRel(("APIC: fPostedIntrsEnabled=%RTbool fVirtApicRegsEnabled=%RTbool fSupportsTscDeadline=%RTbool\n",
             pApic->fPostedIntrsEnabled, pApic->fVirtApicRegsEnabled, pApic->fSupportsTscDeadline));
 
-#ifdef VBOX_WITH_STATISTICS
-    /*
-     * Statistics.
-     */
-    /** @todo Figure out why doing this from apicR3Construct() it doesn't work. See @bugref{8245#c48} */
-#define APIC_REG_COUNTER(a_Reg, a_Desc, a_Key) \
-    do { \
-        rc = STAMR3RegisterF(pVM, a_Reg, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, a_Desc, a_Key, idCpu); \
-        AssertRCReturn(rc, rc); \
-    } while(0)
-
-    bool const fHasRC = !HMIsEnabled(pVM);
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPU   pVCpu     = &pVM->aCpus[idCpu];
-        PAPICCPU pApicCpu  = VMCPU_TO_APICCPU(pVCpu);
-
-        APIC_REG_COUNTER(&pApicCpu->StatMmioReadR0,  "Number of APIC MMIO reads in R0.",  "/Devices/APIC/%u/R0/MmioRead");
-        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR0, "Number of APIC MMIO writes in R0.", "/Devices/APIC/%u/R0/MmioWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrReadR0,   "Number of APIC MSR reads in R0.",   "/Devices/APIC/%u/R0/MsrRead");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR0,  "Number of APIC MSR writes in R0.",  "/Devices/APIC/%u/R0/MsrWrite");
-
-        APIC_REG_COUNTER(&pApicCpu->StatMmioReadR3,  "Number of APIC MMIO reads in R3.",  "/Devices/APIC/%u/R3/MmioReadR3");
-        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR3, "Number of APIC MMIO writes in R3.", "/Devices/APIC/%u/R3/MmioWriteR3");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrReadR3,   "Number of APIC MSR reads in R3.",   "/Devices/APIC/%u/R3/MsrReadR3");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR3,  "Number of APIC MSR writes in R3.",  "/Devices/APIC/%u/R3/MsrWriteR3");
-
-        if (fHasRC)
-        {
-            APIC_REG_COUNTER(&pApicCpu->StatMmioReadRC,  "Number of APIC MMIO reads in RC.",  "/Devices/APIC/%u/RC/MmioRead");
-            APIC_REG_COUNTER(&pApicCpu->StatMmioWriteRC, "Number of APIC MMIO writes in RC.", "/Devices/APIC/%u/RC/MmioWrite");
-            APIC_REG_COUNTER(&pApicCpu->StatMsrReadRC,   "Number of APIC MSR reads in RC.",   "/Devices/APIC/%u/RC/MsrRead");
-            APIC_REG_COUNTER(&pApicCpu->StatMsrWriteRC,  "Number of APIC MSR writes in RC.",  "/Devices/APIC/%u/RC/MsrWrite");
-        }
-    }
-# undef APIC_REG_ACCESS_COUNTER
-#endif
-
     return VINF_SUCCESS;
 }
 
@@ -1395,7 +1356,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     PAPICCPU pApicCpu0 = VMCPU_TO_APICCPU(&pVM->aCpus[0]);
     RTGCPHYS GCPhysApicBase = MSR_APICBASE_GET_PHYSADDR(pApicCpu0->uApicBaseMsr);
-    LogRel(("APIC: PDMDevHlpMMIORegister new = %#RGp\n", GCPhysApicBase));
+
     rc = PDMDevHlpMMIORegister(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NULL /* pvUser */,
                                IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
                                APICWriteMmio, APICReadMmio, "APIC");
@@ -1433,15 +1394,10 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         {
             pApicCpu->pTimerR0 = TMTimerR0Ptr(pApicCpu->pTimerR3);
             pApicCpu->pTimerRC = TMTimerRCPtr(pApicCpu->pTimerR3);
-
 #if 0
             rc = PDMR3CritSectInit(pVM, &pApicCpu->TimerCritSect, RT_SRC_POS, pApicCpu->szTimerDesc);
-            if (RT_SUCCESS(rc))
-                TMR3TimerSetCritSect(pApicCpu->pTimerR3, &pApicCpu->TimerCritSect);
-            else
-                return rc;
-#else
-            return VINF_SUCCESS;
+            AssertRCReturn(rc, rc);
+            TMR3TimerSetCritSect(pApicCpu->pTimerR3, &pApicCpu->TimerCritSect);
 #endif
         }
         else
@@ -1459,8 +1415,46 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register debugger info callback.
      */
-    PDMDevHlpDBGFInfoRegister(pDevIns, "apic", "Display Local APIC state for current CPU. "
-                              "Recognizes 'basic', 'lvt', 'timer' as arguments, defaulting to 'basic'.", apicR3DbgInfo);
+    rc = PDMDevHlpDBGFInfoRegister(pDevIns, "apic", "Display local APIC state for current CPU. Recognizes "
+                                                    "'basic', 'lvt', 'timer' as arguments, defaults to 'basic'.", apicR3DbgInfo);
+    AssertRCReturn(rc, rc);
+
+#ifdef VBOX_WITH_STATISTICS
+    /*
+     * Statistics.
+     */
+#define APIC_REG_COUNTER(a_Reg, a_Desc, a_Key) \
+    do { \
+        rc = STAMR3RegisterF(pVM, a_Reg, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, a_Desc, a_Key, idCpu); \
+        AssertRCReturn(rc, rc); \
+    } while(0)
+
+    bool const fHasRC = !HMIsEnabled(pVM);
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU   pVCpu     = &pVM->aCpus[idCpu];
+        PAPICCPU pApicCpu  = VMCPU_TO_APICCPU(pVCpu);
+
+        APIC_REG_COUNTER(&pApicCpu->StatMmioReadR0,  "Number of APIC MMIO reads in R0.",  "/Devices/APIC/%u/R0/MmioRead");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR0, "Number of APIC MMIO writes in R0.", "/Devices/APIC/%u/R0/MmioWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrReadR0,   "Number of APIC MSR reads in R0.",   "/Devices/APIC/%u/R0/MsrRead");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR0,  "Number of APIC MSR writes in R0.",  "/Devices/APIC/%u/R0/MsrWrite");
+
+        APIC_REG_COUNTER(&pApicCpu->StatMmioReadR3,  "Number of APIC MMIO reads in R3.",  "/Devices/APIC/%u/R3/MmioReadR3");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR3, "Number of APIC MMIO writes in R3.", "/Devices/APIC/%u/R3/MmioWriteR3");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrReadR3,   "Number of APIC MSR reads in R3.",   "/Devices/APIC/%u/R3/MsrReadR3");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR3,  "Number of APIC MSR writes in R3.",  "/Devices/APIC/%u/R3/MsrWriteR3");
+
+        if (fHasRC)
+        {
+            APIC_REG_COUNTER(&pApicCpu->StatMmioReadRC,  "Number of APIC MMIO reads in RC.",  "/Devices/APIC/%u/RC/MmioRead");
+            APIC_REG_COUNTER(&pApicCpu->StatMmioWriteRC, "Number of APIC MMIO writes in RC.", "/Devices/APIC/%u/RC/MmioWrite");
+            APIC_REG_COUNTER(&pApicCpu->StatMsrReadRC,   "Number of APIC MSR reads in RC.",   "/Devices/APIC/%u/RC/MsrRead");
+            APIC_REG_COUNTER(&pApicCpu->StatMsrWriteRC,  "Number of APIC MSR writes in RC.",  "/Devices/APIC/%u/RC/MsrWrite");
+        }
+    }
+# undef APIC_REG_ACCESS_COUNTER
+#endif
 
     return VINF_SUCCESS;
 }
