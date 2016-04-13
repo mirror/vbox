@@ -161,10 +161,11 @@ static int rtNtPathUtf8ToUniStr(struct _UNICODE_STRING *pNtName, PHANDLE phRootD
 
 
 /**
- * Converts a path to NT format and encoding.
+ * Converts a windows-style path to NT format and encoding.
  *
  * @returns IPRT status code.
- * @param   pNtName             Where to return the NT name.
+ * @param   pNtName             Where to return the NT name.  Free using
+ *                              rtTNtPathToNative.
  * @param   phRootDir           Where to return the root handle, if applicable.
  * @param   pszPath             The UTF-8 path.
  */
@@ -224,6 +225,21 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
      */
     memcpy(szPath, pszPrefix, cchPrefix);
     return rtNtPathUtf8ToUniStr(pNtName, phRootDir, szPath);
+}
+
+
+/**
+ * Converts a windows-style path to NT format and encoding.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             Where to return the NT name.  Free using
+ *                              RTNtPathToNative.
+ * @param   phRootDir           Where to return the root handle, if applicable.
+ * @param   pszPath             The UTF-8 path.
+ */
+RTDECL(int) RTNtPathFromWinUtf8(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath)
+{
+    return rtNtPathToNative(pNtName, phRootDir, pszPath);
 }
 
 
@@ -340,12 +356,38 @@ RTDECL(int) RTNtPathFromWinUtf16Ex(struct _UNICODE_STRING *pNtName, HANDLE *phRo
 
 
 /**
+ * Ensures that the NT string has sufficient storage to hold @a cwcMin RTUTF16
+ * chars plus a terminator.
+ *
+ * The NT string must have been returned by RTNtPathFromWinUtf8 or
+ * RTNtPathFromWinUtf16Ex.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             The NT path string.
+ * @param   cwcMin              The minimum number of RTUTF16 chars. Max 32767.
+ * @sa      RTNtPathFree
+ */
+RTDECL(int) RTNtPathEnsureSpace(struct _UNICODE_STRING *pNtName, size_t cwcMin)
+{
+    if (pNtName->MaximumLength / sizeof(RTUTF16) > cwcMin)
+        return VINF_SUCCESS;
+
+    AssertReturn(cwcMin < _64K / sizeof(RTUTF16), VERR_OUT_OF_RANGE);
+
+    size_t const cbMin = (cwcMin + 1) * sizeof(RTUTF16);
+    int rc = RTUtf16Realloc(&pNtName->Buffer, cbMin);
+    if (RT_SUCCESS(rc))
+        pNtName->MaximumLength = (uint16_t)cbMin;
+    return rc;
+}
+
+
+/**
  * Frees the native path and root handle.
  *
  * @param   pNtName             The NT path after a successful rtNtPathToNative
  *                              call.
- * @param   phRootDir           The root handle variable after a
- *                              rtNtPathToNative.
+ * @param   phRootDir           The root handle variable from the same call.
  */
 static void rtNtPathFreeNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir)
 {
@@ -357,10 +399,9 @@ static void rtNtPathFreeNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDi
 /**
  * Frees the native path and root handle.
  *
- * @param   pNtName             The NT path after a successful
- *                              RTNtPathFromWinUtf16Ex call.
- * @param   phRootDir           The root handle variable after a successfull
- *                              RTNtPathFromWinUtf16Ex call.
+ * @param   pNtName             The NT path from a successful RTNtPathToNative
+ *                              or RTNtPathFromWinUtf16Ex call.
+ * @param   phRootDir           The root handle variable from the same call.
  */
 RTDECL(void) RTNtPathFree(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir)
 {

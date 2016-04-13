@@ -105,6 +105,45 @@ RTDECL(int) RTUtf16ICmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2)
 RT_EXPORT_SYMBOL(RTUtf16ICmp);
 
 
+RTDECL(int) RTUtf16ICmpUtf8(PCRTUTF16 pwsz1, const char *psz2)
+{
+    /*
+     * NULL and empty strings are all the same.
+     */
+    if (!pwsz1)
+        return !psz2 || !*psz2 ? 0 : -1;
+    if (!psz2)
+        return !*pwsz1         ? 0 :  1;
+
+    /*
+     * Compare with a UTF-8 string by enumerating them char by char.
+     */
+    for (;;)
+    {
+        RTUNICP uc1;
+        int rc = RTUtf16GetCpEx(&pwsz1, &uc1);
+        AssertRCReturn(rc, 1);
+
+        RTUNICP uc2;
+        rc = RTStrGetCpEx(&psz2, &uc2);
+        AssertRCReturn(rc, -1);
+        if (uc1 == uc2)
+        {
+            if (uc1)
+                continue;
+            return 0;
+        }
+
+        if (RTUniCpToUpper(uc1) == RTUniCpToUpper(uc2))
+            continue;
+        if (RTUniCpToLower(uc1) == RTUniCpToLower(uc2))
+            continue;
+        return uc1 < uc2 ? -1 : 1;
+    }
+}
+RT_EXPORT_SYMBOL(RTUtf16CmpIUtf8);
+
+
 RTDECL(PRTUTF16) RTUtf16ToLower(PRTUTF16 pwsz)
 {
     PRTUTF16 pwc = pwsz;

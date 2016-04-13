@@ -113,6 +113,37 @@ RTDECL(PRTUTF16) RTUtf16AllocTag(size_t cb, const char *pszTag)
 RT_EXPORT_SYMBOL(RTUtf16AllocTag);
 
 
+RTDECL(int) RTUtf16ReallocTag(PRTUTF16 *ppwsz, size_t cbNew, const char *pszTag)
+{
+    PRTUTF16 pwszOld = *ppwsz;
+    cbNew = RT_ALIGN_Z(cbNew, sizeof(RTUTF16));
+    if (!cbNew)
+    {
+        RTMemFree(pwszOld);
+        *ppwsz = NULL;
+    }
+    else if (pwszOld)
+    {
+        PRTUTF16 pwszNew = (PRTUTF16)RTMemReallocTag(pwszOld, cbNew, pszTag);
+        if (!pwszNew)
+            return VERR_NO_STR_MEMORY;
+        pwszNew[cbNew / sizeof(RTUTF16) - 1] = '\0';
+        *ppwsz = pwszNew;
+    }
+    else
+    {
+        PRTUTF16 pwszNew = (PRTUTF16)RTMemAllocTag(cbNew, pszTag);
+        if (!pwszNew)
+            return VERR_NO_UTF16_MEMORY;
+        pwszNew[0] = '\0';
+        pwszNew[cbNew / sizeof(RTUTF16) - 1] = '\0';
+        *ppwsz = pwszNew;
+    }
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTUtf16ReallocTag);
+
+
 RTDECL(void)  RTUtf16Free(PRTUTF16 pwszString)
 {
     if (pwszString)
@@ -182,6 +213,40 @@ RTDECL(int) RTUtf16Cmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2)
     }
 }
 RT_EXPORT_SYMBOL(RTUtf16Cmp);
+
+
+RTDECL(int) RTUtf16CmpUtf8(PCRTUTF16 pwsz1, const char *psz2)
+{
+    /*
+     * NULL and empty strings are all the same.
+     */
+    if (!pwsz1)
+        return !psz2 || !*psz2 ? 0 : -1;
+    if (!psz2)
+        return !*pwsz1         ? 0 :  1;
+
+    /*
+     * Compare with a UTF-8 string by enumerating them char by char.
+     */
+    for (;;)
+    {
+        RTUNICP uc1;
+        int rc = RTUtf16GetCpEx(&pwsz1, &uc1);
+        AssertRCReturn(rc, 1);
+
+        RTUNICP uc2;
+        rc = RTStrGetCpEx(&psz2, &uc2);
+        AssertRCReturn(rc, -1);
+        if (uc1 == uc2)
+        {
+            if (uc1)
+                continue;
+            return 0;
+        }
+        return uc1 < uc2 ? -1 : 1;
+    }
+}
+RT_EXPORT_SYMBOL(RTUtf16CmpUtf8);
 
 
 RTDECL(int) RTUtf16ValidateEncoding(PCRTUTF16 pwsz)

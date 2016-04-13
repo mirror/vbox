@@ -157,7 +157,7 @@ RTDECL(int) RTNtPathExpand8dot3Path(PUNICODE_STRING pUniStr, bool fPathOnly)
                     pUniStr->Length -= (USHORT)(cwcNameOld * sizeof(WCHAR));
                     pUniStr->Length += (USHORT)(cwcNameNew * sizeof(WCHAR));
                     pwszFixEnd      -= cwcNameOld;
-                    pwszFixEnd      -= cwcNameNew;
+                    pwszFixEnd      += cwcNameNew;
                     memcpy(pwszFix, &puBuf->Info.FileName[offName], cwcNameNew * sizeof(WCHAR));
                 }
                 else
