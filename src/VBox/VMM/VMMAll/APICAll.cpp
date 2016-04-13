@@ -436,7 +436,7 @@ static int apicGetLastSetBit(volatile const XAPIC256BITREG *pReg, int rcNotFound
  * @returns true if any interrupt is pending, false otherwise.
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pu8PendingIntr      Where to store the interrupt vector if the
- *                              interrupt is pending.
+ *                              interrupt is pending, optional can be NULL.
  */
 static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr)
 {
@@ -445,7 +445,8 @@ static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr
     if (irrv >= 0)
     {
         Assert(irrv <= (int)UINT8_MAX);
-        *pu8PendingIntr = (uint8_t)irrv;
+        if (pu8PendingIntr)
+            *pu8PendingIntr = (uint8_t)irrv;
         return true;
     }
     return false;
