@@ -1089,172 +1089,6 @@ DECLHIDDEN(int) supHardNtVpDebugger(HANDLE hProcess, PRTERRINFO pErrInfo)
 
 
 /**
- * Checks whether the path could be containing alternative 8.3 names generated
- * by NTFS, FAT, or other similar file systems.
- *
- * @returns Pointer to the first component that might be an 8.3 name, NULL if
- *          not 8.3 path.
- * @param   pwszPath        The path to check.
- *
- * @remarks This is making bad ASSUMPTION wrt to the naming scheme of 8.3 names,
- *          however, non-tilde 8.3 aliases are probably rare enough to not be
- *          worth all the extra code necessary to open each path component and
- *          check if we've got the short name or not.
- */
-DECLHIDDEN(PRTUTF16) supHardNtVpIsPossible8dot3Path(PCRTUTF16 pwszPath)
-{
-    PCRTUTF16 pwszName = pwszPath;
-    for (;;)
-    {
-        RTUTF16 wc = *pwszPath++;
-        if (wc == '~')
-        {
-            /* Could check more here before jumping to conclusions... */
-            if (pwszPath - pwszName <= 8+1+3)
-                return (PRTUTF16)pwszName;
-        }
-        else if (wc == '\\' || wc == '/' || wc == ':')
-            pwszName = pwszPath;
-        else if (wc == 0)
-            break;
-    }
-    return NULL;
-}
-
-
-/**
- * Fixes up a path possibly containing one or more alternative 8-dot-3 style
- * components.
- *
- * The path is fixed up in place.  Errors are ignored.
- *
- * @param   pUniStr     The path to fix up. MaximumLength is the max buffer
- *                      length.
- * @param   fPathOnly   Whether to only process the path and leave the filename
- *                      as passed in.
- */
-DECLHIDDEN(void) supHardNtVpFix8dot3Path(PUNICODE_STRING pUniStr, bool fPathOnly)
-{
-    /*
-     * We could use FileNormalizedNameInformation here and slap the volume device
-     * path in front of the result, but it's only supported since windows 8.0
-     * according to some docs... So we expand all supicious names.
-     */
-    union fix8dot3tmp
-    {
-        FILE_BOTH_DIR_INFORMATION Info;
-        uint8_t abBuffer[sizeof(FILE_BOTH_DIR_INFORMATION) + 2048 * sizeof(WCHAR)];
-    } *puBuf = NULL;
-
-
-    PRTUTF16 pwszFix = pUniStr->Buffer;
-    while (*pwszFix)
-    {
-        pwszFix = supHardNtVpIsPossible8dot3Path(pwszFix);
-        if (pwszFix == NULL)
-            break;
-
-        RTUTF16 wc;
-        PRTUTF16 pwszFixEnd = pwszFix;
-        while ((wc = *pwszFixEnd) != '\0' && wc != '\\' && wc != '/')
-            pwszFixEnd++;
-        if (wc == '\0' && fPathOnly)
-            break;
-
-        if (!puBuf)
-        {
-            puBuf = (union fix8dot3tmp *)RTMemAlloc(sizeof(*puBuf));
-            if (!puBuf)
-                break;
-        }
-
-        RTUTF16 const wcSaved = *pwszFix;
-        *pwszFix = '\0';                     /* paranoia. */
-
-        UNICODE_STRING      NtDir;
-        NtDir.Buffer = pUniStr->Buffer;
-        NtDir.Length = NtDir.MaximumLength = (USHORT)((pwszFix - pUniStr->Buffer) * sizeof(WCHAR));
-
-        HANDLE              hDir  = RTNT_INVALID_HANDLE_VALUE;
-        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-
-        OBJECT_ATTRIBUTES   ObjAttr;
-        InitializeObjectAttributes(&ObjAttr, &NtDir, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
-#ifdef IN_RING0
-        ObjAttr.Attributes |= OBJ_KERNEL_HANDLE;
-#endif
-
-        NTSTATUS rcNt = NtCreateFile(&hDir,
-                                     FILE_READ_DATA | SYNCHRONIZE,
-                                     &ObjAttr,
-                                     &Ios,
-                                     NULL /* Allocation Size*/,
-                                     FILE_ATTRIBUTE_NORMAL,
-                                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                                     FILE_OPEN,
-                                     FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
-                                     NULL /*EaBuffer*/,
-                                     0 /*EaLength*/);
-        *pwszFix = wcSaved;
-        if (NT_SUCCESS(rcNt))
-        {
-            RT_ZERO(*puBuf);
-
-            IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-            UNICODE_STRING  NtFilterStr;
-            NtFilterStr.Buffer = pwszFix;
-            NtFilterStr.Length = (USHORT)((uintptr_t)pwszFixEnd - (uintptr_t)pwszFix);
-            NtFilterStr.MaximumLength = NtFilterStr.Length;
-            rcNt = NtQueryDirectoryFile(hDir,
-                                        NULL /* Event */,
-                                        NULL /* ApcRoutine */,
-                                        NULL /* ApcContext */,
-                                        &Ios,
-                                        puBuf,
-                                        sizeof(*puBuf) - sizeof(WCHAR),
-                                        FileBothDirectoryInformation,
-                                        FALSE /*ReturnSingleEntry*/,
-                                        &NtFilterStr,
-                                        FALSE /*RestartScan */);
-            if (NT_SUCCESS(rcNt) && puBuf->Info.NextEntryOffset == 0) /* There shall only be one entry matching... */
-            {
-                uint32_t offName = puBuf->Info.FileNameLength / sizeof(WCHAR);
-                while (offName > 0  && puBuf->Info.FileName[offName - 1] != '\\' && puBuf->Info.FileName[offName - 1] != '/')
-                    offName--;
-                uint32_t cwcNameNew = (puBuf->Info.FileNameLength / sizeof(WCHAR)) - offName;
-                uint32_t cwcNameOld = (uint32_t)(pwszFixEnd - pwszFix);
-
-                if (cwcNameOld == cwcNameNew)
-                    memcpy(pwszFix, &puBuf->Info.FileName[offName], cwcNameNew * sizeof(WCHAR));
-                else if (   pUniStr->Length + cwcNameNew * sizeof(WCHAR) - cwcNameOld * sizeof(WCHAR) + sizeof(WCHAR)
-                         <= pUniStr->MaximumLength)
-                {
-                    size_t cwcLeft = pUniStr->Length - (pwszFixEnd - pUniStr->Buffer) * sizeof(WCHAR) + sizeof(WCHAR);
-                    memmove(&pwszFix[cwcNameNew], pwszFixEnd, cwcLeft * sizeof(WCHAR));
-                    pUniStr->Length -= (USHORT)(cwcNameOld * sizeof(WCHAR));
-                    pUniStr->Length += (USHORT)(cwcNameNew * sizeof(WCHAR));
-                    pwszFixEnd      -= cwcNameOld;
-                    pwszFixEnd      -= cwcNameNew;
-                    memcpy(pwszFix, &puBuf->Info.FileName[offName], cwcNameNew * sizeof(WCHAR));
-                }
-                /* else: ignore overflow. */
-            }
-            /* else: ignore failure. */
-
-            NtClose(hDir);
-        }
-
-        /* Advance */
-        pwszFix = pwszFixEnd;
-    }
-
-    if (puBuf)
-        RTMemFree(puBuf);
-}
-
-
-
-/**
  * Matches two UNICODE_STRING structures in a case sensitive fashion.
  *
  * @returns true if equal, false if not.
@@ -1315,7 +1149,7 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
      * path so that we will recognize the DLLs and their location.
      */
     PUNICODE_STRING pLongName = &pImage->Name.UniStr;
-    if (supHardNtVpIsPossible8dot3Path(pLongName->Buffer))
+    if (RTNtPathFindPossible8dot3Name(pLongName->Buffer))
     {
         AssertCompile(sizeof(pThis->abMemory) > sizeof(pImage->Name));
         PUNICODE_STRING pTmp = (PUNICODE_STRING)pThis->abMemory;
@@ -1324,7 +1158,7 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
         pTmp->Buffer = (PRTUTF16)(pTmp + 1);
         memcpy(pTmp->Buffer, pLongName->Buffer, pLongName->Length + sizeof(RTUTF16));
 
-        supHardNtVpFix8dot3Path(pTmp, false /*fPathOnly*/);
+        RTNtPathExpand8dot3Path(pTmp, false /*fPathOnly*/);
         Assert(pTmp->Buffer[pTmp->Length / sizeof(RTUTF16)] == '\0');
 
         pLongName = pTmp;

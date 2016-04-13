@@ -307,7 +307,6 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/err/errinfo.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathChangeToUnixSlashes.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathExt.cpp \
-	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTStrPrintHexBytes.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTUtf16PrintHexBytes.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTUtf16ICmpAscii.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTUtf16CatAscii.cpp \
@@ -374,6 +373,8 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
  SUPR3HardenedStatic_SOURCES.win += \
  	win/SUPR3HardenedNoCrt-win.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/nt/RTErrConvertFromNtStatus.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/nt/RTNtPathFindPossible8dot3Name.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/nt/RTNtPathExpand8dot3Path.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/r3/nt/pathint-nt.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/win/RTErrConvertFromWin32.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/win/errmsgwin.cpp

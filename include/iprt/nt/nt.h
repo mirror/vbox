@@ -248,6 +248,17 @@ RTDECL(int) RTNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULO
 RTDECL(int) RTNtPathClose(HANDLE hHandle);
 
 /**
+ * Converts a windows-style path to NT format and encoding.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             Where to return the NT name.  Free using
+ *                              RTNtPathFree.
+ * @param   phRootDir           Where to return the root handle, if applicable.
+ * @param   pszPath             The UTF-8 path.
+ */
+RTDECL(int) RTNtPathFromWinUtf8(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath);
+
+/**
  * Converts a UTF-16 windows-style path to NT format.
  *
  * @returns IPRT status code.
@@ -262,14 +273,59 @@ RTDECL(int) RTNtPathClose(HANDLE hHandle);
 RTDECL(int) RTNtPathFromWinUtf16Ex(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir, PCRTUTF16 pwszPath, size_t cwcPath);
 
 /**
+ * Ensures that the NT string has sufficient storage to hold @a cwcMin RTUTF16
+ * chars plus a terminator.
+ *
+ * The NT string must have been returned by RTNtPathFromWinUtf8 or
+ * RTNtPathFromWinUtf16Ex.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             The NT path string.
+ * @param   cwcMin              The minimum number of RTUTF16 chars. Max 32767.
+ * @sa      RTNtPathFree
+ */
+RTDECL(int) RTNtPathEnsureSpace(struct _UNICODE_STRING *pNtName, size_t cwcMin);
+
+/**
  * Frees the native path and root handle.
  *
- * @param   pNtName             The NT path after a successful
- *                              RTNtPathFromWinUtf16Ex call.
- * @param   phRootDir           The root handle variable after a successfull
- *                              RTNtPathFromWinUtf16Ex call.
+ * @param   pNtName             The NT path from a successful call to
+ *                              RTNtPathFromWinUtf8 or RTNtPathFromWinUtf16Ex.
+ * @param   phRootDir           The root handle variable from the same call.
  */
 RTDECL(void) RTNtPathFree(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir);
+
+
+/**
+ * Checks whether the path could be containing alternative 8.3 names generated
+ * by NTFS, FAT, or other similar file systems.
+ *
+ * @returns Pointer to the first component that might be an 8.3 name, NULL if
+ *          not 8.3 path.
+ * @param   pwszPath        The path to check.
+ *
+ * @remarks This is making bad ASSUMPTION wrt to the naming scheme of 8.3 names,
+ *          however, non-tilde 8.3 aliases are probably rare enough to not be
+ *          worth all the extra code necessary to open each path component and
+ *          check if we've got the short name or not.
+ */
+RTDECL(PRTUTF16) RTNtPathFindPossible8dot3Name(PCRTUTF16 pwszPath);
+
+/**
+ * Fixes up a path possibly containing one or more alternative 8-dot-3 style
+ * components.
+ *
+ * The path is fixed up in place.  Errors are ignored.
+ *
+ * @returns VINF_SUCCESS if it all went smoothly, informational status codes
+ *          indicating the nature of last problem we ran into.
+ *
+ * @param   pUniStr     The path to fix up. MaximumLength is the max buffer
+ *                      length.
+ * @param   fPathOnly   Whether to only process the path and leave the filename
+ *                      as passed in.
+ */
+RTDECL(int) RTNtPathExpand8dot3Path(struct _UNICODE_STRING *pUniStr, bool fPathOnly);
 
 
 RT_C_DECLS_END

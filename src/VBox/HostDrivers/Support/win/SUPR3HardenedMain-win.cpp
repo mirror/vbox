@@ -1224,10 +1224,13 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnore
         return rcNt;
     }
 
-    if (supHardNtVpIsPossible8dot3Path(uBuf.UniStr.Buffer))
+    if (!RTNtPathFindPossible8dot3Name(uBuf.UniStr.Buffer))
+        cbNameBuf += sizeof(WCHAR);
+    else
     {
         uBuf.UniStr.MaximumLength = sizeof(uBuf) - 128;
-        supHardNtVpFix8dot3Path(&uBuf.UniStr, true /*fPathOnly*/);
+        RTNtPathExpand8dot3Path(&uBuf.UniStr, true /*fPathOnly*/);
+        cbNameBuf = (uintptr_t)uBuf.UniStr.Buffer + uBuf.UniStr.Length + sizeof(WCHAR) - (uintptr_t)&uBuf.abBuffer[0];
     }
 
     /*

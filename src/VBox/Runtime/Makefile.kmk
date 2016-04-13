@@ -783,6 +783,8 @@ RuntimeR3_SOURCES.win = \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
+ 	nt/RTNtPathExpand8dot3Path.cpp \
+ 	nt/RTNtPathFindPossible8dot3Name.cpp \
  	r3/nt/fs-nt.cpp \
  	r3/nt/pathint-nt.cpp \
  	r3/nt/RTProcQueryParent-r3-nt.cpp \
@@ -2170,6 +2172,8 @@ RuntimeR0Drv_SOURCES.win = \
 	generic/mppresent-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
+	nt/RTNtPathExpand8dot3Path.cpp \
+	nt/RTNtPathFindPossible8dot3Name.cpp \
 	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/alloc-ef-r0drv.cpp \
 	r0drv/memobj-r0drv.cpp \
