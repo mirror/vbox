@@ -231,6 +231,141 @@ static VBOXSTRICTRC apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACC
 
 
 /**
+ * Gets the descriptive APIC mode.
+ *
+ * @returns The name.
+ * @param   enmMode     The xAPIC mode.
+ */
+const char *apicGetModeName(APICMODE enmMode)
+{
+    switch (enmMode)
+    {
+        case APICMODE_DISABLED:  return "Disabled";
+        case APICMODE_XAPIC:     return "xAPIC";
+        case APICMODE_X2APIC:    return "x2APIC";
+        default:                 break;
+    }
+    return "Invalid";
+}
+
+
+/**
+ * Gets the descriptive destination format name.
+ *
+ * @returns The destination format name.
+ * @param   enmDestFormat       The destination format.
+ */
+const char *apicGetDestFormatName(XAPICDESTFORMAT enmDestFormat)
+{
+    switch (enmDestFormat)
+    {
+        case XAPICDESTFORMAT_FLAT:      return "Flat";
+        case XAPICDESTFORMAT_CLUSTER:   return "Cluster";
+        default:                        break;
+    }
+    return "Invalid";
+}
+
+
+/**
+ * Gets the descriptive delivery mode name.
+ *
+ * @returns The delivery mode name.
+ * @param   enmDeliveryMode     The delivery mode.
+ */
+const char *apicGetDeliveryModeName(XAPICDELIVERYMODE enmDeliveryMode)
+{
+    switch (enmDeliveryMode)
+    {
+        case XAPICDELIVERYMODE_FIXED:        return "Fixed";
+        case XAPICDELIVERYMODE_LOWEST_PRIO:  return "Lowest-priority";
+        case XAPICDELIVERYMODE_SMI:          return "SMI";
+        case XAPICDELIVERYMODE_NMI:          return "NMI";
+        case XAPICDELIVERYMODE_INIT:         return "INIT";
+        case XAPICDELIVERYMODE_STARTUP:      return "SIPI";
+        case XAPICDELIVERYMODE_EXTINT:       return "ExtINT";
+        default:                             break;
+    }
+    return "Invalid";
+}
+
+
+/**
+ * Gets the descriptive destination mode name.
+ *
+ * @returns The destination mode name.
+ * @param   enmDestMode     The destination mode.
+ */
+const char *apicGetDestModeName(XAPICDESTMODE enmDestMode)
+{
+    switch (enmDestMode)
+    {
+        case XAPICDESTMODE_PHYSICAL:  return "Physical";
+        case XAPICDESTMODE_LOGICAL:   return "Logical";
+        default:                      break;
+    }
+    return "Invalid";
+}
+
+
+/**
+ * Gets the descriptive trigger mode name.
+ *
+ * @returns The trigger mode name.
+ * @param   enmTriggerMode     The trigger mode.
+ */
+const char *apicGetTriggerModeName(XAPICTRIGGERMODE enmTriggerMode)
+{
+    switch (enmTriggerMode)
+    {
+        case XAPICTRIGGERMODE_EDGE:     return "Edge";
+        case XAPICTRIGGERMODE_LEVEL:    return "Level";
+        default:                        break;
+    }
+    return "Invalid";
+}
+
+
+/**
+ * Gets the destination shorthand name.
+ *
+ * @returns The destination shorthand name.
+ * @param   enmDestShorthand     The destination shorthand.
+ */
+const char *apicGetDestShorthandName(XAPICDESTSHORTHAND enmDestShorthand)
+{
+    switch (enmDestShorthand)
+    {
+        case XAPICDESTSHORTHAND_NONE:           return "None";
+        case XAPICDESTSHORTHAND_SELF:           return "Self";
+        case XAPIDDESTSHORTHAND_ALL_INCL_SELF:  return "All including self";
+        case XAPICDESTSHORTHAND_ALL_EXCL_SELF:  return "All excluding self";
+        default:                                break;
+    }
+    return "Invalid";
+}
+
+
+/**
+ * Gets the timer mode name.
+ *
+ * @returns The timer mode name.
+ * @param   enmTimerMode         The timer mode.
+ */
+const char *apicGetTimerModeName(XAPICTIMERMODE enmTimerMode)
+{
+    switch (enmTimerMode)
+    {
+        case XAPICTIMERMODE_ONESHOT:        return "One-shot";
+        case XAPICTIMERMODE_PERIODIC:       return "Periodic";
+        case XAPICTIMERMODE_TSC_DEADLINE:   return "TSC deadline";
+        default:                            break;
+    }
+    return "Invalid";
+}
+
+
+/**
  * Gets the APIC mode given the base MSR value.
  *
  * @returns The APIC mode.
@@ -542,7 +677,8 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
 
         default:
         {
-            AssertMsgFailed(("APIC: apicSendIntr: Unknown delivery mode %#x\n", enmDeliveryMode));
+            AssertMsgFailed(("APIC: apicSendIntr: Unsupported delivery mode %#x (%s)\n", enmDeliveryMode,
+                             apicGetDeliveryModeName(enmDeliveryMode)));
             break;
         }
     }
@@ -1036,6 +1172,9 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
                 /** @todo We need to broadcast EOI to IO APICs here. */
                 apicClearVectorInReg(&pXApicPage->tmr, uVector);
             }
+
+            Log4(("APIC%u: apicSetEoi: Acknowledged %s triggered interrupt. uVector=%#x\n", pVCpu->idCpu,
+                  fLevelTriggered ? "level" : "edge", uVector));
 
             apicSignalNextPendingIntr(pVCpu);
         }
@@ -1991,6 +2130,9 @@ VMMDECL(int) APICBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode
     uint32_t          fDestMask       = uDest;
     uint32_t          fBroadcastMask  = UINT32_C(0xff);
 
+    Log4(("APIC: apicBusDeliver: fDestMask=%#x enmDestMode=%s enmTriggerMode=%s enmDeliveryMode=%s\n", fDestMask,
+          apicGetDestModeName(enmDestMode), apicGetTriggerModeName(enmTriggerMode), apicGetDeliveryModeName(enmDeliveryMode)));
+
     VMCPUSET DestCpuSet;
     apicGetDestCpuSet(pVM, fDestMask, fBroadcastMask, enmDestMode, enmDeliveryMode, &DestCpuSet);
     VBOXSTRICTRC rcStrict = apicSendIntr(pVM, NULL /* pVCpu */, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet,
@@ -2075,8 +2217,8 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
                 default:
                 {
                     rcStrict = VERR_INTERNAL_ERROR_3;
-                    AssertMsgFailed(("APIC%u: LocalInterrupt: Invalid delivery mode %#x on LINT%d\n", pVCpu->idCpu,
-                                     enmDeliveryMode, u8Pin));
+                    AssertMsgFailed(("APIC%u: LocalInterrupt: Invalid delivery mode %#x (%s) on LINT%d\n", pVCpu->idCpu,
+                                     enmDeliveryMode, apicGetDeliveryModeName(enmDeliveryMode), u8Pin));
                     break;
                 }
             }

@@ -610,6 +610,14 @@ DECLINLINE(uint8_t) apicGetTimerShift(PCXAPICPAGE pXApicPage)
 
 RT_C_DECLS_BEGIN
 
+const char             *apicGetModeName(APICMODE enmMode);
+const char             *apicGetDestFormatName(XAPICDESTFORMAT enmDestFormat);
+const char             *apicGetDeliveryModeName(XAPICDELIVERYMODE enmDeliveryMode);
+const char             *apicGetDestModeName(XAPICDESTMODE enmDestMode);
+const char             *apicGetTriggerModeName(XAPICTRIGGERMODE enmTriggerMode);
+const char             *apicGetDestShorthandName(XAPICDESTSHORTHAND enmDestShorthand);
+const char             *apicGetTimerModeName(XAPICTIMERMODE enmTimerMode);
+
 VMMDECL(uint64_t)       APICGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t uBase);
 VMMDECL(uint8_t)        APICGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu);
