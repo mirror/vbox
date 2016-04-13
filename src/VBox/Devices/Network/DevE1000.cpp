@@ -29,6 +29,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_ENABLED
 #define LOG_GROUP LOG_GROUP_DEV_E1000
 #include <iprt/crc.h>
 #include <iprt/ctype.h>
@@ -1479,7 +1480,7 @@ static const struct E1kRegMap_st
     { 0x00600, 0x00200, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadVFTA         , e1kRegWriteVFTA         , "VFTA82542", "VLAN Filter Table Array (n) (82542)" }
 };
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
 
 /**
  * Convert U32 value to hex string. Masked bytes are replaced with dots.
@@ -5695,7 +5696,7 @@ static int e1kRegReadUnaligned(PE1KSTATE pThis, uint32_t offReg, void *pv, uint3
     uint32_t    shift;
     int         rc     = VINF_SUCCESS;
     int         index  = e1kRegLookup(pThis, offReg);
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     char        buf[9];
 #endif
 
