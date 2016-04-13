@@ -37,7 +37,6 @@
 # include "UIIconPool.h"
 # include "UIToolBar.h"
 # include "QITableView.h"
-# include "QIStyledItemDelegate.h"
 
 /* Other VBox includes: */
 # include <iprt/cidr.h>
@@ -108,11 +107,6 @@ class NameEditor : public QLineEdit
     Q_OBJECT;
     Q_PROPERTY(NameData name READ name WRITE setName USER true);
 
-signals:
-
-    /** Notifies listener about data should be committed. */
-    void sigCommitData(QWidget *pThis);
-
 public:
 
     /* Constructor: */
@@ -121,15 +115,6 @@ public:
         setFrame(false);
         setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         setValidator(new QRegExpValidator(QRegExp("[^,:]*"), this));
-        connect(this, SIGNAL(textEdited(const QString&)), this, SLOT(sltTextEdited(const QString&)));
-    }
-
-private slots:
-
-    /** Drops the changed data to listener. */
-    void sltTextEdited(const QString&)
-    {
-        emit sigCommitData(this);
     }
 
 private:
@@ -153,11 +138,6 @@ class ProtocolEditor : public QComboBox
     Q_OBJECT;
     Q_PROPERTY(KNATProtocol protocol READ protocol WRITE setProtocol USER true);
 
-signals:
-
-    /** Notifies listener about data should be committed. */
-    void sigCommitData(QWidget *pThis);
-
 public:
 
     /* Constructor: */
@@ -165,15 +145,6 @@ public:
     {
         addItem(gpConverter->toString(KNATProtocol_UDP), QVariant::fromValue(KNATProtocol_UDP));
         addItem(gpConverter->toString(KNATProtocol_TCP), QVariant::fromValue(KNATProtocol_TCP));
-        connect(this, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(sltTextEdited(const QString&)));
-    }
-
-private slots:
-
-    /** Drops the changed data to listener. */
-    void sltTextEdited(const QString&)
-    {
-        emit sigCommitData(this);
     }
 
 private:
@@ -204,11 +175,6 @@ class IPv4Editor : public QLineEdit
     Q_OBJECT;
     Q_PROPERTY(IpData ip READ ip WRITE setIp USER true);
 
-signals:
-
-    /** Notifies listener about data should be committed. */
-    void sigCommitData(QWidget *pThis);
-
 public:
 
     /* Constructor: */
@@ -217,15 +183,6 @@ public:
         setFrame(false);
         setAlignment(Qt::AlignCenter);
         setValidator(new IPv4Validator(this));
-        connect(this, SIGNAL(textEdited(const QString&)), this, SLOT(sltTextEdited(const QString&)));
-    }
-
-private slots:
-
-    /** Drops the changed data to listener. */
-    void sltTextEdited(const QString&)
-    {
-        emit sigCommitData(this);
     }
 
 private:
@@ -249,11 +206,6 @@ class IPv6Editor : public QLineEdit
     Q_OBJECT;
     Q_PROPERTY(IpData ip READ ip WRITE setIp USER true);
 
-signals:
-
-    /** Notifies listener about data should be committed. */
-    void sigCommitData(QWidget *pThis);
-
 public:
 
     /* Constructor: */
@@ -262,15 +214,6 @@ public:
         setFrame(false);
         setAlignment(Qt::AlignCenter);
         setValidator(new IPv6Validator(this));
-        connect(this, SIGNAL(textEdited(const QString&)), this, SLOT(sltTextEdited(const QString&)));
-    }
-
-private slots:
-
-    /** Drops the changed data to listener. */
-    void sltTextEdited(const QString&)
-    {
-        emit sigCommitData(this);
     }
 
 private:
@@ -294,11 +237,6 @@ class PortEditor : public QSpinBox
     Q_OBJECT;
     Q_PROPERTY(PortData port READ port WRITE setPort USER true);
 
-signals:
-
-    /** Notifies listener about data should be committed. */
-    void sigCommitData(QWidget *pThis);
-
 public:
 
     /* Constructor: */
@@ -306,15 +244,6 @@ public:
     {
         setFrame(false);
         setRange(0, (1 << (8 * sizeof(ushort))) - 1);
-        connect(this, SIGNAL(valueChanged(const QString&)), this, SLOT(sltTextEdited(const QString&)));
-    }
-
-private slots:
-
-    /** Drops the changed data to listener. */
-    void sltTextEdited(const QString&)
-    {
-        emit sigCommitData(this);
     }
 
 private:
@@ -647,53 +576,50 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
         pMainLayout->addWidget(m_pToolBar);
     }
 
-    /* Reinstall delegate: */
-    delete m_pTableView->itemDelegate();
-    QIStyledItemDelegate *pStyledItemDelegate = new QIStyledItemDelegate(this);
-    m_pTableView->setItemDelegate(pStyledItemDelegate);
-
-    /* Create new item editor factory: */
-    QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
-
-    /* Register name type: */
-    int iNameId = qRegisterMetaType<NameData>();
-    /* Register name editor: */
-    QStandardItemEditorCreator<NameEditor> *pNameEditorItemCreator = new QStandardItemEditorCreator<NameEditor>();
-    /* Link name type & editor: */
-    pNewItemEditorFactory->registerEditor((QVariant::Type)iNameId, pNameEditorItemCreator);
-
-    /* Register protocol type: */
-    int iProtocolId = qRegisterMetaType<KNATProtocol>();
-    /* Register protocol editor: */
-    QStandardItemEditorCreator<ProtocolEditor> *pProtocolEditorItemCreator = new QStandardItemEditorCreator<ProtocolEditor>();
-    /* Link protocol type & editor: */
-    pNewItemEditorFactory->registerEditor((QVariant::Type)iProtocolId, pProtocolEditorItemCreator);
-
-    /* Register ip type: */
-    int iIpId = qRegisterMetaType<IpData>();
-    /* Register ip editor: */
-    if (!fIPv6)
+    /* We do have abstract item delegate: */
+    QAbstractItemDelegate *pAbstractItemDelegate = m_pTableView->itemDelegate();
+    if (pAbstractItemDelegate)
     {
-        QStandardItemEditorCreator<IPv4Editor> *pIPv4EditorItemCreator = new QStandardItemEditorCreator<IPv4Editor>();
-        /* Link ip type & editor: */
-        pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv4EditorItemCreator);
-    }
-    else
-    {
-        QStandardItemEditorCreator<IPv6Editor> *pIPv6EditorItemCreator = new QStandardItemEditorCreator<IPv6Editor>();
-        /* Link ip type & editor: */
-        pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv6EditorItemCreator);
-    }
+        /* But do we have styled item delegate? */
+        QStyledItemDelegate *pStyledItemDelegate = qobject_cast<QStyledItemDelegate*>(pAbstractItemDelegate);
+        if (pStyledItemDelegate)
+        {
+            /* Create new item editor factory: */
+            QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
+            {
+                /* Register NameEditor as the NameData editor: */
+                int iNameId = qRegisterMetaType<NameData>();
+                QStandardItemEditorCreator<NameEditor> *pNameEditorItemCreator = new QStandardItemEditorCreator<NameEditor>();
+                pNewItemEditorFactory->registerEditor((QVariant::Type)iNameId, pNameEditorItemCreator);
 
-    /* Register port type: */
-    int iPortId = qRegisterMetaType<PortData>();
-    /* Register port editor: */
-    QStandardItemEditorCreator<PortEditor> *pPortEditorItemCreator = new QStandardItemEditorCreator<PortEditor>();
-    /* Link port type & editor: */
-    pNewItemEditorFactory->registerEditor((QVariant::Type)iPortId, pPortEditorItemCreator);
+                /* Register ProtocolEditor as the KNATProtocol editor: */
+                int iProtocolId = qRegisterMetaType<KNATProtocol>();
+                QStandardItemEditorCreator<ProtocolEditor> *pProtocolEditorItemCreator = new QStandardItemEditorCreator<ProtocolEditor>();
+                pNewItemEditorFactory->registerEditor((QVariant::Type)iProtocolId, pProtocolEditorItemCreator);
 
-    /* Set newly created item editor factory for table delegate: */
-    pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
+                /* Register IPv4Editor/IPv6Editor as the IpData editor: */
+                int iIpId = qRegisterMetaType<IpData>();
+                if (!fIPv6)
+                {
+                    QStandardItemEditorCreator<IPv4Editor> *pIPv4EditorItemCreator = new QStandardItemEditorCreator<IPv4Editor>();
+                    pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv4EditorItemCreator);
+                }
+                else
+                {
+                    QStandardItemEditorCreator<IPv6Editor> *pIPv6EditorItemCreator = new QStandardItemEditorCreator<IPv6Editor>();
+                    pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv6EditorItemCreator);
+                }
+
+                /* Register PortEditor as the PortData editor: */
+                int iPortId = qRegisterMetaType<PortData>();
+                QStandardItemEditorCreator<PortEditor> *pPortEditorItemCreator = new QStandardItemEditorCreator<PortEditor>();
+                pNewItemEditorFactory->registerEditor((QVariant::Type)iPortId, pPortEditorItemCreator);
+
+                /* Set newly created item editor factory for table delegate: */
+                pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
+            }
+        }
+    }
 
     /* Retranslate dialog: */
     retranslateUi();
