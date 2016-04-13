@@ -3548,35 +3548,22 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
 
         if (u.Cfg64.Size != Dir.Size)
         {
-            /* Kludge #1, seen ati shipping 32-bit DLLs and EXEs with Dir.Size=0x40
-               and Cfg64.Size=0x5c or 0x48.  Windows seems to deal with it, so
-               lets do so as well. */
-            if (   Dir.Size < u.Cfg64.Size
-                && (   u.Cfg64.Size == cbExpectV3
-                    || u.Cfg64.Size == cbExpectV2) )
-            {
-                Log(("rtldrPEOpen: %s: load cfg dir: Header (%d) and directory (%d) size mismatch, applying the ATI kludge\n",
-                     pszLogName, u.Cfg64.Size, Dir.Size));
-                Dir.Size = u.Cfg64.Size;
-                RT_ZERO(u.Cfg64);
-                rc = rtldrPEReadRVA(pModPe, &u.Cfg64, Dir.Size, Dir.VirtualAddress);
-                if (RT_FAILURE(rc))
-                    return rc;
-                rtldrPEConvert32BitLoadConfigTo64Bit(&u.Cfg64);
-            }
-
-            /* Kludge #2, ntdll.dll from XP seen with Dir.Size=0x40 and Cfg64.Size=0x00. */
+            /* Kludge #1: ntdll.dll from XP seen with Dir.Size=0x40 and Cfg64.Size=0x00. */
             if (Dir.Size == 0x40 && u.Cfg64.Size == 0x00 && !pModPe->f64Bit)
             {
-                Log(("rtldrPEOpen: %s: load cfg dir: Header (%d) and directory (%d) size mismatch, applying the XP kludge\n",
+                Log(("rtldrPEOpen: %s: load cfg dir: Header (%d) and directory (%d) size mismatch, applying the XP kludge.\n",
                      pszLogName, u.Cfg64.Size, Dir.Size));
-                u.Cfg64.Size = 0x40;
+                u.Cfg64.Size = Dir.Size;
             }
-
-            /* Kludge #3, imagehlp.dll from W10/32 seen with Dir.Size=0x40 (V1) and Cfg64.Size=0x68 (V3). */
-            if (Dir.Size == 0x40 && u.Cfg64.Size == 0x68 && !pModPe->f64Bit)
+            /* Kludge #2: This happens a lot. Structure changes, but the linker doesn't get
+               it updated and stores some old size in the directory.  Use the header size. */
+            else if (   u.Cfg64.Size == cbExpectV5
+                     || u.Cfg64.Size == cbExpectV4
+                     || u.Cfg64.Size == cbExpectV3
+                     || u.Cfg64.Size == cbExpectV2
+                     || u.Cfg64.Size == cbExpectV1)
             {
-                Log(("rtldrPEOpen: %s: load cfg dir: Header (%d) and directory (%d) size mismatch, applying the W10/32 kludge\n",
+                Log(("rtldrPEOpen: %s: load cfg dir: Header (%d) and directory (%d) size mismatch, applying the old linker kludge.\n",
                      pszLogName, u.Cfg64.Size, Dir.Size));
                 Dir.Size = u.Cfg64.Size;
                 RT_ZERO(u.Cfg64);
@@ -3584,14 +3571,17 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
                 if (RT_FAILURE(rc))
                     return rc;
                 rtldrPEConvert32BitLoadConfigTo64Bit(&u.Cfg64);
+                AssertReturn(u.Cfg64.Size == Dir.Size,
+                             RTErrInfoSetF(pErrInfo, VERR_LDRPE_LOAD_CONFIG_SIZE, "Data changed while reading! (%d vs %d)\n",
+                                           u.Cfg64.Size, Dir.Size));
             }
-
-            if (u.Cfg64.Size != Dir.Size)
+            else
             {
-                Log(("rtldrPEOpen: %s: load cfg dir: unexpected header size of %d bytes, expected %d.\n",
-                     pszLogName, u.Cfg64.Size, Dir.Size));
+                Log(("rtldrPEOpen: %s: load cfg hdr: unexpected hdr size of %u bytes (dir %u), expected %zu, %zu, %zu, %zu, or %zu.\n",
+                     pszLogName, u.Cfg64.Size, Dir.Size, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1));
                 return RTErrInfoSetF(pErrInfo, VERR_LDRPE_LOAD_CONFIG_SIZE,
-                                     "Load config header vs directory size mismatch: %#x vs %#x", u.Cfg64.Size, Dir.Size);
+                                     "Unexpected load config dir size of %u bytes (dir %u); supported sized: %zu, %zu, %zu, %zu, or %zu",
+                                     u.Cfg64.Size, Dir.Size, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1);
             }
         }
         if (u.Cfg64.LockPrefixTable && !(fFlags & (RTLDR_O_FOR_DEBUG | RTLDR_O_FOR_VALIDATION)))
