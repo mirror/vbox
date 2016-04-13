@@ -748,19 +748,17 @@ static bool apicIsLogicalDest(PVMCPU pVCpu, uint32_t fDest)
         uint8_t const u8Ldr = pXApicPage->ldr.u.u8LogicalApicId;
         return RT_BOOL(u8Ldr & fDest & XAPIC_LDR_FLAT_LOGICAL_ID);
     }
-    else
-    {
-        /*
-         * In clustered logical mode, the 8-bit logical ID in the LDR is interpreted as follows:
-         *    - High 4 bits is the cluster ID.
-         *    - Low 4 bits: each bit represents a unique APIC within the cluster.
-         */
-        Assert(enmDestFormat == XAPICDESTFORMAT_CLUSTER);
-        uint8_t const u8Ldr = pXApicPage->ldr.u.u8LogicalApicId;
-        if (XAPIC_LDR_CLUSTERED_GET_CLUSTER_ID(u8Ldr) == (fDest & XAPIC_LDR_CLUSTERED_CLUSTER_ID))
-            return RT_BOOL(u8Ldr & fDest & XAPIC_LDR_CLUSTERED_LOGICAL_ID);
-        return false;
-    }
+
+    /*
+     * In clustered logical mode, the 8-bit logical ID in the LDR is interpreted as follows:
+     *    - High 4 bits is the cluster ID.
+     *    - Low 4 bits: each bit represents a unique APIC within the cluster.
+     */
+    Assert(enmDestFormat == XAPICDESTFORMAT_CLUSTER);
+    uint8_t const u8Ldr = pXApicPage->ldr.u.u8LogicalApicId;
+    if (XAPIC_LDR_CLUSTERED_GET_CLUSTER_ID(u8Ldr) == (fDest & XAPIC_LDR_CLUSTERED_CLUSTER_ID))
+        return RT_BOOL(u8Ldr & fDest & XAPIC_LDR_CLUSTERED_LOGICAL_ID);
+    return false;
 #else
 # error "Implement Pentium and P6 family APIC architectures"
 #endif
