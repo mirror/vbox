@@ -519,12 +519,12 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     pHlp->pfnPrintf(pHlp, "    Processor-priority subclass = %u\n",       XAPIC_PPR_GET_PP_SUBCLASS(pXApicPage->ppr.u8Ppr));
     if (!fX2ApicMode)
         pHlp->pfnPrintf(pHlp, "  RRD                           = %u (%#x)\n", pXApicPage->rrd.u32Rrd, pXApicPage->rrd.u32Rrd);
-    pHlp->pfnPrintf(pHlp, "  LDR                           = %u (%#x)\n", pXApicPage->ldr.all.u32Ldr, pXApicPage->ldr.all.u32Ldr);
-    pHlp->pfnPrintf(pHlp, "    Logical APIC ID             = %u\n",       fX2ApicMode ? pX2ApicPage->ldr.u32LogicalApicId
+    pHlp->pfnPrintf(pHlp, "  LDR                           = %#x\n",      pXApicPage->ldr.all.u32Ldr);
+    pHlp->pfnPrintf(pHlp, "    Logical APIC ID             = %#x\n",      fX2ApicMode ? pX2ApicPage->ldr.u32LogicalApicId
                                                                           : pXApicPage->ldr.u.u8LogicalApicId);
     if (!fX2ApicMode)
     {
-        pHlp->pfnPrintf(pHlp, "  DFR                           = %RX32\n", pXApicPage->dfr.all.u32Dfr);
+        pHlp->pfnPrintf(pHlp, "  DFR                           = %#x\n",  pXApicPage->dfr.all.u32Dfr);
         pHlp->pfnPrintf(pHlp, "    Model                       = %#x (%s)\n", pXApicPage->dfr.u.u4Model,
                         apicGetDestFormatName((XAPICDESTFORMAT)pXApicPage->dfr.u.u4Model));
     }
