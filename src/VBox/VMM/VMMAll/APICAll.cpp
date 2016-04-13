@@ -1081,10 +1081,13 @@ static VBOXSTRICTRC apicSetDfr(PVMCPU pVCpu, uint32_t uDfr)
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
 
+    uDfr &= XAPIC_DFR;
+    uDfr |= XAPIC_DFR_RSVD_MB1;
+
     Log4(("APIC%u: apicSetDfr: uDfr=%#RX32\n", pVCpu->idCpu, uDfr));
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    apicWriteRaw32(pXApicPage, XAPIC_OFF_DFR, uDfr & XAPIC_DFR);
+    apicWriteRaw32(pXApicPage, XAPIC_OFF_DFR, uDfr);
     return VINF_SUCCESS;
 }
 
@@ -1220,8 +1223,9 @@ static VBOXSTRICTRC apicSetTimerIcr(PVMCPU pVCpu, int rcBusy, uint32_t uInitialC
  */
 static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt)
 {
-#if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
     VMCPU_ASSERT_EMT(pVCpu);
+
+#if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
     AssertMsg(   offLvt == XAPIC_OFF_LVT_TIMER
               || offLvt == XAPIC_OFF_LVT_THERMAL
               || offLvt == XAPIC_OFF_LVT_PERF
