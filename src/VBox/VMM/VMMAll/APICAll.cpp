@@ -617,6 +617,8 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
             if (   idCpu < pVM->cCpus
                 && apicIsEnabled(&pVM->aCpus[idCpu]))
                 APICPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
+            else
+                Log4(("APIC: apicSendIntr: No CPU found for lowest-priority delivery mode!\n"));
             break;
         }
 
@@ -812,9 +814,12 @@ static void apicGetDestCpuSet(PVM pVM, uint32_t fDestMask, uint32_t fBroadcastMa
                 PCXAPICPAGE   pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpuDest);
                 uint8_t const u8Tpr      = pXApicPage->tpr.u8Tpr;         /* PAV */
 
-                /* If there is a tie for lowest priority, the local APIC with the highest ID is chosen.
-                   See AMD spec. 16.6.2 "Lowest Priority Messages and Arbitration". */
-                if (u8LowestTpr <= u8Tpr)
+                /*
+                 * If there is a tie for lowest priority, the local APIC with the highest ID is chosen.
+                 * Hence the use of "<=" in the check below.
+                 * See AMD spec. 16.6.2 "Lowest Priority Messages and Arbitration".
+                 */
+                if (u8Tpr <= u8LowestTpr)
                 {
                     u8LowestTpr    = u8Tpr;
                     idCpuLowestTpr = idCpu;
