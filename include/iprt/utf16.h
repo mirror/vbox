@@ -115,7 +115,7 @@ RTDECL(PRTUTF16) RTUtf16AllocTag(size_t cb, const char *pszTag);
  *                              memory backing the string, i.e. it includes the
  *                              terminator (RTUTF16) char.
  */
-#define RTUtf16Realloc(ppwsz, cb)       RTUtf16ReallocTag((ppwsz), (cb), RTSTR_TAG)
+#define RTUtf16Realloc(ppwsz, cbNew)    RTUtf16ReallocTag((ppwsz), (cbNew), RTSTR_TAG)
 
 /**
  * Reallocates the specified UTF-16 string (custom tag).
