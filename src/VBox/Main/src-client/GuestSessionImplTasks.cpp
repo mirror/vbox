@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -342,6 +342,7 @@ int SessionTaskCopyTo::Run(void)
     procInfo.mFlags      = ProcessCreateFlag_Hidden;
 
     /* Set arguments.*/
+    procInfo.mArguments.push_back(procInfo.mExecutable);                     /* Set argv0. */
     procInfo.mArguments.push_back(Utf8StrFmt("--output=%s", mDest.c_str())); /** @todo Do we need path conversion? */
 
     /* Startup process. */
@@ -672,7 +673,8 @@ int SessionTaskCopyFrom::Run(void)
             procInfo.mFlags      = ProcessCreateFlag_Hidden | ProcessCreateFlag_WaitForStdOut;
 
             /* Set arguments.*/
-            procInfo.mArguments.push_back(mSource); /* Which file to output? */
+            procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
+            procInfo.mArguments.push_back(mSource);              /* Which file to output? */
 
             /* Startup process. */
             ComObjPtr<GuestProcess> pProcess;
@@ -981,7 +983,7 @@ int SessionTaskUpdateAdditions::i_copyFileToGuest(GuestSession *pSession, PRTISO
                 }
                 catch(...)
                 {
-                    hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR, 
+                    hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                   GuestSession::tr("Failed to create SessionTaskCopyTo object "));
                     throw;
                 }
@@ -1004,7 +1006,7 @@ int SessionTaskUpdateAdditions::i_copyFileToGuest(GuestSession *pSession, PRTISO
                     pProgressCopyTo = pTask->GetProgressObject();
                 }
                 else
-                    hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR, 
+                    hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                   GuestSession::tr("Starting thread for updating additions failed "));
             }
             catch(std::bad_alloc &)

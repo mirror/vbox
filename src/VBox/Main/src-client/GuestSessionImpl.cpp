@@ -660,7 +660,8 @@ int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMo
     GuestProcessStartupInfo procInfo;
     procInfo.mFlags      = ProcessCreateFlag_Hidden;
     procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
-    procInfo.mArguments.push_back(procInfo.mExecutable);
+
+    procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
 
     try
     {
@@ -818,7 +819,8 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
     GuestProcessStartupInfo procInfo;
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
     procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
-    procInfo.mArguments.push_back(procInfo.mExecutable);
+
+    procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
 
     try
     {
@@ -1221,7 +1223,8 @@ int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
 
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
     procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_RM);
-    procInfo.mArguments.push_back(procInfo.mExecutable);
+
+    procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
 
     try
     {
@@ -1389,7 +1392,8 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
     GuestProcessStartupInfo procInfo;
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
     procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_STAT);
-    procInfo.mArguments.push_back(procInfo.mExecutable);
+
+    procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
 
     try
     {
