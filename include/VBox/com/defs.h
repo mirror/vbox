@@ -393,6 +393,9 @@ typedef nsIID   IID;
 
 #define COM_STRUCT_OR_CLASS(I) class I
 
+namespace ATL
+{
+
 /* A few very simple ATL emulator classes to provide
  * FinalConstruct()/FinalRelease() functionality on Linux. */
 
@@ -412,6 +415,10 @@ template <class Base> class CComObject : public Base
 public:
     virtual ~CComObject() { this->FinalRelease(); }
 };
+
+} /* namespace ATL */
+
+using namespace ATL;
 
 /* helper functions */
 extern "C"
