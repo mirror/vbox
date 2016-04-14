@@ -1075,7 +1075,6 @@ static NTSTATUS vboxUsbRtUrbSendCompletion(PDEVICE_OBJECT pDevObj, IRP *pIrp, vo
 
         switch(pContext->ulTransferType)
         {
-            case USBSUP_TRANSFER_TYPE_CTRL:
             case USBSUP_TRANSFER_TYPE_MSG:
                 pUrbInfo->len = pUrb->UrbControlTransfer.TransferBufferLength;
                 if (pContext->ulTransferType == USBSUP_TRANSFER_TYPE_MSG)
@@ -1117,9 +1116,8 @@ static NTSTATUS vboxUsbRtUrbSendCompletion(PDEVICE_OBJECT pDevObj, IRP *pIrp, vo
 #ifdef DEBUG
         switch(pContext->ulTransferType)
         {
-            case USBSUP_TRANSFER_TYPE_CTRL:
             case USBSUP_TRANSFER_TYPE_MSG:
-                LogRel(("Ctrl/Msg length=%d\n", pUrb->UrbControlTransfer.TransferBufferLength));
+                LogRel(("Msg (CTRL) length=%d\n", pUrb->UrbControlTransfer.TransferBufferLength));
                 break;
             case USBSUP_TRANSFER_TYPE_ISOC:
                 LogRel(("ISOC length=%d\n", pUrb->UrbIsochronousTransfer.TransferBufferLength));
@@ -1271,7 +1269,6 @@ static NTSTATUS vboxUsbRtUrbSend(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp, PUSBSUP_URB
 
         switch (pUrbInfo->type)
         {
-            case USBSUP_TRANSFER_TYPE_CTRL:
             case USBSUP_TRANSFER_TYPE_MSG:
             {
                 pUrb->UrbHeader.Function = URB_FUNCTION_CONTROL_TRANSFER;
@@ -1284,29 +1281,21 @@ static NTSTATUS vboxUsbRtUrbSend(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp, PUSBSUP_URB
                 if (!hPipe)
                     pUrb->UrbControlTransfer.TransferFlags |= USBD_DEFAULT_PIPE_TRANSFER;
 
-                if (pUrbInfo->type == USBSUP_TRANSFER_TYPE_MSG)
-                {
-                   /* QUSB_TRANSFER_TYPE_MSG is a control transfer, but it is special
-                    * the first 8 bytes of the buffer is the setup packet so the real
-                    * data length is therefore pUrb->len - 8
-                    */
-                    PVBOXUSB_SETUP pSetup = (PVBOXUSB_SETUP)pUrb->UrbControlTransfer.SetupPacket;
-                    memcpy(pUrb->UrbControlTransfer.SetupPacket, pBuffer, min(sizeof (pUrb->UrbControlTransfer.SetupPacket), pUrbInfo->len));
+                /* QUSB_TRANSFER_TYPE_MSG is a control transfer, but it is special
+                 * the first 8 bytes of the buffer is the setup packet so the real
+                 * data length is therefore pUrb->len - 8
+                 */
+                PVBOXUSB_SETUP pSetup = (PVBOXUSB_SETUP)pUrb->UrbControlTransfer.SetupPacket;
+                memcpy(pUrb->UrbControlTransfer.SetupPacket, pBuffer, min(sizeof (pUrb->UrbControlTransfer.SetupPacket), pUrbInfo->len));
 
-                    if (pUrb->UrbControlTransfer.TransferBufferLength <= sizeof (pUrb->UrbControlTransfer.SetupPacket))
-                        pUrb->UrbControlTransfer.TransferBufferLength = 0;
-                    else
-                        pUrb->UrbControlTransfer.TransferBufferLength -= sizeof (pUrb->UrbControlTransfer.SetupPacket);
-
-                    pUrb->UrbControlTransfer.TransferBuffer = (uint8_t *)pBuffer + sizeof(pUrb->UrbControlTransfer.SetupPacket);
-                    pUrb->UrbControlTransfer.TransferBufferMDL = 0;
-                    pUrb->UrbControlTransfer.TransferFlags |= USBD_SHORT_TRANSFER_OK;
-                }
+                if (pUrb->UrbControlTransfer.TransferBufferLength <= sizeof (pUrb->UrbControlTransfer.SetupPacket))
+                    pUrb->UrbControlTransfer.TransferBufferLength = 0;
                 else
-                {
-                    pUrb->UrbControlTransfer.TransferBuffer = 0;
-                    pUrb->UrbControlTransfer.TransferBufferMDL = pMdlBuf;
-                }
+                    pUrb->UrbControlTransfer.TransferBufferLength -= sizeof (pUrb->UrbControlTransfer.SetupPacket);
+
+                pUrb->UrbControlTransfer.TransferBuffer = (uint8_t *)pBuffer + sizeof(pUrb->UrbControlTransfer.SetupPacket);
+                pUrb->UrbControlTransfer.TransferBufferMDL = 0;
+                pUrb->UrbControlTransfer.TransferFlags |= USBD_SHORT_TRANSFER_OK;
                 break;
             }
             case USBSUP_TRANSFER_TYPE_ISOC:
