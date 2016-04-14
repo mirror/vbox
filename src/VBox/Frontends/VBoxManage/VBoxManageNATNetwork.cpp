@@ -114,7 +114,7 @@ static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet)
     return rc;
 }
 
-static RTEXITCODE handleList(HandlerArg *a)
+RTEXITCODE handleList(HandlerArg *a)
 {
     HRESULT rc;
 
