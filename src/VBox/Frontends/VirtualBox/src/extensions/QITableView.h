@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,29 +15,32 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QITableView_h__
-#define __QITableView_h__
+#ifndef ___QITableView_h___
+#define ___QITableView_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QTableView>
 
-/* QITableView class which extends standard QTableView's functionality. */
-class QITableView: public QTableView
+/** QTableView extension providing GUI with advanced functionality. */
+class QITableView : public QTableView
 {
     Q_OBJECT;
 
-public:
-
-    QITableView(QWidget *pParent = 0);
-
 signals:
 
+    /** Notifies listeners about index changed from @a previous to @a current. */
     void sigCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
 
-protected slots:
+public:
 
-    void currentChanged(const QModelIndex &current, const QModelIndex &previous);
+    /** Constructs table-view on the basis of passed @a pParent. */
+    QITableView(QWidget *pParent = 0);
+
+protected:
+
+    /** Handles index change from @a previous to @a current. */
+    virtual void currentChanged(const QModelIndex &current, const QModelIndex &previous) /* override */;
 };
 
-#endif /* __QITableView_h__ */
+#endif /* !___QITableView_h___ */
 

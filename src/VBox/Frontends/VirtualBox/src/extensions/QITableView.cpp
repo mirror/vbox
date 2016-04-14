@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Local includes */
+/* GUI includes: */
 # include "QITableView.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -32,7 +32,9 @@ QITableView::QITableView(QWidget *pParent)
 
 void QITableView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
 {
+    /* Notify listeners about index changed: */
     emit sigCurrentChanged(current, previous);
+    /* Call to base-class: */
     QTableView::currentChanged(current, previous);
 }
 
