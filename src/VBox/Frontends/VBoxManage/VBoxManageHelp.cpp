@@ -1339,7 +1339,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                            "%s natnetwork %s      start --netname <name>\n\n"
                            "%s natnetwork %s      stop --netname <name>\n"
                            "%s natnetwork %s      list [<pattern>]\n"
-                     "\n", SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP);
+                     "\n", SEP, SEP, SEP, SEP, SEP, SEP);
 
 
     }
