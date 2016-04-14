@@ -378,7 +378,7 @@ void COMErrorInfo::fetchFromCurrentThread(IUnknown *callee, const GUID *calleeII
         }
     }
 
-#else /* !defined(VBOX_WITH_XPCOM) */
+#else /* defined(VBOX_WITH_XPCOM) */
 
     nsCOMPtr<nsIExceptionService> es;
     es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
@@ -392,8 +392,8 @@ void COMErrorInfo::fetchFromCurrentThread(IUnknown *callee, const GUID *calleeII
             rc = em->GetCurrentException(getter_AddRefs(ex));
             if (NS_SUCCEEDED(rc) && ex)
             {
-                ComPtr<IVirtualBoxErrorInfo> info;
-                rc = ex.queryInterfaceTo(info.asOutParam());
+                nsCOMPtr<IVirtualBoxErrorInfo> info;
+                info = do_QueryInterface(ex, &rc);
                 if (NS_SUCCEEDED(rc) && info)
                     init(CVirtualBoxErrorInfo(info));
 
