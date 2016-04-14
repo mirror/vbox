@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2015 Oracle Corporation
+ * Copyright (C) 2004-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,6 +17,12 @@
 
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
+
+// VBoxNetCfg-win.h needs winsock2.h and thus MUST be included before any other
+// header file includes Windows.h.
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+# include <VBox/VBoxNetCfg-win.h>
+#endif
 
 // for some reason Windows burns in sdk\...\winsock.h if this isn't included first
 #include "VBox/com/ptr.h"
@@ -52,10 +58,6 @@
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
-# include <VBox/VBoxNetCfg-win.h>
-#endif /* #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
 
 #if defined(RT_OS_DARWIN) && ARCH_BITS == 32
 # include <sys/types.h>
@@ -124,7 +126,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 //# include <setupapi.h>
 # include <shlobj.h>
 # include <cfgmgr32.h>
-
+# include <tchar.h>
 #endif /* RT_OS_WINDOWS */
 
 #ifdef RT_OS_DARWIN

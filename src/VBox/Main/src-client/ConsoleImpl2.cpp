@@ -24,8 +24,12 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-/* For some reason Windows burns in sdk\...\winsock.h if this isn't included first. */
-#include "VBox/com/ptr.h"
+
+// VBoxNetCfg-win.h needs winsock2.h and thus MUST be included before any other
+// header file includes Windows.h.
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+# include <VBox/VBoxNetCfg-win.h>
+#endif
 
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
@@ -107,7 +111,6 @@
 #  include <net80211/ieee80211_ioctl.h>
 # endif
 # if defined(RT_OS_WINDOWS)
-#  include <VBox/VBoxNetCfg-win.h>
 #  include <Ntddndis.h>
 #  include <devguid.h>
 # else
