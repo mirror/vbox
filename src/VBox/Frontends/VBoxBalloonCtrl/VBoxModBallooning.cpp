@@ -142,7 +142,7 @@ static long balloonGetDelta(PVBOXWATCHDOG_MACHINE pMachine,
     }
     else if (ulBalloonNew < ulBalloonOld) /* Deflate. */
     {
-        lBalloonDelta = RT_CLAMP(g_ulMemoryBalloonDecrementMB, 0, ulBalloonOld - ulBalloonNew) * -1;
+        lBalloonDelta = RT_MIN(g_ulMemoryBalloonDecrementMB, ulBalloonOld - ulBalloonNew) * -1;
     }
 
     /* Limit the ballooning to the available host memory, leaving some free.
