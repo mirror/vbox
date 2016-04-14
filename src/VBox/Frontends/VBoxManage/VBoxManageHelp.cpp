@@ -1337,7 +1337,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--port-forward-6 <rule>]\n"
                      "                            [--loopback-6 <rule>]\n\n"
                            "%s natnetwork %s      start --netname <name>\n\n"
-                           "%s natnetwork %s      stop --netname <name>\n"
+                           "%s natnetwork %s      stop --netname <name>\n\n"
                            "%s natnetwork %s      list [<pattern>]\n"
                      "\n", SEP, SEP, SEP, SEP, SEP, SEP);
 
