@@ -461,7 +461,7 @@ static int utsReplyRC(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr, int rcOperation, 
     va_end(va);
 
     return utsReplyFailure(pClient, pPktHdr, "FAILED  ", rcOperation, "%s failed with rc=%Rrc (opcode '%.8s')",
-                           rcOperation, szOperation, rcOperation, pPktHdr->achOpcode);
+                           szOperation, rcOperation, pPktHdr->achOpcode);
 }
 
 /**
@@ -599,9 +599,9 @@ static int utsDoHowdy(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
         return utsReplyBadStrTermination(pClient, pPktHdr);
 
     /* Extract string. */
-    pClient->pszHostname = RTStrDup(pClient->pszHostname);
+    pClient->pszHostname = RTStrDup(&pReq->achHostname[0]);
     if (!pClient->pszHostname)
-        return utsReplyRC(pClient, pPktHdr, VERR_NO_MEMORY, "Failed to alllocate memory for the hostname string");
+        return utsReplyRC(pClient, pPktHdr, VERR_NO_MEMORY, "Failed to allocate memory for the hostname string");
 
     if (pReq->fUsbConn & UTSPKT_HOWDY_CONN_F_PHYSICAL)
         return utsReplyRC(pClient, pPktHdr, VERR_NOT_SUPPORTED, "Physical connections are not yet supported");
@@ -896,7 +896,8 @@ static DECLCALLBACK(int) utsClientWorker(RTTHREAD hThread, void *pvUser)
                     Assert(fEvts & RTPOLL_EVT_READ);
 
                     uint8_t bRead;
-                    rc = RTPipeRead(g_hPipeR, &bRead, 1, NULL);
+                    size_t cbRead = 0;
+                    rc = RTPipeRead(g_hPipeR, &bRead, 1, &cbRead);
                     AssertRC(rc);
 
                     RTCritSectEnter(&g_CritSectClients);
@@ -949,6 +950,7 @@ static DECLCALLBACK(int) utsClientWorker(RTTHREAD hThread, void *pvUser)
                 {
                     /* Client sends a request, pick the right client and process it. */
                     PUTSCLIENT pClient = papClients[uId - 1];
+                    AssertPtr(pClient);
                     if (fEvts & RTPOLL_EVT_READ)
                         rc = utsClientReqProcess(pClient);
 
@@ -956,6 +958,9 @@ static DECLCALLBACK(int) utsClientWorker(RTTHREAD hThread, void *pvUser)
                         || RT_FAILURE(rc))
                     {
                         /* Close connection and remove client from array. */
+                        rc = g_pTransport->pfnPollSetRemove(hPollSet, pClient->pTransportClient, uId);
+                        AssertRC(rc);
+
                         g_pTransport->pfnNotifyBye(pClient->pTransportClient);
                         papClients[uId - 1] = NULL;
                         cClientsCur--;
@@ -994,7 +999,7 @@ static RTEXITCODE utsMainLoop(void)
          * New connection, create new client structure and spin of
          * the request handling thread.
          */
-        PUTSCLIENT pClient = (PUTSCLIENT)RTMemAllocZ(sizeof(PUTSCLIENT));
+        PUTSCLIENT pClient = (PUTSCLIENT)RTMemAllocZ(sizeof(UTSCLIENT));
         if (RT_LIKELY(pClient))
         {
             pClient->enmState         = UTSCLIENTSTATE_INITIALISING;
@@ -1002,6 +1007,16 @@ static RTEXITCODE utsMainLoop(void)
             pClient->pszHostname      = NULL;
             pClient->hGadgetHost      = NIL_UTSGADGETHOST;
             pClient->hGadget          = NIL_UTSGADGET;
+
+            /* Add client to the new list and inform the worker thread. */
+            RTCritSectEnter(&g_CritSectClients);
+            RTListAppend(&g_LstClientsNew, &pClient->NdLst);
+            RTCritSectLeave(&g_CritSectClients);
+
+            size_t cbWritten = 0;
+            rc = RTPipeWrite(g_hPipeW, "", 1, &cbWritten);
+            if (RT_FAILURE(rc))
+                RTMsgError("Failed to inform worker thread of a new client");
         }
         else
         {

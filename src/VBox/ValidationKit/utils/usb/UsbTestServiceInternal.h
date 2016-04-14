@@ -121,6 +121,16 @@ typedef struct UTSTRANSPORT
     DECLR3CALLBACKMEMBER(int, pfnPollSetAdd, (RTPOLLSET hPollSet, PUTSTRANSPORTCLIENT pClient, uint32_t idStart));
 
     /**
+     * Removes the given client frmo the given pollset.
+     *
+     * @returns IPRT status code.
+     * @param   hPollSet            The poll set to remove from.
+     * @paramm  pClient             The transport client structure. 
+     * @param   idStart             The handle ID to remove.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPollSetRemove, (RTPOLLSET hPollSet, PUTSTRANSPORTCLIENT pClient, uint32_t idStart));
+
+    /**
      * Receives an incoming packet.
      *
      * This will block until the data becomes available or we're interrupted by a

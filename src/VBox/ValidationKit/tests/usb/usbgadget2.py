@@ -70,12 +70,32 @@ g_kiGadgetAccessUsbIp          = 1;
 # These are used both the Session and Transport classes.
 #
 
+def getU64(abData, off):
+    """Get a U64 field."""
+    return abData[off] \
+         + abData[off + 1] * 256 \
+         + abData[off + 2] * 65536 \
+         + abData[off + 3] * 16777216 \
+         + abData[off + 4] * 4294967296 \
+         + abData[off + 5] * 1099511627776 \
+         + abData[off + 6] * 281474976710656 \
+         + abData[off + 7] * 72057594037927936;
+
 def getU32(abData, off):
     """Get a U32 field."""
     return abData[off] \
          + abData[off + 1] * 256 \
          + abData[off + 2] * 65536 \
          + abData[off + 3] * 16777216;
+
+def getU16(abData, off):
+    """Get a U16 field."""
+    return abData[off] \
+         + abData[off + 1] * 256;
+
+def getU8(abData, off):
+    """Get a U8 field."""
+    return abData[off];
 
 def getSZ(abData, off, sDefault = None):
     """
@@ -149,7 +169,15 @@ def u16ToByteArray(u16):
 
 def u8ToByteArray(u8):
     """Encodes the u8 value as a little endian byte (B) array."""
-    return array.array('B', (u8 % 256);
+    return array.array('B', (u8 % 256));
+
+def zeroByteArray(cb):
+    """Returns an array with the given size containing 0."""
+    abArray = array.array('B', (0, ));
+    cb = cb - 1;
+    for i in range(cb):
+        abArray.append(0);
+    return abArray;
 
 class TransportBase(object):
     """
@@ -692,7 +720,9 @@ class Session(TdTaskBase):
 
     def taskGreet(self, cMsIdleFudge):
         """Greets the UTS"""
-        rc = self.sendMsg("HOWDY", ());
+        sHostname = socket.gethostname().lower();
+        cbFill = 68 - len(sHostname) - 1;
+        rc = self.sendMsg("HOWDY", (long((1 << 16) | 0), long(0x1), long(len(sHostname)), sHostname, zeroByteArray(cbFill)));
         if rc is True:
             rc = self.recvAckLogged("HOWDY", self.fTryConnect);
         if rc is True:
@@ -717,28 +747,28 @@ class Session(TdTaskBase):
 
     def taskGadgetCreate(self, iGadgetType, iGadgetAccess):
         """Creates a new gadget on UTS"""
-        fRc = self.senfMsg("GDGTCRT", (iGadgetType, iGadgetAccess, 0));
+        fRc = self.sendMsg("GDGTCRT", (iGadgetType, iGadgetAccess, 0));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTCRT");
         return rc;
 
     def taskGadgetDestroy(self, iGadgetId):
         """Destroys the given gadget handle on UTS"""
-        fRc = self.senfMsg("GDGTDTOR", (iGadgetId, ));
+        fRc = self.sendMsg("GDGTDTOR", (iGadgetId, ));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTDTOR");
         return rc;
 
     def taskGadgetConnect(self, iGadgetId):
         """Connects the given gadget handle on UTS"""
-        fRc = self.senfMsg("GDGTCNCT", (iGadgetId, ));
+        fRc = self.sendMsg("GDGTCNCT", (iGadgetId, ));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTCNCT");
         return rc;
 
     def taskGadgetDisconnect(self, iGadgetId):
         """Disconnects the given gadget handle from UTS"""
-        fRc = self.senfMsg("GDGTDCNT", (iGadgetId, ));
+        fRc = self.sendMsg("GDGTDCNT", (iGadgetId, ));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTDCNT");
         return rc;
@@ -804,7 +834,65 @@ class Session(TdTaskBase):
     # Public methods - gadget API
     #
 
-    def 
+    def asyncGadgetCreate(self, iGadgetType, iGadgetAccess, cMsTimeout = 30000, fIgnoreErrors = False):
+        """
+        Initiates a gadget create task.
+
+        Returns True on success, False on failure (logged).
+
+        The task returns True on success and False on failure.
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "GadgetCreate", self.taskGadgetCreate, \
+                              (long(iGadgetType), long(iGadgetAccess)));
+
+    def syncGadgetCreate(self, iGadgetType, iGadgetAccess, cMsTimeout = 30000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncGadgetCreate, iGadgetType, iGadgetAccess, cMsTimeout, fIgnoreErrors);
+
+    def asyncGadgetDestroy(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
+        """
+        Initiates a gadget destroy task.
+
+        Returns True on success, False on failure (logged).
+
+        The task returns True on success and False on failure.
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "GadgetDestroy", self.taskGadgetDestroy, \
+                              (long(iGadgetId), ));
+
+    def syncGadgetDestroy(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncGadgetDestroy, iGadgetId, cMsTimeout, fIgnoreErrors);
+
+    def asyncGadgetConnect(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
+        """
+        Initiates a gadget connect task.
+
+        Returns True on success, False on failure (logged).
+
+        The task returns True on success and False on failure.
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "GadgetConnect", self.taskGadgetConnect, \
+                              (long(iGadgetId), ));
+
+    def syncGadgetConnect(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncGadgetConnect, iGadgetId, cMsTimeout, fIgnoreErrors);
+
+    def asyncGadgetDisconnect(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
+        """
+        Initiates a gadget disconnect task.
+
+        Returns True on success, False on failure (logged).
+
+        The task returns True on success and False on failure.
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "GadgetDisconnect", self.taskGadgetDisconnect, \
+                              (long(iGadgetId), ));
+
+    def syncGadgetDisconnect(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncGadgetDisconnect, iGadgetId, cMsTimeout, fIgnoreErrors);
 
 
 class TransportTcp(TransportBase):
@@ -1202,8 +1290,8 @@ class UsbGadget(object):
     def __init__(self):
         self.oUtsSession    = None;
         self.sImpersonation = g_ksGadgetImpersonationInvalid;
-        self.sGadgetType    = g_ksGadgetTypeInvalid;
         self.idGadget       = None;
+        self.iUsbIpPort     = None;
 
     def _clearImpersonation(self):
         """
@@ -1246,7 +1334,14 @@ class UsbGadget(object):
 
         return fRc;
 
-    def connectTo(self, cMsTimeout, sHostname, uPort = None):
+    def getUsbIpPort(self):
+        """
+        Returns the port the USB/IP server is listening on if requested,
+        None if USB/IP is not supported.
+        """
+        return self.iUsbIpPort;
+
+    def connectTo(self, cMsTimeout, sHostname, uPort = None, fUsbIpSupport = True, cMsIdleFudge = 0):
         """
         Connects to the specified target device.
         Returns True on Success.
@@ -1269,9 +1364,6 @@ class UsbGadget(object):
                     fRc = False;
             else:
                 fRc = False;
-
-            if fRc:
-                fRc = self._prepareGadget();
         except:
             reporter.errorXcpt(None, 15);
             return False;

@@ -48,7 +48,7 @@ from testdriver import vbox;
 from testdriver import vboxcon;
 
 # USB gadget control import
-import usbgadget;
+import usbgadget2;
 
 class tdUsbBenchmark(vbox.TestDriver):                                      # pylint: disable=R0902
     """
@@ -64,17 +64,17 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
     # and the hardware type.
     kdGadgetParams = {
         # The following is for local testing and not for the test lab.
+        #'adaris': {
+        #    'Low':   ('beaglebone',),
+        #    'Full':  ('beaglebone',),
+        #    'High':  ('beaglebone',),
+        #    'Super': ('odroidxu3',)
+        #},
         'adaris': {
-            'Low':   ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
-            'Full':  ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
-            'High':  ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
-            'Super': ('odroidxu3',  usbgadget.g_ksGadgetTypeODroidXu3)
-        },
-        'archusb': {
-            'Low':   ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
-            'Full':  ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
-            'High':  ('beaglebone', usbgadget.g_ksGadgetTypeBeaglebone),
-            'Super': ('odroidxu3',  usbgadget.g_ksGadgetTypeODroidXu3)
+            'Low':   ('127.0.0.1', 0),
+            'Full':  ('127.0.0.1', 0),
+            'High':  ('127.0.0.1', 0),
+            'Super': ('127.0.0.1', 0)
         },
     };
 
@@ -104,7 +104,6 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         self.cUsbReattachCyclesDef = 100;
         self.cUsbReattachCycles    = self.cUsbReattachCyclesDef;
         self.sHostname             = socket.gethostname().lower();
-        self.fUseTxs               = True;
 
     #
     # Overridden methods.
@@ -131,9 +130,6 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         reporter.log('      Default: %s' % (':'.join(str(c) for c in self.asUsbTestsDef)));
         reporter.log('  --usb-reattach-cycles <cycles>');
         reporter.log('      Default: %s' % (self.cUsbReattachCyclesDef));
-        reporter.log('  --local');
-        reporter.log('      Don\'t use TXS for communication with the gadget but do everything');
-        reporter.log('      on this host');
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -199,8 +195,6 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             if self.cUsbReattachCycles <= 0:
                 raise base.InvalidOption('The "--usb-reattach-cycles" value "%s" is zero or negative.' \
                     % (self.cUsbReattachCycles,));
-        elif asArgs[iArg] == '--local':
-            self.fUseTxs = False;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -293,25 +287,23 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         Test VirtualBoxs USB stack in a VM.
         """
         # Get configured USB test devices from hostname we are running on
-        if self.fUseTxs is True:
-            sGadgetHost, sGadgetType = self.getGadgetParams(self.sHostname, sSpeed);
-        else:
-            sGadgetHost = 'dummy';
-            sGadgetType = usbgadget.g_ksGadgetTypeDummyHcd;
+        sGadgetHost, _ = self.getGadgetParams(self.sHostname, sSpeed);
 
-        # Create device filter
-        fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
+        oUsbGadget = usbgadget2.UsbGadget();
+        reporter.log('Connecting to UTS: ' + sGadgetHost);
+        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost);
         if fRc is True:
-            oUsbGadget = usbgadget.UsbGadget();
-            reporter.log('Connecting to gadget: ' + sGadgetType);
-            fRc = oUsbGadget.connectTo(30 * 1000, sGadgetType, self.fUseTxs, sGadgetHost);
+            reporter.log('Connect succeeded');
+            self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost, [], []);
+
+            # Create device filter
+            fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
             if fRc is True:
-                reporter.log('Connect succeeded');
-                fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
+                fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
                 if fRc is True:
 
                     # Wait a moment to let the USB device appear
-                    self.sleep(3);
+                    self.sleep(10);
 
                     tupCmdLine = ('UsbTest', );
                     # Exclude a few tests which hang and cause a timeout, need investigation.
@@ -328,9 +320,11 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
                 oUsbGadget.disconnectFrom();
             else:
-                reporter.testFailure('Failed to connect to USB gadget');
+                reporter.testFailure('Failed to create USB device filter');
+
+            self.oVBox.host.removeUSBDeviceSource(sGadgetHost);
         else:
-            reporter.testFailure('Failed to create USB device filter');
+            reporter.testFailure('Failed to connect to USB gadget');
 
         return fRc;
 
@@ -339,21 +333,19 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         Tests that rapid connect/disconnect cycles work.
         """
         # Get configured USB test devices from hostname we are running on
-        if self.fUseTxs is True:
-            sGadgetHost, sGadgetType = self.getGadgetParams(self.sHostname, sSpeed);
-        else:
-            sGadgetHost = 'dummy';
-            sGadgetType = usbgadget.g_ksGadgetTypeDummyHcd;
+        sGadgetHost, _ = self.getGadgetParams(self.sHostname, sSpeed);
 
-        # Create device filter
-        fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
+        oUsbGadget = usbgadget2.UsbGadget();
+        reporter.log('Connecting to UTS: ' + sGadgetHost);
+        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost);
         if fRc is True:
-            oUsbGadget = usbgadget.UsbGadget();
-            reporter.log('Connecting to gadget: ' + sGadgetType);
-            fRc = oUsbGadget.connectTo(30 * 1000, sGadgetType, self.fUseTxs, sGadgetHost);
+            reporter.log('Connect succeeded');
+            self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost, [], []);
+
+            # Create device filter
+            fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
             if fRc is True:
-                reporter.log('Connect succeeded');
-                fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
+                fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
                 if fRc is True:
 
                     self.sleep(1);

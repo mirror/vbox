@@ -92,15 +92,22 @@ static bool                 g_fTcpStopConnecting    = false;
 
 
 /**
- * Disconnects the current client and frees its data structure.
+ * Disconnects the current client and frees all stashed data.
  */
 static void utsTcpDisconnectClient(PUTSTRANSPORTCLIENT pClient)
 {
-    int rc = RTTcpServerDisconnectClient2(pClient->hTcpClient);
-    AssertRCSuccess(rc);
+    if (pClient->hTcpClient == NIL_RTSOCKET)
+    {
+        int rc = RTTcpServerDisconnectClient2(pClient->hTcpClient);
+        pClient->hTcpClient = NIL_RTSOCKET;
+        AssertRCSuccess(rc);
+    }
+
     if (pClient->pbTcpStashed)
+    {
         RTMemFree(pClient->pbTcpStashed);
-    RTMemFree(pClient);
+        pClient->pbTcpStashed = NULL;
+    }
 }
 
 /**
@@ -157,6 +164,7 @@ static DECLCALLBACK(void) utsTcpNotifyBye(PUTSTRANSPORTCLIENT pClient)
 {
     Log(("utsTcpNotifyBye: utsTcpDisconnectClient %RTsock\n", pClient->hTcpClient));
     utsTcpDisconnectClient(pClient);
+    RTMemFree(pClient);
 }
 
 /**
@@ -346,6 +354,14 @@ static DECLCALLBACK(int) utsTcpPollSetAdd(RTPOLLSET hPollSet, PUTSTRANSPORTCLIEN
 }
 
 /**
+ * @interface_method_impl{UTSTRANSPORT,pfnPollSetRemove}
+ */
+static DECLCALLBACK(int) utsTcpPollSetRemove(RTPOLLSET hPollSet, PUTSTRANSPORTCLIENT pClient, uint32_t idStart)
+{
+    return RTPollSetRemove(hPollSet, idStart);
+}
+
+/**
  * @interface_method_impl{UTSTRANSPORT,pfnPollIn}
  */
 static DECLCALLBACK(bool) utsTcpPollIn(PUTSTRANSPORTCLIENT pClient)
@@ -470,6 +486,7 @@ const UTSTRANSPORT g_TcpTransport =
     /* .pfnWaitForConnect = */ utsTcpWaitForConnect,
     /* .pfnPollIn         = */ utsTcpPollIn,
     /* .pfnPollSetAdd     = */ utsTcpPollSetAdd,
+    /* .pfnPollSetRemove  = */ utsTcpPollSetRemove,
     /* .pfnRecvPkt        = */ utsTcpRecvPkt,
     /* .pfnSendPkt        = */ utsTcpSendPkt,
     /* .pfnBabble         = */ utsTcpBabble,
