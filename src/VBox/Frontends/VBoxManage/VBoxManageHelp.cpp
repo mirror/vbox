@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1338,7 +1338,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--loopback-6 <rule>]\n\n"
                            "%s natnetwork %s      start --netname <name>\n\n"
                            "%s natnetwork %s      stop --netname <name>\n"
-                     "\n", SEP, SEP, SEP, SEP, SEP);
+                           "%s natnetwork %s      list [<pattern>]\n"
+                     "\n", SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP, SEP);
 
 
     }

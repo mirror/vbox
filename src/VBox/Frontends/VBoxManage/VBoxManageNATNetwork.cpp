@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -82,6 +82,80 @@ typedef VPF2ADD::const_iterator VPF2ADDITERATOR;
 
 typedef std::vector<std::string>  LOOPBACK2DELETEADD;
 typedef LOOPBACK2DELETEADD::iterator LOOPBACK2DELETEADDITERATOR;
+
+static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet)
+{
+    HRESULT rc;
+
+    do
+    {
+        Bstr strVal;
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(NetworkName)(strVal.asOutParam()));
+        RTPrintf("Name:        %ls\n", strVal.raw());
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(Network)(strVal.asOutParam()));
+        RTPrintf("Network:     %ls\n", strVal.raw());
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(Gateway)(strVal.asOutParam()));
+        RTPrintf("Gateway:     %ls\n", strVal.raw());
+        BOOL fVal;
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Enabled)(&fVal));
+        RTPrintf("IPv6:        %s\n",  fVal ? "Yes" : "No");
+        if (fVal)
+        {
+            CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Prefix)(strVal.asOutParam()));
+            RTPrintf("IPv6 Prefix: %s\n", strVal.raw());
+        }
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(Enabled)(&fVal));
+        RTPrintf("Enabled:     %s\n",  fVal ? "Yes" : "No");
+        /** @todo Add more information here. */
+        RTPrintf("\n");
+
+    } while (0);
+
+    return rc;
+}
+
+static RTEXITCODE handleList(HandlerArg *a)
+{
+    HRESULT rc;
+
+    RTPrintf("NAT Networks:\n\n");
+
+    const char *pszFilter = NULL;
+    if (a->argc > 1)
+        pszFilter = a->argv[1];
+
+    size_t cFound = 0;
+
+    com::SafeIfaceArray<INATNetwork> arrNetNets;
+    CHECK_ERROR(a->virtualBox, COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(arrNetNets)));
+    for (size_t i = 0; i < arrNetNets.size(); ++i)
+    {
+        ComPtr<INATNetwork> pNATNet = arrNetNets[i];
+
+        if (pszFilter)
+        {
+            Bstr strVal;
+            CHECK_ERROR_BREAK(pNATNet, COMGETTER(NetworkName)(strVal.asOutParam()));
+
+            Utf8Str strValUTF8 = Utf8Str(strVal);
+            if (!RTStrSimplePatternMatch(pszFilter,  strValUTF8.c_str()))
+                continue;
+        }
+
+        if (i > 0)
+            RTPrintf("\n");
+        rc = printNATNetwork(pNATNet);
+        if (FAILED(rc))
+            break;
+
+        cFound++;
+    }
+
+    if (SUCCEEDED(rc))
+        RTPrintf("%zu %s found\n", cFound, cFound == 1 ? "network" : "networks");
+
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
 
 static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
 {
@@ -439,6 +513,8 @@ RTEXITCODE handleNATNetwork(HandlerArg *a)
         rcExit = handleOp(a, OP_START);
     else if (strcmp(a->argv[0], "stop") == 0)
         rcExit = handleOp(a, OP_STOP);
+    else if (strcmp(a->argv[0], "list") == 0)
+        rcExit = handleList(a);
     else
         rcExit = errorSyntax(USAGE_NATNETWORK, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
     return rcExit;
