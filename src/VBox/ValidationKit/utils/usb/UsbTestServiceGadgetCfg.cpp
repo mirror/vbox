@@ -170,7 +170,10 @@ DECLHIDDEN(int) utsGadgetCfgQueryU8Def(PCUTSGADGETCFGITEM paCfg, const char *psz
 
     if (   !pCfgItem
         || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_UINT8)
+    {
         *pu8 = pCfgItem ? pCfgItem->Val.u.u8 : u8Def;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -205,7 +208,10 @@ DECLHIDDEN(int) utsGadgetCfgQueryU16Def(PCUTSGADGETCFGITEM paCfg, const char *ps
 
     if (   !pCfgItem
         || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_UINT16)
+    {
         *pu16 = pCfgItem ? pCfgItem->Val.u.u16 : u16Def;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -240,7 +246,10 @@ DECLHIDDEN(int) utsGadgetCfgQueryU32Def(PCUTSGADGETCFGITEM paCfg, const char *ps
 
     if (   !pCfgItem
         || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_UINT32)
+    {
         *pu32 = pCfgItem ? pCfgItem->Val.u.u32 : u32Def;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -275,7 +284,10 @@ DECLHIDDEN(int) utsGadgetCfgQueryU64Def(PCUTSGADGETCFGITEM paCfg, const char *ps
 
     if (   !pCfgItem
         || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_UINT64)
+    {
         *pu64 = pCfgItem ? pCfgItem->Val.u.u64 : u64Def;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -310,7 +322,10 @@ DECLHIDDEN(int) utsGadgetCfgQueryS8Def(PCUTSGADGETCFGITEM paCfg, const char *psz
 
     if (   !pCfgItem
         || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_INT8)
+    {
         *pi8 = pCfgItem ? pCfgItem->Val.u.i8 : i8Def;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -345,7 +360,10 @@ DECLHIDDEN(int) utsGadgetCfgQueryS16Def(PCUTSGADGETCFGITEM paCfg, const char *ps
 
     if (   !pCfgItem
         || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_INT16)
+    {
         *pi16 = pCfgItem ? pCfgItem->Val.u.i16 : i16Def;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -380,7 +398,10 @@ DECLHIDDEN(int) utsGadgetCfgQueryS32Def(PCUTSGADGETCFGITEM paCfg, const char *ps
 
     if (   !pCfgItem
         || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_INT32)
+    {
         *pi32 = pCfgItem ? pCfgItem->Val.u.i32 : i32Def;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -415,7 +436,10 @@ DECLHIDDEN(int) utsGadgetCfgQueryS64Def(PCUTSGADGETCFGITEM paCfg, const char *ps
 
     if (   !pCfgItem
         || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_INT64)
+    {
         *pi64 = pCfgItem ? pCfgItem->Val.u.i64 : i64Def;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }

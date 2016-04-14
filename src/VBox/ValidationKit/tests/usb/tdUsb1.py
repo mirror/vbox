@@ -294,7 +294,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost);
         if fRc is True:
             reporter.log('Connect succeeded');
-            self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost, [], []);
+            self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);
 
             # Create device filter
             fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
@@ -340,7 +340,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost);
         if fRc is True:
             reporter.log('Connect succeeded');
-            self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost, [], []);
+            self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + ':' + oUsbGadget.getUsbIpPort(), [], []);
 
             # Create device filter
             fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');

@@ -183,8 +183,8 @@ static int utsGadgetClassTestLinkFuncToCfg(PUTSGADGETCLASSINT pClass, const char
                                pClass->pszGadgetPath, pszFunc);
     if (cbStr <= sizeof(aszPathFunc) - 1)
     {
-        cbStr = RTStrPrintf(&aszPathCfg[0], sizeof(aszPathCfg), "%s/configs/%s",
-                            pClass->pszGadgetPath, pszCfg);
+        cbStr = RTStrPrintf(&aszPathCfg[0], sizeof(aszPathCfg), "%s/configs/%s/%s",
+                            pClass->pszGadgetPath, pszCfg, pszFunc);
         if (cbStr <= sizeof(aszPathCfg) - 1)
             rc = RTSymlinkCreate(&aszPathCfg[0], &aszPathFunc[0], RTSYMLINKTYPE_DIR, 0);
         else

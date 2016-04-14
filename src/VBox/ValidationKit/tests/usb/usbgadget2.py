@@ -415,6 +415,11 @@ class TransportBase(object):
                         reporter.fatal('sendMsg: uint32_t payload is out of range: %s' % (hex(o)));
                         return None;
                     abPayload.extend(u32ToByteArray(o));
+                elif isinstance(o, types.IntType):
+                    if o < 0 or o > 0xffffffff:
+                        reporter.fatal('sendMsg: uint32_t payload is out of range: %s' % (hex(o)));
+                        return None;
+                    abPayload.extend(u32ToByteArray(o));
                 elif isinstance(o, array.array):
                     abPayload.extend(o);
                 else:
@@ -626,7 +631,7 @@ class Session(TdTaskBase):
         sOpcode = sOpcode.strip()
         if sOpcode == "ACK":
             return True;
-        return (sOpcode, getSZ(abPayload, 0, sOpcode));
+        return (sOpcode, getSZ(abPayload, 16, sOpcode));
 
     def recvAckLogged(self, sCommand, fNoDataOk = False):
         """
@@ -658,7 +663,7 @@ class Session(TdTaskBase):
             return True;
         if sOpcode == "FALSE":
             return False;
-        reporter.maybeErr(self.fErr, 'recvAckLogged: %s response was %s: %s' % (sCommand, sOpcode, getSZ(abPayload, 0, sOpcode)));
+        reporter.maybeErr(self.fErr, 'recvAckLogged: %s response was %s: %s' % (sCommand, sOpcode, getSZ(abPayload, 16, sOpcode)));
         return None;
 
     def sendMsg(self, sOpcode, aoPayload = (), cMsTimeout = None):
@@ -720,7 +725,7 @@ class Session(TdTaskBase):
         """Greets the UTS"""
         sHostname = socket.gethostname().lower();
         cbFill = 68 - len(sHostname) - 1;
-        rc = self.sendMsg("HOWDY", (long((1 << 16) | 0), long(0x1), long(len(sHostname)), sHostname, zeroByteArray(cbFill)));
+        rc = self.sendMsg("HOWDY", ((1 << 16) | 0, 0x1, len(sHostname), sHostname, zeroByteArray(cbFill)));
         if rc is True:
             rc = self.recvAckLogged("HOWDY", self.fTryConnect);
         if rc is True:
@@ -745,7 +750,7 @@ class Session(TdTaskBase):
 
     def taskGadgetCreate(self, iGadgetType, iGadgetAccess):
         """Creates a new gadget on UTS"""
-        fRc = self.sendMsg("GDGTCRT", (iGadgetType, iGadgetAccess, 0));
+        fRc = self.sendMsg("GDGTCRT", (iGadgetType, iGadgetAccess, 0, 0));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTCRT");
         return fRc;
@@ -841,7 +846,7 @@ class Session(TdTaskBase):
         The task returns True on success and False on failure.
         """
         return self.startTask(cMsTimeout, fIgnoreErrors, "GadgetCreate", self.taskGadgetCreate, \
-                              (long(iGadgetType), long(iGadgetAccess)));
+                              (iGadgetType, iGadgetAccess));
 
     def syncGadgetCreate(self, iGadgetType, iGadgetAccess, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
@@ -856,7 +861,7 @@ class Session(TdTaskBase):
         The task returns True on success and False on failure.
         """
         return self.startTask(cMsTimeout, fIgnoreErrors, "GadgetDestroy", self.taskGadgetDestroy, \
-                              (long(iGadgetId), ));
+                              (iGadgetId, ));
 
     def syncGadgetDestroy(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
@@ -1326,7 +1331,7 @@ class UsbGadget(object):
 
         fRc = False;
         if sImpersonation == g_ksGadgetImpersonationTest:
-            fRc = self.oUtsSession.syncGadgetCreate(g_kiGadgetTypeTest);
+            fRc = self.oUtsSession.syncGadgetCreate(g_kiGadgetTypeTest, g_kiGadgetAccessUsbIp);
         else:
             reporter.log('Invalid or unsupported impersonation');
 
@@ -1357,7 +1362,15 @@ class UsbGadget(object):
                 fDone = self.oUtsSession.waitForTask(30*1000);
                 print 'connect: waitForTask -> %s, result %s' % (fDone, self.oUtsSession.getResult());
                 if fDone is True and self.oUtsSession.isSuccess():
-                    fRc = True;
+                    # Parse the reply.
+                    _, _, abPayload = self.oUtsSession.getLastReply();
+
+                    if getU32(abPayload, 20) is g_kiGadgetAccessUsbIp:
+                        fRc = True;
+                        self.iUsbIpPort = getU32(abPayload, 24);
+                    else:
+                        reporter.log('Gadget doesn\'t support access over USB/IP despite being requested');
+                        fRc = False;
                 else:
                     fRc = False;
             else:
@@ -1375,7 +1388,6 @@ class UsbGadget(object):
         fRc = True;
 
         self._clearImpersonation();
-        self._cleanupGadget();
         if self.oUtsSession is not None:
             fRc = self.oUtsSession.syncDisconnect();
 

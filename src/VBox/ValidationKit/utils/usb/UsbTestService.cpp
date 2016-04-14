@@ -565,7 +565,6 @@ static int utsDoBye(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
         rc = utsReplyAck(pClient, pPktHdr);
     else
         rc = utsReplyBadSize(pClient, pPktHdr, sizeof(UTSPKTHDR));
-    g_pTransport->pfnNotifyBye(pClient->pTransportClient);
     return rc;
 }
 

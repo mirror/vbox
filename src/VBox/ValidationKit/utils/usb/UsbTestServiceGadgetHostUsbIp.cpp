@@ -28,6 +28,8 @@
 #include <iprt/mem.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
+#include <iprt/time.h>
 #include <iprt/types.h>
 
 #include "UsbTestServiceGadgetHostInternal.h"
@@ -97,7 +99,7 @@ static DECLCALLBACK(int) utsGadgetHostUsbIpInit(PUTSGADGETHOSTTYPEINT pIf, PCUTS
     pIf->hProcUsbIp = NIL_RTPROCESS;
 
     rc = utsGadgetCfgQueryU16Def(paCfg, "UsbIp/Port", &uPort, UTS_GADGET_HOST_USBIP_PORT_DEF);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Make sure the kernel drivers are loaded. */
         rc = utsGadgetHostUsbIpLoadModule("usbip-core");
@@ -106,23 +108,40 @@ static DECLCALLBACK(int) utsGadgetHostUsbIpInit(PUTSGADGETHOSTTYPEINT pIf, PCUTS
             rc = utsGadgetHostUsbIpLoadModule("usbip-host");
             if (RT_SUCCESS(rc))
             {
-                char aszPort[10];
-                char aszPidFile[64];
-                const char *apszArgv[6];
-
-                RTStrPrintf(aszPort, RT_ELEMENTS(aszPort), "%u", uPort);
-                RTStrPrintf(aszPidFile, RT_ELEMENTS(aszPidFile), "/var/run/usbipd-%u.pid", uPort);
-                /* Start the USB/IP server process. */
-                apszArgv[0] = "usbipd";
-                apszArgv[1] = "--tcp-port";
-                apszArgv[2] = aszPort;
-                apszArgv[3] = "--pid";
-                apszArgv[4] = aszPidFile;
-                apszArgv[5] = NULL;
-                rc = RTProcCreate("usbipd", apszArgv, RTENV_DEFAULT, RTPROC_FLAGS_SEARCH_PATH, &pIf->hProcUsbIp);
+                rc = utsGadgetHostUsbIpLoadModule("libcomposite");
                 if (RT_SUCCESS(rc))
                 {
-                    /* We are done setting it up at the moment. */
+                    char aszPort[10];
+                    char aszPidFile[64];
+                    const char *apszArgv[6];
+
+                    RTStrPrintf(aszPort, RT_ELEMENTS(aszPort), "%u", uPort);
+                    RTStrPrintf(aszPidFile, RT_ELEMENTS(aszPidFile), "/var/run/usbipd-%u.pid", uPort);
+                    /* Start the USB/IP server process. */
+                    apszArgv[0] = "usbipd";
+                    apszArgv[1] = "--tcp-port";
+                    apszArgv[2] = aszPort;
+                    apszArgv[3] = "--pid";
+                    apszArgv[4] = aszPidFile;
+                    apszArgv[5] = NULL;
+                    rc = RTProcCreate("usbipd", apszArgv, RTENV_DEFAULT, RTPROC_FLAGS_SEARCH_PATH, &pIf->hProcUsbIp);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Wait for a bit to make sure the server started up successfully. */
+                        uint64_t tsStart = RTTimeMilliTS();
+                        do
+                        {
+                            RTPROCSTATUS ProcSts;
+                            rc = RTProcWait(pIf->hProcUsbIp, RTPROCWAIT_FLAGS_NOBLOCK, &ProcSts);
+                            if (rc != VERR_PROCESS_RUNNING)
+                            {
+                                rc = VERR_INVALID_HANDLE;
+                                break;
+                            }
+                            RTThreadSleep(1);
+                            rc = VINF_SUCCESS;
+                        } while (RTTimeMilliTS() - tsStart < 2 * 1000); /* 2 seconds. */
+                    }
                 }
             }
         }
@@ -137,8 +156,11 @@ static DECLCALLBACK(int) utsGadgetHostUsbIpInit(PUTSGADGETHOSTTYPEINT pIf, PCUTS
  */
 static DECLCALLBACK(void) utsGadgetHostUsbIpTerm(PUTSGADGETHOSTTYPEINT pIf)
 {
-    /* Kill the process. */
+    /* Kill the process and wait for it to terminate. */
     RTProcTerminate(pIf->hProcUsbIp);
+
+    RTPROCSTATUS ProcSts;
+    RTProcWait(pIf->hProcUsbIp, RTPROCWAIT_FLAGS_BLOCK, &ProcSts);
 }
 
 
