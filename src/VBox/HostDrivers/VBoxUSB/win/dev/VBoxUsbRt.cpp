@@ -896,6 +896,11 @@ static NTSTATUS vboxUsbRtDispatchUsbSelectInterface(PVBOXUSBDEV_EXT pDevExt, PIR
 
 static HANDLE vboxUsbRtGetPipeHandle(PVBOXUSBDEV_EXT pDevExt, uint32_t EndPointAddress)
 {
+    if (EndPointAddress == 0)
+    {
+        return pDevExt->Rt.hPipe0;
+    }
+
     for (ULONG i = 0; i < pDevExt->Rt.uNumInterfaces; i++)
     {
         for (ULONG j = 0; j < pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo->NumberOfPipes; j++)
@@ -1082,6 +1087,18 @@ static NTSTATUS vboxUsbRtUrbSendCompletion(PDEVICE_OBJECT pDevObj, IRP *pIrp, vo
                  * data length is therefore urb->len - 8
                  */
                 pUrbInfo->len += sizeof (pUrb->UrbControlTransfer.SetupPacket);
+
+                /* If a control URB was successfully completed on the default control
+                 * pipe, stash away the handle. When submitting the URB, we don't need 
+                 * to know (and initially don't have) the handle. If we want to abort 
+                 * the default control pipe, we *have* to have a handle. This is how we 
+                 * find out what the handle is. 
+                 */
+                if (!pUrbInfo->ep && (pDevExt->Rt.hPipe0 == NULL))
+                {
+                    pDevExt->Rt.hPipe0 = pUrb->UrbControlTransfer.PipeHandle;
+                }
+
                 break;
             case USBSUP_TRANSFER_TYPE_ISOC:
                 pUrbInfo->len = pUrb->UrbIsochronousTransfer.TransferBufferLength;

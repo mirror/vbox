@@ -35,6 +35,7 @@ typedef struct VBOXUSB_RT
 {
     UNICODE_STRING                  IfName;
 
+    HANDLE                          hPipe0;
     HANDLE                          hConfiguration;
     uint32_t                        uConfigValue;
 
