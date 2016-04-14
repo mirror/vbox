@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2015 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -906,7 +906,7 @@ static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
     /*
      * Create a guest session.
      */
-    if (pCtx->cVerbose > 1)
+    if (pCtx->cVerbose)
         RTPrintf("Creating guest session as user '%s'...\n", pCtx->strUsername.c_str());
     try
     {
@@ -926,7 +926,7 @@ static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
         /*
          * Wait for guest session to start.
          */
-        if (pCtx->cVerbose > 1)
+        if (pCtx->cVerbose)
             RTPrintf("Waiting for guest session to start...\n");
         GuestSessionWaitResult_T enmWaitResult;
         try
@@ -954,7 +954,7 @@ static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
                 CHECK_ERROR(pCtx->pGuestSession, COMGETTER(Id)(&pCtx->uSessionID));
                 if (SUCCEEDED(rc))
                 {
-                    if (pCtx->cVerbose > 1)
+                    if (pCtx->cVerbose)
                         RTPrintf("Successfully started guest session (ID %RU32)\n", pCtx->uSessionID);
                     RTStrFree(pszSessionName);
                     return RTEXITCODE_SUCCESS;
@@ -1063,13 +1063,13 @@ static void gctlCtxTerm(PGCTLCMDCTX pCtx)
         if (   !(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS)
             && !pCtx->fDetachGuestSession)
         {
-            if (pCtx->cVerbose > 1)
+            if (pCtx->cVerbose)
                 RTPrintf("Closing guest session ...\n");
 
             CHECK_ERROR(pCtx->pGuestSession, Close());
         }
         else if (   pCtx->fDetachGuestSession
-                 && pCtx->cVerbose > 1)
+                 && pCtx->cVerbose)
             RTPrintf("Guest session detached\n");
 
         pCtx->pGuestSession.setNull();
@@ -1497,7 +1497,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
             /*
              * Create the process.
              */
-            if (pCtx->cVerbose > 1)
+            if (pCtx->cVerbose)
             {
                 if (cMsTimeout == 0)
                     RTPrintf("Starting guest process ...\n");
@@ -1523,7 +1523,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
 
             ULONG uPID = 0;
             CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
-            if (fRunCmd && pCtx->cVerbose > 1)
+            if (fRunCmd && pCtx->cVerbose)
                 RTPrintf("Process '%s' (PID %RU32) started\n", pszImage, uPID);
             else if (!fRunCmd && pCtx->cVerbose)
             {
@@ -1561,7 +1561,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                         fReadStdErr = true;
                         break;
                     case ProcessWaitResult_Terminate:
-                        if (pCtx->cVerbose > 1)
+                        if (pCtx->cVerbose)
                             RTPrintf("Process terminated\n");
                         /* Process terminated, we're done. */
                         fCompleted = true;
@@ -1636,13 +1636,13 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
              */
             if (g_fGuestCtrlCanceled)
             {
-                if (pCtx->cVerbose > 1)
+                if (pCtx->cVerbose)
                     RTPrintf("Process execution aborted!\n");
                 rcExit = EXITCODEEXEC_CANCELED;
             }
             else if (fCompletedStartCmd)
             {
-                if (pCtx->cVerbose > 1)
+                if (pCtx->cVerbose)
                     RTPrintf("Process successfully started!\n");
                 rcExit = RTEXITCODE_SUCCESS;
             }
@@ -1656,7 +1656,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                 {
                     LONG lExitCode;
                     CHECK_ERROR_BREAK(pProcess, COMGETTER(ExitCode)(&lExitCode));
-                    if (pCtx->cVerbose > 1)
+                    if (pCtx->cVerbose)
                         RTPrintf("Exit code=%u (Status=%u [%s])\n",
                                  lExitCode, procStatus, gctlProcessStatusToText(procStatus));
 
@@ -1665,7 +1665,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                 else if (   procStatus == ProcessStatus_TimedOutKilled
                          || procStatus == ProcessStatus_TimedOutAbnormally)
                 {
-                    if (pCtx->cVerbose > 1)
+                    if (pCtx->cVerbose)
                         RTPrintf("Process timed out (guest side) and %s\n",
                                  procStatus == ProcessStatus_TimedOutAbnormally
                                  ? "failed to terminate so far" : "was terminated");
@@ -1673,20 +1673,20 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                 }
                 else
                 {
-                    if (pCtx->cVerbose > 1)
+                    if (pCtx->cVerbose)
                         RTPrintf("Process now is in status [%s] (unexpected)\n", gctlProcessStatusToText(procStatus));
                     rcExit = RTEXITCODE_FAILURE;
                 }
             }
             else if (RT_FAILURE_NP(vrc))
             {
-                if (pCtx->cVerbose > 1)
+                if (pCtx->cVerbose)
                     RTPrintf("Process monitor loop quit with vrc=%Rrc\n", vrc);
                 rcExit = RTEXITCODE_FAILURE;
             }
             else
             {
-                if (pCtx->cVerbose > 1)
+                if (pCtx->cVerbose)
                     RTPrintf("Process monitor loop timed out\n");
                 rcExit = EXITCODEEXEC_TIMEOUT;
             }
@@ -1940,7 +1940,7 @@ static int gctlCopyDirCreate(PCOPYCONTEXT pContext, const char *pszDir)
     if (   RT_SUCCESS(vrc)
         && fDirExists)
     {
-        if (pContext->pCmdCtx->cVerbose > 1)
+        if (pContext->pCmdCtx->cVerbose)
             RTPrintf("Directory \"%s\" already exists\n", pszDir);
         return VINF_SUCCESS;
     }
@@ -1950,7 +1950,7 @@ static int gctlCopyDirCreate(PCOPYCONTEXT pContext, const char *pszDir)
     if (RT_FAILURE(vrc))
         return vrc;
 
-    if (pContext->pCmdCtx->cVerbose > 1)
+    if (pContext->pCmdCtx->cVerbose)
         RTPrintf("Creating directory \"%s\" ...\n", pszDir);
 
     if (pContext->fDryRun)
@@ -2126,9 +2126,8 @@ static int gctlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
     AssertPtrReturn(pszFileDest, VERR_INVALID_POINTER);
     AssertReturn(enmFlags == kGctlCopyFlags_None, VERR_INVALID_PARAMETER); /* No flags supported yet. */
 
-    if (pContext->pCmdCtx->cVerbose > 1)
-        RTPrintf("Copying \"%s\" to \"%s\" ...\n",
-                 pszFileSource, pszFileDest);
+    if (pContext->pCmdCtx->cVerbose)
+        RTPrintf("Copying \"%s\" to \"%s\" ...\n", pszFileSource, pszFileDest);
 
     if (pContext->fDryRun)
         return VINF_SUCCESS;
@@ -2157,7 +2156,7 @@ static int gctlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
     }
     else
     {
-        if (pContext->pCmdCtx->cVerbose > 1)
+        if (pContext->pCmdCtx->cVerbose)
             rc = showProgress(pProgress);
         else
             rc = pProgress->WaitForCompletion(-1 /* No timeout */);
@@ -2200,7 +2199,7 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
     if (RT_SUCCESS(vrc) && pszSubDir)
         vrc = RTPathAppend(szCurDir, sizeof(szCurDir), pszSubDir);
 
-    if (pContext->pCmdCtx->cVerbose > 1)
+    if (pContext->pCmdCtx->cVerbose)
         RTPrintf("Processing host directory: %s\n", szCurDir);
 
     /* Flag indicating whether the current directory was created on the
@@ -2245,7 +2244,7 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
                         || !strcmp(DirEntry.szName, ".."))
                         break;
 
-                    if (pContext->pCmdCtx->cVerbose > 1)
+                    if (pContext->pCmdCtx->cVerbose)
                         RTPrintf("Directory: %s\n", DirEntry.szName);
 
                     if (enmFlags & kGctlCopyFlags_Recursive)
@@ -2289,7 +2288,7 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
                         break; /* Filter does not match. */
                     }
 
-                    if (pContext->pCmdCtx->cVerbose > 1)
+                    if (pContext->pCmdCtx->cVerbose)
                         RTPrintf("File: %s\n", DirEntry.szName);
 
                     if (!fDirCreated)
@@ -2372,7 +2371,7 @@ static int gctlCopyDirToHost(PCOPYCONTEXT pContext,
     if (RT_FAILURE(vrc))
         return vrc;
 
-    if (pContext->pCmdCtx->cVerbose > 1)
+    if (pContext->pCmdCtx->cVerbose)
         RTPrintf("Processing guest directory: %s\n", szCurDir);
 
     /* Flag indicating whether the current directory was created on the
@@ -2409,7 +2408,7 @@ static int gctlCopyDirToHost(PCOPYCONTEXT pContext,
                     || !strName.compare(Bstr("..")))
                     break;
 
-                if (pContext->pCmdCtx->cVerbose > 1)
+                if (pContext->pCmdCtx->cVerbose)
                 {
                     Utf8Str strDir(strName);
                     RTPrintf("Directory: %s\n", strDir.c_str());
@@ -2459,7 +2458,7 @@ static int gctlCopyDirToHost(PCOPYCONTEXT pContext,
                     break; /* Filter does not match. */
                 }
 
-                if (pContext->pCmdCtx->cVerbose > 1)
+                if (pContext->pCmdCtx->cVerbose)
                     RTPrintf("File: %s\n", strFile.c_str());
 
                 if (!fDirCreated)
@@ -2731,7 +2730,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     /*
      * Done parsing arguments, do some more preparations.
      */
-    if (pCtx->cVerbose > 1)
+    if (pCtx->cVerbose)
     {
         if (fHostToGuest)
             RTPrintf("Copying from host to guest ...\n");
@@ -2803,7 +2802,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                 break;
             }
 
-            if (pCtx->cVerbose > 1)
+            if (pCtx->cVerbose)
                 RTPrintf("Source: %s\n", pszSource);
 
             /** @todo Files with filter?? */
@@ -2941,7 +2940,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrtMkDir(PGCTLCMDCTX pCtx, int argc, char
                     rcExit = gctlCtxPostOptionParsingInit(pCtx);
                     if (rcExit != RTEXITCODE_SUCCESS)
                         return rcExit;
-                    if (pCtx->cVerbose > 1)
+                    if (pCtx->cVerbose)
                         RTPrintf("Creating %RU32 directories...\n", argc - GetState.iNext + 1);
                 }
                 if (g_fGuestCtrlCanceled)
@@ -2957,7 +2956,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrtMkDir(PGCTLCMDCTX pCtx, int argc, char
                  * how /bin/mkdir works on unix.
                  */
                 cDirsCreated++;
-                if (pCtx->cVerbose > 1)
+                if (pCtx->cVerbose)
                     RTPrintf("Creating directory \"%s\" ...\n", ValueUnion.psz);
                 try
                 {
@@ -3024,7 +3023,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx, int argc, char
                     rcExit = gctlCtxPostOptionParsingInit(pCtx);
                     if (rcExit != RTEXITCODE_SUCCESS)
                         return rcExit;
-                    if (pCtx->cVerbose > 1)
+                    if (pCtx->cVerbose)
                         RTPrintf("Removing %RU32 directorie%ss...\n", argc - GetState.iNext + 1, fRecursive ? "trees" : "");
                 }
                 if (g_fGuestCtrlCanceled)
@@ -3038,7 +3037,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx, int argc, char
                     /*
                      * Remove exactly one directory.
                      */
-                    if (pCtx->cVerbose > 1)
+                    if (pCtx->cVerbose)
                         RTPrintf("Removing directory \"%s\" ...\n", ValueUnion.psz);
                     try
                     {
@@ -3057,7 +3056,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx, int argc, char
                      * CMD.EXE "rmdir /s" operation, a tradition which jpsoft's TCC
                      * strongly warns against (and half-ways questions the sense of).
                      */
-                    if (pCtx->cVerbose > 1)
+                    if (pCtx->cVerbose)
                         RTPrintf("Recursively removing directory \"%s\" ...\n", ValueUnion.psz);
                     try
                     {
@@ -3071,7 +3070,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx, int argc, char
                                                                                   ptrProgress.asOutParam()));
                         if (SUCCEEDED(rc))
                         {
-                            if (pCtx->cVerbose > 1)
+                            if (pCtx->cVerbose)
                                 rc = showProgress(ptrProgress);
                             else
                                 rc = ptrProgress->WaitForCompletion(-1 /* indefinitely */);
@@ -3139,7 +3138,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx, int argc, char **
                     rcExit = gctlCtxPostOptionParsingInit(pCtx);
                     if (rcExit != RTEXITCODE_SUCCESS)
                         return rcExit;
-                    if (pCtx->cVerbose > 1)
+                    if (pCtx->cVerbose)
                         RTPrintf("Removing %RU32 file(s)...\n", argc - GetState.iNext + 1);
                 }
                 if (g_fGuestCtrlCanceled)
@@ -3153,7 +3152,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx, int argc, char **
                  * by unix traditions force us to ignore errors and continue.
                  */
                 cFilesDeleted++;
-                if (pCtx->cVerbose > 1)
+                if (pCtx->cVerbose)
                     RTPrintf("Removing file \"%s\" ...\n", ValueUnion.psz);
                 try
                 {
@@ -3264,7 +3263,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
     /*
      * Rename (move) the entries.
      */
-    if (pCtx->cVerbose > 1)
+    if (pCtx->cVerbose)
         RTPrintf("Renaming %RU32 %s ...\n", cSources, cSources > 1 ? "entries" : "entry");
 
     std::vector< Utf8Str >::iterator it = vecSources.begin();
@@ -3280,14 +3279,14 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
             rc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
         if (FAILED(rc))
         {
-            if (pCtx->cVerbose > 1)
+            if (pCtx->cVerbose)
                 RTPrintf("Warning: Cannot stat for element \"%s\": No such element\n",
                          strCurSource.c_str());
             ++it;
             continue; /* Skip. */
         }
 
-        if (pCtx->cVerbose > 1)
+        if (pCtx->cVerbose)
             RTPrintf("Renaming %s \"%s\" to \"%s\" ...\n",
                      enmObjType == FsObjType_Directory ? "directory" : "file",
                      strCurSource.c_str(), pszDst);
@@ -3320,7 +3319,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
     }
 
     if (   (it != vecSources.end())
-        && pCtx->cVerbose > 1)
+        && pCtx->cVerbose)
     {
         RTPrintf("Warning: Not all sources were renamed\n");
     }
@@ -3407,7 +3406,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, cha
     /*
      * Create the directories.
      */
-    if (pCtx->cVerbose > 1)
+    if (pCtx->cVerbose)
     {
         if (fDirectory && !strTempDir.isEmpty())
             RTPrintf("Creating temporary directory from template '%s' in directory '%s' ...\n",
@@ -3505,7 +3504,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
     DESTDIRMAPITER it = mapObjs.begin();
     while (it != mapObjs.end())
     {
-        if (pCtx->cVerbose > 1)
+        if (pCtx->cVerbose)
             RTPrintf("Checking for element \"%s\" ...\n", it->first.c_str());
 
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
@@ -3514,7 +3513,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
         {
             /* If there's at least one element which does not exist on the guest,
              * drop out with exitcode 1. */
-            if (pCtx->cVerbose > 1)
+            if (pCtx->cVerbose)
                 RTPrintf("Cannot stat for element \"%s\": No such element\n",
                          it->first.c_str());
             rcExit = RTEXITCODE_FAILURE;
@@ -3603,7 +3602,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
         }
     }
 
-    if (pCtx->cVerbose > 1)
+    if (pCtx->cVerbose)
         RTPrintf("Updating Guest Additions ...\n");
 
     HRESULT rc = S_OK;
@@ -3631,7 +3630,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
 
     if (RT_SUCCESS(vrc))
     {
-        if (pCtx->cVerbose > 1)
+        if (pCtx->cVerbose)
             RTPrintf("Using source: %s\n", strSource.c_str());
 
 
@@ -3644,7 +3643,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
         if (fWaitStartOnly)
         {
             aUpdateFlags.push_back(AdditionsUpdateFlag_WaitForUpdateStartOnly);
-            if (pCtx->cVerbose > 1)
+            if (pCtx->cVerbose)
                 RTPrintf("Preparing and waiting for Guest Additions installer to start ...\n");
         }
 
@@ -3658,7 +3657,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
             vrc = gctlPrintError(pCtx->pGuest, COM_IIDOF(IGuest));
         else
         {
-            if (pCtx->cVerbose > 1)
+            if (pCtx->cVerbose)
                 rc = showProgress(pProgress);
             else
                 rc = pProgress->WaitForCompletion(-1 /* No timeout */);
@@ -3667,7 +3666,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
                 CHECK_PROGRESS_ERROR(pProgress, ("Guest additions update failed"));
             vrc = gctlPrintProgressError(pProgress);
             if (   RT_SUCCESS(vrc)
-                && pCtx->cVerbose > 1)
+                && pCtx->cVerbose)
             {
                 RTPrintf("Guest Additions update successful\n");
             }
@@ -3994,7 +3993,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx, int arg
 
                     if (fProcFound)
                     {
-                        if (pCtx->cVerbose > 1)
+                        if (pCtx->cVerbose)
                             RTPrintf("Terminating process (PID %RU32) (session ID %RU32) ...\n",
                                      uPID, uID);
                         CHECK_ERROR_BREAK(pProcess, Terminate());
@@ -4132,11 +4131,11 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseSession(PGCTLCMDCTX pCtx, int arg
                 cSessionsHandled++;
 
                 Assert(!pSession.isNull());
-                if (pCtx->cVerbose > 1)
+                if (pCtx->cVerbose)
                     RTPrintf("Closing guest session ID=#%RU32 \"%s\" ...\n",
                              uID, strNameUtf8.c_str());
                 CHECK_ERROR_BREAK(pSession, Close());
-                if (pCtx->cVerbose > 1)
+                if (pCtx->cVerbose)
                     RTPrintf("Guest session successfully closed\n");
 
                 pSession.setNull();
@@ -4216,7 +4215,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
 
         } while (0);
 
-        if (pCtx->cVerbose > 1)
+        if (pCtx->cVerbose)
             RTPrintf("Waiting for events ...\n");
 
         while (!g_fGuestCtrlCanceled)
@@ -4225,7 +4224,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
             RTThreadSleep(10);
         }
 
-        if (pCtx->cVerbose > 1)
+        if (pCtx->cVerbose)
             RTPrintf("Signal caught, exiting ...\n");
 
         if (!pGuestListener.isNull())
