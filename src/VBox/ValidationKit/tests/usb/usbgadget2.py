@@ -31,14 +31,12 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import array
 import errno
-import os
 import select
 import socket
 import threading
 import time
 import types
 import zlib
-import uuid
 
 # Validation Kit imports.
 from common     import utils;
@@ -750,28 +748,28 @@ class Session(TdTaskBase):
         fRc = self.sendMsg("GDGTCRT", (iGadgetType, iGadgetAccess, 0));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTCRT");
-        return rc;
+        return fRc;
 
     def taskGadgetDestroy(self, iGadgetId):
         """Destroys the given gadget handle on UTS"""
         fRc = self.sendMsg("GDGTDTOR", (iGadgetId, ));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTDTOR");
-        return rc;
+        return fRc;
 
     def taskGadgetConnect(self, iGadgetId):
         """Connects the given gadget handle on UTS"""
         fRc = self.sendMsg("GDGTCNCT", (iGadgetId, ));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTCNCT");
-        return rc;
+        return fRc;
 
     def taskGadgetDisconnect(self, iGadgetId):
         """Disconnects the given gadget handle from UTS"""
         fRc = self.sendMsg("GDGTDCNT", (iGadgetId, ));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTDCNT");
-        return rc;
+        return fRc;
 
     #
     # Public methods - generic task queries
