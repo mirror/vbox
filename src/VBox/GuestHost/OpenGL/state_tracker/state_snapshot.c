@@ -1858,7 +1858,10 @@ int32_t crStateLoadGlobals(PSSMHANDLE pSSM, uint32_t u32Version)
 
 AssertCompile(VBOXTLSREFDATA_SIZE() <= CR_MAX_BITARRAY);
 AssertCompile(VBOXTLSREFDATA_STATE_INITIALIZED != 0);
-AssertCompile(RT_OFFSETOF(CRContext, shared) >= VBOXTLSREFDATA_OFFSET(CRContext) + VBOXTLSREFDATA_SIZE() + RT_SIZEOFMEMB(CRContext, bitid) + RT_SIZEOFMEMB(CRContext, neg_bitid));
+AssertCompile(RTASSERT_OFFSET_OF(CRContext, shared) >= VBOXTLSREFDATA_ASSERT_OFFSET(CRContext)
+                                                     + VBOXTLSREFDATA_SIZE()
+                                                     + RT_SIZEOFMEMB(CRContext, bitid)
+                                                     + RT_SIZEOFMEMB(CRContext, neg_bitid));
 
 int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRSTATE_CONTEXT_GET pfnCtxGet, PSSMHANDLE pSSM, uint32_t u32Version)
 {

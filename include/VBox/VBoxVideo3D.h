@@ -68,6 +68,7 @@ struct VBOXTLSREFDATA_DUMMY
 };
 
 #define VBOXTLSREFDATA_OFFSET(_t) RT_OFFSETOF(_t, cTlsRefs)
+#define VBOXTLSREFDATA_ASSERT_OFFSET(_t) RTASSERT_OFFSET_OF(_t, cTlsRefs)
 #define VBOXTLSREFDATA_SIZE() (sizeof (struct VBOXTLSREFDATA_DUMMY))
 #define VBOXTLSREFDATA_COPY(_pDst, _pSrc) do { \
         (_pDst)->cTlsRefs = (_pSrc)->cTlsRefs; \
