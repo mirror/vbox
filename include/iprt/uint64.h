@@ -798,9 +798,8 @@ DECLINLINE(PRTUINT64U) RTUInt64AssignShiftLeft(PRTUINT64U pValueResult, int cBit
     if (cBits > 0)
     {
         /* (left shift) */
-        if (cBits >= 64)
-            RTUInt64SetZero(pValueResult);
-        else if (cBits >= 32)
+        cBits &= 31
+        if (cBits >= 32)
         {
             pValueResult->s.Lo  = 0;
             pValueResult->s.Hi  = InVal.s.Lo << (cBits - 32);
@@ -816,9 +815,8 @@ DECLINLINE(PRTUINT64U) RTUInt64AssignShiftLeft(PRTUINT64U pValueResult, int cBit
     {
         /* (right shift) */
         cBits = -cBits;
-        if (cBits >= 64)
-            RTUInt64SetZero(pValueResult);
-        else if (cBits >= 32)
+        cBits &= 31
+        if (cBits >= 32)
         {
             pValueResult->s.Hi  = 0;
             pValueResult->s.Lo  = InVal.s.Hi >> (cBits - 32);
@@ -1047,7 +1045,7 @@ DECLINLINE(PRTUINT64U) RTUInt64BitSet(PRTUINT64U pValueResult, unsigned iBit)
     else if (iBit < 64)
     {
 #if ARCH_BITS >= 32
-        pValueResult->s.Hi |= UINT16_C(1) << (iBit - 32);
+        pValueResult->s.Hi |= RT_BIT_32(iBit - 32);
 #else
         if (iBit < 48)
             pValueResult->Words.w2 |= UINT16_C(1) << (iBit - 64);
@@ -1118,7 +1116,7 @@ DECLINLINE(bool) RTUInt64BitTest(PRTUINT64U pValueResult, unsigned iBit)
     else if (iBit < 64)
     {
 #if ARCH_BITS >= 32
-        fRc = RT_BOOL(pValueResult->s.Hi & RT_BIT_64(iBit - 64));
+        fRc = RT_BOOL(pValueResult->s.Hi & RT_BIT_32(iBit - 32));
 #else
         if (iBit < 48)
             fRc = RT_BOOL(pValueResult->Words.w2 & (UINT16_C(1) << (iBit - 32)));

@@ -68,7 +68,12 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	pcibios.c \
  	pciutil.c \
  	vds.c \
- 	../../BiosCommonCode/support.asm \
+ 	../../BiosCommonCode/__U4M.asm \
+ 	../../BiosCommonCode/__U4D.asm \
+ 	../../BiosCommonCode/__U8RS.asm \
+ 	../../BiosCommonCode/__U8LS.asm \
+ 	../../BiosCommonCode/fmemset.asm \
+ 	../../BiosCommonCode/fmemcpy.asm \
  	pcibio32.asm \
  	apm_pm.asm \
  	$(VBoxPcBios32_0_OUTDIR)/VBoxPcBios32.lib \
@@ -81,15 +86,23 @@ ifdef VBOX_WITH_OPEN_WATCOM
  VBoxPcBios32_SOURCES = \
        pci32.c
 
+ ../../BiosCommonCode/DoUInt32Div.c_CFLAGS = -mc # asm.h and uint32.h both require far data pointers by default.
+
  MISCBINS += VBoxPcBios286
  VBoxPcBios286_EXTENDS = VBoxPcBios386
  VBoxPcBios286_CFLAGS  = -2
  VBoxPcBios286_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxPcBios386_DEFS)) VBOX_BIOS_CPU=80286
+ VBoxPcBios286_SOURCES = $(VBoxPcBios386_SOURCES) \
+ 	../../BiosCommonCode/DoUInt32Div.c \
+       ../../BiosCommonCode/ASMBitLastSetU16.asm
 
  MISCBINS += VBoxPcBios8086
  VBoxPcBios8086_EXTENDS = VBoxPcBios386
  VBoxPcBios8086_CFLAGS  = -0
  VBoxPcBios8086_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxPcBios386_DEFS)) VBOX_BIOS_CPU=8086
+ VBoxPcBios8086_SOURCES = $(VBoxPcBios386_SOURCES) \
+ 	../../BiosCommonCode/DoUInt32Div.c \
+       ../../BiosCommonCode/ASMBitLastSetU16.asm
 
 
  #
