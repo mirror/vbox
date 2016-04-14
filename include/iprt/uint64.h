@@ -798,7 +798,7 @@ DECLINLINE(PRTUINT64U) RTUInt64AssignShiftLeft(PRTUINT64U pValueResult, int cBit
     if (cBits > 0)
     {
         /* (left shift) */
-        cBits &= 31
+        cBits &= 31;
         if (cBits >= 32)
         {
             pValueResult->s.Lo  = 0;
@@ -815,7 +815,7 @@ DECLINLINE(PRTUINT64U) RTUInt64AssignShiftLeft(PRTUINT64U pValueResult, int cBit
     {
         /* (right shift) */
         cBits = -cBits;
-        cBits &= 31
+        cBits &= 31;
         if (cBits >= 32)
         {
             pValueResult->s.Hi  = 0;

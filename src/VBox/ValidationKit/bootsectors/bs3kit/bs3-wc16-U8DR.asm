@@ -76,8 +76,10 @@ $_?U8DRE:
         add     bp, 10h                 ; Correct bp.
 
         ; The divisor.
-        push    dword [es:si + 4]
-        push    dword [es:si]
+        push    word [es:si + 6]
+        push    word [es:si + 4]
+        push    word [es:si + 2]
+        push    word [es:si]
 
         ; The dividend.
         push    dx
@@ -93,7 +95,8 @@ $_?U8DRE:
         mov     cx, [bp - 10h + 8 + 2]
         mov     dx, [bp - 10h + 8]
 
-        leave
+        mov     sp, bp
+        pop     bp
         pop     es
         pop     ds
         ret

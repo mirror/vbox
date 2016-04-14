@@ -928,8 +928,8 @@ DECLINLINE(PRTUINT32U) RTUInt32BitSetRange(PRTUINT32U pValueResult, unsigned iFi
  */
 DECLINLINE(bool) RTUInt32BitAreAllSet(PRTUINT32U pValue)
 {
-    return pValue->s.Hi == UINT32_MAX
-        && pValue->s.Lo == UINT32_MAX;
+    return pValue->s.Hi == UINT16_MAX
+        && pValue->s.Lo == UINT16_MAX;
 }
 
 

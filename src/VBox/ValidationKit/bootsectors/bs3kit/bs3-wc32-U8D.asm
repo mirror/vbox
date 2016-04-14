@@ -50,7 +50,7 @@ $??U8D:
         ; Pointer to the return buffer.
         push    esp
 
-        ; The dividend.
+        ; The divisor.
         push    ecx
         push    ebx
 

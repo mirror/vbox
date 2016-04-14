@@ -76,8 +76,10 @@ $_?U8DQE:
         add     bp, 10h                 ; Correct bp.
 
         ; The divisor.
-        push    dword [es:si + 4]
-        push    dword [es:si]
+        push    word [es:si + 6]
+        push    word [es:si + 4]
+        push    word [es:si + 2]
+        push    word [es:si]
 
         ; The dividend.
         push    dx
@@ -88,12 +90,13 @@ $_?U8DQE:
         call    Bs3UInt64Div
 
         ; Load the quotient.
-        mov     ax, [bp - 10h + 8 + 6]
-        mov     bx, [bp - 10h + 8 + 4]
-        mov     cx, [bp - 10h + 8 + 2]
-        mov     dx, [bp - 10h + 8]
+        mov     ax, [bp - 10h + 6]
+        mov     bx, [bp - 10h + 4]
+        mov     cx, [bp - 10h + 2]
+        mov     dx, [bp - 10h]
 
-        leave
+        mov     sp, bp
+        pop     bp
         pop     es
         pop     ds
         ret

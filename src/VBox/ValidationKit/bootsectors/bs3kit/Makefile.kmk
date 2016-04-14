@@ -164,6 +164,8 @@ bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 	bs3-cmn-CpuDetectData.c \
 	bs3-cmn-PerCpuData.c \
 	bs3-cmn-ConvertRMStackToP16UsingCxReturnToAx.asm \
+	bs3-cmn-UInt64Div.c \
+	bs3-cmn-UInt32Div.c \
 	bs3-wc16-U8DR.asm \
 	bs3-wc16-U8DQ.asm \
 	bs3-wc16-I8DR.asm \
@@ -174,6 +176,7 @@ bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 	bs3-wc16-U4D.asm \
 	bs3-wc16-I4D.asm \
        bs3-c16-Trap16Generic.asm
+bs3kit-common-16_bs3-cmn-UInt64Div.c_CFLAGS = -oh -d0 # -d1+ vs -d0 saves 0x6a3-0x577 = 0x12C (300)!
 
 # The 32-bit BS3Kit library.
 LIBRARIES += bs3kit-common-32
@@ -182,6 +185,7 @@ bs3kit-common-32_INSTTYPE = none
 bs3kit-common-32_DEFS     = TMPL_PE32 BS3_CMN_ONLY
 bs3kit-common-32_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
+	bs3-cmn-UInt64Div.c \
 	bs3-wc32-U8D.asm \
 	bs3-wc32-I8D.asm \
 	bs3-wc32-I8RS.asm \

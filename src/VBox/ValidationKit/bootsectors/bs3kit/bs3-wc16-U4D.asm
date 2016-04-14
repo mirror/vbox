@@ -27,6 +27,7 @@
 %include "bs3kit-template-header.mac"
 
 
+
 ;;
 ; 32-bit unsigned integer division.
 ;
@@ -38,6 +39,7 @@
 ;
 global $_?U4D
 $_?U4D:
+%if TMPL_BITS >= 32
         ; Move dividend into EDX:EAX
         shl     eax, 10h
         mov     ax, dx
@@ -58,6 +60,47 @@ $_?U4D:
         ; Quotient into DX:AX
         mov     edx, eax
         shr     edx, 10h
+%else
+        push    ds
+        push    es
 
+        ;
+        ; Convert to a C __cdecl call - too lazy to do this in assembly.
+        ;
+
+        ; Set up a frame of sorts, allocating 8 bytes for the result buffer.
+        push    bp
+        sub     sp, 08h
+        mov     bp, sp
+
+        ; Pointer to the return buffer.
+        push    ss
+        push    bp
+        add     bp, 08h                 ; Correct bp.
+
+        ; The divisor.
+        push    cx
+        push    bx
+
+        ; The dividend.
+        push    dx
+        push    ax
+
+        BS3_EXTERN_CMN Bs3UInt32Div
+        call    Bs3UInt32Div
+
+        ; Load the reminder.
+        mov     cx, [bp - 08h + 6]
+        mov     bx, [bp - 08h + 4]
+        ; Load the quotient.
+        mov     dx, [bp - 08h + 2]
+        mov     ax, [bp - 08h]
+
+        mov     sp, bp
+        pop     bp
+        pop     es
+        pop     ds
+
+%endif
         ret
 
