@@ -69,6 +69,8 @@ const UIPortForwardingDataList& UIMachineSettingsPortForwardingDlg::rules() cons
 
 void UIMachineSettingsPortForwardingDlg::accept()
 {
+    /* Make sure table has own data committed: */
+    m_pTable->makeSureEditorDataCommitted();
     /* Validate table: */
     bool fPassed = m_pTable->validate();
     if (!fPassed)

@@ -690,6 +690,11 @@ bool UIPortForwardingTable::validate() const
     return true;
 }
 
+void UIPortForwardingTable::makeSureEditorDataCommitted()
+{
+    m_pTableView->makeSureEditorDataCommitted();
+}
+
 void UIPortForwardingTable::sltAddRule()
 {
     m_pModel->addRule(QModelIndex());

@@ -85,6 +85,9 @@ const UIPortForwardingDataList& UIGlobalSettingsPortForwardingDlg::ipv6rules() c
 
 void UIGlobalSettingsPortForwardingDlg::accept()
 {
+    /* Make sure both tables have their data committed: */
+    m_pIPv4Table->makeSureEditorDataCommitted();
+    m_pIPv6Table->makeSureEditorDataCommitted();
     /* Validate table: */
     bool fPassed = m_pIPv4Table->validate() && m_pIPv6Table->validate();
     if (!fPassed)
