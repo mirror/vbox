@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,15 +34,9 @@
 # define __STDC_CONSTANT_MACROS
 #endif
 
-#if !defined (VBOX_WITH_XPCOM)
- #include <atlbase.h>
- #ifndef _ATL_IIDOF
- # define _ATL_IIDOF(c) __uuidof(c)
- #endif
-#else
- #include <nsISupportsUtils.h>
-
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#ifdef VBOX_WITH_XPCOM
+# include <nsISupportsUtils.h>
+#endif /* VBOX_WITH_XPCOM */
 
 #include <VBox/com/defs.h>
 
@@ -61,10 +55,10 @@ namespace com
 HRESULT GlueCreateObjectOnServer(const CLSID &clsid,
                                  const char *serverName,
                                  const nsIID &id,
-                                 void** ppobj);
+                                 void **ppobj);
 HRESULT GlueCreateInstance(const CLSID &clsid,
                            const nsIID &id,
-                           void** ppobj);
+                           void **ppobj);
 }
 
 #endif // VBOX_WITH_XPCOM
@@ -129,7 +123,7 @@ public:
     {
         m_p = NULL;
         if (!that.isNull())
-            that->QueryInterface(COM_IIDOF(T), (void**)&m_p);
+            that->QueryInterface(COM_IIDOF(T), (void **)&m_p);
     }
 
     /**
@@ -154,11 +148,11 @@ public:
     {
         m_p = NULL;
         if (p)
-            p->QueryInterface(COM_IIDOF(T), (void**)&m_p);
+            p->QueryInterface(COM_IIDOF(T), (void **)&m_p);
     }
 
     /**
-     * Specialization: copy constructor from a plain T* pointer. Calls AddRef().
+     * Specialization: copy constructor from a plain T * pointer. Calls AddRef().
      */
     ComPtr(T *that_p)
     {
@@ -177,7 +171,7 @@ public:
     template <class T2>
     ComPtr& operator=(const ComPtr<T2> &that)
     {
-        return operator=((T2*)that);
+        return operator=((T2 *)that);
     }
 
     /**
@@ -186,7 +180,7 @@ public:
      */
     ComPtr& operator=(const ComPtr &that)
     {
-        return operator=((T*)that);
+        return operator=((T *)that);
     }
 
     /**
@@ -203,12 +197,12 @@ public:
     {
         cleanup();
         if (p)
-            p->QueryInterface(COM_IIDOF(T), (void**)&m_p);
+            p->QueryInterface(COM_IIDOF(T), (void **)&m_p);
         return *this;
     }
 
     /**
-     * Specialization of the previous: assignment from a plain T* pointer.
+     * Specialization of the previous: assignment from a plain T * pointer.
      * Calls Release() on the previous member pointer, if any, and AddRef() on the new one.
      */
     ComPtr& operator=(T *p)
@@ -242,8 +236,7 @@ public:
         return (m_p != NULL);
     }
 
-
-    bool operator<(T* p) const
+    bool operator<(T *p) const
     {
         return m_p < p;
     }
@@ -252,7 +245,7 @@ public:
      * Conversion operator, most often used to pass ComPtr instances as
      * parameters to COM method calls.
      */
-    operator T*() const
+    operator T *() const
     {
         return m_p;
     }
@@ -261,7 +254,7 @@ public:
      *  Dereferences the instance (redirects the -> operator to the managed
      *  pointer).
      */
-    T* operator->() const
+    T *operator->() const
     {
         return m_p;
     }
@@ -275,7 +268,7 @@ public:
      * The ComPtr destructor will then still invoke Release() so that the returned object
      * can get cleaned up properly.
      */
-    T** asOutParam()
+    T **asOutParam()
     {
         cleanup();
         return &m_p;
@@ -293,7 +286,7 @@ public:
         if (pp)
         {
             if (m_p)
-                return m_p->QueryInterface(COM_IIDOF(T2), (void**)pp);
+                return m_p->QueryInterface(COM_IIDOF(T2), (void **)pp);
             else
             {
                 *pp = NULL;
@@ -309,17 +302,17 @@ public:
      * equal if their IUnknown interface pointers are equal.
      */
     template <class T2>
-    bool operator==(T2* p)
+    bool operator==(T2 *p)
     {
         IUnknown *p1 = NULL;
         bool fNeedsRelease1 = false;
         if (m_p)
-            fNeedsRelease1 = (SUCCEEDED(m_p->QueryInterface(COM_IIDOF(IUnknown), (void**)&p1)));
+            fNeedsRelease1 = (SUCCEEDED(m_p->QueryInterface(COM_IIDOF(IUnknown), (void **)&p1)));
 
         IUnknown *p2 = NULL;
         bool fNeedsRelease2 = false;
         if (p)
-            fNeedsRelease2 = (SUCCEEDED(p->QueryInterface(COM_IIDOF(IUnknown), (void**)&p2)));
+            fNeedsRelease2 = (SUCCEEDED(p->QueryInterface(COM_IIDOF(IUnknown), (void **)&p2)));
 
         bool f = p1 == p2;
         if (fNeedsRelease1)
@@ -337,13 +330,13 @@ public:
     {
         HRESULT rc;
         T *obj = NULL;
-#if !defined (VBOX_WITH_XPCOM)
-        rc = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER, _ATL_IIDOF(T),
-                              (void**)&obj);
-#else /* !defined (VBOX_WITH_XPCOM) */
+#ifndef VBOX_WITH_XPCOM
+        rc = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER, COM_IIDOF(T),
+                              (void **)&obj);
+#else /* VBOX_WITH_XPCOM */
         using namespace com;
-        rc = GlueCreateInstance(clsid, NS_GET_IID(T), (void**)&obj);
-#endif /* !defined (VBOX_WITH_XPCOM) */
+        rc = GlueCreateInstance(clsid, NS_GET_IID(T), (void **)&obj);
+#endif /* VBOX_WITH_XPCOM */
         *this = obj;
         if (SUCCEEDED(rc))
             obj->Release();
@@ -361,18 +354,18 @@ public:
      */
     HRESULT createLocalObject(const CLSID &clsid)
     {
-#if !defined (VBOX_WITH_XPCOM)
+#ifndef VBOX_WITH_XPCOM
         HRESULT rc;
         T *obj = NULL;
-        rc = CoCreateInstance(clsid, NULL, CLSCTX_LOCAL_SERVER, _ATL_IIDOF(T),
-                              (void**)&obj);
+        rc = CoCreateInstance(clsid, NULL, CLSCTX_LOCAL_SERVER, COM_IIDOF(T),
+                              (void **)&obj);
         *this = obj;
         if (SUCCEEDED(rc))
             obj->Release();
         return rc;
-#else /* !defined (VBOX_WITH_XPCOM) */
+#else /* VBOX_WITH_XPCOM */
         return createInprocObject(clsid);
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* VBOX_WITH_XPCOM */
     }
 
 #ifdef VBOX_WITH_XPCOM
@@ -385,7 +378,7 @@ public:
     HRESULT createObjectOnServer(const CLSID &clsid, const char *serverName)
     {
         T *obj = NULL;
-        HRESULT rc = GlueCreateObjectOnServer(clsid, serverName, NS_GET_IID(T), (void**)&obj);
+        HRESULT rc = GlueCreateObjectOnServer(clsid, serverName, NS_GET_IID(T), (void **)&obj);
         *this = obj;
         if (SUCCEEDED(rc))
             obj->Release();
@@ -394,7 +387,7 @@ public:
 #endif
 
 protected:
-    void copyFrom(T* p)
+    void copyFrom(T *p)
     {
         m_p = p;
         if (m_p)
@@ -410,6 +403,8 @@ protected:
         }
     }
 
+public:
+    // Do NOT access this member unless you really know what you're doing!
     T *m_p;
 };
 
@@ -478,9 +473,9 @@ public:
     HRESULT createObject()
     {
         HRESULT rc;
-#if !defined (VBOX_WITH_XPCOM)
-#   ifdef VBOX_COM_OUTOFPROC_MODULE
-        CComObjectNoLock<T> *obj = new CComObjectNoLock<T>();
+#ifndef VBOX_WITH_XPCOM
+# ifdef VBOX_COM_OUTOFPROC_MODULE
+        ATL::CComObjectNoLock<T> *obj = new ATL::CComObjectNoLock<T>();
         if (obj)
         {
             obj->InternalFinalConstructAddRef();
@@ -489,17 +484,17 @@ public:
         }
         else
             rc = E_OUTOFMEMORY;
-#   else
-        CComObject<T> *obj = NULL;
-        rc = CComObject<T>::CreateInstance(&obj);
-#   endif
-#else /* !defined (VBOX_WITH_XPCOM) */
+# else
+        ATL::CComObject<T> *obj = NULL;
+        rc = ATL::CComObject<T>::CreateInstance(&obj);
+# endif
+#else /* VBOX_WITH_XPCOM */
         CComObject<T> *obj = new CComObject<T>();
         if (obj)
             rc = obj->FinalConstruct();
         else
             rc = E_OUTOFMEMORY;
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* VBOX_WITH_XPCOM */
         *this = obj;
         return rc;
     }
