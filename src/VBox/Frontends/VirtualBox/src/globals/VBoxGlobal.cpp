@@ -179,6 +179,11 @@ using namespace UIExtraDataDefs;
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef VBOX_WS_WIN
+/* Make sure that ATL is usable in this linking namespace. */
+static ATL::CComModule _Module;
+#endif /* VBOX_WS_WIN */
+
 /* static */
 bool VBoxGlobal::m_sfCleanupInProgress = false;
 VBoxGlobal* VBoxGlobal::m_spInstance = 0;

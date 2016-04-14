@@ -656,7 +656,7 @@ public:
             I* pObj = NULL;
 #if !defined(VBOX_WITH_XPCOM)
             B::mRC = CoCreateInstance(aClsId, NULL, CLSCTX_ALL,
-                                      _ATL_IIDOF(I), (void **)&pObj);
+                                      COM_IIDOF(I), (void **)&pObj);
 #else
             nsCOMPtr<nsIComponentManager> manager;
             B::mRC = NS_GetComponentManager(getter_AddRefs(manager));

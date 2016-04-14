@@ -71,7 +71,7 @@
 
 /** IFramebuffer implementation used to maintain VM display video memory. */
 class ATL_NO_VTABLE UIFrameBufferPrivate : public QObject,
-                                           public CComObjectRootEx<CComMultiThreadModel>,
+                                           public ATL::CComObjectRootEx<ATL::CComMultiThreadModel>,
                                            VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
     Q_OBJECT;
@@ -181,7 +181,7 @@ public:
     BEGIN_COM_MAP(UIFrameBufferPrivate)
         COM_INTERFACE_ENTRY(IFramebuffer)
         COM_INTERFACE_ENTRY2(IDispatch,IFramebuffer)
-        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
+        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.m_p)
     END_COM_MAP()
 
     HRESULT FinalConstruct();
@@ -394,7 +394,7 @@ protected:
 private:
 
 #ifdef Q_OS_WIN
-     CComPtr <IUnknown> m_pUnkMarshaler;
+     ComPtr<IUnknown> m_pUnkMarshaler;
 #endif /* Q_OS_WIN */
      /** Identifier returned by AttachFramebuffer. Used in DetachFramebuffer. */
      QString m_strFramebufferId;
@@ -520,13 +520,10 @@ private:
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
 
-/* COM stuff: */
-#ifdef VBOX_WS_WIN
-static CComModule _Module;
-#else /* !VBOX_WS_WIN */
+#ifdef VBOX_WITH_XPCOM
 NS_DECL_CLASSINFO(UIFrameBufferPrivate)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBufferPrivate, IFramebuffer)
-#endif /* !VBOX_WS_WIN */
+#endif /* VBOX_WITH_XPCOM */
 
 
 UIFrameBufferPrivate::UIFrameBufferPrivate()
@@ -582,7 +579,7 @@ HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
     performRescale();
 
 #ifdef Q_OS_WIN
-    CoCreateFreeThreadedMarshaler(this, &m_pUnkMarshaler.p);
+    CoCreateFreeThreadedMarshaler(this, m_pUnkMarshaler.asOutParam());
 #endif /* Q_OS_WIN */
     return S_OK;
 }
