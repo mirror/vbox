@@ -825,7 +825,8 @@ static DECLCALLBACK(int) vusbRhAbortEpWorker(PVUSBDEV pDev, int EndPt, VUSBDIREC
 
         Assert(pUrb->pVUsb->pDev == pDev);
 
-        if (pUrb->EndPt == EndPt && pUrb->enmDir == enmDir)
+        /* For the default control EP, direction does not matter. */
+        if (pUrb->EndPt == EndPt && (pUrb->enmDir == enmDir || !EndPt))
         {
             LogFlow(("%s: vusbRhAbortEpWorker: CANCELING URB\n", pUrb->pszDesc));
             int rc = vusbUrbCancelWorker(pUrb, CANCELMODE_UNDO);
