@@ -7031,11 +7031,7 @@ const PDMDEVREG g_DeviceVga =
     /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
-#ifdef VBOX_WITH_VMSVGA
     vgaR3PowerOn,
-#else
-    NULL,
-#endif
     /* pfnReset */
     vgaR3Reset,
     /* pfnSuspend */
