@@ -141,3 +141,21 @@ DECLHIDDEN(uint32_t) utsGadgetHostRelease(UTSGADGETHOST hGadgetHost)
     return cRefs;
 }
 
+
+DECLHIDDEN(int) utsGadgetHostGadgetConnect(UTSGADGETHOST hGadgetHost, UTSGADGET hGadget)
+{
+    PUTSGADGETHOSTINT pThis = hGadgetHost;
+
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    return pThis->pHstIf->pfnGadgetConnect((PUTSGADGETHOSTTYPEINT)&pThis->abIfInst[0], hGadget);
+}
+
+
+DECLHIDDEN(int) utsGadgetHostGadgetDisconnect(UTSGADGETHOST hGadgetHost, UTSGADGET hGadget)
+{
+    PUTSGADGETHOSTINT pThis = hGadgetHost;
+
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    return pThis->pHstIf->pfnGadgetDisconnect((PUTSGADGETHOSTTYPEINT)&pThis->abIfInst[0], hGadget);
+}
+

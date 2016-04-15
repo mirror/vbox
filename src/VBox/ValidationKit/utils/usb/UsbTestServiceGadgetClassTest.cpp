@@ -36,6 +36,7 @@
 #include <iprt/linux/sysfs.h>
 
 #include "UsbTestServiceGadgetInternal.h"
+#include "UsbTestServicePlatform.h"
 
 /*********************************************************************************************************************************
 *   Constants And Macros, Structures and Typedefs                                                                                *
@@ -252,6 +253,14 @@ static void utsGadgetClassTestCleanup(PUTSGADGETCLASSINT pClass)
 
     /* Finally delete the gadget template. */
     utsGadgetClassTestDirRemove(pClass->pszGadgetPath);
+
+    /* Release the UDC. */
+    if (pClass->pszUdc)
+    {
+        rc = utsPlatformLnxReleaseUDC(pClass->pszUdc);
+        AssertRC(rc);
+        RTStrFree(pClass->pszUdc);
+    }
 }
 
 /**
@@ -342,9 +351,14 @@ static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTS
                     rc = utsGadgetClassTestLinkFuncToCfg(pClass, "Loopback.0", "c.2");
 
                 /* Finally enable the gadget by attaching it to a UDC. */
-                /** @todo: Figure out a free UDC dynamically. */
                 if (RT_SUCCESS(rc))
-                    rc = RTLinuxSysFsWriteStrFile("dummy_udc.0", 0, NULL, "%s/UDC", pClass->pszGadgetPath);
+                {
+                    pClass->pszUdc = NULL;
+
+                    rc = utsPlatformLnxAcquireUDC(&pClass->pszUdc, &pClass->uBusId);
+                    if (RT_SUCCESS(rc))
+                        rc = RTLinuxSysFsWriteStrFile(pClass->pszUdc, 0, NULL, "%s/UDC", pClass->pszGadgetPath);
+                }
             }
 
             if (pszSerial)
@@ -377,6 +391,32 @@ static DECLCALLBACK(void) utsGadgetClassTestTerm(PUTSGADGETCLASSINT pClass)
 }
 
 
+/**
+ * @interface_method_impl{UTSGADGETCLASS,pfnGetBusId}
+ */
+static DECLCALLBACK(uint32_t) utsGadgetClassTestGetBusId(PUTSGADGETCLASSINT pClass)
+{
+    return pClass->uBusId;
+}
+
+
+/**
+ * @interface_method_impl{UTSGADGETCLASS,pfnConnect}
+ */
+static DECLCALLBACK(int) utsGadgetClassTestConnect(PUTSGADGETCLASSINT pClass)
+{
+    return RTLinuxSysFsWriteStrFile("connect", 0, NULL, "/sys/class/udc/%s/soft_connect", pClass->pszUdc);
+}
+
+
+/**
+ * @interface_method_impl{UTSGADGETCLASS,pfnDisconnect}
+ */
+static DECLCALLBACK(int) utsGadgetClassTestDisconnect(PUTSGADGETCLASSINT pClass)
+{
+    return RTLinuxSysFsWriteStrFile("disconnect", 0, NULL, "/sys/class/udc/%s/soft_connect", pClass->pszUdc);}
+
+
 
 /**
  * The gadget host interface callback table.
@@ -392,6 +432,12 @@ const UTSGADGETCLASSIF g_UtsGadgetClassTest =
     /** pfnInit */
     utsGadgetClassTestInit,
     /** pfnTerm */
-    utsGadgetClassTestTerm
+    utsGadgetClassTestTerm,
+    /** pfnGetBusId */
+    utsGadgetClassTestGetBusId,
+    /** pfnConnect */
+    utsGadgetClassTestConnect,
+    /** pfnDisconnect. */
+    utsGadgetClassTestDisconnect
 };
 

@@ -400,7 +400,7 @@ DECLHIDDEN(int) utsGadgetCfgQueryS64Def(PCUTSGADGETCFGITEM paCfg, const char *ps
  * @param   enmType           The host type.
  * @param   paCfg             Additional configuration parameters - optional.
  *                            The array must be terminated with a NULL entry.
- * @param   phGadgetHost      Where to store the handle to the gadget host on success.              
+ * @param   phGadgetHost      Where to store the handle to the gadget host on success.
  */
 DECLHIDDEN(int) utsGadgetHostCreate(UTSGADGETHOSTTYPE enmType, PCUTSGADGETCFGITEM paCfg,
                                     PUTSGADGETHOST phGadgetHost);
@@ -429,6 +429,24 @@ DECLHIDDEN(uint32_t) utsGadgetHostRelease(UTSGADGETHOST hGadgetHost);
  * @param   hGadgetHost       The gadget host handle.
  */
 DECLHIDDEN(PCUTSGADGETCFGITEM) utsGadgetHostGetCfg(UTSGADGETHOST hGadgetHost);
+
+/**
+ * Connects the given gadget to the host.
+ *
+ * @returns IPRT status code.
+ * @param   hGadgetHost       The gadget host handle.
+ * @param   hGadget           The gadget handle.
+ */
+DECLHIDDEN(int) utsGadgetHostGadgetConnect(UTSGADGETHOST hGadgetHost, UTSGADGET hGadget);
+
+/**
+ * Disconnects the given gadget from the host.
+ *
+ * @returns IPRT status code.
+ * @param   hGadgetHost       The gadget host handle.
+ * @param   hGadget           The gadget handle.
+ */
+DECLHIDDEN(int) utsGadgetHostGadgetDisconnect(UTSGADGETHOST hGadgetHost, UTSGADGET hGadget);
 
 /**
  * Creates a new USB gadget based the class.
@@ -474,6 +492,22 @@ DECLHIDDEN(PCUTSGADGETCFGITEM) utsGadgetGetCfg(UTSGADGET hGadget);
  * @param   hGadget           The gadget handle.
  */
 DECLHIDDEN(const char *) utsGadgetGetAccessPath(UTSGADGET hGadget);
+
+/**
+ * Returns the bus ID the gadget is on.
+ *
+ * @returns Bus ID of the gadget.
+ * @param   hGadget           The gadget handle.
+ */
+DECLHIDDEN(uint32_t) utsGadgetGetBusId(UTSGADGET hGadget);
+
+/**
+ * Returns the device ID of the gagdet.
+ *
+ * @returns Device ID of the gadget.
+ * @param   hGadget           The gadget handle.
+ */
+DECLHIDDEN(uint32_t) utsGadgetGetDevId(UTSGADGET hGadget);
 
 /**
  * Mark the gadget as connected to the host. Depending

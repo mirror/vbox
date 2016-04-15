@@ -106,7 +106,12 @@ DECLHIDDEN(int) utsGadgetCreate(UTSGADGETHOST hGadgetHost, UTSGADGETCLASS enmCla
             pThis->pClassIf    = pClassIf;
             rc = pClassIf->pfnInit((PUTSGADGETCLASSINT)&pThis->abClassInst[0], paCfg);
             if (RT_SUCCESS(rc))
-                *phGadget = pThis;
+            {
+                /* Connect the gadget to the host. */
+                rc = utsGadgetHostGadgetConnect(pThis->hGadgetHost, pThis);
+                if (RT_SUCCESS(rc))
+                    *phGadget = pThis;
+            }
             else
                 RTMemFree(pThis);
         }
@@ -144,12 +149,34 @@ DECLHIDDEN(uint32_t) utsGadgetRelease(UTSGADGET hGadget)
 }
 
 
+DECLHIDDEN(uint32_t) utsGadgetGetBusId(UTSGADGET hGadget)
+{
+    PUTSGADGETINT pThis = hGadget;
+
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    return pThis->pClassIf->pfnGetBusId((PUTSGADGETCLASSINT)&pThis->abClassInst[0]);
+}
+
+
+DECLHIDDEN(uint32_t) utsGadgetGetDevId(UTSGADGET hGadget)
+{
+    PUTSGADGETINT pThis = hGadget;
+
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    return 1; /** @todo: Current assumption which is true on Linux with dummy_hcd. */
+}
+
+
 DECLHIDDEN(int) utsGadgetConnect(UTSGADGET hGadget)
 {
     PUTSGADGETINT pThis = hGadget;
 
-    AssertPtrReturn(pThis, 0);
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    int rc = pThis->pClassIf->pfnConnect((PUTSGADGETCLASSINT)&pThis->abClassInst[0]);
+    if (RT_SUCCESS(rc))
+        rc = utsGadgetHostGadgetConnect(pThis->hGadgetHost, hGadget);
+
+    return rc;
 }
 
 
@@ -157,7 +184,11 @@ DECLHIDDEN(int) utsGadgetDisconnect(UTSGADGET hGadget)
 {
     PUTSGADGETINT pThis = hGadget;
 
-    AssertPtrReturn(pThis, 0);
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    int rc = utsGadgetHostGadgetDisconnect(pThis->hGadgetHost, hGadget);
+    if (RT_SUCCESS(rc))
+        rc = pThis->pClassIf->pfnDisconnect((PUTSGADGETCLASSINT)&pThis->abClassInst[0]);
+
+    return rc;
 }
 

@@ -33,6 +33,7 @@
 #include <iprt/types.h>
 
 #include "UsbTestServiceGadgetHostInternal.h"
+#include "UsbTestServicePlatform.h"
 
 /*********************************************************************************************************************************
 *   Constants And Macros, Structures and Typedefs                                                                                *
@@ -56,25 +57,41 @@ typedef struct UTSGADGETHOSTTYPEINT
 
 
 /**
- * Load a kernel module on a Linux host.
+ * Worker for binding/unbinding the given gadget from the USB/IP server.
  *
  * @returns IPRT status code.
- * @param   pszModule    The module to load.
+ * @param   pThis             The gadget host instance.
+ * @param   hGadget           The gadget handle.
+ * @param   fBind             Flag whether to do a bind or unbind.
  */
-static int utsGadgetHostUsbIpLoadModule(const char *pszModule)
+static int usbGadgetHostUsbIpBindUnbind(PUTSGADGETHOSTTYPEINT pThis, UTSGADGET hGadget, bool fBind)
 {
-    RTPROCESS hProcModprobe = NIL_RTPROCESS;
-    const char *apszArgv[3];
+    uint32_t uBusId, uDevId;
+    char aszBus[32];
 
-    apszArgv[0] = "modprobe";
-    apszArgv[1] = pszModule;
-    apszArgv[2] = NULL;
+    uBusId = utsGadgetGetBusId(hGadget);
+    uDevId = utsGadgetGetDevId(hGadget);
 
-    int rc = RTProcCreate("modprobe", apszArgv, RTENV_DEFAULT, RTPROC_FLAGS_SEARCH_PATH, &hProcModprobe);
+    /* Create the busid argument string. */
+    size_t cbRet = RTStrPrintf(&aszBus[0], RT_ELEMENTS(aszBus), "%u-%u", uBusId, uDevId);
+    if (cbRet == RT_ELEMENTS(aszBus))
+        return VERR_BUFFER_OVERFLOW;
+
+    /* Bind to the USB/IP server. */
+    RTPROCESS hProcUsbIp = NIL_RTPROCESS;
+    const char *apszArgv[5];
+
+    apszArgv[0] = "usbip";
+    apszArgv[1] = fBind ? "bind" : "unbind";
+    apszArgv[2] = "-b";
+    apszArgv[3] = &aszBus[0];
+    apszArgv[4] = NULL;
+
+    int rc = RTProcCreate("usbip", apszArgv, RTENV_DEFAULT, RTPROC_FLAGS_SEARCH_PATH, &hProcUsbIp);
     if (RT_SUCCESS(rc))
     {
         RTPROCSTATUS ProcSts;
-        rc = RTProcWait(hProcModprobe, RTPROCWAIT_FLAGS_BLOCK, &ProcSts);
+        rc = RTProcWait(hProcUsbIp, RTPROCWAIT_FLAGS_BLOCK, &ProcSts);
         if (RT_SUCCESS(rc))
         {
             /* Evaluate the process status. */
@@ -86,7 +103,6 @@ static int utsGadgetHostUsbIpLoadModule(const char *pszModule)
 
     return rc;
 }
-
 
 /**
  * @interface_method_impl{UTSGADGETHOSTIF,pfnInit}
@@ -102,46 +118,42 @@ static DECLCALLBACK(int) utsGadgetHostUsbIpInit(PUTSGADGETHOSTTYPEINT pIf, PCUTS
     if (RT_SUCCESS(rc))
     {
         /* Make sure the kernel drivers are loaded. */
-        rc = utsGadgetHostUsbIpLoadModule("usbip-core");
+        rc = utsPlatformModuleLoad("usbip-core", NULL, 0);
         if (RT_SUCCESS(rc))
         {
-            rc = utsGadgetHostUsbIpLoadModule("usbip-host");
+            rc = utsPlatformModuleLoad("usbip-host", NULL, 0);
             if (RT_SUCCESS(rc))
             {
-                rc = utsGadgetHostUsbIpLoadModule("libcomposite");
+                char aszPort[10];
+                char aszPidFile[64];
+                const char *apszArgv[6];
+
+                RTStrPrintf(aszPort, RT_ELEMENTS(aszPort), "%u", uPort);
+                RTStrPrintf(aszPidFile, RT_ELEMENTS(aszPidFile), "/var/run/usbipd-%u.pid", uPort);
+                /* Start the USB/IP server process. */
+                apszArgv[0] = "usbipd";
+                apszArgv[1] = "--tcp-port";
+                apszArgv[2] = aszPort;
+                apszArgv[3] = "--pid";
+                apszArgv[4] = aszPidFile;
+                apszArgv[5] = NULL;
+                rc = RTProcCreate("usbipd", apszArgv, RTENV_DEFAULT, RTPROC_FLAGS_SEARCH_PATH, &pIf->hProcUsbIp);
                 if (RT_SUCCESS(rc))
                 {
-                    char aszPort[10];
-                    char aszPidFile[64];
-                    const char *apszArgv[6];
-
-                    RTStrPrintf(aszPort, RT_ELEMENTS(aszPort), "%u", uPort);
-                    RTStrPrintf(aszPidFile, RT_ELEMENTS(aszPidFile), "/var/run/usbipd-%u.pid", uPort);
-                    /* Start the USB/IP server process. */
-                    apszArgv[0] = "usbipd";
-                    apszArgv[1] = "--tcp-port";
-                    apszArgv[2] = aszPort;
-                    apszArgv[3] = "--pid";
-                    apszArgv[4] = aszPidFile;
-                    apszArgv[5] = NULL;
-                    rc = RTProcCreate("usbipd", apszArgv, RTENV_DEFAULT, RTPROC_FLAGS_SEARCH_PATH, &pIf->hProcUsbIp);
-                    if (RT_SUCCESS(rc))
+                    /* Wait for a bit to make sure the server started up successfully. */
+                    uint64_t tsStart = RTTimeMilliTS();
+                    do
                     {
-                        /* Wait for a bit to make sure the server started up successfully. */
-                        uint64_t tsStart = RTTimeMilliTS();
-                        do
+                        RTPROCSTATUS ProcSts;
+                        rc = RTProcWait(pIf->hProcUsbIp, RTPROCWAIT_FLAGS_NOBLOCK, &ProcSts);
+                        if (rc != VERR_PROCESS_RUNNING)
                         {
-                            RTPROCSTATUS ProcSts;
-                            rc = RTProcWait(pIf->hProcUsbIp, RTPROCWAIT_FLAGS_NOBLOCK, &ProcSts);
-                            if (rc != VERR_PROCESS_RUNNING)
-                            {
-                                rc = VERR_INVALID_HANDLE;
-                                break;
-                            }
-                            RTThreadSleep(1);
-                            rc = VINF_SUCCESS;
-                        } while (RTTimeMilliTS() - tsStart < 2 * 1000); /* 2 seconds. */
-                    }
+                            rc = VERR_INVALID_HANDLE;
+                            break;
+                        }
+                        RTThreadSleep(1);
+                        rc = VINF_SUCCESS;
+                    } while (RTTimeMilliTS() - tsStart < 2 * 1000); /* 2 seconds. */
                 }
             }
         }
@@ -189,7 +201,7 @@ static DECLCALLBACK(int) utsGadgetHostUsbIpGadgetRemove(PUTSGADGETHOSTTYPEINT pI
  */
 static DECLCALLBACK(int) utsGadgetHostUsbIpGadgetConnect(PUTSGADGETHOSTTYPEINT pIf, UTSGADGET hGadget)
 {
-   return VINF_SUCCESS;
+    return usbGadgetHostUsbIpBindUnbind(pIf, hGadget, true /* fBind */);
 }
 
 
@@ -198,7 +210,7 @@ static DECLCALLBACK(int) utsGadgetHostUsbIpGadgetConnect(PUTSGADGETHOSTTYPEINT p
  */
 static DECLCALLBACK(int) utsGadgetHostUsbIpGadgetDisconnect(PUTSGADGETHOSTTYPEINT pIf, UTSGADGET hGadget)
 {
-    return VINF_SUCCESS;
+    return usbGadgetHostUsbIpBindUnbind(pIf, hGadget, false /* fBind */);
 }
 
 

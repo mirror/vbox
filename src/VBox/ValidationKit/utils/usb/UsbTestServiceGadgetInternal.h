@@ -68,6 +68,30 @@ typedef struct UTSGADGETCLASSIF
      */
     DECLR3CALLBACKMEMBER(void, pfnTerm, (PUTSGADGETCLASSINT pClass));
 
+    /**
+     * Returns the bus ID of the class instance.
+     *
+     * @returns Bus ID.
+     * @param   pClass        The interface specific instance data.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetBusId, (PUTSGADGETCLASSINT pClass));
+
+    /**
+     * Connects the gadget.
+     *
+     * @returns IPRT status code.
+     * @param   pClass        The interface specific instance data.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnConnect, (PUTSGADGETCLASSINT pClass));
+
+    /**
+     * Disconnect the gadget.
+     *
+     * @returns IPRT status code.
+     * @param   pClass        The interface specific instance data.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDisconnect, (PUTSGADGETCLASSINT pClass));
+
 } UTSGADGETCLASSIF;
 /** Pointer to a gadget class callback table. */
 typedef UTSGADGETCLASSIF *PUTSGADGETCLASSIF;

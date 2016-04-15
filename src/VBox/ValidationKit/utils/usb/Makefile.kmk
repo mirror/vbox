@@ -51,6 +51,8 @@ UsbTestService_SOURCES = \
 	UsbTestServiceGadget.cpp \
 	UsbTestServiceProtocol.cpp \
 	UsbTestServiceTcp.cpp
+UsbTestService_SOURCES.linux = \
+	UsbTestServicePlatform-linux.cpp
 
 $(evalcall def_vbox_validationkit_process_python_sources)
 include $(FILE_KBUILD_SUB_FOOTER)
