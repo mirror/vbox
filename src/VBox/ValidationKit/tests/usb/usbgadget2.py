@@ -757,21 +757,21 @@ class Session(TdTaskBase):
 
     def taskGadgetDestroy(self, iGadgetId):
         """Destroys the given gadget handle on UTS"""
-        fRc = self.sendMsg("GDGTDTOR", (iGadgetId, ));
+        fRc = self.sendMsg("GDGTDTOR", (iGadgetId, zeroByteArray(12)));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTDTOR");
         return fRc;
 
     def taskGadgetConnect(self, iGadgetId):
         """Connects the given gadget handle on UTS"""
-        fRc = self.sendMsg("GDGTCNCT", (iGadgetId, ));
+        fRc = self.sendMsg("GDGTCNCT", (iGadgetId, zeroByteArray(12)));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTCNCT");
         return fRc;
 
     def taskGadgetDisconnect(self, iGadgetId):
         """Disconnects the given gadget handle from UTS"""
-        fRc = self.sendMsg("GDGTDCNT", (iGadgetId, ));
+        fRc = self.sendMsg("GDGTDCNT", (iGadgetId, zeroByteArray(12)));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTDCNT");
         return fRc;
@@ -876,7 +876,7 @@ class Session(TdTaskBase):
         The task returns True on success and False on failure.
         """
         return self.startTask(cMsTimeout, fIgnoreErrors, "GadgetConnect", self.taskGadgetConnect, \
-                              (long(iGadgetId), ));
+                              (iGadgetId, ));
 
     def syncGadgetConnect(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
@@ -891,7 +891,7 @@ class Session(TdTaskBase):
         The task returns True on success and False on failure.
         """
         return self.startTask(cMsTimeout, fIgnoreErrors, "GadgetDisconnect", self.taskGadgetDisconnect, \
-                              (long(iGadgetId), ));
+                              (iGadgetId, ));
 
     def syncGadgetDisconnect(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
@@ -1296,7 +1296,7 @@ class UsbGadget(object):
         self.idGadget       = None;
         self.iUsbIpPort     = None;
 
-    def _clearImpersonation(self):
+    def clearImpersonation(self):
         """
         Removes the current impersonation of the gadget.
         """
@@ -1304,6 +1304,7 @@ class UsbGadget(object):
 
         if self.idGadget is not None:
             fRc = self.oUtsSession.syncGadgetDestroy(self.idGadget);
+            self.idGadget = None;
 
         return fRc;
 
@@ -1326,12 +1327,18 @@ class UsbGadget(object):
         """
 
         # Clear any previous impersonation
-        self._clearImpersonation();
+        self.clearImpersonation();
         self.sImpersonation = sImpersonation;
 
         fRc = False;
         if sImpersonation == g_ksGadgetImpersonationTest:
-            fRc = self.oUtsSession.syncGadgetCreate(g_kiGadgetTypeTest, g_kiGadgetAccessUsbIp);
+            fDone = self.oUtsSession.syncGadgetCreate(g_kiGadgetTypeTest, g_kiGadgetAccessUsbIp);
+            if fDone is True and self.oUtsSession.isSuccess():
+                # Get the gadget ID.
+                _, _, abPayload = self.oUtsSession.getLastReply();
+
+                fRc = True;
+                self.idGadget = getU32(abPayload, 16);
         else:
             reporter.log('Invalid or unsupported impersonation');
 
@@ -1387,7 +1394,7 @@ class UsbGadget(object):
         """
         fRc = True;
 
-        self._clearImpersonation();
+        self.clearImpersonation();
         if self.oUtsSession is not None:
             fRc = self.oUtsSession.syncDisconnect();
 

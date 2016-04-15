@@ -29,7 +29,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/dir.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
@@ -37,7 +39,6 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
-#include <iprt/file.h>
 
 #include <unistd.h>
 #include <errno.h>
@@ -272,56 +273,71 @@ static char *usbTestFindDevice(void)
      * Very crude and quick way to search for the correct test device.
      * Assumption is that the path looks like /dev/bus/usb/%3d/%3d.
      */
-    uint8_t uBus = 1;
-    bool fBusExists = false;
-    char aszDevPath[64];
+    char *pszDevPath = NULL;
 
-    RT_ZERO(aszDevPath);
-
-    do
+    PRTDIR pDirUsb = NULL;
+    int rc = RTDirOpen(&pDirUsb, "/dev/bus/usb");
+    if (RT_SUCCESS(rc))
     {
-        RTStrPrintf(aszDevPath, sizeof(aszDevPath), "/dev/bus/usb/%03d", uBus);
-
-        fBusExists = RTPathExists(aszDevPath);
-
-        if (fBusExists)
+        do
         {
-            /* Check every device. */
-            bool fDevExists = false;
-            uint8_t uDev = 1;
-
-            do
+            RTDIRENTRY DirUsbBus;
+            rc = RTDirRead(pDirUsb, &DirUsbBus, NULL);
+            if (RT_SUCCESS(rc))
             {
-                RTStrPrintf(aszDevPath, sizeof(aszDevPath), "/dev/bus/usb/%03d/%03d", uBus, uDev);
+                char aszPath[RTPATH_MAX + 1];
+                RTStrPrintf(&aszPath[0], RT_ELEMENTS(aszPath), "/dev/bus/usb/%s", DirUsbBus.szName);
 
-                fDevExists = RTPathExists(aszDevPath);
-
-                if (fDevExists)
+                PRTDIR pDirUsbBus = NULL;
+                rc = RTDirOpen(&pDirUsbBus, &aszPath[0]);
+                if (RT_SUCCESS(rc))
                 {
-                    RTFILE hFileDev;
-                    int rc = RTFileOpen(&hFileDev, aszDevPath, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
-                    if (RT_SUCCESS(rc))
+                    do
                     {
-                        USBDEVDESC DevDesc;
+                        RTDIRENTRY DirUsbDev;
+                        rc = RTDirRead(pDirUsbBus, &DirUsbDev, NULL);
+                        if (RT_SUCCESS(rc))
+                        {
+                            char aszPathDev[RTPATH_MAX + 1];
+                            RTStrPrintf(&aszPathDev[0], RT_ELEMENTS(aszPathDev), "/dev/bus/usb/%s/%s",
+                                        DirUsbBus.szName, DirUsbDev.szName);
 
-                        rc = RTFileRead(hFileDev, &DevDesc, sizeof(DevDesc), NULL);
-                        RTFileClose(hFileDev);
+                            RTFILE hFileDev;
+                            rc = RTFileOpen(&hFileDev, aszPathDev, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+                            if (RT_SUCCESS(rc))
+                            {
+                                USBDEVDESC DevDesc;
 
-                        if (   RT_SUCCESS(rc)
-                            && DevDesc.idVendor == 0x0525
-                            && DevDesc.idProduct == 0xa4a0)
-                            return RTStrDup(aszDevPath);
-                    }
+                                rc = RTFileRead(hFileDev, &DevDesc, sizeof(DevDesc), NULL);
+                                RTFileClose(hFileDev);
+
+                                if (   RT_SUCCESS(rc)
+                                    && DevDesc.idVendor == 0x0525
+                                    && DevDesc.idProduct == 0xa4a0)
+                                    pszDevPath = RTStrDup(aszPathDev);
+                            }
+
+                            rc = VINF_SUCCESS;
+                        }
+                        else if (rc != VERR_NO_MORE_FILES)
+                            rc = VINF_SUCCESS;
+
+                    } while (   RT_SUCCESS(rc)
+                             && !pszDevPath);
+
+                    rc = VINF_SUCCESS;
+                    RTDirClose(pDirUsbBus);
                 }
+            }
+            else if (rc != VERR_NO_MORE_FILES)
+                rc = VINF_SUCCESS;
+        } while (   RT_SUCCESS(rc)
+                 && !pszDevPath);
 
-                uDev++;
-            } while (fDevExists);
-        }
+        RTDirClose(pDirUsb);
+    }
 
-        uBus++;
-    } while (fBusExists);
-
-    return NULL;
+    return pszDevPath;
 }
 
 static int usbTestIoctl(int iDevFd, int iInterface, PUSBTESTPARAMS pParams)

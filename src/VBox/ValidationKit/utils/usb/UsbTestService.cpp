@@ -831,7 +831,7 @@ static int utsClientReqProcess(PUTSCLIENT pClient)
     else if (utsIsSameOpcode(pPktHdr, UTSPKT_OPCODE_GADGET_CREATE))
         rc = utsDoGadgetCreate(pClient, pPktHdr);
     else if (utsIsSameOpcode(pPktHdr, UTSPKT_OPCODE_GADGET_DESTROY))
-        rc = utsDoGadgetCreate(pClient, pPktHdr);
+        rc = utsDoGadgetDestroy(pClient, pPktHdr);
     else if (utsIsSameOpcode(pPktHdr, UTSPKT_OPCODE_GADGET_CONNECT))
         rc = utsDoGadgetConnect(pClient, pPktHdr);
     else if (utsIsSameOpcode(pPktHdr, UTSPKT_OPCODE_GADGET_DISCONNECT))

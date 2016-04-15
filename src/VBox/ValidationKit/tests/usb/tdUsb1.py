@@ -63,18 +63,11 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
     # The parameters consist of the hostname of the gadget in the network
     # and the hardware type.
     kdGadgetParams = {
-        # The following is for local testing and not for the test lab.
-        #'adaris': {
-        #    'Low':   ('beaglebone',),
-        #    'Full':  ('beaglebone',),
-        #    'High':  ('beaglebone',),
-        #    'Super': ('odroidxu3',)
-        #},
         'adaris': {
-            'Low':   ('127.0.0.1', 0),
-            'Full':  ('127.0.0.1', 0),
-            'High':  ('127.0.0.1', 0),
-            'Super': ('127.0.0.1', 0)
+            'Low':   ('usbtest.de.oracle.com', None),
+            'Full':  ('usbtest.de.oracle.com', None),
+            'High':  ('usbtest.de.oracle.com', None),
+            'Super': ('usbtest.de.oracle.com', None)
         },
     };
 
@@ -104,6 +97,8 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         self.cUsbReattachCyclesDef = 100;
         self.cUsbReattachCycles    = self.cUsbReattachCyclesDef;
         self.sHostname             = socket.gethostname().lower();
+        self.sGadgetHostnameDef    = 'usbtest.de.oracle.com';
+        self.uGadgetPortDef        = None;
 
     #
     # Overridden methods.
@@ -130,6 +125,12 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         reporter.log('      Default: %s' % (':'.join(str(c) for c in self.asUsbTestsDef)));
         reporter.log('  --usb-reattach-cycles <cycles>');
         reporter.log('      Default: %s' % (self.cUsbReattachCyclesDef));
+        reporter.log('  --hostname: <hostname>');
+        reporter.log('      Default: %s' % (self.sHostname));
+        reporter.log('  --default-gadget-host <hostname>');
+        reporter.log('      Default: %s' % (self.sGadgetHostnameDef));
+        reporter.log('  --default-gadget-port <port>');
+        reporter.log('      Default: %s' % (6042));
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -195,6 +196,23 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             if self.cUsbReattachCycles <= 0:
                 raise base.InvalidOption('The "--usb-reattach-cycles" value "%s" is zero or negative.' \
                     % (self.cUsbReattachCycles,));
+        elif asArgs[iArg] == '--hostname':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--hostname" takes a hostname');
+            self.sHostname = asArgs[iArg];
+        elif asArgs[iArg] == '--default-gadget-host':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--default-gadget-host" takes a hostname');
+            self.sGadgetHostnameDef = asArgs[iArg];
+        elif asArgs[iArg] == '--default-gadget-port':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--default-gadget-port" takes port number');
+            try:    self.uGadgetPortDef = int(asArgs[iArg]);
+            except: raise base.InvalidOption('The "--default-gadget-port" value "%s" is not an integer' \
+                    % (asArgs[iArg],));
+            if self.uGadgetPortDef <= 0:
+                raise base.InvalidOption('The "--default-gadget-port" value "%s" is zero or negative.' \
+                    % (self.uGadgetPortDef,));
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -270,14 +288,14 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
     def getGadgetParams(self, sHostname, sSpeed):
         """
-        Returns the gadget hostname and type from the
+        Returns the gadget hostname and port from the
         given hostname the test is running on and device speed we want to test.
         """
         kdGadgetsConfigured = self.kdGadgetParams.get(sHostname);
         if kdGadgetsConfigured is not None:
             return kdGadgetsConfigured.get(sSpeed);
 
-        return (None, None);
+        return (self.sGadgetHostnameDef, self.uGadgetPortDef);
 
     #
     # Test execution helpers.
@@ -287,11 +305,11 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         Test VirtualBoxs USB stack in a VM.
         """
         # Get configured USB test devices from hostname we are running on
-        sGadgetHost, _ = self.getGadgetParams(self.sHostname, sSpeed);
+        sGadgetHost, uGadgetPort = self.getGadgetParams(self.sHostname, sSpeed);
 
         oUsbGadget = usbgadget2.UsbGadget();
         reporter.log('Connecting to UTS: ' + sGadgetHost);
-        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost);
+        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost, uPort = uGadgetPort);
         if fRc is True:
             reporter.log('Connect succeeded');
             self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);

@@ -31,6 +31,7 @@
 #include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/symlink.h>
+#include <iprt/thread.h>
 #include <iprt/types.h>
 
 #include <iprt/linux/sysfs.h>
@@ -358,6 +359,8 @@ static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTS
                     rc = utsPlatformLnxAcquireUDC(&pClass->pszUdc, &pClass->uBusId);
                     if (RT_SUCCESS(rc))
                         rc = RTLinuxSysFsWriteStrFile(pClass->pszUdc, 0, NULL, "%s/UDC", pClass->pszGadgetPath);
+                    if (RT_SUCCESS(rc))
+                        RTThreadSleep(500); /* Fudge: Sleep a bit to give the device a chance to appear on the host so binding succeeds. */
                 }
             }
 
@@ -405,7 +408,11 @@ static DECLCALLBACK(uint32_t) utsGadgetClassTestGetBusId(PUTSGADGETCLASSINT pCla
  */
 static DECLCALLBACK(int) utsGadgetClassTestConnect(PUTSGADGETCLASSINT pClass)
 {
-    return RTLinuxSysFsWriteStrFile("connect", 0, NULL, "/sys/class/udc/%s/soft_connect", pClass->pszUdc);
+    int rc = RTLinuxSysFsWriteStrFile("connect", 0, NULL, "/sys/class/udc/%s/soft_connect", pClass->pszUdc);
+    if (RT_SUCCESS(rc))
+        RTThreadSleep(500); /* Fudge: Sleep a bit to give the device a chance to appear on the host so binding succeeds. */
+
+    return rc;
 }
 
 
