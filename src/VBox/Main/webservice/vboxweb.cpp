@@ -5,7 +5,7 @@
  *      (plus static gSOAP server code) to implement the actual webservice
  *      server, to which clients can connect.
  *
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -963,7 +963,7 @@ static DECLCALLBACK(int) fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
 
 #ifdef RT_OS_WINDOWS
 // Required for ATL
-static CComModule _Module;
+static ATL::CComModule _Module;
 
 /**
  * "Signal" handler for cleanly terminating the event loop.
@@ -980,35 +980,28 @@ static BOOL WINAPI websrvSignalHandler(DWORD dwCtrlType)
         case CTRL_C_EVENT:
         case CTRL_LOGOFF_EVENT:
         case CTRL_SHUTDOWN_EVENT:
+        {
             ASMAtomicWriteBool(&g_fKeepRunning, false);
+            com::NativeEventQueue *pQ = com::NativeEventQueue::getMainEventQueue();
+            pQ->interruptEventQueueProcessing();
             fEventHandled = TRUE;
             break;
+        }
         default:
             break;
     }
     return fEventHandled;
 }
 #else
-class ForceQuitEvent : public com::NativeEvent
-{
-    void *handler()
-    {
-        LogFlowFunc(("\n"));
-
-        ASMAtomicWriteBool(&g_fKeepRunning, false);
-
-        return NULL;
-    }
-};
-
 /**
  * Signal handler for cleanly terminating the event loop.
  */
 static void websrvSignalHandler(int iSignal)
 {
     NOREF(iSignal);
+    ASMAtomicWriteBool(&g_fKeepRunning, false);
     com::NativeEventQueue *pQ = com::NativeEventQueue::getMainEventQueue();
-    pQ->postEvent(new ForceQuitEvent());
+    pQ->interruptEventQueueProcessing();
 }
 #endif
 
