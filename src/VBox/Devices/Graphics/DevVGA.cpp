@@ -6987,7 +6987,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 static DECLCALLBACK(void) vgaR3PowerOn(PPDMDEVINS pDevIns)
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+#ifdef VBOX_WITH_VMSVGA
     vmsvgaR3PowerOn(pDevIns);
+#endif
     VBVAOnResume(pThis);
 }
 
