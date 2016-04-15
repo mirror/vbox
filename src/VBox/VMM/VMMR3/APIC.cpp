@@ -410,7 +410,7 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     pHlp->pfnPrintf(pHlp, "    Send Illegal Vector         = %RTbool\n",  pXApicPage->esr.u.fSendIllegalVector);
     pHlp->pfnPrintf(pHlp, "    Recv Illegal Vector         = %RTbool\n",  pXApicPage->esr.u.fRcvdIllegalVector);
     pHlp->pfnPrintf(pHlp, "    Illegal Register Address    = %RTbool\n",  pXApicPage->esr.u.fIllegalRegAddr);
-    pHlp->pfnPrintf(pHlp, "  ICR Low                       = %#x\n",      pXApicPage->icr_lo.all);
+    pHlp->pfnPrintf(pHlp, "  ICR Low                       = %#x\n",      pXApicPage->icr_lo.all.u32IcrLo);
     pHlp->pfnPrintf(pHlp, "    Vector                      = %u (%#x)\n", pXApicPage->icr_lo.u.u8Vector,
                                                                           pXApicPage->icr_lo.u.u8Vector);
     pHlp->pfnPrintf(pHlp, "    Delivery Mode               = %#x (%s)\n", pXApicPage->icr_lo.u.u3DeliveryMode,
@@ -1294,6 +1294,13 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         AssertRCReturn(rc, rc); \
     } while(0)
 
+#define APIC_PROF_COUNTER(a_Reg, a_Desc, a_Key) \
+    do { \
+        rc = STAMR3RegisterF(pVM, a_Reg, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, a_Desc, a_Key, \
+                             idCpu); \
+        AssertRCReturn(rc, rc); \
+    } while(0)
+
     bool const fHasRC = !HMIsEnabled(pVM);
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -1317,6 +1324,10 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             APIC_REG_COUNTER(&pApicCpu->StatMsrReadRC,   "Number of APIC MSR reads in RC.",   "/Devices/APIC/%u/RC/MsrRead");
             APIC_REG_COUNTER(&pApicCpu->StatMsrWriteRC,  "Number of APIC MSR writes in RC.",  "/Devices/APIC/%u/RC/MsrWrite");
         }
+
+        APIC_PROF_COUNTER(&pApicCpu->StatUpdatePendingIntrs, "Profiling of APICUpdatePendingInterrupts",
+                          "/PROF/CPU%d/APIC/UpdatePendingInterrupts");
+        APIC_PROF_COUNTER(&pApicCpu->StatPostInterrupt, "Profiling of APICPostInterrupt", "/PROF/CPU%d/APIC/PostInterrupt");
     }
 # undef APIC_REG_ACCESS_COUNTER
 #endif

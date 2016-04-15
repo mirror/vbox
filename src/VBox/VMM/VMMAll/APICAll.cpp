@@ -1080,7 +1080,7 @@ static VBOXSTRICTRC apicSetEsr(PVMCPU pVCpu, uint32_t uEsr)
  */
 static void apicUpdatePpr(PVMCPU pVCpu)
 {
-    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
 
     /* See Intel spec 10.8.3.1 "Task and Processor Priorities". */
     PXAPICPAGE    pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
@@ -1102,7 +1102,7 @@ static void apicUpdatePpr(PVMCPU pVCpu)
  */
 static uint8_t apicGetPpr(PVMCPU pVCpu)
 {
-    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
 
     /*
      * With virtualized APIC registers or with TPR virtualization, the hardware may
@@ -2393,9 +2393,13 @@ VMMDECL(void) APICClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode)
 {
     Assert(pVCpu);
+    Assert(uVector > XAPIC_ILLEGAL_VECTOR_END);
 
     PCAPIC   pApic    = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+
+    STAM_PROFILE_START(&pApicCpu->StatPostInterrupt, a);
+
     /* Validate the vector. See Intel spec. 10.5.2 "Valid Interrupt Vectors". */
     if (RT_LIKELY(uVector > XAPIC_ILLEGAL_VECTOR_END))
     {
@@ -2405,13 +2409,13 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
             Assert(CTX_SUFF(pApicCpu->pvApicPib));
             apicSetVectorInPib(CTX_SUFF(pApicCpu->pvApicPib), uVector);
             bool const fAlreadySet = apicSetNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
-            if (fAlreadySet)
-                return;
-
-            if (pApic->fPostedIntrsEnabled)
-            { /** @todo posted-interrupt call to hardware */ }
-            else
-                APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+            if (!fAlreadySet)
+            {
+                if (pApic->fPostedIntrsEnabled)
+                { /** @todo posted-interrupt call to hardware */ }
+                else
+                    APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+            }
         }
         else
         {
@@ -2421,14 +2425,14 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
              */
             apicSetVectorInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0], uVector);
             bool const fAlreadySet = apicSetNotificationBitInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0]);
-            if (fAlreadySet)
-                return;
-
-            APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+            if (!fAlreadySet)
+                APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
         }
     }
     else
         apicSetError(pVCpu, XAPIC_ESR_RECV_ILLEGAL_VECTOR);
+
+    STAM_PROFILE_STOP(&pApicCpu->StatPostInterrupt, a);
 }
 
 
@@ -2536,6 +2540,7 @@ VMMDECL(bool) APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr)
 
     PAPIC pApic = VM_TO_APIC(CTX_SUFF(pVCpu->pVM));
     Assert(!pApic->fVirtApicRegsEnabled);
+    NOREF(pApic);
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     bool const fIsPending = apicTestVectorInReg(&pXApicPage->irr, u8PendingIntr);
@@ -2566,6 +2571,7 @@ VMMDECL(void) APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingInt
 
     PAPIC pApic = VM_TO_APIC(CTX_SUFF(pVCpu->pVM));
     Assert(!pApic->fVirtApicRegsEnabled);
+    NOREF(pApic);
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     bool const fInService = apicTestVectorInReg(&pXApicPage->isr, u8PendingIntr);
@@ -2589,6 +2595,8 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
 
     PAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
+
+    STAM_PROFILE_START(&pApicCpu->StatUpdatePendingIntrs, a);
 
     /* Update edge-triggered pending interrupts. */
     for (;;)
@@ -2627,6 +2635,8 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
             }
         }
     }
+
+    STAM_PROFILE_STOP(&pApicCpu->StatUpdatePendingIntrs, a);
 }
 
 

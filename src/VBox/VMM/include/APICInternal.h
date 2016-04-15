@@ -586,6 +586,11 @@ typedef struct APICCPU
     STAMCOUNTER                 StatMsrWriteR3;
     /** Number of MSR writes in RC. */
     STAMCOUNTER                 StatMsrWriteRC;
+
+    /** Profiling of APICUpdatePendingInterrupts().  */
+    STAMPROFILE                 StatUpdatePendingIntrs;
+    /** Profiling of APICPostInterrupt().  */
+    STAMPROFILE                 StatPostInterrupt;
     /** @} */
 #endif
 } APICCPU;
