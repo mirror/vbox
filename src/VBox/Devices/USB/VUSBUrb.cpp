@@ -1144,10 +1144,26 @@ int vusbUrbSubmit(PVUSBURB pUrb)
      */
     if ((pEndPtDesc->Core.bmAttributes & 0x3) != pUrb->enmType)
     {
-        Log(("%s: pDev=%p[%s]: SUBMIT: %s transfer requested for %#x endpoint on DstAddress=%i ep=%i dir=%s\n",
-             pUrb->pszDesc, pDev, pDev->pUsbIns->pszName, vusbUrbTypeName(pUrb->enmType), pEndPtDesc->Core.bmAttributes,
-             pUrb->DstAddress, pUrb->EndPt, vusbUrbDirName(pUrb->enmDir)));
-        return vusbUrbSubmitHardError(pUrb);
+        /* Bulk and interrupt transfers are identical on the bus level (the only difference
+         * is in how they are scheduled by the HCD/HC) and need an exemption.
+         * Atheros AR9271 is a known offender; its configuration descriptors include
+         * interrupt endpoints, but drivers (Win7/8, Linux kernel pre-3.05) treat them
+         * as bulk endpoints.
+         */
+        if (   (pUrb->enmType == VUSBXFERTYPE_BULK && (pEndPtDesc->Core.bmAttributes & 0x3) == VUSBXFERTYPE_INTR)
+            || (pUrb->enmType == VUSBXFERTYPE_INTR && (pEndPtDesc->Core.bmAttributes & 0x3) == VUSBXFERTYPE_BULK))
+        {
+            Log2(("%s: pDev=%p[%s]: SUBMIT: mixing bulk/interrupt transfers on DstAddress=%i ep=%i dir=%s\n",
+                  pUrb->pszDesc, pDev, pDev->pUsbIns->pszName,
+                  pUrb->DstAddress, pUrb->EndPt, vusbUrbDirName(pUrb->enmDir)));
+        }
+        else
+        {
+            Log(("%s: pDev=%p[%s]: SUBMIT: %s transfer requested for %#x endpoint on DstAddress=%i ep=%i dir=%s\n",
+                 pUrb->pszDesc, pDev, pDev->pUsbIns->pszName, vusbUrbTypeName(pUrb->enmType), pEndPtDesc->Core.bmAttributes,
+                 pUrb->DstAddress, pUrb->EndPt, vusbUrbDirName(pUrb->enmDir)));
+            return vusbUrbSubmitHardError(pUrb);
+        }
     }
 
     /*
