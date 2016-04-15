@@ -342,6 +342,16 @@ void UIGChooserItem::dropEvent(QGraphicsSceneDragDropEvent *pEvent)
     }
 }
 
+void UIGChooserItem::handleRootStatusChange()
+{
+    /* Reset minimum size hints for non-root items: */
+    if (!isRoot())
+    {
+        m_iPreviousMinimumWidthHint = 0;
+        m_iPreviousMinimumHeightHint = 0;
+    }
+}
+
 /* static */
 void UIGChooserItem::configurePainterShape(QPainter *pPainter,
                                            const QStyleOptionGraphicsItem *pOption,

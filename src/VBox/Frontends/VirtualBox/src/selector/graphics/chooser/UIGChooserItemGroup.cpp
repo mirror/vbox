@@ -119,6 +119,12 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     updateItemCountInfo();
     updateVisibleName();
     updateToolTip();
+
+    /* Prepare root-item connections: */
+    connect(this, SIGNAL(sigMinimumWidthHintChanged(int)),
+            model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
+    connect(this, SIGNAL(sigMinimumHeightHintChanged(int)),
+            model(), SIGNAL(sigRootItemMinimumHeightHintChanged(int)));
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
@@ -456,6 +462,9 @@ void UIGChooserItemGroup::copyContent(UIGChooserItemGroup *pFrom, UIGChooserItem
 
 void UIGChooserItemGroup::handleRootStatusChange()
 {
+    /* Call to base-class: */
+    UIGChooserItem::handleRootStatusChange();
+
     /* Update linked values: */
     updateVisibleName();
     updateMinimumHeaderSize();

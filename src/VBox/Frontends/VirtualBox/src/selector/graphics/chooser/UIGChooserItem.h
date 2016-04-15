@@ -157,7 +157,7 @@ protected:
     void dropEvent(QGraphicsSceneDragDropEvent *pEvent);
 
     /* Helper: Update stuff: */
-    virtual void handleRootStatusChange() {}
+    virtual void handleRootStatusChange();
     void setPreviousGeometry(const QRectF &previousGeometry) { m_previousGeometry = previousGeometry; }
     const QRectF& previousGeometry() const { return m_previousGeometry; }
 
