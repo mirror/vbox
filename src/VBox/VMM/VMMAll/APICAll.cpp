@@ -2341,7 +2341,7 @@ VMMDECL(int) APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioWrite));
 
-    LogRel(("APIC%u: APICWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    Log4(("APIC%u: APICWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
 
     int rc = VBOXSTRICTRC_VAL(apicWriteRegister(pApicDev, pVCpu, offReg, uValue));
     return rc;
@@ -2406,14 +2406,14 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
         Log4(("APIC%u: APICPostInterrupt: uVector=%#x\n", pVCpu->idCpu, uVector));
         if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
         {
-            Assert(CTX_SUFF(pApicCpu->pvApicPib));
-            apicSetVectorInPib(CTX_SUFF(pApicCpu->pvApicPib), uVector);
-            bool const fAlreadySet = apicSetNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
-            if (!fAlreadySet)
+            if (pApic->fPostedIntrsEnabled)
+            { /** @todo posted-interrupt call to hardware */ }
+            else
             {
-                if (pApic->fPostedIntrsEnabled)
-                { /** @todo posted-interrupt call to hardware */ }
-                else
+                Assert(CTX_SUFF(pApicCpu->pvApicPib));
+                apicSetVectorInPib(CTX_SUFF(pApicCpu->pvApicPib), uVector);
+                bool const fAlreadySet = apicSetNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
+                if (!fAlreadySet)
                     APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
             }
         }
@@ -2611,8 +2611,8 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
             uint32_t const uFragment = ASMAtomicXchgU32(&pPib->aVectorBitmap[i], 0);
             if (uFragment)
             {
-                apicOrVectorsToReg(&pXApicPage->irr,  i,  uFragment);
-                apicAndVectorsToReg(&pXApicPage->tmr, i, ~uFragment);
+                pXApicPage->irr.u[i].u32Reg |=  uFragment;
+                pXApicPage->tmr.u[i].u32Reg &= ~uFragment;
             }
         }
     }
@@ -2630,8 +2630,8 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
             uint32_t const uFragment = ASMAtomicXchgU32(&pPib->aVectorBitmap[i], 0);
             if (uFragment)
             {
-                apicOrVectorsToReg(&pXApicPage->irr, i, uFragment);
-                apicOrVectorsToReg(&pXApicPage->tmr, i, uFragment);
+                pXApicPage->irr.u[i].u32Reg |= uFragment;
+                pXApicPage->tmr.u[i].u32Reg |= uFragment;
             }
         }
     }
