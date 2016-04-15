@@ -217,9 +217,8 @@ typedef struct INTNETIF
     /** Whether the interface is active or not.
      * This is shadowed by INTNETMACTABENTRY::fActive. */
     bool                    fActive;
-    /** Whether someone is currently in the destructor or has indicated that
-     *  the end is nigh by means of IntNetR0IfAbortWait. */
-    bool volatile           fDestroying;
+    /** Whether someone has indicated that the end is nigh by means of IntNetR0IfAbortWait. */
+    bool volatile           fNoMoreWaits;
     /** The flags specified when opening this interface. */
     uint32_t                fOpenFlags;
     /** Number of yields done to try make the interface read pending data.
@@ -239,11 +238,16 @@ typedef struct INTNETIF
      * waiting for data to arrive. */
     RTSEMEVENT volatile     hRecvEvent;
     /** Number of threads sleeping on the event semaphore. */
-    uint32_t                cSleepers;
+    uint32_t volatile       cSleepers;
     /** The interface handle.
      * When this is INTNET_HANDLE_INVALID a sleeper which is waking up
      * should return with the appropriate error condition. */
     INTNETIFHANDLE volatile hIf;
+    /** The native handle of the destructor thread.  This is NIL_RTNATIVETHREAD when
+     * the object is valid and set when intnetR0IfDestruct is in progress.  This is
+     * used to cover an unlikely (impossible?)  race between SUPDRVSESSION cleanup
+     * and lingering threads waiting for recv or similar. */
+    RTNATIVETHREAD volatile hDestructorThread;
     /** Pointer to the network this interface is connected to.
      * This is protected by the INTNET::hMtxCreateOpenDestroy. */
     struct INTNETNETWORK   *pNetwork;
@@ -770,8 +774,11 @@ DECLINLINE(void) intnetR0BusyIncTrunk(PINTNETTRUNKIF pTrunk)
  */
 DECLINLINE(int) intnetR0IfRetain(PINTNETIF pIf, PSUPDRVSESSION pSession)
 {
+    Assert(((PINTNETIF)pIf->pvObj)->hDestructorThread == NIL_RTNATIVETHREAD);
+
     int rc = SUPR0ObjAddRefEx(pIf->pvObj, pSession, true /* fNoBlocking */);
     AssertRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 
@@ -786,8 +793,11 @@ DECLINLINE(int) intnetR0IfRetain(PINTNETIF pIf, PSUPDRVSESSION pSession)
  */
 DECLINLINE(bool) intnetR0IfRelease(PINTNETIF pIf, PSUPDRVSESSION pSession)
 {
+    Assert(((PINTNETIF)pIf->pvObj)->hDestructorThread == NIL_RTNATIVETHREAD);
+
     int rc = SUPR0ObjRelease(pIf->pvObj, pSession);
     AssertRC(rc);
+
     return rc == VINF_OBJECT_DESTROYED;
 }
 
@@ -808,10 +818,20 @@ static DECLCALLBACK(int) intnetR0IfRetainHandle(RTHANDLETABLE hHandleTable, void
 {
     NOREF(pvUser);
     NOREF(hHandleTable);
-    PINTNETIF pIf = (PINTNETIF)pvObj;
-    if (pIf->hIf != INTNET_HANDLE_INVALID) /* Don't try retain it if called from intnetR0IfDestruct. */
+
+    PINTNETIF      pIf = (PINTNETIF)pvObj;
+    RTNATIVETHREAD hDtorThrd;
+    ASMAtomicUoReadHandle(&pIf->hDestructorThread, &hDtorThrd);
+    if (hDtorThrd == NIL_RTNATIVETHREAD)
         return intnetR0IfRetain(pIf, (PSUPDRVSESSION)pvCtx);
-    return VINF_SUCCESS;
+
+    /* Allow intnetR0IfDestruct to call RTHandleTableFreeWithCtx to free
+       the handle, but not even think about retaining a referenceas we don't
+       want to confuse SUPDrv and risk having the destructor called twice. */
+    if (hDtorThrd == RTThreadNativeSelf())
+        return VINF_SUCCESS;
+
+    return VERR_SEM_DESTROYED;
 }
 
 
@@ -4617,46 +4637,58 @@ INTNETR0DECL(int) IntNetR0IfWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, ui
         return VERR_INVALID_HANDLE;
     }
 
-    const INTNETIFHANDLE    hIfSelf     = pIf->hIf;
-    const RTSEMEVENT        hRecvEvent  = pIf->hRecvEvent;
-    const bool              fDestroying = ASMAtomicReadBool(&pIf->fDestroying);
-    if (    hIfSelf    != hIf           /* paranoia */
-        ||  hRecvEvent == NIL_RTSEMEVENT
-        ||  fDestroying
-       )
+    const RTSEMEVENT hRecvEvent   = pIf->hRecvEvent;
+    const bool       fNoMoreWaits = ASMAtomicUoReadBool(&pIf->fNoMoreWaits);
+    RTNATIVETHREAD   hDtorThrd;
+    ASMAtomicReadHandle(&pIf->hDestructorThread, &hDtorThrd);
+    if (hDtorThrd != NIL_RTNATIVETHREAD)
     {
+        /* See IntNetR0IfAbortWait for an explanation of hDestructorThread. */
         Log(("IntNetR0IfWait: returns VERR_SEM_DESTROYED\n"));
         return VERR_SEM_DESTROYED;
     }
 
-    /*
-     * It is tempting to check if there is data to be read here,
-     * but the problem with such an approach is that it will cause
-     * one unnecessary supervisor->user->supervisor trip. There is
-     * already a slight risk for such, so no need to increase it.
-     */
-
-    /*
-     * Increment the number of waiters before starting the wait.
-     * Upon wakeup we must assert reality, checking that we're not
-     * already destroyed or in the process of being destroyed. This
-     * code must be aligned with the waiting code in intnetR0IfDestruct.
-     */
-    ASMAtomicIncU32(&pIf->cSleepers);
-    int rc = RTSemEventWaitNoResume(hRecvEvent, cMillies);
-    if (pIf->hRecvEvent == hRecvEvent)
+    /* Check whether further waits have been barred by IntNetR0IfAbortWait. */
+    int rc;
+    if (   !fNoMoreWaits
+        && hRecvEvent != NIL_RTSEMEVENT)
     {
-        ASMAtomicDecU32(&pIf->cSleepers);
-        if (!pIf->fDestroying)
+        /*
+         * It is tempting to check if there is data to be read here,
+         * but the problem with such an approach is that it will cause
+         * one unnecessary supervisor->user->supervisor trip. There is
+         * already a slight risk for such, so no need to increase it.
+         */
+
+        /*
+         * Increment the number of waiters before starting the wait.
+         * Upon wakeup we must assert reality, checking that we're not
+         * already destroyed or in the process of being destroyed. This
+         * code must be aligned with the waiting code in intnetR0IfDestruct.
+         */
+        ASMAtomicIncU32(&pIf->cSleepers);
+        rc = RTSemEventWaitNoResume(hRecvEvent, cMillies);
+        if (pIf->hRecvEvent == hRecvEvent)
         {
-            if (intnetR0IfRelease(pIf, pSession))
+            ASMAtomicDecU32(&pIf->cSleepers);
+            ASMAtomicReadHandle(&pIf->hDestructorThread, &hDtorThrd);
+            if (hDtorThrd == NIL_RTNATIVETHREAD)
+            {
+                if (intnetR0IfRelease(pIf, pSession))
+                    rc = VERR_SEM_DESTROYED;
+            }
+            else
                 rc = VERR_SEM_DESTROYED;
         }
         else
             rc = VERR_SEM_DESTROYED;
     }
     else
+    {
         rc = VERR_SEM_DESTROYED;
+        intnetR0IfRelease(pIf, pSession);
+    }
+
     Log4(("IntNetR0IfWait: returns %Rrc\n", rc));
     return rc;
 }
@@ -4703,32 +4735,45 @@ INTNETR0DECL(int) IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSessio
         return VERR_INVALID_HANDLE;
     }
 
-    const INTNETIFHANDLE    hIfSelf     = pIf->hIf;
-    const RTSEMEVENT        hRecvEvent  = pIf->hRecvEvent;
-    const bool              fDestroying = ASMAtomicReadBool(&pIf->fDestroying);
-    if (    hIfSelf    != hIf           /* paranoia */
-        ||  hRecvEvent == NIL_RTSEMEVENT
-        ||  fDestroying
-       )
+    const RTSEMEVENT hRecvEvent  = pIf->hRecvEvent;
+    RTNATIVETHREAD   hDtorThrd;
+    ASMAtomicReadHandle(&pIf->hDestructorThread, &hDtorThrd);
+    if (hDtorThrd != NIL_RTNATIVETHREAD)
     {
+        /* This can only happen if we for some reason race SUPDRVSESSION cleanup,
+           i.e. the object count is set to zero without yet having removed it from
+           the object table, so we got a spurious "reference".  We must drop that
+           reference and let the destructor get on with its work.  (Not entirely sure
+           if this is practically possible on any of the platforms, i.e. whether it's
+           we can actually close a SUPDrv handle/descriptor with active threads still
+           in NtDeviceIoControlFile/ioctl, but better safe than sorry.) */
         Log(("IntNetR0IfAbortWait: returns VERR_SEM_DESTROYED\n"));
         return VERR_SEM_DESTROYED;
     }
 
-    /*
-     * Set fDestroying if requested to do so and then wake up all the sleeping
-     * threads (usually just one).   We leave the semaphore in the signalled
-     * state so the next caller will return immediately.
-     */
-    if (fNoMoreWaits)
-        ASMAtomicWriteBool(&pIf->fDestroying, true);
-
-    uint32_t cSleepers = ASMAtomicReadU32(&pIf->cSleepers) + 1;
-    while (cSleepers-- > 0)
+    /* a bit of paranoia */
+    int rc = VINF_SUCCESS;
+    if (hRecvEvent != NIL_RTSEMEVENT)
     {
-        int rc = RTSemEventSignal(pIf->hRecvEvent);
-        AssertRC(rc);
+        /*
+         * Set fNoMoreWaits if requested to do so and then wake up all the sleeping
+         * threads (usually just one).   We leave the semaphore in the signalled
+         * state so the next caller will return immediately.
+         */
+        if (fNoMoreWaits)
+            ASMAtomicWriteBool(&pIf->fNoMoreWaits, true);
+
+        uint32_t cSleepers = ASMAtomicReadU32(&pIf->cSleepers) + 1;
+        while (cSleepers-- > 0)
+        {
+            int rc2 = RTSemEventSignal(pIf->hRecvEvent);
+            AssertRC(rc2);
+        }
     }
+    else
+        rc = VERR_SEM_DESTROYED;
+
+    intnetR0IfRelease(pIf, pSession);
 
     Log4(("IntNetR0IfWait: returns %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
@@ -4830,13 +4875,18 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     Log(("intnetR0IfDestruct: pvObj=%p pIf=%p pIntNet=%p hIf=%RX32\n", pvObj, pIf, pIntNet, pIf->hIf));
 
     /*
+     * For paranoid reasons we must now mark the interface as destroyed.
+     * This is so that any waiting threads can take evasive action (kind
+     * of theoretical case), and we can reject everyone else referencing
+     * the object via the handle table before we get around to removing it.
+     */
+    ASMAtomicWriteHandle(&pIf->hDestructorThread, RTThreadNativeSelf());
+
+    /*
      * We grab the INTNET create/open/destroy semaphore to make sure nobody is
-     * adding or removing interface while we're in here.  For paranoid reasons
-     * we also mark the interface as destroyed here so any waiting threads can
-     * take evasive action (theoretical case).
+     * adding or removing interfaces while we're in here.
      */
     RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
-    ASMAtomicWriteBool(&pIf->fDestroying, true);
 
     /*
      * Delete the interface handle so the object no longer can be used.
@@ -4920,7 +4970,8 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
 
     /*
-     * Wakeup anyone waiting on this interface.
+     * Wakeup anyone waiting on this interface. (Kind of unlikely, but perhaps
+     * not quite impossible.)
      *
      * We *must* make sure they have woken up properly and realized
      * that the interface is no longer valid.
@@ -5044,7 +5095,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     //pIf->fMacSet          = false;
     //pIf->fPromiscuousReal = false;
     //pIf->fActive          = false;
-    //pIf->fDestroying      = false;
+    //pIf->fNoMoreWaits     = false;
     pIf->fOpenFlags         = fFlags;
     //pIf->cYields          = 0;
     //pIf->pIntBuf          = 0;
@@ -5054,6 +5105,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     pIf->hRecvEvent         = NIL_RTSEMEVENT;
     //pIf->cSleepers        = 0;
     pIf->hIf                = INTNET_HANDLE_INVALID;
+    pIf->hDestructorThread  = NIL_RTNATIVETHREAD;
     pIf->pNetwork           = pNetwork;
     pIf->pSession           = pSession;
     //pIf->pvObj            = NULL;
