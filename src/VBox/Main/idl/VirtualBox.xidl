@@ -1879,6 +1879,12 @@
 
       To enumerate all the virtual machines on the host, use the
       <link to="IVirtualBox::machines"/> attribute.
+
+      Error information handling is a bit special with IVirtualBox: creating
+      an instance will always succeed. The return of the actual error
+      code/information is postponed to any attribute or method call. The
+      reason for this is that COM likes to mutilate the error code and lose
+      the detailed error information returned by instance creation.
     </desc>
 
     <attribute name="version" type="wstring" readonly="yes">
@@ -21141,6 +21147,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       At the moment only available for clients of the local API (not usable
       via the webservice). Once the session logic is redesigned this might
       change.
+
+      Error information handling is a bit special with IVirtualBoxClient:
+      creating an instance will always succeed. The return of the actual error
+      code/information is postponed to any attribute or method call. The
+      reason for this is that COM likes to mutilate the error code and lose
+      the detailed error information returned by instance creation.
     </desc>
 
     <attribute name="virtualBox" type="IVirtualBox" readonly="yes">

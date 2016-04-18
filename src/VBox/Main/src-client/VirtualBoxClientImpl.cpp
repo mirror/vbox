@@ -137,7 +137,7 @@ HRESULT VirtualBoxClient::init()
         rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
-    /* Confirm a successful initialization iwhen it's the case. Must be last,
+    /* Confirm a successful initialization when it's the case. Must be last,
      * as on failure it will uninitialize the object. */
     if (SUCCEEDED(rc))
         autoInitSpan.setSucceeded();
