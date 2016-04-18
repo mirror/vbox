@@ -50,8 +50,11 @@ endif
 KBUILD_ARCHES += noarch
 
 
+# The bootsector directory.
+VBOX_PATH_BOOTSECTORS_SRC = $(VBOX_PATH_VALIDATIONKIT_SRC)/bootsectors
+
 # The bs3kit source directory.
-VBOX_PATH_BS3KIT_SRC = $(VBOX_PATH_VALIDATIONKIT_SRC)/bootsectors/bs3kit
+VBOX_PATH_BS3KIT_SRC = $(VBOX_PATH_BOOTSECTORS_SRC)/bs3kit
 
 
 # The 16-bit code & data segment classes.
@@ -78,7 +81,7 @@ BS3KIT_FN_GEN_NEARSTUBS = $(foreach fn,$2,$(evalcall2 def_Bs3KitGenNearStubSourc
 define def_Bs3KitGenNearStubSource
 $1_SOURCES += $$($1_0_OUTDIR)/near-call-to-$2_f16.asm
 $1_CLEAN   += $$($1_0_OUTDIR)/near-call-to-$2_f16.asm
-$$$$($1_0_OUTDIR)/near-call-to-$2_f16.asm: | $$$$(dir $$$$@)
+$$$$($1_0_OUTDIR)/near-call-to-$2_f16.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
 	$(QUIET)$(APPEND) -tn $$@ \
 		'%include "bs3kit.mac"' \
        	'BS3_BEGIN_TEXT16' \
