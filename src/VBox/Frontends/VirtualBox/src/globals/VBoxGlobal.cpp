@@ -4015,12 +4015,18 @@ void VBoxGlobal::prepare()
         return;
     }
 
-    /* Create VirtualBox client instance: */
+    /* Make sure VirtualBoxClient instance created: */
     m_client.createInstance(CLSID_VirtualBoxClient);
-    /* And make sure it was created: */
     if (!m_client.isOk())
     {
         msgCenter().cannotCreateVirtualBoxClient(m_client);
+        return;
+    }
+    /* Make sure VirtualBox instance acquired: */
+    m_vbox = m_client.GetVirtualBox();
+    if (!m_client.isOk())
+    {
+        msgCenter().cannotAcquireVirtualBox(m_client);
         return;
     }
     /* Init wrappers: */
@@ -4495,16 +4501,29 @@ void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
         /* Mark wrappers invalid: */
         m_fWrappersValid = false;
         /* Re-fetch corresponding CVirtualBox to restart VBoxSVC: */
-        // CVirtualBox is still NULL in current Main implementation,
-        // and this call do not restart anything, so we are waiting
-        // for subsequent event about VBoxSVC is available again.
-        m_vbox = virtualBoxClient().GetVirtualBox();
+        m_vbox = m_client.GetVirtualBox();
+        if (!m_client.isOk())
+        {
+            // The proper behavior would be to show the message and to exit the app, e.g.:
+            // msgCenter().cannotAcquireVirtualBox(m_client);
+            // return QApplication::quit();
+            // But CVirtualBox is still NULL in current Main implementation,
+            // and this call do not restart anything, so we are waiting
+            // for subsequent event about VBoxSVC is available again.
+        }
     }
     /* If VBoxSVC is available: */
     else
     {
         if (!m_fWrappersValid)
         {
+            /* Re-fetch corresponding CVirtualBox: */
+            m_vbox = m_client.GetVirtualBox();
+            if (!m_client.isOk())
+            {
+                msgCenter().cannotAcquireVirtualBox(m_client);
+                return QApplication::quit();
+            }
             /* Re-init wrappers: */
             comWrappersReinit();
 
@@ -4525,7 +4544,6 @@ void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
 void VBoxGlobal::comWrappersReinit()
 {
     /* Re-fetch corresponding objects/values: */
-    m_vbox = virtualBoxClient().GetVirtualBox();
     m_host = virtualBox().GetHost();
     m_strHomeFolder = virtualBox().GetHomeFolder();
 

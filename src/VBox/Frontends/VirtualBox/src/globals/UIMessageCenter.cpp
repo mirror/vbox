@@ -438,6 +438,14 @@ void UIMessageCenter::cannotCreateVirtualBoxClient(const CVirtualBoxClient &clie
           formatErrorInfo(client));
 }
 
+void UIMessageCenter::cannotAcquireVirtualBox(const CVirtualBoxClient &client) const
+{
+    error(0, MessageType_Critical,
+          tr("<p>Failed to acquire the VirtualBox COM object.</p>"
+             "<p>The application will now terminate.</p>"),
+          formatErrorInfo(client));
+}
+
 void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const
 {
     alert(0, MessageType_Error,
