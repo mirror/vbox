@@ -440,7 +440,7 @@ typedef struct APIC
     RTRCPTR                     RCPtrAlignment0;
     /** @} */
 
-    /** @name The APIC pending interrupt bitmap (PIB).
+    /** @name The APIC pending-interrupt bitmap (PIB).
      * @{ */
     /** The host-context physical address of the PIB. */
     RTHCPHYS                    HCPhysApicPib;
@@ -518,7 +518,7 @@ typedef struct APICCPU
     uint64_t volatile           uApicBaseMsr;
     /** @} */
 
-    /** @name The pending interrupt bitmaps (PIB).
+    /** @name The pending-interrupt bitmaps (PIB).
      * @{ */
     /** The host-context physical address of the page. */
     RTHCPHYS                    HCPhysApicPib;

@@ -236,13 +236,13 @@ typedef struct VMCPU
 # ifdef ___APICInternal_h
         struct APICCPU      s;
 # endif
-        uint8_t             padding[512];      /* multiple of 64 */
+        uint8_t             padding[640];      /* multiple of 64 */
     } apic;
 #endif
 
     /** Align the following members on page boundary. */
 #ifdef VBOX_WITH_NEW_APIC
-    uint8_t                 abAlignment2[2880];
+    uint8_t                 abAlignment2[2752];
 #else
     uint8_t                 abAlignment2[3392];
 #endif

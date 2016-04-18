@@ -206,7 +206,7 @@ static void apicR3InitIpi(PVMCPU pVCpu)
     PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
     memset((void *)&pX2ApicPage->self_ipi, 0, sizeof(pX2ApicPage->self_ipi));
 
-    /* Clear the posted interrupt bitmaps. */
+    /* Clear the pending-interrupt bitmaps. */
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
     memset((void *)&pApicCpu->ApicPibLevel, 0, sizeof(APICPIB));
     memset((void *)pApicCpu->pvApicPibR3,   0, sizeof(APICPIB));
@@ -250,23 +250,26 @@ VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu)
 
     LogFlow(("APIC%u: APICR3Reset\n", pVCpu->idCpu));
 
-#ifdef RT_STRICT
+#ifdef VBOX_STRICT
     /* Verify that the initial APIC ID reported via CPUID matches our VMCPU ID assumption. */
-    CPUMCPUIDLEAF CpuLeaf;
-    int rc = CPUMR3CpuIdGetLeaf(pVCpu->CTX_SUFF(pVM), &CpuLeaf, 1, 0);
-    AssertRC(rc);
-    Assert(((CpuLeaf.uEbx >> 24) & 0xff) == pVCpu->idCpu);
+    uint32_t uEax, uEbx, uEcx, uEdx;
+    uEax = uEbx = uEcx = uEdx = UINT32_MAX;
+    CPUMGetGuestCpuId(pVCpu, 1, 0, &uEax, &uEbx, &uEcx, &uEdx);
+    Assert(((uEbx >> 24) & 0xff) == pVCpu->idCpu);
 #endif
 
+    /*
+     * The state following a power-up or reset is a superset of the INIT state.
+     * See Intel spec. 10.4.7.3 "Local APIC State After an INIT Reset ('Wait-for-SIPI' State)"
+     */
     apicR3InitIpi(pVCpu);
-
-    PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
 
     /*
      * The APIC version register is read-only, so just initialize it here.
      * It is not clear from the specs, where exactly it is initalized.
      * The version determines the number of LVT entries and size of the APIC ID (8 bits for P4).
      */
+    PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
 #if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
     pXApicPage->version.u.u8MaxLvtEntry = XAPIC_MAX_LVT_ENTRIES_P4 - 1;
     pXApicPage->version.u.u8Version     = XAPIC_HARDWARE_VERSION_P4;
@@ -275,8 +278,8 @@ VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu)
 # error "Implement Pentium and P6 family APIC architectures"
 #endif
 
-    /** @todo It isn't very clear where the default base address is (re)initialized,
-     *        atm we do it here in Reset. */
+    /** @todo It isn't clear in the spec. where exactly the default base address
+     *        is (re)initialized, atm we do it here in Reset. */
     apicR3ResetBaseMsr(pVCpu);
 
     /*
@@ -984,6 +987,7 @@ static int apicR3InitState(PVM pVM)
             RT_ZERO(SupApicPage);
             SupApicPage.Phys = NIL_RTHCPHYS;
 
+            Assert(pVCpu->idCpu == idCpu);
             Assert(pApicCpu->pvApicPageR3 == NIL_RTR0PTR);
             Assert(pApicCpu->pvApicPageR0 == NIL_RTR0PTR);
             Assert(pApicCpu->pvApicPageRC == NIL_RTRCPTR);
@@ -1153,8 +1157,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pApic->pApicDevR3   = (PAPICDEV)PDMINS_2_DATA_R3PTR(pDevIns);
     pApic->pApicDevRC   = PDMINS_2_DATA_RCPTR(pDevIns);
 
-    rc = apicR3InitState(pVM);
-    AssertRCReturn(rc, rc);
+    apicR3InitState(pVM);
 
     /*
      * Disable automatic PDM locking for this device.

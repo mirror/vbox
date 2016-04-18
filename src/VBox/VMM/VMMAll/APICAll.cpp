@@ -91,7 +91,7 @@ DECLINLINE(void) apicClearVectorInReg(volatile XAPIC256BITREG *pApicReg, uint8_t
 
 
 /**
- * Checks if a vector is set in an APIC Pending Interrupt Bitmap (PIB).
+ * Checks if a vector is set in an APIC Pending-Interrupt Bitmap (PIB).
  *
  * @returns true if the specified vector is set, false otherwise.
  * @param   pvPib           Opaque pointer to the PIB.
@@ -127,7 +127,7 @@ DECLINLINE(bool) apicClearNotificationBitInPib(volatile void *pvPib)
 
 
 /**
- * Sets the vector in an APIC Pending Interrupt Bitmap (PIB).
+ * Sets the vector in an APIC Pending-Interrupt Bitmap (PIB).
  *
  * @param   pvPib           Opaque pointer to the PIB.
  * @param   uVector         The vector to set.
@@ -139,7 +139,7 @@ DECLINLINE(void) apicSetVectorInPib(volatile void *pvPib, uint8_t uVector)
 
 
 /**
- * Clears the vector in an APIC Pending Interrupt Bitmap (PIB).
+ * Clears the vector in an APIC Pending-Interrupt Bitmap (PIB).
  *
  * @param   pvPib           Opaque pointer to the PIB.
  * @param   uVector         The vector to clear.
@@ -2154,15 +2154,15 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
     NOREF(pDevIns);
     AssertReturn(u8Pin <= 1, VERR_INVALID_PARAMETER);
     AssertReturn(u8Level <= 1, VERR_INVALID_PARAMETER);
-
     LogFlow(("APIC%u: APICLocalInterrupt\n", pVCpu->idCpu));
 
-    PCXAPICPAGE  pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
-    VBOXSTRICTRC rcStrict   = VINF_SUCCESS;
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
     /* If the APIC is enabled, the interrupt is subject to LVT programming. */
     if (apicIsEnabled(pVCpu))
     {
+        PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
+
         /* Pick the LVT entry corresponding to the interrupt pin. */
         static const uint16_t s_au16LvtOffsets[] =
         {

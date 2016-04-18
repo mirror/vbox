@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1363,6 +1363,30 @@
     GEN_CHECK_OFF(PATMPATCHPAGE, papPatch);
 #endif
 
+#ifdef VBOX_WITH_NEW_APIC
+    GEN_CHECK_SIZE(APIC);
+    GEN_CHECK_OFF(APIC, pApicDevR0);
+    GEN_CHECK_OFF(APIC, pApicDevR3);
+    GEN_CHECK_OFF(APIC, pApicDevRC);
+    GEN_CHECK_OFF(APIC, pvApicPibR0);
+    GEN_CHECK_OFF(APIC, pvApicPibR3);
+    GEN_CHECK_OFF(APIC, pvApicPibRC);
+    GEN_CHECK_OFF(APIC, cbApicPib);
+    GEN_CHECK_OFF(APIC, enmOriginalMode);
+    GEN_CHECK_OFF(APICCPU, pvApicPageR0);
+    GEN_CHECK_OFF(APICCPU, pvApicPageR3);
+    GEN_CHECK_OFF(APICCPU, pvApicPageRC);
+    GEN_CHECK_OFF(APICCPU, pvApicPageRC);
+    GEN_CHECK_OFF(APICCPU, cbApicPage);
+    GEN_CHECK_OFF(APICCPU, pvApicPibR0);
+    GEN_CHECK_OFF(APICCPU, pvApicPibR3);
+    GEN_CHECK_OFF(APICCPU, pvApicPibRC);
+    GEN_CHECK_OFF(APICCPU, ApicPibLevel);
+    GEN_CHECK_OFF(APICCPU, pTimerR0);
+    GEN_CHECK_OFF(APICCPU, pTimerR3);
+    GEN_CHECK_OFF(APICCPU, pTimerRC);
+    GEN_CHECK_OFF(APICCPU, TimerCritSect);
+#endif
 
     GEN_CHECK_SIZE(VM);
     GEN_CHECK_OFF(VM, enmVMState);
@@ -1424,8 +1448,12 @@
     GEN_CHECK_OFF(VM, ssm);
     GEN_CHECK_OFF(VM, ftm);
     GEN_CHECK_OFF(VM, rem);
+    GEN_CHECK_OFF(VM, gim);
     GEN_CHECK_OFF(VM, vm);
     GEN_CHECK_OFF(VM, cfgm);
+#ifdef VBOX_WITH_NEW_APIC
+    GEN_CHECK_OFF(VM, apic);
+#endif
     GEN_CHECK_OFF(VM, aCpus);
 
 
@@ -1443,7 +1471,6 @@
     GEN_CHECK_OFF(VMCPU, fTraceGroups);
     GEN_CHECK_OFF(VMCPU, uAdHoc);
     GEN_CHECK_OFF(VMCPU, aStatAdHoc);
-    GEN_CHECK_OFF(VMCPU, cpum);
     GEN_CHECK_OFF(VMCPU, hm);
     GEN_CHECK_OFF(VMCPU, em);
     GEN_CHECK_OFF(VMCPU, iem);
@@ -1453,7 +1480,12 @@
     GEN_CHECK_OFF(VMCPU, pdm);
     GEN_CHECK_OFF(VMCPU, iom);
     GEN_CHECK_OFF(VMCPU, dbgf);
+    GEN_CHECK_OFF(VMCPU, gim);
+#ifdef VBOX_WITH_NEW_APIC
+    GEN_CHECK_OFF(VMCPU, apic);
+#endif
     GEN_CHECK_OFF(VMCPU, pgm);
+    GEN_CHECK_OFF(VMCPU, cpum);
 
 #ifndef VBOX_FOR_DTRACE_LIB
     GEN_CHECK_SIZE(DISCPUSTATE);
