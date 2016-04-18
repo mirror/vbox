@@ -2507,12 +2507,12 @@ BS3_DECL(void) Bs3InitAll_rm(void);
  *
  * For proper operation on OLDer CPUs, call #Bs3CpuDetect_mmm first.
  */
-BS3_DECL_FAR(void) Bs3InitMemory_rm(void);
+BS3_DECL_FAR(void) Bs3InitMemory_rm_far(void);
 
 /**
  * Initialized the X0TEXT16 and X1TEXT16 GDT entries.
  */
-BS3_DECL_FAR(void) Bs3InitGdt_rm(void);
+BS3_DECL_FAR(void) Bs3InitGdt_rm_far(void);
 
 
 

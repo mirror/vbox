@@ -27,7 +27,7 @@
 %include "bs3kit-template-header.mac"
 
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
-TMPL_BEGIN_TEXT
+
 
 ;;
 ; Rough CPU detection, mainly for detecting really old CPUs.
@@ -41,7 +41,17 @@ TMPL_BEGIN_TEXT
 ;
 ; @remarks  ASSUMES we're in ring-0 when not in some kind of real mode.
 ;
-BS3_PROC_BEGIN_MODE Bs3CpuDetect, BS3_PBC_HYBRID_0_ARGS
+; @note     We put the real mode version of this code in the RMTEXT16 segment
+;           to save space elsewhere.  We generate a far call stub that goes
+;           to the right segment.
+;
+%if TMPL_MODE == BS3_MODE_RM
+BS3_BEGIN_RMTEXT16
+BS3_PROC_BEGIN_MODE Bs3CpuDetect, BS3_PBC_FAR
+%else
+TMPL_BEGIN_TEXT
+BS3_PROC_BEGIN_MODE Bs3CpuDetect, BS3_PBC_HYBRID
+%endif
 CPU 8086
         push    xBP
         mov     xBP, xSP
@@ -295,4 +305,13 @@ CPU 8086
         BS3_HYBRID_RET
 
 BS3_PROC_END_MODE   Bs3CpuDetect
+
+
+%if TMPL_MODE == BS3_MODE_RM
+BS3_BEGIN_TEXT16_NEARSTUBS
+BS3_PROC_BEGIN_MODE Bs3CpuDetect, BS3_PBC_NEAR
+        call far TMPL_FAR_NM(Bs3CpuDetect)
+        ret
+BS3_PROC_END_MODE   Bs3CpuDetect
+%endif
 

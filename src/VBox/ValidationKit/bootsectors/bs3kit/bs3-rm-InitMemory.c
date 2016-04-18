@@ -238,7 +238,7 @@ static void bs3InitMemoryAddRange(uint32_t uRange, uint32_t cbRange)
 }
 
 
-BS3_DECL(void) BS3_FAR_CODE Bs3InitMemory_rm(void)
+BS3_DECL(void) BS3_FAR_CODE Bs3InitMemory_rm_far(void)
 {
     uint16_t        i;
     uint16_t        cPages;

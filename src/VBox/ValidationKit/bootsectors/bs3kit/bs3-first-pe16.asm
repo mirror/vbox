@@ -49,9 +49,10 @@ extern Bs3TestTerm_c64
 extern Bs3TestSub_c64
 extern Bs3TestInit_c64
 
-BS3_BEGIN_TEXT16
-EXTERN Bs3InitMemory_rm
+BS3_BEGIN_RMTEXT16
+EXTERN Bs3InitMemory_rm_far
 
+BS3_BEGIN_TEXT16
 %if 0
 EXTERN Main_pe16
 EXTERN Bs3SwitchToPE16_rm
@@ -85,7 +86,7 @@ BS3_BEGIN_TEXT16
     ;
     ; We need to enter 16-bit protected mode before we can call Main_pe16.
     ;
-    call    NAME(Bs3InitMemory_rm)      ; Initialize the memory (must be done from real mode).
+    call far NAME(Bs3InitMemory_rm_far) ; Initialize the memory (must be done from real mode).
     call    Bs3Trap32Init
     sub     xSP, 20h                    ; for 64-bit calls.
 %if 0

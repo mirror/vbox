@@ -40,9 +40,9 @@
 
 BS3_DECL(void) Bs3InitAll_rm(void)
 {
-    Bs3CpuDetect_rm();
-    Bs3InitMemory_rm();
-    Bs3InitGdt_rm();
+    Bs3CpuDetect_rm_far();
+    Bs3InitMemory_rm_far();
+    Bs3InitGdt_rm_far();
 
     ASMIntDisable();
     Bs3PicMaskAll();
