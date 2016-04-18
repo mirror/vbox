@@ -1724,6 +1724,12 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->cbReplyParametersLeft = sizeof(ReplyInquirePCIHostAdapterInformation);
             break;
         }
+        case BUSLOGICCOMMAND_SET_SCSI_SELECTION_TIMEOUT:
+        {
+            /* no-op */
+            pBusLogic->cbReplyParametersLeft = 0;
+            break;
+        }
         case BUSLOGICCOMMAND_MODIFY_IO_ADDRESS:
         {
             /* Modify the ISA-compatible I/O port base. Note that this technically
@@ -1815,11 +1821,11 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         {
             /* The reply length is set by the guest and is found in the first byte of the command buffer. */
             pBusLogic->cbReplyParametersLeft = pBusLogic->aCommandBuffer[0];
-            memset(pBusLogic->aReplyBuffer, ' ', pBusLogic->cbReplyParametersLeft);
-            const char aModelName[] = "958";
-            int cCharsToTransfer =   (pBusLogic->cbReplyParametersLeft <= (sizeof(aModelName) - 1))
+            memset(pBusLogic->aReplyBuffer, 0, pBusLogic->cbReplyParametersLeft);
+            const char aModelName[] = "958";    /* Trailing \0 is fine, that's the filler anyway. */
+            int cCharsToTransfer =   pBusLogic->cbReplyParametersLeft <= sizeof(aModelName)
                                    ? pBusLogic->cbReplyParametersLeft
-                                   : sizeof(aModelName) - 1;
+                                   : sizeof(aModelName);
 
             for (int i = 0; i < cCharsToTransfer; i++)
                 pBusLogic->aReplyBuffer[i] = aModelName[i];
@@ -2311,6 +2317,9 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                     case BUSLOGICCOMMAND_READ_BUSMASTER_CHIP_FIFO:
                     case BUSLOGICCOMMAND_WRITE_BUSMASTER_CHIP_FIFO:
                         pBusLogic->cbCommandParametersLeft = 3;
+                        break;
+                    case BUSLOGICCOMMAND_SET_SCSI_SELECTION_TIMEOUT:
+                        pBusLogic->cbCommandParametersLeft = 4;
                         break;
                     case BUSLOGICCOMMAND_INITIALIZE_MAILBOX:
                         pBusLogic->cbCommandParametersLeft = sizeof(RequestInitMbx);
