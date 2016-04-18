@@ -127,29 +127,17 @@ UIGDetailsElementPreview::UIGDetailsElementPreview(UIGDetailsSet *pParent, bool 
     /* Assign corresponding icon: */
     setIcon(gpConverter->toIcon(elementType()));
 
-    /* Create layout: */
-    QGraphicsLinearLayout *pLayout = new QGraphicsLinearLayout;
-    AssertPtr(pLayout);
+    /* Create preview: */
+    m_pPreview = new UIGMachinePreview(this);
+    AssertPtr(m_pPreview);
     {
-        /* Prepare layout: */
+        /* Configure preview: */
+        connect(m_pPreview, SIGNAL(sigSizeHintChanged()),
+                this, SLOT(sltPreviewSizeHintChanged()));
         const int iMargin = data(ElementData_Margin).toInt();
-        pLayout->setContentsMargins(iMargin, 2 * iMargin + minimumHeaderHeight(), iMargin, iMargin);
-        /* Assign layout to widget: */
-        setLayout(pLayout);
-        /* Create preview: */
-        m_pPreview = new UIGMachinePreview(this);
-        AssertPtr(m_pPreview);
-        {
-            /* Prepare preview: */
-            connect(m_pPreview, SIGNAL(sigSizeHintChanged()),
-                    this, SLOT(sltPreviewSizeHintChanged()));
-            /* Add preview into layout: */
-            pLayout->addItem(m_pPreview);
-        }
+        m_pPreview->setPos(iMargin, 2 * iMargin + minimumHeaderHeight());
+        m_pPreview->resize(m_pPreview->minimumSizeHint());
     }
-
-    /* Set fixed size policy finally (after all content constructed): */
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     /* Translate finally: */
     retranslateUi();
@@ -237,6 +225,7 @@ void UIGDetailsElementPreview::updateAppearance()
 
     /* Set new machine attribute directly: */
     m_pPreview->setMachine(machine());
+    m_pPreview->resize(m_pPreview->minimumSizeHint());
     emit sigBuildDone();
 }
 
