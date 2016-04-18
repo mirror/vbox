@@ -180,6 +180,10 @@ UIMainEventListener::UIMainEventListener()
 
 void UIMainEventListener::registerSource(const CEventSource &source, const CEventListener &listener)
 {
+    /* Make sure source and listener are valid: */
+    AssertReturnVoid(!source.isNull());
+    AssertReturnVoid(!listener.isNull());
+
     /* Create thread for passed source: */
     m_threads << new UIMainEventListeningThread(source, listener);
     /* And start it: */
