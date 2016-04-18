@@ -873,7 +873,8 @@ typedef struct X2APICPAGE
 typedef volatile X2APICPAGE *PX2APICPAGE;
 /** Pointer to a const X2APICPAGE struct. */
 typedef const volatile X2APICPAGE *PCX2APICPAGE;
-//AssertCompileSize(X2APICPAGE, 4096);
+AssertCompileSize(X2APICPAGE, 4096);
+AssertCompileSize(X2APICPAGE, sizeof(XAPICPAGE));
 AssertCompileMemberOffset(X2APICPAGE, id,          XAPIC_OFF_ID);
 AssertCompileMemberOffset(X2APICPAGE, version,     XAPIC_OFF_VERSION);
 AssertCompileMemberOffset(X2APICPAGE, tpr,         XAPIC_OFF_TPR);
