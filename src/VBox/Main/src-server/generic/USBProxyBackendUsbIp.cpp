@@ -379,12 +379,19 @@ void USBProxyBackendUsbIp::uninit()
         AssertRC(rc);
         rc = RTPipeClose(m->hWakeupPipeW);
         AssertRC(rc);
+
+        m->hPollSet = NIL_RTPOLLSET;
+        m->hWakeupPipeR = NIL_RTPIPE;
+        m->hWakeupPipeW = NIL_RTPIPE;
     }
 
     if (m->pszHost)
         RTStrFree(m->pszHost);
     if (m->hMtxDevices != NIL_RTSEMFASTMUTEX)
+    {
         RTSemFastMutexDestroy(m->hMtxDevices);
+        m->hMtxDevices = NIL_RTSEMFASTMUTEX;
+    }
 
     delete m;
     USBProxyBackend::uninit();
@@ -454,7 +461,8 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
         rc = reconnect();
 
     /* Query a new device list upon entering. */
-    if (m->enmRecvState == kUsbIpRecvState_None)
+    if (   RT_SUCCESS(rc)
+        && m->enmRecvState == kUsbIpRecvState_None)
     {
         rc = startListExportedDevicesReq();
         if (RT_FAILURE(rc))
@@ -694,6 +702,8 @@ int USBProxyBackendUsbIp::reconnect()
             RTTcpClientCloseEx(m->hSocket, false /*fGracefulShutdown*/);
             m->hSocket = NIL_RTSOCKET;
         }
+        else
+            LogRel(("USB/IP: Connected to host \"%s\"\n", m->pszHost));
     }
 
     return rc;
@@ -906,8 +916,14 @@ int USBProxyBackendUsbIp::addDeviceToList(PUsbIpExportedDevice pDev)
         pNew->bNumConfigurations = pDev->bNumConfigurations;
         pNew->enmState           = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
         pNew->u64SerialHash      = 0;
-        pNew->bBus               = (uint8_t)pDev->u32BusNum;
-        pNew->bPort              = (uint8_t)pDev->u32DevNum;
+        /** @todo: The following is not correct but is required to to get USB testing working
+         * because only the port can be part of a filter (adding the required attributes for the bus
+         * breaks API and ABI compatibility).
+         * Filtering by port number is required for USB testing to connect to the correct device
+         * in case there are multiple ones.
+         */
+        pNew->bBus               = (uint8_t)pDev->u32DevNum;
+        pNew->bPort              = (uint8_t)pDev->u32BusNum;
 
         switch (pDev->u32Speed)
         {
