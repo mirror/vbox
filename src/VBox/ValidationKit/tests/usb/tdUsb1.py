@@ -314,14 +314,15 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             reporter.log('Connect succeeded');
             self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);
 
-            # Create device filter
-            fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
+            # Create test device gadget and a filter to attach the device automatically.
+            fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
             if fRc is True:
-                fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
+                iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
+                fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', sPort = str(iBusId));
                 if fRc is True:
 
                     # Wait a moment to let the USB device appear
-                    self.sleep(10);
+                    self.sleep(3);
 
                     tupCmdLine = ('UsbTest', );
                     # Exclude a few tests which hang and cause a timeout, need investigation.

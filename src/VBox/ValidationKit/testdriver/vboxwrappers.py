@@ -2009,7 +2009,9 @@ class SessionWrapper(TdTaskBase):
 
         return fRc;
 
-    def addUsbDeviceFilter(self, sName, sVendorId, sProductId):
+    def addUsbDeviceFilter(self, sName, sVendorId = None, sProductId = None, sRevision = None, \
+                           sManufacturer = None, sProduct = None, sSerialNumber = None, \
+                           sPort = None, sRemote = None):
         """
         Creates a USB device filter and inserts it into the VM.
         Returns True on success.
@@ -2018,12 +2020,26 @@ class SessionWrapper(TdTaskBase):
         fRc = True;
 
         try:
-            usbDevFilter = self.o.machine.USBDeviceFilters.createDeviceFilter(sName);
-            usbDevFilter.active = True;
-            usbDevFilter.vendorId = sVendorId;
-            usbDevFilter.productId = sProductId;
+            oUsbDevFilter = self.o.machine.USBDeviceFilters.createDeviceFilter(sName);
+            oUsbDevFilter.active = True;
+            if sVendorId is not None:
+                oUsbDevFilter.vendorId = sVendorId;
+            if sProductId is not None:
+                oUsbDevFilter.productId = sProductId;
+            if sRevision is not None:
+                oUsbDevFilter.revision = sRevision;
+            if sManufacturer is not None:
+                oUsbDevFilter.manufacturer = sManufacturer;
+            if sProduct is not None:
+                oUsbDevFilter.product = sProduct;
+            if sSerialNumber is not None:
+                oUsbDevFilter.serialnumber = sSerialNumber;
+            if sPort is not None:
+                oUsbDevFilter.port = sPort;
+            if sRemote is not None:
+                oUsbDevFilter.remote = sRemote;
             try:
-                self.o.machine.USBDeviceFilters.insertDeviceFilter(0, usbDevFilter);
+                self.o.machine.USBDeviceFilters.insertDeviceFilter(0, oUsbDevFilter);
             except:
                 reporter.errorXcpt('insertDeviceFilter(%s) failed on "%s"' \
                                    % (0, self.sName) );
