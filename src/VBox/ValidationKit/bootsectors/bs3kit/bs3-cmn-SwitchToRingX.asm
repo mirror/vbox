@@ -42,7 +42,7 @@ TMPL_BEGIN_TEXT
 ;
 ; @uses     No GPRs.
 ;
-BS3_PROC_BEGIN_CMN Bs3SwitchToRingX
+BS3_PROC_BEGIN_CMN Bs3SwitchToRingX, BS3_PBC_HYBRID_SAFE
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
@@ -64,12 +64,12 @@ BS3_PROC_BEGIN_CMN Bs3SwitchToRingX
         ; In protected mode: Check the CPL we're currently at skip syscall if ring-0 already.
         mov     ax, cs
         and     al, 3
-        cmp     al, byte [xBP + xCB*2]
+        cmp     al, byte [xBP + xCB + cbCurRetAddr]
         je      .return
 
 .just_do_it:
         mov     xAX, BS3_SYSCALL_TO_RING0
-        add     al, [xBP + xCB*2]
+        add     al, [xBP + xCB + cbCurRetAddr]
         call    Bs3Syscall
 
 %ifndef BS3_STRICT
@@ -79,12 +79,12 @@ BS3_PROC_BEGIN_CMN Bs3SwitchToRingX
         pop     xAX
         pop     xBP
         BS3_CALL_CONV_EPILOG 1
-        ret
+        BS3_HYBRID_RET
 
 %ifdef BS3_STRICT
 ; In real mode, only ring-0 makes any sense.
 .return_real_mode:
-        cmp     byte [xBP + xCB*2], 0
+        cmp     byte [xBP + xCB + cbCurRetAddr], 0
         je      .return
         int3
         jmp     .return

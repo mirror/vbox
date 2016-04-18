@@ -137,25 +137,16 @@
  %endif
 %endmacro
 
-; Default to register aliases for ARCH_BITS.
-BS3_SET_REG_ALIASES ARCH_BITS
-
-
-;; Wrapper around BITS.
-; Updates __BITS__ (built-in variable in nasm, we work it for yasm) as well
-; a number of convenient macros and register aliases.
-;
-; @param    %1      The CPU bit count: 16, 32 or 64
-; @remarks ARCH_BITS is not modified and will remain what it was on the
-;          assembler command line.
-%macro BS3_SET_BITS 1
- BITS %1
-
+;;
+; Redefines macros that follows __BITS__.
+%macro BS3_SET_BITS_MACROS 1
+ ;; Emulate the __BITS__ macro in NASM 2.0+. Follows BS3_SET_BITS.
  %ifdef __YASM__
   %undef  __BITS__
   %define __BITS__ %1
  %endif
 
+ ;; Mostly internal macro. Follows BS3_SET_BITS.
  %undef  BS3_NAME_UNDERSCORE
  %if %1 == 64
   %define BS3_NAME_UNDERSCORE
@@ -163,6 +154,7 @@ BS3_SET_REG_ALIASES ARCH_BITS
   %define BS3_NAME_UNDERSCORE _
  %endif
 
+ ;; For segment overrides and stuff. Follows BS3_SET_BITS.
  %undef   BS3_ONLY_16BIT
  %if %1 == 16
   %define BS3_ONLY_16BIT(a_Expr)    a_Expr
@@ -170,6 +162,7 @@ BS3_SET_REG_ALIASES ARCH_BITS
   %define BS3_ONLY_16BIT(a_Expr)
  %endif
 
+ ;; For odd 64-bit stuff. Follows BS3_SET_BITS.
  %undef   BS3_ONLY_64BIT
  %if %1 == 64
   %define BS3_ONLY_64BIT(a_Expr)    a_Expr
@@ -177,6 +170,7 @@ BS3_SET_REG_ALIASES ARCH_BITS
   %define BS3_ONLY_64BIT(a_Expr)
  %endif
 
+ ;; For segment overrides and stuff. Follows BS3_SET_BITS.
  %undef   BS3_NOT_64BIT
  %if %1 == 64
   %define BS3_NOT_64BIT(a_Expr)
@@ -184,6 +178,7 @@ BS3_SET_REG_ALIASES ARCH_BITS
   %define BS3_NOT_64BIT(a_Expr)     a_Expr
  %endif
 
+ ;; For stack cleanups and similar where each bit mode is different. Follows BS3_SET_BITS.
  %undef   BS3_IF_16_32_64BIT
  %if %1 == 16
   %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_16BitExpr
@@ -193,6 +188,8 @@ BS3_SET_REG_ALIASES ARCH_BITS
   %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_64BitExpr
  %endif
 
+ ;; For RIP relative addressing in 64-bit mode and absolute addressing in
+ ; other modes. Follows BS3_SET_BITS.
  %undef   BS3_WRT_RIP
  %if %1 == 64
   %define BS3_WRT_RIP(a_Sym)        rel a_Sym
@@ -240,64 +237,37 @@ BS3_SET_REG_ALIASES ARCH_BITS
   %define BS3_IF_64BIT_OTHERWISE(a_64BitExpr, a_OtherwiseExpr) a_OtherwiseExpr
  %endif
 
- BS3_SET_REG_ALIASES %1
+ ;;
+ ; Same as BS3_CMN_NM except in 16-bit mode, it will generate the far name.
+ ; (16-bit code generally have both near and far callable symbols, so we won't
+ ; be restricted to 64KB test code.)
+ %if %1 == 16
+  %define BS3_CMN_NM_FAR(a_Name) BS3_NAME_UNDERSCORE %+ a_Name %+ _f %+ __BITS__
+ %else
+  %define BS3_CMN_NM_FAR(a_Name) BS3_CMN_NM(a_Name)
+ %endif
+
 %endmacro
 
+; Default to register aliases for ARCH_BITS.
+BS3_SET_REG_ALIASES ARCH_BITS
 
-;; Emulate the __BITS__ macro in NASM 2.0+. Follows BS3_SET_BITS.
-%ifdef __YASM__
- %define __BITS__                   ARCH_BITS
-%endif
+; Define macros for ARCH_BITS.
+BS3_SET_BITS_MACROS ARCH_BITS
 
-;; Mostly internal macro. Follows BS3_SET_BITS.
-%if ARCH_BITS == 64
- %define BS3_NAME_UNDERSCORE
-%else
- %define BS3_NAME_UNDERSCORE        _
-%endif
 
-;; For RIP relative addressing in 64-bit mode and absolute addressing in
-; other modes. Follows BS3_SET_BITS.
-%if ARCH_BITS == 64
- %ifdef __YASM__
-  %define BS3_WRT_RIP(a_Sym)        a_Sym wrt rip
- %else
-  %define BS3_WRT_RIP(a_Sym)        rel a_Sym       ; Baka! Why couldn't they do 'wrt rip' like yasm?
- %endif
-%else
- %define BS3_WRT_RIP(a_Sym)         a_Sym
-%endif
-
-;; For segment overrides and stuff. Follows BS3_SET_BITS.
-%if ARCH_BITS == 16
- %define BS3_ONLY_16BIT(a_Expr)     a_Expr
-%else
- %define BS3_ONLY_16BIT(a_Expr)
-%endif
-
-;; For odd 64-bit stuff. Follows BS3_SET_BITS.
-%if ARCH_BITS == 64
- %define BS3_ONLY_64BIT(a_Expr)     a_Expr
-%else
- %define BS3_ONLY_64BIT(a_Expr)
-%endif
-
-;; For segment overrides and stuff. Follows BS3_SET_BITS.
-%if ARCH_BITS == 64
- %define BS3_NOT_64BIT(a_Expr)
-%else
- %define BS3_NOT_64BIT(a_Expr)     a_Expr
-%endif
-
-;; For stack cleanups and similar where each bit mode is different. Follows BS3_SET_BITS.
-%if ARCH_BITS == 16
- %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_16BitExpr
-%elif ARCH_BITS == 32
- %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_32BitExpr
-%else
- %define BS3_IF_16_32_64BIT(a_16BitExpr, a_32BitExpr, a_64BitExpr) a_64BitExpr
-%endif
-
+;; Wrapper around BITS.
+; Updates __BITS__ (built-in variable in nasm, we work it for yasm) as well
+; a number of convenient macros and register aliases.
+;
+; @param    %1      The CPU bit count: 16, 32 or 64
+; @remarks ARCH_BITS is not modified and will remain what it was on the
+;          assembler command line.
+%macro BS3_SET_BITS 1
+ BITS %1
+ BS3_SET_BITS_MACROS %1
+ BS3_SET_REG_ALIASES %1
+%endmacro
 
 ;;
 ; For instruction that should only be emitted in 16-bit mode. Follows BS3_SET_BITS.
@@ -357,6 +327,56 @@ GROUP FLAT BS3FLAT
  %else
         section BS3TEXT16
  %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_TEXT16
+        BS3_SET_BITS 16
+%endmacro
+
+%macro BS3_BEGIN_TEXT16_NEARSTUBS 0
+ %ifndef  BS3_BEGIN_TEXT16_NEARSTUBS_NOT_FIRST
+  %define BS3_BEGIN_TEXT16_NEARSTUBS_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3TEXT16_NEARSTUBS align=1 progbits alloc exec nowrite
+  %else
+        section BS3TEXT16_NEARSTUBS align=1 CLASS=BS3CLASS16CODE PUBLIC USE16
+  %endif
+ %else
+        section BS3TEXT16_NEARSTUBS
+ %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_TEXT16_NEARSTUBS
+        BS3_SET_BITS 16
+%endmacro
+
+%macro BS3_BEGIN_TEXT16_FARSTUBS 0
+ %ifndef  BS3_BEGIN_TEXT16_FARSTUBS_NOT_FIRST
+  %define BS3_BEGIN_TEXT16_FARSTUBS_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3TEXT16_FARSTUBS align=1 progbits alloc exec nowrite
+  %else
+        section BS3TEXT16_FARSTUBS align=1 CLASS=BS3CLASS16CODE PUBLIC USE16
+  %endif
+ %else
+        section BS3TEXT16_FARSTUBS
+ %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_TEXT16_FARSTUBS
+        BS3_SET_BITS 16
+%endmacro
+
+%macro BS3_BEGIN_RMTEXT16 0
+ %ifndef  BS3_BEGIN_RMTEXT16_NOT_FIRST
+  %define BS3_BEGIN_RMTEXT16_NOT_FIRST
+  %ifdef ASM_FORMAT_ELF
+        section BS3RMTEXT16 align=2 progbits alloc exec nowrite
+  %else
+        section BS3RMTEXT16 align=2 CLASS=BS3CLASS16RMCODE PUBLIC USE16
+  %endif
+ %else
+        section BS3RMTEXT16
+ %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_RMTEXT16
         BS3_SET_BITS 16
 %endmacro
 
@@ -374,6 +394,8 @@ GROUP FLAT BS3FLAT
  %else
         section BS3DATA16
  %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_DATA16
         BS3_SET_BITS 16
 %endmacro
 
@@ -388,6 +410,8 @@ GROUP FLAT BS3FLAT
  %else
         section BS3TEXT32
  %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_TEXT32
         BS3_SET_BITS 32
 %endmacro
 
@@ -402,6 +426,8 @@ GROUP FLAT BS3FLAT
  %else
         section BS3DATA32
  %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_DATA32
         BS3_SET_BITS 32
 %endmacro
 
@@ -416,6 +442,8 @@ GROUP FLAT BS3FLAT
  %else
         section BS3TEXT64
  %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_TEXT64
         BS3_SET_BITS 64
 %endmacro
 
@@ -430,6 +458,8 @@ GROUP FLAT BS3FLAT
  %else
         section BS3DATA64
  %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_DATA64
         BS3_SET_BITS 64
 %endmacro
 
@@ -445,6 +475,8 @@ GROUP FLAT BS3FLAT
  %else
         section BS3SYSTEM16
  %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_SYSTEM16
         BS3_SET_BITS 16
 %endmacro
 
@@ -512,6 +544,19 @@ GROUP FLAT BS3FLAT
  extern BS3_CMN_NM(%1)
  %undef  %1
  %define %1 BS3_CMN_NM(%1)
+%endmacro
+
+;;
+; Same as BS3_EXTERN_CMN except it picks the far variant in 16-bit code.
+;
+; @param    %1  The unmangled common name.
+;
+; @remarks  Must enter the segment in which this name is defined.
+;
+%macro BS3_EXTERN_CMN_FAR 1
+ extern BS3_CMN_NM_FAR(%1)
+ %undef  %1
+ %define %1 BS3_CMN_NM_FAR(%1)
 %endmacro
 
 ;; @def BS3_EXTERN_TMPL
@@ -628,16 +673,151 @@ size %1 %+ _EndProc     0
 %endmacro
 
 
+;; @name BS3_PBC_XXX - For use as the 2nd parameter to BS3_PROC_BEGIN_CMN.
+;; @{
+%define BS3_PBC_NEAR          0 ;;< Only near.
+%define BS3_PBC_FAR           1 ;;< Only far.
+%define BS3_PBC_HYBRID        2 ;;< Hybrid near/far procedure, trashing AX
+%define BS3_PBC_HYBRID_SAFE   3 ;;< Hybrid near/far procedure, no trashing but slower.
+%define BS3_PBC_HYBRID_0_ARGS 4 ;;< Hybrid near/far procedure, no parameters so separate far stub, no trashing, fast near calls.
+;; @}
+
 ;; Convenience macro for defining common procedures.
-%macro BS3_PROC_BEGIN_CMN 1
- BS3_PROC_BEGIN     BS3_CMN_NM(%1)
+; This will emit both near and far 16-bit symbols according to parameter %2 (BS3_PBC_XXX).
+%macro BS3_PROC_BEGIN_CMN 2
+ %undef BS3_CUR_PROC_FLAGS
+ %if __BITS__ == 16
+  %if %2 == BS3_PBC_NEAR
+   %define BS3_CUR_PROC_FLAGS   BS3_PBC_NEAR
+   %xdefine cbCurRetAddr        2
+   BS3_PROC_BEGIN       BS3_CMN_NM(%1)
+
+  %elif %2 == BS3_PBC_FAR
+   %define BS3_CUR_PROC_FLAGS   BS3_PBC_FAR
+   %xdefine cbCurRetAddr        4
+   BS3_PROC_BEGIN       BS3_CMN_NM_FAR(%1)
+
+  %elif %2 == BS3_PBC_HYBRID
+   %define BS3_CUR_PROC_FLAGS   BS3_PBC_HYBRID
+   %xdefine cbCurRetAddr        4
+   BS3_GLOBAL_NAME_EX   BS3_CMN_NM(%1), function, 3
+        pop     ax
+        push    cs
+        push    ax
+   BS3_PROC_BEGIN       BS3_CMN_NM_FAR(%1)
+
+  %elif %2 == BS3_PBC_HYBRID_SAFE
+   %define BS3_CUR_PROC_FLAGS   BS3_PBC_HYBRID_SAFE
+   %xdefine cbCurRetAddr        4
+   BS3_GLOBAL_NAME_EX   BS3_CMN_NM(%1), function, 3
+        extern  Bs3CreateHybridFarRet_c16
+        call    Bs3CreateHybridFarRet_c16
+   BS3_PROC_BEGIN       BS3_CMN_NM_FAR(%1)
+
+  %elif %2 == BS3_PBC_HYBRID_0_ARGS
+   %define BS3_CUR_PROC_FLAGS   BS3_PBC_NEAR
+   %xdefine cbCurRetAddr        2
+   %undef  TMP_BEGIN_PREV_SEG
+   %xdefine TMP_BEGIN_PREV_SEG   BS3_CUR_SEG_BEGIN_MACRO
+
+   BS3_BEGIN_TEXT16_FARSTUBS
+   BS3_PROC_BEGIN       BS3_CMN_NM_FAR(%1)
+        call    BS3_CMN_NM(%1)
+        retf
+   BS3_PROC_END         BS3_CMN_NM_FAR(%1)
+
+   TMP_BEGIN_PREV_SEG
+   BS3_PROC_BEGIN       BS3_CMN_NM(%1)
+
+  %else
+   %error BS3_PROC_BEGIN_CMN parameter 2 value %2 is not recognized.
+
+   %define BS3_CUR_PROC_FLAGS    BS3_PBC_NEAR
+   %xdefine cbCurRetAddr         4
+   BS3_PROC_BEGIN       BS3_CMN_NM(%1)
+  %endif
+ %else
+  %define BS3_CUR_PROC_FLAGS    BS3_PBC_NEAR
+  %xdefine cbCurRetAddr         xCB
+  BS3_PROC_BEGIN        BS3_CMN_NM(%1)
+ %endif
 %endmacro
 
 ;; Convenience macro for defining common procedures.
 %macro BS3_PROC_END_CMN 1
- BS3_PROC_END       BS3_CMN_NM(%1)
+ %if __BITS__ == 16
+  %if BS3_CUR_PROC_FLAGS == BS3_PBC_NEAR
+   BS3_PROC_END      BS3_CMN_NM(%1)
+  %else
+   BS3_PROC_END      BS3_CMN_NM_FAR(%1)
+  %endif
+ %else
+  BS3_PROC_END       BS3_CMN_NM(%1)
+ %endif
+ %undef cbCurRetAddr
 %endmacro
 
+;; Does a far return in 16-bit code, near return in 32-bit and 64-bit.
+; This is for use with BS3_PBC_XXX
+%macro BS3_HYBRID_RET 0-1
+ %if __BITS__ == 16
+  %if %0 > 0
+   %if BS3_CUR_PROC_FLAGS == BS3_PBC_NEAR || BS3_CUR_PROC_FLAGS == BS3_PBC_HYBRID_0_ARGS
+        ret    %1
+   %else
+        retf    %1
+   %endif
+  %else
+   %if BS3_CUR_PROC_FLAGS == BS3_PBC_NEAR || BS3_CUR_PROC_FLAGS == BS3_PBC_HYBRID_0_ARGS
+        ret
+   %else
+        retf
+   %endif
+  %endif
+ %else
+  %if BS3_CUR_PROC_FLAGS != BS3_PBC_NEAR
+   %error Expected BS3_CUR_PROC_FLAGS to be BS3_PBC_NEAR in non-16-bit code.
+  %endif
+  %if %0 > 0
+        ret     %1
+  %else
+        ret
+  %endif
+ %endif
+%endmacro
+
+;;
+; Generate a safe 16-bit far stub for function %1, shuffling %2 bytes of parameters.
+;
+; This does absolutely nothing in 32-bit and 64-bit mode.
+;
+; @param    1   The function basename.
+; @param    2   The number of bytes of parameters on the stack, must be a multiple of 2.
+; @remarks  Changes the segment to TEXT16.
+;
+%macro BS3_CMN_FAR_STUB 2
+ %if %2 <= 1 || (%2 & 1)
+  %error Invalid parameter frame size passed to BS3_CMN_FAR_STUB: %2
+ %endif
+ %if __BITS__ == 16
+BS3_BEGIN_TEXT16_FARSTUBS
+BS3_PROC_BEGIN_CMN %1, BS3_PBC_FAR
+        CPU 8086
+        push    bp
+        mov     bp, sp
+  %assign offParam %2
+  %rep %2/2
+        push    word [bp + xCB + cbCurRetAddr + offParam - 2]
+  %assign offParam offParam - 2
+  %endrep
+        call    BS3_CMN_NM(%1)
+        add     sp, %2
+        pop     bp
+        retf
+BS3_PROC_END_CMN   %1
+BS3_BEGIN_TEXT16
+ %endif
+%endmacro
 
 ;; Convenience macro for defining mode specific procedures.
 %macro BS3_PROC_BEGIN_MODE 1

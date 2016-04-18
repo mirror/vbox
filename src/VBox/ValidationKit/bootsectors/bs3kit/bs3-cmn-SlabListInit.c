@@ -27,7 +27,8 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(void) Bs3SlabListInit(PBS3SLABHEAD pHead, uint16_t cbChunk)
+#undef Bs3SlabListInit
+BS3_CMN_DEF(void, Bs3SlabListInit,(PBS3SLABHEAD pHead, uint16_t cbChunk))
 {
     BS3_ASSERT(RT_IS_POWER_OF_TWO(cbChunk));
     BS3_XPTR_SET(struct BS3SLABCTL, pHead->pFirst, 0);

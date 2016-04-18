@@ -37,7 +37,8 @@
 extern uint32_t g_Bs3Trap32DoubleFaultHandlerFlatAddr;
 
 
-BS3_DECL(void) Bs3Trap32Init(void)
+#undef Bs3Trap32Init
+BS3_CMN_DEF(void, Bs3Trap32Init,(void))
 {
      X86TSS32 BS3_FAR *pTss;
      unsigned iIdt;

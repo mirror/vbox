@@ -32,7 +32,8 @@
 #include <iprt/asm-amd64-x86.h>
 
 
-BS3_DECL(void) Bs3PicMaskAll(void)
+#undef Bs3PicMaskAll
+BS3_CMN_DEF(void, Bs3PicMaskAll,(void))
 {
     ASMOutU8(0xa1, 0xff);
     ASMOutU8(0x21, 0xff);

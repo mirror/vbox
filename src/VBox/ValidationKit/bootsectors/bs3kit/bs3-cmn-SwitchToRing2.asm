@@ -33,7 +33,7 @@
 ;*********************************************************************************************************************************
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
-BS3_EXTERN_CMN Bs3SwitchToRingX
+BS3_EXTERN_CMN_FAR Bs3SwitchToRingX
 TMPL_BEGIN_TEXT
 
 
@@ -43,7 +43,7 @@ TMPL_BEGIN_TEXT
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ; @uses     No GPRs.
 ;
-BS3_PROC_BEGIN_CMN Bs3SwitchToRing2
+BS3_PROC_BEGIN_CMN Bs3SwitchToRing2, BS3_PBC_HYBRID_0_ARGS
 %if TMPL_BITS == 64
         push    rcx
         sub     rsp, 20h
@@ -54,9 +54,10 @@ BS3_PROC_BEGIN_CMN Bs3SwitchToRing2
         pop     rcx
 %else
         push    2
+        TMPL_ONLY_16BIT_STMT push cs
         call    Bs3SwitchToRingX
         add     xSP, xCB
 %endif
-        ret
+        BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3SwitchToRing2
 

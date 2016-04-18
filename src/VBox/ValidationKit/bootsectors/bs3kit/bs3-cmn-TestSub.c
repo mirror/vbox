@@ -36,7 +36,8 @@
 /**
  * Equivalent to RTTestISubV.
  */
-BS3_DECL(void) Bs3TestSubV(const char *pszFormat, va_list va)
+#undef Bs3TestSubV
+BS3_CMN_DEF(void, Bs3TestSubV,(const char *pszFormat, va_list va))
 {
     size_t cch;
 
@@ -69,11 +70,12 @@ BS3_DECL(void) Bs3TestSubV(const char *pszFormat, va_list va)
 /**
  * Equivalent to RTTestIFailedF.
  */
-BS3_DECL(void) Bs3TestSubF(const char *pszFormat, ...)
+#undef Bs3TestSubF
+BS3_CMN_DEF(void, Bs3TestSubF,(const char *pszFormat, ...))
 {
     va_list va;
     va_start(va, pszFormat);
-    Bs3TestSubV(pszFormat, va);
+    BS3_CMN_NM(Bs3TestSubV)(pszFormat, va);
     va_end(va);
 }
 
@@ -81,8 +83,9 @@ BS3_DECL(void) Bs3TestSubF(const char *pszFormat, ...)
 /**
  * Equivalent to RTTestISub.
  */
-BS3_DECL(void) Bs3TestSub(const char *pszMessage)
+#undef Bs3TestSub
+BS3_CMN_DEF(void, Bs3TestSub,(const char *pszMessage))
 {
-    Bs3TestSubF("%s", pszMessage);
+    BS3_CMN_NM(Bs3TestSubF)("%s", pszMessage);
 }
 

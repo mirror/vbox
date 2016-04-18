@@ -28,7 +28,7 @@
 
 BS3_EXTERN_CMN Bs3Panic
 
-BS3_PROC_BEGIN_CMN Bs3Shutdown
+BS3_PROC_BEGIN_CMN Bs3Shutdown, BS3_PBC_HYBRID_0_ARGS
         cli
         mov     bl, 64
         mov     dx, 08900h

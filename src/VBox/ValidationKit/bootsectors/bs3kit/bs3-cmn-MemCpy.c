@@ -27,7 +27,7 @@
 #include "bs3kit-template-header.h"
 
 #undef Bs3MemCpy
-BS3_DECL(void BS3_FAR *) BS3_CMN_NM(Bs3MemCpy)(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy)
+BS3_CMN_DEF(void BS3_FAR *, Bs3MemCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy))
 {
 #if 1
     const size_t BS3_FAR   *pBigSrc = (const size_t BS3_FAR *)pvSrc;
@@ -72,5 +72,4 @@ BS3_DECL(void BS3_FAR *) BS3_CMN_NM(Bs3MemCpy)(void BS3_FAR *pvDst, const void B
 
     return pvDst;
 }
-
 

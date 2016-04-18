@@ -36,7 +36,8 @@
 /**
  * Equivalent to RTTestISubDone.
  */
-BS3_DECL(void) Bs3TestSubDone(void)
+#undef Bs3TestSubDone
+BS3_CMN_DEF(void, Bs3TestSubDone,(void))
 {
     bs3TestSubCleanup();
 }

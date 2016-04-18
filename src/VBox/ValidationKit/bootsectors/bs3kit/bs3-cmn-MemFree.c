@@ -31,7 +31,8 @@
 #include "bs3-cmn-memory.h"
 
 
-BS3_DECL(void) Bs3MemFree(void BS3_FAR *pv, size_t cb)
+#undef Bs3MemFree
+BS3_CMN_DEF(void, Bs3MemFree,(void BS3_FAR *pv, size_t cb))
 {
     if (pv != NULL)
     {

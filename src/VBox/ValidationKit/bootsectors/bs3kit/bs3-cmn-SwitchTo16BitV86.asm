@@ -39,7 +39,7 @@ TMPL_BEGIN_TEXT
 ; @uses No general registers modified. Regment registers loaded with specific
 ;       values and the stack register converted to real mode (not ebp).
 ;
-BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
+BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86, BS3_PBC_NEAR
         ; Construct basic v8086 return frame.
         BS3_ONLY_16BIT_STMT movzx   esp, sp
         push    dword 0                                 ; +0x20: GS
@@ -116,6 +116,8 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16BitV86
         pop     eax
         iretd
 BS3_PROC_END_CMN   Bs3SwitchTo16BitV86
+
+;; @todo far 16-bit variant.
 
 %endif ; ! 64-bit
 

@@ -42,7 +42,7 @@
 ;
 ; @uses     cx, ss, esp
 ;
-BS3_PROC_BEGIN_CMN Bs3ConvertRMStackToP16UsingCxReturnToAx
+BS3_PROC_BEGIN_CMN Bs3ConvertRMStackToP16UsingCxReturnToAx, BS3_PBC_NEAR
 
         ;
         ; Check if it looks like the normal stack, if use BS3_SEL_R0_SS16.

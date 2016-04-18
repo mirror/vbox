@@ -29,7 +29,7 @@
 ;;
 ; @cproto   BS3_DECL(void) Bs3MemZero_c16(void BS3_FAR *pvDst, size_t cbDst);
 ;
-BS3_PROC_BEGIN_CMN Bs3MemZero
+BS3_PROC_BEGIN_CMN Bs3MemZero, BS3_PBC_HYBRID
 %ifdef RT_ARCH_AMD64
         push    rdi
 
@@ -45,7 +45,7 @@ BS3_PROC_BEGIN_CMN Bs3MemZero
         rep stosb
 
         pop     rdi
-        ret
+        BS3_HYBRID_RET
 
 %elif ARCH_BITS == 16
         push    bp
@@ -53,22 +53,22 @@ BS3_PROC_BEGIN_CMN Bs3MemZero
         push    di
         push    es
 
-        mov     di, [bp + 4]            ; pvDst.off
-        mov     dx, [bp + 4 + 2]        ; pvDst.sel
+        mov     di, [bp + 2 + cbCurRetAddr]     ; pvDst.off
+        mov     dx, [bp + 2 + cbCurRetAddr + 2] ; pvDst.sel
         mov     es, dx
-        mov     cx, [bp + 4 + 4]        ; cbDst
-        shr     cx, 1                   ; calc dword count.
+        mov     cx, [bp + 2 + cbCurRetAddr + 4] ; cbDst
+        shr     cx, 1                           ; calc dword count.
         xor     ax, ax
         rep stosw
 
-        mov     cx, [bp + 4 + 4]        ; cbDst
-        and     cx, 1                   ; calc tailing byte count.
+        mov     cx, [bp + 2 + cbCurRetAddr + 4] ; cbDst
+        and     cx, 1                           ; calc tailing byte count.
         rep stosb
 
         pop     es
         pop     di
         pop     bp
-        ret
+        BS3_HYBRID_RET
 
 %elif ARCH_BITS == 32
         push    edi
@@ -84,7 +84,7 @@ BS3_PROC_BEGIN_CMN Bs3MemZero
         rep stosb
 
         pop     edi
-        ret
+        BS3_HYBRID_RET
 
 %else
  %error "Unknown bitness."

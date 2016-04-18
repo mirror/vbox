@@ -56,6 +56,14 @@
 # define ELF_FMT_D64  "lld"
 #endif
 
+/** Compares an OMF string with a constant string. */
+#define IS_OMF_STR_EQUAL_EX(a_cch1, a_pch1, a_szConst2) \
+    ( (a_cch1) == sizeof(a_szConst2) - 1 && memcmp(a_pch1, a_szConst2, sizeof(a_szConst2) - 1) == 0 )
+
+/** Compares an OMF string with a constant string. */
+#define IS_OMF_STR_EQUAL(a_pchZeroPrefixed, a_szConst2) \
+    IS_OMF_STR_EQUAL_EX((uint8_t)((a_pchZeroPrefixed)[0]), &((a_pchZeroPrefixed)[1]), a_szConst2)
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -3593,6 +3601,39 @@ static const char * const g_apszExtDefRenames[] =
 };
 
 /**
+ * Segment definition.
+ */
+typedef struct OMFSEGDEF
+{
+    uint32_t    cbSeg;
+    uint8_t     bSegAttr;
+    uint16_t    idxName;
+    uint16_t    idxClass;
+    uint16_t    idxOverlay;
+    uint8_t     cchName;
+    uint8_t     cchClass;
+    uint8_t     cchOverlay;
+    const char *pchName;
+    const char *pchClass;
+    const char *pchOverlay;
+    bool        fUse32;
+} OMFSEGDEF;
+typedef OMFSEGDEF *POMFSEGDEF;
+
+/**
+ * Group definition.
+ */
+typedef struct OMFGRPDEF
+{
+    const char *pchName;
+    uint16_t    idxName;
+    uint8_t     cchName;
+    uint16_t    cSegDefs;
+    uint16_t   *pidxSegDefs;
+} OMFGRPDEF;
+typedef OMFGRPDEF *POMFGRPDEF;
+
+/**
  * Records line number information for a file in a segment (for CV8 debug info).
  */
 typedef struct OMFFILELINES
@@ -3619,6 +3660,9 @@ typedef struct OMFSEGLINES
     uint32_t        cb;
     /** The segment index. */
     uint16_t        idxSeg;
+    /** The group index for this segment.  This is zero if not yet determined and
+     * UINT16_MAX if no group applicable to this segment. */
+    uint16_t        idxGrp;
     /** File table. */
     POMFFILEINES    paFiles;
 } OMFSEGLINES;
@@ -3637,14 +3681,32 @@ typedef struct OMFDETAILS
     bool            fProbably32bit;
     /** Set if this module may need mangling. */
     bool            fMayNeedMangling;
-    /** Number of SEGDEFs records. */
-    uint32_t        cSegDefs;
+    /** Set if this module needs CGROUP16 for line number fixupes. */
+    bool            fNeedsCGroup16;
     /** The LNAME index of '$$SYMBOLS' or UINT16_MAX it not found. */
     uint16_t        iSymbolsNm;
     /** The LNAME index of 'DEBSYM' or UINT16_MAX it not found. */
     uint16_t        iDebSymNm;
     /** The '$$SYMBOLS' segment index. */
     uint16_t        iSymbolsSeg;
+    /** The LNAME index of 'CGROUP16' or UINT16_MAX it not found. */
+    uint16_t        iCGroup16Nm;
+    /** The 'CGROUP16' group definition index or UINT16_MAX it not found. */
+    uint16_t        iCGroup16Grp;
+
+    /** Number of SEGDEFs records. */
+    uint16_t        cSegDefs;
+    /** Number of GRPDEFs records. */
+    uint16_t        cGrpDefs;
+    /** Number of listed names. */
+    uint16_t        cLNames;
+
+    /** Segment defintions. */
+    POMFSEGDEF      paSegDefs;
+    /** Group defintions. */
+    POMFGRPDEF      paGrpDefs;
+    /** Name list.  Points to the size repfix. */
+    char          **papchLNames;
 
     /** CV8: Filename string table size. */
     uint32_t        cbStrTab;
@@ -3665,6 +3727,37 @@ typedef struct OMFDETAILS
 } OMFDETAILS;
 typedef OMFDETAILS *POMFDETAILS;
 typedef OMFDETAILS const *PCOMFDETAILS;
+
+/** Grows a table to a given size (a_cNewEntries). */
+#define OMF_GROW_TABLE_EX_RET_ERR(a_EntryType, a_paTable, a_cEntries, a_cNewEntries) \
+    do\
+    { \
+        size_t cbOld = (a_cEntries) * sizeof(a_EntryType); \
+        size_t cbNew = (a_cNewEntries) * sizeof(a_EntryType); \
+        void  *pvNew = realloc(a_paTable, cbNew); \
+        if (pvNew) \
+        { \
+            memset((uint8_t *)pvNew + cbOld, 0, cbNew - cbOld); \
+            (a_paTable) = (a_EntryType *)pvNew; \
+        } \
+        else return error("???", "Out of memory!\n"); \
+    } while (0)
+
+/** Grows a table. */
+#define OMF_GROW_TABLE_RET_ERR(a_EntryType, a_paTable, a_cEntries, a_cEvery) \
+    if ((a_cEntries) % (a_cEvery) != 0) { /* likely */ } \
+    else do\
+    { \
+        size_t cbOld = (a_cEntries) * sizeof(a_EntryType); \
+        size_t cbNew = cbOld + (a_cEvery) * sizeof(a_EntryType); \
+        void  *pvNew = realloc(a_paTable, cbNew); \
+        if (pvNew) \
+        { \
+            memset((uint8_t *)pvNew + cbOld, 0, (a_cEvery) * sizeof(a_EntryType)); \
+            (a_paTable) = (a_EntryType *)pvNew; \
+        } \
+        else return error("???", "Out of memory!\n"); \
+    } while (0)
 
 
 /**
@@ -3755,16 +3848,11 @@ static bool collectOmfAddLine(POMFDETAILS pOmfStuff, uint16_t idxSeg, uint32_t o
      */
     if (idxSeg >= pOmfStuff->cSegLines)
     {
-        void *pvNew = realloc(pOmfStuff->paSegLines, (idxSeg + 1) * sizeof(pOmfStuff->paSegLines[0]));
-        if (!pvNew)
-            return error("???", "out of memory");
-        pOmfStuff->paSegLines = (POMFSEGLINES)pvNew;
-
-        memset(&pOmfStuff->paSegLines[pOmfStuff->cSegLines], 0,
-               (idxSeg + 1 - pOmfStuff->cSegLines) * sizeof(pOmfStuff->paSegLines[0]));
+        OMF_GROW_TABLE_EX_RET_ERR(OMFSEGLINES, pOmfStuff->paSegLines, pOmfStuff->cSegLines, idxSeg + 1);
         for (uint32_t i = pOmfStuff->cSegLines; i <= idxSeg; i++)
         {
             pOmfStuff->paSegLines[i].idxSeg = i;
+            pOmfStuff->paSegLines[i].idxGrp = UINT16_MAX;
             pOmfStuff->paSegLines[i].cb = sizeof(RTCV8LINESHDR);
         }
         pOmfStuff->cSegLines = idxSeg + 1;
@@ -3785,14 +3873,7 @@ static bool collectOmfAddLine(POMFDETAILS pOmfStuff, uint16_t idxSeg, uint32_t o
     if (!pFileLines)
     {
         i = pSegLines->cFiles;
-        if ((i % 4) == 0)
-        {
-            void *pvNew = realloc(pSegLines->paFiles, (i + 4) * sizeof(pSegLines->paFiles[0]));
-            if (!pvNew)
-                return error("???", "out of memory");
-            pSegLines->paFiles = (POMFFILEINES)pvNew;
-        }
-
+        OMF_GROW_TABLE_RET_ERR(OMFFILEINES, pSegLines->paFiles, pSegLines->cFiles, 4);
         pSegLines->cFiles = i + 1;
         pSegLines->cb    += sizeof(RTCV8LINESSRCMAP);
 
@@ -3801,6 +3882,22 @@ static bool collectOmfAddLine(POMFDETAILS pOmfStuff, uint16_t idxSeg, uint32_t o
         pFileLines->cPairs      = 0;
         pFileLines->cPairsAlloc = 0;
         pFileLines->paPairs     = NULL;
+
+        /*
+         * Check for segment group requirements the first time a segment is used.
+         */
+        if (i == 0)
+        {
+            if (idxSeg >= pOmfStuff->cSegDefs)
+                return error("???", "collectOmfAddLine: idxSeg=%#x is out of bounds (%#x)!\n", idxSeg, pOmfStuff->cSegDefs);
+            POMFSEGDEF pSegDef = &pOmfStuff->paSegDefs[idxSeg];
+            if (   IS_OMF_STR_EQUAL_EX(pSegDef->cchClass, pSegDef->pchClass, "BS3CLASS16CODE")
+                || IS_OMF_STR_EQUAL_EX(pSegDef->cchClass, pSegDef->pchClass, "CODE"))
+            {
+                pOmfStuff->fNeedsCGroup16 = true;
+                pSegLines->idxGrp = 0;  /* We'll replace zeros by the actual CGROUP16 index later. */
+            }
+        }
     }
 
     /*
@@ -3851,7 +3948,6 @@ static bool collectOmfAddLine(POMFDETAILS pOmfStuff, uint16_t idxSeg, uint32_t o
  */
 static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t cbFile, POMFDETAILS pOmfStuff)
 {
-    uint32_t        cLNames = 0;
     uint32_t        cExtDefs = 0;
     uint32_t        cPubDefs = 0;
     uint32_t        off = 0;
@@ -3860,10 +3956,26 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
     uint32_t        offSrcInfo = UINT32_MAX;
 
     memset(pOmfStuff, 0, sizeof(*pOmfStuff));
-    pOmfStuff->iDebSymNm   = UINT16_MAX;
-    pOmfStuff->iSymbolsNm  = UINT16_MAX;
-    pOmfStuff->iSymbolsSeg = UINT16_MAX;
+    pOmfStuff->iDebSymNm    = UINT16_MAX;
+    pOmfStuff->iSymbolsNm   = UINT16_MAX;
+    pOmfStuff->iSymbolsSeg  = UINT16_MAX;
+    pOmfStuff->iCGroup16Nm  = UINT16_MAX;
+    pOmfStuff->iCGroup16Grp = UINT16_MAX;
 
+    /* Dummy entries. */
+    OMF_GROW_TABLE_RET_ERR(char *, pOmfStuff->papchLNames, pOmfStuff->cLNames, 16);
+    pOmfStuff->papchLNames[0] = (char *)"";
+    pOmfStuff->cLNames = 1;
+
+    OMF_GROW_TABLE_RET_ERR(OMFSEGDEF, pOmfStuff->paSegDefs, pOmfStuff->cSegDefs, 16);
+    pOmfStuff->cSegDefs = 1;
+
+    OMF_GROW_TABLE_RET_ERR(OMFGRPDEF, pOmfStuff->paGrpDefs, pOmfStuff->cGrpDefs, 16);
+    pOmfStuff->cGrpDefs = 1;
+
+    /*
+     * Process the OMF records.
+     */
     while (off + 3 < cbFile)
     {
         uint8_t     bRecType = pbFile[off];
@@ -3887,6 +3999,28 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
                     a_idx = (((a_idx) & 0x7f) << 8) | pbRec[offRec++]; \
             } while (0)
 
+#define OMF_READ_U16(a_u16, a_Name) \
+            do { \
+                OMF_CHECK_RET(4, a_Name); \
+                a_u16 = RT_MAKE_U16(pbRec[offRec], pbRec[offRec + 1]); \
+                offRec += 2; \
+            } while (0)
+#define OMF_READ_U32(a_u32, a_Name) \
+            do { \
+                OMF_CHECK_RET(4, a_Name); \
+                a_u32 = RT_MAKE_U32_FROM_U8(pbRec[offRec], pbRec[offRec + 1], pbRec[offRec + 2], pbRec[offRec + 3]); \
+                offRec += 4; \
+            } while (0)
+#define OMF_EXPLODE_LNAME(a_idxName, a_pchName, a_cchName, a_Name) \
+            do { \
+                if ((a_idxName) < pOmfStuff->cLNames) \
+                { \
+                    a_cchName = (uint8_t)*pOmfStuff->papchLNames[(a_idxName)]; \
+                    a_pchName = pOmfStuff->papchLNames[(a_idxName)] + 1; \
+                } \
+                else return error(pszFile, "Invalid LNAME reference %#x in " #a_Name "!\n", a_idxName); \
+            } while (0)
+
         switch (bRecType)
         {
             /*
@@ -3900,28 +4034,29 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
                         return error(pszFile, "Invalid LNAME string length at %#x+3+%#x: %#x (cbFile=%#lx)\n",
                                      off, offRec, cch, (unsigned long)cbFile);
 
-                    cLNames++;
                     if (g_cVerbose > 2)
-                        printf("  LNAME[%u]: %-*.*s\n", cLNames, cch, cch, &pbRec[offRec + 1]);
+                        printf("  LNAME[%u]: %-*.*s\n", pOmfStuff->cLNames, cch, cch, &pbRec[offRec + 1]);
 
-                    if (cch == 4 && memcmp(&pbRec[offRec + 1], "FLAT", 4) == 0)
+                    OMF_GROW_TABLE_RET_ERR(char *, pOmfStuff->papchLNames, pOmfStuff->cLNames, 16);
+                    pOmfStuff->papchLNames[pOmfStuff->cLNames] = (char *)&pbRec[offRec];
+
+                    if (IS_OMF_STR_EQUAL_EX(cch, &pbRec[offRec + 1], "FLAT"))
                         pOmfStuff->fProbably32bit = true;
 
-                    if (   cch == 6
-                        && pOmfStuff->iDebSymNm == UINT16_MAX
-                        && memcmp(&pbRec[offRec + 1], "DEBSYM", 6) == 0)
-                        pOmfStuff->iDebSymNm = cLNames;
-                    if (   cch == 9
-                        && pOmfStuff->iSymbolsNm == UINT16_MAX
-                        && memcmp(&pbRec[offRec + 1], "$$SYMBOLS", 9) == 0)
-                        pOmfStuff->iSymbolsNm = cLNames;
+                    if (IS_OMF_STR_EQUAL_EX(cch, &pbRec[offRec + 1], "DEBSYM"))
+                        pOmfStuff->iDebSymNm = pOmfStuff->cLNames;
+                    if (IS_OMF_STR_EQUAL_EX(cch, &pbRec[offRec + 1], "$$SYMBOLS"))
+                        pOmfStuff->iSymbolsNm = pOmfStuff->cLNames;
+                    if (IS_OMF_STR_EQUAL_EX(cch, &pbRec[offRec + 1], "CGROUP16"))
+                        pOmfStuff->iCGroup16Nm = pOmfStuff->cLNames;
 
+                    pOmfStuff->cLNames++;
                     offRec += cch + 1;
                 }
                 break;
 
             /*
-             * Display external defitions if -v is specified, also check if anything needs mangling.
+             * Display external definitions if -v is specified, also check if anything needs mangling.
              */
             case OMF_EXTDEF:
                 while (offRec + 1 < cbRec)
@@ -4023,12 +4158,63 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
                 break;
 
             /*
-             * Must count segment defitions to figure the index of our segment.
+             * Must count segment definitions to figure the index of our segment.
              */
             case OMF_SEGDEF16:
             case OMF_SEGDEF32:
-                pOmfStuff->cSegDefs++;
+            {
+                OMF_GROW_TABLE_RET_ERR(OMFSEGDEF, pOmfStuff->paSegDefs, pOmfStuff->cSegDefs, 16);
+                POMFSEGDEF pSegDef = &pOmfStuff->paSegDefs[pOmfStuff->cSegDefs++];
+
+                OMF_CHECK_RET(1 + (bRecType == OMF_SEGDEF16 ? 2 : 4) + 1 + 1 + 1, SEGDEF);
+                pSegDef->bSegAttr = pbRec[offRec++];
+                pSegDef->fUse32   = pSegDef->bSegAttr & 1;
+                if ((pSegDef->bSegAttr >> 5) == 0)
+                {
+                    /* A=0: skip frame number of offset. */
+                    OMF_CHECK_RET(3, SEGDEF);
+                    offRec += 3;
+                }
+                if (bRecType == OMF_SEGDEF16)
+                    OMF_READ_U16(pSegDef->cbSeg, SEGDEF16);
+                else
+                    OMF_READ_U32(pSegDef->cbSeg, SEGDEF32);
+                OMF_READ_IDX(pSegDef->idxName, SEGDEF);
+                OMF_READ_IDX(pSegDef->idxClass, SEGDEF);
+                OMF_READ_IDX(pSegDef->idxOverlay, SEGDEF);
+                OMF_EXPLODE_LNAME(pSegDef->idxName, pSegDef->pchName, pSegDef->cchName, SEGDEF);
+                OMF_EXPLODE_LNAME(pSegDef->idxClass, pSegDef->pchClass, pSegDef->cchClass, SEGDEF);
+                OMF_EXPLODE_LNAME(pSegDef->idxOverlay, pSegDef->pchOverlay, pSegDef->cchOverlay, SEGDEF);
                 break;
+            }
+
+            /*
+             * Must count segment definitions to figure the index of our segment.
+             */
+            case OMF_GRPDEF:
+            {
+                OMF_GROW_TABLE_RET_ERR(OMFGRPDEF, pOmfStuff->paGrpDefs, pOmfStuff->cGrpDefs, 8);
+                POMFGRPDEF pGrpDef = &pOmfStuff->paGrpDefs[pOmfStuff->cGrpDefs];
+
+                OMF_READ_IDX(pGrpDef->idxName, GRPDEF);
+                OMF_EXPLODE_LNAME(pGrpDef->idxName, pGrpDef->pchName, pGrpDef->cchName, GRPDEF);
+                if (pGrpDef->idxName == pOmfStuff->iCGroup16Grp)
+                    pOmfStuff->iCGroup16Grp = pOmfStuff->cGrpDefs;
+
+                pGrpDef->cSegDefs    = 0;
+                pGrpDef->pidxSegDefs = NULL;
+                while (offRec + 2 + 1 < cbRec)
+                {
+                    if (pbRec[offRec] != 0xff)
+                        return error(pszFile, "Unsupported GRPDEF member type: %#x\n", pbRec[offRec]);
+                    offRec++;
+                    OMF_GROW_TABLE_RET_ERR(uint16_t, pGrpDef->pidxSegDefs, pGrpDef->cSegDefs, 16);
+                    OMF_READ_IDX(pGrpDef->pidxSegDefs[pGrpDef->cSegDefs], GRPDEF);
+                    pGrpDef->cSegDefs++;
+                }
+                pOmfStuff->cGrpDefs++;
+                break;
+            }
 
             /*
              * Gather file names.
@@ -4148,9 +4334,9 @@ static bool convertOmfWriteDebugSegDefs(POMFWRITER pThis, POMFDETAILS pOmfStuff)
 #endif
 
     /*
-     * Emit the segment defitions.
+     * Emit the segment definitions.
      */
-    pOmfStuff->iSymbolsSeg = ++pOmfStuff->cSegDefs;
+    pOmfStuff->iSymbolsSeg = pOmfStuff->cSegDefs++;
 
     uint8_t   bSegAttr = 0;
     bSegAttr |= 5 << 5; /* A: dword alignment */
@@ -4167,6 +4353,40 @@ static bool convertOmfWriteDebugSegDefs(POMFWRITER pThis, POMFDETAILS pOmfStuff)
         if (pOmfStuff->paSegLines[i].cFiles > 0)
             cbSeg += 4 + 4 + pOmfStuff->paSegLines[i].cb;
     return omfWriter_SegDef(pThis, bSegAttr, cbSeg, pOmfStuff->iSymbolsNm, pOmfStuff->iDebSymNm);
+}
+
+
+/**
+ * Writes additional segment group definitions.
+ *
+ * @returns success indicator.
+ * @param   pThis       The OMF writer.
+ * @param   pOmfStuff   The OMF stuff with CV8 line number info.
+ */
+static bool convertOmfWriteDebugGrpDefs(POMFWRITER pThis, POMFDETAILS pOmfStuff)
+{
+    if (   pOmfStuff->cSegLines == 0
+        || !pOmfStuff->fNeedsCGroup16)
+        return true;
+
+    if (pOmfStuff->iCGroup16Grp == UINT16_MAX)
+    {
+        if (pOmfStuff->iCGroup16Nm == UINT16_MAX)
+            if (   !omfWriter_LNamesBegin(pThis, true)
+                || !omfWriter_LNamesAdd(pThis, "CGROUP16", &pOmfStuff->iCGroup16Nm)
+                || !omfWriter_LNamesEnd(pThis))
+                return false;
+
+        if (   !omfWriter_GrpDefBegin(pThis, pOmfStuff->iCGroup16Nm)
+            || !omfWriter_GrpDefEnd(pThis))
+            return false;
+        pOmfStuff->iCGroup16Grp = pOmfStuff->cGrpDefs;
+    }
+
+    for (unsigned i = 0; i < pOmfStuff->cSegLines; i++)
+        if (pOmfStuff->paSegLines[i].idxGrp == 0)
+            pOmfStuff->paSegLines[i].idxGrp = pOmfStuff->iCGroup16Grp;
+    return true;
 }
 
 
@@ -4236,17 +4456,26 @@ static bool convertOmfWriteDebugData(POMFWRITER pThis, POMFDETAILS pOmfStuff)
                 || !omfWriter_LEDataAddU32(pThis, cbSectionCovered) /*RTCV8LINESHDR::cbSectionCovered*/ )
                 return false;
 
+            /* Default to the segment (BS3TEXT32, BS3TEXT64) or the group (CGROUP16,
+               RMGROUP16, etc).  The important thing is that we're framing the fixups
+               using a segment or group which ends up in the codeview segment map. */
+            uint16_t idxFrame = pSegLines->idxSeg;
+            uint8_t  bFrame   = OMF_FIX_F_SEGDEF;
+            if (pSegLines->idxGrp != UINT16_MAX)
+            {
+                idxFrame = pSegLines->idxGrp;
+                bFrame   = OMF_FIX_F_GRPDEF;
+            }
+
             /* Fixup #1: segment offset - IMAGE_REL_AMD64_SECREL. */
             if (!omfWriter_LEDataAddFixupNoDisp(pThis, 4 + 4 + RT_OFFSETOF(RTCV8LINESHDR, offSection), OMF_FIX_LOC_32BIT_OFFSET,
-                                                OMF_FIX_F_SEGDEF, pSegLines->idxSeg,
-                                                OMF_FIX_T_SEGDEF_NO_DISP, pSegLines->idxSeg))
+                                                bFrame, idxFrame, OMF_FIX_T_SEGDEF_NO_DISP, pSegLines->idxSeg))
                 return false;
 
 
             /* Fixup #2: segment number - IMAGE_REL_AMD64_SECTION. */
             if (!omfWriter_LEDataAddFixupNoDisp(pThis, 4 + 4 + RT_OFFSETOF(RTCV8LINESHDR, iSection), OMF_FIX_LOC_16BIT_SEGMENT,
-                                                OMF_FIX_F_SEGDEF, pSegLines->idxSeg,
-                                                OMF_FIX_T_SEGDEF_NO_DISP, pSegLines->idxSeg))
+                                                bFrame, idxFrame, OMF_FIX_T_SEGDEF_NO_DISP, pSegLines->idxSeg))
                 return false;
 
             /* Emit data for each source file. */
@@ -4386,7 +4615,8 @@ static bool convertOmfPassthru(POMFWRITER pThis, uint8_t const *pbFile, size_t c
                 {
                     fSkip = pbRec[1] == OMF_CCLS_BORLAND_SRC_FILE;
                     if (pbRec[1] == OMF_CCLS_LINK_PASS_SEP)
-                        if (!convertOmfWriteDebugSegDefs(pThis, pOmfStuff))
+                        if (   !convertOmfWriteDebugSegDefs(pThis, pOmfStuff)
+                            || !convertOmfWriteDebugGrpDefs(pThis, pOmfStuff))
                             return false;
                 }
                 break;
@@ -4419,6 +4649,7 @@ static bool convertOmfPassthru(POMFWRITER pThis, uint8_t const *pbFile, size_t c
                 if (fConvertLineNumbers)
                 {
                     if (   convertOmfWriteDebugSegDefs(pThis, pOmfStuff)
+                        && convertOmfWriteDebugGrpDefs(pThis, pOmfStuff)
                         && convertOmfWriteDebugData(pThis, pOmfStuff))
                     { /* likely */ }
                     else return false;

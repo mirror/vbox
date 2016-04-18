@@ -27,7 +27,8 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(void) Bs3SlabListFree(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks)
+#undef Bs3SlabListFree
+BS3_CMN_DEF(void, Bs3SlabListFree,(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks))
 {
     BS3_ASSERT(cChunks > 0);
     if (cChunks > 0)

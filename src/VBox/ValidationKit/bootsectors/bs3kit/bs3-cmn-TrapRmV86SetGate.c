@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TrapSetJmpAndRestore
+ * BS3Kit - Bs3TrapRmV86SetGate
  */
 
 /*
@@ -30,15 +30,11 @@
 #include "bs3kit-template-header.h"
 
 
-#undef Bs3TrapSetJmpAndRestore
-BS3_CMN_DEF(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame))
+#undef Bs3TrapRmV86SetGate
+BS3_CMN_DEF(void, Bs3TrapRmV86SetGate,(uint8_t iIvt, uint16_t uSeg, uint16_t off))
 {
-    if (Bs3TrapSetJmp(pTrapFrame))
-    {
-#if TMPL_BITS == 32
-        g_uBs3TrapEipHint = pCtxRestore->rip.u32;
-#endif
-        Bs3RegCtxRestore(pCtxRestore, 0);
-    }
+    RTFAR16 BS3_FAR *paIvt = Bs3XptrFlatToCurrent(0);
+    paIvt[iIvt].off = off;
+    paIvt[iIvt].sel = uSeg;
 }
 

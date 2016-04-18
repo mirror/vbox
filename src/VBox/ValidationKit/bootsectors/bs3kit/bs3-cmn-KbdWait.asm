@@ -31,7 +31,7 @@
 ;
 ; @cproto   BS3_DECL(void) Bs3KbdWait_c16(void);
 ;
-BS3_PROC_BEGIN_CMN Bs3KbdWait
+BS3_PROC_BEGIN_CMN Bs3KbdWait, BS3_PBC_HYBRID_0_ARGS
         push    xBP
         mov     xBP, xSP
         push    xAX
@@ -44,8 +44,8 @@ BS3_PROC_BEGIN_CMN Bs3KbdWait
         jnz     .check_status
 
         pop     xAX
-        leave
-        ret
+        pop     xBP
+        BS3_HYBRID_RET
 
 .read_data_and_status:
         in      al, 60h

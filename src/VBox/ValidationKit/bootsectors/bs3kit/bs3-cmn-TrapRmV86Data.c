@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TrapSetJmpAndRestore
+ * BS3Kit - Real mode and V86 trap data.
  */
 
 /*
@@ -30,15 +30,13 @@
 #include "bs3kit-template-header.h"
 
 
-#undef Bs3TrapSetJmpAndRestore
-BS3_CMN_DEF(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame))
-{
-    if (Bs3TrapSetJmp(pTrapFrame))
-    {
-#if TMPL_BITS == 32
-        g_uBs3TrapEipHint = pCtxRestore->rip.u32;
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+#if ARCH_BITS == 16
+/** Copy of the original real-mode interrupt vector table. */
+RTFAR16 g_aBs3RmIvtOriginal[256];
+/** Indicates whether we've copied the real-mode IVT or not. */
+bool    g_fBs3RmIvtCopied = false;
 #endif
-        Bs3RegCtxRestore(pCtxRestore, 0);
-    }
-}
 

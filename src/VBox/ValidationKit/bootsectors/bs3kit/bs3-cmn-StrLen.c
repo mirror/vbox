@@ -27,7 +27,7 @@
 #include "bs3kit-template-header.h"
 
 #undef Bs3StrLen
-BS3_DECL(size_t) BS3_CMN_NM(Bs3StrLen)(const char BS3_FAR *pszString)
+BS3_CMN_DEF(size_t, Bs3StrLen,(const char BS3_FAR *pszString))
 {
     size_t cch = 0;
     while (pszString[cch] != '\0')

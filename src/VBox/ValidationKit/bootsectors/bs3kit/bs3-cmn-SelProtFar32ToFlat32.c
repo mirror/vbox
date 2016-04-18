@@ -27,7 +27,8 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(uint32_t) Bs3SelProtFar32ToFlat32(uint32_t off, uint16_t uSel)
+#undef Bs3SelProtFar32ToFlat32
+BS3_CMN_DEF(uint32_t, Bs3SelProtFar32ToFlat32,(uint32_t off, uint16_t uSel))
 {
     uint32_t    uRet;
     PCX86DESC   pEntry;

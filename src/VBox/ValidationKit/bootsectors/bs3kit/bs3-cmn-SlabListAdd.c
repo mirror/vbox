@@ -27,7 +27,8 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(void) Bs3SlabListAdd(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl)
+#undef Bs3SlabListAdd
+BS3_CMN_DEF(void, Bs3SlabListAdd,(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl))
 {
     BS3_ASSERT(pHead->cbChunk == pSlabCtl->cbChunk);
     BS3_ASSERT(BS3_XPTR_IS_NULL(BS3SLABHEAD, pSlabCtl->pNext));

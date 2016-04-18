@@ -1,13 +1,10 @@
 ; $Id$
 ;; @file
-; BS3Kit - Included by asmdefs.mac when assembling IPRT code.
-;
-; This will only be included if asmdefs.mac is included before bs3kit.mac, so
-; it will not be used for bs3*.asm files, only IPRT ones.
+; BS3Kit - Bs3A20Disable.
 ;
 
 ;
-; Copyright (C) 2006-2015 Oracle Corporation
+; Copyright (C) 2007-2015 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -28,25 +25,29 @@
 ;
 
 
-%ifndef ___asmdefs_first_mac
-%define ___asmdefs_first_mac
+%include "bs3kit.mac"
 
-%include "bs3kit-template-header.mac"
 
-;
-; Redefine some macros to suite us.
-;
-; We do near 16-bit code and produce far stubs separately as needed.
-;
-%define BEGINCODE               TMPL_BEGIN_TEXT
-%define BEGINPROC_EXPORTED      BS3_BEGINPROC_EXPORTED_WRAPPER
-%define ENDPROC                 BS3_PROC_END_CMN
-%undef  NAME
-%define NAME(a)                 BS3_CMN_NM(a)
+;;
+; Worker for BS3_PROC_BEGIN_CMN
+; @uses nothing
+BS3_PROC_BEGIN Bs3CreateHybridFarRet_c16
+        push    ax                      ; reserve space
+        push    bp
+        mov     bp, sp
+        push    ax                      ; save it
 
-%macro BS3_BEGINPROC_EXPORTED_WRAPPER 1
-BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
-%endmacro
+        ; Move the return address up a word.
+        mov     ax, [bp + 4]
+        mov     [bp + 2], ax
+        ; Move the caller's return address up a word.
+        mov     ax, [bp + 6]
+        mov     [bp + 4], ax
+        ; Add CS to the caller's far return address.
+        mov     [bp + 6], cs
 
-%endif
+        pop     ax
+        pop     bp
+        ret
+BS3_PROC_END   Bs3CreateHybridFarRet_c16
 

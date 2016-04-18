@@ -37,7 +37,8 @@
  *
  * @param   pszTest         The test name.
  */
-BS3_DECL(void) Bs3TestInit(const char BS3_FAR *pszTest)
+#undef Bs3TestInit
+BS3_CMN_DEF(void, Bs3TestInit,(const char BS3_FAR *pszTest))
 {
     /*
      * Initialize the globals.

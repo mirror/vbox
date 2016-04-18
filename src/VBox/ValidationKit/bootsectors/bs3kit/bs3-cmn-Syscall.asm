@@ -50,7 +50,7 @@ TMPL_BEGIN_TEXT
 ;
 ; @uses     Whatever the syscall modified (xBX and XBP are always saved).
 ;
-BS3_PROC_BEGIN_CMN Bs3Syscall
+BS3_PROC_BEGIN_CMN Bs3Syscall, BS3_PBC_HYBRID_0_ARGS ; (all parameters are in registers)
         push    xBP
         mov     xBP, xSP
         push    xBX
@@ -79,6 +79,6 @@ BS3_PROC_BEGIN_CMN Bs3Syscall
 
         pop     xBX
         pop     xBP
-        ret
+        BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3Syscall
 

@@ -42,7 +42,7 @@ TMPL_BEGIN_TEXT
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
-BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit
+BS3_PROC_BEGIN_CMN Bs3SwitchTo32Bit, BS3_PBC_NEAR
 %if TMPL_BITS == 32
         ret
 %else
@@ -146,4 +146,6 @@ BS3_SET_BITS 32
         ret
 %endif
 BS3_PROC_END_CMN   Bs3SwitchTo32Bit
+
+;; @todo far 16-bit variant.
 

@@ -64,19 +64,23 @@ BS3_BEGIN_TEXT16
 .after_eye_catcher:
 
 %ifdef ASM_FORMAT_ELF
-section BS3TEXT16_END   align=2 progbits alloc exec nowrite
+section BS3TEXT16_NEARSTUBS align=1 progbits alloc exec nowrite
+section BS3TEXT16_FARSTUBS  align=1 progbits alloc exec nowrite
+section BS3TEXT16_END       align=1 progbits alloc exec nowrite
 %else
-section _TEXT           align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
-section BS3TEXT16_END   align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
+section _TEXT               align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
+section BS3TEXT16_NEARSTUBS align=1 CLASS=BS3CLASS16CODE PUBLIC USE16
+section BS3TEXT16_FARSTUBS  align=1 CLASS=BS3CLASS16CODE PUBLIC USE16
+section BS3TEXT16_END       align=1 CLASS=BS3CLASS16CODE PUBLIC USE16
 %endif
 
 BS3_GLOBAL_DATA Bs3Text16_EndOfSegment, 0
 
 %ifndef ASM_FORMAT_ELF
  %ifndef BS3_IS_DOS_EXE
-GROUP CGROUP16 BS3TEXT16 BS3TEXT16_END
+GROUP CGROUP16 BS3TEXT16 _TEXT BS3TEXT16_NEARSTUBS BS3TEXT16_FARSTUBS BS3TEXT16_END
  %else
-GROUP CGROUP16 BEGTEXT BS3TEXT16 _TEXT BS3TEXT16_END
+GROUP CGROUP16 BEGTEXT BS3TEXT16 _TEXT BS3TEXT16_NEARSTUBS BS3TEXT16_FARSTUBS BS3TEXT16_END
  %endif
 %endif
 
@@ -147,6 +151,27 @@ GROUP BS3KIT_GRPNM_DATA16 \
  %endif
 %endif
 
+;
+; 16-bit real-mode text
+;
+%ifdef ASM_FORMAT_ELF
+section BS3RMTEXT16_START   align=16 progbits alloc exec nowrite
+%else
+section BS3RMTEXT16_START   align=16 CLASS=BS3CLASS16RMCODE PUBLIC USE16
+%endif
+BS3_GLOBAL_DATA Bs3RmText16_StartOfSegment, 0
+    db      10,13,'eye-catcher: BS3RMTEXT16',10,13
+
+BS3_BEGIN_RMTEXT16
+
+%ifdef ASM_FORMAT_ELF
+section BS3RMTEXT16_END   align=1 progbits alloc exec nowrite
+%else
+section BS3RMTEXT16_END   align=1 CLASS=BS3CLASS16RMCODE PUBLIC USE16
+%endif
+
+BS3_GLOBAL_DATA Bs3RmText16_EndOfSegment, 0
+
 
 ;
 ; 32-bit text
@@ -160,7 +185,6 @@ section BS3TEXT32_END   align=1 progbits alloc exec nowrite
 %else
 section BS3TEXT32_END   align=1 CLASS=BS3CLASS32CODE PUBLIC USE32 FLAT
 %endif
-
 BS3_GLOBAL_DATA Bs3Text32_EndOfSegment, 0
 
 

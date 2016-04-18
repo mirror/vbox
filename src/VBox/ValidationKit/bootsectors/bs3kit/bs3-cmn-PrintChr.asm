@@ -45,7 +45,7 @@ TMPL_BEGIN_TEXT
 ;;
 ; @cproto   BS3_DECL(void) Bs3PrintChr_c16(char ch);
 ;
-BS3_PROC_BEGIN_CMN Bs3PrintChr
+BS3_PROC_BEGIN_CMN Bs3PrintChr, BS3_PBC_NEAR
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
@@ -86,14 +86,20 @@ BS3_PROC_BEGIN_CMN Bs3PrintChr
 .do_system_call:
         mov     cl, [xBP + xCB*2]       ; Load the char
         mov     ax, BS3_SYSCALL_PRINT_CHR
-        call    Bs3Syscall              ; (no BS3_CALL!)
+        call    Bs3Syscall              ; near! no BS3_CALL!
 
 .return:
         pop     xBX
         pop     xCX
         pop     xAX
-        leave
+        pop     xBP
         BS3_CALL_CONV_EPILOG 1
         ret
 BS3_PROC_END_CMN   Bs3PrintChr
+
+;
+; Generate 16-bit far stub.
+; Peformance critical, so don't penalize near calls.
+;
+BS3_CMN_FAR_STUB Bs3PrintChr, 2
 

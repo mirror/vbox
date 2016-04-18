@@ -31,7 +31,8 @@
 #include <iprt/asm.h>
 
 
-BS3_DECL(void BS3_FAR *) Bs3SlabAlloc(PBS3SLABCTL pSlabCtl)
+#undef Bs3SlabAlloc
+BS3_CMN_DEF(void BS3_FAR *, Bs3SlabAlloc,(PBS3SLABCTL pSlabCtl))
 {
     if (pSlabCtl->cFreeChunks)
     {

@@ -58,7 +58,8 @@ static void *bs3PagingBuildPaeTable(uint64_t uTmpl, uint64_t cbIncrement, BS3MEM
 }
 
 
-BS3_DECL(X86PTE BS3_FAR *) bs3PagingGetLegacyPte(RTCCUINTXREG cr3, uint32_t uFlat, bool fUseInvlPg, int *prc)
+#undef bs3PagingGetLegacyPte
+BS3_CMN_DEF(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t uFlat, bool fUseInvlPg, int *prc))
 {
     X86PTE BS3_FAR *pPTE = NULL;
 #if TMPL_BITS == 16
@@ -119,7 +120,8 @@ BS3_DECL(X86PTE BS3_FAR *) bs3PagingGetLegacyPte(RTCCUINTXREG cr3, uint32_t uFla
 }
 
 
-BS3_DECL(X86PTEPAE BS3_FAR *) bs3PagingGetPte(RTCCUINTXREG cr3, uint64_t uFlat, bool fUseInvlPg, int *prc)
+#undef bs3PagingGetPte
+BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFlat, bool fUseInvlPg, int *prc))
 {
     X86PTEPAE BS3_FAR  *pPTE = NULL;
 #if TMPL_BITS == 16
@@ -211,7 +213,8 @@ BS3_DECL(X86PTEPAE BS3_FAR *) bs3PagingGetPte(RTCCUINTXREG cr3, uint64_t uFlat, 
 }
 
 
-BS3_DECL(int) Bs3PagingProtect(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear)
+#undef Bs3PagingProtect
+BS3_CMN_DEF(int, Bs3PagingProtect,(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear))
 {
     RTCCUINTXREG const  cr3        = ASMGetCR3();
     RTCCUINTXREG const  cr4        = g_uBs3CpuDetected & BS3CPU_F_CPUID ? ASMGetCR4() : 0;
@@ -241,7 +244,7 @@ BS3_DECL(int) Bs3PagingProtect(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint6
          */
         while ((uint32_t)cb > 0)
         {
-            PX86PTE pPte = bs3PagingGetLegacyPte(cr3, (uint32_t)uFlat, fUseInvlPg, &rc);
+            PX86PTE pPte = BS3_CMN_NM(bs3PagingGetLegacyPte)(cr3, (uint32_t)uFlat, fUseInvlPg, &rc);
             if (!pPte)
                 return rc;
 
@@ -266,7 +269,7 @@ BS3_DECL(int) Bs3PagingProtect(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint6
          */
         while (cb > 0)
         {
-            PX86PTEPAE pPte = bs3PagingGetPte(cr3, uFlat, fUseInvlPg, &rc);
+            PX86PTEPAE pPte = BS3_CMN_NM(bs3PagingGetPte)(cr3, uFlat, fUseInvlPg, &rc);
             if (!pPte)
                 return rc;
 
@@ -297,12 +300,13 @@ BS3_DECL(int) Bs3PagingProtect(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint6
 }
 
 
-BS3_DECL(int) Bs3PagingProtectPtr(void *pv, size_t cb, uint64_t fSet, uint64_t fClear)
+#undef Bs3PagingProtectPtr
+BS3_CMN_DEF(int, Bs3PagingProtectPtr,(void *pv, size_t cb, uint64_t fSet, uint64_t fClear))
 {
 #if ARCH_BITS == 16
-    return Bs3PagingProtect(Bs3SelPtrToFlat(pv), cb, fSet, fClear);
+    return BS3_CMN_NM(Bs3PagingProtect)(Bs3SelPtrToFlat(pv), cb, fSet, fClear);
 #else
-    return Bs3PagingProtect((uintptr_t)pv, cb, fSet, fClear);
+    return BS3_CMN_NM(Bs3PagingProtect)((uintptr_t)pv, cb, fSet, fClear);
 #endif
 }
 

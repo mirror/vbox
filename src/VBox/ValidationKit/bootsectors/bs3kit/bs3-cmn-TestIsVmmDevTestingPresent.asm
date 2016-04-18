@@ -37,7 +37,7 @@ TMPL_BEGIN_TEXT
 ;;
 ; @cproto   BS3_DECL(bool) bs3TestIsVmmDevTestingPresent_c16(void);
 ;
-BS3_PROC_BEGIN_CMN bs3TestIsVmmDevTestingPresent
+BS3_PROC_BEGIN_CMN bs3TestIsVmmDevTestingPresent, BS3_PBC_HYBRID_0_ARGS
         BS3_CALL_CONV_PROLOG 2
         push    xBP
         mov     xBP, xSP
@@ -58,7 +58,7 @@ BS3_PROC_BEGIN_CMN bs3TestIsVmmDevTestingPresent
         pop     xDX
         pop     xBP
         BS3_CALL_CONV_EPILOG 2
-        ret
+        BS3_HYBRID_RET
 
 .ancient_cpu:
         in      ax, dx

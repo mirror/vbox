@@ -76,7 +76,8 @@ BS3_DECL(void) bs3TestSubCleanup(void)
 /**
  * Equivalent to RTTestSummaryAndDestroy.
  */
-BS3_DECL(void) Bs3TestTerm(void)
+#undef Bs3TestTerm
+BS3_CMN_DEF(void, Bs3TestTerm,(void))
 {
     /*
      * Close any current sub-test.

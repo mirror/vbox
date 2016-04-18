@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3Trap16Init
+ * BS3Kit - Bs3TrapRmV86Init
  */
 
 /*
@@ -36,19 +36,36 @@
 /* We ASSUME that BS3CLASS16CODE is 64KB aligned, so the low 16-bit of the
    flat address matches.   Also, these symbols are defined both with
    and without underscore prefixes. */
-extern BS3_DECL(void) BS3_FAR_CODE Bs3Trap16DoubleFaultHandler80386(void);
-extern BS3_DECL(void) BS3_FAR_CODE Bs3Trap16DoubleFaultHandler80286(void);
 extern BS3_DECL(void) BS3_FAR_CODE Bs3Trap16GenericEntries(void);
 
 /* These two are ugly.  Need data access for patching purposes. */
 extern uint8_t  BS3_FAR_DATA bs3Trap16GenericTrapOrInt[];
 
+/* bs3-cmn-TrapRmV86Data.c: */
+#define g_fBs3RmIvtCopied   BS3_DATA_NM(g_fBs3RmIvtCopied)
+extern bool    g_fBs3RmIvtCopied;
 
-#undef Bs3Trap16InitEx
-BS3_CMN_DEF(void, Bs3Trap16InitEx,(bool f386Plus))
+
+#undef Bs3TrapRmV86InitEx
+BS3_CMN_DEF(void, Bs3TrapRmV86InitEx,(bool f386Plus))
 {
-    X86TSS16 BS3_FAR *pTss;
-    unsigned iIdt;
+    RTFAR16 BS3_FAR *paIvt = Bs3XptrFlatToCurrent(0);
+    unsigned iIvt;
+
+    /*
+     * Copy the real mode IVT the first time we are here.
+     */
+    if (!g_fBs3RmIvtCopied)
+    {
+        Bs3MemCpy(g_aBs3RmIvtOriginal, paIvt, sizeof(g_aBs3RmIvtOriginal));
+        g_fBs3RmIvtCopied = true;
+    }
+    /*
+     * The rest of the times, we copy back the original and modify it.
+     */
+    else
+        Bs3MemCpy(paIvt, g_aBs3RmIvtOriginal, sizeof(g_aBs3RmIvtOriginal));
+
 
     /*
      * If 386 or later, patch the trap handler code to not jump to the 80286
@@ -66,53 +83,24 @@ BS3_CMN_DEF(void, Bs3Trap16InitEx,(bool f386Plus))
     }
 
     /*
-     * IDT entries, except the system call gate.
+     * Since we want to play with V86 mode as well as 8086 and 186 CPUs, we
+     * cannot move the IVT from its default location.  So, modify it in place.
+     *
+     * Note! We must keep int 10h working, which is easy since the CPU does
+     *       use it (well, it's been reserved for 30+ years).
      */
-    for (iIdt = 0; iIdt < 256; iIdt++)
-        if (iIdt != BS3_TRAP_SYSCALL)
-            Bs3Trap16SetGate(iIdt, X86_SEL_TYPE_SYS_286_INT_GATE, 0 /*bDpl*/,
-                             BS3_SEL_R0_CS16, (uint16_t)(uintptr_t)Bs3Trap16GenericEntries + iIdt * 8, 0 /*cParams*/);
-
-    /*
-     * Initialize the normal TSS so we can do ring transitions via the IDT.
-     */
-    pTss = &Bs3Tss16;
-    Bs3MemZero(pTss, sizeof(*pTss));
-    pTss->sp0       = BS3_ADDR_STACK_R0;
-    pTss->ss0       = BS3_SEL_R0_SS16;
-    pTss->sp1       = BS3_ADDR_STACK_R1;
-    pTss->ss1       = BS3_SEL_R1_SS16 | 1;
-    pTss->sp2       = BS3_ADDR_STACK_R2;
-    pTss->ss2       = BS3_SEL_R2_SS16 | 2;
-
-    /*
-     * Initialize the double fault TSS.
-     * cr3 is filled in by switcher code, when needed.
-     */
-    pTss = &Bs3Tss16DoubleFault;
-    Bs3MemZero(pTss, sizeof(*pTss));
-    pTss->sp0       = BS3_ADDR_STACK_R0;
-    pTss->ss0       = BS3_SEL_R0_SS16;
-    pTss->sp1       = BS3_ADDR_STACK_R1;
-    pTss->ss1       = BS3_SEL_R1_SS16 | 1;
-    pTss->sp2       = BS3_ADDR_STACK_R2;
-    pTss->ss2       = BS3_SEL_R2_SS16 | 2;
-    pTss->ip        = (uint16_t)(uintptr_t)(f386Plus ? &Bs3Trap16DoubleFaultHandler80386 : &Bs3Trap16DoubleFaultHandler80286);
-    pTss->flags     = X86_EFL_1;
-    pTss->sp        = BS3_ADDR_STACK_R0_IST1;
-    pTss->es        = BS3_SEL_R0_DS16;
-    pTss->ds        = BS3_SEL_R0_DS16;
-    pTss->cs        = BS3_SEL_R0_CS16;
-    pTss->ss        = BS3_SEL_R0_SS16;
-    pTss->dx        = f386Plus;
-
-    Bs3Trap16SetGate(X86_XCPT_DF, X86_SEL_TYPE_SYS_TASK_GATE, 0 /*bDpl*/, BS3_SEL_TSS16_DF, 0, 0 /*cParams*/);
+    for (iIvt = 0; iIvt < 256; iIvt++)
+        if (iIvt != 0x10 && iIvt != BS3_TRAP_SYSCALL)
+        {
+            paIvt[iIvt].off = (uint16_t)(uintptr_t)Bs3Trap16GenericEntries + iIvt * 8;
+            paIvt[iIvt].sel = BS3_SEL_TEXT16;
+        }
 }
 
 
-#undef Bs3Trap16Init
-BS3_CMN_DEF(void, Bs3Trap16Init,(void))
+#undef Bs3TrapRmV86InitEx
+BS3_CMN_DEF(void, Bs3TrapRmV86Init,(void))
 {
-    BS3_CMN_NM(Bs3Trap16InitEx)((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386);
+    BS3_CMN_NM(Bs3TrapRmV86InitEx)((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386);
 }
 

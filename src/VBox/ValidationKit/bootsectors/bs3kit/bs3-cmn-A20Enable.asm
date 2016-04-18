@@ -37,7 +37,7 @@ BS3_EXTERN_CMN Bs3KbdWrite
 ;
 ; @uses     Nothing.
 ;
-BS3_PROC_BEGIN_CMN Bs3A20Enable
+BS3_PROC_BEGIN_CMN Bs3A20Enable, BS3_PBC_HYBRID_0_ARGS
         push    xBP
         mov     xBP, xSP
         BS3_ONLY_64BIT_STMT sub     rsp, 20h
@@ -46,8 +46,8 @@ BS3_PROC_BEGIN_CMN Bs3A20Enable
 ;; @todo real 286 support
 ;        call    TMPL_NM_CMN(Bs3A20EnableViaKbd)
 
-        leave
-        ret
+        pop     xBP
+        BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3A20Enable
 
 
@@ -56,7 +56,7 @@ BS3_PROC_END_CMN   Bs3A20Enable
 ;
 ; @uses     Nothing.
 ;
-BS3_PROC_BEGIN_CMN Bs3A20EnableViaKbd
+BS3_PROC_BEGIN_CMN Bs3A20EnableViaKbd, BS3_PBC_HYBRID_0_ARGS
         push    xBP
         mov     xBP, xSP
         push    xAX
@@ -82,8 +82,8 @@ BS3_PROC_BEGIN_CMN Bs3A20EnableViaKbd
         BS3_ONLY_64BIT_STMT add     rsp, 20h
         popf
         pop     xAX
-        leave
-        ret
+        pop     xBP
+        BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3A20EnableViaKbd
 
 
@@ -92,7 +92,7 @@ BS3_PROC_END_CMN   Bs3A20EnableViaKbd
 ;
 ; @uses     Nothing.
 ;
-BS3_PROC_BEGIN_CMN Bs3A20EnableViaPortA
+BS3_PROC_BEGIN_CMN Bs3A20EnableViaPortA, BS3_PBC_HYBRID_0_ARGS
         push    xBP
         mov     xBP, xSP
         push    xAX
@@ -106,7 +106,7 @@ BS3_PROC_BEGIN_CMN Bs3A20EnableViaPortA
 
 .done:
         pop     xAX
-        leave
-        ret
+        pop     xBP
+        BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3A20EnableViaPortA
 

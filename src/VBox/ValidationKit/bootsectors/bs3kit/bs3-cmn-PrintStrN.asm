@@ -47,7 +47,7 @@ TMPL_BEGIN_TEXT
 ;
 ; ASSUMES cchString < 64KB!
 ;
-BS3_PROC_BEGIN_CMN Bs3PrintStrN
+BS3_PROC_BEGIN_CMN Bs3PrintStrN, BS3_PBC_NEAR
         BS3_CALL_CONV_PROLOG 2
         push    xBP
         mov     xBP, xSP
@@ -73,9 +73,9 @@ BS3_PROC_BEGIN_CMN Bs3PrintStrN
         ;
 .do_bios_call:
         push    ds
-        lds     si, [xBP + xCB*2]       ; DS:SI -> string.
+        lds     si, [xBP + xCB + cbCurRetAddr]          ; DS:SI -> string.
         cld
-        mov     cx, [xBP + xCB*2 + sCB] ; Use CX for counting down.
+        mov     cx, [xBP + xCB + cbCurRetAddr + sCB]    ; Use CX for counting down.
         call    Bs3PrintStrN_c16_CX_Bytes_At_DS_SI
         pop     ds
         jmp     .return
@@ -91,12 +91,12 @@ BS3_PROC_BEGIN_CMN Bs3PrintStrN
         ;
 .do_system_call:
 %if TMPL_BITS == 16
-        mov     cx, [xBP + xCB*2 + 2]
+        mov     cx, [xBP + xCB + cbCurRetAddr + 2]
 %else
         mov     cx, ds
 %endif
-        mov     xSI, [xBP + xCB*2]
-        mov     dx, [xBP + xCB*2 + sCB]
+        mov     xSI, [xBP + xCB + cbCurRetAddr]
+        mov     dx,  [xBP + xCB + cbCurRetAddr + sCB]
 %if TMPL_BITS == 16
 
 %else
@@ -104,16 +104,16 @@ BS3_PROC_BEGIN_CMN Bs3PrintStrN
         jae     .char_by_char
 %endif
         mov     ax, BS3_SYSCALL_PRINT_STR
-        call    Bs3Syscall              ; (no BS3_CALL!)
+        call    Bs3Syscall              ; near! no BS3_CALL!
 
 .return:
         pop     xSI
         pop     xBX
         pop     xCX
         pop     xAX
-        leave
+        pop     xBP
         BS3_CALL_CONV_EPILOG 2
-        ret
+        BS3_HYBRID_RET
 
         ;
         ; Doesn't look like it's real-mode addressable.  So, char-by-char.
@@ -129,7 +129,7 @@ BS3_PROC_BEGIN_CMN Bs3PrintStrN
 .char_by_char_loop:
         mov     ax, BS3_SYSCALL_PRINT_CHR
         mov     cl, [BS3_ONLY_16BIT(es:) xSI]
-        call    Bs3Syscall              ; (no BS3_CALL!)
+        call    Bs3Syscall              ; near! no BS3_CALL!
         inc     xSI
         dec     xDX
         jnz     .char_by_char_loop
@@ -182,5 +182,13 @@ BS3_PROC_BEGIN Bs3PrintStrN_c16_CX_Bytes_At_DS_SI
         mov     bx, 0ff00h
         jmp     .bios_loop_int10h
 BS3_PROC_END   Bs3PrintStrN_c16_CX_Bytes_At_DS_SI
+
+
+;
+; Generate 16-bit far stub.
+; Peformance critical, so don't penalize near calls.
+;
+BS3_CMN_FAR_STUB Bs3PrintStrN, 6
+
 %endif
 

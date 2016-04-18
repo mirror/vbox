@@ -114,7 +114,8 @@ static BS3_DECL_CALLBACK(size_t) bs3TestPrintfStrOutput(char ch, void BS3_FAR *p
 
 
 
-BS3_DECL(void) Bs3TestPrintfV(const char BS3_FAR *pszFormat, va_list va)
+#undef Bs3TestPrintfV
+BS3_CMN_DEF(void, Bs3TestPrintfV,(const char BS3_FAR *pszFormat, va_list va))
 {
     BS3TESTPRINTBUF Buf;
     Buf.fNewCmd = true;
@@ -124,11 +125,12 @@ BS3_DECL(void) Bs3TestPrintfV(const char BS3_FAR *pszFormat, va_list va)
 
 
 
-BS3_DECL(void) Bs3TestPrintf(const char BS3_FAR *pszFormat, ...)
+#undef Bs3TestPrintf
+BS3_CMN_DEF(void, Bs3TestPrintf,(const char BS3_FAR *pszFormat, ...))
 {
     va_list va;
     va_start(va, pszFormat);
-    Bs3TestPrintfV(pszFormat, va);
+    BS3_CMN_NM(Bs3TestPrintfV)(pszFormat, va);
     va_end(va);
 }
 

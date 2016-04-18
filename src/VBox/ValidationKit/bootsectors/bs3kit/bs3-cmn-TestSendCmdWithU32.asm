@@ -33,7 +33,7 @@ TMPL_BEGIN_TEXT
 ;;
 ; @cproto   BS3_DECL(void) bs3TestSendCmdWithU32_c16(uint32_t uCmd, uint32_t uValue);
 ;
-BS3_PROC_BEGIN_CMN bs3TestSendCmdWithU32
+BS3_PROC_BEGIN_CMN bs3TestSendCmdWithU32, BS3_PBC_HYBRID
         BS3_CALL_CONV_PROLOG 2
         push    xBP
         mov     xBP, xSP
@@ -47,7 +47,7 @@ BS3_PROC_BEGIN_CMN bs3TestSendCmdWithU32
         ; The command (uCmd) -
         mov     dx, VMMDEV_TESTING_IOPORT_CMD
 %if TMPL_BITS == 16
-        mov     ax, [xBP + xCB*2]       ; We ignore the top bits in 16-bit mode.
+        mov     ax, [xBP + xCB + cbCurRetAddr] ; We ignore the top bits in 16-bit mode.
         out     dx, ax
 %else
         mov     eax, [xBP + xCB*2]
@@ -58,9 +58,9 @@ BS3_PROC_BEGIN_CMN bs3TestSendCmdWithU32
         ; The value (uValue).
         mov     dx, VMMDEV_TESTING_IOPORT_DATA
 %if TMPL_BITS == 16
-        mov     ax, [xBP + xCB*2 + sCB]
+        mov     ax, [xBP + xCB + cbCurRetAddr + sCB]
         out     dx, ax
-        mov     ax, [xBP + xCB*2 + sCB + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr + sCB + 2]
         out     dx, ax
 %else
         mov     eax, [xBP + xCB*2 + sCB]
@@ -74,8 +74,8 @@ BS3_PROC_BEGIN_CMN bs3TestSendCmdWithU32
         pop     xSI
         pop     xDX
         pop     xAX
-        leave
+        pop     xBP
         BS3_CALL_CONV_EPILOG 2
-        ret
+        BS3_HYBRID_RET
 BS3_PROC_END_CMN   bs3TestSendCmdWithU32
 

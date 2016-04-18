@@ -31,7 +31,8 @@
 #include <iprt/asm.h>
 
 
-BS3_DECL(void) Bs3SlabInit(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr, uint32_t cbSlab, uint16_t cbChunk)
+#undef Bs3SlabInit
+BS3_CMN_DEF(void, Bs3SlabInit,(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr, uint32_t cbSlab, uint16_t cbChunk))
 {
     uint16_t cBits;
     BS3_ASSERT(RT_IS_POWER_OF_TWO(cbChunk));

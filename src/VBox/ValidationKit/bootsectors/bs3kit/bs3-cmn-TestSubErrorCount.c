@@ -36,7 +36,8 @@
 /**
  * Equivalent to RTTestSubErrorCount.
  */
-BS3_DECL(uint16_t) Bs3TestSubErrorCount(void)
+#undef Bs3TestSubErrorCount
+BS3_CMN_DEF(uint16_t, Bs3TestSubErrorCount,(void))
 {
     return g_cusBs3TestErrors - g_cusBs3SubTestAtErrors;
 }

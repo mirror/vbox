@@ -46,17 +46,19 @@ TMPL_BEGIN_TEXT
 ;
 ; @note         Only respects the BS3_MODE_CODE_MASK part of pRegCtx->bMode.
 ;
-%if TMPL_BITS == 16 || TMPL_BITS == 32
-BS3_PROC_BEGIN_CMN Bs3RegCtxRestore_aborts ; special entry point for when watcom applies __aborts
- %if TMPL_BITS == 16
+%if TMPL_BITS == 16
+BS3_PROC_BEGIN_CMN Bs3RegCtxRestore_aborts, BS3_PBC_FAR  ; special entry point for when watcom applies __aborts
+BS3_PROC_BEGIN_CMN Bs3RegCtxRestore_aborts, BS3_PBC_NEAR ; special entry point for when watcom applies __aborts
         CPU 8086
         xor     xAX, xAX
         push    xAX                     ; fake return address.
- %else
+        push    xAX
+        jmp     _Bs3RegCtxRestore_f16
+%elif TMPL_BITS == 32
+BS3_PROC_BEGIN_CMN Bs3RegCtxRestore_aborts, BS3_PBC_NEAR ; special entry point for when watcom applies __aborts
         push    0feedfaceh              ; fake return address.
- %endif
 %endif
-BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
+BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         BS3_CALL_CONV_PROLOG 2
         push    xBP
         mov     xBP, xSP
@@ -70,9 +72,9 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
         test    al, 3
         jz      .in_ring0
 %if TMPL_BITS == 16
-        mov     si, [bp + 4]
-        mov     cx, [bp + 4+2]
-        mov     dx, [bp + 8]
+        mov     si, [bp + xCB + cbCurRetAddr]
+        mov     cx, [bp + xCB + cbCurRetAddr + 2]
+        mov     dx, [bp + xCB + cbCurRetAddr + sCB]
         mov     ax, BS3_SYSCALL_RESTORE_CTX
 %else
         mov     cx, ds
@@ -90,8 +92,8 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore
 %if TMPL_BITS == 16
         mov     ax, BS3_SEL_DATA16
         mov     es, ax
-        lds     bx, [bp + 4]
-        mov     cx, [bp + 8]
+        lds     bx, [bp + xCB + cbCurRetAddr]
+        mov     cx, [bp + xCB + cbCurRetAddr + sCB]
 %elif TMPL_BITS == 32
         mov     ax, BS3_SEL_R0_DS32
         mov     ds, ax

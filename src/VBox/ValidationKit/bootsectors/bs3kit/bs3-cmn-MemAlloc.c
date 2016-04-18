@@ -32,7 +32,8 @@
 #include <iprt/asm.h>
 
 
-BS3_DECL(void BS3_FAR *) Bs3MemAlloc(BS3MEMKIND enmKind, size_t cb)
+#undef Bs3MemAlloc
+BS3_CMN_DEF(void BS3_FAR *, Bs3MemAlloc,(BS3MEMKIND enmKind, size_t cb))
 {
     void BS3_FAR   *pvRet;
     uint8_t         idxSlabList = bs3MemSizeToSlabListIndex(cb);

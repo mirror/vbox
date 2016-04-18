@@ -70,6 +70,35 @@ BS3KIT_CLASS_BSS16  = ???
 endif
 
 
+##
+# Macro for generating near-call aliases for zero or more 16-bit C functions.
+# @param    1   The target name.
+# @param    2   List of functions.
+BS3KIT_FN_GEN_NEARSTUBS = $(foreach fn,$2,$(evalcall2 def_Bs3KitGenNearStubSource,$1,$(fn)))
+define def_Bs3KitGenNearStubSource
+$1_SOURCES += $$($1_0_OUTDIR)/near-call-to-$2_f16.asm
+$1_CLEAN   += $$($1_0_OUTDIR)/near-call-to-$2_f16.asm
+$$$$($1_0_OUTDIR)/near-call-to-$2_f16.asm: | $$$$(dir $$$$@)
+	$(QUIET)$(APPEND) -tn $$@ \
+		'%include "bs3kit.mac"' \
+       	'BS3_BEGIN_TEXT16' \
+               '      extern  _$2_f16' \
+       	'BS3_BEGIN_TEXT16_NEARSTUBS' \
+               'GROUP CGROUP16 BS3TEXT16 BS3TEXT16_NEARSTUBS' \
+		'BS3_GLOBAL_NAME_EX _$2_c16, function, 6' \
+               '      pop     ax' \
+               '      push    cs' \
+               '      push    ax' \
+               '      jmp     _$2_f16 wrt CGROUP16'
+endef
+
+
+#
+# Tools Tools Tools
+# Tools Tools Tools
+# Tools Tools Tools
+#
+
 # Dummy CP "linker" tool.
 TOOL_VBoxBsCpLd = Dummy copy linker.
 TOOL_VBoxBsCpLd_LINK_MISCBIN_OUTPUT =
@@ -529,6 +558,8 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
  	   segment BS3FLAT segaddr=0x0000 \
  	 clname $(BS3KIT_CLASS_CODE16) segaddr=0x1000 \
  	  segment BS3TEXT16 \
+ 	  segment BS3TEXT16_NEARSTUBS \
+         segment BS3TEXT16_FARSTUBS \
  	  segment BS3TEXT16_END \
         clname BS3SYSTEM16 segaddr=0x2000 \
          segment BS3SYSTEM16 \
@@ -570,10 +601,18 @@ $(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
  	  segment BS3DATA64CONST \
  	  segment BS3DATA64_BSS \
  	  segment BS3DATA64_END \
+        clname BS3CLASS16RMCODE \
+ 	  segment BS3RMCODE16_START \
+ 	  segment BS3RMCODE16 \
+ 	  segment BS3RMCODE16_END \
         clname BS3CLASS32CODE \
+ 	  segment BS3TEXT32_START \
  	  segment BS3TEXT32 \
+ 	  segment BS3TEXT32_END \
         clname BS3CLASS64CODE \
- 	  segment BS3TEXT64
+ 	  segment BS3TEXT64_START \
+ 	  segment BS3TEXT64 \
+ 	  segment BS3TEXT64_END
 
 TEMPLATE_VBoxBS3KitImg_LNK_DEPS = \
 	$(bs3-bootsector_1_TARGET) \
@@ -704,6 +743,8 @@ TEMPLATE_VBoxBS3KitUtil_LDFLAGS  = system dos \
  	  segment BEGTEXT \
  	  segment BS3TEXT16 \
  	  segment _TEXT \
+ 	  segment BS3TEXT16_NEARSTUBS \
+ 	  segment BS3TEXT16_FARSTUBS \
  	  segment BS3TEXT16_END \
         clname BS3SYSTEM16  \
          segment BS3SYSTEM16 \
@@ -763,10 +804,16 @@ $(if-expr "$(BS3KIT_SEGNM_DATA16)" != "", \
  	  segment BS3DATA64CONST \
  	  segment BS3DATA64_BSS \
  	  segment BS3DATA64_END \
+        clname BS3CLASS16RMCODE \
+ 	  segment BS3RMCODE16_START \
+ 	  segment BS3RMCODE16 \
+ 	  segment BS3RMCODE16_END \
         clname BS3CLASS32CODE \
  	  segment BS3TEXT32 \
+ 	  segment BS3TEXT32_END \
         clname BS3CLASS64CODE \
- 	  segment BS3TEXT64
+ 	  segment BS3TEXT64 \
+ 	  segment BS3TEXT64_END
 # 	 clname BS3FLAT segaddr=0x0000 \
 # 	   segment BS3FLAT segaddr=0x0000
 

@@ -31,8 +31,9 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(bool) Bs3TestCheckRegCtxEx(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAcjust,
-                                    uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep)
+#undef Bs3TestCheckRegCtxEx
+BS3_CMN_DEF(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAcjust,
+                                        uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep))
 {
     uint16_t cErrorsBefore = Bs3TestSubErrorCount();
 

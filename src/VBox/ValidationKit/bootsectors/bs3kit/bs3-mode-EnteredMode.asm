@@ -261,9 +261,7 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode
         int3
 .return_stack_ok:
 %endif
-        leave
+        pop     xBP
         ret
-.dbg_str:
-    db 'CurrentMode=%#x', 0ah, 0
 BS3_PROC_END_MODE   Bs3EnteredMode
 

@@ -30,7 +30,8 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(void BS3_FAR *) Bs3SlabListAllocEx(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags)
+#undef Bs3SlabListAllocEx
+BS3_CMN_DEF(void BS3_FAR *, Bs3SlabListAllocEx,(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags))
 {
     BS3_ASSERT(!(fFlags & ~BS3_SLAB_ALLOC_F_SAME_TILE));
     if (pHead->cFreeChunks >= cChunks)

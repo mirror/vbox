@@ -36,8 +36,9 @@ TMPL_BEGIN_TEXT
 ; @cproto   BS3_DECL(void) Bs3SwitchTo64Bit(void);
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
+; @uses     No GPRs.
 ;
-BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit
+BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit, BS3_PBC_NEAR
 %if TMPL_BITS == 64
         ret
 
@@ -103,4 +104,7 @@ BS3_SET_BITS 64
         ret
 %endif
 BS3_PROC_END_CMN   Bs3SwitchTo64Bit
+
+
+;; @todo far 16-bit variant.
 

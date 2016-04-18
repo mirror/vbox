@@ -47,9 +47,11 @@ static void bs3TrapDefaultHandlerV8086Syscall(PBS3TRAPFRAME pTrapFrame)
     if (pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_PRINT_CHR)
         Bs3PrintChr(pTrapFrame->Ctx.rcx.u8);
     else if (pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_PRINT_STR)
-        Bs3PrintStrN(Bs3XptrFlatToCurrent((pTrapFrame->Ctx.rcx.u16 << 4) + pTrapFrame->Ctx.rsi.u16), pTrapFrame->Ctx.rdx.u16);
+        Bs3PrintStrN(Bs3XptrFlatToCurrent(((uint32_t)pTrapFrame->Ctx.rcx.u16 << 4) + pTrapFrame->Ctx.rsi.u16),
+                     pTrapFrame->Ctx.rdx.u16);
     else if (pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_RESTORE_CTX)
-        Bs3RegCtxRestore(Bs3XptrFlatToCurrent((pTrapFrame->Ctx.rcx.u16 << 4) + pTrapFrame->Ctx.rsi.u16), pTrapFrame->Ctx.rdx.u16);
+        Bs3RegCtxRestore(Bs3XptrFlatToCurrent(((uint32_t)pTrapFrame->Ctx.rcx.u16 << 4) + pTrapFrame->Ctx.rsi.u16),
+                         pTrapFrame->Ctx.rdx.u16);
     else if (   pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_TO_RING0
              || pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_TO_RING1
              || pTrapFrame->Ctx.rax.u16 == BS3_SYSCALL_TO_RING2
@@ -62,7 +64,8 @@ static void bs3TrapDefaultHandlerV8086Syscall(PBS3TRAPFRAME pTrapFrame)
 }
 #endif
 
-BS3_DECL(void) Bs3TrapDefaultHandler(PBS3TRAPFRAME pTrapFrame)
+#undef Bs3TrapDefaultHandler
+BS3_CMN_DEF(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame))
 {
 #if TMPL_BITS != 64
     /*

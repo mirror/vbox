@@ -350,7 +350,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
     bool const      f486Plus = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486;
 # if TMPL_BITS == 16
     bool const      f386Plus = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386;
-    bool const      f286     = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80286;
+    bool const      f286     = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) == BS3CPU_80286;
 # else
     bool const      f286     = false;
     bool const      f386Plus = true;
@@ -1570,6 +1570,10 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
     g_bTestMode   = bMode;
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
 
+    Bs3PrintStrN(RT_STR_TUPLE("Hello world!\n"));
+#if !BS3_MODE_IS_V86(TMPL_MODE)
+    Bs3TestPrintf(RT_STR_TUPLE("Hi there!\n"));
+#endif
     return BS3TESTDOMODE_SKIPPED;
 }
 

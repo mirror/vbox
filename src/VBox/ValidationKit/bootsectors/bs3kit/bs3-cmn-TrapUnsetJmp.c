@@ -39,7 +39,8 @@
 extern uint32_t g_pBs3TrapSetJmpFrame;
 
 
-BS3_DECL(void) Bs3TrapUnsetJmp(void)
+#undef Bs3TrapUnsetJmp
+BS3_CMN_DEF(void, Bs3TrapUnsetJmp,(void))
 {
     g_pBs3TrapSetJmpFrame = 0;
 }

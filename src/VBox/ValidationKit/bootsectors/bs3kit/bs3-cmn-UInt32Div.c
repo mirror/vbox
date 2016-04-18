@@ -32,8 +32,8 @@
 #include <iprt/uint32.h>
 
 
-
-void BS3_CMN_NM(Bs3UInt32Div)(RTUINT32U uDividend, RTUINT32U uDivisor, RTUINT32U BS3_FAR *paQuotientReminder)
+#undef Bs3UInt32Div
+BS3_CMN_DEF(void, Bs3UInt32Div,(RTUINT32U uDividend, RTUINT32U uDivisor, RTUINT32U BS3_FAR *paQuotientReminder))
 {
     RTUInt32DivRem(&paQuotientReminder[0], &paQuotientReminder[1], &uDividend, &uDivisor);
 }

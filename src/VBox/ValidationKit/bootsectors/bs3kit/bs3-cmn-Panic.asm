@@ -27,7 +27,7 @@
 %include "bs3kit-template-header.mac"
 
 
-BS3_PROC_BEGIN_CMN Bs3Panic
+BS3_PROC_BEGIN_CMN Bs3Panic, BS3_PBC_HYBRID_0_ARGS
         push    xBP
         mov     xBP, xSP
         cli

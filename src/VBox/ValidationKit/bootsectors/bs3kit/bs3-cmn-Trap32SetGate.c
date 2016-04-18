@@ -30,7 +30,8 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(void) Bs3Trap32SetGate(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams)
+#undef Bs3Trap32SetGate
+BS3_CMN_DEF(void, Bs3Trap32SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams))
 {
     X86DESC BS3_FAR *pIdte = &Bs3Idt32[iIdt];
 

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Bs3TrapSetJmpAndRestore
+ * BS3Kit - Symbol mangling, code.
  */
 
 /*
@@ -24,21 +24,16 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/*********************************************************************************************************************************
-*   Header Files                                                                                                                 *
-*********************************************************************************************************************************/
-#include "bs3kit-template-header.h"
 
-
-#undef Bs3TrapSetJmpAndRestore
-BS3_CMN_DEF(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame))
-{
-    if (Bs3TrapSetJmp(pTrapFrame))
-    {
-#if TMPL_BITS == 32
-        g_uBs3TrapEipHint = pCtxRestore->rip.u32;
+/*
+ * Do function mangling.  This can be redone at compile time (templates).
+ */
+#undef BS3_CMN_MANGLER
+#if ARCH_BITS != 16 || !defined(BS3_USE_RM_TEXT_SEG)
+# define BS3_CMN_MANGLER(a_Function)            BS3_CMN_NM(a_Function)
+#else
+# define BS3_CMN_MANGLER(a_Function)            BS3_CMN_FAR_NM(a_Function)
 #endif
-        Bs3RegCtxRestore(pCtxRestore, 0);
-    }
-}
+#include "bs3kit-mangling-code-undef.h"
+#include "bs3kit-mangling-code-define.h"
 

@@ -31,7 +31,8 @@
 #include "bs3-cmn-paging.h"
 
 
-BS3_DECL(int) Bs3PagingInitRootForPAE(void)
+#undef Bs3PagingInitRootForPAE
+BS3_CMN_DEF(int, Bs3PagingInitRootForPAE,(void))
 {
     X86PDPT BS3_FAR *pPdPtr;
 

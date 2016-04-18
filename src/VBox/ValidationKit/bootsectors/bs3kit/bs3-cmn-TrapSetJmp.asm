@@ -36,7 +36,7 @@
 ;*********************************************************************************************************************************
 BS3_EXTERN_CMN Bs3RegCtxSave
 %if TMPL_BITS == 16
-BS3_EXTERN_CMN Bs3SelFar32ToFlat32
+BS3_EXTERN_CMN_FAR Bs3SelFar32ToFlat32
 %endif
 BS3_EXTERN_DATA16 g_Bs3TrapSetJmpCtx
 BS3_EXTERN_DATA16 g_pBs3TrapSetJmpFrame
@@ -48,7 +48,7 @@ TMPL_BEGIN_TEXT
 ;
 ; @uses     See, applicable C calling convention.
 ;
-BS3_PROC_BEGIN_CMN Bs3TrapSetJmp
+BS3_PROC_BEGIN_CMN Bs3TrapSetJmp, BS3_PBC_HYBRID
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
@@ -70,9 +70,13 @@ BS3_PROC_BEGIN_CMN Bs3TrapSetJmp
         BS3_LEA_MOV_WRT_RIP(xBX, BS3_DATA16_WRT(g_Bs3TrapSetJmpCtx))
         mov     xAX, [xBP + xCB]        ; The return address of this function
         mov     [xBX + BS3REGCTX.rip], xAX
+%if TMPL_BITS == 16
+        mov     xAX, [xBP + xCB+2]      ; The return address CS of this function.
+        mov     [xBX + BS3REGCTX.cs], xAX
+%endif
         mov     xAX, [xBP]
         mov     [xBX + BS3REGCTX.rbp], xAX
-        lea     xAX, [xBP + xCB*2]
+        lea     xAX, [xBP + xCB + cbCurRetAddr]
         mov     [xBX + BS3REGCTX.rsp], xAX
         mov     xAX, [xBP - xCB]
         mov     [xBX + BS3REGCTX.rbx], xAX
@@ -85,7 +89,7 @@ BS3_PROC_BEGIN_CMN Bs3TrapSetJmp
         push    xDI
 %if TMPL_BITS == 16
         push    es
-        les     di, [xBP + xCB*2]
+        les     di, [xBP + xCB + cbCurRetAddr]
         mov     cx, BS3TRAPFRAME_size / 2
         mov     ax, 0faceh
         rep stosw
@@ -103,9 +107,10 @@ BS3_PROC_BEGIN_CMN Bs3TrapSetJmp
         ;
 %if TMPL_BITS == 16
         xor     ax, ax
-        push    word [xBP + xCB*2 + 2]
+        push    word [xBP + xCB + cbCurRetAddr + 2]
         push    ax
-        push    word [xBP + xCB*2]
+        push    word [xBP + xCB + cbCurRetAddr]
+        push    cs
         call    Bs3SelFar32ToFlat32
         add     sp, 6h
         mov     [BS3_DATA16_WRT(g_pBs3TrapSetJmpFrame)], ax
@@ -123,6 +128,6 @@ BS3_PROC_BEGIN_CMN Bs3TrapSetJmp
         pop     xBX
         pop     xBP
         BS3_CALL_CONV_EPILOG 1
-        ret
+        BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3TrapSetJmp
 

@@ -37,12 +37,12 @@ TMPL_BEGIN_TEXT
 
 
 ;;
-; Restores the given register context.
+; Saves the current register context.
 ;
 ; @param        pRegCtx
 ; @uses         None.
 ;
-BS3_PROC_BEGIN_CMN Bs3RegCtxSave
+BS3_PROC_BEGIN_CMN Bs3RegCtxSave, BS3_PBC_HYBRID_SAFE
         TMPL_ONLY_16BIT_STMT CPU 8086
         BS3_CALL_CONV_PROLOG 1
         push    xBP
@@ -55,31 +55,21 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         BS3_ONLY_16BIT_STMT push    ds  ; xBP - xCB*6
 
         ;
-        ; Prologue. Load ES:xDI with pRegCtx.
-        ; (ASSUMES ds is BS3KIT_GRPNM_DATA16/FLAT of course.)
-        ;
-%if TMPL_BITS == 16
-        les     di, [bp + 4]
-%else
-        mov     xDI, [xBP + xCB*2]
-%endif
-
-        ;
         ; Clear the whole structure first.
         ;
         xor     xAX, xAX
         cld
         AssertCompileSizeAlignment(BS3REGCTX, 4)
 %if TMPL_BITS == 16
-        les     xDI, [xBP + xCB*2]
+        les     xDI, [xBP + xCB + cbCurRetAddr]
         mov     xCX, BS3REGCTX_size / 2
         rep stosw
 %else
-        mov     xDI, [xBP + xCB*2]
+        mov     xDI, [xBP + xCB + cbCurRetAddr]
         mov     xCX, BS3REGCTX_size / 4
         rep stosd
 %endif
-        mov     xDI, [xBP + xCB*2]
+        mov     xDI, [xBP + xCB + cbCurRetAddr]
 
         ;
         ; Save the current mode.
@@ -200,6 +190,8 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         ; 80286 control registers.
 .common_80286:
         TMPL_ONLY_16BIT_STMT CPU 286
+        cmp     cl, BS3_MODE_RM
+        je      .common_ancient
         str     [xDI + BS3REGCTX.tr]
         sldt    [xDI + BS3REGCTX.ldtr]
 
@@ -218,16 +210,18 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         mov     [xDI + BS3REGCTX.rbp], xAX
         mov     xAX, [xBP + xCB]
         mov     [xDI + BS3REGCTX.rip], xAX
-        lea     xAX, [xBP + xCB*2]
+        lea     xAX, [xBP + xCB + cbCurRetAddr]
         mov     [xDI + BS3REGCTX.rsp], xAX
 
-        mov     [xDI + BS3REGCTX.cs], cs
 %if TMPL_BITS == 16
+        mov     ax, [xBP + xCB + 2]
+        mov     [xDI + BS3REGCTX.cs], ax
         mov     ax, [xBP - xCB*6]
         mov     [xDI + BS3REGCTX.ds], ax
         mov     ax, [xBP - xCB*5]
         mov     [xDI + BS3REGCTX.es], ax
 %else
+        mov     [xDI + BS3REGCTX.cs], cs
         mov     [xDI + BS3REGCTX.ds], ds
         mov     [xDI + BS3REGCTX.es], es
 %endif
@@ -244,6 +238,6 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave
         pop     xAX
         xPOPF
         pop     xBP
-        ret
+        BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3RegCtxSave
 

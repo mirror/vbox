@@ -31,7 +31,8 @@
 #include "bs3-cmn-paging.h"
 
 
-BS3_DECL(int) Bs3PagingInitRootForLM(void)
+#undef Bs3PagingInitRootForLM
+BS3_CMN_DEF(int, Bs3PagingInitRootForLM,(void))
 {
     X86PML4 BS3_FAR *pPml4;
 

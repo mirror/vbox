@@ -36,7 +36,8 @@
 extern PFNBS3TRAPHANDLER BS3_DATA_NM(BS3_CMN_NM(g_apfnBs3TrapHandlers))[256];
 
 
-BS3_DECL(PFNBS3TRAPHANDLER) Bs3TrapSetHandler(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler)
+#undef Bs3TrapSetHandler
+BS3_CMN_DEF(PFNBS3TRAPHANDLER, Bs3TrapSetHandler,(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler))
 {
     PFNBS3TRAPHANDLER pfnOld = BS3_DATA_NM(BS3_CMN_NM(g_apfnBs3TrapHandlers))[iIdt];
     BS3_DATA_NM(BS3_CMN_NM(g_apfnBs3TrapHandlers))[iIdt] = pfnHandler;

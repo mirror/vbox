@@ -30,7 +30,8 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(void) Bs3RegCtxPrint(PCBS3REGCTX pRegCtx)
+#undef Bs3RegCtxPrint
+BS3_CMN_DEF(void, Bs3RegCtxPrint,(PCBS3REGCTX pRegCtx))
 {
     //if (BS3_MODE_IS_64BIT_CODE(pRegCtx->bMode))
     //{

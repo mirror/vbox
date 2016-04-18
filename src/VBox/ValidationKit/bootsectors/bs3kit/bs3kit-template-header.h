@@ -137,7 +137,8 @@
 
 #else /* !DOXYGEN_RUNNING */
 
-#undef BS3_CMN_NM
+//#undef BS3_CMN_NM
+//#undef BS3_CMN_FAR_NM
 
 
 /*
@@ -204,7 +205,9 @@
 # define TMPL_16BIT
 # define TMPL_BITS              16
 # define TMPL_UNDERSCORE        _
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
+//# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
+//# define BS3_CMN_FAR_NM(Name)   RT_CONCAT(Name,_f16)
+
 
 #elif (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_32
 # if ARCH_BITS != 32
@@ -213,7 +216,8 @@
 # define TMPL_32BIT
 # define TMPL_BITS              32
 # define TMPL_UNDERSCORE        _
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c32)
+//# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c32)
+//# define BS3_CMN_FAR_NM(a_Name) RT_CONCAT(Name,_c32)
 
 #elif (TMPL_MODE & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_V86
 # if ARCH_BITS != 16
@@ -222,7 +226,8 @@
 # define TMPL_16BIT
 # define TMPL_BITS              16
 # define TMPL_UNDERSCORE        _
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
+//# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c16)
+//# define BS3_CMN_FAR_NM(Name)   RT_CONCAT(Name,_f16)
 # define TMPL_CMN_R86
 # define TMPL_CMN_V86
 
@@ -233,7 +238,8 @@
 # define TMPL_64BIT
 # define TMPL_BITS              64
 # define TMPL_UNDERSCORE
-# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c64)
+//# define BS3_CMN_NM(Name)       RT_CONCAT(Name,_c64)
+//# define BS3_CMN_FAR_NM(a_Name) RT_CONCAT(Name,_c64)
 
 #else
 # error "Invalid TMPL_MODE value!"

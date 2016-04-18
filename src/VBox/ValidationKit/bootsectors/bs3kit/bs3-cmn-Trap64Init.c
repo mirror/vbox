@@ -30,7 +30,8 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(void) Bs3Trap64Init(void)
+#undef Bs3Trap64Init
+BS3_CMN_DEF(void, Bs3Trap64Init,(void))
 {
      X86TSS64 BS3_FAR *pTss;
      unsigned iIdt;

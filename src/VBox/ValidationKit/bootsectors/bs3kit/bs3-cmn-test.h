@@ -99,10 +99,10 @@ extern char                 g_szBs3SubTest[64];
  * @param   uCmd        The command.
  * @param   pszString   The string.
  */
-BS3_DECL(void) bs3TestSendCmdWithStr_c16(uint32_t uCmd, const char BS3_FAR *pszString);
-BS3_DECL(void) bs3TestSendCmdWithStr_c32(uint32_t uCmd, const char BS3_FAR *pszString); /**< @copydoc bs3TestSendCmdWithStr_c16 */
-BS3_DECL(void) bs3TestSendCmdWithStr_c64(uint32_t uCmd, const char BS3_FAR *pszString); /**< @copydoc bs3TestSendCmdWithStr_c16 */
-#define bs3TestSendCmdWithStr BS3_CMN_NM(bs3TestSendCmdWithStr) /**< Selects #bs3TestSendCmdWithStr_c16, #bs3TestSendCmdWithStr_c32 or #bs3TestSendCmdWithStr_c64. */
+#ifndef DOXYGEN_RUNNING
+# define bs3TestSendCmdWithStr BS3_CMN_NM(bs3TestSendCmdWithStr)
+#endif
+BS3_DECL(void) bs3TestSendCmdWithStr(uint32_t uCmd, const char BS3_FAR *pszString);
 
 /**
  * Sends a command to VMMDev followed by a 32-bit unsigned integer value.
@@ -113,28 +113,28 @@ BS3_DECL(void) bs3TestSendCmdWithStr_c64(uint32_t uCmd, const char BS3_FAR *pszS
  * @param   uCmd        The command.
  * @param   uValue      The value.
  */
-BS3_DECL(void) bs3TestSendCmdWithU32_c16(uint32_t uCmd, uint32_t uValue);
-BS3_DECL(void) bs3TestSendCmdWithU32_c32(uint32_t uCmd, uint32_t uValue); /**< @copydoc bs3TestSendCmdWithU32_c16 */
-BS3_DECL(void) bs3TestSendCmdWithU32_c64(uint32_t uCmd, uint32_t uValue); /**< @copydoc bs3TestSendCmdWithU32_c16 */
-#define bs3TestSendCmdWithU32 BS3_CMN_NM(bs3TestSendCmdWithU32) /**< Selects #bs3TestSendCmdWithU32_c16, #bs3TestSendCmdWithU32_c32 or #bs3TestSendCmdWithU32_c64. */
+#ifndef DOXYGEN_RUNNING
+# define bs3TestSendCmdWithU32 BS3_CMN_NM(bs3TestSendCmdWithU32)
+#endif
+BS3_DECL(void) bs3TestSendCmdWithU32(uint32_t uCmd, uint32_t uValue);
 
 /**
  * Checks if the VMMDev is configured for testing.
  *
  * @returns true / false.
  */
-BS3_DECL(bool) bs3TestIsVmmDevTestingPresent_c16(void);
-BS3_DECL(bool) bs3TestIsVmmDevTestingPresent_c32(void); /**< @copydoc bs3TestIsVmmDevTestingPresent_c16 */
-BS3_DECL(bool) bs3TestIsVmmDevTestingPresent_c64(void); /**< @copydoc bs3TestIsVmmDevTestingPresent_c16 */
-#define bs3TestIsVmmDevTestingPresent BS3_CMN_NM(bs3TestIsVmmDevTestingPresent) /**< Selects #bs3TestIsVmmDevTestingPresent_c16, #bs3TestIsVmmDevTestingPresent_c32 or #bs3TestIsVmmDevTestingPresent_c64. */
+#ifndef DOXYGEN_RUNNING
+# define bs3TestIsVmmDevTestingPresent BS3_CMN_NM(bs3TestIsVmmDevTestingPresent)
+#endif
+BS3_DECL(bool) bs3TestIsVmmDevTestingPresent(void);
 
 /**
  * Similar to rtTestSubCleanup.
  */
-BS3_DECL(void) bs3TestSubCleanup_c16(void);
-BS3_DECL(void) bs3TestSubCleanup_c32(void); /**< @copydoc bs3TestSubCleanup_c16 */
-BS3_DECL(void) bs3TestSubCleanup_c64(void); /**< @copydoc bs3TestSubCleanup_c16 */
-#define bs3TestSubCleanup BS3_CMN_NM(bs3TestSubCleanup) /**< Selects #bs3TestSubCleanup_c16, #bs3TestSubCleanup_c32 or #bs3TestSubCleanup_c64. */
+#ifndef DOXYGEN_RUNNING
+# define bs3TestSubCleanup BS3_CMN_NM(bs3TestSubCleanup)
+#endif
+BS3_DECL(void) bs3TestSubCleanup(void);
 
 /**
  * @impl_callback_method{FNBS3STRFORMATOUTPUT,
@@ -142,10 +142,10 @@ BS3_DECL(void) bs3TestSubCleanup_c64(void); /**< @copydoc bs3TestSubCleanup_c16 
  *
  *      The @a pvUser parameter must point a BS3TESTFAILEDBUF structure. }
  */
-BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput_c16(char ch, void BS3_FAR *pvUser);
-BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput_c32(char ch, void BS3_FAR *pvUser);
-BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput_c64(char ch, void BS3_FAR *pvUser);
-#define bs3TestFailedStrOutput BS3_CMN_NM(bs3TestFailedStrOutput) /**< Selects #bs3TestFailedStrOutput_c16, #bs3TestFailedStrOutput_c32 or #bs3TestFailedStrOutput_c64. */
+#ifndef DOXYGEN_RUNNING
+# define bs3TestFailedStrOutput BS3_CMN_NM(bs3TestFailedStrOutput)
+#endif
+BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput(char ch, void BS3_FAR *pvUser);
 
 /**
  * Output buffering for bs3TestFailedStrOutput.

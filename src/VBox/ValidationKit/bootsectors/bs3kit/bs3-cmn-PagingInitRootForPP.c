@@ -67,7 +67,8 @@ static int Bs3PagingInitPageTablesForPgDir(X86PD BS3_FAR *pPgDir, unsigned iFirs
 }
 
 
-BS3_DECL(int) Bs3PagingInitRootForPP(void)
+#undef Bs3PagingInitRootForPP
+BS3_CMN_DEF(int, Bs3PagingInitRootForPP,(void))
 {
     X86PD BS3_FAR *pPgDir;
 

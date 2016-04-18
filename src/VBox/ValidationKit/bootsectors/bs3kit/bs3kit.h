@@ -54,11 +54,20 @@
  * BS3_CMN_NM yet, as we need to include IPRT headers with function
  * declarations before we can define it. Thus the duplciate effort.)
  */
-#define RT_MANGLER(a_Name) RT_CONCAT3(a_Name,_c,ARCH_BITS)
+#if ARCH_BITS != 16 || !defined(BS3_USE_RM_TEXT_SEG)
+# define RT_MANGLER(a_Name) RT_CONCAT3(a_Name,_c,ARCH_BITS)
+#else
+# define RT_MANGLER(a_Name) RT_CONCAT(a_Name,_f16)
+#endif
 #include <iprt/mangling.h>
 #include <iprt/x86.h>
 #include <iprt/err.h>
 
+/*
+ * Include data symbol mangling (function mangling/mapping must be done
+ * after the protypes).
+ */
+#include "bs3kit-mangling-data.h"
 
 
 RT_C_DECLS_BEGIN
@@ -491,15 +500,39 @@ RT_C_DECLS_BEGIN
 #endif
 
 /** @def BS3_DECL
- * Declares a BS3Kit function.
+ * Declares a BS3Kit function with default far/near.
+ *
+ * Until we outgrow BS3TEXT16, we use all near functions in 16-bit.
+ *
+ * @param a_Type        The return type. */
+#if ARCH_BITS != 16 || !defined(BS3_USE_RM_TEXT_SEG)
+# define BS3_DECL(a_Type)  BS3_DECL_NEAR(a_Type)
+#else
+# define BS3_DECL(a_Type)  BS3_DECL_FAR(a_Type)
+#endif
+
+/** @def BS3_DECL_NEAR
+ * Declares a BS3Kit function, always near everywhere.
  *
  * Until we outgrow BS3TEXT16, we use all near functions in 16-bit.
  *
  * @param a_Type        The return type. */
 #ifdef IN_BS3KIT
-# define BS3_DECL(a_Type)   DECLEXPORT(a_Type) BS3_NEAR_CODE BS3_CALL
+# define BS3_DECL_NEAR(a_Type)  DECLEXPORT(a_Type) BS3_NEAR_CODE BS3_CALL
 #else
-# define BS3_DECL(a_Type)   DECLIMPORT(a_Type) BS3_NEAR_CODE BS3_CALL
+# define BS3_DECL_NEAR(a_Type)  DECLIMPORT(a_Type) BS3_NEAR_CODE BS3_CALL
+#endif
+
+/** @def BS3_DECL_FAR
+ * Declares a BS3Kit function, far 16-bit, otherwise near.
+ *
+ * Until we outgrow BS3TEXT16, we use all near functions in 16-bit.
+ *
+ * @param a_Type        The return type. */
+#ifdef IN_BS3KIT
+# define BS3_DECL_FAR(a_Type)   DECLEXPORT(a_Type) BS3_FAR_CODE BS3_CALL
+#else
+# define BS3_DECL_FAR(a_Type)   DECLIMPORT(a_Type) BS3_FAR_CODE BS3_CALL
 #endif
 
 /** @def BS3_DECL_CALLBACK
@@ -520,11 +553,45 @@ RT_C_DECLS_BEGIN
  * Example: BS3_CMN_NM(Bs3Shutdown)
  *
  * @param   a_Name      The name of the function or global variable.
+ * @todo fix code vs data issue with _f16
  */
-#define BS3_CMN_NM(a_Name)  RT_CONCAT3(a_Name,_c,ARCH_BITS)
+#define BS3_CMN_NM(a_Name)      RT_CONCAT3(a_Name,_c,ARCH_BITS)
+
+/**
+ * Constructs a common function name, far in 16-bit code.
+ *
+ * Example: BS3_CMN_FAR_NM(Bs3Shutdown)
+ *
+ * @param   a_Name      The name of the function.
+ */
+#if ARCH_BITS == 16
+# define BS3_CMN_FAR_NM(a_Name) RT_CONCAT(a_Name,_f16)
+#else
+# define BS3_CMN_FAR_NM(a_Name) RT_CONCAT3(a_Name,_c,ARCH_BITS)
+#endif
+
+/**
+ * Constructs a common function name, far or near as defined by the source.
+ *
+ * Which to use in 16-bit mode is defined by BS3_USE_RM_TEXT_SEG.  In 32-bit and
+ * 64-bit mode there are no far symbols, only near ones.
+ *
+ * Example: BS3_CMN_FN_NM(Bs3Shutdown)
+ *
+ * @param   a_Name      The name of the function.
+ */
+#if ARCH_BITS != 16 || !defined(BS3_USE_RM_TEXT_SEG)
+# define BS3_CMN_FN_NM(a_Name)  BS3_CMN_NM(a_Name)
+#else
+# define BS3_CMN_FN_NM(a_Name)  BS3_CMN_FAR_NM(a_Name)
+#endif
+
 
 /**
  * Constructs a data name.
+ *
+ * This glosses over the underscore prefix usage of our 16-bit, 32-bit and
+ * 64-bit compilers.
  *
  * Example: @code{.c}
  *  \#define Bs3Gdt BS3_DATA_NM(Bs3Gdt)
@@ -532,6 +599,7 @@ RT_C_DECLS_BEGIN
  * @endcode
  *
  * @param   a_Name      The name of the global variable.
+ * @remarks Mainly used in bs3kit-mangling.h, internal headers and templates.
  */
 #if ARCH_BITS == 64
 # define BS3_DATA_NM(a_Name)  RT_CONCAT(_,a_Name)
@@ -617,191 +685,6 @@ BS3_PTR_UNION_TEMPLATE(BS3CVPTRUNION, const volatile);
 
 /** @defgroup grp_bs3kit_system System structures
  * @{ */
-#if ARCH_BITS == 64 && !defined(DOXYGEN_RUNNING)
-# define Bs3Gdt                                 BS3_DATA_NM(Bs3Gdt)
-# define Bs3Gdt_Ldt                             BS3_DATA_NM(Bs3Gdt_Ldt)
-# define Bs3Gdte_Tss16                          BS3_DATA_NM(Bs3Gdte_Tss16)
-# define Bs3Gdte_Tss16DoubleFault               BS3_DATA_NM(Bs3Gdte_Tss16DoubleFault)
-# define Bs3Gdte_Tss16Spare0                    BS3_DATA_NM(Bs3Gdte_Tss16Spare0)
-# define Bs3Gdte_Tss16Spare1                    BS3_DATA_NM(Bs3Gdte_Tss16Spare1)
-# define Bs3Gdte_Tss32                          BS3_DATA_NM(Bs3Gdte_Tss32)
-# define Bs3Gdte_Tss32DoubleFault               BS3_DATA_NM(Bs3Gdte_Tss32DoubleFault)
-# define Bs3Gdte_Tss32Spare0                    BS3_DATA_NM(Bs3Gdte_Tss32Spare0)
-# define Bs3Gdte_Tss32Spare1                    BS3_DATA_NM(Bs3Gdte_Tss32Spare1)
-# define Bs3Gdte_Tss32IobpIntRedirBm            BS3_DATA_NM(Bs3Gdte_Tss32IobpIntRedirBm)
-# define Bs3Gdte_Tss32IntRedirBm                BS3_DATA_NM(Bs3Gdte_Tss32IntRedirBm)
-# define Bs3Gdte_Tss64                          BS3_DATA_NM(Bs3Gdte_Tss64)
-# define Bs3Gdte_Tss64Spare0                    BS3_DATA_NM(Bs3Gdte_Tss64Spare0)
-# define Bs3Gdte_Tss64Spare1                    BS3_DATA_NM(Bs3Gdte_Tss64Spare1)
-# define Bs3Gdte_Tss64Iobp                      BS3_DATA_NM(Bs3Gdte_Tss64Iobp)
-# define Bs3Gdte_R0_MMIO16                      BS3_DATA_NM(Bs3Gdte_R0_MMIO16)
-
-# define Bs3Gdte_R0_First                       BS3_DATA_NM(Bs3Gdte_R0_First)
-# define Bs3Gdte_R0_CS16                        BS3_DATA_NM(Bs3Gdte_R0_CS16)
-# define Bs3Gdte_R0_DS16                        BS3_DATA_NM(Bs3Gdte_R0_DS16)
-# define Bs3Gdte_R0_SS16                        BS3_DATA_NM(Bs3Gdte_R0_SS16)
-# define Bs3Gdte_R0_CS32                        BS3_DATA_NM(Bs3Gdte_R0_CS32)
-# define Bs3Gdte_R0_DS32                        BS3_DATA_NM(Bs3Gdte_R0_DS32)
-# define Bs3Gdte_R0_SS32                        BS3_DATA_NM(Bs3Gdte_R0_SS32)
-# define Bs3Gdte_R0_CS64                        BS3_DATA_NM(Bs3Gdte_R0_CS64)
-# define Bs3Gdte_R0_DS64                        BS3_DATA_NM(Bs3Gdte_R0_DS64)
-# define Bs3Gdte_R0_CS16_EO                     BS3_DATA_NM(Bs3Gdte_R0_CS16_EO)
-# define Bs3Gdte_R0_CS16_CNF                    BS3_DATA_NM(Bs3Gdte_R0_CS16_CNF)
-# define Bs3Gdte_R0_CS16_CND_EO                 BS3_DATA_NM(Bs3Gdte_R0_CS16_CND_EO)
-# define Bs3Gdte_R0_CS32_EO                     BS3_DATA_NM(Bs3Gdte_R0_CS32_EO)
-# define Bs3Gdte_R0_CS32_CNF                    BS3_DATA_NM(Bs3Gdte_R0_CS32_CNF)
-# define Bs3Gdte_R0_CS32_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R0_CS32_CNF_EO)
-# define Bs3Gdte_R0_CS64_EO                     BS3_DATA_NM(Bs3Gdte_R0_CS64_EO)
-# define Bs3Gdte_R0_CS64_CNF                    BS3_DATA_NM(Bs3Gdte_R0_CS64_CNF)
-# define Bs3Gdte_R0_CS64_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R0_CS64_CNF_EO)
-
-# define Bs3Gdte_R1_First                       BS3_DATA_NM(Bs3Gdte_R1_First)
-# define Bs3Gdte_R1_CS16                        BS3_DATA_NM(Bs3Gdte_R1_CS16)
-# define Bs3Gdte_R1_DS16                        BS3_DATA_NM(Bs3Gdte_R1_DS16)
-# define Bs3Gdte_R1_SS16                        BS3_DATA_NM(Bs3Gdte_R1_SS16)
-# define Bs3Gdte_R1_CS32                        BS3_DATA_NM(Bs3Gdte_R1_CS32)
-# define Bs3Gdte_R1_DS32                        BS3_DATA_NM(Bs3Gdte_R1_DS32)
-# define Bs3Gdte_R1_SS32                        BS3_DATA_NM(Bs3Gdte_R1_SS32)
-# define Bs3Gdte_R1_CS64                        BS3_DATA_NM(Bs3Gdte_R1_CS64)
-# define Bs3Gdte_R1_DS64                        BS3_DATA_NM(Bs3Gdte_R1_DS64)
-# define Bs3Gdte_R1_CS16_EO                     BS3_DATA_NM(Bs3Gdte_R1_CS16_EO)
-# define Bs3Gdte_R1_CS16_CNF                    BS3_DATA_NM(Bs3Gdte_R1_CS16_CNF)
-# define Bs3Gdte_R1_CS16_CND_EO                 BS3_DATA_NM(Bs3Gdte_R1_CS16_CND_EO)
-# define Bs3Gdte_R1_CS32_EO                     BS3_DATA_NM(Bs3Gdte_R1_CS32_EO)
-# define Bs3Gdte_R1_CS32_CNF                    BS3_DATA_NM(Bs3Gdte_R1_CS32_CNF)
-# define Bs3Gdte_R1_CS32_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R1_CS32_CNF_EO)
-# define Bs3Gdte_R1_CS64_EO                     BS3_DATA_NM(Bs3Gdte_R1_CS64_EO)
-# define Bs3Gdte_R1_CS64_CNF                    BS3_DATA_NM(Bs3Gdte_R1_CS64_CNF)
-# define Bs3Gdte_R1_CS64_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R1_CS64_CNF_EO)
-
-# define Bs3Gdte_R2_First                       BS3_DATA_NM(Bs3Gdte_R2_First)
-# define Bs3Gdte_R2_CS16                        BS3_DATA_NM(Bs3Gdte_R2_CS16)
-# define Bs3Gdte_R2_DS16                        BS3_DATA_NM(Bs3Gdte_R2_DS16)
-# define Bs3Gdte_R2_SS16                        BS3_DATA_NM(Bs3Gdte_R2_SS16)
-# define Bs3Gdte_R2_CS32                        BS3_DATA_NM(Bs3Gdte_R2_CS32)
-# define Bs3Gdte_R2_DS32                        BS3_DATA_NM(Bs3Gdte_R2_DS32)
-# define Bs3Gdte_R2_SS32                        BS3_DATA_NM(Bs3Gdte_R2_SS32)
-# define Bs3Gdte_R2_CS64                        BS3_DATA_NM(Bs3Gdte_R2_CS64)
-# define Bs3Gdte_R2_DS64                        BS3_DATA_NM(Bs3Gdte_R2_DS64)
-# define Bs3Gdte_R2_CS16_EO                     BS3_DATA_NM(Bs3Gdte_R2_CS16_EO)
-# define Bs3Gdte_R2_CS16_CNF                    BS3_DATA_NM(Bs3Gdte_R2_CS16_CNF)
-# define Bs3Gdte_R2_CS16_CND_EO                 BS3_DATA_NM(Bs3Gdte_R2_CS16_CND_EO)
-# define Bs3Gdte_R2_CS32_EO                     BS3_DATA_NM(Bs3Gdte_R2_CS32_EO)
-# define Bs3Gdte_R2_CS32_CNF                    BS3_DATA_NM(Bs3Gdte_R2_CS32_CNF)
-# define Bs3Gdte_R2_CS32_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R2_CS32_CNF_EO)
-# define Bs3Gdte_R2_CS64_EO                     BS3_DATA_NM(Bs3Gdte_R2_CS64_EO)
-# define Bs3Gdte_R2_CS64_CNF                    BS3_DATA_NM(Bs3Gdte_R2_CS64_CNF)
-# define Bs3Gdte_R2_CS64_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R2_CS64_CNF_EO)
-
-# define Bs3Gdte_R3_First                       BS3_DATA_NM(Bs3Gdte_R3_First)
-# define Bs3Gdte_R3_CS16                        BS3_DATA_NM(Bs3Gdte_R3_CS16)
-# define Bs3Gdte_R3_DS16                        BS3_DATA_NM(Bs3Gdte_R3_DS16)
-# define Bs3Gdte_R3_SS16                        BS3_DATA_NM(Bs3Gdte_R3_SS16)
-# define Bs3Gdte_R3_CS32                        BS3_DATA_NM(Bs3Gdte_R3_CS32)
-# define Bs3Gdte_R3_DS32                        BS3_DATA_NM(Bs3Gdte_R3_DS32)
-# define Bs3Gdte_R3_SS32                        BS3_DATA_NM(Bs3Gdte_R3_SS32)
-# define Bs3Gdte_R3_CS64                        BS3_DATA_NM(Bs3Gdte_R3_CS64)
-# define Bs3Gdte_R3_DS64                        BS3_DATA_NM(Bs3Gdte_R3_DS64)
-# define Bs3Gdte_R3_CS16_EO                     BS3_DATA_NM(Bs3Gdte_R3_CS16_EO)
-# define Bs3Gdte_R3_CS16_CNF                    BS3_DATA_NM(Bs3Gdte_R3_CS16_CNF)
-# define Bs3Gdte_R3_CS16_CND_EO                 BS3_DATA_NM(Bs3Gdte_R3_CS16_CND_EO)
-# define Bs3Gdte_R3_CS32_EO                     BS3_DATA_NM(Bs3Gdte_R3_CS32_EO)
-# define Bs3Gdte_R3_CS32_CNF                    BS3_DATA_NM(Bs3Gdte_R3_CS32_CNF)
-# define Bs3Gdte_R3_CS32_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R3_CS32_CNF_EO)
-# define Bs3Gdte_R3_CS64_EO                     BS3_DATA_NM(Bs3Gdte_R3_CS64_EO)
-# define Bs3Gdte_R3_CS64_CNF                    BS3_DATA_NM(Bs3Gdte_R3_CS64_CNF)
-# define Bs3Gdte_R3_CS64_CNF_EO                 BS3_DATA_NM(Bs3Gdte_R3_CS64_CNF_EO)
-
-# define Bs3GdteSpare00                         BS3_DATA_NM(Bs3GdteSpare00)
-# define Bs3GdteSpare01                         BS3_DATA_NM(Bs3GdteSpare01)
-# define Bs3GdteSpare02                         BS3_DATA_NM(Bs3GdteSpare02)
-# define Bs3GdteSpare03                         BS3_DATA_NM(Bs3GdteSpare03)
-# define Bs3GdteSpare04                         BS3_DATA_NM(Bs3GdteSpare04)
-# define Bs3GdteSpare05                         BS3_DATA_NM(Bs3GdteSpare05)
-# define Bs3GdteSpare06                         BS3_DATA_NM(Bs3GdteSpare06)
-# define Bs3GdteSpare07                         BS3_DATA_NM(Bs3GdteSpare07)
-# define Bs3GdteSpare08                         BS3_DATA_NM(Bs3GdteSpare08)
-# define Bs3GdteSpare09                         BS3_DATA_NM(Bs3GdteSpare09)
-# define Bs3GdteSpare0a                         BS3_DATA_NM(Bs3GdteSpare0a)
-# define Bs3GdteSpare0b                         BS3_DATA_NM(Bs3GdteSpare0b)
-# define Bs3GdteSpare0c                         BS3_DATA_NM(Bs3GdteSpare0c)
-# define Bs3GdteSpare0d                         BS3_DATA_NM(Bs3GdteSpare0d)
-# define Bs3GdteSpare0e                         BS3_DATA_NM(Bs3GdteSpare0e)
-# define Bs3GdteSpare0f                         BS3_DATA_NM(Bs3GdteSpare0f)
-# define Bs3GdteSpare10                         BS3_DATA_NM(Bs3GdteSpare10)
-# define Bs3GdteSpare11                         BS3_DATA_NM(Bs3GdteSpare11)
-# define Bs3GdteSpare12                         BS3_DATA_NM(Bs3GdteSpare12)
-# define Bs3GdteSpare13                         BS3_DATA_NM(Bs3GdteSpare13)
-# define Bs3GdteSpare14                         BS3_DATA_NM(Bs3GdteSpare14)
-# define Bs3GdteSpare15                         BS3_DATA_NM(Bs3GdteSpare15)
-# define Bs3GdteSpare16                         BS3_DATA_NM(Bs3GdteSpare16)
-# define Bs3GdteSpare17                         BS3_DATA_NM(Bs3GdteSpare17)
-# define Bs3GdteSpare18                         BS3_DATA_NM(Bs3GdteSpare18)
-# define Bs3GdteSpare19                         BS3_DATA_NM(Bs3GdteSpare19)
-# define Bs3GdteSpare1a                         BS3_DATA_NM(Bs3GdteSpare1a)
-# define Bs3GdteSpare1b                         BS3_DATA_NM(Bs3GdteSpare1b)
-# define Bs3GdteSpare1c                         BS3_DATA_NM(Bs3GdteSpare1c)
-# define Bs3GdteSpare1d                         BS3_DATA_NM(Bs3GdteSpare1d)
-# define Bs3GdteSpare1e                         BS3_DATA_NM(Bs3GdteSpare1e)
-# define Bs3GdteSpare1f                         BS3_DATA_NM(Bs3GdteSpare1f)
-
-# define Bs3GdteTiled                           BS3_DATA_NM(Bs3GdteTiled)
-# define Bs3GdteFreePart1                       BS3_DATA_NM(Bs3GdteFreePart1)
-# define Bs3Gdte_CODE16                         BS3_DATA_NM(Bs3Gdte_CODE16)
-# define Bs3GdteFreePart2                       BS3_DATA_NM(Bs3GdteFreePart2)
-# define Bs3Gdte_SYSTEM16                       BS3_DATA_NM(Bs3Gdte_SYSTEM16)
-# define Bs3GdteFreePart3                       BS3_DATA_NM(Bs3GdteFreePart3)
-# define Bs3Gdte_DATA16                         BS3_DATA_NM(Bs3Gdte_DATA16)
-
-# define Bs3GdteFreePart4                       BS3_DATA_NM(Bs3GdteFreePart4)
-# define Bs3GdtePreTestPage08                   BS3_DATA_NM(Bs3GdtePreTestPage08)
-# define Bs3GdtePreTestPage07                   BS3_DATA_NM(Bs3GdtePreTestPage07)
-# define Bs3GdtePreTestPage06                   BS3_DATA_NM(Bs3GdtePreTestPage06)
-# define Bs3GdtePreTestPage05                   BS3_DATA_NM(Bs3GdtePreTestPage05)
-# define Bs3GdtePreTestPage04                   BS3_DATA_NM(Bs3GdtePreTestPage04)
-# define Bs3GdtePreTestPage03                   BS3_DATA_NM(Bs3GdtePreTestPage03)
-# define Bs3GdtePreTestPage02                   BS3_DATA_NM(Bs3GdtePreTestPage02)
-# define Bs3GdtePreTestPage01                   BS3_DATA_NM(Bs3GdtePreTestPage01)
-# define Bs3GdteTestPage                        BS3_DATA_NM(Bs3GdteTestPage)
-# define Bs3GdteTestPage00                      BS3_DATA_NM(Bs3GdteTestPage00)
-# define Bs3GdteTestPage01                      BS3_DATA_NM(Bs3GdteTestPage01)
-# define Bs3GdteTestPage02                      BS3_DATA_NM(Bs3GdteTestPage02)
-# define Bs3GdteTestPage03                      BS3_DATA_NM(Bs3GdteTestPage03)
-# define Bs3GdteTestPage04                      BS3_DATA_NM(Bs3GdteTestPage04)
-# define Bs3GdteTestPage05                      BS3_DATA_NM(Bs3GdteTestPage05)
-# define Bs3GdteTestPage06                      BS3_DATA_NM(Bs3GdteTestPage06)
-# define Bs3GdteTestPage07                      BS3_DATA_NM(Bs3GdteTestPage07)
-
-# define Bs3GdtEnd                              BS3_DATA_NM(Bs3GdtEnd)
-
-# define Bs3Tss16                               BS3_DATA_NM(Bs3Tss16)
-# define Bs3Tss16DoubleFault                    BS3_DATA_NM(Bs3Tss16DoubleFault)
-# define Bs3Tss16Spare0                         BS3_DATA_NM(Bs3Tss16Spare0)
-# define Bs3Tss16Spare1                         BS3_DATA_NM(Bs3Tss16Spare1)
-# define Bs3Tss32                               BS3_DATA_NM(Bs3Tss32)
-# define Bs3Tss32DoubleFault                    BS3_DATA_NM(Bs3Tss32DoubleFault)
-# define Bs3Tss32Spare0                         BS3_DATA_NM(Bs3Tss32Spare0)
-# define Bs3Tss32Spare1                         BS3_DATA_NM(Bs3Tss32Spare1)
-# define Bs3Tss64                               BS3_DATA_NM(Bs3Tss64)
-# define Bs3Tss64Spare0                         BS3_DATA_NM(Bs3Tss64Spare0)
-# define Bs3Tss64Spare1                         BS3_DATA_NM(Bs3Tss64Spare1)
-# define Bs3Tss64WithIopb                       BS3_DATA_NM(Bs3Tss64WithIopb)
-# define Bs3Tss32WithIopb                       BS3_DATA_NM(Bs3Tss32WithIopb)
-# define Bs3SharedIntRedirBm                    BS3_DATA_NM(Bs3SharedIntRedirBm)
-# define Bs3SharedIobp                          BS3_DATA_NM(Bs3SharedIobp)
-# define Bs3SharedIobpEnd                       BS3_DATA_NM(Bs3SharedIobpEnd)
-# define Bs3Idt16                               BS3_DATA_NM(Bs3Idt16)
-# define Bs3Idt32                               BS3_DATA_NM(Bs3Idt32)
-# define Bs3Idt64                               BS3_DATA_NM(Bs3Idt64)
-# define Bs3Lidt_Idt16                          BS3_DATA_NM(Bs3Lidt_Idt16)
-# define Bs3Lidt_Idt32                          BS3_DATA_NM(Bs3Lidt_Idt32)
-# define Bs3Lidt_Idt64                          BS3_DATA_NM(Bs3Lidt_Idt64)
-# define Bs3Lidt_Ivt                            BS3_DATA_NM(Bs3Lidt_Ivt)
-# define Bs3Lgdt_Gdt                            BS3_DATA_NM(Bs3Lgdt_Gdt)
-# define Bs3Ldt                                 BS3_DATA_NM(Bs3Ldt)
-# define Bs3LdtEnd                              BS3_DATA_NM(Bs3LdtEnd)
-#endif /* ARCH_BITS == 64 && !DOXYGEN_RUNNING*/
-
 /** The GDT, indexed by BS3_SEL_XXX shifted by 3. */
 extern X86DESC BS3_FAR_DATA Bs3Gdt[(BS3_SEL_GDT_LIMIT + 1) / 8];
 
@@ -1023,123 +906,63 @@ extern X86DESC   BS3_FAR_DATA Bs3LdtEnd;
 /** @name Segment start and end markers, sizes.
  * @{ */
 /** Start of the BS3TEXT16 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Text16_StartOfSegment BS3_DATA_NM(Bs3Text16_StartOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Text16_StartOfSegment;
 /** End of the BS3TEXT16 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Text16_EndOfSegment BS3_DATA_NM(Bs3Text16_EndOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Text16_EndOfSegment;
 /** The size of the BS3TEXT16 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Text16_Size BS3_DATA_NM(Bs3Text16_Size)
-#endif
 extern uint16_t BS3_FAR_DATA Bs3Text16_Size;
 
 /** Start of the BS3SYSTEM16 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3System16_StartOfSegment BS3_DATA_NM(Bs3System16_StartOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3System16_StartOfSegment;
 /** End of the BS3SYSTEM16 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3System16_EndOfSegment BS3_DATA_NM(Bs3System16_EndOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3System16_EndOfSegment;
 
 /** Start of the BS3DATA16/BS3KIT_GRPNM_DATA16 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Data16_StartOfSegment BS3_DATA_NM(Bs3Data16_StartOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Data16_StartOfSegment;
 /** End of the BS3DATA16/BS3KIT_GRPNM_DATA16 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Data16_EndOfSegment BS3_DATA_NM(Bs3Data16_EndOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Data16_EndOfSegment;
 
 /** Start of the BS3TEXT32 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Text32_StartOfSegment BS3_DATA_NM(Bs3Text32_StartOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Text32_StartOfSegment;
 /** Start of the BS3TEXT32 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Text32_EndOfSegment BS3_DATA_NM(Bs3Text32_EndOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Text32_EndOfSegment;
 
 /** Start of the BS3DATA32 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Data32_StartOfSegment BS3_DATA_NM(Bs3Data32_StartOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Data32_StartOfSegment;
 /** Start of the BS3DATA32 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Data32_EndOfSegment BS3_DATA_NM(Bs3Data32_EndOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Data32_EndOfSegment;
 
 /** Start of the BS3TEXT64 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Text64_StartOfSegment BS3_DATA_NM(Bs3Text64_StartOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Text64_StartOfSegment;
 /** Start of the BS3TEXT64 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Text64_EndOfSegment BS3_DATA_NM(Bs3Text64_EndOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Text64_EndOfSegment;
 
 /** Start of the BS3DATA64 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Data64_StartOfSegment BS3_DATA_NM(Bs3Data64_StartOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Data64_StartOfSegment;
 /** Start of the BS3DATA64 segment.   */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Data64_EndOfSegment BS3_DATA_NM(Bs3Data64_EndOfSegment)
-#endif
 extern uint8_t  BS3_FAR_DATA Bs3Data64_EndOfSegment;
 
 /** The size of the Data16, Text32, Text64, Data32 and Data64 blob. */
-#ifndef DOXYGEN_RUNNING
-# define Bs3Data16Thru64Text32And64_TotalSize BS3_DATA_NM(Bs3Data16Thru64Text32And64_TotalSize)
-#endif
 extern uint32_t BS3_FAR_DATA Bs3Data16Thru64Text32And64_TotalSize;
 /** The total image size (from Text16 thu Data64). */
-#ifndef DOXYGEN_RUNNING
-# define Bs3TotalImageSize BS3_DATA_NM(Bs3TotalImageSize)
-#endif
 extern uint32_t BS3_FAR_DATA Bs3TotalImageSize;
 /** @} */
 
 
 /** Lower case hex digits. */
-#ifndef DOXYGEN_RUNNING
-# define g_achBs3HexDigits BS3_DATA_NM(g_achBs3HexDigits)
-#endif
 extern char const g_achBs3HexDigits[16+1];
 /** Upper case hex digits. */
-#ifndef DOXYGEN_RUNNING
-# define g_achBs3HexDigitsUpper BS3_DATA_NM(g_achBs3HexDigitsUpper)
-#endif
 extern char const g_achBs3HexDigitsUpper[16+1];
 
 
 /** The current mode (BS3_MODE_XXX) of CPU \#0. */
-#ifndef DOXYGEN_RUNNING
-# define g_bBs3CurrentMode BS3_DATA_NM(g_bBs3CurrentMode)
-#endif
 extern uint8_t    g_bBs3CurrentMode;
 
 /** Hint for 16-bit trap handlers regarding the high word of EIP. */
-#ifndef DOXYGEN_RUNNING
-# define g_uBs3TrapEipHint BS3_DATA_NM(g_uBs3TrapEipHint)
-#endif
 extern uint32_t   g_uBs3TrapEipHint;
+
+/** Copy of the original real-mode interrupt vector table. */
+extern RTFAR16 g_aBs3RmIvtOriginal[256];
 
 
 #ifdef __WATCOMC__
@@ -1402,6 +1225,45 @@ DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(RTCCUINTXREG uFlatPtr)
  * @{
  */
 
+/** @def BS3_CMN_PROTO
+ * Macro for prototyping all the variations of a common function.
+ * @param   a_RetType   The return type.
+ * @param   a_Name      The function basename.
+ * @param   a_Params    The parameter list (in parentheses).
+ * @param   a_fAutoStub Whether to autogenerate a 16-bit near -> 16-bit far stub
+ *                      function. Either 'true' for stub or 'false' for no stub.
+ */
+#if ARCH_BITS == 16
+# define BS3_CMN_PROTO(a_RetType, a_Name, a_Params, a_fAutoStub) \
+    BS3_DECL_NEAR(a_RetType) BS3_CMN_NM(a_Name) a_Params;  \
+    BS3_DECL_FAR(a_RetType)  BS3_CMN_FAR_NM(a_Name) a_Params
+#else
+# define BS3_CMN_PROTO(a_RetType, a_Name, a_Params, a_fAutoStub) \
+    BS3_DECL_NEAR(a_RetType) BS3_CMN_NM(a_Name) a_Params
+#endif
+
+/** @def BS3_CMN_DEF
+ * Macro for defining a common function.
+ *
+ * This makes 16-bit common function far, while 32-bit and 64-bit are near.
+ *
+ * @param   a_RetType   The return type.
+ * @param   a_Name      The function basename.
+ * @param   a_Params    The parameter list (in parentheses).
+ */
+#if ARCH_BITS == 16
+# define BS3_CMN_DEF(a_RetType, a_Name, a_Params) \
+    BS3_DECL_FAR(a_RetType)  BS3_CMN_FAR_NM(a_Name) a_Params
+#else
+# define BS3_CMN_DEF(a_RetType, a_Name, a_Params) \
+    BS3_DECL_NEAR(a_RetType) BS3_CMN_NM(a_Name) a_Params
+#endif
+
+/** @def BS3_ASSERT
+ * Assert that an expression is true.
+ *
+ * Calls Bs3Panic if false and it's a strict build.  Does nothing in
+ * non-strict builds.  */
 #ifdef BS3_STRICT
 # define BS3_ASSERT(a_Expr) do { if (!!(a_Expr)) { /* likely */ } else { Bs3Panic(); } } while (0) /**< @todo later */
 #else
@@ -1413,12 +1275,10 @@ DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(RTCCUINTXREG uFlatPtr)
  *
  * The current implementation will only halt the CPU.
  */
-BS3_DECL(DECL_NO_RETURN(void)) Bs3Panic_c16(void);
-BS3_DECL(DECL_NO_RETURN(void)) Bs3Panic_c32(void); /**< @copydoc Bs3Panic_c16  */
-BS3_DECL(DECL_NO_RETURN(void)) Bs3Panic_c64(void); /**< @copydoc Bs3Panic_c16  */
-#define Bs3Panic BS3_CMN_NM(Bs3Panic) /**< Selects #Bs3Panic_c16, #Bs3Panic_c32 or #Bs3Panic_c64. */
+BS3_CMN_PROTO(DECL_NO_RETURN(void), Bs3Panic,(void), false);
 #if !defined(BS3_KIT_WITH_NO_RETURN) && defined(__WATCOMC__)
 # pragma aux Bs3Panic_c16 __aborts
+# pragma aux Bs3Panic_f16 __aborts
 # pragma aux Bs3Panic_c32 __aborts
 #endif
 
@@ -1428,30 +1288,21 @@ BS3_DECL(DECL_NO_RETURN(void)) Bs3Panic_c64(void); /**< @copydoc Bs3Panic_c16  *
  * This currently only works for VMs.  When running on real systems it will
  * just halt the CPU.
  */
-BS3_DECL(void) Bs3Shutdown_c16(void);
-BS3_DECL(void) Bs3Shutdown_c32(void); /**< @copydoc Bs3Shutdown_c16 */
-BS3_DECL(void) Bs3Shutdown_c64(void); /**< @copydoc Bs3Shutdown_c16 */
-#define Bs3Shutdown BS3_CMN_NM(Bs3Shutdown) /**< Selects #Bs3Shutdown_c16, #Bs3Shutdown_c32 or #Bs3Shutdown_c64. */
+BS3_CMN_PROTO(void, Bs3Shutdown,(void), false);
 
 /**
  * Prints a 32-bit unsigned value as decimal to the screen.
  *
  * @param   uValue      The 32-bit value.
  */
-BS3_DECL(void) Bs3PrintU32_c16(uint32_t uValue);
-BS3_DECL(void) Bs3PrintU32_c32(uint32_t uValue); /**< @copydoc Bs3PrintU32_c16 */
-BS3_DECL(void) Bs3PrintU32_c64(uint32_t uValue); /**< @copydoc Bs3PrintU32_c16 */
-#define Bs3PrintU32 BS3_CMN_NM(Bs3PrintU32) /**< Selects #Bs3PrintU32_c16, #Bs3PrintU32_c32 or #Bs3PrintU32_c64. */
+BS3_CMN_PROTO(void, Bs3PrintU32,(uint32_t uValue), false);
 
 /**
  * Prints a 32-bit unsigned value as hex to the screen.
  *
  * @param   uValue      The 32-bit value.
  */
-BS3_DECL(void) Bs3PrintX32_c16(uint32_t uValue);
-BS3_DECL(void) Bs3PrintX32_c32(uint32_t uValue); /**< @copydoc Bs3PrintX32_c16 */
-BS3_DECL(void) Bs3PrintX32_c64(uint32_t uValue); /**< @copydoc Bs3PrintX32_c16 */
-#define Bs3PrintX32 BS3_CMN_NM(Bs3PrintX32) /**< Selects #Bs3PrintX32_c16, #Bs3PrintX32_c32 or #Bs3PrintX32_c64. */
+BS3_CMN_PROTO(void, Bs3PrintX32,(uint32_t uValue), false);
 
 /**
  * Formats and prints a string to the screen.
@@ -1461,10 +1312,7 @@ BS3_DECL(void) Bs3PrintX32_c64(uint32_t uValue); /**< @copydoc Bs3PrintX32_c16 *
  * @param   pszFormat       The format string.
  * @param   ...             Format arguments.
  */
-BS3_DECL(size_t) Bs3Printf_c16(const char BS3_FAR *pszFormat, ...);
-BS3_DECL(size_t) Bs3Printf_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3Printf_c16 */
-BS3_DECL(size_t) Bs3Printf_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3Printf_c16 */
-#define Bs3Printf BS3_CMN_NM(Bs3Printf) /**< Selects #Bs3Printf_c16, #Bs3Printf_c32 or #Bs3Printf_c64. */
+BS3_CMN_PROTO(size_t, Bs3Printf,(const char BS3_FAR *pszFormat, ...), true);
 
 /**
  * Formats and prints a string to the screen, va_list version.
@@ -1474,20 +1322,14 @@ BS3_DECL(size_t) Bs3Printf_c64(const char BS3_FAR *pszFormat, ...); /**< @copydo
  * @param   pszFormat       The format string.
  * @param   va              Format arguments.
  */
-BS3_DECL(size_t) Bs3PrintfV_c16(const char BS3_FAR *pszFormat, va_list va);
-BS3_DECL(size_t) Bs3PrintfV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3PrintfV_c16 */
-BS3_DECL(size_t) Bs3PrintfV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3PrintfV_c16 */
-#define Bs3PrintfV BS3_CMN_NM(Bs3PrintfV) /**< Selects #Bs3PrintfV_c16, #Bs3PrintfV_c32 or #Bs3PrintfV_c64. */
+BS3_CMN_PROTO(size_t, Bs3PrintfV,(const char BS3_FAR *pszFormat, va_list va), true);
 
 /**
  * Prints a string to the screen.
  *
  * @param   pszString       The string to print.
  */
-BS3_DECL(void) Bs3PrintStr_c16(const char BS3_FAR *pszString);
-BS3_DECL(void) Bs3PrintStr_c32(const char BS3_FAR *pszString); /**< @copydoc Bs3PrintStr_c16 */
-BS3_DECL(void) Bs3PrintStr_c64(const char BS3_FAR *pszString); /**< @copydoc Bs3PrintStr_c16 */
-#define Bs3PrintStr BS3_CMN_NM(Bs3PrintStr) /**< Selects #Bs3PrintStr_c16, #Bs3PrintStr_c32 or #Bs3PrintStr_c64. */
+BS3_CMN_PROTO(void, Bs3PrintStr,(const char BS3_FAR *pszString), true);
 
 /**
  * Prints a string to the screen.
@@ -1495,20 +1337,14 @@ BS3_DECL(void) Bs3PrintStr_c64(const char BS3_FAR *pszString); /**< @copydoc Bs3
  * @param   pchString       The string to print.  Any terminator charss will be printed.
  * @param   cchString       The exact number of characters to print.
  */
-BS3_DECL(void) Bs3PrintStrN_c16(const char BS3_FAR *pszString, size_t cchString);
-BS3_DECL(void) Bs3PrintStrN_c32(const char BS3_FAR *pszString, size_t cchString); /**< @copydoc Bs3PrintStrN_c16 */
-BS3_DECL(void) Bs3PrintStrN_c64(const char BS3_FAR *pszString, size_t cchString); /**< @copydoc Bs3PrintStrN_c16 */
-#define Bs3PrintStrN BS3_CMN_NM(Bs3PrintStrN) /**< Selects #Bs3PrintStrN_c16, #Bs3PrintStrN_c32 or #Bs3PrintStrN_c64. */
+BS3_CMN_PROTO(void, Bs3PrintStrN,(const char BS3_FAR *pszString, size_t cchString), false);
 
 /**
  * Prints a char to the screen.
  *
  * @param   ch              The character to print.
  */
-BS3_DECL(void) Bs3PrintChr_c16(char ch);
-BS3_DECL(void) Bs3PrintChr_c32(char ch); /**< @copydoc Bs3PrintChr_c16 */
-BS3_DECL(void) Bs3PrintChr_c64(char ch); /**< @copydoc Bs3PrintChr_c16 */
-#define Bs3PrintChr BS3_CMN_NM(Bs3PrintChr) /**< Selects #Bs3PrintChr_c16, #Bs3PrintChr_c32 or #Bs3PrintChr_c64. */
+BS3_CMN_PROTO(void, Bs3PrintChr,(char ch), false);
 
 
 /**
@@ -1542,15 +1378,8 @@ typedef FNBS3STRFORMATOUTPUT *PFNBS3STRFORMATOUTPUT;
  * @param   pfnOutput   The output function.
  * @param   pvUser      The user argument for the output function.
  */
-BS3_DECL(size_t) Bs3StrFormatV_c16(const char BS3_FAR *pszFormat, va_list va,
-                                   PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser);
-/** @copydoc Bs3StrFormatV_c16  */
-BS3_DECL(size_t) Bs3StrFormatV_c32(const char BS3_FAR *pszFormat, va_list va,
-                                   PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser);
-/** @copydoc Bs3StrFormatV_c16  */
-BS3_DECL(size_t) Bs3StrFormatV_c64(const char BS3_FAR *pszFormat, va_list va,
-                                   PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser);
-#define Bs3StrFormatV BS3_CMN_NM(Bs3StrFormatV) /**< Selects #Bs3StrFormatV_c16, #Bs3StrFormatV_c32 or #Bs3StrFormatV_c64. */
+BS3_CMN_PROTO(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
+                                     PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser), true);
 
 /**
  * Formats a string into a buffer.
@@ -1564,12 +1393,7 @@ BS3_DECL(size_t) Bs3StrFormatV_c64(const char BS3_FAR *pszFormat, va_list va,
  * @param   pszFormat   The format string.
  * @param   va          Format arguments.
  */
-BS3_DECL(size_t) Bs3StrPrintfV_c16(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va);
-/** @copydoc Bs3StrPrintfV_c16  */
-BS3_DECL(size_t) Bs3StrPrintfV_c32(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va);
-/** @copydoc Bs3StrPrintfV_c16  */
-BS3_DECL(size_t) Bs3StrPrintfV_c64(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va);
-#define Bs3StrPrintfV BS3_CMN_NM(Bs3StrPrintfV) /**< Selects #Bs3StrPrintfV_c16, #Bs3StrPrintfV_c32 or #Bs3StrPrintfV_c64. */
+BS3_CMN_PROTO(size_t, Bs3StrPrintfV,(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va), true);
 
 /**
  * Formats a string into a buffer.
@@ -1583,12 +1407,7 @@ BS3_DECL(size_t) Bs3StrPrintfV_c64(char BS3_FAR *pszBuf, size_t cbBuf, const cha
  * @param   pszFormat   The format string.
  * @param   ...         Format arguments.
  */
-BS3_DECL(size_t) Bs3StrPrintf_c16(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, ...);
-/** @copydoc Bs3StrPrintf_c16  */
-BS3_DECL(size_t) Bs3StrPrintf_c32(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, ...);
-/** @copydoc Bs3StrPrintf_c16  */
-BS3_DECL(size_t) Bs3StrPrintf_c64(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, ...);
-#define Bs3StrPrintf BS3_CMN_NM(Bs3StrPrintf) /**< Selects #Bs3StrPrintf_c16, #Bs3StrPrintf_c32 or #Bs3StrPrintf_c64. */
+BS3_CMN_PROTO(size_t, Bs3StrPrintf,(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, ...), true);
 
 
 /**
@@ -1597,10 +1416,7 @@ BS3_DECL(size_t) Bs3StrPrintf_c64(char BS3_FAR *pszBuf, size_t cbBuf, const char
  * @returns String length in chars/bytes.
  * @param   pszString       The string to examine.
  */
-BS3_DECL(size_t) Bs3StrLen_c16(const char BS3_FAR *pszString);
-BS3_DECL(size_t) Bs3StrLen_c32(const char BS3_FAR *pszString); /** @copydoc Bs3StrLen_c16 */
-BS3_DECL(size_t) Bs3StrLen_c64(const char BS3_FAR *pszString); /** @copydoc Bs3StrLen_c16 */
-#define Bs3StrLen BS3_CMN_NM(Bs3StrLen) /**< Selects #Bs3StrLen_c16, #Bs3StrLen_c32 or #Bs3StrLen_c64. */
+BS3_CMN_PROTO(size_t, Bs3StrLen,(const char BS3_FAR *pszString), true);
 
 /**
  * Finds the length of a zero terminated string, but with a max length.
@@ -1610,10 +1426,7 @@ BS3_DECL(size_t) Bs3StrLen_c64(const char BS3_FAR *pszString); /** @copydoc Bs3S
  * @param   pszString       The string to examine.
  * @param   cchMax          The max length to examine.
  */
-BS3_DECL(size_t) Bs3StrNLen_c16(const char BS3_FAR *pszString, size_t cchMax);
-BS3_DECL(size_t) Bs3StrNLen_c32(const char BS3_FAR *pszString, size_t cchMax); /** @copydoc Bs3StrNLen_c16 */
-BS3_DECL(size_t) Bs3StrNLen_c64(const char BS3_FAR *pszString, size_t cchMax); /** @copydoc Bs3StrNLen_c16 */
-#define Bs3StrNLen BS3_CMN_NM(Bs3StrNLen) /**< Selects #Bs3StrNLen_c16, #Bs3StrNLen_c32 or #Bs3StrNLen_c64. */
+BS3_CMN_PROTO(size_t, Bs3StrNLen,(const char BS3_FAR *pszString, size_t cchMax), true);
 
 /**
  * CRT style unsafe strcpy.
@@ -1623,10 +1436,7 @@ BS3_DECL(size_t) Bs3StrNLen_c64(const char BS3_FAR *pszString, size_t cchMax); /
  *                          hold the source string.
  * @param   pszSrc          The source string.
  */
-BS3_DECL(char BS3_FAR *) Bs3StrCpy_c16(char BS3_FAR *pszDst, const char BS3_FAR *pszSrc);
-BS3_DECL(char BS3_FAR *) Bs3StrCpy_c32(char BS3_FAR *pszDst, const char BS3_FAR *pszSrc); /** @copydoc Bs3StrCpy_c16 */
-BS3_DECL(char BS3_FAR *) Bs3StrCpy_c64(char BS3_FAR *pszDst, const char BS3_FAR *pszSrc); /** @copydoc Bs3StrCpy_c16 */
-#define Bs3StrCpy BS3_CMN_NM(Bs3StrCpy) /**< Selects #Bs3StrCpy_c16, #Bs3StrCpy_c32 or #Bs3StrCpy_c64. */
+BS3_CMN_PROTO(char BS3_FAR *, Bs3StrCpy,(char BS3_FAR *pszDst, const char BS3_FAR *pszSrc), true);
 
 /**
  * CRT style memcpy.
@@ -1636,10 +1446,7 @@ BS3_DECL(char BS3_FAR *) Bs3StrCpy_c64(char BS3_FAR *pszDst, const char BS3_FAR 
  * @param   pvSrc           The source buffer.
  * @param   cbCopy          The number of bytes to copy.
  */
-BS3_DECL(void BS3_FAR *) Bs3MemCpy_c16(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy);
-BS3_DECL(void BS3_FAR *) Bs3MemCpy_c32(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemCpy_c16 */
-BS3_DECL(void BS3_FAR *) Bs3MemCpy_c64(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemCpy_c16 */
-#define Bs3MemCpy BS3_CMN_NM(Bs3MemCpy) /**< Selects #Bs3MemCpy_c16, #Bs3MemCpy_c32 or #Bs3MemCpy_c64. */
+BS3_CMN_PROTO(void BS3_FAR *, Bs3MemCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy), true);
 
 /**
  * GNU (?) style mempcpy.
@@ -1649,10 +1456,7 @@ BS3_DECL(void BS3_FAR *) Bs3MemCpy_c64(void BS3_FAR *pvDst, const void BS3_FAR *
  * @param   pvSrc           The source buffer.
  * @param   cbCopy          The number of bytes to copy.
  */
-BS3_DECL(void BS3_FAR *) Bs3MemPCpy_c16(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy);
-BS3_DECL(void BS3_FAR *) Bs3MemPCpy_c32(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemPCpy_c16 */
-BS3_DECL(void BS3_FAR *) Bs3MemPCpy_c64(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemPCpy_c16 */
-#define Bs3MemPCpy BS3_CMN_NM(Bs3MemPCpy) /**< Selects #Bs3MemPCpy_c16, #Bs3MemPCpy_c32 or #Bs3MemPCpy_c64. */
+BS3_CMN_PROTO(void BS3_FAR *, Bs3MemPCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy), true);
 
 /**
  * CRT style memmove (overlapping buffers is fine).
@@ -1662,10 +1466,7 @@ BS3_DECL(void BS3_FAR *) Bs3MemPCpy_c64(void BS3_FAR *pvDst, const void BS3_FAR 
  * @param   pvSrc           The source buffer.
  * @param   cbCopy          The number of bytes to copy.
  */
-BS3_DECL(void BS3_FAR *) Bs3MemMove_c16(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy);
-BS3_DECL(void BS3_FAR *) Bs3MemMove_c32(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemMove_c16 */
-BS3_DECL(void BS3_FAR *) Bs3MemMove_c64(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy); /** @copydoc Bs3MemMove_c16 */
-#define Bs3MemMove BS3_CMN_NM(Bs3MemMove) /**< Selects #Bs3MemMove_c16, #Bs3MemMove_c32 or #Bs3MemMove_c64. */
+BS3_CMN_PROTO(void BS3_FAR *, Bs3MemMove,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy), true);
 
 /**
  * BSD style bzero.
@@ -1673,10 +1474,7 @@ BS3_DECL(void BS3_FAR *) Bs3MemMove_c64(void BS3_FAR *pvDst, const void BS3_FAR 
  * @param   pvDst           The buffer to be zeroed.
  * @param   cbDst           The number of bytes to zero.
  */
-BS3_DECL(void) Bs3MemZero_c16(void BS3_FAR *pvDst, size_t cbDst);
-BS3_DECL(void) Bs3MemZero_c32(void BS3_FAR *pvDst, size_t cbDst); /** @copydoc Bs3MemZero_c16 */
-BS3_DECL(void) Bs3MemZero_c64(void BS3_FAR *pvDst, size_t cbDst); /** @copydoc Bs3MemZero_c16 */
-#define Bs3MemZero BS3_CMN_NM(Bs3MemZero) /**< Selects #Bs3MemZero_c16, #Bs3MemZero_c32 or #Bs3MemZero_c64. */
+BS3_CMN_PROTO(void, Bs3MemZero,(void BS3_FAR *pvDst, size_t cbDst), false);
 
 
 /**
@@ -1686,10 +1484,7 @@ BS3_DECL(void) Bs3MemZero_c64(void BS3_FAR *pvDst, size_t cbDst); /** @copydoc B
  * @param   off             The segment offset.
  * @param   uSel            The protected mode segment selector.
  */
-BS3_DECL(uint32_t) Bs3SelProtFar32ToFlat32_c16(uint32_t off, uint16_t uSel);
-BS3_DECL(uint32_t) Bs3SelProtFar32ToFlat32_c32(uint32_t off, uint16_t uSel); /**< @copydoc Bs3SelProtFar32ToFlat32_c16 */
-BS3_DECL(uint32_t) Bs3SelProtFar32ToFlat32_c64(uint32_t off, uint16_t uSel); /**< @copydoc Bs3SelProtFar32ToFlat32_c16 */
-#define Bs3SelProtFar32ToFlat32 BS3_CMN_NM(Bs3SelProtFar32ToFlat32) /**< Selects #Bs3SelProtFar32ToFlat32_c16, #Bs3SelProtFar32ToFlat32_c32 or #Bs3SelProtFar32ToFlat32_c64. */
+BS3_CMN_PROTO(uint32_t, Bs3SelProtFar32ToFlat32,(uint32_t off, uint16_t uSel), true);
 
 
 /**
@@ -1699,10 +1494,7 @@ BS3_DECL(uint32_t) Bs3SelProtFar32ToFlat32_c64(uint32_t off, uint16_t uSel); /**
  * @param   off             The segment offset.
  * @param   uSel            The current mode segment selector.
  */
-BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c16(uint32_t off, uint16_t uSel);
-BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c32(uint32_t off, uint16_t uSel); /**< @copydoc Bs3SelFar32ToFlat32_c16 */
-BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c64(uint32_t off, uint16_t uSel); /**< @copydoc Bs3SelFar32ToFlat32_c16 */
-#define Bs3SelFar32ToFlat32 BS3_CMN_NM(Bs3SelFar32ToFlat32) /**< Selects #Bs3SelFar32ToFlat32_c16, #Bs3SelFar32ToFlat32_c32 or #Bs3SelFar32ToFlat32_c64. */
+BS3_CMN_PROTO(uint32_t, Bs3SelFar32ToFlat32,(uint32_t off, uint16_t uSel), true);
 
 /**
  * Gets a flat address from a working poitner.
@@ -1713,7 +1505,7 @@ BS3_DECL(uint32_t) Bs3SelFar32ToFlat32_c64(uint32_t off, uint16_t uSel); /**< @c
 DECLINLINE(RTCCUINTXREG) Bs3SelPtrToFlat(void BS3_FAR *pv)
 {
 #if ARCH_BITS == 16
-    return Bs3SelFar32ToFlat32(BS3_FP_OFF(pv), BS3_FP_SEG(pv));
+    return BS3_CMN_FN_NM(Bs3SelFar32ToFlat32)(BS3_FP_OFF(pv), BS3_FP_SEG(pv));
 #else
     return (uintptr_t)pv;
 #endif
@@ -1783,12 +1575,8 @@ typedef BS3SLABCTL BS3_FAR *PBS3SLABCTL;
  * @param   cbSlab          The size of the slab.
  * @param   cbChunk         The chunk size.
  */
-BS3_DECL(void) Bs3SlabInit_c16(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr, uint32_t cbSlab, uint16_t cbChunk);
-/** @copydoc Bs3SlabInit_c16 */
-BS3_DECL(void) Bs3SlabInit_c32(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr, uint32_t cbSlab, uint16_t cbChunk);
-/** @copydoc Bs3SlabInit_c16 */
-BS3_DECL(void) Bs3SlabInit_c64(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr, uint32_t cbSlab, uint16_t cbChunk);
-#define Bs3SlabInit BS3_CMN_NM(Bs3SlabInit) /**< Selects #Bs3SlabInit_c16, #Bs3SlabInit_c32 or #Bs3SlabInit_c64. */
+BS3_CMN_PROTO(void, Bs3SlabInit,(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr,
+                                 uint32_t cbSlab, uint16_t cbChunk), true);
 
 /**
  * Allocates one chunk from a slab.
@@ -1796,10 +1584,7 @@ BS3_DECL(void) Bs3SlabInit_c64(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_t 
  * @returns Pointer to a chunk on success, NULL if we're out of chunks.
  * @param   pSlabCtl        The slab constrol structure to allocate from.
  */
-BS3_DECL(void BS3_FAR *) Bs3SlabAlloc_c16(PBS3SLABCTL pSlabCtl);
-BS3_DECL(void BS3_FAR *) Bs3SlabAlloc_c32(PBS3SLABCTL pSlabCtl); /**< @copydoc Bs3SlabAlloc_c16 */
-BS3_DECL(void BS3_FAR *) Bs3SlabAlloc_c64(PBS3SLABCTL pSlabCtl); /**< @copydoc Bs3SlabAlloc_c16 */
-#define Bs3SlabAlloc BS3_CMN_NM(Bs3SlabAlloc) /**< Selects #Bs3SlabAlloc_c16, #Bs3SlabAlloc_c32 or #Bs3SlabAlloc_c64. */
+BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabAlloc,(PBS3SLABCTL pSlabCtl), true);
 
 /**
  * Allocates one or more chunks rom a slab.
@@ -1810,10 +1595,7 @@ BS3_DECL(void BS3_FAR *) Bs3SlabAlloc_c64(PBS3SLABCTL pSlabCtl); /**< @copydoc B
  * @param   cChunks         The number of contiguous chunks we want.
  * @param   fFlags          Flags, see BS3_SLAB_ALLOC_F_XXX
  */
-BS3_DECL(void BS3_FAR *) Bs3SlabAllocEx_c16(PBS3SLABCTL pSlabCtl, uint16_t cChunks, uint16_t fFlags);
-BS3_DECL(void BS3_FAR *) Bs3SlabAllocEx_c32(PBS3SLABCTL pSlabCtl, uint16_t cChunks, uint16_t fFlags); /**< @copydoc Bs3SlabAllocEx_c16 */
-BS3_DECL(void BS3_FAR *) Bs3SlabAllocEx_c64(PBS3SLABCTL pSlabCtl, uint16_t cChunks, uint16_t fFlags); /**< @copydoc Bs3SlabAllocEx_c16 */
-#define Bs3SlabAllocEx BS3_CMN_NM(Bs3SlabAllocEx) /**< Selects #Bs3SlabAllocEx_c16, #Bs3SlabAllocEx_c32 or #Bs3SlabAllocEx_c64. */
+BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabAllocEx,(PBS3SLABCTL pSlabCtl, uint16_t cChunks, uint16_t fFlags), true);
 
 /**
  * Frees one or more chunks from a slab.
@@ -1824,10 +1606,7 @@ BS3_DECL(void BS3_FAR *) Bs3SlabAllocEx_c64(PBS3SLABCTL pSlabCtl, uint16_t cChun
  * @param   uFlatChunkPtr   The flat address of the chunks to free.
  * @param   cChunks         The number of contiguous chunks to free.
  */
-BS3_DECL(uint16_t) Bs3SlabFree_c16(PBS3SLABCTL pSlabCtl, uint32_t uFlatChunkPtr, uint16_t cChunks);
-BS3_DECL(uint16_t) Bs3SlabFree_c32(PBS3SLABCTL pSlabCtl, uint32_t uFlatChunkPtr, uint16_t cChunks); /**< @copydoc Bs3SlabFree_c16 */
-BS3_DECL(uint16_t) Bs3SlabFree_c64(PBS3SLABCTL pSlabCtl, uint32_t uFlatChunkPtr, uint16_t cChunks); /**< @copydoc Bs3SlabFree_c16 */
-#define Bs3SlabFree BS3_CMN_NM(Bs3SlabFree) /**< Selects #Bs3SlabFree_c16, #Bs3SlabFree_c32 or #Bs3SlabFree_c64. */
+BS3_CMN_PROTO(uint16_t, Bs3SlabFree,(PBS3SLABCTL pSlabCtl, uint32_t uFlatChunkPtr, uint16_t cChunks), true);
 
 
 /**
@@ -1836,10 +1615,7 @@ BS3_DECL(uint16_t) Bs3SlabFree_c64(PBS3SLABCTL pSlabCtl, uint32_t uFlatChunkPtr,
  * @param   pHead       The slab list head.
  * @param   cbChunk     The chunk size.
  */
-BS3_DECL(void) Bs3SlabListInit_c16(PBS3SLABHEAD pHead, uint16_t cbChunk);
-BS3_DECL(void) Bs3SlabListInit_c32(PBS3SLABHEAD pHead, uint16_t cbChunk); /**< @copydoc Bs3SlabListInit_c16 */
-BS3_DECL(void) Bs3SlabListInit_c64(PBS3SLABHEAD pHead, uint16_t cbChunk); /**< @copydoc Bs3SlabListInit_c16 */
-#define Bs3SlabListInit BS3_CMN_NM(Bs3SlabListInit) /**< Selects #Bs3SlabListInit_c16, #Bs3SlabListInit_c32 or #Bs3SlabListInit_c64. */
+BS3_CMN_PROTO(void, Bs3SlabListInit,(PBS3SLABHEAD pHead, uint16_t cbChunk), true);
 
 /**
  * Adds an initialized slab control structure to the list.
@@ -1847,12 +1623,7 @@ BS3_DECL(void) Bs3SlabListInit_c64(PBS3SLABHEAD pHead, uint16_t cbChunk); /**< @
  * @param   pHead           The slab list head to add it to.
  * @param   pSlabCtl        The slab control structure to add.
  */
-BS3_DECL(void) Bs3SlabListAdd_c16(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl);
-/** @copydoc Bs3SlabListAdd_c16 */
-BS3_DECL(void) Bs3SlabListAdd_c32(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl);
-/** @copydoc Bs3SlabListAdd_c16 */
-BS3_DECL(void) Bs3SlabListAdd_c64(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl);
-#define Bs3SlabListAdd BS3_CMN_NM(Bs3SlabListAdd) /**< Selects #Bs3SlabListAdd_c16, #Bs3SlabListAdd_c32 or #Bs3SlabListAdd_c64. */
+BS3_CMN_PROTO(void, Bs3SlabListAdd,(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl), true);
 
 /**
  * Allocates one chunk.
@@ -1860,10 +1631,7 @@ BS3_DECL(void) Bs3SlabListAdd_c64(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl);
  * @returns Pointer to a chunk on success, NULL if we're out of chunks.
  * @param   pHead           The slab list to allocate from.
  */
-BS3_DECL(void BS3_FAR *) Bs3SlabListAlloc_c16(PBS3SLABHEAD pHead);
-BS3_DECL(void BS3_FAR *) Bs3SlabListAlloc_c32(PBS3SLABHEAD pHead); /**< @copydoc Bs3SlabListAlloc_c16 */
-BS3_DECL(void BS3_FAR *) Bs3SlabListAlloc_c64(PBS3SLABHEAD pHead); /**< @copydoc Bs3SlabListAlloc_c16 */
-#define Bs3SlabListAlloc BS3_CMN_NM(Bs3SlabListAlloc) /**< Selects #Bs3SlabListAlloc_c16, #Bs3SlabListAlloc_c32 or #Bs3SlabListAlloc_c64. */
+BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabListAlloc,(PBS3SLABHEAD pHead), true);
 
 /**
  * Allocates one or more chunks.
@@ -1874,10 +1642,7 @@ BS3_DECL(void BS3_FAR *) Bs3SlabListAlloc_c64(PBS3SLABHEAD pHead); /**< @copydoc
  * @param   cChunks         The number of contiguous chunks we want.
  * @param   fFlags          Flags, see BS3_SLAB_ALLOC_F_XXX
  */
-BS3_DECL(void BS3_FAR *) Bs3SlabListAllocEx_c16(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags);
-BS3_DECL(void BS3_FAR *) Bs3SlabListAllocEx_c32(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags); /**< @copydoc Bs3SlabListAllocEx_c16 */
-BS3_DECL(void BS3_FAR *) Bs3SlabListAllocEx_c64(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags); /**< @copydoc Bs3SlabListAllocEx_c16 */
-#define Bs3SlabListAllocEx BS3_CMN_NM(Bs3SlabListAllocEx) /**< Selects #Bs3SlabListAllocEx_c16, #Bs3SlabListAllocEx_c32 or #Bs3SlabListAllocEx_c64. */
+BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabListAllocEx,(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags), true);
 
 /**
  * Frees one or more chunks from a slab list.
@@ -1886,10 +1651,7 @@ BS3_DECL(void BS3_FAR *) Bs3SlabListAllocEx_c64(PBS3SLABHEAD pHead, uint16_t cCh
  * @param   pvChunks        Pointer to the first chunk to free.
  * @param   cChunks         The number of contiguous chunks to free.
  */
-BS3_DECL(void) Bs3SlabListFree_c16(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks);
-BS3_DECL(void) Bs3SlabListFree_c32(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks); /**< @copydoc Bs3SlabListFree_c16 */
-BS3_DECL(void) Bs3SlabListFree_c64(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks); /**< @copydoc Bs3SlabListFree_c16 */
-#define Bs3SlabListFree BS3_CMN_NM(Bs3SlabListFree) /**< Selects #Bs3SlabListFree_c16, #Bs3SlabListFree_c32 or #Bs3SlabListFree_c64. */
+BS3_CMN_PROTO(void, Bs3SlabListFree,(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks), true);
 
 /**
  * Allocation addressing constraints.
@@ -1918,10 +1680,7 @@ typedef enum BS3MEMKIND
  *                      allocation.
  * @param   cb          How much to allocate.  Must be 4KB or less.
  */
-BS3_DECL(void BS3_FAR *) Bs3MemAlloc_c16(BS3MEMKIND enmKind, size_t cb);
-BS3_DECL(void BS3_FAR *) Bs3MemAlloc_c32(BS3MEMKIND enmKind, size_t cb); /**< @copydoc Bs3MemAlloc_c16 */
-BS3_DECL(void BS3_FAR *) Bs3MemAlloc_c64(BS3MEMKIND enmKind, size_t cb); /**< @copydoc Bs3MemAlloc_c16 */
-#define Bs3MemAlloc BS3_CMN_NM(Bs3MemAlloc) /**< Selects #Bs3MemAlloc_c16, #Bs3MemAlloc_c32 or #Bs3MemAlloc_c64. */
+BS3_CMN_PROTO(void BS3_FAR *, Bs3MemAlloc,(BS3MEMKIND enmKind, size_t cb), true);
 
 /**
  * Allocates zero'ed memory.
@@ -1930,10 +1689,7 @@ BS3_DECL(void BS3_FAR *) Bs3MemAlloc_c64(BS3MEMKIND enmKind, size_t cb); /**< @c
  *                      allocation.
  * @param   cb          How much to allocate.  Must be 4KB or less.
  */
-BS3_DECL(void BS3_FAR *) Bs3MemAllocZ_c16(BS3MEMKIND enmKind, size_t cb);
-BS3_DECL(void BS3_FAR *) Bs3MemAllocZ_c32(BS3MEMKIND enmKind, size_t cb); /**< @copydoc Bs3MemAllocZ_c16 */
-BS3_DECL(void BS3_FAR *) Bs3MemAllocZ_c64(BS3MEMKIND enmKind, size_t cb); /**< @copydoc Bs3MemAllocZ_c16 */
-#define Bs3MemAllocZ BS3_CMN_NM(Bs3MemAllocZ) /**< Selects #Bs3MemAllocZ_c16, #Bs3MemAllocZ_c32 or #Bs3MemAllocZ_c64. */
+BS3_CMN_PROTO(void BS3_FAR *, Bs3MemAllocZ,(BS3MEMKIND enmKind, size_t cb), true);
 
 /**
  * Frees memory.
@@ -1942,59 +1698,38 @@ BS3_DECL(void BS3_FAR *) Bs3MemAllocZ_c64(BS3MEMKIND enmKind, size_t cb); /**< @
  * @param   pv          The memory to free (returned by #Bs3MemAlloc).
  * @param   cb          The size of the allocation.
  */
-BS3_DECL(void) Bs3MemFree_c16(void BS3_FAR *pv, size_t cb);
-BS3_DECL(void) Bs3MemFree_c32(void BS3_FAR *pv, size_t cb); /**< @copydoc Bs3MemFree_c16 */
-BS3_DECL(void) Bs3MemFree_c64(void BS3_FAR *pv, size_t cb); /**< @copydoc Bs3MemFree_c16 */
-#define Bs3MemFree BS3_CMN_NM(Bs3MemFree) /**< Selects #Bs3MemFree_c16, #Bs3MemFree_c32 or #Bs3MemFree_c64. */
+BS3_CMN_PROTO(void, Bs3MemFree,(void BS3_FAR *pv, size_t cb), true);
 
 
 /**
  * Enables the A20 gate.
  */
-BS3_DECL(void) Bs3A20Enable_c16(void);
-BS3_DECL(void) Bs3A20Enable_c32(void); /**< @copydoc Bs3A20Enable_c16 */
-BS3_DECL(void) Bs3A20Enable_c64(void); /**< @copydoc Bs3A20Enable_c16 */
-#define Bs3A20Enable BS3_CMN_NM(Bs3A20Enable) /**< Selects #Bs3A20Enable_c16, #Bs3A20Enable_c32 or #Bs3A20Enable_c64. */
+BS3_CMN_PROTO(void, Bs3A20Enable,(void), false);
 
 /**
  * Enables the A20 gate via the keyboard controller
  */
-BS3_DECL(void) Bs3A20EnableViaKbd_c16(void);
-BS3_DECL(void) Bs3A20EnableViaKbd_c32(void); /**< @copydoc Bs3A20EnableViaKbd_c16 */
-BS3_DECL(void) Bs3A20EnableViaKbd_c64(void); /**< @copydoc Bs3A20EnableViaKbd_c16 */
-#define Bs3A20EnableViaKbd BS3_CMN_NM(Bs3A20EnableViaKbd) /**< Selects #Bs3A20EnableViaKbd_c16, #Bs3A20EnableViaKbd_c32 or #Bs3A20EnableViaKbd_c64. */
+BS3_CMN_PROTO(void, Bs3A20EnableViaKbd,(void), false);
 
 /**
  * Enables the A20 gate via the PS/2 control port A.
  */
-BS3_DECL(void) Bs3A20EnableViaPortA_c16(void);
-BS3_DECL(void) Bs3A20EnableViaPortA_c32(void); /**< @copydoc Bs3A20EnableViaPortA_c16 */
-BS3_DECL(void) Bs3A20EnableViaPortA_c64(void); /**< @copydoc Bs3A20EnableViaPortA_c16 */
-#define Bs3A20EnableViaPortA BS3_CMN_NM(Bs3A20EnableViaPortA) /**< Selects #Bs3A20EnableViaPortA_c16, #Bs3A20EnableViaPortA_c32 or #Bs3A20EnableViaPortA_c64. */
+BS3_CMN_PROTO(void, Bs3A20EnableViaPortA,(void), false);
 
 /**
  * Disables the A20 gate.
  */
-BS3_DECL(void) Bs3A20Disable_c16(void);
-BS3_DECL(void) Bs3A20Disable_c32(void); /**< @copydoc Bs3A20Disable_c16 */
-BS3_DECL(void) Bs3A20Disable_c64(void); /**< @copydoc Bs3A20Disable_c16 */
-#define Bs3A20Disable BS3_CMN_NM(Bs3A20Disable) /**< Selects #Bs3A20Disable_c16, #Bs3A20Disable_c32 or #Bs3A20Disable_c64. */
+BS3_CMN_PROTO(void, Bs3A20Disable,(void), false);
 
 /**
  * Disables the A20 gate via the keyboard controller
  */
-BS3_DECL(void) Bs3A20DisableViaKbd_c16(void);
-BS3_DECL(void) Bs3A20DisableViaKbd_c32(void); /**< @copydoc Bs3A20DisableViaKbd_c16 */
-BS3_DECL(void) Bs3A20DisableViaKbd_c64(void); /**< @copydoc Bs3A20DisableViaKbd_c16 */
-#define Bs3A20DisableViaKbd BS3_CMN_NM(Bs3A20DisableViaKbd) /**< Selects #Bs3A20DisableViaKbd_c16, #Bs3A20DisableViaKbd_c32 or #Bs3A20DisableViaKbd_c64. */
+BS3_CMN_PROTO(void, Bs3A20DisableViaKbd,(void), false);
 
 /**
  * Disables the A20 gate via the PS/2 control port A.
  */
-BS3_DECL(void) Bs3A20DisableViaPortA_c16(void);
-BS3_DECL(void) Bs3A20DisableViaPortA_c32(void); /**< @copydoc Bs3A20DisableViaPortA_c16 */
-BS3_DECL(void) Bs3A20DisableViaPortA_c64(void); /**< @copydoc Bs3A20DisableViaPortA_c16 */
-#define Bs3A20DisableViaPortA BS3_CMN_NM(Bs3A20DisableViaPortA) /**< Selects #Bs3A20DisableViaPortA_c16, #Bs3A20DisableViaPortA_c32 or #Bs3A20DisableViaPortA_c64. */
+BS3_CMN_PROTO(void, Bs3A20DisableViaPortA,(void), false);
 
 
 /**
@@ -2003,10 +1738,7 @@ BS3_DECL(void) Bs3A20DisableViaPortA_c64(void); /**< @copydoc Bs3A20DisableViaPo
  * @returns IPRT status code.
  * @remarks Must not be called in real-mode!
  */
-BS3_DECL(int) Bs3PagingInitRootForPP_c16(void);
-BS3_DECL(int) Bs3PagingInitRootForPP_c32(void); /**< @copydoc Bs3PagingInitRootForPP_c16 */
-BS3_DECL(int) Bs3PagingInitRootForPP_c64(void); /**< @copydoc Bs3PagingInitRootForPP_c16 */
-#define Bs3PagingInitRootForPP BS3_CMN_NM(Bs3PagingInitRootForPP) /**< Selects #Bs3PagingInitRootForPP_c16, #Bs3PagingInitRootForPP_c32 or #Bs3PagingInitRootForPP_c64. */
+BS3_CMN_PROTO(int, Bs3PagingInitRootForPP,(void), true);
 
 /**
  * Initializes root page tables for PAE page protected mode (PAE16, PAE32).
@@ -2015,10 +1747,7 @@ BS3_DECL(int) Bs3PagingInitRootForPP_c64(void); /**< @copydoc Bs3PagingInitRootF
  * @remarks The default long mode page tables depends on the PAE ones.
  * @remarks Must not be called in real-mode!
  */
-BS3_DECL(int) Bs3PagingInitRootForPAE_c16(void);
-BS3_DECL(int) Bs3PagingInitRootForPAE_c32(void); /**< @copydoc Bs3PagingInitRootForPAE_c16 */
-BS3_DECL(int) Bs3PagingInitRootForPAE_c64(void); /**< @copydoc Bs3PagingInitRootForPAE_c16 */
-#define Bs3PagingInitRootForPAE BS3_CMN_NM(Bs3PagingInitRootForPAE) /**< Selects #Bs3PagingInitRootForPAE_c16, #Bs3PagingInitRootForPAE_c32 or #Bs3PagingInitRootForPAE_c64. */
+BS3_CMN_PROTO(int, Bs3PagingInitRootForPAE,(void), true);
 
 /**
  * Initializes root page tables for long mode (LM16, LM32, LM64).
@@ -2027,10 +1756,7 @@ BS3_DECL(int) Bs3PagingInitRootForPAE_c64(void); /**< @copydoc Bs3PagingInitRoot
  * @remarks The default long mode page tables depends on the PAE ones.
  * @remarks Must not be called in real-mode!
  */
-BS3_DECL(int) Bs3PagingInitRootForLM_c16(void);
-BS3_DECL(int) Bs3PagingInitRootForLM_c32(void); /**< @copydoc Bs3PagingInitRootForLM_c16 */
-BS3_DECL(int) Bs3PagingInitRootForLM_c64(void); /**< @copydoc Bs3PagingInitRootForLM_c16 */
-#define Bs3PagingInitRootForLM BS3_CMN_NM(Bs3PagingInitRootForLM) /**< Selects #Bs3PagingInitRootForLM_c16, #Bs3PagingInitRootForLM_c32 or #Bs3PagingInitRootForLM_c64. */
+BS3_CMN_PROTO(int, Bs3PagingInitRootForLM,(void), true);
 
 /**
  * Modifies the page table protection of an address range.
@@ -2048,10 +1774,7 @@ BS3_DECL(int) Bs3PagingInitRootForLM_c64(void); /**< @copydoc Bs3PagingInitRootF
  * @param   fSet        Mask of zero or more X86_PTE_XXX values to set for the range.
  * @param   fClear      Mask of zero or more X86_PTE_XXX values to clear for the range.
  */
-BS3_DECL(int) Bs3PagingProtect_c16(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear);
-BS3_DECL(int) Bs3PagingProtect_c32(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear); /**< @copydoc Bs3PagingProtect_c16 */
-BS3_DECL(int) Bs3PagingProtect_c64(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear); /**< @copydoc Bs3PagingProtect_c16 */
-#define Bs3PagingProtect BS3_CMN_NM(Bs3PagingProtect) /**< Selects #Bs3PagingProtect_c16, #Bs3PagingProtect_c32 or #Bs3PagingProtect_c64. */
+BS3_CMN_PROTO(int, Bs3PagingProtect,(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear), true);
 
 /**
  * Modifies the page table protection of an address range.
@@ -2069,18 +1792,12 @@ BS3_DECL(int) Bs3PagingProtect_c64(uint64_t uFlat, uint64_t cb, uint64_t fSet, u
  * @param   fSet        Mask of zero or more X86_PTE_XXX values to set for the range.
  * @param   fClear      Mask of zero or more X86_PTE_XXX values to clear for the range.
  */
-BS3_DECL(int) Bs3PagingProtectPtr_c16(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear);
-BS3_DECL(int) Bs3PagingProtectPtr_c32(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear); /**< @copydoc Bs3PagingProtectPtr_c16 */
-BS3_DECL(int) Bs3PagingProtectPtr_c64(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear); /**< @copydoc Bs3PagingProtectPtr_c16 */
-#define Bs3PagingProtectPtr BS3_CMN_NM(Bs3PagingProtectPtr) /**< Selects #Bs3PagingProtectPtr_c16, #Bs3PagingProtectPtr_c32 or #Bs3PagingProtectPtr_c64. */
+BS3_CMN_PROTO(int, Bs3PagingProtectPtr,(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear), true);
 
 /**
  * Waits for the keyboard controller to become ready.
  */
-BS3_DECL(void) Bs3KbdWait_c16(void);
-BS3_DECL(void) Bs3KbdWait_c32(void); /**< @copydoc Bs3KbdWait_c16 */
-BS3_DECL(void) Bs3KbdWait_c64(void); /**< @copydoc Bs3KbdWait_c16 */
-#define Bs3KbdWait BS3_CMN_NM(Bs3KbdWait) /**< Selects #Bs3KbdWait_c16, #Bs3KbdWait_c32 or #Bs3KbdWait_c64. */
+BS3_CMN_PROTO(void, Bs3KbdWait,(void), false);
 
 /**
  * Sends a read command to the keyboard controller and gets the result.
@@ -2091,10 +1808,7 @@ BS3_DECL(void) Bs3KbdWait_c64(void); /**< @copydoc Bs3KbdWait_c16 */
  * @returns      The value read is returned (in al).
  * @param        bCmd            The read command.
  */
-BS3_DECL(uint8_t) Bs3KbdRead_c16(uint8_t bCmd);
-BS3_DECL(uint8_t) Bs3KbdRead_c32(uint8_t bCmd); /**< @copydoc Bs3KbdRead_c16 */
-BS3_DECL(uint8_t) Bs3KbdRead_c64(uint8_t bCmd); /**< @copydoc Bs3KbdRead_c16 */
-#define Bs3KbdRead BS3_CMN_NM(Bs3KbdRead) /**< Selects #Bs3KbdRead_c16, #Bs3KbdRead_c32 or #Bs3KbdRead_c64. */
+BS3_CMN_PROTO(uint8_t, Bs3KbdRead,(uint8_t bCmd), false);
 
 /**
  * Sends a write command to the keyboard controller and then sends the data.
@@ -2105,19 +1819,13 @@ BS3_DECL(uint8_t) Bs3KbdRead_c64(uint8_t bCmd); /**< @copydoc Bs3KbdRead_c16 */
  * @param        bCmd           The write command.
  * @param        bData          The data to write.
  */
-BS3_DECL(void) Bs3KbdWrite_c16(uint8_t bCmd, uint8_t bData);
-BS3_DECL(void) Bs3KbdWrite_c32(uint8_t bCmd, uint8_t bData); /**< @copydoc Bs3KbdWrite_c16 */
-BS3_DECL(void) Bs3KbdWrite_c64(uint8_t bCmd, uint8_t bData); /**< @copydoc Bs3KbdWrite_c16 */
-#define Bs3KbdWrite BS3_CMN_NM(Bs3KbdWrite) /**< Selects #Bs3KbdWrite_c16, #Bs3KbdWrite_c32 or #Bs3KbdWrite_c64. */
+BS3_CMN_PROTO(void, Bs3KbdWrite,(uint8_t bCmd, uint8_t bData), false);
 
 
 /**
  * Disables all IRQs on the PIC.
  */
-BS3_DECL(void) Bs3PicMaskAll_c16(void);
-BS3_DECL(void) Bs3PicMaskAll_c32(void); /**< @copydoc Bs3PicMaskAll_c16 */
-BS3_DECL(void) Bs3PicMaskAll_c64(void); /**< @copydoc Bs3PicMaskAll_c16 */
-#define Bs3PicMaskAll BS3_CMN_NM(Bs3PicMaskAll) /**< Selects #Bs3PicMaskAll_c16, #Bs3PicMaskAll_c32 or #Bs3PicMaskAll_c64. */
+BS3_CMN_PROTO(void, Bs3PicMaskAll,(void), true);
 
 
 
@@ -2217,10 +1925,7 @@ typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
  *
  * @param   pRegCtx     Where to store the register context.
  */
-BS3_DECL(void) Bs3RegCtxSave_c16(PCBS3REGCTX pRegCtx);
-BS3_DECL(void) Bs3RegCtxSave_c32(PCBS3REGCTX pRegCtx); /**< @copydoc Bs3RegCtxSave_c16 */
-BS3_DECL(void) Bs3RegCtxSave_c64(PCBS3REGCTX pRegCtx); /**< @copydoc Bs3RegCtxSave_c16 */
-#define Bs3RegCtxSave BS3_CMN_NM(Bs3RegCtxSave) /**< Selects #Bs3RegCtxSave_c16, #Bs3RegCtxSave_c32 or #Bs3RegCtxSave_c64. */
+BS3_CMN_PROTO(void, Bs3RegCtxSave,(PCBS3REGCTX pRegCtx), false);
 
 /**
  * Transforms a register context to a different ring.
@@ -2228,10 +1933,7 @@ BS3_DECL(void) Bs3RegCtxSave_c64(PCBS3REGCTX pRegCtx); /**< @copydoc Bs3RegCtxSa
  * @param   pRegCtx     The register context.
  * @param   bRing       The target ring (0..3).
  */
-BS3_DECL(void) Bs3RegCtxConvertToRingX_c16(PBS3REGCTX pRegCtx, uint8_t bRing);
-BS3_DECL(void) Bs3RegCtxConvertToRingX_c32(PBS3REGCTX pRegCtx, uint8_t bRing); /**< @copydoc Bs3RegCtxConvertToRingX_c16 */
-BS3_DECL(void) Bs3RegCtxConvertToRingX_c64(PBS3REGCTX pRegCtx, uint8_t bRing); /**< @copydoc Bs3RegCtxConvertToRingX_c16 */
-#define Bs3RegCtxConvertToRingX BS3_CMN_NM(Bs3RegCtxConvertToRingX) /**< Selects #Bs3RegCtxConvertToRingX_c16, #Bs3RegCtxConvertToRingX_c32 or #Bs3RegCtxConvertToRingX_c64. */
+BS3_CMN_PROTO(void, Bs3RegCtxConvertToRingX,(PBS3REGCTX pRegCtx, uint8_t bRing), true);
 
 /**
  * Restores a register context.
@@ -2242,12 +1944,10 @@ BS3_DECL(void) Bs3RegCtxConvertToRingX_c64(PBS3REGCTX pRegCtx, uint8_t bRing); /
  * @remarks Will switch to ring-0.
  * @remarks Does not return.
  */
-BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c16(PCBS3REGCTX pRegCtx, uint16_t fFlags);
-BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c32(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
-BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c64(PCBS3REGCTX pRegCtx, uint16_t fFlags); /**< @copydoc Bs3RegCtxRestore_c16 */
-#define Bs3RegCtxRestore BS3_CMN_NM(Bs3RegCtxRestore) /**< Selects #Bs3RegCtxRestore_c16, #Bs3RegCtxRestore_c32 or #Bs3RegCtxRestore_c64. */
+BS3_CMN_PROTO(DECL_NO_RETURN(void), Bs3RegCtxRestore,(PCBS3REGCTX pRegCtx, uint16_t fFlags), false);
 #if !defined(BS3_KIT_WITH_NO_RETURN) && defined(__WATCOMC__)
 # pragma aux Bs3RegCtxRestore_c16 "_Bs3RegCtxRestore_aborts_c16" __aborts
+# pragma aux Bs3RegCtxRestore_f16 "_Bs3RegCtxRestore_aborts_f16" __aborts
 # pragma aux Bs3RegCtxRestore_c32 "_Bs3RegCtxRestore_aborts_c32" __aborts
 #endif
 
@@ -2259,10 +1959,7 @@ BS3_DECL(DECL_NO_RETURN(void)) Bs3RegCtxRestore_c64(PCBS3REGCTX pRegCtx, uint16_
  *
  * @param   pRegCtx     The register context to be printed.
  */
-BS3_DECL(void) Bs3RegCtxPrint_c16(PCBS3REGCTX pRegCtx);
-BS3_DECL(void) Bs3RegCtxPrint_c32(PCBS3REGCTX pRegCtx); /**< @copydoc Bs3RegCtxPrint_c16 */
-BS3_DECL(void) Bs3RegCtxPrint_c64(PCBS3REGCTX pRegCtx); /**< @copydoc Bs3RegCtxPrint_c16 */
-#define Bs3RegCtxPrint BS3_CMN_NM(Bs3RegCtxPrint) /**< Selects #Bs3RegCtxPrint_c16, #Bs3RegCtxPrint_c32 or #Bs3RegCtxPrint_c64. */
+BS3_CMN_PROTO(void, Bs3RegCtxPrint,(PCBS3REGCTX pRegCtx), true);
 
 
 /**
@@ -2303,10 +2000,7 @@ typedef BS3TRAPFRAME const BS3_FAR *PCBS3TRAPFRAME;
  * @remarks Does not install 16-bit trap handling, just initializes the
  *          structures.
  */
-BS3_DECL(void) Bs3Trap16Init_c16(void);
-BS3_DECL(void) Bs3Trap16Init_c32(void); /**< @copydoc Bs3Trap16Init_c16 */
-BS3_DECL(void) Bs3Trap16Init_c64(void); /**< @copydoc Bs3Trap16Init_c16 */
-#define Bs3Trap16Init BS3_CMN_NM(Bs3Trap16Init) /**< Selects #Bs3Trap16Init_c16, #Bs3Trap16Init_c32 or #Bs3Trap16Init_c64. */
+BS3_CMN_PROTO(void, Bs3Trap16Init,(void), true);
 
 /**
  * Initializes 16-bit (protected mode) trap handling, extended version.
@@ -2319,10 +2013,7 @@ BS3_DECL(void) Bs3Trap16Init_c64(void); /**< @copydoc Bs3Trap16Init_c16 */
  * @remarks Does not install 16-bit trap handling, just initializes the
  *          structures.
  */
-BS3_DECL(void) Bs3Trap16InitEx_c16(bool f386Plus);
-BS3_DECL(void) Bs3Trap16InitEx_c32(bool f386Plus); /**< @copydoc Bs3Trap16InitEx_c16 */
-BS3_DECL(void) Bs3Trap16InitEx_c64(bool f386Plus); /**< @copydoc Bs3Trap16InitEx_c16 */
-#define Bs3Trap16InitEx BS3_CMN_NM(Bs3Trap16InitEx) /**< Selects #Bs3Trap16InitEx_c16, #Bs3Trap16InitEx_c32 or #Bs3Trap16InitEx_c64. */
+BS3_CMN_PROTO(void, Bs3Trap16InitEx,(bool f386Plus), true);
 
 /**
  * Initializes 32-bit trap handling.
@@ -2330,10 +2021,7 @@ BS3_DECL(void) Bs3Trap16InitEx_c64(bool f386Plus); /**< @copydoc Bs3Trap16InitEx
  * @remarks Does not install 32-bit trap handling, just initializes the
  *          structures.
  */
-BS3_DECL(void) Bs3Trap32Init_c16(void);
-BS3_DECL(void) Bs3Trap32Init_c32(void); /**< @copydoc Bs3Trap32Init_c16 */
-BS3_DECL(void) Bs3Trap32Init_c64(void); /**< @copydoc Bs3Trap32Init_c16 */
-#define Bs3Trap32Init BS3_CMN_NM(Bs3Trap32Init) /**< Selects #Bs3Trap32Init_c16, #Bs3Trap32Init_c32 or #Bs3Trap32Init_c64. */
+BS3_CMN_PROTO(void, Bs3Trap32Init,(void), true);
 
 /**
  * Initializes 64-bit trap handling
@@ -2341,10 +2029,16 @@ BS3_DECL(void) Bs3Trap32Init_c64(void); /**< @copydoc Bs3Trap32Init_c16 */
  * @remarks Does not install 64-bit trap handling, just initializes the
  *          structures.
  */
-BS3_DECL(void) Bs3Trap64Init_c16(void);
-BS3_DECL(void) Bs3Trap64Init_c32(void); /**< @copydoc Bs3Trap64Init_c16 */
-BS3_DECL(void) Bs3Trap64Init_c64(void); /**< @copydoc Bs3Trap64Init_c16 */
-#define Bs3Trap64Init BS3_CMN_NM(Bs3Trap64Init) /**< Selects #Bs3Trap64Init_c16, #Bs3Trap64Init_c32 or #Bs3Trap64Init_c64. */
+BS3_CMN_PROTO(void, Bs3Trap64Init,(void), true);
+
+/**
+ * Modifies the real-mode / V86 IVT entry specified by @a iIvt.
+ *
+ * @param   iIvt        The index of the IDT entry to set.
+ * @param   uSel        The handler real-mode segment.
+ * @param   off         The handler offset.
+ */
+BS3_CMN_PROTO(void, Bs3TrapRmV86SetGate,(uint8_t iIvt, uint16_t uSeg, uint16_t off), true);
 
 /**
  * Modifies the 16-bit IDT entry (protected mode) specified by @a iIdt.
@@ -2356,18 +2050,13 @@ BS3_DECL(void) Bs3Trap64Init_c64(void); /**< @copydoc Bs3Trap64Init_c16 */
  * @param   off         The handler offset (if applicable).
  * @param   cParams     The parameter count (for call gates).
  */
-BS3_DECL(void) Bs3Trap16SetGate_c16(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint16_t off, uint8_t cParams);
-BS3_DECL(void) Bs3Trap16SetGate_c32(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint16_t off, uint8_t cParams); /**< @copydoc Bs3Trap16SetGate_c16 */
-BS3_DECL(void) Bs3Trap16SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint16_t off, uint8_t cParams); /**< @copydoc Bs3Trap16SetGate_c16 */
-#define Bs3Trap16SetGate BS3_CMN_NM(Bs3Trap16SetGate) /**< Selects #Bs3Trap16SetGate_c16, #Bs3Trap16SetGate_c32 or #Bs3Trap16SetGate_c64. */
+BS3_CMN_PROTO(void, Bs3Trap16SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl,
+                                      uint16_t uSel, uint16_t off, uint8_t cParams), true);
 
 /** The address of Bs3Trap16GenericEntries.
  * Bs3Trap16GenericEntries is an array of interrupt/trap/whatever entry
  * points, 8 bytes each, that will create a register frame and call the generic
  * C compatible trap handlers. */
-#ifndef DOXYGEN_RUNNING
-# define g_Bs3Trap16GenericEntriesFlatAddr BS3_DATA_NM(g_Bs3Trap16GenericEntriesFlatAddr)
-#endif
 extern uint32_t g_Bs3Trap16GenericEntriesFlatAddr;
 
 /**
@@ -2380,18 +2069,13 @@ extern uint32_t g_Bs3Trap16GenericEntriesFlatAddr;
  * @param   off         The handler offset (if applicable).
  * @param   cParams     The parameter count (for call gates).
  */
-BS3_DECL(void) Bs3Trap32SetGate_c16(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams);
-BS3_DECL(void) Bs3Trap32SetGate_c32(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams); /**< @copydoc Bs3Trap32SetGate_c16 */
-BS3_DECL(void) Bs3Trap32SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint32_t off, uint8_t cParams); /**< @copydoc Bs3Trap32SetGate_c16 */
-#define Bs3Trap32SetGate BS3_CMN_NM(Bs3Trap32SetGate) /**< Selects #Bs3Trap32SetGate_c16, #Bs3Trap32SetGate_c32 or #Bs3Trap32SetGate_c64. */
+BS3_CMN_PROTO(void, Bs3Trap32SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl,
+                                      uint16_t uSel, uint32_t off, uint8_t cParams), true);
 
 /** The address of Bs3Trap32GenericEntries.
  * Bs3Trap32GenericEntries is an array of interrupt/trap/whatever entry
  * points, 10 bytes each, that will create a register frame and call the generic
  * C compatible trap handlers. */
-#ifndef DOXYGEN_RUNNING
-# define g_Bs3Trap32GenericEntriesFlatAddr BS3_DATA_NM(g_Bs3Trap32GenericEntriesFlatAddr)
-#endif
 extern uint32_t g_Bs3Trap32GenericEntriesFlatAddr;
 
 /**
@@ -2404,18 +2088,13 @@ extern uint32_t g_Bs3Trap32GenericEntriesFlatAddr;
  * @param   off         The handler offset (if applicable).
  * @param   bIst        The interrupt stack to use.
  */
-BS3_DECL(void) Bs3Trap64SetGate_c16(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint64_t off, uint8_t bIst);
-BS3_DECL(void) Bs3Trap64SetGate_c32(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint64_t off, uint8_t bIst); /**< @copydoc Bs3Trap64SetGate_c16 */
-BS3_DECL(void) Bs3Trap64SetGate_c64(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint64_t off, uint8_t bIst); /**< @copydoc Bs3Trap64SetGate_c16 */
-#define Bs3Trap64SetGate BS3_CMN_NM(Bs3Trap64SetGate) /**< Selects #Bs3Trap64SetGate_c16, #Bs3Trap64SetGate_c32 or #Bs3Trap64SetGate_c64. */
+BS3_CMN_PROTO(void, Bs3Trap64SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl,
+                                      uint16_t uSel, uint64_t off, uint8_t bIst), true);
 
 /** The address of Bs3Trap64GenericEntries.
  * Bs3Trap64GenericEntries is an array of interrupt/trap/whatever entry
  * points, 8 bytes each, that will create a register frame and call the generic
  * C compatible trap handlers. */
-#ifndef DOXYGEN_RUNNING
-# define g_Bs3Trap64GenericEntriesFlatAddr BS3_DATA_NM(g_Bs3Trap64GenericEntriesFlatAddr)
-#endif
 extern uint32_t g_Bs3Trap64GenericEntriesFlatAddr;
 
 /**
@@ -2447,10 +2126,7 @@ typedef FNBS3TRAPHANDLER *PFNBS3TRAPHANDLER;
  * @param   iIdt        The index of the IDT entry to set.
  * @param   pfnHandler  Pointer to the handler.
  */
-BS3_DECL(PFNBS3TRAPHANDLER) Bs3TrapSetHandler_c16(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler);
-BS3_DECL(PFNBS3TRAPHANDLER) Bs3TrapSetHandler_c32(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler); /**< @copydoc Bs3Trap32SetHandler_c16 */
-BS3_DECL(PFNBS3TRAPHANDLER) Bs3TrapSetHandler_c64(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler); /**< @copydoc Bs3Trap32SetHandler_c16 */
-#define Bs3Trap32SetHandler BS3_CMN_NM(Bs3Trap32SetHandler) /**< Selects #Bs3Trap32SetHandler_c16, #Bs3Trap32SetHandler_c32 or #Bs3Trap32SetHandler_c64. */
+BS3_CMN_PROTO(PFNBS3TRAPHANDLER, Bs3TrapSetHandler,(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler), true);
 
 /**
  * Default C/C++ trap handler.
@@ -2459,19 +2135,13 @@ BS3_DECL(PFNBS3TRAPHANDLER) Bs3TrapSetHandler_c64(uint8_t iIdt, PFNBS3TRAPHANDLE
  *
  * @param   pTrapFrame      Trap frame of the trap to handle.
  */
-BS3_DECL(void) Bs3TrapDefaultHandler_c16(PBS3TRAPFRAME pTrapFrame);
-BS3_DECL(void) Bs3TrapDefaultHandler_c32(PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapDefaultHandler_c16 */
-BS3_DECL(void) Bs3TrapDefaultHandler_c64(PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapDefaultHandler_c16 */
-#define Bs3TrapDefaultHandler BS3_CMN_NM(Bs3TrapDefaultHandler) /**< Selects #Bs3TrapDefaultHandler_c16, #Bs3TrapDefaultHandler_c32 or #Bs3TrapDefaultHandler_c64. */
+BS3_CMN_PROTO(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame), true);
 
 /**
  * Prints the trap frame (to screen).
  * @param   pTrapFrame      Trap frame to print.
  */
-BS3_DECL(void) Bs3TrapPrintFrame_c16(PCBS3TRAPFRAME pTrapFrame);
-BS3_DECL(void) Bs3TrapPrintFrame_c32(PCBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapPrintFrame_c16 */
-BS3_DECL(void) Bs3TrapPrintFrame_c64(PCBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapPrintFrame_c16 */
-#define Bs3TrapPrintFrame BS3_CMN_NM(Bs3TrapPrintFrame) /**< Selects #Bs3TrapPrintFrame_c16, #Bs3TrapPrintFrame_c32 or #Bs3TrapPrintFrame_c64. */
+BS3_CMN_PROTO(void, Bs3TrapPrintFrame,(PCBS3TRAPFRAME pTrapFrame), true);
 
 /**
  * Sets up a long jump from a trap handler.
@@ -2485,10 +2155,7 @@ BS3_DECL(void) Bs3TrapPrintFrame_c64(PCBS3TRAPFRAME pTrapFrame); /**< @copydoc B
  *                          returning @c false.
  * @sa      #Bs3TrapUnsetJmp
  */
-BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c16(PBS3TRAPFRAME pTrapFrame);
-BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c32(PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmp_c16 */
-BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c64(PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmp_c16 */
-#define Bs3TrapSetJmp BS3_CMN_NM(Bs3TrapSetJmp) /**< Selects #Bs3TrapSetJmp_c16, #Bs3TrapSetJmp_c32 or #Bs3TrapSetJmp_c64. */
+BS3_CMN_PROTO(DECL_RETURNS_TWICE(bool),Bs3TrapSetJmp,(PBS3TRAPFRAME pTrapFrame), false);
 
 /**
  * Combination of #Bs3TrapSetJmp and #Bs3RegCtxRestore.
@@ -2496,89 +2163,56 @@ BS3_DECL(DECL_RETURNS_TWICE(bool)) Bs3TrapSetJmp_c64(PBS3TRAPFRAME pTrapFrame); 
  * @param   pCtxRestore     The context to restore.
  * @param   pTrapFrame      Where to store the trap information.
  */
-BS3_DECL(void) Bs3TrapSetJmpAndRestore_c16(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame);
-BS3_DECL(void) Bs3TrapSetJmpAndRestore_c32(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmpAndRestore_c16 */
-BS3_DECL(void) Bs3TrapSetJmpAndRestore_c64(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame); /**< @copydoc Bs3TrapSetJmpAndRestore_c16 */
-#define Bs3TrapSetJmpAndRestore BS3_CMN_NM(Bs3TrapSetJmpAndRestore) /**< Selects #Bs3TrapSetJmpAndRestore_c16, #Bs3TrapSetJmpAndRestore_c32 or #Bs3TrapSetJmpAndRestore_c64. */
+BS3_CMN_PROTO(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame), true);
 
 /**
  * Disables a previous #Bs3TrapSetJmp call.
  */
-BS3_DECL(void) Bs3TrapUnsetJmp_c16(void);
-BS3_DECL(void) Bs3TrapUnsetJmp_c32(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
-BS3_DECL(void) Bs3TrapUnsetJmp_c64(void); /**< @copydoc Bs3TrapUnsetJmp_c16 */
-#define Bs3TrapUnsetJmp BS3_CMN_NM(Bs3TrapUnsetJmp) /**< Selects #Bs3TrapUnsetJmp_c16, #Bs3TrapUnsetJmp_c32 or #Bs3TrapUnsetJmp_c64. */
+BS3_CMN_PROTO(void, Bs3TrapUnsetJmp,(void), true);
 
 
 /**
  * The current test step.
  */
-#ifndef DOXYGEN_RUNNING
-# define g_usBs3TestStep BS3_DATA_NM(g_usBs3TestStep)
-#endif
 extern uint16_t g_usBs3TestStep;
-#ifndef DOXYGEN_RUNNING
-# define g_usBs3TestStep BS3_DATA_NM(g_usBs3TestStep)
-#endif
 
 /**
  * Equivalent to RTTestCreate + RTTestBanner.
  *
  * @param   pszTest         The test name.
  */
-BS3_DECL(void) Bs3TestInit_c16(const char BS3_FAR *pszTest);
-BS3_DECL(void) Bs3TestInit_c32(const char BS3_FAR *pszTest); /**< @copydoc Bs3TestInit_c16 */
-BS3_DECL(void) Bs3TestInit_c64(const char BS3_FAR *pszTest); /**< @copydoc Bs3TestInit_c16 */
-#define Bs3TestInit BS3_CMN_NM(Bs3TestInit) /**< Selects #Bs3TestInit_c16, #Bs3TestInit_c32 or #Bs3TestInit_c64. */
+BS3_CMN_PROTO(void, Bs3TestInit,(const char BS3_FAR *pszTest), true);
 
 
 /**
  * Equivalent to RTTestSummaryAndDestroy.
  */
-BS3_DECL(void) Bs3TestTerm_c16(void);
-BS3_DECL(void) Bs3TestTerm_c32(void); /**< @copydoc Bs3TestTerm_c16 */
-BS3_DECL(void) Bs3TestTerm_c64(void); /**< @copydoc Bs3TestTerm_c16 */
-#define Bs3TestTerm BS3_CMN_NM(Bs3TestTerm) /**< Selects #Bs3TestTerm_c16, #Bs3TestTerm_c32 or #Bs3TestTerm_c64. */
+BS3_CMN_PROTO(void, Bs3TestTerm,(void), true);
 
 /**
  * Equivalent to RTTestISub.
  */
-BS3_DECL(void) Bs3TestSub_c16(const char BS3_FAR *pszSubTest);
-BS3_DECL(void) Bs3TestSub_c32(const char BS3_FAR *pszSubTest); /**< @copydoc Bs3TestSub_c16 */
-BS3_DECL(void) Bs3TestSub_c64(const char BS3_FAR *pszSubTest); /**< @copydoc Bs3TestSub_c16 */
-#define Bs3TestSub BS3_CMN_NM(Bs3TestSub) /**< Selects #Bs3TestSub_c16, #Bs3TestSub_c32 or #Bs3TestSub_c64. */
+BS3_CMN_PROTO(void, Bs3TestSub,(const char BS3_FAR *pszSubTest), true);
 
 /**
  * Equivalent to RTTestIFailedF.
  */
-BS3_DECL(void) Bs3TestSubF_c16(const char BS3_FAR *pszFormat, ...);
-BS3_DECL(void) Bs3TestSubF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSubF_c16 */
-BS3_DECL(void) Bs3TestSubF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSubF_c16 */
-#define Bs3TestSubF BS3_CMN_NM(Bs3TestSubF) /**< Selects #Bs3TestSubF_c16, #Bs3TestSubF_c32 or #Bs3TestSubF_c64. */
+BS3_CMN_PROTO(void, Bs3TestSubF,(const char BS3_FAR *pszFormat, ...), true);
 
 /**
  * Equivalent to RTTestISubV.
  */
-BS3_DECL(void) Bs3TestSubV_c16(const char BS3_FAR *pszFormat, va_list va);
-BS3_DECL(void) Bs3TestSubV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSubV_c16 */
-BS3_DECL(void) Bs3TestSubV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSubV_c16 */
-#define Bs3TestSubV BS3_CMN_NM(Bs3TestSubV) /**< Selects #Bs3TestSubV_c16, #Bs3TestSubV_c32 or #Bs3TestSubV_c64. */
+BS3_CMN_PROTO(void, Bs3TestSubV,(const char BS3_FAR *pszFormat, va_list va), true);
 
 /**
  * Equivalent to RTTestISubDone.
  */
-BS3_DECL(void) Bs3TestSubDone_c16(void);
-BS3_DECL(void) Bs3TestSubDone_c32(void); /**< @copydoc Bs3TestSubDone_c16 */
-BS3_DECL(void) Bs3TestSubDone_c64(void); /**< @copydoc Bs3TestSubDone_c16 */
-#define Bs3TestSubDone BS3_CMN_NM(Bs3TestSubDone) /**< Selects #Bs3TestSubDone_c16, #Bs3TestSubDone_c32 or #Bs3TestSubDone_c64. */
+BS3_CMN_PROTO(void, Bs3TestSubDone,(void), true);
 
 /**
  * Equivalent to RTTestSubErrorCount.
  */
-BS3_DECL(uint16_t) Bs3TestSubErrorCount_c16(void);
-BS3_DECL(uint16_t) Bs3TestSubErrorCount_c32(void); /**< @copydoc Bs3TestSubErrorCount_c16 */
-BS3_DECL(uint16_t) Bs3TestSubErrorCount_c64(void); /**< @copydoc Bs3TestSubErrorCount_c16 */
-#define Bs3TestSubErrorCount BS3_CMN_NM(Bs3TestSubErrorCount) /**< Selects #Bs3TestSubErrorCount_c16, #Bs3TestSubErrorCount_c32 or #Bs3TestSubErrorCount_c64. */
+BS3_CMN_PROTO(uint16_t, Bs3TestSubErrorCount,(void), true);
 
 /**
  * Equivalent to RTTestIPrintf with RTTESTLVL_ALWAYS.
@@ -2586,10 +2220,7 @@ BS3_DECL(uint16_t) Bs3TestSubErrorCount_c64(void); /**< @copydoc Bs3TestSubError
  * @param   pszFormat   What to print, format string.  Explicit newline char.
  * @param   ...         String format arguments.
  */
-BS3_DECL(void) Bs3TestPrintf_c16(const char BS3_FAR *pszFormat, ...);
-BS3_DECL(void) Bs3TestPrintf_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestPrintf_c16 */
-BS3_DECL(void) Bs3TestPrintf_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestPrintf_c16 */
-#define Bs3TestPrintf BS3_CMN_NM(Bs3TestPrintf) /**< Selects #Bs3TestPrintf_c16, #Bs3TestPrintf_c32 or #Bs3TestPrintf_c64. */
+BS3_CMN_PROTO(void, Bs3TestPrintf,(const char BS3_FAR *pszFormat, ...), true);
 
 /**
  * Equivalent to RTTestIPrintfV with RTTESTLVL_ALWAYS.
@@ -2597,44 +2228,29 @@ BS3_DECL(void) Bs3TestPrintf_c64(const char BS3_FAR *pszFormat, ...); /**< @copy
  * @param   pszFormat   What to print, format string.  Explicit newline char.
  * @param   va          String format arguments.
  */
-BS3_DECL(void) Bs3TestPrintfV_c16(const char BS3_FAR *pszFormat, va_list va);
-BS3_DECL(void) Bs3TestPrintfV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestPrintfV_c16 */
-BS3_DECL(void) Bs3TestPrintfV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestPrintfV_c16 */
-#define Bs3TestPrintfV BS3_CMN_NM(Bs3TestPrintfV) /**< Selects #Bs3TestPrintfV_c16, #Bs3TestPrintfV_c32 or #Bs3TestPrintfV_c64. */
+BS3_CMN_PROTO(void, Bs3TestPrintfV,(const char BS3_FAR *pszFormat, va_list va), true);
 
 /**
  * Equivalent to RTTestIFailed.
  */
-BS3_DECL(void) Bs3TestFailed_c16(const char BS3_FAR *pszMessage);
-BS3_DECL(void) Bs3TestFailed_c32(const char BS3_FAR *pszMessage); /**< @copydoc Bs3TestFailed_c16 */
-BS3_DECL(void) Bs3TestFailed_c64(const char BS3_FAR *pszMessage); /**< @copydoc Bs3TestFailed_c16 */
-#define Bs3TestFailed BS3_CMN_NM(Bs3TestFailed) /**< Selects #Bs3TestFailed_c16, #Bs3TestFailed_c32 or #Bs3TestFailed_c64. */
+BS3_CMN_PROTO(void, Bs3TestFailed,(const char BS3_FAR *pszMessage), true);
 
 /**
  * Equivalent to RTTestIFailedF.
  */
-BS3_DECL(void) Bs3TestFailedF_c16(const char BS3_FAR *pszFormat, ...);
-BS3_DECL(void) Bs3TestFailedF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestFailedF_c16 */
-BS3_DECL(void) Bs3TestFailedF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestFailedF_c16 */
-#define Bs3TestFailedF BS3_CMN_NM(Bs3TestFailedF) /**< Selects #Bs3TestFailedF_c16, #Bs3TestFailedF_c32 or #Bs3TestFailedF_c64. */
+BS3_CMN_PROTO(void, Bs3TestFailedF,(const char BS3_FAR *pszFormat, ...), true);
 
 /**
  * Equivalent to RTTestIFailedV.
  */
-BS3_DECL(void) Bs3TestFailedV_c16(const char BS3_FAR *pszFormat, va_list va);
-BS3_DECL(void) Bs3TestFailedV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestFailedV_c16 */
-BS3_DECL(void) Bs3TestFailedV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestFailedV_c16 */
-#define Bs3TestFailedV BS3_CMN_NM(Bs3TestFailedV) /**< Selects #Bs3TestFailedV_c16, #Bs3TestFailedV_c32 or #Bs3TestFailedV_c64. */
+BS3_CMN_PROTO(void, Bs3TestFailedV,(const char BS3_FAR *pszFormat, va_list va), true);
 
 /**
  * Equivalent to RTTestISkipped.
  *
  * @param   pszWhy          Optional reason why it's being skipped.
  */
-BS3_DECL(void) Bs3TestSkipped_c16(const char BS3_FAR *pszWhy);
-BS3_DECL(void) Bs3TestSkipped_c32(const char BS3_FAR *pszWhy); /**< @copydoc Bs3TestSkipped_c16 */
-BS3_DECL(void) Bs3TestSkipped_c64(const char BS3_FAR *pszWhy); /**< @copydoc Bs3TestSkipped_c16 */
-#define Bs3TestSkipped BS3_CMN_NM(Bs3TestSkipped) /**< Selects #Bs3TestSkipped_c16, #Bs3TestSkipped_c32 or #Bs3TestSkipped_c64. */
+BS3_CMN_PROTO(void, Bs3TestSkipped,(const char BS3_FAR *pszWhy), true);
 
 /**
  * Equivalent to RTTestISkippedF.
@@ -2642,10 +2258,7 @@ BS3_DECL(void) Bs3TestSkipped_c64(const char BS3_FAR *pszWhy); /**< @copydoc Bs3
  * @param   pszFormat       Optional reason why it's being skipped.
  * @param   ...             Format arguments.
  */
-BS3_DECL(void) Bs3TestSkippedF_c16(const char BS3_FAR *pszFormat, ...);
-BS3_DECL(void) Bs3TestSkippedF_c32(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSkippedF_c16 */
-BS3_DECL(void) Bs3TestSkippedF_c64(const char BS3_FAR *pszFormat, ...); /**< @copydoc Bs3TestSkippedF_c16 */
-#define Bs3TestSkippedF BS3_CMN_NM(Bs3TestSkippedF) /**< Selects #Bs3TestSkippedF_c16, #Bs3TestSkippedF_c32 or #Bs3TestSkippedF_c64. */
+BS3_CMN_PROTO(void, Bs3TestSkippedF,(const char BS3_FAR *pszFormat, ...), true);
 
 /**
  * Equivalent to RTTestISkippedV.
@@ -2653,10 +2266,7 @@ BS3_DECL(void) Bs3TestSkippedF_c64(const char BS3_FAR *pszFormat, ...); /**< @co
  * @param   pszFormat       Optional reason why it's being skipped.
  * @param   va              Format arguments.
  */
-BS3_DECL(void) Bs3TestSkippedV_c16(const char BS3_FAR *pszFormat, va_list va);
-BS3_DECL(void) Bs3TestSkippedV_c32(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSkippedV_c16 */
-BS3_DECL(void) Bs3TestSkippedV_c64(const char BS3_FAR *pszFormat, va_list va); /**< @copydoc Bs3TestSkippedV_c16 */
-#define Bs3TestSkippedV BS3_CMN_NM(Bs3TestSkippedV) /**< Selects #Bs3TestSkippedV_c16, #Bs3TestSkippedV_c32 or #Bs3TestSkippedV_c64. */
+BS3_CMN_PROTO(void, Bs3TestSkippedV,(const char BS3_FAR *pszFormat, va_list va), true);
 
 /**
  * Compares two register contexts, with PC and SP adjustments.
@@ -2672,13 +2282,8 @@ BS3_DECL(void) Bs3TestSkippedV_c64(const char BS3_FAR *pszFormat, va_list va); /
  * @param   pszMode         CPU mode or some other helpful text.
  * @param   idTestStep      Test step identifier.
  */
-BS3_DECL(bool) Bs3TestCheckRegCtxEx_c16(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAdjust,
-                                        uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep);
-BS3_DECL(bool) Bs3TestCheckRegCtxEx_c32(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAdjust,
-                                        uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep); /** @copydoc Bs3TestCheckRegCtxEx_c16 */
-BS3_DECL(bool) Bs3TestCheckRegCtxEx_c64(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAdjust,
-                                        uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep); /** @copydoc Bs3TestCheckRegCtxEx_c16 */
-#define Bs3TestCheckRegCtxEx BS3_CMN_NM(Bs3TestCheckRegCtxEx) /**< Selects #Bs3TestCheckRegCtxEx_c16, #Bs3TestCheckRegCtxEx_c32 or #Bs3TestCheckRegCtxEx_c64. */
+BS3_CMN_PROTO(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
+                                          int16_t cbSpAdjust, uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep), true);
 
 /**
  * Performs the testing for the given mode.
@@ -2844,7 +2449,7 @@ BS3_DECL(void) Bs3InitAll_rm(void);
  *
  * For proper operation on OLDer CPUs, call #Bs3CpuDetect_mmm first.
  */
-BS3_DECL(void) Bs3InitMemory_rm(void);
+BS3_DECL_FAR(void) Bs3InitMemory_rm(void);
 
 
 
@@ -2865,28 +2470,29 @@ BS3_DECL(void) Bs3InitMemory_rm(void);
  * Doxygen knows how to expand this, well, kind of.
  */
 #define BS3_MODE_EXPAND_PROTOTYPES(a_RetType, a_BaseFnNm, a_Parameters) \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_rm)       a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16)     a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16_32)  a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16_v86) a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32)     a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32_16)  a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pev86)    a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16)     a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16_32)  a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16_v86) a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32)     a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32_16)  a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_ppv86)    a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16)    a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_32) a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_v86)a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32)    a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32_16) a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_paev86)   a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm16)     a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm32)     a_Parameters; \
-    BS3_DECL(a_RetType) RT_CONCAT(a_BaseFnNm,_lm64)     a_Parameters
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_rm)       a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_rm_far)   a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16)     a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16_32)  a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16_v86) a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32)     a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32_16)  a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pev86)    a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16)     a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16_32)  a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16_v86) a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32)     a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32_16)  a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_ppv86)    a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16)    a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_32) a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_v86)a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32)    a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32_16) a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_paev86)   a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_lm16)     a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_lm32)     a_Parameters; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_lm64)     a_Parameters
 
 /**
  * Macro for reducing typing.
@@ -2964,9 +2570,6 @@ BS3_MODE_EXPAND_PROTOTYPES(uint8_t, Bs3CpuDetect,(void));
 /** @} */
 
 /** The return value of #Bs3CpuDetect_mmm. (Initial value is BS3CPU_TYPE_MASK.) */
-#ifndef DOXYGEN_RUNNING
-# define g_uBs3CpuDetected BS3_DATA_NM(g_uBs3CpuDetected)
-#endif
 extern uint16_t g_uBs3CpuDetected;
 
 /**
@@ -2988,6 +2591,12 @@ BS3_MODE_EXPAND_PROTOTYPES(void, Bs3TestDoModes, (PCBS3TESTMODEENTRY paEntries, 
 /** @} */
 
 RT_C_DECLS_END
+
+
+/*
+ * Include default function symbol mangling.
+ */
+#include "bs3kit-mangling-code.h"
 
 
 #endif

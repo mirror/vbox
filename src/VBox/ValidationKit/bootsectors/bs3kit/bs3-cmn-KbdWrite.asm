@@ -44,7 +44,7 @@ BS3_EXTERN_CMN Bs3KbdWait
 ;
 ; @cproto   BS3_DECL(void) Bs3KbdWait_c16(uint8_t bCmd, uint8_t bData);
 ;
-BS3_PROC_BEGIN_CMN Bs3KbdWrite
+BS3_PROC_BEGIN_CMN Bs3KbdWrite, BS3_PBC_NEAR
         push    xBP
         mov     xBP, xSP
         push    xAX
@@ -60,7 +60,13 @@ BS3_PROC_BEGIN_CMN Bs3KbdWrite
 
         BS3_ONLY_64BIT_STMT add     rsp, 20h
         pop     xAX
-        leave
-        ret
+        pop     xBP
+        BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3KbdWrite
+
+;
+; We may be using the near code in some critical code paths, so don't
+; penalize it.
+;
+BS3_CMN_FAR_STUB   Bs3KbdWrite, 4
 

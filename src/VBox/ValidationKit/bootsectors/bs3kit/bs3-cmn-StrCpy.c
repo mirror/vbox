@@ -27,7 +27,7 @@
 #include "bs3kit-template-header.h"
 
 #undef Bs3StrCpy
-BS3_DECL(char BS3_FAR *) BS3_CMN_NM(Bs3StrCpy)(char BS3_FAR *pszDst, const char BS3_FAR *pszSrc)
+BS3_CMN_DEF(char BS3_FAR *, Bs3StrCpy,(char BS3_FAR *pszDst, const char BS3_FAR *pszSrc))
 {
     char BS3_FAR *pszRet = pszDst;
     char ch;
