@@ -268,7 +268,7 @@ ifdef VBOX_WITH_QTGUI
   	$(if $(VBOX_WITH_ORACLE_QT),accessible/libqtaccessiblewidgets.so,)
  else # VBOX_WITH_QTGUI_V5
   VBOX_LNX_NO_STRIP += \
-  	$(VBOX_QT_PLUGINS) \
+  	$(if $(VBOX_WITH_ORACLE_QT),$(VBOX_QT_PLUGINS)) \
 	$(addprefix legacy/,$(VBOX_QT_LEGACY_LIBS))
  endif # VBOX_WITH_QTGUI_V5
 endif
