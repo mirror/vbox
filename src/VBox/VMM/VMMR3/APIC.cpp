@@ -1157,7 +1157,8 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pApic->pApicDevR3   = (PAPICDEV)PDMINS_2_DATA_R3PTR(pDevIns);
     pApic->pApicDevRC   = PDMINS_2_DATA_RCPTR(pDevIns);
 
-    apicR3InitState(pVM);
+    rc = apicR3InitState(pVM);
+    AssertRCReturn(rc, rc);
 
     /*
      * Disable automatic PDM locking for this device.
