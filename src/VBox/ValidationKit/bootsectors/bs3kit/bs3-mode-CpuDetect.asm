@@ -41,7 +41,7 @@ TMPL_BEGIN_TEXT
 ;
 ; @remarks  ASSUMES we're in ring-0 when not in some kind of real mode.
 ;
-BS3_PROC_BEGIN_MODE Bs3CpuDetect
+BS3_PROC_BEGIN_MODE Bs3CpuDetect, BS3_PBC_HYBRID_0_ARGS
 CPU 8086
         push    xBP
         mov     xBP, xSP
@@ -292,7 +292,7 @@ CPU 8086
         pop     xCX
         popf
         pop     xBP
-        ret
+        BS3_HYBRID_RET
 
 BS3_PROC_END_MODE   Bs3CpuDetect
 

@@ -46,7 +46,7 @@ extern  NAME(Bs3EnteredMode_pp16)
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
-BS3_PROC_BEGIN_MODE Bs3SwitchToPP16
+BS3_PROC_BEGIN_MODE Bs3SwitchToPP16, BS3_PBC_NEAR
 %ifdef TMPL_PP16
         extern  BS3_CMN_NM(Bs3SwitchToRing0)
         call    BS3_CMN_NM(Bs3SwitchToRing0)
@@ -180,4 +180,29 @@ TMPL_BEGIN_TEXT
  %endif
 %endif
 BS3_PROC_END_MODE   Bs3SwitchToPP16
+
+
+%if TMPL_BITS == 16
+;;
+; Custom far stub.
+BS3_BEGIN_TEXT16_FARSTUBS
+BS3_PROC_BEGIN_MODE Bs3SwitchToPP16, BS3_PBC_FAR
+        inc         bp
+        push        bp
+        mov         bp, sp
+
+        ; Call the real thing.
+        call        TMPL_NM(Bs3SwitchToPP16)
+
+ %if BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
+        ; Jmp to  common code for the tedious conversion.
+        BS3_EXTERN_CMN Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn
+        jmp         Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn
+ %else
+        pop         bp
+        dec         bp
+        retf
+ %endif
+BS3_PROC_END_MODE   Bs3SwitchToPP16
+%endif
 

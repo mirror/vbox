@@ -77,21 +77,46 @@ endif
 # Macro for generating near-call aliases for zero or more 16-bit C functions.
 # @param    1   The target name.
 # @param    2   List of functions.
-BS3KIT_FN_GEN_NEARSTUBS = $(foreach fn,$2,$(evalcall2 def_Bs3KitGenNearStubSource,$1,$(fn)))
+BS3KIT_FN_GEN_NEARSTUBS = $(foreach fn,$2,$(evalcall2 def_Bs3KitGenNearStubSource,$1,_$(fn)_c16,_$(fn)_f16))
+
+##
+# Macro for generating near-call aliases for zero or more 16-bit C mode functions.
+# @param    1   The target name.
+# @param    2   List of mode functions.
+BS3KIT_FN_GEN_MODE_NEARSTUBS = $(foreach fn,$2,$(foreach suff, \
+	_rm \
+	_pe16 \
+	_pe16_v86 \
+	_pe32_16 \
+	_pev86 \
+	_pp16 \
+	_pp16_v86 \
+	_pp32_16 \
+	_ppv86 \
+	_pae16 \
+	_pae16_v86 \
+	_pae32_16 \
+	_paev86 \
+	_lm16 \
+	,$(evalcall2 def_Bs3KitGenNearStubSource,$1,_$(fn)$(suff),_$(fn)$(suff)_far)))
+
+# @param    1   The target name.
+# @param    2   The near function name.
+# @param    3   The far function name.
 define def_Bs3KitGenNearStubSource
-$1_SOURCES += $$($1_0_OUTDIR)/near-call-to-$2_f16.asm
-$1_CLEAN   += $$($1_0_OUTDIR)/near-call-to-$2_f16.asm
-$$$$($1_0_OUTDIR)/near-call-to-$2_f16.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
+$1_SOURCES += $$($1_0_OUTDIR)/stub$2.asm
+$1_CLEAN   += $$($1_0_OUTDIR)/stub$2.asm
+$$$$($1_0_OUTDIR)/stub$2.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
 	$(QUIET)$(APPEND) -tn $$@ \
 		'%include "bs3kit.mac"' \
        	'BS3_BEGIN_TEXT16' \
-               '      extern  _$2_f16' \
+               '      extern  $3' \
        	'BS3_BEGIN_TEXT16_NEARSTUBS' \
-		'BS3_GLOBAL_NAME_EX _$2_c16, function, 6' \
+		'BS3_GLOBAL_NAME_EX $2, function, 6' \
                '      pop     ax' \
                '      push    cs' \
                '      push    ax' \
-               '      jmp     _$2_f16 wrt CGROUP16'
+               '      jmp     $3 wrt CGROUP16'
 endef
 
 
@@ -630,7 +655,9 @@ TEMPLATE_VBoxBS3KitImg_LNK_DEPS = \
 TEMPLATE_VBoxBS3KitImg_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY)\
 	,,$(QUIET)$(MV_EXT) -f -- "$(out)" "$(out).tmp" \
 	$$(NLTAB)$(QUIET)$(VBoxBs3Linker_1_TARGET) -o $(out) $(bs3-bootsector_1_TARGET) $(out).tmp \
-	$$(NLTAB)$(QUIET)$(RM_EXT) -f -- "$(out).tmp")
+	$$(NLTAB)$(QUIET)$(RM_EXT) -f -- "$(out).tmp") \
+	$(eval .PRECIOUS: $(outbase).map) # ugly hack!
+
 
 TEMPLATE_VBoxBS3KitImg_LIBS = \
 	$(PATH_OBJ)/bs3kit-common-16/bs3kit-common-16.lib \

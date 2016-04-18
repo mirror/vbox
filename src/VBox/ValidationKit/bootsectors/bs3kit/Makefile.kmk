@@ -89,6 +89,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-RegCtxSave.asm \
        bs3-cmn-SelFar32ToFlat32.c \
        bs3-cmn-SelProtFar32ToFlat32.c \
+       bs3-cmn-SelProtModeCodeToRealMode.asm \
        bs3-cmn-SelRealModeCodeToProtMode.asm \
        bs3-cmn-SelFlatCodeToRealMode.asm \
        bs3-cmn-SelFlatCodeToProtFar16.asm \
@@ -101,6 +102,8 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-SlabListAlloc.c \
        bs3-cmn-SlabListAllocEx.c \
        bs3-cmn-SlabListFree.c \
+       bs3-cmn-SwitchHlpConvRealModeRetfPopBpDecBpAndReturn.asm \
+       bs3-cmn-SwitchHlpConvProtModeRetfPopBpDecBpAndReturn.asm \
        bs3-cmn-SwitchToRing0.asm \
        bs3-cmn-SwitchToRing1.asm \
        bs3-cmn-SwitchToRing2.asm \
@@ -212,8 +215,14 @@ bs3kit-common-16_VBOX_NEAR_TO_FAR_FUNCTIONS := \
        Bs3TestSkippedV \
        Bs3TestSubF \
        Bs3TestSubV \
-       Bs3Trap16InitEx
+       Bs3Trap16InitEx \
+
+bs3kit-common-16_VBOX_NEAR_TO_FAR_MODE_FUNCTIONS := \
+	Bs3TestDoModes \
+	Bs3TrapInit \
+
 $(call BS3KIT_FN_GEN_NEARSTUBS,bs3kit-common-16,$(bs3kit-common-16_VBOX_NEAR_TO_FAR_FUNCTIONS))
+$(call BS3KIT_FN_GEN_MODE_NEARSTUBS,bs3kit-common-16,$(bs3kit-common-16_VBOX_NEAR_TO_FAR_MODE_FUNCTIONS))
 
 # The 32-bit BS3Kit library.
 LIBRARIES += bs3kit-common-32

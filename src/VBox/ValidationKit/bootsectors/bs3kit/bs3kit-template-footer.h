@@ -71,7 +71,7 @@
 #undef TMPL_CMN_R86
 
 #undef TMPL_NM
-#undef TMPL_NM_CMN
+#undef TMPL_FAR_NM
 #undef TMPL_MODE
 #undef TMPL_MODE_STR
 #undef TMPL_MODE_LNAME

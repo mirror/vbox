@@ -153,7 +153,11 @@ BS3_GLOBAL_NAME_EX TMPL_NM(bs3TestCallDoerEpilogue), , 0
         pop     xBX
         xPOPF
         pop     xBP
+%if TMPL_BITS == 16
+        retf
+%else
         ret
+%endif
 
 ;
 ; For checking that the mode switching macros doesn't screw up GPRs.
@@ -212,14 +216,14 @@ BS3_GLOBAL_NAME_EX TMPL_NM(bs3TestCallDoerEpilogue), , 0
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInRM(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInRM
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInRM, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -253,14 +257,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInRM
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE16(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -286,11 +290,11 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPE16
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE16_32(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_32
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_32, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     eax, [xBP + xCB + cbCurRetAddr]      ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -311,12 +315,12 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPE16_32
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE16_V86(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_V86
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_V86, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -342,11 +346,11 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPE16_V86
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE32(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE32
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE32, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     eax, [xBP + xCB + cbCurRetAddr]      ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -367,14 +371,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPE32
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPE32_16(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE32_16
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE32_16, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -401,14 +405,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPE32_16
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPEV86(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPEV86
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPEV86, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -441,14 +445,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPEV86
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP16(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -475,11 +479,11 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPP16
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP16_32(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_32
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_32, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     eax, [xBP + xCB + cbCurRetAddr]      ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -500,12 +504,12 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPP16_32
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP16_V86(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_V86
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_V86, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -531,11 +535,11 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPP16_V86
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP32(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP32
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP32, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     eax, [xBP + xCB + cbCurRetAddr]      ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -556,14 +560,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPP32
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPP32_16(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP32_16
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP32_16, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -590,14 +594,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPP32_16
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPPV86(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPPV86
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPPV86, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -630,14 +634,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPPV86
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE16(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -664,11 +668,11 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPAE16
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE16_32(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_32
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_32, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     eax, [xBP + xCB + cbCurRetAddr]      ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -689,12 +693,12 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPAE16_32
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE16_V86(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_V86
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_V86, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -720,11 +724,11 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPAE16_V86
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE32(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE32
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE32, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     eax, [xBP + xCB + cbCurRetAddr]      ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -745,14 +749,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPAE32
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAE32_16(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE32_16
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE32_16, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -779,14 +783,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPAE32_16
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInPAEV86(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAEV86
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAEV86, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -819,14 +823,14 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInPAEV86
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInLM16(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM16
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM16, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
-        mov     dx, [xBP + xCB*2 + 2]
+        mov     ax, [xBP + xCB + cbCurRetAddr]      ; Load far function pointer.
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -853,11 +857,11 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInLM16
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInLM32(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM32
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM32, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     eax, [xBP + xCB + cbCurRetAddr]      ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -879,11 +883,11 @@ BS3_PROC_END_MODE   Bs3TestCallDoerInLM32
 ;;
 ; @cproto   BS3_DECL(uint8_t) Bs3TestCallDoerInLM64(uint16_t offBs3Text16);
 ; @uses     rax
-BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM64
+BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM64, BS3_PBC_FAR
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     eax, [xBP + xCB*2]      ; Load function pointer.
+        mov     eax, [xBP + xCB + cbCurRetAddr]      ; Load function pointer.
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS

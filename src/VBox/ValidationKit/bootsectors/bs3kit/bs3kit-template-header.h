@@ -106,8 +106,21 @@
  * Example: TMPL_NM(PrintChr)
  *
  * @param   Name        The function or variable name to mangle.
+ * @sa      #TMPL_FAR_NM, #BS3_CMN_NM, #BS3_CMN_FAR_NM
  */
 # define TMPL_NM(Name)  RT_CONCAT(Name,_mode)
+
+/** @def TMPL_FAR_NM
+ * Name mangling macro for the current mode into a far function name.
+ *
+ * In 32-bit and 64-bit code this does not differ from #TMPL_NM.
+ *
+ * Example: TMPL_FAR_NM(PrintChr)
+ *
+ * @param   Name        The function or variable name to mangle.
+ * @sa      #TMPL_NM, #BS3_CMN_FAR_NM, #BS3_CMN_NM
+ */
+# define TMPL_FAR_NM(Name)  RT_CONCAT3(Name,_mode,_far)
 
 /** @def TMPL_MODE_STR
  * Short mode description. */
@@ -470,6 +483,34 @@
 #else
 # error "Invalid TMPL_MODE value!!"
 #endif
+
+
+#if TMPL_MODE & (BS3_MODE_CODE_16 | BS3_MODE_CODE_V86)
+# define TMPL_FAR_NM(Name)      RT_CONCAT3(TMPL_NM(Name),_f,ar) /* _far and far may be #defined already. */
+#else
+# define TMPL_FAR_NM(Name)      TMPL_NM(Name)
+#endif
+
+
+/** @def BS3_MODE_DEF
+ * Macro for defining a mode specific function.
+ *
+ * This makes 16-bit mode functions far, while 32-bit and 64-bit are near.
+ * You need to update the make file to generate near->far wrappers in most
+ * cases.
+ *
+ * @param   a_RetType   The return type.
+ * @param   a_Name      The function basename.
+ * @param   a_Params    The parameter list (in parentheses).
+ *
+ * @sa      BS3_MODE_PROTO
+ */
+#if ARCH_BITS == 16
+# define BS3_MODE_DEF(a_RetType, a_Name, a_Params) BS3_DECL_FAR(a_RetType) TMPL_FAR_NM(a_Name) a_Params
+#else
+# define BS3_MODE_DEF(a_RetType, a_Name, a_Params) BS3_DECL_NEAR(a_RetType)    TMPL_NM(a_Name) a_Params
+#endif
+
 
 
 #ifndef TMPL_MODE_STR

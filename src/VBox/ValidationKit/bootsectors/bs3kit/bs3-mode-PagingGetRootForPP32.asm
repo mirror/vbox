@@ -50,7 +50,7 @@ TMPL_BEGIN_TEXT
 ;
 ; @remarks  returns value in EAX, not dx:ax!
 ;
-BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPP32
+BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPP32, BS3_PBC_NEAR ; Internal function, no far variant necessary.
         mov     eax, [BS3_DATA16_WRT(g_PhysPagingRootPP)]
         cmp     eax, 0ffffffffh
         je      .init_root

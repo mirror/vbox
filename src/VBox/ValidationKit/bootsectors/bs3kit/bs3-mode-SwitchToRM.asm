@@ -64,7 +64,7 @@ TMPL_BEGIN_TEXT
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
-BS3_PROC_BEGIN_MODE Bs3SwitchToRM
+BS3_PROC_BEGIN_MODE Bs3SwitchToRM, BS3_PBC_NEAR
 %ifdef TMPL_RM
         push    ax
         mov     ax, BS3_SEL_DATA16
@@ -336,4 +336,29 @@ TMPL_BEGIN_TEXT
  %endif
 %endif
 BS3_PROC_END_MODE   Bs3SwitchToRM
+
+
+%if TMPL_BITS == 16
+;;
+; Custom far stub.
+BS3_BEGIN_TEXT16_FARSTUBS
+BS3_PROC_BEGIN_MODE Bs3SwitchToRM, BS3_PBC_FAR
+        inc         bp
+        push        bp
+        mov         bp, sp
+
+        ; Call the real thing.
+        call        TMPL_NM(Bs3SwitchToRM)
+
+ %if !BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
+        ; Jmp to  common code for the tedious conversion.
+        BS3_EXTERN_CMN Bs3SwitchHlpConvProtModeRetfPopBpDecBpAndReturn
+        jmp         Bs3SwitchHlpConvProtModeRetfPopBpDecBpAndReturn
+ %else
+        pop         bp
+        dec         bp
+        retf
+ %endif
+BS3_PROC_END_MODE   Bs3SwitchToRM
+%endif
 

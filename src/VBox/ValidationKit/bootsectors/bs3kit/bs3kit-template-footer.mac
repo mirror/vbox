@@ -82,6 +82,7 @@
 
 %undef TMPL_NM
 %undef TMPL_NM_U
+%undef TMPL_FAR_NM
 %undef BS3_CMN_NM
 %undef TMPL_UNDESCORE
 %undef TMPL_MODE_UNAME

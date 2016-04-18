@@ -63,6 +63,7 @@
 #define Bs3SelFlatCodeToProtFar16               BS3_CMN_MANGLER(Bs3SelFlatCodeToProtFar16)
 #define Bs3SelFar32ToFlat32                     BS3_CMN_MANGLER(Bs3SelFar32ToFlat32)
 #define Bs3SelProtFar32ToFlat32                 BS3_CMN_MANGLER(Bs3SelProtFar32ToFlat32)
+#define Bs3SelProtModeCodeToRealMode            BS3_CMN_MANGLER(Bs3SelProtModeCodeToRealMode)
 #define Bs3SelRealModeCodeToProtMode            BS3_CMN_MANGLER(Bs3SelRealModeCodeToProtMode)
 #define Bs3Shutdown                             BS3_CMN_MANGLER(Bs3Shutdown)
 #define Bs3SlabAlloc                            BS3_CMN_MANGLER(Bs3SlabAlloc)

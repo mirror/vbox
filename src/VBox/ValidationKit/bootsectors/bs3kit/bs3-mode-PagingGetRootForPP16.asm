@@ -39,7 +39,7 @@ extern TMPL_NM(Bs3PagingGetRootForPP32)
 ;
 ; @remarks  returns value in EAX, not dx:ax!
 ;
-BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPP16
+BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPP16, BS3_PBC_NEAR ; Internal function, no far variant necessary.
         jmp     TMPL_NM(Bs3PagingGetRootForPP32)
 BS3_PROC_END_MODE   Bs3PagingGetRootForPP16
 

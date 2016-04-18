@@ -387,6 +387,13 @@
  %define TMPL_NM_U(Name)        TMPL_UNDERSCORE %+ Name %+ TMPL_MODE_UNAME
 %endif
 
+; TMPL_FAR_NM
+%if TMPL_MODE & (BS3_MODE_CODE_16 | BS3_MODE_CODE_V86)
+ %define TMPL_FAR_NM(Name)      TMPL_NM(Name) %+ _far
+%else
+ %define TMPL_FAR_NM(Name)      TMPL_NM(Name)
+%endif
+
 
 ;; @def TMPL_WRT_FLAT
 ; WRT flat when not in 16-bit modes.

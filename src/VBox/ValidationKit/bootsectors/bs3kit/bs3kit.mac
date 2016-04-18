@@ -679,117 +679,109 @@ size %1 %+ _EndProc     0
 %endmacro
 
 
-;; @name BS3_PBC_XXX - For use as the 2nd parameter to BS3_PROC_BEGIN_CMN.
+;; @name BS3_PBC_XXX - For use as the 2nd parameter to BS3_PROC_BEGIN_CMN and BS3_PROC_BEGIN_MODE.
 ;; @{
-%define BS3_PBC_NEAR          0 ;;< Only near.
-%define BS3_PBC_FAR           1 ;;< Only far.
-%define BS3_PBC_HYBRID        2 ;;< Hybrid near/far procedure, trashing AX
-%define BS3_PBC_HYBRID_SAFE   3 ;;< Hybrid near/far procedure, no trashing but slower.
-%define BS3_PBC_HYBRID_0_ARGS 4 ;;< Hybrid near/far procedure, no parameters so separate far stub, no trashing, fast near calls.
+%define BS3_PBC_NEAR          1 ;;< Only near.
+%define BS3_PBC_FAR           2 ;;< Only far.
+%define BS3_PBC_HYBRID        3 ;;< Hybrid near/far procedure, trashing AX
+%define BS3_PBC_HYBRID_SAFE   4 ;;< Hybrid near/far procedure, no trashing but slower.
+%define BS3_PBC_HYBRID_0_ARGS 5 ;;< Hybrid near/far procedure, no parameters so separate far stub, no trashing, fast near calls.
 ;; @}
+
+;; Internal begin procedure macro.
+;
+; @param    1       The near name.
+; @param    2       The far name
+; @param    3       BS3_PBC_XXX.
+%macro BS3_PROC_BEGIN_INT 3
+ ;%warning "BS3_PROC_BEGIN_INT:" 1=%1 2=%2 3=%3
+ %undef BS3_CUR_PROC_FLAGS
+ %if __BITS__ == 16
+  %if %3 == BS3_PBC_NEAR
+   %xdefine BS3_CUR_PROC_FLAGS  BS3_PBC_NEAR
+   %xdefine cbCurRetAddr        2
+   BS3_PROC_BEGIN       %1
+
+  %elif %3 == BS3_PBC_FAR
+   %xdefine BS3_CUR_PROC_FLAGS  BS3_PBC_FAR
+   %xdefine cbCurRetAddr        4
+   BS3_PROC_BEGIN       %2
+
+  %elif %3 == BS3_PBC_HYBRID
+   %xdefine BS3_CUR_PROC_FLAGS  BS3_PBC_HYBRID
+   %xdefine cbCurRetAddr        4
+   BS3_GLOBAL_NAME_EX   %1, function, 3
+        pop     ax
+        push    cs
+        push    ax
+   BS3_PROC_BEGIN       %2
+
+  %elif %3 == BS3_PBC_HYBRID_SAFE
+   %xdefine BS3_CUR_PROC_FLAGS  BS3_PBC_HYBRID_SAFE
+   %xdefine cbCurRetAddr        4
+   BS3_GLOBAL_NAME_EX   %1, function, 3
+        extern  Bs3CreateHybridFarRet_c16
+        call    Bs3CreateHybridFarRet_c16
+   BS3_PROC_BEGIN       %2
+
+  %elif %3 == BS3_PBC_HYBRID_0_ARGS
+   %xdefine BS3_CUR_PROC_FLAGS  BS3_PBC_NEAR
+   %xdefine cbCurRetAddr        2
+   %xdefine TMP_BEGIN_PREV_SEG  BS3_CUR_SEG_BEGIN_MACRO
+
+   BS3_BEGIN_TEXT16_FARSTUBS
+   BS3_PROC_BEGIN       %2
+        call    %1
+        retf
+   BS3_PROC_END         %2
+
+   TMP_BEGIN_PREV_SEG
+   BS3_PROC_BEGIN       %1
+   %undef  TMP_BEGIN_PREV_SEG
+
+  %else
+   %error BS3_PROC_BEGIN_CMN parameter 2 value %3 is not recognized.
+
+   %xdefine BS3_CUR_PROC_FLAGS   BS3_PBC_NEAR
+   %xdefine cbCurRetAddr         4
+   BS3_PROC_BEGIN       %1
+  %endif
+ %else
+  %xdefine BS3_CUR_PROC_FLAGS   BS3_PBC_NEAR
+  %xdefine cbCurRetAddr         xCB
+  BS3_PROC_BEGIN        %1
+ %endif
+%endmacro
+
+;; Internal end procedure macro
+;
+; @param    1       The near name.
+; @param    2       The far name
+;
+%macro BS3_PROC_END_INT 2
+ %if __BITS__ == 16
+  %if BS3_CUR_PROC_FLAGS == BS3_PBC_NEAR
+   BS3_PROC_END      %1
+  %else
+   BS3_PROC_END      %2
+  %endif
+ %else
+  BS3_PROC_END       %1
+ %endif
+ %undef BS3_CUR_PROC_FLAGS
+ %undef cbCurRetAddr
+%endmacro
+
 
 ;; Convenience macro for defining common procedures.
 ; This will emit both near and far 16-bit symbols according to parameter %2 (BS3_PBC_XXX).
 %macro BS3_PROC_BEGIN_CMN 2
- %undef BS3_CUR_PROC_FLAGS
- %if __BITS__ == 16
-  %if %2 == BS3_PBC_NEAR
-   %define BS3_CUR_PROC_FLAGS   BS3_PBC_NEAR
-   %xdefine cbCurRetAddr        2
-   BS3_PROC_BEGIN       BS3_CMN_NM(%1)
-
-  %elif %2 == BS3_PBC_FAR
-   %define BS3_CUR_PROC_FLAGS   BS3_PBC_FAR
-   %xdefine cbCurRetAddr        4
-   BS3_PROC_BEGIN       BS3_CMN_NM_FAR(%1)
-
-  %elif %2 == BS3_PBC_HYBRID
-   %define BS3_CUR_PROC_FLAGS   BS3_PBC_HYBRID
-   %xdefine cbCurRetAddr        4
-   BS3_GLOBAL_NAME_EX   BS3_CMN_NM(%1), function, 3
-        pop     ax
-        push    cs
-        push    ax
-   BS3_PROC_BEGIN       BS3_CMN_NM_FAR(%1)
-
-  %elif %2 == BS3_PBC_HYBRID_SAFE
-   %define BS3_CUR_PROC_FLAGS   BS3_PBC_HYBRID_SAFE
-   %xdefine cbCurRetAddr        4
-   BS3_GLOBAL_NAME_EX   BS3_CMN_NM(%1), function, 3
-        extern  Bs3CreateHybridFarRet_c16
-        call    Bs3CreateHybridFarRet_c16
-   BS3_PROC_BEGIN       BS3_CMN_NM_FAR(%1)
-
-  %elif %2 == BS3_PBC_HYBRID_0_ARGS
-   %define BS3_CUR_PROC_FLAGS   BS3_PBC_NEAR
-   %xdefine cbCurRetAddr        2
-   %undef  TMP_BEGIN_PREV_SEG
-   %xdefine TMP_BEGIN_PREV_SEG   BS3_CUR_SEG_BEGIN_MACRO
-
-   BS3_BEGIN_TEXT16_FARSTUBS
-   BS3_PROC_BEGIN       BS3_CMN_NM_FAR(%1)
-        call    BS3_CMN_NM(%1)
-        retf
-   BS3_PROC_END         BS3_CMN_NM_FAR(%1)
-
-   TMP_BEGIN_PREV_SEG
-   BS3_PROC_BEGIN       BS3_CMN_NM(%1)
-
-  %else
-   %error BS3_PROC_BEGIN_CMN parameter 2 value %2 is not recognized.
-
-   %define BS3_CUR_PROC_FLAGS    BS3_PBC_NEAR
-   %xdefine cbCurRetAddr         4
-   BS3_PROC_BEGIN       BS3_CMN_NM(%1)
-  %endif
- %else
-  %define BS3_CUR_PROC_FLAGS    BS3_PBC_NEAR
-  %xdefine cbCurRetAddr         xCB
-  BS3_PROC_BEGIN        BS3_CMN_NM(%1)
- %endif
+ BS3_PROC_BEGIN_INT BS3_CMN_NM(%1), BS3_CMN_NM_FAR(%1), %2
 %endmacro
 
 ;; Convenience macro for defining common procedures.
 %macro BS3_PROC_END_CMN 1
- %if __BITS__ == 16
-  %if BS3_CUR_PROC_FLAGS == BS3_PBC_NEAR
-   BS3_PROC_END      BS3_CMN_NM(%1)
-  %else
-   BS3_PROC_END      BS3_CMN_NM_FAR(%1)
-  %endif
- %else
-  BS3_PROC_END       BS3_CMN_NM(%1)
- %endif
- %undef cbCurRetAddr
-%endmacro
-
-;; Does a far return in 16-bit code, near return in 32-bit and 64-bit.
-; This is for use with BS3_PBC_XXX
-%macro BS3_HYBRID_RET 0-1
- %if __BITS__ == 16
-  %if %0 > 0
-   %if BS3_CUR_PROC_FLAGS == BS3_PBC_NEAR || BS3_CUR_PROC_FLAGS == BS3_PBC_HYBRID_0_ARGS
-        ret    %1
-   %else
-        retf    %1
-   %endif
-  %else
-   %if BS3_CUR_PROC_FLAGS == BS3_PBC_NEAR || BS3_CUR_PROC_FLAGS == BS3_PBC_HYBRID_0_ARGS
-        ret
-   %else
-        retf
-   %endif
-  %endif
- %else
-  %if BS3_CUR_PROC_FLAGS != BS3_PBC_NEAR
-   %error Expected BS3_CUR_PROC_FLAGS to be BS3_PBC_NEAR in non-16-bit code.
-  %endif
-  %if %0 > 0
-        ret     %1
-  %else
-        ret
-  %endif
- %endif
+ BS3_PROC_END_INT BS3_CMN_NM(%1), BS3_CMN_NM_FAR(%1)
 %endmacro
 
 ;;
@@ -827,14 +819,45 @@ BS3_BEGIN_TEXT16
  %endif
 %endmacro
 
+
 ;; Convenience macro for defining mode specific procedures.
-%macro BS3_PROC_BEGIN_MODE 1
- BS3_PROC_BEGIN     TMPL_NM(%1)
+%macro BS3_PROC_BEGIN_MODE 2
+ ;%warning "BS3_PROC_BEGIN_MODE: 1=" %1 "2=" %2
+ BS3_PROC_BEGIN_INT TMPL_NM(%1), TMPL_FAR_NM(%1), %2
 %endmacro
 
 ;; Convenience macro for defining mode specific procedures.
 %macro BS3_PROC_END_MODE 1
- BS3_PROC_END       TMPL_NM(%1)
+ BS3_PROC_END_INT TMPL_NM(%1), TMPL_FAR_NM(%1)
+%endmacro
+
+;; Does a far return in 16-bit code, near return in 32-bit and 64-bit.
+; This is for use with BS3_PBC_XXX
+%macro BS3_HYBRID_RET 0-1
+ %if __BITS__ == 16
+  %if %0 > 0
+   %if BS3_CUR_PROC_FLAGS == BS3_PBC_NEAR || BS3_CUR_PROC_FLAGS == BS3_PBC_HYBRID_0_ARGS
+        ret    %1
+   %else
+        retf    %1
+   %endif
+  %else
+   %if BS3_CUR_PROC_FLAGS == BS3_PBC_NEAR || BS3_CUR_PROC_FLAGS == BS3_PBC_HYBRID_0_ARGS
+        ret
+   %else
+        retf
+   %endif
+  %endif
+ %else
+  %if BS3_CUR_PROC_FLAGS != BS3_PBC_NEAR
+   %error Expected BS3_CUR_PROC_FLAGS to be BS3_PBC_NEAR in non-16-bit code.
+  %endif
+  %if %0 > 0
+        ret     %1
+  %else
+        ret
+  %endif
+ %endif
 %endmacro
 
 

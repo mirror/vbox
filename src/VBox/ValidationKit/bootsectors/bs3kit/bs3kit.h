@@ -1527,7 +1527,15 @@ BS3_CMN_PROTO(uint32_t, Bs3SelFar32ToFlat32,(uint32_t off, uint16_t uSel), true)
  * @returns protected mode segment selector.
  * @param   uRealSeg        Real mode code segment.
  */
-BS3_CMN_PROTO(uint16_t, Bs3SelRealModeCodeToProtMode,(uint16_t uRealSel), false);
+BS3_CMN_PROTO(uint16_t, Bs3SelRealModeCodeToProtMode,(uint16_t uRealSeg), false);
+
+/**
+ * Converts a real mode code segment to a protected mode code segment selector.
+ *
+ * @returns protected mode segment selector.
+ * @param   uProtSel        Real mode code segment.
+ */
+BS3_CMN_PROTO(uint16_t, Bs3SelProtModeCodeToRealMode,(uint16_t uProtSel), false);
 
 /**
  * Converts a flat code address to a real mode segment and offset.
@@ -2519,35 +2527,54 @@ BS3_DECL_FAR(void) Bs3InitGdt_rm(void);
  */
 
 
-/**
+/** @def BS3_MODE_PROTO
  * Macro for reducing typing.
  *
  * Doxygen knows how to expand this, well, kind of.
+ *
+ * @param   a_RetType   The return type.
+ * @param   a_Name      The function basename.
+ * @param   a_Params    The parameter list (in parentheses).
+ * @param   a_fAutoStub Whether to autogenerate a 16-bit near -> 16-bit far stub
+ *                      function. Either 'true' for stub or 'false' for no stub.
  */
-#define BS3_MODE_EXPAND_PROTOTYPES(a_RetType, a_BaseFnNm, a_Parameters) \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_rm)       a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_rm_far)   a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16)     a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16_32)  a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe16_v86) a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32)     a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pe32_16)  a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pev86)    a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16)     a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16_32)  a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp16_v86) a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32)     a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pp32_16)  a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_ppv86)    a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16)    a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_32) a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae16_v86)a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32)    a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_pae32_16) a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_paev86)   a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_lm16)     a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_lm32)     a_Parameters; \
-    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_BaseFnNm,_lm64)     a_Parameters
+#define BS3_MODE_PROTO(a_RetType, a_Name, a_Params, a_fAutoStub) \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_rm)           a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pe16)         a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pe16_32)      a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pe16_v86)     a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pe32)         a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pe32_16)      a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pev86)        a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pp16)         a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pp16_32)      a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pp16_v86)     a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pp32)         a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pp32_16)      a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_ppv86)        a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pae16)        a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pae16_32)     a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pae16_v86)    a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pae32)        a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pae32_16)     a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_paev86)       a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_lm16)         a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_lm32)         a_Params; \
+    BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_lm64)         a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_rm_far)       a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pe16_far)     a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pe16_v86_far) a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pe32_16_far)  a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pev86_far)    a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pp16_far)     a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pp16_v86_far) a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pp32_16_far)  a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_ppv86_far)    a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pae16_far)    a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pae16_v86_far)a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pae32_16_far) a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_paev86_far)   a_Params; \
+    BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_lm16_far)     a_Params
 
 /**
  * Macro for reducing typing.
@@ -2596,7 +2623,7 @@ BS3_MODE_EXPAND_EXTERN_DATA16(const char, g_szBs3ModeName, []);
  * @returns BS3CPU_XXX value with the BS3CPU_F_CPUID flag set depending on
  *          capabilities.
  */
-BS3_MODE_EXPAND_PROTOTYPES(uint8_t, Bs3CpuDetect,(void));
+BS3_MODE_PROTO(uint8_t, Bs3CpuDetect,(void), false);
 
 /** @name BS3CPU_XXX - CPU detected by BS3CpuDetect_c16() and friends.
  * @{ */
@@ -2632,7 +2659,7 @@ extern uint16_t g_uBs3CpuDetected;
  *
  * Calls the appropriate Bs3Trap16Init, Bs3Trap32Init or Bs3Trap64Init function.
  */
-BS3_MODE_EXPAND_PROTOTYPES(void, Bs3TrapInit,(void));
+BS3_MODE_PROTO(void, Bs3TrapInit,(void), true);
 
 /**
  * Executes the array of tests in every possibly mode.
@@ -2640,7 +2667,7 @@ BS3_MODE_EXPAND_PROTOTYPES(void, Bs3TrapInit,(void));
  * @param   paEntries       The mode sub-test entries.
  * @param   cEntries        The number of sub-test entries.
  */
-BS3_MODE_EXPAND_PROTOTYPES(void, Bs3TestDoModes, (PCBS3TESTMODEENTRY paEntries, size_t cEntries));
+BS3_MODE_PROTO(void, Bs3TestDoModes,(PCBS3TESTMODEENTRY paEntries, size_t cEntries), true);
 
 
 /** @} */

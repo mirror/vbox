@@ -39,7 +39,7 @@
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
-BS3_PROC_BEGIN_MODE Bs3SwitchToPAE16_32
+BS3_PROC_BEGIN_MODE Bs3SwitchToPAE16_32, BS3_PBC_NEAR
 %ifdef TMPL_PAE16_32
         ret
 
@@ -74,4 +74,30 @@ BS3_BEGIN_TEXT16
  %endif
 %endif
 BS3_PROC_END_MODE   Bs3SwitchToPAE16_32
+
+
+%if TMPL_BITS == 16
+;;
+; Custom far stub.
+BS3_BEGIN_TEXT16_FARSTUBS
+BS3_PROC_BEGIN_MODE Bs3SwitchToPAE16_32, BS3_PBC_FAR
+        inc         bp
+        push        bp
+        mov         bp, sp
+
+        ; Call the real thing.
+        call        TMPL_NM(Bs3SwitchToPAE16_32)
+        BS3_SET_BITS 32
+
+        ; Jmp to common code for the tedious conversion.
+ %if BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
+        BS3_EXTERN_CMN Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn
+        jmp         Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn
+ %else
+        BS3_EXTERN_CMN Bs3SwitchHlpConvProtModeRetfPopBpDecBpAndReturn
+        jmp         Bs3SwitchHlpConvProtModeRetfPopBpDecBpAndReturn
+ %endif
+        BS3_SET_BITS 16
+BS3_PROC_END_MODE   Bs3SwitchToPAE16_32
+%endif
 

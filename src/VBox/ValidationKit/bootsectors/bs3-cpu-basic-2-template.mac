@@ -39,7 +39,7 @@ BS3_EXTERN_CMN Bs3Printf
 TMPL_BEGIN_TEXT
 
 %if 0 ; Will be doing the testing in C, I think.
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_iret
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_iret, BS3_PBC_FAR
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
@@ -78,42 +78,42 @@ BS3_PROC_END_MODE   bs3CpuBasic2_iret
 %endif
 
 
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int80
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int80, BS3_PBC_NEAR
         int     80h
 .again: ud2
         jmp     .again
 BS3_PROC_END_MODE   bs3CpuBasic2_Int80
 
 
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int81
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int81, BS3_PBC_NEAR
         int     81h
 .again: ud2
         jmp     .again
 BS3_PROC_END_MODE   bs3CpuBasic2_Int81
 
 
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int82
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int82, BS3_PBC_NEAR
         int     82h
 .again: ud2
         jmp     .again
 BS3_PROC_END_MODE   bs3CpuBasic2_Int82
 
 
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int83
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int83, BS3_PBC_NEAR
         int     83h
 .again: ud2
         jmp     .again
 BS3_PROC_END_MODE   bs3CpuBasic2_Int83
 
 
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_sidt_bx_ud2
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_sidt_bx_ud2, BS3_PBC_NEAR
         sidt    [xBX]
 .again: ud2
         jmp     .again
 BS3_PROC_END_MODE   bs3CpuBasic2_sidt_bx_ud2
 
 
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_lidt_bx_ud2
+BS3_PROC_BEGIN_MODE bs3CpuBasic2_lidt_bx_ud2, BS3_PBC_NEAR
         lidt    [xBX]
 .again: ud2
         jmp     .again

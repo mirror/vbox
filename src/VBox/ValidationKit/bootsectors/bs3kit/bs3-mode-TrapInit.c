@@ -31,7 +31,7 @@
 #include "bs3kit-template-header.h"
 
 
-BS3_DECL(void) TMPL_NM(Bs3TrapInit)(void)
+BS3_MODE_DEF(void, Bs3TrapInit,(void))
 {
 #if BS3_MODE_IS_16BIT_SYS(TMPL_MODE)
     Bs3Trap16Init();

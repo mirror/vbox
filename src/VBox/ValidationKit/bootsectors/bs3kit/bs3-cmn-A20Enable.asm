@@ -44,7 +44,7 @@ BS3_PROC_BEGIN_CMN Bs3A20Enable, BS3_PBC_HYBRID_0_ARGS
 
         call    BS3_CMN_NM(Bs3A20EnableViaPortA)
 ;; @todo real 286 support
-;        call    TMPL_NM_CMN(Bs3A20EnableViaKbd)
+;        call    BS3_CMN_NM(Bs3A20EnableViaKbd)
 
         pop     xBP
         BS3_HYBRID_RET
