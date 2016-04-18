@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2012-2015 Oracle Corporation
+; Copyright (C) 2012-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -80,15 +80,15 @@ else
                 ; Convert to a C __cdecl call - not doing this in assembly.
                 ;
 
-                ; Set up a frame of sorts, allocating 8 bytes for the result buffer.
+                ; Set up a frame of sorts, allocating 4 bytes for the result buffer.
                 push    bp
-                sub     sp, 08h
+                sub     sp, 04h
                 mov     bp, sp
 
                 ; Pointer to the return buffer.
                 push    ss
                 push    bp
-                add     bp, 08h                 ; Correct bp.
+                add     bp, 04h                 ; Correct bp.
 
                 ; The divisor.
                 push    cx
@@ -100,13 +100,11 @@ else
 
                 call    _DoUInt32Div
 
-                ; Load the reminder.
-                mov     cx, [bp - 08h + 6]
-                mov     bx, [bp - 08h + 4]
+                ; Load the remainder.
+                mov     cx, [bp - 02h]
+                mov     bx, [bp - 04h]
 
-                ; Load the quotient.
-                mov     dx, [bp - 08h + 2]
-                mov     ax, [bp - 08h]
+                ; The quotient is already in dx:ax
 
                 mov     sp, bp
                 pop     bp
