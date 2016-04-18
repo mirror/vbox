@@ -702,6 +702,8 @@ static int utsDoGadgetCreate(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
         RT_ZERO(Rep);
 
         Rep.idGadget = 0;
+        Rep.u32BusId = utsGadgetGetBusId(pClient->hGadget);
+        Rep.u32DevId = utsGadgetGetDevId(pClient->hGadget);
         rc = utsReplyInternal(pClient, &Rep.Sts, "ACK     ", sizeof(Rep) - sizeof(UTSPKTSTS));
     }
     else

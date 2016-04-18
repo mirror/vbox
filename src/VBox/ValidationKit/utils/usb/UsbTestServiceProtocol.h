@@ -220,8 +220,12 @@ typedef struct UTSPKTREPGDGTCTOR
     UTSPKTSTS       Sts;
     /** The gadget ID on success. */
     uint32_t        idGadget;
+    /** Bus ID the gadget is attached to */
+    uint32_t        u32BusId;
+    /** Device ID of the gadget on the bus. */
+    uint32_t        u32DevId;
     /** Padding - reserved. */
-    uint8_t         au8Padding[12];
+    uint8_t         au8Padding[4];
 } UTSPKTREPGDGTCTOR;
 AssertCompileSizeAlignment(UTSPKTREPGDGTCTOR, UTSPKT_ALIGNMENT);
 /** Pointer to a GADGET CREATE structure. */
