@@ -218,7 +218,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInRM
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -228,7 +229,13 @@ BS3_SET_BITS TMPL_BITS
 
         mov     cx, BS3_MODE_RM
         push    cx
-        call    ax
+        push    cs
+        mov     cx, .return
+        push    cx
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_rm)
@@ -252,7 +259,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -261,7 +269,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PE16
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16)
@@ -302,7 +315,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_V86
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -311,7 +325,12 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE16_V86
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PE16_V86
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe16_v86)
@@ -354,7 +373,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPE32_16
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -363,7 +383,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PE32_16
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pe32_16)
@@ -382,7 +407,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPEV86
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -391,7 +417,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PEV86
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pev86)
@@ -416,7 +447,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -425,7 +457,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PP16
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16)
@@ -467,7 +504,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_V86
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -476,7 +514,12 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP16_V86
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PP16_V86
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp16_v86)
@@ -519,7 +562,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPP32_16
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -528,7 +572,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PP32_16
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pp32_16)
@@ -547,7 +596,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPPV86
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -556,7 +606,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PPV86
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_ppv86)
@@ -581,7 +636,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -590,7 +646,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PAE16
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16)
@@ -632,7 +693,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_V86
         BS3_LEA_MOV_WRT_RIP(xAX, .doit)
         jmp     TMPL_NM(bs3TestCallDoerPrologue)
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -641,7 +703,12 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE16_V86
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PAE16_V86
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae16_v86)
@@ -684,7 +751,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAE32_16
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -693,7 +761,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PAE32_16
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_pae32_16)
@@ -712,7 +785,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInPAEV86
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -721,7 +795,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_PAEV86
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_paev86)
@@ -746,7 +825,8 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM16
 BS3_BEGIN_TEXT16
 BS3_SET_BITS TMPL_BITS
 .doit:
-        mov     ax, [xBP + xCB*2]       ; Load function pointer.
+        mov     ax, [xBP + xCB*2]       ; Load far function pointer.
+        mov     dx, [xBP + xCB*2 + 2]
 
         ; Mode switch, make the call, switch back.
         STRICT_SAVE_REGS
@@ -755,7 +835,12 @@ BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
 
         push    BS3_MODE_LM16
-        call    ax
+        push    cs
+        push    .return
+        push    dx
+        push    ax
+        retf
+.return:
 
         STRICT_SAVE_REGS
         call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_lm16)

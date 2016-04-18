@@ -241,8 +241,8 @@ void bs3CpuBasic2_CompareTrapCtx2(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx
  * Compares a CPU trap.
  */
 #define bs3CpuBasic2_CompareCpuTrapCtx BS3_CMN_NM(bs3CpuBasic2_CompareCpuTrapCtx)
-BS3_DECL(void) bs3CpuBasic2_CompareCpuTrapCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd, uint8_t bXcpt,
-                                              bool f486ResumeFlagHint)
+void bs3CpuBasic2_CompareCpuTrapCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd, uint8_t bXcpt,
+                                    bool f486ResumeFlagHint)
 {
     uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
     uint32_t fExtraEfl;
@@ -1497,7 +1497,7 @@ void bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DESC const paIdt,
 #endif /* PE16 || PE32 */
 
 
-BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
+BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
 {
     uint8_t bRet = 0;
 
@@ -1527,7 +1527,7 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
 }
 
 
-BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
+BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
 {
     g_pszTestMode = TMPL_NM(g_szBs3ModeName);
     g_bTestMode   = bMode;
@@ -1564,7 +1564,7 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
 }
 
 
-BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
+BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
 {
     g_pszTestMode = TMPL_NM(g_szBs3ModeName);
     g_bTestMode   = bMode;
@@ -1578,7 +1578,7 @@ BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
 }
 
 
-BS3_DECL(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
+BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
 {
     g_pszTestMode = TMPL_NM(g_szBs3ModeName);
     g_bTestMode   = bMode;

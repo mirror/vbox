@@ -227,6 +227,8 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_TSS64_SPARE1        0x0090 /**< The 64-bit TSS selector. */
 #define BS3_SEL_TSS64_IOBP          0x00a0 /**< The 64-bit TSS selector. */
 
+#define BS3_SEL_X0TEXT16_CS         0x00e8 /**< Conforming code selector for accessing the BS3X0TEXT16 segment. Runtime config. */
+#define BS3_SEL_X1TEXT16_CS         0x00f0 /**< Conforming code selector for accessing the BS3X0TEXT16 segment. Runtime config. */
 #define BS3_SEL_VMMDEV_MMIO16       0x00f8 /**< Selector for accessing the VMMDev MMIO segment at 0100000h from 16-bit code. */
 
 #define BS3_SEL_RING_SHIFT          8      /**< For the formula: BS3_SEL_R0_XXX + ((cs & 3) << BS3_SEL_RING_SHIFT) */
@@ -553,7 +555,6 @@ RT_C_DECLS_BEGIN
  * Example: BS3_CMN_NM(Bs3Shutdown)
  *
  * @param   a_Name      The name of the function or global variable.
- * @todo fix code vs data issue with _f16
  */
 #define BS3_CMN_NM(a_Name)      RT_CONCAT3(a_Name,_c,ARCH_BITS)
 
@@ -703,6 +704,8 @@ extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64;                  /**< @see BS3_SEL_TS
 extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64Spare0;            /**< @see BS3_SEL_TSS64_SPARE0 */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64Spare1;            /**< @see BS3_SEL_TSS64_SPARE1 */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64Iobp;              /**< @see BS3_SEL_TSS64_IOBP */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_X0TEXT16_CS;            /**< @see BS3_SEL_X0TEXT16_CS */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_X1TEXT16_CS;            /**< @see BS3_SEL_X1TEXT16_CS */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_MMIO16;              /**< @see BS3_SEL_VMMDEV_MMIO16 */
 
 extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_First;               /**< @see BS3_SEL_R0_FIRST */
@@ -921,6 +924,29 @@ extern uint8_t  BS3_FAR_DATA Bs3System16_EndOfSegment;
 extern uint8_t  BS3_FAR_DATA Bs3Data16_StartOfSegment;
 /** End of the BS3DATA16/BS3KIT_GRPNM_DATA16 segment.   */
 extern uint8_t  BS3_FAR_DATA Bs3Data16_EndOfSegment;
+
+/** Start of the BS3RMTEXT16 segment.   */
+extern uint8_t  BS3_FAR_DATA Bs3RmText16_StartOfSegment;
+/** End of the BS3RMTEXT16 segment.   */
+extern uint8_t  BS3_FAR_DATA Bs3RmText16_EndOfSegment;
+
+/** Start of the BS3X0TEXT16 segment.   */
+extern uint8_t  BS3_FAR_DATA Bs3X0Text16_StartOfSegment;
+/** End of the BS3X0TEXT16 segment.   */
+extern uint8_t  BS3_FAR_DATA Bs3X0Text16_EndOfSegment;
+/** The size of the BS3X0TEXT16 segment.   */
+extern uint16_t BS3_FAR_DATA Bs3X0Text16_Size;
+/** The flat start address of the BS3X1TEXT16 segment.   */
+extern uint32_t BS3_FAR_DATA Bs3X0Text16_FlatAddr;
+
+/** Start of the BS3X1TEXT16 segment.   */
+extern uint8_t  BS3_FAR_DATA Bs3X1Text16_StartOfSegment;
+/** End of the BS3X1TEXT16 segment.   */
+extern uint8_t  BS3_FAR_DATA Bs3X1Text16_EndOfSegment;
+/** The size of the BS3X1TEXT16 segment.   */
+extern uint16_t BS3_FAR_DATA Bs3X1Text16_Size;
+/** The flat start address of the BS3X1TEXT16 segment.   */
+extern uint32_t BS3_FAR_DATA Bs3X1Text16_FlatAddr;
 
 /** Start of the BS3TEXT32 segment.   */
 extern uint8_t  BS3_FAR_DATA Bs3Text32_StartOfSegment;
@@ -1486,7 +1512,6 @@ BS3_CMN_PROTO(void, Bs3MemZero,(void BS3_FAR *pvDst, size_t cbDst), false);
  */
 BS3_CMN_PROTO(uint32_t, Bs3SelProtFar32ToFlat32,(uint32_t off, uint16_t uSel), true);
 
-
 /**
  * Converts a current mode 32-bit far pointer to a 32-bit flat address.
  *
@@ -1495,6 +1520,31 @@ BS3_CMN_PROTO(uint32_t, Bs3SelProtFar32ToFlat32,(uint32_t off, uint16_t uSel), t
  * @param   uSel            The current mode segment selector.
  */
 BS3_CMN_PROTO(uint32_t, Bs3SelFar32ToFlat32,(uint32_t off, uint16_t uSel), true);
+
+/**
+ * Converts a real mode code segment to a protected mode code segment selector.
+ *
+ * @returns protected mode segment selector.
+ * @param   uRealSeg        Real mode code segment.
+ */
+BS3_CMN_PROTO(uint16_t, Bs3SelRealModeCodeToProtMode,(uint16_t uRealSel), false);
+
+/**
+ * Converts a flat code address to a real mode segment and offset.
+ *
+ * @returns Far real mode address (high 16-bit is segment, low is offset)
+ * @param   uFlatAddr       Flat code address.
+ */
+BS3_CMN_PROTO(uint32_t, Bs3SelFlatCodeToRealMode,(uint32_t uFlatAddr), false);
+
+/**
+ * Converts a flat code address to a protected mode 16-bit far pointer (ring-0).
+ *
+ * @returns Far 16-bit protected mode address (high 16-bit is segment selector,
+ *          low is segment offset).
+ * @param   uFlatAddr       Flat code address.
+ */
+BS3_CMN_PROTO(uint32_t, Bs3SelFlatCodeToProtFar16,(uint32_t uFlatAddr), false);
 
 /**
  * Gets a flat address from a working poitner.
@@ -2318,30 +2368,30 @@ typedef struct BS3TESTMODEENTRY
 {
     const char * BS3_FAR    pszSubTest;
 
-    PFNBS3TESTDOMODE        pfnDoRM;
+    FPFNBS3TESTDOMODE       pfnDoRM;
 
-    PFNBS3TESTDOMODE        pfnDoPE16;
+    FPFNBS3TESTDOMODE       pfnDoPE16;
     FPFNBS3TESTDOMODE       pfnDoPE16_32;
-    PFNBS3TESTDOMODE        pfnDoPE16_V86;
+    FPFNBS3TESTDOMODE       pfnDoPE16_V86;
     FPFNBS3TESTDOMODE       pfnDoPE32;
-    PFNBS3TESTDOMODE        pfnDoPE32_16;
-    PFNBS3TESTDOMODE        pfnDoPEV86;
+    FPFNBS3TESTDOMODE       pfnDoPE32_16;
+    FPFNBS3TESTDOMODE       pfnDoPEV86;
 
-    PFNBS3TESTDOMODE        pfnDoPP16;
+    FPFNBS3TESTDOMODE       pfnDoPP16;
     FPFNBS3TESTDOMODE       pfnDoPP16_32;
-    PFNBS3TESTDOMODE        pfnDoPP16_V86;
+    FPFNBS3TESTDOMODE       pfnDoPP16_V86;
     FPFNBS3TESTDOMODE       pfnDoPP32;
-    PFNBS3TESTDOMODE        pfnDoPP32_16;
-    PFNBS3TESTDOMODE        pfnDoPPV86;
+    FPFNBS3TESTDOMODE       pfnDoPP32_16;
+    FPFNBS3TESTDOMODE       pfnDoPPV86;
 
-    PFNBS3TESTDOMODE        pfnDoPAE16;
+    FPFNBS3TESTDOMODE       pfnDoPAE16;
     FPFNBS3TESTDOMODE       pfnDoPAE16_32;
-    PFNBS3TESTDOMODE        pfnDoPAE16_V86;
+    FPFNBS3TESTDOMODE       pfnDoPAE16_V86;
     FPFNBS3TESTDOMODE       pfnDoPAE32;
-    PFNBS3TESTDOMODE        pfnDoPAE32_16;
-    PFNBS3TESTDOMODE        pfnDoPAEV86;
+    FPFNBS3TESTDOMODE       pfnDoPAE32_16;
+    FPFNBS3TESTDOMODE       pfnDoPAEV86;
 
-    PFNBS3TESTDOMODE        pfnDoLM16;
+    FPFNBS3TESTDOMODE       pfnDoLM16;
     FPFNBS3TESTDOMODE       pfnDoLM32;
     FPFNBS3TESTDOMODE       pfnDoLM64;
 
@@ -2379,7 +2429,7 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
 
 /** A set of standard protypes to go with #BS3TESTMODEENTRY_CMN. */
 #define BS3TESTMODE_PROTOTYPES_CMN(a_BaseNm) \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _c16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c16); \
     FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c32); \
     FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c64)
 
@@ -2413,28 +2463,28 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
 
 /** A set of standard protypes to go with #BS3TESTMODEENTRY_MODE. */
 #define BS3TESTMODE_PROTOTYPES_MODE(a_BaseNm) \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _rm); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pe16_32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe16_v86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pe32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pe32_16); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pev86); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pp16_32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp16_v86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pp32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pp32_16); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _ppv86); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pae16_32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae16_v86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _pae32); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _pae32_16); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _paev86); \
-    FNBS3TESTDOMODE                 RT_CONCAT(a_BaseNm, _lm16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _lm32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _lm64)
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _rm); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe16_32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe16_v86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe32_16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pev86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp16_32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp16_v86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp32_16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _ppv86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae16_32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae16_v86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae32_16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _paev86); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _lm16); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _lm32); \
+    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _lm64)
 
 /** @} */
 
@@ -2450,6 +2500,11 @@ BS3_DECL(void) Bs3InitAll_rm(void);
  * For proper operation on OLDer CPUs, call #Bs3CpuDetect_mmm first.
  */
 BS3_DECL_FAR(void) Bs3InitMemory_rm(void);
+
+/**
+ * Initialized the X0TEXT16 and X1TEXT16 GDT entries.
+ */
+BS3_DECL_FAR(void) Bs3InitGdt_rm(void);
 
 
 

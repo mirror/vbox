@@ -316,13 +316,21 @@ GROUP FLAT BS3FLAT
 %endif
 
 
-%macro BS3_BEGIN_TEXT16 0
+%macro BS3_BEGIN_TEXT16 0-1 2
  %ifndef  BS3_BEGIN_TEXT16_NOT_FIRST
   %define BS3_BEGIN_TEXT16_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3TEXT16 align=2 progbits alloc exec nowrite
-  %else
-        section BS3TEXT16 align=2 CLASS=BS3CLASS16CODE PUBLIC USE16
+        section BS3TEXT16 align=%1 CLASS=BS3CLASS16CODE PUBLIC USE16
+  %ifndef BS3_BEGIN_TEXT16_WITHOUT_GROUP ; bs3-first-common.mac trick.
+   %ifndef BS3_BEGIN_TEXT16_NEARSTUBS_NOT_FIRST
+   %define BS3_BEGIN_TEXT16_NEARSTUBS_NOT_FIRST
+        section BS3TEXT16_NEARSTUBS align=1 CLASS=BS3CLASS16CODE PUBLIC USE16
+   %endif
+   %ifndef BS3_BEGIN_TEXT16_FARSTUBS_NOT_FIRST
+   %define BS3_BEGIN_TEXT16_FARSTUBS_NOT_FIRST
+        section BS3TEXT16_FARSTUBS align=1 CLASS=BS3CLASS16CODE PUBLIC USE16
+   %endif
+        GROUP CGROUP16 BS3TEXT16 BS3TEXT16_NEARSTUBS BS3TEXT16_FARSTUBS
+        section BS3TEXT16
   %endif
  %else
         section BS3TEXT16
@@ -335,11 +343,7 @@ GROUP FLAT BS3FLAT
 %macro BS3_BEGIN_TEXT16_NEARSTUBS 0
  %ifndef  BS3_BEGIN_TEXT16_NEARSTUBS_NOT_FIRST
   %define BS3_BEGIN_TEXT16_NEARSTUBS_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3TEXT16_NEARSTUBS align=1 progbits alloc exec nowrite
-  %else
         section BS3TEXT16_NEARSTUBS align=1 CLASS=BS3CLASS16CODE PUBLIC USE16
-  %endif
  %else
         section BS3TEXT16_NEARSTUBS
  %endif
@@ -351,11 +355,7 @@ GROUP FLAT BS3FLAT
 %macro BS3_BEGIN_TEXT16_FARSTUBS 0
  %ifndef  BS3_BEGIN_TEXT16_FARSTUBS_NOT_FIRST
   %define BS3_BEGIN_TEXT16_FARSTUBS_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3TEXT16_FARSTUBS align=1 progbits alloc exec nowrite
-  %else
         section BS3TEXT16_FARSTUBS align=1 CLASS=BS3CLASS16CODE PUBLIC USE16
-  %endif
  %else
         section BS3TEXT16_FARSTUBS
  %endif
@@ -364,13 +364,12 @@ GROUP FLAT BS3FLAT
         BS3_SET_BITS 16
 %endmacro
 
-%macro BS3_BEGIN_RMTEXT16 0
+%macro BS3_BEGIN_RMTEXT16 0-1 2
  %ifndef  BS3_BEGIN_RMTEXT16_NOT_FIRST
   %define BS3_BEGIN_RMTEXT16_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3RMTEXT16 align=2 progbits alloc exec nowrite
-  %else
-        section BS3RMTEXT16 align=2 CLASS=BS3CLASS16RMCODE PUBLIC USE16
+        section BS3RMTEXT16 align=%1 CLASS=BS3CLASS16RMCODE PUBLIC USE16
+  %ifndef BS3_BEGIN_RMTEXT16_WITHOUT_GROUP ; bs3-first-common.mac trick.
+        GROUP BS3GROUPRMTEXT16 BS3RMTEXT16
   %endif
  %else
         section BS3RMTEXT16
@@ -380,16 +379,43 @@ GROUP FLAT BS3FLAT
         BS3_SET_BITS 16
 %endmacro
 
-%macro BS3_BEGIN_DATA16 0
+%macro BS3_BEGIN_X0TEXT16 0-1 2
+ %ifndef  BS3_BEGIN_X0TEXT16_NOT_FIRST
+  %define BS3_BEGIN_X0TEXT16_NOT_FIRST
+        section BS3X0TEXT16 align=%1 CLASS=BS3CLASS16X0CODE PUBLIC USE16
+  %ifndef BS3_BEGIN_X0TEXT16_WITHOUT_GROUP ; bs3-first-common.mac trick.
+        GROUP BS3GROUPX0TEXT16 BS3X0TEXT16
+  %endif
+ %else
+        section BS3X0TEXT16
+ %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_X0TEXT16
+        BS3_SET_BITS 16
+%endmacro
+
+%macro BS3_BEGIN_X1TEXT16 0-1 2
+ %ifndef  BS3_BEGIN_X1TEXT16_NOT_FIRST
+  %define BS3_BEGIN_X1TEXT16_NOT_FIRST
+        section BS3X1TEXT16 align=%1 CLASS=BS3CLASS16X1CODE PUBLIC USE16
+  %ifndef BS3_BEGIN_X1TEXT16_WITHOUT_GROUP ; bs3-first-common.mac trick.
+        GROUP BS3GROUPX1TEXT16 BS3X1TEXT16
+  %endif
+ %else
+        section BS3X1TEXT16
+ %endif
+ %undef   BS3_CUR_SEG_BEGIN_MACRO
+ %xdefine BS3_CUR_SEG_BEGIN_MACRO   BS3_BEGIN_X1TEXT16
+        BS3_SET_BITS 16
+%endmacro
+
+
+%macro BS3_BEGIN_DATA16 0-1 2
  %ifndef  BS3_BEGIN_DATA16_NOT_FIRST
   %define BS3_BEGIN_DATA16_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3DATA16 align=2 progbits alloc noexec write
-  %else
-        section BS3DATA16 align=2 CLASS=BS3KIT_CLASS_DATA16 PUBLIC USE16
-   %ifndef BS3_BEGIN_DATA16_WITHOUT_GROUP ; bs3-first-common.mac trick.
+        section BS3DATA16 align=%1 CLASS=BS3KIT_CLASS_DATA16 PUBLIC USE16
+  %ifndef BS3_BEGIN_DATA16_WITHOUT_GROUP ; bs3-first-common.mac trick.
     GROUP BS3KIT_GRPNM_DATA16 BS3DATA16
-   %endif
   %endif
  %else
         section BS3DATA16
@@ -399,14 +425,10 @@ GROUP FLAT BS3FLAT
         BS3_SET_BITS 16
 %endmacro
 
-%macro BS3_BEGIN_TEXT32 0
+%macro BS3_BEGIN_TEXT32 0-1 2
  %ifndef  BS3_BEGIN_TEXT32_NOT_FIRST
   %define BS3_BEGIN_TEXT32_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3TEXT32 align=1 progbits alloc exec nowrite
-  %else
-        section BS3TEXT32 align=1 CLASS=BS3CLASS32CODE PUBLIC USE32 FLAT
-  %endif
+        section BS3TEXT32 align=%1 CLASS=BS3CLASS32CODE PUBLIC USE32 FLAT
  %else
         section BS3TEXT32
  %endif
@@ -415,14 +437,10 @@ GROUP FLAT BS3FLAT
         BS3_SET_BITS 32
 %endmacro
 
-%macro BS3_BEGIN_DATA32 0
+%macro BS3_BEGIN_DATA32 0-1 16
  %ifndef  BS3_BEGIN_DATA32_NOT_FIRST
   %define BS3_BEGIN_DATA32_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3DATA32 align=16 progbits alloc noexec write
-  %else
-        section BS3DATA32 align=16 CLASS=FAR_DATA PUBLIC USE32 ;FLAT - compiler doesn't make data flat.
-  %endif
+        section BS3DATA32 align=%1 CLASS=FAR_DATA PUBLIC USE32 ;FLAT - compiler doesn't make data flat.
  %else
         section BS3DATA32
  %endif
@@ -431,14 +449,10 @@ GROUP FLAT BS3FLAT
         BS3_SET_BITS 32
 %endmacro
 
-%macro BS3_BEGIN_TEXT64 0
+%macro BS3_BEGIN_TEXT64 0-1 2
  %ifndef  BS3_BEGIN_TEXT64_NOT_FIRST
   %define BS3_BEGIN_TEXT64_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3TEXT64 align=1 progbits alloc exec nowrite
-  %else
-        section BS3TEXT64 align=1 CLASS=BS3CLASS64CODE PUBLIC USE32 FLAT
-  %endif
+        section BS3TEXT64 align=%1 CLASS=BS3CLASS64CODE PUBLIC USE32 FLAT
  %else
         section BS3TEXT64
  %endif
@@ -447,14 +461,10 @@ GROUP FLAT BS3FLAT
         BS3_SET_BITS 64
 %endmacro
 
-%macro BS3_BEGIN_DATA64 0
+%macro BS3_BEGIN_DATA64 0-1 16
  %ifndef  BS3_BEGIN_DATA64_NOT_FIRST
   %define BS3_BEGIN_DATA64_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3DATA64 align=16 progbits alloc noexec write
-  %else
-        section BS3DATA64 align=16 CLASS=FAR_DATA PUBLIC USE32 ;FLAT (see DATA32)
-  %endif
+        section BS3DATA64 align=%1 CLASS=FAR_DATA PUBLIC USE32 ;FLAT (see DATA32)
  %else
         section BS3DATA64
  %endif
@@ -464,14 +474,10 @@ GROUP FLAT BS3FLAT
 %endmacro
 
 ;; The system data segment containing the GDT, TSSes and IDTs.
-%macro BS3_BEGIN_SYSTEM16 0
+%macro BS3_BEGIN_SYSTEM16 0-1 16
  %ifndef  BS3_BEGIN_SYSTEM16_NOT_FIRST
   %define BS3_BEGIN_SYSTEM16_NOT_FIRST
-  %ifdef ASM_FORMAT_ELF
-        section BS3SYSTEM16 align=16 progbits alloc noexec write
-  %else
-        section BS3SYSTEM16 align=16 CLASS=BS3SYSTEM16 PUBLIC USE16
-  %endif
+        section BS3SYSTEM16 align=%1 CLASS=BS3SYSTEM16 PUBLIC USE16
  %else
         section BS3SYSTEM16
  %endif
@@ -803,6 +809,7 @@ size %1 %+ _EndProc     0
 BS3_BEGIN_TEXT16_FARSTUBS
 BS3_PROC_BEGIN_CMN %1, BS3_PBC_FAR
         CPU 8086
+        inc     bp                      ; Odd bp is far call indicator.
         push    bp
         mov     bp, sp
   %assign offParam %2
@@ -813,6 +820,7 @@ BS3_PROC_BEGIN_CMN %1, BS3_PBC_FAR
         call    BS3_CMN_NM(%1)
         add     sp, %2
         pop     bp
+        dec     bp
         retf
 BS3_PROC_END_CMN   %1
 BS3_BEGIN_TEXT16
@@ -1445,6 +1453,8 @@ endstruc
 %define BS3_SEL_TSS64_SPARE1        0090h ;;< The 64-bit TSS selector.
 %define BS3_SEL_TSS64_IOBP          00a0h ;;< The 64-bit TSS selector.
 
+%define BS3_SEL_X0TEXT16_CS         00e8h ;;< Conforming code selector for accessing the BS3X0TEXT16 segment. Runtime config.
+%define BS3_SEL_X1TEXT16_CS         00f0h ;;< Conforming code selector for accessing the BS3X0TEXT16 segment. Runtime config.
 %define BS3_SEL_VMMDEV_MMIO16       00f8h ;;< Selector for accessing the VMMDev MMIO segment at 0100000h from 16-bit code.
 
 %define BS3_SEL_RING_SHIFT          8     ;;< For the formula: BS3_SEL_R0_XXX + ((cs & 3) << BS3_SEL_RING_SHIFT)

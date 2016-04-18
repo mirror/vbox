@@ -84,7 +84,6 @@ $$$$($1_0_OUTDIR)/near-call-to-$2_f16.asm: | $$$$(dir $$$$@)
        	'BS3_BEGIN_TEXT16' \
                '      extern  _$2_f16' \
        	'BS3_BEGIN_TEXT16_NEARSTUBS' \
-               'GROUP CGROUP16 BS3TEXT16 BS3TEXT16_NEARSTUBS' \
 		'BS3_GLOBAL_NAME_EX _$2_c16, function, 6' \
                '      pop     ax' \
                '      push    cs' \
@@ -605,6 +604,14 @@ $(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
  	  segment BS3RMCODE16_START \
  	  segment BS3RMCODE16 \
  	  segment BS3RMCODE16_END \
+        clname BS3CLASS16X0CODE \
+ 	  segment BS3X0CODE16_START \
+ 	  segment BS3X0CODE16 \
+ 	  segment BS3X0CODE16_END \
+        clname BS3CLASS16X1CODE \
+ 	  segment BS3X1CODE16_START \
+ 	  segment BS3X1CODE16 \
+ 	  segment BS3X1CODE16_END \
         clname BS3CLASS32CODE \
  	  segment BS3TEXT32_START \
  	  segment BS3TEXT32 \
@@ -808,6 +815,14 @@ $(if-expr "$(BS3KIT_SEGNM_DATA16)" != "", \
  	  segment BS3RMCODE16_START \
  	  segment BS3RMCODE16 \
  	  segment BS3RMCODE16_END \
+        clname BS3CLASS16X0CODE \
+ 	  segment BS3X0CODE16_START \
+ 	  segment BS3X0CODE16 \
+ 	  segment BS3X0CODE16_END \
+        clname BS3CLASS16X1CODE \
+ 	  segment BS3X1CODE16_START \
+ 	  segment BS3X1CODE16 \
+ 	  segment BS3X1CODE16_END \
         clname BS3CLASS32CODE \
  	  segment BS3TEXT32 \
  	  segment BS3TEXT32_END \

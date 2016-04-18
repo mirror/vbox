@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Initialize all components, real mode.
+ * BS3Kit - Bs3InitGdt
  */
 
 /*
@@ -24,34 +24,31 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-//#define BS3_USE_RM_TEXT_SEG 1
+#define BS3_USE_RM_TEXT_SEG 1
 #include "bs3kit-template-header.h"
-#include "bs3-cmn-test.h"
-#include <iprt/asm-amd64-x86.h>
+#include <iprt/asm.h>
 
-//#ifdef __WATCOMC__
-//# pragma code_seg("BS3RMTEXT16", "BS3CLASS16RMCODE")
-//#endif
+#ifdef __WATCOMC__
+# pragma code_seg("BS3RMTEXT16", "BS3CLASS16RMCODE")
+#endif
 
 
-BS3_DECL(void) Bs3InitAll_rm(void)
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+
+
+BS3_DECL_FAR(void) Bs3InitGdt_rm(void)
 {
-    Bs3CpuDetect_rm();
-    Bs3InitMemory_rm();
-    Bs3InitGdt_rm();
-
-    ASMIntDisable();
-    Bs3PicMaskAll();
-
-    if (g_uBs3CpuDetected & BS3CPU_F_LONG_MODE)
-        Bs3Trap64Init();
-    if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
-        Bs3Trap32Init();
-    if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
-        Bs3Trap16Init();
+    Bs3Gdte_X0TEXT16_CS.Gen.u16LimitLow = Bs3X0Text16_Size - 1;
+    Bs3Gdte_X1TEXT16_CS.Gen.u16LimitLow = Bs3X0Text16_Size - 1;
+    Bs3Gdte_X0TEXT16_CS.Gen.u16BaseLow  = (uint16_t)Bs3X0Text16_FlatAddr;
+    Bs3Gdte_X1TEXT16_CS.Gen.u16BaseLow  = (uint16_t)Bs3X1Text16_FlatAddr;
+    Bs3Gdte_X0TEXT16_CS.Gen.u8BaseHigh1 = (uint8_t)(Bs3X0Text16_FlatAddr >> 16);
+    Bs3Gdte_X1TEXT16_CS.Gen.u8BaseHigh1 = (uint8_t)(Bs3X1Text16_FlatAddr >> 16);
 }
+
 

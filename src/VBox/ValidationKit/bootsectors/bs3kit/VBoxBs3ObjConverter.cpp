@@ -3660,13 +3660,22 @@ typedef struct OMFSEGLINES
     uint32_t        cb;
     /** The segment index. */
     uint16_t        idxSeg;
-    /** The group index for this segment.  This is zero if not yet determined and
-     * UINT16_MAX if no group applicable to this segment. */
+    /** The group index for this segment.  Initially OMF_REPLACE_GRP_XXX values,
+     * later convertOmfWriteDebugGrpDefs replaces them with actual values. */
     uint16_t        idxGrp;
     /** File table. */
     POMFFILEINES    paFiles;
 } OMFSEGLINES;
 typedef OMFSEGLINES *POMFSEGLINES;
+
+/** @name OMF_REPLACE_GRP_XXX - Special OMFSEGLINES::idxGrp values.
+ * @{ */
+#define OMF_REPLACE_GRP_CGROUP16    UINT16_C(0xffe0)
+#define OMF_REPLACE_GRP_RMCODE      UINT16_C(0xffe1)
+#define OMF_REPLACE_GRP_X0CODE      UINT16_C(0xffe2)
+#define OMF_REPLACE_GRP_X1CODE      UINT16_C(0xffe3)
+/** @} */
+
 
 /**
  * OMF conversion details.
@@ -3681,18 +3690,12 @@ typedef struct OMFDETAILS
     bool            fProbably32bit;
     /** Set if this module may need mangling. */
     bool            fMayNeedMangling;
-    /** Set if this module needs CGROUP16 for line number fixupes. */
-    bool            fNeedsCGroup16;
     /** The LNAME index of '$$SYMBOLS' or UINT16_MAX it not found. */
     uint16_t        iSymbolsNm;
     /** The LNAME index of 'DEBSYM' or UINT16_MAX it not found. */
     uint16_t        iDebSymNm;
     /** The '$$SYMBOLS' segment index. */
     uint16_t        iSymbolsSeg;
-    /** The LNAME index of 'CGROUP16' or UINT16_MAX it not found. */
-    uint16_t        iCGroup16Nm;
-    /** The 'CGROUP16' group definition index or UINT16_MAX it not found. */
-    uint16_t        iCGroup16Grp;
 
     /** Number of SEGDEFs records. */
     uint16_t        cSegDefs;
@@ -3707,6 +3710,31 @@ typedef struct OMFDETAILS
     POMFGRPDEF      paGrpDefs;
     /** Name list.  Points to the size repfix. */
     char          **papchLNames;
+
+    /** Code groups we need to keep an eye on for line number fixup purposes. */
+    struct OMFLINEGROUPS
+    {
+        /** The name. */
+        const char *pszName;
+        /** The primary class name. */
+        const char *pszClass1;
+        /** The secondary class name. */
+        const char *pszClass2;
+        /** The name length. */
+        uint8_t     cchName;
+        /** The primary class name length. */
+        uint8_t     cchClass1;
+        /** The secondary class name length. */
+        uint8_t     cchClass2;
+        /** Whether this group is needed. */
+        bool        fNeeded;
+        /** The group index (UINT16_MAX if not found). */
+        uint16_t    idxGroup;
+        /** The group name. */
+        uint16_t    idxName;
+        /** The OMF_REPLACE_GRP_XXX value. */
+        uint16_t    idxReplaceGrp;
+    }               aGroups[4];
 
     /** CV8: Filename string table size. */
     uint32_t        cbStrTab;
@@ -3727,6 +3755,7 @@ typedef struct OMFDETAILS
 } OMFDETAILS;
 typedef OMFDETAILS *POMFDETAILS;
 typedef OMFDETAILS const *PCOMFDETAILS;
+
 
 /** Grows a table to a given size (a_cNewEntries). */
 #define OMF_GROW_TABLE_EX_RET_ERR(a_EntryType, a_paTable, a_cEntries, a_cNewEntries) \
@@ -3891,12 +3920,17 @@ static bool collectOmfAddLine(POMFDETAILS pOmfStuff, uint16_t idxSeg, uint32_t o
             if (idxSeg >= pOmfStuff->cSegDefs)
                 return error("???", "collectOmfAddLine: idxSeg=%#x is out of bounds (%#x)!\n", idxSeg, pOmfStuff->cSegDefs);
             POMFSEGDEF pSegDef = &pOmfStuff->paSegDefs[idxSeg];
-            if (   IS_OMF_STR_EQUAL_EX(pSegDef->cchClass, pSegDef->pchClass, "BS3CLASS16CODE")
-                || IS_OMF_STR_EQUAL_EX(pSegDef->cchClass, pSegDef->pchClass, "CODE"))
-            {
-                pOmfStuff->fNeedsCGroup16 = true;
-                pSegLines->idxGrp = 0;  /* We'll replace zeros by the actual CGROUP16 index later. */
-            }
+            unsigned j = RT_ELEMENTS(pOmfStuff->aGroups);
+            while (j-- > 0)
+                if (   (   pSegDef->cchClass == pOmfStuff->aGroups[j].cchClass1
+                        && memcmp(pSegDef->pchClass, pOmfStuff->aGroups[j].pszClass1, pSegDef->cchClass) == 0)
+                    || (   pSegDef->cchClass == pOmfStuff->aGroups[j].cchClass2
+                        && memcmp(pSegDef->pchClass, pOmfStuff->aGroups[j].pszClass2, pSegDef->cchClass) == 0))
+                {
+                    pOmfStuff->aGroups[j].fNeeded = true;
+                    pSegLines->idxGrp = pOmfStuff->aGroups[j].idxReplaceGrp;
+                    break;
+                }
         }
     }
 
@@ -3959,8 +3993,6 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
     pOmfStuff->iDebSymNm    = UINT16_MAX;
     pOmfStuff->iSymbolsNm   = UINT16_MAX;
     pOmfStuff->iSymbolsSeg  = UINT16_MAX;
-    pOmfStuff->iCGroup16Nm  = UINT16_MAX;
-    pOmfStuff->iCGroup16Grp = UINT16_MAX;
 
     /* Dummy entries. */
     OMF_GROW_TABLE_RET_ERR(char *, pOmfStuff->papchLNames, pOmfStuff->cLNames, 16);
@@ -3972,6 +4004,23 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
 
     OMF_GROW_TABLE_RET_ERR(OMFGRPDEF, pOmfStuff->paGrpDefs, pOmfStuff->cGrpDefs, 16);
     pOmfStuff->cGrpDefs = 1;
+
+    /* Groups we seek. */
+#define OMF_INIT_WANTED_GROUP(a_idx, a_szName, a_szClass1, a_szClass2, a_idxReplace) \
+        pOmfStuff->aGroups[a_idx].pszName   = a_szName; \
+        pOmfStuff->aGroups[a_idx].cchName   = sizeof(a_szName) - 1; \
+        pOmfStuff->aGroups[a_idx].pszClass1 = a_szClass1; \
+        pOmfStuff->aGroups[a_idx].cchClass1 = sizeof(a_szClass1) - 1; \
+        pOmfStuff->aGroups[a_idx].pszClass2 = a_szClass2; \
+        pOmfStuff->aGroups[a_idx].cchClass2 = sizeof(a_szClass2) - 1; \
+        pOmfStuff->aGroups[a_idx].fNeeded   = false; \
+        pOmfStuff->aGroups[a_idx].idxGroup  = UINT16_MAX; \
+        pOmfStuff->aGroups[a_idx].idxName   = UINT16_MAX; \
+        pOmfStuff->aGroups[a_idx].idxReplaceGrp = a_idxReplace
+    OMF_INIT_WANTED_GROUP(0, "CGROUP16",         "BS3CLASS16CODE",   "CODE", OMF_REPLACE_GRP_CGROUP16);
+    OMF_INIT_WANTED_GROUP(1, "BS3GROUPRMTEXT16", "BS3CLASS16RMCODE", "",     OMF_REPLACE_GRP_RMCODE);
+    OMF_INIT_WANTED_GROUP(2, "BS3GROUPX0TEXT16", "BS3CLASS16X0CODE", "",     OMF_REPLACE_GRP_X0CODE);
+    OMF_INIT_WANTED_GROUP(3, "BS3GROUPX1TEXT16", "BS3CLASS16X1CODE", "",     OMF_REPLACE_GRP_X1CODE);
 
     /*
      * Process the OMF records.
@@ -4047,8 +4096,15 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
                         pOmfStuff->iDebSymNm = pOmfStuff->cLNames;
                     if (IS_OMF_STR_EQUAL_EX(cch, &pbRec[offRec + 1], "$$SYMBOLS"))
                         pOmfStuff->iSymbolsNm = pOmfStuff->cLNames;
-                    if (IS_OMF_STR_EQUAL_EX(cch, &pbRec[offRec + 1], "CGROUP16"))
-                        pOmfStuff->iCGroup16Nm = pOmfStuff->cLNames;
+
+                    unsigned j = RT_ELEMENTS(pOmfStuff->aGroups);
+                    while (j-- > 0)
+                        if (   cch == pOmfStuff->aGroups[j].cchName
+                            && memcmp(&pbRec[offRec + 1], pOmfStuff->aGroups[j].pszName, pOmfStuff->aGroups[j].cchName) == 0)
+                        {
+                            pOmfStuff->aGroups[j].idxName = pOmfStuff->cLNames;
+                            break;
+                        }
 
                     pOmfStuff->cLNames++;
                     offRec += cch + 1;
@@ -4198,8 +4254,14 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
 
                 OMF_READ_IDX(pGrpDef->idxName, GRPDEF);
                 OMF_EXPLODE_LNAME(pGrpDef->idxName, pGrpDef->pchName, pGrpDef->cchName, GRPDEF);
-                if (pGrpDef->idxName == pOmfStuff->iCGroup16Grp)
-                    pOmfStuff->iCGroup16Grp = pOmfStuff->cGrpDefs;
+
+                unsigned j = RT_ELEMENTS(pOmfStuff->aGroups);
+                while (j-- > 0)
+                    if (pGrpDef->idxName == pOmfStuff->aGroups[j].idxName)
+                    {
+                        pOmfStuff->aGroups[j].idxGroup = pOmfStuff->cGrpDefs;
+                        break;
+                    }
 
                 pGrpDef->cSegDefs    = 0;
                 pGrpDef->pidxSegDefs = NULL;
@@ -4365,27 +4427,68 @@ static bool convertOmfWriteDebugSegDefs(POMFWRITER pThis, POMFDETAILS pOmfStuff)
  */
 static bool convertOmfWriteDebugGrpDefs(POMFWRITER pThis, POMFDETAILS pOmfStuff)
 {
-    if (   pOmfStuff->cSegLines == 0
-        || !pOmfStuff->fNeedsCGroup16)
+    if (pOmfStuff->cSegLines == 0)
         return true;
 
-    if (pOmfStuff->iCGroup16Grp == UINT16_MAX)
-    {
-        if (pOmfStuff->iCGroup16Nm == UINT16_MAX)
-            if (   !omfWriter_LNamesBegin(pThis, true)
-                || !omfWriter_LNamesAdd(pThis, "CGROUP16", &pOmfStuff->iCGroup16Nm)
-                || !omfWriter_LNamesEnd(pThis))
-                return false;
+    /*
+     * See what (if anything) we need.
+     */
+    uint8_t cNames  = 0;
+    uint8_t cGroups = 0;
+    unsigned j = RT_ELEMENTS(pOmfStuff->aGroups);
+    while (j-- > 0)
+        if (pOmfStuff->aGroups[j].fNeeded)
+        {
+            cNames  += pOmfStuff->aGroups[j].idxName  == UINT16_MAX;
+            cGroups += pOmfStuff->aGroups[j].idxGroup == UINT16_MAX;
+        }
 
-        if (   !omfWriter_GrpDefBegin(pThis, pOmfStuff->iCGroup16Nm)
-            || !omfWriter_GrpDefEnd(pThis))
+    /*
+     * Add any names we need.
+     */
+    if (cNames)
+    {
+        if (!omfWriter_LNamesBegin(pThis, true))
             return false;
-        pOmfStuff->iCGroup16Grp = pOmfStuff->cGrpDefs;
+        j = RT_ELEMENTS(pOmfStuff->aGroups);
+        while (j-- > 0)
+            if (   pOmfStuff->aGroups[j].fNeeded
+                && pOmfStuff->aGroups[j].idxName == UINT16_MAX)
+                if (!omfWriter_LNamesAdd(pThis, pOmfStuff->aGroups[j].pszName, &pOmfStuff->aGroups[j].idxName))
+                    return false;
+        if (!omfWriter_LNamesEnd(pThis))
+            return false;
     }
 
-    for (unsigned i = 0; i < pOmfStuff->cSegLines; i++)
-        if (pOmfStuff->paSegLines[i].idxGrp == 0)
-            pOmfStuff->paSegLines[i].idxGrp = pOmfStuff->iCGroup16Grp;
+    /*
+     * Add any groups we need.
+     */
+    if (cNames)
+    {
+        uint16_t iGrp = pOmfStuff->cGrpDefs; /* Shouldn't update cGrpDefs as it governs paGrpDefs. */
+        j = RT_ELEMENTS(pOmfStuff->aGroups);
+        while (j-- > 0)
+        {
+            if (   pOmfStuff->aGroups[j].fNeeded
+                && pOmfStuff->aGroups[j].idxGroup == UINT16_MAX)
+            {
+                if (   !omfWriter_GrpDefBegin(pThis, pOmfStuff->aGroups[j].idxName)
+                    || !omfWriter_GrpDefEnd(pThis))
+                    return false;
+                pOmfStuff->aGroups[j].idxGroup = iGrp++;
+            }
+        }
+    }
+
+    /*
+     * Replace group references in the segment lines table.
+     */
+    j = RT_ELEMENTS(pOmfStuff->aGroups);
+    while (j-- > 0)
+        if (pOmfStuff->aGroups[j].fNeeded)
+            for (unsigned i = 0; i < pOmfStuff->cSegLines; i++)
+                if (pOmfStuff->paSegLines[i].idxGrp == pOmfStuff->aGroups[j].idxReplaceGrp)
+                    pOmfStuff->paSegLines[i].idxGrp = pOmfStuff->aGroups[j].idxGroup;
     return true;
 }
 

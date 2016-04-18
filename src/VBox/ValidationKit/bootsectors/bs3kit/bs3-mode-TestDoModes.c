@@ -39,42 +39,47 @@
  * Get flat address.  In 16-bit the parameter is a real mode far address, while
  * in 32-bit and 64-bit modes it is already flat.
  */
-/** @def CONV_TO_BS3TEXT16
- * Get BS3TEXT16 relative address. In 32-bit and 64-bit mode this is a flat
- * address, while in 16-bit it is alreay a BS3TEXT16 relative address.
+/** @def CONV_TO_PROT_FAR16
+ * Get a 32-bit value that makes a protected mode far 16:16 address.
+ */
+/** @def CONV_TO_RM_FAR16
+ * Get a 32-bit value that makes a real mode far 16:16 address.  In 16-bit mode
+ * this is already what we've got, except must be converted to uint32_t.
  */
 #if ARCH_BITS == 16
 # define CONV_TO_FLAT(a_fpfn)           (((uint32_t)BS3_FP_SEG(a_fpfn) << 4) + BS3_FP_OFF(a_fpfn))
-# define CONV_TO_BS3TEXT16(a_pfn)       ((uint16_t)(a_pfn))
+# define CONV_TO_PROT_FAR16(a_fpfn)     RT_MAKE_U32(BS3_FP_OFF(a_fpfn), Bs3SelRealModeCodeToProtMode(BS3_FP_SEG(a_fpfn)))
+# define CONV_TO_RM_FAR16(a_fpfn)       RT_MAKE_U32(BS3_FP_OFF(a_fpfn), BS3_FP_SEG(a_fpfn))
 #else
 # define CONV_TO_FLAT(a_fpfn)           ((uint32_t)(uintptr_t)(a_fpfn))
-# define CONV_TO_BS3TEXT16(a_pfn)       ((uint16_t)(uintptr_t)(a_pfn))
+# define CONV_TO_PROT_FAR16(a_fpfn)     Bs3SelFlatCodeToProtFar16((uint32_t)(uintptr_t)(a_fpfn))
+# define CONV_TO_RM_FAR16(a_fpfn)       Bs3SelFlatCodeToRealMode( (uint32_t)(uintptr_t)(a_fpfn))
 #endif
 
 
 /*********************************************************************************************************************************
 *   Assembly Symbols                                                                                                             *
 *********************************************************************************************************************************/
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInRM)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16)(uint16_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInRM)(uint32_t uCallbackFarPtr);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16)(uint32_t uCallbackFarPtr);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16_32)(uint32_t uFlatAddrCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16_V86)(uint16_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE16_V86)(uint32_t uCallbackFarPtr);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE32)(uint32_t uFlatAddrCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE32_16)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPEV86)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16)(uint16_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPE32_16)(uint32_t uCallbackFarPtr);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPEV86)(uint32_t uCallbackFarPtr);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16)(uint32_t uCallbackFarPtr);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16_32)(uint32_t uFlatAddrCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16_V86)(uint16_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP16_V86)(uint32_t uCallbackFarPtr);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP32)(uint32_t uFlatAddrCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP32_16)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPPV86)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16)(uint16_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPP32_16)(uint32_t uCallbackFarPtr);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPPV86)(uint32_t uCallbackFarPtr);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16)(uint32_t uCallbackFarPtr);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16_32)(uint32_t uFlatAddrCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16_V86)(uint16_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE16_V86)(uint32_t uCallbackFarPtr);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE32)(uint32_t uFlatAddrCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE32_16)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAEV86)(uint16_t offCallback);
-BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM16)(uint16_t offCallback);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAE32_16)(uint32_t uCallbackFarPtr);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInPAEV86)(uint32_t uCallbackFarPtr);
+BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM16)(uint32_t uCallbackFarPtr);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM32)(uint32_t uFlatAddrCallback);
 BS3_DECL(uint8_t) TMPL_NM(Bs3TestCallDoerInLM64)(uint32_t uFlatAddrCallback);
 
@@ -209,7 +214,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoRM)
         {
             PRE_DO_CALL(g_szBs3ModeName_rm);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInRM)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoRM));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInRM)(CONV_TO_RM_FAR16(paEntries[i].pfnDoRM));
             CHECK_RESULT(g_szBs3ModeName_rm);
         }
 
@@ -226,7 +231,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoPE16)
         {
             PRE_DO_CALL(g_szBs3ModeName_pe16);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPE16)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPE16));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPE16)(CONV_TO_PROT_FAR16(paEntries[i].pfnDoPE16));
             CHECK_RESULT(g_szBs3ModeName_pe16);
         }
         if (bCpuType < BS3CPU_80386)
@@ -246,7 +251,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoPE16_V86 && fDoWeirdV86Modes)
         {
             PRE_DO_CALL(g_szBs3ModeName_pe16_v86);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPE16_V86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPE16_V86));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPE16_V86)(CONV_TO_RM_FAR16(paEntries[i].pfnDoPE16_V86));
             CHECK_RESULT(g_szBs3ModeName_pe16_v86);
         }
 
@@ -260,14 +265,14 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoPE32_16)
         {
             PRE_DO_CALL(g_szBs3ModeName_pe32_16);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPE32_16)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPE32_16));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPE32_16)(CONV_TO_PROT_FAR16(paEntries[i].pfnDoPE32_16));
             CHECK_RESULT(g_szBs3ModeName_pe32_16);
         }
 
         if (paEntries[i].pfnDoPEV86 && fDoV86Modes)
         {
             PRE_DO_CALL(g_szBs3ModeName_pev86);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPEV86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPEV86));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPEV86)(CONV_TO_RM_FAR16(paEntries[i].pfnDoPEV86));
             CHECK_RESULT(g_szBs3ModeName_pev86);
         }
 
@@ -277,7 +282,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoPP16)
         {
             PRE_DO_CALL(g_szBs3ModeName_pp16);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPP16)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPP16));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPP16)(CONV_TO_PROT_FAR16(paEntries[i].pfnDoPP16));
             CHECK_RESULT(g_szBs3ModeName_pp16);
         }
 
@@ -291,7 +296,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoPP16_V86 && fDoWeirdV86Modes)
         {
             PRE_DO_CALL(g_szBs3ModeName_pp16_v86);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPP16_V86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPP16_V86));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPP16_V86)(CONV_TO_RM_FAR16(paEntries[i].pfnDoPP16_V86));
             CHECK_RESULT(g_szBs3ModeName_pp16_v86);
         }
 
@@ -305,14 +310,14 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoPP32_16)
         {
             PRE_DO_CALL(g_szBs3ModeName_pp32_16);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPP32_16)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPP32_16));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPP32_16)(CONV_TO_PROT_FAR16(paEntries[i].pfnDoPP32_16));
             CHECK_RESULT(g_szBs3ModeName_pp32_16);
         }
 
         if (paEntries[i].pfnDoPPV86 && fDoV86Modes)
         {
             PRE_DO_CALL(g_szBs3ModeName_ppv86);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPPV86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPPV86));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPPV86)(CONV_TO_RM_FAR16(paEntries[i].pfnDoPPV86));
             CHECK_RESULT(g_szBs3ModeName_ppv86);
         }
 
@@ -329,7 +334,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoPAE16)
         {
             PRE_DO_CALL(g_szBs3ModeName_pae16);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPAE16)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPAE16));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPAE16)(CONV_TO_PROT_FAR16(paEntries[i].pfnDoPAE16));
             CHECK_RESULT(g_szBs3ModeName_pae16);
         }
 
@@ -343,7 +348,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoPAE16_V86 && fDoWeirdV86Modes)
         {
             PRE_DO_CALL(g_szBs3ModeName_pae16_v86);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPAE16_V86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPAE16_V86));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPAE16_V86)(CONV_TO_RM_FAR16(paEntries[i].pfnDoPAE16_V86));
             CHECK_RESULT(g_szBs3ModeName_pae16_v86);
         }
 
@@ -357,14 +362,14 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoPAE32_16)
         {
             PRE_DO_CALL(g_szBs3ModeName_pae32_16);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPAE32_16)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPAE32_16));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPAE32_16)(CONV_TO_PROT_FAR16(paEntries[i].pfnDoPAE32_16));
             CHECK_RESULT(g_szBs3ModeName_pae32_16);
         }
 
         if (paEntries[i].pfnDoPAEV86 && fDoV86Modes)
         {
             PRE_DO_CALL(g_szBs3ModeName_paev86);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInPAEV86)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoPAEV86));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInPAEV86)(CONV_TO_RM_FAR16(paEntries[i].pfnDoPAEV86));
             CHECK_RESULT(g_szBs3ModeName_paev86);
         }
 
@@ -381,7 +386,7 @@ BS3_DECL(void) TMPL_NM(Bs3TestDoModes)(PCBS3TESTMODEENTRY paEntries, size_t cEnt
         if (paEntries[i].pfnDoLM16)
         {
             PRE_DO_CALL(g_szBs3ModeName_lm16);
-            bErrNo = TMPL_NM(Bs3TestCallDoerInLM16)(CONV_TO_BS3TEXT16(paEntries[i].pfnDoLM16));
+            bErrNo = TMPL_NM(Bs3TestCallDoerInLM16)(CONV_TO_PROT_FAR16(paEntries[i].pfnDoLM16));
             CHECK_RESULT(g_szBs3ModeName_lm16);
         }
 

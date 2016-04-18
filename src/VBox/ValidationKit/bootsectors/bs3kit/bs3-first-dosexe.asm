@@ -25,8 +25,6 @@
 ;
 
 
-%include "bs3kit.mac"
-
 ;
 ; Segment defs, grouping and related variables.
 ; Defines the entry point 'start' as well, leaving us in BS3TEXT16.
