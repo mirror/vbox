@@ -2205,6 +2205,11 @@ class SessionWrapper(TdTaskBase):
                 self.waitForTask(1000);                                # fudge
             return False;
 
+        # Deregister event handler now, otherwise we're racing for VM process
+        # termination and cause misleading spurious error messages in the
+        # event handling code, because the event objects disappear.
+        self._deregisterEventHandler();
+
         rc = self.oTstDrv.waitOnProgress(oProgress);
         if rc < 0:
             self.close();
