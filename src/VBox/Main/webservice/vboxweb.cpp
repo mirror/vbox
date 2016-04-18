@@ -1378,11 +1378,15 @@ int main(int argc, char *argv[])
 # endif
 #endif
 
+#ifndef RT_OS_WINDOWS
     RTThreadPoke(threadQPumper);
+#endif
     RTThreadWait(threadQPumper, 30000, NULL);
     if (threadWatchdog != NIL_RTTHREAD)
     {
+#ifndef RT_OS_WINDOWS
         RTThreadPoke(threadWatchdog);
+#endif
         RTThreadWait(threadWatchdog, g_iWatchdogCheckInterval * 1000 + 10000, NULL);
     }
 
