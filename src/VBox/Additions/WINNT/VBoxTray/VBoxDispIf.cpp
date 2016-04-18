@@ -34,10 +34,10 @@
         } while (0)
 #else
 #define WARN(_m) do { \
-            Log(_m); \
+            LogRel(_m); \
         } while (0)
 #define WARN_FUNC(_m) do { \
-            LogFunc(_m); \
+            LogRelFunc(_m); \
         } while (0)
 #endif
 
@@ -1313,6 +1313,7 @@ static DWORD vboxDispIfWaitDisplayDataInited(VBOXDISPIF_OP *pOp)
 
 static DWORD vboxDispIfUpdateModesWDDM(VBOXDISPIF_OP *pOp, uint32_t u32TargetId, const RTRECTSIZE *pSize)
 {
+	LogRel(("VBoxTray: vboxDispIfUpdateModesWDDM Enter, u32TargetId %d\n", u32TargetId));
     DWORD winEr = ERROR_SUCCESS;
     VBOXDISPIFESCAPE_UPDATEMODES EscData = {0};
     EscData.EscapeHdr.escapeCode = VBOXESC_UPDATEMODES;
@@ -1398,7 +1399,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
 {
     DWORD winEr = NO_ERROR;
 
-    Log(("VBoxTray: vboxDispIfResizeModesWDDM iChanged %d cDevModes %d\n", iChangedMode, cDevModes));
+    LogRel(("VBoxTray: vboxDispIfResizeModesWDDM fEnable %d, iChanged %d, cDevModes %d\n", fEnable, iChangedMode, cDevModes));
     VBoxRrRetryStop();
 
     VBOXDISPIF_OP Op;
@@ -1436,7 +1437,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     DdiData.PrivateDriverDataSize = sizeof (VidPnData);
 
     NTSTATUS Status = Op.pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTInvalidateActiveVidPn(&DdiData);
-    LogFunc(("InvalidateActiveVidPn 0x%08x\n", Status));
+    LogRel(("VBoxTray: InvalidateActiveVidPn cElements %d, returns 0x%08x\n", cElements, Status));
 
     /* Resize displays always to keep the display layout because
      * "the D3DKMTInvalidateActiveVidPn function always resets a multimonitor desktop to the default configuration".
@@ -1451,13 +1452,16 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
             Size.cy = paDeviceModes[iChangedMode].dmPelsHeight;
             winEr = vboxDispIfUpdateModesWDDM(&Op, iChangedMode, &Size);
             if (winEr != NO_ERROR)
-                WARN(("vboxDispIfUpdateModesWDDM failed %d\n", winEr));
+                WARN(("VBoxTray: vboxDispIfUpdateModesWDDM failed %d\n", winEr));
+            else
+                LogRel(("VBoxTray: vboxDispIfUpdateModesWDDM is OK for iChangedMode %d\n", iChangedMode));
         }
 
         if (winEr == NO_ERROR)
         {
             winEr = vboxDispIfResizePerform(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
 
+            LogRel(("VBoxTray: vboxDispIfResizePerform returned 0x%08x for iChangedMode %d\n", winEr, iChangedMode));
             if (winEr == ERROR_RETRY)
             {
                 VBoxRrRetrySchedule(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);

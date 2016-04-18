@@ -538,6 +538,8 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
             if (pDevExt->Core.fLoggingEnabled)
                 LogRelFunc(("Logging to host log enabled (%#x)", uValue));
         }
+        
+        pDevExt->Core.fLoggingEnabled = true;
 
         /* Ready to rumble! */
         LogRelFunc(("Device is ready!\n"));

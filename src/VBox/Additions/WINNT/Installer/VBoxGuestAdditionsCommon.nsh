@@ -573,11 +573,9 @@ Function ${un}CheckForCapabilities
   StrCpy $g_iSystemMode $0
 
   ; Does the guest have a DLL cache?
-  ${If}   $g_strWinVersion == "Vista"
-  ${OrIf} $g_strWinVersion == "7"
-  ${OrIf} $g_strWinVersion == "8"
-  ${OrIf} $g_strWinVersion == "8_1"
-  ${OrIf} $g_strWinVersion == "10"
+  ${If}   $g_strWinVersion == "NT4"
+  ${OrIf} $g_strWinVersion == "2000"
+  ${OrIf} $g_strWinVersion == "XP"
     StrCpy $g_bCapDllCache "true"
     ${LogVerbose}  "OS has a DLL cache"
   ${EndIf}
@@ -889,20 +887,24 @@ Function ${un}PrepareWRPFile
     Return
   ${EndIf}
 
-  ${If} ${FileExists} "$g_strSystemDir\takeown.exe"
-    ${CmdExecute} "$\"$g_strSystemDir\takeown.exe$\" /F $\"$0$\"" "true"
-  ${Else}
-    ${LogVerbose} "WRP: Warning: takeown.exe not found, skipping"
-  ${EndIf}
-
-  AccessControl::SetFileOwner "$0" "(S-1-5-32-545)"
-  Pop $1
-  ${LogVerbose} "WRP: Setting file owner for $\"$0$\" returned: $1"
-
-  AccessControl::GrantOnFile "$0" "(S-1-5-32-545)" "FullAccess"
-  Pop $1
-  ${LogVerbose} "WRP: Setting access rights for $\"$0$\" returned: $1"
-
+  ${Switch} $g_strWinVersion
+    ${Case} "NT4"
+    ${Case} "2000"
+    ${Case} "XP"
+      ${LogVerbose} "WRP: changing ownership or permissions is not required on NT4, 2000, XP."
+    ${Break}
+    ${Default}
+      ${CmdExecute} "$\"$g_strSystemDir\takeown.exe$\" /A /F $\"$0$\"" "true"
+      Pop $1
+      ${LogVerbose} "WRP: Changing ownership for $\"$0$\" returned: $1"
+    
+      ${CmdExecute} "icacls.exe $\"$0$\" /grant *S-1-5-32-544:F" "true"
+      Pop $1
+      ${LogVerbose} "WRP: Changing DACL for $\"$0$\" returned: $1"
+    
+      Sleep 1000 ; TrustedInstaller needs some time to forget about the file
+  ${EndSwitch}
+  
 !if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
   !ifdef WFP_FILE_EXCEPTION
     VBoxGuestInstallHelper::DisableWFP "$0"

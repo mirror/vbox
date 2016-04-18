@@ -67,7 +67,7 @@ ifdef VBOX_WITH_SHARED_FOLDERS
 endif
 ifdef VBOX_WITH_WDDM
  VBoxTray_DEFS   += VBOX_WITH_WDDM
- # VBoxTray_DEFS   += LOG_ENABLED
+ VBoxTray_DEFS   += LOG_ENABLED
  VBoxTray_SOURCES += ../Graphics/Video/disp/wddm/VBoxDispKmt.cpp
 endif
 

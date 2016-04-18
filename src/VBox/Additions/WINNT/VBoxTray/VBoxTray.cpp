@@ -1003,6 +1003,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
             rc = vboxTrayOpenBaseDriver();
     }
 
+    RTLogGroupSettings(NULL, "+all.e.l.f");
+
     if (RT_SUCCESS(rc))
     {
         /* Save instance handle. */
