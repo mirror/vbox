@@ -352,22 +352,23 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         Tests that rapid connect/disconnect cycles work.
         """
         # Get configured USB test devices from hostname we are running on
-        sGadgetHost, _ = self.getGadgetParams(self.sHostname, sSpeed);
+        sGadgetHost, uGadgetPort = self.getGadgetParams(self.sHostname, sSpeed);
 
         oUsbGadget = usbgadget2.UsbGadget();
         reporter.log('Connecting to UTS: ' + sGadgetHost);
-        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost);
+        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost,  uPort = uGadgetPort);
         if fRc is True:
-            reporter.log('Connect succeeded');
-            self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + ':' + oUsbGadget.getUsbIpPort(), [], []);
+            self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);
 
-            # Create device filter
-            fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
+            # Create test device gadget and a filter to attach the device automatically.
+            fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
             if fRc is True:
-                fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
+                iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
+                fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', sPort = str(iBusId));
                 if fRc is True:
 
-                    self.sleep(1);
+                    # Wait a moment to let the USB device appear
+                    self.sleep(3);
 
                     # Do a rapid disconnect reconnect cycle. Wait a second before disconnecting
                     # again or it will happen so fast that the VM can't attach the new device.
