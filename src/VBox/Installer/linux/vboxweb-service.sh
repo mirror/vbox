@@ -167,6 +167,8 @@ stop() {
         begin_msg "Stopping VirtualBox web service" console;
         killproc $binary
         RETVAL=$?
+        # Be careful: wait 1 second, making sure that everything is cleaned up.
+        sleep 1
         if ! pidof $binary > /dev/null 2>&1; then
             rm -f $PIDFILE
             succ_msg "VirtualBox web service stopped"

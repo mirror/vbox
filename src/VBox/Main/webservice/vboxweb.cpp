@@ -907,10 +907,35 @@ static void doQueuesLoop()
         // initialize thread queue, mutex and eventsem
         g_pSoapQ = new SoapQ(&soap);
 
-        for (uint64_t i = 1; g_fKeepRunning; i++)
+        uint64_t cAccepted = 1;
+        while (g_fKeepRunning)
         {
+            struct timeval timeout;
+            fd_set fds;
+            int rv;
+            for (;;)
+            {
+                timeout.tv_sec = 60;
+                timeout.tv_usec = 0;
+                FD_ZERO(&fds);
+                FD_SET(soap.master, &fds);
+                rv = select((int)soap.master + 1, &fds, &fds, &fds, &timeout);
+                if (rv > 0)
+                    break; // work is waiting
+                else if (rv == 0)
+                    continue; // timeout, not necessary to bother gsoap
+                else // r < 0, errno
+                {
+                    if (soap_socket_errno(soap.master) == SOAP_EINTR)
+                        rv = 0; // re-check if we should terminate
+                    break;
+                }
+            }
+            if (rv == 0)
+                continue;
+
             // call gSOAP to handle incoming SOAP connection
-            soap.accept_timeout = 10;
+            soap.accept_timeout = -1; // 1usec timeout, actual waiting is above
             s = soap_accept(&soap);
             if (!soap_valid_socket(s))
             {
@@ -922,7 +947,8 @@ static void doQueuesLoop()
             // add the socket to the queue and tell worker threads to
             // pick up the job
             size_t cItemsOnQ = g_pSoapQ->add(s);
-            LogRel(("Request %llu on socket %d queued for processing (%d items on Q)\n", i, s, cItemsOnQ));
+            LogRel(("Request %llu on socket %d queued for processing (%d items on Q)\n", cAccepted, s, cItemsOnQ));
+            cAccepted++;
         }
 
         delete g_pSoapQ;
@@ -1320,6 +1346,7 @@ int main(int argc, char *argv[])
     }
 #else
     signal(SIGINT,   websrvSignalHandler);
+    signal(SIGTERM,  websrvSignalHandler);
 # ifdef SIGBREAK
     signal(SIGBREAK, websrvSignalHandler);
 # endif
@@ -1345,14 +1372,19 @@ int main(int argc, char *argv[])
     }
 #else
     signal(SIGINT,   SIG_DFL);
+    signal(SIGTERM,  SIG_DFL);
 # ifdef SIGBREAK
     signal(SIGBREAK, SIG_DFL);
 # endif
 #endif
 
+    RTThreadPoke(threadQPumper);
     RTThreadWait(threadQPumper, 30000, NULL);
     if (threadWatchdog != NIL_RTTHREAD)
+    {
+        RTThreadPoke(threadWatchdog);
         RTThreadWait(threadWatchdog, g_iWatchdogCheckInterval * 1000 + 10000, NULL);
+    }
 
     /* VirtualBoxClient events unregistration. */
     if (vboxClientListener)

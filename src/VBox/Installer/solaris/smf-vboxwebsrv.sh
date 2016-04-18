@@ -124,6 +124,8 @@ case $VW_OPT in
     stop)
         # Kill service contract
         smf_kill_contract $2 TERM 1
+        # Be careful: wait 1 second, making sure that everything is cleaned up.
+        smf_kill_contract $2 TERM 1
     ;;
     *)
         VW_EXIT=$SMF_EXIT_ERR_CONFIG
