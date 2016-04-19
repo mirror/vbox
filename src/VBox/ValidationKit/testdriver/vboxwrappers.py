@@ -2009,8 +2009,8 @@ class SessionWrapper(TdTaskBase):
 
         return fRc;
 
-    def addUsbDeviceFilter(self, sName, sVendorId = None, sProductId = None, sRevision = None, \
-                           sManufacturer = None, sProduct = None, sSerialNumber = None, \
+    def addUsbDeviceFilter(self, sName, sVendorId = None, sProductId = None, sRevision = None, # pylint: disable=R0913
+                           sManufacturer = None, sProduct = None, sSerialNumber = None,
                            sPort = None, sRemote = None):
         """
         Creates a USB device filter and inserts it into the VM.
