@@ -635,36 +635,55 @@ EOF
 #define BS3_DECL(type)                  type
 #define BS3_DECL_CALLBACK(type)         type
 #define TMPL_NM(name)                   name
+#define TMPL_FAR_NM(name)               name##_far
 #define BS3_CMN_NM(name)                name
+#define BS3_CMN_FAR_NM(name)            name
+#define BS3_CMN_FN_NM(name)             name
 #define BS3_DATA_NM(name)               name
 #define BS3_FAR
 #define BS3_FAR_CODE
 #define BS3_FAR_DATA
 #define BS3_NEAR
 #define BS3_NEAR_CODE
-#define BS3_MODE_EXPAND_PROTOTYPES(a_RetType, a_BaseFnNm, a_Parameters) \
-    a_RetType  a_BaseFnNm##_rm        a_Parameters; \
-    a_RetType  a_BaseFnNm##_pe16      a_Parameters; \
-    a_RetType  a_BaseFnNm##_pe16_32   a_Parameters; \
-    a_RetType  a_BaseFnNm##_pe16_v86  a_Parameters; \
-    a_RetType  a_BaseFnNm##_pe32      a_Parameters; \
-    a_RetType  a_BaseFnNm##_pe32_16   a_Parameters; \
-    a_RetType  a_BaseFnNm##_pev86     a_Parameters; \
-    a_RetType  a_BaseFnNm##_pp16      a_Parameters; \
-    a_RetType  a_BaseFnNm##_pp16_32   a_Parameters; \
-    a_RetType  a_BaseFnNm##_pp16_v86  a_Parameters; \
-    a_RetType  a_BaseFnNm##_pp32      a_Parameters; \
-    a_RetType  a_BaseFnNm##_pp32_16   a_Parameters; \
-    a_RetType  a_BaseFnNm##_ppv86     a_Parameters; \
-    a_RetType  a_BaseFnNm##_pae16     a_Parameters; \
-    a_RetType  a_BaseFnNm##_pae16_16  a_Parameters; \
-    a_RetType  a_BaseFnNm##_pae16_v86 a_Parameters; \
-    a_RetType  a_BaseFnNm##_pae32     a_Parameters; \
-    a_RetType  a_BaseFnNm##_pae32_16  a_Parameters; \
-    a_RetType  a_BaseFnNm##_paev86    a_Parameters; \
-    a_RetType  a_BaseFnNm##_lm16      a_Parameters; \
-    a_RetType  a_BaseFnNm##_lm32      a_Parameters; \
-    a_RetType  a_BaseFnNm##_lm64      a_Parameters
+#define BS3_CMN_PROTO(a_RetType, a_Name, a_Params, a_fAutoStub) a_RetType a_Name a_Params
+#define BS3_CMN_DEF(a_RetType, a_Name, a_Params)                a_RetType a_Name a_Params
+#define BS3_MODE_PROTO(a_RetType, a_Name, a_Params, a_fAutoStub) \
+    a_RetType a_Name##_rm            a_Params; \
+    a_RetType a_Name##_pe16          a_Params; \
+    a_RetType a_Name##_pe16_32       a_Params; \
+    a_RetType a_Name##_pe16_v86      a_Params; \
+    a_RetType a_Name##_pe32          a_Params; \
+    a_RetType a_Name##_pe32_16       a_Params; \
+    a_RetType a_Name##_pev86         a_Params; \
+    a_RetType a_Name##_pp16          a_Params; \
+    a_RetType a_Name##_pp16_32       a_Params; \
+    a_RetType a_Name##_pp16_v86      a_Params; \
+    a_RetType a_Name##_pp32          a_Params; \
+    a_RetType a_Name##_pp32_16       a_Params; \
+    a_RetType a_Name##_ppv86         a_Params; \
+    a_RetType a_Name##_pae16         a_Params; \
+    a_RetType a_Name##_pae16_32      a_Params; \
+    a_RetType a_Name##_pae16_v86     a_Params; \
+    a_RetType a_Name##_pae32         a_Params; \
+    a_RetType a_Name##_pae32_16      a_Params; \
+    a_RetType a_Name##_paev86        a_Params; \
+    a_RetType a_Name##_lm16          a_Params; \
+    a_RetType a_Name##_lm32          a_Params; \
+    a_RetType a_Name##_lm64          a_Params; \
+    a_RetType a_Name##_rm_far        a_Params; \
+    a_RetType a_Name##_pe16_far      a_Params; \
+    a_RetType a_Name##_pe16_v86_far  a_Params; \
+    a_RetType a_Name##_pe32_16_far   a_Params; \
+    a_RetType a_Name##_pev86_far     a_Params; \
+    a_RetType a_Name##_pp16_far      a_Params; \
+    a_RetType a_Name##_pp16_v86_far  a_Params; \
+    a_RetType a_Name##_pp32_16_far   a_Params; \
+    a_RetType a_Name##_ppv86_far     a_Params; \
+    a_RetType a_Name##_pae16_far     a_Params; \
+    a_RetType a_Name##_pae16_v86_far a_Params; \
+    a_RetType a_Name##_pae32_16_far  a_Params; \
+    a_RetType a_Name##_paev86_far    a_Params; \
+    a_RetType a_Name##_lm16_far      a_Params
 #define BS3_MODE_EXPAND_EXTERN_DATA16(a_VarType, a_VarName, a_Suffix) \
     extern a_VarType a_VarName##_rm        a_Suffix; \
     extern a_VarType a_VarName##_pe16      a_Suffix; \
