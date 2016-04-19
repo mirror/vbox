@@ -2681,8 +2681,10 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
             }
             else
             {
-                /** @todo Does this actually happen? If not turn it into an assertion. */
+                /* This can happen with the new APIC code. */
+#ifndef VBOX_WITH_NEW_APIC
                 Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)));
+#endif
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
             }
         }
