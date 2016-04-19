@@ -316,7 +316,10 @@ endif
 	dh_installmime
 	dh_link
 ifeq ($(DEBUG),)
-	dh_strip --keep-debug --exclude=libQtCoreVBox.so.4 --exclude=libQtGuiVBox.so.4 --exclude=libQtOpenGLVBox.so.4 --exclude=libqtaccessiblewidgets.so
+	dh_strip --keep-debug \
+	    $(addprefix --exclude=lib,$(addsuffix VBox.so.5,\
+	      Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport Qt5OpenGL Qt5DBus Qt5XcbQpa Qt5X11Extras)) \
+	    --exclude=libqxcb.so
 endif
 	mkdir -p $(current)/debian/$(verpkg)-dbg/usr/lib/$(package)
 	mv $(prefix)/usr/lib/$(package)/*.debug $(current)/debian/$(verpkg)-dbg/usr/lib/$(package)
