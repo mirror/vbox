@@ -1243,20 +1243,22 @@ typedef struct DBGFSTACKFRAME
  * @{ */
 /** Set if the content of the frame is filled in by DBGFR3StackWalk() and can be used
  * to construct the next frame. */
-# define DBGFSTACKFRAME_FLAGS_ALL_VALID RT_BIT(0)
+# define DBGFSTACKFRAME_FLAGS_ALL_VALID     RT_BIT(0)
 /** This is the last stack frame we can read.
  * This flag is not set if the walk stop because of max dept or recursion. */
-# define DBGFSTACKFRAME_FLAGS_LAST      RT_BIT(1)
+# define DBGFSTACKFRAME_FLAGS_LAST          RT_BIT(1)
 /** This is the last record because we detected a loop. */
-# define DBGFSTACKFRAME_FLAGS_LOOP      RT_BIT(2)
+# define DBGFSTACKFRAME_FLAGS_LOOP          RT_BIT(2)
 /** This is the last record because we reached the maximum depth. */
-# define DBGFSTACKFRAME_FLAGS_MAX_DEPTH RT_BIT(3)
+# define DBGFSTACKFRAME_FLAGS_MAX_DEPTH     RT_BIT(3)
 /** 16-bit frame. */
-# define DBGFSTACKFRAME_FLAGS_16BIT     RT_BIT(4)
+# define DBGFSTACKFRAME_FLAGS_16BIT         RT_BIT(4)
 /** 32-bit frame. */
-# define DBGFSTACKFRAME_FLAGS_32BIT     RT_BIT(5)
+# define DBGFSTACKFRAME_FLAGS_32BIT         RT_BIT(5)
 /** 64-bit frame. */
-# define DBGFSTACKFRAME_FLAGS_64BIT     RT_BIT(6)
+# define DBGFSTACKFRAME_FLAGS_64BIT         RT_BIT(6)
+/** Used Odd/even heuristics for far/near return. */
+# define DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN RT_BIT(7)
 /** @} */
 
 /** @name DBGFCODETYPE

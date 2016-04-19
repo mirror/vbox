@@ -87,10 +87,11 @@ static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAM
 
     /*
      * Read the raw frame data.
+     * We double cbRetAddr in case we find we have a far return.
      */
-    const DBGFADDRESS AddrOldPC = pFrame->AddrPC;
-    const unsigned cbRetAddr = DBGFReturnTypeSize(pFrame->enmReturnType);
-    unsigned cbStackItem;
+    const DBGFADDRESS   AddrOldPC = pFrame->AddrPC;
+    unsigned            cbRetAddr = DBGFReturnTypeSize(pFrame->enmReturnType);
+    unsigned            cbStackItem;
     switch (AddrOldPC.fFlags & DBGFADDRESS_FLAGS_TYPE_MASK)
     {
         case DBGFADDRESS_FLAGS_FAR16: cbStackItem = 2; break;
@@ -129,7 +130,7 @@ static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAM
         uint8_t  *pb;
         void     *pv;
     } u, uRet, uArgs, uBp;
-    size_t cbRead = cbRetAddr + cbStackItem + sizeof(pFrame->Args);
+    size_t cbRead = cbRetAddr*2 + cbStackItem + sizeof(pFrame->Args);
     u.pv = alloca(cbRead);
     uBp = u;
     uRet.pb = u.pb + cbStackItem;
@@ -184,6 +185,43 @@ static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAM
         case 8:    pFrame->AddrReturnFrame.off = *uBp.pu64; break;
         default:    AssertMsgFailedReturn(("cbStackItem=%d\n", cbStackItem), VERR_DBGF_STACK_IPE_1);
     }
+
+    /* Watcom tries to keep the frame pointer odd for far returns. */
+    if (cbStackItem <= 4)
+    {
+        if (pFrame->AddrReturnFrame.off & 1)
+        {
+            pFrame->AddrReturnFrame.off &= ~(RTGCUINTPTR)1;
+            if (pFrame->enmReturnType == DBGFRETURNTYPE_NEAR16)
+            {
+                pFrame->fFlags       |= DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
+                pFrame->enmReturnType = DBGFRETURNTYPE_FAR16;
+                cbRetAddr = 4;
+            }
+            else if (pFrame->enmReturnType == DBGFRETURNTYPE_NEAR32)
+            {
+                pFrame->fFlags       |= DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
+                pFrame->enmReturnType = DBGFRETURNTYPE_FAR32;
+                cbRetAddr = 8;
+            }
+        }
+        else if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN)
+        {
+            if (pFrame->enmReturnType == DBGFRETURNTYPE_FAR16)
+            {
+                pFrame->enmReturnType = DBGFRETURNTYPE_NEAR16;
+                cbRetAddr = 2;
+            }
+            else if (pFrame->enmReturnType == DBGFRETURNTYPE_NEAR32)
+            {
+                pFrame->enmReturnType = DBGFRETURNTYPE_FAR32;
+                cbRetAddr = 4;
+            }
+            pFrame->fFlags &= ~DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
+        }
+        uArgs.pb = u.pb + cbStackItem + cbRetAddr;
+    }
+
     pFrame->AddrReturnFrame.FlatPtr += pFrame->AddrReturnFrame.off - pFrame->AddrFrame.off;
 
     /*
@@ -314,8 +352,12 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
                 case DBGFADDRESS_FLAGS_FAR16: pCur->enmReturnType = DBGFRETURNTYPE_NEAR16; break;
                 case DBGFADDRESS_FLAGS_FAR32: pCur->enmReturnType = DBGFRETURNTYPE_NEAR32; break;
                 case DBGFADDRESS_FLAGS_FAR64: pCur->enmReturnType = DBGFRETURNTYPE_NEAR64; break;
-                case DBGFADDRESS_FLAGS_RING0: pCur->enmReturnType = HC_ARCH_BITS == 64 ? DBGFRETURNTYPE_NEAR64 : DBGFRETURNTYPE_NEAR32; break;
-                default:                      pCur->enmReturnType = DBGFRETURNTYPE_NEAR32; break; /// @todo 64-bit guests
+                case DBGFADDRESS_FLAGS_RING0:
+                    pCur->enmReturnType = HC_ARCH_BITS == 64 ? DBGFRETURNTYPE_NEAR64 : DBGFRETURNTYPE_NEAR32;
+                    break;
+                default:
+                    pCur->enmReturnType = DBGFRETURNTYPE_NEAR32;
+                    break; /// @todo 64-bit guests
             }
 
         uint64_t fAddrMask;
