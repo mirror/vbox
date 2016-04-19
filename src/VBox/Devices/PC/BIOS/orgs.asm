@@ -130,7 +130,6 @@ extrn		_int70_function:near
 extrn		_int74_function:near
 extrn		_apm_function:near
 extrn		_ata_init:near
-extrn		_ahci_init:near
 extrn		_scsi_init:near
 extrn		_ata_detect:near
 extrn		_cdemu_init:near
@@ -138,6 +137,9 @@ extrn		_keyboard_init:near
 extrn		_print_bios_banner:near
 extrn		_inv_op_handler:near
 extrn		rom_scan_:near
+ifdef VBOX_WITH_AHCI
+extrn		_ahci_init:near
+endif
 
 
 ;; Symbols referenced from C code
