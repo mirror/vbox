@@ -439,7 +439,7 @@ $(TOOL_OPENWATCOM-16_COMPILE_CXX_CMDS)
 endef
 
 # Debug info format depends on what we use for 64-bit.
-if1of ($(KBUILD_HOST), win)
+if 1 #1of ($(KBUILD_HOST), win) - wlink dwarf .sym files are useless for binary blobs
  BS3_OW_DBG_OPT   = -hc -d1+
  #BS3_OW_DBG_OPT   = -hd -d1+
  BS3_OW_DBG_LDOPT = codeview
@@ -737,8 +737,10 @@ else
  TEMPLATE_VBoxBS3KitImg64_CTOOL      := Bs3Gcc64Elf64
  TEMPLATE_VBoxBS3KitImg64_CXXTOOL    := Bs3Gcc64Elf64
  # Note! -mx32 would be exactly what we needed here, however it causes internal compiler errors with 4.8.4 on gentoo.
- TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_WARN_PEDANTIC_C)
- TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_WARN_PEDANTIC_CXX)
+ TEMPLATE_VBoxBS3KitImg64_CFLAGS      = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_WARN_PEDANTIC_C) \
+    -msoft-float -fno-exceptions -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_fno-stack-protector)
+ TEMPLATE_VBoxBS3KitImg64_CXXFLAGS    = -m64 -maccumulate-outgoing-args -g -Os -fno-omit-frame-pointer $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_WARN_PEDANTIC_CXX) \
+    -msoft-float -fno-exceptions -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_fno-stack-protector)
 endif
 TEMPLATE_VBoxBS3KitImg64_LDTOOL       = VBoxBsUnusedLd
 
