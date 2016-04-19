@@ -318,7 +318,8 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
-                fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', sPort = str(iBusId));
+                fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
+                                                  sPort = str(iBusId));
                 if fRc is True:
 
                     # Wait a moment to let the USB device appear
@@ -364,7 +365,8 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
-                fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', sPort = str(iBusId));
+                fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
+                                                  sPort = str(iBusId));
                 if fRc is True:
 
                     # Wait a moment to let the USB device appear
