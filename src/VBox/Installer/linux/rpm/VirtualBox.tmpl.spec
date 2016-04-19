@@ -37,6 +37,9 @@ Requires:  %INITSCRIPTS% %LIBASOUND% net-tools
 
 %MACROSPYTHON%
 
+# our Qt5 libs are built on EL5 with ld 2.17 which does not provide --link-id=
+%undefine _missing_build_ids_terminate_build
+
 
 %description
 VirtualBox is a powerful PC virtualization solution allowing
