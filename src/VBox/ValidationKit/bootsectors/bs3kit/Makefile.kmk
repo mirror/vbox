@@ -200,7 +200,7 @@ bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
        bs3-c16-Trap16Generic.asm \
 	bs3-c16-CreateHybridFarRet.asm
 bs3kit-common-16_bs3-cmn-UInt64Div.c_CFLAGS = -oh -d0 # -d1+ vs -d0 saves 0x6a3-0x577 = 0x12C (300)!
-bs3kit-common-16_VBOX_NEAR_TO_FAR_FUNCTIONS := \
+bs3kit-common-16_VBOX_NEAR_TO_FAR_CMN_FUNCTIONS := \
 	$(sort $(subst bs3-cmn-,Bs3,$(basename $(filter-out \
 		%Data.c \
 		bs3-rm-% \
@@ -220,8 +220,13 @@ bs3kit-common-16_VBOX_NEAR_TO_FAR_FUNCTIONS := \
 bs3kit-common-16_VBOX_NEAR_TO_FAR_MODE_FUNCTIONS := \
 	Bs3TrapInit \
 
-$(call BS3KIT_FN_GEN_NEARSTUBS,bs3kit-common-16,$(bs3kit-common-16_VBOX_NEAR_TO_FAR_FUNCTIONS))
+bs3kit-common-16_VBOX_FAR_TO_NEAR_CMN_FUNCTIONS := \
+	ASMMemFirstMismatchingU8:8 \
+	ASMMemFirstNonZero:6 \
+
+$(call BS3KIT_FN_GEN_CMN_NEARSTUBS,bs3kit-common-16,$(bs3kit-common-16_VBOX_NEAR_TO_FAR_CMN_FUNCTIONS))
 $(call BS3KIT_FN_GEN_MODE_NEARSTUBS,bs3kit-common-16,$(bs3kit-common-16_VBOX_NEAR_TO_FAR_MODE_FUNCTIONS))
+$(call BS3KIT_FN_GEN_CMN_FARSTUBS,bs3kit-common-16,$(bs3kit-common-16_VBOX_FAR_TO_NEAR_CMN_FUNCTIONS))
 
 # The 32-bit BS3Kit library.
 LIBRARIES += bs3kit-common-32

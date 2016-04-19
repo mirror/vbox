@@ -257,6 +257,9 @@ void bs3CpuBasic2_CompareCpuTrapCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartC
         fExtraEfl = 0;
     else
         fExtraEfl = X86_EFL_RF;
+#if 0 /** @todo Running on an AMD Phenom II X6 1100T under AMD-V I'm not getting good X86_EFL_RF results.  Enable this to get on with other work.  */
+    fExtraEfl = pTrapCtx->Ctx.rflags.u32 & X86_EFL_RF;
+#endif
     Bs3TestCheckRegCtxEx(&pTrapCtx->Ctx, pStartCtx, 0 /*cbIpAdjust*/, 0 /*cbSpAdjust*/, fExtraEfl, g_pszTestMode, g_usBs3TestStep);
     if (Bs3TestSubErrorCount() != cErrorsBefore)
     {
@@ -403,7 +406,9 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
     Bs3RegCtxSave(&Ctx80);
     Ctx80.rsp.u -= 0x300;
     Ctx80.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int80));
-# if TMPL_BITS == 32
+# if TMPL_BITS == 16
+    Ctx80.cs = BS3_MODE_IS_RM_OR_V86(g_bTestMode) ? BS3_SEL_TEXT16 : BS3_SEL_R0_CS16;
+# elif TMPL_BITS == 32
     g_uBs3TrapEipHint = Ctx80.rip.u32;
 # endif
     Bs3MemCpy(&Ctx81, &Ctx80, sizeof(Ctx80));
@@ -1522,7 +1527,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
     /*
      * Re-initialize the IDT.
      */
-    TMPL_NM(Bs3TrapInit)();
+    TMPL_FAR_NM(Bs3TrapInit)();
     return bRet;
 }
 
@@ -1548,7 +1553,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
     /*
      * Re-initialize the IDT.
      */
-    TMPL_NM(Bs3TrapInit)();
+    TMPL_FAR_NM(Bs3TrapInit)();
     return 0;
 #elif TMPL_MODE == BS3_MODE_RM
 
@@ -1594,7 +1599,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
     /*
      * Re-initialize the IDT.
      */
-    TMPL_NM(Bs3TrapInit)();
+    TMPL_FAR_NM(Bs3TrapInit)();
     return 0;
 }
 

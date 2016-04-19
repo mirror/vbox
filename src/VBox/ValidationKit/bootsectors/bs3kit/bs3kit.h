@@ -48,16 +48,27 @@
 # define DECL_NO_RETURN(type) type
 #endif
 
+/** @def BS3_USE_ALT_16BIT_TEXT_SEG
+ * Combines the BS3_USE_RM_TEXT_SEG,  BS3_USE_X0_TEXT_SEG, and
+ * BS3_USE_X1_TEXT_SEG indicators into a single one. */
+#if defined(BS3_USE_RM_TEXT_SEG) || defined(BS3_USE_X0_TEXT_SEG) || defined(BS3_USE_X1_TEXT_SEG)
+# define BS3_USE_ALT_16BIT_TEXT_SEG
+#else
+# undef  BS3_USE_ALT_16BIT_TEXT_SEG
+#endif
+
 /*
  * We may want to reuse some IPRT code in the common name space, so we
  * redefine the RT_MANGLER to work like BS3_CMN_NM.  (We cannot use
  * BS3_CMN_NM yet, as we need to include IPRT headers with function
  * declarations before we can define it. Thus the duplciate effort.)
  */
-#if ARCH_BITS != 16 || !defined(BS3_USE_RM_TEXT_SEG)
+#if ARCH_BITS != 16 || !defined(BS3_USE_ALT_16BIT_TEXT_SEG)
 # define RT_MANGLER(a_Name) RT_CONCAT3(a_Name,_c,ARCH_BITS)
 #else
 # define RT_MANGLER(a_Name) RT_CONCAT(a_Name,_f16)
+# undef RTCALL
+# define RTCALL __cdecl __far
 #endif
 #include <iprt/mangling.h>
 #include <iprt/x86.h>
@@ -508,7 +519,7 @@ RT_C_DECLS_BEGIN
  * Until we outgrow BS3TEXT16, we use all near functions in 16-bit.
  *
  * @param a_Type        The return type. */
-#if ARCH_BITS != 16 || !defined(BS3_USE_RM_TEXT_SEG)
+#if ARCH_BITS != 16 || !defined(BS3_USE_ALT_16BIT_TEXT_SEG)
 # define BS3_DECL(a_Type)  BS3_DECL_NEAR(a_Type)
 #else
 # define BS3_DECL(a_Type)  BS3_DECL_FAR(a_Type)
@@ -575,14 +586,14 @@ RT_C_DECLS_BEGIN
 /**
  * Constructs a common function name, far or near as defined by the source.
  *
- * Which to use in 16-bit mode is defined by BS3_USE_RM_TEXT_SEG.  In 32-bit and
- * 64-bit mode there are no far symbols, only near ones.
+ * Which to use in 16-bit mode is defined by BS3_USE_ALT_16BIT_TEXT_SEG.  In
+ * 32-bit and 64-bit mode there are no far symbols, only near ones.
  *
  * Example: BS3_CMN_FN_NM(Bs3Shutdown)
  *
  * @param   a_Name      The name of the function.
  */
-#if ARCH_BITS != 16 || !defined(BS3_USE_RM_TEXT_SEG)
+#if ARCH_BITS != 16 || !defined(BS3_USE_ALT_16BIT_TEXT_SEG)
 # define BS3_CMN_FN_NM(a_Name)  BS3_CMN_NM(a_Name)
 #else
 # define BS3_CMN_FN_NM(a_Name)  BS3_CMN_FAR_NM(a_Name)
@@ -2686,6 +2697,22 @@ RT_C_DECLS_END
  */
 #include "bs3kit-mangling-code.h"
 
+/*
+ * Change 16-bit text segment if requested.
+ */
+#if defined(BS3_USE_ALT_16BIT_TEXT_SEG) && ARCH_BITS == 16 && !defined(BS3_DONT_CHANGE_TEXT_SEG)
+# if (defined(BS3_USE_RM_TEXT_SEG) + defined(BS3_USE_X0_TEXT_SEG) + defined(BS3_USE_X1_TEXT_SEG)) != 1
+#  error "Cannot set more than one alternative 16-bit text segment!"
+# elif defined(BS3_USE_RM_TEXT_SEG)
+#  pragma code_seg("BS3RMTEXT16", "BS3CLASS16RMCODE")
+# elif defined(BS3_USE_X0_TEXT_SEG)
+#  pragma code_seg("BS3X0TEXT16", "BS3CLASS16X0CODE")
+# elif defined(BS3_USE_X1_TEXT_SEG)
+#  pragma code_seg("BS3X1TEXT16", "BS3CLASS16X1CODE")
+# else
+#  error "Huh? Which alternative text segment did you want again?"
+# endif
+#endif
 
 #endif
 

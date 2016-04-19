@@ -31,10 +31,6 @@
 #include "bs3kit-template-header.h"
 #include <iprt/asm.h>
 
-#ifdef __WATCOMC__
-# pragma code_seg("BS3RMTEXT16", "BS3CLASS16RMCODE")
-#endif
-
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *

@@ -77,7 +77,7 @@ endif
 # Macro for generating near-call aliases for zero or more 16-bit C functions.
 # @param    1   The target name.
 # @param    2   List of functions.
-BS3KIT_FN_GEN_NEARSTUBS = $(foreach fn,$2,$(evalcall2 def_Bs3KitGenNearStubSource,$1,_$(fn)_c16,_$(fn)_f16))
+BS3KIT_FN_GEN_CMN_NEARSTUBS = $(foreach fn,$2,$(evalcall2 def_Bs3KitGenNearStubSource,$1,_$(fn)_c16,_$(fn)_f16))
 
 ##
 # Macro for generating near-call aliases for zero or more 16-bit C mode functions.
@@ -117,6 +117,69 @@ $$$$($1_0_OUTDIR)/stub$2.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(di
                '      push    cs' \
                '      push    ax' \
                '      jmp     $3 wrt CGROUP16'
+endef
+
+
+##
+# Macro for generating far-call aliases for zero or more 16-bit C or assembly functions.
+# @param    1   The target name.
+# @param    2   List of functions.
+BS3KIT_FN_GEN_CMN_FARSTUBS = $(foreach fn,$2,$(evalcall2 def_Bs3KitGenFarStubSource,$1,$(fn),_f16,_c16))
+
+##
+# Macro for generating far-call aliases for zero or more 16-bit C mode functions.
+# @param    1   The target name.
+# @param    2   List of mode functions.
+BS3KIT_FN_GEN_MODE_FARSTUBS = $(foreach fn,$2,$(foreach suff, \
+	_rm \
+	_pe16 \
+	_pe16_v86 \
+	_pe32_16 \
+	_pev86 \
+	_pp16 \
+	_pp16_v86 \
+	_pp32_16 \
+	_ppv86 \
+	_pae16 \
+	_pae16_v86 \
+	_pae32_16 \
+	_paev86 \
+	_lm16 \
+	,$(evalcall2 def_Bs3KitGenFarStubSource,$1,$(fn),$(suff)_far,$(suff))
+
+# @param    1   The target name.
+# @param    2   The function and amount of parameters.
+# @param    3   The far function suffix.
+# @param    4   The near function suffix.
+define def_Bs3KitGenFarStubSource
+$(eval local fn2 = $(firstword $(subst :, $(SP), $2)))
+$(eval local cbParam = $(lastword $(subst :, $(SP), $2)))
+
+$1_SOURCES += $$($1_0_OUTDIR)/stub_$(fn2)$3.asm
+$1_CLEAN   += $$($1_0_OUTDIR)/stub_$(fn2)$3.asm
+$$$$($1_0_OUTDIR)/stub_$(fn2)$3.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
+	$(QUIET)$(APPEND) -tn $$@ \
+		'%include "bs3kit.mac"' \
+       	'BS3_BEGIN_TEXT16' \
+               '      extern  _$(fn2)$4' \
+       	'BS3_BEGIN_TEXT16_FARSTUBS' \
+		'BS3_PROC_BEGIN _$(fn2)$3' \
+               '      CPU 8086' \
+               '      inc     bp' \
+               '      push    bp' \
+               '      mov     bp, sp' \
+               '%assign offParam $(cbParam)' \
+               '%rep $(cbParam) / 2' \
+               '      push    word [bp + 2 + 4 + offParam - 2]' \
+               '%assign offParam offParam - 2' \
+               '%endrep' \
+               '      call    _$(fn2)$4' \
+               '      add     sp, $(cbParam)' \
+               '      pop     bp' \
+               '      dec     bp' \
+               '      retf' \
+		'BS3_PROC_END _$(fn2)$3' \
+               ''
 endef
 
 

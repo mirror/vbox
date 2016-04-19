@@ -24,18 +24,14 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/** @todo get this mess into the RM segment! */
-
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#if defined(__WATCOMC__) && TMPL_MODE == BS3_MODE_RM
-/* In real mode we move this blob of code to the RMTEXT16 segment to save space. */
-# define BS3_USE_RM_TEXT_SEG 1
+#if TMPL_MODE == BS3_MODE_RM
+# define BS3_USE_RM_TEXT_SEG 1 /* Real mode version in RMTEXT16 segment to save space. */
 # include "bs3kit-template-header.h"
 # include "bs3-cmn-test.h"
-# pragma code_seg("BS3RMTEXT16", "BS3CLASS16RMCODE")
 #else
 # include "bs3kit-template-header.h"
 # include "bs3-cmn-test.h"

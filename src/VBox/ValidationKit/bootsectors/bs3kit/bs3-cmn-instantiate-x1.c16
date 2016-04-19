@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - Symbol mangling, code.
+ * BS3Kit - 16-bit common C template instantiator, using the BS3X1TEXT16 segment.
  */
 
 /*
@@ -24,16 +24,6 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
-/*
- * Do function mangling.  This can be redone at compile time (templates).
- */
-#undef BS3_CMN_MANGLER
-#if ARCH_BITS != 16 || !defined(BS3_USE_ALT_16BIT_TEXT_SEG)
-# define BS3_CMN_MANGLER(a_Function)            BS3_CMN_NM(a_Function)
-#else
-# define BS3_CMN_MANGLER(a_Function)            BS3_CMN_FAR_NM(a_Function)
-#endif
-#include "bs3kit-mangling-code-undef.h"
-#include "bs3kit-mangling-code-define.h"
+#define BS3_USE_X1_TEXT_SEG 1
+#include "bs3-cmn-instantiate-common.h"
 

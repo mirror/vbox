@@ -33,10 +33,6 @@
 #include "bs3-cmn-test.h"
 #include <iprt/asm-amd64-x86.h>
 
-//#ifdef __WATCOMC__
-//# pragma code_seg("BS3RMTEXT16", "BS3CLASS16RMCODE")
-//#endif
-
 
 BS3_DECL(void) Bs3InitAll_rm(void)
 {

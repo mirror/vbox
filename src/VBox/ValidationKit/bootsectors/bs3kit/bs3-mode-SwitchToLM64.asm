@@ -40,7 +40,7 @@
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
-BS3_GLOBAL_NAME_EX TMPL_NM(Bs3SwitchToLM16_Safe), function, 0
+BS3_GLOBAL_NAME_EX TMPL_NM(Bs3SwitchToLM64_Safe), function, 0
 BS3_PROC_BEGIN_MODE Bs3SwitchToLM64, BS3_PBC_NEAR
 %ifdef TMPL_LM64
         ret

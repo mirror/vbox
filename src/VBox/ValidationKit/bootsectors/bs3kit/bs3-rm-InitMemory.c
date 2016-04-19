@@ -32,10 +32,6 @@
 #include "bs3-cmn-memory.h"
 #include <iprt/asm.h>
 
-#ifdef __WATCOMC__
-# pragma code_seg("BS3RMTEXT16", "BS3CLASS16RMCODE")
-#endif
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
