@@ -1554,7 +1554,9 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
         }
         else
         {
+#ifndef VBOX_WITH_NEW_APIC
             AssertRC(rc);
+#endif
             return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
         }
 #else /* !TRPM_FORWARD_TRAPS_IN_GC */

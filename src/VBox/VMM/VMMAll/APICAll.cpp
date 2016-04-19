@@ -628,7 +628,10 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
             {
                 if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
+                {
+                    Log4(("APIC: apicSendIntr: Raising SMI on VCPU%u\n", idCpu));
                     APICSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_SMI);
+                }
             }
             break;
         }
@@ -639,7 +642,10 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
             {
                 if (   VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu)
                     && apicIsEnabled(&pVM->aCpus[idCpu]))
+                {
+                    Log4(("APIC: apicSendIntr: Raising NMI on VCPU%u\n", idCpu));
                     APICSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_NMI);
+                }
             }
             break;
         }
@@ -649,7 +655,10 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
 #ifdef IN_RING3
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
                 if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
+                {
+                    Log4(("APIC: apicSendIntr: Issuing INIT to VCPU%u\n", idCpu));
                     VMMR3SendInitIpi(pVM, idCpu);
+                }
 #else
             /* We need to return to ring-3 to deliver the INIT. */
             rcStrict = rcRZ;
@@ -662,7 +671,10 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
 #ifdef IN_RING3
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
                 if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
+                {
+                    Log4(("APIC: apicSendIntr: Issuing SIPI to VCPU%u\n", idCpu));
                     VMMR3SendStartupIpi(pVM, idCpu, uVector);
+                }
 #else
             /* We need to return to ring-3 to deliver the SIPI. */
             rcStrict = rcRZ;
@@ -674,7 +686,10 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
         {
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
                 if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
+                {
+                    Log4(("APIC: apicSendIntr: Raising EXTINT on VCPU%u\n", idCpu));
                     APICSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_EXTINT);
+                }
             break;
         }
 
@@ -910,10 +925,10 @@ static VBOXSTRICTRC apicSendIpi(PVMCPU pVCpu, int rcRZ)
     VMCPU_ASSERT_EMT(pVCpu);
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    XAPICDELIVERYMODE  const enmDeliveryMode  = (XAPICDELIVERYMODE)pXApicPage->icr_lo.u.u3DeliveryMode;
+    XAPICDELIVERYMODE const  enmDeliveryMode  = (XAPICDELIVERYMODE)pXApicPage->icr_lo.u.u3DeliveryMode;
     XAPICDESTMODE const      enmDestMode      = (XAPICDESTMODE)pXApicPage->icr_lo.u.u1DestMode;
-    XAPICINITLEVEL           enmInitLevel     = (XAPICINITLEVEL)pXApicPage->icr_lo.u.u1Level;
-    XAPICTRIGGERMODE         enmTriggerMode   = (XAPICTRIGGERMODE)pXApicPage->icr_lo.u.u1TriggerMode;
+    XAPICINITLEVEL const     enmInitLevel     = (XAPICINITLEVEL)pXApicPage->icr_lo.u.u1Level;
+    XAPICTRIGGERMODE const   enmTriggerMode   = (XAPICTRIGGERMODE)pXApicPage->icr_lo.u.u1TriggerMode;
     XAPICDESTSHORTHAND const enmDestShorthand = (XAPICDESTSHORTHAND)pXApicPage->icr_lo.u.u2DestShorthand;
     uint8_t const            uVector          = pXApicPage->icr_lo.u.u8Vector;
 
@@ -923,16 +938,15 @@ static VBOXSTRICTRC apicSendIpi(PVMCPU pVCpu, int rcRZ)
 #if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
     /*
      * INIT Level De-assert is not support on Pentium 4 and Xeon processors.
+     * See AMD spec. 16.5 "Interprocessor Interrupts (IPI)" for a table of valid ICR combinations.
      */
     if (RT_UNLIKELY(   enmDeliveryMode == XAPICDELIVERYMODE_INIT_LEVEL_DEASSERT
                     && enmInitLevel    == XAPICINITLEVEL_DEASSERT
                     && enmTriggerMode  == XAPICTRIGGERMODE_LEVEL))
     {
+        Log4(("APIC%u: INIT level de-assert unsupported, ignoring!\n", pVCpu->idCpu));
         return VINF_SUCCESS;
     }
-
-    enmInitLevel   = XAPICINITLEVEL_ASSERT;
-    enmTriggerMode = XAPICTRIGGERMODE_EDGE;
 #else
 # error "Implement Pentium and P6 family APIC architectures"
 #endif
@@ -1014,8 +1028,7 @@ static VBOXSTRICTRC apicSetIcrLo(PVMCPU pVCpu, uint32_t uIcrLo, int rcRZ)
     pXApicPage->icr_lo.all.u32IcrLo = uIcrLo & XAPIC_ICR_LO_WR;
     Log4(("APIC%u: apicSetIcrLo: uIcrLo=%#RX32\n", pVCpu->idCpu, pXApicPage->icr_lo.all.u32IcrLo));
 
-    apicSendIpi(pVCpu, rcRZ);
-    return VINF_SUCCESS;
+    return apicSendIpi(pVCpu, rcRZ);
 }
 
 
@@ -2262,7 +2275,8 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
     LogFlow(("APIC%u: APICGetInterrupt\n", pVCpu->idCpu));
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    if (   apicIsEnabled(pVCpu)
+    bool const fApicHwEnabled = apicIsEnabled(pVCpu);
+    if (   fApicHwEnabled
         && pXApicPage->svr.u.fApicSoftwareEnable)
     {
         APICUpdatePendingInterrupts(pVCpu);
@@ -2294,8 +2308,15 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
                 Log4(("APIC%u: APICGetInterrupt: Valid Interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
                 return uVector;
             }
+            else
+                Log4(("APIC%u: APICGetInterrupt: Interrupt's priority is not higher than the PPR uVector=%#x PPR=%#x\n",
+                      pVCpu->idCpu, uVector, uPpr));
         }
+        else
+            Log4(("APIC%u: APICGetInterrupt: No pending bits in IRR\n", pVCpu->idCpu));
     }
+    else
+        Log4(("APIC%u: APICGetInterrupt: APIC %s disabled\n", pVCpu->idCpu, !fApicHwEnabled ? "hardware" : "software"));
 
     return -1;
 }
@@ -2317,10 +2338,10 @@ VMMDECL(int) APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr,
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioRead));
 
-    Log4(("APIC%u: ApicReadMmio: offReg=%#RX16\n", pVCpu->idCpu, offReg));
-
     int rc = apicReadRegister(pApicDev, pVCpu, offReg, &uValue);
     *(uint32_t *)pv = uValue;
+
+    Log4(("APIC%u: ApicReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
     return rc;
 }
 
