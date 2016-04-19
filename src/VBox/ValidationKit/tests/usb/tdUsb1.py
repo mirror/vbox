@@ -48,7 +48,7 @@ from testdriver import vbox;
 from testdriver import vboxcon;
 
 # USB gadget control import
-import usbgadget2;
+import usbgadget;
 
 class tdUsbBenchmark(vbox.TestDriver):                                      # pylint: disable=R0902
     """
@@ -307,7 +307,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         # Get configured USB test devices from hostname we are running on
         sGadgetHost, uGadgetPort = self.getGadgetParams(self.sHostname, sSpeed);
 
-        oUsbGadget = usbgadget2.UsbGadget();
+        oUsbGadget = usbgadget.UsbGadget();
         reporter.log('Connecting to UTS: ' + sGadgetHost);
         fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost, uPort = uGadgetPort);
         if fRc is True:
@@ -315,7 +315,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);
 
             # Create test device gadget and a filter to attach the device automatically.
-            fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
+            fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
                 fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
@@ -355,14 +355,14 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         # Get configured USB test devices from hostname we are running on
         sGadgetHost, uGadgetPort = self.getGadgetParams(self.sHostname, sSpeed);
 
-        oUsbGadget = usbgadget2.UsbGadget();
+        oUsbGadget = usbgadget.UsbGadget();
         reporter.log('Connecting to UTS: ' + sGadgetHost);
         fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost,  uPort = uGadgetPort);
         if fRc is True:
             self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);
 
             # Create test device gadget and a filter to attach the device automatically.
-            fRc = oUsbGadget.impersonate(usbgadget2.g_ksGadgetImpersonationTest);
+            fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
                 fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \

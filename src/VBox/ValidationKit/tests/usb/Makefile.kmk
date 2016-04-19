@@ -33,7 +33,8 @@ ValidationKitTestsUsb_TEMPLATE = VBoxValidationKitR3
 ValidationKitTestsUsb_INST = $(INST_VALIDATIONKIT)tests/usb/
 ValidationKitTestsUsb_EXEC_SOURCES := \
 	$(PATH_SUB_CURRENT)/tdUsb1.py \
-	$(PATH_SUB_CURRENT)/usbgadget.py
+	$(PATH_SUB_CURRENT)/usbgadget.py \
+	$(PATH_SUB_CURRENT)/tst-utsgadget.py
 
 VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsUsb_EXEC_SOURCES)
 
