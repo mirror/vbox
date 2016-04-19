@@ -36,7 +36,7 @@ import types
 sys.path.insert(0, '.');
 sys.path.insert(0, '..');
 sys.path.insert(0, '../..');
-import usbgadget2;
+import usbgadget;
 import testdriver.reporter as reporter
 
 g_cTests = 0;
