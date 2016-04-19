@@ -604,7 +604,7 @@ void UIMiniToolBar::prepare()
     m_pHoverEnterTimer = new QTimer(this);
     {
         m_pHoverEnterTimer->setSingleShot(true);
-        m_pHoverEnterTimer->setInterval(50);
+        m_pHoverEnterTimer->setInterval(500);
         connect(m_pHoverEnterTimer, SIGNAL(timeout()), this, SLOT(sltHoverEnter()));
     }
     m_pHoverLeaveTimer = new QTimer(this);
