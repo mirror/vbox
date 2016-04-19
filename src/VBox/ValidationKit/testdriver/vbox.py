@@ -477,11 +477,12 @@ class EventHandlerBase(object):
                 break;
             if oEvt:
                 self.handleEvent(oEvt);
-                try:
-                    self.oEventSrc.eventProcessed(self.oListener, oEvt);
-                except:
-                    reporter.logXcpt();
-                    break;
+                if not self.fShutdown:
+                    try:
+                        self.oEventSrc.eventProcessed(self.oListener, oEvt);
+                    except:
+                        reporter.logXcpt();
+                        break;
         self.unregister(fWaitForThread = False);
         return None;
 
@@ -499,31 +500,32 @@ class EventHandlerBase(object):
         """
         Unregister the event handler.
         """
-        self.fShutdown = True;
+        if not self.fShutdown:
+            self.fShutdown = True;
 
-        fRc = False;
-        if self.oEventSrc is not None:
-            if self.fpApiVer < 3.3:
-                try:
-                    self.oEventSrc.unregisterCallback(self.oListener);
-                    fRc = True;
-                except:
-                    reporter.errorXcpt('unregisterCallback failed on %s' % (self.oListener,));
-            else:
-                try:
-                    self.oEventSrc.unregisterListener(self.oListener);
-                    fRc = True;
-                except:
-                    if self.oVBoxMgr.xcptIsDeadInterface():
-                        reporter.log('unregisterListener failed on %s because of dead interface (%s)'
-                                     % (self.oListener, self.oVBoxMgr.xcptToString(),));
-                    else:
-                        reporter.errorXcpt('unregisterListener failed on %s' % (self.oListener,));
+            fRc = False;
+            if self.oEventSrc is not None:
+                if self.fpApiVer < 3.3:
+                    try:
+                        self.oEventSrc.unregisterCallback(self.oListener);
+                        fRc = True;
+                    except:
+                        reporter.errorXcpt('unregisterCallback failed on %s' % (self.oListener,));
+                else:
+                    try:
+                        self.oEventSrc.unregisterListener(self.oListener);
+                        fRc = True;
+                    except:
+                        if self.oVBoxMgr.xcptIsDeadInterface():
+                            reporter.log('unregisterListener failed on %s because of dead interface (%s)'
+                                         % (self.oListener, self.oVBoxMgr.xcptToString(),));
+                        else:
+                            reporter.errorXcpt('unregisterListener failed on %s' % (self.oListener,));
 
-        if    self.oThread is not None \
-          and self.oThread != threading.current_thread():
-            self.oThread.join();
-            self.oThread = None;
+            if    self.oThread is not None \
+              and self.oThread != threading.current_thread():
+                self.oThread.join();
+                self.oThread = None;
 
         _ = fWaitForThread;
         return fRc;
