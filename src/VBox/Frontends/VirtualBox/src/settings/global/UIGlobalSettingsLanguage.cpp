@@ -139,6 +139,11 @@ public:
          * from being shrinked too much when the list wants to be wider */
         setText(2, "                ");
         setText(3, "                ");
+
+        /* Default language item appears in italic: */
+        QFont fnt = font(0);
+        fnt.setItalic(true);
+        setFont(0, fnt);
     }
 
     bool isBuiltIn() const { return m_fBuiltIn; }
