@@ -67,9 +67,6 @@ BS3_PROC_BEGIN_CMN bs3TestSendCmdWithU32, BS3_PBC_HYBRID
         out     dx, eax
 %endif
 
-%if TMPL_BITS == 16
-        pop     sAX
-%endif
 .no_vmmdev:
         pop     xSI
         pop     xDX

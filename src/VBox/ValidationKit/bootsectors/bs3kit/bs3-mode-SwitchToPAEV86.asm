@@ -39,6 +39,9 @@
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
+%if TMPL_BITS == 16
+BS3_GLOBAL_NAME_EX TMPL_NM(Bs3SwitchToPAEV86_Safe), function , 0
+%endif
 BS3_PROC_BEGIN_MODE Bs3SwitchToPAEV86, BS3_PBC_NEAR
 %if TMPL_MODE == BS3_MODE_PAEV86
         ret
@@ -88,5 +91,18 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPAEV86, BS3_PBC_FAR
         retf
  %endif
 BS3_PROC_END_MODE   Bs3SwitchToPAEV86
+
+%else
+;;
+; Safe far return to non-BS3TEXT16 code.
+BS3_EXTERN_CMN Bs3SwitchHlpConvFlatRetToRetfProtMode
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+BS3_PROC_BEGIN_MODE Bs3SwitchToPAEV86_Safe, BS3_PBC_NEAR
+        call        Bs3SwitchHlpConvFlatRetToRetfProtMode ; Special internal function.  Uses nothing, but modifies the stack.
+        call        TMPL_NM(Bs3SwitchToPAEV86)
+        BS3_SET_BITS 16
+        retf
+BS3_PROC_END_MODE   Bs3SwitchToPAEV86_Safe
 %endif
 

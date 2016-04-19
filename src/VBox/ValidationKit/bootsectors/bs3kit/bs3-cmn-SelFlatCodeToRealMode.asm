@@ -34,14 +34,16 @@
 ;*********************************************************************************************************************************
 ;*      Global Variables                                                                                                         *
 ;*********************************************************************************************************************************
-extern Bs3X0Text16_EndOfSegment
-extern Bs3X1Text16_EndOfSegment
+BS3_EXTERN_DATA16 Bs3RmText16_EndOfSegment
+BS3_EXTERN_DATA16 Bs3X0Text16_EndOfSegment
+BS3_EXTERN_DATA16 Bs3X1Text16_EndOfSegment
 
 
 ;
 ; Make sure we can get at all the segments.
 ;
 BS3_BEGIN_TEXT16
+BS3_BEGIN_RMTEXT16
 BS3_BEGIN_X0TEXT16
 BS3_BEGIN_X1TEXT16
 TMPL_BEGIN_TEXT
@@ -76,12 +78,20 @@ BS3_PROC_BEGIN_CMN Bs3SelFlatCodeToRealMode, BS3_PBC_NEAR
         or      dl, al                                  ; dx =  0x5432
 
         mov     ax, dx
-        sub     ax, BS3TEXT16
+        sub     ax, CGROUP16
         cmp     ax, 1000h
         jb      .bs3text16
 
         mov     ax, dx
-        sub     ax, BS3X0TEXT16
+        sub     ax, BS3GROUPRMTEXT16
+        mov     bx, Bs3RmText16_EndOfSegment wrt BS3GROUPRMTEXT16
+        add     bx, 15
+        shr     bx, cl
+        cmp     ax, bx
+        jb      .bs3rmtext16
+
+        mov     ax, dx
+        sub     ax, BS3GROUPX0TEXT16
         mov     bx, Bs3X0Text16_EndOfSegment wrt BS3GROUPX0TEXT16
         add     bx, 15
         shr     bx, cl
@@ -89,7 +99,7 @@ BS3_PROC_BEGIN_CMN Bs3SelFlatCodeToRealMode, BS3_PBC_NEAR
         jb      .bs3x0text16
 
         mov     ax, dx
-        sub     ax, BS3X1TEXT16
+        sub     ax, BS3GROUPX1TEXT16
         mov     bx, Bs3X1Text16_EndOfSegment wrt BS3GROUPX1TEXT16
         add     bx, 15
         shr     bx, cl
@@ -103,13 +113,16 @@ BS3_PROC_BEGIN_CMN Bs3SelFlatCodeToRealMode, BS3_PBC_NEAR
         ; Load the real-mode frame into DX and calc the offset in AX.
         ;
 .bs3x1text16:
-        mov     dx, BS3X1TEXT16
+        mov     dx, BS3GROUPX1TEXT16
         jmp     .calc_return
 .bs3x0text16:
-        mov     dx, BS3X0TEXT16
+        mov     dx, BS3GROUPX0TEXT16
+        jmp     .calc_return
+.bs3rmtext16:
+        mov     dx, BS3GROUPRMTEXT16
         jmp     .calc_return
 .bs3text16:
-        mov     dx, BS3X0TEXT16
+        mov     dx, CGROUP16
 .calc_return:
         ; Convert the real-mode frame into the low 16-bit base (BX).
         mov     bx, dx

@@ -40,6 +40,7 @@
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
+BS3_GLOBAL_NAME_EX TMPL_NM(Bs3SwitchToPE32_Safe), function, 0
 BS3_PROC_BEGIN_MODE Bs3SwitchToPE32, BS3_PBC_NEAR
 %ifdef TMPL_PE32
         ret
@@ -151,11 +152,11 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPE32, BS3_PBC_FAR
 
         ; Jmp to common code for the tedious conversion.
  %if BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
-        BS3_EXTERN_CMN Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn
-        jmp         Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn
+        extern      _Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn_c32
+        jmp         _Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn_c32
  %else
-        BS3_EXTERN_CMN Bs3SwitchHlpConvProtModeRetfPopBpDecBpAndReturn
-        jmp         Bs3SwitchHlpConvProtModeRetfPopBpDecBpAndReturn
+        extern      _Bs3SwitchHlpConvProtModeRetfPopBpDecBpAndReturn_c32
+        jmp         _Bs3SwitchHlpConvProtModeRetfPopBpDecBpAndReturn_c32
  %endif
         BS3_SET_BITS 16
 BS3_PROC_END_MODE   Bs3SwitchToPE32

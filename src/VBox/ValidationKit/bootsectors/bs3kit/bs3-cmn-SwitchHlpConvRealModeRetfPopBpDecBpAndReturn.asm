@@ -50,7 +50,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn, BS3_PBC_NEAR
         mov         ax, [bp + 2 + 2]
         push        ax
         BS3_EXTERN_CMN Bs3SelRealModeCodeToProtMode
-        call        Bs3SelRealModeCodeToProtMode ; This doesn't trash any registers (except AX).
+        call        Bs3SelRealModeCodeToProtMode    ; This doesn't trash any registers (except AX).
         add         sp, 2
         mov         [bp + 2 + 2], ax
 
@@ -60,28 +60,40 @@ BS3_PROC_BEGIN_CMN Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn, BS3_PBC_NEAR
         dec         bp
         retf
 
-%else
+%elif TMPL_BITS == 32
         push    xAX
         push    xDX
 
-        movzx   eax, word [xSP + 4*2 + 2 + 2]   ; return segment
-        movzx   edx, word [xSP + 4*2 + 2]       ; return offset
+        movzx   eax, word [xSP + xCB*2 + 2 + 2]     ; return segment
+        movzx   edx, word [xSP + xCB*2 + 2]         ; return offset
         shl     eax, 4
         add     eax, edx
-        mov     [xSP + 4*3 + 2], eax
+        mov     [xSP + xCB*2 + 2], eax
 
         pop     xDX
         pop     xAX
- %if TMPL_BITS == 32
         pop     bp
         dec     bp
         ret
- %else
-        mov     bp, [rsp]
-        add     rsp, 2h
+%else
+        sub     rsp, 2h
+
+        push    xAX
+        push    xDX
+
+        movzx   eax, word [xSP + xCB*2 + 4 + 2]     ; return segment
+        movzx   edx, word [xSP + xCB*2 + 4]         ; return offset
+        shl     eax, 4
+        add     eax, edx
+
+        mov     bp, [xSP + xCB*2 + 2]
         dec     bp
-        o32 ret
- %endif
+
+        mov     [xSP + xCB*2], rax
+
+        pop     xDX
+        pop     xAX
+        ret
 %endif
 BS3_PROC_END_CMN   Bs3SwitchHlpConvRealModeRetfPopBpDecBpAndReturn
 

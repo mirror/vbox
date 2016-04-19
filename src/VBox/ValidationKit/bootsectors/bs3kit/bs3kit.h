@@ -227,8 +227,9 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_TSS64_SPARE1        0x0090 /**< The 64-bit TSS selector. */
 #define BS3_SEL_TSS64_IOBP          0x00a0 /**< The 64-bit TSS selector. */
 
+#define BS3_SEL_RMTEXT16_CS         0x00e0 /**< Conforming code selector for accessing the BS3RMTEXT16 segment. Runtime config. */
 #define BS3_SEL_X0TEXT16_CS         0x00e8 /**< Conforming code selector for accessing the BS3X0TEXT16 segment. Runtime config. */
-#define BS3_SEL_X1TEXT16_CS         0x00f0 /**< Conforming code selector for accessing the BS3X0TEXT16 segment. Runtime config. */
+#define BS3_SEL_X1TEXT16_CS         0x00f0 /**< Conforming code selector for accessing the BS3X1TEXT16 segment. Runtime config. */
 #define BS3_SEL_VMMDEV_MMIO16       0x00f8 /**< Selector for accessing the VMMDev MMIO segment at 0100000h from 16-bit code. */
 
 #define BS3_SEL_RING_SHIFT          8      /**< For the formula: BS3_SEL_R0_XXX + ((cs & 3) << BS3_SEL_RING_SHIFT) */
@@ -704,6 +705,7 @@ extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64;                  /**< @see BS3_SEL_TS
 extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64Spare0;            /**< @see BS3_SEL_TSS64_SPARE0 */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64Spare1;            /**< @see BS3_SEL_TSS64_SPARE1 */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_Tss64Iobp;              /**< @see BS3_SEL_TSS64_IOBP */
+extern X86DESC BS3_FAR_DATA Bs3Gdte_RMTEXT16_CS;            /**< @see BS3_SEL_RMTEXT16_CS */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_X0TEXT16_CS;            /**< @see BS3_SEL_X0TEXT16_CS */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_X1TEXT16_CS;            /**< @see BS3_SEL_X1TEXT16_CS */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_R0_MMIO16;              /**< @see BS3_SEL_VMMDEV_MMIO16 */
@@ -929,6 +931,10 @@ extern uint8_t  BS3_FAR_DATA Bs3Data16_EndOfSegment;
 extern uint8_t  BS3_FAR_DATA Bs3RmText16_StartOfSegment;
 /** End of the BS3RMTEXT16 segment.   */
 extern uint8_t  BS3_FAR_DATA Bs3RmText16_EndOfSegment;
+/** The size of the BS3RMTEXT16 segment.   */
+extern uint16_t BS3_FAR_DATA Bs3RmText16_Size;
+/** The flat start address of the BS3X0TEXT16 segment.   */
+extern uint32_t BS3_FAR_DATA Bs3RmText16_FlatAddr;
 
 /** Start of the BS3X0TEXT16 segment.   */
 extern uint8_t  BS3_FAR_DATA Bs3X0Text16_StartOfSegment;
@@ -936,7 +942,7 @@ extern uint8_t  BS3_FAR_DATA Bs3X0Text16_StartOfSegment;
 extern uint8_t  BS3_FAR_DATA Bs3X0Text16_EndOfSegment;
 /** The size of the BS3X0TEXT16 segment.   */
 extern uint16_t BS3_FAR_DATA Bs3X0Text16_Size;
-/** The flat start address of the BS3X1TEXT16 segment.   */
+/** The flat start address of the BS3X0TEXT16 segment.   */
 extern uint32_t BS3_FAR_DATA Bs3X0Text16_FlatAddr;
 
 /** Start of the BS3X1TEXT16 segment.   */

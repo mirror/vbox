@@ -54,7 +54,7 @@ TMPL_BEGIN_TEXT
 ; @cproto   BS3_DECL(void) Bs3SwitchToRM(void);
 ;
 ; @uses     GPRs and EFLAGS are unchanged (except high 32-bit register (AMD64) parts).
-;           CS is loaded with BS3TEXT16.
+;           CS is loaded with CGROUP16.
 ;           SS:[RE]SP is converted to real mode address.
 ;           DS and ES are loaded with BS3DATA16_GROUP.
 ;           FS and GS are loaded with zero if present.
@@ -64,6 +64,9 @@ TMPL_BEGIN_TEXT
 ;
 ; @remarks  Does not require 20h of parameter scratch space in 64-bit mode.
 ;
+%if TMPL_BITS == 16
+BS3_GLOBAL_NAME_EX TMPL_NM(Bs3SwitchToRM_Safe), function , 0
+%endif
 BS3_PROC_BEGIN_MODE Bs3SwitchToRM, BS3_PBC_NEAR
 %ifdef TMPL_RM
         push    ax
@@ -264,7 +267,7 @@ BS3_BEGIN_TEXT16
         mov     eax, cr0
         and     eax, X86_CR0_NO_PE_NO_PG
         mov     cr0, eax
-        jmp     BS3TEXT16:.reload_cs
+        jmp     CGROUP16:.reload_cs
 .reload_cs:
 
         ;
@@ -360,5 +363,37 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM, BS3_PBC_FAR
         retf
  %endif
 BS3_PROC_END_MODE   Bs3SwitchToRM
+
+%else
+;;
+; Safe far return to non-BS3TEXT16 code.
+BS3_EXTERN_CMN Bs3SelFlatCodeToRealMode
+BS3_BEGIN_TEXT16
+BS3_SET_BITS TMPL_BITS
+BS3_PROC_BEGIN_MODE Bs3SwitchToRM_Safe, BS3_PBC_NEAR
+ %if TMPL_BITS == 64
+        push        xAX
+        push        xCX
+        sub         xSP, 20h
+
+        mov         xCX, [xSP + xCB*2 + 20h]
+        call        Bs3SelFlatCodeToRealMode ; well behaved assembly function, only clobbers ecx
+        mov         [xSP + xCB*2 + 20h + 4], eax
+
+        add         xSP, 20h
+        pop         xCX
+        pop         xAX
+        add         xSP, 4
+ %else
+        xchg        eax, [xSP]
+        push        xAX
+        call        Bs3SelFlatCodeToRealMode ; well behaved assembly function, only clobbers eax
+        add         xSP, 4
+        xchg        [xSP], eax
+ %endif
+        call        TMPL_NM(Bs3SwitchToRM)
+        BS3_SET_BITS 16
+        retf
+BS3_PROC_END_MODE   Bs3SwitchToRM_Safe
 %endif
 

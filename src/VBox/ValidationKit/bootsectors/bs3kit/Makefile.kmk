@@ -218,7 +218,6 @@ bs3kit-common-16_VBOX_NEAR_TO_FAR_FUNCTIONS := \
        Bs3Trap16InitEx \
 
 bs3kit-common-16_VBOX_NEAR_TO_FAR_MODE_FUNCTIONS := \
-	Bs3TestDoModes \
 	Bs3TrapInit \
 
 $(call BS3KIT_FN_GEN_NEARSTUBS,bs3kit-common-16,$(bs3kit-common-16_VBOX_NEAR_TO_FAR_FUNCTIONS))
@@ -231,6 +230,7 @@ bs3kit-common-32_INSTTYPE = none
 bs3kit-common-32_DEFS     = TMPL_PE32 BS3_CMN_ONLY
 bs3kit-common-32_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
+       bs3-cmn-SwitchHlpConvFlatRetToRetfProtMode.asm \
 	bs3-cmn-UInt64Div.c \
 	bs3-wc32-U8D.asm \
 	bs3-wc32-I8D.asm \
@@ -246,6 +246,7 @@ bs3kit-common-64_INSTTYPE = none
 bs3kit-common-64_DEFS     = TMPL_LM64 BS3_CMN_ONLY
 bs3kit-common-64_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
+       bs3-cmn-SwitchHlpConvFlatRetToRetfProtMode.asm \
        bs3-c64-Trap64Generic.asm \
        ../../../Runtime/common/asm/ASMGetIDTR.asm \
        ../../../Runtime/common/asm/ASMSetIDTR.asm \

@@ -97,12 +97,18 @@ BS3_GLOBAL_DATA Bs3Data16Thru64Text32And64_TotalSize, 4
     dd  BS3_DATA_NM(Bs3Data64_EndOfSegment) wrt BS3KIT_GRPNM_DATA16
 BS3_GLOBAL_DATA Bs3TotalImageSize, 4
     dd  BS3_DATA_NM(Bs3Data64_EndOfSegment) wrt CGROUP16
+
 BS3_GLOBAL_DATA Bs3Text16_Size, 2
     dw  BS3_DATA_NM(Bs3Text16_EndOfSegment) wrt CGROUP16
+BS3_GLOBAL_DATA Bs3RmText16_Size, 2
+    dw  BS3_DATA_NM(Bs3RmText16_EndOfSegment) wrt BS3GROUPRMTEXT16
 BS3_GLOBAL_DATA Bs3X0Text16_Size, 2
     dw  BS3_DATA_NM(Bs3X0Text16_EndOfSegment) wrt BS3GROUPX0TEXT16
 BS3_GLOBAL_DATA Bs3X1Text16_Size, 2
     dw  BS3_DATA_NM(Bs3X1Text16_EndOfSegment) wrt BS3GROUPX1TEXT16
+
+BS3_GLOBAL_DATA Bs3RmText16_FlatAddr, 4
+    dd  BS3_DATA_NM(Bs3RmText16_StartOfSegment) wrt BS3FLAT
 BS3_GLOBAL_DATA Bs3X0Text16_FlatAddr, 4
     dd  BS3_DATA_NM(Bs3X0Text16_StartOfSegment) wrt BS3FLAT
 BS3_GLOBAL_DATA Bs3X1Text16_FlatAddr, 4

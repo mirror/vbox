@@ -30,6 +30,7 @@
 ; Make sure we can get at all the segments.
 ;
 BS3_BEGIN_TEXT16
+BS3_BEGIN_RMTEXT16
 BS3_BEGIN_X0TEXT16
 BS3_BEGIN_X1TEXT16
 TMPL_BEGIN_TEXT
@@ -45,12 +46,15 @@ BS3_PROC_BEGIN_CMN Bs3SelRealModeCodeToProtMode, BS3_PBC_NEAR
         mov     xBP, xSP
 
         mov     ax, [xBP + xCB + cbCurRetAddr]
-        cmp     ax, BS3TEXT16
+        cmp     ax, CGROUP16
         je      .bs3text16
-        cmp     ax, BS3X0TEXT16
+        cmp     ax, BS3GROUPRMTEXT16
+        je      .bs3rmtext16
+        cmp     ax, BS3GROUPX0TEXT16
         je      .bs3x0text16
-        cmp     ax, BS3X1TEXT16
+        cmp     ax, BS3GROUPX1TEXT16
         je      .bs3x1text16
+
         extern  BS3_CMN_NM(Bs3Panic)
         call    BS3_CMN_NM(Bs3Panic)
         jmp     .return
@@ -60,6 +64,9 @@ BS3_PROC_BEGIN_CMN Bs3SelRealModeCodeToProtMode, BS3_PBC_NEAR
         jmp     .return
 .bs3x0text16:
         mov     ax, BS3_SEL_X0TEXT16_CS
+        jmp     .return
+.bs3rmtext16:
+        mov     ax, BS3_SEL_RMTEXT16_CS
         jmp     .return
 .bs3text16:
         mov     ax, BS3_SEL_R0_CS16

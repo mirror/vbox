@@ -43,10 +43,21 @@
 
 BS3_DECL_FAR(void) Bs3InitGdt_rm_far(void)
 {
+#if 1
+    Bs3Gdte_R0_CS16.Gen.u16LimitLow     = Bs3Text16_Size - 1;
+    Bs3Gdte_R1_CS16.Gen.u16LimitLow     = Bs3Text16_Size - 1;
+    Bs3Gdte_R2_CS16.Gen.u16LimitLow     = Bs3Text16_Size - 1;
+    Bs3Gdte_R3_CS16.Gen.u16LimitLow     = Bs3Text16_Size - 1;
+#endif
+    Bs3Gdte_RMTEXT16_CS.Gen.u16LimitLow = Bs3RmText16_Size - 1;
     Bs3Gdte_X0TEXT16_CS.Gen.u16LimitLow = Bs3X0Text16_Size - 1;
-    Bs3Gdte_X1TEXT16_CS.Gen.u16LimitLow = Bs3X0Text16_Size - 1;
+    Bs3Gdte_X1TEXT16_CS.Gen.u16LimitLow = Bs3X1Text16_Size - 1;
+
+    Bs3Gdte_RMTEXT16_CS.Gen.u16BaseLow  = (uint16_t)Bs3RmText16_FlatAddr;
     Bs3Gdte_X0TEXT16_CS.Gen.u16BaseLow  = (uint16_t)Bs3X0Text16_FlatAddr;
     Bs3Gdte_X1TEXT16_CS.Gen.u16BaseLow  = (uint16_t)Bs3X1Text16_FlatAddr;
+
+    Bs3Gdte_RMTEXT16_CS.Gen.u8BaseHigh1 = (uint8_t)(Bs3RmText16_FlatAddr >> 16);
     Bs3Gdte_X0TEXT16_CS.Gen.u8BaseHigh1 = (uint8_t)(Bs3X0Text16_FlatAddr >> 16);
     Bs3Gdte_X1TEXT16_CS.Gen.u8BaseHigh1 = (uint8_t)(Bs3X1Text16_FlatAddr >> 16);
 }

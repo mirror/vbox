@@ -49,6 +49,9 @@
 # define Bs3Gdte_Tss64Spare0                    BS3_DATA_NM(Bs3Gdte_Tss64Spare0)
 # define Bs3Gdte_Tss64Spare1                    BS3_DATA_NM(Bs3Gdte_Tss64Spare1)
 # define Bs3Gdte_Tss64Iobp                      BS3_DATA_NM(Bs3Gdte_Tss64Iobp)
+# define Bs3Gdte_RMTEXT16_CS                    BS3_DATA_NM(Bs3Gdte_RMTEXT16_CS)
+# define Bs3Gdte_X0TEXT16_CS                    BS3_DATA_NM(Bs3Gdte_X0TEXT16_CS)
+# define Bs3Gdte_X1TEXT16_CS                    BS3_DATA_NM(Bs3Gdte_X1TEXT16_CS)
 # define Bs3Gdte_R0_MMIO16                      BS3_DATA_NM(Bs3Gdte_R0_MMIO16)
 
 # define Bs3Gdte_R0_First                       BS3_DATA_NM(Bs3Gdte_R0_First)
@@ -219,21 +222,43 @@
 # define Bs3Text16_StartOfSegment               BS3_DATA_NM(Bs3Text16_StartOfSegment)
 # define Bs3Text16_EndOfSegment                 BS3_DATA_NM(Bs3Text16_EndOfSegment)
 # define Bs3Text16_Size                         BS3_DATA_NM(Bs3Text16_Size)
+
 # define Bs3System16_StartOfSegment             BS3_DATA_NM(Bs3System16_StartOfSegment)
 # define Bs3System16_EndOfSegment               BS3_DATA_NM(Bs3System16_EndOfSegment)
+
 # define Bs3Data16_StartOfSegment               BS3_DATA_NM(Bs3Data16_StartOfSegment)
 # define Bs3Data16_EndOfSegment                 BS3_DATA_NM(Bs3Data16_EndOfSegment)
+
+# define Bs3RmText16_StartOfSegment             BS3_DATA_NM(Bs3RmText16_StartOfSegment)
+# define Bs3RmText16_EndOfSegment               BS3_DATA_NM(Bs3RmText16_EndOfSegment)
+# define Bs3RmText16_Size                       BS3_DATA_NM(Bs3RmText16_Size)
+# define Bs3RmText16_FlatAddr                   BS3_DATA_NM(Bs3RmText16_FlatAddr)
+
+# define Bs3X0Text16_StartOfSegment             BS3_DATA_NM(Bs3X0Text16_StartOfSegment)
+# define Bs3X0Text16_EndOfSegment               BS3_DATA_NM(Bs3X0Text16_EndOfSegment)
+# define Bs3X0Text16_Size                       BS3_DATA_NM(Bs3X0Text16_Size)
+# define Bs3X0Text16_FlatAddr                   BS3_DATA_NM(Bs3X0Text16_FlatAddr)
+
+# define Bs3X1Text16_StartOfSegment             BS3_DATA_NM(Bs3X1Text16_StartOfSegment)
+# define Bs3X1Text16_EndOfSegment               BS3_DATA_NM(Bs3X1Text16_EndOfSegment)
+# define Bs3X1Text16_Size                       BS3_DATA_NM(Bs3X1Text16_Size)
+# define Bs3X1Text16_FlatAddr                   BS3_DATA_NM(Bs3X1Text16_FlatAddr)
+
 # define Bs3Text32_StartOfSegment               BS3_DATA_NM(Bs3Text32_StartOfSegment)
 # define Bs3Text32_EndOfSegment                 BS3_DATA_NM(Bs3Text32_EndOfSegment)
+
 # define Bs3Data32_StartOfSegment               BS3_DATA_NM(Bs3Data32_StartOfSegment)
 # define Bs3Data32_EndOfSegment                 BS3_DATA_NM(Bs3Data32_EndOfSegment)
+
 # define Bs3Text64_StartOfSegment               BS3_DATA_NM(Bs3Text64_StartOfSegment)
 # define Bs3Text64_EndOfSegment                 BS3_DATA_NM(Bs3Text64_EndOfSegment)
+
 # define Bs3Data64_StartOfSegment               BS3_DATA_NM(Bs3Data64_StartOfSegment)
 # define Bs3Data64_EndOfSegment                 BS3_DATA_NM(Bs3Data64_EndOfSegment)
 
 # define Bs3Data16Thru64Text32And64_TotalSize   BS3_DATA_NM(Bs3Data16Thru64Text32And64_TotalSize)
 # define Bs3TotalImageSize                      BS3_DATA_NM(Bs3TotalImageSize)
+
 # define g_achBs3HexDigits                      BS3_DATA_NM(g_achBs3HexDigits)
 # define g_achBs3HexDigitsUpper                 BS3_DATA_NM(g_achBs3HexDigitsUpper)
 # define g_bBs3CurrentMode                      BS3_DATA_NM(g_bBs3CurrentMode)

@@ -30,6 +30,7 @@
 ; Make sure we can get at all the segments.
 ;
 BS3_BEGIN_TEXT16
+BS3_BEGIN_RMTEXT16
 BS3_BEGIN_X0TEXT16
 BS3_BEGIN_X1TEXT16
 TMPL_BEGIN_TEXT
@@ -49,12 +50,14 @@ BS3_PROC_BEGIN_CMN Bs3SelProtModeCodeToRealMode, BS3_PBC_NEAR
         and     ax, X86_SEL_MASK_OFF_RPL
 
         ; We're allowed to use the real-mode segment value.
-        cmp     ax, BS3TEXT16
+        cmp     ax, CGROUP16
         je      .bs3text16
 
         ; Check for typical code segments.
         cmp     ax, BS3_SEL_R0_CS16
         je      .bs3text16
+        cmp     ax, BS3_SEL_RMTEXT16_CS
+        je      .bs3rmtext16
         cmp     ax, BS3_SEL_X0TEXT16_CS
         je      .bs3x0text16
         cmp     ax, BS3_SEL_X1TEXT16_CS
@@ -80,18 +83,22 @@ AssertCompile(BS3_SEL_RING_SHIFT == 8)
         cmp     ax, BS3_SEL_R0_CS16_CNF_EO & 0xff
         je      .bs3text16
 .panic:
+hlt
         extern  BS3_CMN_NM(Bs3Panic)
         call    BS3_CMN_NM(Bs3Panic)
         jmp     .return
 
 .bs3x1text16:
-        mov     ax, BS3_SEL_X1TEXT16_CS
+        mov     ax, BS3GROUPX1TEXT16
         jmp     .return
 .bs3x0text16:
-        mov     ax, BS3_SEL_X0TEXT16_CS
+        mov     ax, BS3GROUPX0TEXT16
+        jmp     .return
+.bs3rmtext16:
+        mov     ax, BS3GROUPRMTEXT16
         jmp     .return
 .bs3text16:
-        mov     ax, BS3TEXT16
+        mov     ax, CGROUP16
 .return:
         pop     xBP
         BS3_CALL_CONV_EPILOG 1
