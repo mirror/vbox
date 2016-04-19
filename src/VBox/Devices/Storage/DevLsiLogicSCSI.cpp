@@ -3890,7 +3890,7 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *p
     else if (RT_FAILURE(rc))
         AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
