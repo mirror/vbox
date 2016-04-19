@@ -1037,7 +1037,6 @@ class TransportTcp(TransportBase):
                     iRc = -42;
                     reporter.fatalXcpt('socket.select() on connect failed');
 
-            # pylint: disable=R0916
             if rc is True:
                 pass;
             elif  iRc == errno.ECONNREFUSED \
@@ -1051,7 +1050,6 @@ class TransportTcp(TransportBase):
                 if iRc != errno.EBADF  or  not self.fConnectCanceled:
                     reporter.fatalXcpt('socket.connect((%s,%s)) failed; iRc=%s' % (self.sHostname, self.uPort, iRc));
             reporter.log2('TransportTcp::connect: rc=%s iRc=%s' % (rc, iRc));
-            # pylint: enable=R0916
         except:
             reporter.fatalXcpt('socket.connect((%s,%s)) failed' % (self.sHostname, self.uPort));
         return rc;
