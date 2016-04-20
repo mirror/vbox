@@ -467,7 +467,9 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
     (PFNRT)RTRandBytes,
     /* VBoxUSB */
     (PFNRT)RTPathStripFilename,
+#if !defined(RT_OS_FREEBSD)
     (PFNRT)RTStrPurgeEncoding,
+#endif
     NULL
 };
 #endif  /* RT_OS_DARWIN || RT_OS_SOLARIS || RT_OS_SOLARIS */

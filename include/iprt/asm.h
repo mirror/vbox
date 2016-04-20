@@ -3953,7 +3953,8 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
  *
  * @remarks No alignment requirements.
  */
-#if !defined(RT_OS_LINUX) || !defined(__KERNEL__)
+#if    (!defined(RT_OS_LINUX) || !defined(__KERNEL__)) \
+    && (!defined(RT_OS_FREEBSD) || !defined(_KERNEL))
 DECLASM(void *) ASMMemFirstMismatchingU8(void const *pv, size_t cb, uint8_t u8);
 #else
 DECLINLINE(void *) ASMMemFirstMismatchingU8(void const *pv, size_t cb, uint8_t u8)
