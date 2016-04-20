@@ -563,6 +563,7 @@ endef
 #       -zdp                   DS pegged to BS3DATA16_GROUP/DGROUP.
 #       -zu                    Assume SS != DS.
 #       -mc                    Compact memory model, far data, small code.
+#       -ml                    Large memory model, far data, far code.
 #       -mf                    Flat memory model (32-bit).
 #       -d+                    Enabled better /dVAR=XXX parsing, using space as delimiter instead of alpha-numerical/whatever.
 #       -d1                    Debug info: Globals and line numbers.
@@ -588,7 +589,7 @@ TEMPLATE_VBoxBS3KitImg_SRC_HANDLERS = \
 TEMPLATE_VBoxBS3KitImg_ASOBJSUFF    = .o16
 TEMPLATE_VBoxBS3KitImg_ASTOOL       = VBoxNasm
 TEMPLATE_VBoxBS3KitImg_ASFLAGS      = -f obj -g $(BS3KIT_NASM_allow_64_bit) -w+orphan-labels
-TEMPLATE_VBoxBS3KitImg_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__ ARCH_BITS=16 RT_ARCH_X86 \
+TEMPLATE_VBoxBS3KitImg_ASDEFS       = ASM_FORMAT_OMF RT_NOINC_SEGMENTS __NASM__ ARCH_BITS=16 RT_ARCH_X86 ASM_MODEL_FAR_CODE \
         BS3CLASS16CODE=$(BS3KIT_CLASS_CODE16) BS3KIT_CLASS_DATA16=$(BS3KIT_CLASS_DATA16) \
 	 BS3KIT_GRPNM_DATA16=$(BS3KIT_GRPNM_DATA16) BS3KIT_CLASS_BSS16=$(BS3KIT_CLASS_BSS16)
 TEMPLATE_VBoxBS3KitImg_DEFS         = IN_BS3KIT
@@ -599,9 +600,9 @@ TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CFLAGS       = $(if $(BS3KIT_SEGNM_DATA16),-nd=$(BS3KIT_SEGNM_DATA16),) \
-	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -wx -zl -zdp -zu -ml $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = $(if $(BS3KIT_SEGNM_DATA16),-nd=$(BS3KIT_SEGNM_DATA16),) \
-	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -wx -zl -zdp -zu -mc $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -wx -zl -zdp -zu -ml $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg_CDEFS        = ARCH_BITS=16 RT_ARCH_X86
 
 TEMPLATE_VBoxBS3KitImg_TOOL         = $(NO_SUCH_VARIABLE)
@@ -617,8 +618,6 @@ TEMPLATE_VBoxBS3KitImg_C64DEFS      = ARCH_BITS=64 RT_ARCH_AMD64
 
 TEMPLATE_VBoxBS3KitImg_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
-# 	option quiet, nofarcalls\
-#	disable 1014, 1023, 2120, 1080
 
 # linker options:
 #      system dos:                 Link a 16-bit DOS binary.
@@ -628,19 +627,19 @@ TEMPLATE_VBoxBS3KitImg_LDTOOL       = OPENWATCOM-WL
 #      debug codeview/dwarf all:   Full debug information either in codeview or dwarf.
 #      option symfile:             Produce a separate symbol file with the debug info.
 #      option map:                 Produce a map file.
+#      option farcalls:            Change intrasegment far calls into 'push cs; seg ds; call symbol' where possible.
 #      option statics:             ?
 #      option verbose:             Verbose map file?
-#  	option disable 1014:        Disable warning about
-#  	option disable 1080:        Disable warning about
-#  	option disable 1150:        Disable warning about
+#  	option disable 1014:        Disable warning about 'stack segment not found'.
+#  	option disable 1080:        Disable warning about '%1 is a 32-bit object file'.
 #
 # Note! We're pushing DATA16 to 0x20000 because it's impossible to force wlink
 #       to give us a real-mode + GDT compatible alignment (0ffffff80h), i.e.
 #       real-mode address on the form 0fff8:0000.
 TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
 	debug $(BS3_OW_DBG_LDOPT) all \
-	option quiet, map, statics, verbose, symfile, start=_start \
-       disable 1014, 1080, 1150 \
+	option quiet, map, statics, verbose, symfile, start=_start, farcalls \
+       disable 1014, 1080 \
 	\
  	output raw offset=0x10000 \
  	order \
