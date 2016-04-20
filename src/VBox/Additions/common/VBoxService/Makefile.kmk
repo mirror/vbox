@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2007-2015 Oracle Corporation
+# Copyright (C) 2007-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -29,33 +29,61 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 PROGRAMS += VBoxService
 PROGRAMS.win.x86 += VBoxServiceNT
 
+# Enable the timesync service within VBoxService.
+VBOX_WITH_VBOXSERVICE_TIMESYNC      := 1
+
+# Busybox-like toolbox, embedded into VBoxService.
+VBOX_WITH_VBOXSERVICE_TOOLBOX       := 1
+
+# VM-management functions, like memory ballooning and statistics.
+VBOX_WITH_VBOXSERVICE_MANAGEMENT    := 1
+
+if1of ($(KBUILD_TARGET), linux)
+ # CPU hotplugging.
+ VBOX_WITH_VBOXSERVICE_CPUHOTPLUG   := 1
+endif
+
+if1of ($(KBUILD_TARGET), win)
+ # Page Sharing (Page Fusion).
+ VBOX_WITH_VBOXSERVICE_PAGE_SHARING := 1
+endif
+
+ifdef VBOX_WITH_GUEST_PROPS
+ VBOX_WITH_VBOXSERVICE_VMINFO       := 1
+endif
+
+ifdef VBOX_WITH_GUEST_CONTROL
+ # Guest Control.
+ VBOX_WITH_VBOXSERVICE_CONTROL      := 1
+endif
+
 #
 # VBoxService
 #
 VBoxService_TEMPLATE      = NewVBoxGuestR3Exe
-VBoxService_DEFS          = VBOX_WITH_HGCM VBOXSERVICE_TIMESYNC VBOXSERVICE_MANAGEMENT VBOXSERVICE_TOOLBOX
+
+# Define features to be activate.
+VBoxService_DEFS         += \
+	$(if $(VBOX_WITH_VBOXSERVICE_CONTROL),VBOX_WITH_VBOXSERVICE_CONTROL,)           \
+	$(if $(VBOX_WITH_VBOXSERVICE_CPUHOTPLUG),VBOX_WITH_VBOXSERVICE_CPUHOTPLUG,)     \
+	$(if $(VBOX_WITH_VBOXSERVICE_MANAGEMENT),VBOX_WITH_VBOXSERVICE_MANAGEMENT,)     \
+	$(if $(VBOX_WITH_VBOXSERVICE_PAGE_SHARING),VBOX_WITH_VBOXSERVICE_PAGE_SHARING,) \
+	$(if $(VBOX_WITH_VBOXSERVICE_TIMESYNC),VBOX_WITH_VBOXSERVICE_TIMESYNC,)         \
+	$(if $(VBOX_WITH_VBOXSERVICE_TOOLBOX),VBOX_WITH_VBOXSERVICE_TOOLBOX,)           \
+	$(if $(VBOX_WITH_VBOXSERVICE_VMINFO),VBOX_WITH_VBOXSERVICE_VMINFO,)
+
+# Import global defines.
+VBoxService_DEFS         +=                                       \
+	$(if $(VBOX_WITH_DBUS),VBOX_WITH_DBUS,)                   \
+	$(if $(VBOX_WITH_GUEST_CONTROL),VBOX_WITH_GUEST_CONTROL,) \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)     \
+	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,)
+
 VBoxService_DEFS         += \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 VBoxService_DEFS.win     += _WIN32_WINNT=0x0501
-VBoxService_DEFS.os2      = VBOX_WITH_HGCM VBOXSERVICE_CLIPBOARD
-ifdef VBOX_WITH_DBUS
- VBoxService_DEFS        += VBOX_WITH_DBUS
-endif
-ifdef VBOX_WITH_GUEST_PROPS
- VBoxService_DEFS        += VBOX_WITH_GUEST_PROPS VBOXSERVICE_VMINFO
-endif
-ifdef VBOX_WITH_GUEST_CONTROL
- VBoxService_DEFS        += VBOX_WITH_GUEST_CONTROL VBOXSERVICE_CONTROL
-endif
-ifdef VBOX_WITH_MEMBALLOON
- VBoxService_DEFS        += VBOX_WITH_MEMBALLOON
-endif
-if1of ($(KBUILD_TARGET), win)
- VBoxService_DEFS        += VBOXSERVICE_PAGE_SHARING
-endif
-if1of ($(KBUILD_TARGET), linux)
- VBoxService_DEFS        += VBOXSERVICE_CPUHOTPLUG
-endif
+VBoxService_DEFS.os2      = VBOX_WITH_HGCM VBOX_WITH_VBOXSERVICE_CLIPBOARD
+
 ifdef VBOX_WITH_SHARED_FOLDERS
  # darwin freebsd
  if1of ($(KBUILD_TARGET), linux solaris)
@@ -63,38 +91,48 @@ ifdef VBOX_WITH_SHARED_FOLDERS
  endif
 endif
 
-VBoxService_SOURCES       = \
-	VBoxService.cpp \
-	VBoxServiceTimeSync.cpp \
+VBoxService_SOURCES       =  \
+	VBoxService.cpp      \
 	VBoxServiceUtils.cpp \
-	VBoxServiceStats.cpp \
-	VBoxServiceToolBox.cpp
+	VBoxServiceStats.cpp
 
-ifdef VBOX_WITH_GUEST_CONTROL
- VBoxService_SOURCES    += \
- 	VBoxServiceControl.cpp \
+ifdef VBOX_WITH_VBOXSERVICE_TIMESYNC
+ VBoxService_SOURCES     += \
+	VBoxServiceTimeSync.cpp
+endif
+
+ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
+ VBoxService_SOURCES     += \
+	VBoxServiceToolBox.cpp
+endif
+
+ifdef VBOX_WITH_VBOXSERVICE_CONTROL
+ VBoxService_SOURCES     +=       \
+ 	VBoxServiceControl.cpp        \
 	VBoxServiceControlProcess.cpp \
 	VBoxServiceControlSession.cpp
 endif
 
-ifdef VBOX_WITH_MEMBALLOON
- VBoxService_SOURCES    += \
+ifdef VBOX_WITH_VBOXSERVICE_MANAGEMENT
+ VBoxService_SOURCES     += \
  	VBoxServiceBalloon.cpp
+ VBoxService_DEFS        += $(if $(VBOX_WITH_MEMBALLOON),VBOX_WITH_MEMBALLOON,)
 endif
+
 if1of ($(KBUILD_TARGET), win)
  VBoxService_SOURCES    += \
  	VBoxServicePageSharing.cpp
 endif
 
-ifdef VBOX_WITH_GUEST_PROPS
- VBoxService_SOURCES.win  = \
+ifdef VBOX_WITH_VBOXSERVICE_VMINFO
+ VBoxService_SOURCES.win += \
  	VBoxServiceVMInfo-win.cpp
- VBoxService_SOURCES     += \
- 	VBoxServiceVMInfo.cpp \
+ VBoxService_SOURCES     +=  \
+ 	VBoxServiceVMInfo.cpp    \
  	VBoxServicePropCache.cpp
 endif
 
-if1of ($(KBUILD_TARGET), linux)
+ifdef VBOX_WITH_VBOXSERVICE_CPUHOTPLUG
  VBoxService_SOURCES     += \
 	VBoxServiceCpuHotPlug.cpp
 endif
@@ -148,7 +186,7 @@ endif
 #
 VBoxServiceNT_TEMPLATE = NewVBoxGuestR3Exe
 VBoxServiceNT_EXTENDS  = VBoxService
-VBoxServiceNT_DEFS.win = _WIN32_WINNT=0x0400 TARGET_NT4 VBOXSERVICE_MANAGEMENT
+VBoxServiceNT_DEFS.win = _WIN32_WINNT=0x0400 TARGET_NT4 VBOX_WITH_VBOXSERVICE_MANAGEMENT
 
 VBoxServiceVMInfo.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxServiceVMInfo.cpp_DEPS = $(VBOX_SVN_REV_KMK)

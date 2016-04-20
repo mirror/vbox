@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -88,7 +88,7 @@
 #include <VBox/log.h>
 
 #include "VBoxServiceInternal.h"
-#ifdef VBOX_WITH_GUEST_CONTROL
+#ifdef VBOX_WITH_VBOXSERVICE_CONTROL
 # include "VBoxServiceControl.h"
 #endif
 
@@ -142,28 +142,28 @@ static struct
     bool            fEnabled;
 } g_aServices[] =
 {
-#ifdef VBOXSERVICE_CONTROL
+#ifdef VBOX_WITH_VBOXSERVICE_CONTROL
     { &g_Control,       NIL_RTTHREAD, false, false, false, false, true },
 #endif
-#ifdef VBOXSERVICE_TIMESYNC
+#ifdef VBOX_WITH_VBOXSERVICE_TIMESYNC
     { &g_TimeSync,      NIL_RTTHREAD, false, false, false, false, true },
 #endif
-#ifdef VBOXSERVICE_CLIPBOARD
+#ifdef VBOX_WITH_VBOXSERVICE_CLIPBOARD
     { &g_Clipboard,     NIL_RTTHREAD, false, false, false, false, true },
 #endif
-#ifdef VBOXSERVICE_VMINFO
+#ifdef VBOX_WITH_VBOXSERVICE_VMINFO
     { &g_VMInfo,        NIL_RTTHREAD, false, false, false, false, true },
 #endif
-#ifdef VBOXSERVICE_CPUHOTPLUG
+#ifdef VBOX_WITH_VBOXSERVICE_CPUHOTPLUG
     { &g_CpuHotPlug,    NIL_RTTHREAD, false, false, false, false, true },
 #endif
-#ifdef VBOXSERVICE_MANAGEMENT
+#ifdef VBOX_WITH_VBOXSERVICE_MANAGEMENT
 # ifdef VBOX_WITH_MEMBALLOON
     { &g_MemBalloon,    NIL_RTTHREAD, false, false, false, false, true },
 # endif
     { &g_VMStatistics,  NIL_RTTHREAD, false, false, false, false, true },
 #endif
-#if defined(VBOXSERVICE_PAGE_SHARING)
+#if defined(VBOX_WITH_VBOXSERVICE_PAGE_SHARING)
     { &g_PageSharing,   NIL_RTTHREAD, false, false, false, false, true },
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
@@ -866,7 +866,7 @@ int main(int argc, char **argv)
     AssertRC(rc);
 #endif
 
-#ifdef VBOXSERVICE_TOOLBOX
+#ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
     /*
      * Run toolbox code before all other stuff since these things are simpler
      * shell/file/text utility like programs that just happens to be inside
@@ -878,7 +878,7 @@ int main(int argc, char **argv)
 #endif
 
     bool fUserSession = false;
-#ifdef VBOX_WITH_GUEST_CONTROL
+#ifdef VBOX_WITH_VBOXSERVICE_CONTROL
     /*
      * Check if we're the specially spawned VBoxService.exe process that
      * handles a guest control session.
@@ -916,7 +916,7 @@ int main(int argc, char **argv)
         return VGSvcPageSharingWorkerChild();
 #endif
 
-#ifdef VBOX_WITH_GUEST_CONTROL
+#ifdef VBOX_WITH_VBOXSERVICE_CONTROL
     /*
      * Check if we're the specially spawned VBoxService.exe process that
      * handles a guest control session.
