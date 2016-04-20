@@ -59,19 +59,23 @@
 /**
  * Initialize data members.
  */
-USBProxyBackendFreeBSD::USBProxyBackendFreeBSD(USBProxyService *aUsbProxyService, const com::Utf8Str &strId)
-    : USBProxyBackend(aUsbProxyService, strId)
+USBProxyBackendFreeBSD::USBProxyBackendFreeBSD()
+    : USBProxyBackend(), mNotifyEventSem(NIL_RTSEMEVENT)
 {
-    LogFlowThisFunc(("aUsbProxyService=%p\n", aUsbProxyService));
+    LogFlowThisFunc(("\n"));
 }
 
+USBProxyBackendFreeBSD::~USBProxyBackendFreeBSD()
+{
+    LogFlowThisFunc(("\n"));
+}
 
 /**
  * Initializes the object (called right after construction).
  *
  * @returns S_OK on success and non-fatal failures, some COM error otherwise.
  */
-int USBProxyBackendFreeBSD::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddresss)
+int USBProxyBackendFreeBSD::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress)
 {
     USBProxyBackend::init(pUsbProxyService, strId, strAddress);
 
@@ -95,7 +99,7 @@ int USBProxyBackendFreeBSD::init(USBProxyService *pUsbProxyService, const com::U
 /**
  * Stop all service threads and free the device chain.
  */
-USBProxyBackendFreeBSD::~USBProxyBackendFreeBSD()
+void USBProxyBackendFreeBSD::uninit()
 {
     LogFlowThisFunc(("\n"));
 
@@ -107,6 +111,7 @@ USBProxyBackendFreeBSD::~USBProxyBackendFreeBSD()
 
     RTSemEventDestroy(mNotifyEventSem);
     mNotifyEventSem = NULL;
+    USBProxyBackend::uninit();
 }
 
 
@@ -235,20 +240,13 @@ PUSBDEVICE USBProxyBackendFreeBSD::getDevices(void)
     {
         rc = RTStrAPrintf(&pszDevicePath, "/dev/%s%d.%d", USB_GENERIC_NAME, iBus, iAddr);
         if (RT_FAILURE(rc))
-        {
-            mLastError = rc;
             break;
-        }
 
         LogFlowFunc((": Opening %s\n", pszDevicePath));
 
         FileUsb = open(pszDevicePath, O_RDONLY);
         if (FileUsb < 0)
         {
-            if (   (errno != ENOENT)
-                && (errno != EACCES))
-                mLastError = RTErrConvertFromErrno(errno);
-
             RTStrFree(pszDevicePath);
 
             if ((errno == ENOENT) && (iAddr > 1))
@@ -276,7 +274,6 @@ PUSBDEVICE USBProxyBackendFreeBSD::getDevices(void)
         if (rc < 0)
         {
             LogFlowFunc((": Error querying device info rc=%Rrc\n", RTErrConvertFromErrno(errno)));
-            mLastError = RTErrConvertFromErrno(errno);
             close(FileUsb);
             RTStrFree(pszDevicePath);
             break;
@@ -288,7 +285,6 @@ PUSBDEVICE USBProxyBackendFreeBSD::getDevices(void)
             PUSBDEVICE pDevice = (PUSBDEVICE)RTMemAllocZ(sizeof(USBDEVICE));
             if (!pDevice)
             {
-                mLastError = VERR_NO_MEMORY;
                 close(FileUsb);
                 RTStrFree(pszDevicePath);
                 break;
