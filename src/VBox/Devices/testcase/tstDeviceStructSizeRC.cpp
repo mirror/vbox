@@ -792,7 +792,8 @@ int main()
     GEN_CHECK_OFF(APICCPU, StatMsrWriteR3);
     GEN_CHECK_OFF(APICCPU, StatMsrWriteRC);
     GEN_CHECK_OFF(APICCPU, StatUpdatePendingIntrs);
-    GEN_CHECK_OFF(APICCPU, StatPostInterrupt);
+    GEN_CHECK_OFF(APICCPU, StatPostIntr);
+    GEN_CHECK_OFF(APICCPU, StatPostIntrAlreadyPending);
 #else
     /* PC/DevAPIC.cpp */
     GEN_CHECK_SIZE(APICState);

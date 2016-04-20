@@ -1183,7 +1183,12 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     ApicReg.pfnBusDeliverR3         = APICBusDeliver;
     ApicReg.pfnLocalInterruptR3     = APICLocalInterrupt;
     ApicReg.pfnGetTimerFreqR3       = APICGetTimerFreq;
-    if (pApic->fRZEnabled)
+
+    /*
+     * We always require R0 functionality (e.g. APICGetTpr() called by HMR0 VT-x/AMD-V code).
+     * Hence, 'fRZEnabled' strictly only applies to MMIO and MSR read/write handlers returning
+     * to ring-3. We still need other handlers like APICGetTpr() in ring-0 for now.
+     */
     {
         ApicReg.pszGetInterruptRC   = "APICGetInterrupt";
         ApicReg.pszHasPendingIrqRC  = "APICHasPendingIrq";
@@ -1263,11 +1268,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         {
             pApicCpu->pTimerR0 = TMTimerR0Ptr(pApicCpu->pTimerR3);
             pApicCpu->pTimerRC = TMTimerRCPtr(pApicCpu->pTimerR3);
-#if 0
-            rc = PDMR3CritSectInit(pVM, &pApicCpu->TimerCritSect, RT_SRC_POS, pApicCpu->szTimerDesc);
-            AssertRCReturn(rc, rc);
-            TMR3TimerSetCritSect(pApicCpu->pTimerR3, &pApicCpu->TimerCritSect);
-#endif
         }
         else
             return rc;
@@ -1331,8 +1331,12 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
         APIC_PROF_COUNTER(&pApicCpu->StatUpdatePendingIntrs, "Profiling of APICUpdatePendingInterrupts",
                           "/PROF/CPU%d/APIC/UpdatePendingInterrupts");
-        APIC_PROF_COUNTER(&pApicCpu->StatPostInterrupt, "Profiling of APICPostInterrupt", "/PROF/CPU%d/APIC/PostInterrupt");
+        APIC_PROF_COUNTER(&pApicCpu->StatPostIntr, "Profiling of APICPostInterrupt", "/PROF/CPU%d/APIC/PostInterrupt");
+
+        APIC_REG_COUNTER(&pApicCpu->StatPostIntrAlreadyPending,  "Number of times an interrupt is already pending.",
+                         "/Devices/APIC/%u/PostInterruptAlreadyPending");
     }
+# undef APIC_PROF_COUNTER
 # undef APIC_REG_ACCESS_COUNTER
 #endif
 

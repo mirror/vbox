@@ -472,7 +472,7 @@ typedef struct APIC
     bool                        fSupportsTscDeadline;
     /** Whether this VM has an IO-APIC. */
     bool                        fIoApicPresent;
-    /** Whether RZ is enabled or not (required for MSR handling as well). */
+    /** Whether RZ is enabled or not (applies to MSR handling as well). */
     bool                        fRZEnabled;
     /** Alignment padding. */
     bool                        afAlignment0[7];
@@ -590,7 +590,10 @@ typedef struct APICCPU
     /** Profiling of APICUpdatePendingInterrupts().  */
     STAMPROFILE                 StatUpdatePendingIntrs;
     /** Profiling of APICPostInterrupt().  */
-    STAMPROFILE                 StatPostInterrupt;
+    STAMPROFILE                 StatPostIntr;
+    /** Number of times an interrupt is already pending in
+     *  APICPostInterrupts().*/
+    STAMCOUNTER                 StatPostIntrAlreadyPending;
     /** @} */
 #endif
 } APICCPU;

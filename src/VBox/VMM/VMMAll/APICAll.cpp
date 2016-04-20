@@ -57,9 +57,9 @@ static const uint32_t g_au32LvtExtValidMask[] =
  * @param   pApicReg        The APIC 256-bit spare register.
  * @param   uVector         The vector to check if set.
  */
-DECLINLINE(bool) apicTestVectorInReg(volatile XAPIC256BITREG *pApicReg, uint8_t uVector)
+DECLINLINE(bool) apicTestVectorInReg(const volatile XAPIC256BITREG *pApicReg, uint8_t uVector)
 {
-    volatile uint8_t *pbBitmap = (volatile uint8_t *)&pApicReg->u[0];
+    const volatile uint8_t *pbBitmap = (const volatile uint8_t *)&pApicReg->u[0];
     return ASMBitTest(pbBitmap + XAPIC_REG256_VECTOR_OFF(uVector), XAPIC_REG256_VECTOR_BIT(uVector));
 }
 
@@ -2419,41 +2419,54 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
     PCAPIC   pApic    = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
-    STAM_PROFILE_START(&pApicCpu->StatPostInterrupt, a);
+    STAM_PROFILE_START(&pApicCpu->StatPostIntr, a);
 
-    /* Validate the vector. See Intel spec. 10.5.2 "Valid Interrupt Vectors". */
+    /*
+     * Only post valid interrupt vectors.
+     * See Intel spec. 10.5.2 "Valid Interrupt Vectors".
+     */
     if (RT_LIKELY(uVector > XAPIC_ILLEGAL_VECTOR_END))
     {
-        Log4(("APIC%u: APICPostInterrupt: uVector=%#x\n", pVCpu->idCpu, uVector));
-        if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
+        /*
+         * If the interrupt is already pending in the vIRR we can skip the
+         * potential expensive operation of poking the guest EMT out of execution.
+         */
+        PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
+        if (!apicTestVectorInReg(&pXApicPage->irr, uVector))     /* PAV */
         {
-            if (pApic->fPostedIntrsEnabled)
-            { /** @todo posted-interrupt call to hardware */ }
+            Log4(("APIC%u: APICPostInterrupt: uVector=%#x\n", pVCpu->idCpu, uVector));
+            if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
+            {
+                if (pApic->fPostedIntrsEnabled)
+                { /** @todo posted-interrupt call to hardware */ }
+                else
+                {
+                    Assert(CTX_SUFF(pApicCpu->pvApicPib));
+                    apicSetVectorInPib(CTX_SUFF(pApicCpu->pvApicPib), uVector);
+                    bool const fAlreadySet = apicSetNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
+                    if (!fAlreadySet)
+                        APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+                }
+            }
             else
             {
-                Assert(CTX_SUFF(pApicCpu->pvApicPib));
-                apicSetVectorInPib(CTX_SUFF(pApicCpu->pvApicPib), uVector);
-                bool const fAlreadySet = apicSetNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
+                /*
+                 * Level-triggered interrupts requires updating of the TMR and thus cannot be
+                 * delivered asynchronously.
+                 */
+                apicSetVectorInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0], uVector);
+                bool const fAlreadySet = apicSetNotificationBitInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0]);
                 if (!fAlreadySet)
                     APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
             }
         }
         else
-        {
-            /*
-             * Level-triggered interrupts requires updating of the TMR and thus cannot be
-             * delivered asynchronously.
-             */
-            apicSetVectorInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0], uVector);
-            bool const fAlreadySet = apicSetNotificationBitInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0]);
-            if (!fAlreadySet)
-                APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
-        }
+            STAM_COUNTER_INC(&pApicCpu->StatPostIntrAlreadyPending);
     }
     else
         apicSetError(pVCpu, XAPIC_ESR_RECV_ILLEGAL_VECTOR);
 
-    STAM_PROFILE_STOP(&pApicCpu->StatPostInterrupt, a);
+    STAM_PROFILE_STOP(&pApicCpu->StatPostIntr, a);
 }
 
 
@@ -2627,13 +2640,21 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
             break;
 
         PAPICPIB pPib = (PAPICPIB)CTX_SUFF(pApicCpu->pvApicPib);
-        for (size_t i = 0; i < RT_ELEMENTS(pPib->aVectorBitmap); i++)
+        AssertCompile(RT_ELEMENTS(pXApicPage->irr.u) == 2 * RT_ELEMENTS(pPib->aVectorBitmap));
+
+        for (size_t idxPib = 0, idxReg = 0; idxPib < RT_ELEMENTS(pPib->aVectorBitmap); idxPib++, idxReg += 2)
         {
-            uint32_t const uFragment = ASMAtomicXchgU32(&pPib->aVectorBitmap[i], 0);
-            if (uFragment)
+            uint64_t const u64Fragment = ASMAtomicXchgU64(&pPib->aVectorBitmap[idxPib], 0);
+            if (u64Fragment)
             {
-                pXApicPage->irr.u[i].u32Reg |=  uFragment;
-                pXApicPage->tmr.u[i].u32Reg &= ~uFragment;
+                uint32_t const u32FragmentLo = RT_LO_U32(u64Fragment);
+                uint32_t const u32FragmentHi = RT_HI_U32(u64Fragment);
+
+                pXApicPage->irr.u[idxReg].u32Reg     |=  u32FragmentLo;
+                pXApicPage->irr.u[idxReg + 1].u32Reg |=  u32FragmentHi;
+
+                pXApicPage->tmr.u[idxReg].u32Reg     &= ~u32FragmentLo;
+                pXApicPage->tmr.u[idxReg + 1].u32Reg &= ~u32FragmentHi;
             }
         }
     }
@@ -2646,13 +2667,21 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
             break;
 
         PAPICPIB pPib = (PAPICPIB)&pApicCpu->ApicPibLevel;
-        for (size_t i = 0; i < RT_ELEMENTS(pPib->aVectorBitmap); i++)
+        AssertCompile(RT_ELEMENTS(pXApicPage->irr.u) == 2 * RT_ELEMENTS(pPib->aVectorBitmap));
+
+        for (size_t idxPib = 0, idxReg = 0; idxPib < RT_ELEMENTS(pPib->aVectorBitmap); idxPib++, idxReg += 2)
         {
-            uint32_t const uFragment = ASMAtomicXchgU32(&pPib->aVectorBitmap[i], 0);
-            if (uFragment)
+            uint64_t const u64Fragment = ASMAtomicXchgU64(&pPib->aVectorBitmap[idxPib], 0);
+            if (u64Fragment)
             {
-                pXApicPage->irr.u[i].u32Reg |= uFragment;
-                pXApicPage->tmr.u[i].u32Reg |= uFragment;
+                uint32_t const u32FragmentLo = RT_LO_U32(u64Fragment);
+                uint32_t const u32FragmentHi = RT_HI_U32(u64Fragment);
+
+                pXApicPage->irr.u[idxReg].u32Reg     |= u32FragmentLo;
+                pXApicPage->irr.u[idxReg + 1].u32Reg |= u32FragmentHi;
+
+                pXApicPage->tmr.u[idxReg].u32Reg     |= u32FragmentLo;
+                pXApicPage->tmr.u[idxReg + 1].u32Reg |= u32FragmentHi;
             }
         }
     }

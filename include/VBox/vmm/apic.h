@@ -910,7 +910,7 @@ AssertCompileMemberOffset(X2APICPAGE, self_ipi,    X2APIC_OFF_SELF_IPI);
  */
 typedef struct APICPIB
 {
-    uint32_t volatile aVectorBitmap[8];
+    uint64_t volatile aVectorBitmap[4];
     uint32_t volatile fOutstandingNotification;
     uint8_t           au8Reserved[28];
 } APICPIB;
