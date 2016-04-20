@@ -568,6 +568,7 @@ PREDEFINED += \
     BS3_DECL(a_Type)=a_Type \
     BS3_DECL_NEAR(a_Type)=a_Type \
     BS3_DECL_FAR(a_Type)=a_Type \
+    BS3_DECL_CALLBACK(a_Type)=a_Type \
     BS3_CMN_NM(a_Name)=a_Name \
     BS3_CMN_FAR_NM(a_Name)=a_Name \
     BS3_CMN_FN_NM(a_Name)=a_Name \
