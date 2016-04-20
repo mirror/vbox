@@ -49,5 +49,6 @@ BS3_DECL(void) Bs3InitAll_rm(void)
         Bs3Trap32Init();
     if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
         Bs3Trap16Init();
+    Bs3TrapRmV86Init();
 }
 

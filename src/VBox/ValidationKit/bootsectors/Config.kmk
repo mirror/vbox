@@ -74,16 +74,16 @@ endif
 
 
 ##
-# Macro for generating near-call aliases for zero or more 16-bit C functions.
+# Macro for generating near-call aliases for one 16-bit C function.
 # @param    1   The target name.
-# @param    2   List of functions.
-BS3KIT_FN_GEN_CMN_NEARSTUBS = $(foreach fn,$2,$(evalcall2 def_Bs3KitGenNearStubSource,$1,_$(fn)_c16,_$(fn)_f16))
+# @param    2   The common function.
+BS3KIT_FN_GEN_CMN_NEARSTUB = $(evalcall2 def_Bs3KitGenNearStubSource,$1,_$2_c16,_$2_f16)
 
 ##
-# Macro for generating near-call aliases for zero or more 16-bit C mode functions.
+# Macro for generating near-call aliases for one 16-bit C mode function.
 # @param    1   The target name.
-# @param    2   List of mode functions.
-BS3KIT_FN_GEN_MODE_NEARSTUBS = $(foreach fn,$2,$(foreach suff, \
+# @param    2   The mode function.
+BS3KIT_FN_GEN_MODE_NEARSTUB = $(foreach suff, \
 	_rm \
 	_pe16 \
 	_pe16_v86 \
@@ -98,7 +98,7 @@ BS3KIT_FN_GEN_MODE_NEARSTUBS = $(foreach fn,$2,$(foreach suff, \
 	_pae32_16 \
 	_paev86 \
 	_lm16 \
-	,$(evalcall2 def_Bs3KitGenNearStubSource,$1,_$(fn)$(suff),_$(fn)$(suff)_far)))
+	,$(evalcall2 def_Bs3KitGenNearStubSource,$1,_$2$(suff),_$2$(suff)_far))
 
 # @param    1   The target name.
 # @param    2   The near function name.
@@ -123,14 +123,16 @@ endef
 ##
 # Macro for generating far-call aliases for zero or more 16-bit C or assembly functions.
 # @param    1   The target name.
-# @param    2   List of functions.
-BS3KIT_FN_GEN_CMN_FARSTUBS = $(foreach fn,$2,$(evalcall2 def_Bs3KitGenFarStubSource,$1,$(fn),_f16,_c16))
+# @param    2   The common function.
+# @param    3   The parameter size in bytes.
+BS3KIT_FN_GEN_CMN_FARSTUB = $(evalcall2 def_Bs3KitGenFarStubSource,$1,$2,_f16,_c16,$3)
 
 ##
 # Macro for generating far-call aliases for zero or more 16-bit C mode functions.
 # @param    1   The target name.
-# @param    2   List of mode functions.
-BS3KIT_FN_GEN_MODE_FARSTUBS = $(foreach fn,$2,$(foreach suff, \
+# @param    2   The mode function.
+# @param    3   The parameter size in bytes.
+BS3KIT_FN_GEN_MODE_FARSTUB = $(foreach suff, \
 	_rm \
 	_pe16 \
 	_pe16_v86 \
@@ -145,40 +147,38 @@ BS3KIT_FN_GEN_MODE_FARSTUBS = $(foreach fn,$2,$(foreach suff, \
 	_pae32_16 \
 	_paev86 \
 	_lm16 \
-	,$(evalcall2 def_Bs3KitGenFarStubSource,$1,$(fn),$(suff)_far,$(suff))
+	,$(evalcall2 def_Bs3KitGenFarStubSource,$1,$2,$(suff)_far,$(suff),$3))
 
 # @param    1   The target name.
-# @param    2   The function and amount of parameters.
+# @param    2   The function name.
 # @param    3   The far function suffix.
 # @param    4   The near function suffix.
+# @param    5   The parameter size in bytes.
 define def_Bs3KitGenFarStubSource
-$(eval local fn2 = $(firstword $(subst :, $(SP), $2)))
-$(eval local cbParam = $(lastword $(subst :, $(SP), $2)))
-
-$1_SOURCES += $$($1_0_OUTDIR)/stub_$(fn2)$3.asm
-$1_CLEAN   += $$($1_0_OUTDIR)/stub_$(fn2)$3.asm
-$$$$($1_0_OUTDIR)/stub_$(fn2)$3.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
+$1_SOURCES += $$($1_0_OUTDIR)/stub_$2$3.asm
+$1_CLEAN   += $$($1_0_OUTDIR)/stub_$2$3.asm
+$$$$($1_0_OUTDIR)/stub_$2$3.asm: $$(VBOX_PATH_BOOTSECTORS_SRC)/Config.kmk | $$$$(dir $$$$@)
 	$(QUIET)$(APPEND) -tn $$@ \
 		'%include "bs3kit.mac"' \
        	'BS3_BEGIN_TEXT16' \
-               '      extern  _$(fn2)$4' \
+               '      extern  _$2$4' \
        	'BS3_BEGIN_TEXT16_FARSTUBS' \
-		'BS3_PROC_BEGIN _$(fn2)$3' \
+		'BS3_PROC_BEGIN _$2$3' \
                '      CPU 8086' \
                '      inc     bp' \
                '      push    bp' \
                '      mov     bp, sp' \
-               '%assign offParam $(cbParam)' \
-               '%rep $(cbParam) / 2' \
+               '%assign offParam $5' \
+               '%rep $5 / 2' \
                '      push    word [bp + 2 + 4 + offParam - 2]' \
                '%assign offParam offParam - 2' \
                '%endrep' \
-               '      call    _$(fn2)$4' \
-               '      add     sp, $(cbParam)' \
+               '      call    _$2$4' \
+               '      add     sp, $5' \
                '      pop     bp' \
                '      dec     bp' \
                '      retf' \
-		'BS3_PROC_END _$(fn2)$3' \
+		'BS3_PROC_END _$2$3' \
                ''
 endef
 

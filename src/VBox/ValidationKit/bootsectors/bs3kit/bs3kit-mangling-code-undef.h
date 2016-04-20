@@ -24,7 +24,6 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #undef Bs3A20Disable
 #undef Bs3A20DisableViaKbd
 #undef Bs3A20DisableViaPortA
@@ -59,9 +58,9 @@
 #undef Bs3RegCtxPrint
 #undef Bs3RegCtxRestore
 #undef Bs3RegCtxSave
-#undef Bs3SelFlatCodeToRealMode
-#undef Bs3SelFlatCodeToProtFar16
 #undef Bs3SelFar32ToFlat32
+#undef Bs3SelFlatCodeToProtFar16
+#undef Bs3SelFlatCodeToRealMode
 #undef Bs3SelProtFar32ToFlat32
 #undef Bs3SelProtModeCodeToRealMode
 #undef Bs3SelRealModeCodeToProtMode
@@ -106,9 +105,17 @@
 #undef Bs3Trap64SetGate
 #undef Bs3TrapDefaultHandler
 #undef Bs3TrapPrintFrame
+#undef Bs3TrapRmV86Init
+#undef Bs3TrapRmV86InitEx
 #undef Bs3TrapRmV86SetGate
 #undef Bs3TrapSetHandler
 #undef Bs3TrapSetJmp
 #undef Bs3TrapSetJmpAndRestore
 #undef Bs3TrapUnsetJmp
-
+#undef Bs3UInt32Div
+#undef Bs3UInt64Div
+#ifndef BS3_CMN_ONLY
+# undef Bs3CpuDetect
+# undef Bs3TestDoModes
+# undef Bs3TrapInit
+#endif /* !BS3_CMN_ONLY */

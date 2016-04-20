@@ -1268,22 +1268,56 @@ DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(RTCCUINTXREG uFlatPtr)
  * @{
  */
 
-/** @def BS3_CMN_PROTO
- * Macro for prototyping all the variations of a common function.
+/** @def BS3_CMN_PROTO_INT
+ * Internal macro for prototyping all the variations of a common function.
  * @param   a_RetType   The return type.
  * @param   a_Name      The function basename.
  * @param   a_Params    The parameter list (in parentheses).
- * @param   a_fAutoStub Whether to autogenerate a 16-bit near -> 16-bit far stub
- *                      function. Either 'true' for stub or 'false' for no stub.
+ * @sa      BS3_CMN_PROTO_STUB, BS3_CMN_PROTO_NOSB
  */
 #if ARCH_BITS == 16
-# define BS3_CMN_PROTO(a_RetType, a_Name, a_Params, a_fAutoStub) \
+# define BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params) \
     BS3_DECL_NEAR(a_RetType) BS3_CMN_NM(a_Name) a_Params;  \
     BS3_DECL_FAR(a_RetType)  BS3_CMN_FAR_NM(a_Name) a_Params
 #else
-# define BS3_CMN_PROTO(a_RetType, a_Name, a_Params, a_fAutoStub) \
+# define BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params) \
     BS3_DECL_NEAR(a_RetType) BS3_CMN_NM(a_Name) a_Params
 #endif
+
+/** @BS3_CMN_PROTO_STUB
+ * Macro for prototyping all the variations of a common function with automatic
+ * near -> far stub.
+ *
+ * @param   a_RetType   The return type.
+ * @param   a_Name      The function basename.
+ * @param   a_Params    The parameter list (in parentheses).
+ * @sa      BS3_CMN_PROTO_NOSB
+ */
+#define BS3_CMN_PROTO_STUB(a_RetType, a_Name, a_Params) BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params)
+
+/** @BS3_CMN_PROTO_NOSB
+ * Macro for prototyping all the variations of a common function without any
+ * near > far stub.
+ *
+ * @param   a_RetType   The return type.
+ * @param   a_Name      The function basename.
+ * @param   a_Params    The parameter list (in parentheses).
+ * @sa      BS3_CMN_PROTO_STUB
+ */
+#define BS3_CMN_PROTO_NOSB(a_RetType, a_Name, a_Params) BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params)
+
+/** @BS3_CMN_PROTO_FRST
+ * Macro for prototyping all the variations of a common function with automatic
+ * far -> near stub.
+ *
+ * @param   a_cbParam16 The size of the 16-bit parameter list in bytes.
+ * @param   a_RetType   The return type.
+ * @param   a_Name      The function basename.
+ * @param   a_Params    The parameter list (in parentheses).
+ * @sa      BS3_CMN_PROTO_STUB
+ */
+#define BS3_CMN_PROTO_FARSTUB(a_cbParam16, a_RetType, a_Name, a_Params) BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params)
+
 
 /** @def BS3_CMN_DEF
  * Macro for defining a common function.
@@ -1318,7 +1352,7 @@ DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(RTCCUINTXREG uFlatPtr)
  *
  * The current implementation will only halt the CPU.
  */
-BS3_CMN_PROTO(DECL_NO_RETURN(void), Bs3Panic,(void), false);
+BS3_CMN_PROTO_NOSB(DECL_NO_RETURN(void), Bs3Panic,(void));
 #if !defined(BS3_KIT_WITH_NO_RETURN) && defined(__WATCOMC__)
 # pragma aux Bs3Panic_c16 __aborts
 # pragma aux Bs3Panic_f16 __aborts
@@ -1331,21 +1365,21 @@ BS3_CMN_PROTO(DECL_NO_RETURN(void), Bs3Panic,(void), false);
  * This currently only works for VMs.  When running on real systems it will
  * just halt the CPU.
  */
-BS3_CMN_PROTO(void, Bs3Shutdown,(void), false);
+BS3_CMN_PROTO_NOSB(void, Bs3Shutdown,(void));
 
 /**
  * Prints a 32-bit unsigned value as decimal to the screen.
  *
  * @param   uValue      The 32-bit value.
  */
-BS3_CMN_PROTO(void, Bs3PrintU32,(uint32_t uValue), false);
+BS3_CMN_PROTO_NOSB(void, Bs3PrintU32,(uint32_t uValue));
 
 /**
  * Prints a 32-bit unsigned value as hex to the screen.
  *
  * @param   uValue      The 32-bit value.
  */
-BS3_CMN_PROTO(void, Bs3PrintX32,(uint32_t uValue), false);
+BS3_CMN_PROTO_NOSB(void, Bs3PrintX32,(uint32_t uValue));
 
 /**
  * Formats and prints a string to the screen.
@@ -1355,7 +1389,7 @@ BS3_CMN_PROTO(void, Bs3PrintX32,(uint32_t uValue), false);
  * @param   pszFormat       The format string.
  * @param   ...             Format arguments.
  */
-BS3_CMN_PROTO(size_t, Bs3Printf,(const char BS3_FAR *pszFormat, ...), true);
+BS3_CMN_PROTO_STUB(size_t, Bs3Printf,(const char BS3_FAR *pszFormat, ...));
 
 /**
  * Formats and prints a string to the screen, va_list version.
@@ -1365,14 +1399,14 @@ BS3_CMN_PROTO(size_t, Bs3Printf,(const char BS3_FAR *pszFormat, ...), true);
  * @param   pszFormat       The format string.
  * @param   va              Format arguments.
  */
-BS3_CMN_PROTO(size_t, Bs3PrintfV,(const char BS3_FAR *pszFormat, va_list va), true);
+BS3_CMN_PROTO_STUB(size_t, Bs3PrintfV,(const char BS3_FAR *pszFormat, va_list va));
 
 /**
  * Prints a string to the screen.
  *
  * @param   pszString       The string to print.
  */
-BS3_CMN_PROTO(void, Bs3PrintStr,(const char BS3_FAR *pszString), true);
+BS3_CMN_PROTO_STUB(void, Bs3PrintStr,(const char BS3_FAR *pszString));
 
 /**
  * Prints a string to the screen.
@@ -1380,14 +1414,14 @@ BS3_CMN_PROTO(void, Bs3PrintStr,(const char BS3_FAR *pszString), true);
  * @param   pchString       The string to print.  Any terminator charss will be printed.
  * @param   cchString       The exact number of characters to print.
  */
-BS3_CMN_PROTO(void, Bs3PrintStrN,(const char BS3_FAR *pszString, size_t cchString), false);
+BS3_CMN_PROTO_NOSB(void, Bs3PrintStrN,(const char BS3_FAR *pszString, size_t cchString));
 
 /**
  * Prints a char to the screen.
  *
  * @param   ch              The character to print.
  */
-BS3_CMN_PROTO(void, Bs3PrintChr,(char ch), false);
+BS3_CMN_PROTO_NOSB(void, Bs3PrintChr,(char ch));
 
 
 /**
@@ -1421,8 +1455,8 @@ typedef FNBS3STRFORMATOUTPUT *PFNBS3STRFORMATOUTPUT;
  * @param   pfnOutput   The output function.
  * @param   pvUser      The user argument for the output function.
  */
-BS3_CMN_PROTO(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
-                                     PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser), true);
+BS3_CMN_PROTO_STUB(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
+                                          PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser));
 
 /**
  * Formats a string into a buffer.
@@ -1436,7 +1470,7 @@ BS3_CMN_PROTO(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
  * @param   pszFormat   The format string.
  * @param   va          Format arguments.
  */
-BS3_CMN_PROTO(size_t, Bs3StrPrintfV,(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va), true);
+BS3_CMN_PROTO_STUB(size_t, Bs3StrPrintfV,(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, va_list va));
 
 /**
  * Formats a string into a buffer.
@@ -1450,7 +1484,7 @@ BS3_CMN_PROTO(size_t, Bs3StrPrintfV,(char BS3_FAR *pszBuf, size_t cbBuf, const c
  * @param   pszFormat   The format string.
  * @param   ...         Format arguments.
  */
-BS3_CMN_PROTO(size_t, Bs3StrPrintf,(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, ...), true);
+BS3_CMN_PROTO_STUB(size_t, Bs3StrPrintf,(char BS3_FAR *pszBuf, size_t cbBuf, const char BS3_FAR *pszFormat, ...));
 
 
 /**
@@ -1459,7 +1493,7 @@ BS3_CMN_PROTO(size_t, Bs3StrPrintf,(char BS3_FAR *pszBuf, size_t cbBuf, const ch
  * @returns String length in chars/bytes.
  * @param   pszString       The string to examine.
  */
-BS3_CMN_PROTO(size_t, Bs3StrLen,(const char BS3_FAR *pszString), true);
+BS3_CMN_PROTO_STUB(size_t, Bs3StrLen,(const char BS3_FAR *pszString));
 
 /**
  * Finds the length of a zero terminated string, but with a max length.
@@ -1469,7 +1503,7 @@ BS3_CMN_PROTO(size_t, Bs3StrLen,(const char BS3_FAR *pszString), true);
  * @param   pszString       The string to examine.
  * @param   cchMax          The max length to examine.
  */
-BS3_CMN_PROTO(size_t, Bs3StrNLen,(const char BS3_FAR *pszString, size_t cchMax), true);
+BS3_CMN_PROTO_STUB(size_t, Bs3StrNLen,(const char BS3_FAR *pszString, size_t cchMax));
 
 /**
  * CRT style unsafe strcpy.
@@ -1479,7 +1513,7 @@ BS3_CMN_PROTO(size_t, Bs3StrNLen,(const char BS3_FAR *pszString, size_t cchMax),
  *                          hold the source string.
  * @param   pszSrc          The source string.
  */
-BS3_CMN_PROTO(char BS3_FAR *, Bs3StrCpy,(char BS3_FAR *pszDst, const char BS3_FAR *pszSrc), true);
+BS3_CMN_PROTO_STUB(char BS3_FAR *, Bs3StrCpy,(char BS3_FAR *pszDst, const char BS3_FAR *pszSrc));
 
 /**
  * CRT style memcpy.
@@ -1489,7 +1523,7 @@ BS3_CMN_PROTO(char BS3_FAR *, Bs3StrCpy,(char BS3_FAR *pszDst, const char BS3_FA
  * @param   pvSrc           The source buffer.
  * @param   cbCopy          The number of bytes to copy.
  */
-BS3_CMN_PROTO(void BS3_FAR *, Bs3MemCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy), true);
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy));
 
 /**
  * GNU (?) style mempcpy.
@@ -1499,7 +1533,7 @@ BS3_CMN_PROTO(void BS3_FAR *, Bs3MemCpy,(void BS3_FAR *pvDst, const void BS3_FAR
  * @param   pvSrc           The source buffer.
  * @param   cbCopy          The number of bytes to copy.
  */
-BS3_CMN_PROTO(void BS3_FAR *, Bs3MemPCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy), true);
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemPCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy));
 
 /**
  * CRT style memmove (overlapping buffers is fine).
@@ -1509,7 +1543,7 @@ BS3_CMN_PROTO(void BS3_FAR *, Bs3MemPCpy,(void BS3_FAR *pvDst, const void BS3_FA
  * @param   pvSrc           The source buffer.
  * @param   cbCopy          The number of bytes to copy.
  */
-BS3_CMN_PROTO(void BS3_FAR *, Bs3MemMove,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy), true);
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemMove,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy));
 
 /**
  * BSD style bzero.
@@ -1517,7 +1551,11 @@ BS3_CMN_PROTO(void BS3_FAR *, Bs3MemMove,(void BS3_FAR *pvDst, const void BS3_FA
  * @param   pvDst           The buffer to be zeroed.
  * @param   cbDst           The number of bytes to zero.
  */
-BS3_CMN_PROTO(void, Bs3MemZero,(void BS3_FAR *pvDst, size_t cbDst), false);
+BS3_CMN_PROTO_NOSB(void, Bs3MemZero,(void BS3_FAR *pvDst, size_t cbDst));
+
+
+BS3_CMN_PROTO_STUB(void, Bs3UInt64Div,(RTUINT64U uDividend, RTUINT64U uDivisor, RTUINT64U BS3_FAR *paQuotientReminder));
+BS3_CMN_PROTO_STUB(void, Bs3UInt32Div,(RTUINT32U uDividend, RTUINT32U uDivisor, RTUINT32U BS3_FAR *paQuotientReminder));
 
 
 /**
@@ -1527,7 +1565,7 @@ BS3_CMN_PROTO(void, Bs3MemZero,(void BS3_FAR *pvDst, size_t cbDst), false);
  * @param   off             The segment offset.
  * @param   uSel            The protected mode segment selector.
  */
-BS3_CMN_PROTO(uint32_t, Bs3SelProtFar32ToFlat32,(uint32_t off, uint16_t uSel), true);
+BS3_CMN_PROTO_STUB(uint32_t, Bs3SelProtFar32ToFlat32,(uint32_t off, uint16_t uSel));
 
 /**
  * Converts a current mode 32-bit far pointer to a 32-bit flat address.
@@ -1536,7 +1574,7 @@ BS3_CMN_PROTO(uint32_t, Bs3SelProtFar32ToFlat32,(uint32_t off, uint16_t uSel), t
  * @param   off             The segment offset.
  * @param   uSel            The current mode segment selector.
  */
-BS3_CMN_PROTO(uint32_t, Bs3SelFar32ToFlat32,(uint32_t off, uint16_t uSel), true);
+BS3_CMN_PROTO_STUB(uint32_t, Bs3SelFar32ToFlat32,(uint32_t off, uint16_t uSel));
 
 /**
  * Converts a real mode code segment to a protected mode code segment selector.
@@ -1544,7 +1582,7 @@ BS3_CMN_PROTO(uint32_t, Bs3SelFar32ToFlat32,(uint32_t off, uint16_t uSel), true)
  * @returns protected mode segment selector.
  * @param   uRealSeg        Real mode code segment.
  */
-BS3_CMN_PROTO(uint16_t, Bs3SelRealModeCodeToProtMode,(uint16_t uRealSeg), false);
+BS3_CMN_PROTO_NOSB(uint16_t, Bs3SelRealModeCodeToProtMode,(uint16_t uRealSeg));
 
 /**
  * Converts a real mode code segment to a protected mode code segment selector.
@@ -1552,7 +1590,7 @@ BS3_CMN_PROTO(uint16_t, Bs3SelRealModeCodeToProtMode,(uint16_t uRealSeg), false)
  * @returns protected mode segment selector.
  * @param   uProtSel        Real mode code segment.
  */
-BS3_CMN_PROTO(uint16_t, Bs3SelProtModeCodeToRealMode,(uint16_t uProtSel), false);
+BS3_CMN_PROTO_NOSB(uint16_t, Bs3SelProtModeCodeToRealMode,(uint16_t uProtSel));
 
 /**
  * Converts a flat code address to a real mode segment and offset.
@@ -1560,7 +1598,7 @@ BS3_CMN_PROTO(uint16_t, Bs3SelProtModeCodeToRealMode,(uint16_t uProtSel), false)
  * @returns Far real mode address (high 16-bit is segment, low is offset)
  * @param   uFlatAddr       Flat code address.
  */
-BS3_CMN_PROTO(uint32_t, Bs3SelFlatCodeToRealMode,(uint32_t uFlatAddr), false);
+BS3_CMN_PROTO_NOSB(uint32_t, Bs3SelFlatCodeToRealMode,(uint32_t uFlatAddr));
 
 /**
  * Converts a flat code address to a protected mode 16-bit far pointer (ring-0).
@@ -1569,7 +1607,7 @@ BS3_CMN_PROTO(uint32_t, Bs3SelFlatCodeToRealMode,(uint32_t uFlatAddr), false);
  *          low is segment offset).
  * @param   uFlatAddr       Flat code address.
  */
-BS3_CMN_PROTO(uint32_t, Bs3SelFlatCodeToProtFar16,(uint32_t uFlatAddr), false);
+BS3_CMN_PROTO_NOSB(uint32_t, Bs3SelFlatCodeToProtFar16,(uint32_t uFlatAddr));
 
 /**
  * Gets a flat address from a working poitner.
@@ -1650,8 +1688,8 @@ typedef BS3SLABCTL BS3_FAR *PBS3SLABCTL;
  * @param   cbSlab          The size of the slab.
  * @param   cbChunk         The chunk size.
  */
-BS3_CMN_PROTO(void, Bs3SlabInit,(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr,
-                                 uint32_t cbSlab, uint16_t cbChunk), true);
+BS3_CMN_PROTO_STUB(void, Bs3SlabInit,(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_t uFlatSlabPtr,
+                                      uint32_t cbSlab, uint16_t cbChunk));
 
 /**
  * Allocates one chunk from a slab.
@@ -1659,7 +1697,7 @@ BS3_CMN_PROTO(void, Bs3SlabInit,(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, uint32_
  * @returns Pointer to a chunk on success, NULL if we're out of chunks.
  * @param   pSlabCtl        The slab constrol structure to allocate from.
  */
-BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabAlloc,(PBS3SLABCTL pSlabCtl), true);
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabAlloc,(PBS3SLABCTL pSlabCtl));
 
 /**
  * Allocates one or more chunks rom a slab.
@@ -1670,7 +1708,7 @@ BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabAlloc,(PBS3SLABCTL pSlabCtl), true);
  * @param   cChunks         The number of contiguous chunks we want.
  * @param   fFlags          Flags, see BS3_SLAB_ALLOC_F_XXX
  */
-BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabAllocEx,(PBS3SLABCTL pSlabCtl, uint16_t cChunks, uint16_t fFlags), true);
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabAllocEx,(PBS3SLABCTL pSlabCtl, uint16_t cChunks, uint16_t fFlags));
 
 /**
  * Frees one or more chunks from a slab.
@@ -1681,7 +1719,7 @@ BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabAllocEx,(PBS3SLABCTL pSlabCtl, uint16_t cCh
  * @param   uFlatChunkPtr   The flat address of the chunks to free.
  * @param   cChunks         The number of contiguous chunks to free.
  */
-BS3_CMN_PROTO(uint16_t, Bs3SlabFree,(PBS3SLABCTL pSlabCtl, uint32_t uFlatChunkPtr, uint16_t cChunks), true);
+BS3_CMN_PROTO_STUB(uint16_t, Bs3SlabFree,(PBS3SLABCTL pSlabCtl, uint32_t uFlatChunkPtr, uint16_t cChunks));
 
 
 /**
@@ -1690,7 +1728,7 @@ BS3_CMN_PROTO(uint16_t, Bs3SlabFree,(PBS3SLABCTL pSlabCtl, uint32_t uFlatChunkPt
  * @param   pHead       The slab list head.
  * @param   cbChunk     The chunk size.
  */
-BS3_CMN_PROTO(void, Bs3SlabListInit,(PBS3SLABHEAD pHead, uint16_t cbChunk), true);
+BS3_CMN_PROTO_STUB(void, Bs3SlabListInit,(PBS3SLABHEAD pHead, uint16_t cbChunk));
 
 /**
  * Adds an initialized slab control structure to the list.
@@ -1698,7 +1736,7 @@ BS3_CMN_PROTO(void, Bs3SlabListInit,(PBS3SLABHEAD pHead, uint16_t cbChunk), true
  * @param   pHead           The slab list head to add it to.
  * @param   pSlabCtl        The slab control structure to add.
  */
-BS3_CMN_PROTO(void, Bs3SlabListAdd,(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl), true);
+BS3_CMN_PROTO_STUB(void, Bs3SlabListAdd,(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl));
 
 /**
  * Allocates one chunk.
@@ -1706,7 +1744,7 @@ BS3_CMN_PROTO(void, Bs3SlabListAdd,(PBS3SLABHEAD pHead, PBS3SLABCTL pSlabCtl), t
  * @returns Pointer to a chunk on success, NULL if we're out of chunks.
  * @param   pHead           The slab list to allocate from.
  */
-BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabListAlloc,(PBS3SLABHEAD pHead), true);
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabListAlloc,(PBS3SLABHEAD pHead));
 
 /**
  * Allocates one or more chunks.
@@ -1717,7 +1755,7 @@ BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabListAlloc,(PBS3SLABHEAD pHead), true);
  * @param   cChunks         The number of contiguous chunks we want.
  * @param   fFlags          Flags, see BS3_SLAB_ALLOC_F_XXX
  */
-BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabListAllocEx,(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags), true);
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabListAllocEx,(PBS3SLABHEAD pHead, uint16_t cChunks, uint16_t fFlags));
 
 /**
  * Frees one or more chunks from a slab list.
@@ -1726,7 +1764,7 @@ BS3_CMN_PROTO(void BS3_FAR *, Bs3SlabListAllocEx,(PBS3SLABHEAD pHead, uint16_t c
  * @param   pvChunks        Pointer to the first chunk to free.
  * @param   cChunks         The number of contiguous chunks to free.
  */
-BS3_CMN_PROTO(void, Bs3SlabListFree,(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks), true);
+BS3_CMN_PROTO_STUB(void, Bs3SlabListFree,(PBS3SLABHEAD pHead, void BS3_FAR *pvChunks, uint16_t cChunks));
 
 /**
  * Allocation addressing constraints.
@@ -1755,7 +1793,7 @@ typedef enum BS3MEMKIND
  *                      allocation.
  * @param   cb          How much to allocate.  Must be 4KB or less.
  */
-BS3_CMN_PROTO(void BS3_FAR *, Bs3MemAlloc,(BS3MEMKIND enmKind, size_t cb), true);
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemAlloc,(BS3MEMKIND enmKind, size_t cb));
 
 /**
  * Allocates zero'ed memory.
@@ -1764,7 +1802,7 @@ BS3_CMN_PROTO(void BS3_FAR *, Bs3MemAlloc,(BS3MEMKIND enmKind, size_t cb), true)
  *                      allocation.
  * @param   cb          How much to allocate.  Must be 4KB or less.
  */
-BS3_CMN_PROTO(void BS3_FAR *, Bs3MemAllocZ,(BS3MEMKIND enmKind, size_t cb), true);
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemAllocZ,(BS3MEMKIND enmKind, size_t cb));
 
 /**
  * Frees memory.
@@ -1773,38 +1811,38 @@ BS3_CMN_PROTO(void BS3_FAR *, Bs3MemAllocZ,(BS3MEMKIND enmKind, size_t cb), true
  * @param   pv          The memory to free (returned by #Bs3MemAlloc).
  * @param   cb          The size of the allocation.
  */
-BS3_CMN_PROTO(void, Bs3MemFree,(void BS3_FAR *pv, size_t cb), true);
+BS3_CMN_PROTO_STUB(void, Bs3MemFree,(void BS3_FAR *pv, size_t cb));
 
 
 /**
  * Enables the A20 gate.
  */
-BS3_CMN_PROTO(void, Bs3A20Enable,(void), false);
+BS3_CMN_PROTO_NOSB(void, Bs3A20Enable,(void));
 
 /**
  * Enables the A20 gate via the keyboard controller
  */
-BS3_CMN_PROTO(void, Bs3A20EnableViaKbd,(void), false);
+BS3_CMN_PROTO_NOSB(void, Bs3A20EnableViaKbd,(void));
 
 /**
  * Enables the A20 gate via the PS/2 control port A.
  */
-BS3_CMN_PROTO(void, Bs3A20EnableViaPortA,(void), false);
+BS3_CMN_PROTO_NOSB(void, Bs3A20EnableViaPortA,(void));
 
 /**
  * Disables the A20 gate.
  */
-BS3_CMN_PROTO(void, Bs3A20Disable,(void), false);
+BS3_CMN_PROTO_NOSB(void, Bs3A20Disable,(void));
 
 /**
  * Disables the A20 gate via the keyboard controller
  */
-BS3_CMN_PROTO(void, Bs3A20DisableViaKbd,(void), false);
+BS3_CMN_PROTO_NOSB(void, Bs3A20DisableViaKbd,(void));
 
 /**
  * Disables the A20 gate via the PS/2 control port A.
  */
-BS3_CMN_PROTO(void, Bs3A20DisableViaPortA,(void), false);
+BS3_CMN_PROTO_NOSB(void, Bs3A20DisableViaPortA,(void));
 
 
 /**
@@ -1813,7 +1851,7 @@ BS3_CMN_PROTO(void, Bs3A20DisableViaPortA,(void), false);
  * @returns IPRT status code.
  * @remarks Must not be called in real-mode!
  */
-BS3_CMN_PROTO(int, Bs3PagingInitRootForPP,(void), true);
+BS3_CMN_PROTO_STUB(int, Bs3PagingInitRootForPP,(void));
 
 /**
  * Initializes root page tables for PAE page protected mode (PAE16, PAE32).
@@ -1822,7 +1860,7 @@ BS3_CMN_PROTO(int, Bs3PagingInitRootForPP,(void), true);
  * @remarks The default long mode page tables depends on the PAE ones.
  * @remarks Must not be called in real-mode!
  */
-BS3_CMN_PROTO(int, Bs3PagingInitRootForPAE,(void), true);
+BS3_CMN_PROTO_STUB(int, Bs3PagingInitRootForPAE,(void));
 
 /**
  * Initializes root page tables for long mode (LM16, LM32, LM64).
@@ -1831,7 +1869,7 @@ BS3_CMN_PROTO(int, Bs3PagingInitRootForPAE,(void), true);
  * @remarks The default long mode page tables depends on the PAE ones.
  * @remarks Must not be called in real-mode!
  */
-BS3_CMN_PROTO(int, Bs3PagingInitRootForLM,(void), true);
+BS3_CMN_PROTO_STUB(int, Bs3PagingInitRootForLM,(void));
 
 /**
  * Modifies the page table protection of an address range.
@@ -1849,7 +1887,7 @@ BS3_CMN_PROTO(int, Bs3PagingInitRootForLM,(void), true);
  * @param   fSet        Mask of zero or more X86_PTE_XXX values to set for the range.
  * @param   fClear      Mask of zero or more X86_PTE_XXX values to clear for the range.
  */
-BS3_CMN_PROTO(int, Bs3PagingProtect,(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear), true);
+BS3_CMN_PROTO_STUB(int, Bs3PagingProtect,(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear));
 
 /**
  * Modifies the page table protection of an address range.
@@ -1867,12 +1905,12 @@ BS3_CMN_PROTO(int, Bs3PagingProtect,(uint64_t uFlat, uint64_t cb, uint64_t fSet,
  * @param   fSet        Mask of zero or more X86_PTE_XXX values to set for the range.
  * @param   fClear      Mask of zero or more X86_PTE_XXX values to clear for the range.
  */
-BS3_CMN_PROTO(int, Bs3PagingProtectPtr,(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear), true);
+BS3_CMN_PROTO_STUB(int, Bs3PagingProtectPtr,(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear));
 
 /**
  * Waits for the keyboard controller to become ready.
  */
-BS3_CMN_PROTO(void, Bs3KbdWait,(void), false);
+BS3_CMN_PROTO_NOSB(void, Bs3KbdWait,(void));
 
 /**
  * Sends a read command to the keyboard controller and gets the result.
@@ -1883,7 +1921,7 @@ BS3_CMN_PROTO(void, Bs3KbdWait,(void), false);
  * @returns      The value read is returned (in al).
  * @param        bCmd            The read command.
  */
-BS3_CMN_PROTO(uint8_t, Bs3KbdRead,(uint8_t bCmd), false);
+BS3_CMN_PROTO_NOSB(uint8_t, Bs3KbdRead,(uint8_t bCmd));
 
 /**
  * Sends a write command to the keyboard controller and then sends the data.
@@ -1894,13 +1932,13 @@ BS3_CMN_PROTO(uint8_t, Bs3KbdRead,(uint8_t bCmd), false);
  * @param        bCmd           The write command.
  * @param        bData          The data to write.
  */
-BS3_CMN_PROTO(void, Bs3KbdWrite,(uint8_t bCmd, uint8_t bData), false);
+BS3_CMN_PROTO_NOSB(void, Bs3KbdWrite,(uint8_t bCmd, uint8_t bData));
 
 
 /**
  * Disables all IRQs on the PIC.
  */
-BS3_CMN_PROTO(void, Bs3PicMaskAll,(void), true);
+BS3_CMN_PROTO_STUB(void, Bs3PicMaskAll,(void));
 
 
 
@@ -2000,7 +2038,7 @@ typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
  *
  * @param   pRegCtx     Where to store the register context.
  */
-BS3_CMN_PROTO(void, Bs3RegCtxSave,(PCBS3REGCTX pRegCtx), false);
+BS3_CMN_PROTO_NOSB(void, Bs3RegCtxSave,(PCBS3REGCTX pRegCtx));
 
 /**
  * Transforms a register context to a different ring.
@@ -2008,7 +2046,7 @@ BS3_CMN_PROTO(void, Bs3RegCtxSave,(PCBS3REGCTX pRegCtx), false);
  * @param   pRegCtx     The register context.
  * @param   bRing       The target ring (0..3).
  */
-BS3_CMN_PROTO(void, Bs3RegCtxConvertToRingX,(PBS3REGCTX pRegCtx, uint8_t bRing), true);
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxConvertToRingX,(PBS3REGCTX pRegCtx, uint8_t bRing));
 
 /**
  * Restores a register context.
@@ -2019,7 +2057,7 @@ BS3_CMN_PROTO(void, Bs3RegCtxConvertToRingX,(PBS3REGCTX pRegCtx, uint8_t bRing),
  * @remarks Will switch to ring-0.
  * @remarks Does not return.
  */
-BS3_CMN_PROTO(DECL_NO_RETURN(void), Bs3RegCtxRestore,(PCBS3REGCTX pRegCtx, uint16_t fFlags), false);
+BS3_CMN_PROTO_NOSB(DECL_NO_RETURN(void), Bs3RegCtxRestore,(PCBS3REGCTX pRegCtx, uint16_t fFlags));
 #if !defined(BS3_KIT_WITH_NO_RETURN) && defined(__WATCOMC__)
 # pragma aux Bs3RegCtxRestore_c16 "_Bs3RegCtxRestore_aborts_c16" __aborts
 # pragma aux Bs3RegCtxRestore_f16 "_Bs3RegCtxRestore_aborts_f16" __aborts
@@ -2034,7 +2072,7 @@ BS3_CMN_PROTO(DECL_NO_RETURN(void), Bs3RegCtxRestore,(PCBS3REGCTX pRegCtx, uint1
  *
  * @param   pRegCtx     The register context to be printed.
  */
-BS3_CMN_PROTO(void, Bs3RegCtxPrint,(PCBS3REGCTX pRegCtx), true);
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxPrint,(PCBS3REGCTX pRegCtx));
 
 
 /**
@@ -2068,6 +2106,26 @@ typedef BS3TRAPFRAME BS3_FAR *PBS3TRAPFRAME;
 typedef BS3TRAPFRAME const BS3_FAR *PCBS3TRAPFRAME;
 
 
+/**
+ * Initializes real mode and v8086 trap handling.
+ *
+ * @remarks Does not install RM/V86 trap handling, just initializes the
+ *          structures.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3TrapRmV86Init,(void));
+
+/**
+ * Initializes real mode and v8086 trap handling, extended version.
+ *
+ * @param   f386Plus    Set if the CPU is 80386 or later and
+ *                      extended registers should be saved.  Once initialized
+ *                      with this parameter set to @a true, the effect cannot be
+ *                      reversed.
+ *
+ * @remarks Does not install RM/V86 trap handling, just initializes the
+ *          structures.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3TrapRmV86InitEx,(bool f386Plus));
 
 /**
  * Initializes 16-bit (protected mode) trap handling.
@@ -2075,7 +2133,7 @@ typedef BS3TRAPFRAME const BS3_FAR *PCBS3TRAPFRAME;
  * @remarks Does not install 16-bit trap handling, just initializes the
  *          structures.
  */
-BS3_CMN_PROTO(void, Bs3Trap16Init,(void), true);
+BS3_CMN_PROTO_STUB(void, Bs3Trap16Init,(void));
 
 /**
  * Initializes 16-bit (protected mode) trap handling, extended version.
@@ -2088,7 +2146,7 @@ BS3_CMN_PROTO(void, Bs3Trap16Init,(void), true);
  * @remarks Does not install 16-bit trap handling, just initializes the
  *          structures.
  */
-BS3_CMN_PROTO(void, Bs3Trap16InitEx,(bool f386Plus), true);
+BS3_CMN_PROTO_STUB(void, Bs3Trap16InitEx,(bool f386Plus));
 
 /**
  * Initializes 32-bit trap handling.
@@ -2096,7 +2154,7 @@ BS3_CMN_PROTO(void, Bs3Trap16InitEx,(bool f386Plus), true);
  * @remarks Does not install 32-bit trap handling, just initializes the
  *          structures.
  */
-BS3_CMN_PROTO(void, Bs3Trap32Init,(void), true);
+BS3_CMN_PROTO_STUB(void, Bs3Trap32Init,(void));
 
 /**
  * Initializes 64-bit trap handling
@@ -2104,7 +2162,7 @@ BS3_CMN_PROTO(void, Bs3Trap32Init,(void), true);
  * @remarks Does not install 64-bit trap handling, just initializes the
  *          structures.
  */
-BS3_CMN_PROTO(void, Bs3Trap64Init,(void), true);
+BS3_CMN_PROTO_STUB(void, Bs3Trap64Init,(void));
 
 /**
  * Modifies the real-mode / V86 IVT entry specified by @a iIvt.
@@ -2113,7 +2171,7 @@ BS3_CMN_PROTO(void, Bs3Trap64Init,(void), true);
  * @param   uSel        The handler real-mode segment.
  * @param   off         The handler offset.
  */
-BS3_CMN_PROTO(void, Bs3TrapRmV86SetGate,(uint8_t iIvt, uint16_t uSeg, uint16_t off), true);
+BS3_CMN_PROTO_STUB(void, Bs3TrapRmV86SetGate,(uint8_t iIvt, uint16_t uSeg, uint16_t off));
 
 /**
  * Modifies the 16-bit IDT entry (protected mode) specified by @a iIdt.
@@ -2125,8 +2183,8 @@ BS3_CMN_PROTO(void, Bs3TrapRmV86SetGate,(uint8_t iIvt, uint16_t uSeg, uint16_t o
  * @param   off         The handler offset (if applicable).
  * @param   cParams     The parameter count (for call gates).
  */
-BS3_CMN_PROTO(void, Bs3Trap16SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl,
-                                      uint16_t uSel, uint16_t off, uint8_t cParams), true);
+BS3_CMN_PROTO_STUB(void, Bs3Trap16SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl,
+                                           uint16_t uSel, uint16_t off, uint8_t cParams));
 
 /** The address of Bs3Trap16GenericEntries.
  * Bs3Trap16GenericEntries is an array of interrupt/trap/whatever entry
@@ -2144,8 +2202,8 @@ extern uint32_t g_Bs3Trap16GenericEntriesFlatAddr;
  * @param   off         The handler offset (if applicable).
  * @param   cParams     The parameter count (for call gates).
  */
-BS3_CMN_PROTO(void, Bs3Trap32SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl,
-                                      uint16_t uSel, uint32_t off, uint8_t cParams), true);
+BS3_CMN_PROTO_STUB(void, Bs3Trap32SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl,
+                                           uint16_t uSel, uint32_t off, uint8_t cParams));
 
 /** The address of Bs3Trap32GenericEntries.
  * Bs3Trap32GenericEntries is an array of interrupt/trap/whatever entry
@@ -2163,8 +2221,7 @@ extern uint32_t g_Bs3Trap32GenericEntriesFlatAddr;
  * @param   off         The handler offset (if applicable).
  * @param   bIst        The interrupt stack to use.
  */
-BS3_CMN_PROTO(void, Bs3Trap64SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl,
-                                      uint16_t uSel, uint64_t off, uint8_t bIst), true);
+BS3_CMN_PROTO_STUB(void, Bs3Trap64SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl, uint16_t uSel, uint64_t off, uint8_t bIst));
 
 /** The address of Bs3Trap64GenericEntries.
  * Bs3Trap64GenericEntries is an array of interrupt/trap/whatever entry
@@ -2201,7 +2258,7 @@ typedef FNBS3TRAPHANDLER *PFNBS3TRAPHANDLER;
  * @param   iIdt        The index of the IDT entry to set.
  * @param   pfnHandler  Pointer to the handler.
  */
-BS3_CMN_PROTO(PFNBS3TRAPHANDLER, Bs3TrapSetHandler,(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler), true);
+BS3_CMN_PROTO_STUB(PFNBS3TRAPHANDLER, Bs3TrapSetHandler,(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler));
 
 /**
  * Default C/C++ trap handler.
@@ -2210,13 +2267,13 @@ BS3_CMN_PROTO(PFNBS3TRAPHANDLER, Bs3TrapSetHandler,(uint8_t iIdt, PFNBS3TRAPHAND
  *
  * @param   pTrapFrame      Trap frame of the trap to handle.
  */
-BS3_CMN_PROTO(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame), true);
+BS3_CMN_PROTO_STUB(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame));
 
 /**
  * Prints the trap frame (to screen).
  * @param   pTrapFrame      Trap frame to print.
  */
-BS3_CMN_PROTO(void, Bs3TrapPrintFrame,(PCBS3TRAPFRAME pTrapFrame), true);
+BS3_CMN_PROTO_STUB(void, Bs3TrapPrintFrame,(PCBS3TRAPFRAME pTrapFrame));
 
 /**
  * Sets up a long jump from a trap handler.
@@ -2230,7 +2287,7 @@ BS3_CMN_PROTO(void, Bs3TrapPrintFrame,(PCBS3TRAPFRAME pTrapFrame), true);
  *                          returning @c false.
  * @sa      #Bs3TrapUnsetJmp
  */
-BS3_CMN_PROTO(DECL_RETURNS_TWICE(bool),Bs3TrapSetJmp,(PBS3TRAPFRAME pTrapFrame), false);
+BS3_CMN_PROTO_NOSB(DECL_RETURNS_TWICE(bool),Bs3TrapSetJmp,(PBS3TRAPFRAME pTrapFrame));
 
 /**
  * Combination of #Bs3TrapSetJmp and #Bs3RegCtxRestore.
@@ -2238,12 +2295,12 @@ BS3_CMN_PROTO(DECL_RETURNS_TWICE(bool),Bs3TrapSetJmp,(PBS3TRAPFRAME pTrapFrame),
  * @param   pCtxRestore     The context to restore.
  * @param   pTrapFrame      Where to store the trap information.
  */
-BS3_CMN_PROTO(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame), true);
+BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame));
 
 /**
  * Disables a previous #Bs3TrapSetJmp call.
  */
-BS3_CMN_PROTO(void, Bs3TrapUnsetJmp,(void), true);
+BS3_CMN_PROTO_STUB(void, Bs3TrapUnsetJmp,(void));
 
 
 /**
@@ -2256,38 +2313,38 @@ extern uint16_t g_usBs3TestStep;
  *
  * @param   pszTest         The test name.
  */
-BS3_CMN_PROTO(void, Bs3TestInit,(const char BS3_FAR *pszTest), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestInit,(const char BS3_FAR *pszTest));
 
 
 /**
  * Equivalent to RTTestSummaryAndDestroy.
  */
-BS3_CMN_PROTO(void, Bs3TestTerm,(void), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestTerm,(void));
 
 /**
  * Equivalent to RTTestISub.
  */
-BS3_CMN_PROTO(void, Bs3TestSub,(const char BS3_FAR *pszSubTest), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestSub,(const char BS3_FAR *pszSubTest));
 
 /**
  * Equivalent to RTTestIFailedF.
  */
-BS3_CMN_PROTO(void, Bs3TestSubF,(const char BS3_FAR *pszFormat, ...), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestSubF,(const char BS3_FAR *pszFormat, ...));
 
 /**
  * Equivalent to RTTestISubV.
  */
-BS3_CMN_PROTO(void, Bs3TestSubV,(const char BS3_FAR *pszFormat, va_list va), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestSubV,(const char BS3_FAR *pszFormat, va_list va));
 
 /**
  * Equivalent to RTTestISubDone.
  */
-BS3_CMN_PROTO(void, Bs3TestSubDone,(void), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestSubDone,(void));
 
 /**
  * Equivalent to RTTestSubErrorCount.
  */
-BS3_CMN_PROTO(uint16_t, Bs3TestSubErrorCount,(void), true);
+BS3_CMN_PROTO_STUB(uint16_t, Bs3TestSubErrorCount,(void));
 
 /**
  * Equivalent to RTTestIPrintf with RTTESTLVL_ALWAYS.
@@ -2295,7 +2352,7 @@ BS3_CMN_PROTO(uint16_t, Bs3TestSubErrorCount,(void), true);
  * @param   pszFormat   What to print, format string.  Explicit newline char.
  * @param   ...         String format arguments.
  */
-BS3_CMN_PROTO(void, Bs3TestPrintf,(const char BS3_FAR *pszFormat, ...), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestPrintf,(const char BS3_FAR *pszFormat, ...));
 
 /**
  * Equivalent to RTTestIPrintfV with RTTESTLVL_ALWAYS.
@@ -2303,29 +2360,29 @@ BS3_CMN_PROTO(void, Bs3TestPrintf,(const char BS3_FAR *pszFormat, ...), true);
  * @param   pszFormat   What to print, format string.  Explicit newline char.
  * @param   va          String format arguments.
  */
-BS3_CMN_PROTO(void, Bs3TestPrintfV,(const char BS3_FAR *pszFormat, va_list va), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestPrintfV,(const char BS3_FAR *pszFormat, va_list va));
 
 /**
  * Equivalent to RTTestIFailed.
  */
-BS3_CMN_PROTO(void, Bs3TestFailed,(const char BS3_FAR *pszMessage), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestFailed,(const char BS3_FAR *pszMessage));
 
 /**
  * Equivalent to RTTestIFailedF.
  */
-BS3_CMN_PROTO(void, Bs3TestFailedF,(const char BS3_FAR *pszFormat, ...), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestFailedF,(const char BS3_FAR *pszFormat, ...));
 
 /**
  * Equivalent to RTTestIFailedV.
  */
-BS3_CMN_PROTO(void, Bs3TestFailedV,(const char BS3_FAR *pszFormat, va_list va), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestFailedV,(const char BS3_FAR *pszFormat, va_list va));
 
 /**
  * Equivalent to RTTestISkipped.
  *
  * @param   pszWhy          Optional reason why it's being skipped.
  */
-BS3_CMN_PROTO(void, Bs3TestSkipped,(const char BS3_FAR *pszWhy), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestSkipped,(const char BS3_FAR *pszWhy));
 
 /**
  * Equivalent to RTTestISkippedF.
@@ -2333,7 +2390,7 @@ BS3_CMN_PROTO(void, Bs3TestSkipped,(const char BS3_FAR *pszWhy), true);
  * @param   pszFormat       Optional reason why it's being skipped.
  * @param   ...             Format arguments.
  */
-BS3_CMN_PROTO(void, Bs3TestSkippedF,(const char BS3_FAR *pszFormat, ...), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestSkippedF,(const char BS3_FAR *pszFormat, ...));
 
 /**
  * Equivalent to RTTestISkippedV.
@@ -2341,7 +2398,7 @@ BS3_CMN_PROTO(void, Bs3TestSkippedF,(const char BS3_FAR *pszFormat, ...), true);
  * @param   pszFormat       Optional reason why it's being skipped.
  * @param   va              Format arguments.
  */
-BS3_CMN_PROTO(void, Bs3TestSkippedV,(const char BS3_FAR *pszFormat, va_list va), true);
+BS3_CMN_PROTO_STUB(void, Bs3TestSkippedV,(const char BS3_FAR *pszFormat, va_list va));
 
 /**
  * Compares two register contexts, with PC and SP adjustments.
@@ -2357,8 +2414,8 @@ BS3_CMN_PROTO(void, Bs3TestSkippedV,(const char BS3_FAR *pszFormat, va_list va),
  * @param   pszMode         CPU mode or some other helpful text.
  * @param   idTestStep      Test step identifier.
  */
-BS3_CMN_PROTO(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
-                                          int16_t cbSpAdjust, uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep), true);
+BS3_CMN_PROTO_STUB(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust,
+                                               int16_t cbSpAdjust, uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep));
 
 /**
  * Performs the testing for the given mode.
@@ -2544,18 +2601,15 @@ BS3_DECL_FAR(void) Bs3InitGdt_rm_far(void);
  */
 
 
-/** @def BS3_MODE_PROTO
- * Macro for reducing typing.
- *
- * Doxygen knows how to expand this, well, kind of.
+/** @def BS3_MODE_PROTO_INT
+ * Internal macro for emitting prototypes for mode functions.
  *
  * @param   a_RetType   The return type.
  * @param   a_Name      The function basename.
  * @param   a_Params    The parameter list (in parentheses).
- * @param   a_fAutoStub Whether to autogenerate a 16-bit near -> 16-bit far stub
- *                      function. Either 'true' for stub or 'false' for no stub.
+ * @sa      BS3_MODE_PROTO_STUB, BS3_MODE_PROTO_NOSB
  */
-#define BS3_MODE_PROTO(a_RetType, a_Name, a_Params, a_fAutoStub) \
+#define BS3_MODE_PROTO_INT(a_RetType, a_Name, a_Params) \
     BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_rm)           a_Params; \
     BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pe16)         a_Params; \
     BS3_DECL_NEAR(a_RetType) RT_CONCAT(a_Name,_pe16_32)      a_Params; \
@@ -2592,6 +2646,29 @@ BS3_DECL_FAR(void) Bs3InitGdt_rm_far(void);
     BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_pae32_16_far) a_Params; \
     BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_paev86_far)   a_Params; \
     BS3_DECL_FAR(a_RetType)  RT_CONCAT(a_Name,_lm16_far)     a_Params
+
+/** @def BS3_MODE_PROTO_STUB
+ * Macro for prototyping all the variations of a mod function with automatic
+ * near -> far stub.
+ *
+ * @param   a_RetType   The return type.
+ * @param   a_Name      The function basename.
+ * @param   a_Params    The parameter list (in parentheses).
+ * @sa      BS3_MODE_PROTO_STUB, BS3_MODE_PROTO_NOSB
+ */
+#define BS3_MODE_PROTO_STUB(a_RetType, a_Name, a_Params) BS3_MODE_PROTO_INT(a_RetType, a_Name, a_Params)
+
+/** @def BS3_MODE_PROTO_STUB
+ * Macro for prototyping all the variations of a mod function without any
+ * near -> far stub.
+ *
+ * @param   a_RetType   The return type.
+ * @param   a_Name      The function basename.
+ * @param   a_Params    The parameter list (in parentheses).
+ * @sa      BS3_MODE_PROTO_STUB, BS3_MODE_PROTO_NOSB
+ */
+#define BS3_MODE_PROTO_NOSB(a_RetType, a_Name, a_Params) BS3_MODE_PROTO_INT(a_RetType, a_Name, a_Params)
+
 
 /**
  * Macro for reducing typing.
@@ -2640,7 +2717,7 @@ BS3_MODE_EXPAND_EXTERN_DATA16(const char, g_szBs3ModeName, []);
  * @returns BS3CPU_XXX value with the BS3CPU_F_CPUID flag set depending on
  *          capabilities.
  */
-BS3_MODE_PROTO(uint8_t, Bs3CpuDetect,(void), false);
+BS3_MODE_PROTO_NOSB(uint8_t, Bs3CpuDetect,(void));
 
 /** @name BS3CPU_XXX - CPU detected by BS3CpuDetect_c16() and friends.
  * @{ */
@@ -2676,7 +2753,7 @@ extern uint16_t g_uBs3CpuDetected;
  *
  * Calls the appropriate Bs3Trap16Init, Bs3Trap32Init or Bs3Trap64Init function.
  */
-BS3_MODE_PROTO(void, Bs3TrapInit,(void), true);
+BS3_MODE_PROTO_STUB(void, Bs3TrapInit,(void));
 
 /**
  * Executes the array of tests in every possibly mode.
@@ -2684,7 +2761,7 @@ BS3_MODE_PROTO(void, Bs3TrapInit,(void), true);
  * @param   paEntries       The mode sub-test entries.
  * @param   cEntries        The number of sub-test entries.
  */
-BS3_MODE_PROTO(void, Bs3TestDoModes,(PCBS3TESTMODEENTRY paEntries, size_t cEntries), true);
+BS3_MODE_PROTO_NOSB(void, Bs3TestDoModes,(PCBS3TESTMODEENTRY paEntries, size_t cEntries));
 
 
 /** @} */

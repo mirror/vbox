@@ -36,10 +36,10 @@
 /* We ASSUME that BS3CLASS16CODE is 64KB aligned, so the low 16-bit of the
    flat address matches.   Also, these symbols are defined both with
    and without underscore prefixes. */
-extern BS3_DECL(void) BS3_FAR_CODE Bs3Trap16GenericEntries(void);
+extern BS3_DECL(void) BS3_FAR_CODE Bs3TrapRmV86GenericEntries(void);
 
 /* These two are ugly.  Need data access for patching purposes. */
-extern uint8_t  BS3_FAR_DATA bs3Trap16GenericTrapOrInt[];
+extern uint8_t  BS3_FAR_DATA bs3TrapRmV86GenericTrapOrInt[];
 
 /* bs3-cmn-TrapRmV86Data.c: */
 #define g_fBs3RmIvtCopied   BS3_DATA_NM(g_fBs3RmIvtCopied)
@@ -73,7 +73,7 @@ BS3_CMN_DEF(void, Bs3TrapRmV86InitEx,(bool f386Plus))
      */
     if (f386Plus)
     {
-        uint8_t BS3_FAR_DATA *pbFunction = &bs3Trap16GenericTrapOrInt[0];
+        uint8_t BS3_FAR_DATA *pbFunction = &bs3TrapRmV86GenericTrapOrInt[0];
 #if ARCH_BITS == 16
         if (g_bBs3CurrentMode != BS3_MODE_RM)
             pbFunction = (uint8_t BS3_FAR_DATA *)BS3_FP_MAKE(BS3_SEL_TILED + 1, BS3_FP_OFF(pbFunction));
@@ -92,13 +92,13 @@ BS3_CMN_DEF(void, Bs3TrapRmV86InitEx,(bool f386Plus))
     for (iIvt = 0; iIvt < 256; iIvt++)
         if (iIvt != 0x10 && iIvt != BS3_TRAP_SYSCALL)
         {
-            paIvt[iIvt].off = (uint16_t)(uintptr_t)Bs3Trap16GenericEntries + iIvt * 8;
+            paIvt[iIvt].off = (uint16_t)(uintptr_t)Bs3TrapRmV86GenericEntries + iIvt * 8;
             paIvt[iIvt].sel = BS3_SEL_TEXT16;
         }
 }
 
 
-#undef Bs3TrapRmV86InitEx
+#undef Bs3TrapRmV86Init
 BS3_CMN_DEF(void, Bs3TrapRmV86Init,(void))
 {
     BS3_CMN_NM(Bs3TrapRmV86InitEx)((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386);

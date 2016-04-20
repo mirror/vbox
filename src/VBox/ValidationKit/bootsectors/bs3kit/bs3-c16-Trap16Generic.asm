@@ -40,23 +40,13 @@
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 BS3_EXTERN_DATA16 g_uBs3TrapEipHint
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
+BS3_EXTERN_DATA16 g_apfnBs3TrapHandlers_c16
 BS3_EXTERN_SYSTEM16 Bs3Gdt
 TMPL_BEGIN_TEXT
 BS3_EXTERN_CMN Bs3TrapDefaultHandler
 BS3_EXTERN_CMN Bs3RegCtxRestore
 TMPL_BEGIN_TEXT
 
-
-;*********************************************************************************************************************************
-;*  Global Variables                                                                                                             *
-;*********************************************************************************************************************************
-BS3_BEGIN_DATA16
-;; Pointer C trap handlers (BS3TEXT16).
-BS3_GLOBAL_DATA g_apfnBs3TrapHandlers_c16, 512
-        resw 256
-
-
-TMPL_BEGIN_TEXT
 
 ;;
 ; Generic entry points for IDT handlers, 8 byte spacing.
@@ -180,16 +170,16 @@ CPU 386
         movzx   ebx, sp
 
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
-        mov     edx, [bp - 12h]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], edx
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], edx
+        mov     edx, [bp - 12h]         ; This isn't quite right for wrap arounds, but close enough for now
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], edx     ; high bits
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], edx             ; high bits
         mov     dx, [bp - 0eh]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], dx
         mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], dx
         mov     edx, [bp - 0ch]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], edx
         mov     edx, [bp - 8]
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], edx ; high bits
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags], edx  ; high bits
         mov     [ss:bx + BS3TRAPFRAME.fHandlerRfl], edx
         mov     edx, [bp - 4]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], edx
@@ -211,7 +201,7 @@ CPU 386
 %ifdef BS3_STRICT
         int3
 %endif
-        jmp     .stack_load_bx_into_ss
+        jmp     .stack_esp_out_of_bounds
 BS3_PROC_END   bs3Trap16GenericTrapErrCode
 
 ;;
@@ -309,13 +299,11 @@ CPU 286
 .save_segment_registers:
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ds], ds
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.es], es
+        mov     [ss:bx + BS3TRAPFRAME.uHandlerCs], cs
 
         ;
         ; Load 16-bit data selector for the DPL we're executing at into DS and ES.
-        ; Save the handler SS and CS values first.
         ;
-        mov     ax, cs
-        mov     [ss:bx + BS3TRAPFRAME.uHandlerCs], ax
         mov     ax, ss
         and     ax, 3
         mov     cx, ax
@@ -367,9 +355,7 @@ CPU 286
         jnz     .iret_frame_done
         jmp     .iret_frame_seed_high_eip_word
 
-.iret_frame_same_cpl:
-        mov     cx, ss
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], cx
+.iret_frame_same_cpl: ; (ss and high bits was saved by CPU specific part)
         lea     cx, [bp + 8]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], cx
         mov     byte [ss:bx + BS3TRAPFRAME.cbIretFrame], 3*2

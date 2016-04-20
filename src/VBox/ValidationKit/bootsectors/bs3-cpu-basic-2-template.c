@@ -1527,7 +1527,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
     /*
      * Re-initialize the IDT.
      */
-    TMPL_FAR_NM(Bs3TrapInit)();
+    Bs3TrapInit();
     return bRet;
 }
 
@@ -1553,7 +1553,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
     /*
      * Re-initialize the IDT.
      */
-    TMPL_FAR_NM(Bs3TrapInit)();
+    Bs3TrapInit();
     return 0;
 #elif TMPL_MODE == BS3_MODE_RM
 
@@ -1599,7 +1599,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
     /*
      * Re-initialize the IDT.
      */
-    TMPL_FAR_NM(Bs3TrapInit)();
+    Bs3TrapInit();
     return 0;
 }
 
