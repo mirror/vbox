@@ -654,6 +654,8 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  	linux/SUPDrv-linux.mod.c
  endif
 
+ linux/SUPDrv-linux.c_DEPS = $(VBOX_SVN_REV_HEADER)
+
 endif
 
 

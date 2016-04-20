@@ -480,6 +480,7 @@ else if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo merge this with th
   vboxnetflt_SOURCES.solaris = solaris/VBoxNetFlt-solaris.c
   vboxnetflt_SOURCES.freebsd = freebsd/VBoxNetFlt-freebsd.c
   vboxnetflt_SOURCES = VBoxNetFlt.c
+  linux/VBoxNetFlt-linux.c_DEPS = $(VBOX_SVN_REV_HEADER)
   solaris/VBoxNetFlt-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
   ifdef VBOX_WITH_NETFLT_CROSSBOW

@@ -67,6 +67,8 @@ ifdef VBOX_WITH_ADDITION_DRIVERS
  	regops.c
  vboxsf_LIBS            = \
  	$(VBOX_LIB_VBGL_R0)
+
+vfsmod.c_DEPS           = $(VBOX_SVN_REV_HEADER)
 endif
 
 #

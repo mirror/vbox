@@ -84,6 +84,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
    VBoxGuest_SOURCES    = VBoxGuest-$(KBUILD_TARGET).cpp
   else
    VBoxGuest_SOURCES    = VBoxGuest-$(KBUILD_TARGET).c
+   VBoxGuest_$(KBUILD_TARGET).c_DEPS = $(VBOX_SVN_REV_HEADER)
   endif
   VBoxGuest_SOURCES     += \
   	VBoxGuest.cpp

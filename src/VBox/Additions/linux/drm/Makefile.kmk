@@ -67,5 +67,7 @@ vboxvideo_drm_SOURCES         = \
 	vbox_mode.c \
 	vbox_ttm.c
 
+vbox_drv.c_DEPS               = $(VBOX_SVN_REV_HEADER)
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

@@ -56,6 +56,7 @@ if1of ($(KBUILD_TARGET), solaris darwin linux freebsd)
   #	VBoxNetAdp.c
   VBoxNetAdp_LIBS            += \
   	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+  linux/VBoxNetAdp-linux.c_DEPS = $(VBOX_SVN_REV_HEADER)
  endif
 endif
 

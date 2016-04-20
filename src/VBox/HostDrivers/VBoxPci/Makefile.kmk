@@ -40,6 +40,7 @@ if1of ($(KBUILD_TARGET), linux)
  	VBoxPci.c
   VBoxPci_LIBS          += \
  	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+  linux/VBoxPci-linux.c_DEPS = $(VBOX_SVN_REV_HEADER)
  endif
 
  #
