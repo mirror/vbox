@@ -566,7 +566,18 @@ PREDEFINED += \
     BS3_NEAR= \
     BS3_DECL(a_Type)=a_Type \
     BS3_CMN_NM(a_Name)=a_Name \
-    "BS3_MODE_EXPAND_PROTOTYPES(a_RetType, a_BaseFnNm, a_Parameters)=a_RetType a_BaseFnNm##_mmm a_Parameters" \
+    BS3_CMN_FAR_NM(a_Name)=a_Name \
+    BS3_CMN_FN_NM(a_Name)=a_Name \
+    BS3_DATA_NM(a_Name)=a_Name \
+    TMPL_NM(a_Name)=a_Name##_mmm \
+    TMPL_FAR_NM(a_Name)=a_Name##_mmm \
+    "BS3_CMN_PROTO_STUB(a_RetType, a_Name, a_Params)=a_RetType a_Name a_Params" \
+    "BS3_CMN_PROTO_NOSB(a_RetType, a_Name, a_Params)=a_RetType a_Name a_Params" \
+    "BS3_CMN_DEF(       a_RetType, a_Name, a_Params)=a_RetType a_Name a_Params" \
+    "BS3_MODE_PROTO_STUB(a_RetType, a_Name, a_Params)=a_RetType a_Name##_mmm a_Params" \
+    "BS3_MODE_PROTO_NOSB(a_RetType, a_Name, a_Params)=a_RetType a_Name##_mmm a_Params" \
+    "BS3_MODE_DEF(       a_RetType, a_Name, a_Params)=a_RetType a_Name##_mmm a_Params" \
+
 
 # templated fun.
 PREDEFINED += \
