@@ -29,6 +29,9 @@
  */
 
 #include "vfsmod.h"
+#include "version-generated.h"
+#include "revision-generated.h"
+#include "product-generated.h"
 
 MODULE_DESCRIPTION(VBOX_PRODUCT " VFS Module for Host File System Access");
 MODULE_AUTHOR(VBOX_VENDOR);
