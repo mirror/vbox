@@ -564,19 +564,24 @@ PREDEFINED += \
 PREDEFINED += \
     BS3_FAR= \
     BS3_NEAR= \
+    BS3_FAR_DATA= \
     BS3_DECL(a_Type)=a_Type \
+    BS3_DECL_NEAR(a_Type)=a_Type \
+    BS3_DECL_FAR(a_Type)=a_Type \
     BS3_CMN_NM(a_Name)=a_Name \
     BS3_CMN_FAR_NM(a_Name)=a_Name \
     BS3_CMN_FN_NM(a_Name)=a_Name \
     BS3_DATA_NM(a_Name)=a_Name \
     TMPL_NM(a_Name)=a_Name##_mmm \
     TMPL_FAR_NM(a_Name)=a_Name##_mmm \
-    "BS3_CMN_PROTO_STUB(a_RetType, a_Name, a_Params)=a_RetType a_Name a_Params" \
-    "BS3_CMN_PROTO_NOSB(a_RetType, a_Name, a_Params)=a_RetType a_Name a_Params" \
-    "BS3_CMN_DEF(       a_RetType, a_Name, a_Params)=a_RetType a_Name a_Params" \
-    "BS3_MODE_PROTO_STUB(a_RetType, a_Name, a_Params)=a_RetType a_Name##_mmm a_Params" \
-    "BS3_MODE_PROTO_NOSB(a_RetType, a_Name, a_Params)=a_RetType a_Name##_mmm a_Params" \
-    "BS3_MODE_DEF(       a_RetType, a_Name, a_Params)=a_RetType a_Name##_mmm a_Params" \
+    "BS3_CMN_PROTO_STUB(a_RetType,a_Name,a_Params)=a_RetType a_Name a_Params" \
+    "BS3_CMN_PROTO_NOSB(a_RetType,a_Name,a_Params)=a_RetType a_Name a_Params" \
+    "BS3_CMN_DEF(a_RetType,a_Name,a_Params)=a_RetType a_Name a_Params" \
+    "BS3_MODE_PROTO_STUB(a_RetType,a_Name,a_Params)=a_RetType a_Name##_mmm a_Params" \
+    "BS3_MODE_PROTO_NOSB(a_RetType,a_Name,a_Params)=a_RetType a_Name##_mmm a_Params" \
+    "BS3_MODE_DEF(a_RetType,a_Name,a_Params)=a_RetType a_Name##_mmm a_Params" \
+    "BS3_PTR_UNION_TEMPLATE(a_BaseName,a_Modifiers)=typedef union a_BaseName { a_Modifiers void *pv } a_BaseName, * P##a_BaseName; }" \
+    "BS3_XPTR_MEMBER(a_Type,a_Name)=a_Type * a_Name" \
 
 
 # templated fun.
