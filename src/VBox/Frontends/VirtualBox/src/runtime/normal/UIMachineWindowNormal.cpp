@@ -24,6 +24,7 @@
 # include <QTimer>
 # include <QContextMenuEvent>
 # include <QResizeEvent>
+# include <QScrollBar>
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -519,6 +520,10 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
 
     /* Get the best size w/o scroll-bars: */
     QSize s = sizeHint();
+    if (machineView()->verticalScrollBar()->isVisible())
+        s -= QSize(machineView()->verticalScrollBar()->sizeHint().width(), 0);
+    if (machineView()->horizontalScrollBar()->isVisible())
+        s -= QSize(0, machineView()->horizontalScrollBar()->sizeHint().height());
 
     /* Resize the frame to fit the contents: */
     s -= size();
