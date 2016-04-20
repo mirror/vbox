@@ -43,9 +43,16 @@ $_?I8DR:
         push    es
         push    ss
         pop     es
+%ifdef ASM_MODEL_FAR_CODE
+        push    cs
+%endif
         call    $_?I8DRE
         pop     es
+%ifdef ASM_MODEL_FAR_CODE
+        retf
+%else
         ret
+%endif
 
 ;;
 ; 64-bit unsigned integer modulo, ES variant.
@@ -96,5 +103,9 @@ $_?I8DRE:
         leave
         pop     es
         pop     ds
+%ifdef ASM_MODEL_FAR_CODE
+        retf
+%else
         ret
+%endif
 

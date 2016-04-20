@@ -62,5 +62,9 @@ $_?I8LS:
 
 .return:
         pop     si
+%ifdef ASM_MODEL_FAR_CODE
+        retf
+%else
         ret
+%endif
 

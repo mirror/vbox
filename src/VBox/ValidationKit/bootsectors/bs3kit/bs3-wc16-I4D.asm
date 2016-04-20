@@ -62,5 +62,9 @@ extern TODO_NEGATIVE_SIGNED_DIVISION
         mov     edx, eax
         shr     edx, 10h
 
+%ifdef ASM_MODEL_FAR_CODE
+        retf
+%else
         ret
+%endif
 

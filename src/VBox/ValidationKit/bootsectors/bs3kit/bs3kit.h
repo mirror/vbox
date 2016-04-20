@@ -49,13 +49,26 @@
 #endif
 
 /** @def BS3_USE_ALT_16BIT_TEXT_SEG
+ * @addtogroup grp_bs3kit
  * Combines the BS3_USE_RM_TEXT_SEG,  BS3_USE_X0_TEXT_SEG, and
- * BS3_USE_X1_TEXT_SEG indicators into a single one. */
+ * BS3_USE_X1_TEXT_SEG indicators into a single one.
+ */
 #if defined(BS3_USE_RM_TEXT_SEG) || defined(BS3_USE_X0_TEXT_SEG) || defined(BS3_USE_X1_TEXT_SEG)
 # define BS3_USE_ALT_16BIT_TEXT_SEG
 #else
 # undef  BS3_USE_ALT_16BIT_TEXT_SEG
 #endif
+
+/** @def BS3_MODEL_FAR_CODE
+ * @addtogroup grp_bs3kit
+ * Default compiler model indicates far code.
+ */
+#ifdef DOXYGEN_RUNNING
+# define BS3_MODEL_FAR_CODE
+#elif !defined(BS3_MODEL_FAR_CODE) && (defined(__LARGE__) || defined(__MEDIUM__) || defined(__HUGE__)) && ARCH_BITS == 16
+# define BS3_MODEL_FAR_CODE
+#endif
+
 
 /*
  * We may want to reuse some IPRT code in the common name space, so we
@@ -63,12 +76,17 @@
  * BS3_CMN_NM yet, as we need to include IPRT headers with function
  * declarations before we can define it. Thus the duplciate effort.)
  */
-#if ARCH_BITS != 16 || !defined(BS3_USE_ALT_16BIT_TEXT_SEG)
-# define RT_MANGLER(a_Name) RT_CONCAT3(a_Name,_c,ARCH_BITS)
-#else
-# define RT_MANGLER(a_Name) RT_CONCAT(a_Name,_f16)
+#if ARCH_BITS == 16
 # undef RTCALL
-# define RTCALL __cdecl __far
+# if defined(BS3_USE_ALT_16BIT_TEXT_SEG)
+#  define RTCALL __cdecl __far
+#  define RT_MANGLER(a_Name) RT_CONCAT(a_Name,_f16)
+# else
+#  define RTCALL __cdecl __near
+#  define RT_MANGLER(a_Name) RT_CONCAT(a_Name,_c16)
+# endif
+#else
+# define RT_MANGLER(a_Name)  RT_CONCAT3(a_Name,_c,ARCH_BITS)
 #endif
 #include <iprt/mangling.h>
 #include <iprt/x86.h>

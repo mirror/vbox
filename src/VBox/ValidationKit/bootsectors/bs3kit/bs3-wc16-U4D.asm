@@ -102,5 +102,9 @@ $_?U4D:
         pop     ds
 
 %endif
+%ifdef ASM_MODEL_FAR_CODE
+        retf
+%else
         ret
+%endif
 

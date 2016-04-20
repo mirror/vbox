@@ -43,9 +43,16 @@ $_?U8DQ:
         push    es
         push    ss
         pop     es
+%ifdef BS3_MODEL_FAR_CODE
+        push    cs
+%endif
         call    $_?U8DQE
         pop     es
+%ifdef BS3_MODEL_FAR_CODE
+        retf
+%else
         ret
+%endif
 
 ;;
 ; 64-bit unsigned integer division, ES variant.
@@ -99,5 +106,9 @@ $_?U8DQE:
         pop     bp
         pop     es
         pop     ds
+%ifdef ASM_MODEL_FAR_CODE
+        retf
+%else
         ret
+%endif
 
