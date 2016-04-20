@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -337,6 +337,8 @@ DECLINLINE(uint32_t) VDOpenFlagsToFileOpenFlags(unsigned fOpenFlags, bool fCreat
 #define VD_CAP_VFS                  RT_BIT(9)
 /** The backend supports the discard operation. */
 #define VD_CAP_DISCARD              RT_BIT(10)
+/** This is a frequently used backend. */
+#define VD_CAP_PREFERRED            RT_BIT(11)
 /** @}*/
 
 /** @name VBox HDD container type.

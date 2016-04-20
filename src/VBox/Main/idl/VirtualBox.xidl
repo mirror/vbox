@@ -15678,7 +15678,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
-    <const name="CapabilityMask" value="0x3FF"/>
+    <const name="Discard" value="0x400">
+      <desc>
+        The format backend supports discarding blocks.
+      </desc>
+    </const>
+
+    <const name="Preferred" value="0x800">
+      <desc>
+        Indicates that this is a frequently used format backend.
+      </desc>
+    </const>
+
+    <const name="CapabilityMask" value="0xFFF"/>
   </enum>
 
   <interface
