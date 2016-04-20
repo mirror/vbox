@@ -104,25 +104,26 @@ DECLINLINE(bool) apicTestVectorInPib(volatile void *pvPib, uint8_t uVector)
 
 
 /**
- * Atomically tests and sets the PIB notification bit.
+ * Atomically sets the PIB notification bit.
  *
- * @returns true if the bit was already set, false otherwise.
- * @param   pvPib           Opaque pointer to the PIB.
+ * @returns non-zero if the bit was already set, 0 otherwise.
+ * @param   pApicPib        Pointer to the PIB.
  */
-DECLINLINE(bool) apicSetNotificationBitInPib(volatile void *pvPib)
+DECLINLINE(uint32_t) apicSetNotificationBitInPib(PAPICPIB pApicPib)
 {
-    return ASMAtomicBitTestAndSet(pvPib, XAPIC_PIB_NOTIFICATION_BIT);
+    return ASMAtomicXchgU32(&pApicPib->fOutstandingNotification, RT_BIT_32(31));
 }
 
 
 /**
  * Atomically tests and clears the PIB notification bit.
  *
- * @returns true if the bit was already set, false otherwise.
+ * @returns non-zero if the bit was already set, 0 otherwise.
+ * @param   pApicPib        Pointer to the PIB.
  */
-DECLINLINE(bool) apicClearNotificationBitInPib(volatile void *pvPib)
+DECLINLINE(uint32_t) apicClearNotificationBitInPib(PAPICPIB pApicPib)
 {
-    return ASMAtomicBitTestAndClear(pvPib, XAPIC_PIB_NOTIFICATION_BIT);
+    return ASMAtomicXchgU32(&pApicPib->fOutstandingNotification, UINT32_C(0));
 }
 
 
@@ -2441,9 +2442,8 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
                 { /** @todo posted-interrupt call to hardware */ }
                 else
                 {
-                    Assert(CTX_SUFF(pApicCpu->pvApicPib));
-                    apicSetVectorInPib(CTX_SUFF(pApicCpu->pvApicPib), uVector);
-                    bool const fAlreadySet = apicSetNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
+                    apicSetVectorInPib(pApicCpu->CTX_SUFF(pvApicPib), uVector);
+                    uint32_t const fAlreadySet = apicSetNotificationBitInPib((PAPICPIB)pApicCpu->CTX_SUFF(pvApicPib));
                     if (!fAlreadySet)
                         APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
                 }
@@ -2454,8 +2454,8 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
                  * Level-triggered interrupts requires updating of the TMR and thus cannot be
                  * delivered asynchronously.
                  */
-                apicSetVectorInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0], uVector);
-                bool const fAlreadySet = apicSetNotificationBitInPib(&pApicCpu->ApicPibLevel.aVectorBitmap[0]);
+                apicSetVectorInPib(&pApicCpu->ApicPibLevel, uVector);
+                uint32_t const fAlreadySet = apicSetNotificationBitInPib((PAPICPIB)&pApicCpu->ApicPibLevel);
                 if (!fAlreadySet)
                     APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
             }
@@ -2635,7 +2635,7 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
     /* Update edge-triggered pending interrupts. */
     for (;;)
     {
-        bool const fAlreadySet = apicClearNotificationBitInPib(CTX_SUFF(pApicCpu->pvApicPib));
+        uint32_t const fAlreadySet = apicClearNotificationBitInPib((PAPICPIB)pApicCpu->CTX_SUFF(pvApicPib));
         if (!fAlreadySet)
             break;
 
@@ -2662,7 +2662,7 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
     /* Update level-triggered pending interrupts. */
     for (;;)
     {
-        bool const fAlreadySet = apicClearNotificationBitInPib(&pApicCpu->ApicPibLevel);
+        uint32_t const fAlreadySet = apicClearNotificationBitInPib((PAPICPIB)&pApicCpu->ApicPibLevel);
         if (!fAlreadySet)
             break;
 

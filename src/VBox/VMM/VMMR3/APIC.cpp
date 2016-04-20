@@ -147,6 +147,16 @@ static const SSMFIELD g_aX2ApicPageFields[] =
     SSMFIELD_ENTRY_TERM()
 };
 
+/** Saved state field descriptors for APICPIB. */
+static const SSMFIELD g_aApicPibFields[] =
+{
+    SSMFIELD_ENTRY(APICPIB,    aVectorBitmap[0]),
+    SSMFIELD_ENTRY(APICPIB,    aVectorBitmap[1]),
+    SSMFIELD_ENTRY(APICPIB,    aVectorBitmap[2]),
+    SSMFIELD_ENTRY(APICPIB,    aVectorBitmap[3]),
+    SSMFIELD_ENTRY(APICPIB,    fOutstandingNotification),
+    SSMFIELD_ENTRY_TERM()
+};
 
 /**
  * Initializes per-VCPU APIC to the state following an INIT reset
@@ -654,9 +664,26 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
         PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
+        /* Save the auxiliary data. */
         SSMR3PutU64(pSSM, pApicCpu->uApicBaseMsr);
+        SSMR3PutU32(pSSM, pApicCpu->uEsrInternal);
 
-        /** @todo  */
+        /* Save the APIC page. */
+        if (XAPIC_IN_X2APIC_MODE(pVCpu))
+            SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, g_aX2ApicPageFields);
+        else
+            SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, g_aXApicPageFields);
+
+        /* Save the PIBs: We could in theory push them to vIRR and avoid saving them,
+           but in case of posted-interrupts we can't do that at this point, so save in all cases. */
+        SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPibR3,   g_aApicPibFields);
+        SSMR3PutStruct(pSSM, (const void *)&pApicCpu->ApicPibLevel, g_aApicPibFields);
+
+        /* Save the timer. */
+        TMR3TimerSave(pApicCpu->pTimerR3, pSSM);
+        SSMR3PutU64(pSSM, pApicCpu->u64TimerInitial);
+
+        /** @todo anything else? */
     }
 
     return rc;

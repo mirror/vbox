@@ -900,13 +900,10 @@ AssertCompileMemberOffset(X2APICPAGE, timer_ccr,   XAPIC_OFF_TIMER_CCR);
 AssertCompileMemberOffset(X2APICPAGE, timer_dcr,   XAPIC_OFF_TIMER_DCR);
 AssertCompileMemberOffset(X2APICPAGE, self_ipi,    X2APIC_OFF_SELF_IPI);
 
-/** The offset (in bits) of the posted-interrupt bitmap's outstanding
- *  notification bit. */
-#define XAPIC_PIB_NOTIFICATION_BIT             UINT32_C(256)
-
 /**
  * APIC Pending Interrupt Bitmap (PIB).
- * The layout is critical as it mimics VT-x's Posted Interrupt Bitmap!
+ * @note This structure is used in saved-state, careful with changing layout or
+ *       size!
  */
 typedef struct APICPIB
 {
@@ -914,7 +911,7 @@ typedef struct APICPIB
     uint32_t volatile fOutstandingNotification;
     uint8_t           au8Reserved[28];
 } APICPIB;
-AssertCompileMemberOffset(APICPIB, fOutstandingNotification, XAPIC_PIB_NOTIFICATION_BIT / 8);
+AssertCompileMemberOffset(APICPIB, fOutstandingNotification, 256 / 8);
 AssertCompileSize(APICPIB, 64);
 /** Pointer to a pending interrupt bitmap. */
 typedef APICPIB *PAPICPIB;
