@@ -569,10 +569,13 @@ int main(int argc, char *argv[])
 
         do
         {
+            ComPtr<IVirtualBoxClient> virtualBoxClient;
             ComPtr<IVirtualBox> virtualBox;
             ComPtr<ISession> session;
 
-            hr = virtualBox.createLocalObject(CLSID_VirtualBox);
+            hr = virtualBoxClient.createLocalObject(CLSID_VirtualBoxClient);
+            if (SUCCEEDED(hr))
+                hr = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
             if (FAILED(hr))
                 RTStrmPrintf(g_pStdErr, "WARNING: Failed to create the VirtualBox object (hr=0x%x)\n", hr);
             else
