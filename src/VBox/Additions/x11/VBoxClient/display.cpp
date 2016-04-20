@@ -75,8 +75,8 @@ static unsigned char *getRootProperty(struct DISPLAYSTATE *pState, const char *p
 {
     Atom actualType = None;
     int iFormat = 0;
-    ulong cReturned = 0;
-    ulong cAfter = 0;
+    unsigned long cReturned = 0;
+    unsigned long cAfter = 0;
     unsigned char *pData = 0;
     
     if (XGetWindowProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay),
