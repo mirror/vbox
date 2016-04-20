@@ -36,6 +36,9 @@
 #include <linux/in.h>
 #include <linux/ip.h>
 #include <linux/if_vlan.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#include <uapi/linux/pkt_cls.h>
+#endif
 #include <net/ipv6.h>
 #include <net/if_inet6.h>
 #include <net/addrconf.h>
