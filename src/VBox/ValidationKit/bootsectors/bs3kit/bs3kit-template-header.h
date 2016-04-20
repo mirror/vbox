@@ -26,7 +26,7 @@
 
 #include "bs3kit.h"
 
-/** @defgroup grp_bs3kit_tmpl       BS3Kit Multi-Mode Code Templates
+/** @defgroup grp_bs3kit_tmpl       Multi-Mode Code Templates
  * @ingroup grp_bs3kit
  *
  * Multi-mode code templates avoid duplicating code for each of the CPU modes.

@@ -154,6 +154,7 @@
  *  - IPRT - Runtime Library for hiding host OS differences.
  *  - Validation Kit:
  *      - @ref pg_validationkit_guideline
+ *      - @ref pg_bs3kit
  *
  * @todo Make links to the components.
  *

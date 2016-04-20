@@ -49,7 +49,7 @@
 #endif
 
 /** @def BS3_USE_ALT_16BIT_TEXT_SEG
- * @addtogroup grp_bs3kit
+ * @ingroup grp_bs3kit
  * Combines the BS3_USE_RM_TEXT_SEG,  BS3_USE_X0_TEXT_SEG, and
  * BS3_USE_X1_TEXT_SEG indicators into a single one.
  */
@@ -60,7 +60,7 @@
 #endif
 
 /** @def BS3_MODEL_FAR_CODE
- * @addtogroup grp_bs3kit
+ * @ingroup grp_bs3kit
  * Default compiler model indicates far code.
  */
 #ifdef DOXYGEN_RUNNING
@@ -101,7 +101,11 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_bs3kit     BS3Kit
+/** @defgroup grp_bs3kit     BS3Kit - Boot Sector Kit \#3
+ *
+ * The BS3Kit is a framework for bare metal floppy/usb image tests,
+ * see the @ref pg_bs3kit "doc page" for more.
+ *
  * @{ */
 
 /** @name Execution modes.
@@ -714,7 +718,7 @@ BS3_PTR_UNION_TEMPLATE(BS3CVPTRUNION, const volatile);
 
 
 
-/** @defgroup grp_bs3kit_system System structures
+/** @defgroup grp_bs3kit_system System Structures
  * @{ */
 /** The GDT, indexed by BS3_SEL_XXX shifted by 3. */
 extern X86DESC BS3_FAR_DATA Bs3Gdt[(BS3_SEL_GDT_LIMIT + 1) / 8];
@@ -1054,7 +1058,7 @@ uint16_t Bs3AsmSmsw(void);
 
 
 
-/** @defgroup bs3kit_cross_ptr  Cross context pointer type
+/** @defgroup bs3kit_cross_ptr  Cross Context Pointer Type
  *
  * The cross context pointer type is
  *
@@ -1063,7 +1067,6 @@ uint16_t Bs3AsmSmsw(void);
 /**
  * Cross context pointer base type.
  */
-#pragma pack(4)
 typedef union BS3XPTR
 {
     /** The flat pointer.   */
@@ -1082,7 +1085,7 @@ typedef union BS3XPTR
     void           *pvRaw;
 #endif
 } BS3XPTR;
-#pragma pack()
+AssertCompileSize(BS3XPTR, 4);
 
 
 /** @def BS3_XPTR_DEF_INTERNAL
@@ -2499,8 +2502,9 @@ typedef struct BS3TESTMODEENTRY
 /** Pointer to a mode sub-test entry. */
 typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
 
-/** Produces a BS3TESTMODEENTRY initializer for common (c16,c32,c64) test
- *  functions. */
+/** @def BS3TESTMODEENTRY_CMN
+ * Produces a BS3TESTMODEENTRY initializer for common (c16,c32,c64) test
+ * functions. */
 #define BS3TESTMODEENTRY_CMN(a_szTest, a_BaseNm) \
     {   /*pszSubTest =*/ a_szTest, \
         /*RM*/        RT_CONCAT(a_BaseNm, _c16), \
@@ -2527,14 +2531,16 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
         /*LM64*/      RT_CONCAT(a_BaseNm, _c64), \
     }
 
-/** A set of standard protypes to go with #BS3TESTMODEENTRY_CMN. */
+/** @def BS3TESTMODE_PROTOTYPES_CMN
+ * A set of standard protypes to go with #BS3TESTMODEENTRY_CMN. */
 #define BS3TESTMODE_PROTOTYPES_CMN(a_BaseNm) \
     FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c16); \
     FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c32); \
     FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c64)
 
-/** Produces a BS3TESTMODEENTRY initializer for a full set of mode test
- *  functions. */
+/** @def BS3TESTMODEENTRY_MODE
+ * Produces a BS3TESTMODEENTRY initializer for a full set of mode test
+ * functions. */
 #define BS3TESTMODEENTRY_MODE(a_szTest, a_BaseNm) \
     {   /*pszSubTest =*/ a_szTest, \
         /*RM*/        RT_CONCAT(a_BaseNm, _rm), \
@@ -2561,7 +2567,8 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
         /*LM64*/      RT_CONCAT(a_BaseNm, _lm64), \
     }
 
-/** A set of standard protypes to go with #BS3TESTMODEENTRY_MODE. */
+/** @def BS3TESTMODE_PROTOTYPES_MODE
+ * A set of standard protypes to go with #BS3TESTMODEENTRY_MODE. */
 #define BS3TESTMODE_PROTOTYPES_MODE(a_BaseNm) \
     FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _rm); \
     FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe16); \
