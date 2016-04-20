@@ -21,7 +21,8 @@
   fn C0h instead (PC-DOS 3.1, MSD).
 
 - DOS 4.01 (both IBM and Microsoft) calls INT 13h to read from disk with less
-  than 100 bytes of stack space early in the boot sequence.
+  than 100 bytes of stack space early in the boot sequence. This tends to be
+  a problem especially for the SATA and SCSI code paths.
 
 - Very few guests use the 32-bit PCI BIOS interface. One is OS/2 (but falls
   back), another is Etherboot.
@@ -79,12 +80,40 @@
   version 2.03 and later also contains 286 LOADALL code but this will not be
   executed on 386+ processors.
 
+- IBM and Microsoft OS/2 1.0 use CMOS shutdown status 9 to get back from
+  protected mode without having called INT 15h/87h at all. That makes the
+  status 9 handling a public interface (just like codes 5 and 0Ah) which
+  has to be compatible with other BIOS implementations.
+
 - Windows NT 3.5 and 3.51 with MPS HAL requires that INT 15h/E820h return the
   I/O APIC range as reserved, or not return any ranges at all just below 4GB.
   Otherwise the NT kernel will crash early during init due to confusion about
   the top of memory.
 
 
+
+ 286 BIOS
+ --------
+
+ For testing purposes, it's quite useful to have a BIOS that can run in a
+classic PC/AT environment with a 286 CPU. This forces various changes, not
+always obvious:
+
+ - C code can be easily compiled to produce 286-compatible object code
+
+ - 32-bit BIOS services such as APM or PCI BIOS are irrelevant
+
+ - PCI cannot be supported because it requires 32-bit port I/O
+
+ - AHCI cannot be supported because it requires 32-bit port I/O and PCI
+
+ - Switching to protected mode must be done using LMSW instead of CR0
+
+ - Switching back to real mode must reset the CPU (currently triple fault)
+   and regain control by setting up the CMOS shutdown status byte
+
+
+ 
  Notes on BIOS implementation
  ----------------------------
 

@@ -140,6 +140,9 @@ extrn		rom_scan_:near
 ifdef VBOX_WITH_AHCI
 extrn		_ahci_init:near
 endif
+if VBOX_BIOS_CPU ge 80286
+extrn		_int15_blkmove:near
+endif
 
 
 ;; Symbols referenced from C code
@@ -1665,6 +1668,27 @@ int11_handler:
 ;; --------------------------------------------------------
 		BIOSORG_CHECK	0F859h	; fixed wrt preceding code
 int15_handler:
+
+if VBOX_BIOS_CPU ge 80286
+		cmp	ah, 87h
+		jne	not_blkmove
+		
+		;; INT 15h/87h has semi-public interface because software
+		;; may use CMOS shutdown status code 9 for its own purposes.
+		;; The stack layout has to match.
+		pusha
+		push	es
+		push	ds
+		C_SETUP
+		call	_int15_blkmove
+		pop	ds
+		pop	es
+		popa
+		iret
+not_blkmove:
+
+endif
+
 		pushf
 		push	ds
 		push	es

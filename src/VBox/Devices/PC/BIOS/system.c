@@ -64,7 +64,13 @@ extern  int rmode_IDT;
 uint16_t read_ss(void);
 #pragma aux read_ss = "mov ax, ss" modify exact [ax] nomemory;
 
-void pm_stack_save(uint16_t cx, uint16_t es, uint16_t si);
+#if VBOX_BIOS_CPU >= 80386
+
+/* The 386+ code uses CR0 to switch to/from protected mode.
+ * Quite straightforward.
+ */
+
+void pm_stack_save(uint16_t cx, uint16_t es, uint16_t si, uint16_t frame);
 #pragma aux pm_stack_save =     \
     ".386"                      \
     "push   ds"                 \
@@ -73,7 +79,7 @@ void pm_stack_save(uint16_t cx, uint16_t es, uint16_t si);
     "mov    ds, ax"             \
     "mov    ds:[467h], sp"      \
     "mov    ds:[469h], ss"      \
-    parm [cx] [es] [si] modify nomemory;
+    parm [cx] [es] [si] [ax] modify nomemory;
 
 /* Uses position independent code... because it was too hard to figure
  * out how to code the far call in inline assembler.
@@ -100,14 +106,6 @@ void pm_enter(void);
     "mov    ds, ax"                 \
     "mov    ax, 18h"                \
     "mov    es, ax"                 \
-    modify nomemory;
-
-void pm_copy(void);
-#pragma aux pm_copy =               \
-    "xor    si, si"                 \
-    "xor    di, di"                 \
-    "cld"                           \
-    "rep    movsw"                  \
     modify nomemory;
 
 /* Restore segment limits to real mode compatible values and
@@ -145,6 +143,81 @@ void pm_stack_restore(void);
     "lss    sp, ds:[467h]"      \
     "pop    eax"                \
     "pop    ds"                 \
+    modify nomemory;
+
+#elif VBOX_BIOS_CPU >= 80286
+
+/* The 286 code uses LMSW to switch to protected mode but it has to reset
+ * the CPU to get back to real mode. Ugly! See return_blkmove in orgs.asm
+ * for the other matching half.
+ */
+void pm_stack_save(uint16_t cx, uint16_t es, uint16_t si, uint16_t frame);
+#pragma aux pm_stack_save =     \
+    "xor    ax, ax"             \
+    "mov    ds, ax"             \
+    "mov    ds:[467h], bx"      \
+    "mov    ds:[469h], ss"      \
+    parm [cx] [es] [si] [bx] modify nomemory;
+
+/* Uses position independent code... because it was too hard to figure
+ * out how to code the far call in inline assembler.
+ * NB: Trashes MSW bits but the CPU will be reset anyway.
+ */
+void pm_enter(void);
+#pragma aux pm_enter =              \
+    ".286p"                         \
+    "call   pentry"                 \
+    "pentry:"                       \
+    "pop    di"                     \
+    "add    di, 18h"                \
+    "push   20h"                    \
+    "push   di"                     \
+    "lgdt   fword ptr es:[si+8]"    \
+    "lidt   fword ptr cs:pmode_IDT" \
+    "or     al, 1"                  \
+    "lmsw   ax"                     \
+    "retf"                          \
+    "pm_pm:"                        \
+    "mov    ax, 28h"                \
+    "mov    ss, ax"                 \
+    "mov    ax, 10h"                \
+    "mov    ds, ax"                 \
+    "mov    ax, 18h"                \
+    "mov    es, ax"                 \
+    modify nomemory;
+
+/* Set up shutdown status and reset the CPU. The POST code
+ * will regain control. Port 80h is written with status.
+ * Code 9 is written to CMOS shutdown status byte (0Fh).
+ * CPU is triple faulted.                                                    .
+ */
+void pm_exit(void);
+#pragma aux pm_exit =               \
+    "xor    ax, ax"                 \
+    "out    80h, al"                \
+    "mov    al, 0Fh"                \
+    "out    70h, al"                \
+    "mov    al, 09h"                \
+    "out    71h, al"                \
+    ".286p"                         \
+    "lidt   fword ptr cs:pmode_IDT" \
+    "int    3"                      \
+    modify nomemory;
+
+/* Dummy. Actually done in return_blkmove. */
+void pm_stack_restore(void);
+#pragma aux pm_stack_restore =  \
+    "rm_return:"                \
+    modify nomemory;
+
+#endif
+
+void pm_copy(void);
+#pragma aux pm_copy =               \
+    "xor    si, si"                 \
+    "xor    di, di"                 \
+    "cld"                           \
+    "rep    movsw"                  \
     modify nomemory;
 
 /* The pm_switch has a few crucial differences from pm_enter, hence
@@ -282,10 +355,6 @@ void set_e820_range(uint16_t ES, uint16_t DI, uint32_t start, uint32_t end,
 
 void BIOSCALL int15_function(sys_regs_t r)
 {
-    bx_bool     prev_a20_enable;
-    uint16_t    base15_00;
-    uint8_t     base23_16;
-    uint16_t    ss;
     uint16_t    bRegister;
     uint8_t     irqDisable;
 
@@ -390,82 +459,6 @@ void BIOSCALL int15_function(sys_regs_t r)
 
         break;
         }
-
-    case 0x87:
-#if BX_CPU < 3
-        SET_AH(UNSUPPORTED_FUNCTION);
-        SET_CF();
-#endif
-        // +++ should probably have descriptor checks
-        // +++ should have exception handlers
-
-        // turn off interrupts
-        int_disable();    //@todo: aren't they disabled already?
-
-        prev_a20_enable = set_enable_a20(1); // enable A20 line
-
-        // 128K max of transfer on 386+ ???
-        // source == destination ???
-
-        // ES:SI points to descriptor table
-        // offset   use     initially  comments
-        // ==============================================
-        // 00..07   Unused  zeros      Null descriptor
-        // 08..0f   GDT     zeros      filled in by BIOS
-        // 10..17   source  ssssssss   source of data
-        // 18..1f   dest    dddddddd   destination of data
-        // 20..27   CS      zeros      filled in by BIOS
-        // 28..2f   SS      zeros      filled in by BIOS
-
-        //es:si
-        //eeee0
-        //0ssss
-        //-----
-
-        // check for access rights of source & dest here
-
-        // Initialize GDT descriptor
-        base15_00 = (ES << 4) + SI;
-        base23_16 = ES >> 12;
-        if (base15_00 < (ES<<4))
-            base23_16++;
-        write_word(ES, SI+0x08+0, 47);       // limit 15:00 = 6 * 8bytes/descriptor
-        write_word(ES, SI+0x08+2, base15_00);// base 15:00
-        write_byte(ES, SI+0x08+4, base23_16);// base 23:16
-        write_byte(ES, SI+0x08+5, 0x93);     // access
-        write_word(ES, SI+0x08+6, 0x0000);   // base 31:24/reserved/limit 19:16
-
-        // Initialize CS descriptor
-        write_word(ES, SI+0x20+0, 0xffff);// limit 15:00 = normal 64K limit
-        write_word(ES, SI+0x20+2, 0x0000);// base 15:00
-        write_byte(ES, SI+0x20+4, 0x000f);// base 23:16
-        write_byte(ES, SI+0x20+5, 0x9b);  // access
-        write_word(ES, SI+0x20+6, 0x0000);// base 31:24/reserved/limit 19:16
-
-        // Initialize SS descriptor
-        ss = read_ss();
-        base15_00 = ss << 4;
-        base23_16 = ss >> 12;
-        write_word(ES, SI+0x28+0, 0xffff);   // limit 15:00 = normal 64K limit
-        write_word(ES, SI+0x28+2, base15_00);// base 15:00
-        write_byte(ES, SI+0x28+4, base23_16);// base 23:16
-        write_byte(ES, SI+0x28+5, 0x93);     // access
-        write_word(ES, SI+0x28+6, 0x0000);   // base 31:24/reserved/limit 19:16
-
-        pm_stack_save(CX, ES, SI);
-        pm_enter();
-        pm_copy();
-        pm_exit();
-        pm_stack_restore();
-
-        set_enable_a20(prev_a20_enable);
-
-        // turn interrupts back on
-        int_enable();
-
-        SET_AH(0);
-        CLEAR_CF();
-        break;
 
     case 0x88:
         // Get the amount of extended memory (above 1M)
@@ -829,3 +822,88 @@ void BIOSCALL int15_function32(sys32_regs_t r)
         break;
     }
 }
+
+#if VBOX_BIOS_CPU >= 80286
+
+#undef  FLAGS
+#define FLAGS   r.ra.flags.u.r16.flags
+
+/* Function 0x87 handled separately due to specific stack layout requirements. */
+void BIOSCALL int15_blkmove(disk_regs_t r)
+{
+    bx_bool     prev_a20_enable;
+    uint16_t    base15_00;
+    uint8_t     base23_16;
+    uint16_t    ss;
+
+    // +++ should probably have descriptor checks
+    // +++ should have exception handlers
+
+    // turn off interrupts
+    int_disable();    //@todo: aren't they disabled already?
+
+    prev_a20_enable = set_enable_a20(1); // enable A20 line
+
+    // 128K max of transfer on 386+ ???
+    // source == destination ???
+
+    // ES:SI points to descriptor table
+    // offset   use     initially  comments
+    // ==============================================
+    // 00..07   Unused  zeros      Null descriptor
+    // 08..0f   GDT     zeros      filled in by BIOS
+    // 10..17   source  ssssssss   source of data
+    // 18..1f   dest    dddddddd   destination of data
+    // 20..27   CS      zeros      filled in by BIOS
+    // 28..2f   SS      zeros      filled in by BIOS
+
+    //es:si
+    //eeee0
+    //0ssss
+    //-----
+
+    // check for access rights of source & dest here
+
+    // Initialize GDT descriptor
+    base15_00 = (ES << 4) + SI;
+    base23_16 = ES >> 12;
+    if (base15_00 < (ES<<4))
+        base23_16++;
+    write_word(ES, SI+0x08+0, 47);       // limit 15:00 = 6 * 8bytes/descriptor
+    write_word(ES, SI+0x08+2, base15_00);// base 15:00
+    write_byte(ES, SI+0x08+4, base23_16);// base 23:16
+    write_byte(ES, SI+0x08+5, 0x93);     // access
+    write_word(ES, SI+0x08+6, 0x0000);   // base 31:24/reserved/limit 19:16
+
+    // Initialize CS descriptor
+    write_word(ES, SI+0x20+0, 0xffff);// limit 15:00 = normal 64K limit
+    write_word(ES, SI+0x20+2, 0x0000);// base 15:00
+    write_byte(ES, SI+0x20+4, 0x000f);// base 23:16
+    write_byte(ES, SI+0x20+5, 0x9b);  // access
+    write_word(ES, SI+0x20+6, 0x0000);// base 31:24/reserved/limit 19:16
+
+    // Initialize SS descriptor
+    ss = read_ss();
+    base15_00 = ss << 4;
+    base23_16 = ss >> 12;
+    write_word(ES, SI+0x28+0, 0xffff);   // limit 15:00 = normal 64K limit
+    write_word(ES, SI+0x28+2, base15_00);// base 15:00
+    write_byte(ES, SI+0x28+4, base23_16);// base 23:16
+    write_byte(ES, SI+0x28+5, 0x93);     // access
+    write_word(ES, SI+0x28+6, 0x0000);   // base 31:24/reserved/limit 19:16
+
+    pm_stack_save(CX, ES, SI, (uint16_t)(void __near *)&r);
+    pm_enter();
+    pm_copy();
+    pm_exit();
+    pm_stack_restore();
+
+    set_enable_a20(prev_a20_enable);
+
+    // turn interrupts back on
+    int_enable();
+
+    SET_AH(0);
+    CLEAR_CF();
+}
+#endif
