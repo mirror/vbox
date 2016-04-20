@@ -48,6 +48,8 @@
 #include "vbox_drv.h"
 
 #include <VBox/VBoxGuest.h>
+#include "version-generated.h"
+#include "revision-generated.h"
 
 #include <linux/module.h>
 #include <linux/console.h>
@@ -293,4 +295,6 @@ module_exit(vbox_exit);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL and additional rights");
-
+#ifdef MODULE_VERSION
+MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV));
+#endif

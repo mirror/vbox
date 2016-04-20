@@ -23,6 +23,7 @@
 #define VBOXNETFLT_LINUX_NO_XMIT_QUEUE
 #include "the-linux-kernel.h"
 #include "version-generated.h"
+#include "revision-generated.h"
 #include "product-generated.h"
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 #include <linux/nsproxy.h>
@@ -206,7 +207,7 @@ MODULE_AUTHOR(VBOX_VENDOR);
 MODULE_DESCRIPTION(VBOX_PRODUCT " Network Filter Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
-MODULE_VERSION(VBOX_VERSION_STRING " (" RT_XSTR(INTNETTRUNKIFPORT_VERSION) ")");
+MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV) " (" RT_XSTR(INTNETTRUNKIFPORT_VERSION) ")");
 #endif
 
 

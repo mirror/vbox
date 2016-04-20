@@ -80,6 +80,7 @@ VBOX_VBOXNETFLT_SOURCES=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/umoddi3.c=>math/gcc/umoddi3.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
+    ${PATH_OUT}/revision-generated.h=>revision-generated.h \
     ${PATH_OUT}/product-generated.h=>product-generated.h \
 "
 

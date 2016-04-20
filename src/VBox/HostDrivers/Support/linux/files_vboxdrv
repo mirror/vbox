@@ -200,6 +200,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/memobj-r0drv.cpp=>r0drv/memobj-r0drv.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/log-vbox.cpp=>VBox/log-vbox.c \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
+    ${PATH_OUT}/revision-generated.h=>revision-generated.h \
     ${PATH_OUT}/product-generated.h=>product-generated.h \
 "
 

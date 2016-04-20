@@ -84,6 +84,7 @@ FILES_VBOXSF_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vfsmod.c=>vfsmod.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vfsmod.h=>vfsmod.h \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
+    ${PATH_OUT}/revision-generated.h=>revision-generated.h \
     ${PATH_OUT}/product-generated.h=>product-generated.h \
 "
 

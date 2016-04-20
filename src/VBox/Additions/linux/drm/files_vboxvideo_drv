@@ -18,6 +18,7 @@
 
 FILES_VBOXVIDEO_DRM_NOBIN=" \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
+    ${PATH_OUT}/revision-generated.h=>revision-generated.h \
     ${PATH_OUT}/product-generated.h=>product-generated.h \
     ${PATH_ROOT}/include/iprt/asm.h=>include/iprt/asm.h \
     ${PATH_ROOT}/include/iprt/asm-amd64-x86.h=>include/iprt/asm-amd64-x86.h \

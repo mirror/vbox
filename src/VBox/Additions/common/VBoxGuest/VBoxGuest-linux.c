@@ -37,6 +37,7 @@
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
 #include <VBox/version.h>
+#include "revision-generated.h"
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -1081,6 +1082,6 @@ MODULE_AUTHOR(VBOX_VENDOR);
 MODULE_DESCRIPTION(VBOX_PRODUCT " Guest Additions for Linux Module");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
-MODULE_VERSION(VBOX_VERSION_STRING);
+MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV));
 #endif
 

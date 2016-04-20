@@ -20,6 +20,7 @@
 #define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include "the-linux-kernel.h"
 #include "version-generated.h"
+#include "revision-generated.h"
 #include "product-generated.h"
 #include <VBox/log.h>
 
