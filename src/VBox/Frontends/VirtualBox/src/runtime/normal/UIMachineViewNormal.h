@@ -67,6 +67,7 @@ private:
     void adjustGuestScreenSize();
 
     /* Private helpers: */
+    QSize sizeHint() const;
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
 
