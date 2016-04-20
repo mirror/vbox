@@ -38,15 +38,20 @@ BS3_EXTERN_CMN Bs3Printf
 
 TMPL_BEGIN_TEXT
 
-%if 0 ; Will be doing the testing in C, I think.
+;
+; Code that is instantiated for every possible CPU mode
+;
+%ifdef BS3_INSTANTIATING_MODE
+
+ %if 0 ; Will be doing the testing in C, I think.
 BS3_PROC_BEGIN_MODE bs3CpuBasic2_iret, BS3_PBC_FAR
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
         sub     xSP, 20h
 
-%if TMPL_BITS == 64
-%if TMPL_BITS == 16
+ %if TMPL_BITS == 64
+  %if TMPL_BITS == 16
         xor     ax, ax
         mov     al, [xBP + xCB*2]
         push    ax
@@ -54,14 +59,14 @@ BS3_PROC_BEGIN_MODE bs3CpuBasic2_iret, BS3_PBC_FAR
         push    .szMsg wrt BS3TEXT16
         call    Bs3Printf
         add     sp, 6
-%else
+  %else
         movzx   xDX, byte [xBP + xCB*2]
         push    xDX
         push    .szMsg wrt FLAT
         BS3_CALL Bs3Printf, 2
         add     xSP, xCB * 2
-%endif
-%endif
+  %endif
+ %endif
 
         ; Return
         xor     al, al
@@ -75,51 +80,31 @@ BS3_PROC_BEGIN_MODE bs3CpuBasic2_iret, BS3_PBC_FAR
 .szMsg: db 'hello world %#x!', 13, 10, 0
 
 BS3_PROC_END_MODE   bs3CpuBasic2_iret
-%endif
+ %endif
+
+%endif ; BS3_INSTANTIATING_MODE
 
 
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int80, BS3_PBC_NEAR
-        int     80h
-.again: ud2
-        jmp     .again
-BS3_PROC_END_MODE   bs3CpuBasic2_Int80
+;
+; Test code snippets containing code which differs between 16-bit, 32-bit
+; and 64-bit CPUs modes.
+;
+%ifdef BS3_INSTANTIATING_CMN
 
-
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int81, BS3_PBC_NEAR
-        int     81h
-.again: ud2
-        jmp     .again
-BS3_PROC_END_MODE   bs3CpuBasic2_Int81
-
-
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int82, BS3_PBC_NEAR
-        int     82h
-.again: ud2
-        jmp     .again
-BS3_PROC_END_MODE   bs3CpuBasic2_Int82
-
-
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_Int83, BS3_PBC_NEAR
-        int     83h
-.again: ud2
-        jmp     .again
-BS3_PROC_END_MODE   bs3CpuBasic2_Int83
-
-
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_sidt_bx_ud2, BS3_PBC_NEAR
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sidt_bx_ud2, BS3_PBC_NEAR
         sidt    [xBX]
 .again: ud2
         jmp     .again
-BS3_PROC_END_MODE   bs3CpuBasic2_sidt_bx_ud2
+BS3_PROC_END_CMN   bs3CpuBasic2_sidt_bx_ud2
 
 
-BS3_PROC_BEGIN_MODE bs3CpuBasic2_lidt_bx_ud2, BS3_PBC_NEAR
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_lidt_bx_ud2, BS3_PBC_NEAR
         lidt    [xBX]
 .again: ud2
         jmp     .again
-BS3_PROC_END_MODE   bs3CpuBasic2_lidt_bx_ud2
+BS3_PROC_END_CMN   bs3CpuBasic2_lidt_bx_ud2
 
-
+%endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment
 

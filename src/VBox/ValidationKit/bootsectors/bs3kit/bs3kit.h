@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,17 +36,7 @@
 # undef  IN_RING0
 #endif
 
-/*
- * We normally don't want the noreturn / aborts attributes as they mess up stack traces.
- *
- * Note! pragma aux <fnname> aborts can only be used with functions
- *       implemented in C and functions that does not have parameters.
- */
-#define BS3_KIT_WITH_NO_RETURN
-#ifndef BS3_KIT_WITH_NO_RETURN
-# undef  DECL_NO_RETURN
-# define DECL_NO_RETURN(type) type
-#endif
+
 
 /** @def BS3_USE_ALT_16BIT_TEXT_SEG
  * @ingroup grp_bs3kit
@@ -59,6 +49,45 @@
 # undef  BS3_USE_ALT_16BIT_TEXT_SEG
 #endif
 
+/** @def BS3_USE_X0_TEXT_SEG
+ * @ingroup grp_bs3kit
+ * Emit 16-bit code to the BS3X0TEXT16 segment - ignored for 32-bit and 64-bit.
+ *
+ * Calling directly into the BS3X0TEXT16 segment is only possible in real-mode
+ * and v8086 mode.  In protected mode the real far pointer have to be converted
+ * to a protected mode pointer that uses BS3_SEL_X0TEXT16_CS, Bs3TestDoModes and
+ * associates does this automatically.
+ */
+#ifdef DOXYGEN_RUNNING
+# define BS3_USE_X0_TEXT_SEG
+#endif
+
+/** @def BS3_USE_X1_TEXT_SEG
+ * @ingroup grp_bs3kit
+ * Emit 16-bit code to the BS3X1TEXT16 segment - ignored for 32-bit and 64-bit.
+ *
+ * Calling directly into the BS3X1TEXT16 segment is only possible in real-mode
+ * and v8086 mode.  In protected mode the real far pointer have to be converted
+ * to a protected mode pointer that uses BS3_SEL_X1TEXT16_CS, Bs3TestDoModes and
+ * associates does this automatically.
+ */
+#ifdef DOXYGEN_RUNNING
+# define BS3_USE_X1_TEXT_SEG
+#endif
+
+/** @def BS3_USE_RM_TEXT_SEG
+ * @ingroup grp_bs3kit
+ * Emit 16-bit code to the BS3RMTEXT16 segment - ignored for 32-bit and 64-bit.
+ *
+ * This segment is normally used for real-mode only code, though
+ * BS3_SEL_RMTEXT16_CS can be used to call it from protected mode.  Unlike the
+ * BS3X0TEXT16 and BS3X1TEXT16 segments which are empty by default, this segment
+ * is used by common BS3Kit code.
+ */
+#ifdef DOXYGEN_RUNNING
+# define BS3_USE_X0_TEXT_SEG
+#endif
+
 /** @def BS3_MODEL_FAR_CODE
  * @ingroup grp_bs3kit
  * Default compiler model indicates far code.
@@ -67,6 +96,19 @@
 # define BS3_MODEL_FAR_CODE
 #elif !defined(BS3_MODEL_FAR_CODE) && (defined(__LARGE__) || defined(__MEDIUM__) || defined(__HUGE__)) && ARCH_BITS == 16
 # define BS3_MODEL_FAR_CODE
+#endif
+
+
+/*
+ * We normally don't want the noreturn / aborts attributes as they mess up stack traces.
+ *
+ * Note! pragma aux <fnname> aborts can only be used with functions
+ *       implemented in C and functions that does not have parameters.
+ */
+#define BS3_KIT_WITH_NO_RETURN
+#ifndef BS3_KIT_WITH_NO_RETURN
+# undef  DECL_NO_RETURN
+# define DECL_NO_RETURN(type) type
 #endif
 
 
@@ -97,6 +139,7 @@
  * after the protypes).
  */
 #include "bs3kit-mangling-data.h"
+
 
 
 RT_C_DECLS_BEGIN
@@ -578,9 +621,9 @@ RT_C_DECLS_BEGIN
  *
  * @param a_Type        The return type. */
 #ifdef IN_BS3KIT
-# define BS3_DECL_CALLBACK(a_Type)   a_Type BS3_NEAR_CODE BS3_CALL
+# define BS3_DECL_CALLBACK(a_Type)   a_Type BS3_FAR_CODE BS3_CALL
 #else
-# define BS3_DECL_CALLBACK(a_Type)   a_Type BS3_NEAR_CODE BS3_CALL
+# define BS3_DECL_CALLBACK(a_Type)   a_Type BS3_FAR_CODE BS3_CALL
 #endif
 
 /**
@@ -1297,9 +1340,14 @@ DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(RTCCUINTXREG uFlatPtr)
  * @sa      BS3_CMN_PROTO_STUB, BS3_CMN_PROTO_NOSB
  */
 #if ARCH_BITS == 16
-# define BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params) \
+# ifndef BS3_USE_ALT_16BIT_TEXT_SEG
+#  define BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params) \
     BS3_DECL_NEAR(a_RetType) BS3_CMN_NM(a_Name) a_Params;  \
     BS3_DECL_FAR(a_RetType)  BS3_CMN_FAR_NM(a_Name) a_Params
+# else
+#  define BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params) \
+    BS3_DECL_FAR(a_RetType)  BS3_CMN_FAR_NM(a_Name) a_Params
+# endif
 #else
 # define BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params) \
     BS3_DECL_NEAR(a_RetType) BS3_CMN_NM(a_Name) a_Params
@@ -2448,11 +2496,9 @@ BS3_CMN_PROTO_STUB(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGC
  *          should be returned to indicate that the test has been skipped.
  * @param   bMode       The current CPU mode.
  */
-typedef BS3_DECL_CALLBACK(uint8_t) FNBS3TESTDOMODE(uint8_t bMode);
-/** Near pointer to a test (for 16-bit code). */
-typedef FNBS3TESTDOMODE               *PFNBS3TESTDOMODE;
-/** Far pointer to a test (for 32-bit and 64-bit code, will be flatten). */
-typedef FNBS3TESTDOMODE BS3_FAR_CODE  *FPFNBS3TESTDOMODE;
+typedef BS3_DECL_CALLBACK(uint8_t)  FNBS3TESTDOMODE(uint8_t bMode);
+/** Pointer (far) to a test (for 32-bit and 64-bit code, will be flatten). */
+typedef FNBS3TESTDOMODE            *PFNBS3TESTDOMODE;
 
 /** Special FNBS3TESTDOMODE return code for indicating a skipped mode test.  */
 #define BS3TESTDOMODE_SKIPPED       UINT8_MAX
@@ -2471,32 +2517,32 @@ typedef struct BS3TESTMODEENTRY
 {
     const char * BS3_FAR    pszSubTest;
 
-    FPFNBS3TESTDOMODE       pfnDoRM;
+    PFNBS3TESTDOMODE        pfnDoRM;
 
-    FPFNBS3TESTDOMODE       pfnDoPE16;
-    FPFNBS3TESTDOMODE       pfnDoPE16_32;
-    FPFNBS3TESTDOMODE       pfnDoPE16_V86;
-    FPFNBS3TESTDOMODE       pfnDoPE32;
-    FPFNBS3TESTDOMODE       pfnDoPE32_16;
-    FPFNBS3TESTDOMODE       pfnDoPEV86;
+    PFNBS3TESTDOMODE        pfnDoPE16;
+    PFNBS3TESTDOMODE        pfnDoPE16_32;
+    PFNBS3TESTDOMODE        pfnDoPE16_V86;
+    PFNBS3TESTDOMODE        pfnDoPE32;
+    PFNBS3TESTDOMODE        pfnDoPE32_16;
+    PFNBS3TESTDOMODE        pfnDoPEV86;
 
-    FPFNBS3TESTDOMODE       pfnDoPP16;
-    FPFNBS3TESTDOMODE       pfnDoPP16_32;
-    FPFNBS3TESTDOMODE       pfnDoPP16_V86;
-    FPFNBS3TESTDOMODE       pfnDoPP32;
-    FPFNBS3TESTDOMODE       pfnDoPP32_16;
-    FPFNBS3TESTDOMODE       pfnDoPPV86;
+    PFNBS3TESTDOMODE        pfnDoPP16;
+    PFNBS3TESTDOMODE        pfnDoPP16_32;
+    PFNBS3TESTDOMODE        pfnDoPP16_V86;
+    PFNBS3TESTDOMODE        pfnDoPP32;
+    PFNBS3TESTDOMODE        pfnDoPP32_16;
+    PFNBS3TESTDOMODE        pfnDoPPV86;
 
-    FPFNBS3TESTDOMODE       pfnDoPAE16;
-    FPFNBS3TESTDOMODE       pfnDoPAE16_32;
-    FPFNBS3TESTDOMODE       pfnDoPAE16_V86;
-    FPFNBS3TESTDOMODE       pfnDoPAE32;
-    FPFNBS3TESTDOMODE       pfnDoPAE32_16;
-    FPFNBS3TESTDOMODE       pfnDoPAEV86;
+    PFNBS3TESTDOMODE        pfnDoPAE16;
+    PFNBS3TESTDOMODE        pfnDoPAE16_32;
+    PFNBS3TESTDOMODE        pfnDoPAE16_V86;
+    PFNBS3TESTDOMODE        pfnDoPAE32;
+    PFNBS3TESTDOMODE        pfnDoPAE32_16;
+    PFNBS3TESTDOMODE        pfnDoPAEV86;
 
-    FPFNBS3TESTDOMODE       pfnDoLM16;
-    FPFNBS3TESTDOMODE       pfnDoLM32;
-    FPFNBS3TESTDOMODE       pfnDoLM64;
+    PFNBS3TESTDOMODE        pfnDoLM16;
+    PFNBS3TESTDOMODE        pfnDoLM32;
+    PFNBS3TESTDOMODE        pfnDoLM64;
 
 } BS3TESTMODEENTRY;
 /** Pointer to a mode sub-test entry. */
@@ -2570,28 +2616,28 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
 /** @def BS3TESTMODE_PROTOTYPES_MODE
  * A set of standard protypes to go with #BS3TESTMODEENTRY_MODE. */
 #define BS3TESTMODE_PROTOTYPES_MODE(a_BaseNm) \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _rm); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe16_32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe16_v86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pe32_16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pev86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp16_32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp16_v86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pp32_16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _ppv86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae16_32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae16_v86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _pae32_16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _paev86); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _lm16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _lm32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE RT_CONCAT(a_BaseNm, _lm64)
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _rm); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pe16); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pe16_32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pe16_v86); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pe32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pe32_16); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pev86); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pp16); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pp16_32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pp16_v86); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pp32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pp32_16); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _ppv86); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pae16); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pae16_32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pae16_v86); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pae32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pae32_16); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _paev86); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _lm16); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _lm32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _lm64)
 
 /** @} */
 

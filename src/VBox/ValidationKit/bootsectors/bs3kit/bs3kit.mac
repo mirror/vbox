@@ -652,13 +652,18 @@ BS3_GLOBAL_NAME_EX BS3_DATA_NM(%1), , %2
 ; does the NASM symbol size stuff.
 ;
 ; @param    %1      The mangled name.
+; @param    %2      Create an underscore prefixed alias if present and
+;                   BS3_PB_WITH_US_ALIAS (automatic in 64-bit code).
 ;
-%macro BS3_PROC_BEGIN 1
-%if __BITS__ == 64
- BS3_GLOBAL_NAME_EX _ %+ %1, function, (_ %+ %1 %+ _EndProc - %1)
+%macro BS3_PROC_BEGIN 1-2 0
+%if __BITS__ == 64 || ((%2) & BS3_PB_WITH_US_ALIAS)
+BS3_GLOBAL_NAME_EX _ %+ %1, function, (%1 %+ _EndProc - %1)
 %endif
 BS3_GLOBAL_NAME_EX %1, function, (%1 %+ _EndProc - %1)
 %endmacro
+
+;; For use with BS3_PROC_BEGIN for making it produce an underscore prefixed alias.
+%define BS3_PB_WITH_US_ALIAS 1
 
 ;;
 ; Ends a procedure.
@@ -1190,6 +1195,9 @@ BS3_BEGIN_TEXT16
 ; Includes the file %1 with TMPL_MODE set to all possible value.
 ; @param 1      Double quoted include file name.
 %macro BS3_INSTANTIATE_TEMPLATE_WITH_WEIRD_ONES 1
+ %define BS3_INSTANTIATING_MODE
+ %define BS3_INSTANTIATING_ALL_MODES
+
  %define TMPL_MODE BS3_MODE_RM
  %include %1
 
@@ -1241,6 +1249,9 @@ BS3_BEGIN_TEXT16
  %include %1
  %define TMPL_MODE BS3_MODE_LM64
  %include %1
+
+ %undef BS3_INSTANTIATING_MODE
+ %undef BS3_INSTANTIATING_ALL_MODES
 %endmacro
 
 
@@ -1248,6 +1259,9 @@ BS3_BEGIN_TEXT16
 ; Includes the file %1 with TMPL_MODE set to all but the "weird" value.
 ; @param 1      Double quoted include file name.
 %macro BS3_INSTANTIATE_TEMPLATE_ESSENTIALS 1
+ %define BS3_INSTANTIATING_MODE
+ %define BS3_INSTANTIATING_ESSENTIAL_MODES
+
  %define TMPL_MODE BS3_MODE_RM
  %include %1
 
@@ -1281,18 +1295,25 @@ BS3_BEGIN_TEXT16
  %include %1
  %define TMPL_MODE BS3_MODE_LM64
  %include %1
+
+ %undef  BS3_INSTANTIATING_MODE
+ %undef  BS3_INSTANTIATING_ESSENTIAL_MODES
 %endmacro
 
 ;;
 ; Includes the file %1 with TMPL_MODE set to a 16-bit, a 32-bit and a 64-bit value.
 ; @param 1      Double quoted include file name.
 %macro BS3_INSTANTIATE_COMMON_TEMPLATE 1
+ %define BS3_INSTANTIATING_CMN
+
  %define TMPL_MODE BS3_MODE_RM
  %include %1
  %define TMPL_MODE BS3_MODE_PE32
  %include %1
  %define TMPL_MODE BS3_MODE_LM64
  %include %1
+
+ %undef  BS3_INSTANTIATING_CMN
 %endmacro
 
 

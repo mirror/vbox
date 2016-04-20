@@ -25,8 +25,6 @@
  */
 
 
-#ifdef BS3_INSTANTIATING_MODE
-
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -37,6 +35,15 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#undef  CHECK_MEMBER
+#define CHECK_MEMBER(a_szName, a_szFmt, a_Actual, a_Expected) \
+    do \
+    { \
+        if ((a_Actual) == (a_Expected)) { /* likely */ } \
+        else bs3CpuBasic2_FailedF(a_szName "=" a_szFmt " expected " a_szFmt, (a_Actual), (a_Expected)); \
+    } while (0)
+
+#ifdef BS3_INSTANTIATING_MODE
 # undef MyBs3Idt
 # undef MY_SYS_SEL_R0_CS
 # undef MY_SYS_SEL_R0_CS_CNF
@@ -63,20 +70,12 @@
 # else
 #  error "TMPL_MODE"
 # endif
-#undef  CHECK_MEMBER
-#define CHECK_MEMBER(a_szName, a_szFmt, a_Actual, a_Expected) \
-    do \
-    { \
-        if ((a_Actual) == (a_Expected)) { /* likely */ } \
-        else bs3CpuBasic2_FailedF(a_szName "=" a_szFmt " expected " a_szFmt, (a_Actual), (a_Expected)); \
-    } while (0)
-
+#endif
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-#ifndef DONE_MODE_TYPES
-#define DONE_MODE_TYPES
+#ifdef BS3_INSTANTIATING_CMN
 typedef struct BS3CB2INVLDESCTYPE
 {
     uint8_t u4Type;
@@ -88,28 +87,30 @@ typedef struct BS3CB2INVLDESCTYPE
 /*********************************************************************************************************************************
 *   External Symbols                                                                                                             *
 *********************************************************************************************************************************/
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int80)(void);
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int81)(void);
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int82)(void);
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_Int83)(void);
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_ud2)(void);
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_sidt_bx_ud2)(void);
-extern BS3_DECL(void) TMPL_NM(bs3CpuBasic2_lidt_bx_ud2)(void);
-#ifndef DOXYGEN_RUNNING
-# define g_bs3CpuBasic2_ud2_FlatAddr BS3_DATA_NM(g_bs3CpuBasic2_ud2_FlatAddr)
+#ifdef BS3_INSTANTIATING_CMN
+extern BS3_DECL(void)   bs3CpuBasic2_Int80(void);
+extern BS3_DECL(void)   bs3CpuBasic2_Int81(void);
+extern BS3_DECL(void)   bs3CpuBasic2_Int82(void);
+extern BS3_DECL(void)   bs3CpuBasic2_Int83(void);
+extern BS3_DECL(void)   bs3CpuBasic2_ud2(void);
+#define                 bs3CpuBasic2_sidt_bx_ud2 BS3_CMN_NM(bs3CpuBasic2_sidt_bx_ud2)
+extern BS3_DECL(void)   bs3CpuBasic2_sidt_bx_ud2(void);
+#define                 bs3CpuBasic2_lidt_bx_ud2 BS3_CMN_NM(bs3CpuBasic2_lidt_bx_ud2)
+extern BS3_DECL(void)   bs3CpuBasic2_lidt_bx_ud2(void);
+#define                 g_bs3CpuBasic2_ud2_FlatAddr BS3_DATA_NM(g_bs3CpuBasic2_ud2_FlatAddr)
+extern uint32_t         g_bs3CpuBasic2_ud2_FlatAddr;
 #endif
-extern uint32_t g_bs3CpuBasic2_ud2_FlatAddr;
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#if TMPL_MODE == BS3_MODE_RM || TMPL_MODE == BS3_MODE_PE16_32 || TMPL_MODE == BS3_MODE_LM64
-#define g_pszTestMode   BS3_CMN_NM(g_pszTestMode)
+#ifdef BS3_INSTANTIATING_CMN
+# define                    g_pszTestMode   BS3_CMN_NM(g_pszTestMode)
 static const char BS3_FAR  *g_pszTestMode = (const char *)1;
-#define g_bTestMode     BS3_CMN_NM(g_bTestMode)
+# define                    g_bTestMode     BS3_CMN_NM(g_bTestMode)
 static uint8_t              g_bTestMode = 1;
-#define g_f16BitSys     BS3_CMN_NM(g_f16BitSys)
+# define                    g_f16BitSys     BS3_CMN_NM(g_f16BitSys)
 static bool                 g_f16BitSys = 1;
 
 /** Table containing invalid CS selector types. */
@@ -170,16 +171,16 @@ static const BS3CB2INVLDESCTYPE g_aInvalidSsTypes[] =
     {   15,                         0 },
 };
 
-#endif
+#endif /* BS3_INSTANTIATING_CMN - global */
 
-#if TMPL_MODE == BS3_MODE_RM || TMPL_MODE == BS3_MODE_PE16_32 || TMPL_MODE == BS3_MODE_LM64
+#ifdef BS3_INSTANTIATING_CMN
 
 /**
  * Wrapper around Bs3TestFailedF that prefixes the error with g_usBs3TestStep
  * and g_pszTestMode.
  */
-#define bs3CpuBasic2_FailedF BS3_CMN_NM(bs3CpuBasic2_FailedF)
-void bs3CpuBasic2_FailedF(const char *pszFormat, ...)
+# define bs3CpuBasic2_FailedF BS3_CMN_NM(bs3CpuBasic2_FailedF)
+BS3_DECL_NEAR(void) bs3CpuBasic2_FailedF(const char *pszFormat, ...)
 {
     va_list va;
 
@@ -195,8 +196,8 @@ void bs3CpuBasic2_FailedF(const char *pszFormat, ...)
 /**
  * Compares trap stuff.
  */
-#define bs3CpuBasic2_CompareIntCtx1 BS3_CMN_NM(bs3CpuBasic2_CompareIntCtx1)
-void bs3CpuBasic2_CompareIntCtx1(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint8_t bXcpt)
+# define bs3CpuBasic2_CompareIntCtx1 BS3_CMN_NM(bs3CpuBasic2_CompareIntCtx1)
+BS3_DECL_NEAR(void) bs3CpuBasic2_CompareIntCtx1(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint8_t bXcpt)
 {
     uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
     CHECK_MEMBER("bXcpt",   "%#04x",    pTrapCtx->bXcpt,        bXcpt);
@@ -217,9 +218,9 @@ void bs3CpuBasic2_CompareIntCtx1(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx,
 /**
  * Compares trap stuff.
  */
-#define bs3CpuBasic2_CompareTrapCtx2 BS3_CMN_NM(bs3CpuBasic2_CompareTrapCtx2)
-void bs3CpuBasic2_CompareTrapCtx2(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t cbIpAdjust, uint8_t bXcpt,
-                                  uint16_t uHandlerCs)
+# define bs3CpuBasic2_CompareTrapCtx2 BS3_CMN_NM(bs3CpuBasic2_CompareTrapCtx2)
+BS3_DECL_NEAR(void) bs3CpuBasic2_CompareTrapCtx2(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t cbIpAdjust,
+                                                 uint8_t bXcpt, uint16_t uHandlerCs)
 {
     uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
     CHECK_MEMBER("bXcpt",   "%#04x",    pTrapCtx->bXcpt,        bXcpt);
@@ -240,9 +241,9 @@ void bs3CpuBasic2_CompareTrapCtx2(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx
 /**
  * Compares a CPU trap.
  */
-#define bs3CpuBasic2_CompareCpuTrapCtx BS3_CMN_NM(bs3CpuBasic2_CompareCpuTrapCtx)
-void bs3CpuBasic2_CompareCpuTrapCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd, uint8_t bXcpt,
-                                    bool f486ResumeFlagHint)
+# define bs3CpuBasic2_CompareCpuTrapCtx BS3_CMN_NM(bs3CpuBasic2_CompareCpuTrapCtx)
+BS3_DECL_NEAR(void) bs3CpuBasic2_CompareCpuTrapCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd,
+                                                   uint8_t bXcpt, bool f486ResumeFlagHint)
 {
     uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
     uint32_t fExtraEfl;
@@ -276,8 +277,8 @@ void bs3CpuBasic2_CompareCpuTrapCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartC
 /**
  * Compares \#GP trap.
  */
-#define bs3CpuBasic2_CompareGpCtx BS3_CMN_NM(bs3CpuBasic2_CompareGpCtx)
-void bs3CpuBasic2_CompareGpCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd)
+# define bs3CpuBasic2_CompareGpCtx BS3_CMN_NM(bs3CpuBasic2_CompareGpCtx)
+BS3_DECL_NEAR(void) bs3CpuBasic2_CompareGpCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd)
 {
     bs3CpuBasic2_CompareCpuTrapCtx(pTrapCtx, pStartCtx, uErrCd, X86_XCPT_GP, true /*f486ResumeFlagHint*/);
 }
@@ -285,8 +286,8 @@ void bs3CpuBasic2_CompareGpCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, u
 /**
  * Compares \#NP trap.
  */
-#define bs3CpuBasic2_CompareNpCtx BS3_CMN_NM(bs3CpuBasic2_CompareNpCtx)
-void bs3CpuBasic2_CompareNpCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd)
+# define bs3CpuBasic2_CompareNpCtx BS3_CMN_NM(bs3CpuBasic2_CompareNpCtx)
+BS3_DECL_NEAR(void) bs3CpuBasic2_CompareNpCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd)
 {
     bs3CpuBasic2_CompareCpuTrapCtx(pTrapCtx, pStartCtx, uErrCd, X86_XCPT_NP, true /*f486ResumeFlagHint*/);
 }
@@ -294,8 +295,8 @@ void bs3CpuBasic2_CompareNpCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, u
 /**
  * Compares \#SS trap.
  */
-#define bs3CpuBasic2_CompareSsCtx BS3_CMN_NM(bs3CpuBasic2_CompareSsCtx)
-void bs3CpuBasic2_CompareSsCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd, bool f486ResumeFlagHint)
+# define bs3CpuBasic2_CompareSsCtx BS3_CMN_NM(bs3CpuBasic2_CompareSsCtx)
+BS3_DECL_NEAR(void) bs3CpuBasic2_CompareSsCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd, bool f486ResumeFlagHint)
 {
     bs3CpuBasic2_CompareCpuTrapCtx(pTrapCtx, pStartCtx, uErrCd, X86_XCPT_SS, f486ResumeFlagHint);
 }
@@ -303,8 +304,8 @@ void bs3CpuBasic2_CompareSsCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, u
 /**
  * Compares \#TS trap.
  */
-#define bs3CpuBasic2_CompareTsCtx BS3_CMN_NM(bs3CpuBasic2_CompareTsCtx)
-void bs3CpuBasic2_CompareTsCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd)
+# define bs3CpuBasic2_CompareTsCtx BS3_CMN_NM(bs3CpuBasic2_CompareTsCtx)
+BS3_DECL_NEAR(void) bs3CpuBasic2_CompareTsCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, uint16_t uErrCd)
 {
     bs3CpuBasic2_CompareCpuTrapCtx(pTrapCtx, pStartCtx, uErrCd, X86_XCPT_TS, false /*f486ResumeFlagHint*/);
 }
@@ -312,8 +313,8 @@ void bs3CpuBasic2_CompareTsCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx, u
 /**
  * Compares \#PF trap.
  */
-#define bs3CpuBasic2_ComparePfCtx BS3_CMN_NM(bs3CpuBasic2_ComparePfCtx)
-void bs3CpuBasic2_ComparePfCtx(PCBS3TRAPFRAME pTrapCtx, PBS3REGCTX pStartCtx, uint16_t uErrCd, uint64_t uCr2Expected)
+# define bs3CpuBasic2_ComparePfCtx BS3_CMN_NM(bs3CpuBasic2_ComparePfCtx)
+BS3_DECL_NEAR(void) bs3CpuBasic2_ComparePfCtx(PCBS3TRAPFRAME pTrapCtx, PBS3REGCTX pStartCtx, uint16_t uErrCd, uint64_t uCr2Expected)
 {
     uint64_t const uCr2Saved     = pStartCtx->cr2.u;
     pStartCtx->cr2.u = uCr2Expected;
@@ -324,17 +325,16 @@ void bs3CpuBasic2_ComparePfCtx(PCBS3TRAPFRAME pTrapCtx, PBS3REGCTX pStartCtx, ui
 /**
  * Compares \#UD trap.
  */
-#define bs3CpuBasic2_CompareUdCtx BS3_CMN_NM(bs3CpuBasic2_CompareUdCtx)
-void bs3CpuBasic2_CompareUdCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx)
+# define bs3CpuBasic2_CompareUdCtx BS3_CMN_NM(bs3CpuBasic2_CompareUdCtx)
+BS3_DECL_NEAR(void) bs3CpuBasic2_CompareUdCtx(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pStartCtx)
 {
     bs3CpuBasic2_CompareCpuTrapCtx(pTrapCtx, pStartCtx, 0 /*no error code*/, X86_XCPT_UD, true /*f486ResumeFlagHint*/);
 }
 
 
-#define bs3CpuBasic2_RaiseXcpt1Common BS3_CMN_NM(bs3CpuBasic2_RaiseXcpt1Common)
-static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
-                                          uint16_t const uSysR0Cs, uint16_t const uSysR0CsConf, uint16_t const uSysR0Ss,
-                                          PX86DESC const paIdt, unsigned const cIdteShift)
+# define bs3CpuBasic2_RaiseXcpt1Common BS3_CMN_NM(bs3CpuBasic2_RaiseXcpt1Common)
+BS3_DECL_NEAR(void) bs3CpuBasic2_RaiseXcpt1Common(uint16_t const uSysR0Cs, uint16_t const uSysR0CsConf, uint16_t const uSysR0Ss,
+                                                  PX86DESC const paIdt, unsigned const cIdteShift)
 {
     BS3TRAPFRAME    TrapCtx;
     BS3REGCTX       Ctx80;
@@ -405,18 +405,18 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
 
     Bs3RegCtxSave(&Ctx80);
     Ctx80.rsp.u -= 0x300;
-    Ctx80.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int80));
+    Ctx80.rip.u  = (uintptr_t)BS3_FP_OFF(&bs3CpuBasic2_Int80);
 # if TMPL_BITS == 16
     Ctx80.cs = BS3_MODE_IS_RM_OR_V86(g_bTestMode) ? BS3_SEL_TEXT16 : BS3_SEL_R0_CS16;
 # elif TMPL_BITS == 32
     g_uBs3TrapEipHint = Ctx80.rip.u32;
 # endif
     Bs3MemCpy(&Ctx81, &Ctx80, sizeof(Ctx80));
-    Ctx81.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int81));
+    Ctx81.rip.u  = (uintptr_t)BS3_FP_OFF(&bs3CpuBasic2_Int81);
     Bs3MemCpy(&Ctx82, &Ctx80, sizeof(Ctx80));
-    Ctx82.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int82));
+    Ctx82.rip.u  = (uintptr_t)BS3_FP_OFF(&bs3CpuBasic2_Int82);
     Bs3MemCpy(&Ctx83, &Ctx80, sizeof(Ctx80));
-    Ctx83.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int83));
+    Ctx83.rip.u  = (uintptr_t)BS3_FP_OFF(&bs3CpuBasic2_Int83);
 
     /*
      * Check that all the above gates work from ring-0.
@@ -1282,7 +1282,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
                     }
                 }
 
-                paIdt[(0x80 + iCtx) << cIdteShift].Gate.u16Sel     = MY_SYS_SEL_R0_CS;
+                paIdt[(0x80 + iCtx) << cIdteShift].Gate.u16Sel     = uSysR0Cs;
                 paIdt[(0x80 + iCtx) << cIdteShift].Gate.u4Type     = bSavedType;
                 paIdt[(0x80 + iCtx) << cIdteShift].Gate.u1DescType = 0;
                 paIdt[(0x80 + iCtx) << cIdteShift].Gate.u1Present  = 1;
@@ -1304,8 +1304,8 @@ static void bs3CpuBasic2_RaiseXcpt1Common(bool const g_f16BitSys,
 }
 
 
-#define bs3CpuBasic2_sidt_Common BS3_CMN_NM(bs3CpuBasic2_sidt_Common)
-void bs3CpuBasic2_sidt_Common(void)
+# define bs3CpuBasic2_sidt_Common BS3_CMN_NM(bs3CpuBasic2_sidt_Common)
+BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_Common(void)
 {
     BS3TRAPFRAME        TrapCtx;
     BS3REGCTX           Ctx;
@@ -1323,7 +1323,7 @@ void bs3CpuBasic2_sidt_Common(void)
        at our SIDT [xBX] + UD2 combo, and point DS:xBX at abBuf. */
     Bs3RegCtxSave(&Ctx);
     Ctx.rsp.u -= 0x80;
-    Ctx.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_sidt_bx_ud2));
+    Ctx.rip.u  = (uintptr_t)BS3_FP_OFF(&bs3CpuBasic2_sidt_bx_ud2);
 # if TMPL_BITS == 32
     g_uBs3TrapEipHint = Ctx.rip.u32;
 # endif
@@ -1342,17 +1342,15 @@ void bs3CpuBasic2_sidt_Common(void)
 
 }
 
-#endif /* once for each bitcount */
-
-
-#if TMPL_MODE == BS3_MODE_PE16 || TMPL_MODE == BS3_MODE_PE16_32
+# if ARCH_BITS != 64
 
 /**
  * Worker for bs3CpuBasic2_TssGateEsp that tests the INT 80 from outer rings.
  */
-#define bs3CpuBasic2_TssGateEsp_AltStackOuterRing BS3_CMN_NM(bs3CpuBasic2_TssGateEsp_AltStackOuterRing)
-void bs3CpuBasic2_TssGateEsp_AltStackOuterRing(PCBS3REGCTX pCtx, uint8_t bRing, uint8_t *pbAltStack, size_t cbAltStack,
-                                               bool f16BitStack, bool f16BitTss, bool f16BitHandler, unsigned uLine)
+#  define bs3CpuBasic2_TssGateEsp_AltStackOuterRing BS3_CMN_NM(bs3CpuBasic2_TssGateEsp_AltStackOuterRing)
+BS3_DECL_NEAR(void) bs3CpuBasic2_TssGateEsp_AltStackOuterRing(PCBS3REGCTX pCtx, uint8_t bRing, uint8_t *pbAltStack,
+                                                              size_t cbAltStack, bool f16BitStack, bool f16BitTss,
+                                                              bool f16BitHandler, unsigned uLine)
 {
     uint8_t const   cbIretFrame = f16BitHandler ? 5*2 : 5*4;
     BS3REGCTX       Ctx2;
@@ -1400,15 +1398,15 @@ void bs3CpuBasic2_TssGateEsp_AltStackOuterRing(PCBS3REGCTX pCtx, uint8_t bRing, 
     }
 }
 
-#define bs3CpuBasic2_TssGateEspCommon BS3_CMN_NM(bs3CpuBasic2_TssGateEspCommon)
-void bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DESC const paIdt, unsigned const cIdteShift)
+#  define bs3CpuBasic2_TssGateEspCommon BS3_CMN_NM(bs3CpuBasic2_TssGateEspCommon)
+BS3_DECL_NEAR(void) bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DESC const paIdt, unsigned const cIdteShift)
 {
     BS3TRAPFRAME    TrapCtx;
     BS3REGCTX       Ctx;
     BS3REGCTX       Ctx2;
-# if TMPL_BITS == 16
+#  if TMPL_BITS == 16
     uint8_t        *pbTmp;
-# endif
+#  endif
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx, sizeof(Ctx));
@@ -1417,10 +1415,10 @@ void bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DESC const paIdt,
 
     Bs3RegCtxSave(&Ctx);
     Ctx.rsp.u -= 0x80;
-    Ctx.rip.u  = (uintptr_t)BS3_FP_OFF(&TMPL_NM(bs3CpuBasic2_Int80));
-# if TMPL_BITS == 32
+    Ctx.rip.u  = (uintptr_t)BS3_FP_OFF(&bs3CpuBasic2_Int80);
+#  if TMPL_BITS == 32
     g_uBs3TrapEipHint = Ctx.rip.u32;
-# endif
+#  endif
 
     /*
      * We'll be using IDT entry 80 and 81 here. The first one will be
@@ -1457,14 +1455,14 @@ void bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DESC const paIdt,
             if (Bs3TrapSetJmp(&TrapCtx))
                 Bs3RegCtxRestore(&Ctx2, 0); /* (does not return) */
             bs3CpuBasic2_CompareIntCtx1(&TrapCtx, &Ctx2, 0x80 /*bXcpt*/);
-# if TMPL_BITS == 16
+#  if TMPL_BITS == 16
             if ((pbTmp = (uint8_t *)ASMMemFirstNonZero(pbAltStack, cbAltStack)) != NULL)
                 bs3CpuBasic2_FailedF("someone touched the alt stack (%p) with SS:ESP=%04x:%#RX32: %p=%02x\n",
                                      pbAltStack, Ctx2.ss, Ctx2.rsp.u32, pbTmp, *pbTmp);
-# else
+#  else
             if (ASMMemIsZero(pbAltStack, cbAltStack))
                 bs3CpuBasic2_FailedF("alt stack wasn't used despite SS:ESP=%04x:%#RX32\n", Ctx2.ss, Ctx2.rsp.u32);
-# endif
+#  endif
 
             /* Different rings (load SS0:SP0 from TSS). */
             bs3CpuBasic2_TssGateEsp_AltStackOuterRing(&Ctx, 1, pbAltStack, cbAltStack,
@@ -1499,8 +1497,16 @@ void bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DESC const paIdt,
         Bs3TestPrintf("%s: Skipping ESP check, CPU too old\n", g_pszTestMode);
 }
 
-#endif /* PE16 || PE32 */
+# endif /* ARCH_BITS != 64 */
+#endif /* BS3_INSTANTIATING_CMN */
 
+
+/*
+ * Mode specific code.
+ * Mode specific code.
+ * Mode specific code.
+ */
+#ifdef BS3_INSTANTIATING_MODE
 
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
 {
@@ -1510,7 +1516,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
     g_bTestMode   = bMode;
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
 
-#if TMPL_MODE == BS3_MODE_PE16 \
+# if TMPL_MODE == BS3_MODE_PE16 \
  || TMPL_MODE == BS3_MODE_PE16_32 \
  || TMPL_MODE == BS3_MODE_PP16 \
  || TMPL_MODE == BS3_MODE_PP16_32 \
@@ -1520,9 +1526,9 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_TssGateEsp)(uint8_t bMode)
     bs3CpuBasic2_TssGateEspCommon(BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
                                   (PX86DESC)MyBs3Idt,
                                   BS3_MODE_IS_64BIT_SYS(TMPL_MODE) ? 1 : 0);
-#else
+# else
     bRet = BS3TESTDOMODE_SKIPPED;
-#endif
+# endif
 
     /*
      * Re-initialize the IDT.
@@ -1538,13 +1544,12 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
     g_bTestMode   = bMode;
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
 
-#if !BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
+# if !BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
 
     /*
      * Pass to common worker which is only compiled once per mode.
      */
-    bs3CpuBasic2_RaiseXcpt1Common(BS3_MODE_IS_16BIT_SYS(TMPL_MODE),
-                                  MY_SYS_SEL_R0_CS,
+    bs3CpuBasic2_RaiseXcpt1Common(MY_SYS_SEL_R0_CS,
                                   MY_SYS_SEL_R0_CS_CNF,
                                   MY_SYS_SEL_R0_SS,
                                   (PX86DESC)MyBs3Idt,
@@ -1555,7 +1560,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
      */
     Bs3TrapInit();
     return 0;
-#elif TMPL_MODE == BS3_MODE_RM
+# elif TMPL_MODE == BS3_MODE_RM
 
     /*
      * Check
@@ -1563,9 +1568,9 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
     /** @todo check    */
     return BS3TESTDOMODE_SKIPPED;
 
-#else
+# else
     return BS3TESTDOMODE_SKIPPED;
-#endif
+# endif
 }
 
 
@@ -1576,9 +1581,9 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
 
     Bs3PrintStrN(RT_STR_TUPLE("Hello world!\n"));
-#if !BS3_MODE_IS_V86(TMPL_MODE)
+# if !BS3_MODE_IS_V86(TMPL_MODE)
     Bs3TestPrintf(RT_STR_TUPLE("Hi there!\n"));
-#endif
+# endif
     return BS3TESTDOMODE_SKIPPED;
 }
 
@@ -1602,7 +1607,6 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
     Bs3TrapInit();
     return 0;
 }
-
 
 #endif /* BS3_INSTANTIATING_MODE */
 

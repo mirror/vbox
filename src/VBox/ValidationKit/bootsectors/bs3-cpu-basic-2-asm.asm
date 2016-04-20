@@ -39,16 +39,50 @@ BS3_GLOBAL_DATA g_bs3CpuBasic2_ud2_FlatAddr, 4
         dd  bs3CpuBasic2_ud2 wrt FLAT
 
 
+
+;
+; CPU mode agnostic test code snippets.
+;
 BS3_BEGIN_TEXT16
-BS3_PROC_BEGIN  bs3CpuBasic2_ud2
+
+BS3_PROC_BEGIN  bs3CpuBasic2_ud2, BS3_PB_WITH_US_ALIAS
 .again:
         ud2
         jmp     .again
 BS3_PROC_END    bs3CpuBasic2_ud2
 
 
+BS3_PROC_BEGIN bs3CpuBasic2_Int80, BS3_PB_WITH_US_ALIAS
+        int     80h
+.again: ud2
+        jmp     .again
+BS3_PROC_END   bs3CpuBasic2_Int80
 
-;BS3_INSTANTIATE_COMMON_TEMPLATE "bs3-cpu-basic-2-template.mac"
+
+BS3_PROC_BEGIN bs3CpuBasic2_Int81, BS3_PB_WITH_US_ALIAS
+        int     81h
+.again: ud2
+        jmp     .again
+BS3_PROC_END   bs3CpuBasic2_Int81
+
+
+BS3_PROC_BEGIN bs3CpuBasic2_Int82, BS3_PB_WITH_US_ALIAS
+        int     82h
+.again: ud2
+        jmp     .again
+BS3_PROC_END   bs3CpuBasic2_Int82
+
+
+BS3_PROC_BEGIN bs3CpuBasic2_Int83, BS3_PB_WITH_US_ALIAS
+        int     83h
+.again: ud2
+        jmp     .again
+BS3_PROC_END   bs3CpuBasic2_Int83
+
+
+;
+; Instantiate code templates.
+;
+BS3_INSTANTIATE_COMMON_TEMPLATE          "bs3-cpu-basic-2-template.mac"
 BS3_INSTANTIATE_TEMPLATE_WITH_WEIRD_ONES "bs3-cpu-basic-2-template.mac"
-
 
