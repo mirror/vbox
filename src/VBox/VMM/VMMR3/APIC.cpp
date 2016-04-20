@@ -674,8 +674,8 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         else
             SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, g_aXApicPageFields);
 
-        /* Save the PIBs: We could in theory push them to vIRR and avoid saving them,
-           but in case of posted-interrupts we can't do that at this point, so save in all cases. */
+        /* Save the PIBs: In theory, we could push them to vIRR and avoid saving them here, but
+           with posted-interrupts we can't at this point as HM is paralyzed, so just save PIBs always. */
         SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPibR3,   g_aApicPibFields);
         SSMR3PutStruct(pSSM, (const void *)&pApicCpu->ApicPibLevel, g_aApicPibFields);
 
