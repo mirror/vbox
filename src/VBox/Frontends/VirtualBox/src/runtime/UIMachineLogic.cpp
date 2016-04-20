@@ -1597,7 +1597,8 @@ void UIMachineLogic::sltPowerOff()
     }
 
     LogRel(("GUI: User request to power VM off.\n"));
-    powerOff(machine().GetSnapshotCount() > 0);
+    MachineCloseAction enmLastCloseAction = gEDataManager->lastMachineCloseAction(vboxGlobal().managedVMUuid());
+    powerOff(machine().GetSnapshotCount() > 0 && enmLastCloseAction == MachineCloseAction_PowerOff_RestoringSnapshot);
 }
 
 void UIMachineLogic::sltClose()
