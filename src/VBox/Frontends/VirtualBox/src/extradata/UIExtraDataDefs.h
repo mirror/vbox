@@ -286,7 +286,7 @@ namespace UIExtraDataDefs
     /** @} */
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** @name VirtualBox: Extra-data Manager window
       * @{ */
         /** Holds extra-data manager geometry. */
@@ -294,7 +294,7 @@ namespace UIExtraDataDefs
         /** Holds extra-data manager splitter hints. */
         extern const char* GUI_ExtraDataManager_SplitterHints;
     /** @} */
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
     /** @name Virtual Machine: Log dialog
       * @{ */

@@ -137,7 +137,7 @@ protected:
     }
 };
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 class UIActionSimpleExtraDataManagerWindow : public UIActionSimple
 {
     Q_OBJECT;
@@ -165,7 +165,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display the Extra Data Manager window"));
     }
 };
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 class UIActionSimpleExit : public UIActionSimple
 {
@@ -1009,9 +1009,9 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_File_S_ShowMediumManager] = new UIActionSimpleMediumManagerDialog(this);
     m_pool[UIActionIndexST_M_File_S_ImportAppliance] = new UIActionSimpleImportApplianceWizard(this);
     m_pool[UIActionIndexST_M_File_S_ExportAppliance] = new UIActionSimpleExportApplianceWizard(this);
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     m_pool[UIActionIndexST_M_File_S_ShowExtraDataManager] = new UIActionSimpleExtraDataManagerWindow(this);
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     m_pool[UIActionIndexST_M_File_S_Close] = new UIActionSimpleExit(this);
 
     /* 'Group' actions: */

@@ -104,10 +104,10 @@ private slots:
         void sltOpenImportApplianceWizard(const QString &strFileName = QString());
         /** Handles call to open Export Appliance wizard. */
         void sltOpenExportApplianceWizard();
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
         /** Handles call to open Extra-data Manager window. */
         void sltOpenExtraDataManagerWindow();
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
         /** Handles call to open Preferences dialog. */
         void sltOpenPreferencesDialog();
         /** Handles call to exit application. */

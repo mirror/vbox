@@ -431,12 +431,12 @@ void UISelectorWindow::sltOpenExportApplianceWizard()
         delete pWizard;
 }
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 void UISelectorWindow::sltOpenExtraDataManagerWindow()
 {
     gEDataManager->openWindow(this);
 }
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 void UISelectorWindow::sltOpenPreferencesDialog()
 {
@@ -1260,10 +1260,10 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
     /* 'Export Appliance' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
-# ifdef DEBUG
+# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /* 'Show Extra-data Manager' action goes to 'File' menu for Debug build: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
-# endif /* DEBUG */
+# endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     /* 'Show Media Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
 
@@ -1279,10 +1279,10 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
     /* Separator after 'Export Appliance' action of the 'File' menu: */
     pMenu->addSeparator();
-# ifdef DEBUG
+# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /* 'Extra-data Manager' action goes to 'File' menu for Debug build: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
-# endif /* DEBUG */
+# endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     /* 'Show Media Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -1549,9 +1549,9 @@ void UISelectorWindow::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager), SIGNAL(triggered()), this, SLOT(sltOpenMediaManagerWindow()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenImportApplianceWizard()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenExportApplianceWizard()));
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     connect(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager), SIGNAL(triggered()), this, SLOT(sltOpenExtraDataManagerWindow()));
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), SIGNAL(triggered()), this, SLOT(sltOpenPreferencesDialog()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_Close), SIGNAL(triggered()), this, SLOT(sltPerformExit()));
 

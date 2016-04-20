@@ -161,11 +161,11 @@ const char* UIExtraDataDefs::GUI_Dbg_Enabled = "GUI/Dbg/Enabled";
 const char* UIExtraDataDefs::GUI_Dbg_AutoShow = "GUI/Dbg/AutoShow";
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 /* VirtualBox: Extra-data Manager window: */
 const char* UIExtraDataDefs::GUI_ExtraDataManager_Geometry = "GUI/ExtraDataManager/Geometry";
 const char* UIExtraDataDefs::GUI_ExtraDataManager_SplitterHints = "GUI/ExtraDataManager/SplitterHints";
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* Virtual Machine: Log dialog: */
 const char* UIExtraDataDefs::GUI_LogWindowGeometry = "GUI/LogWindowGeometry";

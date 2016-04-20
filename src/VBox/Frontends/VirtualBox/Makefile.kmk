@@ -160,6 +160,9 @@ ifdef VBOX_WITH_LIBCURL
  VirtualBox_DEFS        += VBOX_GUI_WITH_NETWORK_MANAGER
  VBOX_GUI_WITH_NETWORK_MANAGER := 1
 endif
+ifneq ($(KBUILD_TYPE),release)
+ VirtualBox_DEFS        += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+endif
 ifdef VBOX_BLEEDING_EDGE
 VirtualBox_src/selector/UISelectorWindow.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"

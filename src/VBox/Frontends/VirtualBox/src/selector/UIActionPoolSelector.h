@@ -35,9 +35,9 @@ enum UIActionIndexST
     UIActionIndexST_M_File_S_ShowMediumManager,
     UIActionIndexST_M_File_S_ImportAppliance,
     UIActionIndexST_M_File_S_ExportAppliance,
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     UIActionIndexST_M_File_S_ShowExtraDataManager,
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     UIActionIndexST_M_File_S_Close,
 
     /* 'Group' menu actions: */

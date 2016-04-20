@@ -21,18 +21,18 @@
 /* Qt includes: */
 #include <QObject>
 #include <QMap>
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 # include <QPointer>
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class UIExtraDataEventHandler;
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 class UIExtraDataManagerWindow;
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /** Defines the map of extra data values. The index is an extra-data key. */
 typedef QMap<QString, QString> ExtraDataMap;
@@ -104,10 +104,10 @@ public:
     /** Static Extra-data Manager destructor. */
     static void destroy();
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** Static show and raise API. */
     static void openWindow(QWidget *pCenterWidget);
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
     /** @name Base
       * @{ */
@@ -533,7 +533,7 @@ public:
     /** @} */
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** @name VirtualBox: Extra-data Manager window
       * @{ */
         /** Returns Extra-data Manager geometry using @a pWidget as hint. */
@@ -548,7 +548,7 @@ public:
         /** Defines Extra-data Manager splitter @a hints. */
         void setExtraDataManagerSplitterHints(const QList<int> &hints);
     /** @} */
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
     /** @name Virtual Machine: Log dialog
       * @{ */
@@ -573,13 +573,13 @@ private:
     void prepareGlobalExtraDataMap();
     /** Prepare extra-data event-handler. */
     void prepareExtraDataEventHandler();
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     // /** Prepare window. */
     // void prepareWindow();
 
     /** Cleanup window. */
     void cleanupWindow();
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     /** Cleanup extra-data event-handler. */
     void cleanupExtraDataEventHandler();
     // /** Cleanup extra-data map. */
@@ -587,10 +587,10 @@ private:
     /** Cleanup Extra-data Manager. */
     void cleanup();
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** Open window. */
     void open(QWidget *pCenterWidget);
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
     /** Retrieves an extra-data key from both machine and global sources.
       *
@@ -629,10 +629,10 @@ private:
     /** Holds extra-data map instance. */
     MapOfExtraDataMaps m_data;
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** Holds Extra-data Manager window instance. */
     QPointer<UIExtraDataManagerWindow> m_pWindow;
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 };
 
 /** Singleton Extra-data Manager 'official' name. */

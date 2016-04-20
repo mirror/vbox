@@ -22,7 +22,7 @@
 /* Qt includes: */
 # include <QMutex>
 # include <QMetaEnum>
-# ifdef DEBUG
+# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 #  include <QMainWindow>
 #  include <QMenuBar>
 #  include <QListView>
@@ -35,7 +35,7 @@
 #  include <QLineEdit>
 #  include <QComboBox>
 #  include <QPushButton>
-# endif /* DEBUG */
+# endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* GUI includes: */
 # include "UIExtraDataManager.h"
@@ -46,7 +46,7 @@
 # include "UIConverter.h"
 # include "UISettingsDefs.h"
 # include "UIMessageCenter.h"
-# ifdef DEBUG
+# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 #  include "VBoxUtils.h"
 #  include "UIVirtualBoxEventHandler.h"
 #  include "UIIconPool.h"
@@ -56,7 +56,7 @@
 #  include "QIFileDialog.h"
 #  include "QISplitter.h"
 #  include "QIDialog.h"
-# endif /* DEBUG */
+# endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -67,11 +67,11 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 # include <QStandardItemModel>
 # include <QXmlStreamWriter>
 # include <QXmlStreamReader>
-#endif
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 
 /* Namespaces: */
@@ -275,7 +275,7 @@ void UIExtraDataEventHandler::sltPreprocessExtraDataChange(QString strMachineID,
 }
 
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 /** Data fields. */
 enum Field
 {
@@ -2009,7 +2009,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_ExtraDataManager_Geometry << GUI_ExtraDataManager_SplitterHints
            << GUI_LogWindowGeometry;
 }
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 
 /* static */
@@ -2040,14 +2040,14 @@ void UIExtraDataManager::destroy()
     }
 }
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 /* static */
 void UIExtraDataManager::openWindow(QWidget *pCenterWidget)
 {
     /* Pass to instance: */
     instance()->open(pCenterWidget);
 }
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID)
 {
@@ -3817,7 +3817,7 @@ QString UIExtraDataManager::debugFlagValue(const QString &strDebugFlagKey)
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget)
 {
     /* Get corresponding extra-data: */
@@ -3933,7 +3933,7 @@ void UIExtraDataManager::setExtraDataManagerSplitterHints(const QList<int> &hint
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(GUI_ExtraDataManager_SplitterHints, data);
 }
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 QRect UIExtraDataManager::logWindowGeometry(QWidget *pWidget, const QRect &defaultGeometry)
 {
@@ -4127,12 +4127,12 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
     }
 }
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 void UIExtraDataManager::cleanupWindow()
 {
     delete m_pWindow;
 }
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 void UIExtraDataManager::cleanupExtraDataEventHandler()
 {
@@ -4145,13 +4145,13 @@ void UIExtraDataManager::cleanup()
 {
     /* Cleanup extra-data event-handler: */
     cleanupExtraDataEventHandler();
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /* Cleanup window: */
     cleanupWindow();
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 }
 
-#ifdef DEBUG
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 void UIExtraDataManager::open(QWidget *pCenterWidget)
 {
     /* If necessary: */
@@ -4168,7 +4168,7 @@ void UIExtraDataManager::open(QWidget *pCenterWidget)
     /* Show and raise window: */
     m_pWindow->showAndRaise(pCenterWidget);
 }
-#endif /* DEBUG */
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 bool UIExtraDataManager::isFeatureAllowed(const QString &strKey, const QString &strID /* = GlobalID */)
 {
