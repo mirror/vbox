@@ -319,7 +319,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
                 fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
-                                                  sPort = str(iBusId));
+                                                  sPort = format(iBusId, 'x'));
                 if fRc is True:
 
                     # Wait a moment to let the USB device appear
