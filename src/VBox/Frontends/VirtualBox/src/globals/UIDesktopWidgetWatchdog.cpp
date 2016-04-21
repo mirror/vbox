@@ -132,7 +132,8 @@ void UIDesktopWidgetWatchdog::sltUpdateHostScreenConfiguration(int cHostScreenCo
 
     /* Cleanup existing workers first: */
     foreach (QWidget *pWorker, m_availableGeometryWorkers)
-        pWorker->disconnect();
+        if (pWorker)
+            pWorker->disconnect();
     qDeleteAll(m_availableGeometryWorkers);
     m_availableGeometryWorkers.clear();
     m_availableGeometryData.clear();
@@ -208,7 +209,8 @@ void UIDesktopWidgetWatchdog::cleanup()
 
     /* Cleanup existing workers finally: */
     foreach (QWidget *pWorker, m_availableGeometryWorkers)
-        pWorker->disconnect();
+        if (pWorker)
+            pWorker->disconnect();
     qDeleteAll(m_availableGeometryWorkers);
     m_availableGeometryWorkers.clear();
     m_availableGeometryData.clear();
