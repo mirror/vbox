@@ -111,6 +111,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_HPET,
     /** IDE Device group. */
     LOG_GROUP_DEV_IDE,
+    /** I/O APIC Device group. */
+    LOG_GROUP_DEV_IOAPIC,
     /** The internal networking IP stack Device group. */
     LOG_GROUP_DEV_INIP,
     /** KeyBoard Controller Device group. */
@@ -832,6 +834,7 @@ typedef enum LOGGROUP
     "DEV_HDA_CODEC", \
     "DEV_HPET",     \
     "DEV_IDE",      \
+    "DEV_IOAPIC",   \
     "DEV_INIP",     \
     "DEV_KBD",      \
     "DEV_LPC",      \
