@@ -40,7 +40,7 @@ protected:
     UIWizardNewVDPage1();
 
     /* Helping stuff: */
-    void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat);
+    void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat, bool fPreferred = false);
 
     /* Stuff for 'mediumFormat' field: */
     CMediumFormat mediumFormat() const;

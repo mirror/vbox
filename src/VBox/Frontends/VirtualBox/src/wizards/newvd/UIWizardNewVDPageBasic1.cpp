@@ -40,7 +40,7 @@ UIWizardNewVDPage1::UIWizardNewVDPage1()
 {
 }
 
-void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat)
+void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred /* = false */)
 {
     /* Check that medium format supports creation: */
     ULONG uFormatCapabilities = 0;
@@ -62,10 +62,20 @@ void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatL
 
     /* Create/add corresponding radio-button: */
     QRadioButton *pFormatButton = new QRadioButton(pParent);
-    pFormatLayout->addWidget(pFormatButton);
-    m_formats << medFormat;
-    m_formatNames << medFormat.GetName();
-    m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
+    AssertPtrReturnVoid(pFormatButton);
+    {
+        /* Make the preferred button font bold: */
+        if (fPreferred)
+        {
+            QFont font = pFormatButton->font();
+            font.setBold(true);
+            pFormatButton->setFont(font);
+        }
+        pFormatLayout->addWidget(pFormatButton);
+        m_formats << medFormat;
+        m_formatNames << medFormat.GetName();
+        m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
+    }
 }
 
 CMediumFormat UIWizardNewVDPage1::mediumFormat() const
