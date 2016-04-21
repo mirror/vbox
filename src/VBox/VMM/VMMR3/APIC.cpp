@@ -621,30 +621,28 @@ static PDMAPICMODE apicR3ConvertToLegacyApicMode(APICMODE enmMode)
  * This is primarily concerned about the APIC state relevant for saved-states.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pszPrefix   A caller supplied prefix before dumping parts of the
- *                      state.
+ * @param   pszPrefix   A caller supplied prefix before dumping the state.
  */
 static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix)
 {
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
     /* The auxiliary state. */
-    LogRel(("APIC%u: uApicBaseMsr    = %#RX64\n", pVCpu->idCpu, pApicCpu->uApicBaseMsr));
-    LogRel(("APIC%u: uEsrInternal    = %#RX64\n", pVCpu->idCpu, pApicCpu->uEsrInternal));
+    LogRel(("APIC%u: %s\n", pVCpu->idCpu, pszPrefix));
+    LogRel(("APIC%u: uApicBaseMsr             = %#RX64\n", pVCpu->idCpu, pApicCpu->uApicBaseMsr));
+    LogRel(("APIC%u: uEsrInternal             = %#RX64\n", pVCpu->idCpu, pApicCpu->uEsrInternal));
 
     /* The timer. */
-    LogRel(("APIC%u: %s APIC Timer:\n", pVCpu->idCpu));
-    LogRel(("APIC%u: u64TimerInitial = %#RU64\n", pVCpu->idCpu, pApicCpu->u64TimerInitial));
+    LogRel(("APIC%u: u64TimerInitial          = %#RU64\n", pVCpu->idCpu, pApicCpu->u64TimerInitial));
+    LogRel(("APIC%u: uHintedTimerInitialCount = %#RU64\n", pVCpu->idCpu, pApicCpu->uHintedTimerInitialCount));
+    LogRel(("APIC%u: uHintedTimerShift        = %#RU64\n", pVCpu->idCpu, pApicCpu->uHintedTimerShift));
 
     /* The PIBs. */
-    LogRel(("APIC%u: %s APIC PIB:\n", pVCpu->idCpu, pszPrefix));
-    LogRel(("%.*Rhxs\n", sizeof(APICPIB), pApicCpu->pvApicPibR3));
-    LogRel(("APIC%u: %s APIC Level PIB:\n", pVCpu->idCpu, pszPrefix));
-    LogRel(("%.*Rhxs\n", sizeof(APICPIB), &pApicCpu->ApicPibLevel));
+    LogRel(("APIC%u: Edge PIB : %.*Rhxs\n", pVCpu->idCpu, sizeof(APICPIB), pApicCpu->pvApicPibR3));
+    LogRel(("APIC%u: Level PIB: %.*Rhxs\n", pVCpu->idCpu, sizeof(APICPIB), &pApicCpu->ApicPibLevel));
 
     /* The APIC page. */
-    LogRel(("APIC%u: %s APIC page\n:", pVCpu->idCpu, pszPrefix));
-    LogRel(("%.*Rhxs\n", sizeof(XAPICPAGE), pApicCpu->pvApicPageR3));
+    LogRel(("APIC%u: APIC page: %.*Rhxs\n", pVCpu->idCpu, sizeof(XAPICPAGE), pApicCpu->pvApicPageR3));
 }
 #endif
 
@@ -758,7 +756,7 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         SSMR3PutU64(pSSM, pApicCpu->u64TimerInitial);
 
 #ifdef DEBUG_ramshankar
-        apicR3DumpState(pVCpu, "Saved");
+        apicR3DumpState(pVCpu, "Saved state:");
 #endif
     }
 
@@ -833,7 +831,7 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             }
 
 #ifdef DEBUG_ramshankar
-            apicR3DumpState(pVCpu, "Loaded");
+            apicR3DumpState(pVCpu, "Loaded state:");
 #endif
         }
         else
