@@ -104,7 +104,8 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
                 for (int i = 0; i < medFormats.size(); ++i)
                 {
                     const CMediumFormat &medFormat = medFormats[i];
-                    if (medFormat.GetName() != "VDI")
+                    const QVector<KMediumFormatCapabilities> &capabilities = medFormat.GetCapabilities();
+                    if (medFormat.GetName() != "VDI" && capabilities.contains(KMediumFormatCapabilities_Preferred))
                         addFormatButton(this, pFormatLayout, medFormat);
                 }
             }
