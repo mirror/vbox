@@ -1217,7 +1217,10 @@ VMMR3DECL(int) DBGFR3Resume(PUVM pUVM)
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
-    AssertReturn(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong), VERR_SEM_OUT_OF_TURN);
+    if (RT_LIKELY(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong)))
+    { /* likely */ }
+    else
+        return VERR_SEM_OUT_OF_TURN;
 
     /*
      * Send the ping back to the emulation thread telling it to run.
@@ -1248,9 +1251,12 @@ VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
-    AssertReturn(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong), VERR_SEM_OUT_OF_TURN);
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
+    if (RT_LIKELY(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong)))
+    { /* likely */ }
+    else
+        return VERR_SEM_OUT_OF_TURN;
 
     /*
      * Send the ping back to the emulation thread telling it to run.
