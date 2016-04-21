@@ -892,7 +892,7 @@ void BIOSCALL int15_blkmove(disk_regs_t r)
     write_byte(ES, SI+0x28+5, 0x93);     // access
     write_word(ES, SI+0x28+6, 0x0000);   // base 31:24/reserved/limit 19:16
 
-    pm_stack_save(CX, ES, SI, (uint16_t)(void __near *)&r);
+    pm_stack_save(CX, ES, SI, FP_OFF(&r));
     pm_enter();
     pm_copy();
     pm_exit();
