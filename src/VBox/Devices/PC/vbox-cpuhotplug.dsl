@@ -59,7 +59,7 @@ DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
             Name (_UID, cpuuid)                                            \
             Name (_PXM, 0x00)                                              \
             <NL>                                                           \
-            Method(_MAT, 0)                                                \
+            Method(_MAT, 0, Serialized)                                    \
             {                                                              \
                 Name (APIC, Buffer (8) {0x00, 0x08, id, id})               \
                 IF (CPCK(id))                                              \
