@@ -7854,13 +7854,11 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                  * or LockedRead (parent medium) state if it is not the target.
                  * If it is the target it must be in the LockedWrite state.
                  */
-#ifndef DEBUG_andy /* See see @bugref{8172}. */
                 Assert(   (   pMedium != pTarget
                            && (   pMedium->m->state == MediumState_Deleting
                                || pMedium->m->state == MediumState_LockedRead))
                        || (   pMedium == pTarget
                            && pMedium->m->state == MediumState_LockedWrite));
-#endif
                 /*
                  * Medium must be the target, in the LockedRead state
                  * or Deleting state where it is not allowed to be attached
