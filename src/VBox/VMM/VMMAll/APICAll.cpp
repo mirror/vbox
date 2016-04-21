@@ -2244,8 +2244,8 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
     else
     {
         /* The APIC is disabled, pass it through the CPU. */
-        LogFlow(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, passing interrupt to CPU. u8Pin=%u u8Level=%u\n", u8Pin,
-              u8Level));
+        LogFlow(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, passing interrupt to CPU. u8Pin=%u u8Level=%u\n",
+                 pVCpu->idCpu, u8Pin, u8Level));
         if (u8Level)
             APICSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
         else

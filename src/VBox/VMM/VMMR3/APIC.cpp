@@ -868,7 +868,9 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
     LogFlow(("APIC%u: apicR3TimerCallback\n", pVCpu->idCpu));
 
     PXAPICPAGE     pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
+    PAPICCPU       pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     uint32_t const uLvtTimer  = pXApicPage->lvt_timer.all.u32LvtTimer;
+    STAM_COUNTER_INC(&pApicCpu->StatTimerCallback);
     if (!XAPIC_LVT_IS_MASKED(uLvtTimer))
     {
         uint8_t uVector = XAPIC_LVT_GET_VECTOR(uLvtTimer);
@@ -876,7 +878,6 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
         APICPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE);
     }
 
-    PAPICCPU       pApicCpu     = VMCPU_TO_APICCPU(pVCpu);
     XAPICTIMERMODE enmTimerMode = XAPIC_LVT_GET_TIMER_MODE(uLvtTimer);
     switch (enmTimerMode)
     {
@@ -1442,6 +1443,8 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
         APIC_REG_COUNTER(&pApicCpu->StatPostIntrAlreadyPending,  "Number of times an interrupt is already pending.",
                          "/Devices/APIC/%u/PostInterruptAlreadyPending");
+        APIC_REG_COUNTER(&pApicCpu->StatTimerCallback,  "Number of times the timer callback is invoked.",
+                         "/Devices/APIC/%u/TimerCallback");
     }
 # undef APIC_PROF_COUNTER
 # undef APIC_REG_ACCESS_COUNTER

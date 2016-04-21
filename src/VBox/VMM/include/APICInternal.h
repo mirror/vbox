@@ -594,6 +594,8 @@ typedef struct APICCPU
     /** Number of times an interrupt is already pending in
      *  APICPostInterrupts().*/
     STAMCOUNTER                 StatPostIntrAlreadyPending;
+    /** Number of times the timer callback is invoked. */
+    STAMCOUNTER                 StatTimerCallback;
     /** @} */
 #endif
 } APICCPU;
