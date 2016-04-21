@@ -35,6 +35,7 @@
 
 #include <iprt/env.h>
 #include <iprt/file.h> /* For CopyTo/From. */
+#include <iprt/path.h>
 
 #ifdef LOG_GROUP
  #undef LOG_GROUP
