@@ -199,10 +199,6 @@ extern RTEXITCODE               VGSvcWinEnterCtrlDispatcher(void);
 extern void                     VGSvcWinSetStopPendingStatus(uint32_t uCheckPoint);
 #endif
 
-#ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
-extern bool                     VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit);
-#endif
-
 #ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_GUEST_PROPS
 extern int                      VGSvcVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList, uint32_t *pcUsersInList);

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2658,6 +2658,10 @@
 #define VERR_GSTCTL_GUEST_ERROR                     (-6200)
 /** A guest control object has changed its overall status. */
 #define VWRN_GSTCTL_OBJECTSTATE_CHANGED             6220
+/** Guest process is in a wrong state. */
+#define VERR_GSTCTL_PROCESS_WRONG_STATE             (-6221)
+/** Started guest process terminated with an exit code <> 0. */
+#define VWRN_GSTCTL_PROCESS_EXIT_CODE               6221
 /** @} */
 
 

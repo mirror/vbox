@@ -588,6 +588,8 @@ HRESULT GuestSession::getEventSource(ComPtr<IEventSource> &aEventSource)
 
 int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestRc)
 {
+    AssertPtrReturn(pGuestRc, VERR_INVALID_POINTER);
+
     LogFlowThisFunc(("uFlags=%x, uTimeoutMS=%RU32\n", uFlags, uTimeoutMS));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -650,10 +652,11 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGue
 }
 
 int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode,
-                                          uint32_t uFlags, int *pGuestRc)
+                                            uint32_t uFlags, int *pGuestRc)
 {
-    LogFlowThisFunc(("strPath=%s, uMode=%x, uFlags=%x\n",
-                     strPath.c_str(), uMode, uFlags));
+    AssertPtrReturn(pGuestRc, VERR_INVALID_POINTER);
+
+    LogFlowThisFunc(("strPath=%s, uMode=%x, uFlags=%x\n", strPath.c_str(), uMode, uFlags));
 
     int vrc = VINF_SUCCESS;
 
@@ -716,7 +719,9 @@ inline bool GuestSession::i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDire
 int GuestSession::i_directoryQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks,
                                                GuestFsObjData &objData, int *pGuestRc)
 {
-    LogFlowThisFunc(("strPath=%s fFollowSymlinks=%RTbool\n", strPath.c_str(), fFollowSymlinks));
+    AssertPtrReturn(pGuestRc, VERR_INVALID_POINTER);
+
+    LogFlowThisFunc(("strPath=%s, fFollowSymlinks=%RTbool\n", strPath.c_str(), fFollowSymlinks));
 
     int vrc = i_fsQueryInfoInternal(strPath, fFollowSymlinks, objData, pGuestRc);
     if (RT_SUCCESS(vrc))
@@ -731,6 +736,8 @@ int GuestSession::i_directoryQueryInfoInternal(const Utf8Str &strPath, bool fFol
 
 int GuestSession::i_directoryRemoveFromList(GuestDirectory *pDirectory)
 {
+    AssertPtrReturn(pDirectory, VERR_INVALID_POINTER);
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int rc = VERR_NOT_FOUND;
@@ -772,6 +779,7 @@ int GuestSession::i_directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFl
                                             int *pGuestRc)
 {
     AssertReturn(!(uFlags & ~DIRREMOVE_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pGuestRc, VERR_INVALID_POINTER);
 
     LogFlowThisFunc(("strPath=%s, uFlags=0x%x\n", strPath.c_str(), uFlags));
 
@@ -811,6 +819,8 @@ int GuestSession::i_directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFl
 int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath,
                                              bool fDirectory, Utf8Str &strName, int *pGuestRc)
 {
+    AssertPtrReturn(pGuestRc, VERR_INVALID_POINTER);
+
     LogFlowThisFunc(("strTemplate=%s, strPath=%s, fDirectory=%RTbool\n",
                      strTemplate.c_str(), strPath.c_str(), fDirectory));
 
@@ -877,6 +887,8 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
 int GuestSession::i_directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo,
                                           ComObjPtr<GuestDirectory> &pDirectory, int *pGuestRc)
 {
+    AssertPtrReturn(pGuestRc, VERR_INVALID_POINTER);
+
     LogFlowThisFunc(("strPath=%s, strPath=%s, uFlags=%x\n",
                      openInfo.mPath.c_str(), openInfo.mFilter.c_str(), openInfo.mFlags));
 
@@ -1428,8 +1440,7 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
         && pGuestRc)
         *pGuestRc = guestRc;
 
-    LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n",
-                     vrc, guestRc));
+    LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n", vrc, guestRc));
     return vrc;
 }
 
@@ -1481,10 +1492,6 @@ Utf8Str GuestSession::i_guestErrorToString(int guestRc)
 
         case VERR_MAX_PROCS_REACHED:
             strError += Utf8StrFmt(tr("Maximum number of concurrent guest processes has been reached"));
-            break;
-
-        case VERR_NOT_EQUAL: /** @todo Imprecise to the user; can mean anything and all. */
-            strError += Utf8StrFmt(tr("Unable to retrieve requested information"));
             break;
 
         case VERR_NOT_FOUND:
@@ -1934,8 +1941,8 @@ int GuestSession::i_processCreateExInternal(GuestProcessStartupInfo &procInfo, C
         return VERR_INVALID_PARAMETER;
     }
 
-    /* Adjust timeout. If set to 0, we define
-     * an infinite timeout. */
+    /* Adjust timeout.
+     * If set to 0, we define an infinite timeout (unlimited process run time). */
     if (procInfo.mTimeoutMS == 0)
         procInfo.mTimeoutMS = UINT32_MAX;
 
@@ -2649,8 +2656,8 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
         switch (rc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                /** @todo Handle VERR_NOT_EQUAL (meaning process exit code <> 0). */
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Could not create directory"));
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %s",
+                                                    GuestDirectory::i_guestErrorToString(guestRc).c_str()));
                 break;
 
             case VERR_INVALID_PARAMETER:

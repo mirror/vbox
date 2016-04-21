@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2015 Oracle Corporation
+ * Copyright (C) 2012-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -321,9 +321,7 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
     if (   RT_SUCCESS(rc)
         && !mData.mProcessTool.i_isRunning())
     {
-        rc = mData.mProcessTool.i_terminatedOk(NULL /* Exit code */);
-        if (rc == VERR_NOT_EQUAL)
-            rc = VERR_ACCESS_DENIED;
+        rc = mData.mProcessTool.i_terminatedOk();
     }
 
     if (RT_SUCCESS(rc))
@@ -372,9 +370,9 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
                 hr = GuestProcess::i_setErrorExternal(this, guestRc);
                 break;
 
-            case VERR_ACCESS_DENIED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: Unable to read / access denied"),
-                              mData.mOpenInfo.mPath.c_str());
+            case VWRN_GSTCTL_PROCESS_EXIT_CODE:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: %Rrc"),
+                              mData.mOpenInfo.mPath.c_str(), mData.mProcessTool.i_getRc());
                 break;
 
             case VERR_PATH_NOT_FOUND:

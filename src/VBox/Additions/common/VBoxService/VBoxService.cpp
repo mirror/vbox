@@ -91,6 +91,9 @@
 #ifdef VBOX_WITH_VBOXSERVICE_CONTROL
 # include "VBoxServiceControl.h"
 #endif
+#ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
+# include "VBoxServiceToolBox.h"
+#endif
 
 
 /*********************************************************************************************************************************

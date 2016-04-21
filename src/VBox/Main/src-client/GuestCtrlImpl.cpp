@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -599,12 +599,14 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
             {
                 hr = E_OUTOFMEMORY;
             }
-            catch(HRESULT eHR)
+            catch(...)
             {
-                LogFlowThisFunc(("Exception was caught in the function \n"));
+                LogFlowThisFunc(("Exception was caught in the function\n"));
             }
         }
     }
+
+    LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

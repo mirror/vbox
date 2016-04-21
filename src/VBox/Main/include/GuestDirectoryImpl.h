@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -72,6 +72,7 @@ private:
         GuestDirectoryOpenInfo     mOpenInfo;
         /** The directory's ID. */
         uint32_t                   mID;
+        /** The process tool instance to use. */
         GuestProcessTool           mProcessTool;
     } mData;
 };

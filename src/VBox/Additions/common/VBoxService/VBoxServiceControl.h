@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2015 Oracle Corporation
+ * Copyright (C) 2013-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,7 @@
 #include <iprt/req.h>
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/GuestHost/GuestControl.h>
 #include <VBox/HostServices/GuestControlSvc.h>
 
 

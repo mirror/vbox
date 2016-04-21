@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -183,7 +183,25 @@ private:
 #define GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK    RT_BIT(0)
 
 /**
- * Internal class for handling a VBoxService tool ("vbox_ls", vbox_stat", ...).
+ * Structure for keeping a VBoxService toolbox tool's error info around.
+ */
+struct GuestProcessToolErrorInfo
+{
+    /** Return code from the guest side for executing the process tool. */
+    int  guestRc;
+    /** The process tool's returned exit code. */
+    LONG lExitCode;
+};
+
+/**
+ * Internal class for handling the BusyBox-like tools built into VBoxService
+ * on the guest side. It's also called the VBoxService Toolbox (tm).
+ *
+ * Those initially were necessary to guarantee execution of commands (like "ls", "cat")
+ * under the behalf of a certain guest user.
+ *
+ * This class essentially helps to wrap all the gory details like process creation,
+ * information extraction and maintaining the overall status.
  */
 class GuestProcessTool
 {
@@ -197,6 +215,10 @@ public:
 
     int Init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, bool fAsync, int *pGuestRc);
 
+    int i_getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock);
+
+    int i_getRc(void) const;
+
     GuestProcessStream &i_getStdOut(void) { return mStdOut; }
 
     GuestProcessStream &i_getStdErr(void) { return mStdErr; }
@@ -205,18 +227,27 @@ public:
 
     int i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBlock, int *pGuestRc);
 
-    int i_getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock);
-
     bool i_isRunning(void);
 
+    int i_terminatedOk(LONG *plExitCode = NULL);
+
+    int i_terminate(uint32_t uTimeoutMS, int *pGuestRc);
+
+public:
+
     static int i_run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pGuestRc);
+
+    static int i_runErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestProcessToolErrorInfo &errorInfo);
 
     static int i_runEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
                        GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, int *pGuestRc);
 
-    int i_terminatedOk(LONG *pExitCode);
+    static int i_runExErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
+                                GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, GuestProcessToolErrorInfo &errorInfo);
 
-    int i_terminate(uint32_t uTimeoutMS, int *pGuestRc);
+    static int i_exitCodeToRc(const GuestProcessStartupInfo &startupInfo, LONG lExitCode);
+
+    static int i_exitCodeToRc(const char *pszTool, LONG lExitCode);
 
 protected:
 

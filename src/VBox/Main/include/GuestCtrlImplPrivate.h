@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,6 +37,7 @@
 using namespace com;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+# include <VBox/GuestHost/GuestControl.h>
 # include <VBox/HostServices/GuestControlSvc.h>
 using namespace guestControl;
 #endif
@@ -701,7 +702,7 @@ public:
 
     GuestProcessStartupInfo(void)
         : mFlags(ProcessCreateFlag_None),
-          mTimeoutMS(30 * 1000 /* 30s timeout by default */),
+          mTimeoutMS(UINT32_MAX /* No timeout by default */),
           mPriority(ProcessPriority_Default) { }
 
     /** The process' friendly name. */
@@ -714,6 +715,8 @@ public:
     GuestEnvironmentChanges     mEnvironmentChanges;
     /** Process creation flags. */
     uint32_t                    mFlags;
+    /** Timeout (in ms) the process is allowed to run.
+     *  Specify UINT32_MAX if no timeout (unlimited run time) is given. */
     ULONG                       mTimeoutMS;
     /** Process priority. */
     ProcessPriority_T           mPriority;

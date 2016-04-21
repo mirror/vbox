@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2015 Oracle Corporation
+ * Copyright (C) 2012-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,9 +40,14 @@
 
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/version.h>
+
+#include <VBox/GuestHost/GuestControl.h>
+
 #include "VBoxServiceInternal.h"
+#include "VBoxServiceToolBox.h"
 #include "VBoxServiceUtils.h"
 
+using namespace guestControl;
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -77,12 +82,42 @@ typedef enum VBOXSERVICETOOLBOXOUTPUTFLAG
     VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE =    0x2
 } VBOXSERVICETOOLBOXOUTPUTFLAG;
 
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
+static RTEXITCODE vgsvcToolboxCat(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxLs(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxRm(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxMkTemp(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxMkDir(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxStat(int argc, char **argv);
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/** Pointer to a handler function. */
+/** Pointer to a tool handler function. */
 typedef RTEXITCODE (*PFNHANDLER)(int , char **);
+
+/** Definition for a specific toolbox tool. */
+typedef struct VBOXSERVICETOOLBOXTOOL
+{
+    /** Friendly name of the tool. */
+    const char *pszName;
+    /** Main handler to be invoked to use the tool. */
+    RTEXITCODE (*pfnHandler)(int argc, char **argv);
+    /** Conversion routine to convert the tool's exit code back to an IPRT rc. Optional. */
+    int        (*pfnExitCodeConvertToRc)(RTEXITCODE rcExit);
+} VBOXSERVICETOOLBOXTOOL, *PVBOXSERVICETOOLBOXTOOL;
+
+static VBOXSERVICETOOLBOXTOOL s_aTools[] =
+{
+    { VBOXSERVICE_TOOL_CAT,    vgsvcToolboxCat   , NULL },
+    { VBOXSERVICE_TOOL_LS,     vgsvcToolboxLs    , NULL },
+    { VBOXSERVICE_TOOL_RM,     vgsvcToolboxRm    , NULL },
+    { VBOXSERVICE_TOOL_MKTEMP, vgsvcToolboxMkTemp, NULL },
+    { VBOXSERVICE_TOOL_MKDIR,  vgsvcToolboxMkDir , NULL },
+    { VBOXSERVICE_TOOL_STAT,   vgsvcToolboxStat  , NULL }
+};
 
 /**
  * An file/directory entry. Used to cache
@@ -467,7 +502,7 @@ static RTEXITCODE vgsvcToolboxCat(int argc, char **argv)
                     break;
             }
 
-            /* If not input files were defined, process stdin. */
+            /* If no input files were defined, process stdin. */
             if (RTListNodeIsFirst(&inputList, &inputList))
                 rc = vgsvcToolboxCatOutput(hInput, hOutput);
         }
@@ -477,7 +512,31 @@ static RTEXITCODE vgsvcToolboxCat(int argc, char **argv)
         RTFileClose(hOutput);
     vgsvcToolboxPathBufDestroy(&inputList);
 
-    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            case VERR_ACCESS_DENIED:
+                return (RTEXITCODE)VBOXSERVICETOOLBOX_CAT_EXITCODE_ACCESS_DENIED;
+
+            case VERR_FILE_NOT_FOUND:
+                return (RTEXITCODE)VBOXSERVICETOOLBOX_CAT_EXITCODE_FILE_NOT_FOUND;
+
+            case VERR_PATH_NOT_FOUND:
+                return (RTEXITCODE)VBOXSERVICETOOLBOX_CAT_EXITCODE_PATH_NOT_FOUND;
+
+            case VERR_SHARING_VIOLATION:
+                return (RTEXITCODE)VBOXSERVICETOOLBOX_CAT_EXITCODE_SHARING_VIOLATION;
+
+            default:
+                AssertMsgFailed(("Exit code for %Rrc not implemented\n", rc));
+                break;
+        }
+
+        return RTEXITCODE_FAILURE;
+    }
+
+    return RTEXITCODE_SUCCESS;
 }
 
 /**
@@ -1402,12 +1461,8 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
             int rc2 = RTPathQueryInfoEx(pNodeIt->pszName, &objInfo, RTFSOBJATTRADD_UNIX, fQueryInfoFlags);
             if (RT_FAILURE(rc2))
             {
-/** @todo r=bird: You can get a number of other errors here, like access denied. */
                 if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                    RTMsgError("Cannot stat for '%s': No such file or directory (%Rrc)\n", pNodeIt->pszName, rc);
-                rc = VERR_FILE_NOT_FOUND;
-                /* Do not break here -- process every element in the list
-                 * and keep failing rc. */
+                    RTMsgError("Cannot stat for '%s': %Rrc\n", pNodeIt->pszName, rc2);
             }
             else
             {
@@ -1415,9 +1470,12 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
                                               strlen(pNodeIt->pszName) /* cbName */,
                                               fOutputFlags,
                                               &objInfo);
-                if (RT_FAILURE(rc2))
-                    rc = rc2;
             }
+
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+            /* Do not break here -- process every element in the list
+             * and keep (initial) failing rc. */
         }
 
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
@@ -1432,48 +1490,68 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
         RTMsgError("Failed with rc=%Rrc\n", rc);
 
     vgsvcToolboxPathBufDestroy(&fileList);
-    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            case VERR_ACCESS_DENIED:
+                return (RTEXITCODE)VBOXSERVICETOOLBOX_STAT_EXITCODE_ACCESS_DENIED;
+
+            case VERR_FILE_NOT_FOUND:
+                return (RTEXITCODE)VBOXSERVICETOOLBOX_STAT_EXITCODE_FILE_NOT_FOUND;
+
+            case VERR_PATH_NOT_FOUND:
+                return (RTEXITCODE)VBOXSERVICETOOLBOX_STAT_EXITCODE_PATH_NOT_FOUND;
+
+            default:
+                AssertMsgFailed(("Exit code for %Rrc not implemented\n", rc));
+                break;
+        }
+
+        return RTEXITCODE_FAILURE;
+    }
+
+    return RTEXITCODE_SUCCESS;
 }
 
 
-
 /**
- * Looks up the handler for the tool give by @a pszTool.
+ * Looks up the tool definition entry for the tool give by @a pszTool.
  *
- * @returns Pointer to handler function.  NULL if not found.
+ * @returns Pointer to the tool definition.  NULL if not found.
  * @param   pszTool     The name of the tool.
  */
-static PFNHANDLER vgsvcToolboxLookUpHandler(const char *pszTool)
+static PVBOXSERVICETOOLBOXTOOL const vgsvcToolboxLookUp(const char *pszTool)
 {
-    static struct
-    {
-        const char *pszName;
-        RTEXITCODE (*pfnHandler)(int argc, char **argv);
-    }
-    const s_aTools[] =
-    {
-        { "cat",    vgsvcToolboxCat    },
-        { "ls",     vgsvcToolboxLs     },
-        { "rm",     vgsvcToolboxRm     },
-        { "mktemp", vgsvcToolboxMkTemp },
-        { "mkdir",  vgsvcToolboxMkDir  },
-        { "stat",   vgsvcToolboxStat   },
-    };
-
-    /* Skip optional 'vbox_' prefix. */
-    if (   pszTool[0] == 'v'
-        && pszTool[1] == 'b'
-        && pszTool[2] == 'o'
-        && pszTool[3] == 'x'
-        && pszTool[4] == '_')
-        pszTool += 5;
+    AssertPtrReturn(pszTool, NULL);
 
     /* Do a linear search, since we don't have that much stuff in the table. */
     for (unsigned i = 0; i < RT_ELEMENTS(s_aTools); i++)
         if (!strcmp(s_aTools[i].pszName, pszTool))
-            return s_aTools[i].pfnHandler;
+            return &s_aTools[i];
 
     return NULL;
+}
+
+
+/**
+ * Converts a tool's exit code back to an IPRT error code.
+ *
+ * @return  Converted IPRT status code.
+ * @param   pszTool                 Name of the toolbox tool to convert exit code for.
+ * @param   rcExit                  The tool's exit code to convert.
+ */
+int VGSvcToolboxExitCodeConvertToRc(const char *pszTool, RTEXITCODE rcExit)
+{
+    AssertPtrReturn(pszTool, VERR_INVALID_POINTER);
+
+    PVBOXSERVICETOOLBOXTOOL pTool = vgsvcToolboxLookUp(pszTool);
+    if (pTool)
+        return pTool->pfnExitCodeConvertToRc(rcExit);
+
+    AssertMsgFailed(("Tool '%s' not found\n", pszTool));
+    return VERR_GENERAL_FAILURE; /* Lookup failed, should not happen. */
 }
 
 
@@ -1493,9 +1571,9 @@ bool VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
      * Check if the file named in argv[0] is one of the toolbox programs.
      */
     AssertReturn(argc > 0, false);
-    const char *pszTool    = RTPathFilename(argv[0]);
-    PFNHANDLER  pfnHandler = vgsvcToolboxLookUpHandler(pszTool);
-    if (!pfnHandler)
+    const char              *pszTool = RTPathFilename(argv[0]);
+    PVBOXSERVICETOOLBOXTOOL  pTool   = vgsvcToolboxLookUp(pszTool);
+    if (!pTool)
     {
         /*
          * For debugging and testing purposes we also allow toolbox program access
@@ -1506,8 +1584,8 @@ bool VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
         argc -= 2;
         argv += 2;
         pszTool = argv[0];
-        pfnHandler = vgsvcToolboxLookUpHandler(pszTool);
-        if (!pfnHandler)
+        pTool = vgsvcToolboxLookUp(pszTool);
+        if (!pTool)
         {
            *prcExit = RTEXITCODE_SUCCESS;
            if (!strcmp(pszTool, "-V"))
@@ -1527,7 +1605,8 @@ bool VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
      * Invoke the handler.
      */
     RTMsgSetProgName("VBoxService/%s", pszTool);
-    *prcExit = pfnHandler(argc, argv);
+    AssertPtr(pTool);
+    *prcExit = pTool->pfnHandler(argc, argv);
 
     return true;
 }
