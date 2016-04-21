@@ -60,6 +60,7 @@ static VOID DoLogging(LPCSTR szString, ...);
 
 #define VBOX_NETCFG_LOCK_TIME_OUT     5000  /** @todo r=bird: What does this do? */
 
+#define VBOXNETCFGWIN_NETADP_ID L"sun_VBoxNetAdp"
 
 /*
 * Wrappers for HelpAPI functions
@@ -323,17 +324,21 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallComponent(IN INetCfg *pNetCfg, I
             *   See @bugref{6379} for details.
             */
             res = pTempComponent->OpenParamKey(&hkey);
-            if(SUCCEEDED(res) && hkey != NULL)
-                res = vboxNetCfgWinSetupMetric(hkey);
-            if (FAILED(res))
+
+            /* Set default metric value for host-only interface only */
+            if (SUCCEEDED(res) && hkey != NULL && wcsnicmp(pszwComponentId, VBOXNETCFGWIN_NETADP_ID, 256) == 0)
             {
-                /*  
-                 *   The setting of Metric is not very important functionality,
-                 *   So we will not break installation process due to this error.
-                 */
-                NonStandardLogFlow(("VBoxNetCfgWinInstallComponent Warning! "
-                                    "vboxNetCfgWinSetupMetric failed, default metric "
-                                    "for new interface will not be set, hr (0x%x)\n", res));
+                res = vboxNetCfgWinSetupMetric(hkey);
+                if (FAILED(res))
+                {
+                    /*
+                     *   The setting of Metric is not very important functionality,
+                     *   So we will not break installation process due to this error.
+                     */
+                    NonStandardLogFlow(("VBoxNetCfgWinInstallComponent Warning! "
+                        "vboxNetCfgWinSetupMetric failed, default metric "
+                        "for new interface will not be set, hr (0x%x)\n", res));
+                }
             }
             if (ppComponent != NULL)
                 *ppComponent = pTempComponent;
@@ -2164,7 +2169,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc,
     return hr;
 }
 
-#define VBOXNETCFGWIN_NETADP_ID L"sun_VBoxNetAdp"
 static HRESULT vboxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, LPCWSTR pwszId, DWORD InfRmFlags)
 {
     HRESULT hr = S_OK;
@@ -3424,8 +3428,8 @@ HRESULT vboxNetCfgWinGetLoopbackMetric(OUT int* Metric)
     row.InterfaceLuid.Info.IfType = IF_TYPE_SOFTWARE_LOOPBACK;
 
     rc = g_pfnGetIpInterfaceEntry(&row);
-    if (rc != 0)
-        return E_FAIL;
+    if (rc != NO_ERROR)
+        return HRESULT_FROM_WIN32(rc);
 
     *Metric = row.Metric;
 
@@ -3451,7 +3455,7 @@ HRESULT vboxNetCfgWinSetInterfaceMetric(
     newRow.Metric = metric;
 
     // change settings
-    return g_pfnSetIpInterfaceEntry(&newRow);
+    return HRESULT_FROM_WIN32(g_pfnSetIpInterfaceEntry(&newRow));
 }
 
 
@@ -3468,15 +3472,15 @@ HRESULT vboxNetCfgWinGetInterfaceLUID(IN HKEY hKey, OUT NET_LUID* pLUID)
     
     res = RegQueryValueExW(hKey, L"NetLuidIndex", NULL,
         &dwValueType, (LPBYTE)&luidIndex, &cbSize);
-    if (FAILED(res))
-        return res;
+    if (res != 0)
+        return HRESULT_FROM_WIN32(res);
 
     cbSize = sizeof(ifType);
     dwValueType = REG_DWORD;
     res = RegQueryValueExW(hKey, L"*IfType", NULL,
         &dwValueType, (LPBYTE)&ifType, &cbSize);
-    if (FAILED(res))
-        return res;
+    if (res != 0)
+        return HRESULT_FROM_WIN32(res);
 
     ZeroMemory(pLUID, sizeof(NET_LUID));
     pLUID->Info.IfType = ifType;
