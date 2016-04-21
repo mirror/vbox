@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -715,7 +715,7 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine>
 
         MediumLockList *pMediumLockList(new MediumLockList());
         rc = diff->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                          true /* fMediumLockWrite */,
+                                          diff /* pToLockWrite */,
                                           false /* fMediumLockWriteAll */,
                                           pParent,
                                           *pMediumLockList);

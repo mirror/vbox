@@ -2614,7 +2614,7 @@ HRESULT Medium::createDiffStorage(const ComPtr<IMedium> &aTarget,
     MediumLockList *pMediumLockList(new MediumLockList());
     alock.release();
     HRESULT rc = diff->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                              true /* fMediumLockWrite */,
+                                              diff /* pToLockWrite */,
                                               false /* fMediumLockWriteAll */,
                                               this,
                                               *pMediumLockList);
@@ -2754,7 +2754,7 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
         MediumLockList *pSourceMediumLockList(new MediumLockList());
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                    false /* fMediumLockWrite */,
+                                    NULL /* pToLockWrite */,
                                     false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pSourceMediumLockList);
@@ -2769,7 +2769,7 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
         MediumLockList *pTargetMediumLockList(new MediumLockList());
         alock.release();
         rc = pTarget->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                             true /* fMediumLockWrite */,
+                                             pTarget /* pToLockWrite */,
                                              false /* fMediumLockWriteAll */,
                                              pParent,
                                              *pTargetMediumLockList);
@@ -2884,7 +2884,7 @@ HRESULT Medium::compact(ComPtr<IProgress> &aProgress)
         MediumLockList *pMediumLockList(new MediumLockList());
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */ ,
-                                    true /* fMediumLockWrite */,
+                                    this /* pToLockWrite */,
                                     false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pMediumLockList);
@@ -2954,7 +2954,7 @@ HRESULT Medium::resize(LONG64 aLogicalSize,
         MediumLockList *pMediumLockList(new MediumLockList());
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */ ,
-                                    true /* fMediumLockWrite */,
+                                    this /* pToLockWrite */,
                                     false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pMediumLockList);
@@ -3037,7 +3037,7 @@ HRESULT Medium::reset(ComPtr<IProgress> &aProgress)
         MediumLockList *pMediumLockList(new MediumLockList());
         multilock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                    true /* fMediumLockWrite */,
+                                    this /* pToLockWrite */,
                                     false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pMediumLockList);
@@ -3126,7 +3126,7 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com
         MediumLockList *pMediumLockList(new MediumLockList());
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */ ,
-                                    true /* fMediumLockWrite */,
+                                    this /* pToLockWrite */,
                                     true /* fMediumLockAllWrite */,
                                     NULL,
                                     *pMediumLockList);
@@ -4271,13 +4271,13 @@ HRESULT Medium::i_saveSettings(settings::Medium &data,
  * @param fFailIfInaccessible If true, this fails with an error if a medium is inaccessible. If false,
  *          inaccessible media are silently skipped and not locked (i.e. their state remains "Inaccessible");
  *          this is necessary for a VM's removable media VM startup for which we do not want to fail.
- * @param fMediumLockWrite     Whether to associate a write lock with this medium.
+ * @param pToLockWrite         If not NULL, associate a write lock with this medium object.
  * @param fMediumLockWriteAll  Whether to associate a write lock to all other media too.
  * @param pToBeParent          Medium which will become the parent of this medium.
  * @param mediumLockList       Where to store the resulting list.
  */
 HRESULT Medium::i_createMediumLockList(bool fFailIfInaccessible,
-                                       bool fMediumLockWrite,
+                                       Medium *pToLockWrite,
                                        bool fMediumLockWriteAll,
                                        Medium *pToBeParent,
                                        MediumLockList &mediumLockList)
@@ -4343,8 +4343,8 @@ HRESULT Medium::i_createMediumLockList(bool fFailIfInaccessible,
             }
         }
 
-        if (pMedium == this)
-            mediumLockList.Prepend(pMedium, fMediumLockWrite);
+        if (pMedium == pToLockWrite)
+            mediumLockList.Prepend(pMedium, true);
         else
             mediumLockList.Prepend(pMedium, fMediumLockWriteAll);
 
@@ -4749,7 +4749,7 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
         MediumLockList *pMediumLockList(new MediumLockList());
         multilock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                    true /* fMediumLockWrite */,
+                                    this /* pToLockWrite */,
                                     false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pMediumLockList);
@@ -5112,13 +5112,13 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
         treeLock.release();
         if (fMergeForward)
             rc = pTarget->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                                 true /* fMediumLockWrite */,
+                                                 pTarget /* pToLockWrite */,
                                                  false /* fMediumLockWriteAll */,
                                                  NULL,
                                                  *aMediumLockList);
         else
             rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                        true /* fMediumLockWrite */,
+                                        pTarget /* pToLockWrite */,
                                         false /* fMediumLockWriteAll */,
                                         NULL,
                                         *aMediumLockList);
@@ -5566,7 +5566,7 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
     Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
     MediumLockList mediumLockList;
     HRESULT rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                        false /* fMediumLockWrite */,
+                                        NULL /* pToLockWrite */,
                                         false /* fMediumLockWriteAll */,
                                         this,
                                         mediumLockList);
@@ -5683,7 +5683,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
         /* Build the source lock list. */
         MediumLockList *pSourceMediumLockList(new MediumLockList());
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                    false /* fMediumLockWrite */,
+                                    NULL /* pToLockWrite */,
                                     false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pSourceMediumLockList);
@@ -5773,7 +5773,7 @@ HRESULT Medium::i_importFile(const char *aFilename,
         MediumLockList *pTargetMediumLockList(new MediumLockList());
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                    true /* fMediumLockWrite */,
+                                    this /* pToLockWrite */,
                                     false /* fMediumLockWriteAll */,
                                     aParent,
                                     *pTargetMediumLockList);
@@ -5871,7 +5871,7 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
         MediumLockList *pSourceMediumLockList(new MediumLockList());
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                    false /* fMediumLockWrite */,
+                                    NULL /* pToLockWrite */,
                                     false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pSourceMediumLockList);
@@ -5886,7 +5886,7 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
         MediumLockList *pTargetMediumLockList(new MediumLockList());
         alock.release();
         rc = aTarget->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                             true /* fMediumLockWrite */,
+                                             aTarget /* pToLockWrite */,
                                              false /* fMediumLockWriteAll */,
                                              aParent,
                                              *pTargetMediumLockList);

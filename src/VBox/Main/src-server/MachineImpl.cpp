@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2015 Oracle Corporation
+ * Copyright (C) 2004-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -3922,7 +3922,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
                         MediumLockList *pMediumLockList(new MediumLockList());
 
                         rc = medium->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                                            true /* fMediumLockWrite */,
+                                                            medium /* pToLockWrite */,
                                                             false /* fMediumLockWriteAll */,
                                                             NULL,
                                                             *pMediumLockList);
@@ -4020,7 +4020,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
                                 MediumLockList *pMediumLockList(new MediumLockList());
 
                                 rc = medium->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                                                    true /* fMediumLockWrite */,
+                                                                    medium /* pToLockWrite */,
                                                                     false /* fMediumLockWriteAll */,
                                                                     NULL,
                                                                     *pMediumLockList);
@@ -4187,7 +4187,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
         mediumLock.release();
         treeLock.release();
         rc = diff->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                          true /* fMediumLockWrite */,
+                                          diff /* pToLockWrite */,
                                           false /* fMediumLockWriteAll */,
                                           medium,
                                           *pMediumLockList);
@@ -4291,7 +4291,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
             MediumLockList *pMediumLockList(new MediumLockList());
 
             rc = medium->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                                true /* fMediumLockWrite */,
+                                                medium /* pToLockWrite */,
                                                 false /* fMediumLockWriteAll */,
                                                 NULL,
                                                 *pMediumLockList);
@@ -10739,7 +10739,7 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
                     MediumLockList *pMediumLockList(new MediumLockList());
                     alock.release();
                     rc = pMedium->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                                         false /* fMediumLockWrite */,
+                                                         NULL /* pToLockWrite */,
                                                          false /* fMediumLockWriteAll */,
                                                          NULL,
                                                          *pMediumLockList);
@@ -10993,7 +10993,7 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
                     MediumLockList *pMediumLockList(new MediumLockList());
                     alock.release();
                     rc = pMedium->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                                         false /* fMediumLockWrite */,
+                                                         NULL /* pToLockWrite */,
                                                          false /* fMediumLockWriteAll */,
                                                          NULL,
                                                          *pMediumLockList);
@@ -14403,7 +14403,7 @@ HRESULT SessionMachine::i_lockMedia()
 
             alock.release();
             mrc = pMedium->i_createMediumLockList(fIsVitalImage /* fFailIfInaccessible */,
-                                                  !fIsReadOnlyLock /* fMediumLockWrite */,
+                                                  !fIsReadOnlyLock ? pMedium : NULL /* pToLockWrite */,
                                                   false /* fMediumLockWriteAll */,
                                                   NULL,
                                                   *pMediumLockList);
