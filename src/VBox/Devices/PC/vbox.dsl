@@ -78,7 +78,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
     //
     // S2BF(Str) - Convert a string object into a buffer object.
     //
-    Method(S2BF, 1)
+    Method(S2BF, 1, Serialized)
     {
         //
         // Note: The caller must make sure that the argument is a string object.
@@ -236,7 +236,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         DBG("\n")
 
         // Does OS provide the _OSI method?
-        If (CondRefOf(_OSI, Local1))
+        If (CondRefOf(_OSI))
         {
             DBG("_OSI exists\n")
             // OS returns non-zero value in response to _OSI query if it
@@ -294,7 +294,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         }
 
         // Does OS provide the _REV method?
-        If (CondRefOf(_REV, Local2))
+        If (CondRefOf(_REV))
         {
             DBG("_REV: ")
             HEX4(_REV)
