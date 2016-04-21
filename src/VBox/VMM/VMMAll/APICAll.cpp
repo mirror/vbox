@@ -1303,7 +1303,7 @@ static VBOXSTRICTRC apicGetTimerCcr(PVMCPU pVCpu, int rcBusy, uint32_t *puValue)
      * We also need to lock before reading the timer CCR, see apicR3TimerCallback().
      */
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    PTMTIMER  pTimer   = CTX_SUFF(pApicCpu->pTimer);
+    PTMTIMER  pTimer   = pApicCpu->CTX_SUFF(pTimer);
 
     int rc = TMTimerLock(pTimer, rcBusy);
     if (rc == VINF_SUCCESS)
@@ -1338,10 +1338,10 @@ static VBOXSTRICTRC apicSetTimerIcr(PVMCPU pVCpu, int rcBusy, uint32_t uInitialC
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
-    PAPIC      pApic      = VM_TO_APIC(CTX_SUFF(pVCpu->pVM));
+    PAPIC      pApic      = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     PAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    PTMTIMER   pTimer     = CTX_SUFF(pApicCpu->pTimer);
+    PTMTIMER   pTimer     = pApicCpu->CTX_SUFF(pTimer);
 
     /* In TSC-deadline mode, timer ICR writes are ignored, see Intel spec. 10.5.4.1 "TSC-Deadline Mode". */
     if (   pApic->fSupportsTscDeadline
@@ -1395,7 +1395,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt
      * If TSC-deadline mode isn't support, ignore the bit in xAPIC mode
      * and raise #GP(0) in x2APIC mode.
      */
-    PCAPIC pApic = VM_TO_APIC(CTX_SUFF(pVCpu->pVM));
+    PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     if (offLvt == XAPIC_OFF_LVT_TIMER)
     {
         if (   !pApic->fSupportsTscDeadline
@@ -2377,7 +2377,7 @@ VMMDECL(int) APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr
  */
 VMMDECL(void) APICSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 {
-    PVM      pVM      = CTX_SUFF(pVCpu->pVM);
+    PVM      pVM      = pVCpu->CTX_SUFF(pVM);
     PAPICDEV pApicDev = VM_TO_APICDEV(pVM);
     CTX_SUFF(pApicDev->pApicHlp)->pfnSetInterruptFF(pApicDev->CTX_SUFF(pDevIns), enmType, pVCpu->idCpu);
 }
@@ -2391,9 +2391,9 @@ VMMDECL(void) APICSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
  */
 VMMDECL(void) APICClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 {
-    PVM      pVM      = CTX_SUFF(pVCpu->pVM);
+    PVM      pVM      = pVCpu->CTX_SUFF(pVM);
     PAPICDEV pApicDev = VM_TO_APICDEV(pVM);
-    CTX_SUFF(pApicDev->pApicHlp)->pfnClearInterruptFF(pApicDev->CTX_SUFF(pDevIns), enmType, pVCpu->idCpu);
+    pApicDev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(pApicDev->CTX_SUFF(pDevIns), enmType, pVCpu->idCpu);
 }
 
 
@@ -2480,7 +2480,7 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
 VMM_INT_DECL(void) APICStartTimer(PAPICCPU pApicCpu, uint32_t uInitialCount)
 {
     Assert(pApicCpu);
-    Assert(TMTimerIsLockOwner(CTX_SUFF(pApicCpu->pTimer)));
+    Assert(TMTimerIsLockOwner(pApicCpu->CTX_SUFF(pTimer)));
     Assert(uInitialCount > 0);
 
     PCXAPICPAGE    pXApicPage   = APICCPU_TO_CXAPICPAGE(pApicCpu);
@@ -2493,7 +2493,7 @@ VMM_INT_DECL(void) APICStartTimer(PAPICCPU pApicCpu, uint32_t uInitialCount)
      * however is updating u64TimerInitial 'atomically' while setting the next
      * tick.
      */
-    PTMTIMER pTimer = CTX_SUFF(pApicCpu->pTimer);
+    PTMTIMER pTimer = pApicCpu->CTX_SUFF(pTimer);
     TMTimerSetRelative(pTimer, cTicksToNext, &pApicCpu->u64TimerInitial);
     apicHintTimerFreq(pApicCpu, uInitialCount, uTimerShift);
 }
@@ -2508,9 +2508,9 @@ VMM_INT_DECL(void) APICStartTimer(PAPICCPU pApicCpu, uint32_t uInitialCount)
 VMM_INT_DECL(void) APICStopTimer(PAPICCPU pApicCpu)
 {
     Assert(pApicCpu);
-    Assert(TMTimerIsLockOwner(CTX_SUFF(pApicCpu->pTimer)));
+    Assert(TMTimerIsLockOwner(pApicCpu->CTX_SUFF(pTimer)));
 
-    PTMTIMER pTimer = CTX_SUFF(pApicCpu->pTimer);
+    PTMTIMER pTimer = pApicCpu->CTX_SUFF(pTimer);
     TMTimerStop(pTimer);    /* This will reset the hint, no need to explicitly call TMTimerSetFrequencyHint(). */
     pApicCpu->uHintedTimerInitialCount = 0;
     pApicCpu->uHintedTimerShift = 0;
@@ -2571,7 +2571,8 @@ VMMDECL(bool) APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
-    PAPIC pApic = VM_TO_APIC(CTX_SUFF(pVCpu->pVM));
+    PVM   pVM   = pVCpu->CTX_SUFF(pVM);
+    PAPIC pApic = VM_TO_APIC(pVM);
     Assert(!pApic->fVirtApicRegsEnabled);
     NOREF(pApic);
 
@@ -2602,7 +2603,8 @@ VMMDECL(void) APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingInt
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
-    PAPIC pApic = VM_TO_APIC(CTX_SUFF(pVCpu->pVM));
+    PVM   pVM   = pVCpu->CTX_SUFF(pVM);
+    PAPIC pApic = VM_TO_APIC(pVM);
     Assert(!pApic->fVirtApicRegsEnabled);
     NOREF(pApic);
 
@@ -2638,7 +2640,7 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
         if (!fAlreadySet)
             break;
 
-        PAPICPIB pPib = (PAPICPIB)CTX_SUFF(pApicCpu->pvApicPib);
+        PAPICPIB pPib = (PAPICPIB)pApicCpu->CTX_SUFF(pvApicPib);
         AssertCompile(RT_ELEMENTS(pXApicPage->irr.u) == 2 * RT_ELEMENTS(pPib->aVectorBitmap));
 
         for (size_t idxPib = 0, idxReg = 0; idxPib < RT_ELEMENTS(pPib->aVectorBitmap); idxPib++, idxReg += 2)
