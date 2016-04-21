@@ -222,7 +222,7 @@
 #define CODEC_F00_0C_CAP_INPUT                             RT_BIT(5)
 #define CODEC_F00_0C_CAP_OUTPUT                            RT_BIT(4)
 #define CODEC_F00_0C_CAP_HEADPHONE_AMP                     RT_BIT(3)
-#define CODEC_F00_0C_CAP_PRESENSE_DETECT                   RT_BIT(2)
+#define CODEC_F00_0C_CAP_PRESENCE_DETECT                   RT_BIT(2)
 #define CODEC_F00_0C_CAP_TRIGGER_REQUIRED                  RT_BIT(1)
 #define CODEC_F00_0C_CAP_IMPENDANCE_SENSE                  RT_BIT(0)
 
@@ -234,7 +234,7 @@
 #define CODEC_F00_0C_IS_CAP_INPUT(f00_0c)                  ((f00_0c) & RT_BIT(5))
 #define CODEC_F00_0C_IS_CAP_OUTPUT(f00_0c)                 ((f00_0c) & RT_BIT(4))
 #define CODEC_F00_0C_IS_CAP_HP(f00_0c)                     ((f00_0c) & RT_BIT(3))
-#define CODEC_F00_0C_IS_CAP_PRESENSE_DETECT(f00_0c)        ((f00_0c) & RT_BIT(2))
+#define CODEC_F00_0C_IS_CAP_PRESENCE_DETECT(f00_0c)        ((f00_0c) & RT_BIT(2))
 #define CODEC_F00_0C_IS_CAP_TRIGGER_REQUIRED(f00_0c)       ((f00_0c) & RT_BIT(1))
 #define CODEC_F00_0C_IS_CAP_IMPENDANCE_SENSE(f00_0c)       ((f00_0c) & RT_BIT(0))
 
@@ -914,7 +914,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
                                                 | CODEC_F00_0C_CAP_BALANCED_IO
                                                 | CODEC_F00_0C_CAP_INPUT
                                                 | CODEC_F00_0C_CAP_OUTPUT
-                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_PRESENCE_DETECT
                                                 | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
                                                 | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;
 
@@ -1058,7 +1058,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
                                                 | CODEC_F00_0C_CAP_INPUT
                                                 | CODEC_F00_0C_CAP_OUTPUT
                                                 | CODEC_F00_0C_CAP_HEADPHONE_AMP
-                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_PRESENCE_DETECT
                                                 | CODEC_F00_0C_CAP_TRIGGER_REQUIRED;
 
             /* Connection list entry 0: Goes to DAC0. */
@@ -1080,7 +1080,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
                                                 | CODEC_F00_0C_CAP_OUTPUT
-                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_PRESENCE_DETECT
                                                 | CODEC_F00_0C_CAP_TRIGGER_REQUIRED;
 
             /* Connection list entry 0: Goes to DAC2. */
@@ -1104,7 +1104,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
                                                 | CODEC_F00_0C_CAP_OUTPUT
-                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_PRESENCE_DETECT
                                                 | CODEC_F00_0C_CAP_TRIGGER_REQUIRED;
 
             /* Connection list entry 0: Goes to DAC1. */
@@ -1129,7 +1129,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
                                                 | CODEC_F00_0C_CAP_INPUT
                                                 | CODEC_F00_0C_CAP_OUTPUT
                                                 | CODEC_F00_0C_CAP_HEADPHONE_AMP
-                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                                | CODEC_F00_0C_CAP_PRESENCE_DETECT
                                                 | CODEC_F00_0C_CAP_TRIGGER_REQUIRED;
 
             /* Connection list entry 0: Goes to DAC1. */
@@ -1170,7 +1170,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
                                                 | CODEC_F00_09_CAP_UNSOL
                                                 | CODEC_F00_09_CAP_STEREO;
             pNode->port.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_INPUT
-                                                | CODEC_F00_0C_CAP_PRESENSE_DETECT;
+                                                | CODEC_F00_0C_CAP_PRESENCE_DETECT;
 
             if (!pThis->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
@@ -1222,7 +1222,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
                                                   | CODEC_F00_09_CAP_CONNECTION_LIST
                                                   | CODEC_F00_09_CAP_STEREO;
             pNode->digout.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT
-                                                  | CODEC_F00_0C_CAP_PRESENSE_DETECT;
+                                                  | CODEC_F00_0C_CAP_PRESENCE_DETECT;
 
             /* Connection list entries. */
             pNode->digout.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 3 /* Entries */);
@@ -1255,7 +1255,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
 
             pNode->digin.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_EAPD
                                                  | CODEC_F00_0C_CAP_INPUT
-                                                 | CODEC_F00_0C_CAP_PRESENSE_DETECT;
+                                                 | CODEC_F00_0C_CAP_PRESENCE_DETECT;
             if (!pThis->fInReset)
                 pNode->digin.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                            CODEC_F1C_LOCATION_REAR,
