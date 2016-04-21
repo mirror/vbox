@@ -614,6 +614,41 @@ static PDMAPICMODE apicR3ConvertToLegacyApicMode(APICMODE enmMode)
 }
 
 
+#ifdef DEBUG_ramshankar
+/**
+ * Helper for dumping per-VCPU APIC state to the release logger.
+ *
+ * This is primarily concerned about the APIC state relevant for saved-states.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszPrefix   A caller supplied prefix before dumping parts of the
+ *                      state.
+ */
+static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix)
+{
+    PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+
+    /* The auxiliary state. */
+    LogRel(("APIC%u: uApicBaseMsr    = %#RX64\n", pVCpu->idCpu, pApicCpu->uApicBaseMsr));
+    LogRel(("APIC%u: uEsrInternal    = %#RX64\n", pVCpu->idCpu, pApicCpu->uEsrInternal));
+
+    /* The timer. */
+    LogRel(("APIC%u: %s APIC Timer:\n", pVCpu->idCpu));
+    LogRel(("APIC%u: u64TimerInitial = %#RU64\n", pVCpu->idCpu, pApicCpu->u64TimerInitial));
+
+    /* The PIBs. */
+    LogRel(("APIC%u: %s APIC PIB:\n", pVCpu->idCpu, pszPrefix));
+    LogRel(("%.*Rhxs\n", sizeof(APICPIB), pApicCpu->pvApicPibR3));
+    LogRel(("APIC%u: %s APIC Level PIB:\n", pVCpu->idCpu, pszPrefix));
+    LogRel(("%.*Rhxs\n", sizeof(APICPIB), &pApicCpu->ApicPibLevel));
+
+    /* The APIC page. */
+    LogRel(("APIC%u: %s APIC page\n:", pVCpu->idCpu, pszPrefix));
+    LogRel(("%.*Rhxs\n", sizeof(XAPICPAGE), pApicCpu->pvApicPageR3));
+}
+#endif
+
+
 /**
  * Worker for saving per-VM APIC data.
  *
@@ -721,6 +756,10 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         /* Save the timer. */
         TMR3TimerSave(pApicCpu->pTimerR3, pSSM);
         SSMR3PutU64(pSSM, pApicCpu->u64TimerInitial);
+
+#ifdef DEBUG_ramshankar
+        apicR3DumpState(pVCpu, "Saved");
+#endif
     }
 
     return rc;
@@ -792,6 +831,10 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 uint8_t const  uTimerShift   = apicGetTimerShift(pXApicPage);
                 apicHintTimerFreq(pApicCpu, uInitialCount, uTimerShift);
             }
+
+#ifdef DEBUG_ramshankar
+            apicR3DumpState(pVCpu, "Loaded");
+#endif
         }
         else
         {
