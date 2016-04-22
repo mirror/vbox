@@ -560,11 +560,9 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
     switch (enmEffOpSize)
     {
         case IEMMODE_16BIT:
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
             AssertCompile(IEMTARGETCPU_8086 <= IEMTARGETCPU_186 && IEMTARGETCPU_V20 <= IEMTARGETCPU_186 && IEMTARGETCPU_286 > IEMTARGETCPU_186);
-            if (pIemCpu->uTargetCpu <= IEMTARGETCPU_186)
+            if (IEM_GET_TARGET_CPU(pIemCpu) <= IEMTARGETCPU_186)
                 fEfl |= UINT16_C(0xf000);
-#endif
             rcStrict = iemMemStackPushU16(pIemCpu, (uint16_t)fEfl);
             break;
         case IEMMODE_32BIT:
@@ -676,7 +674,6 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
                     return rcStrict;
                 fEflNew = u16Value | (fEflOld & UINT32_C(0xffff0000));
 
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
                 /*
                  * Ancient CPU adjustments:
                  *  - 8086, 80186, V20/30:
@@ -688,10 +685,9 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
                  *    their initial value is zero).  This changed on a 386 and can
                  *    therefore be used to detect 286 or 386 CPU in real mode.
                  */
-                if (   pIemCpu->uTargetCpu == IEMTARGETCPU_286
+                if (   IEM_GET_TARGET_CPU(pIemCpu) == IEMTARGETCPU_286
                     && !(pCtx->cr0 & X86_CR0_PE) )
                     fEflNew &= ~(X86_EFL_NT | X86_EFL_IOPL);
-#endif
                 break;
             }
             case IEMMODE_32BIT:
@@ -2775,10 +2771,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
                    | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT
                    | X86_EFL_RF /*| X86_EFL_VM*/ | X86_EFL_AC /*|X86_EFL_VIF*/ /*|X86_EFL_VIP*/
                    | X86_EFL_ID;
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
-        if (pIemCpu->uTargetCpu <= IEMTARGETCPU_386)
+        if (IEM_GET_TARGET_CPU(pIemCpu) <= IEMTARGETCPU_386)
             uNewFlags &= ~(X86_EFL_AC | X86_EFL_ID | X86_EFL_VIF | X86_EFL_VIP);
-#endif
         uNewFlags |= Efl.u & (X86_EFL_VM | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_1);
     }
     else
@@ -2794,11 +2788,9 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
         uNewFlags |= Efl.u & ((UINT32_C(0xffff0000) | X86_EFL_1) & ~X86_EFL_RF);
         /** @todo The intel pseudo code does not indicate what happens to
          *        reserved flags. We just ignore them. */
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
         /* Ancient CPU adjustments: See iemCImpl_popf. */
-        if (pIemCpu->uTargetCpu == IEMTARGETCPU_286)
+        if (IEM_GET_TARGET_CPU(pIemCpu) == IEMTARGETCPU_286)
             uNewFlags &= ~(X86_EFL_NT | X86_EFL_IOPL);
-#endif
     }
     /** @todo Check how this is supposed to work if sp=0xfffe. */
     Log7(("iemCImpl_iret_real_v8086: uNewCs=%#06x uNewRip=%#010x uNewFlags=%#x uNewRsp=%#18llx\n",
@@ -3262,10 +3254,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
             fEFlagsMask |= X86_EFL_IF | X86_EFL_IOPL | X86_EFL_VIF | X86_EFL_VIP; /* VM is 0 */
         else if (pIemCpu->uCpl <= pCtx->eflags.Bits.u2IOPL)
             fEFlagsMask |= X86_EFL_IF;
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
-        if (pIemCpu->uTargetCpu <= IEMTARGETCPU_386)
+        if (IEM_GET_TARGET_CPU(pIemCpu) <= IEMTARGETCPU_386)
             fEFlagsMask &= ~(X86_EFL_AC | X86_EFL_ID | X86_EFL_VIF | X86_EFL_VIP);
-#endif
         uint32_t fEFlagsNew = IEMMISC_GET_EFL(pIemCpu, pCtx);
         fEFlagsNew         &= ~fEFlagsMask;
         fEFlagsNew         |= uNewFlags & fEFlagsMask;
@@ -3338,10 +3328,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
             fEFlagsMask |= X86_EFL_IF | X86_EFL_IOPL | X86_EFL_VIF | X86_EFL_VIP; /* VM is 0 */
         else if (pIemCpu->uCpl <= NewEfl.Bits.u2IOPL)
             fEFlagsMask |= X86_EFL_IF;
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
-        if (pIemCpu->uTargetCpu <= IEMTARGETCPU_386)
+        if (IEM_GET_TARGET_CPU(pIemCpu) <= IEMTARGETCPU_386)
             fEFlagsMask &= ~(X86_EFL_AC | X86_EFL_ID | X86_EFL_VIF | X86_EFL_VIP);
-#endif
         NewEfl.u           &= ~fEFlagsMask;
         NewEfl.u           |= fEFlagsMask & uNewFlags;
 #ifdef DBGFTRACE_ENABLED
@@ -4807,10 +4795,8 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     {
         case 0:
             crX = pCtx->cr0;
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
-            if (pIemCpu->uTargetCpu <= IEMTARGETCPU_386)
+            if (IEM_GET_TARGET_CPU(pIemCpu) <= IEMTARGETCPU_386)
                 crX |= UINT32_C(0x7fffffe0); /* All reserved CR0 flags are set on a 386, just like MSW on 286. */
-#endif
             break;
         case 2: crX = pCtx->cr2; break;
         case 3: crX = pCtx->cr3; break;
@@ -4864,22 +4850,23 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
              * Perform checks.
              */
             uint64_t const uOldCrX = pCtx->cr0;
+            uint32_t const fValid  = X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS
+                                   | X86_CR0_ET | X86_CR0_NE | X86_CR0_WP | X86_CR0_AM
+                                   | X86_CR0_NW | X86_CR0_CD | X86_CR0_PG;
 
             /* ET is hardcoded on 486 and later. */
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
-            if (pIemCpu->uTargetCpu >= IEMTARGETCPU_486)
-#endif
-                uNewCrX |= X86_CR0_ET; /* hardcoded on 486+ */
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
-            /* The 386 didn't #GP(0) on attempting to set reserved CR0 bits. ET was settable. */
+            if (IEM_GET_TARGET_CPU(pIemCpu) > IEMTARGETCPU_486)
+                uNewCrX |= X86_CR0_ET;
+            /* The 386 and 486 didn't #GP(0) on attempting to set reserved CR0 bits. ET was settable on 386. */
+            else if (IEM_GET_TARGET_CPU(pIemCpu) == IEMTARGETCPU_486)
+            {
+                uNewCrX &= fValid;
+                uNewCrX |= X86_CR0_ET;
+            }
             else
                 uNewCrX &= X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS | X86_CR0_PG | X86_CR0_ET;
-#endif
 
             /* Check for reserved bits. */
-            uint32_t const fValid = X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS
-                                  | X86_CR0_ET | X86_CR0_NE | X86_CR0_WP | X86_CR0_AM
-                                  | X86_CR0_NW | X86_CR0_CD | X86_CR0_PG;
             if (uNewCrX & ~(uint64_t)fValid)
             {
                 Log(("Trying to set reserved CR0 bits: NewCR0=%#llx InvalidBits=%#llx\n", uNewCrX, uNewCrX & ~(uint64_t)fValid));
