@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1986,6 +1986,8 @@ int DragInstance::ghIsDnDPending(void)
     }
     else
     {
+        rc = VINF_SUCCESS;
+
         /* Determine the current window which currently has the XdndSelection set. */
         Window wndSelection = XGetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection));
         LogFlowThisFunc(("wndSelection=%#x, wndProxy=%#x, wndCur=%#x\n", wndSelection, m_wndProxy.hWnd, m_wndCur));
