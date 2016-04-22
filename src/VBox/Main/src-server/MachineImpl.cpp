@@ -12124,7 +12124,15 @@ void Machine::i_copyFrom(Machine *aThat)
 
     mNetworkAdapters.resize(aThat->mNetworkAdapters.size());
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
-        mNetworkAdapters[slot]->i_copyFrom(aThat->mNetworkAdapters[slot]);
+    {
+        if (mNetworkAdapters[slot].isNotNull())
+            mNetworkAdapters[slot]->i_copyFrom(aThat->mNetworkAdapters[slot]);
+        else
+        {
+            unconst(mNetworkAdapters[slot]).createObject();
+            mNetworkAdapters[slot]->initCopy(this, aThat->mNetworkAdapters[slot]);
+        }
+    }
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
         mSerialPorts[slot]->i_copyFrom(aThat->mSerialPorts[slot]);
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); ++slot)
