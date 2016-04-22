@@ -551,8 +551,7 @@ int main(int argc, char **argv)
             {
                 if (rc == VERR_TIMEOUT)
                 {
-                    // seems that test thread hungs - alert
-                    RTTestFailed(g_hTest, "Test failed - one of operations hunged. VBoxSvc deadlock detected.\n");
+                    RTTestFailed(g_hTest, "Timeout. Deadlock?\n");
                     com::Shutdown();
                     return RTTestSummaryAndDestroy(g_hTest);
                 }
